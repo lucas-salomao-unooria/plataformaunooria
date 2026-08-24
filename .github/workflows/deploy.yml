@@ -1,0 +1,47 @@
+name: deploy
+on:
+  push: { branches: [main] }
+env:
+  REGION: southamerica-east1
+  CONTRATO: ${{ vars.CONTRATO }}          # ex: "sp-piloto" — definido por ambiente
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }   # WIF, sem chave JSON
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: pnpm install --frozen-lockfile
+      - name: Build só o que mudou
+        run: pnpm turbo build --filter='...[HEAD^]'
+      # --- hub/api: docker → Artifact Registry → Cloud Run (se mudaram) ---
+      - name: Deploy api
+        run: |
+          if git diff --quiet HEAD^ HEAD -- apps/api packages; then echo "api sem mudanças"; exit 0; fi
+          IMG=$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/$CONTRATO-docker/api:${{ github.sha }}
+          gcloud builds submit --tag $IMG -f apps/api/Dockerfile .
+          gcloud run deploy $CONTRATO-api --image $IMG --region $REGION
+      - name: Deploy hub
+        run: |
+          if git diff --quiet HEAD^ HEAD -- apps/hub packages; then echo "hub sem mudanças"; exit 0; fi
+          IMG=$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/$CONTRATO-docker/hub:${{ github.sha }}
+          gcloud builds submit --tag $IMG -f apps/hub/Dockerfile .
+          gcloud run deploy $CONTRATO-hub --image $IMG --region $REGION
+      # --- experiências: dist → bucket versionado (se mudaram) ---
+      - name: Publicar experiências alteradas
+        run: |
+          for dir in apps/experiencias/*/; do
+            exp=$(basename "$dir"); [ "$exp" = "_template" ] && continue
+            if git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk; then continue; fi
+            ver=$(node -p "require('./$dir/package.json').version")
+            gsutil -m rsync -r -d "$dir/dist" "gs://$CONTRATO-exp/$exp/$ver/"
+            echo "publicada $exp@$ver"
+          done
