@@ -5,17 +5,31 @@
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
+    "build:isolado": "HUB_DIST_DIR=.next-prod next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint || echo ok",
     "test": "echo 'sem testes ainda'"
   },
   "dependencies": {
-    "next": "^15.0.0",
+    "@edu/sdk": "workspace:*",
+    "@edu/ui": "workspace:*",
+    "jose": "^5.9.0",
+    "next": "^15.5.0",
     "next-auth": "^5.0.0-beta.25",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "@edu/sdk": "workspace:*"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "server-only": "^0.0.1",
+    "zod": "^3.24.0"
   },
-  "devDependencies": { "@types/react": "^18.3.0", "@types/node": "^22.0.0", "typescript": "^5.6.0" }
+  "devDependencies": {
+    "@auth/core": "0.41.3",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "autoprefixer": "^10.5.4",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.7.0"
+  }
 }

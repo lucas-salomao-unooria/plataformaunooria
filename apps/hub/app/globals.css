@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * CSS base do hub. Aqui NÃO entra cor nem tipografia institucional: elas vêm
+ * dos tokens do DS via `@edu/ui/styles/plataforma.css`, importado só no grupo
+ * de rotas `(plataforma)`. O que fica aqui é reset e acessibilidade.
+ *
+ * O `@tailwind base` (preflight) é obrigatório: o DS estiliza componentes, não
+ * elementos — sem o reset, links ficam sublinhados e listas ganham bullets.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  /* Foco visível em tudo que é interativo (acessibilidade AA). */
+  :focus-visible {
+    outline: 2px solid var(--unooria-color-brandnavy-800, #49699f);
+    outline-offset: 2px;
+  }
+}

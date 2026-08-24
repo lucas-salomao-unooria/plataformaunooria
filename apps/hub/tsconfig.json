@@ -1,5 +1,34 @@
-{ "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "jsx": "preserve", "lib": ["ES2022","DOM"], "plugins": [{ "name": "next" }],
-    "declaration": false, "noEmit": true, "allowJs": true, "incremental": true,
-    "paths": { "@/*": ["./*"] } },
-  "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts"], "exclude": ["node_modules"] }
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "declaration": false,
+    "noEmit": true,
+    "allowJs": true,
+    "incremental": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "isolatedModules": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next-prod/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

@@ -1,0 +1,371 @@
+'use client';
+
+import { Fragment, useState } from 'react';
+
+import { AlertBox, Badge, Card } from '@edu/ui/ds';
+import type { AnaliseDaTurma } from '@/lib/analise-tipos';
+
+/**
+ * A tela de análise pedagógica (doc 11 §4.2).
+ *
+ * A ordem das seções não é decorativa: a **tabela conclusão × lado semeado** vem
+ * primeiro porque é o resultado experimental da turma e o insumo direto do
+ * momento-espelho (doc 09). Tudo abaixo dela existe para explicá-la.
+ */
+export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
+  const [aberto, setAberto] = useState<string | null>(null);
+
+  const { atividade, conclusaoPorLadoSemeado: tabela, poderDoViesSemeado: poder } = analise;
+  const rotulo = (lado: 'A' | 'B') => (lado === 'A' ? atividade.ladoALabel : atividade.ladoBLabel);
+  const duracao = (ms: number) => {
+    const total = Math.round(ms / 1000);
+    return total >= 60 ? `${Math.floor(total / 60)}min${String(total % 60).padStart(2, '0')}s` : `${total}s`;
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      {analise.turma.naMissao > 0 ? (
+        <AlertBox
+          theme="light"
+          variant="info"
+          device="auto"
+          title={`${analise.turma.naMissao} aluno(s) ainda na missão`}
+          description="Os números abaixo mudam enquanto eles terminam. Vale esperar antes de projetar a tabela para a sala."
+        />
+      ) : null}
+
+      {/* 1. A tabela que vale a aula */}
+      <Card variant="elevated">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-[17px] font-semibold text-unooria-neutral-950">
+              Conclusão × lado em que o feed nasceu
+            </h2>
+            <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-600">
+              As linhas são o lado que o perfil do Ato 1 escolheu para cada aluno. As colunas são o que
+              cada um escreveu no fim, antes de saber que existia um lado. Se a diagonal for forte, o
+              viés semeado previu a conclusão da turma.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] border-collapse text-left">
+              <thead>
+                <tr className="text-[12px] text-unooria-neutral-600">
+                  <th className="px-3 py-2 font-semibold">feed nasceu em</th>
+                  <th className="px-3 py-2 text-center font-semibold">
+                    concluiu “{atividade.ladoALabel}”
+                  </th>
+                  <th className="px-3 py-2 text-center font-semibold">ficou em dúvida</th>
+                  <th className="px-3 py-2 text-center font-semibold">
+                    concluiu “{atividade.ladoBLabel}”
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(
+                  [
+                    ['A', tabela.semeadoEmA],
+                    ['B', tabela.semeadoEmB],
+                  ] as const
+                ).map(([lado, celula]) => (
+                  <tr key={lado} className="border-t border-unooria-neutral-200">
+                    <td className="px-3 py-2.5 text-[13px] font-semibold text-unooria-neutral-900">
+                      {rotulo(lado)}
+                    </td>
+                    {(['A', 'duvida', 'B'] as const).map((coluna) => {
+                      const naDiagonal = coluna === lado;
+                      return (
+                        <td key={coluna} className="px-3 py-2.5 text-center">
+                          <span
+                            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-[15px] font-bold ${
+                              naDiagonal
+                                ? 'bg-unooria-navy-800 text-white'
+                                : 'bg-unooria-neutral-100 text-unooria-neutral-800'
+                            }`}
+                          >
+                            {celula[coluna]}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              [
+                'Seguiram o lado que receberam',
+                poder.taxa === null ? '—' : `${Math.round(poder.taxa * 100)}%`,
+                `${poder.seguiram} de ${poder.seguiram + poder.viraram} que tomaram lado`,
+              ],
+              ['Concluíram no lado oposto', String(poder.viraram), 'os que viraram o jogo na escrita'],
+              ['Ficaram em dúvida', String(poder.emDuvida), 'não contam a favor nem contra'],
+            ].map(([titulo, valor, apoio]) => (
+              <div key={titulo} className="rounded-lg border border-unooria-neutral-200 p-3">
+                <p className="text-[12px] leading-tight text-unooria-neutral-500">{titulo}</p>
+                <p className="text-[22px] font-bold text-unooria-neutral-950">{valor}</p>
+                <p className="text-[11px] leading-tight text-unooria-neutral-500">{apoio}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
+            Cuidado ao ler: a taxa mede correlação numa turma, não prova de causa. O contraexemplo está
+            na própria sala — os {poder.viraram} que concluíram no lado oposto.
+          </p>
+        </div>
+      </Card>
+
+      {/* 2. A largada e as viradas */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card variant="elevated">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[16px] font-semibold text-unooria-neutral-950">A largada</h2>
+            <dl className="flex flex-col gap-1.5 text-[13px]">
+              <div className="flex justify-between gap-3">
+                <dt className="text-unooria-neutral-600">{atividade.ladoALabel}</dt>
+                <dd className="font-semibold text-unooria-neutral-950">{analise.largada.porLado.A}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-unooria-neutral-600">{atividade.ladoBLabel}</dt>
+                <dd className="font-semibold text-unooria-neutral-950">{analise.largada.porLado.B}</dd>
+              </div>
+            </dl>
+            <p className="text-[12px] text-unooria-neutral-500">
+              de onde veio o lado:{' '}
+              {Object.entries(analise.largada.porOrigem)
+                .map(([origem, quantos]) => `${origem} ${quantos}`)
+                .join(' · ') || '—'}
+            </p>
+          </div>
+        </Card>
+
+        <Card variant="elevated">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[16px] font-semibold text-unooria-neutral-950">
+              Quem virou o jogo no feed
+            </h2>
+            {analise.turma.inverteram.length === 0 ? (
+              <p className="text-[13px] text-unooria-neutral-600">
+                Ninguém inverteu o lado dominante nesta turma.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5 text-[13px]">
+                {analise.turma.inverteram.map((aluno) => (
+                  <li key={aluno.username} className="flex flex-wrap items-baseline gap-1.5">
+                    <span className="font-semibold text-unooria-neutral-950">{aluno.displayName}</span>
+                    <span className="text-unooria-neutral-600">
+                      {aluno.de} → {aluno.para}
+                    </span>
+                    {aluno.bloco ? (
+                      <Badge variant="info" size="sm">
+                        bloco {aluno.bloco}
+                      </Badge>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
+              Pergunte a eles o que fizeram diferente. É a prova, dentro da sala, de que o viés não é
+              destino.
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      {/* 3. Busca, imersão e quem não concluiu */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card variant="elevated">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[16px] font-semibold text-unooria-neutral-950">A saída que existia</h2>
+            <p className="text-[13px] text-unooria-neutral-700">
+              <strong>{analise.busca.usaram}</strong> abriram a busca ·{' '}
+              <strong>{analise.busca.naoUsaram}</strong> não abriram nenhuma vez.
+            </p>
+            {analise.busca.termos.length > 0 ? (
+              <p className="text-[12px] leading-relaxed text-unooria-neutral-600">
+                o que a turma procurou: {analise.busca.termos.slice(0, 20).join(' · ')}
+              </p>
+            ) : (
+              <p className="text-[12px] text-unooria-neutral-500">Ninguém digitou nada na busca.</p>
+            )}
+          </div>
+        </Card>
+
+        <Card variant="elevated">
+          <div className="flex flex-col gap-3">
+            <h2 className="text-[16px] font-semibold text-unooria-neutral-950">
+              Imersão média da turma
+            </h2>
+            <p className="text-[26px] font-bold leading-none text-unooria-neutral-950">
+              {analise.imersao.media ?? '—'}
+              <span className="text-[14px] font-normal text-unooria-neutral-500"> / 100</span>
+            </p>
+            <ul className="flex flex-col gap-1.5">
+              {analise.imersao.porComponente.map((componente) => (
+                <li key={componente.chave} className="flex flex-col gap-0.5">
+                  <span className="flex justify-between text-[12px] text-unooria-neutral-700">
+                    <span>{componente.rotulo}</span>
+                    <span className="font-semibold">{componente.media}/20</span>
+                  </span>
+                  <span className="h-1.5 overflow-hidden rounded-full bg-unooria-neutral-200">
+                    <span
+                      className="block h-full rounded-full bg-unooria-navy-800"
+                      style={{ width: `${Math.round((componente.media / 20) * 100)}%` }}
+                    />
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
+              Só entra na média quem consumiu 8 posts ou mais — senão o atraso no login vira
+              “desengajamento”.
+            </p>
+          </div>
+        </Card>
+      </div>
+
+      {analise.turma.semConcluir.length > 0 ? (
+        <Card variant="elevated">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-[16px] font-semibold text-unooria-neutral-950">
+              Não entregaram a conclusão ({analise.turma.semConcluir.length})
+            </h2>
+            <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
+              {analise.turma.semConcluir
+                .map((aluno) => `${aluno.displayName} (${aluno.fase})`)
+                .join(' · ')}
+            </p>
+          </div>
+        </Card>
+      ) : null}
+
+      {/* 4. Drill-down por aluno */}
+      <Card variant="elevated">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-[16px] font-semibold text-unooria-neutral-950">Aluno por aluno</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px] border-collapse text-left">
+              <thead className="bg-unooria-neutral-100">
+                <tr className="text-[12px] text-unooria-neutral-700">
+                  <th className="px-3 py-2 font-semibold">Aluno</th>
+                  <th className="px-3 py-2 font-semibold">Perfil (jogo)</th>
+                  <th className="px-3 py-2 font-semibold">Nasceu em</th>
+                  <th className="px-3 py-2 font-semibold">Terminou em</th>
+                  <th className="px-3 py-2 font-semibold">Concluiu</th>
+                  <th className="px-3 py-2 font-semibold">Tempo no lado</th>
+                  <th className="px-3 py-2 font-semibold">Busca</th>
+                  <th className="px-3 py-2 font-semibold">Imersão</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analise.alunos.map((aluno) => {
+                  const outro = aluno.bolha.ladoInicial === 'A' ? 'B' : 'A';
+                  const expandido = aberto === aluno.runId;
+                  return (
+                    <Fragment key={aluno.runId}>
+                      <tr
+                        className="cursor-pointer border-t border-unooria-neutral-200 text-[13px] hover:bg-unooria-neutral-50"
+                        onClick={() => setAberto(expandido ? null : aluno.runId)}
+                      >
+                        <td className="px-3 py-2">
+                          <span className="font-semibold text-unooria-neutral-950">
+                            {aluno.aluno.displayName}
+                          </span>
+                          <span className="block text-[11px] text-unooria-neutral-500">
+                            {aluno.aluno.username}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
+                          {aluno.perfilJogo?.dominante ?? '—'}
+                        </td>
+                        <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
+                          {rotulo(aluno.bolha.ladoInicial)}
+                        </td>
+                        <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
+                          {aluno.ladoDominante === 'indefinido'
+                            ? 'sem lado'
+                            : rotulo(aluno.ladoDominante)}
+                          {aluno.bolha.inverteu ? ' ↺' : ''}
+                        </td>
+                        <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
+                          {aluno.conclusao
+                            ? aluno.conclusao.inclinacao === 'duvida'
+                              ? 'em dúvida'
+                              : rotulo(aluno.conclusao.inclinacao)
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
+                          {duracao(aluno.tempo.porLadoMs[aluno.bolha.ladoInicial])} ·{' '}
+                          {duracao(aluno.tempo.porLadoMs[outro])}
+                        </td>
+                        <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
+                          {aluno.investigacao.usosDaBusca}
+                        </td>
+                        <td className="px-3 py-2 text-[12px] font-semibold text-unooria-neutral-900">
+                          {aluno.imersao.total}
+                        </td>
+                      </tr>
+
+                      {expandido ? (
+                        <tr className="bg-unooria-neutral-50">
+                          <td colSpan={8} className="px-3 py-3">
+                            <div className="flex flex-col gap-3 text-[12px] leading-relaxed text-unooria-neutral-700">
+                              {aluno.conclusao ? (
+                                <blockquote className="rounded-lg border border-unooria-neutral-200 bg-white p-3 text-[13px]">
+                                  “{aluno.conclusao.texto}”
+                                  <span className="mt-1 block text-[11px] text-unooria-neutral-500">
+                                    {aluno.conclusao.caracteres} caracteres
+                                  </span>
+                                </blockquote>
+                              ) : (
+                                <p>Sem conclusão escrita.</p>
+                              )}
+
+                              <ul className="grid gap-1.5 sm:grid-cols-2">
+                                {aluno.imersao.componentes.map((componente) => (
+                                  <li key={componente.chave}>
+                                    <strong>{componente.rotulo}</strong> {componente.pontos}/20 —{' '}
+                                    {componente.detalhe}
+                                  </li>
+                                ))}
+                              </ul>
+
+                              <p>
+                                {aluno.postsConsumidos} posts em {duracao(aluno.tempo.feedMs)} (ativo{' '}
+                                {duracao(aluno.tempo.ativoMs)}, {aluno.tempo.vaosOciosos} pausa(s) longa(s))
+                                · {aluno.ritmo.postsPorMinuto} posts/min · variação do ritmo{' '}
+                                {aluno.ritmo.variacaoDoRitmo}
+                              </p>
+                              <p>
+                                curtidas {aluno.interacoes.curtidas} · comentários{' '}
+                                {aluno.interacoes.comentarios} · salvos {aluno.interacoes.salvos} ·
+                                seguiu {aluno.interacoes.seguidos} · parou de verdade em{' '}
+                                {aluno.investigacao.consideracaoDoOposto} post(s) do outro lado
+                                {aluno.investigacao.termosBuscados.length > 0
+                                  ? ` · buscou: ${aluno.investigacao.termosBuscados.join(', ')}`
+                                  : ''}
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[12px] text-unooria-neutral-500">
+            Clique numa linha para ver a conclusão escrita e os cinco componentes de imersão.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}

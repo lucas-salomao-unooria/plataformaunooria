@@ -1,16 +1,9 @@
-import Link from "next/link";
-// Catálogo mínimo. Em produção: lê manifesto de experiências do bucket/banco.
-const EXPERIENCIAS = [{ id: "exp-template", nome: "Experiência de exemplo (template)" }];
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { homeDoPapel } from "@/lib/papeis";
 
-export default function Home() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>Hub — catálogo</h1>
-      <ul>
-        {EXPERIENCIAS.map((e) => (
-          <li key={e.id}><Link href={`/exp/${e.id}`}>{e.nome}</Link></li>
-        ))}
-      </ul>
-    </main>
-  );
+/** A raiz só roteia: com sessão → home do papel; sem sessão → login. */
+export default async function Home() {
+  const session = await auth();
+  redirect(session?.usuario ? homeDoPapel(session.usuario.papel) : "/login");
 }
