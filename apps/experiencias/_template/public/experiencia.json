@@ -1,6 +1,7 @@
 {
   "id": "exp-template",
   "nome": "Experiência de exemplo",
+  "versao": "0.1.0",
   "series": ["6EF"],
   "capabilities": ["telemetria", "progresso"],
   "verbos": { "interacted": "clicou no contador", "completed": "concluiu a atividade" }
