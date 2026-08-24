@@ -1,0 +1,278 @@
+/**
+ * Atividade de DEMONSTRAÇÃO, sem chamar o Gemini — porte multi-tenant do
+ * `prisma/semear-demo.ts` do projeto origem (escola-demo, prof.demo).
+ *
+ * Existe para exercitar o fluxo da aula — o relógio da turma, o debate, os posts
+ * perdidos — sem esperar a geração de centenas de posts com imagem a cada
+ * rodada. O conteúdo é marcado no título; não confunda com atividade real.
+ *
+ * Uso:  pnpm --filter @edu/api seed:demo            (8 alunos com perfil do Ato 1)
+ *       pnpm --filter @edu/api seed:demo -- 24      (24 alunos)
+ *       pnpm --filter @edu/api seed:demo -- --apagar
+ */
+import { PrismaClient } from "@prisma/client";
+import { ENGINE_CONFIG_DEFAULT, PERFIS, PROPORCOES_DEFAULT } from "../src/comum/insta/defaults";
+
+const prisma = new PrismaClient();
+const TITULO = "DEMO — Descobrimento (sem Gemini)";
+const ESCOLA_ID = "escola-demo";
+
+const ANTAGONISMO = {
+  perguntas_candidatas: [
+    {
+      pergunta: "O descobrimento do Brasil foi algo planejado ou foi por acaso?",
+      // `equilibrio` é objeto, não número: com o shape errado o
+      // `antagonismoSchema` recusa tudo em silêncio e a UI cai no rótulo
+      // genérico "Lado A" / "Lado B".
+      equilibrio: { ok: true, nota: 0.9, aviso: null },
+      por_que: "Os dois lados têm documento e defensor.",
+    },
+  ],
+  escolhida: 0,
+  equilibrio: { ok: true, nota: 0.9, aviso: null },
+  ladoA: {
+    label: "Intenção e Planejamento",
+    tese: "A viagem tinha rota, ordem do rei e cálculo por trás.",
+    argumentos: ["o tratado assinado antes da viagem", "uma frota grande demais para só passar"],
+    tom_tipico: "documento, estratégia, perícia de navegação",
+  },
+  ladoB: {
+    label: "Acaso e Navegação",
+    tese: "Ventos, correntes e desvio de rota levaram a frota ao litoral.",
+    argumentos: ["as correntes do Atlântico Sul", "o relato de Caminha"],
+    tom_tipico: "surpresa, a história é mais bagunçada do que parece",
+  },
+  /** Eixo por eixo, com as quatro justificativas. */
+  afinidade: {
+    abertura: "B" as const,
+    por_que_abertura: "esse lado convida a duvidar da versão pronta e a procurar o que não está no livro",
+    por_que_conservacao: "esse lado se apoia no documento oficial e no que sempre foi ensinado",
+    autopromocao: "A" as const,
+    por_que_autopromocao: "esse lado enfatiza o feito técnico e a perícia de quem navegou",
+    por_que_autotranscendencia: "esse lado abre espaço para quem pagou o preço da chegada",
+  },
+  categorias_neutras_sugeridas: ["memes de escola", "animais", "comida", "esportes"],
+  neutros_no_tema_sugeridos: ["cronologia da viagem", "como se sabe isso: fontes"],
+  reformulacoes_sugeridas: [],
+};
+
+/**
+ * Apaga a atividade de demonstração e tudo que pende dela.
+ * A ordem importa: `activities` não tem `ON DELETE CASCADE` para `runs` (de
+ * propósito), então os dependentes saem primeiro.
+ */
+async function apagar() {
+  const atividades = await prisma.activity.findMany({
+    where: { titulo: TITULO, escolaId: ESCOLA_ID },
+    select: { id: true },
+  });
+  if (atividades.length === 0) {
+    console.log("nada para apagar.");
+    return;
+  }
+
+  const ids = atividades.map((atividade) => atividade.id);
+  await prisma.$transaction([
+    // runs cascateia events, conclusoes, reflexoes, comentarios e dossiers
+    prisma.run.deleteMany({ where: { activityId: { in: ids } } }),
+    prisma.perfilImportado.deleteMany({ where: { activityId: { in: ids } } }),
+    prisma.post.deleteMany({ where: { activityId: { in: ids } } }),
+    prisma.author.deleteMany({ where: { activityId: { in: ids } } }),
+    prisma.generationJob.deleteMany({ where: { activityId: { in: ids } } }),
+    prisma.activity.deleteMany({ where: { id: { in: ids } } }),
+  ]);
+  console.log(`atividade de demonstração apagada (${ids.length}).`);
+}
+
+async function semear(qtdAlunos: number) {
+  const professor = await prisma.user.findFirst({
+    where: { username: "prof.demo", escolaId: ESCOLA_ID },
+  });
+  if (!professor) {
+    console.error("rode `pnpm --filter @edu/api seed` antes: não há prof.demo.");
+    process.exit(1);
+  }
+
+  await apagar();
+
+  const atividade = await prisma.activity.create({
+    data: {
+      escolaId: ESCOLA_ID,
+      professorId: professor.id,
+      titulo: TITULO,
+      disciplina: "História",
+      temaGeral: "Brasil colonial",
+      recorte: "O descobrimento do Brasil",
+      perguntaChave: ANTAGONISMO.perguntas_candidatas[0]!.pergunta,
+      perguntaOrigem: "ia",
+      antagonismo: ANTAGONISMO,
+      categoriasNeutras: ANTAGONISMO.categorias_neutras_sugeridas,
+      neutrosNoTema: ANTAGONISMO.neutros_no_tema_sugeridos,
+      estiloVisual: "pintura histórica",
+      qtdPostsTese: 48,
+      proporcoes: PROPORCOES_DEFAULT,
+      // Sem isto o feed morre com "sinaisExplicitosParaDestravar undefined": o
+      // motor lê a config da atividade em toda curadoria de bloco.
+      engineConfig: ENGINE_CONFIG_DEFAULT,
+      status: "ativa",
+      etapa: "investigacao",
+    },
+  });
+
+  const autores = await Promise.all(
+    (["A", "B", "neutro"] as const).flatMap((lado) =>
+      [0, 1, 2].map((indice) =>
+        prisma.author.create({
+          data: {
+            escolaId: ESCOLA_ID,
+            activityId: atividade.id,
+            handle: `@demo.${lado.toLowerCase()}.${indice + 1}`,
+            displayName: `Perfil ${lado} ${indice + 1}`,
+            tipo: lado === "neutro" ? "humor" : "pagina_tema",
+            lado,
+            bio: "perfil de demonstração",
+            voz: "voz de demonstração",
+            perfilAfim: PERFIS[indice % PERFIS.length],
+          },
+        }),
+      ),
+    ),
+  );
+  const autorDe = (lado: string, i: number) => {
+    const doLado = autores.filter((autor) => autor.lado === lado);
+    return doLado[i % doLado.length]!.id;
+  };
+
+  /** 2 lados × 4 perfis × 3 intensidades × 3 posts + 20 neutros. */
+  const dados: {
+    escolaId: string;
+    activityId: string;
+    authorId: string;
+    lado: string;
+    perfil: string;
+    intensidade: number;
+    categoria: string;
+    caption: string;
+    hashtags: string[];
+    imageBrief: string;
+    likesCount: number;
+    timestampLabel: string;
+    imageStatus: string;
+  }[] = [];
+
+  let n = 0;
+  for (const lado of ["A", "B"] as const) {
+    const rotulo = lado === "A" ? ANTAGONISMO.ladoA.label : ANTAGONISMO.ladoB.label;
+    for (const perfil of PERFIS) {
+      for (const intensidade of [1, 2, 3] as const) {
+        for (let k = 0; k < 3; k += 1) {
+          n += 1;
+          dados.push({
+            escolaId: ESCOLA_ID,
+            activityId: atividade.id,
+            authorId: autorDe(lado, n),
+            lado,
+            perfil,
+            intensidade,
+            categoria: "tema",
+            caption: `DEMO · ${rotulo} · ${perfil} · intensidade ${intensidade} · #${k + 1} — texto de demonstração para testar o fluxo da aula sem gastar geração.`,
+            hashtags: ["#demo", "#historiadobrasil"],
+            imageBrief: "brief de demonstração",
+            likesCount: 400 + n * 7,
+            timestampLabel: `há ${1 + (n % 9)} h`,
+            // Fallback procedural: sem imagem gerada, o card ainda renderiza.
+            imageStatus: "fallback",
+          });
+        }
+      }
+    }
+  }
+  for (const categoria of ["memes de escola", "animais", "comida", "cronologia da viagem"]) {
+    for (let k = 0; k < 5; k += 1) {
+      n += 1;
+      dados.push({
+        escolaId: ESCOLA_ID,
+        activityId: atividade.id,
+        authorId: autorDe("neutro", n),
+        lado: "neutro",
+        perfil: PERFIS[n % PERFIS.length]!,
+        intensidade: 1,
+        categoria,
+        caption: `DEMO neutro · ${categoria} · #${k + 1}`,
+        hashtags: ["#demo"],
+        imageBrief: "brief de demonstração",
+        likesCount: 700 + n * 5,
+        timestampLabel: `há ${1 + (n % 9)} h`,
+        imageStatus: "fallback",
+      });
+    }
+  }
+
+  await prisma.post.createMany({ data: dados });
+  const posts = await prisma.post.findMany({
+    where: { activityId: atividade.id },
+    select: { id: true },
+  });
+
+  await prisma.postComment.createMany({
+    data: posts.flatMap((post) => [
+      {
+        escolaId: ESCOLA_ID,
+        postId: post.id,
+        handle: "@comenta.demo",
+        texto: "concordo, mas queria ver a fonte disso",
+        likesCount: 4,
+        ordem: 0,
+        timestampLabel: "há 1 h",
+      },
+      {
+        escolaId: ESCOLA_ID,
+        postId: post.id,
+        handle: "@outro.demo",
+        texto: "nunca tinha pensado por esse lado",
+        likesCount: 2,
+        ordem: 1,
+        timestampLabel: "há 2 h",
+      },
+    ]),
+  });
+
+  /** Perfis do Ato 1 em rodízio pelos 4, para a turma nascer dividida. */
+  const alunos = await prisma.user.findMany({
+    where: { role: "aluno", escolaId: ESCOLA_ID },
+    orderBy: { username: "asc" },
+    take: qtdAlunos,
+    select: { id: true, username: true },
+  });
+
+  for (const [indice, aluno] of alunos.entries()) {
+    const dominante = PERFIS[indice % PERFIS.length]!;
+    await prisma.perfilImportado.create({
+      data: {
+        escolaId: ESCOLA_ID,
+        activityId: atividade.id,
+        alunoId: aluno.id,
+        escores: Object.fromEntries(
+          PERFIS.map((perfil) => [perfil, perfil === dominante ? 0.4 : 0.2]),
+        ),
+        dominante,
+        origem: "jogo",
+        medidoEm: new Date(),
+      },
+    });
+  }
+
+  console.log(`atividade ....... ${atividade.id}`);
+  console.log(`posts ........... ${posts.length} (imagem em fallback procedural)`);
+  console.log(`perfis do Ato 1 . ${alunos.length} alunos`);
+}
+
+// Sem top-level await: o ts-node compila este arquivo como CJS.
+async function principal() {
+  const args = process.argv.slice(2);
+  if (args.includes("--apagar")) await apagar();
+  else await semear(Number(args.find((a) => /^\d+$/.test(a)) ?? 8));
+  await prisma.$disconnect();
+}
+
+void principal();

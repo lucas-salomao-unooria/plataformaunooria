@@ -1,17 +1,9 @@
-import { Body, Controller, HttpException, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, HttpException, Inject, Post, Req, UseGuards } from "@nestjs/common";
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { PROMPTS } from "./prompts";
-import type { AiProvider } from "./provider";
-import { VertexProvider } from "./vertex.provider";
-import { MockProvider } from "./mock.provider";
-
-const provider: AiProvider =
-  process.env.AI_PROVIDER === "mock" ? new MockProvider() : new VertexProvider();
-
-// Quota diária em memória (por instância). TODO produção: mover p/ Redis ou Postgres.
-const usoDiario = new Map<string, { dia: string; tokens: number }>();
-const QUOTA = Number(process.env.AI_DAILY_TOKEN_QUOTA_PER_ALUNO ?? 20000);
+import { AI_PROVIDER, type AiProvider } from "./provider";
+import { QuotaService } from "./quota.service";
 
 const GerarSchema = z.object({
   expId: z.string(),
@@ -22,21 +14,30 @@ const GerarSchema = z.object({
 @Controller("ai")
 @UseGuards(OidcGuard)
 export class AiController {
+  constructor(
+    @Inject(AI_PROVIDER) private readonly provider: AiProvider,
+    private readonly quota: QuotaService,
+  ) {}
+
   @Post("gerar")
   async gerar(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
     const { expId, atividade, mensagem } = GerarSchema.parse(body);
+    const { escolaId, usuarioId } = req.auth;
 
-    const hoje = new Date().toISOString().slice(0, 10);
-    const uso = usoDiario.get(req.auth.alunoId);
-    const tokensHoje = uso?.dia === hoje ? uso.tokens : 0;
-    if (tokensHoje >= QUOTA) throw new HttpException("Quota diária de IA atingida", 429);
+    // Quota persistida (tabela ia_uso_diario): sobrevive a restart e vale para
+    // todas as instâncias — o Map em memória de antes não fazia nem uma coisa
+    // nem outra.
+    if (!(await this.quota.temSaldo(escolaId, usuarioId))) {
+      throw new HttpException("Quota diária de IA atingida", 429);
+    }
 
     const system = PROMPTS[expId] ?? PROMPTS["tutor"]!;
-    const result = await provider.generate({
+    const result = await this.provider.generate({
       system: `${system}\nSérie do aluno: ${req.auth.turmaId ?? "n/d"}. Atividade: ${atividade}.`,
       user: mensagem,
     });
-    usoDiario.set(req.auth.alunoId, { dia: hoje, tokens: tokensHoje + result.tokensUsados });
+
+    await this.quota.consumir(escolaId, usuarioId, result.tokensUsados);
     return { texto: result.texto };
   }
 }

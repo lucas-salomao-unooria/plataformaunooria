@@ -1,0 +1,464 @@
+// Schema da api — evolução do schema do projeto origem (Instanooria) para o
+// monorepo multi-tenant. Diferenças estruturais em relação ao origem:
+//
+// 1. TENANCY: `escolas`/`turmas` novas; TODA tabela de dados de aluno carrega
+//    `escola_id` NOT NULL denormalizado + RLS (política na migration — Prisma
+//    não modela RLS). A api conecta com role sem ownership e as queries rodam
+//    dentro de transação com `set_config('app.escola_id', ..., true)`.
+// 2. PAPÉIS: aluno | professor | gestor | admin-contrato (origem tinha
+//    professor|aluno|analista; analista → admin-contrato).
+// 3. `users.username` é único POR ESCOLA (não mais global).
+// 4. Absorve as tabelas do scaffold (`progresso`, `telemetria_eventos`) e as
+//    novas `experiencias` (manifesto de versões) e `ia_uso_diario` (quota).
+//
+// Os CHECK constraints vivem na migration (Prisma não os modela); os campos
+// correspondentes são TEXT/SMALLINT e a validação de aplicação é feita com zod.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Tenant nível 2 (nível 1 é o contrato = stack inteira). O id é texto e é o
+/// MESMO valor que circula no claim `escola_id` do JWT e no `set_config` da RLS.
+model Escola {
+  id        String   @id
+  nome      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  turmas   Turma[]
+  usuarios User[]
+
+  @@map("escolas")
+}
+
+model Turma {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  nome     String
+  /// 1EF..9EF | 1EM..3EM — validado com zod na aplicação
+  serie    String
+
+  escola Escola @relation(fields: [escolaId], references: [id])
+  alunos User[]
+
+  @@unique([escolaId, nome])
+  @@index([escolaId])
+  @@map("turmas")
+}
+
+/// aluno | professor | gestor | admin-contrato
+/// CHECK na migration: escola_id NOT NULL exceto quando role = 'admin-contrato'.
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role         String
+  escolaId     String?  @map("escola_id")
+  turmaId      String?  @map("turma_id") @db.Uuid
+  username     String
+  displayName  String   @map("display_name")
+  passwordHash String   @map("password_hash")
+  avatar       String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  escola Escola? @relation(fields: [escolaId], references: [id])
+  turma  Turma?  @relation(fields: [turmaId], references: [id])
+
+  activities Activity[]        @relation("ActivityProfessor")
+  runs       Run[]
+  perfis     PerfilImportado[]
+
+  @@unique([escolaId, username])
+  @@index([escolaId, role])
+  @@map("users")
+}
+
+model Activity {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId          String   @map("escola_id")
+  professorId       String   @map("professor_id") @db.Uuid
+  titulo            String
+  disciplina        String
+  temaGeral         String   @map("tema_geral")
+  recorte           String
+  contextoAula      String?  @map("contexto_aula")
+  /// gerada pela IA a partir do tema, validada pelo professor
+  perguntaChave     String   @map("pergunta_chave")
+  /// ia | professor — 'professor' quando editada ou escrita à mão
+  perguntaOrigem    String   @default("ia") @map("pergunta_origem")
+  /// investigacao | conclusao | debate | explicabilidade | perdidos | reflexao | fim
+  /// Relógio COLETIVO da turma: os momentos de turma são abertos e fechados pelo
+  /// professor, e a tela do aluno trava conforme esta etapa.
+  etapa             String   @default("investigacao")
+  /// Personas reagem ao vivo ao que o aluno publica e comenta. Desligável pelo
+  /// professor no meio da aula, sem deploy.
+  iaAoVivo          Boolean  @default(true) @map("ia_ao_vivo")
+  /// destilação APROVADA pelo professor: {equilibrio, ladoA{...}, ladoB{...}}
+  antagonismo       Json?
+  /// categorias dos neutros FORA do tema
+  categoriasNeutras String[] @default([]) @map("categorias_neutras")
+  /// rótulos dos neutros DENTRO do tema (fato/cronologia/fontes)
+  neutrosNoTema     String[] @default([]) @map("neutros_no_tema")
+  estiloVisual      String   @map("estilo_visual")
+  /// posts que carregam o antagonismo; divisível por 8 (2 lados × 4 perfis)
+  qtdPostsTese      Int      @default(400) @map("qtd_posts_tese")
+  /// {int:{i1,i2,i3}, neutros:{ativo,modo,proporcao}}
+  proporcoes        Json
+  /// pesos/mixagem do motor
+  engineConfig      Json     @map("engine_config")
+  /// rascunho | antagonismo | gerando | revisao | ativa | encerrada
+  status            String   @default("rascunho")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  professor User              @relation("ActivityProfessor", fields: [professorId], references: [id])
+  authors   Author[]
+  posts     Post[]
+  jobs      GenerationJob[]
+  runs      Run[]
+  perfis    PerfilImportado[]
+
+  @@index([escolaId])
+  @@map("activities")
+}
+
+/// personas fictícias (etapa 0 da geração)
+model Author {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String  @map("escola_id")
+  activityId  String  @map("activity_id") @db.Uuid
+  handle      String
+  displayName String  @map("display_name")
+  /// pagina_tema | fofoca_tema | checagem | humor | vida_escolar
+  tipo        String
+  /// A | B | neutro
+  lado        String
+  /// perfil de Schwartz cuja linguagem esta persona fala; null em legado
+  perfilAfim  String? @map("perfil_afim")
+  verificado  Boolean @default(false)
+  bio         String?
+  /// estilo de escrita usado nos prompts de lote
+  voz         String?
+
+  activity Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  posts    Post[]
+  comments PostComment[]
+
+  @@unique([activityId, handle])
+  @@index([escolaId])
+  @@map("authors")
+}
+
+model Post {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId       String   @map("escola_id")
+  activityId     String   @map("activity_id") @db.Uuid
+  authorId       String   @map("author_id") @db.Uuid
+  /// A | B | neutro
+  lado           String
+  /// abertura | autotranscendencia | autopromocao | conservacao
+  perfil         String
+  /// 1 | 2 | 3
+  intensidade    Int      @db.SmallInt
+  categoria      String
+  /// feed | story | enquete
+  formato        String   @default("feed")
+  caption        String
+  hashtags       String[] @default([])
+  emotionalHook  String?  @map("emotional_hook")
+  imageBrief     String   @map("image_brief")
+  imageUrl       String?  @map("image_url")
+  /// pendente | ok | fallback
+  imageStatus    String   @default("pendente") @map("image_status")
+  likesCount     Int      @map("likes_count")
+  timestampLabel String   @map("timestamp_label")
+  aprovado       Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  activity Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  author   Author        @relation(fields: [authorId], references: [id])
+  comments PostComment[]
+  events   Event[]
+
+  @@index([activityId, lado, perfil, intensidade, aprovado], map: "idx_posts_curadoria")
+  @@index([escolaId])
+  @@map("posts")
+  comentariosDaSessao ComentarioDaSessao[]
+}
+
+/// comentários fake do post (objeto completo, como no padrão do IG)
+model PostComment {
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId       String  @map("escola_id")
+  postId         String  @map("post_id") @db.Uuid
+  /// null ⇒ handle avulso gerado
+  authorId       String? @map("author_id") @db.Uuid
+  handle         String
+  texto          String
+  likesCount     Int     @default(0) @map("likes_count")
+  ordem          Int     @db.SmallInt
+  timestampLabel String  @map("timestamp_label")
+
+  post   Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author Author? @relation(fields: [authorId], references: [id])
+
+  @@index([escolaId])
+  @@map("post_comments")
+}
+
+model GenerationJob {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId   String   @map("escola_id")
+  activityId String   @map("activity_id") @db.Uuid
+  /// personas | posts_lote | imagem | validacao
+  tipo       String
+  /// ex.: mix do lote / post_id da imagem
+  payload    Json?
+  /// pendente | rodando | ok | erro
+  status     String   @default("pendente")
+  tentativa  Int      @default(0) @db.SmallInt
+  erro       String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId])
+  @@map("generation_jobs")
+}
+
+/// sessão de uso do aluno
+model Run {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  activityId   String    @map("activity_id") @db.Uuid
+  alunoId      String    @map("aluno_id") @db.Uuid
+  /// onboarding | feed | encerramento | conclusao | revelacao | dossie | comparacao
+  fase         String    @default("onboarding")
+  /// A | B — vem da afinidade do perfil; nunca muda
+  ladoInicial  String    @map("lado_inicial")
+  /// perfil | sorteio | redistribuido — auditoria de por que caiu neste lado
+  ladoOrigem   String    @default("sorteio") @map("lado_origem")
+  /// PerfilDeValores do Ato 1, congelado na criação da run
+  perfilJogo   Json?     @map("perfil_jogo")
+  /// jogo | professor | ausente
+  perfilOrigem String    @default("ausente") @map("perfil_origem")
+  /// EngineState do motor
+  engineState  Json      @map("engine_state")
+  startedAt    DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt   DateTime? @map("finished_at") @db.Timestamptz(6)
+
+  /// Nome que o aluno digitou no aparelho, e o avatar que escolheu. Ficam na
+  /// run porque a conta é do APARELHO: outra turma reusa o mesmo login.
+  nomeNoApp       String? @map("nome_no_app")
+  avatarEscolhido String? @map("avatar_escolhido")
+
+  activity     Activity      @relation(fields: [activityId], references: [id])
+  aluno        User          @relation(fields: [alunoId], references: [id])
+  events       Event[]
+  studentPosts StudentPost[]
+  conclusao    Conclusao?
+  reflexao     Reflexao?
+  comentarios  ComentarioDaSessao[]
+  dossier      Dossier?
+
+  @@unique([activityId, alunoId])
+  @@index([escolaId])
+  @@map("runs")
+}
+
+model Event {
+  id        BigInt   @id @default(autoincrement())
+  escolaId  String   @map("escola_id")
+  runId     String   @map("run_id") @db.Uuid
+  postId    String?  @map("post_id") @db.Uuid
+  /// visto|curtiu|descurtiu|salvou|abriu_comentarios|comentou|compartilhou|
+  /// seguiu|deixou_seguir|nao_interessa|denunciou|enquete|rever|abriu_perfil
+  tipo      String
+  /// {dwellMs,dwellNorm} | {texto} | {opcao} | {authorId} ...
+  payload   Json?
+  clientTs  BigInt   @map("client_ts")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  run  Run   @relation(fields: [runId], references: [id], onDelete: Cascade)
+  post Post? @relation(fields: [postId], references: [id])
+
+  @@index([runId, id], map: "idx_events_run")
+  @@index([escolaId])
+  @@map("events")
+}
+
+/// post publicado pelo aluno (opcional, espontâneo)
+model StudentPost {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String   @map("escola_id")
+  runId        String   @map("run_id") @db.Uuid
+  texto        String
+  template     String
+  /// lado dominante no momento da publicação
+  ladoInferido String   @map("lado_inferido")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId])
+  @@map("student_posts")
+  comentariosDaSessao ComentarioDaSessao[]
+}
+
+/// perfil do Ato 1 importado ANTES de existir run
+model PerfilImportado {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String   @map("escola_id")
+  activityId  String   @map("activity_id") @db.Uuid
+  alunoId     String   @map("aluno_id") @db.Uuid
+  /// {abertura,autotranscendencia,autopromocao,conservacao} normalizados 0–1
+  escores     Json
+  /// abertura | autotranscendencia | autopromocao | conservacao | misto
+  dominante   String
+  /// jogo | professor
+  origem      String
+  /// A | B quando o professor redistribuiu a turma; null = segue a afinidade
+  ladoForcado String?  @map("lado_forcado")
+  medidoEm    DateTime @map("medido_em") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  aluno    User     @relation(fields: [alunoId], references: [id])
+
+  @@unique([activityId, alunoId])
+  @@index([escolaId])
+  @@map("perfis_importados")
+}
+
+/// conclusão da missão: neste fluxo o aluno só escolhe um lado; o texto livre
+/// virou a reflexão do fim, e é sobre a atividade, não sobre a pergunta.
+model Conclusao {
+  runId      String   @id @map("run_id") @db.Uuid
+  escolaId   String   @map("escola_id")
+  /// A | B | duvida
+  inclinacao String
+  texto      String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId])
+  @@map("conclusoes")
+}
+
+model Dossier {
+  runId     String   @id @map("run_id") @db.Uuid
+  escolaId  String   @map("escola_id")
+  /// DossierData
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId])
+  @@map("dossiers")
+}
+
+/// Fechamento da atividade: o que o aluno entendeu sobre viés, algoritmo e as
+/// próprias escolhas. Sem limite de caracteres de propósito.
+model Reflexao {
+  runId     String   @id @map("run_id") @db.Uuid
+  escolaId  String   @map("escola_id")
+  texto     String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId])
+  @@map("reflexoes")
+}
+
+/// Comentário que existe SÓ nesta sessão: escrito pelo aluno ou por uma persona
+/// reagindo a ele. Não vai para `post_comments` porque os posts são da turma.
+model ComentarioDaSessao {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String  @map("escola_id")
+  runId    String  @map("run_id") @db.Uuid
+  /// Ancoragem: um post do banco OU o post que o aluno publicou. Nunca os dois.
+  postId        String? @map("post_id") @db.Uuid
+  studentPostId String? @map("student_post_id") @db.Uuid
+  /// NULL = o próprio aluno. Preenchido = a persona que respondeu.
+  handle String?
+  /// Escrito pelo modelo. Existe para o professor distinguir na auditoria.
+  deIa      Boolean  @default(false) @map("de_ia")
+  texto     String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  run         Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
+  post        Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  studentPost StudentPost? @relation(fields: [studentPostId], references: [id], onDelete: Cascade)
+
+  @@index([runId, createdAt], map: "idx_comentarios_sessao_run")
+  @@index([runId, postId], map: "idx_comentarios_sessao_post")
+  @@index([escolaId])
+  @@map("comentarios_da_sessao")
+}
+
+// ─── Tabelas do contrato SDK/monorepo (absorvidas do scaffold SQL) ───────────
+
+/// Progresso salvo pela experiência via SDK (`progresso.salvar/carregar`).
+model Progresso {
+  escolaId     String   @map("escola_id")
+  alunoId      String   @map("aluno_id")
+  expId        String   @map("exp_id")
+  dados        Json     @default("{}")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@id([escolaId, alunoId, expId])
+  @@map("progresso")
+}
+
+/// Telemetria analítica (xAPI simplificado) — gravada pelo ingest do Pub/Sub.
+model TelemetriaEvento {
+  eventId    String   @id @map("event_id") @db.Uuid
+  ts         DateTime @db.Timestamptz(6)
+  escolaId   String   @map("escola_id")
+  alunoId    String   @map("aluno_id")
+  expId      String   @map("exp_id")
+  expVersion String   @map("exp_version")
+  sessaoId   String   @map("sessao_id") @db.Uuid
+  verbo      String
+  objeto     String
+  resultado  Json?
+  contexto   Json?
+
+  @@index([escolaId, expId, ts], map: "idx_tel_escola_exp_ts")
+  @@map("telemetria_eventos")
+}
+
+/// Manifesto de versões das experiências: o hub monta a URL do bundle com
+/// `versaoAtiva`; rollback = UPDATE deste campo. O CI faz upsert ao publicar.
+model Experiencia {
+  expId        String   @id @map("exp_id")
+  nome         String
+  versaoAtiva  String   @map("versao_ativa")
+  series       String[] @default([])
+  capabilities String[] @default([])
+  /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
+  viewport     Json?
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@map("experiencias")
+}
+
+/// Quota diária de IA por aluno — persistida (o Map em memória zera a cada
+/// restart e é contornável com múltiplas instâncias).
+model IaUsoDiario {
+  escolaId    String @map("escola_id")
+  usuarioId   String @map("usuario_id")
+  /// YYYY-MM-DD
+  dia         String
+  tokensUsados Int   @default(0) @map("tokens_usados")
+
+  @@id([escolaId, usuarioId, dia])
+  @@map("ia_uso_diario")
+}

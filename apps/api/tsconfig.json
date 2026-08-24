@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "commonjs", "moduleResolution": "node",
     "emitDecoratorMetadata": true, "experimentalDecorators": true,
+    "isolatedModules": true,
     "outDir": "dist", "declaration": false
   },
-  "include": ["src"] }
+  "include": ["src", "tests", "prisma/seed.ts"] }

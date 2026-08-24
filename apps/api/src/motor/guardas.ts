@@ -1,0 +1,61 @@
+import { NotFoundException } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
+
+/**
+ * Guardas das rotas do aluno/professor — adaptação NestJS do
+ * `lib/api/guardas.ts` do origem. O OidcGuard já autenticou; aqui é POSSE:
+ * run do próprio aluno, atividade do próprio professor — sempre com
+ * `escola_id` explícito além da RLS (defesa em profundidade, regra 1).
+ */
+
+/**
+ * Todo `[id]` de rota chega como string crua da URL. Sem esta checagem, um id
+ * malformado (`undefined`, texto colado errado) faz o Postgres recusar o
+ * parâmetro e a rota responder 500 — quando a resposta correta é 404, a mesma
+ * de um id que não existe. Também evita gastar ida ao banco.
+ */
+export function ehUuid(valor: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);
+}
+
+/** Mensagem neutra: esta rota também responde ao aluno (o disfarce vale). */
+export function naoEncontrado(): never {
+  throw new NotFoundException({ mensagem: "Não conseguimos abrir agora." });
+}
+
+/** Run do próprio aluno — ninguém lê a sessão de outro. */
+export async function runDoAluno(
+  tx: Prisma.TransactionClient,
+  runId: string,
+  alunoId: string,
+  escolaId: string,
+) {
+  if (!ehUuid(runId)) return null;
+  return tx.run.findFirst({
+    where: { id: runId, alunoId, escolaId },
+    include: {
+      activity: {
+        select: {
+          id: true,
+          engineConfig: true,
+          perguntaChave: true,
+          status: true,
+          /** Etapa da turma e chave da IA ao vivo: quase toda rota do aluno precisa. */
+          etapa: true,
+          iaAoVivo: true,
+        },
+      },
+    },
+  });
+}
+
+/** Atividade do professor logado — evita acesso cruzado entre professores. */
+export async function atividadeDoProfessor(
+  tx: Prisma.TransactionClient,
+  activityId: string,
+  professorId: string,
+  escolaId: string,
+) {
+  if (!ehUuid(activityId)) return null;
+  return tx.activity.findFirst({ where: { id: activityId, professorId, escolaId } });
+}
