@@ -20,34 +20,55 @@ export async function createExperiencia(meta: {
   let token = init.token;
   const sessaoId = crypto.randomUUID();
 
-  // renovação de token orquestrada pelo hub
-  onMessage((m) => {
-    const msg = m as { type?: string; token?: string };
-    if (msg?.type === "hub:token" && msg.token) token = msg.token;
+  const handlers: Record<"pause" | "resume", Array<() => void>> = { pause: [], resume: [] };
+
+  // Mensagens pós-init já chegam validadas pelo schema (bridge.ts).
+  onMessage((msg) => {
+    if (msg.type === "hub:token") token = msg.token;
+    if (msg.type === "hub:pause") handlers.pause.forEach((cb) => cb());
+    if (msg.type === "hub:resume") handlers.resume.forEach((cb) => cb());
   });
-  setInterval(() => send({ type: "exp:token-expirando" }), 45 * 60 * 1000);
+  setInterval(() => send({ type: "exp:token-expirando" }), 10 * 60 * 1000); // TTL do token é 15min
 
   const telemetry = new TelemetryClient({
     apiUrl: init.apiUrl, getToken: () => token, aluno: init.aluno,
     expId: meta.expId, expVersion: meta.expVersion, sessaoId,
   });
 
+  /**
+   * Fetch com timeout (10s) e retry: GET tenta de novo em falha de rede/5xx
+   * (idempotente); POST NUNCA — o caller decide se reenvia.
+   */
   async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${init.apiUrl}${path}`, {
-      method,
-      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`API ${method} ${path} → ${res.status}`);
-    return (await res.json()) as T;
+    const tentativas = method === "GET" ? 2 : 1;
+    let ultimoErro: unknown;
+    for (let i = 0; i < tentativas; i += 1) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10_000);
+      try {
+        const res = await fetch(`${init.apiUrl}${path}`, {
+          method,
+          headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+          body: body === undefined ? undefined : JSON.stringify(body),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          if (method === "GET" && res.status >= 500 && i + 1 < tentativas) {
+            ultimoErro = new Error(`API ${method} ${path} → ${res.status}`);
+            continue;
+          }
+          throw new Error(`API ${method} ${path} → ${res.status}`);
+        }
+        return (await res.json()) as T;
+      } catch (erro) {
+        ultimoErro = erro;
+        if (method !== "GET" || i + 1 >= tentativas) throw erro;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    throw ultimoErro;
   }
-
-  const handlers: Record<string, Array<() => void>> = { pause: [], resume: [] };
-  onMessage((m) => {
-    const t = (m as { type?: string })?.type;
-    if (t === "hub:pause") handlers.pause?.forEach((cb) => cb());
-    if (t === "hub:resume") handlers.resume?.forEach((cb) => cb());
-  });
 
   return {
     aluno: init.aluno,
@@ -71,5 +92,6 @@ export async function createExperiencia(meta: {
       send({ type: "exp:concluir", payload: payload ?? {} });
     },
     on: (evento, cb) => handlers[evento]?.push(cb),
+    enviarEstado: (estado) => send({ type: "exp:estado", estado }),
   };
 }

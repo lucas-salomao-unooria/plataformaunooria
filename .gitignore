@@ -7,3 +7,10 @@ dist/
 !.env.example
 *.log
 coverage/
+
+# Assets gerados em dev (ASSETS_DRIVER=local)
+storage/
+apps/api/storage/
+
+# Prints dos walkthroughs
+testes/walkthrough-*/

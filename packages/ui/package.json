@@ -1,3 +1,29 @@
-{ "name": "@edu/ui", "version": "0.1.0", "private": true, "type": "module",
-  "main": "./src/index.ts",
-  "scripts": { "typecheck": "tsc --noEmit -p ../../tsconfig.base.json --lib ES2022,DOM src/index.ts || true", "lint": "echo ok", "build": "echo 'sem build (fonte TS direto)'" } }
+{
+  "name": "@edu/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": ["**/*.css"],
+  "exports": {
+    "./ds": "./src/ds.ts",
+    "./ds-insta": "./src/ds-insta.ts",
+    "./fontes": "./src/fontes-da-plataforma.tsx",
+    "./styles/plataforma.css": "./styles/plataforma.css"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "echo 'lint ui (eslint entra na fase de hardening)'",
+    "build": "echo 'sem build (fonte TS direto)'"
+  },
+  "dependencies": {
+    "@unooria/design-system": "^0.1.10"
+  },
+  "peerDependencies": {
+    "react": ">=19"
+  },
+  "devDependencies": {
+    "react": "^19.2.0",
+    "@types/react": "^19.2.0",
+    "typescript": "^5.7.0"
+  }
+}

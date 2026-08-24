@@ -1,0 +1,203 @@
+/*
+ * Estilos das superfícies da Plataforma Unooria (/login, /professor/**, /admin/**).
+ * Importado junto do CSS do @unooria/design-system, e SÓ nessas rotas: a
+ * superfície do aluno não carrega tokens nem classes institucionais.
+ * Regra: nada de cor solta aqui — só tokens `--unooria-*`.
+ *
+ * Este arquivo é EXCEÇÃO CONTROLADA E DECRESCENTE (política B1.5 do plano):
+ * cada bloco compensa uma lacuna real do DS, anotada no comentário. Lacuna
+ * nova = issue/componente no repo `storybook-unooria`; a compensação local é
+ * temporária até o pacote publicar a correção.
+ */
+
+.unooria-surface {
+  background: var(--unooria-color-neutral-100, #f5f5f5);
+}
+
+/*
+ * LACUNA REAL DO DS: não existe componente de seleção (só TextField, TextArea,
+ * PasswordInput e SearchInput). Enquanto não existir, `<select>` usa os tokens
+ * do DS para não sair da linguagem da plataforma — mesma altura, raio e cores
+ * do TextField. Os campos de texto, esses, já são componentes do DS.
+ */
+.unooria-select {
+  width: 100%;
+  height: 44px; /* mesma altura do TextField/Button size="md" do DS */
+  padding: 0 16px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--unooria-color-neutral-200, #cbd4d6);
+  background: var(--unooria-color-neutral-50, #ffffff);
+  color: var(--unooria-color-neutral-950, #22272a);
+  outline: none;
+  transition: border-color 120ms ease;
+}
+
+.unooria-select:focus {
+  border-color: var(--unooria-color-brandnavy-800, #49699f);
+}
+
+.unooria-rotulo-de-campo {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--unooria-color-neutral-800, #3d4448);
+}
+
+/*
+ * Classes utilitárias das telas da plataforma. Ficam AQUI (e não no tema do
+ * Tailwind) de propósito: nada da marca institucional pode vazar para a
+ * superfície do aluno — nem em nome de classe, nem em nome de variável.
+ */
+.text-unooria-neutral-950 { color: var(--unooria-color-neutral-950, #22272a); }
+.text-unooria-neutral-800 { color: var(--unooria-color-neutral-800, #3d4448); }
+.text-unooria-neutral-700 { color: var(--unooria-color-neutral-700, #475157); }
+.text-unooria-neutral-500 { color: var(--unooria-color-neutral-500, #617379); }
+.text-unooria-navy-900 { color: var(--unooria-color-brandnavy-900, #2f4f7f); }
+.text-unooria-danger { color: var(--unooria-color-danger-600, #e31a1a); }
+
+.bg-unooria-neutral-50 { background-color: var(--unooria-color-neutral-50, #ffffff); }
+.bg-unooria-neutral-100 { background-color: var(--unooria-color-neutral-100, #f5f5f5); }
+.bg-unooria-neutral-200 { background-color: var(--unooria-color-neutral-200, #cbd4d6); }
+.bg-unooria-navy-800 { background-color: var(--unooria-color-brandnavy-800, #49699f); }
+
+.border-unooria-neutral-200 { border-color: var(--unooria-color-neutral-200, #cbd4d6); }
+
+.hover\:border-unooria-danger:hover { border-color: var(--unooria-color-danger-600, #e31a1a); }
+.hover\:text-unooria-danger:hover { color: var(--unooria-color-danger-600, #e31a1a); }
+.hover\:text-unooria-navy-900:hover { color: var(--unooria-color-brandnavy-900, #2f4f7f); }
+
+/*
+ * LACUNA REAL DO DS: emite `unooria-card--elevated` / `--outlined`, mas a folha
+ * de estilos dele só define a base (e as elevações `--unooria-elevation-neutral-*`
+ * são glows BRANCOS, feitos para tema escuro). Em fundo claro o card ficava sem
+ * profundidade nenhuma — damos a sombra aqui, com os tokens de cor do DS.
+ */
+.unooria-card {
+  box-shadow:
+    0 1px 2px rgba(34, 39, 42, 0.06),
+    0 8px 24px rgba(34, 39, 42, 0.05);
+}
+
+.unooria-card--outlined,
+.unooria-card--interactive {
+  box-shadow: 0 1px 2px rgba(34, 39, 42, 0.05);
+}
+
+.unooria-card--interactive:hover {
+  box-shadow:
+    0 2px 4px rgba(34, 39, 42, 0.08),
+    0 12px 28px rgba(34, 39, 42, 0.08);
+}
+
+/*
+ * Os Cards do Design System têm `max-width: 398px` (pensados para dashboards em
+ * coluna). No guia da aula e no monitor da turma o conteúdo é tabela larga e
+ * material de projeção, então liberamos a largura dentro deste contexto.
+ */
+.plataforma-largura-cheia .unooria-card {
+  max-width: none;
+  width: 100%;
+}
+
+/* Fundo da tela de login (gradiente com os tokens de opacidade da marca). */
+.unooria-fundo-login {
+  background:
+    radial-gradient(1100px 420px at 50% -180px, var(--unooria-color-opacity-brandnavy-100, rgba(127, 165, 226, 0.1)), transparent),
+    var(--unooria-color-neutral-100, #f5f5f5);
+}
+
+/*
+ * Ação destrutiva em botão de ícone: o `ghost` do DS não tem variante danger
+ * (a `danger` do Button é sólida e vermelha, peso visual de ação primária —
+ * errado para "excluir" ao lado de "editar"). Aqui o ícone só assume o vermelho
+ * do DS no hover/foco, mantendo a hierarquia do rodapé.
+ */
+.cartao-post__excluir:hover,
+.cartao-post__excluir:focus-visible {
+  color: var(--unooria-color-danger-600, #e31a1a);
+}
+
+/*
+ * Hub de produtos e trilha do Entre Redes.
+ *
+ * O DS não tem componente de "card de produto" nem de "card de missão" — o que
+ * ele tem é o Card, e é sobre ele que estas classes trabalham. Nenhuma cor
+ * solta: tudo sai dos tokens `--unooria-*`.
+ */
+
+/* Selo do ícone no card de produto. */
+.cartao-produto__icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--unooria-color-opacity-brandnavy-100, rgba(127, 165, 226, 0.1));
+  color: var(--unooria-color-brandnavy-900, #2f4f7f);
+  flex-shrink: 0;
+}
+
+/*
+ * Unidade ainda não publicada: fica na grade (a grade de 4 é a informação),
+ * mas apagada e sem afordância de clique — nada aqui responde ao ponteiro.
+ */
+.cartao-missao--em-breve {
+  opacity: 0.62;
+  background: var(--unooria-color-neutral-100, #f5f5f5);
+  box-shadow: none;
+}
+
+/* Linhas de "continue de onde parou": separador entre itens, nunca no primeiro. */
+.linha-de-lista + .linha-de-lista {
+  border-top: 1px solid var(--unooria-color-neutral-200, #cbd4d6);
+}
+
+/*
+ * Card com link esticado + ação própria.
+ *
+ * O card da atividade precisa ser todo clicável E ter um botão de excluir. Um
+ * `<Link>` envolvendo o card resolveria o primeiro e quebraria o segundo (botão
+ * dentro de link é HTML inválido, e o clique navegaria junto). Aqui o link vive
+ * no título e estica a área de clique pelo card inteiro; a ação sobe uma camada.
+ */
+.cartao-atividade {
+  position: relative;
+}
+
+.link-esticado::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.acima-do-link {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * Ação destrutiva em botão de ícone. Mesma decisão do `.cartao-post__excluir`: o
+ * `ghost` do DS não tem variante danger, e a `danger` do Button é sólida — peso
+ * de ação primária, errado para uma lixeira no canto do card. O vermelho do DS
+ * só entra no hover/foco.
+ */
+.acao-excluir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--unooria-color-neutral-500, #617379);
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.acao-excluir:hover,
+.acao-excluir:focus-visible {
+  color: var(--unooria-color-danger-600, #e31a1a);
+  background-color: var(--unooria-color-neutral-100, #f5f5f5);
+}
