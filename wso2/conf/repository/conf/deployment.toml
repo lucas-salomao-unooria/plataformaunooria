@@ -1,0 +1,134 @@
+# WSO2 Identity Server 7.3.0 — configuração do ambiente local.
+#
+# O entrypoint da imagem copia tudo de /home/wso2carbon/wso2-config-volume/ para
+# o server home (com `cp -RL`) antes de subir o servidor, então este arquivo
+# sobrescreve o deployment.toml da distribuição.
+#
+# Todo segredo entra por `$env{VAR}`. Isso dispensa inteiramente o cipher-tool /
+# secure vault do WSO2 (que exigiria um passo interativo em build-time) e é o
+# mesmo mecanismo usado em produção, onde as envs vêm do Secret Manager.
+#
+# ATENÇÃO: `$env{}` substitui o valor INTEIRO de um campo, não interpola dentro
+# de uma string maior. Por isso as URLs JDBC vêm prontas do ambiente.
+
+[server]
+hostname = "$env{SERVER_HOSTNAME}"
+node_ip = "127.0.0.1"
+base_path = "https://$ref{server.hostname}:${carbon.management.port}"
+
+[super_admin]
+username = "$env{ADMIN_USERNAME}"
+password = "$env{ADMIN_PASSWORD}"
+create_admin_account = true
+
+[user_store]
+type = "database_unique_id"
+
+# ---------------------------------------------------------------------------
+# Datasources — PostgreSQL dedicado (container `postgres` deste compose).
+#
+# O IS 7.3.0 exige TRÊS bancos. O AgentIdentity é novo nesta versão; sem ele o
+# boot falha com erro de datasource mesmo que a feature de agentes não seja usada.
+# ---------------------------------------------------------------------------
+
+[database.identity_db]
+url = "$env{DB_URL_IDENTITY}"
+username = "$env{DB_USER}"
+password = "$env{DB_PASSWORD}"
+driver = "org.postgresql.Driver"
+
+[database.identity_db.pool_options]
+maxActive = "20"
+maxWait = "60000"
+minIdle = "5"
+testOnBorrow = true
+# O "; COMMIT" é exigência da doc de PostgreSQL da WSO2: sem ele a query de
+# validação deixa transações ociosas abertas no pool.
+validationQuery = "SELECT 1; COMMIT"
+validationInterval = "30000"
+defaultAutoCommit = false
+commitOnReturn = true
+
+[database.shared_db]
+url = "$env{DB_URL_SHARED}"
+username = "$env{DB_USER}"
+password = "$env{DB_PASSWORD}"
+driver = "org.postgresql.Driver"
+
+[database.shared_db.pool_options]
+maxActive = "20"
+maxWait = "60000"
+minIdle = "5"
+testOnBorrow = true
+validationQuery = "SELECT 1; COMMIT"
+validationInterval = "30000"
+defaultAutoCommit = false
+commitOnReturn = true
+
+[datasource.AgentIdentity]
+id = "AgentIdentity"
+url = "$env{DB_URL_AGENT}"
+username = "$env{DB_USER}"
+password = "$env{DB_PASSWORD}"
+driver = "org.postgresql.Driver"
+
+[datasource.AgentIdentity.pool_options]
+maxActive = "10"
+maxWait = "60000"
+minIdle = "2"
+testOnBorrow = true
+validationQuery = "SELECT 1; COMMIT"
+validationInterval = "30000"
+defaultAutoCommit = false
+commitOnReturn = true
+
+# ---------------------------------------------------------------------------
+# Keystores
+#
+# ⚠️  ESTE AMBIENTE USA O KEYSTORE DE DEMONSTRAÇÃO DA DISTRIBUIÇÃO.
+#
+# `wso2carbon.p12` (alias `wso2carbon`, senha `wso2carbon`) acompanha toda cópia
+# do produto baixada no mundo — a chave privada é pública. É aceitável em
+# localhost e INACEITÁVEL em qualquer ambiente alcançável pela internet: com ela,
+# qualquer pessoa forja um token `{"perfil":"admin-contrato"}`, que é a única
+# exceção cross-escola da regra inviolável nº 1, e lê dados de menores de todas
+# as escolas de todos os contratos.
+#
+# O procedimento de geração e injeção do keystore próprio está em
+# docs/INFRA-IDENTITY.md, seção "Keystore primário".
+# ---------------------------------------------------------------------------
+
+[keystore.primary]
+file_name = "wso2carbon.p12"
+password = "$env{KEYSTORE_PASSWORD}"
+alias = "wso2carbon"
+key_password = "$env{KEYSTORE_PASSWORD}"
+type = "PKCS12"
+
+[truststore]
+file_name = "client-truststore.p12"
+password = "$env{TRUSTSTORE_PASSWORD}"
+type = "PKCS12"
+
+[account_recovery.endpoint.auth]
+hash = "66cd9688a2ae068244ea01e70f0e230f5623b7fa4cdecb65070a09ec06452262"
+
+[identity.auth_framework.endpoint]
+app_password = "dashboard"
+
+# ---------------------------------------------------------------------------
+# OAuth2 / OIDC
+# ---------------------------------------------------------------------------
+
+# Access token como JWT (e não opaco) é pré-requisito da api: o TokenService usa
+# `jose.jwtVerify`, que falha imediatamente com token opaco.
+[oauth.token_generation]
+access_token_type = "JWT"
+
+# Uma hora — casa com a decisão nº 8 do docs/DECISOES.md e dá folga maior que
+# qualquer janela de indisponibilidade do IS.
+[oauth.access_token]
+expiry_time = "3600s"
+
+[oauth.refresh_token]
+expiry_time = "86400s"

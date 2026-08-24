@@ -1,0 +1,40 @@
+# Infra local completa para desenvolvimento e testes e2e:
+#
+#   docker compose up -d
+#
+# Sobe:
+#   - pg            Postgres da PLATAFORMA (api/hub), porta 5432, banco `unooria`
+#   - wso2/*        IdP central (WSO2 IS 7.3.0) + Postgres DEDICADO na 5433
+#                   (via include de wso2/docker-compose.yml)
+#
+# Os dois Postgres são propositalmente separados: o do WSO2 é um gerenciador
+# central de identidade, apartado da plataforma (mesmo desenho de produção,
+# onde ele vive em outro projeto GCP — docs/INFRA-IDENTITY.md).
+#
+# Depois do primeiro up, prepare o banco da plataforma:
+#   pnpm --filter @edu/api migrate:dev && pnpm --filter @edu/api seed
+name: unooria
+
+include:
+  - path: wso2/docker-compose.yml
+
+services:
+  # Substitui o `docker run --name pg` do README. Mesmas credenciais que o
+  # .env.example espera: postgresql://postgres:pass@localhost:5432/unooria
+  pg:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: unooria
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -U postgres -d unooria"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+volumes:
+  pgdata:

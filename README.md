@@ -13,10 +13,19 @@ O scope interno dos workspaces segue `@edu/*` (`@edu/sdk`, `@edu/hub`, `@edu/api
 ## Subir local
 ```bash
 pnpm install
-docker run -d --name pg -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres:16
-cp .env.example apps/api/.env && cp .env.example apps/hub/.env.local
+docker compose up -d   # pg da plataforma :5432 + WSO2 IS :9443 (pg dele na :5433)
+cp .env.example apps/api/.env && cp .env.example apps/hub/.env.local   # e edite
+pnpm --filter @edu/api migrate:dev     # aplica migrations (Prisma + RLS)
+pnpm --filter @edu/api seed            # escola-demo: prof.demo/gestor.demo/aluno01–40, senha unooria123
 pnpm dev            # hub :3000, api :3001, template exp :5173
 ```
+O compose sobe também o IdP central (WSO2) já configurado — tenant `dev-local`,
+app OIDC do hub e usuários de teste; `docker compose logs bootstrap` imprime as
+envs OIDC prontas para colar. Detalhes e troubleshooting: `wso2/README.md`.
+Quem quiser só o banco: `docker compose up -d pg`.
+Login: `gestor.demo`/`unooria123` → `/admin/usuarios` (importação CSV);
+`aluno01` → experiência. Teste de experiência local: `/dev-embed`.
+Sanidade do DS: `/ds-smoke` (dev only).
 
 ## Infra
 Terraform vive em repo separado (ver `docs/INFRA.md` para o contrato entre os repos).

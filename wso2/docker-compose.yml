@@ -1,0 +1,118 @@
+# Gerenciador central de identidade — WSO2 Identity Server 7.3.0 com PostgreSQL
+# dedicado (apartado do banco da plataforma).
+#
+# Os quatro serviços rodam em cadeia: postgres → dbinit → identity-server →
+# bootstrap. `docker compose up` do zero leva ~3 min (o IS boota em 60-120s).
+#
+# Dois jeitos de subir:
+#   - e2e completo (plataforma + IdP): `docker compose up -d` NA RAIZ do repo,
+#     que inclui este arquivo;
+#   - só o IdP: `docker compose up -d` aqui dentro.
+#
+# Todas as variáveis têm default de desenvolvimento — o wso2/.env é opcional e
+# serve para sobrescrever (cp .env.example .env). Em produção nada disto se
+# aplica: ver docs/INFRA-IDENTITY.md.
+name: unooria-wso2
+
+services:
+  # Banco exclusivo do IdP. Nada da plataforma vive aqui.
+  wso2-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres-local}
+      POSTGRES_DB: postgres
+      # Lidas pelo script de initdb para criar o role da aplicação.
+      WSO2_DB_USER: ${DB_USER:-wso2carbon}
+      WSO2_DB_PASSWORD: ${DB_PASSWORD:-wso2carbon-local}
+    ports:
+      # 5433 no host de propósito: a 5432 é do Postgres da PLATAFORMA (banco
+      # `unooria` da api). Colidir aqui derruba o ambiente de quem usa os dois.
+      - "${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - wso2-pgdata:/var/lib/postgresql/data
+      - ./dbinit/00-create-databases.sh:/docker-entrypoint-initdb.d/00-create-databases.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -U $$POSTGRES_USER -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  # Aplica o schema do IS nos três bancos e sai. Idempotente.
+  dbinit:
+    build: ./dbinit
+    depends_on:
+      wso2-postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: wso2-postgres
+      PGPORT: 5432
+      PGUSER: ${DB_USER:-wso2carbon}
+      PGPASSWORD: ${DB_PASSWORD:-wso2carbon-local}
+    restart: "no"
+
+  identity-server:
+    build: .
+    depends_on:
+      dbinit:
+        condition: service_completed_successfully
+    environment:
+      SERVER_HOSTNAME: ${SERVER_HOSTNAME:-localhost}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Unooria1}
+      DB_USER: ${DB_USER:-wso2carbon}
+      DB_PASSWORD: ${DB_PASSWORD:-wso2carbon-local}
+      # URLs completas: `$env{}` no deployment.toml substitui o campo inteiro,
+      # não interpola pedaços de string.
+      DB_URL_IDENTITY: jdbc:postgresql://wso2-postgres:5432/WSO2IS_IDENTITY_DB
+      DB_URL_SHARED: jdbc:postgresql://wso2-postgres:5432/WSO2IS_SHARED_DB
+      DB_URL_AGENT: jdbc:postgresql://wso2-postgres:5432/WSO2IS_AGENTIDENTITY_DB
+      KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-wso2carbon}
+      TRUSTSTORE_PASSWORD: ${TRUSTSTORE_PASSWORD:-wso2carbon}
+      JVM_MEM_OPTS: ${JVM_MEM_OPTS:--Xms512m -Xmx2048m}
+    ports:
+      - "${IS_HTTPS_PORT:-9443}:9443"
+      - "${IS_HTTP_PORT:-9763}:9763"
+    volumes:
+      # O entrypoint copia daqui para o server home antes de subir o servidor.
+      - ./conf:/home/wso2carbon/wso2-config-volume:ro
+    healthcheck:
+      # O discovery endpoint é um health check melhor que um probe TCP: o Tomcat
+      # faz bind da porta antes de terminar o deploy dos webapps, então TCP passa
+      # cedo demais e o bootstrap bateria num servidor meio inicializado.
+      test:
+        - CMD
+        - curl
+        - -sfk
+        - https://localhost:9443/oauth2/token/.well-known/openid-configuration
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 120s
+
+  # Cria tenant, claims, scope, aplicação OIDC e usuários de teste. Idempotente:
+  # roda de novo a cada `up` sem duplicar nada.
+  bootstrap:
+    image: node:22-alpine
+    depends_on:
+      identity-server:
+        condition: service_healthy
+    environment:
+      IS_INTERNAL_URL: https://identity-server:9443
+      IS_PUBLIC_URL: https://${SERVER_HOSTNAME:-localhost}:${IS_HTTPS_PORT:-9443}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@Unooria1}
+      CONTRATO: ${CONTRATO:-dev-local}
+      TENANT_ADMIN_PASSWORD: ${TENANT_ADMIN_PASSWORD:-Admin@Unooria1}
+      HUB_CALLBACK_URL: ${HUB_CALLBACK_URL:-http://localhost:3000/api/auth/callback/wso2}
+      SEED_PASSWORD: ${SEED_PASSWORD:-Aluno@Unooria1}
+      ESCOLA_DEMO_ID: ${ESCOLA_DEMO_ID:-escola-demo}
+    volumes:
+      - ./bootstrap:/app:ro
+      - ./certs:/certs
+    working_dir: /app
+    command: ["node", "bootstrap.mjs"]
+    restart: "no"
+
+volumes:
+  wso2-pgdata:

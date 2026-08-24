@@ -53,9 +53,40 @@ exp → hub : { type: "exp:ready", protocolVersion: 1 }
 hub → exp : { type: "hub:init", token, aluno:{id,nome,serie,turmaId,escolaId}, config, apiUrl }
 exp → hub : { type: "exp:concluir", payload:{ score?, dados? } }
 exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:token", token }
-hub → exp : { type: "hub:pause" | "hub:resume" }
+exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo v1)
+hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
-Versione com `protocolVersion`. Nunca quebre compatibilidade sem bump + suporte à anterior.
+Versione com `protocolVersion` (major verificado nos DOIS lados — incompatível
+falha alto). Toda mensagem pós-init é validada com Zod nos dois lados; inválida
+é descartada com aviso. Nunca quebre compatibilidade sem bump + suporte à anterior.
+
+### Token e emissor (decisão da migração, 2026-08)
+O HUB assina os tokens de experiência (RS256, TTL 15min, claims
+`{sub, escola_id, turma_id?, perfil}`, aud `plataforma-api`) e serve o JWKS em
+`/.well-known/jwks.json`. A api valida via `OIDC_ISSUER`/`OIDC_JWKS_URI` —
+trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
+`aluno | professor | gestor | admin-contrato` (admin-contrato é a única exceção
+cross-escola). Usuários entram por CSV: `POST /usuarios/importar-csv`
+(gestor/admin), colunas `nome,usuario,senha,papel,turma,serie`.
+
+### Telemetria: dois canais, não um (decisão da migração)
+- **Operacional (motor)**: `POST /runs/:id/eventos` e `GET /runs/:id/feed` —
+  síncrono, transacional, lido em tempo quase real para curar o próximo bloco.
+  Dwell NUNCA passa por Pub/Sub: latência e falta de ordenação quebrariam a
+  adaptação e o lock por run.
+- **Analítico (SDK)**: `track()` → batch 50/10s → `POST /telemetry/batch` →
+  Pub/Sub → push subscription → `POST /telemetry/ingest` → `telemetria_eventos`
+  (`ON CONFLICT DO NOTHING`: o Pub/Sub entrega *at least once*). No `pagehide`,
+  `POST /telemetry/beacon` com o token no CORPO — `sendBeacon` não manda header.
+
+### Manifesto de experiências (tabela `experiencias` na api)
+O CI, ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, faz upsert
+(`PUT /experiencias/:expId`, admin-contrato) lendo o `public/experiencia.json`
+da experiência (`id, nome, versao, series, capabilities, viewport?`). O hub
+monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`.
+`viewport` presente ⇒ o hub embeda dentro do `DispositivoFrame` (casca de
+aparelho com escala). Sem manifesto (dev) o hub cai na raiz do Vite; teste
+local: rota `/dev-embed?src=http://localhost:5173`.
 
 ### Evento de telemetria (inspirado em xAPI, simplificado)
 ```json
@@ -122,6 +153,9 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Definition of Done (qualquer tarefa)
 
 - [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
+- [ ] Se mexeu em tela: smoke VISUAL (`node scripts/walkthrough-aluno.mjs <pasta>`
+      e `walkthrough-professor.mjs`) — typecheck verde não pega ícone virando
+      texto, link sublinhado nem iframe vazio
 - [ ] Input externo validado com Zod
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client
