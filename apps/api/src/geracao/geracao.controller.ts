@@ -46,6 +46,23 @@ const AntagonismoSchema = z.object({
 });
 
 const TAMANHO_PAGINA = 24;
+
+/**
+ * Ordenação da grade de revisão do professor. O `id` não é enfeite: é o que
+ * faz a ordenação ser TOTAL.
+ *
+ * Os posts entram por `createMany` dentro de uma transação (`worker.ts`), e o
+ * `now()` do Postgres é o timestamp de início da transação — o lote inteiro
+ * compartilha o mesmo `created_at`. Com a chave empatada, `ORDER BY created_at
+ * LIMIT/OFFSET` não tem ordem definida: a mesma linha vem em duas páginas e
+ * outra nunca vem. Medido no app origem: 207 de 208 posts visíveis, de forma
+ * reprodutível. Exportada porque `tests/geracao-paginacao.spec.ts` pagina com
+ * ela — travar a query é o ponto do teste.
+ */
+export const ORDEM_DA_GRADE: Prisma.PostOrderByWithRelationInput[] = [
+  { createdAt: "asc" },
+  { id: "asc" },
+];
 const FiltrosSchema = z.object({
   lado: z.enum(["A", "B", "neutro"]).optional(),
   perfil: z.enum(PERFIS).optional(),
@@ -259,7 +276,7 @@ export class GeracaoController {
         tx.post.count({ where }),
         tx.post.findMany({
           where,
-          orderBy: { createdAt: "asc" },
+          orderBy: ORDEM_DA_GRADE,
           skip: (page - 1) * TAMANHO_PAGINA,
           take: TAMANHO_PAGINA,
           select: {
