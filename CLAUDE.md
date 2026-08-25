@@ -174,6 +174,26 @@ em dev → `storage-privado/`): `gerado.md` imutável + `atual.html` do editor
   gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
   `comTenancy` + controllers por papel.
 
+## Git e branches
+
+- **`main` é o tronco.** A migração para o monorepo foi mergeada nela em
+  2026-08-25 por fast-forward: 26 commits, histórico linear, sem merge commit.
+  A branch `migracao-monorepo` não existe mais.
+- **Uma branch por experiência nova**, com o nome do slug dela:
+  `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
+  commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
+- Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo é
+  o slug da experiência ou o app/pacote tocado.
+- **Nada de build no git.** `.gitignore` cobre `dist/`, `.next/`, `.next-prod/`,
+  `.turbo/`, `*.tsbuildinfo`, `storage/`, `storage-privado/` e os prints dos
+  walkthroughs. `apps/hub/.next-prod/` (que o `pnpm build:isolado` escreve) já
+  entrou uma vez por um `git add -A` distraído: 358 arquivos e 250MB de cache de
+  webpack no histórico, que só saíram reconstruindo a branch inteira. Stage por
+  caminho, nunca `-A` sem olhar o `git status`.
+- `apps/hub/next-env.d.ts` É versionado (o Next espera isso), mas alterna entre
+  `./.next` e `./.next-prod` conforme o último build. Modificado depois de um
+  `build:isolado` = descartar, não commitar.
+
 ## Comandos
 
 ```bash
@@ -193,6 +213,7 @@ node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smok
 
 ## Como criar uma experiência nova
 
+0. `git switch -c exp-NN-slug` a partir da `main` — uma branch por experiência.
 1. `pnpm new:exp exp-NN-slug` (copia `_template`, ajusta nomes).
 2. Implementar em `src/App.tsx`+; usar SOMENTE a SDK para auth/api/telemetria.
 3. Declarar capabilities no `experiencia.json` (`telemetria`, `progresso`,

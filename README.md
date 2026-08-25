@@ -89,5 +89,15 @@ node scripts/walkthrough-professor.mjs testes/wt-professor
 Typecheck não pega ícone virando texto, link sublinhado nem iframe vazio —
 estes dois pegam. Precisam da plataforma no ar (containers ou `pnpm dev`).
 
+## Branches
+`main` é o tronco — a migração para o monorepo está mergeada nela (histórico
+linear, 26 commits). Trabalho novo sai da `main` numa branch própria: **uma por
+experiência**, com o nome do slug (`exp-07-fracoes`); o resto usa o prefixo do
+tipo do commit (`fix/…`, `chore/…`, `ci/…`). Convenções de commit em `CLAUDE.md`.
+
+Build não vai para o git: `dist/`, `.next/`, `.next-prod/`, `.turbo/` e
+`*.tsbuildinfo` estão no `.gitignore`. Stage por caminho — um `git add -A`
+distraído já colocou 250MB de cache de webpack no histórico uma vez.
+
 ## Infra
 Terraform vive em repo separado (ver `docs/INFRA.md` para o contrato entre os repos).
