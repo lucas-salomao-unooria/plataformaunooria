@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { connectToHub } from "./bridge";
+import { READY_RETRY_MS, connectToHub } from "./bridge";
 import { PROTOCOL_VERSION, type HubParaExp } from "./types";
 
 /**
@@ -36,6 +36,28 @@ describe("connectToHub", () => {
     const { init } = await promessa;
     expect(init.aluno.escolaId).toBe("e1");
     expect(init.token).toBe("token-inicial");
+    spy.mockRestore();
+  });
+
+  test("reenvia exp:ready até o hub responder e ignora hub:init repetido", async () => {
+    const spy = vi.spyOn(window.parent, "postMessage");
+    const promessa = connectToHub({ hubOrigin: HUB_ORIGIN, timeoutMs: 3000 });
+    await new Promise((r) => setTimeout(r, READY_RETRY_MS * 2 + 100));
+    const readies = spy.mock.calls.filter((c) => (c[0] as { type?: string })?.type === "exp:ready");
+    expect(readies.length).toBeGreaterThanOrEqual(2);
+    mensagemDoHub(INIT_VALIDO);
+    const { onMessage } = await promessa;
+    const antes = readies.length;
+    await new Promise((r) => setTimeout(r, READY_RETRY_MS * 2));
+    const depois = spy.mock.calls.filter((c) => (c[0] as { type?: string })?.type === "exp:ready").length;
+    expect(depois).toBe(antes); // parou de anunciar depois do init
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const recebidas: HubParaExp[] = [];
+    onMessage((m) => recebidas.push(m));
+    mensagemDoHub(INIT_VALIDO); // resposta atrasada a um reenvio
+    expect(aviso).not.toHaveBeenCalled();
+    expect(recebidas).toHaveLength(0);
+    aviso.mockRestore();
     spy.mockRestore();
   });
 

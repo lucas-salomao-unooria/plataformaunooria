@@ -3,6 +3,8 @@ import { TelemetryClient } from "./telemetry";
 import type { ExperienciaHandle } from "./types";
 export * from "./types";
 
+type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
 /**
  * Ponto de entrada de TODA experiência:
  *   const exp = await createExperiencia({ expId: "exp-01", expVersion: "1.0.0" });
@@ -37,9 +39,9 @@ export async function createExperiencia(meta: {
 
   /**
    * Fetch com timeout (10s) e retry: GET tenta de novo em falha de rede/5xx
-   * (idempotente); POST NUNCA — o caller decide se reenvia.
+   * (idempotente); POST/PUT/PATCH/DELETE NUNCA — o caller decide se reenvia.
    */
-  async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+  async function call<T>(method: MetodoHttp, path: string, body?: unknown): Promise<T> {
     const tentativas = method === "GET" ? 2 : 1;
     let ultimoErro: unknown;
     for (let i = 0; i < tentativas; i += 1) {
@@ -76,6 +78,9 @@ export async function createExperiencia(meta: {
     api: {
       get: (p) => call("GET", p),
       post: (p, b) => call("POST", p, b),
+      put: (p, b) => call("PUT", p, b),
+      patch: (p, b) => call("PATCH", p, b),
+      delete: (p) => call("DELETE", p),
     },
     ai: { gerar: (input) => call("POST", "/ai/gerar", { ...input, expId: meta.expId }) },
     track: (verbo, objeto, dados) => telemetry.track({ verbo, objeto, ...dados }),

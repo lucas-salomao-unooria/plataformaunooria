@@ -64,6 +64,10 @@ export interface ExperienciaHandle {
   api: {
     get<T = unknown>(path: string): Promise<T>;
     post<T = unknown>(path: string, body?: unknown): Promise<T>;
+    /** Aditivos (exp-90): salvar/renomear/excluir. Sem retry — só GET reenvia. */
+    put<T = unknown>(path: string, body?: unknown): Promise<T>;
+    patch<T = unknown>(path: string, body?: unknown): Promise<T>;
+    delete<T = unknown>(path: string): Promise<T>;
   };
   ai: { gerar(input: { atividade: string; mensagem: string }): Promise<{ texto: string }> };
   track(verbo: TelemetryEvent["verbo"], objeto: string, dados?: Omit<TelemetryEvent, "verbo" | "objeto">): void;
