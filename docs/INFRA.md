@@ -82,6 +82,18 @@ como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
   vivem no Postgres e entram por `scripts/importar-referencias-plano.mjs`.
   O Cloud Run `planodeaula` antigo pode ser desligado após o smoke em produção.
 
+**IA: a service account da api precisa de `roles/aiplatform.user`** (2026-08).
+A api autentica no Vertex por ADC (`google-auth-library`), então em Cloud Run a
+credencial é a SA do serviço e não há env de credencial nenhuma — só
+`VERTEX_PROJECT_ID` (obrigatória com `AI_PROVIDER=vertex`; o boot recusa sem
+ela), `VERTEX_LOCATION`, `VERTEX_MODEL`, `VERTEX_MODEL_LONGO` e
+`VERTEX_THINKING_BUDGET`. Sem o papel, toda geração falha com 403 do Vertex.
+Atenção ao catálogo por região: `southamerica-east1` publica a família 2.5, não
+o `gemini-2.0-flash`; modelo ausente na região sai por `VERTEX_LOCATION=global`.
+Em dev (host ou container) a mesma cadeia lê o ADC do
+`gcloud auth application-default login` — os compose montam esse arquivo em
+`/adc` como somente leitura.
+
 **Telemetria: a rota de ingest é autenticada** (2026-08). `POST /telemetry/ingest`
 não passa pelo `OidcGuard` — quem chama é a push subscription. O
 `PubSubPushGuard` verifica o ID token que o Pub/Sub assina: emissor Google,

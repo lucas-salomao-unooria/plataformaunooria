@@ -176,7 +176,9 @@ describe("geração assíncrona", () => {
     expect(existsSync(join(dirTemporario, "planos", ESCOLA, id, "atual.html"))).toBe(true);
 
     // A chamada de IA pediu o modelo LONGO com o prompt de sistema do plano.
-    expect(provider.chamadas[0]).toMatchObject({ modelo: "longo", maxTokens: 32000 });
+    // 64k, não os 32k do app origem: com o material real (currículo da rede +
+    // 4 unidades) o gemini-2.5-flash é cortado em 32k e não sobra plano.
+    expect(provider.chamadas[0]).toMatchObject({ modelo: "longo", maxTokens: 64000 });
     expect(provider.chamadas[0]!.system).toContain("# PAPEL");
     // Quota consumida (por professor).
     expect(await quota.usadoHoje(ESCOLA, profA)).toBeGreaterThanOrEqual(1200);
@@ -250,8 +252,26 @@ describe("geração assíncrona", () => {
   });
 
   test("quota do professor esgotada → 429 antes de qualquer trabalho", async () => {
+    // `ConfigService.get` lê o process.env ANTES do config injetado, e o
+    // Prisma carrega o `apps/api/.env` ao subir os testes: sem apertar
+    // também o process.env, um `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` no .env
+    // local vencia o config apertado e o 429 nunca acontecia. E o consumo é
+    // forçado aqui em vez de herdado dos testes anteriores, para o caso valer
+    // rodando isolado (`-t`).
+    const envAnterior = process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR;
+    process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR = "100";
+    try {
+      await rodarQuotaEsgotada();
+    } finally {
+      if (envAnterior === undefined) delete process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR;
+      else process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR = envAnterior;
+    }
+  });
+
+  async function rodarQuotaEsgotada() {
     const configApertada = new ConfigService({ ...config["internalConfig"], AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 100 });
     const servicoApertado = new PlanosService(prisma, storage, provider, new QuotaService(prisma, configApertada));
+    await quota.consumir(ESCOLA, profA, 500);
     const chamadasAntes = provider.chamadas.length;
     expect(await statusDe(servicoApertado.criar(ESCOLA, profA, "professor", { disciplina: DISCIPLINA, serie: "8EF" }))).toBe(429);
     expect(provider.chamadas.length).toBe(chamadasAntes);
@@ -259,7 +279,7 @@ describe("geração assíncrona", () => {
     // e a régua do professor (2M) não: é isso que `perfil` muda.
     expect(await quota.temSaldo(ESCOLA, profA, "aluno")).toBe(true); // 20k > ~3k gastos
     expect(await new QuotaService(prisma, configApertada).temSaldo(ESCOLA, profA, "professor")).toBe(false);
-  });
+  }
 });
 
 describe("salvar, restaurar, renomear, excluir", () => {

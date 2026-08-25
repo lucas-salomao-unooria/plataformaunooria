@@ -17,9 +17,14 @@ export const EnvSchema = z.object({
   OIDC_AUDIENCE: z.string().min(1).default("plataforma-api"),
 
   AI_PROVIDER: z.enum(["vertex", "mock"]).default("vertex"),
+  // Obrigatório quando o provider é `vertex` (superRefine abaixo): sem projeto
+  // a URL vira `.../projects/undefined/...` e o erro só aparece na 1ª geração.
   VERTEX_PROJECT_ID: z.string().optional(),
+  // `global` também vale: é onde ficam os modelos ainda não publicados na
+  // região do contrato (hoje, o gemini-2.5-pro).
   VERTEX_LOCATION: z.string().default("southamerica-east1"),
-  VERTEX_MODEL: z.string().default("gemini-2.0-flash"),
+  // 2.5, não 2.0: `gemini-2.0-flash` não está publicado em southamerica-east1.
+  VERTEX_MODEL: z.string().default("gemini-2.5-flash"),
   // Modelo de SAÍDA LONGA (`AiRequest.modelo: "longo"`): planos anuais passam
   // de 8k tokens de saída, o teto do 2.0-flash. A família 2.5 vai a 65k.
   VERTEX_MODEL_LONGO: z.string().default("gemini-2.5-flash"),
@@ -29,6 +34,11 @@ export const EnvSchema = z.object({
   AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: z.coerce.number().int().positive().default(2_000_000),
 
   VERTEX_IMAGE_MODEL: z.string().default("gemini-2.0-flash-exp"),
+
+  // Tokens de RACIOCÍNIO dos modelos 2.5, que saem do `maxOutputTokens`.
+  // 0 = desligado (paridade com o app origem, que usava Claude sem thinking e
+  // é o que garante que o plano anual caiba no teto de saída); -1 = dinâmico.
+  VERTEX_THINKING_BUDGET: z.coerce.number().int().min(-1).default(0),
 
   // Imagens geradas: local (dev, servido pela api em /assets) | gcs (bucket
   // {contrato}-assets atrás da CDN — docs/INFRA.md).
@@ -59,6 +69,15 @@ export const EnvSchema = z.object({
   TELEMETRIA_PUSH_AUDIENCE: z.string().optional(),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175"),
   PORT: z.coerce.number().int().default(3001),
+}).superRefine((env, ctx) => {
+  if (env.AI_PROVIDER === "vertex" && !env.VERTEX_PROJECT_ID) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["VERTEX_PROJECT_ID"],
+      message:
+        "obrigatório com AI_PROVIDER=vertex (em dev, use AI_PROVIDER=mock para subir sem GCP)",
+    });
+  }
 });
 
 export type Env = z.infer<typeof EnvSchema>;

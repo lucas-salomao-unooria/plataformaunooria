@@ -148,6 +148,27 @@ provedor, cria-se novo arquivo — nada fora de `src/ai` conhece o vendor.
 `VERTEX_MODEL_LONGO`, Gemini 2.5, saída até 65k — planos anuais); quem gera texto
 longo checa `AiResult.finishReason` (`MAX_TOKENS` = conteúdo cortado, é erro).
 
+**Credencial: ADC, nunca chave de API.** O provider pega o token com
+`google-auth-library`, que resolve na mesma ordem nos três ambientes:
+`GOOGLE_APPLICATION_CREDENTIALS` → arquivo do `gcloud auth application-default
+login` → metadata server (Cloud Run). Antes daqui só havia o metadata server, e
+por isso NENHUMA chamada de IA funcionava fora do Cloud Run — nem no host nem no
+container, onde `metadata.google.internal` não resolve; em dev a api ficava presa
+no `AI_PROVIDER=mock` e a exp-90 devolvia um plano falso. Os dois compose montam
+o ADC do host em `/adc` (só leitura); em Cloud Run a service account do serviço
+já é a credencial, e ela precisa de `roles/aiplatform.user`.
+
+**Modelo × região.** `gemini-2.0-flash` NÃO está publicado em
+`southamerica-east1` (404 "publisher model not found"), `gemini-2.5-flash` está —
+por isso os defaults são 2.5. Modelo ausente na região do contrato (hoje o
+`gemini-2.5-pro`) sai por `VERTEX_LOCATION=global`, que não tem host regional.
+
+**Raciocínio conta como saída.** Nos modelos 2.5 os tokens de pensamento saem do
+`maxOutputTokens`: com pensamento livre o plano anual voltava VAZIO com
+`finishReason: MAX_TOKENS`. `VERTEX_THINKING_BUDGET` (default `0`, desligado)
+mantém a paridade com o app origem, que usava Claude sem essa etapa; `-1` volta
+ao dinâmico.
+
 ### Plano de aula (exp-90, `apps/api/src/planos`)
 Ferramenta do professor: `POST /planos` (202) gera em background (claim atômico
 em `planos_de_aula`, `marked` roda na api), o cliente faz polling em `GET /planos/:id`.
@@ -156,6 +177,10 @@ em dev → `storage-privado/`): `gerado.md` imutável + `atual.html` do editor
 (sanitizado com allowlist). Referências curriculares = texto no Postgres
 (`planos_referencias`, catálogo do contrato, sem RLS), importadas por
 `scripts/importar-referencias-plano.mjs` com `PLANOS_IMPORT_TOKEN`.
+O teto de saída é 64k tokens, não os 32k do app origem (que eram o limite do
+Claude): com o material real (currículo da rede + as 4 unidades do ano, ~190k
+tokens só de prompt) o gemini-2.5-flash é cortado em 32k e o professor recebe
+"o plano ficou grande demais" sem plano nenhum.
 
 ## Convenções de código
 

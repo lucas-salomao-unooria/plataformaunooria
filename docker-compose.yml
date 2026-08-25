@@ -75,10 +75,17 @@ services:
       OIDC_ISSUER: http://localhost:3000
       OIDC_JWKS_URI: http://hub:3000/.well-known/jwks.json
       OIDC_AUDIENCE: plataforma-api
+      # IA por ADC: aqui a credencial vem do arquivo montado abaixo; em Cloud
+      # Run, da service account do serviço (mesma cadeia, sem env nenhuma).
       AI_PROVIDER: ${AI_PROVIDER:-mock}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID:-}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-southamerica-east1}
+      VERTEX_MODEL: ${VERTEX_MODEL:-gemini-2.5-flash}
+      VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-2.5-flash}
+      VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
+      GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
       AI_DAILY_TOKEN_QUOTA_PER_ALUNO: "20000"
+      AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: ${AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR:-2000000}
       ASSETS_DRIVER: local
       ASSETS_LOCAL_DIR: /app/storage
       ASSETS_PUBLIC_URL: http://localhost:3001/assets
@@ -90,6 +97,10 @@ services:
     volumes:
       # Imagens geradas sobrevivem ao recreate do container.
       - assets:/app/storage
+      # ADC do host (somente leitura): este compose roda a IMAGEM de produção
+      # na máquina, onde não há metadata server. Em Cloud Run o arquivo não
+      # existe e a lib cai sozinha na service account do serviço.
+      - ${ADC_FILE:-${HOME}/.config/gcloud/application_default_credentials.json}:/adc/application_default_credentials.json:ro
     depends_on:
       pg:
         condition: service_healthy

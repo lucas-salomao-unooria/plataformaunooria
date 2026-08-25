@@ -137,8 +137,10 @@ try {
   await exp.getByText("8º ano").first().click();
   await registrar("plano-de-aula-escolha");
   await exp.getByRole("button", { name: "Gerar plano de aula" }).click();
-  // Mock devolve em segundos; Vertex real leva minutos — o teto cobre o mock.
-  await exp.locator("table").first().waitFor({ timeout: 90_000 });
+  // Com o Vertex de verdade e o material real da rede a geração levou 30–60 s
+  // nas medições; o mock devolve em segundos. O teto cobre os dois com folga,
+  // porque um plano cortado por timeout aqui viraria "iframe vazio" no print.
+  await exp.locator("table").first().waitFor({ timeout: 180_000 });
   await registrar("plano-de-aula-editor", "tabela do plano renderizada no editor");
 
   const editor = exp.locator('[contenteditable="true"]').first();

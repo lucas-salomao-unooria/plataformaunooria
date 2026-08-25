@@ -69,6 +69,14 @@ x-fonte: &fonte
   - ./docker/env-vazio:/repo/apps/hub/.env.local:ro
   - ./docker/env-vazio:/repo/apps/hub/.env.development:ro
   - ./docker/env-vazio:/repo/apps/hub/.env.development.local:ro
+  # Credencial ADC do host, para a api falar com o Vertex de dentro do
+  # container (`GOOGLE_APPLICATION_CREDENTIALS` abaixo). Só a api usa, mas o
+  # mount fica aqui porque YAML não mescla listas: `volumes:` no serviço
+  # SUBSTITUI esta lista inteira em vez de acrescentar. Somente leitura.
+  # Rode `gcloud auth application-default login` ANTES do primeiro
+  # `pnpm docker:dev`: se o arquivo não existir, o Docker cria um DIRETÓRIO
+  # com esse nome e o login depois falha.
+  - ${ADC_FILE:-${HOME}/.config/gcloud/application_default_credentials.json}:/adc/application_default_credentials.json:ro
 
 x-dev: &dev
   image: unooria-dev:latest
@@ -145,15 +153,26 @@ services:
       OIDC_ISSUER: http://localhost:3000
       OIDC_JWKS_URI: http://hub:3000/.well-known/jwks.json
       OIDC_AUDIENCE: plataforma-api
+      # IA: `vertex` exige VERTEX_PROJECT_ID (o boot recusa sem ele) e a
+      # credencial ADC montada acima — a mesma cadeia do Cloud Run, onde a
+      # credencial é a service account do serviço e nada disto é preciso.
       AI_PROVIDER: ${AI_PROVIDER:-mock}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID:-}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-southamerica-east1}
+      VERTEX_MODEL: ${VERTEX_MODEL:-gemini-2.5-flash}
+      VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-2.5-flash}
+      VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
+      GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
       AI_DAILY_TOKEN_QUOTA_PER_ALUNO: "20000"
+      AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: ${AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR:-2000000}
       ASSETS_DRIVER: local
       ASSETS_LOCAL_DIR: /repo/apps/api/storage
       ASSETS_PUBLIC_URL: http://localhost:3001/assets
       PLANOS_DRIVER: local
       PLANOS_LOCAL_DIR: /repo/apps/api/storage-privado
+      # Vazio = `POST /planos/referencias` desligado (503). Preencha para
+      # importar currículo/material didático com scripts/importar-referencias-plano.mjs.
+      PLANOS_IMPORT_TOKEN: ${PLANOS_IMPORT_TOKEN:-}
       TELEMETRIA_TOPIC: ""
       # As três portas de exp entram no CORS: sem a :5175 o plano de aula
       # embedado morre com "Failed to fetch".

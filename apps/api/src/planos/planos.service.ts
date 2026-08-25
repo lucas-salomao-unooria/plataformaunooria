@@ -39,8 +39,14 @@ const emExecucao = registroGlobal.planosGerando;
 const MAX_TENTATIVAS = 2;
 /** Geração `gerando` há mais que isto sem worker nesta instância = órfã. */
 const MINUTOS_PARA_ORFAO = 12;
-/** O original pedia 32k; a família 2.5 aceita até 65k de saída. */
-const MAX_TOKENS_SAIDA = 32_000;
+/**
+ * O original pedia 32k — era o teto do Claude via OpenRouter. MEDIDO no
+ * gemini-2.5-flash com o material real (currículo de Cajamar + 4 unidades do
+ * 8º ano): o plano é cortado em 32k e a geração termina em `MAX_TOKENS`, sem
+ * plano nenhum. A família 2.5 entrega até 65k de saída; 64k dá a folga que
+ * falta sem chegar no limite duro.
+ */
+const MAX_TOKENS_SAIDA = 64_000;
 
 export const STATUS_PLANO = ["pendente", "gerando", "pronto", "erro"] as const;
 export type StatusPlano = (typeof STATUS_PLANO)[number];
