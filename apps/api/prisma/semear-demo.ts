@@ -239,7 +239,8 @@ async function semear(qtdAlunos: number) {
 
   /** Perfis do Ato 1 em rodízio pelos 4, para a turma nascer dividida. */
   const alunos = await prisma.user.findMany({
-    where: { role: "aluno", escolaId: ESCOLA_ID },
+    // Só o 8º ano: a turma 4A do seed pertence à exp-02-unootube, não ao Instanooria.
+    where: { role: "aluno", escolaId: ESCOLA_ID, turma: { serie: "8EF" } },
     orderBy: { username: "asc" },
     take: qtdAlunos,
     select: { id: true, username: true },
@@ -268,10 +269,81 @@ async function semear(qtdAlunos: number) {
 }
 
 // Sem top-level await: o ts-node compila este arquivo como CJS.
+/**
+ * Referências curriculares de DEMONSTRAÇÃO do gerador de plano de aula
+ * (exp-90): um trecho "geral" e um específico de 8EF, curtos, para o
+ * `Selection` ter o que oferecer e o smoke visual gerar um plano com o
+ * provider mock. Em produção elas vêm do `scripts/importar-referencias-plano.mjs`.
+ * Catálogo do contrato (sem escola_id) — por isso fora do `apagar()` da escola.
+ */
+const REFERENCIAS_DEMO = [
+  {
+    disciplina: "letramento-digital",
+    serie: null,
+    nome: "DEMO — Proposta curricular da rede (trecho)",
+    ordem: 0,
+    texto: [
+      "PROPOSTA CURRICULAR — LETRAMENTO DIGITAL (TRECHO DE DEMONSTRAÇÃO)",
+      "",
+      "Princípios: o componente Letramento Digital forma o estudante para ler, avaliar e produzir",
+      "informação em ambientes digitais com autonomia e responsabilidade. Articula-se à BNCC",
+      "Computação (eixos Pensamento Computacional, Mundo Digital e Cultura Digital).",
+      "",
+      "Competências gerais: compreender o funcionamento das redes e algoritmos; avaliar a",
+      "confiabilidade de fontes; reconhecer mecanismos de persuasão e desinformação; produzir",
+      "conteúdo digital com autoria e ética; proteger dados pessoais.",
+      "",
+      "Avaliação: processual, com produtos de síntese por bimestre (mural, podcast, checagem",
+      "de fatos, campanha) e autoavaliação orientada por rubricas.",
+    ].join("\n"),
+  },
+  {
+    disciplina: "letramento-digital",
+    serie: "8EF",
+    nome: "DEMO — Material didático 8º ano, unidades 1 a 4 (trecho)",
+    ordem: 0,
+    texto: [
+      "MATERIAL DIDÁTICO — 8º ANO — LETRAMENTO DIGITAL (TRECHO DE DEMONSTRAÇÃO)",
+      "",
+      "Unidade 1 — O feed decide por mim? Como algoritmos de recomendação selecionam o que",
+      "vemos; bolhas e câmaras de eco; experimento com dois perfis. Produto: diário do feed.",
+      "",
+      "Unidade 2 — Em quais fontes eu confio? Critérios de credibilidade; verificação lateral;",
+      "checagem de fatos. Produto: checagem coletiva de três notícias virais.",
+      "",
+      "Unidade 3 — Quem lucra com a minha atenção? Economia da atenção, dados pessoais e",
+      "LGPD para adolescentes. Produto: campanha de conscientização em vídeo curto.",
+      "",
+      "Unidade 4 — Eu, autor na rede. Produção responsável, licenças, cultura do remix.",
+      "Produto: podcast em grupo sobre um tema da comunidade escolar.",
+    ].join("\n"),
+  },
+];
+
+async function semearReferenciasDoPlano() {
+  for (const ref of REFERENCIAS_DEMO) {
+    const existente = await prisma.planoReferencia.findFirst({
+      where: { disciplina: ref.disciplina, serie: ref.serie, nome: ref.nome },
+      select: { id: true },
+    });
+    if (existente) {
+      await prisma.planoReferencia.update({ where: { id: existente.id }, data: { texto: ref.texto, ordem: ref.ordem } });
+    } else {
+      await prisma.planoReferencia.create({ data: ref });
+    }
+  }
+  console.info(`referências de demonstração do plano de aula: ${REFERENCIAS_DEMO.length}`);
+}
+
 async function principal() {
   const args = process.argv.slice(2);
-  if (args.includes("--apagar")) await apagar();
-  else await semear(Number(args.find((a) => /^\d+$/.test(a)) ?? 8));
+  if (args.includes("--apagar")) {
+    await apagar();
+    await prisma.planoReferencia.deleteMany({ where: { nome: { startsWith: "DEMO — " } } });
+  } else {
+    await semear(Number(args.find((a) => /^\d+$/.test(a)) ?? 8));
+    await semearReferenciasDoPlano();
+  }
   await prisma.$disconnect();
 }
 

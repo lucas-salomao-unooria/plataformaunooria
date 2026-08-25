@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Put, Req, UseGuards } from "@nestjs/commo
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
+import { SERIES } from "../comum/series";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
@@ -12,11 +13,6 @@ import { PrismaService } from "../prisma/prisma.service";
  * tabela global, sem RLS (não é dado de aluno).
  */
 
-const SERIES = [
-  "1EF", "2EF", "3EF", "4EF", "5EF", "6EF", "7EF", "8EF", "9EF",
-  "1EM", "2EM", "3EM",
-] as const;
-
 const UpsertSchema = z.object({
   nome: z.string().min(1).max(120),
   versaoAtiva: z.string().regex(/^\d+\.\d+\.\d+$/, "versão semver x.y.z"),
@@ -25,6 +21,12 @@ const UpsertSchema = z.object({
     .array(z.enum(["telemetria", "progresso", "ia", "avaliacao", "tempo-real"]))
     .default([]),
   viewport: z.object({ largura: z.number().int().positive(), altura: z.number().int().positive() }).nullish(),
+  /**
+   * Para quem é a experiência. `series` pressupõe aluno; uma ferramenta de
+   * professor (exp-90, plano de aula) declara `publico: "professor"` e o hub
+   * recusa embedá-la em `/exp/*` (rota do aluno). Aditivo: ausente = aluno.
+   */
+  publico: z.enum(["aluno", "professor"]).default("aluno"),
 });
 
 const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
@@ -61,6 +63,7 @@ export class ExperienciasController {
         series: dados.series,
         capabilities: dados.capabilities,
         viewport: dados.viewport ?? undefined,
+        publico: dados.publico,
       },
       create: {
         expId: id,
@@ -69,6 +72,7 @@ export class ExperienciasController {
         series: dados.series,
         capabilities: dados.capabilities,
         viewport: dados.viewport ?? undefined,
+        publico: dados.publico,
       },
     });
     return { experiencia };

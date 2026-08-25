@@ -77,6 +77,8 @@ model User {
   activities Activity[]        @relation("ActivityProfessor")
   runs       Run[]
   perfis     PerfilImportado[]
+  unootube   UnootubeSessao[]
+  planos     PlanoDeAula[]     @relation("PlanoProfessor")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -424,6 +426,29 @@ model Progresso {
   @@map("progresso")
 }
 
+/// Estado server-side da exp-02-unootube (uma linha por aluno). `salvos`
+/// guarda ids do catálogo (`src/unootube/catalogo.ts`); o gabarito `factual`
+/// não é persistido nem devolvido. CHECKs (cardinality(salvos) <= 3,
+/// conclusão implica concluido_em) e RLS vivem na migration.
+model UnootubeSessao {
+  escolaId                String    @map("escola_id")
+  alunoId                 String    @map("aluno_id") @db.Uuid
+  salvos                  String[]  @default([])
+  curtidos                String[]  @default([])
+  rankingDesbloqueado     Boolean   @default(false) @map("ranking_desbloqueado")
+  credibilidadeAdicionada Boolean   @default(false) @map("credibilidade_adicionada")
+  concluidoEm             DateTime? @map("concluido_em") @db.Timestamptz(6)
+  reinicios               Int       @default(0) @db.SmallInt
+  criadoEm                DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm            DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  aluno User @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, alunoId])
+  @@index([escolaId])
+  @@map("unootube_sessoes")
+}
+
 /// Telemetria analítica (xAPI simplificado) — gravada pelo ingest do Pub/Sub.
 model TelemetriaEvento {
   eventId    String   @id @map("event_id") @db.Uuid
@@ -452,6 +477,9 @@ model Experiencia {
   capabilities String[] @default([])
   /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
   viewport     Json?
+  /// aluno | professor — CHECK na migration. Ferramenta de professor (exp-90)
+  /// não é embedada em /exp/* nem listada para aluno.
+  publico      String   @default("aluno")
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   @@map("experiencias")
@@ -468,4 +496,54 @@ model IaUsoDiario {
 
   @@id([escolaId, usuarioId, dia])
   @@map("ia_uso_diario")
+}
+
+/// Plano de aula gerado pelo professor (exp-90-plano-de-aula). O CONTEÚDO fica
+/// em object storage privado (`{contrato}-planos`); aqui só metadados, status
+/// da geração assíncrona e os caminhos. `pendente|gerando|pronto|erro` — CHECK
+/// na migration. RLS por escola_id + posse por professor_id nas queries.
+model PlanoDeAula {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  professorId  String    @map("professor_id") @db.Uuid
+  /// 1EF..9EF | 1EM..3EM
+  serie        String
+  /// slug do catálogo (`letramento-digital`)
+  disciplina   String
+  titulo       String
+  status       String    @default("pendente")
+  tentativas   Int       @default(0) @db.SmallInt
+  iniciadoEm   DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  erro         String?
+  tokensUsados Int       @default(0) @map("tokens_usados")
+  /// `planos/{escolaId}/{id}/gerado.md` — Markdown da IA, imutável
+  caminhoGeradoMd String? @map("caminho_gerado_md")
+  /// `planos/{escolaId}/{id}/atual.html` — o que o editor salvou
+  caminhoHtml  String?   @map("caminho_html")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  professor User @relation("PlanoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId, professorId])
+  @@map("planos_de_aula")
+}
+
+/// Referências curriculares do CONTRATO (currículo da rede, material didático)
+/// já extraídas para texto — o prompt do plano anual é montado daqui.
+/// Catálogo global como `experiencias`: sem escola_id, FORA da RLS. Escrita só
+/// pelo script de importação (`PLANOS_IMPORT_TOKEN`).
+model PlanoReferencia {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  disciplina   String
+  /// null = vale para todas as séries da disciplina (ex.: currículo da rede)
+  serie        String?
+  nome         String
+  texto        String
+  ordem        Int      @default(0)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  @@unique([disciplina, serie, nome])
+  @@index([disciplina, serie])
+  @@map("planos_referencias")
 }
