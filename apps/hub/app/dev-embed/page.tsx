@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { montarEmbed } from "@/lib/embed-experiencia";
 import { ExpHost } from "@/components/ExpHost";
+import { HeaderPlataforma } from "@/components/header-plataforma";
 
 /**
  * Bancada de teste de experiência local (dev only): aponta para o dev server
@@ -33,14 +34,17 @@ export default async function DevEmbedPage({
 
   const embed = await montarEmbed(expId, usuario, { srcDev: base });
   return (
-    <ExpHost
-      expId={expId}
-      src={embed.src}
-      expOrigin={embed.expOrigin}
-      token={embed.token}
-      aluno={embed.aluno}
-      apiUrl={embed.apiUrl}
-      viewport={embed.viewport}
-    />
+    <>
+      <HeaderPlataforma largura="cheia" voltar={{ href: "/aluno", rotulo: "Missões" }} />
+      <ExpHost
+        expId={expId}
+        src={embed.src}
+        expOrigin={embed.expOrigin}
+        token={embed.token}
+        aluno={embed.aluno}
+        apiUrl={embed.apiUrl}
+        viewport={embed.viewport}
+      />
+    </>
   );
 }

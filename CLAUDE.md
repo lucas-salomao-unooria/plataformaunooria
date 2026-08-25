@@ -114,6 +114,16 @@ professor entrega a virada. `/aluno` e `/exp/*` são a MESMA área no middleware
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
+**Header: um só para todos os papéis.** `components/header-plataforma.tsx`
+(marca → home do papel, nome + série/papel, avatar, Sair) é o header de
+`/aluno`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
+copiava o seu e a experiência não tinha nenhum. A casca visual (CSS do DS,
+compensações, fontes) saiu do layout do grupo `(plataforma)` para
+`components/casca-plataforma.tsx`, porque `/exp/*` e `/dev-embed` estão fora do
+grupo e também precisam dela. A regra de ouro passou a valer um nível abaixo: o
+header é chrome do HUB, desenhado ACIMA do aparelho — dentro do iframe nada da
+marca institucional entra.
+
 ### Evento de telemetria (inspirado em xAPI, simplificado)
 ```json
 { "eventId": "uuid", "ts": "ISO", "alunoId": "...", "escolaId": "...",

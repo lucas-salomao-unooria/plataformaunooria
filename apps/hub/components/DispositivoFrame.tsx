@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/** Respiro entre o aparelho e as bordas da área disponível. */
+const FOLGA = { vertical: 32, horizontal: 16 };
 
 /**
  * Viewport de celular embutido na página — port da casca do projeto origem.
@@ -13,9 +16,17 @@ import { useEffect, useState } from "react";
  * contra a janela e inflaria silenciosamente o sinal central do motor.
  *
  * Sem bezel, sem status bar: só o viewport travado, centralizado num fundo
- * neutro. Se a janela for menor que o aparelho, tudo reduz proporcionalmente —
- * a página nunca rola. Aplicado quando o manifesto da experiência declara
- * `viewport`; sem viewport, o ExpFrame ocupa a janela inteira.
+ * neutro — mais uma borda de 1px e uma sombra fraca, para o aparelho não se
+ * dissolver no fundo (o feed é branco e o fundo quase branco). Se a área for
+ * menor que o aparelho, tudo reduz proporcionalmente — a página nunca rola.
+ *
+ * A escala vem do TAMANHO DA PRÓPRIA ÁREA (ResizeObserver), não de
+ * `window.innerHeight` menos um número mágico de header: o header padrão do hub
+ * mora acima e já sai da conta sozinho. Antes eram 56+32px chumbados, que
+ * passaram a mentir quando o header virou 64px.
+ *
+ * Aplicado quando o manifesto da experiência declara `viewport`; sem viewport,
+ * o ExpFrame ocupa a área inteira (exp-02, desenhada para desktop).
  */
 export function DispositivoFrame({
   largura,
@@ -26,32 +37,35 @@ export function DispositivoFrame({
   altura: number;
   children: React.ReactNode;
 }) {
+  const area = useRef<HTMLDivElement>(null);
   const [escala, setEscala] = useState(1);
 
   useEffect(() => {
+    const alvo = area.current;
+    if (!alvo) return;
+
     const recalcular = () => {
-      // 56px de header + 32px de respiro: sem descontar, o aparelho fica alto
-      // demais e a página do navegador volta a rolar (lição do origem).
-      const folgaVertical = 56 + 32;
-      const folgaHorizontal = 16;
-      const cabeVertical = (window.innerHeight - folgaVertical) / altura;
-      const cabeHorizontal = (window.innerWidth - folgaHorizontal) / largura;
-      setEscala(Math.min(1, cabeVertical, cabeHorizontal));
+      const { width, height } = alvo.getBoundingClientRect();
+      // Antes do primeiro layout a caixa vem 0×0: manter a escala atual em vez
+      // de encolher o aparelho para zero.
+      if (width === 0 || height === 0) return;
+      const cabeVertical = (height - FOLGA.vertical) / altura;
+      const cabeHorizontal = (width - FOLGA.horizontal) / largura;
+      setEscala(Math.max(0.1, Math.min(1, cabeVertical, cabeHorizontal)));
     };
+
     recalcular();
-    window.addEventListener("resize", recalcular);
-    window.addEventListener("orientationchange", recalcular);
-    return () => {
-      window.removeEventListener("resize", recalcular);
-      window.removeEventListener("orientationchange", recalcular);
-    };
+    const observador = new ResizeObserver(recalcular);
+    observador.observe(alvo);
+    return () => observador.disconnect();
   }, [largura, altura]);
 
   return (
     <div
+      ref={area}
       style={{
         // absolute (não fixed): o ExpHost pode empilhar um "chrome" acima (a
-        // moldura dos perdidos) — fixed cobriria a moldura.
+        // moldura dos perdidos) — fixed cobriria a moldura e o header.
         position: "absolute",
         inset: 0,
         display: "flex",
@@ -69,6 +83,12 @@ export function DispositivoFrame({
           transformOrigin: "center center",
           flexShrink: 0,
           overflow: "hidden",
+          background: "#fff",
+          // `outline`, não `border`: o preflight do Tailwind põe
+          // `box-sizing: border-box` em tudo, e 1px de borda comeria 2px do
+          // viewport — o iframe deixaria de ter EXATAMENTE 375×812.
+          outline: "1px solid #e5e5e5",
+          boxShadow: "0 8px 32px rgb(0 0 0 / 8%)",
         }}
       >
         {children}

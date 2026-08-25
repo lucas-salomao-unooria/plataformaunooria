@@ -15,6 +15,10 @@ const MolduraPerdidos = lazy(() =>
  * Composição client da experiência: DispositivoFrame (quando o manifesto
  * declara viewport) + ExpFrame, com a persistência do exp:concluir.
  *
+ * Ocupa o espaço que o pai der (`flex: 1`) — quem desenha o header padrão do
+ * hub acima é a página (`/exp/:expId`, `/dev-embed`). O caminho de volta também
+ * é do header agora; aqui não há mais chrome solto sobre o aparelho.
+ *
  * A conclusão registrada aqui é PROGRESSO (a experiência terminou), não nota:
  * pontuação que vale nota é recalculada server-side quando o módulo de
  * avaliação da experiência existir (regra inviolável nº 3).
@@ -27,6 +31,11 @@ export function ExpHost(props: {
   aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   config?: Record<string, unknown>;
+  /**
+   * Presente ⇒ a experiência foi desenhada para um APARELHO: roda num iframe de
+   * exatamente `largura`×`altura` px, centralizado. Ausente ⇒ foi desenhada
+   * para desktop (exp-02) e ocupa a área inteira.
+   */
   viewport?: { largura: number; altura: number } | null;
 }) {
   const { expId, viewport, ...frame } = props;
@@ -68,27 +77,21 @@ export function ExpHost(props: {
     />
   );
 
-  const moldura = mostrarMolduraPerdidos ? (
-    <Suspense fallback={null}>
-      <MolduraPerdidos />
-    </Suspense>
-  ) : null;
-
-  if (!viewport) {
-    return (
-      <div style={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
-        {moldura}
-        <div style={{ flex: 1 }}>{conteudo}</div>
-      </div>
-    );
-  }
   return (
-    <div style={{ display: "flex", minHeight: "100dvh", flexDirection: "column" }}>
-      {moldura}
-      <div style={{ flex: 1, position: "relative" }}>
-        <DispositivoFrame largura={viewport.largura} altura={viewport.altura}>
-          {conteudo}
-        </DispositivoFrame>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      {mostrarMolduraPerdidos ? (
+        <Suspense fallback={null}>
+          <MolduraPerdidos />
+        </Suspense>
+      ) : null}
+      <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+        {viewport ? (
+          <DispositivoFrame largura={viewport.largura} altura={viewport.altura}>
+            {conteudo}
+          </DispositivoFrame>
+        ) : (
+          conteudo
+        )}
       </div>
     </div>
   );

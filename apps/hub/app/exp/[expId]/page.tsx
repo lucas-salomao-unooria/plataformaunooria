@@ -2,11 +2,16 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { montarEmbed } from "@/lib/embed-experiencia";
 import { ExpHost } from "@/components/ExpHost";
+import { HeaderPlataforma } from "@/components/header-plataforma";
 
 /**
  * Superfície do ALUNO: embeda a experiência do manifesto (ou, em dev, o dev
  * server dela). A montagem vive em `lib/embed-experiencia.ts`, compartilhada
  * com a superfície do professor.
+ *
+ * O header é o MESMO de todas as áreas do hub (marca, identidade, sair), com o
+ * caminho de volta para as missões. Ele é chrome do HUB, acima do aparelho —
+ * a regra de ouro (nada da marca institucional dentro do iframe) segue valendo.
  */
 export default async function ExpPage({ params }: { params: Promise<{ expId: string }> }) {
   const { expId } = await params;
@@ -20,14 +25,17 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
   if (embed.manifesto && (embed.manifesto.publico ?? "aluno") !== "aluno") notFound();
 
   return (
-    <ExpHost
-      expId={expId}
-      src={embed.src}
-      expOrigin={embed.expOrigin}
-      token={embed.token}
-      aluno={embed.aluno}
-      apiUrl={embed.apiUrl}
-      viewport={embed.viewport}
-    />
+    <>
+      <HeaderPlataforma largura="cheia" voltar={{ href: "/aluno", rotulo: "Missões" }} />
+      <ExpHost
+        expId={expId}
+        src={embed.src}
+        expOrigin={embed.expOrigin}
+        token={embed.token}
+        aluno={embed.aluno}
+        apiUrl={embed.apiUrl}
+        viewport={embed.viewport}
+      />
+    </>
   );
 }

@@ -34,3 +34,15 @@ export function areaDoPapel(papel: Papel): string {
   if (papel === "gestor" || papel === "admin-contrato") return "/admin/usuarios";
   return "/aluno";
 }
+
+/**
+ * Como o papel se apresenta na interface — a linha de apoio do header padrão
+ * (`components/header-plataforma.tsx`). Fica aqui, junto do resto do que se
+ * sabe sobre papel, para não haver duas listas de rótulos divergindo.
+ */
+export function rotuloDoPapel(papel: Papel): string {
+  if (papel === "professor") return "Professor";
+  if (papel === "gestor") return "Gestor";
+  if (papel === "admin-contrato") return "Admin do contrato";
+  return "Aluno";
+}
