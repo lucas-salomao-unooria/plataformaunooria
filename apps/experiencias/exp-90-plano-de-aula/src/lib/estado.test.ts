@@ -1,4 +1,5 @@
 import { describe, expect, test } from "vitest";
+import { DISCIPLINAS_CATALOGO } from "./curriculo";
 import { mensagemDoStatus, rotuloDaSerie, rotuloDoStatus, telaDoStatus } from "./estado";
 
 describe("máquina de telas do polling", () => {
@@ -23,9 +24,20 @@ describe("máquina de telas do polling", () => {
 });
 
 describe("série ↔ rótulo", () => {
-  test("EF e EM", () => {
+  test("EF e EM cobrindo todos os anos do catálogo", () => {
     expect(rotuloDaSerie("2EF")).toBe("2º ano");
+    expect(rotuloDaSerie("4EF")).toBe("4º ano");
+    expect(rotuloDaSerie("6EF")).toBe("6º ano");
     expect(rotuloDaSerie("8EF")).toBe("8º ano");
     expect(rotuloDaSerie("2EM")).toBe("2ª série EM");
+  });
+});
+
+describe("catálogo de disciplinas", () => {
+  test("possui 15 disciplinas canônicas da Educação Básica", () => {
+    expect(DISCIPLINAS_CATALOGO).toHaveLength(15);
+    expect(DISCIPLINAS_CATALOGO[0]).toEqual({ slug: "letramento-digital", label: "Letramento Digital" });
+    expect(DISCIPLINAS_CATALOGO.some((d) => d.slug === "matematica")).toBe(true);
+    expect(DISCIPLINAS_CATALOGO.some((d) => d.slug === "lingua-portuguesa")).toBe(true);
   });
 });

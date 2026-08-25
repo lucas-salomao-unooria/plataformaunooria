@@ -16,6 +16,7 @@ import {
 } from "@edu/ui/ds";
 
 import { api, experiencia, statusDoErro } from "../lib/api";
+import { DISCIPLINAS_CATALOGO } from "../lib/curriculo";
 import { mensagemDoStatus, rotuloDaSerie, rotuloDoStatus, telaDoStatus, type Tela } from "../lib/estado";
 import { baixarDoc } from "../lib/exportar-doc";
 import { INSIGHTS_SEMENTE } from "../lib/insights";
@@ -78,7 +79,31 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
   const [indiceInsight, setIndiceInsight] = useState(0);
 
   const disciplinaAtual = disponiveis.find((d) => d.disciplina === disciplina);
-  const opcoesDisciplina = disponiveis.map((d) => ({ value: d.disciplina, label: d.rotulo }));
+
+  // Mapeia todas as 15 disciplinas da BNCC: ativas e "em breve" (como no app original)
+  const opcoesDisciplina = (() => {
+    const conhecidas = new Set(DISCIPLINAS_CATALOGO.map((d) => d.slug));
+    const catalogo = DISCIPLINAS_CATALOGO.map((d) => {
+      const disp = disponiveis.find((x) => x.disciplina === d.slug);
+      const ativa = Boolean(disp && disp.series.length > 0);
+      return {
+        value: d.slug,
+        label: ativa ? d.label : `${d.label} (em breve)`,
+        disabled: !ativa,
+      };
+    });
+
+    const extras = disponiveis
+      .filter((d) => !conhecidas.has(d.disciplina) && d.series.length > 0)
+      .map((d) => ({
+        value: d.disciplina,
+        label: d.rotulo,
+        disabled: false,
+      }));
+
+    return [...catalogo, ...extras];
+  })();
+
   const opcoesSerie = (disciplinaAtual?.series ?? []).map((s) => ({ value: s, label: rotuloDaSerie(s) }));
 
   // ------------------------------------------------------------ insights
@@ -157,7 +182,8 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
     setErro("");
     setAviso("");
     setAtual(null);
-    setDisciplina(disponiveis.length === 1 ? disponiveis[0]!.disciplina : "");
+    const ativas = disponiveis.filter((d) => d.series.length > 0);
+    setDisciplina(ativas.length === 1 ? ativas[0]!.disciplina : "");
     setSerie("");
     setTela("novo");
   }, [disponiveis]);
@@ -327,7 +353,7 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
                     variant="primary"
                     size="md"
                     onClick={novoPlano}
-                    isDisabled={disponiveis.length === 0}
+                    isDisabled={!disponiveis.some((d) => d.series.length > 0)}
                     leftIcon={<Icon name="add" size="xs" />}
                   >
                     Novo plano
@@ -337,7 +363,7 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
               />
 
               {erro && <FeedbackAlert type="error" description={erro} />}
-              {disponiveis.length === 0 && (
+              {!disponiveis.some((d) => d.series.length > 0) && (
                 <FeedbackAlert
                   type="warning"
                   description="Ainda não há material de referência (currículo da rede, material didático) cadastrado para a sua rede. Peça à coordenação para importá-lo."
@@ -350,7 +376,7 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
                     variant="no-data"
                     title="Nenhum plano ainda"
                     description="Escolha a disciplina e a série: o currículo da rede e o material didático já cadastrados são lidos automaticamente."
-                    primaryAction={disponiveis.length > 0 ? { label: "Gerar meu primeiro plano", onClick: novoPlano } : undefined}
+                    primaryAction={disponiveis.some((d) => d.series.length > 0) ? { label: "Gerar meu primeiro plano", onClick: novoPlano } : undefined}
                   />
                 </div>
               ) : (
@@ -419,6 +445,7 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
                     setDisciplina(valorSimples(v));
                     setSerie("");
                   }}
+                  helperText="As disciplinas marcadas como “em breve” ainda estão em preparação."
                   required
                   fullWidth
                   showOptionCheckbox={false}
