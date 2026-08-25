@@ -1,23 +1,30 @@
-import { Tag } from "@edu/ui/ds";
+import { Card, Tag } from "@edu/ui/ds";
 import { CartaoMissao } from "@/components/cartao-missao";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
-import { ANOS, MISSAO_ATUAL } from "@/lib/entre-redes/catalogo";
+import { ETAPAS, MISSAO_ATUAL, UNIDADES_POR_ANO, type Ano } from "@/lib/entre-redes/catalogo";
 
 /**
- * Trilha do Entre Redes: os anos, as 4 unidades de cada um e o estado de cada
- * missão. Hoje uma única unidade está publicada — 8º ano · Unidade 1 — e as
- * demais aparecem como "Em breve".
+ * Trilha do Entre Redes: a grade da Educação Básica inteira (1º ao 9º ano e as
+ * 3 séries do Médio), agrupada por etapa.
+ *
+ * Ano COM missão publicada abre a grade das 4 unidades; ano sem nenhuma
+ * publicada vira uma linha só. Com 12 anos × 4 unidades, desenhar 48 cartões
+ * "Em breve" afogaria as duas missões que existem — a linha compacta mantém a
+ * promessa (o ano está na trilha) sem virar ruído.
  */
 export default async function EntreRedesPage() {
-  // MISSÃO ÚNICA: enquanto só a Unidade 1 do 8º ano existe, toda atividade do
-  // professor pertence a ela (ver nota de modelagem em lib/entre-redes/catalogo).
+  // MISSÃO ÚNICA: enquanto só a Unidade 1 do 8º ano tem atividades, toda
+  // atividade do professor pertence a ela (ver nota em lib/entre-redes/catalogo).
   // No origem era `prisma.activity.count(...)`; aqui a contagem vem da lista
   // que a api já devolve escopada ao professor do token.
   const resposta = await apiDoServidor<{ atividades: Array<{ id: string }> }>(
     "/atividades",
   );
   const atividadesDaMissaoAtual = resposta?.atividades.length ?? 0;
+
+  const temMissao = (ano: Ano) =>
+    ano.missoes.some((missao) => missao.status === "disponivel");
 
   return (
     <div className="flex flex-col gap-8">
@@ -36,39 +43,62 @@ export default async function EntreRedesPage() {
         </div>
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
           Missões em que a turma vive por dentro como as redes funcionam — e só
-          depois discute o que aconteceu. Cada ano tem <strong>4 unidades</strong>,
-          uma missão por unidade. Você configura a missão para a sua disciplina e
-          roda com a turma quantas vezes quiser.
+          depois discute o que aconteceu. Do 1º ano do Fundamental à 3ª série do
+          Médio, cada ano tem <strong>4 unidades</strong>, uma missão por
+          unidade. Você configura a missão para a sua disciplina e roda com a
+          turma quantas vezes quiser.
         </p>
       </div>
 
-      {ANOS.map((ano) => (
-        <section key={ano.slug} className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-unooria-neutral-200 pb-2">
-            <h2 className="text-[18px] font-bold text-unooria-neutral-950">
-              {ano.rotulo}
-            </h2>
-            <span className="text-[12px] text-unooria-neutral-500">
-              {ano.etapa}
-            </span>
-          </div>
+      {ETAPAS.map((etapa) => (
+        <section key={etapa.id} className="flex flex-col gap-5">
+          <h2 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
+            {etapa.rotulo}
+          </h2>
 
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {ano.missoes.map((missao) => (
-              <li key={missao.unidadeSlug} className="h-full">
-                <CartaoMissao
-                  ano={ano}
-                  missao={missao}
-                  atividades={
-                    missao.anoSlug === MISSAO_ATUAL.anoSlug &&
-                    missao.unidadeSlug === MISSAO_ATUAL.unidadeSlug
-                      ? atividadesDaMissaoAtual
-                      : undefined
-                  }
-                />
-              </li>
-            ))}
-          </ul>
+          {etapa.anos.map((ano) =>
+            temMissao(ano) ? (
+              <div key={ano.slug} className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-unooria-neutral-200 pb-2">
+                  <h3 className="text-[18px] font-bold text-unooria-neutral-950">
+                    {ano.rotulo}
+                  </h3>
+                  <span className="text-[12px] text-unooria-neutral-500">
+                    {ano.missoes.filter((m) => m.status === "disponivel").length}{" "}
+                    de {UNIDADES_POR_ANO} unidades publicadas
+                  </span>
+                </div>
+
+                <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {ano.missoes.map((missao) => (
+                    <li key={missao.unidadeSlug} className="h-full">
+                      <CartaoMissao
+                        ano={ano}
+                        missao={missao}
+                        atividades={
+                          missao.anoSlug === MISSAO_ATUAL.anoSlug &&
+                          missao.unidadeSlug === MISSAO_ATUAL.unidadeSlug
+                            ? atividadesDaMissaoAtual
+                            : undefined
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <Card key={ano.slug} variant="outlined">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-[15px] font-semibold text-unooria-neutral-700">
+                    {ano.rotulo}
+                  </span>
+                  <span className="text-[13px] text-unooria-neutral-500">
+                    {UNIDADES_POR_ANO} unidades em produção
+                  </span>
+                </div>
+              </Card>
+            ),
+          )}
         </section>
       ))}
     </div>

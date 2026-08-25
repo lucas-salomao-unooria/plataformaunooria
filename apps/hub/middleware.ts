@@ -22,7 +22,7 @@ export default auth((request) => {
 
   if (areaDoPathname(pathname) !== areaDoPapel(usuario.papel)) {
     const url = request.nextUrl.clone();
-    url.pathname = homeDoPapel(usuario.papel, usuario.serie);
+    url.pathname = homeDoPapel(usuario.papel);
     url.search = "";
     return NextResponse.redirect(url);
   }
@@ -31,5 +31,12 @@ export default auth((request) => {
 });
 
 export const config = {
-  matcher: ["/professor/:path*", "/exp/:path*", "/admin/:path*", "/analise/:path*", "/dev-embed"],
+  matcher: [
+    "/aluno/:path*",
+    "/professor/:path*",
+    "/exp/:path*",
+    "/admin/:path*",
+    "/analise/:path*",
+    "/dev-embed",
+  ],
 };

@@ -9,6 +9,9 @@ import { chromium } from "playwright";
  * :3000 embeda a experiência :5173), então tudo que está dentro dele se
  * alcança por `frameLocator` — não pelo DOM da página.
  *
+ * Passa pelo HUB DO ALUNO (`/aluno`): o login não cai mais direto na
+ * experiência da série — o aluno escolhe a missão.
+ *
  * Uso: node scripts/walkthrough-aluno.mjs <pasta-de-prints> [login]
  * Pré-requisitos: `pnpm dev` no ar (hub :3000, api :3001, exp :5173) e o seed
  * (`pnpm --filter @edu/api seed && seed:demo`).
@@ -56,7 +59,15 @@ try {
   await registrar("login-preenchido");
 
   await p.click("button[type=submit]");
-  await p.waitForURL("**/exp/**", { timeout: 30_000 });
+
+  // ---- hub do aluno: ele escolhe a missão ---------------------------------
+  await p.waitForURL("**/aluno", { timeout: 30_000 });
+  const cartao = p.locator("a", { hasText: "Instanooria" }).first();
+  await cartao.waitFor({ timeout: 15_000 });
+  await registrar("hub-do-aluno", `${await p.locator("main ul > li").count()} missões`);
+
+  await cartao.click();
+  await p.waitForURL("**/exp/exp-01-instanooria**", { timeout: 30_000 });
   await registrar("entrou-na-experiencia", p.url().replace(HUB, ""));
 
   // ---- o aparelho --------------------------------------------------------

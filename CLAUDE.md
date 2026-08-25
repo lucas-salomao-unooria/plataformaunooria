@@ -99,8 +99,13 @@ experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed` e
 `/professor/plano-de-aula`.
-O aluno entra na experiência da SÉRIE dele (`apps/hub/lib/experiencia-do-aluno.ts`,
-mapa estático até o manifesto virar a fonte).
+O aluno tem hub próprio (`/aluno`): ele ESCOLHE a missão, sem filtro por série
+por enquanto (`apps/hub/lib/missoes-do-aluno.ts`, derivado do catálogo do Entre
+Redes; a série volta a filtrar quando o manifesto virar a fonte). Missão só
+aparece lá se tiver copy de aluno (`missao.aluno` no catálogo) — a copy do
+professor entrega a virada. `/aluno` e `/exp/*` são a MESMA área no middleware
+(`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
+(1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
 ### Evento de telemetria (inspirado em xAPI, simplificado)
 ```json

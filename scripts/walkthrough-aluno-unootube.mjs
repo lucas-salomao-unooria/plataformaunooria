@@ -48,7 +48,15 @@ try {
     { timeout: 10_000 },
   );
   await p.click("button[type=submit]");
-  // A série do aluno (4EF) decide a experiência — este waitForURL é o teste do roteamento.
+
+  // ---- hub do aluno -------------------------------------------------------
+  // O roteamento não olha mais a série: o aluno escolhe a missão no hub dele.
+  await p.waitForURL("**/aluno", { timeout: 30_000 });
+  const cartao = p.locator("a", { hasText: "UnooTube" }).first();
+  await cartao.waitFor({ timeout: 15_000 });
+  await registrar("hub-do-aluno", `${await p.locator("main ul > li").count()} missões`);
+
+  await cartao.click();
   await p.waitForURL("**/exp/exp-02-unootube**", { timeout: 30_000 });
   await registrar("entrou-no-unootube", p.url().replace(HUB, ""));
 
