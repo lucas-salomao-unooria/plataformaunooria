@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Perfil } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
- * Quota diária de IA por aluno, PERSISTIDA.
+ * Quota diária de IA por usuário, PERSISTIDA.
  *
  * O `Map` em memória que existia antes tinha dois furos: zerava a cada restart
  * e era por instância — com `min-instances: 3` no Cloud Run, a mesma criança
@@ -13,6 +14,11 @@ import { PrismaService } from "../prisma/prisma.service";
  *
  * A checagem acontece ANTES de chamar o provider: gastar token e depois
  * recusar seria pagar pelo que não se entrega.
+ *
+ * O LIMITE depende do perfil: o aluno conversa com o tutor (20k tokens/dia
+ * bastam); o professor gera planos anuais em que só o PROMPT (currículo da
+ * rede + material didático) passa de 200k tokens — o teto dele é outro
+ * (`AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`). Sem o perfil, vale o do aluno.
  */
 @Injectable()
 export class QuotaService {
@@ -21,7 +27,10 @@ export class QuotaService {
     private readonly config: ConfigService,
   ) {}
 
-  private limite(): number {
+  private limite(perfil: Perfil): number {
+    if (perfil === "professor" || perfil === "gestor" || perfil === "admin-contrato") {
+      return Number(this.config.get("AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR") ?? 2_000_000);
+    }
     return Number(this.config.get("AI_DAILY_TOKEN_QUOTA_PER_ALUNO") ?? 20000);
   }
 
@@ -44,8 +53,8 @@ export class QuotaService {
   }
 
   /** `true` quando ainda há saldo — checar antes de chamar o provider. */
-  async temSaldo(escolaId: string, usuarioId: string): Promise<boolean> {
-    return (await this.usadoHoje(escolaId, usuarioId)) < this.limite();
+  async temSaldo(escolaId: string, usuarioId: string, perfil: Perfil = "aluno"): Promise<boolean> {
+    return (await this.usadoHoje(escolaId, usuarioId)) < this.limite(perfil);
   }
 
   /** Incremento atômico; devolve o total do dia depois do consumo. */

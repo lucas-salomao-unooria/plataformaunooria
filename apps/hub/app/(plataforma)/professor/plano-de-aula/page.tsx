@@ -1,0 +1,42 @@
+import { ExpFrame } from "@/components/ExpFrame";
+import { auth } from "@/lib/auth";
+import { montarEmbed } from "@/lib/embed-experiencia";
+import { EXP_PLANO_DE_AULA } from "@/lib/plano-de-aula";
+
+/**
+ * **Gerador de Plano de Aula** dentro do hub: a exp-90 (Vite, estática)
+ * embedada na casca do professor. Antes era um serviço Cloud Run separado
+ * aberto em nova guia; agora é a mesma sessão, o mesmo token e a mesma api.
+ *
+ * Renderiza o `ExpFrame` direto (sem `ExpHost`): não há viewport de aparelho
+ * nem chrome de aluno, e a conclusão não é progresso de aluno. O wrapper
+ * anula o padding do layout para o editor usar a altura toda.
+ *
+ * Em dev, sem manifesto: `?src=http://localhost:5175` (ou a porta registrada
+ * em `lib/experiencias-dev.ts`).
+ */
+export default async function PlanoDeAulaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ src?: string }>;
+}) {
+  const session = await auth();
+  const usuario = session!.usuario; // middleware garante professor em /professor/**
+
+  const { src } = await searchParams;
+  const srcDev = process.env.NODE_ENV !== "production" ? src : undefined;
+  const embed = await montarEmbed(EXP_PLANO_DE_AULA, usuario, { srcDev });
+
+  return (
+    <div className="-mx-5 -my-8" style={{ height: "calc(100dvh - 64px)" }}>
+      <ExpFrame
+        src={embed.src}
+        expOrigin={embed.expOrigin}
+        token={embed.token}
+        aluno={embed.aluno}
+        apiUrl={embed.apiUrl}
+        config={{ expId: EXP_PLANO_DE_AULA }}
+      />
+    </div>
+  );
+}

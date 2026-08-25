@@ -20,7 +20,13 @@ export const EnvSchema = z.object({
   VERTEX_PROJECT_ID: z.string().optional(),
   VERTEX_LOCATION: z.string().default("southamerica-east1"),
   VERTEX_MODEL: z.string().default("gemini-2.0-flash"),
+  // Modelo de SAÍDA LONGA (`AiRequest.modelo: "longo"`): planos anuais passam
+  // de 8k tokens de saída, o teto do 2.0-flash. A família 2.5 vai a 65k.
+  VERTEX_MODEL_LONGO: z.string().default("gemini-2.5-flash"),
   AI_DAILY_TOKEN_QUOTA_PER_ALUNO: z.coerce.number().int().positive().default(20000),
+  // Professor gera planos cujo PROMPT sozinho tem ~220k tokens (currículo +
+  // material didático); 2M/dia ≈ 6–9 planos. Regra 5 do CLAUDE.md, por perfil.
+  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: z.coerce.number().int().positive().default(2_000_000),
 
   VERTEX_IMAGE_MODEL: z.string().default("gemini-2.0-flash-exp"),
 
@@ -35,8 +41,18 @@ export const EnvSchema = z.object({
   // jogo externo). Ausente = rota desligada (503), não aberta.
   PERFIL_IMPORT_TOKEN: z.string().optional(),
 
+  // Planos de aula (exp-90): conteúdo autoral do professor, em bucket PRIVADO
+  // `{contrato}-planos` (docs/INFRA.md) — nunca no de assets, que é público.
+  // Em dev, `local` grava em `storage-privado/` (fora do static de /assets).
+  PLANOS_DRIVER: z.enum(["local", "gcs"]).default("local"),
+  PLANOS_BUCKET: z.string().optional(),
+  PLANOS_LOCAL_DIR: z.string().optional(),
+  // Chave de serviço da importação das referências curriculares
+  // (`POST /planos/referencias`, chamada pelo script local). Ausente = 503.
+  PLANOS_IMPORT_TOKEN: z.string().optional(),
+
   TELEMETRIA_TOPIC: z.string().optional().default(""),
-  CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173"),
+  CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175"),
   PORT: z.coerce.number().int().default(3001),
 });
 

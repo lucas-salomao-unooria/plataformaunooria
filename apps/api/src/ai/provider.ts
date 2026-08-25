@@ -1,5 +1,23 @@
-export interface AiRequest { system: string; user: string; maxTokens?: number }
-export interface AiResult { texto: string; tokensUsados: number }
+export interface AiRequest {
+  system: string;
+  user: string;
+  maxTokens?: number;
+  /**
+   * Família de modelo, neutra de vendor. `padrao` é o modelo do dia a dia
+   * (reações ao vivo, tutor); `longo` é o modelo com janela de SAÍDA grande —
+   * planos anuais, relatórios — que o provider mapeia para outro modelo
+   * (`VERTEX_MODEL_LONGO`). Quem chama não sabe qual modelo é.
+   */
+  modelo?: "padrao" | "longo";
+  temperatura?: number;
+}
+export interface AiResult {
+  texto: string;
+  tokensUsados: number;
+  /** Por que o modelo parou: `STOP` (natural) ou outro motivo do vendor
+   *  (`MAX_TOKENS`, `SAFETY`...). Aditivo: quem não liga, ignora. */
+  finishReason?: string;
+}
 
 /**
  * Schema de resposta estruturada NEUTRO de vendor (subconjunto de JSON Schema:

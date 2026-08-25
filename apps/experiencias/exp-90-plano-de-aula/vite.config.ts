@@ -1,0 +1,16 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  base: "./", // base relativa p/ servir de qualquer path do bucket
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // O @edu/ui e o DS carregam 'use client' (para o hub/Next); no Vite é inerte.
+        if (warning.code === "MODULE_LEVEL_DIRECTIVE") return;
+        warn(warning);
+      },
+    },
+  },
+});

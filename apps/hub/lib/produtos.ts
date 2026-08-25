@@ -4,7 +4,8 @@
  * A plataforma deixou de ser "a tela de uma atividade" e passou a ser um **hub**
  * com dois produtos independentes:
  *
- * 1. **Gerador de Plano de Aula** — ferramenta de autoria, roda fora daqui.
+ * 1. **Gerador de Plano de Aula** — ferramenta de autoria; a experiência
+ *    `exp-90` embedada em `/professor/plano-de-aula` (`lib/plano-de-aula.ts`).
  * 2. **Entre Redes** — trilha de missões de letramento digital, dentro da
  *    plataforma (`lib/entre-redes/catalogo.ts`).
  *
@@ -17,7 +18,7 @@
  */
 
 import { MISSOES_DISPONIVEIS } from "@/lib/entre-redes/catalogo";
-import { PLANO_DE_AULA_URL } from "@/lib/plano-de-aula";
+import { ROTA_PLANO_DE_AULA } from "@/lib/plano-de-aula";
 
 export type Produto = {
   slug: "plano-de-aula" | "entre-redes";
@@ -27,7 +28,8 @@ export type Produto = {
   /** O parágrafo do card no hub. */
   descricao: string;
   destino: string;
-  /** `true` ⇒ abre em nova guia (o professor não pode perder um formulário). */
+  /** `true` ⇒ abre em nova guia. Hoje nenhum produto é externo; o campo fica
+   *  para o próximo parceiro que ainda rode fora da plataforma. */
   externo: boolean;
   /** Rótulo da ação principal do card. */
   acao: string;
@@ -42,10 +44,10 @@ export const PRODUTOS: Produto[] = [
     chamada: "Autoria",
     descricao:
       "Monte o plano da sua aula a partir do conteúdo que vai trabalhar: objetivos, roteiro e materiais, prontos para editar.",
-    destino: PLANO_DE_AULA_URL,
-    externo: true,
+    destino: ROTA_PLANO_DE_AULA,
+    externo: false,
     acao: "Abrir gerador",
-    situacao: "Ferramenta externa",
+    situacao: "Ferramenta de autoria",
   },
   {
     slug: "entre-redes",

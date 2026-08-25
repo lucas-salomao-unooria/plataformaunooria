@@ -27,7 +27,7 @@ export class AiController {
     // Quota persistida (tabela ia_uso_diario): sobrevive a restart e vale para
     // todas as instâncias — o Map em memória de antes não fazia nem uma coisa
     // nem outra.
-    if (!(await this.quota.temSaldo(escolaId, usuarioId))) {
+    if (!(await this.quota.temSaldo(escolaId, usuarioId, req.auth.perfil))) {
       throw new HttpException("Quota diária de IA atingida", 429);
     }
 

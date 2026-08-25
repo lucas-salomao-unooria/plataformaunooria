@@ -122,9 +122,9 @@ function Corpo({ produto }: { produto: Produto }) {
 }
 
 /**
- * Card de produto do hub. Interno vira `<Link>`; externo abre em nova guia com
- * `noopener noreferrer` — o professor costuma acionar o gerador no meio da
- * configuração de uma atividade e não pode perder o formulário.
+ * Card de produto do hub. Interno vira `<Link>`; externo (nenhum hoje — o
+ * gerador de plano de aula passou para dentro) abre em nova guia com
+ * `noopener noreferrer`.
  */
 export function CartaoProduto({ produto }: { produto: Produto }) {
   if (produto.externo) {

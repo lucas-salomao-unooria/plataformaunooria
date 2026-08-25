@@ -15,7 +15,9 @@ async function bootstrap() {
     app.useStaticAssets(app.get(AssetsService).dirLocal(), { prefix: "/assets" });
   }
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:5173").split(","),
+    origin: (
+      process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175"
+    ).split(","),
   });
   await app.listen(process.env.PORT ?? 3001);
 }

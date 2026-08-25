@@ -2,13 +2,13 @@
  * **Gerador de Plano de Aula** — um dos dois produtos da Plataforma Unooria
  * (o outro é o Entre Redes, em `lib/entre-redes/catalogo.ts`).
  *
- * Não é uma tela daqui: roda em serviço próprio, fora da plataforma. Por isso
- * o card dele no hub abre em **nova guia** — o professor costuma acionar o
- * gerador no meio da configuração de uma atividade e não pode perder o
- * formulário.
+ * Deixou de ser um serviço externo aberto em nova guia: é a experiência
+ * `exp-90-plano-de-aula` (Vite, estática, `publico: "professor"`), embedada
+ * em `/professor/plano-de-aula` com a MESMA sessão e o MESMO token da
+ * plataforma. O lado server é `apps/api/src/planos`.
  *
  * Só aparece em superfícies do professor. O aparelho do aluno nunca menciona
- * "aula" nem "plano de aula" (regra de ouro 1).
+ * "aula" nem "plano de aula" (regra de ouro 1), e `/exp/exp-90-...` responde 404.
  */
-export const PLANO_DE_AULA_URL =
-  "https://planodeaula-404742064652.us-east1.run.app/";
+export const EXP_PLANO_DE_AULA = "exp-90-plano-de-aula";
+export const ROTA_PLANO_DE_AULA = "/professor/plano-de-aula";
