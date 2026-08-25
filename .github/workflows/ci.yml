@@ -1,7 +1,11 @@
 name: ci
 on:
   pull_request:
-  push: { branches: [main] }
+  # Chamado pelo deploy.yml no push para main. NAO tem `push: main` proprio:
+  # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
+  # dois workflows em paralelo deixariam um teste vermelho subir para escola.
+  workflow_call:
+
 jobs:
   verify:
     runs-on: ubuntu-latest
