@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { comEscolaNoContexto } from "../src/tenancy/tenancy-context";
+import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 
 /**
  * Teste de contrato da regra inviolável nº 1: a RLS impede que uma conexão de
@@ -13,7 +14,7 @@ import { comEscolaNoContexto } from "../src/tenancy/tenancy-context";
  */
 
 const ADMIN_URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
-const RUNTIME_URL = ADMIN_URL.replace(/\/\/[^@]+@/, "//app_runtime_test:app_runtime_test@");
+const RUNTIME_URL = urlDeRuntime(ADMIN_URL);
 
 const ESCOLA_A = "teste-escola-a";
 const ESCOLA_B = "teste-escola-b";
@@ -28,20 +29,7 @@ async function limparDadosDeTeste() {
 }
 
 beforeAll(async () => {
-  await admin.$executeRawUnsafe(`
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_runtime_test') THEN
-        CREATE ROLE app_runtime_test LOGIN PASSWORD 'app_runtime_test' NOSUPERUSER NOBYPASSRLS;
-      END IF;
-    END $$;
-  `);
-  await admin.$executeRawUnsafe(`GRANT USAGE ON SCHEMA public TO app_runtime_test`);
-  await admin.$executeRawUnsafe(
-    `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_runtime_test`,
-  );
-  await admin.$executeRawUnsafe(
-    `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_runtime_test`,
-  );
+  await criarRoleDeRuntime(admin);
 
   await limparDadosDeTeste();
   for (const [id, nome] of [

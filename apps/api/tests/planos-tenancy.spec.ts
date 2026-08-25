@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 
 /**
  * Regra inviolável nº 1 para as tabelas da exp-90: `planos_de_aula` obedece a
@@ -8,7 +9,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
  */
 
 const ADMIN_URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
-const RUNTIME_URL = ADMIN_URL.replace(/\/\/[^@]+@/, "//app_runtime_test:app_runtime_test@");
+const RUNTIME_URL = urlDeRuntime(ADMIN_URL);
 
 const ESCOLA_A = "teste-planos-rls-a";
 const ESCOLA_B = "teste-planos-rls-b";
@@ -25,15 +26,7 @@ async function limpar() {
 }
 
 beforeAll(async () => {
-  await admin.$executeRawUnsafe(`
-    DO $$ BEGIN
-      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_runtime_test') THEN
-        CREATE ROLE app_runtime_test LOGIN PASSWORD 'app_runtime_test' NOSUPERUSER NOBYPASSRLS;
-      END IF;
-    END $$;
-  `);
-  await admin.$executeRawUnsafe(`GRANT USAGE ON SCHEMA public TO app_runtime_test`);
-  await admin.$executeRawUnsafe(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_runtime_test`);
+  await criarRoleDeRuntime(admin);
 
   await limpar();
   for (const id of [ESCOLA_A, ESCOLA_B]) {
