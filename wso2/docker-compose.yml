@@ -77,6 +77,17 @@ services:
     volumes:
       # O entrypoint copia daqui para o server home antes de subir o servidor.
       - ./conf:/home/wso2carbon/wso2-config-volume:ro
+    # `docker compose -f wso2/docker-compose.yml watch` fica olhando estes
+    # caminhos. Num servidor Java não existe hot reload: o `conf` já entra por
+    # volume (sem rebuild), e o que falta para valer é o RESTART, porque o
+    # entrypoint só copia o config-volume para o server home no boot (~2min).
+    # A imagem só precisa ser refeita quando muda o Dockerfile (driver JDBC).
+    develop:
+      watch:
+        - path: ./conf
+          action: restart
+        - path: ./Dockerfile
+          action: rebuild
     healthcheck:
       # O discovery endpoint é um health check melhor que um probe TCP: o Tomcat
       # faz bind da porta antes de terminar o deploy dos webapps, então TCP passa
@@ -114,6 +125,13 @@ services:
     working_dir: /app
     command: ["node", "bootstrap.mjs"]
     restart: "no"
+    # O script já entra por volume; como o serviço roda uma vez e sai,
+    # "atualizar" é re-executar — e ele é idempotente. Fora do `watch`:
+    # `docker compose -f wso2/docker-compose.yml run --rm bootstrap`.
+    develop:
+      watch:
+        - path: ./bootstrap
+          action: restart
 
 volumes:
   wso2-pgdata:

@@ -42,6 +42,35 @@ export interface Embed {
   viewport: { largura: number; altura: number } | null;
 }
 
+/**
+ * De onde o SERVIDOR lê o `experiencia.json` do bundle, quando o endereço do
+ * iframe (`base`) não serve — típico do hub em container, onde `localhost:5173`
+ * é o próprio container.
+ *
+ *  - `EXP_INTERNAL_URL`: endereço fixo, usado como está. Só serve quando há UMA
+ *    origem de bundles (o CDN, em produção).
+ *  - `EXP_INTERNAL_HOST`: troca só o host e PRESERVA a porta. É o que serve em
+ *    dev, onde cada experiência tem um dev server numa porta diferente: um
+ *    `EXP_INTERNAL_URL` fixo faria as três lerem o manifesto de uma só (e o
+ *    UnooTube, que não tem `viewport`, apareceria dentro do aparelho da
+ *    Instanooria).
+ *
+ * Ausentes = o mesmo `base` do iframe.
+ */
+function urlInternaDoBundle(base: string): string {
+  const explicito = process.env.EXP_INTERNAL_URL;
+  if (explicito) return explicito.replace(/\/$/, "");
+
+  const host = process.env.EXP_INTERNAL_HOST;
+  if (!host) return base;
+
+  const url = new URL(base);
+  // Com porta ("cdn.interno:8080") troca host+porta; sem porta, preserva a do `base`.
+  if (host.includes(":")) url.host = host;
+  else url.hostname = host;
+  return url.toString().replace(/\/$/, "");
+}
+
 /** Consulta o manifesto de versões na api (tabela `experiencias`). */
 export async function buscarManifesto(expId: string, token: string): Promise<ManifestoDeExperiencia | null> {
   try {
@@ -87,11 +116,11 @@ export async function montarEmbed(
   // primeiro publish do CI) servia o Instanooria esticado na janela inteira em
   // vez do aparelho de 375×812.
   //
-  // `EXP_INTERNAL_URL` existe pelo mesmo motivo que `API_INTERNAL_URL`: esta
-  // leitura é server-side, e `NEXT_PUBLIC_CDN_EXP_URL` é o endereço que o
-  // BROWSER usa — de dentro de um container, `localhost:5173` é o próprio
-  // container. Ausente = usa o mesmo `base` do iframe.
-  const baseInterna = (process.env.EXP_INTERNAL_URL ?? base).replace(/\/$/, "");
+  // `EXP_INTERNAL_URL`/`EXP_INTERNAL_HOST` existem pelo mesmo motivo que
+  // `API_INTERNAL_URL`: esta leitura é server-side, e `NEXT_PUBLIC_CDN_EXP_URL`
+  // é o endereço que o BROWSER usa — de dentro de um container,
+  // `localhost:5173` é o próprio container.
+  const baseInterna = urlInternaDoBundle(base);
   let viewportDoBundle: { largura: number; altura: number } | null = null;
   if (!manifesto) {
     try {

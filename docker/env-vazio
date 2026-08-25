@@ -1,0 +1,12 @@
+# Arquivo VAZIO de propósito.
+#
+# O docker-compose.dev.yml monta este arquivo por cima dos `.env` de
+# `apps/api` e `apps/hub` dentro do container. Motivo: o bind mount traz o repo
+# INTEIRO (o .dockerignore não vale para bind mount), e esses arquivos são a
+# configuração do ambiente do HOST — apontam para `localhost:3001`,
+# `localhost:5432`, etc. Dentro do container, `localhost` é o próprio
+# container: a api não acharia o Postgres e o hub não acharia a api.
+#
+# No container a configuração vem SÓ do `environment:` do compose (nomes de
+# serviço na rede: `pg`, `api`, `hub`). Arquivo de env novo em apps/* precisa
+# entrar na mesma lista de mounts.

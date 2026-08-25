@@ -96,8 +96,15 @@ desenhada para desktop). SEM linha na tabela, o `viewport` é lido do
 `experiencia.json` servido ao lado do index do bundle — não só em dev: uma
 stack com a tabela vazia (compose local, ambiente novo antes do 1º publish do
 CI) servia o Instanooria esticado na janela em vez do aparelho. Essa leitura é
-server-side, então em container use `EXP_INTERNAL_URL` (o público
-`NEXT_PUBLIC_CDN_EXP_URL` é o endereço do BROWSER).
+server-side (o público `NEXT_PUBLIC_CDN_EXP_URL` é o endereço do BROWSER), então
+em container use `EXP_INTERNAL_HOST` — que troca só o HOST e PRESERVA a porta,
+porque em dev cada exp tem um dev server numa porta diferente e um
+`EXP_INTERNAL_URL` fixo faria as três lerem o manifesto de uma só (o UnooTube,
+sem `viewport`, apareceria dentro do aparelho da Instanooria). `EXP_INTERNAL_URL`
+continua valendo para quando há UMA origem de bundles (o CDN, em produção).
+Os dev servers das exps declaram `allowedHosts: ["host.docker.internal"]`: o
+Vite 5.4+ recusa `Host` que não conheça, e sem isso o hub em container não lê o
+manifesto e a experiência aparece esticada na janela.
 `publico: "professor"` ⇒ ferramenta do professor
 (exp-90-plano-de-aula): embedada em `/professor/plano-de-aula`, e `/exp/*`
 responde 404 para ela. Sem manifesto (dev) o hub cai na raiz do Vite **da
@@ -170,7 +177,11 @@ em dev → `storage-privado/`): `gerado.md` imutável + `atual.html` do editor
 ## Comandos
 
 ```bash
-pnpm dev                                  # tudo em watch
+pnpm dev                                  # tudo em watch, no host
+pnpm docker:dev                           # a stack INTEIRA em container (pg/api/hub/3 exps) com o
+                                          # código do host por bind mount: salvar arquivo recompila
+                                          # lá dentro, sem build. Mesmas portas do `pnpm dev`, então
+                                          # é um OU outro. `:logs` `:deps` `:down` completam.
 pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
 pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
 pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template

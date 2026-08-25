@@ -16,14 +16,12 @@ Para a implantação em produção, ver [`docs/INFRA-IDENTITY.md`](../docs/INFRA
 
 ## Subir
 
-Duas formas:
+O IdP tem ciclo de vida próprio e NÃO sobe com o compose da plataforma
+(ele é compartilhado entre contratos — mesmo desenho de produção):
 
 ```bash
-# 1. Junto com o Postgres da plataforma (recomendado; e2e completo):
-docker compose up -d            # na RAIZ do repo — inclui este stack
-
-# 2. Só o IdP:
-cd wso2 && docker compose up -d
+docker compose -f wso2/docker-compose.yml up -d   # na raiz do repo
+cd wso2 && docker compose up -d                   # ou de dentro desta pasta
 ```
 
 Todas as variáveis têm default de desenvolvimento; o `.env` é opcional
@@ -41,6 +39,27 @@ docker compose logs bootstrap            # imprime client_id/secret e as envs pr
 
 Ao final, `docker compose ps` deve mostrar `wso2-postgres` e `identity-server` de pé, e
 `dbinit`/`bootstrap` como `exited (0)` — os dois são jobs que rodam e saem.
+
+## Editar a configuração sem rebuild
+
+`conf/` e `bootstrap/` já entram por volume — mudar um arquivo ali não pede
+imagem nova. O que falta para a mudança valer é o restart, porque o entrypoint
+copia o config-volume para o server home só no boot. O `watch` faz isso:
+
+```bash
+docker compose -f wso2/docker-compose.yml watch
+```
+
+- `conf/**` (`deployment.toml`) → **reinicia** o identity-server (~25s até o
+  healthcheck do discovery endpoint voltar a passar);
+- `bootstrap/**` (`bootstrap.mjs`) → **re-executa** o bootstrap, que é
+  idempotente. Fora do watch: `docker compose -f wso2/docker-compose.yml run --rm bootstrap`;
+- `Dockerfile` (versão do driver JDBC) → **refaz a imagem**.
+
+Não existe hot reload de verdade num servidor Java: o restart É o ciclo curto.
+Para o resto da plataforma (api/hub/experiências), o equivalente é
+`pnpm docker:dev` na raiz — lá o código entra por bind mount e cada watcher
+recompila sozinho, sem restart.
 
 ## O que cada peça faz
 

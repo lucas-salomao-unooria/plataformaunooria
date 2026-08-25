@@ -1,0 +1,40 @@
+# Imagem ÚNICA de desenvolvimento do monorepo (api, hub e experiências).
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#
+# Diferença em relação às imagens de produção (apps/api/Dockerfile e
+# apps/hub/Dockerfile): aqui NÃO existe `COPY . .` nem build. O código entra em
+# tempo de execução, por bind mount da raiz do repo em /repo — editar no host é
+# o mesmo que editar dentro do container, e o watcher de cada serviço
+# (`nest start --watch`, `next dev`, `vite`) recompila sozinho. Nunca use esta
+# imagem para deploy: ela não tem build, roda como root e traz devDependencies.
+#
+# O que ela precisa ter, e por quê:
+#   - `openssl`: dependência de runtime do engine do Prisma;
+#   - `curl`: healthcheck do compose;
+#   - `procps`: o `nest start --watch` mata o processo antigo via `ps` a cada
+#     recompilação (tree-kill). Sem ele o watch detecta a mudança, tenta
+#     reiniciar e o container MORRE com `Error: spawn ps ENOENT`;
+#   - pnpm FIXO pelo corepack prepare (o `enable` sozinho não fixa a versão);
+#   - store do pnpm fora de /repo: /repo é bind mount do host e os
+#     `node_modules` são volumes — o store precisa de um lugar estável só do
+#     container.
+FROM node:20-slim
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl procps \
+  && rm -rf /var/lib/apt/lists/*
+RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+
+# O store é um volume próprio (fs diferente do volume de node_modules), então o
+# hardlink do pnpm não se aplica: declarar `copy` evita o aviso a cada install.
+ENV npm_config_store_dir=/pnpm-store
+ENV npm_config_package_import_method=copy
+# O `playwright` da raiz baixaria ~150MB de Chromium a cada volume novo. Os
+# walkthroughs rodam no HOST (é lá que está o navegador), não aqui.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+WORKDIR /repo
+# Sem CMD útil de propósito: cada serviço do compose declara o seu.
+CMD ["node", "-e", "console.error('imagem de dev: o compose define o command de cada serviço'); process.exit(1)"]

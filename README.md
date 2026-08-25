@@ -26,6 +26,29 @@ pnpm --filter @edu/exp-02-unootube dev                       # :5174 (4º ano; v
 ```
 
 ## Subir para desenvolver (hot reload)
+
+Duas formas. **Nas duas o código do host é a fonte** — as imagens de produção
+(`docker compose up -d --build`) é que congelam um build e ficam velhas.
+
+### Tudo em container, sincronizado com o editor (recomendado)
+```bash
+pnpm docker:dev          # pg + api + hub + as 3 experiências, cada um com o seu watcher
+pnpm docker:dev:logs     # acompanha a recompilação
+pnpm docker:dev:down     # desce
+```
+O repo entra nos containers por bind mount: salvar um arquivo no editor
+recompila lá dentro (api ~1s, hub e Vite na hora), sem `build` e sem `up` de
+novo. Migrations e seed rodam sozinhos a cada `up` (serviço `migrate`), e o
+`node_modules` do host fica intocado — o do container é volume próprio, porque
+binário de macOS não roda no Linux da imagem.
+
+Depois de mexer em dependência (`package.json`/lockfile): `pnpm docker:dev:deps`.
+Se algum dia salvar um arquivo e nada recompilar: `DEV_POLLING=1 pnpm docker:dev`.
+
+As portas são as mesmas de sempre (hub :3000, api :3001, exps :5173/:5174/:5175),
+então **não dá para rodar isto e `pnpm dev` ao mesmo tempo** — escolha um.
+
+### Só o banco em container, o resto no host
 ```bash
 pnpm install
 docker compose up -d pg                # só o banco
@@ -40,8 +63,14 @@ pnpm dev                               # hub :3000, api :3001, exp :5173
 Ele é um gerenciador central de identidade, compartilhado entre contratos e com
 ciclo de vida próprio — por isso não sobe junto com a plataforma:
 ```bash
-docker compose -f wso2/docker-compose.yml up -d    # IS :9443, pg dele :5433
+docker compose -f wso2/docker-compose.yml up -d       # IS :9443, pg dele :5433
+docker compose -f wso2/docker-compose.yml watch       # e este fica olhando conf/ e bootstrap/
 ```
+O `watch` é o equivalente do hot reload para ele: `conf/` já entra por volume
+(nada de rebuild), e mudar o `deployment.toml` REINICIA o servidor — que é o
+ciclo mais curto possível num servidor Java, porque o entrypoint só copia o
+config-volume para o server home no boot (~2min). Mudar `bootstrap/` re-executa
+o bootstrap (idempotente); só mudar o `Dockerfile` (driver JDBC) refaz imagem.
 Vem configurado (tenant `dev-local`, app OIDC do hub, usuários de teste);
 `docker compose -f wso2/docker-compose.yml logs bootstrap` imprime as envs OIDC
 prontas para colar. Detalhes: `wso2/README.md`. Enquanto ele não é o emissor, o

@@ -1,0 +1,261 @@
+# Plataforma Unooria — a MESMA stack do docker-compose.yml, mas em modo
+# desenvolvimento: o código vem do host por bind mount e cada serviço roda o
+# seu watcher. Editar um arquivo no editor = container atualizado, sem
+# `docker compose build` e sem `up` de novo.
+#
+#   pnpm docker:dev            # sobe tudo (== docker compose -f docker-compose.dev.yml up -d)
+#   pnpm docker:dev:logs       # acompanha
+#   pnpm docker:dev:down       # desce
+#   pnpm docker:dev:deps       # reinstala node_modules (depois de mexer no package.json/lockfile)
+#
+# Sobe, tudo com hot reload:
+#   pg      Postgres da plataforma (5432, banco `unooria`)
+#   api     NestJS em `nest start --watch` (3001)
+#   hub     Next.js em `next dev` (3000)
+#   exp-01  Vite da Instanooria (5173)
+#   exp-02  Vite do UnooTube (5174)
+#   exp-90  Vite do plano de aula, ferramenta do professor (5175)
+#
+# As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
+# não existem porque em produção são bundles estáticos num bucket, não serviços.
+# Em dev elas são dev servers do Vite, e as portas são as MESMAS de
+# `apps/hub/lib/experiencias-dev.ts` (o hub monta o iframe a partir desse mapa,
+# e a origin do postMessage sai da mesma URL).
+#
+# Mesmo `name:` do compose de produção de propósito: os dois descrevem a mesma
+# stack nas mesmas portas, então trocar de um para o outro RECRIA os serviços em
+# vez de subir uma segunda cópia que brigaria pelas portas (use
+# `--remove-orphans` ao trocar, para os containers das exps saírem junto). O
+# volume do Postgres é o mesmo (`unooria-plataforma_pgdata`): o banco não se
+# perde na troca.
+#
+# O IdP (WSO2) continua em `wso2/docker-compose.yml` — lá o equivalente disto é
+# `docker compose -f wso2/docker-compose.yml watch` (ver wso2/README.md).
+name: unooria-plataforma
+
+# ── Volumes de código, compartilhados por todos os serviços node ──────────────
+#
+# O repo inteiro entra por bind mount; por cima dele, um volume para CADA
+# `node_modules` do workspace. Isso não é zelo: o `node_modules` do host é
+# binário de macOS (esbuild, sharp, engine do Prisma) e não roda no Linux do
+# container — e o inverso é pior, o install do container sobrescreveria com
+# binários Linux o `node_modules` que o `pnpm dev` do host usa. Os dois mundos
+# ficam isolados e cada um instala o seu.
+x-fonte: &fonte
+  - .:/repo
+  - nm-raiz:/repo/node_modules
+  - nm-api:/repo/apps/api/node_modules
+  - nm-hub:/repo/apps/hub/node_modules
+  - nm-sdk:/repo/packages/sdk/node_modules
+  - nm-ui:/repo/packages/ui/node_modules
+  - nm-exp01:/repo/apps/experiencias/exp-01-instanooria/node_modules
+  - nm-exp02:/repo/apps/experiencias/exp-02-unootube/node_modules
+  - nm-exp90:/repo/apps/experiencias/exp-90-plano-de-aula/node_modules
+  - nm-exp-template:/repo/apps/experiencias/_template/node_modules
+  - pnpm-store:/pnpm-store
+  # Artefatos de build também em volume, por dois motivos: não competir com o
+  # `.next`/`dist` que o `pnpm dev` do host escreve (sintoma clássico do
+  # conflito: tela branca / CSS bugado) e escrever no fs do container, que no
+  # macOS é bem mais rápido que o bind mount.
+  - hub-next:/repo/apps/hub/.next
+  - api-dist:/repo/apps/api/dist
+  # Os `.env` do HOST não podem valer dentro do container: eles apontam para
+  # `localhost` (que aqui é o próprio container) enquanto a rede do compose usa
+  # nomes de serviço. O `.dockerignore` cuida disso nas imagens de produção, mas
+  # não vale para bind mount — então cada um é coberto por um arquivo vazio.
+  - ./docker/env-vazio:/repo/apps/api/.env:ro
+  - ./docker/env-vazio:/repo/apps/api/.env.local:ro
+  - ./docker/env-vazio:/repo/apps/hub/.env:ro
+  - ./docker/env-vazio:/repo/apps/hub/.env.local:ro
+  - ./docker/env-vazio:/repo/apps/hub/.env.development:ro
+  - ./docker/env-vazio:/repo/apps/hub/.env.development.local:ro
+
+x-dev: &dev
+  image: unooria-dev:latest
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  volumes: *fonte
+  # Escape hatch dos watchers. MEDIDO nesta máquina (Docker Desktop 29 no
+  # macOS): os três recompilam sem polling — os eventos de inotify atravessam o
+  # bind mount, tanto para o tsc do Nest quanto para o chokidar do Vite e o
+  # webpack do Next. Se um dia salvar arquivo e nada recompilar (Docker Desktop
+  # mais antigo, gRPC-FUSE em vez de VirtioFS), suba com `DEV_POLLING=1`.
+  environment: &dev-env
+    WATCHPACK_POLLING: ${DEV_POLLING:-}
+    CHOKIDAR_USEPOLLING: ${DEV_POLLING:-}
+    VITE_USE_POLLING: ${DEV_POLLING:-}
+
+services:
+  pg:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: unooria
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -U postgres -d unooria"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  # `pnpm install` UMA vez, nos volumes que os outros serviços compartilham.
+  # Um serviço só para isso (e não um entrypoint em cada) porque seis installs
+  # simultâneos no mesmo `node_modules` corrompem a árvore: aqui todo mundo
+  # espera pelo `service_completed_successfully`. Idempotente e rápido quando
+  # nada mudou; depois de mexer em dependência, `pnpm docker:dev:deps`.
+  deps:
+    <<: *dev
+    command: >
+      sh -c "pnpm install --frozen-lockfile &&
+             pnpm --filter @edu/api exec prisma generate"
+    restart: "no"
+
+  # Migrations + seed antes da api subir, como no compose de produção — mas a
+  # partir do FONTE (ts-node), não de `dist/`. Os três passos são idempotentes.
+  migrate:
+    <<: *dev
+    working_dir: /repo/apps/api
+    command: >
+      sh -c "pnpm exec prisma migrate deploy &&
+             pnpm exec ts-node --transpile-only prisma/seed.ts &&
+             pnpm exec ts-node --transpile-only prisma/semear-demo.ts"
+    environment:
+      <<: *dev-env
+      DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+    depends_on:
+      pg:
+        condition: service_healthy
+      deps:
+        condition: service_completed_successfully
+    restart: "no"
+
+  api:
+    <<: *dev
+    working_dir: /repo/apps/api
+    command: pnpm exec nest start --watch
+    environment:
+      <<: *dev-env
+      DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+      # O emissor dos tokens é o HUB: o `issuer` é a origem que o BROWSER usa,
+      # mas o JWKS é buscado pela rede do compose (nome do serviço).
+      OIDC_ISSUER: http://localhost:3000
+      OIDC_JWKS_URI: http://hub:3000/.well-known/jwks.json
+      OIDC_AUDIENCE: plataforma-api
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID:-}
+      AI_DAILY_TOKEN_QUOTA_PER_ALUNO: "20000"
+      ASSETS_DRIVER: local
+      ASSETS_LOCAL_DIR: /repo/apps/api/storage
+      ASSETS_PUBLIC_URL: http://localhost:3001/assets
+      PLANOS_DRIVER: local
+      PLANOS_LOCAL_DIR: /repo/apps/api/storage-privado
+      TELEMETRIA_TOPIC: ""
+      # As três portas de exp entram no CORS: sem a :5175 o plano de aula
+      # embedado morre com "Failed to fetch".
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    depends_on:
+      pg:
+        condition: service_healthy
+      deps:
+        condition: service_completed_successfully
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      # A primeira compilação do watch leva bem mais que um boot de imagem
+      # pronta; sem isto o compose declararia a api doente antes de ela subir.
+      start_period: 90s
+
+  hub:
+    <<: *dev
+    working_dir: /repo/apps/hub
+    # `-H 0.0.0.0`: o default do next dev escuta em todas as interfaces, mas
+    # explicitar deixa claro que quem acessa está FORA do container.
+    command: pnpm exec next dev -p 3000 -H 0.0.0.0
+    environment:
+      <<: *dev-env
+      API_INTERNAL_URL: http://api:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_CDN_EXP_URL: http://localhost:5173
+      # Fora de produção e sem manifesto, o hub embeda o dev server de cada exp
+      # (mapa de portas em lib/experiencias-dev.ts) — endereços do BROWSER. Já a
+      # leitura do `experiencia.json` (que decide o aparelho/viewport) é
+      # server-side: de dentro do container, `localhost:5173` seria o próprio
+      # container. `EXP_INTERNAL_HOST` troca só o HOST e preserva a porta, então
+      # cada exp continua lendo o SEU manifesto (um `EXP_INTERNAL_URL` fixo
+      # apontaria as três para o mesmo arquivo).
+      EXP_INTERNAL_HOST: host.docker.internal
+      HUB_ORIGIN: http://localhost:3000
+      AUTH_URL: http://localhost:3000
+      AUTH_SECRET: ${AUTH_SECRET:-dev-secret-com-mais-de-32-caracteres-ok}
+      AUTH_TRUST_HOST: "true"
+      # Vazia = par RS256 efêmero (regenera a cada restart, invalidando tokens
+      # antigos). Vem do .env da raiz; em produção, do Secret Manager.
+      TOKEN_SIGNING_KEY_PEM: ${TOKEN_SIGNING_KEY_PEM:-}
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+
+  # ── Experiências (dev servers do Vite) ──────────────────────────────────────
+  # `--strictPort` porque a porta é contrato com o hub: sem ele o Vite pula para
+  # a próxima livre e o iframe passa a apontar para a experiência errada.
+  exp-01:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-01-instanooria
+    command: pnpm exec vite --host 0.0.0.0 --port 5173 --strictPort
+    ports:
+      - "5173:5173"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+  exp-02:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-02-unootube
+    command: pnpm exec vite --host 0.0.0.0 --port 5174 --strictPort
+    ports:
+      - "5174:5174"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+  exp-90:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-90-plano-de-aula
+    command: pnpm exec vite --host 0.0.0.0 --port 5175 --strictPort
+    ports:
+      - "5175:5175"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+  pnpm-store:
+  nm-raiz:
+  nm-api:
+  nm-hub:
+  nm-sdk:
+  nm-ui:
+  nm-exp01:
+  nm-exp02:
+  nm-exp90:
+  nm-exp-template:
+  hub-next:
+  api-dist:
