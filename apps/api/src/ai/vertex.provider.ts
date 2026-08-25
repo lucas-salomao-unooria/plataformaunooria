@@ -28,14 +28,18 @@ const dispatcher = new Agent({ headersTimeout: TIMEOUT_MS, bodyTimeout: TIMEOUT_
  */
 const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
 
-/** `gemini-2.0-flash` NÃO existe em `southamerica-east1` (medido: 404 "publisher
- *  model not found"); a família 2.5 existe. Default alinhado à região do contrato. */
-const MODELO_PADRAO = "gemini-2.5-flash";
+/** Catálogo por região, MEDIDO no projeto do contrato: o `gemini-3.6-flash` só
+ *  responde em `global` (404 em southamerica-east1, us-east1 e us-central1), e a
+ *  família 2.0 saiu do catálogo. Daí o par default 3.6-flash + `global`. */
+const MODELO_PADRAO = "gemini-3.6-flash";
+const LOCALIZACAO_PADRAO = "global";
+const MODELO_IMAGEM_PADRAO = "gemini-2.5-flash-image";
 
 /**
- * `global` não tem host regional (`https://aiplatform.googleapis.com`), e é a
- * saída quando um modelo não está publicado na região do contrato — hoje o
- * `gemini-2.5-pro`, ausente em `southamerica-east1`. Exportado para teste.
+ * `global` não tem host regional (`https://aiplatform.googleapis.com`) — é a
+ * única forma de alcançar modelo que a região não publica, e por isso virou o
+ * default: o gemini-3.6-flash não existe em nenhuma região testada. Pôr uma
+ * região na env volta ao host com prefixo. Exportado para teste.
  */
 export function endpointVertex(alvo: { project?: string; location: string; model: string }): string {
   const host =
@@ -44,8 +48,10 @@ export function endpointVertex(alvo: { project?: string; location: string; model
 }
 
 /**
- * Os modelos 2.5 "pensam" por padrão E os tokens de raciocínio saem do
- * `maxOutputTokens`. MEDIDO no gemini-2.5-flash: com pensamento dinâmico o
+ * Os modelos 2.5 e 3.x "pensam" por padrão E os tokens de raciocínio saem do
+ * `maxOutputTokens` — medido também no 3.6-flash, que gastou 521 tokens de
+ * pensamento numa resposta de três frases. MEDIDO no gemini-2.5-flash: com
+ * pensamento dinâmico o
  * modelo gastou o teto inteiro pensando e devolveu texto VAZIO com
  * `finishReason: MAX_TOKENS` — que na exp-90 vira "o plano ficou grande demais"
  * sem nenhum plano. O app origem (Claude via OpenRouter) não tinha essa etapa,
@@ -87,15 +93,16 @@ export class VertexProvider implements AiProvider {
 
   private endpoint(modelo?: string): string {
     const project = process.env.VERTEX_PROJECT_ID;
-    const location = process.env.VERTEX_LOCATION ?? "southamerica-east1";
+    const location = process.env.VERTEX_LOCATION ?? LOCALIZACAO_PADRAO;
     const model = modelo ?? process.env.VERTEX_MODEL ?? MODELO_PADRAO;
     return endpointVertex({ project, location, model });
   }
 
-  /** `longo` → modelo com saída grande (gemini-2.5-*: até 65k tokens de saída;
-   *  o 2.0-flash para em 8k, insuficiente para um plano anual). */
+  /** `longo` → modelo com saída grande: o plano anual passa de 8k tokens de
+   *  saída, teto de modelos menores. Hoje `longo` e `padrao` são o mesmo
+   *  modelo; a env separada existe para trocar um sem mexer no outro. */
   private modeloPara(familia: AiRequest["modelo"]): string | undefined {
-    if (familia === "longo") return process.env.VERTEX_MODEL_LONGO ?? "gemini-2.5-flash";
+    if (familia === "longo") return process.env.VERTEX_MODEL_LONGO ?? MODELO_PADRAO;
     return undefined;
   }
 
@@ -188,7 +195,7 @@ export class VertexProvider implements AiProvider {
   /** Imagem via modelo próprio (VERTEX_IMAGE_MODEL) com responseModalities —
    *  porte do `gerarImagemBytes` do origem para o endpoint Vertex/ADC. */
   async generateImage(prompt: string): Promise<Buffer> {
-    const modelo = process.env.VERTEX_IMAGE_MODEL ?? "gemini-2.0-flash-exp";
+    const modelo = process.env.VERTEX_IMAGE_MODEL ?? MODELO_IMAGEM_PADRAO;
     const res = await fetch(this.endpoint(modelo), {
       method: "POST",
       headers: {

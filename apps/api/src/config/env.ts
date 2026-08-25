@@ -20,22 +20,27 @@ export const EnvSchema = z.object({
   // Obrigatório quando o provider é `vertex` (superRefine abaixo): sem projeto
   // a URL vira `.../projects/undefined/...` e o erro só aparece na 1ª geração.
   VERTEX_PROJECT_ID: z.string().optional(),
-  // `global` também vale: é onde ficam os modelos ainda não publicados na
-  // região do contrato (hoje, o gemini-2.5-pro).
-  VERTEX_LOCATION: z.string().default("southamerica-east1"),
-  // 2.5, não 2.0: `gemini-2.0-flash` não está publicado em southamerica-east1.
-  VERTEX_MODEL: z.string().default("gemini-2.5-flash"),
+  // `global` é o default porque o gemini-3.6-flash SÓ existe lá: medido no
+  // projeto do contrato, ele dá 404 em southamerica-east1, us-east1 e
+  // us-central1. Pôr uma região aqui volta ao host regional — e ao catálogo
+  // dela (southamerica-east1 tem a família 2.5, não a 3.x nem a 2.0).
+  VERTEX_LOCATION: z.string().default("global"),
+  VERTEX_MODEL: z.string().default("gemini-3.6-flash"),
   // Modelo de SAÍDA LONGA (`AiRequest.modelo: "longo"`): planos anuais passam
-  // de 8k tokens de saída, o teto do 2.0-flash. A família 2.5 vai a 65k.
-  VERTEX_MODEL_LONGO: z.string().default("gemini-2.5-flash"),
+  // de 8k tokens de saída. Hoje é o mesmo modelo do dia a dia; a env separada
+  // existe para trocar um sem tocar no outro.
+  VERTEX_MODEL_LONGO: z.string().default("gemini-3.6-flash"),
   AI_DAILY_TOKEN_QUOTA_PER_ALUNO: z.coerce.number().int().positive().default(20000),
   // Professor gera planos cujo PROMPT sozinho tem ~220k tokens (currículo +
   // material didático); 2M/dia ≈ 6–9 planos. Regra 5 do CLAUDE.md, por perfil.
   AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: z.coerce.number().int().positive().default(2_000_000),
 
-  VERTEX_IMAGE_MODEL: z.string().default("gemini-2.0-flash-exp"),
+  // O `gemini-2.0-flash-exp` que era o default aqui não existe mais no
+  // catálogo (404 na região E em global): a arte da exp-01 caía sempre no
+  // fallback procedural. `gemini-2.5-flash-image` é o que responde hoje.
+  VERTEX_IMAGE_MODEL: z.string().default("gemini-2.5-flash-image"),
 
-  // Tokens de RACIOCÍNIO dos modelos 2.5, que saem do `maxOutputTokens`.
+  // Tokens de RACIOCÍNIO (famílias 2.5 e 3.x), que saem do `maxOutputTokens`.
   // 0 = desligado (paridade com o app origem, que usava Claude sem thinking e
   // é o que garante que o plano anual caiba no teto de saída); -1 = dinâmico.
   VERTEX_THINKING_BUDGET: z.coerce.number().int().min(-1).default(0),

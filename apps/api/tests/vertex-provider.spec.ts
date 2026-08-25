@@ -19,7 +19,7 @@ describe("endpoint do Vertex", () => {
   });
 
   test("global não leva prefixo no host, mas continua na URL", () => {
-    const url = endpointVertex({ project: "entre-redes", location: "global", model: "gemini-2.5-pro" });
+    const url = endpointVertex({ project: "entre-redes", location: "global", model: "gemini-3.6-flash" });
     expect(url.startsWith("https://aiplatform.googleapis.com/")).toBe(true);
     expect(url).toContain("/locations/global/");
   });

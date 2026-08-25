@@ -88,8 +88,10 @@ credencial é a SA do serviço e não há env de credencial nenhuma — só
 `VERTEX_PROJECT_ID` (obrigatória com `AI_PROVIDER=vertex`; o boot recusa sem
 ela), `VERTEX_LOCATION`, `VERTEX_MODEL`, `VERTEX_MODEL_LONGO` e
 `VERTEX_THINKING_BUDGET`. Sem o papel, toda geração falha com 403 do Vertex.
-Atenção ao catálogo por região: `southamerica-east1` publica a família 2.5, não
-o `gemini-2.0-flash`; modelo ausente na região sai por `VERTEX_LOCATION=global`.
+Atenção ao catálogo por região: o modelo escolhido (`gemini-3.6-flash`) só
+existe no endpoint `global`, então `VERTEX_LOCATION=global` — o processamento de
+IA NÃO fica em São Paulo, e isso precisa constar do contrato/DPA da rede. Voltar
+à região é trocar as duas envs juntas (localização + modelo da família 2.5).
 Em dev (host ou container) a mesma cadeia lê o ADC do
 `gcloud auth application-default login` — os compose montam esse arquivo em
 `/adc` como somente leitura.

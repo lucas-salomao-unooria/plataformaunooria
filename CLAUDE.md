@@ -158,12 +158,18 @@ no `AI_PROVIDER=mock` e a exp-90 devolvia um plano falso. Os dois compose montam
 o ADC do host em `/adc` (só leitura); em Cloud Run a service account do serviço
 já é a credencial, e ela precisa de `roles/aiplatform.user`.
 
-**Modelo × região.** `gemini-2.0-flash` NÃO está publicado em
-`southamerica-east1` (404 "publisher model not found"), `gemini-2.5-flash` está —
-por isso os defaults são 2.5. Modelo ausente na região do contrato (hoje o
-`gemini-2.5-pro`) sai por `VERTEX_LOCATION=global`, que não tem host regional.
+**Modelo × região (decisão, 2026-08).** O modelo é `gemini-3.6-flash` e a
+localização é `global` — para texto E para o plano de aula. Medido no projeto do
+contrato: o 3.6-flash dá 404 em `southamerica-east1`, `us-east1` e `us-central1`;
+só o endpoint `global` (sem host regional) o serve. A consequência é explícita e
+foi aceita: o tráfego de IA sai de São Paulo, inclusive o do aluno. Voltar para
+`VERTEX_LOCATION=southamerica-east1` é possível a qualquer momento, mas exige
+trocar TAMBÉM o modelo pelo que a região publica (família 2.5 — a 2.0 saiu do
+catálogo e a 3.x nunca esteve lá). A arte da exp-01 usa `gemini-2.5-flash-image`:
+o `gemini-2.0-flash-exp` que era o default não existe mais em lugar nenhum, e por
+isso toda geração de imagem caía no fallback procedural.
 
-**Raciocínio conta como saída.** Nos modelos 2.5 os tokens de pensamento saem do
+**Raciocínio conta como saída.** Nos modelos 2.5 e 3.x os tokens de pensamento saem do
 `maxOutputTokens`: com pensamento livre o plano anual voltava VAZIO com
 `finishReason: MAX_TOKENS`. `VERTEX_THINKING_BUDGET` (default `0`, desligado)
 mantém a paridade com o app origem, que usava Claude sem essa etapa; `-1` volta
