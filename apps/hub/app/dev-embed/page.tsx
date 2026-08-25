@@ -1,13 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { assinarTokenExperiencia } from "@/lib/chave-token";
+import { montarEmbed } from "@/lib/embed-experiencia";
 import { ExpHost } from "@/components/ExpHost";
-
-interface ExperienciaJson {
-  id?: string;
-  nome?: string;
-  viewport?: { largura: number; altura: number };
-}
 
 /**
  * Bancada de teste de experiência local (dev only): aponta para o dev server
@@ -28,39 +22,25 @@ export default async function DevEmbedPage({
 
   const { src: srcParam } = await searchParams;
   const base = (srcParam ?? "http://localhost:5173").replace(/\/$/, "");
-  const expOrigin = new URL(base).origin;
 
-  let meta: ExperienciaJson = {};
+  let expId = "exp-dev";
   try {
     const r = await fetch(`${base}/experiencia.json`, { cache: "no-store" });
-    if (r.ok) meta = (await r.json()) as ExperienciaJson;
+    if (r.ok) expId = ((await r.json()) as { id?: string }).id ?? expId;
   } catch {
-    // sem experiencia.json — segue sem viewport/nome
+    // sem experiencia.json — segue com id genérico
   }
 
-  const token = await assinarTokenExperiencia({
-    sub: usuario.id,
-    escola_id: usuario.escolaId,
-    turma_id: usuario.turmaId,
-    perfil: usuario.papel,
-  });
-
-  const hubOrigin = encodeURIComponent(process.env.HUB_ORIGIN ?? "http://localhost:3000");
+  const embed = await montarEmbed(expId, usuario, { srcDev: base });
   return (
     <ExpHost
-      expId={meta.id ?? "exp-dev"}
-      src={`${base}/?hubOrigin=${hubOrigin}`}
-      expOrigin={expOrigin}
-      token={token}
-      aluno={{
-        id: usuario.id,
-        nome: usuario.nome,
-        serie: usuario.serie ?? "",
-        turmaId: usuario.turmaId ?? "",
-        escolaId: usuario.escolaId,
-      }}
-      apiUrl={process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}
-      viewport={meta.viewport ?? null}
+      expId={expId}
+      src={embed.src}
+      expOrigin={embed.expOrigin}
+      token={embed.token}
+      aluno={embed.aluno}
+      apiUrl={embed.apiUrl}
+      viewport={embed.viewport}
     />
   );
 }

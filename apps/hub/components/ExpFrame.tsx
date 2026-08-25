@@ -111,8 +111,13 @@ export function ExpFrame(props: {
       style={{ border: 0, width: "100%", height: "100%", display: "block" }}
       // Cross-origin em produção (CDN): sem allow-same-origin a origin do
       // iframe vira "null" e a validação de origin quebra dos dois lados.
-      sandbox="allow-scripts allow-same-origin"
-      allow="fullscreen; clipboard-write"
+      // `allow-modals`: sem ele o navegador IGNORA `confirm()`/`alert()` do
+      // iframe em silêncio (devolve false) — a exp-90 confirma exclusão e
+      // restauração assim. Ferramenta 1ª parte; não abre nada além disso.
+      sandbox="allow-scripts allow-same-origin allow-modals"
+      // `autoplay`: a Permissions-Policy tem default 'self' — sem delegar,
+      // um <video muted autoplay> cross-origin rejeita play() em silêncio.
+      allow="autoplay; fullscreen; clipboard-write"
     />
   );
 }

@@ -1,0 +1,117 @@
+import "server-only";
+import type { Session } from "next-auth";
+import { assinarTokenExperiencia } from "./chave-token";
+import { baseDevDaExperiencia } from "./experiencias-dev";
+
+/**
+ * Montagem do embed de uma experiência — o que `/exp/[expId]` fazia inline,
+ * extraído porque agora há DUAS superfícies que embedam: a do aluno
+ * (`/exp/[expId]`) e a do professor (`/professor/plano-de-aula`, exp-90).
+ *
+ * Regras que valem para as duas:
+ *  - token assinado pelo hub com os claims do usuário LOGADO (sem tela de
+ *    login na experiência; WSO2 troca só o emissor);
+ *  - com manifesto: URL versionada do bucket/CDN (rollback = `versaoAtiva`);
+ *  - sem manifesto (dev): dev server do Vite da experiência
+ *    (`lib/experiencias-dev.ts`) ou o `srcDev` explícito (`/dev-embed?src=`);
+ *  - `expOrigin` do postMessage sai da MESMA URL do iframe, senão o ExpFrame
+ *    descarta o `exp:ready` por origin e o handshake expira.
+ */
+
+export type PublicoDaExperiencia = "aluno" | "professor";
+
+export interface ManifestoDeExperiencia {
+  expId: string;
+  nome: string;
+  versaoAtiva: string;
+  viewport?: { largura: number; altura: number } | null;
+  /** Ausente em linhas antigas = aluno (default do schema da api). */
+  publico?: PublicoDaExperiencia;
+}
+
+type Usuario = Session["usuario"];
+
+export interface Embed {
+  manifesto: ManifestoDeExperiencia | null;
+  src: string;
+  expOrigin: string;
+  token: string;
+  /** Nome herdado do protocolo v1: carrega o usuário logado, seja aluno ou professor. */
+  aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
+  apiUrl: string;
+  viewport: { largura: number; altura: number } | null;
+}
+
+/** Consulta o manifesto de versões na api (tabela `experiencias`). */
+export async function buscarManifesto(expId: string, token: string): Promise<ManifestoDeExperiencia | null> {
+  try {
+    const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
+    const r = await fetch(`${apiUrl}/experiencias/${encodeURIComponent(expId)}`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!r.ok) return null;
+    const { experiencia } = (await r.json()) as { experiencia: ManifestoDeExperiencia | null };
+    return experiencia;
+  } catch {
+    return null;
+  }
+}
+
+export async function montarEmbed(
+  expId: string,
+  usuario: Usuario,
+  opts: { srcDev?: string } = {},
+): Promise<Embed> {
+  const token = await assinarTokenExperiencia({
+    sub: usuario.id,
+    escola_id: usuario.escolaId,
+    turma_id: usuario.turmaId,
+    perfil: usuario.papel,
+  });
+
+  const emProducao = process.env.NODE_ENV === "production";
+  // `srcDev` (bancada /dev-embed) dispensa o manifesto; fora de produção e sem
+  // manifesto, cai no dev server registrado da experiência.
+  const manifesto = opts.srcDev && !emProducao ? null : await buscarManifesto(expId, token);
+
+  const cdn = process.env.NEXT_PUBLIC_CDN_EXP_URL ?? "http://localhost:5173";
+  const emDev = !manifesto && !emProducao;
+  const base = (emDev ? (opts.srcDev ?? baseDevDaExperiencia(expId, cdn)) : cdn).replace(/\/$/, "");
+
+  // DEV sem manifesto: o Vite serve a exp na raiz — o viewport vem do
+  // experiencia.json dele (por isso o arquivo vive em `public/`).
+  let viewportDev: { largura: number; altura: number } | null = null;
+  if (emDev) {
+    try {
+      const r = await fetch(`${base}/experiencia.json`, { cache: "no-store" });
+      if (r.ok) {
+        const meta = (await r.json()) as { viewport?: { largura: number; altura: number } };
+        viewportDev = meta.viewport ?? null;
+      }
+    } catch {
+      // sem dev server no ar — segue sem viewport
+    }
+  }
+
+  const hubOrigin = encodeURIComponent(process.env.HUB_ORIGIN ?? "http://localhost:3000");
+  const src = manifesto
+    ? `${cdn}/${manifesto.expId}/${manifesto.versaoAtiva}/index.html?hubOrigin=${hubOrigin}`
+    : `${base}/?hubOrigin=${hubOrigin}`;
+
+  return {
+    manifesto,
+    src,
+    expOrigin: new URL(base).origin,
+    token,
+    aluno: {
+      id: usuario.id,
+      nome: usuario.nome,
+      serie: usuario.serie ?? "",
+      turmaId: usuario.turmaId ?? "",
+      escolaId: usuario.escolaId,
+    },
+    apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
+    viewport: manifesto?.viewport ?? viewportDev,
+  };
+}

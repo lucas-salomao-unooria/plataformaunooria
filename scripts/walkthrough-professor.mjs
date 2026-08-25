@@ -65,6 +65,20 @@ async function iconesViraramTexto() {
   });
 }
 
+/** Mesmo check, dentro do iframe da experiência (a exp-90 carrega o DS por conta própria). */
+async function iconesNoFrame() {
+  const frame = p.frames().find((f) => f !== p.mainFrame() && f.url().includes("hubOrigin="));
+  if (!frame) return "iframe não encontrado";
+  return frame.evaluate(() => {
+    const alvo = [...document.querySelectorAll("span")].find((s) =>
+      (s.className || "").toString().includes("material-symbols"),
+    );
+    if (!alvo) return "sem ícone na tela";
+    const carregou = document.fonts.check(`24px "Material Symbols Rounded"`);
+    return carregou ? "ok" : "FONTE NÃO CARREGOU";
+  });
+}
+
 try {
   // ---- professor ---------------------------------------------------------
   await entrar("prof.demo");
@@ -75,12 +89,87 @@ try {
   await p.waitForTimeout(1500);
   await registrar("trilha-entre-redes");
 
+  // ---- UnooTube (4º ano · unidade 1): missão sem atividades + resultados ---
+  await p.goto(`${HUB}/professor/entre-redes/4-ano/unidade-1`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1500);
+  await registrar("missao-unootube", p.url().replace(HUB, ""));
+  await p.locator("a", { hasText: "Ver resultados da turma" }).click();
+  await p.waitForSelector("select#turma", { timeout: 15_000 });
+  await p.selectOption("select#turma", { label: /4A/ }).catch(async () => {
+    const opcoes = p.locator("select#turma option");
+    if ((await opcoes.count()) > 1) await p.selectOption("select#turma", { index: 1 });
+  });
+  await p.waitForURL("**turmaId=**", { timeout: 15_000 });
+  await p.waitForTimeout(2500);
+  const linhasUnootube = await p.locator("table tbody tr").count().catch(() => 0);
+  await registrar("resultados-unootube", `${linhasUnootube} alunos na tabela`);
+
   const atividade = p.locator('a[href^="/professor/atividades/"]').first();
   if (await atividade.count()) {
     await atividade.click();
     await p.waitForTimeout(3000);
     await registrar("tela-da-atividade", p.url().replace(HUB, ""));
   }
+
+  // ---- plano de aula: exp-90 embedada no hub ------------------------------
+  // Diálogos nativos (confirm de excluir) são aceitos; sem isto o Playwright trava.
+  p.on("dialog", (d) => void d.accept());
+  await p.goto(`${HUB}/professor`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1000);
+  const cardPlano = p.locator('a[href="/professor/plano-de-aula"]');
+  console.log("   card do plano de aula é interno:", (await cardPlano.count()) === 1 ? "sim" : "NÃO");
+  await cardPlano.first().click();
+  await p.waitForURL((url) => url.pathname === "/professor/plano-de-aula", { timeout: 30_000 });
+  const exp = p.frameLocator('iframe[title="experiencia"]');
+  await exp.getByText("Meus planos de aula").waitFor({ timeout: 45_000 });
+  await registrar("plano-de-aula-lista", "iframe da exp-90 carregado");
+  console.log("   ícones no iframe:", await iconesNoFrame());
+
+  await exp.getByRole("button", { name: /Novo plano|Gerar meu primeiro plano/ }).first().click();
+  await exp.getByText("Novo plano de aula").waitFor({ timeout: 10_000 });
+  // Com uma única disciplina disponível o app já a pré-seleciona.
+  const escolherDisciplina = exp.getByText("Selecione a disciplina");
+  if (await escolherDisciplina.isVisible().catch(() => false)) {
+    await escolherDisciplina.click();
+    await exp.getByText("Letramento Digital").first().click();
+  }
+  await exp.getByText("Selecione a série").click();
+  await exp.getByText("8º ano").first().click();
+  await registrar("plano-de-aula-escolha");
+  await exp.getByRole("button", { name: "Gerar plano de aula" }).click();
+  // Mock devolve em segundos; Vertex real leva minutos — o teto cobre o mock.
+  await exp.locator("table").first().waitFor({ timeout: 90_000 });
+  await registrar("plano-de-aula-editor", "tabela do plano renderizada no editor");
+
+  const editor = exp.locator('[contenteditable="true"]').first();
+  await editor.click();
+  await p.keyboard.press("End");
+  await p.keyboard.type(" Editado no smoke visual.");
+  await exp.getByText("Alterações não salvas", { exact: false }).waitFor({ timeout: 5_000 });
+  await exp.getByRole("button", { name: "Salvar" }).click();
+  await exp.getByText(/Salvo às/).waitFor({ timeout: 15_000 });
+  await registrar("plano-de-aula-salvo");
+
+  // Persistiu? Recarrega, abre o primeiro da lista e procura o texto digitado.
+  await p.reload({ waitUntil: "domcontentloaded" });
+  const exp2 = p.frameLocator('iframe[title="experiencia"]');
+  await exp2.getByText("Meus planos de aula").waitFor({ timeout: 45_000 });
+  await exp2.getByText(/Plano Anual/).first().click();
+  await exp2.locator('[contenteditable="true"]').first().waitFor({ timeout: 15_000 });
+  const persistiu = (await exp2.locator('[contenteditable="true"]').first().innerText()).includes("Editado no smoke visual.");
+  console.log("   edição persistiu após recarregar:", persistiu ? "sim" : "NÃO");
+  await registrar("plano-de-aula-reaberto", persistiu ? "conteúdo salvo voltou" : "CONTEÚDO NÃO VOLTOU");
+
+  await exp2.getByRole("button", { name: "Meus planos" }).click();
+  await exp2.getByText("Meus planos de aula").waitFor({ timeout: 10_000 });
+  const antesDeExcluir = await exp2.getByText(/Plano Anual/).count();
+  await exp2.getByRole("button", { name: /^Excluir / }).first().click();
+  await p.waitForTimeout(1500);
+  const depoisDeExcluir = await exp2.getByText(/Plano Anual/).count();
+  // `confirm()` só funciona com `allow-modals` no sandbox do ExpFrame — sem
+  // isso o clique é ignorado em silêncio e a contagem não muda.
+  console.log("   excluir removeu da lista:", depoisDeExcluir < antesDeExcluir ? "sim" : "NÃO");
+  await registrar("plano-de-aula-excluido", depoisDeExcluir < antesDeExcluir ? "lista diminuiu" : "LISTA NÃO MUDOU");
 
   // ---- gestor: importação de usuários ------------------------------------
   await p.goto(`${HUB}/api/auth/signout`, { waitUntil: "domcontentloaded" }).catch(() => {});
