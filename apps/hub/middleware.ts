@@ -22,7 +22,7 @@ export default auth((request) => {
 
   if (areaDoPathname(pathname) !== areaDoPapel(usuario.papel)) {
     const url = request.nextUrl.clone();
-    url.pathname = homeDoPapel(usuario.papel);
+    url.pathname = homeDoPapel(usuario.papel, usuario.serie);
     url.search = "";
     return NextResponse.redirect(url);
   }

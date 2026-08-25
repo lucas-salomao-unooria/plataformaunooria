@@ -1,0 +1,84 @@
+# exp-02-unootube — UnooTube
+
+Clone educacional do YouTube Shorts sobre **fontes confiáveis vs. sensacionalismo**
+(Entre Redes · 4º ano EF · unidade 1). Portado do projeto standalone `UnooTube`
+(Next.js) para a estrutura de experiências da plataforma (Vite + `@edu/sdk`).
+
+## A missão
+
+1. O aluno abre um feed com 21 vídeos curtos de História (Grandes Navegações,
+   escrita cuneiforme, arqueologia…). Metade tem fonte verificável e poucos
+   inscritos; a outra metade é sensacionalista e tem "1 mil inscritos".
+2. Ele salva **até 3** vídeos em que confiaria. Cada salvo muda o canal dele:
+   fake dá +1000 inscritos, confiável dá +50 e conta 1 "fonte confiável".
+3. Ao 3º salvo o **ranking da turma** desbloqueia — 39 colegas fictícios + o
+   aluno, ordenados por inscritos: quem escolheu fake vence.
+4. **"Adicionar credibilidade"** revela a coluna de fontes confiáveis e a
+   métrica vira: *"Ter muitos inscritos não significa contar a verdade."*
+   Esse clique é a conclusão (`exp.concluir({ score })`).
+
+## O que é server-side (regra 3 do CLAUDE.md)
+
+O gabarito (`factual`) e o estado da missão vivem em `apps/api/src/unootube`.
+A experiência só recebe o catálogo sem gabarito e manda escolhas:
+
+| Chamada | Quando |
+|---|---|
+| `GET /unootube/sessao` | boot (catálogo, estado, aluno, ranking se desbloqueado) |
+| `POST /unootube/salvos {videoId}` / `POST /unootube/salvos/:id/remover` | salvar / remover |
+| `POST /unootube/curtidos/:id` | curtir (toggle, sem efeito no jogo) |
+| `GET /unootube/ranking` | abrir o ranking (409 `RANKING_BLOQUEADO` antes dos 3) |
+| `POST /unootube/credibilidade` | conclusão — devolve `score` |
+| `POST /unootube/reiniciar` | "Reiniciar missão" no perfil |
+
+Após a credibilidade, salvar/remover devolvem 409 `MISSAO_CONCLUIDA` (o score
+já foi reportado). Reiniciar descongela.
+
+## Telemetria (canal analítico da SDK)
+
+| verbo | objeto |
+|---|---|
+| `attempted` | `exp-02-unootube` (boot) |
+| `interacted` | `salvar:vNN`, `remover-salvo:vNN`, `curtir:vNN`, `descurtir:vNN`, `tela:playlists\|ranking\|perfil`, `descricao:vNN`, `som:on\|off`, `ordenar:inscritos\|confiaveis`, `busca-bloqueada`, `reiniciar` |
+| `progressed` | `missao-3-salvos` com `resultado: { inscritos, fontesConfiaveis }` |
+| `completed` | via `exp.concluir` em "Adicionar credibilidade" (`score = fontesConfiaveis`) |
+
+Nenhum evento carrega se um vídeo é confiável — o cliente não sabe.
+
+## Vídeos (fora do git)
+
+Os 21 mp4 (~52 MB, 10 s cada, 9:16) não são versionados (regra ">2 MB vai
+para o bucket").
+
+- **Dev**: copie-os para `public/videos/vNN.mp4` (pasta gitignorada) — o Vite
+  serve em `./videos`. Origem: `~/Documents/UnooTube-projeto-completo/public/videos`.
+- **Prod**: suba uma vez por contrato para
+  `gs://{contrato}-assets/exp-02-unootube/videos/` e builde com
+  `VITE_VIDEOS_BASE_URL=https://<cdn-assets>/exp-02-unootube/videos`
+  (`docs/INFRA.md`).
+
+## Rodar
+
+```bash
+pnpm --filter @edu/exp-02-unootube dev      # :5174 (a exp-01 usa :5173)
+```
+
+Logado no hub como aluno do 4º ano (`aluno4a01` / `unooria123` no seed), a
+home é `/exp/exp-02-unootube`. Em dev o hub acha o Vite pela porta mapeada em
+`apps/hub/lib/experiencias-dev.ts`. Sem `viewport` no manifesto: tela cheia.
+
+## Contrato com o smoke visual
+
+`scripts/walkthrough-aluno-unootube.mjs` depende destes textos/seletores:
+`text=UnooTube`, `button[aria-label="Salvar vídeo"]`, "Missão concluída",
+botão/aba "Ranking", "Adicionar credibilidade" e a frase
+"Ter muitos inscritos não significa contar a verdade".
+
+## Decisões
+
+- URLs das fontes são **texto**, não link (sandbox do iframe bloqueia popups;
+  alunos não saem da plataforma).
+- Colegas do ranking são **fictícios** (distribuição fixa para a lição; sem
+  pontuação de colegas reais — LGPD).
+- Sem Tailwind e sem design system: preflight mínimo em `estilos/globals.css`;
+  o disfarce é YouTube.

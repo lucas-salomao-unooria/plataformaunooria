@@ -4,6 +4,7 @@ import { AlertBox, Card } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
 import {
+  MISSAO_ATUAL,
   buscarMissao,
   rotaDaMissao,
   rotuloDaMissao,
@@ -30,7 +31,10 @@ export default async function GuiaPage({
 
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   // Só missão publicada tem guia: unidade "em breve" não tem aula para guiar.
+  // E este guia é o do Instanooria (doc 09) — outras missões têm o próprio
+  // roteiro na página da missão, não este.
   if (!encontrado || encontrado.missao.status !== "disponivel") notFound();
+  if (encontrado.missao.expId !== MISSAO_ATUAL.expId) notFound();
   const { ano, missao } = encontrado;
 
   return (

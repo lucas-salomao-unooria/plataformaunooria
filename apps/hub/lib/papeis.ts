@@ -2,19 +2,21 @@
  * Papéis e roteamento por papel — edge-safe (o middleware importa daqui).
  * Contrato congelado com a api (apps/api/src/auth/claims.ts).
  */
+import { expIdDoAluno } from "./experiencia-do-aluno";
+
 export type Papel = "aluno" | "professor" | "gestor" | "admin-contrato";
 
 export const PAPEIS: readonly Papel[] = ["aluno", "professor", "gestor", "admin-contrato"];
 
 /** Área inicial de cada papel. Papéis são mutuamente exclusivos. */
-export function homeDoPapel(papel: Papel): string {
+export function homeDoPapel(papel: Papel, serie?: string | null): string {
   if (papel === "professor") return "/professor";
   if (papel === "gestor") return "/admin/usuarios";
   // admin-contrato ganha /analise na fase M6; até lá administra usuários.
   if (papel === "admin-contrato") return "/admin/usuarios";
-  // Enquanto houver UMA experiência, o aluno cai direto no aparelho dela
-  // (não há hub para o aluno — decisão herdada do origem).
-  return "/exp/exp-01-instanooria";
+  // Não há hub para o aluno (decisão herdada do origem): ele cai direto na
+  // experiência da série dele — `lib/experiencia-do-aluno.ts`.
+  return `/exp/${expIdDoAluno(serie)}`;
 }
 
 /** A que área um pathname pertence, para o redirect cross-área. */

@@ -12,12 +12,13 @@
  * uma missão são instâncias no banco (`activities`), com rota própria em
  * `/professor/atividades/**`.
  *
- * NOTA DE MODELAGEM: enquanto existir uma única missão disponível, toda
+ * NOTA DE MODELAGEM: enquanto existir uma única missão COM ATIVIDADES, toda
  * atividade pertence a `MISSAO_ATUAL` por construção — por isso `activities`
- * ainda não tem coluna `missao`. Quando a segunda missão entrar, o caminho é
- * adicionar essa coluna (default = slug da missão atual) e filtrar as listagens
- * por ela; os pontos que hoje assumem a missão única estão marcados com
- * `MISSAO_ATUAL` no código.
+ * ainda não tem coluna `missao`. Missões sem `activities` (o UnooTube do 4º
+ * ano: conteúdo fixo, resultados em tabela própria da api) não mudam isso.
+ * Quando a segunda missão configurável entrar, o caminho é adicionar essa
+ * coluna (default = slug da missão atual) e filtrar as listagens por ela; os
+ * pontos que hoje assumem a missão única estão marcados com `MISSAO_ATUAL`.
  */
 
 export type StatusMissao = "disponivel" | "em-breve";
@@ -45,6 +46,11 @@ export type Missao = {
   anoSlug: string;
   unidadeSlug: string;
   unidade: number;
+  /**
+   * Id da experiência do aluno (`apps/experiencias/<expId>`): a chave que liga
+   * catálogo, manifesto `experiencias` e `/exp/:expId`. Só em missão disponível.
+   */
+  expId?: string;
   titulo: string;
   resumo: string;
   status: StatusMissao;
@@ -95,6 +101,7 @@ export const MISSAO_ATUAL: Missao = {
   anoSlug: "8-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
+  expId: "exp-01-instanooria",
   titulo: "O Conteúdo que não chegou",
   resumo:
     "O aluno investiga uma pergunta do seu conteúdo dentro de uma rede social — e só na revelação final descobre que o feed dele foi montado para puxá-lo para um dos lados.",
@@ -130,7 +137,59 @@ export const MISSAO_ATUAL: Missao = {
   },
 };
 
+/**
+ * 4º ano · Unidade 1 — o UnooTube: fontes confiáveis vs. sensacionalismo num
+ * clone do YouTube Shorts. Sem atividades configuráveis: o conteúdo é fixo (21
+ * vídeos de História), o professor só entra com a turma e lê os resultados.
+ */
+export const MISSAO_UNOOTUBE: Missao = {
+  anoSlug: "4-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp-02-unootube",
+  titulo: "UnooTube — Em quais fontes você confiaria?",
+  resumo:
+    "Num feed de vídeos curtos sobre História, o aluno salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
+  status: "disponivel",
+  ficha: {
+    competencia:
+      "Letramento digital — distinguir fontes confiáveis de conteúdo sensacionalista em vídeos curtos, e perceber que inscritos não medem verdade.",
+    duracao: "1 aula (50 min)",
+    formato: "Clone do YouTube Shorts com 21 vídeos de História (Grandes Navegações, escrita, arqueologia)",
+    atos: [
+      {
+        rotulo: "1 — Explorar o feed",
+        texto:
+          "O aluno assiste aos Shorts e salva até 3 vídeos que pareçam contar uma história confiável. Metade cita fonte verificável e tem poucos inscritos; a outra metade é sensacionalista e tem '1 mil inscritos'.",
+      },
+      {
+        rotulo: "2 — Ranking por inscritos",
+        texto:
+          "Ao 3º salvo, o ranking da turma abre ordenado por inscritos — e quem escolheu fake aparece no topo. O aluno se vê perdendo por ter acertado.",
+      },
+      {
+        rotulo: "3 — Adicionar credibilidade",
+        texto:
+          "Um botão revela a coluna 'fontes confiáveis' e a métrica vira. A frase que fica: ter muitos inscritos não significa contar a verdade.",
+      },
+    ],
+    preparo: [
+      "Conferir som ou fones: os vídeos começam mudos e o aluno liga o som.",
+      "Avisar que a pesquisa do app está bloqueada durante a missão — é de propósito.",
+      "Nada a configurar: é só entrar com a turma e acompanhar os resultados aqui.",
+    ],
+  },
+};
+
 export const ANOS: Ano[] = [
+  {
+    slug: "4-ano",
+    rotulo: "4º ano",
+    etapa: "Ensino Fundamental — Anos Iniciais",
+    missoes: [MISSAO_UNOOTUBE, ...unidadesEmBreve("4-ano", [1])].sort(
+      (a, b) => a.unidade - b.unidade,
+    ),
+  },
   {
     slug: "6-ano",
     rotulo: "6º ano",

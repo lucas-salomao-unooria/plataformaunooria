@@ -4,8 +4,9 @@ import { Badge, Card } from "@edu/ui/ds";
 import type { Ano, Missao } from "@/lib/entre-redes/catalogo";
 import { rotaDaMissao } from "@/lib/entre-redes/catalogo";
 
-function rodape(atividades: number | undefined): string {
-  if (atividades === undefined) return "";
+function rodape(missao: Missao, atividades: number | undefined): string {
+  // Missão sem atividades configuráveis (ex.: UnooTube): o professor só entra com a turma.
+  if (atividades === undefined) return missao.expId ? "Sem configuração — é só entrar com a turma" : "";
   if (atividades === 0) return "Nenhuma atividade criada";
   if (atividades === 1) return "1 atividade";
   return `${atividades} atividades`;
@@ -55,7 +56,7 @@ export function CartaoMissao({
 
         {emBreve ? null : (
           <p className="mt-auto pt-1 text-[12px] text-unooria-neutral-500">
-            {rodape(atividades)}
+            {rodape(missao, atividades)}
           </p>
         )}
       </div>
