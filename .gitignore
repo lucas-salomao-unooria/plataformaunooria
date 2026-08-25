@@ -1,6 +1,10 @@
 node_modules/
 dist/
 .next/
+# Build de producao do hub (HUB_DIST_DIR=.next-prod, `pnpm build:isolado`).
+# Entrou no git por acidente em 36bf8d0 e sujava o status a cada build.
+.next-prod/
+*.tsbuildinfo
 .turbo/
 .env
 .env.*
