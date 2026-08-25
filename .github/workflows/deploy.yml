@@ -44,4 +44,12 @@ jobs:
             ver=$(node -p "require('./$dir/package.json').version")
             gsutil -m rsync -r -d "$dir/dist" "gs://$CONTRATO-exp/$exp/$ver/"
             echo "publicada $exp@$ver"
+            # Manifesto (tabela `experiencias`): é isto que o hub lê para montar a
+            # URL do iframe. Token admin-contrato assinado com a chave do hub.
+            API_URL="$API_URL" HUB_ORIGIN="$HUB_ORIGIN" TOKEN_SIGNING_KEY_PEM="$TOKEN_SIGNING_KEY_PEM" \
+              node apps/hub/scripts/publicar-manifesto.mjs "$dir"
           done
+        env:
+          API_URL: ${{ vars.API_URL }}            # https://{contrato}-api-...run.app
+          HUB_ORIGIN: ${{ vars.HUB_ORIGIN }}      # mesmo issuer que o hub usa nos tokens
+          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `token-signing-key`

@@ -11,6 +11,12 @@ coverage/
 # Assets gerados em dev (ASSETS_DRIVER=local)
 storage/
 apps/api/storage/
+# Planos de aula em dev (PLANOS_DRIVER=local) — privado, fora do static /assets
+storage-privado/
+apps/api/storage-privado/
 
 # Prints dos walkthroughs
 testes/walkthrough-*/
+
+# Mídia pesada das experiências (>2MB vai para o bucket de assets, não para o git)
+apps/experiencias/exp-02-unootube/public/videos/

@@ -16,9 +16,10 @@
 # Enquanto o WSO2 não é o emissor, o próprio hub assina os tokens de
 # experiência (RS256) e serve o JWKS em /.well-known/jwks.json.
 #
-# A EXPERIÊNCIA (exp-01) não entra aqui: em produção ela é um bundle estático
-# num bucket, não um serviço. Em dev, rode à parte:
+# As EXPERIÊNCIAS não entram aqui: em produção são bundles estáticos num
+# bucket, não serviços. Em dev, rode à parte (portas em apps/hub/lib/experiencias-dev.ts):
 #   pnpm --filter @edu/exp-01-instanooria dev     # :5173
+#   pnpm --filter @edu/exp-02-unootube dev        # :5174
 name: unooria-plataforma
 
 services:
@@ -82,7 +83,7 @@ services:
       ASSETS_LOCAL_DIR: /app/storage
       ASSETS_PUBLIC_URL: http://localhost:3001/assets
       TELEMETRIA_TOPIC: ""
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174
       PORT: "3001"
     ports:
       - "3001:3001"
