@@ -52,6 +52,11 @@ export const EnvSchema = z.object({
   PLANOS_IMPORT_TOKEN: z.string().optional(),
 
   TELEMETRIA_TOPIC: z.string().optional().default(""),
+  // Tranca do `POST /telemetry/ingest` (push do Pub/Sub): a SA que assina o
+  // push e a audience configurada na subscription. Ausentes = rota fechada,
+  // nunca aberta — ver `pubsub-push.guard.ts`. Em dev não há Pub/Sub.
+  TELEMETRIA_PUSH_SA: z.string().optional(),
+  TELEMETRIA_PUSH_AUDIENCE: z.string().optional(),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175"),
   PORT: z.coerce.number().int().default(3001),
 });

@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, Post, Req, UseGuards } from "@nestjs/common
 import { PubSub } from "@google-cloud/pubsub";
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
+import { PubSubPushGuard } from "./pubsub-push.guard";
 import { TokenService } from "../auth/token.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -94,14 +95,18 @@ export class TelemetryController {
    * Consumo da PUSH SUBSCRIPTION do Pub/Sub: grava em `telemetria_eventos`.
    *
    * Push (e não um worker próprio) porque é uma peça a menos para operar — o
-   * `{contrato}-telemetry-worker` do docs/INFRA.md fica adiado. O endpoint é
-   * protegido pelo OIDC token que o Pub/Sub envia no Authorization; em dev,
-   * sem `TELEMETRIA_TOPIC`, nada chega aqui.
+   * `{contrato}-telemetry-worker` do docs/INFRA.md fica adiado.
+   *
+   * `PubSubPushGuard` verifica o ID token que o Pub/Sub assina (emissor Google
+   * + audience + SA de push). Sem ele a rota seria um endpoint público que
+   * escreve dado de aluno com o `escolaId` vindo do corpo. Em dev, sem
+   * `TELEMETRIA_TOPIC`, nada chega aqui.
    *
    * `ON CONFLICT DO NOTHING` no `event_id`: o Pub/Sub garante *at least once*,
    * então reentrega é rotina, não exceção.
    */
   @Post("ingest")
+  @UseGuards(PubSubPushGuard)
   @HttpCode(204)
   async ingest(@Body() body: unknown) {
     const envelope = PushSchema.safeParse(body);

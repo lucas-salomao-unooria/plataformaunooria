@@ -80,6 +80,9 @@ cross-escola). Usuários entram por CSV: `POST /usuarios/importar-csv`
   Pub/Sub → push subscription → `POST /telemetry/ingest` → `telemetria_eventos`
   (`ON CONFLICT DO NOTHING`: o Pub/Sub entrega *at least once*). No `pagehide`,
   `POST /telemetry/beacon` com o token no CORPO — `sendBeacon` não manda header.
+  `/telemetry/ingest` não tem OidcGuard (quem chama é o Pub/Sub) e por isso tem
+  o `PubSubPushGuard`: ID token do Google, `aud` == `TELEMETRIA_PUSH_AUDIENCE`,
+  `email` == `TELEMETRIA_PUSH_SA`. Envs ausentes = rota 401, nunca aberta.
 
 ### Manifesto de experiências (tabela `experiencias` na api)
 O CI, ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, faz upsert
