@@ -1,0 +1,142 @@
+# WSO2 Identity Server 7.3.0 — configuração para Cloud Run (GCP).
+#
+# Diferenças em relação ao conf/ local:
+#   - vai EMBUTIDO na imagem (wso2/gcp/Dockerfile), não em config-volume: em
+#     produção a imagem é imutável e pinável por digest;
+#   - o TLS termina fora do container (Cloud Run/LB), então o tráfego chega no
+#     conector HTTP 9763 e o proxyPort faz as URLs gerarem https;
+#   - keystore próprio (montado do Secret Manager) e [encryption] key.
+#
+# Segredos continuam entrando por $env{} — no GCP as envs vêm do Secret
+# Manager via Terraform (repo "Identidade Plataforma Unooria").
+
+[server]
+hostname = "$env{SERVER_HOSTNAME}"
+node_ip = "127.0.0.1"
+# Sem porta: atrás do proxy a porta pública é a 443 implícita.
+base_path = "https://$ref{server.hostname}"
+
+[super_admin]
+username = "$env{ADMIN_USERNAME}"
+password = "$env{ADMIN_PASSWORD}"
+create_admin_account = true
+
+[user_store]
+type = "database_unique_id"
+
+# ---------------------------------------------------------------------------
+# ⚠️ PONTO DO SPIKE (validar no primeiro boot — ver INFRA-IDENTITY.md §2):
+# o discovery (/oauth2/token/.well-known/openid-configuration) precisa anunciar
+# URLs https://, e o login no console não pode entrar em loop de redirect.
+# Se falhar, o fallback é VM COS atrás do mesmo LB — não é GKE.
+# ---------------------------------------------------------------------------
+[transport.http.properties]
+proxyPort = 443
+
+[transport.https.properties]
+proxyPort = 443
+
+# ---------------------------------------------------------------------------
+# Datasources — Cloud SQL via IP privado (Direct VPC egress), JDBC puro.
+# As URLs vêm prontas por env: $env{} substitui o campo inteiro, não interpola.
+# ---------------------------------------------------------------------------
+
+[database.identity_db]
+url = "$env{DB_URL_IDENTITY}"
+username = "$env{DB_USER}"
+password = "$env{DB_PASSWORD}"
+driver = "org.postgresql.Driver"
+
+[database.identity_db.pool_options]
+maxActive = "40"
+maxWait = "60000"
+minIdle = "5"
+testOnBorrow = true
+validationQuery = "SELECT 1; COMMIT"
+validationInterval = "30000"
+defaultAutoCommit = false
+commitOnReturn = true
+
+[database.shared_db]
+url = "$env{DB_URL_SHARED}"
+username = "$env{DB_USER}"
+password = "$env{DB_PASSWORD}"
+driver = "org.postgresql.Driver"
+
+[database.shared_db.pool_options]
+maxActive = "40"
+maxWait = "60000"
+minIdle = "5"
+testOnBorrow = true
+validationQuery = "SELECT 1; COMMIT"
+validationInterval = "30000"
+defaultAutoCommit = false
+commitOnReturn = true
+
+[datasource.AgentIdentity]
+id = "AgentIdentity"
+url = "$env{DB_URL_AGENT}"
+username = "$env{DB_USER}"
+password = "$env{DB_PASSWORD}"
+driver = "org.postgresql.Driver"
+
+[datasource.AgentIdentity.pool_options]
+maxActive = "10"
+maxWait = "60000"
+minIdle = "2"
+testOnBorrow = true
+validationQuery = "SELECT 1; COMMIT"
+validationInterval = "30000"
+defaultAutoCommit = false
+commitOnReturn = true
+
+# ---------------------------------------------------------------------------
+# Keystores.
+#
+# Enquanto `wso2_mount_keystore = false` no Terraform, NÃO existe
+# unooria-primary.p12 no filesystem e este bloco precisa apontar para o
+# wso2carbon.p12 de demonstração (com KEYSTORE_PASSWORD=wso2carbon).
+# Ao ligar o mount: trocar file_name/alias abaixo, rebuildar a imagem e
+# atualizar os secrets de senha — os dois passos andam JUNTOS.
+# ---------------------------------------------------------------------------
+
+[keystore.primary]
+file_name = "wso2carbon.p12"
+password = "$env{KEYSTORE_PASSWORD}"
+alias = "wso2carbon"
+key_password = "$env{KEYSTORE_PASSWORD}"
+type = "PKCS12"
+# Com o keystore próprio montado (wso2_mount_keystore = true):
+# file_name = "unooria-primary.p12"
+# alias = "unooria-signing"
+
+[truststore]
+file_name = "client-truststore.p12"
+password = "$env{TRUSTSTORE_PASSWORD}"
+type = "PKCS12"
+
+# Chave simétrica que cifra client secrets e credenciais dentro do banco.
+# Perdê-la ou trocá-la depois de gravar dados = todo dado cifrado vira lixo.
+# Vem do Secret Manager; escrow off-GCP obrigatório (INFRA-IDENTITY.md §6).
+[encryption]
+key = "$env{INTERNAL_CRYPTO_KEY}"
+
+[account_recovery.endpoint.auth]
+hash = "66cd9688a2ae068244ea01e70f0e230f5623b7fa4cdecb65070a09ec06452262"
+
+[identity.auth_framework.endpoint]
+app_password = "dashboard"
+
+# ---------------------------------------------------------------------------
+# OAuth2 / OIDC — mesmos requisitos do local: access token JWT (a api usa
+# jose.jwtVerify) e TTL de 1h (decisão nº 8 do docs/DECISOES.md).
+# ---------------------------------------------------------------------------
+
+[oauth.token_generation]
+access_token_type = "JWT"
+
+[oauth.access_token]
+expiry_time = "3600s"
+
+[oauth.refresh_token]
+expiry_time = "86400s"

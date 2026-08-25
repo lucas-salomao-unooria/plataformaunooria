@@ -16,6 +16,13 @@
 
 generator client {
   provider = "prisma-client-js"
+  /**
+   * `native` é o binário da máquina que gerou (macOS em dev); o segundo é o
+   * do node:20-slim (Debian + OpenSSL 3) usado no Dockerfile e no Cloud Run.
+   * Sem ele a imagem sobe e morre no primeiro query com "Query engine
+   * library for current platform could not be found".
+   */
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {

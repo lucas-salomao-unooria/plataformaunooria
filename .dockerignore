@@ -1,0 +1,18 @@
+# O build usa a raiz do monorepo como contexto (COPY . .). Sem este arquivo o
+# contexto levaria centenas de MB de node_modules e artefatos, e — pior — o
+# `node_modules` do host (macOS) entraria na imagem Linux por cima do que o
+# pnpm instala lá dentro.
+**/node_modules
+**/.next
+**/.next-prod
+**/dist
+**/.turbo
+**/coverage
+**/storage
+**/.git
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+testes/walkthrough-*
+.claude

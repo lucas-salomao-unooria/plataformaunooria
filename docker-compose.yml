@@ -1,26 +1,27 @@
-# Infra local completa para desenvolvimento e testes e2e:
+# Plataforma Unooria — banco + api + hub, em containers.
 #
-#   docker compose up -d
+#   docker compose up -d --build
 #
 # Sobe:
-#   - pg            Postgres da PLATAFORMA (api/hub), porta 5432, banco `unooria`
-#   - wso2/*        IdP central (WSO2 IS 7.3.0) + Postgres DEDICADO na 5433
-#                   (via include de wso2/docker-compose.yml)
+#   - pg    Postgres da plataforma (5432, banco `unooria`)
+#   - api   NestJS (3001) — migrations e seed rodam sozinhos no primeiro up
+#   - hub   Next.js (3000)
 #
-# Os dois Postgres são propositalmente separados: o do WSO2 é um gerenciador
-# central de identidade, apartado da plataforma (mesmo desenho de produção,
-# onde ele vive em outro projeto GCP — docs/INFRA-IDENTITY.md).
+# O IdP (WSO2) é OUTRO compose, de propósito: é um gerenciador central de
+# identidade, compartilhado entre contratos e com ciclo de vida próprio (mesmo
+# desenho de produção — docs/INFRA-IDENTITY.md). Para subir só ele:
 #
-# Depois do primeiro up, prepare o banco da plataforma:
-#   pnpm --filter @edu/api migrate:dev && pnpm --filter @edu/api seed
-name: unooria
-
-include:
-  - path: wso2/docker-compose.yml
+#   docker compose -f wso2/docker-compose.yml up -d
+#
+# Enquanto o WSO2 não é o emissor, o próprio hub assina os tokens de
+# experiência (RS256) e serve o JWKS em /.well-known/jwks.json.
+#
+# A EXPERIÊNCIA (exp-01) não entra aqui: em produção ela é um bundle estático
+# num bucket, não um serviço. Em dev, rode à parte:
+#   pnpm --filter @edu/exp-01-instanooria dev     # :5173
+name: unooria-plataforma
 
 services:
-  # Substitui o `docker run --name pg` do README. Mesmas credenciais que o
-  # .env.example espera: postgresql://postgres:pass@localhost:5432/unooria
   pg:
     image: postgres:16
     environment:
@@ -36,5 +37,93 @@ services:
       timeout: 5s
       retries: 24
 
+  # Migrations + seed antes da api subir. Roda até o fim e sai; o
+  # `service_completed_successfully` da api espera por ele. Idempotente: pode
+  # rodar em todo `up`.
+  #
+  # Reusa a MESMA imagem da api (só `image:`, sem `build:`) — é assim que o
+  # Cloud Run Job de migration funciona em produção, e evita que um `build api`
+  # deixe uma imagem de migrate velha para trás.
+  migrate:
+    image: unooria-plataforma-api:latest
+    # Os três passos são idempotentes: `migrate deploy` só aplica o que falta,
+    # e os dois seeds fazem upsert (o de demo apaga e recria a atividade DEMO).
+    # `./node_modules/.bin/prisma`, não `npx prisma`: o npx buscaria a última
+    # versão na REDE (baixou a 7.x e quebrou), em vez da 6.x do projeto.
+    command: >
+      sh -c "./node_modules/.bin/prisma migrate deploy &&
+             node dist/prisma/seed.js &&
+             node dist/prisma/semear-demo.js"
+    environment:
+      DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+    depends_on:
+      pg:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: unooria-plataforma-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+      # O emissor dos tokens é o HUB. Dentro da rede do compose a api alcança
+      # o hub pelo nome do serviço; o `issuer` precisa ser o mesmo valor que o
+      # hub grava no token (a origem que o BROWSER usa).
+      OIDC_ISSUER: http://localhost:3000
+      OIDC_JWKS_URI: http://hub:3000/.well-known/jwks.json
+      OIDC_AUDIENCE: plataforma-api
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      VERTEX_PROJECT_ID: ${VERTEX_PROJECT_ID:-}
+      AI_DAILY_TOKEN_QUOTA_PER_ALUNO: "20000"
+      ASSETS_DRIVER: local
+      ASSETS_LOCAL_DIR: /app/storage
+      ASSETS_PUBLIC_URL: http://localhost:3001/assets
+      TELEMETRIA_TOPIC: ""
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    volumes:
+      # Imagens geradas sobrevivem ao recreate do container.
+      - assets:/app/storage
+    depends_on:
+      pg:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  hub:
+    build:
+      context: .
+      dockerfile: apps/hub/Dockerfile
+    environment:
+      # `API_INTERNAL_URL` é server-side (rede do compose); `NEXT_PUBLIC_API_URL`
+      # vai para o BROWSER e precisa ser alcançável de fora.
+      API_INTERNAL_URL: http://api:3001
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_CDN_EXP_URL: ${CDN_EXP_URL:-http://localhost:5173}
+      HUB_ORIGIN: http://localhost:3000
+      AUTH_URL: http://localhost:3000
+      AUTH_SECRET: ${AUTH_SECRET:-dev-secret-com-mais-de-32-caracteres-ok}
+      AUTH_TRUST_HOST: "true"
+      # Vazia em dev = par RS256 efêmero (regenera a cada restart do container,
+      # invalidando tokens antigos). Em produção vem do Secret Manager.
+      TOKEN_SIGNING_KEY_PEM: ${TOKEN_SIGNING_KEY_PEM:-}
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   pgdata:
+  assets:

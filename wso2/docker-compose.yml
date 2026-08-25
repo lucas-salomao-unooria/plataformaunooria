@@ -4,10 +4,11 @@
 # Os quatro serviços rodam em cadeia: postgres → dbinit → identity-server →
 # bootstrap. `docker compose up` do zero leva ~3 min (o IS boota em 60-120s).
 #
-# Dois jeitos de subir:
-#   - e2e completo (plataforma + IdP): `docker compose up -d` NA RAIZ do repo,
-#     que inclui este arquivo;
-#   - só o IdP: `docker compose up -d` aqui dentro.
+# Como subir (o compose da plataforma NÃO inclui mais este arquivo — o IdP tem
+# ciclo de vida próprio e é compartilhado entre contratos):
+#   - só o IdP, da raiz do repo:  docker compose -f wso2/docker-compose.yml up -d
+#   - ou de dentro desta pasta:   docker compose up -d
+#   - a plataforma (banco/api/hub): docker compose up -d na raiz.
 #
 # Todas as variáveis têm default de desenvolvimento — o wso2/.env é opcional e
 # serve para sobrescrever (cp .env.example .env). Em produção nada disto se

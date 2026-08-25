@@ -1,0 +1,2 @@
+# O Next standalone não copia esta pasta sozinho — o Dockerfile copia.
+# Mantida no repo para o COPY do Dockerfile não falhar quando ela está vazia.

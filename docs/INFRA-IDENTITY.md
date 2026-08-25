@@ -13,6 +13,10 @@ contratos"*. Ele não pertence à stack de nenhum cliente e vive em **projeto pr
 > o login de todo mundo.
 
 Ambiente de desenvolvimento equivalente: [`wso2/`](../wso2/README.md).
+Implementação Terraform: repo **Identidade Plataforma Unooria** (irmão do repo de
+fundação) — hoje provisiona o ambiente de teste (Cloud Run scale-to-0, banco
+ZONAL); o README de lá lista o delta até este documento (§ "O que falta para
+produção").
 
 ---
 

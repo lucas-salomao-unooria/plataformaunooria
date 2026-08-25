@@ -180,6 +180,15 @@ docker compose down -v   # -v apaga o volume do Postgres
 docker compose up -d --build
 ```
 
+## GCP
+
+A pasta [gcp/](gcp/) tem a variante da imagem para o Cloud Run: mesmo base +
+driver JDBC, mas com o `deployment.toml` **embutido** (imagem imutável) e
+configuração de reverse proxy (`proxyPort=443`, TLS termina fora do container).
+Quem builda/pusha e provisiona a infra é o repo de Terraform
+**Identidade Plataforma Unooria** (irmão do de fundação) — o passo a passo está
+no README de lá. O desenho completo: [docs/INFRA-IDENTITY.md](../docs/INFRA-IDENTITY.md).
+
 ## Produção
 
 ⚠️ **Este ambiente usa o keystore de demonstração da distribuição** (`wso2carbon.p12`, senha
