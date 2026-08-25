@@ -2,25 +2,35 @@
 
 Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 
+> **`{contrato}` = `{app_name}-{env}`** do Terraform (`local.name_prefix`).
+> No piloto: `plataforma-unooria-dev`, projeto `entre-redes`, região
+> **`us-east1`** (a mesma do Cloud SQL que já existe — o Vertex é o único que
+> fica em `southamerica-east1`, por `VERTEX_LOCATION`).
+> O passo a passo de subida está em `RUNBOOK-API.md`, no repo de infra.
+
 > O **gerenciador central de identidade** (WSO2 Identity Server) foge deste padrão: é
 > único para vários contratos, então não é `{contrato}-*` e vive em projeto próprio.
 > Contrato separado em [`INFRA-IDENTITY.md`](INFRA-IDENTITY.md).
 
 | Recurso | Nome esperado | Consumido por |
 |---|---|---|
-| Cloud Run service | `{contrato}-hub`, `{contrato}-api` | deploy.yml |
+| Cloud Run service | `{contrato}-frontend` (hub), `{contrato}-api` | deploy.yml |
 | Cloud Run **job** | `{contrato}-migrate` (VPC, roda `prisma migrate deploy`) | deploy.yml |
-| Artifact Registry | `{contrato}-docker` (southamerica-east1) | deploy.yml |
+| Artifact Registry | `{contrato}` (mesma região do Cloud Run) | deploy.yml |
 | Bucket experiências | `{contrato}-exp` (+ Cloud CDN) | deploy.yml |
 | Bucket **assets** | `{contrato}-assets` (+ Cloud CDN, leitura pública) | api (`ASSETS_BUCKET`) |
 | Bucket **planos** | `{contrato}-planos` (**privado**, sem CDN, versionamento de objetos ligado) | api (`PLANOS_BUCKET`) |
 | Cloud SQL | `{contrato}-pg` (HA, PITR, pooler ativo) | api DATABASE_URL |
 | Pub/Sub | topic `{contrato}-telemetria` + **push** sub `{contrato}-telemetria-ingest` → `POST {api}/telemetry/ingest` | api |
-| Secret Manager | `oidc-*`, `database-url`, `vertex-*`, `token-signing-key`, `perfil-import-token`, `planos-import-token` | Cloud Run env |
-| Service Accounts | `{contrato}-api-sa` (Vertex, Pub/Sub pub, GCS write no bucket de assets, `objectAdmin` no bucket de planos) | |
+| Secret Manager | `{contrato}-database-url`, `{contrato}-db-password`, `{contrato}-token-signing-key`, `{contrato}-auth-secret`, `{contrato}-perfil-import-token`, `{contrato}-planos-import-token` | Cloud Run env |
+| Service Accounts | `{contrato}-api` (Vertex, Pub/Sub publisher, `objectAdmin` nos buckets de assets e de planos), `{contrato}-run` (hub/storybook), `{contrato}-push` (assina o push da telemetria) | |
+| Load Balancer | um só, global: hub em `{hub_domain}`, api em `{api_domain}`, bundles em `{exp_domain}`, assets em `{assets_domain}` — mesmo IP, host rules | DNS |
 | WIF p/ GitHub Actions | pool `github` | deploy.yml (sem chave JSON) |
 
 Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run env/secrets.
+`OIDC_ISSUER`/`OIDC_JWKS_URI` NÃO são segredo (são URLs públicas do hub) e vão
+como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
+`iss` do token e o esperado pela api não podem divergir.
 
 **Mudanças em relação ao desenho original (decisões da migração, 2026-08):**
 
@@ -43,9 +53,14 @@ Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run 
   para 48 experiências o passo `gsutil rsync` de mídia precisa entrar no CI.
 - **Job de migration**: `prisma migrate deploy` roda como Cloud Run Job na VPC
   (o Cloud SQL só tem IP privado), antes do deploy dos serviços.
-- **Roles do Postgres**: a api conecta com role SEM ownership (`app_runtime`),
-  porque as tabelas têm `FORCE ROW LEVEL SECURITY` — o owner ignoraria as
-  políticas. As migrations rodam com a role owner.
+- **Roles do Postgres**: o desenho original previa duas roles (owner p/
+  migrations, `app_runtime` sem ownership p/ a api). Na prática ficou UMA
+  (`app`, criada pelo Terraform), porque as tabelas usam **`FORCE ROW LEVEL
+  SECURITY`** — que sujeita o próprio dono às políticas e torna a separação
+  desnecessária. O que continua sendo obrigatório é a role **não** ter
+  `BYPASSRLS` nem `SUPERUSER`; `RUNBOOK-API.md` traz o SQL de verificação, e
+  `tests/tenancy.spec.ts` cobre o mesmo contrato localmente com uma role sem
+  ownership.
 - **Chave de assinatura de token**: enquanto o IdP central não entra, o HUB
   assina os tokens de experiência (RS256) e publica o JWKS em
   `/.well-known/jwks.json`; a api valida por `OIDC_ISSUER`/`OIDC_JWKS_URI`.
@@ -67,10 +82,20 @@ Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run 
   vivem no Postgres e entram por `scripts/importar-referencias-plano.mjs`.
   O Cloud Run `planodeaula` antigo pode ser desligado após o smoke em produção.
 
+**Telemetria: a rota de ingest é autenticada** (2026-08). `POST /telemetry/ingest`
+não passa pelo `OidcGuard` — quem chama é a push subscription. O
+`PubSubPushGuard` verifica o ID token que o Pub/Sub assina: emissor Google,
+`aud` == `TELEMETRIA_PUSH_AUDIENCE` e `email` == `TELEMETRIA_PUSH_SA`. Sem as
+duas envs a rota responde 401 (fechada, não aberta). O Terraform casa os dois
+lados: a subscription é criada com `oidc_token` dessa mesma SA e audience.
+
 Deploy (CI deste repo):
 1. `turbo build --filter='...[HEAD^]'`
-2. schema mudou → executar o job `{contrato}-migrate`
-3. hub/api mudou → docker build+push → `gcloud run deploy` (revisions = rollback)
+2. schema mudou → executar o job `{contrato}-migrate` (roda ANTES do deploy do
+   serviço: o schema novo tem que estar no banco antes da revisão nova pegar
+   tráfego)
+3. hub/api mudou → `docker build` + push direto no Artifact Registry (sem Cloud
+   Build) → `gcloud run deploy` (revisions = rollback)
 4. exp mudou → `gsutil -m rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
    e `PUT {api}/experiencias/{expId}` (admin-contrato) com o conteúdo do
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
@@ -79,6 +104,11 @@ Deploy (CI deste repo):
    Rollback = `node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao <anterior>`. Experiência com
    mídia externa (exp-02) builda com `VITE_VIDEOS_BASE_URL` apontando para a
    CDN de assets do contrato.
-   **Pendente**: o `deploy.yml` ainda só faz o `rsync` — o `PUT` do manifesto
-   (traduzindo `versao` → `versaoAtiva`) não foi automatizado; sem ele o hub
-   cai no fallback dev.
+   O `deploy.yml` faz o `rsync` **e** o `PUT` do manifesto, e grava
+   `Cache-Control: max-age=60` no `index.html` (o resto do caminho carrega a
+   versão e é imutável). **Pendente**: o `rsync` da mídia pesada
+   (`gsutil rsync` dos mp4 para o bucket de assets) continua manual — ver
+   `RUNBOOK-API.md`, passo 4.
+
+Nomes e valores concretos saem de `terraform output`; as `vars` que o
+`deploy.yml` consome estão listadas no passo 2 do `RUNBOOK-API.md`.

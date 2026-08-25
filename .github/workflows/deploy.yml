@@ -1,9 +1,22 @@
 name: deploy
 on:
   push: { branches: [main] }
+
+# Tudo que muda de um contrato para outro entra por `vars` do repositório/ambiente
+# — o workflow em si não sabe o nome de nenhum recurso. Os valores saem dos
+# outputs do Terraform (repo de infra); ver docs/INFRA.md.
 env:
-  REGION: southamerica-east1
-  CONTRATO: ${{ vars.CONTRATO }}          # ex: "sp-piloto" — definido por ambiente
+  GCP_PROJECT: ${{ vars.GCP_PROJECT }}       # ex: entre-redes
+  REGION: ${{ vars.REGION }}                 # ex: us-east1 (a MESMA do Artifact Registry e do Cloud Run)
+  AR_REPO: ${{ vars.AR_REPO }}               # ex: plataforma-unooria-dev
+  API_SERVICE: ${{ vars.API_SERVICE }}       # terraform output api_service_name
+  HUB_SERVICE: ${{ vars.HUB_SERVICE }}       # terraform output frontend_service_name
+  MIGRATE_JOB: ${{ vars.MIGRATE_JOB }}       # terraform output migrate_job_name
+  EXP_BUCKET: ${{ vars.EXP_BUCKET }}         # terraform output bucket_exp
+  API_URL: ${{ vars.API_URL }}               # terraform output api_public_url
+  HUB_ORIGIN: ${{ vars.HUB_ORIGIN }}         # mesmo issuer que o hub usa nos tokens
+  ASSETS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}   # terraform output url_assets
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,37 +32,91 @@ jobs:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOY_SA }}
       - uses: google-github-actions/setup-gcloud@v2
+
+      # Push direto para o Artifact Registry: nada de Cloud Build no meio (uma
+      # API e um conjunto de permissões a menos, e o build fica no runner).
+      - name: Autenticar o Docker no Artifact Registry
+        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+
       - run: pnpm install --frozen-lockfile
+
+      - name: O que mudou neste push
+        id: mudou
+        run: |
+          mudou() { git diff --quiet HEAD^ HEAD -- "$@" && echo false || echo true; }
+          {
+            echo "api=$(mudou apps/api packages)"
+            echo "hub=$(mudou apps/hub packages)"
+            echo "migrations=$(mudou apps/api/prisma/migrations)"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build só o que mudou
+        env:
+          # Mídia pesada (52 MB de mp4 da exp-02) não entra no bundle: o build
+          # aponta para o bucket de assets. Vazio = ./videos (dev).
+          VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp-02-unootube/videos
         run: pnpm turbo build --filter='...[HEAD^]'
-      # --- hub/api: docker → Artifact Registry → Cloud Run (se mudaram) ---
-      - name: Deploy api
+
+      # --- api: imagem -> migrations -> serviço ---------------------------------
+      # A ORDEM importa: o schema novo tem que estar no banco antes que a revisão
+      # nova comece a receber tráfego, senão a api roda contra um banco velho.
+      - name: Build e push da imagem da api
+        if: steps.mudou.outputs.api == 'true'
         run: |
-          if git diff --quiet HEAD^ HEAD -- apps/api packages; then echo "api sem mudanças"; exit 0; fi
-          IMG=$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/$CONTRATO-docker/api:${{ github.sha }}
-          gcloud builds submit --tag $IMG -f apps/api/Dockerfile .
-          gcloud run deploy $CONTRATO-api --image $IMG --region $REGION
-      - name: Deploy hub
+          IMG="$REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/api:${{ github.sha }}"
+          docker build -f apps/api/Dockerfile -t "$IMG" .
+          docker push "$IMG"
+          echo "API_IMG=$IMG" >> "$GITHUB_ENV"
+
+      # O job roda DENTRO da VPC — é o único caminho até o Postgres, que só tem
+      # IP privado. `--wait` faz o passo falhar se a migration falhar.
+      - name: Rodar as migrations (Cloud Run Job)
+        if: steps.mudou.outputs.api == 'true' && steps.mudou.outputs.migrations == 'true'
         run: |
-          if git diff --quiet HEAD^ HEAD -- apps/hub packages; then echo "hub sem mudanças"; exit 0; fi
-          IMG=$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/$CONTRATO-docker/hub:${{ github.sha }}
-          gcloud builds submit --tag $IMG -f apps/hub/Dockerfile .
-          gcloud run deploy $CONTRATO-hub --image $IMG --region $REGION
-      # --- experiências: dist → bucket versionado (se mudaram) ---
+          gcloud run jobs update "$MIGRATE_JOB" \
+            --image "$API_IMG" --region "$REGION" --project "$GCP_PROJECT"
+          gcloud run jobs execute "$MIGRATE_JOB" \
+            --region "$REGION" --project "$GCP_PROJECT" --wait
+
+      - name: Deploy da api
+        if: steps.mudou.outputs.api == 'true'
+        run: |
+          gcloud run deploy "$API_SERVICE" \
+            --image "$API_IMG" --region "$REGION" --project "$GCP_PROJECT"
+
+      # --- hub ------------------------------------------------------------------
+      - name: Deploy do hub
+        if: steps.mudou.outputs.hub == 'true'
+        run: |
+          IMG="$REGION-docker.pkg.dev/$GCP_PROJECT/$AR_REPO/hub:${{ github.sha }}"
+          docker build -f apps/hub/Dockerfile -t "$IMG" .
+          docker push "$IMG"
+          gcloud run deploy "$HUB_SERVICE" \
+            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
+
+      # --- experiências: dist -> bucket versionado + manifesto ------------------
       - name: Publicar experiências alteradas
+        env:
+          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `{prefix}-token-signing-key`
         run: |
+          set -euo pipefail
           for dir in apps/experiencias/*/; do
-            exp=$(basename "$dir"); [ "$exp" = "_template" ] && continue
+            exp=$(basename "$dir")
+            if [ "$exp" = "_template" ]; then continue; fi
             if git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk; then continue; fi
             ver=$(node -p "require('./$dir/package.json').version")
-            gsutil -m rsync -r -d "$dir/dist" "gs://$CONTRATO-exp/$exp/$ver/"
+
+            gcloud storage rsync -r "$dir/dist" "gs://$EXP_BUCKET/$exp/$ver/" \
+              --delete-unmatched-destination-objects --project "$GCP_PROJECT"
+
+            # O caminho carrega a versão, então o bundle é imutável e pode
+            # ficar um ano na borda. O index.html é o ponteiro: cache curto,
+            # senão um rollback de `versaoAtiva` demora a aparecer.
+            gcloud storage objects update "gs://$EXP_BUCKET/$exp/$ver/index.html" \
+              --cache-control="public, max-age=60" --project "$GCP_PROJECT"
+
+            # Manifesto (tabela `experiencias`): é isto que o hub lê para montar
+            # a URL do iframe. Sem este PUT o hub cai no fallback de dev.
+            node apps/hub/scripts/publicar-manifesto.mjs "$dir"
             echo "publicada $exp@$ver"
-            # Manifesto (tabela `experiencias`): é isto que o hub lê para montar a
-            # URL do iframe. Token admin-contrato assinado com a chave do hub.
-            API_URL="$API_URL" HUB_ORIGIN="$HUB_ORIGIN" TOKEN_SIGNING_KEY_PEM="$TOKEN_SIGNING_KEY_PEM" \
-              node apps/hub/scripts/publicar-manifesto.mjs "$dir"
           done
-        env:
-          API_URL: ${{ vars.API_URL }}            # https://{contrato}-api-...run.app
-          HUB_ORIGIN: ${{ vars.HUB_ORIGIN }}      # mesmo issuer que o hub usa nos tokens
-          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `token-signing-key`
