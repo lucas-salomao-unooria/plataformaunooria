@@ -152,7 +152,7 @@ export function PainelMonitor({
 
   useEffect(() => {
     void buscar();
-    const intervalo = setInterval(buscar, 5000);
+    const intervalo = setInterval(() => void buscar(), 5000);
     return () => clearInterval(intervalo);
   }, [buscar]);
 

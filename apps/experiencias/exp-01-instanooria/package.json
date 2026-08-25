@@ -7,7 +7,7 @@
     "dev": "vite --port 5173",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'lint exp-01 (eslint entra na fase de hardening)'",
+    "lint": "eslint src",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
@@ -15,7 +15,7 @@
     "react-dom": "^19.2.0",
     "@edu/sdk": "workspace:*",
     "@edu/ui": "workspace:*",
-    "@unooria/design-system": "^0.1.10",
+    "@unooria/design-system": "^0.1.11",
     "@fontsource-variable/inter": "^5.1.0",
     "@fontsource/grand-hotel": "^5.1.0"
   },

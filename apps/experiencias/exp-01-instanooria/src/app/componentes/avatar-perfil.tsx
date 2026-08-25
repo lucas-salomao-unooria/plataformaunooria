@@ -30,7 +30,7 @@ export function AvatarPerfil({
 
   if (doCatalogo && !falhou) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
+       
       <img
         src={urlDoAvatar(seed)}
         alt=""

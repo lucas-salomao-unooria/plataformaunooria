@@ -49,7 +49,7 @@ export class TelemetryController {
     if (topic) {
       await pubsub.topic(topic).publishMessage({ json: { eventos } });
     } else {
-      console.log("[telemetria/dev]", eventos.length, "eventos"); // sem Pub/Sub em dev local
+      console.info("[telemetria/dev]", eventos.length, "eventos"); // sem Pub/Sub em dev local
     }
     return eventos.length;
   }

@@ -29,7 +29,6 @@ interface MaterialDeChave {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __chaveTokenHub: Promise<MaterialDeChave> | undefined;
 }
 

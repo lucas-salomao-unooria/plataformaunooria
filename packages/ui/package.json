@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "sideEffects": ["**/*.css"],
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
     "./ds": "./src/ds.ts",
     "./ds-insta": "./src/ds-insta.ts",
@@ -12,11 +14,11 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'lint ui (eslint entra na fase de hardening)'",
+    "lint": "eslint src",
     "build": "echo 'sem build (fonte TS direto)'"
   },
   "dependencies": {
-    "@unooria/design-system": "^0.1.10"
+    "@unooria/design-system": "^0.1.11"
   },
   "peerDependencies": {
     "react": ">=19"

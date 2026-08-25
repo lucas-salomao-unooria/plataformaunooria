@@ -112,7 +112,7 @@ function MiniaturaBusca({
       onClick={() => aoAbrir(post)}
     >
       {post.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
+         
         <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
       ) : (
         <span
@@ -248,7 +248,7 @@ export function AbaPerfil({
         {salvos.map((post) => (
           <div key={post.id} className="aspect-square overflow-hidden bg-canvas">
             {post.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+               
               <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
             ) : (
               <span
@@ -311,7 +311,7 @@ export function ModalPerfil({
             {posts.slice(0, 6).map((post) => (
               <div key={post.id} className="aspect-square overflow-hidden bg-canvas">
                 {post.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
+                   
                   <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                 ) : (
                   <span

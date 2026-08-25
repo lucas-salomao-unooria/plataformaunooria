@@ -179,7 +179,7 @@ function VisualizadorDeStory({
           aria-label="Próximo story"
         >
           {post.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+             
             <img src={post.imageUrl} alt="" className="h-full w-full object-cover" draggable={false} />
           ) : (
             <span

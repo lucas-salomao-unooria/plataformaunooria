@@ -316,7 +316,8 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
 function montarExplicacao({
   origem,
   dominante,
-  ladoInicial,
+  // Recebido para manter a assinatura do origem; a explicação usa o rótulo.
+  ladoInicial: _ladoInicial,
   ladoRotulo,
   afinidade,
 }: {

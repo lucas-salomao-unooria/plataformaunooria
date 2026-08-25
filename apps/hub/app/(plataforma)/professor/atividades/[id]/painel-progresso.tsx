@@ -92,7 +92,7 @@ export function PainelProgresso({ activityId }: { activityId: string }) {
     }
 
     void consultar();
-    const intervalo = setInterval(consultar, 2000);
+    const intervalo = setInterval(() => void consultar(), 2000);
     return () => {
       ativo = false;
       clearInterval(intervalo);

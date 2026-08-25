@@ -135,7 +135,7 @@ export function Debate({ runId }: { runId: string }) {
                     onClick={() => setAberto(post)}
                   >
                     {post.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+                       
                       <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                     ) : (
                       <span

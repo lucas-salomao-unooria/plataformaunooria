@@ -103,7 +103,7 @@ export function Perdidos({ runId }: { runId: string }) {
 
             <div className="aspect-[4/5] w-full overflow-hidden bg-canvas">
               {post.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                 
                 <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
               ) : (
                 <span

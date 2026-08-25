@@ -14,7 +14,6 @@ import { chromium } from "playwright";
  * (`pnpm --filter @edu/api seed && seed:demo`).
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
-const EXP = process.env.EXP_URL ?? "http://localhost:5173";
 const OUT = process.argv[2] ?? "testes/walkthrough-aluno";
 const USER = process.argv[3] ?? "aluno03";
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";

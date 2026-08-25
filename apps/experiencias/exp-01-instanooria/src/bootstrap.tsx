@@ -35,7 +35,7 @@ export function Bootstrap() {
 
   useEffect(() => {
     let ativo = true;
-    (async () => {
+    void (async () => {
       try {
         const exp = await createExperiencia({ expId: "exp-01-instanooria", expVersion: "1.0.0" });
         definirExperiencia(exp);

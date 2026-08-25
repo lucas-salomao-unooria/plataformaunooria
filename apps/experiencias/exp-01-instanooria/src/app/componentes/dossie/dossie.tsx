@@ -457,7 +457,7 @@ function Miniatura({ post }: { post: { imageUrl: string | null; fallbackArt: { c
   return (
     <span className="h-12 w-12 shrink-0 overflow-hidden rounded-md">
       {post.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
+         
         <img src={post.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
       ) : (
         <span

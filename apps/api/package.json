@@ -6,7 +6,7 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "typecheck": "tsc --noEmit",
-    "lint": "echo 'lint api (eslint entra na fase de hardening)'",
+    "lint": "eslint src tests prisma",
     "test": "jest --passWithNoTests",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",

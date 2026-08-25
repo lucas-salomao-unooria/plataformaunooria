@@ -88,12 +88,15 @@ export function ExpFrame(props: {
       if (document.visibilityState !== "hidden") post({ type: "hub:resume" });
     };
 
-    window.addEventListener("message", onMsg);
+    // `onMsg` é async (renova token); o void marca o descarte deliberado da
+    // promise — ela já trata os próprios erros.
+    const onMsgVoid = (ev: MessageEvent) => void onMsg(ev);
+    window.addEventListener("message", onMsgVoid);
     document.addEventListener("visibilitychange", aoTrocarVisibilidade);
     window.addEventListener("blur", aoPerderFoco);
     window.addEventListener("focus", aoGanharFoco);
     return () => {
-      window.removeEventListener("message", onMsg);
+      window.removeEventListener("message", onMsgVoid);
       document.removeEventListener("visibilitychange", aoTrocarVisibilidade);
       window.removeEventListener("blur", aoPerderFoco);
       window.removeEventListener("focus", aoGanharFoco);

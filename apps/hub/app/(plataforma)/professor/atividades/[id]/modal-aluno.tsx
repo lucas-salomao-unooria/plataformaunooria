@@ -133,7 +133,7 @@ export function ModalAluno({
 
     void buscar();
     // Em tempo real: o professor abre e vê o aluno mexendo.
-    const intervalo = setInterval(buscar, 5000);
+    const intervalo = setInterval(() => void buscar(), 5000);
     return () => {
       ativo = false;
       clearInterval(intervalo);

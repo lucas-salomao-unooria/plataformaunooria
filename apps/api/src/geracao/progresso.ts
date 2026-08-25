@@ -55,9 +55,11 @@ export async function progressoDaAtividade(
       orderBy: { updatedAt: 'desc' },
     });
 
-    let etapa: ProgressoGeracao['etapa'] = 'personas';
-    let feitos = 0;
-    let total = 1;
+    // Sem valor inicial: o encadeamento abaixo tem `else`, então todo
+    // caminho atribui — inicializar aqui seria valor morto.
+    let etapa: ProgressoGeracao['etapa'];
+    let feitos: number;
+    let total: number;
 
     if (atividade.status !== 'gerando') {
       etapa = 'concluido';
