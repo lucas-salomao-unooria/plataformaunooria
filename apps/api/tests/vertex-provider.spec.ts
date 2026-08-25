@@ -1,4 +1,5 @@
-import { endpointVertex, thinkingConfig } from "../src/ai/vertex.provider";
+import { ALTURA, LARGURA } from "../src/assets/assets.service";
+import { PROPORCAO_IMAGEM, endpointVertex, thinkingConfig } from "../src/ai/vertex.provider";
 
 /**
  * Contratos do provider Vertex que não dá para verificar com typecheck e que
@@ -47,5 +48,12 @@ describe("orçamento de raciocínio", () => {
   test("lixo na env desliga em vez de mandar valor inválido ao vendor", () => {
     process.env.VERTEX_THINKING_BUDGET = "muito";
     expect(thinkingConfig()).toEqual({ thinkingConfig: { thinkingBudget: 0 } });
+  });
+});
+
+describe("proporção da imagem gerada", () => {
+  test("é a mesma do card da exp-01 — senão o `cover` come a composição", () => {
+    const [largura, altura] = PROPORCAO_IMAGEM.split(":").map(Number);
+    expect(largura! / altura!).toBeCloseTo(LARGURA / ALTURA, 3);
   });
 });

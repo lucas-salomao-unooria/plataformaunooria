@@ -165,9 +165,13 @@ só o endpoint `global` (sem host regional) o serve. A consequência é explíci
 foi aceita: o tráfego de IA sai de São Paulo, inclusive o do aluno. Voltar para
 `VERTEX_LOCATION=southamerica-east1` é possível a qualquer momento, mas exige
 trocar TAMBÉM o modelo pelo que a região publica (família 2.5 — a 2.0 saiu do
-catálogo e a 3.x nunca esteve lá). A arte da exp-01 usa `gemini-2.5-flash-image`:
-o `gemini-2.0-flash-exp` que era o default não existe mais em lugar nenhum, e por
-isso toda geração de imagem caía no fallback procedural.
+catálogo e a 3.x nunca esteve lá). A arte da exp-01 usa `gemini-3.1-flash-image`
+(o `gemini-2.0-flash-exp` que era o default não existe mais em lugar nenhum, e
+por isso toda geração de imagem caía no fallback procedural), e PEDE a proporção
+`4:5` no `imageConfig`: sem isso o 3.1 devolve 1408×768 e o `cover` do
+`AssetsService` (1080×1350) descarta mais da metade da largura. O modelo aceita
+1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9 e 21:9 pelo MESMO custo em tokens —
+experiência com outro formato deve pedir o formato, não recortar depois.
 
 **Raciocínio conta como saída.** Nos modelos 2.5 e 3.x os tokens de pensamento saem do
 `maxOutputTokens`: com pensamento livre o plano anual voltava VAZIO com

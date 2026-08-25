@@ -17,9 +17,11 @@ import sharp from "sharp";
  * não resolve nada, só renderiza o que o feed devolve.
  */
 
-/** 1080×1350 lógico — a proporção 4:5 do card. */
-const LARGURA = 1080;
-const ALTURA = 1350;
+/** 1080×1350 lógico — a proporção 4:5 do card. Exportadas porque a MESMA
+ *  proporção é pedida ao modelo de imagem (`PROPORCAO_IMAGEM`): se mudarem
+ *  aqui sem mudar lá, o corte volta a comer a composição. */
+export const LARGURA = 1080;
+export const ALTURA = 1350;
 
 @Injectable()
 export class AssetsService {

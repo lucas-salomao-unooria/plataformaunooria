@@ -30,10 +30,27 @@ const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-pl
 
 /** Catálogo por região, MEDIDO no projeto do contrato: o `gemini-3.6-flash` só
  *  responde em `global` (404 em southamerica-east1, us-east1 e us-central1), e a
- *  família 2.0 saiu do catálogo. Daí o par default 3.6-flash + `global`. */
+ *  família 2.0 saiu do catálogo. Daí o par default 3.6-flash + `global`.
+ *  Em imagem valem `gemini-3.1-flash-image`, `gemini-2.5-flash-image` (o Nano
+ *  Banana) e `gemini-3-pro-image`; não existe 3.x flash-image fora do 3.1. */
 const MODELO_PADRAO = "gemini-3.6-flash";
 const LOCALIZACAO_PADRAO = "global";
-const MODELO_IMAGEM_PADRAO = "gemini-2.5-flash-image";
+const MODELO_IMAGEM_PADRAO = "gemini-3.1-flash-image";
+
+/**
+ * Proporção pedida ao modelo de imagem. NÃO é enfeite: o `AssetsService`
+ * normaliza tudo para 1080×1350 com `fit: "cover"`, e o 3.1-flash-image, sem
+ * `imageConfig`, devolve 1408×768 (paisagem) — o corte jogaria fora mais da
+ * METADE da largura, com a composição do modelo decidida para outro formato.
+ * Com 4:5 ele devolve 928×1152 e o corte vira só um ajuste de escala.
+ * MEDIDO: o modelo aceita 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9 e 21:9,
+ * TODAS pelo mesmo custo em tokens — se uma experiência futura precisar de
+ * outro formato, o caminho é um parâmetro em `generateImage`, não um recorte
+ * depois. `imageSize: "1K"` dá 928×1152; "2K" daria 1856×2304 por ~50% mais
+ * tokens, resolução que o card de 1080 não aproveita.
+ */
+export const PROPORCAO_IMAGEM = "4:5";
+const TAMANHO_IMAGEM = "1K";
 
 /**
  * `global` não tem host regional (`https://aiplatform.googleapis.com`) — é a
@@ -204,7 +221,10 @@ export class VertexProvider implements AiProvider {
       },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ["IMAGE"] },
+        generationConfig: {
+          responseModalities: ["IMAGE"],
+          imageConfig: { aspectRatio: PROPORCAO_IMAGEM, imageSize: TAMANHO_IMAGEM },
+        },
       }),
       ...({ dispatcher } as Record<string, unknown>),
     });

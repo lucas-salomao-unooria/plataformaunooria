@@ -35,10 +35,12 @@ export const EnvSchema = z.object({
   // material didático); 2M/dia ≈ 6–9 planos. Regra 5 do CLAUDE.md, por perfil.
   AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: z.coerce.number().int().positive().default(2_000_000),
 
-  // O `gemini-2.0-flash-exp` que era o default aqui não existe mais no
-  // catálogo (404 na região E em global): a arte da exp-01 caía sempre no
-  // fallback procedural. `gemini-2.5-flash-image` é o que responde hoje.
-  VERTEX_IMAGE_MODEL: z.string().default("gemini-2.5-flash-image"),
+  // Arte da exp-01. O `gemini-2.0-flash-exp` que era o default aqui não existe
+  // mais no catálogo (404 na região E em global), então toda geração caía no
+  // fallback procedural. Responde hoje: `gemini-3.1-flash-image` (default),
+  // `gemini-2.5-flash-image` e `gemini-3-pro-image`. Quem trocar precisa
+  // conferir a proporção devolvida — ver PROPORCAO_IMAGEM no vertex.provider.
+  VERTEX_IMAGE_MODEL: z.string().default("gemini-3.1-flash-image"),
 
   // Tokens de RACIOCÍNIO (famílias 2.5 e 3.x), que saem do `maxOutputTokens`.
   // 0 = desligado (paridade com o app origem, que usava Claude sem thinking e

@@ -161,7 +161,7 @@ services:
       VERTEX_LOCATION: ${VERTEX_LOCATION:-global}
       VERTEX_MODEL: ${VERTEX_MODEL:-gemini-3.6-flash}
       VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-3.6-flash}
-      VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-2.5-flash-image}
+      VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-3.1-flash-image}
       VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
       AI_DAILY_TOKEN_QUOTA_PER_ALUNO: "20000"
