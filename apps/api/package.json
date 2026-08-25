@@ -27,10 +27,13 @@
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^2.4.3",
     "jose": "^5.9.0",
+    "marked": "^15",
     "prisma": "^6.19.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
+    "sanitize-html": "^2.13.1",
     "sharp": "^0.35.3",
+    "undici": "^6",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -38,6 +41,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.0.0",
+    "@types/sanitize-html": "^2",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
