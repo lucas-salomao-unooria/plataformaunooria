@@ -91,7 +91,14 @@ da experiência (`id, nome, versao, series, capabilities, viewport?, publico?`).
 O hub monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`
 (`node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao x.y.z`).
 `viewport` presente ⇒ o hub embeda dentro do `DispositivoFrame` (casca de
-aparelho com escala). `publico: "professor"` ⇒ ferramenta do professor
+aparelho com escala; exp-01 é 375×812, exp-02 não tem viewport porque foi
+desenhada para desktop). SEM linha na tabela, o `viewport` é lido do
+`experiencia.json` servido ao lado do index do bundle — não só em dev: uma
+stack com a tabela vazia (compose local, ambiente novo antes do 1º publish do
+CI) servia o Instanooria esticado na janela em vez do aparelho. Essa leitura é
+server-side, então em container use `EXP_INTERNAL_URL` (o público
+`NEXT_PUBLIC_CDN_EXP_URL` é o endereço do BROWSER).
+`publico: "professor"` ⇒ ferramenta do professor
 (exp-90-plano-de-aula): embedada em `/professor/plano-de-aula`, e `/exp/*`
 responde 404 para ela. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:

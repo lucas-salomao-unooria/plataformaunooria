@@ -79,18 +79,29 @@ export async function montarEmbed(
   const emDev = !manifesto && !emProducao;
   const base = (emDev ? (opts.srcDev ?? baseDevDaExperiencia(expId, cdn)) : cdn).replace(/\/$/, "");
 
-  // DEV sem manifesto: o Vite serve a exp na raiz — o viewport vem do
-  // experiencia.json dele (por isso o arquivo vive em `public/`).
-  let viewportDev: { largura: number; altura: number } | null = null;
-  if (emDev) {
+  // SEM MANIFESTO o bundle é servido na raiz de `base` — e o `experiencia.json`
+  // dele está do lado do index (por isso o arquivo vive em `public/`). É de lá
+  // que vem o `viewport`, ou seja: a decisão de embedar a experiência dentro do
+  // `DispositivoFrame`. A leitura NÃO é só de dev: antes era, e uma stack sem a
+  // tabela `experiencias` populada (compose local, ambiente novo antes do
+  // primeiro publish do CI) servia o Instanooria esticado na janela inteira em
+  // vez do aparelho de 375×812.
+  //
+  // `EXP_INTERNAL_URL` existe pelo mesmo motivo que `API_INTERNAL_URL`: esta
+  // leitura é server-side, e `NEXT_PUBLIC_CDN_EXP_URL` é o endereço que o
+  // BROWSER usa — de dentro de um container, `localhost:5173` é o próprio
+  // container. Ausente = usa o mesmo `base` do iframe.
+  const baseInterna = (process.env.EXP_INTERNAL_URL ?? base).replace(/\/$/, "");
+  let viewportDoBundle: { largura: number; altura: number } | null = null;
+  if (!manifesto) {
     try {
-      const r = await fetch(`${base}/experiencia.json`, { cache: "no-store" });
+      const r = await fetch(`${baseInterna}/experiencia.json`, { cache: "no-store" });
       if (r.ok) {
         const meta = (await r.json()) as { viewport?: { largura: number; altura: number } };
-        viewportDev = meta.viewport ?? null;
+        viewportDoBundle = meta.viewport ?? null;
       }
     } catch {
-      // sem dev server no ar — segue sem viewport
+      // bundle/dev server fora do ar — segue sem viewport
     }
   }
 
@@ -112,6 +123,6 @@ export async function montarEmbed(
       escolaId: usuario.escolaId,
     },
     apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
-    viewport: manifesto?.viewport ?? viewportDev,
+    viewport: manifesto?.viewport ?? viewportDoBundle,
   };
 }

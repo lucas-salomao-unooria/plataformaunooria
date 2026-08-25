@@ -111,6 +111,10 @@ services:
       API_INTERNAL_URL: http://api:3001
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_CDN_EXP_URL: ${CDN_EXP_URL:-http://localhost:5173}
+      # Server-side: de onde o hub LÊ o `experiencia.json` do bundle (o
+      # `viewport` que decide o aparelho). O endereço público acima é o do
+      # browser — dentro do container `localhost` é o container.
+      EXP_INTERNAL_URL: ${EXP_INTERNAL_URL:-http://host.docker.internal:5173}
       HUB_ORIGIN: http://localhost:3000
       AUTH_URL: http://localhost:3000
       AUTH_SECRET: ${AUTH_SECRET:-dev-secret-com-mais-de-32-caracteres-ok}
