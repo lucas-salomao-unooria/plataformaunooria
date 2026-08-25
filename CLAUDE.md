@@ -40,8 +40,10 @@ Experiências NUNCA viram serviços no Cloud Run. São bundles estáticos:
    O client envia a resposta do aluno; a api corrige.
 4. **Token**: hub obtém via OIDC (WSO2), repassa à experiência por `postMessage`
    com `targetOrigin` explícito (nunca `*`). Experiência mantém token só em memória.
-5. **IA tem quota**: por aluno/dia (`AI_DAILY_TOKEN_QUOTA_PER_ALUNO`) e rate limit
-   por usuário. Nunca exponha chamada de IA sem passar pelo guard de quota.
+5. **IA tem quota**: por usuário/dia e POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ALUNO`,
+   `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` — um plano anual gasta ~220k tokens só de
+   prompt) e rate limit por usuário. Nunca exponha chamada de IA sem passar pelo
+   `QuotaService` (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `aluno_id` opaco, nunca nome/email.
 
@@ -82,11 +84,20 @@ cross-escola). Usuários entram por CSV: `POST /usuarios/importar-csv`
 ### Manifesto de experiências (tabela `experiencias` na api)
 O CI, ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, faz upsert
 (`PUT /experiencias/:expId`, admin-contrato) lendo o `public/experiencia.json`
-da experiência (`id, nome, versao, series, capabilities, viewport?`). O hub
-monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`.
+da experiência (`id, nome, versao, series, capabilities, viewport?, publico?`).
+O hub monta a URL do iframe com `versaoAtiva`; rollback = trocar `versaoAtiva`
+(`node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao x.y.z`).
 `viewport` presente ⇒ o hub embeda dentro do `DispositivoFrame` (casca de
-aparelho com escala). Sem manifesto (dev) o hub cai na raiz do Vite; teste
-local: rota `/dev-embed?src=http://localhost:5173`.
+aparelho com escala). `publico: "professor"` ⇒ ferramenta do professor
+(exp-90-plano-de-aula): embedada em `/professor/plano-de-aula`, e `/exp/*`
+responde 404 para ela. Sem manifesto (dev) o hub cai na raiz do Vite **da
+experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
+5173 exp-01, 5174 exp-02, 5175 exp-90…); teste local: rota `/dev-embed?src=http://localhost:5174`.
+A montagem do embed (token, manifesto, dev server, origin) é uma só:
+`apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed` e
+`/professor/plano-de-aula`.
+O aluno entra na experiência da SÉRIE dele (`apps/hub/lib/experiencia-do-aluno.ts`,
+mapa estático até o manifesto virar a fonte).
 
 ### Evento de telemetria (inspirado em xAPI, simplificado)
 ```json
@@ -101,6 +112,18 @@ SDK preenche tudo exceto `verbo`, `objeto`, `resultado`. Batch de até 50, flush
 Interface única `AiProvider { generate(req): Promise<AiResult> }`. Implementações:
 `vertex.provider.ts` (default), `mock.provider.ts` (testes). Para trocar de
 provedor, cria-se novo arquivo — nada fora de `src/ai` conhece o vendor.
+`AiRequest.modelo: "padrao" | "longo"` escolhe a família (o `longo` mapeia para
+`VERTEX_MODEL_LONGO`, Gemini 2.5, saída até 65k — planos anuais); quem gera texto
+longo checa `AiResult.finishReason` (`MAX_TOKENS` = conteúdo cortado, é erro).
+
+### Plano de aula (exp-90, `apps/api/src/planos`)
+Ferramenta do professor: `POST /planos` (202) gera em background (claim atômico
+em `planos_de_aula`, `marked` roda na api), o cliente faz polling em `GET /planos/:id`.
+Conteúdo em object storage PRIVADO (`{contrato}-planos`; `PLANOS_DRIVER=local`
+em dev → `storage-privado/`): `gerado.md` imutável + `atual.html` do editor
+(sanitizado com allowlist). Referências curriculares = texto no Postgres
+(`planos_referencias`, catálogo do contrato, sem RLS), importadas por
+`scripts/importar-referencias-plano.mjs` com `PLANOS_IMPORT_TOKEN`.
 
 ## Convenções de código
 
@@ -113,6 +136,11 @@ provedor, cria-se novo arquivo — nada fora de `src/ai` conhece o vendor.
   no sdk/experiências, Jest no NestJS.
 - UI: template de experiência é propositalmente cru. Trabalho visual sério
   segue `docs/DESIGN.md` quando existir (não inventar design system agora).
+- Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
+  professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
+  `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
+  gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
+  `comTenancy` + controllers por papel.
 
 ## Comandos
 
@@ -122,6 +150,9 @@ pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
 pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
 pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
 pnpm --filter @edu/api test
+pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
+pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
+node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 ```
 
 ## Como criar uma experiência nova
@@ -154,8 +185,8 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 
 - [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
 - [ ] Se mexeu em tela: smoke VISUAL (`node scripts/walkthrough-aluno.mjs <pasta>`
-      e `walkthrough-professor.mjs`) — typecheck verde não pega ícone virando
-      texto, link sublinhado nem iframe vazio
+      e `walkthrough-professor.mjs`, que também cobre a exp-90 embedada) —
+      typecheck verde não pega ícone virando texto, link sublinhado nem iframe vazio
 - [ ] Input externo validado com Zod
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client

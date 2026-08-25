@@ -19,3 +19,14 @@
    lote sempre que a pedagogia permitir.
 8. **JWT curto + memória no iframe** — roubo mitigado por HTTPS, expiração 1h,
    escopo mínimo, rate limit; validação de nota é server-side de qualquer forma.
+9. **Gabarito e estado de missão server-side, por experiência** (exp-02
+   UnooTube, 2026-08-24) — `factual` (a resposta) nunca vai ao bundle; a api
+   corrige e devolve inscritos/fontes (regra 3). Não há módulo genérico de
+   avaliação: cada experiência com lógica de domínio ganha um módulo próprio
+   (`apps/api/src/<slug>/`), como `motor/` para a exp-01. Decisões da missão:
+   ranking com colegas FICTÍCIOS (distribuição desenhada para a lição; sem
+   pontuação de menores reais — LGPD), URLs das fontes como TEXTO (sandbox do
+   iframe bloqueia popups; aluno não sai da plataforma), salvos CONGELADOS após
+   "adicionar credibilidade" (o score já foi reportado — nota e estado não
+   divergem; reiniciar descongela), aluno roteado pela SÉRIE
+   (`4EF → exp-02-unootube`, mapa estático até o manifesto ser a fonte).
