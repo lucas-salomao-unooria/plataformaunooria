@@ -74,7 +74,7 @@ export const EnvSchema = z.object({
   // nunca aberta — ver `pubsub-push.guard.ts`. Em dev não há Pub/Sub.
   TELEMETRIA_PUSH_SA: z.string().optional(),
   TELEMETRIA_PUSH_AUDIENCE: z.string().optional(),
-  CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175"),
+  CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176"),
   PORT: z.coerce.number().int().default(3001),
 }).superRefine((env, ctx) => {
   if (env.AI_PROVIDER === "vertex" && !env.VERTEX_PROJECT_ID) {

@@ -5,6 +5,7 @@ import { CartaoProduto } from "@/components/cartao-produto";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
 import { MISSAO_ATUAL, rotaDaMissao } from "@/lib/entre-redes/catalogo";
+import { situacaoDoBemEstar, type ResumoBemEstar } from "@/lib/bem-estar";
 import { PRODUTOS } from "@/lib/produtos";
 import { STATUS_DA_ATIVIDADE } from "@/lib/status-atividade";
 
@@ -47,8 +48,16 @@ export default async function HubProfessor() {
 
   // No origem era `prisma.activity.findMany({ take: 4 })`; a api devolve a
   // lista já ordenada por criação (desc) e escopada ao professor do token.
-  const resposta = await apiDoServidor<RespostaAtividades>("/atividades");
+  // O resumo do bem-estar é leve (não abre ciclo nem chama IA) e falha em
+  // silêncio: sem api, o card mostra o convite neutro.
+  const [resposta, resumoBemEstar] = await Promise.all([
+    apiDoServidor<RespostaAtividades>("/atividades"),
+    apiDoServidor<ResumoBemEstar>("/bemestar/resumo"),
+  ]);
   const recentes = (resposta?.atividades ?? []).slice(0, 4);
+  const situacaoPorSlug: Partial<Record<(typeof PRODUTOS)[number]["slug"], string>> = {
+    "bem-estar": situacaoDoBemEstar(resumoBemEstar),
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -58,8 +67,9 @@ export default async function HubProfessor() {
           Olá, {primeiroNome(usuario.nome)}
         </h1>
         <p className="text-[14px] text-unooria-neutral-500">
-          Escolha por onde começar. São dois produtos, cada um com o seu tempo:
-          um prepara a aula, o outro roda com a turma.
+          Escolha por onde começar. Três produtos, cada um com o seu tempo: um
+          prepara a aula, um roda com a turma e um cuida de você — em menos de
+          um minuto.
         </p>
       </div>
 
@@ -67,10 +77,12 @@ export default async function HubProfessor() {
         <h2 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
           Produtos
         </h2>
-        <ul className="grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PRODUTOS.map((produto) => (
             <li key={produto.slug} className="h-full">
-              <CartaoProduto produto={produto} />
+              <CartaoProduto
+                produto={{ ...produto, situacao: situacaoPorSlug[produto.slug] ?? produto.situacao }}
+              />
             </li>
           ))}
         </ul>

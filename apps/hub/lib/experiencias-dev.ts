@@ -11,6 +11,8 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp-02-unootube": "http://localhost:5174",
   /** Ferramenta do professor — embedada em /professor/plano-de-aula. */
   "exp-90-plano-de-aula": "http://localhost:5175",
+  /** Check-in de bem-estar do professor — embedado em /professor/bem-estar. */
+  "exp-91-bem-estar": "http://localhost:5176",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

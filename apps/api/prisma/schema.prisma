@@ -15,7 +15,7 @@
 // correspondentes são TEXT/SMALLINT e a validação de aplicação é feita com zod.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   /**
    * `native` é o binário da máquina que gerou (macOS em dev); o segundo é o
    * do node:20-slim (Debian + OpenSSL 3) usado no Dockerfile e no Cloud Run.
@@ -74,11 +74,13 @@ model User {
   escola Escola? @relation(fields: [escolaId], references: [id])
   turma  Turma?  @relation(fields: [turmaId], references: [id])
 
-  activities Activity[]        @relation("ActivityProfessor")
-  runs       Run[]
-  perfis     PerfilImportado[]
-  unootube   UnootubeSessao[]
-  planos     PlanoDeAula[]     @relation("PlanoProfessor")
+  activities       Activity[]        @relation("ActivityProfessor")
+  runs             Run[]
+  perfis           PerfilImportado[]
+  unootube         UnootubeSessao[]
+  planos           PlanoDeAula[]     @relation("PlanoProfessor")
+  bemEstarCiclos   BemEstarCiclo[]   @relation("BemEstarCicloProfessor")
+  bemEstarCheckins BemEstarCheckin[] @relation("BemEstarCheckinProfessor")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -186,15 +188,15 @@ model Post {
   aprovado       Boolean  @default(true)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  activity Activity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  author   Author        @relation(fields: [authorId], references: [id])
-  comments PostComment[]
-  events   Event[]
+  activity            Activity             @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  author              Author               @relation(fields: [authorId], references: [id])
+  comments            PostComment[]
+  events              Event[]
+  comentariosDaSessao ComentarioDaSessao[]
 
   @@index([activityId, lado, perfil, intensidade, aprovado], map: "idx_posts_curadoria")
   @@index([escolaId])
   @@map("posts")
-  comentariosDaSessao ComentarioDaSessao[]
 }
 
 /// comentários fake do post (objeto completo, como no padrão do IG)
@@ -264,8 +266,8 @@ model Run {
   nomeNoApp       String? @map("nome_no_app")
   avatarEscolhido String? @map("avatar_escolhido")
 
-  activity     Activity      @relation(fields: [activityId], references: [id])
-  aluno        User          @relation(fields: [alunoId], references: [id])
+  activity     Activity             @relation(fields: [activityId], references: [id])
+  aluno        User                 @relation(fields: [alunoId], references: [id])
   events       Event[]
   studentPosts StudentPost[]
   conclusao    Conclusao?
@@ -310,11 +312,11 @@ model StudentPost {
   ladoInferido String   @map("lado_inferido")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+  run                 Run                  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  comentariosDaSessao ComentarioDaSessao[]
 
   @@index([escolaId])
   @@map("student_posts")
-  comentariosDaSessao ComentarioDaSessao[]
 }
 
 /// perfil do Ato 1 importado ANTES de existir run
@@ -389,18 +391,18 @@ model Reflexao {
 /// Comentário que existe SÓ nesta sessão: escrito pelo aluno ou por uma persona
 /// reagindo a ele. Não vai para `post_comments` porque os posts são da turma.
 model ComentarioDaSessao {
-  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId String  @map("escola_id")
-  runId    String  @map("run_id") @db.Uuid
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId      String   @map("escola_id")
+  runId         String   @map("run_id") @db.Uuid
   /// Ancoragem: um post do banco OU o post que o aluno publicou. Nunca os dois.
-  postId        String? @map("post_id") @db.Uuid
-  studentPostId String? @map("student_post_id") @db.Uuid
+  postId        String?  @map("post_id") @db.Uuid
+  studentPostId String?  @map("student_post_id") @db.Uuid
   /// NULL = o próprio aluno. Preenchido = a persona que respondeu.
-  handle String?
+  handle        String?
   /// Escrito pelo modelo. Existe para o professor distinguir na auditoria.
-  deIa      Boolean  @default(false) @map("de_ia")
-  texto     String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  deIa          Boolean  @default(false) @map("de_ia")
+  texto         String
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   run         Run          @relation(fields: [runId], references: [id], onDelete: Cascade)
   post        Post?        @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -488,11 +490,11 @@ model Experiencia {
 /// Quota diária de IA por aluno — persistida (o Map em memória zera a cada
 /// restart e é contornável com múltiplas instâncias).
 model IaUsoDiario {
-  escolaId    String @map("escola_id")
-  usuarioId   String @map("usuario_id")
+  escolaId     String @map("escola_id")
+  usuarioId    String @map("usuario_id")
   /// YYYY-MM-DD
-  dia         String
-  tokensUsados Int   @default(0) @map("tokens_usados")
+  dia          String
+  tokensUsados Int    @default(0) @map("tokens_usados")
 
   @@id([escolaId, usuarioId, dia])
   @@map("ia_uso_diario")
@@ -503,25 +505,25 @@ model IaUsoDiario {
 /// da geração assíncrona e os caminhos. `pendente|gerando|pronto|erro` — CHECK
 /// na migration. RLS por escola_id + posse por professor_id nas queries.
 model PlanoDeAula {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId     String    @map("escola_id")
-  professorId  String    @map("professor_id") @db.Uuid
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId        String    @map("escola_id")
+  professorId     String    @map("professor_id") @db.Uuid
   /// 1EF..9EF | 1EM..3EM
-  serie        String
+  serie           String
   /// slug do catálogo (`letramento-digital`)
-  disciplina   String
-  titulo       String
-  status       String    @default("pendente")
-  tentativas   Int       @default(0) @db.SmallInt
-  iniciadoEm   DateTime? @map("iniciado_em") @db.Timestamptz(6)
-  erro         String?
-  tokensUsados Int       @default(0) @map("tokens_usados")
+  disciplina      String
+  titulo          String
+  status          String    @default("pendente")
+  tentativas      Int       @default(0) @db.SmallInt
+  iniciadoEm      DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  erro            String?
+  tokensUsados    Int       @default(0) @map("tokens_usados")
   /// `planos/{escolaId}/{id}/gerado.md` — Markdown da IA, imutável
-  caminhoGeradoMd String? @map("caminho_gerado_md")
+  caminhoGeradoMd String?   @map("caminho_gerado_md")
   /// `planos/{escolaId}/{id}/atual.html` — o que o editor salvou
-  caminhoHtml  String?   @map("caminho_html")
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  caminhoHtml     String?   @map("caminho_html")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   professor User @relation("PlanoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
 
@@ -546,4 +548,69 @@ model PlanoReferencia {
   @@unique([disciplina, serie, nome])
   @@index([disciplina, serie])
   @@map("planos_referencias")
+}
+
+/// Check-in de bem-estar do PROFESSOR (exp-91-bem-estar): um ciclo cobre os
+/// 21 itens do DASS-21 em 7 check-ins de 3 itens. `ordem_itens` é a permutação
+/// dos itens 1..21 sorteada na abertura do ciclo (cada check-in = 3 itens, um
+/// de cada subescala). A pontuação (soma ×2, faixas de Lovibond & Lovibond) é
+/// calculada SERVER-SIDE ao fechar o 7º check-in (regra 3). Dado SENSÍVEL de
+/// saúde (LGPD art. 11): só o próprio professor lê; RLS por escola_id + posse.
+/// `aberto|concluido|expirado` — CHECK na migration.
+model BemEstarCiclo {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String    @map("escola_id")
+  professorId String    @map("professor_id") @db.Uuid
+  status      String    @default("aberto")
+  ordemItens  Int[]     @map("ordem_itens")
+  iniciadoEm  DateTime  @default(now()) @map("iniciado_em") @db.Timestamptz(6)
+  expiraEm    DateTime  @map("expira_em") @db.Timestamptz(6)
+  concluidoEm DateTime? @map("concluido_em") @db.Timestamptz(6)
+  /// Pontuações já ×2 (escala do DASS-42), preenchidas ao concluir.
+  depressao   Int?
+  ansiedade   Int?
+  estresse    Int?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  professor User              @relation("BemEstarCicloProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+  checkins  BemEstarCheckin[]
+
+  @@index([escolaId, professorId, status])
+  @@map("bem_estar_ciclos")
+}
+
+/// Um check-in (≤ 1 por dia por professor — `dia` é YYYY-MM-DD no fuso do
+/// contrato). Nasce `pendente` no GET /bemestar/hoje, já com os 3 itens e os
+/// textos da IA (abertura + pergunta aberta) que o professor viu; vira
+/// `respondido` no POST. `respostas` = [{ item, valor }] ×3 (valor 0..3).
+/// `origem_texto`: `ia` | `fallback` (IA indisponível ou barrada pelo
+/// guardrail) | `seguranca` (sinal de apoio — texto fixo, a IA nem é chamada).
+model BemEstarCheckin {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  professorId  String    @map("professor_id") @db.Uuid
+  cicloId      String    @map("ciclo_id") @db.Uuid
+  /// 1..7 dentro do ciclo
+  numero       Int       @db.SmallInt
+  dia          String
+  status       String    @default("pendente")
+  itens        Int[]
+  respostas    Json?
+  textoLivre   String?   @map("texto_livre")
+  abertura     String
+  pergunta     String
+  acolhimento  String?
+  origemTexto  String    @default("fallback") @map("origem_texto")
+  sinalDeApoio Boolean   @default(false) @map("sinal_de_apoio")
+  tokensIa     Int       @default(0) @map("tokens_ia")
+  respondidoEm DateTime? @map("respondido_em") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  professor User          @relation("BemEstarCheckinProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+  ciclo     BemEstarCiclo @relation(fields: [cicloId], references: [id], onDelete: Cascade)
+
+  @@unique([escolaId, professorId, dia])
+  @@index([cicloId])
+  @@map("bem_estar_checkins")
 }

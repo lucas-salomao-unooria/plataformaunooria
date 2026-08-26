@@ -19,6 +19,7 @@ import { PerfisModule } from "./perfis/perfis.module";
 import { UnootubeModule } from "./unootube/unootube.module";
 import { StorageModule } from "./object-storage/storage.module";
 import { PlanosModule } from "./planos/planos.module";
+import { BemEstarModule } from "./bemestar/bemestar.module";
 import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
 
 @Module({
@@ -41,6 +42,7 @@ import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
     UnootubeModule,
     StorageModule,
     PlanosModule,
+    BemEstarModule,
   ],
   providers: [
     // Depois dos guards em toda rota: abre o AsyncLocalStorage com a escola do

@@ -81,6 +81,11 @@ como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
   `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`. As referências curriculares (texto)
   vivem no Postgres e entram por `scripts/importar-referencias-plano.mjs`.
   O Cloud Run `planodeaula` antigo pode ser desligado após o smoke em produção.
+- **Check-in de bem-estar** (exp-91, 2026-08): sem recurso novo de infra —
+  duas tabelas com RLS (`bem_estar_ciclos`, `bem_estar_checkins`; a migration
+  dá `GRANT` à `app_runtime`) e IA pelo mesmo Vertex/quota do professor. O
+  texto livre do professor vai ao Vertex (endpoint `global`): consta do DPA
+  junto com o resto da IA. Nenhum bucket, nenhuma rota pública.
 
 **IA: a service account da api precisa de `roles/aiplatform.user`** (2026-08).
 A api autentica no Vertex por ADC (`google-auth-library`), então em Cloud Run a

@@ -173,6 +173,44 @@ try {
   console.log("   excluir removeu da lista:", depoisDeExcluir < antesDeExcluir ? "sim" : "NÃO");
   await registrar("plano-de-aula-excluido", depoisDeExcluir < antesDeExcluir ? "lista diminuiu" : "LISTA NÃO MUDOU");
 
+  // ---- bem-estar: exp-91 embedada no hub ----------------------------------
+  // Fluxo completo do check-in do dia com o provider que estiver na api (com
+  // `mock` os textos são os fixos do catálogo — o formulário é o mesmo).
+  await p.goto(`${HUB}/professor`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1000);
+  const cardBemEstar = p.locator('a[href="/professor/bem-estar"]');
+  console.log("   card do bem-estar no hub:", (await cardBemEstar.count()) === 1 ? "sim" : "NÃO");
+  console.log("   situação do card:", (await cardBemEstar.locator("span").filter({ hasText: /Check-in|minuto/ }).first().innerText().catch(() => "?")));
+  await cardBemEstar.first().click();
+  await p.waitForURL((url) => url.pathname === "/professor/bem-estar", { timeout: 30_000 });
+  const bem = p.frameLocator('iframe[title="experiencia"]');
+  await bem.getByText(/Como você está|Check-in de hoje feito/).first().waitFor({ timeout: 45_000 });
+  const jaFeito = await bem.getByText("Check-in de hoje feito").isVisible().catch(() => false);
+  if (jaFeito) {
+    await registrar("bem-estar-ja-feito", "o check-in de hoje já estava registrado (1 por dia)");
+  } else {
+    await registrar("bem-estar-checkin", "3 frases do DASS-21 + pergunta aberta");
+    console.log("   ícones no iframe:", await iconesNoFrame());
+    // Uma resposta por frase: os grupos de rádio são as três frases do dia.
+    // Marca pelo <input>: o DS põe o input (opacity 0) POR CIMA do rótulo, e o
+    // Playwright recusa clicar num <span> coberto — para o humano é o mesmo clique.
+    const grupos = bem.locator("fieldset");
+    const total = await grupos.count();
+    console.log("   frases na tela:", total);
+    for (let i = 0; i < total; i += 1) {
+      await grupos.nth(i).locator('input[type=radio][aria-label="Às vezes"]').check();
+    }
+    await bem.locator("textarea").fill("Semana corrida, mas a aula de hoje rendeu.");
+    await registrar("bem-estar-respondido");
+    await bem.getByRole("button", { name: "Enviar check-in" }).click();
+    await bem.getByText("Check-in de hoje feito").waitFor({ timeout: 60_000 });
+    await registrar("bem-estar-feito", "acolhimento + progresso do ciclo");
+  }
+  await bem.getByRole("button", { name: "Histórico" }).click();
+  await bem.getByText("Seu histórico").waitFor({ timeout: 15_000 });
+  await p.waitForTimeout(1500);
+  await registrar("bem-estar-historico");
+
   // ---- gestor: importação de usuários ------------------------------------
   await p.goto(`${HUB}/api/auth/signout`, { waitUntil: "domcontentloaded" }).catch(() => {});
   await contexto.clearCookies();

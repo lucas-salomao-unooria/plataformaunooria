@@ -15,6 +15,7 @@
 #   exp-01  Vite da Instanooria (5173)
 #   exp-02  Vite do UnooTube (5174)
 #   exp-90  Vite do plano de aula, ferramenta do professor (5175)
+#   exp-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -51,6 +52,7 @@ x-fonte: &fonte
   - nm-exp01:/repo/apps/experiencias/exp-01-instanooria/node_modules
   - nm-exp02:/repo/apps/experiencias/exp-02-unootube/node_modules
   - nm-exp90:/repo/apps/experiencias/exp-90-plano-de-aula/node_modules
+  - nm-exp91:/repo/apps/experiencias/exp-91-bem-estar/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -175,9 +177,9 @@ services:
       # importar currículo/material didático com scripts/importar-referencias-plano.mjs.
       PLANOS_IMPORT_TOKEN: ${PLANOS_IMPORT_TOKEN:-}
       TELEMETRIA_TOPIC: ""
-      # As três portas de exp entram no CORS: sem a :5175 o plano de aula
+      # As quatro portas de exp entram no CORS: sem a :5175 o plano de aula
       # embedado morre com "Failed to fetch".
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176
       PORT: "3001"
     ports:
       - "3001:3001"
@@ -265,6 +267,16 @@ services:
       deps:
         condition: service_completed_successfully
 
+  exp-91:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-91-bem-estar
+    command: pnpm exec vite --host 0.0.0.0 --port 5176 --strictPort
+    ports:
+      - "5176:5176"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 volumes:
   pgdata:
   pnpm-store:
@@ -276,6 +288,7 @@ volumes:
   nm-exp01:
   nm-exp02:
   nm-exp90:
+  nm-exp91:
   nm-exp-template:
   hub-next:
   api-dist:

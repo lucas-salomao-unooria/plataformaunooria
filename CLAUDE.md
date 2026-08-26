@@ -106,13 +106,13 @@ Os dev servers das exps declaram `allowedHosts: ["host.docker.internal"]`: o
 Vite 5.4+ recusa `Host` que não conheça, e sem isso o hub em container não lê o
 manifesto e a experiência aparece esticada na janela.
 `publico: "professor"` ⇒ ferramenta do professor
-(exp-90-plano-de-aula): embedada em `/professor/plano-de-aula`, e `/exp/*`
-responde 404 para ela. Sem manifesto (dev) o hub cai na raiz do Vite **da
+(exp-90-plano-de-aula em `/professor/plano-de-aula`; exp-91-bem-estar em
+`/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
-5173 exp-01, 5174 exp-02, 5175 exp-90…); teste local: rota `/dev-embed?src=http://localhost:5174`.
+5173 exp-01, 5174 exp-02, 5175 exp-90, 5176 exp-91…); teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
-`apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed` e
-`/professor/plano-de-aula`.
+`apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
+`/professor/plano-de-aula` e `/professor/bem-estar`.
 O aluno tem hub próprio (`/aluno`): ele ESCOLHE a missão, sem filtro por série
 por enquanto (`apps/hub/lib/missoes-do-aluno.ts`, derivado do catálogo do Entre
 Redes; a série volta a filtrar quando o manifesto virar a fonte). Missão só
@@ -192,6 +192,29 @@ Claude): com o material real (currículo da rede + as 4 unidades do ano, ~190k
 tokens só de prompt) o gemini-2.5-flash é cortado em 32k e o professor recebe
 "o plano ficou grande demais" sem plano nenhum.
 
+### Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
+Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão
+brasileira Vignola & Tucci 2014; domínio público) em **microdoses** — 3 frases
+por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
+- **Os 21 itens são fixos e verbatim** (`catalogo.ts`). A IA NUNCA reescreve
+  um item: reformular quebra a validação psicométrica e as faixas de corte.
+  O que a IA gera é o entorno — abertura do dia, pergunta aberta, acolhimento
+  ao texto — e cada texto passa por `regras.validarTextoDaIa` (sem vocabulário
+  clínico, ordens, promessas, gestão, links, tamanho). Barrado, sem saldo ou
+  sem provider ⇒ texto fixo do catálogo; o check-in nunca deixa de abrir.
+  A IA nunca recebe nome, escola, pontuação ou faixa (só dia da semana, mês,
+  nº do check-in e o texto livre, delimitado como conteúdo).
+- **Correção server-side** (regra 3): ao 7º check-in a api soma por subescala
+  (×2) e classifica pelas faixas publicadas. `pontuar`/`faixaDe` em `regras.ts`.
+- **Sinal de apoio**: item 17 ou 21 ≥ 2, ou termo de risco no texto ⇒ mensagem
+  FIXA de apoio (CVV 188, SAMU 192, CAPS/UBS) e a IA não é chamada.
+- **Dado sensível (LGPD art. 11)**: `bem_estar_ciclos`/`bem_estar_checkins`
+  com RLS + posse por `professor_id` em toda query; **nenhuma rota de gestor
+  ou agregado** — só o professor lê, e `DELETE /bemestar/dados` apaga tudo.
+  Texto livre nunca vai a log nem à telemetria (só contagens).
+- 1 check-in por dia (`dia` em `America/Sao_Paulo`); ciclo expira em 21 dias
+  sem fechar. `GET /bemestar/resumo` é leve (sem IA) — é o que o card do hub lê.
+
 ## Convenções de código
 
 - TypeScript strict em tudo. Sem `any` (use `unknown` + narrow).
@@ -242,6 +265,7 @@ pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
 pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
 pnpm --filter @edu/api test
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
+pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 ```

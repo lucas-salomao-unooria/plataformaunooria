@@ -8,6 +8,9 @@
  *    `exp-90` embedada em `/professor/plano-de-aula` (`lib/plano-de-aula.ts`).
  * 2. **Entre Redes** — trilha de missões de letramento digital, dentro da
  *    plataforma (`lib/entre-redes/catalogo.ts`).
+ * 3. **Como você está?** — check-in de bem-estar do professor (DASS-21 em
+ *    microdoses); a experiência `exp-91` embedada em `/professor/bem-estar`
+ *    (`lib/bem-estar.ts`). O card mostra se o check-in de hoje já foi feito.
  *
  * Por isso o header do professor não carrega mais atalhos para "Guia da aula" e
  * "Plano de aula": eram links de uma plataforma de atividade única. A navegação
@@ -18,10 +21,11 @@
  */
 
 import { MISSOES_DISPONIVEIS } from "@/lib/entre-redes/catalogo";
+import { ROTA_BEM_ESTAR } from "@/lib/bem-estar";
 import { ROTA_PLANO_DE_AULA } from "@/lib/plano-de-aula";
 
 export type Produto = {
-  slug: "plano-de-aula" | "entre-redes";
+  slug: "plano-de-aula" | "entre-redes" | "bem-estar";
   nome: string;
   /** Uma linha do que o produto é. */
   chamada: string;
@@ -62,6 +66,18 @@ export const PRODUTOS: Produto[] = [
       MISSOES_DISPONIVEIS.length === 1
         ? "1 missão disponível"
         : `${MISSOES_DISPONIVEIS.length} missões disponíveis`,
+  },
+  {
+    slug: "bem-estar",
+    nome: "Como você está?",
+    chamada: "Bem-estar",
+    descricao:
+      "Três frases e um espaço para contar como foi a semana — menos de um minuto por dia. Em sete dias, um retrato só seu, que ninguém mais vê.",
+    destino: ROTA_BEM_ESTAR,
+    externo: false,
+    acao: "Fazer o check-in",
+    // Substituída na página do hub pelo estado real (`GET /bemestar/resumo`).
+    situacao: "Menos de 1 minuto por dia",
   },
 ];
 

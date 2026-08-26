@@ -46,6 +46,22 @@ const ICONES: Record<Produto["slug"], React.ReactNode> = {
       <path d="M8.4 7h7.2" />
     </svg>
   ),
+  "bem-estar": (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.9a4.3 4.3 0 0 1 7.5 2.4c0 5.6-7.5 10.2-7.5 10.2Z" />
+      <path d="M7.5 12.5h2.2l1.3-2.2 1.8 4 1.2-1.8h2.5" />
+    </svg>
+  ),
 };
 
 function SetaExterna() {

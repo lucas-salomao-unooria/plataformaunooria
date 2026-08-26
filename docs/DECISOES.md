@@ -30,3 +30,15 @@
    "adicionar credibilidade" (o score já foi reportado — nota e estado não
    divergem; reiniciar descongela), aluno roteado pela SÉRIE
    (`4EF → exp-02-unootube`, mapa estático até o manifesto ser a fonte).
+10. **Check-in de bem-estar do professor: DASS-21 fixo, IA só no entorno,
+   dado que só o professor lê** (exp-91, 2026-08-25). O instrumento entra
+   verbatim (versão brasileira de Vignola & Tucci 2014) em microdoses de 3
+   itens/dia — engajamento vem de custar < 1 min, não de reescrever perguntas.
+   A IA gera abertura, pergunta aberta e acolhimento, atrás de guardrails
+   (`regras.validarTextoDaIa`) com fallback fixo, e nunca vê pontuação, nome ou
+   escola. Correção server-side ao 7º check-in. Item sentinela (17/21 ≥ 2) ou
+   termo de risco ⇒ mensagem fixa de apoio (CVV 188) sem IA. Por ser dado de
+   saúde (LGPD art. 11), **não há visão de gestor nem agregado por escola**:
+   RLS + posse por professor, e o próprio professor apaga tudo
+   (`DELETE /bemestar/dados`). Uma visão agregada/anonimizada para a rede é
+   decisão futura, com DPA e k-anonimato — não sai de um `GROUP BY`.
