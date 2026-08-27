@@ -241,7 +241,7 @@ describe("concluir a partida", () => {
     const s = await service.abrir(ESCOLA, aluno, "1.0.0");
     await service.concluir(ESCOLA, aluno, s.sessaoId, partidaCompleta()); // seguranca.cartoes vazio
     const [linha] = await prisma.$queryRaw<Array<{ nulo: boolean }>>`
-      SELECT leitura_mensagens IS NULL AS nulo FROM vila_sessoes WHERE id = ${s.sessaoId}::uuid`;
+      SELECT leitura_mensagens IS NULL AS nulo FROM exp_70_sessoes WHERE id = ${s.sessaoId}::uuid`;
     expect(linha!.nulo).toBe(true);
     const relatorio = await service.doAluno(ESCOLA, aluno);
     expect(relatorio!.mensagens).toBeNull();

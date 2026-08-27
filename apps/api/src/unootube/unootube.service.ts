@@ -260,11 +260,11 @@ export class UnootubeService {
       // Antes de criar linha: o aluno precisa ser desta escola (users está fora da RLS).
       await this.alunoDaEscola(tx, escolaId, alunoId);
       await tx.$executeRaw`
-        INSERT INTO unootube_sessoes (escola_id, aluno_id)
+        INSERT INTO exp_02_sessoes (escola_id, aluno_id)
         VALUES (${escolaId}, ${alunoId}::uuid)
         ON CONFLICT DO NOTHING`;
       await tx.$executeRaw`
-        SELECT 1 FROM unootube_sessoes
+        SELECT 1 FROM exp_02_sessoes
         WHERE escola_id = ${escolaId} AND aluno_id = ${alunoId}::uuid
         FOR UPDATE`;
       const atual = await tx.unootubeSessao.findUniqueOrThrow({

@@ -499,7 +499,7 @@ export class VilaService {
    * nada. Quem zera está dizendo "vou rodar isto do zero"; sem sortear de novo,
    * não é do zero.
    *
-   * O que NÃO é tocado: `perfis_importados`. Aquilo pertence à atividade do
+   * O que NÃO é tocado: `exp_01_exp_70_perfis_importados`. Aquilo pertence à atividade do
    * Instanooria, não à Vila, e apagar de lá trocaria os lados de uma atividade em
    * andamento sem ninguém pedir. Se o professor quiser refazer a largada, ele
    * reimporta depois de a turma jogar de novo.
@@ -542,7 +542,7 @@ export class VilaService {
    * importados" sem dizer que 7 foram descartados deixa o professor achando que
    * a turma inteira entrou. Ele precisa saber para decidir se completa à mão.
    *
-   * Não escreve nada — quem grava em `perfis_importados` é o módulo `perfis`,
+   * Não escreve nada — quem grava em `exp_01_exp_70_perfis_importados` é o módulo `perfis`,
    * que é o dono daquela tabela. Este método é a leitura.
    */
   async perfisParaOAto1(

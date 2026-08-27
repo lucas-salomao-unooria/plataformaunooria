@@ -10,7 +10,7 @@ import { PerfisController, PerfisImportacaoController } from "./perfis.controlle
  */
 /* `VilaModule` entra porque o Ato 1 deixou de ser externo: `POST
    :id/perfis/da-vila` lê o perfil da exp-70 pelo `VilaService`. A dependência é
-   nesta direção e não na contrária — `perfis` é dono de `perfis_importados`, e
+   nesta direção e não na contrária — `perfis` é dono de `exp_01_exp_70_perfis_importados`, e
    `vila` não sabe que o Instanooria existe. */
 @Module({
   imports: [VilaModule],

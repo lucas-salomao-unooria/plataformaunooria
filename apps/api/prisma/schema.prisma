@@ -138,7 +138,7 @@ model Activity {
   perfis    PerfilImportado[]
 
   @@index([escolaId])
-  @@map("activities")
+  @@map("exp_01_activities")
 }
 
 /// personas fictícias (etapa 0 da geração)
@@ -165,7 +165,7 @@ model Author {
 
   @@unique([activityId, handle])
   @@index([escolaId])
-  @@map("authors")
+  @@map("exp_01_authors")
 }
 
 model Post {
@@ -200,9 +200,9 @@ model Post {
   events              Event[]
   comentariosDaSessao ComentarioDaSessao[]
 
-  @@index([activityId, lado, perfil, intensidade, aprovado], map: "idx_posts_curadoria")
+  @@index([activityId, lado, perfil, intensidade, aprovado], map: "idx_exp_01_posts_curadoria")
   @@index([escolaId])
-  @@map("posts")
+  @@map("exp_01_posts")
 }
 
 /// comentários fake do post (objeto completo, como no padrão do IG)
@@ -222,7 +222,7 @@ model PostComment {
   author Author? @relation(fields: [authorId], references: [id])
 
   @@index([escolaId])
-  @@map("post_comments")
+  @@map("exp_01_post_comments")
 }
 
 model GenerationJob {
@@ -243,7 +243,7 @@ model GenerationJob {
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("generation_jobs")
+  @@map("exp_01_generation_jobs")
 }
 
 /// sessão de uso do aluno
@@ -283,7 +283,7 @@ model Run {
 
   @@unique([activityId, alunoId])
   @@index([escolaId])
-  @@map("runs")
+  @@map("exp_01_runs")
 }
 
 model Event {
@@ -302,9 +302,9 @@ model Event {
   run  Run   @relation(fields: [runId], references: [id], onDelete: Cascade)
   post Post? @relation(fields: [postId], references: [id])
 
-  @@index([runId, id], map: "idx_events_run")
+  @@index([runId, id], map: "idx_exp_01_events_run")
   @@index([escolaId])
-  @@map("events")
+  @@map("exp_01_events")
 }
 
 /// post publicado pelo aluno (opcional, espontâneo)
@@ -322,7 +322,7 @@ model StudentPost {
   comentariosDaSessao ComentarioDaSessao[]
 
   @@index([escolaId])
-  @@map("student_posts")
+  @@map("exp_01_student_posts")
 }
 
 /// perfil do Ato 1 importado ANTES de existir run
@@ -347,7 +347,7 @@ model PerfilImportado {
 
   @@unique([activityId, alunoId])
   @@index([escolaId])
-  @@map("perfis_importados")
+  @@map("exp_01_exp_70_perfis_importados")
 }
 
 /// conclusão da missão: neste fluxo o aluno só escolhe um lado; o texto livre
@@ -363,7 +363,7 @@ model Conclusao {
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("conclusoes")
+  @@map("exp_01_conclusoes")
 }
 
 model Dossier {
@@ -376,7 +376,7 @@ model Dossier {
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("dossiers")
+  @@map("exp_01_dossiers")
 }
 
 /// Fechamento da atividade: o que o aluno entendeu sobre viés, algoritmo e as
@@ -391,7 +391,7 @@ model Reflexao {
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("reflexoes")
+  @@map("exp_01_reflexoes")
 }
 
 /// Comentário que existe SÓ nesta sessão: escrito pelo aluno ou por uma persona
@@ -417,7 +417,7 @@ model ComentarioDaSessao {
   @@index([runId, createdAt], map: "idx_comentarios_sessao_run")
   @@index([runId, postId], map: "idx_comentarios_sessao_post")
   @@index([escolaId])
-  @@map("comentarios_da_sessao")
+  @@map("exp_01_comentarios_da_sessao")
 }
 
 // ─── Tabelas do contrato SDK/monorepo (absorvidas do scaffold SQL) ───────────
@@ -454,12 +454,19 @@ model UnootubeSessao {
 
   @@id([escolaId, alunoId])
   @@index([escolaId])
-  @@map("unootube_sessoes")
+  @@map("exp_02_sessoes")
 }
 
 /// Telemetria analítica (xAPI simplificado) — gravada pelo ingest do Pub/Sub.
+/// Particionada por mês (`PARTITION BY RANGE (ts)`, migration
+/// `20260827100000_telemetria_particionada`). As partições vivem no schema
+/// `particoes` — fora do alcance do Prisma, que gerencia só `public`.
+///
+/// A PK é COMPOSTA porque o Postgres exige a chave de partição em todo índice
+/// único. A dedupe do Pub/Sub segue correta: reentrega da mesma mensagem traz
+/// o mesmo `ts`.
 model TelemetriaEvento {
-  eventId    String   @id @map("event_id") @db.Uuid
+  eventId    String   @map("event_id") @db.Uuid
   ts         DateTime @db.Timestamptz(6)
   escolaId   String   @map("escola_id")
   alunoId    String   @map("aluno_id")
@@ -471,6 +478,7 @@ model TelemetriaEvento {
   resultado  Json?
   contexto   Json?
 
+  @@id([eventId, ts])
   @@index([escolaId, expId, ts], map: "idx_tel_escola_exp_ts")
   @@map("telemetria_eventos")
 }
@@ -543,7 +551,7 @@ model PlanoDeAula {
   professor User @relation("PlanoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
 
   @@index([escolaId, professorId])
-  @@map("planos_de_aula")
+  @@map("exp_90_planos")
 }
 
 /// Referências curriculares do CONTRATO (currículo da rede, material didático)
@@ -562,7 +570,7 @@ model PlanoReferencia {
 
   @@unique([disciplina, serie, nome])
   @@index([disciplina, serie])
-  @@map("planos_referencias")
+  @@map("exp_90_referencias")
 }
 
 // ─── exp-70-vila-do-lume ─────────────────────────────────────────────────────
@@ -656,9 +664,9 @@ model VilaSessao {
   aluno  User         @relation("VilaAluno", fields: [alunoId], references: [id], onDelete: Cascade)
   perfis VilaPerfil[]
 
-  @@index([escolaId, turmaId, abertaEm], map: "idx_vila_sessoes_consulta")
-  @@index([escolaId, alunoId], map: "idx_vila_sessoes_aluno")
-  @@map("vila_sessoes")
+  @@index([escolaId, turmaId, abertaEm], map: "idx_exp_70_sessoes_consulta")
+  @@index([escolaId, alunoId], map: "idx_exp_70_sessoes_aluno")
+  @@map("exp_70_sessoes")
 }
 
 /// O retrato Schwartz de uma partida. RECALCULADO pelo servidor a partir das
@@ -703,8 +711,8 @@ model VilaPerfil {
   aluno  User       @relation("VilaPerfilAluno", fields: [alunoId], references: [id], onDelete: Cascade)
 
   @@unique([sessaoId, versaoMapeamento])
-  @@index([escolaId, alunoId, createdAt], map: "idx_vila_perfis_consulta")
-  @@map("vila_perfis")
+  @@index([escolaId, alunoId, createdAt], map: "idx_exp_70_perfis_consulta")
+  @@map("exp_70_perfis")
 }
 
 /// Que bolha cada aluno recebeu. Uma linha por aluno, POR ALUNO e não por
@@ -726,8 +734,8 @@ model VilaBolha {
   aluno User @relation("VilaBolhaAluno", fields: [alunoId], references: [id], onDelete: Cascade)
 
   @@id([escolaId, alunoId])
-  @@index([escolaId], map: "idx_vila_bolhas_escola")
-  @@map("vila_bolhas")
+  @@index([escolaId], map: "idx_exp_70_bolhas_escola")
+  @@map("exp_70_bolhas")
 }
 
 /// Check-in de bem-estar do PROFESSOR (exp-91-bem-estar): um ciclo cobre os
@@ -757,7 +765,7 @@ model BemEstarCiclo {
   checkins  BemEstarCheckin[]
 
   @@index([escolaId, professorId, status])
-  @@map("bem_estar_ciclos")
+  @@map("exp_91_ciclos")
 }
 
 /// Um check-in (≤ 1 por dia por professor — `dia` é YYYY-MM-DD no fuso do
@@ -792,5 +800,5 @@ model BemEstarCheckin {
 
   @@unique([escolaId, professorId, dia])
   @@index([cicloId])
-  @@map("bem_estar_checkins")
+  @@map("exp_91_checkins")
 }

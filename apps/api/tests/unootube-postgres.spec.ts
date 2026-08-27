@@ -211,10 +211,10 @@ describe("tenancy", () => {
 
   test("a RLS da tabela nova está armada (policy + FORCE)", async () => {
     const policies = await prisma.$queryRaw<{ policyname: string }[]>`
-      SELECT policyname FROM pg_policies WHERE tablename = 'unootube_sessoes'`;
-    expect(policies.map((p) => p.policyname)).toEqual(["unootube_sessoes_por_escola"]);
+      SELECT policyname FROM pg_policies WHERE tablename = 'exp_02_sessoes'`;
+    expect(policies.map((p) => p.policyname)).toEqual(["exp_02_sessoes_por_escola"]);
     const [tabela] = await prisma.$queryRaw<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
-      SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'unootube_sessoes'`;
+      SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'exp_02_sessoes'`;
     expect(tabela).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
   });
 });

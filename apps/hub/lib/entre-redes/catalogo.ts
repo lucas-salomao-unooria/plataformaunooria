@@ -10,12 +10,12 @@
  *
  * Este arquivo é a fonte da verdade da trilha. Ele descreve o CATÁLOGO
  * (o que a Unooria oferece); as **atividades** que o professor cria a partir de
- * uma missão são instâncias no banco (`activities`), com rota própria em
+ * uma missão são instâncias no banco (`exp_01_activities`), com rota própria em
  * `/professor/atividades/**`.
  *
  * NOTA DE MODELAGEM: enquanto existir uma única missão COM ATIVIDADES, toda
- * atividade pertence a `MISSAO_ATUAL` por construção — por isso `activities`
- * ainda não tem coluna `missao`. Missões sem `activities` (o UnooTube do 4º
+ * atividade pertence a `MISSAO_ATUAL` por construção — por isso `exp_01_activities`
+ * ainda não tem coluna `missao`. Missões sem `exp_01_activities` (o UnooTube do 4º
  * ano: conteúdo fixo, resultados em tabela própria da api) não mudam isso.
  * Quando a segunda missão configurável entrar, o caminho é adicionar essa
  * coluna (default = slug da missão atual) e filtrar as listagens por ela; os

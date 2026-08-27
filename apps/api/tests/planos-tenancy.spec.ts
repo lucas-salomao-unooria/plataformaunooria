@@ -3,8 +3,8 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 
 /**
- * Regra inviolável nº 1 para as tabelas da exp-90: `planos_de_aula` obedece a
- * RLS por escola com a role de runtime; `planos_referencias` é catálogo do
+ * Regra inviolável nº 1 para as tabelas da exp-90: `exp_90_planos` obedece a
+ * RLS por escola com a role de runtime; `exp_90_referencias` é catálogo do
  * CONTRATO e fica FORA da RLS de propósito (legível sem set_config).
  */
 
