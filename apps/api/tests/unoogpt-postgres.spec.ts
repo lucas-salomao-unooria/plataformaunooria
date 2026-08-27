@@ -189,6 +189,29 @@ describe("o turno do Cientista", () => {
     );
   });
 
+  it("turno em que NADA foi consultado não debita pergunta", async () => {
+    // O mock chama `usar_dados` com argumento vazio, então nada é carregado.
+    // Cobrar por isso ensinaria o aluno a não perguntar — que é o contrário do
+    // ponto da missão. Só conta como consulta se o modelo rodou ou se há fonte
+    // de fato em uso.
+    await service.mexerNoRelogio(ESCOLA, turmaId, "largada");
+    // A premissa tem de ser explícita: NENHUMA fonte em uso. Com fonte
+    // carregada o Cientista consulta de verdade e o débito é correto — foi o que
+    // esta suíte pegou na primeira versão do teste.
+    await prisma.unoogptSessao.update({
+      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+      data: { conjuntos: [], rodadas: 0, perguntasGastas: 0 },
+    });
+    const gastasAntes = 0;
+    await service.pergunta(ESCOLA, ana, "aluno", "quantas pessoas moram na Ribeirinha?");
+    const depois = await prisma.unoogptSessao.findUniqueOrThrow({
+      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+    });
+    expect(depois.perguntasGastas).toBe(gastasAntes);
+    // Mas a CHAMADA contou: o token foi gasto de todo modo.
+    expect(depois.chamadasIa).toBeGreaterThan(0);
+  });
+
   it("o orçamento de 3 perguntas é debitado no SERVIDOR e trava na quarta", async () => {
     for (let i = 0; i < 6; i += 1) {
       const codigo = await codigoDe(service.pergunta(ESCOLA, bia, "aluno", `pergunta ${i} sobre a chuva?`));
@@ -276,14 +299,34 @@ describe("decidir, justificar e enfrentar a tempestade", () => {
 
   it("recomeçar abre tentativa NOVA e preserva a conversa anterior", async () => {
     const falasAntes = await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, alunoId: ana } });
-    const s = await service.reiniciar(ESCOLA, ana);
-    expect(s.tentativa).toBe(2);
-    expect(s.conjuntos).toEqual([]);
-    expect(s.alocacao).toEqual({ alfa: null, bravo: null });
+    const { sessao } = await service.reiniciar(ESCOLA, ana);
+    expect(sessao.tentativa).toBe(2);
+    expect(sessao.conjuntos).toEqual([]);
+    expect(sessao.alocacao).toEqual({ alfa: null, bravo: null });
     // Para o aluno a tela limpa; para o professor a aula inteira continua.
     expect(await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, alunoId: ana } })).toBe(
       falasAntes,
     );
+  });
+});
+
+describe("o ENVELOPE das rotas de mutação", () => {
+  /**
+   * Toda rota de mutação devolve `{ sessao }`. Parece detalhe e não é: o cliente
+   * tem UM tipo para todas (`RespostaEstado`), e uma rota que devolvesse a
+   * sessão crua fazia ele ler `dados.sessao` como `undefined` e derrubar a
+   * árvore do React — tela BRANCA dentro do iframe, sem erro de console.
+   * Nenhum typecheck vê através do HTTP; quem pegou foi o smoke visual.
+   */
+  it("passo, alocacao e reiniciar devolvem `{ sessao }`", async () => {
+    for (const resposta of [
+      await service.irParaPasso(ESCOLA, bia, "orientacao"),
+      await service.alocar(ESCOLA, bia, "alfa", "valeverde", null),
+      await service.reiniciar(ESCOLA, bia),
+    ]) {
+      expect(resposta).toHaveProperty("sessao");
+      expect((resposta as { sessao: { passo: string } }).sessao.passo).toBeTruthy();
+    }
   });
 });
 

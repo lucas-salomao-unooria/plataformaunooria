@@ -27,7 +27,7 @@ export function ExpFrame(props: {
   config?: Record<string, unknown>;
   /**
    * Permissões de iframe declaradas no manifesto DESTA experiência. Hoje só
-   * `pointer-lock`. Ausente = nenhuma, que é o comportamento que todas as
+   * `pointer-lock` e `forms`. Ausente = nenhuma, que é o comportamento que todas as
    * experiências tinham antes deste campo existir.
    */
   permissoes?: readonly string[];
@@ -142,6 +142,20 @@ export function ExpFrame(props: {
     // restauração assim. Ferramenta 1ª parte; não abre nada além disso.
     "allow-modals",
     ...(props.permissoes?.includes("pointer-lock") ? ["allow-pointer-lock"] : []),
+    /**
+     * `allow-forms` só para quem declarou (exp-03, a Missão Tempestade).
+     *
+     * O `Composer` do design system é um `<form>`, e num iframe com sandbox sem
+     * este token o navegador BLOQUEIA o submit — o aluno digita a pergunta,
+     * aperta Enter e nada acontece. O sintoma engana: a conversa parece viva,
+     * porque a mensagem de abertura do agente já está na tela, e o único rastro
+     * é um aviso no console sobre "form's frame is sandboxed".
+     *
+     * Por experiência, e não default, pelo mesmo motivo do pointer-lock:
+     * permitir submit de formulário é capacidade de quem declarou. Uma
+     * experiência que não tem formulário não tem por que poder enviar um.
+     */
+    ...(props.permissoes?.includes("forms") ? ["allow-forms"] : []),
   ].join(" ");
 
   return (

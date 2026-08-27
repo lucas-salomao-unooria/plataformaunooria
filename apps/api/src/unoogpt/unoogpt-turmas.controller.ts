@@ -41,6 +41,12 @@ const AcaoSchema = z.object({
 export class UnoogptTurmasController {
   constructor(private readonly service: UnoogptService) {}
 
+  /** As turmas da escola: alimenta o seletor da página de resultados. */
+  @Get("turmas")
+  turmas(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
+    return this.service.turmas(escolaAlvo(req.auth, escolaIdPedida));
+  }
+
   /** A folha da turma: relógio, retrato de conduta e uma linha por aluno. */
   @Get("turmas/:turmaId")
   turma(

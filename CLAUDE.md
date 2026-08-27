@@ -133,8 +133,15 @@ continua valendo para quando há UMA origem de bundles (o CDN, em produção).
 Os dev servers das exps declaram `allowedHosts: ["host.docker.internal"]`: o
 Vite 5.4+ recusa `Host` que não conheça, e sem isso o hub em container não lê o
 manifesto e a experiência aparece esticada na janela.
-`permissoes` (aditivo) lista o que o IFRAME daquela experiência precisa — hoje só
-`pointer-lock`, que o `ExpFrame` traduz no token `allow-pointer-lock` do sandbox.
+`permissoes` (aditivo) lista o que o IFRAME daquela experiência precisa — hoje
+`pointer-lock` e `forms`, que o `ExpFrame` traduz nos tokens
+`allow-pointer-lock` e `allow-forms`. **`forms` custou um bug inteiro para ser
+descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
+o submit — o aluno da exp-03 digitava a pergunta, apertava Enter e nada
+acontecia. O sintoma engana porque a conversa parece viva (a fala de abertura do
+agente já está na tela) e o único rastro é um aviso de console sobre "form's
+frame is sandboxed". Typecheck, lint e a primeira versão do smoke passaram por
+cima disso.
 Vazio (o default) = nenhuma, que é o que toda experiência tinha antes. É POR
 EXPERIÊNCIA de propósito: prender o ponteiro do aluno é capacidade de quem
 declarou, não default do frame. Medido em `scripts/probe-pointerlock.mjs`: num
@@ -149,7 +156,7 @@ experiência desaparecer da tela sozinha.
 (exp-90-plano-de-aula em `/professor/plano-de-aula`; exp-91-bem-estar em
 `/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
-5173 exp-01, 5174 exp-02, 5175 exp-90, 5176 exp-91, 5177 exp-70);
+5173 exp-01, 5174 exp-02, 5175 exp-90, 5176 exp-91, 5177 exp-70, 5178 exp-03);
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
@@ -384,7 +391,7 @@ no feed do aluno quebra a ilusão que a experiência está medindo.
 | `instanooria` (21) | `/instanooria` ou `InstanooriaUI` | `/instanooria.css` | `--insta-*`, prefixo `insta-` | exp-01 |
 | `unitube` (30) | `/unitube` ou `UnitubeUI` | `/unitube.css` | `--uni-*`, `uni-` — **só escuro** (o Figma não publica claro; proibido derivar) | exp-02 |
 | `whatsappmobile` (29) | `/whatsappmobile` ou `WhatsAppMobileUI` | `/whatsappmobile.css` | `--wa-*`, `wa-` — só escuro | — |
-| `chatgpt` (17) | `/chatgpt` ou `ChatGPTUI` | `/chatgpt.css` | `--gpt-*`, `gpt-`, `data-gpt-theme` | — |
+| `chatgpt` (25) | `/chatgpt` ou `ChatGPTUI` | `/chatgpt.css` | `--gpt-*`, `gpt-`, `data-gpt-theme` | exp-03 |
 | `tiktooria` (35) | `/tiktooria` ou `TikTooriaUI` | `/tiktooria.css` | `--tik-*`, `tik-` — dois CONTEXTOS de superfície (cromo claro de lista/perfil, imersivo preto de feed/câmera), não dois temas | — |
 
 **Consumir sempre pela ponte em `packages/ui`**, nunca importando o pacote direto
@@ -507,6 +514,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do aluno** |
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp-01 |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
+| `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp-03 INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
 
 **A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
 componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só
@@ -611,6 +619,10 @@ node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke 
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)
 node scripts/walkthrough-ato1-vila.mjs testes/wt-ato1                   # smoke do Ato 1 (a tela; a largada tem teste em tests/vila-ato1.spec.ts)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
+pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
+node scripts/walkthrough-aluno-unoogpt.mjs testes/walkthrough-unoogpt   # smoke da exp-03: DOIS contextos
+                                          # (o professor dá a largada, o aluno joga). Zera a turma no
+                                          # começo — senão a 2ª execução acha o aluno já na investigação.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)

@@ -252,6 +252,12 @@ export function Mapa({
             return (
               <article
                 key={b.slug}
+                /* Contrato com o smoke visual (README da exp): é por ele que o
+                   teste conta os bairros desenhados e confere que o mapa começa
+                   VAZIO. Sem um marcador estável a asserção viraria texto, e
+                   texto muda com a copy. */
+                data-bairro={b.slug}
+                data-com-dado={b.estimativa !== null}
                 data-nao-arrasta
                 style={{ left: b.left, top: b.top, width: b.w }}
                 onClick={() => {

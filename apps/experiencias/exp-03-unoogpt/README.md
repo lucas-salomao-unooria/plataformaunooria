@@ -93,15 +93,26 @@ Mudar um deles é mudar o teste.
 |---|---|
 | iframe no hub | `iframe[title="experiencia"]` |
 | briefing | texto `Não dá para atender todos` |
-| botão de começar | `button` com `Entrar na sala` |
+| botão de começar | `button` com `Começar` |
 | cronômetro parado | texto `Aguardando o professor` |
-| campo de fala | `form textarea` (o `Composer`) |
-| bolha do aluno | `[class*="gpt-chat-bubble"][data-role="user"]` |
-| bolha do Cientista | `[class*="gpt-chat-bubble"][data-role="assistant"]` |
+| cronômetro correndo | texto `Para investigar` |
+| campo de fala | **`form input`** — o `Composer` do DS é um `<form>` com `input`, não `textarea` |
 | contador de perguntas | texto `Perguntas:` |
-| bairro no mapa | `[data-bairro="ribeirinha"]` |
-| painel de decisão | texto `Por que aqui?` |
-| faixa do resultado | `[data-faixa]` |
+| bairro no mapa | `[data-bairro="<slug>"]` |
+| bairro COM dado | `[data-bairro][data-com-dado="true"]` — deve ser 0 antes de carregar fonte |
+| zerar a turma (professor) | `[data-zerar-turma]` |
+| linha do aluno (professor) | `[data-aluno="<usuario>"]` |
+
+**Duas armadilhas que este roteiro já pagou**, e que valem para qualquer smoke
+desta missão:
+
+1. **O estado é server-side e sobrevive ao teste.** A segunda execução encontra
+   o aluno já na investigação. Por isso o roteiro começa **zerando a turma** —
+   e de graça isso cobre o caminho destrutivo.
+2. **Esperar por texto do assistente é falso positivo.** A fala de abertura dele
+   já está na tela desde o começo, e o cliente mostra a fala do ALUNO
+   otimistamente antes de a api responder. A asserção honesta é a conversa
+   **sobreviver a um F5**, porque aí ela veio de `exp_03_mensagens`.
 
 ## Decisões
 
@@ -129,6 +140,21 @@ Marcadas como `(b) COMPENSAÇÃO` em `src/estilos/globals.css`:
    orçamento de 3 perguntas não perdoa;
 2. `ChatBubble` não aceita conteúdo em **bloco** abaixo da fala, e é ali que o
    cartão de leitura precisa aparecer (solto na coluna ele perde o dono).
+
+## `allow-forms` no sandbox
+
+O manifesto declara `"permissoes": ["forms"]`, e sem isso **a missão não
+funciona**: o `Composer` do DS é um `<form>`, e num iframe com sandbox sem
+`allow-forms` o navegador bloqueia o submit. O aluno digita, aperta Enter e nada
+acontece.
+
+O sintoma engana de propósito: a conversa parece viva (a fala de abertura do
+agente está na tela) e o único rastro é um aviso de console sobre *"form's frame
+is sandboxed"*. Foi assim que passou pelo typecheck, pelo lint e por uma primeira
+versão do smoke.
+
+É por experiência, não default, pelo mesmo motivo do `pointer-lock` da exp-70:
+permitir submit de formulário é capacidade de quem declarou.
 
 ## Rodar
 

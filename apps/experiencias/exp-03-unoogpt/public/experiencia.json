@@ -4,6 +4,7 @@
   "versao": "1.0.0",
   "series": ["2EM"],
   "capabilities": ["telemetria", "ia"],
+  "permissoes": ["forms"],
   "verbos": {
     "attempted": "briefing, recomeco",
     "interacted": "turno, fontes, alocacao",

@@ -3,10 +3,11 @@
  *
  * O Entre Redes é uma trilha, não uma atividade solta: cada ano da Educação
  * Básica — 1º ao 9º do Fundamental e as 3 séries do Médio — tem **4 unidades**,
- * e cada unidade é uma **missão**. Hoje só duas missões existem de fato (8º ano
+ * e cada unidade é uma **missão**. Hoje três missões existem de fato (8º ano
  * · Unidade 1, a bolha de filtro do Instanooria; 4º ano · Unidade 1, o
- * UnooTube). As demais aparecem na trilha como "Em breve" porque a grade é a
- * informação: o professor precisa enxergar onde a missão dele mora.
+ * UnooTube; 2ª série do EM · Unidade 1, a Missão Tempestade do unooGPT). As
+ * demais aparecem na trilha como "Em breve" porque a grade é a informação: o
+ * professor precisa enxergar onde a missão dele mora.
  *
  * Este arquivo é a fonte da verdade da trilha. Ele descreve o CATÁLOGO
  * (o que a Unooria oferece); as **atividades** que o professor cria a partir de
@@ -210,12 +211,76 @@ export const MISSAO_UNOOTUBE: Missao = {
 };
 
 /**
+ * 2ª série do EM · Unidade 1 — a Missão Tempestade (`exp-03-unoogpt`).
+ *
+ * ATENÇÃO À COPY: os textos abaixo foram redigidos a partir das ADRs e dos dois
+ * playtests documentados do projeto de origem, porque o guia do professor de lá
+ * (`docs/09-guia-professor.md`) está VAZIO — o material de condução do debate
+ * nunca foi escrito. E é no debate que a lição acontece: a missão
+ * deliberadamente não revela nada por software, porque o viés de cada fonte é o
+ * assunto da conversa depois. Esta ficha é ponto de partida para revisão
+ * pedagógica, não palavra final.
+ */
+export const MISSAO_UNOOGPT: Missao = {
+  anoSlug: "2-serie",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp-03-unoogpt",
+  titulo: "unooGPT — Decidir com o que os dados mostram",
+  resumo:
+    "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O aluno conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
+  status: "disponivel",
+  aluno: {
+    titulo: "unooGPT",
+    chamada:
+      "Uma tempestade chega a Serra do Sauá em uma hora. Você tem duas equipes, quatro bairros e um assistente que consulta os dados da cidade. Decida para onde mandar cada equipe.",
+  },
+  ficha: {
+    competencia:
+      "Letramento de dados — perguntar melhor, perceber que fontes discordam entre si e decidir sob incerteza, sem confundir 'não sabemos' com 'zero'.",
+    duracao: "1 aula (50 min): ~5 min de missão por aluno, o resto é o debate",
+    formato:
+      "Clone de assistente de IA. O aluno conversa com um 'Cientista de Dados' que consulta 8 fontes sobre a cidade — cada uma com um viés que ele não vê",
+    atos: [
+      {
+        rotulo: "1 — Briefing, e a espera",
+        texto:
+          "A manchete, o mapa apagado e a frase que organiza tudo: não dá para atender todos. O cronômetro aparece PARADO — quem dá a largada é você, no painel, e ela vale para a turma inteira ao mesmo tempo. Enquanto não largar, ninguém fala com o assistente.",
+      },
+      {
+        rotulo: "2 — Investigação: 3 perguntas, 5 minutos",
+        texto:
+          "O mapa começa VAZIO e só acende o que uma fonte carregada cobre. Conversar é de graça; investigar custa. Bairro sem cobertura fica em branco — e branco quer dizer 'não sabemos', nunca 'zero em risco'. É aqui que o aluno descobre que duas fontes discordam sobre o mesmo bairro.",
+      },
+      {
+        rotulo: "3 — Decidir e dizer por quê",
+        texto:
+          "Ele manda cada equipe e responde 'por que aqui?', escolhendo entre as fontes que ABRIU — ou 'foi intuição, não olhei dado', que está sempre disponível. O software não julga a resposta: quem lê é você. A lista nunca oferece a fonte que ele não consultou.",
+      },
+      {
+        rotulo: "4 — Resultado: a faixa, não a nota",
+        texto:
+          "O desfecho é sorteado, e a manchete é uma FAIXA com 20 corridas da mesma decisão plotadas: a mesma escolha não repete igual. Vêm também um fato ('627 pessoas ficaram sem equipe no Morro Alto — você nunca consultou a previsão do tempo') e a lista do que ele nunca abriu. Não há pontuação.",
+      },
+    ],
+    preparo: [
+      "Abra /professor/entre-redes/2-serie/unidade-1/resultados ANTES da aula: é de lá que sai a largada, e nenhum aluno fala com o assistente antes dela.",
+      "Combine a largada em voz alta. O relógio é da turma: quem chega antes espera, e a espera é a aula — não a tela travada.",
+      "Você pode somar +2 minutos ou encerrar a qualquer momento. Somar não faz a chuva andar para trás.",
+      "Guarde metade da aula para o debate: o software NÃO conta a ninguém qual fonte engana em quê. Esse é o seu material, e está no guia.",
+      "Turma sem partida nenhuma? Confira se a largada foi dada — é o motivo nº 1 de 'não abre'.",
+    ],
+  },
+};
+
+/**
  * As missões publicadas, indexadas pelo ano em que moram. Tudo o que não
  * está aqui entra na grade como "Em breve".
  */
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "4-ano": [MISSAO_UNOOTUBE],
   "8-ano": [MISSAO_ATUAL],
+  "2-serie": [MISSAO_UNOOGPT],
 };
 
 function montarAno(slug: string, rotulo: string, etapa: Etapa): Ano {

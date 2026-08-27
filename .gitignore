@@ -19,8 +19,13 @@ apps/api/storage/
 storage-privado/
 apps/api/storage-privado/
 
-# Prints dos walkthroughs
-testes/walkthrough-*/
+# Prints dos walkthroughs.
+#
+# `testes/` INTEIRA, e não só `testes/walkthrough-*/`: o padrão antigo deixava de
+# fora justamente as pastas que o CLAUDE.md documenta (`testes/wt-prof-vila`,
+# `testes/wt-ato1`), e um `git add` distraído levaria centenas de PNG de 2x para
+# o histórico. Esta pasta é saída de teste — nada dela é entregável.
+testes/
 
 # Mídia pesada das experiências (>2MB vai para o bucket de assets, não para o git)
 apps/experiencias/exp-02-unootube/public/videos/

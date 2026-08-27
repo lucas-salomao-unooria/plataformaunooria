@@ -20,6 +20,8 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp-70-vila-do-lume": "http://localhost:5177",
   /** Check-in de bem-estar do professor — embedado em /professor/bem-estar. */
   "exp-91-bem-estar": "http://localhost:5176",
+  /** A Missão Tempestade — 2ª série do EM, unidade 1. Próxima porta livre. */
+  "exp-03-unoogpt": "http://localhost:5178",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

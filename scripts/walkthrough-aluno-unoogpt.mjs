@@ -1,0 +1,230 @@
+import { mkdirSync } from "node:fs";
+import { chromium } from "playwright";
+
+/**
+ * Smoke VISUAL da exp-03-unoogpt (a Missão Tempestade), do login ao resultado.
+ *
+ * DOIS CONTEXTOS, e isso é o ponto: o relógio é da TURMA, e sem a largada do
+ * professor o aluno não fala com o Cientista. O roteiro prova as duas metades —
+ * primeiro que o aluno está BLOQUEADO, depois que a largada o libera. Um smoke
+ * de um contexto só passaria com o relógio quebrado.
+ *
+ * Valida também: o handshake da SDK no iframe cross-origin, o mapa VAZIO no
+ * começo (ponto cego é ausência, não zero), o orçamento de 3 perguntas debitado
+ * no servidor, o portão da justificativa, e a ausência de erros de console.
+ *
+ * Uso: node scripts/walkthrough-aluno-unoogpt.mjs <pasta> [aluno] [turma]
+ * Pré-requisitos: hub, api e a exp-03 (:5178) no ar + seed (turma 2A).
+ * Com AI_PROVIDER=mock o Cientista responde "[mock] ..." — o roteiro aceita.
+ * Os seletores abaixo são CONTRATO com a experiência (README da exp-03).
+ */
+const HUB = process.env.HUB_URL ?? "http://localhost:3000";
+const OUT = process.argv[2] ?? "testes/walkthrough-unoogpt";
+const USER = process.argv[3] ?? "aluno2a01";
+const TURMA = process.argv[4] ?? "2A";
+const PROF = process.env.PROF_DEMO ?? "prof.demo";
+const SENHA = process.env.SENHA_DEMO ?? "unooria123";
+
+mkdirSync(OUT, { recursive: true });
+
+const browser = await chromium.launch();
+const passos = [];
+const erros = [];
+
+/** Login com portão de hidratação: em dev o SSR chega antes do bundle, e o
+ *  `fill` do Playwright não move o estado do React. */
+async function entrar(pagina, usuario) {
+  await pagina.goto(`${HUB}/login`, { waitUntil: "domcontentloaded" });
+  await pagina.waitForSelector("button[type=submit]");
+  await pagina.waitForTimeout(1500);
+  await pagina.locator("#username").pressSequentially(usuario, { delay: 20 });
+  await pagina.locator("#password").pressSequentially(SENHA, { delay: 20 });
+  await pagina.waitForFunction(
+    () => !document.querySelector("button[type=submit]")?.hasAttribute("disabled"),
+    null,
+    { timeout: 10_000 },
+  );
+  await pagina.click("button[type=submit]");
+}
+
+function vigiar(pagina, rotulo) {
+  pagina.on("console", (m) => m.type() === "error" && erros.push(`[${rotulo}] ${m.text().slice(0, 200)}`));
+  pagina.on("pageerror", (e) => erros.push(`[${rotulo}] PAGEERROR: ${String(e).slice(0, 200)}`));
+}
+
+const registrar = async (pagina, nome, detalhe = "") => {
+  await pagina.screenshot({ path: `${OUT}/${passos.length + 1}-${nome}.png` });
+  passos.push(`${passos.length + 1}. ${nome}${detalhe ? ` — ${detalhe}` : ""}`);
+  console.log(`✓ ${nome}${detalhe ? ` — ${detalhe}` : ""}`);
+};
+
+try {
+  // ═══ PROFESSOR: abre a aula, mas AINDA NÃO dá a largada ═══════════════════
+  const ctxProf = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2 });
+  const prof = await ctxProf.newPage();
+  vigiar(prof, "prof");
+  await entrar(prof, PROF);
+  // Sai do /login: para onde o hub manda depois do login é assunto dele.
+  await prof.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
+
+  await prof.goto(`${HUB}/professor/entre-redes/2-serie/unidade-1`, { waitUntil: "domcontentloaded" });
+  await prof.waitForSelector("text=/largada/i", { timeout: 15_000 });
+  await registrar(prof, "ficha-do-professor", "a faixa avisa que sem largada a missão não começa");
+
+  await prof.click("text=Abrir a aula e os resultados");
+  await prof.waitForURL("**/resultados**", { timeout: 20_000 });
+  // O seletor de turma vem do banco: escolhe a 2A pelo rótulo.
+  const seletor = prof.locator("select").first();
+  await seletor.waitFor({ timeout: 15_000 });
+  // `selectOption` só aceita label literal: acha o value da 2A entre as opções.
+  const opcoes = await seletor.locator("option").evaluateAll((os) =>
+    os.map((o) => ({ value: o.value, label: o.textContent ?? "" })),
+  );
+  const alvo = opcoes.find((o) => o.label.includes(TURMA) && o.value);
+  if (!alvo) throw new Error(`turma ${TURMA} não está no seletor (rode o seed)`);
+  await seletor.selectOption(alvo.value);
+  await prof.waitForURL("**turmaId=**", { timeout: 20_000 });
+  await prof.waitForSelector("text=Relógio da aula", { timeout: 20_000 });
+
+  /* ZERAR PRIMEIRO — o estado desta missão é server-side e sobrevive ao
+     roteiro: sem isto a segunda execução encontra o aluno já na investigação e
+     o smoke falha por sucesso da rodada anterior. É o mesmo problema que o
+     walkthrough da exp-02 resolve reiniciando pelo perfil. Aqui o reset é do
+     PROFESSOR, e de graça ele cobre o caminho destrutivo. */
+  if (await prof.locator("[data-zerar-turma]").count()) {
+    await prof.click("[data-zerar-turma]");
+    await prof.locator("text=/Apaga as partidas|apaga todas as partidas/i").first().waitFor({ timeout: 10_000 });
+    await prof.locator("button", { hasText: /^Zerar a turma$/ }).last().click();
+    await prof.waitForTimeout(2500);
+    await registrar(prof, "turma-zerada", "partidas apagadas e relógio devolvido ao início");
+    await prof.reload({ waitUntil: "domcontentloaded" });
+    await prof.waitForSelector("text=Relógio da aula", { timeout: 20_000 });
+  }
+
+  await registrar(prof, "aula-antes-da-largada", "cronômetro parado, botão 'Dar a largada' habilitado");
+
+  // ═══ ALUNO: bloqueado, porque a largada não veio ══════════════════════════
+  const ctxAluno = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2 });
+  const aluno = await ctxAluno.newPage();
+  vigiar(aluno, "aluno");
+  await entrar(aluno, USER);
+  await aluno.waitForURL("**/aluno", { timeout: 30_000 });
+
+  const cartao = aluno.locator("a", { hasText: "unooGPT" }).first();
+  await cartao.waitFor({ timeout: 15_000 });
+  await registrar(aluno, "hub-do-aluno", `${await aluno.locator("main ul > li").count()} missões`);
+
+  await cartao.click();
+  await aluno.waitForURL("**/exp/exp-03-unoogpt**", { timeout: 30_000 });
+  const quadro = aluno.frameLocator('iframe[title="experiencia"]');
+  // O briefing é a primeira tela: se o handshake da SDK falhou, nada aparece.
+  await quadro.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
+  await registrar(aluno, "briefing", "handshake da SDK ok dentro do iframe");
+
+  // Entrar ANTES da largada é a melhor prova do portão: a investigação abre, o
+  // cronômetro aparece PARADO e o campo não aceita fala nenhuma.
+  await quadro.locator("button", { hasText: /começar/i }).first().click();
+  await quadro.locator("text=/Aguardando o professor/i").waitFor({ timeout: 25_000 });
+  const campoBloqueado = quadro.locator("form input").first();
+  await campoBloqueado.waitFor({ timeout: 20_000 });
+  if (!(await campoBloqueado.isDisabled())) {
+    throw new Error("o campo aceita fala ANTES da largada — o portão do relógio não está valendo");
+  }
+  await registrar(aluno, "aluno-esperando", "cronômetro parado e campo desabilitado");
+
+  // ═══ PROFESSOR: dá a largada ══════════════════════════════════════════════
+  await prof.click("text=Dar a largada");
+  await prof.waitForSelector("text=Em andamento", { timeout: 20_000 });
+  await registrar(prof, "largada-dada", "fase: Em andamento");
+
+  // ═══ ALUNO: agora a missão abre ═══════════════════════════════════════════
+  // O polling do relógio é de 5s; recarregar é mais rápido e igualmente válido.
+  /* O aluno JÁ está na investigação (ele entrou antes da largada, e o passo é
+     server-side). Recarregar não o devolve ao briefing — o que muda é o
+     cronômetro, que agora corre, e o campo, que agora aceita fala. É essa
+     mudança que interessa. O polling é de 5s; o reload é mais rápido e
+     igualmente válido. */
+  await aluno.reload({ waitUntil: "domcontentloaded" });
+  const q2 = aluno.frameLocator('iframe[title="experiencia"]');
+  const campo = q2.locator("form input").first();
+  await campo.waitFor({ timeout: 40_000 });
+  await q2.locator("text=/Perguntas:/i").waitFor({ timeout: 20_000 });
+  await q2.locator("text=/Para investigar/i").waitFor({ timeout: 20_000 });
+  if (await campo.isDisabled()) {
+    throw new Error("o campo continua bloqueado DEPOIS da largada — o relógio não liberou");
+  }
+  await registrar(aluno, "investigacao-liberada", "cronômetro correndo e campo habilitado");
+
+  // O MAPA COMEÇA VAZIO: nenhum bairro entrega estimativa antes de haver fonte.
+  const desenhados = await q2.locator("[data-bairro]").count();
+  const comDado = await q2.locator('[data-bairro][data-com-dado="true"]').count();
+  if (desenhados === 0) throw new Error("o mapa não desenhou bairro nenhum");
+  if (comDado !== 0) {
+    throw new Error(`${comDado} bairro(s) já têm dado antes de carregar fonte — o mapa deve começar VAZIO`);
+  }
+  await registrar(aluno, "mapa-vazio", `${desenhados} bairros desenhados, nenhum com dado`);
+
+  /* UM TURNO COM O CIENTISTA.
+     A asserção é a fala DO ALUNO aparecendo na conversa — não a do agente. A
+     primeira versão deste roteiro esperava por texto do assistente e passava
+     sem turno nenhum: a mensagem de abertura dele já está na tela desde o
+     começo, e o submit do formulário estava BLOQUEADO pelo sandbox. Um teste
+     que passa com a funcionalidade quebrada é pior que teste nenhum. */
+  const PERGUNTA = "onde mora mais gente?";
+  await campo.pressSequentially(PERGUNTA, { delay: 15 });
+  await campo.press("Enter");
+  await q2.locator(`text=${PERGUNTA}`).first().waitFor({ timeout: 60_000 });
+
+  /* A ASSERÇÃO DE VERDADE: a fala tem de SOBREVIVER a um reload.
+     Ver o texto na tela não prova nada — o cliente mostra a fala do aluno
+     otimistamente, na hora, e só a retira se a api falhar. Um turno que morre no
+     provedor fica ~30s na tela antes de desaparecer, e o teste passaria nessa
+     janela. O que só um turno gravado produz é a conversa voltar inteira depois
+     de um F5, porque ela vem de `exp_03_mensagens`. */
+  await aluno.reload({ waitUntil: "domcontentloaded" });
+  const q3 = aluno.frameLocator('iframe[title="experiencia"]');
+  await q3.locator(`text=${PERGUNTA}`).first().waitFor({ timeout: 40_000 });
+  const orcamento = await q3.locator("text=/Perguntas:/").first().innerText();
+  await registrar(aluno, "turno-do-cientista", `a fala sobreviveu ao F5 · ${orcamento.trim()}`);
+
+  // ═══ PROFESSOR: a folha da turma já mostra a criança ══════════════════════
+  await prof.reload({ waitUntil: "domcontentloaded" });
+  await prof.waitForSelector(`[data-aluno="${USER}"]`, { timeout: 20_000 });
+  const linha = await prof.locator(`[data-aluno="${USER}"]`).innerText();
+  await registrar(prof, "folha-da-turma", linha.replace(/\s+/g, " ").slice(0, 90));
+
+  // A listagem NÃO pode ter coluna de resgatados — é ranking de crianças.
+  const cabecalho = (await prof.locator("thead").first().innerText()).toLowerCase();
+  for (const proibido of ["resgatad", "salvas", "vítimas", "vitimas"]) {
+    if (cabecalho.includes(proibido)) throw new Error(`a folha da turma tem coluna proibida: ${proibido}`);
+  }
+  await registrar(prof, "sem-ranking", "nenhuma coluna de resgatados na listagem");
+
+  // ═══ PROFESSOR: a linha de uma criança, com a transcrição ═════════════════
+  await prof.locator(`[data-aluno="${USER}"] a`).first().click();
+  await prof.waitForSelector("text=O que a missão mediu", { timeout: 20_000 });
+  await prof.waitForSelector("text=A conversa", { timeout: 20_000 });
+  await registrar(prof, "relatorio-individual", "graus + transcrição");
+
+  console.log("\n" + passos.join("\n"));
+  if (erros.length > 0) {
+    console.error(`\n✗ ${erros.length} erro(s) de console:\n` + erros.join("\n"));
+    process.exitCode = 1;
+  } else {
+    console.log("\n✓ sem erros de console");
+  }
+} catch (erro) {
+  console.error("\n✗ FALHOU:", erro.message);
+  // Diagnóstico: o que estava DENTRO do iframe quando quebrou. Sem isto o
+  // timeout de um seletor não diz se a tela errada apareceu ou nenhuma.
+  for (const pagina of browser.contexts().flatMap((c) => c.pages())) {
+    const dentro = pagina.frames().find((f) => f.url().includes("5178"));
+    if (!dentro) continue;
+    const txt = await dentro.evaluate(() => document.body.innerText).catch(() => "(inacessível)");
+    console.error("--- iframe da exp ---\n" + txt.slice(0, 800));
+  }
+  console.log(passos.join("\n"));
+  process.exitCode = 1;
+} finally {
+  await browser.close();
+}

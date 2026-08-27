@@ -16,7 +16,11 @@ async function bootstrap() {
   }
   app.enableCors({
     origin: (
-      process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175"
+      // O fallback tinha parado na 5175: sem `CORS_ORIGINS` no ambiente, as
+      // exps 5176 (bem-estar), 5177 (Vila) e 5178 (unooGPT) ficavam fora e o
+      // navegador barrava a chamada — com um erro que fala de CORS, não da
+      // porta que faltou na lista.
+      process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178"
     ).split(","),
   });
   await app.listen(process.env.PORT ?? 3001);

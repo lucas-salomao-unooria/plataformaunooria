@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
-import { AI_PROVIDER, type AiProvider } from "../ai/provider";
+import { AI_PROVIDER, ErroDeGeracao, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
@@ -256,7 +256,14 @@ export class UnoogptService {
         // pode custar, senão o aluno aprende a não perguntar. Calculado ANTES de
         // gravar: `debitou` na fala do aluno é a trilha de auditoria de qual
         // turno custou pergunta, e é por ela que se reconstrói o orçamento.
-        const debita = gastaPergunta(tipo, resposta.rodada !== null || resposta.dadosUsados !== null);
+        // `dadosUsados` VAZIO não é consulta. O Cientista pode ter chamado
+        // `usar_dados` e não ter carregado nada (argumento que não casa com
+        // fonte nenhuma) — e cobrar por isso ensinaria o aluno a não perguntar,
+        // que é o contrário do ponto. Só conta como consulta se o modelo rodou
+        // ou se há fonte de fato em uso.
+        const consultou =
+          resposta.rodada !== null || (resposta.dadosUsados?.length ?? 0) > 0;
+        const debita = gastaPergunta(tipo, consultou);
 
         const comum = { escolaId, alunoId, passo: atual.passo, tentativa: atual.tentativa };
         await tx.unoogptMensagem.create({ data: { ...comum, papel: "aluno", texto, debitou: debita } });
@@ -302,6 +309,24 @@ export class UnoogptService {
           justificativas: opcoesDeJustificativa(atualizada.conjuntos),
         };
       }, escolaId);
+    } catch (erro) {
+      /**
+       * Falha do PROVEDOR não pode chegar ao aluno como 500.
+       *
+       * Sem isto, credencial ausente, cota do vendor ou rede instável viravam
+       * "Internal Server Error" dentro do iframe — e o aluno de 16 anos não tem
+       * o que fazer com isso. Vira `cientista-indisponivel` (503), que a tela
+       * traduz em "O Cientista não conseguiu responder agora. Tente falar de
+       * novo." E NÃO debita: o débito acontece só depois de resposta válida.
+       *
+       * O log fica com o motivo técnico — sem o texto do aluno, que é caixa
+       * livre escrita por menor de idade.
+       */
+      if (erro instanceof ErroDeGeracao) {
+        this.log.error(`turno sem resposta: ${erro.message}`, erro.detalhe);
+        throw erroDeJogo("cientista-indisponivel");
+      }
+      throw erro;
     } finally {
       // No `finally`: o token foi gasto mesmo quando o turno falhou, e a quota
       // que não conta a falha é quota que não protege nada.
@@ -526,13 +551,18 @@ export class UnoogptService {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
         where: { escolaId_alunoId: { escolaId, alunoId } },
       });
-      if (atual.passo === para) return sanitizarSessao(atual);
+      // ENVELOPE `{ sessao }` — o mesmo de `alocar` e `carregarConjuntos`.
+      // Devolver a sessão crua daqui fazia o cliente ler `dados.sessao` como
+      // `undefined` e derrubar a árvore inteira do React: a tela ficava BRANCA
+      // dentro do iframe, sem erro de console. Nenhum typecheck vê através do
+      // HTTP; quem pegou foi o smoke visual.
+      if (atual.passo === para) return { sessao: sanitizarSessao(atual) };
       if (!podeIr(atual.passo as Passo, para)) throw erroDeJogo("passo-invalido");
       const atualizada = await tx.unoogptSessao.update({
         where: { escolaId_alunoId: { escolaId, alunoId } },
         data: { passo: para },
       });
-      return sanitizarSessao(atualizada);
+      return { sessao: sanitizarSessao(atualizada) };
     }, escolaId);
   }
 
@@ -563,7 +593,7 @@ export class UnoogptService {
           concluidoEm: null,
         },
       });
-      return sanitizarSessao(atualizada);
+      return { sessao: sanitizarSessao(atualizada) };
     }, escolaId);
   }
 
@@ -835,6 +865,27 @@ export class UnoogptService {
         },
         agora,
       );
+    }, escolaId);
+  }
+
+  /**
+   * As turmas da escola — alimenta o seletor da página de resultados.
+   *
+   * NOTA: `unootube.service.ts` tem uma função idêntica. É duplicação real, e a
+   * saída não é uma delas importar a outra (acoplaria duas experiências) — é uma
+   * rota de plataforma para listar turmas, que ainda não existe. Quando a
+   * terceira experiência precisar disto, vale criá-la.
+   */
+  async turmas(escolaId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      const turmas = await tx.turma.findMany({
+        where: { escolaId },
+        select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
+        orderBy: [{ serie: "asc" }, { nome: "asc" }],
+      });
+      return {
+        turmas: turmas.map((t) => ({ id: t.id, nome: t.nome, serie: t.serie, alunos: t._count.alunos })),
+      };
     }, escolaId);
   }
 

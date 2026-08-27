@@ -24,6 +24,11 @@ const PREFIXOS_PERMITIDOS = [
      na api (`@Roles("professor")`); isto aqui só decide quais prefixos o BFF
      repassa. */
   "vila",
+  /* exp-03: a LARGADA do relógio da turma é client-side — o professor aperta
+     durante a aula e o painel precisa responder na hora, sem recarregar a
+     página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
+     As guardas de papel estão na api (`@Roles("professor")`). */
+  "unoogpt",
 ] as const;
 
 async function proxy(request: NextRequest, path: string[]) {

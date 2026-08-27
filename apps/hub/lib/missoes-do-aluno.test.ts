@@ -18,15 +18,19 @@ describe("missões do aluno", () => {
   });
 
   test("as missões publicadas hoje aparecem, com rota para o aparelho", () => {
+    // A ORDEM é a de `ANOS`: 1º ao 9º ano do Fundamental e depois as 3 séries
+    // do Médio. A 2ª série vem DEPOIS do 8º ano, e as transversais no fim.
     expect(MISSOES_DO_ALUNO.map((m) => m.expId)).toEqual([
       "exp-02-unootube",
       "exp-01-instanooria",
+      "exp-03-unoogpt",
       // Transversal: entra sem série e sem filtro nenhum.
       "exp-70-vila-do-lume",
     ]);
     expect(MISSOES_DO_ALUNO.map((m) => m.rota)).toEqual([
       "/exp/exp-02-unootube",
       "/exp/exp-01-instanooria",
+      "/exp/exp-03-unoogpt",
       "/exp/exp-70-vila-do-lume",
     ]);
   });

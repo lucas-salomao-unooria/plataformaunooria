@@ -35,7 +35,7 @@ const UpsertSchema = z.object({
    * default do frame. `fullscreen` não entra: o `allow` do frame já o delega a
    * todas as experiências.
    */
-  permissoes: z.array(z.enum(["pointer-lock"])).default([]),
+  permissoes: z.array(z.enum(["pointer-lock", "forms"])).default([]),
 });
 
 const EXP_ID_RE = /^exp-[a-z0-9-]+$/;

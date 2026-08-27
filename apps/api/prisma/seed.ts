@@ -3,8 +3,9 @@ import bcrypt from "bcryptjs";
 
 /**
  * Seed de desenvolvimento — evolução multi-tenant do seed do projeto origem:
- * 1 escola demo com 2 turmas de 8º ano (40 alunos, 20 por turma) + 1 turma de
- * 4º ano (10 alunos, para a exp-02-unootube), 1 professor, 1 gestor e
+ * 1 escola demo com 2 turmas de 8º ano (40 alunos, 20 por turma), 1 turma de
+ * 4º ano (10 alunos, para a exp-02-unootube) e 1 turma de 2ª série do EM
+ * (10 alunos, para a exp-03-unoogpt), 1 professor, 1 gestor e
  * 1 admin-contrato (sem escola — única exceção da regra de tenancy).
  * Todos com a senha "unooria123". Idempotente — pode rodar quantas vezes quiser.
  *
@@ -15,6 +16,8 @@ const prisma = new PrismaClient();
 const SENHA_PADRAO = "unooria123";
 const TOTAL_ALUNOS = 40;
 const TOTAL_ALUNOS_4A = 10;
+/** 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). */
+const TOTAL_ALUNOS_2A = 10;
 const ESCOLA_ID = "escola-demo";
 
 async function main() {
@@ -75,6 +78,20 @@ async function main() {
     await upsertUsuario(`aluno4a${numero}`, `Aluno 4A ${numero}`, "aluno", { turmaId: turma4A.id });
   }
 
+  // 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). O relógio
+  // dela é por TURMA — quem dá a largada é o professor, em
+  // /professor/entre-redes/2-serie/unidade-1/resultados. Sem a largada o aluno
+  // vê o cronômetro parado, e é o motivo nº 1 de "a missão não abre".
+  const turma2A = await prisma.turma.upsert({
+    where: { escolaId_nome: { escolaId: ESCOLA_ID, nome: "2A" } },
+    update: { serie: "2EM" },
+    create: { escolaId: ESCOLA_ID, nome: "2A", serie: "2EM" },
+  });
+  for (let i = 1; i <= TOTAL_ALUNOS_2A; i += 1) {
+    const numero = String(i).padStart(2, "0");
+    await upsertUsuario(`aluno2a${numero}`, `Aluno 2A ${numero}`, "aluno", { turmaId: turma2A.id });
+  }
+
   // admin-contrato: papel de nível de produto (o "analista" do origem). Vê a
   // análise entre escolas/turmas; não alcança as telas do professor nem a do
   // aluno. Único papel sem escola — o upsert por (escolaId, username) não o
@@ -100,7 +117,7 @@ async function main() {
 
   const total = await prisma.user.count();
   console.log(
-    `Seed ok: escola "${ESCOLA_ID}" com 3 turmas (8A, 8B, 4A), 1 professor, 1 gestor, ${TOTAL_ALUNOS + TOTAL_ALUNOS_4A} alunos e 1 admin-contrato (senha "${SENHA_PADRAO}"). Usuários na base: ${total}.`,
+    `Seed ok: escola "${ESCOLA_ID}" com 4 turmas (8A, 8B, 4A, 2A), 1 professor, 1 gestor, ${TOTAL_ALUNOS + TOTAL_ALUNOS_4A + TOTAL_ALUNOS_2A} alunos e 1 admin-contrato (senha "${SENHA_PADRAO}"). Usuários na base: ${total}.`,
   );
 }
 
