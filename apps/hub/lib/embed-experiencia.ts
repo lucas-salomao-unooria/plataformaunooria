@@ -91,6 +91,34 @@ export async function buscarManifesto(expId: string, token: string): Promise<Man
   }
 }
 
+/**
+ * A leitura do manifesto do bundle falhou — e este aviso existe porque o
+ * silêncio já custou um diagnóstico inteiro.
+ *
+ * Sem manifesto na tabela E sem conseguir ler o `experiencia.json` do bundle, o
+ * embed segue com `viewport: null` e `permissoes: []`. Os dois degradam de um
+ * jeito que NÃO aponta para aqui: a experiência de aparelho aparece esticada na
+ * janela, e a exp-70 (jogo 3D em primeira pessoa) abre sem
+ * `allow-pointer-lock` — a criança entra na vila, a câmera não gira, o teclado
+ * não anda, e não há erro em lugar nenhum. O `catch {}` que vivia aqui
+ * transformava uma configuração errada num bug de jogo.
+ *
+ * MEDIDO em 2026-08-27, no compose local: dois dev servers da exp-70 disputando
+ * a 5177 (um no host, um no container). O do host tinha subido antes de
+ * `allowedHosts` existir no `vite.config.ts` e respondia
+ * `403 Blocked request. This host ("host.docker.internal") is not allowed.`
+ * ao hub — que engolia o 403 e servia o jogo sem o token do sandbox.
+ */
+function avisarManifestoIlegivel(expId: string, url: string, causa: string): void {
+  console.warn(
+    `[hub] ${expId}: sem linha na tabela \`experiencias\` e o \`experiencia.json\` do ` +
+      `bundle não pôde ser lido (${url} → ${causa}). O embed segue SEM viewport e SEM ` +
+      `permissões de iframe: experiência de aparelho aparece esticada, e a que precisa de ` +
+      `\`pointer-lock\` (exp-70) abre com a câmera travada. Confira o dev server da ` +
+      `experiência e o \`allowedHosts\` do vite.config.ts dela.`,
+  );
+}
+
 export async function montarEmbed(
   expId: string,
   usuario: Usuario,
@@ -128,8 +156,9 @@ export async function montarEmbed(
   let viewportDoBundle: { largura: number; altura: number } | null = null;
   let permissoesDoBundle: readonly string[] = [];
   if (!manifesto) {
+    const url = `${baseInterna}/experiencia.json`;
     try {
-      const r = await fetch(`${baseInterna}/experiencia.json`, { cache: "no-store" });
+      const r = await fetch(url, { cache: "no-store" });
       if (r.ok) {
         const meta = (await r.json()) as {
           viewport?: { largura: number; altura: number };
@@ -141,9 +170,11 @@ export async function montarEmbed(
         // abriria sem `allow-pointer-lock` — o jogo monta, a câmera não anda, e
         // nada no console diz por quê.
         permissoesDoBundle = meta.permissoes ?? [];
+      } else {
+        avisarManifestoIlegivel(expId, url, `HTTP ${r.status}`);
       }
-    } catch {
-      // bundle/dev server fora do ar — segue sem viewport e sem permissões
+    } catch (erro) {
+      avisarManifestoIlegivel(expId, url, erro instanceof Error ? erro.message : String(erro));
     }
   }
 

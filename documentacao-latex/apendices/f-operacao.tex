@@ -82,7 +82,9 @@ node scripts/probe-pointerlock.mjs
 \toprule
 \headrow \thd{Pré-requisito} & \thd{Detalhe}\\
 \midrule
-Plataforma no ar & Contêineres ou \cd{pnpm dev}.\\
+Plataforma no ar & Contêineres \textbf{ou} \cd{pnpm dev} --- um \emph{ou} outro,
+  nunca os dois na mesma porta: o navegador e o servidor passam a ler
+  \emph{dev servers} diferentes.\\
 \zebra Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
   exp-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
   não concede \emph{pointer lock} nem no topo da página.\\
@@ -187,10 +189,30 @@ causa.
 \textbf{\cd{iframe} vazio} &
   \emph{Handshake} expirado, \emph{dev server} fora do ar, ou
   \emph{origin} divergente. Ver o console: a SDK avisa o descarte por esquema.\\
-\zebra \textbf{Câmera do jogo não anda} &
-  \cd{allow-pointer-lock} ausente: \cd{permissoes} não chegou (manifesto vazio +
-  \arq{experiencia.json} não lido). \cd{requestPointerLock()} morre com
-  \cd{SecurityError} e nada diz por quê.\\
+\zebra \textbf{Câmera do jogo não anda \emph{desde o começo}} &
+  \cd{allow-pointer-lock} ausente: \cd{permissoes} não chegou (manifesto vazio
+  \emph{e} \arq{experiencia.json} não lido). \cd{requestPointerLock()} morre com
+  \cd{SecurityError}. Desde 2026-08-27 o hub \textbf{avisa} no log
+  (\arq{embed-experiencia.ts}) nomeando URL, causa e consequência --- antes o
+  \cd{catch \{\}} engolia, e uma configuração errada virava bug de jogo. O
+  \emph{sandbox} do \cd{iframe} é a evidência: sem o \emph{token}, o
+  \emph{walkthrough} da exp-70 falha no primeiro passo.\\
+\textbf{A câmera congela \emph{depois} de já ter andado} --- ao apertar Esc ou
+  trocar de aba --- \textbf{e o aviso \enquote{clique pra voltar} não aparece} &
+  O \cd{pointerlockchange} não foi registrado. No jogo de origem os
+  \cd{<script>} ficavam no fim do \arq{index.html} e o \cd{load} disparava
+  depois deles; no porte o \arq{carregador.ts} injeta os \emph{scripts} depois
+  do \emph{handshake} com o hub, quando o \cd{load} já passou. Como o
+  \cd{pausedHint} é o \textbf{único} \cd{controls.lock()} fora dos diálogos, a
+  partida ficava sem caminho de volta. Corrigido em \arq{16-boot.js}
+  (2026-08-27); coberto pelo passo \emph{pausa-e-volta} do \emph{walkthrough}.\\
+\zebra \textbf{Dois \emph{dev servers} da mesma experiência na mesma porta} &
+  Um no \emph{host} e um no \emph{compose}. O navegador e o servidor podem
+  alcançar \textbf{servidores diferentes} (\cd{localhost} resolve para um,
+  \cd{host.docker.internal} para o outro), e o mais antigo responde com o
+  \arq{vite.config.ts} que ele tinha ao subir --- daí um
+  \cd{403 Blocked request} no \cd{allowedHosts} que \emph{está} no arquivo.
+  \cd{pnpm docker:dev} e \cd{pnpm dev} são um \textbf{ou} outro.\\
 \textbf{Vídeo não toca} (\cd{play()} rejeitado em silêncio) &
   \cd{autoplay} não delegado no \cd{allow} do \emph{frame}: a
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}.\\

@@ -187,6 +187,37 @@ try {
   exigir(depois > antes, `a criança não andou (${antes}m → ${depois}m): o loop do jogo não roda`);
   await registrar("andou-na-vila", `${antes}m → ${depois}m`);
 
+  /* PERDER E RETOMAR O PONTEIRO — o caminho que o porte quebrou, e que só um
+     walkthrough pega.
+
+     O `pointerlockchange` do `16-boot.js` estava dentro de
+     `window.addEventListener('load', ...)`. No repo de origem os `<script>`
+     ficavam no fim do `index.html` e o `load` disparava depois deles; aqui o
+     `carregador.ts` injeta os scripts DEPOIS do handshake com o hub, quando o
+     `load` já passou — então o listener nunca era registrado.
+
+     A consequência não parece um bug de listener: a criança perde o ponteiro
+     (Esc, trocar de aba, `hub:pause`), a câmera congela, o teclado para de andar
+     e o aviso "Clique pra voltar pro jogo" NÃO aparece. Como ele é o único
+     `controls.lock()` fora dos diálogos, a partida fica sem caminho de volta. */
+  if (comChromeReal && preso) {
+    await quadro.evaluate(() => document.exitPointerLock());
+    await p.waitForTimeout(1200); // o Chrome recusa novo lock por ~1s
+    const aviso = await quadro.evaluate(
+      () => getComputedStyle(document.getElementById("pausedHint")).display,
+    );
+    exigir(
+      aviso === "flex",
+      `perdeu o ponteiro e o aviso de voltar não apareceu (display=${aviso}): ` +
+        "o listener de pointerlockchange não foi registrado",
+    );
+    await tela.locator("#pausedHint").click();
+    await p.waitForTimeout(600);
+    const voltou = await quadro.evaluate(() => document.pointerLockElement !== null);
+    exigir(voltou, "clicar no aviso não devolveu o ponteiro — a partida fica sem caminho de volta");
+    await registrar("pausa-e-volta", `aviso=${aviso}, ponteiro de volta: ${voltou}`);
+  }
+
   // ---- a partida veio da api, e sem gabarito ------------------------------
   const ponte = await quadro.evaluate(() => ({
     bolha: window.VILA?.bolha ?? null,
@@ -198,12 +229,25 @@ try {
   /* O gabarito não pode estar no fio. Era uma constante no bundle, com os três
      golpes divergentes e o `legitima` de cada um. */
   exigir(!/legitima|"aceita"|"nivel"/.test(ponte.fio), "GABARITO no fio dos cartões");
+  /* Só a bolha DESTA criança pode estar no fio. Conta BOLHAS DISTINTAS, não
+     ocorrências: a versão anterior somava as aparições de um marcador e exigia
+     exatamente 1, mas "Suporte da Vila" aparece quatro vezes dentro do MESMO
+     cartão da bolha B (a `tag` e o `name` das três batidas) — a asserção
+     acusava vazamento de bolha numa partida perfeitamente correta. Smoke que
+     grita lobo é pior que smoke nenhum: some no meio do ruído junto com a falha
+     de verdade. */
+  const MARCAS_DE_BOLHA = { A: "jogador 1000", B: "Suporte da Vila", C: "sentei atrás de ti" };
+  const bolhasNoFio = Object.entries(MARCAS_DE_BOLHA)
+    .filter(([, marca]) => ponte.fio.includes(marca))
+    .map(([bolha]) => bolha);
   exigir(
-    !/Suporte da Vila|sentei atrás de ti|jogador 1000/.test(ponte.fio) ||
-      ponte.fio.match(/Suporte da Vila|sentei atrás de ti|jogador 1000/g).length === 1,
-    "cartões de MAIS DE UMA bolha chegaram ao cliente",
+    bolhasNoFio.length === 1 && bolhasNoFio[0] === ponte.bolha,
+    `o fio devia trazer só a bolha ${ponte.bolha} e trouxe [${bolhasNoFio.join(", ") || "nenhuma"}]`,
   );
-  await registrar("cartoes-da-api", `bolha ${ponte.bolha}, ${ponte.quantos} cartões, sem gabarito`);
+  await registrar(
+    "cartoes-da-api",
+    `bolha ${ponte.bolha} (só ela no fio), ${ponte.quantos} cartões, sem gabarito`,
+  );
 
   // ---- a DM: um cartão SERVIDO PELA API renderiza e registra ---------------
   /* O caminho crítico do M3. O gatilho `inicio` só abre 20s depois de entrar na

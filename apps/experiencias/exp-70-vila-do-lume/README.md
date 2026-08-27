@@ -65,7 +65,16 @@ node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila
 
 Ele usa o **Chrome do sistema**, não o Chromium do Playwright: só o Chrome real
 concede pointer lock em automação, e sem isso a checagem não distingue "o sandbox
-está errado" de "o navegador não faz isso". A tabela medida está no cabeçalho de
+está errado" de "o navegador não faz isso".
+
+Dois passos dele cobrem coisas que nenhum teste de unidade alcança e que já
+quebraram: o **sandbox** trazer `allow-pointer-lock` (sem o token a criança entra
+na vila e a câmera não gira) e o **pausa-e-volta** — perder o ponteiro e o aviso
+"Clique pra voltar pro jogo" aparecer. O segundo existe porque o
+`pointerlockchange` do `16-boot.js` vivia dentro de `window.addEventListener('load')`,
+e aqui os scripts entram DEPOIS do load: o listener nunca era registrado, e como
+o `pausedHint` é o único `controls.lock()` fora dos diálogos, a partida ficava
+sem caminho de volta. A tabela medida está no cabeçalho de
 `scripts/probe-pointerlock.mjs`. Sem Chrome instalado o script roda e avisa que a
 checagem de pointer lock não valeu.
 
