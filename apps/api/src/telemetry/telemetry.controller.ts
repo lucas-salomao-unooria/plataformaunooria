@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, Post, Req, UseGuards } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PubSub } from "@google-cloud/pubsub";
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
@@ -140,15 +141,25 @@ export class TelemetryController {
 
     for (const [escolaId, doGrupo] of porEscola) {
       await this.prisma.comTenancy(async (tx) => {
-        for (const e of doGrupo) {
-          await tx.$executeRaw`
-            INSERT INTO telemetria_eventos
-              (event_id, ts, escola_id, aluno_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto)
-            VALUES (${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${e.alunoId}, ${e.expId},
-                    ${e.expVersion}, ${e.sessaoId}::uuid, ${e.verbo}, ${e.objeto},
-                    ${JSON.stringify(e.resultado ?? null)}::jsonb, ${JSON.stringify(e.contexto ?? null)}::jsonb)
-            ON CONFLICT (event_id) DO NOTHING`;
-        }
+        // UM INSERT multi-linha, não um por evento. É o gargalo real deste
+        // caminho: um lote de 50 eventos custava 50 round-trips ao banco, e no
+        // pico da manhã (~4k alunos simultâneos) isso é ~800 INSERTs/s numa
+        // instância pequena. Em lote vira ~16/s, que é trivial.
+        //
+        // Não é caso para Redis: quem amortece o pico já é o Pub/Sub, que ainda
+        // por cima é durável — um buffer em memória perderia eventos no
+        // processo que morre antes do flush.
+        const linhas = doGrupo.map(
+          (e) => Prisma.sql`(
+            ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${e.alunoId}, ${e.expId},
+            ${e.expVersion}, ${e.sessaoId}::uuid, ${e.verbo}, ${e.objeto},
+            ${JSON.stringify(e.resultado ?? null)}::jsonb, ${JSON.stringify(e.contexto ?? null)}::jsonb)`,
+        );
+        await tx.$executeRaw(Prisma.sql`
+          INSERT INTO telemetria_eventos
+            (event_id, ts, escola_id, aluno_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto)
+          VALUES ${Prisma.join(linhas)}
+          ON CONFLICT (event_id, ts) DO NOTHING`);
       }, escolaId);
     }
   }

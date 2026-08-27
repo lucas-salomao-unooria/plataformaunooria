@@ -84,6 +84,27 @@ cross-escola). Usuários entram por CSV: `POST /usuarios/importar-csv`
   `/telemetry/ingest` não tem OidcGuard (quem chama é o Pub/Sub) e por isso tem
   o `PubSubPushGuard`: ID token do Google, `aud` == `TELEMETRIA_PUSH_AUDIENCE`,
   `email` == `TELEMETRIA_PUSH_SA`. Envs ausentes = rota 401, nunca aberta.
+  **Destino: Postgres, não BigQuery** (decisão de 2026-08-27). O canal analítico
+  fica no mesmo banco: se um relatório precisar dele um dia, é um JOIN local com
+  `turmas`/`users`, e é uma plataforma de dados a menos para operar. O que
+  sustenta isso na escala são duas coisas, e nenhuma delas é um serviço novo:
+  o `INSERT` do `ingest` é **multi-linha** (um lote de 50 custava 50
+  round-trips; no pico de ~4k simultâneos isso era ~800 INSERTs/s numa
+  instância pequena) e `telemetria_eventos` é **particionada por mês**
+  (`particoes.telemetria_eventos_YYYY_MM`, migration
+  `20260827100000_telemetria_particionada`).
+  **Nada de Redis como buffer.** Quem amortece o pico já é o Pub/Sub — e ele é
+  DURÁVEL: um buffer em memória perde os eventos do processo que morre antes do
+  flush. Redis só entra com gargalo medido, e o gargalo medido aqui era o laço
+  de INSERT.
+  A PK é `(event_id, ts)` porque o Postgres exige a chave de partição em índice
+  único; a dedupe segue correta (reentrega da mesma mensagem traz o mesmo `ts`).
+  As partições vivem no schema `particoes`, fora do alcance do Prisma — em
+  `public` cada uma viraria drift. Há uma partição DEFAULT como rede de
+  segurança: sem ela, evento com `ts` fora das faixas seria RECUSADO, e
+  telemetria perdida em silêncio é pior que telemetria mal guardada. Ela
+  encher é sinal de que faltou criar partição — não há job agendado nesta
+  plataforma, de propósito, e as faixas vão até 2028-12.
 
 ### Manifesto de experiências (tabela `experiencias` na api)
 O CI, ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, faz upsert
@@ -445,6 +466,24 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   `@unooria/design-system` (seção `unooria` para a plataforma, seção do clone
   para a experiência), sempre na última versão — ver "Design System" acima. O
   `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
+- **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
+  `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
+  — fica **sem prefixo**: `escolas`, `turmas`, `users`, `experiencias`,
+  `progresso`, `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
+  geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
+  duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
+  (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem
+  depende dela.
+  **Um banco, um schema.** Nem banco por experiência (elas não são isoladas: o
+  perfil da Vila alimenta a largada do Instanooria, e o Postgres não faz JOIN
+  entre bancos; além disso um pool do Prisma por experiência estouraria o
+  `max_connections`), nem schema por experiência (a única coisa que um schema
+  daria além do prefixo é fronteira de `GRANT`, e existe UMA role de aplicação).
+  Migração de referência: `20260827090000_tabelas_por_experiencia` — `RENAME`,
+  nunca DROP/CREATE, e renomeando constraints, índices e políticas de RLS
+  junto. Duas armadilhas registradas lá: `FOR ... IN SELECT` sobre o catálogo
+  relê o que o próprio laço alterou, e `RENAME CONSTRAINT` renomeia também o
+  índice que a sustenta — as duas produzem `exp_01_exp_01_..._pkey`.
 - Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
   professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
   `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o

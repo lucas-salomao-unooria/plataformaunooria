@@ -129,6 +129,18 @@ Em dev (host ou container) a mesma cadeia lê o ADC do
 `gcloud auth application-default login` — os compose montam esse arquivo em
 `/adc` como somente leitura.
 
+**Telemetria: fica no Postgres, e sem serviço novo** (decisão de 2026-08-27).
+Avaliamos mandar o canal analítico para o BigQuery por subscription nativa do
+Pub/Sub. Não foi: os relatórios do professor NÃO leem `telemetria_eventos` (leem
+`exp_01_events`, o canal síncrono do motor), então o BigQuery não resolvia
+problema nenhum hoje e criava uma segunda plataforma de dados para operar. O que
+entrou no lugar, tudo dentro do que já existe: `INSERT` multi-linha no
+`/telemetry/ingest` (era um por evento, em laço) e partição mensal de
+`telemetria_eventos` no schema `particoes`. **Sem Redis**: o amortecedor de pico
+é o Pub/Sub, que é durável — um buffer em memória perderia o que não deu tempo
+de descarregar. Retenção continua sem prazo declarado, mas agora vira
+`DROP TABLE particoes.<mês>` em vez de um `DELETE` que trava a tabela.
+
 **Telemetria: a rota de ingest é autenticada** (2026-08). `POST /telemetry/ingest`
 não passa pelo `OidcGuard` — quem chama é a push subscription. O
 `PubSubPushGuard` verifica o ID token que o Pub/Sub assina: emissor Google,
