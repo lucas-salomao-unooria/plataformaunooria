@@ -311,6 +311,22 @@ causa.
   \rota{/professor/entre-redes/2-serie/unidade-1/resultados}. É o motivo nº 1 de
   \enquote{a missão não abre}, e por isso a ficha do professor abre com a faixa
   avisando.\\
+\textbf{\enquote{Sem credencial do Google Cloud para falar com o Vertex}}, com o
+  ADC montado e legível &
+  A credencial de usuário precisa de \textbf{reautenticação periódica} (política
+  da organização). O erro real, visível só ao pedir o token à mão, é
+  \cd{invalid\_grant} com \cd{error\_subtype: invalid\_rapt} --- \emph{RAPT} é
+  \emph{Reauth Proof Token}. Resolve com \cd{gcloud auth application-default
+  login} no HOST. Não é permissão nem \emph{mount}: confira nessa ordem
+  (existe? legível? token?), porque as três falham com a mesma mensagem na API.
+  O \cd{gcloud} reescreve o arquivo \emph{no lugar}, então o \emph{bind mount}
+  do container acompanha sem recriar --- mas confirme comparando o \cd{inode}.\\
+\zebra \textbf{Teste ou script ignora o valor que você passou ao
+  \cd{ConfigService}} &
+  O \cd{ConfigService} do Nest lê \cd{process.env} com \textbf{prioridade} sobre
+  o objeto do construtor. Num container com a variável definida, o valor do
+  código não vale. Foi o que fez uma medição de custo bater na quota de
+  \num{20000} com \num{5000000} declarados no script.\\
 \textbf{Dependência nova não chega no container}; a API não sobe depois de
   \cd{prisma migrate} &
   O \cd{node\_modules} \textbf{e o Prisma Client} dos containers são próprios.
