@@ -64,7 +64,9 @@ try {
   const iframe = p.locator('iframe[title="experiencia"]');
   await iframe.waitFor({ state: "attached", timeout: 20_000 });
   const tela = p.frameLocator('iframe[title="experiencia"]');
-  await tela.locator(".youtube-wordmark", { hasText: "UnooTube" }).first().waitFor({ timeout: 30_000 });
+  // A marca é o `Logo` da seção Unootube do DS (`.uni-logo`), não mais um
+  // wordmark de texto próprio — ver `bootstrap.tsx` e `Topbar.tsx`.
+  await tela.locator(".uni-topbar .uni-logo").first().waitFor({ timeout: 30_000 });
   await tela.locator("article.short-item").first().waitFor({ timeout: 20_000 });
   await p.waitForTimeout(2500);
 
@@ -75,7 +77,7 @@ try {
 
   // ---- estado anterior? reinicia pelo perfil para o roteiro ser repetível --
   const jaSalvos = await tela.locator('button[aria-label="Remover dos salvos"]').count();
-  const rankingJaAberto = await tela.locator("aside.sidebar button", { hasText: "Ranking" }).count();
+  const rankingJaAberto = await tela.locator("nav.uni-sidebar button", { hasText: "Ranking" }).count();
   if (jaSalvos > 0 || rankingJaAberto > 0) {
     await tela.locator('button[aria-label="Abrir seu perfil"]').click();
     await tela.locator("button", { hasText: "Reiniciar missão" }).click();
@@ -96,17 +98,48 @@ try {
   const resultado = await tela.locator(".complete-result").innerText();
   await registrar("missao-concluida", resultado.replace(/\s+/g, " ").trim());
 
-  // ---- ranking por inscritos → credibilidade ------------------------------
-  await tela.locator("button", { hasText: "Ver ranking da turma" }).click();
-  await tela.locator("h1", { hasText: "Ranking da turma" }).waitFor({ timeout: 15_000 });
-  await tela.locator(".ranking-row").nth(39).waitFor({ timeout: 15_000 });
-  const posicaoAntes = await tela.locator(".current-ranking-summary strong").first().innerText();
+  // ---- coleção: as duas abas ----------------------------------------------
+  // A tela de Playlists nunca esteve no smoke e foi inteiramente reescrita
+  // sobre o DS (ShortsShelf + TopMenuBar): sem print aqui, uma prateleira
+  // vazia ou uma prévia sem vídeo passaria despercebida.
+  await tela.locator("button", { hasText: "Ver depois" }).click();
+  await tela.locator("nav.uni-sidebar button", { hasText: "Playlists" }).click();
+  await tela.locator("h1", { hasText: "Sua coleção" }).waitFor({ timeout: 15_000 });
+  await p.waitForTimeout(1200);
+  const previas = await tela.locator(".library-preview video").count();
+  await registrar("playlists-salvos", `${previas} prévias na prateleira`);
+
+  await tela.locator("button", { hasText: "Curtidos" }).click();
+  await p.waitForTimeout(800);
+  await registrar("playlists-curtidos");
+
+  await tela.locator("nav.uni-sidebar button", { hasText: "Ranking" }).click();
+  // Da revelação em diante quem desenha é o DS da PLATAFORMA (ver Ranking.tsx):
+  // `SectionHeader` publica o título como <h2>, a tabela é `.unooria-table` e o
+  // resumo virou três `MetricCard`.
+  await tela.locator("h2", { hasText: "Ranking da turma" }).waitFor({ timeout: 15_000 });
+  await tela.locator(".unooria-table tbody tr").nth(39).waitFor({ timeout: 15_000 });
+  const posicaoAntes = await tela.locator(".unooria-metric-card__value").first().innerText();
   await registrar("ranking-por-inscritos", `40 linhas · você em ${posicaoAntes}`);
+
+  // A troca de aparência é do aluno (Perfil → APARÊNCIA) e vale para as DUAS
+  // seções do DS: `data-uni-theme` no clone e `.unooria-theme-dark` na
+  // plataforma. Sem este passo, o modo escuro nunca entra no smoke visual.
+  await tela.locator('button[aria-label="Abrir seu perfil"]').click();
+  await tela.locator("h1", { hasText: "Aluno" }).first().waitFor({ timeout: 15_000 });
+  await tela.locator("button", { hasText: "Escuro" }).click();
+  await p.waitForTimeout(600);
+  const temaEscuro = await tela.locator("html").getAttribute("data-uni-theme");
+  await registrar("perfil-tema-escuro", `data-uni-theme: ${temaEscuro}`);
+
+  await tela.locator("nav.uni-sidebar button", { hasText: "Ranking" }).click();
+  await tela.locator("h2", { hasText: "Ranking da turma" }).waitFor({ timeout: 15_000 });
+  await registrar("ranking-no-escuro");
 
   await tela.locator("button", { hasText: "Adicionar credibilidade" }).click();
   await tela.locator("text=Ter muitos inscritos não significa contar a verdade").waitFor({ timeout: 15_000 });
   await p.waitForTimeout(800);
-  const posicaoDepois = await tela.locator(".current-ranking-summary strong").first().innerText();
+  const posicaoDepois = await tela.locator(".unooria-metric-card__value").first().innerText();
   await registrar("credibilidade-adicionada", `você em ${posicaoDepois}`);
 
   // ---- recarga: o estado é do servidor -------------------------------------

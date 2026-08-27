@@ -399,9 +399,9 @@ bastava a ponte trocar de versão (ou o `node_modules` ser reinstalado com outro
 layout) para o CSS do hub sumir sem ninguém ter mexido nele.
 
 **Fora da regra, deliberadamente:** exp-70 (jogo em canvas 3D, sem DOM de UI — a
-exceção de ADR das convenções). **Pendente:** exp-02 ainda tem CSS próprio em
-`src/estilos` embora a seção `unitube` exista completa (`VideoCard`,
-`VideoPlayer`, `Sidebar`, `ChannelHeader`, `DesktopFrame`, …).
+exceção de ADR das convenções). A pendência da exp-02 (CSS próprio em
+`src/estilos`) foi RESOLVIDA: ela consome a seção `unitube` pela ponte
+`@edu/ui/ds-unootube`, com a aparência escolhida pelo aluno.
 
 ### Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
 Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão
@@ -450,6 +450,46 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
   gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
   `comTenancy` + controllers por papel.
+
+## Design System (`@unooria/design-system`, via `packages/ui`)
+
+O pacote publica SEÇÕES independentes, cada uma com namespace de token e
+prefixo de classe próprios. Nunca importar o `styles.css` consolidado: ele
+arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
+
+| Ponte | Seção | CSS | Namespace | Onde vale |
+|---|---|---|---|---|
+| `@edu/ui/ds` | `unooria` (39) | `/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do aluno** |
+| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` | `--insta-*` | superfície disfarçada da exp-01 |
+| `@edu/ui/ds-unootube` | `unootube` (40) | `/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
+
+**A linha que separa as seções é a REVELAÇÃO, não o arquivo.** Enquanto o aluno
+acha que está num app de vídeo, tudo é clone; da virada da missão em diante ele
+está de volta na Unooria e a linguagem institucional é parte do que se ensina.
+Na exp-02 isso é literal: feed, cromo, playlists e canal usam `ds-unootube`;
+ranking e os dois diálogos da missão usam `ds`. O toast NÃO cruza — ele fala de
+dentro da ficção ("Vídeo salvo!").
+
+**Tema:** a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
+`theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
+o aluno escolhe escuro no feed e o ranking volta branco. Na exp-02 a escolha é
+do aluno (Perfil → APARÊNCIA) e é lembrada em `localStorage` — que a regra 4
+proíbe para TOKEN, não para preferência de tela.
+
+**Componente que falta no pacote não nasce na experiência.** Vira compensação
+local marcada no CSS (`(b) COMPENSAÇÃO`) e um pedido ao `storybook-unooria`. Em
+aberto pela exp-02, todos verificados na 0.1.14:
+- `unootube` não publica toast, diálogo, tabela nem estado vazio;
+- `ChannelHeader` não tem `showSubscribe` — o botão de inscrever-se é sempre
+  desenhado, e o canal da exp-02 é o do PRÓPRIO aluno;
+- `.uni-channel-header__cover` usa a primitiva `--uni-color-neutral-50`, e não
+  um token semântico: no escuro vira uma laje branca;
+- `styles-unootube.css` repete o `@import` da Roboto no MEIO do arquivo; o Vite
+  descarta com aviso (o do topo continua valendo, então a fonte carrega).
+
+Sobrescrever classe do DS exige DOIS seletores (`.app-shell > .x`): o CSS do
+pacote é injetado pelo módulo do componente, ou seja, DEPOIS do CSS da
+experiência no grafo de importação — com peso igual, quem ganha é sempre o DS.
 
 ## Git e branches
 

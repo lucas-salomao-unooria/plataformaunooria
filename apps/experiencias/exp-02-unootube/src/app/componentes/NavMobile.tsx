@@ -1,3 +1,5 @@
+import { Icon, MobileTabBar } from "@edu/ui/ds-unootube";
+
 import type { Tela } from "../../lib/tipos";
 
 interface Props {
@@ -9,15 +11,47 @@ interface Props {
   aoAbrirPerfil: () => void;
 }
 
-export function NavMobile({ tela, rankingDesbloqueado, aoIrParaFeed, aoAbrirPlaylists, aoAbrirRanking, aoAbrirPerfil }: Props) {
+/**
+ * Barra de abas do rodapé (`MobileTabBar`, 0.1.14). Não há `CreateButton` aqui
+ * de propósito: o aluno não publica nada nesta missão, e um botão de criar no
+ * meio da barra prometeria uma ação que não existe.
+ */
+export function NavMobile({
+  tela,
+  rankingDesbloqueado,
+  aoIrParaFeed,
+  aoAbrirPlaylists,
+  aoAbrirRanking,
+  aoAbrirPerfil,
+}: Props) {
   return (
-    <nav className="mobile-nav" aria-label="Navegação móvel">
-      <button className={tela === "feed" ? "active" : ""} type="button" onClick={aoIrParaFeed}><span>▶</span>Shorts</button>
-      <button className={tela === "playlists" ? "active" : ""} type="button" onClick={aoAbrirPlaylists}><span>▣</span>Playlists</button>
+    <MobileTabBar className="unootube-nav-mobile" aria-label="Navegação móvel">
+      <MobileTabBar.Item
+        icon={<Icon name={tela === "feed" ? "exploreFill" : "explore"} size="lg" />}
+        label="Shorts"
+        active={tela === "feed"}
+        onClick={aoIrParaFeed}
+      />
+      <MobileTabBar.Item
+        icon={<Icon name={tela === "playlists" ? "libraryFill" : "library"} size="lg" />}
+        label="Playlists"
+        active={tela === "playlists"}
+        onClick={aoAbrirPlaylists}
+      />
       {rankingDesbloqueado && (
-        <button className={tela === "ranking" ? "active" : ""} type="button" onClick={aoAbrirRanking}><span>▤</span>Ranking</button>
+        <MobileTabBar.Item
+          icon={<Icon name={tela === "ranking" ? "likedFill" : "likedOutline"} size="lg" />}
+          label="Ranking"
+          active={tela === "ranking"}
+          onClick={aoAbrirRanking}
+        />
       )}
-      <button className={tela === "perfil" ? "active" : ""} type="button" onClick={aoAbrirPerfil}><span>●</span>Perfil</button>
-    </nav>
+      <MobileTabBar.Item
+        icon={<Icon name={tela === "perfil" ? "subscriptionsFill" : "subscriptions"} size="lg" />}
+        label="Perfil"
+        active={tela === "perfil"}
+        onClick={aoAbrirPerfil}
+      />
+    </MobileTabBar>
   );
 }

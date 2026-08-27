@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createExperiencia } from "@edu/sdk";
+import { Logo } from "@edu/ui/ds-unootube";
 
 import { api, definirExperiencia } from "./lib/api";
 import { marcarVisibilidade } from "./lib/visibilidade";
@@ -44,7 +45,7 @@ export function Bootstrap() {
   if (erro) {
     return (
       <main className="splash">
-        <span className="splash-wordmark">UnooTube</span>
+        <Logo height={28} title="UnooTube" />
         <p>{erro}</p>
       </main>
     );
@@ -53,7 +54,7 @@ export function Bootstrap() {
   if (!sessao) {
     return (
       <main className="splash" aria-busy="true">
-        <span className="splash-wordmark splash-pulsando">UnooTube</span>
+        <Logo className="splash-pulsando" height={28} title="UnooTube" />
       </main>
     );
   }

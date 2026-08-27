@@ -1,28 +1,52 @@
-export function DialogoReiniciar({ aoCancelar, aoConfirmar }: { aoCancelar: () => void; aoConfirmar: () => void }) {
+import { Button, MetricCard, Modal } from "@edu/ui/ds";
+
+import type { Aparencia } from "../../lib/tema";
+
+/**
+ * Os dois diálogos usam o `Modal` do DS da PLATAFORMA, e não o clone.
+ *
+ * O critério é o mesmo do ranking: os dois falam de "missão" e de "reiniciar",
+ * ou seja, já falam da Unooria e não do app de vídeo. São a moldura do
+ * exercício aparecendo por cima do disfarce — é justamente onde a linguagem
+ * institucional cabe. O que continua no clone é o que fala DE DENTRO da
+ * ficção: o toast de "vídeo salvo", que é fala do app.
+ *
+ * `theme` vem por prop porque a seção da plataforma não lê `data-uni-theme`.
+ */
+
+interface ReiniciarProps {
+  aparencia: Aparencia;
+  aoCancelar: () => void;
+  aoConfirmar: () => void;
+}
+
+export function DialogoReiniciar({ aparencia, aoCancelar, aoConfirmar }: ReiniciarProps) {
+  const tema = aparencia === "escuro" ? "dark" : "light";
   return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={aoCancelar}>
-      <section
-        className="reset-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reset-dialog-title"
-        aria-describedby="reset-dialog-copy"
-        onMouseDown={(evento) => evento.stopPropagation()}
-      >
-        <h2 id="reset-dialog-title">Reiniciar a missão?</h2>
-        <p id="reset-dialog-copy">
-          Isso vai apagar seus vídeos salvos, curtidas, inscritos, fontes confiáveis e o desbloqueio do ranking. Você voltará ao primeiro Short.
-        </p>
-        <div className="reset-dialog-actions">
-          <button type="button" autoFocus onClick={aoCancelar}>Cancelar</button>
-          <button className="confirm-reset" type="button" onClick={aoConfirmar}>Sim, reiniciar</button>
-        </div>
-      </section>
-    </div>
+    <Modal
+      isOpen
+      theme={tema}
+      size="sm"
+      onClose={aoCancelar}
+      title="Reiniciar a missão?"
+      description="Isso vai apagar seus vídeos salvos, curtidas, inscritos, fontes confiáveis e o desbloqueio do ranking. Você voltará ao primeiro Short."
+      footerAlign="end"
+      secondaryAction={
+        <Button theme={tema} variant="ghost" autoFocus onClick={aoCancelar}>
+          Cancelar
+        </Button>
+      }
+      primaryAction={
+        <Button theme={tema} variant="danger" onClick={aoConfirmar}>
+          Sim, reiniciar
+        </Button>
+      }
+    />
   );
 }
 
 interface MissaoConcluidaProps {
+  aparencia: Aparencia;
   inscritos: number;
   fontesConfiaveis: number;
   limite: number;
@@ -30,28 +54,39 @@ interface MissaoConcluidaProps {
   aoFechar: () => void;
 }
 
-export function DialogoMissaoConcluida({ inscritos, fontesConfiaveis, limite, aoVerRanking, aoFechar }: MissaoConcluidaProps) {
+export function DialogoMissaoConcluida({
+  aparencia,
+  inscritos,
+  fontesConfiaveis,
+  limite,
+  aoVerRanking,
+  aoFechar,
+}: MissaoConcluidaProps) {
+  const tema = aparencia === "escuro" ? "dark" : "light";
   return (
-    <div className="dialog-backdrop" role="presentation" onMouseDown={aoFechar}>
-      <section
-        className="complete-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="complete-dialog-title"
-        aria-describedby="complete-dialog-copy"
-        onMouseDown={(evento) => evento.stopPropagation()}
-      >
-        <span className="complete-icon" aria-hidden="true">✓</span>
-        <span className="eyebrow">MISSÃO CONCLUÍDA</span>
-        <h2 id="complete-dialog-title">Você salvou {limite} vídeos!</h2>
-        <p id="complete-dialog-copy">Agora compare popularidade e credibilidade com os outros 39 alunos da turma.</p>
-        <div className="complete-result">
-          <span><small>Inscritos</small><strong>{inscritos.toLocaleString("pt-BR")}</strong></span>
-          <span><small>Fontes confiáveis</small><strong>{fontesConfiaveis}/{limite}</strong></span>
-        </div>
-        <button className="complete-ranking-button" type="button" autoFocus onClick={aoVerRanking}>Ver ranking da turma</button>
-        <button className="complete-later-button" type="button" onClick={aoFechar}>Ver depois</button>
-      </section>
-    </div>
+    <Modal
+      isOpen
+      theme={tema}
+      size="md"
+      onClose={aoFechar}
+      title={`Você salvou ${limite} vídeos!`}
+      description="Agora compare popularidade e credibilidade com os outros 39 alunos da turma."
+      footerAlign="end"
+      secondaryAction={
+        <Button theme={tema} variant="ghost" onClick={aoFechar}>
+          Ver depois
+        </Button>
+      }
+      primaryAction={
+        <Button theme={tema} variant="primary" autoFocus onClick={aoVerRanking}>
+          Ver ranking da turma
+        </Button>
+      }
+    >
+      <div className="complete-result">
+        <MetricCard theme={tema} title="Inscritos" value={inscritos.toLocaleString("pt-BR")} />
+        <MetricCard theme={tema} title="Fontes confiáveis" value={`${fontesConfiaveis}/${limite}`} />
+      </div>
+    </Modal>
   );
 }

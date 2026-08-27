@@ -1,3 +1,5 @@
+import { Sidebar as SidebarDS, SidebarMenuItem } from "@edu/ui/ds-unootube";
+
 import type { Tela } from "../../lib/tipos";
 
 interface Props {
@@ -8,23 +10,55 @@ interface Props {
   aoAbrirRanking: () => void;
 }
 
+/**
+ * Barra lateral do DS. O `SidebarMenuItem` marca o item ativo do jeito que o
+ * arquivo de origem marca — trocando o glifo de contorno pelo PREENCHIDO, e
+ * não mudando a cor do texto. Por isso cada linha declara `icon` e
+ * `activeIcon`; os glifos vazados eram justamente o que os `▶ ▣ ▤` literais do
+ * código antigo tentavam imitar.
+ *
+ * `asButton` porque aqui nada navega: são trocas de tela dentro da experiência.
+ */
 export function Sidebar({ tela, rankingDesbloqueado, aoIrParaFeed, aoAbrirPlaylists, aoAbrirRanking }: Props) {
   return (
-    <aside className="sidebar" aria-label="Navegação principal">
-      <button className="nav-item" type="button" onClick={aoIrParaFeed}>
-        <span className="home-glyph" aria-hidden="true">⌂</span>Início
-      </button>
-      <button className={`nav-item ${tela === "feed" ? "active" : ""}`} type="button" onClick={aoIrParaFeed}>
-        <span className="shorts-glyph" aria-hidden="true">▶</span>Shorts
-      </button>
-      <button className={`nav-item ${tela === "playlists" ? "active" : ""}`} type="button" onClick={aoAbrirPlaylists}>
-        <span className="library-glyph" aria-hidden="true">▣</span>Playlists
-      </button>
-      {rankingDesbloqueado && (
-        <button className={`nav-item ${tela === "ranking" ? "active" : ""}`} type="button" onClick={aoAbrirRanking}>
-          <span className="ranking-glyph" aria-hidden="true">▤</span>Ranking
-        </button>
-      )}
-    </aside>
+    <SidebarDS className="unootube-sidebar" label="Navegação principal">
+      <SidebarDS.Section divider={false}>
+        <SidebarMenuItem
+          asButton
+          icon="home"
+          activeIcon="homeFill"
+          menuLabel="Início"
+          /* Leva ao mesmo lugar que "Shorts", mas quem marca o feed é o Shorts:
+             duas linhas acesas ao mesmo tempo não diriam onde o aluno está. */
+          onClick={aoIrParaFeed}
+        />
+        <SidebarMenuItem
+          asButton
+          icon="explore"
+          activeIcon="exploreFill"
+          menuLabel="Shorts"
+          active={tela === "feed"}
+          onClick={aoIrParaFeed}
+        />
+        <SidebarMenuItem
+          asButton
+          icon="library"
+          activeIcon="libraryFill"
+          menuLabel="Playlists"
+          active={tela === "playlists"}
+          onClick={aoAbrirPlaylists}
+        />
+        {rankingDesbloqueado && (
+          <SidebarMenuItem
+            asButton
+            icon="likedOutline"
+            activeIcon="likedFill"
+            menuLabel="Ranking"
+            active={tela === "ranking"}
+            onClick={aoAbrirRanking}
+          />
+        )}
+      </SidebarDS.Section>
+    </SidebarDS>
   );
 }

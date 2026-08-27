@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { Avatar, Icon, PlayerGlyph, ShortsActionRail, ShortsPlayer } from "@edu/ui/ds-unootube";
 
+import { useTelaEstreita } from "../../lib/largura";
 import type { VideoPublico } from "../../lib/tipos";
 import { urlDoVideo } from "../../lib/videos";
 import { aoMudarVisibilidade, estaVisivel } from "../../lib/visibilidade";
@@ -23,10 +25,20 @@ interface Props {
 }
 
 /**
- * Scroll-snap vertical de <video> nativos; o ativo é o mais visível
- * (IntersectionObserver com root no próprio feed — não depende da janela, por
- * isso a experiência dispensa `viewport`/DispositivoFrame). Autoplay só
- * funciona porque começa mudo e porque o hub delega `allow="autoplay"`.
+ * Scroll-snap vertical de `ShortsPlayer` do DS.
+ *
+ * A divisão de trabalho é esta: o DS entrega o REPRODUTOR (o `<video>`, o véu,
+ * o toque para pausar, a linha do tempo, a trilha de ações) e a experiência
+ * entrega o CARROSSEL — o contêiner com scroll-snap e o IntersectionObserver
+ * que elege o vídeo ativo. O DS não publica carrossel de Shorts, e essa é a
+ * única parte do palco que continua sendo daqui.
+ *
+ * `variant` acompanha a largura porque as duas apresentações do arquivo de
+ * origem são justamente as que esta tela sempre teve: trilha AO LADO na área
+ * de trabalho, trilha SOBRE o vídeo no celular.
+ *
+ * Autoplay só funciona porque começa mudo e porque o hub delega
+ * `allow="autoplay"` no iframe.
  */
 export function Feed(props: Props) {
   const { videos, ativoId, somLigado, aoMudarAtivo } = props;
@@ -34,6 +46,8 @@ export function Feed(props: Props) {
   const videoRefs = useRef(new Map<string, HTMLVideoElement>());
   const [carregando, setCarregando] = useState<Set<string>>(() => new Set(videos.map((v) => v.id)));
   const [visivel, setVisivel] = useState(estaVisivel());
+  const estreita = useTelaEstreita();
+  const variante = estreita ? "immersive" : "card";
 
   useEffect(() => aoMudarVisibilidade(setVisivel), []);
 
@@ -71,13 +85,6 @@ export function Feed(props: Props) {
     });
   }
 
-  function alternarReproducao(id: string) {
-    const video = videoRefs.current.get(id);
-    if (!video) return;
-    if (video.paused) video.play().catch(() => undefined);
-    else video.pause();
-  }
-
   return (
     <>
       <div className="feed-scroll" ref={feedRef} aria-label="Feed de vídeos curtos">
@@ -94,84 +101,97 @@ export function Feed(props: Props) {
               aria-label={`Vídeo ${indice + 1} de ${videos.length}`}
             >
               <div className="short-stage">
-                <div className="video-card" onClick={() => alternarReproducao(video.id)}>
-                  <video
-                    ref={(node) => {
-                      if (node) videoRefs.current.set(video.id, node);
-                      else videoRefs.current.delete(video.id);
-                    }}
-                    src={urlDoVideo(video.arquivo)}
-                    muted={!somLigado}
-                    loop
-                    playsInline
-                    preload={indice < 2 ? "auto" : "metadata"}
-                    aria-label={video.titulo}
-                    onLoadStart={() => marcarCarregando(video.id, true)}
-                    onWaiting={() => marcarCarregando(video.id, true)}
-                    onStalled={() => marcarCarregando(video.id, true)}
-                    onCanPlay={() => marcarCarregando(video.id, false)}
-                    onPlaying={() => marcarCarregando(video.id, false)}
-                  />
-                  {carregando.has(video.id) && <IndicadorCarregando />}
-                  <div className="video-shade" />
-                  <button
-                    className="sound-control"
-                    type="button"
-                    aria-label={somLigado ? "Desativar som" : "Ativar som"}
-                    onClick={(evento) => {
-                      evento.stopPropagation();
-                      props.aoAlternarSom();
-                    }}
-                  >
-                    <span aria-hidden="true">{somLigado ? "♪" : "×"}</span>
-                  </button>
-                  <div className="video-copy">
-                    <div className="channel-row">
-                      <div className={`channel-avatar ${video.accent}`}>{video.avatar}</div>
-                      <strong>{video.handle}</strong>
-                      <span>{video.inscritosRotulo}</span>
-                    </div>
-                    <h1>{video.titulo}</h1>
-                    <div
-                      className={`video-description ${expandida ? "expanded" : ""}`}
-                      onClick={(evento) => evento.stopPropagation()}
+                <ShortsPlayer
+                  variant={variante}
+                  src={urlDoVideo(video.arquivo)}
+                  alt={video.titulo}
+                  muted={!somLigado}
+                  loop
+                  preload={indice < 2 ? "auto" : "metadata"}
+                  videoRef={(node) => {
+                    if (node) videoRefs.current.set(video.id, node);
+                    else videoRefs.current.delete(video.id);
+                  }}
+                  onStateChange={(estado) => marcarCarregando(video.id, estado.waiting)}
+                  /*
+                   * `showChannel={false}` e a faixa do canal composta aqui: o
+                   * bloco pronto do DS traz um botão de INSCREVER-SE sempre
+                   * visível, e nesta missão inscrever-se não existe — "inscritos"
+                   * é o placar do aluno, não uma ação sobre o canal do vídeo. Um
+                   * botão morto ali confundiria justamente a métrica que a
+                   * missão quer ensinar a ler.
+                   */
+                  showChannel={false}
+                  caption={
+                    <>
+                      <span className="canal-do-video">
+                        <Avatar size="md" initials={video.avatar} className={video.accent} />
+                        <strong>{video.handle}</strong>
+                        <span>{video.inscritosRotulo}</span>
+                      </span>
+                      <span className="titulo-do-video">{video.titulo}</span>
+                      <span className={`descricao-do-video ${expandida ? "expandida" : ""}`}>
+                        <span className="descricao-texto">
+                          <Descricao texto={video.descricao} />
+                        </span>
+                        <button
+                          type="button"
+                          aria-expanded={expandida}
+                          aria-label={expandida ? "Mostrar menos da descrição" : "Mostrar descrição completa"}
+                          onClick={() => props.aoExpandirDescricao(expandida ? null : video.id)}
+                        >
+                          {expandida ? "mostrar menos" : "…mais"}
+                        </button>
+                      </span>
+                    </>
+                  }
+                  actions={
+                    <ShortsActionRail
+                      variant={estreita ? "overlay" : "standalone"}
+                      aria-label="Ações do vídeo"
+                      footer={
+                        <span className="posicao-do-video">
+                          {indice + 1}/{videos.length}
+                        </span>
+                      }
                     >
-                      <p><Descricao texto={video.descricao} /></p>
-                      <button
-                        type="button"
-                        aria-expanded={expandida}
-                        aria-label={expandida ? "Mostrar menos da descrição" : "Mostrar descrição completa"}
-                        onClick={() => props.aoExpandirDescricao(expandida ? null : video.id)}
-                      >
-                        {expandida ? "mostrar menos" : "…mais"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="action-rail" aria-label="Ações do vídeo">
-                  <button
-                    className={`save-action ${salvo ? "pressed saved" : ""}`}
-                    type="button"
-                    aria-label={salvo ? "Remover dos salvos" : "Salvar vídeo"}
-                    aria-pressed={salvo}
-                    onClick={() => props.aoSalvar(video.id)}
-                  >
-                    <span className="action-circle" aria-hidden="true"><i className="bookmark-glyph" /></span>
-                    <small>{salvo ? "Salvo" : "Salvar"}</small>
-                  </button>
-                  <button
-                    className={`like-action ${curtido ? "pressed" : ""}`}
-                    type="button"
-                    aria-label={curtido ? "Remover curtida" : "Curtir vídeo"}
-                    aria-pressed={curtido}
-                    onClick={() => props.aoCurtir(video.id)}
-                  >
-                    <span className="action-circle heart-glyph" aria-hidden="true">{curtido ? "♥" : "♡"}</span>
-                    <small>{curtido ? "Curtido" : "Curtir"}</small>
-                  </button>
-                  <span className="video-position">{indice + 1}/{videos.length}</span>
-                </div>
+                      <ShortsActionRail.Item
+                        icon={<Icon name="save" size={estreita ? 36 : 24} />}
+                        label={salvo ? "Salvo" : "Salvar"}
+                        active={salvo}
+                        aria-label={salvo ? "Remover dos salvos" : "Salvar vídeo"}
+                        aria-pressed={salvo}
+                        onClick={() => props.aoSalvar(video.id)}
+                      />
+                      <ShortsActionRail.Item
+                        icon={<Icon name={curtido ? "likedFill" : "likedOutline"} size={estreita ? 36 : 24} />}
+                        label={curtido ? "Curtido" : "Curtir"}
+                        active={curtido}
+                        aria-label={curtido ? "Remover curtida" : "Curtir vídeo"}
+                        aria-pressed={curtido}
+                        onClick={() => props.aoCurtir(video.id)}
+                      />
+                      {/*
+                       * O som é um item da trilha, e não um botão solto sobre o
+                       * vídeo como antes. Motivo: a seção não publica glifo de
+                       * MUDO — só o alto-falante do cromo do reprodutor. Como
+                       * item, o estado aparece de duas formas que não dependem
+                       * de desenhar um glifo novo: o realce de `active` do
+                       * próprio DS e o rótulo, que diz em palavras se o som
+                       * está ligado.
+                       */}
+                      <ShortsActionRail.Item
+                        icon={<PlayerGlyph name="sound" height={estreita ? 28 : 20} />}
+                        label={somLigado ? "Som" : "Mudo"}
+                        active={somLigado}
+                        aria-label={somLigado ? "Desativar som" : "Ativar som"}
+                        aria-pressed={somLigado}
+                        onClick={props.aoAlternarSom}
+                      />
+                    </ShortsActionRail>
+                  }
+                />
+                {carregando.has(video.id) && <IndicadorCarregando />}
               </div>
             </article>
           );
@@ -179,8 +199,22 @@ export function Feed(props: Props) {
       </div>
 
       <div className="feed-arrows" aria-label="Navegar entre vídeos">
-        <button type="button" aria-label="Vídeo anterior" disabled={props.indiceAtivo === 0} onClick={() => props.aoMover(-1)}>↑</button>
-        <button type="button" aria-label="Próximo vídeo" disabled={props.indiceAtivo === videos.length - 1} onClick={() => props.aoMover(1)}>↓</button>
+        <button
+          type="button"
+          aria-label="Vídeo anterior"
+          disabled={props.indiceAtivo === 0}
+          onClick={() => props.aoMover(-1)}
+        >
+          <Icon name="arrowTop" size="lg" />
+        </button>
+        <button
+          type="button"
+          aria-label="Próximo vídeo"
+          disabled={props.indiceAtivo === videos.length - 1}
+          onClick={() => props.aoMover(1)}
+        >
+          <Icon name="arrowBottom" size="lg" />
+        </button>
       </div>
     </>
   );
