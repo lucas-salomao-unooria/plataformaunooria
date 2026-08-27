@@ -24,6 +24,16 @@ export const telemetria = {
   som: (ligado: boolean) => track("interacted", `som:${ligado ? "on" : "off"}`),
   ordenou: (modo: string) => track("interacted", `ordenar:${modo}`),
   buscaBloqueada: () => track("interacted", "busca-bloqueada"),
+  /** Tocou em "Começar missão" na tela de entrada — leu (ou pulou) o briefing. */
+  comecouMissao: () => track("interacted", "comecar-missao"),
+  /**
+   * Tocou em "Concluir missão" com os 3 favoritos escolhidos. É diferente de
+   * `completouSalvos`: aquele marca o 3º salvo, este marca a DECISÃO de fechar.
+   * A distância entre os dois é quanto tempo a criança levou revendo a escolha.
+   */
+  concluiuMissao: () => track("interacted", "concluir-missao"),
+  /** Bateu no teto de 3 e viu o diálogo da troca. */
+  limiteAtingido: () => track("interacted", "limite-atingido"),
   completouSalvos: (resultado: { inscritos: number; fontesConfiaveis: number }) =>
     track("progressed", "missao-3-salvos", { resultado }),
   reiniciou: () => track("interacted", "reiniciar"),

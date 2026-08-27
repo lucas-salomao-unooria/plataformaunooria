@@ -109,6 +109,13 @@ Clone de plataforma de vídeo, para o 4º ano. O aluno salva até três vídeos;
 terceiro, o ranking desbloqueia; \enquote{adicionar credibilidade} reordena o
 ranking por fontes e é a virada pedagógica.
 
+\textbf{Fluxo (1.1.0).} Entrada (\emph{briefing} da missão) \seta{} \emph{feed}
+\seta{} três favoritos na bandeja \seta{} \enquote{Concluir missão} \seta{}
+diálogo \seta{} \emph{ranking} \seta{} \enquote{Adicionar credibilidade} (a
+virada). Até a 1.0.0 o aluno caía direto no \emph{feed} sem saber o que estava
+fazendo, e o terceiro salvo abria o diálogo sozinho --- a palavra
+\enquote{missão} só aparecia depois de a medida já ter sido tomada.
+
 \begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
 \toprule
 \headrow \thd{Decisão} & \thd{Motivo}\\
@@ -130,16 +137,45 @@ URLs das fontes como \textbf{texto} & O \emph{sandbox} do \cd{iframe} bloqueia
 Tema escolhido pelo aluno & Perfil \seta{} APARÊNCIA, lembrado em
   \cd{localStorage} --- que a regra 4 proíbe para \emph{token}, não para
   preferência de tela.\\
+\zebra Entrada só com a missão \textbf{zerada} & \arq{src/lib/missao.ts}.
+  Recarregar no meio cai direto no \emph{feed}: repetir o \emph{briefing} a cada
+  \cd{F5} faria o aluno pular a leitura justamente na vez em que ele leria.
+  Reiniciar pelo perfil volta ao \emph{briefing}.\\
+Conclusão pelo \textbf{botão}, não pelo 3º salvo & O terceiro salvo habilita
+  \enquote{Concluir missão}; quem fecha é o aluno. A distância entre
+  \cd{missao-3-salvos} e \cd{concluir-missao} é quanto tempo ele passou revendo a
+  escolha. Nada muda na API: \cd{ranking\_desbloqueado} já vem do servidor no 3º
+  salvo.\\
+\zebra Limite de 3 vira \textbf{diálogo}, não \emph{toast} & O \emph{toast}
+  sumia em 5,2\,s e não dava saída. O diálogo põe a troca na tela, com os três
+  favoritos e um \enquote{Remover} em cada --- e não repreende. Usa o \cd{Modal}
+  do \textbf{clone}: quem fala é o aplicativo sobre a própria mecânica.\\
+Métricas de popularidade \textbf{visíveis} & \cd{visualizacoesRotulo} e
+  \cd{curtidasRotulo} no catálogo, sem nenhuma marcação de verdadeiro ou falso.
+  São cosméticas --- o gabarito continua sendo \cd{factual} --- mas não são
+  aleatórias: o vídeo \emph{fake} é o que tem os números grandes, e há teste que
+  garante isso.\\
 \bottomrule
 \end{tabularx}
 
 \begin{nota}
 A exp-02 é o caso canônico da \textbf{linha da revelação}
 (Capítulo~\ref{cap:ds}): \emph{feed}, cromo, \emph{playlists} e canal usam a
-seção do clone; ranking e os dois diálogos da missão usam a seção da plataforma.
-O \emph{toast} não cruza a linha --- ele fala de dentro da ficção
-(\enquote{Vídeo salvo!}).
+seção do clone; ranking, os dois diálogos da missão, a tela de entrada e o botão
+\enquote{Concluir missão} usam a seção da plataforma. O \emph{toast} e o diálogo
+de limite \textbf{não} cruzam a linha --- os dois falam de dentro da ficção
+(\enquote{Vídeo salvo!}, \enquote{sua \emph{playlist} tem três lugares}). O
+critério nunca foi \enquote{é depois no tempo?}, e sim \enquote{quem está
+falando?} --- ver \adrr{ADR-22}.
 \end{nota}
+
+\begin{regra}
+O \emph{badge} \cd{+N} de ganho de inscritos, ao lado do chip do canal, torna
+legível \textbf{durante} a missão o padrão \emph{fake}~$=$~$+$1.000 contra
+confiável~$=$~$+$50. Foi aceito de propósito (\adrr{ADR-22}): o total já se movia
+e o delta sempre foi derivável de dois quadros seguidos. É o primeiro suspeito se
+a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
+\end{regra}
 
 \section{exp-70 --- Vila do Lume}
 

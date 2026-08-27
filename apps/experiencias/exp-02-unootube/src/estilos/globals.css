@@ -15,9 +15,12 @@
  * O que sobrou é de três tipos, e cada bloco diz de qual:
  *   (a) ESQUELETO — a grade da página e o carrossel do feed, que são
  *       composição da experiência, não componente de biblioteca;
- *   (b) COMPENSAÇÃO — o que a seção ainda não publica. Sobrou UMA (o girador
- *       de carregamento): a 0.1.17 trouxe toast, diálogo, tabela e estado
- *       vazio para a seção, e as compensações deles morreram aqui;
+ *   (b) COMPENSAÇÃO — o que a seção ainda não publica. São DUAS: o girador de
+ *       carregamento e a etiqueta de estado do diálogo de limite (a seção não
+ *       publica `Tag` nem `Badge` — nenhum dos dois arquivos de origem desenha
+ *       um). A 0.1.17 trouxe toast, diálogo, tabela e estado vazio, e as
+ *       compensações deles morreram aqui; as duas restantes têm pedido aberto
+ *       no `storybook-unooria`;
  *   (c) LIGAÇÃO — ajustes de encaixe entre um componente do DS e o lugar onde
  *       ele entra.
  */
@@ -96,18 +99,40 @@ video {
 }
 
 /* ---- (a) esqueleto: a grade da página ---- */
+/*
+ * A bandeja de favoritos atravessa a página inteira, POR BAIXO da trilha
+ * lateral — é assim no wireframe, e faz sentido: ela não pertence à navegação,
+ * pertence à missão. As duas alturas ficam aqui porque o quadro 9:16 precisa
+ * saber quanto sobrou de altura para ele (ver `.short-stage`).
+ */
 .app-shell {
   height: 100dvh;
+  --altura-bandeja: 120px;
+  --altura-dica: 34px;
   display: grid;
   grid-template-columns: auto 1fr;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-areas:
     "topo topo"
     "lado conteudo"
+    "bandeja bandeja"
     "abas abas";
   overflow: hidden;
   background: var(--uni-color-background-primary);
   color: var(--uni-color-text-primary);
+}
+
+/*
+ * A tela de entrada não tem trilha, abas nem bandeja: antes de começar não há
+ * nada para navegar nem nenhum favorito para mostrar. Sem esta regra as faixas
+ * continuariam reservadas e o briefing ficaria espremido numa coluna à direita.
+ */
+.app-shell.view-entrada {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "topo"
+    "conteudo";
 }
 
 .unootube-topbar {
@@ -152,10 +177,29 @@ video {
 .short-item {
   height: 100%;
   display: grid;
+  grid-template-rows: 1fr auto;
   place-items: center;
+  align-content: center;
+  gap: var(--uni-spacing-8);
   scroll-snap-align: start;
   scroll-snap-stop: always;
   padding: var(--uni-spacing-12);
+}
+
+/*
+ * A linha de orientação sob o quadro. O texto vem de `lib/dicas.ts` — é a mesma
+ * para os 21 itens, e fica repetida em cada um só por causa do scroll-snap
+ * (cada item ocupa a viewport inteira). Por isso NÃO tem `role="status"`: 21
+ * regiões vivas anunciariam a mesma frase 21 vezes.
+ */
+.dica-do-feed {
+  height: var(--altura-dica);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--uni-color-text-tertiary);
+  font-size: var(--uni-font-caption-size);
 }
 
 /*
@@ -166,7 +210,15 @@ video {
  */
 .short-stage {
   position: relative;
-  --uni-shorts-frame-width: min(460px, calc((100dvh - var(--uni-topbar-height) - var(--uni-spacing-64)) * 0.5625));
+  --uni-shorts-frame-width: min(
+    460px,
+    calc(
+      (
+          100dvh - var(--uni-topbar-height) - var(--altura-bandeja) - var(--altura-dica) -
+            var(--uni-spacing-64)
+        ) * 0.5625
+    )
+  );
 }
 
 .canal-do-video {
@@ -221,16 +273,115 @@ video {
   word-break: break-all;
 }
 
+/*
+ * "Vídeo N de M" sobre o quadro, no canto superior direito (Figma `5:30`).
+ * `z-index` porque o `ShortsPlayer` desenha o véu e a linha do tempo por cima
+ * do vídeo, e o chip tem de ficar acima dos dois.
+ */
 .posicao-do-video {
+  position: absolute;
+  top: var(--uni-spacing-16);
+  right: var(--uni-spacing-12);
+  z-index: 2;
+  padding: var(--uni-spacing-4) var(--uni-spacing-10);
+  border-radius: var(--uni-radius-full);
+  background: var(--uni-color-scrim);
+  color: var(--uni-color-shorts-chrome);
+  font-size: var(--uni-font-caption-sm-size);
+  font-weight: var(--uni-font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Popularidade do vídeo, sob o título — sem marcação de nada (nota `ETAPA 2`). */
+.metricas-do-video {
+  display: block;
+  margin-bottom: var(--uni-spacing-6);
   color: var(--uni-color-text-tertiary);
   font-size: var(--uni-font-caption-sm-size);
   font-variant-numeric: tabular-nums;
 }
 
+/* ---- (a) esqueleto: contador e peso das ações da trilha ---- */
+
+/*
+ * "Favoritos salvos · N de 3" no topo da trilha (Figma `6:15`). Entra pelo prop
+ * `header` do `ShortsActionRail`, que existe justamente para isto.
+ */
+.contador-de-favoritos {
+  display: grid;
+  justify-items: center;
+  gap: var(--uni-spacing-2);
+  padding: var(--uni-spacing-8) var(--uni-spacing-12);
+  border: 1px solid var(--uni-color-border-subtle);
+  border-radius: var(--uni-radius-md);
+  background: var(--uni-color-background-secondary);
+  text-align: center;
+}
+
+.contador-de-favoritos small {
+  color: var(--uni-color-text-tertiary);
+  font-size: var(--uni-font-caption-sm-size);
+}
+
+.contador-de-favoritos strong {
+  font-size: var(--uni-font-body-lg-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.curtidas-do-video {
+  display: block;
+  color: var(--uni-color-text-tertiary);
+  font-size: var(--uni-font-caption-sm-size);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * (c) LIGAÇÃO — Salvar é a ÚNICA ação que decide a missão, e o wireframe a
+ * desenha como o botão cheio da trilha. A seção publica ênfase de item só como
+ * `--active` (cor do glifo), então o preenchimento entra aqui, com os tokens da
+ * própria marca. Quem recebe fundo é o GLIFO e não o item: no `standalone` é o
+ * glifo que já é um círculo de 54px, e é ele que o DS pinta no hover.
+ *
+ * Só no `standalone`: no `overlay` (celular) a trilha fica SOBRE o vídeo, sem
+ * fundo nenhum — encher um círculo ali taparia justamente o que se está
+ * assistindo.
+ */
+.uni-shorts-rail--standalone .acao-salvar .uni-shorts-rail__glyph {
+  background: var(--uni-color-brand-primary);
+  color: var(--uni-color-text-on-media);
+}
+
+/*
+ * (c) LIGAÇÃO — estado desabilitado. Salvar e Curtir ficam mortos enquanto o
+ * vídeo carrega (nota `ETAPA 2`), e a seção não desenha esse estado: sem esta
+ * regra o botão continua com cara de clicável e a criança toca à toa.
+ */
+.uni-shorts-rail__item:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.uni-shorts-rail__item:disabled:active {
+  transform: none;
+}
+
+.uni-shorts-rail--standalone .acao-salvar:disabled .uni-shorts-rail__glyph {
+  background: var(--uni-color-background-secondary);
+  color: var(--uni-color-text-tertiary);
+}
+
+/*
+ * As setas são IRMÃS do `.feed-scroll`, não filhas — e como nenhum ancestral é
+ * posicionado, o bloco que as contém é a janela. Por isso o `bottom` desconta a
+ * bandeja: sem isso elas caem EM CIMA de "Concluir missão" e roubam o clique
+ * justamente do botão que fecha a missão.
+ */
 .feed-arrows {
   position: absolute;
   right: var(--uni-spacing-24);
-  bottom: var(--uni-spacing-24);
+  bottom: calc(var(--altura-bandeja) + var(--uni-spacing-24));
   display: grid;
   gap: var(--uni-spacing-8);
 }
@@ -262,6 +413,10 @@ video {
  * (b) COMPENSAÇÃO — girador de carregamento. O `ShortsPlayer` distingue
  * "parado" de "tocando", mas não "ainda carregando": o arquivo de origem é
  * estático e não desenha esse estado.
+ *
+ * `--detalhado` é a forma do FEED (Figma `7:76`): girador com rótulo no centro
+ * e esqueleto no lugar da legenda. Sem ela, esperar um vídeo era encarar um
+ * retângulo preto — e a criança tentava salvar antes de ter assistido.
  */
 .video-loading {
   position: absolute;
@@ -269,6 +424,37 @@ video {
   display: grid;
   place-items: center;
   pointer-events: none;
+}
+
+.video-loading--detalhado {
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  padding: var(--uni-spacing-16);
+  background: var(--uni-color-shorts-veil);
+}
+
+.video-loading-centro {
+  display: grid;
+  justify-items: center;
+  gap: var(--uni-spacing-12);
+}
+
+.video-loading-rotulo {
+  color: var(--uni-color-text-on-media);
+  font-size: var(--uni-font-body-sm-size);
+}
+
+.video-loading-esqueleto {
+  align-self: end;
+  justify-self: stretch;
+  display: grid;
+  gap: var(--uni-spacing-8);
+}
+
+.video-loading-esqueleto i {
+  height: var(--uni-spacing-12);
+  border-radius: var(--uni-radius-xs);
+  background: var(--uni-color-player-track);
 }
 
 .video-loading-spinner {
@@ -501,14 +687,408 @@ video {
   min-width: 0;
 }
 
+/* ---- (a) esqueleto: chip "Seu canal" na barra superior ---- */
+
+/*
+ * O `ProfileCompact` do DS é só o avatar. O wireframe põe ao lado dele o número
+ * que a missão faz crescer (Figma `4:9`) — e a nota `ETAPA 1` explica: ele
+ * estabelece a LINHA DE BASE, o zero que a criança vê antes de qualquer coisa
+ * se mexer. Sem isso o contador aparecia do nada já grande.
+ */
+.chip-do-canal {
+  display: flex;
+  align-items: center;
+  gap: var(--uni-spacing-8);
+}
+
+.chip-do-canal__texto {
+  display: grid;
+  gap: var(--uni-spacing-2);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.chip-do-canal__texto small {
+  color: var(--uni-color-text-tertiary);
+  font-size: var(--uni-font-caption-sm-size);
+}
+
+.chip-do-canal__texto > span {
+  font-size: var(--uni-font-body-sm-size);
+  font-weight: var(--uni-font-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+/* O "+N" que aparece por 1,4 s quando o número sobe (Figma `8:11`). */
+.ganho-de-inscritos {
+  padding: var(--uni-spacing-2) var(--uni-spacing-8);
+  border-radius: var(--uni-radius-full);
+  background: var(--uni-color-state-hover);
+  color: var(--uni-color-text-primary);
+  font-size: var(--uni-font-caption-sm-size);
+  font-weight: var(--uni-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- (a) esqueleto: tela de entrada (seção da PLATAFORMA — ver TelaDeEntrada.tsx) ---- */
+
+/*
+ * Só medida e empilhamento. Cor, tipografia e forma dos componentes vêm do DS
+ * da plataforma, que os recebe pelo prop `theme` — nada aqui pinta nada. O
+ * espaçamento continua em `--uni-*` porque este arquivo tem um vocabulário de
+ * medida só, e é o mesmo critério que o bloco do ranking já segue.
+ */
+.entrada {
+  grid-area: conteudo;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--uni-spacing-16);
+  padding: var(--uni-spacing-32) var(--uni-spacing-24) var(--uni-spacing-64);
+  text-align: center;
+}
+
+/*
+ * Dois nomes de classe no `FeedbackAlert`: ele traz `width: 100%` do DS, e o
+ * CSS do pacote entra DEPOIS deste arquivo — com peso igual quem ganharia
+ * seria sempre ele, e a faixa de regras iria de ponta a ponta da janela
+ * enquanto o resto do briefing para nos 720px.
+ */
+.entrada > *,
+.entrada > .entrada-regras {
+  width: min(720px, 100%);
+}
+
+.entrada > .unooria-tag,
+.entrada > button {
+  width: auto;
+}
+
+/*
+ * Centraliza o bloco na vertical SEM `justify-content: center`: numa coluna que
+ * rola, o `center` corta o topo quando o conteúdo passa da altura. As margens
+ * automáticas nas pontas centralizam quando sobra espaço e somem quando falta.
+ */
+.entrada > :first-child {
+  margin-top: auto;
+}
+
+.entrada > :last-child {
+  margin-bottom: auto;
+}
+
+.entrada h1 {
+  margin: 0;
+  font-size: var(--uni-font-heading-h1-size);
+  line-height: var(--uni-font-heading-h1-line);
+  font-weight: var(--uni-font-weight-bold);
+}
+
+.entrada-resumo {
+  margin: 0;
+  color: var(--uni-color-text-secondary);
+  font-size: var(--uni-font-body-md-size);
+  line-height: var(--uni-font-body-md-line);
+}
+
+.entrada-passos {
+  margin: var(--uni-spacing-8) 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--uni-spacing-12);
+}
+
+/*
+ * (c) LIGAÇÃO — o `CardContent` do DS empilha à esquerda; aqui o passo é um
+ * número acima de um rótulo, centralizado, como o wireframe desenha.
+ */
+.entrada-passos .unooria-card__content {
+  display: grid;
+  justify-items: center;
+  gap: var(--uni-spacing-8);
+  text-align: center;
+}
+
+.entrada-regras ul {
+  margin: 0;
+  padding-left: var(--uni-spacing-20);
+  display: grid;
+  gap: var(--uni-spacing-6);
+  text-align: left;
+}
+
+/* ---- (a) esqueleto: bandeja de favoritos ---- */
+
+/*
+ * A faixa sob o feed (Figma `3:26`). Três colunas: identidade à esquerda, os
+ * lugares no meio, a conclusão à direita. A altura é fixa e declarada em
+ * `.app-shell` porque o quadro 9:16 do feed precisa saber quanto sobrou.
+ */
+.bandeja {
+  grid-area: bandeja;
+  height: var(--altura-bandeja);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--uni-spacing-24);
+  padding: var(--uni-spacing-12) var(--uni-spacing-24);
+  border-top: 1px solid var(--uni-color-border-subtle);
+  background: var(--uni-color-background-secondary);
+}
+
+.bandeja-titulo {
+  display: grid;
+  gap: var(--uni-spacing-2);
+}
+
+.bandeja-titulo span {
+  color: var(--uni-color-text-tertiary);
+  font-size: var(--uni-font-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.bandeja-slots {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: var(--uni-spacing-12);
+}
+
+.bandeja-slot {
+  position: relative;
+  width: calc((var(--altura-bandeja) - var(--uni-spacing-32)) * var(--uni-shorts-aspect));
+  height: calc(var(--altura-bandeja) - var(--uni-spacing-32));
+}
+
+.bandeja-previa,
+.bandeja-slot .empty-slot {
+  width: 100%;
+  height: 100%;
+}
+
+/*
+ * (c) LIGAÇÃO — `--uni-shorts-frame-width` é a largura que a variante de cartão
+ * do `ShortsPlayer` usa, e o padrão dela é largo demais para um lugar de 47px:
+ * o quadro vazava do slot e o que aparecia era uma tira preta no meio do vídeo.
+ * Mesma ligação que `.library-preview` já faz nas coleções.
+ */
+.bandeja-previa,
+.dialogo-limite__previa {
+  --uni-shorts-frame-width: 100%;
+}
+
+/*
+ * (c) LIGAÇÃO — o véu do `ShortsPlayer` tem altura FIXA de 194px, ancorada na
+ * base do quadro, e o gradiente só começa a clarear a 37% dela. Ele existe para
+ * a legenda ficar legível; nestas miniaturas não há legenda (`showChannel` é
+ * `false`) e o quadro tem 88px — ou seja, o véu é MAIS ALTO que a miniatura
+ * inteira, e o que aparece na tela é só a faixa mais escura do gradiente. O
+ * sintoma é um retângulo preto no lugar do vídeo, com o vídeo carregado por
+ * baixo. Nas prateleiras das coleções o quadro passa de 300px e o véu cai onde
+ * deveria, por isso lá nunca apareceu.
+ * Pedido ao `storybook-unooria`: véu proporcional, ou preso ao `showChannel`.
+ */
+.bandeja-previa .uni-shorts-player__scrim,
+.dialogo-limite__previa .uni-shorts-player__scrim {
+  display: none;
+}
+
+.bandeja-previa {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: var(--uni-radius-md);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+}
+
+/*
+ * O `✕` de remover, no canto do quadro. Fora do `.bandeja-previa` de propósito:
+ * a prévia é um `<button>` (clicar leva ao vídeo) e botão dentro de botão não
+ * existe em HTML — o navegador desfaz o aninhamento e o alvo de dentro para de
+ * responder.
+ */
+.bandeja-remover {
+  position: absolute;
+  top: calc(-1 * var(--uni-spacing-6));
+  right: calc(-1 * var(--uni-spacing-6));
+  z-index: 2;
+  width: var(--uni-spacing-24);
+  height: var(--uni-spacing-24);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--uni-color-border-subtle);
+  border-radius: var(--uni-radius-full);
+  background: var(--uni-color-background-primary);
+  color: var(--uni-color-text-primary);
+  font-size: var(--uni-font-caption-sm-size);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bandeja-slot .empty-slot {
+  aspect-ratio: auto;
+  font-size: var(--uni-font-body-md-size);
+}
+
+/* ---- (b) compensação: etiqueta de estado do diálogo de limite ---- */
+
+/*
+ * A seção `unootube` não publica `Tag` nem `Badge` — nenhum dos dois arquivos
+ * de origem desenha um. Pedido aberto ao `storybook-unooria`; quando ele
+ * publicar, este bloco morre como morreram os quatro da 0.1.17.
+ *
+ * O wireframe pinta esta etiqueta de ÂMBAR e ela sai neutra: a seção não tem
+ * token de aviso — é um clone de app de vídeo, e a paleta dele é vermelho, azul
+ * e neutros. Derivar um âmbar seria inventar valor, que é exatamente o que a
+ * doc da seção proíbe. O que a etiqueta precisa fazer — separar o rótulo de
+ * estado do título — ela faz neutra.
+ */
+.dialogo-limite__etiqueta {
+  display: inline-block;
+  padding: var(--uni-spacing-4) var(--uni-spacing-10);
+  border-radius: var(--uni-radius-full);
+  background: var(--uni-color-state-hover);
+  color: var(--uni-color-text-secondary);
+  font-size: var(--uni-font-caption-sm-size);
+  font-weight: var(--uni-font-weight-bold);
+  /* `--uni-font-tracking` é 0; caixa alta pede um respiro e não há token. */
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---- (a) esqueleto: diálogo de limite ---- */
+.dialogo-limite__titulo {
+  margin: var(--uni-spacing-12) 0 var(--uni-spacing-8);
+  font-size: var(--uni-font-heading-h3-size);
+  line-height: var(--uni-font-heading-h3-line);
+}
+
+.dialogo-limite__texto {
+  margin: 0 0 var(--uni-spacing-20);
+  color: var(--uni-color-text-secondary);
+}
+
+.dialogo-limite__favoritos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--uni-spacing-12);
+  text-align: center;
+}
+
+.dialogo-limite__favoritos li {
+  display: grid;
+  justify-items: center;
+  gap: var(--uni-spacing-8);
+}
+
+/*
+ * 96px de largura, não 100%: o quadro é 9:16, e uma miniatura da largura da
+ * coluna ficaria com meio metro de altura — o diálogo passava da tela e as
+ * ações sumiam abaixo da dobra. Aqui a miniatura só precisa dizer QUAL vídeo é.
+ */
+.dialogo-limite__previa {
+  display: block;
+  width: 96px;
+  border-radius: var(--uni-radius-md);
+  overflow: hidden;
+}
+
+/*
+ * (c) LIGAÇÃO — "Entendi!" é a ação principal do diálogo e o `Button` do clone
+ * não publica variante de ênfase (o nó de origem é um botão só). O
+ * preenchimento sai dos tokens da própria marca.
+ */
+.dialogo-limite .dialogo-limite__ok {
+  padding: var(--uni-spacing-8) var(--uni-spacing-20);
+  border-radius: var(--uni-radius-full);
+  background: var(--uni-color-brand-primary);
+  color: var(--uni-color-text-on-media);
+}
+
+.dialogo-limite__nome {
+  font-size: var(--uni-font-caption-size);
+  color: var(--uni-color-text-secondary);
+}
+
 /* ---- (a) esqueleto: telas estreitas ---- */
 @media (max-width: 760px) {
   .app-shell {
+    --altura-bandeja: 60px;
     grid-template-columns: 1fr;
     grid-template-areas:
       "topo"
       "conteudo"
+      "bandeja"
       "abas";
+  }
+
+  .app-shell.view-entrada {
+    grid-template-areas:
+      "topo"
+      "conteudo";
+  }
+
+  /*
+   * No celular a bandeja perde as MINIATURAS e fica só com a contagem e o
+   * botão. A tela tem ~390px e três quadros 9:16 numa faixa de 60px sairiam com
+   * 25px de largura — ilegíveis, e ainda por cima empurrando o vídeo para cima.
+   * Quem mostra os favoritos ali é a tela de coleções, a um toque de distância
+   * na barra de abas. A experiência foi desenhada para a área de trabalho (é
+   * por isso que ela não declara `viewport` no manifesto); aqui o objetivo é
+   * não quebrar, não reproduzir o wireframe.
+   */
+  .bandeja {
+    grid-template-columns: 1fr auto;
+    gap: var(--uni-spacing-12);
+    padding: var(--uni-spacing-8) var(--uni-spacing-12);
+  }
+
+  .bandeja-slots {
+    display: none;
+  }
+
+  /*
+   * O contador da trilha também sai: no celular a trilha é `overlay`, ou seja,
+   * fica SOBRE o vídeo, e um cartão opaco ali tapa justamente o que se está
+   * assistindo. A contagem continua na bandeja, logo abaixo.
+   */
+  .contador-de-favoritos {
+    display: none;
+  }
+
+  .bandeja-titulo strong {
+    display: none;
+  }
+
+  .entrada {
+    padding: var(--uni-spacing-20) var(--uni-spacing-16) var(--uni-spacing-32);
+  }
+
+  .entrada h1 {
+    font-size: var(--uni-font-heading-h3-size);
+    line-height: var(--uni-font-heading-h3-line);
+  }
+
+  .dialogo-limite__favoritos {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .dialogo-limite__favoritos li {
+    grid-template-columns: 64px 1fr auto;
+    align-items: center;
+    justify-items: start;
   }
 
   .unootube-sidebar {

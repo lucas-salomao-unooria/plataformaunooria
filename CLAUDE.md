@@ -59,6 +59,12 @@ exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:tok
 exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo v1)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
+O `blur` da janela do hub NÃO é sempre o aluno saindo: clicar dentro do iframe
+move o foco para a experiência e dispara `blur` no documento de cima — e o
+`focus` correspondente não volta enquanto ele continuar ali, então um
+`hub:pause` ali é DEFINITIVO (o vídeo da exp-02 parava no 1º toque em "Salvar").
+Quando o foco foi para a nossa experiência, `document.activeElement` é o próprio
+`<iframe>`; o `ExpFrame` não emite nada nesse caso.
 Versione com `protocolVersion` (major verificado nos DOIS lados — incompatível
 falha alto). Toda mensagem pós-init é validada com Zod nos dois lados; inválida
 é descartada com aviso. Nunca quebre compatibilidade sem bump + suporte à anterior.
@@ -523,12 +529,14 @@ que um ícone da plataforma acrescentado à exp-02 amanhã puxaria tudo. Resolve
 vez migrando o `Icon` da plataforma para registro SVG (as outras cinco seções já
 são assim).
 
-**A linha que separa as seções é a REVELAÇÃO, não o arquivo.** Enquanto o aluno
-acha que está num app de vídeo, tudo é clone; da virada da missão em diante ele
-está de volta na Unooria e a linguagem institucional é parte do que se ensina.
-Na exp-02 isso é literal: feed, cromo, playlists e canal usam `ds-unootube`;
-ranking e os dois diálogos da missão usam `ds`. O toast NÃO cruza — ele fala de
-dentro da ficção ("Vídeo salvo!").
+**A linha que separa as seções é a REVELAÇÃO, não o arquivo.** O critério é
+"quem está falando?", nunca "é depois no tempo?". Na exp-02: feed, cromo,
+playlists, canal, o toast ("Vídeo salvo!") e o diálogo de limite ("sua playlist
+tem três lugares") usam `ds-unootube` — todos falam de dentro da ficção. Ranking,
+os dois diálogos da missão, o botão "Concluir missão" e a TELA DE ENTRADA usam
+`ds`. A entrada é a única que fica ANTES do feed, e não é exceção: no briefing
+quem fala é a escola, e não há disfarce a proteger porque a criança ainda não viu
+um Short. O disfarce começa no toque em "Começar missão" (ADR-22).
 
 **Tema:** a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
 `theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
@@ -542,8 +550,14 @@ some quando o pacote publica. Os quatro pedidos abertos pela exp-02 na 0.1.14
 foram atendidos na 0.1.17 (`Modal`/`Snackbar`/`Table`/`EmptyState` em
 `unootube`, `showSubscribe` no `ChannelHeader`, token semântico na capa do
 canal, `@import` duplicado da Roboto), e as compensações correspondentes foram
-apagadas. Sobrou UMA na exp-02: o girador de carregamento, porque o
-`ShortsPlayer` distingue "parado" de "tocando" mas não "ainda carregando".
+apagadas. Sobraram DUAS na exp-02: o girador de carregamento (o
+`ShortsPlayer` distingue "parado" de "tocando" mas não "ainda carregando") e a
+etiqueta de estado do diálogo de limite (a seção não publica `Tag` nem `Badge` —
+e por isso ela sai NEUTRA, não âmbar como o Figma pede: a seção não tem token de
+aviso e derivar um seria inventar valor). Uma terceira ligação, não compensação:
+o véu do `ShortsPlayer` tem altura FIXA de 194px, então numa miniatura de 88px
+sem legenda ele cobre o quadro inteiro e o sintoma é retângulo preto com o vídeo
+carregado por baixo.
 
 **Migração de versão do DS: o que morde.** `VideoPlayer`, `VideoPlayerFull` e
 `VideoCardHorizontal` mudaram o sentido de `src` na 0.1.13 — era o quadro

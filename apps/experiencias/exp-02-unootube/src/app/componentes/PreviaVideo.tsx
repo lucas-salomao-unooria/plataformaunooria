@@ -8,7 +8,13 @@ import { IndicadorCarregando } from "./IndicadorCarregando";
 interface Props {
   video: VideoPublico;
   className: string;
-  aoAssistir: (id: string) => void;
+  /**
+   * Sem ela a prévia é só imagem: o quadro vira `<span>` e não entra na ordem
+   * de foco. É o que o diálogo de limite precisa — lá as três miniaturas
+   * ilustram a troca, e cada uma já tem o seu "Remover" ao lado; um segundo
+   * alvo clicável no mesmo cartão levaria o aluno para fora do diálogo.
+   */
+  aoAssistir?: (id: string) => void;
 }
 
 /**
@@ -23,13 +29,12 @@ interface Props {
  */
 export function PreviaVideo({ video, className, aoAssistir }: Props) {
   const [carregando, setCarregando] = useState(true);
+  const Moldura = aoAssistir ? "button" : "span";
+  const interativa = aoAssistir
+    ? { type: "button" as const, onClick: () => aoAssistir(video.id), "aria-label": `Assistir ${video.titulo}` }
+    : {};
   return (
-    <button
-      className={className}
-      type="button"
-      onClick={() => aoAssistir(video.id)}
-      aria-label={`Assistir ${video.titulo}`}
-    >
+    <Moldura className={className} {...interativa}>
       <ShortsPlayer
         variant="card"
         src={`${urlDoVideo(video.arquivo)}#t=0.1`}
@@ -48,6 +53,6 @@ export function PreviaVideo({ video, className, aoAssistir }: Props) {
         onStateChange={(estado) => setCarregando(estado.duration === 0)}
       />
       {carregando && <IndicadorCarregando />}
-    </button>
+    </Moldura>
   );
 }

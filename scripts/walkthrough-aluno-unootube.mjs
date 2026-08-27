@@ -7,7 +7,8 @@ import { chromium } from "playwright";
  * Valida, de ponta a ponta: o roteamento por série (aluno do 4º ano cai em
  * /exp/exp-02-unootube), o handshake da SDK no iframe cross-origin, o autoplay
  * delegado pelo hub (`allow="autoplay"`), o estado server-side da missão
- * (salvar 3 → ranking → credibilidade) e a ausência de erros de console.
+ * (briefing → salvar 3 → limite → concluir → ranking → credibilidade) e a
+ * ausência de erros de console.
  *
  * Uso: node scripts/walkthrough-aluno-unootube.mjs <pasta-de-prints> [login]
  * Pré-requisitos: hub, api e a exp-02 (:5174) no ar + seed (turma 4A).
@@ -67,33 +68,89 @@ try {
   // A marca é o `Logo` da seção Unootube do DS (`.uni-logo`), não mais um
   // wordmark de texto próprio — ver `bootstrap.tsx` e `Topbar.tsx`.
   await tela.locator(".uni-topbar .uni-logo").first().waitFor({ timeout: 30_000 });
-  await tela.locator("article.short-item").first().waitFor({ timeout: 20_000 });
-  await p.waitForTimeout(2500);
-
-  // Autoplay: sem `allow="autoplay"` no iframe o play() rejeita em silêncio.
-  const tocando = await tela.locator("video").evaluateAll((vs) => vs.some((v) => !v.paused && v.readyState >= 2));
-  const quantosVideos = await tela.locator("article.short-item").count();
-  await registrar("feed-carregado", `${quantosVideos} shorts · autoplay: ${tocando ? "ok" : "BLOQUEADO"}`);
 
   // ---- estado anterior? reinicia pelo perfil para o roteiro ser repetível --
-  const jaSalvos = await tela.locator('button[aria-label="Remover dos salvos"]').count();
-  const rankingJaAberto = await tela.locator("nav.uni-sidebar button", { hasText: "Ranking" }).count();
-  if (jaSalvos > 0 || rankingJaAberto > 0) {
+  // Desde a 1.1.0 a experiência abre no BRIEFING quando nada foi feito ainda
+  // (`lib/missao.ts`), e reiniciar volta para lá. Este roteiro sempre começa da
+  // entrada: se ela não está na tela, é porque há missão em andamento.
+  const jaComecou = (await tela.locator("section.entrada").count()) === 0;
+  if (jaComecou) {
     await tela.locator('button[aria-label="Abrir seu perfil"]').click();
     await tela.locator("button", { hasText: "Reiniciar missão" }).click();
     await tela.locator("button", { hasText: "Sim, reiniciar" }).click();
-    await p.waitForTimeout(1500);
-    await registrar("missao-reiniciada", `${jaSalvos} salvos anteriores`);
+    await tela.locator("section.entrada").waitFor({ timeout: 15_000 });
+    await registrar("missao-reiniciada", "estado anterior descartado");
   }
+
+  // ---- tela de entrada: o briefing (Figma `3:24`) --------------------------
+  await tela.locator("h1", { hasText: "Missão: escolha seus Shorts favoritos!" }).waitFor({ timeout: 20_000 });
+  const passosDoBriefing = await tela.locator(".entrada-passos li").count();
+  const regrasDoBriefing = await tela.locator(".entrada-regras li").count();
+  await registrar("tela-de-entrada", `${passosDoBriefing} passos · ${regrasDoBriefing} regras`);
+
+  await tela.locator("button", { hasText: "Começar missão" }).click();
+  await tela.locator("article.short-item").first().waitFor({ timeout: 20_000 });
+
+  /*
+   * Autoplay: sem `allow="autoplay"` no iframe o play() rejeita em silêncio.
+   *
+   * Espera ATIVA, e não um `waitForTimeout` fixo: desde a 1.1.0 o feed só monta
+   * depois de "Começar missão", ou seja, o vídeo começa a baixar agora — antes
+   * ele tinha o tempo inteiro do login e do boot para bufferizar. Com o sleep de
+   * 2,5 s o smoke acusava "autoplay BLOQUEADO" por rede lenta, que é falso
+   * negativo do pior tipo: aponta para o `allow` do iframe, que está certo.
+   */
+  const tocando = await tela
+    .locator("article.short-item")
+    .first()
+    .evaluate(
+      (item) =>
+        new Promise((resolve) => {
+          const limite = Date.now() + 15_000;
+          const olhar = () => {
+            const v = item.querySelector("video");
+            if (v && !v.paused && v.readyState >= 2) return resolve(true);
+            if (Date.now() > limite) return resolve(false);
+            setTimeout(olhar, 250);
+          };
+          olhar();
+        }),
+    );
+  const quantosVideos = await tela.locator("article.short-item").count();
+  const bandejaVazia = await tela.locator(".bandeja-slot .empty-slot").count();
+  await registrar(
+    "feed-carregado",
+    `${quantosVideos} shorts · autoplay: ${tocando ? "ok" : "BLOQUEADO"} · ${bandejaVazia} lugares vazios`,
+  );
 
   // ---- salvar 3 vídeos ----------------------------------------------------
   for (let i = 0; i < 3; i += 1) {
-    const botoes = tela.locator('button[aria-label="Salvar vídeo"]');
+    const botoes = tela.locator('button[aria-label="Salvar vídeo"]:not([disabled])');
     await botoes.nth(i).scrollIntoViewIfNeeded();
     await p.waitForTimeout(600);
     await botoes.nth(i).click();
     await p.waitForTimeout(900);
   }
+  const preenchidos = await tela.locator(".bandeja-previa").count();
+  await registrar("tres-favoritos", `${preenchidos} na bandeja`);
+
+  // ---- 4º salvo: o diálogo de limite (Figma `7:224`) -----------------------
+  // Ele SUBSTITUIU o toast de "playlist cheia": o toast sumia em 5 s e não
+  // oferecia saída nenhuma. Um print aqui é o que pega o diálogo vazio.
+  const quarto = tela.locator('button[aria-label="Salvar vídeo"]:not([disabled])').first();
+  await quarto.scrollIntoViewIfNeeded();
+  await p.waitForTimeout(600);
+  await quarto.click();
+  await tela.locator("text=Você já salvou 3 vídeos!").waitFor({ timeout: 10_000 });
+  const trocasOferecidas = await tela.locator(".dialogo-limite__favoritos li").count();
+  await registrar("limite-atingido", `${trocasOferecidas} trocas oferecidas`);
+  await tela.locator("button", { hasText: "Entendi!" }).click();
+  await p.waitForTimeout(600);
+
+  // ---- concluir pelo botão da bandeja (1.1.0: não abre mais sozinho) -------
+  const concluir = tela.locator("button", { hasText: "Concluir missão" });
+  if (await concluir.isDisabled()) throw new Error('"Concluir missão" continua desabilitado com 3 favoritos');
+  await concluir.click();
   await tela.locator("text=Você salvou 3 vídeos!").waitFor({ timeout: 10_000 });
   const resultado = await tela.locator(".complete-result").innerText();
   await registrar("missao-concluida", resultado.replace(/\s+/g, " ").trim());

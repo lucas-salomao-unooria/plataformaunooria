@@ -1,12 +1,12 @@
 {
   "id": "exp-02-unootube",
   "nome": "UnooTube — Em quais fontes você confiaria?",
-  "versao": "1.0.0",
+  "versao": "1.1.0",
   "series": ["4EF"],
   "capabilities": ["telemetria", "progresso"],
   "verbos": {
     "attempted": "abriu o UnooTube",
-    "interacted": "salvou/removeu/curtiu um vídeo, mudou de tela, expandiu descrição, mexeu no som ou na ordenação",
+    "interacted": "começou a missão, salvou/removeu/curtiu um vídeo, bateu no limite de 3, concluiu a missão, mudou de tela, expandiu descrição, mexeu no som ou na ordenação",
     "progressed": "completou os 3 salvos (ranking desbloqueado)",
     "completed": "adicionou credibilidade e viu a virada do ranking"
   }

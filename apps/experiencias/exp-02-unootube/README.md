@@ -39,11 +39,24 @@ já foi reportado). Reiniciar descongela.
 | verbo | objeto |
 |---|---|
 | `attempted` | `exp-02-unootube` (boot) |
-| `interacted` | `salvar:vNN`, `remover-salvo:vNN`, `curtir:vNN`, `descurtir:vNN`, `tela:playlists\|ranking\|perfil`, `descricao:vNN`, `som:on\|off`, `ordenar:inscritos\|confiaveis`, `busca-bloqueada`, `reiniciar` |
+| `interacted` | `comecar-missao`, `salvar:vNN`, `remover-salvo:vNN`, `curtir:vNN`, `descurtir:vNN`, `limite-atingido`, `concluir-missao`, `tela:playlists\|ranking\|perfil`, `descricao:vNN`, `som:on\|off`, `ordenar:inscritos\|confiaveis`, `busca-bloqueada`, `reiniciar` |
 | `progressed` | `missao-3-salvos` com `resultado: { inscritos, fontesConfiaveis }` |
 | `completed` | via `exp.concluir` em "Adicionar credibilidade" (`score = fontesConfiaveis`) |
 
 Nenhum evento carrega se um vídeo é confiável — o cliente não sabe.
+
+`missao-3-salvos` e `concluir-missao` não são a mesma coisa e é de propósito: o
+primeiro marca o 3º salvo, o segundo marca a DECISÃO de fechar a missão. A
+distância entre os dois é quanto tempo a criança passou revendo a escolha —
+antes da 1.1.0 ela não existia, porque o 3º salvo abria o diálogo sozinho.
+
+## Fluxo (1.1.0)
+
+Entrada (briefing da missão) → feed → 3 favoritos na bandeja → "Concluir
+missão" → diálogo → ranking → "Adicionar credibilidade" (a virada).
+
+A tela de entrada só aparece com a missão zerada (`lib/missao.ts`): recarregar
+no meio cai direto no feed. Reiniciar pelo perfil volta ao briefing.
 
 ## Vídeos (fora do git)
 

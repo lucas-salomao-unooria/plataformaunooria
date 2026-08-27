@@ -13,7 +13,11 @@ import type {
   Tela,
   VideoPublico,
 } from "../lib/tipos";
+import { telaInicial } from "../lib/missao";
 import { Topbar } from "./componentes/Topbar";
+import { TelaDeEntrada } from "./componentes/TelaDeEntrada";
+import { BandejaFavoritos } from "./componentes/BandejaFavoritos";
+import { DialogoLimite } from "./componentes/DialogoLimite";
 import { Sidebar } from "./componentes/Sidebar";
 import { NavMobile } from "./componentes/NavMobile";
 import { Feed } from "./componentes/Feed";
@@ -29,6 +33,12 @@ import { aplicarAparencia, guardarAparencia, lerAparencia, type Aparencia } from
  * missão vindo da api. Salvar/curtir são OTIMISTAS: aplicam localmente,
  * disparam a chamada e revertem com toast se ela falhar. O cálculo de
  * inscritos/fontes é sempre o do servidor (regra 3).
+ *
+ * A missão tem começo e fim EXPLÍCITOS: abre na tela de entrada (quando nada
+ * foi feito ainda) e fecha no botão "Concluir missão" da bandeja. Antes, o 3º
+ * salvo abria o diálogo de conclusão sozinho — a criança era empurrada para a
+ * virada no instante do toque, sem chance de rever a escolha. Agora o 3º salvo
+ * só HABILITA o botão; quem decide quando fechar é ela.
  */
 
 const LIMITE = 3;
@@ -46,14 +56,14 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
   const [derivados, setDerivados] = useState(sessaoInicial.derivados);
   const [ranking, setRanking] = useState<RespostaRanking | null>(sessaoInicial.ranking);
 
-  const [tela, setTelaBruta] = useState<Tela>("feed");
+  const [tela, setTelaBruta] = useState<Tela>(() => telaInicial(sessaoInicial.estado));
   const [aba, setAba] = useState<AbaPlaylists>("salvos");
   const [modoRanking, setModoRanking] = useState<ModoRanking>("inscritos");
   const [videos, setVideos] = useState<VideoPublico[]>(catalogo.videos);
   const [ativoId, setAtivoId] = useState(catalogo.videos[0]?.id ?? "");
   const [somLigado, setSomLigado] = useState(false);
   const [toast, setToast] = useState("");
-  const [toastCheio, setToastCheio] = useState(false);
+  const [limiteAberto, setLimiteAberto] = useState(false);
   const [reiniciarAberto, setReiniciarAberto] = useState(false);
   const [missaoConcluidaAberta, setMissaoConcluidaAberta] = useState(false);
   const [descricaoExpandida, setDescricaoExpandida] = useState<string | null>(null);
@@ -73,8 +83,11 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     setVideos(ordenados);
     setAtivoId(primeiro);
     telemetria.abriu();
-    experiencia().enviarEstado({ tela: "feed" });
+    // O hub desenha o "chrome" a partir daqui: mandar sempre "feed" faria a
+    // tela de entrada aparecer como se o aluno já estivesse assistindo.
+    experiencia().enviarEstado({ tela: telaInicial(sessaoInicial.estado) });
     window.setTimeout(() => rolarPara(primeiro, "auto"), 30);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catalogo.videos]);
 
   // A aparência escolhida vale para o clone (`data-uni-theme`) E para a seção
@@ -86,22 +99,33 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
 
   useEffect(() => {
     if (!toast) return;
-    const timer = window.setTimeout(() => {
-      setToast("");
-      setToastCheio(false);
-    }, toastCheio ? 5200 : 2600);
+    const timer = window.setTimeout(() => setToast(""), 2600);
     return () => window.clearTimeout(timer);
-  }, [toast, toastCheio]);
+  }, [toast]);
 
-  function mostrarToast(mensagem: string, cheio = false) {
+  function mostrarToast(mensagem: string) {
     setToast(mensagem);
-    setToastCheio(cheio);
   }
 
   function setTela(nova: Tela) {
     setTelaBruta(nova);
-    if (nova !== "feed") telemetria.trocouTela(nova);
+    // "feed" e "entrada" não são navegação: são o começo. Os dois têm eventos
+    // próprios (`abriu`, `comecouMissao`) e contá-los aqui duplicaria.
+    if (nova !== "feed" && nova !== "entrada") telemetria.trocouTela(nova);
     experiencia().enviarEstado({ tela: nova });
+  }
+
+  function comecarMissao() {
+    telemetria.comecouMissao();
+    setTela("feed");
+    window.setTimeout(() => rolarPara(ativoId, "auto"), 30);
+  }
+
+  function concluirMissao() {
+    if (estado.salvos.length < limite) return;
+    telemetria.concluiuMissao();
+    setMissaoConcluidaAberta(true);
+    if (!ranking) void carregarRanking();
   }
 
   function aplicar(resposta: RespostaEstado) {
@@ -154,11 +178,12 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     if (ocupado.current) return;
     const jaSalvo = estado.salvos.includes(id);
     if (!jaSalvo && estado.salvos.length >= limite) {
-      mostrarToast("Sua playlist está cheia. Remova um vídeo para salvar outro.", true);
+      telemetria.limiteAtingido();
+      setLimiteAberto(true);
       return;
     }
     if (estado.credibilidadeAdicionada) {
-      mostrarToast("Você já fechou sua playlist. Reinicie a missão no seu perfil para trocar.", false);
+      mostrarToast("Você já fechou sua playlist. Reinicie a missão no seu perfil para trocar.");
       return;
     }
     const anterior = estado;
@@ -180,23 +205,28 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
       telemetria.salvou(id);
       const total = resposta.estado.salvos.length;
       if (total === limite && !anterior.rankingDesbloqueado) {
+        // 3º salvo: adianta o ranking (a rede trabalha enquanto ela pensa) e
+        // habilita o botão. NÃO abre o diálogo — quem fecha a missão é ela.
         telemetria.completouSalvos(resposta.derivados);
         setModoRanking("inscritos");
-        setMissaoConcluidaAberta(true);
-        setToast("");
-        void carregarRanking();
-      } else if (total === limite) {
-        setRanking(null); // salvos mudaram: o ranking será recarregado ao abrir
-        mostrarToast(`Vídeo salvo! ${total} de ${limite} espaços usados.`);
       } else {
-        setRanking(null);
+        setRanking(null); // salvos mudaram: o ranking será recarregado ao abrir
+      }
+      if (total === limite) {
+        // No teto, quem fala é a dica do feed ("Toque em Concluir missão") e o
+        // botão que acabou de acender. Um toast por cima competiria com os dois.
+        setToast("");
+        if (!ranking) void carregarRanking();
+      } else {
         mostrarToast(`Vídeo salvo! ${total} de ${limite} espaços usados.`);
       }
     } catch (falha) {
       setEstado(anterior);
       const codigo = codigoDoErro(falha);
-      if (codigo === "LIMITE_SALVOS") mostrarToast("Sua playlist está cheia. Remova um vídeo para salvar outro.", true);
-      else if (codigo === "MISSAO_CONCLUIDA") mostrarToast("Você já fechou sua playlist. Reinicie a missão no seu perfil para trocar.");
+      if (codigo === "LIMITE_SALVOS") {
+        telemetria.limiteAtingido();
+        setLimiteAberto(true);
+      } else if (codigo === "MISSAO_CONCLUIDA") mostrarToast("Você já fechou sua playlist. Reinicie a missão no seu perfil para trocar.");
       else mostrarToast("Não deu para salvar agora. Tenta de novo.");
     } finally {
       ocupado.current = false;
@@ -244,14 +274,17 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
       setRanking(null);
       setModoRanking("inscritos");
       setMissaoConcluidaAberta(false);
+      setLimiteAberto(false);
       setDescricaoExpandida(null);
       setSomLigado(false);
       const primeiro = videos[0]?.id ?? "";
       setAtivoId(primeiro);
-      setTela("feed");
+      // Volta ao briefing, não ao feed: "reiniciar a missão" é recomeçar do
+      // começo, e o começo desta missão é a explicação dela.
+      setTela("entrada");
       window.setTimeout(() => {
         rolarPara(primeiro, "auto");
-        mostrarToast("Missão reiniciada. Você voltou ao primeiro Short.");
+        mostrarToast("Missão reiniciada.");
       }, 30);
     } catch {
       mostrarToast("Não deu para reiniciar agora. Tenta de novo.");
@@ -262,6 +295,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     const aoTeclar = (evento: KeyboardEvent) => {
       if (evento.key === "Escape") {
         if (reiniciarAberto) return setReiniciarAberto(false);
+        if (limiteAberto) return setLimiteAberto(false);
         if (missaoConcluidaAberta) return setMissaoConcluidaAberta(false);
       }
       if (tela !== "feed") return;
@@ -276,7 +310,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     };
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
-  }, [tela, reiniciarAberto, missaoConcluidaAberta, indiceAtivo, videos]);
+  }, [tela, reiniciarAberto, limiteAberto, missaoConcluidaAberta, indiceAtivo, videos]);
 
   const rankingDesbloqueado = estado.rankingDesbloqueado;
 
@@ -284,6 +318,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     <main className={`app-shell view-${tela === "playlists" ? "library" : tela === "perfil" ? "profile" : tela}`}>
       <Topbar
         avatar={aluno.avatar}
+        inscritos={derivados.inscritos}
         perfilSelecionado={tela === "perfil"}
         aoIrParaFeed={() => irParaFeed()}
         aoAbrirPerfil={() => setTela("perfil")}
@@ -293,13 +328,17 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
         }}
       />
 
-      <Sidebar
-        tela={tela}
-        rankingDesbloqueado={rankingDesbloqueado}
-        aoIrParaFeed={() => irParaFeed()}
-        aoAbrirPlaylists={() => abrirPlaylists("salvos")}
-        aoAbrirRanking={abrirRanking}
-      />
+      {tela !== "entrada" && (
+        <Sidebar
+          tela={tela}
+          rankingDesbloqueado={rankingDesbloqueado}
+          aoIrParaFeed={() => irParaFeed()}
+          aoAbrirPlaylists={() => abrirPlaylists("salvos")}
+          aoAbrirRanking={abrirRanking}
+        />
+      )}
+
+      {tela === "entrada" && <TelaDeEntrada aparencia={aparencia} aoComecar={comecarMissao} />}
 
       {tela === "feed" && (
         <Feed
@@ -310,6 +349,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
             curtidos={estado.curtidos}
             descricaoExpandida={descricaoExpandida}
             indiceAtivo={indiceAtivo}
+            limite={limite}
             aoMudarAtivo={setAtivoId}
             aoAlternarSom={() => {
               setSomLigado((s) => {
@@ -324,6 +364,18 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
               setDescricaoExpandida(id);
             }}
           aoMover={moverFeed}
+        />
+      )}
+
+      {tela === "feed" && (
+        <BandejaFavoritos
+          aparencia={aparencia}
+          salvos={salvos}
+          limite={limite}
+          podeConcluir={estado.salvos.length === limite && !estado.credibilidadeAdicionada}
+          aoAssistir={irParaFeed}
+          aoRemover={(id) => void alternarSalvo(id)}
+          aoConcluir={concluirMissao}
         />
       )}
 
@@ -379,14 +431,29 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
         />
       )}
 
-      <NavMobile
-        tela={tela}
-        rankingDesbloqueado={rankingDesbloqueado}
-        aoIrParaFeed={() => irParaFeed()}
-        aoAbrirPlaylists={() => abrirPlaylists("salvos")}
-        aoAbrirRanking={abrirRanking}
-        aoAbrirPerfil={() => setTela("perfil")}
-      />
+      {tela !== "entrada" && (
+        <NavMobile
+          tela={tela}
+          rankingDesbloqueado={rankingDesbloqueado}
+          aoIrParaFeed={() => irParaFeed()}
+          aoAbrirPlaylists={() => abrirPlaylists("salvos")}
+          aoAbrirRanking={abrirRanking}
+          aoAbrirPerfil={() => setTela("perfil")}
+        />
+      )}
+
+      {limiteAberto && (
+        <DialogoLimite
+          aparencia={aparencia}
+          salvos={salvos}
+          limite={limite}
+          aoRemover={(id) => {
+            setLimiteAberto(false);
+            void alternarSalvo(id);
+          }}
+          aoFechar={() => setLimiteAberto(false)}
+        />
+      )}
 
       {reiniciarAberto && (
         <DialogoReiniciar
@@ -407,17 +474,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
         />
       )}
 
-      {toast && (
-        <Toast
-          mensagem={toast}
-          cheio={toastCheio}
-          aparencia={aparencia}
-          aoAbrirPlaylist={() => {
-            setToast("");
-            abrirPlaylists("salvos");
-          }}
-        />
-      )}
+      {toast && <Toast mensagem={toast} aparencia={aparencia} />}
     </main>
   );
 }

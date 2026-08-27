@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar, Icon, PlayerGlyph, ShortsActionRail, ShortsPlayer } from "@edu/ui/ds-unootube";
 
+import { dicaDoFeed } from "../../lib/dicas";
 import { useTelaEstreita } from "../../lib/largura";
 import type { VideoPublico } from "../../lib/tipos";
 import { urlDoVideo } from "../../lib/videos";
@@ -16,6 +17,7 @@ interface Props {
   curtidos: string[];
   descricaoExpandida: string | null;
   indiceAtivo: number;
+  limite: number;
   aoMudarAtivo: (id: string) => void;
   aoAlternarSom: () => void;
   aoSalvar: (id: string) => void;
@@ -39,15 +41,24 @@ interface Props {
  *
  * Autoplay só funciona porque começa mudo e porque o hub delega
  * `allow="autoplay"` no iframe.
+ *
+ * As peças de orientação do wireframe moram aqui: o contador "Favoritos
+ * salvos" no topo da trilha, o chip "Vídeo N de M" sobre o quadro e a dica sob
+ * ele. Nenhuma delas comenta a escolha — ver `lib/dicas.ts`.
  */
 export function Feed(props: Props) {
-  const { videos, ativoId, somLigado, aoMudarAtivo } = props;
+  const { videos, ativoId, somLigado, limite, aoMudarAtivo } = props;
   const feedRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef(new Map<string, HTMLVideoElement>());
   const [carregando, setCarregando] = useState<Set<string>>(() => new Set(videos.map((v) => v.id)));
   const [visivel, setVisivel] = useState(estaVisivel());
   const estreita = useTelaEstreita();
   const variante = estreita ? "immersive" : "card";
+  const dica = dicaDoFeed({
+    carregando: carregando.has(ativoId),
+    salvos: props.salvos.length,
+    limite,
+  });
 
   useEffect(() => aoMudarVisibilidade(setVisivel), []);
 
@@ -91,6 +102,7 @@ export function Feed(props: Props) {
         {videos.map((video, indice) => {
           const curtido = props.curtidos.includes(video.id);
           const salvo = props.salvos.includes(video.id);
+          const carregandoEste = carregando.has(video.id);
           const expandida = props.descricaoExpandida === video.id;
           return (
             <article
@@ -101,6 +113,15 @@ export function Feed(props: Props) {
               aria-label={`Vídeo ${indice + 1} de ${videos.length}`}
             >
               <div className="short-stage">
+                {/*
+                 * "Vídeo N de M" saiu do rodapé da trilha e virou chip sobre o
+                 * quadro (Figma `5:30`): no rodapé ele era um `3/21` discreto,
+                 * e o que a criança precisa saber é que o feed TEM fim — sem
+                 * isso, "assista com atenção" não tem tamanho.
+                 */}
+                <span className="posicao-do-video">
+                  Vídeo {indice + 1} de {videos.length}
+                </span>
                 <ShortsPlayer
                   variant={variante}
                   src={urlDoVideo(video.arquivo)}
@@ -130,6 +151,14 @@ export function Feed(props: Props) {
                         <span>{video.inscritosRotulo}</span>
                       </span>
                       <span className="titulo-do-video">{video.titulo}</span>
+                      {/*
+                       * Popularidade à vista, sem nenhuma marcação de verdadeiro
+                       * ou falso (nota `ETAPA 2`). São rótulos do catálogo, não
+                       * contas: o gabarito continua no servidor.
+                       */}
+                      <span className="metricas-do-video">
+                        {video.visualizacoesRotulo} · {video.curtidasRotulo}
+                      </span>
                       <span className={`descricao-do-video ${expandida ? "expandida" : ""}`}>
                         <span className="descricao-texto">
                           <Descricao texto={video.descricao} />
@@ -149,24 +178,45 @@ export function Feed(props: Props) {
                     <ShortsActionRail
                       variant={estreita ? "overlay" : "standalone"}
                       aria-label="Ações do vídeo"
-                      footer={
-                        <span className="posicao-do-video">
-                          {indice + 1}/{videos.length}
+                      header={
+                        <span className="contador-de-favoritos">
+                          <small>Favoritos salvos</small>
+                          <strong>
+                            {props.salvos.length} de {limite}
+                          </strong>
                         </span>
                       }
                     >
+                      {/*
+                       * Salvar vem primeiro e leva o peso de ação principal
+                       * (`.acao-salvar`): é a única ação que decide a missão, e
+                       * o wireframe a desenha como o botão cheio da trilha.
+                       * Curtir fica abaixo, com a contagem do vídeo — visível,
+                       * sem peso nenhum no resultado.
+                       *
+                       * Os dois ficam DESABILITADOS enquanto o vídeo carrega. A
+                       * nota `ETAPA 2` diz por quê: para não salvar sem assistir.
+                       */}
                       <ShortsActionRail.Item
+                        className="acao-salvar"
                         icon={<Icon name="save" size={estreita ? 36 : 24} />}
-                        label={salvo ? "Salvo" : "Salvar"}
+                        label={salvo ? "Salvo!" : "Salvar"}
                         active={salvo}
+                        disabled={carregandoEste}
                         aria-label={salvo ? "Remover dos salvos" : "Salvar vídeo"}
                         aria-pressed={salvo}
                         onClick={() => props.aoSalvar(video.id)}
                       />
                       <ShortsActionRail.Item
                         icon={<Icon name={curtido ? "likedFill" : "likedOutline"} size={estreita ? 36 : 24} />}
-                        label={curtido ? "Curtido" : "Curtir"}
+                        label={
+                          <>
+                            {curtido ? "Curtido" : "Curtir"}
+                            <small className="curtidas-do-video">{video.curtidasRotulo}</small>
+                          </>
+                        }
                         active={curtido}
+                        disabled={carregandoEste}
                         aria-label={curtido ? "Remover curtida" : "Curtir vídeo"}
                         aria-pressed={curtido}
                         onClick={() => props.aoCurtir(video.id)}
@@ -191,8 +241,9 @@ export function Feed(props: Props) {
                     </ShortsActionRail>
                   }
                 />
-                {carregando.has(video.id) && <IndicadorCarregando />}
+                {carregando.has(video.id) && <IndicadorCarregando detalhado />}
               </div>
+              <p className="dica-do-feed">{dica}</p>
             </article>
           );
         })}

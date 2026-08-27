@@ -181,6 +181,15 @@ cronômetro de \emph{dwell} da experiência correria com o aluno de costas --- e
 \emph{dwell} é a medida central do motor de \emph{feed} da exp-01. O hub escuta
 \cd{visibilitychange} \emph{e} \cd{blur}/\cd{focus} da janela, porque trocar de
 janela ou de aplicativo não muda \cd{visibilityState}.
+
+\textbf{Uma exceção, e ela custou um bug:} clicar em qualquer lugar
+\textbf{dentro} do \cd{iframe} move o foco para a experiência, e o navegador
+dispara \cd{blur} no documento de cima. Isso \emph{não} é o aluno saindo --- e
+como o \cd{focus} correspondente não volta enquanto ele continua ali, um
+\cd{hub:pause} nesse caso é definitivo. Na exp-02 o vídeo parava no primeiro
+toque em \enquote{Salvar} e não voltava mais. Quando o foco foi para a nossa
+experiência, \cd{document.activeElement} é o próprio \cd{iframe}, e
+\arq{ExpFrame.tsx} não emite nada.
 \end{atencao}
 
 \section{Manifesto de experiências}

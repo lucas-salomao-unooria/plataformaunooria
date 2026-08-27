@@ -4,9 +4,7 @@ import type { Aparencia } from "../../lib/tema";
 
 interface Props {
   mensagem: string;
-  cheio: boolean;
   aparencia: Aparencia;
-  aoAbrirPlaylist: () => void;
 }
 
 /**
@@ -17,10 +15,13 @@ interface Props {
  * DENTRO da ficção ("Vídeo salvo!"), antes da revelação. Agora o clone tem o
  * seu, e a caixa à mão morreu junto com o CSS que a pintava.
  *
- * `duration={0}` porque quem conta o tempo é o orquestrador — ele distingue o
- * aviso curto do longo (o de playlist cheia fica mais tempo e traz ação).
+ * `duration={0}` porque quem conta o tempo é o orquestrador.
+ *
+ * O aviso longo COM AÇÃO ("playlist cheia" + "Abrir playlist") não existe mais:
+ * bater no teto de 3 abre o `DialogoLimite`, onde a troca acontece. Um toast
+ * que some em 5 s não era lugar para uma decisão.
  */
-export function Toast({ mensagem, cheio, aparencia, aoAbrirPlaylist }: Props) {
+export function Toast({ mensagem, aparencia }: Props) {
   return (
     <Snackbar
       open
@@ -28,8 +29,6 @@ export function Toast({ mensagem, cheio, aparencia, aoAbrirPlaylist }: Props) {
       duration={0}
       theme={aparencia === "escuro" ? "dark" : "light"}
       message={mensagem}
-      actionLabel={cheio ? "Abrir playlist" : undefined}
-      onAction={cheio ? aoAbrirPlaylist : undefined}
     />
   );
 }

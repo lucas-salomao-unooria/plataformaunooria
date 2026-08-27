@@ -216,6 +216,16 @@ causa.
 \textbf{Vídeo não toca} (\cd{play()} rejeitado em silêncio) &
   \cd{autoplay} não delegado no \cd{allow} do \emph{frame}: a
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}.\\
+\zebra \textbf{O vídeo para no primeiro toque \emph{dentro} da experiência e não
+  volta} --- e o \emph{walkthrough} acusa \enquote{autoplay BLOQUEADO} &
+  \textbf{Não é o \cd{allow} do \emph{frame}}, e é aí que o sintoma engana: o
+  \cd{play()} manual funciona e o \cd{readyState} é 4. Clicar dentro do
+  \cd{iframe} tira o foco da janela do hub, o \arq{ExpFrame.tsx} traduzia esse
+  \cd{blur} em \cd{hub:pause} e o \cd{focus} correspondente nunca voltava
+  enquanto o aluno continuasse ali. A evidência é \cd{visivel: false} em
+  \arq{lib/visibilidade.ts}. Corrigido em 2026-08-27: \cd{blur} com
+  \cd{document.activeElement} igual ao próprio \cd{iframe} não é perda de
+  visibilidade nenhuma.\\
 \zebra \textbf{\cd{confirm()} da experiência não aparece} &
   \cd{allow-modals} ausente no \emph{sandbox}: o navegador \textbf{ignora} e
   devolve \cd{false}.\\

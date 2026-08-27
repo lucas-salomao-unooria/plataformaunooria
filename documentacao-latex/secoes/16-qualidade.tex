@@ -80,6 +80,16 @@ revisão em par que uma pessoa não tem.
 \label{fig:testes}
 \end{figure}
 
+\begin{nota}
+\textbf{Caso registrado (2026-08-27).} O \emph{smoke} da exp-02 foi o único
+verificador a pegar o \cd{hub:pause} espúrio do \arq{ExpFrame.tsx}
+(\adrr{ADR-22}): 31 tarefas de \cd{typecheck}, \cd{lint} e teste passavam, e o
+que denunciou foi uma linha do relatório --- \enquote{autoplay BLOQUEADO}. O
+defeito já existia antes da mudança que o expôs; nenhuma camada abaixo tinha como
+vê-lo, porque ele mora no encontro entre foco de janela, \emph{postMessage} e
+política de mídia do navegador.
+\end{nota}
+
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Camada} & \thd{Ferramenta} & \thd{Mínimo obrigatório}\\

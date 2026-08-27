@@ -49,8 +49,38 @@ describe("catálogo", () => {
     const publico = VIDEOS.map(semGabarito);
     expect(JSON.stringify(publico)).not.toContain("factual");
     expect(Object.keys(publico[0]!).sort()).toEqual(
-      ["accent", "arquivo", "avatar", "descricao", "handle", "id", "inscritosRotulo", "titulo"].sort(),
+      [
+        "accent",
+        "arquivo",
+        "avatar",
+        "curtidasRotulo",
+        "descricao",
+        "handle",
+        "id",
+        "inscritosRotulo",
+        "titulo",
+        "visualizacoesRotulo",
+      ].sort(),
     );
+  });
+
+  /**
+   * As métricas de popularidade são COSMÉTICAS, mas não são aleatórias: o vídeo
+   * fake é o que tem os números grandes, e é esse contraste que o ranking
+   * desmonta depois. Se um dia um factual sair com mais visualizações que um
+   * fake, a lição inverte de sinal sem ninguém notar.
+   */
+  test("todo fake é mais popular que todo factual", () => {
+    const emNumero = (rotulo: string) => {
+      const [valor] = rotulo.split(" ");
+      const base = Number(valor!.replace(",", "."));
+      if (rotulo.includes(" mi ")) return base * 1_000_000;
+      if (rotulo.includes(" mil ")) return base * 1_000;
+      return base;
+    };
+    const vistas = (fake: boolean) =>
+      VIDEOS.filter((v) => v.factual !== fake).map((v) => emNumero(v.visualizacoesRotulo));
+    expect(Math.min(...vistas(true))).toBeGreaterThan(Math.max(...vistas(false)));
   });
 });
 

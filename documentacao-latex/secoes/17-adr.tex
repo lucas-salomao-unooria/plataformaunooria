@@ -36,6 +36,7 @@ reavaliação não é decisão registrada: é justificativa.
 \adrr{ADR-19} & \emph{Design system} externo como fonte única de interface & 2026-08 & Aceita\\
 \zebra \adrr{ADR-20} & Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_} & 2026-08-27 & Aceita\\
 \adrr{ADR-21} & \emph{Push subscription} para a própria API, sem \emph{worker} & 2026-08 & Aceita\\
+\zebra \adrr{ADR-22} & exp-02 1.1.0: \emph{briefing} na voz da escola, conclusão por botão & 2026-08-27 & Aceita, com custo\\
 \bottomrule
 \end{tabularx}
 
@@ -595,3 +596,70 @@ emissor Google, \cd{aud} e \cd{email} da conta de serviço de \emph{push}, e
 idempotente por \cd{ON CONFLICT}, porque a entrega é \emph{at least once}.
 
 \textbf{Gatilho.} Volume que justifique isolar o consumo do tráfego de aluno.
+
+% ---------------------------------------------------------------------------
+
+\section{ADR-22 --- exp-02 1.1.0: \emph{briefing} antes do disfarce}
+
+\textbf{Contexto.} Até a 1.0.0 o aluno da exp-02 caía direto no \emph{feed} de
+\emph{Shorts} sem nenhum enquadramento: a primeira vez que a palavra
+\enquote{missão} aparecia para ele era no diálogo que abria sozinho depois do
+terceiro salvo --- isto é, \emph{depois} de a medida já ter sido tomada. Não havia
+contador visível de favoritos, não havia bandeja, e o teto de três se manifestava
+como um \emph{toast} de 5,2\,s. O Figma de redesenho (arquivo
+\cd{oX1NGR8sPyduAS52hDaJFX}, seis telas de 1440$\times$900, público de nove anos)
+acrescentou o enquadramento antes da ação e o retorno durante ela.
+
+\textbf{Decisão.} Três mudanças, tomadas juntas:
+
+\begin{enumerate}
+  \item \textbf{Tela de entrada na voz da escola.} O \emph{briefing} usa a seção
+    da \textbf{plataforma} (\cd{@edu/ui/ds}) --- a primeira vez que ela aparece
+    \emph{antes} da revelação. O critério da linha da revelação
+    (Capítulo~\ref{cap:ds}) continua sendo \enquote{quem está falando?}: no
+    \emph{briefing} quem fala é a escola, e não há disfarce a proteger, porque a
+    criança ainda não viu um \emph{Short}.
+  \item \textbf{Conclusão pelo botão.} O terceiro salvo apenas habilita
+    \enquote{Concluir missão} na bandeja; o diálogo abre no clique.
+  \item \textbf{Ganho de inscritos visível.} Um \emph{badge} \cd{+N} ao lado do
+    chip do canal, por 1,4\,s, quando o número sobe.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.} (a) Reproduzir o \emph{wireframe} ao pé da
+letra, com o azul e o tema claro fixo dele --- forçaria a paleta da plataforma
+para dentro da ficção e quebraria o seletor claro/escuro do aluno; o Figma é
+\emph{wireframe}, e vale como especificação de estrutura, texto e estados, não de
+cor. (b) Reduzir o catálogo a oito vídeos, como o \emph{wireframe} ilustra ---
+mexeria no instrumento (o balanço 10~\emph{fake} / 11 factual) e na
+comparabilidade com dados já coletados. (c) Manter a abertura automática do
+diálogo no terceiro salvo, com o botão como caminho alternativo --- duas portas
+para a mesma coisa, e a primeira empurra a criança para a virada no instante do
+toque. (d) Animar só o total, sem o \emph{badge} de delta.
+
+\textbf{Consequências ruins, aceitas.} O \emph{badge} torna legível
+\textbf{durante} a missão que um vídeo vale $+$1.000 inscritos e outro $+$50, ou
+seja, expõe o padrão que o \emph{ranking} existe para revelar. Foi aceito porque
+o total já se movia --- o delta sempre foi derivável de dois quadros seguidos ---
+e porque a nota da etapa 3 do Figma decide isso explicitamente: o ganho varia, e
+o motivo \textbf{não} é explicado ali. A tela de entrada também gasta um toque a
+mais antes do \emph{feed}, e um aluno apressado a atravessa sem ler.
+
+\textbf{O que não mudou.} As curtidas continuam fora do cálculo; o gabarito
+(\cd{factual}) continua no servidor e fora do \emph{wire} --- há teste que
+enumera os campos públicos do catálogo; o \emph{score} continua saindo de
+\rota{POST /unootube/credibilidade}. Nenhuma rota nova, nenhuma migração.
+
+\textbf{Efeito colateral corrigido no hub.} O \emph{feed} passou a montar depois
+de um clique \emph{dentro} do \cd{iframe}, e isso revelou um defeito que já
+existia: clicar dentro do \cd{iframe} tira o foco da janela do hub, o
+\arq{ExpFrame.tsx} traduzia esse \cd{blur} em \cd{hub:pause}, e o \cd{focus}
+correspondente nunca voltava enquanto o aluno continuasse ali --- o vídeo parava
+no primeiro toque em \enquote{Salvar} e não voltava mais, em qualquer versão. A
+correção é uma linha: quando \cd{document.activeElement} é o próprio
+\cd{iframe}, o foco foi para a experiência e não há perda de visibilidade
+nenhuma.
+
+\textbf{Gatilho de reavaliação.} Distribuição de \cd{fontesConfiaveis} da turma
+subindo de forma anômala --- o \emph{badge} é o primeiro suspeito. Ou o professor
+relatando que a turma atravessa o \emph{briefing} sem ler, o que pediria que ele
+fosse do professor e não da tela.

@@ -364,7 +364,13 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 
 \begin{regra}
 O gabarito (\cd{factual}) \textbf{não está aqui} e não é devolvido em nenhuma rota
-de aluno: vive em \arq{src/unootube/catalogo.ts}.
+de aluno: vive em \arq{src/unootube/catalogo.ts}. O que \emph{sai} de lá é
+\cd{VideoPublico}, isto é, tudo menos \cd{factual} --- e há teste que enumera os
+campos, para que um campo novo não escape por distração. Desde a 1.1.0 são também
+públicos \cd{visualizacoesRotulo} e \cd{curtidasRotulo}: rótulos
+\textbf{cosméticos} de popularidade, sem peso em conta nenhuma, mas escolhidos
+para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
+\emph{ranking} desmonta depois.
 \end{regra}
 
 \subsection{\cd{exp\_70\_sessoes}}

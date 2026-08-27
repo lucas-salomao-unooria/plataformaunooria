@@ -104,6 +104,16 @@ uma aproximação, e a experiência mede reconhecimento.
 \label{fig:linha-revelacao}
 \end{figure}
 
+\begin{nota}
+\textbf{A linha tem duas pontas, não uma.} A versão 1.1.0 da exp-02 abriu com uma
+\textbf{tela de entrada} que explica a missão, e ela usa a seção da
+\textbf{plataforma} --- antes do \emph{feed}, ou seja, \emph{antes} da revelação.
+Não é exceção à regra: é a regra aplicada pelo critério que ela mesma enuncia,
+\enquote{quem está falando?}. No \emph{briefing} quem fala é a escola, e não há
+disfarce a proteger --- a criança ainda não viu um \emph{Short}. O disfarce começa
+no toque em \enquote{Começar missão}. Ver \adrr{ADR-22}.
+\end{nota}
+
 \section{Consumo: sempre pela ponte}
 
 \begin{regra}
@@ -241,6 +251,12 @@ quando o pacote publicar a correção.
 
 \subsection{Lacunas abertas, verificadas na 0.1.14}
 
+\begin{nota}
+As quatro primeiras da tabela abaixo foram \textbf{atendidas na 0.1.17} e as
+compensações correspondentes foram apagadas da exp-02. Duas lacunas novas
+apareceram na 1.1.0 da experiência e estão registradas logo depois.
+\end{nota}
+
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Lacuna} & \thd{Consequência}\\
@@ -259,6 +275,29 @@ Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
   \cd{PasswordInput}, \cd{SearchInput}) & \cd{<select>} do hub usa
   \cd{.unooria-select}, com os tokens do pacote --- mesma altura, raio e cores do
   \cd{TextField}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Lacunas abertas na 0.1.17 (exp-02 1.1.0)}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Consequência}\\
+\midrule
+\cd{unootube} não publica \cd{Tag} nem \cd{Badge} & Nenhum dos dois arquivos de
+  origem desenha um. A etiqueta \enquote{LIMITE ATINGIDO} do diálogo de limite é
+  compensação local --- e sai \textbf{neutra}, não âmbar como o Figma pede: a
+  seção não tem token de aviso, e derivar um seria inventar valor.\\
+\zebra O véu do \cd{ShortsPlayer} tem altura \textbf{fixa} de 194\,px & Ele
+  existe para a legenda ficar legível. Numa miniatura de 88\,px sem legenda
+  (\cd{showChannel} \cd{false}), o véu é mais alto que a miniatura inteira e só a
+  faixa mais escura do gradiente aparece: o sintoma é \textbf{retângulo preto no
+  lugar do vídeo}, com o vídeo carregado por baixo. Compensado com
+  \cd{display: none} nas miniaturas da bandeja e do diálogo. Deveria ser
+  proporcional, ou preso ao \cd{showChannel}.\\
+\cd{Button} do clone não tem variante de ênfase & \enquote{Entendi!} e
+  \enquote{Salvar} recebem preenchimento por ligação local, com os tokens da
+  própria marca.\\
 \bottomrule
 \end{tabularx}
 

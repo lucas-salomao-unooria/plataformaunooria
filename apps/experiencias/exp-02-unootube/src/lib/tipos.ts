@@ -3,7 +3,7 @@
  * rede. Note a ausência de `factual`: o gabarito não existe deste lado.
  */
 export const EXP_ID = "exp-02-unootube";
-export const EXP_VERSION = "1.0.0";
+export const EXP_VERSION = "1.1.0";
 
 export interface VideoPublico {
   id: string;
@@ -11,7 +11,10 @@ export interface VideoPublico {
   titulo: string;
   descricao: string;
   handle: string;
+  /** Métricas de popularidade — cosméticas, sem peso em conta nenhuma. */
   inscritosRotulo: string;
+  visualizacoesRotulo: string;
+  curtidasRotulo: string;
   avatar: string;
   accent: string;
 }
@@ -58,6 +61,12 @@ export interface RespostaSessao extends RespostaEstado {
   ranking: RespostaRanking | null;
 }
 
-export type Tela = "feed" | "playlists" | "ranking" | "perfil";
+/**
+ * `entrada` é a tela de briefing da missão — a primeira coisa que o aluno vê
+ * quando ainda não salvou nem curtiu nada. Não é uma tela navegável: não tem
+ * item na barra lateral nem nas abas, e o único caminho de volta a ela é
+ * reiniciar a missão.
+ */
+export type Tela = "entrada" | "feed" | "playlists" | "ranking" | "perfil";
 export type AbaPlaylists = "salvos" | "curtidos";
 export type ModoRanking = "confiaveis" | "inscritos";
