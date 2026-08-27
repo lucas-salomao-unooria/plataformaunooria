@@ -10,6 +10,23 @@ O scope interno dos workspaces segue `@edu/*` (`@edu/sdk`, `@edu/hub`, `@edu/api
 `@edu/exp-*`) — alias curto, não marca. Para alinhar ao produto:
 `grep -rl "@edu/" --include="*.json" --include="*.ts" --include="*.tsx" . | xargs sed -i '' 's|@edu/|@unooria/|g'`
 
+## Interface: tudo vem do `@unooria/design-system`
+
+Hub e experiências não têm componente de UI próprio — a interface é o pacote npm
+`@unooria/design-system`, **sempre na última versão publicada**, consumido pela
+ponte `packages/ui` (`@edu/ui/ds` para a plataforma, `@edu/ui/ds-insta` e irmãos
+para o clone de cada experiência). O pacote tem uma seção por marca: `unooria`
+(plataforma) + `instanooria`, `unitube`, `chatgpt`, `whatsappmobile`, `tiktooria`
+(os clones que as experiências imitam), cada uma com seus tokens e seu CSS.
+
+```bash
+pnpm up -r @unooria/design-system --latest   # ^0.1.x não sobe minor: atualizar de propósito
+```
+
+Componente que falta nasce no repo do DS (`storybook-unooria`, Storybook `:6007`)
+e chega aqui por versão nova. Detalhes e as regras de não-misturar-seções em
+`CLAUDE.md`.
+
 ## Subir tudo em containers (o caminho mais curto)
 ```bash
 node scripts/gerar-chave-token.mjs --env   # chave RS256 que o hub usa p/ assinar
