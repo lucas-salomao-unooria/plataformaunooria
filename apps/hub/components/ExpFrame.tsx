@@ -11,7 +11,8 @@ import { ExpParaHubSchema, PROTOCOL_VERSION } from "@edu/sdk";
  *  - emite hub:pause/hub:resume quando a PÁGINA DO HUB perde visibilidade ou
  *    foco — esconder um iframe não dispara visibilitychange nele, e sem isso
  *    o cronômetro de dwell da experiência correria com o aluno de costas
- *    (lição do projeto origem);
+ *    (lição do projeto origem). O foco indo para DENTRO do próprio iframe é a
+ *    exceção, e está explicada em `aoPerderFoco`;
  *  - valida TUDO que recebe com Zod (regra: Zod em todo postMessage) e
  *    entrega exp:concluir / exp:estado tipados aos callbacks.
  *
@@ -89,7 +90,20 @@ export function ExpFrame(props: {
     // `blur` cobre trocar de janela/aplicativo, que o visibilitychange não vê.
     const aoTrocarVisibilidade = () =>
       post({ type: document.visibilityState === "hidden" ? "hub:pause" : "hub:resume" });
-    const aoPerderFoco = () => post({ type: "hub:pause" });
+    /*
+     * `blur` da janela do hub NÃO é sempre o aluno saindo: clicar em qualquer
+     * lugar DENTRO do iframe move o foco para a experiência, e o navegador
+     * dispara `blur` no documento de cima. Como o `focus` correspondente nunca
+     * volta enquanto ele continua ali, um `hub:pause` aqui é definitivo — na
+     * exp-02 o vídeo parava no primeiro toque em "Salvar" e não voltava mais.
+     *
+     * Quando o foco foi para a NOSSA experiência, `document.activeElement` é o
+     * próprio `<iframe>`. Esse caso não é perda de visibilidade nenhuma.
+     */
+    const aoPerderFoco = () => {
+      if (document.activeElement === frame.current) return;
+      post({ type: "hub:pause" });
+    };
     const aoGanharFoco = () => {
       if (document.visibilityState !== "hidden") post({ type: "hub:resume" });
     };
