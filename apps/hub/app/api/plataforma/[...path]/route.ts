@@ -19,6 +19,11 @@ const PREFIXOS_PERMITIDOS = [
   "perfis",
   "analise",
   "progresso",
+  /* exp-70: o botão de zerar os dados da turma é client-side, e é o único
+     caminho da Vila que não passa por `apiDoServidor`. As guardas de papel estão
+     na api (`@Roles("professor")`); isto aqui só decide quais prefixos o BFF
+     repassa. */
+  "vila",
 ] as const;
 
 async function proxy(request: NextRequest, path: string[]) {

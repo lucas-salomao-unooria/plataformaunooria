@@ -27,6 +27,16 @@ export default tseslint.config(
       "apps/api/prisma/migrations/**",
       /** Gerado pelo Next a cada build — não é nosso código. */
       "apps/hub/next-env.d.ts",
+      /**
+       * O jogo da Vila do Lume. NÃO é esquecimento: são scripts clássicos com
+       * globais compartilhados (`state`, `zones`, `THREE`), linguagem própria em
+       * pixel, e a decisão de mantê-los assim está registrada em
+       * `apps/experiencias/exp-70-vila-do-lume/ADR-0001-jogo-nao-e-typescript.md`.
+       * Rodar esta régua ali produziria centenas de `no-undef` sem nenhum bug
+       * atrás — e régua que grita sem motivo ensina a ignorar o lint.
+       * O shim (`src/`) É lintado normalmente.
+       */
+      "apps/experiencias/exp-70-vila-do-lume/public/jogo/**",
     ],
   },
 

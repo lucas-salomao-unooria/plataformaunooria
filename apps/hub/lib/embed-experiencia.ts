@@ -27,6 +27,8 @@ export interface ManifestoDeExperiencia {
   viewport?: { largura: number; altura: number } | null;
   /** Ausente em linhas antigas = aluno (default do schema da api). */
   publico?: PublicoDaExperiencia;
+  /** Permissões de iframe (hoje só `pointer-lock`). Ausente = nenhuma. */
+  permissoes?: readonly string[];
 }
 
 type Usuario = Session["usuario"];
@@ -40,6 +42,8 @@ export interface Embed {
   aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   viewport: { largura: number; altura: number } | null;
+  /** Repassado ao `ExpFrame`: liga `allow-pointer-lock` no sandbox. */
+  permissoes: readonly string[];
 }
 
 /**
@@ -122,15 +126,24 @@ export async function montarEmbed(
   // `localhost:5173` é o próprio container.
   const baseInterna = urlInternaDoBundle(base);
   let viewportDoBundle: { largura: number; altura: number } | null = null;
+  let permissoesDoBundle: readonly string[] = [];
   if (!manifesto) {
     try {
       const r = await fetch(`${baseInterna}/experiencia.json`, { cache: "no-store" });
       if (r.ok) {
-        const meta = (await r.json()) as { viewport?: { largura: number; altura: number } };
+        const meta = (await r.json()) as {
+          viewport?: { largura: number; altura: number };
+          permissoes?: readonly string[];
+        };
         viewportDoBundle = meta.viewport ?? null;
+        // Pelo MESMO motivo do viewport: sem a tabela `experiencias` populada
+        // (compose local, ambiente novo antes do 1º publish do CI) a exp-70
+        // abriria sem `allow-pointer-lock` — o jogo monta, a câmera não anda, e
+        // nada no console diz por quê.
+        permissoesDoBundle = meta.permissoes ?? [];
       }
     } catch {
-      // bundle/dev server fora do ar — segue sem viewport
+      // bundle/dev server fora do ar — segue sem viewport e sem permissões
     }
   }
 
@@ -153,5 +166,6 @@ export async function montarEmbed(
     },
     apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
     viewport: manifesto?.viewport ?? viewportDoBundle,
+    permissoes: manifesto?.permissoes ?? permissoesDoBundle,
   };
 }

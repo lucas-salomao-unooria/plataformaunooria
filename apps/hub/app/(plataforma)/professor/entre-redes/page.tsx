@@ -1,8 +1,15 @@
 import { Card, Tag } from "@edu/ui/ds";
 import { CartaoMissao } from "@/components/cartao-missao";
+import { CartaoTransversal } from "@/components/cartao-transversal";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
-import { ETAPAS, MISSAO_ATUAL, UNIDADES_POR_ANO, type Ano } from "@/lib/entre-redes/catalogo";
+import {
+  ETAPAS,
+  MISSAO_ATUAL,
+  MISSOES_TRANSVERSAIS,
+  UNIDADES_POR_ANO,
+  type Ano,
+} from "@/lib/entre-redes/catalogo";
 
 /**
  * Trilha do Entre Redes: a grade da Educação Básica inteira (1º ao 9º ano e as
@@ -45,10 +52,39 @@ export default async function EntreRedesPage() {
           Missões em que a turma vive por dentro como as redes funcionam — e só
           depois discute o que aconteceu. Do 1º ano do Fundamental à 3ª série do
           Médio, cada ano tem <strong>4 unidades</strong>, uma missão por
-          unidade. Você configura a missão para a sua disciplina e roda com a
-          turma quantas vezes quiser.
+          unidade — e há missões <strong>transversais</strong>, que valem para
+          qualquer ano. Você configura a missão para a sua disciplina e roda com
+          a turma quantas vezes quiser.
         </p>
       </div>
+
+      {/*
+        As TRANSVERSAIS vêm antes da grade, e fora dela.
+        Não é hierarquia: é que a grade é lida como "onde a minha missão mora",
+        por ano e unidade. Uma missão sem ano dentro dela viraria um card órfão
+        que o professor tenta encaixar num ano e não consegue. Acima, com o
+        próprio título, ela se apresenta pelo que é — vale para qualquer turma.
+      */}
+      {MISSOES_TRANSVERSAIS.length > 0 ? (
+        <section className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
+              Para qualquer ano
+            </h2>
+            <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-600">
+              Missões que não pertencem a uma unidade. Rode com a sua turma seja
+              qual for o ano dela.
+            </p>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {MISSOES_TRANSVERSAIS.map((missao) => (
+              <li key={missao.slug} className="h-full">
+                <CartaoTransversal missao={missao} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {ETAPAS.map((etapa) => (
         <section key={etapa.id} className="flex flex-col gap-5">

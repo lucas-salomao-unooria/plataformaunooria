@@ -21,6 +21,7 @@ import { rateLimit } from "../comum/rate-limit";
 import { estadoInicial, semearEstado } from "../motor/estado";
 import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
+import { VilaService } from "../vila/vila.service";
 import { normalizarPerfil, ordemDeRedistribuicao, quantosMover, rotuloDoPerfil, type LadoTese } from "./afinidade";
 import { distribuicaoDaTurma } from "./distribuicao";
 
@@ -68,11 +69,19 @@ function escoresDeDominante(dominante: (typeof PERFIS)[number]) {
 
 type Autenticado = { auth: AuthClaims };
 
+/** Filtro opcional da importação da Vila. Sem ele, vale a escola inteira — que é
+ *  como `GET :id/perfis` já lista. Com turma, o relatório da importação fica
+ *  legível: o professor roda a atividade com UMA turma. */
+const DaVilaSchema = z.object({ turmaId: z.string().uuid().optional() });
+
 @Controller("atividades")
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("professor")
 export class PerfisController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly vila: VilaService,
+  ) {}
 
   @Post(":id/perfis")
   @HttpCode(200)
@@ -126,6 +135,74 @@ export class PerfisController {
       }
 
       return { importados, ignorados: desconhecidos.length, desconhecidos };
+    });
+  }
+
+  /**
+   * IMPORTA OS PERFIS DA VILA DO LUME (exp-70) para esta atividade.
+   *
+   * Fecha o "Ato 1" que a ficha do Instanooria sempre descreveu: *"fora da
+   * plataforma, um jogo mede o perfil de valores do aluno"*. O jogo deixou de
+   * estar fora — e o comentário do `PerfisImportacaoController` lá embaixo, que
+   * chama a importação manual de "fallback do professor quando o jogo do Ato 1
+   * ainda não integra", tem uma resposta agora.
+   *
+   * ## Três decisões que estão neste método
+   *
+   * **É o professor que dispara, não a plataforma.** Sobrescrever sozinho
+   * desfaria em silêncio uma redistribuição que ele já tinha feito antes da
+   * aula, e a partida da Vila pode acontecer depois de a atividade ter começado.
+   *
+   * **`ladoForcado` é PRESERVADO.** O `update` toca `escores`, `dominante`,
+   * `origem` e `medidoEm` e nada mais — quem foi movido de lado à mão continua
+   * movido. Se o `update` levasse o objeto inteiro, a importação apagaria a
+   * decisão pedagógica dele sem avisar (`largada.ts` dá precedência a
+   * `ladoForcado` justamente para isso).
+   *
+   * **Quem não entrou é NOMEADO.** Perfil de partida curta é descartado (ver
+   * `quadrantes.ts`), e uma resposta que só diz "23 importados" faria o
+   * professor achar que a turma inteira entrou.
+   */
+  @Post(":id/perfis/da-vila")
+  @HttpCode(200)
+  async importarDaVila(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
+    if (!ehUuid(id)) naoEncontrado();
+    const filtro = DaVilaSchema.parse(body ?? {});
+    const { usuarioId, escolaId } = req.auth;
+
+    /* A leitura acontece FORA da transação de escrita, e de propósito: ela abre
+       o próprio `comTenancy` (é do módulo `vila`, dono daquelas tabelas).
+       Aninhar transação do Prisma dentro de transação não faz o que parece. */
+    const doJogo = await this.vila.perfisParaOAto1(escolaId, filtro.turmaId);
+
+    return this.prisma.comTenancy(async (tx) => {
+      const atividade = await atividadeDoProfessor(tx, id, usuarioId, escolaId);
+      if (!atividade) naoEncontrado();
+
+      let importados = 0;
+      for (const entrada of doJogo.prontos) {
+        const perfil = normalizarPerfil(entrada.escores);
+        /* `dados` NÃO inclui `ladoForcado`: o upsert não pode desfazer a
+           redistribuição do professor. */
+        const dados = {
+          escores: perfil.escores as unknown as Prisma.InputJsonObject,
+          dominante: perfil.dominante,
+          origem: "jogo",
+          medidoEm: entrada.medidoEm,
+        };
+        await tx.perfilImportado.upsert({
+          where: { activityId_alunoId: { activityId: id, alunoId: entrada.alunoId } },
+          create: { escolaId, activityId: id, alunoId: entrada.alunoId, ...dados },
+          update: dados,
+        });
+        importados += 1;
+      }
+
+      return {
+        importados,
+        semPartida: doJogo.semPartida,
+        descartados: doJogo.descartados.map((d) => ({ nome: d.nome, motivo: d.motivo })),
+      };
     });
   }
 

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vila do Lume</title>
+<!-- A casca visual é do JOGO, em pixel, e NUNCA importa o Design System da
+     plataforma (ADR-0001 desta experiência). O `game.css` e as fontes vivem em
+     `public/jogo/`, copiado verbatim do repo de origem. Caminhos relativos: o
+     bundle é servido da raiz de uma versão no bucket (`.../1.0.0/`). -->
+<!-- O `vite build` avisa "jogo/css/game.css doesn't exist at build time, it will
+     remain unchanged to be resolved at runtime" nestes dois. O aviso é ESPERADO e
+     o comportamento é o desejado: os arquivos vivem em `public/`, que o Vite copia
+     verbatim, e o href relativo é o que faz o bundle funcionar servido de
+     `.../exp-70-vila-do-lume/1.0.0/`. Mover para o shim tiraria o aviso e traria
+     um flash de tela sem estilo na cara da criança. -->
+<link rel="stylesheet" href="jogo/vendor/fonts.css">
+<link rel="stylesheet" href="jogo/css/game.css">
+</head>
+<body>
+
+<div id="canvasHost"></div>
+<div id="crosshair"></div>
+
+<div id="hud">
+  <div class="app-name px">🔥 VILA DO LUME</div>
+  <div class="stats">
+    <div class="stat fire-stat" id="fireHudWrap">
+      <svg class="fire-hud" id="mirrorHud" viewBox="0 0 100 100" width="42" height="42">
+        <rect class="stone" id="wedge0" x="44.0" y="8.0" width="12" height="16" rx="2" transform="rotate(0 50.0 16.0)"></rect>
+        <rect class="stone" id="wedge1" x="68.0" y="18.0" width="12" height="16" rx="2" transform="rotate(45 74.0 26.0)"></rect>
+        <rect class="stone" id="wedge2" x="78.0" y="42.0" width="12" height="16" rx="2" transform="rotate(90 84.0 50.0)"></rect>
+        <rect class="stone" id="wedge3" x="68.0" y="66.0" width="12" height="16" rx="2" transform="rotate(135 74.0 74.0)"></rect>
+        <rect class="stone" id="wedge4" x="44.0" y="76.0" width="12" height="16" rx="2" transform="rotate(180 50.0 84.0)"></rect>
+        <rect class="stone" id="wedge5" x="20.0" y="66.0" width="12" height="16" rx="2" transform="rotate(225 26.0 74.0)"></rect>
+        <rect class="stone" id="wedge6" x="10.0" y="42.0" width="12" height="16" rx="2" transform="rotate(270 16.0 50.0)"></rect>
+        <rect class="stone" id="wedge7" x="20.0" y="18.0" width="12" height="16" rx="2" transform="rotate(315 26.0 26.0)"></rect>
+        <rect class="log" x="34" y="56" width="32" height="6" rx="2" transform="rotate(24 50 59)"></rect>
+        <rect class="log" x="34" y="56" width="32" height="6" rx="2" transform="rotate(-24 50 59)"></rect>
+        <path class="flame" id="hudFlame" d="M50,22 C58,34 62,40 62,47 C62,55 56,60 50,60 C44,60 38,55 38,47 C38,40 42,34 50,22 Z"></path>
+        <path class="flame-core" id="hudFlameCore" d="M50,36 C54,43 55,46 55,49 C55,53 53,56 50,56 C47,56 45,53 45,49 C45,46 46,43 50,36 Z"></path>
+      </svg>
+      <div class="fire-label">
+        <span class="fire-goal">FOGO SAGRADO</span>
+        <span class="fire-count"><span id="scoreStars">0</span>/8 fogueiras</span>
+      </div>
+    </div>
+    <div class="stat" id="sparksStat">✨ <span id="scoreSparks">0</span> fagulhas</div>
+    <div class="stat torch-slot" id="torchSlot"><span class="fs-icon">🔥</span><span class="fs-text">Tocha</span></div>
+    <div class="stat score-stat"><span class="score-label">PONTOS</span><span id="scoreTotal">0</span></div>
+  </div>
+</div>
+
+<!-- Counts of things already done. They never show a total, so nothing here reads as a
+     checklist to complete — a tally of what happened, not a list of what is missing. -->
+<div id="tally"></div>
+
+<!-- CANAL A — AGORA: o que fazer. Permanente, sempre no mesmo lugar, diz o QUÊ e nunca
+     o ONDE. Não é a bússola de volta: ela apontava a zona mais próxima e desenhava a rota
+     ótima; esta linha não sabe geografia nenhuma. Existe porque criança travada não exerce
+     valor nenhum — ela só desiste. O que precisa ser difícil é escolher, não entender. -->
+<div id="objectiveBar"><span class="obj-icon">⛏️</span><span class="obj-text">—</span></div>
+
+<!-- CANAL B — AQUI: só o que está na frente dela. Verbo e tecla, mais nada. -->
+<div id="interactPrompt">APERTE <span style="color:#fff">E</span></div>
+
+<!-- Instrução longa é fala de personagem, não aviso de sistema. Uma criança de 6 entende
+     um balão com rosto como "alguém está falando comigo"; um toast no canto ela lê como
+     ruído do jogo, se é que lê. Fica até ela fechar. -->
+<div id="lumeSpeech">
+  <div class="ls-head"><span class="ls-face">🔥</span><span class="ls-name">Lume</span></div>
+  <p class="ls-text" id="lumeSpeechText"></p>
+  <div class="ls-dismiss">ESPAÇO pra continuar</div>
+</div>
+
+<div id="mineBar"><div id="mineBarFill"></div></div>
+
+<div id="dangerFlash"></div>
+<div id="successFlash"></div>
+<div id="whiteOut"></div>
+<div id="dangerLabel"></div>
+
+<div id="pausedHint">
+  <div class="box"><p>Clique pra voltar pro jogo</p></div>
+</div>
+
+<div class="overlay open" id="menuOverlay">
+  <div class="panel" id="introPanel"></div>
+</div>
+
+<div class="overlay" id="bitOverlay">
+  <div class="panel" id="bitPanel"></div>
+</div>
+
+<div class="dm-overlay" id="dmOverlay">
+  <div class="dm-card" id="dmCard"></div>
+</div>
+
+<div class="overlay" id="resultsOverlay">
+  <div class="panel" id="resultsPanel"></div>
+</div>
+
+<!-- Não existe overlay de painel/relatório. Foi removido junto com as telas: enquanto o
+     contêiner existir, um innerHTML distraído desenha um retrato de criança dentro do
+     jogo de novo. O relatório vive no hub do professor, que a criança não abre. -->
+
+<!-- O ÚNICO script que o Vite compila. Ele faz o handshake com o hub, abre a
+     partida e só então injeta os scripts clássicos do jogo, na ordem de
+     dependência. Nada do jogo roda antes de a identidade existir. -->
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

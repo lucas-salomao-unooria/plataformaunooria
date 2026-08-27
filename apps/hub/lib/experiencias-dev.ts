@@ -11,6 +11,13 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp-02-unootube": "http://localhost:5174",
   /** Ferramenta do professor — embedada em /professor/plano-de-aula. */
   "exp-90-plano-de-aula": "http://localhost:5175",
+  /**
+   * Transversal: não pertence a nenhum ano (`series: []` no manifesto).
+   * 5177, não 5176: a 5176 é da exp-91 (bem-estar). Com `strictPort` a colisão
+   * falharia alto em vez de o Vite pular de porta e o iframe do hub passar a
+   * apontar para a experiência errada.
+   */
+  "exp-70-vila-do-lume": "http://localhost:5177",
   /** Check-in de bem-estar do professor — embedado em /professor/bem-estar. */
   "exp-91-bem-estar": "http://localhost:5176",
 };

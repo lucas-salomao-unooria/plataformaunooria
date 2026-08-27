@@ -37,6 +37,8 @@ export function ExpHost(props: {
    * para desktop (exp-02) e ocupa a área inteira.
    */
   viewport?: { largura: number; altura: number } | null;
+  /** Do manifesto da experiência; segue no spread para o `ExpFrame`. */
+  permissoes?: readonly string[];
 }) {
   const { expId, viewport, ...frame } = props;
 

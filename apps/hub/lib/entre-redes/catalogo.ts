@@ -138,7 +138,7 @@ export const MISSAO_ATUAL: Missao = {
       {
         rotulo: "Ato 1 — o jogo",
         texto:
-          "Fora da plataforma, um jogo mede o perfil de valores do aluno. No momento em que joga, nada liga o jogo à missão — e é essa desconexão que faz a revelação funcionar.",
+          "A turma joga a Vila do Lume (a missão transversal), e o perfil de valores dela decide de que lado o feed de cada aluno nasce. No momento em que joga, nada liga o jogo a esta missão — e é essa desconexão que faz a revelação funcionar. Traga os perfis na tela da atividade; quem não jogou entra no sorteio balanceado.",
       },
       {
         rotulo: "Ato 2 — a missão",
@@ -253,6 +253,107 @@ export const ANOS: Ano[] = [
   }),
 ];
 
+/* ==========================================================================
+   MISSÕES TRANSVERSAIS — fora da grade de ano/unidade
+   ========================================================================== */
+
+/**
+ * Uma missão que NÃO pertence a nenhum ano.
+ *
+ * Tipo próprio, e não um `Missao` com `anoSlug: "transversal"`: `anoSlug` e
+ * `unidade` são carga estrutural em `ANOS`, `buscarAno`, `rotuloDaMissao`, no
+ * breadcrumb e na rota `/{ano}/{unidade}`. Um ano falso passaria por todos esses
+ * lugares parecendo um ano de verdade, e cada um deles precisaria de uma exceção
+ * que alguém esqueceria.
+ *
+ * No manifesto a contrapartida é `series: []`, que significa **todas as séries**
+ * — não nenhuma. Quando o filtro por série voltar a valer, vazio tem de
+ * continuar querendo dizer "todas", senão a experiência desaparece da tela
+ * sozinha.
+ */
+export type MissaoTransversal = {
+  slug: string;
+  expId: string;
+  titulo: string;
+  resumo: string;
+  /** Por que ela não tem ano — a frase aparece no card. */
+  porQueTransversal: string;
+  status: StatusMissao;
+  ficha?: FichaDaMissao;
+  aluno?: { titulo: string; chamada: string };
+};
+
+/**
+ * Vila do Lume — o jogo 3D que a ficha do Instanooria sempre chamou de "Ato 1":
+ * *"fora da plataforma, um jogo mede o perfil de valores do aluno"*. Ele deixou
+ * de estar fora.
+ *
+ * É transversal porque não é a missão de um ano: é o instrumento que alimenta
+ * missões de vários anos (o perfil dele decide de que lado o feed do Instanooria
+ * nasce) e porque o que ele lê — como uma criança escolhe quando escolher custa
+ * algo — não é conteúdo de série nenhuma.
+ */
+export const MISSAO_VILA: MissaoTransversal = {
+  slug: "vila-do-lume",
+  expId: "exp-70-vila-do-lume",
+  titulo: "Vila do Lume — A Noite Longa",
+  resumo:
+    "A turma reacende as oito fogueiras de uma vila no escuro. Pelo caminho chegam mensagens: duas são verdadeiras, e cada aluno recebe um golpe de um nível diferente — é isso que faz o debate funcionar.",
+  porQueTransversal:
+    "Não pertence a nenhum ano: o que ela lê é como a criança escolhe quando escolher custa algo, e alimenta as missões dos outros anos.",
+  status: "disponivel",
+  // Sem spoiler: a criança não pode saber que está sendo lida, e a copy dela é
+  // só a tarefa. Ver a regra de ouro no README da experiência.
+  aluno: {
+    titulo: "Vila do Lume",
+    chamada: "A vila apagou. Acenda as oito fogueiras antes que a noite acabe.",
+  },
+  ficha: {
+    competencia:
+      "Letramento digital — reconhecer golpe quando ele não tem nenhum dos sinais que se ensina a procurar; e, no fundo, como cada criança decide quando decidir custa algo.",
+    duracao: "1 aula de jogo (15–25 min por aluno) + 10 a 15 min de debate",
+    formato: "Jogo 3D em primeira pessoa, no navegador. Roda no aparelho da plataforma.",
+    atos: [
+      {
+        rotulo: "1 — A vila no escuro",
+        texto:
+          "O aluno minera fagulha, acende as 8 fogueiras e recolhe as Chamas Sagradas. Pelo caminho aparecem coisas que ele pode fazer ou não — ajudar um aldeão, acender um lampião, gravar o nome na Pedra — e nada disso pontua. É aí que está o sinal.",
+      },
+      {
+        rotulo: "2 — As mensagens",
+        texto:
+          "Durante a partida chegam 5 mensagens, sem pausar o jogo. Duas são VERDADEIRAS e ajudam de verdade. O golpe principal chega em três níveis, e cada aluno recebe um só: grosseiro, autoridade com urgência, ou um colega pedindo um passo pequeno no minuto em que ele está travado.",
+      },
+      {
+        rotulo: "3 — O debate",
+        texto:
+          'Uma pergunta na lousa: "Em quem dava pra confiar?". Você não corrige nada — anota os sinais que a turma cita. A bolha A vai dizer que era óbvio; a C não vai conseguir explicar por que caiu.',
+      },
+      {
+        rotulo: "4 — A revelação",
+        texto:
+          'Você projeta as mensagens das três bolhas lado a lado: "vocês não receberam as mesmas mensagens, e não foi sorteado quem é mais esperto". Aí lê o golpe do nível C para quem disse que era óbvio.',
+      },
+    ],
+    preparo: [
+      "Não conte nada antes. A instrução é só \u201cvocês vão manter a vila acesa\u201d — nem \u201cprestem atenção nas mensagens\u201d.",
+      "Confira nos resultados se as três bolhas estão na sua turma: sem as três, a revelação não tem o que comparar.",
+      "Na revelação, diga com todas as letras que o \u201cAluno 14\u201d não foi um colega de verdade.",
+      "Nunca pergunte quem clicou — nem por levantar a mão. A missão foi desenhada para funcionar sem essa pergunta.",
+    ],
+  },
+};
+
+export const MISSOES_TRANSVERSAIS: MissaoTransversal[] = [MISSAO_VILA];
+
+export function buscarMissaoTransversal(slug: string): MissaoTransversal | null {
+  return MISSOES_TRANSVERSAIS.find((m) => m.slug === slug) ?? null;
+}
+
+export function rotaDaTransversal(missao: MissaoTransversal): string {
+  return `/professor/entre-redes/${missao.slug}`;
+}
+
 /** A mesma lista agrupada por etapa — como a trilha do professor é lida. */
 export const ETAPAS: Array<{ id: Etapa; rotulo: string; anos: Ano[] }> = (
   ["anos-iniciais", "anos-finais", "ensino-medio"] as const
@@ -276,10 +377,13 @@ export function buscarMissao(
   return missao ? { ano, missao } : null;
 }
 
-/** Quantas missões estão de fato jogáveis hoje (rótulo do card do produto). */
-export const MISSOES_DISPONIVEIS = ANOS.flatMap((ano) => ano.missoes).filter(
-  (missao) => missao.status === "disponivel",
-);
+/** Quantas missões estão de fato jogáveis hoje (rótulo do card do produto).
+ *  Inclui as transversais: para o professor, "quantas posso rodar" não distingue
+ *  se a missão mora num ano ou fora dele. */
+export const MISSOES_DISPONIVEIS: Array<Missao | MissaoTransversal> = [
+  ...ANOS.flatMap((ano) => ano.missoes),
+  ...MISSOES_TRANSVERSAIS,
+].filter((missao) => missao.status === "disponivel");
 
 export function rotaDaMissao(missao: Missao): string {
   return `/professor/entre-redes/${missao.anoSlug}/${missao.unidadeSlug}`;

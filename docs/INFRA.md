@@ -81,6 +81,34 @@ como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
   `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`. As referências curriculares (texto)
   vivem no Postgres e entram por `scripts/importar-referencias-plano.mjs`.
   O Cloud Run `planodeaula` antigo pode ser desligado após o smoke em produção.
+- **Vila do Lume** (exp-70, transversal, 2026-08): jogo 3D estático no bucket de
+  bundles como qualquer experiência — **sem serviço novo e sem bucket novo**. Não
+  produz documento autoral, não chama IA (zero token, zero quota) e não precisa
+  de fila: o perfil é função pura, calculada no request de conclusão. Três
+  tabelas no Postgres (`vila_sessoes`, `vila_perfis`, `vila_bolhas`), todas com
+  `escola_id` + RLS. **Nenhuma env.**
+  **Tamanho, MEDIDO (2026-08-26)**: o `payload` de uma partida dá ~1,1 KB de
+  JSON (1,5 KB na coluna JSONB). A estimativa anterior — centenas de MB a 2,4 GB
+  por contrato — partia do teto do contrato (2000 eventos) e estava errada por
+  duas ordens de grandeza: o jogo tem 7 pontos de log, todos atos discretos com
+  guarda própria (8 Chamas, 4 aldeões, 1 Borda + 3 Destaques, 4 cartões, 1
+  primeira conversa) — teto real ~22 eventos, nada por quadro nem por metro
+  andado. **~30 MB por contrato** de 10 mil alunos jogando uma vez. O cap do
+  contrato foi de 2000 para 200, que é o que de fato limita a linha se um cliente
+  adulterado mandar lixo.
+  **Sem prazo de retenção declarado** (decisão de 2026-08-26). Houve um
+  `expires_at` de 90 dias no schema e nenhuma rotina que o cumprisse — coluna de
+  prazo que ninguém lê é pior que prazo nenhum, porque quem lê o schema acredita
+  nela. A coluna saiu (`20260826170000_vila_sem_prazo`). O que se ganha em troca
+  é o REPROCESSAMENTO: `payload` é a única fonte para recomputar o perfil quando
+  `VERSAO_MAPEAMENTO` subir, e o mapeamento é hipótese de design que vai mudar.
+  Não há job agendado, e a plataforma segue sem nenhum.
+  **Em aberto, e é decisão de produto/contrato:** se uma rede exigir prazo para o
+  dado comportamental bruto de menores, ele volta junto com a rotina que o
+  cumpre. A mesma pergunta vale para `telemetria_eventos`, que guarda evento por
+  `aluno_id` de TODAS as experiências, também sem prazo — se a resposta importar,
+  ela é da plataforma inteira, não de um módulo.
+
 - **Check-in de bem-estar** (exp-91, 2026-08): sem recurso novo de infra —
   duas tabelas com RLS (`bem_estar_ciclos`, `bem_estar_checkins`; a migration
   dá `GRANT` à `app_runtime`) e IA pelo mesmo Vertex/quota do professor. O

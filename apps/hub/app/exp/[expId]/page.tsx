@@ -35,6 +35,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
         aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         viewport={embed.viewport}
+        permissoes={embed.permissoes}
       />
     </>
   );
