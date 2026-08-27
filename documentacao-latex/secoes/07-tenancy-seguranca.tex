@@ -1,0 +1,472 @@
+% ===========================================================================
+%  7 — Multi-tenancy e seguranca
+% ===========================================================================
+\chapter{\emph{Multi-tenancy} e segurança}
+\label{cap:tenancy}
+
+Este é o capítulo que, se estiver errado, invalida o produto. Uma plataforma que
+serve cem escolas de uma rede não pode, sob nenhuma circunstância --- inclusive
+sob erro de programação --- devolver o dado de uma escola a outra.
+
+\section{Os três níveis de isolamento}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \draw[nuvem] (0.2,0.6) rectangle (7.4,-6.4);
+  \node[nuvemlbl] at (0.5,0.5) {Contrato A --- \emph{stack} GCP};
+  \draw[nuvem, draw=unooMuted, fill=unooPaper] (8.2,0.6) rectangle (15.4,-6.4);
+  \node[nuvemlbl, text=unooInkSoft] at (8.5,0.5) {Contrato B --- outra \emph{stack}};
+
+  \node[servico, text width=26mm] (apiA) at (2.0,-0.6) {API do contrato A};
+  \node[volume, text width=24mm, minimum height=13mm] (pgA) at (5.6,-1.0)
+    {PostgreSQL do contrato A};
+  \node[servico, text width=26mm, fill=unooMuted, draw=unooInkSoft] (apiB) at (10.0,-0.6)
+    {API do contrato B};
+  \node[volume, text width=24mm, minimum height=13mm, fill=unooMuted, draw=unooInkSoft] (pgB) at (13.6,-1.0)
+    {PostgreSQL do contrato B};
+
+  \draw[netpriv] (apiA) -- (pgA);
+  \draw[netpriv] (apiB) -- (pgB);
+
+  % --- escolas dentro do contrato A
+  \node[camadalbl, anchor=west] at (0.6,-2.3) {Dentro de UMA \emph{stack}: isolamento lógico};
+  \node[c4component, text width=20mm] (e1) at (1.8,-3.3) {escola \texttt{sp-001}};
+  \node[c4component, text width=20mm] (e2) at (4.2,-3.3) {escola \texttt{sp-002}};
+  \node[c4component, text width=20mm, fill=unooPaper, draw=unooAxis] (e3) at (6.6,-3.3)
+    {\ldots{} 100+};
+
+  \node[tabelaplat, text width=52mm] (tab) at (3.8,-5.2)
+    {\etitulo{Toda tabela de dado de aluno}
+     \nodepart{two}
+     \pk{escola\_id} \texttt{TEXT NOT NULL}\\
+     \texttt{ENABLE ROW LEVEL SECURITY}\\
+     \texttt{FORCE ROW LEVEL SECURITY}\\
+     \texttt{POLICY USING (escola\_id =}\\
+     \quad\texttt{current\_setting('app.escola\_id', true))}};
+
+  \draw[c4reldash] (e1.south) -- (2.4,-4.2);
+  \draw[c4reldash] (e2.south) -- (3.8,-4.2);
+  \draw[c4reldash] (e3.south) -- (5.4,-4.2);
+
+  \node[actnote, text width=48mm, anchor=north west] at (8.6,-2.3)
+    {\textbf{Por que não uma \emph{stack} por escola:} seriam cem
+     infraestruturas por contrato --- cem bancos, cem \emph{deploys}, cem
+     conjuntos de segredos --- operados por uma pessoa. E o custo fixo de uma
+     escola pequena passaria a ser o de uma rede.\\[4pt]
+     \textbf{Por que não uma \emph{stack} para todos os contratos:} um incidente
+     num município seria um incidente em todos, e o desenho não sobreviveria à
+     primeira análise jurídica de um edital.};
+
+\end{tikzpicture}}
+\caption[Os três níveis de isolamento]{Isolamento em três níveis: físico entre
+  contratos, lógico entre escolas de um contrato, e por autorização entre
+  turmas e alunos de uma escola.}
+\label{fig:tenancy-niveis}
+\end{figure}
+
+\section{Nível 2: \emph{Row-Level Security} no PostgreSQL}
+
+\subsection{Como a política é armada}
+
+Toda tabela de dado de aluno tem \cd{escola\_id TEXT NOT NULL} desnormalizado e
+uma política de RLS~\cite{postgresrls}. A migração inicial aplica isso em laço
+sobre a lista de tabelas:
+
+\begin{lstlisting}[language=sqlunoo, caption={Aplicação da RLS na migração inicial}, label={lst:rls}]
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[ /* ... tabelas de dado de aluno ... */ ] LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
+    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
+    EXECUTE format(
+      'CREATE POLICY %I ON %I USING (escola_id = current_setting(''app.escola_id'', true))',
+      t || '_por_escola', t
+    );
+  END LOOP;
+END $$;
+\end{lstlisting}
+
+\begin{decisao}
+\textbf{\cd{FORCE ROW LEVEL SECURITY}, não apenas \cd{ENABLE}.} \cd{ENABLE}
+isenta o \emph{dono} da tabela das políticas. Com \cd{FORCE}, nem o dono escapa
+--- e é isso que dispensou a segunda \emph{role} de banco que o desenho original
+previa. O que continua obrigatório é a \emph{role} da aplicação não ter
+\cd{BYPASSRLS} nem \cd{SUPERUSER}, porque esses atributos derrotam até o
+\cd{FORCE}.
+\end{decisao}
+
+\subsection{A porta única: \cd{comTenancy}}
+
+\begin{lstlisting}[language=tsunoo, caption={A única porta de acesso ao banco (\arq{src/prisma/prisma.service.ts})}, label={lst:comtenancy}]
+async comTenancy<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  escolaId?: string,
+  opts?: { timeout?: number },
+): Promise<T> {
+  const escola = escolaId ?? escolaDoContexto();
+  if (!escola) {
+    // Falha ALTA. A alternativa — consultar sem filtro — e exatamente o
+    // acidente que este metodo existe para tornar impossivel.
+    throw new Error(
+      "comTenancy sem escola: rota sem OidcGuard/TenancyInterceptor ou " +
+      "chamada fora de requisicao sem escolaId explicito",
+    );
+  }
+  return this.$transaction(async (tx) => {
+    // `true` = local a TRANSACAO. Um SET de sessao vazaria a escola para a
+    // proxima requisicao que reusasse a conexao do pool.
+    await tx.$executeRaw`SELECT set_config('app.escola_id', ${escola}, true)`;
+    return fn(tx);
+  }, opts);
+}
+\end{lstlisting}
+
+Três detalhes desse método carregam a segurança inteira:
+
+\begin{enumerate}
+  \item \textbf{O terceiro argumento de \cd{set\_config} é \cd{true}}, ou seja,
+    o valor é local à transação. Um \cd{SET} de sessão sobreviveria ao
+    \cd{COMMIT} e a conexão voltaria ao \emph{pool} \emph{contaminada} --- a
+    próxima requisição, de outra escola, herdaria a política errada. Esse é o bug
+    clássico de RLS com \emph{pool} de conexões, e é evitado por um booleano.
+  \item \textbf{Sem escola, lança.} Não consulta \enquote{sem filtro}, não
+    devolve lista vazia: lança. Rota nova que esqueceu o \cd{OidcGuard} quebra no
+    primeiro teste, em vez de funcionar devolvendo tudo.
+  \item \textbf{A escola vem do contexto, não do parâmetro.} O parâmetro
+    explícito existe só para código fora de requisição --- \emph{seed},
+    \emph{worker}, testes.
+\end{enumerate}
+
+\subsection{Como a escola chega ao contexto}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[etapaio, text width=25mm] (req) at (0,0)
+    {Requisição HTTP\desc{\texttt{Authorization: Bearer}}};
+  \node[etapa, text width=25mm] (guard) at (3.5,0)
+    {\texttt{OidcGuard}\desc{JWKS; injeta \texttt{req.auth}}};
+  \node[etapa, text width=25mm] (roles) at (7.0,0)
+    {\texttt{RolesGuard}\desc{lê \texttt{req.auth.perfil}}};
+  \node[etapa, text width=27mm] (int) at (10.6,0)
+    {\texttt{TenancyInterceptor}\desc{\texttt{comEscolaNoContexto}}};
+  \node[etapa, text width=25mm] (ctrl) at (14.2,0)
+    {\emph{controller}};
+
+  \node[etapa, text width=27mm] (svc) at (10.6,-2.4)
+    {\emph{service}\desc{\texttt{comTenancy(fn)}}};
+  \node[etapaout, text width=27mm] (tx) at (14.2,-2.4)
+    {Transação\desc{\texttt{set\_config} + \emph{query}}};
+  \node[etapaerr, text width=27mm] (fail) at (6.6,-2.4)
+    {Sem escola no contexto\desc{\textbf{lança}}};
+
+  \draw[pipe] (req) -- (guard);
+  \draw[pipe] (guard) -- (roles);
+  \draw[pipe] (roles) -- (int);
+  \draw[pipe] (int) -- (ctrl);
+  \draw[pipe] (ctrl.south) -- (14.2,-1.2) -- (11.9,-1.2) -- (svc.north east);
+  \draw[pipe] (svc) -- (tx);
+  \draw[pipe, draw=unooRed] (svc) -- (fail);
+
+  \node[actnote, text width=54mm, anchor=north west] at (0,-3.6)
+    {\textbf{A ordem não é acidental.} \emph{Guards} do NestJS rodam
+     \emph{antes} de \emph{interceptors}, então \texttt{req.auth} já existe quando o
+     \texttt{TenancyInterceptor} abre o \texttt{AsyncLocalStorage}. Rota \emph{sem}
+     \texttt{OidcGuard} --- \texttt{/healthz}, \texttt{/telemetry/beacon},
+     \texttt{/telemetry/ingest} --- simplesmente não abre contexto; e
+     \texttt{comTenancy} sem escola explícita falha alto, o que fecha o
+     círculo.};
+  \node[actnote, text width=54mm, anchor=north west] at (8.6,-3.6)
+    {\textbf{A RLS é rede de segurança, não a única tranca.} Os
+     \emph{services} continuam filtrando \texttt{escola\_id} explicitamente em toda
+     \emph{query}. Duas trancas independentes: se a política falhar por erro de
+     migração, o filtro da aplicação segura; se o filtro faltar por esquecimento,
+     a política segura.};
+
+\end{tikzpicture}}
+\caption[Propagação da escola pela requisição]{Como a escola do \emph{token}
+  chega à política de RLS. Duas trancas independentes protegem o mesmo
+  invariante.}
+\label{fig:tenancy-fluxo}
+\end{figure}
+
+\subsection{A exceção: \cd{admin-contrato}}
+
+\begin{regra}
+\cd{admin-contrato} é o \textbf{único} papel autorizado a atravessar escolas, e
+só em rotas explicitamente marcadas com \cd{@Roles("admin-contrato")}. Para esse
+papel, \cd{escolaId} nas \emph{claims} pode ser vazio --- e o \emph{CHECK} da
+migração permite \cd{escola\_id NULL} em \cd{users} apenas quando
+\cd{role = 'admin-contrato'}. Nenhuma outra combinação é aceita pelo banco.
+\end{regra}
+
+As rotas cross-escola vivem em \emph{controllers} separados
+(\arq{src/analise/analise.controller.ts}, o \emph{controller} de
+\rota{/analise/*}) e não num \cd{@Roles} misto com exceção por método --- porque
+um \cd{@Roles} misto é o caminho mais curto para um \cd{GET} novo herdar
+silenciosamente a permissão do vizinho.
+
+\section{Nível 3: autorização por papel}
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Papel} & \thd{Escopo de dados} & \thd{Pode}\\
+\midrule
+\cd{aluno} & Os próprios dados, na própria escola &
+  Realizar experiência, salvar progresso, ver o próprio resultado.
+  \textbf{Nunca} vê gabarito, nem dado de colega.\\
+\zebra \cd{professor} & A própria escola; turmas dela &
+  Preparar e conduzir atividade, ler turma e aluno individual, gerar plano de
+  aula, fazer o próprio \emph{check-in}. \textbf{Não} vê bem-estar de outro
+  professor.\\
+\cd{gestor} & A própria escola &
+  Importar usuários, redefinir senha, ler agregado da escola.
+  \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem
+  qualquer dado de bem-estar.\\
+\zebra \cd{admin-contrato} & Toda a rede &
+  Ler agregado da rede, publicar manifesto. \textbf{Não} tem rota para a linha
+  individual de uma criança.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{Agregado e linha individual são \emph{controllers} diferentes.} Em
+\arq{src/vila/} há \cd{VilaProfessorController} com dois \cd{@Controller}
+distintos: \rota{/vila/agregado/*} abre para \cd{professor} e \cd{gestor};
+\rota{/vila/professor/*}, que devolve a linha de uma criança, só para
+\cd{professor}. A separação física é o que garante que a próxima rota adicionada
+ao arquivo herde a permissão \emph{certa}.
+\end{decisao}
+
+\section{Segurança do \emph{embed}}
+
+A fronteira mais exposta da plataforma não é a API: é o \cd{iframe}. Dentro dele
+roda código que, em produção, vem de outra \emph{origin} (a CDN) e que recebe um
+\emph{token} do usuário.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Medida} & \thd{Implementação e por quê}\\
+\midrule
+\cd{targetOrigin} explícito & Nunca \cd{"*"}, nos dois sentidos. O hub usa a
+  \emph{origin} derivada da \emph{mesma} URL do \cd{iframe}; a SDK usa o
+  \cd{hubOrigin} recebido por \emph{query string}. \cd{"*"} entregaria o
+  \emph{token} a qualquer documento que conseguisse virar o pai do
+  \emph{frame}~\cite{mdnpostmessage}.\\
+\zebra Validação de \cd{ev.origin} & Os dois lados descartam mensagem cuja
+  \emph{origin} não bate, \emph{antes} de olhar o conteúdo.\\
+Validação por esquema & Toda mensagem pós-\emph{init} passa por Zod nos dois
+  lados; o que não casa é descartado com aviso, \textbf{nunca} despachado cru aos
+  \emph{listeners}.\\
+\zebra Verificação de versão maior & Hub e experiência comparam
+  \cd{protocolVersion}. Incompatível falha alto: sem \cd{hub:init}, o
+  \emph{handshake} expira e a experiência mostra erro.\\
+\emph{Token} só em memória & A experiência nunca escreve o \emph{token} em
+  \cd{localStorage} nem em \emph{cookie}. TTL de 15 minutos, renovado por
+  mensagem.\\
+\zebra \emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
+  allow-modals}, mais \cd{allow-pointer-lock} \textbf{apenas} para quem declara
+  \cd{pointer-lock} no manifesto~\cite{mdnsandbox}.\\
+\cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
+  \emph{Permissions-Policy} tem \emph{default} \cd{'self'}: sem delegar
+  \cd{autoplay}, um \cd{<video muted autoplay>} cross-origin rejeita
+  \cd{play()} em silêncio.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+Cada token do \emph{sandbox} está lá por um motivo medido:
+\cd{allow-same-origin} porque, sem ele, a \emph{origin} do \cd{iframe}
+cross-origin vira \cd{"null"} e a validação de \emph{origin} quebra dos dois
+lados; \cd{allow-modals} porque, sem ele, o navegador \emph{ignora}
+\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a exp-90
+confirma exclusão assim; \cd{allow-pointer-lock} porque, num \cd{iframe} com
+\emph{sandbox}, \cd{requestPointerLock()} morre com \cd{SecurityError} sem ele
+--- verificado em \arq{scripts/probe-pointerlock.mjs}, que precisa do Chrome do
+sistema porque o Chromium do Playwright não concede \emph{pointer lock} nem no
+topo da página.
+\end{nota}
+
+\begin{decisao}
+\textbf{Permissão de \cd{iframe} é por experiência, não \emph{default} do
+\emph{frame}.} Prender o ponteiro do mouse de um aluno é capacidade de quem a
+declarou --- e concedê-la a todas as experiências significaria que qualquer
+\emph{bundle} publicado pode capturar o mouse. Já \cd{fullscreen}
+\emph{não} entra no manifesto: o \cd{allow} do \emph{frame} já o delega a todas,
+e campo de manifesto que não muda nada é pior que campo nenhum, porque quem lê
+acredita ter declarado algo.
+\end{decisao}
+
+\section{Segredos e o que nunca vai ao cliente}
+
+\begin{regra}
+\textbf{Nenhum segredo em \emph{bundle} de cliente.} Sem chave de API, sem
+\emph{prompt} de sistema, sem URL interna. Consequências concretas:
+\begin{itemize}
+  \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
+    \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
+    devolvido.
+  \item O gabarito da exp-02 (\cd{factual}) não é persistido no estado do aluno
+    nem devolvido em nenhuma rota de aluno.
+  \item Os textos dos cartões da exp-70 chegam ao jogo \textbf{sem gabarito}, e
+    apenas os da bolha daquela criança.
+  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp-01 são
+    removidos pelo sanitizador antes de o \emph{feed} sair da API --- são a
+    variável independente do experimento.
+\end{itemize}
+\end{regra}
+
+\section{Privacidade e dados de menores}
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
+\toprule
+\headrow \thd{Prática} & \thd{Como é garantida}\\
+\midrule
+Telemetria sem PII & O evento carrega \cd{aluno\_id} opaco (UUID), nunca nome ou
+  \emph{e-mail}. A identidade é derivada do \emph{token} no servidor, não do
+  corpo enviado pelo cliente --- o que é, ao mesmo tempo, anti-\emph{spoof} e
+  garantia de que o cliente não \emph{pode} enviar PII no lugar do id.\\
+\zebra Sem canal de texto arbitrário & Em \cd{exp\_70\_sessoes.payload}, o campo
+  \cd{eventos[].dados} aceita apenas número, booleano ou \emph{string} de um
+  \textbf{vocabulário fechado}. O campo \cd{texto} livre que existia era o único
+  canal de texto arbitrário do \emph{payload} --- e o caminho por onde o nome de
+  uma criança chegaria a um JSONB de longa duração. É trava estrutural, não lista
+  de proibidos.\\
+Texto sensível fora de log & O texto livre do \emph{check-in} de bem-estar nunca
+  vai a log nem à telemetria; só contagens.\\
+\zebra IA sem contexto identificável & O \emph{prompt} de bem-estar recebe
+  apenas dia da semana, mês, número do \emph{check-in} e o texto livre
+  \emph{delimitado como conteúdo}. Nunca nome, escola, pontuação ou faixa.\\
+Ranking sem menor real & O ranking da exp-02 usa colegas
+  \textbf{fictícios}, com distribuição desenhada para a lição. Não há pontuação
+  de criança real exposta a outra criança.\\
+\zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
+  têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
+  existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Retenção: uma decisão explícita de não declarar prazo}
+
+\begin{decisao}
+\textbf{Não há prazo de retenção declarado} para \cd{exp\_70\_sessoes} nem para
+\cd{telemetria\_eventos} (decisão de 2026-08-26, \adrr{ADR-13}).
+
+Havia uma coluna \cd{expires\_at} de 90 dias no \emph{schema} e \emph{nenhuma
+rotina que a cumprisse}. Coluna de prazo que ninguém lê é pior que prazo nenhum,
+porque quem lê o \emph{schema} acredita nela --- é a mesma armadilha de um campo
+\cd{consentimento\_em} que existia no aplicativo de origem: a regra saiu do
+código, a coluna ficou, e todo mundo continuou acreditando. A coluna foi removida
+na migração \arq{20260826170000\_vila\_sem\_prazo}.
+
+O que se ganha em troca é o \textbf{reprocessamento}, que é requisito real deste
+instrumento: \cd{payload} é a única fonte para recomputar o perfil quando a versão
+do mapeamento subir, e o mapeamento é hipótese de \emph{design} que vai mudar. 90
+dias matavam exatamente a comparação entre duas gerações do mapeamento.
+
+Se um contrato exigir prazo, ele volta \textbf{junto com a rotina que o cumpre}
+--- nunca só a coluna. Com a tabela particionada por mês, expurgo passou a ser
+\cd{DROP TABLE particoes.<mês>} em vez de um \cd{DELETE} que trava a tabela.
+\end{decisao}
+
+\begin{limitacao}
+A pergunta \enquote{qual é o prazo de retenção do dado comportamental de menor}
+está \textbf{aberta} e é decisão de produto e de contrato, não de módulo: ela vale
+para a plataforma inteira, porque \cd{telemetria\_eventos} guarda evento por
+\cd{aluno\_id} de \emph{todas} as experiências. Enquanto não for respondida, o
+que existe é esta seção --- que é melhor que uma coluna mentindo.
+\end{limitacao}
+
+\subsection{Localidade de processamento}
+
+\begin{atencao}
+O modelo de IA em uso (\cd{gemini-3.6-flash}) só é publicado no endpoint
+\cd{global}: medido no projeto do contrato, ele responde 404 em
+\cd{southamerica-east1}, \cd{us-east1} e \cd{us-central1}. A consequência é
+explícita e foi aceita: \textbf{o tráfego de IA sai de São Paulo, inclusive o do
+aluno}, e isso precisa constar do contrato e do DPA da rede. Voltar à região é
+possível a qualquer momento, mas exige trocar \emph{também} o modelo pelo que a
+região publica (lá, a família 2.5) --- as duas variáveis mudam juntas ou a
+geração para de funcionar.
+\end{atencao}
+
+\section{Verificação}
+
+Segurança não documentada por teste é intenção. O que é efetivamente verificado:
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Teste} & \thd{O que afirma}\\
+\midrule
+\arq{tests/tenancy.spec.ts} & Com uma \emph{role} sem \emph{ownership} e a
+  política ativa, uma \emph{query} da escola A não retorna linha da escola B ---
+  nem quando o filtro da aplicação é omitido.\\
+\zebra \arq{tests/planos-tenancy.spec.ts} & Um professor não lê nem edita plano
+  de outro professor, mesmo na mesma escola (RLS + posse).\\
+\arq{tests/telemetria-push.spec.ts} & \rota{POST /telemetry/ingest} rejeita
+  \emph{token} sem a \cd{aud} correta, sem a SA correta, e \textbf{rejeita tudo}
+  quando as variáveis estão ausentes.\\
+\zebra \arq{packages/sdk/src/bridge.test.ts} & Mensagem de \emph{origin} errada é
+  ignorada; mensagem que não valida é descartada; versão maior divergente rejeita
+  a conexão.\\
+\arq{tests/motor-concorrencia.spec.ts} & Dois pedidos simultâneos de bloco não
+  descartam um bloco (\emph{lock} consultivo).\\
+\zebra \arq{tests/vila-regras.spec.ts} & \emph{Payload} que traga chave de perfil
+  é recusado; bolha B não é servida nos anos iniciais; \cd{zero} e \cd{none} não
+  se confundem.\\
+\arq{scripts/probe-pointerlock.mjs} & Sem o token de \emph{sandbox},
+  \cd{requestPointerLock()} falha; com ele, funciona.\\
+\bottomrule
+\end{tabularx}
+
+\section{Ameaças consideradas}
+
+Análise no espírito do OWASP Top 10~\cite{owasptop102021}, restrita ao que é
+específico desta plataforma.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Ameaça} & \thd{Categoria} & \thd{Mitigação}\\
+\midrule
+Aluno lê dado de outra escola & \emph{Broken access control} &
+  RLS forçada + filtro explícito + \emph{claims} do \emph{token}. Duas trancas
+  independentes, uma delas no banco.\\
+\zebra Aluno lê o gabarito & Exposição de dado sensível ao negócio &
+  Correção \emph{server-side}; gabarito não persistido no estado do aluno nem
+  devolvido; sanitizador remove metadados de curadoria.\\
+Cliente adulterado envia perfil pronto & Integridade de medida &
+  Servidor \emph{recalcula} e recusa \emph{payload} que traga chave de perfil;
+  cap de eventos por partida.\\
+\zebra Injeção de telemetria falsa & Autenticação ausente em
+  \emph{endpoint} de serviço & \cd{PubSubPushGuard} verifica emissor, audiência e
+  SA; \emph{fail closed} sem configuração.\\
+Roubo de \emph{token} do \cd{iframe} & Exposição de credencial &
+  TTL de 15 min, escopo mínimo, só em memória, \cd{targetOrigin} explícito,
+  HTTPS. E a correção é \emph{server-side} de qualquer forma, então o
+  \emph{token} não compra nota.\\
+\zebra Esgotamento de quota de IA por abuso &
+  Consumo de recurso & Quota diária persistida por (escola, usuário, dia), com
+  incremento atômico, verificada \emph{antes} da chamada; \emph{rate limit} por
+  usuário.\\
+Vazamento de PII por log & Privacidade &
+  Proibição explícita; telemetria com id opaco; vocabulário fechado no
+  \emph{payload}; texto sensível nunca logado.\\
+\zebra Chave de serviço vazada & Gestão de segredo &
+  Não existe chave de longa duração: WIF no CI, ADC na aplicação.\\
+Rota nova esquecendo a \emph{tenancy} & Erro de programação &
+  \cd{comTenancy} \emph{lança} sem escola; não há caminho alternativo ao banco.\\
+\bottomrule
+\end{tabularx}
+
+\begin{limitacao}
+Não foi feita revisão de segurança externa nem teste de intrusão. Para uma
+plataforma que trata dado de menor numa rede pública, isso é item de
+contratação --- e está registrado como risco \cd{R-06}
+(Capítulo~\ref{cap:riscos}).
+\end{limitacao}

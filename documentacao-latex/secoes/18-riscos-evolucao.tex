@@ -1,0 +1,232 @@
+% ===========================================================================
+%  18 — Riscos e evolucao
+% ===========================================================================
+\chapter{Riscos e evolução}
+\label{cap:riscos}
+
+\section{Registro de riscos}
+
+Probabilidade e impacto em escala de três (baixo, médio, alto). A ordem é por
+severidade, e a severidade considera o prazo de novembro de 2026.
+
+\begin{tabularx}{\linewidth}{@{}L{12mm}L{34mm}L{10mm}L{10mm}X@{}}
+\toprule
+\headrow \thd{ID} & \thd{Risco} & \thd{Prob} & \thd{Imp} & \thd{Mitigação e estado}\\
+\midrule
+\endhead
+\cd{R-01} & \textbf{Carga não verificada.} O comportamento no pico de
+  \num{4000} simultâneos é projetado, não medido. & Média & \textbf{Alto} &
+  Teste de carga com k6 --- \num{4000} \emph{logins} e aberturas de experiência
+  em dez minutos --- \textbf{obrigatório antes de novembro de 2026}.
+  \textbf{Não executado.} É o maior risco técnico aberto.\\
+\zebra \cd{R-02} & \textbf{Retenção indefinida de dado de menor.} Não há prazo
+  declarado para \cd{exp\_70\_sessoes} nem para \cd{telemetria\_eventos}. &
+  Alta & \textbf{Alto} &
+  Decisão consciente (\adrr{ADR-13}) em troca de reprocessamento. Com a tabela
+  particionada, a rotina de expurgo passou a ser trivial --- o que remove o último
+  argumento técnico. \textbf{Pendente de decisão de produto e contrato}, e é da
+  plataforma inteira.\\
+\cd{R-03} & \textbf{Localidade de processamento de IA.} O tráfego de IA sai de
+  São Paulo, inclusive o do aluno. & Certa & Médio &
+  Consequência aceita e documentada (\adrr{ADR-16}). \textbf{Precisa constar do
+  contrato e do DPA de cada rede.} Voltar à região exige trocar modelo e
+  localização juntos.\\
+\zebra \cd{R-04} & \textbf{Fator humano único.} Uma pessoa desenvolve e opera. &
+  Certa & \textbf{Alto} &
+  Mitigado \emph{por arquitetura}: menos peças, reversão por ponteiro, decisões
+  registradas em ADR e este documento. Não é mitigável por engenharia sozinha.\\
+\cd{R-05} & \textbf{Sem \emph{alerting}.} Há log e métrica nativa; não há alerta
+  nem painel. & Alta & Médio &
+  Configurar alerta de taxa de 5xx e de saturação de conexões do Cloud SQL.
+  \textbf{Obrigatório antes de novembro de 2026.}\\
+\zebra \cd{R-06} & \textbf{Sem revisão de segurança externa.} Nenhum teste de
+  intrusão. & Alta & \textbf{Alto} &
+  Item de contratação, não de engenharia. Para plataforma que trata dado de menor
+  em rede pública, é exigência prática de edital.\\
+\cd{R-07} & \textbf{Acessibilidade não verificada.} Nenhuma checagem de
+  contraste, foco ou leitor de tela. & Alta & Médio &
+  Rede pública tem exigência legal e prática. O \emph{design system} é o lugar
+  certo para resolver de uma vez --- o que torna isto um pedido ao
+  \arq{storybook-unooria}, não 48 correções.\\
+\zebra \cd{R-08} & \textbf{Partição de telemetria sem \emph{job}.} As faixas vão
+  até 2028-12 e não há rotina que crie novas. & Baixa & Médio &
+  A partição \cd{DEFAULT} é rede de segurança (evento não é recusado). Verificar a
+  contagem dela é item do \emph{checklist} de operação. Encher = faltou criar
+  partição.\\
+\cd{R-09} & \textbf{Mídia pesada publicada à mão.} O CI publica \arq{dist/}; os
+  \SI{52}{\mega\byte} de MP4 da exp-02 vão por \cd{gsutil} manual. & Alta & Baixo &
+  Aceitável para uma experiência; \textbf{não escala para 48}. O passo
+  \cd{gsutil rsync} de mídia precisa entrar no CI.\\
+\zebra \cd{R-10} & \textbf{Geração órfã sem retomada no \emph{boot}.} Se todas as
+  instâncias morrerem e ninguém abrir o painel, a geração fica parada. &
+  Média & Baixo &
+  Aceito (\adrr{ADR-17}): o \emph{polling} do painel é justamente quando alguém se
+  importa com aquela geração. Gatilho: primeira reclamação real.\\
+\cd{R-11} & \textbf{Dependência do \emph{design system} externo.} Lacuna do
+  pacote bloqueia a experiência até a próxima publicação. & Média & Baixo &
+  Compensação local marcada no CSS, decrescente por política, com pedido
+  correspondente. Cinco lacunas abertas, verificadas na 0.1.14.\\
+\zebra \cd{R-12} & \textbf{Catálogo de modelos de IA instável.} Dois modelos
+  \emph{default} já saíram do catálogo sem aviso. & Alta & Médio &
+  \emph{Provider} plugável (\adrr{ADR-07}), modelo em variável de ambiente, e
+  \cd{finishReason} tratado como erro. O sintoma da última vez foi silencioso:
+  toda geração de imagem caindo no \emph{fallback} procedural.\\
+\cd{R-13} & \textbf{WSO2 ainda não é o emissor.} A plataforma roda com o hub
+  assinando. & Média & Baixo &
+  \adrr{ADR-15} é transitória por desenho: trocar são duas variáveis. O risco real
+  é o \cd{iss} \emph{tenant-qualified} do WSO2 ser montado por concatenação em vez
+  de copiado do \emph{discovery}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1.9cm, y=1.5cm]
+
+  \draw[draw=unooAxis, line width=0.7pt] (0.4,0.4) rectangle (3.6,3.6);
+  \foreach \x in {1.4,2.4} \draw[draw=unooGrid] (\x,0.4) -- (\x,3.6);
+  \foreach \y in {1.4,2.4} \draw[draw=unooGrid] (0.4,\y) -- (3.6,\y);
+
+  \node[legenda, rotate=90] at (-0.28,2.0) {Impacto};
+  \node[legenda] at (2.0,0.05) {Probabilidade};
+  \node[legenda] at (0.9,0.22) {baixa}; \node[legenda] at (1.9,0.22) {média};
+  \node[legenda] at (2.9,0.22) {alta};
+  \node[legenda, anchor=east] at (0.35,0.9) {baixo};
+  \node[legenda, anchor=east] at (0.35,1.9) {médio};
+  \node[legenda, anchor=east] at (0.35,2.9) {alto};
+
+  % zona critica
+  \fill[unooRedWash, opacity=0.6] (2.4,2.4) rectangle (3.6,3.6);
+  \fill[unooOrangeWash, opacity=0.5] (1.4,2.4) rectangle (2.4,3.6);
+  \fill[unooOrangeWash, opacity=0.5] (2.4,1.4) rectangle (3.6,2.4);
+
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,2.9) {R-01};
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.1,3.2) {R-02  R-04};
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.1,2.7) {R-06};
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.1,1.9) {R-05  R-07};
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.1,1.55) {R-12};
+  \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09  R-11};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.9) {R-03$^{*}$};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-13};
+  \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};
+
+  \node[legenda, anchor=north west, text width=44mm] at (3.75,3.5)
+    {$^{*}$ R-03 tem probabilidade \emph{certa} --- é consequência aceita, não
+     eventualidade. Está posicionado em \enquote{média} apenas para caber na
+     matriz.\\[4pt]
+     A zona vermelha concentra o que \textbf{tem de ser resolvido antes de
+     novembro de 2026}: carga verificada, retenção decidida e revisão de
+     segurança contratada.};
+
+\end{tikzpicture}}
+\caption[Matriz de riscos]{Matriz de riscos. Três dos quatro riscos da zona
+  crítica não são resolvidos por código: retenção é decisão de produto,
+  segurança externa é contratação, e o fator humano único é estrutural.}
+\label{fig:matriz-riscos}
+\end{figure}
+
+\section{Estado de implementação}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}L{40mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Fase} & \thd{Escopo} & \thd{Estado} & \thd{Observação}\\
+\midrule
+M0 & Contratos congelados (\emph{claims}, ponte, telemetria) & \yes{} Concluído &
+  \arq{packages/sdk}, \arq{src/auth/claims.ts}\\
+\zebra M1 & \emph{Tenancy}, RLS, papéis, importação de usuários &
+  \yes{} Concluído & Teste com \emph{role} sem \emph{ownership}\\
+M2 & exp-01 completa: motor, geração, dossiê & \yes{} Concluído &
+  Migração do aplicativo de origem\\
+\zebra M3 & exp-02, domínio por experiência & \yes{} Concluído & \adrr{ADR-09}\\
+M4 & Ferramentas de professor: exp-90, exp-91 & \yes{} Concluído &
+  Armazenamento privado, \emph{guardrails}\\
+\zebra M5 & exp-70 e o Ato 1 integrado & \yes{} Concluído &
+  \cd{exp\_01\_exp\_70\_perfis\_importados}\\
+M6 & Hub do aluno, \emph{header} único, casca compartilhada &
+  \yes{} Concluído & \rota{/aluno}, \cd{CascaPlataforma}\\
+\zebra --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
+  CI/CD completo com WIF\\
+--- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
+\zebra --- & \textbf{\emph{Alerting}} & \no{} Pendente & \cd{R-05}\\
+--- & \textbf{WSO2 como emissor} & \no{} Pendente & \adrr{ADR-15}\\
+\zebra --- & 43 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
+\bottomrule
+\end{tabularx}
+
+\section{Evolução planejada}
+
+\subsection{Antes de novembro de 2026 (bloqueante)}
+
+\begin{enumerate}
+  \item \textbf{Teste de carga com k6}: \num{4000} \emph{logins} e aberturas de
+    experiência em dez minutos, contra a \emph{stack} \cd{dev}. Verificar
+    saturação de conexões, latência do \rota{/runs/:id/feed} sob \emph{lock}, e o
+    caminho de ingestão de telemetria.
+  \item \textbf{\emph{Alerting} mínimo}: taxa de 5xx do Cloud Run, saturação de
+    conexões do Cloud SQL, falha do Cloud Run Job de migração, e crescimento da
+    partição \cd{DEFAULT} de telemetria.
+  \item \textbf{Decisão de retenção}, com a rotina que a cumpre. Se a resposta for
+    \enquote{sem prazo}, ela precisa estar no contrato --- não só neste documento.
+  \item \textbf{Revisão de segurança externa} e teste de intrusão.
+  \item \textbf{DPA por rede} contemplando a localidade de processamento de IA.
+  \item \textbf{WSO2 como emissor}, com o \cd{iss} \emph{tenant-qualified} copiado
+    literalmente do \emph{discovery}.
+\end{enumerate}
+
+\subsection{Depois, por ordem de retorno}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Evolução} & \thd{Por quê, e o que ela exige}\\
+\midrule
+\emph{Rsync} de mídia no CI & \cd{R-09}. Com 48 experiências, publicação manual
+  de mídia deixa de ser aceitável.\\
+\zebra Filtro por série vindo do manifesto & Hoje o hub do aluno lista missões de
+  um mapa estático. Quando o manifesto virar a fonte, \cd{series: []} tem de
+  \textbf{continuar} querendo dizer \enquote{todas} --- o contrário faz a
+  experiência transversal desaparecer da tela sozinha.\\
+Acessibilidade no \emph{design system} & \cd{R-07}. Resolver no pacote é resolver
+  uma vez; resolver nas experiências é resolver 48 vezes.\\
+\zebra Telemetria offline real (IndexedDB) & Hoje o \emph{buffer} é em memória, e
+  há um \cd{TODO} explícito na SDK. Rede pública tem escola com conectividade
+  ruim, e é lá que o dado se perde.\\
+Métricas de aplicação & Hoje só métrica nativa de infraestrutura. Nada mede
+  \enquote{quantos alunos concluíram a missão hoje}.\\
+\zebra Reprocessamento do mapeamento & \cd{VERSAO\_MAPEAMENTO} vai subir, e o
+  \emph{payload} está guardado justamente para isso (\adrr{ADR-13}). Falta a
+  rotina que reprocessa e o relatório que compara duas gerações.\\
+Visão agregada de bem-estar & Só com DPA e \emph{k}-anonimato explícitos
+  (\adrr{ADR-10}). \textbf{Não sai de um \cd{GROUP BY}.}\\
+\zebra \emph{Worker} dedicado de telemetria & Se o volume justificar isolar o
+  consumo (\adrr{ADR-21}).\\
+BigQuery & Só se um relatório efetivamente precisar de análise em escala sobre
+  \cd{telemetria\_eventos} (\adrr{ADR-14}).\\
+\bottomrule
+\end{tabularx}
+
+\section{O que continuará fora de escopo}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Descartado} & \thd{Condição para reavaliar}\\
+\midrule
+Kubernetes (GKE) & \emph{Workload} de longa duração ou topologia de rede que o
+  Cloud Run não expresse.\\
+\zebra Microsserviço por experiência & Nenhuma. Contraria \adrr{ADR-01} na
+  raiz.\\
+Multi-região & Exigência contratual de continuidade regional.\\
+\zebra Redis & Gargalo medido que o Pub/Sub e o \cd{INSERT} em lote não
+  resolvam.\\
+Módulo genérico de avaliação & Três experiências consecutivas com mecânica
+  idêntica.\\
+\zebra Banco ou \emph{schema} por experiência & Necessidade de fronteira de
+  \cd{GRANT} por experiência.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+A lista acima é tão importante quanto a de evolução. Num projeto com uma pessoa e
+um prazo, \textbf{o que se recusa a construir é o que permite terminar o resto} ---
+e recusar sem registrar a condição de reavaliação transforma a recusa em teimosia.
+\end{nota}

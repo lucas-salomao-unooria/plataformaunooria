@@ -542,7 +542,10 @@ experiência no grafo de importação — com peso igual, quem ganha é sempre o
   o slug da experiência ou o app/pacote tocado.
 - **Nada de build no git.** `.gitignore` cobre `dist/`, `.next/`, `.next-prod/`,
   `.turbo/`, `*.tsbuildinfo`, `storage/`, `storage-privado/` e os prints dos
-  walkthroughs. `apps/hub/.next-prod/` (que o `pnpm build:isolado` escreve) já
+  walkthroughs. Exceção deliberada: `documentacao-latex/main.pdf` É
+  versionado — é entregável de projeto, não artefato de build, e quem precisa
+  dele (cliente, edital, revisão) não tem TeX instalado. Os auxiliares do LaTeX
+  e `documentacao-latex/build/` ficam fora. `apps/hub/.next-prod/` (que o `pnpm build:isolado` escreve) já
   entrou uma vez por um `git add -A` distraído: 358 arquivos e 250MB de cache de
   webpack no histórico, que só saíram reconstruindo a branch inteira. Stage por
   caminho, nunca `-A` sem olhar o `git status`.
@@ -573,6 +576,7 @@ pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-d
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~220p). Atualizar SEMPRE (ver seção própria)
 ```
 
 ## Como criar uma experiência nova
@@ -611,6 +615,50 @@ nomes de recursos esperados, variáveis de ambiente que a app consome, e o que o
 CI deste repo publica (imagens no Artifact Registry, bundles no bucket).
 Nunca criar recursos GCP imperativamente por script neste repo.
 
+## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
+
+A documentação técnica consolidada do projeto é **LaTeX versionado**, em
+`documentacao-latex/`, e compila em `main.pdf` (~220 páginas, `PU-DOC-001`).
+Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
+casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
+nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
+contratos de integração, telemetria, camada de IA, catálogo de experiências,
+especificação da API, design system, entrega, qualidade, **21 ADRs**, riscos e
+evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+Apêndice A.
+
+**REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
+regera o PDF.** Documento que ninguém atualiza é pior que documento nenhum —
+é a mesma armadilha do `expires_at` que saiu do schema e do
+`turmas.consentimento_em` do app de origem: a regra sai do código, o registro
+fica, e quem lê acredita nele.
+
+```bash
+cd documentacao-latex && ./compilar.sh      # tectonic; --rapido p/ iterar, --limpar p/ limpar
+```
+
+| Se você mudou… | Atualize |
+|---|---|
+| Módulo, componente, fronteira | `secoes/05-arquitetura-software.tex` (+ o C4 correspondente) |
+| Recurso de nuvem, rede, CI/CD | `secoes/06-arquitetura-nuvem.tex`, `secoes/15-entrega.tex` |
+| RLS, papel, guard, sandbox do iframe | `secoes/07-tenancy-seguranca.tex` |
+| Migração, tabela, coluna | `secoes/08-modelo-de-dados.tex` + `apendices/e-dicionario-de-dados.tex` |
+| Bridge, telemetria, manifesto, provider de IA | `secoes/09-contratos-integracao.tex` + `apendices/d-payloads.tex` |
+| Rota nova, ou papel de uma rota | `secoes/13-api.tex` + `apendices/c-endpoints.tex` |
+| Variável de ambiente | `apendices/b-variaveis-ambiente.tex` |
+| Experiência nova | `secoes/12-experiencias.tex` (e o catálogo do cap. 12) |
+| Regra de interface / lacuna do DS | `secoes/14-design-system.tex` |
+| **Qualquer decisão com alternativa descartada** | `secoes/17-adr.tex` — **ADR nova, numerada** (contexto, decisão, alternativas, consequências ruins incluídas, gatilho de reavaliação) |
+| Risco novo, mitigado ou reclassificado | `secoes/18-riscos-evolucao.tex` |
+| Sintoma de diagnóstico novo (o sintoma que não aponta para a causa) | `apendices/f-operacao.tex` |
+| Diagrama TikZ novo | **também** a fonte Mermaid equivalente em `apendices/a-mermaid.tex` |
+
+Convenções de edição (as que já custaram tempo) em `documentacao-latex/README.md`.
+As três que mais pegam: dentro de `tikzpicture` use `\texttt{}` cru (as macros
+`\cd`/`\arq` ficam invisíveis em nó de fundo escuro); setas são `\seta` e
+`\implica`, nunca `→`/`⇒` literais (a Roboto não tem esses glifos e o XeTeX
+não desenha nada); e ER grande vai em **duas figuras retrato**, não em landscape.
+
 ## Definition of Done (qualquer tarefa)
 
 - [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
@@ -621,3 +669,5 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client
 - [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
+- [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
+      Decisão com alternativa descartada = ADR nova em `secoes/17-adr.tex`

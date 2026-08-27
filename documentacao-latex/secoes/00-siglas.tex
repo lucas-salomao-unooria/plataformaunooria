@@ -1,0 +1,131 @@
+% ===========================================================================
+%  Lista de siglas, abreviaturas e termos do dominio
+% ===========================================================================
+\chapter*{Lista de siglas e abreviaturas}
+\phantomsection
+\addcontentsline{toc}{chapter}{Lista de siglas e abreviaturas}
+\markboth{Lista de siglas e abreviaturas}{}
+
+\section*{Siglas técnicas}
+
+\begin{tabularx}{\linewidth}{@{}L{24mm}X@{}}
+\toprule
+\headrow \thd{Sigla} & \thd{Significado}\\
+\midrule
+\endhead
+ADC      & \textit{Application Default Credentials} --- cadeia de resolução de credencial do Google Cloud\\
+\zebra ADR      & \textit{Architecture Decision Record} --- registro de decisão arquitetural\\
+API      & \textit{Application Programming Interface}\\
+\zebra ANPD     & Autoridade Nacional de Proteção de Dados\\
+BFF      & \textit{Backend for Frontend} --- camada de \textit{proxy} do hub para a API\\
+\zebra BNCC     & Base Nacional Comum Curricular\\
+C4       & Modelo de visualização arquitetural em quatro níveis (Contexto, Contêiner, Componente, Código)\\
+\zebra CDN      & \textit{Content Delivery Network}\\
+CI/CD    & \textit{Continuous Integration / Continuous Delivery}\\
+\zebra CORS     & \textit{Cross-Origin Resource Sharing}\\
+CSP      & \textit{Content Security Policy}\\
+\zebra CSV      & \textit{Comma-Separated Values}\\
+DASS-21  & \textit{Depression, Anxiety and Stress Scales} --- versão de 21 itens\\
+\zebra DoD      & \textit{Definition of Done} --- critério de conclusão de tarefa\\
+DPA      & \textit{Data Processing Agreement} --- acordo de tratamento de dados\\
+\zebra DS       & \textit{Design System}\\
+EF       & Ensino Fundamental (séries \cd{1EF}--\cd{9EF})\\
+\zebra EM       & Ensino Médio (séries \cd{1EM}--\cd{3EM})\\
+ER       & Entidade-Relacionamento (modelo de dados)\\
+\zebra GCP      & \textit{Google Cloud Platform}\\
+HA       & \textit{High Availability} --- alta disponibilidade\\
+\zebra HTTP(S)  & \textit{HyperText Transfer Protocol} (\textit{Secure})\\
+IaC      & \textit{Infrastructure as Code} --- infraestrutura como código\\
+\zebra IdP      & \textit{Identity Provider} --- provedor de identidade\\
+JSON     & \textit{JavaScript Object Notation}\\
+\zebra JWK/JWKS & \textit{JSON Web Key} / \textit{JSON Web Key Set}\\
+JWT      & \textit{JSON Web Token}\\
+\zebra LB       & \textit{Load Balancer}\\
+LGPD     & Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018)\\
+\zebra LLM      & \textit{Large Language Model} --- modelo de linguagem de grande escala\\
+OIDC     & \textit{OpenID Connect}\\
+\zebra ORM      & \textit{Object-Relational Mapping}\\
+PII      & \textit{Personally Identifiable Information} --- dado pessoal identificável\\
+\zebra PITR     & \textit{Point-in-Time Recovery} --- recuperação a um instante no tempo\\
+PK/FK    & \textit{Primary Key} / \textit{Foreign Key}\\
+\zebra REST     & \textit{Representational State Transfer}\\
+RF       & Requisito Funcional\\
+\zebra RLS      & \textit{Row-Level Security} --- segurança em nível de linha do PostgreSQL\\
+RNF      & Requisito Não Funcional\\
+\zebra RS256    & RSASSA-PKCS1-v1\_5 com SHA-256 --- algoritmo de assinatura de JWT\\
+SA       & \textit{Service Account} --- conta de serviço do GCP\\
+\zebra SDK      & \textit{Software Development Kit}\\
+SLA/SLO  & \textit{Service Level Agreement} / \textit{Objective}\\
+\zebra SQL      & \textit{Structured Query Language}\\
+SSR      & \textit{Server-Side Rendering}\\
+\zebra TLS      & \textit{Transport Layer Security}\\
+TTL      & \textit{Time To Live} --- tempo de validade\\
+\zebra UC       & Caso de Uso (\textit{Use Case})\\
+UML      & \textit{Unified Modeling Language}\\
+\zebra VPC      & \textit{Virtual Private Cloud}\\
+WIF      & \textit{Workload Identity Federation} --- federação de identidade de carga de trabalho\\
+\zebra WSO2 IS  & WSO2 \textit{Identity Server} --- o gerenciador central de identidade do produto\\
+xAPI     & \textit{Experience API} --- especificação de telemetria de aprendizagem\\
+\bottomrule
+\end{tabularx}
+
+\section*{Termos do domínio}
+
+Os nomes de domínio deste projeto são em português brasileiro por convenção
+explícita (\arq{CLAUDE.md}, seção \enquote{Convenções de código}); termos
+técnicos permanecem em inglês. O glossário abaixo fixa o significado de cada um
+para todo o documento.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Termo} & \thd{Significado neste projeto}\\
+\midrule
+\endhead
+\cd{contrato} & \textbf{Tenant de nível 1}: uma rede pública (estado ou
+  município) que contratou a plataforma. Um contrato equivale a uma
+  \emph{stack} de infraestrutura GCP inteira e separada.\\
+\zebra \cd{escola} & \textbf{Tenant de nível 2}: uma unidade escolar dentro de um
+  contrato. Cem ou mais escolas compartilham a mesma \emph{stack}, isoladas
+  logicamente por \cd{escola\_id} + RLS.\\
+\cd{turma} & Agrupamento de alunos de uma mesma série dentro de uma escola.
+  Chave de balanceamento de vários instrumentos (bolhas, distribuição de
+  lados).\\
+\zebra \cd{aluno} & Usuário-estudante. É o único papel cujos dados são de menores,
+  o que governa a maior parte das decisões de retenção e de log.\\
+\cd{professor} & Usuário que prepara e conduz a aula; consome relatórios de
+  turma e usa as ferramentas de professor (exp-90, exp-91).\\
+\zebra \cd{gestor} & Usuário administrativo da escola: importa usuários, redefine
+  senhas. Não vê dado de bem-estar de professor.\\
+\cd{admin-contrato} & Único papel autorizado a atravessar escolas, e apenas em
+  rotas explicitamente marcadas. Publica manifestos de experiência.\\
+\zebra \cd{experiência} & Aplicação imersiva independente (\emph{bundle} Vite
+  estático) que o hub embeda em \cd{iframe}. Nunca é um serviço.\\
+\cd{hub} & Aplicação Next.js que autentica, roteia por papel, embeda as
+  experiências e desenha todo o \emph{chrome} institucional.\\
+\zebra \cd{aparelho} & Metáfora de interface: a casca de dispositivo
+  (\cd{DispositivoFrame}) que o hub desenha em volta do \cd{iframe} quando a
+  experiência declara \cd{viewport}.\\
+\cd{clone} & Superfície de interface que imita um aplicativo real
+  (Instagram, YouTube, WhatsApp, ChatGPT, TikTok) para que a experiência possa
+  medir comportamento em contexto reconhecível.\\
+\zebra \cd{revelação} & Momento pedagógico em que a experiência sai da ficção do
+  clone e volta à linguagem institucional. É a linha que separa as seções do
+  \textit{design system}.\\
+\cd{missão} & Unidade pedagógica: uma experiência com objetivo, guia do
+  professor e leitura de resultado.\\
+\zebra \cd{manifesto} & Linha da tabela \cd{experiencias} (ou o
+  \arq{public/experiencia.json} do \emph{bundle}) que descreve id, nome, versão
+  ativa, séries, \textit{capabilities}, \cd{viewport}, público e permissões.\\
+\cd{versaoAtiva} & Versão do \emph{bundle} que o hub serve. \emph{Rollback} é a
+  troca deste campo --- não um novo \emph{deploy}.\\
+\zebra \cd{bolha} & Nível de dificuldade do instrumento da exp-70 (A, B ou C),
+  atribuído pelo servidor e estável por aluno.\\
+\cd{grau} & Quanto uma partida sustenta a medida de um valor:
+  \cd{scored}, \cd{indicative}, \cd{zero} ou \cd{none}. A diferença entre
+  \cd{zero} e \cd{none} é invariante de API.\\
+\zebra \cd{run} & Sessão de um aluno numa atividade da exp-01: carrega o estado do
+  motor de feed adaptativo.\\
+\cd{comTenancy} & Porta única de acesso ao banco na API: abre transação e arma
+  a RLS com a escola do \textit{token}.\\
+\bottomrule
+\end{tabularx}

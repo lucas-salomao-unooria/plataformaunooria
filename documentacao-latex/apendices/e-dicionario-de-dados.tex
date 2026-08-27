@@ -1,0 +1,543 @@
+% ===========================================================================
+%  Apendice E — Dicionario de dados
+% ===========================================================================
+\chapter{Dicionário de dados}
+\label{ap:dicionario}
+
+Catálogo das 27 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
+\toprule
+\headrow \thd{Regime} & \thd{Significado}\\
+\midrule
+\textbf{Tenant} & Tem \cd{escola\_id NOT NULL} + \cd{ENABLE}/\cd{FORCE ROW LEVEL
+  SECURITY} + política por escola. Acesso só por \cd{comTenancy}.\\
+\zebra \textbf{Tenant+posse} & O acima, \emph{mais} filtro por
+  \cd{professor\_id} em toda \emph{query}: dois professores da mesma escola não
+  se leem.\\
+\textbf{Catálogo} & Sem \cd{escola\_id}, \textbf{fora} da RLS. Pertence ao
+  contrato, não à escola.\\
+\bottomrule
+\end{tabularx}
+
+\section{Índice de tabelas}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{Regime} & \thd{Conteúdo}\\
+\midrule
+\endhead
+\cd{escolas} & Tenant raiz & Unidades escolares do contrato\\
+\zebra \cd{turmas} & Tenant & Turmas por escola e série\\
+\cd{users} & Tenant & Usuários e papéis\\
+\zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
+\cd{progresso} & Tenant & Progresso genérico da SDK\\
+\zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
+\cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
+\zebra \cd{exp\_01\_activities} & Tenant & Atividade preparada pelo professor\\
+\cd{exp\_01\_authors} & Tenant & Personas fictícias\\
+\zebra \cd{exp\_01\_posts} & Tenant & Posts gerados\\
+\cd{exp\_01\_post\_comments} & Tenant & Comentários dos posts\\
+\zebra \cd{exp\_01\_generation\_jobs} & Tenant & Fila de geração\\
+\cd{exp\_01\_runs} & Tenant & Sessão de um aluno\\
+\zebra \cd{exp\_01\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
+\cd{exp\_01\_student\_posts} & Tenant & Posts publicados pelo aluno\\
+\zebra \cd{exp\_01\_conclusoes} & Tenant & Inclinação escolhida\\
+\cd{exp\_01\_reflexoes} & Tenant & Texto de fechamento\\
+\zebra \cd{exp\_01\_dossiers} & Tenant & Dossiê calculado\\
+\cd{exp\_01\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
+\zebra \cd{exp\_01\_exp\_70\_perfis\_importados} & Tenant &
+  \textbf{Contrato entre duas experiências}\\
+\cd{exp\_02\_sessoes} & Tenant & Estado da missão do UnooTube\\
+\zebra \cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\cd{exp\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
+\zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por aluno\\
+\cd{exp\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
+\zebra \cd{exp\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
+\cd{exp\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\zebra \cd{exp\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+  (\textbf{sensível})\\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas da plataforma}
+
+\subsection{\cd{escolas}}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{TEXT} PK & \textbf{Texto, não UUID.} É o \emph{mesmo} valor que
+  circula no \emph{claim} \cd{escola\_id} do JWT e no \cd{set\_config} da RLS ---
+  um id legível (\cd{sp-001}) vale mais que um UUID quando o valor aparece em
+  três lugares de um diagnóstico.\\
+\zebra \cd{nome} & \cd{TEXT} & \\
+\cd{created\_at} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{turmas}}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \fk{escola\_id} & \cd{TEXT} FK & \\
+\cd{nome} & \cd{TEXT} & \cd{UNIQUE (escola\_id, nome)}: duas escolas podem ter
+  \enquote{8A}.\\
+\zebra \cd{serie} & \cd{TEXT} & \cd{1EF}--\cd{9EF} $|$ \cd{1EM}--\cd{3EM},
+  validado com Zod na aplicação.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{users}}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \cd{role} & \cd{TEXT} & \cd{aluno} $|$ \cd{professor} $|$ \cd{gestor} $|$
+  \cd{admin-contrato}.\\
+\fk{escola\_id} & \cd{TEXT?} FK & \textbf{\emph{CHECK} na migração:}
+  \cd{NOT NULL} \emph{exceto} quando \cd{role = 'admin-contrato'}. Nenhuma outra
+  combinação é aceita pelo banco.\\
+\zebra \fk{turma\_id} & \cd{UUID?} FK & \\
+\cd{username} & \cd{TEXT} & \cd{UNIQUE (escola\_id, username)} --- único
+  \textbf{por escola}, não globalmente: uma rede tem muitos \cd{joao.silva}.\\
+\zebra \cd{display\_name} & \cd{TEXT} & \\
+\cd{password\_hash} & \cd{TEXT} & \\
+\zebra \cd{avatar} & \cd{TEXT?} & \\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{experiencias} (catálogo)}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{exp\_id} & \cd{TEXT} PK & Slug da experiência.\\
+\zebra \cd{nome} & \cd{TEXT} & \\
+\cd{versao\_ativa} & \cd{TEXT} & \textbf{\emph{Rollback} = \cd{UPDATE} deste
+  campo.} O hub monta a URL do \cd{iframe} com ele.\\
+\zebra \cd{series} & \cd{TEXT[]} & \textbf{Vazio = TODAS as séries}, não
+  nenhuma. É assim que uma experiência transversal se declara.\\
+\cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
+  \cd{avaliacao}, \cd{tempo-real}.\\
+\zebra \cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
+  Presente \implica{} o hub embeda dentro do \cd{DispositivoFrame}.\\
+\cd{publico} & \cd{TEXT} & \cd{aluno} (default) $|$ \cd{professor}, com
+  \emph{CHECK}. \cd{professor} \implica{} \rota{/exp/*} responde 404.\\
+\zebra \cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
+  \cd{pointer-lock}, com \emph{CHECK} do vocabulário.
+  \textbf{\cd{fullscreen} NÃO entra aqui}: o \cd{allow} do \emph{frame} já o
+  delega a todas, e campo de manifesto que não muda nada é pior que campo
+  nenhum.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{progresso}}
+
+PK composta \cd{(escola\_id, aluno\_id, exp\_id)}; \cd{dados JSONB DEFAULT
+'\{\}'}; \cd{atualizado\_em}. É o progresso \emph{genérico} da SDK --- estado rico
+de experiência vai para a tabela da experiência.
+
+\subsection{\cd{ia\_uso\_diario}}
+
+PK composta \cd{(escola\_id, usuario\_id, dia)}, com \cd{dia} no formato
+\cd{YYYY-MM-DD}; \cd{tokens\_usados INT}. Incremento atômico por
+\cd{ON CONFLICT DO UPDATE ... RETURNING}, para que requisições simultâneas não se
+sobrescrevam.
+
+\subsection{\cd{telemetria\_eventos} (particionada)}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{event\_id} & \cd{UUID} PK$_1$ & Chave de \emph{dedupe}, gerada pela SDK.\\
+\zebra \pk{ts} & \cd{TIMESTAMPTZ(6)} PK$_2$ & \textbf{Chave de partição.} A PK é
+  composta porque o PostgreSQL exige a chave de partição em todo índice único ---
+  e a \emph{dedupe} segue correta, porque a reentrega da mesma mensagem traz o
+  \emph{mesmo} \cd{ts}.\\
+\cd{escola\_id}, \cd{aluno\_id} & \cd{TEXT} & \cd{aluno\_id} é \textbf{opaco}:
+  nunca nome nem \emph{e-mail}. Derivado do \emph{token} no servidor.\\
+\zebra \cd{exp\_id}, \cd{exp\_version} & \cd{TEXT} & \\
+\cd{sessao\_id} & \cd{UUID} & \\
+\zebra \cd{verbo}, \cd{objeto} & \cd{TEXT} & Vocabulário xAPI simplificado.\\
+\cd{resultado}, \cd{contexto} & \cd{JSONB?} & Livres, por experiência.\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Objeto} & \thd{Nota}\\
+\midrule
+\cd{idx\_tel\_escola\_exp\_ts} & Índice \cd{(escola\_id, exp\_id, ts)}.\\
+\zebra \cd{particoes.telemetria\_}\B{}\cd{eventos\_YYYY\_MM} & Uma por mês, faixas
+  declaradas até 2028-12. Vivem no \emph{schema} \cd{particoes} --- em
+  \cd{public} cada uma viraria \emph{drift} de \emph{schema}.\\
+\cd{particoes.\ldots\_default} & \textbf{Rede de segurança.} Sem ela, evento com
+  \cd{ts} fora das faixas seria \textbf{recusado} --- e telemetria perdida em
+  silêncio é pior que telemetria mal guardada. Encher = faltou criar partição.\\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas da exp-01}
+
+\subsection{\cd{exp\_01\_activities}}
+
+\begin{tabularx}{\linewidth}{@{}L{32mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \fk{professor\_id} & \cd{UUID} FK & \\
+\cd{titulo}, \cd{disciplina}, \cd{tema\_geral}, \cd{recorte} & \cd{TEXT} & \\
+\zebra \cd{contexto\_aula} & \cd{TEXT?} & \\
+\cd{pergunta\_chave} & \cd{TEXT} & Gerada pela IA a partir do tema, validada pelo
+  professor.\\
+\zebra \cd{pergunta\_origem} & \cd{TEXT} & \cd{ia} $|$ \cd{professor} ---
+  \textbf{auditoria de autoria pedagógica}, e custa uma coluna.\\
+\cd{etapa} & \cd{TEXT} & \cd{investigacao} $|$ \cd{conclusao} $|$ \cd{debate} $|$
+  \cd{explicabilidade} $|$ \cd{perdidos} $|$ \cd{reflexao} $|$ \cd{fim}.
+  \textbf{Relógio COLETIVO da turma:} o professor abre e fecha, e a tela do aluno
+  trava conforme.\\
+\zebra \cd{ia\_ao\_vivo} & \cd{BOOLEAN} & Personas reagem ao vivo. Desligável no
+  meio da aula, \textbf{sem \emph{deploy}}.\\
+\cd{antagonismo} & \cd{JSONB?} & Destilação \textbf{aprovada} pelo professor.\\
+\zebra \cd{categorias\_neutras}, \cd{neutros\_no\_tema} & \cd{TEXT[]} &
+  Categorias dos neutros fora do tema; rótulos dos neutros dentro dele.\\
+\cd{estilo\_visual} & \cd{TEXT} & \\
+\zebra \cd{qtd\_posts\_tese} & \cd{INT} & Posts que carregam o antagonismo;
+  divisível por 8 (2 lados $\times$ 4 perfis).\\
+\cd{proporcoes}, \cd{engine\_config} & \cd{JSONB} & Pesos e mixagem do motor.\\
+\zebra \cd{status} & \cd{TEXT} & \cd{rascunho} $|$ \cd{antagonismo} $|$
+  \cd{gerando} $|$ \cd{revisao} $|$ \cd{ativa} $|$ \cd{encerrada}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_01\_posts}}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{lado} & \cd{TEXT} & \cd{A} $|$ \cd{B} $|$ \cd{neutro}.\\
+\zebra \cd{perfil} & \cd{TEXT} & \cd{abertura} $|$ \cd{autotranscendencia} $|$
+  \cd{autopromocao} $|$ \cd{conservacao}.\\
+\cd{intensidade} & \cd{SMALLINT} & 1, 2 ou 3.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\cd{lado}, \cd{perfil} e \cd{intensidade} são \textbf{a variável independente do
+experimento}. Eles existem no banco e são \textbf{removidos pelo sanitizador}
+antes de o \emph{feed} sair da API. Se chegassem ao cliente, a experiência poderia
+exibi-los --- e o aluno saberia de que lado o algoritmo o colocou antes da
+revelação.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{formato} & \cd{TEXT} & \cd{feed} $|$ \cd{story} $|$ \cd{enquete}.\\
+\zebra \cd{caption}, \cd{hashtags}, \cd{emotional\_hook} & \cd{TEXT}/\cd{TEXT[]} &
+  Gerados pela IA.\\
+\cd{image\_brief} & \cd{TEXT} & \emph{Prompt} da arte.\\
+\zebra \cd{image\_url} & \cd{TEXT?} & URL absoluta da CDN de \emph{assets}.\\
+\cd{image\_status} & \cd{TEXT} & \cd{pendente} $|$ \cd{ok} $|$ \cd{fallback}.
+  \cd{fallback} = arte procedural, porque a geração falhou --- e a atividade não
+  trava.\\
+\zebra \cd{likes\_count}, \cd{timestamp\_label} & \cd{INT}/\cd{TEXT} & Ficção
+  visual do clone.\\
+\cd{aprovado} & \cd{BOOLEAN} & O professor revisa antes de ativar.\\
+\bottomrule
+\end{tabularx}
+
+Índice de curadoria:
+\cd{(activity\_id, lado, perfil, intensidade, aprovado)} --- é exatamente a
+consulta que o motor faz a cada bloco.
+
+\subsection{\cd{exp\_01\_runs}}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{fase} & \cd{TEXT} & \cd{onboarding} $|$ \cd{feed} $|$ \cd{encerramento} $|$
+  \cd{conclusao} $|$ \cd{revelacao} $|$ \cd{dossie} $|$ \cd{comparacao}.\\
+\zebra \cd{lado\_inicial} & \cd{TEXT} & \cd{A} $|$ \cd{B}. Vem da afinidade do
+  perfil; \textbf{nunca muda}.\\
+\cd{lado\_origem} & \cd{TEXT} & \cd{perfil} $|$ \cd{sorteio} $|$
+  \cd{redistribuido} --- \textbf{auditoria de por que} aquele aluno caiu naquele
+  lado. Sem isso, uma reclamação de professor não tem resposta.\\
+\zebra \cd{perfil\_jogo} & \cd{JSONB?} & Perfil do Ato 1, \textbf{congelado} na
+  criação da \cd{run}.\\
+\cd{perfil\_origem} & \cd{TEXT} & \cd{jogo} $|$ \cd{professor} $|$
+  \cd{ausente}.\\
+\zebra \cd{engine\_state} & \cd{JSONB} & Estado do motor. Lido e escrito
+  \emph{inteiro}, sempre dentro do mesmo \emph{lock} --- normalizá-lo daria
+  \emph{joins} sem ganho de consulta.\\
+\cd{nome\_no\_app} & \cd{TEXT?} & O nome que a criança digitou.
+  \textbf{Fica na \cd{run}, não em \cd{users}}, porque a conta é \textbf{do
+  aparelho}: outra turma reusa o mesmo \emph{login}.\\
+\zebra \cd{avatar\_escolhido} & \cd{TEXT?} & Mesma razão.\\
+\bottomrule
+\end{tabularx}
+
+\cd{UNIQUE (activity\_id, aluno\_id)}: uma sessão por aluno por atividade.
+
+\subsection{\cd{exp\_01\_events} --- o canal operacional}
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{BIGSERIAL} PK & Ordenação por inserção é significativa aqui ---
+  diferente do canal analítico.\\
+\zebra \cd{tipo} & \cd{TEXT} & \cd{visto} $|$ \cd{curtiu} $|$ \cd{descurtiu} $|$
+  \cd{salvou} $|$ \cd{abriu\_comentarios} $|$ \cd{comentou} $|$
+  \cd{compartilhou} $|$ \cd{seguiu} $|$ \cd{deixou\_seguir} $|$
+  \cd{nao\_interessa} $|$ \cd{denunciou} $|$ \cd{enquete} $|$ \cd{rever} $|$
+  \cd{abriu\_perfil}.\\
+\cd{payload} & \cd{JSONB?} & \cd{\{dwellMs, dwellNorm\}}, \cd{\{texto\}},
+  \cd{\{opcao\}}, \cd{\{authorId\}}\ldots{}\\
+\zebra \cd{client\_ts} & \cd{BIGINT} & Relógio do cliente, guardado como
+  \emph{dado}, não usado como verdade.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{\emph{Dwell} nunca passa pelo Pub/Sub.} A latência e a falta de ordenação
+quebrariam a adaptação do \emph{feed} e o \emph{lock} por \cd{run}. Esta tabela é
+o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
+(Capítulo~\ref{cap:telemetria}).
+\end{regra}
+
+\subsection{\cd{exp\_01\_exp\_70\_perfis\_importados}}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{escores} & \cd{JSONB} & Os quatro quadrantes normalizados 0--1.\\
+\zebra \cd{dominante} & \cd{TEXT} & Um dos quatro, ou \cd{misto}.\\
+\cd{origem} & \cd{TEXT} & \cd{jogo} $|$ \cd{professor}.\\
+\zebra \cd{lado\_forcado} & \cd{TEXT?} & \cd{A} $|$ \cd{B} quando o professor
+  redistribuiu a turma; \cd{NULL} = segue a afinidade.
+  \textbf{PRESERVADO no \emph{upsert}} --- importar sozinho, ou levar o objeto
+  inteiro no \cd{update}, desfaria em silêncio uma redistribuição feita antes da
+  aula.\\
+\cd{medido\_em} & \cd{TIMESTAMPTZ} & \\
+\bottomrule
+\end{tabularx}
+
+\section{Tabelas das demais experiências}
+
+\subsection{\cd{exp\_02\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, aluno\_id)} & PK composta & Uma linha por aluno.\\
+\zebra \cd{salvos} & \cd{TEXT[]} & Ids do catálogo. \emph{CHECK}
+  \cd{cardinality(salvos) <= 3} na migração.\\
+\cd{curtidos} & \cd{TEXT[]} & Segue livre mesmo após a conclusão.\\
+\zebra \cd{ranking\_desbloqueado} & \cd{BOOLEAN} & \textbf{\emph{Latch}}: remover
+  um salvo depois \emph{não} tranca o ranking de novo. Estado que anda para trás
+  confunde a criança e o professor.\\
+\cd{credibilidade\_adicionada} & \cd{BOOLEAN} & A conclusão pedagógica.
+  \textbf{Congela os salvos}: o \emph{score} já foi reportado, e nota e estado não
+  podem divergir.\\
+\zebra \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}: conclusão implica
+  \cd{concluido\_em}.\\
+\cd{reinicios} & \cd{SMALLINT} & Reiniciar descongela.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+O gabarito (\cd{factual}) \textbf{não está aqui} e não é devolvido em nenhuma rota
+de aluno: vive em \arq{src/unootube/catalogo.ts}.
+\end{regra}
+
+\subsection{\cd{exp\_70\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \textbf{Emitido pela API.} No aplicativo de origem o
+  cliente escolhia a própria chave de idempotência, e duas crianças na mesma
+  máquina colidiam --- a segunda partida voltava \enquote{duplicada} e
+  desaparecia.\\
+\zebra \fk{turma\_id} & \cd{UUID?} FK & \textbf{Desnormalizado:} turma \emph{no
+  momento da partida}. O aluno troca de turma entre anos letivos, e o resultado
+  precisa continuar na turma em que foi medido.\\
+\cd{exp\_version} & \cd{TEXT} & Versão do \emph{bundle} que jogou --- torna o
+  \emph{skew} de \emph{publish} visível em vez de silencioso.\\
+\zebra \cd{schema\_version} & \cd{SMALLINT} & Versão do contrato de
+  \emph{payload}.\\
+\cd{bolha} & \cd{TEXT} & \cd{A} $|$ \cd{B} $|$ \cd{C}. Atribuída pela
+  \textbf{API}, nunca pelo cliente, e copiada aqui porque \textbf{o relatório abre
+  pelo NÍVEL}, antes do que ela fez.\\
+\zebra \cd{cartoes\_servidos} & \cd{SMALLINT} & Quantos a API \emph{entregou} ---
+  \textbf{$\neq$ quantos apareceram}. Zero \implica{} a missão não aconteceu, e o
+  relatório precisa dizer isso em vez de \enquote{ela ignorou tudo}.\\
+\cd{aberta\_em}, \cd{concluida\_em} & \cd{TIMESTAMPTZ} & Cravados pelo
+  \textbf{servidor}. O aplicativo de origem derivava do relógio do cliente, e ele
+  mesmo documentava que a hora numa máquina de escola costuma estar errada.\\
+\zebra \cd{duracao\_seg} & \cd{INT?} & Tempo de \textbf{jogo} --- denominador dos
+  ritmos.\\
+\cd{duracao\_total\_seg} & \cd{INT?} & Desde a página abrir, incluindo a intro.
+  Uma criança de 6 anos leva vários minutos ali, e sem o total o professor
+  cronometra a atividade inteira e vê um número bem menor no painel.\\
+\zebra \cd{status} & \cd{TEXT} & \cd{aberta} $|$ \cd{completa} $|$
+  \cd{abandonada}. \cd{aberta} que nunca fecha é partida perdida --- e saber
+  quantas são é \emph{um dado sobre o jogo}.\\
+\cd{fogueiras\_acesas} \ldots{} \cd{distancia\_m} & \cd{SMALLINT}/\cd{INT} &
+  Resumo \textbf{tipado}: o que o painel consulta e ordena. O detalhe fica no
+  \emph{payload}.\\
+\zebra \cd{payload} & \cd{JSONB?} & O corpo bruto, íntegro. \textbf{Única fonte
+  para recomputar} o perfil quando \cd{VERSAO\_MAPEAMENTO} subir.\\
+\cd{leitura\_mensagens} & \cd{JSONB?} & A leitura da missão, \textbf{persistida}:
+  o relatório sobrevive a qualquer expurgo futuro do \emph{payload} e não precisa
+  recomputar a cada visita.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{Não há \cd{expires\_at}} (\adrr{ADR-13}). Houve, de 90 dias, e nenhuma
+rotina que o cumprisse. Coluna de prazo que ninguém lê é pior que prazo nenhum.
+\end{decisao}
+
+\subsection{\cd{exp\_70\_perfis}}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{versao\_mapeamento} & \cd{SMALLINT} & Hoje \textbf{3}, herdada do piloto para
+  os dados serem comparáveis. Sobe a cada mudança de peso, \emph{probe} ou
+  fórmula; \textbf{nunca} reescreve uma versão publicada.\\
+\zebra \cd{valores} & \cd{JSONB} & Os dez valores em 0--100, e \textbf{\cd{null}
+  NÃO É ZERO}: é valor que não recebeu número, porque tem uma fonte de medida só
+  ou porque a oportunidade não chegou.\\
+\cd{graus} & \cd{JSONB} & \cd{scored} $|$ \cd{indicative} $|$ \cd{zero} $|$
+  \cd{none} por valor. \textbf{A distinção mais importante do modelo.}\\
+\zebra \cd{abertura\_vs\_conservacao} & \cd{FLOAT?} & Eixo do circumplexo.
+  \textbf{\cd{NULL} quando um dos polos não foi observado} --- eixo com polo não
+  observado não é zero, é indefinido.\\
+\cd{transcendencia\_vs\_}\B{}\cd{autopromocao} & \cd{FLOAT?} & Idem.\\
+\zebra \cd{amostra\_suficiente} & \cd{BOOLEAN} & Falso \implica{} o painel abre
+  avisando que \textbf{não sabe}. Não é rigor estatístico: é impedir que uma
+  partida sem escolha vire uma frase sobre quem a criança é.\\
+\bottomrule
+\end{tabularx}
+
+\cd{UNIQUE (sessao\_id, versao\_mapeamento)}: quando a hipótese mudar, nasce uma
+linha nova e as antigas ficam --- porque comparar as duas é o único jeito de saber
+o que a mudança fez.
+
+\subsection{\cd{exp\_70\_bolhas}}
+
+PK composta \cd{(escola\_id, aluno\_id)}; \cd{bolha}, \cd{atribuida\_em}.
+
+\begin{decisao}
+\textbf{Por aluno, não por partida.} Repetir a partida não pode trocar o nível: a
+folha do professor diz \enquote{esse estava na C}, e o relatório abre pelo nível.
+A atribuição é balanceada \textbf{dentro da turma} --- o aplicativo de origem
+fazia \cd{n\textsuperscript{o} do aluno mod 3}, que dava terços de graça porque os
+números eram contíguos de 1 a 40; \emph{hash} de UUID dá terços na média da rede e
+pode dar 14/6/5 numa sala de 25 --- e aí o debate da missão não acontece, porque
+ele depende de as três bolhas estarem na mesma sala.
+\end{decisao}
+
+\subsection{\cd{exp\_90\_planos} e \cd{exp\_90\_referencias}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{status} & \cd{TEXT} & \cd{pendente} $|$ \cd{gerando} $|$ \cd{pronto} $|$
+  \cd{erro}, com \emph{CHECK}.\\
+\zebra \cd{tentativas} & \cd{SMALLINT} & Retomadas de geração
+  \emph{interrompida} (\emph{restart}, \emph{deploy}), não de falha da IA. Máximo
+  2.\\
+\cd{iniciado\_em} & \cd{TIMESTAMPTZ?} & \cd{gerando} há mais de 12 minutos sem
+  \emph{worker} nesta instância = órfã.\\
+\zebra \cd{tokens\_usados} & \cd{INT} & \\
+\cd{caminho\_gerado\_md} & \cd{TEXT?} & \arq{planos/\{escolaId\}/\{id\}/gerado.md}
+  --- Markdown da IA, \textbf{imutável}.\\
+\zebra \cd{caminho\_html} & \cd{TEXT?} & \arq{atual.html} --- o que o editor
+  salvou, sanitizado por \emph{allowlist}.\\
+\bottomrule
+\end{tabularx}
+
+\cd{exp\_90\_referencias} é \textbf{catálogo do contrato}: sem \cd{escola\_id},
+fora da RLS, com \cd{serie NULL} significando \enquote{vale para todas as séries
+da disciplina} (ex.: o currículo da rede). Escrita só pelo \emph{script} de
+importação.
+
+\subsection{\cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}}
+
+\begin{tabularx}{\linewidth}{@{}L{32mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{ordem\_itens} & \cd{INT[]} & Permutação dos itens 1..21 sorteada na abertura
+  do ciclo. Cada \emph{check-in} leva 3 itens, um de cada subescala.\\
+\zebra \cd{expira\_em} & \cd{TIMESTAMPTZ} & 21 dias. Ciclo não fechado vira
+  \cd{expirado}, sem pontuação.\\
+\cd{depressao}, \cd{ansiedade}, \cd{estresse} & \cd{INT?} & Já
+  $\times 2$ (escala do DASS-42), preenchidas \textbf{ao concluir} o sétimo
+  \emph{check-in}, no servidor.\\
+\zebra \cd{numero} & \cd{SMALLINT} & 1..7 dentro do ciclo.\\
+\cd{dia} & \cd{TEXT} & \cd{YYYY-MM-DD} no fuso \cd{America/Sao\_Paulo}.
+  \cd{UNIQUE (escola\_id, professor\_id, dia)}: um por dia.\\
+\zebra \cd{itens} & \cd{INT[]} & Os 3 itens deste \emph{check-in}.\\
+\cd{respostas} & \cd{JSONB?} & \cd{[\{ item, valor \}]} $\times$3, valor 0..3.\\
+\zebra \cd{texto\_livre} & \cd{TEXT?} & \textbf{Nunca vai a log nem à
+  telemetria.} Só contagens.\\
+\cd{abertura}, \cd{pergunta}, \cd{acolhimento} & \cd{TEXT} & Os textos de entorno
+  que o professor \emph{viu} --- guardados, não regerados.\\
+\zebra \cd{origem\_texto} & \cd{TEXT} & \cd{ia} $|$ \cd{fallback} (IA
+  indisponível ou barrada pelo \emph{guardrail}) $|$ \cd{seguranca} (sinal de
+  apoio --- texto fixo, a IA nem é chamada).\\
+\cd{sinal\_de\_apoio} & \cd{BOOLEAN} & Item 17 ou 21 $\geq 2$, ou termo de risco
+  no texto.\\
+\zebra \cd{tokens\_ia} & \cd{INT} & \\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Dado sensível de saúde (LGPD art.~11).} RLS por \cd{escola\_id}
+\textbf{mais} posse por \cd{professor\_id} em toda \emph{query}; \textbf{nenhuma}
+rota de gestor ou agregado; e o próprio titular apaga tudo com
+\rota{DELETE /bemestar/dados}.
+\end{regra}
+
+\section{O que o Prisma não modela}
+
+\begin{atencao}
+Ler apenas \arq{schema.prisma} dá uma visão \textbf{incompleta} do banco. Vivem
+\emph{só} na migração:
+
+\begin{itemize}
+  \item políticas de \textbf{RLS} (\cd{ENABLE}, \cd{FORCE}, \cd{CREATE POLICY});
+  \item \textbf{\emph{CHECK} constraints} (papel \emph{versus} \cd{escola\_id},
+    cardinalidade dos salvos, vocabulário de \cd{permissoes}, coerência de
+    conclusão, XOR de ancoragem de comentário);
+  \item \textbf{partições} e o \emph{schema} \cd{particoes};
+  \item \textbf{\cd{GRANT}} para a \emph{role} de aplicação.
+\end{itemize}
+
+Os campos correspondentes são \cd{TEXT}/\cd{SMALLINT} no \emph{schema}, e a
+validação de aplicação é feita com Zod.
+\end{atencao}

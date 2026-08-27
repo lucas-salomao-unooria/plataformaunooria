@@ -1,0 +1,103 @@
+% ============================================================================
+%  Plataforma Unooria
+%  Documentacao Tecnica Consolidada — PU-DOC-001
+%
+%  Compilacao (o caminho curto, sem instalar distribuicao de TeX):
+%     ./compilar.sh
+%  Ou, com uma distribuicao completa instalada:
+%     latexmk -pdf main.tex
+%  Ou manualmente (BibTeX classico, tres passagens):
+%     pdflatex main && bibtex main && pdflatex main && pdflatex main
+% ============================================================================
+\documentclass[11pt, a4paper, oneside, openany]{report}
+
+\input{preambulo/estilo}
+\input{preambulo/diagramas}
+
+\hypersetup{
+  pdftitle={Plataforma Unooria — Documentacao Tecnica de Arquitetura},
+  pdfauthor={Lucas Salomao},
+  pdfsubject={Arquitetura de software e de nuvem, multi-tenancy, modelo de dados,
+              contratos de integracao, IA generativa e documentacao de codigo},
+  pdfkeywords={plataforma educacional, B2G, multi-tenancy, Row-Level Security,
+               C4, UML, Next.js, NestJS, Postgres, Cloud Run, Pub/Sub,
+               Vertex AI, Gemini, OIDC, telemetria, xAPI, design system},
+  pdfcreator={Tectonic / XeTeX}
+}
+
+\begin{document}
+
+% ---------------------------------------------------------------- pre-textual
+\pagenumbering{roman}
+\input{preambulo/capa}
+
+\cleardoublepage
+\pdfbookmark[0]{Sumário}{toc}
+\renewcommand{\contentsname}{Sumário}
+\tableofcontents
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Lista de figuras}
+\renewcommand{\listfigurename}{Lista de figuras}
+\listoffigures
+
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Lista de tabelas}
+\renewcommand{\listtablename}{Lista de tabelas}
+\listoftables
+
+\cleardoublepage
+\input{secoes/00-siglas}
+
+% --------------------------------------------------------------------- textual
+\cleardoublepage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\pagestyle{unoomain}
+
+\input{secoes/01-introducao}
+\input{secoes/02-contexto-negocio}
+\input{secoes/03-requisitos}
+\input{secoes/04-casos-de-uso}
+\input{secoes/05-arquitetura-software}
+\input{secoes/06-arquitetura-nuvem}
+\input{secoes/07-tenancy-seguranca}
+\input{secoes/08-modelo-de-dados}
+\input{secoes/09-contratos-integracao}
+\input{secoes/10-telemetria}
+\input{secoes/11-inteligencia-artificial}
+\input{secoes/12-experiencias}
+\input{secoes/13-api}
+\input{secoes/14-design-system}
+\input{secoes/15-entrega}
+\input{secoes/16-qualidade}
+\input{secoes/17-adr}
+\input{secoes/18-riscos-evolucao}
+\input{secoes/19-conclusao}
+
+% ------------------------------------------------------------------- apendices
+\appendix
+\renewcommand{\thechapter}{\Alph{chapter}}
+\titleformat{\chapter}[display]
+  {\normalfont}
+  {\raggedleft\fontsize{54}{54}\selectfont\color{unooBlueLight}\textbf{Apêndice \thechapter}}
+  {-6pt}
+  {\raggedright\fontsize{23}{27}\selectfont\bfseries\color{unooNavy}}
+  [\vspace{5pt}{\color{unooBlue}\rule{\linewidth}{2.2pt}}]
+
+\input{apendices/a-mermaid}
+\input{apendices/b-variaveis-ambiente}
+\input{apendices/c-endpoints}
+\input{apendices/d-payloads}
+\input{apendices/e-dicionario-de-dados}
+\input{apendices/f-operacao}
+
+% ---------------------------------------------------------------- referencias
+\cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{Referências}
+\bibliography{referencias}
+
+\end{document}

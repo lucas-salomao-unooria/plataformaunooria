@@ -1,0 +1,427 @@
+% ===========================================================================
+%  12 — Catalogo de experiencias
+% ===========================================================================
+\chapter{Catálogo de experiências}
+\label{cap:experiencias}
+
+O catálogo alvo é de 48 experiências. Cinco existem, e são elas que definiram o
+gabarito que as próximas seguem. Este capítulo documenta cada uma até onde a
+mecânica impõe exigência ao \emph{software} --- e não como material pedagógico.
+
+\section{Visão do catálogo}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{14mm}L{12mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Experiência} & \thd{Séries} & \thd{Público} & \thd{Capabilities} & \thd{Módulo na API}\\
+\midrule
+\cd{exp-01-instanooria} & \cd{8EF} & aluno &
+  telemetria, progresso, ia &
+  \arq{motor}, \arq{geracao}, \arq{atividades}, \arq{perfis}, \arq{dossie}\\
+\zebra \cd{exp-02-unootube} & \cd{4EF} & aluno &
+  telemetria, progresso & \arq{unootube}\\
+\cd{exp-70-vila-do-lume} & \textbf{transversal} & aluno &
+  telemetria & \arq{vila}\\
+\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+  telemetria, ia & \arq{planos}\\
+\cd{exp-91-bem-estar} & --- & \textbf{professor} &
+  telemetria, ia & \arq{bemestar}\\
+\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Experiência} & \thd{Porta em \emph{dev}} & \thd{Onde aparece no hub}\\
+\midrule
+\cd{exp-01-instanooria} & \cd{5173} & \rota{/exp/exp-01-instanooria}\\
+\zebra \cd{exp-02-unootube} & \cd{5174} & \rota{/exp/exp-02-unootube}\\
+\cd{exp-90-plano-de-aula} & \cd{5175} & \rota{/professor/plano-de-aula}\\
+\zebra \cd{exp-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
+\cd{exp-70-vila-do-lume} & \cd{5177} & \rota{/exp/exp-70-vila-do-lume}\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+As portas vivem em \arq{apps/hub/lib/experiencias-dev.ts} --- uma por
+experiência. É esse mapa que o hub usa quando não há manifesto, e é por isso que
+\env{EXP\_INTERNAL\_HOST} tem de \emph{preservar a porta}
+(Seção~\ref{sec:manifesto}).
+\end{nota}
+
+\section{exp-01 --- Instanooria}
+
+Clone de rede social de imagens. O aluno navega um \emph{feed} curado por um
+motor adaptativo que o empurra progressivamente para um dos dois lados de uma
+controvérsia; na virada da missão, o dossiê mostra o que ele não viu.
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
+\toprule
+\headrow \thd{Exigência ao \emph{software}} & \thd{Como é atendida}\\
+\midrule
+\emph{Feed} adaptativo por blocos, determinístico & \arq{motor/curadoria.ts}:
+  função pura que recebe um gerador de aleatoriedade. É isso que permite ao teste
+  afirmar \enquote{só engaja A \implica{} domínio $>$ 0,75 até o bloco 4}.\\
+\zebra Serialização por sessão & \cd{pg\_advisory\_xact\_lock(runId)} dentro da
+  transação, com \cd{timeout} de \SI{20}{\second}.\\
+Gabarito de curadoria fora do cliente & \arq{motor/sanitizador.ts} remove
+  \cd{lado}, \cd{perfil} e \cd{intensidade} antes de o \emph{feed} sair.\\
+\zebra Geração de conteúdo em lote, assíncrona & \arq{geracao/}: fila em
+  \cd{exp\_01\_generation\_jobs}, \emph{worker} \emph{in-process}, reciclagem de
+  órfão por \cd{updated\_at}.\\
+Momento coletivo controlado pelo professor & \cd{activities.etapa} é um relógio
+  \textbf{coletivo}: o professor abre e fecha, e a tela do aluno trava
+  conforme.\\
+\zebra Reação ao vivo, desligável sem \emph{deploy} & \cd{activities.ia\_ao\_vivo},
+  alterável por \rota{PATCH /atividades/:id/ia}.\\
+Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
+  com precedência explícita e \cd{lado\_origem} gravado para auditoria.\\
+\zebra Casca de aparelho de 375$\times$812 & \cd{viewport} no manifesto \implica{}
+  \cd{DispositivoFrame}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{lstlisting}[language=tsunoo, caption={Precedência da largada (\arq{src/perfis/largada.ts})}, label={lst:largada}]
+// 1. `lado_forcado` — o professor redistribuiu antes da aula. Essa decisao NAO
+//    pode ser desfeita por um recalculo de afinidade no login.
+// 2. Afinidade do perfil — o mecanismo normal.
+// 3. Sorteio balanceado — sem perfil, ou perfil `misto`. Escolhe o lado com
+//    menos runs, para a turma ainda sair perto de 50/50.
+//
+// Existe como modulo proprio porque DUAS rotas precisam da MESMA regra: o
+// primeiro inicio e o reset da sessao. Quando o reset tinha regra propria, ele
+// mantinha o lado antigo — e reaproveitar o aparelho repetia a semente sem
+// ninguem perceber.
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\toprule
+\headrow \thd{Verbo} & \thd{Significado documentado}\\
+\midrule
+\cd{attempted} & entrou no aparelho\\
+\zebra \cd{progressed} & mudou de fase\\
+\cd{completed} & concluiu a missão (dossiê visto)\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-02 --- UnooTube}
+
+Clone de plataforma de vídeo, para o 4º ano. O aluno salva até três vídeos; ao
+terceiro, o ranking desbloqueia; \enquote{adicionar credibilidade} reordena o
+ranking por fontes e é a virada pedagógica.
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Motivo}\\
+\midrule
+Gabarito (\cd{factual}) fora do \emph{bundle} & Vive em
+  \arq{src/unootube/catalogo.ts}. A API corrige e devolve inscritos e fontes ---
+  nunca a resposta (regra 3).\\
+\zebra Ranking com colegas \textbf{fictícios} & Distribuição desenhada para a
+  lição. Não há pontuação de menor real exposta a outro menor (LGPD).\\
+URLs das fontes como \textbf{texto} & O \emph{sandbox} do \cd{iframe} bloqueia
+  \emph{popups}, e o aluno não sai da plataforma.\\
+\zebra Salvos \textbf{congelados} depois de \enquote{adicionar credibilidade} &
+  O \emph{score} da experiência já foi reportado --- nota e estado não podem
+  divergir. Curtir segue livre; reiniciar descongela.\\
+\cd{ranking\_desbloqueado} é \emph{latch} & Remover um salvo depois não tranca o
+  ranking de novo. Estado que anda para trás confunde a criança e o professor.\\
+\zebra Sem \cd{viewport} & Foi desenhada para \emph{desktop}: não entra em casca
+  de aparelho.\\
+Tema escolhido pelo aluno & Perfil \seta{} APARÊNCIA, lembrado em
+  \cd{localStorage} --- que a regra 4 proíbe para \emph{token}, não para
+  preferência de tela.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+A exp-02 é o caso canônico da \textbf{linha da revelação}
+(Capítulo~\ref{cap:ds}): \emph{feed}, cromo, \emph{playlists} e canal usam a
+seção do clone; ranking e os dois diálogos da missão usam a seção da plataforma.
+O \emph{toast} não cruza a linha --- ele fala de dentro da ficção
+(\enquote{Vídeo salvo!}).
+\end{nota}
+
+\section{exp-70 --- Vila do Lume}
+
+Jogo 3D em primeira pessoa, \textbf{transversal} (\cd{series: []}): não pertence a
+ano nenhum. É o \enquote{Ato 1} que alimenta a largada da exp-01.
+
+\subsection{Duas leituras de uma partida, e elas não se tocam}
+
+\begin{regra}
+O retrato Schwartz (\arq{mapeamento.ts}: 10 valores + 2 eixos) lê \emph{escolhas
+com custo} dentro do jogo. A missão \enquote{A Noite Longa}
+(\arq{mensagens.ts}) lê \emph{julgamento sobre 5 mensagens}. A separação é
+\textbf{de medida}: um golpe que custasse fagulha faria a criança que caiu
+aparecer como \emph{menos generosa} no retrato, e nada no relatório mostraria
+isso.
+\end{regra}
+
+\subsection{O servidor recalcula; nunca aceita o perfil do cliente}
+
+\begin{regra}
+O jogo sabe computar o retrato e \textbf{deliberadamente não o envia}:
+\cd{CHAVES\_DE\_PERFIL} em \arq{src/vila/contrato.ts} \emph{recusa} \emph{payload}
+que traga o perfil. É isso que permite reprocessar o histórico quando
+\cd{VERSAO\_MAPEAMENTO} subir (hoje 3, herdada do piloto para os dados serem
+comparáveis).
+\end{regra}
+
+\subsection{\cd{grau} é invariante de API, não regra de tela}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[classe, text width=42mm] (sc) at (0,0)
+    {\etitulo{grau: 'scored'}
+     \nodepart{two}
+     $\geq$ 2 sinais independentes
+     \nodepart{three}
+     \texttt{numero: number}\\
+     entra na média\\
+     \textbf{é publicado com número}};
+
+  \node[classe, text width=42mm, right=8mm of sc] (ind)
+    {\etitulo{grau: 'indicative'}
+     \nodepart{two}
+     exatamente 1 sinal
+     \nodepart{three}
+     \texttt{numero: null}\\
+     descrito em TEXTO\\
+     fora dos eixos e das médias};
+
+  \node[classe, text width=42mm, below=8mm of sc] (ze)
+    {\etitulo{grau: 'zero'}
+     \nodepart{two}
+     teve a chance e não foi
+     \nodepart{three}
+     \texttt{numero: null}\\
+     \textbf{entra na média} como zero de verdade};
+
+  \node[classe, text width=42mm, right=8mm of ze] (no)
+    {\etitulo{grau: 'none'}
+     \nodepart{two}
+     a oportunidade não chegou
+     \nodepart{three}
+     \texttt{numero: null}\\
+     \textbf{sai da conta} --- não é zero};
+
+  \node[actnote, text width=42mm, right=8mm of ind] (n1)
+    {\textbf{Por que o tipo, e não a tela:} no aplicativo de origem esta decisão
+     vivia na camada de interface, e qualquer tela nova que lesse os valores
+     direto podia imprimir \enquote{Poder 100} a partir de um sinal só. O arquivo
+     avisava disso em prosa --- e prosa não é controle.};
+
+  \node[actnote, text width=42mm, right=8mm of no] (n2)
+    {\textbf{A distinção mais importante do modelo} é entre \texttt{zero} e
+     \texttt{none}. Tratar \enquote{não teve chance} como \enquote{escolheu não}
+     faz uma criança parecer ter recusado algo que nunca lhe foi oferecido --- e
+     esse número vai ser lido por um adulto que decide sobre ela.};
+
+  \draw[actnoteline] (ind) -- (n1);
+  \draw[actnoteline] (no) -- (n2);
+
+\end{tikzpicture}}
+\caption[Os quatro graus de medida]{Os quatro graus de medida da exp-70. A API
+  devolve uma união discriminada em que \textbf{só} a variante \cd{scored} tem
+  \cd{numero: number}; as outras têm \cd{null} \emph{por tipo}. O hub fica
+  estruturalmente incapaz de imprimir número onde não há medida.}
+\label{fig:graus}
+\end{figure}
+
+\subsection{A bolha é do servidor}
+
+\begin{regra}
+\rota{POST /vila/sessoes} atribui a bolha A/B/C \textbf{balanceada dentro da
+turma}, persiste em \cd{exp\_70\_bolhas} (estável entre partidas) e devolve os
+cartões --- \textbf{só os desta criança e sem gabarito}.
+
+Antes era \cd{alunoSlot \% 3} no navegador, o que punha no \emph{bundle} a
+condição do próprio instrumento e deixava as três versões legíveis antes da aula.
+
+Nos anos iniciais (1EF--5EF) a bolha B \textbf{não é servida}
+(\enquote{suporte} exige entender o que é suporte) --- regra que só a API pode
+aplicar, porque só ela sabe a série.
+
+O \emph{lock} consultivo por turma não é zelo: a sala clica junto, e sem ele os
+25 caem todos na bolha A.
+\end{regra}
+
+\begin{atencao}
+\cd{cartoesServidos} $\neq$ \enquote{apareceram}. O primeiro é quantos a API
+entregou; o segundo, quantos chegaram a aparecer na partida. Zero aparecidos
+\implica{} a tela diz \enquote{as mensagens não chegaram nesta partida},
+\textbf{nunca} \enquote{ela ignorou tudo} --- é a mesma distinção entre
+\cd{zero} e \cd{none}.
+\end{atencao}
+
+\subsection{Telas do professor}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Conteúdo e regra}\\
+\midrule
+\rota{.../vila-do-lume} & Ficha: para que serve, quem consome o perfil, passo a
+  passo.\\
+\zebra \rota{.../vila-do-lume/guia} & O debate. Projeta as mensagens das
+  \textbf{três} bolhas lado a lado --- é a revelação da missão, e a primeira vez
+  que a turma vê as outras versões.\\
+\rota{.../resultados?turmaId=} & Listagem da turma, com o botão de zerar.\\
+\zebra \rota{.../alunos/:id} & A leitura individual, que abre pelo
+  \textbf{nível}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\begin{enumerate}
+  \item \textbf{O \rota{/guia} precisa saber a TURMA.} Nos anos iniciais a API não
+    serve a bolha B, e uma tela que projetasse as três mandaria o professor
+    esperar a reação de um grupo que a sala dele não tem.
+    \rota{GET /vila/professor/cartoes?turmaId=} filtra pela \emph{mesma} regra de
+    \cd{abrir} (\cd{bolhasElegiveis}).
+  \item \textbf{Os textos vêm da API, nunca de cópia no hub.} Os textos
+    \emph{são} o instrumento, e uma vírgula divergente entre o que o jogo serviu e
+    o que o professor projeta põe a sala discutindo uma mensagem que ninguém
+    recebeu.
+  \item \textbf{A listagem da turma não mostra valor de Schwartz nenhum.}
+    Listagem é ordenável, e uma coluna \enquote{Poder} viraria ranking de
+    crianças. Os valores vivem na tela individual, uma criança por vez, com o
+    grau ao lado.
+  \item \textbf{O agregado abre para gestor; a linha de uma criança, não.} São
+    \emph{controllers} separados, e não um \cd{@Roles} misto com exceção por
+    método.
+  \item \textbf{Zerar a turma apaga as BOLHAS junto.} Rodar de novo com a mesma
+    bolha serviria à criança o mesmo golpe: ela reconhece, e a segunda rodada não
+    mede nada. O que \textbf{não} é tocado é
+    \cd{exp\_01\_exp\_70\_perfis\_importados} --- aquilo pertence à atividade da
+    exp-01, e apagar de lá trocaria os lados de uma aula em andamento.
+\end{enumerate}
+\end{regra}
+
+\subsection{A exceção de ADR: o jogo em JavaScript clássico}
+
+\begin{decisao}
+\arq{apps/experiencias/exp-70-vila-do-lume/public/jogo/} --- cerca de dez mil
+linhas de JavaScript clássico com variáveis globais compartilhadas e
+\arq{three.min.js} vendorizado --- \textbf{fica como está}, e está nos
+\cd{ignores} do ESLint (\adrr{ADR-18}).
+
+É um instrumento com distâncias e tempos calibrados, e o compilador não tem como
+saber que uma refatoração mudou a \emph{medida}. O \emph{shim} (\arq{src/}, TS
+\emph{strict}) é a única porta: \cd{window.VILA}. A rede que substitui o
+\cd{tsc} ali é o \emph{smoke} visual.
+\end{decisao}
+
+\section{exp-90 --- Gerador de plano de aula}
+
+Ferramenta do professor. Detalhada nas Seções~\ref{cap:ia} e~\ref{cap:casosdeuso};
+o que resta registrar é a divisão de responsabilidade de armazenamento.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Artefato} & \thd{Onde vive, e por quê}\\
+\midrule
+\arq{gerado.md} & \emph{Bucket} privado, \textbf{imutável}. É o original da IA:
+  restaurar é voltar a ele.\\
+\zebra \arq{atual.html} & \emph{Bucket} privado. O que o editor salvou,
+  \textbf{sanitizado por \emph{allowlist}}. Versionamento de objetos dá histórico
+  de cada \enquote{Salvar}.\\
+Referências curriculares & PostgreSQL (\cd{exp\_90\_referencias}), como
+  \textbf{texto}. Catálogo do contrato, sem \cd{escola\_id}, fora da RLS.
+  Importadas por \arq{scripts/importar-referencias-plano.mjs} com
+  \env{PLANOS\_IMPORT\_TOKEN}.\\
+\zebra Metadados e estado & PostgreSQL (\cd{exp\_90\_planos}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\env{PLANOS\_IMPORT\_TOKEN} ausente \implica{} a rota de importação responde
+\textbf{503}, não fica aberta. O mesmo vale para \env{PERFIL\_IMPORT\_TOKEN}.
+\end{atencao}
+
+\section{exp-91 --- Check-in de bem-estar}
+
+Ferramenta do professor, detalhada na Seção~\ref{cap:ia}. O que resta registrar é
+a mecânica de microdoses e a decisão de escopo de leitura.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Mecânica} & \thd{Implementação}\\
+\midrule
+21 itens em 7 \emph{check-ins} & \cd{ordem\_itens} é a permutação de 1..21
+  sorteada na abertura do ciclo; cada \emph{check-in} leva 3 itens, um de cada
+  subescala.\\
+\zebra Um \emph{check-in} por dia & \cd{UNIQUE (escola\_id, professor\_id, dia)},
+  com \cd{dia} no fuso \cd{America/Sao\_Paulo}.\\
+Ciclo expira em 21 dias & \cd{expira\_em}; ciclo não fechado vira
+  \cd{expirado}, sem pontuação.\\
+\zebra Resumo leve para o \emph{card} do hub & \rota{GET /bemestar/resumo}, sem
+  IA. É o que a home do professor lê --- e a home não pode depender de uma
+  chamada de modelo.\\
+Apagar tudo & \rota{DELETE /bemestar/dados}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{Nenhuma rota de gestor nem agregado} (\adrr{ADR-10}). Dado de saúde
+(LGPD art.~11) com RLS \emph{e} posse por \cd{professor\_id} em toda
+\emph{query}; só o professor lê. Uma visão agregada e anonimizada para a rede é
+decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
+\cd{GROUP BY}.
+\end{decisao}
+
+\section{Como criar uma experiência nova}
+
+\begin{lstlisting}[language=bashunoo, caption={O caminho completo}, label={lst:novaexp}]
+# 0. Uma branch por experiencia, com o nome do slug
+git switch -c exp-07-fracoes
+
+# 1. Scaffolding do _template (copia e ajusta nomes)
+pnpm new:exp exp-07-fracoes
+
+# 2. Implementar em src/App.tsx+
+#    - auth, api e telemetria: SOMENTE pela SDK
+#    - interface: SOMENTE o @unooria/design-system, pela ponte packages/ui,
+#      na secao do clone que a experiencia imita
+#    Falta componente? Ele nasce no repo storybook-unooria e chega por versao
+#    nova — nunca como arquivo local.
+
+# 3. Declarar capabilities e verbos no public/experiencia.json
+
+# 4. Documentar verbo/objeto de telemetria no README da experiencia
+
+# 5. Build gera dist/ 100% estatico. Testar embedado:
+pnpm --filter @edu/exp-07-fracoes dev     # porta nova em lib/experiencias-dev.ts
+# e abrir a bancada do hub:
+#   http://localhost:3000/dev-embed?src=http://localhost:5178
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Checklist} & \thd{Verificação}\\
+\midrule
+Módulo de domínio na API & Necessário sempre que houver gabarito, estado de
+  missão ou visão de professor. Prefixo minúsculo igual ao slug
+  (\arq{src/<slug>/}), com \arq{catalogo.ts} + \arq{regras.ts} + \emph{service}
+  com \cd{comTenancy} + \emph{controllers} por papel.\\
+\zebra Tabelas & Prefixo \cd{exp\_NN\_}, \cd{escola\_id NOT NULL} + RLS.\\
+Porta de \emph{dev} & Registrada em \arq{apps/hub/lib/experiencias-dev.ts}.\\
+\zebra \cd{allowedHosts} do Vite & Deve incluir \cd{host.docker.internal},
+  senão o hub em contêiner não lê o manifesto.\\
+\cd{viewport} & Só se a experiência exigir casca de aparelho.\\
+\zebra \cd{permissoes} & Só o que o \cd{iframe} realmente precisa.\\
+Mídia $>$ \SI{2}{\mega\byte} & Vai para o \emph{bucket} de \emph{assets},
+  referenciada por variável de \emph{build}. Nunca no \emph{git}, nunca no
+  \emph{bundle}.\\
+\zebra \emph{Smoke} visual & Um \emph{walkthrough} em \arq{scripts/} se a
+  experiência tem tela nova no hub.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+O \arq{\_template} continua \textbf{cru de propósito}: o que ele não traz, o
+\emph{design system} traz. Um \emph{template} rico em componentes locais seria a
+primeira violação da regra de interface, replicada 48 vezes.
+\end{nota}

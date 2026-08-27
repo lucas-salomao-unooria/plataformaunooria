@@ -1,0 +1,261 @@
+% ===========================================================================
+%  2 — Contexto de negocio e restricoes
+% ===========================================================================
+\chapter{Contexto de negócio e restrições}
+\label{cap:contexto}
+
+\section{Modelo de negócio}
+
+A Plataforma Unooria é vendida \textbf{B2G}: o cliente é um ente federativo ---
+uma secretaria estadual ou municipal de educação --- e não a escola nem a
+família. A consequência arquitetural imediata é que a \emph{unidade comercial} e
+a \emph{unidade de uso} são diferentes, e o desenho precisa acomodar as duas.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Nível} & \thd{Entidade} & \thd{Isolamento}\\
+\midrule
+1 & \cd{contrato} (rede) & \textbf{Físico}: \emph{stack} GCP inteira e
+  separada, provisionada por um \textit{module} Terraform por contrato. Projeto,
+  \emph{buckets}, banco, \emph{Load Balancer} e contas de serviço próprios.\\
+\zebra 2 & \cd{escola} & \textbf{Lógico}: \cd{escola\_id} obrigatório em toda
+  tabela de dado de aluno, mais \textit{Row-Level Security} no PostgreSQL. Cem
+  ou mais escolas por \emph{stack}.\\
+3 & \cd{turma} / \cd{aluno} & \textbf{Autorização}: \emph{claims} do JWT
+  (\cd{turma\_id}, \cd{perfil}) verificados na API por \cd{RolesGuard} e por
+  filtro explícito nas \emph{queries}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{Uma \emph{stack} por contrato, escolas por RLS} (\adrr{ADR-04}).
+A alternativa \enquote{uma \emph{stack} por escola} daria isolamento físico
+perfeito e transformaria a empresa em operadora de cem infraestruturas por
+contrato --- inviável para uma pessoa. A alternativa oposta, uma \emph{stack}
+única para todos os contratos, tornaria um incidente em um município um
+incidente em todos, e não sobreviveria à primeira análise jurídica de um edital.
+O ponto escolhido separa fisicamente o que é contratual e logicamente o que é
+operacional.
+\end{decisao}
+
+\section{Escala alvo}
+
+\begin{tabularx}{\linewidth}{@{}L{50mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Grandeza} & \thd{Alvo por contrato} & \thd{Consequência}\\
+\midrule
+Alunos cadastrados & \textasciitilde\num{10000} & Cabe folgadamente numa
+  instância pequena de Cloud SQL.\\
+\zebra Simultâneos no pico (8h) & \num{2000}--\num{4000} &
+  \cd{min-instances} no Cloud Run para eliminar \emph{cold start}; \emph{pooler}
+  de conexões obrigatório.\\
+Escolas por \emph{stack} & 100+ & RLS e \cd{escola\_id} em todo lugar; nenhuma
+  \emph{query} cruza escolas fora de \cd{admin-contrato}.\\
+\zebra Experiências no catálogo alvo & 48 & Custo marginal de publicação
+  \emph{deve} ser próximo de zero \implica{} \emph{bundle} estático.\\
+Faixa etária & 1º EF ao 3º EM & Instrumentos e interface variam por série; regras
+  de instrumento mudam nos anos iniciais.\\
+\bottomrule
+\end{tabularx}
+
+O perfil de carga é o dado mais importante desta tabela e merece ser dito por
+extenso: \textbf{o tráfego não é distribuído, é uma parede}. Entre 7h50 e 8h10 de
+um dia letivo, uma fração grande da rede faz \emph{login} e abre uma experiência
+quase ao mesmo tempo. O desenho responde a isso com três medidas independentes:
+
+\begin{enumerate}
+  \item O grosso dos \emph{bytes} do pico --- os \emph{bundles} das experiências
+    e as imagens geradas --- não passa pela aplicação. Sai da CDN, com o caminho
+    versionado e, portanto, imutável e cacheável indefinidamente
+    (\adrr{ADR-01}).
+  \item Os serviços têm instâncias mínimas provisionadas, então o pico não paga
+    inicialização de contêiner nem \emph{warm-up} de \textit{pool} do Prisma.
+  \item A telemetria de alto volume não é síncrona: vai para o Pub/Sub e é
+    gravada em lote, fora do caminho da requisição do aluno
+    (Capítulo~\ref{cap:telemetria}).
+\end{enumerate}
+
+\section{Restrições de projeto}
+\label{sec:restricoes}
+
+\begin{tabularx}{\linewidth}{@{}L{15mm}L{40mm}X@{}}
+\toprule
+\headrow \thd{ID} & \thd{Restrição} & \thd{Origem e consequência}\\
+\midrule
+\drr{RE-01} & Uma pessoa desenvolve e opera &
+  Restrição de recurso. Nenhuma peça de infraestrutura sem gargalo medido;
+  preferência sistemática por absorver capacidade na API existente em vez de
+  criar serviço novo.\\
+\zebra \drr{RE-02} & Produção em novembro de 2026 &
+  Restrição de prazo. Ordem de implementação por milestones (M0--M6); o que não
+  bloqueia a primeira rede fica documentado como evolução
+  (Capítulo~\ref{cap:riscos}).\\
+\drr{RE-03} & Identidade centralizada em WSO2 IS &
+  Exigência do cliente e da estratégia multi-contrato. A aplicação nunca conhece
+  o WSO2: conhece OIDC (\adrr{ADR-03}).\\
+\zebra \drr{RE-04} & Google Cloud Platform &
+  Decisão de plataforma. Serviços gerenciados preferidos a orquestração própria;
+  Cloud Run em vez de GKE.\\
+\drr{RE-05} & Interface exclusivamente do \emph{design system} &
+  Decisão de produto e de marca. Nenhum componente de UI nasce neste
+  repositório; o que falta nasce no \arq{storybook-unooria}
+  (Capítulo~\ref{cap:ds}).\\
+\zebra \drr{RE-06} & Dados de menores &
+  LGPD art. 14 e orientação da ANPD~\cite{lgpd2018,anpdcriancas2024}. Governa
+  telemetria, log, retenção e \emph{o que o relatório pode afirmar}.\\
+\drr{RE-07} & Dado de saúde de professor &
+  LGPD art. 11 (dado sensível). Determina a ausência deliberada de visão de
+  gestor na exp-91.\\
+\bottomrule
+\end{tabularx}
+
+\section{Os \emph{drivers} arquiteturais}
+\label{sec:drivers}
+
+Um \emph{driver} arquitetural é uma exigência que, se ignorada, invalida a
+solução --- não a piora, invalida. Foram sete.
+
+\begin{tabularx}{\linewidth}{@{}L{15mm}L{38mm}X@{}}
+\toprule
+\headrow \thd{ID} & \thd{Driver} & \thd{Consequência arquitetural}\\
+\midrule
+\drr{DR-01} & Isolamento verificável entre escolas &
+  \cd{escola\_id} \cd{NOT NULL} + \cd{FORCE ROW LEVEL SECURITY} em toda tabela
+  de dado de aluno; acesso ao banco por uma \emph{única} porta
+  (\cd{PrismaService.comTenancy}) que arma a política antes de qualquer
+  trabalho. \emph{Teste} de \textit{tenancy} com \emph{role} sem
+  \textit{ownership} (\arq{tests/tenancy.spec.ts}).\\
+\zebra \drr{DR-02} & Custo marginal quase nulo por experiência &
+  Experiência é \emph{bundle} estático versionado em \emph{bucket}, nunca um
+  serviço. \emph{Rollback} por ponteiro (\cd{versaoAtiva}), não por
+  \emph{deploy} (\adrr{ADR-01}).\\
+\drr{DR-03} & Correção e pontuação não podem estar no cliente &
+  Gabarito, correção e qualquer nota são \emph{server-side}, num módulo de
+  domínio por experiência na API. O \emph{bundle} nunca recebe a resposta certa
+  (\adrr{ADR-09}).\\
+\zebra \drr{DR-04} & Troca de provedor de identidade sem tocar código &
+  Validação de \emph{token} por OIDC genérico: \env{OIDC\_ISSUER} e
+  \env{OIDC\_JWKS\_URI}. Hoje o emissor é o próprio hub; amanhã é o WSO2, e o
+  \cd{OidcGuard} não muda (\adrr{ADR-03}).\\
+\drr{DR-05} & IA com custo previsível e sem segredo no cliente &
+  Toda chamada de IA passa por \arq{apps/api/src/ai}, com quota diária
+  persistida \emph{por perfil} verificada antes da chamada. Nenhuma chave, URL
+  interna ou \emph{prompt} de sistema em \emph{bundle} (\adrr{ADR-07}).\\
+\zebra \drr{DR-06} & O pico da manhã não pode derrubar o transacional &
+  Dois canais de telemetria com garantias diferentes: o operacional é síncrono e
+  transacional; o analítico é assíncrono via Pub/Sub, com \emph{insert}
+  multi-linha e tabela particionada por mês (\adrr{ADR-06}, \adrr{ADR-14}).\\
+\drr{DR-07} & O relatório não pode produzir rótulo sobre uma criança &
+  Invariantes \emph{de tipo}, não de tela: valor com uma única fonte de medida
+  não recebe número; \enquote{não teve oportunidade} nunca é lido como
+  \enquote{escolheu não}; listagem de turma não exibe valor psicométrico
+  (\adrr{ADR-12}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\drr{DR-07} é incomum como \emph{driver} arquitetural, porque parece uma questão
+de produto. Ele está aqui porque foi implementado como \emph{estrutura}: a API
+devolve uma união discriminada em que só a variante \cd{scored} tem
+\cd{numero: number}; as outras têm \cd{null} \emph{por tipo}. O hub fica
+estruturalmente incapaz de imprimir \enquote{Poder 100} a partir de um único
+sinal --- ele nunca recebe esse número, e o compilador nem deixa procurá-lo.
+Prosa num comentário não é controle; um tipo é.
+\end{nota}
+
+\section{Interessados}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Interessado} & \thd{O que precisa} & \thd{Onde é atendido}\\
+\midrule
+Aluno & Entrar, escolher a missão, jogar sem atrito, ver o próprio resultado &
+  Hub do aluno (\rota{/aluno}), \rota{/exp/*}, dossiê da experiência\\
+\zebra Professor & Preparar a aula, conduzir o momento coletivo, ler a turma,
+  gerar plano de aula, cuidar do próprio bem-estar &
+  \rota{/professor/*}, exp-90, exp-91, relatórios por turma\\
+Gestor escolar & Cadastrar e manter usuários da escola &
+  \rota{/admin/usuarios}, importação CSV\\
+\zebra Secretaria (rede) & Visão agregada da rede, sem identificar criança &
+  \rota{/analise/*} (papel \cd{admin-contrato})\\
+Encarregado de dados (DPO) & Saber o que é coletado, por quanto tempo, quem lê,
+  e onde o dado é processado &
+  Capítulos~\ref{cap:tenancy} e~\ref{cap:telemetria}; \adrr{ADR-11},
+  \adrr{ADR-13}\\
+\zebra Desenvolvedor & Adicionar experiência sem reaprender a plataforma &
+  SDK, \arq{\_template}, \emph{scaffolding} (\cd{pnpm new:exp}),
+  Capítulo~\ref{cap:experiencias}\\
+Operação & Subir, observar e reverter sem adivinhar &
+  CI/CD (Capítulo~\ref{cap:entrega}), Apêndice~\ref{ap:operacao}\\
+\bottomrule
+\end{tabularx}
+
+\section{As sete regras invioláveis}
+\label{sec:regras-inviolaveis}
+
+Estas regras estão registradas em \arq{CLAUDE.md} e são normativas: uma
+implementação que as viole está errada, independentemente de passar nos testes.
+Cada uma tem o capítulo onde é detalhada e verificada.
+
+\begin{tabularx}{\linewidth}{@{}L{8mm}X L{22mm}@{}}
+\toprule
+\headrow \thd{\#} & \thd{Regra} & \thd{Detalhe em}\\
+\midrule
+1 & Toda \emph{query} SQL é escopada por \cd{escola\_id} (e \cd{aluno\_id}
+  quando aplicável). Tabelas de dado de aluno têm \cd{escola\_id NOT NULL} +
+  RLS. Nenhuma \emph{query} atravessa escolas, exceto em rotas
+  \cd{admin-contrato}. & Cap.~\ref{cap:tenancy}\\
+\zebra 2 & Nenhum segredo em \emph{bundle} de cliente: sem chave de API, sem
+  \emph{prompt} de sistema, sem URL interna. IA só pela API. &
+  Cap.~\ref{cap:ia}\\
+3 & Resposta correta, correção e pontuação que vale nota são
+  \emph{server-side}. O cliente envia a resposta do aluno; a API corrige. &
+  Cap.~\ref{cap:experiencias}\\
+\zebra 4 & O \emph{token} é obtido pelo hub via OIDC e repassado à experiência
+  por \cd{postMessage} com \cd{targetOrigin} explícito --- nunca \cd{"*"}. A
+  experiência mantém o \emph{token} \emph{só em memória}. &
+  Cap.~\ref{cap:contratos}\\
+5 & IA tem quota diária por usuário \emph{e por perfil}, e \emph{rate limit}.
+  Nenhuma chamada de IA sem passar pelo \cd{QuotaService}: \cd{temSaldo} antes,
+  \cd{consumir} depois. & Cap.~\ref{cap:ia}\\
+\zebra 6 & Dados de menores: nenhuma PII em log em texto claro. A telemetria
+  carrega \cd{aluno\_id} opaco, nunca nome ou \emph{e-mail}. &
+  Cap.~\ref{cap:telemetria}\\
+7 & Nenhuma migração remove \cd{escola\_id} ou afrouxa RLS. Renomeações usam
+  \cd{RENAME}, nunca \cd{DROP}/\cd{CREATE}. & Cap.~\ref{cap:dados}\\
+\bottomrule
+\end{tabularx}
+
+\section{Fora de escopo, deliberadamente}
+
+O que \emph{não} entra é parte do desenho. As exclusões abaixo são decisões, não
+omissões, e cada uma tem um gatilho explícito de reavaliação
+(Capítulo~\ref{cap:riscos}).
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Descartado} & \thd{Motivo e gatilho de reavaliação}\\
+\midrule
+Kubernetes (GKE) & Cloud Run entrega \emph{autoscaling}, TLS e revisões sem
+  \emph{control plane} para operar. Gatilho: necessidade de
+  \emph{workload} de longa duração ou topologia de rede que o Cloud Run não
+  expresse.\\
+\zebra AlloyDB & A robustez vem de HA + PITR + \emph{pooler}, não do
+  \emph{engine}. Ambos são PostgreSQL; migrar depois é trivial (\adrr{ADR-05}).\\
+Microsserviço por experiência & Seriam 48 serviços para operar, cada um com
+  \emph{deploy}, log e escala próprios --- para servir arquivos estáticos
+  (\adrr{ADR-01}).\\
+\zebra Redis como \emph{buffer} de telemetria & Quem amortece o pico já é o
+  Pub/Sub, e ele é \emph{durável}: um \emph{buffer} em memória perde os eventos
+  do processo que morre antes do \emph{flush}. O gargalo medido era o laço de
+  \cd{INSERT}, e ele foi corrigido (\adrr{ADR-14}).\\
+BigQuery para o canal analítico & Nenhum relatório atual lê
+  \cd{telemetria\_eventos}; seria uma segunda plataforma de dados para operar
+  sem resolver problema existente (\adrr{ADR-14}).\\
+\zebra Multi-região & Uma rede é geograficamente concentrada. Gatilho: exigência
+  contratual de continuidade regional.\\
+\emph{Worker} dedicado de telemetria & Substituído por \emph{push
+  subscription} para a própria API --- uma peça a menos para operar. Gatilho:
+  volume que justifique isolar o consumo.\\
+\bottomrule
+\end{tabularx}

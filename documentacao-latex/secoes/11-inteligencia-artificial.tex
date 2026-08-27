@@ -1,0 +1,372 @@
+% ===========================================================================
+%  11 — Inteligencia artificial
+% ===========================================================================
+\chapter{Camada de inteligência artificial}
+\label{cap:ia}
+
+A IA generativa é usada em quatro lugares da plataforma, com propósitos e riscos
+muito diferentes. Este capítulo descreve a camada única por onde todos passam, a
+economia de \emph{tokens} que a sustenta e os \emph{guardrails} que impedem cada
+uso de produzir dano.
+
+\section{Onde a IA é usada}
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Uso} & \thd{Onde} & \thd{O que gera, e o que NÃO gera}\\
+\midrule
+Geração de \emph{feed} & exp-01, \arq{src/geracao/} &
+  Personas fictícias, \emph{captions}, \emph{hashtags} e arte dos posts. O
+  \emph{mix} (quantos posts de cada lado, perfil e intensidade) é decidido pelo
+  \textbf{servidor}; a IA só preenche.\\
+\zebra Reação ao vivo & exp-01, \arq{src/motor/} &
+  Comentários de persona reagindo ao que o aluno publicou. Desligável pelo
+  professor no meio da aula, sem \emph{deploy} (\cd{ia\_ao\_vivo}).\\
+Plano de aula & exp-90, \arq{src/planos/} &
+  Um plano anual completo em Markdown, a partir do currículo da rede e das
+  unidades do ano. \textbf{Não} decide nota nem avalia aluno.\\
+\zebra Entorno do \emph{check-in} & exp-91, \arq{src/bemestar/} &
+  Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
+  item do DASS-21, nunca vê pontuação, nome ou escola.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Correção, pontuação e gabarito nunca são gerados por IA.} A IA produz
+\emph{conteúdo} e \emph{texto de entorno}. Tudo que vale nota, classifica ou mede
+é código determinístico e testável --- e roda no servidor
+(Capítulo~\ref{cap:experiencias}).
+\end{regra}
+
+\section{A camada única}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \draw[c4zone] (0.6,0.6) rectangle (15.4,-8.6);
+  \node[c4boundarylbl, fill=unooSurface] at (1.0,0.75) {API --- \arq{apps/api/src}};
+
+  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp-01}};
+  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp-01}};
+  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{exp-90}};
+  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{exp-91}};
+  \node[c4component, text width=20mm] (a) at (14.6,-2.0) {\rota{POST /ai/gerar}\desc{SDK}};
+
+  \draw[c4boundary, draw=unooGreen!70] (1.4,-3.0) rectangle (14.6,-7.9);
+  \node[c4boundarylbl, fill=unooSurface, text=unooGreen!60!black] at (1.8,-2.85)
+    {\arq{src/ai/} --- a ÚNICA porta};
+
+  \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (q) at (4.0,-4.0)
+    {\textbf{\cd{QuotaService}}\desc{\cd{temSaldo(escola, usuario, perfil)}
+     ANTES; \cd{consumir(tokens)} DEPOIS}};
+
+  \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (pr) at (8.4,-4.0)
+    {\textbf{\cd{AiProvider}}\desc{\cd{generate}, \cd{generateJson},
+     \cd{generateImage}}};
+
+  \node[c4component, text width=26mm] (pp) at (12.4,-4.0)
+    {\arq{prompts.ts}\desc{\emph{prompt} de sistema; nunca sai daqui}};
+
+  \node[c4component, text width=30mm] (vx) at (5.0,-6.6)
+    {\arq{vertex.provider.ts}\desc{\emph{default}; ADC + REST}};
+  \node[c4component, text width=30mm, fill=unooPaper, draw=unooAxis] (mk) at (10.4,-6.6)
+    {\arq{mock.provider.ts}\desc{testes e \emph{dev} sem GCP}};
+
+  \node[c4db, text width=24mm] (ia) at (0.0,-4.4) {\cd{ia\_uso\_diario}};
+  \node[c4systemext, text width=26mm, minimum height=13mm] (vertex) at (14.4,-9.8)
+    {\textbf{Vertex AI}\desc{endpoint \cd{global}}};
+
+  \draw[c4rel] (g.south) -- (2.4,-3.4);
+  \draw[c4rel] (m.south) -- (5.6,-3.4);
+  \draw[c4rel] (p.south) -- (8.8,-3.4);
+  \draw[c4rel] (b.south) -- (12.0,-3.4);
+  \draw[c4rel] (a.west) -- (13.4,-2.0) -- (13.4,-3.4);
+  \draw[c4relbi] (q.west) -- (ia.east);
+  \draw[c4rel] (q.east) -- (pr.west) node[cxlabel, midway, above]{só com saldo};
+  \draw[c4reldash] (pr.east) -- (pp.west);
+  \draw[c4rel] (pr.south) -- (vx.north east);
+  \draw[c4reldash] (pr.south) -- (mk.north west);
+  \draw[c4rel] (vx.south east) -- (10.0,-9.8) -- (vertex.west)
+    node[cxlabel, pos=0.55, above]{HTTPS + ADC};
+
+\end{tikzpicture}}
+\caption[Camada de IA]{A camada de IA. Quatro módulos de domínio e uma rota de
+  SDK entram; todos passam por \cd{QuotaService} antes do \emph{provider}.
+  Nenhum módulo fora da fronteira verde conhece o \emph{vendor} do modelo.}
+\label{fig:camada-ia}
+\end{figure}
+
+\section{Quota por perfil}
+
+\begin{regra}
+\textbf{Nunca exponha chamada de IA sem passar pelo \cd{QuotaService}:}
+\cd{temSaldo(escola, usuario, perfil)} \textbf{antes}, \cd{consumir} \textbf{depois}.
+\end{regra}
+
+\begin{lstlisting}[language=tsunoo, caption={Incremento atômico da quota (\arq{src/ai/quota.service.ts})}, label={lst:quota}]
+/** Incremento atomico; devolve o total do dia depois do consumo. */
+async consumir(escolaId: string, usuarioId: string, tokens: number): Promise<number> {
+  const dia = this.hoje();
+  return this.prisma.comTenancy(async (tx) => {
+    const linhas = await tx.$queryRaw<Array<{ tokens_usados: number }>>`
+      INSERT INTO ia_uso_diario (escola_id, usuario_id, dia, tokens_usados)
+      VALUES (${escolaId}, ${usuarioId}, ${dia}, ${tokens})
+      ON CONFLICT (escola_id, usuario_id, dia)
+        DO UPDATE SET tokens_usados = ia_uso_diario.tokens_usados + ${tokens}
+      RETURNING tokens_usados`;
+    return Number(linhas[0]?.tokens_usados ?? tokens);
+  }, escolaId);
+}
+\end{lstlisting}
+
+\begin{decisao}
+\textbf{A quota é persistida, não um \cd{Map} em memória.} O \cd{Map} que existia
+antes tinha dois furos: zerava a cada \emph{restart} e era \emph{por instância}
+--- com \cd{min-instances: 3} no Cloud Run, a mesma criança tinha três quotas.
+Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
+\end{decisao}
+
+\begin{decisao}
+\textbf{O limite depende do PERFIL.} O aluno conversa com o tutor, e
+\num{20000} \emph{tokens}/dia bastam. O professor gera planos anuais em que só o
+\emph{prompt} --- currículo da rede mais material didático --- passa de
+\num{200000} \emph{tokens}: o teto dele é outro
+(\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, \emph{default}
+\num{2000000}/dia, o que dá seis a nove planos). Um teto único obrigaria a
+escolher entre \enquote{aluno com quota absurda} e \enquote{professor que não
+consegue gerar um plano}.
+\end{decisao}
+
+\begin{nota}
+A verificação acontece \textbf{antes} de chamar o \emph{provider}. Gastar
+\emph{token} e depois recusar seria pagar pelo que não se entrega. Há também
+\emph{rate limit} por usuário (\arq{src/comum/rate-limit.ts}), que é uma proteção
+diferente: a quota limita custo diário, o \emph{rate limit} limita rajada.
+\end{nota}
+
+\section{Credencial: ADC, nunca chave de API}
+
+\begin{regra}
+O \emph{provider} obtém o \emph{token} com \cd{google-auth-library}, que resolve
+na mesma ordem nos três ambientes:
+\begin{enumerate}
+  \item \env{GOOGLE\_APPLICATION\_CREDENTIALS};
+  \item o arquivo de \cd{gcloud auth application-default login};
+  \item o \emph{metadata server} (Cloud Run).
+\end{enumerate}
+Não existe variável de ambiente para chave de API em nenhum lugar do projeto ---
+nem em \arq{.env.example}.
+\end{regra}
+
+\begin{atencao}
+Antes dessa mudança havia \textbf{só} o \emph{metadata server}, e por isso
+\emph{nenhuma} chamada de IA funcionava fora do Cloud Run --- nem no \emph{host},
+nem no contêiner, onde \cd{metadata.google.internal} não resolve. Em
+desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a exp-90 devolvia
+um plano \textbf{falso}, o que é pior que falhar: parecia funcionar. Os dois
+\emph{compose} montam o ADC do \emph{host} em \arq{/adc} somente leitura; em
+Cloud Run a conta de serviço do serviço já \emph{é} a credencial, e ela precisa de
+\cd{roles/aiplatform.user}. Sem o papel, toda geração falha com 403 do Vertex.
+\end{atencao}
+
+\section{Modelo, região e o custo de escolher}
+
+\begin{decisao}
+\textbf{Modelo \cd{gemini-3.6-flash}, localização \cd{global}} --- para texto
+\emph{e} para o plano de aula (decisão de 2026-08, \adrr{ADR-16}).
+
+Medido no projeto do contrato: o \cd{3.6-flash} dá \textbf{404} em
+\cd{southamerica-east1}, \cd{us-east1} e \cd{us-central1}. Só o endpoint
+\cd{global} (sem \emph{host} regional) o serve.
+
+A consequência é explícita e foi aceita: \textbf{o tráfego de IA sai de São
+Paulo, inclusive o do aluno}, e isso precisa constar do contrato e do DPA da
+rede. Voltar para \env{VERTEX\_LOCATION=southamerica-east1} é possível a qualquer
+momento, mas exige trocar \textbf{também} o modelo pelo que a região publica ---
+a família 2.5, já que a 2.0 saiu do catálogo e a 3.x nunca esteve lá. As duas
+variáveis mudam juntas, ou a geração para de funcionar.
+\end{decisao}
+
+\subsection{Imagem: proporção pedida ao modelo, não recortada depois}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Fato} & \thd{Consequência}\\
+\midrule
+O \emph{default} anterior era \cd{gemini-2.0-flash-exp} & Esse modelo \textbf{não
+  existe mais} em lugar nenhum (404 na região \emph{e} em \cd{global}), e por isso
+  \emph{toda} geração de imagem caía no \emph{fallback} procedural --- sem erro
+  visível para o professor.\\
+\zebra Modelo atual: \cd{gemini-3.1-flash-image} & Responde em \cd{global}.
+  Alternativas verificadas: \cd{gemini-2.5-flash-image} e
+  \cd{gemini-3-pro-image}.\\
+A proporção \cd{4:5} é PEDIDA no \cd{imageConfig} & Sem isso, o 3.1 devolve
+  1408$\times$768, e o \cd{cover} do \cd{AssetsService} (1080$\times$1350)
+  descarta mais da metade da largura.\\
+\zebra O modelo aceita 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9 e 21:9
+  pelo MESMO custo em \emph{tokens} & Experiência com outro formato deve
+  \textbf{pedir} o formato, não recortar depois.\\
+\bottomrule
+\end{tabularx}
+
+\section{Raciocínio conta como saída}
+
+\begin{atencao}
+Nos modelos das famílias 2.5 e 3.x, os \emph{tokens de pensamento} saem do
+\cd{maxOutputTokens}. Com pensamento livre, o plano anual voltava
+\textbf{vazio}, com \cd{finishReason: MAX\_TOKENS} --- o modelo gastava todo o
+orçamento pensando e não sobrava saída.
+
+\env{VERTEX\_THINKING\_BUDGET} (\emph{default} \cd{0}, desligado) mantém a
+paridade com o aplicativo de origem, que usava um modelo sem essa etapa;
+\cd{-1} volta ao dinâmico.
+\end{atencao}
+
+\begin{regra}
+\textbf{Quem gera texto longo checa \cd{AiResult.finishReason}.}
+\cd{MAX\_TOKENS} significa \emph{conteúdo cortado}, e isso é \textbf{erro} --- não
+resultado parcial aceitável. Entregar meio plano de aula a um professor é pior que
+dizer que falhou.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Parâmetro} & \thd{Valor e motivo}\\
+\midrule
+\cd{MAX\_TOKENS\_SAIDA} do plano & \textbf{64k}, não os 32k do aplicativo de
+  origem (que eram o limite do modelo usado lá). Medido: com o material real
+  (currículo da rede + as 4 unidades do ano) o plano é cortado em 32k e o
+  professor recebe \enquote{o plano ficou grande demais} sem plano nenhum. A
+  família 2.5 entrega até 65k; 64k dá a folga sem chegar ao limite duro.\\
+\zebra \cd{AiRequest.modelo} & \cd{"padrao"} ou \cd{"longo"}. O \cd{longo} mapeia
+  para \env{VERTEX\_MODEL\_LONGO}. Quem chama \textbf{não sabe} qual modelo é ---
+  a família é neutra de \emph{vendor}.\\
+\bottomrule
+\end{tabularx}
+
+\section{\emph{Guardrails} do \emph{check-in} de bem-estar}
+
+Este é o uso de IA com maior risco de dano na plataforma, e por isso o mais
+cercado. O instrumento é o DASS-21~\cite{lovibond1995dass}, na versão brasileira
+validada~\cite{vignola2014dass21}, em domínio público.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[actstart] (ini) at (0,0) {};
+  \node[action, text width=32mm, right=8mm of ini] (abre)
+    {\rota{GET /bemestar/hoje}\\3 itens da permutação do ciclo};
+
+  \node[decision, text width=28mm, right=10mm of abre] (sinal)
+    {sinal de apoio? item 17 ou 21 $\geq$ 2, ou termo de risco};
+
+  \node[actionerr, text width=34mm, below=9mm of sinal] (fixo)
+    {texto FIXO de apoio\\CVV 188, SAMU 192, CAPS/UBS\\
+     \textbf{a IA não é chamada}\\\cd{origem\_texto = 'seguranca'}};
+
+  \node[decision, text width=26mm, right=12mm of sinal] (saldo)
+    {tem saldo e \emph{provider}?};
+
+  \node[action, text width=32mm, below=9mm of saldo] (ia)
+    {IA gera abertura, pergunta aberta e acolhimento\\
+     recebe só: dia da semana, mês, nº do \emph{check-in},\\
+     texto livre delimitado};
+
+  \node[decision, text width=26mm, below=9mm of ia] (val)
+    {\cd{validarTextoDaIa}?};
+
+  \node[actionsys, text width=32mm, left=12mm of val] (fall)
+    {texto FIXO do catálogo\\\cd{origem\_texto = 'fallback'}};
+
+  \node[actionok, text width=30mm, below=9mm of val] (ok)
+    {\cd{origem\_texto = 'ia'}};
+
+  \node[actend, left=12mm of ok] (fim) {};
+
+  \draw[flow] (ini) -- (abre);
+  \draw[flow] (abre) -- (sinal);
+  \draw[flow] (sinal) -- (fixo) node[flowlbl, pos=0.5]{sim};
+  \draw[flow] (sinal) -- (saldo) node[flowlbl, pos=0.5]{não};
+  \draw[flow] (saldo) -- (ia) node[flowlbl, pos=0.5]{sim};
+  \draw[flow] (saldo.north) to[out=60,in=20] (fall.north east);
+  \draw[flow] (ia) -- (val);
+  \draw[flow] (val) -- (fall) node[flowlbl, pos=0.5]{barrado};
+  \draw[flow] (val) -- (ok) node[flowlbl, pos=0.5]{passou};
+  \draw[flow] (fall.south) -- (fall |- ok.north) -- (ok.west);
+  \draw[flow] (fixo.south) -- (fixo |- fim.north) -- (fim.north);
+  \draw[flow] (ok) -- (fim);
+
+\end{tikzpicture}}
+\caption[Guardrails do check-in de bem-estar]{Os \emph{guardrails} do
+  \emph{check-in}. Três caminhos levam a texto seguro, e em nenhum deles o
+  \emph{check-in} deixa de abrir: se a IA falha, é barrada ou não há saldo, entra
+  o texto fixo do catálogo; se há sinal de apoio, a IA nem é chamada.}
+\label{fig:guardrails-bemestar}
+\end{figure}
+
+\begin{regra}
+\begin{enumerate}
+  \item \textbf{Os 21 itens são fixos e \emph{verbatim}} (\arq{catalogo.ts}). A IA
+    \textbf{nunca} reescreve um item: reformular quebra a validação psicométrica e
+    invalida as faixas de corte publicadas.
+  \item \textbf{O que a IA gera é o entorno}, e cada texto passa por
+    \cd{regras.validarTextoDaIa}: sem vocabulário clínico, sem ordens, sem
+    promessas, sem linguagem de gestão, sem \emph{links}, com limite de tamanho.
+  \item \textbf{Barrado, sem saldo ou sem \emph{provider} \implica{} texto fixo do
+    catálogo.} O \emph{check-in} nunca deixa de abrir.
+  \item \textbf{A IA nunca recebe} nome, escola, pontuação ou faixa --- só dia da
+    semana, mês, número do \emph{check-in} e o texto livre, \emph{delimitado como
+    conteúdo}.
+  \item \textbf{Sinal de apoio bypassa a IA}: item 17 ou 21 $\geq 2$, ou termo de
+    risco no texto \implica{} mensagem \textbf{fixa} de apoio, e a IA não é
+    chamada.
+  \item \textbf{A correção é \emph{server-side}}: ao sétimo \emph{check-in} a API
+    soma por subescala ($\times 2$) e classifica pelas faixas publicadas
+    (\cd{pontuar} e \cd{faixaDe} em \arq{regras.ts}).
+\end{enumerate}
+\end{regra}
+
+\begin{nota}
+O texto livre do professor \emph{vai} ao Vertex (endpoint \cd{global}), delimitado
+como conteúdo e sem nenhum outro contexto identificável. Isso consta do DPA junto
+com o resto do uso de IA --- e é a razão de a Seção~\ref{cap:tenancy} tratar
+localidade de processamento como item de conformidade, não de arquitetura.
+\end{nota}
+
+\section{Variáveis de configuração da IA}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AI\_PROVIDER} & \cd{vertex} & \cd{vertex} ou \cd{mock}.\\
+\zebra \env{VERTEX\_PROJECT\_ID} & --- & \textbf{Obrigatória} com
+  \cd{AI\_PROVIDER=vertex}: o \emph{boot} recusa sem ela. Sem projeto, a URL
+  viraria \cd{.../projects/undefined/...} e o erro só apareceria na primeira
+  geração.\\
+\env{VERTEX\_LOCATION} & \cd{global} & Ver \adrr{ADR-16}.\\
+\zebra \env{VERTEX\_MODEL} & \cd{gemini-3.6-flash} & Modelo do dia a dia.\\
+\env{VERTEX\_MODEL\_LONGO} & \cd{gemini-3.6-flash} & Modelo de saída longa. A
+  variável separada existe para trocar um sem tocar no outro.\\
+\zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} &
+  Quem trocar precisa conferir a proporção devolvida.\\
+\env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
+  $>0$ teto.\\
+\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} & \num{20000} & Quota diária do
+  aluno.\\
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
+  professor, gestor e admin.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{Validação de \emph{env} no \emph{boot}, com Zod.} \env{VERTEX\_PROJECT\_ID}
+ausente com \cd{AI\_PROVIDER=vertex} derruba o processo na subida, com mensagem
+que diz o que fazer (\enquote{em \emph{dev}, use \cd{AI\_PROVIDER=mock} para subir
+sem GCP}). A alternativa --- descobrir na primeira geração de um professor real
+--- é um incidente em vez de um erro de configuração.
+\end{decisao}

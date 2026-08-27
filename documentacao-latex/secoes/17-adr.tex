@@ -1,0 +1,597 @@
+% ===========================================================================
+%  17 — Registro de decisoes arquiteturais
+% ===========================================================================
+\chapter{Registro de decisões arquiteturais}
+\label{cap:adr}
+
+Cada decisão abaixo segue a forma de um ADR~\cite{nygard2011adr}: contexto,
+decisão, alternativas descartadas, consequências --- inclusive as ruins --- e o
+gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
+reavaliação não é decisão registrada: é justificativa.
+
+\section{Índice}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}X L{18mm} L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Decisão} & \thd{Data} & \thd{Estado}\\
+\midrule
+\adrr{ADR-01} & Experiências como \emph{bundles} estáticos, não serviços & 2026-08 & Aceita\\
+\zebra \adrr{ADR-02} & \emph{Monorepo} único (pnpm + Turborepo) & 2026-08 & Aceita\\
+\adrr{ADR-03} & Autenticação por OIDC genérico & 2026-08 & Aceita\\
+\zebra \adrr{ADR-04} & Uma \emph{stack} por contrato; escolas por RLS & 2026-08 & Aceita\\
+\adrr{ADR-05} & Cloud SQL HA, não AlloyDB & 2026-08 & Aceita\\
+\zebra \adrr{ADR-06} & Pub/Sub para telemetria desde o início & 2026-08 & Aceita\\
+\adrr{ADR-07} & IA atrás de um \emph{gateway} na própria API & 2026-08 & Aceita\\
+\zebra \adrr{ADR-08} & RLS forçada e uma porta única de banco & 2026-08-24 & Aceita\\
+\adrr{ADR-09} & Domínio por experiência na API; gabarito \emph{server-side} & 2026-08-24 & Aceita\\
+\zebra \adrr{ADR-10} & Bem-estar: DASS-21 fixo, IA só no entorno, sem visão de gestor & 2026-08-25 & Aceita\\
+\adrr{ADR-11} & Telemetria sem PII e vocabulário fechado no \emph{payload} & 2026-08-26 & Aceita\\
+\zebra \adrr{ADR-12} & \cd{grau} como invariante de API, não regra de tela & 2026-08-26 & Aceita\\
+\adrr{ADR-13} & Retenção sem prazo declarado, em troca de reprocessamento & 2026-08-26 & Aceita\\
+\zebra \adrr{ADR-14} & Telemetria no PostgreSQL particionado; sem BigQuery, sem Redis & 2026-08-27 & Aceita\\
+\adrr{ADR-15} & O hub assina os \emph{tokens} enquanto o IdP central não entra & 2026-08 & Aceita, transitória\\
+\zebra \adrr{ADR-16} & Credencial por ADC; modelo \cd{3.6-flash} em \cd{global} & 2026-08 & Aceita, com custo\\
+\adrr{ADR-17} & \emph{Claim} atômico em vez de fila externa & 2026-08 & Aceita\\
+\zebra \adrr{ADR-18} & Exceções registradas: jogo em JS clássico, exp-70 fora do DS & 2026-08-26 & Aceita\\
+\adrr{ADR-19} & \emph{Design system} externo como fonte única de interface & 2026-08 & Aceita\\
+\zebra \adrr{ADR-20} & Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_} & 2026-08-27 & Aceita\\
+\adrr{ADR-21} & \emph{Push subscription} para a própria API, sem \emph{worker} & 2026-08 & Aceita\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\section{ADR-01 --- Experiências como \emph{bundles} estáticos}
+
+\begin{especificacao}{Contexto}
+O catálogo alvo é de 48 experiências, cada uma uma aplicação React independente.
+O pico de carga é uma parede às oito da manhã, e o grosso dos \emph{bytes} é o
+código e a mídia dessas aplicações. Uma pessoa opera tudo.
+\end{especificacao}
+
+\textbf{Decisão.} Cada experiência é um \emph{bundle} Vite 100\% estático,
+publicado em \arq{gs://\{contrato\}-exp/\{expId\}/\{versao\}/} e servido pela
+CDN. Não há processo, porta, nem \emph{scaling} por experiência. O hub monta a URL
+do \cd{iframe} com \cd{versaoAtiva} do manifesto.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Microsserviço por experiência}: 48 serviços com \emph{deploy}, log,
+    escala e \emph{alerting} próprios --- para servir arquivos estáticos.
+  \item \emph{Rotas do hub monolítico}: cada experiência entraria no \emph{bundle}
+    do hub, e o hub cresceria sem limite. Uma mudança em qualquer experiência
+    exigiria \emph{deploy} do hub inteiro.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item Custo marginal de publicação $\approx$ armazenamento + tráfego de CDN.
+  \item O caminho carrega a versão \implica{} o \emph{bundle} é imutável e pode
+    ficar um ano na borda.
+  \item \textbf{\emph{Rollback} é um \cd{UPDATE}}: trocar \cd{versaoAtiva}. Sem
+    \emph{build}, sem imagem, sem \emph{deploy}. É a operação de emergência mais
+    rápida da plataforma.
+  \item \emph{Ruim}: a experiência não tem \emph{backend} próprio, então toda
+    lógica de domínio dela vive na API --- o que concentra responsabilidade num
+    serviço só (mitigado por \adrr{ADR-09}).
+  \item \emph{Ruim}: um \emph{bundle} publicado não é reconstruído quando a API
+    muda, o que torna os contratos do Capítulo~\ref{cap:contratos} rígidos.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Uma experiência que precise de execução no
+servidor por natureza --- multiplayer em tempo real com autoridade de servidor, ou
+processamento pesado por sessão.
+
+% ---------------------------------------------------------------------------
+\section{ADR-02 --- \emph{Monorepo} único}
+
+\textbf{Contexto.} A SDK é consumida por 48 aplicações. O \emph{design system} é
+externo, mas a ponte é interna.
+
+\textbf{Decisão.} Um \emph{monorepo} com pnpm \emph{workspaces} e
+Turborepo~\cite{turborepo2026}. \cd{apps/*}, \cd{apps/experiencias/*},
+\cd{packages/*}.
+
+\textbf{Alternativa descartada.} Repositório por experiência, com a SDK publicada
+em npm. Uma mudança na SDK só seria testada contra as 48 aplicações depois de
+publicada --- e a incompatibilidade apareceria num \emph{bundle} servido a alunos
+semanas depois.
+
+\textbf{Consequências.} Mudança na SDK testa tudo no mesmo \emph{pull request};
+o CI builda só o que mudou (\cd{--filter='...[HEAD\^{}]'}). \emph{Ruim}: o
+repositório cresce, e \cd{pnpm install} completo é lento.
+
+\textbf{Gatilho.} Estúdio externo produzindo experiência --- aí a experiência sai
+para repositório próprio e passa a consumir a SDK publicada.
+
+% ---------------------------------------------------------------------------
+\section{ADR-03 --- Autenticação por OIDC genérico}
+
+\textbf{Contexto.} O WSO2 Identity Server é exigência do cliente e da estratégia
+multi-contrato: é único para várias redes.
+
+\textbf{Decisão.} A aplicação \textbf{não conhece o WSO2}: conhece OIDC. A API
+valida \emph{token} por \env{OIDC\_ISSUER}, \env{OIDC\_JWKS\_URI} e
+\env{OIDC\_AUDIENCE}. Trocar de provedor de identidade é trocar essas
+variáveis.
+
+\textbf{Alternativa descartada.} SDK do WSO2 na aplicação. Amarraria o código a um
+produto que pode mudar por decisão comercial, e tornaria o teste local dependente
+de um servidor Java em \emph{bootstrap}.
+
+\textbf{Consequências.} \env{OIDC\_ISSUER} e \env{OIDC\_JWKS\_URI} vão como
+\emph{env} em texto plano (não são segredo: são URLs públicas), derivadas de
+\cd{hub\_domain} --- e é isso que garante que o \cd{iss} do \emph{token} e o
+esperado pela API \textbf{não podem} divergir.
+
+\textbf{Gatilho.} Nenhum previsto. É a decisão mais estável do conjunto.
+
+% ---------------------------------------------------------------------------
+\section{ADR-04 --- Uma \emph{stack} por contrato; escolas por RLS}
+
+\textbf{Contexto.} Cada contrato é uma relação jurídica com um ente federativo;
+cada contrato tem 100+ escolas.
+
+\textbf{Decisão.} Isolamento \textbf{físico} entre contratos (\emph{stack} GCP
+inteira, por \emph{module} Terraform) e \textbf{lógico} entre escolas
+(\cd{escola\_id} + RLS).
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Uma \emph{stack} por escola}: cem infraestruturas por contrato,
+    operadas por uma pessoa. E o custo fixo de uma escola pequena passaria a ser o
+    de uma rede.
+  \item \emph{Uma \emph{stack} para todos os contratos}: um incidente num
+    município seria um incidente em todos, e o desenho não sobreviveria à primeira
+    análise jurídica de um edital.
+\end{itemize}
+
+\textbf{Consequências.} \cd{escola\_id} em toda tabela de dado de aluno, RLS
+forçada, e \cd{admin-contrato} como única exceção cross-escola. \emph{Ruim}: cada
+contrato novo é uma \emph{stack} nova para provisionar, monitorar e faturar.
+
+\textbf{Gatilho.} Exigência contratual de isolamento físico \emph{por escola} ---
+o que mudaria o modelo comercial, não só a arquitetura.
+
+% ---------------------------------------------------------------------------
+\section{ADR-05 --- Cloud SQL HA, não AlloyDB}
+
+\textbf{Decisão.} PostgreSQL gerenciado (Cloud SQL) com HA, PITR e \emph{pooler}
+de conexões obrigatório.
+
+\textbf{Alternativa descartada.} AlloyDB. \textbf{Motivo:} a robustez que este
+sistema precisa vem de HA + PITR + \emph{pooler}, não do \emph{engine}. Ambos são
+PostgreSQL, então migrar depois é trivial se a carga justificar.
+
+\textbf{Consequências.} O \emph{pooler} é \textbf{obrigatório}: o
+\emph{autoscaling} do Cloud Run multiplica \emph{pools} do Prisma e estouraria
+\cd{max\_connections}. E o banco só tem IP privado --- o que obriga a migração a
+rodar como Cloud Run Job dentro da VPC.
+
+\textbf{Gatilho.} Carga medida que sature uma instância de Cloud SQL com
+\emph{pooler} bem dimensionado.
+
+% ---------------------------------------------------------------------------
+\section{ADR-06 --- Pub/Sub para telemetria desde o início}
+
+\textbf{Contexto.} No pico, quatro mil alunos simultâneos gerando evento a cada
+poucos segundos.
+
+\textbf{Decisão.} O canal \emph{analítico} de telemetria vai para o Pub/Sub.
+\textbf{O resto da aplicação fala PostgreSQL direto} --- inclusive o canal
+\emph{operacional} do motor.
+
+\textbf{Alternativa descartada.} Tudo síncrono no PostgreSQL. Colocaria um
+\cd{INSERT} sincronizado por interação de aluno dentro da mesma transação que
+serve a tela.
+
+\textbf{Consequências.} Uma peça de infraestrutura a mais --- e é a única exceção
+declarada à regra \enquote{nada de fila sem gargalo medido}, junto com
+\adrr{ADR-07}. Em troca: o pico é amortecido por um \emph{buffer} \textbf{durável}
+(ver \adrr{ADR-14}).
+
+\textbf{Gatilho.} Nenhum. É decisão tomada de antemão e mantida.
+
+% ---------------------------------------------------------------------------
+\section{ADR-07 --- IA atrás de um \emph{gateway} na própria API}
+
+\textbf{Decisão.} Toda chamada de IA passa por \arq{apps/api/src/ai}, com
+interface neutra de \emph{vendor}, \emph{prompt} de sistema no servidor, quota
+diária persistida por perfil e \emph{rate limit}. Pré-gerar em lote sempre que a
+pedagogia permitir.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Chamada direta do \emph{bundle}}: exporia chave e \emph{prompt} de
+    sistema, e tornaria a quota incontrolável.
+  \item \emph{Serviço de IA separado}: um Cloud Run a mais para operar, sem
+    ganho --- a API já tem CPU sempre alocada.
+\end{itemize}
+
+\textbf{Consequências.} Nenhum módulo fora de \arq{src/ai} conhece o
+\emph{vendor}; trocar de provedor é criar um arquivo. \emph{Ruim}: a API carrega o
+custo de latência das gerações longas, o que obriga o padrão 202 +
+\emph{polling}.
+
+\textbf{Gatilho.} Volume de IA que justifique isolar o consumo, ou requisito de
+GPU própria.
+
+% ---------------------------------------------------------------------------
+\section{ADR-08 --- RLS forçada e uma porta única de banco}
+
+\textbf{Decisão.} \cd{ENABLE} \emph{e} \cd{FORCE ROW LEVEL SECURITY} em toda
+tabela de dado de aluno; acesso ao banco \textbf{exclusivamente} por
+\cd{PrismaService.comTenancy}, que abre transação e executa
+\cd{set\_config('app.escola\_id', ..., true)} antes do trabalho.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Apenas filtro na aplicação}: uma \emph{query} nova que esqueça o
+    filtro devolve dado de outra escola, e ninguém percebe.
+  \item \emph{Apenas RLS}: um erro de migração desliga a proteção inteira.
+  \item \emph{Duas \emph{roles}} (dona para migração, sem \emph{ownership} para a
+    aplicação): desnecessário com \cd{FORCE}, que sujeita o próprio dono às
+    políticas.
+\end{itemize}
+
+\textbf{Consequências.} Duas trancas independentes. O terceiro argumento
+\cd{true} do \cd{set\_config} é \textbf{crítico}: local à transação, então a
+conexão volta limpa ao \emph{pool}. \cd{comTenancy} sem escola \textbf{lança} ---
+não consulta sem filtro. \emph{Ruim}: toda leitura, inclusive trivial, abre
+transação.
+
+\textbf{Gatilho.} Nenhum. É a decisão que sustenta o produto.
+
+% ---------------------------------------------------------------------------
+\section{ADR-09 --- Domínio por experiência na API; gabarito \emph{server-side}}
+
+\textbf{Contexto.} A exp-02 (2026-08-24) foi a primeira experiência com gabarito.
+
+\textbf{Decisão.} \textbf{Não há módulo genérico de avaliação.} Cada experiência
+com lógica de domínio ganha um módulo próprio na API (\arq{src/<slug>/}), com
+\arq{catalogo.ts} + \arq{regras.ts} + \emph{service} + \emph{controllers} por
+papel. O gabarito nunca vai ao \emph{bundle}; a API corrige.
+
+\textbf{Alternativa descartada.} Um módulo genérico de avaliação com
+\enquote{itens} e \enquote{respostas corretas}. Uma API genérica de correção
+convida a mandar a resposta certa junto --- e cada experiência tem uma mecânica
+que não cabe num formato comum.
+
+\textbf{Consequências.} Decisões concretas herdadas desta ADR: ranking com
+colegas \textbf{fictícios} (sem pontuação de menor real exposta a outro menor);
+URLs das fontes como \textbf{texto} (o \emph{sandbox} bloqueia \emph{popups}, e o
+aluno não sai da plataforma); salvos \textbf{congelados} depois da conclusão
+(nota e estado não podem divergir); aluno roteado pela \textbf{série}.
+\emph{Ruim}: um módulo novo por experiência --- 48 módulos no limite.
+
+\textbf{Gatilho.} Se três experiências consecutivas tiverem mecânica idêntica,
+extrair o comum. Nunca antes.
+
+% ---------------------------------------------------------------------------
+\section{ADR-10 --- Bem-estar: instrumento fixo, IA só no entorno, sem gestor}
+
+\textbf{Contexto.} 2026-08-25. Um \emph{check-in} de bem-estar \emph{do
+professor}, com o DASS-21.
+
+\textbf{Decisão.} O instrumento entra \textbf{\emph{verbatim}} (versão brasileira
+de Vignola \& Tucci~\cite{vignola2014dass21}) em microdoses de três itens por dia.
+A IA gera abertura, pergunta aberta e acolhimento, atrás de
+\cd{regras.validarTextoDaIa}, com \emph{fallback} fixo, e \textbf{nunca vê}
+pontuação, nome ou escola. Correção \emph{server-side} ao sétimo \emph{check-in}.
+Item sentinela (17 ou 21 $\geq 2$) ou termo de risco \implica{} mensagem fixa de
+apoio, sem IA.
+
+\textbf{Por ser dado de saúde (LGPD art.~11): não há visão de gestor nem agregado
+por escola.} RLS + posse por \cd{professor\_id}, e o próprio professor apaga tudo.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{IA reescrevendo os itens} para \enquote{soar mais natural}:
+    quebra a validação psicométrica e invalida as faixas de corte.
+  \item \emph{Questionário completo de uma vez}: engajamento vem de custar menos
+    de um minuto, não de ser curto uma vez.
+  \item \emph{Painel agregado para a rede}: sai de um \cd{GROUP BY} e é
+    exatamente o que não se deve fazer com dado de saúde de uma equipe pequena,
+    onde \emph{n} baixo reidentifica.
+\end{itemize}
+
+\textbf{Consequências.} O \emph{check-in} nunca deixa de abrir. \emph{Ruim}: a
+rede não tem nenhuma visão de bem-estar dos professores --- o que é uma perda
+real de informação de gestão, aceita.
+
+\textbf{Gatilho.} Uma visão agregada e anonimizada é decisão futura, com DPA e
+\emph{k}-anonimato explícito.
+
+% ---------------------------------------------------------------------------
+\section{ADR-11 --- Telemetria sem PII e vocabulário fechado}
+
+\textbf{Decisão.} A telemetria carrega \cd{aluno\_id} \textbf{opaco}, e a
+identidade é derivada do \emph{token} no servidor --- o que o cliente enviou nesses
+campos é descartado. Em \cd{exp\_70\_sessoes.payload}, \cd{eventos[].dados} aceita
+apenas número, booleano ou \emph{string} de um \textbf{vocabulário fechado}.
+
+\textbf{Alternativa descartada.} Campo \cd{texto} livre no \emph{payload} (que
+existia). Era o único canal de texto arbitrário --- e o caminho por onde o nome de
+uma criança chegaria a um JSONB de longa duração.
+
+\textbf{Consequências.} Trava \textbf{estrutural}, não lista de proibidos: não há
+como enviar texto arbitrário, então não há como revisar mal. \emph{Ruim}: um
+evento novo que precise de rótulo textual exige acrescentar o rótulo ao
+vocabulário --- ou seja, exige uma decisão explícita.
+
+\textbf{Gatilho.} Nenhum.
+
+% ---------------------------------------------------------------------------
+\section{ADR-12 --- \cd{grau} como invariante de API}
+
+\textbf{Contexto.} O mapeamento comportamento \seta{} valor de Schwartz é
+\textbf{hipótese de \emph{design}, não instrumento validado}: Schwartz se valida
+por questionário (PVQ para adultos, PBVS-C para
+crianças~\cite{schwartz2012overview,doring2010pbvsc}), não por telemetria de jogo.
+
+\textbf{Decisão.} A API devolve uma \textbf{união discriminada} em que só a
+variante \cd{scored} tem \cd{numero: number}; as outras têm \cd{null}
+\textbf{por tipo}. E a distinção entre \cd{zero} (\enquote{teve a chance e não
+foi}, entra na média) e \cd{none} (\enquote{a oportunidade não chegou}, sai da
+conta) é preservada em todo o caminho.
+
+\textbf{Alternativa descartada.} Manter a decisão na camada de interface, com um
+comentário avisando. Foi assim no aplicativo de origem, e qualquer tela nova podia
+imprimir \enquote{Poder 100} a partir de um sinal só. \textbf{Prosa não é
+controle; um tipo é.}
+
+\textbf{Consequências.} O hub fica estruturalmente incapaz de desenhar o número
+errado --- ele nunca o recebe, e o compilador nem deixa procurar. Decisões
+herdadas: o relatório abre pelo \textbf{nível} do instrumento antes do desempenho;
+a listagem de turma \textbf{não} mostra valor psicométrico (listagem é ordenável,
+e uma coluna \enquote{Poder} viraria ranking de crianças);
+\cd{cartoesServidos} $\neq$ \enquote{apareceram}.
+
+\textbf{Gatilho.} Se um instrumento validado por questionário for adotado, a
+união ganha uma variante --- não perde a distinção.
+
+% ---------------------------------------------------------------------------
+\section{ADR-13 --- Retenção sem prazo declarado}
+
+\textbf{Contexto.} 2026-08-26. Havia \cd{expires\_at} de 90 dias no \emph{schema}
+da exp-70 e \textbf{nenhuma rotina que o cumprisse}.
+
+\textbf{Decisão.} A coluna \textbf{saiu}
+(\arq{20260826170000\_vila\_sem\_prazo}). Não há prazo de retenção declarado para
+\cd{exp\_70\_sessoes} nem para \cd{telemetria\_eventos}.
+
+\textbf{Alternativa descartada.} Manter a coluna. \textbf{Coluna de prazo que
+ninguém lê é pior que prazo nenhum}, porque quem lê o \emph{schema} acredita nela
+--- é a mesma armadilha de um campo \cd{consentimento\_em} que existia no
+aplicativo de origem: a regra saiu do código, a coluna ficou, e todo mundo
+continuou acreditando.
+
+\textbf{Consequências.} Ganha-se o \textbf{reprocessamento}, que é requisito real
+do instrumento: \cd{payload} é a única fonte para recomputar o perfil quando
+\cd{VERSAO\_MAPEAMENTO} subir, e 90 dias matavam exatamente a comparação entre
+duas gerações do mapeamento. \emph{Ruim, e é explícito}: dado comportamental de
+menor fica armazenado indefinidamente, e isso é uma exposição de conformidade em
+aberto.
+
+\textbf{Gatilho.} Exigência contratual de prazo. Quando vier, ele volta
+\textbf{junto com a rotina que o cumpre} --- e, com a tabela particionada
+(\adrr{ADR-14}), essa rotina é \cd{DROP TABLE particoes.<mês>}. A pergunta é da
+plataforma inteira, não de um módulo.
+
+% ---------------------------------------------------------------------------
+\section{ADR-14 --- Telemetria no PostgreSQL particionado}
+
+\textbf{Contexto.} 2026-08-27. Avaliou-se mandar o canal analítico para o BigQuery
+por \emph{subscription} nativa do Pub/Sub. Mediu-se também o custo real do
+caminho de gravação.
+
+\textbf{Decisão.} O canal analítico grava no \textbf{mesmo PostgreSQL}, com
+\cd{INSERT} multi-linha e \cd{telemetria\_eventos} particionada por mês.
+\textbf{Sem BigQuery. Sem Redis.}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{BigQuery}: os relatórios do professor \textbf{não leem}
+    \cd{telemetria\_eventos} (leem \cd{exp\_01\_events}), então não resolvia
+    problema nenhum hoje --- e criava uma segunda plataforma de dados para
+    operar.
+  \item \emph{Redis como \emph{buffer}}: quem amortece o pico já é o Pub/Sub, e
+    ele é \textbf{durável}. Um \emph{buffer} em memória perde os eventos do
+    processo que morre antes do \emph{flush}, ou seja, reintroduz a perda que o
+    Pub/Sub eliminou. \textbf{O gargalo medido era o laço de \cd{INSERT}} --- um
+    lote de 50 custava 50 \emph{round-trips}, o que no pico dava
+    $\sim$800 \cd{INSERT}/s; em lote, $\sim$16/s.
+\end{itemize}
+
+\textbf{Consequências.} A chave primária é composta \cd{(event\_id, ts)}, porque o
+PostgreSQL exige a chave de partição em todo índice único --- e a \emph{dedupe}
+segue correta, porque a reentrega traz o mesmo \cd{ts}. As partições vivem no
+\emph{schema} \cd{particoes}, fora do alcance do Prisma. Há partição
+\cd{DEFAULT} como rede de segurança, porque evento recusado é telemetria perdida
+em silêncio. \emph{Ruim}: as faixas vão até 2028-12 e \textbf{não há \emph{job}
+agendado} --- criar partição é item de operação.
+
+\textbf{Gatilho.} Volume que sature o PostgreSQL, ou um relatório que
+efetivamente precise de análise sobre \cd{telemetria\_eventos} em escala.
+
+% ---------------------------------------------------------------------------
+\section{ADR-15 --- O hub assina os \emph{tokens} de experiência}
+
+\textbf{Contexto.} O IdP central (WSO2) tem ciclo de vida próprio e não estava
+pronto quando as experiências precisaram de \emph{token}.
+
+\textbf{Decisão.} O \textbf{hub} assina os \emph{tokens} de experiência (RS256,
+TTL 15 min, \emph{claims} \cd{\{sub, escola\_id, turma\_id?, perfil\}}, \cd{aud}
+\cd{plataforma-api}) e serve o JWKS em \rota{/.well-known/jwks.json}. A API valida
+por \env{OIDC\_ISSUER} e \env{OIDC\_JWKS\_URI}.
+
+\textbf{Alternativa descartada.} Esperar o WSO2. Faria toda a plataforma depender
+de um servidor Java em \emph{bootstrap} para que qualquer experiência pudesse ser
+testada.
+
+\textbf{Consequências.} Trocar para o WSO2 é trocar duas variáveis --- o
+\cd{OidcGuard} não muda uma linha. \textbf{Efeito colateral útil:} o CI usa a
+mesma chave para assinar o \emph{token} de cinco minutos do \emph{upsert} de
+manifesto, o que é o motivo de as experiências serem publicadas \emph{depois} do
+hub. \emph{Ruim}: o hub acumula responsabilidade de emissor, e
+\env{TOKEN\_SIGNING\_KEY\_PEM} passa a ser obrigatória em produção.
+
+\textbf{Gatilho.} WSO2 pronto e configurado por contrato. A ADR é
+\textbf{transitória por desenho}.
+
+% ---------------------------------------------------------------------------
+\section{ADR-16 --- ADC como credencial; modelo \emph{versus} região}
+
+\textbf{Decisão, parte 1 --- credencial.} O \emph{provider} de IA obtém o
+\emph{token} com \cd{google-auth-library}, que resolve
+\env{GOOGLE\_APPLICATION\_CREDENTIALS} \seta{} arquivo de
+\cd{gcloud auth application-default login} \seta{} \emph{metadata server}.
+\textbf{Nunca chave de API} --- não existe variável para ela no projeto.
+
+\textbf{Contexto.} Antes havia \emph{só} o \emph{metadata server}, e por isso
+\emph{nenhuma} chamada de IA funcionava fora do Cloud Run. Em desenvolvimento a
+API ficava presa em \cd{mock} e a exp-90 devolvia um plano \textbf{falso} --- o
+que é pior que falhar, porque parecia funcionar.
+
+\textbf{Decisão, parte 2 --- modelo e região.} Modelo \cd{gemini-3.6-flash},
+localização \cd{global}, para texto \emph{e} para plano de aula.
+
+\textbf{Medição.} O \cd{3.6-flash} dá \textbf{404} em \cd{southamerica-east1},
+\cd{us-east1} e \cd{us-central1}. Só o endpoint \cd{global} o serve.
+
+\textbf{Consequência aceita, e ela é séria.} \textbf{O tráfego de IA sai de São
+Paulo, inclusive o do aluno}, e isso precisa constar do contrato e do DPA da rede.
+
+\textbf{Gatilho.} Exigência de residência de dados. Voltar à região é trocar
+\env{VERTEX\_LOCATION} \textbf{e} o modelo, juntos --- a região publica a família
+2.5, não a 3.x.
+
+\textbf{Decisões relacionadas.} \env{VERTEX\_THINKING\_BUDGET} = \cd{0}: nos
+modelos 2.5 e 3.x os \emph{tokens} de pensamento saem do \cd{maxOutputTokens}, e
+com pensamento livre o plano anual voltava \textbf{vazio} com
+\cd{finishReason: MAX\_TOKENS}. Teto de saída do plano em \textbf{64k}, não 32k.
+Modelo de imagem \cd{gemini-3.1-flash-image}, com proporção \cd{4:5}
+\textbf{pedida} ao modelo --- o \emph{default} anterior não existe mais, e sem
+pedir a proporção o \cd{cover} descarta metade da largura.
+
+% ---------------------------------------------------------------------------
+\section{ADR-17 --- \emph{Claim} atômico em vez de fila externa}
+
+\textbf{Contexto.} Duas rotinas longas e assíncronas: geração de \emph{feed}
+(exp-01) e geração de plano de aula (exp-90). Duas ou três instâncias do Cloud Run
+rodando ao mesmo tempo.
+
+\textbf{Decisão.} \emph{Claim} atômico na própria linha
+(\cd{UPDATE ... WHERE status = 'pendente'}, com contagem de linhas afetadas) e
+\emph{worker} \emph{in-process}. Para o motor de \emph{feed}, \emph{lock}
+consultivo por \cd{run} (\cd{pg\_advisory\_xact\_lock}).
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Fila externa} (Pub/Sub, Cloud Tasks): peça a mais para operar, para
+    um problema que um \cd{UPDATE} condicionado resolve.
+  \item \emph{Sem \emph{lock} no motor}: dois pedidos simultâneos de bloco (duas
+    abas, \emph{reload} no meio do \emph{fetch}, \emph{retry}) se sobrescreviam e
+    um bloco inteiro desaparecia do estado --- posts entregues voltavam a ser
+    servidos e a série por bloco do dossiê ficava corrompida.
+\end{itemize}
+
+\textbf{Consequências.} A API precisa de \textbf{CPU sempre alocada} e
+\cd{min-instances} $\geq$ 1, porque há trabalho fora do ciclo de requisição.
+Retomada de órfã é disparada pelo \emph{polling} do painel, não por
+\emph{scheduler}. \emph{Ruim}: se todas as instâncias morrerem e ninguém abrir o
+painel, uma geração órfã fica parada até que alguém abra.
+
+\textbf{Gatilho.} Primeira reclamação real de geração parada.
+
+% ---------------------------------------------------------------------------
+\section{ADR-18 --- Exceções registradas}
+
+\textbf{Contexto.} Duas regras da plataforma têm exceção, e exceção não
+registrada vira precedente.
+
+\textbf{Exceção 1 --- \cd{any} e ESLint.}
+\arq{apps/experiencias/exp-70-vila-do-lume/public/jogo/} --- cerca de dez mil
+linhas de JavaScript clássico com globais compartilhadas e \arq{three.min.js}
+vendorizado --- fica como está, e está nos \cd{ignores} do ESLint.
+\textbf{Motivo:} é um instrumento com distâncias e tempos calibrados, e o
+compilador não tem como saber que uma refatoração mudou a \emph{medida}. O
+\emph{shim} (\arq{src/}, TS \emph{strict}) é a única porta: \cd{window.VILA}. A
+rede que substitui o \cd{tsc} ali é o \emph{smoke} visual.
+
+\textbf{Exceção 2 --- \emph{design system}.} A exp-70 não usa o
+\cd{@unooria/design-system}. \textbf{Motivo:} é jogo em \emph{canvas} 3D, sem DOM
+de interface.
+
+\textbf{Consequências.} As duas exceções são \textbf{nominais} --- valem para uma
+pasta e uma experiência, não para uma categoria. Qualquer outra experiência que
+peça a mesma exceção precisa de uma ADR nova.
+
+% ---------------------------------------------------------------------------
+\section{ADR-19 --- \emph{Design system} externo como fonte única de interface}
+
+\textbf{Decisão.} Todo elemento de interface vem do \cd{@unooria/design-system},
+consumido pela ponte \arq{packages/ui}. Componente que falta \textbf{nasce no
+repositório do \emph{design system}} e chega por versão nova --- não como arquivo
+local.
+
+\textbf{Alternativa descartada.} Componentes locais em \arq{packages/ui}. Com 48
+experiências, um componente local viraria 48 divergências --- e a fidelidade ao
+clone é o que a experiência \emph{mede}.
+
+\textbf{Consequências.} Duas famílias no mesmo pacote que \textbf{nunca se
+cruzam}; a linha entre elas é a \textbf{revelação}, não o arquivo. Compensação
+local só como exceção marcada no CSS, com pedido correspondente ao repositório do
+\emph{design system}. \emph{Ruim}: uma lacuna do pacote bloqueia a experiência até
+a próxima publicação --- e \cd{\^{}0.1.x} não sobe \emph{minor}, então atualizar é
+ato deliberado.
+
+\textbf{Gatilho.} Nenhum. É decisão de produto e de marca, não de engenharia.
+
+% ---------------------------------------------------------------------------
+\section{ADR-20 --- Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_}}
+
+\textbf{Decisão.} Um banco, um \emph{schema} lógico. Tabela de experiência leva
+\cd{exp\_NN\_}; tabela de plataforma fica sem prefixo; tabela que é contrato entre
+duas experiências carrega \textbf{os dois números}
+(\cd{exp\_01\_exp\_70\_perfis\_importados}).
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Banco por experiência}: elas \textbf{não} são isoladas --- o perfil
+    da Vila alimenta a largada do Instanooria, e o PostgreSQL não faz \cd{JOIN}
+    entre bancos. E um \emph{pool} do Prisma por experiência estouraria
+    \cd{max\_connections}.
+  \item \emph{\emph{Schema} por experiência}: a única coisa que daria além do
+    prefixo é fronteira de \cd{GRANT}, e existe \textbf{uma} \emph{role} de
+    aplicação.
+\end{itemize}
+
+\textbf{Consequências.} Migração de referência
+\arq{20260827090000\_tabelas\_por\_experiencia}: \cd{RENAME}, nunca
+\cd{DROP}/\cd{CREATE}, renomeando \emph{constraints}, índices e políticas junto.
+Duas armadilhas registradas lá: \cd{FOR ... IN SELECT} sobre o catálogo
+\textbf{relê o que o próprio laço alterou}, e \cd{RENAME CONSTRAINT} renomeia
+\textbf{também} o índice que a sustenta --- as duas produzem
+\cd{exp\_01\_exp\_01\_...\_pkey}.
+
+\textbf{Gatilho.} Necessidade de fronteira de \cd{GRANT} por experiência --- o
+que só faria sentido com mais de uma \emph{role} de aplicação.
+
+% ---------------------------------------------------------------------------
+\section{ADR-21 --- \emph{Push subscription} para a própria API}
+
+\textbf{Decisão.} O canal analítico é consumido por \emph{push subscription}
+direto num \emph{endpoint} da própria API (\rota{POST /telemetry/ingest}), e não
+por um \cd{\{contrato\}-telemetry-worker} separado.
+
+\textbf{Alternativa descartada.} \emph{Worker} dedicado, como previa o desenho
+original de infraestrutura. Seria um Cloud Run a mais com \emph{deploy}, log,
+escala e \emph{alerting} próprios.
+
+\textbf{Consequências.} A rota grava dado de aluno e \textbf{não} passa pelo
+\cd{OidcGuard}, então precisa de tranca própria: \cd{PubSubPushGuard} verifica
+emissor Google, \cd{aud} e \cd{email} da conta de serviço de \emph{push}, e
+\textbf{falha fechada} sem configuração. O Terraform casa os dois lados. Gravação
+idempotente por \cd{ON CONFLICT}, porque a entrega é \emph{at least once}.
+
+\textbf{Gatilho.} Volume que justifique isolar o consumo do tráfego de aluno.

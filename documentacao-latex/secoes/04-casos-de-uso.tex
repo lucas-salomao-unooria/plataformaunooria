@@ -1,0 +1,455 @@
+% ===========================================================================
+%  4 — Casos de uso
+% ===========================================================================
+\chapter{Casos de uso}
+\label{cap:casosdeuso}
+
+Os casos de uso descrevem o sistema pela ótica de quem o usa. Cada um recebe
+identificador estável, ator primário, pré-condição, fluxo principal, fluxos
+alternativos e a regra de negócio que o governa. A rastreabilidade para
+requisitos está na Seção~\ref{sec:uc-rastreio}.
+
+\section{Atores}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Ator} & \thd{Tipo} & \thd{Descrição}\\
+\midrule
+Aluno & Primário & Estudante da rede. Escolhe a missão no hub próprio e entra na
+  experiência. É titular de dado de menor.\\
+\zebra Professor & Primário & Prepara e conduz a aula, lê a turma, gera plano de
+  aula e faz o próprio \emph{check-in} de bem-estar.\\
+Gestor escolar & Primário & Administra usuários da escola.\\
+\zebra Admin do contrato & Primário & Único papel autorizado a atravessar
+  escolas. Publica manifestos e lê o agregado da rede.\\
+Provedor de identidade & Secundário & WSO2 Identity Server (futuro). Hoje o
+  papel de emissor é exercido pelo próprio hub.\\
+\zebra Vertex AI (Gemini) & Secundário & Geração de texto e de imagem, sempre
+  intermediada pela API.\\
+Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
+\zebra CI/CD (GitHub Actions) & Secundário & Publica \emph{bundles} e faz
+  \emph{upsert} do manifesto. É um ator: age no sistema por API autenticada.\\
+\bottomrule
+\end{tabularx}
+
+\section{Diagrama de casos de uso}
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  % ---- fronteira do sistema
+  \draw[ucsystem] (3.5,0.9) rectangle (13.2,-16.6);
+  \node[font=\small\bfseries\color{unooNavy}, anchor=north] at (8.35,0.65)
+    {Plataforma Unooria};
+
+  % ---- atores primarios (esquerda)
+  \ator{aluno}{(1.4,-2.4)}{Aluno}
+  \ator{prof}{(1.4,-7.4)}{Professor}
+  \ator{gestor}{(1.4,-12.4)}{Gestor escolar}
+  \ator{admin}{(1.4,-15.6)}{Admin do contrato}
+
+  % ---- atores secundarios (direita)
+  \atorsys{idp}{(15.3,-2.2)}{WSO2 IS}
+  \atorsys{vertex}{(15.3,-7.4)}{Vertex AI}
+  \atorsys{pubsub}{(15.3,-11.0)}{Pub/Sub}
+  \atorsys{ci}{(15.3,-15.6)}{CI/CD}
+
+  % ---- casos de uso: aluno
+  \node[ucase] (uc01) at (6.2,-1.1)  {\ucr{UC-01} Autenticar-se};
+  \node[ucase] (uc02) at (6.2,-2.6)  {\ucr{UC-02} Escolher missão no hub};
+  \node[ucase] (uc03) at (6.2,-4.1)  {\ucr{UC-03} Realizar experiência};
+  \node[ucasesec] (uc04) at (10.6,-4.1) {\ucr{UC-04} Registrar telemetria};
+  \node[ucasesec] (uc05) at (10.6,-2.6) {\ucr{UC-05} Renovar token da sessão};
+  \node[ucase] (uc06) at (6.2,-5.6)  {\ucr{UC-06} Ver o próprio resultado};
+
+  % ---- casos de uso: professor
+  \node[ucase] (uc10) at (6.2,-7.1)  {\ucr{UC-10} Preparar atividade};
+  \node[ucasesec] (uc11) at (10.6,-7.1) {\ucr{UC-11} Gerar conteúdo com IA};
+  \node[ucase] (uc12) at (6.2,-8.6)  {\ucr{UC-12} Conduzir o momento coletivo};
+  \node[ucase] (uc13) at (6.2,-10.1) {\ucr{UC-13} Ler resultados da turma};
+  \node[ucase] (uc14) at (6.2,-11.6) {\ucr{UC-14} Gerar plano de aula};
+  \node[ucase] (uc15) at (10.6,-9.3) {\ucr{UC-15} Fazer \emph{check-in} de bem-estar};
+  \node[ucase] (uc16) at (10.6,-10.8) {\ucr{UC-16} Zerar dados da turma};
+
+  % ---- casos de uso: gestor / admin
+  \node[ucase] (uc20) at (6.2,-13.1) {\ucr{UC-20} Importar usuários por CSV};
+  \node[ucase] (uc21) at (6.2,-14.6) {\ucr{UC-21} Redefinir senha};
+  \node[ucase] (uc22) at (10.6,-14.2) {\ucr{UC-22} Ler agregado da rede};
+  \node[ucase] (uc23) at (10.6,-15.7) {\ucr{UC-23} Publicar manifesto};
+  \node[ucasesec] (uc24) at (6.2,-16.0) {\ucr{UC-24} Reverter versão};
+
+  % ---- relacoes: aluno
+  \draw[ucrel] (aluno) -- (uc01);
+  \draw[ucrel] (aluno) -- (uc02);
+  \draw[ucrel] (aluno) -- (uc03);
+  \draw[ucrel] (aluno) -- (uc06);
+
+  % ---- relacoes: professor
+  \draw[ucrel] (prof) -- (uc10);
+  \draw[ucrel] (prof) -- (uc12);
+  \draw[ucrel] (prof) -- (uc13);
+  \draw[ucrel] (prof) -- (uc14);
+  \draw[ucrel] (prof) -- (uc01);
+  \draw[ucrel] (prof.east) -- (uc15.west);
+  \draw[ucrel] (prof.east) -- (uc16.west);
+
+  % ---- relacoes: gestor / admin
+  \draw[ucrel] (gestor) -- (uc20);
+  \draw[ucrel] (gestor) -- (uc21);
+  \draw[ucrel] (admin) -- (uc22);
+  \draw[ucrel] (admin) -- (uc23);
+
+  % ---- include / extend
+  \draw[ucinclude] (uc03) -- (uc04) node[ucnote, midway, above]{$\ll$include$\gg$};
+  \draw[ucinclude] (uc03) -- (uc05) node[ucnote, pos=0.55, above]{$\ll$include$\gg$};
+  \draw[ucinclude] (uc10) -- (uc11) node[ucnote, midway, above]{$\ll$include$\gg$};
+  \draw[ucextend] (uc23) -- (uc24) node[ucnote, midway, above]{$\ll$extend$\gg$};
+
+  % ---- atores secundarios
+  \draw[ucrel] (uc01.east) -- (idp.west);
+  \draw[ucrel] (uc11.east) -- (vertex.west);
+  \draw[ucrel] (uc14.east) -- (13.2,-11.6) -- (14.4,-8.4) -- (vertex.south west);
+  \draw[ucrel] (uc15.east) -- (vertex.south west);
+  \draw[ucrel] (uc04.east) -- (pubsub.west);
+  \draw[ucrel] (uc23.east) -- (ci.west);
+
+\end{tikzpicture}}
+\caption[Casos de uso da plataforma]{Casos de uso da plataforma. As elipses em
+  tom claro são casos de uso de \emph{suporte}, incluídos por outros e nunca
+  iniciados diretamente por um ator humano. Os quatro papéis são mutuamente
+  exclusivos: o \emph{middleware} do hub redireciona quem entra na área de outro
+  papel.}
+\label{fig:casos-de-uso}
+\end{figure}
+
+\begin{legendadiag}
+\amostra{ucase} caso de uso primário \quad
+\amostra{ucasesec} caso de uso de suporte \quad
+\textcolor{unooGreen}{\textbf{- - -}} $\ll$include$\gg$ \quad
+\textcolor{unooOrange}{\textbf{- - -}} $\ll$extend$\gg$
+\end{legendadiag}
+
+\section{Especificação dos casos de uso}
+
+\subsection{UC-01 --- Autenticar-se}
+
+\begin{especificacao}{\ucr{UC-01} Autenticar-se}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & Qualquer usuário\\
+\textbf{Pré-condição} & Usuário existe na escola (criado por \ucr{UC-20})\\
+\textbf{Pós-condição} & Sessão do hub estabelecida; usuário na \emph{home} do
+  próprio papel\\
+\textbf{Requisitos} & \rf{RF-01}, \rf{RF-02}, \rf{RF-05}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Fluxo principal}
+\begin{enumerate}
+  \item O usuário informa credencial em \rota{/login}.
+  \item O hub valida a credencial e cria a sessão, com \cd{papel},
+    \cd{escolaId}, \cd{turmaId} e \cd{serie}.
+  \item O \emph{middleware} redireciona para a \emph{home} do papel:
+    \rota{/aluno}, \rota{/professor} ou \rota{/admin/usuarios}.
+\end{enumerate}
+
+\textbf{Fluxos alternativos}
+\begin{itemize}
+  \item \textbf{A1 --- credencial inválida:} o formulário permanece com
+    mensagem; nenhuma sessão é criada.
+  \item \textbf{A2 --- usuário já autenticado acessa área de outro papel:}
+    redirecionado para a \emph{home} do próprio papel. \emph{Não} recebe 403 ---
+    um aluno que digita \rota{/professor} volta ao lugar dele sem mensagem de
+    erro, o que é decisão de produto, não descuido de segurança (a autorização
+    real é verificada de novo na API).
+  \item \textbf{A3 --- WSO2 como emissor:} o passo 2 passa a ser um
+    \emph{redirect} OIDC. Nada muda nos passos 1 e 3, nem na API.
+\end{itemize}
+
+\subsection{UC-03 --- Realizar experiência}
+
+Este é o caso de uso central da plataforma e o que mais determina a arquitetura.
+
+\begin{especificacao}{\ucr{UC-03} Realizar experiência}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & Aluno (ou Professor, nas ferramentas de professor)\\
+\textbf{Pré-condição} & Sessão válida; experiência disponível para o papel\\
+\textbf{Pós-condição} & Progresso e telemetria registrados; conclusão notificada
+  ao hub\\
+\textbf{Inclui} & \ucr{UC-04} (telemetria), \ucr{UC-05} (renovação de
+  \emph{token})\\
+\textbf{Requisitos} & \rf{RF-12}--\rf{RF-17}, \rf{RF-40}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Fluxo principal}
+\begin{enumerate}
+  \item O aluno escolhe a missão em \rota{/aluno} e o hub navega para
+    \rota{/exp/\{expId\}}.
+  \item O hub monta o \emph{embed}: assina o \emph{token} de experiência
+    (RS256, 15 min), consulta o manifesto e resolve a URL versionada do
+    \emph{bundle}.
+  \item Se o manifesto declara \cd{viewport}, o hub desenha a casca de aparelho
+    em volta do \cd{iframe}.
+  \item O \emph{bundle} carrega, a SDK emite \cd{exp:ready} e o hub responde
+    \cd{hub:init} com \emph{token}, dados do aluno, \cd{apiUrl} e \cd{config}.
+  \item A experiência opera: chama rotas de domínio da API, registra telemetria
+    em lote e salva progresso.
+  \item Ao terminar, emite \cd{exp:concluir}; o hub registra progresso e libera
+    a tela seguinte.
+\end{enumerate}
+
+\textbf{Fluxos alternativos}
+\begin{itemize}
+  \item \textbf{A1 --- \emph{token} perto de expirar:} a experiência emite
+    \cd{exp:token-expirando}; o hub busca \rota{GET /api/exp-token} e responde
+    \cd{hub:token}. O \cd{iframe} não recarrega e o estado não se perde.
+  \item \textbf{A2 --- versão de protocolo incompatível:} os dois lados
+    verificam a versão \emph{maior}. Sem \cd{hub:init}, o
+    \emph{handshake} expira e a experiência mostra erro. Falha alta, nunca
+    silenciosa.
+  \item \textbf{A3 --- sem manifesto (ambiente novo ou desenvolvimento):} o hub
+    lê o \arq{experiencia.json} servido ao lado do \arq{index.html} do
+    \emph{bundle} para obter \cd{viewport} e \cd{permissoes}.
+  \item \textbf{A4 --- página do hub perde foco:} o hub emite \cd{hub:pause}; a
+    experiência congela cronômetros. Ao voltar, \cd{hub:resume}.
+  \item \textbf{A5 --- experiência de professor acessada por \rota{/exp/*}:}
+    a rota responde 404. Ferramenta de professor não é missão de aluno.
+\end{itemize}
+
+\begin{atencao}
+O passo 4 falhava de forma intermitente numa versão anterior da SDK: com os
+\emph{assets} em \emph{cache} (um F5), a experiência ficava pronta \emph{antes}
+de o hub hidratar o \emph{listener}, e o único \cd{exp:ready} se perdia --- o
+\emph{handshake} expirava sem culpa de ninguém. A correção foi \emph{reenviar}
+\cd{exp:ready} a cada \SI{400}{\milli\second} até o hub responder, e tratar
+\cd{hub:init} repetido como evento normal, não como ruído.
+\end{atencao}
+
+\subsection{UC-10 --- Preparar atividade}
+
+\begin{especificacao}{\ucr{UC-10} Preparar atividade (exp-01)}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & Professor\\
+\textbf{Pré-condição} & Sessão de professor válida\\
+\textbf{Pós-condição} & Atividade \cd{ativa}, com \emph{feed} gerado e revisado\\
+\textbf{Inclui} & \ucr{UC-11} (geração com IA)\\
+\textbf{Requisitos} & \rf{RF-30}, \rf{RF-31}, \rf{RF-41}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Fluxo principal}
+\begin{enumerate}
+  \item O professor cria a atividade com tema, recorte e contexto de aula.
+  \item A API destila o antagonismo (dois lados) e propõe a pergunta-chave; o
+    professor \emph{aprova ou reescreve} --- a origem fica registrada em
+    \cd{pergunta\_origem}.
+  \item O professor dispara a geração. O servidor planeja os lotes (o
+    \emph{mix} é decisão do servidor; a IA apenas preenche) e o \emph{worker}
+    executa em segundo plano.
+  \item O professor acompanha o progresso por \emph{polling}, revisa os posts,
+    reprova ou regenera itens e ativa a atividade.
+\end{enumerate}
+
+\textbf{Fluxos alternativos}
+\begin{itemize}
+  \item \textbf{A1 --- sem saldo de quota:} a geração é recusada \emph{antes} da
+    chamada ao provedor. Gastar \emph{token} e depois recusar seria pagar pelo
+    que não se entrega.
+  \item \textbf{A2 --- geração órfã (instância morta no meio):} o
+    \emph{polling} do painel detecta a fila órfã e redispara; itens
+    \cd{rodando} há tempo demais voltam à fila por \cd{updatedAt}.
+  \item \textbf{A3 --- falha de geração de imagem:} o post recebe arte
+    procedural de \emph{fallback} e \cd{image\_status = "fallback"}. A atividade
+    não trava.
+\end{itemize}
+
+\subsection{UC-13 --- Ler resultados da turma}
+
+\begin{especificacao}{\ucr{UC-13} Ler resultados da turma}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & Professor\\
+\textbf{Pré-condição} & Turma com pelo menos uma sessão registrada\\
+\textbf{Pós-condição} & Nenhuma --- é leitura\\
+\textbf{Requisitos} & \rf{RF-47}--\rf{RF-49}, \rf{RF-52}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Regras de negócio que governam este caso de uso} --- e que são a parte
+mais importante dele:
+
+\begin{enumerate}
+  \item \textbf{A listagem da turma não mostra valor psicométrico.} Listagem é
+    ordenável, e uma coluna \enquote{Poder} viraria ranking de crianças. Os
+    valores vivem na tela individual, uma criança por vez.
+  \item \textbf{O relatório individual abre pelo nível do instrumento.}
+    \enquote{Caiu em 2 de 3} sem dizer que era o nível C faz o adulto concluir
+    que a criança é ingênua --- exatamente o rótulo que o projeto existe para
+    não produzir.
+  \item \textbf{Ausência de oportunidade nunca é lida como omissão.} Zero
+    cartões aparecidos produz \enquote{as mensagens não chegaram nesta partida},
+    nunca \enquote{ela ignorou tudo}.
+  \item \textbf{Valor com uma única fonte de medida não recebe número.} A API
+    não devolve o número; o hub não pode imprimi-lo.
+  \item \textbf{O agregado é de gestor; a linha de uma criança, não.} São
+    \emph{controllers} separados, e não um \cd{@Roles} misto com exceção por
+    método.
+\end{enumerate}
+
+\subsection{UC-14 --- Gerar plano de aula}
+
+\begin{especificacao}{\ucr{UC-14} Gerar plano de aula (exp-90)}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & Professor\\
+\textbf{Pré-condição} & Referências curriculares do contrato importadas\\
+\textbf{Pós-condição} & Plano \cd{pronto} em armazenamento privado, editável\\
+\textbf{Requisitos} & \rf{RF-35}, \rf{RF-36}, \rf{RF-34}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Fluxo principal}
+\begin{enumerate}
+  \item O professor escolhe disciplina e série; a experiência chama
+    \rota{POST /planos}, que responde \textbf{202} imediatamente.
+  \item A API faz \emph{claim} atômico da linha (\cd{pendente} \seta{}
+    \cd{gerando}) e chama o modelo de saída longa com o material real ---
+    currículo da rede e as quatro unidades do ano, algo em torno de
+    \num{190000} \emph{tokens} só de \emph{prompt}.
+  \item O Markdown gerado é gravado imutável em
+    \arq{planos/\{escolaId\}/\{id\}/gerado.md}; a conversão para HTML alimenta o
+    editor.
+  \item O professor edita e salva; o HTML é sanitizado por \emph{allowlist} e
+    gravado em \arq{atual.html}. O versionamento de objetos do \emph{bucket} dá
+    histórico de cada salvamento sem uma linha de código.
+\end{enumerate}
+
+\textbf{Fluxos alternativos}
+\begin{itemize}
+  \item \textbf{A1 --- saída cortada:} \cd{finishReason = MAX\_TOKENS} é
+    \emph{erro}, não conteúdo. O plano vai para \cd{erro} com mensagem, em vez
+    de entregar meio plano.
+  \item \textbf{A2 --- \emph{restart} no meio da geração:} a linha fica
+    \cd{gerando} sem \emph{worker}; após 12 minutos é considerada órfã e
+    retomada, no máximo duas vezes.
+  \item \textbf{A3 --- restaurar o original:} o professor descarta a edição e
+    volta ao \arq{gerado.md}, que nunca foi sobrescrito.
+\end{itemize}
+
+\subsection{UC-15 --- Fazer \emph{check-in} de bem-estar}
+
+\begin{especificacao}{\ucr{UC-15} \emph{Check-in} de bem-estar (exp-91)}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & Professor (e somente ele)\\
+\textbf{Pré-condição} & Sessão de professor válida\\
+\textbf{Pós-condição} & \emph{Check-in} do dia registrado; ao sétimo, ciclo
+  pontuado e classificado\\
+\textbf{Requisitos} & \rf{RF-37}, \rf{RF-53}, \rf{RF-54}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Fluxo principal}
+\begin{enumerate}
+  \item \rota{GET /bemestar/hoje} abre o \emph{check-in} do dia com três itens
+    do DASS-21 --- \emph{verbatim}, na versão brasileira validada --- e os
+    textos de entorno gerados pela IA.
+  \item O professor responde os três itens (0--3) e, se quiser, escreve texto
+    livre.
+  \item \rota{POST /bemestar/checkins/:id/respostas} grava. No sétimo
+    \emph{check-in} a API soma por subescala ($\times 2$) e classifica pelas
+    faixas publicadas.
+\end{enumerate}
+
+\textbf{Fluxos alternativos}
+\begin{itemize}
+  \item \textbf{A1 --- texto de IA barrado, sem saldo ou sem \emph{provider}:}
+    entra o texto fixo do catálogo. O \emph{check-in} nunca deixa de abrir.
+  \item \textbf{A2 --- sinal de apoio} (item 17 ou 21 $\geq 2$, ou termo de risco
+    no texto livre): mensagem \emph{fixa} de apoio com CVV 188, SAMU 192 e
+    CAPS/UBS, e a IA \emph{não é chamada}.
+  \item \textbf{A3 --- ciclo expirado:} 21 dias sem fechar encerra o ciclo como
+    \cd{expirado}, sem pontuação.
+  \item \textbf{A4 --- apagar tudo:} \rota{DELETE /bemestar/dados} remove
+    ciclos e \emph{check-ins} do professor.
+\end{itemize}
+
+\begin{regra}
+O instrumento é \textbf{fixo e \emph{verbatim}}. A IA nunca reescreve um item do
+DASS-21: reformular quebra a validação psicométrica e invalida as faixas de
+corte. O que a IA gera é o entorno --- abertura do dia, pergunta aberta,
+acolhimento --- e cada texto passa por validação antes de chegar ao professor. A
+IA nunca recebe nome, escola, pontuação ou faixa.
+\end{regra}
+
+\subsection{UC-23 --- Publicar manifesto de experiência}
+
+\begin{especificacao}{\ucr{UC-23} Publicar manifesto}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\textbf{Ator primário} & CI/CD (em nome de \cd{admin-contrato})\\
+\textbf{Pré-condição} & \emph{Bundle} publicado em
+  \arq{gs://\{contrato\}-exp/\{expId\}/\{versao\}/}\\
+\textbf{Pós-condição} & Linha da tabela \cd{experiencias} atualizada; hub passa a
+  servir a nova versão\\
+\textbf{Estendido por} & \ucr{UC-24} (reverter versão)\\
+\textbf{Requisitos} & \rf{RF-10}, \rf{RF-11}\\
+\end{tabularx}
+\end{especificacao}
+
+\textbf{Fluxo principal}
+\begin{enumerate}
+  \item O CI sincroniza \arq{dist/} para o caminho versionado do \emph{bucket} e
+    marca o \arq{index.html} com \cd{Cache-Control: max-age=60}.
+  \item O CI assina um \emph{token} de cinco minutos com a chave de assinatura e
+    chama \rota{PUT /experiencias/\{expId\}} com o conteúdo do
+    \arq{public/experiencia.json}.
+  \item A API valida o \emph{token} contra o JWKS que o \emph{hub} publica e faz
+    o \emph{upsert}.
+\end{enumerate}
+
+\begin{nota}
+A ordem importa e está codificada no \emph{workflow}: as experiências são
+publicadas \emph{depois} do hub, porque o \emph{token} do passo 2 é validado
+contra o JWKS servido pelo hub. Hub fora do ar significa manifesto rejeitado ---
+e um manifesto rejeitado é preferível a um manifesto aceito apontando para um hub
+que não subiu.
+\end{nota}
+
+\textbf{\ucr{UC-24} --- Reverter versão:} o mesmo \emph{script} com
+\cd{--versao <anterior>}. Não há \emph{build}, não há imagem, não há
+\emph{deploy}: é um \cd{UPDATE} de \cd{versao\_ativa}, e o próximo aluno que
+abrir a experiência recebe o \emph{bundle} anterior. É a operação de emergência
+mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
+
+\section{Rastreabilidade de casos de uso}
+\label{sec:uc-rastreio}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}L{40mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{UC} & \thd{Requisitos} & \thd{Superfície} & \thd{Módulo da API}\\
+\midrule
+\ucr{UC-01} & \rf{RF-01}, \rf{RF-02}, \rf{RF-05} & \rota{/login} &
+  \arq{auth}\\
+\zebra \ucr{UC-02} & \rf{RF-10} & \rota{/aluno} & \arq{experiencias}\\
+\ucr{UC-03} & \rf{RF-12}--\rf{RF-17} & \rota{/exp/:expId} &
+  \arq{motor}, \arq{unootube}, \arq{vila}, \arq{progress}\\
+\zebra \ucr{UC-04} & \rf{RF-20}--\rf{RF-25} & SDK & \arq{telemetry}\\
+\ucr{UC-05} & \rf{RF-14} & \rota{/api/exp-token} & \arq{auth}\\
+\zebra \ucr{UC-06} & \rf{RF-40} & dossiê da experiência & \arq{dossie}\\
+\ucr{UC-10} & \rf{RF-41} & \rota{/professor/atividades/*} &
+  \arq{atividades}, \arq{geracao}\\
+\zebra \ucr{UC-11} & \rf{RF-30}--\rf{RF-33} & --- & \arq{ai}, \arq{geracao}\\
+\ucr{UC-12} & \rf{RF-41} & painel de etapas & \arq{atividades}, \arq{motor}\\
+\zebra \ucr{UC-13} & \rf{RF-47}--\rf{RF-52} &
+  \rota{/professor/entre-redes/*} & \arq{analise}, \arq{vila}, \arq{unootube}\\
+\ucr{UC-14} & \rf{RF-34}--\rf{RF-36} & \rota{/professor/plano-de-aula} &
+  \arq{planos}\\
+\zebra \ucr{UC-15} & \rf{RF-37}, \rf{RF-53} & \rota{/professor/bem-estar} &
+  \arq{bemestar}\\
+\ucr{UC-16} & \rf{RF-50} & botão de zerar turma & \arq{vila}\\
+\zebra \ucr{UC-20} & \rf{RF-06} & \rota{/admin/usuarios} & \arq{usuarios}\\
+\ucr{UC-21} & \rf{RF-07} & \rota{/admin/usuarios} & \arq{usuarios}\\
+\zebra \ucr{UC-22} & \rf{RF-52} & \rota{/analise} & \arq{analise}\\
+\ucr{UC-23} & \rf{RF-10} & CI/CD & \arq{experiencias}\\
+\zebra \ucr{UC-24} & \rf{RF-11} & \emph{script} & \arq{experiencias}\\
+\bottomrule
+\end{tabularx}

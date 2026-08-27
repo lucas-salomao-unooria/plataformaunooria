@@ -1,0 +1,259 @@
+% ===========================================================================
+%  16 — Qualidade
+% ===========================================================================
+\chapter{Qualidade}
+\label{cap:qualidade}
+
+\section{A \emph{Definition of Done}}
+
+\begin{regra}
+Nenhuma tarefa está concluída sem estes seis itens. É o portão que substitui a
+revisão em par que uma pessoa não tem.
+
+\begin{enumerate}
+  \item \textbf{\emph{Typecheck} + \emph{lint} + testes passando}
+    (\cd{pnpm turbo typecheck lint test}).
+  \item \textbf{Se mexeu em tela: \emph{smoke} VISUAL}
+    (\cd{node scripts/walkthrough-aluno.mjs <pasta>} e
+    \cd{walkthrough-professor.mjs}) --- \emph{typecheck} verde não pega ícone
+    virando texto, \emph{link} sublinhado nem \cd{iframe} vazio.
+  \item \textbf{\emph{Input} externo validado com Zod.}
+  \item \textbf{\emph{Queries} novas escopadas por \emph{tenancy}} (revisar
+    mentalmente a regra 1).
+  \item \textbf{Sem segredo nem URL interna em código de cliente.}
+  \item \textbf{Se tocou contrato} (ponte, telemetria, \emph{provider},
+    manifesto): \textbf{documentação atualizada} --- em \arq{CLAUDE.md} \emph{e}
+    neste documento.
+\end{enumerate}
+\end{regra}
+
+\section{Estratégia de testes}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[camada, text width=140mm, fill=unooGreenWash, draw=unooGreen] (u) at (7.5,0)
+    {\textbf{Regra pura} --- Vitest / Jest, milissegundos, sem banco\\
+     \arq{vila-regras}, \arq{unootube-regras}, \arq{bemestar-regras},
+     \arq{motor-pesos}, \arq{motor-bolha}, \arq{motor-sugestoes},
+     \arq{motor-reversibilidade}, \arq{dossie-relatorio}, \arq{bridge.test},
+     e os testes de \arq{lib/} do hub};
+
+  \node[camada, text width=140mm, fill=unooBlueWash, draw=unooBlue] (i) at (7.5,-2.0)
+    {\textbf{Integração com PostgreSQL} --- o que não dá para afirmar sem banco\\
+     \arq{tenancy}, \arq{planos-tenancy}, \arq{motor-concorrencia},
+     \arq{motor-postgres}, \arq{unootube-postgres}, \arq{vila-postgres},
+     \arq{vila-ato1}, \arq{usuarios}, \arq{planos}, \arq{bemestar},
+     \arq{geracao-paginacao}};
+
+  \node[camada, text width=140mm, fill=unooYellowWash, draw=unooYellow] (c) at (7.5,-4.0)
+    {\textbf{Contrato externo} --- o que quebra em produção sem aviso\\
+     \arq{telemetria-push} (o \emph{guard} do Pub/Sub),
+     \arq{vertex-provider} (a cadeia ADC e o formato da requisição)};
+
+  \node[camada, text width=140mm, fill=unooOrangeWash, draw=unooOrange] (v) at (7.5,-6.0)
+    {\textbf{\emph{Smoke} visual} --- Playwright com navegador real\\
+     \arq{walkthrough-aluno}, \arq{walkthrough-professor},
+     \arq{walkthrough-aluno-unootube}, \arq{walkthrough-vila-do-lume},
+     \arq{walkthrough-professor-vila}, \arq{walkthrough-ato1-vila},
+     \arq{probe-pointerlock}};
+
+  \node[actnote, text width=64mm, anchor=north west] at (0.4,-7.4)
+    {\textbf{A pirâmide é larga na base de propósito.} Cada módulo de domínio
+     separa \arq{regras.ts} puro do \emph{service} que persiste, e é isso que
+     permite a maior parte da regra de negócio ser testada sem banco --- em
+     milissegundos, no \emph{watch} do editor.};
+
+  \node[actnote, text width=64mm, anchor=north west] at (8.2,-7.4)
+    {\textbf{E tem um topo que a pirâmide clássica não prevê.} O \emph{smoke}
+     visual não é \enquote{E2E de fluxo}: é verificação de que a INTERFACE
+     apareceu. Ele existe porque as falhas mais frequentes deste projeto ---
+     ícone virando texto, \cd{iframe} vazio, cor inexistente, fonte removida pelo
+     Next --- são \emph{invisíveis} para o compilador.};
+
+\end{tikzpicture}}
+\caption[Estratégia de testes]{As quatro camadas de verificação. A quarta é
+  incomum e é a mais importante deste projeto: ela pega a classe de falha que o
+  \emph{typecheck} estruturalmente não vê.}
+\label{fig:testes}
+\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Camada} & \thd{Ferramenta} & \thd{Mínimo obrigatório}\\
+\midrule
+Regra pura & Vitest (SDK, experiências) / Jest (NestJS) &
+  Contratos: ponte, telemetria, \emph{guards} de \emph{tenancy}. Toda função de
+  \arq{regras.ts}.\\
+\zebra Integração & Jest + PostgreSQL de teste &
+  \emph{Tenancy}, \emph{lock}, concorrência, idempotência.\\
+Contrato externo & Jest com \emph{fake} de rede &
+  \emph{Guard} do Pub/Sub e formato da requisição ao Vertex.\\
+\zebra \emph{Smoke} visual & Playwright, navegador real &
+  Toda mudança de tela.\\
+\bottomrule
+\end{tabularx}
+
+\section{O \emph{smoke} visual, em detalhe}
+
+\begin{lstlisting}[language=bashunoo, caption={Os \emph{walkthroughs} disponíveis}]
+node scripts/walkthrough-aluno.mjs      testes/wt-aluno
+node scripts/walkthrough-professor.mjs  testes/wt-professor   # cobre a exp-90 embedada
+node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube   # aluno4a01
+node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila       # usa o CHROME do sistema
+node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
+node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
+node scripts/probe-pointerlock.mjs
+\end{lstlisting}
+
+\begin{atencao}
+Dois \emph{walkthroughs} exigem o \textbf{Chrome do sistema}, não o Chromium do
+Playwright: o da exp-70 e o \emph{probe} de \emph{pointer lock}. O Chromium
+empacotado \textbf{não concede \emph{pointer lock} nem no topo da página}, então
+usá-lo produziria um falso negativo --- o teste diria que a permissão de
+\emph{sandbox} não funciona quando o problema é o navegador.
+\end{atencao}
+
+\begin{nota}
+Os \emph{walkthroughs} precisam da plataforma no ar (contêineres ou
+\cd{pnpm dev}) e gravam \emph{prints} na pasta indicada --- que está no
+\arq{.gitignore}. A senha de todos os usuários de demonstração é
+\cd{unooria123}; os \emph{logins} do \emph{seed} são \cd{gestor.demo},
+\cd{prof.demo} e \cd{aluno01}--\cd{aluno40}.
+\end{nota}
+
+\subsection{O que só o \emph{smoke} visual pega}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Falha} & \thd{Por que o \emph{typecheck} não vê}\\
+\midrule
+Ícone virando texto & O Next remove \cd{@import} externo de CSS importado por
+  JS, \emph{silenciosamente}. \cd{Material Symbols Rounded} é fonte de ligadura,
+  então o sintoma é \enquote{addInvestigação} no lugar do ícone. O
+  \cd{getComputedStyle} \emph{responde} \enquote{Open Sans} --- a regra continua
+  no CSS.\\
+\zebra Cor inexistente em fundo & Classe de cor que não existe em
+  \arq{plataforma.css} não é erro em lugar nenhum. Em texto herda a cor; em
+  \textbf{fundo} o elemento fica branco no branco. O \emph{smoke} da exp-70 checa
+  o \cd{backgroundColor} \textbf{computado} --- \cd{toBeVisible()} não pega.\\
+\cd{iframe} vazio & \emph{Handshake} que expira, \emph{dev server} fora do ar,
+  manifesto ausente: o componente monta, o \cd{iframe} existe, e não há nada
+  dentro.\\
+\zebra Experiência esticada na janela & \cd{viewport} não lido (manifesto vazio +
+  \env{EXP\_INTERNAL\_HOST} errado). Nenhum tipo muda.\\
+\emph{Link} sublinhado, marcador de lista de volta &
+  \emph{Preflight} do Tailwind desligado. O pacote estiliza \emph{componentes},
+  não elementos.\\
+\zebra Câmera do jogo que não anda & \cd{allow-pointer-lock} ausente:
+  \cd{requestPointerLock()} morre com \cd{SecurityError} e nada no console diz por
+  quê.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Testes de navegador precisam de portão de hidratação.} Em
+desenvolvimento, o SSR chega \emph{antes} do \emph{bundle}, e o \cd{fill} do
+Playwright não move o estado do React --- o campo mostra o texto e o
+\cd{onChange} nunca rodou. Todo \emph{walkthrough} espera um sinal de hidratação
+antes de interagir.
+\end{atencao}
+
+\section{Análise estática}
+
+\begin{tabularx}{\linewidth}{@{}L{32mm}X@{}}
+\toprule
+\headrow \thd{Regra} & \thd{Aplicação}\\
+\midrule
+TypeScript \emph{strict} em tudo & \arq{tsconfig.base.json}, herdado por todos os
+  \emph{workspaces}. Inclui \cd{noUncheckedIndexedAccess} --- é por isso que o
+  código de curadoria usa \cd{!} em índices provadamente válidos, com comentário.\\
+\zebra \textbf{Sem \cd{any}} & Use \cd{unknown} + \emph{narrow}. Uma exceção,
+  registrada em ADR: \arq{exp-70/public/jogo/**} está nos \cd{ignores} do
+  ESLint.\\
+Zod em todo \emph{input} externo & Corpo, \emph{query}, \cd{postMessage}
+  recebido, variáveis de ambiente.\\
+\zebra ESLint & \arq{eslint.config.mjs} na raiz, com \cd{typescript-eslint},
+  \cd{eslint-plugin-react-hooks} e \cd{@next/eslint-plugin-next}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+O ESLint \textbf{ignora a pasta \arq{storage}}. Um módulo com esse nome passaria
+no \emph{lint} sem ser lido --- foi por isso que o módulo de armazenamento de
+objetos se chama \arq{object-storage}, e não \arq{storage}.
+\end{atencao}
+
+\section{Armadilhas de ferramenta registradas}
+
+Cada linha abaixo é um erro efetivamente cometido, com o sintoma que ele produz.
+Estão aqui porque o sintoma nunca aponta para a causa.
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
+\toprule
+\headrow \thd{Armadilha} & \thd{Sintoma, e o que fazer}\\
+\midrule
+\emph{Build} isolado apagando o \arq{.next} do \emph{dev} &
+  Sintoma: \enquote{tela branca} ou \enquote{CSS bugado} depois de validar um
+  \emph{build} de produção. Validar sempre com \cd{pnpm build:isolado}
+  (\env{HUB\_DIST\_DIR=.next-prod}).\\
+\zebra \emph{Standalone} do Next não copia \arq{static} nem \arq{public} &
+  Sintoma: CSS 404 e página sem estilo. Distinguir do caso acima pelo
+  \textbf{código} do erro, não pela aparência.\\
+Substituição de texto sem asserção &
+  Edição por \emph{replace} que não casa passa em \textbf{silêncio}, e o
+  \cd{tsc} não acusa. Sempre afirmar o casamento.\\
+\zebra Arquivo em \arq{public/} escrito em \emph{runtime} &
+  Dá 404: \arq{public/} é do \emph{build}. E \cd{Cache-Control} de rota dinâmica
+  só cola via \arq{next.config}.\\
+\emph{Probe} de \emph{hot reload} como comentário &
+  O \emph{esbuild} remove comentários --- o falso negativo faz parecer que o
+  \emph{inotify} não atravessa o \emph{bind mount}.\\
+\zebra \cd{sanitize-html} recente é ESM-only &
+  Fixar \cd{\~{}2.13.1} na API (CJS, Node 20).\\
+\emph{Design system} quebrando o \emph{dev server} do Vite &
+  ESM importando diretório: o \emph{build} passa, o \emph{dev} morre. Sintoma:
+  \cd{iframe} vazio ou \cd{ERR\_CONNECTION\_REFUSED}.\\
+\zebra Vite pulando de porta &
+  Uma segunda instância da mesma experiência ocupa a porta seguinte --- e o hub
+  passa a ler o manifesto da experiência errada.\\
+\bottomrule
+\end{tabularx}
+
+\section{Cobertura: onde está e onde não está}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Área} & \thd{Cobertura} & \thd{Observação}\\
+\midrule
+\emph{Tenancy} e RLS & \yes{} Forte & Teste com \emph{role} sem
+  \emph{ownership}; o caso mais crítico do sistema.\\
+\zebra Regra de domínio & \yes{} Forte & \arq{regras.ts} puro em todos os
+  módulos.\\
+Concorrência do motor & \yes{} Forte & \emph{Lock} consultivo, reversibilidade,
+  paginação da geração.\\
+\zebra Contrato da ponte & \yes{} Forte & \emph{Origin}, esquema, versão maior.\\
+\emph{Guard} do Pub/Sub & \yes{} Forte & Inclui o caso \emph{fail closed}.\\
+\zebra Provider de IA & \yes{} Parcial & Cadeia ADC e formato da requisição. Não
+  há teste contra o Vertex real --- e não deveria haver.\\
+Telas & \yes{} \emph{Smoke} & Sete \emph{walkthroughs}; não é cobertura de
+  interação, é verificação de que apareceu.\\
+\zebra \textbf{Carga} & \no{} \textbf{Ausente} & O teste de \num{4000}
+  \emph{logins} em dez minutos é obrigatório antes de novembro de 2026 e não foi
+  executado. Risco \cd{R-01}.\\
+Segurança externa & \no{} Ausente & Sem revisão externa nem teste de intrusão.
+  Risco \cd{R-06}.\\
+\zebra Acessibilidade & \no{} Ausente & Nenhuma verificação automatizada de
+  contraste, foco ou leitor de tela. Risco \cd{R-07}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{limitacao}
+Não há métrica de cobertura de linha configurada, e não há meta numérica. A
+escolha é deliberada: com uma pessoa desenvolvendo, uma meta de percentual
+incentiva testar o que é fácil em vez do que é caro se falhar. O critério em uso é
+o da \emph{Definition of Done} --- contratos, \emph{tenancy} e regra pura --- e
+ele é verificável por inspeção da lista de arquivos de teste.
+\end{limitacao}

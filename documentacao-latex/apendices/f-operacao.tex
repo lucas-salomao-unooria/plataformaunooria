@@ -1,0 +1,349 @@
+% ===========================================================================
+%  Apendice F — Operacao
+% ===========================================================================
+\chapter{Operação}
+\label{ap:operacao}
+
+\section{Comandos de desenvolvimento}
+
+\begin{lstlisting}[language=bashunoo, caption={Subir a plataforma}]
+# --- Tudo em container, sincronizado com o editor (RECOMENDADO)
+pnpm docker:dev          # pg + api + hub + as 5 experiencias, cada um com watcher
+pnpm docker:dev:logs     # acompanha a recompilacao
+pnpm docker:dev:deps     # DEPOIS de mexer em dependencia; e reiniciar
+pnpm docker:dev:down     # desce
+
+# --- So o banco em container, o resto no host
+docker compose up -d pg
+cp .env.example apps/api/.env && cp .env.example apps/hub/.env.local   # e editar
+node scripts/gerar-chave-token.mjs --env      # chave RS256 do hub
+pnpm --filter @edu/api migrate:dev            # migrations (Prisma + RLS)
+pnpm --filter @edu/api seed                   # escola-demo, prof/gestor/aluno01-40
+pnpm --filter @edu/api seed:demo              # atividade DEMO com 92 posts, sem IA
+pnpm dev                                      # hub :3000, api :3001, exp :5173
+
+# --- Imagens congeladas (mais proximo da producao)
+docker compose up -d --build                  # migrations e seed no 1o up
+\end{lstlisting}
+
+\begin{atencao}
+As portas são as mesmas nos três modos, então \textbf{não dá para rodar
+\cd{pnpm docker:dev} e \cd{pnpm dev} ao mesmo tempo}. Se salvar um arquivo e nada
+recompilar: \cd{DEV\_POLLING=1 pnpm docker:dev}.
+\end{atencao}
+
+\begin{lstlisting}[language=bashunoo, caption={Experiências, uma a uma}]
+pnpm --filter @edu/exp-01-instanooria    dev   # :5173
+pnpm --filter @edu/exp-02-unootube       dev   # :5174 (videos em public/videos)
+pnpm --filter @edu/exp-90-plano-de-aula  dev   # :5175 -> /professor/plano-de-aula
+pnpm --filter @edu/exp-91-bem-estar      dev   # :5176 -> /professor/bem-estar
+pnpm --filter @edu/exp-70-vila-do-lume   dev   # :5177 -> /exp/exp-70-vila-do-lume
+
+pnpm new:exp exp-07-fracoes                    # scaffolda do _template
+\end{lstlisting}
+
+\begin{lstlisting}[language=bashunoo, caption={O IdP sobe à parte}]
+docker compose -f wso2/docker-compose.yml up -d    # IS :9443, pg dele :5433
+docker compose -f wso2/docker-compose.yml watch    # olha conf/ e bootstrap/
+docker compose -f wso2/docker-compose.yml logs bootstrap   # imprime as envs OIDC
+\end{lstlisting}
+
+\begin{lstlisting}[language=bashunoo, caption={Verificação e build}]
+pnpm turbo typecheck lint test                 # o portao da Definition of Done
+pnpm turbo build --filter=@edu/exp-01          # 1 experiencia (+ deps)
+pnpm turbo build --filter='...[HEAD^]'         # so o que mudou (o CI usa isso)
+pnpm build:isolado                             # build de PRODUCAO do hub
+                                               # (HUB_DIST_DIR=.next-prod)
+pnpm --filter @edu/api test
+\end{lstlisting}
+
+\begin{atencao}
+Validar \emph{build} de produção \textbf{sempre} com \cd{pnpm build:isolado}. Um
+\cd{next build} comum apaga o \arq{.next} do \emph{dev}, e o sintoma é
+\enquote{tela branca} ou \enquote{CSS bugado} depois --- que se confunde com bug
+de aplicação. E \arq{apps/hub/next-env.d.ts} alterna entre \arq{./.next} e
+\arq{./.next-prod}: modificado depois de um \cd{build:isolado} = \textbf{descartar,
+não \emph{commitar}}.
+\end{atencao}
+
+\section{\emph{Smoke} visual}
+
+\begin{lstlisting}[language=bashunoo]
+node scripts/walkthrough-aluno.mjs            testes/wt-aluno
+node scripts/walkthrough-professor.mjs        testes/wt-professor
+node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube
+node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila
+node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
+node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
+node scripts/probe-pointerlock.mjs
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Pré-requisito} & \thd{Detalhe}\\
+\midrule
+Plataforma no ar & Contêineres ou \cd{pnpm dev}.\\
+\zebra Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
+  exp-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
+  não concede \emph{pointer lock} nem no topo da página.\\
+\emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
+  \cd{prof.demo} \seta{} \rota{/professor}; \cd{aluno01}--\cd{aluno40} \seta{}
+  \rota{/aluno}; \cd{aluno4a01} para a exp-02. Senha de todos:
+  \cd{unooria123}.\\
+\zebra Bancada de \emph{embed} & \rota{/dev-embed?src=http://localhost:5174}.
+  Sanidade do \emph{design system}: \rota{/ds-smoke} (só em \emph{dev}).\\
+\bottomrule
+\end{tabularx}
+
+\section{\emph{Design system}}
+
+\begin{lstlisting}[language=bashunoo]
+npm view @unooria/design-system version         # qual e a ultima publicada
+pnpm up -r @unooria/design-system --latest      # sobe em ui/hub/exps de uma vez
+                                                # (^0.1.x NAO sobe minor)
+cd ../storybook-unooria && npm run storybook     # :6007, o catalogo das 6 secoes
+\end{lstlisting}
+
+\begin{atencao}
+Commitar o \emph{lockfile} \textbf{e} os \arq{package.json} juntos. E lembrar:
+\textbf{quem importa, declara} --- todo aplicativo que escreve
+\cd{@unooria/design-system} no código tem a dependência no próprio
+\arq{package.json}, hub incluído.
+\end{atencao}
+
+\section{Publicação e reversão}
+
+\begin{lstlisting}[language=bashunoo, caption={Reversão --- as três formas, por velocidade}]
+# 1. EXPERIENCIA (o mais rapido: sem build, sem imagem, sem deploy)
+node apps/hub/scripts/publicar-manifesto.mjs exp-02-unootube --versao 0.9.0
+#    Requer: TOKEN_SIGNING_KEY_PEM, API_URL, HUB_ORIGIN
+
+# 2. HUB ou API (revisao do Cloud Run)
+gcloud run services update-traffic "$HUB_SERVICE" \
+  --region "$REGION" --project "$GCP_PROJECT" --to-revisions "<revisao>=100"
+
+# 3. CONTEUDO DE PROFESSOR (versionamento de objetos do bucket de planos)
+gcloud storage ls --all-versions \
+  "gs://$PLANOS_BUCKET/planos/$ESCOLA/$PLANO/atual.html"
+\end{lstlisting}
+
+\begin{lstlisting}[language=bashunoo, caption={Publicar tudo (primeiro \emph{deploy} de um contrato)}]
+# GitHub Actions -> workflow "deploy" -> Run workflow -> forcar: true
+# Ignora o diff e publica hub, api e TODAS as experiencias.
+\end{lstlisting}
+
+\section{Provisionamento de um contrato novo}
+
+\begin{enumerate}
+  \item No repositório de Terraform: instanciar o \emph{module} \cd{contrato} com
+    o novo prefixo. \textbf{Nada é criado por \emph{script} deste repositório.}
+  \item \cd{terraform output} \seta{} configurar as \cd{vars} do repositório
+    (\arq{scripts/configurar-github-ci.sh}).
+  \item Gerar o par RS256 e gravar em \cd{\{contrato\}-token-signing-key} no
+    Secret Manager; espelhar no \emph{secret} \cd{TOKEN\_SIGNING\_KEY\_PEM} do
+    GitHub.
+  \item Conceder \cd{roles/aiplatform.user} à conta de serviço
+    \cd{\{contrato\}-api}. \textbf{Sem esse papel, toda geração falha com 403 do
+    Vertex} --- e o 403 vem do Vertex, o que se confunde com quota esgotada.
+  \item Verificar que a \emph{role} de banco \textbf{não} tem \cd{BYPASSRLS} nem
+    \cd{SUPERUSER} (SQL de verificação no \emph{runbook} do repositório de
+    infra).
+  \item Executar o \emph{deploy} com \cd{forcar: true}.
+  \item Importar usuários por CSV (\rota{POST /usuarios/importar-csv}).
+  \item Importar as referências curriculares:
+    \cd{node scripts/importar-referencias-plano.mjs} com
+    \env{PLANOS\_IMPORT\_TOKEN}.
+  \item \textbf{Manual, e pendente de automação:} \cd{gsutil rsync} da mídia
+    pesada da exp-02 para o \emph{bucket} de \emph{assets} (\cd{R-09}).
+  \item Rodar os \emph{walkthroughs} contra o ambiente novo.
+\end{enumerate}
+
+\section{Diagnóstico: sintoma \seta{} causa}
+
+Esta tabela existe porque, nesta plataforma, o sintoma quase nunca aponta para a
+causa.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Sintoma} & \thd{Causa provável}\\
+\midrule
+\endhead
+\textbf{Ícone virando texto} (\enquote{addInvestigação}) &
+  O Next removeu o \cd{@import} externo do CSS do \emph{design system}, e
+  \cd{Material Symbols Rounded} é fonte de ligadura. Verificar
+  \cd{FontesDaPlataforma} em \arq{casca-plataforma.tsx}. O
+  \cd{getComputedStyle} \emph{responde} \enquote{Open Sans}, então não confie
+  nele.\\
+\zebra \textbf{Elemento branco no branco} &
+  Classe de cor que não existe em \arq{plataforma.css}. Não é erro em lugar
+  nenhum. Checar o \cd{backgroundColor} \textbf{computado}.\\
+\textbf{Experiência esticada na janela} em vez de dentro do aparelho &
+  \cd{viewport} não lido: tabela \cd{experiencias} vazia \emph{e}
+  \env{EXP\_INTERNAL\_HOST} ausente ou errado.\\
+\zebra \textbf{O UnooTube aparece dentro da casca de celular da Instanooria} &
+  \env{EXP\_INTERNAL\_URL} fixo em \emph{dev}: as experiências estão lendo o
+  manifesto de \emph{uma só}. Usar \env{EXP\_INTERNAL\_HOST}, que preserva a
+  porta.\\
+\textbf{\cd{iframe} vazio} &
+  \emph{Handshake} expirado, \emph{dev server} fora do ar, ou
+  \emph{origin} divergente. Ver o console: a SDK avisa o descarte por esquema.\\
+\zebra \textbf{Câmera do jogo não anda} &
+  \cd{allow-pointer-lock} ausente: \cd{permissoes} não chegou (manifesto vazio +
+  \arq{experiencia.json} não lido). \cd{requestPointerLock()} morre com
+  \cd{SecurityError} e nada diz por quê.\\
+\textbf{Vídeo não toca} (\cd{play()} rejeitado em silêncio) &
+  \cd{autoplay} não delegado no \cd{allow} do \emph{frame}: a
+  \emph{Permissions-Policy} tem \emph{default} \cd{'self'}.\\
+\zebra \textbf{\cd{confirm()} da experiência não aparece} &
+  \cd{allow-modals} ausente no \emph{sandbox}: o navegador \textbf{ignora} e
+  devolve \cd{false}.\\
+\textbf{Toda geração de imagem sai como \emph{fallback} procedural} &
+  \env{VERTEX\_IMAGE\_MODEL} aponta para um modelo que saiu do catálogo.
+  Verificar no Vertex.\\
+\zebra \textbf{Arte cortada pela metade} &
+  Proporção não pedida no \cd{imageConfig}: o modelo devolve 1408$\times$768 e o
+  \cd{cover} de 1080$\times$1350 descarta a largura. Pedir \cd{4:5}.\\
+\textbf{Plano de aula volta vazio} com \cd{finishReason: MAX\_TOKENS} &
+  \env{VERTEX\_THINKING\_BUDGET} diferente de \cd{0}: os \emph{tokens} de
+  pensamento saem do \cd{maxOutputTokens}.\\
+\zebra \textbf{Toda chamada de IA falha com 403} &
+  A conta de serviço não tem \cd{roles/aiplatform.user}. O 403 vem do
+  \emph{Vertex}, não da API --- e se confunde com quota esgotada.\\
+\textbf{IA não funciona no \emph{host} nem no contêiner} &
+  ADC ausente. \cd{gcloud auth application-default login}; os \emph{compose}
+  montam o arquivo em \arq{/adc}.\\
+\zebra \textbf{API não sobe, reclamando de \cd{VERTEX\_PROJECT\_ID}} &
+  Correto: com \cd{AI\_PROVIDER=vertex} a variável é obrigatória. Em \emph{dev},
+  use \cd{AI\_PROVIDER=mock}.\\
+\textbf{\rota{/telemetry/ingest} responde 401} &
+  Em \emph{dev}, correto (\env{TELEMETRIA\_PUSH\_*} vazias = rota fechada). Em
+  produção, conferir SA e \emph{audience} contra a \emph{subscription}.\\
+\zebra \textbf{Validação de \emph{token} falha com \enquote{\emph{issuer}
+  inválido}} &
+  \cd{iss} montado por concatenação. O do WSO2 é \emph{tenant-qualified} e deve
+  ser copiado \textbf{literalmente} do \emph{discovery}.\\
+\textbf{Um bloco de \emph{feed} desapareceu; posts repetidos} &
+  \emph{Lock} consultivo não tomado. Verificar
+  \cd{pg\_advisory\_xact\_lock(runId)} e o \cd{timeout} de \SI{20}{\second}.\\
+\zebra \textbf{\cd{comTenancy sem escola}} &
+  Rota sem \cd{OidcGuard}/\cd{TenancyInterceptor}, ou chamada fora de requisição
+  sem \cd{escolaId} explícito. \textbf{É o comportamento correto} --- a
+  alternativa era consultar sem filtro.\\
+\textbf{A sala inteira caiu na bolha A} &
+  \emph{Lock} consultivo por turma não tomado em \rota{POST /vila/sessoes}. A
+  sala clica junto.\\
+\zebra \textbf{Partida da exp-70 recusada} &
+  \cd{.strict()} pegou chave desconhecida, ou a varredura achou chave de nome, ou
+  o \emph{payload} trouxe perfil. \textbf{Recusa é o comportamento correto};
+  chave nova legítima precisa entrar no contrato \emph{de forma consciente}.\\
+\textbf{Dependência nova não aparece no contêiner} &
+  \arq{node\_modules} do contêiner é volume próprio.
+  \cd{pnpm docker:dev:deps} + reiniciar.\\
+\zebra \textbf{Vite recusa a conexão do hub em contêiner} &
+  \cd{allowedHosts} sem \cd{host.docker.internal}. O Vite 5.4+ recusa \cd{Host}
+  que não conheça.\\
+\textbf{Vite subiu numa porta diferente} &
+  Segunda instância da mesma experiência. O hub passa a ler o manifesto da
+  experiência errada.\\
+\zebra \textbf{\emph{Link} sublinhado, marcador de lista de volta} &
+  \emph{Preflight} do Tailwind desligado. O pacote estiliza \emph{componentes},
+  não elementos.\\
+\textbf{Sobrescrita de classe do \emph{design system} não pega} &
+  Peso igual: o CSS do pacote é injetado \emph{depois}. Usar \textbf{dois}
+  seletores (\cd{.app-shell > .x}).\\
+\zebra \textbf{\cd{exp\_01\_exp\_01\_...\_pkey}} depois de uma migração de
+  renomeação &
+  \cd{FOR ... IN SELECT} sobre o catálogo releu o que o laço alterou, ou
+  \cd{RENAME CONSTRAINT} renomeou também o índice. Ver a migração de referência.\\
+\bottomrule
+\end{tabularx}
+
+\section{\emph{Checklist} de operação}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
+\toprule
+\headrow \thd{Frequência} & \thd{Item}\\
+\midrule
+Após cada \emph{deploy} & Conferir que a migração rodou (\cd{--wait} no
+  \emph{job}); abrir \rota{/readyz}; abrir uma experiência de aluno e uma
+  ferramenta de professor.\\
+\zebra Semanal & Taxa de 5xx do Cloud Run; conexões ativas do Cloud SQL;
+  contagem de \cd{status = 'aberta'} em \cd{exp\_70\_sessoes} (partidas
+  perdidas); planos em \cd{status = 'erro'}.\\
+Mensal & \textbf{Contagem da partição \cd{DEFAULT} de telemetria} --- encher
+  significa que faltou criar partição (\cd{R-08}); volume de
+  \cd{telemetria\_eventos} por mês; consumo de quota de IA por professor.\\
+\zebra Trimestral & \cd{pnpm up -r @unooria/design-system --latest} e rodar os
+  \emph{walkthroughs}; revisar as lacunas do \emph{design system} ainda
+  compensadas localmente; conferir se os modelos de IA em uso continuam no
+  catálogo (\cd{R-12}).\\
+Anual, ou por \emph{release} & Revisar as ADRs cujo gatilho de reavaliação pode
+  ter sido acionado (Capítulo~\ref{cap:adr}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{lstlisting}[language=sqlunoo, caption={As consultas do \emph{checklist}}]
+-- A particao DEFAULT esta enchendo? (deveria ser sempre 0)
+SELECT count(*) FROM particoes.telemetria_eventos_default;
+
+-- Partidas perdidas (aba fechada no meio) por turma
+SELECT turma_id, count(*) FROM exp_70_sessoes
+ WHERE status = 'aberta' AND aberta_em < now() - interval '1 day'
+ GROUP BY turma_id ORDER BY 2 DESC;
+
+-- Planos que falharam
+SELECT id, serie, disciplina, tentativas, erro FROM exp_90_planos
+ WHERE status = 'erro' ORDER BY updated_at DESC;
+
+-- Consumo de IA no dia
+SELECT usuario_id, tokens_usados FROM ia_uso_diario
+ WHERE dia = to_char(now(), 'YYYY-MM-DD') ORDER BY 2 DESC LIMIT 20;
+
+-- Volume de telemetria por mes (nome da particao ja diz o mes)
+SELECT relname, n_live_tup FROM pg_stat_user_tables
+ WHERE schemaname = 'particoes' ORDER BY relname;
+\end{lstlisting}
+
+\begin{atencao}
+Toda consulta manual acima roda \textbf{fora} de \cd{comTenancy}, ou seja, com a
+\emph{role} de aplicação a RLS a filtraria para nada. Diagnóstico em produção usa
+conexão administrativa --- e é por isso que a \emph{role} de aplicação
+\textbf{não pode} ter \cd{BYPASSRLS}: a separação entre \enquote{a aplicação} e
+\enquote{um humano diagnosticando} tem de ser real.
+\end{atencao}
+
+\section{Compilar esta documentação}
+
+\begin{lstlisting}[language=bashunoo]
+cd documentacao-latex
+./compilar.sh              # build completo (Tectonic: baixa o que falta e roda o BibTeX)
+./compilar.sh --rapido     # uma passagem, para iterar na escrita
+./compilar.sh --limpar     # remove os auxiliares
+
+# Com uma distribuicao de TeX completa instalada, alternativamente:
+latexmk -pdf main.tex
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
+\toprule
+\headrow \thd{Requisito} & \thd{Detalhe}\\
+\midrule
+Motor & \textbf{Tectonic} (recomendado: baixa os pacotes sob demanda e chama o
+  BibTeX sozinho) \emph{ou} qualquer distribuição com \cd{pdflatex} +
+  \cd{bibtex}.\\
+\zebra Fontes & \cd{roboto} e \cd{roboto-mono}.\\
+Diagramas & \cd{tikz} e \cd{pgfplots} --- todos vetoriais, sem renderização
+  externa.\\
+\zebra Bibliografia & \cd{abntex2cite} (estilo \cd{alf}) processado por
+  \textbf{BibTeX} --- \emph{não} biblatex/biber, para que o Tectonic feche o ciclo
+  sem ferramenta externa.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Atualizar esta documentação faz parte da \emph{Definition of Done}}
+(Capítulo~\ref{cap:qualidade}). Implementação que mude arquitetura, contrato,
+modelo de dados, decisão ou risco atualiza o capítulo correspondente
+\textbf{e regera o \arq{main.pdf} no mesmo \emph{commit}}. A regra está registrada
+em \arq{CLAUDE.md}, não apenas aqui.
+\end{regra}

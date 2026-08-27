@@ -1,0 +1,211 @@
+% ============================================================================
+%  capa.tex — capa, ficha tecnica e controle de versoes
+% ============================================================================
+
+\begin{titlepage}
+\thispagestyle{empty}
+\singlespacing
+\setlength{\parskip}{0pt}
+\begin{tikzpicture}[remember picture, overlay]
+  % Faixa superior
+  \fill[unooNavy] (current page.north west) rectangle
+        ([yshift=-11mm]current page.north east);
+  \fill[unooBlue] ([yshift=-11mm]current page.north west) rectangle
+        ([yshift=-13.4mm]current page.north east);
+  \fill[unooGreen] ([yshift=-13.4mm]current page.north west) rectangle
+        ([yshift=-14.4mm]current page.north east);
+
+  % Marca d'agua geometrica — 48 experiencias em torno de um hub
+  \begin{scope}[opacity=0.10]
+    \foreach \x/\y in {0/0, 2.4/1.1, 4.8/0.2, 7.2/1.5, 9.6/0.6,
+                       1.2/3.0, 3.6/3.9, 6.0/3.1, 8.4/4.2,
+                       0.6/6.2, 3.0/6.9, 5.4/6.1, 7.8/7.0} {
+      \fill[unooBlue] ([xshift=\x cm + 20mm, yshift=\y cm + 24mm]current page.south west)
+            circle (1.7pt);
+    }
+    \draw[unooBlue, line width=0.5pt]
+      ([xshift=20mm, yshift=24mm]current page.south west) --
+      ([xshift=44mm, yshift=35mm]current page.south west) --
+      ([xshift=68mm, yshift=26mm]current page.south west) --
+      ([xshift=92mm, yshift=39mm]current page.south west) --
+      ([xshift=116mm, yshift=30mm]current page.south west);
+    \draw[unooBlue, line width=0.5pt]
+      ([xshift=32mm, yshift=54mm]current page.south west) --
+      ([xshift=56mm, yshift=63mm]current page.south west) --
+      ([xshift=80mm, yshift=55mm]current page.south west) --
+      ([xshift=104mm, yshift=66mm]current page.south west);
+  \end{scope}
+
+  % Barra lateral de identidade
+  \fill[unooBlue] ([xshift=0mm, yshift=42mm]current page.south west) rectangle
+        ([xshift=3.2mm, yshift=150mm]current page.south west);
+\end{tikzpicture}
+
+\vspace*{10mm}
+
+% Assinatura tipografica (o logotipo institucional nao entra no repositorio:
+% asset de marca vive no bucket, nao no git — ver `figuras/README.md`).
+{\fontsize{27}{27}\selectfont\bfseries\color{unooNavy}unooria\par}
+{\footnotesize\color{unooMuted}plataforma educacional B2G\par}
+
+\vspace{15mm}
+
+{\footnotesize\bfseries\color{unooGreen}%
+ DOCUMENTAÇÃO TÉCNICA DE ARQUITETURA DE SOFTWARE, ARQUITETURA DE NUVEM E CÓDIGO}
+
+\vspace{3mm}
+
+{\color{unooBlue}\rule{28mm}{2.6pt}}
+
+\vspace{8mm}
+
+{\fontsize{31}{37}\selectfont\bfseries\color{unooNavy}%
+ Plataforma Unooria\par}
+
+\vspace{4mm}
+
+{\fontsize{15}{20}\selectfont\bfseries\color{unooBlue}%
+ Hub multi-tenant e 48 experiências imersivas\par}
+
+\vspace{6mm}
+
+{\fontsize{13.5}{19}\selectfont\color{unooInkSoft}%
+ \textit{Monorepo} de uma plataforma de educação básica para redes públicas de
+ ensino: um \emph{hub} em Next.js que embeda experiências estáticas versionadas
+ em CDN, uma API NestJS com isolamento lógico por escola em \textit{Row-Level
+ Security}, telemetria em dois canais e uma camada de IA generativa com quota
+ por perfil --- uma \emph{stack} de nuvem por contrato, cem escolas por
+ \emph{stack}.\par}
+
+\vspace{11mm}
+
+{\color{unooGrid}\rule{\linewidth}{0.8pt}}
+
+\vspace{5mm}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}@{\hspace{4mm}}X@{}}
+  {\footnotesize\color{unooMuted}DOCUMENTO}      & {\footnotesize\bfseries\color{unooInk}\docid{} --- Documentação Técnica Consolidada}\\[3pt]
+  {\footnotesize\color{unooMuted}VERSÃO}         & {\footnotesize\bfseries\color{unooInk}\docversao}\\[3pt]
+  {\footnotesize\color{unooMuted}DATA}           & {\footnotesize\bfseries\color{unooInk}27 de agosto de 2026}\\[3pt]
+  {\footnotesize\color{unooMuted}AUTOR}          & {\footnotesize\bfseries\color{unooInk}Lucas Salomão}\\[3pt]
+  {\footnotesize\color{unooMuted}REPOSITÓRIO}    & {\footnotesize\bfseries\color{unooInk}\texttt{plataforma-unooria} (\textit{monorepo}, tronco \texttt{main})}\\[3pt]
+  {\footnotesize\color{unooMuted}CLASSIFICAÇÃO}  & {\footnotesize\bfseries\color{unooInk}Documento técnico de projeto --- uso interno}\\
+\end{tabularx}
+
+\vspace{5mm}
+
+{\color{unooGrid}\rule{\linewidth}{0.8pt}}
+
+\vspace{6mm}
+
+{\scriptsize\color{unooMuted}%
+ Escopo do documento: contexto de negócio, requisitos, casos de uso,
+ arquitetura de \textit{software} nos quatro níveis do modelo C4, arquitetura de
+ nuvem e implantação em GCP, modelo de \textit{multi-tenancy} e segurança,
+ modelo de dados, contratos de integração, telemetria, camada de IA, catálogo de
+ experiências, especificação da API, \textit{design system}, engenharia de
+ entrega, qualidade, registro de decisões arquiteturais, riscos e evolução.
+ Diagramas vetoriais em TikZ; fontes Mermaid equivalentes no Apêndice~A.\par}
+
+\end{titlepage}
+
+% ---------------------------------------------------------------------------
+%  Ficha tecnica e controle de versoes
+% ---------------------------------------------------------------------------
+\chapter*{Ficha técnica do documento}
+\addcontentsline{toc}{chapter}{Ficha técnica do documento}
+\markboth{Ficha técnica do documento}{}
+
+\section*{Identificação}
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
+  \toprule
+  \textbf{Campo} & \textbf{Conteúdo}\\
+  \midrule
+  Título & Plataforma Unooria --- Documentação Técnica Consolidada de
+           Arquitetura de \textit{Software}, Arquitetura de Nuvem e Código\\
+  \zebra Identificador & \docid\\
+  Versão & \docversao\\
+  \zebra Data de emissão & 27 de agosto de 2026\\
+  Autor & Lucas Salomão (\url{lucas.salomao@unooria.com})\\
+  \zebra Repositório & \arq{plataforma-unooria} --- \textit{monorepo} pnpm + Turborepo\\
+  Tronco & \arq{main} (histórico linear; uma \textit{branch} por experiência)\\
+  \zebra Linguagem principal & TypeScript 5.7 (\textit{strict}), Node.js 20\\
+  Prazo de produção & novembro de 2026\\
+  \zebra Estado & Em desenvolvimento --- M0--M6 concluídos; \textit{stack} de
+           \textit{dev} em GCP operacional\\
+  Repositório de infra & Separado (Terraform). Contrato em \arq{docs/INFRA.md}\\
+  \bottomrule
+\end{tabularx}
+
+\section*{Escopo e propósito}
+
+Este documento consolida, em fonte única, o que estava distribuído entre
+\arq{CLAUDE.md} (as convenções e regras invioláveis do repositório),
+\arq{README.md}, \arq{docs/ARQUITETURA.md}, \arq{docs/DECISOES.md},
+\arq{docs/INFRA.md}, \arq{docs/INFRA-IDENTITY.md} e os comentários de decisão
+que vivem no próprio código-fonte --- que, neste projeto, é onde as decisões
+mais finas estão registradas.
+
+Acrescenta o material que não existia em forma escrita: especificação de
+requisitos funcionais e não funcionais rastreáveis, catálogo de casos de uso,
+modelo C4 completo nos quatro níveis para o \textit{software} \emph{e} para a
+nuvem, diagramas de sequência dos contratos de integração, dicionário de dados,
+especificação da API rota por rota e o registro formal das decisões
+arquiteturais (ADR) com suas consequências.
+
+\begin{nota}
+Este documento é \textbf{normativo} para o projeto: quando ele divergir de uma
+suposição, ele vence. Quando divergir do código, o código vence e o documento
+está desatualizado --- e atualizá-lo faz parte da \emph{Definition of Done} de
+qualquer tarefa (Capítulo~\ref{cap:qualidade}).
+\end{nota}
+
+\section*{Histórico de revisões}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}L{22mm}L{30mm}X@{}}
+  \toprule
+  \headrow \thd{Versão} & \thd{Data} & \thd{Autor} & \thd{Alterações}\\
+  \midrule
+  0.1 & 22/08/2026 & L. Salomão & Estrutura do \textit{monorepo}; arquitetura e
+       ADRs iniciais em \arq{docs/}.\\
+  \zebra 0.2 & 25/08/2026 & L. Salomão & Migração para o \textit{monorepo}
+       mergeada na \arq{main} (26 \textit{commits}, \textit{fast-forward});
+       \textit{tenancy} com RLS, exp-01 e exp-02.\\
+  0.3 & 26/08/2026 & L. Salomão & exp-70 (Vila do Lume) e exp-91 (bem-estar);
+       decisão de retenção sem prazo declarado.\\
+  \zebra \textbf{1.0} & \textbf{27/08/2026} & \textbf{L. Salomão} &
+       \textbf{Documentação técnica consolidada: requisitos, casos de uso,
+       modelo C4 de \textit{software} e de nuvem, \textit{multi-tenancy},
+       modelo de dados, contratos, telemetria particionada, IA, API,
+       \textit{design system}, entrega, qualidade, ADRs e bibliografia em
+       ABNT.}\\
+  \bottomrule
+\end{tabularx}
+
+\section*{Documentos de referência do projeto}
+
+\begin{tabularx}{\linewidth}{@{}L{45mm}X@{}}
+  \toprule
+  \headrow \thd{Artefato} & \thd{Conteúdo}\\
+  \midrule
+  \arq{CLAUDE.md} & Convenções, regras invioláveis de \textit{tenancy} e
+       segurança, contratos de integração e \emph{Definition of Done}. É o
+       documento de governança do repositório.\\
+  \zebra \arq{README.md} & Instalação, os três modos de execução local e
+       \textit{smoke} visual.\\
+  \arq{docs/ARQUITETURA.md} & Visão arquitetural resumida por contrato.\\
+  \zebra \arq{docs/DECISOES.md} & Registro resumido de decisões (base do
+       Capítulo~\ref{cap:adr}).\\
+  \arq{docs/INFRA.md} & Contrato entre este repositório e o de Terraform:
+       nomes de recursos, variáveis e o que o CI publica.\\
+  \zebra \arq{docs/INFRA-IDENTITY.md} & Contrato do gerenciador central de
+       identidade (WSO2 IS), que é único para vários contratos.\\
+  \arq{apps/api/prisma/schema.prisma} & Modelo de dados anotado, com o porquê
+       de cada decisão de esquema.\\
+  \zebra \arq{packages/sdk/src/} & Contrato \textit{postMessage} e cliente de
+       telemetria --- a fronteira entre hub e experiência.\\
+  \arq{.env.example} & Catálogo completo de variáveis de ambiente
+       (Apêndice~\ref{ap:envs}).\\
+  \bottomrule
+\end{tabularx}

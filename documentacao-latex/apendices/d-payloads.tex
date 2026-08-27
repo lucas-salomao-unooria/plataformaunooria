@@ -1,0 +1,403 @@
+% ===========================================================================
+%  Apendice D — Payloads e esquemas
+% ===========================================================================
+\chapter{\emph{Payloads} e esquemas de validação}
+\label{ap:payloads}
+
+Exemplos reais dos \emph{payloads} que atravessam as fronteiras da plataforma, com
+os esquemas Zod que os validam. Todo \emph{input} externo é validado; nenhum
+esquema aqui é decorativo.
+
+\section{Protocolo \cd{postMessage} (v1)}
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{packages/sdk/src/types.ts} --- os esquemas do protocolo}]
+export const PROTOCOL_VERSION = 1;
+
+export const AlunoSchema = z.object({
+  id: z.string(), nome: z.string(),
+  serie: z.string(),          // "6EF", "2EM"
+  turmaId: z.string(), escolaId: z.string(),
+});
+
+export const HubInitSchema = z.object({
+  type: z.literal("hub:init"),
+  protocolVersion: z.number(),
+  token: z.string(),
+  aluno: AlunoSchema,
+  apiUrl: z.string().url(),
+  config: z.record(z.unknown()).default({}),
+});
+
+/** Mensagens POS-init, validadas com Zod nos DOIS lados. Unioes
+ *  discriminadas — mensagem que nao casa e DESCARTADA com aviso, nunca
+ *  despachada crua. Tudo aqui e ADITIVO ao v1: hub antigo ignora mensagem
+ *  que nao conhece; experiencia antiga nunca recebe as novas sem pedir. */
+export const HubParaExpSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("hub:token"), token: z.string() }),
+  z.object({ type: z.literal("hub:pause") }),
+  z.object({ type: z.literal("hub:resume") }),
+]);
+
+export const ExpParaHubSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("exp:ready"), protocolVersion: z.number() }),
+  z.object({ type: z.literal("exp:concluir"),
+             payload: ExpConcluirPayloadSchema.default({}) }),
+  z.object({ type: z.literal("exp:token-expirando") }),
+  z.object({ type: z.literal("exp:estado"), estado: z.record(z.unknown()) }),
+]);
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={\cd{hub:init} --- o que a experiência recebe}]
+{
+  "type": "hub:init",
+  "protocolVersion": 1,
+  "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "aluno": {
+    "id": "8f2c1a44-...", "nome": "Ana",
+    "serie": "8EF",
+    "turmaId": "b17e...", "escolaId": "sp-001"
+  },
+  "apiUrl": "https://api-entreredes.unooria.com",
+  "config": {}
+}
+\end{lstlisting}
+
+\section{\emph{Token} de experiência}
+
+\begin{lstlisting}[language=jsonunoo, caption={\emph{Claims} do JWT --- contrato congelado}]
+{
+  "sub":       "8f2c1a44-...",       // usuarioId (nao "alunoId": professor
+                                     // passa pelo MESMO guard)
+  "escola_id": "sp-001",             // vazio APENAS para admin-contrato
+  "turma_id":  "b17e...",            // opcional
+  "perfil":    "aluno",              // aluno | professor | gestor | admin-contrato
+  "aud":       "plataforma-api",
+  "iss":       "https://entreredes.unooria.com",
+  "exp":       1756290000            // TTL de 15 minutos
+}
+\end{lstlisting}
+
+\begin{nota}
+\cd{sub} vira \cd{usuarioId} nas \emph{claims} tipadas da API
+(\arq{src/auth/claims.ts}) --- e não \cd{alunoId}, porque professor, gestor e
+admin passam pelo mesmo \emph{guard}. O nome do campo é documentação: um
+\cd{alunoId} que às vezes contém um professor é uma armadilha para quem lê a
+\emph{query} seis meses depois.
+\end{nota}
+
+\section{Telemetria --- canal analítico}
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{src/telemetry/telemetry.controller.ts} --- os esquemas}]
+const EventoSchema = z.object({
+  eventId:    z.string().uuid(),
+  ts:         z.string(),
+  expId:      z.string(),
+  expVersion: z.string(),
+  sessaoId:   z.string(),
+  verbo:      z.string(),
+  objeto:     z.string(),
+  resultado:  z.record(z.unknown()).optional(),
+  contexto:   z.record(z.unknown()).optional(),
+});
+// alunoId e escolaId NAO estao no esquema de entrada: sao SOBRESCRITOS a
+// partir do token. O cliente nao PODE colocar PII no lugar do id.
+
+const BatchSchema  = z.object({ eventos: z.array(EventoSchema).max(50) });
+
+/** O beacon do pagehide NAO envia headers, entao o token vem no CORPO. */
+const BeaconSchema = BatchSchema.extend({
+  beacon: z.literal(true).optional(),
+  token:  z.string().min(1),
+});
+
+/** Envelope de push subscription do Pub/Sub. */
+const PushSchema = z.object({
+  message: z.object({ data: z.string().optional(), messageId: z.string().optional() }),
+  subscription: z.string().optional(),
+});
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /telemetry/batch} --- corpo}]
+{
+  "eventos": [
+    {
+      "eventId":    "3f9a2c10-8b41-4d2e-9c77-1a5e6b0d4f22",
+      "ts":         "2026-08-27T11:14:03.512Z",
+      "expId":      "exp-02-unootube",
+      "expVersion": "1.0.0",
+      "sessaoId":   "c81b5e77-2d94-4a10-b3f6-77c2e9a4d001",
+      "verbo":      "interacted",
+      "objeto":     "video/v07",
+      "resultado":  { "acao": "salvou", "salvos": 2 },
+      "contexto":   { "tela": "feed", "ordenacao": "relevancia" }
+    }
+  ]
+}
+\end{lstlisting}
+
+\section{exp-70 --- o \emph{payload} de uma partida}
+
+Este é o \emph{payload} mais elaborado da plataforma, e o que carrega mais
+decisões de projeto por campo.
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /vila/sessoes/:id/concluir} --- corpo (abreviado)}]
+{
+  "v": 1,
+  "bundleVersion": "1.0.0",
+  "duracaoSeg": 1042,          // do "ENTRAR NA VILA" ao fim: tempo de JOGO
+  "duracaoTotalSeg": 1387,     // desde a pagina abrir, incluindo a intro
+  "status": "completa",
+
+  "resumo": {
+    "fogueirasAcesas": 8, "pedrasQuebradas": 3, "aldeoesAjudados": 2,
+    "lampioesAcesos": 4, "tochasAcesas": 6,
+    "dilemasVistos": 3, "dilemasResolvidos": 2, "distanciaM": 1840
+  },
+
+  "medidas": {
+    "cobertura": { "celulas": 62, "total": 144, "pisoObrigatorio": 31 },
+    "movimento": { "movendoSeg": 712, "escuroSeg": 128, "luzSeg": 584,
+                   "atalhos": 2, "desvioM": 340, "raioMax": 58 },
+    "lume":      { "conversas": 4, "perguntasCaminho": 1, "lore": 2,
+                   "ajuda": 1, "sugestaoSeguida": null },
+    "tocha":     { "aldeao": 2, "lampiao": 3, "pedra": 1,
+                   "passarela": 0, "retomadas": 1 },
+    "pedra":     { "borda": true, "destaque": false,
+                   "nomesApagados": 0, "nomesLidos": 5 },
+    "fumaca":    { "avistadas": 3, "seguidas": 2 },
+    "brinquedos": 4,
+    "resgates":  [ { "at": 512, "firesLit": 5 } ]
+  },
+
+  "oportunidades": { "lampiao": 6, "aldeao": 4, "pedra": 1 },
+
+  "dilemas": [ { "pairId": 0, "escolha": "aldeao", "emMs": 214000 } ],
+
+  "eventos": [
+    { "tipo": "chama_acesa",  "emMs": 61000,  "dados": { "zona": "praca" } },
+    { "tipo": "tocha_gasta",  "emMs": 188000, "dados": { "destino": "aldeao" } },
+    { "tipo": "pedra_gravou", "emMs": 402000, "dados": { "acao": "borda" } }
+  ],
+
+  "seguranca": {
+    "apareceram": 4, "respondidas": 3, "ignoradas": 1,
+    "cartoes": [
+      { "id": "c1", "emMs": 240000, "viuOpcoes": true,
+        "escolha": 2, "decisaoMs": 9400 },
+      { "id": "c2", "emMs": 431000, "viuOpcoes": true,
+        "escolha": 1, "decisaoMs": 1800 },
+      { "id": "c3", "emMs": 655000, "viuOpcoes": false,
+        "escolha": null, "decisaoMs": null }
+    ]
+  }
+}
+\end{lstlisting}
+
+\subsection{As decisões que cada campo carrega}
+
+\begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
+\toprule
+\headrow \thd{Campo} & \thd{Decisão registrada}\\
+\midrule
+\textbf{Ausência} de \cd{sessaoLocalId}, \cd{destino}, \cd{iniciadaEm} &
+  Identidade e turma vêm da \emph{sessão autenticada}; repeti-las no
+  \emph{payload} criaria uma segunda fonte de verdade para o servidor conferir
+  contra a primeira. O \emph{id} da partida é emitido pela API (é a chave de
+  idempotência) e o instante de início é cravado por ela.\\
+\zebra \cd{seguranca.cartoes[]} sem classificação &
+  \textbf{Regra 3.} O aplicativo de origem recebia \cd{seguras}, \cd{risco},
+  \cd{golpeAceito}, \cd{legitimaRecusada} e \cd{bolha} por cartão --- o
+  \emph{cliente} classificando as próprias respostas. Agora ele manda o que
+  \emph{fez}, e a API corrige contra \arq{catalogo.ts}. Um \emph{bundle}
+  adulterado já não pode se reportar como tendo recusado tudo.\\
+\cd{viuOpcoes} & Separa \enquote{deixei passar} de \enquote{nem vi}. As duas
+  caíam em \cd{ignoradas}, e são crianças diferentes.\\
+\zebra \cd{decisaoMs} & O campo mais informativo do conjunto: cair em dois
+  segundos e cair depois de dez são duas crianças diferentes --- a primeira não
+  avaliou, a segunda avaliou e foi convencida.\\
+\cd{oportunidades} --- \textbf{a ausência de uma chave} &
+  Significa \enquote{não observado}, que é \emph{diferente} de zero. Zero é
+  \enquote{teve a chance e não foi} e entra na média do polo; não observado
+  \textbf{sai da conta}.\\
+\zebra \cd{pedra.borda} \emph{versus} \cd{pedra.destaque} &
+  Gravou onde ainda cabia, sem apagar ninguém (Realização) \emph{versus} apagou
+  um nome tendo a borda livre (Poder). \textbf{A distinção é o ponto.}\\
+\cd{lume.sugestaoSeguida: null} & \cd{null} = a sugestão não chegou a ser
+  testada. \textbf{Não} é \enquote{não seguiu}.\\
+\zebra \cd{cobertura.pisoObrigatorio} & Quantas células a rota obrigatória já
+  toca. Sem isso, cobertura mediria \emph{cumprimento do objetivo} em vez de
+  iniciativa.\\
+\cd{eventos[].emMs} & Tempo \textbf{relativo} ao início. Nunca relógio de
+  parede.\\
+\zebra \cd{eventos[].dados} & Número, booleano ou \emph{string} de
+  \textbf{vocabulário fechado} (ids das 8 zonas + Fogo Sagrado, destinos da
+  Tocha, as duas ações da Pedra, ids dos cartões). Nome de criança não cabe num
+  vocabulário fechado.\\
+\cd{bundleVersion} & Fica na linha para o \emph{skew} de \emph{publish} ser
+  \textbf{visível}: quem estava com a aba aberta durante uma publicação termina a
+  partida com o \emph{bundle} anterior, e uma partida dura 15--25 minutos.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As duas travas estruturais}
+
+\begin{lstlisting}[language=tsunoo, caption={Por que \cd{.strict()} e por que a inspeção acontece no BRUTO}]
+/**
+ * ATENCAO AO `.strict()` E A ORDEM DE `validarPayload`.
+ *
+ * A primeira versao disto no app de origem tinha as recusas mais importantes
+ * escritas como `.refine()`, e elas NAO FUNCIONAVAM: o zod remove chaves
+ * desconhecidas ANTES de rodar refine, entao `{ nome: "Lara" }` era descartado
+ * em silencio e o refine recebia um objeto ja limpo. O payload passava e o nome
+ * simplesmente sumia sem ninguem saber que tinha chegado. Por isso:
+ *
+ *   1. `.strict()` — chave desconhecida e ERRO, nunca descarte silencioso;
+ *   2. `validarPayload()` inspeciona o dado BRUTO antes do parse, porque so o
+ *      bruto ainda contem o que nao deveria ter vindo.
+ */
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Trava} & \thd{Como funciona}\\
+\midrule
+\cd{CHAVES\_PROIBIDAS} (por \emph{substring}) &
+  \cd{nome}, \cd{name}, \cd{apelido}, \cd{nick}, \cd{aluno}, \cd{crianca},
+  \cd{jogador}, \cd{player}, \cd{cpf}, \cd{matricula}, \cd{email},
+  \cd{telefone}, \cd{responsavel}, \cd{professor}, \cd{endereco},
+  \cd{nascimento}. Por \emph{substring}, porque \cd{nomeCompleto},
+  \cd{nome\_do\_aluno} e \cd{playerName} são a mesma coisa para quem for
+  reidentificar a criança.\\
+\zebra \cd{CHAVES\_PROIBIDAS\_EXATAS} & \cd{rg}, \cd{ra}, \cd{id\_aluno},
+  \cd{doc} --- \textbf{só por igualdade}. \cd{rg} casaria dentro de
+  \cd{perguntasCaminho}, e um falso positivo recusa a partida inteira de uma
+  criança.\\
+\cd{CHAVES\_DO\_CONTRATO} & \cd{nomesApagados} e \cd{nomesLidos} são chaves
+  legítimas que contêm um termo proibido como \emph{substring} (contam nomes na
+  Pedra --- números, nunca texto). A lista é \textbf{fechada}: campo novo que
+  colida tem de ser adicionado aqui \emph{de forma consciente}.\\
+\zebra \cd{CHAVES\_DE\_PERFIL} & Recusa \emph{payload} que traga o perfil
+  calculado. O jogo sabe computá-lo e deliberadamente não o envia --- é isso que
+  permite reprocessar o histórico quando \cd{VERSAO\_MAPEAMENTO} subir.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+A varredura por nome de criança importa \emph{mais} aqui do que no aplicativo de
+origem: lá o \emph{bundle} não tinha nome nenhum em memória; aqui o \emph{shim}
+entrega o primeiro nome da criança ao jogo, para o Lume chamá-la e para a Pedra
+dos Nomes. \textbf{Existe um nome a vazar agora} --- e rejeitar é melhor que
+ignorar em silêncio, porque um campo de nome aparecendo é \emph{bug do jogo}.
+\end{nota}
+
+\subsection{O cap de eventos, e por que ele caiu de 2000 para 200}
+
+\begin{lstlisting}[language=tsunoo]
+.max(200)
+/**
+ * 200, e o teto REAL do jogo e ~22.
+ *
+ * MEDIDO no bundle: o jogo tem 7 pontos que gravam evento, e todos sao atos
+ * discretos com guarda propria — 8 Chamas Sagradas, 4 aldeoes, 1 Borda + 3
+ * Destaques, 4 cartoes da missao, 1 primeira conversa com o Lume. Nada por
+ * quadro, nada por metro andado. `restart()` zera o log, entao replay nao
+ * acumula.
+ *
+ * Herdamos 2000 do app de origem. Cabe baixar: o cap e a UNICA coisa que
+ * limita o tamanho da linha se um cliente adulterado mandar lixo, e
+ * 2000 x ~80 bytes = 160KB por partida (1,6GB num contrato de 10 mil alunos)
+ * contra ~2KB reais. Com 200 ha 9x de folga para eventos novos.
+ */
+\end{lstlisting}
+
+\section{Manifesto de experiência}
+
+\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp-01, com \cd{viewport}}]
+{
+  "id": "exp-01-instanooria",
+  "nome": "Instanooria — O Conteúdo que não chegou",
+  "versao": "1.0.0",
+  "series": ["8EF"],
+  "capabilities": ["telemetria", "progresso", "ia"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "verbos": {
+    "attempted":  "entrou no aparelho",
+    "completed":  "concluiu a missão (dossiê visto)",
+    "progressed": "mudou de fase"
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp-90, ferramenta de professor}]
+{
+  "id": "exp-90-plano-de-aula",
+  "nome": "Gerador de Plano de Aula",
+  "versao": "1.0.0",
+  "series": [],
+  "capabilities": ["telemetria", "ia"],
+  "publico": "professor",
+  "verbos": {
+    "attempted":  "pediu a geração de um plano anual (disciplina + série)",
+    "completed":  "salvou o plano pela primeira vez",
+    "interacted": "exportou .doc, restaurou o original ou excluiu um plano"
+  }
+}
+\end{lstlisting}
+
+\begin{nota}
+\cd{series: []} na exp-90 significa \enquote{não se aplica} porque
+\cd{publico: "professor"}; na exp-70 significa \textbf{todas as séries}, porque é
+experiência de aluno \emph{transversal}. O mesmo valor, duas leituras --- e o que
+as distingue é \cd{publico}. Quando o filtro por série voltar a valer, vazio tem
+de continuar querendo dizer \enquote{todas} para o público \cd{aluno}.
+\end{nota}
+
+\section{Validação de variáveis de ambiente}
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{src/config/env.ts} --- o \emph{refine} que evita um incidente}]
+}).superRefine((env, ctx) => {
+  if (env.AI_PROVIDER === "vertex" && !env.VERTEX_PROJECT_ID) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["VERTEX_PROJECT_ID"],
+      message:
+        "obrigatorio com AI_PROVIDER=vertex (em dev, use AI_PROVIDER=mock " +
+        "para subir sem GCP)",
+    });
+  }
+});
+
+export function validarEnv(config: Record<string, unknown>): Env {
+  const parsed = EnvSchema.safeParse(config);
+  if (!parsed.success) {
+    const erros = parsed.error.issues
+      .map((i) => `  ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
+    throw new Error(`Variaveis de ambiente invalidas:\n${erros}`);
+  }
+  return parsed.data;
+}
+\end{lstlisting}
+
+\begin{nota}
+Sem esse \cd{superRefine}, a URL do Vertex viraria
+\cd{.../projects/undefined/...} e o erro só apareceria na \emph{primeira geração
+real} --- provavelmente de um professor, em aula. A mensagem diz o que fazer, não
+só o que está errado.
+\end{nota}
+
+\section{Importação de usuários por CSV}
+
+\begin{lstlisting}[language=bashunoo, caption={\rota{POST /usuarios/importar-csv} --- corpo \cd{text/csv} cru}]
+nome,usuario,senha,papel,turma,serie
+Ana Souza,ana.souza,trocar123,aluno,8A,8EF
+Bruno Lima,bruno.lima,trocar123,aluno,8A,8EF
+Carla Dias,carla.dias,trocar123,professor,,
+\end{lstlisting}
+
+\begin{nota}
+O corpo é \cd{text/csv} \textbf{cru}, com teto de \SI{2}{\mega\byte} --- por isso
+\arq{src/main.ts} registra um \emph{body parser} explícito de texto além do JSON.
+\cd{username} é único \textbf{por escola}: uma rede tem muitos
+\cd{joao.silva}.
+\end{nota}

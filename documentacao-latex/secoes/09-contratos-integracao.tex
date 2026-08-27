@@ -1,0 +1,479 @@
+% ===========================================================================
+%  9 — Contratos de integracao
+% ===========================================================================
+\chapter{Contratos de integração}
+\label{cap:contratos}
+
+Há quatro fronteiras nesta plataforma cuja quebra é caríssima, porque atinge
+código que já está publicado e não pode ser atualizado em conjunto: o protocolo
+\cd{postMessage} entre hub e experiência, o formato do evento de telemetria, o
+manifesto de experiências e a interface do \emph{provider} de IA. Este capítulo
+especifica os quatro e a política de versionamento de cada um.
+
+\begin{regra}
+\textbf{Mudança em contrato exige cuidado extremo e atualização deste
+documento.} Um \emph{bundle} publicado há três meses no \emph{bucket} de um
+contrato continua sendo servido a alunos: ele não é reconstruído quando a API
+muda. Toda alteração de contrato é, por definição, uma alteração
+\emph{retrocompatível} ou um \emph{bump} de versão maior com suporte à anterior.
+\end{regra}
+
+\section{Protocolo \cd{postMessage} hub $\leftrightarrow$ experiência}
+\label{sec:bridge}
+
+\subsection{Especificação das mensagens (protocolo v1)}
+
+\begin{tabularx}{\linewidth}{@{}L{18mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Sentido} & \thd{Mensagem} & \thd{Carga e semântica}\\
+\midrule
+exp \seta{} hub & \cd{exp:ready} &
+  \cd{\{ protocolVersion \}}. Anúncio de que o \emph{bundle} carregou. É
+  \textbf{reenviado} a cada \SI{400}{\milli\second} até o hub responder.\\
+\zebra hub \seta{} exp & \cd{hub:init} &
+  \cd{\{ protocolVersion, token, aluno\{id,nome,serie,turmaId,escolaId\},
+  apiUrl, config \}}. Resposta ao \cd{exp:ready}; só a primeira conta.\\
+exp \seta{} hub & \cd{exp:concluir} &
+  \cd{\{ payload: \{ score?, dados? \} \}}. Conclusão da missão. O hub registra
+  progresso.\\
+\zebra exp \seta{} hub & \cd{exp:token-expirando} &
+  Sem carga. Pedido de renovação; o hub responde \cd{hub:token}.\\
+hub \seta{} exp & \cd{hub:token} &
+  \cd{\{ token \}}. Novo \emph{token}, sem recarregar o \cd{iframe}.\\
+\zebra exp \seta{} hub & \cd{exp:estado} &
+  \cd{\{ estado: \{\ldots\} \}}. Estado de alto nível para o \emph{chrome}
+  opcional do hub. \textbf{Aditivo} ao v1; o hub \emph{não} interpreta domínio,
+  só repassa a quem plugou um \emph{callback}.\\
+hub \seta{} exp & \cd{hub:pause} / \cd{hub:resume} &
+  Sem carga. Emitidos por visibilidade e foco da página do hub.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O \emph{handshake}, passo a passo}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \raia{1.6}{-12.2}{Experiência}{\texttt{@edu/sdk} no \texttt{iframe}}
+  \raia{6.2}{-12.2}{\texttt{ExpFrame}}{React, no hub}
+  \raia{10.8}{-12.2}{Rota do hub}{Next.js, servidor}
+  \raiaext{15.0}{-12.2}{API}{NestJS}
+
+  \msgs{10.8}{6.2}{-1.0}{monta o \emph{embed}: assina \emph{token} RS256 (15 min)}
+  \msgs{10.8}{15.0}{-1.8}{\rota{GET /experiencias/:expId} --- manifesto}
+  \msgr{15.0}{10.8}{-2.6}{\texttt{\{ versaoAtiva, viewport, permissoes \}}}
+
+  \msgs{6.2}{1.6}{-3.6}{renderiza \texttt{iframe src=} URL versionada}
+  \msgself{1.6}{-4.4}{\texttt{connectToHub(\{ hubOrigin \})}}
+  \msgs{1.6}{6.2}{-5.4}{\texttt{exp:ready \{ protocolVersion: 1 \}}}
+  \msgself{6.2}{-6.2}{valida \texttt{ev.origin} e a versão MAIOR}
+  \msgr{6.2}{1.6}{-7.2}{\texttt{hub:init \{ token, aluno, apiUrl, config \}}}
+  \msgself{1.6}{-8.0}{valida com Zod; resolve a \emph{Promise}}
+
+  \msgs{1.6}{15.0}{-9.2}{chamadas de domínio, \rota{/telemetry/batch}, \rota{/ai/gerar}}
+  \msgs{1.6}{6.2}{-10.0}{\texttt{exp:token-expirando}}
+  \msgs{6.2}{10.8}{-10.8}{\rota{GET /api/exp-token}}
+  \msgr{10.8}{6.2}{-11.4}{\texttt{\{ token \}}}
+  \msgr{6.2}{1.6}{-11.9}{\texttt{hub:token \{ token \}}}
+
+  \node[actnote, text width=42mm, anchor=north west] at (16.6,-3.4)
+    {\textbf{Por que o reenvio do \texttt{exp:ready}:} com os \emph{assets} em
+     \emph{cache} (um F5), a experiência fica pronta ANTES de o \texttt{ExpFrame}
+     hidratar o \emph{listener}, e um disparo único se perderia --- o
+     \emph{handshake} expiraria sem culpa de ninguém. O hub responde a cada
+     \texttt{exp:ready} com um \texttt{hub:init}; só o primeiro conta, e
+     \texttt{hub:init} repetido é tratado como evento normal, não como ruído.};
+
+  \node[actnote, text width=42mm, anchor=north west] at (16.6,-9.0)
+    {\textbf{Por que a renovação passa pelo hub:} a experiência não tem sessão
+     --- ela tem um \emph{token} de 15 minutos. Quem tem sessão é o hub, e é ele
+     que pode assinar outro. O \texttt{iframe} nunca recarrega, então o estado da
+     missão sobrevive à renovação.};
+
+\end{tikzpicture}}
+\caption[Sequência do handshake hub-experiência]{Sequência do \emph{handshake} e
+  da renovação de \emph{token}. O \cd{targetOrigin} é explícito nos dois
+  sentidos, e as duas pontas descartam mensagem de \emph{origin} divergente
+  antes de olhar o conteúdo.}
+\label{fig:seq-handshake}
+\end{figure}
+
+\subsection{Regras invioláveis do protocolo}
+
+\begin{regra}
+\begin{enumerate}
+  \item \textbf{\cd{targetOrigin} explícito, nunca \cd{"*"}.} O hub usa a
+    \emph{origin} derivada da \emph{mesma} URL que colocou no \cd{iframe}; a SDK
+    usa o \cd{hubOrigin} que recebeu por \emph{query string}. Com \cd{"*"}, o
+    \emph{token} iria para qualquer documento que conseguisse virar o pai do
+    \emph{frame}.
+  \item \textbf{Toda mensagem pós-\emph{init} é validada com Zod nos DOIS
+    lados.} Mensagem inválida é descartada com aviso, nunca despachada crua aos
+    \emph{listeners}.
+  \item \textbf{Versão MAIOR verificada nos dois lados; incompatível falha
+    alto.} O hub não envia \cd{hub:init} e registra erro no console; a
+    experiência expira o \emph{handshake} e mostra a própria mensagem de erro.
+  \item \textbf{O \emph{token} vive só em memória} na experiência. Nunca
+    \cd{localStorage}, nunca \emph{cookie}.
+  \item \textbf{Nunca quebrar compatibilidade sem \emph{bump} de versão maior e
+    suporte à anterior.}
+\end{enumerate}
+\end{regra}
+
+\begin{lstlisting}[language=tsunoo, caption={O núcleo da validação, em \arq{packages/sdk/src/bridge.ts}}, label={lst:bridge}]
+function handler(ev: MessageEvent) {
+  if (ev.origin !== hubOrigin) return;           // regra 1: valida origin
+
+  if (!conectado) {
+    const init = HubInitSchema.safeParse(ev.data);
+    if (!init.success) return;                   // antes do init, tudo mais e ruido
+    // Versao MAIOR precisa bater — hub e experiencia de geracoes diferentes
+    // falham ALTO, nao silenciosamente.
+    if (Math.trunc(init.data.protocolVersion) !== PROTOCOL_VERSION) {
+      reject(new Error(`Protocolo incompativel: hub v${init.data.protocolVersion}, ` +
+                       `experiencia v${PROTOCOL_VERSION}`));
+      return;
+    }
+    conectado = true;
+    resolve({ init: init.data, send, onMessage });
+    return;
+  }
+
+  // hub:init repetido (resposta a um exp:ready reenviado) nao e ruido nem erro.
+  if ((ev.data as { type?: unknown })?.type === "hub:init") return;
+
+  const msg = HubParaExpSchema.safeParse(ev.data);
+  if (!msg.success) {
+    console.warn("[sdk] mensagem do hub descartada (schema):", ev.data?.type);
+    return;                                      // regra 2: descarta, nao despacha
+  }
+  listeners.forEach((cb) => cb(msg.data));
+}
+\end{lstlisting}
+
+\subsection{Política de evolução}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Tipo de mudança} & \thd{Versão} & \thd{Regra}\\
+\midrule
+Nova mensagem opcional (como \cd{exp:estado}) & v1, aditivo &
+  Permitido sem \emph{bump}: hub antigo ignora mensagem que não conhece, e
+  experiência antiga nunca recebe a nova sem pedir.\\
+\zebra Novo campo opcional em \cd{hub:init} & v1, aditivo &
+  Permitido. O esquema Zod tem \cd{.default()} ou \cd{.optional()}, e a
+  experiência antiga simplesmente não o lê.\\
+Campo existente muda de tipo ou semântica & \textbf{v2} &
+  Exige \emph{bump} de versão maior \emph{e} que o hub continue respondendo v1
+  enquanto houver \emph{bundle} v1 publicado em algum contrato.\\
+\zebra Remoção de mensagem ou de campo & \textbf{v2} &
+  Mesma regra. A remoção só é efetiva quando o último \emph{bundle} v1 tiver sido
+  republicado.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\cd{hub:pause} e \cd{hub:resume} existem porque \textbf{esconder um
+\cd{iframe} não dispara \cd{visibilitychange} nele}. Sem essas mensagens, o
+cronômetro de \emph{dwell} da experiência correria com o aluno de costas --- e
+\emph{dwell} é a medida central do motor de \emph{feed} da exp-01. O hub escuta
+\cd{visibilitychange} \emph{e} \cd{blur}/\cd{focus} da janela, porque trocar de
+janela ou de aplicativo não muda \cd{visibilityState}.
+\end{atencao}
+
+\section{Manifesto de experiências}
+\label{sec:manifesto}
+
+O manifesto é o contrato entre o CI, a API e o hub. Ele existe em duas cópias
+que devem concordar: o arquivo \arq{public/experiencia.json} dentro do
+\emph{bundle}, e a linha da tabela \cd{experiencias} na API --- que o CI escreve
+lendo o arquivo.
+
+\begin{lstlisting}[language=jsonunoo, caption={\arq{apps/experiencias/exp-70-vila-do-lume/public/experiencia.json}}, label={lst:manifesto}]
+{
+  "id": "exp-70-vila-do-lume",
+  "nome": "Vila do Lume — A Noite Longa",
+  "versao": "1.0.0",
+  "series": [],
+  "capabilities": ["telemetria"],
+  "permissoes": ["pointer-lock"],
+  "verbos": {
+    "attempted":  "entrou na vila (partida aberta)",
+    "interacted": "acendeu fogueira, gastou tocha, gravou na Pedra dos Nomes ou respondeu a uma mensagem",
+    "progressed": "acendeu mais uma das 8 fogueiras",
+    "completed":  "acendeu as 8 fogueiras e reacendeu o Fogo Sagrado"
+  }
+}
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Campo} & \thd{Tipo} & \thd{Semântica}\\
+\midrule
+\cd{id} & \emph{string} & Slug da experiência; é a chave primária da tabela e o
+  primeiro segmento do caminho no \emph{bucket}.\\
+\zebra \cd{nome} & \emph{string} & Nome de exibição.\\
+\cd{versao} & \emph{semver} & Vem do \arq{package.json} da experiência. É o
+  segundo segmento do caminho no \emph{bucket}, o que torna o \emph{bundle}
+  imutável.\\
+\zebra \cd{series} & \emph{string[]} & Séries em que a experiência se aplica.
+  \textbf{Vazio significa TODAS as séries}, não nenhuma --- ver o alerta
+  abaixo.\\
+\cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
+  \cd{ia}, \cd{avaliacao}, \cd{tempo-real}. Declara o que a experiência usa da
+  plataforma.\\
+\zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
+  embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
+  exp-01 é 375$\times$812; a exp-02 \emph{não} tem \cd{viewport}, porque foi
+  desenhada para \emph{desktop}.\\
+\cd{publico} & \cd{aluno|professor} & \cd{professor} \implica{} ferramenta do
+  professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
+\zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
+  experiência precisa. Hoje só \cd{pointer-lock}. Vazio (o \emph{default}) =
+  nenhuma.\\
+\cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
+  experiência emite. Não é lido por código; é contrato de leitura para quem
+  analisa os dados.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\cd{series: []} significa \textbf{todas as séries}, não nenhuma: é assim que uma
+experiência \emph{transversal} se declara (é o caso da exp-70, que não pertence a
+ano nenhum). Quando o filtro por série voltar a valer no hub do aluno, vazio tem
+de continuar querendo dizer \enquote{todas} --- o contrário faz a experiência
+desaparecer da tela sozinha, sem erro em lugar nenhum.
+\end{regra}
+
+\subsection{Como o hub resolve a URL do \cd{iframe}}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[actstart] (ini) at (0,0) {};
+  \node[decision, text width=26mm, right=10mm of ini] (temman)
+    {tem linha em \texttt{experiencias}?};
+
+  \node[action, text width=44mm, above right=6mm and 12mm of temman] (com)
+    {\texttt{\{cdn\}/\{expId\}/\{versaoAtiva\}/index.html}\\
+     \texttt{?hubOrigin=\ldots}};
+  \node[actionsys, text width=44mm, below right=6mm and 12mm of temman] (sem)
+    {\texttt{\{baseDev\}/?hubOrigin=\ldots}\\
+     porta de \arq{lib/experiencias-dev.ts}\\
+     ou o \texttt{src} explícito de \rota{/dev-embed}};
+
+  \node[action, text width=40mm, right=12mm of com] (vp1)
+    {\texttt{viewport} e \texttt{permissoes}\\vêm do MANIFESTO};
+  \node[actionsys, text width=44mm, right=12mm of sem] (vp2)
+    {lê \texttt{\{baseInterna\}/experiencia.json}\\
+     \texttt{baseInterna} = \env{EXP\_INTERNAL\_HOST} aplicado à base};
+
+  \node[actionok, text width=40mm, below right=10mm and -6mm of vp1] (frame)
+    {\texttt{ExpFrame}: \emph{sandbox} + \texttt{allow},\\
+     dentro de \texttt{DispositivoFrame}\\se houver \texttt{viewport}};
+
+  \node[actend, below=8mm of frame] (fim) {};
+
+  \draw[flow] (ini) -- (temman);
+  \draw[flow] (temman) -- (com) node[flowlbl, pos=0.55]{sim};
+  \draw[flow] (temman) -- (sem) node[flowlbl, pos=0.55]{não};
+  \draw[flow] (com) -- (vp1);
+  \draw[flow] (sem) -- (vp2);
+  \draw[flow] (vp1) -- (frame);
+  \draw[flow] (vp2) -- (frame);
+  \draw[flow] (frame) -- (fim);
+
+\end{tikzpicture}}
+\caption[Resolução da URL do embed]{Resolução da URL do \emph{embed} e da casca
+  de aparelho. Os dois caminhos convergem: mesmo sem manifesto, o hub obtém
+  \cd{viewport} e \cd{permissoes} lendo o \arq{experiencia.json} servido ao lado
+  do \arq{index.html} do \emph{bundle}.}
+\label{fig:fluxo-embed}
+\end{figure}
+
+\begin{atencao}
+A leitura do \arq{experiencia.json} do \emph{bundle} \textbf{não é só de
+desenvolvimento}. Antes era, e uma \emph{stack} com a tabela \cd{experiencias}
+vazia --- \emph{compose} local, ou ambiente novo antes do primeiro
+\emph{publish} do CI --- servia a exp-01 \emph{esticada na janela} em vez de
+dentro do aparelho de 375$\times$812. Pelo mesmo motivo, a exp-70 abriria sem
+\cd{allow-pointer-lock}: o jogo monta, a câmera não anda, e nada no console diz
+por quê.
+\end{atencao}
+
+\begin{nota}
+Essa leitura é \emph{server-side}, e \env{NEXT\_PUBLIC\_CDN\_EXP\_URL} é o
+endereço do \textbf{navegador} --- de dentro de um contêiner,
+\cd{localhost:5173} é o próprio contêiner. Daí as duas variáveis:
+\env{EXP\_INTERNAL\_HOST} troca só o \emph{host} e \textbf{preserva a porta} (é
+o que serve em desenvolvimento, onde cada experiência tem um \emph{dev server}
+numa porta diferente), e \env{EXP\_INTERNAL\_URL} é um endereço fixo, que só
+serve quando há \emph{uma} origem de \emph{bundles} --- a CDN, em produção.
+\end{nota}
+
+\subsection{Publicação e reversão}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Operação} & \thd{Comando}\\
+\midrule
+Publicar (feito pelo CI) &
+  \cd{gcloud storage rsync -r \{dir\}/dist gs://\{bucket\}/\{exp\}/\{ver\}/} +
+  \cd{node apps/hub/scripts/publicar-manifesto.mjs \{dir\}}\\
+\zebra Reverter &
+  \cd{node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao x.y.z}\\
+\bottomrule
+\end{tabularx}
+
+O \emph{script} assina um \emph{token} de cinco minutos com a chave de assinatura
+e chama \rota{PUT /experiencias/:expId} como \cd{admin-contrato}. A API valida
+esse \emph{token} contra o JWKS que o \emph{hub} publica --- o que é a razão de o
+\emph{workflow} publicar as experiências \emph{depois} do hub.
+
+\section{Contrato de telemetria}
+
+O formato do evento é inspirado em xAPI~\cite{xapi2023} e simplificado ao que a
+plataforma efetivamente usa.
+
+\begin{lstlisting}[language=jsonunoo, caption={Evento de telemetria (canal analítico)}, label={lst:evento}]
+{
+  "eventId":    "uuid",          // gerado pela SDK; chave de dedupe
+  "ts":         "ISO-8601",      // relogio do cliente
+  "alunoId":    "...",           // SOBRESCRITO pelo servidor, a partir do token
+  "escolaId":   "...",           // SOBRESCRITO pelo servidor
+  "expId":      "exp-01",
+  "expVersion": "1.2.0",
+  "sessaoId":   "uuid",
+  "verbo":      "completed | attempted | interacted | scored | progressed | ...",
+  "objeto":     "fase-3",
+  "resultado":  { },             // livre, por experiencia
+  "contexto":   { }              // livre, por experiencia
+}
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X@{}}
+\toprule
+\headrow \thd{Cláusula} & \thd{Regra}\\
+\midrule
+Quem preenche o quê & A SDK preenche tudo \textbf{exceto} \cd{verbo},
+  \cd{objeto} e \cd{resultado} --- esses são a única coisa que a experiência
+  informa.\\
+\zebra Identidade & \cd{alunoId} e \cd{escolaId} enviados pelo cliente são
+  \textbf{descartados}: o servidor os deriva do \emph{token}. É anti-\emph{spoof}
+  e, ao mesmo tempo, garantia de que o cliente não \emph{pode} colocar PII no
+  lugar do id.\\
+Lote & Até 50 eventos por requisição, \emph{flush} a cada
+  \SI{10}{\second} ou quando o \emph{buffer} enche.\\
+\zebra Fechamento de página & No \cd{pagehide}, \rota{POST /telemetry/beacon}
+  com o \emph{token} \textbf{no corpo} --- \cd{sendBeacon} não envia cabeçalho.\\
+Idempotência & \cd{ON CONFLICT (event\_id, ts) DO NOTHING}. O Pub/Sub entrega
+  \emph{at least once}, então reentrega é rotina, não exceção.\\
+\zebra Documentação dos verbos & Cada experiência declara seus \cd{verbos} no
+  manifesto e no próprio README. Verbo não documentado é dado que ninguém
+  consegue interpretar seis meses depois.\\
+\bottomrule
+\end{tabularx}
+
+O detalhamento dos dois canais --- por que são dois, e o que acontece em cada um
+--- é o Capítulo~\ref{cap:telemetria}.
+
+\section{Contrato do \emph{provider} de IA}
+
+\begin{lstlisting}[language=tsunoo, caption={\arq{apps/api/src/ai/provider.ts} --- a interface neutra de \emph{vendor}}, label={lst:aiprovider}]
+export interface AiRequest {
+  system: string;
+  user: string;
+  maxTokens?: number;
+  /** Familia de modelo, NEUTRA de vendor. `padrao` e o modelo do dia a dia;
+   *  `longo` e o de saida grande (planos anuais). Quem chama nao sabe qual e. */
+  modelo?: "padrao" | "longo";
+  temperatura?: number;
+}
+
+export interface AiResult {
+  texto: string;
+  tokensUsados: number;
+  /** `STOP` (natural) ou outro motivo do vendor (`MAX_TOKENS`, `SAFETY`...).
+   *  Aditivo: quem nao liga, ignora. Quem gera texto longo TEM de olhar. */
+  finishReason?: string;
+}
+
+export interface AiProvider {
+  generate(req: AiRequest): Promise<AiResult>;
+  /** Saida JSON estruturada, com retry e reforco do erro anterior no prompt. */
+  generateJson<T>(req: AiJsonRequest<T>): Promise<T>;
+  /** Bytes originais (jpeg/png). Falha => quem chama cai no fallback procedural. */
+  generateImage(prompt: string): Promise<Buffer>;
+}
+
+export const AI_PROVIDER = "AI_PROVIDER";   // token de injecao do Nest
+\end{lstlisting}
+
+\begin{regra}
+\textbf{Nenhum módulo fora de \arq{src/ai} conhece o \emph{vendor}.} Trocar de
+provedor é criar um arquivo novo (\arq{src/ai/<vendor>.provider.ts}) e registrá-lo
+no módulo por \env{AI\_PROVIDER}. Implementações atuais:
+\arq{vertex.provider.ts} (\emph{default}) e \arq{mock.provider.ts} (testes e
+desenvolvimento sem GCP).
+\end{regra}
+
+\begin{nota}
+\cd{AiJsonSchema} é um subconjunto deliberadamente pequeno de JSON Schema
+(\cd{object}, \cd{array}, \cd{string}, \cd{number}, \cd{boolean}, \cd{enum}), e
+cada \emph{provider} o traduz para o formato do seu modelo. O campo
+\cd{validar} do \cd{AiJsonRequest} recebe a saída bruta e \emph{lança} quando ela
+não serve --- o que faz a tentativa ser regerada com o erro anterior reforçado no
+\emph{prompt}. Validação como parte do contrato, não como verificação posterior.
+\end{nota}
+
+\section{Contrato entre duas experiências}
+
+Quando uma experiência precisa do resultado de outra, a comunicação nunca é
+direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O contrato
+é uma tabela nomeada com os dois números e um \emph{endpoint} de fronteira.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[bundle, text width=28mm] (v) at (0.8,0) {\textbf{exp-70}\desc{Vila do Lume}};
+  \node[c4component, text width=30mm] (mv) at (4.6,0)
+    {\arq{src/vila/}\desc{\texttt{quadrantes.ts}: colapso 10 \seta{} 4}};
+  \node[c4component, text width=34mm, fill=unooOrangeWash, draw=unooOrange] (t) at (9.2,0)
+    {\texttt{exp\_01\_exp\_70\_}\\\texttt{perfis\_importados}\desc{a tabela de contrato}};
+  \node[c4component, text width=30mm] (mi) at (13.6,0)
+    {\arq{src/perfis/largada.ts}\desc{decide o lado do \emph{feed}}};
+  \node[bundle, text width=28mm] (i) at (13.6,-3.2) {\textbf{exp-01}\desc{Instanooria}};
+
+  \node[actnote, text width=52mm, anchor=north west] at (0.2,-2.2)
+    {\textbf{Duas travas que custam alunos, de propósito:} valor não observado
+     (\texttt{indicative} ou \texttt{none}) \textbf{fica fora da média} --- nunca
+     entra como zero; e quadrante \emph{sem nenhum membro observado} invalida o
+     perfil inteiro. Sem perfil, o Instanooria cai no sorteio balanceado, que é
+     honesto sobre não saber. O preço é real: parte da turma não terá perfil
+     importado.};
+
+  \draw[c4rel] (v) -- (mv) node[cxlabel, midway, above]{\emph{payload} bruto};
+  \draw[c4rel] (mv) -- (t) node[cxlabel, midway, above]{\rota{POST /atividades/:id/perfis/da-vila}};
+  \draw[c4rel] (t) -- (mi) node[cxlabel, midway, above]{lê};
+  \draw[c4rel] (mi) -- (i);
+
+\end{tikzpicture}}
+\caption[Contrato entre duas experiências]{O único acoplamento entre
+  experiências, e como ele é explícito: uma tabela cujo nome carrega os dois
+  números, escrita por um \emph{endpoint} de fronteira acionado pelo professor.}
+\label{fig:contrato-exps}
+\end{figure}
+
+\begin{regra}
+O disparo é do \textbf{professor}, e \cd{lado\_forcado} é \textbf{preservado} no
+\emph{upsert}. Importar sozinho --- ou levar o objeto inteiro no \cd{update} ---
+desfaria em silêncio uma redistribuição de turma que o professor fez antes da
+aula. \env{PERFIL\_IMPORT\_TOKEN} e \rota{POST /perfis/importar} continuam vivos
+apenas como compatibilidade com a ponte externa original.
+\end{regra}

@@ -1,0 +1,300 @@
+% ===========================================================================
+%  13 — Especificacao da API
+% ===========================================================================
+\chapter{Especificação da API}
+\label{cap:api}
+
+A API é um serviço NestJS~\cite{nestjs2026} com 22 módulos. Este capítulo
+especifica a superfície HTTP: as convenções transversais, os grupos de rotas e a
+autorização de cada um. O catálogo completo, rota por rota, está no
+Apêndice~\ref{ap:endpoints}.
+
+\section{Convenções transversais}
+
+\begin{tabularx}{\linewidth}{@{}L{32mm}X@{}}
+\toprule
+\headrow \thd{Aspecto} & \thd{Convenção}\\
+\midrule
+Autenticação & \cd{Authorization: Bearer <JWT>}, validado por
+  \cd{OidcGuard} contra o JWKS de \env{OIDC\_ISSUER}. Três rotas fogem disso, e
+  cada uma tem substituto explícito (abaixo).\\
+\zebra Autorização & \cd{@Roles(...)} + \cd{RolesGuard}, \emph{sempre} depois do
+  \cd{OidcGuard} na lista de \emph{guards}. Sem \cd{@Roles}, a rota aceita
+  qualquer papel autenticado.\\
+\emph{Tenancy} & \cd{TenancyInterceptor} global abre o contexto com a escola do
+  \emph{token}; toda \emph{query} passa por \cd{comTenancy} e filtra
+  \cd{escola\_id} explicitamente.\\
+\zebra Validação de entrada & Zod em todo corpo e \emph{query}. Não há
+  \cd{class-validator} nem \emph{pipes} de DTO: o esquema Zod é a fonte única do
+  tipo e da validação.\\
+Corpo & JSON com teto de \SI{2}{\mega\byte}; \cd{text/csv} cru também com
+  \SI{2}{\mega\byte}, para a importação de usuários.\\
+\zebra CORS & Lista explícita em \env{CORS\_ORIGINS} --- hub mais os
+  \emph{dev servers} das experiências. Nunca \cd{*}.\\
+Erros & \emph{Exceptions} do Nest (\cd{BadRequestException},
+  \cd{ForbiddenException}, \cd{NotFoundException}). Domínio com vocabulário
+  próprio de erro usa um \cd{CodigoErro} tipado (ex.:
+  \arq{src/unootube/erros.ts}).\\
+\zebra Assincronia longa & \textbf{202 + \emph{polling}}. Nenhuma rota fica
+  aberta esperando modelo de linguagem.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As três rotas sem \cd{OidcGuard}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Substituto} & \thd{Por quê}\\
+\midrule
+\rota{GET /healthz}, \rota{GET /readyz} & Nenhum --- públicas &
+  Sonda de saúde. Exigir \emph{token} tornaria a sonda dependente do IdP.\\
+\zebra \rota{POST /telemetry/beacon} & Verificação manual do \emph{token}, pelo
+  \cd{TokenService} & \cd{sendBeacon} não envia cabeçalho, então o \emph{token}
+  vem no corpo. O rigor da verificação é o mesmo; só o transporte muda.\\
+\rota{POST /telemetry/ingest} & \cd{PubSubPushGuard} &
+  Quem chama é o Pub/Sub, não um usuário. Verifica emissor Google, \cd{aud} e
+  \cd{email} da conta de serviço. \textbf{Falha fechada} sem configuração.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+Há ainda duas rotas de \emph{serviço} protegidas por chave em cabeçalho, e não
+por JWT: \rota{POST /perfis/importar} (\cd{x-perfil-token}) e
+\rota{POST /planos/referencias} (\cd{x-import-token}). Ambas são chamadas por
+\emph{script} local ou por integração externa, e ambas respondem \textbf{503}
+quando a variável correspondente está ausente --- desligadas, não abertas.
+\end{atencao}
+
+\section{Mapa de rotas por área}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[camadalbl, anchor=west] at (0.3,0.8) {Plataforma --- serve a todos os papéis};
+  \node[c4component, text width=27mm] (au) at (2.3,-0.4)
+    {\rota{/auth/login}\desc{sem papel}};
+  \node[c4component, text width=27mm] (he) at (5.7,-0.4)
+    {\rota{/healthz}, \rota{/readyz}\desc{público}};
+  \node[c4component, text width=27mm] (ex) at (9.1,-0.4)
+    {\rota{/experiencias}\desc{GET: qualquer; PUT: admin}};
+  \node[c4component, text width=27mm] (pg) at (12.5,-0.4)
+    {\rota{/progresso/:expId}\desc{aluno}};
+  \node[c4component, text width=27mm] (te) at (14.4,-1.9)
+    {\rota{/telemetry/*}\desc{ver acima}};
+  \node[c4component, text width=27mm] (us) at (2.3,-1.9)
+    {\rota{/usuarios/*}\desc{gestor, admin}};
+  \node[c4component, text width=27mm] (ai) at (5.7,-1.9)
+    {\rota{/ai/gerar}\desc{autenticado + quota}};
+  \node[c4component, text width=27mm] (an) at (9.1,-1.9)
+    {\rota{/analise/*}\desc{\textbf{admin-contrato}}};
+
+  \node[camadalbl, anchor=west] at (0.3,-3.4) {exp-01 --- Instanooria};
+  \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
+    {\rota{/atividades/*}\desc{professor}};
+  \node[c4component, text width=27mm] (rn) at (5.7,-4.6)
+    {\rota{/runs/*}\desc{aluno (\cd{/eventos}: professor tb.)}};
+  \node[c4component, text width=27mm] (po) at (9.1,-4.6)
+    {\rota{/posts/:id/comentarios}\desc{aluno}};
+  \node[c4component, text width=27mm] (pf) at (12.5,-4.6)
+    {\rota{/perfis/importar}\desc{chave de serviço}};
+
+  \node[camadalbl, anchor=west] at (0.3,-6.1) {Demais experiências};
+  \node[c4component, text width=27mm] (ut) at (2.3,-7.3)
+    {\rota{/unootube/*}\desc{aluno}};
+  \node[c4component, text width=27mm] (utt) at (5.7,-7.3)
+    {\rota{/unootube/turmas/*}\desc{prof., gestor, admin}};
+  \node[c4component, text width=27mm] (vi) at (9.1,-7.3)
+    {\rota{/vila/sessoes}\desc{aluno}};
+  \node[c4component, text width=27mm] (vp) at (12.5,-7.3)
+    {\rota{/vila/professor/*}\desc{\textbf{professor}}};
+  \node[c4component, text width=27mm] (va) at (2.3,-8.8)
+    {\rota{/vila/agregado/*}\desc{prof., gestor}};
+  \node[c4component, text width=27mm] (pl) at (5.7,-8.8)
+    {\rota{/planos/*}\desc{professor}};
+  \node[c4component, text width=27mm] (pref) at (9.1,-8.8)
+    {\rota{/planos/referencias}\desc{chave de serviço}};
+  \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (be) at (12.5,-8.8)
+    {\rota{/bemestar/*}\desc{\textbf{só professor}, posse}};
+
+\end{tikzpicture}}
+\caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. A área
+  de bem-estar está destacada porque é a única sem \emph{nenhuma} rota de
+  gestor ou de agregado --- ausência deliberada, não lacuna.}
+\label{fig:mapa-rotas}
+\end{figure}
+
+\section{Superfície que a SDK consome}
+
+Uma experiência nunca chama a API \enquote{à mão}: chama pela SDK, e a SDK
+oferece exatamente quatro capacidades.
+
+\begin{lstlisting}[language=tsunoo, caption={\cd{ExperienciaHandle} --- tudo que a experiência pode fazer}, label={lst:handle}]
+export interface ExperienciaHandle {
+  aluno: Aluno;
+  config: Record<string, unknown>;
+
+  /** Cliente HTTP autenticado. Sem retry fora do GET — repetir um POST
+   *  de dominio pode duplicar efeito. */
+  api: {
+    get<T>(path: string): Promise<T>;
+    post<T>(path: string, body?: unknown): Promise<T>;
+    put<T>(path: string, body?: unknown): Promise<T>;
+    patch<T>(path: string, body?: unknown): Promise<T>;
+    delete<T>(path: string): Promise<T>;
+  };
+
+  /** Unica porta para IA. A experiencia NAO conhece modelo nem prompt. */
+  ai: { gerar(input: { atividade: string; mensagem: string }): Promise<{ texto: string }> };
+
+  /** Telemetria em lote. A experiencia informa SO verbo, objeto e dados. */
+  track(verbo: TelemetryEvent["verbo"], objeto: string,
+        dados?: Omit<TelemetryEvent, "verbo" | "objeto">): void;
+
+  progresso: {
+    salvar(dados: Record<string, unknown>): Promise<void>;
+    carregar<T>(): Promise<T | null>;
+  };
+
+  concluir(payload?: { score?: number; dados?: Record<string, unknown> }): void;
+  on(evento: "pause" | "resume", cb: () => void): void;
+
+  /** Estado de alto nivel para o chrome opcional do hub (exp:estado). */
+  enviarEstado(estado: Record<string, unknown>): void;
+}
+\end{lstlisting}
+
+\begin{nota}
+Não há método de \enquote{corrigir} nem de \enquote{pontuar} na SDK, e isso é
+intencional: correção é rota de domínio da experiência na API
+(\rota{/unootube/*}, \rota{/vila/*}, \rota{/runs/*}), não capacidade genérica. Uma
+API genérica de avaliação convidaria a mandar a resposta certa junto.
+\end{nota}
+
+\section{Grupos de rotas em detalhe}
+
+\subsection{Motor de \emph{feed} (exp-01)}
+
+O grupo com mais rotas da plataforma, todas escopadas por \cd{run} e todas de
+papel \cd{aluno}, com duas exceções marcadas.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{Semântica}\\
+\midrule
+\rota{POST /runs} & aluno & Cria ou recupera a sessão; resolve a largada
+  (perfil, sorteio ou redistribuição).\\
+\zebra \rota{GET /runs/boot} & aluno & Estado inicial que a experiência precisa
+  para montar a primeira tela.\\
+\rota{POST /runs/:id/entrar} & aluno & Nome no aplicativo e avatar escolhidos.\\
+\zebra \rota{GET /runs/:id/feed} & aluno & \textbf{Próximo bloco curado.} Abre
+  transação, toma o \emph{lock} da \cd{run}, aplica eventos pendentes, cura,
+  persiste e sanitiza.\\
+\rota{POST /runs/:id/eventos} & \textbf{aluno, professor} & Canal operacional de
+  telemetria (\emph{dwell}, curtidas, salvos). Síncrono e transacional.\\
+\zebra \rota{GET /runs/:id/fase} & aluno & Fase atual, para travar a tela conforme
+  o relógio coletivo da turma.\\
+\rota{POST /runs/:id/conclusao} & aluno & Inclinação escolhida (A, B ou dúvida).\\
+\zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & aluno &
+  Texto livre de fechamento, sem limite de caracteres.\\
+\rota{POST /runs/:id/student-post} & aluno & Post publicado pelo aluno.\\
+\zebra \rota{POST /runs/:id/reacoes} & aluno & Dispara reações de persona ao vivo
+  (se \cd{ia\_ao\_vivo}).\\
+\rota{GET /runs/:id/dossie} & \textbf{aluno, professor} & O dossiê de fechamento
+  --- a única rota do grupo que o professor também lê.\\
+\zebra \rota{GET /runs/:id/perdidos} & aluno & Os posts que o aluno \emph{não}
+  viu. É a virada pedagógica da missão.\\
+\rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão. Recalcula a
+  largada pela \emph{mesma} regra do primeiro início.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Planos de aula (exp-90)}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{POST /planos} & \textbf{202} & Enfileira a geração e devolve o id.
+  \emph{Não} espera o modelo.\\
+\zebra \rota{GET /planos/:id} & 200 & Estado (\cd{pendente}, \cd{gerando},
+  \cd{pronto}, \cd{erro}) e, quando pronto, o conteúdo. É o alvo do
+  \emph{polling}.\\
+\rota{PUT /planos/:id/conteudo} & 200 & Salva o HTML do editor, sanitizado por
+  \emph{allowlist}.\\
+\zebra \rota{POST /planos/:id/restaurar} & 200 & Volta ao \arq{gerado.md}, que
+  nunca foi sobrescrito.\\
+\rota{PATCH /planos/:id} & 200 & Renomeia.\\
+\zebra \rota{DELETE /planos/:id} & 200 & Exclui.\\
+\rota{GET /planos/referencias/disponiveis} & 200 & Que disciplinas e séries têm
+  material importado --- é o que popula o formulário.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Bem-estar (exp-91)}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Semântica}\\
+\midrule
+\rota{GET /bemestar/resumo} & \textbf{Leve, sem IA.} É o que o \emph{card} do hub
+  lê --- a home do professor não pode depender de uma chamada de modelo.\\
+\zebra \rota{GET /bemestar/hoje} & Abre o \emph{check-in} do dia: 3 itens
+  \emph{verbatim} + textos de entorno (IA ou \emph{fallback}).\\
+\rota{POST /bemestar/checkins/:id/respostas} & Grava. No sétimo, pontua e
+  classifica \emph{server-side}.\\
+\zebra \rota{GET /bemestar/historico} & Série do próprio professor.\\
+\rota{DELETE /bemestar/dados} & Apaga tudo do próprio professor.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+Todas as cinco são \cd{@Roles("professor")} \emph{e} filtram
+\cd{professor\_id = req.auth.usuarioId} em toda \emph{query}. RLS por escola não
+basta aqui: dois professores da mesma escola não podem se ler.
+\end{regra}
+
+\subsection{Análise}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{Escopo}\\
+\midrule
+\rota{GET /atividades/:id/analise} & professor & Uma atividade da própria
+  escola.\\
+\zebra \rota{GET /atividades/:id/analise/csv} & professor & Exportação da mesma
+  visão.\\
+\rota{GET /analise/resumo} & \textbf{admin-contrato} & Toda a rede.\\
+\zebra \rota{GET /analise/atividades/:id} & \textbf{admin-contrato} & Uma
+  atividade, cross-escola.\\
+\rota{GET /analise/csv} & \textbf{admin-contrato} & Exportação da rede.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+São \textbf{dois \emph{controllers} no mesmo arquivo}, com \cd{@Roles}
+diferentes: um em \rota{/atividades} para o professor, outro em \rota{/analise}
+para o \cd{admin-contrato}. A separação física é o que garante que a próxima rota
+adicionada herde a permissão certa --- e é a mesma decisão tomada em
+\arq{src/vila/}.
+\end{decisao}
+
+\section{Sanidade e prontidão}
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Semântica} & \thd{Uso}\\
+\midrule
+\rota{GET /healthz} & O processo está vivo & \emph{Liveness} do Cloud Run.\\
+\zebra \rota{GET /readyz} & As dependências estão prontas &
+  \emph{Readiness}: verifica o banco. É o que impede uma revisão nova de receber
+  tráfego antes de conseguir consultar.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+As duas são públicas de propósito. Uma sonda de saúde que precise de
+\emph{token} depende do provedor de identidade para dizer se a API está viva ---
+o que inverte a relação de diagnóstico exatamente quando ela mais importa.
+\end{nota}

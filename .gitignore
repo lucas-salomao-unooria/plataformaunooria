@@ -24,3 +24,17 @@ testes/walkthrough-*/
 
 # Mídia pesada das experiências (>2MB vai para o bucket de assets, não para o git)
 apps/experiencias/exp-02-unootube/public/videos/
+
+# Auxiliares do LaTeX (documentacao-latex/). O main.pdf É versionado de
+# propósito: é entregável de projeto, e quem precisa dele não tem TeX instalado.
+documentacao-latex/build/
+documentacao-latex/*.aux
+documentacao-latex/*.bbl
+documentacao-latex/*.blg
+documentacao-latex/*.lof
+documentacao-latex/*.lot
+documentacao-latex/*.toc
+documentacao-latex/*.out
+documentacao-latex/*.fls
+documentacao-latex/*.fdb_latexmk
+documentacao-latex/*.synctex.gz

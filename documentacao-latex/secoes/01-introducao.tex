@@ -1,0 +1,259 @@
+% ===========================================================================
+%  1 — Introducao
+% ===========================================================================
+\chapter{Introdução}
+\label{cap:introducao}
+
+\section{Propósito deste documento}
+
+Este documento descreve a arquitetura, o escopo e a implementação da
+\textbf{Plataforma Unooria}: uma plataforma de educação básica destinada a redes
+públicas de ensino, composta por um \emph{hub} web multi-tenant e um catálogo
+alvo de 48 experiências imersivas que cobrem do 1º ano do Ensino Fundamental ao
+3º ano do Ensino Médio.
+
+A descrição arquitetural segue a norma ISO/IEC/IEEE 42010~\cite{iso42010}:
+identifica os interessados, enuncia os \emph{drivers} que restringem o desenho,
+apresenta visões complementares do sistema e registra as decisões com suas
+consequências. A notação de visualização é o modelo C4~\cite{c4model,brown2024c4},
+aplicado \emph{duas vezes} --- uma para a arquitetura de \emph{software}
+(Capítulo~\ref{cap:arqsw}) e outra para a arquitetura de nuvem e implantação
+(Capítulo~\ref{cap:arqnuvem}) --- porque neste projeto os dois recortes não
+coincidem: há contêineres lógicos que não são serviços em execução, e há
+serviços em execução que não são contêineres lógicos novos.
+
+\begin{nota}
+Todo diagrama deste documento é vetorial, desenhado nativamente em TikZ. Não há
+imagem rasterizada de diagrama, nem dependência de ferramenta externa de
+renderização. Para quem precisa editar, revisar ou versionar o diagrama fora do
+\LaTeX, o Apêndice~\ref{ap:mermaid} traz a fonte Mermaid equivalente de cada
+figura, referenciando o mesmo número.
+\end{nota}
+
+\section{O problema}
+
+Uma plataforma educacional para rede pública tem três exigências que, juntas,
+determinam quase toda a arquitetura --- e que raramente aparecem juntas em
+produto educacional comercial:
+
+\begin{enumerate}
+  \item \textbf{Isolamento contratual forte, isolamento escolar barato.} Cada
+    contrato é uma relação jurídica com um ente federativo. Vazamento de dado
+    entre \emph{contratos} é inaceitável; por isso cada contrato recebe uma
+    \emph{stack} de infraestrutura própria. Já as cem escolas de um mesmo
+    contrato não podem custar cem infraestruturas: elas compartilham a
+    \emph{stack} e são isoladas logicamente.
+  \item \textbf{Pico de carga previsível e brutal.} A rede toda entra na
+    plataforma às oito da manhã. O alvo de projeto é de aproximadamente dez mil
+    alunos por contrato com dois a quatro mil simultâneos nesse pico --- uma
+    curva de carga que não se parece com a de um SaaS de escritório.
+  \item \textbf{Dados de menores.} A maior parte dos titulares dos dados
+    tratados é criança ou adolescente. Isso não é um detalhe de conformidade
+    tratado no fim: é um \emph{driver} arquitetural que decide o que se registra,
+    onde se registra, quem lê e o que o relatório está \emph{proibido} de
+    afirmar~\cite{lgpd2018,anpdcriancas2024}.
+\end{enumerate}
+
+A quarta restrição não é do domínio, é do projeto, e é a mais severa:
+\textbf{uma pessoa desenvolve, com prazo de produção em novembro de 2026}. Isso
+transforma \enquote{simplicidade} de preferência estética em requisito de
+viabilidade. Cada peça de infraestrutura nova é uma peça que uma pessoa vai
+operar de plantão; cada abstração a mais é código que ninguém revisa em par.
+
+\begin{decisao}
+A regra de projeto que decorre disso está escrita no documento de governança do
+repositório e é aplicada em todo este documento: \textbf{simplicidade $>$
+sofisticação}. Nenhum serviço, fila, cache ou biblioteca de estado entra sem
+\emph{gargalo medido}. As duas exceções são decisões tomadas de antemão e
+justificadas: o Pub/Sub da telemetria (\adrr{ADR-06}) e o \emph{provider}
+plugável de IA (\adrr{ADR-07}).
+\end{decisao}
+
+\section{A solução em uma página}
+
+A plataforma é um \emph{monorepo} com quatro tipos de artefato, e a distinção
+entre eles é a decisão arquitetural mais consequente do projeto:
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Artefato} & \thd{Tecnologia} & \thd{Como é entregue}\\
+\midrule
+\arq{apps/hub} & Next.js (App Router) & Contêiner no Cloud Run\\
+\zebra \arq{apps/api} & NestJS + PostgreSQL & Contêiner no Cloud Run\\
+\arq{apps/experiencias/*} & Vite + React + \cd{@edu/sdk} &
+  \textbf{\emph{Bundle} estático} em Cloud Storage atrás de CDN\\
+\zebra \arq{packages/*} & TypeScript puro & Consumido por
+  \textit{workspace}; nunca implantado sozinho\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Experiências nunca viram serviços.} Uma experiência é um conjunto de
+arquivos estáticos em \arq{gs://\{contrato\}-exp/\{expId\}/\{versao\}/}. Não há
+processo, não há porta, não há \emph{scaling}. Isso vale para as 48: o custo
+marginal de publicar a quadragésima oitava experiência é o custo de copiar
+arquivos para um \emph{bucket}. \emph{Rollback} é o hub passar a apontar para a
+versão anterior --- uma linha de \cd{UPDATE}, não um \emph{deploy}.
+\end{regra}
+
+A Figura~\ref{fig:visao-geral} resume o caminho de uma sessão de aluno, do
+\emph{login} à coleta de telemetria.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[c4person, text width=22mm, minimum height=12mm] (aluno) at (0,0)
+    {\textbf{Aluno}};
+
+  \node[c4container, text width=30mm, minimum height=14mm] (hub) at (4.1,0)
+    {\textbf{Hub}\tech{Next.js}\desc{autentica, roteia, embeda}};
+
+  \node[bundle, text width=30mm, minimum height=14mm] (exp) at (8.6,0)
+    {\textbf{Experiência}\tech{Vite estático + CDN}\desc{roda no iframe}};
+
+  \node[c4container, text width=30mm, minimum height=14mm] (api) at (4.1,-3.6)
+    {\textbf{API}\tech{NestJS}\desc{regra, gabarito, tenancy}};
+
+  \node[c4db, text width=24mm] (pg) at (0,-3.6)
+    {\textbf{PostgreSQL}\tech{Cloud SQL}};
+
+  \node[c4queue, text width=26mm, minimum height=12mm] (ps) at (8.6,-3.6)
+    {\textbf{Pub/Sub}\desc{telemetria analítica}};
+
+  \node[c4systemext, text width=26mm, minimum height=12mm] (vertex) at (12.9,-3.6)
+    {\textbf{Vertex AI}\desc{Gemini}};
+
+  \node[c4systemext, text width=26mm, minimum height=12mm] (idp) at (12.9,0)
+    {\textbf{WSO2 IS}\desc{identidade, futuro}};
+
+  \draw[c4rel] (aluno) -- (hub) node[cxlabel, midway, above]{HTTPS};
+  \draw[c4relbi] (hub) -- (exp)
+    node[cxlabel, midway, above]{\texttt{postMessage}}
+    node[cxlabel, midway, below]{token, contexto};
+  \draw[c4reldash] (hub) -- (idp) node[cxlabel, midway, above]{OIDC};
+  \draw[c4rel] (hub) -- (api) node[cxlabel, midway, right=2pt]{BFF};
+  \draw[c4rel] (exp.south) -- (api.east)
+    node[cxlabel, pos=0.42, above right=-1pt]{SDK: \texttt{/telemetry}, \texttt{/ai}, domínio};
+  \draw[c4relbi] (api) -- (pg) node[cxlabel, midway, above]{RLS};
+  \draw[c4rel] (api) -- (ps) node[cxlabel, midway, above]{publica};
+  \draw[c4rel] (ps.south) -- ++(0,-1.0) -| (api.south)
+    node[cxlabel, pos=0.28, below]{\emph{push} \texttt{/telemetry/ingest}};
+  \draw[c4rel] (api) -- (vertex) node[cxlabel, pos=0.62, below]{quota por perfil};
+
+\end{tikzpicture}}
+\caption[Visão geral da plataforma]{Visão geral: o hub é a única porta do
+  usuário; a experiência é estática e recebe o contexto por \cd{postMessage}; a
+  API concentra regra, gabarito e \textit{tenancy}; a telemetria analítica sai
+  pelo Pub/Sub e volta à própria API por \emph{push}.}
+\label{fig:visao-geral}
+\end{figure}
+
+\begin{legendadiag}
+\amostra{c4person} pessoa \quad
+\amostra{c4container} contêiner da plataforma \quad
+\amostra{bundle} artefato estático \quad
+\amostra{c4db} banco de dados \quad
+\amostra{c4queue} fila \quad
+\amostra{c4systemext} sistema externo
+\end{legendadiag}
+
+\section{Como ler este documento}
+
+\subsection{Estrutura}
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}L{44mm}X@{}}
+\toprule
+\headrow \thd{Cap.} & \thd{Título} & \thd{Responde a}\\
+\midrule
+1--2 & Introdução, contexto de negócio & Por que a plataforma existe e sob que
+  restrições\\
+\zebra 3--4 & Requisitos, casos de uso & O que ela deve fazer, e para quem\\
+5 & Arquitetura de \emph{software} (C4) & Como o \emph{software} está
+  organizado\\
+\zebra 6 & Arquitetura de nuvem (C4 + implantação) & Onde ele roda e quanto
+  custa operá-lo\\
+7 & \textit{Multi-tenancy} e segurança & Como um dado de escola não vaza para
+  outra\\
+\zebra 8 & Modelo de dados & Que dados existem e por quê\\
+9--11 & Contratos, telemetria, IA & As três fronteiras que mais custam se
+  quebrarem\\
+\zebra 12--14 & Experiências, API, \emph{design system} & O catálogo, a
+  superfície HTTP e a interface\\
+15--16 & Entrega e qualidade & Como o código chega à escola e o que o impede de
+  chegar errado\\
+\zebra 17--19 & ADRs, riscos, conclusão & As decisões, o que pode dar errado e o
+  estado atual\\
+A--F & Apêndices & Mermaid, variáveis, \emph{endpoints}, \emph{payloads},
+  dicionário de dados, operação\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Convenções tipográficas}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Marca} & \thd{Significado}\\
+\midrule
+\cd{identificador} & Identificador de código: campo, função, tipo, coluna,
+  valor.\\
+\zebra \arq{caminho/arquivo.ts} & Caminho de arquivo ou diretório no repositório.\\
+\rota{GET /rota/:id} & \emph{Endpoint} HTTP da API.\\
+\zebra \env{VARIAVEL} & Variável de ambiente.\\
+\rf{RF-01}, \rf{RNF-01} & Requisito funcional / não funcional
+  (Capítulo~\ref{cap:requisitos}).\\
+\zebra \ucr{UC-01} & Caso de uso (Capítulo~\ref{cap:casosdeuso}).\\
+\adrr{ADR-01} & Decisão arquitetural registrada (Capítulo~\ref{cap:adr}).\\
+\zebra \drr{DR-01} & \emph{Driver} arquitetural (Seção~\ref{sec:drivers}).\\
+\bottomrule
+\end{tabularx}
+
+Os blocos destacados têm significado fixo ao longo do documento:
+
+\begin{nota}
+Informação de contexto que ajuda a entender uma escolha, mas cuja ausência não
+quebra nada.
+\end{nota}
+
+\begin{decisao}
+Decisão de projeto tomada deliberadamente, com a alternativa descartada e o
+motivo. Toda decisão deste tipo tem uma entrada correspondente no
+Capítulo~\ref{cap:adr}.
+\end{decisao}
+
+\begin{regra}
+Invariante que não pode ser violada por nenhuma implementação futura. As sete
+regras invioláveis da plataforma estão consolidadas na
+Seção~\ref{sec:regras-inviolaveis}.
+\end{regra}
+
+\begin{atencao}
+Armadilha conhecida: algo que já falhou, ou que falha silenciosamente. Quase
+todos estes blocos registram um erro efetivamente cometido e medido no projeto.
+\end{atencao}
+
+\begin{limitacao}
+Limitação assumida do estado atual, com o caminho de saída. Não é bug: é escopo
+que ficou de fora, de propósito.
+\end{limitacao}
+
+\section{O que este documento não cobre}
+
+\begin{itemize}
+  \item \textbf{O código Terraform.} Ele vive em repositório separado. O
+    \emph{contrato} entre os dois repositórios --- nomes de recursos esperados,
+    variáveis consumidas, artefatos publicados --- está no
+    Capítulo~\ref{cap:arqnuvem} e em \arq{docs/INFRA.md}.
+  \item \textbf{O conteúdo pedagógico.} O catálogo de missões, os textos e a
+    trilha por ano são produto, não arquitetura. O Capítulo~\ref{cap:experiencias}
+    descreve a \emph{mecânica} de cada experiência apenas até onde ela impõe
+    exigências ao \emph{software}.
+  \item \textbf{O \emph{design system}.} Os componentes vivem em repositório
+    próprio (\arq{storybook-unooria}) e chegam aqui como pacote npm publicado. O
+    Capítulo~\ref{cap:ds} documenta as \emph{regras de consumo}, não o catálogo
+    de componentes.
+  \item \textbf{As 43 experiências ainda não escritas.} O
+    Capítulo~\ref{cap:experiencias} documenta as cinco existentes e o
+    \emph{gabarito} que as próximas devem seguir.
+\end{itemize}

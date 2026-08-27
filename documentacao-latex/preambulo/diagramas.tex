@@ -1,0 +1,457 @@
+% ============================================================================
+%  diagramas.tex — biblioteca TikZ do documento
+%
+%  Todos os diagramas do documento (C4, UML de casos de uso, atividades,
+%  sequencia, entidade-relacionamento, classes e infraestrutura) sao vetoriais
+%  e desenhados nativamente em TikZ. Isso garante tipografia unica (Roboto),
+%  nitidez em qualquer zoom e ausencia de dependencia externa de renderizacao.
+%  O codigo Mermaid equivalente de cada diagrama esta no Apendice A.
+% ============================================================================
+
+\usepackage{tikz}
+\usetikzlibrary{
+  arrows.meta, positioning, fit, backgrounds, calc, shapes.geometric,
+  shapes.symbols, shapes.multipart, shapes.misc, decorations.pathreplacing,
+  decorations.pathmorphing, decorations.markings, patterns, patterns.meta,
+  matrix, chains, scopes, quotes, shadows.blur, math, intersections
+}
+
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+
+% Numeracao dos graficos na convencao brasileira (virgula decimal), coerente
+% com o restante do documento.
+\pgfkeys{/pgf/number format/.cd, use comma, 1000 sep={.}}
+
+% Estilo comum dos graficos quantitativos: eixos recessivos, grade sutil,
+% tipografia do documento. Mesma paleta validada da interface.
+\pgfplotsset{
+  unooplot/.style={
+    width=\linewidth, height=6cm,
+    axis line style={draw=unooAxis, line width=0.6pt},
+    tick label style={font=\scriptsize\color{unooInkSoft}},
+    label style={font=\small\color{unooInkSoft}},
+    title style={font=\small\bfseries\color{unooNavy}, align=left},
+    legend style={font=\scriptsize, draw=unooGrid, fill=unooSurface,
+                  /tikz/every even column/.append style={column sep=6pt}},
+    grid=major, grid style={draw=unooGrid, line width=0.5pt},
+    major tick style={draw=unooAxis},
+    axis background/.style={fill=unooSurface},
+    every axis plot post/.append style={line width=0.9pt},
+    enlarge x limits=0.06,
+  }
+}
+
+% ---------------------------------------------------------------------------
+%  Base comum
+% ---------------------------------------------------------------------------
+\tikzset{
+  >={Stealth[length=5.4pt, width=4.2pt]},
+  every node/.append style={align=center, inner sep=4pt},
+  cxlabel/.style={font=\scriptsize\color{unooInkSoft}, fill=unooSurface,
+                  inner sep=1.6pt, rounded corners=1pt},
+  cxtitle/.style={font=\small\bfseries\color{unooNavy}},
+  legenda/.style={font=\scriptsize\color{unooMuted}},
+}
+
+% ---------------------------------------------------------------------------
+%  C4 model — notacao de Simon Brown adaptada a paleta do projeto
+% ---------------------------------------------------------------------------
+\tikzset{
+  % --- elementos -----------------------------------------------------------
+  c4box/.style={
+    rectangle, rounded corners=2.5pt, draw, line width=0.8pt,
+    text width=32mm, minimum height=15mm, font=\footnotesize,
+    inner sep=5pt
+  },
+  c4person/.style={
+    c4box, fill=unooNavy, draw=unooNavy!85!black, text=white,
+    rounded corners=7pt, text width=28mm, minimum height=16mm
+  },
+  c4system/.style={
+    c4box, fill=unooBlue, draw=unooNavy, text=white
+  },
+  c4systemext/.style={
+    c4box, fill=unooMuted, draw=unooInkSoft, text=white
+  },
+  c4container/.style={
+    c4box, fill=unooBlue!88, draw=unooNavy, text=white
+  },
+  c4containerext/.style={
+    c4box, fill=unooMuted!85, draw=unooInkSoft, text=white
+  },
+  c4component/.style={
+    c4box, fill=unooBlueLight!45, draw=unooBlue, text=unooInk, text width=30mm,
+    minimum height=13mm
+  },
+  c4db/.style={
+    cylinder, shape border rotate=90, aspect=0.28, draw, line width=0.8pt,
+    fill=unooNavy, draw=unooNavy!80!black, text=white,
+    text width=25mm, minimum height=17mm, font=\footnotesize, inner sep=3pt
+  },
+  c4queue/.style={
+    c4box, fill=unooYellow!85, draw=unooYellow!60!black, text=unooInk,
+    rounded corners=8pt
+  },
+  c4artifact/.style={
+    c4box, fill=unooGreen!80, draw=unooGreen!60!black, text=white
+  },
+  % --- fronteiras ----------------------------------------------------------
+  c4boundary/.style={
+    draw=unooAxis, dashed, dash pattern=on 3pt off 2.4pt, line width=0.9pt,
+    rounded corners=4pt, inner sep=9pt
+  },
+  c4boundarylbl/.style={
+    font=\scriptsize\bfseries\color{unooInkSoft}, anchor=north west,
+    inner sep=2pt
+  },
+  c4zone/.style={
+    c4boundary, draw=unooBlue!55, fill=unooBlue!4
+  },
+  c4zoneext/.style={
+    c4boundary, draw=unooMuted, fill=unooPaper
+  },
+  % --- relacoes ------------------------------------------------------------
+  c4rel/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.85pt,
+                draw=unooInkSoft},
+  c4relbi/.style={c4rel, {Stealth[length=5pt,width=4pt]}-{Stealth[length=5pt,width=4pt]}},
+  c4reldash/.style={c4rel, dashed, dash pattern=on 3pt off 2pt},
+  c4relhi/.style={c4rel, draw=unooOrange, line width=1.1pt},
+}
+
+% Rotulo tecnologico dentro de um elemento C4
+\newcommand{\tech}[1]{\\[1.5pt]{\scriptsize\itshape [#1]}}
+% Descricao curta dentro de um elemento C4
+\newcommand{\desc}[1]{\\[2pt]{\scriptsize #1}}
+
+% ---------------------------------------------------------------------------
+%  UML — casos de uso
+% ---------------------------------------------------------------------------
+\tikzset{
+  ucase/.style={
+    ellipse, draw=unooBlue, line width=0.85pt, fill=unooBlueWash,
+    text=unooInk, font=\scriptsize, minimum width=34mm, minimum height=11mm,
+    inner sep=2.5pt, text width=31mm
+  },
+  ucasesec/.style={ucase, fill=unooSurface, draw=unooAxis},
+  ucsystem/.style={
+    draw=unooNavy, line width=1pt, rounded corners=3pt, fill=unooBlue!3,
+    inner sep=11pt
+  },
+  ucrel/.style={line width=0.8pt, draw=unooInkSoft},
+  ucinclude/.style={
+    -{Stealth[length=5pt,width=4pt]}, dashed, dash pattern=on 3pt off 2pt,
+    line width=0.75pt, draw=unooGreen
+  },
+  ucextend/.style={
+    -{Stealth[length=5pt,width=4pt]}, dashed, dash pattern=on 3pt off 2pt,
+    line width=0.75pt, draw=unooOrange
+  },
+  ucgen/.style={-{Triangle[open, length=6pt, width=6pt]}, line width=0.8pt,
+                draw=unooInkSoft},
+  ucnote/.style={font=\scriptsize\color{unooInkSoft}},
+}
+
+% Ator UML (boneco de palito) — #1 nome do no, #2 posicao, #3 rotulo
+\newcommand{\ator}[3]{%
+  \begin{scope}[shift={#2}]
+    \draw[line width=0.9pt, draw=unooNavy] (0,0.30) circle (0.155);
+    \draw[line width=0.9pt, draw=unooNavy] (0,0.145) -- (0,-0.24);
+    \draw[line width=0.9pt, draw=unooNavy] (-0.245,-0.01) -- (0.245,-0.01);
+    \draw[line width=0.9pt, draw=unooNavy] (0,-0.24) -- (-0.20,-0.60);
+    \draw[line width=0.9pt, draw=unooNavy] (0,-0.24) -- (0.20,-0.60);
+    \node[font=\scriptsize\bfseries\color{unooNavy}, text width=24mm,
+          anchor=north] at (0,-0.68) {#3};
+    \node[inner sep=0pt, minimum width=13mm, minimum height=19mm] (#1) at (0,-0.15) {};
+  \end{scope}
+}
+
+% Ator secundario (sistema externo) — retangulo com estereotipo
+\newcommand{\atorsys}[3]{%
+  \node[draw=unooInkSoft, line width=0.85pt, fill=unooPaper, rounded corners=2pt,
+        font=\scriptsize, text width=22mm, minimum height=12mm] (#1) at #2
+        {{\scriptsize$\ll$ator$\gg$}\\\textbf{#3}};
+}
+
+% ---------------------------------------------------------------------------
+%  UML — diagramas de atividades
+% ---------------------------------------------------------------------------
+\tikzset{
+  actstart/.style={
+    circle, fill=unooInk, draw=unooInk, minimum size=4.6mm, inner sep=0pt
+  },
+  actend/.style={
+    circle, fill=unooInk, draw=unooInk, minimum size=4.6mm, inner sep=0pt,
+    double, double distance=1.1pt, outer sep=0pt
+  },
+  action/.style={
+    rectangle, rounded corners=4pt, draw=unooBlue, line width=0.85pt,
+    fill=unooBlueWash, text=unooInk, font=\scriptsize, text width=36mm,
+    minimum height=10mm, inner sep=4pt
+  },
+  actionsys/.style={action, fill=unooSurface, draw=unooAxis},
+  actionerr/.style={action, fill=unooOrangeWash, draw=unooOrange},
+  actionok/.style={action, fill=unooGreenWash, draw=unooGreen},
+  decision/.style={
+    diamond, draw=unooNavy, line width=0.85pt, fill=unooYellowWash,
+    aspect=1.9, font=\scriptsize, text width=26mm, inner sep=1pt
+  },
+  bar/.style={
+    rectangle, fill=unooInk, minimum width=34mm, minimum height=1.5mm,
+    inner sep=0pt
+  },
+  barv/.style={
+    rectangle, fill=unooInk, minimum width=1.5mm, minimum height=30mm,
+    inner sep=0pt
+  },
+  flow/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.85pt,
+               draw=unooInkSoft},
+  flowlbl/.style={font=\scriptsize\color{unooInkSoft}, fill=unooSurface,
+                  inner sep=1.5pt},
+  lane/.style={
+    draw=unooAxis, line width=0.7pt, fill=unooSurface
+  },
+  lanehdr/.style={
+    draw=unooAxis, line width=0.7pt, fill=unooNavy, text=white,
+    font=\scriptsize\bfseries
+  },
+  actnote/.style={
+    draw=unooYellow!70!black, fill=unooYellowWash, line width=0.6pt,
+    font=\scriptsize\color{unooInkSoft}, text width=34mm, align=left,
+    rounded corners=0pt, inner sep=4pt
+  },
+  actnoteline/.style={dashed, dash pattern=on 2pt off 1.6pt, draw=unooYellow!70!black},
+  objflow/.style={
+    rectangle, draw=unooGreen, line width=0.7pt, fill=unooGreenWash,
+    font=\scriptsize, text width=30mm, inner sep=3.5pt
+  },
+}
+
+% ---------------------------------------------------------------------------
+%  UML — diagramas de sequencia
+% ---------------------------------------------------------------------------
+\tikzset{
+  seqhead/.style={
+    rectangle, rounded corners=2pt, draw=unooNavy, line width=0.8pt,
+    fill=unooNavy, text=white, font=\scriptsize, text width=26mm,
+    minimum height=9mm, inner sep=3pt
+  },
+  seqheadext/.style={seqhead, fill=unooMuted, draw=unooInkSoft},
+  seqheadact/.style={seqhead, fill=unooBlue, draw=unooNavy},
+  seqline/.style={dashed, dash pattern=on 2.6pt off 2.2pt, draw=unooAxis,
+                  line width=0.7pt},
+  seqmsg/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.85pt,
+                 draw=unooInkSoft},
+  seqret/.style={seqmsg, dashed, dash pattern=on 2.6pt off 2pt,
+                 draw=unooInkSoft},
+  seqself/.style={seqmsg, rounded corners=2pt},
+  seqlbl/.style={font=\scriptsize\color{unooInk}, fill=unooSurface,
+                 inner sep=1.6pt},
+  seqact/.style={fill=unooBlueLight!60, draw=unooBlue, line width=0.5pt,
+                 minimum width=2.2mm, inner sep=0pt},
+  seqframe/.style={draw=unooAxis, line width=0.7pt, rounded corners=0pt},
+  seqframelbl/.style={fill=unooNavy, text=white, font=\scriptsize\bfseries,
+                      inner sep=2.2pt, anchor=north west},
+  seqcond/.style={font=\scriptsize\itshape\color{unooInkSoft}, anchor=west},
+}
+
+% Raia de sequencia: #1 = x, #2 = profundidade (y final, negativo),
+% #3 = titulo, #4 = tecnologia
+\newcommand{\raia}[4]{%
+  \node[seqhead] at (#1,0) {\textbf{#3}\\[0.5pt]{\scriptsize\itshape #4}};
+  \draw[seqline] (#1,-0.52) -- (#1,#2);
+}
+\newcommand{\raiaext}[4]{%
+  \node[seqheadext] at (#1,0) {\textbf{#3}\\[0.5pt]{\scriptsize\itshape #4}};
+  \draw[seqline] (#1,-0.52) -- (#1,#2);
+}
+% Mensagem: #1 = x origem, #2 = x destino, #3 = y, #4 = rotulo
+\newcommand{\msgs}[4]{%
+  \draw[seqmsg] (#1,#3) -- (#2,#3) node[seqlbl, midway, above=0.4pt]{#4};
+}
+% Retorno (tracejado)
+\newcommand{\msgr}[4]{%
+  \draw[seqret] (#1,#3) -- (#2,#3) node[seqlbl, midway, above=0.4pt]{#4};
+}
+% Auto-mensagem: #1 = x, #2 = y, #3 = rotulo
+\newcommand{\msgself}[3]{%
+  \draw[seqself] (#1,#2) -- ++(0.62,0) -- ++(0,-0.42) -- ++(-0.62,0);
+  \node[seqlbl, anchor=west] at (#1+0.72,#2-0.21) {#3};
+}
+
+% ---------------------------------------------------------------------------
+%  Entidade-relacionamento e classes
+% ---------------------------------------------------------------------------
+\tikzset{
+  entidade/.style={
+    rectangle split, rectangle split parts=2, draw=unooNavy,
+    line width=0.85pt, rectangle split part fill={unooNavy, unooSurface},
+    font=\scriptsize, text width=37mm, inner sep=4pt, rounded corners=1pt,
+    every text node part/.style={align=center},
+    every two node part/.style={align=left}
+  },
+  classe/.style={
+    rectangle split, rectangle split parts=3, draw=unooNavy,
+    line width=0.85pt, rectangle split part fill={unooNavy, unooSurface, unooPaper},
+    font=\scriptsize, text width=44mm, inner sep=4pt, rounded corners=1pt,
+    every text node part/.style={align=center},
+    every two node part/.style={align=left},
+    every three node part/.style={align=left}
+  },
+  erel/.style={line width=0.85pt, draw=unooInkSoft},
+  ercard/.style={font=\scriptsize\color{unooNavy}, fill=unooSurface,
+                 inner sep=1.4pt},
+  hered/.style={-{Triangle[open, length=6.5pt, width=6.5pt]}, line width=0.85pt,
+                draw=unooInkSoft},
+  compos/.style={-{Diamond[open, length=6pt, width=4.5pt]}, line width=0.85pt,
+                 draw=unooInkSoft},
+  depend/.style={-{Stealth[length=5pt,width=4pt]}, dashed,
+                 dash pattern=on 3pt off 2pt, line width=0.75pt,
+                 draw=unooInkSoft},
+}
+
+% Titulo branco em negrito para a primeira particao de entidade/classe
+\newcommand{\etitulo}[1]{\textcolor{white}{\textbf{#1}}}
+\newcommand{\pk}[1]{\textcolor{unooNavy}{\textbf{#1}}}
+\newcommand{\fk}[1]{\textcolor{unooOrange}{#1}}
+
+% ---------------------------------------------------------------------------
+%  Infraestrutura / implantacao
+% ---------------------------------------------------------------------------
+\tikzset{
+  nuvem/.style={
+    draw=unooBlue, line width=1pt, dash pattern=on 4pt off 2.6pt,
+    rounded corners=6pt, fill=unooBlue!3, inner sep=11pt
+  },
+  nuvemlbl/.style={
+    font=\scriptsize\bfseries\color{unooNavy}, anchor=north west,
+    fill=unooSurface, inner sep=2.4pt
+  },
+  regiao/.style={
+    draw=unooAxis, line width=0.8pt, dash pattern=on 2.6pt off 2pt,
+    rounded corners=4pt, fill=unooSurface, inner sep=8pt
+  },
+  servico/.style={
+    rectangle, rounded corners=2.5pt, draw=unooNavy, line width=0.85pt,
+    fill=unooBlue!88, text=white, font=\scriptsize, text width=30mm,
+    minimum height=13mm, inner sep=4pt
+  },
+  servicoger/.style={servico, fill=unooNavy},
+  servicobroker/.style={servico, fill=unooYellow!85, text=unooInk,
+                        draw=unooYellow!55!black},
+  volume/.style={
+    cylinder, shape border rotate=90, aspect=0.30, draw=unooGreen!60!black,
+    line width=0.85pt, fill=unooGreen!80, text=white, font=\scriptsize,
+    text width=22mm, minimum height=15mm, inner sep=3pt
+  },
+  externo/.style={
+    rectangle, rounded corners=2.5pt, draw=unooInkSoft, line width=0.85pt,
+    fill=unooMuted, text=white, font=\scriptsize, text width=30mm,
+    minimum height=13mm, inner sep=4pt
+  },
+  internet/.style={
+    cloud, cloud puffs=13, cloud puff arc=110, draw=unooAxis, line width=0.85pt,
+    fill=unooPaper, text=unooInkSoft, font=\scriptsize, minimum width=26mm,
+    minimum height=15mm, aspect=1.6
+  },
+  netpriv/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.9pt,
+                  draw=unooGreen!70!black},
+  netpub/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.9pt,
+                 draw=unooOrange},
+  netbi/.style={{Stealth[length=5pt,width=4pt]}-{Stealth[length=5pt,width=4pt]},
+                line width=0.9pt, draw=unooInkSoft},
+  portlbl/.style={font=\scriptsize\ttfamily\color{unooInkSoft},
+                  fill=unooSurface, inner sep=1.5pt},
+}
+
+% ---------------------------------------------------------------------------
+%  Pipeline / fluxo de dados
+% ---------------------------------------------------------------------------
+\tikzset{
+  etapa/.style={
+    rectangle, rounded corners=2.5pt, draw=unooBlue, line width=0.85pt,
+    fill=unooBlueWash, font=\scriptsize, text width=27mm, minimum height=13mm,
+    inner sep=4pt
+  },
+  etapaio/.style={
+    etapa, fill=unooPaper, draw=unooAxis
+  },
+  etapaout/.style={etapa, fill=unooGreenWash, draw=unooGreen},
+  etapaerr/.style={etapa, fill=unooOrangeWash, draw=unooOrange},
+  fita/.style={
+    signal, signal to=east, signal from=west, draw=unooBlue,
+    line width=0.85pt, fill=unooBlueWash, font=\scriptsize, text width=24mm,
+    minimum height=12mm
+  },
+  pipe/.style={-{Stealth[length=5.4pt,width=4.4pt]}, line width=1pt,
+               draw=unooBlue},
+  pipelbl/.style={font=\scriptsize\color{unooInkSoft}, fill=unooSurface,
+                  inner sep=1.5pt},
+}
+
+% ---------------------------------------------------------------------------
+%  Legenda padronizada de diagrama
+% ---------------------------------------------------------------------------
+\newcommand{\amostra}[1]{%
+  \tikz[baseline=-0.55ex]{\node[#1, text width=0pt, minimum width=3.6mm,
+    minimum height=3.0mm, inner sep=0pt, font=\tiny]{};}%
+}
+\newenvironment{legendadiag}
+  {\par\vspace{2pt}\begingroup\footnotesize\color{unooInkSoft}%
+   \setlength{\parskip}{2pt}\textbf{Legenda:}\space}
+  {\endgroup\par\vspace{2pt}}
+
+% ---------------------------------------------------------------------------
+%  Acrescimos deste documento (nao vieram da biblioteca de origem)
+% ---------------------------------------------------------------------------
+\tikzset{
+  % Bundle estatico servido pela CDN — nao e um servico, e um artefato.
+  bundle/.style={
+    rectangle, draw=unooGreen!60!black, line width=0.85pt, fill=unooGreen!80,
+    text=white, font=\scriptsize, text width=28mm, minimum height=13mm,
+    inner sep=4pt, rounded corners=1pt
+  },
+  % Fronteira do iframe: a linha que separa o chrome do hub da ficcao da
+  % experiencia. Tracejada e grossa de proposito — e fronteira de seguranca.
+  iframe/.style={
+    draw=unooOrange, line width=1.1pt, dash pattern=on 4pt off 2.4pt,
+    rounded corners=3pt, fill=unooOrangeWash!45, inner sep=9pt
+  },
+  iframelbl/.style={
+    font=\scriptsize\bfseries\color{unooOrange}, anchor=north west,
+    fill=unooSurface, inner sep=2.2pt
+  },
+  % Maquina de estados
+  estado/.style={
+    rectangle, rounded corners=6pt, draw=unooBlue, line width=0.85pt,
+    fill=unooBlueWash, font=\scriptsize, text width=24mm, minimum height=9mm,
+    inner sep=3pt
+  },
+  estadoini/.style={estado, fill=unooNavy, text=white, draw=unooNavy},
+  estadofim/.style={estado, fill=unooGreenWash, draw=unooGreen},
+  estadoerr/.style={estado, fill=unooRedWash, draw=unooRed},
+  trans/.style={-{Stealth[length=5pt,width=4pt]}, line width=0.8pt,
+                draw=unooInkSoft},
+  translbl/.style={font=\scriptsize\color{unooInkSoft}, fill=unooSurface,
+                   inner sep=1.4pt},
+  % Camada horizontal (diagramas de camadas)
+  camada/.style={
+    rectangle, draw=unooAxis, line width=0.7pt, fill=unooSurface,
+    minimum height=13mm, inner sep=5pt, font=\scriptsize
+  },
+  camadalbl/.style={font=\scriptsize\bfseries\color{unooNavy}},
+  % Tabela do banco, com prefixo por experiencia
+  tabela/.style={
+    rectangle split, rectangle split parts=2, draw=unooNavy,
+    line width=0.8pt, rectangle split part fill={unooNavy, unooSurface},
+    font=\scriptsize, text width=34mm, inner sep=3.5pt, rounded corners=1pt,
+    every text node part/.style={align=center},
+    every two node part/.style={align=left}
+  },
+  tabelaplat/.style={tabela, rectangle split part fill={unooBlue, unooSurface}},
+  tabelacat/.style={tabela, rectangle split part fill={unooMuted, unooPaper}},
+}
+
+% Rotulo de prefixo de tabela por experiencia
+\newcommand{\pref}[1]{{\scriptsize\ttfamily #1}}

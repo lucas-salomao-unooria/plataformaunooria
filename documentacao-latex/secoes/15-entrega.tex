@@ -1,0 +1,304 @@
+% ===========================================================================
+%  15 — Engenharia de entrega
+% ===========================================================================
+\chapter{Engenharia de entrega}
+\label{cap:entrega}
+
+\section{O \emph{monorepo} e o \emph{build} incremental}
+
+\begin{decisao}
+\textbf{\emph{Monorepo} único, com pnpm \emph{workspaces} + Turborepo}
+(\adrr{ADR-02}). A SDK é consumida por 48 aplicações: uma mudança nela precisa
+testar tudo no \emph{mesmo} \emph{pull request}, ou a incompatibilidade aparece
+num \emph{bundle} publicado semanas depois. Repositórios separados só se houver
+estúdio externo produzindo experiência.
+\end{decisao}
+
+\begin{lstlisting}[language=jsonunoo, caption={\arq{turbo.json} --- o \emph{pipeline} inteiro}, label={lst:turbo}]
+{
+  "tasks": {
+    "build":     { "dependsOn": ["^build"],
+                   "outputs": ["dist/**", ".next/**", "!.next/cache/**"] },
+    "dev":       { "cache": false, "persistent": true },
+    "lint":      { },
+    "typecheck": { "dependsOn": ["^build"] },
+    "test":      { "dependsOn": ["^build"] }
+  }
+}
+\end{lstlisting}
+
+O \cd{dependsOn: ["\^{}build"]} é o que faz o grafo funcionar: \cd{typecheck} de
+uma experiência exige o \cd{build} da SDK, então o \emph{filtro} por mudança
+arrasta as dependências corretas.
+
+\begin{tabularx}{\linewidth}{@{}L{50mm}X@{}}
+\toprule
+\headrow \thd{Comando} & \thd{Uso}\\
+\midrule
+\cd{pnpm turbo build --filter=@edu/exp-01} & Builda uma experiência mais as
+  dependências dela.\\
+\zebra \cd{pnpm turbo build --filter='...[HEAD\^{}]'} & Só o que mudou. É o que o
+  CI usa.\\
+\cd{pnpm turbo typecheck lint test} & O portão local da \emph{Definition of
+  Done}.\\
+\bottomrule
+\end{tabularx}
+
+\section{Integração contínua}
+
+\begin{lstlisting}[language=yamlunoo, caption={\arq{.github/workflows/ci.yml}}, label={lst:ci}]
+name: ci
+on:
+  pull_request:
+  # Chamado pelo deploy.yml no push para main. NAO tem `push: main` proprio:
+  # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
+  # dois workflows em paralelo deixariam um teste vermelho subir para escola.
+  workflow_call:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo typecheck lint test build --filter='...[HEAD^]'
+\end{lstlisting}
+
+\begin{decisao}
+O CI é chamado pelo \emph{deploy} por \cd{workflow\_call}, e \textbf{não} tem
+gatilho próprio em \cd{push: main}. Com gatilho próprio, ele rodaria duas vezes
+no mesmo \emph{commit} --- e, pior, em \emph{paralelo} com o \emph{deploy}, o que
+deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
+\textbf{espera} pelo portão.
+\end{decisao}
+
+\section{Entrega contínua}
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[etapaio, text width=26mm] (push) at (1.4,0)
+    {\emph{push} para \texttt{main}};
+  \node[etapa, text width=26mm, fill=unooGreenWash, draw=unooGreen] (ver) at (5.0,0)
+    {\textbf{portão}: \texttt{ci.yml}\desc{typecheck, lint, test, build}};
+  \node[etapa, text width=26mm] (auth) at (8.6,0)
+    {WIF + \texttt{setup-gcloud}\desc{sem chave JSON}};
+  \node[etapa, text width=30mm] (diff) at (12.4,0)
+    {o que mudou?\desc{\texttt{git diff HEAD\^{} HEAD}\\api $|$ hub $|$ migrations}};
+
+  \node[etapa, text width=28mm] (build) at (14.0,-2.4)
+    {\texttt{turbo build}\desc{filtrado, ou tudo se \texttt{forcar}}};
+
+  % --- trilha da api
+  \node[camadalbl, anchor=west] at (0.4,-3.6) {api --- a ORDEM importa};
+  \node[etapa, text width=28mm] (img) at (2.4,-4.8)
+    {imagem da api\desc{Artifact Registry, \emph{cache} GHA}};
+  \node[etapa, text width=30mm, fill=unooYellowWash, draw=unooYellow] (mig) at (6.4,-4.8)
+    {\textbf{Cloud Run Job} \texttt{-migrate}\desc{na VPC, \texttt{--wait}}};
+  \node[etapaout, text width=28mm] (dep) at (10.4,-4.8)
+    {\texttt{gcloud run deploy}\desc{revisão nova}};
+
+  % --- trilha do hub
+  \node[camadalbl, anchor=west] at (0.4,-6.4) {hub};
+  \node[etapa, text width=28mm] (imgh) at (2.4,-7.4)
+    {imagem do hub};
+  \node[etapaout, text width=28mm] (deph) at (6.4,-7.4)
+    {\texttt{gcloud run deploy}};
+
+  % --- trilha das experiencias
+  \node[camadalbl, anchor=west] at (0.4,-9.0)
+    {experiências --- DEPOIS do hub, de propósito};
+  \node[etapa, text width=30mm] (rsync) at (2.6,-10.2)
+    {\texttt{gcloud storage rsync}\desc{\texttt{gs://\{bucket\}/\{exp\}/\{ver\}/}}};
+  \node[etapa, text width=30mm] (cc) at (6.6,-10.2)
+    {\texttt{Cache-Control}\desc{\texttt{max-age=60} só no \texttt{index.html}}};
+  \node[etapaout, text width=32mm] (man) at (10.8,-10.2)
+    {\texttt{publicar-manifesto.mjs}\desc{\texttt{PUT /experiencias/:expId},
+     token de 5 min}};
+
+  \draw[pipe] (push) -- (ver);
+  \draw[pipe] (ver) -- (auth);
+  \draw[pipe] (auth) -- (diff);
+  \draw[pipe] (diff) -- (build);
+  \draw[pipe] (build.west) -- (12.2,-2.4) -- (12.2,-3.9) -- (3.4,-3.9) -- (img.north);
+  \draw[pipe] (img) -- (mig);
+  \draw[pipe] (mig) -- (dep);
+  \draw[pipe] (build.west) -- (12.2,-2.4) -- (12.2,-6.6) -- (3.4,-6.6) -- (imgh.north);
+  \draw[pipe] (imgh) -- (deph);
+  \draw[pipe] (deph.south) -- (6.4,-8.4) -- (2.6,-8.4) -- (rsync.north);
+  \draw[pipe] (rsync) -- (cc);
+  \draw[pipe] (cc) -- (man);
+
+  \node[actnote, text width=48mm, anchor=north west] at (12.0,-4.2)
+    {\textbf{Por que a migração antes do \emph{deploy}:} o \emph{schema} novo tem
+     de estar no banco \emph{antes} de a revisão nova receber tráfego, senão a
+     API roda contra um banco velho. O \texttt{--wait} faz o passo falhar se a
+     migração falhar --- e o \emph{deploy} não acontece.};
+
+  \node[actnote, text width=48mm, anchor=north west] at (12.0,-8.4)
+    {\textbf{Por que as experiências depois do hub:} o \texttt{PUT} do manifesto é
+     validado pela API contra o JWKS que o \emph{hub} serve. Hub fora do ar =
+     manifesto rejeitado --- e um manifesto rejeitado é melhor que um manifesto
+     aceito apontando para um hub que não subiu.};
+
+\end{tikzpicture}}
+\caption[Pipeline de entrega]{O \emph{pipeline} de entrega. Três trilhas
+  independentes com uma ordem obrigatória entre elas, e um portão de qualidade
+  antes de tudo.}
+\label{fig:pipeline-deploy}
+\end{figure}
+
+\subsection{Nada de nome de recurso no \emph{workflow}}
+
+\begin{decisao}
+Tudo que muda de um contrato para outro entra por \cd{vars} do repositório --- o
+\emph{workflow} \textbf{não sabe} o nome de nenhum recurso. Os valores saem de
+\cd{terraform output}, e há um \emph{script} que os configura
+(\arq{scripts/configurar-github-ci.sh}).
+
+É isso que faz o mesmo \emph{workflow} servir a \cd{dev} e a produção, e ao
+próximo contrato, sem \emph{fork}.
+\end{decisao}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{\cd{vars}} & \thd{Conteúdo}\\
+\midrule
+\cd{GCP\_PROJECT}, \cd{REGION} & Projeto e região.\\
+\zebra \cd{AR\_REPO} & Artifact Registry.\\
+\cd{API\_SERVICE}, \cd{HUB\_SERVICE}, \cd{MIGRATE\_JOB} & Nomes dos serviços e do
+  \emph{job}.\\
+\zebra \cd{EXP\_BUCKET}, \cd{ASSETS\_BASE\_URL} & \emph{Buckets} e base pública de
+  \emph{assets}.\\
+\cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos.\\
+\zebra \cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Concorrência e reexecução}
+
+\begin{lstlisting}[language=yamlunoo, caption={A política de concorrência do \emph{deploy}}]
+# Dois deploys ao mesmo tempo brigam pela mesma revisao do Cloud Run e pelo
+# mesmo banco. `cancel-in-progress: false` de proposito: abortar no meio de
+# uma migration deixa schema e imagem fora de sincronia — melhor enfileirar.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+\end{lstlisting}
+
+\begin{nota}
+Há um \cd{workflow\_dispatch} com \emph{input} \cd{forcar}, para publicar tudo
+ignorando o \emph{diff} --- primeiro \emph{deploy} de um contrato, ou reexecução
+depois de falha. Com \cd{forcar}, o \emph{build} também tem de ser de
+\textbf{todas} as experiências, senão o laço de publicação encontra pasta sem
+\arq{dist/}.
+\end{nota}
+
+\begin{nota}
+O laço de publicação é tolerante por desenho: pasta de experiência sem
+\arq{package.json}, sem \arq{public/experiencia.json} ou sem \arq{dist/} é
+\textbf{pulada com aviso}, não é erro. Experiência incompleta é trabalho em
+andamento, e trabalho em andamento não deve quebrar o \emph{deploy} do resto.
+\end{nota}
+
+\section{Ambientes locais}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{34mm}X@{}}
+\toprule
+\headrow \thd{Modo} & \thd{Comando} & \thd{Quando usar}\\
+\midrule
+Banco em contêiner, resto no \emph{host} &
+  \cd{docker compose up -d pg} + \cd{pnpm dev} &
+  Iteração rápida com \emph{debugger} do editor. O caminho mais direto.\\
+\zebra \textbf{Tudo em contêiner, sincronizado} &
+  \cd{pnpm docker:dev} &
+  \textbf{Recomendado.} Banco, API, hub e as cinco experiências, cada um com o
+  próprio \emph{watcher}, com o código do \emph{host} por \emph{bind mount}:
+  salvar um arquivo recompila lá dentro (API $\sim$1\,s, hub e Vite na hora), sem
+  \cd{build} e sem \cd{up} de novo.\\
+Imagens congeladas &
+  \cd{docker compose up -d --build} &
+  Aproximar-se da produção. Migrações e \emph{seed} rodam sozinhos no primeiro
+  \cd{up}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+As portas são as mesmas nos três modos (hub \cd{:3000}, API \cd{:3001},
+experiências \cd{:5173}--\cd{:5177}), então \textbf{não dá para rodar
+\cd{pnpm docker:dev} e \cd{pnpm dev} ao mesmo tempo} --- é um \emph{ou} o outro.
+\end{atencao}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Situação} & \thd{O que fazer}\\
+\midrule
+Mexeu em dependência (\arq{package.json} ou \emph{lockfile}) &
+  \cd{pnpm docker:dev:deps} e reiniciar. O \arq{node\_modules} de cada contêiner
+  é \textbf{volume próprio} --- binário de macOS não roda no Linux da imagem ---
+  então instalar no \emph{host} não basta.\\
+\zebra Salvou um arquivo e nada recompilou &
+  \cd{DEV\_POLLING=1 pnpm docker:dev}. O \emph{inotify} pode não atravessar o
+  \emph{bind mount} em alguns \emph{setups}.\\
+\bottomrule
+\end{tabularx}
+
+\section{O provedor de identidade sobe à parte}
+
+\begin{lstlisting}[language=bashunoo, caption={O WSO2 tem ciclo de vida próprio}]
+docker compose -f wso2/docker-compose.yml up -d     # IS :9443, banco dele :5433
+docker compose -f wso2/docker-compose.yml watch     # olha conf/ e bootstrap/
+\end{lstlisting}
+
+\begin{nota}
+O \cd{watch} é o equivalente do \emph{hot reload} para um servidor Java:
+\arq{conf/} já entra por volume (nada de \emph{rebuild}), e mudar o
+\arq{deployment.toml} \textbf{reinicia} o servidor --- que é o ciclo mais curto
+possível ali, porque o \emph{entrypoint} só copia o volume de configuração para o
+\emph{server home} no \emph{boot} ($\sim$2\,min). Mudar \arq{bootstrap/}
+reexecuta o \emph{bootstrap} (idempotente); só mudar o \arq{Dockerfile} (o
+\emph{driver} JDBC) refaz imagem.
+\end{nota}
+
+\section{Convenções de \emph{git}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Convenção} & \thd{Regra}\\
+\midrule
+Tronco & \arq{main}. A migração para o \emph{monorepo} foi mergeada nela em
+  2026-08-25 por \emph{fast-forward}: 26 \emph{commits}, histórico linear, sem
+  \emph{merge commit}.\\
+\zebra \emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
+  (\arq{exp-07-fracoes}). Trabalho que não é experiência usa o prefixo do tipo do
+  \emph{commit}: \arq{fix/quota-por-perfil}, \arq{chore/deps},
+  \arq{ci/deploy}.\\
+\emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
+  \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
+  tocado.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Nada de \emph{build} no \emph{git}.} O \arq{.gitignore} cobre
+\arq{dist/}, \arq{.next/}, \arq{.next-prod/}, \arq{.turbo/},
+\arq{*.tsbuildinfo}, \arq{storage/}, \arq{storage-privado/} e os \emph{prints}
+dos \emph{walkthroughs}.
+
+\arq{apps/hub/.next-prod/} já entrou uma vez por um \cd{git add -A} distraído:
+358 arquivos e \SI{250}{\mega\byte} de \emph{cache} de \emph{webpack} no
+histórico, que só saíram reconstruindo a \emph{branch} inteira.
+\textbf{Stage por caminho, nunca \cd{-A} sem olhar o \cd{git status}.}
+\end{atencao}
+
+\begin{nota}
+\arq{apps/hub/next-env.d.ts} \textbf{é} versionado (o Next espera isso), mas
+alterna entre \arq{./.next} e \arq{./.next-prod} conforme o último \emph{build}.
+Modificado depois de um \cd{build:isolado} = descartar, não \emph{commitar}.
+\end{nota}

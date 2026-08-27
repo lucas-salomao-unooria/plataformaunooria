@@ -1,0 +1,140 @@
+% ===========================================================================
+%  19 — Conclusao
+% ===========================================================================
+\chapter{Conclusão}
+\label{cap:conclusao}
+
+\section{O que foi construído}
+
+A Plataforma Unooria é um \emph{monorepo} com dois serviços em execução --- um hub
+Next.js e uma API NestJS --- servindo um catálogo crescente de experiências
+imersivas entregues como \emph{bundles} estáticos versionados em CDN. Em 27 de
+agosto de 2026, o estado é:
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Dimensão} & \thd{Estado}\\
+\midrule
+Serviços em execução & 2 (hub, API) + 2 gerenciados (PostgreSQL, Pub/Sub)\\
+\zebra Experiências publicadas & 5 de 48, cobrindo os quatro casos estruturais:
+  aluno com IA, aluno sem IA, jogo transversal e ferramenta de professor\\
+Módulos da API & 22, com um módulo de domínio por experiência\\
+\zebra Tabelas & 27 em \cd{public} + partições mensais em \cd{particoes}\\
+Migrações & 9, todas com RLS preservada\\
+\zebra Arquivos de teste & 34 (regra pura, integração, contrato, \emph{smoke})\\
+\emph{Walkthroughs} visuais & 7\\
+\zebra Decisões registradas & 21 ADRs\\
+Milestones concluídos & M0--M6\\
+\bottomrule
+\end{tabularx}
+
+\section{As decisões que mais definiram o resultado}
+
+Se este documento tivesse de ser reduzido a cinco frases, seriam estas.
+
+\begin{enumerate}
+  \item \textbf{Experiência é artefato, não serviço} (\adrr{ADR-01}). É a decisão
+    que torna 48 experiências viáveis para uma pessoa: o custo marginal de
+    publicar a próxima é copiar arquivos, e a reversão de emergência é um
+    \cd{UPDATE} de uma coluna.
+
+  \item \textbf{Isolamento físico entre contratos, lógico entre escolas}
+    (\adrr{ADR-04}, \adrr{ADR-08}). Uma \emph{stack} por rede satisfaz o edital;
+    RLS forçada com uma porta única de banco satisfaz a engenharia. E as duas
+    trancas --- política no banco e filtro na aplicação --- são independentes de
+    propósito.
+
+  \item \textbf{Regra que pode ser expressa em tipo é expressa em tipo}
+    (\adrr{ADR-12}). \cd{comTenancy} \emph{lança} sem escola em vez de consultar
+    sem filtro; a leitura de valores não \emph{tem} campo numérico onde não há
+    medida. Comentário avisa; tipo impede. É a diferença entre uma regra
+    documentada e uma regra que vale.
+
+  \item \textbf{O que se recusa a construir é o que permite terminar}
+    (Capítulo~\ref{cap:riscos}). Sem GKE, sem microsserviço por experiência, sem
+    Redis, sem BigQuery, sem \emph{worker} de telemetria, sem módulo genérico de
+    avaliação --- cada um com a condição de reavaliação escrita, para que a recusa
+    não vire teimosia.
+
+  \item \textbf{Medir antes de otimizar, e medir antes de estimar}
+    (\adrr{ADR-14}, \adrr{ADR-16}). O gargalo da telemetria não era o transporte,
+    era um laço de \cd{INSERT}. O armazenamento da exp-70 não era
+    \SI{2.4}{\giga\byte}, era \SI{30}{\mega\byte}. O modelo de IA não existia na
+    região que parecia óbvia. Nenhuma dessas três coisas era previsível --- e
+    todas as três mudaram uma decisão.
+\end{enumerate}
+
+\section{O que este projeto ensinou sobre documentação}
+
+Vale registrar, porque muda como este documento deve ser mantido.
+
+\begin{nota}
+As decisões mais finas deste projeto não estavam em documento nenhum: estavam em
+\textbf{comentários no código}, ao lado da linha que elas explicam --- por que o
+terceiro argumento do \cd{set\_config} é \cd{true}, por que \cd{exp:ready} é
+reenviado, por que a tabela de contrato carrega dois números, por que
+\cd{cartoesServidos} não é \enquote{apareceram}.
+
+Isso é um bom padrão e deve continuar. O que este documento acrescenta não é
+substituir aqueles comentários --- é dar-lhes um \emph{lugar}: a estrutura em que
+uma pessoa que nunca viu o repositório consegue entender por que ele é assim, e a
+matriz que liga cada decisão ao requisito que a exige e ao teste que a verifica.
+\end{nota}
+
+\begin{atencao}
+O risco desta documentação é o mesmo do \cd{expires\_at} que foi removido do
+\emph{schema} (\adrr{ADR-13}): \textbf{documento que ninguém atualiza é pior que
+documento nenhum}, porque quem o lê acredita nele.
+
+Por isso a atualização deste documento é item explícito da \emph{Definition of
+Done} (Capítulo~\ref{cap:qualidade}) e está registrada em \arq{CLAUDE.md}, não
+apenas aqui. Uma implementação nova que mude arquitetura, contrato, modelo de
+dados, decisão ou risco \textbf{tem de} atualizar o capítulo correspondente e
+regerar o PDF no mesmo \emph{commit}.
+\end{atencao}
+
+\section{Estado de prontidão para produção}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{16mm}X@{}}
+\toprule
+\headrow \thd{Dimensão} & \thd{Estado} & \thd{Falta}\\
+\midrule
+Funcionalidade & \yes{} Pronta & As 43 experiências restantes são \emph{conteúdo},
+  não plataforma.\\
+\zebra Isolamento e segurança de \emph{tenancy} & \yes{} Pronta e verificada &
+  Revisão externa (\cd{R-06}).\\
+Entrega e reversão & \yes{} Pronta & \emph{Rsync} de mídia no CI
+  (\cd{R-09}).\\
+\zebra Identidade & \yes{} Funcional & WSO2 como emissor (\adrr{ADR-15}).\\
+\textbf{Desempenho sob pico} & \no{} \textbf{Não verificado} &
+  \textbf{Teste de carga} (\cd{R-01}). É o item que separa \enquote{funciona} de
+  \enquote{funciona às oito da manhã}.\\
+\zebra \textbf{Operabilidade} & \no{} Parcial & \textbf{\emph{Alerting}}
+  (\cd{R-05}).\\
+\textbf{Conformidade} & \no{} Parcial & \textbf{Retenção decidida} (\cd{R-02}) e
+  \textbf{DPA com a localidade de IA} (\cd{R-03}).\\
+\zebra Acessibilidade & \no{} Não verificada & Checagem no \emph{design system}
+  (\cd{R-07}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{limitacao}
+A plataforma está \textbf{funcionalmente pronta} e \textbf{operacionalmente
+incompleta}. As quatro lacunas em negrito acima são bloqueantes para novembro de
+2026, e três delas não são resolvidas por código: retenção é decisão de produto,
+DPA é jurídico, revisão de segurança é contratação. Reconhecer isso explicitamente
+é mais útil que declarar prontidão.
+\end{limitacao}
+
+\section{Encerramento}
+
+O desenho descrito aqui é conservador por escolha. Não há tecnologia interessante
+nele: há PostgreSQL com RLS, contêineres sem orquestrador, arquivos estáticos numa
+CDN e uma fila onde a fila era inevitável. A parte difícil não foi escolher as
+peças --- foi recusar as que não cabiam, e escrever por que.
+
+O que este documento tenta preservar não é o \emph{estado} do sistema, que o
+código descreve melhor. É o \emph{porquê}: as vinte e uma decisões, as medições
+que as sustentam, as armadilhas que já custaram tempo e as consequências ruins que
+foram aceitas de olhos abertos. Um sistema pode ser lido a partir do código. Um
+projeto, não.

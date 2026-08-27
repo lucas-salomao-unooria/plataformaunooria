@@ -1,0 +1,1003 @@
+% ===========================================================================
+%  Apendice A — Fontes Mermaid dos diagramas
+% ===========================================================================
+\chapter{Fontes Mermaid dos diagramas}
+\label{ap:mermaid}
+
+Todo diagrama deste documento é vetorial, desenhado nativamente em TikZ --- o que
+garante tipografia única, nitidez em qualquer \emph{zoom} e ausência de
+dependência externa de renderização. Este apêndice traz a fonte
+\textbf{Mermaid equivalente} de cada figura, para quem precisa editar, revisar ou
+versionar o diagrama fora do \LaTeX{} (num \emph{pull request}, num Storybook, num
+quadro).
+
+\begin{regra}
+\textbf{Ao acrescentar um diagrama TikZ, inclua aqui a fonte Mermaid
+equivalente}, referenciando o mesmo número de figura. Diagrama sem par Mermaid é
+diagrama que só uma pessoa consegue alterar.
+\end{regra}
+
+\begin{nota}
+As fontes abaixo usam \cd{C4Context}, \cd{C4Container} e \cd{C4Component} onde o
+diagrama é C4, \cd{sequenceDiagram} onde é sequência, \cd{erDiagram} onde é
+entidade-relacionamento, \cd{stateDiagram-v2} onde é máquina de estados e
+\cd{flowchart} nos demais. Não são idênticas ao TikZ: o Mermaid não expressa
+posicionamento fino nem notas ancoradas, e as notas longas dos diagramas TikZ
+aparecem aqui como \cd{note} ou comentário.
+\end{nota}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:visao-geral} --- Visão geral da plataforma}
+
+\begin{lstlisting}[language=mermaid]
+C4Container
+  title Visao geral da Plataforma Unooria
+
+  Person(aluno, "Aluno", "1o EF ao 3o EM")
+
+  Container_Boundary(plat, "Plataforma Unooria") {
+    Container(hub, "Hub", "Next.js", "Autentica, roteia por papel, embeda")
+    Container(exp, "Experiencia", "Vite estatico + CDN", "Roda no iframe do navegador")
+    Container(api, "API", "NestJS", "Regra, gabarito, tenancy")
+    ContainerDb(pg, "PostgreSQL", "Cloud SQL", "RLS por escola")
+    ContainerQueue(ps, "Pub/Sub", "", "Telemetria analitica")
+  }
+
+  System_Ext(idp, "WSO2 Identity Server", "Identidade, futuro")
+  System_Ext(vertex, "Vertex AI", "Gemini")
+
+  Rel(aluno, hub, "HTTPS")
+  BiRel(hub, exp, "postMessage v1", "token, contexto")
+  Rel_L(hub, idp, "OIDC")
+  Rel(hub, api, "BFF")
+  Rel(exp, api, "SDK: /telemetry, /ai, dominio")
+  BiRel(api, pg, "SQL + RLS")
+  Rel(api, ps, "publica")
+  Rel(ps, api, "push POST /telemetry/ingest")
+  Rel(api, vertex, "quota por perfil")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:casos-de-uso} --- Casos de uso}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  aluno([Aluno]); prof([Professor]); gestor([Gestor escolar]); admin([Admin do contrato])
+  idp[[WSO2 IS]]; vertex[[Vertex AI]]; pubsub[[Pub/Sub]]; ci[[CI/CD]]
+
+  subgraph SIS["Plataforma Unooria"]
+    UC01(("UC-01 Autenticar-se"))
+    UC02(("UC-02 Escolher missao no hub"))
+    UC03(("UC-03 Realizar experiencia"))
+    UC04(("UC-04 Registrar telemetria"))
+    UC05(("UC-05 Renovar token da sessao"))
+    UC06(("UC-06 Ver o proprio resultado"))
+    UC10(("UC-10 Preparar atividade"))
+    UC11(("UC-11 Gerar conteudo com IA"))
+    UC12(("UC-12 Conduzir o momento coletivo"))
+    UC13(("UC-13 Ler resultados da turma"))
+    UC14(("UC-14 Gerar plano de aula"))
+    UC15(("UC-15 Check-in de bem-estar"))
+    UC16(("UC-16 Zerar dados da turma"))
+    UC20(("UC-20 Importar usuarios por CSV"))
+    UC21(("UC-21 Redefinir senha"))
+    UC22(("UC-22 Ler agregado da rede"))
+    UC23(("UC-23 Publicar manifesto"))
+    UC24(("UC-24 Reverter versao"))
+  end
+
+  aluno --- UC01 & UC02 & UC03 & UC06
+  prof  --- UC01 & UC10 & UC12 & UC13 & UC14 & UC15 & UC16
+  gestor --- UC20 & UC21
+  admin --- UC22 & UC23
+
+  UC03 -.->|include| UC04
+  UC03 -.->|include| UC05
+  UC10 -.->|include| UC11
+  UC23 -.->|extend| UC24
+
+  UC01 --- idp
+  UC11 --- vertex
+  UC14 --- vertex
+  UC15 --- vertex
+  UC04 --- pubsub
+  UC23 --- ci
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:c4l1} --- C4 nível 1: contexto}
+
+\begin{lstlisting}[language=mermaid]
+C4Context
+  title C4 nivel 1 - Contexto do sistema
+
+  Person(aluno, "Aluno", "1o EF ao 3o EM")
+  Person(prof, "Professor", "Conduz a aula")
+  Person(gestor, "Gestor escolar", "Mantem usuarios")
+  Person(admin, "Admin do contrato", "Rede")
+
+  System(sis, "Plataforma Unooria", "Hub multi-tenant que autentica por papel, embeda experiencias imersivas versionadas, corrige e pontua no servidor, coleta telemetria e produz leitura de turma - com isolamento logico por escola")
+
+  System_Ext(idp, "WSO2 Identity Server", "Identidade central, varios contratos")
+  System_Ext(vertex, "Vertex AI - Gemini", "Texto e imagem generativos")
+  System_Ext(ci, "GitHub Actions", "Publica bundles e manifestos")
+  System_Ext(tf, "Terraform (repo separado)", "Provisiona a stack do contrato")
+
+  Rel(aluno, sis, "realiza missoes")
+  Rel(prof, sis, "prepara, conduz, le")
+  Rel(gestor, sis, "administra")
+  Rel(admin, sis, "le o agregado")
+  Rel(idp, sis, "OIDC")
+  BiRel(sis, vertex, "HTTPS + ADC")
+  Rel(ci, sis, "publica")
+  Rel(tf, sis, "provisiona")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:c4l2} --- C4 nível 2: contêineres}
+
+\begin{lstlisting}[language=mermaid]
+C4Container
+  title C4 nivel 2 - Conteineres (stack de um contrato)
+
+  Person(aluno, "Aluno")
+  Person(prof, "Professor")
+  Person(adm, "Gestor / Admin")
+
+  Container_Boundary(stack, "Plataforma Unooria - stack de um contrato") {
+    Container(hub, "Hub", "Next.js App Router", "Sessao, roteamento por papel, chrome institucional, montagem do embed, BFF, JWKS e assinatura de token")
+    Container(exp, "Experiencia", "Vite + React, ESTATICO", "Uma por missao. Roda no navegador; nunca e um processo do servidor")
+    Component(sdk, "@edu/sdk", "TypeScript", "Ponte, telemetria, API, progresso")
+    Container(api, "API", "NestJS + Prisma", "Autorizacao por papel, tenancy, regra de dominio, gabarito, correcao, gateway de IA, ingestao de telemetria")
+    ContainerDb(pg, "PostgreSQL", "Cloud SQL HA + PITR", "Unico banco, unico schema; RLS por escola")
+    ContainerQueue(ps, "Pub/Sub", "", "Canal analitico de telemetria")
+    Container(buckets, "Object Storage", "Cloud Storage", "bundles, assets publicos, planos privados")
+  }
+
+  System_Ext(vertex, "Vertex AI")
+  Container_Ext(idp, "WSO2 IS", "", "Externo a stack")
+
+  Rel(aluno, hub, "HTTPS")
+  Rel(prof, hub, "HTTPS")
+  Rel(adm, hub, "HTTPS")
+  BiRel(hub, exp, "postMessage v1 - targetOrigin explicito")
+  Rel(exp, sdk, "usa")
+  Rel(sdk, api, "HTTPS + Bearer")
+  Rel(hub, api, "BFF")
+  BiRel(api, pg, "SQL + RLS")
+  Rel(api, ps, "publica")
+  Rel(ps, api, "push /telemetry/ingest")
+  Rel(api, buckets, "assets, planos")
+  Rel(api, vertex, "HTTPS + ADC")
+  Rel(hub, idp, "OIDC")
+  Rel(buckets, exp, "CDN serve o bundle")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:c4l3api} --- C4 nível 3: componentes da API}
+
+\begin{lstlisting}[language=mermaid]
+C4Component
+  title C4 nivel 3 - Componentes da API (NestJS)
+
+  Container_Boundary(api, "API") {
+    %% --- transversal: roda em toda rota
+    Component(guard,  "OidcGuard", "", "Valida JWT por JWKS")
+    Component(roles,  "RolesGuard", "", "Restringe por papel")
+    Component(tenint, "TenancyInterceptor", "", "Escola no AsyncLocalStorage")
+    Component(env,    "validarEnv", "Zod", "Valida env no boot")
+
+    %% --- infraestrutura: as portas unicas
+    Component(prisma, "PrismaService", "Prisma", "comTenancy: transacao + RLS")
+    Component(ai,     "ai/", "", "AiProvider, QuotaService")
+    Component(store,  "object-storage/", "", "local | GCS")
+    Component(assets, "assets/", "", "Imagem gerada")
+
+    %% --- plataforma: serve a todas as experiencias
+    Component(auth,   "auth/", "", "TokenService")
+    Component(usu,    "usuarios/", "", "CSV, senha")
+    Component(expmod, "experiencias/", "", "Manifesto")
+    Component(tel,    "telemetry/", "", "batch, beacon, ingest")
+    Component(prog,   "progress/", "", "Progresso generico")
+    Component(health, "health/", "", "healthz, readyz")
+    Component(analise,"analise/", "", "Turma e rede, CSV")
+    Component(comum,  "comum/", "", "Series, rate limit")
+
+    %% --- dominio por experiencia (nenhum conhece outro)
+    Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp-01")
+    Component(utube,  "unootube/", "", "exp-02")
+    Component(vila,   "vila/", "", "exp-70")
+    Component(planos, "planos/", "", "exp-90")
+    Component(bem,    "bemestar/", "", "exp-91")
+  }
+
+  Rel(guard, roles, "antes de")
+  Rel(tenint, prisma, "escola do token")
+  Rel(motor, prisma, "comTenancy")
+  Rel(vila, prisma, "comTenancy")
+  Rel(planos, ai, "IA + quota")
+  Rel(bem, ai, "IA + quota")
+  Rel(planos, store, "bucket privado")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:c4l3hub} --- C4 nível 3: componentes do hub}
+
+\begin{lstlisting}[language=mermaid]
+C4Component
+  title C4 nivel 3 - Componentes do Hub (Next.js)
+
+  Container_Boundary(hub, "Hub") {
+    Component(mw,      "middleware.ts", "", "Sessao + area do papel")
+    Component(papeis,  "lib/papeis.ts", "", "edge-safe: papel -> area")
+    Component(authlib, "lib/auth.ts", "NextAuth", "Sessao")
+    Component(jwks,    "/.well-known/jwks.json", "", "Chave publica")
+
+    Component(embed,  "lib/embed-experiencia.ts", "", "Token + manifesto + origem, UMA vez")
+    Component(chave,  "lib/chave-token.ts", "", "Assina RS256, TTL 15 min")
+    Component(devsrv, "lib/experiencias-dev.ts", "", "Porta do dev server")
+    Component(apiserv,"lib/api-servidor.ts", "", "BFF")
+
+    Component(casca,  "CascaPlataforma", "", "CSS do DS + fontes")
+    Component(header, "HeaderPlataforma", "", "Um so para todos os papeis")
+    Component(disp,   "DispositivoFrame", "", "Casca de aparelho")
+    Component(frame,  "ExpFrame", "", "Sandbox + protocolo v1")
+  }
+
+  Rel(mw, papeis, "usa")
+  Rel(embed, chave, "assina")
+  Rel(embed, devsrv, "porta em dev")
+  Rel(disp, frame, "envolve")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:c4l4} --- C4 nível 4: tipos que carregam a regra}
+
+\begin{lstlisting}[language=mermaid]
+classDiagram
+  class connectToHub {
+    +hubOrigin: string
+    +timeoutMs = 8000
+    +READY_RETRY_MS = 400
+    valida ev.origin, senao descarta
+    reenvia exp:ready ate responder
+    compara protocolVersion MAIOR
+    valida pos-init com Zod
+  }
+
+  class SdkTypes {
+    +PROTOCOL_VERSION = 1
+    +HubInitSchema
+    +HubParaExpSchema
+    +ExpParaHubSchema
+    unioes discriminadas por type
+  }
+
+  class PrismaService {
+    +comTenancy(fn, escolaId?, opts?)
+    abre $transaction
+    set_config('app.escola_id', ..., true)
+    sem escola: LANCA
+  }
+
+  class TenancyContext {
+    +AsyncLocalStorage~string~
+    +comEscolaNoContexto(id, fn)
+    +escolaDoContexto(): string?
+  }
+
+  class LinhaDeLeitura {
+    <<union>>
+    scored:      numero: number
+    indicative:  numero: null
+    zero:        numero: null
+    none:        numero: null
+  }
+
+  connectToHub ..> SdkTypes : usa
+  PrismaService ..> TenancyContext : le
+  note for LinhaDeLeitura "Comentario avisa; TIPO impede.\nO hub nunca recebe numero onde nao ha medida."
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:monorepo} --- Grafo de dependências do \emph{monorepo}}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  ds[["@unooria/design-system (npm publico)"]]
+  sdk["packages/sdk"]
+  ui["packages/ui"]
+  hub["apps/hub"]; api["apps/api"]
+  e01["exp-01"]; e02["exp-02"]; e70["exp-70"]; e90["exp-90"]; e91["exp-91"]
+  tpl["_template"]
+
+  ds -->|versao publicada| ui
+  sdk --> hub & api & e01 & e02 & e70 & e90 & e91 & tpl
+  ui --> hub & e01 & e02 & e90 & e91
+  %% exp-70 NAO depende de packages/ui: canvas 3D, sem DOM de UI (ADR-18)
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:seq-feed} --- Curadoria de um bloco de \emph{feed}}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  autonumber
+  participant E as Experiencia (exp-01 no iframe)
+  participant C as runs.controller (NestJS)
+  participant S as motor/servico
+  participant P as PostgreSQL
+
+  E->>C: POST /runs/:id/eventos (dwell, curtidas)
+  C->>S: aplicarEventos
+  S->>P: comTenancy: set_config('app.escola_id')
+  S->>P: pg_advisory_xact_lock(runId)
+  Note over S,P: Sem o lock, dois pedidos simultaneos de bloco<br/>se sobrescrevem e um bloco inteiro desaparece.<br/>Transacao com timeout de 20s.
+  P-->>S: estado da run
+  S->>S: curarBloco (puro e deterministico)
+  S->>P: UPDATE engine_state + posts entregues
+  P-->>S: COMMIT (libera o lock)
+  S-->>C: bloco + modulos + diagnostico
+  C->>C: paraFeedPost: remove lado, perfil, intensidade
+  Note over C: Esses campos sao a variavel independente<br/>do experimento. No cliente, o aluno saberia<br/>de que lado o algoritmo o colocou.
+  C-->>E: GET /runs/:id/feed (sanitizado)
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:estados-geracao} --- Estados de uma geração assíncrona}
+
+\begin{lstlisting}[language=mermaid]
+stateDiagram-v2
+  [*] --> pendente : POST (202)
+  pendente --> gerando : claim atomico (updateMany por status)
+  gerando --> pronto : gravou o artefato
+  gerando --> erro : falha do provider OU finishReason=MAX_TOKENS
+  gerando --> pendente : orfa (>12 min sem worker), ate 2 retomadas
+  pronto --> [*]
+
+  note right of pendente
+    O claim atomico substitui uma fila externa:
+    duas instancias podem tentar, so uma ganha a linha.
+    Menor peca possivel que resolve o problema (ADR-17).
+  end note
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:deploy-contrato} --- Implantação de um contrato}
+
+\begin{lstlisting}[language=mermaid]
+C4Deployment
+  title Implantacao de um contrato
+
+  Deployment_Node(internet, "Internet", "escola") {
+    Container(browser, "Navegador do aluno", "", "")
+  }
+
+  Deployment_Node(gcp, "Google Cloud - projeto do contrato", "GCP") {
+    Deployment_Node(borda, "Borda global", "") {
+      Container(lb,  "Cloud Load Balancing", "", "1 IP, host rules")
+      Container(cdn, "Cloud CDN", "", "")
+    }
+    Deployment_Node(regiao, "Regiao de execucao (us-east1)", "") {
+      Container(hub, "Cloud Run {contrato}-frontend", "hub", "min>=1")
+      Container(api, "Cloud Run {contrato}-api", "", "CPU sempre alocada, conc. 80")
+      Deployment_Node(vpc, "VPC - rede privada", "") {
+        ContainerDb(sql, "Cloud SQL {contrato}-pg", "PostgreSQL HA, PITR, pooler", "")
+      }
+    }
+    Deployment_Node(gcs, "Cloud Storage", "") {
+      Container(bexp, "{contrato}-exp", "publico, imutavel, CDN", "")
+      Container(bass, "{contrato}-assets", "publico, CDN", "")
+      Container(bpla, "{contrato}-planos", "PRIVADO, versionado", "")
+    }
+    ContainerQueue(ps, "Pub/Sub {contrato}-telemetria", "", "")
+  }
+
+  System_Ext(idp, "WSO2 IS", "projeto proprio")
+  System_Ext(vertex, "Vertex AI", "endpoint global")
+
+  Rel(browser, lb, "443")
+  Rel(lb, cdn, "bundles e assets")
+  Rel(cdn, bexp, "serve")
+  Rel(lb, hub, "HTTPS")
+  Rel(lb, api, "HTTPS")
+  Rel(api, sql, "5432 - IP PRIVADO")
+  Rel(api, bpla, "so pela API")
+  BiRel(api, ps, "publica / recebe push")
+  Rel(hub, idp, "OIDC")
+  Rel(api, vertex, "HTTPS + ADC")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:deploy-detalhe} --- Implantação detalhada}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  browser([Navegador do aluno]); gh[[GitHub Actions]]; wso2[[WSO2 IS]]; vertex[[Vertex AI - global]]
+
+  subgraph GCP["Google Cloud - projeto do contrato"]
+    subgraph BORDA["Borda global"]
+      lb["Load Balancer (1 IP, host rules)"]; cdn["Cloud CDN"]; cert["Certificados gerenciados (um por dominio)"]
+    end
+    subgraph EXEC["Regiao de execucao (us-east1)"]
+      hub["Cloud Run -frontend (min>=1)"]
+      api["Cloud Run -api (CPU sempre alocada, conc. 80)"]
+      job["Cloud Run Job -migrate (na VPC)"]
+      subgraph VPC["VPC - rede privada"]
+        sql[("Cloud SQL -pg (HA, PITR, pooler)")]
+        conn["Serverless VPC Access (conector)"]
+      end
+    end
+    subgraph STORAGE["Cloud Storage"]
+      bexp["{contrato}-exp - publico, imutavel, CDN"]
+      bass["{contrato}-assets - publico, CDN"]
+      bpla["{contrato}-planos - PRIVADO, sem CDN, versionado"]
+    end
+    subgraph MSG["Mensageria"]
+      topic["topic -telemetria"]; sub["push sub -telemetria-ingest (oidc_token)"]
+    end
+    subgraph GOV["Identidade, segredos e artefatos"]
+      sm["Secret Manager (6 segredos)"]; sa["Service Accounts (-api, -run, -push)"]
+      wif["WIF pool github (sem chave JSON)"]; ar["Artifact Registry"]
+      log["Cloud Logging / Monitoring"]
+    end
+  end
+
+  browser -->|443| lb
+  lb --> cdn --> bexp & bass
+  lb --> hub & api
+  hub -->|BFF| api
+  api -->|5432 privado| conn --> sql
+  job --> conn
+  api -->|so pela API| bpla
+  api --> bass
+  api --> topic --> sub -->|POST /telemetry/ingest| api
+  gh -->|OIDC do GitHub| wif
+  gh -->|push da imagem| ar
+  wso2 -->|OIDC| hub
+  api -->|ADC| vertex
+  sm --> api & hub
+  sa --> api & hub
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:identidade-maquina} --- Identidade de carga de trabalho}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  subgraph CI["CI: Workload Identity Federation"]
+    gh["GitHub Actions (id-token: write)"] --> tok["token OIDC do GitHub (repo, ref, workflow)"]
+    tok --> wif["WIF pool github (valida e troca)"]
+    wif --> sadeploy["access token da DEPLOY_SA (curta duracao)"]
+  end
+
+  subgraph APP["Aplicacao: Application Default Credentials"]
+    run["Cloud Run (API) - sem env de credencial"] --> md["metadata server (ADC nivel 3)"]
+    md --> saapi["SA {contrato}-api (roles/aiplatform.user)"]
+    saapi --> vx["Vertex AI - autorizado"]
+  end
+
+  %% A mesma cadeia nos tres ambientes:
+  %%   1. GOOGLE_APPLICATION_CREDENTIALS
+  %%   2. arquivo de `gcloud auth application-default login`
+  %%   3. metadata server (Cloud Run)
+  %% Antes havia SO o nivel 3 — e por isso nenhuma chamada de IA funcionava
+  %% fora do Cloud Run. NUNCA chave de API.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:tenancy-niveis} --- Os três níveis de isolamento}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  subgraph A["Contrato A - stack GCP"]
+    apiA["API do contrato A"] --> pgA[("PostgreSQL do contrato A")]
+    subgraph ESC["Dentro de UMA stack: isolamento LOGICO"]
+      e1["escola sp-001"]; e2["escola sp-002"]; e3["... 100+"]
+    end
+    tab["Toda tabela de dado de aluno:<br/>escola_id TEXT NOT NULL<br/>ENABLE + FORCE ROW LEVEL SECURITY<br/>POLICY USING (escola_id = current_setting('app.escola_id', true))"]
+    e1 -.-> tab; e2 -.-> tab; e3 -.-> tab
+  end
+  subgraph B["Contrato B - OUTRA stack"]
+    apiB["API do contrato B"] --> pgB[("PostgreSQL do contrato B")]
+  end
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:tenancy-fluxo} --- Propagação da escola}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  req["Requisicao HTTP (Authorization: Bearer)"] --> guard["OidcGuard (JWKS; injeta req.auth)"]
+  guard --> roles["RolesGuard (le req.auth.perfil)"]
+  roles --> int["TenancyInterceptor (comEscolaNoContexto)"]
+  int --> ctrl["controller"] --> svc["service: comTenancy(fn)"]
+  svc --> tx["Transacao: set_config + query"]
+  svc -->|sem escola no contexto| fail["LANCA"]
+
+  %% Guards rodam ANTES de interceptors, entao req.auth ja existe.
+  %% Rota sem OidcGuard nao abre contexto — e comTenancy sem escola falha alto.
+  %% A RLS e rede de seguranca, nao a unica tranca: os services continuam
+  %% filtrando escola_id explicitamente em toda query.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:er-plataforma} --- Modelo de dados da plataforma}
+
+\begin{lstlisting}[language=mermaid]
+erDiagram
+  escolas ||--o{ turmas : tem
+  escolas ||--o{ users  : tem
+  turmas  ||--o{ users  : agrupa
+  experiencias ||..o{ progresso : "exp_id"
+  telemetria_eventos ||..o{ particoes : "ATTACH por mes"
+
+  escolas {
+    text id PK "MESMO valor do claim escola_id e do set_config"
+    text nome
+    timestamptz created_at
+  }
+  turmas {
+    uuid id PK
+    text escola_id FK
+    text nome "UNIQUE (escola_id, nome)"
+    text serie "1EF..9EF | 1EM..3EM"
+  }
+  users {
+    uuid id PK
+    text role "aluno|professor|gestor|admin-contrato"
+    text escola_id FK "NULL SO p/ admin-contrato (CHECK)"
+    uuid turma_id FK
+    text username "UNIQUE (escola_id, username)"
+    text display_name
+    text password_hash
+  }
+  experiencias {
+    text exp_id PK
+    text nome
+    text versao_ativa "rollback = UPDATE deste campo"
+    text_array series "VAZIO = TODAS as series"
+    text_array capabilities
+    jsonb viewport "presente => casca de aparelho"
+    text publico "aluno|professor"
+    text_array permissoes "hoje so pointer-lock"
+  }
+  progresso {
+    text escola_id PK
+    text aluno_id PK
+    text exp_id PK
+    jsonb dados
+  }
+  ia_uso_diario {
+    text escola_id PK
+    text usuario_id PK
+    text dia PK "YYYY-MM-DD"
+    int tokens_usados
+  }
+  telemetria_eventos {
+    uuid event_id PK "PK COMPOSTA: o Postgres exige a chave de particao"
+    timestamptz ts PK
+    text escola_id
+    text aluno_id
+    text exp_id
+    text exp_version
+    uuid sessao_id
+    text verbo
+    text objeto
+    jsonb resultado
+    jsonb contexto
+  }
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figuras~\ref{fig:er-exp01a} e~\ref{fig:er-exp01b} --- Modelo da exp-01}
+
+\begin{lstlisting}[language=mermaid]
+erDiagram
+  exp_01_activities ||--o{ exp_01_authors : tem
+  exp_01_authors    ||--o{ exp_01_posts   : escreve
+  exp_01_posts      ||--o{ exp_01_post_comments : tem
+  exp_01_activities ||--o{ exp_01_generation_jobs : enfileira
+  exp_01_activities ||--o{ exp_01_runs : hospeda
+  exp_01_runs ||--o{ exp_01_events : registra
+  exp_01_runs ||--o{ exp_01_student_posts : publica
+  exp_01_runs ||--|| exp_01_conclusoes : conclui
+  exp_01_runs ||--|| exp_01_reflexoes : reflete
+  exp_01_runs ||--|| exp_01_dossiers : gera
+  exp_01_runs ||--o{ exp_01_comentarios_da_sessao : ancora
+  exp_01_activities ||--o{ exp_01_exp_70_perfis_importados : "largada"
+
+  exp_01_activities {
+    uuid id PK
+    text escola_id FK
+    uuid professor_id FK
+    text pergunta_chave
+    text pergunta_origem "ia|professor - auditoria de autoria"
+    text etapa "relogio COLETIVO da turma"
+    boolean ia_ao_vivo "desligavel sem deploy"
+    jsonb antagonismo
+    jsonb engine_config
+    text status
+  }
+  exp_01_posts {
+    uuid id PK
+    text lado "VARIAVEL INDEPENDENTE - sanitizada antes de sair"
+    text perfil "idem"
+    smallint intensidade "idem"
+    text image_status "pendente|ok|fallback"
+    boolean aprovado
+  }
+  exp_01_runs {
+    uuid id PK
+    text lado_inicial
+    text lado_origem "perfil|sorteio|redistribuido - auditoria"
+    jsonb engine_state "estado do motor; unidade de LOCK"
+    text nome_no_app "a conta e do APARELHO, nao da crianca"
+  }
+  exp_01_events {
+    bigint id PK
+    text tipo "canal OPERACIONAL: sincrono e transacional"
+    jsonb payload "{dwellMs, dwellNorm}"
+  }
+  exp_01_comentarios_da_sessao {
+    uuid post_id FK "XOR com student_post_id (CHECK na migration)"
+    uuid student_post_id FK
+    boolean de_ia "para o professor distinguir na auditoria"
+  }
+  exp_01_exp_70_perfis_importados {
+    jsonb escores "4 quadrantes, 0-1"
+    text dominante
+    text origem "jogo|professor"
+    text lado_forcado "PRESERVADO no upsert"
+  }
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figuras~\ref{fig:er-exp02-70} e~\ref{fig:er-exp90-91} --- Demais experiências}
+
+\begin{lstlisting}[language=mermaid]
+erDiagram
+  exp_70_sessoes ||--o{ exp_70_perfis : "recalculado pelo servidor"
+  exp_70_perfis  ||..|| exp_70_bolhas : "mesmo aluno"
+  exp_90_planos  ||..o{ exp_90_referencias : "monta o prompt"
+  exp_91_ciclos  ||--o{ exp_91_checkins : "7 check-ins"
+
+  exp_02_sessoes {
+    text escola_id PK
+    uuid aluno_id PK
+    text_array salvos "CHECK cardinality <= 3"
+    boolean ranking_desbloqueado "LATCH: nao volta"
+    boolean credibilidade_adicionada "congela os salvos"
+  }
+  exp_70_sessoes {
+    uuid id PK "EMITIDO pela API - o cliente colidia"
+    uuid turma_id FK "desnormalizado: turma NO MOMENTO da partida"
+    text bolha "A|B|C - do SERVIDOR"
+    smallint cartoes_servidos "!= apareceram"
+    timestamptz aberta_em "relogio do SERVIDOR"
+    jsonb payload "bruto - unica fonte do reprocessamento"
+    jsonb leitura_mensagens
+  }
+  exp_70_perfis {
+    smallint versao_mapeamento "sobe => nasce linha nova"
+    jsonb valores "null NAO e zero"
+    jsonb graus "scored|indicative|zero|none"
+    float abertura_vs_conservacao "NULL se polo nao observado"
+    boolean amostra_suficiente "falso => o painel avisa que NAO SABE"
+  }
+  exp_70_bolhas {
+    text escola_id PK
+    uuid aluno_id PK "por ALUNO, nao por partida"
+    text bolha
+  }
+  exp_90_planos {
+    text status "pendente|gerando|pronto|erro"
+    text caminho_gerado_md "IMUTAVEL, bucket privado"
+    text caminho_html "o que o editor salvou, sanitizado"
+  }
+  exp_90_referencias {
+    text disciplina PK
+    text serie PK "NULL = todas"
+    text nome PK
+    text texto "catalogo do CONTRATO - sem escola_id, FORA da RLS"
+  }
+  exp_91_ciclos {
+    uuid id PK
+    int_array ordem_itens "permutacao de 1..21"
+    int depressao "somas x2, ao concluir - DADO SENSIVEL"
+  }
+  exp_91_checkins {
+    smallint numero "1..7"
+    text dia "UNIQUE (escola_id, professor_id, dia)"
+    text texto_livre "NUNCA em log nem telemetria"
+    text origem_texto "ia|fallback|seguranca"
+    boolean sinal_de_apoio
+  }
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:seq-handshake} --- \emph{Handshake} hub-experiência}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  autonumber
+  participant E as Experiencia (@edu/sdk no iframe)
+  participant F as ExpFrame (React, no hub)
+  participant R as Rota do hub (servidor)
+  participant A as API (NestJS)
+
+  R->>F: monta o embed: assina token RS256 (15 min)
+  R->>A: GET /experiencias/:expId (manifesto)
+  A-->>R: { versaoAtiva, viewport, permissoes }
+  F->>E: renderiza iframe src = URL versionada
+  E->>E: connectToHub({ hubOrigin })
+  loop a cada 400ms, ate o hub responder
+    E->>F: exp:ready { protocolVersion: 1 }
+  end
+  F->>F: valida ev.origin e a versao MAIOR
+  F-->>E: hub:init { token, aluno, apiUrl, config }
+  E->>E: valida com Zod; resolve a Promise
+  E->>A: chamadas de dominio, /telemetry/batch, /ai/gerar
+  E->>F: exp:token-expirando
+  F->>R: GET /api/exp-token
+  R-->>F: { token }
+  F-->>E: hub:token { token }
+
+  Note over E,F: Com assets em cache (F5), a experiencia fica pronta ANTES<br/>de o ExpFrame hidratar. Um disparo unico se perderia.<br/>hub:init repetido e evento normal, nao ruido.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:fluxo-embed} --- Resolução da URL do \emph{embed}}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  ini([inicio]) --> q{tem linha em experiencias?}
+  q -->|sim| com["{cdn}/{expId}/{versaoAtiva}/index.html?hubOrigin=..."]
+  q -->|nao| sem["{baseDev}/?hubOrigin=... (porta de lib/experiencias-dev.ts<br/>ou o src explicito de /dev-embed)"]
+  com --> vp1["viewport e permissoes vem do MANIFESTO"]
+  sem --> vp2["le {baseInterna}/experiencia.json<br/>baseInterna = EXP_INTERNAL_HOST aplicado a base"]
+  vp1 --> frame["ExpFrame: sandbox + allow,<br/>dentro de DispositivoFrame se houver viewport"]
+  vp2 --> frame
+  frame --> fim([fim])
+
+  %% A leitura do experiencia.json NAO e so de dev: stack com a tabela vazia
+  %% servia a exp-01 esticada na janela em vez de dentro do aparelho.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:contrato-exps} --- Contrato entre duas experiências}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  v["exp-70 (Vila do Lume)"] -->|payload bruto| mv["src/vila/ - quadrantes.ts: colapso 10 -> 4"]
+  mv -->|"POST /atividades/:id/perfis/da-vila (professor)"| t["exp_01_exp_70_perfis_importados"]
+  t -->|le| mi["src/perfis/largada.ts - decide o lado do feed"]
+  mi --> i["exp-01 (Instanooria)"]
+
+  %% Duas travas que CUSTAM alunos, de proposito:
+  %%  1. valor nao observado (indicative|none) fica FORA da media — nunca zero
+  %%  2. quadrante sem nenhum membro observado INVALIDA o perfil inteiro
+  %% Sem perfil, o Instanooria cai no sorteio balanceado, que e honesto sobre
+  %% nao saber. E `lado_forcado` e PRESERVADO no upsert.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:telemetria-analitica} --- Canal analítico}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  exp["Experiencia: track(verbo, objeto, dados)"] --> sdk["TelemetryClient<br/>buffer em memoria; lote de 50 ou 10s"]
+  sdk -->|"<= 50 eventos"| batch["POST /telemetry/batch<br/>OidcGuard; identidade vem do TOKEN"]
+  batch --> topic[["Pub/Sub topic -telemetria"]]
+  sdk -->|sendBeacon no pagehide| beacon["POST /telemetry/beacon<br/>token NO CORPO; responde 204 SEMPRE"]
+  beacon --> topic
+  topic -->|push autenticado| ingest["POST /telemetry/ingest<br/>PubSubPushGuard: ID token do Google, aud, email"]
+  ingest --> pg[("telemetria_eventos<br/>INSERT multi-linha<br/>ON CONFLICT (event_id, ts) DO NOTHING<br/>particionada por mes")]
+
+  %% Onde ha perda possivel, e SO ali: entre o track() e o flush.
+  %% Do Pub/Sub em diante a entrega e DURAVEL — e por isso um buffer em Redis
+  %% nao o substituiria: reintroduziria a perda que ele eliminou.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:camada-ia} --- Camada de IA}
+
+\begin{lstlisting}[language=mermaid]
+C4Component
+  title Camada de IA - src/ai e a UNICA porta
+
+  Container_Boundary(api, "API") {
+    Component(g, "geracao/", "", "exp-01")
+    Component(m, "motor/", "", "exp-01")
+    Component(p, "planos/", "", "exp-90")
+    Component(b, "bemestar/", "", "exp-91")
+    Component(a, "POST /ai/gerar", "", "SDK")
+
+    Container_Boundary(ai, "src/ai/ - a UNICA porta") {
+      Component(q,  "QuotaService", "", "temSaldo(escola, usuario, perfil) ANTES; consumir DEPOIS")
+      Component(pr, "AiProvider", "", "generate, generateJson, generateImage")
+      Component(pp, "prompts.ts", "", "prompt de sistema; NUNCA sai daqui")
+      Component(vx, "vertex.provider.ts", "", "default; ADC + REST")
+      Component(mk, "mock.provider.ts", "", "testes e dev sem GCP")
+    }
+    ComponentDb(ia, "ia_uso_diario", "", "quota persistida por (escola, usuario, dia)")
+  }
+  System_Ext(vertex, "Vertex AI", "endpoint global")
+
+  Rel(g, q, "1")
+  Rel(m, q, "1")
+  Rel(p, q, "1")
+  Rel(b, q, "1")
+  Rel(a, q, "1")
+  BiRel(q, ia, "incremento atomico")
+  Rel(q, pr, "SO com saldo")
+  Rel(pr, pp, "usa")
+  Rel(pr, vx, "AI_PROVIDER=vertex")
+  Rel(pr, mk, "AI_PROVIDER=mock")
+  Rel(vx, vertex, "HTTPS + ADC")
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:guardrails-bemestar} --- \emph{Guardrails} do bem-estar}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  ini([inicio]) --> abre["GET /bemestar/hoje - 3 itens da permutacao do ciclo"]
+  abre --> sinal{"sinal de apoio?<br/>item 17 ou 21 >= 2, ou termo de risco"}
+  sinal -->|sim| fixo["texto FIXO de apoio (CVV 188, SAMU 192, CAPS/UBS)<br/>a IA NAO e chamada<br/>origem_texto = 'seguranca'"]
+  sinal -->|nao| saldo{tem saldo e provider?}
+  saldo -->|nao| fall["texto FIXO do catalogo<br/>origem_texto = 'fallback'"]
+  saldo -->|sim| ia["IA gera abertura, pergunta aberta e acolhimento<br/>recebe SO: dia da semana, mes, no do check-in,<br/>texto livre delimitado"]
+  ia --> val{validarTextoDaIa?}
+  val -->|barrado| fall
+  val -->|passou| ok["origem_texto = 'ia'"]
+  fixo --> fim([fim]); fall --> fim; ok --> fim
+
+  %% Os 21 itens do DASS-21 sao FIXOS e VERBATIM. A IA nunca reescreve um item:
+  %% reformular quebra a validacao psicometrica e invalida as faixas de corte.
+  %% O check-in NUNCA deixa de abrir.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:graus} --- Os quatro graus de medida}
+
+\begin{lstlisting}[language=mermaid]
+classDiagram
+  class scored {
+    >= 2 sinais independentes
+    numero: number
+    entra na media
+    E PUBLICADO com numero
+  }
+  class indicative {
+    exatamente 1 sinal
+    numero: null
+    descrito em TEXTO
+    fora dos eixos e das medias
+  }
+  class zero {
+    teve a chance e NAO foi
+    numero: null
+    ENTRA na media, como zero de verdade
+  }
+  class none {
+    a oportunidade NAO chegou
+    numero: null
+    SAI da conta - nao e zero
+  }
+  note "A distincao mais importante do modelo e entre zero e none.\nTratar 'nao teve chance' como 'escolheu nao' faz uma crianca\nparecer ter recusado algo que nunca lhe foi oferecido."
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:mapa-rotas} --- Mapa de rotas da API}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  subgraph PLAT["Plataforma - serve a todos os papeis"]
+    au["/auth/login - sem papel"]; he["/healthz, /readyz - PUBLICO"]
+    ex["/experiencias - GET qualquer; PUT admin-contrato"]
+    pg["/progresso/:expId - aluno"]; te["/telemetry/* - ver capitulo 10"]
+    us["/usuarios/* - gestor, admin"]; ai["/ai/gerar - autenticado + quota"]
+    an["/analise/* - ADMIN-CONTRATO"]
+  end
+  subgraph E01["exp-01 - Instanooria"]
+    atv["/atividades/* - professor"]; rn["/runs/* - aluno (/eventos: professor tb.)"]
+    po["/posts/:id/comentarios - aluno"]; pf["/perfis/importar - chave de servico"]
+  end
+  subgraph OUT["Demais experiencias"]
+    ut["/unootube/* - aluno"]; utt["/unootube/turmas/* - prof, gestor, admin"]
+    vi["/vila/sessoes - aluno"]; vp["/vila/professor/* - PROFESSOR"]
+    va["/vila/agregado/* - prof, gestor"]; pl["/planos/* - professor"]
+    pref["/planos/referencias - chave de servico"]
+    be["/bemestar/* - SO PROFESSOR, com posse"]
+  end
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:linha-revelacao} --- A linha da revelação}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  subgraph CLONE["Dentro do iframe, ANTES da revelacao - @edu/ui/ds-unootube"]
+    feed["feed de videos"]; cromo["cromo, busca, menu"]
+    play["playlists"]; canal["canal do aluno"]; toast["toast: 'Video salvo!'"]
+  end
+  subgraph PLATF["DEPOIS da revelacao, no MESMO iframe - @edu/ui/ds"]
+    rank["ranking"]; d1["dialogo 1 da missao"]; d2["dialogo 2 da missao"]; fim["fechamento"]
+  end
+  CLONE ==>|REVELACAO| PLATF
+
+  %% A linha e a REVELACAO, nao o arquivo. O toast NAO cruza: ele fala de
+  %% dentro da ficcao. O criterio nao e "e depois no tempo?", e "quem fala?".
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:pipeline-deploy} --- \emph{Pipeline} de entrega}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  push["push para main"] --> ver["PORTAO: ci.yml (typecheck, lint, test, build)"]
+  ver --> auth["WIF + setup-gcloud (sem chave JSON)"]
+  auth --> diff["o que mudou? git diff HEAD^ HEAD: api | hub | migrations"]
+  diff --> build["turbo build (filtrado, ou tudo se 'forcar')"]
+
+  build --> img["imagem da api -> Artifact Registry"]
+  img --> mig["Cloud Run Job -migrate (na VPC, --wait)"]
+  mig --> dep["gcloud run deploy api (revisao nova)"]
+
+  build --> imgh["imagem do hub"] --> deph["gcloud run deploy hub"]
+
+  deph --> rsync["gcloud storage rsync -> gs://{bucket}/{exp}/{ver}/"]
+  rsync --> cc["Cache-Control: max-age=60 SO no index.html"]
+  cc --> man["publicar-manifesto.mjs -> PUT /experiencias/:expId (token de 5 min)"]
+
+  %% ORDEM 1: migracao ANTES do deploy — o schema novo tem de estar no banco
+  %%          antes de a revisao nova receber trafego. --wait faz falhar.
+  %% ORDEM 2: experiencias DEPOIS do hub — o PUT do manifesto e validado contra
+  %%          o JWKS que o HUB serve.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:testes} --- Estratégia de testes}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  v["SMOKE VISUAL - Playwright, navegador real<br/>walkthrough-aluno, -professor, -unootube, -vila-do-lume,<br/>-professor-vila, -ato1-vila, probe-pointerlock"]
+  c["CONTRATO EXTERNO<br/>telemetria-push (guard do Pub/Sub), vertex-provider (cadeia ADC)"]
+  i["INTEGRACAO COM POSTGRES<br/>tenancy, planos-tenancy, motor-concorrencia, motor-postgres,<br/>unootube-postgres, vila-postgres, vila-ato1, usuarios, planos, bemestar"]
+  u["REGRA PURA - Vitest/Jest, milissegundos, sem banco<br/>vila-regras, unootube-regras, bemestar-regras, motor-pesos,<br/>motor-bolha, motor-sugestoes, motor-reversibilidade, bridge.test"]
+  u --- i --- c --- v
+
+  %% A base e larga de proposito: regras.ts puro em todo modulo de dominio.
+  %% E o TOPO nao e "E2E de fluxo": e verificacao de que a INTERFACE apareceu.
+  %% Icone virando texto, iframe vazio, cor inexistente, fonte removida pelo
+  %% Next — tudo INVISIVEL para o compilador.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:matriz-riscos} --- Matriz de riscos}
+
+\begin{lstlisting}[language=mermaid]
+quadrantChart
+  title Matriz de riscos - probabilidade x impacto
+  x-axis "Probabilidade baixa" --> "Probabilidade alta"
+  y-axis "Impacto baixo" --> "Impacto alto"
+  quadrant-1 "CRITICO - resolver antes de nov/2026"
+  quadrant-2 "Impacto alto, prob. baixa"
+  quadrant-3 "Monitorar"
+  quadrant-4 "Prob. alta, impacto baixo"
+
+  "R-01 carga nao verificada": [0.55, 0.92]
+  "R-02 retencao indefinida":  [0.90, 0.90]
+  "R-04 fator humano unico":   [0.98, 0.88]
+  "R-06 sem revisao externa":  [0.85, 0.86]
+  "R-05 sem alerting":         [0.85, 0.58]
+  "R-07 acessibilidade":       [0.85, 0.55]
+  "R-12 catalogo de modelos":  [0.82, 0.50]
+  "R-03 localidade de IA":     [0.98, 0.55]
+  "R-08 particao sem job":     [0.20, 0.50]
+  "R-09 midia manual":         [0.85, 0.22]
+  "R-10 orfa sem retomada":    [0.50, 0.20]
+  "R-11 dependencia do DS":    [0.50, 0.22]
+  "R-13 WSO2 nao e o emissor": [0.50, 0.18]
+\end{lstlisting}

@@ -1,0 +1,680 @@
+% ===========================================================================
+%  8 — Modelo de dados
+% ===========================================================================
+\chapter{Modelo de dados}
+\label{cap:dados}
+
+Um banco, um \emph{schema} lógico, 27 tabelas em \cd{public} e um \emph{schema}
+auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
+convenção de nomes, o modelo por área e as decisões de esquema que não são
+óbvias --- que, neste projeto, são a maioria.
+
+O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
+
+\section{A convenção de nomes}
+
+\begin{regra}
+\textbf{Tabela de experiência leva o número dela: \cd{exp\_NN\_}.} Assim:
+\cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_91\_checkins}.
+
+\textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
+\cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias}, \cd{progresso},
+\cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
+
+\textbf{Tabela que é contrato entre duas experiências carrega os dois números}:
+\cd{exp\_01\_exp\_70\_perfis\_importados} --- a exp-70 escreve, a exp-01 lê.
+Chamá-la de uma só mentiria sobre quem depende dela.
+\end{regra}
+
+\begin{decisao}
+\textbf{Um banco, um \emph{schema}} --- nem banco por experiência, nem
+\emph{schema} por experiência.
+
+Banco por experiência não funciona porque \emph{as experiências não são
+isoladas}: o perfil de valores medido na Vila do Lume alimenta a largada do
+Instanooria, e o PostgreSQL não faz \cd{JOIN} entre bancos. Além disso, um
+\emph{pool} do Prisma por experiência estouraria \cd{max\_connections} com o
+\emph{autoscaling} do Cloud Run.
+
+\emph{Schema} por experiência não funciona porque a única coisa que um
+\emph{schema} daria além do prefixo é fronteira de \cd{GRANT} --- e existe
+\textbf{uma} \emph{role} de aplicação. Seriam 48 \emph{schemas} para obter
+exatamente o que um prefixo de nome já dá.
+\end{decisao}
+
+\subsection{A migração de referência, e duas armadilhas registradas}
+
+A renomeação para o padrão \cd{exp\_NN\_} está em
+\arq{20260827090000\_tabelas\_por\_experiencia}, e é a migração de referência para
+qualquer renomeação futura: \cd{RENAME}, nunca \cd{DROP}/\cd{CREATE}, e
+renomeando \emph{constraints}, índices e políticas de RLS junto.
+
+\begin{atencao}
+Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
+--- nomes duplicados como \cd{exp\_01\_exp\_01\_..\_pkey}:
+
+\begin{enumerate}
+  \item \cd{FOR ... IN SELECT} sobre o catálogo do sistema \textbf{relê o que o
+    próprio laço alterou}. A lista de tabelas a renomear tem de ser materializada
+    antes do laço.
+  \item \cd{RENAME CONSTRAINT} renomeia \textbf{também} o índice que a sustenta.
+    Renomear os dois em sequência aplica o prefixo duas vezes.
+\end{enumerate}
+\end{atencao}
+
+\section{Modelo da plataforma}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[tabelaplat, text width=40mm] (esc) at (2.4,0)
+    {\etitulo{escolas}
+     \nodepart{two}
+     \pk{id} \texttt{TEXT}\\
+     \texttt{nome}\\
+     \texttt{created\_at}};
+
+  \node[tabelaplat, text width=44mm] (tur) at (8.0,0)
+    {\etitulo{turmas}
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \fk{escola\_id} \seta{} \texttt{escolas}\\
+     \texttt{nome}, \texttt{serie}\\
+     \texttt{UNIQUE (escola\_id, nome)}};
+
+  \node[tabelaplat, text width=46mm] (usr) at (13.6,-0.2)
+    {\etitulo{users}
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \texttt{role} \small(aluno$|$professor$|$gestor$|$admin-contrato)\\
+     \fk{escola\_id} \small(NULL só p/ admin-contrato)\\
+     \fk{turma\_id}, \texttt{username}, \texttt{display\_name}\\
+     \texttt{password\_hash}, \texttt{avatar}\\
+     \texttt{UNIQUE (escola\_id, username)}};
+
+  \node[tabelacat, text width=44mm] (exp) at (2.6,-4.4)
+    {\etitulo{experiencias} \small(catálogo, sem escola)
+     \nodepart{two}
+     \pk{exp\_id} \texttt{TEXT}\\
+     \texttt{nome}, \texttt{versao\_ativa}\\
+     \texttt{series[]}, \texttt{capabilities[]}\\
+     \texttt{viewport} \texttt{JSONB}\\
+     \texttt{publico} \small(aluno$|$professor)\\
+     \texttt{permissoes[]}};
+
+  \node[tabelaplat, text width=40mm] (prog) at (8.2,-4.0)
+    {\etitulo{progresso}
+     \nodepart{two}
+     \pk{escola\_id, aluno\_id, exp\_id}\\
+     \texttt{dados} \texttt{JSONB}\\
+     \texttt{atualizado\_em}};
+
+  \node[tabelaplat, text width=40mm] (ia) at (13.4,-4.0)
+    {\etitulo{ia\_uso\_diario}
+     \nodepart{two}
+     \pk{escola\_id, usuario\_id, dia}\\
+     \texttt{tokens\_usados}};
+
+  \node[tabelaplat, text width=48mm] (tel) at (8.0,-7.6)
+    {\etitulo{telemetria\_eventos} \small(PARTITION BY RANGE (ts))
+     \nodepart{two}
+     \pk{event\_id, ts}\\
+     \texttt{escola\_id}, \texttt{aluno\_id}\\
+     \texttt{exp\_id}, \texttt{exp\_version}, \texttt{sessao\_id}\\
+     \texttt{verbo}, \texttt{objeto}\\
+     \texttt{resultado} \texttt{JSONB}, \texttt{contexto} \texttt{JSONB}\\
+     \texttt{INDEX (escola\_id, exp\_id, ts)}};
+
+  \node[tabelacat, text width=36mm] (part) at (14.0,-7.6)
+    {\etitulo{particoes.*} \small(fora do Prisma)
+     \nodepart{two}
+     \texttt{telemetria\_eventos\_YYYY\_MM}\\
+     \texttt{..\_default} \small(rede de segurança)};
+
+  \draw[erel] (esc.east) -- (tur.west) node[ercard, pos=0.3]{1} node[ercard, pos=0.75]{N};
+  \draw[erel] (tur.east) -- (usr.west) node[ercard, pos=0.25]{1} node[ercard, pos=0.8]{N};
+  \draw[erel] (esc.south) -- (2.4,-1.6) -- (11.6,-1.6) -- (usr.north west)
+    node[ercard, pos=0.06]{1} node[ercard, pos=0.94]{N};
+  \draw[erel, dashed] (usr.south) -- (13.4,-2.6);
+  \draw[erel, dashed] (exp.east) -- (prog.west) node[ercard, midway, above]{\texttt{exp\_id}};
+  \draw[erel, dashed] (tel.east) -- (part.west) node[ercard, midway, above]{\texttt{ATTACH}};
+
+\end{tikzpicture}}
+\caption[Modelo de dados da plataforma]{Modelo de dados da plataforma. As caixas
+  em azul são tabelas de \emph{tenant} (têm \cd{escola\_id} e RLS); as cinzas são
+  \textbf{catálogo do contrato} --- \cd{experiencias} e as partições de
+  telemetria não pertencem a uma escola e ficam fora da RLS de propósito.}
+\label{fig:er-plataforma}
+\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{Regime} & \thd{Nota de esquema}\\
+\midrule
+\cd{escolas} & \emph{Tenant} raiz & O \cd{id} é \textbf{texto}, e é o
+  \emph{mesmo} valor que circula no \emph{claim} \cd{escola\_id} do JWT e no
+  \cd{set\_config} da RLS. Um id legível (\cd{sp-001}) vale mais que um UUID
+  quando o valor aparece em três lugares diferentes de um diagnóstico.\\
+\zebra \cd{turmas} & \emph{Tenant} & \cd{UNIQUE (escola\_id, nome)}: duas escolas
+  podem ter \enquote{8A}.\\
+\cd{users} & \emph{Tenant} & \cd{username} é único \textbf{por escola}, não
+  globalmente --- uma rede tem muitos \cd{joao.silva}. \emph{CHECK}:
+  \cd{escola\_id NOT NULL} exceto quando \cd{role = 'admin-contrato'}.\\
+\zebra \cd{experiencias} & Catálogo & Sem \cd{escola\_id}: o manifesto é do
+  contrato, não da escola. Escrita só por \cd{admin-contrato}.\\
+\cd{progresso} & \emph{Tenant} & PK composta
+  \cd{(escola\_id, aluno\_id, exp\_id)}. É o progresso \emph{genérico} da SDK;
+  estado rico de experiência vai para a tabela da experiência.\\
+\zebra \cd{ia\_uso\_diario} & \emph{Tenant} & Contador de quota, uma linha por
+  (escola, usuário, dia). Incremento atômico por
+  \cd{ON CONFLICT DO UPDATE ... RETURNING}.\\
+\cd{telemetria\_eventos} & \emph{Tenant}, particionada & Ver
+  Seção~\ref{sec:particao}.\\
+\bottomrule
+\end{tabularx}
+
+\section{Telemetria particionada}
+\label{sec:particao}
+
+\begin{decisao}
+\cd{telemetria\_eventos} é \textbf{particionada por mês}
+(\cd{PARTITION BY RANGE (ts)}), na migração
+\arq{20260827100000\_telemetria\_particionada}~\cite{postgrespartition}. As
+partições vivem no \emph{schema} \cd{particoes}, \textbf{fora do alcance do
+Prisma} --- em \cd{public} cada partição viraria \emph{drift} de \emph{schema} a
+cada \cd{prisma migrate dev}.
+\end{decisao}
+
+Três consequências do particionamento merecem registro:
+
+\begin{enumerate}
+  \item \textbf{A chave primária é composta: \cd{(event\_id, ts)}.} O PostgreSQL
+    exige a chave de partição em todo índice único. A \emph{dedupe} do Pub/Sub
+    segue correta, porque a reentrega da mesma mensagem traz o \emph{mesmo}
+    \cd{ts} --- então \cd{ON CONFLICT (event\_id, ts) DO NOTHING} continua sendo
+    idempotência real, não aproximação.
+  \item \textbf{Há uma partição \cd{DEFAULT}, como rede de segurança.} Sem ela,
+    um evento com \cd{ts} fora das faixas seria \textbf{recusado} --- e
+    telemetria perdida em silêncio é pior que telemetria mal guardada. As faixas
+    declaradas vão até 2028-12.
+  \item \textbf{Expurgo passou a ser \cd{DROP TABLE}.} Se um contrato exigir
+    prazo de retenção, ele é cumprido por \cd{DROP TABLE particoes.<mês>} ---
+    instantâneo --- em vez de um \cd{DELETE} que trava a tabela.
+\end{enumerate}
+
+\begin{atencao}
+A partição \cd{DEFAULT} encher é \textbf{sinal de que faltou criar partição}, não
+funcionamento normal. Não há \emph{job} agendado nesta plataforma --- de
+propósito, porque seria a única peça de \emph{scheduling} do sistema --- e as
+faixas vão até 2028-12. Verificar a contagem da partição \cd{DEFAULT} é item do
+\emph{checklist} de operação (Apêndice~\ref{ap:operacao}).
+\end{atencao}
+
+\section{Modelo da exp-01 (Instanooria)}
+
+A exp-01 é a experiência mais rica em dados: um motor de \emph{feed} adaptativo
+com geração de conteúdo por IA, sessão por aluno e dossiê de fechamento. São doze
+tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[tabela, text width=44mm] (act) at (2.9,0)
+    {\etitulo{exp\_01\_activities}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
+     \texttt{titulo}, \texttt{disciplina}, \texttt{tema\_geral}\\
+     \texttt{recorte}, \texttt{contexto\_aula}\\
+     \texttt{pergunta\_chave}, \texttt{pergunta\_origem}\\
+     \texttt{etapa} --- relógio COLETIVO da turma\\
+     \texttt{ia\_ao\_vivo}, \texttt{antagonismo} JSONB\\
+     \texttt{categorias\_neutras[]}, \texttt{neutros\_no\_tema[]}\\
+     \texttt{qtd\_posts\_tese}, \texttt{proporcoes}\\
+     \texttt{engine\_config}, \texttt{estilo\_visual}\\
+     \texttt{status}: rascunho\ldots{}encerrada};
+
+  \node[tabela, text width=40mm] (aut) at (8.4,1.0)
+    {\etitulo{exp\_01\_authors}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
+     \texttt{handle}, \texttt{display\_name}\\
+     \texttt{tipo}, \texttt{lado}: A$|$B$|$neutro\\
+     \texttt{perfil\_afim}, \texttt{verificado}\\
+     \texttt{bio}, \texttt{voz}\\
+     \texttt{UNIQUE (activity\_id, handle)}};
+
+  \node[tabela, text width=44mm] (pos) at (13.6,-0.8)
+    {\etitulo{exp\_01\_posts}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
+     \fk{author\_id}\\
+     \texttt{lado}, \texttt{perfil}, \texttt{intensidade} 1--3\\
+     \texttt{categoria}, \texttt{formato}\\
+     \texttt{caption}, \texttt{hashtags[]}\\
+     \texttt{emotional\_hook}, \texttt{image\_brief}\\
+     \texttt{image\_url}, \texttt{image\_status}\\
+     \texttt{likes\_count}, \texttt{aprovado}\\
+     \texttt{INDEX (activity, lado, perfil,}\\
+     \quad\texttt{intensidade, aprovado)}};
+
+  \node[tabela, text width=40mm] (job) at (2.9,-6.4)
+    {\etitulo{exp\_01\_generation\_jobs}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
+     \texttt{tipo}: personas $|$ posts\_lote $|$\\
+     \quad imagem $|$ validacao\\
+     \texttt{payload}, \texttt{status}, \texttt{tentativa}\\
+     \texttt{erro}, \texttt{updated\_at} --- recicla órfão};
+
+  \node[tabela, text width=38mm] (pc) at (8.6,-6.2)
+    {\etitulo{exp\_01\_post\_comments}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{post\_id}\\
+     \fk{author\_id} --- NULL = handle avulso\\
+     \texttt{handle}, \texttt{texto}\\
+     \texttt{likes\_count}, \texttt{ordem}};
+
+  \draw[erel] (act.east) -- (aut.west)
+    node[ercard, pos=0.22]{1} node[ercard, pos=0.80]{N};
+  \draw[erel] (aut.east) -- (pos.north west)
+    node[ercard, pos=0.20]{1} node[ercard, pos=0.82]{N};
+  \draw[erel] (act.south) -- (job.north)
+    node[ercard, pos=0.25]{1} node[ercard, pos=0.75]{N};
+  \draw[erel] (pos.south) -- (13.6,-5.4) -- (pc.east)
+    node[ercard, pos=0.86]{N};
+
+\end{tikzpicture}}
+\caption[Modelo de dados da exp-01: atividade e conteúdo]{Modelo de dados da
+  exp-01, parte 1: a atividade preparada pelo professor e o conteúdo gerado.
+  \texttt{lado}, \texttt{perfil} e \texttt{intensidade} em
+  \cd{exp\_01\_posts} são a variável independente do experimento --- estão no
+  banco, e o sanitizador da API os remove antes de o \emph{feed} sair
+  (Seção~\ref{sec:fluxos}).}
+\label{fig:er-exp01a}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[tabela, text width=46mm] (run) at (3.1,0)
+    {\etitulo{exp\_01\_runs} --- sessão de um aluno
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
+     \fk{aluno\_id}\\
+     \texttt{fase}: onboarding\ldots{}comparacao\\
+     \texttt{lado\_inicial}, \texttt{lado\_origem}\\
+     \texttt{perfil\_jogo} JSONB, \texttt{perfil\_origem}\\
+     \texttt{engine\_state} JSONB --- estado do motor\\
+     \texttt{nome\_no\_app}, \texttt{avatar\_escolhido}\\
+     \texttt{started\_at}, \texttt{finished\_at}\\
+     \texttt{UNIQUE (activity\_id, aluno\_id)}};
+
+  \node[tabela, text width=40mm] (ev) at (9.2,0.6)
+    {\etitulo{exp\_01\_events} --- canal OPERACIONAL
+     \nodepart{two}
+     \pk{id} BIGSERIAL, \fk{escola\_id}\\
+     \fk{run\_id}, \fk{post\_id}\\
+     \texttt{tipo}: visto $|$ curtiu $|$ comentou\ldots{}\\
+     \texttt{payload}: \{dwellMs, dwellNorm\}\\
+     \texttt{client\_ts}, \texttt{created\_at}\\
+     \texttt{INDEX (run\_id, id)}};
+
+  \node[tabela, text width=36mm] (sp) at (14.2,0.2)
+    {\etitulo{exp\_01\_student\_posts}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
+     \texttt{texto}, \texttt{template}\\
+     \texttt{lado\_inferido}};
+
+  \node[tabela, text width=32mm] (con) at (2.2,-5.2)
+    {\etitulo{exp\_01\_conclusoes}
+     \nodepart{two}
+     \pk{run\_id}, \fk{escola\_id}\\
+     \texttt{inclinacao}: A$|$B$|$duvida\\
+     \texttt{texto}};
+
+  \node[tabela, text width=30mm] (ref) at (6.2,-5.2)
+    {\etitulo{exp\_01\_reflexoes}
+     \nodepart{two}
+     \pk{run\_id}, \fk{escola\_id}\\
+     \texttt{texto} --- sem limite};
+
+  \node[tabela, text width=28mm] (dos) at (10.0,-5.2)
+    {\etitulo{exp\_01\_dossiers}
+     \nodepart{two}
+     \pk{run\_id}, \fk{escola\_id}\\
+     \texttt{data} JSONB};
+
+  \node[tabela, text width=38mm] (cs) at (14.2,-5.4)
+    {\etitulo{exp\_01\_comentarios\_da\_sessao}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
+     \fk{post\_id} \textbf{XOR} \fk{student\_post\_id}\\
+     \texttt{handle} --- NULL = o próprio aluno\\
+     \texttt{de\_ia}, \texttt{texto}};
+
+  \node[tabela, text width=48mm, rectangle split part fill={unooOrange, unooOrangeWash}] (pi) at (5.4,-9.6)
+    {\etitulo{exp\_01\_exp\_70\_perfis\_importados}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{activity\_id}, \fk{aluno\_id}\\
+     \texttt{escores} JSONB --- 4 quadrantes, 0--1\\
+     \texttt{dominante}, \texttt{origem}: jogo $|$ professor\\
+     \texttt{lado\_forcado} --- redistribuição do professor\\
+     \texttt{medido\_em}\\
+     \texttt{UNIQUE (activity\_id, aluno\_id)}};
+
+  \node[actnote, text width=52mm, anchor=north west] at (11.0,-8.4)
+    {\textbf{A tabela laranja é o contrato entre duas experiências.} A exp-70
+     escreve (\rota{POST /atividades/:id/perfis/da-vila}); a exp-01 lê em
+     \arq{perfis/largada.ts} para decidir de que lado o \emph{feed} de cada aluno
+     nasce. O nome carrega os dois números porque a dependência é real --- e um
+     nome com um número só faria parecer que apagar a exp-70 não afeta ninguém.};
+
+  \draw[erel] (run.east) -- (ev.west)
+    node[ercard, pos=0.18]{1} node[ercard, pos=0.82]{N};
+  \draw[erel] (ev.east) -- (sp.west) node[ercard, pos=0.85]{N};
+  \draw[erel] (run.south) -- (con.north) node[ercard, pos=0.75]{1};
+  \draw[erel] (run.south) -- (ref.north) node[ercard, pos=0.78]{1};
+  \draw[erel] (run.south east) -- (dos.north) node[ercard, pos=0.82]{1};
+  \draw[erel] (run.south east) -- (11.4,-2.4) -- (cs.north) node[ercard, pos=0.88]{N};
+  \draw[erel, dashed] (con.south) -- (2.2,-9.6) -- (pi.west)
+    node[ercard, pos=0.72, above]{mesmo aluno};
+
+\end{tikzpicture}}
+\caption[Modelo de dados da exp-01: sessão do aluno]{Modelo de dados da exp-01,
+  parte 2: a sessão do aluno. A \cd{run} é o centro --- carrega o estado do motor
+  em JSONB e é a unidade de \emph{lock} da curadoria. \cd{exp\_01\_events} é o
+  canal \emph{operacional} de telemetria, síncrono e transacional, e não deve ser
+  confundido com \cd{telemetria\_eventos}, o canal analítico
+  (Capítulo~\ref{cap:telemetria}).}
+\label{fig:er-exp01b}
+\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+\cd{engine\_state} em JSONB, não em tabela & O estado do motor é um agregado lido
+  e escrito \emph{inteiro}, sempre dentro do mesmo \emph{lock}. Normalizá-lo daria
+  \emph{joins} sem nenhum ganho de consulta.\\
+\zebra \cd{nome\_no\_app} e \cd{avatar\_escolhido} na \cd{run}, não em
+  \cd{users} & A conta é \textbf{do aparelho}: outra turma reusa o mesmo
+  \emph{login}. O nome que a criança digitou pertence àquela sessão.\\
+\cd{pergunta\_origem} & Distingue pergunta gerada por IA de pergunta escrita ou
+  editada pelo professor. É auditoria de autoria pedagógica, e custa uma coluna.\\
+\zebra \cd{lado\_origem} na \cd{run} & \cd{perfil}, \cd{sorteio} ou
+  \cd{redistribuido}: auditoria de \emph{por que} aquele aluno caiu naquele lado.
+  Sem isso, uma reclamação de professor não tem resposta.\\
+\cd{post\_id} \textbf{XOR} \cd{student\_post\_id} em
+  \cd{comentarios\_da\_sessao} & O comentário ancora num post do banco
+  \emph{ou} no post que o aluno publicou. Nunca nos dois --- e o \emph{CHECK}
+  está na migração.\\
+\zebra \cd{de\_ia} & Permite ao professor distinguir, na auditoria, o comentário
+  escrito pela persona (modelo) do escrito pelo aluno.\\
+\bottomrule
+\end{tabularx}
+
+\section{Modelo das experiências 02, 70, 90 e 91}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[camadalbl, anchor=west] at (0.2,2.1) {exp-02 --- UnooTube};
+  \node[tabela, text width=46mm] (u) at (3.4,-0.2)
+    {\etitulo{exp\_02\_sessoes}
+     \nodepart{two}
+     \pk{escola\_id, aluno\_id} --- 1 linha por aluno\\
+     \texttt{salvos[]} --- ids do catálogo, CHECK $\leq$ 3\\
+     \texttt{curtidos[]}\\
+     \texttt{ranking\_desbloqueado} --- \emph{latch}\\
+     \texttt{credibilidade\_adicionada} --- congela\\
+     \texttt{concluido\_em}, \texttt{reinicios}\\
+     \texttt{criado\_em}, \texttt{atualizado\_em}};
+
+  \node[actnote, text width=54mm, anchor=north west] at (7.6,1.2)
+    {O gabarito (\texttt{factual}) \textbf{não} está aqui e não é devolvido em
+     nenhuma rota de aluno: vive em \arq{src/unootube/catalogo.ts}. Os
+     \emph{CHECK} de cardinalidade dos salvos e de \enquote{conclusão implica
+     \texttt{concluido\_em}} vivem na migração, porque o Prisma não os modela.};
+
+  \node[camadalbl, anchor=west] at (0.2,-4.2) {exp-70 --- Vila do Lume};
+  \node[tabela, text width=50mm] (vs) at (3.6,-8.0)
+    {\etitulo{exp\_70\_sessoes} --- uma partida
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{aluno\_id}, \fk{turma\_id}\\
+     \texttt{exp\_version}, \texttt{schema\_version}\\
+     \texttt{bolha}: A$|$B$|$C --- do SERVIDOR\\
+     \texttt{cartoes\_servidos} --- $\neq$ apareceram\\
+     \texttt{aberta\_em}, \texttt{concluida\_em} --- do servidor\\
+     \texttt{duracao\_seg}, \texttt{duracao\_total\_seg}\\
+     \texttt{status}: aberta $|$ completa $|$ abandonada\\
+     \texttt{fogueiras\_acesas} \ldots{} \texttt{distancia\_m}\\
+     \quad --- resumo tipado, o que o painel ordena\\
+     \texttt{payload} JSONB --- bruto, fonte do\\
+     \quad reprocessamento\\
+     \texttt{leitura\_mensagens} JSONB};
+
+  \node[tabela, text width=48mm] (vp) at (11.4,-7.6)
+    {\etitulo{exp\_70\_perfis} --- retrato Schwartz
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{sessao\_id}, \fk{aluno\_id}\\
+     \texttt{versao\_mapeamento} --- hoje 3\\
+     \texttt{valores} JSONB --- 10 valores; \texttt{null} $\neq$ 0\\
+     \texttt{graus} JSONB --- scored $|$ indicative $|$\\
+     \quad zero $|$ none\\
+     \texttt{abertura\_vs\_conservacao}\\
+     \texttt{transcendencia\_vs\_autopromocao}\\
+     \quad --- NULL se um polo não foi observado\\
+     \texttt{amostra\_suficiente}\\
+     \texttt{UNIQUE (sessao\_id, versao\_mapeamento)}};
+
+  \node[tabela, text width=40mm] (vb) at (11.6,-12.4)
+    {\etitulo{exp\_70\_bolhas} --- 1 linha por ALUNO
+     \nodepart{two}
+     \pk{escola\_id, aluno\_id}\\
+     \texttt{bolha}, \texttt{atribuida\_em}};
+
+  \node[actnote, text width=48mm, anchor=north west] at (3.0,-13.4)
+    {Por \textbf{aluno}, não por partida: repetir a partida não pode trocar o
+     nível, porque a folha do professor diz \enquote{esse estava na C} e o
+     relatório abre pelo nível. A atribuição é balanceada \emph{dentro da turma}
+     --- \emph{hash} de UUID pode dar 14/6/5 numa sala de 25, e aí o debate da
+     missão não acontece, porque ele depende de as três bolhas estarem na mesma
+     sala.};
+
+  \draw[erel] (vs.east) -- (vp.west)
+    node[ercard, pos=0.16]{1} node[ercard, pos=0.84]{N};
+  \draw[erel, dashed] (vp.south) -- (vb.north)
+    node[ercard, pos=0.5, right=2pt]{mesmo aluno};
+
+\end{tikzpicture}}
+\caption[Modelo de dados das exps 02 e 70]{Modelo de dados da exp-02 e da
+  exp-70. Em \cd{exp\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
+  recebeu número. \cd{graus} diz por quê, e é essa distinção que impede um
+  relatório de afirmar recusa onde houve ausência de oportunidade.}
+\label{fig:er-exp02-70}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[camadalbl, anchor=west] at (0.2,1.9) {exp-90 --- Plano de aula};
+  \node[tabela, text width=46mm] (pl) at (3.4,-0.8)
+    {\etitulo{exp\_90\_planos}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
+     \texttt{serie}, \texttt{disciplina}, \texttt{titulo}\\
+     \texttt{status}: pendente $|$ gerando $|$\\
+     \quad pronto $|$ erro\\
+     \texttt{tentativas}, \texttt{iniciado\_em}, \texttt{erro}\\
+     \texttt{tokens\_usados}\\
+     \texttt{caminho\_gerado\_md} --- imutável\\
+     \texttt{caminho\_html} --- o que o editor salvou};
+
+  \node[tabelacat, text width=44mm] (pr) at (10.4,-0.6)
+    {\etitulo{exp\_90\_referencias} --- catálogo do contrato
+     \nodepart{two}
+     \pk{id}\\
+     \texttt{disciplina}, \texttt{serie} --- NULL = todas\\
+     \texttt{nome}, \texttt{texto}, \texttt{ordem}\\
+     \texttt{UNIQUE (disciplina, serie, nome)}\\
+     \textbf{sem \texttt{escola\_id}}, fora da RLS};
+
+  \node[camadalbl, anchor=west] at (0.2,-5.2) {exp-91 --- Bem-estar do professor};
+  \node[tabela, text width=44mm, rectangle split part fill={unooRed, unooRedWash}] (bc) at (3.4,-7.6)
+    {\etitulo{exp\_91\_ciclos} --- DADO SENSÍVEL
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
+     \texttt{status}: aberto $|$ concluido $|$ expirado\\
+     \texttt{ordem\_itens[]} --- permutação de 1..21\\
+     \texttt{iniciado\_em}, \texttt{expira\_em} --- 21 dias\\
+     \texttt{concluido\_em}\\
+     \texttt{depressao}, \texttt{ansiedade}, \texttt{estresse}\\
+     \quad --- somas $\times 2$, preenchidas ao concluir};
+
+  \node[tabela, text width=46mm, rectangle split part fill={unooRed, unooRedWash}] (bk) at (11.0,-8.4)
+    {\etitulo{exp\_91\_checkins}
+     \nodepart{two}
+     \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
+     \fk{ciclo\_id}\\
+     \texttt{numero} 1..7, \texttt{dia}, \texttt{status}\\
+     \texttt{itens[]} --- 3 itens do DASS-21\\
+     \texttt{respostas} JSONB --- [\{item, valor 0..3\}]\\
+     \texttt{texto\_livre} --- nunca em log nem\\
+     \quad telemetria\\
+     \texttt{abertura}, \texttt{pergunta}, \texttt{acolhimento}\\
+     \texttt{origem\_texto}: ia $|$ fallback $|$ seguranca\\
+     \texttt{sinal\_de\_apoio}, \texttt{tokens\_ia}\\
+     \texttt{UNIQUE (escola\_id, professor\_id, dia)}};
+
+  \draw[erel, dashed] (pl.east) -- (pr.west)
+    node[ercard, midway, above]{monta o \emph{prompt}};
+  \draw[erel] (bc.east) -- (bk.west)
+    node[ercard, pos=0.18]{1} node[ercard, pos=0.84]{7};
+
+\end{tikzpicture}}
+\caption[Modelo de dados das exps 90 e 91]{Modelo de dados da exp-90 e da
+  exp-91. As caixas vermelhas são dado \emph{sensível} de saúde (LGPD art.~11):
+  RLS \emph{e} posse por \cd{professor\_id} em toda \emph{query}, sem nenhuma rota
+  de gestor ou agregado. \cd{exp\_90\_referencias} é catálogo do contrato e fica
+  \textbf{fora} da RLS, como \cd{experiencias}.}
+\label{fig:er-exp90-91}
+\end{figure}
+
+\section{Decisões de esquema por experiência}
+
+\subsection{exp-70 --- as decisões que custam informação de propósito}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Por quê}\\
+\midrule
+\cd{turma\_id} desnormalizado na sessão & O aluno troca de turma entre anos
+  letivos, e o resultado precisa continuar \emph{na turma em que foi medido}.\\
+\zebra Datas cravadas pelo \textbf{servidor} & O aplicativo de origem derivava do
+  relógio do cliente, e documentava que a hora numa máquina de escola costuma
+  estar errada.\\
+O \cd{id} da sessão é emitido pela API & No aplicativo de origem o cliente
+  escolhia a própria chave de idempotência, e duas crianças na mesma máquina
+  colidiam --- a segunda partida voltava \enquote{duplicada} e desaparecia.\\
+\zebra \cd{valores} com \cd{null}, e \cd{graus} separados &
+  \cd{null} \textbf{não é zero}: é valor que não recebeu número, porque tem uma
+  fonte de medida só ou porque a oportunidade não chegou. \cd{graus} diz \emph{por
+  quê}, e é essa distinção que impede um relatório de afirmar recusa onde houve
+  ausência.\\
+Eixos do circumplexo anuláveis & Eixo com polo não observado não é zero: é
+  \emph{indefinido}. Colocar zero produziria um ponto no meio do gráfico, que se
+  lê como \enquote{equilibrado}.\\
+\zebra \cd{amostra\_suficiente} como coluna & Falso \implica{} o painel abre
+  avisando que \textbf{não sabe}. Não é rigor estatístico: é impedir que uma
+  partida sem escolha vire uma frase sobre quem a criança é.\\
+Nova linha por \cd{versao\_mapeamento} & O mapeamento é hipótese de \emph{design}
+  e vai mudar. Guardar só o resultado tornaria todo o passado incomparável no dia
+  da revisão. \cd{UNIQUE (sessao\_id, versao\_mapeamento)}.\\
+\zebra \textbf{Sem tabela de evento fino} & O bruto vive em \cd{payload} (fonte do
+  reprocessamento) e o canal analítico da SDK já grava em
+  \cd{telemetria\_eventos}. Duas tabelas de log seriam duas histórias de retenção
+  para o mesmo dado.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{exp-90 --- conteúdo fora do banco}
+
+\begin{decisao}
+O \textbf{conteúdo} do plano de aula não fica no PostgreSQL: fica em
+armazenamento de objetos \emph{privado}
+(\arq{planos/\{escolaId\}/\{planoId\}/gerado.md} imutável +
+\arq{atual.html} do editor). A tabela guarda metadados, estado da geração e
+\emph{caminhos}.
+
+O ganho não é performance: é que o versionamento de objetos do \emph{bucket} dá
+histórico de cada \enquote{Salvar} \textbf{sem uma linha de código de
+histórico}. Um professor que sobrescreveu o plano por engano tem recuperação, e
+ninguém escreveu uma tabela de versões.
+\end{decisao}
+
+\subsection{exp-91 --- ausência como decisão de esquema}
+
+\begin{decisao}
+Não existe tabela de agregado de bem-estar, e não existe \emph{view} por escola.
+Isso não é lacuna: é a decisão. Dado de saúde (LGPD art.~11) tem RLS \emph{e}
+posse por \cd{professor\_id} em toda \emph{query}; o titular apaga tudo com
+\rota{DELETE /bemestar/dados}. Uma visão agregada e anonimizada para a rede é
+decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
+\cd{GROUP BY}.
+\end{decisao}
+
+\section{Migrações}
+
+\begin{tabularx}{\linewidth}{@{}L{54mm}X@{}}
+\toprule
+\headrow \thd{Migração} & \thd{Conteúdo}\\
+\midrule
+\arq{20260824145301\_init} & Esquema inicial: \emph{tenancy} (\cd{escolas},
+  \cd{turmas}, \cd{users}), tabelas da exp-01, tabelas de plataforma, e o laço
+  que aplica \cd{ENABLE}/\cd{FORCE ROW LEVEL SECURITY} + política por escola.\\
+\zebra \arq{20260825011950\_unootube\_sessoes} & Estado \emph{server-side} da
+  exp-02, com \emph{CHECK} de cardinalidade dos salvos.\\
+\arq{20260825120000\_planos\_de\_aula} & Planos e referências curriculares.\\
+\zebra \arq{20260825225016\_bem\_estar} & Ciclos e \emph{check-ins} do DASS-21,
+  com RLS e \cd{GRANT}.\\
+\arq{20260826120000\_permissoes\_de\_iframe} & Coluna \cd{permissoes} no
+  manifesto, com \emph{CHECK} do vocabulário aceito.\\
+\zebra \arq{20260826140000\_vila\_do\_lume} & Sessões, perfis e bolhas da
+  exp-70.\\
+\arq{20260826170000\_vila\_sem\_prazo} & Remoção da coluna \cd{expires\_at}
+  (\adrr{ADR-13}).\\
+\zebra \arq{20260827090000\_tabelas\_por\_experiencia} & Renomeação para o padrão
+  \cd{exp\_NN\_}: \cd{RENAME} de tabelas, \emph{constraints}, índices e políticas.
+  É a migração de referência.\\
+\arq{20260827100000\_telemetria\_particionada} & Particionamento mensal de
+  \cd{telemetria\_eventos} no \emph{schema} \cd{particoes}, com partição
+  \cd{DEFAULT} e faixas até 2028-12.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Nenhuma migração remove \cd{escola\_id} ou afrouxa RLS.} Renomeação usa
+\cd{RENAME}; nada de \cd{DROP}/\cd{CREATE} em tabela com dado. Em produção, a
+migração roda como Cloud Run Job dentro da VPC \textbf{antes} do \emph{deploy} do
+serviço, com \cd{--wait} --- porque o \emph{schema} novo tem de estar no banco
+antes de a revisão nova receber tráfego.
+\end{regra}
+
+\begin{atencao}
+O que o Prisma \textbf{não} modela e por isso vive na migração:
+políticas de RLS, \emph{CHECK constraints}, partições, \cd{GRANT}. Ler
+apenas \arq{schema.prisma} dá uma visão incompleta do banco --- é por isso que os
+campos correspondentes são \cd{TEXT}/\cd{SMALLINT} no \emph{schema} e a validação
+de aplicação é feita com Zod.
+\end{atencao}

@@ -1,0 +1,246 @@
+% ===========================================================================
+%  Apendice B — Variaveis de ambiente
+% ===========================================================================
+\chapter{Variáveis de ambiente}
+\label{ap:envs}
+
+Catálogo completo, derivado de \arq{.env.example} e de
+\arq{apps/api/src/config/env.ts}. Toda variável da API é validada com Zod
+\textbf{no \emph{boot}}: valor errado derruba o processo na subida, não no meio de
+uma requisição de aluno.
+
+\begin{regra}
+Variável marcada \textbf{fecha} significa: \emph{ausente} \implica{} a
+funcionalidade responde 401 ou 503, \textbf{nunca} fica aberta. Essa é a
+convenção de \emph{fail closed} da plataforma (\rf{RNF-09}).
+\end{regra}
+
+\section{API --- \arq{apps/api/.env}}
+
+\subsection{Banco e identidade}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{DATABASE\_URL} & --- (obrigatória) & URL do PostgreSQL. Validada com
+  \cd{startsWith("postgresql://")}. Em produção vem do Secret Manager.\\
+\zebra \env{OIDC\_ISSUER} & --- (obrigatória) & Emissor aceito. Hoje é o hub;
+  amanhã o WSO2. \textbf{Não é segredo} --- é URL pública, e vai em texto plano
+  derivada de \cd{hub\_domain}, o que garante que \cd{iss} e esperado não possam
+  divergir.\\
+\env{OIDC\_JWKS\_URI} & --- (obrigatória) & JWKS do emissor.\\
+\zebra \env{OIDC\_AUDIENCE} & \cd{plataforma-api} & Audiência exigida no
+  \emph{token}.\\
+\env{CORS\_ORIGINS} & hub + \emph{dev servers} & Lista explícita, separada por
+  vírgula. \textbf{Nunca} \cd{*}.\\
+\zebra \env{PORT} & \cd{3001} & Porta HTTP.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+O \cd{issuer} do WSO2 é \emph{tenant-qualified}
+(\cd{.../t/\{contrato\}/oauth2/token}) e deve ser copiado \textbf{literalmente}
+do \emph{discovery}, nunca montado por concatenação. Um \cd{iss} montado à mão que
+difere por uma barra faz toda validação falhar com \enquote{\emph{issuer}
+inválido} --- e a mensagem não diz qual dos dois lados está errado.
+\end{atencao}
+
+\subsection{Inteligência artificial}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{AI\_PROVIDER} & \cd{vertex} & \cd{vertex} ou \cd{mock}. Com \cd{mock} a
+  plataforma sobe sem nenhuma credencial de GCP.\\
+\zebra \env{VERTEX\_PROJECT\_ID} & --- & \textbf{Obrigatória com
+  \cd{AI\_PROVIDER=vertex}}: o \emph{boot} recusa sem ela. Sem projeto, a URL
+  viraria \cd{.../projects/undefined/...} e o erro só apareceria na primeira
+  geração real.\\
+\env{VERTEX\_LOCATION} & \cd{global} & O \cd{3.6-flash} \textbf{só} existe em
+  \cd{global} (medido: 404 em \cd{southamerica-east1}, \cd{us-east1},
+  \cd{us-central1}). Trocar por uma região exige trocar \emph{também} o modelo.\\
+\zebra \env{VERTEX\_MODEL} & \cd{gemini-3.6-flash} & Modelo do dia a dia.\\
+\env{VERTEX\_MODEL\_LONGO} & \cd{gemini-3.6-flash} & Modelo de saída longa
+  (planos anuais). A variável separada existe para trocar um sem tocar no
+  outro.\\
+\zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} & Arte da exp-01.
+  O antigo \cd{gemini-2.0-flash-exp} \textbf{não existe mais} --- e por isso toda
+  geração de imagem caía no \emph{fallback} procedural. Quem trocar precisa
+  conferir a proporção devolvida.\\
+\env{VERTEX\_THINKING\_BUDGET} & \cd{0} & Tokens de \emph{raciocínio} saem do
+  \cd{maxOutputTokens}. \cd{0} desligado (paridade com o aplicativo de origem);
+  \cd{-1} dinâmico; $>0$ teto. Com pensamento livre, o plano anual voltava
+  \textbf{vazio}.\\
+\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} & \num{20000} & Quota diária do
+  aluno.\\
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
+  professor, gestor e admin. Um plano anual gasta $\sim$\num{220000} \emph{tokens}
+  só de \emph{prompt}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Não existe variável para chave de API de IA} em lugar nenhum do projeto ---
+nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
+(\adrr{ADR-16}).
+\end{nota}
+
+\subsection{Armazenamento}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{ASSETS\_DRIVER} & \cd{local} & \cd{local} (a API serve em \rota{/assets}) ou
+  \cd{gcs} (\emph{bucket} público atrás da CDN).\\
+\zebra \env{ASSETS\_BUCKET} & --- & \cd{\{contrato\}-assets}.\\
+\env{ASSETS\_PUBLIC\_URL} & --- & Base pública da CDN de \emph{assets}.\\
+\zebra \env{ASSETS\_LOCAL\_DIR} & --- & Diretório local em \emph{dev}.\\
+\env{PLANOS\_DRIVER} & \cd{local} & \cd{local} grava em
+  \arq{storage-privado/}; \cd{gcs} usa o \emph{bucket} \textbf{privado}.\\
+\zebra \env{PLANOS\_BUCKET} & --- & \cd{\{contrato\}-planos}. \textbf{Privado},
+  sem CDN, com versionamento de objetos.\\
+\env{PLANOS\_LOCAL\_DIR} & --- & Diretório local em \emph{dev}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Telemetria e chaves de serviço}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Ausente} & \thd{Papel}\\
+\midrule
+\env{TELEMETRIA\_TOPIC} & console & Vazio em \emph{dev} = eventos apenas
+  \emph{logados}. Não há Pub/Sub local.\\
+\zebra \env{TELEMETRIA\_PUSH\_SA} & \textbf{fecha (401)} & \emph{E-mail} da conta
+  de serviço que assina o \emph{push} do Pub/Sub.\\
+\env{TELEMETRIA\_PUSH\_AUDIENCE} & \textbf{fecha (401)} & Audiência configurada
+  na \emph{subscription}. Sem as duas, \rota{/telemetry/ingest} rejeita tudo.\\
+\zebra \env{PERFIL\_IMPORT\_TOKEN} & \textbf{fecha (503)} & Cabeçalho
+  \cd{x-perfil-token} da ponte externa do Ato 1.\\
+\env{PLANOS\_IMPORT\_TOKEN} & \textbf{fecha (503)} & Cabeçalho
+  \cd{x-import-token} do \emph{script} de importação de referências
+  curriculares.\\
+\bottomrule
+\end{tabularx}
+
+\section{Hub --- \arq{apps/hub/.env.local}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Escopo} & \thd{Papel}\\
+\midrule
+\env{NEXT\_PUBLIC\_API\_URL} & \textbf{cliente} & Endereço da API que o
+  \textbf{navegador} usa. Vai ao \cd{hub:init} como \cd{apiUrl}.\\
+\zebra \env{API\_INTERNAL\_URL} & servidor & Endereço da API que o \emph{hub} usa
+  (\emph{authorize}, BFF, leitura de manifesto).\\
+\env{NEXT\_PUBLIC\_CDN\_EXP\_URL} & \textbf{cliente} & Base dos \emph{bundles}.
+  Em produção, a CDN; em \emph{dev} sem manifesto, cada experiência usa a porta de
+  \arq{lib/experiencias-dev.ts}.\\
+\zebra \env{EXP\_INTERNAL\_URL} & servidor & De onde o hub \textbf{lê} o
+  \arq{experiencia.json}. Endereço \textbf{fixo} --- serve quando há \emph{uma}
+  origem de \emph{bundles} (a CDN, em produção).\\
+\env{EXP\_INTERNAL\_HOST} & servidor & Troca \textbf{só o host} e
+  \textbf{preserva a porta}. É o que serve em \emph{dev} e em contêiner, onde cada
+  experiência tem um \emph{dev server} numa porta diferente.\\
+\zebra \env{HUB\_ORIGIN} & servidor & \emph{Origin} do hub, passada à experiência
+  por \emph{query string} e usada como \cd{targetOrigin}.\\
+\env{AUTH\_SECRET} & servidor & Segredo de sessão do NextAuth.\\
+\zebra \env{TOKEN\_SIGNING\_KEY\_PEM} & servidor &
+  Par RS256 que assina os \emph{tokens} de experiência. Gerar com
+  \cd{node apps/hub/scripts/gerar-chave-token.mjs}. \textbf{Obrigatória em
+  produção}; vem do Secret Manager.\\
+\env{AUTH\_WSO2\_ISSUER} & servidor & A \textbf{presença} desta variável registra
+  o \emph{provider} OIDC no NextAuth.\\
+\zebra \env{AUTH\_WSO2\_CLIENT\_ID} & servidor & Cliente OIDC do hub.\\
+\env{AUTH\_WSO2\_CLIENT\_SECRET} & servidor & Segredo do cliente OIDC.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\env{EXP\_INTERNAL\_URL} \emph{versus} \env{EXP\_INTERNAL\_HOST} é a confusão de
+configuração mais custosa do projeto, porque o sintoma não aponta para a causa:
+com um \env{EXP\_INTERNAL\_URL} fixo em \emph{dev}, as cinco experiências leem o
+manifesto de \emph{uma só} --- e o UnooTube, que não declara \cd{viewport},
+aparece \textbf{dentro da casca de celular da Instanooria}.
+\end{atencao}
+
+\section{Experiências --- variáveis de \emph{build} do Vite}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Papel}\\
+\midrule
+\env{VITE\_VIDEOS\_BASE\_URL} & exp-02: base dos 21 arquivos MP4
+  (\SI{52}{\mega\byte}), que ficam fora do \emph{git} e fora do \emph{bundle}.
+  Vazio = \arq{./videos} (\arq{public/videos/}, \emph{gitignorado}, em
+  \emph{dev}). Em produção:
+  \cd{https://<cdn-assets>/exp-02-unootube/videos}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{A exp-70 não tem nenhuma variável de ambiente.} Ela não usa IA, não usa
+\emph{bucket} e não tem prazo de retenção declarado --- o que é registrado
+explicitamente em \arq{.env.example}, para que a ausência seja lida como decisão e
+não como esquecimento.
+\end{nota}
+
+\section{\cd{vars} do repositório (CI/CD)}
+
+O \emph{workflow} de \emph{deploy} não conhece o nome de nenhum recurso: tudo
+entra por \cd{vars} do repositório, cujos valores saem de
+\cd{terraform output}. Há um \emph{script} que os configura
+(\arq{scripts/configurar-github-ci.sh}).
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{\cd{vars}} & \thd{Conteúdo}\\
+\midrule
+\cd{GCP\_PROJECT} & Projeto do contrato.\\
+\zebra \cd{REGION} & Região do Cloud Run e do Artifact Registry.\\
+\cd{AR\_REPO} & Repositório do Artifact Registry.\\
+\zebra \cd{API\_SERVICE}, \cd{HUB\_SERVICE} & Nomes dos serviços do Cloud Run.\\
+\cd{MIGRATE\_JOB} & Nome do Cloud Run Job de migração.\\
+\zebra \cd{EXP\_BUCKET} & \emph{Bucket} dos \emph{bundles}.\\
+\cd{ASSETS\_BASE\_URL} & Base pública de \emph{assets} (entra no \emph{build} da
+  exp-02).\\
+\zebra \cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos, usados pelo
+  \emph{script} de manifesto.\\
+\cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{\emph{Secret} do CI} & \thd{Conteúdo}\\
+\midrule
+\cd{TOKEN\_SIGNING\_KEY\_PEM} & A mesma chave RS256 do hub
+  (\cd{\{contrato\}-token-signing-key} no Secret Manager). O CI a usa para
+  assinar o \emph{token} de cinco minutos do \emph{upsert} de manifesto.\\
+\bottomrule
+\end{tabularx}
+
+\section{Configuração mínima para subir sem GCP}
+
+\begin{lstlisting}[language=bashunoo, caption={A combinação que faz \rf{RNF-14} ser verdade}]
+# API
+DATABASE_URL=postgresql://postgres:pass@localhost:5432/unooria
+OIDC_ISSUER=http://localhost:3000
+OIDC_JWKS_URI=http://localhost:3000/.well-known/jwks.json
+AI_PROVIDER=mock          # sem GCP nenhum; devolve texto de exemplo
+ASSETS_DRIVER=local       # a API serve /assets
+PLANOS_DRIVER=local       # grava em storage-privado/
+TELEMETRIA_TOPIC=         # vazio: eventos so no console
+# TELEMETRIA_PUSH_* vazias  => /telemetry/ingest responde 401 (correto em dev)
+
+# HUB
+NEXT_PUBLIC_API_URL=http://localhost:3001
+API_INTERNAL_URL=http://localhost:3001
+NEXT_PUBLIC_CDN_EXP_URL=http://localhost:5173
+HUB_ORIGIN=http://localhost:3000
+AUTH_SECRET=troque-me
+TOKEN_SIGNING_KEY_PEM=    # node apps/hub/scripts/gerar-chave-token.mjs --env
+\end{lstlisting}

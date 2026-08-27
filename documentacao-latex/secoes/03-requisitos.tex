@@ -1,0 +1,311 @@
+% ===========================================================================
+%  3 — Requisitos
+% ===========================================================================
+\chapter{Requisitos}
+\label{cap:requisitos}
+
+Este capítulo especifica os requisitos da plataforma de forma rastreável: cada
+requisito recebe identificador estável, prioridade, estado e o ponto do sistema
+onde é verificado. Requisito sem ponto de verificação é intenção, não requisito.
+
+A prioridade segue MoSCoW: \textbf{M} (\emph{must}) bloqueia a entrada em
+produção; \textbf{S} (\emph{should}) é esperado na primeira rede; \textbf{C}
+(\emph{could}) é evolução planejada. O estado reflete o repositório em 27 de
+agosto de 2026.
+
+\section{Requisitos funcionais}
+
+\subsection{Identidade, papéis e acesso}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}Y L{7mm} L{22mm}Y@{}}
+\toprule
+\headrow \thd{ID} & \thd{Requisito} & \thd{Pri} & \thd{Estado} & \thd{Verificação}\\
+\midrule
+\endhead
+\rf{RF-01} & Autenticar usuário por credencial da rede e emitir sessão. & M &
+  Implementado & \arq{apps/hub/lib/auth.ts}; \rota{POST /auth/login}\\
+\zebra \rf{RF-02} & Emitir \emph{token} de experiência assinado em RS256, com
+  TTL de 15 minutos e \emph{claims} \cd{\{sub, escola\_id, turma\_id?,
+  perfil\}}, audiência \cd{plataforma-api}. & M & Implementado &
+  \arq{lib/chave-token.ts}; \rota{GET /.well-known/jwks.json}\\
+\rf{RF-03} & Validar \emph{token} na API por JWKS do emissor configurado, sem
+  conhecer o produto de identidade. & M & Implementado &
+  \arq{src/auth/oidc.guard.ts}\\
+\zebra \rf{RF-04} & Restringir rota por papel (\cd{aluno}, \cd{professor},
+  \cd{gestor}, \cd{admin-contrato}). & M & Implementado &
+  \arq{src/auth/roles.ts}\\
+\rf{RF-05} & Redirecionar usuário que acessa área de outro papel para a home do
+  próprio papel, sem expor 403. & S & Implementado &
+  \arq{apps/hub/middleware.ts}; \arq{lib/papeis.test.ts}\\
+\zebra \rf{RF-06} & Importar usuários em massa por CSV
+  (\cd{nome,usuario,senha,papel,turma,serie}). & M & Implementado &
+  \rota{POST /usuarios/importar-csv}; \arq{tests/usuarios.spec.ts}\\
+\rf{RF-07} & Redefinir senha de usuário da escola. & S & Implementado &
+  \rota{POST /usuarios/:id/reset-senha}\\
+\zebra \rf{RF-08} & Trocar o emissor de identidade para o WSO2 IS alterando
+  apenas configuração. & M & Preparado &
+  \env{OIDC\_ISSUER}, \env{OIDC\_JWKS\_URI}; \arq{wso2/}\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Experiências e \emph{embed}}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}Y L{7mm} L{22mm}Y@{}}
+\toprule
+\headrow \thd{ID} & \thd{Requisito} & \thd{Pri} & \thd{Estado} & \thd{Verificação}\\
+\midrule
+\endhead
+\rf{RF-10} & Manter manifesto de versões por experiência e servir a versão
+  ativa. & M & Implementado & Tabela \cd{experiencias};
+  \rota{PUT /experiencias/:expId}\\
+\zebra \rf{RF-11} & Reverter versão de experiência trocando \cd{versaoAtiva},
+  sem \emph{build} nem \emph{deploy}. & M & Implementado &
+  \arq{scripts/publicar-manifesto.mjs}\\
+\rf{RF-12} & Embutir a experiência em \cd{iframe} com \emph{sandbox} mínimo,
+  concedendo capacidade extra apenas a quem a declara no manifesto. & M &
+  Implementado & \arq{components/ExpFrame.tsx};
+  \arq{scripts/probe-pointerlock.mjs}\\
+\zebra \rf{RF-13} & Entregar \emph{token} e contexto à experiência por
+  \cd{postMessage} com \cd{targetOrigin} explícito. & M & Implementado &
+  \arq{packages/sdk/src/bridge.ts}; \arq{bridge.test.ts}\\
+\rf{RF-14} & Renovar \emph{token} da experiência sob demanda, sem recarregar o
+  \cd{iframe}. & M & Implementado & \cd{exp:token-expirando} \seta{}
+  \rota{GET /api/exp-token} \seta{} \cd{hub:token}\\
+\zebra \rf{RF-15} & Pausar e retomar a experiência quando a página do hub perde
+  ou recupera visibilidade/foco. & S & Implementado &
+  \cd{hub:pause} / \cd{hub:resume}\\
+\rf{RF-16} & Desenhar casca de aparelho quando a experiência declara
+  \cd{viewport}, lendo o manifesto \emph{ou} o \arq{experiencia.json} do
+  \emph{bundle}. & S & Implementado &
+  \arq{lib/embed-experiencia.ts}; \arq{components/DispositivoFrame.tsx}\\
+\zebra \rf{RF-17} & Persistir e recuperar progresso genérico por
+  (\cd{escola}, \cd{aluno}, \cd{experiência}). & M & Implementado &
+  \rota{GET/POST /progresso/:expId}\\
+\rf{RF-18} & Expor uma bancada local de \emph{embed} para desenvolvimento
+  (\rota{/dev-embed?src=}). & C & Implementado & \arq{app/dev-embed}\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Telemetria}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}Y L{7mm} L{22mm}Y@{}}
+\toprule
+\headrow \thd{ID} & \thd{Requisito} & \thd{Pri} & \thd{Estado} & \thd{Verificação}\\
+\midrule
+\endhead
+\rf{RF-20} & Coletar evento analítico no padrão xAPI simplificado, em lote de
+  até 50 eventos com \emph{flush} a cada 10 segundos. & M & Implementado &
+  \arq{packages/sdk/src/telemetry.ts}\\
+\zebra \rf{RF-21} & Enviar o último lote no \cd{pagehide} por
+  \cd{sendBeacon}, com o \emph{token} no corpo. & M & Implementado &
+  \rota{POST /telemetry/beacon}\\
+\rf{RF-22} & Derivar identidade do evento do \emph{token}, nunca do corpo
+  enviado pelo cliente. & M & Implementado &
+  \arq{src/telemetry/telemetry.controller.ts}\\
+\zebra \rf{RF-23} & Gravar o canal analítico de forma idempotente sob entrega
+  \emph{at least once}. & M & Implementado &
+  \cd{ON CONFLICT (event\_id, ts) DO NOTHING}\\
+\rf{RF-24} & Autenticar o consumo do \emph{push} do Pub/Sub, falhando fechado na
+  ausência de configuração. & M & Implementado &
+  \arq{src/telemetry/pubsub-push.guard.ts}; \arq{tests/telemetria-push.spec.ts}\\
+\zebra \rf{RF-25} & Manter o canal operacional (motor de feed) síncrono e
+  transacional, fora do Pub/Sub. & M & Implementado &
+  \rota{POST /runs/:id/eventos}, \rota{GET /runs/:id/feed}\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Inteligência artificial}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}Y L{7mm} L{22mm}Y@{}}
+\toprule
+\headrow \thd{ID} & \thd{Requisito} & \thd{Pri} & \thd{Estado} & \thd{Verificação}\\
+\midrule
+\endhead
+\rf{RF-30} & Concentrar toda chamada a provedor de IA num único módulo com
+  interface neutra de \emph{vendor}. & M & Implementado &
+  \arq{src/ai/provider.ts}\\
+\zebra \rf{RF-31} & Verificar quota diária por usuário \emph{e por perfil} antes
+  da chamada, e registrar consumo depois. & M & Implementado &
+  \arq{src/ai/quota.service.ts}; tabela \cd{ia\_uso\_diario}\\
+\rf{RF-32} & Autenticar no provedor por ADC, sem chave de API em variável de
+  ambiente. & M & Implementado &
+  \arq{src/ai/vertex.provider.ts}; \arq{tests/vertex-provider.spec.ts}\\
+\zebra \rf{RF-33} & Oferecer \emph{provider} de teste (\cd{mock}) que permita
+  subir sem GCP. & M & Implementado & \env{AI\_PROVIDER=mock}\\
+\rf{RF-34} & Detectar corte de saída do modelo (\cd{finishReason} =
+  \cd{MAX\_TOKENS}) e tratá-lo como erro, não como conteúdo. & M &
+  Implementado & \arq{src/planos/planos.service.ts}\\
+\zebra \rf{RF-35} & Gerar plano de aula anual de forma assíncrona, com
+  \emph{claim} atômico e consulta por \emph{polling}. & M & Implementado &
+  \rota{POST /planos} (202), \rota{GET /planos/:id}\\
+\rf{RF-36} & Guardar conteúdo autoral do professor em armazenamento privado,
+  fora do \emph{bucket} público. & M & Implementado &
+  \cd{\{contrato\}-planos}; \arq{src/object-storage}\\
+\zebra \rf{RF-37} & Validar todo texto gerado por IA que chegue ao professor no
+  contexto de bem-estar (sem vocabulário clínico, ordem, promessa ou
+  \emph{link}), com \emph{fallback} fixo. & M & Implementado &
+  \arq{src/bemestar/regras.ts}; \arq{tests/bemestar-regras.spec.ts}\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Pedagógico e relatórios}
+
+\begin{tabularx}{\linewidth}{@{}L{14mm}Y L{7mm} L{22mm}Y@{}}
+\toprule
+\headrow \thd{ID} & \thd{Requisito} & \thd{Pri} & \thd{Estado} & \thd{Verificação}\\
+\midrule
+\endhead
+\rf{RF-40} & Corrigir e pontuar no servidor; nunca enviar gabarito ao
+  \emph{bundle}. & M & Implementado &
+  \arq{src/unootube/}, \arq{src/motor/}, \arq{src/vila/}\\
+\zebra \rf{RF-41} & Curar o feed adaptativo por blocos, de forma determinística
+  dado um gerador de aleatoriedade. & M & Implementado &
+  \arq{src/motor/curadoria.ts}; \arq{tests/motor-pesos.spec.ts}\\
+\rf{RF-42} & Serializar a curadoria por \cd{run} com \emph{lock} consultivo, para
+  que dois pedidos simultâneos não descartem um bloco. & M & Implementado &
+  \cd{pg\_advisory\_xact\_lock}; \arq{tests/motor-concorrencia.spec.ts}\\
+\zebra \rf{RF-43} & Atribuir bolha (A/B/C) balanceada dentro da turma, no
+  servidor, e mantê-la estável entre partidas. & M & Implementado &
+  \cd{exp\_70\_bolhas}; \arq{tests/vila-regras.spec.ts}\\
+\rf{RF-44} & Não servir a bolha B nos anos iniciais (1EF--5EF). & M &
+  Implementado & \cd{bolhasElegiveis}\\
+\zebra \rf{RF-45} & Recalcular o perfil de valores no servidor a partir das
+  medidas brutas, recusando \emph{payload} que traga o perfil. & M &
+  Implementado & \cd{CHAVES\_DE\_PERFIL} em \arq{src/vila/contrato.ts}\\
+\rf{RF-46} & Permitir reprocessar o histórico quando a versão do mapeamento
+  subir. & M & Implementado & \cd{exp\_70\_sessoes.payload};
+  \cd{versaoMapeamento}\\
+\zebra \rf{RF-47} & Devolver leitura em que só a variante \cd{scored} tem número;
+  as outras têm \cd{null} \emph{por tipo}. & M & Implementado &
+  \arq{src/vila/leitura.ts}\\
+\rf{RF-48} & Abrir o relatório individual pelo \emph{nível} do instrumento antes
+  do desempenho. & M & Implementado &
+  \rota{/professor/entre-redes/vila-do-lume/alunos/:id}\\
+\zebra \rf{RF-49} & Distinguir \enquote{cartões servidos} de
+  \enquote{cartões que apareceram}, e nunca afirmar omissão a partir de
+  ausência. & M & Implementado & \cd{cartoesServidos}\\
+\rf{RF-50} & Zerar os dados da turma de uma experiência, apagando também a
+  atribuição de bolha, e \emph{sem} tocar dados de outra experiência. & S &
+  Implementado & \rota{DELETE /vila/professor/turmas/:turmaId/dados}\\
+\zebra \rf{RF-51} & Importar o perfil da Vila como largada do Instanooria,
+  preservando redistribuição manual do professor. & S & Implementado &
+  \rota{POST /atividades/:id/perfis/da-vila}; \arq{tests/vila-ato1.spec.ts}\\
+\rf{RF-52} & Exportar análise por turma e por rede em CSV. & S & Implementado &
+  \rota{GET /atividades/:id/analise/csv}, \rota{GET /analise/csv}\\
+\zebra \rf{RF-53} & Não expor visão de gestor nem agregado para o dado de
+  bem-estar do professor. & M & Implementado (por ausência) &
+  \arq{src/bemestar/bemestar.controller.ts}\\
+\rf{RF-54} & Permitir ao professor apagar integralmente os próprios dados de
+  bem-estar. & M & Implementado & \rota{DELETE /bemestar/dados}\\
+\bottomrule
+\end{tabularx}
+
+\section{Requisitos não funcionais}
+
+Organizados pelas características de qualidade de produto da ISO/IEC
+25010~\cite{iso25010}.
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}L{26mm}Y L{24mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Característica} & \thd{Requisito e critério} & \thd{Estado}\\
+\midrule
+\endhead
+\rf{RNF-01} & Desempenho --- capacidade &
+  Suportar \num{2000}--\num{4000} sessões simultâneas por contrato no pico, sem
+  \emph{cold start}: \cd{min-instances} $\geq$ 1 na API e no hub, concorrência
+  80 na API. & Configurado; teste de carga pendente\\
+\zebra \rf{RNF-02} & Desempenho --- vazão de ingestão &
+  O caminho de gravação da telemetria analítica deve custar
+  $O(\text{lotes})$ e não $O(\text{eventos})$ em \emph{round-trips} ao banco. &
+  Implementado (\cd{INSERT} multi-linha)\\
+\rf{RNF-03} & Desempenho --- borda &
+  \emph{Bundles} e mídia servidos por CDN com caminho imutável; só o
+  \arq{index.html} tem \emph{cache} curto (\SI{60}{\second}). & Implementado\\
+\zebra \rf{RNF-04} & Confiabilidade &
+  Banco com HA e PITR; \emph{pooler} de conexões obrigatório; \emph{deploy} por
+  revisões reversíveis. & Provisionado\\
+\rf{RNF-05} & Confiabilidade --- entrega &
+  Perda de evento analítico tolerada apenas quando o processo morre antes do
+  \emph{flush}; a partir do Pub/Sub, a entrega é durável e
+  \emph{at least once} com gravação idempotente. & Implementado\\
+\zebra \rf{RNF-06} & Segurança --- isolamento &
+  Nenhuma \emph{query} de dado de aluno pode retornar linha de outra escola,
+  mesmo com erro de aplicação. Verificado por RLS forçada e por teste com
+  \emph{role} sem \emph{ownership}. & Implementado\\
+\rf{RNF-07} & Segurança --- segredo &
+  Zero segredo em artefato de cliente. Segredos em Secret Manager; credencial de
+  IA por ADC. & Implementado\\
+\zebra \rf{RNF-08} & Segurança --- superfície &
+  \emph{Sandbox} de \cd{iframe} mínimo; \cd{targetOrigin} explícito; toda
+  mensagem validada por esquema nos dois lados; CORS por lista explícita. &
+  Implementado\\
+\rf{RNF-09} & Segurança --- \emph{fail closed} &
+  Rota cuja proteção depende de configuração responde 401/503 na ausência dela,
+  nunca fica aberta. & Implementado\\
+\zebra \rf{RNF-10} & Privacidade &
+  Telemetria sem PII; texto livre sensível nunca vai a log nem à telemetria; IA
+  não recebe nome, escola, pontuação nem faixa clínica. & Implementado\\
+\rf{RNF-11} & Manutenibilidade &
+  TypeScript \emph{strict} sem \cd{any} (uma exceção registrada em ADR);
+  validação de todo \emph{input} externo por Zod, inclusive variáveis de
+  ambiente, no \emph{boot}. & Implementado\\
+\zebra \rf{RNF-12} & Manutenibilidade --- acoplamento &
+  Nenhum módulo fora de \arq{src/ai} conhece o \emph{vendor} de IA; nenhum
+  componente fora de \arq{packages/ui} importa o \emph{design system}
+  diretamente. & Implementado\\
+\rf{RNF-13} & Portabilidade &
+  Provedor de identidade e provedor de IA substituíveis por configuração ou por
+  arquivo novo, sem alterar chamadores. & Implementado\\
+\zebra \rf{RNF-14} & Testabilidade &
+  A plataforma sobe inteira sem GCP (\env{AI\_PROVIDER=mock},
+  \env{ASSETS\_DRIVER=local}, \env{PLANOS\_DRIVER=local},
+  \env{TELEMETRIA\_TOPIC} vazio). & Implementado\\
+\rf{RNF-15} & Observabilidade &
+  \emph{Smoke} visual obrigatório para mudança de tela --- \emph{typecheck} não
+  detecta ícone virando texto nem \cd{iframe} vazio. & Implementado\\
+\zebra \rf{RNF-16} & Custo &
+  Custo marginal de experiência publicada $\approx$ armazenamento + tráfego de
+  CDN. Nenhum serviço por experiência. & Implementado\\
+\rf{RNF-17} & Conformidade &
+  Localidade de processamento de IA declarada e auditável; ausência de prazo de
+  retenção é decisão registrada, não omissão. & Documentado\\
+\bottomrule
+\end{tabularx}
+
+\begin{limitacao}
+\rf{RNF-01} está \emph{configurado} mas não \emph{verificado}: o teste de carga
+com \num{4000} \emph{logins} e aberturas de experiência em dez minutos é
+obrigatório antes de novembro de 2026 e ainda não foi executado. É o maior risco
+técnico aberto do projeto (Capítulo~\ref{cap:riscos}, \cd{R-01}).
+\end{limitacao}
+
+\section{Rastreabilidade}
+
+A matriz abaixo liga \emph{drivers}, requisitos-chave e as decisões que os
+realizam. Ela é a resposta à pergunta \enquote{por que o sistema é assim} em uma
+única página.
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}L{40mm}X@{}}
+\toprule
+\headrow \thd{Driver} & \thd{Requisitos} & \thd{Decisões (ADR)}\\
+\midrule
+\drr{DR-01} & \rf{RNF-06}, \rf{RF-04} &
+  \adrr{ADR-04} (\emph{stack} por contrato), \adrr{ADR-08} (RLS forçada e porta
+  única)\\
+\zebra \drr{DR-02} & \rf{RF-10}, \rf{RF-11}, \rf{RNF-03}, \rf{RNF-16} &
+  \adrr{ADR-01} (\emph{bundle} estático), \adrr{ADR-02} (\emph{monorepo})\\
+\drr{DR-03} & \rf{RF-40}, \rf{RF-45} &
+  \adrr{ADR-09} (domínio por experiência na API)\\
+\zebra \drr{DR-04} & \rf{RF-03}, \rf{RF-08}, \rf{RNF-13} &
+  \adrr{ADR-03} (OIDC genérico), \adrr{ADR-15} (hub como emissor provisório)\\
+\drr{DR-05} & \rf{RF-30}--\rf{RF-34}, \rf{RNF-07} &
+  \adrr{ADR-07} (\emph{gateway} de IA na API), \adrr{ADR-16} (ADC e modelo
+  \emph{versus} região)\\
+\zebra \drr{DR-06} & \rf{RF-20}--\rf{RF-25}, \rf{RNF-02} &
+  \adrr{ADR-06} (Pub/Sub), \adrr{ADR-14} (Postgres particionado, sem Redis nem
+  BigQuery)\\
+\drr{DR-07} & \rf{RF-47}--\rf{RF-49}, \rf{RF-53} &
+  \adrr{ADR-12} (\cd{grau} como invariante de API), \adrr{ADR-10} (bem-estar sem
+  visão de gestor)\\
+\bottomrule
+\end{tabularx}

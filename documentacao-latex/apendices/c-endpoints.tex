@@ -1,0 +1,345 @@
+% ===========================================================================
+%  Apendice C — Catalogo de endpoints
+% ===========================================================================
+\chapter{Catálogo de \emph{endpoints}}
+\label{ap:endpoints}
+
+Todas as rotas da API, com papel autorizado. Convenções transversais e
+justificativas estão no Capítulo~\ref{cap:api}.
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}X@{}}
+\toprule
+\headrow \thd{Marca} & \thd{Significado}\\
+\midrule
+\emph{(sem)} & \cd{OidcGuard} apenas: qualquer papel autenticado.\\
+\zebra \cd{papel} & \cd{@Roles(...)} restringe aos papéis listados.\\
+\textbf{público} & Sem \emph{guard}. Apenas \rota{/healthz} e \rota{/readyz}.\\
+\zebra \textbf{serviço} & Chave em cabeçalho; \textbf{503} se a variável estiver
+  ausente.\\
+\textbf{push} & \cd{PubSubPushGuard}; \textbf{401} se as variáveis estiverem
+  ausentes.\\
+\bottomrule
+\end{tabularx}
+
+\section{Sanidade}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /healthz} & \textbf{público} & O processo está vivo.\\
+\zebra \rota{GET /readyz} & \textbf{público} & As dependências estão prontas
+  (banco).\\
+\bottomrule
+\end{tabularx}
+
+\section{Autenticação}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /auth/login} & --- & Autentica credencial da rede. Usada pelo
+  \emph{authorize} do hub.\\
+\bottomrule
+\end{tabularx}
+
+\section{Usuários}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /usuarios} & gestor, admin-contrato & Lista os usuários da escola.\\
+\zebra \rota{POST /usuarios/importar-csv} & gestor, admin-contrato &
+  Corpo \cd{text/csv} cru. Colunas:
+  \cd{nome,usuario,senha,papel,turma,serie}.\\
+\rota{POST /usuarios/:id/reset-senha} & gestor, admin-contrato & Redefine
+  senha.\\
+\bottomrule
+\end{tabularx}
+
+\section{Manifesto de experiências}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /experiencias} & \emph{(sem)} & Catálogo de manifestos.\\
+\zebra \rota{GET /experiencias/:expId} & \emph{(sem)} & Um manifesto. É o que o
+  hub lê para montar a URL do \cd{iframe}.\\
+\rota{PUT /experiencias/:expId} & \textbf{admin-contrato} & \emph{Upsert} do
+  manifesto. Chamada pelo CI com \emph{token} de cinco minutos.\\
+\bottomrule
+\end{tabularx}
+
+\section{Progresso genérico (SDK)}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /progresso/:expId} & \emph{(sem)} & Carrega o progresso salvo.\\
+\zebra \rota{POST /progresso/:expId} & \emph{(sem)} & Salva o progresso.\\
+\rota{POST /progresso/:expId/concluir} & \emph{(sem)} & Marca conclusão.\\
+\bottomrule
+\end{tabularx}
+
+\section{Telemetria}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /telemetry/batch} & \emph{(sem)} & Lote de até 50 eventos. A
+  identidade é derivada do \emph{token}; o que o cliente enviou nesses campos é
+  descartado.\\
+\zebra \rota{POST /telemetry/beacon} & verificação manual & \cd{204 sempre}. O
+  \emph{token} vem \textbf{no corpo}, porque \cd{sendBeacon} não envia
+  cabeçalho.\\
+\rota{POST /telemetry/ingest} & \textbf{push} & \cd{204}. Consumo da
+  \emph{push subscription}. \cd{ON CONFLICT (event\_id, ts) DO NOTHING}.\\
+\bottomrule
+\end{tabularx}
+
+\section{IA}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /ai/gerar} & \emph{(sem)} & Geração de texto pela SDK. Passa por
+  \cd{QuotaService} \textbf{antes} do \emph{provider}; \emph{prompt} de sistema
+  fica no servidor.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-01 --- atividades (professor)}
+
+\begin{tabularx}{\linewidth}{@{}L{42mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /atividades} & professor & Lista as atividades do professor.\\
+\zebra \rota{GET /atividades/:id} & professor & Uma atividade.\\
+\rota{POST /atividades} & professor & Cria.\\
+\zebra \rota{DELETE /atividades/:id} & professor & Exclui.\\
+\rota{POST /atividades/:id/limpar} & professor & Limpa as sessões da atividade.\\
+\zebra \rota{PATCH /atividades/:id/ia} & professor & Liga ou desliga a reação ao
+  vivo, sem \emph{deploy}.\\
+\rota{POST /atividades/:id/ativar} & professor & Ativa a atividade.\\
+\zebra \rota{POST /atividades/:id/etapa} & professor & Avança o relógio
+  \textbf{coletivo} da turma.\\
+\rota{GET /atividades/:id/etapa} & professor & Etapa atual.\\
+\zebra \rota{GET /atividades/:id/monitor} & professor & Monitor da turma em tempo
+  quase real.\\
+\rota{GET /atividades/:id/alunos/:runId} & professor & Uma sessão de aluno.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-01 --- geração de conteúdo (professor)}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /atividades/:id/destilar} & professor & Destila o antagonismo e propõe
+  a pergunta-chave. O professor aprova ou reescreve.\\
+\zebra \rota{PATCH /atividades/:id/antagonismo} & professor & Aprova ou edita a
+  destilação.\\
+\rota{POST /atividades/:id/gerar} & professor & Enfileira a geração. O
+  \emph{mix} é decidido pelo servidor.\\
+\zebra \rota{GET /atividades/:id/geracao/progresso} & professor & Alvo do
+  \emph{polling}; também dispara a retomada de fila órfã.\\
+\rota{GET /atividades/:id/posts} & professor & Posts gerados, paginados.\\
+\zebra \rota{PATCH /posts/:id} & professor & Aprova, reprova ou edita.\\
+\rota{DELETE /posts/:id} & professor & Exclui.\\
+\zebra \rota{POST /posts/:id/regenerar} & professor & Regenera um post.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-01 --- perfis e largada}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /atividades/:id/perfis} & professor & Importa perfis manualmente.\\
+\zebra \rota{POST /atividades/:id/perfis/da-vila} & professor &
+  \textbf{O Ato 1 integrado}: colapsa o perfil da exp-70 nos quatro quadrantes.
+  \cd{lado\_forcado} é \textbf{preservado} no \emph{upsert}.\\
+\rota{GET /atividades/:id/perfis} & professor & Perfis importados.\\
+\zebra \rota{GET /atividades/:id/distribuicao} & professor & Distribuição
+  prevista dos lados.\\
+\rota{POST /atividades/:id/redistribuir} & professor & Redistribui a turma
+  (grava \cd{lado\_forcado}).\\
+\zebra \rota{POST /perfis/importar} & \textbf{serviço} &
+  Cabeçalho \cd{x-perfil-token}. Compatibilidade com a ponte externa original.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-01 --- motor de \emph{feed} (aluno)}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /runs} & \emph{(sem)} & Cria ou recupera a sessão; resolve a largada.\\
+\zebra \rota{GET /runs/boot} & aluno & Estado inicial da primeira tela.\\
+\rota{POST /runs/:id/entrar} & aluno & Nome no aplicativo e avatar.\\
+\zebra \rota{GET /runs/:id/feed} & aluno & \textbf{Próximo bloco curado.}
+  \emph{Lock} consultivo por \cd{run}; saída sanitizada.\\
+\rota{POST /runs/:id/eventos} & \textbf{aluno, professor} & Canal
+  \textbf{operacional} de telemetria. Síncrono e transacional.\\
+\zebra \rota{GET /runs/:id/fase} & aluno & Fase atual (trava a tela conforme a
+  etapa da turma).\\
+\rota{POST /runs/:id/finish} & aluno & Encerra a sessão.\\
+\zebra \rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão;
+  recalcula a largada pela \emph{mesma} regra.\\
+\rota{GET /runs/:id/busca} & aluno & Busca no \emph{feed}.\\
+\zebra \rota{GET /runs/:id/salvos} & aluno & Itens salvos.\\
+\rota{GET /runs/:id/perdidos} & aluno & \textbf{Os posts que o aluno não viu} ---
+  a virada pedagógica.\\
+\zebra \rota{POST /runs/:id/conclusao} & aluno & Inclinação (A, B ou dúvida).\\
+\rota{POST /runs/:id/reflexao} & aluno & Texto de fechamento, sem limite.\\
+\zebra \rota{GET /runs/:id/reflexao} & aluno & Lê a reflexão.\\
+\rota{POST /runs/:id/student-post} & aluno & Post publicado pelo aluno.\\
+\zebra \rota{POST /runs/:id/reacoes} & aluno & Dispara reações de persona ao vivo.\\
+\rota{GET /runs/:id/dossie} & \textbf{aluno, professor} & Dossiê de
+  fechamento.\\
+\zebra \rota{GET /posts/:id/comentarios} & aluno & Comentários de um post.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-02 --- UnooTube}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /unootube/sessao} & aluno & Estado da sessão. \textbf{Nunca} devolve o
+  gabarito.\\
+\zebra \rota{POST /unootube/salvos} & aluno & Salva um vídeo (máx. 3).\\
+\rota{POST /unootube/salvos/:videoId/remover} & aluno & Remove um salvo.\\
+\zebra \rota{POST /unootube/curtidos/:videoId} & aluno & Curte. Segue livre
+  mesmo depois da conclusão.\\
+\rota{GET /unootube/ranking} & aluno & Ranking com colegas \textbf{fictícios}.\\
+\zebra \rota{POST /unootube/credibilidade} & aluno & A virada: reordena por
+  fontes e \textbf{congela} os salvos.\\
+\rota{POST /unootube/reiniciar} & aluno & Descongela e reinicia.\\
+\zebra \rota{GET /unootube/turmas} & professor, gestor, admin-contrato & Turmas
+  com resultado.\\
+\rota{GET /unootube/turmas/:turmaId/resultados} & professor, gestor,
+  admin-contrato & Resultados da turma.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-70 --- Vila do Lume}
+
+\begin{tabularx}{\linewidth}{@{}L{48mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{POST /vila/sessoes} & aluno & Abre a partida. \textbf{Atribui a bolha} (do
+  servidor, balanceada na turma, com \emph{lock}) e devolve os cartões ---
+  \textbf{só os desta criança e sem gabarito}.\\
+\zebra \rota{POST /vila/sessoes/:id/concluir} & aluno & Fecha a partida. O
+  servidor \textbf{recalcula} o perfil; \emph{payload} que traga chave de perfil é
+  \textbf{recusado}.\\
+\rota{GET /vila/agregado/turmas} & professor, gestor & Turmas com partidas.\\
+\zebra \rota{GET /vila/agregado/turmas/:turmaId} & professor, gestor & Agregado da
+  turma. \textbf{Sem valor psicométrico na listagem.}\\
+\rota{GET /vila/professor/turmas/:turmaId} & \textbf{professor} & Listagem da
+  turma.\\
+\zebra \rota{GET /vila/professor/cartoes?turmaId=} & \textbf{professor} & Textos
+  das três bolhas \textbf{com} gabarito, para o guia do debate. Filtra pela
+  \emph{mesma} regra de elegibilidade.\\
+\rota{GET /vila/professor/alunos/:alunoId} & \textbf{professor} & A leitura
+  individual. Abre pelo \textbf{nível}.\\
+\zebra \rota{DELETE /vila/professor/turmas/:turmaId/dados} & \textbf{professor} &
+  Zera a turma --- \textbf{apagando as bolhas junto}. Não toca
+  \cd{exp\_01\_exp\_70\_perfis\_importados}.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-90 --- planos de aula}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /planos} & professor & Lista os planos do professor.\\
+\zebra \rota{POST /planos} & professor & \textbf{202.} Enfileira a geração.\\
+\rota{GET /planos/:id} & professor & Estado e, quando pronto, conteúdo. Alvo do
+  \emph{polling}.\\
+\zebra \rota{PUT /planos/:id/conteudo} & professor & Salva o HTML do editor,
+  sanitizado por \emph{allowlist}.\\
+\rota{POST /planos/:id/restaurar} & professor & Volta ao \arq{gerado.md}.\\
+\zebra \rota{PATCH /planos/:id} & professor & Renomeia.\\
+\rota{DELETE /planos/:id} & professor & Exclui.\\
+\zebra \rota{GET /planos/referencias/disponiveis} & professor & Disciplinas e
+  séries com material importado.\\
+\rota{GET /planos/referencias} & \textbf{serviço} & Lista as referências.\\
+\zebra \rota{POST /planos/referencias} & \textbf{serviço} & Importa.
+  Cabeçalho \cd{x-import-token}.\\
+\rota{DELETE /planos/referencias/:id} & \textbf{serviço} & Remove.\\
+\bottomrule
+\end{tabularx}
+
+\section{exp-91 --- bem-estar}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /bemestar/resumo} & \textbf{professor} & \textbf{Leve, sem IA.} É o que
+  o \emph{card} do hub lê.\\
+\zebra \rota{GET /bemestar/hoje} & \textbf{professor} & Abre o \emph{check-in}: 3
+  itens \emph{verbatim} + textos de entorno.\\
+\rota{POST /bemestar/checkins/:id/respostas} & \textbf{professor} & Grava. No
+  sétimo, pontua e classifica \emph{server-side}.\\
+\zebra \rota{GET /bemestar/historico} & \textbf{professor} & Série do próprio
+  professor.\\
+\rota{DELETE /bemestar/dados} & \textbf{professor} & Apaga tudo do próprio
+  professor.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+Todas as cinco filtram \cd{professor\_id = req.auth.usuarioId} \textbf{além} da
+RLS por escola: dois professores da mesma escola não podem se ler.
+\textbf{Não existe rota de gestor nem agregado} nesta área --- ausência
+deliberada (\adrr{ADR-10}).
+\end{regra}
+
+\section{Análise}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Escopo}\\
+\midrule
+\rota{GET /atividades/:id/analise} & professor & Uma atividade da própria escola.\\
+\zebra \rota{GET /atividades/:id/analise/csv} & professor & Exportação.\\
+\rota{GET /analise/resumo} & \textbf{admin-contrato} & Toda a rede.\\
+\zebra \rota{GET /analise/atividades/:id} & \textbf{admin-contrato} & Uma
+  atividade, cross-escola.\\
+\rota{GET /analise/csv} & \textbf{admin-contrato} & Exportação da rede.\\
+\bottomrule
+\end{tabularx}
+
+\section{Rotas do hub (Next.js)}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Escopo} & \thd{Semântica}\\
+\midrule
+\rota{GET /.well-known/jwks.json} & \textbf{público} & JWKS da chave que assina os
+  \emph{tokens} de experiência. É o que a API valida --- e o que o CI usa
+  indiretamente ao publicar manifesto.\\
+\zebra \rota{GET /api/exp-token} & sessão & Emite um \emph{token} novo de
+  experiência. Alvo do \cd{exp:token-expirando}.\\
+\rota{ALL /api/plataforma/[...path]} & sessão & BFF: \emph{proxy} autenticado para
+  a API.\\
+\zebra \rota{ALL /api/auth/[...nextauth]} & --- & NextAuth.\\
+\bottomrule
+\end{tabularx}

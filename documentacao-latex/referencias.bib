@@ -1,0 +1,385 @@
+% ============================================================================
+%  referencias.bib — bibliografia da documentacao tecnica da Plataforma Unooria
+%  Formatada em ABNT NBR 6023 na saida (abntex2cite, estilo alf).
+% ============================================================================
+
+% --- Arquitetura de software -------------------------------------------------
+
+@book{brown2024c4,
+  author    = {Brown, Simon},
+  title     = {Software Architecture for Developers: Volume 2 --- Visualise, document and explore your software architecture},
+  publisher = {Leanpub},
+  address   = {Victoria},
+  year      = {2024}
+}
+
+@misc{c4model,
+  author       = {Brown, Simon},
+  title        = {The C4 model for visualising software architecture},
+  howpublished = {\url{https://c4model.com}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@article{kruchten1995views,
+  author  = {Kruchten, Philippe},
+  title   = {The 4+1 View Model of Architecture},
+  journal = {IEEE Software},
+  volume  = {12},
+  number  = {6},
+  pages   = {42--50},
+  year    = {1995}
+}
+
+@techreport{iso42010,
+  author      = {{International Organization for Standardization}},
+  title       = {ISO/IEC/IEEE 42010: Systems and software engineering --- Architecture description},
+  institution = {ISO},
+  address     = {Genebra},
+  year        = {2022}
+}
+
+@techreport{iso25010,
+  author      = {{International Organization for Standardization}},
+  title       = {ISO/IEC 25010: Systems and software Quality Requirements and Evaluation (SQuaRE) --- Product quality model},
+  institution = {ISO},
+  address     = {Genebra},
+  year        = {2023}
+}
+
+@book{bass2021architecture,
+  author    = {Bass, Len and Clements, Paul and Kazman, Rick},
+  title     = {Software Architecture in Practice},
+  edition   = {4},
+  publisher = {Addison-Wesley},
+  address   = {Boston},
+  year      = {2021}
+}
+
+@book{ford2021evolutionary,
+  author    = {Ford, Neal and Parsons, Rebecca and Kua, Patrick and Sadalage, Pramod},
+  title     = {Building Evolutionary Architectures: Automating Software Governance},
+  edition   = {2},
+  publisher = {O'Reilly Media},
+  address   = {Sebastopol},
+  year      = {2022}
+}
+
+@misc{nygard2011adr,
+  author       = {Nygard, Michael},
+  title        = {Documenting Architecture Decisions},
+  howpublished = {\url{https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions}},
+  year         = {2011},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@book{newman2021monolith,
+  author    = {Newman, Sam},
+  title     = {Monolith to Microservices: Evolutionary Patterns to Transform Your Monolith},
+  publisher = {O'Reilly Media},
+  address   = {Sebastopol},
+  year      = {2021}
+}
+
+@book{kleppmann2017designing,
+  author    = {Kleppmann, Martin},
+  title     = {Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems},
+  publisher = {O'Reilly Media},
+  address   = {Sebastopol},
+  year      = {2017}
+}
+
+@book{humble2010continuous,
+  author    = {Humble, Jez and Farley, David},
+  title     = {Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation},
+  publisher = {Addison-Wesley},
+  address   = {Boston},
+  year      = {2010}
+}
+
+@book{forsgren2018accelerate,
+  author    = {Forsgren, Nicole and Humble, Jez and Kim, Gene},
+  title     = {Accelerate: The Science of Lean Software and DevOps},
+  publisher = {IT Revolution Press},
+  address   = {Portland},
+  year      = {2018}
+}
+
+% --- Multi-tenancy, nuvem e confiabilidade -----------------------------------
+
+@misc{awssaas2024,
+  author       = {{Amazon Web Services}},
+  title        = {SaaS Tenant Isolation Strategies: Isolating Resources in a Multi-Tenant Environment},
+  howpublished = {AWS Whitepaper},
+  year         = {2024},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{gcpmultitenancy,
+  author       = {{Google Cloud}},
+  title        = {Architecting multi-tenant SaaS applications on Google Cloud},
+  howpublished = {\url{https://cloud.google.com/architecture}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{gcprun,
+  author       = {{Google Cloud}},
+  title        = {Cloud Run documentation: concurrency, minimum instances and CPU allocation},
+  howpublished = {\url{https://cloud.google.com/run/docs}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{gcppubsub,
+  author       = {{Google Cloud}},
+  title        = {Pub/Sub documentation: push subscriptions, delivery guarantees and authentication},
+  howpublished = {\url{https://cloud.google.com/pubsub/docs}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{gcpvertex,
+  author       = {{Google Cloud}},
+  title        = {Vertex AI documentation: Gemini API, thinking budget and regional model availability},
+  howpublished = {\url{https://cloud.google.com/vertex-ai/docs}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@book{beyer2016sre,
+  author    = {Beyer, Betsy and Jones, Chris and Petoff, Jennifer and Murphy, Niall Richard},
+  title     = {Site Reliability Engineering: How Google Runs Production Systems},
+  publisher = {O'Reilly Media},
+  address   = {Sebastopol},
+  year      = {2016}
+}
+
+@book{brikman2022terraform,
+  author    = {Brikman, Yevgeniy},
+  title     = {Terraform: Up \& Running --- Writing Infrastructure as Code},
+  edition   = {3},
+  publisher = {O'Reilly Media},
+  address   = {Sebastopol},
+  year      = {2022}
+}
+
+% --- Banco de dados ----------------------------------------------------------
+
+@misc{postgresrls,
+  author       = {{The PostgreSQL Global Development Group}},
+  title        = {PostgreSQL Documentation: Row Security Policies},
+  howpublished = {\url{https://www.postgresql.org/docs/current/ddl-rowsecurity.html}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{postgrespartition,
+  author       = {{The PostgreSQL Global Development Group}},
+  title        = {PostgreSQL Documentation: Table Partitioning},
+  howpublished = {\url{https://www.postgresql.org/docs/current/ddl-partitioning.html}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+% --- Seguranca e identidade --------------------------------------------------
+
+@misc{oidccore,
+  author       = {{OpenID Foundation}},
+  title        = {OpenID Connect Core 1.0 incorporating errata set 2},
+  howpublished = {\url{https://openid.net/specs/openid-connect-core-1_0.html}},
+  year         = {2023},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@techreport{rfc7519,
+  author      = {Jones, M. and Bradley, J. and Sakimura, N.},
+  title       = {RFC 7519: JSON Web Token (JWT)},
+  institution = {Internet Engineering Task Force},
+  year        = {2015}
+}
+
+@techreport{rfc7517,
+  author      = {Jones, M.},
+  title       = {RFC 7517: JSON Web Key (JWK)},
+  institution = {Internet Engineering Task Force},
+  year        = {2015}
+}
+
+@misc{owasptop102021,
+  author       = {{OWASP Foundation}},
+  title        = {OWASP Top 10: 2021 --- The Ten Most Critical Web Application Security Risks},
+  howpublished = {\url{https://owasp.org/Top10/}},
+  year         = {2021},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{owaspasvs,
+  author       = {{OWASP Foundation}},
+  title        = {OWASP Application Security Verification Standard (ASVS) 4.0.3},
+  howpublished = {\url{https://owasp.org/www-project-application-security-verification-standard/}},
+  year         = {2021},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{mdnpostmessage,
+  author       = {{Mozilla Developer Network}},
+  title        = {Window.postMessage() --- Web APIs},
+  howpublished = {\url{https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{mdnsandbox,
+  author       = {{Mozilla Developer Network}},
+  title        = {The iframe sandbox attribute --- HTML},
+  howpublished = {\url{https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+% --- Legislacao e protecao de dados -----------------------------------------
+
+@misc{lgpd2018,
+  author       = {{Brasil}},
+  title        = {Lei n. 13.709, de 14 de agosto de 2018 --- Lei Geral de Proteção de Dados Pessoais (LGPD)},
+  howpublished = {Diário Oficial da União, Brasília},
+  year         = {2018}
+}
+
+@misc{anpdcriancas2024,
+  author       = {{Autoridade Nacional de Proteção de Dados}},
+  title        = {Guia orientativo: tratamento de dados pessoais de crianças e adolescentes},
+  howpublished = {ANPD, Brasília},
+  year         = {2024},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{eca1990,
+  author       = {{Brasil}},
+  title        = {Lei n. 8.069, de 13 de julho de 1990 --- Estatuto da Criança e do Adolescente},
+  howpublished = {Diário Oficial da União, Brasília},
+  year         = {1990}
+}
+
+% --- Educacao, telemetria e instrumentos -------------------------------------
+
+@misc{bncc2018,
+  author       = {{Brasil. Ministério da Educação}},
+  title        = {Base Nacional Comum Curricular},
+  howpublished = {MEC, Brasília},
+  year         = {2018}
+}
+
+@misc{xapi2023,
+  author       = {{Advanced Distributed Learning Initiative}},
+  title        = {Experience API (xAPI) Specification, version 2.0},
+  howpublished = {\url{https://github.com/adlnet/xAPI-Spec}},
+  year         = {2023},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@article{schwartz1992universals,
+  author  = {Schwartz, Shalom H.},
+  title   = {Universals in the Content and Structure of Values: Theoretical Advances and Empirical Tests in 20 Countries},
+  journal = {Advances in Experimental Social Psychology},
+  volume  = {25},
+  pages   = {1--65},
+  year    = {1992}
+}
+
+@article{schwartz2012overview,
+  author  = {Schwartz, Shalom H.},
+  title   = {An Overview of the Schwartz Theory of Basic Values},
+  journal = {Online Readings in Psychology and Culture},
+  volume  = {2},
+  number  = {1},
+  year    = {2012}
+}
+
+@article{doring2010pbvsc,
+  author  = {Döring, Anna K. and Blauensteiner, Angela and Aryus, Katrin and Drögekamp, Lisa and Bilsky, Wolfgang},
+  title   = {Assessing Values at an Early Age: The Picture-Based Value Survey for Children (PBVS-C)},
+  journal = {Journal of Personality Assessment},
+  volume  = {92},
+  number  = {5},
+  pages   = {439--448},
+  year    = {2010}
+}
+
+@article{lovibond1995dass,
+  author  = {Lovibond, Peter F. and Lovibond, Sydney H.},
+  title   = {The Structure of Negative Emotional States: Comparison of the Depression Anxiety Stress Scales (DASS) with the Beck Depression and Anxiety Inventories},
+  journal = {Behaviour Research and Therapy},
+  volume  = {33},
+  number  = {3},
+  pages   = {335--343},
+  year    = {1995}
+}
+
+@article{vignola2014dass21,
+  author  = {Vignola, Rafael Carvalho Barreto and Tucci, Adriana Marcassa},
+  title   = {Adaptation and validation of the Depression, Anxiety and Stress Scale (DASS) to Brazilian Portuguese},
+  journal = {Journal of Affective Disorders},
+  volume  = {155},
+  pages   = {104--109},
+  year    = {2014}
+}
+
+@book{pariser2011bubble,
+  author    = {Pariser, Eli},
+  title     = {The Filter Bubble: What the Internet Is Hiding from You},
+  publisher = {Penguin Press},
+  address   = {Nova York},
+  year      = {2011}
+}
+
+@book{wineburg2018why,
+  author    = {Wineburg, Sam},
+  title     = {Why Learn History (When It's Already on Your Phone)},
+  publisher = {University of Chicago Press},
+  address   = {Chicago},
+  year      = {2018}
+}
+
+% --- Ferramentas e frameworks -----------------------------------------------
+
+@misc{nextjs2026,
+  author       = {{Vercel}},
+  title        = {Next.js Documentation: App Router, Server Components and Middleware},
+  howpublished = {\url{https://nextjs.org/docs}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{nestjs2026,
+  author       = {{NestJS}},
+  title        = {NestJS Documentation: Guards, Interceptors and Modules},
+  howpublished = {\url{https://docs.nestjs.com}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{prisma2026,
+  author       = {{Prisma}},
+  title        = {Prisma ORM Documentation: Migrate, transactions and raw queries},
+  howpublished = {\url{https://www.prisma.io/docs}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{zod2026,
+  author       = {McDonnell, Colin},
+  title        = {Zod: TypeScript-first schema validation with static type inference},
+  howpublished = {\url{https://zod.dev}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}
+
+@misc{turborepo2026,
+  author       = {{Vercel}},
+  title        = {Turborepo Documentation: task pipelines, filtering and remote caching},
+  howpublished = {\url{https://turborepo.com/docs}},
+  year         = {2026},
+  note         = {Acesso em: 27 ago. 2026}
+}

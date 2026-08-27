@@ -1,0 +1,330 @@
+% ===========================================================================
+%  14 — Design system
+% ===========================================================================
+\chapter{\emph{Design system} e camada de interface}
+\label{cap:ds}
+
+\begin{regra}
+\textbf{Todo elemento de interface do hub e das experiências vem do
+\cd{@unooria/design-system}, sempre na última versão publicada.} Componente de
+interface novo se escreve \emph{no repositório do \emph{design system}} e chega
+aqui por versão --- não em \arq{packages/ui}, não dentro de uma experiência.
+Antes de criar um botão, um \emph{card} ou um campo: procure na seção
+correspondente do pacote, ela provavelmente já tem.
+\end{regra}
+
+O pacote é npm \textbf{público} no escopo \cd{@unooria} --- sem \emph{registry}
+privado, sem \arq{.npmrc} no repositório. A fonte é o repositório
+\arq{storybook-unooria} (Storybook em \cd{:6007}, publicado por \emph{tag}
+\cd{v*} no GitHub Actions).
+
+\section{Duas famílias no mesmo pacote}
+
+O pacote publica \textbf{seções} independentes, cada uma com \emph{namespace} de
+token e prefixo de classe próprios. Elas nunca se cruzam.
+
+\begin{tabularx}{\linewidth}{@{}L{24mm}L{22mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Seção} & \thd{Import} & \thd{Tokens} & \thd{Onde vale}\\
+\midrule
+\cd{unooria} (39) & raiz do pacote &
+  \cd{--unooria-*}, classe \cd{.unooria-theme-light|dark} &
+  Hub: \emph{login}, \rota{/professor}, \rota{/admin}, \rota{/analise};
+  \emph{header} de todos os papéis; telas \textbf{pós-revelação} do aluno\\
+\zebra \cd{instanooria} (21) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
+  exp-01\\
+\cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
+  \textbf{só escuro} & exp-02\\
+\zebra \cd{whatsappmobile} (29) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
+  & ---\\
+\cd{chatgpt} (17) & \cd{/chatgpt} & \cd{--gpt-*},
+  \cd{data-gpt-theme} & ---\\
+\zebra \cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
+  --- (dois \emph{contextos} de superfície: cromo claro de lista e perfil,
+  imersivo preto de \emph{feed} e câmera --- não dois temas)\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+A seção \cd{unitube} é \textbf{só escura}: o Figma não publica variante clara, e
+\textbf{derivar uma é proibido}. Uma paleta clara inventada não é o clone --- é
+uma aproximação, e a experiência mede reconhecimento.
+\end{atencao}
+
+\section{A linha que separa as seções é a REVELAÇÃO}
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \draw[iframe] (0.5,0.7) rectangle (8.0,-4.6);
+  \node[iframelbl] at (0.7,0.85) {Dentro do \texttt{iframe} --- antes da revelação};
+
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (feed) at (2.4,-0.6)
+    {\emph{feed} de vídeos};
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (cromo) at (6.0,-0.6)
+    {cromo, busca, menu};
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (play) at (2.4,-2.4)
+    {\emph{playlists}};
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (canal) at (6.0,-2.4)
+    {canal do aluno};
+  \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (toast) at (4.2,-3.9)
+    {\emph{toast}: \enquote{Vídeo salvo!}};
+  \node[cxlabel, anchor=north] at (4.2,0.55) {\texttt{@edu/ui/ds-unootube} --- seção do CLONE};
+
+  \draw[c4boundary, draw=unooNavy] (9.0,0.7) rectangle (15.5,-4.6);
+  \node[c4boundarylbl, fill=unooSurface, text=unooNavy] at (9.2,0.85)
+    {Depois da revelação --- ainda no mesmo \texttt{iframe}};
+
+  \node[c4component, text width=26mm] (rank) at (10.9,-0.6) {ranking};
+  \node[c4component, text width=26mm] (d1) at (14.2,-0.6) {diálogo 1 da missão};
+  \node[c4component, text width=26mm] (d2) at (10.9,-2.4) {diálogo 2 da missão};
+  \node[c4component, text width=26mm] (fim) at (14.2,-2.4) {fechamento};
+  \node[cxlabel, anchor=north] at (12.3,0.55) {\texttt{@edu/ui/ds} --- seção da PLATAFORMA};
+
+  \node[actnote, text width=52mm, anchor=north west] at (0.5,-5.4)
+    {\textbf{A linha é a revelação, não o arquivo.} Enquanto o aluno acha que
+     está num aplicativo de vídeo, tudo é clone. Da virada da missão em diante ele
+     está de volta na Unooria, e a linguagem institucional é \emph{parte do que se
+     ensina}. Um \texttt{Button} da plataforma no \emph{feed} quebra a ilusão que
+     a experiência está medindo.};
+
+  \node[actnote, text width=52mm, anchor=north west] at (9.0,-5.4)
+    {\textbf{O \emph{toast} não cruza a linha:} ele fala de dentro da ficção
+     (\enquote{Vídeo salvo!}). É o exemplo mais fino da regra --- o critério não é
+     \enquote{é depois no tempo?}, é \enquote{quem está falando?}.};
+
+  \draw[c4relhi] (8.0,-2.0) -- (9.0,-2.0) node[cxlabel, midway, above]{revelação};
+
+\end{tikzpicture}}
+\caption[A linha da revelação]{A linha da revelação, na exp-02. As duas seções do
+  \emph{design system} coexistem no mesmo \emph{bundle} e a fronteira entre elas é
+  pedagógica, não técnica.}
+\label{fig:linha-revelacao}
+\end{figure}
+
+\section{Consumo: sempre pela ponte}
+
+\begin{regra}
+\textbf{Consumir sempre pela ponte em \arq{packages/ui}}, nunca importando o
+pacote direto num componente:
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
+\cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp-01\\
+\cd{@edu/ui/ds-unootube} & \cd{unitube} & exp-02\\
+\end{tabularx}
+\end{regra}
+
+A ponte existe por dois motivos, e os dois estão registrados nos arquivos:
+
+\begin{enumerate}
+  \item \textbf{Marcar \cd{'use client'} de uma vez}, para o App Router do
+    Next.js.
+  \item \textbf{Desfazer a colisão de nomes.} \cd{Icon}, \cd{Avatar},
+    \cd{Badge}, \cd{Button}, \cd{Logo} e \cd{TextField} existem nas
+    \emph{duas} famílias. Os clones só saem pelo \emph{namespace}
+    (\cd{InstanooriaUI.Icon}), e \textbf{destruturar na ponte} é o que mantém o
+    \emph{tree-shaking} e evita o erro \cd{TS2742} causado pelo
+    \cd{@types/react} interno do pacote.
+\end{enumerate}
+
+\begin{nota}
+Clone novo em uso = arquivo novo \arq{packages/ui/src/ds-<clone>.ts} +
+\cd{exports} no \arq{packages/ui/package.json}. Mesmo padrão, sempre.
+\end{nota}
+
+\section{CSS: uma vez, no ponto de entrada}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Aplicação} & \thd{Onde o CSS entra}\\
+\midrule
+Hub & \arq{components/casca-plataforma.tsx} --- e é \emph{por isso} que
+  \rota{/exp/*} e \rota{/dev-embed}, que estão fora do grupo de rotas
+  \cd{(plataforma)}, também têm o \emph{design system}.\\
+\zebra Experiência & O próprio \arq{src/main.tsx}, com o CSS da \emph{sua}
+  seção.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Nunca importe o consolidado \arq{/styles.css} numa experiência}: ele
+arrasta as seis seções e a tipografia da plataforma para dentro do clone.
+\end{regra}
+
+\subsection{No hub, o CSS não basta: as fontes também}
+
+\begin{atencao}
+O \arq{unooria.css} declara \cd{Open Sans} e \cd{Material Symbols Rounded} por
+\cd{@import} de URL remota --- e o \textbf{Next remove \cd{@import} externo} de
+CSS importado por JS, \emph{silenciosamente}: a regra continua lá, o
+\cd{getComputedStyle} responde \enquote{Open Sans} e o navegador desenha com a
+fonte do sistema.
+
+Como \cd{Material Symbols Rounded} é fonte de \textbf{ligadura}, o sintoma é o
+\textbf{ícone virando texto}: onde deveria haver um ícone de adicionar, aparece
+\enquote{addInvestigação}.
+
+Por isso \arq{components/casca-plataforma.tsx} também monta
+\cd{FontesDaPlataforma} (\cd{@edu/ui/fontes}). Numa experiência Vite o
+\cd{@import} sobrevive e isso não é necessário.
+\end{atencao}
+
+\begin{regra}
+\textbf{Quem importa, declara.} Todo aplicativo que escreve
+\cd{@unooria/design-system} no código tem a dependência no seu
+\arq{package.json} --- hub incluído, porque ele importa o \arq{unooria.css}.
+Depender do \emph{hoisting} do pnpm via \arq{packages/ui} funcionava
+\emph{por acaso}: bastava a ponte trocar de versão (ou o \arq{node\_modules} ser
+reinstalado com outro \emph{layout}) para o CSS do hub sumir sem ninguém ter
+mexido nele.
+\end{regra}
+
+\section{Frames: dois níveis, não empilhar}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Componente} & \thd{Onde vale}\\
+\midrule
+\cd{PhoneFrame}, \cd{DesktopFrame} & Cascas de aparelho \textbf{do clone},
+  publicadas pelo pacote. Servem ao Storybook e a telas soltas.\\
+\zebra \cd{DispositivoFrame} (hub) & \textbf{Dentro da plataforma, quem desenha o
+  aparelho é o hub}, dirigido pelo \cd{viewport} do manifesto. A experiência
+  embedada preenche o \cd{iframe} e não traz casca própria.\\
+\bottomrule
+\end{tabularx}
+
+\section{Tema}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X@{}}
+\toprule
+\headrow \thd{Seção} & \thd{Como recebe o tema}\\
+\midrule
+Clone (\cd{unitube}) & Lê \cd{data-uni-theme} na raiz do documento.\\
+\zebra Plataforma (\cd{unooria}) & Recebe \cd{theme} por \textbf{prop}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+Quem troca o tema escreve nos \textbf{dois} (\arq{exp-02/src/lib/tema.ts}),
+senão o aluno escolhe escuro no \emph{feed} e o ranking volta branco --- porque
+o ranking é da seção da plataforma, que não lê o atributo da raiz. Na exp-02 a
+escolha é do aluno (Perfil \seta{} APARÊNCIA) e é lembrada em
+\cd{localStorage}, que a regra 4 proíbe para \emph{token}, não para preferência
+de tela.
+\end{atencao}
+
+\section{Versão: atualizar é ato deliberado}
+
+\begin{atencao}
+\cd{\^{}0.1.11} \textbf{não} pega \cd{0.2.0}: \emph{caret} em \cd{0.x} só sobe
+\emph{patch}. \enquote{Última versão} é, portanto, ativo:
+
+\begin{lstlisting}[language=bashunoo]
+npm view @unooria/design-system version     # qual e a ultima publicada
+pnpm up -r @unooria/design-system --latest  # sobe em ui/hub/exps de uma vez
+# commitando o lockfile E os package.json juntos
+\end{lstlisting}
+\end{atencao}
+
+\section{Compensações locais}
+
+\begin{regra}
+\textbf{Componente que falta no pacote não nasce na experiência.} Vira
+\emph{compensação local} marcada no CSS (comentário \cd{(b) COMPENSAÇÃO}) e um
+pedido ao \arq{storybook-unooria}. A compensação é \textbf{exceção controlada e
+decrescente}: cada bloco compensa uma lacuna real, anotada no comentário, e sai
+quando o pacote publicar a correção.
+\end{regra}
+
+\subsection{Lacunas abertas, verificadas na 0.1.14}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Consequência}\\
+\midrule
+\cd{unitube} não publica \emph{toast}, diálogo, tabela nem estado vazio &
+  Quatro compensações locais na exp-02.\\
+\zebra \cd{ChannelHeader} não tem \cd{showSubscribe} & O botão de inscrever-se é
+  \emph{sempre} desenhado, e o canal da exp-02 é o do \textbf{próprio aluno}.\\
+\cd{.uni-channel-header\_\_cover} usa a primitiva
+  \cd{--uni-color-neutral-50}, não um token semântico & No escuro vira uma laje
+  branca.\\
+\zebra \arq{styles-unootube.css} repete o \cd{@import} da Roboto no
+  \textbf{meio} do arquivo & O Vite descarta com aviso; o do topo continua
+  valendo, então a fonte carrega. É ruído, não bug.\\
+Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
+  \cd{PasswordInput}, \cd{SearchInput}) & \cd{<select>} do hub usa
+  \cd{.unooria-select}, com os tokens do pacote --- mesma altura, raio e cores do
+  \cd{TextField}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Avisos que ficaram obsoletos}
+
+\begin{nota}
+Dois avisos herdados do repositório de origem estão \textbf{obsoletos na 0.1.11},
+medidos no pacote:
+
+\begin{itemize}
+  \item o \cd{MetricCard} \textbf{não inventa mais tendência} --- a prop é
+    \cd{tagText?} e a documentação diz \enquote{sem ela a etiqueta não é
+    renderizada};
+  \item o \cd{PositiveNegativeBarChart} tem escala \textbf{fixa} em $\pm 100$, que
+    é exatamente o que os eixos do circumplexo pedem --- então a barra divergente
+    \emph{não} é mais escrita à mão.
+\end{itemize}
+
+O terceiro segue valendo: \cd{AlertBox} é \textbf{diálogo} de 436\,px; para faixa
+de contexto, o componente é \cd{FeedbackAlert} (e a prop é \cd{type}, não
+\cd{variant}).
+\end{nota}
+
+\begin{atencao}
+\textbf{Sobrescrever classe do pacote exige DOIS seletores}
+(\cd{.app-shell > .x}): o CSS do pacote é injetado pelo módulo do componente,
+ou seja, \emph{depois} do CSS da experiência no grafo de importação. Com peso
+igual, quem ganha é sempre o pacote.
+\end{atencao}
+
+\section{Cor da plataforma: classe escrita à mão}
+
+\begin{atencao}
+A cor das superfícies da plataforma vem de classes escritas à mão em
+\arq{packages/ui/styles/plataforma.css}, e o tema do Tailwind está
+\textbf{vazio} (\cd{theme.extend: \{\}}) --- de propósito, para que nada da
+marca institucional vaze para a superfície do aluno, nem por nome de classe.
+
+A consequência é uma armadilha real: \textbf{classe de cor que não existe ali não
+é erro em lugar nenhum}. Em texto, ela herda a cor e passa desapercebida; em
+\textbf{fundo}, o elemento fica branco no branco. Foi o que aconteceu com
+\cd{bg-unooria-neutral-900}: a letra da bolha ficou invisível. O \emph{smoke} da
+exp-70 checa o \cd{backgroundColor} \textbf{computado} do círculo por isso ---
+\cd{toBeVisible()} não pega.
+
+Existem hoje apenas:
+\cd{bg-unooria-\{navy-800, neutral-50, neutral-100, neutral-200\}},
+\cd{border-unooria-neutral-200} e
+\cd{text-unooria-\{danger, navy-900, neutral-500, neutral-700, neutral-800,
+neutral-950\}}.
+\end{atencao}
+
+\begin{nota}
+O \emph{preflight} do Tailwind fica \textbf{ligado}. Desligá-lo parecia inofensivo
+--- o pacote traz o próprio CSS --- mas o pacote estiliza \textbf{componentes},
+não elementos: sem o \emph{reset}, todo \cd{<a>} volta a ser sublinhado e todo
+\cd{<ul>} volta a ter marcador. Foi o que o \emph{smoke} visual pegou nos
+\emph{cards} de produto.
+\end{nota}
+
+\section{Exceção registrada}
+
+\begin{decisao}
+\textbf{A exp-70 está fora da regra do \emph{design system}}, deliberadamente:
+é jogo em \emph{canvas} 3D, sem DOM de interface (\adrr{ADR-18}). A pendência da
+exp-02 --- que tinha CSS próprio em \arq{src/estilos} --- foi
+\textbf{resolvida}: ela consome a seção \cd{unitube} pela ponte
+\cd{@edu/ui/ds-unootube}, com a aparência escolhida pelo aluno.
+\end{decisao}
