@@ -17,12 +17,12 @@ import { Topbar } from "./componentes/Topbar";
 import { Sidebar } from "./componentes/Sidebar";
 import { NavMobile } from "./componentes/NavMobile";
 import { Feed } from "./componentes/Feed";
-import { CartaoMissao } from "./componentes/CartaoMissao";
 import { Playlists } from "./componentes/Playlists";
 import { Ranking } from "./componentes/Ranking";
 import { Perfil } from "./componentes/Perfil";
 import { DialogoMissaoConcluida, DialogoReiniciar } from "./componentes/Dialogos";
 import { Toast } from "./componentes/Toast";
+import { aplicarAparencia, guardarAparencia, lerAparencia, type Aparencia } from "../lib/tema";
 
 /**
  * Orquestrador — a máquina de telas do `page.tsx` do origem, com o estado da
@@ -57,6 +57,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
   const [reiniciarAberto, setReiniciarAberto] = useState(false);
   const [missaoConcluidaAberta, setMissaoConcluidaAberta] = useState(false);
   const [descricaoExpandida, setDescricaoExpandida] = useState<string | null>(null);
+  const [aparencia, setAparencia] = useState<Aparencia>(lerAparencia);
   const ocupado = useRef(false);
 
   const porId = useMemo(() => new Map(videos.map((v) => [v.id, v])), [videos]);
@@ -75,6 +76,13 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     experiencia().enviarEstado({ tela: "feed" });
     window.setTimeout(() => rolarPara(primeiro, "auto"), 30);
   }, [catalogo.videos]);
+
+  // A aparência escolhida vale para o clone (`data-uni-theme`) E para a seção
+  // da plataforma que desenha o ranking — `aplicarAparencia` escreve nas duas.
+  useEffect(() => {
+    aplicarAparencia(aparencia);
+    guardarAparencia(aparencia);
+  }, [aparencia]);
 
   useEffect(() => {
     if (!toast) return;
@@ -294,8 +302,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
       />
 
       {tela === "feed" && (
-        <>
-          <Feed
+        <Feed
             videos={videos}
             ativoId={ativoId}
             somLigado={somLigado}
@@ -316,10 +323,8 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
               if (id) telemetria.expandiuDescricao(id);
               setDescricaoExpandida(id);
             }}
-            aoMover={moverFeed}
-          />
-          <CartaoMissao salvos={estado.salvos.length} limite={limite} aoVerSalvos={() => abrirPlaylists("salvos")} />
-        </>
+          aoMover={moverFeed}
+        />
       )}
 
       {tela === "playlists" && (
@@ -344,6 +349,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
           ranking={ranking}
           modo={modoRanking}
           credibilidadeAdicionada={estado.credibilidadeAdicionada}
+          aparencia={aparencia}
           avatar={aluno.avatar}
           inscritos={derivados.inscritos}
           fontesConfiaveis={derivados.fontesConfiaveis}
@@ -360,6 +366,8 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
         <Perfil
           nome={aluno.nome}
           avatar={aluno.avatar}
+          aparencia={aparencia}
+          aoTrocarAparencia={setAparencia}
           inscritos={derivados.inscritos}
           fontesConfiaveis={rankingDesbloqueado ? derivados.fontesConfiaveis : null}
           salvos={salvos}
@@ -381,11 +389,16 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
       />
 
       {reiniciarAberto && (
-        <DialogoReiniciar aoCancelar={() => setReiniciarAberto(false)} aoConfirmar={() => void reiniciarMissao()} />
+        <DialogoReiniciar
+          aparencia={aparencia}
+          aoCancelar={() => setReiniciarAberto(false)}
+          aoConfirmar={() => void reiniciarMissao()}
+        />
       )}
 
       {missaoConcluidaAberta && (
         <DialogoMissaoConcluida
+          aparencia={aparencia}
           inscritos={derivados.inscritos}
           fontesConfiaveis={derivados.fontesConfiaveis}
           limite={limite}

@@ -13,7 +13,9 @@
   "dependencies": {
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "@edu/sdk": "workspace:*"
+    "@edu/sdk": "workspace:*",
+    "@edu/ui": "workspace:*",
+    "@unooria/design-system": "^0.1.14"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",

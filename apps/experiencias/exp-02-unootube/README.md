@@ -67,12 +67,38 @@ Logado no hub como aluno do 4º ano (`aluno4a01` / `unooria123` no seed), a
 home é `/exp/exp-02-unootube`. Em dev o hub acha o Vite pela porta mapeada em
 `apps/hub/lib/experiencias-dev.ts`. Sem `viewport` no manifesto: tela cheia.
 
+## Interface
+
+Vem do `@unooria/design-system` — não há CSS de aparência nesta experiência.
+A divisão segue a REVELAÇÃO da missão, e não o arquivo (ver "Design System" no
+CLAUDE.md da raiz):
+
+| Tela | Ponte | Componentes |
+|---|---|---|
+| feed de Shorts | `@edu/ui/ds-unootube` | `ShortsPlayer` (vídeo real; `card` no desktop, `immersive` até 760px), `ShortsActionRail` |
+| cromo | `@edu/ui/ds-unootube` | `TopBar`, `SearchBox`, `ProfileCompact`, `Sidebar`, `MobileTabBar` |
+| playlists e canal | `@edu/ui/ds-unootube` | `TopMenuBar`, `ShortsShelf`, `ChannelHeader`, `Avatar`, `Button` |
+| **ranking e diálogos** | `@edu/ui/ds` | `SectionHeader`, `Table`, `MetricCard`, `Tabs`, `AlertBox`, `Modal`, `Tag` |
+
+O `globals.css` guarda só três coisas, cada bloco marcado: o ESQUELETO (grade
+da página e o carrossel com scroll-snap — o DS entrega o reprodutor, não o
+carrossel), as COMPENSAÇÕES do que a seção ainda não publica (toast, girador,
+estado vazio) e as LIGAÇÕES de encaixe. Zero hexadecimal.
+
+**Aparência clara/escura é escolha do aluno**, em Perfil → APARÊNCIA
+(`src/lib/tema.ts`), lembrada em `localStorage`.
+
 ## Contrato com o smoke visual
 
 `scripts/walkthrough-aluno-unootube.mjs` depende destes textos/seletores:
-`text=UnooTube`, `button[aria-label="Salvar vídeo"]`, "Missão concluída",
-botão/aba "Ranking", "Adicionar credibilidade" e a frase
-"Ter muitos inscritos não significa contar a verdade".
+`.uni-topbar .uni-logo`, `article.short-item`,
+`button[aria-label="Salvar vídeo"]`, `button[aria-label="Abrir seu perfil"]`,
+`nav.uni-sidebar button` (Playlists/Ranking), `.library-preview video`,
+"Sua coleção", "Missão concluída", "Adicionar credibilidade", as pílulas
+"Claro"/"Escuro" e a frase "Ter muitos inscritos não significa contar a
+verdade". Do ranking em diante os seletores são da seção da PLATAFORMA:
+`h2` do `SectionHeader`, `.unooria-table tbody tr`,
+`.unooria-metric-card__value`.
 
 ## Decisões
 
@@ -80,5 +106,15 @@ botão/aba "Ranking", "Adicionar credibilidade" e a frase
   alunos não saem da plataforma).
 - Colegas do ranking são **fictícios** (distribuição fixa para a lição; sem
   pontuação de colegas reais — LGPD).
-- Sem Tailwind e sem design system: preflight mínimo em `estilos/globals.css`;
-  o disfarce é YouTube.
+- Sem Tailwind. O disfarce é YouTube e quem o desenha é a seção `unootube` do
+  DS (2026-08-26): antes disso eram 523 linhas de CSS próprio em duas camadas,
+  com 111 cores literais e nenhum tema escuro possível.
+- O `ShortsPlayer` não mostra a faixa de canal pronta do DS (`showChannel`):
+  ela traz um botão de INSCREVER-SE sempre visível, e nesta missão inscrever-se
+  não existe — "inscritos" é o placar do aluno, não uma ação sobre o canal do
+  vídeo. Um botão morto ali confundiria a métrica que a missão ensina a ler.
+- O som é um item da trilha de ações, e não um botão sobre o vídeo: a seção não
+  publica glifo de MUDO, então o estado aparece pelo realce de `active` e pelo
+  rótulo ("Som"/"Mudo") em vez de por um glifo inventado.
+- O `PhoneFrame` do DS NÃO é usado: quem desenha aparelho na plataforma é o hub
+  (`DispositivoFrame`), e a exp-02 não declara `viewport` de propósito.

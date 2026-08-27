@@ -201,13 +201,53 @@ tokens só de prompt) o gemini-2.5-flash é cortado em 32k e o professor recebe
 - Zod para validar TODO input externo (body, query, postMessage recebido, env).
 - Testes: mínimo = contratos (bridge, telemetria, guards de tenancy). Vitest
   no sdk/experiências, Jest no NestJS.
-- UI: template de experiência é propositalmente cru. Trabalho visual sério
-  segue `docs/DESIGN.md` quando existir (não inventar design system agora).
+- UI: template de experiência é propositalmente cru. Onde há Design System, ele
+  manda — ver "Design System" abaixo.
 - Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
   professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
   `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
   gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
   `comTenancy` + controllers por papel.
+
+## Design System (`@unooria/design-system`, via `packages/ui`)
+
+O pacote publica SEÇÕES independentes, cada uma com namespace de token e
+prefixo de classe próprios. Nunca importar o `styles.css` consolidado: ele
+arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
+
+| Ponte | Seção | CSS | Namespace | Onde vale |
+|---|---|---|---|---|
+| `@edu/ui/ds` | `unooria` (39) | `/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do aluno** |
+| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` | `--insta-*` | superfície disfarçada da exp-01 |
+| `@edu/ui/ds-unootube` | `unootube` (40) | `/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
+
+**A linha que separa as seções é a REVELAÇÃO, não o arquivo.** Enquanto o aluno
+acha que está num app de vídeo, tudo é clone; da virada da missão em diante ele
+está de volta na Unooria e a linguagem institucional é parte do que se ensina.
+Na exp-02 isso é literal: feed, cromo, playlists e canal usam `ds-unootube`;
+ranking e os dois diálogos da missão usam `ds`. O toast NÃO cruza — ele fala de
+dentro da ficção ("Vídeo salvo!").
+
+**Tema:** a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
+`theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
+o aluno escolhe escuro no feed e o ranking volta branco. Na exp-02 a escolha é
+do aluno (Perfil → APARÊNCIA) e é lembrada em `localStorage` — que a regra 4
+proíbe para TOKEN, não para preferência de tela.
+
+**Componente que falta no pacote não nasce na experiência.** Vira compensação
+local marcada no CSS (`(b) COMPENSAÇÃO`) e um pedido ao `storybook-unooria`. Em
+aberto pela exp-02, todos verificados na 0.1.14:
+- `unootube` não publica toast, diálogo, tabela nem estado vazio;
+- `ChannelHeader` não tem `showSubscribe` — o botão de inscrever-se é sempre
+  desenhado, e o canal da exp-02 é o do PRÓPRIO aluno;
+- `.uni-channel-header__cover` usa a primitiva `--uni-color-neutral-50`, e não
+  um token semântico: no escuro vira uma laje branca;
+- `styles-unootube.css` repete o `@import` da Roboto no MEIO do arquivo; o Vite
+  descarta com aviso (o do topo continua valendo, então a fonte carrega).
+
+Sobrescrever classe do DS exige DOIS seletores (`.app-shell > .x`): o CSS do
+pacote é injetado pelo módulo do componente, ou seja, DEPOIS do CSS da
+experiência no grafo de importação — com peso igual, quem ganha é sempre o DS.
 
 ## Git e branches
 

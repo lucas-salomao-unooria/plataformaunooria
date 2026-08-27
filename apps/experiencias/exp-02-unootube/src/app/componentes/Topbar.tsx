@@ -1,3 +1,5 @@
+import { ProfileCompact, SearchBox, TopBar } from "@edu/ui/ds-unootube";
+
 interface Props {
   avatar: string;
   perfilSelecionado: boolean;
@@ -6,41 +8,46 @@ interface Props {
   aoBuscar: () => void;
 }
 
-export function Marca() {
-  return (
-    <button className="brand" type="button" aria-label="Voltar ao feed do UnooTube">
-      <span className="brand-mark" aria-hidden="true"><i /></span>
-      <span className="youtube-wordmark">UnooTube</span>
-      <sup>BR</sup>
-    </button>
-  );
-}
-
+/**
+ * Barra superior do DS (`TopBar`), com os dois blocos laterais trocados pelo
+ * que esta missão precisa.
+ *
+ * `search`: o campo é do DS, mas a busca está BLOQUEADA durante a missão. Em
+ * vez de um `readOnly` (que não avisa nada a quem digita), o campo é
+ * controlado em string vazia: qualquer tecla devolve o valor para "" e dispara
+ * o aviso. O aluno vê que o campo existe, como num app real, e entende por que
+ * não anda.
+ *
+ * O logotipo do DS não aceita `onClick` próprio, então o clique é capturado no
+ * cabeçalho e filtrado pelo bloco da marca — é o que mantém "clicar na marca
+ * volta ao feed" sem reimplementar a barra.
+ */
 export function Topbar({ avatar, perfilSelecionado, aoIrParaFeed, aoAbrirPerfil, aoBuscar }: Props) {
   return (
-    <header className="topbar">
-      <div className="header-left">
-        <button className="menu-button" type="button" aria-label="Menu"><span aria-hidden="true">☰</span></button>
-        <div onClick={aoIrParaFeed}><Marca /></div>
-      </div>
-
-      <div className="search-shell">
-        <input aria-label="Pesquisar" placeholder="Pesquisar" readOnly onFocus={aoBuscar} />
-        <button type="button" aria-label="Pesquisa indisponível nesta missão" onClick={aoBuscar}>
-          <span className="search-glyph" aria-hidden="true" />
-        </button>
-      </div>
-
-      <div className="header-right">
-        <button
-          className={`profile-button ${perfilSelecionado ? "selected" : ""}`}
-          type="button"
+    <TopBar
+      className="unootube-topbar"
+      onClick={(evento) => {
+        const alvo = evento.target as HTMLElement;
+        if (alvo.closest(".uni-topbar__logo")) aoIrParaFeed();
+      }}
+      search={
+        <SearchBox
+          placeholder="Pesquisar"
+          value=""
+          showVoiceSearch={false}
+          onValueChange={aoBuscar}
+          onSearch={aoBuscar}
+        />
+      }
+      actions={
+        <ProfileCompact
+          initials={avatar}
           aria-label="Abrir seu perfil"
+          aria-pressed={perfilSelecionado}
+          className={perfilSelecionado ? "unootube-perfil-selecionado" : undefined}
           onClick={aoAbrirPerfil}
-        >
-          {avatar}
-        </button>
-      </div>
-    </header>
+        />
+      }
+    />
   );
 }

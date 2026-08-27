@@ -9,6 +9,7 @@
   "exports": {
     "./ds": "./src/ds.ts",
     "./ds-insta": "./src/ds-insta.ts",
+    "./ds-unootube": "./src/ds-unootube.ts",
     "./fontes": "./src/fontes-da-plataforma.tsx",
     "./styles/plataforma.css": "./styles/plataforma.css"
   },
@@ -18,14 +19,14 @@
     "build": "echo 'sem build (fonte TS direto)'"
   },
   "dependencies": {
-    "@unooria/design-system": "^0.1.11"
+    "@unooria/design-system": "^0.1.14"
   },
   "peerDependencies": {
     "react": ">=19"
   },
   "devDependencies": {
-    "react": "^19.2.0",
     "@types/react": "^19.2.0",
+    "react": "^19.2.0",
     "typescript": "^5.7.0"
   }
 }

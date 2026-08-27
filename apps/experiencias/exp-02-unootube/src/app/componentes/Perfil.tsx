@@ -1,3 +1,6 @@
+import { Button, ChannelHeader, Icon, ShortsShelf, TopMenuBar } from "@edu/ui/ds-unootube";
+
+import type { Aparencia } from "../../lib/tema";
 import type { VideoPublico } from "../../lib/tipos";
 import { PreviaVideo } from "./PreviaVideo";
 
@@ -8,6 +11,8 @@ interface Props {
   fontesConfiaveis: number | null;
   salvos: VideoPublico[];
   limite: number;
+  aparencia: Aparencia;
+  aoTrocarAparencia: (aparencia: Aparencia) => void;
   aoAssistir: (id: string) => void;
   aoRemoverSalvo: (id: string) => void;
   aoVoltar: () => void;
@@ -25,47 +30,88 @@ export function handleDoNome(nome: string): string {
   return `@${base || "aluno"}`;
 }
 
+/**
+ * Canal do aluno, montado com o `ChannelHeader` do DS — capa, retrato de 80px,
+ * nome, arroba e contagem de inscritos são os campos que ele já publica.
+ *
+ * É aqui que mora a troca de aparência. O lugar é o mesmo em que um app de
+ * vídeo real a guarda (dentro da conta, não solta na barra), e o controle é a
+ * faixa de pílulas do DS: o estado selecionado é visível sem depender de um
+ * glifo de sol e lua, que a seção não publica.
+ */
 export function Perfil(props: Props) {
   const { salvos, limite } = props;
   return (
     <section className="content-view profile-view">
-      <div className="profile-hero">
-        <div className="student-avatar">{props.avatar}</div>
-        <div>
-          <span className="eyebrow">SEU CANAL</span>
-          <h1>{props.nome}</h1>
-          <p>{handleDoNome(props.nome)}</p>
-        </div>
-        <div className="subscriber-stat">
-          <strong>{props.inscritos.toLocaleString("pt-BR")}</strong>
-          <span>inscritos</span>
-          {props.fontesConfiaveis !== null && <em>Fontes confiáveis: {props.fontesConfiaveis}/{limite}</em>}
-        </div>
+      <ChannelHeader
+        className="unootube-canal"
+        avatarInitials={props.avatar}
+        channelName={props.nome}
+        channelHandle={handleDoNome(props.nome)}
+        subscriberCount={`${props.inscritos.toLocaleString("pt-BR")} inscritos`}
+        secondaryLine={
+          props.fontesConfiaveis !== null
+            ? `Fontes confiáveis: ${props.fontesConfiaveis}/${limite}`
+            : undefined
+        }
+        showSearch={false}
+      />
+
+      <div className="profile-appearance">
+        <span className="eyebrow">APARÊNCIA</span>
+        <TopMenuBar
+          className="unootube-abas"
+          label="Aparência do UnooTube"
+          showOverflow={false}
+          activeId={props.aparencia}
+          onSelect={(id) => props.aoTrocarAparencia(id as Aparencia)}
+          options={[
+            { id: "claro", label: "Claro" },
+            { id: "escuro", label: "Escuro" },
+          ]}
+        />
       </div>
 
       <div className="profile-saved-heading">
-        <div><h2>Meus {limite} salvos</h2><p>As fontes que você escolheu para esta missão.</p></div>
-        <span>{salvos.length}/{limite}</span>
+        <div>
+          <h2>Meus {limite} salvos</h2>
+          <p>As fontes que você escolheu para esta missão.</p>
+        </div>
+        <span>
+          {salvos.length}/{limite}
+        </span>
       </div>
 
-      <div className="profile-slots">
+      <ShortsShelf layout="grid" columnWidth={200} showLogo={false} label={null}>
         {Array.from({ length: limite }, (_, i) => {
           const video = salvos[i];
           return video ? (
             <article className="profile-video" key={video.id}>
               <PreviaVideo className="profile-video-preview" video={video} aoAssistir={props.aoAssistir} />
-              <div><b>{video.titulo}</b><small>{video.handle}</small></div>
-              <button className="remove-link" type="button" onClick={() => props.aoRemoverSalvo(video.id)}>Remover</button>
+              <div>
+                <b>{video.titulo}</b>
+                <small>{video.handle}</small>
+              </div>
+              <Button className="acao-remover" onClick={() => props.aoRemoverSalvo(video.id)}>
+                Remover
+              </Button>
             </article>
           ) : (
-            <div className="empty-slot" key={`vazio-${i}`}><i className="bookmark-glyph" /><span>Espaço {i + 1}</span></div>
+            <div className="empty-slot" key={`vazio-${i}`}>
+              <Icon name="save" size="lg" />
+              <span>Espaço {i + 1}</span>
+            </div>
           );
         })}
-      </div>
+      </ShortsShelf>
 
       <div className="profile-actions">
-        <button className="back-to-feed" type="button" onClick={props.aoVoltar}>← Voltar aos Shorts</button>
-        <button className="reset-mission" type="button" onClick={props.aoPedirReinicio}>Reiniciar missão</button>
+        <Button className="back-to-feed" icon="arrowLeft" onClick={props.aoVoltar}>
+          Voltar aos Shorts
+        </Button>
+        <Button className="reset-mission" onClick={props.aoPedirReinicio}>
+          Reiniciar missão
+        </Button>
       </div>
     </section>
   );
