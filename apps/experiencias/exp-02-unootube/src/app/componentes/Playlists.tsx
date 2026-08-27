@@ -1,4 +1,4 @@
-import { Avatar, Button, Icon, ShortsShelf, TopMenuBar } from "@edu/ui/ds-unootube";
+import { Avatar, Button, EmptyState, ShortsShelf, TopMenuBar } from "@edu/ui/ds-unootube";
 
 import type { AbaPlaylists, VideoPublico } from "../../lib/tipos";
 import { ContadorInscritos } from "./ContadorInscritos";
@@ -24,9 +24,9 @@ interface Props {
  * grade é a prateleira de Shorts (`ShortsShelf` em `grid`) — as duas peças que
  * o arquivo de origem publica para exatamente estes papéis.
  *
- * O estado vazio continua local: a seção Unootube não publica um, e esta ainda
- * é tela DE DENTRO do disfarce — puxar o `EmptyState` institucional aqui
- * entregaria o exercício antes do ranking.
+ * O estado vazio é o `EmptyState` da própria seção (0.1.17). Antes era
+ * compensação local: o institucional não cabia aqui, porque esta ainda é tela
+ * DE DENTRO do disfarce e entregaria o exercício antes do ranking.
  */
 export function Playlists(props: Props) {
   const { aba, salvos, curtidos, limite } = props;
@@ -74,17 +74,22 @@ export function Playlists(props: Props) {
       />
 
       {lista.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-illustration" aria-hidden="true">
-            <Icon name={aba === "salvos" ? "save" : "likedOutline"} size="lg" />
-          </span>
-          <h2>{aba === "salvos" ? "Sua playlist está vazia" : "Você ainda não curtiu nenhum vídeo"}</h2>
-          <p>
-            {aba === "salvos"
+        <EmptyState
+          iconName={aba === "salvos" ? "save" : "likedOutline"}
+          title={aba === "salvos" ? "Sua playlist está vazia" : "Você ainda não curtiu nenhum vídeo"}
+          description={
+            aba === "salvos"
               ? `Volte aos Shorts e salve até ${limite} fontes.`
-              : "Use o coração quando um vídeo chamar sua atenção."}
-          </p>
-        </div>
+              : "Use o coração quando um vídeo chamar sua atenção."
+          }
+          action={
+            aba === "salvos" ? (
+              <Button icon="arrowLeft" onClick={props.aoVoltar}>
+                Voltar aos Shorts
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <ShortsShelf
           layout="grid"

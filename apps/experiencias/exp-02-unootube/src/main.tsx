@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
  * para dentro do clone.
  */
 import "@unooria/design-system/unootube.css";
+import "@unooria/design-system/fonts/unootube.css";
 /**
  * E a seção da PLATAFORMA, que desenha só o que vem DEPOIS da revelação:
  * ranking e os dois diálogos da missão (ver `Ranking.tsx`). Os dois arquivos
@@ -14,6 +15,7 @@ import "@unooria/design-system/unootube.css";
  * `--unooria-*`, e nenhum dos dois mexe em `html`/`body`.
  */
 import "@unooria/design-system/unooria.css";
+import "@unooria/design-system/fonts/unooria.css";
 import "./estilos/globals.css";
 
 import { aplicarAparencia, lerAparencia } from "./lib/tema";

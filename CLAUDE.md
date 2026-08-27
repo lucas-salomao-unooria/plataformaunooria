@@ -498,9 +498,30 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 
 | Ponte | Seção | CSS | Namespace | Onde vale |
 |---|---|---|---|---|
-| `@edu/ui/ds` | `unooria` (39) | `/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do aluno** |
-| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` | `--insta-*` | superfície disfarçada da exp-01 |
-| `@edu/ui/ds-unootube` | `unootube` (40) | `/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
+| `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do aluno** |
+| `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp-01 |
+| `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
+
+**A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
+componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só
+cai no fallback — feio. Na PLATAFORMA ela quebra: os ícones são fonte de
+LIGADURA (Material Symbols Rounded), o `.unooria-icon` recebe o NOME do ícone
+como texto, e sem a família a tela escreve "search" no lugar da lupa. As fontes
+são auto-hospedadas (woff2 no pacote): não há mais nenhuma requisição a
+`fonts.googleapis.com` em lugar nenhum, e por isso o `FontesDaPlataforma`
+(`@edu/ui/fontes`), que existia só para injetar aquele `<link>`, foi removido.
+Quem usa `next/font` NÃO escreve a linha — mas aí o Material Symbols precisa
+vir por lá.
+
+**Custo medido do Material Symbols (2026-08-27):** 5,36 MB num woff2 só. O
+`@font-face` é preguiçoso, então o arquivo só desce se a família for aplicada —
+medido com `document.fonts.check()` dentro do iframe: na exp-02 ele fica
+`unloaded` do feed até a virada do ranking (as telas da plataforma que ela usa
+não têm ícone de ligadura), e o que desce ali são ~150 KB de Open Sans. Ou seja:
+os 5,36 MB são peso morto no bucket, não download do aluno — e uma armadilha, já
+que um ícone da plataforma acrescentado à exp-02 amanhã puxaria tudo. Resolve de
+vez migrando o `Icon` da plataforma para registro SVG (as outras cinco seções já
+são assim).
 
 **A linha que separa as seções é a REVELAÇÃO, não o arquivo.** Enquanto o aluno
 acha que está num app de vídeo, tudo é clone; da virada da missão em diante ele
@@ -516,15 +537,18 @@ do aluno (Perfil → APARÊNCIA) e é lembrada em `localStorage` — que a regra
 proíbe para TOKEN, não para preferência de tela.
 
 **Componente que falta no pacote não nasce na experiência.** Vira compensação
-local marcada no CSS (`(b) COMPENSAÇÃO`) e um pedido ao `storybook-unooria`. Em
-aberto pela exp-02, todos verificados na 0.1.14:
-- `unootube` não publica toast, diálogo, tabela nem estado vazio;
-- `ChannelHeader` não tem `showSubscribe` — o botão de inscrever-se é sempre
-  desenhado, e o canal da exp-02 é o do PRÓPRIO aluno;
-- `.uni-channel-header__cover` usa a primitiva `--uni-color-neutral-50`, e não
-  um token semântico: no escuro vira uma laje branca;
-- `styles-unootube.css` repete o `@import` da Roboto no MEIO do arquivo; o Vite
-  descarta com aviso (o do topo continua valendo, então a fonte carrega).
+local marcada no CSS (`(b) COMPENSAÇÃO`) e um pedido ao `storybook-unooria` — e
+some quando o pacote publica. Os quatro pedidos abertos pela exp-02 na 0.1.14
+foram atendidos na 0.1.17 (`Modal`/`Snackbar`/`Table`/`EmptyState` em
+`unootube`, `showSubscribe` no `ChannelHeader`, token semântico na capa do
+canal, `@import` duplicado da Roboto), e as compensações correspondentes foram
+apagadas. Sobrou UMA na exp-02: o girador de carregamento, porque o
+`ShortsPlayer` distingue "parado" de "tocando" mas não "ainda carregando".
+
+**Migração de versão do DS: o que morde.** `VideoPlayer`, `VideoPlayerFull` e
+`VideoCardHorizontal` mudaram o sentido de `src` na 0.1.13 — era o quadro
+estático, agora é o VÍDEO, e o quadro virou `poster`. Passar imagem em `src`
+monta um `<video>` que não carrega. Nenhum dos três é usado neste repo hoje.
 
 Sobrescrever classe do DS exige DOIS seletores (`.app-shell > .x`): o CSS do
 pacote é injetado pelo módulo do componente, ou seja, DEPOIS do CSS da

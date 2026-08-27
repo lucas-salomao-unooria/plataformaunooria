@@ -77,13 +77,20 @@ CLAUDE.md da raiz):
 |---|---|---|
 | feed de Shorts | `@edu/ui/ds-unootube` | `ShortsPlayer` (vídeo real; `card` no desktop, `immersive` até 760px), `ShortsActionRail` |
 | cromo | `@edu/ui/ds-unootube` | `TopBar`, `SearchBox`, `ProfileCompact`, `Sidebar`, `MobileTabBar` |
-| playlists e canal | `@edu/ui/ds-unootube` | `TopMenuBar`, `ShortsShelf`, `ChannelHeader`, `Avatar`, `Button` |
+| playlists e canal | `@edu/ui/ds-unootube` | `TopMenuBar`, `ShortsShelf`, `ChannelHeader` (`showSubscribe={false}`), `EmptyState`, `Avatar`, `Button` |
+| toast do app | `@edu/ui/ds-unootube` | `Snackbar` — fala de dentro da ficção, por isso NÃO é o da plataforma |
 | **ranking e diálogos** | `@edu/ui/ds` | `SectionHeader`, `Table`, `MetricCard`, `Tabs`, `AlertBox`, `Modal`, `Tag` |
+
+`main.tsx` importa QUATRO folhas: `unootube.css` + `fonts/unootube.css` (o
+clone) e `unooria.css` + `fonts/unooria.css` (as telas da revelação). A folha de
+fonte é linha separada desde a 0.1.17 e não é opcional — sem ela a tipografia
+cai no fallback do sistema.
 
 O `globals.css` guarda só três coisas, cada bloco marcado: o ESQUELETO (grade
 da página e o carrossel com scroll-snap — o DS entrega o reprodutor, não o
-carrossel), as COMPENSAÇÕES do que a seção ainda não publica (toast, girador,
-estado vazio) e as LIGAÇÕES de encaixe. Zero hexadecimal.
+carrossel), UMA COMPENSAÇÃO (o girador de carregamento) e as LIGAÇÕES de
+encaixe. Zero hexadecimal. Toast, estado vazio, diálogo e tabela deixaram de ser
+compensação na 0.1.17, quando a seção passou a publicá-los.
 
 **Aparência clara/escura é escolha do aluno**, em Perfil → APARÊNCIA
 (`src/lib/tema.ts`), lembrada em `localStorage`.

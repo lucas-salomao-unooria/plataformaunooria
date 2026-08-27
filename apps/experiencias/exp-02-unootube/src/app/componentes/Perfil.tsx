@@ -55,6 +55,13 @@ export function Perfil(props: Props) {
             : undefined
         }
         showSearch={false}
+        /*
+         * O canal é o do PRÓPRIO aluno: inscrever-se em si mesmo não existe, e
+         * um botão morto no clímax da tela confundiria a métrica que a missão
+         * ensina a ler. Prop da 0.1.17 — antes isto era um `display: none` no
+         * `globals.css`.
+         */
+        showSubscribe={false}
       />
 
       <div className="profile-appearance">

@@ -3,16 +3,21 @@
  *
  * O que este arquivo NÃO faz mais: pintar. Cor, tipografia, raio, sombra e a
  * aparência de todo componente vêm da seção Unootube do
- * `@unooria/design-system` (importada em `main.tsx`). Antes daqui havia 523
- * linhas em duas camadas — um tema roxo e um "YouTube skin" por cima — com 111
- * cores literais; agora não há UM valor hexadecimal neste arquivo, e trocar
- * claro/escuro é trocar `data-uni-theme` na raiz.
+ * `@unooria/design-system` (importada em `main.tsx`).
+ *
+ * A medida que importa não é o tamanho, é a natureza: antes eram duas camadas
+ * — um tema roxo e um "YouTube skin" por cima — com **111 valores
+ * hexadecimais**; hoje são **zero**, e trocar claro/escuro é trocar
+ * `data-uni-theme` na raiz. A contagem de linhas mudou pouco (523 antes, ~530
+ * agora) e não diz nada: o arquivo antigo era denso, com a regra inteira numa
+ * linha só, e este tem uma propriedade por linha.
  *
  * O que sobrou é de três tipos, e cada bloco diz de qual:
  *   (a) ESQUELETO — a grade da página e o carrossel do feed, que são
  *       composição da experiência, não componente de biblioteca;
- *   (b) COMPENSAÇÃO — o punhado de peças que a seção ainda não publica
- *       (girador, toast, estado vazio). São temporárias e estão marcadas;
+ *   (b) COMPENSAÇÃO — o que a seção ainda não publica. Sobrou UMA (o girador
+ *       de carregamento): a 0.1.17 trouxe toast, diálogo, tabela e estado
+ *       vazio para a seção, e as compensações deles morreram aqui;
  *   (c) LIGAÇÃO — ajustes de encaixe entre um componente do DS e o lugar onde
  *       ele entra.
  */
@@ -372,34 +377,6 @@ video {
   width: auto;
 }
 
-/*
- * (b) COMPENSAÇÃO — estado vazio. A seção não publica um; o da plataforma não
- * cabe porque esta tela ainda está DENTRO do disfarce.
- */
-.empty-state {
-  display: grid;
-  justify-items: center;
-  gap: var(--uni-spacing-8);
-  padding: var(--uni-spacing-32);
-  border-radius: var(--uni-radius-lg);
-  background: var(--uni-color-background-secondary);
-  text-align: center;
-}
-
-.empty-illustration {
-  display: grid;
-  place-items: center;
-  width: var(--uni-spacing-64);
-  height: var(--uni-spacing-64);
-  border-radius: var(--uni-radius-full);
-  background: var(--uni-color-background-surface);
-}
-
-.empty-state p {
-  color: var(--uni-color-text-secondary);
-  font-size: var(--uni-font-body-sm-size);
-}
-
 /* ---- (a) esqueleto: cartões das coleções ---- */
 .library-video,
 .profile-video {
@@ -478,26 +455,6 @@ video {
 }
 
 /* ---- (c) ligação: canal do aluno ---- */
-/*
- * LACUNA DO DS: `ChannelHeader` renderiza o `SubscribeButton` sempre — não há
- * prop para escondê-lo. Aqui o canal é o do PRÓPRIO aluno, e "inscrever-se em
- * si mesmo" não existe; um botão morto no clímax da tela confundiria a métrica
- * que a missão ensina a ler. Pedido ao pacote: `showSubscribe`.
- */
-.unootube-canal .uni-channel-header__action {
-  display: none;
-}
-
-/*
- * LACUNA DO DS: a capa de espera do canal é pintada com a PRIMITIVA
- * `--uni-color-neutral-50` (#f8f8f8), e não com um token semântico. No tema
- * escuro isso vira uma laje branca de 136px no topo do perfil. Pedido ao
- * pacote: um token de capa que troque com o tema.
- */
-.unootube-canal .uni-channel-header__cover {
-  background: var(--uni-color-background-surface);
-}
-
 .profile-appearance {
   display: grid;
   gap: var(--uni-spacing-8);
@@ -542,33 +499,6 @@ video {
   align-items: center;
   gap: var(--uni-spacing-8);
   min-width: 0;
-}
-
-/*
- * (b) COMPENSAÇÃO — toast. A seção não publica um, e o `Snackbar` da
- * plataforma não cabe: este aviso fala de dentro da ficção, antes da
- * revelação. Ver o comentário em `Toast.tsx`.
- */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: var(--uni-spacing-24);
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  gap: var(--uni-spacing-12);
-  max-width: min(92vw, 460px);
-  padding: var(--uni-spacing-12) var(--uni-spacing-16);
-  transform: translateX(-50%);
-  border-radius: var(--uni-radius-sm);
-  background: var(--uni-color-surface-inverse);
-  color: var(--uni-color-text-inverse);
-  font-size: var(--uni-font-body-sm-size);
-  box-shadow: var(--uni-elevation-medium);
-}
-
-.toast-acao {
-  flex: none;
 }
 
 /* ---- (a) esqueleto: telas estreitas ---- */

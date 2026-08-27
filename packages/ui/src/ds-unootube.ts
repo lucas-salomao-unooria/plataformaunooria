@@ -71,6 +71,14 @@ export {
  */
 export { Icon, PlayerGlyph, Logo, Avatar, Button, SubscribeButton } from '@unooria/design-system/unootube';
 
+/**
+ * Peças de estrutura que a seção passou a publicar na 0.1.17 — e que até então
+ * eram compensação local nesta plataforma. Existirem AQUI é o que permite ao
+ * clone ter toast, diálogo, tabela e estado vazio sem puxar os institucionais,
+ * que entregariam o exercício antes da revelação.
+ */
+export { Snackbar, Modal, Table, EmptyState } from '@unooria/design-system/unootube';
+
 /** Utilidades de reprodução, para quem precisa dirigir o `<video>` de fora. */
 export { useVideoPlayback, formatPlaybackTime } from '@unooria/design-system/unootube';
 

@@ -6,6 +6,13 @@
  * continua intacto até a revelação).
  */
 import '@unooria/design-system/unooria.css';
+/**
+ * A tipografia do DS, auto-hospedada (0.1.17). Entra no MESMO chunk tardio do
+ * dossiê, então o disfarce do feed segue sem nada da plataforma. O Material
+ * Symbols declarado aqui não é baixado: o gráfico não usa ícone de ligadura, e
+ * `@font-face` só busca o arquivo quando a família é realmente aplicada.
+ */
+import '@unooria/design-system/fonts/unooria.css';
 
 import { DonutChart } from '@edu/ui/ds';
 

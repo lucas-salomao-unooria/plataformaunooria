@@ -411,6 +411,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
         <Toast
           mensagem={toast}
           cheio={toastCheio}
+          aparencia={aparencia}
           aoAbrirPlaylist={() => {
             setToast("");
             abrirPlaylists("salvos");

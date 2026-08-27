@@ -1,11 +1,21 @@
 import "@unooria/design-system/unooria.css";
+/**
+ * As fontes, agora AUTO-HOSPEDADAS pelo pacote (0.1.17). A folha só tem
+ * `@font-face` com `url()` relativa, então o bundler resolve e o Next não tem o
+ * que remover — o `<link>` para o fonts.googleapis.com que morava aqui deixou
+ * de existir, e com ele a única requisição externa da plataforma.
+ *
+ * Esta linha é OBRIGATÓRIA, não decorativa: os ícones da plataforma são fonte
+ * de LIGADURA (Material Symbols Rounded), então `.unooria-icon` recebe o nome
+ * do ícone como texto e a fonte o transforma em glifo. Sem a família carregada,
+ * a tela escreve "search" no lugar da lupa.
+ */
+import "@unooria/design-system/fonts/unooria.css";
 import "@edu/ui/styles/plataforma.css";
-import { FontesDaPlataforma } from "@edu/ui/fontes";
 
 /**
- * Casca visual da plataforma: o CSS institucional do DS, as compensações de
- * `plataforma.css` e as fontes (Open Sans + Material Symbols via <link>
- * explícito, porque o Next remove `@import` externo de CSS importado por JS).
+ * Casca visual da plataforma: o CSS institucional do DS, as fontes e as
+ * compensações de `plataforma.css`.
  *
  * Existe como componente — e não solto no layout do grupo `(plataforma)` —
  * porque há DOIS grupos de rota que precisam dela: `(plataforma)/**` e
@@ -25,7 +35,6 @@ export function CascaPlataforma({
 }) {
   return (
     <div className={`unooria-theme-light unooria-surface ${className ?? ""}`} style={style}>
-      <FontesDaPlataforma />
       {children}
     </div>
   );

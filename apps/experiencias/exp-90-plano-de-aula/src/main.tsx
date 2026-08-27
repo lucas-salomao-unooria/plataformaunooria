@@ -7,6 +7,9 @@ import { createRoot } from "react-dom/client";
  * identidade da plataforma, ao contrário das experiências do aluno.
  */
 import "@unooria/design-system/unooria.css";
+// Obrigatória: os ícones da plataforma são fonte de ligadura — sem ela o glifo
+// vira o NOME do ícone escrito na tela.
+import "@unooria/design-system/fonts/unooria.css";
 import "./estilos/globals.css";
 
 import { Bootstrap } from "./bootstrap";
