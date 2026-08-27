@@ -26,7 +26,29 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   particionada, a rotina de expurgo passou a ser trivial --- o que remove o último
   argumento técnico. \textbf{Pendente de decisão de produto e contrato}, e é da
   plataforma inteira.\\
-\cd{R-03} & \textbf{Localidade de processamento de IA.} O tráfego de IA sai de
+\cd{R-13} & \textbf{Latência de IA numa sala inteira.} O turno da exp-03 é
+  síncrono e leva de 10 a 30 segundos, e a largada é simultânea: 30 alunos
+  perguntam ao mesmo tempo. & Média & \textbf{Alto} &
+  O desenho aceita a latência (a tela cobre com indicador de \enquote{consultando},
+  e a SDK espera 45\,s). O que \textbf{não} foi medido é a concorrência: 30 turnos
+  simultâneos por turma, com até seis voltas de ferramenta cada. Entra no mesmo
+  teste de carga de \cd{R-01}. Saída conhecida se reprovar:
+  \cd{streamGenerateContent} no provider --- mudança dentro de \arq{src/ai}, sem
+  tocar o módulo da experiência.\\
+\zebra \cd{R-14} & \textbf{Teto de custo da exp-03 é estimativa.}
+  \cd{TETO\_TOKENS\_SESSAO} e \cd{TETO\_CHAMADAS\_SESSAO} foram calculados, não
+  medidos. & Certa & Médio &
+  Marcados como estimativa no código (\adrr{ADR-24}). A primeira partida real com
+  \env{AI\_PROVIDER=vertex} substitui os dois pelo \cd{tokens\_gastos} observado.
+  \textbf{Pendente} --- e até lá o número no documento é projeção.\\
+\cd{R-15} & \textbf{Guia de condução do debate da exp-03 não existe.} A missão
+  deliberadamente não revela a Lacuna de nenhuma fonte por software: a lição
+  acontece no debate. & Certa & \textbf{Alto} &
+  O guia do projeto de origem está vazio. A ficha publicada (competência, quatro
+  atos, preparo) foi redigida a partir das ADRs e dos dois \emph{playtests}, e
+  está marcada como ponto de partida. \textbf{Pendente de revisão pedagógica} ---
+  é a lacuna mais séria desta experiência, e não é técnica.\\
+\zebra \cd{R-03} & \textbf{Localidade de processamento de IA.} O tráfego de IA sai de
   São Paulo, inclusive o do aluno. & Certa & Médio &
   Consequência aceita e documentada (\adrr{ADR-16}). \textbf{Precisa constar do
   contrato e do DPA de cada rede.} Voltar à região exige trocar modelo e

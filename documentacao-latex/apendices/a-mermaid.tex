@@ -209,6 +209,7 @@ C4Component
     Component(vila,   "vila/", "", "exp-70")
     Component(planos, "planos/", "", "exp-90")
     Component(bem,    "bemestar/", "", "exp-91")
+    Component(ugpt,   "unoogpt/", "", "exp-03 - motor probabilistico, agente com ferramentas, relogio da turma")
   }
 
   Rel(guard, roles, "antes de")
@@ -910,7 +911,15 @@ flowchart TB
     va["/vila/agregado/* - prof, gestor"]; pl["/planos/* - professor"]
     pref["/planos/referencias - chave de servico"]
     be["/bemestar/* - SO PROFESSOR, com posse"]
+    ug["/unoogpt/* - aluno"]
+    ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
+    uga["/unoogpt/agregado/* - gestor, admin - sem alunoId"]
   end
+
+  %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
+  %% de agregado; e no unoogpt o controller do gestor nao tem NENHUMA rota que
+  %% aceite alunoId, o que torna estrutural (nao disciplinar) o limite do que
+  %% ele alcanca.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -929,6 +938,12 @@ flowchart LR
 
   %% A linha e a REVELACAO, nao o arquivo. O toast NAO cruza: ele fala de
   %% dentro da ficcao. O criterio nao e "e depois no tempo?", e "quem fala?".
+  %%
+  %% CONTRAEXEMPLO, exp-03 (unooGPT): nao ha revelacao no software. O vies de
+  %% cada fonte e o material do debate do professor, e nenhuma tela o entrega.
+  %% Logo a exp-03 e 100% da secao do clone (@edu/ui/ds-chatgpt) e nunca troca
+  %% para a da plataforma. A marca institucional entra so como chrome do HUB,
+  %% desenhada ACIMA do iframe.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------

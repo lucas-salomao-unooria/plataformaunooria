@@ -8,7 +8,7 @@
 
 \begin{lstlisting}[language=bashunoo, caption={Subir a plataforma}]
 # --- Tudo em container, sincronizado com o editor (RECOMENDADO)
-pnpm docker:dev          # pg + api + hub + as 5 experiencias, cada um com watcher
+pnpm docker:dev          # pg + api + hub + as 6 experiencias, cada um com watcher
 pnpm docker:dev:logs     # acompanha a recompilacao
 pnpm docker:dev:deps     # DEPOIS de mexer em dependencia; e reiniciar
 pnpm docker:dev:down     # desce
@@ -287,6 +287,36 @@ causa.
   renomeação &
   \cd{FOR ... IN SELECT} sobre o catálogo releu o que o laço alterou, ou
   \cd{RENAME CONSTRAINT} renomeou também o índice. Ver a migração de referência.\\
+\textbf{Na exp-03, o aluno digita a pergunta, aperta Enter e NADA acontece} ---
+  a conversa parece viva, porque a fala de abertura do agente está na tela &
+  Falta \cd{allow-forms} no \emph{sandbox} do \cd{iframe}: o \cd{Composer} do
+  \emph{design system} é um \cd{<form>}. O manifesto tem de declarar
+  \cd{"permissoes": ["forms"]}. O único rastro é um aviso de console sobre
+  \enquote{\emph{form's frame is sandboxed}} --- e \emph{typecheck} e \emph{lint}
+  passam.\\
+\zebra \textbf{Tela BRANCA dentro do \cd{iframe}, sem erro de console} &
+  Uma rota de mutação devolveu a sessão \emph{crua} em vez do envelope
+  \cd{\{ sessao \}}; o cliente leu \cd{undefined} e derrubou a árvore do React.
+  Toda rota de mutação da exp-03 devolve o envelope, e há teste fixando isso.\\
+\textbf{Na exp-03, \enquote{o Cientista não conseguiu responder}} em toda
+  tentativa &
+  Credencial do Vertex ausente ou \env{AI\_PROVIDER=vertex} sem ADC montado. A
+  API traduz falha do provedor em \cd{cientista-indisponivel} (503) de propósito
+  --- em desenvolvimento, use \env{AI\_PROVIDER=mock}. Confira também
+  \cd{tokens\_gastos} da sessão: teto estourado dá a mesma cara para o aluno,
+  com outra frase.\\
+\zebra \textbf{Na exp-03, a turma inteira vê o cronômetro parado} e ninguém
+  consegue falar &
+  \textbf{A largada não foi dada.} O relógio é da turma (\adrr{ADR-25}), e sai de
+  \rota{/professor/entre-redes/2-serie/unidade-1/resultados}. É o motivo nº 1 de
+  \enquote{a missão não abre}, e por isso a ficha do professor abre com a faixa
+  avisando.\\
+\textbf{Dependência nova não chega no container}; a API não sobe depois de
+  \cd{prisma migrate} &
+  O \cd{node\_modules} \textbf{e o Prisma Client} dos containers são próprios.
+  \cd{pnpm docker:dev:deps}, ou \cd{prisma generate} dentro do container, e
+  \textbf{recriar} o serviço --- \cd{restart} não relê o \arq{compose}, então
+  variável de ambiente nova (como \env{CORS\_ORIGINS}) não entra.\\
 \bottomrule
 \end{tabularx}
 

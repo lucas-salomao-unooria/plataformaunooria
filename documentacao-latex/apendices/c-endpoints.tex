@@ -234,6 +234,51 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \bottomrule
 \end{tabularx}
 
+\section{exp-03 --- unooGPT (Missão Tempestade)}
+
+Nenhuma rota leva id de sessão: a identidade é \cd{(escola, aluno)} e vem do
+\emph{token}.
+
+\begin{tabularx}{\linewidth}{@{}L{52mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /unoogpt/sessao} & aluno & \emph{Bootstrap} da tela: estado, mapa,
+  conversa e relógio numa resposta. Cria a partida na primeira visita.
+  \textbf{Sem gabarito}.\\
+\zebra \rota{GET /unoogpt/relogio} & aluno & \emph{Polling} do Relógio da Aula
+  ($\approx$5\,s). Leve: sem IA, sem mapa.\\
+\rota{POST /unoogpt/pergunta} & aluno & O turno do agente: IA com ferramentas,
+  débito do orçamento e teto por sessão. A única rota que pede
+  \cd{timeoutMs: 45\_000} na SDK.\\
+\zebra \rota{PUT /unoogpt/conjuntos} & aluno & Carrega fontes. \cd{PUT} porque é
+  atribuição de conjunto, não acréscimo.\\
+\rota{POST /unoogpt/alocacao} & aluno & Destino + justificativa. O porquê é
+  \textbf{portão de servidor}.\\
+\zebra \rota{POST /unoogpt/simular} & aluno & Enfrenta a tempestade. Idempotente
+  por tentativa.\\
+\rota{GET /unoogpt/resultado} & aluno & Faixa, trilha, o que sobrou e o que nunca
+  foi consultado.\\
+\zebra \rota{POST /unoogpt/contrafactual} & aluno & \enquote{E se\ldots}
+  --- \textbf{não grava e não debita}.\\
+\rota{POST /unoogpt/passo} & aluno & Transição de Passo.\\
+\zebra \rota{POST /unoogpt/reiniciar} & aluno & Abre tentativa \textbf{nova} ---
+  não apaga a conversa anterior.\\
+\rota{GET /unoogpt/professor/turmas} & professor, admin & Turmas da escola.\\
+\zebra \rota{GET /unoogpt/professor/\B{}turmas/:turmaId} & professor, admin &
+  A folha da turma: relógio e retrato de conduta. \textbf{Sem} número de
+  resgatados.\\
+\rota{POST /unoogpt/professor/\B{}turmas/:turmaId/relogio} & professor, admin &
+  Largada, +2\,min, encerrar, modo, redefinir.\\
+\zebra \rota{DELETE /unoogpt/professor/\B{}turmas/:turmaId} & professor, admin &
+  \textbf{Zerar a turma}: apaga as partidas e o relógio (\adrr{ADR-26}).\\
+\rota{GET /unoogpt/professor/\B{}alunos/:alunoId} & \textbf{professor} & Relatório
+  em graus + a \textbf{Transcrição}. Gestor não entra (\adrr{ADR-27}).\\
+\zebra \rota{GET /unoogpt/agregado/escola} & gestor, admin & Só números por
+  turma. \textbf{Nenhuma} rota deste controller aceita \cd{alunoId}.\\
+\bottomrule
+\end{tabularx}
+
 \section{exp-70 --- Vila do Lume}
 
 \begin{tabularx}{\linewidth}{@{}L{48mm}L{24mm}X@{}}

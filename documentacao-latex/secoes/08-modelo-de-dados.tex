@@ -15,7 +15,8 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 
 \begin{regra}
 \textbf{Tabela de experiência leva o número dela: \cd{exp\_NN\_}.} Assim:
-\cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_91\_checkins}.
+\cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_03\_sessoes},
+\cd{exp\_91\_checkins}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias}, \cd{progresso},
@@ -571,6 +572,58 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \label{fig:er-exp90-91}
 \end{figure}
 
+\section{As cinco tabelas da exp-03}
+\label{sec:tabelas-exp03}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_03\_sessoes} & O estado da partida, uma linha por aluno. Chave
+  \cd{(escola\_id, aluno\_id)} --- \textbf{não há id de sessão}: a identidade vem
+  do \emph{token}, e foi isso que dispensou a guarda de posse do projeto de
+  origem, onde a sessão era um \emph{uuid} na URL. Inclui
+  \cd{tokens\_gastos} e \cd{chamadas\_ia} (\adrr{ADR-24}).\\
+\zebra \cd{exp\_03\_mensagens} & A \textbf{Transcrição}: a conversa entre o aluno e
+  o agente. \cd{texto} é caixa livre escrita por menor de idade --- o dado mais
+  sensível da experiência (\adrr{ADR-27}).\\
+\cd{exp\_03\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
+  cidade. \cd{dados} traz \textbf{só dado público} --- nada de viés, Lacuna ou
+  parâmetro oculto, porque este JSON chega ao navegador.\\
+\zebra \cd{exp\_03\_simulacoes} & O desfecho de cada tentativa, com
+  \cd{versao\_prompt} gravada junto: sem ela não se sabe qual \emph{prompt}
+  produziu o que está em produção.\\
+\cd{exp\_03\_relogio\_turma} & O Relógio da Aula, por \textbf{turma}
+  (\adrr{ADR-25}). Chave \cd{(escola\_id, turma\_id)}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+Os filhos apontam para o \textbf{par} \cd{(escola\_id, aluno\_id)}, não para um
+id de sessão. Cada linha filha carrega \cd{escola\_id} por construção --- que é o
+que a RLS precisa --- e nenhuma consulta nova pode esquecê-lo.
+\end{regra}
+
+\textbf{Cinco colunas do projeto de origem não vieram}, porque estavam mortas
+lá, e foram verificadas uma a uma antes do descarte: \cd{simulacoes\_restantes} e
+\cd{custo\_cents} (zero leituras), \cd{camadas\_reveladas} e \cd{pergunta\_id}
+(só escritas vazias) e \cd{evidencias} (só escrita, e o que ela guardava já está
+em \cd{rodadas}). Centavo virou \emph{token}: preço depende de tabela do
+\emph{vendor}, que muda sem aviso e não é conhecida pela aplicação.
+
+\textbf{Nenhuma coluna de prazo} (\adrr{ADR-26}). E 18 \emph{CHECKs} de estado
+impossível na migração, entre eles: justificativa sem destino, encerrar relógio
+que nunca começou, duração de relógio igual a zero (dividiria por zero no minuto
+narrativo) e \cd{debitou} numa fala que não é do aluno.
+
+\begin{atencao}
+As duas tabelas com \cd{BIGSERIAL} (\cd{exp\_03\_mensagens} e
+\cd{exp\_03\_marcos}) exigem \cd{GRANT USAGE} na \textbf{sequência}, além do
+\emph{grant} de tabela. Sem ele o \cd{INSERT} falha para a \emph{role} de
+\emph{runtime} mesmo com todos os privilégios de tabela concedidos.
+\end{atencao}
+
+% ---------------------------------------------------------------------------
 \section{Decisões de esquema por experiência}
 
 \subsection{exp-70 --- as decisões que custam informação de propósito}

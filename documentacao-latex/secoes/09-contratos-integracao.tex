@@ -411,12 +411,38 @@ export interface AiResult {
   finishReason?: string;
 }
 
+export interface AiFerramenta {
+  nome: string;
+  descricao: string;
+  /** Reusa o AiJsonSchema neutro. `description` por PROPRIEDADE nao e
+   *  comentario: e por ela que o modelo descobre o que pode mandar. */
+  parametros: AiJsonSchema;
+}
+
+export interface AiConversaRequest {
+  system: string;
+  historico: Array<{ papel: "aluno" | "agente"; texto: string }>;
+  ferramentas?: {
+    declaracoes: AiFerramenta[];
+    executar: (nome: string, args: Record<string, unknown>) => Promise<unknown>;
+  };
+  /** Motivos para RECUSAR a fala. Motivo derruba a tentativa e o modelo tenta
+   *  de novo sabendo por que. As regras sao do dominio; o laco e do provider. */
+  validar?: (texto: string) => string[];
+  socorro?: string;              // o que pedir na ULTIMA tentativa
+  maxVoltas?: number;            // teto de idas e voltas de ferramenta (6)
+  tentativas?: number;           // default 3
+}
+
 export interface AiProvider {
   generate(req: AiRequest): Promise<AiResult>;
   /** Saida JSON estruturada, com retry e reforco do erro anterior no prompt. */
   generateJson<T>(req: AiJsonRequest<T>): Promise<T>;
   /** Bytes originais (jpeg/png). Falha => quem chama cai no fallback procedural. */
   generateImage(prompt: string): Promise<Buffer>;
+  /** Conversa multi-turno com ferramentas (ADR-23). `tokensUsados` soma TODAS
+   *  as voltas e TODAS as tentativas, inclusive as rejeitadas: e o que foi pago. */
+  conversar(req: AiConversaRequest): Promise<AiResult>;
 }
 
 export const AI_PROVIDER = "AI_PROVIDER";   // token de injecao do Nest

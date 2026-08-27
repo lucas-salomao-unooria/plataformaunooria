@@ -50,6 +50,11 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp\_01\_exp\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
 \cd{exp\_02\_sessoes} & Tenant & Estado da missão do UnooTube\\
+\zebra \cd{exp\_03\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
+\cd{exp\_03\_mensagens} & Tenant & A Transcrição (texto livre do aluno)\\
+\zebra \cd{exp\_03\_marcos} & Tenant & Trilha da decisão\\
+\cd{exp\_03\_simulacoes} & Tenant & Desfecho por tentativa\\
+\zebra \cd{exp\_03\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
 \zebra \cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \cd{exp\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
 \zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por aluno\\
@@ -373,6 +378,123 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \emph{ranking} desmonta depois.
 \end{regra}
 
+\section{Tabelas da exp-03}
+
+\subsection{\cd{exp\_03\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, aluno\_id)} & PK composta & Uma linha por aluno.
+  \textbf{Não há id de sessão}: a identidade vem do \emph{token}.\\
+\zebra \cd{turma\_id} & \cd{UUID?} & Denormalizado: o painel do professor consulta
+  por turma o tempo todo, e resolver por \emph{join} a cada leitura era o caminho
+  para esquecer o filtro numa consulta nova.\\
+\cd{passo} & \cd{TEXT} & \emph{CHECK} nos quatro Passos. Derivado do que
+  aconteceu na conversa, não de um clique de avançar.\\
+\zebra \cd{tentativa} & \cd{SMALLINT} & Recomeçar abre a seguinte. \emph{CHECK}
+  $\geq 1$.\\
+\cd{minutos\_gastos} & \cd{INT} & Minuto narrativo desde as 17h00. \emph{Snapshot}
+  do que o relógio da turma já produziu --- a fonte da verdade é
+  \cd{exp\_03\_relogio\_turma}. É também o minuto de \textbf{saída} das equipes
+  quando a tempestade é enfrentada. \emph{CHECK} 0--60.\\
+\zebra \cd{conjuntos} & \cd{TEXT[]} & Fontes carregadas, em camadas.
+  \emph{CHECK} \cd{cardinality <= 8}.\\
+\cd{perguntas\_gastas} & \cd{INT} & Conta o \textbf{gasto}, não o resto: mudar o
+  teto passa a valer para partida em curso. \emph{CHECK} 0--3.\\
+\zebra \cd{alocacao\_alfa}, \cd{alocacao\_bravo} & \cd{TEXT?} & Slug do bairro de
+  destino. O agente \textbf{não escolhe} --- registra a escolha do aluno.\\
+\cd{justificativa\_alfa}, \cd{justificativa\_bravo} & \cd{TEXT?} & Slug de um
+  conjunto que o aluno carregou, ou \cd{'intuicao'}. \emph{CHECK}: justificativa
+  sem destino é estado impossível; destino sem justificativa é legítimo (o portão
+  exige antes de \emph{enviar}).\\
+\zebra \cd{tokens\_gastos}, \cd{chamadas\_ia} & \cd{INT} & O teto por sessão
+  (\adrr{ADR-24}). Somam voltas de ferramenta e tentativas rejeitadas.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_03\_mensagens}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{BIGSERIAL} & Paginação por id é estável; por \emph{timestamp} não.\\
+\zebra \cd{papel} & \cd{TEXT} & \emph{CHECK} \cd{IN ('aluno','agente')}.\\
+\cd{texto} & \cd{TEXT} & \textbf{Caixa livre escrita por menor de idade}. Nunca
+  vai a log nem à telemetria; nenhuma rota de gestor a alcança (\adrr{ADR-27}).\\
+\zebra \cd{anexo} & \cd{JSONB?} & O cartão que acompanha a fala. É o que faz a
+  conversa voltar inteira depois de um F5.\\
+\cd{debitou} & \cd{BOOLEAN} & Se esta fala custou uma Pergunta --- a trilha de
+  auditoria do orçamento. \emph{CHECK}: só fala do aluno pode debitar.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_03\_marcos}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{BIGSERIAL} & \emph{UNIQUE}
+  \cd{(escola\_id, aluno\_id, tentativa, ordem)}.\\
+\zebra \cd{tipo} & \cd{TEXT} & \emph{CHECK}
+  \cd{IN ('fontes','leitura','alocacao','envio')}.\\
+\cd{minuto} & \cd{INT} & Minuto do relógio em que aconteceu. \emph{CHECK} 0--60.\\
+\zebra \cd{dados} & \cd{JSONB} & \emph{Payload} por tipo. \textbf{Só dado
+  público}: este JSON chega ao navegador.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_03\_simulacoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} & \emph{UNIQUE} \cd{(escola\_id, aluno\_id, ordem)}.\\
+\zebra \cd{alocacao}, \cd{desfecho} & \cd{JSONB} & A decisão e o que ela rendeu.\\
+\cd{minuto\_da\_saida} & \cd{INT} & O minuto em que as equipes saíram: é o que
+  decidiu se cada uma chegou. Guardado junto do desfecho para a linha ser
+  autoexplicativa.\\
+\zebra \cd{versao\_prompt} & \cd{INT} & Sem ela não se sabe qual \emph{prompt}
+  produziu o que está em produção.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_03\_relogio\_turma}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, turma\_id)} & PK composta & O relógio é da \textbf{turma}
+  (\adrr{ADR-25}).\\
+\zebra \cd{modo} & \cd{TEXT} & \emph{CHECK}
+  \cd{IN ('cronometrado','livre')}.\\
+\cd{iniciado\_em} & \cd{TIMESTAMPTZ?} & \textbf{Nulo = a missão ainda não
+  começou}: o aluno vê o cronômetro parado e não fala com o agente.\\
+\zebra \cd{duracao\_seg} & \cd{INT} & Segundos de parede. \enquote{+2 min} soma
+  120. \emph{CHECK} $> 0$ --- zero dividiria por zero no minuto narrativo.\\
+\cd{encerrado\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}: encerrar o que nunca
+  começou é estado impossível.\\
+\zebra \cd{pivo\_seg}, \cd{pivo\_min} & \cd{INT} & O \textbf{pivô} da extensão:
+  onde o relógio da cidade estava quando a duração mudou. É o que impede o minuto
+  narrativo de rebobinar --- aos 4:00 de 5:00 o aluno está no minuto 48, e
+  recalcular com 7:00 daria 34.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+O gabarito da exp-03 não está em tabela nenhuma: os oito conjuntos, com o viés
+(\cd{instrucao}) e a cobertura de cada um, vivem em
+\arq{src/unoogpt/modelo/conjuntos.ts}, e os parâmetros ocultos do mundo em
+\arq{modelo/parametros.ts}. Nada disso é persistido, nada disso é servido, e há
+conferência por \cd{grep} no \arq{dist/} da experiência.
+\end{regra}
+
+% ---------------------------------------------------------------------------
 \subsection{\cd{exp\_70\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}

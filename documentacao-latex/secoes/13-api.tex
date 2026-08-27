@@ -117,11 +117,20 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\rota{/planos/referencias}\desc{chave de serviço}};
   \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (be) at (12.5,-8.8)
     {\rota{/bemestar/*}\desc{\textbf{só professor}, posse}};
+  \node[c4component, text width=27mm] (ug) at (2.3,-10.3)
+    {\texttt{/unoogpt/*}\desc{aluno}};
+  \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (ugp) at (5.7,-10.3)
+    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
+  \node[c4component, text width=27mm] (uga) at (9.1,-10.3)
+    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{alunoId}}};
 
 \end{tikzpicture}}
-\caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. A área
-  de bem-estar está destacada porque é a única sem \emph{nenhuma} rota de
-  gestor ou de agregado --- ausência deliberada, não lacuna.}
+\caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
+  áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não tem
+  nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do aluno só
+  existe no controller do professor --- o do gestor \textbf{não tem uma rota que
+  aceite \texttt{alunoId}}, o que torna estrutural, e não disciplinar, o limite do
+  que ele alcança (\adrr{ADR-27}).}
 \label{fig:mapa-rotas}
 \end{figure}
 

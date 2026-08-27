@@ -364,6 +364,8 @@ conhecer.
     {\texttt{planos/}\desc{exp-90}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (bem) at (14.6,-13.6)
     {\texttt{bemestar/}\desc{exp-91}};
+  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (2.2,-14.2)
+    {\texttt{unoogpt/}\desc{exp-03}};
 
   % ---- relações principais
   \draw[c4rel] (guard.south) -- (2.5,-3.1) -- (6.0,-3.1) -- (roles.south);
@@ -374,6 +376,9 @@ conhecer.
   \draw[c4rel] (planos.north) -- (12.4,-10.9) -- (6.4,-10.9) -- (6.0,-6.0)
     node[cxlabel, pos=0.80, right=1pt]{IA + quota};
   \draw[c4rel] (bem.west) -- (13.6,-13.6) -- (13.6,-10.7) -- (6.4,-10.7) -- (6.4,-6.0);
+  \draw[c4rel] (ugpt.west) -- (0.4,-14.2) -- (0.4,-10.5) -- (2.5,-10.5) -- (2.5,-6.0);
+  \draw[c4rel] (ugpt.east) -- (4.0,-14.2) -- (6.8,-14.2) -- (6.8,-10.2) -- (6.4,-10.2) -- (6.4,-6.0)
+    node[cxlabel, pos=0.55, above]{IA com ferramentas + quota};
   \draw[c4rel] (planos.north east) -- (13.6,-11.6) -- (10.0,-6.0)
     node[cxlabel, pos=0.72, right=1pt]{\emph{bucket} privado};
 
@@ -387,6 +392,17 @@ conhecer.
 \end{figure}
 
 \begin{regra}
+\begin{nota}
+\arq{unoogpt/} é o módulo de domínio mais fundo da API: 3.285 linhas de motor
+probabilístico, agente e regras puras, com subpastas (\arq{modelo/},
+\arq{regras/}, \arq{agente/}) em vez do par \arq{catalogo.ts} +
+\arq{regras.ts}. A granularidade veio do projeto de origem e foi \textbf{mantida
+de propósito}: cada arquivo tem teste próprio, e colar arquivos bem fatorados
+produziria colisão de nomes e falha mais difícil de localizar. O padrão do
+Capítulo~\ref{cap:experiencias} continua valendo para experiência nova; este é um
+porte.
+\end{nota}
+
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
 Vila alimentando a largada do Instanooria --- a comunicação é por \emph{tabela de

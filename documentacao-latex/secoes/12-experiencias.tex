@@ -19,13 +19,15 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   \arq{motor}, \arq{geracao}, \arq{atividades}, \arq{perfis}, \arq{dossie}\\
 \zebra \cd{exp-02-unootube} & \cd{4EF} & aluno &
   telemetria, progresso & \arq{unootube}\\
-\cd{exp-70-vila-do-lume} & \textbf{transversal} & aluno &
+\cd{exp-03-unoogpt} & \cd{2EM} & aluno &
+  telemetria, ia & \arq{unoogpt}\\
+\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & aluno &
   telemetria & \arq{vila}\\
-\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -38,6 +40,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{exp-90-plano-de-aula} & \cd{5175} & \rota{/professor/plano-de-aula}\\
 \zebra \cd{exp-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{exp-70-vila-do-lume} & \cd{5177} & \rota{/exp/exp-70-vila-do-lume}\\
+\zebra \cd{exp-03-unoogpt} & \cd{5178} & \rota{/exp/exp-03-unoogpt}\\
 \bottomrule
 \end{tabularx}
 
@@ -177,6 +180,155 @@ e o delta sempre foi derivável de dois quadros seguidos. É o primeiro suspeito
 a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
 \end{regra}
 
+\section{exp-03 --- unooGPT (Missão Tempestade)}
+\label{sec:exp03}
+
+Porte de um projeto autônomo (\arq{gpturia}), publicado na trilha do Entre Redes
+em \textbf{2ª série do Ensino Médio, unidade 1}. Um clone de assistente de IA em
+que o aluno decide, sob incerteza e com o relógio correndo, onde alocar duas
+equipes de resgate entre quatro bairros de uma cidade fictícia antes de uma
+tempestade.
+
+\begin{destaque}
+O propósito \textbf{não é acertar a alocação}. É experimentar que perguntas
+melhores e dados melhores produzem respostas melhores --- e que nenhuma delas
+produz a resposta certa.
+\end{destaque}
+
+\subsection{A regra de ouro: a Lacuna não cruza a fronteira do \cd{iframe}}
+
+Cada um dos oito conjuntos de dados distorce a cidade de um jeito: o satélite vê
+telhado e não vê morador, e infla o bairro industrial em 1,6 vez; o cadastro de
+moradores está velho onde a cidade cresceu. Essa distorção --- a
+\textbf{Lacuna} --- é o \textbf{material do debate do professor}, e a experiência
+nunca a revela.
+
+A consequência é arquitetural: \textbf{não há revelação no software}. A exp-02
+troca da seção do \emph{design system} do clone para a da plataforma na virada da
+missão; aqui não existe virada, e por isso a exp-03 é 100\% da seção
+\cd{chatgpt} e não importa \arq{unooria.css} nenhum. A marca institucional entra
+só como \emph{chrome} do hub, desenhada acima do \cd{iframe}.
+
+O que isso proíbe no \emph{bundle}, verificado por \cd{grep} no \arq{dist/} como
+parte da conferência de entrega: \cd{instrucao} (o viés de cada fonte),
+\cd{pSevero}, \cd{expostosSevero}, \cd{expostosBrando} e
+\cd{fracaoVulneravel} (os parâmetros ocultos do mundo),
+\cd{CAPACIDADE\_DA\_EQUIPE}, \cd{JANELA\_CONFORTAVEL}, \cd{EFICIENCIA\_MINIMA} e
+\cd{TETO\_DE\_COBERTURA} (a calibragem), e o \emph{prompt} de sistema.
+
+\subsection{Três contas que o cliente não faz}
+
+Três cálculos que o projeto de origem fazia no navegador subiram para a API no
+porte, e o motivo é o mesmo nos três: um \emph{bundle} capaz de computá-los
+deixaria o aluno antecipar o desfecho antes de enviar.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Conta} & \thd{Por que subiu, e como chega ao cliente}\\
+\midrule
+Minuto da cidade &
+  Depende do \textbf{pivô} da extensão de tempo (\adrr{ADR-25}), uma conta sutil
+  que existia nos dois lados --- duas cópias, duas chances de divergir. Chega
+  pronta em \cd{EstadoDoRelogio}; o cliente só faz o número descer entre dois
+  \emph{pollings}.\\
+\zebra Projeção das rotas &
+  Usa \cd{chegaATempo} e a capacidade da equipe. Chega em \cd{Projecao}, e é ela
+  que produz o aviso \enquote{chega com N de sobra} ao lado do botão que manda.\\
+Alcance por bairro &
+  Idem, com o \cd{aperto} (\enquote{chega, mas raspando}) já resolvido como
+  booleano --- era a constante de calibragem \cd{JANELA\_CONFORTAVEL} viajando no
+  \emph{bundle}. Chega em \cd{BairroPublico.alcance}, com o mesmo portão do
+  \cd{tempos}: só existe com a malha viária carregada.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{Ponto cego é ausência, não zero}
+
+\begin{regra}
+\cd{BairroPublico.estimativa === null} significa \enquote{nenhuma fonte carregada
+cobre este bairro}. A tela \textbf{nunca} pode escrever \enquote{0 pessoas em
+risco} aí --- a verdade é \enquote{não sabemos}.
+\end{regra}
+
+É a mesma distinção que separa \cd{zero} de \cd{none} no relatório do professor,
+e era um \textbf{defeito no projeto de origem}: \cd{montarMapa} devolvia uma
+estimativa para todo bairro, inclusive os sem cobertura, com todos os números
+zerados --- e ela atravessava até a tela. O comentário do próprio módulo do modelo
+já dizia a intenção (\enquote{precisa aparecer como ausência, não como número
+ruim}) e o tipo do sanitizador já prometia \cd{null}; só o código não cumpria. A
+correção está em \arq{regras/camadas.ts}, e o teste de camadas fixa o invariante.
+
+\subsection{O Relógio da Aula}
+
+O relógio é da \textbf{turma}, não do aluno: quem dá a largada é o professor, e
+ela vale para a sala ao mesmo tempo. Detalhes e alternativas em \adrr{ADR-25}. O
+que o professor controla é \emph{quando dá para falar} com o assistente --- nunca
+o Passo de ninguém.
+
+\subsection{Telas do professor}
+
+\begin{itemize}
+  \item \rota{/professor/entre-redes/2-serie/unidade-1} --- a ficha, que
+    \textbf{abre com a faixa da largada}: sem ela a aula não começa, e
+    \enquote{não abre} é o suporte que a faixa evita.
+  \item \rota{.../unidade-1/resultados} --- o painel do relógio (largada,
+    +2 min, encerrar, modo livre, redefinir) e o \textbf{retrato de conduta} da
+    turma. Não há coluna de resgatados: listagem é ordenável, e ordenar crianças
+    por acerto viraria \emph{ranking} (\adrr{ADR-27}). O \emph{smoke} visual
+    falha se uma aparecer.
+  \item \rota{.../unidade-1/alunos/:alunoId} --- a linha de uma criança: os graus
+    e a \textbf{transcrição}. Só o professor da escola chega aqui.
+  \item \enquote{Zerar a turma} fica no fim da página, longe da largada: ação
+    destrutiva ao lado do botão mais apertado é acidente esperando acontecer.
+\end{itemize}
+
+\subsection{\cd{allow-forms}: o bug que só o \emph{smoke} pega}
+
+\begin{atencao}
+O manifesto declara \cd{"permissoes": ["forms"]}, e \textbf{sem isso a missão não
+funciona}. O \cd{Composer} do \emph{design system} é um \cd{<form>}, e num
+\cd{iframe} com \emph{sandbox} sem \cd{allow-forms} o navegador bloqueia o
+\emph{submit}: o aluno digita a pergunta, aperta Enter e nada acontece.
+\end{atencao}
+
+O sintoma engana de propósito --- a conversa parece viva, porque a fala de
+abertura do agente já está na tela, e o único rastro é um aviso de console sobre
+\enquote{\emph{form's frame is sandboxed}}. Passou pelo \emph{typecheck}, pelo
+\emph{lint} e por duas versões do \emph{smoke} antes de ser encontrado. A correção
+usa o mecanismo que a plataforma já tinha, \cd{permissoes} no manifesto, como o
+\cd{pointer-lock} da exp-70: por experiência, porque permitir \emph{submit} de
+formulário é capacidade de quem declarou.
+
+\subsection{O \emph{smoke} mentiu duas vezes}
+
+O roteiro de \arq{scripts/walkthrough-aluno-unoogpt.mjs} usa \textbf{dois
+contextos} de navegador --- o professor dá a largada, o aluno joga --- porque um
+contexto só passaria com o relógio quebrado. Duas asserções foram descartadas no
+caminho, e as duas passavam com a funcionalidade quebrada:
+
+\begin{enumerate}
+  \item \emph{esperar por texto do assistente}: a fala de abertura dele já está
+    na tela desde o começo;
+  \item \emph{esperar pela fala do aluno}: o cliente a mostra otimistamente e só
+    a retira cerca de 30 segundos depois, quando a API falha.
+\end{enumerate}
+
+A asserção honesta é a conversa \textbf{sobreviver a um F5}, porque aí ela veio de
+\cd{exp\_03\_mensagens}. Teste que passa com a funcionalidade quebrada é pior que
+teste nenhum.
+
+\subsection{Pendência: o guia do debate}
+
+\begin{limitacao}
+O guia do professor do projeto de origem está \textbf{vazio} --- o material de
+condução do debate nunca foi escrito. E é no debate que a lição acontece, porque a
+missão deliberadamente não revela nada por software. A ficha publicada no catálogo
+(competência, quatro atos, preparo) foi redigida a partir das ADRs e dos dois
+\emph{playtests} documentados, e está marcada no código como ponto de partida para
+revisão pedagógica, não palavra final.
+\end{limitacao}
+
+% ---------------------------------------------------------------------------
 \section{exp-70 --- Vila do Lume}
 
 Jogo 3D em primeira pessoa, \textbf{transversal} (\cd{series: []}): não pertence a

@@ -37,6 +37,11 @@ reavaliação não é decisão registrada: é justificativa.
 \zebra \adrr{ADR-20} & Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_} & 2026-08-27 & Aceita\\
 \adrr{ADR-21} & \emph{Push subscription} para a própria API, sem \emph{worker} & 2026-08 & Aceita\\
 \zebra \adrr{ADR-22} & exp-02 1.1.0: \emph{briefing} na voz da escola, conclusão por botão & 2026-08-27 & Aceita, com custo\\
+\adrr{ADR-23} & \emph{Function calling} entra no \cd{AiProvider}, não na experiência & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-24} & Teto de custo de IA por SESSÃO; a quota diária é fusível & 2026-08-27 & Aceita, com número a medir\\
+\adrr{ADR-25} & O Relógio da Aula é tabela da experiência, não coluna em \cd{turmas} & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-26} & Sem prazo de retenção na exp-03; exclusão por \enquote{zerar a turma} & 2026-08-27 & Aceita\\
+\adrr{ADR-27} & Transcrição do aluno é dado do instrumento: professor lê, gestor não & 2026-08-27 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -663,3 +668,249 @@ nenhuma.
 subindo de forma anômala --- o \emph{badge} é o primeiro suspeito. Ou o professor
 relatando que a turma atravessa o \emph{briefing} sem ler, o que pediria que ele
 fosse do professor e não da tela.
+
+% ---------------------------------------------------------------------------
+\section{ADR-23 --- \emph{Function calling} entra no \cd{AiProvider}}
+\label{adr:ferramentas}
+
+\begin{especificacao}{Contexto}
+A exp-03 (Missão Tempestade) tem um agente conversacional em que \textbf{nenhum
+número pode sair do modelo de linguagem}: as estimativas vêm de um motor
+probabilístico determinístico, e o agente apenas narra o que a ferramenta
+devolveu. O projeto de origem implementava isso com um laço de \emph{function
+calling} do SDK do vendor --- até seis idas e voltas por turno, com três
+tentativas que reaproveitam o motivo da recusa anterior. A interface
+\cd{AiProvider} desta plataforma tinha \cd{generate}, \cd{generateJson} e
+\cd{generateImage}: nenhuma delas conversa.
+\end{especificacao}
+
+\textbf{Decisão.} A interface ganha um quarto método, \cd{conversar}, com tipos
+neutros de vendor (\cd{AiFerramenta} reusa o \cd{AiJsonSchema} que já existia). O
+laço de ferramentas, a preservação da assinatura de raciocínio e o \emph{retry}
+que aprende ficam dentro de \arq{vertex.provider.ts}; as regras de recusa ficam
+no domínio, passadas como \emph{callback} \cd{validar}. \cd{tokensUsados} é a
+soma de todas as voltas e de todas as tentativas, \textbf{inclusive as
+rejeitadas} --- é o que foi pago.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{A experiência falar com o vendor}: violaria a regra de que só
+    \arq{src/ai} conhece o provedor, e poria a chave e o protocolo do vendor no
+    caminho de uma experiência.
+  \item \emph{Módulo da experiência chamar o SDK do vendor diretamente}: mesmo
+    problema um nível acima --- o dia de trocar de provedor passaria a exigir
+    mexer em cada experiência que conversa.
+  \item \emph{Resposta estruturada em vez de ferramentas} (\cd{generateJson}
+    devolvendo uma lista de ações): funcionaria para um turno simples, mas o
+    agente encadeia \emph{carregar fonte} \seta{} \emph{cruzar dados} \seta{}
+    \emph{narrar} decidindo cada passo com o resultado do anterior. Uma lista de
+    ações declarada de antemão não tem essa realimentação.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item Qualquer experiência futura ganha agente com ferramentas de graça, e a
+    troca de provedor continua sendo um arquivo novo em \arq{src/ai}.
+  \item \emph{Ruim}: \cd{conversar} é obrigatório na interface, então as três
+    implementações existentes tiveram de ganhá-lo --- inclusive os \emph{fakes}
+    dos testes de outros módulos.
+  \item \emph{Ruim}: o \cd{MockProvider} não conhece os \emph{slugs} do domínio,
+    então chama a primeira ferramenta declarada com argumento vazio. Em
+    desenvolvimento o mapa não enche pela conversa; enche pelo painel.
+  \item Três defeitos do provedor ficaram cobertos por teste com \cd{fetch}
+    dublado: a assinatura de raciocínio reenviada \emph{verbatim} (sem ela o
+    Vertex recusa a continuação com 400 e a narrativa nunca chega), o descarte
+    das partes de pensamento (senão o raciocínio do modelo aparece na tela do
+    aluno) e o teto de voltas (modelo preso pedindo ferramenta vira recusa, não
+    bolha vazia).
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Um provedor cujo protocolo de ferramentas não
+caiba na assinatura de \cd{conversar} --- por exemplo, ferramentas paralelas na
+mesma volta. Ou latência de turno acima do que a sala tolera, que empurraria para
+\cd{streamGenerateContent} e mudaria a forma do retorno.
+
+% ---------------------------------------------------------------------------
+\section{ADR-24 --- Teto de custo de IA por SESSÃO}
+\label{adr:teto-sessao}
+
+\begin{especificacao}{Contexto}
+O \cd{QuotaService} limita tokens por usuário e por dia, com teto por perfil
+(\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} valia 20.000). Esse número foi
+dimensionado para o tutor da exp-01: uma conversa curta. O agente da exp-03 tem
+\emph{prompt} de sistema de cerca de 11.500 caracteres, reenviado inteiro a cada
+volta de ferramenta e a cada tentativa; uma partida de sete turnos fica na ordem
+de 100 a 200 mil tokens --- duas ordens de grandeza acima.
+\end{especificacao}
+
+\textbf{Decisão.} O controle que importa passa a ser \textbf{por sessão}, no
+módulo da experiência: \cd{tokens\_gastos} e \cd{chamadas\_ia} na linha da
+partida, com tetos em \arq{regras/defaults.ts}. A quota diária continua como
+\textbf{fusível da plataforma} e sobe para acomodar duas partidas. A checagem
+acontece antes de chamar o provedor, e o consumo é registrado no \cd{finally} ---
+inclusive quando o turno falha, porque o token foi gasto de todo modo.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Quota por experiência no \cd{QuotaService}}: um limite por
+    \cd{expId} em variável de ambiente. Não mexeria no teto do tutor, mas
+    complicaria um serviço que hoje é simples e por perfil --- e continuaria
+    sendo por dia, quando o que tem começo e fim é a sessão.
+  \item \emph{Encolher o instrumento para caber em 20.000}: reduzir o
+    \emph{prompt}, as voltas de ferramenta e o histórico. Cabe na quota atual e
+    mexe justamente no que foi calibrado em \emph{playtest}.
+  \item \emph{Teto em centavos}, como no projeto de origem: preço depende de
+    tabela do vendor, que muda sem aviso e não é conhecida pela aplicação. Token
+    é o que o provedor devolve.
+\end{itemize}
+
+\begin{atencao}
+Os dois números do teto por sessão (\cd{TETO\_TOKENS\_SESSAO} e
+\cd{TETO\_CHAMADAS\_SESSAO}) são \textbf{estimativa}, e estão marcados como tal
+no código. Eles serão substituídos pelo \cd{tokens\_gastos} medido na primeira
+partida real com \env{AI\_PROVIDER=vertex}. Número em documento sem medição por
+trás é a mesma armadilha da coluna de prazo que nenhuma rotina cumpre.
+\end{atencao}
+
+\textbf{Consequências.} O custo fica limitado onde ele acontece, e a mensagem de
+estouro é uma frase de jogo (\enquote{a sala de operações fechou por hoje}) em vez
+de vocabulário de infraestrutura --- o aluno não sabe o que é quota. \emph{Ruim}:
+são dois tetos no mesmo caminho, e um estouro exige olhar os dois para saber qual
+disparou.
+
+\textbf{Gatilho de reavaliação.} A primeira medição real. E a terceira
+experiência com agente conversacional, que tornaria o teto por sessão um padrão a
+subir para a plataforma.
+
+% ---------------------------------------------------------------------------
+\section{ADR-25 --- O Relógio da Aula é tabela da experiência}
+\label{adr:relogio-turma}
+
+\begin{especificacao}{Contexto}
+A Missão Tempestade tem uma restrição de tempo que é parte do instrumento: cinco
+minutos de relógio de parede valem a hora do cenário. No projeto de origem esse
+cronômetro armava sozinho quando o aluno entrava na investigação --- e numa sala
+isso é uma corrida com largadas diferentes: quem chegou primeiro terminava antes
+de o professor acabar de explicar. As colunas do relógio moravam em
+\cd{turmas}.
+\end{especificacao}
+
+\textbf{Decisão.} O relógio é da \textbf{turma}, e vive em
+\cd{exp\_03\_relogio\_turma} --- tabela \emph{da experiência}, com
+\cd{escola\_id} e RLS como as outras. Quem dá a largada é o professor, no painel,
+e ela vale para a sala inteira ao mesmo tempo. Enquanto \cd{iniciado\_em} é nulo o
+aluno vê o cronômetro parado e o campo de fala desabilitado.
+
+\textbf{Alternativa descartada.} \emph{Colunas em \cd{turmas}}, como no origem.
+\cd{turmas} serve a plataforma inteira: uma coluna de cronômetro de uma missão
+faria toda experiência futura herdar o vocabulário dela, e a próxima que
+precisasse de tempo teria de escolher entre reusar colunas com nome errado ou
+adicionar as suas. É o mesmo raciocínio do prefixo \cd{exp\_NN\_}
+(\adrr{ADR-20}).
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item A sala começa junto, e a espera passa a ser a aula --- não uma tela
+    travada. A ficha do professor abre com essa faixa, porque \enquote{não abre}
+    é o suporte que ela evita.
+  \item A extensão de tempo usa um \textbf{pivô}: sem ele, esticar de cinco para
+    sete minutos jogaria a cidade do minuto 48 para o 34, e a chuva andaria para
+    trás na cara da turma.
+  \item A largada é \textbf{idempotente} --- é exatamente o clique que um
+    professor nervoso dá duas vezes.
+  \item Aluno sem turma vê \enquote{aguardando}, que é a verdade. O
+    \emph{fallback} do origem armava um cronômetro individual, e com ele um aluno
+    solto jogava sem largada.
+  \item \emph{Ruim}: o professor passa a ter uma ação sem a qual a aula não
+    acontece. É dependência operacional nova, e o suporte precisa saber dela.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Uma segunda experiência com tempo de sala ---
+aí o relógio da turma vira serviço da plataforma, não tabela de uma missão.
+
+% ---------------------------------------------------------------------------
+\section{ADR-26 --- Sem prazo de retenção na exp-03}
+\label{adr:retencao-exp03}
+
+\begin{especificacao}{Contexto}
+O projeto de origem tinha \cd{expires\_at} de 30 dias em \cd{messages} e
+\cd{marcos}, com uma rota de \emph{cron} que o cumpria. Esta plataforma não tem
+\emph{job} agendado, por decisão --- e já registrou duas vezes o custo de uma
+coluna de prazo sem rotina: o \cd{expires\_at} da exp-70 e o
+\cd{turmas.consentimento\_em} do aplicativo de origem, onde a regra saiu do
+código, a coluna ficou, e quem leu o \emph{schema} acreditou nela.
+\end{especificacao}
+
+\textbf{Decisão.} Nenhuma das cinco tabelas da exp-03 tem coluna de prazo. No
+lugar entra \textbf{um} caminho de exclusão que existe de fato: \enquote{zerar a
+turma} (\rota{DELETE /unoogpt/professor/turmas/:turmaId}), acionado por quem tem
+a posse pedagógica, apagando as partidas \emph{daquela turma} e devolvendo o
+relógio ao início.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Portar o \cd{expires\_at} de 30 dias}: prazo que nenhuma rotina
+    cumpre é pior que prazo nenhum, porque cria a crença de que há retenção.
+  \item \emph{Trazer o prazo E o \emph{job}}: seria o primeiro agendador da
+    plataforma, com o custo operacional que a decisão de não ter agendador
+    evitou. Se um contrato exigir prazo, ele volta \textbf{junto com a rotina},
+    nunca só a coluna.
+  \item \emph{\cd{DELETE /unoogpt/dados} no estilo do bem-estar}: lá o professor
+    é dono das linhas; aqui o dado é do aluno, e um botão \enquote{apagar tudo} no
+    professor seria posse que ele não tem.
+\end{itemize}
+
+\textbf{Consequências.} O relógio é apagado junto, e o diálogo diz por quê:
+rodar de novo com a aula \enquote{já começada} faria a segunda rodada nascer no
+meio da tempestade. \emph{Ruim}: sem prazo, a transcrição de um menor de idade
+fica no banco até alguém apagar --- e a pergunta de retenção continua aberta para
+\cd{telemetria\_eventos} e para a plataforma inteira, não só para este módulo.
+
+\textbf{Gatilho de reavaliação.} Exigência contratual de prazo, ou a primeira
+rotina agendada da plataforma --- a partir dela o custo marginal de cumprir um
+prazo cai muito.
+
+% ---------------------------------------------------------------------------
+\section{ADR-27 --- Transcrição é dado do instrumento}
+\label{adr:transcricao}
+
+\begin{especificacao}{Contexto}
+A missão inteira acontece numa conversa em texto livre, escrita por menor de
+idade. O professor precisa ler essa conversa: é nela que aparece \emph{como} a
+criança perguntou, e o relatório sem ela é uma lista de contagens. Ao mesmo tempo,
+o \cd{CLAUDE.md} registra a trava oposta na exp-70 --- o campo de texto livre foi
+removido do \emph{payload} porque era o caminho por onde o nome de uma criança
+chegaria a um JSONB de 90 dias.
+\end{especificacao}
+
+\textbf{Decisão.} A transcrição vive em coluna dedicada
+(\cd{exp\_03\_mensagens.texto}), com RLS por escola, e é servida
+\textbf{apenas ao professor}: \cd{UnoogptTurmasController} tem
+\cd{@Roles("professor")}, e o agregado do gestor está em
+\cd{UnoogptAgregadoController}, que \textbf{não tem nenhuma rota que aceite
+\cd{alunoId}}. Ela nunca vai a log nem à telemetria.
+
+\textbf{Alternativa descartada.} Um controller só, com \cd{@Roles} incluindo
+gestor e uma exceção dentro do método que devolve a criança. É a forma que vaza:
+basta um método novo esquecer a exceção. Com dois controllers, nenhum descuido
+futuro leva o gestor à conversa de uma criança, porque não existe rota para isso
+no controller dele.
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item O relatório individual abre pelo \textbf{nível} --- graus, com
+    \cd{zero} (\enquote{teve a chance e não foi}) distinto de \cd{none} (\enquote{a
+    oportunidade não chegou}) --- antes do que a criança fez. É a regra da
+    exp-70, e existe para o adulto não concluir sobre a criança o que o
+    instrumento não mediu.
+  \item A \textbf{listagem} da turma não tem coluna de resgatados: listagem é
+    ordenável, e ordenar crianças por acerto viraria \emph{ranking}. O
+    \emph{smoke} visual falha se uma aparecer.
+  \item A telemetria analítica carrega contagem, nunca o texto.
+  \item \emph{Ruim}: o dado mais sensível da experiência não tem prazo
+    (\adrr{ADR-26}), e a única forma de apagá-lo é uma ação do professor.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Pedido de visão de rede sobre conduta ---
+aí o caminho é agregado sem identidade no controller do gestor, nunca abrir a
+linha da criança.
