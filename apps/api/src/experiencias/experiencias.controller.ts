@@ -27,6 +27,15 @@ const UpsertSchema = z.object({
    * recusa embedá-la em `/exp/*` (rota do aluno). Aditivo: ausente = aluno.
    */
   publico: z.enum(["aluno", "professor"]).default("aluno"),
+  /**
+   * Permissões de iframe que esta experiência precisa. Lista FECHADA e curta:
+   * hoje só `pointer-lock`, que liga o token `allow-pointer-lock` do sandbox
+   * do `ExpFrame` (jogo 3D em primeira pessoa, exp-70). Ausente/vazio =
+   * nenhuma. Prender o ponteiro do aluno é capacidade de quem declarou, nunca
+   * default do frame. `fullscreen` não entra: o `allow` do frame já o delega a
+   * todas as experiências.
+   */
+  permissoes: z.array(z.enum(["pointer-lock"])).default([]),
 });
 
 const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
@@ -64,6 +73,7 @@ export class ExperienciasController {
         capabilities: dados.capabilities,
         viewport: dados.viewport ?? undefined,
         publico: dados.publico,
+        permissoes: dados.permissoes,
       },
       create: {
         expId: id,
@@ -73,6 +83,7 @@ export class ExperienciasController {
         capabilities: dados.capabilities,
         viewport: dados.viewport ?? undefined,
         publico: dados.publico,
+        permissoes: dados.permissoes,
       },
     });
     return { experiencia };

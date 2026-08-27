@@ -32,6 +32,15 @@ interface Distribuicao {
   precisaRedistribuir: boolean;
 }
 
+/** O que `POST atividades/:id/perfis/da-vila` devolve. `descartados` vem NOMEADO
+ *  de propósito: uma resposta que só diz "23 importados" faria o professor achar
+ *  que a turma inteira entrou. */
+interface ResultadoDaVila {
+  importados: number;
+  semPartida: number;
+  descartados: Array<{ nome: string; motivo: string }>;
+}
+
 const ORIGEM_DO_PERFIL: Record<AlunoNaLista["origemDoPerfil"], string> = {
   jogo: "do jogo",
   professor: "manual",
@@ -66,6 +75,8 @@ export function PainelPerfis({
   const [erro, setErro] = useState<string | null>(null);
   const [redistribuindo, setRedistribuindo] = useState(false);
   const [ultimaAcao, setUltimaAcao] = useState<string | null>(null);
+  const [importando, setImportando] = useState(false);
+  const [resultadoDaVila, setResultadoDaVila] = useState<ResultadoDaVila | null>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -83,6 +94,36 @@ export function PainelPerfis({
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  /**
+   * Traz os perfis da Vila do Lume (exp-70) para esta atividade — o "Ato 1" que
+   * a ficha da missão sempre descreveu como um jogo fora da plataforma.
+   *
+   * O DISPARO É DO PROFESSOR, não automático: importar sozinho desfaria em
+   * silêncio uma redistribuição que ele já tinha feito. (O servidor preserva
+   * `ladoForcado` de qualquer jeito — mas quem decide QUANDO trocar a base é
+   * ele, porque a partida pode acontecer depois de a atividade ter começado.)
+   */
+  async function importarDaVila() {
+    setImportando(true);
+    setResultadoDaVila(null);
+    try {
+      const resposta = await fetch(`/api/plataforma/atividades/${activityId}/perfis/da-vila`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const corpo = (await resposta.json().catch(() => null)) as ResultadoDaVila | null;
+      if (!resposta.ok || !corpo) {
+        setErro("Não foi possível importar os perfis da Vila do Lume agora.");
+        return;
+      }
+      setResultadoDaVila(corpo);
+      await carregar();
+    } finally {
+      setImportando(false);
+    }
+  }
 
   async function redistribuir() {
     setRedistribuindo(true);
@@ -187,6 +228,59 @@ export function PainelPerfis({
           </div>
         </Card>
       ) : null}
+
+      <Card
+        variant="outlined"
+        title="Perfis do Ato 1"
+        className="plataforma-largura-cheia"
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
+            O perfil de valores vem da <strong>Vila do Lume</strong>, a missão
+            transversal do Entre Redes. Traga os perfis de quem já jogou — quem
+            não tiver perfil entra no sorteio balanceado, e você pode completar à
+            mão. Reimportar não desfaz quem você já moveu de lado.
+          </p>
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              isLoading={importando}
+              onClick={() => void importarDaVila()}
+            >
+              Trazer perfis da Vila do Lume
+            </Button>
+          </div>
+          {resultadoDaVila ? (
+            <div className="flex flex-col gap-1 rounded-lg border border-unooria-neutral-200 p-3">
+              <p className="text-[13px] font-semibold text-unooria-neutral-950">
+                {resultadoDaVila.importados}{" "}
+                {resultadoDaVila.importados === 1 ? "perfil importado" : "perfis importados"}
+                {resultadoDaVila.semPartida > 0
+                  ? ` · ${resultadoDaVila.semPartida} ainda não jogaram`
+                  : ""}
+              </p>
+              {resultadoDaVila.descartados.length > 0 ? (
+                <>
+                  {/* Nomeados, e com o motivo: a partida curta não sustenta
+                      leitura, e o professor precisa saber de quem para decidir
+                      se completa à mão ou pede para jogar de novo. */}
+                  <p className="text-[12px] text-unooria-neutral-700">
+                    Ficaram de fora ({resultadoDaVila.descartados.length}):
+                  </p>
+                  <ul className="flex list-disc flex-col gap-0.5 pl-5 text-[12px] text-unooria-neutral-500">
+                    {resultadoDaVila.descartados.map((d) => (
+                      <li key={d.nome}>
+                        {d.nome} — {d.motivo}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </Card>
 
       <Card variant="elevated" className="plataforma-largura-cheia">
         <div className="flex flex-col gap-4">

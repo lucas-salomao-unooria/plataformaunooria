@@ -24,6 +24,12 @@ export function ExpFrame(props: {
   aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   config?: Record<string, unknown>;
+  /**
+   * Permissões de iframe declaradas no manifesto DESTA experiência. Hoje só
+   * `pointer-lock`. Ausente = nenhuma, que é o comportamento que todas as
+   * experiências tinham antes deste campo existir.
+   */
+  permissoes?: readonly string[];
   onConcluir?: (payload: { score?: number; dados?: Record<string, unknown> }) => void;
   onEstado?: (estado: Record<string, unknown>) => void;
 }) {
@@ -103,18 +109,34 @@ export function ExpFrame(props: {
     };
   }, []);
 
+  /**
+   * O sandbox é o MESMO para todas as experiências, exceto o que o manifesto
+   * pedir. `allow-pointer-lock` só entra para quem declarou (exp-70, o jogo 3D
+   * em primeira pessoa): num iframe com sandbox, `requestPointerLock()` é
+   * ignorado sem esse token — e dá-lo a todas as experiências significaria que
+   * qualquer bundle pode capturar o mouse do aluno.
+   *
+   * `fullscreen` não é gateado aqui: o `allow` abaixo já o delega a todas.
+   */
+  const sandbox = [
+    "allow-scripts",
+    // Cross-origin em produção (CDN): sem allow-same-origin a origin do
+    // iframe vira "null" e a validação de origin quebra dos dois lados.
+    "allow-same-origin",
+    // `allow-modals`: sem ele o navegador IGNORA `confirm()`/`alert()` do
+    // iframe em silêncio (devolve false) — a exp-90 confirma exclusão e
+    // restauração assim. Ferramenta 1ª parte; não abre nada além disso.
+    "allow-modals",
+    ...(props.permissoes?.includes("pointer-lock") ? ["allow-pointer-lock"] : []),
+  ].join(" ");
+
   return (
     <iframe
       ref={frame}
       src={props.src}
       title="experiencia"
       style={{ border: 0, width: "100%", height: "100%", display: "block" }}
-      // Cross-origin em produção (CDN): sem allow-same-origin a origin do
-      // iframe vira "null" e a validação de origin quebra dos dois lados.
-      // `allow-modals`: sem ele o navegador IGNORA `confirm()`/`alert()` do
-      // iframe em silêncio (devolve false) — a exp-90 confirma exclusão e
-      // restauração assim. Ferramenta 1ª parte; não abre nada além disso.
-      sandbox="allow-scripts allow-same-origin allow-modals"
+      sandbox={sandbox}
       // `autoplay`: a Permissions-Policy tem default 'self' — sem delegar,
       // um <video muted autoplay> cross-origin rejeita play() em silêncio.
       allow="autoplay; fullscreen; clipboard-write"

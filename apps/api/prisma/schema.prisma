@@ -79,6 +79,12 @@ model User {
   perfis     PerfilImportado[]
   unootube   UnootubeSessao[]
   planos     PlanoDeAula[]     @relation("PlanoProfessor")
+  vilaSessoes VilaSessao[]     @relation("VilaAluno")
+  vilaPerfis  VilaPerfil[]     @relation("VilaPerfilAluno")
+  /// Lista, não `VilaBolha?`: a PK é composta (`escola_id, aluno_id`), então
+  /// `aluno_id` sozinho não é único e o Prisma recusa um-para-um. É a mesma
+  /// forma de `unootube` acima, que também é uma linha por aluno.
+  vilaBolhas  VilaBolha[]      @relation("VilaBolhaAluno")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -480,6 +486,15 @@ model Experiencia {
   /// aluno | professor — CHECK na migration. Ferramenta de professor (exp-90)
   /// não é embedada em /exp/* nem listada para aluno.
   publico      String   @default("aluno")
+  /// Permissões de iframe que esta experiência precisa. Hoje só
+  /// `pointer-lock`, que liga o token `allow-pointer-lock` do sandbox do
+  /// `ExpFrame` — jogo 3D em primeira pessoa (exp-70). Vazio = nenhuma, que é
+  /// o que toda experiência tinha antes disto existir.
+  ///
+  /// `fullscreen` NÃO entra aqui: o `allow` do frame já o delega a todas as
+  /// experiências. Campo de manifesto que não muda nada é pior que campo
+  /// nenhum — quem lê acredita que declarou algo. CHECK na migration.
+  permissoes   String[] @default([])
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   @@map("experiencias")
@@ -546,4 +561,170 @@ model PlanoReferencia {
   @@unique([disciplina, serie, nome])
   @@index([disciplina, serie])
   @@map("planos_referencias")
+}
+
+
+// ─── exp-70-vila-do-lume ─────────────────────────────────────────────────────
+//
+// Jogo 3D transversal (não pertence a nenhum ano). Duas leituras saem de uma
+// partida, e elas NÃO SE TOCAM: o retrato de valores (Schwartz), derivado de
+// escolhas com custo dentro do jogo, e a missão "A Noite Longa", que lê
+// julgamento sobre mensagens. Um golpe que custasse fagulha faria a criança que
+// caiu aparecer como menos generosa no retrato — por isso a separação é de
+// medida, não de organização.
+//
+// NÃO EXISTE tabela de evento fino. Ela existia no app de origem e era
+// redundante: `payload` guarda os eventos íntegros (é a fonte para recomputar o
+// perfil quando o mapeamento mudar de versão), e o canal analítico do SDK já
+// grava em `telemetria_eventos`. Duas tabelas de log seriam duas histórias de
+// retenção para o mesmo dado.
+
+/// Uma partida. Aberta pelo jogo ao entrar na vila (`POST /vila/sessoes`) e
+/// fechada ao terminar. O ID é EMITIDO AQUI: no app de origem o cliente
+/// escolhia a própria chave de idempotência, e duas crianças na mesma máquina
+/// colidiam — a segunda partida voltava "duplicada" e desaparecia.
+model VilaSessao {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String  @map("escola_id")
+  alunoId  String  @map("aluno_id") @db.Uuid
+  /// Turma NO MOMENTO DA PARTIDA, desnormalizada: o aluno troca de turma entre
+  /// anos letivos, e o resultado precisa continuar na turma em que foi medido.
+  turmaId  String? @map("turma_id") @db.Uuid
+
+  /// versão do bundle que jogou (o hub sempre serve a `versaoAtiva`, mas quem
+  /// estava com a aba aberta durante um publish termina com a anterior)
+  expVersion    String @map("exp_version")
+  /// versão do contrato de payload (`v` do corpo)
+  schemaVersion Int    @map("schema_version") @db.SmallInt
+
+  /// A | B | C — o nível do golpe da batida 3. Atribuída pela api (nunca pelo
+  /// cliente) e copiada aqui porque o relatório abre pelo NÍVEL, antes do que
+  /// ela fez: "caiu em 2 de 3" sem dizer que era o nível C faz o professor
+  /// concluir que a criança é ingênua.
+  bolha           String
+  /// Quantos cartões a api chegou a servir. Zero ⇒ a missão não aconteceu, e o
+  /// relatório precisa dizer isso em vez de "ela ignorou tudo" — é a mesma
+  /// distinção entre `zero` e `none` que sustenta o perfil.
+  cartoesServidos Int    @default(0) @map("cartoes_servidos") @db.SmallInt
+
+  /// cravado pelo SERVIDOR. O app de origem derivava do relógio do cliente, e
+  /// documentava que a hora numa máquina de escola costuma estar errada.
+  abertaEm        DateTime  @default(now()) @map("aberta_em") @db.Timestamptz(6)
+  concluidaEm     DateTime? @map("concluida_em") @db.Timestamptz(6)
+  /// do "ENTRAR NA VILA" ao fim — é o tempo de JOGO, denominador dos ritmos
+  duracaoSeg      Int?      @map("duracao_seg")
+  /// desde que a página abriu, incluindo os cartões da intro
+  duracaoTotalSeg Int?      @map("duracao_total_seg")
+  /// aberta | completa | abandonada. `aberta` que nunca fecha é partida perdida
+  /// (aba fechada no meio) — e saber quantas são é um dado sobre o JOGO.
+  status          String    @default("aberta")
+
+  /// Resumo tipado: o que o painel consulta e ordena. O detalhe fica no payload.
+  fogueirasAcesas   Int @default(0) @map("fogueiras_acesas") @db.SmallInt
+  pedrasQuebradas   Int @default(0) @map("pedras_quebradas") @db.SmallInt
+  aldeoesAjudados   Int @default(0) @map("aldeoes_ajudados") @db.SmallInt
+  lampioesAcesos    Int @default(0) @map("lampioes_acesos") @db.SmallInt
+  tochasAcesas      Int @default(0) @map("tochas_acesas") @db.SmallInt
+  dilemasVistos     Int @default(0) @map("dilemas_vistos") @db.SmallInt
+  dilemasResolvidos Int @default(0) @map("dilemas_resolvidos") @db.SmallInt
+  distanciaM        Int @default(0) @map("distancia_m")
+
+  /// O corpo bruto que o jogo enviou, íntegro. Único caminho para recomputar o
+  /// perfil quando `versaoMapeamento` subir. NULO depois da purga (90 dias):
+  /// a linha, os contadores, o perfil e a leitura das mensagens sobrevivem; o
+  /// bruto não. Consequência aceita: passado o prazo, não há reprocessamento.
+  payload Json?
+
+  /// A leitura da missão "A Noite Longa", persistida junto do perfil. No app de
+  /// origem ela era derivada do bruto na hora de desenhar a tela; gravada, o
+  /// relatório sobrevive a qualquer expurgo futuro do `payload` e não precisa
+  /// recomputar a leitura a cada visita.
+  leituraMensagens Json? @map("leitura_mensagens")
+
+  /// SEM PRAZO DECLARADO, por decisão de 2026-08-26. Houve um `expires_at` de 90
+  /// dias aqui, e nenhuma rotina que o cumprisse — coluna de prazo que ninguém lê
+  /// é pior que prazo nenhum, porque quem lê o schema acredita nela (é a mesma
+  /// armadilha do `turmas.consentimento_em` no app de origem).
+  ///
+  /// O que se ganha com isso é o REPROCESSAMENTO: `payload` é a única fonte para
+  /// recomputar o perfil quando `VERSAO_MAPEAMENTO` subir, e 90 dias matavam
+  /// justamente a comparação entre duas gerações do mapeamento. Se um contrato
+  /// exigir prazo, ele volta COM a rotina que o cumpre.
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  aluno  User         @relation("VilaAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  perfis VilaPerfil[]
+
+  @@index([escolaId, turmaId, abertaEm], map: "idx_vila_sessoes_consulta")
+  @@index([escolaId, alunoId], map: "idx_vila_sessoes_aluno")
+  @@map("vila_sessoes")
+}
+
+/// O retrato Schwartz de uma partida. RECALCULADO pelo servidor a partir das
+/// medidas brutas — o jogo sabe computá-lo e deliberadamente não o envia.
+///
+/// O mapeamento comportamento → valor é HIPÓTESE DE DESIGN, não instrumento
+/// validado (Schwartz se valida por questionário: PVQ, PBVS-C para crianças).
+/// Quando a hipótese mudar, `versaoMapeamento` sobe e nasce uma linha nova; as
+/// antigas ficam, porque comparar as duas é o único jeito de saber o que a
+/// mudança fez.
+///
+/// Sem prazo, como `vila_sessoes` — ver a nota lá.
+model VilaPerfil {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  sessaoId String @map("sessao_id") @db.Uuid
+  alunoId  String @map("aluno_id") @db.Uuid
+
+  versaoMapeamento Int @map("versao_mapeamento") @db.SmallInt
+
+  /// Os dez valores em 0–100 — e `null` NÃO É ZERO: é valor que não recebeu
+  /// número, porque tem uma fonte de medida só ou porque a oportunidade não
+  /// chegou até a criança.
+  valores Json
+  /// `scored | indicative | zero | none` por valor. A distinção mais importante
+  /// do modelo: tratar "não teve chance" como "escolheu não" faz uma criança
+  /// parecer ter recusado algo que nunca lhe foi oferecido.
+  graus   Json
+
+  /// Eixos do circumplexo. NULO quando um dos polos não foi observado — eixo
+  /// com polo não observado não é zero, é indefinido.
+  aberturaVsConservacao        Float? @map("abertura_vs_conservacao")
+  transcendenciaVsAutopromocao Float? @map("transcendencia_vs_autopromocao")
+
+  /// Falso ⇒ o painel abre avisando que não sabe. Não é rigor estatístico: é
+  /// impedir que uma partida sem escolha vire uma frase sobre quem a criança é.
+  amostraSuficiente Boolean @map("amostra_suficiente")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  sessao VilaSessao @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  aluno  User       @relation("VilaPerfilAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@unique([sessaoId, versaoMapeamento])
+  @@index([escolaId, alunoId, createdAt], map: "idx_vila_perfis_consulta")
+  @@map("vila_perfis")
+}
+
+/// Que bolha cada aluno recebeu. Uma linha por aluno, POR ALUNO e não por
+/// partida, porque repetir a partida não pode trocar o nível: a folha do
+/// professor diz "esse estava na C", e o relatório abre pelo nível.
+///
+/// A atribuição é balanceada DENTRO DA TURMA. O app de origem fazia
+/// `nº do aluno mod 3`, que dava terços de graça porque os números eram
+/// contíguos de 1 a 40. Hash de uuid dá terços na média da rede e pode dar
+/// 14/6/5 numa sala de 25 — e aí o debate da missão não acontece, porque ele
+/// depende de as três bolhas estarem na mesma sala.
+model VilaBolha {
+  escolaId    String   @map("escola_id")
+  alunoId     String   @map("aluno_id") @db.Uuid
+  /// A | B | C
+  bolha       String
+  atribuidaEm DateTime @default(now()) @map("atribuida_em") @db.Timestamptz(6)
+
+  aluno User @relation("VilaBolhaAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, alunoId])
+  @@index([escolaId], map: "idx_vila_bolhas_escola")
+  @@map("vila_bolhas")
 }

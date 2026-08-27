@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { VilaModule } from "../vila/vila.module";
 import { PerfisController, PerfisImportacaoController } from "./perfis.controller";
 
 /**
@@ -7,5 +8,12 @@ import { PerfisController, PerfisImportacaoController } from "./perfis.controlle
  * professor passa por OidcGuard, o do jogo é por chave de serviço no header e
  * fica FORA de guards (ver `perfis.controller.ts`).
  */
-@Module({ controllers: [PerfisController, PerfisImportacaoController] })
+/* `VilaModule` entra porque o Ato 1 deixou de ser externo: `POST
+   :id/perfis/da-vila` lê o perfil da exp-70 pelo `VilaService`. A dependência é
+   nesta direção e não na contrária — `perfis` é dono de `perfis_importados`, e
+   `vila` não sabe que o Instanooria existe. */
+@Module({
+  imports: [VilaModule],
+  controllers: [PerfisController, PerfisImportacaoController],
+})
 export class PerfisModule {}

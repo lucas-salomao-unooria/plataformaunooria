@@ -44,6 +44,7 @@ export default async function DevEmbedPage({
         aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         viewport={embed.viewport}
+        permissoes={embed.permissoes}
       />
     </>
   );

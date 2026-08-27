@@ -22,6 +22,7 @@ Em conflito entre este arquivo e uma suposição sua, este arquivo vence.
 | `apps/api` | NestJS + Postgres (Cloud SQL) | Cloud Run |
 | `apps/experiencias/*` | Vite + React + `@edu/sdk` | Cloud Storage + CDN (estático) |
 | `packages/sdk` | TS puro, zero deps pesadas | consumido via workspace |
+| `packages/ui` | ponte para `@unooria/design-system` (npm) | consumido via workspace |
 | Auth | WSO2 Identity Server via **OIDC genérico** | externo, único p/ vários contratos |
 | IA | Vertex Gemini via `apps/api/src/ai` (provider plugável) | dentro da api |
 | Telemetria | SDK → `POST /telemetry/batch` → Pub/Sub → worker | |
@@ -105,11 +106,24 @@ continua valendo para quando há UMA origem de bundles (o CDN, em produção).
 Os dev servers das exps declaram `allowedHosts: ["host.docker.internal"]`: o
 Vite 5.4+ recusa `Host` que não conheça, e sem isso o hub em container não lê o
 manifesto e a experiência aparece esticada na janela.
+`permissoes` (aditivo) lista o que o IFRAME daquela experiência precisa — hoje só
+`pointer-lock`, que o `ExpFrame` traduz no token `allow-pointer-lock` do sandbox.
+Vazio (o default) = nenhuma, que é o que toda experiência tinha antes. É POR
+EXPERIÊNCIA de propósito: prender o ponteiro do aluno é capacidade de quem
+declarou, não default do frame. Medido em `scripts/probe-pointerlock.mjs`: num
+iframe com sandbox, sem o token o `requestPointerLock()` morre com `SecurityError`
+e com ele funciona — e o Chromium do Playwright não concede pointer lock nem no
+topo da página, então essa verificação exige o Chrome do sistema.
+`series: []` significa **todas as séries**, não nenhuma: é assim que uma
+experiência TRANSVERSAL se declara (exp-70). Quando o filtro por série voltar a
+valer, vazio tem de continuar querendo dizer "todas" — o contrário faz a
+experiência desaparecer da tela sozinha.
 `publico: "professor"` ⇒ ferramenta do professor
 (exp-90-plano-de-aula): embedada em `/professor/plano-de-aula`, e `/exp/*`
 responde 404 para ela. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
-5173 exp-01, 5174 exp-02, 5175 exp-90…); teste local: rota `/dev-embed?src=http://localhost:5174`.
+5173 exp-01, 5174 exp-02, 5175 exp-90, 5177 exp-70 — a 5176 é da exp-91);
+teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed` e
 `/professor/plano-de-aula`.
@@ -192,17 +206,222 @@ Claude): com o material real (currículo da rede + as 4 unidades do ano, ~190k
 tokens só de prompt) o gemini-2.5-flash é cortado em 32k e o professor recebe
 "o plano ficou grande demais" sem plano nenhum.
 
+### Vila do Lume (exp-70, `apps/api/src/vila`)
+Jogo 3D **transversal** — não pertence a ano nenhum (`series: []`), e é o "Ato 1"
+que o catálogo do Entre Redes sempre descreveu: *"fora da plataforma, um jogo
+mede o perfil de valores do aluno"*. O perfil dele alimenta `perfis_importados`
+(a largada do Instanooria) — M5.
+
+**Duas leituras de uma partida, e elas NÃO SE TOCAM.** O retrato Schwartz
+(`mapeamento.ts`, 10 valores + 2 eixos) lê escolhas com custo dentro do jogo; a
+missão "A Noite Longa" (`mensagens.ts`) lê julgamento sobre 5 mensagens. A
+separação é de MEDIDA: um golpe que custasse fagulha faria a criança que caiu
+aparecer como menos generosa no retrato, e nada no relatório mostraria isso.
+
+**O servidor recalcula; nunca aceita o perfil do cliente.** O jogo sabe computar
+o retrato e deliberadamente não o envia — `CHAVES_DE_PERFIL` no contrato recusa
+payload que traga. É isso que permite reprocessar o histórico quando
+`VERSAO_MAPEAMENTO` subir (hoje 3, herdada do piloto para os dados serem
+comparáveis).
+
+**`grau` é invariante de API, não regra de tela.** Valor com UMA fonte de medida
+não recebe número. A api devolve linhas em que só a variante `scored` tem
+`numero: number`; as outras têm `null` POR TIPO (`leitura.ts`). O hub fica
+estruturalmente incapaz de imprimir "Poder 100" a partir de um sinal só. E a
+diferença entre `zero` ("teve a chance e não foi", entra na média) e `none` ("a
+oportunidade não chegou", sai da conta) é a coisa mais importante do modelo.
+
+**A bolha é do SERVIDOR.** `POST /vila/sessoes` atribui A/B/C balanceada dentro
+da TURMA, persiste em `vila_bolhas` (estável entre partidas: a folha do professor
+diz "esse estava na C") e devolve os cartões — **só os desta criança e sem
+gabarito**, como o `factual` do UnooTube. Era `alunoSlot % 3` no navegador, o que
+punha no bundle a condição do próprio instrumento e deixava as três versões
+legíveis antes da aula. Nos anos iniciais (1EF–5EF) a bolha B não é servida
+("suporte" exige entender o que é suporte) — regra que só a api pode aplicar,
+porque só ela sabe a série. O lock consultivo por turma não é zelo: a sala clica
+junto, e sem ele os 25 caem todos na bolha A.
+
+**O relatório abre pelo NÍVEL, antes do que ela fez.** "Caiu em 2 de 3" sem dizer
+que era o nível C faz o adulto concluir que a criança é ingênua — o rótulo que
+este projeto existe para não produzir.
+
+**`cartoesServidos` ≠ `apareceram`.** O primeiro é quantos a api entregou; o
+segundo, quantos chegaram a aparecer. Zero aparecidos ⇒ a tela diz "as mensagens
+não chegaram nesta partida", **nunca** "ela ignorou tudo" — é a mesma distinção
+entre `zero` e `none`.
+
+**Sem tabela de evento fino.** O bruto vive em `vila_sessoes.payload` (fonte do
+reprocessamento) e o canal analítico do SDK já grava em `telemetria_eventos`.
+`eventos[].dados` só aceita número, booleano ou string de um **vocabulário
+fechado** — o `texto` livre que existia era o único canal de texto arbitrário do
+payload, e o caminho por onde o nome de uma criança chegaria a um JSONB de 90
+dias. Trava estrutural, não lista de proibidos.
+
+**Telas do professor** (`/professor/entre-redes/vila-do-lume`): ficha (para que
+serve, quem consome o perfil, passo a passo), `/guia` (o debate),
+`/resultados?turmaId=` (com o botão de **zerar a turma**) e `/alunos/:id`.
+
+**O `/guia` precisa saber a TURMA.** Nos anos iniciais a api não serve a bolha B,
+e uma tela que projetasse as três mandaria o professor esperar a reação de um
+grupo que a sala dele não tem — `GET /vila/professor/cartoes?turmaId=` filtra
+pela mesma regra de `abrir` (`bolhasElegiveis`).
+
+**Zerar a turma apaga as BOLHAS junto.** Rodar de novo com a mesma bolha serviria
+à criança o mesmo golpe: ela reconhece, e a segunda rodada não mede nada. O que
+NÃO é tocado é `perfis_importados` — aquilo pertence à atividade do Instanooria, e
+apagar de lá trocaria os lados de uma aula em andamento. O `/guia` projeta as mensagens das TRÊS bolhas lado a lado — é a
+revelação da missão, e a primeira vez que a turma vê as outras versões. Os textos
+vêm de `GET /vila/professor/cartoes` (COM gabarito, professor only), nunca de
+cópia no hub: os textos SÃO o instrumento, e uma vírgula divergente entre o que o
+jogo serviu e o que o professor projeta põe a sala discutindo uma mensagem que
+ninguém recebeu. A LISTAGEM da
+turma não mostra valor de Schwartz nenhum — listagem é ordenável, e uma coluna
+"Poder" viraria ranking de crianças; os valores vivem na tela individual, uma
+criança por vez, com o grau ao lado. O agregado (`/vila/agregado/*`) abre para
+gestor; a linha de uma criança, não — são controllers separados, e não um
+`@Roles` misto com exceção por método.
+
+**Dois avisos do repo de origem sobre o DS estão OBSOLETOS na 0.1.11**, medidos
+no pacote: o `MetricCard` **não inventa mais tendência** (o prop é `tagText?` e a
+doc diz "sem ela a etiqueta não é renderizada"), e o `PositiveNegativeBarChart`
+tem escala **fixa** em ±100 (`h = (val / 100) * 110`) — é exatamente o que os
+eixos do circumplexo pedem, então a barra divergente NÃO é mais escrita à mão. O
+terceiro segue valendo: `AlertBox` é diálogo de 436px; para faixa de contexto,
+`FeedbackAlert` (o prop é `type`, não `variant`).
+
+**Cor da plataforma vem de classe escrita à mão** em
+`packages/ui/styles/plataforma.css`, e o tema do Tailwind está VAZIO
+(`theme.extend: {}`). Classe de cor que não existe ali não é erro em lugar
+nenhum: em texto ela herda a cor e passa desapercebida, em FUNDO o elemento fica
+branco no branco. Foi o que aconteceu com `bg-unooria-neutral-900` (letra da
+bolha invisível). O smoke da exp-70 checa o `backgroundColor` COMPUTADO do
+círculo por isso — `toBeVisible()` não pega. Só existem hoje:
+`bg-unooria-{navy-800,neutral-50,neutral-100,neutral-200}`,
+`border-unooria-neutral-200`,
+`text-unooria-{danger,navy-900,neutral-500,neutral-700,neutral-800,neutral-950}`.
+
+**Ato 1 do Instanooria: deixou de ser externo.** `POST
+/atividades/:id/perfis/da-vila` (professor) colapsa o perfil da Vila nos quatro
+quadrantes e grava em `perfis_importados` com `origem: "jogo"` — é o que decide
+de que lado o feed nasce (`largada.ts`). `PERFIL_IMPORT_TOKEN` e
+`POST /perfis/importar` continuam vivos como compatibilidade.
+O colapso (`vila/quadrantes.ts`) tem duas travas que CUSTAM alunos, de propósito:
+valor não observado (`indicative`/`none`) **fica fora da média**, nunca entra como
+zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro** —
+sem perfil, o Instanooria cai no sorteio balanceado, que é honesto sobre não
+saber. Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise`
+ao lado da identidade da criança, e deixar uma partida curta decidir isso seria
+dizer pelas costas o que o relatório se recusa a dizer na frente.
+O disparo é do PROFESSOR e `ladoForcado` é PRESERVADO no upsert: importar
+sozinho, ou levar o objeto inteiro no `update`, desfaria em silêncio uma
+redistribuição que ele fez antes da aula.
+
+**Retenção: NÃO HÁ PRAZO DECLARADO** (decisão de 2026-08-26). Houve um
+`expires_at` de 90 dias no schema e nenhuma rotina que o cumprisse — e coluna de
+prazo que ninguém lê é pior que prazo nenhum, porque quem lê o schema acredita
+nela. É a mesma armadilha do `turmas.consentimento_em` do app de origem: a regra
+saiu do código, a coluna ficou, e todo mundo continuou acreditando.
+
+O que se ganha em troca é o REPROCESSAMENTO, que é requisito de verdade deste
+instrumento: `payload` é a única fonte para recomputar o perfil quando
+`VERSAO_MAPEAMENTO` subir, e o mapeamento é hipótese de design que VAI mudar.
+90 dias matavam exatamente a comparação entre duas gerações.
+
+Se um contrato exigir prazo, ele volta **junto com a rotina que o cumpre** —
+nunca só a coluna. A mesma pergunta está aberta para `telemetria_eventos`, que
+guarda evento por `aluno_id` de todas as experiências e também não tem prazo: se
+a resposta importar, ela é da plataforma inteira, não de um módulo.
+
+## Design System (`@unooria/design-system`) — a fonte da interface
+
+**Regra: todo elemento de interface do hub e das experiências vem deste pacote,
+sempre na última versão publicada.** É npm PÚBLICO no escopo `@unooria` (sem
+registry privado, sem `.npmrc` no repo); a fonte é o repo `storybook-unooria`
+(Storybook em `:6007`, publicado por tag `v*` no GitHub Actions). Componente de
+UI novo se escreve LÁ e chega aqui por versão — não em `packages/ui`, não dentro
+de uma experiência. Antes de criar um botão, um card, um campo: procure na seção
+correspondente do pacote, ela provavelmente já tem.
+
+`^0.1.11` **não** pega `0.2.0` — caret em `0.x` só sobe patch. "Última versão"
+portanto é ativo: `pnpm up -r @unooria/design-system --latest`, commitando o
+lockfile e os `package.json` juntos.
+
+**Duas famílias no mesmo pacote, e elas nunca se cruzam.** A separação é a mesma
+da regra de ouro do embed: a marca institucional é chrome do HUB, e dentro do
+iframe a fidelidade é ao clone que a experiência imita. Um `Button` da plataforma
+no feed do aluno quebra a ilusão que a experiência está medindo.
+
+| Seção | Import | CSS | Tokens / tema | Onde vale |
+|---|---|---|---|---|
+| `unooria` (39) | raiz do pacote | `/unooria.css` | `--unooria-*`, classe `.unooria-theme-light\|dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do aluno |
+| `instanooria` (21) | `/instanooria` ou `InstanooriaUI` | `/instanooria.css` | `--insta-*`, prefixo `insta-` | exp-01 |
+| `unitube` (30) | `/unitube` ou `UnitubeUI` | `/unitube.css` | `--uni-*`, `uni-` — **só escuro** (o Figma não publica claro; proibido derivar) | exp-02 |
+| `whatsappmobile` (29) | `/whatsappmobile` ou `WhatsAppMobileUI` | `/whatsappmobile.css` | `--wa-*`, `wa-` — só escuro | — |
+| `chatgpt` (17) | `/chatgpt` ou `ChatGPTUI` | `/chatgpt.css` | `--gpt-*`, `gpt-`, `data-gpt-theme` | — |
+| `tiktooria` (35) | `/tiktooria` ou `TikTooriaUI` | `/tiktooria.css` | `--tik-*`, `tik-` — dois CONTEXTOS de superfície (cromo claro de lista/perfil, imersivo preto de feed/câmera), não dois temas | — |
+
+**Consumir sempre pela ponte em `packages/ui`**, nunca importando o pacote direto
+num componente: `@edu/ui/ds` (plataforma) e `@edu/ui/ds-insta` (clone do exp-01).
+A ponte existe por dois motivos registrados nos arquivos: marcar `'use client'`
+de uma vez para o App Router, e desfazer a colisão de nomes — `Icon`, `Avatar`,
+`Badge`, `Button`, `Logo`, `TextField` existem nas duas famílias, então os clones
+só saem pelo namespace (`InstanooriaUI.Icon`), e destruturar na ponte é o que
+mantém o tree-shaking e evita o `TS2742` do `@types/react` interno do pacote.
+Clone novo em uso = arquivo novo `packages/ui/src/ds-<clone>.ts` + `exports` no
+`packages/ui/package.json`, mesmo padrão.
+
+**CSS entra UMA vez, no ponto de entrada**: o hub em
+`components/casca-plataforma.tsx` (por isso `/exp/*` e `/dev-embed`, que estão
+fora do grupo `(plataforma)`, também têm o DS); a experiência no seu
+`src/main.tsx`. Nunca importe o consolidado `/styles.css` numa experiência: ele
+traz os tokens da plataforma para dentro do clone.
+
+**No hub, o CSS do DS não basta: as fontes também.** O `unooria.css` declara
+`Open Sans` e `Material Symbols Rounded` por `@import` de URL remota, e o **Next
+remove `@import` externo** de CSS importado por JS — silenciosamente: a regra
+continua lá, o `getComputedStyle` responde "Open Sans" e o navegador desenha com
+a fonte do sistema. Como `Material Symbols Rounded` é fonte de ligadura, o
+sintoma é o ÍCONE VIRANDO TEXTO ("addInvestigação"). Por isso
+`components/casca-plataforma.tsx` também monta `FontesDaPlataforma`
+(`@edu/ui/fontes`). Numa experiência Vite o `@import` sobrevive e isso não é
+necessário.
+
+**Frames: dois níveis, não empilhar.** `PhoneFrame` (instanooria, whatsappmobile,
+tiktooria) e `DesktopFrame` (unitube) são cascas de aparelho DO CLONE, para
+Storybook e telas soltas. Dentro da plataforma quem desenha o aparelho é o hub,
+em `components/DispositivoFrame.tsx`, dirigido pelo `viewport` do manifesto — a
+experiência embedada preenche o iframe e não traz casca própria.
+
+**Quem importa, declara.** Todo app que escreve `@unooria/design-system` no
+código tem a dependência no seu `package.json` — hub incluído, porque ele importa
+o `unooria.css`. Depender do hoisting do pnpm via `@edu/ui` funcionava por acaso:
+bastava a ponte trocar de versão (ou o `node_modules` ser reinstalado com outro
+layout) para o CSS do hub sumir sem ninguém ter mexido nele.
+
+**Fora da regra, deliberadamente:** exp-70 (jogo em canvas 3D, sem DOM de UI — a
+exceção de ADR das convenções). **Pendente:** exp-02 ainda tem CSS próprio em
+`src/estilos` embora a seção `unitube` exista completa (`VideoCard`,
+`VideoPlayer`, `Sidebar`, `ChannelHeader`, `DesktopFrame`, …).
+
 ## Convenções de código
 
-- TypeScript strict em tudo. Sem `any` (use `unknown` + narrow).
+- TypeScript strict em tudo. Sem `any` (use `unknown` + narrow). **Uma exceção,
+  registrada em ADR:** o jogo da exp-70 (`public/jogo/`, ~10k linhas de JS
+  clássico com globais compartilhados, `three.min.js` vendorizado) fica como
+  está — é um instrumento com distâncias e tempos calibrados, e o compilador não
+  tem como saber que uma refatoração mudou a medida. `public/jogo/**` está nos
+  `ignores` do ESLint. O shim (`src/`, TS strict) é a única porta: `window.VILA`.
+  A rede que substitui o `tsc` ali é o smoke visual.
 - Nomes de domínio em pt-BR (`aluno`, `escola`, `turma`, `experiencia`);
   termos técnicos em inglês (`provider`, `guard`, `batch`).
 - Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...`.
 - Zod para validar TODO input externo (body, query, postMessage recebido, env).
 - Testes: mínimo = contratos (bridge, telemetria, guards de tenancy). Vitest
   no sdk/experiências, Jest no NestJS.
-- UI: template de experiência é propositalmente cru. Trabalho visual sério
-  segue `docs/DESIGN.md` quando existir (não inventar design system agora).
+- UI: **não inventar componente**. Hub e experiências montam interface com
+  `@unooria/design-system` (seção `unooria` para a plataforma, seção do clone
+  para a experiência), sempre na última versão — ver "Design System" acima. O
+  `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
 - Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
   professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
   `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
@@ -244,13 +463,24 @@ pnpm --filter @edu/api test
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
+node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
+node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)
+node scripts/walkthrough-ato1-vila.mjs testes/wt-ato1                   # smoke do Ato 1 (a tela; a largada tem teste em tests/vila-ato1.spec.ts)
+pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
+pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
+npm view @unooria/design-system version        # qual é a última publicada
+cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
 ```
 
 ## Como criar uma experiência nova
 
 0. `git switch -c exp-NN-slug` a partir da `main` — uma branch por experiência.
 1. `pnpm new:exp exp-NN-slug` (copia `_template`, ajusta nomes).
-2. Implementar em `src/App.tsx`+; usar SOMENTE a SDK para auth/api/telemetria.
+2. Implementar em `src/App.tsx`+; usar SOMENTE a SDK para auth/api/telemetria e
+   SOMENTE o `@unooria/design-system` para interface — a seção do clone que a
+   experiência imita (`instanooria`, `unitube`, `chatgpt`, `whatsappmobile`,
+   `tiktooria`) pela ponte em `packages/ui`. Falta componente? Ele nasce no repo
+   `storybook-unooria` e chega por versão nova, não como arquivo local.
 3. Declarar capabilities no `experiencia.json` (`telemetria`, `progresso`,
    `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso.
 4. `verbo`/`objeto` de telemetria: documentar no README da experiência.
@@ -264,6 +494,11 @@ node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smok
 - Não usar localStorage para token. Não usar `targetOrigin: "*"`.
 - Não escrever migração que remova `escola_id` ou afrouxe RLS.
 - Não chamar provedores de IA fora de `apps/api/src/ai`.
+- Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
+  quando a seção do DS já tem: o lugar do componente novo é o `storybook-unooria`.
+- Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
+  experiência (ou o contrário) quebra a fidelidade que a experiência mede.
+- Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
 - Não commitar assets binários pesados (>2MB): vão para o bucket, referenciados por URL.
 
 ## Infra (repo separado)

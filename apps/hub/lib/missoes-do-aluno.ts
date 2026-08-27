@@ -1,4 +1,4 @@
-import { ANOS } from "./entre-redes/catalogo";
+import { ANOS, MISSOES_TRANSVERSAIS } from "./entre-redes/catalogo";
 
 /**
  * O que o ALUNO vê no hub dele (`/aluno`): as missões jogáveis hoje.
@@ -21,7 +21,13 @@ export type MissaoDoAluno = {
   rota: string;
 };
 
-export const MISSOES_DO_ALUNO: MissaoDoAluno[] = ANOS.flatMap((ano) => ano.missoes)
+export const MISSOES_DO_ALUNO: MissaoDoAluno[] = [
+  ...ANOS.flatMap((ano) => ano.missoes),
+  /* As transversais entram sem condição nenhuma — é o que "transversal"
+     significa aqui. Quando o filtro por série voltar, elas continuam entrando:
+     `series: []` no manifesto quer dizer TODAS as séries, não nenhuma. */
+  ...MISSOES_TRANSVERSAIS,
+]
   .filter((missao) => missao.status === "disponivel" && missao.expId && missao.aluno)
   .map((missao) => ({
     expId: missao.expId!,

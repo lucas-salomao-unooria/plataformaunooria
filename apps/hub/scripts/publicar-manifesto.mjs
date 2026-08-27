@@ -60,6 +60,13 @@ const corpo = {
   capabilities: manifesto.capabilities ?? [],
   viewport: manifesto.viewport ?? null,
   publico: manifesto.publico ?? "aluno",
+  /* Esquecer este campo aqui é INVISÍVEL em dev e quebra em produção: sem
+     manifesto o hub lê `permissoes` do `experiencia.json` do bundle, então a
+     bancada funciona; COM manifesto ele lê a coluna, que nasceria `[]`. Para a
+     exp-70 isso significa iframe sem `allow-pointer-lock` — o jogo sobe, a
+     intro aparece, a criança clica em ENTRAR NA VILA e a câmera não gira.
+     Campo novo no `experiencia.json` tem de ser adicionado AQUI também. */
+  permissoes: manifesto.permissoes ?? [],
 };
 
 const r = await fetch(`${API_URL}/experiencias/${encodeURIComponent(manifesto.id)}`, {
@@ -72,4 +79,7 @@ if (!r.ok) {
   console.error(`✖ PUT /experiencias/${manifesto.id} → ${r.status}: ${resposta.slice(0, 300)}`);
   process.exit(1);
 }
-console.log(`✔ manifesto publicado: ${manifesto.id}@${versao} (publico=${corpo.publico}) em ${API_URL}`);
+console.log(
+  `✔ manifesto publicado: ${manifesto.id}@${versao} (publico=${corpo.publico}` +
+    `${corpo.permissoes.length ? `, permissoes=${corpo.permissoes.join("+")}` : ""}) em ${API_URL}`,
+);
