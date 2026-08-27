@@ -17,6 +17,12 @@ export interface AiResult {
   /** Por que o modelo parou: `STOP` (natural) ou outro motivo do vendor
    *  (`MAX_TOKENS`, `SAFETY`...). Aditivo: quem não liga, ignora. */
   finishReason?: string;
+  /** Quantas voltas de ferramenta a conversa deu, e em que tentativa parou.
+   *  Só `conversar()` preenche — existe para o log medir o turno em vez de
+   *  lembrar dele ("a IA responde muita coisa" continua sendo impressão sem
+   *  número). `generate`/`generateJson` deixam ausente. */
+  voltas?: number;
+  tentativas?: number;
 }
 
 /**
@@ -30,6 +36,13 @@ export interface AiJsonSchema {
   items?: AiJsonSchema;
   required?: string[];
   enum?: string[];
+  /**
+   * Descrição do campo, repassada ao modelo. Não é comentário de código: numa
+   * DECLARAÇÃO DE FERRAMENTA é por aqui que o modelo descobre o que pode
+   * mandar ("bairro de destino: ribeirinha, valeverde, morroalto ou
+   * industrial"). Sem ela o modelo chuta o valor do argumento.
+   */
+  description?: string;
 }
 
 export interface AiJsonRequest<T> {
@@ -39,6 +52,51 @@ export interface AiJsonRequest<T> {
   /** Valida e normaliza a saída; lançar erro faz a tentativa ser regerada. */
   validar: (bruto: unknown) => T;
   temperatura?: number;
+  tentativas?: number;
+}
+
+/**
+ * Uma ferramenta que o modelo pode chamar no meio da conversa. NEUTRA de
+ * vendor: `parametros` reusa o `AiJsonSchema` acima, e cada provider traduz.
+ *
+ * Existe porque há experiência em que **nenhum número pode sair da LLM**: o
+ * valor vem de um motor determinístico e o modelo só narra o que a ferramenta
+ * devolveu. Sem isto, a alternativa era a experiência falar com o vendor por
+ * fora — proibido (só `src/ai` conhece o vendor).
+ */
+export interface AiFerramenta {
+  nome: string;
+  descricao: string;
+  parametros: AiJsonSchema;
+}
+
+export interface AiConversaRequest {
+  system: string;
+  /** A conversa até aqui, em ordem. `aluno` é quem fala com o modelo. */
+  historico: Array<{ papel: "aluno" | "agente"; texto: string }>;
+  ferramentas?: {
+    declaracoes: AiFerramenta[];
+    /** Executa a ferramenta e devolve o resultado que volta ao modelo. */
+    executar: (nome: string, argumentos: Record<string, unknown>) => Promise<unknown>;
+  };
+  /**
+   * Motivos para RECUSAR a resposta (vazio = aceita). Um motivo derruba a
+   * tentativa e o modelo tenta de novo **sabendo por quê** — o reforço entra no
+   * prompt da tentativa seguinte. As regras são do domínio (termo proibido,
+   * número sem ferramenta ter rodado, resposta longa demais); o laço é daqui.
+   */
+  validar?: (texto: string) => string[];
+  /**
+   * O que pedir na ÚLTIMA tentativa, quando as anteriores foram rejeitadas.
+   * A última baixa a exigência de propósito: insistir na mesma instrução só
+   * repete o erro. Vazio cai num socorro genérico.
+   */
+  socorro?: string;
+  maxTokens?: number;
+  temperatura?: number;
+  /** Teto de idas e voltas de ferramenta num turno (default 6). */
+  maxVoltas?: number;
+  /** Tentativas com reforço do erro anterior (default 3). */
   tentativas?: number;
 }
 
@@ -62,4 +120,10 @@ export interface AiProvider {
   /** Geração de imagem: devolve os bytes originais (jpeg/png) do modelo.
    *  Falha → quem chama cai no fallback procedural (imageStatus "fallback"). */
   generateImage(prompt: string): Promise<Buffer>;
+  /**
+   * Conversa multi-turno com ferramentas. `tokensUsados` é a SOMA de todas as
+   * voltas e de todas as tentativas, **inclusive as rejeitadas** — é o número
+   * que foi pago, e é ele que um teto de custo por sessão precisa contar.
+   */
+  conversar(req: AiConversaRequest): Promise<AiResult>;
 }

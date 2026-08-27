@@ -1,6 +1,6 @@
 import { connectToHub } from "./bridge";
 import { TelemetryClient } from "./telemetry";
-import type { ExperienciaHandle } from "./types";
+import type { ExperienciaHandle, OpcoesDeChamada } from "./types";
 export * from "./types";
 
 type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -38,15 +38,26 @@ export async function createExperiencia(meta: {
   });
 
   /**
-   * Fetch com timeout (10s) e retry: GET tenta de novo em falha de rede/5xx
+   * Fetch com timeout e retry: GET tenta de novo em falha de rede/5xx
    * (idempotente); POST/PUT/PATCH/DELETE NUNCA — o caller decide se reenvia.
+   *
+   * O timeout default segue 10s. Rota que espera geração de texto passa
+   * `timeoutMs` explícito (ver `OpcoesDeChamada`) — é decisão de QUEM CHAMA,
+   * porque só ela sabe se o que está do outro lado é um SELECT ou um modelo.
    */
-  async function call<T>(method: MetodoHttp, path: string, body?: unknown): Promise<T> {
+  const TIMEOUT_PADRAO_MS = 10_000;
+
+  async function call<T>(
+    method: MetodoHttp,
+    path: string,
+    body?: unknown,
+    opcoes?: OpcoesDeChamada,
+  ): Promise<T> {
     const tentativas = method === "GET" ? 2 : 1;
     let ultimoErro: unknown;
     for (let i = 0; i < tentativas; i += 1) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 10_000);
+      const timer = setTimeout(() => controller.abort(), opcoes?.timeoutMs ?? TIMEOUT_PADRAO_MS);
       try {
         const res = await fetch(`${init.apiUrl}${path}`, {
           method,
@@ -76,11 +87,11 @@ export async function createExperiencia(meta: {
     aluno: init.aluno,
     config: init.config,
     api: {
-      get: (p) => call("GET", p),
-      post: (p, b) => call("POST", p, b),
-      put: (p, b) => call("PUT", p, b),
-      patch: (p, b) => call("PATCH", p, b),
-      delete: (p) => call("DELETE", p),
+      get: (p, o) => call("GET", p, undefined, o),
+      post: (p, b, o) => call("POST", p, b, o),
+      put: (p, b, o) => call("PUT", p, b, o),
+      patch: (p, b, o) => call("PATCH", p, b, o),
+      delete: (p, o) => call("DELETE", p, undefined, o),
     },
     ai: { gerar: (input) => call("POST", "/ai/gerar", { ...input, expId: meta.expId }) },
     track: (verbo, objeto, dados) => telemetry.track({ verbo, objeto, ...dados }),

@@ -38,6 +38,9 @@ class ProviderFake implements AiProvider {
   generateImage(): Promise<Buffer> {
     throw new Error("não usado");
   }
+  conversar(): Promise<AiResult> {
+    throw new Error("não usado");
+  }
 }
 
 const config = new ConfigService({ AI_DAILY_TOKEN_QUOTA_PER_ALUNO: 20000, AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000 });

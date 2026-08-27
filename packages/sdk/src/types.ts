@@ -58,16 +58,31 @@ export interface TelemetryEvent {
   contexto?: Record<string, unknown>;
 }
 
+/**
+ * Opções de UMA chamada à api. Aditivo: quem não passa nada mantém o
+ * comportamento de sempre.
+ *
+ * `timeoutMs` existe porque o teto de 10 s do SDK é certo para leitura de
+ * catálogo e ERRADO para rota que espera um modelo de linguagem: um turno de
+ * conversa com ferramentas leva de dez a trinta segundos, e o `AbortController`
+ * cortava a resposta que já estava sendo gerada — o aluno via "não consegui
+ * responder" enquanto a api tinha respondido. Subir o default para todo mundo
+ * seria pior: uma api travada deixaria toda experiência pendurada meio minuto.
+ */
+export interface OpcoesDeChamada {
+  timeoutMs?: number;
+}
+
 export interface ExperienciaHandle {
   aluno: Aluno;
   config: Record<string, unknown>;
   api: {
-    get<T = unknown>(path: string): Promise<T>;
-    post<T = unknown>(path: string, body?: unknown): Promise<T>;
+    get<T = unknown>(path: string, opcoes?: OpcoesDeChamada): Promise<T>;
+    post<T = unknown>(path: string, body?: unknown, opcoes?: OpcoesDeChamada): Promise<T>;
     /** Aditivos (exp-90): salvar/renomear/excluir. Sem retry — só GET reenvia. */
-    put<T = unknown>(path: string, body?: unknown): Promise<T>;
-    patch<T = unknown>(path: string, body?: unknown): Promise<T>;
-    delete<T = unknown>(path: string): Promise<T>;
+    put<T = unknown>(path: string, body?: unknown, opcoes?: OpcoesDeChamada): Promise<T>;
+    patch<T = unknown>(path: string, body?: unknown, opcoes?: OpcoesDeChamada): Promise<T>;
+    delete<T = unknown>(path: string, opcoes?: OpcoesDeChamada): Promise<T>;
   };
   ai: { gerar(input: { atividade: string; mensagem: string }): Promise<{ texto: string }> };
   track(verbo: TelemetryEvent["verbo"], objeto: string, dados?: Omit<TelemetryEvent, "verbo" | "objeto">): void;

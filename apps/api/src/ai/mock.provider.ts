@@ -1,4 +1,4 @@
-import type { AiJsonRequest, AiProvider, AiRequest, AiResult } from "./provider";
+import type { AiConversaRequest, AiJsonRequest, AiProvider, AiRequest, AiResult } from "./provider";
 import { ErroDeGeracao } from "./provider";
 
 /**
@@ -57,5 +57,52 @@ export class MockProvider implements AiProvider {
   /** Falha fechada: em dev todo post nasce com arte procedural (fallback). */
   async generateImage(_prompt: string): Promise<Buffer> {
     throw new ErroDeGeracao("[mock] generateImage sem implementação — use o fallback procedural.");
+  }
+
+  /**
+   * Conversa com ferramentas, determinística. Ao contrário dos dois métodos
+   * acima, este NÃO falha fechado: uma experiência de conversa não tem
+   * fallback autorado, e sem isto `AI_PROVIDER=mock` deixaria a missão sem
+   * abrir em dev — que é justamente onde o mock existe para servir.
+   *
+   * Ele **chama a primeira ferramenta declarada** de propósito: o caminho de
+   * function-calling é a parte nova e arriscada do contrato, e um mock que
+   * devolvesse texto sem tocar nas ferramentas deixaria os testes passando com
+   * o laço de voltas nunca exercitado.
+   *
+   * As falas não têm DÍGITO nenhum: é comum a regra de domínio recusar número
+   * que não tenha vindo de ferramenta, e o mock não deve tropeçar nela.
+   */
+  async conversar(req: AiConversaRequest): Promise<AiResult> {
+    const tentativas = req.tentativas ?? 3;
+    const maxVoltas = req.maxVoltas ?? 6;
+    let tokens = 0;
+    let ultimoErro = "";
+
+    for (let tentativa = 1; tentativa <= tentativas; tentativa += 1) {
+      let voltas = 0;
+      if (req.ferramentas && maxVoltas > 0 && tentativa === 1) {
+        const primeira = req.ferramentas.declaracoes[0]?.nome;
+        if (primeira) {
+          await req.ferramentas.executar(primeira, {});
+          voltas = 1;
+        }
+      }
+      tokens += 120;
+
+      // A última tentativa baixa a exigência, como no provider real: uma frase.
+      const texto =
+        tentativa === tentativas
+          ? "[mock] Preciso consultar uma fonte antes de responder."
+          : "[mock] Consultei o que estava disponível e já podemos seguir. Por onde você quer começar?";
+
+      const motivos = req.validar?.(texto) ?? [];
+      if (motivos.length === 0) {
+        return { texto, tokensUsados: tokens, finishReason: "STOP", voltas, tentativas: tentativa };
+      }
+      ultimoErro = motivos.join("; ").slice(0, 300);
+    }
+
+    throw new ErroDeGeracao("[mock] nenhuma fala passou pela validação do domínio.", ultimoErro);
   }
 }

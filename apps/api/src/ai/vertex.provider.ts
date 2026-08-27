@@ -1,6 +1,13 @@
 import { GoogleAuth } from "google-auth-library";
 import { Agent } from "undici";
-import type { AiJsonRequest, AiJsonSchema, AiProvider, AiRequest, AiResult } from "./provider";
+import type {
+  AiConversaRequest,
+  AiJsonRequest,
+  AiJsonSchema,
+  AiProvider,
+  AiRequest,
+  AiResult,
+} from "./provider";
 import { ErroDeGeracao } from "./provider";
 
 /**
@@ -82,9 +89,22 @@ export function thinkingConfig(): Record<string, unknown> {
   return { thinkingConfig: { thinkingBudget: budget } };
 }
 
+/**
+ * Uma parte do turno do modelo. `thought: true` marca raciocínio — que NÃO é
+ * fala: incluí-lo faria o pensamento do modelo aparecer na tela do aluno.
+ */
+type ParteVertex = {
+  text?: string;
+  thought?: boolean;
+  functionCall?: { name?: string; args?: Record<string, unknown> };
+  functionResponse?: { name?: string; response: Record<string, unknown> };
+};
+
+type ConteudoVertex = { role?: string; parts?: ParteVertex[] };
+
 type RespostaGenerate = {
   candidates?: Array<{
-    content?: { parts?: Array<{ text?: string }> };
+    content?: ConteudoVertex;
     finishReason?: string;
   }>;
   usageMetadata?: { totalTokenCount?: number; thoughtsTokenCount?: number };
@@ -209,6 +229,137 @@ export class VertexProvider implements AiProvider {
     throw new ErroDeGeracao("Falha ao gerar conteúdo estruturado.", ultimoErro);
   }
 
+  /**
+   * Conversa multi-turno com ferramentas (`AiProvider.conversar`).
+   *
+   * Duas camadas, e a ordem importa:
+   *   - `umaTentativa()` é o laço de FERRAMENTA — o modelo pede `usar_dados`, a
+   *     api roda, o resultado volta, o modelo narra. Até `maxVoltas` idas.
+   *   - `conversar()` é o laço de TENTATIVA — se a fala for recusada por
+   *     `validar`, o motivo entra no prompt e ele tenta de novo sabendo por quê.
+   *
+   * O tempo todo `tokens` acumula, inclusive nas tentativas rejeitadas: foi
+   * pago, e quem tem teto de custo por sessão precisa contar o que foi pago.
+   */
+  async conversar(req: AiConversaRequest): Promise<AiResult> {
+    const maxVoltas = req.maxVoltas ?? 6;
+    const tentativas = req.tentativas ?? 3;
+    const declaracoes = req.ferramentas?.declaracoes ?? [];
+    const tools =
+      declaracoes.length > 0
+        ? [
+            {
+              functionDeclarations: declaracoes.map((f) => ({
+                name: f.nome,
+                description: f.descricao,
+                parameters: paraSchemaVertex(f.parametros),
+              })),
+            },
+          ]
+        : undefined;
+
+    let tokens = 0;
+
+    const umaTentativa = async (reforco: string): Promise<{ texto: string; voltas: number; finishReason?: string }> => {
+      // O histórico é remontado a cada tentativa: a tentativa anterior foi
+      // REJEITADA, e deixar a fala recusada no contexto ensinaria o erro.
+      const contents: ConteudoVertex[] = req.historico.map((m) => ({
+        role: m.papel === "aluno" ? "user" : "model",
+        parts: [{ text: m.texto }],
+      }));
+
+      for (let volta = 0; volta < maxVoltas; volta += 1) {
+        const res = await fetch(this.endpoint(), {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${await this.accessToken()}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: req.system + reforco }] },
+            contents,
+            ...(tools ? { tools } : {}),
+            generationConfig: {
+              maxOutputTokens: req.maxTokens ?? 3000,
+              ...(req.temperatura !== undefined ? { temperature: req.temperatura } : {}),
+              ...thinkingConfig(),
+            },
+          }),
+          ...({ dispatcher } as Record<string, unknown>),
+        });
+        if (!res.ok) {
+          const corpo = (await res.text()).slice(0, 300);
+          throw new ErroDeGeracao(`Vertex respondeu ${res.status}`, corpo);
+        }
+        const data = (await res.json()) as RespostaGenerate;
+        tokens += data.usageMetadata?.totalTokenCount ?? 0;
+
+        const candidato = data.candidates?.[0];
+        const partes = candidato?.content?.parts ?? [];
+        const chamada = partes.find((parte) => parte.functionCall)?.functionCall;
+
+        if (!chamada || !req.ferramentas) {
+          // A fala sai das partes, DESCARTANDO as de raciocínio: com pensamento
+          // ligado, um turno com ferramenta trazia o texto só na parte de
+          // `thought`, e ler tudo punha o raciocínio do modelo na tela.
+          const texto = partes
+            .filter((parte) => parte.thought !== true && typeof parte.text === "string")
+            .map((parte) => parte.text)
+            .join("");
+          return { texto, voltas: volta, finishReason: candidato?.finishReason };
+        }
+
+        const resultado = await req.ferramentas.executar(chamada.name ?? "", chamada.args ?? {});
+
+        // O turno do modelo volta VERBATIM. Remontar `{ functionCall }` à mão
+        // perde o `thoughtSignature` que veio junto e o Vertex recusa a
+        // continuação com 400 — a ferramenta roda, mas a narrativa nunca chega.
+        contents.push(candidato?.content ?? { role: "model", parts: [{ functionCall: chamada }] });
+        contents.push({
+          role: "user",
+          parts: [{ functionResponse: { name: chamada.name, response: { resultado } } }],
+        });
+      }
+
+      // Estourar as voltas não é resposta: é o modelo preso pedindo ferramenta
+      // para sempre. Vira motivo de recusa, e a tentativa seguinte pode salvar.
+      return { texto: "", voltas: maxVoltas, finishReason: "MAX_VOLTAS" };
+    };
+
+    let ultimoErro = "";
+    for (let tentativa = 1; tentativa <= tentativas; tentativa += 1) {
+      const reforco = ultimoErro
+        ? `\n\nSua resposta anterior foi rejeitada por: ${ultimoErro}. Corrija.` +
+          (tentativa === tentativas
+            ? " ÚLTIMA CHANCE: responda em UMA frase curta, SEM chamar ferramenta e SEM escrever" +
+              " nome de ferramenta nem colchete de protocolo. " +
+              (req.socorro ?? "Diga o que você precisaria consultar para responder.")
+            : "")
+        : "";
+
+      const { texto, voltas, finishReason } = await umaTentativa(reforco);
+      const motivos = [
+        ...(req.validar?.(texto) ?? []),
+        // Vazio passava por toda a validação — nenhum termo proibido, nenhum
+        // número, tamanho zero — e só estourava depois, como erro seco.
+        ...(texto.trim().length === 0 ? ["você não escreveu nada. Responda em uma frase curta"] : []),
+        // Cortada no teto é cortada no meio de uma frase. Sem isto ela chegava
+        // ao aluno assim, em silêncio.
+        ...(finishReason === "MAX_TOKENS"
+          ? ["sua resposta foi cortada por ser longa demais. Responda em bem menos palavras"]
+          : []),
+      ];
+
+      if (motivos.length === 0) {
+        return { texto, tokensUsados: tokens, finishReason, voltas, tentativas: tentativa };
+      }
+      ultimoErro = motivos.join("; ").slice(0, 300);
+      if (tentativa < tentativas) await new Promise((r) => setTimeout(r, 400 * tentativa));
+    }
+
+    throw new ErroDeGeracao("O modelo não respondeu de forma aceitável.", ultimoErro);
+  }
+
   /** Imagem via modelo próprio (VERTEX_IMAGE_MODEL) com responseModalities —
    *  porte do `gerarImagemBytes` do origem para o endpoint Vertex/ADC. */
   async generateImage(prompt: string): Promise<Buffer> {
@@ -251,5 +402,6 @@ function paraSchemaVertex(schema: AiJsonSchema): Record<string, unknown> {
     ...(schema.items ? { items: paraSchemaVertex(schema.items) } : {}),
     ...(schema.required ? { required: schema.required } : {}),
     ...(schema.enum ? { enum: schema.enum } : {}),
+    ...(schema.description ? { description: schema.description } : {}),
   };
 }
