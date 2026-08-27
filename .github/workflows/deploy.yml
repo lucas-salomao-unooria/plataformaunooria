@@ -74,12 +74,20 @@ jobs:
             echo "migrations=$(mudou apps/api/prisma/migrations)"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Build só o que mudou
+      - name: Build
         env:
           # Mídia pesada (52 MB de mp4 da exp-02) não entra no bundle: o build
           # aponta para o bucket de assets. Vazio = ./videos (dev).
           VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp-02-unootube/videos
-        run: pnpm turbo build --filter='...[HEAD^]'
+          FORCAR: ${{ inputs.forcar }}
+        # Com `forcar`, o laço de publicação percorre TODAS as experiências —
+        # então o build também precisa ser de todas, senão falta o `dist/`.
+        run: |
+          if [ "$FORCAR" = "true" ]; then
+            pnpm turbo build
+          else
+            pnpm turbo build --filter='...[HEAD^]'
+          fi
 
       # --- api: imagem -> migrations -> serviço ---------------------------------
       # A ORDEM importa: o schema novo tem que estar no banco antes que a revisão
@@ -149,6 +157,15 @@ jobs:
           for dir in apps/experiencias/*/; do
             exp=$(basename "$dir")
             if [ "$exp" = "_template" ]; then continue; fi
+            # Pasta de experiencia ainda incompleta (sem package.json, sem
+            # manifesto, ou nao buildada) nao e erro de deploy — e trabalho em
+            # andamento. Publicar exige as tres coisas.
+            if [ ! -f "$dir/package.json" ] || [ ! -f "$dir/public/experiencia.json" ]; then
+              echo "· $exp sem package.json/manifesto — pulando"; continue
+            fi
+            if [ ! -d "$dir/dist" ]; then
+              echo "· $exp sem dist — pulando"; continue
+            fi
             if [ "$FORCAR" != "true" ] && git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk; then continue; fi
             ver=$(node -p "require('./$dir/package.json').version")
 
