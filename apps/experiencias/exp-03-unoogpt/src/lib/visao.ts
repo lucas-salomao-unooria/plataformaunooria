@@ -1,4 +1,4 @@
-import type { EstimativaDoBairro } from '../modelo/estimativa';
+import type { EstimativaDoBairro } from './tipos';
 
 /**
  * As visões do mapa. PURO.
@@ -88,4 +88,27 @@ export function dadoDaVisao(
         confianca: estimativa.confianca,
       };
   }
+}
+
+/**
+ * Quais itens a MARGEM não separa.
+ *
+ * Porte de `agruparEmpatados` (`modelo/estimativa.ts` da api). Vem para o
+ * cliente porque é ordenação e sobreposição de faixas — nada do modelo entra
+ * aqui, e é a tela que precisa saber quando NÃO desenhar uma ordem: duas linhas
+ * cujas faixas se cruzam não são primeira e segunda, e imprimi-las em sequência
+ * inventa um ranking que o dado não sustenta.
+ */
+export function agruparEmpatados<T extends { chave: string; esperado: number; min: number; max: number }>(
+  itens: readonly T[],
+): T[][] {
+  const visiveis = [...itens].sort((a, b) => b.esperado - a.esperado);
+  const grupos: T[][] = [];
+  for (const item of visiveis) {
+    const ultimo = grupos[grupos.length - 1];
+    const cruza = ultimo?.some((x) => item.min <= x.max && x.min <= item.max);
+    if (ultimo && cruza) ultimo.push(item);
+    else grupos.push([item]);
+  }
+  return grupos.filter((g) => g.length > 1);
 }

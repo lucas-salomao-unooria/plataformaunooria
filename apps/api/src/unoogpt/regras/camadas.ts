@@ -2,6 +2,8 @@ import { MISSAO_TEMPESTADE } from '../cenario';
 import { CONJUNTOS } from '../modelo/conjuntos';
 import { estimar, type EstimativaDoBairro } from '../modelo/estimativa';
 import { sementeDe } from '../modelo/aleatorio';
+import { chegaATempo } from '../modelo/tempestade';
+import { JANELA_CONFORTAVEL } from '../modelo/parametros';
 import type { BairroPublico } from './sanitizador';
 
 /**
@@ -10,10 +12,24 @@ import type { BairroPublico } from './sanitizador';
  * A regra que a tela 2 promete: nada aparece sem que um Conjunto o cubra. Não
  * existe caminho no código que revele a cidade inteira — de propósito.
  */
+/**
+ * O alcance de uma equipe, resolvido no servidor.
+ *
+ * `aperto` responde "chega, mas raspando" — no origem era a constante
+ * `JANELA_CONFORTAVEL` no cliente. Mandar o booleano em vez da constante evita
+ * que o bundle carregue um parâmetro de calibragem do modelo.
+ */
+function alcanceDe(slug: string, equipe: 'alfa' | 'bravo', minutosGastos: number) {
+  const r = chegaATempo(slug, equipe, minutosGastos);
+  return { passa: r.chegou, folga: r.folga, aperto: r.folga < JANELA_CONFORTAVEL, motivo: r.motivo };
+}
+
 export function montarMapa(
   sessaoId: string,
   rodada: number,
   conjuntos: readonly string[],
+  /** Minuto da cidade AGORA: é dele que sai a folga de chegada de cada equipe. */
+  minutosGastos = 0,
 ): { bairros: BairroPublico[]; estimativas: EstimativaDoBairro[] } {
   const estimativas = estimar(conjuntos, sementeDe(`${sessaoId}:${rodada}`));
   const porBairro = new Map(estimativas.map((e) => [e.bairro, e]));
@@ -27,6 +43,12 @@ export function montarMapa(
     h: b.h,
     // O tempo de deslocamento só aparece com o conjunto de malha viária.
     tempos: conjuntos.includes('viaria') ? { alfa: b.tA, bravo: b.tB } : null,
+    alcance: conjuntos.includes('viaria')
+      ? {
+          alfa: alcanceDe(b.slug, 'alfa', minutosGastos),
+          bravo: alcanceDe(b.slug, 'bravo', minutosGastos),
+        }
+      : null,
     // PONTO CEGO É AUSÊNCIA, NÃO ZERO. `estimar` devolve uma linha para TODO
     // bairro, e a do bairro sem cobertura vem com zeros — o que, atravessando
     // até a tela, imprimiria "0 pessoas em risco na Ribeirinha" onde a verdade

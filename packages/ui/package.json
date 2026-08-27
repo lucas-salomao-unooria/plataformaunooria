@@ -10,6 +10,7 @@
     "./ds": "./src/ds.ts",
     "./ds-insta": "./src/ds-insta.ts",
     "./ds-unootube": "./src/ds-unootube.ts",
+    "./ds-chatgpt": "./src/ds-chatgpt.ts",
     "./styles/plataforma.css": "./styles/plataforma.css"
   },
   "scripts": {

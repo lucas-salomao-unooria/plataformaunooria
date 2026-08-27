@@ -1,4 +1,4 @@
-import type { RodadaDoModelo } from '../ferramentas';
+import type { RodadaDoModelo } from './tipos';
 
 /**
  * Quais cartões de leitura ficam abertos, e o que neles ainda é novidade.

@@ -1,5 +1,4 @@
 import { montarMapa, naoCarregados } from '../../src/unoogpt/regras/camadas';
-import { dadoDaVisao, nivelDeRisco } from '../../src/unoogpt/regras/visao';
 import { CONJUNTOS } from '../../src/unoogpt/modelo/conjuntos';
 import { MISSAO_TEMPESTADE } from '../../src/unoogpt/cenario';
 
@@ -9,6 +8,11 @@ const bairro = (m: ReturnType<typeof montarMapa>, slug: string) =>
 /**
  * A regra que a tela 2 promete ao aluno: o mapa é a leitura dos Conjuntos que
  * ele carregou — nada mais. Se este teste cair, a Missão mente na segunda tela.
+ *
+ * As asserções sobre a VISÃO (níveis de risco, faixa em vez de número seco)
+ * moraram aqui até o porte e agora vivem em
+ * `apps/experiencias/exp-03-unoogpt/src/lib/visao.test.ts`: `visao.ts` é
+ * lógica de tela e mudou de lado junto com ela.
  */
 describe('invariante: o mapa é a leitura dos Conjuntos', () => {
   it('sem Conjunto, nenhum bairro mostra nada', () => {
@@ -38,26 +42,6 @@ describe('invariante: o mapa é a leitura dos Conjuntos', () => {
       alfa: 41,
       bravo: 12,
     });
-  });
-
-  it('a visão não inventa dado onde não há cobertura', () => {
-    const m = montarMapa('s1', 0, ['estudo']);
-    expect(dadoDaVisao(bairro(m, 'morroalto').estimativa ?? undefined, 'risco')).toBeNull();
-    expect(dadoDaVisao(bairro(m, 'ribeirinha').estimativa ?? undefined, 'risco')).not.toBeNull();
-  });
-
-  it('toda visão mostra faixa, nunca número seco', () => {
-    const m = montarMapa('s1', 0, ['censo', 'sensores']);
-    for (const visao of ['risco', 'pessoas', 'confianca'] as const) {
-      const dado = dadoDaVisao(bairro(m, 'valeverde').estimativa ?? undefined, visao)!;
-      expect(dado.faixa).toBeTruthy();
-    }
-  });
-
-  it('os cortes de risco separam as três faixas', () => {
-    expect(nivelDeRisco(0.12)).toBe('baixo');
-    expect(nivelDeRisco(0.46)).toBe('medio');
-    expect(nivelDeRisco(0.82)).toBe('alto');
   });
 
   it('o que não foi carregado é rastreável — é a peça final do Resultado', () => {

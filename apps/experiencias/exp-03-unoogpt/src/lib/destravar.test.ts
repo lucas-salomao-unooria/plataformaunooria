@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest';
 import {
   CHAMADA_DESTRAVAR,
   PERGUNTAS_PRONTAS,
   TURNOS_ATE_DESTRAVAR,
   estaTravado,
-} from '../../src/unoogpt/regras/destravar';
+} from './destravar';
 
 const agente = (tipo?: string) => ({ papel: 'agente', anexo: tipo ? { tipo } : null });
 const aluno = { papel: 'aluno', anexo: null };

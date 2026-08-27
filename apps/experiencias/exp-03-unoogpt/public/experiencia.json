@@ -1,0 +1,14 @@
+{
+  "id": "exp-03-unoogpt",
+  "nome": "unooGPT — Decidir com o que os dados mostram",
+  "versao": "1.0.0",
+  "series": ["2EM"],
+  "capabilities": ["telemetria", "ia"],
+  "verbos": {
+    "attempted": "briefing, recomeco",
+    "interacted": "turno, fontes, alocacao",
+    "progressed": "investigacao",
+    "scored": "desfecho",
+    "completed": "exp-03-unoogpt"
+  }
+}

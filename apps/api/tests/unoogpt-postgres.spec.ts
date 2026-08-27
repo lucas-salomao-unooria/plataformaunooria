@@ -247,8 +247,18 @@ describe("decidir, justificar e enfrentar a tempestade", () => {
 
     expect(r.desfecho.totais.salvas).toBeGreaterThanOrEqual(0);
     // A FAIXA é a manchete: a mesma decisão não repete igual.
-    expect(r.faixa.min).toBeLessThanOrEqual(r.faixa.media);
-    expect(r.faixa.max).toBeGreaterThanOrEqual(r.faixa.media);
+    expect(r.esperado.faixa[0]).toBeLessThanOrEqual(r.esperado.media);
+    expect(r.esperado.faixa[1]).toBeGreaterThanOrEqual(r.esperado.media);
+    // E as amostras são a variância VISTA, não afirmada.
+    expect(r.esperado.amostras.length).toBeGreaterThan(0);
+    // A lista do que ele nunca consultou não leva o nome TÉCNICO da fonte: o
+    // catálogo diz que ele "aparece no painel do professor, nunca para o aluno".
+    for (const f of r.naoConsultados) {
+      expect(f).not.toHaveProperty("nome");
+      expect(f).not.toHaveProperty("instrucao");
+      expect(f).not.toHaveProperty("vies");
+      expect(f).not.toHaveProperty("cobertura");
+    }
     expect(r.trilha.length).toBeGreaterThan(0);
 
     // Idempotente por tentativa: enfrentar de novo não sorteia outra chuva.

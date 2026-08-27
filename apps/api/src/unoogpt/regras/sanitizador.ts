@@ -16,6 +16,21 @@ export interface BairroPublico {
   /** So com o conjunto de malha viaria carregado. */
   tempos: { alfa: number; bravo: number } | null;
   /**
+   * Se cada equipe ALCANÇA este bairro antes da chuva, e com quanta folga.
+   *
+   * Vem do SERVIDOR e não do navegador: quem responde isso é `chegaATempo`, que
+   * conhece o bloqueio de via e o prazo. O projeto de origem calculava no
+   * cliente — o que punha a matemática de chegada no bundle e deixava o aluno
+   * antecipar parte do desfecho. `aperto` já vem resolvido pelo mesmo motivo:
+   * era a constante `JANELA_CONFORTAVEL` no cliente.
+   *
+   * `null` quando a malha viária não foi carregada — o mesmo portão do `tempos`.
+   */
+  alcance: {
+    alfa: { passa: boolean; folga: number; aperto: boolean; motivo: string | null };
+    bravo: { passa: boolean; folga: number; aperto: boolean; motivo: string | null };
+  } | null;
+  /**
    * O que o modelo enxerga deste bairro. `null` = nenhum Conjunto carregado o
    * cobre, e o cartao fica em branco. Branco e informacao.
    */

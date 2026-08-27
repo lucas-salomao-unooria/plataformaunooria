@@ -16,6 +16,7 @@ import { type Alocacao, esperadoDe, simular } from "./modelo/tempestade";
 import { sementeDe } from "./modelo/aleatorio";
 import { passoDerivado, type PassoDerivavel } from "./regras/anexos";
 import { montarMapa, naoCarregados, oQueSobrou } from "./regras/camadas";
+import { projetar } from "./regras/projecao";
 import { TETO_CHAMADAS_SESSAO, TETO_TOKENS_SESSAO } from "./regras/defaults";
 import {
   INTUICAO,
@@ -101,10 +102,19 @@ export class UnoogptService {
         select: { papel: true, texto: true, anexo: true, criadoEm: true },
       });
 
-      const { bairros } = montarMapa(this.semente(escolaId, alunoId), sessao.rodadas, sessao.conjuntos);
+      const { bairros } = montarMapa(this.semente(escolaId, alunoId), sessao.rodadas, sessao.conjuntos, estado.minutosGastos);
 
       return {
         ficha: sanitizarFicha(MISSAO_TEMPESTADE),
+        // A PROJEÇÃO é servida, nunca calculada no navegador: ela usa
+        // `chegaATempo` e a capacidade da equipe, e um bundle capaz de computar
+        // isso deixaria o aluno prever o desfecho antes de enviar.
+        projecao: projetar(
+          bairros,
+          { alfa: sessao.alocacaoAlfa, bravo: sessao.alocacaoBravo },
+          estado.minutosGastos,
+          sessao.conjuntos.includes("viaria"),
+        ),
         sessao: sanitizarSessao(sessao),
         relogio: sanitizarRelogio(relogio, agora),
         estado: {
@@ -287,7 +297,7 @@ export class UnoogptService {
           anexo: anexo ?? null,
           sessao: sanitizarSessao(atualizada),
           relogio: sanitizarRelogio(relogioAgora, new Date()),
-          mapa: montarMapa(semente, atualizada.rodadas, atualizada.conjuntos).bairros,
+          mapa: montarMapa(semente, atualizada.rodadas, atualizada.conjuntos, depois.minutosGastos).bairros,
           orcamento: { gastas: atualizada.perguntasGastas, teto: TETO_DE_PERGUNTAS },
           justificativas: opcoesDeJustificativa(atualizada.conjuntos),
         };
@@ -452,7 +462,24 @@ export class UnoogptService {
         atual.tentativa,
         marcoDeAlocacao(atual.minutosGastos, { alfa: atualizada.alocacaoAlfa, bravo: atualizada.alocacaoBravo }),
       );
-      return sanitizarSessao(atualizada);
+      const { bairros } = montarMapa(
+        this.semente(escolaId, alunoId),
+        atualizada.rodadas,
+        atualizada.conjuntos,
+        atual.minutosGastos,
+      );
+      return {
+        sessao: sanitizarSessao(atualizada),
+        // "chega com N de sobra" vem do servidor: sem isto o Cientista registra
+        // um destino inalcançável sem uma palavra, e o aluno só descobre no
+        // desfecho — quando não dá mais para escolher diferente.
+        projecao: projetar(
+          bairros,
+          { alfa: atualizada.alocacaoAlfa, bravo: atualizada.alocacaoBravo },
+          atual.minutosGastos,
+          atualizada.conjuntos.includes("viaria"),
+        ),
+      };
     }, escolaId);
   }
 
@@ -555,22 +582,78 @@ export class UnoogptService {
       const alocacao: Alocacao = { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo };
       const faixa = esperadoDe(alocacao, { saidaEmMinutos: sim.minutoDaSaida }, 200);
 
+      // `tentativa` e `ordem` vão junto: a tela do resultado agrupa a trilha por
+      // tentativa para o aluno comparar duas rodadas lado a lado.
       const marcos = await tx.unoogptMarco.findMany({
-        where: { escolaId, alunoId, tentativa: atual.tentativa },
+        where: { escolaId, alunoId },
+        orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
+        select: { tentativa: true, ordem: true, tipo: true, minuto: true, dados: true },
+      });
+
+      // Todas as tentativas, para o aluno COMPARAR. Recomeçar abre tentativa
+      // nova em vez de apagar a anterior justamente por isto: ver que a mesma
+      // cidade dá números diferentes é a lição sobre variância.
+      const tentativas = await tx.unoogptSimulacao.findMany({
+        where: { escolaId, alunoId },
         orderBy: { ordem: "asc" },
-        select: { tipo: true, minuto: true, dados: true },
+        select: { ordem: true, alocacao: true, desfecho: true, minutoDaSaida: true },
       });
 
       return {
         desfecho,
-        // A FAIXA é a manchete: 20 corridas da mesma decisão, para "não repete
+        // A FAIXA é a manchete: corridas da MESMA decisão, para "não repete
         // igual" sair do texto e virar gráfico.
-        faixa: { media: faixa.media, min: faixa.faixa[0], max: faixa.faixa[1], amostras: faixa.amostras },
+        esperado: {
+          media: faixa.media,
+          faixa: faixa.faixa,
+          vitimasMedia: faixa.vitimasMedia,
+          vitimasFaixa: faixa.vitimasFaixa,
+          amostras: faixa.amostras,
+        },
         minutoDaSaida: sim.minutoDaSaida,
         // Um FATO com nome de bairro e número de pessoas — não um veredito.
         // Quem transforma fato em lição é o professor, no debate.
         sobrou: oQueSobrou(desfecho.porBairro, atual.conjuntos),
-        naoConsultados: naoCarregados(atual.conjuntos).map((c) => ({ slug: c.slug, rotulo: c.rotuloCurto })),
+        // A lista do que ele NUNCA consultou é a peça mais forte do fechamento.
+        // `nome` NÃO vai: é o nome técnico, e o comentário do catálogo é
+        // explícito — "aparece no painel do professor, nunca para o aluno".
+        // `instrucao` (o viés), `vies` e `cobertura` também não: são o
+        // instrumento, e são o material do debate.
+        naoConsultados: naoCarregados(atual.conjuntos).map((c) => ({
+          slug: c.slug,
+          comoFalar: c.comoFalar,
+          rotuloCurto: c.rotuloCurto,
+          serve: c.serve,
+        })),
+        // Cada tentativa com o desfecho e a faixa DELA: a tela compara rodadas
+        // (delta de resgatados e de vítimas), e é essa comparação que ensina
+        // que a mesma cidade dá números diferentes. `esperadoDe` roda por
+        // tentativa — são no máximo três, e cada corrida cobre 4 bairros.
+        tentativas: tentativas.map((t) => {
+          const d = t.desfecho as unknown as ReturnType<typeof simular>;
+          const a = t.alocacao as { alfa?: string | null; bravo?: string | null };
+          const esperadoDela = esperadoDe(
+            { alfa: a.alfa ?? null, bravo: a.bravo ?? null },
+            { saidaEmMinutos: t.minutoDaSaida },
+            200,
+          );
+          return {
+            ordem: t.ordem,
+            alocacao: { alfa: a.alfa ?? null, bravo: a.bravo ?? null },
+            minutoDaSaida: t.minutoDaSaida,
+            emRisco: d.totais.emRisco,
+            salvas: d.totais.salvas,
+            vitimas: d.totais.vitimas,
+            desfecho: d,
+            esperado: {
+              media: esperadoDela.media,
+              faixa: esperadoDela.faixa,
+              vitimasMedia: esperadoDela.vitimasMedia,
+              vitimasFaixa: esperadoDela.vitimasFaixa,
+              amostras: esperadoDela.amostras,
+            },
+          };
+        }),
         trilha: marcos,
         justificativas: { alfa: atual.justificativaAlfa, bravo: atual.justificativaBravo },
       };
@@ -1025,7 +1108,7 @@ export class UnoogptService {
       });
       return {
         sessao: sanitizarSessao(atual),
-        mapa: montarMapa(this.semente(escolaId, alunoId), atual.rodadas, conjuntos).bairros,
+        mapa: montarMapa(this.semente(escolaId, alunoId), atual.rodadas, conjuntos, atual.minutosGastos).bairros,
         justificativas: opcoesDeJustificativa(conjuntos),
       };
     }, escolaId);

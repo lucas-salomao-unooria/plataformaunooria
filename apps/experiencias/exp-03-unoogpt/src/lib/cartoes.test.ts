@@ -1,5 +1,6 @@
-import { indiceDoUltimoCartao, oQueMudou, rotuloColapsado } from '../../src/unoogpt/regras/cartoes';
-import type { RodadaDoModelo } from '../../src/unoogpt/ferramentas';
+import { describe, expect, it } from 'vitest';
+import { indiceDoUltimoCartao, oQueMudou, rotuloColapsado } from './cartoes';
+import type { RodadaDoModelo } from './tipos';
 
 const rodada = (empates: string[][], conflitos: string[]) =>
   ({
