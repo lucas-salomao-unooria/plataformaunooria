@@ -17,6 +17,7 @@ import { GeracaoModule } from "./geracao/geracao.module";
 import { AnaliseModule } from "./analise/analise.module";
 import { PerfisModule } from "./perfis/perfis.module";
 import { UnootubeModule } from "./unootube/unootube.module";
+import { UnoogptModule } from "./unoogpt/unoogpt.module";
 import { VilaModule } from "./vila/vila.module";
 import { StorageModule } from "./object-storage/storage.module";
 import { PlanosModule } from "./planos/planos.module";
@@ -41,6 +42,7 @@ import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
     PerfisModule,
     AnaliseModule,
     UnootubeModule,
+    UnoogptModule,
     VilaModule,
     StorageModule,
     PlanosModule,

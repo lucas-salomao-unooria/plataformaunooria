@@ -53,6 +53,11 @@ model Turma {
   escola Escola @relation(fields: [escolaId], references: [id])
   alunos User[]
 
+  /// O Relógio da AULA da exp-03 mora em tabela DA EXPERIÊNCIA, não em coluna
+  /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
+  /// uma missão só faria toda experiência futura herdar o vocabulário dela.
+  unoogptRelogio UnoogptRelogioTurma[]
+
   @@unique([escolaId, nome])
   @@index([escolaId])
   @@map("turmas")
@@ -87,6 +92,8 @@ model User {
   vilaBolhas       VilaBolha[]       @relation("VilaBolhaAluno")
   bemEstarCiclos   BemEstarCiclo[]   @relation("BemEstarCicloProfessor")
   bemEstarCheckins BemEstarCheckin[] @relation("BemEstarCheckinProfessor")
+  /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por aluno.
+  unoogptSessoes   UnoogptSessao[]   @relation("UnoogptAluno")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -801,4 +808,199 @@ model BemEstarCheckin {
   @@unique([escolaId, professorId, dia])
   @@index([cicloId])
   @@map("exp_91_checkins")
+}
+
+// ---------------------------------------------------------------------------
+// exp-03-unoogpt — a Missão Tempestade (Serra do Sauá)
+//
+// Porte do projeto `gpturia`. Cinco tabelas, e NENHUMA coluna de prazo: houve
+// um `expires_at` de 30 dias no origem com uma rota de cron para cumpri-lo;
+// aqui não há job agendado, de propósito, e prazo que nenhuma rotina cumpre é
+// pior que prazo nenhum — quem lê o schema acredita nele. O caminho de
+// exclusão que existe de fato é "zerar a turma" (precedente da exp-70).
+//
+// Cinco colunas do origem NÃO vieram porque estavam mortas lá: `evidencias`
+// (só escrita), `camadas_reveladas` e `pergunta_id` (só escritas vazias),
+// `simulacoes_restantes` e `custo_cents` (zero leituras). Centavo virou token:
+// preço depende de tabela do vendor, token é o que o provider devolve.
+//
+// A sessão NÃO tem id próprio: a identidade é `(escola_id, aluno_id)`, vinda do
+// token, e os filhos apontam para o par. Foi o que dispensou a guarda
+// `donoDaSessao` do origem, onde a sessão era identificada por uuid na URL.
+// CHECKs e RLS vivem na migration.
+// ---------------------------------------------------------------------------
+
+/// Estado server-side de uma partida (uma linha por aluno, como a exp-02).
+model UnoogptSessao {
+  escolaId String  @map("escola_id")
+  alunoId  String  @map("aluno_id") @db.Uuid
+  /// Denormalizado da identidade: o painel do professor consulta por turma o
+  /// tempo todo, e resolver isso por join a cada leitura era o caminho para
+  /// esquecer o filtro em alguma consulta nova.
+  turmaId  String? @map("turma_id") @db.Uuid
+
+  /// abertura | orientacao | investigacao | resultado (CHECK na migration).
+  passo              String   @default("abertura")
+  /// Qual partida do aluno. Recomeçar ABRE tentativa nova em vez de apagar a
+  /// conversa: para o aluno a tela limpa, para o professor a aula continua
+  /// legível.
+  tentativa          Int      @default(1) @db.SmallInt
+  /// Minuto NARRATIVO decorrido desde as 17h00 — snapshot do que o relógio da
+  /// turma já produziu. A fonte da verdade é `exp_03_relogio_turma`; isto é o
+  /// instante congelado da última ação, e é o minuto de SAÍDA das equipes
+  /// quando a tempestade é enfrentada.
+  minutosGastos      Int      @default(0) @map("minutos_gastos")
+  /// Conjuntos de dados carregados no modelo. Acumulam em camadas: o mapa é a
+  /// leitura DELES, com o viés deles junto.
+  conjuntos          String[] @default([])
+  /// Quantas vezes o modelo já rodou nesta partida. Semeia o sorteio.
+  rodadas            Int      @default(0)
+  /// Perguntas de investigação gastas. Conta o GASTO, não o resto: mudar o
+  /// teto passa a valer para partida em curso.
+  perguntasGastas    Int      @default(0) @map("perguntas_gastas")
+  /// Slug do bairro de destino de cada equipe. O Cientista NÃO escolhe — ele
+  /// registra a escolha do aluno.
+  alocacaoAlfa       String?  @map("alocacao_alfa")
+  alocacaoBravo      String?  @map("alocacao_bravo")
+  /// Slug de um conjunto que o aluno carregou, ou 'intuicao'. O software não
+  /// julga a resposta; quem lê é o professor.
+  justificativaAlfa  String?  @map("justificativa_alfa")
+  justificativaBravo String?  @map("justificativa_bravo")
+
+  /// Teto de custo por SESSÃO (`regras/defaults.ts`). Soma voltas de
+  /// ferramenta e tentativas rejeitadas — o que foi pago, não o aproveitado.
+  tokensGastos Int @default(0) @map("tokens_gastos")
+  chamadasIa   Int @default(0) @map("chamadas_ia")
+
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  aluno      User               @relation("UnoogptAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  mensagens  UnoogptMensagem[]
+  marcos     UnoogptMarco[]
+  simulacoes UnoogptSimulacao[]
+
+  @@id([escolaId, alunoId])
+  @@index([escolaId])
+  @@index([escolaId, turmaId])
+  @@map("exp_03_sessoes")
+}
+
+/// A Transcrição: a conversa entre o aluno e o Cientista.
+///
+/// `texto` é CAIXA LIVRE escrita por menor de idade, e é o dado mais sensível
+/// da experiência. Ele existe porque o professor precisa ler a conversa no
+/// relatório — é o instrumento. Nunca vai a log, nunca à telemetria, e nenhuma
+/// rota de gestor o alcança (só o professor da escola).
+model UnoogptMensagem {
+  id        BigInt   @id @default(autoincrement())
+  escolaId  String   @map("escola_id")
+  alunoId   String   @map("aluno_id") @db.Uuid
+  /// aluno | agente (CHECK na migration).
+  papel     String
+  texto     String
+  /// Passo em que a fala aconteceu.
+  passo     String
+  /// Cartão anexado a esta fala: tendência do modelo, alocação, opções ou
+  /// desfecho. Fica na Transcrição para a conversa voltar inteira depois de um
+  /// F5 — da Investigação em diante tudo acontece no chat.
+  anexo     Json?
+  /// Se esta fala debitou uma Pergunta do orçamento.
+  debitou   Boolean  @default(false)
+  tentativa Int      @default(1) @db.SmallInt
+  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  sessao UnoogptSessao @relation(fields: [escolaId, alunoId], references: [escolaId, alunoId], onDelete: Cascade)
+
+  /// Paginação por id é estável; por timestamp não.
+  @@index([escolaId, alunoId, id])
+  @@map("exp_03_mensagens")
+}
+
+/// A trilha da decisão: o que o aluno fez, em que minuto da cidade.
+///
+/// `dados` traz SÓ dado público — nada de viés, Lacuna ou parâmetro oculto:
+/// este JSON chega ao navegador.
+model UnoogptMarco {
+  id        BigInt   @id @default(autoincrement())
+  escolaId  String   @map("escola_id")
+  alunoId   String   @map("aluno_id") @db.Uuid
+  tentativa Int      @db.SmallInt
+  /// Sequência dentro da tentativa.
+  ordem     Int
+  /// fontes | leitura | alocacao | envio (CHECK na migration).
+  tipo      String
+  /// Minuto do relógio em que aconteceu: vira hora da cidade na tela.
+  minuto    Int
+  dados     Json
+  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  sessao UnoogptSessao @relation(fields: [escolaId, alunoId], references: [escolaId, alunoId], onDelete: Cascade)
+
+  @@unique([escolaId, alunoId, tentativa, ordem])
+  @@index([escolaId, alunoId])
+  @@map("exp_03_marcos")
+}
+
+/// O desfecho de cada tentativa — o AGREGADO, que sobrevive ao "zerar a turma"
+/// do ponto de vista conceitual (é o que um relatório de rede leria) e é a
+/// única fonte para comparar duas gerações do prompt.
+model UnoogptSimulacao {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId      String   @map("escola_id")
+  alunoId       String   @map("aluno_id") @db.Uuid
+  ordem         Int
+  /// { v:1, alfa, bravo } — os slugs de destino.
+  alocacao      Json
+  /// { v:1, salvas, naoSalvas, porBairro, ... } vindo do motor.
+  desfecho      Json
+  /// Minuto da cidade em que as equipes saíram: é o que decidiu se cada uma
+  /// chegou. Guardado JUNTO do desfecho para a linha ser autoexplicativa.
+  minutoDaSaida Int      @map("minuto_da_saida")
+  /// Versão do prompt gravada JUNTO da saída: sem isso não se sabe qual prompt
+  /// produziu o que está em produção.
+  versaoPrompt  Int      @map("versao_prompt")
+  criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  sessao UnoogptSessao @relation(fields: [escolaId, alunoId], references: [escolaId, alunoId], onDelete: Cascade)
+
+  @@unique([escolaId, alunoId, ordem])
+  @@index([escolaId, alunoId])
+  @@map("exp_03_simulacoes")
+}
+
+/// O Relógio da AULA — por TURMA, não por aluno.
+///
+/// Antes o cronômetro armava sozinho quando o aluno entrava na Investigação, e
+/// cada um começava quando abria o link. Numa sala isso é uma corrida com
+/// largadas diferentes: quem chegou primeiro terminava antes de o professor
+/// acabar de explicar. Quem dá a partida é o professor, e ela vale para todo
+/// mundo ao mesmo tempo. Mesmo espírito do lock por turma da exp-70.
+model UnoogptRelogioTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// cronometrado | livre (CHECK na migration).
+  modo        String    @default("cronometrado")
+  /// Null = a missão ainda não começou: o aluno vê o cronômetro parado e não
+  /// consegue falar com o Cientista.
+  iniciadoEm  DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  /// Duração em segundos de parede. "+2 min" soma 120.
+  duracaoSeg  Int       @default(300) @map("duracao_seg")
+  /// O professor encerrou antes da hora.
+  encerradoEm DateTime? @map("encerrado_em") @db.Timestamptz(6)
+  /// Pivô da extensão (`regras/relogio.ts`): onde o relógio da cidade estava
+  /// quando a duração mudou. É o que impede o minuto narrativo de rebobinar —
+  /// aos 4:00 de 5:00 o aluno está no minuto 48, e recalcular com 7:00 daria 34.
+  pivoSeg     Int       @default(0) @map("pivo_seg")
+  pivoMin     Int       @default(0) @map("pivo_min")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([escolaId])
+  @@map("exp_03_relogio_turma")
 }
