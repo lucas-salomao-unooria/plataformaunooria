@@ -43,22 +43,28 @@ export const TETO_TOKENS_RESPOSTA = 3000;
  * custa duas ordens de grandeza mais que um turno de tutor. O teto que importa
  * aqui é por sessão, porque é a sessão que tem começo e fim.
  *
- * Conta: o prompt do Cientista tem ~11,5k caracteres (~3k tokens) e é reenviado
- * inteiro a cada volta de ferramenta e a cada tentativa. Um turno com 3 voltas
- * e 1 retry passa de 20k. Sete turnos — o que o relógio de 5 minutos permite —
- * ficam na ordem de 100 a 200k.
+ * MEDIDO com `gemini-3.6-flash` no endpoint `global`, em 2026-08-27:
  *
- * ATENÇÃO: os dois números abaixo são ESTIMATIVA, e estão marcados como tal de
- * propósito. Eles serão substituídos pelo `tokens_gastos` medido na primeira
- * partida real com `AI_PROVIDER=vertex` — número em documento sem medição é
- * como coluna de prazo sem rotina.
+ *   - turno completo: 7.5k a 8k tokens (média de 7.711 em três turnos seguidos);
+ *   - o que domina NÃO é o tamanho do contexto, é o NÚMERO DE VOLTAS de
+ *     ferramenta: cada volta reenvia o histórico inteiro. Um turno de 2 voltas
+ *     custou 11.481; o mesmo turno com 4 fontes já carregadas e histórico de
+ *     6 falas, mas 1 volta, custou 8.463 — MENOS, com mais contexto;
+ *   - latência de 3,6 a 9,7 segundos por turno.
+ *
+ * Daí o teto: uma partida completa (~10 turnos, dos quais só 3 podem ser
+ * pergunta) fica na ordem de 77k. 150k é o dobro disso — cabe a partida inteira
+ * com folga e ainda corta antes de o custo virar problema.
  */
-export const TETO_TOKENS_SESSAO = 250_000;
+export const TETO_TOKENS_SESSAO = 150_000;
 
 /**
  * Teto de CHAMADAS por sessão. Existe junto com o de tokens porque os dois
  * pegam falhas diferentes: token pega a conversa longa; chamada pega o laço
  * (aluno — ou script — mandando mensagem sem parar), que estouraria a fila de
  * requisições muito antes de estourar o token.
+ *
+ * Ao custo medido (7,7k por turno), o teto de TOKENS morde primeiro, por volta
+ * do 19º turno. Este aqui é a rede contra o laço, e não o controle de custo.
  */
 export const TETO_CHAMADAS_SESSAO = 24;

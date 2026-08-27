@@ -171,9 +171,25 @@ try {
      começo, e o submit do formulário estava BLOQUEADO pelo sandbox. Um teste
      que passa com a funcionalidade quebrada é pior que teste nenhum. */
   const PERGUNTA = "onde mora mais gente?";
+  /* ESPERAR A RESPOSTA HTTP, e não um sinal de tela.
+     Com o provedor real o turno leva de 10 a 30 segundos, e recarregar antes de
+     ele terminar encontra o banco ainda vazio — o teste falharia por corrida do
+     roteiro, não por defeito do produto. Esperar o campo reabilitar não serve
+     (ele não é desabilitado) e esperar texto do agente é o falso positivo que
+     este roteiro já cometeu duas vezes. A resposta da rota é o único sinal que
+     significa exatamente "o turno acabou". O `waitForResponse` é registrado
+     ANTES do Enter, senão a resposta pode chegar antes de alguém escutar. */
+  const turno = aluno.waitForResponse(
+    (r) => r.url().includes("/unoogpt/pergunta") && r.request().method() === "POST",
+    { timeout: 90_000 },
+  );
   await campo.pressSequentially(PERGUNTA, { delay: 15 });
   await campo.press("Enter");
   await q2.locator(`text=${PERGUNTA}`).first().waitFor({ timeout: 60_000 });
+  const resposta = await turno;
+  if (!resposta.ok()) {
+    throw new Error(`o turno voltou ${resposta.status()} — veja o log da api`);
+  }
 
   /* A ASSERÇÃO DE VERDADE: a fala tem de SOBREVIVER a um reload.
      Ver o texto na tela não prova nada — o cliente mostra a fala do aluno

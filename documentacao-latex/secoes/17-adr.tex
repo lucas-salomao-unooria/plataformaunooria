@@ -764,12 +764,37 @@ inclusive quando o turno falha, porque o token foi gasto de todo modo.
     é o que o provedor devolve.
 \end{itemize}
 
+\begin{especificacao}{Medição --- 2026-08-27, \cd{gemini-3.6-flash} no endpoint \cd{global}}
+Uma \textbf{partida completa} (8 turnos, 7 chamadas de IA, do briefing ao
+desfecho) custou \textbf{\num{71397} tokens} em 40 segundos.
+
+Por turno: 7,5k a 8k na maioria, com dois picos (20,4k e 16,4k) nos turnos de
+mais voltas. O turno de conversa pura --- \enquote{não entendi, explica de
+novo} --- custou \num{3846} e \textbf{não debitou pergunta}, que é a regra
+funcionando.
+
+E o que domina o custo \textbf{não é o tamanho do contexto: é o número de
+voltas} de ferramenta, porque cada volta reenvia o histórico inteiro. Um turno de
+duas voltas custou \num{11481}; o mesmo turno com quatro fontes já carregadas e
+seis falas de histórico, mas uma volta, custou \num{8463} --- \emph{menos}, com
+mais contexto.
+\end{especificacao}
+
+\textbf{Os números, com a aritmética.} \cd{TETO\_TOKENS\_SESSAO} $=$ \num{150000}:
+o dobro de uma partida completa medida, o que cabe a missão inteira com folga e
+ainda corta antes de o custo virar problema. \cd{TETO\_CHAMADAS\_SESSAO} $=$ 24:
+ao custo medido o teto de \emph{tokens} morde primeiro, por volta do 19º turno ---
+este é a rede contra o laço, não o controle de custo.
+
 \begin{atencao}
-Os dois números do teto por sessão (\cd{TETO\_TOKENS\_SESSAO} e
-\cd{TETO\_CHAMADAS\_SESSAO}) são \textbf{estimativa}, e estão marcados como tal
-no código. Eles serão substituídos pelo \cd{tokens\_gastos} medido na primeira
-partida real com \env{AI\_PROVIDER=vertex}. Número em documento sem medição por
-trás é a mesma armadilha da coluna de prazo que nenhuma rotina cumpre.
+A medição encontrou um defeito que a estimativa não teria encontrado: com
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} em \num{20000} --- o valor dimensionado
+para o tutor da exp-01, e que estava \textbf{fixo no \emph{compose} de
+produção} --- a missão recusava o \textbf{quarto turno} com \enquote{a sala de
+operações fechou por hoje}. A quota subiu para \num{300000} (cerca de quatro
+partidas, porque \enquote{Recomeçar} abre partida nova) em quatro lugares: os dois
+\emph{composes}, o \emph{default} da validação de ambiente e o
+\arq{.env.example}.
 \end{atencao}
 
 \textbf{Consequências.} O custo fica limitado onde ele acontece, e a mensagem de

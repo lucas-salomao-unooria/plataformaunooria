@@ -296,9 +296,20 @@ export class VertexProvider implements AiProvider {
 
         const candidato = data.candidates?.[0];
         const partes = candidato?.content?.parts ?? [];
-        const chamada = partes.find((parte) => parte.functionCall)?.functionCall;
+        /**
+         * TODAS as chamadas da volta, não só a primeira.
+         *
+         * O modelo faz function calling PARALELO: um turno pode trazer várias
+         * partes `functionCall` ("carrega o cadastro E roda o modelo"), e o
+         * Vertex exige uma `functionResponse` para CADA uma — responder só a
+         * primeira devolve 400 com "the number of function response parts is
+         * equal to the number of function call parts". MEDIDO: acontece na
+         * primeira volta de um turno em que o aluno pede fonte e leitura na
+         * mesma frase.
+         */
+        const chamadas = partes.flatMap((parte) => (parte.functionCall ? [parte.functionCall] : []));
 
-        if (!chamada || !req.ferramentas) {
+        if (chamadas.length === 0 || !req.ferramentas) {
           // A fala sai das partes, DESCARTANDO as de raciocínio: com pensamento
           // ligado, um turno com ferramenta trazia o texto só na parte de
           // `thought`, e ler tudo punha o raciocínio do modelo na tela.
@@ -309,16 +320,29 @@ export class VertexProvider implements AiProvider {
           return { texto, voltas: volta, finishReason: candidato?.finishReason };
         }
 
-        const resultado = await req.ferramentas.executar(chamada.name ?? "", chamada.args ?? {});
+        /**
+         * Em SÉRIE, não em paralelo: o executor do domínio muda estado (carregar
+         * fonte, registrar alocação), e `Promise.all` deixaria a ordem das
+         * transições ao acaso. O modelo pediu as duas coisas; a ordem em que ele
+         * as pediu é a ordem em que elas acontecem.
+         */
+        const respostas: ParteVertex[] = [];
+        for (const chamada of chamadas) {
+          const resultado = await req.ferramentas.executar(chamada.name ?? "", chamada.args ?? {});
+          respostas.push({ functionResponse: { name: chamada.name, response: { resultado } } });
+        }
 
         // O turno do modelo volta VERBATIM. Remontar `{ functionCall }` à mão
         // perde o `thoughtSignature` que veio junto e o Vertex recusa a
         // continuação com 400 — a ferramenta roda, mas a narrativa nunca chega.
-        contents.push(candidato?.content ?? { role: "model", parts: [{ functionCall: chamada }] });
-        contents.push({
-          role: "user",
-          parts: [{ functionResponse: { name: chamada.name, response: { resultado } } }],
-        });
+        contents.push(
+          candidato?.content ?? {
+            role: "model",
+            parts: chamadas.map((c) => ({ functionCall: c })),
+          },
+        );
+        // UMA resposta por chamada, na mesma ordem: é o que o protocolo exige.
+        contents.push({ role: "user", parts: respostas });
       }
 
       // Estourar as voltas não é resposta: é o modelo preso pedindo ferramenta

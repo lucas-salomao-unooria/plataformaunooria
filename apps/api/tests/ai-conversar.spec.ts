@@ -42,6 +42,28 @@ function fala(texto: string, extra: Record<string, unknown> = {}) {
   };
 }
 
+/**
+ * Corpo de resposta do Vertex com VÁRIAS chamadas na mesma volta — function
+ * calling PARALELO, que é o que o modelo real faz quando o aluno pede fonte e
+ * leitura na mesma frase.
+ */
+function pedidosParalelos(nomes: string[]) {
+  return {
+    candidates: [
+      {
+        content: {
+          role: "model",
+          parts: nomes.map((name) => ({
+            functionCall: { name, args: {} },
+            thoughtSignature: `sig-${name}`,
+          })),
+        },
+      },
+    ],
+    usageMetadata: { totalTokenCount: 70 },
+  };
+}
+
 /** Corpo de resposta do Vertex: um pedido de ferramenta. `assinatura` imita o
  *  `thoughtSignature` — campo que o provedor manda e EXIGE de volta. */
 function pedidoDeFerramenta(assinatura = "assinatura-opaca") {
@@ -123,6 +145,46 @@ describe("VertexProvider.conversar", () => {
     // e o resultado da ferramenta volta como functionResponse
     expect(respostaDaFerramenta?.role).toBe("user");
     expect(respostaDaFerramenta?.parts?.[0]).toHaveProperty("functionResponse");
+  });
+
+  it("responde TODAS as chamadas de uma volta, uma resposta por chamada", async () => {
+    /**
+     * MEDIDO contra o Vertex real: o modelo faz function calling PARALELO, e
+     * responder só a primeira chamada devolve
+     *   400 "the number of function response parts is equal to the number of
+     *        function call parts of the function call turn."
+     * O sintoma no produto seria o turno morrer no meio — a ferramenta roda, o
+     * estado muda, e o aluno recebe "não consegui responder".
+     */
+    const { pedidos } = dublarFetch([
+      pedidosParalelos(["usar_dados", "rodar_modelo"]),
+      fala("Carreguei o cadastro e cruzei os dados."),
+    ]);
+    const executadas: string[] = [];
+
+    const r = await provider.conversar({
+      ...base,
+      ferramentas: {
+        declaracoes: [FERRAMENTA],
+        executar: async (nome) => {
+          executadas.push(nome);
+          return { ok: true };
+        },
+      },
+    });
+
+    // As duas foram executadas, na ORDEM em que o modelo pediu: o executor do
+    // domínio muda estado, e paralelizar deixaria a ordem ao acaso.
+    expect(executadas).toEqual(["usar_dados", "rodar_modelo"]);
+    expect(r.texto).toBe("Carreguei o cadastro e cruzei os dados.");
+
+    // E o turno de resposta tem DUAS partes `functionResponse`, na mesma ordem.
+    const segundo = pedidos[1] as { contents: Array<{ role?: string; parts?: Array<Record<string, unknown>> }> };
+    const respostas = segundo.contents[2];
+    expect(respostas?.role).toBe("user");
+    expect(respostas?.parts).toHaveLength(2);
+    expect((respostas?.parts?.[0]?.functionResponse as { name?: string })?.name).toBe("usar_dados");
+    expect((respostas?.parts?.[1]?.functionResponse as { name?: string })?.name).toBe("rodar_modelo");
   });
 
   it("não deixa a parte de RACIOCÍNIO virar fala do agente", async () => {

@@ -35,12 +35,13 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   teste de carga de \cd{R-01}. Saída conhecida se reprovar:
   \cd{streamGenerateContent} no provider --- mudança dentro de \arq{src/ai}, sem
   tocar o módulo da experiência.\\
-\zebra \cd{R-14} & \textbf{Teto de custo da exp-03 é estimativa.}
-  \cd{TETO\_TOKENS\_SESSAO} e \cd{TETO\_CHAMADAS\_SESSAO} foram calculados, não
-  medidos. & Certa & Médio &
-  Marcados como estimativa no código (\adrr{ADR-24}). A primeira partida real com
-  \env{AI\_PROVIDER=vertex} substitui os dois pelo \cd{tokens\_gastos} observado.
-  \textbf{Pendente} --- e até lá o número no documento é projeção.\\
+\zebra \cd{R-14} & \textbf{Custo de IA da exp-03.} Uma partida custa duas ordens
+  de grandeza mais que um turno de tutor. & Certa & Médio &
+  \textbf{MEDIDO} em 2026-08-27: \num{71397} tokens numa partida completa de 8
+  turnos (\adrr{ADR-24}). Os tetos foram fixados sobre esse número, e a medição
+  achou de passagem que a quota diária de \num{20000} recusava o quarto turno ---
+  corrigida para \num{300000}. \textbf{Fechado}, com um resíduo: a medição é de
+  UMA partida, e o custo varia com o número de voltas que o modelo escolhe dar.\\
 \cd{R-15} & \textbf{Guia de condução do debate da exp-03 não existe.} A missão
   deliberadamente não revela a Lacuna de nenhuma fonte por software: a lição
   acontece no debate. & Certa & \textbf{Alto} &
