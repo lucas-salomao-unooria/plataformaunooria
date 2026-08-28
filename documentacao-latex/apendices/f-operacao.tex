@@ -247,6 +247,22 @@ testado no container} &
   veio DEPOIS. Isso é \emph{aviso}, não erro: a escola entra sem regional, porque
   perdê-la por causa do agrupamento seria trocar o essencial pelo acessório.
   Reimportar com o pai presente corrige.\\
+\zebra \textbf{\enquote{Sem CPF não há perfil portátil}} &
+  É a regra, não um erro: numa rede de destino nenhum id daqui existe, e o CPF é
+  a única chave que reconhece a criança. Preencha o CPF em
+  \rota{/admin/usuarios} e emita de novo.\\
+\textbf{Todo perfil importado entra \enquote{não verificado}} &
+  \env{PORTABILIDADE\_EMISSORES} vazia --- e é o default. Sem emissores
+  configurados a api não busca JWKS nenhum, e marcar visivelmente é melhor que
+  recusar. Em dev isso é permanente: o hub é \cd{http}, e só \cd{https} é
+  buscado.\\
+\zebra \textbf{A emissão responde 503} &
+  Falta \env{CONTRATO\_ID} no hub. Documento cujo emissor não se identifica não
+  vale nada no destino, que precisa dele para achar o JWKS e para dizer de quem
+  veio.\\
+\textbf{\enquote{Não há aluno com este CPF nesta rede}} &
+  O documento não cria pessoa. Matricule a criança primeiro (planilha ou
+  OneRoster) e importe o perfil depois --- a matrícula é ato da escola.\\
 \zebra \textbf{O item \enquote{Minhas escolas} não aparece na navegação} &
   A pessoa tem UMA lotação. O panorama é a tela de quem administra várias
   unidades; com uma escola ele seria uma linha só, e item de menu que não leva a

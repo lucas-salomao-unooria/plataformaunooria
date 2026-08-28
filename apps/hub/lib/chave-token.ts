@@ -89,3 +89,30 @@ export async function jwksPublico(): Promise<{ keys: JWK[] }> {
   const { publicJwk } = await material();
   return { keys: [publicJwk] };
 }
+
+/**
+ * Assina um PERFIL PORTÁTIL — o documento que a criança leva ao sair da rede.
+ *
+ * Reusa a MESMA chave dos tokens de experiência, e por isso nenhum material de
+ * chave novo entrou por causa deste recurso: a api de destino já sabe procurar
+ * o JWKS em `/.well-known/jwks.json` da origem que assinou.
+ *
+ * O payload é `{ hash }`, não o documento: assim o arquivo entregue à família
+ * fica LEGÍVEL (`{ perfil, assinatura }`), e a assinatura cobre o hash canônico
+ * do perfil. `aud: "perfil-portatil"` separa esta assinatura da de token de
+ * experiência — a mesma chave, dois usos que nunca podem ser confundidos um
+ * pelo outro.
+ *
+ * Sem prazo de validade: um documento de portabilidade é como um histórico
+ * escolar em papel — ele não caduca, e a data de emissão está no próprio
+ * documento para quem precisar julgar se está velho.
+ */
+export async function assinarPerfilPortatil(hash: string): Promise<string> {
+  const { privateKey, publicJwk } = await material();
+  return new SignJWT({ hash })
+    .setProtectedHeader({ alg: "RS256", kid: publicJwk.kid })
+    .setIssuer(process.env.HUB_ORIGIN ?? "http://localhost:3000")
+    .setAudience("perfil-portatil")
+    .setIssuedAt()
+    .sign(privateKey);
+}

@@ -189,6 +189,11 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   \cd{ON CONFLICT DO UPDATE ... RETURNING}.\\
 \cd{telemetria\_eventos} & \emph{Tenant}, particionada & Ver
   Seção~\ref{sec:particao}.\\
+\zebra \cd{perfis\_portateis} & \emph{Tenant} & O documento assinado que veio de
+  OUTRA instalação (\adrr{ADR-35}). Nunca se mistura com o dado local: não vira
+  matrícula, progresso nem perfil, e não entra em média. É a única exceção à
+  contenção do CPF --- o número é o conteúdo do documento, e alterá-lo
+  destruiria a assinatura.\\
 \bottomrule
 \end{tabularx}
 
@@ -886,6 +891,9 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{regional} $|$ \cd{rede} em \cd{escolas.tipo} (\cd{distrito} renomeado), o
   \emph{trigger} que exige que o pai AGRUPE, e índices em \cd{pai\_id}/\cd{tipo}
   --- \adrr{ADR-34}.\\
+\zebra \arq{20260828230000\_perfil\_portatil} & \cd{perfis\_portateis}, com RLS,
+  \emph{CHECK} do vocabulário de \cd{verificacao} e único por
+  (escola, aluno, emissor, emissão) --- \adrr{ADR-35}.\\
 \bottomrule
 \end{tabularx}
 

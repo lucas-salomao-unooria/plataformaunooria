@@ -74,6 +74,15 @@ export const EnvSchema = z.object({
   // (`POST /planos/referencias`, chamada pelo script local). Ausente = 503.
   PLANOS_IMPORT_TOKEN: z.string().optional(),
 
+  // PERFIL PORTÁTIL: as origens https cujo JWKS esta instalação pode buscar para
+  // conferir a assinatura de um documento que chegou de OUTRA rede. O
+  // `emissor.hub` vem de dentro do arquivo, ou seja, de um desconhecido — sem
+  // allowlist a api sairia buscando a URL que um arquivo mandou (SSRF).
+  // Vazia = nenhuma verificação de rede acontece e todo documento entra marcado
+  // `nao-verificada`. Degradar VISIVELMENTE é melhor que recusar o direito do
+  // titular à portabilidade (LGPD art. 18 V).
+  PORTABILIDADE_EMISSORES: z.string().optional(),
+
   TELEMETRIA_TOPIC: z.string().optional().default(""),
   // Tranca do `POST /telemetry/ingest` (push do Pub/Sub): a SA que assina o
   // push e a audience configurada na subscription. Ausentes = rota fechada,

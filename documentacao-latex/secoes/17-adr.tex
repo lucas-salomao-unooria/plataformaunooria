@@ -1464,3 +1464,102 @@ admin do contrato confirma antes de conceder.
 --- \enquote{o desempenho da diretoria inteira} --- muda a pergunta: aí é
 relatório com escopo próprio (como \cd{/vila/agregado/*} faz para o gestor),
 nunca alargamento do \emph{token}.
+
+\section{ADR-35 --- Perfil portátil: um documento assinado, não uma integração}
+\label{adr:perfil-portatil}
+
+\begin{especificacao}{Contexto}
+Um contrato é uma rede e uma \emph{stack}. A \adrr{ADR-32} resolveu a criança
+que troca de escola DENTRO da rede: o dado fica onde foi produzido e a leitura
+atravessa por uma porta só. Fica de fora o caso que o dono do produto levantou:
+a criança que sai da rede estadual para a municipal --- outro contrato, outro
+banco, nenhum \emph{JOIN} possível.
+
+E há a restrição que decide o desenho: \textbf{não há garantia nenhuma de que a
+rede de destino comprou o produto}. Qualquer solução que exija duas instalações
+desta plataforma conversando resolve só o caso raro em que as duas existem.
+\end{especificacao}
+
+\textbf{Decisão.} A saída é um \textbf{documento assinado}, e não uma integração.
+Um arquivo JSON \cd{\{ perfil, assinatura \}} que a escola de origem emite a
+pedido do titular (LGPD art.~18, V --- portabilidade) e que a escola de destino
+importa como um ato dela. Para uma rede que nunca vai instalar esta plataforma, o
+mesmo arquivo continua sendo um documento legível.
+
+Quatro decisões dentro dessa:
+
+\begin{itemize}
+  \item \textbf{O hub assina; a api verifica.} Assinar exige a chave privada, que
+    só o hub tem --- é a MESMA que assina os \emph{tokens} de experiência e é
+    publicada em \rota{/.well-known/jwks.json}, então nenhum material de chave
+    novo entrou. \cd{aud: "perfil-portatil"} separa os dois usos. Verificar
+    acontece na api porque é o passo que \textbf{não pode confiar em quem chama}:
+    se a api recebesse o veredito pronto do hub, bastaria forjar o campo.
+  \item \textbf{O que vem de fora nunca se mistura.} O documento vive em
+    \cd{perfis\_portateis} e em lugar nenhum mais: não vira matrícula, progresso
+    nem perfil da Vila, e não entra em média. É a afirmação de OUTRA instalação
+    sobre a criança, possivelmente de outra \cd{versao\_mapeamento}. Separado, o
+    professor lê os dois e sabe qual é qual.
+  \item \textbf{Assinatura inválida é recusa; emissor inalcançável é rótulo.} São
+    coisas diferentes e a tela diz qual foi. Não conseguir falar com o emissor é
+    limitação de rede; assinatura que não confere é adulteração, e essa não entra.
+  \item \textbf{O documento se liga a alguém que já está aqui.} Importar não cria
+    aluno: a matrícula é ato da escola (planilha ou OneRoster), e só depois o
+    perfil se anexa --- pelo CPF, que é a única chave que significa alguma coisa
+    numa base onde nenhum id da origem existe.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{API entre as duas instalações}: exige que as duas existam, que se
+    conheçam e que uma libere acesso à outra. Não cobre o caso comum, que é a
+    rede de destino não ser cliente.
+  \item \emph{Um banco só para várias redes} (\cd{rede\_id} em tudo): foi medido
+    e descartado antes --- e não resolveria este caso, porque a rede de destino
+    continuaria fora da instalação.
+  \item \emph{Exportar CSV sem assinatura}: quem recebe não tem como saber se o
+    arquivo foi editado no caminho, e um histórico escolar sem procedência não
+    serve para decidir nada.
+  \item \emph{Assinar o documento como \emph{payload} do JWS}: o arquivo viraria
+    uma \emph{string} opaca. Ele é entregue à FAMÍLIA, que tem direito de lê-lo;
+    por isso o JWS cobre o \emph{hash} canônico e o documento fica legível ao
+    lado.
+  \item \emph{Buscar o JWKS de qualquer emissor}: o \cd{emissor.hub} vem de
+    dentro do arquivo, ou seja, de um desconhecido --- seria SSRF. Só origens em
+    \env{PORTABILIDADE\_EMISSORES}, e só \cd{https}.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{O CPF passa a existir num segundo lugar}, e é a única exceção à
+    contenção da \adrr{ADR-33}: \cd{perfis\_portateis.documento}. O CPF é o
+    CONTEÚDO do documento --- é o que reconhece a criança lá fora --- e é
+    guardado \emph{verbatim} porque alterá-lo destruiria a assinatura. A exceção
+    está numa lista explícita dentro do teste estrutural, para que a próxima seja
+    uma decisão e não um vazamento que ninguém viu.
+  \item \textbf{Bem-estar (exp-91) nunca entra no documento.} DASS-21 é dado de
+    saúde, a posse é do professor e não existe rota de gestor para ele em lugar
+    nenhum. Um documento que o gestor emite não pode carregar o que nem o gestor
+    lê.
+  \item \env{PORTABILIDADE\_EMISSORES} vazia (o default, e o caso de dev) faz
+    TODO documento entrar como \cd{nao-verificada}. Degradar visivelmente é
+    melhor que recusar o direito do titular --- e a tela sai em âmbar, não em
+    verde.
+  \item \emph{Ruim}: em desenvolvimento o hub é \cd{http}, e a regra de só buscar
+    JWKS por \cd{https} (que não se afrouxa) torna o caminho criptográfico
+    impossível de exercitar no navegador. Ele é coberto por teste, com as chaves
+    injetadas --- e foi esse teste que pegou o pior erro possível deste recurso:
+    a classificação do erro olhava o TEXTO da exceção, e a palavra
+    \enquote{failed} de \enquote{signature verification failed} caía na regra de
+    erro de rede. Documento FORJADO entraria marcado \enquote{não deu para
+    conferir} em vez de recusado. Hoje a classificação é pelo \cd{code} da
+    biblioteca.
+  \item \emph{Ruim}: reemitir gera outro documento, e a escola de destino pode
+    acabar com dois do mesmo aluno. A lista mostra data \emph{e hora} e permite
+    apagar; unificar por conteúdo esconderia que foram duas emissões.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A especificação técnica do EducaDados (Portaria
+MEC 269/2026) definir um formato nacional de transferência de histórico: aí este
+documento vira um \emph{binding} daquele formato, e o que sobrevive é a decisão
+de ser documento assinado em vez de integração.

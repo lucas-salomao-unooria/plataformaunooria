@@ -153,3 +153,33 @@
    Lição de processo: `tipo` e `pai_id` tinham sido acrescentadas antes "porque
    custam zero" e nenhuma query as lia — a mesma armadilha do `expires_at` sem
    rotina. Coluna nasce com o consumidor, ou não nasce.
+17. **Perfil portátil: um documento assinado, não uma integração** (2026-08-28).
+   A decisão 12 resolveu a criança que troca de escola DENTRO da rede. Faltava a
+   que sai da rede: outro contrato, outra stack, outro banco — e **sem garantia de
+   que o destino comprou o produto**, o que elimina qualquer desenho em que duas
+   instalações precisem conversar. A saída é um arquivo JSON
+   `{ perfil, assinatura }` que a origem emite a pedido do titular (LGPD art. 18,
+   V) e o destino importa como ato dele; numa rede que nunca vai instalar a
+   plataforma, ele continua sendo um documento legível.
+   Quatro decisões dentro dessa: **o hub assina e a api verifica** (assinar exige
+   a chave privada, que só o hub tem — a mesma dos tokens, com `aud` próprio;
+   verificar tem de acontecer onde não se confia em quem chama); **o que vem de
+   fora nunca se mistura** com o dado local, porque é a afirmação de outra
+   instalação, possivelmente de outra versão do instrumento; **assinatura inválida
+   é recusa, emissor inalcançável é rótulo visível**; e **importar não cria
+   aluno** — matricular é ato da escola, e só depois o perfil se anexa pelo CPF.
+   Descartados: API entre instalações (exige que as duas existam e se conheçam);
+   um banco para várias redes (já descartado antes, e não cobriria o destino não
+   cliente); CSV sem assinatura (histórico sem procedência não decide nada);
+   assinar o documento como payload do JWS (o arquivo é da família e precisa ser
+   legível — por isso o JWS cobre o hash canônico ao lado do documento); e buscar
+   JWKS de qualquer emissor (o `emissor.hub` vem de dentro do arquivo: seria SSRF,
+   daí a allowlist `PORTABILIDADE_EMISSORES`, só https).
+   Custo aceito: o CPF passa a existir num segundo lugar — `perfis_portateis.
+   documento` —, porque ele é o CONTEÚDO do documento e alterá-lo destruiria a
+   assinatura. A exceção ficou numa lista explícita dentro do teste estrutural,
+   para que a próxima seja decisão e não vazamento.
+   O que o teste pegou, e vale registrar: a classificação do erro de verificação
+   olhava o TEXTO da exceção, e a palavra "failed" de "signature verification
+   failed" caía na regra de erro de rede — documento **forjado** entraria marcado
+   "não deu para conferir" em vez de recusado. Hoje classifica pelo `code`.

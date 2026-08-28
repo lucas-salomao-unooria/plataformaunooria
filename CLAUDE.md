@@ -146,6 +146,49 @@ literalmente verdadeira (ADR-30).
   linha vira transferência (aluno) ou lotação a mais (professor). Reimportar não
   troca a senha de quem já entrou.
 
+### Perfil portátil: sair da REDE (2026-08-28)
+
+**Transferir é dentro do contrato; o perfil portátil é para FORA dele.** A
+criança que vai da rede estadual para a municipal sai da instalação — outro
+contrato, outro banco, nenhum JOIN — e **não há garantia de que o destino comprou
+o produto**. Por isso a saída é um DOCUMENTO ASSINADO, não uma integração
+(ADR-35): `{ perfil, assinatura }` em JSON, emitido a pedido do titular (LGPD
+art. 18, V) e importado como ato da escola de destino. Numa rede que nunca vai
+instalar a plataforma, o mesmo arquivo continua legível.
+
+- **O hub assina; a api verifica.** A chave é a MESMA dos tokens de experiência
+  (`lib/chave-token.ts`, JWKS em `/.well-known/jwks.json`) — nenhum material novo
+  entrou —, e `aud: "perfil-portatil"` separa os dois usos. Verificar é na api
+  porque é o passo que **não pode confiar em quem chama**.
+- **A assinatura cobre o HASH CANÔNICO**, não o documento como payload: o arquivo
+  vai para a FAMÍLIA e precisa ser legível. `jsonCanonico` (chaves ordenadas
+  recursivamente) existe nos DOIS lados — `apps/api/src/portabilidade/regras.ts` e
+  `apps/hub/lib/perfil-portatil.ts` —, e a duplicação é deliberada: emissor e
+  verificador são instalações diferentes, em versões possivelmente diferentes. Um
+  **fixture de hash** afirmado nos dois testes derruba um deles se as
+  implementações divergirem.
+- **Assinatura inválida é RECUSA; emissor inalcançável é rótulo.** A classificação
+  é pelo `code` da jose, NUNCA pelo texto: "signature verification failed" contém
+  "failed", e uma versão anterior classificava documento FORJADO como "não deu
+  para conferir". `PORTABILIDADE_EMISSORES` (origens https) é allowlist contra
+  SSRF — o `emissor.hub` vem de dentro do arquivo. Vazia = tudo entra
+  `nao-verificada`, e a tela sai em âmbar.
+- **O que vem de fora NUNCA se mistura**: vive só em `perfis_portateis`, não vira
+  matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de
+  outra instalação, possivelmente de outra `VERSAO_MAPEAMENTO`.
+- **Importar não cria aluno**: liga pelo CPF a quem já está aqui. Matricular é ato
+  da escola (planilha ou OneRoster); o perfil se anexa depois.
+- **`perfis_portateis.documento` é a ÚNICA exceção à contenção do CPF** (ADR-33):
+  o número é o conteúdo do documento, e alterá-lo destruiria a assinatura. A
+  exceção está numa lista explícita em `tests/identidade-unica.spec.ts`, que varre
+  todo JSONB do schema procurando os CPFs QUE EXISTEM — não "onze dígitos", que
+  casa com qualquer `Date.now()`.
+- **Bem-estar (exp-91) nunca entra no documento**: dado de saúde, posse do
+  professor, sem rota de gestor em lugar nenhum. Documento que o gestor emite não
+  carrega o que nem o gestor lê.
+- Envs: `CONTRATO_ID` + `CONTRATO_NOME` no hub (sem o primeiro, a emissão é 503);
+  `PORTABILIDADE_EMISSORES` na api. Tela: `/admin/turmas/:id` → "Perfil portátil".
+
 ### Identidade e enturmamento (2026-08-28)
 
 **Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As
@@ -785,6 +828,7 @@ pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-est
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
 node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, aluno transferido pelo CPF
+node scripts/walkthrough-perfil-portatil.mjs testes/wt-portatil  # smoke do PERFIL PORTÁTIL: emitir assinado, receber, e o que acontece com um arquivo adulterado
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)

@@ -119,6 +119,36 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \bottomrule
 \end{tabularx}
 
+\section{Perfil portátil --- sair da rede}
+
+O que a criança leva quando sai do CONTRATO, não da escola (\adrr{ADR-35}).
+Emitir é direito do titular; receber é ato da escola de destino.
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /alunos/:id/perfil-portatil} & gestor, admin-contrato & Monta o
+  documento SEM assinatura. Mesma tranca do histórico: lotação na escola onde a
+  criança está hoje. Sem CPF, recusa --- numa rede de destino nenhum id daqui
+  existe.\\
+\zebra \rota{GET /api/perfil-portatil/:id} & gestor, admin-contrato & Rota do
+  HUB, não da api: assina o documento e devolve o ARQUIVO
+  (\cd{Content-Disposition}). Sem \env{CONTRATO\_ID} responde 503 --- documento
+  sem emissor identificável não vale nada no destino.\\
+\rota{POST /perfis-recebidos} & gestor, admin-contrato & Recebe o documento.
+  Assinatura inválida é 400; emissor inalcançável entra como
+  \cd{nao-verificada}. Não cria aluno: liga pelo CPF a quem já está aqui.\\
+\zebra \rota{GET /alunos/:id/perfis-recebidos} & gestor, admin-contrato & O que
+  esta escola recebeu sobre esta criança, em contagens.\\
+\rota{GET /perfis-recebidos/:id} & gestor, admin-contrato & O documento
+  inteiro, como veio.\\
+\zebra \rota{DELETE /perfis-recebidos/:id} & gestor, admin-contrato & Apaga um
+  documento de fora --- importado na criança errada, ou emitido por engano.
+  Não apaga nada que esta rede tenha medido.\\
+\bottomrule
+\end{tabularx}
+
 \section{Pessoas e turmas (\emph{rostering})}
 
 \begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}

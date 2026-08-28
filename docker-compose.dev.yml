@@ -227,6 +227,11 @@ services:
       # apontaria as três para o mesmo arquivo).
       EXP_INTERNAL_HOST: host.docker.internal
       HUB_ORIGIN: http://localhost:3000
+      # Quem emite o PERFIL PORTÁTIL. Sem isto a rota não emite: um documento
+      # cujo emissor não se identifica não vale nada na rede de destino, que
+      # precisa dele para procurar o JWKS e para dizer de quem veio.
+      CONTRATO_ID: ${CONTRATO_ID:-contrato-dev}
+      CONTRATO_NOME: ${CONTRATO_NOME:-Rede de Demonstração}
       AUTH_URL: http://localhost:3000
       AUTH_SECRET: ${AUTH_SECRET:-dev-secret-com-mais-de-32-caracteres-ok}
       AUTH_TRUST_HOST: "true"

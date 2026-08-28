@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
+  FeedbackAlert,
+  FileUpload,
   Modal,
   ModalBody,
   ModalFooter,
@@ -31,6 +33,21 @@ interface Matriculado extends Record<string, unknown> {
   senhaProvisoria: boolean;
   /** Turma de referência do aluno — a que alimenta o cache e o token. */
   principal: boolean;
+}
+
+/** Um perfil que veio de OUTRA instalação da plataforma. */
+interface PerfilRecebido {
+  id: string;
+  emissor: string;
+  emissorNome: string | null;
+  emissorHub: string;
+  emitidoEm: string;
+  verificacao: "verificada" | "nao-verificada";
+  importadoEm: string;
+  escolas: number;
+  turmas: number;
+  participacoes: number;
+  resultados: number;
 }
 
 interface TurmaDaEscola {
@@ -112,6 +129,13 @@ export function TurmaDetalhe({
   const [mover, setMover] = useState<Matriculado | null>(null);
   const [destino, setDestino] = useState("");
   const [turmas, setTurmas] = useState<TurmaDaEscola[]>([]);
+
+  const [portatil, setPortatil] = useState<Matriculado | null>(null);
+  const [recebidos, setRecebidos] = useState<PerfilRecebido[] | null>(null);
+  const [importando, setImportando] = useState(false);
+  const [avisoDoPerfil, setAvisoDoPerfil] = useState<string | null>(null);
+  const [perfilVerificado, setPerfilVerificado] = useState(false);
+  const [erroDoPerfil, setErroDoPerfil] = useState<string | null>(null);
 
   const [historico, setHistorico] = useState<Historico | null>(null);
   const [transferir, setTransferir] = useState<Matriculado | null>(null);
@@ -223,6 +247,83 @@ export function TurmaDetalhe({
     }
   }
 
+  /** Só a lista. Separada de `abrirPerfilPortatil` porque recarregar DEPOIS de
+   *  importar não pode apagar a mensagem que acabou de explicar o que aconteceu. */
+  async function carregarRecebidos(alunoIdDaLinha: string) {
+    try {
+      const resposta = await fetch(
+        `/api/plataforma/alunos/${alunoIdDaLinha}/perfis-recebidos${sufixo}`,
+      );
+      setRecebidos(resposta.ok ? ((await resposta.json()) as PerfilRecebido[]) : []);
+    } catch {
+      setRecebidos([]);
+    }
+  }
+
+  async function abrirPerfilPortatil(linha: Matriculado) {
+    setPortatil(linha);
+    setRecebidos(null);
+    setAvisoDoPerfil(null);
+    setErroDoPerfil(null);
+    await carregarRecebidos(linha.id);
+  }
+
+  /**
+   * O download é uma navegação de verdade, e não uma rota do App Router: a
+   * resposta é um arquivo com `Content-Disposition`. `router.push` trataria isso
+   * como transição de página e não baixaria nada — daí `window.open`, que abre a
+   * resposta fora do roteador.
+   */
+  function emitirPerfil(linha: Matriculado) {
+    window.open(`/api/perfil-portatil/${linha.id}`, "_blank", "noopener");
+  }
+
+  async function importarPerfil(arquivo: File) {
+    if (!portatil) return;
+    setImportando(true);
+    setAvisoDoPerfil(null);
+    setErroDoPerfil(null);
+    try {
+      const conteudo = JSON.parse(await arquivo.text()) as unknown;
+      const resposta = await fetch("/api/perfil-recebido", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ escolaId: escolaId ?? undefined, arquivo: conteudo }),
+      });
+      const corpo = (await resposta.json().catch(() => null)) as
+        | { mensagem?: string; verificacao?: string }
+        | null;
+      if (!resposta.ok) {
+        setErroDoPerfil(corpo?.mensagem ?? "O documento foi recusado.");
+        return;
+      }
+      const conferido = corpo?.verificacao === "verificada";
+      setPerfilVerificado(conferido);
+      setAvisoDoPerfil(
+        conferido
+          ? "Perfil recebido, e a assinatura confere com o emissor."
+          : "Perfil recebido. Não foi possível conferir a assinatura com o emissor — ele fica na lista marcado como não verificado.",
+      );
+      await carregarRecebidos(portatil.id);
+    } catch {
+      setErroDoPerfil("O arquivo não é um JSON legível.");
+    } finally {
+      setImportando(false);
+    }
+  }
+
+  async function apagarRecebido(id: string) {
+    try {
+      const resposta = await fetch(`/api/plataforma/perfis-recebidos/${id}${sufixo}`, {
+        method: "DELETE",
+      });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      if (portatil) await carregarRecebidos(portatil.id);
+    } catch {
+      setErroDoPerfil("Não foi possível apagar.");
+    }
+  }
+
   async function abrirTransferencia(linha: Matriculado) {
     setTransferir(linha);
     setEscolaDestino("");
@@ -309,6 +410,11 @@ export function TurmaDetalhe({
             {aba === "alunos" && papel === "admin-contrato" ? (
               <Button variant="ghost" size="sm" onClick={() => void abrirTransferencia(linha)}>
                 Transferir
+              </Button>
+            ) : null}
+            {aba === "alunos" ? (
+              <Button variant="ghost" size="sm" onClick={() => void abrirPerfilPortatil(linha)}>
+                Perfil portátil
               </Button>
             ) : null}
             <Button variant="ghost" size="sm" onClick={() => void abrirMover(linha)}>
@@ -504,6 +610,133 @@ export function TurmaDetalhe({
         </ModalBody>
         <ModalFooter>
           <Button variant="primary" size="md" onClick={() => setHistorico(null)}>
+            Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={Boolean(portatil)} onClose={() => setPortatil(null)} size="lg" theme="light">
+        <ModalHeader>
+          <ModalTitle>Perfil portátil de {portatil?.nome}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-4">
+            <FeedbackAlert
+              type="info"
+              title="Isto é para sair da REDE, não da escola"
+              description="Trocar de escola aqui dentro é Transferir — o histórico continua inteiro. O perfil portátil é o documento assinado que a criança leva quando vai para outra rede, que é outro contrato e outro banco: lá nenhum id daqui existe, e é o CPF que a reconhece."
+            />
+
+            <div className="rounded-xl border border-unooria-neutral-200 p-4">
+              <p className="text-[15px] font-semibold text-unooria-navy-900">Emitir</p>
+              <p className="mt-1 text-[14px] text-unooria-neutral-700">
+                Baixa um arquivo assinado com a trajetória, as participações e os resultados desta
+                criança. É um direito do titular (LGPD art. 18, V) — a escola emite a pedido da
+                família, e o arquivo é legível por quem receber, mesmo numa rede que não use esta
+                plataforma. O check-in de bem-estar nunca entra: é dado de saúde, e a posse é do
+                professor.
+              </p>
+              <div className="mt-3">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => portatil && emitirPerfil(portatil)}
+                >
+                  Emitir e baixar
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-unooria-neutral-200 p-4">
+              <p className="text-[15px] font-semibold text-unooria-navy-900">Receber</p>
+              <p className="mt-1 text-[14px] text-unooria-neutral-700">
+                O que vem de fora fica separado do que foi medido aqui, sempre — é a afirmação de
+                outra instalação sobre a criança, e misturada ela ficaria indistinguível do dado
+                desta rede.
+              </p>
+              <div className="mt-3">
+                <FileUpload
+                  label="Documento recebido"
+                  accept="application/json,.json"
+                  multiple={false}
+                  maxFiles={1}
+                  disabled={importando}
+                  dropzoneTitle="Solte o arquivo aqui ou clique para escolher"
+                  dropzoneSubtitle="O .json emitido pela rede de origem"
+                  onUpload={(arquivos) => {
+                    const arquivo = arquivos[0];
+                    if (arquivo) void importarPerfil(arquivo);
+                  }}
+                />
+              </div>
+            </div>
+
+            {erroDoPerfil ? (
+              <FeedbackAlert type="error" title="Recusado" description={erroDoPerfil} />
+            ) : null}
+            {avisoDoPerfil ? (
+              /* Recebido SEM conferir a assinatura não é sucesso limpo: o aviso
+                 sai em âmbar para o gestor não fechar a tela achando que o
+                 documento foi validado. */
+              <FeedbackAlert
+                type={perfilVerificado ? "success" : "warning"}
+                title={perfilVerificado ? "Pronto" : "Recebido, mas não conferido"}
+                description={avisoDoPerfil}
+              />
+            ) : null}
+
+            <div>
+              <p className="text-[15px] font-semibold text-unooria-navy-900">Recebidos</p>
+              {recebidos === null ? (
+                <p className="mt-1 text-[14px] text-unooria-neutral-500">Carregando…</p>
+              ) : recebidos.length === 0 ? (
+                <p className="mt-1 text-[14px] text-unooria-neutral-500">
+                  Nenhum perfil de outra rede foi recebido para esta criança.
+                </p>
+              ) : (
+                <ul className="mt-2 flex flex-col gap-2">
+                  {recebidos.map((r) => (
+                    <li
+                      key={r.id}
+                      className="flex items-start justify-between gap-3 rounded-lg border border-unooria-neutral-200 px-3 py-2"
+                    >
+                      <span className="text-[14px] text-unooria-neutral-800">
+                        <strong>{r.emissorNome ?? r.emissor}</strong>{" "}
+                        {r.verificacao === "verificada" ? (
+                          <Tag variant="success" size="sm">
+                            assinatura conferida
+                          </Tag>
+                        ) : (
+                          <Tag variant="warning" size="sm">
+                            não verificado
+                          </Tag>
+                        )}
+                        <span className="block text-[12px] text-unooria-neutral-500">
+                          {/* Com hora: reemitir no mesmo dia gera OUTRO documento,
+                              e só a data faria dois deles parecerem duplicata. */}
+                          emitido em{" "}
+                          {new Date(r.emitidoEm).toLocaleString("pt-BR", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}{" "}
+                          ·{" "}
+                          {r.escolas} escola{r.escolas === 1 ? "" : "s"}, {r.participacoes}{" "}
+                          participaç{r.participacoes === 1 ? "ão" : "ões"}, {r.resultados} resultado
+                          {r.resultados === 1 ? "" : "s"}
+                        </span>
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={() => void apagarRecebido(r.id)}>
+                        Apagar
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" size="md" onClick={() => setPortatil(null)}>
             Fechar
           </Button>
         </ModalFooter>

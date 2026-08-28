@@ -84,6 +84,50 @@ describe("identidade única", () => {
     expect(colunas.map((c) => c.coluna)).toEqual(["users.cpf"]);
   });
 
+  test("o CPF em JSONB só existe onde a decisão diz — e o resto é varrido", async () => {
+    /* A contenção é "uma coluna só", e há UMA exceção, deliberada: o documento
+       de perfil portátil recebido de outra instalação (`perfis_portateis.
+       documento`). Ele carrega o CPF porque o CPF é o CONTEÚDO dele — é o que
+       reconhece a criança numa base onde nenhum id daqui existe — e é guardado
+       verbatim porque alterá-lo destruiria a assinatura que o torna conferível.
+       A exceção fica NESTA lista para que a próxima seja uma decisão, e não um
+       vazamento que ninguém viu (ADR-35 na documentação). */
+    const PODEM_TER_CPF = ["perfis_portateis.documento"];
+
+    /* Procura os CPFs QUE EXISTEM, não "onze dígitos seguidos": um `Date.now()`
+       dentro de um JSONB tem treze dígitos e casa com o padrão genérico — foi o
+       que fez uma versão anterior deste teste falhar de vez em quando, sem
+       nenhum CPF ter vazado. Buscar o número real é preciso e não depende de
+       quem mais está escrevendo no banco enquanto a suíte roda. */
+    const cpfs = await prisma.$queryRaw<Array<{ cpf: string }>>`
+      SELECT DISTINCT "cpf" FROM users WHERE "cpf" IS NOT NULL LIMIT 200
+    `;
+    if (cpfs.length === 0) return; // banco sem CPF: nada a varrer
+
+    const formas = cpfs.flatMap((c) => [
+      c.cpf,
+      `${c.cpf.slice(0, 3)}.${c.cpf.slice(3, 6)}.${c.cpf.slice(6, 9)}-${c.cpf.slice(9)}`,
+    ]);
+
+    const colunas = await prisma.$queryRaw<Array<{ tabela: string; coluna: string }>>`
+      SELECT table_name AS tabela, column_name AS coluna
+        FROM information_schema.columns
+       WHERE table_schema = 'public' AND data_type = 'jsonb'
+       ORDER BY 1, 2
+    `;
+    const suspeitas: string[] = [];
+    for (const { tabela, coluna } of colunas) {
+      const nome = `${tabela}.${coluna}`;
+      if (PODEM_TER_CPF.includes(nome)) continue;
+      const linhas = await prisma.$queryRawUnsafe<Array<{ total: bigint }>>(
+        `SELECT count(*)::bigint AS total FROM "${tabela}" WHERE "${coluna}"::text LIKE ANY ($1)`,
+        formas.map((f) => `%${f}%`),
+      );
+      if (Number(linhas[0]?.total ?? 0) > 0) suspeitas.push(nome);
+    }
+    expect(suspeitas).toEqual([]);
+  });
+
   test("nenhuma tabela de experiência nem a telemetria carregam CPF", async () => {
     /* Complemento do teste acima pelo outro lado: procura o FORMATO do dado, não
        o nome da coluna. Um `dados` JSONB com o CPF dentro não apareceria em

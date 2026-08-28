@@ -137,6 +137,13 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \env{PLANOS\_IMPORT\_TOKEN} & \textbf{fecha (503)} & Cabeçalho
   \cd{x-import-token} do \emph{script} de importação de referências
   curriculares.\\
+\zebra \env{PORTABILIDADE\_EMISSORES} & degrada & As origens \cd{https} cujo
+  JWKS a api pode buscar para conferir um perfil portátil que veio de outra
+  rede. O \cd{emissor.hub} vem de DENTRO do arquivo, ou seja, de um
+  desconhecido: sem esta lista a api sairia buscando a URL que um arquivo
+  mandou. Vazia = nenhum documento é verificado e todos entram marcados
+  \cd{nao-verificada} --- não é fechar a rota, porque isso recusaria um direito
+  do titular (\adrr{ADR-35}).\\
 \bottomrule
 \end{tabularx}
 
@@ -170,6 +177,12 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
   o \emph{provider} OIDC no NextAuth.\\
 \zebra \env{AUTH\_WSO2\_CLIENT\_ID} & servidor & Cliente OIDC do hub.\\
 \env{AUTH\_WSO2\_CLIENT\_SECRET} & servidor & Segredo do cliente OIDC.\\
+\zebra \env{CONTRATO\_ID} & servidor & Identifica o EMISSOR dentro do perfil
+  portátil. Ausente: a emissão responde 503 --- documento cujo emissor não se
+  identifica não vale nada na rede de destino, que precisa dele (e do
+  \env{HUB\_ORIGIN}) para achar o JWKS.\\
+\env{CONTRATO\_NOME} & servidor & Nome legível da rede, mostrado a quem receber o
+  documento. Opcional.\\
 \bottomrule
 \end{tabularx}
 

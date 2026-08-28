@@ -3,6 +3,7 @@ import type { PrismaService } from "../src/prisma/prisma.service";
 import { EscolasService } from "../src/rostering/escolas.service";
 import { OneRosterService } from "../src/rostering/oneroster.service";
 import { RosteringService } from "../src/rostering/rostering.service";
+import { PortabilidadeService } from "../src/portabilidade/portabilidade.service";
 import { UsuariosService } from "../src/usuarios/usuarios.service";
 
 /**
@@ -18,5 +19,6 @@ export function servicosDeTeste(prisma: PrismaService) {
   const rostering = new RosteringService(prisma, escolas, config);
   const oneroster = new OneRosterService(prisma, rostering, config, escolas);
   const usuarios = new UsuariosService(prisma);
-  return { escolas, rostering, oneroster, usuarios, config };
+  const portabilidade = new PortabilidadeService(prisma, config);
+  return { escolas, rostering, oneroster, usuarios, portabilidade, config };
 }

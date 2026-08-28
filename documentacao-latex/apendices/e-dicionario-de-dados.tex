@@ -97,6 +97,47 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \bottomrule
 \end{tabularx}
 
+\subsection{\cd{perfis\_portateis}}
+
+O documento assinado que veio de OUTRA instalação da plataforma
+(\adrr{ADR-35}). Ele NÃO se mistura com o dado local: não vira matrícula,
+progresso nem perfil da Vila, e não entra em média nenhuma.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \fk{escola\_id} & \cd{TEXT} FK & RLS por escola. O documento pertence à
+  unidade que o recebeu.\\
+\fk{aluno\_id} & \cd{UUID} FK & Ligado pelo CPF na importação --- nunca cria a
+  pessoa: matricular é ato da escola, e só depois o perfil se anexa.\\
+\zebra \cd{emissor\_contrato} & \cd{TEXT} & Quem emitiu. Pode ser uma rede que
+  esta instalação nunca viu.\\
+\cd{emissor\_hub} & \cd{TEXT} & Origem \cd{https} onde o JWKS é procurado.\\
+\zebra \cd{emissor\_nome} & \cd{TEXT?} & Nome legível da rede de origem.\\
+\cd{emitido\_em} & \cd{TIMESTAMPTZ(6)} & Do documento, não da importação.\\
+\zebra \cd{documento} & \cd{JSONB} & O documento como veio --- fonte para
+  reprocessar. \textbf{Única exceção à contenção do CPF} (\adrr{ADR-33}): o
+  número é o conteúdo, e alterá-lo destruiria a assinatura. A exceção está numa
+  lista explícita dentro do teste estrutural.\\
+\cd{assinatura} & \cd{TEXT} & JWS compacto; o \emph{payload} é
+  \cd{\{ hash \}} do documento canônico.\\
+\zebra \cd{verificacao} & \cd{TEXT} & \cd{verificada} $|$ \cd{nao-verificada}
+  --- \emph{CHECK}. Assinatura INVÁLIDA nunca chega aqui: é recusa.\\
+\fk{importado\_por} & \cd{UUID} FK & Quem importou. \cd{ON DELETE RESTRICT}.\\
+\zebra \cd{importado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\cd{UNIQUE (escola\_id, aluno\_id, emissor\_contrato, emitido\_em)}: a escola
+recebe o arquivo por e-mail e alguém importa duas vezes. Duas cópias do mesmo
+fato pareceriam duas medidas. Reimportar reconfere a assinatura e atualiza só o
+veredito --- a rede pode ter voltado, e \enquote{não consegui falar com o
+emissor} deixar de valer não é fato novo sobre a criança.
+\end{decisao}
+
 \subsection{\cd{periodos\_letivos} (catálogo)}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}

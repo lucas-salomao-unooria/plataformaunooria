@@ -131,6 +131,9 @@ services:
       # browser — dentro do container `localhost` é o container.
       EXP_INTERNAL_URL: ${EXP_INTERNAL_URL:-http://host.docker.internal:5173}
       HUB_ORIGIN: http://localhost:3000
+      # Emissor do PERFIL PORTÁTIL — sem ele a emissão responde 503.
+      CONTRATO_ID: ${CONTRATO_ID:-contrato-dev}
+      CONTRATO_NOME: ${CONTRATO_NOME:-Rede de Demonstração}
       AUTH_URL: http://localhost:3000
       AUTH_SECRET: ${AUTH_SECRET:-dev-secret-com-mais-de-32-caracteres-ok}
       AUTH_TRUST_HOST: "true"

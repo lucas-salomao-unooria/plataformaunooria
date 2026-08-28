@@ -22,6 +22,11 @@ const PREFIXOS_PERMITIDOS = [
   /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a
      transferência de aluno entre escolas. */
   "escolas",
+  /* Perfil portátil RECEBIDO de outra rede: ler e apagar. A importação tem rota
+     própria do hub (`/api/perfil-recebido`) porque precisa devolver o MOTIVO da
+     recusa, que este BFF engole — e não por segurança: quem confere a assinatura
+     é a api, justamente para não depender de quem chama. */
+  "perfis-recebidos",
   "lotacoes",
   "alunos",
   "atividades",

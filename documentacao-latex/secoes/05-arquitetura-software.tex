@@ -337,24 +337,29 @@ conhecer.
 
   % ---- faixa 3: plataforma
   \node[camadalbl, anchor=west] at (0.7,-6.8) {Plataforma --- serve a todas as experiências};
-  \node[c4component, text width=25mm] (auth) at (2.3,-8.0)
+  % Cinco colunas por linha, 22mm: com 25mm e a quinta em x=14,0 as caixas
+  % encostavam umas nas outras — `progress/` cobria `rostering/` no PDF, e
+  % typecheck nenhum pega isso.
+  \node[c4component, text width=22mm] (auth) at (2.0,-8.0)
     {\texttt{auth/}\desc{\texttt{TokenService}}};
-  \node[c4component, text width=25mm] (usu) at (5.5,-8.0)
+  \node[c4component, text width=22mm] (usu) at (5.1,-8.0)
     {\texttt{usuarios/}\desc{listar, editar, senha}};
-  \node[c4component, text width=25mm] (expmod) at (8.7,-8.0)
+  \node[c4component, text width=22mm] (expmod) at (8.2,-8.0)
     {\texttt{experiencias/}\desc{manifesto}};
-  \node[c4component, text width=25mm] (tel) at (11.9,-8.0)
-    {\texttt{telemetry/}\desc{\emph{batch}, \emph{beacon}, \emph{ingest}}};
-  \node[c4component, text width=25mm] (prog) at (14.0,-9.5)
+  \node[c4component, text width=22mm] (tel) at (11.3,-8.0)
+    {\texttt{telemetry/}\desc{\emph{batch}, \emph{ingest}}};
+  \node[c4component, text width=22mm] (prog) at (14.4,-8.0)
     {\texttt{progress/}\desc{progresso genérico}};
-  \node[c4component, text width=25mm] (health) at (2.3,-9.5)
+  \node[c4component, text width=22mm] (health) at (2.0,-9.6)
     {\texttt{health/}\desc{\texttt{healthz}, \texttt{readyz}}};
-  \node[c4component, text width=25mm] (analise) at (5.5,-9.5)
+  \node[c4component, text width=22mm] (analise) at (5.1,-9.6)
     {\texttt{analise/}\desc{turma e rede, CSV}};
-  \node[c4component, text width=25mm] (comum) at (8.7,-9.5)
-    {\texttt{comum/}\desc{séries, \emph{rate limit}, escopo de turma}};
-  \node[c4component, text width=25mm] (rost) at (11.9,-9.5)
-    {\texttt{rostering/}\desc{fronteira: planilha, escolas e regionais, turmas, matrículas, lotações}};
+  \node[c4component, text width=22mm] (comum) at (8.2,-9.6)
+    {\texttt{comum/}\desc{séries, escopo de turma}};
+  \node[c4component, text width=22mm] (rost) at (11.3,-9.6)
+    {\texttt{rostering/}\desc{pessoas, escolas, turmas}};
+  \node[c4component, text width=22mm] (port) at (14.4,-9.6)
+    {\texttt{portabilidade/}\desc{perfil portátil}};
 
   % ---- faixa 4: dominio por experiencia
   \node[camadalbl, anchor=west] at (0.7,-11.1)

@@ -284,6 +284,17 @@ participações e nunca o conteúdo dos instrumentos (\adrr{ADR-32}).
 \end{decisao}
 
 \begin{decisao}
+\textbf{Sair da REDE é outra coisa, e sai como DOCUMENTO.} Transferência entre
+escolas do contrato é lotação. Já a criança que vai para outra rede sai da
+instalação --- outro banco, nenhum \emph{JOIN} ---, e não há garantia de que o
+destino seja cliente. Por isso a saída é um arquivo assinado pelo hub (a mesma
+chave dos \emph{tokens}, com \cd{aud} próprio), emitido a pedido do titular
+(LGPD art.~18, V), e o que chega de fora vive numa tabela só dele: nunca vira
+matrícula, progresso nem perfil, e nunca entra em média. Assinatura inválida é
+RECUSA; emissor inalcançável é um rótulo visível na tela (\adrr{ADR-35}).
+\end{decisao}
+
+\begin{decisao}
 \textbf{A senha do primeiro acesso é travada em três lugares.} Enquanto
 \cd{senha\_provisoria} for verdadeira, o \emph{middleware} prende as páginas em
 \rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite

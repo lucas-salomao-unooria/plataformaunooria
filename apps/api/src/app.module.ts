@@ -9,6 +9,7 @@ import { TelemetryModule } from "./telemetry/telemetry.module";
 import { ProgressoModule } from "./progress/progresso.module";
 import { AiModule } from "./ai/ai.module";
 import { UsuariosModule } from "./usuarios/usuarios.module";
+import { PortabilidadeModule } from "./portabilidade/portabilidade.module";
 import { RosteringModule } from "./rostering/rostering.module";
 import { ExperienciasModule } from "./experiencias/experiencias.module";
 import { MotorModule } from "./motor/motor.module";
@@ -36,6 +37,7 @@ import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
     AiModule,
     UsuariosModule,
     RosteringModule,
+    PortabilidadeModule,
     ExperienciasModule,
     MotorModule,
     AssetsModule,

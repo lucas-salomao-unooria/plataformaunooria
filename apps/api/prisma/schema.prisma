@@ -33,27 +33,27 @@ datasource db {
 /// Tenant nível 2 (nível 1 é o contrato = stack inteira). O id é texto e é o
 /// MESMO valor que circula no claim `escola_id` do JWT e no `set_config` da RLS.
 model Escola {
-  id        String   @id
-  nome      String
+  id           String   @id
+  nome         String
   /// Código INEP — o `orgs.identifier` do OneRoster. É por onde a escola daqui
   /// se reconhece na base da rede (e, quando o padrão nacional do MEC cobrar,
   /// no EducaDados). Opcional: contrato pode começar sem ele.
-  codigoInep String? @map("codigo_inep")
+  codigoInep   String?  @map("codigo_inep")
   /// escola | regional | rede — CHECK na migration.
   ///
   /// `regional` cobre Diretoria de Ensino (SP), polo, regional e secretaria
   /// municipal: é o nível que agrupa unidades dentro de uma rede. O `district`
   /// do OneRoster é mapeado para cá na importação.
-  tipo      String   @default("escola")
+  tipo         String   @default("escola")
   /// A regional (ou a rede) a que esta unidade pertence. Serve para MONTAR a
   /// lista de escolas de uma diretoria — o insumo da lotação em lote —, nunca
   /// para autorizar: quem autoriza é a lotação. Trigger na migration recusa
   /// escola como pai.
-  paiId     String?  @map("pai_id")
+  paiId        String?  @map("pai_id")
   /// `sourcedId` desta org no sistema de origem (SIS da rede). Chave de
   /// reconciliação da importação — nunca é o id daqui.
-  fonteId   String?  @map("fonte_id")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  fonteId      String?  @map("fonte_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   /// Município e UF: numa rede estadual são 5 mil escolas em centenas de
@@ -62,11 +62,12 @@ model Escola {
   /// Sigla de 2 letras — CHECK na migration.
   uf        String?
 
-  pai      Escola?  @relation("EscolaPai", fields: [paiId], references: [id])
-  filhas   Escola[] @relation("EscolaPai")
-  turmas   Turma[]
-  usuarios User[]
-  lotacoes Lotacao[]
+  pai             Escola?          @relation("EscolaPai", fields: [paiId], references: [id])
+  filhas          Escola[]         @relation("EscolaPai")
+  turmas          Turma[]
+  usuarios        User[]
+  lotacoes        Lotacao[]
+  perfisPortateis PerfilPortatil[]
 
   @@map("escolas")
 }
@@ -84,19 +85,19 @@ model Escola {
 /// LOGIN, antes de se saber a escola — é ela que responde "quais escolas são
 /// suas". Uma política por `escola_id` aqui esconderia justamente a resposta.
 model Lotacao {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId  String    @map("escola_id")
-  usuarioId String    @map("usuario_id") @db.Uuid
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  usuarioId    String    @map("usuario_id") @db.Uuid
   /// aluno | professor | gestor — CHECK na migration
-  papel     String
+  papel        String
   /// A escola padrão da pessoa: alimenta o cache `users.escola_id` e é a que o
   /// token carrega quando ela entra sem escolher.
-  principal Boolean   @default(false)
-  inicio    DateTime  @db.Date
+  principal    Boolean   @default(false)
+  inicio       DateTime  @db.Date
   /// Preenchido em vez de DELETE quando a pessoa sai da escola.
-  fim       DateTime? @db.Date
-  fonteId   String?   @map("fonte_id")
-  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  fim          DateTime? @db.Date
+  fonteId      String?   @map("fonte_id")
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   escola  Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
   usuario User   @relation("LotacaoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -105,6 +106,46 @@ model Lotacao {
   @@index([usuarioId])
   @@index([escolaId, papel])
   @@map("lotacoes")
+}
+
+/// O PERFIL PORTÁTIL recebido de outra instalação da plataforma.
+///
+/// Um contrato é uma rede e uma stack: a criança que sai da rede estadual para a
+/// municipal sai da instalação, e não há JOIN possível entre os dois bancos. O
+/// que atravessa é um DOCUMENTO ASSINADO, emitido pela origem a pedido do
+/// titular (LGPD art. 18 V) e importado pelo destino como um ato dele.
+///
+/// **O que vem de fora nunca se mistura com o que foi produzido aqui.** Esta
+/// linha não vira matrícula, progresso nem perfil da Vila, e não entra em média
+/// nenhuma: é a afirmação de OUTRA instalação sobre a criança, possivelmente de
+/// outra versão do mapeamento. Separada, o professor lê as duas e sabe qual é
+/// qual; misturada, ela ficaria indistinguível do dado local.
+model PerfilPortatil {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId        String   @map("escola_id")
+  alunoId         String   @map("aluno_id") @db.Uuid
+  emissorContrato String   @map("emissor_contrato")
+  emissorHub      String   @map("emissor_hub")
+  emissorNome     String?  @map("emissor_nome")
+  emitidoEm       DateTime @map("emitido_em") @db.Timestamptz(6)
+  /// O documento como veio — a fonte para reprocessar, nunca a nossa cópia
+  /// interpretada.
+  documento       Json
+  assinatura      String
+  /// verificada | nao-verificada — CHECK na migration. Assinatura INVÁLIDA nunca
+  /// chega aqui: a api recusa. Não conseguir falar com o emissor é limitação de
+  /// rede; assinatura quebrada é adulteração.
+  verificacao     String
+  importadoPor    String   @map("importado_por") @db.Uuid
+  importadoEm     DateTime @default(now()) @map("importado_em") @db.Timestamptz(6)
+
+  escola       Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  aluno        User   @relation("PerfilPortatilAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  quemImportou User   @relation("PerfilPortatilImportador", fields: [importadoPor], references: [id])
+
+  @@unique([escolaId, alunoId, emissorContrato, emitidoEm], map: "perfis_portateis_documento_unico")
+  @@index([escolaId, alunoId], map: "perfis_portateis_por_aluno")
+  @@map("perfis_portateis")
 }
 
 /// Ano letivo e seus recortes (≈ `academicSessions` do OneRoster).
@@ -117,16 +158,16 @@ model Lotacao {
 /// ela, `users.turma_id` é uma coluna, o 8A vira 9A em fevereiro e todo o
 /// acumulado do ano anterior passa a ser lido pela turma nova, em silêncio.
 model PeriodoLetivo {
-  id     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   /// ano_letivo | semestre | bimestre | trimestre — CHECK na migration
-  tipo   String   @default("ano_letivo")
-  titulo String
-  ano    Int      @db.SmallInt
-  inicio DateTime @db.Date
-  fim    DateTime @db.Date
+  tipo         String   @default("ano_letivo")
+  titulo       String
+  ano          Int      @db.SmallInt
+  inicio       DateTime @db.Date
+  fim          DateTime @db.Date
   /// Hierarquia do padrão: ano letivo → bimestre. Null = raiz.
-  paiId  String?  @map("pai_id") @db.Uuid
-  fonteId String? @map("fonte_id")
+  paiId        String?  @map("pai_id") @db.Uuid
+  fonteId      String?  @map("fonte_id")
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   pai    PeriodoLetivo?  @relation("PeriodoPai", fields: [paiId], references: [id])
@@ -138,30 +179,30 @@ model PeriodoLetivo {
 }
 
 model Turma {
-  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId String @map("escola_id")
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId        String   @map("escola_id")
   /// A turma existe DENTRO de um ano letivo. NOT NULL de propósito: turma sem
   /// período é a coluna `users.turma_id` de novo, só que com outro nome.
-  periodoLetivoId String @map("periodo_letivo_id") @db.Uuid
-  nome     String
+  periodoLetivoId String   @map("periodo_letivo_id") @db.Uuid
+  nome            String
   /// 1EF..9EF | 1EM..3EM — validado com zod na aplicação
-  serie    String
+  serie           String
   /// regular | componente — o `classType` do OneRoster (`homeroom|scheduled`).
   /// `regular` é a turma de referência (o enturmamento); `componente` é a turma
   /// de uma disciplina/eletiva, que o mesmo aluno pode cursar em paralelo.
-  tipo     String @default("regular")
+  tipo            String   @default("regular")
   /// manha | tarde | noite | integral — CHECK na migration
-  turno    String?
+  turno           String?
   /// Código da turma na rede (`classCode`).
-  codigo   String?
-  fonteId  String? @map("fonte_id")
-  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  codigo          String?
+  fonteId         String?  @map("fonte_id")
+  atualizadoEm    DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   escola        Escola        @relation(fields: [escolaId], references: [id])
   periodoLetivo PeriodoLetivo @relation(fields: [periodoLetivoId], references: [id])
   /// Cache da matrícula principal (`users.turma_id`). A VERDADE é `matriculas`.
-  alunos     User[]
-  matriculas Matricula[]
+  alunos        User[]
+  matriculas    Matricula[]
 
   /// O Relógio da AULA da exp-03 mora em tabela DA EXPERIÊNCIA, não em coluna
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
@@ -186,21 +227,21 @@ model Turma {
 /// ESCOLA (o `roles.csv` do padrão), não matrícula de turma — e é por isso que
 /// ele continua enxergando a escola inteira.
 model Matricula {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId  String    @map("escola_id")
-  turmaId   String    @map("turma_id") @db.Uuid
-  usuarioId String    @map("usuario_id") @db.Uuid
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String    @map("escola_id")
+  turmaId      String    @map("turma_id") @db.Uuid
+  usuarioId    String    @map("usuario_id") @db.Uuid
   /// aluno | professor — CHECK na migration
-  papel     String
+  papel        String
   /// A turma de referência da pessoa. É ela que alimenta o cache
   /// `users.turma_id` e, por ele, o claim `turma_id` do token.
-  principal Boolean   @default(false)
-  inicio    DateTime  @db.Date
+  principal    Boolean   @default(false)
+  inicio       DateTime  @db.Date
   /// Preenchido em vez de DELETE quando a pessoa sai: há dado de aluno pendurado
   /// em oito tabelas, e apagar a matrícula tornaria esse dado órfão de turma.
-  fim       DateTime? @db.Date
-  fonteId   String?   @map("fonte_id")
-  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  fim          DateTime? @db.Date
+  fonteId      String?   @map("fonte_id")
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   turma   Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   usuario User  @relation("MatriculaUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -214,21 +255,21 @@ model Matricula {
 /// aluno | professor | gestor | admin-contrato
 /// CHECK na migration: escola_id NOT NULL exceto quando role = 'admin-contrato'.
 model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  role         String
-  escolaId     String?  @map("escola_id")
-  turmaId      String?  @map("turma_id") @db.Uuid
-  username     String
-  displayName  String   @map("display_name")
-  passwordHash String   @map("password_hash")
-  avatar       String?
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role             String
+  escolaId         String?   @map("escola_id")
+  turmaId          String?   @map("turma_id") @db.Uuid
+  username         String
+  displayName      String    @map("display_name")
+  passwordHash     String    @map("password_hash")
+  avatar           String?
   /// Identificador da PESSOA na rede (RA/matrícula). É a chave de reconciliação
   /// da importação: com ela, corrigir nome ou login continua sendo a mesma
   /// pessoa; sem ela, o upsert cai no `username` e um login corrigido vira um
   /// segundo aluno com o histórico preso no primeiro.
   /// Índice único parcial por escola vive na migration (o Prisma não modela
   /// índice parcial, e NULL não pode colidir).
-  matriculaExterna String? @map("matricula_externa")
+  matriculaExterna String?   @map("matricula_externa")
   /// Os 11 dígitos, sem pontuação. É a identidade IMUTÁVEL da pessoa na rede:
   /// sobrevive a troca de nome, de login, de matrícula e de ESCOLA, e é por ele
   /// que uma transferência é reconhecida como a mesma criança em vez de virar
@@ -243,29 +284,32 @@ model User {
   /// `sourcedId` desta pessoa no sistema de origem (OneRoster). Distinto do
   /// `sub` do IdP: SIS e IdP são sistemas diferentes e as duas reconciliações
   /// não são a mesma.
-  fonteId          String? @map("fonte_id")
+  fonteId          String?   @map("fonte_id")
   email            String?
   /// Saiu da rede ⇒ `false`. Nunca DELETE: dado de aluno pendurado.
-  ativo            Boolean @default(true)
+  ativo            Boolean   @default(true)
   /// Senha veio da importação e ainda não foi trocada pela pessoa. Enquanto
   /// verdadeiro, o hub prende em /trocar-senha e não emite token de experiência.
-  senhaProvisoria  Boolean @default(false) @map("senha_provisoria")
+  senhaProvisoria  Boolean   @default(false) @map("senha_provisoria")
   senhaDefinidaEm  DateTime? @map("senha_definida_em") @db.Timestamptz(6)
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  atualizadoEm     DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   /// Cache da LOTAÇÃO principal — a escola que o token carrega quando a pessoa
   /// entra sem escolher. A verdade é `lotacoes`; esta coluna existe porque o
   /// login a lê antes de haver escola no contexto, e porque os 31 lugares que
   /// filtram por `escola_id` continuam valendo sem mudança nenhuma.
-  escola Escola? @relation(fields: [escolaId], references: [id])
+  escola            Escola?          @relation(fields: [escolaId], references: [id])
   /// Cache da matrícula principal — a verdade é `matriculas`. Continua existindo
   /// porque o login e o claim `turma_id` do token (contrato congelado) o leem
   /// fora de contexto de tenancy, onde `matriculas` (com RLS) não é alcançável.
-  turma  Turma?  @relation(fields: [turmaId], references: [id])
-  matriculas Matricula[] @relation("MatriculaUsuario")
+  turma             Turma?           @relation(fields: [turmaId], references: [id])
+  matriculas        Matricula[]      @relation("MatriculaUsuario")
   /// As escolas da pessoa. Professor tem mais de uma; aluno, uma ativa.
-  lotacoes   Lotacao[]   @relation("LotacaoUsuario")
+  lotacoes          Lotacao[]        @relation("LotacaoUsuario")
+  /// Perfis vindos de outra instalação — nunca misturados ao dado local.
+  perfisPortateis   PerfilPortatil[] @relation("PerfilPortatilAluno")
+  perfisQueImportou PerfilPortatil[] @relation("PerfilPortatilImportador")
 
   activities       Activity[]        @relation("ActivityProfessor")
   runs             Run[]
