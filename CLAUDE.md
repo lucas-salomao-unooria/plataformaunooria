@@ -407,6 +407,41 @@ marca institucional entra.
 ```
 SDK preenche tudo exceto `verbo`, `objeto`, `resultado`. Batch de até 50, flush 10s.
 
+### Documentação da api: OpenAPI derivado do Zod (2026-08-28)
+
+`/docs` (Swagger UI) e `/docs-json` na **api** — `localhost:3001/docs`, não 3000,
+que é o hub. **Derivado dos schemas Zod que as rotas já usam para validar**
+(ADR-36): a api não tem DTO de classe, e anotar `@ApiBody` à mão nas 146 rotas
+criaria uma segunda descrição do contrato que nada obriga a concordar com a
+primeira — a armadilha do `expires_at`.
+
+- **`@Contrato({...})` só grava metadata.** Ele NÃO chama `@ApiOperation`/
+  `@ApiResponse`, porque um decorator não enxerga o verbo da rota (o `@Get` pode
+  ser aplicado depois dele) nem o `@Roles`. Quem monta a operação é
+  `openapi/documento.ts`, percorrendo as rotas já registradas.
+- **Papel vem do `@Roles` real**, nunca de campo repetido no `@Contrato`.
+- O esqueleto de caminhos vem do roteador do Nest; o conteúdo, do `@Contrato`.
+  As duas travessias têm de concordar, e divergir num caminho é erro na subida.
+- **`.refine()` some da conversão, em silêncio** — JSON Schema não expressa
+  função. O campo `notas` do `@Contrato` existe para essas restrições virarem
+  texto: sem ele o documento mente por omissão.
+- **Schema de resposta é CONFERIDO, não só publicado** (ADR-37): `.parse()`
+  estrito nos testes, `safeParse` com aviso no log fora de produção
+  (`ContratoInterceptor`), e **no-op em produção** — schema estrito demais não
+  pode transformar rota que funciona em 500. O aviso carrega só caminho e código
+  do problema, nunca o valor: a resposta desta api tem nome de criança e CPF.
+- **Senha: `SWAGGER_USUARIO` + `SWAGGER_SENHA` (mín. 16).** Ausentes ⇒ a rota
+  **não é montada** e o 404 é do roteador — não 401, que confirmaria o mapa.
+  Meia credencial derruba a subida.
+- **A trava é `tests/openapi-cobertura.spec.ts`**: percorre o roteador e cobra
+  `@Contrato` de toda rota, salvo as da lista `SEM_CONTRATO_AINDA`, **que só
+  encolhe**. Cada commit cobre um módulo (`<modulo>/contrato-de-rotas.ts` — o
+  nome `contrato.ts` já é o payload do jogo na exp-70) e apaga as linhas dele,
+  copiando a prosa daquele módulo do `c-endpoints.tex` para a `descricao`. Feito:
+  `health`, `auth`. **Faltam 142 rotas.**
+- Gerar o arquivo: `npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts`.
+  Quando a lista zerar, `apendices/c-endpoints.tex` passa a ser GERADO dele.
+
 ### Provider de IA (`apps/api/src/ai/provider.ts`)
 Interface única `AiProvider { generate(req): Promise<AiResult> }`. Implementações:
 `vertex.provider.ts` (default), `mock.provider.ts` (testes). Para trocar de
@@ -832,6 +867,8 @@ pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
 pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
 pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
+npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # escreve o documento OpenAPI (roda da pasta apps/api)
+SWAGGER_USUARIO=doc SWAGGER_SENHA=<16+ chars> pnpm dev          # liga /docs em localhost:3001/docs (na API, não no hub)
 SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)

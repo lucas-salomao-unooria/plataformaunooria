@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Claims do token — CONTRATO CONGELADO (M0 do plano de migração).
  *
@@ -9,7 +11,7 @@
  * `usuarioId` = `sub` (professor/gestor/admin passam pelo mesmo guard, daí não
  * se chamar mais alunoId).
  */
-export type Perfil = "aluno" | "professor" | "gestor" | "admin-contrato";
+export type Perfil = (typeof PERFIS)[number];
 
 export interface AuthClaims {
   usuarioId: string;
@@ -19,4 +21,10 @@ export interface AuthClaims {
   perfil: Perfil;
 }
 
-export const PERFIS: readonly Perfil[] = ["aluno", "professor", "gestor", "admin-contrato"];
+export const PERFIS = ["aluno", "professor", "gestor", "admin-contrato"] as const;
+
+/** Os mesmos quatro papéis para quem valida com Zod — schema de rota, sobretudo.
+ *  Derivado de `PERFIS` (que agora é tupla) para não haver duas listas: uma
+ *  terceira fonte de papéis é exatamente como "coordenacao" viraria papel novo
+ *  sem ninguém decidir. */
+export const PerfilSchema = z.enum(PERFIS);

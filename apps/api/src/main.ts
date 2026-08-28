@@ -1,7 +1,10 @@
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
+import { SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { AssetsService } from "./assets/assets.service";
+import { construirDocumento } from "./openapi/documento";
+import { credenciaisDoDocs, portaDoDocs } from "./openapi/porta-do-docs";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
@@ -27,6 +30,28 @@ async function bootstrap() {
       process.env.CORS_ORIGINS ?? "http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178"
     ).split(","),
   });
+  /**
+   * Documentação OpenAPI em `/docs`, e o JSON em `/docs-json`.
+   *
+   * Sem `SWAGGER_USUARIO`/`SWAGGER_SENHA` nada disto é montado, e o 404 que
+   * responde é o do roteador — a api tem domínio próprio no balanceador, e o
+   * que a porta protege é o mapa das 146 rotas. A porta entra ANTES do
+   * `setup`, senão o próprio JS do Swagger UI (servido debaixo de `/docs`)
+   * sairia sem credencial.
+   */
+  const credenciais = credenciaisDoDocs();
+  if (credenciais) {
+    const porta = portaDoDocs(credenciais);
+    app.use("/docs", porta);
+    app.use("/docs-json", porta);
+    SwaggerModule.setup("docs", app, construirDocumento(app), {
+      jsonDocumentUrl: "docs-json",
+      // Sem isto, o token colado em "Authorize" se perde a cada recarga — e
+      // conferir uma rota vira colar o token de novo a cada tentativa.
+      swaggerOptions: { persistAuthorization: true },
+    });
+  }
+
   await app.listen(process.env.PORT ?? 3001);
 }
 void bootstrap();

@@ -5,6 +5,9 @@ import { z } from "zod";
  * externo, env incluído). Variável errada derruba o processo na subida,
  * não em runtime no meio de uma requisição.
  */
+/** A porta do `/docs` fica na internet, então a senha não pode ser de teclado. */
+export const TAMANHO_MINIMO_DA_SENHA_DO_DOCS = 16;
+
 export const EnvSchema = z.object({
   // Lido pela verificação do perfil portátil, que só aceita JWKS por http fora
   // de produção. Fica no schema em vez de `process.env` solto porque a regra da
@@ -96,6 +99,14 @@ export const EnvSchema = z.object({
   TELEMETRIA_PUSH_AUDIENCE: z.string().optional(),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176"),
   PORT: z.coerce.number().int().default(3001),
+
+  /**
+   * Credencial do `/docs` (Swagger). AUSENTES ⇒ a rota nem é montada: a api tem
+   * domínio próprio no balanceador, e o que a porta protege é o mapa das rotas.
+   * Ver `openapi/porta-do-docs.ts`.
+   */
+  SWAGGER_USUARIO: z.string().min(1).optional(),
+  SWAGGER_SENHA: z.string().min(TAMANHO_MINIMO_DA_SENHA_DO_DOCS).optional(),
 }).superRefine((env, ctx) => {
   if (env.AI_PROVIDER === "vertex" && !env.VERTEX_PROJECT_ID) {
     ctx.addIssue({
@@ -103,6 +114,19 @@ export const EnvSchema = z.object({
       path: ["VERTEX_PROJECT_ID"],
       message:
         "obrigatório com AI_PROVIDER=vertex (em dev, use AI_PROVIDER=mock para subir sem GCP)",
+    });
+  }
+
+  // Meia credencial não é meia porta: é uma porta que não abre, com alguém
+  // achando que configurou a documentação. Falha na SUBIDA, que é onde dá para
+  // consertar, e não num 404 inexplicável depois do deploy.
+  const usuario = Boolean(env.SWAGGER_USUARIO);
+  const senha = Boolean(env.SWAGGER_SENHA);
+  if (usuario !== senha) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [usuario ? "SWAGGER_SENHA" : "SWAGGER_USUARIO"],
+      message: "as duas variáveis do /docs andam juntas: ou ambas, ou nenhuma",
     });
   }
 });

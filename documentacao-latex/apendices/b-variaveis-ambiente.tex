@@ -148,6 +148,15 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
   Vazia = nenhum documento é verificado e todos entram \cd{nao-verificada} ---
   não é fechar a rota, porque isso recusaria um direito do titular
   (\adrr{ADR-35}).\\
+\env{SWAGGER\_USUARIO} & \textbf{some (404)} & Usuário da documentação OpenAPI em
+  \rota{/docs}.\\
+\zebra \env{SWAGGER\_SENHA} & \textbf{some (404)} & Senha, mínimo 16 caracteres.
+  \textbf{Sem as duas, \rota{/docs} e \rota{/docs-json} não são montadas} --- quem
+  responde é o 404 do roteador, não um 401. As rotas de serviço acima devolvem
+  401/503 porque a existência delas já é pública; aqui o ativo protegido É o mapa
+  das rotas, e um 401 confirmaria que ele está atrás daquela porta. \textbf{Meia
+  credencial derruba a subida}: uma porta que não abre com alguém achando que
+  configurou a documentação é pior que nenhuma (\adrr{ADR-36}).\\
 \bottomrule
 \end{tabularx}
 

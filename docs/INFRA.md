@@ -22,7 +22,7 @@ Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 | Bucket **planos** | `{contrato}-planos` (**privado**, sem CDN, versionamento de objetos ligado) | api (`PLANOS_BUCKET`) |
 | Cloud SQL | `{contrato}-pg` (HA, PITR, pooler ativo) | api DATABASE_URL |
 | Pub/Sub | topic `{contrato}-telemetria` + **push** sub `{contrato}-telemetria-ingest` → `POST {api}/telemetry/ingest` | api |
-| Secret Manager | `{contrato}-database-url`, `{contrato}-db-password`, `{contrato}-token-signing-key`, `{contrato}-auth-secret`, `{contrato}-perfil-import-token`, `{contrato}-planos-import-token` | Cloud Run env |
+| Secret Manager | `{contrato}-database-url`, `{contrato}-db-password`, `{contrato}-token-signing-key`, `{contrato}-auth-secret`, `{contrato}-perfil-import-token`, `{contrato}-planos-import-token`, `{contrato}-swagger-senha` | Cloud Run env |
 | Service Accounts | `{contrato}-api` (Vertex, Pub/Sub publisher, `objectAdmin` nos buckets de assets e de planos), `{contrato}-run` (hub/storybook), `{contrato}-push` (assina o push da telemetria) | |
 | Load Balancer | um só, global: hub em `{hub_domain}`, api em `{api_domain}`, bundles em `{exp_domain}`, assets em `{assets_domain}` — mesmo IP, host rules | DNS |
 | WIF p/ GitHub Actions | pool `github` | deploy.yml (sem chave JSON) |
@@ -31,6 +31,13 @@ Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run 
 `OIDC_ISSUER`/`OIDC_JWKS_URI` NÃO são segredo (são URLs públicas do hub) e vão
 como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
 `iss` do token e o esperado pela api não podem divergir.
+
+**Documentação da api (`/docs`)**: `SWAGGER_USUARIO` vai como env em texto plano;
+`SWAGGER_SENHA` vem de `{contrato}-swagger-senha` (mínimo 16 caracteres). **As
+duas ausentes = as rotas `/docs` e `/docs-json` não são montadas**, e o 404 é do
+roteador — a api tem domínio próprio no LB, e o que a porta protege é o mapa das
+rotas. Meia credencial derruba a subida do container, de propósito: uma porta que
+não abre com alguém achando que configurou a documentação é pior que nenhuma.
 
 **Mudanças em relação ao desenho original (decisões da migração, 2026-08):**
 

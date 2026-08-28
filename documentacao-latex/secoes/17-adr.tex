@@ -1575,3 +1575,149 @@ Quatro decisões dentro dessa:
 MEC 269/2026) definir um formato nacional de transferência de histórico: aí este
 documento vira um \emph{binding} daquele formato, e o que sobrevive é a decisão
 de ser documento assinado em vez de integração.
+
+\section{ADR-36 --- O OpenAPI é derivado do Zod, não escrito ao lado dele}
+\label{adr:openapi-derivado}
+
+\begin{especificacao}{Contexto}
+A api tem 146 rotas em 27 \emph{controllers} e nenhuma documentação executável:
+quem quisesse saber o que \rota{POST /rostering/importar} aceita lia o
+\emph{controller}. A única descrição existente é o Apêndice~\ref{ap:endpoints}
+deste documento --- prosa escrita à mão, que nada obriga a concordar com o
+código.
+
+A complicação está em como a api valida. Não há DTO de classe: são 42
+\emph{schemas} Zod declarados como \cd{const} dentro dos \emph{controllers} e
+aplicados por \cd{.parse()}/\cd{.safeParse()} no corpo do método, sem
+\emph{pipe} compartilhado. O \cd{@nestjs/swagger} infere esquema de classe
+anotada com \cd{class-validator}; sobre Zod ele não infere nada.
+\end{especificacao}
+
+\textbf{Decisão.} O documento é \textbf{derivado} do \emph{schema} que a rota já
+usa para validar. Um decorator único, \cd{@Contrato}, declara resumo, prosa,
+corpo, \emph{query} e \textbf{resposta}; \cd{zod-to-json-schema} traduz para o
+dialeto do OpenAPI 3.0; e \cd{openapi/documento.ts} monta cada operação.
+
+Três decisões dentro dessa:
+
+\begin{itemize}
+  \item \textbf{O \cd{@Contrato} não chama \cd{@ApiOperation}/\cd{@ApiResponse}.}
+    Ele só grava metadata. Um decorator não enxerga o verbo da rota --- o
+    \cd{@Get}/\cd{@Post} pode ser aplicado depois dele, e a ordem de avaliação é
+    de baixo para cima --- então teria de ADIVINHAR o código de sucesso, e
+    também não enxerga o \cd{@Roles}. Quem monta a operação é o construtor do
+    documento, que percorre as rotas já registradas e tem o verbo, o
+    \cd{@HttpCode} e o \cd{@Roles} à mão.
+  \item \textbf{Os papéis vêm do \cd{@Roles} real}, nunca de um campo repetido no
+    \cd{@Contrato}: repetir abriria espaço para o documento dizer
+    \cd{gestor} enquanto o \emph{guard} exige \cd{admin-contrato}.
+  \item \textbf{O esqueleto de caminhos vem do roteador do Nest}
+    (\cd{SwaggerModule.createDocument}), que é a única fonte incapaz de inventar
+    uma rota que não existe. As duas travessias --- a do roteador e a do
+    \cd{DiscoveryService} --- precisam concordar, e divergência de um caminho
+    sequer é erro alto na subida.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Anotar \cd{@ApiBody}/\cd{@ApiResponse} à mão nas 146 rotas}: criaria
+    uma segunda descrição do contrato ao lado da primeira, sem nada que as
+    obrigue a concordar. É literalmente a armadilha do \cd{expires\_at} que ficou
+    no \emph{schema} depois que a rotina saiu do código.
+  \item \emph{Migrar a validação para DTOs com \cd{class-validator}}: reescreveria
+    a validação das 146 rotas para ganhar inferência automática, e trocaria o Zod
+    --- que a convenção da casa usa em TODO input externo, \emph{env} incluído ---
+    por um segundo validador só nas rotas.
+  \item \emph{\cd{nestjs-zod}}: exige DTO de classe (\cd{createZodDto}) e
+    \emph{pipe} global. É a mesma reescrita, com uma dependência a mais.
+  \item \emph{\cd{@asteasolutions/zod-to-openapi}}: monta o documento a partir de
+    um registro próprio, fora do roteador do Nest --- ou seja, pode listar rota
+    que não existe e omitir rota que existe, que é exatamente o defeito que se
+    quer evitar.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{\cd{.refine()} some da conversão, em silêncio.} JSON Schema não
+    expressa função JavaScript, e a biblioteca descarta. O
+    \cd{AjustarMatriculaSchema} exige \enquote{\cd{turmaDestinoId} OU
+    \cd{principal}} e isso não aparece como esquema. Por isso o \cd{@Contrato}
+    tem o campo \cd{notas}: restrição que o Zod checa e o JSON Schema não sabe
+    dizer vira texto na descrição. A validação não muda --- o que as notas
+    consertam é o documento não mentir por omissão.
+  \item \textbf{Esquemas saem embutidos, sem \cd{\$ref}}
+    (\cd{\$refStrategy: "none"}). É seguro porque não há \cd{z.lazy} em lugar
+    nenhum da api. Custa repetição no JSON e ganha um documento que não depende
+    de um registro de nomes estáveis.
+  \item \emph{Ruim}: a assinatura publicada do \cd{zodToJsonSchema} estoura o
+    compilador com \textbf{TS2589} (\enquote{type instantiation is excessively
+    deep}) --- o tipo de retorno instancia \cd{JsonSchema7Type}, uma união
+    recursiva grande, mesmo quando \cd{target: "openApi3"} resolve para
+    \cd{object}. O módulo fixa localmente a assinatura que usa. Some quando a
+    biblioteca simplificar o retorno.
+  \item \textbf{A entrega é em etapas, com lista que só encolhe.} Documentar 146
+    rotas num commit seria um \emph{diff} que ninguém revisa, e uma resposta mal
+    descrita passaria batida. \cd{tests/openapi-cobertura.spec.ts} percorre o
+    roteador e cobra \cd{@Contrato} de toda rota, salvo as nomeadas numa lista
+    explícita --- o mesmo molde do \cd{SEM\_CHAVE\_POR\_DECISAO} de
+    \cd{identidade-unica.spec.ts}, com a diferença de que aquelas exceções são
+    permanentes e estas são dívida. Rota NOVA sem contrato fica vermelha desde o
+    primeiro dia.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Subir para Zod 4, que traz
+\cd{z.toJSONSchema} nativo: aí a dependência de conversão sai, e o TS2589
+provavelmente com ela.
+
+\section{ADR-37 --- O \emph{schema} de resposta é conferido, não só publicado}
+\label{adr:contrato-de-resposta}
+
+\begin{especificacao}{Contexto}
+O \emph{schema} de ENTRADA não tem como envelhecer: a api o usa para validar em
+toda requisição, então errar nele quebra a rota na hora. O de SAÍDA não tinha
+nenhum --- os \emph{services} devolvem entidade do Prisma direto, \emph{spreads}
+e formas ad-hoc --- e passa a existir só para o documento.
+
+Afirmação que nada exercita é a mesma coisa que a coluna de prazo sem rotina que
+a cumpra: quem lê acredita, e ninguém percebe quando deixa de ser verdade.
+\end{especificacao}
+
+\textbf{Decisão.} Três camadas, em ordem de força.
+
+\begin{enumerate}
+  \item \textbf{Teste}, com \cd{.parse()} estrito, nas suítes que já exercitam
+    rota de verdade. É a conferência que dói.
+  \item \textbf{Runtime fora de produção}: o \cd{ContratoInterceptor} roda
+    \cd{safeParse} na resposta e avisa no \emph{log}. Nunca lança.
+  \item \textbf{Produção}: o interceptor é \emph{no-op}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Validar a resposta também em produção}: um \emph{schema} estrito
+    demais transformaria rota que funciona em 500. O documento não vale uma
+    indisponibilidade.
+  \item \emph{Só publicar, sem conferir nada}: é o \cd{expires\_at} de novo, agora
+    em forma de \emph{schema}.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{O interceptor serializa antes de conferir}
+    (\cd{JSON.parse(JSON.stringify(...))}). Ele roda ANTES da serialização, onde
+    ainda há \cd{Date} do Prisma; sem essa volta, todo campo de data acusaria
+    divergência falsa contra um \cd{z.string().datetime()} correto. É também
+    parte do motivo de ele não rodar em produção.
+  \item \textbf{O aviso carrega só caminho e código do problema, nunca o valor.}
+    A mensagem do Zod embute o recebido em alguns casos
+    (\cd{invalid\_enum\_value}), e a resposta desta api carrega nome de criança e
+    CPF --- regra de não registrar PII em \emph{log}, nem dentro de mensagem de
+    erro.
+  \item Funcionou na primeira rota documentada: o \emph{schema} do
+    \rota{POST /auth/login} declarava \cd{escolaId} como \cd{uuid}, e
+    \cd{Escola.id} é \cd{String @id} sem \emph{default} --- o id vem da rede. O
+    aviso apareceu no primeiro \emph{login} real.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A conferência aparecer no perfil de latência de
+desenvolvimento a ponto de atrapalhar --- aí ela passa a valer só em teste.

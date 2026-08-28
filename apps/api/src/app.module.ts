@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
-import { APP_INTERCEPTOR } from "@nestjs/core";
+import { APP_INTERCEPTOR, DiscoveryModule } from "@nestjs/core";
 import { validarEnv } from "./config/env";
 import { AuthModule } from "./auth/auth.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -25,10 +25,15 @@ import { StorageModule } from "./object-storage/storage.module";
 import { PlanosModule } from "./planos/planos.module";
 import { BemEstarModule } from "./bemestar/bemestar.module";
 import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
+import { ContratoInterceptor } from "./openapi/contrato.interceptor";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate: validarEnv }),
+    // `DiscoveryService` percorre os controllers para montar o documento
+    // OpenAPI e para a trava de cobertura — é a API pública do Nest para isso,
+    // em vez de cutucar o `_router` do express.
+    DiscoveryModule,
     AuthModule,
     PrismaModule,
     HealthModule,
@@ -56,6 +61,9 @@ import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
     // Depois dos guards em toda rota: abre o AsyncLocalStorage com a escola do
     // token para o PrismaService.comTenancy armar a RLS.
     { provide: APP_INTERCEPTOR, useClass: TenancyInterceptor },
+    // DEPOIS do de tenancy: este só olha a resposta na volta, e fora de
+    // produção. Ver `openapi/contrato.interceptor.ts`.
+    { provide: APP_INTERCEPTOR, useClass: ContratoInterceptor },
   ],
 })
 export class AppModule {}

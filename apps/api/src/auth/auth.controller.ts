@@ -1,22 +1,16 @@
 import { Body, Controller, HttpCode, HttpException, Post } from "@nestjs/common";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
 import { rateLimit } from "../comum/rate-limit";
+import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { EscolasService } from "../rostering/escolas.service";
-import { TAMANHO_MINIMO_DE_SENHA } from "../rostering/regras";
 import type { Perfil } from "./claims";
-
-const LoginSchema = z.object({
-  username: z.string().trim().min(1).max(64),
-  password: z.string().min(1).max(200),
-});
-
-const TrocaSchema = z.object({
-  username: z.string().trim().min(1).max(64),
-  senhaAtual: z.string().min(1).max(200),
-  senhaNova: z.string().min(TAMANHO_MINIMO_DE_SENHA, `mínimo ${TAMANHO_MINIMO_DE_SENHA} caracteres`).max(200),
-});
+import {
+  LoginRespostaSchema,
+  LoginSchema,
+  TrocaRespostaSchema,
+  TrocaSchema,
+} from "./contrato-de-rotas";
 
 const CREDENCIAIS_INVALIDAS = "Usuário ou senha incorretos.";
 
@@ -36,6 +30,19 @@ export class AuthController {
 
   @Post("login")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Autentica uma credencial da rede.",
+    descricao:
+      "Consumida pelo `authorize()` do NextAuth no hub — **nunca pelo navegador**. A api é a única dona do banco; o hub não conhece hash nenhum.\n\nDevolve as escolas em que a pessoa tem lotação ativa: professor de rede estadual tem mais de uma, e o token carrega UMA.",
+    corpo: LoginSchema,
+    resposta: LoginRespostaSchema,
+    acesso: "publica",
+    notas: [
+      "Conta com `ativo = false` é recusada com a MESMA mensagem genérica de senha errada — dizer \"conta desativada\" confirmaria que o login existe.",
+      "`username` é único por ESCOLA, não por contrato: a senha desambigua, e empate entre escolas é recusado.",
+      "8 tentativas por minuto por usuário (429). Não há limite por IP: a api só enxerga o IP do hub.",
+    ],
+  })
   async login(@Body() body: unknown) {
     const parsed = LoginSchema.safeParse(body);
     if (!parsed.success) throw new HttpException({ mensagem: CREDENCIAIS_INVALIDAS }, 400);
@@ -87,6 +94,18 @@ export class AuthController {
    */
   @Post("trocar-senha")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Primeiro acesso: troca a senha provisória.",
+    descricao:
+      "A senha do lote (ou a temporária de um reset) vale uma vez. Exige a senha ATUAL — é o mesmo nível de prova do login, e por isso a rota não pede token.\n\nLimpa `senha_provisoria` (ADR-29). O hub refaz a sessão com a senha nova depois disto: o cookie antigo ainda diz \"precisa trocar\".",
+    corpo: TrocaSchema,
+    resposta: TrocaRespostaSchema,
+    acesso: "publica",
+    notas: [
+      "A senha nova precisa ser diferente da atual (400).",
+      "8 tentativas por minuto por usuário (429).",
+    ],
+  })
   async trocarSenha(@Body() body: unknown) {
     const parsed = TrocaSchema.safeParse(body);
     if (!parsed.success) {

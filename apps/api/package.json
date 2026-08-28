@@ -25,6 +25,7 @@
     "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^10.4.0",
     "@nestjs/platform-express": "^10.4.0",
+    "@nestjs/swagger": "^8.1.1",
     "@prisma/client": "^6.19.0",
     "bcryptjs": "^2.4.3",
     "google-auth-library": "^11.0.2",
@@ -36,7 +37,8 @@
     "sanitize-html": "^2.13.1",
     "sharp": "^0.35.3",
     "undici": "^6",
-    "zod": "^3.24.0"
+    "zod": "^3.25.28",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.0",

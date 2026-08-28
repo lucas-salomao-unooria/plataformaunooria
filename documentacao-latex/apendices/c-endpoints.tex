@@ -27,11 +27,30 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /healthz} & \textbf{público} & O processo está vivo.\\
+\rota{GET /healthz} & \textbf{público} & O processo está vivo. Não toca no banco:
+  é a sonda que decide reiniciar o contêiner, e um Postgres lento derrubaria um
+  processo saudável.\\
 \zebra \rota{GET /readyz} & \textbf{público} & As dependências estão prontas
-  (banco).\\
+  (banco). Banco fora responde \textbf{503}, não \cd{ok: false}.\\
 \bottomrule
 \end{tabularx}
+
+\section{Documentação}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /docs} & \textbf{Basic} & Documentação OpenAPI navegável (Swagger UI),
+  derivada dos \emph{schemas} Zod das próprias rotas (\adrr{ADR-36}).\\
+\zebra \rota{GET /docs-json} & \textbf{Basic} & O mesmo documento em JSON.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Sem \env{SWAGGER\_USUARIO}/\env{SWAGGER\_SENHA} as duas rotas não existem}
+--- e quem responde é o 404 do roteador, não um 401 (Apêndice~\ref{ap:envs}). A
+credencial cobre também os arquivos estáticos do Swagger UI, servidos debaixo de
+\rota{/docs}.
 
 \section{Autenticação}
 
