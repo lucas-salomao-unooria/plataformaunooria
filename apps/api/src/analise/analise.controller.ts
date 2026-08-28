@@ -7,6 +7,15 @@ import { PrismaService } from "../prisma/prisma.service";
 import { metricasDaAtividade } from "./metricas";
 import { analiseDeProduto, resumoDeTodasAsAtividades } from "./produto";
 import { analiseDaTurma, turmaEmCsv } from "./turma";
+import { Contrato } from "../openapi/contrato";
+import {
+  AnaliseDaTurmaSchema,
+  AnaliseDeProdutoSchema,
+  CsvSchema,
+  EscolaQuery,
+  NivelQuery,
+  ResumoDeProdutoSchema,
+} from "./contrato-de-rotas";
 
 /**
  * As duas superfícies de ANÁLISE — porte fiel de `app/api/activities/[id]/analise/**`
@@ -63,6 +72,18 @@ export class AnaliseDaTurmaController {
    * professor DONO da atividade lê (`atividadeDoProfessor`).
    */
   @Get(":id/analise")
+  @Contrato({
+    resumo: "A análise pedagógica da turma — identificada.",
+    descricao:
+      "É a turma DELE, e o professor precisa saber com quem falar. Só o professor DONO da atividade lê.\n\nA peça central é `conclusaoPorLadoSemeado`: se o lado em que o feed nasceu prevê a conclusão que o aluno escreveu, o resultado experimental da turma está nessa grade — e é ela que o professor projeta no momento-espelho. Tudo o mais na tela existe para explicar essa grade.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: AnaliseDaTurmaSchema,
+    notas: [
+      "`imersao.total` nunca aparece sem os componentes — regra do doc, e vale para o relatório, o monitor e a análise.",
+      "`ociosoHaMs` é `null` quando a run acabou: ninguém precisa ser cutucado por estar \"ocioso\" num relatório.",
+      "`colecao` conta o ÚLTIMO evento por post (salvar e dessalvar se anulam); `interacoes.salvos` conta eventos.",
+    ],
+  })
   async daTurma(@Param("id") id: string, @Req() req: Autenticado) {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -80,6 +101,15 @@ export class AnaliseDaTurmaController {
    * telas portadas chamam, e o cliente nomeia o download pelo header.
    */
   @Get(":id/analise/csv")
+  @Contrato({
+    resumo: "A mesma análise da turma, em planilha.",
+    descricao:
+      "O nome do arquivo sai no `content-disposition`. O caminho **não** termina em `.csv` porque no app de origem segmento de rota com ponto quebrava a validação de tipos do App Router — mantido igual, porque é o path que as telas portadas chamam.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: CsvSchema,
+    tipoDaResposta: "text/csv",
+    notas: ["BOM UTF-8 **e** `charset=utf-8`: um sem o outro ainda quebra acento em alguma planilha."],
+  })
   async csvDaTurma(
     @Param("id") id: string,
     @Req() req: Autenticado,
@@ -123,6 +153,13 @@ export class AnaliseDeProdutoController {
    * guardas existentes recusariam os dois. O professor NÃO alcança esta rota.
    */
   @Get("resumo")
+  @Contrato({
+    resumo: "Uma linha por atividade — o nível de produto.",
+    descricao:
+      "Guarda de papel própria: `admin-contrato` não é professor nem aluno, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**",
+    query: EscolaQuery,
+    resposta: ResumoDeProdutoSchema,
+  })
   async resumo(@Query() query: unknown) {
     const escolaId = escolaPedida(query);
     return this.prisma.comTenancy(
@@ -137,6 +174,14 @@ export class AnaliseDeProdutoController {
    * capaz de refutar a premissa do produto.
    */
   @Get("atividades/:id")
+  @Contrato({
+    resumo: "O detalhe de uma atividade, com a eficácia da escrita por perfil.",
+    descricao:
+      "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre alunos daquele perfil, menos o dwell dos MESMOS posts entre alunos de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do aluno) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.",
+    params: z.object({ id: z.string().uuid() }),
+    query: EscolaQuery,
+    resposta: AnaliseDeProdutoSchema,
+  })
   async atividade(@Param("id") id: string, @Query() query: unknown) {
     const escolaId = escolaPedida(query);
     if (!ehUuid(id)) naoEncontrado();
@@ -154,6 +199,15 @@ export class AnaliseDeProdutoController {
    * Mesmo formato do CSV do professor: BOM UTF-8 e `;` como separador.
    */
   @Get("csv")
+  @Contrato({
+    resumo: "Export do nível de produto — por run ou por evento.",
+    descricao:
+      "Dois níveis porque as perguntas são diferentes: **por run** responde \"como as turmas se comparam\"; **por evento** é a matéria-prima para quem quer recalcular tudo fora daqui, inclusive contestando as definições. Um sistema de análise que não deixa auditar o próprio cálculo não deveria ser levado a sério.",
+    query: NivelQuery,
+    resposta: CsvSchema,
+    tipoDaResposta: "text/csv",
+    notas: ["Teto de 200.000 eventos no nível `evento`."],
+  })
   async csv(
     @Query() query: unknown,
     @Query("nivel") nivelBruto: string | undefined,

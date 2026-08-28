@@ -440,7 +440,9 @@ primeira — a armadilha do `expires_at`.
   copiando a prosa daquele módulo do `c-endpoints.tex` para a `descricao`. Feito:
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
   (escolas, turmas, matrículas, períodos, lotações, alunos), `usuarios`,
-  `planos` (+referências), `bemestar`, `vila`. **Faltam 78 rotas.**
+  `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
+  `perfis`, `analise`. **Faltam 53 rotas** (motor/runs, atividades, geracao,
+  unoogpt).
 - Gerar o arquivo: `npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts`.
   Quando a lista zerar, `apendices/c-endpoints.tex` passa a ser GERADO dele.
 

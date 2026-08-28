@@ -22,7 +22,18 @@ import { estadoInicial, semearEstado } from "../motor/estado";
 import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
 import { VilaService } from "../vila/vila.service";
+import { Contrato } from "../openapi/contrato";
 import { normalizarPerfil, ordemDeRedistribuicao, quantosMover, rotuloDoPerfil, type LadoTese } from "./afinidade";
+import {
+  DaVilaSchema,
+  DistribuicaoSchema,
+  ImportadosDaVilaSchema,
+  ImportadosSchema,
+  ImportarPerfisSchema,
+  ListaDePerfisSchema,
+  PerfisManuaisSchema,
+  RedistribuicaoSchema,
+} from "./contrato-de-rotas";
 import { distribuicaoDaTurma } from "./distribuicao";
 
 /**
@@ -41,24 +52,6 @@ const TOLERANCIA = 0.15;
  * dominante (seleção manual na lista da turma). A segunda existe porque, na
  * prática, o professor às vezes tem só o resultado final do jogo impresso.
  */
-const PerfisManuaisSchema = z.object({
-  perfis: z
-    .array(
-      z.union([
-        z.object({
-          username: z.string().trim().min(1).max(64),
-          escores: z.record(z.enum(PERFIS), z.number().min(0)),
-        }),
-        z.object({
-          username: z.string().trim().min(1).max(64),
-          dominante: z.enum(PERFIS),
-        }),
-      ]),
-    )
-    .min(1)
-    .max(200),
-});
-
 /** Escores sintéticos a partir de um dominante escolhido à mão. */
 function escoresDeDominante(dominante: (typeof PERFIS)[number]) {
   const resto = 0.2 / (PERFIS.length - 1);
@@ -72,7 +65,6 @@ type Autenticado = { auth: AuthClaims };
 /** Filtro opcional da importação da Vila. Sem ele, vale a escola inteira — que é
  *  como `GET :id/perfis` já lista. Com turma, o relatório da importação fica
  *  legível: o professor roda a atividade com UMA turma. */
-const DaVilaSchema = z.object({ turmaId: z.string().uuid().optional() });
 
 @Controller("atividades")
 @UseGuards(OidcGuard, RolesGuard)
@@ -85,6 +77,15 @@ export class PerfisController {
 
   @Post(":id/perfis")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Importa perfis à mão — o fallback do professor.",
+    descricao:
+      "Aceita **duas formas**: escores completos (colados de planilha) ou só o `dominante` (seleção manual na lista). A segunda existe porque, na prática, o professor às vezes tem só o resultado final do jogo impresso.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: PerfisManuaisSchema,
+    resposta: ImportadosSchema,
+    notas: ["`username` que não existe nesta escola volta em `desconhecidos` — dito, nunca engolido."],
+  })
   async importarManual(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
 
@@ -164,6 +165,20 @@ export class PerfisController {
    * professor achar que a turma inteira entrou.
    */
   @Post(":id/perfis/da-vila")
+  @Contrato({
+    resumo: "Traz os perfis da Vila do Lume para a largada do Instanooria.",
+    descricao:
+      "Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.",
+    params: z.object({ id: z.string().uuid() }),
+    query: DaVilaSchema,
+    resposta: ImportadosDaVilaSchema,
+    notas: [
+      "O colapso tem duas travas que CUSTAM alunos, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.",
+      "Sem perfil, o Instanooria cai no sorteio balanceado — que é honesto sobre não saber.",
+      "Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise` ao lado da identidade da criança.",
+      "`ladoForcado` é PRESERVADO no upsert.",
+    ],
+  })
   @HttpCode(200)
   async importarDaVila(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -208,6 +223,12 @@ export class PerfisController {
 
   /** Lista da turma com o estado do perfil por aluno, para conferência. */
   @Get(":id/perfis")
+  @Contrato({
+    resumo: "O estado do perfil de cada aluno, para conferência.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: ListaDePerfisSchema,
+    notas: ["`origem: \"ausente\"` = a criança ainda não tem perfil; ela cai no sorteio."],
+  })
   async listar(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
 
@@ -258,6 +279,17 @@ export class PerfisController {
    * a turma começou não é possível sem invalidar sessões.
    */
   @Get(":id/distribuicao")
+  @Contrato({
+    resumo: "Onde cada aluno vai cair — antes de começar.",
+    descricao:
+      "Existe para o professor **ver antes**. A distribuição de perfis varia por sala, e aí os lados nascem desequilibrados: não é defeito do sistema, é a turma — mas o professor precisa saber antes, não descobrir no meio da aula.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: DistribuicaoSchema,
+    notas: [
+      "`semLado` são os que caem no SORTEIO (perfil ausente ou `misto`): não entram na projeção porque o lado só é decidido quando a run nasce.",
+      "`precisaRedistribuir` é `desequilibrio > 0.15`.",
+    ],
+  })
   async distribuicao(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
 
@@ -290,6 +322,17 @@ export class PerfisController {
    *    lado errado.
    */
   @Post(":id/redistribuir")
+  @Contrato({
+    resumo: "Rebalanceia a turma quando ela cai quase toda num lado.",
+    descricao:
+      "Duas regras definem o comportamento:\n\n1. **Move os de afinidade mais fraca primeiro** — `misto` antes de todos, depois por margem crescente. Preserva a pedagogia onde o sinal do perfil é forte.\n2. **Só age em quem ainda não começou.** Trocar o lado de quem já está rolando o feed invalidaria a sessão: os scores acumulados passariam a contar para o lado errado.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: RedistribuicaoSchema,
+    notas: [
+      "`bloqueados` conta quem já começou e por isso ficou — o rebalanceamento pode não ter chegado ao alvo, e o professor precisa saber.",
+      "Pergunta e lados não aprovados ⇒ **409**.",
+    ],
+  })
   @HttpCode(200)
   async redistribuir(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -420,29 +463,6 @@ export class PerfisController {
  * autenticação é por chave de serviço no header, não por cookie — e por isso o
  * rate limit é por token, não por IP: o jogo pode chamar de qualquer lugar.
  */
-const ImportarSchema = z.object({
-  /**
-   * DECISÃO DO PORTE: no origem a escola era implícita (instância única). Aqui
-   * não há token JWT nesta rota, logo não há `escola_id` no contexto — e
-   * `comTenancy` sem escola falha alto de propósito. O jogo externo passa a
-   * informar a escola no corpo, e ela vira a chave da tenancy (`comTenancy(fn,
-   * escolaId)`); o `activityId` é conferido DENTRO dessa escola, então um
-   * `escolaId` errado não alcança atividade de outra rede.
-   */
-  escolaId: z.string().trim().min(1).max(64),
-  activityId: z.string().uuid(),
-  alunos: z
-    .array(
-      z.object({
-        username: z.string().trim().min(1).max(64),
-        escores: z.record(z.enum(PERFIS), z.number().min(0)),
-        medidoEm: z.string().datetime().optional(),
-      }),
-    )
-    .min(1)
-    .max(200),
-});
-
 /**
  * INTEGRAÇÃO EXTERNA — fica FORA de `OidcGuard`/`RolesGuard` de propósito: o
  * chamador é o jogo do Ato 1, um serviço, não um usuário logado.
@@ -456,6 +476,18 @@ export class PerfisImportacaoController {
 
   @Post("importar")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Ponte externa do Ato 1 — compatibilidade.",
+    descricao:
+      "Chamada pelo JOGO, que roda fora do navegador e não tem sessão: autenticação por chave de serviço no cabeçalho, não por cookie.\n\nContinua viva como compatibilidade; hoje o caminho normal é `POST /atividades/:id/perfis/da-vila`, disparado pelo professor.",
+    corpo: ImportarPerfisSchema,
+    resposta: ImportadosSchema,
+    acesso: "servico",
+    notas: [
+      "`escolaId` vem no CORPO porque esta rota não tem token: sem ele não há escola no contexto, e `comTenancy` falha alto. O `activityId` é conferido DENTRO dessa escola, então um `escolaId` errado não alcança atividade de outra rede.",
+      "Sem `PERFIL_IMPORT_TOKEN` a rota responde **503** — desligada, nunca aberta.",
+    ],
+  })
   async importar(@Headers("x-perfil-token") token: string | undefined, @Body() body: unknown) {
     const esperado = this.config.get<string>("PERFIL_IMPORT_TOKEN");
 
@@ -474,7 +506,7 @@ export class PerfisImportacaoController {
       throw new HttpException({ mensagem: "Muitas importações seguidas." }, 429);
     }
 
-    const parsed = ImportarSchema.safeParse(body);
+    const parsed = ImportarPerfisSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException({
         mensagem: "Payload inválido.",

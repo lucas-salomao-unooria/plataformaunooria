@@ -8,9 +8,12 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
+import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { ehUuid } from "../motor/guardas";
+import { Contrato } from "../openapi/contrato";
+import { ResultadosDaTurmaSchema, TurmasDoUnootubeSchema } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { UnootubeService } from "./unootube.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
@@ -45,11 +48,26 @@ export class UnootubeTurmasController {
 
   /** Turmas da escola — alimenta o seletor da página de resultados do hub. */
   @Get()
+  @Contrato({
+    resumo: "Turmas para o seletor de resultados.",
+    descricao:
+      "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=` — o token dele tem escola vazia e o TenancyInterceptor não abre contexto.",
+    query: z.object({ escolaId: z.string().optional() }),
+    resposta: TurmasDoUnootubeSchema,
+  })
   turmas(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     return this.unootube.turmas(escolaAlvo(req.auth, escolaIdPedida), professorDoToken(req.auth));
   }
 
   @Get(":turmaId/resultados")
+  @Contrato({
+    resumo: "O que a turma fez na missão do UnooTube.",
+    descricao:
+      "Uma linha por aluno mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.",
+    params: z.object({ turmaId: z.string().uuid() }),
+    query: z.object({ escolaId: z.string().optional() }),
+    resposta: ResultadosDaTurmaSchema,
+  })
   resultados(
     @Param("turmaId") turmaId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
