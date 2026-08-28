@@ -82,22 +82,6 @@ const SEM_CONTRATO_AINDA = new Set<string>([
   "GET /runs/{id}/salvos",
   "POST /runs/{id}/student-post",
   "GET /runs/boot",
-  "GET /unoogpt/agregado/escola",
-  "POST /unoogpt/alocacao",
-  "PUT /unoogpt/conjuntos",
-  "POST /unoogpt/contrafactual",
-  "POST /unoogpt/passo",
-  "POST /unoogpt/pergunta",
-  "GET /unoogpt/professor/alunos/{alunoId}",
-  "GET /unoogpt/professor/turmas",
-  "DELETE /unoogpt/professor/turmas/{turmaId}",
-  "GET /unoogpt/professor/turmas/{turmaId}",
-  "POST /unoogpt/professor/turmas/{turmaId}/relogio",
-  "POST /unoogpt/reiniciar",
-  "GET /unoogpt/relogio",
-  "GET /unoogpt/resultado",
-  "GET /unoogpt/sessao",
-  "POST /unoogpt/simular",
 ]);
 
 describe("cobertura do OpenAPI", () => {

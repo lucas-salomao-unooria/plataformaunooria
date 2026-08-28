@@ -3,6 +3,9 @@ import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { erroDeJogo } from "./erros";
 import { UnoogptService } from "./unoogpt.service";
+import { z } from "zod";
+import { Contrato } from "../openapi/contrato";
+import { AgregadoDaEscolaSchema } from "./contrato-de-rotas";
 
 /**
  * Visão do GESTOR: SÓ números por turma.
@@ -22,6 +25,14 @@ export class UnoogptAgregadoController {
   constructor(private readonly service: UnoogptService) {}
 
   @Get("escola")
+  @Contrato({
+    resumo: "O agregado da escola — uma linha por turma.",
+    descricao:
+      "Controller separado do professor de propósito. A alternativa — um `@Roles` misto com exceção por método — é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\n**Nada aqui identifica uma criança.**",
+    query: z.object({ escolaId: z.string().optional() }),
+    resposta: AgregadoDaEscolaSchema,
+    notas: ["`admin-contrato` precisa dizer `?escolaId=`; gestor só vê a própria escola (403)."],
+  })
   escola(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     const auth = req.auth;
     if (auth.perfil === "admin-contrato") {
