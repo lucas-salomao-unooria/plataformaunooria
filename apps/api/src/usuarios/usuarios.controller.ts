@@ -14,34 +14,20 @@ import {
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
-import { cpfEhValido, digitosDoCpf } from "../comum/cpf";
+import { digitosDoCpf } from "../comum/cpf";
 import { escolaAlvo } from "../comum/escola-alvo";
 import { rateLimit } from "../comum/rate-limit";
+import { Contrato } from "../openapi/contrato";
+import { RelatorioDeImportacaoSchema } from "../rostering/contrato-de-rotas";
 import { MAX_LINHAS, RosteringService } from "../rostering/rostering.service";
+import {
+  EditarSchema,
+  ListarSchema,
+  ListaDeUsuariosSchema,
+  SenhaResetadaSchema,
+  UsuarioEditadoSchema,
+} from "./contrato-de-rotas";
 import { UsuariosService } from "./usuarios.service";
-
-const ListarSchema = z.object({
-  papel: z.enum(["aluno", "professor", "gestor"]).optional(),
-  turmaId: z.string().uuid().optional(),
-  situacao: z.enum(["ativos", "inativos", "sem-primeiro-acesso"]).optional(),
-  busca: z.string().trim().max(80).optional(),
-  pagina: z.coerce.number().int().min(1).default(1),
-  porPagina: z.coerce.number().int().min(1).max(100).default(25),
-  escolaId: z.string().min(1).optional(),
-});
-
-const EditarSchema = z.object({
-  nome: z.string().trim().min(1).max(120).optional(),
-  /* Corrigir CPF é caminho de balcão: a planilha veio com o dígito trocado e a
-     família traz o documento. Vazio APAGA o campo — é o que se faz quando o
-     número era de outra pessoa. */
-  cpf: z
-    .union([z.literal(""), z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos")])
-    .optional(),
-  email: z.union([z.literal(""), z.string().email().max(180)]).optional(),
-  papel: z.enum(["aluno", "professor", "gestor"]).optional(),
-  ativo: z.boolean().optional(),
-});
 
 /**
  * Gestão de usuários — só gestor (própria escola) e admin-contrato (qualquer
@@ -57,6 +43,17 @@ export class UsuariosController {
   ) {}
 
   @Get()
+  @Contrato({
+    resumo: "As pessoas da escola, paginadas.",
+    descricao:
+      "A tela `/admin/usuarios`. Busca por nome, login, matrícula **e CPF — com ou sem pontuação**.",
+    query: ListarSchema,
+    resposta: ListaDeUsuariosSchema,
+    notas: [
+      "`situacao: sem-primeiro-acesso` lista quem ainda não trocou a senha da importação.",
+      "A consulta roda dentro de `comTenancy` porque inclui MATRÍCULAS, que têm RLS: fora do contexto a lista voltaria com todo mundo \"sem turma\", em silêncio.",
+    ],
+  })
   async listar(@Query() query: Record<string, string>, @Req() req: { auth: AuthClaims }) {
     const q = ListarSchema.parse(query);
     const escolaId = escolaAlvo(req.auth, q.escolaId);
@@ -69,6 +66,15 @@ export class UsuariosController {
    * dois importadores lado a lado divergiriam na primeira regra nova.
    */
   @Post("importar-csv")
+  @Contrato({
+    resumo: "Compatibilidade: delega para `POST /rostering/importar`.",
+    descricao:
+      "Continua respondendo porque scripts e documentação a citam. **Delega** — dois importadores lado a lado divergiriam na primeira regra nova.",
+    query: z.object({ escolaId: z.string().optional(), senhaPadrao: z.string().optional() }),
+    corpo: z.string(),
+    tipoDoCorpo: "text/csv",
+    resposta: RelatorioDeImportacaoSchema,
+  })
   async importarCsv(
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Query("senhaPadrao") senhaPadrao: string | undefined,
@@ -92,6 +98,19 @@ export class UsuariosController {
   }
 
   @Patch(":id")
+  @Contrato({
+    resumo: "Edita nome, CPF, e-mail, papel ou situação da pessoa.",
+    descricao:
+      "Caminho de balcão: a planilha veio com o dígito trocado e a família traz o documento.",
+    params: z.object({ id: z.string().uuid() }),
+    query: z.object({ escolaId: z.string().optional() }),
+    corpo: EditarSchema,
+    resposta: UsuarioEditadoSchema,
+    notas: [
+      "`cpf: \"\"` **APAGA** o campo — é o que se faz quando o número era de outra pessoa.",
+      "Sair da REDE é `ativo: false`, não DELETE: há dado de aluno pendurado em oito tabelas.",
+    ],
+  })
   async editar(
     @Param("id") id: string,
     @Body() body: unknown,
@@ -112,6 +131,15 @@ export class UsuariosController {
   }
 
   @Post(":id/reset-senha")
+  @Contrato({
+    resumo: "Gera uma senha temporária e a devolve UMA vez.",
+    descricao:
+      "Marca a conta como provisória: quem entrar com ela cai em `/trocar-senha` sem saída — trava tripla, no middleware, no BFF e no `/api/exp-token`.",
+    params: z.object({ id: z.string().uuid() }),
+    query: z.object({ escolaId: z.string().optional() }),
+    resposta: SenhaResetadaSchema,
+    notas: ["A senha **não fica em coluna nem em log**: se a tela perder, gera-se outra."],
+  })
   async resetarSenha(
     @Param("id") id: string,
     @Query("escolaId") escolaIdPedida: string | undefined,

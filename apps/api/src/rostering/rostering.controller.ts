@@ -14,7 +14,15 @@ import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { escolaAlvo } from "../comum/escola-alvo";
 import { rateLimit } from "../comum/rate-limit";
+import { Contrato } from "../openapi/contrato";
 import { ARQUIVOS_ONEROSTER, type ArquivoOneRoster } from "./catalogo";
+import {
+  ContasDeAssentoSchema,
+  CsvSchema,
+  ImportarQuery,
+  OneRosterQuery,
+  RelatorioDeImportacaoSchema,
+} from "./contrato-de-rotas";
 import { OneRosterService } from "./oneroster.service";
 import { exemploPreenchido, modeloEmBranco } from "./planilha";
 import { MAX_LINHAS, RosteringService } from "./rostering.service";
@@ -24,18 +32,6 @@ interface RespostaHttp {
 }
 
 const TETO_DO_ARQUIVO = 10_000_000; // 10 MB — 10 mil alunos não cabem em 1 MB
-
-const ImportarSchema = z.object({
-  escolaId: z.string().min(1).optional(),
-  /** Senha única do lote, escolhida na tela. Vale só para quem nasce aqui. */
-  senhaPadrao: z.string().min(8).max(200).optional(),
-  /** "1" = uma senha diferente por pessoa. */
-  gerarSenhas: z.enum(["0", "1"]).optional(),
-});
-
-const OneRosterSchema = ImportarSchema.extend({
-  modo: z.enum(["bulk", "delta"]).optional(),
-});
 
 /**
  * Fronteira de entrada de pessoas e turmas. Só gestor (própria escola) e
@@ -56,11 +52,24 @@ export class RosteringController {
    * sintoma seria "importei o modelo de vocês e deu erro de cabeçalho".
    */
   @Get("modelos/usuarios.csv")
+  @Contrato({
+    resumo: "O modelo em branco da planilha de pessoas.",
+    descricao:
+      "Gerado da MESMA constante que o leitor consome — um modelo escrito à mão divergiria do parser no primeiro campo novo, e o sintoma seria \"importei o modelo de vocês e deu erro de cabeçalho\".",
+    resposta: CsvSchema,
+    tipoDaResposta: "text/csv",
+    notas: ["Sai com BOM e `charset=utf-8`: um sem o outro ainda quebra acento em alguma planilha."],
+  })
   modelo(@Res({ passthrough: true }) res: RespostaHttp): string {
     return this.comoCsv(res, "modelo-usuarios.csv", modeloEmBranco());
   }
 
   @Get("modelos/exemplo.csv")
+  @Contrato({
+    resumo: "O mesmo modelo, preenchido com um exemplo.",
+    resposta: CsvSchema,
+    tipoDaResposta: "text/csv",
+  })
   exemplo(@Res({ passthrough: true }) res: RespostaHttp): string {
     return this.comoCsv(res, "exemplo-usuarios.csv", exemploPreenchido());
   }
@@ -74,11 +83,26 @@ export class RosteringController {
 
   /** Corpo: o CSV cru (`Content-Type: text/csv`). */
   @Post("importar")
+  @Contrato({
+    resumo: "Importa a planilha de pessoas.",
+    descricao:
+      "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 10MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.",
+    query: ImportarQuery,
+    corpo: CsvSchema,
+    tipoDoCorpo: "text/csv",
+    resposta: RelatorioDeImportacaoSchema,
+    notas: [
+      "**O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).",
+      "Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.",
+      "Coluna desconhecida é ERRO, não coluna ignorada.",
+      "5 importações por minuto por usuário (429); acima de 10MB ou 50k linhas, 400.",
+    ],
+  })
   async importar(
     @Query() query: Record<string, string>,
     @Req() req: { auth: AuthClaims; body: unknown },
   ) {
-    const q = ImportarSchema.parse(query);
+    const q = ImportarQuery.parse(query);
     const escolaId = escolaAlvo(req.auth, q.escolaId);
 
     const cota = rateLimit(`importar:${req.auth.usuarioId}`, 5, 60_000);
@@ -107,12 +131,29 @@ export class RosteringController {
    * `sourcedId` inexistente volta no relatório dizendo qual arquivo falta.
    */
   @Post("oneroster/:arquivo")
+  @Contrato({
+    resumo: "Binding CSV do OneRoster 1.2 — UM arquivo por chamada.",
+    descricao:
+      "Ordem: `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`, `roles`. **Fora de ordem não corrompe nada**: a linha que aponta para um `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta.\n\nO padrão vive só nesta fronteira: nada do domínio conhece `sourcedId`.",
+    params: z.object({ arquivo: z.enum(ARQUIVOS_ONEROSTER) }),
+    query: OneRosterQuery,
+    corpo: CsvSchema,
+    tipoDoCorpo: "text/csv",
+    resposta: RelatorioDeImportacaoSchema,
+    notas: [
+      "`orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `admin-contrato`.",
+      "Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **aluno**, o menor privilégio; o `roles.csv` corrige.",
+      "A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.",
+      "Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.",
+      "`status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.",
+    ],
+  })
   async oneRoster(
     @Param("arquivo") arquivo: string,
     @Query() query: Record<string, string>,
     @Req() req: { auth: AuthClaims; body: unknown },
   ) {
-    const q = OneRosterSchema.parse(query);
+    const q = OneRosterQuery.parse(query);
     const escolaId = escolaAlvo(req.auth, q.escolaId);
 
     if (!(ARQUIVOS_ONEROSTER as readonly string[]).includes(arquivo)) {
@@ -143,6 +184,17 @@ export class RosteringController {
 
   /** Diagnóstico das contas sem matrícula da rede (as que podem ser de assento). */
   @Get("contas-de-assento")
+  @Contrato({
+    resumo: "As contas sem matrícula da rede — as que podem ser de assento.",
+    descricao:
+      "As experiências vieram de projetos onde a conta era do APARELHO: outra turma reusava o mesmo login. Esta lista mostra quanto cada conta acumulou de dado, para o gestor decidir o que desativar.",
+    query: z.object({ escolaId: z.string().optional() }),
+    resposta: ContasDeAssentoSchema,
+    notas: [
+      "**Não existe fundir contas**: juntar duas move o que uma criança fez para outra pessoa, e depois ninguém audita de quem era.",
+      "Teto de 200 linhas, dito na resposta em `truncado` em vez de cortado em silêncio.",
+    ],
+  })
   async contasDeAssento(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: { auth: AuthClaims }) {
     return this.rostering.contasDeAssento(escolaAlvo(req.auth, escolaIdPedida));
   }

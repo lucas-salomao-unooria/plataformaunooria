@@ -438,8 +438,9 @@ primeira — a armadilha do `expires_at`.
   encolhe**. Cada commit cobre um módulo (`<modulo>/contrato-de-rotas.ts` — o
   nome `contrato.ts` já é o payload do jogo na exp-70) e apaga as linhas dele,
   copiando a prosa daquele módulo do `c-endpoints.tex` para a `descricao`. Feito:
-  `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`.
-  **Faltam 132 rotas.**
+  `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
+  (escolas, turmas, matrículas, períodos, lotações, alunos), `usuarios`.
+  **Faltam 102 rotas.**
 - Gerar o arquivo: `npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts`.
   Quando a lista zerar, `apendices/c-endpoints.tex` passa a ser GERADO dele.
 

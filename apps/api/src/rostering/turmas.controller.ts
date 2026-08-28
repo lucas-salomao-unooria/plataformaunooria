@@ -17,40 +17,26 @@ import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { escolaAlvo } from "../comum/escola-alvo";
-import { SerieSchema } from "../comum/series";
-import { TURNOS } from "./catalogo";
+import { Contrato } from "../openapi/contrato";
+import {
+  AjustarMatriculaSchema,
+  EditarTurmaSchema,
+  EscolaAlvoQuery,
+  MatricularSchema,
+  NovaTurmaSchema,
+  NovoPeriodoSchema,
+  OkSchema,
+  PeriodosSchema,
+  PeriodoLetivoSchema,
+  PessoasDaTurmaSchema,
+  TurmaCruaSchema,
+  TurmasSchema,
+} from "./contrato-de-rotas";
 import { RosteringService } from "./rostering.service";
 
 type Autenticado = { auth: AuthClaims };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const NovaTurmaSchema = z.object({
-  nome: z.string().trim().min(1).max(40),
-  serie: SerieSchema,
-  turno: z.enum(TURNOS).optional(),
-  periodoLetivoId: z.string().uuid().optional(),
-});
-
-const EditarTurmaSchema = z.object({
-  nome: z.string().trim().min(1).max(40).optional(),
-  serie: SerieSchema.optional(),
-  turno: z.enum(TURNOS).nullable().optional(),
-});
-
-const MatricularSchema = z.object({
-  usuarioId: z.string().uuid(),
-  papel: z.enum(["aluno", "professor"]),
-});
-
-const AjustarMatriculaSchema = z
-  .object({
-    turmaDestinoId: z.string().uuid().optional(),
-    principal: z.literal(true).optional(),
-  })
-  .refine((d) => Boolean(d.turmaDestinoId) !== Boolean(d.principal), {
-    message: "informe turmaDestinoId OU principal",
-  });
 
 /**
  * Turmas e enturmamento.
@@ -73,6 +59,13 @@ export class TurmasController {
    */
   @Get("minhas")
   @Roles("professor", "gestor", "admin-contrato")
+  @Contrato({
+    resumo: "As turmas DO PROFESSOR — as que ele tem matrícula, e só elas.",
+    descricao:
+      "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence, e `/turmas/minhas` bateria em `/turmas/:id` com o id \"minhas\".\n\nGestor e admin-contrato caem nas turmas da escola inteira — é a diferença entre administrar a escola e dar aula numa turma.",
+    query: EscolaAlvoQuery,
+    resposta: TurmasSchema,
+  })
   async minhas(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (req.auth.perfil === "professor") {
@@ -83,6 +76,13 @@ export class TurmasController {
 
   @Get()
   @Roles("gestor", "admin-contrato")
+  @Contrato({
+    resumo: "As turmas da escola.",
+    descricao:
+      "Filtra por período letivo quando `periodoLetivoId` vem. Sem ele, TODAS as turmas de todos os anos — é isso que preserva o histórico depois da virada.",
+    query: EscolaAlvoQuery.extend({ periodoLetivoId: z.string().uuid().optional() }),
+    resposta: TurmasSchema,
+  })
   async listar(
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Query("periodoLetivoId") periodoLetivoId: string | undefined,
@@ -93,6 +93,17 @@ export class TurmasController {
 
   @Post()
   @Roles("gestor", "admin-contrato")
+  @Contrato({
+    resumo: "Cria uma turma.",
+    descricao:
+      "Sem `periodoLetivoId`, nasce no período VIGENTE — derivado das datas. Sem nenhum período cadastrado, **400**: turma sem período é a coluna `users.turma_id` de novo, com outro nome.",
+    query: EscolaAlvoQuery,
+    corpo: NovaTurmaSchema,
+    resposta: TurmaCruaSchema,
+    notas: [
+      "`UNIQUE (escola_id, periodo_letivo_id, nome)`: o \"8A de 2026\" e o \"8A de 2027\" são turmas DIFERENTES.",
+    ],
+  })
   async criar(
     @Body() body: unknown,
     @Query("escolaId") escolaIdPedida: string | undefined,
@@ -106,6 +117,14 @@ export class TurmasController {
 
   @Patch(":id")
   @Roles("gestor", "admin-contrato")
+  @Contrato({
+    resumo: "Edita nome, série ou turno da turma.",
+    descricao: "Não move de período: isso seria reescrever o histórico do ano.",
+    params: z.object({ id: z.string().uuid() }),
+    query: EscolaAlvoQuery,
+    corpo: EditarTurmaSchema,
+    resposta: TurmaCruaSchema,
+  })
   async editar(
     @Param("id") id: string,
     @Body() body: unknown,
@@ -131,6 +150,18 @@ export class TurmasController {
    */
   @Get(":id")
   @Roles("professor", "gestor", "admin-contrato")
+  @Contrato({
+    resumo: "Os matriculados da turma — a lista nominal.",
+    descricao:
+      "Para o PROFESSOR a checagem é de MATRÍCULA, não de escola: o professor do 8A pedindo o 9B leva **403**. Antes disto, qualquer professor da escola lia qualquer turma dela — a única prova exigida era \"mesma escola\", que é a regra de tenancy e não a de quem dá aula ali.",
+    params: z.object({ id: z.string().uuid() }),
+    query: EscolaAlvoQuery,
+    resposta: PessoasDaTurmaSchema,
+    notas: [
+      "`matriculaId` é da MATRÍCULA e `id` é da PESSOA — mover e encerrar operam sobre o primeiro.",
+      "`senhaProvisoria: true` = ainda não fez o primeiro acesso.",
+    ],
+  })
   async pessoas(
     @Param("id") id: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
@@ -149,6 +180,15 @@ export class TurmasController {
 
   @Post(":id/matriculas")
   @Roles("gestor", "admin-contrato")
+  @Contrato({
+    resumo: "Matricula uma pessoa na turma.",
+    descricao:
+      "`papel` só admite `aluno` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.",
+    params: z.object({ id: z.string().uuid() }),
+    query: EscolaAlvoQuery,
+    corpo: MatricularSchema,
+    resposta: OkSchema,
+  })
   async matricular(
     @Param("id") id: string,
     @Body() body: unknown,
@@ -184,6 +224,18 @@ export class MatriculasController {
    * (`principal: true`). Nenhuma das duas apaga linha.
    */
   @Patch(":id")
+  @Contrato({
+    resumo: "Move de turma, ou torna esta a turma de referência.",
+    descricao:
+      "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o aluno fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.",
+    params: z.object({ id: z.string().uuid() }),
+    query: EscolaAlvoQuery,
+    corpo: AjustarMatriculaSchema,
+    resposta: OkSchema,
+    notas: [
+      "Informe `turmaDestinoId` OU `principal`, nunca os dois nem nenhum — é um `.refine()`, que o JSON Schema não sabe expressar.",
+    ],
+  })
   async ajustar(
     @Param("id") id: string,
     @Body() body: unknown,
@@ -202,6 +254,14 @@ export class MatriculasController {
   }
 
   @Delete(":id")
+  @Contrato({
+    resumo: "Encerra a matrícula.",
+    descricao:
+      "**Não apaga linha**: grava `fim`. O dado da Vila, do UnooTube e do unooGPT continua pendurado nela, e apagar deixaria esse dado órfão de turma. Sair da REDE é outra coisa — `ativo = false` na pessoa.",
+    params: z.object({ id: z.string().uuid() }),
+    query: EscolaAlvoQuery,
+    resposta: OkSchema,
+  })
   async encerrar(
     @Param("id") id: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
@@ -214,14 +274,6 @@ export class MatriculasController {
   }
 }
 
-const NovoPeriodoSchema = z.object({
-  tipo: z.enum(["ano_letivo", "semestre", "bimestre", "trimestre"]).default("ano_letivo"),
-  titulo: z.string().trim().min(1).max(80),
-  ano: z.number().int().min(2020).max(2100),
-  inicio: z.coerce.date(),
-  fim: z.coerce.date(),
-});
-
 /** Catálogo do CONTRATO (sem escola, sem RLS) — por isso controller separado. */
 @Controller("periodos-letivos")
 @UseGuards(OidcGuard, RolesGuard)
@@ -230,12 +282,29 @@ export class PeriodosLetivosController {
 
   @Get()
   @Roles("professor", "gestor", "admin-contrato")
+  @Contrato({
+    resumo: "O calendário do contrato, com quantas turmas cada período tem.",
+    descricao:
+      "Catálogo do CONTRATO: sem `escola_id` e sem RLS, por isso controller separado. A contagem de turmas é o que impede apagar um período por engano.",
+    resposta: PeriodosSchema,
+    notas: [
+      "`vigente` é DERIVADO das datas, nunca coluna — estado que ninguém atualiza mente mais do que ajuda.",
+    ],
+  })
   listar() {
     return this.rostering.periodosComTurmas();
   }
 
   @Post()
   @Roles("gestor", "admin-contrato")
+  @Contrato({
+    resumo: "Cria um período letivo — a primeira etapa da virada do ano.",
+    descricao:
+      "A partir da data de início ele passa a ser o vigente, e toda turma nova nasce nele. **A segunda etapa é importar o enturmamento**, e nenhuma das duas é automática: as turmas do ano anterior ficam onde estão, e é isso que preserva o histórico.",
+    corpo: NovoPeriodoSchema,
+    resposta: PeriodoLetivoSchema,
+    notas: ["`fim` antes de `inicio` é **400**."],
+  })
   criar(@Body() body: unknown) {
     const dados = NovoPeriodoSchema.parse(body);
     if (dados.fim < dados.inicio) throw new BadRequestException("fim antes do início");
