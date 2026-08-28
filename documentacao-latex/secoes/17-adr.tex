@@ -1022,6 +1022,34 @@ nomes seguem em pt-BR.
     \enquote{sem turma}.
 \end{itemize}
 
+\textbf{Nota de implementação --- o binding CSV, arquivo por arquivo.} O padrão
+empacota os sete arquivos num zip com \cd{manifest.csv}. Aqui cada um é enviado
+em uma chamada (\rota{POST /rostering/oneroster/:arquivo}), na ordem de
+dependência: empacotamento é embalagem, não semântica, e aplicar um por vez dá o
+mesmo resultado sem dependência de descompactação e sem lote pela metade guardado
+em lugar nenhum. Fora de ordem também não corrompe: a linha que aponta para um
+\cd{sourcedId} inexistente volta no relatório \textbf{dizendo qual arquivo
+falta}, em vez de criar meia entidade. Quatro decisões dentro dessa leitura:
+
+\begin{itemize}
+  \item \cd{orgs.csv} só \textbf{aprende} o código INEP da escola desta
+    importação. Escola é \emph{tenant}: criar um a partir de arquivo enviado por
+    \emph{upload} seria abrir um inquilino com \emph{stack}, RLS e dados de
+    menores por trás de um clique.
+  \item Na 1.2 o papel saiu de \cd{users.csv} e foi para \cd{roles.csv}. A
+    coluna \cd{role} é aceita quando vem (provedores seguem emitindo a da 1.1);
+    sem ela, a pessoa nasce como \textbf{aluno} --- o menor privilégio --- e o
+    relatório diz quantas linhas dependem do \cd{roles.csv}. Falhar fechado: um
+    professor que entra como aluno perde acesso e reclama; um aluno que entrasse
+    como professor leria a turma inteira.
+  \item A coluna \cd{password}, que o padrão permite, é \textbf{ignorada}
+    (\adrr{ADR-29}) --- e a contagem de linhas que a traziam vai ao relatório,
+    para não sumir em silêncio.
+  \item Em \cd{bulk}, ausência de linha \textbf{não} desativa ninguém: é
+    contada e listada. Lote completo que chegou pela metade não pode apagar uma
+    rede por omissão.
+\end{itemize}
+
 \textbf{Gatilho de reavaliação.} Publicação da especificação técnica do
 EducaDados --- em especial se ela adotar o CPF como identificador do estudante,
 que entra em coluna de reconciliação de acesso restrito e \textbf{nunca} em

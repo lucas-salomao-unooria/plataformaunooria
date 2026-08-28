@@ -2,12 +2,14 @@ import { Injectable } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { matricularEm } from "./matricula";
 import { lerPlanilha, type ErroDeLinha, type PessoaDaPlanilha } from "./planilha";
 import { gerarSenha, gerarUsuario, periodoVigente, senhaAceitavel } from "./regras";
 
 export const MAX_LINHAS = 50_000;
 const CHUNK = 100;
 const TIMEOUT_DA_ESCRITA = 30_000;
+const TETO_DE_ASSENTOS = 200;
 
 export interface Credencial {
   nome: string;
@@ -20,6 +22,14 @@ export interface RelatorioImportacao {
   criados: number;
   atualizados: number;
   matriculados: number;
+  /** `status = tobedeleted`: desativado, nunca apagado. */
+  desativados: number;
+  /**
+   * Em `bulk`, quem existe aqui e NÃO veio no arquivo. Ausência de linha num
+   * lote completo não é ordem de exclusão — mas também não pode passar em
+   * silêncio, senão a rede some da plataforma por omissão.
+   */
+  candidatosAInativacao: number;
   turmasCriadas: string[];
   erros: ErroDeLinha[];
   avisos: ErroDeLinha[];
@@ -34,10 +44,12 @@ export interface OpcoesDeImportacao {
   gerarSenhas?: boolean;
 }
 
-const vazio = (): RelatorioImportacao => ({
+export const relatorioVazio = (): RelatorioImportacao => ({
   criados: 0,
   atualizados: 0,
   matriculados: 0,
+  desativados: 0,
+  candidatosAInativacao: 0,
   turmasCriadas: [],
   erros: [],
   avisos: [],
@@ -83,7 +95,7 @@ export class RosteringService {
     opcoes: OpcoesDeImportacao = {},
   ): Promise<RelatorioImportacao> {
     const leitura = lerPlanilha(csv);
-    const relatorio = vazio();
+    const relatorio = relatorioVazio();
     relatorio.erros = [...leitura.erros];
     relatorio.avisos = [...leitura.avisos];
 
@@ -301,11 +313,14 @@ export class RosteringService {
             }
 
             if (turmaId && (pessoa.papel === "aluno" || pessoa.papel === "professor")) {
-              await this.matricularNaTransacao(tx, {
+              await matricularEm(tx, {
                 escolaId,
                 turmaId,
                 usuarioId,
                 papel: pessoa.papel,
+                /* A planilha simples tem UMA turma por pessoa (linha repetida é
+                   erro de arquivo), então essa turma é a de referência. */
+                principal: pessoa.papel === "aluno",
                 inicio: periodo.inicio,
               });
               relatorio.matriculados += 1;
@@ -322,50 +337,6 @@ export class RosteringService {
 
   // --------------------------------------------------------------- matrículas
 
-  /**
-   * Matricula (ou reabre a matrícula de) alguém numa turma.
-   *
-   * Para ALUNO a matrícula é a principal: a anterior no mesmo período é
-   * ENCERRADA (`fim`), nunca apagada — o dado do UnooTube, da Vila e do
-   * unooGPT continua pendurado nela, e apagar a matrícula deixaria esse dado
-   * órfão de turma. O `users.turma_id` acompanha como cache.
-   */
-  private async matricularNaTransacao(
-    tx: Prisma.TransactionClient,
-    dados: {
-      escolaId: string;
-      turmaId: string;
-      usuarioId: string;
-      papel: "aluno" | "professor";
-      inicio: Date;
-    },
-  ) {
-    const { escolaId, turmaId, usuarioId, papel, inicio } = dados;
-
-    if (papel === "aluno") {
-      await tx.matricula.updateMany({
-        where: { escolaId, usuarioId, papel: "aluno", turmaId: { not: turmaId }, fim: null },
-        data: { fim: new Date(), principal: false },
-      });
-      await tx.user.update({ where: { id: usuarioId }, data: { turmaId } });
-    }
-
-    await tx.matricula.upsert({
-      where: {
-        escolaId_turmaId_usuarioId_papel: { escolaId, turmaId, usuarioId, papel },
-      },
-      update: { fim: null, principal: papel === "aluno" },
-      create: {
-        escolaId,
-        turmaId,
-        usuarioId,
-        papel,
-        principal: papel === "aluno",
-        inicio,
-      },
-    });
-  }
-
   async matricular(escolaId: string, turmaId: string, usuarioId: string, papel: "aluno" | "professor") {
     const periodo = await this.periodoDeHoje();
     return this.prisma.comTenancy(async (tx) => {
@@ -373,11 +344,14 @@ export class RosteringService {
       if (!turma) return null;
       const usuario = await tx.user.findFirst({ where: { id: usuarioId, escolaId } });
       if (!usuario) return null;
-      await this.matricularNaTransacao(tx, {
+      await matricularEm(tx, {
         escolaId,
         turmaId,
         usuarioId,
         papel,
+        /* Matrícula pela tela do gestor: turma regular é a de referência;
+           componente (eletiva, reforço) entra ao lado dela. */
+        principal: papel === "aluno" && turma.tipo === "regular",
         inicio: periodo?.inicio ?? new Date(),
       });
       return { ok: true as const };
@@ -560,12 +534,18 @@ export class RosteringService {
    */
   async contasDeAssento(escolaId: string) {
     return this.prisma.comTenancy(async (tx) => {
+      /* Teto de 200: numa rede recém-migrada TODA conta antiga cai aqui, e uma
+         lista de 10 mil linhas não é diagnóstico — é uma tela que trava. O corte
+         é dito na resposta (`truncado`), nunca silencioso. */
       const usuarios = await tx.user.findMany({
         where: { escolaId, matriculaExterna: null, role: { in: ["aluno", "professor"] } },
         select: { id: true, username: true, displayName: true, role: true, ativo: true },
         orderBy: [{ username: "asc" }],
+        take: TETO_DE_ASSENTOS + 1,
       });
-      if (usuarios.length === 0) return [];
+      const truncado = usuarios.length > TETO_DE_ASSENTOS;
+      if (truncado) usuarios.length = TETO_DE_ASSENTOS;
+      if (usuarios.length === 0) return { total: 0, truncado: false, contas: [] };
       const ids = usuarios.map((u) => u.id);
       const [runs, vila, unootube, unoogpt] = await Promise.all([
         tx.run.groupBy({ by: ["alunoId"], where: { escolaId, alunoId: { in: ids } }, _count: true }),
@@ -582,14 +562,18 @@ export class RosteringService {
       somar(vila as never, totais);
       somar(unootube as never, totais);
       somar(unoogpt as never, totais);
-      return usuarios.map((u) => ({
-        id: u.id,
-        usuario: u.username,
-        nome: u.displayName,
-        papel: u.role,
-        ativo: u.ativo,
-        dados: totais.get(u.id) ?? 0,
-      }));
+      return {
+        total: usuarios.length,
+        truncado,
+        contas: usuarios.map((u) => ({
+          id: u.id,
+          usuario: u.username,
+          nome: u.displayName,
+          papel: u.role,
+          ativo: u.ativo,
+          dados: totais.get(u.id) ?? 0,
+        })),
+      };
     }, escolaId);
   }
 }

@@ -32,6 +32,49 @@ const PLANILHA = [
   "",
 ].join("\n");
 
+const TURMA_ONEROSTER = "6C";
+const MANIFESTO = [
+  "propertyName,value",
+  "manifest.version,1.0",
+  "oneroster.version,1.2",
+  "source.systemName,Smoke da Unooria",
+  "file.orgs,absent",
+  "file.academicSessions,delta",
+  "file.classes,delta",
+  "file.users,delta",
+  "file.enrollments,delta",
+  "file.roles,delta",
+  "",
+].join("\n");
+
+/** Um lote mínimo, na ordem de dependência. `sourcedId` prefixado por `sm-`. */
+const LOTE_ONEROSTER = {
+  academicSessions: [
+    "sourcedId,title,type,startDate,endDate,schoolYear",
+    "sm-ano-2026,Ano letivo 2026,schoolYear,2026-01-01,2026-12-31,2026",
+    "",
+  ].join("\n"),
+  classes: [
+    "sourcedId,title,grades,classType,schoolSourcedId,termSourcedIds",
+    `sm-turma-6c,${TURMA_ONEROSTER},06,homeroom,escola-demo,sm-ano-2026`,
+    "",
+  ].join("\n"),
+  users: [
+    "sourcedId,enabledUser,username,givenName,familyName,identifier,role",
+    "sm-prof-1,true,,Helena,Braga,SM-P1,teacher",
+    "sm-aluno-1,true,,Tiago,Amorim,SM-A1,student",
+    "sm-aluno-2,true,,Vera,Pontes,SM-A2,student",
+    "",
+  ].join("\n"),
+  enrollments: [
+    "sourcedId,classSourcedId,schoolSourcedId,userSourcedId,role,primary,beginDate",
+    "sm-mat-1,sm-turma-6c,escola-demo,sm-prof-1,teacher,true,2026-02-01",
+    "sm-mat-2,sm-turma-6c,escola-demo,sm-aluno-1,student,true,2026-02-01",
+    "sm-mat-3,sm-turma-6c,escola-demo,sm-aluno-2,student,true,2026-02-01",
+    "",
+  ].join("\n"),
+};
+
 mkdirSync(OUT, { recursive: true });
 const ARQUIVO = join(OUT, "planilha-do-smoke.csv");
 writeFileSync(ARQUIVO, PLANILHA, "utf8");
@@ -112,8 +155,8 @@ try {
   await p.waitForTimeout(500);
   await p.getByRole("button", { name: "Importar" }).last().click();
 
-  await p.getByText(/criados,.*atualizados/).waitFor({ timeout: 30_000 });
-  const resumo = await p.getByText(/criados,.*atualizados/).first().innerText();
+  await p.getByText(/criados.*atualizados/).waitFor({ timeout: 30_000 });
+  const resumo = await p.getByText(/criados.*atualizados/).first().innerText();
   await registrar("importacao-relatorio", resumo.replace(/\n/g, " · "));
 
   await p.goto(`${HUB}/admin/turmas`, { waitUntil: "domcontentloaded" });
@@ -129,6 +172,59 @@ try {
     const alunos = await p.locator("table tbody tr").count();
     await registrar("admin-turma-alunos", `${alunos} aluno(s) matriculados`);
   }
+
+  // ---- o outro caminho: o binding CSV do OneRoster ------------------------
+  await p.goto(`${HUB}/admin/importar`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1200);
+  await p.getByRole("tab", { name: /OneRoster/ }).click().catch(async () => {
+    await p.locator("text=OneRoster 1.2").first().click();
+  });
+  await p.waitForTimeout(600);
+  await registrar("oneroster-arquivos", "os sete arquivos, na ordem de dependência");
+
+  // O manifesto pela TELA (prova a aba + o modal); os demais pela api, porque o
+  // valor do smoke aqui é visual, não sete danças de modal.
+  writeFileSync(join(OUT, "manifest.csv"), MANIFESTO, "utf8");
+  await p.locator("li", { hasText: "1. manifest.csv" }).getByRole("button", { name: "Enviar" }).click();
+  await p.waitForTimeout(600);
+  await p.locator('input[type="file"]').setInputFiles(join(OUT, "manifest.csv"));
+  await p.waitForTimeout(400);
+  await p.getByRole("button", { name: "Enviar" }).last().click();
+  await p.getByText(/manifest.csv:/).waitFor({ timeout: 20_000 });
+  await registrar("oneroster-manifesto", "versão conferida e lote declarado");
+
+  for (const [arquivo, conteudo] of Object.entries(LOTE_ONEROSTER)) {
+    const params = new URLSearchParams({ modo: "delta" });
+    if (arquivo === "users") params.set("senhaPadrao", SENHA_DO_LOTE);
+    const resposta = await p.request.post(
+      `${HUB}/api/plataforma/rostering/oneroster/${arquivo}?${params}`,
+      { headers: { "content-type": "text/csv" }, data: conteudo },
+    );
+    const corpo = await resposta.json();
+    console.log(
+      `   ${arquivo}.csv: ${corpo.criados} novos, ${corpo.atualizados} atualizados, ` +
+        `${corpo.matriculados} enturmados, ${corpo.erros?.length ?? 0} erro(s)`,
+    );
+    if (corpo.erros?.length) console.log("     erros:", JSON.stringify(corpo.erros).slice(0, 240));
+  }
+
+  await p.goto(`${HUB}/admin/turmas`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1500);
+  const turmaOneRoster = p.locator("table tbody tr", { hasText: TURMA_ONEROSTER });
+  await registrar(
+    "oneroster-turma",
+    (await turmaOneRoster.count()) > 0
+      ? `turma ${TURMA_ONEROSTER} veio do padrão`
+      : `TURMA ${TURMA_ONEROSTER} NÃO APARECEU`,
+  );
+
+  // ---- contas de assento: o diagnóstico da virada -------------------------
+  await p.goto(`${HUB}/admin/importar`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(1000);
+  await p.getByRole("button", { name: "Listar contas sem matrícula" }).click();
+  await p.waitForTimeout(1500);
+  const semMatricula = await p.locator("table tbody tr").count();
+  await registrar("contas-de-assento", `${semMatricula} conta(s) sem RA na primeira página`);
 
   // ---- reset de senha: é o caminho de quem perdeu a folha do lote ----------
   await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });

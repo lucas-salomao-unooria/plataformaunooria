@@ -9,6 +9,8 @@ import {
   RadioButton,
   SectionHeader,
   Table,
+  Tabs,
+  Tag,
   TextField,
   UploadFileModal,
   type TableColumn,
@@ -33,13 +35,41 @@ interface Relatorio {
   criados: number;
   atualizados: number;
   matriculados: number;
+  desativados: number;
+  candidatosAInativacao: number;
   turmasCriadas: string[];
   erros: ErroDeLinha[];
   avisos: ErroDeLinha[];
   credenciais: Credencial[];
+  /** Só no caminho OneRoster. */
+  arquivo?: string;
+}
+
+interface ContaDeAssento extends Record<string, unknown> {
+  id: string;
+  usuario: string;
+  nome: string;
+  papel: string;
+  ativo: boolean;
+  dados: number;
 }
 
 const SENHA_SUGERIDA = "Unooria@2026";
+
+/**
+ * Os sete arquivos do binding CSV, NA ORDEM de dependência. Fora de ordem não
+ * corrompe nada — a linha que referencia um `sourcedId` inexistente volta no
+ * relatório dizendo qual arquivo falta —, mas na ordem o lote passa de primeira.
+ */
+const ARQUIVOS_ONEROSTER = [
+  { nome: "manifest", descricao: "Declara a versão e o que vem no lote. Não escreve nada." },
+  { nome: "orgs", descricao: "Só aprende o código INEP desta escola — escola nova não nasce de CSV." },
+  { nome: "academicSessions", descricao: "Ano letivo e seus recortes." },
+  { nome: "classes", descricao: "Turmas. `homeroom` vira regular; `scheduled`, componente." },
+  { nome: "users", descricao: "Pessoas. A coluna `password` do padrão é ignorada." },
+  { nome: "enrollments", descricao: "O enturmamento: quem está em qual turma, com que papel." },
+  { nome: "roles", descricao: "Papel no nível da escola. Corrige quem entrou como aluno." },
+] as const;
 
 /**
  * A porta de entrada das pessoas.
@@ -60,12 +90,24 @@ export function ImportarPessoas({
   escolaIdInicial: string;
 }) {
   const [escolaId, setEscolaId] = useState(escolaIdInicial);
-  const [modo, setModo] = useState<"padrao" | "por-pessoa">("padrao");
+  const [modoSenha, setModoSenha] = useState<"padrao" | "por-pessoa">("padrao");
   const [senhaPadrao, setSenhaPadrao] = useState(SENHA_SUGERIDA);
   const [aberto, setAberto] = useState(false);
   const [importando, setImportando] = useState(false);
   const [relatorio, setRelatorio] = useState<Relatorio | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+
+  const [aba, setAba] = useState<"planilha" | "oneroster">("planilha");
+  const [modoLote, setModoLote] = useState<"delta" | "bulk">("delta");
+  const [arquivoAlvo, setArquivoAlvo] = useState<string | null>(null);
+  const [enviados, setEnviados] = useState<Record<string, Relatorio>>({});
+
+  const [assentos, setAssentos] = useState<{
+    total: number;
+    truncado: boolean;
+    contas: ContaDeAssento[];
+  } | null>(null);
+  const [carregandoAssentos, setCarregandoAssentos] = useState(false);
 
   const sufixoEscola = useMemo(
     () => (papel === "admin-contrato" && escolaId ? `escolaId=${encodeURIComponent(escolaId)}` : ""),
@@ -83,7 +125,7 @@ export function ImportarPessoas({
     try {
       const params = new URLSearchParams();
       if (sufixoEscola) params.set("escolaId", escolaId);
-      if (modo === "padrao") params.set("senhaPadrao", senhaPadrao);
+      if (modoSenha === "padrao") params.set("senhaPadrao", senhaPadrao);
       else params.set("gerarSenhas", "1");
 
       const resposta = await fetch(`/api/plataforma/rostering/importar?${params}`, {
@@ -105,6 +147,70 @@ export function ImportarPessoas({
       setErro("Falha na importação. Tente de novo.");
     } finally {
       setImportando(false);
+    }
+  }
+
+  async function importarOneRoster(arquivos: UploadFileItem[]) {
+    const arquivo = arquivos[0]?.file;
+    if (!arquivo || !arquivoAlvo) return;
+    setImportando(true);
+    setErro(null);
+    try {
+      const params = new URLSearchParams({ modo: modoLote });
+      if (sufixoEscola) params.set("escolaId", escolaId);
+      if (arquivoAlvo === "users") {
+        if (modoSenha === "padrao") params.set("senhaPadrao", senhaPadrao);
+        else params.set("gerarSenhas", "1");
+      }
+
+      const resposta = await fetch(
+        `/api/plataforma/rostering/oneroster/${arquivoAlvo}?${params}`,
+        { method: "POST", headers: { "content-type": "text/csv" }, body: await arquivo.text() },
+      );
+      const corpo = (await resposta.json().catch(() => null)) as
+        | Relatorio
+        | { mensagem?: string }
+        | null;
+      if (!resposta.ok || !corpo || !("criados" in corpo)) {
+        setErro((corpo as { mensagem?: string } | null)?.mensagem ?? "Falha na importação.");
+        return;
+      }
+      setEnviados((antes) => ({ ...antes, [arquivoAlvo]: corpo }));
+      setRelatorio(corpo);
+      setArquivoAlvo(null);
+    } catch {
+      setErro("Falha na importação. Tente de novo.");
+    } finally {
+      setImportando(false);
+    }
+  }
+
+  async function carregarAssentos() {
+    setCarregandoAssentos(true);
+    try {
+      const resposta = await fetch(
+        `/api/plataforma/rostering/contas-de-assento${sufixoEscola ? `?${sufixoEscola}` : ""}`,
+      );
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      setAssentos((await resposta.json()) as { total: number; truncado: boolean; contas: ContaDeAssento[] });
+    } catch {
+      setErro("Não foi possível listar as contas sem matrícula.");
+    } finally {
+      setCarregandoAssentos(false);
+    }
+  }
+
+  async function desativar(conta: ContaDeAssento) {
+    try {
+      const resposta = await fetch(`/api/plataforma/usuarios/${conta.id}${sufixoEscola ? `?${sufixoEscola}` : ""}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ativo: false }),
+      });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      await carregarAssentos();
+    } catch {
+      setErro("Não foi possível desativar a conta.");
     }
   }
 
@@ -157,6 +263,20 @@ export function ImportarPessoas({
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
 
+      {/* Dois caminhos para o mesmo núcleo: a planilha simples é de quem não tem
+          sistema de gestão; o OneRoster é de quem tem. */}
+      <Tabs
+        theme="light"
+        value={aba}
+        onChange={(valor) => setAba(valor === "oneroster" ? "oneroster" : "planilha")}
+        items={[
+          { value: "planilha", label: "Planilha da escola", showIcon: false },
+          { value: "oneroster", label: "OneRoster 1.2", showIcon: false },
+        ]}
+      />
+
+      {aba === "planilha" ? (
+      <>
       <section className="flex flex-col gap-3 rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 p-5">
         <h2 className="text-[16px] font-bold text-unooria-neutral-950">1. Baixe o modelo</h2>
         <p className="text-[14px] text-unooria-neutral-700">
@@ -195,18 +315,18 @@ export function ImportarPessoas({
             id="modo-padrao"
             name="modo-senha"
             label="Uma senha para todo o lote"
-            checked={modo === "padrao"}
-            onChange={() => setModo("padrao")}
+            checked={modoSenha === "padrao"}
+            onChange={() => setModoSenha("padrao")}
           />
           <RadioButton
             id="modo-por-pessoa"
             name="modo-senha"
             label="Uma senha diferente por pessoa (recomendado para alunos)"
-            checked={modo === "por-pessoa"}
-            onChange={() => setModo("por-pessoa")}
+            checked={modoSenha === "por-pessoa"}
+            onChange={() => setModoSenha("por-pessoa")}
           />
         </div>
-        {modo === "padrao" ? (
+        {modoSenha === "padrao" ? (
           <>
             <div className="max-w-[320px]">
               <TextField
@@ -230,18 +350,106 @@ export function ImportarPessoas({
         <Button
           variant="primary"
           size="md"
-          disabled={modo === "padrao" && senhaPadrao.length < 8}
+          disabled={modoSenha === "padrao" && senhaPadrao.length < 8}
           onClick={() => setAberto(true)}
         >
           Enviar arquivo
         </Button>
       </section>
+      </>
+      ) : (
+      <section className="flex flex-col gap-4 rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 p-5">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-[16px] font-bold text-unooria-neutral-950">
+            Arquivos do padrão, um por vez
+          </h2>
+          <p className="text-[14px] text-unooria-neutral-700">
+            Envie na ordem abaixo. Fora de ordem não corrompe nada: a linha que aponta para um
+            <code> sourcedId</code> que ainda não existe volta no relatório dizendo qual arquivo
+            falta — em vez de criar meia entidade.
+          </p>
+          <p className="text-[14px] text-unooria-neutral-700">
+            A reimportação é idempotente pelo <code>sourcedId</code>. O que o padrão chama de
+            exclusão (<code>status = tobedeleted</code>) <strong>desativa</strong> aqui: pessoa fica
+            inativa, matrícula é encerrada, e nada é apagado.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <RadioButton
+            id="modo-delta"
+            name="modo-lote"
+            label="Delta — só o que mudou desde o último envio"
+            checked={modoLote === "delta"}
+            onChange={() => setModoLote("delta")}
+          />
+          <RadioButton
+            id="modo-bulk"
+            name="modo-lote"
+            label="Bulk — lote completo da rede"
+            checked={modoLote === "bulk"}
+            onChange={() => setModoLote("bulk")}
+          />
+          {modoLote === "bulk" ? (
+            <FeedbackAlert
+              type="info"
+              description="Num lote completo, quem não vier no arquivo NÃO é desativado — só contado e listado no relatório. Ausência de linha não é ordem de exclusão."
+            />
+          ) : null}
+        </div>
+
+        <ul className="flex flex-col divide-y divide-unooria-neutral-200">
+          {ARQUIVOS_ONEROSTER.map((arquivo, indice) => {
+            const feito = enviados[arquivo.nome];
+            return (
+              <li key={arquivo.nome} className="flex items-center justify-between gap-4 py-3">
+                <div className="min-w-0">
+                  <span className="text-[15px] font-semibold text-unooria-neutral-950">
+                    {indice + 1}. {arquivo.nome}.csv
+                  </span>
+                  <span className="block text-[13px] text-unooria-neutral-500">
+                    {arquivo.descricao}
+                  </span>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  {feito ? (
+                    <Tag>
+                      {feito.erros.length > 0
+                        ? `${feito.erros.length} erro(s)`
+                        : `${feito.criados} novos · ${feito.atualizados} atualizados`}
+                    </Tag>
+                  ) : null}
+                  <Button variant="secondary" size="sm" onClick={() => setArquivoAlvo(arquivo.nome)}>
+                    Enviar
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <p className="text-[13px] text-unooria-neutral-500">
+          Em <code>users.csv</code> a senha inicial é a escolhida na aba
+          <strong> Planilha da escola</strong> — a coluna <code>password</code> do padrão é
+          ignorada. Sem a coluna <code>role</code>, a pessoa entra como <strong>aluno</strong> (o
+          menor privilégio) e o <code>roles.csv</code> corrige.
+        </p>
+      </section>
+      )}
 
       {relatorio ? (
         <section className="flex flex-col gap-4">
           <FeedbackAlert
             type={relatorio.erros.length > 0 ? "warning" : "success"}
-            title={`${relatorio.criados} criados, ${relatorio.atualizados} atualizados, ${relatorio.matriculados} enturmados`}
+            title={[
+              relatorio.arquivo ? `${relatorio.arquivo}.csv:` : "",
+              `${relatorio.criados} criados`,
+              `${relatorio.atualizados} atualizados`,
+              `${relatorio.matriculados} enturmados`,
+              relatorio.desativados > 0 ? `${relatorio.desativados} desativados` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
             description={
               relatorio.turmasCriadas.length > 0
                 ? `Turmas criadas: ${relatorio.turmasCriadas.join(", ")}.`
@@ -264,10 +472,8 @@ export function ImportarPessoas({
                   </Button>
                 </div>
               </div>
-              <AlertBox
-                theme="light"
-                variant="warning"
-                device="auto"
+              <FeedbackAlert
+                type="warning"
                 description="Guarde agora: estas senhas não aparecem de novo. Depois desta tela, o caminho é resetar a senha da pessoa em Usuários."
               />
               <Table<Credencial>
@@ -314,6 +520,76 @@ export function ImportarPessoas({
           ) : null}
         </section>
       ) : null}
+
+      <section className="flex flex-col gap-3 rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 p-5">
+        <h2 className="text-[16px] font-bold text-unooria-neutral-950">
+          Contas sem matrícula da rede
+        </h2>
+        <p className="text-[14px] text-unooria-neutral-700">
+          São as candidatas a <strong>conta de assento</strong> — a conta do aparelho, que uma turma
+          usava depois da outra. Depois de importar as pessoas de verdade, elas viram sobra. A
+          coluna <strong>dados</strong> mostra quanto cada uma acumulou de partidas e sessões, para
+          a decisão não ser às cegas.
+        </p>
+        {/* Faixa de contexto, não diálogo: `AlertBox` é o diálogo de 436px do
+            DS e aparece centralizado no meio da seção. */}
+        <FeedbackAlert
+          type="warning"
+          description="Não existe fundir contas: juntar duas move o que uma criança fez para outra pessoa, e depois ninguém consegue auditar de quem era."
+        />
+        <div>
+          <Button variant="secondary" size="md" isLoading={carregandoAssentos} onClick={() => void carregarAssentos()}>
+            {assentos ? "Atualizar lista" : "Listar contas sem matrícula"}
+          </Button>
+        </div>
+        {assentos ? (
+          <Table<ContaDeAssento>
+            columns={[
+              { key: "nome", title: "Nome" },
+              { key: "usuario", title: "Login" },
+              { key: "papel", title: "Papel" },
+              { key: "dados", title: "Dados", align: "right" },
+              {
+                key: "acoes",
+                title: "",
+                align: "right",
+                render: (_, linha) =>
+                  linha.ativo ? (
+                    <Button variant="ghost" size="sm" onClick={() => void desativar(linha)}>
+                      Desativar
+                    </Button>
+                  ) : (
+                    <Tag>inativa</Tag>
+                  ),
+              },
+            ]}
+            data={assentos.contas}
+            keyExtractor={(linha) => linha.id}
+            emptyText="Nenhuma conta sem matrícula — todo mundo aqui veio de uma importação com RA."
+            size="sm"
+            theme="light"
+          />
+        ) : null}
+        {assentos?.truncado ? (
+          <p className="text-[13px] text-unooria-neutral-500">
+            Mostrando as {assentos.total} primeiras. Há mais contas sem matrícula — a lista é
+            diagnóstico, não fila de trabalho: importe as pessoas com RA e ela encolhe sozinha.
+          </p>
+        ) : null}
+      </section>
+
+      <UploadFileModal
+        isOpen={Boolean(arquivoAlvo)}
+        onClose={() => setArquivoAlvo(null)}
+        title={`Enviar ${arquivoAlvo}.csv`}
+        description={`Arquivo .csv do OneRoster 1.2, modo ${modoLote}. Até 10MB.`}
+        accept=".csv,text/csv"
+        multiple={false}
+        isSubmitting={importando}
+        submitText="Enviar"
+        cancelText="Cancelar"
+        onSubmit={(arquivos) => void importarOneRoster(arquivos)}
+      />
 
       <UploadFileModal
         isOpen={aberto}

@@ -131,6 +131,25 @@ gerado e devolvido no relatório. O header legado
 (`GET /rostering/modelos/usuarios.csv`) é gerado da MESMA constante que o parser
 lê — modelo escrito à mão divergiria no primeiro campo novo.
 
+**OneRoster CSV** (para rede COM sistema de gestão):
+`POST /rostering/oneroster/:arquivo`, **um arquivo por chamada**, na ordem
+`manifest → orgs → academicSessions → classes → users → enrollments → roles`,
+com `?modo=bulk|delta`. Fora de ordem não corrompe: a linha que aponta para um
+`sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta. Quatro
+regras que não são óbvias: `orgs.csv` só APRENDE o código INEP desta escola
+(escola é tenant, não nasce de upload); sem a coluna `role` (que saiu de
+`users.csv` na 1.2) a pessoa entra como **aluno**, o menor privilégio, e o
+`roles.csv` corrige; a coluna `password` do padrão é IGNORADA e a contagem vai ao
+relatório; e em `bulk` a ausência de linha **não desativa ninguém** — é contada e
+listada, porque lote que chegou pela metade não pode apagar uma rede por omissão.
+`status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.
+
+**Contas de assento**: `GET /rostering/contas-de-assento` lista as contas sem
+`matricula_externa` com quanto cada uma acumulou de dado, para o gestor desativar
+o que era conta de aparelho. **Não existe fundir contas** — juntar duas move o que
+uma criança fez para outra pessoa, e depois ninguém audita de quem era. Teto de
+200 linhas, dito na resposta (`truncado`).
+
 **Senha (ADR-29)**: a planilha NÃO tem coluna de senha. A senha inicial é
 escolhida na tela (uma para o lote, ou uma por pessoa — recomendada para alunos),
 marca `senha_provisoria` e o primeiro acesso cai em `/trocar-senha` sem saída. A

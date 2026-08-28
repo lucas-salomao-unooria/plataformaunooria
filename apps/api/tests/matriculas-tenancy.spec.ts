@@ -118,6 +118,40 @@ describe("as turmas do professor", () => {
     expect(daOutra).toHaveLength(0);
   });
 
+  test("matricular numa turma de COMPONENTE não tira o aluno da regular", async () => {
+    const periodo = await periodoDeTeste(admin);
+    const eletiva = await admin.turma.create({
+      data: {
+        escolaId: ESCOLA,
+        periodoLetivoId: periodo.id,
+        nome: "Eletiva de Xadrez",
+        serie: "8EF",
+        tipo: "componente",
+      },
+    });
+
+    await rostering.matricular(ESCOLA, eletiva.id, ids.ana, "aluno");
+
+    const ativas = await admin.matricula.findMany({
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+      include: { turma: { select: { nome: true } } },
+      orderBy: { turma: { nome: "asc" } },
+    });
+    // As duas ao mesmo tempo: é o multi-turma que a coluna `users.turma_id` não
+    // conseguia representar. A regular continua sendo a PRINCIPAL.
+    expect(ativas.map((m) => m.turma.nome)).toEqual(["8A", "Eletiva de Xadrez"]);
+    expect(ativas.find((m) => m.turma.nome === "8A")?.principal).toBe(true);
+    expect(ativas.find((m) => m.turma.nome === "Eletiva de Xadrez")?.principal).toBe(false);
+
+    // O cache NÃO foi para a eletiva. (Continua nulo porque a fixture criou a
+    // matrícula do 8A direto no banco, sem passar por `matricularEm`.)
+    const ana = await admin.user.findUniqueOrThrow({ where: { id: ids.ana } });
+    expect(ana.turmaId).not.toBe(eletiva.id);
+
+    await admin.matricula.deleteMany({ where: { turmaId: eletiva.id } });
+    await admin.turma.delete({ where: { id: eletiva.id } });
+  });
+
   test("encerrar matrícula tira da turma sem apagar a linha", async () => {
     const matricula = await admin.matricula.findFirstOrThrow({
       where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno" },

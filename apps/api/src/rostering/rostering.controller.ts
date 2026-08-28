@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   HttpException,
+  Param,
   Post,
   Query,
   Req,
@@ -13,6 +14,8 @@ import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { escolaAlvo } from "../comum/escola-alvo";
 import { rateLimit } from "../comum/rate-limit";
+import { ARQUIVOS_ONEROSTER, type ArquivoOneRoster } from "./catalogo";
+import { OneRosterService } from "./oneroster.service";
 import { exemploPreenchido, modeloEmBranco } from "./planilha";
 import { MAX_LINHAS, RosteringService } from "./rostering.service";
 
@@ -30,6 +33,10 @@ const ImportarSchema = z.object({
   gerarSenhas: z.enum(["0", "1"]).optional(),
 });
 
+const OneRosterSchema = ImportarSchema.extend({
+  modo: z.enum(["bulk", "delta"]).optional(),
+});
+
 /**
  * Fronteira de entrada de pessoas e turmas. Só gestor (própria escola) e
  * admin-contrato (qualquer escola, via `?escolaId=`).
@@ -38,7 +45,10 @@ const ImportarSchema = z.object({
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("gestor", "admin-contrato")
 export class RosteringController {
-  constructor(private readonly rostering: RosteringService) {}
+  constructor(
+    private readonly rostering: RosteringService,
+    private readonly oneroster: OneRosterService,
+  ) {}
 
   /**
    * O modelo em branco. Gerado da MESMA constante que o leitor consome — um
@@ -85,6 +95,45 @@ export class RosteringController {
     }
 
     return this.rostering.importarPlanilha(escolaId, req.body, {
+      senhaPadrao: q.senhaPadrao,
+      gerarSenhas: q.gerarSenhas === "1",
+    });
+  }
+
+  /**
+   * Binding CSV do OneRoster 1.2 — UM arquivo por chamada, nesta ordem:
+   * `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`,
+   * `roles`. Fora de ordem não corrompe nada: a linha que referencia
+   * `sourcedId` inexistente volta no relatório dizendo qual arquivo falta.
+   */
+  @Post("oneroster/:arquivo")
+  async oneRoster(
+    @Param("arquivo") arquivo: string,
+    @Query() query: Record<string, string>,
+    @Req() req: { auth: AuthClaims; body: unknown },
+  ) {
+    const q = OneRosterSchema.parse(query);
+    const escolaId = escolaAlvo(req.auth, q.escolaId);
+
+    if (!(ARQUIVOS_ONEROSTER as readonly string[]).includes(arquivo)) {
+      throw new HttpException(
+        { mensagem: `arquivo desconhecido — use um de: ${ARQUIVOS_ONEROSTER.join(", ")}` },
+        400,
+      );
+    }
+
+    const cota = rateLimit(`oneroster:${req.auth.usuarioId}`, 20, 60_000);
+    if (!cota.ok) throw new HttpException("Muitas importações — aguarde um minuto", 429);
+
+    if (typeof req.body !== "string" || req.body.length === 0) {
+      throw new HttpException({ mensagem: "Envie o CSV cru no corpo com Content-Type: text/csv" }, 400);
+    }
+    if (req.body.length > TETO_DO_ARQUIVO) {
+      throw new HttpException({ mensagem: "CSV acima de 10MB — divida o arquivo" }, 400);
+    }
+
+    return this.oneroster.importar(escolaId, arquivo as ArquivoOneRoster, req.body, {
+      modo: q.modo,
       senhaPadrao: q.senhaPadrao,
       gerarSenhas: q.gerarSenhas === "1",
     });

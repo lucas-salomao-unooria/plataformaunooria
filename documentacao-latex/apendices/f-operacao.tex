@@ -203,6 +203,17 @@ causa.
   A coluna \cd{matricula} estava vazia. Sem o RA, a chave de reconciliação cai no
   \cd{usuario}, e um \emph{login} corrigido vira uma segunda pessoa --- com o
   histórico preso na primeira.\\
+\textbf{O OneRoster recusa a linha dizendo que a turma é desconhecida} &
+  Ordem dos arquivos. \cd{enrollments.csv} referencia \cd{classSourcedId}, que
+  vem de \cd{classes.csv}, que referencia \cd{termSourcedIds}, que vêm de
+  \cd{academicSessions.csv}. O relatório nomeia o arquivo que falta.\\
+\zebra \textbf{Todo mundo importado pelo OneRoster virou aluno} &
+  Na 1.2 o papel não está em \cd{users.csv} --- foi para \cd{roles.csv}. Sem a
+  coluna \cd{role}, a pessoa nasce com o menor privilégio de propósito; aplique
+  \cd{roles.csv} para corrigir.\\
+\textbf{Mandei \cd{bulk} e ninguém foi desativado} &
+  É o comportamento. Ausência de linha num lote completo não é ordem de exclusão:
+  o relatório conta e lista os que não vieram, e a desativação é ato do gestor.\\
 \textbf{Elemento branco no branco} &
   Classe de cor que não existe em \arq{plataforma.css}. Não é erro em lugar
   nenhum. Checar o \cd{backgroundColor} \textbf{computado}.\\

@@ -87,10 +87,17 @@ justificativas estão no Capítulo~\ref{cap:api}.
   cru, até 10\,MB / 50 mil linhas. \cd{?senhaPadrao=} ou \cd{?gerarSenhas=1}.
   Devolve criados, atualizados, enturmados, turmas criadas, erros e avisos por
   linha, e as credenciais geradas --- uma única vez.\\
+\rota{POST /rostering/oneroster/:arquivo} & gestor, admin-contrato & Binding CSV
+  do OneRoster 1.2, \textbf{um arquivo por chamada}, em ordem de dependência:
+  \cd{manifest}, \cd{orgs}, \cd{academicSessions}, \cd{classes}, \cd{users},
+  \cd{enrollments}, \cd{roles}. \cd{?modo=bulk|delta}. Idempotente por
+  \cd{sourcedId}; \cd{status = tobedeleted} \textbf{desativa}, nunca apaga.\\
 \zebra \rota{GET /rostering/contas-de-assento} & gestor, admin-contrato &
   Diagnóstico das contas sem matrícula da rede, com quanto cada uma acumulou.
   Não existe \enquote{fundir contas}: juntar duas move dado de uma criança para
-  outra sem auditoria possível.\\
+  outra sem auditoria possível. Teto de 200 linhas, e o corte é \textbf{dito} na
+  resposta (\cd{truncado}) --- numa rede recém-migrada toda conta antiga cai
+  aqui.\\
 \rota{GET /turmas} & gestor, admin-contrato & Turmas da escola, com contagem de
   alunos e professores.\\
 \zebra \rota{GET /turmas/minhas} & professor, gestor, admin-contrato & As turmas
