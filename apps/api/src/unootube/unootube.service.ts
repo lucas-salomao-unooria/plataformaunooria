@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import type { Prisma, UnootubeSessao } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { LIMITE_SALVOS, VIDEOS, semGabarito, type VideoPublico } from "./catalogo";
 import { erroDeJogo } from "./erros";
 import {
@@ -163,10 +164,11 @@ export class UnootubeService {
     );
   }
 
-  async turmas(escolaId: string) {
+  /** `professorId` presente = só as turmas dele (ver `ondeAsTurmasSaoVisiveis`). */
+  async turmas(escolaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       const turmas = await tx.turma.findMany({
-        where: { escolaId },
+        where: ondeAsTurmasSaoVisiveis(escolaId, professorId),
         select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
         orderBy: [{ serie: "asc" }, { nome: "asc" }],
       });
@@ -179,17 +181,25 @@ export class UnootubeService {
   /**
    * Visão do professor. Parte de `users` (quem não iniciou também aparece);
    * `users`/`turmas` estão fora da RLS, por isso o `escolaId` no `where`.
-   * Autorização = turma da mesma escola do token: não existe vínculo
-   * professor↔turma no modelo; se um dia existir (`professores_turmas`), é aqui
-   * que ele entra.
+   *
+   * Autorização: escola do token E matrícula na turma quando quem pede é
+   * professor. Antes de `matriculas` existir, a única prova era "mesma escola",
+   * que é a regra de tenancy — não a de quem dá aula naquela sala.
    */
-  async resultadosDaTurma(escolaId: string, turmaId: string): Promise<RespostaTurma> {
+  async resultadosDaTurma(
+    escolaId: string,
+    turmaId: string,
+    professorId?: string,
+  ): Promise<RespostaTurma> {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await tx.turma.findFirst({
         where: { id: turmaId, escolaId },
         select: { id: true, nome: true, serie: true },
       });
       if (!turma) erroDeJogo("TURMA_NAO_ENCONTRADA");
+      if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) {
+        erroDeJogo("TURMA_NAO_ENCONTRADA");
+      }
 
       const alunos = await tx.user.findMany({
         where: { escolaId, turmaId, role: "aluno" },

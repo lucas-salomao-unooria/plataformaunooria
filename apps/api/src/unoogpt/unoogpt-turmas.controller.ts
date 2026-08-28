@@ -6,6 +6,7 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { ehUuid } from "../motor/guardas";
 import { erroDeJogo } from "./erros";
 import { UnoogptService } from "./unoogpt.service";
+import { professorDoToken } from "../comum/turmas-do-professor";
 
 /**
  * Visão do PROFESSOR: o relógio da aula, a folha da turma e a linha de uma
@@ -44,7 +45,7 @@ export class UnoogptTurmasController {
   /** As turmas da escola: alimenta o seletor da página de resultados. */
   @Get("turmas")
   turmas(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
-    return this.service.turmas(escolaAlvo(req.auth, escolaIdPedida));
+    return this.service.turmas(escolaAlvo(req.auth, escolaIdPedida), professorDoToken(req.auth));
   }
 
   /** A folha da turma: relógio, retrato de conduta e uma linha por aluno. */
@@ -56,7 +57,7 @@ export class UnoogptTurmasController {
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (!ehUuid(turmaId)) throw erroDeJogo("payload-invalido");
-    return this.service.turmaDoProfessor(escolaId, turmaId);
+    return this.service.turmaDoProfessor(escolaId, turmaId, professorDoToken(req.auth));
   }
 
   /**

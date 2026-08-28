@@ -145,7 +145,19 @@ export function ModalAluno({
   return (
     <Modal isOpen size="lg" onClose={aoFechar} closeOnOverlayClick closeOnEsc>
       <ModalHeader onClose={aoFechar}>
-        <ModalTitle>{dados?.aluno.nomeNoApp || nome}</ModalTitle>
+        {/*
+          A IDENTIDADE vem da conta, não do aparelho. `nomeNoApp` é o apelido que
+          a criança escolheu dentro da ficção do Instanooria; era ele que vinha
+          primeiro aqui, de quando a conta era de assento e o nome digitado no app
+          era a única pista de quem estava jogando. Agora cada pessoa tem a conta
+          dela, e o apelido é o que é: decoração da experiência.
+        */}
+        <ModalTitle>{dados?.aluno.displayName || nome}</ModalTitle>
+        {dados?.aluno.nomeNoApp ? (
+          <p className="text-[13px] text-unooria-neutral-500">
+            no app: {dados.aluno.nomeNoApp}
+          </p>
+        ) : null}
       </ModalHeader>
 
       <ModalBody>

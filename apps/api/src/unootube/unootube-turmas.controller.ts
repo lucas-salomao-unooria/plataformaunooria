@@ -13,6 +13,7 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { ehUuid } from "../motor/guardas";
 import { erroDeJogo } from "./erros";
 import { UnootubeService } from "./unootube.service";
+import { professorDoToken } from "../comum/turmas-do-professor";
 
 /**
  * Visão do PROFESSOR (e gestor) sobre a missão do UnooTube — classe separada
@@ -45,7 +46,7 @@ export class UnootubeTurmasController {
   /** Turmas da escola — alimenta o seletor da página de resultados do hub. */
   @Get()
   turmas(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
-    return this.unootube.turmas(escolaAlvo(req.auth, escolaIdPedida));
+    return this.unootube.turmas(escolaAlvo(req.auth, escolaIdPedida), professorDoToken(req.auth));
   }
 
   @Get(":turmaId/resultados")
@@ -58,6 +59,6 @@ export class UnootubeTurmasController {
     if (!ehUuid(turmaId)) {
       throw new BadRequestException({ codigo: "TURMA_NAO_ENCONTRADA", mensagem: "Turma inválida." });
     }
-    return this.unootube.resultadosDaTurma(escolaId, turmaId);
+    return this.unootube.resultadosDaTurma(escolaId, turmaId, professorDoToken(req.auth));
   }
 }

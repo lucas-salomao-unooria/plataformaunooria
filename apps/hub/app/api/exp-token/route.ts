@@ -13,6 +13,11 @@ export async function GET() {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
   }
   const u = session.usuario;
+  // A experiência não abre com senha de primeiro acesso: o middleware prende as
+  // PÁGINAS, e sem esta linha o token continuaria saindo por aqui.
+  if (u.precisaTrocarSenha) {
+    return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
+  }
   const token = await assinarTokenExperiencia({
     sub: u.id,
     escola_id: u.escolaId,

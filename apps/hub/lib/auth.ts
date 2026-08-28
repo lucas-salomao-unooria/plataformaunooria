@@ -17,11 +17,13 @@ import type { UsuarioDaSessao } from "@/types/next-auth";
 
 const RespostaLoginSchema = z.object({
   usuarioId: z.string().min(1),
+  usuario: z.string().min(1),
   nome: z.string(),
   papel: z.enum(PAPEIS as [Papel, ...Papel[]]),
   escolaId: z.string().nullable(),
   turmaId: z.string().nullable(),
   serie: z.string().nullable(),
+  precisaTrocarSenha: z.boolean().default(false),
 });
 
 const providers = [
@@ -49,11 +51,13 @@ const providers = [
 
       const usuario: UsuarioDaSessao = {
         id: dados.data.usuarioId,
+        usuario: dados.data.usuario,
         nome: dados.data.nome,
         papel: dados.data.papel,
         escolaId: dados.data.escolaId ?? "",
         turmaId: dados.data.turmaId ?? undefined,
         serie: dados.data.serie ?? undefined,
+        precisaTrocarSenha: dados.data.precisaTrocarSenha,
       };
       return { id: usuario.id, usuario };
     },

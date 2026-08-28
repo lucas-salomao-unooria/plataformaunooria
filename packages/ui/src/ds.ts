@@ -137,6 +137,7 @@ export type {
   CardProps,
   EmptyStateProps,
   ModalProps,
+  SideBarItemData,
   SideBarProps,
   TableColumn,
   UnooriaTheme,

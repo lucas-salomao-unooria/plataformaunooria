@@ -50,6 +50,8 @@ export class AuthController {
 
     return {
       usuarioId: user.id,
+      /** O login em si — a troca de senha precisa dele, e o hub não o tinha. */
+      usuario: user.username,
       nome: user.displayName,
       papel: user.role as Perfil,
       escolaId: user.escolaId,

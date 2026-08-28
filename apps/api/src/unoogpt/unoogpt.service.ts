@@ -4,6 +4,7 @@ import { AI_PROVIDER, ErroDeGeracao, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
+import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { MISSAO_TEMPESTADE } from "./cenario";
 
 /** Quanto cada toque em "+2 min" acrescenta ao relógio da aula. */
@@ -876,10 +877,11 @@ export class UnoogptService {
    * rota de plataforma para listar turmas, que ainda não existe. Quando a
    * terceira experiência precisar disto, vale criá-la.
    */
-  async turmas(escolaId: string) {
+  /** `professorId` presente = só as turmas dele (ver `ondeAsTurmasSaoVisiveis`). */
+  async turmas(escolaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       const turmas = await tx.turma.findMany({
-        where: { escolaId },
+        where: ondeAsTurmasSaoVisiveis(escolaId, professorId),
         select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
         orderBy: [{ serie: "asc" }, { nome: "asc" }],
       });
@@ -897,10 +899,10 @@ export class UnoogptService {
    * se leu antes de decidir, se viu fontes discordando, se justificou por
    * intuição — e o número de resgate fica na tela individual, uma por vez.
    */
-  async turmaDoProfessor(escolaId: string, turmaId: string) {
+  async turmaDoProfessor(escolaId: string, turmaId: string, professorId?: string) {
     const agora = new Date();
     return this.prisma.comTenancy(async (tx) => {
-      const turma = await this.turmaDaEscola(tx, escolaId, turmaId);
+      const turma = await this.turmaDaEscola(tx, escolaId, turmaId, professorId);
       const relogio = await this.relogioDaTurma(tx, escolaId, turmaId);
 
       const alunos = await tx.user.findMany({
@@ -1061,12 +1063,25 @@ export class UnoogptService {
   // =========================================================================
 
   /** `turmas` está FORA da RLS: a checagem da escola é explícita. */
-  private async turmaDaEscola(tx: Prisma.TransactionClient, escolaId: string, turmaId: string) {
+  /**
+   * Turma da escola — e, quando quem pede é PROFESSOR, turma em que ele tem
+   * matrícula. O erro é o mesmo de turma inexistente de propósito: quem não dá
+   * aula ali não precisa descobrir que ela existe.
+   */
+  private async turmaDaEscola(
+    tx: Prisma.TransactionClient,
+    escolaId: string,
+    turmaId: string,
+    professorId?: string,
+  ) {
     const turma = await tx.turma.findFirst({
       where: { id: turmaId, escolaId },
       select: { id: true, nome: true, serie: true },
     });
     if (!turma) throw erroDeJogo("sessao-encerrada");
+    if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) {
+      throw erroDeJogo("sessao-encerrada");
+    }
     return turma;
   }
 

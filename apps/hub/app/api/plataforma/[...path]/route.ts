@@ -12,6 +12,13 @@ import { assinarTokenExperiencia } from "@/lib/chave-token";
  */
 const PREFIXOS_PERMITIDOS = [
   "usuarios",
+  /* Área administrativa: importação de pessoas, turmas, enturmamento e o
+     calendário do contrato. As guardas de papel estão na api (`@Roles`); isto
+     aqui só decide quais prefixos o BFF repassa. */
+  "rostering",
+  "turmas",
+  "matriculas",
+  "periodos-letivos",
   "atividades",
   "runs",
   "posts",
@@ -35,6 +42,9 @@ async function proxy(request: NextRequest, path: string[]) {
   const session = await auth();
   if (!session?.usuario) {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
+  }
+  if (session.usuario.precisaTrocarSenha) {
+    return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
   }
   const prefixo = path[0] ?? "";
   if (!PREFIXOS_PERMITIDOS.includes(prefixo as (typeof PREFIXOS_PERMITIDOS)[number])) {

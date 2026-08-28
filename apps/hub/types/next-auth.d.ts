@@ -6,11 +6,19 @@ import type { Papel } from "@/lib/papeis";
  */
 export interface UsuarioDaSessao {
   id: string;
+  /** O login (`username`) — usado na troca de senha e na identificação. */
+  usuario: string;
   nome: string;
   papel: Papel;
   escolaId: string;
   turmaId?: string;
   serie?: string;
+  /**
+   * A senha veio de uma importação ou de um reset e ainda não foi trocada.
+   * Enquanto for verdade a pessoa fica presa em /trocar-senha — e nem o BFF nem
+   * o /api/exp-token respondem, senão bastaria digitar /exp/... para pular.
+   */
+  precisaTrocarSenha?: boolean;
 }
 
 declare module "next-auth" {

@@ -14,6 +14,7 @@ import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { CARTOES, DESCRICAO_BOLHA } from "./catalogo";
 import { VilaService } from "./vila.service";
+import { professorDoToken } from "../comum/turmas-do-professor";
 
 /**
  * Rotas do PROFESSOR. Superfície separada da do aluno, e não é organização: é a
@@ -57,10 +58,13 @@ function idOu404(bruto: string): string {
 export class VilaAgregadoController {
   constructor(private readonly vila: VilaService) {}
 
-  /** Turmas da escola, para o seletor. Sem filtro por série: a Vila é transversal. */
+  /**
+   * Turmas para o seletor. Sem filtro por série (a Vila é transversal), mas COM
+   * filtro por matrícula: o professor vê as turmas dele, o gestor vê a escola.
+   */
   @Get("turmas")
   async turmas(@Req() req: Autenticado) {
-    return { turmas: await this.vila.turmas(req.auth.escolaId) };
+    return { turmas: await this.vila.turmas(req.auth.escolaId, professorDoToken(req.auth)) };
   }
 
   /**
@@ -73,7 +77,13 @@ export class VilaAgregadoController {
    */
   @Get("turmas/:turmaId")
   async resumo(@Param("turmaId") turmaId: string, @Req() req: Autenticado) {
-    return { resumo: await this.vila.resumoDaTurma(req.auth.escolaId, idOu404(turmaId)) };
+    return {
+      resumo: await this.vila.resumoDaTurma(
+        req.auth.escolaId,
+        idOu404(turmaId),
+        professorDoToken(req.auth),
+      ),
+    };
   }
 }
 
@@ -87,7 +97,9 @@ export class VilaProfessorController {
    *  sustenta leitura. Sem números de valor — esses são da tela individual. */
   @Get("turmas/:turmaId")
   async turma(@Param("turmaId") turmaId: string, @Req() req: Autenticado) {
-    return { alunos: await this.vila.daTurma(req.auth.escolaId, idOu404(turmaId)) };
+    return {
+      alunos: await this.vila.daTurma(req.auth.escolaId, idOu404(turmaId), professorDoToken(req.auth)),
+    };
   }
 
   /**

@@ -9,6 +9,12 @@ export const SERIES = [
 
 export type Serie = (typeof SERIES)[number];
 
+/** Como a série se escreve na tela ("8º ano", "2ª série EM"). */
+export function rotuloDaSerie(serie: Serie): string {
+  const numero = serie[0];
+  return serie.endsWith("EM") ? `${numero}ª série EM` : `${numero}º ano`;
+}
+
 /**
  * Normaliza qualquer grafia de série para o enum; `null` se não reconhecer.
  * Hoje a sessão já carrega o enum (o CSV valida na entrada), mas o WSO2 pode

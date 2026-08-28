@@ -4,6 +4,7 @@ import { HttpException, Injectable } from "@nestjs/common";
    neste campo" e o tipo do Prisma nem aceita. */
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { cartoesDaBolha, semGabarito, type Bolha, type CartaoPublico } from "./catalogo";
 import { validarPayload } from "./contrato";
 import { linhasDeLeitura, resumoHonesto, type LinhaDeLeitura } from "./leitura";
@@ -337,10 +338,10 @@ export class VilaService {
   /** Turmas da escola — alimenta o seletor da tela de resultados. SEM filtro por
    *  série: a Vila do Lume é transversal, e filtrar aqui deixaria de fora
    *  exatamente as turmas para as quais ela existe. */
-  async turmas(escolaId: string): Promise<TurmaResumida[]> {
+  async turmas(escolaId: string, professorId?: string): Promise<TurmaResumida[]> {
     return this.prisma.comTenancy(async (tx) => {
       const turmas = await tx.turma.findMany({
-        where: { escolaId },
+        where: ondeAsTurmasSaoVisiveis(escolaId, professorId),
         select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
         orderBy: [{ serie: "asc" }, { nome: "asc" }],
       });
@@ -354,10 +355,16 @@ export class VilaService {
    * Conta a ÚLTIMA partida concluída de cada aluno, não todas: quem jogou três
    * vezes contaria três golpes recusados e enviesaria a distribuição da sala.
    */
-  async resumoDaTurma(escolaId: string, turmaId: string): Promise<ResumoDaTurma | null> {
+  async resumoDaTurma(
+    escolaId: string,
+    turmaId: string,
+    professorId?: string,
+  ): Promise<ResumoDaTurma | null> {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await tx.turma.findFirst({ where: { id: turmaId, escolaId }, select: { id: true } });
       if (!turma) return null;
+      // Professor só lê a turma em que tem matrícula; gestor lê a escola.
+      if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return null;
 
       const alunos = await tx.user.findMany({
         where: { escolaId, turmaId, role: "aluno" },
@@ -420,8 +427,9 @@ export class VilaService {
   }
 
   /** Uma linha por aluno da turma. Nunca atravessa escola: `escolaId` no where. */
-  async daTurma(escolaId: string, turmaId: string): Promise<LinhaDaTurma[]> {
+  async daTurma(escolaId: string, turmaId: string, professorId?: string): Promise<LinhaDaTurma[]> {
     return this.prisma.comTenancy(async (tx) => {
+      if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return [];
       const alunos = await tx.user.findMany({
         where: { escolaId, turmaId, role: "aluno" },
         select: { id: true, displayName: true },

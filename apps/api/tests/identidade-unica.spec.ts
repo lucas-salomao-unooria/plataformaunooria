@@ -63,12 +63,19 @@ describe("identidade única", () => {
     expect(soltas.map((s) => s.coluna).filter((c) => !SEM_CHAVE_POR_DECISAO.has(c))).toEqual([]);
   });
 
+  /**
+   * As escolas `teste-*` ficam de fora: as suítes de integração criam usuário
+   * com `turma_id` direto, porque estão testando outra coisa, e o Jest roda
+   * todas contra o mesmo banco em paralelo. Policiar fixture aqui só produziria
+   * falha intermitente sem relação com o que este teste protege — o dado real.
+   */
   test("matriculas é a única fonte de enturmamento — e `users.turma_id` é cache dela", async () => {
     const divergentes = await prisma.$queryRaw<Array<{ total: bigint }>>`
       SELECT count(*)::bigint AS total
         FROM users u
        WHERE u.turma_id IS NOT NULL
          AND u.role = 'aluno'
+         AND u.escola_id NOT LIKE 'teste-%'
          AND NOT EXISTS (
            SELECT 1 FROM matriculas m
             WHERE m.usuario_id = u.id AND m.turma_id = u.turma_id

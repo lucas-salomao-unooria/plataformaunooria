@@ -7,6 +7,8 @@ import { auth } from "@/lib/auth";
 import { MISSAO_ATUAL, rotaDaMissao } from "@/lib/entre-redes/catalogo";
 import { situacaoDoBemEstar, type ResumoBemEstar } from "@/lib/bem-estar";
 import { PRODUTOS } from "@/lib/produtos";
+import { minhasTurmas, rotuloDoTurno } from "@/lib/turmas";
+import { rotuloDaSerie, type Serie } from "@/lib/series";
 import { STATUS_DA_ATIVIDADE } from "@/lib/status-atividade";
 
 /** O que a api devolve em GET /atividades (escopado ao professor do token). */
@@ -50,9 +52,10 @@ export default async function HubProfessor() {
   // lista já ordenada por criação (desc) e escopada ao professor do token.
   // O resumo do bem-estar é leve (não abre ciclo nem chama IA) e falha em
   // silêncio: sem api, o card mostra o convite neutro.
-  const [resposta, resumoBemEstar] = await Promise.all([
+  const [resposta, resumoBemEstar, turmas] = await Promise.all([
     apiDoServidor<RespostaAtividades>("/atividades"),
     apiDoServidor<ResumoBemEstar>("/bemestar/resumo"),
+    minhasTurmas(),
   ]);
   const recentes = (resposta?.atividades ?? []).slice(0, 4);
   const situacaoPorSlug: Partial<Record<(typeof PRODUTOS)[number]["slug"], string>> = {
@@ -86,6 +89,53 @@ export default async function HubProfessor() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
+            Minhas turmas
+          </h2>
+          <Link
+            href="/professor/turmas"
+            className="text-[13px] font-semibold text-unooria-neutral-700 hover:text-unooria-navy-900"
+          >
+            Ver todas
+          </Link>
+        </div>
+
+        {turmas.length === 0 ? (
+          <Card variant="outlined">
+            <p className="py-2 text-[14px] text-unooria-neutral-700">
+              Você ainda não está em nenhuma turma. Quem faz o enturmamento é a coordenação da
+              escola — peça para te matricular e suas turmas aparecem aqui.
+            </p>
+          </Card>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {turmas.slice(0, 4).map((turma) => {
+              const turno = rotuloDoTurno(turma.turno);
+              return (
+                <li key={turma.id} className="h-full">
+                  <Link href={`/professor/turmas/${turma.id}`} className="block h-full">
+                    <Card variant="outlined" className="h-full">
+                      <div className="flex flex-col gap-0.5 p-1">
+                        <span className="text-[16px] font-bold text-unooria-neutral-950">
+                          {turma.nome}
+                        </span>
+                        <span className="text-[13px] text-unooria-neutral-500">
+                          {rotuloDaSerie(turma.serie as Serie)}
+                          {turno ? ` · ${turno}` : ""} · {turma.alunos} aluno
+                          {turma.alunos === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                    </Card>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       {recentes.length > 0 ? (
