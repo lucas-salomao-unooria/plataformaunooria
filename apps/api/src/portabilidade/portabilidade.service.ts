@@ -69,7 +69,10 @@ export class PortabilidadeService {
       this.prisma.lotacao.findMany({
         where: { usuarioId: alunoId, papel: "aluno" },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
-        orderBy: [{ inicio: "asc" }],
+        /* Ordem estável: o documento é ASSINADO, e o hash cobre o JSON canônico.
+           Com `inicio` DATE empatando numa transferência do mesmo dia, duas
+           emissões do mesmo fato sairiam com as escolas em ordens diferentes. */
+        orderBy: [{ inicio: "asc" }, { escolaId: "asc" }],
       }),
       this.prisma.matricula.findMany({
         where: { usuarioId: alunoId, papel: "aluno" },
@@ -78,12 +81,12 @@ export class PortabilidadeService {
             select: { nome: true, serie: true, periodoLetivo: { select: { titulo: true } } },
           },
         },
-        orderBy: [{ inicio: "asc" }],
+        orderBy: [{ inicio: "asc" }, { turmaId: "asc" }],
       }),
       this.prisma.progresso.findMany({
         where: { alunoId },
         select: { escolaId: true, expId: true, atualizadoEm: true },
-        orderBy: [{ atualizadoEm: "asc" }],
+        orderBy: [{ atualizadoEm: "asc" }, { escolaId: "asc" }, { expId: "asc" }],
       }),
       this.prisma.experiencia.findMany({ select: { expId: true, nome: true } }),
     ]);

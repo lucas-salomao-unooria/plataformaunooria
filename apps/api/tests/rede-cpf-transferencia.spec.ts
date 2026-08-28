@@ -206,7 +206,14 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
     const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     const historico = await escolas.historicoDoAluno(helena.id);
 
+    /* A ORDEM importa: a tela imprime esta lista como está, e a primeira linha é
+       a que o adulto lê como "a escola dela". Aqui as duas lotações têm o MESMO
+       `inicio` (a transferência é no mesmo dia, e `inicio` é DATE) — ordenar só
+       por `inicio` deixava isso na mão do Postgres, passava na máquina e caía no
+       CI. Quem garante a ordem é `fim` nulo primeiro. */
     expect(historico?.escolas.map((e) => e.id)).toEqual([ESCOLA_B, ESCOLA_A]);
+    const entradas = historico?.escolas.map((e) => new Date(e.entrada).toISOString().slice(0, 10));
+    expect(new Set(entradas).size).toBe(1); // empate real: é o que o teste protege
     expect(historico?.escolas.find((e) => e.id === ESCOLA_B)?.atual).toBe(true);
     expect(historico?.escolas.find((e) => e.id === ESCOLA_A)?.saida).not.toBeNull();
     // As turmas das duas escolas aparecem, com a escola ao lado.

@@ -344,7 +344,10 @@ export class EscolasService {
       // ficaria com `users.escola_id` apontando para onde não está mais.
       const outra = await tx.lotacao.findFirst({
         where: { usuarioId: lotacao.usuarioId, fim: null },
-        orderBy: [{ inicio: "desc" }],
+        /* `escolaId` como desempate: `inicio` é DATE, e duas lotações abertas no
+           MESMO dia empatam — sem ele, qual escola vira a principal depende da
+           ordem física das linhas. */
+        orderBy: [{ inicio: "desc" }, { escolaId: "asc" }],
       });
       if (outra) {
         await tx.lotacao.update({ where: { id: outra.id }, data: { principal: true } });
@@ -471,14 +474,29 @@ export class EscolasService {
       this.prisma.lotacao.findMany({
         where: { usuarioId: alunoId, papel: "aluno" },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
-        orderBy: [{ inicio: "desc" }],
+        /* ONDE ELA ESTÁ HOJE VEM PRIMEIRO — a tela imprime nesta ordem, e a
+           primeira linha é a que o adulto lê como "a escola dela".
+           `fim` nulo primeiro resolve isso; `inicio: desc` não resolvia, porque
+           `inicio` é DATE e uma transferência no mesmo dia EMPATA — aí a ordem
+           era a que o Postgres devolvesse. Passou meses em máquina e caiu no CI,
+           que é o comportamento clássico de ordenação não determinística.
+           `escolaId` fecha o último empate possível. */
+        orderBy: [
+          { fim: { sort: "desc", nulls: "first" } },
+          { inicio: "desc" },
+          { escolaId: "asc" },
+        ],
       }),
       this.prisma.matricula.findMany({
         where: { usuarioId: alunoId, papel: "aluno" },
         include: {
           turma: { select: { nome: true, serie: true, periodoLetivo: { select: { titulo: true } } } },
         },
-        orderBy: [{ inicio: "desc" }],
+        orderBy: [
+          { fim: { sort: "desc", nulls: "first" } },
+          { inicio: "desc" },
+          { turmaId: "asc" },
+        ],
       }),
       this.prisma.progresso.findMany({
         where: { alunoId },
