@@ -45,43 +45,8 @@ const ENV_MINIMA: Record<string, string> = {
  * aquelas exceções são permanentes e estas são dívida, com data para acabar.
  */
 const SEM_CONTRATO_AINDA = new Set<string>([
-  "GET /atividades",
-  "POST /atividades",
-  "DELETE /atividades/{id}",
-  "GET /atividades/{id}",
-  "GET /atividades/{id}/alunos/{runId}",
-  "PATCH /atividades/{id}/antagonismo",
-  "POST /atividades/{id}/ativar",
-  "POST /atividades/{id}/destilar",
-  "GET /atividades/{id}/etapa",
-  "POST /atividades/{id}/etapa",
-  "GET /atividades/{id}/geracao/progresso",
-  "POST /atividades/{id}/gerar",
-  "PATCH /atividades/{id}/ia",
-  "POST /atividades/{id}/limpar",
-  "GET /atividades/{id}/monitor",
-  "GET /atividades/{id}/posts",
-  "DELETE /posts/{id}",
-  "PATCH /posts/{id}",
-  "GET /posts/{id}/comentarios",
-  "POST /posts/{id}/regenerar",
-  "POST /runs",
-  "GET /runs/{id}/busca",
-  "POST /runs/{id}/conclusao",
-  "GET /runs/{id}/dossie",
-  "POST /runs/{id}/entrar",
-  "POST /runs/{id}/eventos",
-  "GET /runs/{id}/fase",
-  "GET /runs/{id}/feed",
-  "POST /runs/{id}/finish",
-  "GET /runs/{id}/perdidos",
-  "POST /runs/{id}/reacoes",
-  "GET /runs/{id}/reflexao",
-  "POST /runs/{id}/reflexao",
-  "POST /runs/{id}/reset",
-  "GET /runs/{id}/salvos",
-  "POST /runs/{id}/student-post",
-  "GET /runs/boot",
+  /* VAZIA. As 146 rotas declaram contrato. Acrescentar uma linha aqui é uma
+     decisão explícita, e o teste abaixo cobra que ela não fique para trás. */
 ]);
 
 describe("cobertura do OpenAPI", () => {

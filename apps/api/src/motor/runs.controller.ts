@@ -31,7 +31,33 @@ import { dominioDe } from "./eventos";
 import { ehUuid, naoEncontrado, runDoAluno } from "./guardas";
 import { paraFeedPost } from "./sanitizador";
 import { proximoBlocoDoFeed } from "./servico";
-import { eventoSchema, type EngineConfig } from "./tipos";
+import type { EngineConfig } from "./tipos";
+import { Contrato } from "../openapi/contrato";
+import {
+  BlocoDoFeedSchema,
+  BootSchema,
+  BuscaSchema,
+  ConclusaoGravadaSchema,
+  ConclusaoSchema,
+  CriarRunSchema,
+  DossieSchema,
+  EntrarSchema,
+  EventosGravadosSchema,
+  EventosSchema,
+  FaseAtualSchema,
+  FaseSchema,
+  PerdidosSchema,
+  PostDoAlunoSchema,
+  ReacoesGeradasSchema,
+  ReacoesSchema,
+  ReflexaoGravadaSchema,
+  ReflexaoSalvaSchema,
+  ReflexaoSchema,
+  RunCriadaSchema,
+  RunResetadaSchema,
+  SalvosSchema,
+  StudentPostSchema,
+} from "./contrato-de-rotas";
 
 /**
  * Rotas de RUN do aluno (e o reset do professor) — porte fiel dos handlers de
@@ -39,28 +65,6 @@ import { eventoSchema, type EngineConfig } from "./tipos";
  * comentários de cada handler do origem; aqui só muda a casca (guards, tenancy
  * explícita por `escola_id` + RLS via comTenancy).
  */
-
-const CriarRunSchema = z.object({ avatar: z.string().trim().max(40).optional() }).default({});
-const EntrarSchema = z.object({
-  /** O nome que aparece no aparelho. Pode ser apelido; é ele que o aluno lê. */
-  nome: z.string().trim().min(1).max(40),
-  avatar: z.string().trim().min(1).max(60),
-});
-const EventosSchema = z.object({ events: z.array(eventoSchema).min(1).max(200) });
-const ConclusaoSchema = z.object({ inclinacao: z.enum(["A", "B", "duvida"]) });
-const ReflexaoSchema = z.object({
-  /** 60 caracteres é o piso: passa "o algoritmo me mostrou mais de um lado" e
-   *  barra "gostei". Não é medida de qualidade, é filtro de vazio. */
-  texto: z.string().trim().min(60),
-});
-const StudentPostSchema = z.object({
-  texto: z.string().trim().min(1).max(280),
-  template: z.string().trim().min(1).max(40),
-});
-const ReacoesSchema = z.union([
-  z.object({ tipo: z.literal("post_do_aluno"), studentPostId: z.string().uuid(), texto: z.string().trim().min(1).max(600) }),
-  z.object({ tipo: z.literal("comentario"), postId: z.string().uuid(), texto: z.string().trim().min(1).max(600) }),
-]);
 
 type Autenticado = { auth: AuthClaims };
 
@@ -76,6 +80,14 @@ export class RunsController {
   @Post()
   @Roles("aluno")
   @HttpCode(201)
+  @Contrato({
+    resumo: "Cria a run do aluno na atividade ativa.",
+    descricao:
+      "A LARGADA: é aqui que o lado do feed é decidido — pelo perfil do Ato 1, por redistribuição do professor, ou por sorteio balanceado quando não há perfil.",
+    corpo: CriarRunSchema,
+    resposta: RunCriadaSchema,
+    status: 201,
+  })
   async criar(@Body() body: unknown, @Req() req: Autenticado) {
     const parsed = CriarRunSchema.safeParse(body ?? {});
     const avatar = parsed.success ? parsed.data.avatar : undefined;
@@ -143,6 +155,12 @@ export class RunsController {
    */
   @Get("boot")
   @Roles("aluno")
+  @Contrato({
+    resumo: "O bootstrap da experiência — o servidor decide a fase.",
+    descricao:
+      "Resolve o que o Server Component da tela resolvia no app de origem; agora a experiência é um bundle Vite estático e chama isto no primeiro fetch.\n\n**Só os RÓTULOS dos lados saem daqui** — são os únicos campos do antagonismo que o cliente pode ver antes da revelação.",
+    resposta: BootSchema,
+  })
   async boot(@Req() req: Autenticado) {
     const { usuarioId, escolaId } = req.auth;
     return this.prisma.comTenancy(async (tx) => {
@@ -194,6 +212,13 @@ export class RunsController {
 
   /** O aluno entra no aparelho: escolheu avatar, digitou o nome, vai ao feed. */
   @Post(":id/entrar")
+  @Contrato({
+    resumo: "O aluno entra no aparelho e vai ao feed.",
+    descricao: "`nome` é APELIDO dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: EntrarSchema,
+    resposta: FaseSchema,
+  })
   @Roles("aluno")
   @HttpCode(200)
   async entrar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
@@ -230,6 +255,14 @@ export class RunsController {
 
   /** GET /runs/:id/feed — casca HTTP; o motor vive em servico.ts. */
   @Get(":id/feed")
+  @Contrato({
+    resumo: "O próximo bloco do feed.",
+    descricao:
+      "O post sai **sem `lado`, sem `perfil` e sem `intensidade`** — o disfarce depende disso: um bundle que soubesse o lado de cada post entregaria o experimento antes da revelação.\n\nO `diagnostico` do motor (domínio, lado dominante, bloco) fica no SERVIDOR.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: BlocoDoFeedSchema,
+    notas: ["Lock consultivo por run: duas abas pedindo bloco ao mesmo tempo se sobrescreviam, e um bloco se perdia."],
+  })
   @Roles("aluno")
   async feed(@Param("id") id: string, @Req() req: Autenticado) {
     const run = await this.prisma.comTenancy((tx) =>
@@ -248,6 +281,13 @@ export class RunsController {
    */
   @Get(":id/fase")
   @Roles("aluno")
+  @Contrato({
+    resumo: "A tela que o aluno deve estar vendo agora.",
+    descricao:
+      "Já reconciliada com a etapa da TURMA — o cliente faz polling porque os momentos coletivos são do professor, não do aluno.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: FaseAtualSchema,
+  })
   async fase(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
@@ -260,6 +300,12 @@ export class RunsController {
 
   /** POST /runs/:id/finish — congela a run, computa o dossiê, fase = conclusao. */
   @Post(":id/finish")
+  @Contrato({
+    resumo: "Congela a run e computa o dossiê.",
+    descricao: "Encerrar antes da hora é **409** — e a mensagem é de app real (\"sua sessão ainda está rolando\"), não de sistema.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: FaseSchema,
+  })
   @Roles("aluno")
   @HttpCode(200)
   async finish(@Param("id") id: string, @Req() req: Autenticado) {
@@ -308,6 +354,12 @@ export class RunsController {
    */
   @Post(":id/reset")
   @Roles("professor")
+  @Contrato({
+    resumo: "Reabre a run de um aluno, sorteando a largada de novo.",
+    descricao: "Rota de PROFESSOR: é o socorro para a sessão que travou no meio da aula.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: RunResetadaSchema,
+  })
   @HttpCode(200)
   async reset(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -366,6 +418,18 @@ export class RunsController {
 
   /** Lote de eventos do cliente. Idempotência por (client_ts, tipo, postId). */
   @Post(":id/eventos")
+  @Contrato({
+    resumo: "Lote de eventos do cliente — o canal OPERACIONAL.",
+    descricao:
+      "Síncrono e transacional, lido em tempo quase real para curar o próximo bloco. **`dwell` nunca passa por Pub/Sub**: latência e falta de ordenação quebrariam a adaptação e o lock por run.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: EventosSchema,
+    resposta: EventosGravadosSchema,
+    notas: [
+      "Idempotência por `(client_ts, tipo, postId)`: `descartados` conta o que já existia — reenvio é rotina no cliente, não erro.",
+      "Cota por SESSÃO, não por IP: a turma toda compartilha a rede da escola.",
+    ],
+  })
   @Roles("aluno")
   @HttpCode(200)
   async eventos(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
@@ -443,6 +507,13 @@ export class RunsController {
   /** A busca do aluno — e ela NÃO é enviesada: é o acervo, não a bolha. */
   @Get(":id/busca")
   @Roles("aluno")
+  @Contrato({
+    resumo: "Busca no acervo da atividade.",
+    descricao: "Usar a busca é o sinal de INVESTIGAÇÃO que o relatório conta — por isso ela é uma rota, e não um filtro no cliente.",
+    params: z.object({ id: z.string().uuid() }),
+    query: z.object({ q: z.string().optional() }),
+    resposta: BuscaSchema,
+  })
   async busca(@Param("id") id: string, @Query("q") q: string | undefined, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     const termo = z.string().trim().max(80).optional().parse(q ?? undefined)?.trim();
@@ -483,6 +554,12 @@ export class RunsController {
 
   /** Os posts que o ALUNO salvou — o último evento por post decide. */
   @Get(":id/salvos")
+  @Contrato({
+    resumo: "A coleção do aluno — o que ele salvou.",
+    descricao: "O ÚLTIMO evento por post decide: salvar e dessalvar se anulam. É a coleção que ele vai defender no debate.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: SalvosSchema,
+  })
   @Roles("aluno")
   async salvos(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -536,6 +613,13 @@ export class RunsController {
 
   /** O que o aluno PERDEU: posts do lado oposto que nunca foram servidos. */
   @Get(":id/perdidos")
+  @Contrato({
+    resumo: "O que o aluno PERDEU — posts do lado oposto que nunca foram servidos.",
+    descricao:
+      "**Só das etapas `perdidos` em diante**: antes disso derrubaria o disfarce, que é o que a atividade inteira depende de manter até a revelação.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: PerdidosSchema,
+  })
   @Roles("aluno")
   async perdidos(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -627,6 +711,13 @@ export class RunsController {
    */
   @Post(":id/conclusao")
   @Roles("aluno")
+  @Contrato({
+    resumo: "A escolha de um lado no fim da missão.",
+    descricao: "Enviar duas vezes é **409**, com linguagem de app real: \"isso já foi enviado\", nada de \"fase\" ou \"atividade\".",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: ConclusaoSchema,
+    resposta: ConclusaoGravadaSchema,
+  })
   @HttpCode(200)
   async conclusao(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -656,6 +747,17 @@ export class RunsController {
   /** A reflexão que fecha a atividade: assunto próprio, sem teto, editável. */
   @Post(":id/reflexao")
   @Roles("aluno")
+  @Contrato({
+    resumo: "O fechamento escrito da atividade.",
+    descricao:
+      "É sobre a ATIVIDADE (letramento digital), não sobre a pergunta-chave — a conclusão já foi a escolha de um lado.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: ReflexaoSchema,
+    resposta: ReflexaoGravadaSchema,
+    notas: [
+      "60 caracteres é o PISO: passa \"o algoritmo me mostrou mais de um lado\" e barra \"gostei\". Não é medida de qualidade, é filtro de vazio.",
+    ],
+  })
   @HttpCode(200)
   async salvarReflexao(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -685,6 +787,14 @@ export class RunsController {
   /** O que ele já escreveu — para reabrir a tela sem perder o texto. */
   @Get(":id/reflexao")
   @Roles("aluno")
+  @Contrato({
+    resumo: "O texto da reflexão que o aluno já escreveu.",
+    descricao:
+      "Lê a reflexão desta run — a dele, e só a dele: o `where` casa `alunoId` do token junto com o id.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: ReflexaoSalvaSchema,
+    notas: ["`texto: \"\"` quando ainda não escreveu — o campo abre vazio, não com erro."],
+  })
   async lerReflexao(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
@@ -699,6 +809,14 @@ export class RunsController {
 
   /** O post espontâneo do aluno (nunca sugerido pela interface). */
   @Post(":id/student-post")
+  @Contrato({
+    resumo: "O aluno publica no app, e as personas reagem.",
+    descricao:
+      "**Falha fechada**: IA desligada, erro de rede ou reação recusada ⇒ lista vazia, e o post é publicado do mesmo jeito — como num app real quando ninguém responde. A chamada de IA fica FORA da transação, de propósito.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: StudentPostSchema,
+    resposta: PostDoAlunoSchema,
+  })
   @Roles("aluno")
   @HttpCode(201)
   async studentPost(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
@@ -778,6 +896,17 @@ export class RunsController {
 
   /** Personas reagem ao que o aluno acabou de escrever. Vazio é resultado válido. */
   @Post(":id/reacoes")
+  @Contrato({
+    resumo: "Reações das personas ao que o aluno escreveu.",
+    descricao: "Nunca falha para o aluno: sem IA, sem cota ou com erro, devolve `reacoes: []` e diz por quê.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: ReacoesSchema,
+    resposta: ReacoesGeradasSchema,
+    notas: [
+      "`desligada: true` = o professor desligou a IA ao vivo.",
+      "`limite: true` = teto de 12 reações por sessão — aluno comentando sem parar não queima a cota da turma.",
+    ],
+  })
   @Roles("aluno")
   @HttpCode(200)
   async reacoes(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
@@ -850,6 +979,18 @@ export class RunsController {
    * aparecer: o disfarce já caiu.
    */
   @Get(":id/dossie")
+  @Contrato({
+    resumo: "O dossiê da sessão — o relatório da revelação.",
+    descricao:
+      "Aqui o disfarce JÁ CAIU, e por isso o `lado` de cada post pode aparecer. A seção mais importante é `explicacaoDoLado`: **por que o feed começou daquele lado**.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: DossieSchema,
+    notas: [
+      "`conclusao` é anexada na LEITURA, não no congelamento: o dossiê é computado no `finish`, antes de o aluno escrever. `undefined` quando a sessão foi interrompida — e o relatório precisa funcionar assim.",
+      "Os rótulos de perfil vêm prontos no payload em vez de o cliente importar as FICHAS: elas carregam o vocabulário dos prompts, que não tem por que viajar até o navegador.",
+      "`imersao.total` nunca vem sem os componentes.",
+    ],
+  })
   @Roles("aluno", "professor")
   async dossie(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();

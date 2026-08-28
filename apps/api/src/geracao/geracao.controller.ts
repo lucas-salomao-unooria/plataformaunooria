@@ -18,32 +18,31 @@ import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { rateLimit } from "../comum/rate-limit";
-import { DIVISOR_TESE, PERFIS } from "../comum/insta/defaults";
+import { DIVISOR_TESE } from "../comum/insta/defaults";
 import { antagonismoSchema } from "../comum/insta/tipos";
 import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
 import { planejarLotes, type Proporcoes } from "./plano";
 import { GeracaoService } from "./geracao.service";
+import { Contrato } from "../openapi/contrato";
+import {
+  AntagonismoDoProfessorSchema,
+  DestilarSchema,
+  DestiladoSchema,
+  EditarPostSchema,
+  FiltrosSchema,
+  GradeDePostsSchema,
+  GeracaoDisparadaSchema,
+  OkSchema,
+  ProgressoDaGeracaoSchema,
+  RegenerarSchema,
+} from "./contrato-de-rotas";
 
 /**
  * O fluxo de GERAÇÃO de conteúdo do professor — porte fiel dos handlers
  * distill/antagonismo/generate/progress/posts (+ ações de post) do origem.
  * Superfície de professor: lado/perfil/intensidade são visíveis.
  */
-
-const DestilarSchema = z
-  .object({ perguntaChave: z.string().trim().min(10).max(280).optional() })
-  .default({});
-
-const AntagonismoSchema = z.object({
-  antagonismo: antagonismoSchema,
-  /** Neutros FORA do tema. Pode vir vazio quando o modo é `no_tema`. */
-  categoriasNeutras: z.array(z.string().trim().min(2).max(40)).max(10).default([]),
-  /** Neutros DENTRO do tema: fato sem lado. */
-  neutrosNoTema: z.array(z.string().trim().min(2).max(60)).max(8).default([]),
-  /** Override explícito quando o medidor de equilíbrio reprova. */
-  forcar: z.boolean().default(false),
-});
 
 const TAMANHO_PAGINA = 24;
 
@@ -63,28 +62,6 @@ export const ORDEM_DA_GRADE: Prisma.PostOrderByWithRelationInput[] = [
   { createdAt: "asc" },
   { id: "asc" },
 ];
-const FiltrosSchema = z.object({
-  lado: z.enum(["A", "B", "neutro"]).optional(),
-  perfil: z.enum(PERFIS).optional(),
-  intensidade: z.coerce.number().int().min(1).max(3).optional(),
-  categoria: z.string().trim().min(1).max(60).optional(),
-  imagem: z.enum(["pendente", "ok", "fallback"]).optional(),
-  aprovado: z.enum(["sim", "nao"]).optional(),
-  page: z.coerce.number().int().min(1).default(1),
-});
-
-const EditarPostSchema = z.object({
-  caption: z.string().trim().min(10).max(400).optional(),
-  hashtags: z.array(z.string().trim().min(2).max(40)).min(1).max(5).optional(),
-  aprovado: z.boolean().optional(),
-  comentarios: z
-    .array(z.object({ id: z.string().uuid(), texto: z.string().trim().min(2).max(220) }))
-    .max(6)
-    .optional(),
-});
-
-const RegenerarSchema = z.object({ alvo: z.enum(["texto", "imagem"]) });
-
 type Autenticado = { auth: AuthClaims };
 
 @Controller()
@@ -99,6 +76,14 @@ export class GeracaoController {
   /** Passo 2: a IA propõe a pergunta-chave e destila o antagonismo. */
   @Post("atividades/:id/destilar")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Destila a pergunta-chave e os dois lados a partir do recorte.",
+    descricao:
+      "O professor pode mandar a `perguntaChave` pronta — e aí `perguntaOrigem` sai como `professor`. Sem ela, a IA destila e a origem é `ia`.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: DestilarSchema,
+    resposta: DestiladoSchema,
+  })
   async destilar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const limite = rateLimit(`distill:${req.auth.usuarioId}`, 12, 60_000);
     if (!limite.ok) {
@@ -156,8 +141,17 @@ export class GeracaoController {
 
   /** O professor edita/aprova os dois lados e as categorias neutras. */
   @Patch("atividades/:id/antagonismo")
+  @Contrato({
+    resumo: "O professor aprova (ou reescreve) os dois lados e os neutros.",
+    descricao:
+      "Nada é gerado antes desta aprovação: os dois lados e as justificativas de eixo são o que decide de que lado cada aluno começa, e isso não sai da IA direto para a turma.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: AntagonismoDoProfessorSchema,
+    resposta: OkSchema,
+    notas: ["`forcar: true` passa por cima do medidor de equilíbrio, de propósito e explicitamente."],
+  })
   async aprovarAntagonismo(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
-    const parsed = AntagonismoSchema.safeParse(body);
+    const parsed = AntagonismoDoProfessorSchema.safeParse(body);
     if (!parsed.success) {
       throw new BadRequestException({
         mensagem: "Confira os dois lados antes de aprovar.",
@@ -207,6 +201,13 @@ export class GeracaoController {
   /** Exige antagonismo aprovado; cria a fila e dispara o worker in-process. */
   @Post("atividades/:id/gerar")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Enfileira a geração dos posts.",
+    descricao:
+      "**Duas respostas, e a diferença importa**: `retomado: true` quando havia uma geração parada no meio (nada novo foi enfileirado), e `lotes: N` quando ela começou agora.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: GeracaoDisparadaSchema,
+  })
   async gerar(@Param("id") id: string, @Req() req: Autenticado) {
     const { usuarioId, escolaId } = req.auth;
     const atividade = await this.prisma.comTenancy((tx) =>
@@ -243,6 +244,13 @@ export class GeracaoController {
 
   /** Polling de 2s do painel. Também retoma fila órfã após restart. */
   @Get("atividades/:id/geracao/progresso")
+  @Contrato({
+    resumo: "O progresso da geração — o alvo do polling da tela.",
+    descricao:
+      "As imagens são contadas em três estados porque `fallback` **não é erro**: a arte procedural entra no lugar e o feed nunca fica com buraco.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: ProgressoDaGeracaoSchema,
+  })
   async progresso(@Param("id") id: string, @Req() req: Autenticado) {
     const atividade = await this.prisma.comTenancy((tx) =>
       atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId),
@@ -253,6 +261,18 @@ export class GeracaoController {
 
   /** Grade de revisão do professor. Aqui lado/intensidade são visíveis. */
   @Get("atividades/:id/posts")
+  @Contrato({
+    resumo: "A grade de revisão do professor, paginada e filtrável.",
+    descricao:
+      "A ordenação é `(created_at, id)`, e o `id` **não é enfeite**: os posts entram por `createMany` numa transação, então o lote inteiro compartilha o mesmo `created_at`. Com a chave empatada, `LIMIT/OFFSET` não tem ordem definida — a mesma linha vem em duas páginas e outra nunca vem (medido no app de origem: 207 de 208 visíveis, de forma reprodutível).",
+    params: z.object({ id: z.string().uuid() }),
+    query: FiltrosSchema,
+    resposta: GradeDePostsSchema,
+    notas: [
+      "A `matriz` 2×4 existe para o professor ver de relance se alguma linguagem ficou fraca: os lados podem estar 50/50 e um perfil inteiro estar vazio.",
+      "24 posts por página.",
+    ],
+  })
   async posts(@Param("id") id: string, @Query() query: Record<string, string>, @Req() req: Autenticado) {
     const parsed = FiltrosSchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException({ mensagem: "Filtro inválido." });
@@ -338,6 +358,12 @@ export class GeracaoController {
 
   /** Edição do professor: caption, hashtags, comentários e aprovação. */
   @Patch("posts/:id")
+  @Contrato({
+    resumo: "Edita o post: legenda, hashtags, comentários e aprovação.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: EditarPostSchema,
+    resposta: OkSchema,
+  })
   async editarPost(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     const parsed = EditarPostSchema.safeParse(body);
@@ -377,6 +403,11 @@ export class GeracaoController {
 
   /** Excluir um post gerado (a grade de revisão tem essa ação). */
   @Delete("posts/:id")
+  @Contrato({
+    resumo: "Exclui um post da grade.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: OkSchema,
+  })
   async excluirPost(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
@@ -402,6 +433,12 @@ export class GeracaoController {
   /** Cria um job de regeração (texto ou imagem) e acorda o worker. */
   @Post("posts/:id/regenerar")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Regenera o texto ou a imagem de um post.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: RegenerarSchema,
+    resposta: OkSchema,
+  })
   async regenerar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     const parsed = RegenerarSchema.safeParse(body);

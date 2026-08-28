@@ -22,9 +22,7 @@ import {
   CATEGORIAS_NEUTRAS_DEFAULT,
   DIVISOR_TESE,
   ENGINE_CONFIG_DEFAULT,
-  ESTILOS_VISUAIS,
   MINIMOS_ATIVACAO,
-  MODOS_NEUTROS,
   PERFIS,
   PROPORCOES_DEFAULT,
 } from "../comum/insta/defaults";
@@ -32,7 +30,6 @@ import { antagonismoSchema } from "../comum/insta/tipos";
 import {
   ehEtapaDaTurma,
   ehVoltar,
-  ETAPAS_DA_TURMA,
   faseAoVoltar,
   faseEfetiva,
   type EtapaDaTurma,
@@ -45,45 +42,30 @@ import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { normalizarEstado } from "../motor/estado";
 import { PrismaService } from "../prisma/prisma.service";
 import { excluirAtividade, limparDadosDosAlunos } from "./manutencao";
+import { Contrato } from "../openapi/contrato";
+import {
+  AlunoDaAtividadeSchema,
+  AtivadaSchema,
+  AtivarSchema,
+  AtividadeCriadaSchema,
+  CriarSchema,
+  DetalheDaAtividadeSchema,
+  EtapaAtualSchema,
+  EtapaMovidaSchema,
+  EtapaSchema,
+  ExcluidaSchema,
+  IaAlternadaSchema,
+  IaSchema,
+  LimpaSchema,
+  ListaDeAtividadesSchema,
+  MonitorSchema,
+} from "./contrato-de-rotas";
 
 /**
  * Rotas do PROFESSOR sobre a atividade (fora da geração de conteúdo, que vive
  * no GeracaoModule) — porte fiel dos handlers de `app/api/activities/**` do
  * origem. Aqui lado/perfil/domínio PODEM aparecer: é superfície de professor.
  */
-
-const CriarSchema = z.object({
-  titulo: z.string().trim().min(3).max(120),
-  disciplina: z.string().trim().min(2).max(60),
-  recorte: z.string().trim().min(2).max(120),
-  temaGeral: z.string().trim().min(2).max(120).optional(),
-  contextoAula: z.string().trim().max(2000).optional().nullable(),
-  /**
-   * Posts de TESE. Divisível por 8 (2 lados × 4 perfis) para a matriz fechar
-   * sem célula quebrada. Recusar aqui é melhor que arredondar em silêncio.
-   */
-  qtdPostsTese: z
-    .number()
-    .int()
-    .min(DIVISOR_TESE)
-    .max(900)
-    .default(400)
-    .refine((valor) => valor % DIVISOR_TESE === 0, {
-      message: `A quantidade de posts de tese precisa ser múltiplo de ${DIVISOR_TESE} (2 lados × 4 perfis).`,
-    }),
-  neutros: z
-    .object({
-      ativo: z.boolean().default(true),
-      modo: z.enum(MODOS_NEUTROS).default("ambos"),
-      proporcao: z.number().min(0).max(1).default(0.4),
-    })
-    .default({ ativo: true, modo: "ambos", proporcao: 0.4 }),
-  estiloVisual: z.enum(ESTILOS_VISUAIS),
-});
-
-const EtapaSchema = z.object({ etapa: z.enum(ETAPAS_DA_TURMA) });
-const IaSchema = z.object({ ativo: z.boolean() });
-const AtivarSchema = z.object({ forcar: z.boolean().default(false) }).default({ forcar: false });
 
 type Autenticado = { auth: AuthClaims };
 
@@ -98,6 +80,11 @@ export class AtividadesController {
 
   /** Lista do professor — o que a página do hub de produtos consulta. */
   @Get()
+  @Contrato({
+    resumo: "As atividades DESTE professor.",
+    descricao: "Posse por `professor_id` + `escola_id`: atividade é autoral.",
+    resposta: ListaDeAtividadesSchema,
+  })
   async listar(@Req() req: Autenticado) {
     return this.prisma.comTenancy(async (tx) => {
       const atividades = await tx.activity.findMany({
@@ -137,6 +124,13 @@ export class AtividadesController {
 
   /** Detalhe — o que a página da atividade carregava com prisma no origem. */
   @Get(":id")
+  @Contrato({
+    resumo: "O detalhe de uma atividade.",
+    descricao:
+      "`_count` espelha o `select` do Prisma da página de origem — o porte dos painéis consome exatamente esse shape —, e os agregados nomeados (`alunos`, `postsAprovados`) ficam junto.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: DetalheDaAtividadeSchema,
+  })
   async detalhe(@Param("id") id: string, @Req() req: Autenticado) {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -156,6 +150,15 @@ export class AtividadesController {
   /** Passo 1: cria a atividade em rascunho com os defaults do motor. */
   @Post()
   @HttpCode(201)
+  @Contrato({
+    resumo: "Cria a atividade em rascunho, com os defaults do motor.",
+    corpo: CriarSchema,
+    resposta: AtividadeCriadaSchema,
+    status: 201,
+    notas: [
+      "`qtdPostsTese` precisa ser múltiplo de 8 (2 lados × 4 perfis) para a matriz fechar sem célula quebrada — **recusar é melhor que arredondar em silêncio**. É um `.refine()`, invisível no esquema.",
+    ],
+  })
   async criar(@Body() body: unknown, @Req() req: Autenticado) {
     const parsed = CriarSchema.safeParse(body);
     if (!parsed.success) {
@@ -199,6 +202,12 @@ export class AtividadesController {
 
   /** Irreversível — a UI exige digitar o título antes de confirmar. */
   @Delete(":id")
+  @Contrato({
+    resumo: "Exclui a atividade.",
+    descricao: "Devolve o título e quantas sessões foram junto — \"pronto\" sem número deixa o professor sem saber se apagou a atividade certa.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: ExcluidaSchema,
+  })
   async excluir(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     const atividade = await this.prisma.comTenancy((tx) =>
@@ -213,6 +222,12 @@ export class AtividadesController {
   /** Zera o que a turma produziu, preservando a atividade e os perfis do Ato 1. */
   @Post(":id/limpar")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Apaga as sessões dos alunos, mantendo a atividade e os posts.",
+    descricao: "É o botão de rodar a mesma atividade com outra turma.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: LimpaSchema,
+  })
   async limpar(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
@@ -225,6 +240,12 @@ export class AtividadesController {
 
   /** Liga/desliga as reações ao vivo — o único conteúdo que ele não revisa antes. */
   @Patch(":id/ia")
+  @Contrato({
+    resumo: "Liga ou desliga a IA ao vivo durante a aula.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: IaSchema,
+    resposta: IaAlternadaSchema,
+  })
   async ia(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const corpo = IaSchema.safeParse(body);
     if (!corpo.success) throw new BadRequestException({ mensagem: "Valor inválido." });
@@ -239,6 +260,15 @@ export class AtividadesController {
   /** Checa os mínimos de cobertura e ativa a atividade para a turma. */
   @Post(":id/ativar")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Ativa a atividade para os alunos entrarem.",
+    descricao:
+      "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele aluno nasceria torto.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: AtivarSchema,
+    resposta: AtivadaSchema,
+    notas: ["`forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso."],
+  })
   async ativar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const parsed = AtivarSchema.safeParse(body ?? {});
     const forcar = parsed.success ? parsed.data.forcar : false;
@@ -333,6 +363,15 @@ export class AtividadesController {
    */
   @Post(":id/etapa")
   @HttpCode(200)
+  @Contrato({
+    resumo: "O RELÓGIO DA AULA: move a turma inteira de momento.",
+    descricao:
+      "Escreve a etapa na atividade e leva as runs junto. `voltou: true` quando a turma RETROCEDE de etapa.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: EtapaSchema,
+    resposta: EtapaMovidaSchema,
+    notas: ["`foraDoAparelho` conta quem ficou no onboarding: não entrou e não pode ser movido."],
+  })
   async moverEtapa(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const corpo = EtapaSchema.safeParse(body ?? {});
     if (!corpo.success) throw new BadRequestException({ mensagem: "Etapa desconhecida." });
@@ -406,6 +445,12 @@ export class AtividadesController {
 
   /** Etapa atual + quantos alunos em cada tela — o painel decide se pode avançar. */
   @Get(":id/etapa")
+  @Contrato({
+    resumo: "Etapa atual e quantos alunos em cada tela.",
+    descricao: "É com isto que o painel decide se dá para avançar a turma.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: EtapaAtualSchema,
+  })
   async lerEtapa(@Param("id") id: string, @Req() req: Autenticado) {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -429,6 +474,17 @@ export class AtividadesController {
 
   /** Painel da turma ao vivo. `ociosoHaMs` é o único campo que pede AÇÃO. */
   @Get(":id/monitor")
+  @Contrato({
+    resumo: "O painel da turma ao vivo.",
+    descricao:
+      "**`ociosoHaMs` é o único campo que pede AÇÃO** — é o número que faz o professor levantar da cadeira. Tudo o mais é retrato.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: MonitorSchema,
+    notas: [
+      "`ladoDominante: \"indefinido\"` sai como `neutro`: o painel não tem coluna para \"ainda não dá para dizer\".",
+      "A imersão nunca vem só com o total — os componentes vão junto, e essa é a regra em toda tela.",
+    ],
+  })
   async monitor(@Param("id") id: string, @Req() req: Autenticado) {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -510,6 +566,17 @@ export class AtividadesController {
 
   /** Tudo o que UM aluno fez, para o professor ler durante a atividade. */
   @Get(":id/alunos/:runId")
+  @Contrato({
+    resumo: "Tudo o que UM aluno fez, durante a atividade.",
+    descricao:
+      "As interações vêm com os **salvos primeiro**: é a coleção que o aluno vai defender no debate.",
+    params: z.object({ id: z.string().uuid(), runId: z.string().uuid() }),
+    resposta: AlunoDaAtividadeSchema,
+    notas: [
+      "`doLadoSemeado` é a definição de COERÊNCIA: o post é do lado em que o feed dele nasceu?",
+      "`nomeNoApp` é apelido dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.",
+    ],
+  })
   async aluno(@Param("id") id: string, @Param("runId") runId: string, @Req() req: Autenticado) {
     if (!ehUuid(runId)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {

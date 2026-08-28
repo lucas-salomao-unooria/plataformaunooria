@@ -441,8 +441,9 @@ primeira — a armadilha do `expires_at`.
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
   (escolas, turmas, matrículas, períodos, lotações, alunos), `usuarios`,
   `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
-  `perfis`, `analise`, `unoogpt`. **Faltam 37 rotas** (motor/runs, atividades,
-  geracao) — todas do motor da exp-01.
+  `perfis`, `analise`, `unoogpt`, `atividades`, `geracao`, `motor` (runs/posts).
+  **As 146 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
+  fica vermelha.
 - Gerar o arquivo: `npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts`.
   Quando a lista zerar, `apendices/c-endpoints.tex` passa a ser GERADO dele.
 

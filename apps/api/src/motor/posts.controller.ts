@@ -2,6 +2,9 @@ import { Controller, Get, Param, Req, UseGuards } from "@nestjs/common";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { PrismaService } from "../prisma/prisma.service";
 import { ehUuid, naoEncontrado } from "./guardas";
+import { z } from "zod";
+import { Contrato } from "../openapi/contrato";
+import { ComentariosDoPostSchema } from "../geracao/contrato-de-rotas";
 
 /**
  * GET /posts/:id/comentarios — comentários completos do sheet. Lazy: só o que
@@ -18,6 +21,14 @@ export class PostsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get(":id/comentarios")
+  @Contrato({
+    resumo: "Os comentários de um post do feed.",
+    descricao:
+      "Na ordem de uma CONVERSA: o comentário do aluno no topo (como o Instagram faz com o seu), as reações da IA logo depois, e os do roteiro por último.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: ComentariosDoPostSchema,
+    notas: ["`doAluno` distingue o que a criança escreveu do que veio do roteiro — só o aluno da própria run vê os dele."],
+  })
   async comentarios(@Param("id") id: string, @Req() req: { auth: AuthClaims }) {
     if (!ehUuid(id)) naoEncontrado();
     const { usuarioId, escolaId, perfil } = req.auth;
