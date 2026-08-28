@@ -62,17 +62,6 @@ export const EnvSchema = z.object({
 
   // Chave de serviço da ponte do Ato 1 (`POST /perfis/importar`, chamada pelo
   // jogo externo). Ausente = rota desligada (503), não aberta.
-  /**
-   * Pimenta do hash de CPF. O CPF do estudante é a chave IMUTÁVEL de identidade
-   * na rede (é o que o padrão nacional do MEC adota), e por isso nunca é
-   * guardado em claro: o banco tem `HMAC-SHA256(cpf, CPF_PEPPER)`.
-   *
-   * A pimenta é do CONTRATO e não muda: trocá-la invalida todos os hashes e a
-   * plataforma deixa de reconhecer as pessoas que já cadastrou. Ausente, a
-   * coluna `cpf` da importação é RECUSADA com mensagem explícita — nunca aceita
-   * e guardada de outro jeito (regra de falhar fechado).
-   */
-  CPF_PEPPER: z.string().min(16).optional(),
   PERFIL_IMPORT_TOKEN: z.string().optional(),
 
   // Planos de aula (exp-90): conteúdo autoral do professor, em bucket PRIVADO

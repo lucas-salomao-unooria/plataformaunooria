@@ -111,3 +111,21 @@
    plataforma não usa para nada), sal por linha (mata a identidade), e cifrar (
    exigiria guardar a chave capaz de devolver o número, que é o que não se quer
    poder devolver).
+15. **O CPF é guardado, e o gestor o vê** (2026-08-28, revisa a 14). A decisão 14
+   guardava só `HMAC-SHA256(cpf, pimenta)` e três dígitos: dava as duas coisas que
+   a PLATAFORMA precisa do CPF — unicidade na rede e reconhecer a mesma criança
+   numa transferência — e ignorava a que o GESTOR precisa: **ver o número**. Ele
+   confere identidade contra o sistema da rede, preenche documento e atende a
+   família no balcão. Hash é de mão única: nenhuma chave o destrava, porque não
+   existe chave. E CPF é dado pessoal **comum**, não do art. 11 (saúde, raça,
+   religião, biometria), com base legal clara num contrato de educação pública —
+   é o que todo sistema de gestão escolar brasileiro guarda.
+   Agora: `users.cpf`, 11 dígitos sem pontuação (CHECK), único por contrato,
+   exibido formatado e buscável com ou sem pontuação na lista do gestor, e
+   corrigível na edição (o balcão erra). O que sustenta a decisão não é a coluna, é
+   a **contenção**: uma coluna só, nunca em log, telemetria, JSONB, claim de token
+   ou bundle — com teste estrutural cobrando pelos dois lados (nome de coluna e
+   formato dentro de JSONB). `CPF_PEPPER` deixou de existir.
+   Lição de processo: eu decidi por segurança sem perguntar quem usa o dado. O
+   requisito de exibição não estava escrito, e uma escolha irreversível não devia
+   ter sido tomada sem ele.

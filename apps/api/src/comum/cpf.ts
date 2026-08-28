@@ -1,22 +1,22 @@
-import { createHmac } from "node:crypto";
-
 /**
  * CPF como identidade IMUTÁVEL do estudante na rede.
  *
  * É o identificador que o padrão nacional do MEC adota (Portaria 269/2026,
  * EducaDados) e o único dado que sobrevive à troca de nome, de login, de
- * matrícula e de escola. É também o dado pessoal mais sensível que esta
- * plataforma toca.
+ * matrícula e de escola — é ele que faz uma criança transferida ser reconhecida
+ * como a mesma pessoa em vez de nascer de novo com o histórico partido.
  *
- * DECISÃO: o banco guarda o HASH, nunca o número. `HMAC-SHA256(cpf, pepper)`
- * dá tudo o que precisamos dele — unicidade na rede, reconhecer a mesma criança
- * numa transferência entre escolas, e busca (basta hashear o que o gestor
- * digitou) — sem transformar o banco num acervo de CPF de menores de idade. O
- * que fica em claro são os TRÊS últimos dígitos, para o gestor confirmar na tela
- * que é a pessoa certa.
+ * O NÚMERO É GUARDADO (decisão de produto, ADR-33). O gestor precisa vê-lo: ele
+ * confere identidade contra o sistema da rede, preenche documento e atende a
+ * família no balcão. CPF é dado pessoal comum — não do art. 11 da LGPD —, com
+ * base legal clara num contrato de educação pública, e é o que todo sistema de
+ * gestão escolar brasileiro guarda.
  *
- * A pimenta vem de `CPF_PEPPER` e é do contrato. Sem ela não há hash: a
- * importação recusa a coluna com mensagem explícita em vez de guardar o número.
+ * O que NÃO acontece com ele, e é o que sustenta a decisão:
+ *  · nunca sai em log (nem em mensagem de erro);
+ *  · nunca entra em telemetria, JSONB, claim de token ou bundle de experiência;
+ *  · nunca existe fora de `users.cpf` — há teste estrutural cobrando isso;
+ *  · só chega a gestor e admin-contrato, nas telas de cadastro.
  */
 
 /** Só os dígitos — o gestor cola com ponto e traço. */
@@ -46,26 +46,9 @@ export function cpfEhValido(bruto: string): boolean {
   return digito(9) === Number(cpf[9]) && digito(10) === Number(cpf[10]);
 }
 
-/** Últimos três dígitos — o que a tela mostra para confirmação humana. */
-export function finalDoCpf(bruto: string): string {
-  return digitosDoCpf(bruto).slice(-3);
-}
-
-export class PimentaAusente extends Error {
-  constructor() {
-    super(
-      "CPF_PEPPER não configurada: a coluna cpf não é aceita. Sem a pimenta o " +
-        "número teria de ser guardado em claro, e isso não acontece.",
-    );
-  }
-}
-
-/**
- * Hash determinístico do CPF. Determinístico de propósito — é o que permite
- * procurar e reconhecer a mesma pessoa; um sal por linha (bcrypt) tornaria o
- * campo inútil como identidade.
- */
-export function hashDoCpf(bruto: string, pimenta: string | undefined): string {
-  if (!pimenta) throw new PimentaAusente();
-  return createHmac("sha256", pimenta).update(digitosDoCpf(bruto)).digest("hex");
+/** `000.000.000-00` — como o CPF se lê em qualquer documento brasileiro. */
+export function formatarCpf(bruto: string): string {
+  const cpf = digitosDoCpf(bruto);
+  if (cpf.length !== 11) return bruto;
+  return `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
 }

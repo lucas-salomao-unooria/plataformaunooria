@@ -54,13 +54,15 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /usuarios} & gestor, admin-contrato & Lista as pessoas da escola.
-  Filtros: \cd{papel}, \cd{turmaId}, \cd{situacao}
+\rota{GET /usuarios} & gestor, admin-contrato & Lista as pessoas da escola, com o
+  \textbf{CPF formatado} --- é como o gestor confere identidade contra o sistema da
+  rede (\adrr{ADR-33}). Filtros: \cd{papel}, \cd{turmaId}, \cd{situacao}
   (\cd{ativos}$|$\cd{inativos}$|$\cd{sem-primeiro-acesso}) e \cd{busca} por nome,
-  \emph{login} ou matrícula da rede.\\
-\zebra \rota{PATCH /usuarios/:id} & gestor, admin-contrato & Nome, e-mail, papel
-  e \cd{ativo}. \emph{Login} e matrícula não mudam por aqui: os dois identificam a
-  pessoa e vêm da importação.\\
+  CPF (com ou sem pontuação), \emph{login} ou matrícula da rede.\\
+\zebra \rota{PATCH /usuarios/:id} & gestor, admin-contrato & Nome, e-mail, papel,
+  \cd{ativo} e \textbf{CPF} --- corrigir CPF é caminho de balcão, e vazio APAGA o
+  campo (é o que se faz quando o número era de outra pessoa). \emph{Login} e
+  matrícula não mudam por aqui: os dois identificam a pessoa e vêm da importação.\\
 \rota{POST /usuarios/:id/reset-senha} & gestor, admin-contrato & Gera senha
   temporária, devolvida \textbf{uma vez}, e remarca a conta como provisória.\\
 \zebra \rota{POST /usuarios/importar-csv} & gestor, admin-contrato &

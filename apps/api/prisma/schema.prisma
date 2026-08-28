@@ -222,15 +222,17 @@ model User {
   /// Índice único parcial por escola vive na migration (o Prisma não modela
   /// índice parcial, e NULL não pode colidir).
   matriculaExterna String? @map("matricula_externa")
-  /// `HMAC-SHA256(cpf, CPF_PEPPER)` — o CPF NUNCA em claro. É a identidade
-  /// IMUTÁVEL da pessoa na rede: sobrevive a troca de nome, de login, de
-  /// matrícula e de ESCOLA, e é por ele que uma transferência é reconhecida como
-  /// a mesma criança em vez de virar uma segunda pessoa. Único por CONTRATO (não
-  /// por escola) — índice parcial na migration.
-  cpfHash          String? @map("cpf_hash")
-  /// Os três últimos dígitos, em claro, para o gestor confirmar na tela que é a
-  /// pessoa certa. Três dígitos não reconstroem um CPF.
-  cpfFinal         String? @map("cpf_final")
+  /// Os 11 dígitos, sem pontuação. É a identidade IMUTÁVEL da pessoa na rede:
+  /// sobrevive a troca de nome, de login, de matrícula e de ESCOLA, e é por ele
+  /// que uma transferência é reconhecida como a mesma criança em vez de virar
+  /// uma segunda pessoa. Único por CONTRATO (não por escola) — índice parcial na
+  /// migration, com CHECK de 11 dígitos.
+  ///
+  /// O gestor VÊ o número (ADR-33): ele confere identidade contra o sistema da
+  /// rede e atende a família no balcão. O que não acontece: nunca em log, em
+  /// telemetria, em JSONB, em claim de token nem em bundle de experiência — e
+  /// não existe fora desta coluna, com teste estrutural cobrando.
+  cpf              String?
   /// `sourcedId` desta pessoa no sistema de origem (OneRoster). Distinto do
   /// `sub` do IdP: SIS e IdP são sistemas diferentes e as duas reconciliações
   /// não são a mesma.

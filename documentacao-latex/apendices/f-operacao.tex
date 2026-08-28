@@ -219,14 +219,16 @@ testado no container} &
   sendo reescrito naquele instante (o \cd{gcloud} renova o \emph{refresh token}
   sozinho), a api fica presa num cliente quebrado até o fim da vida do processo, e
   um teste manual no mesmo contêiner passa. Conserto: reiniciar a api.\\
-\zebra \textbf{\enquote{A coluna cpf não pode ser usada nesta instalação}} &
-  \env{CPF\_PEPPER} ausente. O CPF não é guardado em claro, então sem a pimenta não
-  há \emph{hash} --- e a importação recusa a coluna em vez de guardar o número de
-  outro jeito. Em \emph{dev} ela vem do \arq{docker-compose.dev.yml}.\\
+\zebra \textbf{\enquote{Unique constraint failed on \cd{cpf}} na importação} &
+  Comportamento correto: o índice único de CPF é da REDE, não da escola. Duas
+  pessoas com o mesmo CPF não podem existir no contrato --- e se a intenção era
+  transferência, o caminho é importar na escola de DESTINO, que o reconhece. Em
+  paralelo (duas importações simultâneas) a linha volta como erro dela, sem
+  derrubar o lote.\\
 \textbf{Toda criança transferida virou cadastro novo} &
-  A pimenta \textbf{mudou}. Ela é do contrato e não muda: outro valor produz outro
-  \emph{hash}, e a plataforma deixa de reconhecer quem já cadastrou. Não há
-  conserto pela frente --- é restaurar a pimenta anterior.\\
+  A planilha veio \textbf{sem} a coluna \cd{cpf}. Sem ela, a chave de
+  reconciliação cai na matrícula da rede --- que muda de escola para escola --- e a
+  mesma criança nasce duas vezes.\\
 \zebra \textbf{O professor não vê a segunda escola no cabeçalho} &
   Falta \textbf{lotação} nela. O seletor só aparece com duas ou mais: com uma, seria
   um campo de uma opção. O caminho é \rota{/admin/escolas} \seta{} a escola \seta{}

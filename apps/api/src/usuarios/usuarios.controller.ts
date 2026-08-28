@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
+import { cpfEhValido, digitosDoCpf } from "../comum/cpf";
 import { escolaAlvo } from "../comum/escola-alvo";
 import { rateLimit } from "../comum/rate-limit";
 import { MAX_LINHAS, RosteringService } from "../rostering/rostering.service";
@@ -31,6 +32,12 @@ const ListarSchema = z.object({
 
 const EditarSchema = z.object({
   nome: z.string().trim().min(1).max(120).optional(),
+  /* Corrigir CPF é caminho de balcão: a planilha veio com o dígito trocado e a
+     família traz o documento. Vazio APAGA o campo — é o que se faz quando o
+     número era de outra pessoa. */
+  cpf: z
+    .union([z.literal(""), z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos")])
+    .optional(),
   email: z.union([z.literal(""), z.string().email().max(180)]).optional(),
   papel: z.enum(["aluno", "professor", "gestor"]).optional(),
   ativo: z.boolean().optional(),
@@ -96,6 +103,9 @@ export class UsuariosController {
     const atualizado = await this.usuarios.atualizar(escolaId, id, {
       ...dados,
       ...(dados.email !== undefined ? { email: dados.email === "" ? null : dados.email } : {}),
+      ...(dados.cpf !== undefined
+        ? { cpf: dados.cpf === "" ? null : digitosDoCpf(dados.cpf) }
+        : {}),
     });
     if (!atualizado) throw new NotFoundException("usuário não encontrado nesta escola");
     return atualizado;

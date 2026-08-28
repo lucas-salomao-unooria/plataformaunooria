@@ -47,7 +47,7 @@ interface EscolaDaRede {
 }
 
 interface Historico {
-  aluno: { nome: string; usuario: string; cpfFinal: string | null };
+  aluno: { nome: string; usuario: string; cpf: string | null };
   escolas: Array<{
     id: string;
     nome: string;
@@ -436,7 +436,7 @@ export function TurmaDetalhe({
           <div className="flex flex-col gap-5">
             <p className="text-[13px] text-unooria-neutral-500">
               {historico?.aluno.usuario}
-              {historico?.aluno.cpfFinal ? ` · CPF terminado em ${historico.aluno.cpfFinal}` : ""}
+              {historico?.aluno.cpf ? ` · CPF ${historico.aluno.cpf}` : ""}
             </p>
 
             <section className="flex flex-col gap-2">

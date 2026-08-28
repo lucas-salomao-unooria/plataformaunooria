@@ -209,11 +209,13 @@ política de RLS ficam intocadas (\adrr{ADR-30}).
 \zebra \textbf{Escola ativa} & Estado de SESSÃO, não coluna. Quem tem mais de uma
   escolhe no cabeçalho, e a troca é validada contra as lotações \emph{pela API} ---
   nunca contra a lista que o \emph{cookie} carrega.\\
-\cd{users.cpf\_hash} & A identidade IMUTÁVEL do estudante. Nome, \emph{login} e
+\cd{users.cpf} & A identidade IMUTÁVEL do estudante. Nome, \emph{login} e
   matrícula mudam; o CPF não. É o que transforma \enquote{esse CPF já existe na
   escola B} em transferência reconhecida, em vez de duas crianças com o histórico
-  partido. \textbf{Nunca é o número}: \cd{HMAC-SHA256} com pimenta do contrato,
-  mais três dígitos em claro para confirmação humana (\adrr{ADR-31}).\\
+  partido. Guardado em 11 dígitos, único por contrato, e \textbf{exibido ao
+  gestor} --- é como ele confere identidade contra o sistema da rede. O que
+  sustenta a decisão é a contenção: esta é a única coluna onde o número existe
+  (\adrr{ADR-33}).\\
 \zebra \cd{escolas.codigo\_inep} \newline \cd{municipio}, \cd{uf} & Identificar a
   unidade numa rede de milhares. Sem município, a lista de escolas é impossível de
   navegar.\\

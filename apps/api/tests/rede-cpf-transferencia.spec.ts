@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { cpfEhValido, hashDoCpf } from "../src/comum/cpf";
+import { cpfEhValido, digitosDoCpf, formatarCpf } from "../src/comum/cpf";
 import { periodoDeTeste } from "./turma-de-teste";
-import { PIMENTA_DE_TESTE, servicosDeTeste } from "./servicos-de-teste";
+import { servicosDeTeste } from "./servicos-de-teste";
 
 /**
  * A REDE: uma pessoa, várias escolas — e o CPF como identidade imutável.
@@ -20,7 +20,11 @@ const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as Prism
   PrismaClient;
 const { rostering, escolas } = servicosDeTeste(prisma);
 
-/** CPFs válidos (dígitos verificadores conferem) usados só aqui. */
+/**
+ * CPFs válidos (dígitos verificadores conferem) usados SÓ aqui. O índice único é
+ * da REDE inteira, não da escola: número repetido em outra suíte colide em
+ * paralelo, com uma mensagem que não fala da suíte vizinha.
+ */
 const CPF_ALUNA = "529.982.247-25";
 const CPF_PROFESSORA = "045.833.259-32";
 
@@ -59,18 +63,12 @@ describe("CPF", () => {
     expect(cpfEhValido("123")).toBe(false);
   });
 
-  test("o hash é determinístico e ignora pontuação", () => {
-    expect(hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE)).toBe(hashDoCpf("52998224725", PIMENTA_DE_TESTE));
+  test("guarda só os dígitos: a pontuação é da tela", () => {
+    expect(digitosDoCpf(CPF_ALUNA)).toBe("52998224725");
+    expect(formatarCpf("52998224725")).toBe("529.982.247-25");
   });
 
-  test("pimenta diferente dá hash diferente — e sem pimenta não há hash", () => {
-    expect(hashDoCpf(CPF_ALUNA, "outra-pimenta-qualquer-123")).not.toBe(
-      hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE),
-    );
-    expect(() => hashDoCpf(CPF_ALUNA, undefined)).toThrow(/CPF_PEPPER/);
-  });
-
-  test("o banco guarda o hash e três dígitos — nunca o número", async () => {
+  test("o banco guarda os 11 dígitos, sem pontuação", async () => {
     const r = await rostering.importarPlanilha(
       ESCOLA_A,
       csv(
@@ -82,11 +80,10 @@ describe("CPF", () => {
     expect(r.criados).toBe(1);
 
     const helena = await prisma.user.findFirstOrThrow({ where: { escolaId: ESCOLA_A, matriculaExterna: "RA-A1" } });
-    expect(helena.cpfHash).toBe(hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE));
-    expect(helena.cpfFinal).toBe("725");
-    // O número em claro não está em coluna nenhuma da linha.
-    expect(JSON.stringify(helena)).not.toContain("52998224725");
-    expect(JSON.stringify(helena)).not.toContain("529.982.247-25");
+    expect(helena.cpf).toBe("52998224725");
+    // A pontuação NÃO entra: "529.982.247-25" e "52998224725" coexistindo seriam
+    // duas pessoas com o mesmo CPF, e o índice único não pegaria.
+    expect(helena.cpf).not.toContain(".");
   });
 
   test("CPF inválido é erro de linha, e a linha não entra", async () => {
@@ -132,13 +129,13 @@ describe("professor ACUMULA escolas", () => {
     expect(naB.lotacoesNovas).toBe(1);
     expect(naB.transferidos).toBe(0);
 
-    const marta = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_PROFESSORA, PIMENTA_DE_TESTE) } });
+    const marta = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_PROFESSORA) } });
     const escolasDela = await escolas.escolasDaPessoa(marta.id);
     expect(escolasDela.map((e) => e.id).sort()).toEqual([ESCOLA_A, ESCOLA_B]);
   });
 
   test("e continua com turma nas duas escolas", async () => {
-    const marta = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_PROFESSORA, PIMENTA_DE_TESTE) } });
+    const marta = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_PROFESSORA) } });
     const naA = await rostering.turmasDoProfessor(ESCOLA_A, marta.id);
     const naB = await rostering.turmasDoProfessor(ESCOLA_B, marta.id);
     expect(naA.map((t) => t.nome)).toEqual(["6A"]);
@@ -147,7 +144,7 @@ describe("professor ACUMULA escolas", () => {
 
   test("só existe UMA pessoa na rede com aquele CPF", async () => {
     const quantas = await prisma.user.count({
-      where: { cpfHash: hashDoCpf(CPF_PROFESSORA, PIMENTA_DE_TESTE) },
+      where: { cpf: digitosDoCpf(CPF_PROFESSORA) },
     });
     expect(quantas).toBe(1);
   });
@@ -155,7 +152,7 @@ describe("professor ACUMULA escolas", () => {
 
 describe("aluno é TRANSFERIDO, não duplicado", () => {
   test("importar na escola B o CPF que está na A transfere, sem criar ninguém", async () => {
-    const antes = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE) } });
+    const antes = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     expect(antes.escolaId).toBe(ESCOLA_A);
 
     const r = await rostering.importarPlanilha(
@@ -174,7 +171,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
   });
 
   test("uma lotação ativa só, e a anterior fica registrada com data de saída", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE) } });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     const lotacoes = await prisma.lotacao.findMany({
       where: { usuarioId: helena.id, papel: "aluno" },
       orderBy: { escolaId: "asc" },
@@ -185,7 +182,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
   });
 
   test("a matrícula na turma da escola de origem foi ENCERRADA", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE) } });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     const naOrigem = await prisma.matricula.findMany({
       where: { usuarioId: helena.id, escolaId: ESCOLA_A },
     });
@@ -206,7 +203,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
   });
 
   test("o histórico ATRAVESSA as escolas — é a identidade que segue o aluno", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE) } });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     const historico = await escolas.historicoDoAluno(helena.id);
 
     expect(historico?.escolas.map((e) => e.id)).toEqual([ESCOLA_B, ESCOLA_A]);
@@ -217,13 +214,13 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
       "EE Rede A/6A",
       "EE Rede B/7B",
     ]);
-    // Só os três dígitos do CPF, nunca o número.
-    expect(historico?.aluno.cpfFinal).toBe("725");
-    expect(JSON.stringify(historico)).not.toContain("52998224725");
+    // O gestor VÊ o CPF, formatado como em qualquer documento: é como ele confere
+    // que é a criança certa.
+    expect(historico?.aluno.cpf).toBe(CPF_ALUNA);
   });
 
   test("transferir para a escola onde já está é no-op, não uma segunda entrada", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_ALUNA, PIMENTA_DE_TESTE) } });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     const feito = await escolas.transferirAluno({ alunoId: helena.id, escolaDestinoId: ESCOLA_B });
     expect(feito).toMatchObject({ jaEstava: true });
     const ativas = await prisma.lotacao.count({
@@ -247,7 +244,7 @@ describe("escolas da rede", () => {
   });
 
   test("encerrar a lotação do professor numa escola não mexe na outra", async () => {
-    const marta = await prisma.user.findFirstOrThrow({ where: { cpfHash: hashDoCpf(CPF_PROFESSORA, PIMENTA_DE_TESTE) } });
+    const marta = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_PROFESSORA) } });
     const naA = await prisma.lotacao.findFirstOrThrow({
       where: { usuarioId: marta.id, escolaId: ESCOLA_A, fim: null },
     });

@@ -28,6 +28,8 @@ interface LinhaDeUsuario extends Record<string, unknown> {
   nome: string;
   papel: string;
   matricula: string | null;
+  /** Formatado pela api (000.000.000-00). Null quando a pessoa não tem. */
+  cpf: string | null;
   email: string | null;
   ativo: boolean;
   senhaProvisoria: boolean;
@@ -84,6 +86,7 @@ export function GestaoUsuarios({
   const [edicao, setEdicao] = useState<LinhaDeUsuario | null>(null);
   const [nomeEditado, setNomeEditado] = useState("");
   const [emailEditado, setEmailEditado] = useState("");
+  const [cpfEditado, setCpfEditado] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   const [resetAlvo, setResetAlvo] = useState<LinhaDeUsuario | null>(null);
@@ -132,9 +135,18 @@ export function GestaoUsuarios({
       const resposta = await fetch(`/api/plataforma/usuarios/${edicao.id}${sufixo}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ nome: nomeEditado.trim(), email: emailEditado.trim() }),
+        body: JSON.stringify({
+          nome: nomeEditado.trim(),
+          email: emailEditado.trim(),
+          cpf: cpfEditado.trim(),
+        }),
       });
-      if (!resposta.ok) throw new Error(String(resposta.status));
+      if (!resposta.ok) {
+        const corpo = (await resposta.json().catch(() => null)) as { message?: unknown } | null;
+        const detalhe = Array.isArray(corpo?.message) ? corpo.message.join("; ") : corpo?.message;
+        setErro(typeof detalhe === "string" ? detalhe : "Não foi possível salvar.");
+        return;
+      }
       setEdicao(null);
       setAviso("Cadastro atualizado.");
       await carregar();
@@ -183,6 +195,16 @@ export function GestaoUsuarios({
     () => [
       { key: "nome", title: "Nome" },
       { key: "usuario", title: "Login" },
+      {
+        key: "cpf",
+        title: "CPF",
+        render: (_, linha) =>
+          linha.cpf ? (
+            <span className="tabular-nums">{String(linha.cpf)}</span>
+          ) : (
+            <span className="text-unooria-neutral-500">—</span>
+          ),
+      },
       { key: "matricula", title: "Matrícula", render: (_, linha) => linha.matricula ?? "—" },
       { key: "papel", title: "Papel", render: (_, linha) => <Tag>{String(linha.papel)}</Tag> },
       {
@@ -215,6 +237,7 @@ export function GestaoUsuarios({
                 setEdicao(linha);
                 setNomeEditado(linha.nome);
                 setEmailEditado(linha.email ?? "");
+                setCpfEditado(linha.cpf ?? "");
               }}
             >
               Editar
@@ -264,7 +287,7 @@ export function GestaoUsuarios({
             <SearchInput
               id="busca"
               label="Buscar"
-              placeholder="Nome, login ou matrícula"
+              placeholder="Nome, CPF, login ou matrícula"
               value={busca}
               onChange={(e) => {
                 setPagina(1);
@@ -341,9 +364,17 @@ export function GestaoUsuarios({
               value={emailEditado}
               onChange={(e) => setEmailEditado(e.target.value)}
             />
+            <TextField
+              id="cpf"
+              label="CPF"
+              helperText="Deixe vazio para remover. Os dígitos verificadores são conferidos."
+              value={cpfEditado}
+              onChange={(e) => setCpfEditado(e.target.value)}
+            />
             <p className="text-[13px] text-unooria-neutral-500">
               Login e matrícula não mudam por aqui: os dois identificam a pessoa e vêm da
-              importação.
+              importação. O CPF muda porque o balcão erra — e é ele que reconhece a pessoa numa
+              transferência.
             </p>
           </div>
         </ModalBody>

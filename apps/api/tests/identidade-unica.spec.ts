@@ -69,7 +69,7 @@ describe("identidade única", () => {
    * todas contra o mesmo banco em paralelo. Policiar fixture aqui só produziria
    * falha intermitente sem relação com o que este teste protege — o dado real.
    */
-  test("o CPF não existe em claro em lugar nenhum do banco", async () => {
+  test("o CPF existe em UM lugar só: users.cpf", async () => {
     const colunas = await prisma.$queryRaw<Array<{ coluna: string }>>`
       SELECT table_name || '.' || column_name AS coluna
         FROM information_schema.columns
@@ -77,9 +77,26 @@ describe("identidade única", () => {
          AND column_name ~ 'cpf'
        ORDER BY 1
     `;
-    // Só o hash e os três últimos dígitos, e só em `users`. Uma coluna `cpf`
-    // qualquer que apareça aqui é o número em claro entrando na plataforma.
-    expect(colunas.map((c) => c.coluna)).toEqual(["users.cpf_final", "users.cpf_hash"]);
+    /* O número é guardado (ADR-33) — o gestor precisa vê-lo. O que sustenta a
+       decisão é a CONTENÇÃO: uma coluna só. Cópia em tabela de experiência, em
+       telemetria ou em JSONB é o número escapando para onde ninguém mais o
+       controla, e é isso que este teste impede de passar em silêncio. */
+    expect(colunas.map((c) => c.coluna)).toEqual(["users.cpf"]);
+  });
+
+  test("nenhuma tabela de experiência nem a telemetria carregam CPF", async () => {
+    /* Complemento do teste acima pelo outro lado: procura o FORMATO do dado, não
+       o nome da coluna. Um `dados` JSONB com o CPF dentro não apareceria em
+       `information_schema` — e é o caminho mais fácil de o número vazar. */
+    const suspeitas = await prisma.$queryRaw<Array<{ tabela: string; total: bigint }>>`
+      SELECT 'telemetria_eventos' AS tabela,
+             count(*)::bigint AS total
+        FROM telemetria_eventos
+       WHERE resultado::text ~ '[0-9]{11}' OR contexto::text ~ '[0-9]{11}'
+      UNION ALL
+      SELECT 'progresso', count(*)::bigint FROM progresso WHERE dados::text ~ '[0-9]{11}'
+    `;
+    expect(suspeitas.filter((s) => Number(s.total) > 0)).toEqual([]);
   });
 
   test("lotacoes é a fonte da escola — e `users.escola_id` é cache dela", async () => {

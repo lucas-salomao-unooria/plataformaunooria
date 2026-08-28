@@ -1179,6 +1179,14 @@ duas escolas ao mesmo tempo na mesma tela --- aí a conversa volta para o
 \section{ADR-31 --- CPF como identidade, guardado só em \emph{hash}}
 \label{adr:cpf}
 
+\begin{atencao}
+\textbf{SUPERADA pela \adrr{ADR-33}.} O \emph{hash} entregava o que a
+\emph{plataforma} precisa do CPF e não o que o \emph{gestor} precisa: ver o
+número. Fica registrada porque o raciocínio continua valendo para qualquer dado
+que a plataforma só precise \emph{comparar} --- e porque a lição de processo é a
+parte mais útil dela.
+\end{atencao}
+
 \begin{especificacao}{Contexto}
 Numa rede, a criança troca de escola e o dado dela precisa continuar sendo dela.
 Nome muda (casamento dos pais, correção de registro), \emph{login} muda,
@@ -1298,3 +1306,76 @@ quando), nunca o conteúdo dos instrumentos.
 \textbf{Gatilho de reavaliação.} Pedido pedagógico formal de continuidade entre
 escolas da mesma rede --- aí a conversa é sobre consentimento e sobre QUAL
 instrumento atravessa, um a um, nunca sobre abrir a fronteira inteira.
+
+% ---------------------------------------------------------------------------
+\section{ADR-33 --- O CPF é guardado, e o gestor o vê}
+\label{adr:cpf-em-claro}
+
+\begin{especificacao}{Contexto}
+\adrr{ADR-31} decidiu guardar apenas \cd{HMAC-SHA256(cpf, CPF\_PEPPER)} e os três
+últimos dígitos. A decisão pesou o risco de o banco acumular CPF de menores e
+\textbf{não perguntou quem usa o dado}.
+
+Quem usa é o gestor da escola, e ele precisa \textbf{ver o número}: confere
+identidade contra o sistema de gestão da rede, preenche documento de
+transferência e atende a família no balcão com o documento na mão. \emph{Hash} é
+de mão única --- não existe configuração que o exiba, porque não existe chave.
+Não era uma limitação a ajustar; era a funcionalidade ausente por construção.
+\end{especificacao}
+
+\textbf{Decisão.} O CPF é guardado: \cd{users.cpf}, os 11 dígitos sem pontuação
+(a formatação é da tela, e um \emph{CHECK} no banco impede que
+\enquote{529.982.247-25} e \enquote{52998224725} coexistam como duas pessoas).
+Único por \textbf{contrato}, não por escola. Exibido formatado na lista do gestor,
+buscável com ou sem pontuação, e corrigível na edição --- o balcão erra, e um
+dígito trocado numa planilha de dez mil linhas só aparece meses depois, na
+primeira transferência.
+
+\textbf{Sobre a base legal.} CPF é dado pessoal \textbf{comum}, não dado sensível
+do art.~11 da LGPD --- que trata de saúde, raça, religião, filiação e biometria.
+O tratamento tem base clara num contrato de execução de política pública de
+educação, e é o que todo sistema de gestão escolar brasileiro guarda. O cuidado
+que a plataforma tem com \cd{exp\_91\_checkins} (saúde) não é o mesmo caso.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter o \emph{hash} e exibir os três dígitos}: é o que havia, e não
+    atende --- três dígitos não servem para conferir documento nem para preencher
+    formulário.
+  \item \emph{\emph{Hash} para identidade $+$ coluna cifrada para exibição}: duas
+    representações do mesmo fato, uma chave a operar e a rotacionar, e um vazamento
+    de \emph{dump} $+$ chave devolve o número de todo modo. O ganho real sobre a
+    cifra de disco que o Cloud SQL já aplica é pequeno; a complexidade é
+    permanente.
+  \item \emph{Exibir mascarado na lista e completo só no cadastro}: foi
+    considerado e recusado pelo dono do produto --- o gestor confere pela lista, e
+    obrigá-lo a abrir cada pessoa transforma uma conferência de turma em trinta
+    cliques.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{O que sustenta a decisão não é a coluna, é a contenção.}
+    \cd{users.cpf} é o ÚNICO lugar onde o número existe: nunca em \emph{log} (nem
+    em mensagem de erro), nunca em telemetria, JSONB, \emph{claim} de \emph{token}
+    ou \emph{bundle} de experiência. O teste estrutural cobra pelos dois lados ---
+    que só exista essa coluna, e que nenhum JSONB de \cd{telemetria\_eventos} ou
+    \cd{progresso} carregue onze dígitos seguidos, que é o caminho mais fácil de o
+    número escapar.
+  \item O índice único é da \textbf{rede}, não da escola. Duas importações
+    simultâneas com o mesmo CPF colidem no banco --- é o comportamento correto, e
+    o efeito colateral apareceu primeiro nos testes, onde duas suítes usavam o
+    mesmo número.
+  \item \env{CPF\_PEPPER} deixou de existir.
+  \item \emph{Ruim}: o banco passa a ser um acervo de CPF de menores de idade.
+    A proteção é de acesso (só gestor e admin-contrato alcançam a rota) e de
+    contenção, não de criptografia de aplicação.
+  \item \emph{Lição de processo, registrada porque custou retrabalho}: uma escolha
+    \textbf{irreversível} --- \emph{hash} não volta atrás --- foi tomada sem o
+    requisito de quem usa o dado estar escrito. A pergunta \enquote{quem precisa
+    LER isso, e como?} devia ter vindo antes da primeira migração.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Exigência contratual de cifra em nível de
+aplicação, ou um incidente de acesso indevido --- aí a conversa é sobre onde a
+chave mora e quem a usa, não sobre se o número existe.

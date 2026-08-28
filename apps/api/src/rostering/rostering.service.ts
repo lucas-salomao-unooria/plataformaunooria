@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
-import { finalDoCpf, hashDoCpf } from "../comum/cpf";
+
 import { PrismaService } from "../prisma/prisma.service";
 import { EscolasService } from "./escolas.service";
 import { garantirLotacao } from "./lotacao";
@@ -178,32 +178,15 @@ export class RosteringService {
      * ele existe para responder: "essa criança já é nossa, de outra escola?".
      * Sem esta consulta, cada transferência criaria uma segunda pessoa e o
      * histórico dela nasceria partido.
-     *
-     * Sem `CPF_PEPPER` não há hash: a coluna é recusada com mensagem explícita,
-     * em vez de o número acabar guardado de outro jeito.
      */
-    const pimenta = this.config.get<string>("CPF_PEPPER");
-    const comCpf = leitura.pessoas.filter((p) => p.cpf);
-    if (comCpf.length > 0 && !pimenta) {
-      relatorio.erros.push({
-        linha: comCpf[0]!.linha,
-        campo: "cpf",
-        mensagem:
-          "a coluna cpf não pode ser usada nesta instalação (CPF_PEPPER ausente). " +
-          "Remova a coluna ou configure a pimenta — o CPF não é guardado em claro.",
-      });
-      return relatorio;
-    }
-    const hashPorLinha = new Map<number, string>();
-    for (const p of comCpf) hashPorLinha.set(p.linha, hashDoCpf(p.cpf, pimenta));
-
-    const naRede = hashPorLinha.size
+    const cpfs = leitura.pessoas.map((p) => p.cpf).filter(Boolean);
+    const naRede = cpfs.length
       ? await this.prisma.user.findMany({
-          where: { cpfHash: { in: [...hashPorLinha.values()] } },
-          select: { id: true, username: true, escolaId: true, role: true, cpfHash: true },
+          where: { cpf: { in: cpfs } },
+          select: { id: true, username: true, escolaId: true, role: true, cpf: true },
         })
       : [];
-    const porCpfNaRede = new Map(naRede.map((u) => [u.cpfHash!, u]));
+    const porCpfNaRede = new Map(naRede.map((u) => [u.cpf!, u]));
     const porMatricula = new Map(
       existentes.filter((u) => u.matriculaExterna).map((u) => [u.matriculaExterna!, u]),
     );
@@ -219,7 +202,6 @@ export class RosteringService {
       senha: string | null;
       /** Já existe na rede, em OUTRA escola: transferir (aluno) ou lotar. */
       deOutraEscola: { id: string; escolaId: string | null } | null;
-      cpfHash: string | null;
     };
     const preparadas: Preparada[] = [];
 
@@ -238,8 +220,7 @@ export class RosteringService {
          nome, de login, de matrícula e de escola. Achado em outra escola da
          rede, a linha deixa de ser "pessoa nova" e passa a ser transferência
          (aluno) ou lotação a mais (professor e gestor). */
-      const hash = hashPorLinha.get(pessoa.linha);
-      const naOutraEscola = hash ? porCpfNaRede.get(hash) : undefined;
+      const naOutraEscola = pessoa.cpf ? porCpfNaRede.get(pessoa.cpf) : undefined;
       const veioDeOutraEscola = Boolean(naOutraEscola && naOutraEscola.escolaId !== escolaId);
 
       let existente: (typeof existentes)[number] | null = null;
@@ -305,7 +286,6 @@ export class RosteringService {
         deOutraEscola: veioDeOutraEscola
           ? { id: naOutraEscola!.id, escolaId: naOutraEscola!.escolaId }
           : null,
-        cpfHash: hash ?? null,
       });
     }
 
@@ -401,11 +381,8 @@ export class RosteringService {
               role: pessoa.papel,
               ...(pessoa.matricula ? { matriculaExterna: pessoa.matricula } : {}),
               ...(pessoa.email ? { email: pessoa.email } : {}),
-              // O CPF entra como hash; os três últimos dígitos, em claro, são o
-              // que a tela mostra para o gestor confirmar a pessoa.
-              ...(lote[j]!.cpfHash
-                ? { cpfHash: lote[j]!.cpfHash, cpfFinal: finalDoCpf(pessoa.cpf) }
-                : {}),
+              // O CPF, quando veio. Só os 11 dígitos: a formatação é da tela.
+              ...(pessoa.cpf ? { cpf: pessoa.cpf } : {}),
               ativo: true,
             };
 

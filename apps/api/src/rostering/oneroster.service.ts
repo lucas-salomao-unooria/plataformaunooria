@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
-import { cpfEhValido, finalDoCpf, hashDoCpf } from "../comum/cpf";
+import { cpfEhValido, digitosDoCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
 import type { ArquivoOneRoster } from "./catalogo";
 import { EscolasService } from "./escolas.service";
@@ -476,8 +476,7 @@ export class OneRosterService {
     /* O CPF é procurado na REDE, não nesta escola: é o que transforma "essa
        criança já é nossa, de outra unidade" em transferência reconhecida em vez
        de uma segunda pessoa com o histórico partido. */
-    const pimenta = this.config.get<string>("CPF_PEPPER");
-    const hashPorLinha = new Map<number, string>();
+    const cpfPorLinha = new Map<number, string>();
     for (const linha of linhas) {
       const bruto = cpfDaLinha(linha);
       if (!bruto) continue;
@@ -485,8 +484,7 @@ export class OneRosterService {
         cpfsInvalidos += 1;
         continue;
       }
-      if (!pimenta) continue;
-      hashPorLinha.set(linha.linha, hashDoCpf(bruto, pimenta));
+      cpfPorLinha.set(linha.linha, digitosDoCpf(bruto));
     }
     if (cpfsInvalidos > 0) {
       relatorio.avisos.push({
@@ -495,23 +493,13 @@ export class OneRosterService {
         mensagem: `${cpfsInvalidos} CPF(s) com dígito verificador errado foram ignorados — a pessoa entrou sem CPF`,
       });
     }
-    if (hashPorLinha.size === 0 && !pimenta) {
-      const traziam = linhas.filter((l) => cpfDaLinha(l)).length;
-      if (traziam > 0) {
-        relatorio.avisos.push({
-          linha: 1,
-          campo: "cpf",
-          mensagem: `${traziam} linha(s) traziam CPF e ele foi ignorado: CPF_PEPPER não está configurada nesta instalação`,
-        });
-      }
-    }
-    const naRede = hashPorLinha.size
+    const naRede = cpfPorLinha.size
       ? await this.prisma.user.findMany({
-          where: { cpfHash: { in: [...hashPorLinha.values()] } },
-          select: { id: true, escolaId: true, role: true, cpfHash: true },
+          where: { cpf: { in: [...cpfPorLinha.values()] } },
+          select: { id: true, escolaId: true, role: true, cpf: true },
         })
       : [];
-    const porCpfNaRede = new Map(naRede.map((u) => [u.cpfHash!, u]));
+    const porCpfNaRede = new Map(naRede.map((u) => [u.cpf!, u]));
 
     type Preparada = {
       linha: number;
@@ -525,8 +513,7 @@ export class OneRosterService {
       existenteId: string | null;
       senha: string | null;
       desativar: boolean;
-      cpfHash: string | null;
-      cpfFinal: string | null;
+      cpf: string | null;
       /** Já existe na rede, em OUTRA escola: transferir (aluno) ou lotar. */
       deOutraEscola: { id: string; escolaId: string | null } | null;
     };
@@ -543,8 +530,8 @@ export class OneRosterService {
 
       /* O CPF vem primeiro: é o único identificador que sobrevive à troca de
          nome, de login, de matrícula e de ESCOLA. */
-      const hash = hashPorLinha.get(linha.linha) ?? null;
-      const naOutra = hash ? porCpfNaRede.get(hash) : undefined;
+      const cpf = cpfPorLinha.get(linha.linha) ?? null;
+      const naOutra = cpf ? porCpfNaRede.get(cpf) : undefined;
       const veioDeOutraEscola = Boolean(naOutra && naOutra.escolaId !== escolaId);
 
       const existente = veioDeOutraEscola
@@ -621,8 +608,7 @@ export class OneRosterService {
       }
 
       preparadas.push({
-        cpfHash: hash,
-        cpfFinal: hash ? finalDoCpf(cpfDaLinha(linha)) : null,
+        cpf,
         deOutraEscola: veioDeOutraEscola
           ? { id: naOutra!.id, escolaId: naOutra!.escolaId }
           : null,
@@ -691,8 +677,8 @@ export class OneRosterService {
             ...(p.matricula ? { matriculaExterna: p.matricula } : {}),
             ...(p.sourcedId ? { fonteId: p.sourcedId } : {}),
             ...(p.email ? { email: p.email } : {}),
-            // Hash e três dígitos; o número nunca.
-            ...(p.cpfHash ? { cpfHash: p.cpfHash, cpfFinal: p.cpfFinal } : {}),
+            // Só os 11 dígitos: a formatação é da tela.
+            ...(p.cpf ? { cpf: p.cpf } : {}),
             ativo: p.ativo,
           };
 

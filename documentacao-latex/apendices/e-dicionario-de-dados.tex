@@ -197,14 +197,14 @@ divergentes.
   vira um segundo aluno, com o histórico preso no primeiro. Índice único
   \textbf{parcial} por escola --- vive na migração, porque o Prisma não modela
   índice parcial.\\
-\zebra \cd{cpf\_hash} & \cd{TEXT?} & \cd{HMAC-SHA256(cpf, CPF\_PEPPER)} --- o
-  número \textbf{nunca} em claro. É a identidade IMUTÁVEL da pessoa na rede:
-  sobrevive a troca de nome, \emph{login}, matrícula e ESCOLA, e é por ela que uma
-  transferência é reconhecida como a mesma criança. Único por \textbf{contrato}
-  (índice parcial), não por escola. \emph{CHECK} de 64 hexadecimais, para o número
-  em claro não caber na coluna por acidente de código (\adrr{ADR-31}).\\
-\cd{cpf\_final} & \cd{TEXT?} & Os três últimos dígitos, em claro, para o gestor
-  confirmar na tela que é a pessoa certa. Três dígitos não reconstroem um CPF.\\
+\zebra \cd{cpf} & \cd{TEXT?} & Os 11 dígitos, \textbf{sem pontuação}
+  (\emph{CHECK}) --- a formatação é da tela, e guardar as duas formas faria
+  \enquote{529.982.247-25} e \enquote{52998224725} coexistirem como duas pessoas.
+  É a identidade IMUTÁVEL na rede: sobrevive a troca de nome, \emph{login},
+  matrícula e ESCOLA, e é por ela que uma transferência é reconhecida como a mesma
+  criança. Único por \textbf{contrato} (índice parcial), não por escola.
+  \textbf{O gestor vê o número} --- é como ele confere identidade contra o sistema
+  da rede. Esta é a ÚNICA coluna do banco onde o CPF existe (\adrr{ADR-33}).\\
 \zebra \cd{fonte\_id} & \cd{TEXT?} & \cd{sourcedId} da pessoa no sistema de
   origem. \textbf{Distinto} do \cd{sub} do provedor de identidade: sistema de
   gestão e IdP são coisas diferentes, e as duas reconciliações não são a mesma.\\

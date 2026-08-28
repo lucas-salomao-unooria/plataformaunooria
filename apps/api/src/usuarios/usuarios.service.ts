@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 import { PrismaService } from "../prisma/prisma.service";
+import { digitosDoCpf, formatarCpf } from "../comum/cpf";
 import { gerarSenha } from "../rostering/regras";
 
 /**
@@ -43,6 +44,10 @@ export class UsuariosService {
               { displayName: { contains: busca, mode: "insensitive" as const } },
               { username: { contains: busca, mode: "insensitive" as const } },
               { matriculaExterna: { contains: busca, mode: "insensitive" as const } },
+              /* Buscar por CPF é o caso mais comum do balcão: a família chega com
+                 o documento. Compara pelos DÍGITOS — quem digita "529.982" e quem
+                 digita "529982" procura a mesma pessoa. */
+              ...(digitosDoCpf(busca) ? [{ cpf: { contains: digitosDoCpf(busca) } }] : []),
             ],
           }
         : {}),
@@ -79,6 +84,9 @@ export class UsuariosService {
             nome: u.displayName,
             papel: u.role,
             matricula: u.matriculaExterna,
+            /* Formatado como em qualquer documento brasileiro. Só gestor e
+               admin-contrato chegam nesta rota. */
+            cpf: u.cpf ? formatarCpf(u.cpf) : null,
             email: u.email,
             ativo: u.ativo,
             /** Ainda não fez o primeiro acesso (senha veio da importação). */
@@ -102,7 +110,13 @@ export class UsuariosService {
   async atualizar(
     escolaId: string,
     usuarioId: string,
-    dados: { nome?: string; email?: string | null; papel?: string; ativo?: boolean },
+    dados: {
+      nome?: string;
+      email?: string | null;
+      papel?: string;
+      ativo?: boolean;
+      cpf?: string | null;
+    },
   ) {
     const usuario = await this.prisma.user.findFirst({
       where: { id: usuarioId, escolaId, NOT: { role: "admin-contrato" } },
@@ -115,6 +129,7 @@ export class UsuariosService {
         ...(dados.email !== undefined ? { email: dados.email } : {}),
         ...(dados.papel !== undefined ? { role: dados.papel } : {}),
         ...(dados.ativo !== undefined ? { ativo: dados.ativo } : {}),
+        ...(dados.cpf !== undefined ? { cpf: dados.cpf } : {}),
       },
     });
     return {
@@ -123,6 +138,7 @@ export class UsuariosService {
       nome: atualizado.displayName,
       papel: atualizado.role,
       email: atualizado.email,
+      cpf: atualizado.cpf ? formatarCpf(atualizado.cpf) : null,
       ativo: atualizado.ativo,
     };
   }

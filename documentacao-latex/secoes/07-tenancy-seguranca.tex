@@ -364,14 +364,18 @@ acredita ter declarado algo.
 \section{Privacidade e dados de menores}
 
 \begin{atencao}
-\textbf{O CPF do estudante nunca é guardado.} Ele é a identidade imutável na rede
---- e o que torna possível reconhecer a mesma criança numa transferência entre
-escolas --- mas o banco tem apenas \cd{HMAC-SHA256(cpf, CPF\_PEPPER)} e os três
-últimos dígitos, para confirmação humana na tela. O \emph{hash} é determinístico
-de propósito (é o que permite procurar e reconhecer); a pimenta é o que o torna
-inútil fora desta instalação. Sem ela, a importação \textbf{recusa} a coluna em
-vez de guardar o número de outro jeito, e o teste estrutural falha se aparecer
-qualquer coluna com \cd{cpf} no nome fora dessas duas (\adrr{ADR-31}).
+\textbf{O CPF é guardado, e o que o protege é a CONTENÇÃO.} Ele é a identidade
+imutável na rede --- o que torna possível reconhecer a mesma criança numa
+transferência --- e o gestor precisa vê-lo, para conferir identidade contra o
+sistema da rede e atender a família no balcão (\adrr{ADR-33}). CPF é dado pessoal
+comum, não do art.~11.
+
+O que o cerca: \cd{users.cpf} é o \textbf{único} lugar do banco onde o número
+existe; ele nunca vai a \emph{log} (nem em mensagem de erro), nunca a telemetria,
+JSONB, \emph{claim} de \emph{token} ou \emph{bundle} de experiência; e só gestor e
+admin-contrato alcançam a rota que o devolve. O teste estrutural cobra os dois
+lados --- que só exista essa coluna, e que nenhum JSONB de telemetria ou progresso
+carregue onze dígitos seguidos, que é o caminho mais fácil de ele escapar.
 \end{atencao}
 
 \begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}

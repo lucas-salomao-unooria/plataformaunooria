@@ -99,13 +99,23 @@ literalmente verdadeira (ADR-30).
 - **Criar escola é `admin-contrato` e ninguém mais**, inclusive no `orgs.csv`:
   escola é tenant, e abrir inquilino com RLS e dados de menores por trás não é
   operação de quem administra uma unidade. `/admin/escolas` é a tela.
-- **`users.cpf_hash` é a identidade IMUTÁVEL do estudante** — e o que torna a
-  transferência possível: nome, login e matrícula mudam, o CPF não. **O número
-  NUNCA é guardado**: `HMAC-SHA256(cpf, CPF_PEPPER)` (determinístico de propósito
-  — é o que permite procurar e reconhecer) + os três últimos dígitos em claro para
-  confirmação humana. Único por CONTRATO, não por escola. Sem a pimenta, a coluna
-  `cpf` da importação é RECUSADA. `CPF_PEPPER` **não muda**: outro valor invalida
-  todos os hashes e toda criança transferida vira cadastro novo (ADR-31).
+- **`users.cpf` é a identidade IMUTÁVEL do estudante** — e o que torna a
+  transferência possível: nome, login e matrícula mudam, o CPF não. Guardado como
+  **11 dígitos, sem pontuação** (a formatação é da tela; CHECK no banco), **único
+  por CONTRATO**, não por escola — é essa unicidade que transforma "esse CPF já
+  existe na escola B" em transferência reconhecida.
+  **O gestor VÊ o número** (ADR-33): ele confere identidade contra o sistema da
+  rede, preenche documento e atende a família no balcão — e a lista de
+  `/admin/usuarios` mostra o CPF formatado e busca por ele, com ou sem pontuação.
+  CPF é dado pessoal COMUM, não do art. 11 (que é saúde, raça, religião,
+  biometria), com base legal clara em contrato de educação pública.
+  O que sustenta a decisão não é a coluna, é a **contenção**: `users.cpf` é o
+  ÚNICO lugar onde o número existe. Nunca em log (nem em mensagem de erro), nunca
+  em telemetria, JSONB, claim de token ou bundle de experiência — e
+  `tests/identidade-unica.spec.ts` cobra as duas coisas: que só exista essa
+  coluna, e que nenhum JSONB de telemetria/progresso carregue 11 dígitos seguidos.
+  Uma versão anterior guardava só o hash; a decisão foi revista porque hash é de
+  mão única e o gestor não conseguia ver o número (ADR-31, superada pela ADR-33).
 - **Na transferência, o dado FICA e a identidade SEGUE** (ADR-32). Tudo o que a
   criança produziu continua com o `escola_id` de onde foi produzido — verdade
   histórica. O que atravessa é `GET /alunos/:id/historico`: uma porta só, restrita

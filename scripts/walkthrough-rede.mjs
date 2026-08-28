@@ -129,11 +129,12 @@ try {
     await p.waitForTimeout(800);
     const texto = await p.getByTestId("unooria-modal").innerText();
     const duasEscolas = /EE Escola Demo/.test(texto) && /EE Vila Nova/.test(texto);
-    const soTresDigitos = /terminado em 705/.test(texto) && !/39053344705/.test(texto);
+    // O gestor VÊ o CPF, formatado: é como ele confere que é a criança certa.
+    const cpfNaTela = texto.includes(CPF);
     await registrar(
       "historico-atravessa-escolas",
       `${duasEscolas ? "as DUAS escolas na trajetória" : "SÓ UMA ESCOLA"} · ${
-        soTresDigitos ? "CPF só pelos 3 últimos dígitos" : "CPF EM CLARO NA TELA"
+        cpfNaTela ? "CPF completo na tela" : "CPF NÃO APARECEU"
       }`,
     );
     // O diálogo do DS tem o X ("Fechar modal") e o botão "Fechar": `exact`

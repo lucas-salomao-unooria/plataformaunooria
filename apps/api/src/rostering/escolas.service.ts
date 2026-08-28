@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
+import { formatarCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
 import { escolaAtualDoAluno, garantirLotacao, type PapelDeLotacao } from "./lotacao";
 import { periodoVigente } from "./regras";
@@ -152,7 +153,7 @@ export class EscolasService {
       where: { escolaId, papel, fim: null },
       include: {
         usuario: {
-          select: { id: true, username: true, displayName: true, ativo: true, cpfFinal: true },
+          select: { id: true, username: true, displayName: true, ativo: true, cpf: true },
         },
       },
       orderBy: [{ usuario: { displayName: "asc" } }],
@@ -163,7 +164,7 @@ export class EscolasService {
       nome: l.usuario.displayName,
       usuario: l.usuario.username,
       ativo: l.usuario.ativo,
-      cpfFinal: l.usuario.cpfFinal,
+      cpf: l.usuario.cpf ? formatarCpf(l.usuario.cpf) : null,
       principal: l.principal,
       desde: l.inicio,
     }));
@@ -331,7 +332,7 @@ export class EscolasService {
   async historicoDoAluno(alunoId: string) {
     const aluno = await this.prisma.user.findUnique({
       where: { id: alunoId },
-      select: { id: true, displayName: true, username: true, cpfFinal: true, role: true },
+      select: { id: true, displayName: true, username: true, cpf: true, role: true },
     });
     if (!aluno || aluno.role !== "aluno") return null;
 
@@ -362,7 +363,7 @@ export class EscolasService {
         id: aluno.id,
         nome: aluno.displayName,
         usuario: aluno.username,
-        cpfFinal: aluno.cpfFinal,
+        cpf: aluno.cpf ? formatarCpf(aluno.cpf) : null,
       },
       escolas: lotacoes.map((l) => ({
         id: l.escola.id,
