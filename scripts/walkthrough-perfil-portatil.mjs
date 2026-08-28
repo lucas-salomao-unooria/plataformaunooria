@@ -121,16 +121,19 @@ try {
   await p.waitForTimeout(600);
   await p.waitForTimeout(1200);
   /* A LISTA é a prova de que o documento entrou — a mensagem sozinha some no
-     próximo clique, e o modal rola. */
+     próximo clique, e o modal rola. E o veredito se lê no AVISO da importação
+     que acabou de acontecer: o texto do diálogo inteiro carrega as linhas de
+     execuções anteriores e diria "não verificado" mesmo quando esta conferiu. */
   const naLista = await dialogo.locator("li", { hasText: /emitido em/ }).count();
-  const textoDepois = await dialogo.innerText();
+  const aviso = await dialogo.locator('[class*="feedback"], [role="alert"]').last().innerText();
+  const conferiu = /assinatura confere/i.test(aviso);
   await dialogo.getByText("Recebidos").scrollIntoViewIfNeeded();
   await registrar(
     "documento-recebido",
-    `${naLista} na lista de recebidos · ${
-      /não verificado/i.test(textoDepois)
-        ? "marcado NÃO VERIFICADO (a instalação não tem emissores configurados)"
-        : "SEM o rótulo de verificação"
+    `${naLista} na lista · ${
+      conferiu
+        ? "ASSINATURA CONFERIDA com o emissor"
+        : "marcado NÃO VERIFICADO (sem emissores configurados nesta instalação)"
     }`,
   );
   if (naLista === 0) throw new Error("o documento não apareceu na lista de recebidos");
@@ -144,20 +147,30 @@ try {
   await dialogo.locator('input[type="file"]').setInputFiles(caminhoRuim);
   await p.waitForTimeout(2500);
   const textoFinal = await dialogo.innerText();
-  /* Sem emissores configurados a assinatura NÃO é conferida, e o documento
-     adulterado entra marcado `nao-verificada` — que é a decisão, não um bug:
-     esta instalação não tem como falar com o emissor. O que o smoke registra é
-     qual dos dois caminhos aconteceu, para a diferença ficar visível no print. */
+  const recusou = /Recusado/i.test(textoFinal);
   await registrar(
     "documento-adulterado",
-    /Recusado/i.test(textoFinal)
+    recusou
       ? "RECUSADO — a assinatura não cobre o conteúdo"
       : "entrou como NÃO VERIFICADO (sem emissores configurados, não há o que conferir)",
   );
 
+  /* A garantia que este smoke existe para provar: ONDE HÁ VERIFICAÇÃO, um byte
+     trocado não passa. Sem `PORTABILIDADE_EMISSORES` não há o que conferir e os
+     dois caminhos caem em `nao-verificada` — aí não há o que exigir. */
+  if (conferiu && !recusou) {
+    throw new Error("a instalação confere assinatura, mas aceitou um documento adulterado");
+  }
+
   console.log("\n--- passos ---");
   passos.forEach((linha) => console.log(linha));
-  console.log("\nerros de console:", erros.length ? erros : "nenhum");
+  /* O 400 da recusa é o comportamento sendo exercido, não um defeito: sai da
+     lista para uma regressão de verdade não se esconder no meio dele. */
+  const inesperados = erros.filter((e) => !/status of 400/.test(e));
+  console.log("\nerros de console:", inesperados.length ? inesperados : "nenhum");
+  if (erros.length !== inesperados.length) {
+    console.log("  (o 400 da importação recusada é esperado)");
+  }
   console.log(`prints em ${OUT}/`);
 } finally {
   await browser.close();

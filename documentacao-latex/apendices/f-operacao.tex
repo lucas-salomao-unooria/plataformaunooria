@@ -252,31 +252,37 @@ testado no container} &
   a única chave que reconhece a criança. Preencha o CPF em
   \rota{/admin/usuarios} e emita de novo.\\
 \textbf{Todo perfil importado entra \enquote{não verificado}} &
-  \env{PORTABILIDADE\_EMISSORES} vazia --- e é o default. Sem emissores
-  configurados a api não busca JWKS nenhum, e marcar visivelmente é melhor que
-  recusar. Em dev isso é permanente: o hub é \cd{http}, e só \cd{https} é
-  buscado.\\
-\zebra \textbf{A emissão responde 503} &
+  \env{PORTABILIDADE\_EMISSORES} vazia, ou a origem do documento não está nela.
+  Sem emissores configurados a api não busca JWKS nenhum, e marcar visivelmente é
+  melhor que recusar. \textbf{Em contêiner, a entrada precisa apontar o JWKS}:
+  \cd{http://localhost:3000=http://hub:3000/.well-known/jwks.json} --- o
+  \cd{emissor.hub} do documento é o endereço do navegador, e de dentro da api
+  \cd{localhost:3000} é ela mesma. É o \emph{default} do \arq{docker-compose.dev.yml}.\\
+\zebra \textbf{\enquote{em produção o JWKS só é buscado por https}} &
+  A entrada da allowlist aponta para \cd{http}. Fora de produção isso é aceito
+  (com aviso no \emph{log}); em produção, não --- chave pública por canal
+  reescrevível não prova nada.\\
+\textbf{A emissão responde 503} &
   Falta \env{CONTRATO\_ID} no hub. Documento cujo emissor não se identifica não
   vale nada no destino, que precisa dele para achar o JWKS e para dizer de quem
   veio.\\
-\textbf{\enquote{Não há aluno com este CPF nesta rede}} &
+\zebra \textbf{\enquote{Não há aluno com este CPF nesta rede}} &
   O documento não cria pessoa. Matricule a criança primeiro (planilha ou
   OneRoster) e importe o perfil depois --- a matrícula é ato da escola.\\
-\zebra \textbf{O item \enquote{Minhas escolas} não aparece na navegação} &
+\textbf{O item \enquote{Minhas escolas} não aparece na navegação} &
   A pessoa tem UMA lotação. O panorama é a tela de quem administra várias
   unidades; com uma escola ele seria uma linha só, e item de menu que não leva a
   nada é pior que item nenhum.\\
-\textbf{O admin do contrato abre uma tela de escola e ela vem vazia} &
+\zebra \textbf{O admin do contrato abre uma tela de escola e ela vem vazia} &
   Falta \cd{?escolaId=} na URL. O \emph{token} dele não tem escola (é a exceção
   cross-escola), então a tela precisa dizer qual --- e o caminho que já leva o
   parâmetro é \rota{/admin/escolas}, pelos botões \enquote{Turmas} e
   \enquote{Pessoas}.\\
-\zebra \textbf{\enquote{Nenhum período letivo cadastrado} ao importar ou criar turma} &
+\textbf{\enquote{Nenhum período letivo cadastrado} ao importar ou criar turma} &
   Banco novo, ou virada de ano sem o período criado. Turma vive DENTRO de um
   período letivo: o caminho é \rota{/admin/periodos-letivos}. O \emph{seed} cria
   o do ano corrente; um ambiente novo sem \emph{seed} não tem nenhum.\\
-\textbf{Turma nova nasceu no ano errado} &
+\zebra \textbf{Turma nova nasceu no ano errado} &
   \cd{vigente} é derivado das DATAS. Se nenhum período contém hoje, a plataforma
   cai no mais recente para não travar --- e a tela do ano letivo avisa isso em
   faixa. Corrija as datas em vez de criar outro período.\\

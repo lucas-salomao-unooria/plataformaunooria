@@ -137,13 +137,17 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \env{PLANOS\_IMPORT\_TOKEN} & \textbf{fecha (503)} & Cabeçalho
   \cd{x-import-token} do \emph{script} de importação de referências
   curriculares.\\
-\zebra \env{PORTABILIDADE\_EMISSORES} & degrada & As origens \cd{https} cujo
-  JWKS a api pode buscar para conferir um perfil portátil que veio de outra
-  rede. O \cd{emissor.hub} vem de DENTRO do arquivo, ou seja, de um
-  desconhecido: sem esta lista a api sairia buscando a URL que um arquivo
-  mandou. Vazia = nenhum documento é verificado e todos entram marcados
-  \cd{nao-verificada} --- não é fechar a rota, porque isso recusaria um direito
-  do titular (\adrr{ADR-35}).\\
+\zebra \env{PORTABILIDADE\_EMISSORES} & degrada & De quem a api aceita conferir
+  um perfil portátil. O \cd{emissor.hub} vem de DENTRO do arquivo, ou seja, de um
+  desconhecido: sem esta lista a api sairia buscando a URL que um arquivo mandou
+  (SSRF). O documento \textbf{seleciona} entre estas origens; nunca introduz uma.
+  Cada entrada é \cd{origem} ou \cd{origem=urlDoJwks} --- a segunda porque o
+  \cd{emissor.hub} é o endereço do \textbf{navegador} (mesma distinção de
+  \env{EXP\_INTERNAL\_HOST}): de dentro do contêiner, \cd{localhost:3000} é a
+  própria api. JWKS por \cd{http} só fora de produção, com aviso no \emph{log}.
+  Vazia = nenhum documento é verificado e todos entram \cd{nao-verificada} ---
+  não é fechar a rota, porque isso recusaria um direito do titular
+  (\adrr{ADR-35}).\\
 \bottomrule
 \end{tabularx}
 

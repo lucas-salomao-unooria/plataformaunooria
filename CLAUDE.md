@@ -170,9 +170,19 @@ instalar a plataforma, o mesmo arquivo continua legível.
 - **Assinatura inválida é RECUSA; emissor inalcançável é rótulo.** A classificação
   é pelo `code` da jose, NUNCA pelo texto: "signature verification failed" contém
   "failed", e uma versão anterior classificava documento FORJADO como "não deu
-  para conferir". `PORTABILIDADE_EMISSORES` (origens https) é allowlist contra
-  SSRF — o `emissor.hub` vem de dentro do arquivo. Vazia = tudo entra
-  `nao-verificada`, e a tela sai em âmbar.
+  para conferir".
+- **`PORTABILIDADE_EMISSORES` é a decisão de confiança**, não o esquema da URL: o
+  `emissor.hub` vem de dentro do arquivo, então o documento **seleciona** entre
+  origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia =
+  tudo entra `nao-verificada`, e a tela sai em âmbar.
+  Cada entrada é `origem` ou **`origem=urlDoJwks`** — a segunda forma pelo mesmo
+  motivo do `EXP_INTERNAL_HOST`: o `emissor.hub` é o endereço do NAVEGADOR, e de
+  dentro do container da api `localhost:3000` é a própria api. É o default do
+  `docker-compose.dev.yml`
+  (`http://localhost:3000=http://hub:3000/.well-known/jwks.json`), e é o que faz o
+  caminho criptográfico ser exercível em dev — sem ele o smoke registrava o
+  caminho degradado como se fosse o normal. **JWKS por http só FORA de produção**,
+  com aviso no log; em produção, https ou nada.
 - **O que vem de fora NUNCA se mistura**: vive só em `perfis_portateis`, não vira
   matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de
   outra instalação, possivelmente de outra `VERSAO_MAPEAMENTO`.

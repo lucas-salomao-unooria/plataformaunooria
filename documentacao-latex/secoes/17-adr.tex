@@ -1525,8 +1525,10 @@ Quatro decisões dentro dessa:
     por isso o JWS cobre o \emph{hash} canônico e o documento fica legível ao
     lado.
   \item \emph{Buscar o JWKS de qualquer emissor}: o \cd{emissor.hub} vem de
-    dentro do arquivo, ou seja, de um desconhecido --- seria SSRF. Só origens em
-    \env{PORTABILIDADE\_EMISSORES}, e só \cd{https}.
+    dentro do arquivo, ou seja, de um desconhecido --- seria SSRF. A allowlist
+    \env{PORTABILIDADE\_EMISSORES} é a decisão de confiança: o documento
+    \textbf{seleciona} entre origens que o operador escreveu, e nunca introduz
+    uma URL.
 \end{itemize}
 
 \textbf{Consequências.}
@@ -1545,15 +1547,25 @@ Quatro decisões dentro dessa:
     TODO documento entrar como \cd{nao-verificada}. Degradar visivelmente é
     melhor que recusar o direito do titular --- e a tela sai em âmbar, não em
     verde.
-  \item \emph{Ruim}: em desenvolvimento o hub é \cd{http}, e a regra de só buscar
-    JWKS por \cd{https} (que não se afrouxa) torna o caminho criptográfico
-    impossível de exercitar no navegador. Ele é coberto por teste, com as chaves
-    injetadas --- e foi esse teste que pegou o pior erro possível deste recurso:
-    a classificação do erro olhava o TEXTO da exceção, e a palavra
-    \enquote{failed} de \enquote{signature verification failed} caía na regra de
-    erro de rede. Documento FORJADO entraria marcado \enquote{não deu para
-    conferir} em vez de recusado. Hoje a classificação é pelo \cd{code} da
-    biblioteca.
+  \item \textbf{A entrada da allowlist pode apontar o JWKS}
+    (\cd{origem=urlDoJwks}), e é isso que torna o caminho criptográfico
+    exercitável fora de produção. O \cd{emissor.hub} do documento é o endereço do
+    \textbf{navegador} --- a mesma distinção de \env{EXP\_INTERNAL\_HOST}, e pela
+    mesma razão: de dentro do contêiner da api, \cd{localhost:3000} é a própria
+    api. A regra de canal passou a valer sobre a URL do JWKS: \cd{https} sempre,
+    exceto \textbf{fora de produção}, onde \cd{http} é aceito e avisado no
+    \emph{log} (quem escreveu a entrada foi o operador, no servidor, e o tráfego
+    não sai da máquina). Em produção, \cd{http} é recusado --- a chave pública
+    viria por um canal que qualquer um reescreve.
+  \item Sem isso, a garantia mais importante do recurso --- documento adulterado
+    é RECUSADO --- não teria prova no ambiente onde se trabalha todo dia, e o
+    \emph{smoke} visual registrava o caminho degradado como se fosse o normal.
+  \item O caminho criptográfico é coberto por teste com as chaves injetadas, e
+    foi esse teste que pegou o pior erro possível deste recurso: a classificação
+    do erro olhava o TEXTO da exceção, e a palavra \enquote{failed} de
+    \enquote{signature verification failed} caía na regra de erro de rede.
+    Documento FORJADO entraria marcado \enquote{não deu para conferir} em vez de
+    recusado. Hoje a classificação é pelo \cd{code} da biblioteca.
   \item \emph{Ruim}: reemitir gera outro documento, e a escola de destino pode
     acabar com dois do mesmo aluno. A lista mostra data \emph{e hora} e permite
     apagar; unificar por conteúdo esconderia que foram duas emissões.

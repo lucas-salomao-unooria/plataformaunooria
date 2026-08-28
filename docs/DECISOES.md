@@ -183,3 +183,15 @@
    olhava o TEXTO da exceção, e a palavra "failed" de "signature verification
    failed" caía na regra de erro de rede — documento **forjado** entraria marcado
    "não deu para conferir" em vez de recusado. Hoje classifica pelo `code`.
+   *Correção (mesmo dia):* a regra de canal era "JWKS só por https", e isso
+   tornava o caminho criptográfico impossível de exercer em dev — o hub é http, e
+   pior: o `emissor.hub` do documento é o endereço do NAVEGADOR, então de dentro
+   do container da api `localhost:3000` é a própria api. A garantia mais
+   importante do recurso (documento adulterado = RECUSADO) ficava sem prova no
+   ambiente de trabalho, e o smoke registrava o caminho degradado como se fosse o
+   normal. Agora cada entrada da allowlist pode apontar o JWKS
+   (`origem=urlDoJwks`, mesma distinção do `EXP_INTERNAL_HOST`), e http é aceito
+   **fora de produção** com aviso no log — quem escreveu a entrada foi o operador,
+   no servidor, e o tráfego não sai da máquina. Em produção, https ou nada. O que
+   protege contra SSRF continua sendo a allowlist, não o esquema: o documento
+   seleciona entre origens declaradas e nunca introduz uma.

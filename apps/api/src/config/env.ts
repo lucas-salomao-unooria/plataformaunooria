@@ -6,6 +6,11 @@ import { z } from "zod";
  * não em runtime no meio de uma requisição.
  */
 export const EnvSchema = z.object({
+  // Lido pela verificação do perfil portátil, que só aceita JWKS por http fora
+  // de produção. Fica no schema em vez de `process.env` solto porque a regra da
+  // casa é Zod em TODO input externo, env incluído.
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+
   DATABASE_URL: z.string().startsWith("postgresql://"),
 
   // Emissor dos tokens que a api aceita. A api não sabe quem é o emissor: só

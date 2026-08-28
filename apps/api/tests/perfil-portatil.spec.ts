@@ -251,6 +251,8 @@ describe("verificação da assinatura", () => {
     let assinar: (hash: string) => Promise<string>;
     let chaves: ResolvedorDeChaves;
     let outraChave: ResolvedorDeChaves;
+    let chavesQueAnotam: ResolvedorDeChaves;
+    let urlPedida = "";
 
     beforeAll(async () => {
       const par = await generateKeyPair("RS256");
@@ -264,11 +266,18 @@ describe("verificação da assinatura", () => {
           .sign(par.privateKey);
       chaves = () => (async () => par.publicKey) as never;
       outraChave = () => (async () => outroPar.publicKey) as never;
+      /* O resolvedor recebe a URL do JWKS, não a origem: é o que permite ao
+         operador apontar para um endereço interno (o caso do contêiner). */
+      urlPedida = "";
+      chavesQueAnotam = (url) => {
+        urlPedida = url;
+        return (async () => par.publicKey) as never;
+      };
     });
 
     test("documento íntegro e assinado: VERIFICADA", async () => {
       const jws = await assinar(hashDoPerfil(perfil));
-      expect(await verificarAssinatura(perfil, jws, EMISSOR, chaves)).toEqual({
+      expect(await verificarAssinatura(perfil, jws, EMISSOR, { chaves })).toEqual({
         estado: "verificada",
       });
     });
@@ -276,7 +285,7 @@ describe("verificação da assinatura", () => {
     test("um byte trocado no documento: INVÁLIDA, e a importação recusa", async () => {
       const jws = await assinar(hashDoPerfil(perfil));
       const adulterado = { ...perfil, titular: { ...perfil.titular, nome: "Outra Criança" } };
-      const v = await verificarAssinatura(adulterado, jws, EMISSOR, chaves);
+      const v = await verificarAssinatura(adulterado, jws, EMISSOR, { chaves });
       expect(v.estado).toBe("invalida");
       expect(v).toHaveProperty("motivo", expect.stringContaining("não corresponde"));
     });
@@ -287,7 +296,52 @@ describe("verificação da assinatura", () => {
        conferir" em vez de recusado. Hoje a classificação é pelo `code`. */
     test("assinado por outra chave: INVÁLIDA, e não 'não deu para conferir'", async () => {
       const jws = await assinar(hashDoPerfil(perfil));
-      expect((await verificarAssinatura(perfil, jws, EMISSOR, outraChave)).estado).toBe("invalida");
+      expect((await verificarAssinatura(perfil, jws, EMISSOR, { chaves: outraChave })).estado).toBe(
+        "invalida",
+      );
+    });
+
+    /**
+     * O `emissor.hub` do documento é o endereço do NAVEGADOR. De dentro do
+     * contêiner da api, `localhost:3000` é a própria api — mesma distinção de
+     * `EXP_INTERNAL_HOST`. A entrada `origem=urlDoJwks` é o que torna o caminho
+     * criptográfico exercitável fora de produção.
+     */
+    test("a entrada pode apontar o JWKS para um endereço interno", async () => {
+      const jws = await assinar(hashDoPerfil(perfil));
+      const v = await verificarAssinatura(
+        perfil,
+        jws,
+        `${EMISSOR}=http://api-interna:3000/.well-known/jwks.json`,
+        { chaves: chavesQueAnotam },
+      );
+      expect(v).toEqual({ estado: "verificada" });
+      expect(urlPedida).toBe("http://api-interna:3000/.well-known/jwks.json");
+    });
+
+    test("http no JWKS: aceito fora de produção, com aviso", async () => {
+      const jws = await assinar(hashDoPerfil(perfil));
+      const avisos: string[] = [];
+      const v = await verificarAssinatura(
+        perfil,
+        jws,
+        `${EMISSOR}=http://hub:3000/.well-known/jwks.json`,
+        { chaves, avisar: (m) => avisos.push(m) },
+      );
+      expect(v.estado).toBe("verificada");
+      expect(avisos.join(" ")).toContain("http");
+    });
+
+    test("http no JWKS: RECUSADO em produção — chave pública por canal reescrevível", async () => {
+      const jws = await assinar(hashDoPerfil(perfil));
+      const v = await verificarAssinatura(
+        perfil,
+        jws,
+        `${EMISSOR}=http://hub:3000/.well-known/jwks.json`,
+        { chaves, producao: true },
+      );
+      expect(v.estado).toBe("nao-verificada");
+      expect(v).toHaveProperty("motivo", expect.stringContaining("https"));
     });
 
     test("assinatura de token de EXPERIÊNCIA não vale como perfil: `aud` separa os usos", async () => {
@@ -298,24 +352,34 @@ describe("verificação da assinatura", () => {
         .setAudience("plataforma-api")
         .setIssuedAt()
         .sign(par.privateKey);
-      const v = await verificarAssinatura(
-        perfil,
-        deOutroUso,
-        EMISSOR,
-        () => (async () => par.publicKey) as never,
-      );
+      const v = await verificarAssinatura(perfil, deOutroUso, EMISSOR, {
+        chaves: () => (async () => par.publicKey) as never,
+      });
       expect(v.estado).toBe("invalida");
     });
   });
 
-  test("emissor em http não é verificável: chave pública por canal reescrevível não prova nada", async () => {
+  /* Quem decide a confiança é a ALLOWLIST, não o esquema do `emissor.hub`: o
+     documento SELECIONA entre origens que o operador escreveu, e nunca introduz
+     uma URL. O esquema é regra de CANAL, e vale sobre a URL do JWKS — ver os
+     dois testes de http mais abaixo. */
+  test("origem que não está na lista não é buscada, mesmo sendo https", async () => {
     const v = await verificarAssinatura(
-      { ...perfilBase, emissor: { ...perfilBase.emissor, hub: "http://hub.outra.gov.br" } },
+      { ...perfilBase, emissor: { ...perfilBase.emissor, hub: "https://hub.impostor.gov.br" } },
       "a.b.c",
-      "http://hub.outra.gov.br",
+      "https://hub.outra.gov.br",
     );
     expect(v.estado).toBe("nao-verificada");
-    expect(v).toHaveProperty("motivo", expect.stringContaining("https"));
+    expect(v).toHaveProperty("motivo", expect.stringContaining("não está entre os emissores"));
+  });
+
+  test("emissor sem URL válida no documento não vira busca nenhuma", async () => {
+    const v = await verificarAssinatura(
+      { ...perfilBase, emissor: { ...perfilBase.emissor, hub: "nao-e-uma-url" } },
+      "a.b.c",
+      "https://hub.outra.gov.br",
+    );
+    expect(v.estado).toBe("nao-verificada");
   });
 });
 

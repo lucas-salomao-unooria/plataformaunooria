@@ -154,6 +154,13 @@ services:
     environment:
       <<: *dev-env
       DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+      # PERFIL PORTÁTIL: de quem esta instalação aceita conferir assinatura.
+      # A forma `origem=urlDoJwks` existe porque o `emissor.hub` do documento é o
+      # endereço do NAVEGADOR — mesma distinção de EXP_INTERNAL_HOST: de dentro
+      # deste contêiner, `localhost:3000` é a própria api, e o hub é `hub:3000`.
+      # Sem isto o caminho criptográfico (documento adulterado = RECUSADO) não
+      # teria como ser exercido em dev. http só é aceito fora de produção.
+      PORTABILIDADE_EMISSORES: ${PORTABILIDADE_EMISSORES:-http://localhost:3000=http://hub:3000/.well-known/jwks.json}
       # O emissor dos tokens é o HUB: o `issuer` é a origem que o BROWSER usa,
       # mas o JWKS é buscado pela rede do compose (nome do serviço).
       OIDC_ISSUER: http://localhost:3000

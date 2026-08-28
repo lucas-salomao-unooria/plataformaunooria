@@ -217,6 +217,7 @@ export class PortabilidadeService {
       perfil,
       arquivo.assinatura,
       this.config.get<string>("PORTABILIDADE_EMISSORES"),
+      { producao: this.config.get<string>("NODE_ENV") === "production" },
     );
     if (veredito.estado === "invalida") {
       return { ok: false, erro: "assinatura-invalida", detalhe: veredito.motivo };
