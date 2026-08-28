@@ -195,6 +195,15 @@ services:
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
       CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178
+      # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
+      #
+      # LIGADA por default em dev, com credencial de dev à vista: sem as duas
+      # variáveis a rota nem é montada, e um /docs que só funciona para quem
+      # descobriu que precisa exportar env é um /docs que ninguém abre. Em
+      # produção estas variáveis vêm do Secret Manager (docs/INFRA.md) e a senha
+      # NÃO é esta — o boot exige 16 caracteres, e as duas andam juntas.
+      SWAGGER_USUARIO: ${SWAGGER_USUARIO:-docs}
+      SWAGGER_SENHA: ${SWAGGER_SENHA:-unooria-docs-local}
       PORT: "3001"
     ports:
       - "3001:3001"

@@ -156,7 +156,11 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
   401/503 porque a existência delas já é pública; aqui o ativo protegido É o mapa
   das rotas, e um 401 confirmaria que ele está atrás daquela porta. \textbf{Meia
   credencial derruba a subida}: uma porta que não abre com alguém achando que
-  configurou a documentação é pior que nenhuma (\adrr{ADR-36}).\\
+  configurou a documentação é pior que nenhuma (\adrr{ADR-36}).
+  Em \emph{dev} os dois \emph{compose} trazem um default (\cd{docs} /
+  \cd{unooria-docs-local}) --- sem ele o \rota{/docs} só funcionaria para quem
+  descobrisse que precisa exportar variável, isto é, para ninguém. Em produção
+  vêm do Secret Manager.\\
 \bottomrule
 \end{tabularx}
 

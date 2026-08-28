@@ -432,7 +432,10 @@ primeira — a armadilha do `expires_at`.
   do problema, nunca o valor: a resposta desta api tem nome de criança e CPF.
 - **Senha: `SWAGGER_USUARIO` + `SWAGGER_SENHA` (mín. 16).** Ausentes ⇒ a rota
   **não é montada** e o 404 é do roteador — não 401, que confirmaria o mapa.
-  Meia credencial derruba a subida.
+  Meia credencial derruba a subida. Nos dois compose há default de DEV
+  (`docs` / `unooria-docs-local`): sem ele o `/docs` só funcionaria para quem
+  descobrisse que precisa exportar env, ou seja, para ninguém. Em produção as
+  duas vêm do Secret Manager (`{contrato}-swagger-senha`).
 - **A trava é `tests/openapi-cobertura.spec.ts`**: percorre o roteador e cobra
   `@Contrato` de toda rota, salvo as da lista `SEM_CONTRATO_AINDA`, **que só
   encolhe**. Cada commit cobre um módulo (`<modulo>/contrato-de-rotas.ts` — o
@@ -878,7 +881,9 @@ pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
 npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
 node scripts/gerar-endpoints-tex.mjs                            # apendices/c-endpoints.tex A PARTIR do openapi.json
-SWAGGER_USUARIO=doc SWAGGER_SENHA=<16+ chars> pnpm dev          # liga /docs em localhost:3001/docs (na API, não no hub)
+# /docs já vem LIGADO no docker:dev — http://localhost:3001/docs (docs / unooria-docs-local).
+# No host (`pnpm dev`) as envs não existem e a rota some; exporte-as para ligar:
+SWAGGER_USUARIO=docs SWAGGER_SENHA=unooria-docs-local pnpm dev
 SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
