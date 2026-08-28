@@ -444,8 +444,12 @@ primeira — a armadilha do `expires_at`.
   `perfis`, `analise`, `unoogpt`, `atividades`, `geracao`, `motor` (runs/posts).
   **As 146 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
   fica vermelha.
-- Gerar o arquivo: `npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts`.
-  Quando a lista zerar, `apendices/c-endpoints.tex` passa a ser GERADO dele.
+- **`docs/openapi.json` é versionado** e o **apêndice C do LaTeX é GERADO dele**
+  (`scripts/gerar-endpoints-tex.mjs`) — eram 547 linhas de prosa à mão que nada
+  obrigava a concordar com o código. A coluna de autorização do apêndice vem das
+  extensões `x-papeis`/`x-acesso` do documento, nunca de parsing da descrição:
+  gerador que lê a própria prosa quebra em silêncio na primeira reescrita da
+  frase. Mudou rota? Regere os dois e recompile o PDF.
 
 ### Provider de IA (`apps/api/src/ai/provider.ts`)
 Interface única `AiProvider { generate(req): Promise<AiResult> }`. Implementações:
@@ -872,7 +876,8 @@ pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
 pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
 pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
-npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # escreve o documento OpenAPI (roda da pasta apps/api)
+npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
+node scripts/gerar-endpoints-tex.mjs                            # apendices/c-endpoints.tex A PARTIR do openapi.json
 SWAGGER_USUARIO=doc SWAGGER_SENHA=<16+ chars> pnpm dev          # liga /docs em localhost:3001/docs (na API, não no hub)
 SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)

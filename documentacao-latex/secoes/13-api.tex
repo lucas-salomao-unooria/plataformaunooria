@@ -362,8 +362,22 @@ que o acesso declarado bate com os \emph{guards} que a rota realmente tem
 de pendências não guarda rota que já não existe. Rota nova sem contrato fica
 vermelha.
 
-\textbf{Gerar o arquivo:}
+\textbf{O documento e o Apêndice~\ref{ap:endpoints} são GERADOS.} O
+\arq{docs/openapi.json} é versionado no repositório --- é o artefato que um
+cliente ou um edital consome sem precisar subir a plataforma --- e o catálogo de
+\emph{endpoints} sai dele, não mais de prosa escrita à mão.
 
-\begin{lstlisting}[language=bashunoo, caption={Gerar o documento OpenAPI}]
-npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts [destino]
+\begin{lstlisting}[language=bashunoo, caption={Regerar o documento e o apêndice}]
+npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts
+node scripts/gerar-endpoints-tex.mjs
+cd documentacao-latex && ./compilar.sh
 \end{lstlisting}
+
+\begin{nota}
+A coluna de autorização do apêndice vem das extensões \cd{x-papeis} e
+\cd{x-acesso} que o documento carrega, e não da prosa da descrição. Um gerador
+que fizesse \emph{parsing} do próprio texto procurando
+\enquote{\textbf{Papéis:}} quebraria na primeira vez que alguém reescrevesse a
+frase --- e quebraria em silêncio, produzindo uma tabela de autorização errada,
+que é o pior defeito possível num catálogo de rotas.
+\end{nota}

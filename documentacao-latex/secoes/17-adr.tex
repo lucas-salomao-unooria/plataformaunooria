@@ -1655,14 +1655,19 @@ Três decisões dentro dessa:
     recursiva grande, mesmo quando \cd{target: "openApi3"} resolve para
     \cd{object}. O módulo fixa localmente a assinatura que usa. Some quando a
     biblioteca simplificar o retorno.
-  \item \textbf{A entrega é em etapas, com lista que só encolhe.} Documentar 146
-    rotas num commit seria um \emph{diff} que ninguém revisa, e uma resposta mal
-    descrita passaria batida. \cd{tests/openapi-cobertura.spec.ts} percorre o
+  \item \textbf{A entrega foi em etapas, com lista que só encolhe.} Documentar
+    146 rotas num commit seria um \emph{diff} que ninguém revisa, e uma resposta
+    mal descrita passaria batida. \cd{tests/openapi-cobertura.spec.ts} percorre o
     roteador e cobra \cd{@Contrato} de toda rota, salvo as nomeadas numa lista
     explícita --- o mesmo molde do \cd{SEM\_CHAVE\_POR\_DECISAO} de
     \cd{identidade-unica.spec.ts}, com a diferença de que aquelas exceções são
-    permanentes e estas são dívida. Rota NOVA sem contrato fica vermelha desde o
-    primeiro dia.
+    permanentes e estas eram dívida. \textbf{A lista está vazia}: as 146 rotas
+    declaram contrato, e rota nova sem ele é teste vermelho.
+  \item \textbf{O Apêndice~\ref{ap:endpoints} deixou de ser escrito à mão.} Ele
+    é gerado do \arq{docs/openapi.json}, que é gerado do \cd{@Contrato}. Eram
+    547 linhas de prosa descrevendo 146 rotas sem que nada obrigasse essa prosa a
+    concordar com o código --- exatamente o defeito que esta ADR existe para
+    fechar, e que teria sobrevivido dentro do próprio documento que a registra.
 \end{itemize}
 
 \textbf{Gatilho de reavaliação.} Subir para Zod 4, que traz

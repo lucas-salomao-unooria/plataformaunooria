@@ -63,9 +63,19 @@ function descricaoDaOperacao(rota: RotaDescoberta): string {
   return partes.join("\n\n");
 }
 
-function montarOperacao(rota: RotaDescoberta, atual: OperationObject): OperationObject {
+/**
+ * `OperationObject` do swagger não conhece as extensões `x-`, embora o OpenAPI
+ * as permita em qualquer objeto. O tipo local acrescenta as duas que usamos —
+ * sem `any`, e sem afrouxar o resto da operação.
+ */
+type OperacaoComExtensoes = OperationObject & {
+  "x-papeis": string[];
+  "x-acesso": string;
+};
+
+function montarOperacao(rota: RotaDescoberta, atual: OperationObject): OperacaoComExtensoes {
   const c = rota.contrato;
-  if (!c) return atual;
+  if (!c) return { ...atual, "x-papeis": [...rota.perfis], "x-acesso": "token" };
 
   const parametros: ParameterObject[] = [];
   if (c.params) {
@@ -86,7 +96,7 @@ function montarOperacao(rota: RotaDescoberta, atual: OperationObject): Operation
   // faria o "Try it out" mostrar um corpo que nunca chega.
   const semCorpo = c.resposta instanceof ZodVoid || c.resposta instanceof ZodUndefined;
 
-  const operacao: OperationObject = {
+  const operacao: OperacaoComExtensoes = {
     ...atual,
     tags: [etiquetaDe(rota.caminho)],
     summary: c.resumo,
@@ -107,6 +117,17 @@ function montarOperacao(rota: RotaDescoberta, atual: OperationObject): Operation
     // Rota pública não carrega esquema de segurança; as de serviço e de push
     // não usam o Bearer da plataforma e são descritas na prosa.
     security: c.acesso && c.acesso !== "token" ? [] : [{ [ESQUEMA_BEARER]: [] }],
+    /**
+     * Extensões `x-`: a autorização em forma LEGÍVEL POR MÁQUINA, além da prosa.
+     *
+     * Existem para o gerador do apêndice C não ter de reler a `description`
+     * procurando "**Papéis:**". Um gerador que faz parsing da própria prosa
+     * quebra na primeira vez que alguém reescreve a frase — e quebra em
+     * silêncio, produzindo uma tabela de autorização errada, que é o pior
+     * defeito possível num catálogo de rotas.
+     */
+    "x-papeis": [...rota.perfis],
+    "x-acesso": c.acesso ?? "token",
   };
 
   if (c.corpo) {

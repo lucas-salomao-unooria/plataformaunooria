@@ -1,566 +1,433 @@
 % ===========================================================================
-%  Apendice C — Catalogo de endpoints
+%  Apendice C - Catalogo de endpoints
+%
+%  ARQUIVO GERADO. Nao edite a mao: o conteudo vem do @Contrato de cada
+%  rota, via docs/openapi.json.
+%
+%    npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts
+%    node scripts/gerar-endpoints-tex.mjs
 % ===========================================================================
 \chapter{Catálogo de \emph{endpoints}}
 \label{ap:endpoints}
 
-Todas as rotas da API, com papel autorizado. Convenções transversais e
-justificativas estão no Capítulo~\ref{cap:api}.
+Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado} a partir do \cd{@Contrato} de cada rota (\adrr{ADR-36}): a coluna de autorização vem do \cd{@Roles} real, e a semântica, do resumo e das notas declarados no \emph{controller}. Convenções transversais e justificativas estão no Capítulo~\ref{cap:api}.
 
-\begin{tabularx}{\linewidth}{@{}L{20mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
 \toprule
 \headrow \thd{Marca} & \thd{Significado}\\
 \midrule
-\emph{(sem)} & \cd{OidcGuard} apenas: qualquer papel autenticado.\\
-\zebra \cd{papel} & \cd{@Roles(...)} restringe aos papéis listados.\\
-\textbf{público} & Sem \emph{guard}. Apenas \rota{/healthz} e \rota{/readyz}.\\
-\zebra \textbf{serviço} & Chave em cabeçalho; \textbf{503} se a variável estiver
-  ausente.\\
-\textbf{push} & \cd{PubSubPushGuard}; \textbf{401} se as variáveis estiverem
-  ausentes.\\
+\cd{papel} & \cd{@Roles(...)} restringe aos papéis listados.\\
+\zebra \emph{(qualquer)} & \cd{OidcGuard} apenas: qualquer papel autenticado.\\
+\textbf{público} & Sem \emph{guard}, deliberadamente.\\
+\zebra \textbf{serviço} & Chave em cabeçalho; \textbf{503} se a variável estiver ausente.\\
+\textbf{push} & \cd{PubSubPushGuard}; \textbf{401} se as variáveis estiverem ausentes.\\
+\zebra \textbf{token no corpo} & O \emph{token} vai no corpo, não no cabeçalho --- \cd{sendBeacon} não manda cabeçalho.\\
 \bottomrule
 \end{tabularx}
 
-\section{Sanidade}
+\section{ai}
 
-\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /healthz} & \textbf{público} & O processo está vivo. Não toca no banco:
-  é a sonda que decide reiniciar o contêiner, e um Postgres lento derrubaria um
-  processo saudável.\\
-\zebra \rota{GET /readyz} & \textbf{público} & As dependências estão prontas
-  (banco). Banco fora responde \textbf{503}, não \cd{ok: false}.\\
+\endhead
+\rota{POST /\allowbreak{}ai/\allowbreak{}gerar} & \emph{(qualquer)} & Conversa com o tutor de IA da experiência.\par Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo \cd{expId} e \textbf{nunca sai daqui} --- segredo em bundle de experiência é regra 2.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Quota diária POR PERFIL (\cd{AI\_\allowbreak{}DAILY\_\allowbreak{}TOKEN\_\allowbreak{}QUOTA\_\allowbreak{}PER\_\allowbreak{}ALUNO} / \cd{\_\allowbreak{}PROFESSOR}), persistida em \cd{ia\_\allowbreak{}uso\_\allowbreak{}diario}: \cd{temSaldo} ANTES, \cd{consumir} depois. Sem saldo, \textbf{429}.\par \hspace*{1em}\textbullet{} A série do aluno vai ao prompt a partir do TOKEN, não do corpo.\\
 \bottomrule
 \end{tabularx}
 
-\section{Documentação}
+\section{alunos}
 
-\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /docs} & \textbf{Basic} & Documentação OpenAPI navegável (Swagger UI),
-  derivada dos \emph{schemas} Zod das próprias rotas (\adrr{ADR-36}).\\
-\zebra \rota{GET /docs-json} & \textbf{Basic} & O mesmo documento em JSON.\\
+\endhead
+\rota{GET /\allowbreak{}alunos/\allowbreak{}\{id\}/\allowbreak{}historico} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & O histórico do aluno ATRAVESSANDO escolas.\par A única leitura fora de \cd{admin-contrato} que atravessa escolas --- e por isso é uma porta só. Alcança apenas quem tem lotação na escola \textbf{onde o aluno está HOJE}: é a unidade responsável por ele.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Devolve PARTICIPAÇÕES, \textbf{nunca o conteúdo dos instrumentos}: o retrato de valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem tem a posse pedagógica na escola onde aquilo aconteceu.\par \hspace*{1em}\textbullet{} A escola de HOJE é a PRIMEIRA da lista \cd{escolas} --- a tela imprime nessa ordem, e a primeira linha é a que o adulto lê como \enquote{a escola dela}.\\
+\zebra \rota{GET /\allowbreak{}alunos/\allowbreak{}\{id\}/\allowbreak{}perfil-portatil} & \cd{gestor}, \cd{admin-contrato} & Monta o documento SEM assinatura, para o hub assinar.\par A api monta; \textbf{o hub assina}, porque é ele que tem a chave e publica o JWKS. Os campos \cd{emissor} e \cd{emitidoEm} são preenchidos na assinatura, e por isso não vêm daqui.\par Transferir é dentro do contrato; o perfil portátil é para FORA dele --- a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto \adrr{ADR-35}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Mesma tranca de \cd{GET /\allowbreak{}alunos/\allowbreak{}:id/\allowbreak{}historico}: quem pede precisa de lotação na escola onde a criança está HOJE.\par \hspace*{1em}\textbullet{} \textbf{Sem CPF não há perfil portátil} (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\par \hspace*{1em}\textbullet{} Bem-estar (exp-91) \textbf{nunca} entra: documento que o gestor emite não carrega o que nem o gestor lê.\par \hspace*{1em}\textbullet{} Sem \cd{CONTRATO\_\allowbreak{}ID} no hub, a emissão é \textbf{503}.\\
+\rota{GET /\allowbreak{}alunos/\allowbreak{}\{id\}/\allowbreak{}perfis-recebidos} & \cd{gestor}, \cd{admin-contrato} & Os documentos que esta escola já recebeu sobre esta criança.\par Contagens, não conteúdo: a tela diz o que veio sem despejar o documento inteiro.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} O que vem de fora vive SÓ em \cd{perfis\_\allowbreak{}portateis}: não vira matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de outra instalação.\\
+\zebra \rota{POST /\allowbreak{}alunos/\allowbreak{}\{id\}/\allowbreak{}transferir} & \cd{gestor}, \cd{admin-contrato} & Transfere o aluno entre escolas da rede.\par A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. \cd{admin-contrato} pode mover para qualquer uma.\par \textbf{O dado que o aluno produziu NÃO se move} --- continua com o \cd{escola\_\allowbreak{}id} de onde aconteceu, que é verdade histórica. O que segue o aluno é a identidade \adrr{ADR-32}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} É a única operação que troca o \cd{app.escola\_\allowbreak{}id} no MEIO de uma transação: sem isso o update na origem não veria linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.\par \hspace*{1em}\textbullet{} \cd{jaEstava: true} quando o destino já era a escola atual --- nada foi movido.\\
 \bottomrule
 \end{tabularx}
 
-\textbf{Sem \env{SWAGGER\_USUARIO}/\env{SWAGGER\_SENHA} as duas rotas não existem}
---- e quem responde é o 404 do roteador, não um 401 (Apêndice~\ref{ap:envs}). A
-credencial cobre também os arquivos estáticos do Swagger UI, servidos debaixo de
-\rota{/docs}.
+\section{analise}
 
-\section{Autenticação}
-
-\begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /auth/login} & --- & Autentica credencial da rede. Usada pelo
-  \emph{authorize} do hub. Devolve \cd{precisaTrocarSenha} e recusa conta
-  \cd{ativo = false} com a mesma mensagem genérica.\\
-\zebra \rota{POST /auth/trocar-senha} & --- & Primeiro acesso: exige a senha
-  atual, que é a mesma prova do \emph{login} --- por isso a rota não pede
-  \emph{token}. Limpa \cd{senha\_provisoria} (\adrr{ADR-29}).\\
+\endhead
+\rota{GET /\allowbreak{}analise/\allowbreak{}atividades/\allowbreak{}\{id\}} & \cd{admin-contrato} & O detalhe de uma atividade, com a eficácia da escrita por perfil.\par \cd{eficaciaDaEscrita} é \textbf{a única métrica do sistema capaz de refutar a premissa do produto}: o dwell dos posts de um perfil entre alunos daquele perfil, menos o dwell dos MESMOS posts entre alunos de outro --- sempre com a exposição no denominador.\par Sem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do aluno) e \enquote{confirmaria} a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam --- e a gente descobre com número em vez de achismo.\\
+\zebra \rota{GET /\allowbreak{}analise/\allowbreak{}csv} & \cd{admin-contrato} & Export do nível de produto --- por run ou por evento.\par Dois níveis porque as perguntas são diferentes: \textbf{por run} responde \enquote{como as turmas se comparam}; \textbf{por evento} é a matéria-prima para quem quer recalcular tudo fora daqui, inclusive contestando as definições. Um sistema de análise que não deixa auditar o próprio cálculo não deveria ser levado a sério.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Teto de 200.000 eventos no nível \cd{evento}.\\
+\rota{GET /\allowbreak{}analise/\allowbreak{}resumo} & \cd{admin-contrato} & Uma linha por atividade --- o nível de produto.\par Guarda de papel própria: \cd{admin-contrato} não é professor nem aluno, e as guardas existentes recusariam os dois. \textbf{O professor NÃO alcança esta rota.}\\
 \bottomrule
 \end{tabularx}
 
-\section{Usuários}
+\section{atividades}
 
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /usuarios} & gestor, admin-contrato & Lista as pessoas da escola, com o
-  \textbf{CPF formatado} --- é como o gestor confere identidade contra o sistema da
-  rede (\adrr{ADR-33}). Filtros: \cd{papel}, \cd{turmaId}, \cd{situacao}
-  (\cd{ativos}$|$\cd{inativos}$|$\cd{sem-primeiro-acesso}) e \cd{busca} por nome,
-  CPF (com ou sem pontuação), \emph{login} ou matrícula da rede.\\
-\zebra \rota{PATCH /usuarios/:id} & gestor, admin-contrato & Nome, e-mail, papel,
-  \cd{ativo} e \textbf{CPF} --- corrigir CPF é caminho de balcão, e vazio APAGA o
-  campo (é o que se faz quando o número era de outra pessoa). \emph{Login} e
-  matrícula não mudam por aqui: os dois identificam a pessoa e vêm da importação.\\
-\rota{POST /usuarios/:id/reset-senha} & gestor, admin-contrato & Gera senha
-  temporária, devolvida \textbf{uma vez}, e remarca a conta como provisória.\\
-\zebra \rota{POST /usuarios/importar-csv} & gestor, admin-contrato &
-  \textbf{Compatibilidade}: delega para \rota{POST /rostering/importar}. Existe
-  porque \emph{scripts} e documentação a citam --- dois importadores lado a lado
-  divergiriam na primeira regra nova.\\
+\endhead
+\rota{GET /\allowbreak{}atividades} & \cd{professor} & As atividades DESTE professor.\par Posse por \cd{professor\_\allowbreak{}id} + \cd{escola\_\allowbreak{}id}: atividade é autoral.\\
+\zebra \rota{POST /\allowbreak{}atividades} & \cd{professor} & Cria a atividade em rascunho, com os defaults do motor.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{qtdPostsTese} precisa ser múltiplo de 8 (2 lados × 4 perfis) para a matriz fechar sem célula quebrada --- \textbf{recusar é melhor que arredondar em silêncio}. É um \cd{.refine()}, invisível no esquema.\\
+\rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}} & \cd{professor} & O detalhe de uma atividade.\par \cd{\_\allowbreak{}count} espelha o \cd{select} do Prisma da página de origem --- o porte dos painéis consome exatamente esse shape ---, e os agregados nomeados (\cd{alunos}, \cd{postsAprovados}) ficam junto.\\
+\zebra \rota{DELETE /\allowbreak{}atividades/\allowbreak{}\{id\}} & \cd{professor} & Exclui a atividade.\par Devolve o título e quantas sessões foram junto --- \enquote{pronto} sem número deixa o professor sem saber se apagou a atividade certa.\\
+\rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}alunos/\allowbreak{}\{runId\}} & \cd{professor} & Tudo o que UM aluno fez, durante a atividade.\par As interações vêm com os \textbf{salvos primeiro}: é a coleção que o aluno vai defender no debate.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{doLadoSemeado} é a definição de COERÊNCIA: o post é do lado em que o feed dele nasceu?\par \hspace*{1em}\textbullet{} \cd{nomeNoApp} é apelido dentro da ficção do Instanooria --- nunca identidade em tela de professor ou relatório.\\
+\zebra \rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}analise} & \cd{professor} & A análise pedagógica da turma --- identificada.\par É a turma DELE, e o professor precisa saber com quem falar. Só o professor DONO da atividade lê.\par A peça central é \cd{conclusaoPorLadoSemeado}: se o lado em que o feed nasceu prevê a conclusão que o aluno escreveu, o resultado experimental da turma está nessa grade --- e é ela que o professor projeta no momento-espelho. Tudo o mais na tela existe para explicar essa grade.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{imersao.total} nunca aparece sem os componentes --- regra do doc, e vale para o relatório, o monitor e a análise.\par \hspace*{1em}\textbullet{} \cd{ociosoHaMs} é \cd{null} quando a run acabou: ninguém precisa ser cutucado por estar \enquote{ocioso} num relatório.\par \hspace*{1em}\textbullet{} \cd{colecao} conta o ÚLTIMO evento por post (salvar e dessalvar se anulam); \cd{interacoes.salvos} conta eventos.\\
+\rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}analise/\allowbreak{}csv} & \cd{professor} & A mesma análise da turma, em planilha.\par O nome do arquivo sai no \cd{content-disposition}. O caminho \textbf{não} termina em \cd{.csv} porque no app de origem segmento de rota com ponto quebrava a validação de tipos do App Router --- mantido igual, porque é o path que as telas portadas chamam.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} BOM UTF-8 \textbf{e} \cd{charset=utf-8}: um sem o outro ainda quebra acento em alguma planilha.\\
+\zebra \rota{PATCH /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}antagonismo} & \cd{professor} & O professor aprova (ou reescreve) os dois lados e os neutros.\par Nada é gerado antes desta aprovação: os dois lados e as justificativas de eixo são o que decide de que lado cada aluno começa, e isso não sai da IA direto para a turma.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{forcar: true} passa por cima do medidor de equilíbrio, de propósito e explicitamente.\\
+\rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}ativar} & \cd{professor} & Ativa a atividade para os alunos entrarem.\par Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post --- e o feed daquele aluno nasceria torto.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{forcar: true} ativa com a matriz incompleta, de propósito --- e a resposta devolve \cd{forcado: true} para a tela dizer isso.\\
+\zebra \rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}destilar} & \cd{professor} & Destila a pergunta-chave e os dois lados a partir do recorte.\par O professor pode mandar a \cd{perguntaChave} pronta --- e aí \cd{perguntaOrigem} sai como \cd{professor}. Sem ela, a IA destila e a origem é \cd{ia}.\\
+\rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}distribuicao} & \cd{professor} & Onde cada aluno vai cair --- antes de começar.\par Existe para o professor \textbf{ver antes}. A distribuição de perfis varia por sala, e aí os lados nascem desequilibrados: não é defeito do sistema, é a turma --- mas o professor precisa saber antes, não descobrir no meio da aula.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{semLado} são os que caem no SORTEIO (perfil ausente ou \cd{misto}): não entram na projeção porque o lado só é decidido quando a run nasce.\par \hspace*{1em}\textbullet{} \cd{precisaRedistribuir} é \cd{desequilibrio > 0.15}.\\
+\zebra \rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}etapa} & \cd{professor} & Etapa atual e quantos alunos em cada tela.\par É com isto que o painel decide se dá para avançar a turma.\\
+\rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}etapa} & \cd{professor} & O RELÓGIO DA AULA: move a turma inteira de momento.\par Escreve a etapa na atividade e leva as runs junto. \cd{voltou: true} quando a turma RETROCEDE de etapa.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{foraDoAparelho} conta quem ficou no onboarding: não entrou e não pode ser movido.\\
+\zebra \rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}geracao/\allowbreak{}progresso} & \cd{professor} & O progresso da geração --- o alvo do polling da tela.\par As imagens são contadas em três estados porque \cd{fallback} \textbf{não é erro}: a arte procedural entra no lugar e o feed nunca fica com buraco.\\
+\rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}gerar} & \cd{professor} & Enfileira a geração dos posts.\par \textbf{Duas respostas, e a diferença importa}: \cd{retomado: true} quando havia uma geração parada no meio (nada novo foi enfileirado), e \cd{lotes: N} quando ela começou agora.\\
+\zebra \rota{PATCH /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}ia} & \cd{professor} & Liga ou desliga a IA ao vivo durante a aula.\\
+\rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}limpar} & \cd{professor} & Apaga as sessões dos alunos, mantendo a atividade e os posts.\par É o botão de rodar a mesma atividade com outra turma.\\
+\zebra \rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}monitor} & \cd{professor} & O painel da turma ao vivo.\par \textbf{`ociosoHaMs` é o único campo que pede AÇÃO} --- é o número que faz o professor levantar da cadeira. Tudo o mais é retrato.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{ladoDominante: "indefinido"} sai como \cd{neutro}: o painel não tem coluna para \enquote{ainda não dá para dizer}.\par \hspace*{1em}\textbullet{} A imersão nunca vem só com o total --- os componentes vão junto, e essa é a regra em toda tela.\\
+\rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}perfis} & \cd{professor} & O estado do perfil de cada aluno, para conferência.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{origem: "ausente"} = a criança ainda não tem perfil; ela cai no sorteio.\\
+\zebra \rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}perfis} & \cd{professor} & Importa perfis à mão --- o fallback do professor.\par Aceita \textbf{duas formas}: escores completos (colados de planilha) ou só o \cd{dominante} (seleção manual na lista). A segunda existe porque, na prática, o professor às vezes tem só o resultado final do jogo impresso.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{username} que não existe nesta escola volta em \cd{desconhecidos} --- dito, nunca engolido.\\
+\rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}perfis/\allowbreak{}da-vila} & \cd{professor} & Traz os perfis da Vila do Lume para a largada do Instanooria.\par Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com \cd{origem: "jogo"} --- é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} O colapso tem duas travas que CUSTAM alunos, de propósito: valor não observado (\cd{indicative}/\cd{none}) fica \textbf{fora da média}, nunca entra como zero; e quadrante sem nenhum membro observado \textbf{invalida o perfil inteiro}.\par \hspace*{1em}\textbullet{} Sem perfil, o Instanooria cai no sorteio balanceado --- que é honesto sobre não saber.\par \hspace*{1em}\textbullet{} Exige \cd{amostraSuficiente}: o \cd{dominante} vira coluna no CSV do \cd{/\allowbreak{}analise} ao lado da identidade da criança.\par \hspace*{1em}\textbullet{} \cd{ladoForcado} é PRESERVADO no upsert.\\
+\zebra \rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}posts} & \cd{professor} & A grade de revisão do professor, paginada e filtrável.\par A ordenação é \cd{(created\_\allowbreak{}at,\allowbreak{} id)}, e o \cd{id} \textbf{não é enfeite}: os posts entram por \cd{createMany} numa transação, então o lote inteiro compartilha o mesmo \cd{created\_\allowbreak{}at}. Com a chave empatada, \cd{LIMIT/\allowbreak{}OFFSET} não tem ordem definida --- a mesma linha vem em duas páginas e outra nunca vem (medido no app de origem: 207 de 208 visíveis, de forma reprodutível).\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} A \cd{matriz} 2×4 existe para o professor ver de relance se alguma linguagem ficou fraca: os lados podem estar 50/50 e um perfil inteiro estar vazio.\par \hspace*{1em}\textbullet{} 24 posts por página.\\
+\rota{POST /\allowbreak{}atividades/\allowbreak{}\{id\}/\allowbreak{}redistribuir} & \cd{professor} & Rebalanceia a turma quando ela cai quase toda num lado.\par Duas regras definem o comportamento:\par 1. \textbf{Move os de afinidade mais fraca primeiro} --- \cd{misto} antes de todos, depois por margem crescente. Preserva a pedagogia onde o sinal do perfil é forte. 2. \textbf{Só age em quem ainda não começou.} Trocar o lado de quem já está rolando o feed invalidaria a sessão: os scores acumulados passariam a contar para o lado errado.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{bloqueados} conta quem já começou e por isso ficou --- o rebalanceamento pode não ter chegado ao alvo, e o professor precisa saber.\par \hspace*{1em}\textbullet{} Pergunta e lados não aprovados \implica{} \textbf{409}.\\
 \bottomrule
 \end{tabularx}
 
-\section{A rede: escolas, lotações e transferência}
+\section{auth}
 
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /escolas/minhas} & todos os papéis & As escolas de QUEM PEDE. É a rota
-  que o hub usa para o seletor de escola do professor de duas unidades --- e para
-  \textbf{validar} a troca antes de assinar um \emph{token} com a escola nova.
-  Declarada antes de \rota{/escolas/:id}: no Nest a primeira rota que casa vence.\\
-\zebra \rota{GET /escolas/minhas/resumo} & prof., gestor, admin-contrato & O
-  PANORAMA de quem administra muitas unidades: uma linha por escola, com turmas,
-  alunos, professores e quantos ainda não fizeram o primeiro acesso. \textbf{Lista,
-  não soma} --- somar as escolas numa métrica só seria a tela que \adrr{ADR-34}
-  recusa.\\
-\rota{GET /escolas} & \textbf{admin-contrato} & As escolas do contrato, com
-  contagem de turmas, alunos e vínculos de professor. \cd{?busca=} por nome, id,
-  INEP ou município; \cd{?tipo=} (\cd{escola} $|$ \cd{regional} $|$ \cd{rede}),
-  \cd{?paiId=} (as unidades de uma diretoria) e \cd{?municipio=}.\\
-\rota{POST /escolas} \newline \rota{PATCH /escolas/:id} & \textbf{admin-contrato} &
-  Escola é \emph{tenant}: abrir inquilino com RLS e dados de menores por trás não é
-  operação de quem administra uma unidade (\adrr{ADR-30}).\\
-\zebra \rota{GET /escolas/:id/pessoas} & gestor, admin-contrato & Quem está lotado
-  nesta escola, por papel.\\
-\rota{POST /escolas/:id/lotacoes} & gestor, admin-contrato & Lota alguém aqui.
-  Para professor e gestor é \textbf{acréscimo}: a lotação em outra escola da rede
-  continua valendo.\\
-\zebra \rota{POST /escolas/lotacoes-em-lote} & \textbf{admin-contrato} & Lota UMA
-  pessoa em MUITAS unidades --- é assim que nasce o supervisor de uma diretoria,
-  sem papel novo e sem tocar na RLS. Recebe a \textbf{lista} de \cd{escolaIds}
-  (máx.\ 1000), nunca o critério: quem confirma precisa ver quais escolas está
-  liberando. O que não for \cd{tipo = 'escola'} é ignorado e volta no relatório.
-  Uma transação por escola (\adrr{ADR-34}).\\
-\rota{DELETE /lotacoes/:id} & gestor, admin-contrato & Encerra o vínculo
-  (grava \cd{fim}) e fecha as matrículas de turma daquela escola. Se era a
-  principal, a lotação seguinte assume --- senão \cd{users.escola\_id} apontaria
-  para onde a pessoa não está mais.\\
-\rota{POST /alunos/:id/transferir} & gestor, admin-contrato & O destino é a escola
-  de quem pede: um gestor só transfere PARA a própria unidade --- é ela que recebe
-  a criança. O dado \textbf{não} se move (\adrr{ADR-32}).\\
-\zebra \rota{GET /alunos/:id/historico} & prof., gestor, admin-contrato & A única
-  leitura fora de \cd{admin-contrato} que atravessa escolas. Exige lotação na
-  escola onde o aluno está HOJE. Devolve participações --- em que escola, turma e
-  missão, quando ---, \textbf{nunca} o conteúdo dos instrumentos.\\
+\endhead
+\rota{POST /\allowbreak{}auth/\allowbreak{}login} & \textbf{público} & Autentica uma credencial da rede.\par Consumida pelo \cd{authorize()} do NextAuth no hub --- \textbf{nunca pelo navegador}. A api é a única dona do banco; o hub não conhece hash nenhum.\par Devolve as escolas em que a pessoa tem lotação ativa: professor de rede estadual tem mais de uma, e o token carrega UMA.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Conta com \cd{ativo = false} é recusada com a MESMA mensagem genérica de senha errada --- dizer \enquote{conta desativada} confirmaria que o login existe.\par \hspace*{1em}\textbullet{} \cd{username} é único por ESCOLA, não por contrato: a senha desambigua, e empate entre escolas é recusado.\par \hspace*{1em}\textbullet{} 8 tentativas por minuto por usuário (429). Não há limite por IP: a api só enxerga o IP do hub.\\
+\zebra \rota{POST /\allowbreak{}auth/\allowbreak{}trocar-senha} & \textbf{público} & Primeiro acesso: troca a senha provisória.\par A senha do lote (ou a temporária de um reset) vale uma vez. Exige a senha ATUAL --- é o mesmo nível de prova do login, e por isso a rota não pede token.\par Limpa \cd{senha\_\allowbreak{}provisoria} \adrr{ADR-29}. O hub refaz a sessão com a senha nova depois disto: o cookie antigo ainda diz \enquote{precisa trocar}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} A senha nova precisa ser diferente da atual (400).\par \hspace*{1em}\textbullet{} 8 tentativas por minuto por usuário (429).\\
 \bottomrule
 \end{tabularx}
 
-\section{Perfil portátil --- sair da rede}
+\section{bemestar}
 
-O que a criança leva quando sai do CONTRATO, não da escola (\adrr{ADR-35}).
-Emitir é direito do titular; receber é ato da escola de destino.
-
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /alunos/:id/perfil-portatil} & gestor, admin-contrato & Monta o
-  documento SEM assinatura. Mesma tranca do histórico: lotação na escola onde a
-  criança está hoje. Sem CPF, recusa --- numa rede de destino nenhum id daqui
-  existe.\\
-\zebra \rota{GET /api/perfil-portatil/:id} & gestor, admin-contrato & Rota do
-  HUB, não da api: assina o documento e devolve o ARQUIVO
-  (\cd{Content-Disposition}). Sem \env{CONTRATO\_ID} responde 503 --- documento
-  sem emissor identificável não vale nada no destino.\\
-\rota{POST /perfis-recebidos} & gestor, admin-contrato & Recebe o documento.
-  Assinatura inválida é 400; emissor inalcançável entra como
-  \cd{nao-verificada}. Não cria aluno: liga pelo CPF a quem já está aqui.\\
-\zebra \rota{GET /alunos/:id/perfis-recebidos} & gestor, admin-contrato & O que
-  esta escola recebeu sobre esta criança, em contagens.\\
-\rota{GET /perfis-recebidos/:id} & gestor, admin-contrato & O documento
-  inteiro, como veio.\\
-\zebra \rota{DELETE /perfis-recebidos/:id} & gestor, admin-contrato & Apaga um
-  documento de fora --- importado na criança errada, ou emitido por engano.
-  Não apaga nada que esta rede tenha medido.\\
+\endhead
+\rota{POST /\allowbreak{}bemestar/\allowbreak{}checkins/\allowbreak{}\{id\}/\allowbreak{}respostas} & \cd{professor} & Responde as três frases do dia.\par No \textbf{7º} check-in a api soma por subescala (×2) e classifica pelas faixas publicadas --- correção server-side (regra 3) ---, e o ciclo fecha com \cd{resultado} preenchido.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \textbf{Sinal de apoio}: item 17 ou 21 ≥ 2, ou termo de risco no texto \implica{} mensagem FIXA (CVV 188, SAMU 192, CAPS/UBS) e \textbf{a IA não é chamada}.\par \hspace*{1em}\textbullet{} Responder duas vezes no mesmo dia é \textbf{409} com \cd{codigo: JA\_\allowbreak{}RESPONDIDO}.\par \hspace*{1em}\textbullet{} O texto livre nunca vai a log nem à telemetria --- só contagens.\\
+\zebra \rota{DELETE /\allowbreak{}bemestar/\allowbreak{}dados} & \cd{professor} & Apaga TUDO do bem-estar do professor logado.\par Direito de eliminação (LGPD). Apaga de verdade --- ciclos e check-ins ---, e a resposta diz quanto sumiu.\\
+\rota{GET /\allowbreak{}bemestar/\allowbreak{}historico} & \cd{professor} & Os ciclos concluídos e as anotações --- só do próprio professor.\par Posse por \cd{professor\_\allowbreak{}id} em toda query, com RLS por cima. \textbf{Não existe rota de gestor nem agregado} em lugar nenhum: DASS-21 é dado sensível de saúde (LGPD art. 11), e só o professor lê o dele.\\
+\zebra \rota{GET /\allowbreak{}bemestar/\allowbreak{}hoje} & \cd{professor} & O check-in de hoje --- o já respondido, o pendente, ou um novo.\par \textbf{3 frases por dia; 7 check-ins fecham os 21 itens} do DASS-21. Cria o pendente se ainda não houver, e nesse caminho chama a IA para o entorno.\par Os 21 itens são FIXOS e *verbatim*: a IA nunca reescreve um item --- reformular quebra a validação psicométrica e as faixas de corte. O que ela gera é a abertura do dia, a pergunta aberta e o acolhimento.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Todo texto de IA passa por \cd{validarTextoDaIa} (sem vocabulário clínico, ordens, promessas, gestão, links). Barrado, sem saldo ou sem provider \implica{} texto fixo do catálogo: \textbf{o check-in nunca deixa de abrir}.\par \hspace*{1em}\textbullet{} A IA nunca recebe nome, escola, pontuação ou faixa --- só dia da semana, mês, nº do check-in e o texto livre, delimitado como conteúdo.\par \hspace*{1em}\textbullet{} 1 por dia, em \cd{America/\allowbreak{}Sao\_\allowbreak{}Paulo}. O ciclo expira em 21 dias sem fechar.\\
+\rota{GET /\allowbreak{}bemestar/\allowbreak{}resumo} & \cd{professor} & Estado leve do check-in, para o card do hub.\par \textbf{Não abre ciclo e não chama IA} --- é o que o card do hub lê a cada carregamento, e um card não pode custar uma geração.\\
 \bottomrule
 \end{tabularx}
 
-\section{Pessoas e turmas (\emph{rostering})}
+\section{escolas}
 
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /rostering/modelos/usuarios.csv} & gestor, admin-contrato & O modelo
-  em branco, gerado da \textbf{mesma constante} que o leitor consome. Modelo
-  escrito à mão divergiria do \emph{parser} no primeiro campo novo, e o sintoma
-  seria \enquote{importei o modelo de vocês e deu erro de cabeçalho}.\\
-\zebra \rota{GET /rostering/modelos/exemplo.csv} & gestor, admin-contrato &
-  Exemplo preenchido, em arquivo \textbf{separado}: linha de exemplo dentro do
-  modelo vira usuário fantasma no primeiro uso.\\
-\rota{POST /rostering/importar} & gestor, admin-contrato & Corpo \cd{text/csv}
-  cru, até 10\,MB / 50 mil linhas. \cd{?senhaPadrao=} ou \cd{?gerarSenhas=1}.
-  A coluna \cd{cpf} é a primeira chave de identidade: achada em OUTRA escola da
-  rede, a linha deixa de ser pessoa nova e vira transferência (aluno) ou lotação a
-  mais (professor) --- o relatório conta as duas separadamente.
-  Devolve criados, atualizados, enturmados, turmas criadas, erros e avisos por
-  linha, e as credenciais geradas --- uma única vez.\\
-\rota{POST /rostering/oneroster/:arquivo} & gestor, admin-contrato & Binding CSV
-  do OneRoster 1.2, \textbf{um arquivo por chamada}, em ordem de dependência:
-  \cd{manifest}, \cd{orgs}, \cd{academicSessions}, \cd{classes}, \cd{users},
-  \cd{enrollments}, \cd{roles}. \cd{?modo=bulk|delta}. Idempotente por
-  \cd{sourcedId}; \cd{status = tobedeleted} \textbf{desativa}, nunca apaga.\\
-\zebra \rota{GET /rostering/contas-de-assento} & gestor, admin-contrato &
-  Diagnóstico das contas sem matrícula da rede, com quanto cada uma acumulou.
-  Não existe \enquote{fundir contas}: juntar duas move dado de uma criança para
-  outra sem auditoria possível. Teto de 200 linhas, e o corte é \textbf{dito} na
-  resposta (\cd{truncado}) --- numa rede recém-migrada toda conta antiga cai
-  aqui.\\
-\rota{GET /turmas} & gestor, admin-contrato & Turmas da escola, com contagem de
-  alunos e professores.\\
-\zebra \rota{GET /turmas/minhas} & professor, gestor, admin-contrato & As turmas
-  em que o PROFESSOR tem matrícula. Gestor recebe a escola inteira.\\
-\rota{GET /turmas/:id} & professor, gestor, admin-contrato & Os matriculados ---
-  a lista nominal. Para professor a checagem é de \textbf{matrícula}: o do 8A
-  pedindo o 9B leva 403.\\
-\zebra \rota{POST /turmas} \newline \rota{PATCH /turmas/:id} & gestor,
-  admin-contrato & Cria e edita turma no período letivo vigente.\\
-\rota{POST /turmas/:id/matriculas} & gestor, admin-contrato & Matricula
-  (\cd{aluno} ou \cd{professor}). Para aluno, encerra a matrícula anterior do
-  mesmo período e atualiza o cache \cd{users.turma\_id}.\\
-\zebra \rota{PATCH /matriculas/:id} & gestor, admin-contrato &
-  \cd{\{turmaDestinoId\}} move de turma num passo (encerra na origem, abre no
-  destino); \cd{\{principal: true\}} troca qual turma é a de referência do aluno,
-  sem encerrar nada. Nenhuma das duas apaga linha.\\
-\rota{DELETE /matriculas/:id} & gestor, admin-contrato & \textbf{Encerra}
-  (grava \cd{fim}); não apaga linha.\\
-\rota{GET /periodos-letivos} \newline \rota{POST /periodos-letivos} & prof.\ (GET),
-  gestor & Calendário do contrato. O \cd{GET} devolve \cd{vigente} \textbf{calculado}
-  das datas e a contagem de turmas de cada período --- a tela não repete a regra,
-  senão poderia discordar de onde a turma nova vai cair. Tela:
-  \rota{/admin/periodos-letivos}.\\
+\endhead
+\rota{GET /\allowbreak{}escolas} & \cd{admin-contrato} & Todas as escolas do contrato, com contagem.\par Só \cd{admin-contrato} chega aqui. O filtro \cd{paiId} é o insumo da lotação em lote: ele resolve \enquote{as unidades desta diretoria} em LISTA, que é o que a tela mostra para o admin confirmar.\\
+\zebra \rota{POST /\allowbreak{}escolas} & \cd{admin-contrato} & Cria uma escola.\par \textbf{`admin-contrato` e ninguém mais}, inclusive no \cd{orgs.csv}: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Id já existente é \textbf{400}.\par \hspace*{1em}\textbullet{} \cd{pai\_\allowbreak{}id} liga unidade a regional, e um trigger no banco recusa pai que seja \cd{escola} ou a própria linha.\\
+\rota{PATCH /\allowbreak{}escolas/\allowbreak{}\{id\}} & \cd{admin-contrato} & Edita os dados da escola.\par \cd{id} e \cd{tipo} não se editam: os dois circulam em token e em RLS.\\
+\zebra \rota{POST /\allowbreak{}escolas/\allowbreak{}\{id\}/\allowbreak{}lotacoes} & \cd{gestor}, \cd{admin-contrato} & Lota alguém nesta escola.\par Para professor e gestor é \textbf{ACRÉSCIMO}: a lotação que a pessoa tem em outra escola da rede continua valendo --- é o caso que a rede estadual tem aos milhares, e a razão de \cd{lotacoes} existir.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{admin-contrato} não recebe lotação: ele é a exceção cross-escola.\\
+\rota{GET /\allowbreak{}escolas/\allowbreak{}\{id\}/\allowbreak{}pessoas} & \cd{gestor}, \cd{admin-contrato} & Quem está lotado nesta escola.\par Gestor vê a própria; \cd{admin-contrato}, qualquer uma. \cd{papel} diferente de \cd{aluno}/\cd{gestor} cai em \cd{professor}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} O CPF vem FORMATADO e visível: o gestor confere identidade contra o sistema da rede e atende a família no balcão \adrr{ADR-33}.\\
+\zebra \rota{POST /\allowbreak{}escolas/\allowbreak{}lotacoes-em-lote} & \cd{admin-contrato} & Lota uma pessoa em MUITAS escolas de uma vez.\par É assim que o supervisor de uma Diretoria de Ensino nasce: um \cd{gestor} lotado nas unidades dela, \textbf{sem papel novo e sem tocar na RLS} --- o token continua carregando UMA escola.\par Idempotente: reaplicar reabre o que estava encerrado e não duplica.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Recebe a LISTA de escolas, nunca o critério (\enquote{todas da regional X}): autorizar por hierarquia seria uma segunda fonte de verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse um pai.\par \hspace*{1em}\textbullet{} \cd{regional} e \cd{rede} entram em \cd{ignoradas}: não têm turma nem dado, e virariam escola fantasma no seletor do cabeçalho.\par \hspace*{1em}\textbullet{} Uma transação POR escola --- cinquenta numa só seguraria conexão por segundos, e falhar na décima não é motivo para desfazer as nove.\\
+\rota{GET /\allowbreak{}escolas/\allowbreak{}minhas} & \cd{aluno}, \cd{professor}, \cd{gestor}, \cd{admin-contrato} & As escolas de QUEM ESTÁ PEDINDO.\par Declarada antes de \cd{:id} de propósito: no Nest a primeira rota que casa vence.\par É com ela que o hub monta o seletor de escola do professor de duas unidades --- e \textbf{valida a troca} antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Barata de propósito: está no caminho do LOGIN. Contagens ficam em \cd{/\allowbreak{}escolas/\allowbreak{}minhas/\allowbreak{}resumo}.\par \hspace*{1em}\textbullet{} Professor e gestor ACUMULAM lotação; aluno tem UMA ativa, garantida por índice único parcial no banco.\\
+\zebra \rota{GET /\allowbreak{}escolas/\allowbreak{}minhas/\allowbreak{}resumo} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & O panorama de quem tem muitas escolas.\par A tela do supervisor de diretoria. \textbf{LISTA, não soma}: uma linha por unidade, com turmas, alunos e quantos ainda não fizeram o primeiro acesso.\par Somar escolas numa métrica só seria autorizar por hierarquia --- exatamente o que a \adrr{ADR-34} recusa. O supervisor não é papel novo: é um \cd{gestor} lotado nas unidades da diretoria.\\
 \bottomrule
 \end{tabularx}
 
-\section{Manifesto de experiências}
+\section{experiencias}
 
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /experiencias} & \emph{(sem)} & Catálogo de manifestos.\\
-\zebra \rota{GET /experiencias/:expId} & \emph{(sem)} & Um manifesto. É o que o
-  hub lê para montar a URL do \cd{iframe}.\\
-\rota{PUT /experiencias/:expId} & \textbf{admin-contrato} & \emph{Upsert} do
-  manifesto. Chamada pelo CI com \emph{token} de cinco minutos.\\
+\endhead
+\rota{GET /\allowbreak{}experiencias} & \emph{(qualquer)} & O catálogo de experiências do contrato.\par Tabela GLOBAL, sem RLS: manifesto de versões não é dado de aluno. O hub monta a URL do iframe com \cd{versaoAtiva}, e filtra por série na interface.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{series: []} quer dizer TODAS as séries, não nenhuma --- é como uma experiência transversal se declara (exp-70).\\
+\zebra \rota{GET /\allowbreak{}experiencias/\allowbreak{}\{expId\}} & \emph{(qualquer)} & Uma linha do manifesto.\par Devolve \cd{experiencia: null} quando não há linha --- e isso não é erro: o hub cai no \cd{experiencia.json} servido ao lado do bundle. É o caso de dev e o de uma stack nova, antes do primeiro publish do CI.\\
+\rota{PUT /\allowbreak{}experiencias/\allowbreak{}\{expId\}} & \cd{admin-contrato} & Publica ou faz rollback de uma versão.\par Chamada pelo CI ao publicar \cd{gs:/\allowbreak{}/\allowbreak{}\{contrato\}-exp/\allowbreak{}\{expId\}/\allowbreak{}\{versao\}/\allowbreak{}}, com o conteúdo do \cd{public/\allowbreak{}experiencia.json} da experiência. \textbf{Rollback é trocar `versaoAtiva` para a anterior} --- não há deploy a desfazer, porque o bundle antigo continua no bucket.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{permissoes} é POR EXPERIÊNCIA: prender o ponteiro do aluno é capacidade de quem declarou, nunca default do frame.\par \hspace*{1em}\textbullet{} \cd{viewport} ausente \implica{} o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).\\
 \bottomrule
 \end{tabularx}
 
-\section{Progresso genérico (SDK)}
+\section{healthz}
 
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /progresso/:expId} & \emph{(sem)} & Carrega o progresso salvo.\\
-\zebra \rota{POST /progresso/:expId} & \emph{(sem)} & Salva o progresso.\\
-\rota{POST /progresso/:expId/concluir} & \emph{(sem)} & Marca conclusão.\\
+\endhead
+\rota{GET /\allowbreak{}healthz} & \textbf{público} & O processo está vivo.\par Não toca no banco de propósito: é a sonda que decide reiniciar o container, e um Postgres lento derrubaria um processo saudável.\\
 \bottomrule
 \end{tabularx}
 
-\section{Telemetria}
+\section{lotacoes}
 
-\begin{tabularx}{\linewidth}{@{}L{38mm}L{22mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /telemetry/batch} & \emph{(sem)} & Lote de até 50 eventos. A
-  identidade é derivada do \emph{token}; o que o cliente enviou nesses campos é
-  descartado.\\
-\zebra \rota{POST /telemetry/beacon} & verificação manual & \cd{204 sempre}. O
-  \emph{token} vem \textbf{no corpo}, porque \cd{sendBeacon} não envia
-  cabeçalho.\\
-\rota{POST /telemetry/ingest} & \textbf{push} & \cd{204}. Consumo da
-  \emph{push subscription}. \cd{ON CONFLICT (event\_id, ts) DO NOTHING}.\\
+\endhead
+\rota{DELETE /\allowbreak{}lotacoes/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & Encerra o vínculo da pessoa com a escola.\par \textbf{Não apaga}: grava \cd{fim}. É a lotação que diz que a pessoa esteve ali.\par Fecha junto as matrículas de turma daquela escola (sem escola, não há turma), e se era a principal, a próxima lotação ativa assume --- senão \cd{users.escola\_\allowbreak{}id} apontaria para onde a pessoa não está mais.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} A checagem de escola vem DEPOIS de achar a lotação, porque é ela que diz de qual escola é --- e um gestor não encerra vínculo de outra unidade (403).\\
 \bottomrule
 \end{tabularx}
 
-\section{IA}
+\section{matriculas}
 
-\begin{tabularx}{\linewidth}{@{}L{30mm}L{20mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /ai/gerar} & \emph{(sem)} & Geração de texto pela SDK. Passa por
-  \cd{QuotaService} \textbf{antes} do \emph{provider}; \emph{prompt} de sistema
-  fica no servidor.\\
+\endhead
+\rota{PATCH /\allowbreak{}matriculas/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & Move de turma, ou torna esta a turma de referência.\par Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o aluno fica sem turma --- invisível para o professor, sem nada na tela dizendo o que faltou.\par Nenhuma das duas operações apaga linha.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Informe \cd{turmaDestinoId} OU \cd{principal}, nunca os dois nem nenhum --- é um \cd{.refine()}, que o JSON Schema não sabe expressar.\\
+\zebra \rota{DELETE /\allowbreak{}matriculas/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & Encerra a matrícula.\par \textbf{Não apaga linha}: grava \cd{fim}. O dado da Vila, do UnooTube e do unooGPT continua pendurado nela, e apagar deixaria esse dado órfão de turma. Sair da REDE é outra coisa --- \cd{ativo = false} na pessoa.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-01 --- atividades (professor)}
+\section{perfis}
 
-\begin{tabularx}{\linewidth}{@{}L{42mm}L{20mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /atividades} & professor & Lista as atividades do professor.\\
-\zebra \rota{GET /atividades/:id} & professor & Uma atividade.\\
-\rota{POST /atividades} & professor & Cria.\\
-\zebra \rota{DELETE /atividades/:id} & professor & Exclui.\\
-\rota{POST /atividades/:id/limpar} & professor & Limpa as sessões da atividade.\\
-\zebra \rota{PATCH /atividades/:id/ia} & professor & Liga ou desliga a reação ao
-  vivo, sem \emph{deploy}.\\
-\rota{POST /atividades/:id/ativar} & professor & Ativa a atividade.\\
-\zebra \rota{POST /atividades/:id/etapa} & professor & Avança o relógio
-  \textbf{coletivo} da turma.\\
-\rota{GET /atividades/:id/etapa} & professor & Etapa atual.\\
-\zebra \rota{GET /atividades/:id/monitor} & professor & Monitor da turma em tempo
-  quase real.\\
-\rota{GET /atividades/:id/alunos/:runId} & professor & Uma sessão de aluno.\\
+\endhead
+\rota{POST /\allowbreak{}perfis/\allowbreak{}importar} & \textbf{serviço} & Ponte externa do Ato 1 --- compatibilidade.\par Chamada pelo JOGO, que roda fora do navegador e não tem sessão: autenticação por chave de serviço no cabeçalho, não por cookie.\par Continua viva como compatibilidade; hoje o caminho normal é \cd{POST /\allowbreak{}atividades/\allowbreak{}:id/\allowbreak{}perfis/\allowbreak{}da-vila}, disparado pelo professor.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{escolaId} vem no CORPO porque esta rota não tem token: sem ele não há escola no contexto, e \cd{comTenancy} falha alto. O \cd{activityId} é conferido DENTRO dessa escola, então um \cd{escolaId} errado não alcança atividade de outra rede.\par \hspace*{1em}\textbullet{} Sem \cd{PERFIL\_\allowbreak{}IMPORT\_\allowbreak{}TOKEN} a rota responde \textbf{503} --- desligada, nunca aberta.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-01 --- geração de conteúdo (professor)}
+\section{perfis-recebidos}
 
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{18mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /atividades/:id/destilar} & professor & Destila o antagonismo e propõe
-  a pergunta-chave. O professor aprova ou reescreve.\\
-\zebra \rota{PATCH /atividades/:id/antagonismo} & professor & Aprova ou edita a
-  destilação.\\
-\rota{POST /atividades/:id/gerar} & professor & Enfileira a geração. O
-  \emph{mix} é decidido pelo servidor.\\
-\zebra \rota{GET /atividades/:id/geracao/progresso} & professor & Alvo do
-  \emph{polling}; também dispara a retomada de fila órfã.\\
-\rota{GET /atividades/:id/posts} & professor & Posts gerados, paginados.\\
-\zebra \rota{PATCH /posts/:id} & professor & Aprova, reprova ou edita.\\
-\rota{DELETE /posts/:id} & professor & Exclui.\\
-\zebra \rota{POST /posts/:id/regenerar} & professor & Regenera um post.\\
+\endhead
+\rota{POST /\allowbreak{}perfis-recebidos} & \cd{gestor}, \cd{admin-contrato} & Recebe um documento de outra rede.\par Receber é \textbf{ato da escola de destino} --- ninguém empurra perfil para dentro de uma rede; alguém de lá importa o arquivo, olhando para ele.\par A api verifica porque verificar é o passo que \textbf{não pode confiar em quem chama}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \textbf{Assinatura inválida é RECUSA (400)} --- isso é adulteração. Emissor inalcançável \textbf{não} é: entra marcado \cd{nao-verificada}, e a tela sai em âmbar em vez de fingir que conferiu.\par \hspace*{1em}\textbullet{} A classificação é pelo \cd{code} da jose, NUNCA pelo texto: \enquote{signature verification failed} contém \enquote{failed}, e uma versão anterior classificava documento FORJADO como \enquote{não deu para conferir}.\par \hspace*{1em}\textbullet{} \cd{PORTABILIDADE\_\allowbreak{}EMISSORES} é a decisão de confiança: o \cd{emissor.hub} vem de dentro do arquivo, então o documento SELECIONA entre origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia = tudo entra \cd{nao-verificada}.\par \hspace*{1em}\textbullet{} \textbf{Importar não cria aluno}: liga pelo CPF a quem já está aqui. Matricular é ato da escola.\\
+\zebra \rota{GET /\allowbreak{}perfis-recebidos/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & O documento recebido inteiro, como veio.\par Guardado *verbatim*: alterar qualquer byte destruiria a assinatura. É a \textbf{única exceção} à contenção do CPF em \cd{users.cpf} --- o número é o conteúdo do documento \adrr{ADR-33}.\\
+\rota{DELETE /\allowbreak{}perfis-recebidos/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & Apaga um perfil recebido.\par Existe porque o documento é de FORA: importado na criança errada, ou emitido por engano, ele tem de sair --- e apagá-lo não apaga nada que esta rede tenha medido.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-01 --- perfis e largada}
+\section{periodos-letivos}
 
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{20mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /atividades/:id/perfis} & professor & Importa perfis manualmente.\\
-\zebra \rota{POST /atividades/:id/perfis/da-vila} & professor &
-  \textbf{O Ato 1 integrado}: colapsa o perfil da exp-70 nos quatro quadrantes.
-  \cd{lado\_forcado} é \textbf{preservado} no \emph{upsert}.\\
-\rota{GET /atividades/:id/perfis} & professor & Perfis importados.\\
-\zebra \rota{GET /atividades/:id/distribuicao} & professor & Distribuição
-  prevista dos lados.\\
-\rota{POST /atividades/:id/redistribuir} & professor & Redistribui a turma
-  (grava \cd{lado\_forcado}).\\
-\zebra \rota{POST /perfis/importar} & \textbf{serviço} &
-  Cabeçalho \cd{x-perfil-token}. Compatibilidade com a ponte externa original.\\
+\endhead
+\rota{GET /\allowbreak{}periodos-letivos} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & O calendário do contrato, com quantas turmas cada período tem.\par Catálogo do CONTRATO: sem \cd{escola\_\allowbreak{}id} e sem RLS, por isso controller separado. A contagem de turmas é o que impede apagar um período por engano.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{vigente} é DERIVADO das datas, nunca coluna --- estado que ninguém atualiza mente mais do que ajuda.\\
+\zebra \rota{POST /\allowbreak{}periodos-letivos} & \cd{gestor}, \cd{admin-contrato} & Cria um período letivo --- a primeira etapa da virada do ano.\par A partir da data de início ele passa a ser o vigente, e toda turma nova nasce nele. \textbf{A segunda etapa é importar o enturmamento}, e nenhuma das duas é automática: as turmas do ano anterior ficam onde estão, e é isso que preserva o histórico.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{fim} antes de \cd{inicio} é \textbf{400}.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-01 --- motor de \emph{feed} (aluno)}
+\section{planos}
 
-\begin{tabularx}{\linewidth}{@{}L{40mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /runs} & \emph{(sem)} & Cria ou recupera a sessão; resolve a largada.\\
-\zebra \rota{GET /runs/boot} & aluno & Estado inicial da primeira tela.\\
-\rota{POST /runs/:id/entrar} & aluno & Nome no aplicativo e avatar.\\
-\zebra \rota{GET /runs/:id/feed} & aluno & \textbf{Próximo bloco curado.}
-  \emph{Lock} consultivo por \cd{run}; saída sanitizada.\\
-\rota{POST /runs/:id/eventos} & \textbf{aluno, professor} & Canal
-  \textbf{operacional} de telemetria. Síncrono e transacional.\\
-\zebra \rota{GET /runs/:id/fase} & aluno & Fase atual (trava a tela conforme a
-  etapa da turma).\\
-\rota{POST /runs/:id/finish} & aluno & Encerra a sessão.\\
-\zebra \rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão;
-  recalcula a largada pela \emph{mesma} regra.\\
-\rota{GET /runs/:id/busca} & aluno & Busca no \emph{feed}.\\
-\zebra \rota{GET /runs/:id/salvos} & aluno & Itens salvos.\\
-\rota{GET /runs/:id/perdidos} & aluno & \textbf{Os posts que o aluno não viu} ---
-  a virada pedagógica.\\
-\zebra \rota{POST /runs/:id/conclusao} & aluno & Inclinação (A, B ou dúvida).\\
-\rota{POST /runs/:id/reflexao} & aluno & Texto de fechamento, sem limite.\\
-\zebra \rota{GET /runs/:id/reflexao} & aluno & Lê a reflexão.\\
-\rota{POST /runs/:id/student-post} & aluno & Post publicado pelo aluno.\\
-\zebra \rota{POST /runs/:id/reacoes} & aluno & Dispara reações de persona ao vivo.\\
-\rota{GET /runs/:id/dossie} & \textbf{aluno, professor} & Dossiê de
-  fechamento.\\
-\zebra \rota{GET /posts/:id/comentarios} & aluno & Comentários de um post.\\
+\endhead
+\rota{GET /\allowbreak{}planos} & \cd{professor} & Os planos DESTE professor.\par Posse por \cd{professor\_\allowbreak{}id} em toda query --- plano de aula é autoral.\\
+\zebra \rota{POST /\allowbreak{}planos} & \cd{professor} & Pede a geração de um plano de aula.\par \textbf{202}: a geração corre em background (claim atômico na linha), e o cliente acompanha por \cd{GET /\allowbreak{}planos/\allowbreak{}:id} até o status virar \cd{pronto} ou \cd{erro}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} 3 gerações por hora por professor: cada uma custa \textasciitilde{}220k tokens só de prompt (currículo da rede + as 4 unidades do ano). Acima disso, \textbf{429} com \cd{codigo: RATE\_\allowbreak{}LIMIT}.\par \hspace*{1em}\textbullet{} O teto de saída é 64k tokens, não 32k: com o material real o gemini-2.5-flash era cortado e o professor recebia \enquote{o plano ficou grande demais} sem plano nenhum.\par \hspace*{1em}\textbullet{} Passa pelo \cd{QuotaService} por PERFIL (\cd{AI\_\allowbreak{}DAILY\_\allowbreak{}TOKEN\_\allowbreak{}QUOTA\_\allowbreak{}PER\_\allowbreak{}PROFESSOR}).\\
+\rota{GET /\allowbreak{}planos/\allowbreak{}\{id\}} & \cd{professor} & Um plano, com o conteúdo quando estiver pronto.\par É o alvo do polling que segue o 202 de \cd{POST /\allowbreak{}planos}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{html: null} enquanto o status não for \cd{pronto} --- é assim que o cliente sabe que ainda deve continuar o polling.\\
+\zebra \rota{PATCH /\allowbreak{}planos/\allowbreak{}\{id\}} & \cd{professor} & Renomeia o plano.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Título entre 3 e 160 caracteres; fora disso, \textbf{400}.\\
+\rota{DELETE /\allowbreak{}planos/\allowbreak{}\{id\}} & \cd{professor} & Exclui o plano.\\
+\zebra \rota{PUT /\allowbreak{}planos/\allowbreak{}\{id\}/\allowbreak{}conteudo} & \cd{professor} & Salva o conteúdo editado pelo professor.\par Sobrescreve o \cd{atual.html} no object storage PRIVADO. O \cd{gerado.md} é imutável e continua lá --- é o que \cd{POST /\allowbreak{}planos/\allowbreak{}:id/\allowbreak{}restaurar} devolve.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} O HTML é sanitizado com allowlist antes de gravar.\par \hspace*{1em}\textbullet{} Teto de 1 MB: um plano anual tem 30--150 KB. Acima disso, \textbf{400}.\\
+\rota{POST /\allowbreak{}planos/\allowbreak{}\{id\}/\allowbreak{}restaurar} & \cd{professor} & Descarta a edição e volta ao plano gerado.\par O \cd{gerado.md} é IMUTÁVEL de propósito: é o que torna esta rota possível. Sem ele, salvar por cima seria irreversível.\\
+\zebra \rota{GET /\allowbreak{}planos/\allowbreak{}referencias} & \textbf{serviço} & O inventário das referências curriculares do contrato.\par \textbf{Sem o texto}: existe para o script de importação ser idempotente e para auditoria --- o texto de um currículo inteiro não cabe numa listagem.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Catálogo GLOBAL do contrato: sem \cd{escola\_\allowbreak{}id}, fora da RLS.\\
+\rota{POST /\allowbreak{}planos/\allowbreak{}referencias} & \textbf{serviço} & Importa (ou sobrescreve) uma referência curricular.\par Chamada pelo \cd{scripts/\allowbreak{}importar-referencias-plano.mjs}, que extrai o texto dos PDF/DOCX \textbf{localmente} e manda só texto. Upsert por \cd{(disciplina,\allowbreak{} serie,\allowbreak{} nome)}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{serie: null} = vale para todas as séries daquela disciplina.\par \hspace*{1em}\textbullet{} O upsert é find + update/create, e não \cd{upsert}: \cd{serie} nulo não entra em \cd{where} de unique composto no Prisma, e o Postgres trata NULLs como distintos no índice.\par \hspace*{1em}\textbullet{} Sem \cd{PLANOS\_\allowbreak{}IMPORT\_\allowbreak{}TOKEN} a rota responde \textbf{503} --- desligada, nunca aberta.\\
+\zebra \rota{DELETE /\allowbreak{}planos/\allowbreak{}referencias/\allowbreak{}\{id\}} & \textbf{serviço} & Remove uma referência do catálogo.\\
+\rota{GET /\allowbreak{}planos/\allowbreak{}referencias/\allowbreak{}disponiveis} & \cd{professor} & Disciplinas e séries que têm material curricular importado.\par Alimenta os seletores da exp-90. Vem com os rótulos prontos: a tela imprime o que o servidor mandou, em vez de manter um segundo dicionário que divergiria na primeira disciplina nova.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-02 --- UnooTube}
+\section{posts}
 
-\begin{tabularx}{\linewidth}{@{}L{44mm}L{28mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /unootube/sessao} & aluno & Estado da sessão. \textbf{Nunca} devolve o
-  gabarito.\\
-\zebra \rota{POST /unootube/salvos} & aluno & Salva um vídeo (máx. 3).\\
-\rota{POST /unootube/salvos/:videoId/remover} & aluno & Remove um salvo.\\
-\zebra \rota{POST /unootube/curtidos/:videoId} & aluno & Curte. Segue livre
-  mesmo depois da conclusão.\\
-\rota{GET /unootube/ranking} & aluno & Ranking com colegas \textbf{fictícios}.\\
-\zebra \rota{POST /unootube/credibilidade} & aluno & A virada: reordena por
-  fontes e \textbf{congela} os salvos.\\
-\rota{POST /unootube/reiniciar} & aluno & Descongela e reinicia.\\
-\zebra \rota{GET /unootube/turmas} & professor, gestor, admin-contrato & Turmas
-  com resultado.\\
-\rota{GET /unootube/turmas/:turmaId/resultados} & professor, gestor,
-  admin-contrato & Resultados da turma.\\
+\endhead
+\rota{PATCH /\allowbreak{}posts/\allowbreak{}\{id\}} & \cd{professor} & Edita o post: legenda, hashtags, comentários e aprovação.\\
+\zebra \rota{DELETE /\allowbreak{}posts/\allowbreak{}\{id\}} & \cd{professor} & Exclui um post da grade.\\
+\rota{GET /\allowbreak{}posts/\allowbreak{}\{id\}/\allowbreak{}comentarios} & \emph{(qualquer)} & Os comentários de um post do feed.\par Na ordem de uma CONVERSA: o comentário do aluno no topo (como o Instagram faz com o seu), as reações da IA logo depois, e os do roteiro por último.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{doAluno} distingue o que a criança escreveu do que veio do roteiro --- só o aluno da própria run vê os dele.\\
+\zebra \rota{POST /\allowbreak{}posts/\allowbreak{}\{id\}/\allowbreak{}regenerar} & \cd{professor} & Regenera o texto ou a imagem de um post.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-03 --- unooGPT (Missão Tempestade)}
+\section{progresso}
 
-Nenhuma rota leva id de sessão: a identidade é \cd{(escola, aluno)} e vem do
-\emph{token}.
-
-\begin{tabularx}{\linewidth}{@{}L{52mm}L{22mm}X@{}}
-\toprule
-\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
-\midrule
-\rota{GET /unoogpt/sessao} & aluno & \emph{Bootstrap} da tela: estado, mapa,
-  conversa e relógio numa resposta. Cria a partida na primeira visita.
-  \textbf{Sem gabarito}.\\
-\zebra \rota{GET /unoogpt/relogio} & aluno & \emph{Polling} do Relógio da Aula
-  ($\approx$5\,s). Leve: sem IA, sem mapa.\\
-\rota{POST /unoogpt/pergunta} & aluno & O turno do agente: IA com ferramentas,
-  débito do orçamento e teto por sessão. A única rota que pede
-  \cd{timeoutMs: 45\_000} na SDK.\\
-\zebra \rota{PUT /unoogpt/conjuntos} & aluno & Carrega fontes. \cd{PUT} porque é
-  atribuição de conjunto, não acréscimo.\\
-\rota{POST /unoogpt/alocacao} & aluno & Destino + justificativa. O porquê é
-  \textbf{portão de servidor}.\\
-\zebra \rota{POST /unoogpt/simular} & aluno & Enfrenta a tempestade. Idempotente
-  por tentativa.\\
-\rota{GET /unoogpt/resultado} & aluno & Faixa, trilha, o que sobrou e o que nunca
-  foi consultado.\\
-\zebra \rota{POST /unoogpt/contrafactual} & aluno & \enquote{E se\ldots}
-  --- \textbf{não grava e não debita}.\\
-\rota{POST /unoogpt/passo} & aluno & Transição de Passo.\\
-\zebra \rota{POST /unoogpt/reiniciar} & aluno & Abre tentativa \textbf{nova} ---
-  não apaga a conversa anterior.\\
-\rota{GET /unoogpt/professor/turmas} & professor, admin & Turmas da escola.\\
-\zebra \rota{GET /unoogpt/professor/\B{}turmas/:turmaId} & professor, admin &
-  A folha da turma: relógio e retrato de conduta. \textbf{Sem} número de
-  resgatados.\\
-\rota{POST /unoogpt/professor/\B{}turmas/:turmaId/relogio} & professor, admin &
-  Largada, +2\,min, encerrar, modo, redefinir.\\
-\zebra \rota{DELETE /unoogpt/professor/\B{}turmas/:turmaId} & professor, admin &
-  \textbf{Zerar a turma}: apaga as partidas e o relógio (\adrr{ADR-26}).\\
-\rota{GET /unoogpt/professor/\B{}alunos/:alunoId} & \textbf{professor} & Relatório
-  em graus + a \textbf{Transcrição}. Gestor não entra (\adrr{ADR-27}).\\
-\zebra \rota{GET /unoogpt/agregado/escola} & gestor, admin & Só números por
-  turma. \textbf{Nenhuma} rota deste controller aceita \cd{alunoId}.\\
-\bottomrule
-\end{tabularx}
-
-\section{exp-70 --- Vila do Lume}
-
-\begin{tabularx}{\linewidth}{@{}L{48mm}L{24mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{POST /vila/sessoes} & aluno & Abre a partida. \textbf{Atribui a bolha} (do
-  servidor, balanceada na turma, com \emph{lock}) e devolve os cartões ---
-  \textbf{só os desta criança e sem gabarito}.\\
-\zebra \rota{POST /vila/sessoes/:id/concluir} & aluno & Fecha a partida. O
-  servidor \textbf{recalcula} o perfil; \emph{payload} que traga chave de perfil é
-  \textbf{recusado}.\\
-\rota{GET /vila/agregado/turmas} & professor, gestor & Turmas com partidas.\\
-\zebra \rota{GET /vila/agregado/turmas/:turmaId} & professor, gestor & Agregado da
-  turma. \textbf{Sem valor psicométrico na listagem.}\\
-\rota{GET /vila/professor/turmas/:turmaId} & \textbf{professor} & Listagem da
-  turma.\\
-\zebra \rota{GET /vila/professor/cartoes?turmaId=} & \textbf{professor} & Textos
-  das três bolhas \textbf{com} gabarito, para o guia do debate. Filtra pela
-  \emph{mesma} regra de elegibilidade.\\
-\rota{GET /vila/professor/alunos/:alunoId} & \textbf{professor} & A leitura
-  individual. Abre pelo \textbf{nível}.\\
-\zebra \rota{DELETE /vila/professor/turmas/:turmaId/dados} & \textbf{professor} &
-  Zera a turma --- \textbf{apagando as bolhas junto}. Não toca
-  \cd{exp\_01\_exp\_70\_perfis\_importados}.\\
+\endhead
+\rota{GET /\allowbreak{}progresso/\allowbreak{}\{expId\}} & \emph{(qualquer)} & O progresso do aluno autenticado nesta experiência.\par Escopado por \cd{escola\_\allowbreak{}id} + \cd{aluno\_\allowbreak{}id} do token --- nunca por parâmetro. O aluno da requisição é o único progresso que esta rota alcança.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{dados: null} = a criança ainda não começou; não é erro.\\
+\zebra \rota{POST /\allowbreak{}progresso/\allowbreak{}\{expId\}} & \emph{(qualquer)} & Salva o progresso da experiência.\par Substitui \cd{dados} inteiro. É a experiência que decide o que cabe ali.\\
+\rota{POST /\allowbreak{}progresso/\allowbreak{}\{expId\}/\allowbreak{}concluir} & \emph{(qualquer)} & Registra a conclusão da experiência.\par O \cd{exp:concluir} do protocolo da bridge, gravado pelo hub. \textbf{Merge} no jsonb: nunca sobrescreve o que a experiência salvou.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Isto é progresso (\enquote{terminou}), NÃO nota. Pontuação que vale nota é recalculada server-side pelo módulo de avaliação (regra 3).\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-90 --- planos de aula}
+\section{readyz}
 
-\begin{tabularx}{\linewidth}{@{}L{44mm}L{22mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /planos} & professor & Lista os planos do professor.\\
-\zebra \rota{POST /planos} & professor & \textbf{202.} Enfileira a geração.\\
-\rota{GET /planos/:id} & professor & Estado e, quando pronto, conteúdo. Alvo do
-  \emph{polling}.\\
-\zebra \rota{PUT /planos/:id/conteudo} & professor & Salva o HTML do editor,
-  sanitizado por \emph{allowlist}.\\
-\rota{POST /planos/:id/restaurar} & professor & Volta ao \arq{gerado.md}.\\
-\zebra \rota{PATCH /planos/:id} & professor & Renomeia.\\
-\rota{DELETE /planos/:id} & professor & Exclui.\\
-\zebra \rota{GET /planos/referencias/disponiveis} & professor & Disciplinas e
-  séries com material importado.\\
-\rota{GET /planos/referencias} & \textbf{serviço} & Lista as referências.\\
-\zebra \rota{POST /planos/referencias} & \textbf{serviço} & Importa.
-  Cabeçalho \cd{x-import-token}.\\
-\rota{DELETE /planos/referencias/:id} & \textbf{serviço} & Remove.\\
+\endhead
+\rota{GET /\allowbreak{}readyz} & \textbf{público} & As dependências estão prontas (banco).\par Banco fora do ar responde \textbf{503}, não \cd{ok: false} --- o balanceador tira a instância do rodízio pelo código, não pelo corpo.\\
 \bottomrule
 \end{tabularx}
 
-\section{exp-91 --- bem-estar}
+\section{rostering}
 
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{22mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /bemestar/resumo} & \textbf{professor} & \textbf{Leve, sem IA.} É o que
-  o \emph{card} do hub lê.\\
-\zebra \rota{GET /bemestar/hoje} & \textbf{professor} & Abre o \emph{check-in}: 3
-  itens \emph{verbatim} + textos de entorno.\\
-\rota{POST /bemestar/checkins/:id/respostas} & \textbf{professor} & Grava. No
-  sétimo, pontua e classifica \emph{server-side}.\\
-\zebra \rota{GET /bemestar/historico} & \textbf{professor} & Série do próprio
-  professor.\\
-\rota{DELETE /bemestar/dados} & \textbf{professor} & Apaga tudo do próprio
-  professor.\\
+\endhead
+\rota{GET /\allowbreak{}rostering/\allowbreak{}contas-de-assento} & \cd{gestor}, \cd{admin-contrato} & As contas sem matrícula da rede --- as que podem ser de assento.\par As experiências vieram de projetos onde a conta era do APARELHO: outra turma reusava o mesmo login. Esta lista mostra quanto cada conta acumulou de dado, para o gestor decidir o que desativar.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \textbf{Não existe fundir contas}: juntar duas move o que uma criança fez para outra pessoa, e depois ninguém audita de quem era.\par \hspace*{1em}\textbullet{} Teto de 200 linhas, dito na resposta em \cd{truncado} em vez de cortado em silêncio.\\
+\zebra \rota{POST /\allowbreak{}rostering/\allowbreak{}importar} & \cd{gestor}, \cd{admin-contrato} & Importa a planilha de pessoas.\par Corpo é o \textbf{CSV cru} (\cd{Content-Type: text/\allowbreak{}csv}), até 10MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): \cd{matricula,\allowbreak{}nome,\allowbreak{}usuario,\allowbreak{}email,\allowbreak{}papel,\allowbreak{}turma,\allowbreak{}serie,\allowbreak{}turno}. Só \cd{nome} e \cd{papel} são obrigatórios --- aluno também exige \cd{turma} e \cd{serie}.\par Idempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \textbf{O CPF é a primeira chave}: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).\par \hspace*{1em}\textbullet{} Reimportar NÃO reseta a senha de quem já entrou --- seria trancar a escola inteira para fora.\par \hspace*{1em}\textbullet{} Coluna desconhecida é ERRO, não coluna ignorada.\par \hspace*{1em}\textbullet{} 5 importações por minuto por usuário (429); acima de 10MB ou 50k linhas, 400.\\
+\rota{GET /\allowbreak{}rostering/\allowbreak{}modelos/\allowbreak{}exemplo.csv} & \cd{gestor}, \cd{admin-contrato} & O mesmo modelo, preenchido com um exemplo.\\
+\zebra \rota{GET /\allowbreak{}rostering/\allowbreak{}modelos/\allowbreak{}usuarios.csv} & \cd{gestor}, \cd{admin-contrato} & O modelo em branco da planilha de pessoas.\par Gerado da MESMA constante que o leitor consome --- um modelo escrito à mão divergiria do parser no primeiro campo novo, e o sintoma seria \enquote{importei o modelo de vocês e deu erro de cabeçalho}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Sai com BOM e \cd{charset=utf-8}: um sem o outro ainda quebra acento em alguma planilha.\\
+\rota{POST /\allowbreak{}rostering/\allowbreak{}oneroster/\allowbreak{}\{arquivo\}} & \cd{gestor}, \cd{admin-contrato} & Binding CSV do OneRoster 1.2 --- UM arquivo por chamada.\par Ordem: \cd{manifest}, \cd{orgs}, \cd{academicSessions}, \cd{classes}, \cd{users}, \cd{enrollments}, \cd{roles}. \textbf{Fora de ordem não corrompe nada}: a linha que aponta para um \cd{sourcedId} inexistente volta no relatório dizendo QUAL arquivo falta.\par O padrão vive só nesta fronteira: nada do domínio conhece \cd{sourcedId}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{orgs.csv} só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só \cd{admin-contrato}.\par \hspace*{1em}\textbullet{} Sem a coluna \cd{role} (que saiu de \cd{users.csv} na 1.2) a pessoa entra como \textbf{aluno}, o menor privilégio; o \cd{roles.csv} corrige.\par \hspace*{1em}\textbullet{} A coluna \cd{password} do padrão é IGNORADA, e a contagem vai ao relatório.\par \hspace*{1em}\textbullet{} Em \cd{bulk}, ausência de linha \textbf{não desativa ninguém} --- é contada em \cd{candidatosAInativacao}: lote que chegou pela metade não pode apagar uma rede por omissão.\par \hspace*{1em}\textbullet{} \cd{status = tobedeleted} desativa (pessoa) ou encerra (matrícula), nunca apaga.\\
 \bottomrule
 \end{tabularx}
 
-\begin{regra}
-Todas as cinco filtram \cd{professor\_id = req.auth.usuarioId} \textbf{além} da
-RLS por escola: dois professores da mesma escola não podem se ler.
-\textbf{Não existe rota de gestor nem agregado} nesta área --- ausência
-deliberada (\adrr{ADR-10}).
-\end{regra}
+\section{runs}
 
-\section{Análise}
-
-\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
-\headrow \thd{Rota} & \thd{Autorização} & \thd{Escopo}\\
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /atividades/:id/analise} & professor & Uma atividade da própria escola.\\
-\zebra \rota{GET /atividades/:id/analise/csv} & professor & Exportação.\\
-\rota{GET /analise/resumo} & \textbf{admin-contrato} & Toda a rede.\\
-\zebra \rota{GET /analise/atividades/:id} & \textbf{admin-contrato} & Uma
-  atividade, cross-escola.\\
-\rota{GET /analise/csv} & \textbf{admin-contrato} & Exportação da rede.\\
+\endhead
+\rota{POST /\allowbreak{}runs} & \cd{aluno} & Cria a run do aluno na atividade ativa.\par A LARGADA: é aqui que o lado do feed é decidido --- pelo perfil do Ato 1, por redistribuição do professor, ou por sorteio balanceado quando não há perfil.\\
+\zebra \rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}busca} & \cd{aluno} & Busca no acervo da atividade.\par Usar a busca é o sinal de INVESTIGAÇÃO que o relatório conta --- por isso ela é uma rota, e não um filtro no cliente.\\
+\rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}conclusao} & \cd{aluno} & A escolha de um lado no fim da missão.\par Enviar duas vezes é \textbf{409}, com linguagem de app real: \enquote{isso já foi enviado}, nada de \enquote{fase} ou \enquote{atividade}.\\
+\zebra \rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}dossie} & \cd{aluno}, \cd{professor} & O dossiê da sessão --- o relatório da revelação.\par Aqui o disfarce JÁ CAIU, e por isso o \cd{lado} de cada post pode aparecer. A seção mais importante é \cd{explicacaoDoLado}: \textbf{por que o feed começou daquele lado}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{conclusao} é anexada na LEITURA, não no congelamento: o dossiê é computado no \cd{finish}, antes de o aluno escrever. \cd{undefined} quando a sessão foi interrompida --- e o relatório precisa funcionar assim.\par \hspace*{1em}\textbullet{} Os rótulos de perfil vêm prontos no payload em vez de o cliente importar as FICHAS: elas carregam o vocabulário dos prompts, que não tem por que viajar até o navegador.\par \hspace*{1em}\textbullet{} \cd{imersao.total} nunca vem sem os componentes.\\
+\rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}entrar} & \cd{aluno} & O aluno entra no aparelho e vai ao feed.\par \cd{nome} é APELIDO dentro da ficção do Instanooria --- nunca identidade em tela de professor ou relatório.\\
+\zebra \rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}eventos} & \cd{aluno} & Lote de eventos do cliente --- o canal OPERACIONAL.\par Síncrono e transacional, lido em tempo quase real para curar o próximo bloco. \textbf{`dwell` nunca passa por Pub/Sub}: latência e falta de ordenação quebrariam a adaptação e o lock por run.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Idempotência por \cd{(client\_\allowbreak{}ts,\allowbreak{} tipo,\allowbreak{} postId)}: \cd{descartados} conta o que já existia --- reenvio é rotina no cliente, não erro.\par \hspace*{1em}\textbullet{} Cota por SESSÃO, não por IP: a turma toda compartilha a rede da escola.\\
+\rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}fase} & \cd{aluno} & A tela que o aluno deve estar vendo agora.\par Já reconciliada com a etapa da TURMA --- o cliente faz polling porque os momentos coletivos são do professor, não do aluno.\\
+\zebra \rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}feed} & \cd{aluno} & O próximo bloco do feed.\par O post sai \textbf{sem `lado`, sem `perfil` e sem `intensidade`} --- o disfarce depende disso: um bundle que soubesse o lado de cada post entregaria o experimento antes da revelação.\par O \cd{diagnostico} do motor (domínio, lado dominante, bloco) fica no SERVIDOR.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Lock consultivo por run: duas abas pedindo bloco ao mesmo tempo se sobrescreviam, e um bloco se perdia.\\
+\rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}finish} & \cd{aluno} & Congela a run e computa o dossiê.\par Encerrar antes da hora é \textbf{409} --- e a mensagem é de app real (\enquote{sua sessão ainda está rolando}), não de sistema.\\
+\zebra \rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}perdidos} & \cd{aluno} & O que o aluno PERDEU --- posts do lado oposto que nunca foram servidos.\par \textbf{Só das etapas `perdidos` em diante}: antes disso derrubaria o disfarce, que é o que a atividade inteira depende de manter até a revelação.\\
+\rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}reacoes} & \cd{aluno} & Reações das personas ao que o aluno escreveu.\par Nunca falha para o aluno: sem IA, sem cota ou com erro, devolve \cd{reacoes: []} e diz por quê.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{desligada: true} = o professor desligou a IA ao vivo.\par \hspace*{1em}\textbullet{} \cd{limite: true} = teto de 12 reações por sessão --- aluno comentando sem parar não queima a cota da turma.\\
+\zebra \rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}reflexao} & \cd{aluno} & O texto da reflexão que o aluno já escreveu.\par Lê a reflexão desta run --- a dele, e só a dele: o \cd{where} casa \cd{alunoId} do token junto com o id.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{texto: ""} quando ainda não escreveu --- o campo abre vazio, não com erro.\\
+\rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}reflexao} & \cd{aluno} & O fechamento escrito da atividade.\par É sobre a ATIVIDADE (letramento digital), não sobre a pergunta-chave --- a conclusão já foi a escolha de um lado.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} 60 caracteres é o PISO: passa \enquote{o algoritmo me mostrou mais de um lado} e barra \enquote{gostei}. Não é medida de qualidade, é filtro de vazio.\\
+\zebra \rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}reset} & \cd{professor} & Reabre a run de um aluno, sorteando a largada de novo.\par Rota de PROFESSOR: é o socorro para a sessão que travou no meio da aula.\\
+\rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}salvos} & \cd{aluno} & A coleção do aluno --- o que ele salvou.\par O ÚLTIMO evento por post decide: salvar e dessalvar se anulam. É a coleção que ele vai defender no debate.\\
+\zebra \rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}student-post} & \cd{aluno} & O aluno publica no app, e as personas reagem.\par \textbf{Falha fechada}: IA desligada, erro de rede ou reação recusada \implica{} lista vazia, e o post é publicado do mesmo jeito --- como num app real quando ninguém responde. A chamada de IA fica FORA da transação, de propósito.\\
+\rota{GET /\allowbreak{}runs/\allowbreak{}boot} & \cd{aluno} & O bootstrap da experiência --- o servidor decide a fase.\par Resolve o que o Server Component da tela resolvia no app de origem; agora a experiência é um bundle Vite estático e chama isto no primeiro fetch.\par \textbf{Só os RÓTULOS dos lados saem daqui} --- são os únicos campos do antagonismo que o cliente pode ver antes da revelação.\\
 \bottomrule
 \end{tabularx}
 
-\section{Rotas do hub (Next.js)}
+\section{telemetry}
 
-\begin{tabularx}{\linewidth}{@{}L{44mm}L{20mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
 \toprule
-\headrow \thd{Rota} & \thd{Escopo} & \thd{Semântica}\\
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /.well-known/jwks.json} & \textbf{público} & JWKS da chave que assina os
-  \emph{tokens} de experiência. É o que a API valida --- e o que o CI usa
-  indiretamente ao publicar manifesto.\\
-\zebra \rota{GET /api/exp-token} & sessão & Emite um \emph{token} novo de
-  experiência. Alvo do \cd{exp:token-expirando}.\\
-\rota{ALL /api/plataforma/[...path]} & sessão & BFF: \emph{proxy} autenticado para
-  a API.\\
-\zebra \rota{ALL /api/auth/[...nextauth]} & --- & NextAuth.\\
-\zebra \rota{POST /api/escola-ativa} & sessão & Troca a ESCOLA ATIVA de quem tem
-  mais de uma lotação. Valida contra \rota{GET /escolas/minhas} da API, \textbf{não}
-  contra a lista que o \emph{cookie} carrega --- \emph{cookie} é dado do cliente, e
-  aceitar a escola que ele pedir deixaria qualquer professor ler qualquer unidade
-  da rede.\\
-\rota{POST /api/trocar-senha} & sessão & Troca de senha do primeiro acesso.
-  \emph{Route handler} próprio, e não o BFF, por dois motivos: o BFF recusa tudo
-  enquanto \cd{precisaTrocarSenha} --- é justamente a trava --- e o \emph{login}
-  usado sai da SESSÃO, então o navegador nunca escolhe de quem é a senha que
-  está trocando.\\
+\endhead
+\rota{POST /\allowbreak{}telemetry/\allowbreak{}batch} & \emph{(qualquer)} & Recebe um lote do canal ANALÍTICO da SDK.\par Publica no Pub/Sub, que entrega em \cd{POST /\allowbreak{}telemetry/\allowbreak{}ingest}. É o canal analítico --- \textbf{não} o operacional: \cd{dwell} e o feed adaptativo do motor passam por \cd{/\allowbreak{}runs/\allowbreak{}:id/\allowbreak{}eventos}, que é síncrono e ordenado.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{alunoId} e \cd{escolaId} NÃO vêm do corpo: são acrescentados a partir do token. Aceitá-los do cliente deixaria um bundle gravar evento no nome de outra criança.\par \hspace*{1em}\textbullet{} \cd{recebidos} conta o que foi PUBLICADO, não o que foi gravado --- a gravação acontece do outro lado do Pub/Sub.\\
+\zebra \rota{POST /\allowbreak{}telemetry/\allowbreak{}beacon} & \textbf{token no corpo} & Último lote de uma sessão que está fechando.\par Chamada no \cd{pagehide} com \cd{navigator.sendBeacon}. \textbf{Responde 204 SEMPRE}: a página já foi descartada e ninguém lê o corpo --- erro aqui só poluiria o log do cliente. Corpo inválido ou token que não confere viram descarte silencioso, com aviso no servidor.\\
+\rota{POST /\allowbreak{}telemetry/\allowbreak{}ingest} & \textbf{push} & Consome a push subscription do Pub/Sub e grava os eventos.\par Push, e não um worker próprio, é uma peça a menos para operar. Grava em \cd{telemetria\_\allowbreak{}eventos} (particionada por mês, schema \cd{particoes}).\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{ON CONFLICT (event\_\allowbreak{}id,\allowbreak{} ts) DO NOTHING}: o Pub/Sub entrega *at least once*, então reentrega é rotina, não exceção.\par \hspace*{1em}\textbullet{} UM INSERT multi-linha por escola, não um por evento --- no pico da manhã o laço custava \textasciitilde{}800 INSERTs/s.\par \hspace*{1em}\textbullet{} Sem \cd{TELEMETRIA\_\allowbreak{}PUSH\_\allowbreak{}SA}/\cd{TELEMETRIA\_\allowbreak{}PUSH\_\allowbreak{}AUDIENCE} a rota responde 401, nunca aberta: ela escreve dado de aluno.\\
 \bottomrule
 \end{tabularx}
+
+\section{turmas}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}turmas} & \cd{gestor}, \cd{admin-contrato} & As turmas da escola.\par Filtra por período letivo quando \cd{periodoLetivoId} vem. Sem ele, TODAS as turmas de todos os anos --- é isso que preserva o histórico depois da virada.\\
+\zebra \rota{POST /\allowbreak{}turmas} & \cd{gestor}, \cd{admin-contrato} & Cria uma turma.\par Sem \cd{periodoLetivoId}, nasce no período VIGENTE --- derivado das datas. Sem nenhum período cadastrado, \textbf{400}: turma sem período é a coluna \cd{users.turma\_\allowbreak{}id} de novo, com outro nome.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{UNIQUE (escola\_\allowbreak{}id,\allowbreak{} periodo\_\allowbreak{}letivo\_\allowbreak{}id,\allowbreak{} nome)}: o \enquote{8A de 2026} e o \enquote{8A de 2027} são turmas DIFERENTES.\\
+\rota{GET /\allowbreak{}turmas/\allowbreak{}\{id\}} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & Os matriculados da turma --- a lista nominal.\par Para o PROFESSOR a checagem é de MATRÍCULA, não de escola: o professor do 8A pedindo o 9B leva \textbf{403}. Antes disto, qualquer professor da escola lia qualquer turma dela --- a única prova exigida era \enquote{mesma escola}, que é a regra de tenancy e não a de quem dá aula ali.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{matriculaId} é da MATRÍCULA e \cd{id} é da PESSOA --- mover e encerrar operam sobre o primeiro.\par \hspace*{1em}\textbullet{} \cd{senhaProvisoria: true} = ainda não fez o primeiro acesso.\\
+\zebra \rota{PATCH /\allowbreak{}turmas/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & Edita nome, série ou turno da turma.\par Não move de período: isso seria reescrever o histórico do ano.\\
+\rota{POST /\allowbreak{}turmas/\allowbreak{}\{id\}/\allowbreak{}matriculas} & \cd{gestor}, \cd{admin-contrato} & Matricula uma pessoa na turma.\par \cd{papel} só admite \cd{aluno} e \cd{professor}. Gestor é papel da ESCOLA, não matrícula de turma --- e é por isso que ele continua vendo a escola inteira.\\
+\zebra \rota{GET /\allowbreak{}turmas/\allowbreak{}minhas} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & As turmas DO PROFESSOR --- as que ele tem matrícula, e só elas.\par Declarada antes de \cd{:id} de propósito: no Nest a primeira rota que casa vence, e \cd{/\allowbreak{}turmas/\allowbreak{}minhas} bateria em \cd{/\allowbreak{}turmas/\allowbreak{}:id} com o id \enquote{minhas}.\par Gestor e admin-contrato caem nas turmas da escola inteira --- é a diferença entre administrar a escola e dar aula numa turma.\\
+\bottomrule
+\end{tabularx}
+
+\section{unoogpt}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}unoogpt/\allowbreak{}agregado/\allowbreak{}escola} & \cd{gestor}, \cd{admin-contrato} & O agregado da escola --- uma linha por turma.\par Controller separado do professor de propósito. A alternativa --- um \cd{@Roles} misto com exceção por método --- é como uma rota individual acaba aberta para gestor sem ninguém notar.\par \textbf{Nada aqui identifica uma criança.}\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{admin-contrato} precisa dizer \cd{?escolaId=}; gestor só vê a própria escola (403).\\
+\zebra \rota{POST /\allowbreak{}unoogpt/\allowbreak{}alocacao} & \cd{aluno} & Manda uma equipe para um bairro.\par \cd{bairro: null} tira a equipe do destino. A justificativa é \textbf{portão de servidor}: só vale fonte que o aluno carregou, ou \enquote{foi intuição} --- que está sempre disponível, porque sem essa saída a pergunta vira pegadinha e o aluno aprende a mentir para o formulário.\\
+\rota{PUT /\allowbreak{}unoogpt/\allowbreak{}conjuntos} & \cd{aluno} & Carrega fontes no modelo pelo painel.\par \cd{PUT} porque é atribuição de conjunto. As camadas ACUMULAM.\\
+\zebra \rota{POST /\allowbreak{}unoogpt/\allowbreak{}contrafactual} & \cd{aluno} & \enquote{E se eu tivesse mandado para\ldots{}} --- calculado e descartado.\par \textbf{Não grava e não debita}: é a pergunta que o aluno faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\\
+\rota{POST /\allowbreak{}unoogpt/\allowbreak{}passo} & \cd{aluno} & Move a sessão para outro passo da missão.\\
+\zebra \rota{POST /\allowbreak{}unoogpt/\allowbreak{}pergunta} & \cd{aluno} & O turno do Cientista --- a rota que fala com o modelo.\par Rate limit apertado (\textbf{12/min}) porque cada chamada custa tokens de verdade: o teto por sessão é o controle de custo, e este é o freio contra o laço.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Falha do PROVEDOR \textbf{não} chega ao aluno como 500: vira \cd{cientista-indisponivel} (\textbf{503}), que a tela traduz em \enquote{tente falar de novo}. E \textbf{não debita} --- o débito acontece só depois de resposta válida.\par \hspace*{1em}\textbullet{} O log fica com o motivo técnico, \textbf{sem o texto do aluno}: é caixa livre escrita por menor de idade.\par \hspace*{1em}\textbullet{} O número que um botão de opção mostra sai do MOTOR, nunca da LLM.\\
+\rota{GET /\allowbreak{}unoogpt/\allowbreak{}professor/\allowbreak{}alunos/\allowbreak{}\{alunoId\}} & \cd{professor}, \cd{admin-contrato} & A linha de UMA criança: leitura em graus e a Transcrição.\par \textbf{Professor only.} O relatório abre pelo que a missão MEDIU, em graus.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Número só com \cd{grau: "scored"}. E \cd{zero} (\enquote{teve a chance e não foi}) nunca se confunde com \cd{none} (\enquote{a oportunidade não chegou}) --- é a distinção mais importante do modelo, e ela está no TIPO.\par \hspace*{1em}\textbullet{} \cd{resumo} nunca afirma o que o aluno É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.\\
+\zebra \rota{GET /\allowbreak{}unoogpt/\allowbreak{}professor/\allowbreak{}turmas} & \cd{professor}, \cd{admin-contrato} & Turmas para o seletor de resultados do unooGPT.\par Filtradas por MATRÍCULA para o professor. \textbf{Gestor não entra aqui} --- ele tem \cd{/\allowbreak{}unoogpt/\allowbreak{}agregado/\allowbreak{}escola}.\\
+\rota{GET /\allowbreak{}unoogpt/\allowbreak{}professor/\allowbreak{}turmas/\allowbreak{}\{turmaId\}} & \cd{professor}, \cd{admin-contrato} & A folha da turma: relógio, retrato de conduta e uma linha por aluno.\par O retrato fala de \textbf{conduta, não de nota} --- conta \enquote{decidiram no escuro} e \enquote{justificaram por intuição} em vez de somar acertos, porque a Missão não tem resposta certa.\\
+\zebra \rota{DELETE /\allowbreak{}unoogpt/\allowbreak{}professor/\allowbreak{}turmas/\allowbreak{}\{turmaId\}} & \cd{professor}, \cd{admin-contrato} & Zera a turma: apaga as partidas E o relógio.\par É o caminho de exclusão que substitui o \cd{expires\_\allowbreak{}at} do app de origem --- prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\par O relógio vai junto porque rodar de novo com a aula \enquote{já começada} faria a segunda rodada nascer no meio da tempestade.\\
+\rota{POST /\allowbreak{}unoogpt/\allowbreak{}professor/\allowbreak{}turmas/\allowbreak{}\{turmaId\}/\allowbreak{}relogio} & \cd{professor}, \cd{admin-contrato} & Dá a largada, soma tempo, encerra, troca o modo ou redefine.\par É o único lugar onde alguém que não é o aluno mexe no que ele vê --- e mesmo aqui \textbf{não toca o Passo dele}: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.\\
+\zebra \rota{POST /\allowbreak{}unoogpt/\allowbreak{}reiniciar} & \cd{aluno} & Recomeça --- abre uma tentativa NOVA.\par \textbf{Não apaga a conversa anterior.} Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.\\
+\rota{GET /\allowbreak{}unoogpt/\allowbreak{}relogio} & \cd{aluno} & O relógio da turma --- polling de \textasciitilde{}5s.\par Leve de propósito: sem IA e sem mapa. \cd{agora} é o instante do SERVIDOR, senão o relógio da máquina da escola (que atrasa) decide quanto tempo a turma tem.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} 240 chamadas por minuto por aluno.\\
+\zebra \rota{GET /\allowbreak{}unoogpt/\allowbreak{}resultado} & \cd{aluno} & O resultado da tentativa, com a faixa e o que ele nunca consultou.\par A \textbf{faixa é a manchete}: corridas da MESMA decisão, para \enquote{não repete igual} sair do texto e virar gráfico. Uma rodada é anedota --- o aluno lê 1.345 e conclui que tirou uma nota.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{sobrou} é um FATO com nome de bairro e número de pessoas, \textbf{não um veredito}: quem transforma fato em lição é o professor, no debate.\par \hspace*{1em}\textbullet{} \cd{naoConsultados} traz só \cd{comoFalar}/\cd{rotuloCurto}/\cd{serve} --- o nome técnico, o viés e a cobertura são o instrumento, e ficam com o professor.\\
+\rota{GET /\allowbreak{}unoogpt/\allowbreak{}sessao} & \cd{aluno} & O bootstrap da Missão Tempestade. Cria a sessão na primeira visita.\par Repare no que NÃO existe nestas rotas: \textbf{id de sessão}. No app de origem toda rota era \cd{/\allowbreak{}api/\allowbreak{}missao/\allowbreak{}:id/\allowbreak{}*} com uma guarda \cd{donoDaSessao} para provar a posse; aqui a identidade é \cd{(escola,\allowbreak{} aluno)} vinda do TOKEN, e não há como pedir a partida de outra pessoa. A guarda desapareceu junto com a classe de bug que ela protegia.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} A \cd{projecao} é SERVIDA, nunca calculada no navegador: um bundle capaz de computá-la deixaria o aluno prever o desfecho antes de enviar.\par \hspace*{1em}\textbullet{} O mapa começa vazio: só o que uma Pergunta revelou chega ao navegador --- \cd{estimativa: null} é o cartão em branco, e \textbf{branco é informação}.\par \hspace*{1em}\textbullet{} A \cd{ficha} sai por allowlist, sem os números por bairro: eles são a verdade do mundo, e mandá-los daria de graça a resposta que a missão existe para o aluno não ter.\\
+\zebra \rota{POST /\allowbreak{}unoogpt/\allowbreak{}simular} & \cd{aluno} & Enfrenta a tempestade e fecha a tentativa.\par Exige justificativa de \textbf{cada equipe com destino} --- sem isso, \cd{falta-justificar}. Devolve o mesmo que \cd{GET /\allowbreak{}unoogpt/\allowbreak{}resultado}.\\
+\bottomrule
+\end{tabularx}
+
+\section{unootube}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{POST /\allowbreak{}unootube/\allowbreak{}credibilidade} & \cd{aluno} & Fecha a missão trocando inscritos por credibilidade.\par É a única rota que acrescenta \cd{score}, e ele é \cd{derivados.fontesConfiaveis} --- a correção server-side. É o valor que a experiência devolve ao hub no \cd{exp:concluir}.\\
+\zebra \rota{POST /\allowbreak{}unootube/\allowbreak{}curtidos/\allowbreak{}\{videoId\}} & \cd{aluno} & Curte (ou descurte) um vídeo.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Curtir não conta para nada na missão: o que vale é o que a criança SALVA.\\
+\rota{GET /\allowbreak{}unootube/\allowbreak{}ranking} & \cd{aluno} & O ranking --- a virada da missão.\par Os colegas são \textbf{fictícios}: ranquear colegas reais exporia pontuação de menores (regra 6). \cd{voce} marca a linha do aluno.\par É aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.\\
+\zebra \rota{POST /\allowbreak{}unootube/\allowbreak{}reiniciar} & \cd{aluno} & Começa a missão do zero.\\
+\rota{POST /\allowbreak{}unootube/\allowbreak{}salvos} & \cd{aluno} & Salva um vídeo na playlist.\par A api corrige contra o \cd{factual} e devolve inscritos e fontes recalculados no servidor (regra 3) --- o cliente manda só qual vídeo salvou.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} A playlist tem 3 lugares. Cheia, a api recusa --- é o diálogo de limite da experiência.\par \hspace*{1em}\textbullet{} Vídeo fora do catálogo é \textbf{400} com \cd{codigo: VIDEO\_\allowbreak{}DESCONHECIDO}.\\
+\zebra \rota{POST /\allowbreak{}unootube/\allowbreak{}salvos/\allowbreak{}\{videoId\}/\allowbreak{}remover} & \cd{aluno} & Tira um vídeo da playlist.\par \cd{POST} em vez de \cd{DELETE} porque a SDK só expõe get/post --- a semântica idempotente é a mesma.\\
+\rota{GET /\allowbreak{}unootube/\allowbreak{}sessao} & \cd{aluno} & O estado da missão e o catálogo de vídeos.\par O catálogo sai \textbf{sem `factual`} --- o tipo do servidor é \cd{Omit<Video,\allowbreak{} "factual">}, então o gabarito é impossível de vazar aqui, não só ausente por descuido.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} As métricas de popularidade são COSMÉTICAS: nenhuma entra em conta nenhuma. O vídeo fake é o que tem os números grandes, e é esse contraste que o ranking desmonta.\par \hspace*{1em}\textbullet{} \cd{ranking: null} até ele ser desbloqueado --- é a virada da missão.\\
+\zebra \rota{GET /\allowbreak{}unootube/\allowbreak{}turmas} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & Turmas para o seletor de resultados.\par Filtradas por MATRÍCULA para o professor; o gestor vê a escola. \cd{admin-contrato} precisa dizer \cd{?escolaId=} --- o token dele tem escola vazia e o TenancyInterceptor não abre contexto.\\
+\rota{GET /\allowbreak{}unootube/\allowbreak{}turmas/\allowbreak{}\{turmaId\}/\allowbreak{}resultados} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & O que a turma fez na missão do UnooTube.\par Uma linha por aluno mais o resumo. \cd{distribuicaoFontes} conta só entre os que CONCLUÍRAM --- misturar quem parou no meio faria a média dizer outra coisa.\\
+\bottomrule
+\end{tabularx}
+
+\section{usuarios}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}usuarios} & \cd{gestor}, \cd{admin-contrato} & As pessoas da escola, paginadas.\par A tela \cd{/\allowbreak{}admin/\allowbreak{}usuarios}. Busca por nome, login, matrícula \textbf{e CPF --- com ou sem pontuação}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{situacao: sem-primeiro-acesso} lista quem ainda não trocou a senha da importação.\par \hspace*{1em}\textbullet{} A consulta roda dentro de \cd{comTenancy} porque inclui MATRÍCULAS, que têm RLS: fora do contexto a lista voltaria com todo mundo \enquote{sem turma}, em silêncio.\\
+\zebra \rota{PATCH /\allowbreak{}usuarios/\allowbreak{}\{id\}} & \cd{gestor}, \cd{admin-contrato} & Edita nome, CPF, e-mail, papel ou situação da pessoa.\par Caminho de balcão: a planilha veio com o dígito trocado e a família traz o documento.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{cpf: ""} \textbf{APAGA} o campo --- é o que se faz quando o número era de outra pessoa.\par \hspace*{1em}\textbullet{} Sair da REDE é \cd{ativo: false}, não DELETE: há dado de aluno pendurado em oito tabelas.\\
+\rota{POST /\allowbreak{}usuarios/\allowbreak{}\{id\}/\allowbreak{}reset-senha} & \cd{gestor}, \cd{admin-contrato} & Gera uma senha temporária e a devolve UMA vez.\par Marca a conta como provisória: quem entrar com ela cai em \cd{/\allowbreak{}trocar-senha} sem saída --- trava tripla, no middleware, no BFF e no \cd{/\allowbreak{}api/\allowbreak{}exp-token}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} A senha \textbf{não fica em coluna nem em log}: se a tela perder, gera-se outra.\\
+\zebra \rota{POST /\allowbreak{}usuarios/\allowbreak{}importar-csv} & \cd{gestor}, \cd{admin-contrato} & Compatibilidade: delega para \cd{POST /\allowbreak{}rostering/\allowbreak{}importar}.\par Continua respondendo porque scripts e documentação a citam. \textbf{Delega} --- dois importadores lado a lado divergiriam na primeira regra nova.\\
+\bottomrule
+\end{tabularx}
+
+\section{vila}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}vila/\allowbreak{}agregado/\allowbreak{}turmas} & \cd{professor}, \cd{gestor} & Turmas para o seletor da Vila.\par Sem filtro por série --- a Vila é transversal ---, mas \textbf{com} filtro por matrícula: o professor vê as turmas dele, o gestor vê a escola.\\
+\zebra \rota{GET /\allowbreak{}vila/\allowbreak{}agregado/\allowbreak{}turmas/\allowbreak{}\{turmaId\}} & \cd{professor}, \cd{gestor} & O agregado da turma --- contagens, nunca por criança.\par Abre para GESTOR também, e nenhum campo aqui identifica uma criança: porta a regra do app de origem (\enquote{pesquisador nunca vê a linha de uma criança; só agregados}).\par A distribuição de bolhas é o número que o professor precisa \textbf{antes} do debate: sem as três bolhas na sala, o momento em que a turma descobre que recebeu mensagens diferentes não acontece.\\
+\rota{GET /\allowbreak{}vila/\allowbreak{}professor/\allowbreak{}alunos/\allowbreak{}\{alunoId\}} & \cd{professor} & O relatório da última partida concluída de um aluno.\par \textbf{Professor only} --- o gestor tem o agregado, nunca a linha de uma criança. São controllers separados de propósito: um \cd{@Roles} misto com exceção por método é como uma rota individual acaba aberta para gestor sem ninguém notar.\par A seção das mensagens abre pelo \textbf{NÍVEL} que ela recebeu, antes do que ela fez: \enquote{caiu em 2 de 3} sem dizer que era o nível C faz o adulto concluir que a criança é ingênua --- o rótulo que este projeto existe para não produzir.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{relatorio: null} é resposta legítima: o aluno existe e não jogou. Um 404 faria a tela dizer \enquote{não encontrado} para uma criança da turma dele.\par \hspace*{1em}\textbullet{} \cd{grau} é invariante de API: só a variante \cd{scored} tem número; as outras têm \cd{null} POR TIPO, então o hub não consegue imprimir \enquote{Poder 100} a partir de um sinal só.\par \hspace*{1em}\textbullet{} \cd{mensagens: null} = nenhum cartão chegou a aparecer --- \textbf{não} é \enquote{ela ignorou tudo}.\\
+\zebra \rota{GET /\allowbreak{}vila/\allowbreak{}professor/\allowbreak{}cartoes} & \cd{professor} & TODOS os cartões, das três bolhas, COM o gabarito.\par É a revelação final da missão: o professor projeta as três versões lado a lado, marcando quais eram verdadeiras, e é a primeira vez que a turma vê as outras.\par Vem da api, e não de uma cópia no hub, porque \textbf{os textos SÃO o instrumento}: uma vírgula divergente entre o que o jogo serviu e o que o professor projeta põe a sala discutindo uma mensagem que ninguém recebeu.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \textbf{COM `turmaId`, devolve só as bolhas que AQUELA sala recebeu.} Sem isso, o guia de uma turma de 3º ano projetava o golpe da bolha B --- que a api nunca serviu ali --- e mandava o professor esperar a reação de um grupo que não existe na sala.\par \hspace*{1em}\textbullet{} \cd{bolhasDaTurma: null} = nenhuma turma escolhida; a tela mostra as três e avisa.\\
+\rota{GET /\allowbreak{}vila/\allowbreak{}professor/\allowbreak{}turmas/\allowbreak{}\{turmaId\}} & \cd{professor} & Uma linha por aluno da turma.\par Quantas partidas, a bolha, e se a última sustenta leitura.\par \textbf{Sem valor de Schwartz nenhum}: listagem é ordenável, e uma coluna \enquote{Poder} viraria ranking de crianças. Os valores vivem na tela individual, uma criança por vez, com o grau ao lado.\\
+\zebra \rota{DELETE /\allowbreak{}vila/\allowbreak{}professor/\allowbreak{}turmas/\allowbreak{}\{turmaId\}/\allowbreak{}dados} & \cd{professor} & Zera os dados da Vila desta turma.\par \cd{DELETE}, e não um \cd{POST /\allowbreak{}limpar}: é remoção, e o verbo diz isso a quem lê o log. Devolve as contagens do que sumiu --- \enquote{pronto} sem número deixa o professor sem saber se apagou a turma certa.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} As \textbf{bolhas} somem junto: rodar de novo com a mesma bolha serviria à criança o mesmo golpe --- ela reconhece, e a segunda rodada não mede nada.\par \hspace*{1em}\textbullet{} \cd{perfis\_\allowbreak{}importados} \textbf{não} é tocado: aquilo pertence à atividade do Instanooria, e apagar de lá trocaria os lados de uma aula em andamento.\\
+\rota{POST /\allowbreak{}vila/\allowbreak{}sessoes} & \cd{aluno} & Abre a partida e entrega os cartões DESTA criança.\par \textbf{A bolha é do SERVIDOR.} Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em \cd{vila\_\allowbreak{}bolhas} (estável entre partidas: a folha do professor diz \enquote{esse estava na C}).\par Era \cd{alunoSlot \% 3} no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Os cartões vêm \textbf{sem gabarito} e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.\par \hspace*{1em}\textbullet{} Nos anos iniciais (1EF--5EF) a bolha B \textbf{não é servida} --- \enquote{suporte} exige entender o que é suporte, e só a api sabe a série.\par \hspace*{1em}\textbullet{} Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.\par \hspace*{1em}\textbullet{} Identidade sempre do token: o payload não traz aluno nem turma.\\
+\zebra \rota{POST /\allowbreak{}vila/\allowbreak{}sessoes/\allowbreak{}\{id\}/\allowbreak{}concluir} & \cd{aluno} & Fecha a partida e grava o payload bruto.\par \textbf{Idempotente}: a criança pode recarregar, e o \cd{pagehide} pode disparar duas vezes --- daí \cd{status: "jaEstava"}.\par O servidor RECALCULA o retrato; nunca aceita o perfil do cliente. É isso que permite reprocessar o histórico quando \cd{VERSAO\_\allowbreak{}MAPEAMENTO} subir.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{CHAVES\_\allowbreak{}DE\_\allowbreak{}PERFIL} recusa payload que traga valores/graus/perfil calculados: o jogo sabe computar o retrato e deliberadamente não o envia.\par \hspace*{1em}\textbullet{} \cd{eventos[].dados} só aceita número, booleano ou string de um \textbf{vocabulário fechado} --- o \cd{texto} livre era o caminho por onde o nome de uma criança chegaria a um JSONB.\par \hspace*{1em}\textbullet{} O gabarito da missão fica no servidor: o cliente manda qual opção escolheu, a api corrige (regra 3).\\
+\bottomrule
+\end{tabularx}
+
