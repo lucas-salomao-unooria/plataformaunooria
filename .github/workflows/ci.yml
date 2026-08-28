@@ -37,7 +37,7 @@ jobs:
         with: { fetch-depth: 2 }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+        with: { node-version: 24, cache: pnpm }
 
       # O `postinstall` da api roda o `prisma generate` aqui. Sem ele, o
       # `@prisma/client` nao exporta nada e a api nao compila — foi o que

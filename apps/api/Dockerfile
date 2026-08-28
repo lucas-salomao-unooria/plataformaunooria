@@ -12,7 +12,7 @@
 #   - o Prisma Client precisa do engine do Linux (binaryTargets no schema) e
 #     do `prisma generate` rodado ANTES do build.
 
-FROM node:20-slim AS build
+FROM node:24-slim AS build
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 # `openssl` é dependência de runtime do engine do Prisma.
@@ -36,7 +36,7 @@ RUN pnpm --filter=@edu/api deploy --prod /deploy
 RUN cp -r /repo/apps/api/prisma /deploy/prisma \
  && cd /deploy && ./node_modules/.bin/prisma generate
 
-FROM node:20-slim
+FROM node:24-slim
 ENV NODE_ENV=production
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
