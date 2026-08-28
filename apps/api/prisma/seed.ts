@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { comEscola } from "./tenancy-do-seed";
 import bcrypt from "bcryptjs";
 
 /**
@@ -121,13 +122,17 @@ async function main() {
       create: { escolaId, usuarioId, papel, principal, inicio: periodo.inicio },
     });
 
+  /* `matriculas` tem FORCE RLS: o upsert precisa da escola no contexto, senão
+     o banco recusa. Local passava porque a DATABASE_URL de dev é do `postgres`
+     (superusuário ignora RLS); em produção, conectando como `app`, não passa. */
   const matricular = (
     turmaId: string,
     usuarioId: string,
     papel: "aluno" | "professor",
     escolaId = ESCOLA_ID,
   ) =>
-    prisma.matricula.upsert({
+    comEscola(prisma, escolaId, (tx) =>
+      tx.matricula.upsert({
       where: {
         escolaId_turmaId_usuarioId_papel: { escolaId, turmaId, usuarioId, papel },
       },
@@ -140,7 +145,8 @@ async function main() {
         principal: papel === "aluno",
         inicio: periodo.inicio,
       },
-    });
+      }),
+    );
 
   const upsertUsuarioMinimo = (username: string, displayName: string, role: string) =>
     prisma.user.upsert({

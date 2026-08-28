@@ -11,9 +11,14 @@
  *       pnpm --filter @edu/api seed:demo -- --apagar
  */
 import { PrismaClient } from "@prisma/client";
+import { clientDoSeed } from "./tenancy-do-seed";
 import { ENGINE_CONFIG_DEFAULT, PERFIS, PROPORCOES_DEFAULT } from "../src/comum/insta/defaults";
 
-const prisma = new PrismaClient();
+/* Cliente com a RLS armada na sessão: este seed é de UMA escola do começo ao
+   fim, e várias das tabelas que ele escreve (`exp_01_activities`, `exp_01_posts`,
+   `exp_01_exp_70_perfis_importados`, ...) têm FORCE ROW LEVEL SECURITY. Ver
+   `tenancy-do-seed.ts` para por que sessão e não transação. */
+let prisma: PrismaClient;
 const TITULO = "DEMO — Descobrimento (sem Gemini)";
 const ESCOLA_ID = "escola-demo";
 
@@ -420,6 +425,7 @@ async function semearReferenciasDoPlano() {
 }
 
 async function principal() {
+  prisma = await clientDoSeed(ESCOLA_ID);
   const args = process.argv.slice(2);
   if (args.includes("--apagar")) {
     await apagar();
