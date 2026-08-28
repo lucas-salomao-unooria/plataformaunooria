@@ -118,7 +118,10 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
 - **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
   silêncio. O sintoma é lista de pessoas "sem turma".
 - Sair da turma é `fim`, não `DELETE`; sair da rede é `ativo = false`. Há dado de
-  aluno pendurado em oito tabelas.
+  aluno pendurado em oito tabelas. Mover de turma (`PATCH /matriculas/:id` com
+  `turmaDestinoId`) é UM passo: à mão, o gestor tira da antiga e esquece de pôr
+  na nova, e o aluno fica sem turma — invisível para o professor, sem nada na
+  tela dizendo o que faltou.
 
 **Entrada de pessoas**: `POST /rostering/importar` (gestor/admin), corpo
 `text/csv` cru, até 10MB/50k linhas. Planilha de UMA linha por pessoa, cabeçalho

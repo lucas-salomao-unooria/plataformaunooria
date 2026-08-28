@@ -358,6 +358,73 @@ export class RosteringService {
     }, escolaId);
   }
 
+  /**
+   * Troca qual turma é a de REFERÊNCIA do aluno, sem encerrar nada.
+   *
+   * É o caso do aluno que está numa regular e numa eletiva e foi enturmado na
+   * ordem errada: a de referência é a que alimenta o cache `users.turma_id` e,
+   * por ele, o claim `turma_id` do token.
+   */
+  async tornarPrincipal(escolaId: string, matriculaId: string) {
+    return this.prisma.comTenancy(async (tx) => {
+      const matricula = await tx.matricula.findFirst({
+        where: { id: matriculaId, escolaId, papel: "aluno", fim: null },
+      });
+      if (!matricula) return null;
+      await tx.matricula.updateMany({
+        where: {
+          escolaId,
+          usuarioId: matricula.usuarioId,
+          papel: "aluno",
+          fim: null,
+          id: { not: matricula.id },
+        },
+        data: { principal: false },
+      });
+      await tx.matricula.update({ where: { id: matricula.id }, data: { principal: true } });
+      await tx.user.update({
+        where: { id: matricula.usuarioId },
+        data: { turmaId: matricula.turmaId },
+      });
+      return { ok: true as const };
+    }, escolaId);
+  }
+
+  /**
+   * Move a pessoa de turma: encerra a matrícula na origem e abre na destino.
+   *
+   * Dois passos numa ação por um motivo: feito à mão, o gestor tira da turma
+   * antiga e esquece de colocar na nova — e o aluno fica sem turma, invisível
+   * para o professor, sem nada na tela dizendo o que faltou.
+   */
+  async moverDeTurma(escolaId: string, matriculaId: string, turmaDestinoId: string) {
+    const periodo = await this.periodoDeHoje();
+    return this.prisma.comTenancy(async (tx) => {
+      const matricula = await tx.matricula.findFirst({
+        where: { id: matriculaId, escolaId, fim: null },
+      });
+      if (!matricula) return null;
+      const destino = await tx.turma.findFirst({ where: { id: turmaDestinoId, escolaId } });
+      if (!destino) return null;
+      if (destino.id === matricula.turmaId) return { ok: true as const };
+
+      const papel = matricula.papel as "aluno" | "professor";
+      await tx.matricula.update({
+        where: { id: matricula.id },
+        data: { fim: new Date(), principal: false },
+      });
+      await matricularEm(tx, {
+        escolaId,
+        turmaId: destino.id,
+        usuarioId: matricula.usuarioId,
+        papel,
+        principal: papel === "aluno" && matricula.principal,
+        inicio: periodo?.inicio ?? new Date(),
+      });
+      return { ok: true as const };
+    }, escolaId);
+  }
+
   /** Encerra em vez de apagar — a matrícula é o que dá turma ao histórico. */
   async encerrarMatricula(escolaId: string, matriculaId: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -506,6 +573,8 @@ export class RosteringService {
             usuario: m.usuario.username,
             matricula: m.usuario.matriculaExterna,
             ativo: m.usuario.ativo,
+            /** Turma de REFERÊNCIA da pessoa (só faz sentido para aluno). */
+            principal: m.principal,
             /** Ainda não entrou pela primeira vez. */
             senhaProvisoria: m.usuario.senhaProvisoria,
             desde: m.inicio,

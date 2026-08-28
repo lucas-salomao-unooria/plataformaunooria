@@ -15,6 +15,17 @@ funcionalidade responde 401 ou 503, \textbf{nunca} fica aberta. Essa é a
 convenção de \emph{fail closed} da plataforma (\rf{RNF-09}).
 \end{regra}
 
+\begin{decisao}
+\textbf{Identidade, enturmamento e importação não têm variável nenhuma}
+(\adrr{ADR-28}, \adrr{ADR-29}). É afirmação, não omissão deste apêndice: o
+período letivo vigente é derivado das \emph{datas} em \cd{periodos\_letivos} ---
+sem coluna \cd{ativo} e sem \env{ANO\_LETIVO} ---, a senha inicial do lote é
+escolhida na tela de importação e não fica em configuração, e o teto do CSV está
+no código (\cd{main.ts} e \arq{rostering.service.ts}). Configuração é lugar de
+endereço e segredo; regra de negócio em variável de ambiente é regra que ninguém
+encontra quando ela sai do esperado.
+\end{decisao}
+
 \section{API --- \arq{apps/api/.env}}
 
 \subsection{Banco e identidade}

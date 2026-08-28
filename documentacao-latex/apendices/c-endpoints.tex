@@ -110,7 +110,11 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \rota{POST /turmas/:id/matriculas} & gestor, admin-contrato & Matricula
   (\cd{aluno} ou \cd{professor}). Para aluno, encerra a matrícula anterior do
   mesmo período e atualiza o cache \cd{users.turma\_id}.\\
-\zebra \rota{DELETE /matriculas/:id} & gestor, admin-contrato & \textbf{Encerra}
+\zebra \rota{PATCH /matriculas/:id} & gestor, admin-contrato &
+  \cd{\{turmaDestinoId\}} move de turma num passo (encerra na origem, abre no
+  destino); \cd{\{principal: true\}} troca qual turma é a de referência do aluno,
+  sem encerrar nada. Nenhuma das duas apaga linha.\\
+\rota{DELETE /matriculas/:id} & gestor, admin-contrato & \textbf{Encerra}
   (grava \cd{fim}); não apaga linha.\\
 \rota{GET /periodos-letivos} \newline \rota{POST /periodos-letivos} & prof.\ (GET),
   gestor & Calendário do contrato.\\

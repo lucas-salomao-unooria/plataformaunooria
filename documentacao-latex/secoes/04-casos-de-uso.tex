@@ -74,7 +74,7 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   \node[ucase] (uc16) at (10.6,-10.8) {\ucr{UC-16} Zerar dados da turma};
 
   % ---- casos de uso: gestor / admin
-  \node[ucase] (uc20) at (6.2,-13.1) {\ucr{UC-20} Importar usuários por CSV};
+  \node[ucase] (uc20) at (6.2,-13.1) {\ucr{UC-20} Importar pessoas e enturmar};
   \node[ucase] (uc21) at (6.2,-14.6) {\ucr{UC-21} Redefinir senha};
   \node[ucase] (uc22) at (10.6,-14.2) {\ucr{UC-22} Ler agregado da rede};
   \node[ucase] (uc23) at (10.6,-15.7) {\ucr{UC-23} Publicar manifesto};
@@ -153,6 +153,13 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   \item O \emph{middleware} redireciona para a \emph{home} do papel:
     \rota{/aluno}, \rota{/professor} ou \rota{/admin/usuarios}.
 \end{enumerate}
+
+\textbf{Fluxo do PRIMEIRO acesso.} Se a senha veio de uma importação ou de um
+reajuste (\cd{senha\_provisoria}), o passo 3 vira \rota{/trocar-senha}, e não há
+saída: a mesma marca faz o BFF recusar dados e o \rota{/api/exp-token} recusar
+\emph{token} de experiência --- só com o \emph{middleware}, bastaria digitar
+\rota{/exp/...} para pular. Trocada a senha, a sessão é \textbf{refeita} com a
+nova, porque o \emph{cookie} antigo ainda diz que falta trocar (\adrr{ADR-29}).
 
 \textbf{Fluxos alternativos}
 \begin{itemize}
@@ -446,8 +453,11 @@ mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
 \zebra \ucr{UC-15} & \rf{RF-37}, \rf{RF-53} & \rota{/professor/bem-estar} &
   \arq{bemestar}\\
 \ucr{UC-16} & \rf{RF-50} & botão de zerar turma & \arq{vila}\\
-\zebra \ucr{UC-20} & \rf{RF-06} & \rota{/admin/usuarios} & \arq{usuarios}\\
+\zebra \ucr{UC-20} & \rf{RF-06} & \rota{/admin/importar}, \rota{/admin/turmas}
+  & \arq{rostering}\\
 \ucr{UC-21} & \rf{RF-07} & \rota{/admin/usuarios} & \arq{usuarios}\\
+\zebra \ucr{UC-25} & \rf{RF-01} & \rota{/trocar-senha} & \arq{auth}\\
+\ucr{UC-26} & \rf{RF-06} & \rota{/professor/turmas} & \arq{rostering}\\
 \zebra \ucr{UC-22} & \rf{RF-52} & \rota{/analise} & \arq{analise}\\
 \ucr{UC-23} & \rf{RF-10} & CI/CD & \arq{experiencias}\\
 \zebra \ucr{UC-24} & \rf{RF-11} & \emph{script} & \arq{experiencias}\\

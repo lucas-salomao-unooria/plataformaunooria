@@ -12,6 +12,7 @@ import {
   ModalTitle,
   SearchInput,
   SectionHeader,
+  Selection,
   Table,
   Tabs,
   Tag,
@@ -28,6 +29,14 @@ interface Matriculado extends Record<string, unknown> {
   matricula: string | null;
   ativo: boolean;
   senhaProvisoria: boolean;
+  /** Turma de referência do aluno — a que alimenta o cache e o token. */
+  principal: boolean;
+}
+
+interface TurmaDaEscola {
+  id: string;
+  nome: string;
+  serie: string;
 }
 
 interface DadosDaTurma {
@@ -70,6 +79,9 @@ export function TurmaDetalhe({
   const [candidatos, setCandidatos] = useState<Candidato[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [remover, setRemover] = useState<Matriculado | null>(null);
+  const [mover, setMover] = useState<Matriculado | null>(null);
+  const [destino, setDestino] = useState("");
+  const [turmas, setTurmas] = useState<TurmaDaEscola[]>([]);
 
   const sufixo = useMemo(
     () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
@@ -135,6 +147,33 @@ export function TurmaDetalhe({
     }
   }
 
+  async function abrirMover(linha: Matriculado) {
+    setMover(linha);
+    setDestino("");
+    if (turmas.length === 0) {
+      const resposta = await fetch(`/api/plataforma/turmas${sufixo}`);
+      if (resposta.ok) setTurmas((await resposta.json()) as TurmaDaEscola[]);
+    }
+  }
+
+  async function ajustar(matriculaId: string, corpo: Record<string, unknown>) {
+    setSalvando(true);
+    try {
+      const resposta = await fetch(`/api/plataforma/matriculas/${matriculaId}${sufixo}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(corpo),
+      });
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      setMover(null);
+      await carregar();
+    } catch {
+      setErro("Não foi possível ajustar a matrícula.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   async function encerrar() {
     if (!remover) return;
     setSalvando(true);
@@ -163,6 +202,7 @@ export function TurmaDetalhe({
         render: (_, linha) => {
           if (!linha.ativo) return <Tag>inativo</Tag>;
           if (linha.senhaProvisoria) return <Tag>sem primeiro acesso</Tag>;
+          if (linha.principal) return <Tag>turma de referência</Tag>;
           return <span className="text-unooria-neutral-500">ativo</span>;
         },
       },
@@ -171,13 +211,30 @@ export function TurmaDetalhe({
         title: "",
         align: "right",
         render: (_, linha) => (
-          <Button variant="ghost" size="sm" onClick={() => setRemover(linha)}>
-            Remover da turma
-          </Button>
+          <div className="flex justify-end gap-1">
+            {aba === "alunos" && !linha.principal ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void ajustar(linha.matriculaId, { principal: true })}
+              >
+                Tornar referência
+              </Button>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={() => void abrirMover(linha)}>
+              Mover
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setRemover(linha)}>
+              Remover
+            </Button>
+          </div>
         ),
       },
     ],
-    [],
+    // `ajustar` e `abrirMover` fecham sobre estado que muda a cada render; as
+    // colunas só precisam ser recriadas quando a aba muda.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [aba],
   );
 
   const lista = aba === "alunos" ? (dados?.alunos ?? []) : (dados?.professores ?? []);
@@ -277,6 +334,42 @@ export function TurmaDetalhe({
         <ModalFooter>
           <Button variant="ghost" size="md" onClick={() => setAdicionarAberto(false)}>
             Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={Boolean(mover)} onClose={() => setMover(null)} size="sm" theme="light">
+        <ModalHeader>
+          <ModalTitle>Mover de turma</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-4">
+            <p className="text-[14px] text-unooria-neutral-700">
+              <strong>{mover?.nome}</strong> sai desta turma e entra na escolhida, num passo. A
+              matrícula antiga é encerrada, não apagada — é ela que dá turma ao que a pessoa já fez.
+            </p>
+            <Selection
+              label="Turma de destino"
+              value={destino}
+              onChange={(valor) => setDestino(String(valor))}
+              options={turmas
+                .filter((t) => t.id !== turmaId)
+                .map((t) => ({ value: t.id, label: `${t.nome} · ${t.serie}` }))}
+            />
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" size="md" onClick={() => setMover(null)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            isLoading={salvando}
+            disabled={!destino}
+            onClick={() => void ajustar(mover!.matriculaId, { turmaDestinoId: destino })}
+          >
+            Mover
           </Button>
         </ModalFooter>
       </Modal>

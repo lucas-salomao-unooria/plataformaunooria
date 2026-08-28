@@ -43,6 +43,15 @@ const MatricularSchema = z.object({
   papel: z.enum(["aluno", "professor"]),
 });
 
+const AjustarMatriculaSchema = z
+  .object({
+    turmaDestinoId: z.string().uuid().optional(),
+    principal: z.literal(true).optional(),
+  })
+  .refine((d) => Boolean(d.turmaDestinoId) !== Boolean(d.principal), {
+    message: "informe turmaDestinoId OU principal",
+  });
+
 /**
  * Turmas e enturmamento.
  *
@@ -169,6 +178,28 @@ export class TurmasController {
 @Roles("gestor", "admin-contrato")
 export class MatriculasController {
   constructor(private readonly rostering: RosteringService) {}
+
+  /**
+   * Mover de turma (`turmaDestinoId`) ou tornar esta a turma de referência
+   * (`principal: true`). Nenhuma das duas apaga linha.
+   */
+  @Patch(":id")
+  async ajustar(
+    @Param("id") id: string,
+    @Body() body: unknown,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: Autenticado,
+  ) {
+    if (!UUID.test(id)) throw new NotFoundException("matrícula não encontrada");
+    const dados = AjustarMatriculaSchema.parse(body);
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+
+    const feito = dados.turmaDestinoId
+      ? await this.rostering.moverDeTurma(escolaId, id, dados.turmaDestinoId)
+      : await this.rostering.tornarPrincipal(escolaId, id);
+    if (!feito) throw new NotFoundException("matrícula ou turma não encontrada nesta escola");
+    return feito;
+  }
 
   @Delete(":id")
   async encerrar(

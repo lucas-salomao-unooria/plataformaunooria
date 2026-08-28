@@ -152,9 +152,73 @@ describe("as turmas do professor", () => {
     await admin.turma.delete({ where: { id: eletiva.id } });
   });
 
+  test("tornar principal troca a referência sem encerrar nada", async () => {
+    const periodo = await periodoDeTeste(admin);
+    const eletiva = await admin.turma.create({
+      data: {
+        escolaId: ESCOLA,
+        periodoLetivoId: periodo.id,
+        nome: "Eletiva de Teatro",
+        serie: "8EF",
+        tipo: "componente",
+      },
+    });
+    await rostering.matricular(ESCOLA, eletiva.id, ids.ana, "aluno");
+
+    const naEletiva = await admin.matricula.findFirstOrThrow({
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, turmaId: eletiva.id },
+    });
+    await rostering.tornarPrincipal(ESCOLA, naEletiva.id);
+
+    const todas = await admin.matricula.findMany({
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+    });
+    expect(todas).toHaveLength(2); // nada foi encerrado
+    expect(todas.filter((m) => m.principal)).toHaveLength(1);
+    expect(todas.find((m) => m.principal)?.turmaId).toBe(eletiva.id);
+
+    const ana = await admin.user.findUniqueOrThrow({ where: { id: ids.ana } });
+    expect(ana.turmaId).toBe(eletiva.id); // o cache seguiu a referência
+
+    // devolve o estado para os testes seguintes
+    await rostering.tornarPrincipal(
+      ESCOLA,
+      (
+        await admin.matricula.findFirstOrThrow({
+          where: { escolaId: ESCOLA, usuarioId: ids.ana, turmaId: ids.turma8A },
+        })
+      ).id,
+    );
+    await admin.matricula.deleteMany({ where: { turmaId: eletiva.id } });
+    await admin.turma.delete({ where: { id: eletiva.id } });
+  });
+
+  test("mover de turma encerra na origem E abre no destino, num passo", async () => {
+    const daOito = await admin.matricula.findFirstOrThrow({
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, turmaId: ids.turma8A, fim: null },
+    });
+    await rostering.moverDeTurma(ESCOLA, daOito.id, ids.turma9B);
+
+    const ativas = await admin.matricula.findMany({
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+    });
+    expect(ativas.map((m) => m.turmaId)).toEqual([ids.turma9B]);
+    // A linha antiga continua lá, encerrada: é ela que dá turma ao histórico.
+    const antiga = await admin.matricula.findUniqueOrThrow({ where: { id: daOito.id } });
+    expect(antiga.fim).not.toBeNull();
+
+    const ana = await admin.user.findUniqueOrThrow({ where: { id: ids.ana } });
+    expect(ana.turmaId).toBe(ids.turma9B);
+
+    // volta para o 8A, que é o que os testes seguintes esperam
+    await rostering.moverDeTurma(ESCOLA, ativas[0]!.id, ids.turma8A);
+  });
+
   test("encerrar matrícula tira da turma sem apagar a linha", async () => {
+    // `fim: null`: depois de mover e voltar, a Ana tem linhas ENCERRADAS no 8A
+    // também — e encerrar uma delas não tiraria ninguém de turma nenhuma.
     const matricula = await admin.matricula.findFirstOrThrow({
-      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno" },
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
     });
     await rostering.encerrarMatricula(ESCOLA, matricula.id);
 
