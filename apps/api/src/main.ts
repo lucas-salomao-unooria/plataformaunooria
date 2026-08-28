@@ -6,9 +6,13 @@ import { AssetsService } from "./assets/assets.service";
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
   // Parsers explícitos: JSON com teto e text/csv cru para a importação de
-  // usuários (`POST /usuarios/importar-csv` lê o corpo como string).
+  // pessoas (`POST /rostering/importar` lê o corpo como string).
+  //
+  // O teto do CSV é 10mb porque o de 2mb não cobria o caso real: uma planilha
+  // de 10 mil alunos passa de 1mb, e o erro que aparecia era "PayloadTooLarge"
+  // no meio da matrícula da rede inteira.
   app.useBodyParser("json", { limit: "2mb" });
-  app.useBodyParser("text", { type: "text/csv", limit: "2mb" });
+  app.useBodyParser("text", { type: "text/csv", limit: "10mb" });
   // Driver LOCAL de assets (dev): a api serve as imagens geradas em /assets.
   // Em produção (gcs) a CDN serve o bucket e este static nunca é usado.
   if ((process.env.ASSETS_DRIVER ?? "local") !== "gcs") {

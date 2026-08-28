@@ -1,0 +1,247 @@
+/**
+ * Leitura da PLANILHA SIMPLES de pessoas — uma linha por pessoa, o formato que
+ * a escola preenche e que a área administrativa oferece para download.
+ *
+ * O cabeçalho é lido por NOME, não por posição: quem abre no Excel move coluna,
+ * e um importador que dependesse da ordem transformaria isso em dado trocado
+ * (nome no campo do login) em vez de erro. Coluna desconhecida é erro de
+ * cabeçalho, não coluna ignorada.
+ */
+import { parseCsv } from "../usuarios/csv";
+import {
+  COLUNAS_CONHECIDAS,
+  COLUNAS_LEGADO,
+  COLUNAS_MODELO,
+  type PapelImportavel,
+  type Serie,
+  type Turno,
+} from "./catalogo";
+import { chave, normalizarPapel, normalizarSerie, normalizarTurno, usuarioEhValido } from "./regras";
+
+export interface ErroDeLinha {
+  linha: number;
+  campo: string;
+  mensagem: string;
+}
+
+export interface PessoaDaPlanilha {
+  /** Linha no arquivo (1-based, contando o cabeçalho) — é o que o relatório cita. */
+  linha: number;
+  matricula: string;
+  nome: string;
+  usuario: string;
+  email: string;
+  papel: PapelImportavel;
+  turma: string;
+  serie: Serie | "";
+  turno: Turno | null;
+  /** Só o formato legado traz senha por linha. */
+  senha: string;
+}
+
+export interface LeituraDaPlanilha {
+  formato: "modelo" | "legado";
+  pessoas: PessoaDaPlanilha[];
+  erros: ErroDeLinha[];
+  avisos: ErroDeLinha[];
+}
+
+/** O modelo em branco, gerado da MESMA constante que o leitor consome. */
+export function modeloEmBranco(): string {
+  return `${COLUNAS_MODELO.join(",")}\n`;
+}
+
+/**
+ * Exemplo preenchido — arquivo SEPARADO do modelo, de propósito: linha de
+ * exemplo dentro do modelo vira usuário fantasma importado no primeiro uso.
+ */
+export function exemploPreenchido(): string {
+  return [
+    COLUNAS_MODELO.join(","),
+    "2026001,Ana Paula Ribeiro,,ana.ribeiro@escola.exemplo,aluno,8A,8EF,manha",
+    '2026002,"Souza, João Pedro",joao.souza,,aluno,8A,8EF,manha',
+    "1099,Marta Nunes Alves,,marta.alves@escola.exemplo,professor,8A,8EF,manha",
+    "1100,Carlos Eduardo Dias,,,coordenacao,,,",
+    "",
+  ].join("\n");
+}
+
+/** Os campos que uma linha pode ter — a chave do acesso por NOME de coluna. */
+type CampoDaLinha =
+  | "matricula"
+  | "nome"
+  | "usuario"
+  | "email"
+  | "papel"
+  | "turma"
+  | "serie"
+  | "turno"
+  | "senha";
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+export function lerPlanilha(csv: string): LeituraDaPlanilha {
+  const registros = parseCsv(csv);
+  const erros: ErroDeLinha[] = [];
+  const avisos: ErroDeLinha[] = [];
+
+  const cabecalho = registros[0]?.map((c) => chave(c));
+  if (!cabecalho || cabecalho.length === 0) {
+    return {
+      formato: "modelo",
+      pessoas: [],
+      erros: [{ linha: 1, campo: "header", mensagem: `cabeçalho esperado: ${COLUNAS_MODELO.join(",")}` }],
+      avisos,
+    };
+  }
+
+  const ehLegado =
+    cabecalho.length === COLUNAS_LEGADO.length && COLUNAS_LEGADO.every((c, i) => cabecalho[i] === c);
+  const formato: LeituraDaPlanilha["formato"] = ehLegado ? "legado" : "modelo";
+
+  if (!ehLegado) {
+    const desconhecidas = cabecalho.filter((c) => c && !COLUNAS_CONHECIDAS.includes(c));
+    for (const coluna of desconhecidas) {
+      erros.push({ linha: 1, campo: "header", mensagem: `coluna desconhecida: "${coluna}"` });
+    }
+    for (const obrigatoria of ["nome", "papel"] as const) {
+      if (!cabecalho.includes(obrigatoria)) {
+        erros.push({
+          linha: 1,
+          campo: "header",
+          mensagem: `falta a coluna "${obrigatoria}" — cabeçalho esperado: ${COLUNAS_MODELO.join(",")}`,
+        });
+      }
+    }
+    if (erros.length > 0) return { formato, pessoas: [], erros, avisos };
+  }
+
+  const corpo = registros.slice(1);
+  if (corpo.length === 0) {
+    return {
+      formato,
+      pessoas: [],
+      erros: [{ linha: 2, campo: "arquivo", mensagem: "nenhuma linha de dados" }],
+      avisos,
+    };
+  }
+
+  const indice = new Map<string, number>();
+  cabecalho.forEach((coluna, i) => {
+    if (coluna && !indice.has(coluna)) indice.set(coluna, i);
+  });
+
+  const pessoas: PessoaDaPlanilha[] = [];
+  const porMatricula = new Map<string, number>();
+  const porUsuario = new Map<string, number>();
+
+  corpo.forEach((celulas, idx) => {
+    const linha = idx + 2;
+    const campo = (nome: CampoDaLinha) => {
+      const i = indice.get(nome);
+      return i === undefined ? "" : (celulas[i] ?? "").trim();
+    };
+
+    const nome = campo("nome");
+    const papelBruto = campo("papel");
+    // Linha inteiramente vazia (planilha exportada costuma trazer várias) não é erro.
+    if (!nome && !papelBruto && celulas.every((c) => c.trim() === "")) return;
+
+    const daLinha: ErroDeLinha[] = [];
+    if (!nome) daLinha.push({ linha, campo: "nome", mensagem: "nome vazio" });
+    if (nome.length > 120) daLinha.push({ linha, campo: "nome", mensagem: "nome acima de 120 caracteres" });
+
+    const papel = normalizarPapel(papelBruto);
+    if (!papel) {
+      daLinha.push({
+        linha,
+        campo: "papel",
+        mensagem: papelBruto
+          ? `papel não reconhecido: "${papelBruto}" — use aluno, professor ou coordenação`
+          : "papel: informe aluno, professor ou coordenação",
+      });
+    }
+
+    const usuario = chave(campo("usuario")).replace(/\s+/g, "");
+    if (usuario && !usuarioEhValido(usuario)) {
+      daLinha.push({ linha, campo: "usuario", mensagem: "usuario: use 3–64 caracteres [a-z 0-9 . _ -]" });
+    }
+
+    const email = campo("email");
+    if (email && !EMAIL.test(email)) {
+      daLinha.push({ linha, campo: "email", mensagem: "email inválido" });
+    }
+
+    const matricula = campo("matricula");
+    if (matricula.length > 64) {
+      daLinha.push({ linha, campo: "matricula", mensagem: "matricula acima de 64 caracteres" });
+    }
+
+    const turma = campo("turma");
+    const serieBruta = campo("serie");
+    const serie = serieBruta ? normalizarSerie(serieBruta) : null;
+    if (serieBruta && !serie) {
+      daLinha.push({ linha, campo: "serie", mensagem: `série não reconhecida: "${serieBruta}"` });
+    }
+
+    const turnoBruto = campo("turno");
+    const turno = turnoBruto ? normalizarTurno(turnoBruto) : null;
+    if (turnoBruto && !turno) {
+      daLinha.push({ linha, campo: "turno", mensagem: `turno não reconhecido: "${turnoBruto}"` });
+    }
+
+    if (papel === "aluno") {
+      if (!turma) daLinha.push({ linha, campo: "turma", mensagem: "turma: obrigatória para aluno" });
+      if (!serie) daLinha.push({ linha, campo: "serie", mensagem: "serie: obrigatória para aluno" });
+    }
+
+    const senha = campo("senha");
+    if (senha && (senha.length < 8 || senha.length > 200)) {
+      daLinha.push({ linha, campo: "senha", mensagem: "senha: mínimo 8 caracteres" });
+    }
+
+    // Gestor não é matrícula de turma (é papel no nível da escola). A turma na
+    // linha não é ignorada em silêncio: vira aviso, para o gestor saber que
+    // aquela coluna não teve efeito.
+    if (papel === "gestor" && turma) {
+      avisos.push({
+        linha,
+        campo: "turma",
+        mensagem: "coordenação não é matriculada em turma — a coluna turma foi ignorada nesta linha",
+      });
+    }
+
+    if (daLinha.length > 0) {
+      erros.push(...daLinha);
+      return;
+    }
+
+    const anteriorMatricula = matricula ? porMatricula.get(chave(matricula)) : undefined;
+    if (anteriorMatricula) {
+      erros.push({ linha, campo: "matricula", mensagem: `matricula repetida no arquivo (linha ${anteriorMatricula})` });
+      return;
+    }
+    const anteriorUsuario = usuario ? porUsuario.get(usuario) : undefined;
+    if (anteriorUsuario) {
+      erros.push({ linha, campo: "usuario", mensagem: `usuario repetido no arquivo (linha ${anteriorUsuario})` });
+      return;
+    }
+    if (matricula) porMatricula.set(chave(matricula), linha);
+    if (usuario) porUsuario.set(usuario, linha);
+
+    pessoas.push({
+      linha,
+      matricula,
+      nome,
+      usuario,
+      email,
+      papel: papel!,
+      turma: papel === "gestor" ? "" : turma,
+      serie: serie ?? "",
+      turno,
+      senha,
+    });
+  });
+
+  return { formato, pessoas, erros, avisos };
+}

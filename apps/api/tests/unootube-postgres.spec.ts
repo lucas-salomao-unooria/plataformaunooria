@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { VIDEOS } from "../src/unootube/catalogo";
 import { UnootubeService } from "../src/unootube/unootube.service";
+import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
  * Integração da exp-02-unootube no Postgres: fluxo completo, corrida em
@@ -50,7 +51,7 @@ beforeAll(async () => {
   await limpar();
   await prisma.escola.create({ data: { id: ESCOLA, nome: "Escola UnooTube (teste)" } });
   await prisma.escola.create({ data: { id: OUTRA_ESCOLA, nome: "Outra escola (teste)" } });
-  const turma = await prisma.turma.create({ data: { escolaId: ESCOLA, nome: "4A", serie: "4EF" } });
+  const turma = await criarTurmaDeTeste(prisma, ESCOLA, "4A", "4EF");
   turmaId = turma.id;
   const criar = (username: string, displayName: string, comTurma: boolean) =>
     prisma.user.create({

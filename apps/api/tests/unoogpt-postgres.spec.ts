@@ -5,6 +5,7 @@ import { MockProvider } from "../src/ai/mock.provider";
 import { QuotaService } from "../src/ai/quota.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { UnoogptService } from "../src/unoogpt/unoogpt.service";
+import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
  * Integração da exp-03-unoogpt no Postgres: a largada da TURMA, o orçamento de
@@ -66,9 +67,9 @@ beforeAll(async () => {
   await limpar();
   await prisma.escola.create({ data: { id: ESCOLA, nome: "Escola unooGPT (teste)" } });
   await prisma.escola.create({ data: { id: OUTRA_ESCOLA, nome: "Outra escola (teste)" } });
-  const t = await prisma.turma.create({ data: { escolaId: ESCOLA, nome: "2A", serie: "2EM" } });
+  const t = await criarTurmaDeTeste(prisma, ESCOLA, "2A", "2EM");
   turmaId = t.id;
-  const o = await prisma.turma.create({ data: { escolaId: OUTRA_ESCOLA, nome: "2A", serie: "2EM" } });
+  const o = await criarTurmaDeTeste(prisma, OUTRA_ESCOLA, "2A", "2EM");
   outraTurmaId = o.id;
 
   const criar = (escolaId: string, turma: string | null, username: string) =>

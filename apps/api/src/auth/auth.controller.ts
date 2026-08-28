@@ -3,11 +3,18 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { rateLimit } from "../comum/rate-limit";
 import { PrismaService } from "../prisma/prisma.service";
+import { TAMANHO_MINIMO_DE_SENHA } from "../rostering/regras";
 import type { Perfil } from "./claims";
 
 const LoginSchema = z.object({
   username: z.string().trim().min(1).max(64),
   password: z.string().min(1).max(200),
+});
+
+const TrocaSchema = z.object({
+  username: z.string().trim().min(1).max(64),
+  senhaAtual: z.string().min(1).max(200),
+  senhaNova: z.string().min(TAMANHO_MINIMO_DE_SENHA, `mínimo ${TAMANHO_MINIMO_DE_SENHA} caracteres`).max(200),
 });
 
 const CREDENCIAIS_INVALIDAS = "Usuário ou senha incorretos.";
@@ -38,11 +45,74 @@ export class AuthController {
       );
     }
 
-    // Username é único POR ESCOLA: o mesmo usuário pode existir em mais de uma
-    // (contratos grandes). A senha desambigua; empate de senha entre escolas é
-    // recusado — caso raro que o gestor resolve renomeando no CSV.
+    const user = await this.autenticar(username, password);
+    if (!user) throw new HttpException({ mensagem: CREDENCIAIS_INVALIDAS }, 401);
+
+    return {
+      usuarioId: user.id,
+      nome: user.displayName,
+      papel: user.role as Perfil,
+      escolaId: user.escolaId,
+      turmaId: user.turmaId,
+      serie: user.turma?.serie ?? null,
+      /**
+       * Senha veio de uma importação ou de um reset e ainda não foi trocada.
+       * O hub prende a pessoa em /trocar-senha enquanto isto for verdade — e
+       * também recusa emitir token de experiência, senão bastaria digitar
+       * /exp/... para pular a troca.
+       */
+      precisaTrocarSenha: user.senhaProvisoria,
+    };
+  }
+
+  /**
+   * Primeiro acesso: a senha do lote (ou a temporária do reset) vale uma vez.
+   * Exige a senha atual — é o mesmo nível de prova do login, e por isso a rota
+   * não precisa de token.
+   */
+  @Post("trocar-senha")
+  @HttpCode(200)
+  async trocarSenha(@Body() body: unknown) {
+    const parsed = TrocaSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new HttpException(
+        { mensagem: parsed.error.issues[0]?.message ?? "Dados inválidos." },
+        400,
+      );
+    }
+    const { username, senhaAtual, senhaNova } = parsed.data;
+
+    const cota = rateLimit(`trocar-senha:${username.toLowerCase()}`, 8, 60_000);
+    if (!cota.ok) {
+      throw new HttpException({ mensagem: "Muitas tentativas. Aguarde um momento." }, 429);
+    }
+
+    const user = await this.autenticar(username, senhaAtual);
+    if (!user) throw new HttpException({ mensagem: CREDENCIAIS_INVALIDAS }, 401);
+
+    if (await bcrypt.compare(senhaNova, user.passwordHash)) {
+      throw new HttpException({ mensagem: "A nova senha precisa ser diferente da atual." }, 400);
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await bcrypt.hash(senhaNova, 10),
+        senhaProvisoria: false,
+        senhaDefinidaEm: new Date(),
+      },
+    });
+    return { ok: true };
+  }
+
+  /**
+   * Username é único POR ESCOLA: o mesmo usuário pode existir em mais de uma
+   * (contratos grandes). A senha desambigua; empate de senha entre escolas é
+   * recusado — caso raro que o gestor resolve renomeando no CSV.
+   */
+  private async autenticar(username: string, password: string) {
     const candidatos = await this.prisma.user.findMany({
-      where: { username },
+      where: { username, ativo: true },
       include: { turma: true },
     });
 
@@ -56,22 +126,11 @@ export class AuthController {
       }
     }
 
-    const user = aprovados.length === 1 ? aprovados[0]! : null;
-    if (!user) {
-      if (aprovados.length > 1) {
-        console.warn(`[auth/login] username "${username}" ambíguo entre escolas — negado`);
-      }
-      throw new HttpException({ mensagem: CREDENCIAIS_INVALIDAS }, 401);
+    if (aprovados.length > 1) {
+      console.warn(`[auth] username "${username}" ambíguo entre escolas — negado`);
+      return null;
     }
-
-    return {
-      usuarioId: user.id,
-      nome: user.displayName,
-      papel: user.role as Perfil,
-      escolaId: user.escolaId,
-      turmaId: user.turmaId,
-      serie: user.turma?.serie ?? null,
-    };
+    return aprovados[0] ?? null;
   }
 }
 

@@ -2,16 +2,20 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { parseCsv } from "../src/usuarios/csv";
+import { RosteringService } from "../src/rostering/rostering.service";
 import { UsuariosService } from "../src/usuarios/usuarios.service";
+import { criarTurmaDeTeste } from "./turma-de-teste";
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
-const ESCOLA = "teste-escola-csv";
+const ESCOLA = "teste-escola-usuarios";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
-const service = new UsuariosService(prisma);
+const usuarios = new UsuariosService(prisma);
+const rostering = new RosteringService(prisma);
 
 async function limpar() {
+  await prisma.matricula.deleteMany({ where: { escolaId: ESCOLA } });
   await prisma.user.deleteMany({ where: { escolaId: ESCOLA } });
   await prisma.turma.deleteMany({ where: { escolaId: ESCOLA } });
   await prisma.escola.deleteMany({ where: { id: ESCOLA } });
@@ -19,7 +23,8 @@ async function limpar() {
 
 beforeAll(async () => {
   await limpar();
-  await prisma.escola.create({ data: { id: ESCOLA, nome: "Escola CSV (teste)" } });
+  await prisma.escola.create({ data: { id: ESCOLA, nome: "Escola Usuários (teste)" } });
+  await criarTurmaDeTeste(prisma, ESCOLA, "8A", "8EF");
 });
 
 afterAll(async () => {
@@ -42,94 +47,62 @@ describe("parseCsv", () => {
   });
 });
 
-describe("importação CSV de usuários", () => {
-  const CSV_OK = [
-    "nome,usuario,senha,papel,turma,serie",
-    "Maria Silva,maria.silva,senha1234,professor,,",
-    '"Souza, João",joao.souza,senha1234,aluno,8A,8EF',
-    "Ana Lima,ana.lima,senha1234,aluno,8A,8EF",
-    "Beto Gestor,beto.gestor,senha1234,gestor,,",
-  ].join("\n");
+describe("listagem, edição e senha", () => {
+  beforeAll(async () => {
+    await rostering.importarPlanilha(
+      ESCOLA,
+      [
+        "matricula,nome,usuario,papel,turma,serie",
+        "2026001,Ana Lima,ana.lima,aluno,8A,8EF",
+        "1099,Marta Nunes,marta.nunes,professor,8A,8EF",
+      ].join("\n"),
+      { senhaPadrao: "senha1234" },
+    );
+  });
 
-  test("lote misto: válidas entram, inválidas voltam no relatório por linha", async () => {
-    const csv = [
-      "nome,usuario,senha,papel,turma,serie",
-      "Maria Silva,maria.silva,senha1234,professor,,",
-      "Sem Senha,sem.senha,,aluno,8A,8EF", // nova sem senha → erro na escrita
-      "Curta,curta.senha,abc,aluno,8A,8EF", // senha < 8 → erro de validação
-      "Aluno Sem Turma,sem.turma,senha1234,aluno,,", // aluno sem turma/serie
-      "Diretor,diretor,senha1234,admin-contrato,,", // papel proibido via CSV
-      "Ana Lima,ana.lima,senha1234,aluno,8A,8EF",
-    ].join("\n");
+  test("listagem traz a turma da matrícula (e não some por causa da RLS)", async () => {
+    const pagina = await usuarios.listar(ESCOLA, { pagina: 1, porPagina: 25 });
+    const ana = pagina.usuarios.find((u) => u.usuario === "ana.lima");
+    expect(ana?.turma).toBe("8A");
+    expect(ana?.serie).toBe("8EF");
+    expect(ana?.matricula).toBe("2026001");
+    // Nasceu de importação: ainda não fez o primeiro acesso.
+    expect(ana?.senhaProvisoria).toBe(true);
+  });
 
-    const r = await service.importarCsv(ESCOLA, csv);
-    expect(r.criados).toBe(2); // maria + ana
-    expect(r.atualizados).toBe(0);
-    const campos = r.erros.map((e) => `${e.linha}:${e.campo}`).sort();
-    expect(campos).toEqual(["3:senha", "4:senha", "5:serie", "5:turma", "6:papel"]);
+  test("busca por nome, login ou matrícula da rede", async () => {
+    const porMatricula = await usuarios.listar(ESCOLA, { pagina: 1, porPagina: 25, busca: "2026001" });
+    expect(porMatricula.usuarios.map((u) => u.usuario)).toEqual(["ana.lima"]);
+    const porNome = await usuarios.listar(ESCOLA, { pagina: 1, porPagina: 25, busca: "marta" });
+    expect(porNome.usuarios.map((u) => u.usuario)).toEqual(["marta.nunes"]);
+  });
 
-    const turma = await prisma.turma.findUnique({
-      where: { escolaId_nome: { escolaId: ESCOLA, nome: "8A" } },
+  test("desativar não apaga a pessoa", async () => {
+    const alvo = await prisma.user.findUniqueOrThrow({
+      where: { escolaId_username: { escolaId: ESCOLA, username: "marta.nunes" } },
     });
-    expect(turma?.serie).toBe("8EF");
+    const atualizado = await usuarios.atualizar(ESCOLA, alvo.id, { ativo: false });
+    expect(atualizado?.ativo).toBe(false);
+    expect(await prisma.user.count({ where: { id: alvo.id } })).toBe(1);
+    await usuarios.atualizar(ESCOLA, alvo.id, { ativo: true });
   });
 
-  test("reimportar o mesmo CSV é idempotente (vira atualização, não duplica)", async () => {
-    const primeira = await service.importarCsv(ESCOLA, CSV_OK);
-    expect(primeira.erros).toEqual([]);
-    const segunda = await service.importarCsv(ESCOLA, CSV_OK);
-    expect(segunda.criados).toBe(0);
-    expect(segunda.atualizados).toBe(4);
-    const total = await prisma.user.count({ where: { escolaId: ESCOLA } });
-    expect(total).toBe(4); // maria, joao, ana, beto — upsert não duplica ninguém
-  });
-
-  test("senha vazia em atualização mantém a senha atual", async () => {
-    const antes = await prisma.user.findUnique({
+  test("reset de senha devolve temporária que autentica via bcrypt e volta a exigir troca", async () => {
+    const ana = await prisma.user.findUniqueOrThrow({
       where: { escolaId_username: { escolaId: ESCOLA, username: "ana.lima" } },
     });
-    const csv = ["nome,usuario,senha,papel,turma,serie", "Ana L. Lima,ana.lima,,aluno,8A,8EF"].join("\n");
-    const r = await service.importarCsv(ESCOLA, csv);
-    expect(r.atualizados).toBe(1);
-    const depois = await prisma.user.findUnique({
-      where: { escolaId_username: { escolaId: ESCOLA, username: "ana.lima" } },
-    });
-    expect(depois?.displayName).toBe("Ana L. Lima");
-    expect(depois?.passwordHash).toBe(antes?.passwordHash);
-  });
+    await prisma.user.update({ where: { id: ana.id }, data: { senhaProvisoria: false } });
 
-  test("usuario repetido dentro do arquivo é rejeitado com referência à linha", async () => {
-    const csv = [
-      "nome,usuario,senha,papel,turma,serie",
-      "Um,repetido.x,senha1234,professor,,",
-      "Dois,repetido.x,senha1234,professor,,",
-    ].join("\n");
-    const r = await service.importarCsv(ESCOLA, csv);
-    expect(r.criados).toBe(1);
-    expect(r.erros).toEqual([
-      { linha: 3, campo: "usuario", mensagem: "usuario repetido no arquivo (linha 2)" },
-    ]);
-  });
-
-  test("header errado não escreve nada", async () => {
-    const r = await service.importarCsv(ESCOLA, "usuario,senha\na,b");
-    expect(r.criados + r.atualizados).toBe(0);
-    expect(r.erros[0]?.campo).toBe("header");
-  });
-
-  test("reset de senha devolve temporária que autentica via bcrypt", async () => {
-    const ana = await prisma.user.findUnique({
-      where: { escolaId_username: { escolaId: ESCOLA, username: "ana.lima" } },
-    });
-    const resultado = await service.resetarSenha(ESCOLA, ana!.id);
+    const resultado = await usuarios.resetarSenha(ESCOLA, ana.id);
     expect(resultado?.usuario).toBe("ana.lima");
-    const depois = await prisma.user.findUnique({ where: { id: ana!.id } });
-    expect(await bcrypt.compare(resultado!.senhaTemporaria, depois!.passwordHash)).toBe(true);
+    const depois = await prisma.user.findUniqueOrThrow({ where: { id: ana.id } });
+    expect(await bcrypt.compare(resultado!.senhaTemporaria, depois.passwordHash)).toBe(true);
+    expect(depois.senhaProvisoria).toBe(true);
   });
 
   test("reset de senha não alcança usuário de outra escola", async () => {
     const outsider = await prisma.user.findFirst({ where: { escolaId: "escola-demo" } });
     if (!outsider) return; // seed não rodou neste banco — nada a validar
-    expect(await service.resetarSenha(ESCOLA, outsider.id)).toBeNull();
+    expect(await usuarios.resetarSenha(ESCOLA, outsider.id)).toBeNull();
   });
 });

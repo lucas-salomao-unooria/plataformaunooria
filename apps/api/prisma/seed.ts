@@ -14,6 +14,8 @@ import bcrypt from "bcryptjs";
  */
 const prisma = new PrismaClient();
 const SENHA_PADRAO = "unooria123";
+const ANO_LETIVO = 2026;
+const TITULO_PERIODO = `Ano letivo ${ANO_LETIVO}`;
 const TOTAL_ALUNOS = 40;
 const TOTAL_ALUNOS_4A = 10;
 /** 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). */
@@ -29,15 +31,56 @@ async function main() {
     create: { id: ESCOLA_ID, nome: "Escola Demo" },
   });
 
-  const turmas = await Promise.all(
-    ["8A", "8B"].map((nome) =>
-      prisma.turma.upsert({
-        where: { escolaId_nome: { escolaId: ESCOLA_ID, nome } },
-        update: { serie: "8EF" },
-        create: { escolaId: ESCOLA_ID, nome, serie: "8EF" },
-      }),
-    ),
-  );
+  // Toda turma vive dentro de um ano letivo — é o que faz "8A de 2026" e "8A de
+  // 2027" serem turmas diferentes, e o histórico sobreviver à virada do ano.
+  const periodo = await prisma.periodoLetivo.upsert({
+    where: { tipo_titulo: { tipo: "ano_letivo", titulo: TITULO_PERIODO } },
+    update: {},
+    create: {
+      tipo: "ano_letivo",
+      titulo: TITULO_PERIODO,
+      ano: ANO_LETIVO,
+      inicio: new Date(Date.UTC(ANO_LETIVO, 0, 1)),
+      fim: new Date(Date.UTC(ANO_LETIVO, 11, 31)),
+    },
+  });
+
+  const upsertTurma = (nome: string, serie: string, turno = "manha") =>
+    prisma.turma.upsert({
+      where: {
+        escolaId_periodoLetivoId_nome: { escolaId: ESCOLA_ID, periodoLetivoId: periodo.id, nome },
+      },
+      update: { serie, turno },
+      create: { escolaId: ESCOLA_ID, periodoLetivoId: periodo.id, nome, serie, turno },
+    });
+
+  /**
+   * Enturmamento. `users.turma_id` continua preenchido porque é o CACHE da
+   * matrícula principal (o login e o claim `turma_id` do token o leem fora de
+   * contexto de tenancy); a verdade é a linha em `matriculas`.
+   */
+  const matricular = (turmaId: string, usuarioId: string, papel: "aluno" | "professor") =>
+    prisma.matricula.upsert({
+      where: {
+        escolaId_turmaId_usuarioId_papel: {
+          escolaId: ESCOLA_ID,
+          turmaId,
+          usuarioId,
+          papel,
+        },
+      },
+      update: { fim: null },
+      create: {
+        escolaId: ESCOLA_ID,
+        turmaId,
+        usuarioId,
+        papel,
+        principal: papel === "aluno",
+        inicio: periodo.inicio,
+      },
+    });
+
+  const turmas = await Promise.all(["8A", "8B"].map((nome) => upsertTurma(nome, "8EF")));
 
   const upsertUsuario = (
     username: string,
@@ -47,49 +90,61 @@ async function main() {
   ) =>
     prisma.user.upsert({
       where: { escolaId_username: { escolaId: extras.escolaId ?? ESCOLA_ID, username } },
-      update: { displayName, role, passwordHash, turmaId: extras.turmaId },
+      update: { displayName, role, passwordHash, turmaId: extras.turmaId, ativo: true },
       create: {
         username,
         displayName,
         role,
         passwordHash,
+        // Usuário de demonstração entra direto: senha provisória é o caminho de
+        // quem NASCE de uma importação, e prender o seed nela pararia os seis
+        // walkthroughs na tela de troca de senha.
+        senhaProvisoria: false,
         escolaId: extras.escolaId === null ? undefined : (extras.escolaId ?? ESCOLA_ID),
         turmaId: extras.turmaId,
       },
     });
 
-  await upsertUsuario("prof.demo", "Prof. Demo", "professor");
+  const professor = await upsertUsuario("prof.demo", "Prof. Demo", "professor");
   await upsertUsuario("gestor.demo", "Gestor Demo", "gestor");
 
   for (let i = 1; i <= TOTAL_ALUNOS; i += 1) {
     const numero = String(i).padStart(2, "0");
-    const turma = turmas[i <= TOTAL_ALUNOS / 2 ? 0 : 1];
-    await upsertUsuario(`aluno${numero}`, `Aluno ${numero}`, "aluno", { turmaId: turma?.id });
+    const turma = turmas[i <= TOTAL_ALUNOS / 2 ? 0 : 1]!;
+    const aluno = await upsertUsuario(`aluno${numero}`, `Aluno ${numero}`, "aluno", {
+      turmaId: turma.id,
+    });
+    await matricular(turma.id, aluno.id, "aluno");
   }
 
   // 4º ano: a série roteia o aluno para a exp-02-unootube (apps/hub/lib/experiencia-do-aluno.ts).
-  const turma4A = await prisma.turma.upsert({
-    where: { escolaId_nome: { escolaId: ESCOLA_ID, nome: "4A" } },
-    update: { serie: "4EF" },
-    create: { escolaId: ESCOLA_ID, nome: "4A", serie: "4EF" },
-  });
+  const turma4A = await upsertTurma("4A", "4EF");
   for (let i = 1; i <= TOTAL_ALUNOS_4A; i += 1) {
     const numero = String(i).padStart(2, "0");
-    await upsertUsuario(`aluno4a${numero}`, `Aluno 4A ${numero}`, "aluno", { turmaId: turma4A.id });
+    const aluno = await upsertUsuario(`aluno4a${numero}`, `Aluno 4A ${numero}`, "aluno", {
+      turmaId: turma4A.id,
+    });
+    await matricular(turma4A.id, aluno.id, "aluno");
   }
 
   // 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). O relógio
   // dela é por TURMA — quem dá a largada é o professor, em
   // /professor/entre-redes/2-serie/unidade-1/resultados. Sem a largada o aluno
   // vê o cronômetro parado, e é o motivo nº 1 de "a missão não abre".
-  const turma2A = await prisma.turma.upsert({
-    where: { escolaId_nome: { escolaId: ESCOLA_ID, nome: "2A" } },
-    update: { serie: "2EM" },
-    create: { escolaId: ESCOLA_ID, nome: "2A", serie: "2EM" },
-  });
+  const turma2A = await upsertTurma("2A", "2EM");
   for (let i = 1; i <= TOTAL_ALUNOS_2A; i += 1) {
     const numero = String(i).padStart(2, "0");
-    await upsertUsuario(`aluno2a${numero}`, `Aluno 2A ${numero}`, "aluno", { turmaId: turma2A.id });
+    const aluno = await upsertUsuario(`aluno2a${numero}`, `Aluno 2A ${numero}`, "aluno", {
+      turmaId: turma2A.id,
+    });
+    await matricular(turma2A.id, aluno.id, "aluno");
+  }
+
+  // O professor demo é matriculado nas QUATRO turmas. Sem isso as telas dele
+  // ficam vazias — a partir daqui "as turmas do professor" são as turmas em que
+  // ele tem matrícula, e não mais todas as turmas da escola.
+  for (const turma of [...turmas, turma4A, turma2A]) {
+    await matricular(turma.id, professor.id, "professor");
   }
 
   // admin-contrato: papel de nível de produto (o "analista" do origem). Vê a

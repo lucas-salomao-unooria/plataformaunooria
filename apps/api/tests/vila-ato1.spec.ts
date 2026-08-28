@@ -11,6 +11,7 @@ import {
   todosOsValoresMapeados,
 } from "../src/vila/quadrantes";
 import { VilaService } from "../src/vila/vila.service";
+import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
  * O Ato 1 nativo: o perfil da Vila do Lume virando `exp_01_exp_70_perfis_importados`, que é o
@@ -161,7 +162,7 @@ describe("perfisParaOAto1", () => {
   beforeAll(async () => {
     await limpar();
     await prisma.escola.create({ data: { id: ESCOLA, nome: "Escola Ato1 (teste)" } });
-    const turma = await prisma.turma.create({ data: { escolaId: ESCOLA, nome: "8A", serie: "8EF" } });
+    const turma = await criarTurmaDeTeste(prisma, ESCOLA, "8A", "8EF");
     turmaId = turma.id;
     const criar = (username: string) =>
       prisma.user.create({
@@ -252,7 +253,7 @@ describe("importar para a atividade (Ato 1)", () => {
   beforeAll(async () => {
     await limpar();
     await prisma.escola.create({ data: { id: ESCOLA_AT, nome: "Escola Ato1 imp (teste)" } });
-    const turma = await prisma.turma.create({ data: { escolaId: ESCOLA_AT, nome: "8B", serie: "8EF" } });
+    const turma = await criarTurmaDeTeste(prisma, ESCOLA_AT, "8B", "8EF");
     turmaId = turma.id;
     professorId = (
       await prisma.user.create({
@@ -416,7 +417,7 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
   beforeAll(async () => {
     await limpar();
     await prisma.escola.create({ data: { id: ESCOLA_LG, nome: "Escola largada (teste)" } });
-    turmaId = (await prisma.turma.create({ data: { escolaId: ESCOLA_LG, nome: "8A", serie: "8EF" } })).id;
+    turmaId = (await criarTurmaDeTeste(prisma, ESCOLA_LG, "8A", "8EF")).id;
     professorId = (
       await prisma.user.create({
         data: { role: "professor", escolaId: ESCOLA_LG, username: "lg.prof", displayName: "Prof", passwordHash: "x" },

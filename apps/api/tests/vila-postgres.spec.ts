@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { VERSAO_MAPEAMENTO } from "../src/vila/mapeamento";
 import { VilaService } from "../src/vila/vila.service";
+import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
  * Integração da exp-70 no Postgres: abrir, concluir, idempotência, bolha
@@ -95,8 +96,8 @@ beforeAll(async () => {
   await limpar();
   await prisma.escola.create({ data: { id: ESCOLA, nome: "Escola Vila (teste)" } });
   await prisma.escola.create({ data: { id: OUTRA_ESCOLA, nome: "Outra escola (teste)" } });
-  const t8 = await prisma.turma.create({ data: { escolaId: ESCOLA, nome: "8A", serie: "8EF" } });
-  const t3 = await prisma.turma.create({ data: { escolaId: ESCOLA, nome: "3A", serie: "3EF" } });
+  const t8 = await criarTurmaDeTeste(prisma, ESCOLA, "8A", "8EF");
+  const t3 = await criarTurmaDeTeste(prisma, ESCOLA, "3A", "3EF");
   turma8 = t8.id;
   turma3 = t3.id;
 
