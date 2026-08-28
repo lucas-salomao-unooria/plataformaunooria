@@ -3,6 +3,9 @@ import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { rateLimit } from "../comum/rate-limit";
+import { Contrato } from "../openapi/contrato";
+import { AbrirSchema, SessaoAbertaSchema, SessaoConcluidaSchema } from "./contrato-de-rotas";
+import { PayloadVilaV1 } from "./contrato";
 import { VilaService } from "./vila.service";
 
 /**
@@ -15,12 +18,6 @@ import { VilaService } from "./vila.service";
  *
  * Identidade sempre do token, nunca do body: o payload não traz aluno nem turma.
  */
-
-const AbrirSchema = z.object({
-  /** versão do bundle que está jogando. Fica na linha porque quem estava com a
-   *  aba aberta durante um publish termina com a anterior. */
-  expVersion: z.string().min(1).max(32),
-});
 
 const UUID = z.string().uuid();
 
@@ -45,6 +42,20 @@ export class VilaController {
    */
   @Post("sessoes")
   @HttpCode(201)
+  @Contrato({
+    resumo: "Abre a partida e entrega os cartões DESTA criança.",
+    descricao:
+      "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `alunoSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.",
+    corpo: AbrirSchema,
+    resposta: SessaoAbertaSchema,
+    status: 201,
+    notas: [
+      "Os cartões vêm **sem gabarito** e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.",
+      "Nos anos iniciais (1EF–5EF) a bolha B **não é servida** — \"suporte\" exige entender o que é suporte, e só a api sabe a série.",
+      "Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.",
+      "Identidade sempre do token: o payload não traz aluno nem turma.",
+    ],
+  })
   async abrir(@Body() body: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId, 20);
     const dados = AbrirSchema.parse(body);
@@ -57,6 +68,19 @@ export class VilaController {
    */
   @Post("sessoes/:id/concluir")
   @HttpCode(200)
+  @Contrato({
+    resumo: "Fecha a partida e grava o payload bruto.",
+    descricao:
+      "**Idempotente**: a criança pode recarregar, e o `pagehide` pode disparar duas vezes — daí `status: \"jaEstava\"`.\n\nO servidor RECALCULA o retrato; nunca aceita o perfil do cliente. É isso que permite reprocessar o histórico quando `VERSAO_MAPEAMENTO` subir.",
+    params: z.object({ id: z.string().uuid() }),
+    corpo: PayloadVilaV1,
+    resposta: SessaoConcluidaSchema,
+    notas: [
+      "`CHAVES_DE_PERFIL` recusa payload que traga valores/graus/perfil calculados: o jogo sabe computar o retrato e deliberadamente não o envia.",
+      "`eventos[].dados` só aceita número, booleano ou string de um **vocabulário fechado** — o `texto` livre era o caminho por onde o nome de uma criança chegaria a um JSONB.",
+      "O gabarito da missão fica no servidor: o cliente manda qual opção escolheu, a api corrige (regra 3).",
+    ],
+  })
   async concluir(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     limitar(req.auth.usuarioId, 40);
     const sessaoId = UUID.safeParse(id);

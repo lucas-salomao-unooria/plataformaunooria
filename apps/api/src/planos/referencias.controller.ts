@@ -11,9 +11,16 @@ import {
   Post,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { z } from "zod";
 import { ehUuid, naoEncontrado } from "../motor/guardas";
+import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { ImportarReferenciaSchema } from "./catalogo";
+import {
+  InventarioDeReferenciasSchema,
+  OkSchema,
+  ReferenciaImportadaSchema,
+} from "./contrato-de-rotas";
 
 /**
  * Importação das referências curriculares do CONTRATO (currículo da rede,
@@ -44,6 +51,14 @@ export class ReferenciasController {
 
   /** Inventário (sem o texto) para o script ser idempotente e para auditoria. */
   @Get()
+  @Contrato({
+    resumo: "O inventário das referências curriculares do contrato.",
+    descricao:
+      "**Sem o texto**: existe para o script de importação ser idempotente e para auditoria — o texto de um currículo inteiro não cabe numa listagem.",
+    resposta: InventarioDeReferenciasSchema,
+    acesso: "servico",
+    notas: ["Catálogo GLOBAL do contrato: sem `escola_id`, fora da RLS."],
+  })
   async listar(@Headers("x-import-token") token: string | undefined) {
     this.autorizar(token);
     const referencias = await this.prisma.planoReferencia.findMany({
@@ -56,6 +71,19 @@ export class ReferenciasController {
   /** Upsert por (disciplina, serie, nome). */
   @Post()
   @HttpCode(200)
+  @Contrato({
+    resumo: "Importa (ou sobrescreve) uma referência curricular.",
+    descricao:
+      "Chamada pelo `scripts/importar-referencias-plano.mjs`, que extrai o texto dos PDF/DOCX **localmente** e manda só texto. Upsert por `(disciplina, serie, nome)`.",
+    corpo: ImportarReferenciaSchema,
+    resposta: ReferenciaImportadaSchema,
+    acesso: "servico",
+    notas: [
+      "`serie: null` = vale para todas as séries daquela disciplina.",
+      "O upsert é find + update/create, e não `upsert`: `serie` nulo não entra em `where` de unique composto no Prisma, e o Postgres trata NULLs como distintos no índice.",
+      "Sem `PLANOS_IMPORT_TOKEN` a rota responde **503** — desligada, nunca aberta.",
+    ],
+  })
   async importar(@Headers("x-import-token") token: string | undefined, @Body() body: unknown) {
     this.autorizar(token);
     const parsed = ImportarReferenciaSchema.safeParse(body);
@@ -88,6 +116,12 @@ export class ReferenciasController {
   }
 
   @Delete(":id")
+  @Contrato({
+    resumo: "Remove uma referência do catálogo.",
+    params: z.object({ id: z.string().uuid() }),
+    resposta: OkSchema,
+    acesso: "servico",
+  })
   async remover(@Headers("x-import-token") token: string | undefined, @Param("id") id: string) {
     this.autorizar(token);
     if (!ehUuid(id)) naoEncontrado();
