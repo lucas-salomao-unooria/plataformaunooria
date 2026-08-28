@@ -20,7 +20,13 @@ export type Acesso =
   /** Chave de serviço em cabeçalho; env ausente ⇒ 503. */
   | "servico"
   /** `PubSubPushGuard`: ID token do Google. Env ausente ⇒ 401. */
-  | "push";
+  | "push"
+  /**
+   * Token da plataforma no CORPO, verificado à mão — sem `OidcGuard`.
+   * Existe por uma razão só: `navigator.sendBeacon` não manda cabeçalho.
+   * O rigor da verificação é o mesmo; o que muda é por onde o token chega.
+   */
+  | "token-no-corpo";
 
 export type OpcoesDoContrato = {
   /** Uma linha. Vira o `summary` da operação e a coluna do apêndice C. */

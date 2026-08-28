@@ -45,7 +45,6 @@ const ENV_MINIMA: Record<string, string> = {
  * aquelas exceções são permanentes e estas são dívida, com data para acabar.
  */
 const SEM_CONTRATO_AINDA = new Set<string>([
-  "POST /ai/gerar",
   "GET /alunos/{id}/historico",
   "GET /alunos/{id}/perfil-portatil",
   "GET /alunos/{id}/perfis-recebidos",
@@ -89,9 +88,6 @@ const SEM_CONTRATO_AINDA = new Set<string>([
   "POST /escolas/lotacoes-em-lote",
   "GET /escolas/minhas",
   "GET /escolas/minhas/resumo",
-  "GET /experiencias",
-  "GET /experiencias/{expId}",
-  "PUT /experiencias/{expId}",
   "DELETE /lotacoes/{id}",
   "DELETE /matriculas/{id}",
   "PATCH /matriculas/{id}",
@@ -116,9 +112,6 @@ const SEM_CONTRATO_AINDA = new Set<string>([
   "PATCH /posts/{id}",
   "GET /posts/{id}/comentarios",
   "POST /posts/{id}/regenerar",
-  "GET /progresso/{expId}",
-  "POST /progresso/{expId}",
-  "POST /progresso/{expId}/concluir",
   "GET /rostering/contas-de-assento",
   "POST /rostering/importar",
   "GET /rostering/modelos/exemplo.csv",
@@ -141,9 +134,6 @@ const SEM_CONTRATO_AINDA = new Set<string>([
   "GET /runs/{id}/salvos",
   "POST /runs/{id}/student-post",
   "GET /runs/boot",
-  "POST /telemetry/batch",
-  "POST /telemetry/beacon",
-  "POST /telemetry/ingest",
   "GET /turmas",
   "POST /turmas",
   "GET /turmas/{id}",

@@ -99,7 +99,7 @@ importers:
         specifier: ^6
         version: 6.28.0
       zod:
-        specifier: ^3.24.0
+        specifier: ^3.25.28
         version: 3.25.76
       zod-to-json-schema:
         specifier: ^3.25.2

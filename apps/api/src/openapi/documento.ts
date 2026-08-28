@@ -5,6 +5,7 @@ import type {
   OperationObject,
   ParameterObject,
 } from "@nestjs/swagger/dist/interfaces/open-api-spec.interface";
+import { ZodUndefined, ZodVoid } from "zod";
 import { chaveDaRota, listarRotas, type RotaDescoberta } from "./rotas";
 import { queryParaParametros, zodParaOpenApi } from "./zod-para-openapi";
 
@@ -42,6 +43,10 @@ function descricaoDaOperacao(rota: RotaDescoberta): string {
     partes.push(
       "**Acesso:** chave de serviço em cabeçalho, não token de pessoa. Com a variável de ambiente ausente a rota responde **503**.",
     );
+  } else if (c?.acesso === "token-no-corpo") {
+    partes.push(
+      "**Acesso:** o token vai no CORPO, não no cabeçalho — `navigator.sendBeacon` não manda cabeçalho. Verificado à mão, com o mesmo rigor do `OidcGuard`.",
+    );
   } else if (c?.acesso === "push") {
     partes.push(
       "**Acesso:** _push_ do Pub/Sub (ID token do Google). Com as variáveis ausentes a rota responde **401**, nunca aberta.",
@@ -76,6 +81,11 @@ function montarOperacao(rota: RotaDescoberta, atual: OperationObject): Operation
     }
   }
 
+  // Resposta declarada como `z.void()` é 204 de verdade: o OpenAPI descreve
+  // isso como resposta SEM `content`. Emitir um `content` com esquema vazio
+  // faria o "Try it out" mostrar um corpo que nunca chega.
+  const semCorpo = c.resposta instanceof ZodVoid || c.resposta instanceof ZodUndefined;
+
   const operacao: OperationObject = {
     ...atual,
     tags: [etiquetaDe(rota.caminho)],
@@ -83,14 +93,16 @@ function montarOperacao(rota: RotaDescoberta, atual: OperationObject): Operation
     description: descricaoDaOperacao(rota),
     parameters: parametros,
     responses: {
-      [String(c.status ?? rota.status)]: {
-        description: "Sucesso.",
-        content: {
-          [c.tipoDaResposta ?? "application/json"]: {
-            schema: zodParaOpenApi(c.resposta, "saida"),
+      [String(c.status ?? rota.status)]: semCorpo
+        ? { description: "Sucesso, sem corpo." }
+        : {
+            description: "Sucesso.",
+            content: {
+              [c.tipoDaResposta ?? "application/json"]: {
+                schema: zodParaOpenApi(c.resposta, "saida"),
+              },
+            },
           },
-        },
-      },
     },
     // Rota pública não carrega esquema de segurança; as de serviço e de push
     // não usam o Bearer da plataforma e são descritas na prosa.

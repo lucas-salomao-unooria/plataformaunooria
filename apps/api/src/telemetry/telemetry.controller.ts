@@ -3,39 +3,18 @@ import { Prisma } from "@prisma/client";
 import { PubSub } from "@google-cloud/pubsub";
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
+import { Contrato } from "../openapi/contrato";
 import { PubSubPushGuard } from "./pubsub-push.guard";
 import { TokenService } from "../auth/token.service";
 import { PrismaService } from "../prisma/prisma.service";
-
-const EventoSchema = z.object({
-  eventId: z.string().uuid(),
-  ts: z.string(),
-  expId: z.string(),
-  expVersion: z.string(),
-  sessaoId: z.string(),
-  verbo: z.string(),
-  objeto: z.string(),
-  resultado: z.record(z.unknown()).optional(),
-  contexto: z.record(z.unknown()).optional(),
-});
-
-const BatchSchema = z.object({ eventos: z.array(EventoSchema).max(50) });
-
-/**
- * Beacon: o `navigator.sendBeacon` do `pagehide` NÃO envia headers, então o
- * token vem no CORPO. Sem guard — a verificação é feita à mão pelo
- * TokenService, com o mesmo rigor.
- */
-const BeaconSchema = BatchSchema.extend({
-  beacon: z.literal(true).optional(),
-  token: z.string().min(1),
-});
-
-/** Envelope de push subscription do Pub/Sub. */
-const PushSchema = z.object({
-  message: z.object({ data: z.string().optional(), messageId: z.string().optional() }),
-  subscription: z.string().optional(),
-});
+import {
+  BatchRespostaSchema,
+  BatchSchema,
+  BeaconSchema,
+  EventoSchema,
+  PushSchema,
+  SemCorpoSchema,
+} from "./contrato-de-rotas";
 
 const pubsub = new PubSub();
 const topic = process.env.TELEMETRIA_TOPIC ?? "";
@@ -58,6 +37,17 @@ export class TelemetryController {
 
   @Post("batch")
   @UseGuards(OidcGuard)
+  @Contrato({
+    resumo: "Recebe um lote do canal ANALÍTICO da SDK.",
+    descricao:
+      "Publica no Pub/Sub, que entrega em `POST /telemetry/ingest`. É o canal analítico — **não** o operacional: `dwell` e o feed adaptativo do motor passam por `/runs/:id/eventos`, que é síncrono e ordenado.",
+    corpo: BatchSchema,
+    resposta: BatchRespostaSchema,
+    notas: [
+      "`alunoId` e `escolaId` NÃO vêm do corpo: são acrescentados a partir do token. Aceitá-los do cliente deixaria um bundle gravar evento no nome de outra criança.",
+      "`recebidos` conta o que foi PUBLICADO, não o que foi gravado — a gravação acontece do outro lado do Pub/Sub.",
+    ],
+  })
   async batch(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
     const { eventos } = BatchSchema.parse(body);
     // identidade vem do TOKEN, nunca do payload do client (anti-spoof)
@@ -73,6 +63,14 @@ export class TelemetryController {
    */
   @Post("beacon")
   @HttpCode(204)
+  @Contrato({
+    resumo: "Último lote de uma sessão que está fechando.",
+    descricao:
+      "Chamada no `pagehide` com `navigator.sendBeacon`. **Responde 204 SEMPRE**: a página já foi descartada e ninguém lê o corpo — erro aqui só poluiria o log do cliente. Corpo inválido ou token que não confere viram descarte silencioso, com aviso no servidor.",
+    corpo: BeaconSchema,
+    resposta: SemCorpoSchema,
+    acesso: "token-no-corpo",
+  })
   async beacon(@Body() body: unknown) {
     const parsed = BeaconSchema.safeParse(body);
     if (!parsed.success) {
@@ -109,6 +107,19 @@ export class TelemetryController {
   @Post("ingest")
   @UseGuards(PubSubPushGuard)
   @HttpCode(204)
+  @Contrato({
+    resumo: "Consome a push subscription do Pub/Sub e grava os eventos.",
+    descricao:
+      "Push, e não um worker próprio, é uma peça a menos para operar. Grava em `telemetria_eventos` (particionada por mês, schema `particoes`).",
+    corpo: PushSchema,
+    resposta: SemCorpoSchema,
+    acesso: "push",
+    notas: [
+      "`ON CONFLICT (event_id, ts) DO NOTHING`: o Pub/Sub entrega *at least once*, então reentrega é rotina, não exceção.",
+      "UM INSERT multi-linha por escola, não um por evento — no pico da manhã o laço custava ~800 INSERTs/s.",
+      "Sem `TELEMETRIA_PUSH_SA`/`TELEMETRIA_PUSH_AUDIENCE` a rota responde 401, nunca aberta: ela escreve dado de aluno.",
+    ],
+  })
   async ingest(@Body() body: unknown) {
     const envelope = PushSchema.safeParse(body);
     if (!envelope.success || !envelope.data.message.data) {

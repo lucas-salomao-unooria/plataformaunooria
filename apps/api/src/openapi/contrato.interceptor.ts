@@ -62,7 +62,10 @@ export class ContratoInterceptor implements NestInterceptor {
       // ainda há `Date` do Prisma, e ele vira string só na serialização. Sem
       // esta volta pelo JSON, todo campo de data acusaria divergência falsa
       // contra um `z.string().datetime()` que está corretíssimo.
-      const comoSai: unknown = JSON.parse(JSON.stringify(valor ?? null));
+      // `undefined` passa direto: é o que uma rota 204 devolve, e
+      // `JSON.stringify(undefined)` é `undefined` — o `JSON.parse` estouraria.
+      const comoSai: unknown =
+        valor === undefined ? undefined : (JSON.parse(JSON.stringify(valor)) as unknown);
       const conferido = contrato.resposta.safeParse(comoSai);
       if (conferido.success) return;
 

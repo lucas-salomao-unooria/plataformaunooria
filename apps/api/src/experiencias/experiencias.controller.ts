@@ -2,8 +2,9 @@ import { Body, Controller, Get, Param, Put, Req, UseGuards } from "@nestjs/commo
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
-import { SERIES } from "../comum/series";
+import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
+import { CatalogoSchema, UmaExperienciaSchema, UpsertSchema } from "./contrato-de-rotas";
 
 /**
  * Manifesto de versões das experiências — o `experiencia.json` finalmente é
@@ -13,30 +14,6 @@ import { PrismaService } from "../prisma/prisma.service";
  * tabela global, sem RLS (não é dado de aluno).
  */
 
-const UpsertSchema = z.object({
-  nome: z.string().min(1).max(120),
-  versaoAtiva: z.string().regex(/^\d+\.\d+\.\d+$/, "versão semver x.y.z"),
-  series: z.array(z.enum(SERIES)).default([]),
-  capabilities: z
-    .array(z.enum(["telemetria", "progresso", "ia", "avaliacao", "tempo-real"]))
-    .default([]),
-  viewport: z.object({ largura: z.number().int().positive(), altura: z.number().int().positive() }).nullish(),
-  /**
-   * Para quem é a experiência. `series` pressupõe aluno; uma ferramenta de
-   * professor (exp-90, plano de aula) declara `publico: "professor"` e o hub
-   * recusa embedá-la em `/exp/*` (rota do aluno). Aditivo: ausente = aluno.
-   */
-  publico: z.enum(["aluno", "professor"]).default("aluno"),
-  /**
-   * Permissões de iframe que esta experiência precisa. Lista FECHADA e curta:
-   * hoje só `pointer-lock`, que liga o token `allow-pointer-lock` do sandbox
-   * do `ExpFrame` (jogo 3D em primeira pessoa, exp-70). Ausente/vazio =
-   * nenhuma. Prender o ponteiro do aluno é capacidade de quem declarou, nunca
-   * default do frame. `fullscreen` não entra: o `allow` do frame já o delega a
-   * todas as experiências.
-   */
-  permissoes: z.array(z.enum(["pointer-lock", "forms"])).default([]),
-});
 
 const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
 
@@ -47,12 +24,28 @@ export class ExperienciasController {
 
   /** Catálogo — qualquer usuário autenticado (o hub filtra por série na UI). */
   @Get()
+  @Contrato({
+    resumo: "O catálogo de experiências do contrato.",
+    descricao:
+      "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de aluno. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.",
+    resposta: CatalogoSchema,
+    notas: [
+      "`series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (exp-70).",
+    ],
+  })
   async listar() {
     const experiencias = await this.prisma.experiencia.findMany({ orderBy: { expId: "asc" } });
     return { experiencias };
   }
 
   @Get(":expId")
+  @Contrato({
+    resumo: "Uma linha do manifesto.",
+    descricao:
+      "Devolve `experiencia: null` quando não há linha — e isso não é erro: o hub cai no `experiencia.json` servido ao lado do bundle. É o caso de dev e o de uma stack nova, antes do primeiro publish do CI.",
+    params: z.object({ expId: z.string() }),
+    resposta: UmaExperienciaSchema,
+  })
   async uma(@Param("expId") expId: string) {
     const experiencia = await this.prisma.experiencia.findUnique({ where: { expId } });
     return { experiencia };
@@ -61,6 +54,18 @@ export class ExperienciasController {
   /** Upsert do CI (ou rollback manual) — só admin-contrato. */
   @Put(":expId")
   @Roles("admin-contrato")
+  @Contrato({
+    resumo: "Publica ou faz rollback de uma versão.",
+    descricao:
+      "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.",
+    params: z.object({ expId: z.string().regex(EXP_ID_RE) }),
+    corpo: UpsertSchema,
+    resposta: UmaExperienciaSchema,
+    notas: [
+      "`permissoes` é POR EXPERIÊNCIA: prender o ponteiro do aluno é capacidade de quem declarou, nunca default do frame.",
+      "`viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
+    ],
+  })
   async upsert(@Param("expId") expId: string, @Body() body: unknown, @Req() _req: { auth: AuthClaims }) {
     const dados = UpsertSchema.parse(body);
     const id = z.string().regex(EXP_ID_RE, "expId no formato exp-<slug>").parse(expId);
