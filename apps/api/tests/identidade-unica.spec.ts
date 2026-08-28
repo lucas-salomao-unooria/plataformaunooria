@@ -69,6 +69,34 @@ describe("identidade única", () => {
    * todas contra o mesmo banco em paralelo. Policiar fixture aqui só produziria
    * falha intermitente sem relação com o que este teste protege — o dado real.
    */
+  test("o CPF não existe em claro em lugar nenhum do banco", async () => {
+    const colunas = await prisma.$queryRaw<Array<{ coluna: string }>>`
+      SELECT table_name || '.' || column_name AS coluna
+        FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND column_name ~ 'cpf'
+       ORDER BY 1
+    `;
+    // Só o hash e os três últimos dígitos, e só em `users`. Uma coluna `cpf`
+    // qualquer que apareça aqui é o número em claro entrando na plataforma.
+    expect(colunas.map((c) => c.coluna)).toEqual(["users.cpf_final", "users.cpf_hash"]);
+  });
+
+  test("lotacoes é a fonte da escola — e `users.escola_id` é cache dela", async () => {
+    const divergentes = await prisma.$queryRaw<Array<{ total: bigint }>>`
+      SELECT count(*)::bigint AS total
+        FROM users u
+       WHERE u.escola_id IS NOT NULL
+         AND u.role IN ('aluno','professor','gestor')
+         AND u.escola_id NOT LIKE 'teste-%'
+         AND NOT EXISTS (
+           SELECT 1 FROM lotacoes l
+            WHERE l.usuario_id = u.id AND l.escola_id = u.escola_id AND l.fim IS NULL
+         )
+    `;
+    expect(Number(divergentes[0]?.total ?? 0)).toBe(0);
+  });
+
   test("matriculas é a única fonte de enturmamento — e `users.turma_id` é cache dela", async () => {
     const divergentes = await prisma.$queryRaw<Array<{ total: bigint }>>`
       SELECT count(*)::bigint AS total

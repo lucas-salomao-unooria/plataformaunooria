@@ -2,9 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { AuthController } from "../src/auth/auth.controller";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { RosteringService } from "../src/rostering/rostering.service";
-import { UsuariosService } from "../src/usuarios/usuarios.service";
 import { periodoDeTeste } from "./turma-de-teste";
+import { servicosDeTeste } from "./servicos-de-teste";
 
 /**
  * O primeiro acesso, do lado da api.
@@ -21,15 +20,15 @@ const SENHA_DO_LOTE = "SenhaDoLote123";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
-const auth = new AuthController(prisma);
-const rostering = new RosteringService(prisma);
-const usuarios = new UsuariosService(prisma);
+const { escolas, rostering, usuarios } = servicosDeTeste(prisma);
+const auth = new AuthController(prisma, escolas);
 
 /** O login é um só por escola, mas o rate limit é por username GLOBAL (8/min). */
 const login = (username: string) => `sp-${username}`;
 
 async function limpar() {
   await prisma.matricula.deleteMany({ where: { escolaId: ESCOLA } });
+  await prisma.lotacao.deleteMany({ where: { escolaId: ESCOLA } });
   await prisma.user.deleteMany({ where: { escolaId: ESCOLA } });
   await prisma.turma.deleteMany({ where: { escolaId: ESCOLA } });
   await prisma.escola.deleteMany({ where: { id: ESCOLA } });

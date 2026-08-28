@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Avatar, Logo } from "@edu/ui/ds";
 import { LogoutButton } from "@/components/logout-button";
+import { SeletorDeEscola } from "@/components/seletor-de-escola";
 import { auth } from "@/lib/auth";
 import { homeDoPapel, rotuloDoPapel } from "@/lib/papeis";
 
@@ -74,6 +75,9 @@ export async function HeaderPlataforma({
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Quem está lotado em mais de uma escola escolhe onde está agora.
+              A escola ativa é o que o token de dados carrega. */}
+          <SeletorDeEscola escolas={usuario.escolas ?? []} ativa={usuario.escolaId} />
           <div className="hidden text-right sm:block">
             <p className="text-[13px] font-semibold text-unooria-neutral-950">{usuario.nome}</p>
             <p className="text-[12px] text-unooria-neutral-500">{apoio}</p>

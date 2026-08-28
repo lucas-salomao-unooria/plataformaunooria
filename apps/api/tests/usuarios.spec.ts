@@ -2,9 +2,9 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { parseCsv } from "../src/usuarios/csv";
-import { RosteringService } from "../src/rostering/rostering.service";
 import { UsuariosService } from "../src/usuarios/usuarios.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
+import { servicosDeTeste } from "./servicos-de-teste";
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const ESCOLA = "teste-escola-usuarios";
@@ -12,7 +12,7 @@ const ESCOLA = "teste-escola-usuarios";
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
 const usuarios = new UsuariosService(prisma);
-const rostering = new RosteringService(prisma);
+const { rostering } = servicosDeTeste(prisma);
 
 async function limpar() {
   await prisma.matricula.deleteMany({ where: { escolaId: ESCOLA } });

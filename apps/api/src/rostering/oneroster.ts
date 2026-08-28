@@ -51,6 +51,10 @@ export const COLUNAS_POR_ARQUIVO: Readonly<
       "email", "sms", "phone", "agentsourcedids", "grades", "password",
       "usermasteridentifier", "preferredgivenname", "preferredmiddlename",
       "preferredfamilyname", "primaryorgsourcedid", "pronouns",
+      /* Extensão brasileira: o CPF é a identidade imutável do estudante e o
+         padrão não tem campo para ele. `userIds` também o carrega, no formato
+         `cpf:NNNNNNNNNNN`. */
+      "metadata.br.cpf",
       /* `role` saiu de users.csv na 1.2 (foi para roles.csv), mas provedores
          seguem emitindo a coluna da 1.1. Aceitar é mais barato que exigir dois
          arquivos para saber se alguém é aluno. */

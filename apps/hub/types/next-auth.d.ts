@@ -14,6 +14,12 @@ export interface UsuarioDaSessao {
   turmaId?: string;
   serie?: string;
   /**
+   * As escolas da pessoa nesta REDE. Professor de rede estadual tem mais de uma;
+   * aluno tem uma. `escolaId` acima é a ATIVA — a que o token carrega e a que
+   * define o que ele vê. Trocar de escola troca a sessão, não os dados.
+   */
+  escolas?: Array<{ id: string; nome: string; papel: string }>;
+  /**
    * A senha veio de uma importação ou de um reset e ainda não foi trocada.
    * Enquanto for verdade a pessoa fica presa em /trocar-senha — e nem o BFF nem
    * o /api/exp-token respondem, senão bastaria digitar /exp/... para pular.

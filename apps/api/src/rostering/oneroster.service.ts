@@ -1,8 +1,12 @@
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
+import { cpfEhValido, finalDoCpf, hashDoCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
 import type { ArquivoOneRoster } from "./catalogo";
+import { EscolasService } from "./escolas.service";
+import { garantirLotacao } from "./lotacao";
 import { matricularEm } from "./matricula";
 import {
   dataDoCampo,
@@ -28,6 +32,29 @@ const TIMEOUT_DA_ESCRITA = 30_000;
 export interface OpcoesOneRoster extends OpcoesDeImportacao {
   /** `bulk` = lote completo; `delta` = só o que mudou. Default: `delta`. */
   modo?: "bulk" | "delta";
+  /**
+   * `orgs.csv` pode CRIAR escola. Só `admin-contrato`: escola é tenant, e abrir
+   * inquilino novo não é operação de quem administra uma unidade.
+   */
+  podeCriarEscola?: boolean;
+}
+
+/**
+ * O CPF no padrão. Não há campo para ele — é dado brasileiro —, então vem por
+ * onde o próprio padrão manda estender: `userIds` no formato `cpf:NNNNNNNNNNN`
+ * (a lista de identificadores tipados) ou a coluna de extensão
+ * `metadata.br.cpf`. As duas são lidas; vale a primeira que aparecer.
+ */
+/** Mesma regra do controller: o id circula no claim do token e na RLS. */
+function idDeEscolaValido(id: string): boolean {
+  return /^[a-z0-9][a-z0-9._-]{2,63}$/.test(id);
+}
+
+function cpfDaLinha(linha: LinhaOneRoster): string {
+  const daExtensao = linha.campo("metadata.br.cpf");
+  if (daExtensao) return daExtensao;
+  const tipado = listaDoCampo(linha.campo("userIds")).find((v) => /^cpf\s*:/i.test(v));
+  return tipado ? tipado.split(":").slice(1).join(":").trim() : "";
 }
 
 export interface RelatorioOneRoster extends RelatorioImportacao {
@@ -53,6 +80,8 @@ export class OneRosterService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rostering: RosteringService,
+    private readonly config: ConfigService,
+    private readonly escolasDaRede: EscolasService,
   ) {}
 
   async importar(
@@ -102,7 +131,7 @@ export class OneRosterService {
 
     switch (arquivo) {
       case "orgs":
-        return this.aplicarOrgs(escolaId, linhas, relatorio);
+        return this.aplicarOrgs(escolaId, linhas, relatorio, opcoes.podeCriarEscola === true);
       case "academicSessions":
         return this.aplicarPeriodos(linhas, relatorio);
       case "classes":
@@ -133,6 +162,7 @@ export class OneRosterService {
     escolaId: string,
     linhas: LinhaOneRoster[],
     relatorio: RelatorioOneRoster,
+    podeCriar = false,
   ): Promise<RelatorioOneRoster> {
     const escola = await this.prisma.escola.findUnique({ where: { id: escolaId } });
     if (!escola) {
@@ -159,11 +189,46 @@ export class OneRosterService {
         sourcedId === escola.fonteId ||
         (identifier !== "" && (identifier === escola.codigoInep || identifier === escola.id));
       if (!ehEsta) {
-        relatorio.avisos.push({
-          linha: linha.linha,
-          campo: "sourcedId",
-          mensagem: `escola "${linha.campo("name")}" não é a desta importação — escola nova não nasce de CSV`,
-        });
+        /* REVISÃO da decisão original ("escola nova não nasce de CSV"): numa
+           rede estadual são milhares de escolas, e cadastrar à mão é inviável.
+           O que se mantém é QUEM pode: só `admin-contrato` abre inquilino novo.
+           Para gestor, a linha continua sendo aviso. */
+        if (!podeCriar) {
+          relatorio.avisos.push({
+            linha: linha.linha,
+            campo: "sourcedId",
+            mensagem: `escola "${linha.campo("name")}" não é a desta importação — só admin-contrato cadastra escola nova`,
+          });
+          continue;
+        }
+        const idNovo = idDeEscolaValido(sourcedId) ? sourcedId : null;
+        if (!idNovo) {
+          relatorio.erros.push({
+            linha: linha.linha,
+            campo: "sourcedId",
+            mensagem: `sourcedId "${sourcedId}" não serve como id de escola: use 3–64 caracteres [a-z 0-9 . _ -]`,
+          });
+          continue;
+        }
+        const existente = await this.prisma.escola.findUnique({ where: { id: idNovo } });
+        if (existente) {
+          await this.prisma.escola.update({
+            where: { id: idNovo },
+            data: { nome: linha.campo("name") || existente.nome, ...(identifier ? { codigoInep: identifier } : {}) },
+          });
+          relatorio.atualizados += 1;
+        } else {
+          await this.prisma.escola.create({
+            data: {
+              id: idNovo,
+              nome: linha.campo("name") || idNovo,
+              tipo: "escola",
+              fonteId: sourcedId,
+              ...(identifier ? { codigoInep: identifier } : {}),
+            },
+          });
+          relatorio.criados += 1;
+        }
         continue;
       }
 
@@ -390,6 +455,8 @@ export class OneRosterService {
     relatorio: RelatorioOneRoster,
     opcoes: OpcoesOneRoster,
   ): Promise<RelatorioOneRoster> {
+    const periodo = await this.rostering.periodoDeHoje();
+    const inicioDaLotacao = periodo?.inicio ?? new Date();
     const existentes = await this.prisma.user.findMany({
       where: { escolaId },
       select: { id: true, username: true, matriculaExterna: true, fonteId: true, role: true },
@@ -403,7 +470,48 @@ export class OneRosterService {
 
     let semPapelDeclarado = 0;
     let senhasIgnoradas = 0;
+    let cpfsInvalidos = 0;
     const vistos = new Set<string>();
+
+    /* O CPF é procurado na REDE, não nesta escola: é o que transforma "essa
+       criança já é nossa, de outra unidade" em transferência reconhecida em vez
+       de uma segunda pessoa com o histórico partido. */
+    const pimenta = this.config.get<string>("CPF_PEPPER");
+    const hashPorLinha = new Map<number, string>();
+    for (const linha of linhas) {
+      const bruto = cpfDaLinha(linha);
+      if (!bruto) continue;
+      if (!cpfEhValido(bruto)) {
+        cpfsInvalidos += 1;
+        continue;
+      }
+      if (!pimenta) continue;
+      hashPorLinha.set(linha.linha, hashDoCpf(bruto, pimenta));
+    }
+    if (cpfsInvalidos > 0) {
+      relatorio.avisos.push({
+        linha: 1,
+        campo: "cpf",
+        mensagem: `${cpfsInvalidos} CPF(s) com dígito verificador errado foram ignorados — a pessoa entrou sem CPF`,
+      });
+    }
+    if (hashPorLinha.size === 0 && !pimenta) {
+      const traziam = linhas.filter((l) => cpfDaLinha(l)).length;
+      if (traziam > 0) {
+        relatorio.avisos.push({
+          linha: 1,
+          campo: "cpf",
+          mensagem: `${traziam} linha(s) traziam CPF e ele foi ignorado: CPF_PEPPER não está configurada nesta instalação`,
+        });
+      }
+    }
+    const naRede = hashPorLinha.size
+      ? await this.prisma.user.findMany({
+          where: { cpfHash: { in: [...hashPorLinha.values()] } },
+          select: { id: true, escolaId: true, role: true, cpfHash: true },
+        })
+      : [];
+    const porCpfNaRede = new Map(naRede.map((u) => [u.cpfHash!, u]));
 
     type Preparada = {
       linha: number;
@@ -417,6 +525,10 @@ export class OneRosterService {
       existenteId: string | null;
       senha: string | null;
       desativar: boolean;
+      cpfHash: string | null;
+      cpfFinal: string | null;
+      /** Já existe na rede, em OUTRA escola: transferir (aluno) ou lotar. */
+      deOutraEscola: { id: string; escolaId: string | null } | null;
     };
     const preparadas: Preparada[] = [];
 
@@ -429,19 +541,27 @@ export class OneRosterService {
       const matricula =
         linha.campo("identifier") || listaDoCampo(linha.campo("userIds"))[0] || null;
 
-      const existente =
-        (sourcedId ? porFonte.get(sourcedId) : undefined) ??
-        (matricula ? porMatricula.get(matricula) : undefined) ??
-        porUsuario.get(linha.campo("username")) ??
-        null;
+      /* O CPF vem primeiro: é o único identificador que sobrevive à troca de
+         nome, de login, de matrícula e de ESCOLA. */
+      const hash = hashPorLinha.get(linha.linha) ?? null;
+      const naOutra = hash ? porCpfNaRede.get(hash) : undefined;
+      const veioDeOutraEscola = Boolean(naOutra && naOutra.escolaId !== escolaId);
 
-      if (existente?.role === "admin-contrato") {
+      const existente = veioDeOutraEscola
+        ? null
+        : ((naOutra ? existentes.find((u) => u.id === naOutra.id) : undefined) ??
+          (sourcedId ? porFonte.get(sourcedId) : undefined) ??
+          (matricula ? porMatricula.get(matricula) : undefined) ??
+          porUsuario.get(linha.campo("username")) ??
+          null);
+
+      if (existente?.role === "admin-contrato" || naOutra?.role === "admin-contrato") {
         relatorio.erros.push({ linha: linha.linha, campo: "username", mensagem: "usuario reservado" });
         continue;
       }
 
       const desativar = linha.status === "tobedeleted" || !ehVerdadeiro(linha.campo("enabledUser") || "true");
-      if (desativar && !existente) {
+      if (desativar && !existente && !veioDeOutraEscola) {
         relatorio.avisos.push({
           linha: linha.linha,
           campo: "status",
@@ -450,7 +570,7 @@ export class OneRosterService {
         continue;
       }
 
-      if (!nome && !existente) {
+      if (!nome && !existente && !veioDeOutraEscola) {
         relatorio.erros.push({ linha: linha.linha, campo: "givenName", mensagem: "nome vazio" });
         continue;
       }
@@ -486,7 +606,9 @@ export class OneRosterService {
       loginsUsados.add(usuario);
 
       let senha: string | null = null;
-      if (!existente && !desativar) {
+      // Quem vem de outra escola da rede já tem conta e senha: trocar a dela
+      // numa transferência seria trancar a criança para fora sem ninguém pedir.
+      if (!existente && !desativar && !veioDeOutraEscola) {
         senha = opcoes.gerarSenhas ? gerarSenha() : (opcoes.senhaPadrao ?? null);
         if (!senha) {
           relatorio.erros.push({
@@ -499,6 +621,11 @@ export class OneRosterService {
       }
 
       preparadas.push({
+        cpfHash: hash,
+        cpfFinal: hash ? finalDoCpf(cpfDaLinha(linha)) : null,
+        deOutraEscola: veioDeOutraEscola
+          ? { id: naOutra!.id, escolaId: naOutra!.escolaId }
+          : null,
         linha: linha.linha,
         sourcedId,
         matricula,
@@ -528,6 +655,28 @@ export class OneRosterService {
       });
     }
 
+    /* O que ATRAVESSA escola vem antes do laço, cada um na sua transação:
+       transferir encerra vínculo numa escola e abre em outra, e isso não cabe
+       dentro de uma transação já presa ao `escola_id` desta importação. */
+    for (const p of preparadas) {
+      if (!p.deOutraEscola) continue;
+      if (p.papel === "aluno") {
+        const feito = await this.escolasDaRede.transferirAluno({
+          alunoId: p.deOutraEscola.id,
+          escolaDestinoId: escolaId,
+        });
+        if (feito && !feito.jaEstava) relatorio.transferidos += 1;
+      } else {
+        const feito = await this.escolasDaRede.lotar(
+          escolaId,
+          p.deOutraEscola.id,
+          p.papel as "professor" | "gestor",
+        );
+        if (feito) relatorio.lotacoesNovas += 1;
+      }
+      p.existenteId = p.deOutraEscola.id;
+    }
+
     const hashes = await Promise.all(
       preparadas.map((p) => (p.senha ? bcrypt.hash(p.senha, 10) : Promise.resolve(null))),
     );
@@ -542,6 +691,8 @@ export class OneRosterService {
             ...(p.matricula ? { matriculaExterna: p.matricula } : {}),
             ...(p.sourcedId ? { fonteId: p.sourcedId } : {}),
             ...(p.email ? { email: p.email } : {}),
+            // Hash e três dígitos; o número nunca.
+            ...(p.cpfHash ? { cpfHash: p.cpfHash, cpfFinal: p.cpfFinal } : {}),
             ativo: p.ativo,
           };
 
@@ -549,9 +700,18 @@ export class OneRosterService {
             await tx.user.update({ where: { id: p.existenteId }, data: { ...comum, username: p.usuario } });
             if (p.desativar) relatorio.desativados += 1;
             else relatorio.atualizados += 1;
+            if (!p.desativar) {
+              await garantirLotacao(tx, {
+                escolaId,
+                usuarioId: p.existenteId,
+                papel: p.papel as "aluno" | "professor" | "gestor",
+                inicio: inicioDaLotacao,
+                fonteId: p.sourcedId || null,
+              });
+            }
             continue;
           }
-          await tx.user.create({
+          const criado = await tx.user.create({
             data: {
               ...comum,
               displayName: p.nome,
@@ -563,6 +723,14 @@ export class OneRosterService {
             },
           });
           relatorio.criados += 1;
+          await garantirLotacao(tx, {
+            escolaId,
+            usuarioId: criado.id,
+            papel: p.papel as "aluno" | "professor" | "gestor",
+            inicio: inicioDaLotacao,
+            principal: true,
+            fonteId: p.sourcedId || null,
+          });
           if (p.senha) {
             relatorio.credenciais.push({ nome: p.nome, usuario: p.usuario, senha: p.senha, turma: null });
           }

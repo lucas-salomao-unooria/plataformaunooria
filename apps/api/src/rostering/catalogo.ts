@@ -60,6 +60,13 @@ export const SINONIMOS_DE_PAPEL: Readonly<Record<string, PapelImportavel>> = {
  * claro circula por e-mail, WhatsApp e pen drive.
  */
 export const COLUNAS_MODELO = [
+  /**
+   * A identidade IMUTÁVEL do estudante na rede. Vem primeiro na planilha porque
+   * é a coluna que decide se uma criança que mudou de escola é reconhecida como
+   * a mesma pessoa ou nasce de novo, com o histórico partido em duas.
+   * Nunca guardado em claro — ver `comum/cpf.ts`.
+   */
+  "cpf",
   "matricula",
   "nome",
   "usuario",

@@ -27,6 +27,9 @@ const TOTAL_ALUNOS_4A = 10;
 /** 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). */
 const TOTAL_ALUNOS_2A = 10;
 const ESCOLA_ID = "escola-demo";
+/** Segunda escola: é ela que torna visível o professor lotado em DUAS. */
+const ESCOLA_2_ID = "escola-demo-2";
+const TOTAL_ALUNOS_5A = 10;
 const MINIMO = process.env.SEED_MINIMO === "1";
 
 async function main() {
@@ -34,8 +37,25 @@ async function main() {
 
   await prisma.escola.upsert({
     where: { id: ESCOLA_ID },
-    update: { nome: "Escola Demo" },
-    create: { id: ESCOLA_ID, nome: "Escola Demo" },
+    update: { nome: "EE Escola Demo", municipio: "São Paulo", uf: "SP", codigoInep: "35000101" },
+    create: {
+      id: ESCOLA_ID,
+      nome: "EE Escola Demo",
+      municipio: "São Paulo",
+      uf: "SP",
+      codigoInep: "35000101",
+    },
+  });
+  await prisma.escola.upsert({
+    where: { id: ESCOLA_2_ID },
+    update: { nome: "EE Vila Nova", municipio: "Campinas", uf: "SP", codigoInep: "35000202" },
+    create: {
+      id: ESCOLA_2_ID,
+      nome: "EE Vila Nova",
+      municipio: "Campinas",
+      uf: "SP",
+      codigoInep: "35000202",
+    },
   });
 
   // Toda turma vive dentro de um ano letivo — é o que faz "8A de 2026" e "8A de
@@ -52,13 +72,13 @@ async function main() {
     },
   });
 
-  const upsertTurma = (nome: string, serie: string, turno = "manha") =>
+  const upsertTurma = (nome: string, serie: string, turno = "manha", escolaId = ESCOLA_ID) =>
     prisma.turma.upsert({
       where: {
-        escolaId_periodoLetivoId_nome: { escolaId: ESCOLA_ID, periodoLetivoId: periodo.id, nome },
+        escolaId_periodoLetivoId_nome: { escolaId, periodoLetivoId: periodo.id, nome },
       },
       update: { serie, turno },
-      create: { escolaId: ESCOLA_ID, periodoLetivoId: periodo.id, nome, serie, turno },
+      create: { escolaId, periodoLetivoId: periodo.id, nome, serie, turno },
     });
 
   /**
@@ -66,19 +86,30 @@ async function main() {
    * matrícula principal (o login e o claim `turma_id` do token o leem fora de
    * contexto de tenancy); a verdade é a linha em `matriculas`.
    */
-  const matricular = (turmaId: string, usuarioId: string, papel: "aluno" | "professor") =>
+  /**
+   * Lotação: o vínculo com a ESCOLA. Professor acumula; aluno tem uma só.
+   * `users.escola_id` é o cache da principal.
+   */
+  const lotar = (escolaId: string, usuarioId: string, papel: string, principal: boolean) =>
+    prisma.lotacao.upsert({
+      where: { escolaId_usuarioId_papel: { escolaId, usuarioId, papel } },
+      update: { fim: null, principal },
+      create: { escolaId, usuarioId, papel, principal, inicio: periodo.inicio },
+    });
+
+  const matricular = (
+    turmaId: string,
+    usuarioId: string,
+    papel: "aluno" | "professor",
+    escolaId = ESCOLA_ID,
+  ) =>
     prisma.matricula.upsert({
       where: {
-        escolaId_turmaId_usuarioId_papel: {
-          escolaId: ESCOLA_ID,
-          turmaId,
-          usuarioId,
-          papel,
-        },
+        escolaId_turmaId_usuarioId_papel: { escolaId, turmaId, usuarioId, papel },
       },
       update: { fim: null },
       create: {
-        escolaId: ESCOLA_ID,
+        escolaId,
         turmaId,
         usuarioId,
         papel,
@@ -119,7 +150,8 @@ async function main() {
   };
 
   if (MINIMO) {
-    await upsertUsuarioMinimo("gestor.demo", "Gestor Demo", "gestor");
+    const gestorMinimo = await upsertUsuarioMinimo("gestor.demo", "Gestor Demo", "gestor");
+    await lotar(ESCOLA_ID, gestorMinimo.id, "gestor", true);
     await upsertAdminContrato();
     console.log(
       `Seed MÍNIMO: escola "${ESCOLA_ID}", período "${periodo.titulo}", gestor.demo e ` +
@@ -155,7 +187,7 @@ async function main() {
     });
 
   const professor = await upsertUsuario("prof.demo", "Prof. Demo", "professor");
-  await upsertUsuario("gestor.demo", "Gestor Demo", "gestor");
+  const gestor = await upsertUsuario("gestor.demo", "Gestor Demo", "gestor");
 
   for (let i = 1; i <= TOTAL_ALUNOS; i += 1) {
     const numero = String(i).padStart(2, "0");
@@ -163,6 +195,7 @@ async function main() {
     const aluno = await upsertUsuario(`aluno${numero}`, `Aluno ${numero}`, "aluno", {
       turmaId: turma.id,
     });
+    await lotar(ESCOLA_ID, aluno.id, "aluno", true);
     await matricular(turma.id, aluno.id, "aluno");
   }
 
@@ -173,6 +206,7 @@ async function main() {
     const aluno = await upsertUsuario(`aluno4a${numero}`, `Aluno 4A ${numero}`, "aluno", {
       turmaId: turma4A.id,
     });
+    await lotar(ESCOLA_ID, aluno.id, "aluno", true);
     await matricular(turma4A.id, aluno.id, "aluno");
   }
 
@@ -186,14 +220,39 @@ async function main() {
     const aluno = await upsertUsuario(`aluno2a${numero}`, `Aluno 2A ${numero}`, "aluno", {
       turmaId: turma2A.id,
     });
+    await lotar(ESCOLA_ID, aluno.id, "aluno", true);
     await matricular(turma2A.id, aluno.id, "aluno");
   }
 
   // O professor demo é matriculado nas QUATRO turmas. Sem isso as telas dele
   // ficam vazias — a partir daqui "as turmas do professor" são as turmas em que
   // ele tem matrícula, e não mais todas as turmas da escola.
+  await lotar(ESCOLA_ID, professor.id, "professor", true);
+  await lotar(ESCOLA_ID, gestor.id, "gestor", true);
   for (const turma of [...turmas, turma4A, turma2A]) {
     await matricular(turma.id, professor.id, "professor");
+  }
+
+  /**
+   * SEGUNDA ESCOLA. Existe para o caso da rede estadual ficar visível sem
+   * ninguém precisar montar nada: o `prof.demo` fica lotado nas DUAS, e é isso
+   * que faz aparecer o seletor de escola no cabeçalho dele.
+   */
+  const turma5A = await upsertTurma("5A", "5EF", "tarde", ESCOLA_2_ID);
+  const gestor2 = await upsertUsuario("gestor.vilanova", "Gestor Vila Nova", "gestor", {
+    escolaId: ESCOLA_2_ID,
+  });
+  await lotar(ESCOLA_2_ID, gestor2.id, "gestor", true);
+  await lotar(ESCOLA_2_ID, professor.id, "professor", false);
+  await matricular(turma5A.id, professor.id, "professor", ESCOLA_2_ID);
+  for (let i = 1; i <= TOTAL_ALUNOS_5A; i += 1) {
+    const numero = String(i).padStart(2, "0");
+    const aluno = await upsertUsuario(`aluno5a${numero}`, `Aluno 5A ${numero}`, "aluno", {
+      escolaId: ESCOLA_2_ID,
+      turmaId: turma5A.id,
+    });
+    await lotar(ESCOLA_2_ID, aluno.id, "aluno", true);
+    await matricular(turma5A.id, aluno.id, "aluno", ESCOLA_2_ID);
   }
 
   // admin-contrato: papel de nível de produto (o "analista" do origem). Vê a
@@ -202,7 +261,10 @@ async function main() {
 
   const total = await prisma.user.count();
   console.log(
-    `Seed ok: escola "${ESCOLA_ID}" com 4 turmas (8A, 8B, 4A, 2A), 1 professor, 1 gestor, ${TOTAL_ALUNOS + TOTAL_ALUNOS_4A + TOTAL_ALUNOS_2A} alunos e 1 admin-contrato (senha "${SENHA_PADRAO}"). Usuários na base: ${total}.`,
+    `Seed ok: 2 escolas ("${ESCOLA_ID}" com 8A, 8B, 4A, 2A e "${ESCOLA_2_ID}" com 5A), ` +
+      `prof.demo lotado nas DUAS, gestor.demo, gestor.vilanova, ` +
+      `${TOTAL_ALUNOS + TOTAL_ALUNOS_4A + TOTAL_ALUNOS_2A + TOTAL_ALUNOS_5A} alunos e ` +
+      `1 admin-contrato (senha "${SENHA_PADRAO}"). Usuários na base: ${total}.`,
   );
 }
 

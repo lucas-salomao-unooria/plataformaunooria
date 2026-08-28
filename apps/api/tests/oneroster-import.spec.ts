@@ -1,8 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { OneRosterService } from "../src/rostering/oneroster.service";
-import { RosteringService } from "../src/rostering/rostering.service";
 import { periodoDeTeste } from "./turma-de-teste";
+import { servicosDeTeste } from "./servicos-de-teste";
 
 /**
  * O binding CSV do OneRoster 1.2 aplicado arquivo por arquivo.
@@ -17,8 +16,8 @@ const ESCOLA = "teste-escola-oneroster";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
-const rostering = new RosteringService(prisma);
-const oneroster = new OneRosterService(prisma, rostering);
+const { rostering } = servicosDeTeste(prisma);
+const { oneroster } = servicosDeTeste(prisma);
 
 const csv = (...linhas: string[]) => linhas.join("\n");
 /**
@@ -316,15 +315,55 @@ describe("orgs.csv", () => {
     expect(escola.codigoInep).toBe("35001234");
   });
 
-  test("escola nova NÃO nasce de CSV", async () => {
+  test("para GESTOR, escola nova não nasce de CSV", async () => {
     const r = await oneroster.importar(
       ESCOLA,
       "orgs",
-      csv("sourcedId,name,type", "outra-escola-qualquer,EE Outra,school"),
+      csv("sourcedId,name,type", "or-escola-nova,EE Outra,school"),
+      // `podeCriarEscola` ausente = quem importou não é admin-contrato.
     );
     expect(r.criados).toBe(0);
-    expect(r.avisos[0]?.mensagem).toMatch(/escola nova não nasce de CSV/);
-    expect(await prisma.escola.count({ where: { id: "outra-escola-qualquer" } })).toBe(0);
+    expect(r.avisos[0]?.mensagem).toMatch(/só admin-contrato cadastra escola nova/);
+    expect(await prisma.escola.count({ where: { id: "or-escola-nova" } })).toBe(0);
+  });
+
+  test("para ADMIN-CONTRATO, orgs.csv cadastra a rede — milhares de escolas não entram à mão", async () => {
+    const r = await oneroster.importar(
+      ESCOLA,
+      "orgs",
+      csv(
+        "sourcedId,name,type,identifier",
+        "or-escola-nova,EE Nova do Padrão,school,35009999",
+      ),
+      { podeCriarEscola: true },
+    );
+    expect(r.criados).toBe(1);
+    const nova = await prisma.escola.findUniqueOrThrow({ where: { id: "or-escola-nova" } });
+    expect(nova.nome).toBe("EE Nova do Padrão");
+    expect(nova.codigoInep).toBe("35009999");
+
+    // Reaplicar atualiza, não duplica.
+    const dedeNovo = await oneroster.importar(
+      ESCOLA,
+      "orgs",
+      csv("sourcedId,name,type", "or-escola-nova,EE Nova (nome corrigido),school"),
+      { podeCriarEscola: true },
+    );
+    expect(dedeNovo.criados).toBe(0);
+    expect(dedeNovo.atualizados).toBe(1);
+
+    await prisma.escola.delete({ where: { id: "or-escola-nova" } });
+  });
+
+  test("sourcedId que não serve como id de escola é erro, não escola com id torto", async () => {
+    const r = await oneroster.importar(
+      ESCOLA,
+      "orgs",
+      csv("sourcedId,name,type", "ID Com Espaço E Maiúscula,EE Torta,school"),
+      { podeCriarEscola: true },
+    );
+    expect(r.criados).toBe(0);
+    expect(r.erros[0]).toMatchObject({ campo: "sourcedId" });
   });
 
   test("distrito e rede não são montados por importação", async () => {

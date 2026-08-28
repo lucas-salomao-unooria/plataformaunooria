@@ -16,6 +16,7 @@ import {
   type Serie,
   type Turno,
 } from "./catalogo";
+import { cpfEhValido, digitosDoCpf } from "../comum/cpf";
 import { chave, normalizarPapel, normalizarSerie, normalizarTurno, usuarioEhValido } from "./regras";
 
 export interface ErroDeLinha {
@@ -27,6 +28,8 @@ export interface ErroDeLinha {
 export interface PessoaDaPlanilha {
   /** Linha no arquivo (1-based, contando o cabeçalho) — é o que o relatório cita. */
   linha: number;
+  /** Dígitos do CPF, já validados. Vazio quando a coluna não veio. */
+  cpf: string;
   matricula: string;
   nome: string;
   usuario: string;
@@ -58,16 +61,17 @@ export function modeloEmBranco(): string {
 export function exemploPreenchido(): string {
   return [
     COLUNAS_MODELO.join(","),
-    "2026001,Ana Paula Ribeiro,,ana.ribeiro@escola.exemplo,aluno,8A,8EF,manha",
-    '2026002,"Souza, João Pedro",joao.souza,,aluno,8A,8EF,manha',
-    "1099,Marta Nunes Alves,,marta.alves@escola.exemplo,professor,8A,8EF,manha",
-    "1100,Carlos Eduardo Dias,,,coordenacao,,,",
+    "529.982.247-25,2026001,Ana Paula Ribeiro,,ana.ribeiro@escola.exemplo,aluno,8A,8EF,manha",
+    '045.833.259-32,2026002,"Souza, João Pedro",joao.souza,,aluno,8A,8EF,manha',
+    ",1099,Marta Nunes Alves,,marta.alves@escola.exemplo,professor,8A,8EF,manha",
+    ",1100,Carlos Eduardo Dias,,,coordenacao,,,",
     "",
   ].join("\n");
 }
 
 /** Os campos que uma linha pode ter — a chave do acesso por NOME de coluna. */
 type CampoDaLinha =
+  | "cpf"
   | "matricula"
   | "nome"
   | "usuario"
@@ -132,6 +136,7 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
   });
 
   const pessoas: PessoaDaPlanilha[] = [];
+  const porCpf = new Map<string, number>();
   const porMatricula = new Map<string, number>();
   const porUsuario = new Map<string, number>();
 
@@ -177,6 +182,19 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
       daLinha.push({ linha, campo: "matricula", mensagem: "matricula acima de 64 caracteres" });
     }
 
+    /* CPF errado numa planilha de 10 mil linhas cria identidade fantasma que
+       nunca casa com a da rede — e o erro só aparece meses depois, quando a
+       criança se transfere e vira uma segunda pessoa. Por isso valida aqui. */
+    const cpfBruto = campo("cpf");
+    const cpf = cpfBruto ? digitosDoCpf(cpfBruto) : "";
+    if (cpfBruto && !cpfEhValido(cpfBruto)) {
+      daLinha.push({
+        linha,
+        campo: "cpf",
+        mensagem: `CPF inválido: "${cpfBruto}" — confira os dígitos verificadores`,
+      });
+    }
+
     const turma = campo("turma");
     const serieBruta = campo("serie");
     const serie = serieBruta ? normalizarSerie(serieBruta) : null;
@@ -216,6 +234,13 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
       return;
     }
 
+    const anteriorCpf = cpf ? porCpf.get(cpf) : undefined;
+    if (anteriorCpf) {
+      erros.push({ linha, campo: "cpf", mensagem: `CPF repetido no arquivo (linha ${anteriorCpf})` });
+      return;
+    }
+    if (cpf) porCpf.set(cpf, linha);
+
     const anteriorMatricula = matricula ? porMatricula.get(chave(matricula)) : undefined;
     if (anteriorMatricula) {
       erros.push({ linha, campo: "matricula", mensagem: `matricula repetida no arquivo (linha ${anteriorMatricula})` });
@@ -231,6 +256,7 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
 
     pessoas.push({
       linha,
+      cpf,
       matricula,
       nome,
       usuario,

@@ -1,7 +1,11 @@
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import bcrypt from "bcryptjs";
 import type { Prisma } from "@prisma/client";
+import { finalDoCpf, hashDoCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
+import { EscolasService } from "./escolas.service";
+import { garantirLotacao } from "./lotacao";
 import { matricularEm } from "./matricula";
 import { lerPlanilha, type ErroDeLinha, type PessoaDaPlanilha } from "./planilha";
 import { gerarSenha, gerarUsuario, periodoVigente, senhaAceitavel } from "./regras";
@@ -33,6 +37,17 @@ export interface RelatorioImportacao {
   turmasCriadas: string[];
   erros: ErroDeLinha[];
   avisos: ErroDeLinha[];
+  /**
+   * Alunos que já existiam em OUTRA escola da rede e foram TRANSFERIDOS para
+   * esta. Reconhecidos pelo CPF — sem ele, cada um deles nasceria de novo, com o
+   * histórico partido em duas pessoas.
+   */
+  transferidos: number;
+  /**
+   * Professores e gestores que já existiam em outra escola e ganharam lotação
+   * NESTA, sem perder a de lá. É o caso que a rede estadual tem aos milhares.
+   */
+  lotacoesNovas: number;
   /** Devolvidas UMA vez, para o gestor imprimir. Não ficam em coluna nem em log. */
   credenciais: Credencial[];
 }
@@ -50,6 +65,8 @@ export const relatorioVazio = (): RelatorioImportacao => ({
   matriculados: 0,
   desativados: 0,
   candidatosAInativacao: 0,
+  transferidos: 0,
+  lotacoesNovas: 0,
   turmasCriadas: [],
   erros: [],
   avisos: [],
@@ -58,7 +75,11 @@ export const relatorioVazio = (): RelatorioImportacao => ({
 
 @Injectable()
 export class RosteringService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly escolas: EscolasService,
+    private readonly config: ConfigService,
+  ) {}
 
   // ------------------------------------------------------------------ períodos
 
@@ -151,6 +172,38 @@ export class RosteringService {
       where: { escolaId },
       select: { id: true, username: true, matriculaExterna: true, role: true, turmaId: true },
     });
+
+    /**
+     * O CPF é procurado na REDE INTEIRA, não nesta escola — é justamente o que
+     * ele existe para responder: "essa criança já é nossa, de outra escola?".
+     * Sem esta consulta, cada transferência criaria uma segunda pessoa e o
+     * histórico dela nasceria partido.
+     *
+     * Sem `CPF_PEPPER` não há hash: a coluna é recusada com mensagem explícita,
+     * em vez de o número acabar guardado de outro jeito.
+     */
+    const pimenta = this.config.get<string>("CPF_PEPPER");
+    const comCpf = leitura.pessoas.filter((p) => p.cpf);
+    if (comCpf.length > 0 && !pimenta) {
+      relatorio.erros.push({
+        linha: comCpf[0]!.linha,
+        campo: "cpf",
+        mensagem:
+          "a coluna cpf não pode ser usada nesta instalação (CPF_PEPPER ausente). " +
+          "Remova a coluna ou configure a pimenta — o CPF não é guardado em claro.",
+      });
+      return relatorio;
+    }
+    const hashPorLinha = new Map<number, string>();
+    for (const p of comCpf) hashPorLinha.set(p.linha, hashDoCpf(p.cpf, pimenta));
+
+    const naRede = hashPorLinha.size
+      ? await this.prisma.user.findMany({
+          where: { cpfHash: { in: [...hashPorLinha.values()] } },
+          select: { id: true, username: true, escolaId: true, role: true, cpfHash: true },
+        })
+      : [];
+    const porCpfNaRede = new Map(naRede.map((u) => [u.cpfHash!, u]));
     const porMatricula = new Map(
       existentes.filter((u) => u.matriculaExterna).map((u) => [u.matriculaExterna!, u]),
     );
@@ -164,6 +217,9 @@ export class RosteringService {
       existenteId: string | null;
       usuario: string;
       senha: string | null;
+      /** Já existe na rede, em OUTRA escola: transferir (aluno) ou lotar. */
+      deOutraEscola: { id: string; escolaId: string | null } | null;
+      cpfHash: string | null;
     };
     const preparadas: Preparada[] = [];
 
@@ -178,8 +234,22 @@ export class RosteringService {
        * conta antiga SEM matrícula (a conta de assento) recebendo agora o RA de
        * uma criança de verdade.
        */
-      let existente = pessoa.matricula ? (porMatricula.get(pessoa.matricula) ?? null) : null;
-      if (!existente && pessoa.usuario) {
+      /* O CPF vem PRIMEIRO: é o único identificador que sobrevive à troca de
+         nome, de login, de matrícula e de escola. Achado em outra escola da
+         rede, a linha deixa de ser "pessoa nova" e passa a ser transferência
+         (aluno) ou lotação a mais (professor e gestor). */
+      const hash = hashPorLinha.get(pessoa.linha);
+      const naOutraEscola = hash ? porCpfNaRede.get(hash) : undefined;
+      const veioDeOutraEscola = Boolean(naOutraEscola && naOutraEscola.escolaId !== escolaId);
+
+      let existente: (typeof existentes)[number] | null = null;
+      if (naOutraEscola && !veioDeOutraEscola) {
+        existente = existentes.find((u) => u.id === naOutraEscola.id) ?? null;
+      }
+      if (!existente && !veioDeOutraEscola && pessoa.matricula) {
+        existente = porMatricula.get(pessoa.matricula) ?? null;
+      }
+      if (!existente && !veioDeOutraEscola && pessoa.usuario) {
         const candidato = porUsuario.get(pessoa.usuario) ?? null;
         const compativel =
           candidato &&
@@ -189,7 +259,7 @@ export class RosteringService {
         if (compativel) existente = candidato;
       }
 
-      if (existente?.role === "admin-contrato") {
+      if (existente?.role === "admin-contrato" || naOutraEscola?.role === "admin-contrato") {
         relatorio.erros.push({ linha: pessoa.linha, campo: "usuario", mensagem: "usuario reservado" });
         continue;
       }
@@ -212,9 +282,13 @@ export class RosteringService {
 
       let senha: string | null = null;
       if (pessoa.senha) senha = pessoa.senha;
-      else if (!existente) senha = opcoes.gerarSenhas ? gerarSenha() : (opcoes.senhaPadrao ?? null);
+      // Quem vem de outra escola da rede JÁ tem conta e senha: pedir senha nova
+      // seria trocar a dela numa transferência, sem ninguém ter pedido.
+      else if (!existente && !veioDeOutraEscola) {
+        senha = opcoes.gerarSenhas ? gerarSenha() : (opcoes.senhaPadrao ?? null);
+      }
 
-      if (!existente && !senha) {
+      if (!existente && !veioDeOutraEscola && !senha) {
         relatorio.erros.push({
           linha: pessoa.linha,
           campo: "senha",
@@ -223,7 +297,16 @@ export class RosteringService {
         continue;
       }
 
-      preparadas.push({ pessoa, existenteId: existente?.id ?? null, usuario, senha });
+      preparadas.push({
+        pessoa,
+        existenteId: existente?.id ?? null,
+        usuario,
+        senha,
+        deOutraEscola: veioDeOutraEscola
+          ? { id: naOutraEscola!.id, escolaId: naOutraEscola!.escolaId }
+          : null,
+        cpfHash: hash ?? null,
+      });
     }
 
     if (preparadas.length === 0) return relatorio;
@@ -273,7 +356,33 @@ export class RosteringService {
       }
     }, escolaId);
 
-    // 3) Hash fora da transação, e escrita em lotes curtos.
+    /**
+     * 3) O que ATRAVESSA escola vem antes do laço de escrita, e cada um na sua
+     * transação: transferir um aluno encerra vínculo numa escola e abre em
+     * outra, e isso não cabe dentro de uma transação já presa ao `escola_id`
+     * desta importação.
+     *
+     * Aluno → transferência (a anterior é encerrada, é uma escola só).
+     * Professor e gestor → lotação A MAIS (a de lá continua valendo).
+     */
+    for (const p of preparadas) {
+      if (!p.deOutraEscola) continue;
+      if (p.pessoa.papel === "aluno") {
+        const feito = await this.escolas.transferirAluno({
+          alunoId: p.deOutraEscola.id,
+          escolaDestinoId: escolaId,
+        });
+        if (feito && !feito.jaEstava) relatorio.transferidos += 1;
+      } else {
+        const feito = await this.escolas.lotar(escolaId, p.deOutraEscola.id, p.pessoa.papel);
+        if (feito) relatorio.lotacoesNovas += 1;
+      }
+      // A partir daqui a pessoa está NESTA escola, então o laço abaixo a trata
+      // como qualquer outra que já existia aqui.
+      p.existenteId = p.deOutraEscola.id;
+    }
+
+    // 4) Hash fora da transação, e escrita em lotes curtos.
     for (let i = 0; i < preparadas.length; i += CHUNK) {
       const lote = preparadas.slice(i, i + CHUNK);
       const hashes = await Promise.all(
@@ -292,6 +401,11 @@ export class RosteringService {
               role: pessoa.papel,
               ...(pessoa.matricula ? { matriculaExterna: pessoa.matricula } : {}),
               ...(pessoa.email ? { email: pessoa.email } : {}),
+              // O CPF entra como hash; os três últimos dígitos, em claro, são o
+              // que a tela mostra para o gestor confirmar a pessoa.
+              ...(lote[j]!.cpfHash
+                ? { cpfHash: lote[j]!.cpfHash, cpfFinal: finalDoCpf(pessoa.cpf) }
+                : {}),
               ativo: true,
             };
 
@@ -331,6 +445,17 @@ export class RosteringService {
                 turma: pessoa.turma || null,
               });
             }
+
+            /* Lotação na escola desta importação. Para quem já veio de outra,
+               a transferência (ou o `lotar`) acima já a criou; aqui é o caminho
+               de quem nasce nesta escola — e do gestor, que não tem turma. */
+            await garantirLotacao(tx, {
+              escolaId,
+              usuarioId,
+              papel: pessoa.papel,
+              inicio: periodo.inicio,
+              principal: pessoa.papel === "aluno" || !existenteId,
+            });
 
             if (turmaId && (pessoa.papel === "aluno" || pessoa.papel === "professor")) {
               await matricularEm(tx, {

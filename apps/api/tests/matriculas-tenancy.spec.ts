@@ -3,6 +3,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { RosteringService } from "../src/rostering/rostering.service";
 import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { periodoDeTeste } from "./turma-de-teste";
+import { servicosDeTeste } from "./servicos-de-teste";
 
 /**
  * O enturmamento como ESCOPO: "as turmas do professor" são as turmas em que ele
@@ -64,7 +65,7 @@ beforeAll(async () => {
   await matricular(ESCOLA, ids.turma8A, ids.ana, "aluno");
 
   runtime = new PrismaService({ datasources: { db: { url: urlDeRuntime(ADMIN_URL) } } });
-  rostering = new RosteringService(runtime);
+  rostering = servicosDeTeste(runtime).rostering;
 });
 
 afterAll(async () => {

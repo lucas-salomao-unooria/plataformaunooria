@@ -1,15 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { RosteringService } from "../src/rostering/rostering.service";
 import { periodoDeTeste } from "./turma-de-teste";
+import { servicosDeTeste } from "./servicos-de-teste";
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const ESCOLA = "teste-escola-rostering";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
-const rostering = new RosteringService(prisma);
+const { rostering } = servicosDeTeste(prisma);
 
 const csv = (...linhas: string[]) => linhas.join("\n");
 

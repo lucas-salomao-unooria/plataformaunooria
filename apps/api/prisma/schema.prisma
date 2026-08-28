@@ -49,12 +49,55 @@ model Escola {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
+  /// Município e UF: numa rede estadual são 5 mil escolas em centenas de
+  /// municípios, e sem eles a lista de escolas é impossível de navegar.
+  municipio String? @map("municipio")
+  /// Sigla de 2 letras — CHECK na migration.
+  uf        String?
+
   pai      Escola?  @relation("EscolaPai", fields: [paiId], references: [id])
   filhas   Escola[] @relation("EscolaPai")
   turmas   Turma[]
   usuarios User[]
+  lotacoes Lotacao[]
 
   @@map("escolas")
+}
+
+/// Vínculo de uma PESSOA com uma ESCOLA (≈ `roles.csv` do OneRoster: papel no
+/// nível da organização, datado).
+///
+/// `lotação` é o termo que a rede pública usa para a alocação de um servidor a
+/// uma unidade, e é exatamente isto: o professor tem lotação em mais de uma
+/// escola — o caso que `users.escola_id` sozinho não conseguia representar. O
+/// ALUNO tem uma só ativa; trocar de escola é transferência, que encerra a
+/// anterior.
+///
+/// FORA da RLS, de propósito e pelo mesmo motivo de `users`/`turmas`: é lida no
+/// LOGIN, antes de se saber a escola — é ela que responde "quais escolas são
+/// suas". Uma política por `escola_id` aqui esconderia justamente a resposta.
+model Lotacao {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId  String    @map("escola_id")
+  usuarioId String    @map("usuario_id") @db.Uuid
+  /// aluno | professor | gestor — CHECK na migration
+  papel     String
+  /// A escola padrão da pessoa: alimenta o cache `users.escola_id` e é a que o
+  /// token carrega quando ela entra sem escolher.
+  principal Boolean   @default(false)
+  inicio    DateTime  @db.Date
+  /// Preenchido em vez de DELETE quando a pessoa sai da escola.
+  fim       DateTime? @db.Date
+  fonteId   String?   @map("fonte_id")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  escola  Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  usuario User   @relation("LotacaoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([escolaId, usuarioId, papel])
+  @@index([usuarioId])
+  @@index([escolaId, papel])
+  @@map("lotacoes")
 }
 
 /// Ano letivo e seus recortes (≈ `academicSessions` do OneRoster).
@@ -179,6 +222,15 @@ model User {
   /// Índice único parcial por escola vive na migration (o Prisma não modela
   /// índice parcial, e NULL não pode colidir).
   matriculaExterna String? @map("matricula_externa")
+  /// `HMAC-SHA256(cpf, CPF_PEPPER)` — o CPF NUNCA em claro. É a identidade
+  /// IMUTÁVEL da pessoa na rede: sobrevive a troca de nome, de login, de
+  /// matrícula e de ESCOLA, e é por ele que uma transferência é reconhecida como
+  /// a mesma criança em vez de virar uma segunda pessoa. Único por CONTRATO (não
+  /// por escola) — índice parcial na migration.
+  cpfHash          String? @map("cpf_hash")
+  /// Os três últimos dígitos, em claro, para o gestor confirmar na tela que é a
+  /// pessoa certa. Três dígitos não reconstroem um CPF.
+  cpfFinal         String? @map("cpf_final")
   /// `sourcedId` desta pessoa no sistema de origem (OneRoster). Distinto do
   /// `sub` do IdP: SIS e IdP são sistemas diferentes e as duas reconciliações
   /// não são a mesma.
@@ -193,12 +245,18 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
+  /// Cache da LOTAÇÃO principal — a escola que o token carrega quando a pessoa
+  /// entra sem escolher. A verdade é `lotacoes`; esta coluna existe porque o
+  /// login a lê antes de haver escola no contexto, e porque os 31 lugares que
+  /// filtram por `escola_id` continuam valendo sem mudança nenhuma.
   escola Escola? @relation(fields: [escolaId], references: [id])
   /// Cache da matrícula principal — a verdade é `matriculas`. Continua existindo
   /// porque o login e o claim `turma_id` do token (contrato congelado) o leem
   /// fora de contexto de tenancy, onde `matriculas` (com RLS) não é alcançável.
   turma  Turma?  @relation(fields: [turmaId], references: [id])
   matriculas Matricula[] @relation("MatriculaUsuario")
+  /// As escolas da pessoa. Professor tem mais de uma; aluno, uma ativa.
+  lotacoes   Lotacao[]   @relation("LotacaoUsuario")
 
   activities       Activity[]        @relation("ActivityProfessor")
   runs             Run[]

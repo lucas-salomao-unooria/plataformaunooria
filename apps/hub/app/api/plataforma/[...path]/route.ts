@@ -19,6 +19,11 @@ const PREFIXOS_PERMITIDOS = [
   "turmas",
   "matriculas",
   "periodos-letivos",
+  /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a
+     transferência de aluno entre escolas. */
+  "escolas",
+  "lotacoes",
+  "alunos",
   "atividades",
   "runs",
   "posts",

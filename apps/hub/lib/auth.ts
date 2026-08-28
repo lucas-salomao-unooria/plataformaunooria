@@ -24,6 +24,9 @@ const RespostaLoginSchema = z.object({
   turmaId: z.string().nullable(),
   serie: z.string().nullable(),
   precisaTrocarSenha: z.boolean().default(false),
+  escolas: z
+    .array(z.object({ id: z.string(), nome: z.string(), papel: z.string() }))
+    .default([]),
 });
 
 const providers = [
@@ -58,6 +61,7 @@ const providers = [
         turmaId: dados.data.turmaId ?? undefined,
         serie: dados.data.serie ?? undefined,
         precisaTrocarSenha: dados.data.precisaTrocarSenha,
+        escolas: dados.data.escolas,
       };
       return { id: usuario.id, usuario };
     },
@@ -78,7 +82,7 @@ if (process.env.AUTH_WSO2_ISSUER) {
   } as never);
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   providers,
   session: { strategy: "jwt", maxAge: 60 * 60 * 12 }, // 12h — cobre um dia de aula
   pages: { signIn: "/login" },
@@ -86,9 +90,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // O beta do next-auth re-exporta o tipo JWT de @auth/core e a module
     // augmentation não o alcança — o narrow explícito cobre até o beta
     // estabilizar. A Session (o que as telas consomem) é tipada de verdade.
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       const u = user as { usuario?: UsuarioDaSessao } | null;
       if (u?.usuario) token.usuario = u.usuario;
+      /**
+       * `trigger: "update"` é a troca de ESCOLA ATIVA do professor lotado em
+       * mais de uma unidade (`/api/escola-ativa`). O que muda é o cookie de
+       * sessão — e, por ele, a escola que o token de dados vai carregar.
+       * A validação de que a escola é dele fica na rota, contra a api: aqui só
+       * se aplica o que já foi aprovado.
+       */
+      if (trigger === "update" && token.usuario) {
+        const parcial = (session as { usuario?: Partial<UsuarioDaSessao> } | undefined)?.usuario;
+        if (parcial) token.usuario = { ...token.usuario, ...parcial };
+      }
       return token;
     },
     session({ session, token }) {

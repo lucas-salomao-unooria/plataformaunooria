@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { rateLimit } from "../comum/rate-limit";
 import { PrismaService } from "../prisma/prisma.service";
+import { EscolasService } from "../rostering/escolas.service";
 import { TAMANHO_MINIMO_DE_SENHA } from "../rostering/regras";
 import type { Perfil } from "./claims";
 
@@ -28,7 +29,10 @@ const CREDENCIAIS_INVALIDAS = "Usuário ou senha incorretos.";
  */
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly escolas: EscolasService,
+  ) {}
 
   @Post("login")
   @HttpCode(200)
@@ -48,7 +52,16 @@ export class AuthController {
     const user = await this.autenticar(username, password);
     if (!user) throw new HttpException({ mensagem: CREDENCIAIS_INVALIDAS }, 401);
 
+    /**
+     * As escolas da pessoa. Professor de rede estadual tem mais de uma, e o
+     * token carrega UMA — a que ele escolher. O hub monta o seletor com esta
+     * lista e a reconsulta para VALIDAR a troca antes de assinar um token com a
+     * escola nova; sem isso, bastaria pedir uma escola qualquer.
+     */
+    const escolas = await this.escolas.escolasDaPessoa(user.id);
+
     return {
+      escolas: escolas.map((e) => ({ id: e.id, nome: e.nome, papel: e.papel })),
       usuarioId: user.id,
       /** O login em si — a troca de senha precisa dele, e o hub não o tinha. */
       usuario: user.username,

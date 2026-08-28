@@ -136,6 +136,8 @@ export class RosteringController {
       modo: q.modo,
       senhaPadrao: q.senhaPadrao,
       gerarSenhas: q.gerarSenhas === "1",
+      // Escola é tenant: só o admin do contrato abre inquilino novo por CSV.
+      podeCriarEscola: req.auth.perfil === "admin-contrato",
     });
   }
 

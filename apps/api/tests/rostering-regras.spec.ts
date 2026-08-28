@@ -110,9 +110,18 @@ describe("leitura da planilha", () => {
   });
 
   test("coluna desconhecida é erro de cabeçalho — não coluna ignorada em silêncio", () => {
-    const leitura = lerPlanilha(["nome,papel,cpf", "Ana,aluno,123"].join("\n"));
+    const leitura = lerPlanilha(["nome,papel,telefone", "Ana,aluno,11999999999"].join("\n"));
     expect(leitura.pessoas).toEqual([]);
     expect(leitura.erros[0]).toMatchObject({ campo: "header" });
+  });
+
+  test("cpf É coluna conhecida, e o dígito verificador é conferido na leitura", () => {
+    const boa = lerPlanilha(["cpf,nome,papel", "529.982.247-25,Ana Lima,professor"].join("\n"));
+    expect(boa.erros).toEqual([]);
+    expect(boa.pessoas[0]?.cpf).toBe("52998224725"); // só os dígitos
+
+    const ruim = lerPlanilha(["cpf,nome,papel", "529.982.247-26,Ana Lima,professor"].join("\n"));
+    expect(ruim.erros[0]).toMatchObject({ campo: "cpf" });
   });
 
   test("aluno sem turma ou sem série volta com o campo que faltou", () => {
