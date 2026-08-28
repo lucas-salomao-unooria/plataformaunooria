@@ -183,6 +183,19 @@ Por isso \arq{components/casca-plataforma.tsx} também monta
 \cd{@import} sobrevive e isso não é necessário.
 \end{atencao}
 
+\begin{atencao}
+\textbf{Segundo caminho para o mesmo sintoma: \cd{icon} como \emph{string}.}
+Componentes de navegação do pacote (\cd{SideBar}, \cd{Tab}) tipam \cd{icon} como
+\cd{React.ReactNode}, não como nome de ícone. Passando a \emph{string}, o item
+renderiza o \textbf{texto cru}: a barra lateral da área administrativa escrevia
+\enquote{group}, \enquote{school} e \enquote{upload\_file} na lateral --- com a
+mesma cara de fonte que não carregou, e com a fonte perfeitamente carregada.
+
+A forma certa é \cd{icon=\{<Icon name="group" />\}}. Quem pegou foi o
+\emph{smoke} visual: \emph{typecheck} não reclama, porque \cd{string} é um
+\cd{ReactNode} válido.
+\end{atencao}
+
 \begin{regra}
 \textbf{Quem importa, declara.} Todo aplicativo que escreve
 \cd{@unooria/design-system} no código tem a dependência no seu

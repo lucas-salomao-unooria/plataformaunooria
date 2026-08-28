@@ -42,3 +42,38 @@
    RLS + posse por professor, e o próprio professor apaga tudo
    (`DELETE /bemestar/dados`). Uma visão agregada/anonimizada para a rede é
    decisão futura, com DPA e k-anonimato — não sai de um `GROUP BY`.
+11. **Uma conta por PESSOA; enturmamento em `matriculas`; OneRoster só na
+   fronteira** (2026-08-28). As experiências vieram de projetos com cadastro
+   próprio por atividade. A unificação técnica já existia (todas recebem
+   `aluno.id` pelo `hub:init`), mas a conta era de **assento** — está escrito no
+   schema: `exp_01_runs.nome_no_app` existe "porque a conta é do APARELHO: outra
+   turma reusa o mesmo login" — e o nome real da criança vivia dentro de uma
+   experiência só. Entram `periodos_letivos` (≈ `academicSessions`) e
+   `matriculas` (≈ `enrollments`), mais `matricula_externa` (o RA da rede) como
+   chave de reconciliação. O padrão OneRoster 1.2 vive só em
+   `apps/api/src/rostering/`, como o vendor de IA vive em `src/ai`: nada do
+   domínio conhece `sourcedId`, e o `hub:init` não muda.
+   Três consequências: (a) `users.turma_id` sobrevive como **cache** da matrícula
+   principal, porque o login e o claim `turma_id` o leem antes de haver escola no
+   contexto; (b) "as turmas do professor" passam a ser as turmas em que ele tem
+   matrícula — antes, qualquer professor abria bem-estar e Vila de qualquer turma
+   da escola, porque a única prova era "mesma escola"; (c) `matriculas` tem RLS, e
+   query fora de `comTenancy` volta **vazia sem erro**.
+   Descartados: modelo próprio (chegaria na mesma tabela), LTI/NRPS (responde
+   "quem chegou agora", não provisiona antes da aula), Ed-Fi (escopo de data
+   warehouse), esperar o EducaDados do MEC (Portaria 269/2026 — padrão nacional
+   criado, especificação técnica ainda não publicada; adotar o *modelo* agora e
+   manter o *formato* atrás de adaptadores serve aos dois futuros), e o
+   `demographics` do OneRoster (raça/etnia do censo dos EUA — dado sensível que a
+   plataforma não usa).
+12. **Senha provisória com troca obrigatória** (2026-08-28). A planilha não tem
+   coluna de senha: arquivo com senha em texto claro circula por e-mail e pen
+   drive. A senha inicial é escolhida na tela de importação (uma para o lote, ou
+   uma por pessoa — recomendada para alunos), marca `senha_provisoria` e o
+   primeiro acesso cai em `/trocar-senha` sem saída. A trava é **tripla**:
+   middleware, BFF e `/api/exp-token` — só com o middleware, bastaria digitar
+   `/exp/...` para pular. Ao trocar, a sessão é **refeita** com a senha nova em
+   vez de remendada: o cookie antigo ainda diz "precisa trocar", e sem refazê-lo
+   a pessoa voltaria à mesma tela com a senha anterior já inválida.
+   Consequência ruim, aceita e dita na própria tela: com uma senha só para o
+   lote, qualquer aluno entra na conta de outro até o primeiro acesso dele.

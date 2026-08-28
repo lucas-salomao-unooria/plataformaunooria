@@ -221,12 +221,13 @@ silenciosamente a permissão do vizinho.
 \cd{aluno} & Os próprios dados, na própria escola &
   Realizar experiência, salvar progresso, ver o próprio resultado.
   \textbf{Nunca} vê gabarito, nem dado de colega.\\
-\zebra \cd{professor} & A própria escola; turmas dela &
+\zebra \cd{professor} & A própria escola; \textbf{as turmas em que tem
+  matrícula} &
   Preparar e conduzir atividade, ler turma e aluno individual, gerar plano de
   aula, fazer o próprio \emph{check-in}. \textbf{Não} vê bem-estar de outro
-  professor.\\
+  professor, nem turma em que não leciona.\\
 \cd{gestor} & A própria escola &
-  Importar usuários, redefinir senha, ler agregado da escola.
+  Importar pessoas, enturmar, redefinir senha, ler agregado da escola.
   \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem
   qualquer dado de bem-estar.\\
 \zebra \cd{admin-contrato} & Toda a rede &
@@ -242,6 +243,30 @@ distintos: \rota{/vila/agregado/*} abre para \cd{professor} e \cd{gestor};
 \rota{/vila/professor/*}, que devolve a linha de uma criança, só para
 \cd{professor}. A separação física é o que garante que a próxima rota adicionada
 ao arquivo herde a permissão \emph{certa}.
+\end{decisao}
+
+\begin{decisao}
+\textbf{Dentro da escola, o escopo do professor é a MATRÍCULA.} Até a migração
+do enturmamento não havia vínculo professor$\leftrightarrow$turma no modelo: os
+seletores listavam todas as turmas da escola e a única prova exigida para abrir
+os resultados de uma delas era \enquote{mesma escola do \emph{token}} --- que é a
+regra de \emph{tenancy}, não a de quem dá aula ali. O professor do 8A abria
+bem-estar e Vila do 9B.
+
+Agora \cd{matriculas} responde por isso: \cd{ondeAsTurmasSaoVisiveis} filtra as
+listas e \cd{professorLeciona} vira 403 nas telas de uma turma só. Gestor e
+admin-contrato seguem enxergando a escola inteira, de propósito --- é a mesma
+distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
+\cd{enrollments}, no nível da turma (\adrr{ADR-28}).
+\end{decisao}
+
+\begin{decisao}
+\textbf{A senha do primeiro acesso é travada em três lugares.} Enquanto
+\cd{senha\_provisoria} for verdadeira, o \emph{middleware} prende as páginas em
+\rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite
+\emph{token} de experiência. Só com o \emph{middleware}, bastaria digitar
+\rota{/exp/...} para pular a troca --- a experiência abriria por baixo, com o
+\emph{token} que o hub continuaria assinando (\adrr{ADR-29}).
 \end{decisao}
 
 \section{Segurança do \emph{embed}}

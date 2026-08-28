@@ -939,3 +939,141 @@ no controller dele.
 \textbf{Gatilho de reavaliação.} Pedido de visão de rede sobre conduta ---
 aí o caminho é agregado sem identidade no controller do gestor, nunca abrir a
 linha da criança.
+
+% ---------------------------------------------------------------------------
+\section{ADR-28 --- Identidade por pessoa; OneRoster na fronteira}
+\label{adr:identidade-enturmamento}
+
+\begin{especificacao}{Contexto}
+As experiências foram portadas de projetos onde \textbf{cada atividade tinha o
+próprio cadastro de usuário}. No monorepo a unificação técnica já existia --- toda
+experiência recebe \cd{aluno.id} pelo \cd{hub:init} e grava \cd{aluno\_id} com
+chave estrangeira para \cd{users} ---, mas três resíduos impediam que
+\enquote{acompanhar por aluno} fosse verdade:
+
+\begin{enumerate}
+  \item A conta era de \textbf{assento}, não de pessoa. Está escrito no
+    \emph{schema} desde o porte: \cd{exp\_01\_runs.nome\_no\_app} existe
+    \enquote{porque a conta é do APARELHO: outra turma reusa o mesmo login}. O nome
+    real da criança vivia dentro de UMA experiência, e nenhuma das outras o
+    enxergava.
+  \item Não existia \textbf{enturmamento}. O vínculo era a coluna
+    \cd{users.turma\_id}: um aluno cabia em uma turma só, o PROFESSOR não tinha
+    turma nenhuma --- e por isso todo professor enxergava todas as turmas da
+    escola --- e não havia ano letivo. Em fevereiro o 8A vira 9A e todo o
+    acumulado do ano anterior passaria a ser lido pela turma nova, em silêncio.
+  \item A entrada de pessoas fazia \emph{upsert} por \cd{usuario} e exigia
+    \textbf{senha em texto claro no arquivo}. Corrigir um login criava um segundo
+    aluno, com o histórico preso no primeiro.
+\end{enumerate}
+\end{especificacao}
+
+\textbf{Decisão.} O modelo interno passa a ser \textbf{isomórfico ao OneRoster
+1.2} (1EdTech): entram \cd{periodos\_letivos} (\cd{academicSessions}) e
+\cd{matriculas} (\cd{enrollments}, a tripla usuário $\times$ turma $\times$ escola
+com papel e datas), mais as colunas de identidade em \cd{users}, \cd{turmas} e
+\cd{escolas} (\cd{matricula\_externa}, \cd{fonte\_id}, \cd{codigo\_inep}).
+
+O padrão vive \textbf{só na fronteira} \arq{apps/api/src/rostering/} --- a mesma
+disciplina de \arq{src/ai}, onde apenas o \emph{provider} conhece o fornecedor.
+Nada do domínio conhece \cd{sourcedId}, o contrato do \cd{hub:init} não muda, e os
+nomes seguem em pt-BR.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Modelar do zero, sem padrão}: chegaríamos a quase a mesma tabela.
+    O padrão não é o motivo --- é a conferência de que o desenho está certo, o
+    vocabulário de graça e um argumento de edital.
+  \item \emph{LTI 1.3 / NRPS}: responde \enquote{quem chegou agora}, em tempo real,
+    e pressupõe estar embutido num LMS. Não provisiona quem ainda não entrou, que
+    é exatamente o caso da matrícula da rede antes do ano letivo.
+  \item \emph{Ed-Fi}: padrão de \emph{data warehouse} de rede; escopo muito maior
+    que o problema, para uma equipe de uma pessoa.
+  \item \emph{Esperar o padrão nacional}: o MEC publicou a Portaria 269, de
+    24/03/2026, criando a Infraestrutura Nacional de Dados da Educação
+    (EducaDados) e o Padrão Nacional de Interoperabilidade, com implantação
+    gradual e especificação técnica ainda não publicada. Adotar o \emph{modelo}
+    agora e manter o \emph{formato} atrás de adaptadores é o que serve aos dois
+    futuros.
+  \item \emph{Adotar também os \emph{bindings} do padrão}: o CSV do OneRoster são
+    sete arquivos com identificadores globais; nenhum secretário de escola os
+    preenche. A tela oferece uma \textbf{planilha simples}, de uma linha por
+    pessoa, e o mesmo núcleo aplica o lote.
+  \item \emph{\cd{demographics} do OneRoster}: raça e etnia no vocabulário do
+    censo dos Estados Unidos, além de nascimento e sexo. Dado sensível
+    (LGPD art.~11) que a plataforma não usa para nada --- não entra nem como
+    coluna.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \cd{users.turma\_id} \textbf{sobrevive}, com novo significado: cache da
+    matrícula principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do
+    \emph{token} (contrato congelado) o leem antes de haver escola no contexto,
+    onde \cd{matriculas} --- que tem RLS --- não é alcançável.
+  \item \enquote{Coordenação} continua sendo \cd{gestor}: \cd{PAPEIS} é contrato
+    congelado entre o hub e a API, e um quinto papel atravessaria
+    \emph{middleware}, \emph{guards} e RLS. A planilha aceita sinônimos
+    (\cd{coordenacao}, \cd{diretor}, \cd{principal}) e normaliza.
+  \item \emph{Ruim}: quatro tabelas e um módulo a mais, e uma migração nas duas
+    tabelas mais centrais três meses antes de produção.
+  \item \emph{Armadilha registrada}: consulta que leia \cd{matriculas} fora de
+    \cd{comTenancy} volta \textbf{vazia}, sem erro. O sintoma é lista de pessoas
+    \enquote{sem turma}.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Publicação da especificação técnica do
+EducaDados --- em especial se ela adotar o CPF como identificador do estudante,
+que entra em coluna de reconciliação de acesso restrito e \textbf{nunca} em
+telemetria, JSONB ou \emph{claim} de \emph{token}.
+
+% ---------------------------------------------------------------------------
+\section{ADR-29 --- Senha provisória com troca obrigatória}
+\label{adr:senha-provisoria}
+
+\begin{especificacao}{Contexto}
+Antes da integração com o WSO2, alguém precisa criar as contas e entregar uma
+credencial a 10 mil pessoas que nunca acessaram a plataforma. O formato anterior
+resolvia isso com uma coluna \cd{senha} na planilha --- arquivo que circula por
+e-mail, WhatsApp e \emph{pen drive}, e que fica no computador da secretaria.
+\end{especificacao}
+
+\textbf{Decisão.} A planilha \textbf{não tem coluna de senha}. A senha inicial é
+escolhida na tela de importação, em dois modos: uma para o lote inteiro, ou uma
+por pessoa (recomendado para alunos). Quem nasce da importação recebe
+\cd{senha\_provisoria = true}, e o primeiro acesso cai em \rota{/trocar-senha}
+sem saída. Reimportar \textbf{não} redefine a senha de quem já entrou.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter a senha na planilha}: é o vazamento por construção, e a
+    reimportação passaria a redefinir a senha de quem já trocou.
+  \item \emph{Delegar tudo ao WSO2 agora}: o piloto precisa de contas antes do
+    provedor de identidade existir, e a plataforma continuaria sem caminho para a
+    escola sem federação.
+  \item \emph{Link mágico por e-mail}: a maioria dos alunos da rede pública não
+    tem e-mail institucional em uso, e a plataforma não envia e-mail hoje.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item A trava é \textbf{tripla}: \emph{middleware} (páginas), BFF (dados) e
+    \rota{/api/exp-token}. Só com o \emph{middleware}, bastaria digitar
+    \rota{/exp/...} para pular a troca.
+  \item Ao trocar, a sessão é \textbf{refeita} com a senha nova, não remendada:
+    o \emph{cookie} antigo ainda diz \enquote{precisa trocar}, e sem refazê-lo o
+    \emph{middleware} devolveria a pessoa à mesma tela --- agora com a senha
+    anterior já inválida. É o beco sem saída mais fácil de criar neste fluxo.
+  \item As senhas geradas são devolvidas \textbf{uma vez}, para impressão. Não
+    ficam em coluna nem em \emph{log}; depois disso o caminho é o reajuste de
+    senha pelo gestor, que remarca a conta como provisória.
+  \item \emph{Ruim, e dito na própria tela}: com uma senha só para o lote,
+    qualquer aluno entra na conta de outro até o primeiro acesso dele. Por isso o
+    modo \enquote{uma por pessoa} existe e é o recomendado para turma grande.
+  \item O \emph{seed} de desenvolvimento nasce com \cd{senha\_provisoria = false}:
+    prender os usuários de demonstração na troca pararia os seis
+    \emph{walkthroughs} visuais na mesma tela.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Entrada do WSO2 em produção --- a partir daí a
+senha local vira caminho de exceção (escola sem federação), não o principal.

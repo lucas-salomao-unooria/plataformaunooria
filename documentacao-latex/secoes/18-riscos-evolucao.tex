@@ -98,7 +98,25 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   assinando. & Média & Baixo &
   \adrr{ADR-15} é transitória por desenho: trocar são duas variáveis. O risco real
   é o \cd{iss} \emph{tenant-qualified} do WSO2 ser montado por concatenação em vez
-  de copiado do \emph{discovery}.\\
+  de copiado do \emph{discovery}. Ficou \textbf{mais barato} com o enturmamento:
+  \cd{users.fonte\_id} existe para casar o \cd{sub} do IdP com a pessoa, sem
+  depender do \cd{username}.\\
+\zebra \cd{R-14} & \textbf{Virada do ano letivo.} Em fevereiro de 2027 --- três
+  meses depois da entrada em produção --- o 8A vira 9A em toda a rede. & Alta &
+  \textbf{Alto} &
+  \textbf{Mitigado} por \adrr{ADR-28}: com \cd{periodos\_letivos} e matrícula
+  datada, o \enquote{8A de 2026} e o \enquote{8A de 2027} são turmas diferentes, e
+  o acumulado do ano anterior continua apontando para a turma certa. Antes disso,
+  \cd{users.turma\_id} era coluna: todo relatório histórico passaria a ser lido
+  pela turma nova, \textbf{em silêncio}. O que \textbf{falta} é a operação da
+  virada --- criar o período de 2027 e importar o enturmamento novo --- e ela é
+  manual hoje.\\
+\cd{R-15} & \textbf{Senha compartilhada até o primeiro acesso.} Importação com
+  uma senha para o lote inteiro deixa qualquer aluno entrar na conta de outro
+  antes do primeiro acesso dele. & Média & Médio &
+  Aceito e \textbf{dito na própria tela} (\adrr{ADR-29}), com o modo
+  \enquote{uma senha por pessoa} ao lado, recomendado para turma grande. Fecha de
+  vez quando o WSO2 for o emissor.\\
 \bottomrule
 \end{tabularx}
 

@@ -29,8 +29,10 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \midrule
 \endhead
 \cd{escolas} & Tenant raiz & Unidades escolares do contrato\\
-\zebra \cd{turmas} & Tenant & Turmas por escola e série\\
-\cd{users} & Tenant & Usuários e papéis\\
+\zebra \cd{periodos\_letivos} & \textbf{Catálogo} & Ano letivo e seus recortes\\
+\cd{turmas} & Tenant & Turmas por escola, período e série\\
+\zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (aluno e professor)\\
+\cd{users} & Tenant & Pessoas e papéis\\
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{progresso} & Tenant & Progresso genérico da SDK\\
 \zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
@@ -79,9 +81,43 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
   um id legível (\cd{sp-001}) vale mais que um UUID quando o valor aparece em
   três lugares de um diagnóstico.\\
 \zebra \cd{nome} & \cd{TEXT} & \\
+\cd{codigo\_inep} & \cd{TEXT?} & O \cd{orgs.identifier} do OneRoster. É por
+  onde a escola daqui se reconhece na base da rede.\\
+\zebra \cd{tipo} & \cd{TEXT} & \cd{escola} $|$ \cd{rede} $|$ \cd{distrito}.
+  Hoje toda linha é \cd{escola}; a hierarquia existe para a rede caber acima
+  delas sem tabela nova.\\
+\fk{pai\_id} & \cd{TEXT?} FK & Auto-relacionamento.\\
+\zebra \cd{fonte\_id} & \cd{TEXT?} & \cd{sourcedId} desta organização no
+  sistema de origem. Chave de reconciliação da importação --- nunca é o id daqui.\\
 \cd{created\_at} & \cd{TIMESTAMPTZ(6)} & \\
+\zebra \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
 \bottomrule
 \end{tabularx}
+
+\subsection{\cd{periodos\_letivos} (catálogo)}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \cd{tipo} & \cd{TEXT} & \cd{ano\_letivo} $|$ \cd{semestre} $|$
+  \cd{bimestre} $|$ \cd{trimestre} --- \emph{CHECK} na migração.\\
+\cd{titulo} & \cd{TEXT} & \cd{UNIQUE (tipo, titulo)}.\\
+\zebra \cd{ano} & \cd{SMALLINT} & \\
+\cd{inicio}, \cd{fim} & \cd{DATE} & \emph{CHECK}: \cd{fim >= inicio}. O período
+  \enquote{de hoje} é derivado destas datas --- sem coluna \cd{ativo}, que é
+  estado que ninguém atualiza.\\
+\zebra \fk{pai\_id} & \cd{UUID?} FK & Hierarquia do padrão: ano letivo
+  \seta{} bimestre.\\
+\cd{fonte\_id} & \cd{TEXT?} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Sem \cd{escola\_id} e sem RLS}, de propósito: o calendário é do
+\textbf{contrato}, mesmo precedente de \cd{exp\_90\_referencias}. Uma rede
+compartilha o ano letivo, e duplicá-lo por escola só criaria cem linhas
+divergentes.
 
 \subsection{\cd{turmas}}
 
@@ -91,12 +127,51 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \midrule
 \pk{id} & \cd{UUID} PK & \\
 \zebra \fk{escola\_id} & \cd{TEXT} FK & \\
-\cd{nome} & \cd{TEXT} & \cd{UNIQUE (escola\_id, nome)}: duas escolas podem ter
-  \enquote{8A}.\\
-\zebra \cd{serie} & \cd{TEXT} & \cd{1EF}--\cd{9EF} $|$ \cd{1EM}--\cd{3EM},
+\fk{periodo\_letivo\_id} & \cd{UUID} FK & \textbf{NOT NULL} de propósito: turma
+  sem período é a coluna \cd{users.turma\_id} de novo, com outro nome --- e é
+  exatamente o que a virada do ano quebra.\\
+\zebra \cd{nome} & \cd{TEXT} & \cd{UNIQUE (escola\_id, periodo\_letivo\_id,
+  nome)}: duas escolas podem ter \enquote{8A}, e o \enquote{8A} de 2026 e o de
+  2027 são turmas diferentes.\\
+\cd{serie} & \cd{TEXT} & \cd{1EF}--\cd{9EF} $|$ \cd{1EM}--\cd{3EM},
   validado com Zod na aplicação.\\
+\zebra \cd{tipo} & \cd{TEXT} & \cd{regular} $|$ \cd{componente} --- o
+  \cd{classType} do padrão (\cd{homeroom}$|$\cd{scheduled}). \emph{CHECK} na
+  migração.\\
+\cd{turno} & \cd{TEXT?} & \cd{manha} $|$ \cd{tarde} $|$ \cd{noite} $|$
+  \cd{integral}.\\
+\zebra \cd{codigo}, \cd{fonte\_id} & \cd{TEXT?} & Código da turma na rede e o
+  \cd{sourcedId} dela no sistema de origem.\\
 \bottomrule
 \end{tabularx}
+
+\subsection{\cd{matriculas}}
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \fk{escola\_id} & \cd{TEXT} & \textbf{RLS} por esta coluna. Consulta
+  fora de \cd{comTenancy} volta \textbf{vazia}, sem erro --- o sintoma é lista de
+  pessoas \enquote{sem turma}.\\
+\fk{turma\_id} & \cd{UUID} FK & \cd{ON DELETE CASCADE}.\\
+\zebra \fk{usuario\_id} & \cd{UUID} FK & \cd{ON DELETE CASCADE}.\\
+\cd{papel} & \cd{TEXT} & \cd{aluno} $|$ \cd{professor} --- \emph{CHECK} na
+  migração. \textbf{Gestor não entra}: o papel dele é da escola, não da turma.\\
+\zebra \cd{principal} & \cd{BOOLEAN} & A turma de referência da pessoa. É ela
+  que alimenta o cache \cd{users.turma\_id} e, por ele, o \emph{claim}
+  \cd{turma\_id} do \emph{token}.\\
+\cd{inicio} & \cd{DATE} & \\
+\zebra \cd{fim} & \cd{DATE?} & Preenchido em vez de \cd{DELETE} quando a
+  pessoa sai. \emph{CHECK}: \cd{fim >= inicio}.\\
+\cd{fonte\_id} & \cd{TEXT?} & \\
+\bottomrule
+\end{tabularx}
+
+\cd{UNIQUE (escola\_id, turma\_id, usuario\_id, papel)} mais índices por
+\cd{(escola\_id, usuario\_id)} --- \enquote{as turmas do professor} --- e por
+\cd{(escola\_id, turma\_id)} --- \enquote{quem está nesta turma}.
 
 \subsection{\cd{users}}
 
@@ -116,8 +191,31 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{display\_name} & \cd{TEXT} & \\
 \cd{password\_hash} & \cd{TEXT} & \\
 \zebra \cd{avatar} & \cd{TEXT?} & \\
+\cd{matricula\_externa} & \cd{TEXT?} & O RA da pessoa na rede. É a chave de
+  reconciliação da importação: com ela, corrigir nome ou login continua sendo a
+  mesma pessoa; sem ela o \emph{upsert} cai no \cd{username} e um login corrigido
+  vira um segundo aluno, com o histórico preso no primeiro. Índice único
+  \textbf{parcial} por escola --- vive na migração, porque o Prisma não modela
+  índice parcial.\\
+\zebra \cd{fonte\_id} & \cd{TEXT?} & \cd{sourcedId} da pessoa no sistema de
+  origem. \textbf{Distinto} do \cd{sub} do provedor de identidade: sistema de
+  gestão e IdP são coisas diferentes, e as duas reconciliações não são a mesma.\\
+\cd{email} & \cd{TEXT?} & \\
+\zebra \cd{ativo} & \cd{BOOLEAN} & Saiu da rede \seta{} \cd{false}. Nunca
+  \cd{DELETE}: há dado de aluno pendurado. \cd{ativo = false} recusa \emph{login}
+  com a mesma mensagem genérica de credencial inválida.\\
+\cd{senha\_provisoria} & \cd{BOOLEAN} & A senha veio da importação ou de um
+  reajuste e ainda não foi trocada. Enquanto verdadeira, o hub prende em
+  \rota{/trocar-senha} e não emite \emph{token} de experiência (\adrr{ADR-29}).\\
+\zebra \cd{senha\_definida\_em} & \cd{TIMESTAMPTZ?} & \\
+\cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
 \bottomrule
 \end{tabularx}
+
+\cd{turma\_id} permanece, com novo significado: \textbf{cache} da matrícula
+principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
+--- contrato congelado --- o leem antes de haver escola no contexto, onde
+\cd{matriculas} não é alcançável.
 
 \subsection{\cd{experiencias} (catálogo)}
 

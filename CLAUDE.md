@@ -75,8 +75,76 @@ O HUB assina os tokens de experiência (RS256, TTL 15min, claims
 `/.well-known/jwks.json`. A api valida via `OIDC_ISSUER`/`OIDC_JWKS_URI` —
 trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
 `aluno | professor | gestor | admin-contrato` (admin-contrato é a única exceção
-cross-escola). Usuários entram por CSV: `POST /usuarios/importar-csv`
-(gestor/admin), colunas `nome,usuario,senha,papel,turma,serie`.
+cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do aluno (ver
+"Identidade e enturmamento").
+
+### Identidade e enturmamento (2026-08-28)
+
+**Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As
+experiências vieram de projetos onde cada atividade tinha cadastro próprio; a
+unificação técnica já existia (todas recebem `aluno.id` pelo `hub:init` e gravam
+`aluno_id` com FK para `users`), mas a conta era de ASSENTO — está escrito no
+schema: `exp_01_runs.nome_no_app` existe *"porque a conta é do APARELHO: outra
+turma reusa o mesmo login"*. `nome_no_app` continua existindo como APELIDO dentro
+da ficção do Instanooria, nunca como identidade em tela de professor ou
+relatório. O teste `tests/identidade-unica.spec.ts` falha se alguém criar uma
+segunda tabela de credencial ou uma coluna de pessoa sem FK para `users`.
+
+**O modelo é isomórfico ao OneRoster 1.2, com nomes em pt-BR** — `periodos_letivos`
+(≈ `academicSessions`) e `matriculas` (≈ `enrollments`: usuário × turma × escola,
+com papel, `principal`, `inicio`/`fim`). O padrão vive SÓ na fronteira
+`apps/api/src/rostering/`, como o vendor de IA vive em `src/ai`: nada do domínio
+conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
+
+- **A chave da pessoa é `users.matricula_externa`** (o RA da rede), com índice
+  único parcial por escola. Sem ela o upsert cai no `username`, e corrigir um
+  login cria um segundo aluno com o histórico preso no primeiro.
+- **`users.turma_id` sobrevive como CACHE da matrícula principal.** O login e o
+  claim `turma_id` o leem antes de haver escola no contexto, onde `matriculas`
+  (que tem RLS) não é alcançável. A verdade é `matriculas`.
+- **Turma vive dentro de um período letivo**: `UNIQUE (escola_id,
+  periodo_letivo_id, nome)`. O "8A de 2026" e o "8A de 2027" são turmas
+  DIFERENTES — é isso que impede a virada do ano de reescrever o histórico de
+  2026 em silêncio.
+- **`matriculas.papel` só admite `aluno` e `professor`.** Gestor é papel da
+  ESCOLA (o `roles.csv` do padrão), não matrícula de turma — e é por isso que ele
+  continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
+  congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
+- **As turmas do professor são as em que ele tem matrícula.** `comum/turmas-do-professor.ts`
+  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`) é a porta única; os seletores do
+  UnooTube, da Vila e do unooGPT passam por ela. Antes, qualquer professor abria
+  bem-estar e Vila de qualquer turma da escola, porque a única prova exigida era
+  "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
+- **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
+  silêncio. O sintoma é lista de pessoas "sem turma".
+- Sair da turma é `fim`, não `DELETE`; sair da rede é `ativo = false`. Há dado de
+  aluno pendurado em oito tabelas.
+
+**Entrada de pessoas**: `POST /rostering/importar` (gestor/admin), corpo
+`text/csv` cru, até 10MB/50k linhas. Planilha de UMA linha por pessoa, cabeçalho
+lido por NOME (ordem livre; coluna desconhecida é erro, não coluna ignorada):
+`matricula,nome,usuario,email,papel,turma,serie,turno` — só `nome` e `papel` são
+obrigatórios (aluno também exige `turma`+`serie`). `usuario` vazio ⇒ o login é
+gerado e devolvido no relatório. O header legado
+`nome,usuario,senha,papel,turma,serie` continua aceito, e
+`POST /usuarios/importar-csv` delega. O modelo para download
+(`GET /rostering/modelos/usuarios.csv`) é gerado da MESMA constante que o parser
+lê — modelo escrito à mão divergiria no primeiro campo novo.
+
+**Senha (ADR-29)**: a planilha NÃO tem coluna de senha. A senha inicial é
+escolhida na tela (uma para o lote, ou uma por pessoa — recomendada para alunos),
+marca `senha_provisoria` e o primeiro acesso cai em `/trocar-senha` sem saída. A
+trava é TRIPLA: middleware, BFF e `/api/exp-token` — só com o middleware,
+bastaria digitar `/exp/...` para pular. Ao trocar, a sessão é REFEITA com a senha
+nova (novo `signIn`), não remendada: o cookie antigo ainda diz "precisa trocar", e
+sem refazê-lo a pessoa volta à mesma tela com a senha anterior já inválida.
+Reimportar NÃO reseta a senha de quem já entrou. Os usuários do seed nascem com
+`senha_provisoria: false` — prendê-los na troca pararia os sete walkthroughs.
+
+**Área administrativa** (gestor/admin-contrato): `/admin/usuarios` (busca,
+filtros, editar, ativar/desativar, reset), `/admin/turmas` e `/admin/turmas/[id]`
+(enturmamento), `/admin/importar`. O professor tem `/professor/turmas` e
+`/professor/turmas/[id]` — as turmas dele, com os alunos nominais.
 
 ### Telemetria: dois canais, não um (decisão da migração)
 - **Operacional (motor)**: `POST /runs/:id/eventos` e `GET /runs/:id/feed` —
@@ -481,8 +549,8 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
 - **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
   `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
-  — fica **sem prefixo**: `escolas`, `turmas`, `users`, `experiencias`,
-  `progresso`, `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
+  — fica **sem prefixo**: `escolas`, `turmas`, `matriculas`, `periodos_letivos`,
+  `users`, `experiencias`, `progresso`, `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
   geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
   duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
   (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem
@@ -614,6 +682,7 @@ pnpm --filter @edu/api test
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
+node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)

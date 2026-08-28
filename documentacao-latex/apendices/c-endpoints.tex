@@ -40,7 +40,11 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
 \rota{POST /auth/login} & --- & Autentica credencial da rede. Usada pelo
-  \emph{authorize} do hub.\\
+  \emph{authorize} do hub. Devolve \cd{precisaTrocarSenha} e recusa conta
+  \cd{ativo = false} com a mesma mensagem genérica.\\
+\zebra \rota{POST /auth/trocar-senha} & --- & Primeiro acesso: exige a senha
+  atual, que é a mesma prova do \emph{login} --- por isso a rota não pede
+  \emph{token}. Limpa \cd{senha\_provisoria} (\adrr{ADR-29}).\\
 \bottomrule
 \end{tabularx}
 
@@ -50,12 +54,59 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \toprule
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
-\rota{GET /usuarios} & gestor, admin-contrato & Lista os usuários da escola.\\
+\rota{GET /usuarios} & gestor, admin-contrato & Lista as pessoas da escola.
+  Filtros: \cd{papel}, \cd{turmaId}, \cd{situacao}
+  (\cd{ativos}$|$\cd{inativos}$|$\cd{sem-primeiro-acesso}) e \cd{busca} por nome,
+  \emph{login} ou matrícula da rede.\\
+\zebra \rota{PATCH /usuarios/:id} & gestor, admin-contrato & Nome, e-mail, papel
+  e \cd{ativo}. \emph{Login} e matrícula não mudam por aqui: os dois identificam a
+  pessoa e vêm da importação.\\
+\rota{POST /usuarios/:id/reset-senha} & gestor, admin-contrato & Gera senha
+  temporária, devolvida \textbf{uma vez}, e remarca a conta como provisória.\\
 \zebra \rota{POST /usuarios/importar-csv} & gestor, admin-contrato &
-  Corpo \cd{text/csv} cru. Colunas:
-  \cd{nome,usuario,senha,papel,turma,serie}.\\
-\rota{POST /usuarios/:id/reset-senha} & gestor, admin-contrato & Redefine
-  senha.\\
+  \textbf{Compatibilidade}: delega para \rota{POST /rostering/importar}. Existe
+  porque \emph{scripts} e documentação a citam --- dois importadores lado a lado
+  divergiriam na primeira regra nova.\\
+\bottomrule
+\end{tabularx}
+
+\section{Pessoas e turmas (\emph{rostering})}
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\rota{GET /rostering/modelos/usuarios.csv} & gestor, admin-contrato & O modelo
+  em branco, gerado da \textbf{mesma constante} que o leitor consome. Modelo
+  escrito à mão divergiria do \emph{parser} no primeiro campo novo, e o sintoma
+  seria \enquote{importei o modelo de vocês e deu erro de cabeçalho}.\\
+\zebra \rota{GET /rostering/modelos/exemplo.csv} & gestor, admin-contrato &
+  Exemplo preenchido, em arquivo \textbf{separado}: linha de exemplo dentro do
+  modelo vira usuário fantasma no primeiro uso.\\
+\rota{POST /rostering/importar} & gestor, admin-contrato & Corpo \cd{text/csv}
+  cru, até 10\,MB / 50 mil linhas. \cd{?senhaPadrao=} ou \cd{?gerarSenhas=1}.
+  Devolve criados, atualizados, enturmados, turmas criadas, erros e avisos por
+  linha, e as credenciais geradas --- uma única vez.\\
+\zebra \rota{GET /rostering/contas-de-assento} & gestor, admin-contrato &
+  Diagnóstico das contas sem matrícula da rede, com quanto cada uma acumulou.
+  Não existe \enquote{fundir contas}: juntar duas move dado de uma criança para
+  outra sem auditoria possível.\\
+\rota{GET /turmas} & gestor, admin-contrato & Turmas da escola, com contagem de
+  alunos e professores.\\
+\zebra \rota{GET /turmas/minhas} & professor, gestor, admin-contrato & As turmas
+  em que o PROFESSOR tem matrícula. Gestor recebe a escola inteira.\\
+\rota{GET /turmas/:id} & professor, gestor, admin-contrato & Os matriculados ---
+  a lista nominal. Para professor a checagem é de \textbf{matrícula}: o do 8A
+  pedindo o 9B leva 403.\\
+\zebra \rota{POST /turmas} \newline \rota{PATCH /turmas/:id} & gestor,
+  admin-contrato & Cria e edita turma no período letivo vigente.\\
+\rota{POST /turmas/:id/matriculas} & gestor, admin-contrato & Matricula
+  (\cd{aluno} ou \cd{professor}). Para aluno, encerra a matrícula anterior do
+  mesmo período e atualiza o cache \cd{users.turma\_id}.\\
+\zebra \rota{DELETE /matriculas/:id} & gestor, admin-contrato & \textbf{Encerra}
+  (grava \cd{fim}); não apaga linha.\\
+\rota{GET /periodos-letivos} \newline \rota{POST /periodos-letivos} & prof.\ (GET),
+  gestor & Calendário do contrato.\\
 \bottomrule
 \end{tabularx}
 
@@ -386,5 +437,10 @@ deliberada (\adrr{ADR-10}).
 \rota{ALL /api/plataforma/[...path]} & sessão & BFF: \emph{proxy} autenticado para
   a API.\\
 \zebra \rota{ALL /api/auth/[...nextauth]} & --- & NextAuth.\\
+\rota{POST /api/trocar-senha} & sessão & Troca de senha do primeiro acesso.
+  \emph{Route handler} próprio, e não o BFF, por dois motivos: o BFF recusa tudo
+  enquanto \cd{precisaTrocarSenha} --- é justamente a trava --- e o \emph{login}
+  usado sai da SESSÃO, então o navegador nunca escolhe de quem é a senha que
+  está trocando.\\
 \bottomrule
 \end{tabularx}

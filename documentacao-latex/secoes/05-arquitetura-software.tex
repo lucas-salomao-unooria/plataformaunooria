@@ -58,8 +58,11 @@ Os princípios que atravessam todo o código:
     errada derruba o processo na subida, não no meio de uma requisição de aluno.
   \item[Uma porta por recurso crítico.] O banco só é acessado por
     \cd{PrismaService.comTenancy}; a IA só por \arq{src/ai}; o
-    \emph{design system} só pela ponte \arq{packages/ui}. Recurso com duas portas
-    tem duas chances de esquecer a tranca.
+    \emph{design system} só pela ponte \arq{packages/ui}; a entrada de pessoas e
+    turmas só por \arq{src/rostering} --- que é também o único lugar da API que
+    conhece o OneRoster, do mesmo jeito que só o \emph{provider} conhece o
+    fornecedor de IA (\adrr{ADR-28}). Recurso com duas portas tem duas chances de
+    esquecer a tranca.
   \item[Regra de domínio pura, casca fina.] Cada módulo de experiência separa
     \arq{catalogo.ts} (dados), \arq{regras.ts} (funções puras, testáveis sem
     banco) e um \emph{service} que persiste. O \emph{controller} é só a casca
@@ -337,7 +340,7 @@ conhecer.
   \node[c4component, text width=25mm] (auth) at (2.3,-8.0)
     {\texttt{auth/}\desc{\texttt{TokenService}}};
   \node[c4component, text width=25mm] (usu) at (5.5,-8.0)
-    {\texttt{usuarios/}\desc{CSV, senha}};
+    {\texttt{usuarios/}\desc{listar, editar, senha}};
   \node[c4component, text width=25mm] (expmod) at (8.7,-8.0)
     {\texttt{experiencias/}\desc{manifesto}};
   \node[c4component, text width=25mm] (tel) at (11.9,-8.0)
@@ -349,7 +352,9 @@ conhecer.
   \node[c4component, text width=25mm] (analise) at (5.5,-9.5)
     {\texttt{analise/}\desc{turma e rede, CSV}};
   \node[c4component, text width=25mm] (comum) at (8.7,-9.5)
-    {\texttt{comum/}\desc{séries, \emph{rate limit}}};
+    {\texttt{comum/}\desc{séries, \emph{rate limit}, escopo de turma}};
+  \node[c4component, text width=25mm] (rost) at (11.9,-9.5)
+    {\texttt{rostering/}\desc{fronteira: planilha, turmas, matrículas}};
 
   % ---- faixa 4: dominio por experiencia
   \node[camadalbl, anchor=west] at (0.7,-11.1)

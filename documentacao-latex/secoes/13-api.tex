@@ -89,8 +89,16 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\rota{/ai/gerar}\desc{autenticado + quota}};
   \node[c4component, text width=27mm] (an) at (9.1,-1.9)
     {\rota{/analise/*}\desc{\textbf{admin-contrato}}};
+  \node[c4component, text width=27mm] (ro) at (12.5,-1.9)
+    {\rota{/rostering/*}\desc{gestor, admin}};
+  \node[c4component, text width=27mm] (tu) at (2.3,-3.0)
+    {\rota{/turmas/*}\desc{prof.\ (as dele), gestor}};
+  \node[c4component, text width=27mm] (mt) at (5.7,-3.0)
+    {\rota{/matriculas/:id}\desc{gestor, admin}};
+  \node[c4component, text width=27mm] (pll) at (9.1,-3.0)
+    {\rota{/periodos-letivos}\desc{GET: prof.; POST: gestor}};
 
-  \node[camadalbl, anchor=west] at (0.3,-3.4) {exp-01 --- Instanooria};
+  \node[camadalbl, anchor=west] at (0.3,-4.0) {exp-01 --- Instanooria};
   \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
     {\rota{/atividades/*}\desc{professor}};
   \node[c4component, text width=27mm] (rn) at (5.7,-4.6)
@@ -130,7 +138,9 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do aluno só
   existe no controller do professor --- o do gestor \textbf{não tem uma rota que
   aceite \texttt{alunoId}}, o que torna estrutural, e não disciplinar, o limite do
-  que ele alcança (\adrr{ADR-27}).}
+  que ele alcança (\adrr{ADR-27}). Em \rota{/turmas/*} a autorização do professor
+  é por \textbf{matrícula}, não por escola: é a diferença entre \enquote{dá aula
+  nesta turma} e \enquote{trabalha nesta escola} (\adrr{ADR-28}).}
 \label{fig:mapa-rotas}
 \end{figure}
 

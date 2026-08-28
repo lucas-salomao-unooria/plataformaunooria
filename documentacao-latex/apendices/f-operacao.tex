@@ -75,6 +75,7 @@ node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube
 node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila
 node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
 node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
+node scripts/walkthrough-admin-usuarios.mjs   testes/wt-admin
 node scripts/probe-pointerlock.mjs
 \end{lstlisting}
 
@@ -91,7 +92,10 @@ Plataforma no ar & Contêineres \textbf{ou} \cd{pnpm dev} --- um \emph{ou} outro
 \emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
   \cd{prof.demo} \seta{} \rota{/professor}; \cd{aluno01}--\cd{aluno40} \seta{}
   \rota{/aluno}; \cd{aluno4a01} para a exp-02. Senha de todos:
-  \cd{unooria123}.\\
+  \cd{unooria123}. Eles nascem com \cd{senha\_provisoria = false} de propósito:
+  prendê-los na troca do primeiro acesso pararia os sete \emph{walkthroughs} na
+  mesma tela. \cd{prof.demo} é matriculado nas quatro turmas --- sem isso, as
+  telas dele abrem vazias.\\
 \zebra Bancada de \emph{embed} & \rota{/dev-embed?src=http://localhost:5174}.
   Sanidade do \emph{design system}: \rota{/ds-smoke} (só em \emph{dev}).\\
 \bottomrule
@@ -176,7 +180,30 @@ causa.
   \cd{FontesDaPlataforma} em \arq{casca-plataforma.tsx}. O
   \cd{getComputedStyle} \emph{responde} \enquote{Open Sans}, então não confie
   nele.\\
-\zebra \textbf{Elemento branco no branco} &
+\zebra \textbf{O professor não vê a turma dele} &
+  Falta \textbf{matrícula}, não falta permissão. Desde o enturmamento
+  (\adrr{ADR-28}) \enquote{as turmas do professor} são as turmas em que ele tem
+  linha em \cd{matriculas}; o caminho é \rota{/admin/turmas/:id} \seta{}
+  \enquote{Adicionar professor}, ou a coluna \cd{turma} na linha dele da
+  planilha.\\
+\textbf{A lista de pessoas mostra todo mundo \enquote{sem turma}} &
+  Consulta que lê \cd{matriculas} \textbf{fora} de \cd{comTenancy}: a RLS
+  devolve zero linhas, sem erro nenhum. É a armadilha registrada na migração do
+  enturmamento.\\
+\zebra \textbf{A pessoa troca a senha e volta para a tela de trocar a senha} &
+  Sessão antiga: o \emph{cookie} ainda diz \cd{precisaTrocarSenha}. O fluxo
+  \textbf{refaz} o \emph{login} com a senha nova justamente por isso
+  (\adrr{ADR-29}); se ele falhar, a saída é \rota{/login} --- a senha JÁ foi
+  trocada.\\
+\textbf{Importei e ninguém consegue entrar} &
+  A senha do lote não foi anotada. Ela é devolvida \textbf{uma vez}, na folha da
+  tela de importação. O caminho de volta é \rota{POST /usuarios/:id/reset-senha},
+  uma pessoa por vez.\\
+\zebra \textbf{Reimportei a planilha e nasceu gente duplicada} &
+  A coluna \cd{matricula} estava vazia. Sem o RA, a chave de reconciliação cai no
+  \cd{usuario}, e um \emph{login} corrigido vira uma segunda pessoa --- com o
+  histórico preso na primeira.\\
+\textbf{Elemento branco no branco} &
   Classe de cor que não existe em \arq{plataforma.css}. Não é erro em lugar
   nenhum. Checar o \cd{backgroundColor} \textbf{computado}.\\
 \textbf{Experiência esticada na janela} em vez de dentro do aparelho &

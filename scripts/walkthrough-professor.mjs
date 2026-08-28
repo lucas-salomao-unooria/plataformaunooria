@@ -48,7 +48,11 @@ async function entrar(usuario) {
     { timeout: 10_000 },
   );
   await p.click("button[type=submit]");
-  await p.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
+  // A raiz só ROTEIA (`app/page.tsx` redireciona por papel). Parar em "/" tira
+  // print de tela em branco — e a contagem de linhas da tabela dá zero.
+  await p.waitForURL((url) => !url.pathname.startsWith("/login") && url.pathname !== "/", {
+    timeout: 30_000,
+  });
   await p.waitForTimeout(1500);
 }
 

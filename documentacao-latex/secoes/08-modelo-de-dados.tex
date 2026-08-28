@@ -158,11 +158,20 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   \emph{mesmo} valor que circula no \emph{claim} \cd{escola\_id} do JWT e no
   \cd{set\_config} da RLS. Um id legível (\cd{sp-001}) vale mais que um UUID
   quando o valor aparece em três lugares diferentes de um diagnóstico.\\
-\zebra \cd{turmas} & \emph{Tenant} & \cd{UNIQUE (escola\_id, nome)}: duas escolas
-  podem ter \enquote{8A}.\\
+\zebra \cd{turmas} & \emph{Tenant} & \cd{UNIQUE (escola\_id, periodo\_letivo\_id,
+  nome)}: duas escolas podem ter \enquote{8A}, e a mesma escola tem o \enquote{8A}
+  de 2026 e o de 2027 --- são turmas \textbf{diferentes}, e é essa diferença que
+  preserva o histórico na virada do ano.\\
 \cd{users} & \emph{Tenant} & \cd{username} é único \textbf{por escola}, não
   globalmente --- uma rede tem muitos \cd{joao.silva}. \emph{CHECK}:
-  \cd{escola\_id NOT NULL} exceto quando \cd{role = 'admin-contrato'}.\\
+  \cd{escola\_id NOT NULL} exceto quando \cd{role = 'admin-contrato'}. A
+  identidade da PESSOA é \cd{matricula\_externa} (o RA da rede), com índice único
+  \textbf{parcial} por escola.\\
+\zebra \cd{periodos\_letivos} & Catálogo & Ano letivo e seus recortes. Sem
+  \cd{escola\_id} e sem RLS: o calendário é do contrato, e duplicá-lo por escola
+  só criaria cem linhas divergentes.\\
+\cd{matriculas} & \emph{Tenant} & O enturmamento. Ver
+  Seção~\ref{sec:enturmamento}.\\
 \zebra \cd{experiencias} & Catálogo & Sem \cd{escola\_id}: o manifesto é do
   contrato, não da escola. Escrita só por \cd{admin-contrato}.\\
 \cd{progresso} & \emph{Tenant} & PK composta
@@ -173,6 +182,91 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   \cd{ON CONFLICT DO UPDATE ... RETURNING}.\\
 \cd{telemetria\_eventos} & \emph{Tenant}, particionada & Ver
   Seção~\ref{sec:particao}.\\
+\bottomrule
+\end{tabularx}
+
+\section{Enturmamento e identidade}
+\label{sec:enturmamento}
+
+Duas tabelas respondem \enquote{quem é a pessoa} e \enquote{em que turma ela está,
+desde quando}. São isomórficas ao OneRoster 1.2 (\cd{academicSessions} e
+\cd{enrollments}) por decisão registrada em \adrr{ADR-28}, com nomes em pt-BR ---
+o padrão em si só aparece na fronteira de importação.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[tabelacat, text width=46mm] (per) at (2.6,0)
+    {\etitulo{periodos\_letivos} \small(catálogo, sem escola)
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \texttt{tipo} \small(ano\_letivo$|$semestre$|$bimestre$|$trimestre)\\
+     \texttt{titulo}, \texttt{ano}\\
+     \texttt{inicio}, \texttt{fim} \texttt{DATE}\\
+     \fk{pai\_id} \small(ano letivo \seta{} bimestre)\\
+     \texttt{fonte\_id}};
+
+  \node[tabelaplat, text width=48mm] (tur) at (9.2,0)
+    {\etitulo{turmas}
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \fk{escola\_id}, \fk{periodo\_letivo\_id}\\
+     \texttt{nome}, \texttt{serie}\\
+     \texttt{tipo} \small(regular$|$componente)\\
+     \texttt{turno}, \texttt{codigo}, \texttt{fonte\_id}\\
+     \texttt{UNIQUE (escola\_id, periodo\_letivo\_id, nome)}};
+
+  \node[tabelaplat, text width=50mm] (mat) at (9.2,-4.6)
+    {\etitulo{matriculas} \small(RLS por escola)
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \fk{escola\_id}, \fk{turma\_id}, \fk{usuario\_id}\\
+     \texttt{papel} \small(aluno$|$professor)\\
+     \texttt{principal} \texttt{BOOL}\\
+     \texttt{inicio}, \texttt{fim} \texttt{DATE}\\
+     \texttt{UNIQUE (escola\_id, turma\_id, usuario\_id, papel)}};
+
+  \node[tabelaplat, text width=48mm] (usr) at (15.8,-4.6)
+    {\etitulo{users} \small(colunas de identidade)
+     \nodepart{two}
+     \texttt{matricula\_externa} \small(o RA da rede)\\
+     \texttt{fonte\_id}, \texttt{email}\\
+     \texttt{ativo}, \texttt{senha\_provisoria}\\
+     \fk{turma\_id} \small(CACHE da principal)};
+
+  \draw[erel] (per.east) -- (tur.west) node[ercard, pos=0.2]{1} node[ercard, pos=0.85]{N};
+  \draw[erel] (tur.south) -- (mat.north) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
+  \draw[erel] (usr.west) -- (mat.east) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
+
+\end{tikzpicture}}
+\caption[Enturmamento]{Enturmamento. A verdade é \cd{matriculas}; \cd{users.turma\_id}
+  permanece como \textbf{cache} da matrícula principal, porque o \emph{login} e o
+  \emph{claim} \cd{turma\_id} do \emph{token} o leem antes de haver escola no
+  contexto de tenancy.}
+\label{fig:er-enturmamento}
+\end{figure}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+\cd{papel} só admite \cd{aluno} e \cd{professor} & Gestor é papel no
+  \textbf{nível da escola} (o \cd{roles.csv} do padrão), não matrícula de turma
+  --- e é por isso que ele continua enxergando a escola inteira enquanto o
+  professor passa a ver só as turmas dele.\\
+\zebra \cd{fim} em vez de \cd{DELETE} & Há dado de aluno pendurado em oito
+  tabelas. Apagar a matrícula deixaria esse histórico órfão de turma; encerrar
+  preserva \enquote{esteve no 8A até março}.\\
+\cd{matriculas} tem RLS, \cd{turmas} e \cd{users} não & A exceção de identidade
+  existe porque o \emph{login} precisa achar a pessoa \textbf{antes} de saber a
+  escola --- e a matrícula nunca é lida nesse momento. \emph{Armadilha}: consulta
+  fora de \cd{comTenancy} devolve lista \textbf{vazia}, sem erro.\\
+\zebra Índice único \textbf{parcial} em \cd{matricula\_externa} & Duas pessoas sem
+  RA não colidem entre si (\cd{NULL} não é valor), mas o mesmo RA não se repete
+  dentro de uma escola. O Prisma não modela índice parcial: ele vive na
+  \emph{migration}, como os \emph{CHECKs} e a RLS.\\
 \bottomrule
 \end{tabularx}
 
