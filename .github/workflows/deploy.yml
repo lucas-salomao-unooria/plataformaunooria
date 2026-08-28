@@ -110,8 +110,15 @@ jobs:
 
       # O job roda DENTRO da VPC — é o único caminho até o Postgres, que só tem
       # IP privado. `--wait` faz o passo falhar se a migration falhar.
+      #
+      # Roda em TODO deploy da api, e não só quando `prisma/migrations` muda:
+      # `migrate deploy` aplica o que falta e é no-op quando não falta nada. A
+      # condição por diff parecia economia e criava um buraco — num banco novo
+      # TODAS as migrations estão pendentes, e nenhum commit "mudou migrations".
+      # O deploy passava verde com o banco vazio, e a api subia contra um schema
+      # que não existia.
       - name: Rodar as migrations (Cloud Run Job)
-        if: steps.mudou.outputs.api == 'true' && steps.mudou.outputs.migrations == 'true'
+        if: steps.mudou.outputs.api == 'true'
         env:
           IMG: ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/api:${{ github.sha }}
         run: |
@@ -170,7 +177,13 @@ jobs:
               echo "· $exp sem dist — pulando"; continue
             fi
             if [ "$FORCAR" != "true" ] && git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk; then continue; fi
-            ver=$(node -p "require('./$dir/package.json').version")
+            # A versão sai do MANIFESTO, não do package.json: é o
+            # `experiencia.json` que o `publicar-manifesto.mjs` lê para gravar
+            # `versaoAtiva`. Lendo de fontes diferentes elas divergem — a
+            # exp-02 subiu para `.../1.0.0/` (package.json) enquanto o manifesto
+            # registrava `1.1.0`, e o hub montaria a URL de uma versão que não
+            # existe no bucket.
+            ver=$(node -p "require('./$dir/public/experiencia.json').versao")
 
             gcloud storage rsync -r "$dir/dist" "gs://$EXP_BUCKET/$exp/$ver/" \
               --delete-unmatched-destination-objects --project "$GCP_PROJECT"
