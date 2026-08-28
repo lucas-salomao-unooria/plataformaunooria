@@ -82,9 +82,15 @@ justificativas estão no Capítulo~\ref{cap:api}.
   que o hub usa para o seletor de escola do professor de duas unidades --- e para
   \textbf{validar} a troca antes de assinar um \emph{token} com a escola nova.
   Declarada antes de \rota{/escolas/:id}: no Nest a primeira rota que casa vence.\\
-\zebra \rota{GET /escolas} & \textbf{admin-contrato} & As escolas do contrato, com
+\zebra \rota{GET /escolas/minhas/resumo} & prof., gestor, admin-contrato & O
+  PANORAMA de quem administra muitas unidades: uma linha por escola, com turmas,
+  alunos, professores e quantos ainda não fizeram o primeiro acesso. \textbf{Lista,
+  não soma} --- somar as escolas numa métrica só seria a tela que \adrr{ADR-34}
+  recusa.\\
+\rota{GET /escolas} & \textbf{admin-contrato} & As escolas do contrato, com
   contagem de turmas, alunos e vínculos de professor. \cd{?busca=} por nome, id,
-  INEP ou município.\\
+  INEP ou município; \cd{?tipo=} (\cd{escola} $|$ \cd{regional} $|$ \cd{rede}),
+  \cd{?paiId=} (as unidades de uma diretoria) e \cd{?municipio=}.\\
 \rota{POST /escolas} \newline \rota{PATCH /escolas/:id} & \textbf{admin-contrato} &
   Escola é \emph{tenant}: abrir inquilino com RLS e dados de menores por trás não é
   operação de quem administra uma unidade (\adrr{ADR-30}).\\
@@ -93,7 +99,13 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \rota{POST /escolas/:id/lotacoes} & gestor, admin-contrato & Lota alguém aqui.
   Para professor e gestor é \textbf{acréscimo}: a lotação em outra escola da rede
   continua valendo.\\
-\zebra \rota{DELETE /lotacoes/:id} & gestor, admin-contrato & Encerra o vínculo
+\zebra \rota{POST /escolas/lotacoes-em-lote} & \textbf{admin-contrato} & Lota UMA
+  pessoa em MUITAS unidades --- é assim que nasce o supervisor de uma diretoria,
+  sem papel novo e sem tocar na RLS. Recebe a \textbf{lista} de \cd{escolaIds}
+  (máx.\ 1000), nunca o critério: quem confirma precisa ver quais escolas está
+  liberando. O que não for \cd{tipo = 'escola'} é ignorado e volta no relatório.
+  Uma transação por escola (\adrr{ADR-34}).\\
+\rota{DELETE /lotacoes/:id} & gestor, admin-contrato & Encerra o vínculo
   (grava \cd{fim}) e fecha as matrículas de turma daquela escola. Se era a
   principal, a lotação seguinte assume --- senão \cd{users.escola\_id} apontaria
   para onde a pessoa não está mais.\\

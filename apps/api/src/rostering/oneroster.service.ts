@@ -175,11 +175,46 @@ export class OneRosterService {
       const identifier = linha.campo("identifier");
       const tipo = linha.campo("type").toLowerCase();
 
+      /* `district` do padrão é a nossa `regional` — Diretoria de Ensino, polo,
+         secretaria municipal. Ela é criada (só por admin-contrato, como a
+         escola) porque é o que agrupa as unidades para a lotação em lote. */
+      if (tipo === "district" || tipo === "local") {
+        if (!podeCriar) {
+          relatorio.avisos.push({
+            linha: linha.linha,
+            campo: "type",
+            mensagem: `regional "${linha.campo("name")}" ignorada — só admin-contrato cadastra`,
+          });
+          continue;
+        }
+        const idNovo = idDeEscolaValido(sourcedId) ? sourcedId : null;
+        if (!idNovo) {
+          relatorio.erros.push({
+            linha: linha.linha,
+            campo: "sourcedId",
+            mensagem: `sourcedId "${sourcedId}" não serve como id: use 3–64 caracteres [a-z 0-9 . _ -]`,
+          });
+          continue;
+        }
+        await this.prisma.escola.upsert({
+          where: { id: idNovo },
+          update: { nome: linha.campo("name") || idNovo, tipo: "regional" },
+          create: {
+            id: idNovo,
+            nome: linha.campo("name") || idNovo,
+            tipo: "regional",
+            fonteId: sourcedId,
+          },
+        });
+        relatorio.criados += 1;
+        continue;
+      }
+
       if (tipo !== "school") {
         relatorio.avisos.push({
           linha: linha.linha,
           campo: "type",
-          mensagem: `organização "${tipo}" ignorada — a hierarquia acima da escola não é montada por importação`,
+          mensagem: `organização "${tipo}" ignorada — só escola e regional são montadas por importação`,
         });
         continue;
       }
@@ -218,12 +253,31 @@ export class OneRosterService {
           });
           relatorio.atualizados += 1;
         } else {
+          /* `parentSourcedId` amarra a unidade à regional — é o que monta a lista
+             de escolas de uma diretoria. Pai desconhecido entra como null e volta
+             no relatório: melhor unidade sem regional que unidade pendurada em
+             nada. */
+          const paiId = linha.campo("parentSourcedId");
+          const pai = paiId
+            ? await this.prisma.escola.findFirst({
+                where: { OR: [{ id: paiId }, { fonteId: paiId }], tipo: { in: ["regional", "rede"] } },
+                select: { id: true },
+              })
+            : null;
+          if (paiId && !pai) {
+            relatorio.avisos.push({
+              linha: linha.linha,
+              campo: "parentSourcedId",
+              mensagem: `regional "${paiId}" desconhecida — a escola entrou sem regional; envie as linhas de district antes`,
+            });
+          }
           await this.prisma.escola.create({
             data: {
               id: idNovo,
               nome: linha.campo("name") || idNovo,
               tipo: "escola",
               fonteId: sourcedId,
+              ...(pai ? { paiId: pai.id } : {}),
               ...(identifier ? { codigoInep: identifier } : {}),
             },
           });

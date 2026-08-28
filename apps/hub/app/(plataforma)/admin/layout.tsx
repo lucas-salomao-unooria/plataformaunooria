@@ -14,7 +14,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="flex min-h-dvh flex-col unooria-surface">
       <HeaderPlataforma largura="cheia" />
       <div className="flex flex-1">
-        <NavAdmin papel={session!.usuario.papel} />
+        <NavAdmin
+          papel={session!.usuario.papel}
+          escolas={session!.usuario.escolas?.length ?? 1}
+        />
         <div className="flex-1 px-6 py-6">{children}</div>
       </div>
     </div>

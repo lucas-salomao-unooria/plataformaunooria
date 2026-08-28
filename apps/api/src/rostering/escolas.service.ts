@@ -13,9 +13,20 @@ export interface EscolaDaRede {
   municipio: string | null;
   uf: string | null;
   paiId: string | null;
+  /** Nome da regional (ou da rede) a que a unidade pertence. */
+  pai: string | null;
   alunos: number;
   professores: number;
   turmas: number;
+}
+
+export interface FiltroDeEscolas {
+  busca?: string;
+  /** `escola` | `regional` | `rede` */
+  tipo?: string;
+  /** Só as unidades desta regional — é o insumo da lotação em lote. */
+  paiId?: string;
+  municipio?: string;
 }
 
 /**
@@ -33,21 +44,30 @@ export class EscolasService {
   // ------------------------------------------------------------------ escolas
 
   /** Todas as escolas do contrato, com contagem. Só `admin-contrato` chega aqui. */
-  async listar(busca?: string): Promise<EscolaDaRede[]> {
-    const termo = busca?.trim();
+  async listar(filtro: FiltroDeEscolas | string = {}): Promise<EscolaDaRede[]> {
+    // A assinatura antiga aceitava só a busca; manter as duas evita mexer em
+    // todos os call sites por causa de um filtro novo.
+    const f: FiltroDeEscolas = typeof filtro === "string" ? { busca: filtro } : filtro;
+    const termo = f.busca?.trim();
     const escolas = await this.prisma.escola.findMany({
-      where: termo
-        ? {
-            OR: [
-              { nome: { contains: termo, mode: "insensitive" } },
-              { id: { contains: termo, mode: "insensitive" } },
-              { codigoInep: { contains: termo } },
-              { municipio: { contains: termo, mode: "insensitive" } },
-            ],
-          }
-        : undefined,
-      orderBy: [{ nome: "asc" }],
-      take: 500,
+      where: {
+        ...(f.tipo ? { tipo: f.tipo } : {}),
+        ...(f.paiId ? { paiId: f.paiId } : {}),
+        ...(f.municipio ? { municipio: { equals: f.municipio, mode: "insensitive" } } : {}),
+        ...(termo
+          ? {
+              OR: [
+                { nome: { contains: termo, mode: "insensitive" as const } },
+                { id: { contains: termo, mode: "insensitive" as const } },
+                { codigoInep: { contains: termo } },
+                { municipio: { contains: termo, mode: "insensitive" as const } },
+              ],
+            }
+          : {}),
+      },
+      include: { pai: { select: { nome: true } } },
+      orderBy: [{ tipo: "asc" }, { nome: "asc" }],
+      take: 1000,
     });
     if (escolas.length === 0) return [];
 
@@ -71,6 +91,7 @@ export class EscolasService {
       municipio: e.municipio,
       uf: e.uf,
       paiId: e.paiId,
+      pai: e.pai?.nome ?? null,
       alunos: conta(e.id, "aluno"),
       professores: conta(e.id, "professor"),
       turmas: turmas.find((t) => t.escolaId === e.id)?._count._all ?? 0,
@@ -168,6 +189,116 @@ export class EscolasService {
       principal: l.principal,
       desde: l.inicio,
     }));
+  }
+
+  /**
+   * Lota uma pessoa em MUITAS escolas de uma vez — o supervisor de uma Diretoria
+   * de Ensino é um `gestor` lotado nas 50 unidades dela.
+   *
+   * Recebe a LISTA de escolas, não o critério ("todas da regional X"), de
+   * propósito: quem confirma precisa ver quantas e quais são antes de dar acesso
+   * a cinquenta escolas de uma vez. A tela resolve o critério em lista e mostra.
+   *
+   * Idempotente: reaplicar reabre o que estava encerrado e não duplica.
+   */
+  async lotarEmLote(
+    escolaIds: string[],
+    usuarioId: string,
+    papel: "professor" | "gestor",
+  ): Promise<{ lotadas: number; ignoradas: string[] } | null> {
+    const periodo = await this.periodoDeHoje();
+    const inicio = periodo?.inicio ?? new Date();
+
+    const usuario = await this.prisma.user.findUnique({ where: { id: usuarioId } });
+    if (!usuario || usuario.role === "admin-contrato") return null;
+
+    // Só unidades: lotar alguém numa `regional` daria uma escola que não tem
+    // turma, aluno nem dado — e a pessoa apareceria com uma escola fantasma no
+    // seletor do cabeçalho.
+    const existentes = await this.prisma.escola.findMany({
+      where: { id: { in: escolaIds }, tipo: "escola" },
+      select: { id: true },
+    });
+    const validas = new Set(existentes.map((e) => e.id));
+    const ignoradas = escolaIds.filter((id) => !validas.has(id));
+
+    let lotadas = 0;
+    // Uma transação por escola: cinquenta lotações numa transação só seguraria
+    // conexão por segundos, e cada uma é independente — falhar na décima não é
+    // motivo para desfazer as nove.
+    for (const escolaId of validas) {
+      await this.prisma.$transaction(async (tx) => {
+        const primeira = (await tx.lotacao.count({ where: { usuarioId, fim: null } })) === 0;
+        await garantirLotacao(tx, {
+          escolaId,
+          usuarioId,
+          papel,
+          inicio,
+          principal: primeira,
+        });
+      });
+      lotadas += 1;
+    }
+    return { lotadas, ignoradas };
+  }
+
+  /**
+   * O panorama de quem tem muitas escolas: uma linha por unidade, com o que há
+   * dentro dela. É a tela do supervisor de diretoria — sem ela, ele entraria em
+   * cinquenta escolas uma a uma para saber onde falta gente.
+   *
+   * Separado de `escolasDaPessoa` porque aquele está no caminho do LOGIN e
+   * precisa continuar barato.
+   */
+  async resumoDasEscolasDaPessoa(usuarioId: string) {
+    const lotacoes = await this.prisma.lotacao.findMany({
+      where: { usuarioId, fim: null },
+      include: {
+        escola: {
+          select: { id: true, nome: true, municipio: true, uf: true, pai: { select: { nome: true } } },
+        },
+      },
+    });
+    if (lotacoes.length === 0) return [];
+
+    const ids = lotacoes.map((l) => l.escola.id);
+    const [pessoas, turmas, semPrimeiroAcesso] = await Promise.all([
+      this.prisma.lotacao.groupBy({
+        by: ["escolaId", "papel"],
+        where: { escolaId: { in: ids }, fim: null },
+        _count: { _all: true },
+      }),
+      this.prisma.turma.groupBy({
+        by: ["escolaId"],
+        where: { escolaId: { in: ids } },
+        _count: { _all: true },
+      }),
+      this.prisma.user.groupBy({
+        by: ["escolaId"],
+        where: { escolaId: { in: ids }, senhaProvisoria: true, ativo: true },
+        _count: { _all: true },
+      }),
+    ]);
+    const conta = (escolaId: string, papel: string) =>
+      pessoas.find((p) => p.escolaId === escolaId && p.papel === papel)?._count._all ?? 0;
+
+    return lotacoes
+      .map((l) => ({
+        id: l.escola.id,
+        nome: l.escola.nome,
+        municipio: l.escola.municipio,
+        uf: l.escola.uf,
+        regional: l.escola.pai?.nome ?? null,
+        papel: l.papel,
+        principal: l.principal,
+        alunos: conta(l.escola.id, "aluno"),
+        professores: conta(l.escola.id, "professor"),
+        turmas: turmas.find((t) => t.escolaId === l.escola.id)?._count._all ?? 0,
+        /** Quantos ainda não fizeram o primeiro acesso — o que falta fazer ali. */
+        semPrimeiroAcesso:
+          semPrimeiroAcesso.find((u) => u.escolaId === l.escola.id)?._count._all ?? 0,
+      }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   }
 
   /**

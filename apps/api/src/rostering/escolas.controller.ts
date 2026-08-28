@@ -36,7 +36,9 @@ const IdDeEscola = z
 const NovaEscolaSchema = z.object({
   id: IdDeEscola,
   nome: z.string().trim().min(1).max(160),
-  tipo: z.enum(["escola", "rede", "distrito"]).default("escola"),
+  /* `regional` é o nível que agrupa unidades: Diretoria de Ensino (SP), polo,
+     secretaria municipal. `rede` é a raiz. */
+  tipo: z.enum(["escola", "regional", "rede"]).default("escola"),
   codigoInep: z
     .union([z.literal(""), z.string().trim().regex(/^\d{8}$/, "código INEP: 8 dígitos")])
     .optional(),
@@ -50,6 +52,21 @@ const EditarEscolaSchema = NovaEscolaSchema.partial().omit({ id: true, tipo: tru
 const LotarSchema = z.object({
   usuarioId: z.string().uuid(),
   papel: z.enum(["professor", "gestor"]),
+});
+
+const LotarEmLoteSchema = z.object({
+  usuarioId: z.string().uuid(),
+  papel: z.enum(["professor", "gestor"]),
+  /* A LISTA, não o critério: quem confirma precisa ver quantas e quais escolas
+     antes de dar acesso a cinquenta unidades de uma vez. */
+  escolaIds: z.array(IdDeEscola).min(1).max(1000),
+});
+
+const ListarEscolasSchema = z.object({
+  busca: z.string().trim().max(80).optional(),
+  tipo: z.enum(["escola", "regional", "rede"]).optional(),
+  paiId: IdDeEscola.optional(),
+  municipio: z.string().trim().max(120).optional(),
 });
 
 const TransferirSchema = z.object({
@@ -85,10 +102,34 @@ export class EscolasController {
     return this.escolas.escolasDaPessoa(req.auth.usuarioId);
   }
 
+  /** O panorama de quem tem muitas escolas — a tela do supervisor de diretoria. */
+  @Get("minhas/resumo")
+  @Roles("professor", "gestor", "admin-contrato")
+  resumo(@Req() req: Autenticado) {
+    return this.escolas.resumoDasEscolasDaPessoa(req.auth.usuarioId);
+  }
+
   @Get()
   @Roles("admin-contrato")
-  listar(@Query("busca") busca?: string) {
-    return this.escolas.listar(busca);
+  listar(@Query() query: Record<string, string>) {
+    return this.escolas.listar(ListarEscolasSchema.parse(query));
+  }
+
+  /**
+   * Lota uma pessoa em MUITAS escolas de uma vez: é assim que o supervisor de uma
+   * Diretoria de Ensino nasce — um `gestor` lotado nas unidades dela, sem papel
+   * novo e sem tocar na RLS (o token continua carregando UMA escola).
+   *
+   * Só `admin-contrato`: dar acesso a cinquenta escolas de uma vez não é operação
+   * de quem administra uma unidade.
+   */
+  @Post("lotacoes-em-lote")
+  @Roles("admin-contrato")
+  async lotarEmLote(@Body() body: unknown) {
+    const { usuarioId, papel, escolaIds } = LotarEmLoteSchema.parse(body);
+    const feito = await this.escolas.lotarEmLote(escolaIds, usuarioId, papel);
+    if (!feito) throw new NotFoundException("pessoa não encontrada");
+    return feito;
   }
 
   @Post()

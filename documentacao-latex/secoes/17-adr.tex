@@ -1379,3 +1379,88 @@ que a plataforma tem com \cd{exp\_91\_checkins} (saúde) não é o mesmo caso.
 \textbf{Gatilho de reavaliação.} Exigência contratual de cifra em nível de
 aplicação, ou um incidente de acesso indevido --- aí a conversa é sobre onde a
 chave mora e quem a usa, não sobre se o número existe.
+
+\section{ADR-34 --- A regional agrupa; quem autoriza é a lotação}
+\label{adr:nivel-regional}
+
+\begin{especificacao}{Contexto}
+Uma rede estadual não chega organizada em escolas soltas. Em São Paulo são
+\textbf{Diretorias de Ensino}; em outras redes, polos ou secretarias municipais.
+Entre a escola e o contrato existe um nível intermediário real, com gente que
+trabalha nele: o supervisor que acompanha as cinquenta unidades da sua diretoria.
+
+A \adrr{ADR-30} deixou a plataforma pronta para a pessoa em várias escolas --- a
+lotação existe, o \emph{token} carrega uma escola por vez e o cabeçalho troca a
+escola ativa. O que faltava era o \emph{agrupamento}: sem ele, pôr um supervisor
+nas cinquenta unidades é abrir cinquenta telas.
+
+As colunas \cd{escolas.tipo} e \cd{escolas.pai\_id} tinham sido acrescentadas
+antes, \enquote{porque custam zero}, e \textbf{nenhuma consulta as lia}. Era
+exatamente a armadilha que este projeto já documentou duas vezes --- o
+\cd{expires\_at} sem rotina e o \cd{turmas.consentimento\_em} do aplicativo de
+origem: a regra sai do código, a coluna fica, e quem lê o \emph{schema} acredita
+nela.
+\end{especificacao}
+
+\textbf{Decisão.} O nível regional passa a ser \textbf{real e lido}, com um
+vocabulário fechado de três valores em \cd{escolas.tipo} --- \cd{escola} (a
+unidade, onde há turma, aluno e dado), \cd{regional} (o que agrupa unidades) e
+\cd{rede} (a raiz). \cd{pai\_id} liga unidade a regional, e um \emph{trigger} no
+banco recusa \cd{pai\_id} apontando para uma \cd{escola} ou para si mesma.
+
+E a decisão que dá sentido a tudo: \textbf{a hierarquia agrupa e nunca autoriza}.
+Estar numa diretoria não dá acesso a nada. Quem dá acesso é a lotação, uma por
+unidade. A regional é o \emph{insumo} da lotação em lote
+(\rota{POST /escolas/lotacoes-em-lote}) --- ela monta a lista de escolas que o
+admin do contrato confirma antes de conceder.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um papel novo, \cd{supervisor}}: \cd{PAPEIS} é contrato congelado
+    entre o \emph{middleware} do \emph{hub}, os \emph{guards} da api e a RLS; um
+    quinto papel toca os três. E não resolveria nada que a lotação já não
+    resolva --- o supervisor faz o que um gestor faz, em mais de uma escola.
+  \item \emph{Autorizar por hierarquia} (\enquote{quem está na regional lê as
+    unidades dela}): é uma segunda fonte de verdade sobre acesso, ao lado da
+    lotação, e as duas divergem no dia em que alguém corrige um \cd{pai\_id}.
+    Pior: transformaria uma coluna \emph{organizacional} em coluna de segurança,
+    e a RLS deixaria de ser legível numa linha.
+  \item \emph{\cd{regional\_id} no \emph{token}, com a api somando as escolas
+    da diretoria}: quebraria a regra 1 em todas as 31 tabelas com \cd{escola\_id}
+    e daria ao supervisor uma tela que mistura duas escolas --- que é
+    precisamente o que o isolamento lógico existe para impedir.
+  \item \emph{Aceitar o critério no lugar da lista} (\enquote{lote todos da
+    regional X}): o servidor expandiria o critério e o humano confirmaria um
+    número que não viu. A rota exige a \textbf{lista} de \cd{escolaIds}, no
+    máximo mil.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{Nada mudou na tenancy.} O \emph{token} continua carregando uma
+    escola, a política de RLS continua sendo a mesma linha, e as 31 tabelas com
+    \cd{escola\_id} não foram tocadas. O nível regional inteiro vive acima delas.
+  \item A regional \textbf{não recebe lotação}: \cd{lotarEmLote} ignora o que não
+    for \cd{tipo = 'escola'} e devolve a lista de ignoradas. Lotar alguém numa
+    regional daria uma escola sem turma nem aluno no seletor do cabeçalho.
+  \item O panorama (\rota{GET /escolas/minhas/resumo}, tela
+    \cd{/admin/minhas-escolas}) \textbf{lista, não soma}: uma linha por unidade,
+    com turmas, alunos e quantos ainda não fizeram o primeiro acesso. Somar as
+    escolas numa métrica só seria a tela que a decisão acima recusa.
+  \item O \cd{orgs.csv} do OneRoster passa a criar regionais a partir de
+    \cd{district}/\cd{local} e a ligar unidades por \cd{parentSourcedId}. Pai
+    desconhecido vira \emph{aviso} e a escola entra sem regional --- perder a
+    escola por causa do agrupamento seria trocar o essencial pelo acessório.
+  \item \emph{Ruim}: a lotação em lote é uma operação de poucos cliques que
+    concede acesso a muitas escolas. A contenção é ser exclusiva de
+    \cd{admin-contrato}, exigir a lista explícita e mostrar os nomes antes de
+    confirmar.
+  \item \emph{Lição de processo}: coluna acrescentada \enquote{porque custa zero}
+    e nunca lida é dívida com aparência de recurso. Ou nasce com o consumidor,
+    ou não nasce.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Uma rede que exija leitura agregada de fato
+--- \enquote{o desempenho da diretoria inteira} --- muda a pergunta: aí é
+relatório com escopo próprio (como \cd{/vila/agregado/*} faz para o gestor),
+nunca alargamento do \emph{token}.

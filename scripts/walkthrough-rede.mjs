@@ -94,6 +94,74 @@ try {
   const linhasDeEscola = await p.locator("table tbody tr").count();
   await registrar("escolas-da-rede", `${linhasDeEscola} escola(s) com contagem de gente e turma`);
 
+  // ---- a regional agrupa as unidades -------------------------------------
+  /* O nível entre a escola e o contrato. Ele AGRUPA para trabalhar em lote e não
+     autoriza nada — quem dá acesso é a lotação, e é isso que os dois passos
+     seguintes mostram na tela, um depois do outro. */
+  /* O `Selection` do DS não é `<select>`: é um combobox com `role="option"`. */
+  await p.getByRole("combobox", { name: /Nível/ }).click();
+  await p.getByRole("option", { name: "Regionais" }).click();
+  await p.waitForTimeout(1500);
+  const regionais = await p.locator("table tbody tr").allInnerTexts();
+  await registrar(
+    "regionais-da-rede",
+    regionais.length ? regionais.map((t) => t.split("\n")[0]).join(", ") : "NENHUMA REGIONAL",
+  );
+
+  if (regionais.length > 0) {
+    await p.locator("table tbody tr").first().getByRole("button", { name: "Ver unidades" }).click();
+    await p.waitForTimeout(1800);
+    const unidades = await p.locator("table tbody tr").allInnerTexts();
+    await registrar(
+      "unidades-da-regional",
+      `${unidades.length} unidade(s): ${unidades.map((t) => t.split("\n")[0]).join(", ")}`,
+    );
+
+    // ---- lotação em lote: é assim que nasce o supervisor de diretoria -----
+    /* O `<input>` do Checkbox do DS é sr-only e o `<label>` cobre o clique:
+       `force` mira o input em vez de esperar que ele receba o ponteiro. */
+    await p
+      .getByRole("checkbox", { name: "Selecionar todas as linhas" })
+      .check({ force: true });
+    await p.waitForTimeout(600);
+    await registrar("unidades-selecionadas", `${unidades.length} marcada(s), barra de ação visível`);
+
+    await p.getByRole("button", { name: "Lotar pessoa nestas escolas" }).click();
+    await p.getByText("Onde a pessoa está hoje").waitFor({ timeout: 15_000 });
+    await p.waitForTimeout(800);
+
+    const dialogo = p.getByTestId("unooria-modal");
+    await dialogo.getByRole("combobox", { name: /Onde a pessoa está hoje/ }).click();
+    await p.getByRole("option", { name: "EE Vila Nova" }).first().click();
+    await dialogo.locator("#busca-pessoa-lote").pressSequentially("Gestor Vila Nova", { delay: 20 });
+    await p.waitForTimeout(1800);
+
+    const seletorDePessoa = dialogo.getByRole("combobox", { name: /^Pessoa/ });
+    if ((await seletorDePessoa.count()) > 0) {
+      await seletorDePessoa.click();
+      await p.getByRole("option", { name: /Gestor Vila Nova/ }).first().click();
+      await p.waitForTimeout(400);
+      await Promise.all([
+        p.waitForResponse(
+          (r) => r.url().includes("/escolas/lotacoes-em-lote") && r.request().method() === "POST",
+          { timeout: 20_000 },
+        ),
+        dialogo.getByRole("button", { name: "Lotar", exact: true }).click(),
+      ]);
+      await p.waitForTimeout(1200);
+      const texto = await dialogo.innerText();
+      await registrar(
+        "lotacao-em-lote",
+        /agora está em/.test(texto)
+          ? texto.split("\n").find((l) => /agora está em/.test(l))
+          : "SEM CONFIRMAÇÃO NA TELA",
+      );
+      await dialogo.getByRole("button", { name: "Fechar", exact: true }).click();
+    } else {
+      await registrar("lotacao-em-lote", "A PESSOA NÃO APARECEU NA BUSCA");
+    }
+  }
+
   // ---- a mesma criança em duas escolas, reconhecida pelo CPF -------------
   const naOrigem = await importar("escola-demo", PLANILHA_ORIGEM);
   console.log(
@@ -183,6 +251,46 @@ try {
       `${naEscolaDois.map((t) => t.split("\n")[0]).join(", ") || "nenhuma"} · ${
         mudou ? "a lista MUDOU com a escola" : "A LISTA NÃO MUDOU"
       }`,
+    );
+  }
+
+  // ---- o panorama de quem administra muitas escolas ----------------------
+  /* A supervisora da diretoria: um `gestor` lotado nas duas unidades. Ela vê uma
+     escola POR VEZ — o panorama lista, não soma. */
+  await entrar("supervisor.demo");
+  await p.goto(`${HUB}/admin/minhas-escolas`, { waitUntil: "domcontentloaded" });
+  await p.waitForTimeout(2000);
+  const linhasDoPanorama = await p.locator("table tbody tr").allInnerTexts();
+  await registrar(
+    "panorama-do-supervisor",
+    linhasDoPanorama.length
+      ? `${linhasDoPanorama.length} escola(s): ${linhasDoPanorama
+          .map((t) => t.split("\n")[0])
+          .join(" | ")}`
+      : "PANORAMA VAZIO",
+  );
+
+  const itemDoMenu = await p.getByRole("button", { name: /Minhas escolas/ }).count();
+  console.log("   item 'Minhas escolas' na navegação:", itemDoMenu > 0 ? "sim" : "NÃO APARECEU");
+
+  const trocar = p.getByRole("button", { name: "Trocar e abrir" }).first();
+  if ((await trocar.count()) > 0) {
+    await Promise.all([
+      p.waitForResponse(
+        (r) => r.url().includes("/api/escola-ativa") && r.request().method() === "POST",
+        { timeout: 20_000 },
+      ),
+      trocar.click(),
+    ]);
+    await p.waitForURL(/\/admin\/usuarios/, { timeout: 20_000 });
+    await p.waitForTimeout(2000);
+    const escolaNoCabecalho = await p
+      .locator('select[aria-label="Escola ativa"]')
+      .inputValue()
+      .catch(() => "sem seletor");
+    await registrar(
+      "supervisor-trocou-de-escola",
+      `abriu as pessoas de "${escolaNoCabecalho}" — uma escola por vez, nunca duas somadas`,
     );
   }
 

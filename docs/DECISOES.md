@@ -129,3 +129,27 @@
    Lição de processo: eu decidi por segurança sem perguntar quem usa o dado. O
    requisito de exibição não estava escrito, e uma escolha irreversível não devia
    ter sido tomada sem ele.
+16. **A regional agrupa; quem autoriza é a lotação** (2026-08-28). Uma rede
+   estadual não chega em escolas soltas: em SP são Diretorias de Ensino, em outras
+   redes polos ou secretarias municipais, e existe gente que trabalha nesse nível —
+   o supervisor que acompanha cinquenta unidades. A lotação já resolvia a pessoa em
+   várias escolas (decisão 11); faltava o **agrupamento**, sem o qual pôr um
+   supervisor nas cinquenta é abrir cinquenta telas.
+   Agora `escolas.tipo` tem vocabulário fechado (`escola` | `regional` | `rede`),
+   `pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja
+   `escola` ou a própria linha. A decisão que dá sentido a tudo: **a hierarquia
+   agrupa e nunca autoriza**. Estar numa diretoria não dá acesso a nada; quem dá é
+   a lotação, uma por unidade. A regional é o *insumo* da lotação em lote
+   (`POST /escolas/lotacoes-em-lote`), que recebe a **lista** de escolas — nunca o
+   critério, porque quem confirma precisa ver o que está liberando.
+   Descartados: papel novo `supervisor` (`PAPEIS` é contrato congelado entre
+   middleware, guards e RLS, e ele faz o que um gestor faz, em mais escolas);
+   autorizar por hierarquia (segunda fonte de verdade sobre acesso, divergente da
+   lotação assim que alguém corrige um pai, e transformaria coluna organizacional
+   em coluna de segurança); `regional_id` no token com a api somando as escolas
+   (quebraria a regra 1 nas 31 tabelas e daria a tela que mistura duas escolas —
+   exatamente o que o isolamento existe para impedir).
+   O panorama (`/admin/minhas-escolas`) **lista, não soma**, pelo mesmo motivo.
+   Lição de processo: `tipo` e `pai_id` tinham sido acrescentadas antes "porque
+   custam zero" e nenhuma query as lia — a mesma armadilha do `expires_at` sem
+   rotina. Coluna nasce com o consumidor, ou não nasce.

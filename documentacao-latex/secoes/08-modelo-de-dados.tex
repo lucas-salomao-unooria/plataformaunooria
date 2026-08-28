@@ -157,7 +157,10 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \cd{escolas} & \emph{Tenant} raiz & O \cd{id} é \textbf{texto}, e é o
   \emph{mesmo} valor que circula no \emph{claim} \cd{escola\_id} do JWT e no
   \cd{set\_config} da RLS. Um id legível (\cd{sp-001}) vale mais que um UUID
-  quando o valor aparece em três lugares diferentes de um diagnóstico.\\
+  quando o valor aparece em três lugares diferentes de um diagnóstico. A tabela
+  guarda TRÊS níveis (\cd{tipo}: \cd{rede} \seta{} \cd{regional} \seta{}
+  \cd{escola}), mas só a \cd{escola} é \emph{tenant}: regional e rede não têm
+  turma, aluno nem lotação.\\
 \zebra \cd{turmas} & \emph{Tenant} & \cd{UNIQUE (escola\_id, periodo\_letivo\_id,
   nome)}: duas escolas podem ter \enquote{8A}, e a mesma escola tem o \enquote{8A}
   de 2026 e o de 2027 --- são turmas \textbf{diferentes}, e é essa diferença que
@@ -219,8 +222,23 @@ política de RLS ficam intocadas (\adrr{ADR-30}).
 \zebra \cd{escolas.codigo\_inep} \newline \cd{municipio}, \cd{uf} & Identificar a
   unidade numa rede de milhares. Sem município, a lista de escolas é impossível de
   navegar.\\
+\cd{escolas.tipo} \newline \cd{escolas.pai\_id} & O nível REGIONAL --- Diretoria
+  de Ensino, polo, secretaria municipal. \cd{tipo} tem vocabulário fechado
+  (\cd{escola}, \cd{regional}, \cd{rede}) e um \emph{trigger} recusa \cd{pai\_id}
+  que aponte para uma \cd{escola} ou para a própria linha. \textbf{Agrupa, não
+  autoriza}: serve para MONTAR a lista de unidades de uma diretoria --- o insumo
+  da lotação em lote --- e nenhuma consulta de autorização a lê
+  (\adrr{ADR-34}).\\
 \bottomrule
 \end{tabularx}
+
+\begin{atencao}
+\textbf{Coluna que ninguém lê é dívida com cara de recurso.} \cd{tipo} e
+\cd{pai\_id} existiram por um tempo sem nenhuma consulta que as usasse ---
+a mesma armadilha do \cd{expires\_at} sem rotina e do
+\cd{turmas.consentimento\_em} do aplicativo de origem. Ou a coluna nasce com o
+consumidor, ou não nasce.
+\end{atencao}
 
 \begin{decisao}
 \textbf{Na transferência, o dado FICA e a identidade SEGUE} (\adrr{ADR-32}). Tudo
@@ -857,6 +875,17 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \arq{20260827100000\_telemetria\_particionada} & Particionamento mensal de
   \cd{telemetria\_eventos} no \emph{schema} \cd{particoes}, com partição
   \cd{DEFAULT} e faixas até 2028-12.\\
+\zebra \arq{20260828093000\_enturmamento\_e\_identidade} & \cd{periodos\_letivos},
+  \cd{matriculas} (com RLS), colunas de identidade em \cd{users} e o
+  \emph{backfill} de \cd{users.turma\_id} para matrícula principal.\\
+\arq{20260828140000\_rede\_lotacoes\_e\_cpf} & \cd{lotacoes} e o índice único
+  parcial que impede aluno ativo em duas escolas.\\
+\zebra \arq{20260828170000\_cpf\_em\_claro} & Troca de \cd{cpf\_hash} por
+  \cd{users.cpf} (11 dígitos, \emph{CHECK} e único parcial) --- \adrr{ADR-33}.\\
+\arq{20260828200000\_nivel\_regional} & Vocabulário \cd{escola} $|$
+  \cd{regional} $|$ \cd{rede} em \cd{escolas.tipo} (\cd{distrito} renomeado), o
+  \emph{trigger} que exige que o pai AGRUPE, e índices em \cd{pai\_id}/\cd{tipo}
+  --- \adrr{ADR-34}.\\
 \bottomrule
 \end{tabularx}
 

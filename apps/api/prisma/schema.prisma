@@ -39,9 +39,16 @@ model Escola {
   /// se reconhece na base da rede (e, quando o padrão nacional do MEC cobrar,
   /// no EducaDados). Opcional: contrato pode começar sem ele.
   codigoInep String? @map("codigo_inep")
-  /// escola | rede | distrito — `orgs.type`. Hoje toda linha é `escola`; a
-  /// hierarquia existe para a rede caber acima delas sem nova tabela.
+  /// escola | regional | rede — CHECK na migration.
+  ///
+  /// `regional` cobre Diretoria de Ensino (SP), polo, regional e secretaria
+  /// municipal: é o nível que agrupa unidades dentro de uma rede. O `district`
+  /// do OneRoster é mapeado para cá na importação.
   tipo      String   @default("escola")
+  /// A regional (ou a rede) a que esta unidade pertence. Serve para MONTAR a
+  /// lista de escolas de uma diretoria — o insumo da lotação em lote —, nunca
+  /// para autorizar: quem autoriza é a lotação. Trigger na migration recusa
+  /// escola como pai.
   paiId     String?  @map("pai_id")
   /// `sourcedId` desta org no sistema de origem (SIS da rede). Chave de
   /// reconciliação da importação — nunca é o id daqui.

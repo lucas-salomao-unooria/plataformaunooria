@@ -268,6 +268,15 @@ continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
 
+Acima da escola existe um nível --- a \textbf{regional} (Diretoria de Ensino,
+polo, secretaria municipal) ---, e ele \textbf{agrupa sem autorizar}. Estar numa
+diretoria não dá acesso a nada: quem dá acesso é a lotação, uma por unidade. A
+hierarquia serve para MONTAR a lista de escolas que o admin do contrato confirma
+antes de conceder (\rota{POST /escolas/lotacoes-em-lote}), e nenhuma consulta de
+autorização lê \cd{escolas.pai\_id}. Autorizar por hierarquia seria uma segunda
+fonte de verdade sobre acesso, divergente da lotação no dia em que alguém
+corrigisse um pai (\adrr{ADR-34}).
+
 E na transferência de um aluno, o dado \textbf{fica onde foi produzido}. O que
 atravessa é uma leitura única e estreita (\rota{GET /alunos/:id/historico}),
 restrita a quem tem lotação na escola onde a criança está hoje, devolvendo

@@ -29,32 +29,56 @@ const TOTAL_ALUNOS_2A = 10;
 const ESCOLA_ID = "escola-demo";
 /** Segunda escola: é ela que torna visível o professor lotado em DUAS. */
 const ESCOLA_2_ID = "escola-demo-2";
+/** A regional que agrupa as duas — o nível entre a escola e o contrato. */
+const REGIONAL_ID = "de-demo";
 const TOTAL_ALUNOS_5A = 10;
 const MINIMO = process.env.SEED_MINIMO === "1";
 
 async function main() {
   const passwordHash = await bcrypt.hash(SENHA_PADRAO, 10);
 
+  /* A regional entra ANTES das unidades: ela é o pai, e o trigger do banco
+     recusa `pai_id` apontando para escola. */
+  await prisma.escola.upsert({
+    where: { id: REGIONAL_ID },
+    update: { nome: "DE Demo", tipo: "regional", uf: "SP" },
+    create: { id: REGIONAL_ID, nome: "DE Demo", tipo: "regional", uf: "SP" },
+  });
+
   await prisma.escola.upsert({
     where: { id: ESCOLA_ID },
-    update: { nome: "EE Escola Demo", municipio: "São Paulo", uf: "SP", codigoInep: "35000101" },
+    update: {
+      nome: "EE Escola Demo",
+      municipio: "São Paulo",
+      uf: "SP",
+      codigoInep: "35000101",
+      paiId: REGIONAL_ID,
+    },
     create: {
       id: ESCOLA_ID,
       nome: "EE Escola Demo",
       municipio: "São Paulo",
       uf: "SP",
       codigoInep: "35000101",
+      paiId: REGIONAL_ID,
     },
   });
   await prisma.escola.upsert({
     where: { id: ESCOLA_2_ID },
-    update: { nome: "EE Vila Nova", municipio: "Campinas", uf: "SP", codigoInep: "35000202" },
+    update: {
+      nome: "EE Vila Nova",
+      municipio: "Campinas",
+      uf: "SP",
+      codigoInep: "35000202",
+      paiId: REGIONAL_ID,
+    },
     create: {
       id: ESCOLA_2_ID,
       nome: "EE Vila Nova",
       municipio: "Campinas",
       uf: "SP",
       codigoInep: "35000202",
+      paiId: REGIONAL_ID,
     },
   });
 
@@ -238,6 +262,15 @@ async function main() {
    * ninguém precisar montar nada: o `prof.demo` fica lotado nas DUAS, e é isso
    * que faz aparecer o seletor de escola no cabeçalho dele.
    */
+  /**
+   * A SUPERVISORA da diretoria: um `gestor` lotado nas DUAS unidades. É o nível
+   * entre a escola e o contrato, e ele não precisou de papel novo — o token dela
+   * continua carregando UMA escola, a que ela escolhe no cabeçalho.
+   */
+  const supervisora = await upsertUsuario("supervisor.demo", "Supervisora Demo", "gestor");
+  await lotar(ESCOLA_ID, supervisora.id, "gestor", true);
+  await lotar(ESCOLA_2_ID, supervisora.id, "gestor", false);
+
   const turma5A = await upsertTurma("5A", "5EF", "tarde", ESCOLA_2_ID);
   const gestor2 = await upsertUsuario("gestor.vilanova", "Gestor Vila Nova", "gestor", {
     escolaId: ESCOLA_2_ID,
@@ -261,8 +294,9 @@ async function main() {
 
   const total = await prisma.user.count();
   console.log(
-    `Seed ok: 2 escolas ("${ESCOLA_ID}" com 8A, 8B, 4A, 2A e "${ESCOLA_2_ID}" com 5A), ` +
-      `prof.demo lotado nas DUAS, gestor.demo, gestor.vilanova, ` +
+    `Seed ok: regional "${REGIONAL_ID}" com 2 escolas ("${ESCOLA_ID}" com 8A, 8B, 4A, 2A e ` +
+      `"${ESCOLA_2_ID}" com 5A), prof.demo e supervisor.demo lotados nas DUAS, ` +
+      `gestor.demo, gestor.vilanova, ` +
       `${TOTAL_ALUNOS + TOTAL_ALUNOS_4A + TOTAL_ALUNOS_2A + TOTAL_ALUNOS_5A} alunos e ` +
       `1 admin-contrato (senha "${SENHA_PADRAO}"). Usuários na base: ${total}.`,
   );

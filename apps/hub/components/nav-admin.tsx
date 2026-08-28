@@ -23,8 +23,21 @@ import type { Papel } from "@/lib/papeis";
  */
 const SO_ADMIN_DO_CONTRATO = new Set(["escolas"]);
 
+/**
+ * O panorama só aparece para quem tem MAIS DE UMA lotação — o supervisor de uma
+ * diretoria. Com uma escola ele seria uma tela de uma linha, e um item de menu
+ * que não leva a nada é pior que item nenhum.
+ */
+const SO_COM_VARIAS_ESCOLAS = new Set(["minhas-escolas"]);
+
 const ITENS: Array<SideBarItemData & { href: string }> = [
   { id: "escolas", label: "Escolas", icon: <Icon name="apartment" />, href: "/admin/escolas" },
+  {
+    id: "minhas-escolas",
+    label: "Minhas escolas",
+    icon: <Icon name="account_tree" />,
+    href: "/admin/minhas-escolas",
+  },
   { id: "usuarios", label: "Usuários", icon: <Icon name="group" />, href: "/admin/usuarios" },
   { id: "turmas", label: "Turmas", icon: <Icon name="school" />, href: "/admin/turmas" },
   { id: "importar", label: "Importar", icon: <Icon name="upload_file" />, href: "/admin/importar" },
@@ -36,11 +49,13 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
   },
 ];
 
-export function NavAdmin({ papel }: { papel: Papel }) {
+export function NavAdmin({ papel, escolas }: { papel: Papel; escolas: number }) {
   const pathname = usePathname();
   const router = useRouter();
   const itens = ITENS.filter(
-    (i) => !SO_ADMIN_DO_CONTRATO.has(String(i.id)) || papel === "admin-contrato",
+    (i) =>
+      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || papel === "admin-contrato") &&
+      (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) || escolas > 1),
   );
   const ativo = itens.find((item) => pathname.startsWith(item.href))?.id ?? "usuarios";
 

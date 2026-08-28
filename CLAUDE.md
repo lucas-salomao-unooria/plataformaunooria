@@ -99,6 +99,25 @@ literalmente verdadeira (ADR-30).
 - **Criar escola é `admin-contrato` e ninguém mais**, inclusive no `orgs.csv`:
   escola é tenant, e abrir inquilino com RLS e dados de menores por trás não é
   operação de quem administra uma unidade. `/admin/escolas` é a tela.
+- **A REGIONAL agrupa; quem autoriza é a lotação** (ADR-34). `escolas.tipo` tem
+  vocabulário fechado — `escola` (a unidade, onde há turma, aluno e dado),
+  `regional` (Diretoria de Ensino, polo, secretaria municipal) e `rede` (a raiz)
+  —, e `pai_id` liga unidade a regional, com trigger no banco recusando pai que
+  seja `escola` ou a própria linha. **Estar numa diretoria não dá acesso a nada**:
+  a hierarquia serve para MONTAR a lista de escolas que o admin confirma antes de
+  conceder (`POST /escolas/lotacoes-em-lote`, que recebe a **lista** de
+  `escolaIds`, nunca o critério). Autorizar por hierarquia seria uma segunda fonte
+  de verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse
+  um pai. Regional e rede **não recebem lotação** — não têm turma nem dado, e
+  virariam escola fantasma no seletor do cabeçalho.
+  Estas colunas existiram por um tempo sem NENHUMA query que as lesse: era a
+  mesma armadilha do `expires_at` sem rotina. Coluna nasce com o consumidor.
+- **O supervisor de diretoria não é papel novo**: é um `gestor` lotado nas
+  unidades dela. O panorama (`/admin/minhas-escolas`, `GET /escolas/minhas/resumo`)
+  **lista, não soma** — uma linha por unidade, com turmas, alunos e quantos ainda
+  não fizeram o primeiro acesso. Somar escolas numa métrica só seria exatamente a
+  tela que a decisão acima recusa. O item de menu só aparece com mais de uma
+  lotação.
 - **`users.cpf` é a identidade IMUTÁVEL do estudante** — e o que torna a
   transferência possível: nome, login e matrícula mudam, o CPF não. Guardado como
   **11 dígitos, sem pontuação** (a formatação é da tela; CHECK no banco), **único
@@ -765,7 +784,7 @@ pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-d
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
-node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, professor nas duas, aluno transferido pelo CPF
+node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, aluno transferido pelo CPF
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)

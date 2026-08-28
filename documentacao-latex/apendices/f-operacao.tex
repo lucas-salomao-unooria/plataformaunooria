@@ -233,6 +233,24 @@ testado no container} &
   Falta \textbf{lotação} nela. O seletor só aparece com duas ou mais: com uma, seria
   um campo de uma opção. O caminho é \rota{/admin/escolas} \seta{} a escola \seta{}
   lotar, ou a planilha com o CPF dele importada na segunda unidade.\\
+\textbf{Lotei a supervisora na diretoria e ela continua sem ver as escolas} &
+  Estar numa regional não dá acesso a nada --- a hierarquia agrupa, quem autoriza
+  é a lotação (\adrr{ADR-34}). O caminho é \rota{/admin/escolas} \seta{} filtrar
+  pela regional \seta{} marcar as unidades \seta{} \enquote{Lotar pessoa nestas
+  escolas}.\\
+\zebra \textbf{Lotei em lote e o relatório diz menos escolas do que marquei} &
+  Havia \cd{regional} ou \cd{rede} na seleção, e elas não recebem lotação: não têm
+  turma, aluno nem dado, e virariam escola fantasma no seletor do cabeçalho. A
+  barra de seleção da tela já avisa quantas serão ignoradas.\\
+\textbf{O \cd{orgs.csv} entrou mas as escolas ficaram sem regional} &
+  \cd{parentSourcedId} apontou para uma organização que não veio no arquivo, ou
+  veio DEPOIS. Isso é \emph{aviso}, não erro: a escola entra sem regional, porque
+  perdê-la por causa do agrupamento seria trocar o essencial pelo acessório.
+  Reimportar com o pai presente corrige.\\
+\zebra \textbf{O item \enquote{Minhas escolas} não aparece na navegação} &
+  A pessoa tem UMA lotação. O panorama é a tela de quem administra várias
+  unidades; com uma escola ele seria uma linha só, e item de menu que não leva a
+  nada é pior que item nenhum.\\
 \textbf{O admin do contrato abre uma tela de escola e ela vem vazia} &
   Falta \cd{?escolaId=} na URL. O \emph{token} dele não tem escola (é a exceção
   cross-escola), então a tela precisa dizer qual --- e o caminho que já leva o
