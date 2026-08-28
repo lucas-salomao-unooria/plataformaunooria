@@ -5,15 +5,58 @@ on:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
   # dois workflows em paralelo deixariam um teste vermelho subir para escola.
   workflow_call:
+    inputs:
+      completo:
+        description: "Verificar TODOS os pacotes, nao so os alterados desde HEAD^"
+        type: boolean
+        default: false
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    # 9 das 23 suites da api sao de INTEGRACAO: exercitam RLS, advisory lock e
+    # ON CONFLICT, que sao justamente as coisas que um mock nao testa. Sem um
+    # Postgres aqui elas nao rodam, e o portao vira decoracao.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: pass
+          POSTGRES_DB: unooria
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d unooria"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+
+    env:
+      DATABASE_URL: postgresql://postgres:pass@localhost:5432/unooria
+
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: pnpm }
+
+      # O `postinstall` da api roda o `prisma generate` aqui. Sem ele, o
+      # `@prisma/client` nao exporta nada e a api nao compila — foi o que
+      # derrubou o primeiro deploy, com 365 erros de tipo.
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo typecheck lint test build --filter='...[HEAD^]'
+
+      - name: Schema no banco de teste
+        run: pnpm --filter @edu/api migrate:deploy
+
+      # O escopo TEM que acompanhar o do deploy. Com `forcar`, o deploy builda
+      # tudo; se a verificacao continuasse filtrando por `...[HEAD^]`, ela
+      # passaria sem exercitar o pacote que quebra — foi o que aconteceu no
+      # primeiro deploy: o portao ficou verde em 36s sem compilar a api.
+      - name: Verificar
+        env:
+          COMPLETO: ${{ inputs.completo }}
+        run: |
+          if [ "$COMPLETO" = "true" ]; then
+            pnpm turbo typecheck lint test build
+          else
+            pnpm turbo typecheck lint test build --filter='...[HEAD^]'
+          fi

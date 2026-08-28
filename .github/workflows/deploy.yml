@@ -34,6 +34,9 @@ jobs:
   # Portao: typecheck + lint + test. Nada sobe se isto falhar.
   verificar:
     uses: ./.github/workflows/ci.yml
+    # `forcar` builda tudo no deploy — a verificacao precisa cobrir o mesmo.
+    with:
+      completo: ${{ inputs.forcar == true }}
 
   deploy:
     needs: verificar

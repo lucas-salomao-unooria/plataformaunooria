@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "nest start --watch",
+    "postinstall": "prisma generate",
     "build": "nest build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests prisma",

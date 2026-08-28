@@ -25,6 +25,13 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    // `**/*` NAO alcanca diretorio que comeca com ponto — regra de glob do
+    // TypeScript. Sem esta linha, `app/.well-known/jwks.json/route.ts` fica
+    // fora do projeto e o typescript-eslint recusa com "not found by the
+    // project service". Passava em maquina com `.next/types` de um build
+    // antigo (que referencia a rota e a puxava para dentro) e falhava em
+    // checkout limpo — ou seja, exatamente no CI.
+    "app/.well-known/**/*.ts",
     ".next/types/**/*.ts",
     ".next-prod/types/**/*.ts"
   ],
