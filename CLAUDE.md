@@ -165,8 +165,16 @@ Reimportar NÃO reseta a senha de quem já entrou. Os usuários do seed nascem c
 
 **Área administrativa** (gestor/admin-contrato): `/admin/usuarios` (busca,
 filtros, editar, ativar/desativar, reset), `/admin/turmas` e `/admin/turmas/[id]`
-(enturmamento), `/admin/importar`. O professor tem `/professor/turmas` e
-`/professor/turmas/[id]` — as turmas dele, com os alunos nominais.
+(enturmamento, mover, tornar referência), `/admin/importar` e
+`/admin/periodos-letivos` (o calendário do contrato — a tela da virada do ano). O
+professor tem `/professor/turmas` e `/professor/turmas/[id]` — as turmas dele, com
+os alunos nominais.
+
+**A virada do ano tem duas etapas, e nenhuma é automática:** criar o período novo
+em `/admin/periodos-letivos` (a partir da data de início ele passa a ser o
+vigente, e toda turma nova nasce nele) e importar o enturmamento do ano seguinte.
+As turmas e matrículas do ano anterior ficam onde estão — é isso que preserva o
+histórico. `vigente` é DERIVADO das datas, nunca coluna.
 
 ### Telemetria: dois canais, não um (decisão da migração)
 - **Operacional (motor)**: `POST /runs/:id/eventos` e `GET /runs/:id/feed` —
@@ -701,6 +709,8 @@ pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
 pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
 pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
 pnpm --filter @edu/api test
+pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
+SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)

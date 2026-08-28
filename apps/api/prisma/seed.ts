@@ -9,8 +9,14 @@ import bcrypt from "bcryptjs";
  * 1 admin-contrato (sem escola — única exceção da regra de tenancy).
  * Todos com a senha "unooria123". Idempotente — pode rodar quantas vezes quiser.
  *
- * Usuários reais NÃO nascem aqui: entram por importação CSV
- * (`POST /usuarios/importar-csv`, papel gestor/admin-contrato).
+ * Usuários reais NÃO nascem aqui: entram por importação
+ * (`POST /rostering/importar`, papel gestor/admin-contrato).
+ *
+ * `SEED_MINIMO=1` cria só a escola, o gestor e o admin-contrato — nada de
+ * turmas, alunos nem professor. É o ponto de partida para percorrer a plataforma
+ * do zero: com o seed completo, as 61 contas de demonstração aparecem no
+ * diagnóstico de contas de assento e poluem o caminho que se quer testar.
+ * Os walkthroughs visuais exigem o seed COMPLETO — o mínimo não os serve.
  */
 const prisma = new PrismaClient();
 const SENHA_PADRAO = "unooria123";
@@ -21,6 +27,7 @@ const TOTAL_ALUNOS_4A = 10;
 /** 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). */
 const TOTAL_ALUNOS_2A = 10;
 const ESCOLA_ID = "escola-demo";
+const MINIMO = process.env.SEED_MINIMO === "1";
 
 async function main() {
   const passwordHash = await bcrypt.hash(SENHA_PADRAO, 10);
@@ -79,6 +86,48 @@ async function main() {
         inicio: periodo.inicio,
       },
     });
+
+  const upsertUsuarioMinimo = (username: string, displayName: string, role: string) =>
+    prisma.user.upsert({
+      where: { escolaId_username: { escolaId: ESCOLA_ID, username } },
+      update: { displayName, role, passwordHash, ativo: true },
+      create: { username, displayName, role, passwordHash, escolaId: ESCOLA_ID, senhaProvisoria: false },
+    });
+
+  const upsertAdminContrato = async () => {
+    // Único papel sem escola — o upsert por (escolaId, username) não o cobre com
+    // escolaId NULL, então procura-se manualmente.
+    const admin = await prisma.user.findFirst({
+      where: { username: "analise.unooria", role: "admin-contrato" },
+    });
+    if (admin) {
+      await prisma.user.update({
+        where: { id: admin.id },
+        data: { displayName: "Análise Unooria", passwordHash },
+      });
+    } else {
+      await prisma.user.create({
+        data: {
+          username: "analise.unooria",
+          displayName: "Análise Unooria",
+          role: "admin-contrato",
+          passwordHash,
+          senhaProvisoria: false,
+        },
+      });
+    }
+  };
+
+  if (MINIMO) {
+    await upsertUsuarioMinimo("gestor.demo", "Gestor Demo", "gestor");
+    await upsertAdminContrato();
+    console.log(
+      `Seed MÍNIMO: escola "${ESCOLA_ID}", período "${periodo.titulo}", gestor.demo e ` +
+        `analise.unooria (senha "${SENHA_PADRAO}"). Nenhuma turma, nenhum aluno — ` +
+        `as pessoas entram por /admin/importar.`,
+    );
+    return;
+  }
 
   const turmas = await Promise.all(["8A", "8B"].map((nome) => upsertTurma(nome, "8EF")));
 
@@ -148,27 +197,8 @@ async function main() {
   }
 
   // admin-contrato: papel de nível de produto (o "analista" do origem). Vê a
-  // análise entre escolas/turmas; não alcança as telas do professor nem a do
-  // aluno. Único papel sem escola — o upsert por (escolaId, username) não o
-  // cobre com escolaId NULL, então procura-se manualmente.
-  const admin = await prisma.user.findFirst({
-    where: { username: "analise.unooria", role: "admin-contrato" },
-  });
-  if (admin) {
-    await prisma.user.update({
-      where: { id: admin.id },
-      data: { displayName: "Análise Unooria", passwordHash },
-    });
-  } else {
-    await prisma.user.create({
-      data: {
-        username: "analise.unooria",
-        displayName: "Análise Unooria",
-        role: "admin-contrato",
-        passwordHash,
-      },
-    });
-  }
+  // análise entre escolas/turmas; não alcança as telas do professor nem a do aluno.
+  await upsertAdminContrato();
 
   const total = await prisma.user.count();
   console.log(

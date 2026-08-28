@@ -19,6 +19,12 @@ import {
 import type { Papel } from "@/lib/papeis";
 import { SERIES, rotuloDaSerie, type Serie } from "@/lib/series";
 
+interface PeriodoDaLista {
+  id: string;
+  titulo: string;
+  vigente: boolean;
+}
+
 interface LinhaDeTurma extends Record<string, unknown> {
   id: string;
   nome: string;
@@ -50,6 +56,9 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  const [periodos, setPeriodos] = useState<PeriodoDaLista[]>([]);
+  const [periodoFiltro, setPeriodoFiltro] = useState("");
+
   const [novaAberta, setNovaAberta] = useState(false);
   const [nome, setNome] = useState("");
   const [serie, setSerie] = useState<Serie | "">("");
@@ -66,7 +75,10 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
     setCarregando(true);
     setErro(null);
     try {
-      const resposta = await fetch(`/api/plataforma/turmas${sufixo}`);
+      const params = new URLSearchParams();
+      if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
+      if (periodoFiltro) params.set("periodoLetivoId", periodoFiltro);
+      const resposta = await fetch(`/api/plataforma/turmas?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
       setLinhas((await resposta.json()) as LinhaDeTurma[]);
     } catch {
@@ -74,11 +86,20 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
     } finally {
       setCarregando(false);
     }
-  }, [papel, escolaId, sufixo]);
+  }, [papel, escolaId, periodoFiltro]);
 
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  /* O filtro por período só aparece quando há mais de um: antes da virada do ano
+     ele seria um campo com uma opção só. */
+  useEffect(() => {
+    void (async () => {
+      const resposta = await fetch("/api/plataforma/periodos-letivos");
+      if (resposta.ok) setPeriodos((await resposta.json()) as PeriodoDaLista[]);
+    })();
+  }, []);
 
   async function criar() {
     if (!nome.trim() || !serie) return;
@@ -153,10 +174,28 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
 
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-[14px] text-unooria-neutral-500">
-          {linhas.length} turma{linhas.length === 1 ? "" : "s"}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end gap-3">
+          {periodos.length > 1 ? (
+            <div className="w-[260px]">
+              <Selection
+                label="Ano letivo"
+                value={periodoFiltro}
+                onChange={(valor) => setPeriodoFiltro(String(valor))}
+                options={[
+                  { value: "", label: "Todos os períodos" },
+                  ...periodos.map((periodo) => ({
+                    value: periodo.id,
+                    label: periodo.vigente ? `${periodo.titulo} (vigente)` : periodo.titulo,
+                  })),
+                ]}
+              />
+            </div>
+          ) : null}
+          <p className="text-[14px] text-unooria-neutral-500">
+            {linhas.length} turma{linhas.length === 1 ? "" : "s"}
+          </p>
+        </div>
         <Button variant="primary" size="md" onClick={() => setNovaAberta(true)}>
           Nova turma
         </Button>

@@ -15,6 +15,12 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
   { id: "usuarios", label: "Usuários", icon: <Icon name="group" />, href: "/admin/usuarios" },
   { id: "turmas", label: "Turmas", icon: <Icon name="school" />, href: "/admin/turmas" },
   { id: "importar", label: "Importar", icon: <Icon name="upload_file" />, href: "/admin/importar" },
+  {
+    id: "periodos",
+    label: "Ano letivo",
+    icon: <Icon name="calendar_month" />,
+    href: "/admin/periodos-letivos",
+  },
 ];
 
 export function NavAdmin() {

@@ -67,11 +67,31 @@ export class RosteringService {
    * é lido fora de `comTenancy`.
    */
   async periodos() {
-    return this.prisma.periodoLetivo.findMany({ orderBy: [{ inicio: "desc" }] });
+    const periodos = await this.prisma.periodoLetivo.findMany({ orderBy: [{ inicio: "desc" }] });
+    const vigente = periodoVigente(periodos, new Date());
+    /* `vigente` é DERIVADO das datas, não coluna: estado que ninguém atualiza
+       mente mais do que ajuda. Vem calculado na resposta para a tela não repetir
+       a regra — divergir do servidor aqui seria o gestor criando turma no ano
+       errado sem nada na tela dizendo isso. */
+    return periodos.map((p) => ({ ...p, vigente: p.id === vigente?.id }));
+  }
+
+  /** Quantas turmas cada período tem — é o que impede apagar um por engano. */
+  async periodosComTurmas() {
+    const periodos = await this.periodos();
+    const contagem = await this.prisma.turma.groupBy({
+      by: ["periodoLetivoId"],
+      _count: { _all: true },
+    });
+    const porPeriodo = new Map(contagem.map((c) => [c.periodoLetivoId, c._count._all]));
+    return periodos.map((p) => ({ ...p, turmas: porPeriodo.get(p.id) ?? 0 }));
   }
 
   async periodoDeHoje() {
-    return periodoVigente(await this.periodos(), new Date());
+    return periodoVigente(
+      await this.prisma.periodoLetivo.findMany({ orderBy: [{ inicio: "desc" }] }),
+      new Date(),
+    );
   }
 
   async criarPeriodo(dados: { tipo: string; titulo: string; ano: number; inicio: Date; fim: Date }) {

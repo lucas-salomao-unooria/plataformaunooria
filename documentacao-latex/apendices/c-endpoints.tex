@@ -117,7 +117,10 @@ justificativas estão no Capítulo~\ref{cap:api}.
 \rota{DELETE /matriculas/:id} & gestor, admin-contrato & \textbf{Encerra}
   (grava \cd{fim}); não apaga linha.\\
 \rota{GET /periodos-letivos} \newline \rota{POST /periodos-letivos} & prof.\ (GET),
-  gestor & Calendário do contrato.\\
+  gestor & Calendário do contrato. O \cd{GET} devolve \cd{vigente} \textbf{calculado}
+  das datas e a contagem de turmas de cada período --- a tela não repete a regra,
+  senão poderia discordar de onde a turma nova vai cair. Tela:
+  \rota{/admin/periodos-letivos}.\\
 \bottomrule
 \end{tabularx}
 

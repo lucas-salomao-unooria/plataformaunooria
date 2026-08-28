@@ -22,6 +22,10 @@ pnpm --filter @edu/api seed                   # escola-demo, prof/gestor/aluno01
 pnpm --filter @edu/api seed:demo              # atividade DEMO com 92 posts, sem IA
 pnpm dev                                      # hub :3000, api :3001, exp :5173
 
+# --- Zerar o banco e recomecar do zero absoluto (DEV)
+pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed
+SEED_MINIMO=1 pnpm --filter @edu/api seed      # escola + gestor.demo + admin, nada mais
+
 # --- Imagens congeladas (mais proximo da producao)
 docker compose up -d --build                  # migrations e seed no 1o up
 \end{lstlisting}
@@ -203,6 +207,14 @@ causa.
   A coluna \cd{matricula} estava vazia. Sem o RA, a chave de reconciliação cai no
   \cd{usuario}, e um \emph{login} corrigido vira uma segunda pessoa --- com o
   histórico preso na primeira.\\
+\textbf{\enquote{Nenhum período letivo cadastrado} ao importar ou criar turma} &
+  Banco novo, ou virada de ano sem o período criado. Turma vive DENTRO de um
+  período letivo: o caminho é \rota{/admin/periodos-letivos}. O \emph{seed} cria
+  o do ano corrente; um ambiente novo sem \emph{seed} não tem nenhum.\\
+\zebra \textbf{Turma nova nasceu no ano errado} &
+  \cd{vigente} é derivado das DATAS. Se nenhum período contém hoje, a plataforma
+  cai no mais recente para não travar --- e a tela do ano letivo avisa isso em
+  faixa. Corrija as datas em vez de criar outro período.\\
 \textbf{O OneRoster recusa a linha dizendo que a turma é desconhecida} &
   Ordem dos arquivos. \cd{enrollments.csv} referencia \cd{classSourcedId}, que
   vem de \cd{classes.csv}, que referencia \cd{termSourcedIds}, que vêm de

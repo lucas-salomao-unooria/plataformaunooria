@@ -231,7 +231,7 @@ export class PeriodosLetivosController {
   @Get()
   @Roles("professor", "gestor", "admin-contrato")
   listar() {
-    return this.rostering.periodos();
+    return this.rostering.periodosComTurmas();
   }
 
   @Post()
