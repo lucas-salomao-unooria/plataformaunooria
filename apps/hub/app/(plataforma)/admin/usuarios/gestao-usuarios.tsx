@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
@@ -67,7 +67,10 @@ export function GestaoUsuarios({
   escolaIdInicial: string;
 }) {
   const router = useRouter();
-  const [escolaId, setEscolaId] = useState(escolaIdInicial);
+  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+     Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
+  const daUrl = useSearchParams().get("escolaId") ?? "";
+  const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
   const [pagina, setPagina] = useState(1);
   const [total, setTotal] = useState(0);
   const [linhas, setLinhas] = useState<LinhaDeUsuario[]>([]);

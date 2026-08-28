@@ -1,5 +1,6 @@
 import { HeaderPlataforma } from "@/components/header-plataforma";
 import { NavAdmin } from "@/components/nav-admin";
+import { auth } from "@/lib/auth";
 
 /**
  * Casca da área administrativa (gestor / admin-contrato). Mesmo header de
@@ -7,12 +8,13 @@ import { NavAdmin } from "@/components/nav-admin";
  * lateral entrou quando a área deixou de ter uma tela só — pessoas, turmas e
  * importação são três passos do mesmo trabalho.
  */
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
   return (
     <div className="flex min-h-dvh flex-col unooria-surface">
       <HeaderPlataforma largura="cheia" />
       <div className="flex flex-1">
-        <NavAdmin />
+        <NavAdmin papel={session!.usuario.papel} />
         <div className="flex-1 px-6 py-6">{children}</div>
       </div>
     </div>

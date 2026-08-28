@@ -15,8 +15,19 @@ funcionalidade responde 401 ou 503, \textbf{nunca} fica aberta. Essa é a
 convenção de \emph{fail closed} da plataforma (\rf{RNF-09}).
 \end{regra}
 
+\begin{atencao}
+\textbf{\env{CPF\_PEPPER} --- a única variável desta camada, e ela é de
+segredo.} O CPF do estudante é a identidade imutável na rede e \textbf{nunca} é
+guardado em claro: o banco tem \cd{HMAC-SHA256(cpf, CPF\_PEPPER)}. A pimenta é
+do CONTRATO e \textbf{não muda}: trocá-la invalida todos os \emph{hashes} já
+gravados, e a plataforma deixa de reconhecer as pessoas que já cadastrou --- o
+sintoma é toda criança transferida virando cadastro novo. Ausente, a coluna
+\cd{cpf} da importação é \textbf{recusada} com mensagem explícita, nunca aceita
+e guardada de outro jeito (\adrr{ADR-31}).
+\end{atencao}
+
 \begin{decisao}
-\textbf{Identidade, enturmamento e importação não têm variável nenhuma}
+\textbf{Fora dela, identidade, enturmamento e importação não têm variável nenhuma}
 (\adrr{ADR-28}, \adrr{ADR-29}). É afirmação, não omissão deste apêndice: o
 período letivo vigente é derivado das \emph{datas} em \cd{periodos\_letivos} ---
 sem coluna \cd{ativo} e sem \env{ANO\_LETIVO} ---, a senha inicial do lote é

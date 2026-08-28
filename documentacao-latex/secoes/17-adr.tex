@@ -1105,3 +1105,196 @@ sem saída. Reimportar \textbf{não} redefine a senha de quem já entrou.
 
 \textbf{Gatilho de reavaliação.} Entrada do WSO2 em produção --- a partir daí a
 senha local vira caminho de exceção (escola sem federação), não o principal.
+
+% ---------------------------------------------------------------------------
+\section{ADR-30 --- A rede: lotação por escola e escola ativa no \emph{token}}
+\label{adr:rede-lotacoes}
+
+\begin{especificacao}{Contexto}
+Vender a uma rede estadual não é vender a uma escola grande. São milhares de
+unidades, professores que dão aula em mais de uma, e crianças que se transferem
+entre elas. O modelo tinha \cd{users.escola\_id} \textbf{único}, e ele é a chave
+de \emph{tenancy}: circula no \emph{claim} \cd{escola\_id} do JWT e no
+\cd{set\_config} da RLS. Um professor em duas escolas não caberia nele.
+
+O tamanho do problema, medido: \textbf{31 tabelas} carregam \cd{escola\_id} e
+\textbf{19 arquivos} da API derivam a escola do \emph{token}.
+\end{especificacao}
+
+\textbf{Decisão.} O \emph{token} continua carregando \textbf{UMA} escola. Nenhuma
+das 31 tabelas muda, nenhum dos 19 arquivos muda, a RLS continua sendo
+\cd{escola\_id = current\_setting('app.escola\_id')} e a regra inviolável nº 1
+continua literalmente verdadeira. O que entra é a camada \emph{acima}:
+
+\begin{itemize}
+  \item \cd{lotacoes} --- o vínculo PESSOA $\times$ ESCOLA, datado.
+    \enquote{Lotação} é o termo que a rede pública usa para a alocação de um
+    servidor a uma unidade. Professor e gestor \textbf{acumulam}: lotação nova não
+    encerra a anterior. Aluno tem \textbf{uma ativa}, garantida por índice único
+    parcial no banco.
+  \item \textbf{Escola ativa na sessão.} Quem tem mais de uma escolhe no
+    cabeçalho; a troca passa pelo servidor (\rota{POST /api/escola-ativa}), que
+    valida contra \rota{GET /escolas/minhas} --- \textbf{nunca} contra a lista que
+    o \emph{cookie} carrega. \emph{Cookie} é dado do cliente, e aceitar a escola
+    que ele pedir deixaria qualquer professor ler qualquer unidade da rede.
+  \item \cd{users.escola\_id} passa a ser \textbf{cache} da lotação principal ---
+    o mesmo papel que \cd{turma\_id} já tinha em relação a \cd{matriculas}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{\emph{Token} com várias escolas e RLS em \cd{= ANY(...)}}: tocaria
+    as 31 tabelas e trocaria a garantia \enquote{esta conexão vê UMA escola} por
+    \enquote{vê um conjunto}. A propriedade que sustenta o isolamento de um
+    contrato B2G é justamente a primeira.
+  \item \emph{Um usuário por escola (dois cadastros para o mesmo professor)}: é o
+    que acontece hoje sem esta camada, e é o problema --- duas senhas, dois
+    logins, e nada ligando as duas metades da mesma pessoa.
+  \item \emph{\cd{lotacoes} com RLS}: ela é lida no LOGIN, antes de se saber a
+    escola. Uma política por \cd{escola\_id} esconderia justamente a resposta
+    (\enquote{quais escolas são suas}), e o sintoma seria o professor de duas
+    unidades não conseguindo trocar para a segunda. Fica fora, como
+    \cd{users}/\cd{turmas}, com filtro explícito nos \emph{services}.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item Criar escola é \cd{admin-contrato} e ninguém mais --- inclusive no
+    \cd{orgs.csv}. Escola é \emph{tenant}: abrir inquilino com RLS, dados de
+    menores e \emph{stack} por trás não é operação de quem administra uma unidade.
+  \item \emph{Ruim}: a escola ativa é estado de SESSÃO. Duas abas do mesmo
+    professor em escolas diferentes brigam pelo mesmo \emph{cookie} --- a última
+    troca vence, e a outra aba passa a mostrar a escola nova sem avisar.
+  \item \emph{Ruim}: o campo extra que eu pus dentro do item da \cd{SideBar} para
+    filtrar o menu virou atributo no DOM (o tipo do DS tem índice aberto e ele
+    espalha o que não conhece). A restrição foi para fora do item; fica
+    registrado porque é o tipo de erro que o \emph{typecheck} não pega.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Um contrato em que a MESMA pessoa precise ver
+duas escolas ao mesmo tempo na mesma tela --- aí a conversa volta para o
+\emph{token} com conjunto de escolas, e com ela o custo nas 31 tabelas.
+
+% ---------------------------------------------------------------------------
+\section{ADR-31 --- CPF como identidade, guardado só em \emph{hash}}
+\label{adr:cpf}
+
+\begin{especificacao}{Contexto}
+Numa rede, a criança troca de escola e o dado dela precisa continuar sendo dela.
+Nome muda (casamento dos pais, correção de registro), \emph{login} muda,
+matrícula muda a cada rede --- e a escola de origem e a de destino não
+compartilham nenhuma dessas chaves. Sem um identificador imutável, cada
+transferência cria uma segunda pessoa e o histórico nasce partido em duas.
+
+O identificador que o Brasil usa é o CPF, e é o que a Portaria MEC 269/2026
+adota como chave do estudante no EducaDados. É também o dado pessoal mais
+sensível que esta plataforma tocaria, de menores de idade, num banco que já
+guarda perfil de valores e \emph{check-in} de saúde.
+\end{especificacao}
+
+\textbf{Decisão.} O CPF é a chave de identidade e \textbf{nunca} é guardado. O
+banco tem \cd{users.cpf\_hash} = \cd{HMAC-SHA256(cpf, CPF\_PEPPER)} e
+\cd{users.cpf\_final}, os três últimos dígitos em claro para confirmação humana
+na tela. O \emph{hash} é \textbf{determinístico} de propósito: é o que permite
+procurar (basta \emph{hashear} o que o gestor digitou) e reconhecer a mesma
+pessoa. Único por \textbf{contrato}, não por escola --- é a identidade da pessoa
+na rede inteira.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Guardar o número em claro}: dá tudo o que o \emph{hash} dá e mais
+    um acervo de CPF de menores, que a plataforma não precisa para nada --- ela
+    não emite documento nem presta contas ao fisco. O SIS da rede já tem o número.
+  \item \emph{\emph{Hash} com sal por linha} (\cd{bcrypt}): inutilizaria o campo
+    como identidade. Sem determinismo não há busca nem reconhecimento, que é a
+    única razão de o CPF estar aqui.
+  \item \emph{\emph{Hash} sem pimenta}: CPF tem 11 dígitos e espaço de busca
+    trivial --- um SHA-256 puro é reversível por força bruta em minutos. A pimenta
+    é o que torna o \emph{hash} inútil fora desta instalação.
+  \item \emph{Cifrar em vez de \emph{hashear}}: exigiria guardar a chave capaz de
+    devolver o número, e o número é exatamente o que não se quer poder devolver.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \env{CPF\_PEPPER} \textbf{não muda}. Trocá-la invalida todos os
+    \emph{hashes} e a plataforma deixa de reconhecer quem já cadastrou --- o
+    sintoma é toda criança transferida virando cadastro novo. Ausente, a coluna
+    \cd{cpf} da importação é \textbf{recusada} com mensagem explícita, nunca
+    aceita e guardada de outro jeito.
+  \item O dígito verificador é conferido na leitura da planilha. Não é
+    preciosismo: CPF digitado errado numa planilha de 10 mil linhas cria uma
+    identidade fantasma que nunca vai casar com a da rede, e o erro só aparece
+    meses depois, na primeira transferência.
+  \item O CPF é \textbf{opcional}. Rede sem o dado continua funcionando com
+    \cd{matricula\_externa} como chave --- e perde só o reconhecimento
+    automático na transferência.
+  \item \emph{Ruim}: três dígitos em claro são identificáveis em combinação com o
+    nome. É o preço de o gestor conseguir confirmar que é a pessoa certa antes de
+    transferir uma criança.
+  \item O teste estrutural \arq{identidade-unica.spec.ts} falha se aparecer
+    qualquer coluna com \cd{cpf} no nome fora de \cd{users.cpf\_hash} e
+    \cd{users.cpf\_final}.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A especificação técnica do EducaDados exigir
+\emph{enviar} o CPF de volta à rede --- aí ele volta a entrar, e a decisão passa a
+ser onde a chave de cifra mora, não se o número existe.
+
+% ---------------------------------------------------------------------------
+\section{ADR-32 --- Transferência: o dado fica, a identidade segue}
+\label{adr:transferencia}
+
+\begin{especificacao}{Contexto}
+\enquote{Os dados do aluno seguem o aluno, independente da escola} é requisito de
+produto. E colide de frente com a regra inviolável nº 1: tudo o que a criança
+produziu tem \cd{escola\_id} da escola onde produziu, com RLS por cima. Depois de
+uma transferência, a escola nova não alcança nada disso --- e a antiga continua
+alcançando tudo.
+\end{especificacao}
+
+\textbf{Decisão.} O \textbf{dado fica onde foi produzido}; o que segue o aluno é a
+\textbf{identidade}. A transferência encerra a lotação e as matrículas na origem,
+abre na destino e move o \emph{cache} \cd{users.escola\_id} --- e mais nada. Para
+a leitura atravessada existe \textbf{uma} porta: \rota{GET /alunos/:id/historico},
+que devolve \textbf{participações} (em que escola, em que turma, em que missão,
+quando), nunca o conteúdo dos instrumentos.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Reescrever \cd{escola\_id} nas 31 tabelas na transferência}: apaga
+    de onde o fato veio. \enquote{Esta criança respondeu isso na escola A, em
+    2026} deixaria de ser recuperável, e um \emph{UPDATE} em massa por
+    transferência é a operação mais fácil de deixar pela metade.
+  \item \emph{Afrouxar a RLS para o \cd{aluno\_id} atravessar}: transformaria a
+    exceção numa regra geral. A porta única é auditável; uma política mais larga
+    não é.
+  \item \emph{O histórico devolver o instrumento completo}: abriria, por uma tela
+    de secretaria, o retrato de valores da Vila e a transcrição do unooGPT --- o
+    que \adrr{ADR-12}, \adrr{ADR-27} e \adrr{ADR-10} fecharam. Quem lê o
+    instrumento é quem tem a posse pedagógica na escola onde ele aconteceu.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item O \cd{historico} só abre para quem tem \textbf{lotação na escola onde o
+    aluno está hoje} --- é a unidade responsável por ele --- ou para
+    \cd{admin-contrato}.
+  \item A transferência é a única operação que troca o \cd{app.escola\_id}
+    \textbf{no meio de uma transação}: ela encerra na origem e abre no destino, e
+    sem trocar o contexto o \emph{update} na origem não veria linha nenhuma (a RLS
+    o esconderia, sem erro, e a criança ficaria matriculada nas duas escolas). O
+    \cd{set\_config(..., true)} é local à transação, então a conexão volta limpa
+    ao \emph{pool}.
+  \item Quem recebe a criança é a escola de \textbf{destino}: um gestor só
+    transfere PARA a própria escola, e o caminho normal é importar a planilha com
+    o CPF --- o importador reconhece e transfere.
+  \item \emph{Ruim}: o professor da escola nova vê que a criança participou de
+    uma missão na escola anterior, mas não o que ela respondeu. Para continuar um
+    trabalho pedagógico iniciado em outra unidade, isso é pouco --- e é
+    deliberado até haver uma regra de consentimento que diga o contrário.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Pedido pedagógico formal de continuidade entre
+escolas da mesma rede --- aí a conversa é sobre consentimento e sobre QUAL
+instrumento atravessa, um a um, nunca sobre abrir a fronteira inteira.

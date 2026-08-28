@@ -170,6 +170,10 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \zebra \cd{periodos\_letivos} & Catálogo & Ano letivo e seus recortes. Sem
   \cd{escola\_id} e sem RLS: o calendário é do contrato, e duplicá-lo por escola
   só criaria cem linhas divergentes.\\
+\cd{lotacoes} & Identidade & O vínculo PESSOA $\times$ ESCOLA. Professor
+  \textbf{acumula} escolas; aluno tem uma ativa (índice único parcial no banco).
+  Fora da RLS pelo mesmo motivo de \cd{users}: é lida no \emph{login}, antes de se
+  saber a escola (\adrr{ADR-30}).\\
 \cd{matriculas} & \emph{Tenant} & O enturmamento. Ver
   Seção~\ref{sec:enturmamento}.\\
 \zebra \cd{experiencias} & Catálogo & Sem \cd{escola\_id}: o manifesto é do
@@ -184,6 +188,50 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   Seção~\ref{sec:particao}.\\
 \bottomrule
 \end{tabularx}
+
+\section{A rede: escola, lotação e o CPF}
+\label{sec:rede}
+
+Uma rede estadual tem milhares de unidades, professores que dão aula em mais de
+uma e crianças que se transferem entre elas. Três colunas e uma tabela sustentam
+isso, e a decisão que as torna baratas é o que \textbf{não} muda: o \emph{token}
+continua carregando UMA escola, então as 31 tabelas com \cd{escola\_id} e a
+política de RLS ficam intocadas (\adrr{ADR-30}).
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que resolve, e o que ela não é}\\
+\midrule
+\cd{lotacoes} & Pessoa $\times$ escola, datado. Professor e gestor
+  \textbf{acumulam} --- lotação nova não encerra a anterior. Aluno tem UMA ativa,
+  e é o banco que garante: \enquote{aluno em duas escolas} é indistinguível de uma
+  transferência que ficou pela metade.\\
+\zebra \textbf{Escola ativa} & Estado de SESSÃO, não coluna. Quem tem mais de uma
+  escolhe no cabeçalho, e a troca é validada contra as lotações \emph{pela API} ---
+  nunca contra a lista que o \emph{cookie} carrega.\\
+\cd{users.cpf\_hash} & A identidade IMUTÁVEL do estudante. Nome, \emph{login} e
+  matrícula mudam; o CPF não. É o que transforma \enquote{esse CPF já existe na
+  escola B} em transferência reconhecida, em vez de duas crianças com o histórico
+  partido. \textbf{Nunca é o número}: \cd{HMAC-SHA256} com pimenta do contrato,
+  mais três dígitos em claro para confirmação humana (\adrr{ADR-31}).\\
+\zebra \cd{escolas.codigo\_inep} \newline \cd{municipio}, \cd{uf} & Identificar a
+  unidade numa rede de milhares. Sem município, a lista de escolas é impossível de
+  navegar.\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}
+\textbf{Na transferência, o dado FICA e a identidade SEGUE} (\adrr{ADR-32}). Tudo
+o que a criança produziu continua com o \cd{escola\_id} da escola onde produziu ---
+verdade histórica que um \emph{UPDATE} em massa apagaria. O que atravessa é a
+leitura: \rota{GET /alunos/:id/historico}, uma porta só, restrita a quem tem
+lotação na escola onde ela está hoje, devolvendo participações e nunca o conteúdo
+dos instrumentos.
+
+É também a única operação que troca o \cd{app.escola\_id} \emph{no meio de uma
+transação}: sem isso o \emph{update} na escola de origem não veria linha nenhuma,
+a RLS o esconderia sem erro, e a criança ficaria matriculada nas duas.
+\end{decisao}
 
 \section{Enturmamento e identidade}
 \label{sec:enturmamento}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
@@ -35,6 +36,10 @@ interface Relatorio {
   criados: number;
   atualizados: number;
   matriculados: number;
+  /** Reconhecidos pelo CPF em outra escola da rede: vieram transferidos. */
+  transferidos: number;
+  /** Professores que já eram da rede e ganharam lotação NESTA escola. */
+  lotacoesNovas: number;
   desativados: number;
   candidatosAInativacao: number;
   turmasCriadas: string[];
@@ -89,7 +94,10 @@ export function ImportarPessoas({
   papel: Papel;
   escolaIdInicial: string;
 }) {
-  const [escolaId, setEscolaId] = useState(escolaIdInicial);
+  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+     Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
+  const daUrl = useSearchParams().get("escolaId") ?? "";
+  const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
   const [modoSenha, setModoSenha] = useState<"padrao" | "por-pessoa">("padrao");
   const [senhaPadrao, setSenhaPadrao] = useState(SENHA_SUGERIDA);
   const [aberto, setAberto] = useState(false);
@@ -280,15 +288,22 @@ export function ImportarPessoas({
       <section className="flex flex-col gap-3 rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 p-5">
         <h2 className="text-[16px] font-bold text-unooria-neutral-950">1. Baixe o modelo</h2>
         <p className="text-[14px] text-unooria-neutral-700">
-          Colunas: <code>matricula, nome, usuario, email, papel, turma, serie, turno</code>.
+          Colunas: <code>cpf, matricula, nome, usuario, email, papel, turma, serie, turno</code>.
           Obrigatórias: <strong>nome</strong> e <strong>papel</strong> (
           <code>aluno</code>, <code>professor</code> ou <code>coordenacao</code>); para aluno,
           também <strong>turma</strong> e <strong>serie</strong>. A ordem das colunas não importa.
         </p>
         <p className="text-[14px] text-unooria-neutral-700">
-          <strong>matricula</strong> é o número da pessoa na rede (RA). É o que permite reimportar a
-          planilha corrigida sem criar ninguém duas vezes. <strong>usuario</strong> pode ficar em
-          branco — o login é gerado e devolvido na folha de senhas.
+          <strong>cpf</strong> é a identidade que não muda. É por ele que uma criança vinda de outra
+          escola da rede é reconhecida como a <em>mesma pessoa</em> e <strong>transferida</strong>,
+          em vez de nascer de novo com o histórico partido em duas. E é ele que faz o professor de
+          duas unidades ganhar a segunda lotação em vez de virar dois cadastros. O número não é
+          guardado: o banco fica com um código dele e os três últimos dígitos.
+        </p>
+        <p className="text-[14px] text-unooria-neutral-700">
+          <strong>matricula</strong> é o número da pessoa na rede (RA), a chave de reconciliação
+          quando não há CPF. <strong>usuario</strong> pode ficar em branco — o login é gerado e
+          devolvido na folha de senhas.
         </p>
         <div className="flex flex-wrap gap-3">
           <a href={linkDoModelo("usuarios.csv")} download>
@@ -446,6 +461,8 @@ export function ImportarPessoas({
               `${relatorio.criados} criados`,
               `${relatorio.atualizados} atualizados`,
               `${relatorio.matriculados} enturmados`,
+              relatorio.transferidos > 0 ? `${relatorio.transferidos} transferidos` : "",
+              relatorio.lotacoesNovas > 0 ? `${relatorio.lotacoesNovas} lotados aqui também` : "",
               relatorio.desativados > 0 ? `${relatorio.desativados} desativados` : "",
             ]
               .filter(Boolean)

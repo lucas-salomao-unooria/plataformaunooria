@@ -1,14 +1,14 @@
 # Documentação técnica — LaTeX
 
 Fonte da **documentação técnica consolidada** da Plataforma Unooria
-(`PU-DOC-001`). Compila em `main.pdf` (~253 páginas).
+(`PU-DOC-001`). Compila em `main.pdf` (~265 páginas).
 
 Este documento é **normativo** para o projeto: cobre contexto de negócio,
 requisitos rastreáveis, casos de uso, arquitetura de software nos quatro níveis
 do modelo C4, arquitetura de nuvem e implantação em GCP, multi-tenancy e
 segurança, modelo de dados, contratos de integração, telemetria, camada de IA,
 catálogo de experiências, especificação da API, design system, engenharia de
-entrega, qualidade, 29 ADRs, riscos e evolução.
+entrega, qualidade, 32 ADRs, riscos e evolução.
 
 ## Compilar
 

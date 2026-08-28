@@ -159,6 +159,12 @@ services:
       OIDC_ISSUER: http://localhost:3000
       OIDC_JWKS_URI: http://hub:3000/.well-known/jwks.json
       OIDC_AUDIENCE: plataforma-api
+      # Pimenta do hash de CPF. O CPF do estudante é a identidade IMUTÁVEL na
+      # rede e nunca é guardado em claro: o banco tem HMAC-SHA256(cpf, pimenta).
+      # Em DEV vale um valor fixo — trocá-lo invalida os hashes já gravados e a
+      # plataforma deixa de reconhecer quem já foi cadastrado. Ausente, a coluna
+      # `cpf` da importação é RECUSADA, nunca aceita e guardada de outro jeito.
+      CPF_PEPPER: ${CPF_PEPPER:-pimenta-de-desenvolvimento-nao-usar-em-producao}
       # IA: `vertex` exige VERTEX_PROJECT_ID (o boot recusa sem ele) e a
       # credencial ADC montada acima — a mesma cadeia do Cloud Run, onde a
       # credencial é a service account do serviço e nada disto é preciso.

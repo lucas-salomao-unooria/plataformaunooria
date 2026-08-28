@@ -261,6 +261,20 @@ distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 \end{decisao}
 
 \begin{decisao}
+\textbf{Numa REDE, a pessoa atravessa escolas; o \emph{token} não.} O professor
+lotado em duas unidades escolhe em qual está trabalhando, e o \emph{token} leva
+\textbf{essa} --- então a política de RLS e as 31 tabelas com \cd{escola\_id}
+continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
+validada contra as lotações \emph{pela API}, nunca contra a lista que o
+\emph{cookie} carrega: \emph{cookie} é dado do cliente.
+
+E na transferência de um aluno, o dado \textbf{fica onde foi produzido}. O que
+atravessa é uma leitura única e estreita (\rota{GET /alunos/:id/historico}),
+restrita a quem tem lotação na escola onde a criança está hoje, devolvendo
+participações e nunca o conteúdo dos instrumentos (\adrr{ADR-32}).
+\end{decisao}
+
+\begin{decisao}
 \textbf{A senha do primeiro acesso é travada em três lugares.} Enquanto
 \cd{senha\_provisoria} for verdadeira, o \emph{middleware} prende as páginas em
 \rota{/trocar-senha}, o BFF recusa dados e \rota{/api/exp-token} não emite
@@ -348,6 +362,17 @@ acredita ter declarado algo.
 \end{regra}
 
 \section{Privacidade e dados de menores}
+
+\begin{atencao}
+\textbf{O CPF do estudante nunca é guardado.} Ele é a identidade imutável na rede
+--- e o que torna possível reconhecer a mesma criança numa transferência entre
+escolas --- mas o banco tem apenas \cd{HMAC-SHA256(cpf, CPF\_PEPPER)} e os três
+últimos dígitos, para confirmação humana na tela. O \emph{hash} é determinístico
+de propósito (é o que permite procurar e reconhecer); a pimenta é o que o torna
+inútil fora desta instalação. Sem ela, a importação \textbf{recusa} a coluna em
+vez de guardar o número de outro jeito, e o teste estrutural falha se aparecer
+qualquer coluna com \cd{cpf} no nome fora dessas duas (\adrr{ADR-31}).
+\end{atencao}
 
 \begin{tabularx}{\linewidth}{@{}L{36mm}X@{}}
 \toprule

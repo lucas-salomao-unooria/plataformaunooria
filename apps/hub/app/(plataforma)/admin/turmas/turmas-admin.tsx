@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
@@ -51,7 +51,10 @@ const TURNOS = [
  */
 export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaIdInicial: string }) {
   const router = useRouter();
-  const [escolaId, setEscolaId] = useState(escolaIdInicial);
+  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+     Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
+  const daUrl = useSearchParams().get("escolaId") ?? "";
+  const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
   const [linhas, setLinhas] = useState<LinhaDeTurma[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -145,13 +148,21 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
         title: "",
         align: "right",
         render: (_, linha) => (
-          <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/turmas/${linha.id}`)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() =>
+              router.push(
+                `/admin/turmas/${linha.id}${escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""}`,
+              )
+            }
+          >
             Abrir
           </Button>
         ),
       },
     ],
-    [router],
+    [router, escolaId],
   );
 
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
@@ -39,6 +39,31 @@ interface TurmaDaEscola {
   serie: string;
 }
 
+interface EscolaDaRede {
+  id: string;
+  nome: string;
+  municipio: string | null;
+  uf: string | null;
+}
+
+interface Historico {
+  aluno: { nome: string; usuario: string; cpfFinal: string | null };
+  escolas: Array<{
+    id: string;
+    nome: string;
+    municipio: string | null;
+    uf: string | null;
+    entrada: string;
+    saida: string | null;
+    atual: boolean;
+  }>;
+  turmas: Array<{ escola: string; turma: string; serie: string; periodo: string; entrada: string; saida: string | null }>;
+  participacoes: Array<{ escola: string; expId: string; em: string }>;
+}
+
+const dataCurta = (iso: string | null) =>
+  iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—";
+
 interface DadosDaTurma {
   turma: { id: string; nome: string; serie: string; turno: string | null; periodo: string };
   alunos: Matriculado[];
@@ -62,13 +87,18 @@ interface Candidato {
 export function TurmaDetalhe({
   turmaId,
   papel,
-  escolaId,
+  escolaId: escolaIdDaSessao,
 }: {
   turmaId: string;
   papel: Papel;
   escolaId: string;
 }) {
   const router = useRouter();
+  /* `admin-contrato` chega com `?escolaId=` (a escola vem da lista de escolas,
+     não do token dele, que não tem escola). Sem ler a URL, a api recusa com
+     "informe ?escolaId=" e a tela abre vazia. */
+  const escolaDaUrl = useSearchParams().get("escolaId") ?? "";
+  const escolaId = escolaDaUrl || escolaIdDaSessao;
   const [dados, setDados] = useState<DadosDaTurma | null>(null);
   const [aba, setAba] = useState<"alunos" | "professores">("alunos");
   const [carregando, setCarregando] = useState(true);
@@ -83,10 +113,18 @@ export function TurmaDetalhe({
   const [destino, setDestino] = useState("");
   const [turmas, setTurmas] = useState<TurmaDaEscola[]>([]);
 
+  const [historico, setHistorico] = useState<Historico | null>(null);
+  const [transferir, setTransferir] = useState<Matriculado | null>(null);
+  const [escolasDaRede, setEscolasDaRede] = useState<EscolaDaRede[]>([]);
+  const [escolaDestino, setEscolaDestino] = useState("");
+
   const sufixo = useMemo(
     () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
+
+  const voltarParaTurmas = () =>
+    router.push(`/admin/turmas${escolaDaUrl ? `?escolaId=${encodeURIComponent(escolaDaUrl)}` : ""}`);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -174,6 +212,48 @@ export function TurmaDetalhe({
     }
   }
 
+  async function verHistorico(linha: Matriculado) {
+    setHistorico(null);
+    try {
+      const resposta = await fetch(`/api/plataforma/alunos/${linha.id}/historico${sufixo}`);
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      setHistorico((await resposta.json()) as Historico);
+    } catch {
+      setErro("Não foi possível carregar o histórico.");
+    }
+  }
+
+  async function abrirTransferencia(linha: Matriculado) {
+    setTransferir(linha);
+    setEscolaDestino("");
+    if (escolasDaRede.length === 0) {
+      const resposta = await fetch("/api/plataforma/escolas");
+      if (resposta.ok) setEscolasDaRede((await resposta.json()) as EscolaDaRede[]);
+    }
+  }
+
+  async function confirmarTransferencia() {
+    if (!transferir || !escolaDestino) return;
+    setSalvando(true);
+    try {
+      const resposta = await fetch(
+        `/api/plataforma/alunos/${transferir.id}/transferir?escolaId=${encodeURIComponent(escolaDestino)}`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ escolaDestinoId: escolaDestino }),
+        },
+      );
+      if (!resposta.ok) throw new Error(String(resposta.status));
+      setTransferir(null);
+      await carregar();
+    } catch {
+      setErro("Não foi possível transferir.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   async function encerrar() {
     if (!remover) return;
     setSalvando(true);
@@ -221,6 +301,16 @@ export function TurmaDetalhe({
                 Tornar referência
               </Button>
             ) : null}
+            {aba === "alunos" ? (
+              <Button variant="ghost" size="sm" onClick={() => void verHistorico(linha)}>
+                Histórico
+              </Button>
+            ) : null}
+            {aba === "alunos" && papel === "admin-contrato" ? (
+              <Button variant="ghost" size="sm" onClick={() => void abrirTransferencia(linha)}>
+                Transferir
+              </Button>
+            ) : null}
             <Button variant="ghost" size="sm" onClick={() => void abrirMover(linha)}>
               Mover
             </Button>
@@ -234,7 +324,7 @@ export function TurmaDetalhe({
     // `ajustar` e `abrirMover` fecham sobre estado que muda a cada render; as
     // colunas só precisam ser recriadas quando a aba muda.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [aba],
+    [aba, papel],
   );
 
   const lista = aba === "alunos" ? (dados?.alunos ?? []) : (dados?.professores ?? []);
@@ -270,7 +360,7 @@ export function TurmaDetalhe({
       />
 
       <div className="flex items-center justify-between gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/admin/turmas")}>
+        <Button variant="ghost" size="sm" onClick={voltarParaTurmas}>
           Voltar para as turmas
         </Button>
         <Button variant="primary" size="md" onClick={() => setAdicionarAberto(true)}>
@@ -334,6 +424,130 @@ export function TurmaDetalhe({
         <ModalFooter>
           <Button variant="ghost" size="md" onClick={() => setAdicionarAberto(false)}>
             Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={Boolean(historico)} onClose={() => setHistorico(null)} size="md" theme="light">
+        <ModalHeader>
+          <ModalTitle>Histórico de {historico?.aluno.nome}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-5">
+            <p className="text-[13px] text-unooria-neutral-500">
+              {historico?.aluno.usuario}
+              {historico?.aluno.cpfFinal ? ` · CPF terminado em ${historico.aluno.cpfFinal}` : ""}
+            </p>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
+                Escolas
+              </h3>
+              <ul className="flex flex-col gap-1">
+                {historico?.escolas.map((escola) => (
+                  <li key={`${escola.id}-${escola.entrada}`} className="text-[14px]">
+                    <strong className="text-unooria-neutral-950">{escola.nome}</strong>
+                    {escola.municipio ? (
+                      <span className="text-unooria-neutral-500">
+                        {" "}
+                        · {escola.municipio}
+                        {escola.uf ? `/${escola.uf}` : ""}
+                      </span>
+                    ) : null}
+                    <span className="text-unooria-neutral-500">
+                      {" "}
+                      · {dataCurta(escola.entrada)} —{" "}
+                      {escola.atual ? "hoje" : dataCurta(escola.saida)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
+                Turmas
+              </h3>
+              <ul className="flex flex-col gap-1">
+                {historico?.turmas.map((t, i) => (
+                  <li key={i} className="text-[14px] text-unooria-neutral-700">
+                    {t.escola} · <strong className="text-unooria-neutral-950">{t.turma}</strong> ·{" "}
+                    {t.periodo} · {dataCurta(t.entrada)} — {t.saida ? dataCurta(t.saida) : "hoje"}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className="flex flex-col gap-2">
+              <h3 className="text-[12px] font-semibold uppercase tracking-widest text-unooria-neutral-500">
+                Missões em que esteve
+              </h3>
+              {historico && historico.participacoes.length > 0 ? (
+                <ul className="flex flex-col gap-1">
+                  {historico.participacoes.map((p, i) => (
+                    <li key={i} className="text-[14px] text-unooria-neutral-700">
+                      {p.expId} · {p.escola} · {dataCurta(p.em)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-[14px] text-unooria-neutral-500">
+                  Nenhuma missão registrada ainda.
+                </p>
+              )}
+              <p className="text-[13px] text-unooria-neutral-500">
+                O que a criança fez em cada missão fica com quem tem a posse pedagógica na escola
+                onde aconteceu — aqui aparece que ela esteve, não o que respondeu.
+              </p>
+            </section>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="primary" size="md" onClick={() => setHistorico(null)}>
+            Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <Modal isOpen={Boolean(transferir)} onClose={() => setTransferir(null)} size="sm" theme="light">
+        <ModalHeader>
+          <ModalTitle>Transferir de escola</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col gap-4">
+            <p className="text-[14px] text-unooria-neutral-700">
+              <strong>{transferir?.nome}</strong> sai desta escola e entra na escolhida. A conta é a
+              mesma pessoa — o que ela já fez continua registrado na escola onde aconteceu, e o
+              histórico dela passa a mostrar as duas.
+            </p>
+            <Selection
+              label="Escola de destino"
+              value={escolaDestino}
+              onChange={(valor) => setEscolaDestino(String(valor))}
+              options={escolasDaRede
+                .filter((e) => e.id !== escolaId)
+                .map((e) => ({
+                  value: e.id,
+                  label: e.municipio ? `${e.nome} · ${e.municipio}` : e.nome,
+                }))}
+            />
+            <p className="text-[13px] text-unooria-neutral-500">
+              Ela chega sem turma na escola nova — quem enturma é a coordenação de lá.
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" size="md" onClick={() => setTransferir(null)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            isLoading={salvando}
+            disabled={!escolaDestino}
+            onClick={() => void confirmarTransferencia()}
+          >
+            Transferir
           </Button>
         </ModalFooter>
       </Modal>

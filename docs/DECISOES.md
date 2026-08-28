@@ -77,3 +77,37 @@
    a pessoa voltaria à mesma tela com a senha anterior já inválida.
    Consequência ruim, aceita e dita na própria tela: com uma senha só para o
    lote, qualquer aluno entra na conta de outro até o primeiro acesso dele.
+13. **A rede: lotação por escola, escola ativa no token, e o dado que fica**
+   (2026-08-28). Vender a uma rede estadual exigia três coisas que
+   `users.escola_id` único não dava: identificar milhares de escolas, professor em
+   mais de uma, e criança transferida sem perder o histórico. A decisão que torna
+   isso barato é o que **não** muda: o token continua carregando UMA escola —
+   medido, são 31 tabelas com `escola_id` e 19 arquivos que derivam a escola do
+   token, e nenhum foi tocado. Entra a camada acima: `lotacoes` (pessoa × escola,
+   datado; professor ACUMULA, aluno tem uma ativa garantida por índice único
+   parcial) e a escola ativa como estado de SESSÃO, validada contra as lotações
+   pela api e nunca contra a lista do cookie. Descartados: token com conjunto de
+   escolas e RLS em `= ANY` (tocaria as 31 tabelas e trocaria "esta conexão vê UMA
+   escola" por "vê um conjunto", que é justamente a propriedade que sustenta o
+   isolamento de um contrato B2G); e dois cadastros para o mesmo professor, que é
+   o que acontece hoje sem isso — duas senhas e nada ligando as metades.
+   Na transferência o **dado fica onde foi produzido** e o que segue o aluno é a
+   identidade; a leitura atravessada é uma porta só (`GET /alunos/:id/historico`),
+   restrita a quem tem lotação na escola onde ele está hoje, devolvendo
+   participações e nunca o conteúdo dos instrumentos. Reescrever `escola_id` nas 31
+   tabelas foi descartado: apaga de onde o fato veio.
+14. **CPF como identidade, guardado só em hash** (2026-08-28). Nome, login e
+   matrícula mudam; o CPF não — e é o que o padrão nacional do MEC adota. É também
+   o dado mais sensível que a plataforma tocaria, de menores, num banco que já
+   guarda perfil de valores e check-in de saúde. Então: `users.cpf_hash =
+   HMAC-SHA256(cpf, CPF_PEPPER)` e os três últimos dígitos em claro para
+   confirmação humana. O hash é **determinístico** de propósito (sem isso não há
+   busca nem reconhecimento, que é a única razão de o CPF estar aqui); a pimenta é
+   o que o torna inútil fora desta instalação (11 dígitos são força-brutáveis em
+   minutos num SHA-256 puro). Sem `CPF_PEPPER` a coluna é **recusada**, nunca
+   aceita e guardada de outro jeito. A pimenta **não muda**: outro valor invalida
+   todos os hashes e toda criança transferida vira cadastro novo. Descartados:
+   guardar em claro (dá o mesmo e mais um acervo de CPF de menores que a
+   plataforma não usa para nada), sal por linha (mata a identidade), e cifrar (
+   exigiria guardar a chave capaz de devolver o número, que é o que não se quer
+   poder devolver).

@@ -78,6 +78,45 @@ trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
 cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do aluno (ver
 "Identidade e enturmamento").
 
+### A rede: escola, lotação e CPF (2026-08-28)
+
+**Uma rede estadual não é uma escola grande.** São milhares de unidades,
+professores em mais de uma, e crianças que se transferem. A decisão que torna
+isso barato é o que NÃO muda: **o token continua carregando UMA escola**. As 31
+tabelas com `escola_id` e a política de RLS ficam intocadas, e a regra 1 continua
+literalmente verdadeira (ADR-30).
+
+- **`lotacoes`** — pessoa × escola, datado (o termo da rede pública para alocação
+  de servidor a uma unidade). **Professor e gestor ACUMULAM**: lotação nova não
+  encerra a anterior. **Aluno tem UMA ativa**, garantida por índice único parcial
+  no banco — "aluno em duas escolas" é indistinguível de transferência pela
+  metade. FORA da RLS pelo mesmo motivo de `users`: é lida no login, antes de se
+  saber a escola, e é ela que responde "quais escolas são suas".
+- **Escola ativa é estado de SESSÃO.** Quem tem mais de uma escolhe no cabeçalho
+  (`components/seletor-de-escola.tsx`); a troca passa por `POST /api/escola-ativa`,
+  que valida contra `GET /escolas/minhas` **da api** — nunca contra a lista que o
+  cookie carrega. `users.escola_id` é o cache da lotação principal.
+- **Criar escola é `admin-contrato` e ninguém mais**, inclusive no `orgs.csv`:
+  escola é tenant, e abrir inquilino com RLS e dados de menores por trás não é
+  operação de quem administra uma unidade. `/admin/escolas` é a tela.
+- **`users.cpf_hash` é a identidade IMUTÁVEL do estudante** — e o que torna a
+  transferência possível: nome, login e matrícula mudam, o CPF não. **O número
+  NUNCA é guardado**: `HMAC-SHA256(cpf, CPF_PEPPER)` (determinístico de propósito
+  — é o que permite procurar e reconhecer) + os três últimos dígitos em claro para
+  confirmação humana. Único por CONTRATO, não por escola. Sem a pimenta, a coluna
+  `cpf` da importação é RECUSADA. `CPF_PEPPER` **não muda**: outro valor invalida
+  todos os hashes e toda criança transferida vira cadastro novo (ADR-31).
+- **Na transferência, o dado FICA e a identidade SEGUE** (ADR-32). Tudo o que a
+  criança produziu continua com o `escola_id` de onde foi produzido — verdade
+  histórica. O que atravessa é `GET /alunos/:id/historico`: uma porta só, restrita
+  a quem tem lotação na escola onde ela está HOJE, devolvendo participações e
+  **nunca** o conteúdo dos instrumentos. É também a única operação que troca o
+  `app.escola_id` no meio de uma transação — sem isso o update na origem não veria
+  linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.
+- Na importação, **o CPF é a primeira chave**: achado em outra escola da rede, a
+  linha vira transferência (aluno) ou lotação a mais (professor). Reimportar não
+  troca a senha de quem já entrou.
+
 ### Identidade e enturmamento (2026-08-28)
 
 **Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As
@@ -579,8 +618,9 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
 - **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
   `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
-  — fica **sem prefixo**: `escolas`, `turmas`, `matriculas`, `periodos_letivos`,
-  `users`, `experiencias`, `progresso`, `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
+  — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
+  `periodos_letivos`, `users`, `experiencias`, `progresso`, `telemetria_eventos`,
+  `ia_uso_diario`. O motor (feed adaptativo,
   geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
   duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
   (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem
@@ -715,6 +755,7 @@ pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-d
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
+node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, professor nas duas, aluno transferido pelo CPF
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)

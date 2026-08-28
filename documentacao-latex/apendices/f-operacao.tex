@@ -80,6 +80,7 @@ node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila
 node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
 node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
 node scripts/walkthrough-admin-usuarios.mjs   testes/wt-admin
+node scripts/walkthrough-rede.mjs             testes/wt-rede
 node scripts/probe-pointerlock.mjs
 \end{lstlisting}
 
@@ -93,7 +94,11 @@ Plataforma no ar & Contêineres \textbf{ou} \cd{pnpm dev} --- um \emph{ou} outro
 \zebra Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
   exp-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
   não concede \emph{pointer lock} nem no topo da página.\\
-\emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
+Duas escolas no \emph{seed} & \cd{escola-demo} (8A, 8B, 4A, 2A) e
+  \cd{escola-demo-2} (5A), com \cd{prof.demo} lotado nas DUAS --- é o que faz
+  aparecer o seletor de escola no cabeçalho dele. \cd{gestor.vilanova} administra a
+  segunda.\\
+\zebra \emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
   \cd{prof.demo} \seta{} \rota{/professor}; \cd{aluno01}--\cd{aluno40} \seta{}
   \rota{/aluno}; \cd{aluno4a01} para a exp-02. Senha de todos:
   \cd{unooria123}. Eles nascem com \cd{senha\_provisoria = false} de propósito:
@@ -207,11 +212,35 @@ causa.
   A coluna \cd{matricula} estava vazia. Sem o RA, a chave de reconciliação cai no
   \cd{usuario}, e um \emph{login} corrigido vira uma segunda pessoa --- com o
   histórico preso na primeira.\\
-\textbf{\enquote{Nenhum período letivo cadastrado} ao importar ou criar turma} &
+\textbf{\enquote{Sem credencial do Google Cloud} --- e o token funciona quando
+testado no container} &
+  O \cd{GoogleAuth} é resolvido no \textbf{import} do módulo
+  (\arq{ai/vertex.provider.ts}), uma vez por processo. Se o arquivo do ADC estava
+  sendo reescrito naquele instante (o \cd{gcloud} renova o \emph{refresh token}
+  sozinho), a api fica presa num cliente quebrado até o fim da vida do processo, e
+  um teste manual no mesmo contêiner passa. Conserto: reiniciar a api.\\
+\zebra \textbf{\enquote{A coluna cpf não pode ser usada nesta instalação}} &
+  \env{CPF\_PEPPER} ausente. O CPF não é guardado em claro, então sem a pimenta não
+  há \emph{hash} --- e a importação recusa a coluna em vez de guardar o número de
+  outro jeito. Em \emph{dev} ela vem do \arq{docker-compose.dev.yml}.\\
+\textbf{Toda criança transferida virou cadastro novo} &
+  A pimenta \textbf{mudou}. Ela é do contrato e não muda: outro valor produz outro
+  \emph{hash}, e a plataforma deixa de reconhecer quem já cadastrou. Não há
+  conserto pela frente --- é restaurar a pimenta anterior.\\
+\zebra \textbf{O professor não vê a segunda escola no cabeçalho} &
+  Falta \textbf{lotação} nela. O seletor só aparece com duas ou mais: com uma, seria
+  um campo de uma opção. O caminho é \rota{/admin/escolas} \seta{} a escola \seta{}
+  lotar, ou a planilha com o CPF dele importada na segunda unidade.\\
+\textbf{O admin do contrato abre uma tela de escola e ela vem vazia} &
+  Falta \cd{?escolaId=} na URL. O \emph{token} dele não tem escola (é a exceção
+  cross-escola), então a tela precisa dizer qual --- e o caminho que já leva o
+  parâmetro é \rota{/admin/escolas}, pelos botões \enquote{Turmas} e
+  \enquote{Pessoas}.\\
+\zebra \textbf{\enquote{Nenhum período letivo cadastrado} ao importar ou criar turma} &
   Banco novo, ou virada de ano sem o período criado. Turma vive DENTRO de um
   período letivo: o caminho é \rota{/admin/periodos-letivos}. O \emph{seed} cria
   o do ano corrente; um ambiente novo sem \emph{seed} não tem nenhum.\\
-\zebra \textbf{Turma nova nasceu no ano errado} &
+\textbf{Turma nova nasceu no ano errado} &
   \cd{vigente} é derivado das DATAS. Se nenhum período contém hoje, a plataforma
   cai no mais recente para não travar --- e a tela do ano letivo avisa isso em
   faixa. Corrija as datas em vez de criar outro período.\\
