@@ -21,7 +21,7 @@ const TELAS_FIXAS: Tela[] = [
   },
   { texto: 'Mas uma coisa aqui era 100% real:', destaque: 'o algoritmo.' },
   {
-    texto: 'Enquanto você rolava, ele media',
+    texto: 'Enquanto você navegava, ele aprendia',
     destaque: 'cada segundo',
     complemento: 'que você parava em cada post. Cada curtida. Cada comentário aberto.',
   },
