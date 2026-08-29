@@ -15,7 +15,7 @@
 #   - `procps`: o `nest start --watch` mata o processo antigo via `ps` a cada
 #     recompilação (tree-kill). Sem ele o watch detecta a mudança, tenta
 #     reiniciar e o container MORRE com `Error: spawn ps ENOENT`;
-#   - pnpm FIXO pelo corepack prepare (o `enable` sozinho não fixa a versão);
+#   - pnpm FIXO pelo npm (Node 25+ não traz corepack; a versão é a do packageManager);
 #   - store do pnpm fora de /repo: /repo é bind mount do host e os
 #     `node_modules` são volumes — o store precisa de um lugar estável só do
 #     container.
@@ -25,7 +25,10 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates curl procps \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+# Node 25+ NAO traz mais o corepack na imagem oficial (o `corepack enable` morre
+# com "command not found"); o pnpm entra pelo npm, pinado na MESMA versao do
+# `packageManager` do package.json — divergir aqui e lockfile reescrito.
+RUN npm install -g pnpm@9.12.0
 
 # O store é um volume próprio (fs diferente do volume de node_modules), então o
 # hardlink do pnpm não se aplica: declarar `copy` evita o aviso a cada install.

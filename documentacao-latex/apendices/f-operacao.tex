@@ -467,6 +467,13 @@ testado no container} &
   \emph{default} do Vite~6 (\cd{chrome87}/\cd{es2020}). Reverter o
   \emph{override}; a vulnerabilidade fica em \arq{.snyk} com prazo até o Vite
   pinar o esbuild corrigido.\\
+\zebra \textbf{Build da imagem morre em \cd{corepack: not found} (exit 127) depois de
+  subir a base \cd{node:NN-slim}} &
+  A partir do Node~25 a imagem oficial \textbf{não traz mais o corepack}. Os
+  três \emph{Dockerfiles} instalam o pnpm pelo npm, pinado na versão do
+  \cd{packageManager}. O sintoma engana porque o \cd{docker compose up} segue
+  usando a imagem \textbf{antiga} do cache sem avisar --- os containers
+  continuam no Node velho e só o \cd{node --version} lá dentro denuncia.\\
 \bottomrule
 \end{tabularx}
 
