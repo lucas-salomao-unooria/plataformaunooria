@@ -16,7 +16,7 @@
 #     O `pnpm fetch` só depende do lockfile, então a camada pesada sobrevive a
 #     qualquer mudança de código e o install vira resolução offline.
 
-FROM node:24-slim AS build
+FROM node:26.7.0-slim AS build
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 # `openssl` é dependência de runtime do engine do Prisma.
@@ -44,7 +44,7 @@ RUN pnpm --filter=@edu/api deploy --prod /deploy
 RUN cp -r /repo/apps/api/prisma /deploy/prisma \
  && cd /deploy && ./node_modules/.bin/prisma generate
 
-FROM node:24-slim
+FROM node:26.7.0-slim
 ENV NODE_ENV=production
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*

@@ -19,7 +19,7 @@
 #   - store do pnpm fora de /repo: /repo é bind mount do host e os
 #     `node_modules` são volumes — o store precisa de um lugar estável só do
 #     container.
-FROM node:20-slim
+FROM node:26.7.0-slim
 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH

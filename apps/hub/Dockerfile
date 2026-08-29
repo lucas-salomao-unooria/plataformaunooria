@@ -17,7 +17,7 @@
 # Envs de build: nenhuma. As `NEXT_PUBLIC_*` que entram no bundle do client
 # devem ser passadas com `--build-arg` quando forem específicas do contrato.
 
-FROM node:24-slim AS build
+FROM node:26.7.0-slim AS build
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
@@ -31,7 +31,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile --offline
 RUN pnpm turbo build --filter=@edu/hub
 
-FROM node:24-slim
+FROM node:26.7.0-slim
 ENV NODE_ENV=production
 WORKDIR /app
 
