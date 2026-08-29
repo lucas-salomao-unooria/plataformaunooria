@@ -43,3 +43,8 @@ documentacao-latex/*.out
 documentacao-latex/*.fls
 documentacao-latex/*.fdb_latexmk
 documentacao-latex/*.synctex.gz
+
+# Skills do Claude
+.agents/
+.claude/
+skills-lock.json
