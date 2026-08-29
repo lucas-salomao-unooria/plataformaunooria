@@ -78,6 +78,11 @@ jobs:
           else
             pnpm turbo typecheck lint test build --filter='...[HEAD^]'
           fi
+      - name: Snyk (trava em high)   # high/critical em dependencia = vermelho
+        env: { SNYK_TOKEN: "${{ secrets.SNYK_TOKEN }}" }
+        run: |
+          npm install -g snyk
+          snyk test --all-projects --severity-threshold=high
 \end{lstlisting}
 
 \begin{decisao}
@@ -87,6 +92,35 @@ no mesmo \emph{commit} --- e, pior, em \emph{paralelo} com o \emph{deploy}, o qu
 deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
 \textbf{espera} pelo portão.
 \end{decisao}
+
+\subsection{A trava de vulnerabilidade (Snyk)}
+
+O portão termina com \cd{snyk test --all-projects --severity-threshold=high}:
+vulnerabilidade \cd{high} ou \cd{critical} em qualquer dependência do
+\emph{workspace} deixa o CI vermelho --- e, como o \emph{deploy} espera pelo
+portão, nada sobe (\adrr{ADR-39}). O passo roda sempre no \emph{workspace}
+inteiro, sem o filtro por mudança do resto do portão: o \emph{lockfile} é um
+só, e a vulnerabilidade nova chega pelo banco de dados do Snyk, não por um
+\emph{commit} --- ``dependência que não mudou'' não existe como categoria.
+
+\begin{nota}
+\textbf{O que exige \emph{major} de \emph{framework} não bloqueia --- expira.}
+O \arq{apps/api/.snyk} ignora, com \textbf{prazo e motivo}, as vulnerabilidades
+cujo \emph{fix} é o Nest~11 (\cd{@nestjs/core}, e o \cd{file-type} que é ESM-only
+e quebraria o \cd{require} do Nest~10) ou um \emph{bump} que só o Prisma pode
+fazer (\cd{deepmerge-ts}). Quando o prazo vence sem o \emph{upgrade}, o próprio
+passo volta a falhar --- é o prazo \textbf{com} a rotina que o cumpre, a
+resposta à armadilha do \cd{expires\_at}. O resto foi consertado na hora: o hub
+subiu para o \textbf{Next~16} (as \emph{criticals} do 15 não tinham \emph{patch}
+na linha 15.x), e \cd{pnpm.overrides} no \arq{package.json} da raiz cobre o
+transitivo (\cd{next} 16.3.3 por baixo do \emph{design system}, \cd{multer}
+2.2.0, \cd{js-yaml} 4.3.1, \cd{lodash} 4.18.1).
+\end{nota}
+
+O segredo \cd{SNYK\_TOKEN} vem dos \emph{secrets} do repositório
+(\cd{snyk config get api | gh secret set SNYK\_TOKEN}). Ausente, o passo
+\textbf{falha alto} --- nunca pula, pela mesma regra do \emph{guard} do
+Pub/Sub: env ausente é porta fechada, não porta aberta.
 
 \section{Entrega contínua}
 

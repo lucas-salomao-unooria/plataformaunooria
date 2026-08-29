@@ -1786,3 +1786,60 @@ contra o JWKS que o hub serve.
 \textbf{Gatilho de reavaliação.} O \cd{nest build}/\cd{next build} dentro das
 imagens passar de \textasciitilde 2\,min com a camada de dependências já em
 \emph{cache} --- aí o cache remoto do Turborepo entra na conversa.
+
+\section{ADR-39 --- Vulnerabilidade de dependência trava o portão, com prazo para os \emph{majors}}
+\label{adr:snyk-no-portao}
+
+\begin{especificacao}{Contexto}
+A plataforma guarda dado de menor e roda em rede pública; dependência com
+vulnerabilidade conhecida é passivo que cresce em silêncio. Na primeira
+varredura (Snyk, 2026-08-29) havia \emph{criticals} reais: o Next~15 do hub e o
+\cd{next@16.3.0} que o \emph{design system} arrasta para dentro de todo
+consumidor, mais \emph{highs} transitivas na api (\cd{multer}, \cd{js-yaml},
+\cd{lodash}) e três cujo \emph{fix} exige \emph{major} de \emph{framework}
+(Nest~11) ou \emph{bump} de terceiro (Prisma).
+\end{especificacao}
+
+\textbf{Decisão.} O portão (\cd{ci.yml}) ganha
+\cd{snyk test --all-projects --severity-threshold=high}: \cd{high} ou
+\cd{critical} = CI vermelho = nada sobe. O estoque existente foi tratado em
+três movimentos --- o hub subiu para o \textbf{Next~16} (a linha 15.x não tinha
+\emph{patch} para as \emph{criticals}), o transitivo consertável entrou em
+\cd{pnpm.overrides} na raiz, e o que exige Nest~11/Prisma está em
+\arq{apps/api/.snyk} com \textbf{motivo e prazo} (2026-10-31): vencido o prazo
+sem o \emph{upgrade}, o próprio passo volta a falhar. \cd{SNYK\_TOKEN} ausente
+= passo vermelho, nunca pulado (a regra do \emph{guard} do Pub/Sub).
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Só relatório, sem travar} (\cd{continue-on-error}): vira o
+    \cd{expires\_at} --- todo mundo acredita que há uma verificação, e ninguém
+    lê o relatório de um passo que nunca fica vermelho.
+  \item \emph{Bloquear até consertar TUDO, sem \arq{.snyk}}: com \emph{fix} que
+    é \emph{major} de \emph{framework}, o pipeline ficaria vermelho por semanas
+    e o \emph{deploy} pararia --- e um portão que todo mundo precisa contornar
+    ensina a contornar portões.
+  \item \emph{Rodar só no push para \cd{main}}: o PR mergearia vulnerável e o
+    autor descobriria depois do merge, no pior momento para reverter.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item Cada execução do portão testa os 12 projetos do \emph{workspace} contra
+    a API do Snyk --- em plano gratuito há cota mensal de testes. Se a cota
+    virar o problema, a válvula é mover a trava para o \emph{push} em
+    \cd{main} + um agendado diário, nunca desligar.
+  \item O \arq{.snyk} expira em 2026-10-31: o \emph{upgrade} do Nest 10\seta 11
+    tem prazo de verdade, cumprido pelo próprio CI.
+  \item \cd{pnpm.overrides} força versão por baixo de quem não atualizou
+    (\cd{@unooria/design-system>next}, \cd{multer}, \cd{js-yaml}, \cd{lodash});
+    cada entrada deve SUMIR quando o pai atualizar --- \emph{override} esquecido
+    é \emph{pin} que ninguém lembra por quê.
+  \item O \emph{fix} definitivo do \cd{next} transitivo é do repo
+    \arq{storybook-unooria}: o DS não deveria arrastar \cd{next} para dentro de
+    experiência Vite que nunca o executa.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A cota do Snyk barrar o portão, ou o
+\arq{.snyk} vencer: os dois têm a mesma resposta --- resolver a causa (plano ou
+\emph{upgrade}), não afrouxar a trava.
