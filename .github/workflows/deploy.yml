@@ -37,6 +37,10 @@ jobs:
     # `forcar` builda tudo no deploy — a verificacao precisa cobrir o mesmo.
     with:
       completo: ${{ inputs.forcar == true }}
+    # Workflow chamado NAO herda secrets: sem isto o SNYK_TOKEN chega vazio
+    # so no push para main (no PR o ci.yml roda direto e recebe) — o passo
+    # do Snyk falhava com SNYK-0005 exatamente onde o deploy depende dele.
+    secrets: inherit
 
   # O diff decide QUAIS jobs rodam. Um job proprio (e nao um passo repetido em
   # cada job) para o criterio ser calculado UMA vez — api, hub e experiencias
