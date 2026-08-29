@@ -36,4 +36,6 @@ export interface RespostaPosts {
   /** Contagem por célula (lado, perfil) — a visão de matriz do doc 05 §4. */
   matriz: { lado: string; perfil: string; aprovados: number }[];
   esperadoPorCelula: number;
+  /** Abaixo desta fração do esperado, a célula BLOQUEIA a ativação (vem da api). */
+  fracaoMinimaPorCelula: number;
 }

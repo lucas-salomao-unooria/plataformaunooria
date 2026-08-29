@@ -1,0 +1,102 @@
+/**
+ * A COPY DA REVELAÇÃO — as sete telas que derrubam o disfarce do Instanooria.
+ *
+ * Por que ela mora num pacote e não dentro da experiência:
+ *
+ * É a peça que carrega o argumento inteiro do produto, e por muito tempo o
+ * professor era a única pessoa que NÃO a lia antes de entrar em sala. O guia da
+ * aula resumia o momento em uma linha ("libera a explicação de como o feed dele
+ * foi montado") e mandava conduzir a conversa mais importante das duas aulas
+ * sem saber o que a turma tinha acabado de ver, palavra por palavra.
+ *
+ * Copiar o texto para dentro do guia resolveria a leitura e criaria a armadilha
+ * de sempre: duas cópias, nada obrigando as duas a concordarem, e a primeira
+ * revisão de copy fazendo o guia mentir em silêncio. Então há UMA fonte, e os
+ * dois lados a importam — a experiência para exibir, o guia para o professor ler.
+ *
+ * Não passa pela api de propósito. A revelação abre no meio da aula, e rede
+ * instável na escola é regra, não exceção: texto que depende de fetch é texto
+ * que pode não aparecer. Ele viaja no bundle, como sempre viajou.
+ */
+
+export interface TelaDaRevelacao {
+  texto: string;
+  destaque?: string;
+  complemento?: string;
+}
+
+/** De onde veio o lado em que o feed do aluno nasceu. */
+export type OrigemDoLado = 'perfil' | 'redistribuido' | 'sorteio';
+
+/**
+ * As quatro primeiras. Uma ideia por tela, fundo escuro, tipografia grande e
+ * transições lentas — a tela inteira sinaliza "saímos do jogo". O tom nunca
+ * humilha: o sujeito da frase é o SISTEMA, nunca o aluno.
+ */
+export const REVELACAO_FIXA: TelaDaRevelacao[] = [
+  {
+    texto: 'O Instanooria não é uma rede social de verdade. É uma simulação.',
+    complemento: 'Nenhum dado seu saiu daqui.',
+  },
+  { texto: 'Mas uma coisa aqui era 100% real:', destaque: 'o algoritmo.' },
+  {
+    texto: 'Enquanto você navegava, ele aprendia',
+    destaque: 'cada segundo',
+    complemento: 'que você parava em cada post. Cada curtida. Cada comentário aberto.',
+  },
+  { texto: 'E com isso, ele escolheu', destaque: 'o que você viu — e o que você nunca viu.' },
+];
+
+/**
+ * Tela 5 — o lado semeado. A frase MUDA com a origem do lado: dizer "foi
+ * escolhido a partir de como você jogou" para quem caiu no sorteio seria mentir
+ * na única tela do exercício que existe para não mentir.
+ */
+export function telaDoLadoSemeado(origem: string): TelaDaRevelacao {
+  if (origem === 'perfil') {
+    return {
+      texto: 'Tem mais: seu feed',
+      destaque: 'já começou puxado para um dos dois lados.',
+      complemento:
+        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Instanooria.',
+    };
+  }
+
+  if (origem === 'redistribuido') {
+    return {
+      texto: 'Tem mais: seu feed',
+      destaque: 'já começou puxado para um dos dois lados.',
+      complemento:
+        'O seu foi ajustado para a turma não ficar toda do mesmo lado — mas ninguém te avisou disso.',
+    };
+  }
+
+  return {
+    texto: 'Tem mais: seu feed',
+    destaque: 'já começou puxado para um dos dois lados.',
+    complemento: 'No seu caso o lado foi sorteado. Você não escolheu, e ninguém te avisou.',
+  };
+}
+
+/**
+ * Tela 6 — a linguagem. É **obrigatória**: usar o perfil de valores para
+ * escolher como falar com o aluno e depois esconder que isso aconteceu seria
+ * repetir exatamente o que o exercício critica.
+ */
+export const TELA_DA_LINGUAGEM: TelaDaRevelacao = {
+  texto: 'E ele também escolheu',
+  destaque: 'como falar com você.',
+  complemento:
+    'O mesmo argumento foi escrito de quatro jeitos diferentes; você recebeu mais o jeito que combina com o que te move.',
+};
+
+/** A última fecha sempre igual: o problema é do sistema, não do aluno. */
+export const TELA_FINAL: TelaDaRevelacao = {
+  texto: 'Isso acontece com todo mundo — inclusive com adultos.',
+  complemento: 'É assim que as redes que você usa funcionam.',
+};
+
+/** O roteiro completo para uma origem de lado. Sete telas, nesta ordem. */
+export function telasDaRevelacao(origem: string): TelaDaRevelacao[] {
+  return [...REVELACAO_FIXA, telaDoLadoSemeado(origem), TELA_DA_LINGUAGEM, TELA_FINAL];
+}

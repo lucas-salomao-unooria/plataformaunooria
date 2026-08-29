@@ -28,6 +28,8 @@ interface LinhaMonitor {
   minutos: number;
   minutosDeFeed: number;
   temDossie: boolean;
+  /** > 0 quando ele já escreveu a reflexão — o texto está no popup. */
+  caracteresDaReflexao: number;
   publicou: boolean;
 
   // doc 11 §4.1 — a largada, a virada e a imersão parcial
@@ -324,7 +326,7 @@ export function PainelMonitor({
               <th className="px-3 py-2 font-semibold">Largada</th>
               <th className="px-3 py-2 font-semibold">Coleção</th>
               <th className="px-3 py-2 font-semibold">Bolha agora</th>
-              <th className="px-3 py-2 font-semibold">Imersão</th>
+              <th className="px-3 py-2 font-semibold">Envolvimento</th>
               <th className="px-3 py-2 font-semibold">Min</th>
               <th className="px-3 py-2 font-semibold">Ações</th>
             </tr>
@@ -352,6 +354,21 @@ export function PainelMonitor({
                     <Badge variant={fase.variante} size="sm">
                       {fase.rotulo}
                     </Badge>
+                    {/*
+                      Que EXISTE reflexão escrita, não o que ela diz. Texto livre
+                      de criança não passeia por listagem — mas o professor
+                      precisava saber que havia o que ler: a reflexão só aparecia
+                      dentro do popup, e ninguém abre 40 popups para descobrir.
+                      É a única leitura possível de um campo sem moderação.
+                    */}
+                    {linha.caracteresDaReflexao > 0 ? (
+                      <span
+                        className="mt-1 block text-[11px] text-unooria-navy-800"
+                        title="Abra o aluno para ler o que ele escreveu"
+                      >
+                        escreveu {linha.caracteresDaReflexao} caracteres
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2">
                     <span className="text-[12px] text-unooria-neutral-800">
@@ -388,15 +405,15 @@ export function PainelMonitor({
                     ) : null}
                   </td>
                   {/*
-                    Total + as 5 barras. Nunca o total sozinho: dois alunos com 60
-                    podem ter chegado lá por caminhos opostos, e a conversa do
-                    professor com cada um é diferente (doc 11 §3.3).
+                    As 5 barras, e SÓ elas (ADR-44). O total vinha junto e, numa
+                    coluna de tabela, virava nota de aluno — ordenável, comparável,
+                    lida como ranking. O aviso "nunca leia o total sozinho" já
+                    estava escrito no código e a tela o mostrava sozinho mesmo
+                    assim. Passe o mouse para ver eixo por eixo; o número segue no
+                    popup do aluno, que é uma criança por vez.
                   */}
                   <td className="px-3 py-2">
-                    <span className="text-[12px] font-semibold text-unooria-neutral-900">
-                      {linha.imersaoParcial}
-                    </span>
-                    <span className="mt-1 flex gap-0.5">
+                    <span className="flex gap-0.5">
                       {linha.imersaoComponentes.map((componente) => (
                         <span
                           key={componente.chave}

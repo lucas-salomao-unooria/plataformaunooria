@@ -76,12 +76,12 @@ export function LimparSessoes({
             : undefined
         }
       >
-        Limpar dados dos alunos
+        Apagar as sessões da turma
       </Button>
 
       <Modal isOpen={aberto} onClose={fechar} size="sm" role="alertdialog">
         <ModalHeader>
-          <ModalTitle>Limpar os dados dos alunos?</ModalTitle>
+          <ModalTitle>Apagar as sessões desta turma?</ModalTitle>
         </ModalHeader>
 
         <ModalBody>
@@ -96,6 +96,15 @@ export function LimparSessoes({
               A atividade continua de pé — pergunta-chave, os dois lados, posts, imagens e os
               perfis importados ficam como estão. Na próxima entrada, cada aluno começa uma sessão
               nova.
+            </p>
+            {/*
+              A pergunta que o rótulo antigo ("Limpar dados dos alunos") deixava
+              em aberto: serve para reusar, ou apaga o histórico? As duas coisas
+              — e é por isso que ela precisa estar escrita antes do clique.
+            */}
+            <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
+              É o que você usa para <strong>rodar a mesma atividade com outra turma</strong>. Se
+              quiser guardar o que esta turma fez, baixe o CSV da análise antes.
             </p>
 
             {erro ? (

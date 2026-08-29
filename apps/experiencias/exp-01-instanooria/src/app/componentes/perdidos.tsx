@@ -30,8 +30,9 @@ interface PostPerdido {
 }
 
 interface Resposta {
-  rotuloDoLadoPerdido: string;
-  rotuloDoLadoDele: string;
+  /** `null` quando a sessão não serviu post de tese nenhum — ver o vazio abaixo. */
+  rotuloDoLadoPerdido: string | null;
+  rotuloDoLadoDele: string | null;
   contagem: { totalNoAcervo: number; vistos: number; perdidos: number };
   posts: PostPerdido[];
 }
@@ -63,6 +64,22 @@ export function Perdidos({ runId }: { runId: string }) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-surface">
         <p className="text-[15px] text-muted">abrindo o que passou longe…</p>
+      </div>
+    );
+  }
+
+  /**
+   * Sessão que não chegou a servir post de tese nenhum. É raro (entrou e saiu),
+   * mas a tela precisa dizer o que houve: "0 posts que nunca chegaram até você"
+   * afirmaria o contrário do que aconteceu — ele não viu NADA, não viu tudo.
+   */
+  if (!dados.rotuloDoLadoPerdido) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-surface px-8 text-center">
+        <p className="text-[15px] leading-relaxed text-ink/70">
+          Sua sessão terminou antes de o feed abrir de verdade, então não dá para dizer o que ficou de
+          fora dela.
+        </p>
       </div>
     );
   }

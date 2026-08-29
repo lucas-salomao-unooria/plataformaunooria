@@ -903,6 +903,10 @@ node scripts/walkthrough-landing.mjs testes/wt-landing        # smoke da LANDING
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
 node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, aluno transferido pelo CPF
 node scripts/walkthrough-perfil-portatil.mjs testes/wt-portatil  # smoke do PERFIL PORTÁTIL: emitir assinado, receber, e o que acontece com um arquivo adulterado
+node scripts/walkthrough-explicabilidade.mjs testes/wt-explicabilidade  # smoke do FECHAMENTO da exp-01: DOIS contextos
+                                          # (o professor conduz o relogio, o aluno joga). Mede a boundingBox do iframe
+                                          # antes/depois do "Ver meu relatorio" (375 -> 1280 -> 349) e prova que ele NAO
+                                          # recarregou. Zera a turma no comeco.
 node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
 node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)

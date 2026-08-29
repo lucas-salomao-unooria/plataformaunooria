@@ -45,7 +45,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{exp\_01\_runs} & Tenant & Sessão de um aluno\\
 \zebra \cd{exp\_01\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
 \cd{exp\_01\_student\_posts} & Tenant & Posts publicados pelo aluno\\
-\zebra \cd{exp\_01\_conclusoes} & Tenant & Inclinação escolhida\\
+\zebra \cd{exp\_01\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
 \cd{exp\_01\_reflexoes} & Tenant & Texto de fechamento\\
 \zebra \cd{exp\_01\_dossiers} & Tenant & Dossiê calculado\\
 \cd{exp\_01\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\

@@ -146,6 +146,8 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
                     status: statusDaAtividade(atividade.status),
                     posts: atividade.posts,
                     sessoes: atividade.sessoes,
+                    alunos: atividade.alunos,
+                    criadoEm: atividade.criadoEm,
                   }}
                 />
               </li>

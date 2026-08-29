@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+import { MINIMO_DA_REFLEXAO } from "../comum/insta/defaults";
 import { eventoSchema } from "./tipos";
 
 const Uuid = z.string().uuid();
@@ -22,9 +24,7 @@ export const EventosSchema = z.object({ events: z.array(eventoSchema).min(1).max
 export const ConclusaoSchema = z.object({ inclinacao: z.enum(["A", "B", "duvida"]) });
 
 export const ReflexaoSchema = z.object({
-  /** 60 caracteres é o PISO: passa "o algoritmo me mostrou mais de um lado" e
-   *  barra "gostei". Não é medida de qualidade, é filtro de vazio. */
-  texto: z.string().trim().min(60),
+  texto: z.string().trim().min(MINIMO_DA_REFLEXAO),
 });
 
 export const StudentPostSchema = z.object({
@@ -163,9 +163,13 @@ const PostPerdidoSchema = z.object({
  * o que a atividade inteira depende de manter até a revelação.
  */
 export const PerdidosSchema = z.object({
-  ladoPerdido: z.string(),
-  rotuloDoLadoPerdido: z.string(),
-  rotuloDoLadoDele: z.string(),
+  /**
+   * `null` quando a sessão não chegou a servir post de tese nenhum: aí não há
+   * lado a nomear, e a tela diz isso em vez de contar zero (ADR-42).
+   */
+  ladoPerdido: z.string().nullable(),
+  rotuloDoLadoPerdido: z.string().nullable(),
+  rotuloDoLadoDele: z.string().nullable(),
   contagem: z.object({
     totalNoAcervo: z.number().int().nonnegative(),
     vistos: z.number().int().nonnegative(),
@@ -180,7 +184,11 @@ export const ConclusaoGravadaSchema = z.object({
 });
 
 /** `texto: ""` quando ainda não escreveu — o campo abre vazio, não com erro. */
-export const ReflexaoSalvaSchema = z.object({ texto: z.string() });
+export const ReflexaoSalvaSchema = z.object({
+  texto: z.string(),
+  /** O piso, dito pela api: o campo do aluno não tem mais um 60 próprio. */
+  minimo: z.number().int().positive(),
+});
 
 export const ReflexaoGravadaSchema = z.object({
   ok: z.literal(true),
@@ -256,6 +264,7 @@ export const DossieSchema = z.object({
       postsOcultados: z.object({
         ladoOposto: z.array(z.string()),
         total: z.number().int(),
+        ladoNaoObservado: z.boolean(),
       }),
       interacoes: z.object({
         curtidas: z.number(),

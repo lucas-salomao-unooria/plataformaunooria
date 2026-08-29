@@ -21,6 +21,8 @@ import { rateLimit } from "../comum/rate-limit";
 import { antagonismoSchema } from "../comum/insta/tipos";
 import { ehEtapaDaTurma, faseEfetiva, normalizarFase } from "../comum/insta/etapas";
 import { DossieAindaNaoExiste, encerrarRun, montarRespostaDossie } from "../dossie/computar";
+import { MINIMO_DA_REFLEXAO } from "../comum/insta/defaults";
+import { calcularExposicao } from "../dossie/exposicao";
 import { arteFallback } from "../geracao/arte-fallback";
 import { gerarReacoes } from "../geracao/prompts/reacoes";
 import { resolverLargada } from "../perfis/largada";
@@ -637,17 +639,34 @@ export class RunsController {
       const estado = normalizarEstado(run.engineState);
       const servidos = new Set(estado.servedPostIds);
 
-      /** O lado dele = onde ele mais consumiu (posts servidos, não scores). */
+      /**
+       * O lado dele = onde o FEED mais serviu. A conta vive em `calcularExposicao`
+       * porque o relatório do professor faz a mesma pergunta e precisa da mesma
+       * resposta — antes cada um tinha a sua, e nos alunos que viraram o jogo as
+       * duas telas nomeavam lados opostos para a mesma criança (ADR-42).
+       */
       const metas = await tx.post.findMany({
         where: { activityId: run.activityId, aprovado: true, lado: { in: ["A", "B"] } },
-        select: { id: true, lado: true },
+        select: { id: true, lado: true, aprovado: true },
       });
-      const consumo = { A: 0, B: 0 };
-      for (const meta of metas) {
-        if (servidos.has(meta.id) && (meta.lado === "A" || meta.lado === "B")) consumo[meta.lado] += 1;
+      const exposicao = calcularExposicao(estado.servedPostIds, metas);
+
+      /**
+       * Sem post de tese servido não há lado a nomear. Acontece com sessão
+       * interrompida cedo, e é raro — mas inventar um lado aqui poria na tela do
+       * aluno uma frase sobre um feed que ele não chegou a ter.
+       */
+      if (!exposicao.ladoDele || !exposicao.ladoPerdido) {
+        return {
+          ladoPerdido: null,
+          rotuloDoLadoPerdido: null,
+          rotuloDoLadoDele: null,
+          contagem: { totalNoAcervo: 0, vistos: 0, perdidos: 0 },
+          posts: [],
+        };
       }
-      const ladoDele: "A" | "B" = consumo.A >= consumo.B ? "A" : "B";
-      const ladoPerdido: "A" | "B" = ladoDele === "A" ? "B" : "A";
+      const ladoPerdido = exposicao.ladoPerdido;
+      const ladoDele = exposicao.ladoDele;
 
       const perdidos = await tx.post.findMany({
         where: {
@@ -665,8 +684,6 @@ export class RunsController {
         },
       });
 
-      const totalDoLadoPerdido = metas.filter((m) => m.lado === ladoPerdido).length;
-      const vistosDoLadoPerdido = metas.filter((m) => m.lado === ladoPerdido && servidos.has(m.id)).length;
       const rotulo = (lado: "A" | "B") =>
         antagonismo.success
           ? lado === "A"
@@ -681,9 +698,9 @@ export class RunsController {
         rotuloDoLadoPerdido: rotulo(ladoPerdido),
         rotuloDoLadoDele: rotulo(ladoDele),
         contagem: {
-          totalNoAcervo: totalDoLadoPerdido,
-          vistos: vistosDoLadoPerdido,
-          perdidos: totalDoLadoPerdido - vistosDoLadoPerdido,
+          totalNoAcervo: exposicao.totalNoAcervo,
+          vistos: exposicao.vistos,
+          perdidos: exposicao.perdidos,
         },
         posts: perdidos.map((post) => ({
           id: post.id,
@@ -735,10 +752,40 @@ export class RunsController {
       const parsed = ConclusaoSchema.safeParse(body);
       if (!parsed.success) throw new BadRequestException({ mensagem: "Escolhe uma das três opções." });
 
-      await tx.conclusao.upsert({
+      /**
+       * A PRIMEIRA escolha é gravada uma vez e nunca mais tocada; `inclinacao`
+       * segue sendo a última, que é a que vale. A tela convida o aluno a mudar
+       * de ideia enquanto espera a turma, e antes disso a primeira reação ao
+       * feed — a que acontece antes de dois minutos de espera e de olhar a tela
+       * do colega — desaparecia no `update`.
+       */
+      const atual = await tx.conclusao.findUnique({
         where: { runId: id },
-        create: { runId: id, escolaId, inclinacao: parsed.data.inclinacao },
-        update: { inclinacao: parsed.data.inclinacao },
+        select: { inclinacao: true, inclinacaoInicial: true, trocas: true },
+      });
+
+      if (!atual) {
+        await tx.conclusao.create({
+          data: {
+            runId: id,
+            escolaId,
+            inclinacao: parsed.data.inclinacao,
+            inclinacaoInicial: parsed.data.inclinacao,
+          },
+        });
+        return { ok: true, fase: "conclusao" };
+      }
+
+      const mudou = atual.inclinacao !== parsed.data.inclinacao;
+      await tx.conclusao.update({
+        where: { runId: id },
+        data: {
+          inclinacao: parsed.data.inclinacao,
+          // Reenviar a mesma opção (toque duplo, rede lenta) não é trocar de ideia.
+          trocas: mudou ? atual.trocas + 1 : atual.trocas,
+          // Linha anterior à migração: a primeira observável é esta.
+          inclinacaoInicial: atual.inclinacaoInicial ?? atual.inclinacao,
+        },
       });
       return { ok: true, fase: "conclusao" };
     });
@@ -803,7 +850,7 @@ export class RunsController {
         select: { reflexao: { select: { texto: true } } },
       });
       if (!run) naoEncontrado();
-      return { texto: run.reflexao?.texto ?? "" };
+      return { texto: run.reflexao?.texto ?? "", minimo: MINIMO_DA_REFLEXAO };
     });
   }
 

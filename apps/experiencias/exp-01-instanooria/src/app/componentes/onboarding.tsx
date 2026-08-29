@@ -179,7 +179,14 @@ export function Onboarding({
           Entrar no Instanooria
         </button>
 
-        <p className="text-[12px] text-muted">a missão tem tempo limitado</p>
+        {/*
+              Aqui dizia "a missão tem tempo limitado", e não existe cronômetro
+              nenhum no produto: quem abre e fecha cada momento é o professor,
+              pelo botão. A frase criava pressa onde não havia relógio, e a
+              pressa muda o que a atividade mede — um aluno apressado rola mais
+              rápido, e o dwell é o sinal central do motor.
+            */}
+            <p className="text-[12px] text-muted">quem abre cada etapa é quem está conduzindo a aula</p>
       </div>
 
       <footer className="flex flex-col items-center gap-1.5">

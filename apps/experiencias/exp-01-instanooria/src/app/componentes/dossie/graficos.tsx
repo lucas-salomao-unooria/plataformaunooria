@@ -16,6 +16,8 @@ import '@unooria/design-system/fonts/unooria.css';
 
 import { DonutChart } from '@edu/ui/ds';
 
+import { CORES_DE_SERIE } from './cores';
+
 export interface SerieBloco {
   bloco: number;
   A: number;
@@ -24,9 +26,13 @@ export interface SerieBloco {
   intensidadeMediaDominante: number;
 }
 
-const COR_A = '#7FA5E2';
-const COR_B = '#F97607';
-const COR_NEUTRO = '#CBD4D6';
+const COR_A = CORES_DE_SERIE.claro.A;
+const COR_B = CORES_DE_SERIE.claro.B;
+const COR_NEUTRO = CORES_DE_SERIE.claro.neutro;
+
+/** Grade e rótulos de eixo sobre fundo claro. */
+const COR_GRADE = 'rgba(38,38,38,0.14)';
+const COR_EIXO = 'rgba(38,38,38,0.55)';
 
 /** Seção 1: donut da proporção final do feed. */
 export function DonutProporcao({
@@ -40,7 +46,7 @@ export function DonutProporcao({
 }) {
   return (
     <DonutChart
-      theme="dark"
+      theme="light"
       title="Seu mundo no fim da sessão"
       subtitle="% dos posts que chegaram até você"
       size={200}
@@ -76,7 +82,7 @@ export function BarrasPorBloco({
 
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="text-[13px] font-semibold text-white">A bolha se fechando</figcaption>
+      <figcaption className="text-[13px] font-semibold text-ink">A bolha se fechando</figcaption>
 
       <svg
         viewBox={`0 0 ${largura} ${altura}`}
@@ -91,7 +97,7 @@ export function BarrasPorBloco({
             x2={largura}
             y1={(altura - margemInferior) * linha}
             y2={(altura - margemInferior) * linha}
-            stroke="rgba(255,255,255,0.12)"
+            stroke={COR_GRADE}
             strokeWidth={1}
           />
         ))}
@@ -128,7 +134,7 @@ export function BarrasPorBloco({
                 y={altura - 6}
                 textAnchor="middle"
                 fontSize={9}
-                fill="rgba(255,255,255,0.55)"
+                fill={COR_EIXO}
               >
                 {bloco.bloco}
               </text>
@@ -137,7 +143,7 @@ export function BarrasPorBloco({
         })}
       </svg>
 
-      <ul className="flex flex-wrap gap-3 text-[11px] text-white/70">
+      <ul className="flex flex-wrap gap-3 text-[11px] text-muted">
         {[
           [rotuloA, COR_A],
           [rotuloB, COR_B],
@@ -178,7 +184,7 @@ export function LinhaDaEscalada({ series }: { series: SerieBloco[] }) {
 
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="text-[13px] font-semibold text-white">A escalada</figcaption>
+      <figcaption className="text-[13px] font-semibold text-ink">A escalada</figcaption>
 
       <svg
         viewBox={`0 0 ${largura} ${altura}`}
@@ -193,10 +199,10 @@ export function LinhaDaEscalada({ series }: { series: SerieBloco[] }) {
               x2={largura}
               y1={y(nivel)}
               y2={y(nivel)}
-              stroke="rgba(255,255,255,0.12)"
+              stroke={COR_GRADE}
               strokeWidth={1}
             />
-            <text x={0} y={y(nivel) + 3} fontSize={9} fill="rgba(255,255,255,0.55)">
+            <text x={0} y={y(nivel) + 3} fontSize={9} fill={COR_EIXO}>
               {nivel}
             </text>
           </g>
@@ -219,7 +225,7 @@ export function LinhaDaEscalada({ series }: { series: SerieBloco[] }) {
         {series.map((item, indice) => (
           <g key={item.bloco}>
             <circle cx={x(indice)} cy={y(item.intensidadeMediaDominante)} r={3.5} fill={COR_B} />
-            <text x={x(indice)} y={altura - 6} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,0.55)">
+            <text x={x(indice)} y={altura - 6} textAnchor="middle" fontSize={9} fill={COR_EIXO}>
               {item.bloco}
             </text>
           </g>
@@ -230,8 +236,14 @@ export function LinhaDaEscalada({ series }: { series: SerieBloco[] }) {
 }
 
 /**
- * Painel usado pelo dossiê: por padrão mostra o donut da proporção final + as
- * barras por bloco; com `apenas="escalada"`, só a linha da intensidade.
+ * Painel usado pelo dossiê.
+ *
+ * `apenas` existe porque o mesmo relatório é lido em duas larguras. No
+ * APARELHO de 375px vale **um gráfico só** (`apenas="donut"`): o donut responde
+ * "de que era feito o meu feed" num relance, e as barras por bloco pedem
+ * leitura — num relatório para 13 anos, depois de 40 minutos de atividade, o
+ * relance ganha. Fora do aparelho (ADR-41) cabem os três, e aí a escalada volta
+ * a ser gráfico em vez da frase que a substituía.
  */
 export function PainelDeGraficos({
   dossie,
@@ -246,17 +258,11 @@ export function PainelDeGraficos({
 }) {
   const rotuloA = dossie.atividade.ladoALabel;
   const rotuloB = dossie.atividade.ladoBLabel;
+  const caixa = 'rounded-xl border border-black/[0.07] bg-canvas p-3';
 
-  /**
-   * Modo do relatório enxuto: **um gráfico só**. O donut responde "de que era
-   * feito o meu feed" num relance; as barras por bloco respondem algo mais
-   * subtil, que pede leitura — e num relatório para 13 anos, depois de 40 minutos
-   * de atividade, o relance ganha. As barras seguem no export em texto e na
-   * análise do professor.
-   */
   if (apenas === 'donut') {
     return (
-      <div className="flex justify-center rounded-xl bg-white/5 p-3">
+      <div className={`flex justify-center ${caixa}`}>
         <DonutProporcao proporcao={dossie.proporcaoFinal} rotuloA={rotuloA} rotuloB={rotuloB} />
       </div>
     );
@@ -264,23 +270,35 @@ export function PainelDeGraficos({
 
   if (apenas === 'escalada') {
     return (
-      <div className="rounded-xl bg-white/5 p-3">
+      <div className={caixa}>
         <LinhaDaEscalada series={dossie.porBloco} />
-        <p className="mt-2 text-[11px] text-white/60">
+        <p className="mt-2 text-[11px] text-muted">
           Intensidade média dos posts do lado dominante, bloco a bloco (1 = informativo, 3 = sensacionalista).
         </p>
       </div>
     );
   }
 
+  /**
+   * Os três, mas dois deles só onde há largura — e por CSS, não por prop: o
+   * relatório não sabe (nem deve saber) se o hub expandiu o iframe. Renderizar e
+   * esconder custa dois SVGs sobre dados que já estão em memória; perguntar a
+   * largura em JS custaria um `matchMedia` e um render a mais na hidratação.
+   */
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex justify-center rounded-xl bg-white/5 p-3">
+    <div className="grid gap-4 md:grid-cols-3">
+      <div className={`flex justify-center ${caixa}`}>
         <DonutProporcao proporcao={dossie.proporcaoFinal} rotuloA={rotuloA} rotuloB={rotuloB} />
       </div>
-      <div className="rounded-xl bg-white/5 p-3">
+      <div className={`hidden md:block ${caixa}`}>
         <BarrasPorBloco series={dossie.porBloco} rotuloA={rotuloA} rotuloB={rotuloB} />
-        <p className="mt-2 text-[11px] text-white/60">Cada barra é um bloco do feed, do começo ao fim da sessão.</p>
+        <p className="mt-2 text-[11px] text-muted">Cada barra é um bloco do feed, do começo ao fim da sessão.</p>
+      </div>
+      <div className={`hidden md:block ${caixa}`}>
+        <LinhaDaEscalada series={dossie.porBloco} />
+        <p className="mt-2 text-[11px] text-muted">
+          Intensidade média dos posts do lado dominante, bloco a bloco (1 = informativo, 3 = sensacionalista).
+        </p>
       </div>
     </div>
   );

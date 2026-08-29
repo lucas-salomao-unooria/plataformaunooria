@@ -154,7 +154,14 @@ export interface MetricasDaRun {
    * texto livre virou a REFLEXÃO do fim, que é sobre a atividade (letramento
    * digital), não sobre a pergunta-chave.
    */
-  conclusao: { inclinacao: 'A' | 'B' | 'duvida'; texto: string | null; caracteres: number } | null;
+  conclusao: {
+    inclinacao: 'A' | 'B' | 'duvida';
+    /** A PRIMEIRA escolha — `null` nas respostas anteriores a guardá-la. */
+    inclinacaoInicial: 'A' | 'B' | 'duvida' | null;
+    trocas: number;
+    texto: string | null;
+    caracteres: number;
+  } | null;
   /** O fechamento escrito da atividade, sem limite de caracteres. */
   reflexao: { texto: string; caracteres: number } | null;
 
@@ -194,7 +201,16 @@ export interface AnaliseDaTurma {
    * Quantos concluíram no mesmo lado em que o feed nasceu, sobre quem concluiu
    * com lado (a dúvida não conta nem a favor nem contra).
    */
-  poderDoViesSemeado: { seguiram: number; viraram: number; emDuvida: number; taxa: number | null };
+  poderDoViesSemeado: {
+    seguiram: number;
+    viraram: number;
+    emDuvida: number;
+    taxa: number | null;
+    /** Quantos mexeram na resposta depois de escolher a primeira vez. */
+    trocaramDeIdeia: number;
+    /** E quantos, desses, acabaram num lado diferente do que escolheram de cara. */
+    terminaramNoutroLado: number;
+  };
 
   turma: {
     total: number;

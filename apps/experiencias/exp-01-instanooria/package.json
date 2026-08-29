@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@edu/conteudo-exp-01": "workspace:*",
     "@edu/sdk": "workspace:*",
     "@edu/ui": "workspace:*",
     "@fontsource-variable/inter": "^5.1.0",

@@ -134,6 +134,7 @@ export const GradeDePostsSchema = z.object({
     }),
   ),
   esperadoPorCelula: z.number().int().nonnegative(),
+  fracaoMinimaPorCelula: z.number().positive(),
 });
 
 /**

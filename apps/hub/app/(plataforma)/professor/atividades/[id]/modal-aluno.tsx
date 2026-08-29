@@ -56,9 +56,16 @@ interface Relatorio {
     comentariosLidos: number;
   };
   perfilObservado: { dominante: string | null; veredito: string; normalizado: Record<string, number> };
+  /** Por que o feed dele nasceu naquele lado — o que o aluno lê no bloco 2. */
+  explicacaoDoLado: {
+    origem: 'perfil' | 'sorteio' | 'redistribuido';
+    perfilRotulo: string;
+    ladoRotulo: string;
+    porQue: string;
+  };
   rotulosDePerfil: { chave: string; rotulo: string }[];
   interacoes: { curtidas: number; comentarios: number; salvos: number; seguidos: number };
-  postsOcultados: { total: number };
+  postsOcultados: { total: number; ladoNaoObservado: boolean };
   atividade: { ladoALabel: string; ladoBLabel: string };
 }
 
@@ -391,6 +398,41 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
         </dl>
       </section>
 
+      {/*
+        A MESMA explicação que o aluno lê no bloco 2 do relatório dele, em 3ª
+        pessoa. Faltava aqui, e a falta tinha consequência de aula: o professor
+        conduzia a conversa sobre a bolha sem ver a frase que a criança acabara
+        de ler — e é essa frase, não a porcentagem, que ela vai querer discutir.
+      */}
+      <section className="flex flex-col gap-2">
+        <h3 className="text-[15px] font-semibold text-unooria-neutral-950">
+          Por que o feed dele começou desse lado
+        </h3>
+        <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
+          {relatorio.explicacaoDoLado.origem === 'perfil' ? (
+            <>
+              No jogo, o que mais move ele é{' '}
+              <strong>{relatorio.explicacaoDoLado.perfilRotulo}</strong>, e o lado que fala essa língua
+              neste debate é <strong>{relatorio.explicacaoDoLado.ladoRotulo}</strong>
+              {relatorio.explicacaoDoLado.porQue ? ` — ${relatorio.explicacaoDoLado.porQue}` : ''}.
+            </>
+          ) : relatorio.explicacaoDoLado.origem === 'redistribuido' ? (
+            <>
+              Começou em <strong>{relatorio.explicacaoDoLado.ladoRotulo}</strong> por redistribuição — o
+              lado foi ajustado para a turma não ficar concentrada.
+            </>
+          ) : (
+            <>
+              Começou em <strong>{relatorio.explicacaoDoLado.ladoRotulo}</strong> por{' '}
+              <strong>sorteio</strong>: não havia perfil do Ato 1 para este aluno.
+            </>
+          )}
+        </p>
+        <p className="text-[12px] leading-relaxed text-unooria-neutral-600">
+          É o que ele lê no próprio relatório, com o fecho “você não escolheu, e ninguém te avisou”.
+        </p>
+      </section>
+
       <section className="flex flex-col gap-2">
         <h3 className="text-[15px] font-semibold text-unooria-neutral-950">Tempo</h3>
         <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
@@ -444,8 +486,15 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
             ? ` Procurou: ${relatorio.investigacao.termosBuscados.slice(0, 6).join(', ')}.`
             : ''}
         </p>
+        {/*
+          "Escondeu 0 posts" era a frase que saía quando a sessão não serviu post
+          de tese nenhum — e ela afirma o contrário do que houve. Não saber qual
+          era o lado dele não é o mesmo que nada ter sido escondido.
+        */}
         <p className="text-[12px] leading-relaxed text-unooria-neutral-600">
-          O algoritmo escondeu {relatorio.postsOcultados.total} posts do outro lado dele.
+          {relatorio.postsOcultados.ladoNaoObservado
+            ? 'A sessão não chegou a servir posts dos dois lados — não dá para dizer o que ficou de fora.'
+            : `O algoritmo escondeu ${relatorio.postsOcultados.total} posts do outro lado dele — o mesmo número que ele vê na tela "o feed que você não recebeu".`}
         </p>
       </section>
 

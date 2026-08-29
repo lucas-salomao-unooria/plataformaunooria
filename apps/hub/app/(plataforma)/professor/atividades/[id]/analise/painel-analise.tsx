@@ -117,6 +117,27 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
             Cuidado ao ler: a taxa mede correlação numa turma, não prova de causa. O contraexemplo está
             na própria sala — os {poder.viraram} que concluíram no lado oposto.
           </p>
+
+          {/*
+            QUAL resposta a tabela está lendo. A tela do aluno convida a mudar de
+            ideia ("vale a última") enquanto a turma termina, e a tabela usa a
+            última — mas se boa parte da sala trocou depois de sair do feed, a
+            correlação está falando de um momento diferente do que parece. Antes
+            a primeira escolha nem era guardada, e a pergunta não tinha resposta.
+          */}
+          {poder.trocaramDeIdeia > 0 ? (
+            <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
+              A tabela usa a <strong>última</strong> resposta de cada um.{' '}
+              {poder.trocaramDeIdeia === 1
+                ? '1 aluno mexeu na resposta'
+                : `${poder.trocaramDeIdeia} alunos mexeram na resposta`}{' '}
+              depois de escolher pela primeira vez
+              {poder.terminaramNoutroLado > 0
+                ? `, e ${poder.terminaramNoutroLado} terminaram num lado diferente do que marcaram de cara`
+                : ', sem mudar de lado'}
+              .
+            </p>
+          ) : null}
         </div>
       </Card>
 
@@ -200,7 +221,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
         <Card variant="elevated">
           <div className="flex flex-col gap-3">
             <h2 className="text-[16px] font-semibold text-unooria-neutral-950">
-              Imersão média da turma
+              Envolvimento médio da turma
             </h2>
             <p className="text-[26px] font-bold leading-none text-unooria-neutral-950">
               {analise.imersao.media ?? '—'}
@@ -260,7 +281,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                   <th className="px-3 py-2 font-semibold">Concluiu</th>
                   <th className="px-3 py-2 font-semibold">Tempo no lado</th>
                   <th className="px-3 py-2 font-semibold">Busca</th>
-                  <th className="px-3 py-2 font-semibold">Imersão</th>
+                  <th className="px-3 py-2 font-semibold">Envolvimento</th>
                 </tr>
               </thead>
               <tbody>
@@ -307,8 +328,40 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
                           {aluno.investigacao.usosDaBusca}
                         </td>
-                        <td className="px-3 py-2 text-[12px] font-semibold text-unooria-neutral-900">
-                          {aluno.imersao.total}
+                        {/*
+                          As cinco barras, sem o total (ADR-44). O número existe e
+                          continua na linha expandida — mas numa COLUNA de tabela
+                          ele vira nota: ordenável, comparável, e lida como
+                          ranking de crianças. E ele é somável justamente onde
+                          menos se sustenta: Gestos e Exploração ficam em 0/20 na
+                          maioria das sessões, então o teto real não é 100 e dois
+                          alunos com o mesmo número chegaram lá por caminhos
+                          diferentes — que é exatamente o que a própria tela
+                          avisa, três parágrafos abaixo, e mostrava assim mesmo.
+                        */}
+                        <td className="px-3 py-2">
+                          <span className="flex gap-0.5" aria-hidden>
+                            {aluno.imersao.componentes.map((componente) => (
+                              <span
+                                key={componente.chave}
+                                title={`${componente.rotulo}: ${componente.pontos}/20 — ${componente.detalhe}`}
+                                className="h-3.5 w-1.5 overflow-hidden rounded-sm bg-unooria-neutral-200"
+                              >
+                                <span
+                                  className="block w-full bg-unooria-navy-800"
+                                  style={{
+                                    height: `${Math.round((componente.pontos / 20) * 100)}%`,
+                                    marginTop: `${100 - Math.round((componente.pontos / 20) * 100)}%`,
+                                  }}
+                                />
+                              </span>
+                            ))}
+                          </span>
+                          <span className="sr-only">
+                            {aluno.imersao.componentes
+                              .map((componente) => `${componente.rotulo} ${componente.pontos} de 20`)
+                              .join(', ')}
+                          </span>
                         </td>
                       </tr>
 

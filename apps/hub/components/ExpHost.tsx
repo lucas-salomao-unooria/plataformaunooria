@@ -59,6 +59,20 @@ export function ExpHost(props: {
   }, []);
   const mostrarMolduraPerdidos = estado.fase === "perdidos";
 
+  /**
+   * O relatório do aluno sai do aparelho (ADR-41). É a única tela que expande, e
+   * a condição é POSITIVA de propósito: qualquer outro estado — inclusive uma
+   * mensagem que se perdeu — cai no aparelho de 375px, que é o comportamento de
+   * sempre. O contrário (expandir por default e contrair em casos conhecidos)
+   * deixaria o FEED numa área larga, e o `IntersectionObserver` do dwell mede
+   * contra o iframe: o sinal central do motor inflaria em silêncio.
+   *
+   * A volta é o mesmo caminho da moldura: o professor avança, o polling da
+   * experiência vê a fase nova e publica `{ fase: "perdidos" }` — sem `passo`,
+   * porque o estado é substituído inteiro — e o aparelho volta ao lugar.
+   */
+  const expandido = estado.fase === "explicabilidade" && estado.passo === "relatorio";
+
   const onConcluir = useCallback(
     (payload: { score?: number; dados?: Record<string, unknown> }) => {
       void fetch(`/api/plataforma/progresso/${encodeURIComponent(expId)}/concluir`, {
@@ -88,7 +102,11 @@ export function ExpHost(props: {
       ) : null}
       <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
         {viewport ? (
-          <DispositivoFrame largura={viewport.largura} altura={viewport.altura}>
+          <DispositivoFrame
+            largura={viewport.largura}
+            altura={viewport.altura}
+            expandido={expandido}
+          >
             {conteudo}
           </DispositivoFrame>
         ) : (

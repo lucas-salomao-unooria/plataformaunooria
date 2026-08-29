@@ -1,5 +1,7 @@
 import { Suspense, lazy, useState } from 'react';
 
+import { experiencia } from '../../lib/api';
+
 import { Revelacao } from './revelacao';
 
 /**
@@ -14,6 +16,11 @@ import { Revelacao } from './revelacao';
  *
  * A troca de passo é estado LOCAL. O servidor não precisa saber se o aluno já
  * passou dos 7 slides; ele precisa saber que o aluno está na explicabilidade.
+ *
+ * O HUB, esse sim, precisa saber: é o passo que tira o relatório do aparelho de
+ * 375px e o abre em tela cheia (`ExpHost`). Por isso o `enviarEstado` daqui, e
+ * por isso ele carrega a FASE junto — o hub SUBSTITUI o estado inteiro a cada
+ * mensagem, e publicar só o passo apagaria a fase que a moldura dos perdidos lê.
  */
 const Relatorio = lazy(() =>
   import('./dossie/dossie').then((modulo) => ({ default: modulo.Dossie })),
@@ -23,7 +30,15 @@ export function Explicabilidade({ runId }: { runId: string }) {
   const [passo, setPasso] = useState<'revelacao' | 'relatorio'>('revelacao');
 
   if (passo === 'revelacao') {
-    return <Revelacao runId={runId} aoTerminar={() => setPasso('relatorio')} />;
+    return (
+      <Revelacao
+        runId={runId}
+        aoTerminar={() => {
+          experiencia().enviarEstado({ fase: 'explicabilidade', passo: 'relatorio' });
+          setPasso('relatorio');
+        }}
+      />
+    );
   }
 
   return (

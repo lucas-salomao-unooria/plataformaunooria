@@ -40,6 +40,17 @@ export const PERFIS = ['abertura', 'autotranscendencia', 'autopromocao', 'conser
 export type Perfil = (typeof PERFIS)[number];
 
 /** Divisor da matriz de tese: 2 lados × 4 perfis (doc 05 §2). */
+/**
+ * O piso da reflexão, em caracteres. Passa "o algoritmo me mostrou mais de um
+ * lado" e barra "gostei" — não é medida de qualidade, é filtro de vazio.
+ *
+ * Mora aqui e VIAJA no payload de `GET /runs/:id/reflexao`. Antes existiam dois
+ * sessenta: um no schema da api, outro numa constante do bundle da experiência.
+ * Nada obrigava os dois a concordarem, e quem descobriria a divergência seria o
+ * aluno, com o botão desabilitado e a api dizendo que estava curto.
+ */
+export const MINIMO_DA_REFLEXAO = 60;
+
 export const DIVISOR_TESE = 2 * PERFIS.length;
 
 /**

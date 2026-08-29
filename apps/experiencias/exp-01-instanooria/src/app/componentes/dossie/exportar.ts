@@ -1,5 +1,7 @@
 import type { RespostaDossie } from '../../../lib/dossie-tipos';
 
+import { CORES_DE_SERIE } from './cores';
+
 /** Dossiê em texto (doc 02 §5.8): insumo do relatório em dupla do doc 09. */
 export function dossieEmTexto(dados: RespostaDossie): string {
   const { dossie, posts } = dados;
@@ -148,9 +150,9 @@ export function dossieEmPng(dados: RespostaDossie): Promise<Blob | null> {
   // Barras da proporção final
   const base = 245 + linhas.length * 66;
   const barras: [string, number, string][] = [
-    [dossie.atividade.ladoALabel, pct(dossie.proporcaoFinal.A), '#7FA5E2'],
-    [dossie.atividade.ladoBLabel, pct(dossie.proporcaoFinal.B), '#F97607'],
-    ['Outros assuntos', pct(dossie.proporcaoFinal.neutro), '#CBD4D6'],
+    [dossie.atividade.ladoALabel, pct(dossie.proporcaoFinal.A), CORES_DE_SERIE.escuro.A],
+    [dossie.atividade.ladoBLabel, pct(dossie.proporcaoFinal.B), CORES_DE_SERIE.escuro.B],
+    ['Outros assuntos', pct(dossie.proporcaoFinal.neutro), CORES_DE_SERIE.escuro.neutro],
   ];
 
   barras.forEach(([nome, valor, cor], indice) => {

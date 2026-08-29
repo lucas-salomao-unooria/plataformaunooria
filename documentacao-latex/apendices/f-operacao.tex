@@ -83,6 +83,24 @@ node scripts/walkthrough-admin-usuarios.mjs   testes/wt-admin
 node scripts/walkthrough-rede.mjs             testes/wt-rede
 node scripts/probe-pointerlock.mjs
 \end{lstlisting}
+\begin{nota}[title={NOTA --- o \emph{smoke} do fechamento da exp-01}]
+\arq{scripts/walkthrough-explicabilidade.mjs} é o único que sobe DOIS contextos:
+nada avança sem o botão do professor, então um contexto só não chega ao fim. Ele
+mede a \cd{boundingBox} do \emph{iframe} antes e depois do
+\enquote{Ver meu relatório} ($375 \rightarrow 1280 \rightarrow 349$px), escreve
+uma marca dentro do \emph{frame} para provar que ele NÃO foi remontado, e lê o
+\cd{backgroundColor} COMPUTADO --- \cd{toBeVisible()} não pega nenhuma das três.
+
+Duas armadilhas medidas ao escrevê-lo. O \emph{frame} precisa vir do próprio
+elemento (\cd{elementHandle().contentFrame()}): procurar por \cd{"exp-01"} na
+lista de \emph{frames} devolve o frame DO HUB, cuja rota é
+\rota{/exp/exp-01-instanooria} --- e aí a verificação de \enquote{não
+recarregou} fica verde por construção, medindo a página errada. E a medição
+precisa esperar um elemento do FIM do relatório: o conteúdo vem de
+\cd{React.lazy}, e medir logo após o título pega a tela montando, o que sai como
+fundo transparente e zero gráfico.
+\end{nota}
+
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -474,6 +492,33 @@ testado no container} &
   \cd{packageManager}. O sintoma engana porque o \cd{docker compose up} segue
   usando a imagem \textbf{antiga} do cache sem avisar --- os containers
   continuam no Node velho e só o \cd{node --version} lá dentro denuncia.\\
+\textbf{Dois números diferentes para os posts que o algoritmo escondeu} ---
+  a criança lê \enquote{32 posts que nunca chegaram até você} e o relatório do
+  professor, sobre ela, diz \enquote{escondeu 30} &
+  Dossiê \textbf{congelado} numa versão anterior à \adrr{ADR-42}. As duas contas
+  já vêm de \arq{dossie/exposicao.ts}, mas o dossiê é gravado no \cd{finish} e
+  só é recomputado na leitura quando \cd{versaoDoRelatorio} está atrás de
+  \cd{VERSAO\_DO\_RELATORIO}. Se os números seguirem divergindo com a versão em
+  dia, o caso é outro: alguém desaprovou posts entre o encerramento da
+  investigação e a tela dos perdidos --- a matriz é viva.\\
+\zebra \textbf{O envolvimento da turma cai sozinho conforme a aula avança}
+  (52,7 \seta{} 42,8 \seta{} 38,7 \seta{} 35,1 no painel ao vivo) &
+  \textbf{Não é a turma desengajando.} O \emph{buffer} de eventos da experiência
+  vive enquanto a \emph{run} vive, e cada \cd{hub:pause} durante o debate, a
+  explicação ou a reflexão ainda registra \cd{perdeu\_foco}. Se a janela do
+  tempo não terminar no último \cd{visto} (\cd{fimDoFeedDe}, \adrr{ADR-44}),
+  \cd{feedMs} cresce depois de o feed fechar e \cd{ativoMs / feedMs} derrete.
+  Conferir a versão do relatório antes de olhar para o aluno.\\
+\textbf{O aparelho do aluno recarrega e ele volta para a revelação} &
+  Alguém tirou o \cd{children} de dentro do \cd{DispositivoFrame} em vez de
+  ligar a \emph{prop} \cd{expandido}. Trocar a árvore desmonta o \cd{<iframe>};
+  o modo expandido é ESTILO, e só (\adrr{ADR-41}).\\
+\zebra \textbf{O relatório do aluno abre em tela cheia no meio do FEED} &
+  Alguém inverteu a condição do \cd{ExpHost} para expandir por \emph{default}.
+  O \cd{IntersectionObserver} do \emph{dwell} se refere ao \emph{iframe}:
+  numa área larga o sinal central do motor infla em silêncio, e nada na tela
+  denuncia. A condição é positiva --- \cd{fase === "explicabilidade"} E
+  \cd{passo === "relatorio"} ---, tudo o mais é aparelho.\\
 \bottomrule
 \end{tabularx}
 

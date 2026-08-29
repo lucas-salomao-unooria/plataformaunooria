@@ -10,6 +10,7 @@ import { antagonismoSchema } from '../comum/insta/tipos';
 import { normalizarPerfil, rotuloDoPerfil } from '../perfis/afinidade';
 import { PrismaService } from '../prisma/prisma.service';
 
+import { calcularExposicao } from './exposicao';
 import {
   calcularBolha,
   calcularImersao,
@@ -105,12 +106,15 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
     .slice(0, 5)
     .map(([postId, dwellMs]) => ({ postId, dwellMs }));
 
-  // ---- o que o algoritmo escondeu ----
-  const ladoOpostoChave = dominanteFinal === 'A' ? 'B' : dominanteFinal === 'B' ? 'A' : null;
-  const servidosSet = new Set(estado.servedPostIds);
-  const ocultados = ladoOpostoChave
-    ? metas.filter((post) => post.lado === ladoOpostoChave && post.aprovado && !servidosSet.has(post.id))
-    : [];
+  /**
+   * ---- o que o algoritmo escondeu ----
+   *
+   * Pela EXPOSIÇÃO, não pelo domínio (ADR-42): esta é a mesma conta que a tela
+   * dos posts perdidos mostra ao aluno, e as duas precisavam nomear o mesmo
+   * lado. Antes esta linha usava `dominanteFinal`, e nos alunos que viraram o
+   * jogo ela contava os posts do lado que o algoritmo estava EMPURRANDO neles.
+   */
+  const exposicao = calcularExposicao(estado.servedPostIds, metas);
 
   // ---- interações e sinais ----
   const eventos = await prisma.event.groupBy({
@@ -284,7 +288,16 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
     dominio: Math.round(dominio * 100) / 100,
     porBloco,
     topDwell,
-    postsOcultados: { ladoOposto: ocultados.map((post) => post.id), total: ocultados.length },
+    postsOcultados: {
+      ladoOposto: exposicao.idsPerdidos,
+      total: exposicao.perdidos,
+      /**
+       * `true` quando a sessão não serviu post de tese nenhum — sem isso, a tela
+       * do professor lia "escondeu 0 posts", que afirma o contrário do que
+       * aconteceu. É a diferença entre `zero` e `none` da Vila do Lume.
+       */
+      ladoNaoObservado: exposicao.ladoDele === null,
+    },
     interacoes,
     sinais,
     bolha,

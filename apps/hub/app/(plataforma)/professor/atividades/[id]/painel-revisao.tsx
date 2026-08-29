@@ -107,7 +107,12 @@ export function PainelRevisao({
   const aprovadosA = dados?.aprovadosPorLado.A ?? 0;
   const aprovadosB = dados?.aprovadosPorLado.B ?? 0;
   const aprovadosNeutro = dados?.aprovadosPorLado.neutro ?? 0;
-  const totalAprovados = aprovadosA + aprovadosB + aprovadosNeutro;
+  /**
+   * `qtdPostsTese` é o alvo dos posts DE TESE. Somar os neutros no numerador
+   * produzia "134 de ~96 posts aprovados", que lido rápido parece erro de conta
+   * — e não era: eram duas grandezas diferentes no mesmo par de números.
+   */
+  const aprovadosDeTese = aprovadosA + aprovadosB;
 
   const trocarFiltro = (campo: keyof Filtros, valor: string) =>
     setFiltros((atual) => ({ ...atual, [campo]: valor, page: 1 }));
@@ -121,8 +126,8 @@ export function PainelRevisao({
               {statusAtual === "ativa" ? "Ativa para a turma" : "Em revisão"}
             </Badge>
             <span className="text-[13px] text-unooria-neutral-700">
-              {totalAprovados} de ~{qtdPostsTese} posts aprovados · lado A{" "}
-              {aprovadosA} · lado B {aprovadosB} · neutros {aprovadosNeutro}
+              {aprovadosDeTese} de ~{qtdPostsTese} posts de tese aprovados · lado A{" "}
+              {aprovadosA} · lado B {aprovadosB} · mais {aprovadosNeutro} neutros
             </span>
           </div>
 
@@ -174,8 +179,16 @@ export function PainelRevisao({
                         (linha) => linha.lado === lado && linha.perfil === perfil,
                       );
                       const aprovados = celula?.aprovados ?? 0;
-                      const rasa =
-                        aprovados < dados.esperadoPorCelula * 0.9 && aprovados > 0;
+                      /**
+                       * VERMELHO = o que a api vai recusar, e o limiar vem dela.
+                       * Vazia bloqueia; quase vazia também (`fracaoMinimaPorCelula`).
+                       * Amarelo é só "abaixo do alvo de qualidade", que não impede
+                       * ninguém de ativar — a legenda abaixo diz as duas coisas.
+                       */
+                      const bloqueia =
+                        aprovados === 0 ||
+                        aprovados < dados.esperadoPorCelula * dados.fracaoMinimaPorCelula;
+                      const rasa = !bloqueia && aprovados < dados.esperadoPorCelula * 0.9;
                       return (
                         <td key={perfil} className="p-2">
                           <button
@@ -192,13 +205,7 @@ export function PainelRevisao({
                             title="Filtrar por esta combinação"
                           >
                             <Tag
-                              variant={
-                                aprovados === 0
-                                  ? "danger"
-                                  : rasa
-                                    ? "warning"
-                                    : "success"
-                              }
+                              variant={bloqueia ? "danger" : rasa ? "warning" : "success"}
                               size="sm"
                             >
                               {aprovados}
@@ -213,9 +220,11 @@ export function PainelRevisao({
             </table>
           </div>
           <p className="mt-2 text-[12px] text-unooria-neutral-500">
-            Esperado ~{dados.esperadoPorCelula} por célula. Vermelho é célula
-            vazia (bloqueia a ativação); amarelo é célula rasa. Clique num número
-            para filtrar a grade.
+            Esperado ~{dados.esperadoPorCelula} por célula. Vermelho bloqueia a
+            ativação: célula vazia, ou com menos de{" "}
+            {Math.round(dados.fracaoMinimaPorCelula * 100)}% do esperado. Amarelo é
+            célula rasa — passa, mas o perfil fica mal representado daquele lado.
+            Clique num número para filtrar a grade.
           </p>
         </Card>
       ) : null}

@@ -49,6 +49,22 @@ hub \seta{} exp & \cd{hub:pause} / \cd{hub:resume} &
 \bottomrule
 \end{tabularx}
 
+\begin{nota}[title={NOTA --- o que o hub faz com o \cd{exp:estado}}]
+O \cd{ExpHost} guarda o último estado publicado e reconhece dois campos, ambos
+da exp-01: \cd{acao: "sair"} (a sessão é do HUB, em \emph{cookie} \cd{httpOnly}
+fora do alcance do \emph{iframe}, então a experiência pede e o hub executa) e
+\cd{fase}, que acende a moldura dos posts perdidos e --- com
+\cd{passo: "relatorio"} --- solta o aparelho para o relatório ocupar a área
+inteira (ADR-41, \ref{adr:relatorio-expandido}).
+
+Duas consequências de o hub SUBSTITUIR o estado inteiro a cada mensagem:
+publicar só o \cd{passo} apagaria a \cd{fase}, então quem publica leva as duas;
+e é a própria troca de fase seguinte que desfaz o estado anterior, sem
+mensagem de ``desligar''. As outras experiências publicam estado
+(\cd{\{ tela \}} na exp-02, \cd{\{ passo, tentativa \}} na exp-03) e o hub
+ignora --- o canal é genérico de propósito.
+\end{nota}
+
 \subsection{O \emph{handshake}, passo a passo}
 
 \begin{figure}[H]

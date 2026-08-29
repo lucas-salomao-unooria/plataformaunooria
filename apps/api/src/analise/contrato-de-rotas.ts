@@ -131,6 +131,10 @@ export const AnaliseDaTurmaSchema = z.object({
     /** A dúvida não conta nem a favor nem contra. */
     emDuvida: z.number(),
     taxa: z.number().nullable(),
+    /** Mexeram na resposta depois da primeira escolha ("vale a última"). */
+    trocaramDeIdeia: z.number(),
+    /** E terminaram num lado diferente do que marcaram de cara. */
+    terminaramNoutroLado: z.number(),
   }),
   turma: z.object({
     total: z.number(),

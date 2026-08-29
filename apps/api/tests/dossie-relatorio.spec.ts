@@ -453,11 +453,49 @@ describe('imersão (doc 11 §3.3)', () => {
       payload: null,
       clientTs: T0 + i * 30_000,
     }));
+    /**
+     * O `visto` no fim não é enfeite: ele DELIMITA o feed. Só descontam as
+     * perdas de foco de dentro dele — sem um post visto, não houve feed, e
+     * trinta saídas de tela durante a reflexão não dizem nada sobre a atenção
+     * que ele deu ao que o algoritmo serviu.
+     */
+    eventos.push({ tipo: 'visto', postId: 'p0', payload: { dwellMs: 3000 }, clientTs: T0 + 30 * 30_000 });
 
     const imersao = calcularImersao(entrada({ estado: estadoCom({}), porId, eventos }), tempoCheio);
     const continuidade = imersao.componentes.find((c) => c.chave === 'continuidade');
 
     expect(continuidade?.pontos).toBe(0);
+  });
+
+  it('perda de foco DEPOIS do feed não desconta nada', () => {
+    /**
+     * O buffer de eventos vive enquanto a run vive: durante o debate, a
+     * explicação e a reflexão — mais de metade do roteiro de 100 min — cada
+     * `hub:pause` ainda registra `perdeu_foco`. Descontá-las fazia a imersão da
+     * turma derreter conforme a AULA avançava, e o painel mostrava isso como
+     * adolescente desengajando.
+     */
+    const noFeed: EventoDeTelemetria[] = [
+      { tipo: 'visto', postId: 'p0', payload: { dwellMs: 3000 }, clientTs: T0 },
+      { tipo: 'visto', postId: 'p1', payload: { dwellMs: 3000 }, clientTs: T0 + 20_000 },
+    ];
+    const depois: EventoDeTelemetria[] = Array.from({ length: 8 }, (_, i) => ({
+      tipo: 'perdeu_foco',
+      postId: null,
+      payload: null,
+      clientTs: T0 + 600_000 + i * 60_000,
+    }));
+
+    const so = calcularImersao(entrada({ estado: estadoCom({}), porId, eventos: noFeed }), tempoCheio);
+    const com = calcularImersao(
+      entrada({ estado: estadoCom({}), porId, eventos: [...noFeed, ...depois] }),
+      tempoCheio,
+    );
+
+    const pontos = (imersao: typeof so) =>
+      imersao.componentes.find((c) => c.chave === 'continuidade')?.pontos;
+
+    expect(pontos(com)).toBe(pontos(so));
   });
 
   it('exploração conta superfícies distintas, não repetições', () => {

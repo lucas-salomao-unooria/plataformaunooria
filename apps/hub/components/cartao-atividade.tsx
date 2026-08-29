@@ -27,6 +27,10 @@ export type ResumoDaAtividade = {
   status: { rotulo: string; variante: VarianteDeStatus };
   posts: number;
   sessoes: number;
+  /** Alunos com perfil importado do Ato 1 — a "turma" desta atividade. */
+  alunos: number;
+  /** Quando foi criada, para separar três atividades do mesmo tema. */
+  criadoEm: string;
 };
 
 function IconeLixeira() {
@@ -62,6 +66,14 @@ function IconeLixeira() {
  * leva junto posts, imagens no disco e as sessões já rodadas da turma, e não tem
  * volta.
  */
+/** "12/03/2026" — a data curta basta para distinguir duas do mesmo tema. */
+function formatarData(iso: string): string {
+  const data = new Date(iso);
+  return Number.isNaN(data.getTime())
+    ? '—'
+    : data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
@@ -138,8 +150,19 @@ export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade })
               Pergunta-chave ainda não definida.
             </p>
           )}
+          {/*
+            Três atividades do mesmo tema, com títulos quase iguais, e nada que
+            diga QUAL é qual. `Activity` não tem turma no schema — uma atividade
+            é de uma turma por vez, mas por convenção de uso, não por coluna —,
+            então o que dá para afirmar sem inventar é o tamanho e a data. Já
+            chegavam da api e eram descartados aqui.
+          */}
           <p className="text-[12px] text-unooria-neutral-500">
             {atividade.posts} posts · {atividade.sessoes} sessões
+            {atividade.alunos > 0 ? ` · ${atividade.alunos} com perfil do jogo` : null}
+          </p>
+          <p className="text-[12px] text-unooria-neutral-500">
+            criada em {formatarData(atividade.criadoEm)}
           </p>
         </div>
       </Card>

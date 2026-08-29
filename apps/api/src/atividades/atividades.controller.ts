@@ -312,7 +312,27 @@ export class AtividadesController {
         }
       }
 
+      /**
+       * A PREMISSA da atividade, e não só o conteúdo dela.
+       *
+       * Havia gate de conteúdo (a matriz) e nenhum de turma: dava para ativar e
+       * rodar a aula inteira com todo mundo no sorteio, sem o Ato 1. E aí a
+       * revelação diz "no seu caso o lado foi sorteado" para a sala toda — o
+       * texto está certo (ele nunca mente sobre a origem), mas a demonstração
+       * que a aula existe para fazer não acontece: sem perfil medido, o feed não
+       * nasceu de nada que a criança fez.
+       *
+       * Aviso, não bloqueio: rodar no sorteio é um uso legítimo (demonstração,
+       * turma que ainda não jogou), e quem decide é quem está com a sala.
+       */
+      const comPerfil = await tx.perfilImportado.count({ where: { activityId: id } });
+
       const pendencias: string[] = [];
+      if (comPerfil === 0) {
+        pendencias.push(
+          "Nenhum aluno tem perfil do Ato 1 — o lado de todos vai ser sorteado, e a revelação vai dizer isso para a turma inteira.",
+        );
+      }
       if (aprovados < MINIMOS_ATIVACAO.postsAprovados) {
         pendencias.push(`${aprovados} posts aprovados — o recomendado é ${MINIMOS_ATIVACAO.postsAprovados}.`);
       }
@@ -530,6 +550,15 @@ export class AtividadesController {
         alertaDeOcioso: aluno.ociosoHaMs !== null && aluno.ociosoHaMs >= OCIOSO_ALERTA_MS,
         temDossie: comDossie.has(aluno.runId),
         publicou: aluno.interacoes.publicou,
+        /**
+         * SE existe reflexão, não O QUE ela diz. O texto é livre e sem
+         * moderação — num teste um aluno escreveu uma ofensa e o campo aceitou —
+         * e a única pessoa que pode lidar com isso é o professor, lendo. Ele só
+         * não tinha como saber que havia o que ler: a reflexão aparecia no popup
+         * do aluno e em nenhum lugar da tabela. Aqui vai a contagem, nunca o
+         * conteúdo, que é texto de criança e não passeia por listagem.
+         */
+        caracteresDaReflexao: aluno.reflexao?.caracteres ?? 0,
       }));
 
       const comLado = linhas.filter((linha) => linha.ladoDominante !== "neutro");

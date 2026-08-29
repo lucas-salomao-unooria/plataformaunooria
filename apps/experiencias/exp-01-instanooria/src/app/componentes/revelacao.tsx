@@ -1,82 +1,17 @@
 import { useEffect, useState } from 'react';
 
 import { api } from '../../lib/api';
+import { telasDaRevelacao, type TelaDaRevelacao } from '@edu/conteudo-exp-01';
+
 import type { RespostaDossie } from '../../lib/dossie-tipos';
 
-interface Tela {
-  texto: string;
-  destaque?: string;
-  complemento?: string;
-}
-
 /**
- * FASE 5 do doc 02 (~2min, no ritmo do aluno): uma ideia por tela, fundo escuro,
- * tipografia grande, transições lentas — sinaliza "saímos do jogo".
- * O tom nunca humilha: o sujeito da frase é o sistema, não o aluno.
+ * A revelação: sete telas, uma frase por vez, no ritmo do aluno.
+ *
+ * A COPY não mora aqui — ela é a peça que carrega o argumento do produto, e o
+ * professor precisa lê-la no guia antes de conduzir a aula. Fonte única em
+ * `@edu/conteudo-exp-01`; aqui fica só o comportamento (ritmo, progresso, fade).
  */
-const TELAS_FIXAS: Tela[] = [
-  {
-    texto: 'O Instanooria não é uma rede social de verdade. É uma simulação.',
-    complemento: 'Nenhum dado seu saiu daqui.',
-  },
-  { texto: 'Mas uma coisa aqui era 100% real:', destaque: 'o algoritmo.' },
-  {
-    texto: 'Enquanto você navegava, ele aprendia',
-    destaque: 'cada segundo',
-    complemento: 'que você parava em cada post. Cada curtida. Cada comentário aberto.',
-  },
-  { texto: 'E com isso, ele escolheu', destaque: 'o que você viu — e o que você nunca viu.' },
-];
-
-/** A última tela fecha sempre igual: o problema é do sistema, não do aluno. */
-const TELA_FINAL: Tela = {
-  texto: 'Isso acontece com todo mundo — inclusive com adultos.',
-  complemento: 'É assim que as redes que você usa funcionam.',
-};
-
-/**
- * Tela 5 (doc 02 fase 5) — o lado semeado. A frase MUDA com a origem do lado:
- * dizer "foi escolhido a partir de como você jogou" para quem caiu no sorteio
- * seria mentir na única tela do exercício que existe para não mentir.
- */
-function telaDoLadoSemeado(origem: string): Tela {
-  if (origem === 'perfil') {
-    return {
-      texto: 'Tem mais: seu feed',
-      destaque: 'já começou puxado para um dos dois lados.',
-      complemento:
-        'E não foi sorteio — foi escolhido a partir de como você jogou, antes de você abrir o Instanooria.',
-    };
-  }
-
-  if (origem === 'redistribuido') {
-    return {
-      texto: 'Tem mais: seu feed',
-      destaque: 'já começou puxado para um dos dois lados.',
-      complemento:
-        'O seu foi ajustado para a turma não ficar toda do mesmo lado — mas ninguém te avisou disso.',
-    };
-  }
-
-  return {
-    texto: 'Tem mais: seu feed',
-    destaque: 'já começou puxado para um dos dois lados.',
-    complemento: 'No seu caso o lado foi sorteado. Você não escolheu, e ninguém te avisou.',
-  };
-}
-
-/**
- * Tela 6 (doc 02 fase 5) — a linguagem. É **obrigatória** (doc 10 §6.5): usar o
- * perfil de valores para escolher como falar com o aluno e depois esconder que
- * isso aconteceu seria repetir exatamente o que o exercício critica.
- */
-const TELA_DA_LINGUAGEM: Tela = {
-  texto: 'E ele também escolheu',
-  destaque: 'como falar com você.',
-  complemento:
-    'O mesmo argumento foi escrito de quatro jeitos diferentes; você recebeu mais o jeito que combina com o que te move.',
-};
-
 export function Revelacao({ runId, aoTerminar }: { runId: string; aoTerminar: () => void }) {
   const [indice, setIndice] = useState(0);
   const [visivel, setVisivel] = useState(false);
@@ -100,12 +35,7 @@ export function Revelacao({ runId, aoTerminar }: { runId: string; aoTerminar: ()
     };
   }, [runId]);
 
-  const telas: Tela[] = [
-    ...TELAS_FIXAS,
-    telaDoLadoSemeado(origemDoLado ?? 'sorteio'),
-    TELA_DA_LINGUAGEM,
-    TELA_FINAL,
-  ];
+  const telas: TelaDaRevelacao[] = telasDaRevelacao(origemDoLado ?? 'sorteio');
 
   useEffect(() => {
     setVisivel(false);

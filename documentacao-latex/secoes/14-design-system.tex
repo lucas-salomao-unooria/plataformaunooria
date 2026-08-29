@@ -47,6 +47,21 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
 \bottomrule
 \end{tabularx}
 
+\begin{nota}[title={NOTA --- ``pós-revelação'' virou uma tela de verdade}]
+Por muito tempo a linha ``telas pós-revelação do aluno'' descrevia um único
+componente: o \cd{DonutChart} do relatório, num \emph{chunk} tardio. O resto do
+relatório era Tailwind do clone sobre \cd{bg-night}.
+
+Com a ADR-41 (\ref{adr:relatorio-expandido}) o relatório sai do aparelho e passa
+a ser claro e largo, e a autorização deixa de ser teórica. A fronteira não
+mudou: quem a marca é a REVELAÇÃO --- sete telas, fundo \cd{night}, sem nada da
+plataforma. Antes dela, o disfarce; depois, a língua da escola.
+
+A trava técnica continua a mesma e não pode cair: o CSS do DS entra por
+\cd{React.lazy}, no \emph{chunk} do relatório, e nunca no \emph{bundle} do
+feed --- lá ele seria legível no DevTools antes da hora.
+\end{nota}
+
 \begin{atencao}
 A seção \cd{unitube} é \textbf{só escura}: o Figma não publica variante clara, e
 \textbf{derivar uma é proibido}. Uma paleta clara inventada não é o clone --- é

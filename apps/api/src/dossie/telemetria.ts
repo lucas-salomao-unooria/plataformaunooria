@@ -62,13 +62,55 @@ const campo = (payload: unknown, chave: string): string | null => {
 };
 
 /** doc 11 §3.1 — tempo. */
+/**
+ * O instante em que o FEED terminou, no relógio do aparelho.
+ *
+ * O último `visto` é o fim do feed por definição: nenhum post é visto depois que
+ * ele fecha. Não uso `run.finishedAt` porque `clientTs` é o relógio do APARELHO
+ * e `finishedAt` é o do servidor — comparar os dois numa escola com relógio
+ * desregulado traria de volta, por outro caminho, o erro que esta função existe
+ * para corrigir.
+ *
+ * Vive numa função só porque `calcularTempo` e `calcularImersao` precisam do
+ * MESMO corte: se um cortasse e o outro não, a fração de tempo ativo e o
+ * desconto por perda de foco passariam a falar de janelas diferentes.
+ */
+export function fimDoFeedDe(eventos: readonly EventoDeTelemetria[]): number {
+  const vistos = eventos.filter((evento) => evento.tipo === 'visto');
+  if (vistos.length === 0) {
+    const marcas = eventos.map((evento) => evento.clientTs);
+    return marcas.length > 0 ? Math.min(...marcas) : 0;
+  }
+  return Math.max(...vistos.map((evento) => evento.clientTs));
+}
+
 export function calcularTempo({ eventos, estado, porId, run }: Entrada): TempoDaSessao {
   const fim = run.finishedAt ?? new Date();
   const sessaoMs = Math.max(0, fim.getTime() - run.startedAt.getTime());
 
   const vistos = eventos.filter((evento) => evento.tipo === 'visto');
-  const marcas = eventos.map((evento) => evento.clientTs).sort((a, b) => a - b);
-  const inicioDoFeed = vistos.length > 0 ? Math.min(...vistos.map((e) => e.clientTs)) : marcas[0] ?? 0;
+  const todasAsMarcas = eventos.map((evento) => evento.clientTs).sort((a, b) => a - b);
+  const inicioDoFeed = vistos.length > 0 ? Math.min(...vistos.map((e) => e.clientTs)) : todasAsMarcas[0] ?? 0;
+
+  /**
+   * A JANELA TERMINA COM O FEED, e não com o último evento da sessão.
+   *
+   * O buffer de eventos da experiência vive enquanto a run vive: durante o
+   * debate, a explicação e a reflexão — outros ~55 min do roteiro de 100 —
+   * qualquer `hub:pause` ainda registra `perdeu_foco`. Com o último evento da
+   * SESSÃO fechando a conta, `feedMs` continuava crescendo depois de o feed
+   * fechar, cada vão virava `ociosoMs`, e `ativoMs / feedMs` caía sozinha.
+   *
+   * O sintoma era a imersão da turma DERRETENDO conforme a aula avançava
+   * (52.7 → 42.8 → 38.7 → 35.1 no painel ao vivo), e ninguém lia isso como um
+   * bug de denominador: lia como adolescente desengajando.
+   *
+   * O último `visto` é o fim do feed por definição — nenhum post é visto depois
+   * que ele fecha. Não uso `run.finishedAt` porque `clientTs` é o relógio do
+   * APARELHO e `finishedAt` é o do servidor, e comparar os dois numa escola com
+   * relógio desregulado traria de volta o mesmo erro por outro caminho.
+   */
+  const marcas = todasAsMarcas.filter((marca) => marca <= fimDoFeedDe(eventos));
   const ultimo = marcas[marcas.length - 1] ?? inicioDoFeed;
   const feedMs = Math.max(0, ultimo - inicioDoFeed);
 
@@ -158,8 +200,18 @@ export function calcularImersao(entrada: Entrada, tempo: TempoDaSessao): Imersao
   const pontos = (valor: number, teto: number) =>
     teto <= 0 ? 0 : arredondar(Math.min(1, Math.max(0, valor / teto)) * 20, 1);
 
-  // 1. Continuidade — proporção de tempo ativo, com desconto por perda de foco.
-  const perdasDeFoco = conta(eventos, 'perdeu_foco');
+  /**
+   * 1. Continuidade — proporção de tempo ativo, com desconto por perda de foco.
+   *
+   * Só as perdas de foco DENTRO do feed. Fora dele o aluno está assistindo à
+   * revelação, conversando no debate ou escrevendo — sair da aba ali não diz
+   * nada sobre a atenção que ele deu ao feed, e descontava 2 pontos do mesmo
+   * jeito. Ver a janela de `calcularTempo`.
+   */
+  const fimDoFeed = fimDoFeedDe(eventos);
+  const perdasDeFoco = eventos.filter(
+    (evento) => evento.tipo === 'perdeu_foco' && evento.clientTs <= fimDoFeed,
+  ).length;
   const fracaoAtiva = tempo.feedMs > 0 ? tempo.ativoMs / tempo.feedMs : 0;
   const continuidade = Math.max(0, arredondar(pontos(fracaoAtiva, 0.9) - perdasDeFoco * 2, 1));
 

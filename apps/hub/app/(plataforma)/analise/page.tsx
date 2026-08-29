@@ -48,7 +48,7 @@ export default async function AnalisePage({
           análise de produto
         </p>
         <h1 className="text-[24px] font-bold leading-tight text-unooria-neutral-950">
-          Imersão e eficácia entre turmas
+          Envolvimento e eficácia entre turmas
         </h1>
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
           Olá, {usuario.nome}. As métricas são recalculadas dos eventos a cada visita — nada
@@ -86,7 +86,7 @@ export default async function AnalisePage({
                 <tr className="text-[12px] text-unooria-neutral-700">
                   <th className="px-3 py-2 font-semibold">Atividade</th>
                   <th className="px-3 py-2 font-semibold">Sessões</th>
-                  <th className="px-3 py-2 font-semibold">Imersão</th>
+                  <th className="px-3 py-2 font-semibold">Envolvimento</th>
                   <th className="px-3 py-2 font-semibold">Tempo de feed</th>
                   <th className="px-3 py-2 font-semibold">Inversão</th>
                   <th className="px-3 py-2 font-semibold">Poder do viés</th>
@@ -185,7 +185,7 @@ export default async function AnalisePage({
               paga e não usada.
             </li>
             <li>
-              Imersão só conta sessões com 8 posts ou mais, e nunca aparece sem os cinco componentes
+              O envolvimento só conta sessões com 8 posts ou mais, e nunca aparece sem os cinco componentes
               (abra a atividade).
             </li>
           </ul>

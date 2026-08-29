@@ -28,7 +28,16 @@ export interface AnaliseDaTurma {
    * Quantos concluíram no mesmo lado em que o feed nasceu, sobre quem concluiu
    * com lado (a dúvida não conta nem a favor nem contra).
    */
-  poderDoViesSemeado: { seguiram: number; viraram: number; emDuvida: number; taxa: number | null };
+  poderDoViesSemeado: {
+    seguiram: number;
+    viraram: number;
+    emDuvida: number;
+    taxa: number | null;
+    /** Quantos mexeram na resposta depois de escolher a primeira vez. */
+    trocaramDeIdeia: number;
+    /** E quantos, desses, acabaram num lado diferente do que escolheram de cara. */
+    terminaramNoutroLado: number;
+  };
 
   turma: {
     total: number;
@@ -74,6 +83,8 @@ export async function analiseDaTurma(
   let seguiram = 0;
   let viraram = 0;
   let emDuvida = 0;
+  let trocaramDeIdeia = 0;
+  let terminaramNoutroLado = 0;
 
   for (const aluno of alunos) {
     if (!aluno.conclusao) continue;
@@ -83,6 +94,20 @@ export async function analiseDaTurma(
     if (aluno.conclusao.inclinacao === 'duvida') emDuvida += 1;
     else if (aluno.conclusao.inclinacao === aluno.bolha.ladoInicial) seguiram += 1;
     else viraram += 1;
+
+    /**
+     * Quem trocou de ideia enquanto esperava a turma. A tabela acima usa a
+     * ÚLTIMA escolha — é a que o aluno assumiu, e é a que ele vai defender —,
+     * mas a correlação lê diferente se metade da sala mudou de opinião DEPOIS
+     * de sair do feed. Sem este número, ninguém tinha como perguntar isso.
+     */
+    if (aluno.conclusao.trocas > 0) trocaramDeIdeia += 1;
+    if (
+      aluno.conclusao.inclinacaoInicial &&
+      aluno.conclusao.inclinacaoInicial !== aluno.conclusao.inclinacao
+    ) {
+      terminaramNoutroLado += 1;
+    }
   }
 
   const comLado = seguiram + viraram;
@@ -124,6 +149,8 @@ export async function analiseDaTurma(
       viraram,
       emDuvida,
       taxa: comLado > 0 ? Math.round((seguiram / comLado) * 100) / 100 : null,
+      trocaramDeIdeia,
+      terminaramNoutroLado,
     },
     turma: {
       total: alunos.length,
@@ -196,6 +223,11 @@ export function turmaEmCsv(analise: AnaliseDaTurma): string {
     'inverteu',
     'bloco_da_inversao',
     'conclusao',
+    // A PRIMEIRA escolha e quantas vezes ele mexeu. A tela convida a trocar de
+    // ideia enquanto a turma termina, e sem estas duas colunas a planilha não
+    // tem como distinguir a reação ao feed do que sobrou depois da espera.
+    'conclusao_inicial',
+    'trocas_de_resposta',
     // O texto livre saiu da conclusão e virou a REFLEXÃO do fim (fluxo v2): é ele
     // que o professor audita, e é sobre a atividade, não sobre a pergunta-chave.
     'caracteres_da_reflexao',
@@ -238,6 +270,10 @@ export function turmaEmCsv(analise: AnaliseDaTurma): string {
       aluno.bolha.inverteu ? 'sim' : 'nao',
       aluno.bolha.blocoDaInversao ?? '',
       aluno.conclusao ? texto(rotulo(aluno.conclusao.inclinacao)) : 'nao concluiu',
+      aluno.conclusao?.inclinacaoInicial
+        ? texto(rotulo(aluno.conclusao.inclinacaoInicial))
+        : 'nao registrada',
+      String(aluno.conclusao?.trocas ?? 0),
       aluno.reflexao?.caracteres ?? 0,
       aluno.reflexao ? texto(aluno.reflexao.texto) : '',
       aluno.postsConsumidos,

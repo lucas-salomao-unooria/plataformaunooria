@@ -173,6 +173,9 @@ importers:
 
   apps/experiencias/exp-01-instanooria:
     dependencies:
+      '@edu/conteudo-exp-01':
+        specifier: workspace:*
+        version: link:../../../packages/conteudo-exp-01
       '@edu/sdk':
         specifier: workspace:*
         version: link:../../../packages/sdk
@@ -398,6 +401,9 @@ importers:
 
   apps/hub:
     dependencies:
+      '@edu/conteudo-exp-01':
+        specifier: workspace:*
+        version: link:../../packages/conteudo-exp-01
       '@edu/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -452,6 +458,15 @@ importers:
         version: 3.4.19
       typescript:
         specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.50.0)
+
+  packages/conteudo-exp-01:
+    devDependencies:
+      typescript:
+        specifier: ^5.6.0
         version: 5.9.3
       vitest:
         specifier: ^3.2.6

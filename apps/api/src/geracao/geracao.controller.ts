@@ -18,7 +18,7 @@ import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { rateLimit } from "../comum/rate-limit";
-import { DIVISOR_TESE } from "../comum/insta/defaults";
+import { DIVISOR_TESE, MINIMOS_ATIVACAO } from "../comum/insta/defaults";
 import { antagonismoSchema } from "../comum/insta/tipos";
 import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
@@ -352,6 +352,14 @@ export class GeracaoController {
         aprovadosPorLado: Object.fromEntries(resumo.map((l) => [l.lado, l._count._all])),
         matriz: matriz.map((l) => ({ lado: l.lado, perfil: l.perfil, aprovados: l._count._all })),
         esperadoPorCelula: Math.floor(atividade.qtdPostsTese / DIVISOR_TESE),
+        /**
+         * A fração abaixo da qual a célula BLOQUEIA a ativação. Vai no payload
+         * porque a tela precisa pintar de vermelho exatamente o que a api vai
+         * recusar: o client tinha a sua própria constante (0.9), a api a dela
+         * (0.1), e uma célula entre as duas saía amarela — "não bloqueia", dizia
+         * a legenda — para só então o professor levar 422 ao clicar em ativar.
+         */
+        fracaoMinimaPorCelula: MINIMOS_ATIVACAO.fracaoMinimaPorCelula,
       };
     });
   }

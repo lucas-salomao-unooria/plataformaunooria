@@ -80,7 +80,19 @@ export interface MetricasDaRun {
    * texto livre virou a REFLEXÃO do fim, que é sobre a atividade (letramento
    * digital), não sobre a pergunta-chave.
    */
-  conclusao: { inclinacao: 'A' | 'B' | 'duvida'; texto: string | null; caracteres: number } | null;
+  conclusao: {
+    inclinacao: 'A' | 'B' | 'duvida';
+    /**
+     * A PRIMEIRA escolha — `null` nas respostas anteriores à migração que passou
+     * a guardá-la. A correlação "lado do feed × resposta" usa a ÚLTIMA, que é a
+     * que o aluno assumiu; esta existe para ser possível perguntar se as duas
+     * contam a mesma história.
+     */
+    inclinacaoInicial: 'A' | 'B' | 'duvida' | null;
+    trocas: number;
+    texto: string | null;
+    caracteres: number;
+  } | null;
   /** O fechamento escrito da atividade, sem limite de caracteres. */
   reflexao: { texto: string; caracteres: number } | null;
 
@@ -128,7 +140,7 @@ export async function metricasDaAtividade(prisma: Prisma.TransactionClient, acti
         perfilOrigem: true,
         engineState: true,
         aluno: { select: { username: true, displayName: true } },
-        conclusao: { select: { inclinacao: true, texto: true } },
+        conclusao: { select: { inclinacao: true, inclinacaoInicial: true, trocas: true, texto: true } },
         reflexao: { select: { texto: true } },
         _count: { select: { studentPosts: true } },
       },
@@ -268,6 +280,8 @@ export async function metricasDaAtividade(prisma: Prisma.TransactionClient, acti
       conclusao: run.conclusao
         ? {
             inclinacao: run.conclusao.inclinacao as 'A' | 'B' | 'duvida',
+            inclinacaoInicial: (run.conclusao.inclinacaoInicial ?? null) as 'A' | 'B' | 'duvida' | null,
+            trocas: run.conclusao.trocas,
             texto: run.conclusao.texto,
             caracteres: run.conclusao.texto?.length ?? 0,
           }

@@ -1942,3 +1942,230 @@ pessoa à área certa sem o \emph{client} conhecer o papel.
 (institucional, ajuda, termos): aí a \emph{landing} vira um grupo de rotas
 \cd{(publico)} com \emph{layout} próprio, e os \emph{links} do rodapé deixam de
 ser \cd{\#}.
+
+\section{ADR-41 --- O relatório do aluno sai do aparelho: o iframe expande, não remonta}
+\label{adr:relatorio-expandido}
+
+\begin{especificacao}{Contexto}
+A explicabilidade da exp-01 é a peça mais densa do produto e rodava inteira
+dentro do aparelho de $375\times812$: seis blocos, um gráfico só e três dos cinco
+posts de maior \emph{dwell} --- quando o \emph{payload} já carregava mais. As
+barras por bloco e a linha da escalada existiam em \arq{graficos.tsx} e não
+tinham consumidor de tela; a ``escalada'' virara uma frase por falta de espaço.
+
+Ela acontece DEPOIS da revelação, e nesse ponto não há mais disfarce a proteger:
+a regra da ponte (\arq{packages/ui/src/ds.ts}) já autorizava o DS da plataforma
+nas ``telas pós-revelação do aluno''.
+\end{especificacao}
+
+\textbf{Decisão.} No passo do relatório, a experiência publica
+\cd{exp:estado \{ fase: "explicabilidade", passo: "relatorio" \}} e o
+\cd{ExpHost} liga \cd{expandido} no \cd{DispositivoFrame}, que troca APENAS o
+CSS do próprio \cd{<div>} interno. O relatório vira claro, responsivo, com os
+três gráficos e o \emph{top} 5. A revelação continua no aparelho, escura: ela é
+a fronteira, e não estava comprimida.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um \cd{Modal size="full"} do hub buscando \rota{/runs/:id/dossie}}:
+    o BFF já permitiria (a rota autoriza o aluno a ler o próprio) e havia
+    precedente em \arq{modal-aluno.tsx}. Descartado porque duplicaria a
+    renderização do relatório em dois apps --- ou obrigaria a experiência a
+    perder os \emph{exports} em texto e PNG, que são dela.
+  \item \emph{Uma rota própria do hub} (\rota{/aluno/relatorio/:runId}): tira o
+    aluno do aparelho no meio de uma aula conduzida por botão.
+  \item \emph{\cd{requestFullscreen()} de dentro do \emph{iframe}}: o
+    \cd{allow="\ldots fullscreen"} já está delegado a todas as experiências e
+    ninguém usa. O hub perderia o controle da moldura, e a largura lógica
+    continuaria a mesma --- ficaria maior, não menos comprimido.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{Expandir é ESTILO, nunca árvore.} Tirar o \cd{children} do
+    \cd{DispositivoFrame} para renderizá-lo fora desmontaria o \cd{<iframe>} e
+    o aluno voltaria à revelação com a sessão recarregada. É por isso que o
+    modo é uma \emph{prop}, e não um \cd{if} trocando o \emph{wrapper}.
+  \item \textbf{A condição é POSITIVA, e o \emph{default} é contraído.}
+    Qualquer outro estado --- inclusive mensagem perdida --- cai no aparelho de
+    375px. O \cd{IntersectionObserver} do \emph{dwell} se refere ao
+    \emph{iframe}: um FEED numa área larga inflaria o sinal central do motor.
+  \item \textbf{O layout largo é \cd{md:}, o estreito é o \emph{default}.} Se a
+    expansão não acontecer, o aluno vê exatamente o que via.
+  \item \textbf{Nenhuma mensagem hub$\rightarrow$exp para o layout}: o
+    \emph{iframe} muda de largura de verdade, e as \emph{media queries} de
+    dentro respondem sozinhas. Os dois gráficos a mais são renderizados e
+    escondidos por CSS --- perguntar a largura em JS custaria um
+    \cd{matchMedia} e um render a mais na hidratação.
+  \item A volta usa o caminho que já existia: o professor avança, o
+    \emph{polling} de 5s vê a fase nova, a experiência publica
+    \cd{\{ fase: "perdidos" \}} sem \cd{passo}, e o aparelho volta. Até 5s de
+    atraso, que é a latência que a troca de tela já tinha.
+  \item \textbf{Paridade}: o relatório do professor (\arq{modal-aluno.tsx})
+    ganhou a seção \emph{``por que o feed dele começou desse lado''}, que ele
+    não lia --- e é a frase que a criança acabou de ler.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Uma segunda experiência precisar do mesmo
+gesto: aí \cd{expandido} deixa de ser lido de dois campos conhecidos no
+\cd{ExpHost} e vira mensagem própria no \cd{ExpParaHubSchema}, com \emph{bump}
+de \cd{protocolVersion}.
+
+
+\section{ADR-42 --- ``O que o algoritmo escondeu'' é a EXPOSIÇÃO, não o domínio}
+\label{adr:exposicao}
+
+\begin{especificacao}{Contexto}
+Havia duas contas para a mesma frase. A tela do aluno (\rota{/runs/:id/perdidos})
+decidia qual era ``o lado dele'' CONTANDO os posts servidos
+(\cd{consumo.A >= consumo.B}); o relatório do professor
+(\arq{dossie/computar.ts}) decidia pelo \cd{dominioDe()}, o \emph{score} do
+motor --- \emph{dwell}, sinais, escada de intensidade.
+
+Enquanto as duas apontam o mesmo lado, os números batem. Elas divergem
+exatamente quando o aluno VIRA O JOGO, porque virar o jogo \emph{é} a definição
+de a atenção ter terminado do lado oposto ao que o feed empurrou. Ou seja: as
+duas telas se contradiziam justamente sobre os alunos que o professor mais quer
+discutir.
+
+O caso está registrado numa auditoria de UX: sobre o MESMO aluno, o painel dizia
+``terminou dominante em Processo Lento e Gradual, virou o jogo'' e a tela dele
+dizia ``32 posts que nunca chegaram até você, todos de Processo Lento e
+Gradual''. Duas frases sobre a mesma criança, nomeando lados opostos. O
+relatório do professor (``escondeu 30'') contava os posts do lado que o
+algoritmo estava EMPURRANDO nele.
+\end{especificacao}
+
+\textbf{Decisão.} Uma conta só, em \arq{apps/api/src/dossie/exposicao.ts},
+consumida pelas duas rotas: ``o lado dele'' é o que o feed mais SERVIU, e o
+número é quantos aprovados do outro lado nunca foram servidos.
+\cd{ladoDominante} continua existindo e continua no relatório --- ele responde
+``para onde a atenção dele foi'', que é outra pergunta, e é a que sustenta o
+``virou o jogo''.
+
+\textbf{Alternativa descartada.} \emph{Padronizar no domínio.} É a leitura mais
+fiel ao que a atenção do aluno fez, mas ``o algoritmo escondeu'' é uma
+afirmação sobre o que o feed ENTREGOU: medir pelo domínio credita à máquina o
+resultado do comportamento da criança. E com \cd{dominio $\le$ 0{,}5} o
+resultado era \cd{indefinido}, que virava ``escondeu 0 posts''.
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{O número do professor MUDA} em atividades já rodadas ---
+    \cd{VERSAO\_DO\_RELATORIO} sobe para 4 e os dossiês congelados são
+    recomputados na leitura. É o preço de ter contado errado.
+  \item \textbf{Sem post de tese servido, não se nomeia lado nenhum.} A rota
+    devolve \cd{ladoPerdido: null} e a tela diz que a sessão terminou antes de o
+    feed abrir. ``0 posts que nunca chegaram até você'' afirmaria o contrário do
+    que houve --- é a mesma distinção entre \cd{zero} e \cd{none} da Vila do
+    Lume.
+  \item \textbf{Post desaprovado não conta como escondido}: nunca teve chance de
+    aparecer para ninguém, e culpar o algoritmo por uma decisão editorial do
+    professor seria outra mentira pequena.
+  \item A trava é \arq{apps/api/tests/exposicao-lado-oposto.spec.ts}, e o teste
+    do meio monta exatamente o aluno que virou o jogo.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Alguém precisar de ``o oposto do lado
+dominante'' para outra tela: é uma terceira grandeza, e ela nasce com nome
+próprio --- nunca reaproveitando esta.
+
+
+\section{ADR-43 --- A resposta do aluno guarda a primeira e a última}
+\label{adr:conclusao-primeira}
+
+\begin{especificacao}{Contexto}
+A tela da resposta não tem botão de confirmar: tocar na pílula já registra, e o
+quadro diz ``pode trocar de ideia enquanto espera --- vale a última''. O aluno
+oscila de propósito enquanto os colegas terminam.
+
+O \cd{upsert} sobrescrevia \cd{inclinacao} e a primeira escolha desaparecia. O
+\cd{created\_at} ficava congelado no primeiro envio enquanto a inclinação
+mudava, ou seja, passava a mentir sobre a própria linha. E a correlação ``lado
+em que o feed nasceu $\times$ resposta dada'' --- o dado mais forte que esta
+atividade produz --- não tinha como dizer se estava lendo a reação imediata ao
+feed ou o que sobrou depois de dois minutos de espera e de olhar a tela do
+colega.
+\end{especificacao}
+
+\textbf{Decisão.} Migração aditiva em \cd{exp\_01\_conclusoes}:
+\cd{inclinacao\_inicial} (gravada uma vez, nunca mais tocada), \cd{trocas} e
+\cd{atualizado\_em}. A correlação continua usando a ÚLTIMA --- é a que o aluno
+assumiu e é a que ele vai defender no debate --- e a análise da turma passa a
+DIZER isso, com quantos mexeram na resposta e quantos terminaram noutro lado.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Emitir evento de telemetria a cada toque}: o canal analítico tem
+    retenção indefinida e \cd{aluno\_id}; guardar a oscilação de opinião de uma
+    criança num JSONB de eventos é mais dado do que a pergunta pede.
+  \item \emph{Trocar a correlação para a primeira escolha}: seria decidir pelo
+    professor qual das duas conta. A decisão é dele, e agora ele tem os dois
+    números.
+\end{itemize}
+
+\textbf{Consequências.} \cd{inclinacao\_inicial} é NULL nas linhas anteriores à
+migração, e é assim que se lê ``esta resposta é anterior à mudança'':
+preenchê-la com a inclinação atual inventaria uma primeira escolha que ninguém
+observou. Reenviar a mesma opção (toque duplo, rede lenta) não conta como troca.
+As duas colunas novas vão ao CSV da análise.
+
+\textbf{Gatilho de reavaliação.} Aparecer demanda por ver a oscilação completa
+(não só a primeira e a última): aí é tabela de histórico, não mais colunas.
+
+
+\section{ADR-44 --- A janela do envolvimento termina com o feed, e o total sai das listagens}
+\label{adr:envolvimento}
+
+\begin{especificacao}{Contexto}
+Duas coisas, medidas na mesma auditoria.
+
+A primeira: o painel ao vivo mostrava a imersão da turma DERRETENDO conforme a
+aula avançava ($52{,}7 \rightarrow 42{,}8 \rightarrow 38{,}7 \rightarrow 35{,}1$)
+e isso lia como adolescente desengajando. Não era. O \emph{buffer} de eventos da
+experiência vive enquanto a \emph{run} vive: durante o debate, a explicação e a
+reflexão --- mais de metade do roteiro de 100 minutos --- cada \cd{hub:pause}
+ainda registra \cd{perdeu\_foco}. Com a conta fechando no último evento da
+SESSÃO, \cd{feedMs} crescia depois de o feed fechar, cada vão virava
+\cd{ociosoMs}, e \cd{ativoMs / feedMs} caía sozinha.
+
+A segunda: o total 0--100 aparecia como número numa COLUNA de tabela, por
+criança, no monitor e na análise --- ordenável, comparável. O próprio código
+dizia, em comentário, que ``o total existe para ordenar uma lista, não para ser
+exibido sozinho'', e a tela o exibia sozinho. E ele é somável justamente onde
+menos se sustenta: \emph{Gestos} e \emph{Exploração} ficam em 0/20 na maioria
+das sessões, então o teto real não é 100.
+\end{especificacao}
+
+\textbf{Decisão.} \cd{fimDoFeedDe(eventos)} --- o último \cd{visto}, que é o fim
+do feed por definição --- corta a janela em \cd{calcularTempo} E no desconto por
+perda de foco de \cd{calcularImersao}. E o total sai das duas listagens por
+aluno, ficando as cinco barras (com o eixo no \cd{title}); o número segue no
+popup do aluno, que é uma criança por vez, e nos agregados de turma. Um nome só:
+\emph{Envolvimento}, que estava ``Imersão'' em quatro telas e ``Envolvimento''
+numa.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Cortar por \cd{run.finishedAt}}: \cd{clientTs} é o relógio do
+    APARELHO e \cd{finishedAt} é o do servidor. Comparar os dois numa escola com
+    relógio desregulado traria o mesmo erro de volta por outro caminho.
+  \item \emph{Parar de registrar eventos fora do feed, no cliente}: corrigiria
+    daqui para a frente e não tocaria em nenhum dado já coletado --- e depende de
+    a experiência estar atualizada.
+  \item \emph{Recalibrar os tetos de Gestos e Exploração}: exige medição em
+    turmas reais. Fica em aberto; mexer nos tetos por intuição trocaria um número
+    errado por outro.
+\end{itemize}
+
+\textbf{Consequências.} \cd{VERSAO\_DO\_RELATORIO} sobe para 4 e recomputa o que
+está congelado. Um teste do \arq{dossie-relatorio.spec.ts} precisou de um
+\cd{visto} para delimitar o feed: ele montava trinta \cd{perdeu\_foco} e nenhum
+post visto, ou seja, descrevia perdas de foco fora de qualquer feed --- uma
+distinção que antes não existia. O professor perde a leitura de um número por
+aluno na tabela; ganha o padrão dos cinco eixos, que é o que a conversa com ele
+usa.
+
+\textbf{Gatilho de reavaliação.} Dados de turmas reais mostrarem que
+\emph{Gestos} e \emph{Exploração} pontuam: aí os tetos são recalibrados e a
+pergunta de exibir o total volta a fazer sentido.

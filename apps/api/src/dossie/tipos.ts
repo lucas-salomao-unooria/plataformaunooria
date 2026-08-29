@@ -101,8 +101,14 @@ export interface ExplicacaoDoLado {
  *     "por quê" do lado passa a ser o do PERFIL do aluno, não o do polo nomeado
  *     do eixo — antes um aluno de Conservação lia a justificativa da Abertura,
  *     que defende o lado contrário ao dele.
+ * 4 → `postsOcultados` passa a ser contado pela EXPOSIÇÃO e não pelo domínio
+ *     (ADR-42): nos alunos que viraram o jogo, o relatório do professor contava
+ *     os posts do lado que o algoritmo estava EMPURRANDO neles, e divergia do
+ *     número que a criança lia na tela. E a janela do tempo passa a terminar com
+ *     o feed (ADR-44), o que devolve a imersão que derretia durante a aula.
+ *     Os dois exigem RECOMPUTAR o que está congelado — é o que a versão faz.
  */
-export const VERSAO_DO_RELATORIO = 3;
+export const VERSAO_DO_RELATORIO = 4;
 
 /** Shape do dossiê (doc 06). */
 export interface DossierData {
@@ -115,7 +121,12 @@ export interface DossierData {
   dominio: number;
   porBloco: { bloco: number; A: number; B: number; neutro: number; intensidadeMediaDominante: number }[];
   topDwell: { postId: string; dwellMs: number }[];
-  postsOcultados: { ladoOposto: string[]; total: number };
+  postsOcultados: {
+    ladoOposto: string[];
+    total: number;
+    /** Sem post de tese servido: não há lado a nomear, e 0 mentiria (ADR-42). */
+    ladoNaoObservado: boolean;
+  };
   interacoes: {
     curtidas: number;
     comentarios: number;

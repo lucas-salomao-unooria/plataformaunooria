@@ -89,10 +89,25 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
       if (!resposta.ok) {
         setAviso(corpo.mensagem ?? "Não deu para mudar o momento agora.");
       } else {
+        /**
+         * "0 de 1 tela(s) mudaram" era a mensagem de SUCESSO mais comum, e lia
+         * como falha: a api só conta quem trocou de fase, e quem já estava lá
+         * não conta. No meio da aula, com a sala esperando, o professor lia isso
+         * como "não funcionou" e apertava de novo.
+         */
+        const movidos = corpo.movidos ?? 0;
+        const total = corpo.total ?? 0;
         const fora = corpo.foraDoAparelho ?? 0;
+        const pendentes = fora > 0 ? ` ${fora} ainda não entraram no aparelho.` : "";
+
         setAviso(
-          `${rotulo}: ${corpo.movidos ?? 0} de ${corpo.total ?? 0} tela(s) mudaram.` +
-            (fora > 0 ? ` ${fora} aluno(s) ainda não entraram no aparelho.` : ""),
+          total === 0
+            ? `${rotulo}: ninguém entrou na atividade ainda.`
+            : movidos === 0
+              ? `${rotulo}: a turma já estava aí — nenhuma tela precisou mudar.${pendentes}`
+              : movidos === total
+                ? `${rotulo}: as ${total} tela(s) mudaram.${pendentes}`
+                : `${rotulo}: ${movidos} de ${total} tela(s) mudaram.${pendentes}`,
         );
       }
       await buscar();

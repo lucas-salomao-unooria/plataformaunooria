@@ -190,6 +190,8 @@ export const LinhaDoMonitorSchema = z.object({
   ociosoHaMs: z.number().nullable(),
   alertaDeOcioso: z.boolean(),
   temDossie: z.boolean(),
+  /** Tamanho da reflexão escrita — nunca o texto, que é de criança. */
+  caracteresDaReflexao: z.number().int().nonnegative(),
   publicou: z.boolean(),
 });
 

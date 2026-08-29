@@ -18,9 +18,15 @@ import { api } from '../../lib/api';
  * 3. **Ancorada no que ele acabou de viver**, não em teoria. Ele viu os posts que
  *    perdeu segundos atrás; a pergunta parte dali.
  *
- * Sem limite de caracteres. O mínimo é curto e existe só para "gostei" não passar.
+ * Sem limite de caracteres. O mínimo é curto e existe só para "gostei" não passar
+ * — e ele VEM DA API (`GET /runs/:id/reflexao`), que é quem vai recusar o texto.
+ * Havia um 60 aqui e outro no schema da rota, sem nada que os obrigasse a
+ * concordar: no dia em que divergissem, quem descobriria seria o aluno, com o
+ * botão liberado e a api dizendo que estava curto.
+ *
+ * O fallback existe só para a tela abrir antes da resposta chegar.
  */
-const MINIMO = 60;
+const MINIMO_ATE_A_API_RESPONDER = 60;
 
 export function Reflexao({ runId }: { runId: string }) {
   const [texto, setTexto] = useState('');
@@ -28,16 +34,18 @@ export function Reflexao({ runId }: { runId: string }) {
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [minimo, setMinimo] = useState(MINIMO_ATE_A_API_RESPONDER);
 
   /** Recupera o que ele já escreveu: reabrir a tela não pode perder texto. */
   useEffect(() => {
     let ativo = true;
     api
-      .get<{ texto: string }>(`/runs/${runId}/reflexao`)
+      .get<{ texto: string; minimo?: number }>(`/runs/${runId}/reflexao`)
       .then((corpo) => {
         if (!ativo) return;
         setTexto(corpo.texto ?? '');
         setSalvo(Boolean(corpo.texto));
+        if (corpo.minimo) setMinimo(corpo.minimo);
       })
       .catch(() => undefined)
       .finally(() => ativo && setCarregado(true));
@@ -46,7 +54,7 @@ export function Reflexao({ runId }: { runId: string }) {
     };
   }, [runId]);
 
-  const faltam = Math.max(0, MINIMO - texto.trim().length);
+  const faltam = Math.max(0, minimo - texto.trim().length);
   const podeSalvar = faltam === 0 && !salvando;
 
   const salvar = async () => {
@@ -93,7 +101,7 @@ export function Reflexao({ runId }: { runId: string }) {
         <label className="flex flex-col gap-1.5">
           <textarea
             className="min-h-[220px] w-full rounded-xl border border-white/20 bg-white/5 p-3 text-[15px] leading-relaxed text-white outline-none placeholder:text-white/40 focus:border-brand-coral"
-            placeholder="Escreve com suas palavras. Não tem tamanho certo."
+            placeholder="Escreve com suas palavras — umas duas linhas já bastam."
             value={texto}
             disabled={!carregado}
             onChange={(evento) => {
@@ -102,7 +110,11 @@ export function Reflexao({ runId }: { runId: string }) {
             }}
           />
           <span className="flex justify-between text-[12px] text-white/50">
-            <span>{faltam > 0 ? `faltam ${faltam} caracteres` : `${texto.trim().length} caracteres`}</span>
+            <span>
+              {faltam > 0
+                ? `escreve mais um pouco — faltam ${faltam} caracteres`
+                : `${texto.trim().length} caracteres · escreve o quanto quiser`}
+            </span>
             {salvo ? <span className="text-brand-coral">salvo</span> : null}
           </span>
         </label>

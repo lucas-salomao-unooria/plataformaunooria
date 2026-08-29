@@ -594,10 +594,22 @@ model PerfilImportado {
 model Conclusao {
   runId      String   @id @map("run_id") @db.Uuid
   escolaId   String   @map("escola_id")
-  /// A | B | duvida
+  /// A | B | duvida — a ÚLTIMA escolha, que é a que vale.
   inclinacao String
+  /// A PRIMEIRA escolha, imutável depois de gravada.
+  ///
+  /// A tela diz "pode trocar de ideia enquanto espera — vale a última", e o
+  /// aluno troca de propósito. O upsert sobrescrevia `inclinacao` e a primeira
+  /// se perdia para sempre: a correlação "lado do feed × resposta", que é o dado
+  /// mais forte do produto, não tinha como dizer se estava lendo a reação ao
+  /// feed ou o que sobrou depois de dois minutos esperando a turma.
+  inclinacaoInicial String? @map("inclinacao_inicial")
+  /// Quantas vezes ele mudou de ideia antes de o professor encerrar o momento.
+  trocas     Int      @default(0)
   texto      String?
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// `createdAt` congelava no primeiro envio e passava a mentir sobre a linha.
+  atualizadoEm DateTime @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 

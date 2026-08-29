@@ -4,6 +4,13 @@ import { AlertBox, Card } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
 import {
+  REVELACAO_FIXA,
+  TELA_DA_LINGUAGEM,
+  TELA_FINAL,
+  telaDoLadoSemeado,
+} from "@edu/conteudo-exp-01";
+import { CONTROLE_DO_PROFESSOR, type EtapaDaTurma } from "@/lib/insta-tipos";
+import {
   MISSAO_ATUAL,
   buscarMissao,
   rotaDaMissao,
@@ -21,6 +28,34 @@ import {
  * valores) e o Instanooria. Nenhum aluno deve suspeitar que os dois se conectam
  * antes da revelação — é essa surpresa que faz o relatório final funcionar.
  */
+/**
+ * O que o guia acrescenta ao que o PAINEL já diz em cada momento.
+ *
+ * A tabela desta página era escrita à mão, com seis linhas — e o painel ao vivo
+ * tem sete passos. O guia falava em "os seis botões", o professor via sete, e
+ * nada obrigava os dois a concordarem: um passo novo entraria no painel e o guia
+ * seguiria mentindo. Agora a lista vem de `CONTROLE_DO_PROFESSOR`, a mesma que o
+ * painel monta, e o que mora aqui é só o detalhe a mais — aditivo por etapa, e
+ * inofensivo se faltar.
+ */
+/** Como o guia nomeia cada origem de lado ao mostrar a tela 5. */
+const ORIGEM_EM_PALAVRAS: Record<'perfil' | 'redistribuido' | 'sorteio', string> = {
+  perfil: 'Quem jogou o Ato 1',
+  redistribuido: 'Quem você redistribuiu',
+  sorteio: 'Quem entrou sem perfil',
+};
+
+const DETALHE_DO_GUIA: Partial<Record<EtapaDaTurma, string>> = {
+  investigacao: "Antes do feed ele escolhe figurinha e nome, e lê a missão.",
+  conclusao: "Três opções (mais para A / em dúvida / mais para B). Não tem campo de texto aqui.",
+  debate: "Só abrir e fechar o que ele salvou — nada de rolar feed, curtir ou comentar.",
+  explicabilidade:
+    "São sete telas, uma frase por vez, no ritmo dele — e no fim o relatório, que abre em tela cheia.",
+  perdidos: "Sem nenhuma interação: só o que passou longe.",
+  reflexao: "Escrita livre, com um mínimo curto para a frase não ficar pela metade.",
+  fim: "Encerra a atividade e tira a turma do ao vivo.",
+};
+
 export default async function GuiaPage({
   params,
 }: {
@@ -120,15 +155,18 @@ export default async function GuiaPage({
         </ol>
       </Card>
 
-      <Card variant="outlined" title="Você conduz — os seis botões">
+      <Card
+        variant="outlined"
+        title={`Você conduz — os ${CONTROLE_DO_PROFESSOR.length} momentos`}
+      >
         <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
           A atividade não roda sozinha: ninguém passa para o momento seguinte sem
           que você aperte o botão. Isso existe para que a sala chegue{" "}
           <strong>junta</strong> no debate e na revelação — o momento-espelho
           depende de todos terem acabado de sair do feed. O painel da atividade
           mostra o momento de agora em destaque, o botão da próxima ação e uma
-          linha dizendo o que vai mudar na tela dos alunos. Dá para voltar um
-          momento se você adiantou sem querer.
+          linha dizendo o que vai mudar na tela dos alunos. Em cada momento há
+          também <strong>voltar um momento</strong>, se você adiantou sem querer.
         </p>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[560px] border-collapse text-left text-[14px]">
@@ -141,38 +179,19 @@ export default async function GuiaPage({
               </tr>
             </thead>
             <tbody className="align-top">
-              {[
-                [
-                  "Começar investigação",
-                  "libera o feed (figurinha + nome + missão)",
-                ],
-                [
-                  "Encerrar investigação",
-                  "fecha o feed; aparece a pergunta com três opções (mais para A / em dúvida / mais para B). Não tem campo de texto aqui.",
-                ],
-                [
-                  "Iniciar debate",
-                  "a tela trava na coleção: só os posts que ele salvou, e só abrir/fechar. Nada de rolar feed, curtir ou comentar.",
-                ],
-                [
-                  "Encerrar debate",
-                  "libera a explicação de como o feed dele foi montado, e o relatório.",
-                ],
-                [
-                  "Mostrar o que perderam",
-                  "o feed volta em cinza, só com os posts do outro lado que nunca chegaram até ele.",
-                ],
-                [
-                  "Abrir reflexão",
-                  "campo de escrita livre, sem limite: o fechamento da atividade.",
-                ],
-              ].map(([botao, efeito]) => (
-                <tr key={botao} className="border-t border-unooria-neutral-200">
+              {CONTROLE_DO_PROFESSOR.map((momento) => (
+                <tr key={momento.etapa} className="border-t border-unooria-neutral-200">
                   <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
-                    {botao}
+                    {momento.rotulo}
                   </td>
                   <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
-                    {efeito}
+                    {momento.descricao}
+                    {DETALHE_DO_GUIA[momento.etapa] ? (
+                      <span className="text-unooria-neutral-700">
+                        {" "}
+                        {DETALHE_DO_GUIA[momento.etapa]}
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -184,6 +203,83 @@ export default async function GuiaPage({
           o relatório antes dos colegas não fica preso, mas ninguém passa do que
           você liberou. A única exceção é o <strong>debate</strong> — ele trava
           todo mundo na mesma tela, de propósito.
+        </p>
+      </Card>
+
+      {/*
+        A REVELAÇÃO, palavra por palavra.
+        Era a única superfície do produto que o professor não lia antes de entrar
+        em sala — ele conduzia a conversa mais importante das duas aulas sem
+        saber o que a turma tinha acabado de ver. E o texto vem do MESMO módulo
+        que a experiência exibe (`@edu/conteudo-exp-01`): copiado para cá, ele
+        divergiria na primeira revisão de copy e o guia passaria a mentir.
+      */}
+      <Card variant="outlined" title="O que a turma lê na revelação">
+        <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
+          São <strong>{REVELACAO_FIXA.length + 3} telas</strong> de fundo preto, uma frase por vez, no
+          ritmo de cada aluno — não um cartão. Leia antes da aula: é o argumento inteiro da atividade,
+          e a conversa que vem depois parte daqui. O tom nunca culpa a criança: o sujeito da frase é
+          sempre o sistema.
+        </p>
+
+        <ol className="mt-4 flex flex-col gap-3">
+          {[...REVELACAO_FIXA, null, TELA_DA_LINGUAGEM, TELA_FINAL].map((tela, indice) =>
+            tela === null ? (
+              <li
+                key="lado-semeado"
+                className="rounded-lg border border-unooria-neutral-200 bg-unooria-neutral-50 p-3"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-unooria-neutral-500">
+                  tela {indice + 1} · muda conforme o aluno
+                </p>
+                <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-700">
+                  Esta é a única que não é igual para todo mundo. Dizer “foi escolhido a partir de como
+                  você jogou” para quem caiu no sorteio seria mentir na única tela que existe para não
+                  mentir — então cada aluno lê a versão verdadeira do caso dele:
+                </p>
+                <ul className="mt-2 flex flex-col gap-2">
+                  {(["perfil", "redistribuido", "sorteio"] as const).map((origem) => (
+                    <li key={origem} className="text-[13px] leading-relaxed">
+                      <span className="font-semibold text-unooria-neutral-950">
+                        {ORIGEM_EM_PALAVRAS[origem]}:
+                      </span>{" "}
+                      <span className="text-unooria-neutral-800">
+                        {telaDoLadoSemeado(origem).texto}{" "}
+                        <strong>{telaDoLadoSemeado(origem).destaque}</strong>{" "}
+                        {telaDoLadoSemeado(origem).complemento}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ) : (
+              <li
+                key={tela.texto}
+                className="rounded-lg border border-unooria-neutral-200 p-3"
+              >
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-unooria-neutral-500">
+                  tela {indice + 1}
+                </p>
+                <p className="mt-1 text-[15px] leading-relaxed text-unooria-neutral-900">
+                  {tela.texto}
+                  {tela.destaque ? (
+                    <>
+                      {" "}
+                      <strong>{tela.destaque}</strong>
+                    </>
+                  ) : null}
+                  {tela.complemento ? (
+                    <span className="text-unooria-neutral-700"> {tela.complemento}</span>
+                  ) : null}
+                </p>
+              </li>
+            ),
+          )}
+        </ol>
+
+        <p className="mt-3 text-[12px] leading-relaxed text-unooria-neutral-500">
+          Na última tela o botão vira <strong>“Ver meu relatório”</strong>, e o relatório abre em tela
+          cheia, fora do aparelho — dá para projetar.
         </p>
       </Card>
 

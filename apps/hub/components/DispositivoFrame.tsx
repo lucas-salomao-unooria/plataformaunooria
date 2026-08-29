@@ -27,14 +27,30 @@ const FOLGA = { vertical: 32, horizontal: 16 };
  *
  * Aplicado quando o manifesto da experiência declara `viewport`; sem viewport,
  * o ExpFrame ocupa a área inteira (exp-02, desenhada para desktop).
+ *
+ * `expandido` solta o aparelho e deixa a experiência ocupar a área toda — hoje
+ * só o relatório do aluno, DEPOIS da revelação, onde não há mais disfarce a
+ * proteger e 375px comprimiam a tela mais densa do produto.
+ *
+ * Ele muda ESTILO, nunca a árvore. Tirar o `children` daqui para renderizá-lo
+ * fora desmontaria o `<iframe>`, e o aluno voltaria à revelação com a sessão
+ * recarregada. É por isso que o modo expandido é uma prop, e não um `if` no
+ * `ExpHost` trocando o wrapper.
+ *
+ * E é por isso que quem liga a prop precisa ser conservador: o
+ * `IntersectionObserver` que mede o dwell se refere ao APARELHO, então um feed
+ * numa área larga inflaria o sinal central do motor. Fora do relatório, a
+ * resposta certa é sempre "contraído".
  */
 export function DispositivoFrame({
   largura,
   altura,
+  expandido = false,
   children,
 }: {
   largura: number;
   altura: number;
+  expandido?: boolean;
   children: React.ReactNode;
 }) {
   const area = useRef<HTMLDivElement>(null);
@@ -42,7 +58,7 @@ export function DispositivoFrame({
 
   useEffect(() => {
     const alvo = area.current;
-    if (!alvo) return;
+    if (!alvo || expandido) return;
 
     const recalcular = () => {
       const { width, height } = alvo.getBoundingClientRect();
@@ -58,7 +74,7 @@ export function DispositivoFrame({
     const observador = new ResizeObserver(recalcular);
     observador.observe(alvo);
     return () => observador.disconnect();
-  }, [largura, altura]);
+  }, [largura, altura, expandido]);
 
   return (
     <div
@@ -77,9 +93,9 @@ export function DispositivoFrame({
     >
       <div
         style={{
-          width: largura,
-          height: altura,
-          transform: `scale(${escala})`,
+          width: expandido ? "100%" : largura,
+          height: expandido ? "100%" : altura,
+          transform: expandido ? "none" : `scale(${escala})`,
           transformOrigin: "center center",
           flexShrink: 0,
           overflow: "hidden",
@@ -87,8 +103,11 @@ export function DispositivoFrame({
           // `outline`, não `border`: o preflight do Tailwind põe
           // `box-sizing: border-box` em tudo, e 1px de borda comeria 2px do
           // viewport — o iframe deixaria de ter EXATAMENTE 375×812.
-          outline: "1px solid #e5e5e5",
-          boxShadow: "0 8px 32px rgb(0 0 0 / 8%)",
+          outline: expandido ? "none" : "1px solid #e5e5e5",
+          boxShadow: expandido ? "none" : "0 8px 32px rgb(0 0 0 / 8%)",
+          // Sem `width`/`height` na transição: animá-las faria o iframe
+          // relayoutar quadro a quadro, e o conteúdo dentro dele piscaria.
+          transition: "transform 260ms ease, outline-color 260ms ease",
         }}
       >
         {children}
