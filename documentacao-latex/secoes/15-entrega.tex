@@ -80,9 +80,10 @@ jobs:
           fi
       - name: Snyk (trava em high)   # high/critical em dependencia = vermelho
         env: { SNYK_TOKEN: "${{ secrets.SNYK_TOKEN }}" }
-        run: |
+        run: |   # o --exclude e obrigatorio: o passo roda DEPOIS do build
           npm install -g snyk
-          snyk test --all-projects --severity-threshold=high
+          snyk test --all-projects --severity-threshold=high \
+            --exclude=.next,.next-prod,dist,build,storage,storage-privado,jogo
 \end{lstlisting}
 
 \begin{decisao}
