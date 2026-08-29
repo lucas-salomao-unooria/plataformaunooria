@@ -2,7 +2,7 @@
 #   docker build -f apps/hub/Dockerfile .
 #
 # O que este arquivo resolve, e que a versão anterior errava:
-#   - `corepack prepare` fixa a versão do pnpm (o `enable` sozinho não fixa);
+#   - pnpm pinado pelo npm na versão do packageManager (Node 25+ não traz corepack);
 #   - o `standalone` NÃO copia `.next/static` nem `public/` — os dois são
 #     copiados à mão, senão a página sobe sem CSS e sem imagem (sintoma
 #     clássico: "tela branca / css bugado");
@@ -20,7 +20,10 @@
 FROM node:26.7.0-slim AS build
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+# Node 25+ NAO traz mais o corepack na imagem oficial (o `corepack enable` morre
+# com "command not found"); o pnpm entra pelo npm, pinado na MESMA versao do
+# `packageManager` do package.json — divergir aqui e lockfile reescrito.
+RUN npm install -g pnpm@9.12.0
 
 WORKDIR /repo
 # Camada de dependências: só invalida quando o lockfile muda.

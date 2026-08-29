@@ -2,8 +2,8 @@
 #   docker build -f apps/api/Dockerfile .
 #
 # O que este arquivo resolve, e que a versão anterior errava:
-#   - `corepack enable` sozinho não fixa a versão do pnpm (e pode pedir
-#     confirmação interativa): `corepack prepare` trava a do packageManager;
+#   - pnpm pinado pelo npm na versão do packageManager (Node 25+ não traz mais
+#     o corepack na imagem oficial — o `corepack enable` morre com 127);
 #   - copiar `node_modules` da build para a imagem final QUEBRA os symlinks do
 #     pnpm (o store fica em `.pnpm/`): usamos `pnpm deploy`, que materializa
 #     uma árvore real de produção;
@@ -22,7 +22,10 @@ ENV PATH=$PNPM_HOME:$PATH
 # `openssl` é dependência de runtime do engine do Prisma.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
+# Node 25+ NAO traz mais o corepack na imagem oficial (o `corepack enable` morre
+# com "command not found"); o pnpm entra pelo npm, pinado na MESMA versao do
+# `packageManager` do package.json — divergir aqui e lockfile reescrito.
+RUN npm install -g pnpm@9.12.0
 
 WORKDIR /repo
 # Camada de dependências: só invalida quando o lockfile muda.
