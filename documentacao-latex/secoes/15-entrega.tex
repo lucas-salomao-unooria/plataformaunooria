@@ -82,7 +82,7 @@ jobs:
         env: { SNYK_TOKEN: "${{ secrets.SNYK_TOKEN }}" }
         run: |   # o --exclude e obrigatorio: o passo roda DEPOIS do build
           npm install -g snyk
-          snyk test --all-projects --severity-threshold=high \
+          snyk test --all-projects --dev --severity-threshold=high \
             --exclude=.next,.next-prod,dist,build,storage,storage-privado,jogo
 \end{lstlisting}
 
@@ -96,13 +96,21 @@ deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
 
 \subsection{A trava de vulnerabilidade (Snyk)}
 
-O portão termina com \cd{snyk test --all-projects --severity-threshold=high}:
-vulnerabilidade \cd{high} ou \cd{critical} em qualquer dependência do
-\emph{workspace} deixa o CI vermelho --- e, como o \emph{deploy} espera pelo
-portão, nada sobe (\adrr{ADR-39}). O passo roda sempre no \emph{workspace}
-inteiro, sem o filtro por mudança do resto do portão: o \emph{lockfile} é um
-só, e a vulnerabilidade nova chega pelo banco de dados do Snyk, não por um
-\emph{commit} --- ``dependência que não mudou'' não existe como categoria.
+O portão termina com
+\cd{snyk test --all-projects --dev --severity-threshold=high}: vulnerabilidade
+\cd{high} ou \cd{critical} em qualquer dependência do \emph{workspace} deixa o
+CI vermelho --- e, como o \emph{deploy} espera pelo portão, nada sobe
+(\adrr{ADR-39}). O passo roda sempre no \emph{workspace} inteiro, sem o filtro
+por mudança do resto do portão: o \emph{lockfile} é um só, e a vulnerabilidade
+nova chega pelo banco de dados do Snyk, não por um \emph{commit} ---
+``dependência que não mudou'' não existe como categoria.
+
+O \cd{--dev} não é detalhe: sem ele o Snyk pula as \cd{devDependencies}, e foi
+por aí que um \emph{critical} no \cd{vitest} passou verde na primeira semana da
+trava (achado pelo \cd{pnpm audit}, que olha tudo). Ferramenta de
+desenvolvimento não embarca no \emph{bundle}, mas roda na máquina de quem
+desenvolve e no \emph{runner} do CI --- e é lá que um \emph{dev server} furado
+vaza código.
 
 \begin{nota}
 \textbf{O que exige \emph{major} de \emph{framework} não bloqueia --- expira.}

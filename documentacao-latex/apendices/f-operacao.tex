@@ -454,6 +454,19 @@ testado no container} &
   \cd{pnpm docker:dev:deps}, ou \cd{prisma generate} dentro do container, e
   \textbf{recriar} o serviço --- \cd{restart} não relê o \arq{compose}, então
   variável de ambiente nova (como \env{CORS\_ORIGINS}) não entra.\\
+\zebra \textbf{Snyk verde no PR, \cd{SNYK-0005 Authentication error} só no
+  \emph{push} para \cd{main}} &
+  Workflow \textbf{chamado} não herda \emph{secrets}: no PR o \arq{ci.yml} roda
+  direto e recebe \env{SNYK\_TOKEN}; chamado pelo \arq{deploy.yml}, precisa de
+  \cd{secrets: inherit} no \emph{job} \cd{verificar}. O passo falha alto de
+  propósito --- token ausente nunca vira portão aberto.\\
+\textbf{\cd{vite build} morre com \enquote{Transforming destructuring \ldots{}
+  is not supported yet} em todas as experiências} &
+  \cd{esbuild} fora da faixa que o Vite pina (um \emph{override} de segurança,
+  tipicamente): o 0.28 não faz mais o \emph{lowering} para os \emph{targets}
+  \emph{default} do Vite~6 (\cd{chrome87}/\cd{es2020}). Reverter o
+  \emph{override}; a vulnerabilidade fica em \arq{.snyk} com prazo até o Vite
+  pinar o esbuild corrigido.\\
 \bottomrule
 \end{tabularx}
 
