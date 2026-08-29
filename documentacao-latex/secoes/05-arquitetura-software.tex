@@ -463,8 +463,8 @@ mentiria sobre quem depende dela.
     {\texttt{ExpFrame}\desc{\emph{sandbox} + protocolo v1}};
 
   \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
-    {Rotas: \texttt{/aluno}, \texttt{/professor/*}, \texttt{/admin/*},
-     \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
+    {Rotas: \texttt{/} (\emph{landing}), \texttt{/aluno}, \texttt{/professor/*},
+     \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
   \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
     {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
 
@@ -494,6 +494,21 @@ passou a valer um nível abaixo: o \emph{header} é \emph{chrome} do hub, desenh
 \emph{acima} do aparelho --- dentro do \cd{iframe} nada da marca institucional
 entra.
 \end{decisao}
+
+\begin{nota}
+\textbf{A raiz é a \emph{landing} pública, e continua roteando quem tem sessão}
+(\adrr{ADR-40}). \rota{/} sem sessão renderiza \cd{components/landing/} ---
+porte da tela desenhada no Stitch, com a estrutura, a copy e o movimento do
+modelo (navegação fixa em vidro, \emph{shader} WebGL de fundo, revelação ao
+rolar) e a cor, a tipografia, os ícones, o logo e os botões do DS. Com sessão,
+\rota{/} redireciona para a \emph{home} do papel (ou para \rota{/trocar-senha}):
+o \cd{login-form} e a troca de senha fazem \cd{router.replace("/")} e dependem
+desse roteamento para cair na área certa sem o \emph{client} conhecer o papel. A
+\emph{landing} está fora do \cd{matcher} do \emph{middleware}, não lê nada da
+sessão e é, com \rota{/login} e o JWKS, a única superfície pública do hub. Os
+dois pedaços com ciclo de vida (\cd{FundoAnimado}, \cd{RevelarAoRolar}) são
+\emph{client components}; o resto é servidor.
+\end{nota}
 
 \section{C4 nível 4 --- Código}
 \label{sec:c4l4}

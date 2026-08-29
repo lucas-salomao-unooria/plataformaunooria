@@ -1,0 +1,285 @@
+/*
+ * Landing pública da plataforma (`/`, sem sessão).
+ *
+ * Porte fiel da tela "Unooria - Educação Digital Infinita" do Stitch
+ * (projeto 16689192725057015920) em ESTRUTURA, copy, seções e movimento —
+ * nav fixa em vidro, hero sobre um shader animado, cards flutuantes, revelação
+ * ao rolar, rodapé. O que NÃO veio do Stitch é a cor e a tipografia: o HTML dele
+ * traz o tema Material que a ferramenta gera sozinha (#396093, Nunito Sans,
+ * Inter, Material Symbols Outlined), e a marca da plataforma é a do DS. Toda cor
+ * aqui é token `--unooria-*` (ADR-40); nada de literal fora de `transparent`.
+ *
+ * É CSS de composição de página, não compensação de lacuna do DS — por isso
+ * vive aqui, ao lado do componente, e não em `packages/ui/styles/plataforma.css`.
+ */
+
+.landing {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--unooria-color-brandnavy-50, #f5f8fc);
+  color: var(--unooria-color-neutral-950, #22272a);
+  font-family: var(--unooria-font-sans, 'Open Sans', system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+/* O shader fica atrás de tudo, fixo ao viewport e a 30% — é textura, não figura. */
+.landing__fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.3;
+  /* Sem WebGL o canvas fica vazio e este gradiente (token do DS) faz o papel. */
+  background: var(--unooria-color-gradient-1);
+}
+
+.landing__fundo canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.landing__conteudo {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- vidro (glass panel) ------------------------------------------------ */
+
+.landing-vidro {
+  background: color-mix(in srgb, var(--unooria-color-neutral-50, #fff) 70%, transparent);
+  -webkit-backdrop-filter: blur(var(--unooria-blur-400, 16px));
+  backdrop-filter: blur(var(--unooria-blur-400, 16px));
+  border: 1px solid color-mix(in srgb, var(--unooria-color-neutral-50, #fff) 40%, transparent);
+}
+
+/* ---- navegação fixa ----------------------------------------------------- */
+
+.landing-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 80px;
+  background: color-mix(in srgb, var(--unooria-color-neutral-50, #fff) 70%, transparent);
+  -webkit-backdrop-filter: blur(var(--unooria-blur-500, 32px));
+  backdrop-filter: blur(var(--unooria-blur-500, 32px));
+  border-bottom: 1px solid color-mix(in srgb, var(--unooria-color-neutral-50, #fff) 40%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--unooria-color-neutral-950, #22272a) 5%, transparent);
+}
+
+.landing-nav__miolo {
+  max-width: 1440px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ---- tipografia da página (escala do modelo, fonte do DS) ---------------- */
+
+.landing-display {
+  font-size: 48px;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+}
+
+.landing-titulo {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+}
+
+.landing-subtitulo {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.landing-corpo-lg {
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.landing-corpo {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.landing-rotulo {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+@media (max-width: 767px) {
+  .landing-display {
+    font-size: 36px;
+    line-height: 44px;
+  }
+
+  .landing-titulo {
+    font-size: 28px;
+    line-height: 36px;
+  }
+}
+
+/* ---- cores (só tokens) -------------------------------------------------- */
+
+.landing-cor-primaria { color: var(--unooria-color-brandnavy-900, #2f4f7f); }
+.landing-cor-apoio { color: var(--unooria-color-neutral-700, #475157); }
+/* A cor dos ÍCONES vai pela prop `color` do `Icon` (ver `landing.tsx`). */
+
+/* ---- seções ------------------------------------------------------------- */
+
+.landing-secao {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 96px 24px;
+}
+
+.landing-hero {
+  min-height: 100dvh;
+  padding: 80px 24px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- cards -------------------------------------------------------------- */
+
+.landing-cartao {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--unooria-color-brandpurple-700, #57547d) 4%, transparent);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.landing-cartao:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--unooria-color-brandnavy-900, #2f4f7f) 10%, transparent);
+}
+
+.landing-cartao--branco {
+  background: var(--unooria-color-neutral-50, #fff);
+}
+
+/* Selo redondo atrás do ícone da lista de "Nossa Resposta". */
+.landing-selo {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.landing-selo--navy { background: var(--unooria-color-opacity-brandnavy-200, rgba(127, 165, 226, 0.2)); }
+.landing-selo--roxo { background: color-mix(in srgb, var(--unooria-color-brandpurple-400, #aaa5c2) 20%, transparent); }
+
+/*
+ * O painel "conceito" de Nossa Resposta: no modelo era um PNG do símbolo da
+ * marca com um gradiente por cima. Aqui é o gradiente institucional do DS com
+ * o `LogoSymbol` vetorial — mesma imagem, sem raster.
+ */
+.landing-conceito {
+  position: relative;
+  min-height: 300px;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--unooria-color-gradient-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-conceito__simbolo {
+  width: 60%;
+  max-width: 340px;
+  height: auto;
+  opacity: 0.95;
+}
+
+/* ---- rodapé ------------------------------------------------------------- */
+
+.landing-rodape {
+  margin-top: 96px;
+  padding: 64px 24px;
+  background: color-mix(
+    in srgb,
+    var(--unooria-color-brandnavy-100, #e8effa) 40%,
+    var(--unooria-color-neutral-100, #f5f5f5)
+  );
+}
+
+.landing-rodape__miolo {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.landing-rodape a {
+  color: var(--unooria-color-neutral-700, #475157);
+  transition: color 0.15s ease;
+}
+
+.landing-rodape a:hover {
+  color: var(--unooria-color-brandnavy-900, #2f4f7f);
+}
+
+/* ---- revelação ao rolar ------------------------------------------------- */
+
+/*
+ * Só esconde depois que o JS montou (`.landing--animada`): sem script — ou com
+ * o bundle atrasado — a página nasce visível em vez de em branco.
+ */
+.landing--animada .landing-revelar {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.landing--animada .landing-revelar--visivel {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.landing-revelar--atraso-1 { transition-delay: 0.1s; }
+.landing-revelar--atraso-2 { transition-delay: 0.2s; }
+.landing-revelar--atraso-3 { transition-delay: 0.3s; }
+
+.landing-seta {
+  transition: transform 0.2s ease;
+}
+
+.landing-botao-explorar:hover .landing-seta {
+  transform: translateY(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing {
+    scroll-behavior: auto;
+  }
+
+  .landing--animada .landing-revelar,
+  .landing--animada .landing-revelar--visivel {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .landing-cartao,
+  .landing-cartao:hover,
+  .landing-seta {
+    transform: none;
+    transition: none;
+  }
+}

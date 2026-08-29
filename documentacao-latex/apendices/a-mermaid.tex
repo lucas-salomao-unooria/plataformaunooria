@@ -243,9 +243,12 @@ C4Component
     Component(header, "HeaderPlataforma", "", "Um so para todos os papeis")
     Component(disp,   "DispositivoFrame", "", "Casca de aparelho")
     Component(frame,  "ExpFrame", "", "Sandbox + protocolo v1")
+
+    Component(landing, "components/landing", "", "Rota / sem sessao: landing publica (ADR-40)")
   }
 
   Rel(mw, papeis, "usa")
+  Rel(landing, casca, "usa a casca do DS")
   Rel(embed, chave, "assina")
   Rel(embed, devsrv, "porta em dev")
   Rel(disp, frame, "envolve")

@@ -388,6 +388,17 @@ professor entrega a virada. `/aluno` e `/exp/*` são a MESMA área no middleware
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
+**A raiz (`/`) é a LANDING pública** (2026-08-29, ADR-40): sem sessão, renderiza
+`components/landing/` — porte da tela do Stitch com a estrutura, a copy e o
+movimento do modelo, e a cor, a tipografia, os ícones, o logo e os botões do DS
+(nunca a paleta/fontes que o Stitch gera). Com sessão, `/` continua roteando
+para a home do papel: o `login-form` e o `trocar-senha` fazem
+`router.replace("/")` e dependem disso. Duas armadilhas medidas: o cleanup do
+shader NÃO pode chamar `loseContext()` (o Strict Mode remonta o efeito no mesmo
+canvas e o contexto volta perdido — fundo em branco), e cor de ícone vai pela
+prop `color` do `Icon`, não por classe (a folha do DS vence e o ícone sai preto).
+Smoke: `node scripts/walkthrough-landing.mjs testes/wt-landing` (só o hub).
+
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
 (marca → home do papel, nome + série/papel, avatar, Sair) é o header de
 `/aluno`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
@@ -888,6 +899,7 @@ SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: 
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
+node scripts/walkthrough-landing.mjs testes/wt-landing        # smoke da LANDING (/ sem sessão): fontes do DS, shader, revelação, CTA -> /login. Só o hub.
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
 node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, aluno transferido pelo CPF
 node scripts/walkthrough-perfil-portatil.mjs testes/wt-portatil  # smoke do PERFIL PORTÁTIL: emitir assinado, receber, e o que acontece com um arquivo adulterado

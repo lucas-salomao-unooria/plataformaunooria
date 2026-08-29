@@ -58,7 +58,7 @@ revisão em par que uma pessoa não tem.
      \arq{walkthrough-aluno}, \arq{walkthrough-professor},
      \arq{walkthrough-aluno-unootube}, \arq{walkthrough-vila-do-lume},
      \arq{walkthrough-professor-vila}, \arq{walkthrough-ato1-vila},
-     \arq{probe-pointerlock}};
+     \arq{walkthrough-landing}, \arq{probe-pointerlock}};
 
   \node[actnote, text width=64mm, anchor=north west] at (0.4,-7.4)
     {\textbf{A pirâmide é larga na base de propósito.} Cada módulo de domínio
@@ -115,6 +115,7 @@ node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube   # al
 node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila       # usa o CHROME do sistema
 node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
 node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
+node scripts/walkthrough-landing.mjs          testes/wt-landing     # so o hub; a api nao e necessaria
 node scripts/probe-pointerlock.mjs
 \end{lstlisting}
 
@@ -248,7 +249,7 @@ Concorrência do motor & \yes{} Forte & \emph{Lock} consultivo, reversibilidade,
 \emph{Guard} do Pub/Sub & \yes{} Forte & Inclui o caso \emph{fail closed}.\\
 \zebra Provider de IA & \yes{} Parcial & Cadeia ADC e formato da requisição. Não
   há teste contra o Vertex real --- e não deveria haver.\\
-Telas & \yes{} \emph{Smoke} & Sete \emph{walkthroughs}; não é cobertura de
+Telas & \yes{} \emph{Smoke} & Oito \emph{walkthroughs}; não é cobertura de
   interação, é verificação de que apareceu.\\
 \zebra \textbf{Carga} & \no{} \textbf{Ausente} & O teste de \num{4000}
   \emph{logins} em dez minutos é obrigatório antes de novembro de 2026 e não foi

@@ -1843,3 +1843,102 @@ sem o \emph{upgrade}, o próprio passo volta a falhar. \cd{SNYK\_TOKEN} ausente
 \textbf{Gatilho de reavaliação.} A cota do Snyk barrar o portão, ou o
 \arq{.snyk} vencer: os dois têm a mesma resposta --- resolver a causa (plano ou
 \emph{upgrade}), não afrouxar a trava.
+
+\section{ADR-40 --- A raiz é a \emph{landing}; a marca vem do DS, não do modelo}
+\label{adr:landing}
+
+\begin{especificacao}{Contexto}
+A raiz do hub (\rota{/}) só roteava: sem sessão, \rota{/login}; com sessão, a
+\emph{home} do papel. Quem chegava ao endereço da plataforma via um formulário
+de usuário e senha e nada sobre o produto --- não havia \emph{landing}. A tela
+foi desenhada no Stitch (projeto \cd{16689192725057015920}, ``Unooria ---
+Educação Digital Infinita''), e o pedido era implementá-la fiel ao modelo.
+
+O HTML exportado pelo Stitch traz duas coisas que não são da marca: o tema
+Material que a ferramenta gera sozinha (primária \cd{\#396093}, Nunito Sans,
+Inter, Material Symbols \emph{Outlined}, Tailwind por CDN) e o logo como PNG
+hospedado no Google. E o \cd{login-form} e a troca de senha fazem
+\cd{router.replace("/")} contando com o roteamento da raiz --- é o que leva a
+pessoa à área certa sem o \emph{client} conhecer o papel.
+\end{especificacao}
+
+\textbf{Decisão.} Três partes.
+
+\begin{enumerate}
+  \item \textbf{\rota{/} sem sessão é a \emph{landing}; com sessão, continua
+    roteando} para a \emph{home} do papel (ou para \rota{/trocar-senha}). Nada
+    muda no \cd{login-form}, na troca de senha nem no \emph{middleware} (a raiz
+    segue fora do \cd{matcher}). Quem já está dentro e quer ver a \emph{landing}
+    sai da conta.
+  \item \textbf{Fiel ao modelo em estrutura, copy, seções e movimento} ---
+    navegação fixa em vidro, \emph{hero} sobre o \emph{shader} WebGL do modelo
+    (portado do \cd{<script>} inline para um \emph{client component} com ciclo
+    de vida), cards flutuantes, revelação ao rolar, rodapé --- \textbf{e do DS em
+    cor, tipografia, ícones, logo e botões}: tokens \cd{--unooria-*} (a primária
+    do modelo vira \cd{brandnavy-900}; os roxos, \cd{brandpurple-600/700}; o
+    vermelho, \cd{danger-600}), Open Sans, \cd{Icon} (Material Symbols
+    \emph{Rounded}, os mesmos nomes de ícone), \cd{Logo}/\cd{LogoSymbol}
+    vetoriais no lugar dos PNG e \cd{Button} nas duas chamadas. O painel
+    ``conceito'' de Nossa Resposta, que no modelo era um PNG do símbolo sob um
+    gradiente, é o \cd{--unooria-color-gradient-1} com o \cd{LogoSymbol} ---
+    mesma imagem, sem \emph{raster}.
+  \item \textbf{O CSS da \emph{landing} vive ao lado do componente}
+    (\arq{components/landing/landing.css}), não em \arq{plataforma.css}: é
+    composição de página, não compensação de lacuna do DS. Toda cor ali é
+    \emph{token}; translucidez sai de \cd{color-mix()} sobre o \emph{token}, não
+    de literal \cd{rgba}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Landing sempre visível, com uma rota nova (\rota{/inicio}) para o
+    roteamento por sessão}: exigiria trocar o destino do \cd{login-form} e da
+    troca de senha e criar uma segunda porta que só redireciona. Mais peças
+    para o mesmo resultado --- e quem está logado raramente quer a página de
+    venda.
+  \item \emph{Landing fora do hub, como HTML estático no \emph{bucket}}: a
+    página teria de duplicar o CSS e as fontes do DS, e o botão ``Começar
+    Agora'' atravessaria origens. O hub já serve a casca do DS
+    (\cd{CascaPlataforma}) --- a \emph{landing} é a quinta superfície a usá-la.
+  \item \emph{Reproduzir a paleta e as fontes do Stitch}: seria a primeira
+    superfície da plataforma fora da marca, e por definição a mais vista. A
+    regra do DS (Capítulo~\ref{cap:ds}) existe exatamente para isso.
+  \item \emph{Trazer o Tailwind por CDN e o tema do modelo}: o hub já tem
+    Tailwind só para utilitárias de \emph{layout}, com o tema VAZIO de
+    propósito --- cor por nome de classe é o que a decisão de
+    \arq{plataforma.css} proíbe.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item \textbf{O botão primário sai azul-céu, não navy} (\cd{\#0d0d35} no
+    modelo): é o \cd{Button} do DS. Se a marca quiser o CTA em navy, o lugar é o
+    pacote, não uma classe local.
+  \item \textbf{O cleanup do \emph{shader} NÃO chama \cd{loseContext()}.} O
+    Strict Mode do React (dev) monta, desmonta e remonta o efeito no MESMO
+    canvas, e um canvas só tem um contexto WebGL --- perdido de propósito na
+    primeira desmontagem, volta perdido na segunda montagem e o fundo fica em
+    branco. Foi o primeiro sintoma do \emph{smoke}
+    (\cd{contextLost: true}). Com \cd{prefers-reduced-motion} desenha um quadro
+    e para; na aba oculta, para até voltar; sem WebGL, o gradiente do DS
+    declarado no CSS ocupa o lugar.
+  \item \textbf{A revelação ao rolar só esconde depois que o JS montou}
+    (\cd{.landing--animada}). Esconder no CSS e revelar no JS deixaria a página
+    em branco para quem o \emph{bundle} não alcança.
+  \item \textbf{Cor de ícone vai pela \emph{prop} \cd{color} do \cd{Icon}}, não
+    por classe: a folha do pacote vem depois no grafo de importação e, com peso
+    igual, vence --- os ícones saíam pretos.
+  \item Os \emph{links} de Privacidade, Termos e Contato do rodapé apontam para
+    \cd{\#}, como no modelo: as páginas não existem. Pendência de produto, não
+    de código.
+  \item \emph{Smoke} próprio (\arq{scripts/walkthrough-landing.mjs}): fontes do
+    DS carregadas (Open Sans e a de LIGADURA dos ícones), canvas com contexto,
+    cor de fundo COMPUTADA do card de vidro, todo \cd{.landing-revelar} visível
+    ao fim, nada transbordando em celular, e o CTA levando ao \rota{/login}. Só
+    precisa do hub no ar.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A plataforma ganhar uma área pública maior
+(institucional, ajuda, termos): aí a \emph{landing} vira um grupo de rotas
+\cd{(publico)} com \emph{layout} próprio, e os \emph{links} do rodapé deixam de
+ser \cd{\#}.
