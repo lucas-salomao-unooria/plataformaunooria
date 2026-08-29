@@ -59,10 +59,12 @@ jobs:
             if [ "$FORCAR" = "true" ]; then echo true; return; fi
             git diff --quiet HEAD^ HEAD -- "$@" && echo false || echo true
           }
+          # O lockfile entra nos TRES: override de dependencia na raiz muda o
+          # que qualquer app embarca, sem tocar arquivo dentro dele.
           {
-            echo "api=$(mudou apps/api packages)"
-            echo "hub=$(mudou apps/hub packages)"
-            echo "exps=$(mudou apps/experiencias packages)"
+            echo "api=$(mudou apps/api packages pnpm-lock.yaml)"
+            echo "hub=$(mudou apps/hub packages pnpm-lock.yaml)"
+            echo "exps=$(mudou apps/experiencias packages pnpm-lock.yaml)"
           } >> "$GITHUB_OUTPUT"
 
   # --- api: imagem -> migrations -> serviço ---------------------------------
@@ -224,7 +226,7 @@ jobs:
             if [ ! -d "$dir/dist" ]; then
               echo "· $exp sem dist — pulando"; continue
             fi
-            if [ "$FORCAR" != "true" ] && git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk; then continue; fi
+            if [ "$FORCAR" != "true" ] && git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk pnpm-lock.yaml; then continue; fi
             # A versão sai do MANIFESTO, não do package.json: é o
             # `experiencia.json` que o `publicar-manifesto.mjs` lê para gravar
             # `versaoAtiva`. Lendo de fontes diferentes elas divergem — a
