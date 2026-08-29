@@ -18,6 +18,14 @@
     "new:exp": "node scripts/create-experiencia.mjs",
     "lint:all": "eslint apps packages scripts"
   },
+  "pnpm": {
+    "overrides": {
+      "@unooria/design-system>next": "16.3.3",
+      "@nestjs/platform-express>multer": "2.2.0",
+      "@nestjs/swagger>js-yaml": "4.3.1",
+      "lodash@4.17.21": "4.18.1"
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@next/eslint-plugin-next": "^16.3.2",

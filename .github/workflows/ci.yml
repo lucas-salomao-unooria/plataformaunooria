@@ -60,3 +60,21 @@ jobs:
           else
             pnpm turbo typecheck lint test build --filter='...[HEAD^]'
           fi
+
+      # Trava de vulnerabilidade: high ou critical em dependencia = portao
+      # vermelho. Sempre o workspace INTEIRO (o lockfile e um so — nao ha
+      # "dependencia que nao mudou"). O que exige major de framework esta
+      # ignorado com PRAZO no .snyk de apps/api: expirou sem o upgrade, este
+      # passo volta a falhar sozinho — o prazo com a rotina que o cumpre.
+      # Sem SNYK_TOKEN o passo falha alto, nunca pula.
+      #
+      # O --exclude e OBRIGATORIO aqui: este passo roda DEPOIS do build, e o
+      # --all-projects acharia os package.json de dentro de .next/dist (o
+      # standalone do hub carrega copias que nao sao dependencia de ninguem).
+      - name: Snyk (trava em high)
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          npm install -g snyk
+          snyk test --all-projects --severity-threshold=high \
+            --exclude=.next,.next-prod,dist,build,storage,storage-privado,jogo

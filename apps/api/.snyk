@@ -1,0 +1,27 @@
+# Política do Snyk para a api — SÓ vulnerabilidades cujo fix exige major de
+# framework. O prazo é cumprido pelo próprio portão: expirou sem upgrade, o
+# CI fica vermelho de novo (a regra do expires_at: prazo só existe com a
+# rotina que o cumpre — aqui a rotina é o snyk test do ci.yml).
+version: v1.25.0
+ignore:
+  SNYK-JS-NESTJSCORE-15682556:
+    - '*':
+        reason: >-
+          Fix é @nestjs/core 11 (major do framework). Upgrade do Nest 10->11
+          planejado antes da produção; não cabe como efeito colateral de outro
+          trabalho.
+        expires: 2026-10-31T00:00:00.000Z
+  SNYK-JS-FILETYPE-15609896:
+    - '*':
+        reason: >-
+          file-type vem do @nestjs/common (lazy import do FileTypeValidator,
+          que esta api NÃO usa — o código nunca é carregado). O fix (21.x) é
+          ESM-only e quebraria o require do Nest 10; sobe junto com o Nest 11.
+        expires: 2026-10-31T00:00:00.000Z
+  SNYK-JS-DEEPMERGETS-18912249:
+    - '*':
+        reason: >-
+          deepmerge-ts vem do @prisma/config (roda no CLI do prisma, não no
+          runtime da api). Fix é major (8.0.0) por baixo do prisma; espera o
+          prisma atualizar a dependência.
+        expires: 2026-10-31T00:00:00.000Z

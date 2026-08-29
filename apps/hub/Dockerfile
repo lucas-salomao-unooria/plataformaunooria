@@ -8,7 +8,11 @@
 #     clássico: "tela branca / css bugado");
 #   - o tracing do standalone precisa do `outputFileTracingRoot` apontando
 #     para a raiz do monorepo (configurado no next.config.mjs), senão
-#     `@edu/ui` e `@edu/sdk` ficam de fora do bundle.
+#     `@edu/ui` e `@edu/sdk` ficam de fora do bundle;
+#   - `COPY . .` antes do install invalidava a camada de dependências em TODO
+#     commit — o CI refazia o `pnpm install` inteiro mesmo com cache de layers.
+#     O `pnpm fetch` só depende do lockfile, então a camada pesada sobrevive a
+#     qualquer mudança de código e o install vira resolução offline.
 #
 # Envs de build: nenhuma. As `NEXT_PUBLIC_*` que entram no bundle do client
 # devem ser passadas com `--build-arg` quando forem específicas do contrato.
@@ -19,8 +23,12 @@ ENV PATH=$PNPM_HOME:$PATH
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 WORKDIR /repo
+# Camada de dependências: só invalida quando o lockfile muda.
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch
+# Código por cima; o install resolve do store local, sem rede.
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --offline
 RUN pnpm turbo build --filter=@edu/hub
 
 FROM node:24-slim

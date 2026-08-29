@@ -1,6 +1,5 @@
 import { DiscoveryService, NestFactory } from "@nestjs/core";
 import type { INestApplicationContext } from "@nestjs/common";
-import { AppModule } from "../src/app.module";
 import { chaveDaRota, listarRotas, type RotaDescoberta } from "../src/openapi/rotas";
 
 /**
@@ -57,6 +56,13 @@ describe("cobertura do OpenAPI", () => {
     for (const [chave, valor] of Object.entries(ENV_MINIMA)) {
       process.env[chave] ??= valor;
     }
+    // O AppModule entra por import DINÂMICO, depois do env acima: o
+    // `ConfigModule.forRoot` roda `validarEnv` NA IMPORTAÇÃO do módulo, e um
+    // import estático executaria antes deste beforeAll. Passava mesmo assim
+    // quando outro spec do MESMO worker do jest já tinha exportado OIDC_* —
+    // sorte de escalonamento, que a primeira mudança de dependências desfez
+    // (localmente o dotenv lê apps/api/.env do disco e mascara tudo).
+    const { AppModule } = await import("../src/app.module");
     contexto = await NestFactory.createApplicationContext(AppModule, { logger: false });
     rotas = listarRotas(contexto.get(DiscoveryService));
   });

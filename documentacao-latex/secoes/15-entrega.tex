@@ -46,7 +46,7 @@ arrasta as dependências corretas.
 
 \section{Integração contínua}
 
-\begin{lstlisting}[language=yamlunoo, caption={\arq{.github/workflows/ci.yml}}, label={lst:ci}]
+\begin{lstlisting}[language=yamlunoo, caption={\arq{.github/workflows/ci.yml} (abreviado)}, label={lst:ci}]
 name: ci
 on:
   pull_request:
@@ -54,18 +54,36 @@ on:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
   # dois workflows em paralelo deixariam um teste vermelho subir para escola.
   workflow_call:
+    inputs:
+      completo:   # `forcar` no deploy builda tudo; o portao cobre o mesmo
+        type: boolean
 
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:   # 9 das 23 suites da api sao de INTEGRACAO (RLS, locks)
+        image: postgres:16
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: pnpm }
+        with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo typecheck lint test build --filter='...[HEAD^]'
+      - run: pnpm --filter @edu/api migrate:deploy
+      - run: |
+          if [ "$COMPLETO" = "true" ]; then
+            pnpm turbo typecheck lint test build
+          else
+            pnpm turbo typecheck lint test build --filter='...[HEAD^]'
+          fi
+      - name: Snyk (trava em high)   # high/critical em dependencia = vermelho
+        env: { SNYK_TOKEN: "${{ secrets.SNYK_TOKEN }}" }
+        run: |   # o --exclude e obrigatorio: o passo roda DEPOIS do build
+          npm install -g snyk
+          snyk test --all-projects --severity-threshold=high \
+            --exclude=.next,.next-prod,dist,build,storage,storage-privado,jogo
 \end{lstlisting}
 
 \begin{decisao}
@@ -75,6 +93,35 @@ no mesmo \emph{commit} --- e, pior, em \emph{paralelo} com o \emph{deploy}, o qu
 deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
 \textbf{espera} pelo portão.
 \end{decisao}
+
+\subsection{A trava de vulnerabilidade (Snyk)}
+
+O portão termina com \cd{snyk test --all-projects --severity-threshold=high}:
+vulnerabilidade \cd{high} ou \cd{critical} em qualquer dependência do
+\emph{workspace} deixa o CI vermelho --- e, como o \emph{deploy} espera pelo
+portão, nada sobe (\adrr{ADR-39}). O passo roda sempre no \emph{workspace}
+inteiro, sem o filtro por mudança do resto do portão: o \emph{lockfile} é um
+só, e a vulnerabilidade nova chega pelo banco de dados do Snyk, não por um
+\emph{commit} --- ``dependência que não mudou'' não existe como categoria.
+
+\begin{nota}
+\textbf{O que exige \emph{major} de \emph{framework} não bloqueia --- expira.}
+O \arq{apps/api/.snyk} ignora, com \textbf{prazo e motivo}, as vulnerabilidades
+cujo \emph{fix} é o Nest~11 (\cd{@nestjs/core}, e o \cd{file-type} que é ESM-only
+e quebraria o \cd{require} do Nest~10) ou um \emph{bump} que só o Prisma pode
+fazer (\cd{deepmerge-ts}). Quando o prazo vence sem o \emph{upgrade}, o próprio
+passo volta a falhar --- é o prazo \textbf{com} a rotina que o cumpre, a
+resposta à armadilha do \cd{expires\_at}. O resto foi consertado na hora: o hub
+subiu para o \textbf{Next~16} (as \emph{criticals} do 15 não tinham \emph{patch}
+na linha 15.x), e \cd{pnpm.overrides} no \arq{package.json} da raiz cobre o
+transitivo (\cd{next} 16.3.3 por baixo do \emph{design system}, \cd{multer}
+2.2.0, \cd{js-yaml} 4.3.1, \cd{lodash} 4.18.1).
+\end{nota}
+
+O segredo \cd{SNYK\_TOKEN} vem dos \emph{secrets} do repositório
+(\cd{snyk config get api | gh secret set SNYK\_TOKEN}). Ausente, o passo
+\textbf{falha alto} --- nunca pula, pela mesma regra do \emph{guard} do
+Pub/Sub: env ausente é porta fechada, não porta aberta.
 
 \section{Entrega contínua}
 
@@ -87,72 +134,111 @@ deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
     {\emph{push} para \texttt{main}};
   \node[etapa, text width=26mm, fill=unooGreenWash, draw=unooGreen] (ver) at (5.0,0)
     {\textbf{portão}: \texttt{ci.yml}\desc{typecheck, lint, test, build}};
-  \node[etapa, text width=26mm] (auth) at (8.6,0)
-    {WIF + \texttt{setup-gcloud}\desc{sem chave JSON}};
-  \node[etapa, text width=30mm] (diff) at (12.4,0)
-    {o que mudou?\desc{\texttt{git diff HEAD\^{} HEAD}\\api $|$ hub $|$ migrations}};
+  \node[etapa, text width=30mm] (diff) at (9.0,0)
+    {\emph{job} \texttt{mudancas}\desc{\texttt{git diff HEAD\^{} HEAD}\\api $|$ hub $|$ exps}};
 
-  \node[etapa, text width=28mm] (build) at (14.0,-2.4)
-    {\texttt{turbo build}\desc{filtrado, ou tudo se \texttt{forcar}}};
-
-  % --- trilha da api
-  \node[camadalbl, anchor=west] at (0.4,-3.6) {api --- a ORDEM importa};
+  % --- trilha da api (job proprio)
+  \node[camadalbl, anchor=west] at (0.4,-3.6)
+    {\emph{job} \texttt{deploy-api} --- a ORDEM importa};
   \node[etapa, text width=28mm] (img) at (2.4,-4.8)
-    {imagem da api\desc{Artifact Registry, \emph{cache} GHA}};
+    {imagem da api\desc{camada de deps do \texttt{pnpm fetch}, \emph{cache} GHA}};
   \node[etapa, text width=30mm, fill=unooYellowWash, draw=unooYellow] (mig) at (6.4,-4.8)
     {\textbf{Cloud Run Job} \texttt{-migrate}\desc{na VPC, \texttt{--wait}}};
   \node[etapaout, text width=28mm] (dep) at (10.4,-4.8)
     {\texttt{gcloud run deploy}\desc{revisão nova}};
 
-  % --- trilha do hub
-  \node[camadalbl, anchor=west] at (0.4,-6.4) {hub};
+  % --- trilha do hub (job proprio, em paralelo com a api)
+  \node[camadalbl, anchor=west] at (0.4,-6.4)
+    {\emph{job} \texttt{deploy-hub} --- em PARALELO com a api};
   \node[etapa, text width=28mm] (imgh) at (2.4,-7.4)
-    {imagem do hub};
+    {imagem do hub\desc{camada de deps do \texttt{pnpm fetch}, \emph{cache} GHA}};
   \node[etapaout, text width=28mm] (deph) at (6.4,-7.4)
     {\texttt{gcloud run deploy}};
 
-  % --- trilha das experiencias
-  \node[camadalbl, anchor=west] at (0.4,-9.0)
-    {experiências --- DEPOIS do hub, de propósito};
-  \node[etapa, text width=30mm] (rsync) at (2.6,-10.2)
-    {\texttt{gcloud storage rsync}\desc{\texttt{gs://\{bucket\}/\{exp\}/\{ver\}/}}};
-  \node[etapa, text width=30mm] (cc) at (6.6,-10.2)
+  % --- trilha das experiencias (job proprio, depois dos dois)
+  \node[camadalbl, anchor=west] at (0.4,-10.6)
+    {\emph{job} \texttt{publicar-exps} --- DEPOIS do hub e da api, de propósito};
+  \node[etapa, text width=24mm] (build) at (1.8,-11.8)
+    {\texttt{turbo build}\desc{filtrado, ou tudo se \texttt{forcar}}};
+  \node[etapa, text width=30mm] (rsync) at (5.4,-11.8)
+    {\texttt{gcloud storage rsync}\desc{\texttt{gs://\{bucket\}/}\\\texttt{\{exp\}/\{ver\}/}}};
+  \node[etapa, text width=28mm] (cc) at (9.2,-11.8)
     {\texttt{Cache-Control}\desc{\texttt{max-age=60} só no \texttt{index.html}}};
-  \node[etapaout, text width=32mm] (man) at (10.8,-10.2)
+  \node[etapaout, text width=30mm] (man) at (13.0,-11.8)
     {\texttt{publicar-manifesto.mjs}\desc{\texttt{PUT /experiencias/:expId},
      token de 5 min}};
 
   \draw[pipe] (push) -- (ver);
-  \draw[pipe] (ver) -- (auth);
-  \draw[pipe] (auth) -- (diff);
-  \draw[pipe] (diff) -- (build);
-  \draw[pipe] (build.west) -- (12.2,-2.4) -- (12.2,-3.9) -- (3.4,-3.9) -- (img.north);
+  \draw[pipe] (ver) -- (diff);
+  \draw[pipe] (diff.south) -- (9.0,-1.6) -- (-0.4,-1.6) -- (-0.4,-4.8) -- (img.west);
+  \draw[pipe] (-0.4,-4.8) -- (-0.4,-7.4) -- (imgh.west);
   \draw[pipe] (img) -- (mig);
   \draw[pipe] (mig) -- (dep);
-  \draw[pipe] (build.west) -- (12.2,-2.4) -- (12.2,-6.6) -- (3.4,-6.6) -- (imgh.north);
   \draw[pipe] (imgh) -- (deph);
-  \draw[pipe] (deph.south) -- (6.4,-8.4) -- (2.6,-8.4) -- (rsync.north);
+  \draw[pipe] (dep.south) -- (10.4,-9.4) -- (6.4,-9.4);
+  \draw[pipe] (deph.south) -- (6.4,-9.4) -- (-0.4,-9.4) -- (-0.4,-11.8) -- (build.west);
+  \draw[pipe] (build) -- (rsync);
   \draw[pipe] (rsync) -- (cc);
   \draw[pipe] (cc) -- (man);
 
-  \node[actnote, text width=48mm, anchor=north west] at (12.0,-4.2)
+  \node[actnote, text width=44mm, anchor=north west] at (12.2,-3.4)
     {\textbf{Por que a migração antes do \emph{deploy}:} o \emph{schema} novo tem
      de estar no banco \emph{antes} de a revisão nova receber tráfego, senão a
      API roda contra um banco velho. O \texttt{--wait} faz o passo falhar se a
      migração falhar --- e o \emph{deploy} não acontece.};
 
-  \node[actnote, text width=48mm, anchor=north west] at (12.0,-8.4)
+  \node[actnote, text width=44mm, anchor=north west] at (12.2,-6.9)
     {\textbf{Por que as experiências depois do hub:} o \texttt{PUT} do manifesto é
      validado pela API contra o JWKS que o \emph{hub} serve. Hub fora do ar =
      manifesto rejeitado --- e um manifesto rejeitado é melhor que um manifesto
      aceito apontando para um hub que não subiu.};
 
 \end{tikzpicture}}
-\caption[Pipeline de entrega]{O \emph{pipeline} de entrega. Três trilhas
-  independentes com uma ordem obrigatória entre elas, e um portão de qualidade
-  antes de tudo.}
+\caption[Pipeline de entrega]{O \emph{pipeline} de entrega. O portão e o
+  \emph{job} \cd{mudancas} decidem o que roda; api e hub sobem em \emph{jobs}
+  paralelos (cada um autentica por WIF, sem chave JSON); as experiências
+  publicam por último, depois dos dois.}
 \label{fig:pipeline-deploy}
 \end{figure}
+
+\subsection{O que faz o \emph{deploy} caber no café}
+
+\begin{decisao}
+\textbf{As imagens de api e hub sobem em \emph{jobs} paralelos, e a camada de
+dependências dos \emph{Dockerfiles} é cacheável por si} (\adrr{ADR-38}). Medido
+nos \emph{runs} de 2026-08-28: as duas imagens eram 80\% do tempo de
+\emph{deploy} --- 4m53s a api num \emph{push} comum, mais 6m30s o hub em série
+num \cd{forcar} --- porque \cd{COPY . .} vinha \emph{antes} do
+\cd{pnpm install}, e qualquer mudança de código invalidava a camada inteira. O
+\emph{cache} GHA que o \emph{workflow} sempre teve só acertava apt e corepack.
+\end{decisao}
+
+Os dois \emph{Dockerfiles} passaram a abrir com uma camada que depende
+\textbf{só do \emph{lockfile}}:
+
+\begin{lstlisting}[language=bashunoo, caption={A camada de dependências (api e hub)}]
+# Camada de dependencias: so invalida quando o lockfile muda.
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch
+# Codigo por cima; o install resolve do store local, sem rede.
+COPY . .
+RUN pnpm install --frozen-lockfile --offline
+\end{lstlisting}
+
+\cd{pnpm fetch} existe para isto: baixa o \emph{store} inteiro lendo apenas o
+\emph{lockfile}, sem precisar dos \arq{package.json}. Num \emph{commit} que só
+toca código, a camada cara vem do \emph{cache} e sobra o que é daquele
+\emph{app}: \cd{nest build} (ou \cd{next build}), \cd{pnpm deploy --prod} e o
+\cd{prisma generate}.
+
+E como as duas imagens não dependem uma da outra, cada uma virou um \emph{job}
+--- \cd{deploy-api} e \cd{deploy-hub} --- atrás do mesmo portão, com o
+\emph{diff} calculado uma única vez num \emph{job} \cd{mudancas}. A ordem que
+\textbf{importa} continua explícita no grafo: \cd{publicar-exps} depende dos
+dois (o manifesto é validado contra o JWKS que o hub serve), e dentro de
+\cd{deploy-api} a migração continua antes da revisão nova. A única ordem que se
+perdeu foi acidental: o hub não espera mais a api --- os dois conversam por
+HTTP e o \emph{rollout} do Cloud Run nunca garantiu revisão casada mesmo.
 
 \subsection{Nada de nome de recurso no \emph{workflow}}
 

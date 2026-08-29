@@ -10,7 +10,11 @@
 #   - o Nest emite em `dist/src/main.js` (o tsconfig inclui `src`, `tests` e
 #     os seeds), não em `dist/main.js`;
 #   - o Prisma Client precisa do engine do Linux (binaryTargets no schema) e
-#     do `prisma generate` rodado ANTES do build.
+#     do `prisma generate` rodado ANTES do build;
+#   - `COPY . .` antes do install invalidava a camada de dependências em TODO
+#     commit — o CI refazia o `pnpm install` inteiro mesmo com cache de layers.
+#     O `pnpm fetch` só depende do lockfile, então a camada pesada sobrevive a
+#     qualquer mudança de código e o install vira resolução offline.
 
 FROM node:24-slim AS build
 ENV PNPM_HOME=/pnpm
@@ -21,8 +25,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 RUN corepack enable && corepack prepare pnpm@9.12.0 --activate
 
 WORKDIR /repo
+# Camada de dependências: só invalida quando o lockfile muda.
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch
+# Código por cima; o install resolve do store local, sem rede.
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --offline
 RUN pnpm --filter @edu/api generate
 RUN pnpm turbo build --filter=@edu/api
 
