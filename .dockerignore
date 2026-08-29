@@ -15,4 +15,7 @@
 !**/.env.example
 **/*.log
 testes/walkthrough-*
+testes/wt-*
+**/storage-privado
+documentacao-latex
 .claude

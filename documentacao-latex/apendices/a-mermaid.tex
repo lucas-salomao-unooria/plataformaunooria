@@ -952,24 +952,37 @@ flowchart LR
 \begin{lstlisting}[language=mermaid]
 flowchart TB
   push["push para main"] --> ver["PORTAO: ci.yml (typecheck, lint, test, build)"]
-  ver --> auth["WIF + setup-gcloud (sem chave JSON)"]
-  auth --> diff["o que mudou? git diff HEAD^ HEAD: api | hub | migrations"]
-  diff --> build["turbo build (filtrado, ou tudo se 'forcar')"]
+  push --> diff["job mudancas: git diff HEAD^ HEAD -> api | hub | exps"]
 
-  build --> img["imagem da api -> Artifact Registry"]
-  img --> mig["Cloud Run Job -migrate (na VPC, --wait)"]
-  mig --> dep["gcloud run deploy api (revisao nova)"]
+  subgraph api["job deploy-api (paralelo)"]
+    img["imagem da api (camada de deps do pnpm fetch + cache GHA)"]
+    img --> mig["Cloud Run Job -migrate (na VPC, --wait)"]
+    mig --> dep["gcloud run deploy api (revisao nova)"]
+  end
 
-  build --> imgh["imagem do hub"] --> deph["gcloud run deploy hub"]
+  subgraph hub["job deploy-hub (paralelo)"]
+    imgh["imagem do hub"] --> deph["gcloud run deploy hub"]
+  end
 
-  deph --> rsync["gcloud storage rsync -> gs://{bucket}/{exp}/{ver}/"]
-  rsync --> cc["Cache-Control: max-age=60 SO no index.html"]
-  cc --> man["publicar-manifesto.mjs -> PUT /experiencias/:expId (token de 5 min)"]
+  subgraph exps["job publicar-exps — DEPOIS do hub e da api"]
+    build["turbo build (filtrado, ou tudo se 'forcar')"]
+    build --> rsync["gcloud storage rsync -> gs://{bucket}/{exp}/{ver}/"]
+    rsync --> cc["Cache-Control: max-age=60 SO no index.html"]
+    cc --> man["publicar-manifesto.mjs -> PUT /experiencias/:expId (token de 5 min)"]
+  end
+
+  ver --> api
+  ver --> hub
+  diff --> api
+  diff --> hub
+  dep --> exps
+  deph --> exps
 
   %% ORDEM 1: migracao ANTES do deploy — o schema novo tem de estar no banco
   %%          antes de a revisao nova receber trafego. --wait faz falhar.
   %% ORDEM 2: experiencias DEPOIS do hub — o PUT do manifesto e validado contra
-  %%          o JWKS que o HUB serve.
+  %%          o JWKS que o HUB serve. Deploys PULADOS nao bloqueiam
+  %%          (!cancelled() + result != 'failure').
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------

@@ -38,30 +38,18 @@ jobs:
     with:
       completo: ${{ inputs.forcar == true }}
 
-  deploy:
-    needs: verificar
+  # O diff decide QUAIS jobs rodam. Um job proprio (e nao um passo repetido em
+  # cada job) para o criterio ser calculado UMA vez — api, hub e experiencias
+  # lendo o mesmo commit de referencia.
+  mudancas:
     runs-on: ubuntu-latest
-    permissions: { contents: read, id-token: write }   # WIF, sem chave JSON
+    outputs:
+      api: ${{ steps.mudou.outputs.api }}
+      hub: ${{ steps.mudou.outputs.hub }}
+      exps: ${{ steps.mudou.outputs.exps }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: pnpm }
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
-          service_account: ${{ vars.DEPLOY_SA }}
-      - uses: google-github-actions/setup-gcloud@v2
-      - uses: docker/setup-buildx-action@v3
-
-      # Push direto para o Artifact Registry: nada de Cloud Build no meio (uma
-      # API e um conjunto de permissoes a menos, e o build fica no runner).
-      - name: Autenticar o Docker no Artifact Registry
-        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
-
-      - run: pnpm install --frozen-lockfile
-
       - name: O que mudou neste push
         id: mudou
         env:
@@ -74,8 +62,134 @@ jobs:
           {
             echo "api=$(mudou apps/api packages)"
             echo "hub=$(mudou apps/hub packages)"
-            echo "migrations=$(mudou apps/api/prisma/migrations)"
+            echo "exps=$(mudou apps/experiencias packages)"
           } >> "$GITHUB_OUTPUT"
+
+  # --- api: imagem -> migrations -> serviço ---------------------------------
+  # A ORDEM importa: o schema novo tem que estar no banco antes que a revisão
+  # nova comece a receber tráfego, senão a api roda contra um banco velho.
+  # api e hub sao jobs SEPARADOS de proposito: as imagens nao dependem uma da
+  # outra, e em serie eram os dois passos mais caros do deploy.
+  deploy-api:
+    needs: [verificar, mudancas]
+    if: needs.mudancas.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }   # WIF, sem chave JSON
+    env:
+      IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/api:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: docker/setup-buildx-action@v3
+
+      # Push direto para o Artifact Registry: nada de Cloud Build no meio (uma
+      # API e um conjunto de permissoes a menos, e o build fica no runner).
+      - name: Autenticar o Docker no Artifact Registry
+        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+
+      # A imagem builda do zero la dentro (o Dockerfile tem a camada de deps
+      # cacheavel via type=gha) — este job nao precisa de pnpm no runner.
+      - name: Imagem da api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ env.IMG }}
+          # Sem cache, cada imagem refaz o `pnpm install` inteiro: ~10 min.
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      # O job roda DENTRO da VPC — é o único caminho até o Postgres, que só tem
+      # IP privado. `--wait` faz o passo falhar se a migration falhar.
+      #
+      # Roda em TODO deploy da api, e não só quando `prisma/migrations` muda:
+      # `migrate deploy` aplica o que falta e é no-op quando não falta nada. A
+      # condição por diff parecia economia e criava um buraco — num banco novo
+      # TODAS as migrations estão pendentes, e nenhum commit "mudou migrations".
+      # O deploy passava verde com o banco vazio, e a api subia contra um schema
+      # que não existia.
+      - name: Rodar as migrations (Cloud Run Job)
+        run: |
+          gcloud run jobs update "$MIGRATE_JOB" \
+            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
+          gcloud run jobs execute "$MIGRATE_JOB" \
+            --region "$REGION" --project "$GCP_PROJECT" --wait
+
+      - name: Deploy da api
+        run: |
+          gcloud run deploy "$API_SERVICE" \
+            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
+
+  # --- hub ------------------------------------------------------------------
+  deploy-hub:
+    needs: [verificar, mudancas]
+    if: needs.mudancas.outputs.hub == 'true'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }
+    env:
+      IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/hub:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Autenticar o Docker no Artifact Registry
+        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+
+      - name: Imagem do hub
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/hub/Dockerfile
+          push: true
+          tags: ${{ env.IMG }}
+          cache-from: type=gha,scope=hub
+          cache-to: type=gha,scope=hub,mode=max
+
+      - name: Deploy do hub
+        run: |
+          gcloud run deploy "$HUB_SERVICE" \
+            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
+
+  # --- experiências: dist -> bucket versionado + manifesto ------------------
+  # Depois do hub e da api de propósito: o PUT do manifesto é validado pela api
+  # contra o JWKS que o HUB serve. Hub fora do ar = manifesto rejeitado.
+  # `!cancelled()` + `!= 'failure'` porque os deploys podem ter sido PULADOS
+  # (push que só mudou experiência) — pulado não pode bloquear a publicação.
+  publicar-exps:
+    needs: [verificar, mudancas, deploy-api, deploy-hub]
+    if: >-
+      !cancelled() &&
+      needs.verificar.result == 'success' &&
+      needs.mudancas.outputs.exps == 'true' &&
+      needs.deploy-api.result != 'failure' &&
+      needs.deploy-hub.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # O `postinstall` da api roda o `prisma generate` aqui — sem ele o
+      # turbo build dos pacotes que dependem da api quebraria.
+      - run: pnpm install --frozen-lockfile
 
       - name: Build
         env:
@@ -92,72 +206,6 @@ jobs:
             pnpm turbo build --filter='...[HEAD^]'
           fi
 
-      # --- api: imagem -> migrations -> serviço ---------------------------------
-      # A ORDEM importa: o schema novo tem que estar no banco antes que a revisão
-      # nova comece a receber tráfego, senão a api roda contra um banco velho.
-      - name: Imagem da api
-        if: steps.mudou.outputs.api == 'true'
-        id: img_api
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/api/Dockerfile
-          push: true
-          tags: ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/api:${{ github.sha }}
-          # Sem cache, cada imagem refaz o `pnpm install` inteiro: ~10 min.
-          cache-from: type=gha,scope=api
-          cache-to: type=gha,scope=api,mode=max
-
-      # O job roda DENTRO da VPC — é o único caminho até o Postgres, que só tem
-      # IP privado. `--wait` faz o passo falhar se a migration falhar.
-      #
-      # Roda em TODO deploy da api, e não só quando `prisma/migrations` muda:
-      # `migrate deploy` aplica o que falta e é no-op quando não falta nada. A
-      # condição por diff parecia economia e criava um buraco — num banco novo
-      # TODAS as migrations estão pendentes, e nenhum commit "mudou migrations".
-      # O deploy passava verde com o banco vazio, e a api subia contra um schema
-      # que não existia.
-      - name: Rodar as migrations (Cloud Run Job)
-        if: steps.mudou.outputs.api == 'true'
-        env:
-          IMG: ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/api:${{ github.sha }}
-        run: |
-          gcloud run jobs update "$MIGRATE_JOB" \
-            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
-          gcloud run jobs execute "$MIGRATE_JOB" \
-            --region "$REGION" --project "$GCP_PROJECT" --wait
-
-      - name: Deploy da api
-        if: steps.mudou.outputs.api == 'true'
-        env:
-          IMG: ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/api:${{ github.sha }}
-        run: |
-          gcloud run deploy "$API_SERVICE" \
-            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
-
-      # --- hub ------------------------------------------------------------------
-      - name: Imagem do hub
-        if: steps.mudou.outputs.hub == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/hub/Dockerfile
-          push: true
-          tags: ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/hub:${{ github.sha }}
-          cache-from: type=gha,scope=hub
-          cache-to: type=gha,scope=hub,mode=max
-
-      - name: Deploy do hub
-        if: steps.mudou.outputs.hub == 'true'
-        env:
-          IMG: ${{ env.REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT }}/${{ env.AR_REPO }}/hub:${{ github.sha }}
-        run: |
-          gcloud run deploy "$HUB_SERVICE" \
-            --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
-
-      # --- experiências: dist -> bucket versionado + manifesto ------------------
-      # Depois do hub de propósito: o PUT do manifesto é validado pela api
-      # contra o JWKS que o HUB serve. Hub fora do ar = manifesto rejeitado.
       - name: Publicar experiências alteradas
         env:
           TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `{prefix}-token-signing-key`

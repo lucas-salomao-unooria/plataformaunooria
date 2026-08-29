@@ -1726,3 +1726,63 @@ a cumpra: quem lê acredita, e ninguém percebe quando deixa de ser verdade.
 
 \textbf{Gatilho de reavaliação.} A conferência aparecer no perfil de latência de
 desenvolvimento a ponto de atrapalhar --- aí ela passa a valer só em teste.
+
+\section{ADR-38 --- O \emph{deploy} paraleliza os \emph{jobs}, não o portão}
+\label{adr:deploy-paralelo}
+
+\begin{especificacao}{Contexto}
+Medido nos \emph{runs} de 2026-08-28, um \emph{push} comum levava \textasciitilde
+9,6\,min até a escola e um \cd{forcar}, \textasciitilde 26\,min --- e 80\% disso
+eram as duas imagens Docker, por duas causas que se somavam: \cd{COPY . .} antes
+do \cd{pnpm install} invalidava a camada de dependências em todo \emph{commit}
+(o \emph{cache} GHA só acertava apt e corepack), e api e hub buildavam em série
+no mesmo \emph{job} sem depender uma da outra.
+\end{especificacao}
+
+\textbf{Decisão.} Duas mudanças, nenhuma nova peça de infra: (1) os
+\emph{Dockerfiles} abrem com \cd{COPY pnpm-lock.yaml pnpm-workspace.yaml} +
+\cd{pnpm fetch} --- que baixa o \emph{store} lendo só o \emph{lockfile} --- e o
+\cd{pnpm install --offline} roda depois do \cd{COPY . .}; (2) o \emph{workflow}
+vira quatro \emph{jobs} --- \cd{mudancas} (o \emph{diff}, calculado uma vez),
+\cd{deploy-api} e \cd{deploy-hub} em paralelo atrás do portão, e
+\cd{publicar-exps} depois dos dois, porque o \cd{PUT} do manifesto é validado
+contra o JWKS que o hub serve.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Buildar as imagens em paralelo com o portão}, deixando só
+    \cd{gcloud run deploy} e a migração esperarem o verde: ganharia 2--6\,min de
+    caminho crítico, mas gastaria \emph{runner} em todo \emph{commit} vermelho, e
+    o pipeline passaria a ter dois regimes de \emph{gating} para raciocinar. O
+    portão continua na frente de tudo.
+  \item \emph{Cache remoto do Turborepo} ligando \cd{verificar}, o \emph{build}
+    do \emph{runner} e os \emph{builds} dentro das imagens: é a otimização certa
+    quando o \cd{tsc}/\cd{next build} virarem o gargalo --- hoje o gargalo era o
+    \cd{pnpm install} repetido, e um serviço de \emph{cache} é uma peça a mais
+    para operar.
+  \item \emph{Copiar o \arq{dist/} do runner para dentro da imagem} em vez de
+    buildar lá dentro: acopla o \emph{Dockerfile} ao \emph{workflow} (um
+    \cd{docker build} local deixaria de funcionar sozinho) para economizar um
+    passo que, com a camada de dependências cacheada, custa segundos.
+\end{itemize}
+
+\textbf{Consequências.}
+\begin{itemize}
+  \item O hub não espera mais o \emph{deploy} da api. A ordem era acidental ---
+    os dois conversam por HTTP e o \emph{rollout} do Cloud Run nunca garantiu
+    revisão casada --- mas fica registrado: se um dia um contrato exigir
+    hub-depois-da-api, é um \cd{needs} de uma linha.
+  \item \cd{publicar-exps} usa \cd{!cancelled()} com \cd{result != 'failure'}
+    nos \cd{needs}: os \emph{deploys} podem ter sido PULADOS (um \emph{push} que
+    só toca experiência), e pulado não pode bloquear a publicação.
+  \item Cada \emph{job} que autentica no GCP repete o \emph{setup} de
+    \textasciitilde 1\,min (WIF, gcloud, buildx). É o preço do paralelismo, pago
+    em paralelo.
+  \item O \cd{pnpm fetch} depende só do \emph{lockfile}: mudou dependência, a
+    camada refaz inteira. É o comportamento certo --- e é raro na frequência de
+    \emph{commit} deste repo.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} O \cd{nest build}/\cd{next build} dentro das
+imagens passar de \textasciitilde 2\,min com a camada de dependências já em
+\emph{cache} --- aí o cache remoto do Turborepo entra na conversa.
