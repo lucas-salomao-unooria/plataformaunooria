@@ -22,7 +22,7 @@ const TURMA = process.env.TURMA ?? "8A";
 const CPF = "700.100.203-81";
 const PLANILHA = [
   "cpf,matricula,nome,usuario,papel,turma,serie,turno",
-  `${CPF},PP-A1,Rafaela Portatil Souza,rafa.portatil,aluno,${TURMA},8EF,manha`,
+  `${CPF},PP-A1,Rafaela Portatil Souza,rafa.portatil,estudante,${TURMA},8EF,manha`,
   "",
 ].join("\n");
 
@@ -89,8 +89,8 @@ try {
   ]);
   await p.waitForTimeout(2000);
 
-  const linhaDaAluna = p.locator("table tbody tr", { hasText: "Rafaela Portatil" });
-  await linhaDaAluna.getByRole("button", { name: "Perfil portátil" }).click();
+  const linhaDaEstudante = p.locator("table tbody tr", { hasText: "Rafaela Portatil" });
+  await linhaDaEstudante.getByRole("button", { name: "Perfil portátil" }).click();
   await p.getByText("Isto é para sair da REDE").waitFor({ timeout: 15_000 });
   await p.waitForTimeout(1200);
   await registrar("perfil-portatil-aberto", "emitir, receber e o que já foi recebido");

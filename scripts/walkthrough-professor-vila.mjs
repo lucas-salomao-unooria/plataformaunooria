@@ -3,7 +3,7 @@ import { chromium } from "playwright";
 
 /**
  * Smoke VISUAL das telas do professor da exp-70: trilha → ficha → resultados da
- * turma → relatório de um aluno.
+ * turma → relatório de um estudante.
  *
  * O que ele existe para pegar, e que typecheck nenhum pega:
  *
@@ -17,7 +17,7 @@ import { chromium } from "playwright";
  *
  * Uso: node scripts/walkthrough-professor-vila.mjs <pasta> [turma] [login]
  * Pré-requisitos: hub :3000, api :3001, e ao menos uma turma com partidas
- * (rode `walkthrough-vila-do-lume.mjs` com alguns alunos antes).
+ * (rode `walkthrough-vila-do-lume.mjs` com alguns estudantes antes).
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-professor-vila";
@@ -132,11 +132,11 @@ try {
      aviso honesto que recebeu. */
   exigir(/pedra de fagulha atrás da Crista/.test(guia), "a revelação não mostra a legítima do Lume");
   exigir(/mensagem estranha agora há pouco/.test(guia), "a revelação não mostra o aviso legítimo");
-  /* A instrução que impede o dano: a turma não pode sair achando que o Aluno 14
+  /* A instrução que impede o dano: a turma não pode sair achando que o Estudante 14
      fez alguma coisa. */
   exigir(
     /não foi um colega de verdade/i.test(guia),
-    "o guia não manda dizer que o Aluno 14 não foi um colega de verdade",
+    "o guia não manda dizer que o Estudante 14 não foi um colega de verdade",
   );
   exigir(/Nunca pergunte quem clicou/i.test(guia), "falta a instrução de não perguntar quem clicou");
   exigir(/Confere por outro caminho/.test(guia), "falta a regra que a turma leva");
@@ -195,13 +195,13 @@ try {
       `a bolha "${circulo.letra}" tem texto ${circulo.cor} sobre fundo ${circulo.fundo} — invisível`,
     );
   }
-  await registrar("resultados-da-turma", `${linhas} alunos, sem valor de Schwartz na listagem`);
+  await registrar("resultados-da-turma", `${linhas} estudantes, sem valor de Schwartz na listagem`);
 
   // ---- relatório individual ---------------------------------------------
   const abrir = p.locator("table tbody a", { hasText: "Abrir" }).first();
-  exigir((await abrir.count()) > 0, "nenhum aluno com partida para abrir");
+  exigir((await abrir.count()) > 0, "nenhum estudante com partida para abrir");
   await abrir.click();
-  await p.waitForURL("**/vila-do-lume/alunos/**", { timeout: 20_000 });
+  await p.waitForURL((url) => /vila-do-lume\/(alunos|estudantes)\//.test(url.pathname), { timeout: 20_000 });
   await p.locator("text=Os dez valores").first().waitFor({ timeout: 20_000 });
   await p.waitForTimeout(600);
 
@@ -241,7 +241,7 @@ try {
     "nenhuma linha explica ausência de número — ou todos os dez viraram número (improvável)",
   );
   await registrar(
-    "relatorio-do-aluno",
+    "relatorio-do-estudante",
     `10 valores, ${semNumero.length} tipos de ausência explicados, nível antes do ato`,
   );
 } catch (erro) {

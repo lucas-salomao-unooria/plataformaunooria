@@ -31,7 +31,7 @@ agosto de 2026.
 \rf{RF-03} & Validar \emph{token} na API por JWKS do emissor configurado, sem
   conhecer o produto de identidade. & M & Implementado &
   \arq{src/auth/oidc.guard.ts}\\
-\zebra \rf{RF-04} & Restringir rota por papel (\cd{aluno}, \cd{professor},
+\zebra \rf{RF-04} & Restringir rota por papel (\cd{estudante}, \cd{professor},
   \cd{gestor}, \cd{admin-contrato}). & M & Implementado &
   \arq{src/auth/roles.ts}\\
 \rf{RF-05} & Redirecionar usuário que acessa área de outro papel para a home do
@@ -79,7 +79,7 @@ agosto de 2026.
   \emph{bundle}. & S & Implementado &
   \arq{lib/embed-experiencia.ts}; \arq{components/DispositivoFrame.tsx}\\
 \zebra \rf{RF-17} & Persistir e recuperar progresso genérico por
-  (\cd{escola}, \cd{aluno}, \cd{experiência}). & M & Implementado &
+  (\cd{escola}, \cd{estudante}, \cd{experiência}). & M & Implementado &
   \rota{GET/POST /progresso/:expId}\\
 \rf{RF-18} & Expor uma bancada local de \emph{embed} para desenvolvimento
   (\rota{/dev-embed?src=}). & C & Implementado & \arq{app/dev-embed}\\
@@ -180,7 +180,7 @@ agosto de 2026.
   \arq{src/vila/leitura.ts}\\
 \rf{RF-48} & Abrir o relatório individual pelo \emph{nível} do instrumento antes
   do desempenho. & M & Implementado &
-  \rota{/professor/entre-redes/vila-do-lume/alunos/:id}\\
+  \rota{/professor/entre-redes/vila-do-lume/estudantes/:id}\\
 \zebra \rf{RF-49} & Distinguir \enquote{cartões servidos} de
   \enquote{cartões que apareceram}, e nunca afirmar omissão a partir de
   ausência. & M & Implementado & \cd{cartoesServidos}\\
@@ -229,7 +229,7 @@ Organizados pelas características de qualidade de produto da ISO/IEC
   \emph{flush}; a partir do Pub/Sub, a entrega é durável e
   \emph{at least once} com gravação idempotente. & Implementado\\
 \zebra \rf{RNF-06} & Segurança --- isolamento &
-  Nenhuma \emph{query} de dado de aluno pode retornar linha de outra escola,
+  Nenhuma \emph{query} de dado de estudante pode retornar linha de outra escola,
   mesmo com erro de aplicação. Verificado por RLS forçada e por teste com
   \emph{role} sem \emph{ownership}. & Implementado\\
 \rf{RNF-07} & Segurança --- segredo &

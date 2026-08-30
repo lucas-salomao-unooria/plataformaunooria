@@ -87,10 +87,10 @@ para todo o documento.
 \zebra \cd{escola} & \textbf{Tenant de nível 2}: uma unidade escolar dentro de um
   contrato. Cem ou mais escolas compartilham a mesma \emph{stack}, isoladas
   logicamente por \cd{escola\_id} + RLS.\\
-\cd{turma} & Agrupamento de alunos de uma mesma série dentro de uma escola.
+\cd{turma} & Agrupamento de estudantes de uma mesma série dentro de uma escola.
   Chave de balanceamento de vários instrumentos (bolhas, distribuição de
   lados).\\
-\zebra \cd{aluno} & Usuário-estudante. É o único papel cujos dados são de menores,
+\zebra \cd{estudante} & Usuário-estudante. É o único papel cujos dados são de menores,
   o que governa a maior parte das decisões de retenção e de log.\\
 \cd{professor} & Usuário que prepara e conduz a aula; consome relatórios de
   turma e usa as ferramentas de professor (exp-90, exp-91).\\
@@ -119,11 +119,11 @@ para todo o documento.
 \cd{versaoAtiva} & Versão do \emph{bundle} que o hub serve. \emph{Rollback} é a
   troca deste campo --- não um novo \emph{deploy}.\\
 \zebra \cd{bolha} & Nível de dificuldade do instrumento da exp-70 (A, B ou C),
-  atribuído pelo servidor e estável por aluno.\\
+  atribuído pelo servidor e estável por estudante.\\
 \cd{grau} & Quanto uma partida sustenta a medida de um valor:
   \cd{scored}, \cd{indicative}, \cd{zero} ou \cd{none}. A diferença entre
   \cd{zero} e \cd{none} é invariante de API.\\
-\zebra \cd{run} & Sessão de um aluno numa atividade da exp-01: carrega o estado do
+\zebra \cd{run} & Sessão de um estudante numa atividade da exp-01: carrega o estado do
   motor de feed adaptativo.\\
 \cd{comTenancy} & Porta única de acesso ao banco na API: abre transação e arma
   a RLS com a escola do \textit{token}.\\

@@ -33,7 +33,7 @@ aparecem aqui como \cd{note} ou comentário.
 C4Container
   title Visao geral da Plataforma Unooria
 
-  Person(aluno, "Aluno", "1o EF ao 3o EM")
+  Person(estudante, "Estudante", "1o EF ao 3o EM")
 
   Container_Boundary(plat, "Plataforma Unooria") {
     Container(hub, "Hub", "Next.js", "Autentica, roteia por papel, embeda")
@@ -46,7 +46,7 @@ C4Container
   System_Ext(idp, "WSO2 Identity Server", "Identidade, futuro")
   System_Ext(vertex, "Vertex AI", "Gemini")
 
-  Rel(aluno, hub, "HTTPS")
+  Rel(estudante, hub, "HTTPS")
   BiRel(hub, exp, "postMessage v1", "token, contexto")
   Rel_L(hub, idp, "OIDC")
   Rel(hub, api, "BFF")
@@ -62,7 +62,7 @@ C4Container
 
 \begin{lstlisting}[language=mermaid]
 flowchart LR
-  aluno([Aluno]); prof([Professor]); gestor([Gestor escolar]); admin([Admin do contrato])
+  estudante([Estudante]); prof([Professor]); gestor([Gestor escolar]); admin([Admin do contrato])
   idp[[WSO2 IS]]; vertex[[Vertex AI]]; pubsub[[Pub/Sub]]; ci[[CI/CD]]
 
   subgraph SIS["Plataforma Unooria"]
@@ -86,7 +86,7 @@ flowchart LR
     UC24(("UC-24 Reverter versao"))
   end
 
-  aluno --- UC01 & UC02 & UC03 & UC06
+  estudante --- UC01 & UC02 & UC03 & UC06
   prof  --- UC01 & UC10 & UC12 & UC13 & UC14 & UC15 & UC16
   gestor --- UC20 & UC21
   admin --- UC22 & UC23
@@ -111,7 +111,7 @@ flowchart LR
 C4Context
   title C4 nivel 1 - Contexto do sistema
 
-  Person(aluno, "Aluno", "1o EF ao 3o EM")
+  Person(estudante, "Estudante", "1o EF ao 3o EM")
   Person(prof, "Professor", "Conduz a aula")
   Person(gestor, "Gestor escolar", "Mantem usuarios")
   Person(admin, "Admin do contrato", "Rede")
@@ -123,7 +123,7 @@ C4Context
   System_Ext(ci, "GitHub Actions", "Publica bundles e manifestos")
   System_Ext(tf, "Terraform (repo separado)", "Provisiona a stack do contrato")
 
-  Rel(aluno, sis, "realiza missoes")
+  Rel(estudante, sis, "realiza missoes")
   Rel(prof, sis, "prepara, conduz, le")
   Rel(gestor, sis, "administra")
   Rel(admin, sis, "le o agregado")
@@ -140,7 +140,7 @@ C4Context
 C4Container
   title C4 nivel 2 - Conteineres (stack de um contrato)
 
-  Person(aluno, "Aluno")
+  Person(estudante, "Estudante")
   Person(prof, "Professor")
   Person(adm, "Gestor / Admin")
 
@@ -157,7 +157,7 @@ C4Container
   System_Ext(vertex, "Vertex AI")
   Container_Ext(idp, "WSO2 IS", "", "Externo a stack")
 
-  Rel(aluno, hub, "HTTPS")
+  Rel(estudante, hub, "HTTPS")
   Rel(prof, hub, "HTTPS")
   Rel(adm, hub, "HTTPS")
   BiRel(hub, exp, "postMessage v1 - targetOrigin explicito")
@@ -343,7 +343,7 @@ sequenceDiagram
   P-->>S: COMMIT (libera o lock)
   S-->>C: bloco + modulos + diagnostico
   C->>C: paraFeedPost: remove lado, perfil, intensidade
-  Note over C: Esses campos sao a variavel independente<br/>do experimento. No cliente, o aluno saberia<br/>de que lado o algoritmo o colocou.
+  Note over C: Esses campos sao a variavel independente<br/>do experimento. No cliente, o estudante saberia<br/>de que lado o algoritmo o colocou.
   C-->>E: GET /runs/:id/feed (sanitizado)
 \end{lstlisting}
 
@@ -374,7 +374,7 @@ C4Deployment
   title Implantacao de um contrato
 
   Deployment_Node(internet, "Internet", "escola") {
-    Container(browser, "Navegador do aluno", "", "")
+    Container(browser, "Navegador do estudante", "", "")
   }
 
   Deployment_Node(gcp, "Google Cloud - projeto do contrato", "GCP") {
@@ -417,7 +417,7 @@ C4Deployment
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
-  browser([Navegador do aluno]); gh[[GitHub Actions]]; wso2[[WSO2 IS]]; vertex[[Vertex AI - global]]
+  browser([Navegador do estudante]); gh[[GitHub Actions]]; wso2[[WSO2 IS]]; vertex[[Vertex AI - global]]
 
   subgraph GCP["Google Cloud - projeto do contrato"]
     subgraph BORDA["Borda global"]
@@ -499,7 +499,7 @@ flowchart TB
     subgraph ESC["Dentro de UMA stack: isolamento LOGICO"]
       e1["escola sp-001"]; e2["escola sp-002"]; e3["... 100+"]
     end
-    tab["Toda tabela de dado de aluno:<br/>escola_id TEXT NOT NULL<br/>ENABLE + FORCE ROW LEVEL SECURITY<br/>POLICY USING (escola_id = current_setting('app.escola_id', true))"]
+    tab["Toda tabela de dado de estudante:<br/>escola_id TEXT NOT NULL<br/>ENABLE + FORCE ROW LEVEL SECURITY<br/>POLICY USING (escola_id = current_setting('app.escola_id', true))"]
     e1 -.-> tab; e2 -.-> tab; e3 -.-> tab
   end
   subgraph B["Contrato B - OUTRA stack"]
@@ -549,7 +549,7 @@ erDiagram
   }
   users {
     uuid id PK
-    text role "aluno|professor|gestor|admin-contrato"
+    text role "estudante|professor|gestor|admin-contrato"
     text escola_id FK "NULL SO p/ admin-contrato (CHECK)"
     uuid turma_id FK
     text username "UNIQUE (escola_id, username)"
@@ -563,12 +563,12 @@ erDiagram
     text_array series "VAZIO = TODAS as series"
     text_array capabilities
     jsonb viewport "presente => casca de aparelho"
-    text publico "aluno|professor"
+    text publico "estudante|professor"
     text_array permissoes "hoje so pointer-lock"
   }
   progresso {
     text escola_id PK
-    text aluno_id PK
+    text estudante_id PK
     text exp_id PK
     jsonb dados
   }
@@ -582,7 +582,7 @@ erDiagram
     uuid event_id PK "PK COMPOSTA: o Postgres exige a chave de particao"
     timestamptz ts PK
     text escola_id
-    text aluno_id
+    text estudante_id
     text exp_id
     text exp_version
     uuid sessao_id
@@ -662,13 +662,13 @@ erDiagram
 \begin{lstlisting}[language=mermaid]
 erDiagram
   exp_70_sessoes ||--o{ exp_70_perfis : "recalculado pelo servidor"
-  exp_70_perfis  ||..|| exp_70_bolhas : "mesmo aluno"
+  exp_70_perfis  ||..|| exp_70_bolhas : "mesmo estudante"
   exp_90_planos  ||..o{ exp_90_referencias : "monta o prompt"
   exp_91_ciclos  ||--o{ exp_91_checkins : "7 check-ins"
 
   exp_02_sessoes {
     text escola_id PK
-    uuid aluno_id PK
+    uuid estudante_id PK
     text_array salvos "CHECK cardinality <= 3"
     boolean ranking_desbloqueado "LATCH: nao volta"
     boolean credibilidade_adicionada "congela os salvos"
@@ -691,7 +691,7 @@ erDiagram
   }
   exp_70_bolhas {
     text escola_id PK
-    uuid aluno_id PK "por ALUNO, nao por partida"
+    uuid estudante_id PK "por ESTUDANTE, nao por partida"
     text bolha
   }
   exp_90_planos {
@@ -739,7 +739,7 @@ sequenceDiagram
     E->>F: exp:ready { protocolVersion: 1 }
   end
   F->>F: valida ev.origin e a versao MAIOR
-  F-->>E: hub:init { token, aluno, apiUrl, config }
+  F-->>E: hub:init { token, estudante, apiUrl, config }
   E->>E: valida com Zod; resolve a Promise
   E->>A: chamadas de dominio, /telemetry/batch, /ai/gerar
   E->>F: exp:token-expirando
@@ -778,7 +778,7 @@ flowchart LR
   t -->|le| mi["src/perfis/largada.ts - decide o lado do feed"]
   mi --> i["exp-01 (Instanooria)"]
 
-  %% Duas travas que CUSTAM alunos, de proposito:
+  %% Duas travas que CUSTAM estudantes, de proposito:
   %%  1. valor nao observado (indicative|none) fica FORA da media — nunca zero
   %%  2. quadrante sem nenhum membro observado INVALIDA o perfil inteiro
   %% Sem perfil, o Instanooria cai no sorteio balanceado, que e honesto sobre
@@ -900,28 +900,28 @@ flowchart TB
   subgraph PLAT["Plataforma - serve a todos os papeis"]
     au["/auth/login - sem papel"]; he["/healthz, /readyz - PUBLICO"]
     ex["/experiencias - GET qualquer; PUT admin-contrato"]
-    pg["/progresso/:expId - aluno"]; te["/telemetry/* - ver capitulo 10"]
+    pg["/progresso/:expId - estudante"]; te["/telemetry/* - ver capitulo 10"]
     us["/usuarios/* - gestor, admin"]; ai["/ai/gerar - autenticado + quota"]
     an["/analise/* - ADMIN-CONTRATO"]
   end
   subgraph E01["exp-01 - Instanooria"]
-    atv["/atividades/* - professor"]; rn["/runs/* - aluno (/eventos: professor tb.)"]
-    po["/posts/:id/comentarios - aluno"]; pf["/perfis/importar - chave de servico"]
+    atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]
+    po["/posts/:id/comentarios - estudante"]; pf["/perfis/importar - chave de servico"]
   end
   subgraph OUT["Demais experiencias"]
-    ut["/unootube/* - aluno"]; utt["/unootube/turmas/* - prof, gestor, admin"]
-    vi["/vila/sessoes - aluno"]; vp["/vila/professor/* - PROFESSOR"]
+    ut["/unootube/* - estudante"]; utt["/unootube/turmas/* - prof, gestor, admin"]
+    vi["/vila/sessoes - estudante"]; vp["/vila/professor/* - PROFESSOR"]
     va["/vila/agregado/* - prof, gestor"]; pl["/planos/* - professor"]
     pref["/planos/referencias - chave de servico"]
     be["/bemestar/* - SO PROFESSOR, com posse"]
-    ug["/unoogpt/* - aluno"]
+    ug["/unoogpt/* - estudante"]
     ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
-    uga["/unoogpt/agregado/* - gestor, admin - sem alunoId"]
+    uga["/unoogpt/agregado/* - gestor, admin - sem estudanteId"]
   end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
   %% de agregado; e no unoogpt o controller do gestor nao tem NENHUMA rota que
-  %% aceite alunoId, o que torna estrutural (nao disciplinar) o limite do que
+  %% aceite estudanteId, o que torna estrutural (nao disciplinar) o limite do que
   %% ele alcanca.
 \end{lstlisting}
 
@@ -932,7 +932,7 @@ flowchart TB
 flowchart LR
   subgraph CLONE["Dentro do iframe, ANTES da revelacao - @edu/ui/ds-unootube"]
     feed["feed de videos"]; cromo["cromo, busca, menu"]
-    play["playlists"]; canal["canal do aluno"]; toast["toast: 'Video salvo!'"]
+    play["playlists"]; canal["canal do estudante"]; toast["toast: 'Video salvo!'"]
   end
   subgraph PLATF["DEPOIS da revelacao, no MESMO iframe - @edu/ui/ds"]
     rank["ranking"]; d1["dialogo 1 da missao"]; d2["dialogo 2 da missao"]; fim["fechamento"]
@@ -993,7 +993,7 @@ flowchart TB
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
-  v["SMOKE VISUAL - Playwright, navegador real<br/>walkthrough-aluno, -professor, -unootube, -vila-do-lume,<br/>-professor-vila, -ato1-vila, probe-pointerlock"]
+  v["SMOKE VISUAL - Playwright, navegador real<br/>walkthrough-estudante, -professor, -unootube, -vila-do-lume,<br/>-professor-vila, -ato1-vila, probe-pointerlock"]
   c["CONTRATO EXTERNO<br/>telemetria-push (guard do Pub/Sub), vertex-provider (cadeia ADC)"]
   i["INTEGRACAO COM POSTGRES<br/>tenancy, planos-tenancy, motor-concorrencia, motor-postgres,<br/>unootube-postgres, vila-postgres, vila-ato1, usuarios, planos, bemestar"]
   u["REGRA PURA - Vitest/Jest, milissegundos, sem banco<br/>vila-regras, unootube-regras, bemestar-regras, motor-pesos,<br/>motor-bolha, motor-sugestoes, motor-reversibilidade, bridge.test"]

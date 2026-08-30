@@ -121,7 +121,7 @@ registro de imagens e os dois caminhos de identidade de máquina.
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   % ------------------------------------------------ fora da nuvem do contrato
-  \node[internet, minimum width=26mm] (aluno) at (0.6,-1.6) {Navegador\\do aluno};
+  \node[internet, minimum width=26mm] (estudante) at (0.6,-1.6) {Navegador\\do estudante};
   \node[externo, text width=26mm] (gh) at (0.6,-5.4)
     {\textbf{GitHub Actions}\desc{CI/CD}};
   \node[externo, text width=26mm] (wso2) at (0.6,-8.6)
@@ -199,7 +199,7 @@ registro de imagens e os dois caminhos de identidade de máquina.
     {\textbf{Vertex AI}\desc{endpoint \texttt{global}}};
 
   % ------------------------------------------------ arestas
-  \draw[netpub] (aluno.east) -- (lb.west) node[portlbl, midway, above]{443};
+  \draw[netpub] (estudante.east) -- (lb.west) node[portlbl, midway, above]{443};
   \draw[netpub] (cdn.east) -- (14.6,-1.0) -- (bexp.west)
     node[portlbl, pos=0.55, above]{\emph{bundle}};
   \draw[netpub] (cdn.north east) -- (16.7,0.2) -- (bass.north);
@@ -427,7 +427,7 @@ Cloud Run --- API & CPU sempre alocada, \cd{min-instances} $\geq$ 1,
 \zebra Cloud Run --- hub & \cd{min-instances} $\geq$ 1 &
   Elimina \emph{cold start} no pico de \emph{login}.\\
 Cloud SQL & Instância pequena, HA, PITR, \emph{pooler} &
-  \num{10000} alunos e o volume medido de telemetria cabem folgadamente. O
+  \num{10000} estudantes e o volume medido de telemetria cabem folgadamente. O
   \emph{pooler} é obrigatório porque o \emph{autoscaling} do Cloud Run
   multiplica \emph{pools} do Prisma e estoura \cd{max\_connections}.\\
 \zebra CDN & \emph{cache} longo no caminho versionado; \cd{max-age=60} no
@@ -452,7 +452,7 @@ Pub/Sub & \emph{Push subscription} com \cd{oidc\_token} &
   primeira conversa --- teto real de \textasciitilde22 eventos por partida. Nada
   por quadro, nada por metro andado.\\
 \zebra Armazenamento da exp-70 por contrato & \textbf{\textasciitilde\SI{30}{\mega\byte}} &
-  \num{10000} alunos jogando uma vez. A estimativa \emph{anterior} --- centenas
+  \num{10000} estudantes jogando uma vez. A estimativa \emph{anterior} --- centenas
   de MB a \SI{2.4}{\giga\byte} --- partia do teto do contrato (2000 eventos) e
   errava por duas ordens de grandeza. O teto do contrato caiu de 2000 para 200,
   que é o que de fato limita a linha se um cliente adulterado mandar lixo.\\

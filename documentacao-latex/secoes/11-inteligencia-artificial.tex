@@ -20,11 +20,11 @@ Geração de \emph{feed} & exp-01, \arq{src/geracao/} &
   \emph{mix} (quantos posts de cada lado, perfil e intensidade) é decidido pelo
   \textbf{servidor}; a IA só preenche.\\
 \zebra Reação ao vivo & exp-01, \arq{src/motor/} &
-  Comentários de persona reagindo ao que o aluno publicou. Desligável pelo
+  Comentários de persona reagindo ao que o estudante publicou. Desligável pelo
   professor no meio da aula, sem \emph{deploy} (\cd{ia\_ao\_vivo}).\\
 Plano de aula & exp-90, \arq{src/planos/} &
   Um plano anual completo em Markdown, a partir do currículo da rede e das
-  unidades do ano. \textbf{Não} decide nota nem avalia aluno.\\
+  unidades do ano. \textbf{Não} decide nota nem avalia estudante.\\
 \zebra Entorno do \emph{check-in} & exp-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
@@ -129,13 +129,13 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 \end{decisao}
 
 \begin{decisao}
-\textbf{O limite depende do PERFIL.} O aluno conversa com o tutor, e
+\textbf{O limite depende do PERFIL.} O estudante conversa com o tutor, e
 \num{20000} \emph{tokens}/dia bastam. O professor gera planos anuais em que só o
 \emph{prompt} --- currículo da rede mais material didático --- passa de
 \num{200000} \emph{tokens}: o teto dele é outro
 (\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, \emph{default}
 \num{2000000}/dia, o que dá seis a nove planos). Um teto único obrigaria a
-escolher entre \enquote{aluno com quota absurda} e \enquote{professor que não
+escolher entre \enquote{estudante com quota absurda} e \enquote{professor que não
 consegue gerar um plano}.
 \end{decisao}
 
@@ -182,7 +182,7 @@ Medido no projeto do contrato: o \cd{3.6-flash} dá \textbf{404} em
 \cd{global} (sem \emph{host} regional) o serve.
 
 A consequência é explícita e foi aceita: \textbf{o tráfego de IA sai de São
-Paulo, inclusive o do aluno}, e isso precisa constar do contrato e do DPA da
+Paulo, inclusive o do estudante}, e isso precisa constar do contrato e do DPA da
 rede. Voltar para \env{VERTEX\_LOCATION=southamerica-east1} é possível a qualquer
 momento, mas exige trocar \textbf{também} o modelo pelo que a região publica ---
 a família 2.5, já que a 2.0 saiu do catálogo e a 3.x nunca esteve lá. As duas
@@ -356,8 +356,8 @@ localidade de processamento como item de conformidade, não de arquitetura.
   Quem trocar precisa conferir a proporção devolvida.\\
 \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
   $>0$ teto.\\
-\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} & \num{20000} & Quota diária do
-  aluno.\\
+\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{20000} & Quota diária do
+  estudante.\\
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
   professor, gestor e admin.\\
 \bottomrule

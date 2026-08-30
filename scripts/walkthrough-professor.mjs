@@ -5,7 +5,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, vigiarFalhasDaApi } from "./lib/sm
 /**
  * Smoke VISUAL das telas da plataforma (professor e gestor).
  *
- * Cobre o que o walkthrough do aluno não alcança: o Design System
+ * Cobre o que o walkthrough do estudante não alcança: o Design System
  * institucional (`unooria.css` + Material Symbols via <link>), a trilha, a
  * tela da atividade com os painéis e a gestão de usuários.
  *
@@ -110,7 +110,7 @@ try {
   await p.waitForURL("**turmaId=**", { timeout: 15_000 });
   await p.waitForTimeout(2500);
   const linhasUnootube = await p.locator("table tbody tr").count().catch(() => 0);
-  await registrar("resultados-unootube", `${linhasUnootube} alunos na tabela`);
+  await registrar("resultados-unootube", `${linhasUnootube} estudantes na tabela`);
 
   const atividade = p.locator('a[href^="/professor/atividades/"]').first();
   if (await atividade.count()) {

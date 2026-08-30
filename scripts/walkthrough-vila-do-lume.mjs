@@ -15,7 +15,7 @@ import { chromium } from "playwright";
  * iframe do hub.
  *
  * Por que esta experiência precisa de um walkthrough próprio, e não serve o
- * `walkthrough-aluno.mjs`: aqui o typecheck não cobre quase nada. O jogo é
+ * `walkthrough-estudante.mjs`: aqui o typecheck não cobre quase nada. O jogo é
  * JavaScript clássico fora do `tsc` (ADR-0001 da experiência), e as três coisas
  * que podem quebrar são todas de runtime e todas invisíveis num teste de
  * unidade:
@@ -33,7 +33,7 @@ import { chromium } from "playwright";
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-vila";
-const USER = process.argv[3] ?? "aluno03";
+const USER = process.argv[3] ?? "estudante03";
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 const EXP = "exp-70-vila-do-lume";
 
@@ -112,8 +112,8 @@ try {
     { timeout: 10_000 },
   );
   await p.click("button[type=submit]");
-  await p.waitForURL("**/aluno", { timeout: 30_000 });
-  await registrar("hub-do-aluno");
+  await p.waitForURL((url) => url.pathname.includes("/estudante") || url.pathname.includes("/aluno"), { timeout: 30_000 });
+  await registrar("hub-do-estudante");
 
   // ---- entra na experiência ---------------------------------------------
   await p.goto(`${HUB}/exp/${EXP}`, { waitUntil: "domcontentloaded" });
@@ -151,11 +151,11 @@ try {
   await tela.locator("button", { hasText: "Pular a explicação" }).click();
   const nomeNaPedra = await tela.locator(".slot-escolhido").innerText();
   /* A identidade vem da sessão. Vazio ou "—" aqui significa que o handshake
-     entregou o jogo sem aluno — e uma partida sem aluno não pode ser
+     entregou o jogo sem estudante — e uma partida sem estudante não pode ser
      atribuída a ninguém. */
   exigir(
     nomeNaPedra.trim().length > 0 && !nomeNaPedra.includes("—"),
-    `nome do aluno não chegou ao jogo (leu "${nomeNaPedra}")`,
+    `nome do estudante não chegou ao jogo (leu "${nomeNaPedra}")`,
   );
   await registrar("ultimo-cartao", `nome no jogo: "${nomeNaPedra}"`);
 

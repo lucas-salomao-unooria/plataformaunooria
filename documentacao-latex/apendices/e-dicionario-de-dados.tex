@@ -31,7 +31,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{escolas} & Tenant raiz & Unidades escolares do contrato\\
 \zebra \cd{periodos\_letivos} & \textbf{Catálogo} & Ano letivo e seus recortes\\
 \cd{turmas} & Tenant & Turmas por escola, período e série\\
-\zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (aluno e professor)\\
+\zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (estudante e professor)\\
 \cd{users} & Tenant & Pessoas e papéis\\
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{progresso} & Tenant & Progresso genérico da SDK\\
@@ -42,9 +42,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp\_01\_posts} & Tenant & Posts gerados\\
 \cd{exp\_01\_post\_comments} & Tenant & Comentários dos posts\\
 \zebra \cd{exp\_01\_generation\_jobs} & Tenant & Fila de geração\\
-\cd{exp\_01\_runs} & Tenant & Sessão de um aluno\\
+\cd{exp\_01\_runs} & Tenant & Sessão de um estudante\\
 \zebra \cd{exp\_01\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
-\cd{exp\_01\_student\_posts} & Tenant & Posts publicados pelo aluno\\
+\cd{exp\_01\_student\_posts} & Tenant & Posts publicados pelo estudante\\
 \zebra \cd{exp\_01\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
 \cd{exp\_01\_reflexoes} & Tenant & Texto de fechamento\\
 \zebra \cd{exp\_01\_dossiers} & Tenant & Dossiê calculado\\
@@ -53,13 +53,13 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
   \textbf{Contrato entre duas experiências}\\
 \cd{exp\_02\_sessoes} & Tenant & Estado da missão do UnooTube\\
 \zebra \cd{exp\_03\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
-\cd{exp\_03\_mensagens} & Tenant & A Transcrição (texto livre do aluno)\\
+\cd{exp\_03\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
 \zebra \cd{exp\_03\_marcos} & Tenant & Trilha da decisão\\
 \cd{exp\_03\_simulacoes} & Tenant & Desfecho por tentativa\\
 \zebra \cd{exp\_03\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
 \zebra \cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \cd{exp\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
-\zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por aluno\\
+\zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por estudante\\
 \cd{exp\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
 \zebra \cd{exp\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
 \cd{exp\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
@@ -85,7 +85,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
   onde a escola daqui se reconhece na base da rede.\\
 \zebra \cd{tipo} & \cd{TEXT} & \cd{escola} $|$ \cd{regional} $|$ \cd{rede}
   --- \emph{CHECK} na migração. Só a \cd{escola} é \emph{tenant}: regional e rede
-  não têm turma, aluno nem lotação. \textbf{Agrupa, não autoriza} (\adrr{ADR-34}).\\
+  não têm turma, estudante nem lotação. \textbf{Agrupa, não autoriza} (\adrr{ADR-34}).\\
 \fk{pai\_id} & \cd{TEXT?} FK & Auto-relacionamento. Um \emph{trigger}
   (\cd{escolas\_pai\_agrupa}) recusa pai que seja \cd{tipo = 'escola'} ou a
   própria linha --- é o que impede uma unidade de virar pai de outra e a
@@ -110,7 +110,7 @@ progresso nem perfil da Vila, e não entra em média nenhuma.
 \pk{id} & \cd{UUID} PK & \\
 \zebra \fk{escola\_id} & \cd{TEXT} FK & RLS por escola. O documento pertence à
   unidade que o recebeu.\\
-\fk{aluno\_id} & \cd{UUID} FK & Ligado pelo CPF na importação --- nunca cria a
+\fk{estudante\_id} & \cd{UUID} FK & Ligado pelo CPF na importação --- nunca cria a
   pessoa: matricular é ato da escola, e só depois o perfil se anexa.\\
 \zebra \cd{emissor\_contrato} & \cd{TEXT} & Quem emitiu. Pode ser uma rede que
   esta instalação nunca viu.\\
@@ -131,7 +131,7 @@ progresso nem perfil da Vila, e não entra em média nenhuma.
 \end{tabularx}
 
 \begin{decisao}
-\cd{UNIQUE (escola\_id, aluno\_id, emissor\_contrato, emitido\_em)}: a escola
+\cd{UNIQUE (escola\_id, estudante\_id, emissor\_contrato, emitido\_em)}: a escola
 recebe o arquivo por e-mail e alguém importa duas vezes. Duas cópias do mesmo
 fato pareceriam duas medidas. Reimportar reconfere a assinatura e atualiza só o
 veredito --- a rede pode ter voltado, e \enquote{não consegui falar com o
@@ -201,7 +201,7 @@ divergentes.
   pessoas \enquote{sem turma}.\\
 \fk{turma\_id} & \cd{UUID} FK & \cd{ON DELETE CASCADE}.\\
 \zebra \fk{usuario\_id} & \cd{UUID} FK & \cd{ON DELETE CASCADE}.\\
-\cd{papel} & \cd{TEXT} & \cd{aluno} $|$ \cd{professor} --- \emph{CHECK} na
+\cd{papel} & \cd{TEXT} & \cd{estudante} $|$ \cd{professor} --- \emph{CHECK} na
   migração. \textbf{Gestor não entra}: o papel dele é da escola, não da turma.\\
 \zebra \cd{principal} & \cd{BOOLEAN} & A turma de referência da pessoa. É ela
   que alimenta o cache \cd{users.turma\_id} e, por ele, o \emph{claim}
@@ -224,7 +224,7 @@ divergentes.
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
 \pk{id} & \cd{UUID} PK & \\
-\zebra \cd{role} & \cd{TEXT} & \cd{aluno} $|$ \cd{professor} $|$ \cd{gestor} $|$
+\zebra \cd{role} & \cd{TEXT} & \cd{estudante} $|$ \cd{professor} $|$ \cd{gestor} $|$
   \cd{admin-contrato}.\\
 \fk{escola\_id} & \cd{TEXT?} FK & \textbf{\emph{CHECK} na migração:}
   \cd{NOT NULL} \emph{exceto} quando \cd{role = 'admin-contrato'}. Nenhuma outra
@@ -238,7 +238,7 @@ divergentes.
 \cd{matricula\_externa} & \cd{TEXT?} & O RA da pessoa na rede. É a chave de
   reconciliação da importação: com ela, corrigir nome ou login continua sendo a
   mesma pessoa; sem ela o \emph{upsert} cai no \cd{username} e um login corrigido
-  vira um segundo aluno, com o histórico preso no primeiro. Índice único
+  vira um segundo estudante, com o histórico preso no primeiro. Índice único
   \textbf{parcial} por escola --- vive na migração, porque o Prisma não modela
   índice parcial.\\
 \zebra \cd{cpf} & \cd{TEXT?} & Os 11 dígitos, \textbf{sem pontuação}
@@ -254,7 +254,7 @@ divergentes.
   gestão e IdP são coisas diferentes, e as duas reconciliações não são a mesma.\\
 \cd{email} & \cd{TEXT?} & \\
 \zebra \cd{ativo} & \cd{BOOLEAN} & Saiu da rede \seta{} \cd{false}. Nunca
-  \cd{DELETE}: há dado de aluno pendurado. \cd{ativo = false} recusa \emph{login}
+  \cd{DELETE}: há dado de estudante pendurado. \cd{ativo = false} recusa \emph{login}
   com a mesma mensagem genérica de credencial inválida.\\
 \cd{senha\_provisoria} & \cd{BOOLEAN} & A senha veio da importação ou de um
   reajuste e ainda não foi trocada. Enquanto verdadeira, o hub prende em
@@ -285,7 +285,7 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
   \cd{avaliacao}, \cd{tempo-real}.\\
 \zebra \cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
   Presente \implica{} o hub embeda dentro do \cd{DispositivoFrame}.\\
-\cd{publico} & \cd{TEXT} & \cd{aluno} (default) $|$ \cd{professor}, com
+\cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
   \emph{CHECK}. \cd{professor} \implica{} \rota{/exp/*} responde 404.\\
 \zebra \cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
   \cd{pointer-lock}, com \emph{CHECK} do vocabulário.
@@ -297,7 +297,7 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
 
 \subsection{\cd{progresso}}
 
-PK composta \cd{(escola\_id, aluno\_id, exp\_id)}; \cd{dados JSONB DEFAULT
+PK composta \cd{(escola\_id, estudante\_id, exp\_id)}; \cd{dados JSONB DEFAULT
 '\{\}'}; \cd{atualizado\_em}. É o progresso \emph{genérico} da SDK --- estado rico
 de experiência vai para a tabela da experiência.
 
@@ -319,7 +319,7 @@ sobrescrevam.
   composta porque o PostgreSQL exige a chave de partição em todo índice único ---
   e a \emph{dedupe} segue correta, porque a reentrega da mesma mensagem traz o
   \emph{mesmo} \cd{ts}.\\
-\cd{escola\_id}, \cd{aluno\_id} & \cd{TEXT} & \cd{aluno\_id} é \textbf{opaco}:
+\cd{escola\_id}, \cd{estudante\_id} & \cd{TEXT} & \cd{estudante\_id} é \textbf{opaco}:
   nunca nome nem \emph{e-mail}. Derivado do \emph{token} no servidor.\\
 \zebra \cd{exp\_id}, \cd{exp\_version} & \cd{TEXT} & \\
 \cd{sessao\_id} & \cd{UUID} & \\
@@ -356,7 +356,7 @@ sobrescrevam.
   (\adrr{ADR-49}). \cd{NULL} = atividade anterior à coluna, que vale para a
   escola inteira --- o comportamento antigo, preservado sem
   \emph{backfill}. Com turma, o painel de perfis, a importação da Vila e a
-  entrada do aluno em \cd{POST /runs} falam todos da MESMA sala.
+  entrada do estudante em \cd{POST /runs} falam todos da MESMA sala.
   \cd{ON DELETE RESTRICT}.\\
 \zebra \cd{titulo}, \cd{disciplina}, \cd{tema\_geral}, \cd{recorte} & \cd{TEXT} & \\
 \cd{contexto\_aula} & \cd{TEXT?} & \\
@@ -366,7 +366,7 @@ sobrescrevam.
   \textbf{auditoria de autoria pedagógica}, e custa uma coluna.\\
 \cd{etapa} & \cd{TEXT} & \cd{investigacao} $|$ \cd{conclusao} $|$ \cd{debate} $|$
   \cd{explicabilidade} $|$ \cd{perdidos} $|$ \cd{reflexao} $|$ \cd{fim}.
-  \textbf{Relógio COLETIVO da turma:} o professor abre e fecha, e a tela do aluno
+  \textbf{Relógio COLETIVO da turma:} o professor abre e fecha, e a tela do estudante
   trava conforme.\\
 \zebra \cd{ia\_ao\_vivo} & \cd{BOOLEAN} & Personas reagem ao vivo. Desligável no
   meio da aula, \textbf{sem \emph{deploy}}.\\
@@ -399,7 +399,7 @@ sobrescrevam.
 \cd{lado}, \cd{perfil} e \cd{intensidade} são \textbf{a variável independente do
 experimento}. Eles existem no banco e são \textbf{removidos pelo sanitizador}
 antes de o \emph{feed} sair da API. Se chegassem ao cliente, a experiência poderia
-exibi-los --- e o aluno saberia de que lado o algoritmo o colocou antes da
+exibi-los --- e o estudante saberia de que lado o algoritmo o colocou antes da
 revelação.
 \end{regra}
 
@@ -436,7 +436,7 @@ consulta que o motor faz a cada bloco.
 \zebra \cd{lado\_inicial} & \cd{TEXT} & \cd{A} $|$ \cd{B}. Vem da afinidade do
   perfil; \textbf{nunca muda}.\\
 \cd{lado\_origem} & \cd{TEXT} & \cd{perfil} $|$ \cd{sorteio} $|$
-  \cd{redistribuido} --- \textbf{auditoria de por que} aquele aluno caiu naquele
+  \cd{redistribuido} --- \textbf{auditoria de por que} aquele estudante caiu naquele
   lado. Sem isso, uma reclamação de professor não tem resposta.\\
 \zebra \cd{perfil\_jogo} & \cd{JSONB?} & Perfil do Ato 1, \textbf{congelado} na
   criação da \cd{run}.\\
@@ -452,7 +452,7 @@ consulta que o motor faz a cada bloco.
 \bottomrule
 \end{tabularx}
 
-\cd{UNIQUE (activity\_id, aluno\_id)}: uma sessão por aluno por atividade.
+\cd{UNIQUE (activity\_id, estudante\_id)}: uma sessão por estudante por atividade.
 
 \subsection{\cd{exp\_01\_events} --- o canal operacional}
 
@@ -516,7 +516,7 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 \toprule
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
-\pk{(escola\_id, aluno\_id)} & PK composta & Uma linha por aluno.\\
+\pk{(escola\_id, estudante\_id)} & PK composta & Uma linha por estudante.\\
 \zebra \cd{salvos} & \cd{TEXT[]} & Ids do catálogo. \emph{CHECK}
   \cd{cardinality(salvos) <= 3} na migração.\\
 \cd{curtidos} & \cd{TEXT[]} & Segue livre mesmo após a conclusão.\\
@@ -534,7 +534,7 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 
 \begin{regra}
 O gabarito (\cd{factual}) \textbf{não está aqui} e não é devolvido em nenhuma rota
-de aluno: vive em \arq{src/unootube/catalogo.ts}. O que \emph{sai} de lá é
+de estudante: vive em \arq{src/unootube/catalogo.ts}. O que \emph{sai} de lá é
 \cd{VideoPublico}, isto é, tudo menos \cd{factual} --- e há teste que enumera os
 campos, para que um campo novo não escape por distração. Desde a 1.1.0 são também
 públicos \cd{visualizacoesRotulo} e \cd{curtidasRotulo}: rótulos
@@ -551,7 +551,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \toprule
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
-\pk{(escola\_id, aluno\_id)} & PK composta & Uma linha por aluno.
+\pk{(escola\_id, estudante\_id)} & PK composta & Uma linha por estudante.
   \textbf{Não há id de sessão}: a identidade vem do \emph{token}.\\
 \zebra \cd{turma\_id} & \cd{UUID?} & Denormalizado: o painel do professor consulta
   por turma o tempo todo, e resolver por \emph{join} a cada leitura era o caminho
@@ -569,9 +569,9 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \cd{perguntas\_gastas} & \cd{INT} & Conta o \textbf{gasto}, não o resto: mudar o
   teto passa a valer para partida em curso. \emph{CHECK} 0--3.\\
 \zebra \cd{alocacao\_alfa}, \cd{alocacao\_bravo} & \cd{TEXT?} & Slug do bairro de
-  destino. O agente \textbf{não escolhe} --- registra a escolha do aluno.\\
+  destino. O agente \textbf{não escolhe} --- registra a escolha do estudante.\\
 \cd{justificativa\_alfa}, \cd{justificativa\_bravo} & \cd{TEXT?} & Slug de um
-  conjunto que o aluno carregou, ou \cd{'intuicao'}. \emph{CHECK}: justificativa
+  conjunto que o estudante carregou, ou \cd{'intuicao'}. \emph{CHECK}: justificativa
   sem destino é estado impossível; destino sem justificativa é legítimo (o portão
   exige antes de \emph{enviar}).\\
 \zebra \cd{tokens\_gastos}, \cd{chamadas\_ia} & \cd{INT} & O teto por sessão
@@ -586,13 +586,13 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
 \pk{id} & \cd{BIGSERIAL} & Paginação por id é estável; por \emph{timestamp} não.\\
-\zebra \cd{papel} & \cd{TEXT} & \emph{CHECK} \cd{IN ('aluno','agente')}.\\
+\zebra \cd{papel} & \cd{TEXT} & \emph{CHECK} \cd{IN ('estudante','agente')}.\\
 \cd{texto} & \cd{TEXT} & \textbf{Caixa livre escrita por menor de idade}. Nunca
   vai a log nem à telemetria; nenhuma rota de gestor a alcança (\adrr{ADR-27}).\\
 \zebra \cd{anexo} & \cd{JSONB?} & O cartão que acompanha a fala. É o que faz a
   conversa voltar inteira depois de um F5.\\
 \cd{debitou} & \cd{BOOLEAN} & Se esta fala custou uma Pergunta --- a trilha de
-  auditoria do orçamento. \emph{CHECK}: só fala do aluno pode debitar.\\
+  auditoria do orçamento. \emph{CHECK}: só fala do estudante pode debitar.\\
 \bottomrule
 \end{tabularx}
 
@@ -603,7 +603,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
 \pk{id} & \cd{BIGSERIAL} & \emph{UNIQUE}
-  \cd{(escola\_id, aluno\_id, tentativa, ordem)}.\\
+  \cd{(escola\_id, estudante\_id, tentativa, ordem)}.\\
 \zebra \cd{tipo} & \cd{TEXT} & \emph{CHECK}
   \cd{IN ('fontes','leitura','alocacao','envio')}.\\
 \cd{minuto} & \cd{INT} & Minuto do relógio em que aconteceu. \emph{CHECK} 0--60.\\
@@ -618,7 +618,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \toprule
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
-\pk{id} & \cd{UUID} & \emph{UNIQUE} \cd{(escola\_id, aluno\_id, ordem)}.\\
+\pk{id} & \cd{UUID} & \emph{UNIQUE} \cd{(escola\_id, estudante\_id, ordem)}.\\
 \zebra \cd{alocacao}, \cd{desfecho} & \cd{JSONB} & A decisão e o que ela rendeu.\\
 \cd{minuto\_da\_saida} & \cd{INT} & O minuto em que as equipes saíram: é o que
   decidiu se cada uma chegou. Guardado junto do desfecho para a linha ser
@@ -639,14 +639,14 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \zebra \cd{modo} & \cd{TEXT} & \emph{CHECK}
   \cd{IN ('cronometrado','livre')}.\\
 \cd{iniciado\_em} & \cd{TIMESTAMPTZ?} & \textbf{Nulo = a missão ainda não
-  começou}: o aluno vê o cronômetro parado e não fala com o agente.\\
+  começou}: o estudante vê o cronômetro parado e não fala com o agente.\\
 \zebra \cd{duracao\_seg} & \cd{INT} & Segundos de parede. \enquote{+2 min} soma
   120. \emph{CHECK} $> 0$ --- zero dividiria por zero no minuto narrativo.\\
 \cd{encerrado\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}: encerrar o que nunca
   começou é estado impossível.\\
 \zebra \cd{pivo\_seg}, \cd{pivo\_min} & \cd{INT} & O \textbf{pivô} da extensão:
   onde o relógio da cidade estava quando a duração mudou. É o que impede o minuto
-  narrativo de rebobinar --- aos 4:00 de 5:00 o aluno está no minuto 48, e
+  narrativo de rebobinar --- aos 4:00 de 5:00 o estudante está no minuto 48, e
   recalcular com 7:00 daria 34.\\
 \bottomrule
 \end{tabularx}
@@ -671,7 +671,7 @@ conferência por \cd{grep} no \arq{dist/} da experiência.
   máquina colidiam --- a segunda partida voltava \enquote{duplicada} e
   desaparecia.\\
 \zebra \fk{turma\_id} & \cd{UUID?} FK & \textbf{Desnormalizado:} turma \emph{no
-  momento da partida}. O aluno troca de turma entre anos letivos, e o resultado
+  momento da partida}. O estudante troca de turma entre anos letivos, e o resultado
   precisa continuar na turma em que foi medido.\\
 \cd{exp\_version} & \cd{TEXT} & Versão do \emph{bundle} que jogou --- torna o
   \emph{skew} de \emph{publish} visível em vez de silencioso.\\
@@ -740,13 +740,13 @@ o que a mudança fez.
 
 \subsection{\cd{exp\_70\_bolhas}}
 
-PK composta \cd{(escola\_id, aluno\_id)}; \cd{bolha}, \cd{atribuida\_em}.
+PK composta \cd{(escola\_id, estudante\_id)}; \cd{bolha}, \cd{atribuida\_em}.
 
 \begin{decisao}
-\textbf{Por aluno, não por partida.} Repetir a partida não pode trocar o nível: a
+\textbf{Por estudante, não por partida.} Repetir a partida não pode trocar o nível: a
 folha do professor diz \enquote{esse estava na C}, e o relatório abre pelo nível.
 A atribuição é balanceada \textbf{dentro da turma} --- o aplicativo de origem
-fazia \cd{n\textsuperscript{o} do aluno mod 3}, que dava terços de graça porque os
+fazia \cd{n\textsuperscript{o} do estudante mod 3}, que dava terços de graça porque os
 números eram contíguos de 1 a 40; \emph{hash} de UUID dá terços na média da rede e
 pode dar 14/6/5 numa sala de 25 --- e aí o debate da missão não acontece, porque
 ele depende de as três bolhas estarem na mesma sala.

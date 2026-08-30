@@ -9,7 +9,7 @@ Em conflito entre este arquivo e uma suposição sua, este arquivo vence.
 - Cliente: redes públicas (estado/município). **1 contrato = 1 stack de infra GCP**
   (provisionada por Terraform em repo separado). Dentro de um contrato, 100+
   escolas compartilham a stack com **isolamento lógico por `escola_id`**.
-- Escala alvo por contrato: ~10k alunos, picos de 2-4k simultâneos (8h da manhã).
+- Escala alvo por contrato: ~10k estudantes, picos de 2-4k simultâneos (8h da manhã).
 - Produto: hub (Next.js) que embeda 48 experiências imersivas (Vite, estáticas)
   do 1º ano EF ao 3º EM.
 - Prazo: produção em novembro/2026. Uma pessoa desenvolve. Simplicidade > sofisticação.
@@ -32,28 +32,28 @@ Experiências NUNCA viram serviços no Cloud Run. São bundles estáticos:
 
 ## Regras invioláveis (segurança/tenancy)
 
-1. **Toda query SQL é escopada por `escola_id`** (e `aluno_id` quando aplicável).
-   Tabelas de dados de aluno têm `escola_id NOT NULL` + Row-Level Security.
+1. **Toda query SQL é escopada por `escola_id`** (e `estudante_id` quando aplicável).
+   Tabelas de dados de estudante têm `escola_id NOT NULL` + Row-Level Security.
    Nunca escreva uma query que atravesse escolas, exceto em rotas `admin-contrato`.
 2. **Nenhum segredo em bundle client** (experiências e hub client-side): sem
    API keys, sem prompts de sistema, sem URLs internas. IA só via `api /ai/*`.
 3. **Respostas corretas / correção / pontuação que vale nota: server-side.**
-   O client envia a resposta do aluno; a api corrige.
+   O client envia a resposta do estudante; a api corrige.
 4. **Token**: hub obtém via OIDC (WSO2), repassa à experiência por `postMessage`
    com `targetOrigin` explícito (nunca `*`). Experiência mantém token só em memória.
-5. **IA tem quota**: por usuário/dia e POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ALUNO`,
+5. **IA tem quota**: por usuário/dia e POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE`,
    `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` — um plano anual gasta ~220k tokens só de
    prompt) e rate limit por usuário. Nunca exponha chamada de IA sem passar pelo
    `QuotaService` (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
-   `aluno_id` opaco, nunca nome/email.
+   `estudante_id` opaco, nunca nome/email.
 
 ## Contratos de integração (mudanças aqui exigem cuidado extremo)
 
 ### postMessage hub ⇄ experiência (`packages/sdk/src/bridge.ts`)
 ```
 exp → hub : { type: "exp:ready", protocolVersion: 1 }
-hub → exp : { type: "hub:init", token, aluno:{id,nome,serie,turmaId,escolaId}, config, apiUrl }
+hub → exp : { type: "hub:init", token, estudante:{id,nome,serie,turmaId,escolaId}, config, apiUrl }
 exp → hub : { type: "exp:concluir", payload:{ score?, dados? } }
 exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:token", token }
 exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo v1)
@@ -68,7 +68,7 @@ experiência está em https, e confere contra `location.ancestorOrigins[0]` — 
 origem REAL de quem embedou, que VENCE a query string (ADR-46). Sintoma novo:
 "hubOrigin não é quem embedou" onde antes o handshake só expirava em 8s.
 
-O `blur` da janela do hub NÃO é sempre o aluno saindo: clicar dentro do iframe
+O `blur` da janela do hub NÃO é sempre o estudante saindo: clicar dentro do iframe
 move o foco para a experiência e dispara `blur` no documento de cima — e o
 `focus` correspondente não volta enquanto ele continuar ali, então um
 `hub:pause` ali é DEFINITIVO (o vídeo da exp-02 parava no 1º toque em "Salvar").
@@ -83,8 +83,8 @@ O HUB assina os tokens de experiência (RS256, TTL 15min, claims
 `{sub, escola_id, turma_id?, perfil}`, aud `plataforma-api`) e serve o JWKS em
 `/.well-known/jwks.json`. A api valida via `OIDC_ISSUER`/`OIDC_JWKS_URI` —
 trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
-`aluno | professor | gestor | admin-contrato` (admin-contrato é a única exceção
-cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do aluno (ver
+`estudante | professor | gestor | admin-contrato` (admin-contrato é a única exceção
+cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
 "Identidade e enturmamento").
 
 ### A rede: escola, lotação e CPF (2026-08-28)
@@ -97,8 +97,8 @@ literalmente verdadeira (ADR-30).
 
 - **`lotacoes`** — pessoa × escola, datado (o termo da rede pública para alocação
   de servidor a uma unidade). **Professor e gestor ACUMULAM**: lotação nova não
-  encerra a anterior. **Aluno tem UMA ativa**, garantida por índice único parcial
-  no banco — "aluno em duas escolas" é indistinguível de transferência pela
+  encerra a anterior. **Estudante tem UMA ativa**, garantida por índice único parcial
+  no banco — "estudante em duas escolas" é indistinguível de transferência pela
   metade. FORA da RLS pelo mesmo motivo de `users`: é lida no login, antes de se
   saber a escola, e é ela que responde "quais escolas são suas".
 - **Escola ativa é estado de SESSÃO.** Quem tem mais de uma escolhe no cabeçalho
@@ -109,7 +109,7 @@ literalmente verdadeira (ADR-30).
   escola é tenant, e abrir inquilino com RLS e dados de menores por trás não é
   operação de quem administra uma unidade. `/admin/escolas` é a tela.
 - **A REGIONAL agrupa; quem autoriza é a lotação** (ADR-34). `escolas.tipo` tem
-  vocabulário fechado — `escola` (a unidade, onde há turma, aluno e dado),
+  vocabulário fechado — `escola` (a unidade, onde há turma, estudante e dado),
   `regional` (Diretoria de Ensino, polo, secretaria municipal) e `rede` (a raiz)
   —, e `pai_id` liga unidade a regional, com trigger no banco recusando pai que
   seja `escola` ou a própria linha. **Estar numa diretoria não dá acesso a nada**:
@@ -123,7 +123,7 @@ literalmente verdadeira (ADR-30).
   mesma armadilha do `expires_at` sem rotina. Coluna nasce com o consumidor.
 - **O supervisor de diretoria não é papel novo**: é um `gestor` lotado nas
   unidades dela. O panorama (`/admin/minhas-escolas`, `GET /escolas/minhas/resumo`)
-  **lista, não soma** — uma linha por unidade, com turmas, alunos e quantos ainda
+  **lista, não soma** — uma linha por unidade, com turmas, estudantes e quantos ainda
   não fizeram o primeiro acesso. Somar escolas numa métrica só seria exatamente a
   tela que a decisão acima recusa. O item de menu só aparece com mais de uma
   lotação.
@@ -146,13 +146,13 @@ literalmente verdadeira (ADR-30).
   mão única e o gestor não conseguia ver o número (ADR-31, superada pela ADR-33).
 - **Na transferência, o dado FICA e a identidade SEGUE** (ADR-32). Tudo o que a
   criança produziu continua com o `escola_id` de onde foi produzido — verdade
-  histórica. O que atravessa é `GET /alunos/:id/historico`: uma porta só, restrita
+  histórica. O que atravessa é `GET /estudantes/:id/historico`: uma porta só, restrita
   a quem tem lotação na escola onde ela está HOJE, devolvendo participações e
   **nunca** o conteúdo dos instrumentos. É também a única operação que troca o
   `app.escola_id` no meio de uma transação — sem isso o update na origem não veria
   linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.
 - Na importação, **o CPF é a primeira chave**: achado em outra escola da rede, a
-  linha vira transferência (aluno) ou lotação a mais (professor). Reimportar não
+  linha vira transferência (estudante) ou lotação a mais (professor). Reimportar não
   troca a senha de quem já entrou.
 
 ### Perfil portátil: sair da REDE (2026-08-28)
@@ -195,7 +195,7 @@ instalar a plataforma, o mesmo arquivo continua legível.
 - **O que vem de fora NUNCA se mistura**: vive só em `perfis_portateis`, não vira
   matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de
   outra instalação, possivelmente de outra `VERSAO_MAPEAMENTO`.
-- **Importar não cria aluno**: liga pelo CPF a quem já está aqui. Matricular é ato
+- **Importar não cria estudante**: liga pelo CPF a quem já está aqui. Matricular é ato
   da escola (planilha ou OneRoster); o perfil se anexa depois.
 - **`perfis_portateis.documento` é a ÚNICA exceção à contenção do CPF** (ADR-33):
   o número é o conteúdo do documento, e alterá-lo destruiria a assinatura. A
@@ -212,8 +212,8 @@ instalar a plataforma, o mesmo arquivo continua legível.
 
 **Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As
 experiências vieram de projetos onde cada atividade tinha cadastro próprio; a
-unificação técnica já existia (todas recebem `aluno.id` pelo `hub:init` e gravam
-`aluno_id` com FK para `users`), mas a conta era de ASSENTO — está escrito no
+unificação técnica já existia (todas recebem `estudante.id` pelo `hub:init` e gravam
+`estudante_id` com FK para `users`), mas a conta era de ASSENTO — está escrito no
 schema: `exp_01_runs.nome_no_app` existe *"porque a conta é do APARELHO: outra
 turma reusa o mesmo login"*. `nome_no_app` continua existindo como APELIDO dentro
 da ficção do Instanooria, nunca como identidade em tela de professor ou
@@ -228,7 +228,7 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
 
 - **A chave da pessoa é `users.matricula_externa`** (o RA da rede), com índice
   único parcial por escola. Sem ela o upsert cai no `username`, e corrigir um
-  login cria um segundo aluno com o histórico preso no primeiro.
+  login cria um segundo estudante com o histórico preso no primeiro.
 - **`users.turma_id` sobrevive como CACHE da matrícula principal.** O login e o
   claim `turma_id` o leem antes de haver escola no contexto, onde `matriculas`
   (que tem RLS) não é alcançável. A verdade é `matriculas`.
@@ -236,7 +236,7 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   periodo_letivo_id, nome)`. O "8A de 2026" e o "8A de 2027" são turmas
   DIFERENTES — é isso que impede a virada do ano de reescrever o histórico de
   2026 em silêncio.
-- **`matriculas.papel` só admite `aluno` e `professor`.** Gestor é papel da
+- **`matriculas.papel` só admite `estudante` e `professor`.** Gestor é papel da
   ESCOLA (o `roles.csv` do padrão), não matrícula de turma — e é por isso que ele
   continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
   congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
@@ -252,7 +252,7 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   NÃO protege nada — ele arma `app.escola_id`, que só as políticas leem —, e o
   `escola_id` no `where` é a ÚNICA tranca, não defesa em profundidade. Custou um
   vazamento real: `distribuicaoDaTurma` (painel do Instanooria) rodava
-  `user.findMany({ where: { role: 'aluno' } })` dentro de um `comTenancy` e
+  `user.findMany({ where: { role: 'estudante' } })` dentro de um `comTenancy` e
   listava crianças de TODAS as escolas do contrato (ADR-49).
   `tests/perfis-distribuicao-tenancy.spec.ts` roda como superusuário de
   propósito, para a RLS não mascarar a falta do `where`.
@@ -261,11 +261,11 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   e o painel DIZ isso numa faixa. Com turma, painel, listagem de perfis,
   importação da Vila e `POST /runs` falam todos da MESMA sala; a turma é
   conferida contra a MATRÍCULA (`professorLeciona`), nunca contra a escola do
-  token. Sem o ajuste no `POST /runs`, o aluno do 8B entrava na atividade do 8A.
+  token. Sem o ajuste no `POST /runs`, o estudante do 8B entrava na atividade do 8A.
 - Sair da turma é `fim`, não `DELETE`; sair da rede é `ativo = false`. Há dado de
-  aluno pendurado em oito tabelas. Mover de turma (`PATCH /matriculas/:id` com
+  estudante pendurado em oito tabelas. Mover de turma (`PATCH /matriculas/:id` com
   `turmaDestinoId`) é UM passo: à mão, o gestor tira da antiga e esquece de pôr
-  na nova, e o aluno fica sem turma — invisível para o professor, sem nada na
+  na nova, e o estudante fica sem turma — invisível para o professor, sem nada na
   tela dizendo o que faltou.
 
 **Entrada de pessoas**: `POST /rostering/importar` (gestor/admin), corpo
@@ -276,11 +276,11 @@ escolhidos para caber DEBAIXO do teto do ambiente**: o Cloud Run recusa
 requisição acima de 32 MiB em HTTP/1, antes do contêiner, com um 413 que não é
 nosso e não deixa linha no log (ADR-48). Prometer mais do que o ambiente entrega
 é o que produz o erro que ninguém diagnostica. Folga: o pior caso realista de um
-contrato (~10 mil alunos, 5 componentes cada) dá ~7MB de `enrollments.csv`.
+contrato (~10 mil estudantes, 5 componentes cada) dá ~7MB de `enrollments.csv`.
 Planilha de UMA linha por pessoa, cabeçalho
 lido por NOME (ordem livre; coluna desconhecida é erro, não coluna ignorada):
 `matricula,nome,usuario,email,papel,turma,serie,turno` — só `nome` e `papel` são
-obrigatórios (aluno também exige `turma`+`serie`). `usuario` vazio ⇒ o login é
+obrigatórios (estudante também exige `turma`+`serie`). `usuario` vazio ⇒ o login é
 gerado e devolvido no relatório. O header legado
 `nome,usuario,senha,papel,turma,serie` continua aceito, e
 `POST /usuarios/importar-csv` delega. O modelo para download
@@ -294,7 +294,7 @@ com `?modo=bulk|delta`. Fora de ordem não corrompe: a linha que aponta para um
 `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta. Quatro
 regras que não são óbvias: `orgs.csv` só APRENDE o código INEP desta escola
 (escola é tenant, não nasce de upload); sem a coluna `role` (que saiu de
-`users.csv` na 1.2) a pessoa entra como **aluno**, o menor privilégio, e o
+`users.csv` na 1.2) a pessoa entra como **estudante**, o menor privilégio, e o
 `roles.csv` corrige; a coluna `password` do padrão é IGNORADA e a contagem vai ao
 relatório; e em `bulk` a ausência de linha **não desativa ninguém** — é contada e
 listada, porque lote que chegou pela metade não pode apagar uma rede por omissão.
@@ -317,7 +317,7 @@ uma criança fez para outra pessoa, e depois ninguém audita de quem era. Teto d
 200 linhas, dito na resposta (`truncado`).
 
 **Senha (ADR-29)**: a planilha NÃO tem coluna de senha. A senha inicial é
-escolhida na tela (uma para o lote, ou uma por pessoa — recomendada para alunos),
+escolhida na tela (uma para o lote, ou uma por pessoa — recomendada para estudantes),
 marca `senha_provisoria` e o primeiro acesso cai em `/trocar-senha` sem saída. A
 trava é TRIPLA: middleware, BFF e `/api/exp-token` — só com o middleware,
 bastaria digitar `/exp/...` para pular. Ao trocar, a sessão é REFEITA com a senha
@@ -331,7 +331,7 @@ filtros, editar, ativar/desativar, reset), `/admin/turmas` e `/admin/turmas/[id]
 (enturmamento, mover, tornar referência), `/admin/importar` e
 `/admin/periodos-letivos` (o calendário do contrato — a tela da virada do ano). O
 professor tem `/professor/turmas` e `/professor/turmas/[id]` — as turmas dele, com
-os alunos nominais.
+os estudantes nominais.
 
 **A virada do ano tem duas etapas, e nenhuma é automática:** criar o período novo
 em `/admin/periodos-letivos` (a partir da data de início ele passa a ser o
@@ -398,13 +398,13 @@ manifesto e a experiência aparece esticada na janela.
 `pointer-lock` e `forms`, que o `ExpFrame` traduz nos tokens
 `allow-pointer-lock` e `allow-forms`. **`forms` custou um bug inteiro para ser
 descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
-o submit — o aluno da exp-03 digitava a pergunta, apertava Enter e nada
+o submit — o estudante da exp-03 digitava a pergunta, apertava Enter e nada
 acontecia. O sintoma engana porque a conversa parece viva (a fala de abertura do
 agente já está na tela) e o único rastro é um aviso de console sobre "form's
 frame is sandboxed". Typecheck, lint e a primeira versão do smoke passaram por
 cima disso.
 Vazio (o default) = nenhuma, que é o que toda experiência tinha antes. É POR
-EXPERIÊNCIA de propósito: prender o ponteiro do aluno é capacidade de quem
+EXPERIÊNCIA de propósito: prender o ponteiro do estudante é capacidade de quem
 declarou, não default do frame. Medido em `scripts/probe-pointerlock.mjs`: num
 iframe com sandbox, sem o token o `requestPointerLock()` morre com `SecurityError`
 e com ele funciona — e o Chromium do Playwright não concede pointer lock nem no
@@ -422,17 +422,17 @@ teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
 `/professor/plano-de-aula` e `/professor/bem-estar`.
-O aluno tem hub próprio (`/aluno`): ele ESCOLHE a missão, sem filtro por série
-por enquanto (`apps/hub/lib/missoes-do-aluno.ts`, derivado do catálogo do Entre
+O estudante tem hub próprio (`/estudante`): ele ESCOLHE a missão, sem filtro por série
+por enquanto (`apps/hub/lib/missoes-do-estudante.ts`, derivado do catálogo do Entre
 Redes; a série volta a filtrar quando o manifesto virar a fonte). Missão só
-aparece lá se tiver copy de aluno (`missao.aluno` no catálogo) — a copy do
+aparece lá se tiver copy de estudante (`missao.estudante` no catálogo) — a copy do
 professor entrega a virada. **As TRANSVERSAIS vêm primeiro na lista**: não
 pertencem a ano nenhum, logo não são "depois" de nada, e a Vila do Lume é o Ato 1
 do Instanooria — com ela no fim, a criança encontrava o Ato 2 antes do Ato 1 e
 nada dizia o que faltou. Não há GATE, e não deve haver: falta de partida na Vila
 nunca bloqueia a exp-01, ela só cai no sorteio. O caminho entre as duas fichas do
 professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo).
-`/aluno` e `/exp/*` são a MESMA área no middleware
+`/estudante` e `/exp/*` são a MESMA área no middleware
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
@@ -449,7 +449,7 @@ Smoke: `node scripts/walkthrough-landing.mjs testes/wt-landing` (só o hub).
 
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
 (marca → home do papel, nome + série/papel, avatar, Sair) é o header de
-`/aluno`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
+`/estudante`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
 copiava o seu e a experiência não tinha nenhum. A casca visual (CSS do DS,
 compensações, fontes) saiu do layout do grupo `(plataforma)` para
 `components/casca-plataforma.tsx`, porque `/exp/*` e `/dev-embed` estão fora do
@@ -459,7 +459,7 @@ marca institucional entra.
 
 ### Evento de telemetria (inspirado em xAPI, simplificado)
 ```json
-{ "eventId": "uuid", "ts": "ISO", "alunoId": "...", "escolaId": "...",
+{ "eventId": "uuid", "ts": "ISO", "estudanteId": "...", "escolaId": "...",
   "expId": "exp-01", "expVersion": "1.2.0", "sessaoId": "uuid",
   "verbo": "completed|attempted|interacted|scored|...",
   "objeto": "fase-3", "resultado": { }, "contexto": { } }
@@ -501,7 +501,7 @@ primeira — a armadilha do `expires_at`.
   nome `contrato.ts` já é o payload do jogo na exp-70) e apaga as linhas dele,
   copiando a prosa daquele módulo do `c-endpoints.tex` para a `descricao`. Feito:
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
-  (escolas, turmas, matrículas, períodos, lotações, alunos), `usuarios`,
+  (escolas, turmas, matrículas, períodos, lotações, estudantes), `usuarios`,
   `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
   `perfis`, `analise`, `unoogpt`, `atividades`, `geracao`, `motor` (runs/posts).
   **As 146 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
@@ -535,7 +535,7 @@ já é a credencial, e ela precisa de `roles/aiplatform.user`.
 localização é `global` — para texto E para o plano de aula. Medido no projeto do
 contrato: o 3.6-flash dá 404 em `southamerica-east1`, `us-east1` e `us-central1`;
 só o endpoint `global` (sem host regional) o serve. A consequência é explícita e
-foi aceita: o tráfego de IA sai de São Paulo, inclusive o do aluno. Voltar para
+foi aceita: o tráfego de IA sai de São Paulo, inclusive o do estudante. Voltar para
 `VERTEX_LOCATION=southamerica-east1` é possível a qualquer momento, mas exige
 trocar TAMBÉM o modelo pelo que a região publica (família 2.5 — a 2.0 saiu do
 catálogo e a 3.x nunca esteve lá). A arte da exp-01 usa `gemini-3.1-flash-image`
@@ -568,7 +568,7 @@ tokens só de prompt) o gemini-2.5-flash é cortado em 32k e o professor recebe
 ### Vila do Lume (exp-70, `apps/api/src/vila`)
 Jogo 3D **transversal** — não pertence a ano nenhum (`series: []`), e é o "Ato 1"
 que o catálogo do Entre Redes sempre descreveu: *"fora da plataforma, um jogo
-mede o perfil de valores do aluno"*. O perfil dele alimenta `perfis_importados`
+mede o perfil de valores do estudante"*. O perfil dele alimenta `perfis_importados`
 (a largada do Instanooria) — M5.
 
 **Duas leituras de uma partida, e elas NÃO SE TOCAM.** O retrato Schwartz
@@ -593,7 +593,7 @@ oportunidade não chegou", sai da conta) é a coisa mais importante do modelo.
 **A bolha é do SERVIDOR.** `POST /vila/sessoes` atribui A/B/C balanceada dentro
 da TURMA, persiste em `vila_bolhas` (estável entre partidas: a folha do professor
 diz "esse estava na C") e devolve os cartões — **só os desta criança e sem
-gabarito**, como o `factual` do UnooTube. Era `alunoSlot % 3` no navegador, o que
+gabarito**, como o `factual` do UnooTube. Era `estudanteSlot % 3` no navegador, o que
 punha no bundle a condição do próprio instrumento e deixava as três versões
 legíveis antes da aula. Nos anos iniciais (1EF–5EF) a bolha B não é servida
 ("suporte" exige entender o que é suporte) — regra que só a api pode aplicar,
@@ -618,7 +618,7 @@ dias. Trava estrutural, não lista de proibidos.
 
 **Telas do professor** (`/professor/entre-redes/vila-do-lume`): ficha (para que
 serve, quem consome o perfil, passo a passo), `/guia` (o debate),
-`/resultados?turmaId=` (com o botão de **zerar a turma**) e `/alunos/:id`.
+`/resultados?turmaId=` (com o botão de **zerar a turma**) e `/estudantes/:id`.
 
 **O `/guia` precisa saber a TURMA.** Nos anos iniciais a api não serve a bolha B,
 e uma tela que projetasse as três mandaria o professor esperar a reação de um
@@ -664,7 +664,7 @@ círculo por isso — `toBeVisible()` não pega. Só existem hoje:
 quadrantes e grava em `perfis_importados` com `origem: "jogo"` — é o que decide
 de que lado o feed nasce (`largada.ts`). `PERFIL_IMPORT_TOKEN` e
 `POST /perfis/importar` continuam vivos como compatibilidade.
-O colapso (`vila/quadrantes.ts`) tem duas travas que CUSTAM alunos, de propósito:
+O colapso (`vila/quadrantes.ts`) tem duas travas que CUSTAM estudantes, de propósito:
 valor não observado (`indicative`/`none`) **fica fora da média**, nunca entra como
 zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro** —
 sem perfil, o Instanooria cai no sorteio balanceado, que é honesto sobre não
@@ -700,7 +700,7 @@ instrumento: `payload` é a única fonte para recomputar o perfil quando
 
 Se um contrato exigir prazo, ele volta **junto com a rotina que o cumpre** —
 nunca só a coluna. A mesma pergunta está aberta para `telemetria_eventos`, que
-guarda evento por `aluno_id` de todas as experiências e também não tem prazo: se
+guarda evento por `estudante_id` de todas as experiências e também não tem prazo: se
 a resposta importar, ela é da plataforma inteira, não de um módulo.
 
 ## Design System (`@unooria/design-system`) — a fonte da interface
@@ -720,11 +720,11 @@ lockfile e os `package.json` juntos.
 **Duas famílias no mesmo pacote, e elas nunca se cruzam.** A separação é a mesma
 da regra de ouro do embed: a marca institucional é chrome do HUB, e dentro do
 iframe a fidelidade é ao clone que a experiência imita. Um `Button` da plataforma
-no feed do aluno quebra a ilusão que a experiência está medindo.
+no feed do estudante quebra a ilusão que a experiência está medindo.
 
 | Seção | Import | CSS | Tokens / tema | Onde vale |
 |---|---|---|---|---|
-| `unooria` (39) | raiz do pacote | `/unooria.css` | `--unooria-*`, classe `.unooria-theme-light\|dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do aluno |
+| `unooria` (39) | raiz do pacote | `/unooria.css` | `--unooria-*`, classe `.unooria-theme-light\|dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
 | `instanooria` (21) | `/instanooria` ou `InstanooriaUI` | `/instanooria.css` | `--insta-*`, prefixo `insta-` | exp-01 |
 | `unitube` (30) | `/unitube` ou `UnitubeUI` | `/unitube.css` | `--uni-*`, `uni-` — **só escuro** (o Figma não publica claro; proibido derivar) | exp-02 |
 | `whatsappmobile` (29) | `/whatsappmobile` ou `WhatsAppMobileUI` | `/whatsappmobile.css` | `--wa-*`, `wa-` — só escuro | — |
@@ -772,7 +772,7 @@ layout) para o CSS do hub sumir sem ninguém ter mexido nele.
 **Fora da regra, deliberadamente:** exp-70 (jogo em canvas 3D, sem DOM de UI — a
 exceção de ADR das convenções). A pendência da exp-02 (CSS próprio em
 `src/estilos`) foi RESOLVIDA: ela consome a seção `unitube` pela ponte
-`@edu/ui/ds-unootube`, com a aparência escolhida pelo aluno.
+`@edu/ui/ds-unootube`, com a aparência escolhida pelo estudante.
 
 ### Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
 Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão
@@ -806,7 +806,7 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   tem como saber que uma refatoração mudou a medida. `public/jogo/**` está nos
   `ignores` do ESLint. O shim (`src/`, TS strict) é a única porta: `window.VILA`.
   A rede que substitui o `tsc` ali é o smoke visual.
-- Nomes de domínio em pt-BR (`aluno`, `escola`, `turma`, `experiencia`);
+- Nomes de domínio em pt-BR (`estudante`, `escola`, `turma`, `experiencia`);
   termos técnicos em inglês (`provider`, `guard`, `batch`).
 - Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...`.
 - Zod para validar TODO input externo (body, query, postMessage recebido, env).
@@ -849,7 +849,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 
 | Ponte | Seção | CSS | Namespace | Onde vale |
 |---|---|---|---|---|
-| `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do aluno** |
+| `@edu/ui/ds` | `unooria` | `/unooria.css` + `/fonts/unooria.css` | `--unooria-*`, `.unooria-theme-dark` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, **telas pós-revelação do estudante** |
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp-01 |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp-03 INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
@@ -870,7 +870,7 @@ vir por lá.
 medido com `document.fonts.check()` dentro do iframe: na exp-02 ele fica
 `unloaded` do feed até a virada do ranking (as telas da plataforma que ela usa
 não têm ícone de ligadura), e o que desce ali são ~150 KB de Open Sans. Ou seja:
-os 5,36 MB são peso morto no bucket, não download do aluno — e uma armadilha, já
+os 5,36 MB são peso morto no bucket, não download do estudante — e uma armadilha, já
 que um ícone da plataforma acrescentado à exp-02 amanhã puxaria tudo. Resolve de
 vez migrando o `Icon` da plataforma para registro SVG (as outras cinco seções já
 são assim).
@@ -886,8 +886,8 @@ um Short. O disfarce começa no toque em "Começar missão" (ADR-22).
 
 **Tema:** a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
 `theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
-o aluno escolhe escuro no feed e o ranking volta branco. Na exp-02 a escolha é
-do aluno (Perfil → APARÊNCIA) e é lembrada em `localStorage` — que a regra 4
+o estudante escolhe escuro no feed e o ranking volta branco. Na exp-02 a escolha é
+do estudante (Perfil → APARÊNCIA) e é lembrada em `localStorage` — que a regra 4
 proíbe para TOKEN, não para preferência de tela.
 
 **Componente que falta no pacote não nasce na experiência.** Vira compensação
@@ -972,21 +972,21 @@ pnpm exec playwright install chromium     # PRE-REQUISITO dos walkthroughs, uma 
                                           # manda rodar justamente o npx que causou o descasamento.
 node scripts/walkthrough-landing.mjs testes/wt-landing        # smoke da LANDING (/ sem sessão): fontes do DS, shader, revelação, CTA -> /login. Só o hub.
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
-node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, aluno transferido pelo CPF
+node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, estudante transferido pelo CPF
 node scripts/walkthrough-perfil-portatil.mjs testes/wt-portatil  # smoke do PERFIL PORTÁTIL: emitir assinado, receber, e o que acontece com um arquivo adulterado
 node scripts/walkthrough-explicabilidade.mjs testes/wt-explicabilidade  # smoke do FECHAMENTO da exp-01: DOIS contextos
-                                          # (o professor conduz o relogio, o aluno joga). Mede a boundingBox do iframe
+                                          # (o professor conduz o relogio, o estudante joga). Mede a boundingBox do iframe
                                           # antes/depois do "Ver meu relatorio" (375 -> 1280 -> 349) e prova que ele NAO
                                           # recarregou. Zera a turma no comeco.
-node scripts/walkthrough-aluno-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (aluno4a01)
-node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, aluno (usa o CHROME do sistema: pointer lock)
-node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → aluno)
+node scripts/walkthrough-estudante-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (estudante4a01)
+node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, estudante (usa o CHROME do sistema: pointer lock)
+node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → estudante)
 node scripts/walkthrough-ato1-vila.mjs testes/wt-ato1                   # smoke do Ato 1 (a tela; a largada tem teste em tests/vila-ato1.spec.ts)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
-node scripts/walkthrough-aluno-unoogpt.mjs testes/walkthrough-unoogpt   # smoke da exp-03: DOIS contextos
-                                          # (o professor dá a largada, o aluno joga). Zera a turma no
-                                          # começo — senão a 2ª execução acha o aluno já na investigação.
+node scripts/walkthrough-estudante-unoogpt.mjs testes/walkthrough-unoogpt   # smoke da exp-03: DOIS contextos
+                                          # (o professor dá a largada, o estudante joga). Zera a turma no
+                                          # começo — senão a 2ª execução acha o estudante já na investigação.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
@@ -1076,7 +1076,7 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 ## Definition of Done (qualquer tarefa)
 
 - [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
-- [ ] Se mexeu em tela: smoke VISUAL (`node scripts/walkthrough-aluno.mjs <pasta>`
+- [ ] Se mexeu em tela: smoke VISUAL (`node scripts/walkthrough-estudante.mjs <pasta>`
       e `walkthrough-professor.mjs`, que também cobre a exp-90 embedada) —
       typecheck verde não pega ícone virando texto, link sublinhado nem iframe vazio
       Espera nova de IA **corre contra o erro** (`scripts/lib/smoke.mjs`:

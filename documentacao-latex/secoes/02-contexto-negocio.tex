@@ -19,9 +19,9 @@ a \emph{unidade de uso} são diferentes, e o desenho precisa acomodar as duas.
   separada, provisionada por um \textit{module} Terraform por contrato. Projeto,
   \emph{buckets}, banco, \emph{Load Balancer} e contas de serviço próprios.\\
 \zebra 2 & \cd{escola} & \textbf{Lógico}: \cd{escola\_id} obrigatório em toda
-  tabela de dado de aluno, mais \textit{Row-Level Security} no PostgreSQL. Cem
+  tabela de dado de estudante, mais \textit{Row-Level Security} no PostgreSQL. Cem
   ou mais escolas por \emph{stack}.\\
-3 & \cd{turma} / \cd{aluno} & \textbf{Autorização}: \emph{claims} do JWT
+3 & \cd{turma} / \cd{estudante} & \textbf{Autorização}: \emph{claims} do JWT
   (\cd{turma\_id}, \cd{perfil}) verificados na API por \cd{RolesGuard} e por
   filtro explícito nas \emph{queries}.\\
 \bottomrule
@@ -44,7 +44,7 @@ operacional.
 \toprule
 \headrow \thd{Grandeza} & \thd{Alvo por contrato} & \thd{Consequência}\\
 \midrule
-Alunos cadastrados & \textasciitilde\num{10000} & Cabe folgadamente numa
+Estudantes cadastrados & \textasciitilde\num{10000} & Cabe folgadamente numa
   instância pequena de Cloud SQL.\\
 \zebra Simultâneos no pico (8h) & \num{2000}--\num{4000} &
   \cd{min-instances} no Cloud Run para eliminar \emph{cold start}; \emph{pooler}
@@ -71,7 +71,7 @@ quase ao mesmo tempo. O desenho responde a isso com três medidas independentes:
   \item Os serviços têm instâncias mínimas provisionadas, então o pico não paga
     inicialização de contêiner nem \emph{warm-up} de \textit{pool} do Prisma.
   \item A telemetria de alto volume não é síncrona: vai para o Pub/Sub e é
-    gravada em lote, fora do caminho da requisição do aluno
+    gravada em lote, fora do caminho da requisição do estudante
     (Capítulo~\ref{cap:telemetria}).
 \end{enumerate}
 
@@ -121,7 +121,7 @@ solução --- não a piora, invalida. Foram sete.
 \midrule
 \drr{DR-01} & Isolamento verificável entre escolas &
   \cd{escola\_id} \cd{NOT NULL} + \cd{FORCE ROW LEVEL SECURITY} em toda tabela
-  de dado de aluno; acesso ao banco por uma \emph{única} porta
+  de dado de estudante; acesso ao banco por uma \emph{única} porta
   (\cd{PrismaService.comTenancy}) que arma a política antes de qualquer
   trabalho. \emph{Teste} de \textit{tenancy} com \emph{role} sem
   \textit{ownership} (\arq{tests/tenancy.spec.ts}).\\
@@ -169,8 +169,8 @@ Prosa num comentário não é controle; um tipo é.
 \toprule
 \headrow \thd{Interessado} & \thd{O que precisa} & \thd{Onde é atendido}\\
 \midrule
-Aluno & Entrar, escolher a missão, jogar sem atrito, ver o próprio resultado &
-  Hub do aluno (\rota{/aluno}), \rota{/exp/*}, dossiê da experiência\\
+Estudante & Entrar, escolher a missão, jogar sem atrito, ver o próprio resultado &
+  Hub do estudante (\rota{/estudante}), \rota{/exp/*}, dossiê da experiência\\
 \zebra Professor & Preparar a aula, conduzir o momento coletivo, ler a turma,
   gerar plano de aula, cuidar do próprio bem-estar &
   \rota{/professor/*}, exp-90, exp-91, relatórios por turma\\
@@ -201,15 +201,15 @@ Cada uma tem o capítulo onde é detalhada e verificada.
 \toprule
 \headrow \thd{\#} & \thd{Regra} & \thd{Detalhe em}\\
 \midrule
-1 & Toda \emph{query} SQL é escopada por \cd{escola\_id} (e \cd{aluno\_id}
-  quando aplicável). Tabelas de dado de aluno têm \cd{escola\_id NOT NULL} +
+1 & Toda \emph{query} SQL é escopada por \cd{escola\_id} (e \cd{estudante\_id}
+  quando aplicável). Tabelas de dado de estudante têm \cd{escola\_id NOT NULL} +
   RLS. Nenhuma \emph{query} atravessa escolas, exceto em rotas
   \cd{admin-contrato}. & Cap.~\ref{cap:tenancy}\\
 \zebra 2 & Nenhum segredo em \emph{bundle} de cliente: sem chave de API, sem
   \emph{prompt} de sistema, sem URL interna. IA só pela API. &
   Cap.~\ref{cap:ia}\\
 3 & Resposta correta, correção e pontuação que vale nota são
-  \emph{server-side}. O cliente envia a resposta do aluno; a API corrige. &
+  \emph{server-side}. O cliente envia a resposta do estudante; a API corrige. &
   Cap.~\ref{cap:experiencias}\\
 \zebra 4 & O \emph{token} é obtido pelo hub via OIDC e repassado à experiência
   por \cd{postMessage} com \cd{targetOrigin} explícito --- nunca \cd{"*"}. A
@@ -219,7 +219,7 @@ Cada uma tem o capítulo onde é detalhada e verificada.
   Nenhuma chamada de IA sem passar pelo \cd{QuotaService}: \cd{temSaldo} antes,
   \cd{consumir} depois. & Cap.~\ref{cap:ia}\\
 \zebra 6 & Dados de menores: nenhuma PII em log em texto claro. A telemetria
-  carrega \cd{aluno\_id} opaco, nunca nome ou \emph{e-mail}. &
+  carrega \cd{estudante\_id} opaco, nunca nome ou \emph{e-mail}. &
   Cap.~\ref{cap:telemetria}\\
 7 & Nenhuma migração remove \cd{escola\_id} ou afrouxa RLS. Renomeações usam
   \cd{RENAME}, nunca \cd{DROP}/\cd{CREATE}. & Cap.~\ref{cap:dados}\\

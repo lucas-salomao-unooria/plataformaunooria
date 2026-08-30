@@ -14,14 +14,14 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \toprule
 \headrow \thd{Experiência} & \thd{Séries} & \thd{Público} & \thd{Capabilities} & \thd{Módulo na API}\\
 \midrule
-\cd{exp-01-instanooria} & \cd{8EF} & aluno &
+\cd{exp-01-instanooria} & \cd{8EF} & estudante &
   telemetria, progresso, ia &
   \arq{motor}, \arq{geracao}, \arq{atividades}, \arq{perfis}, \arq{dossie}\\
-\zebra \cd{exp-02-unootube} & \cd{4EF} & aluno &
+\zebra \cd{exp-02-unootube} & \cd{4EF} & estudante &
   telemetria, progresso & \arq{unootube}\\
-\cd{exp-03-unoogpt} & \cd{2EM} & aluno &
+\cd{exp-03-unoogpt} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & aluno &
+\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
 \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
@@ -53,7 +53,7 @@ experiência. É esse mapa que o hub usa quando não há manifesto, e é por iss
 
 \section{exp-01 --- Instanooria}
 
-Clone de rede social de imagens. O aluno navega um \emph{feed} curado por um
+Clone de rede social de imagens. O estudante navega um \emph{feed} curado por um
 motor adaptativo que o empurra progressivamente para um dos dois lados de uma
 controvérsia; na virada da missão, o dossiê mostra o que ele não viu.
 
@@ -72,7 +72,7 @@ Gabarito de curadoria fora do cliente & \arq{motor/sanitizador.ts} remove
   \cd{exp\_01\_generation\_jobs}, \emph{worker} \emph{in-process}, reciclagem de
   órfão por \cd{updated\_at}.\\
 Momento coletivo controlado pelo professor & \cd{activities.etapa} é um relógio
-  \textbf{coletivo}: o professor abre e fecha, e a tela do aluno trava
+  \textbf{coletivo}: o professor abre e fecha, e a tela do estudante trava
   conforme.\\
 \zebra Reação ao vivo, desligável sem \emph{deploy} & \cd{activities.ia\_ao\_vivo},
   alterável por \rota{PATCH /atividades/:id/ia}.\\
@@ -108,14 +108,14 @@ Largada por perfil, sorteio ou redistribuição & \arq{perfis/largada.ts},
 
 \section{exp-02 --- UnooTube}
 
-Clone de plataforma de vídeo, para o 4º ano. O aluno salva até três vídeos; ao
+Clone de plataforma de vídeo, para o 4º ano. O estudante salva até três vídeos; ao
 terceiro, o ranking desbloqueia; \enquote{adicionar credibilidade} reordena o
 ranking por fontes e é a virada pedagógica.
 
 \textbf{Fluxo (1.1.0).} Entrada (\emph{briefing} da missão) \seta{} \emph{feed}
 \seta{} três favoritos na bandeja \seta{} \enquote{Concluir missão} \seta{}
 diálogo \seta{} \emph{ranking} \seta{} \enquote{Adicionar credibilidade} (a
-virada). Até a 1.0.0 o aluno caía direto no \emph{feed} sem saber o que estava
+virada). Até a 1.0.0 o estudante caía direto no \emph{feed} sem saber o que estava
 fazendo, e o terceiro salvo abria o diálogo sozinho --- a palavra
 \enquote{missão} só aparecia depois de a medida já ter sido tomada.
 
@@ -129,7 +129,7 @@ Gabarito (\cd{factual}) fora do \emph{bundle} & Vive em
 \zebra Ranking com colegas \textbf{fictícios} & Distribuição desenhada para a
   lição. Não há pontuação de menor real exposta a outro menor (LGPD).\\
 URLs das fontes como \textbf{texto} & O \emph{sandbox} do \cd{iframe} bloqueia
-  \emph{popups}, e o aluno não sai da plataforma.\\
+  \emph{popups}, e o estudante não sai da plataforma.\\
 \zebra Salvos \textbf{congelados} depois de \enquote{adicionar credibilidade} &
   O \emph{score} da experiência já foi reportado --- nota e estado não podem
   divergir. Curtir segue livre; reiniciar descongela.\\
@@ -137,15 +137,15 @@ URLs das fontes como \textbf{texto} & O \emph{sandbox} do \cd{iframe} bloqueia
   ranking de novo. Estado que anda para trás confunde a criança e o professor.\\
 \zebra Sem \cd{viewport} & Foi desenhada para \emph{desktop}: não entra em casca
   de aparelho.\\
-Tema escolhido pelo aluno & Perfil \seta{} APARÊNCIA, lembrado em
+Tema escolhido pelo estudante & Perfil \seta{} APARÊNCIA, lembrado em
   \cd{localStorage} --- que a regra 4 proíbe para \emph{token}, não para
   preferência de tela.\\
 \zebra Entrada só com a missão \textbf{zerada} & \arq{src/lib/missao.ts}.
   Recarregar no meio cai direto no \emph{feed}: repetir o \emph{briefing} a cada
-  \cd{F5} faria o aluno pular a leitura justamente na vez em que ele leria.
+  \cd{F5} faria o estudante pular a leitura justamente na vez em que ele leria.
   Reiniciar pelo perfil volta ao \emph{briefing}.\\
 Conclusão pelo \textbf{botão}, não pelo 3º salvo & O terceiro salvo habilita
-  \enquote{Concluir missão}; quem fecha é o aluno. A distância entre
+  \enquote{Concluir missão}; quem fecha é o estudante. A distância entre
   \cd{missao-3-salvos} e \cd{concluir-missao} é quanto tempo ele passou revendo a
   escolha. Nada muda na API: \cd{ranking\_desbloqueado} já vem do servidor no 3º
   salvo.\\
@@ -185,7 +185,7 @@ a distribuição de \cd{fontesConfiaveis} da turma subir de forma anômala.
 
 Porte de um projeto autônomo (\arq{gpturia}), publicado na trilha do Entre Redes
 em \textbf{2ª série do Ensino Médio, unidade 1}. Um clone de assistente de IA em
-que o aluno decide, sob incerteza e com o relógio correndo, onde alocar duas
+que o estudante decide, sob incerteza e com o relógio correndo, onde alocar duas
 equipes de resgate entre quatro bairros de uma cidade fictícia antes de uma
 tempestade.
 
@@ -220,7 +220,7 @@ parte da conferência de entrega: \cd{instrucao} (o viés de cada fonte),
 
 Três cálculos que o projeto de origem fazia no navegador subiram para a API no
 porte, e o motivo é o mesmo nos três: um \emph{bundle} capaz de computá-los
-deixaria o aluno antecipar o desfecho antes de enviar.
+deixaria o estudante antecipar o desfecho antes de enviar.
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -260,7 +260,7 @@ correção está em \arq{regras/camadas.ts}, e o teste de camadas fixa o invaria
 
 \subsection{O Relógio da Aula}
 
-O relógio é da \textbf{turma}, não do aluno: quem dá a largada é o professor, e
+O relógio é da \textbf{turma}, não do estudante: quem dá a largada é o professor, e
 ela vale para a sala ao mesmo tempo. Detalhes e alternativas em \adrr{ADR-25}. O
 que o professor controla é \emph{quando dá para falar} com o assistente --- nunca
 o Passo de ninguém.
@@ -276,7 +276,7 @@ o Passo de ninguém.
     turma. Não há coluna de resgatados: listagem é ordenável, e ordenar crianças
     por acerto viraria \emph{ranking} (\adrr{ADR-27}). O \emph{smoke} visual
     falha se uma aparecer.
-  \item \rota{.../unidade-1/alunos/:alunoId} --- a linha de uma criança: os graus
+  \item \rota{.../unidade-1/estudantes/:estudanteId} --- a linha de uma criança: os graus
     e a \textbf{transcrição}. Só o professor da escola chega aqui.
   \item \enquote{Zerar a turma} fica no fim da página, longe da largada: ação
     destrutiva ao lado do botão mais apertado é acidente esperando acontecer.
@@ -288,7 +288,7 @@ o Passo de ninguém.
 O manifesto declara \cd{"permissoes": ["forms"]}, e \textbf{sem isso a missão não
 funciona}. O \cd{Composer} do \emph{design system} é um \cd{<form>}, e num
 \cd{iframe} com \emph{sandbox} sem \cd{allow-forms} o navegador bloqueia o
-\emph{submit}: o aluno digita a pergunta, aperta Enter e nada acontece.
+\emph{submit}: o estudante digita a pergunta, aperta Enter e nada acontece.
 \end{atencao}
 
 O sintoma engana de propósito --- a conversa parece viva, porque a fala de
@@ -301,15 +301,15 @@ formulário é capacidade de quem declarou.
 
 \subsection{O \emph{smoke} mentiu duas vezes}
 
-O roteiro de \arq{scripts/walkthrough-aluno-unoogpt.mjs} usa \textbf{dois
-contextos} de navegador --- o professor dá a largada, o aluno joga --- porque um
+O roteiro de \arq{scripts/walkthrough-estudante-unoogpt.mjs} usa \textbf{dois
+contextos} de navegador --- o professor dá a largada, o estudante joga --- porque um
 contexto só passaria com o relógio quebrado. Duas asserções foram descartadas no
 caminho, e as duas passavam com a funcionalidade quebrada:
 
 \begin{enumerate}
   \item \emph{esperar por texto do assistente}: a fala de abertura dele já está
     na tela desde o começo;
-  \item \emph{esperar pela fala do aluno}: o cliente a mostra otimistamente e só
+  \item \emph{esperar pela fala do estudante}: o cliente a mostra otimistamente e só
     a retira cerca de 30 segundos depois, quando a API falha.
 \end{enumerate}
 
@@ -426,7 +426,7 @@ comparáveis).
 turma}, persiste em \cd{exp\_70\_bolhas} (estável entre partidas) e devolve os
 cartões --- \textbf{só os desta criança e sem gabarito}.
 
-Antes era \cd{alunoSlot \% 3} no navegador, o que punha no \emph{bundle} a
+Antes era \cd{estudanteSlot \% 3} no navegador, o que punha no \emph{bundle} a
 condição do próprio instrumento e deixava as três versões legíveis antes da aula.
 
 Nos anos iniciais (1EF--5EF) a bolha B \textbf{não é servida}
@@ -457,7 +457,7 @@ entregou; o segundo, quantos chegaram a aparecer na partida. Zero aparecidos
   \textbf{três} bolhas lado a lado --- é a revelação da missão, e a primeira vez
   que a turma vê as outras versões.\\
 \rota{.../resultados?turmaId=} & Listagem da turma, com o botão de zerar.\\
-\zebra \rota{.../alunos/:id} & A leitura individual, que abre pelo
+\zebra \rota{.../estudantes/:id} & A leitura individual, que abre pelo
   \textbf{nível}.\\
 \bottomrule
 \end{tabularx}

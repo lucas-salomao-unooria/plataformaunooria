@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 
 /**
  * Smoke VISUAL da REDE: escola identificável, professor lotado em duas, e o
- * aluno transferido pelo CPF sem perder o histórico.
+ * estudante transferido pelo CPF sem perder o histórico.
  *
  * É o caminho que nenhum teste de api enxerga: o seletor de escola no cabeçalho
  * mudando o que o professor vê, o CPF sendo reconhecido na importação de OUTRA
@@ -25,14 +25,14 @@ const TURMA_DESTINO = "4X";
 
 const PLANILHA_ORIGEM = [
   "cpf,matricula,nome,usuario,papel,turma,serie,turno",
-  `${CPF},RED-A1,Iara Menezes Costa,iara.rede,aluno,${TURMA_ORIGEM},3EF,manha`,
+  `${CPF},RED-A1,Iara Menezes Costa,iara.rede,estudante,${TURMA_ORIGEM},3EF,manha`,
   "",
 ].join("\n");
 
 /** A MESMA criança, agora na outra escola: o CPF é o que a reconhece. */
 const PLANILHA_DESTINO = [
   "cpf,matricula,nome,papel,turma,serie,turno",
-  `${CPF},RED-A1,Iara Menezes Costa,aluno,${TURMA_DESTINO},4EF,tarde`,
+  `${CPF},RED-A1,Iara Menezes Costa,estudante,${TURMA_DESTINO},4EF,tarde`,
   "",
 ].join("\n");
 
@@ -99,7 +99,7 @@ try {
      autoriza nada — quem dá acesso é a lotação, e é isso que os dois passos
      seguintes mostram na tela, um depois do outro. */
   /* O `Selection` do DS não é `<select>`: é um combobox com `role="option"`. */
-  await p.getByRole("combobox", { name: /Nível/ }).click();
+  await p.getByRole("combobox", { name: /Tipo|Nível/ }).click();
   await p.getByRole("option", { name: "Regionais" }).click();
   await p.waitForTimeout(1500);
   const regionais = await p.locator("table tbody tr").allInnerTexts();

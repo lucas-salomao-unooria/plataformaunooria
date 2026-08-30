@@ -14,7 +14,7 @@ revisão em par que uma pessoa não tem.
   \item \textbf{\emph{Typecheck} + \emph{lint} + testes passando}
     (\cd{pnpm turbo typecheck lint test}).
   \item \textbf{Se mexeu em tela: \emph{smoke} VISUAL}
-    (\cd{node scripts/walkthrough-aluno.mjs <pasta>} e
+    (\cd{node scripts/walkthrough-estudante.mjs <pasta>} e
     \cd{walkthrough-professor.mjs}) --- \emph{typecheck} verde não pega ícone
     virando texto, \emph{link} sublinhado nem \cd{iframe} vazio.
   \item \textbf{\emph{Input} externo validado com Zod.}
@@ -55,8 +55,8 @@ revisão em par que uma pessoa não tem.
 
   \node[camada, text width=140mm, fill=unooOrangeWash, draw=unooOrange] (v) at (7.5,-6.0)
     {\textbf{\emph{Smoke} visual} --- Playwright com navegador real\\
-     \arq{walkthrough-aluno}, \arq{walkthrough-professor},
-     \arq{walkthrough-aluno-unootube}, \arq{walkthrough-vila-do-lume},
+     \arq{walkthrough-estudante}, \arq{walkthrough-professor},
+     \arq{walkthrough-estudante-unootube}, \arq{walkthrough-vila-do-lume},
      \arq{walkthrough-professor-vila}, \arq{walkthrough-ato1-vila},
      \arq{walkthrough-landing}, \arq{probe-pointerlock}};
 
@@ -111,9 +111,9 @@ Contrato externo & Jest com \emph{fake} de rede &
 \begin{lstlisting}[language=bashunoo, caption={Os \emph{walkthroughs} disponíveis}]
 pnpm exec playwright install chromium    # uma vez por maquina. NAO `npx playwright install`:
                                         # o npx baixa a build de navegador de OUTRA versao
-node scripts/walkthrough-aluno.mjs      testes/wt-aluno
+node scripts/walkthrough-estudante.mjs      testes/wt-estudante
 node scripts/walkthrough-professor.mjs  testes/wt-professor   # cobre a exp-90 embedada
-node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube   # aluno4a01
+node scripts/walkthrough-estudante-unootube.mjs   testes/walkthrough-unootube   # estudante4a01
 node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila       # usa o CHROME do sistema
 node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
 node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
@@ -134,7 +134,7 @@ Os \emph{walkthroughs} precisam da plataforma no ar (contêineres ou
 \cd{pnpm dev}) e gravam \emph{prints} na pasta indicada --- que está no
 \arq{.gitignore}. A senha de todos os usuários de demonstração é
 \cd{unooria123}; os \emph{logins} do \emph{seed} são \cd{gestor.demo},
-\cd{prof.demo} e \cd{aluno01}--\cd{aluno40}.
+\cd{prof.demo} e \cd{estudante01}--\cd{estudante40}.
 \end{nota}
 
 \subsection{O roteiro tem de PERDER a corrida para o erro}
@@ -184,7 +184,7 @@ classe estável para esperar.
 
 \subsection{Duas condições para o vermelho significar alguma coisa}
 
-\textbf{Idempotência.} O roteiro do aluno cobre \emph{login} \seta{}
+\textbf{Idempotência.} O roteiro do estudante cobre \emph{login} \seta{}
 \textbf{onboarding} \seta{} \emph{feed}, e o \emph{onboarding} só acontece uma
 vez: na segunda execução a criança cai direto no \emph{feed}, a espera pelo
 texto da tela de entrada estoura em 30\,s, e o relatório diz \emph{iframe}

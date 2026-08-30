@@ -89,7 +89,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
     {\etitulo{users}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
-     \texttt{role} \small(aluno$|$professor$|$gestor$|$admin-contrato)\\
+     \texttt{role} \small(estudante$|$professor$|$gestor$|$admin-contrato)\\
      \fk{escola\_id} \small(NULL só p/ admin-contrato)\\
      \fk{turma\_id}, \texttt{username}, \texttt{display\_name}\\
      \texttt{password\_hash}, \texttt{avatar}\\
@@ -102,13 +102,13 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
      \texttt{nome}, \texttt{versao\_ativa}\\
      \texttt{series[]}, \texttt{capabilities[]}\\
      \texttt{viewport} \texttt{JSONB}\\
-     \texttt{publico} \small(aluno$|$professor)\\
+     \texttt{publico} \small(estudante$|$professor)\\
      \texttt{permissoes[]}};
 
   \node[tabelaplat, text width=40mm] (prog) at (8.2,-4.0)
     {\etitulo{progresso}
      \nodepart{two}
-     \pk{escola\_id, aluno\_id, exp\_id}\\
+     \pk{escola\_id, estudante\_id, exp\_id}\\
      \texttt{dados} \texttt{JSONB}\\
      \texttt{atualizado\_em}};
 
@@ -122,7 +122,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
     {\etitulo{telemetria\_eventos} \small(PARTITION BY RANGE (ts))
      \nodepart{two}
      \pk{event\_id, ts}\\
-     \texttt{escola\_id}, \texttt{aluno\_id}\\
+     \texttt{escola\_id}, \texttt{estudante\_id}\\
      \texttt{exp\_id}, \texttt{exp\_version}, \texttt{sessao\_id}\\
      \texttt{verbo}, \texttt{objeto}\\
      \texttt{resultado} \texttt{JSONB}, \texttt{contexto} \texttt{JSONB}\\
@@ -160,7 +160,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   quando o valor aparece em três lugares diferentes de um diagnóstico. A tabela
   guarda TRÊS níveis (\cd{tipo}: \cd{rede} \seta{} \cd{regional} \seta{}
   \cd{escola}), mas só a \cd{escola} é \emph{tenant}: regional e rede não têm
-  turma, aluno nem lotação.\\
+  turma, estudante nem lotação.\\
 \zebra \cd{turmas} & \emph{Tenant} & \cd{UNIQUE (escola\_id, periodo\_letivo\_id,
   nome)}: duas escolas podem ter \enquote{8A}, e a mesma escola tem o \enquote{8A}
   de 2026 e o de 2027 --- são turmas \textbf{diferentes}, e é essa diferença que
@@ -174,7 +174,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   \cd{escola\_id} e sem RLS: o calendário é do contrato, e duplicá-lo por escola
   só criaria cem linhas divergentes.\\
 \cd{lotacoes} & Identidade & O vínculo PESSOA $\times$ ESCOLA. Professor
-  \textbf{acumula} escolas; aluno tem uma ativa (índice único parcial no banco).
+  \textbf{acumula} escolas; estudante tem uma ativa (índice único parcial no banco).
   Fora da RLS pelo mesmo motivo de \cd{users}: é lida no \emph{login}, antes de se
   saber a escola (\adrr{ADR-30}).\\
 \cd{matriculas} & \emph{Tenant} & O enturmamento. Ver
@@ -182,7 +182,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \zebra \cd{experiencias} & Catálogo & Sem \cd{escola\_id}: o manifesto é do
   contrato, não da escola. Escrita só por \cd{admin-contrato}.\\
 \cd{progresso} & \emph{Tenant} & PK composta
-  \cd{(escola\_id, aluno\_id, exp\_id)}. É o progresso \emph{genérico} da SDK;
+  \cd{(escola\_id, estudante\_id, exp\_id)}. É o progresso \emph{genérico} da SDK;
   estado rico de experiência vai para a tabela da experiência.\\
 \zebra \cd{ia\_uso\_diario} & \emph{Tenant} & Contador de quota, uma linha por
   (escola, usuário, dia). Incremento atômico por
@@ -211,8 +211,8 @@ política de RLS ficam intocadas (\adrr{ADR-30}).
 \headrow \thd{Peça} & \thd{O que resolve, e o que ela não é}\\
 \midrule
 \cd{lotacoes} & Pessoa $\times$ escola, datado. Professor e gestor
-  \textbf{acumulam} --- lotação nova não encerra a anterior. Aluno tem UMA ativa,
-  e é o banco que garante: \enquote{aluno em duas escolas} é indistinguível de uma
+  \textbf{acumulam} --- lotação nova não encerra a anterior. Estudante tem UMA ativa,
+  e é o banco que garante: \enquote{estudante em duas escolas} é indistinguível de uma
   transferência que ficou pela metade.\\
 \zebra \textbf{Escola ativa} & Estado de SESSÃO, não coluna. Quem tem mais de uma
   escolhe no cabeçalho, e a troca é validada contra as lotações \emph{pela API} ---
@@ -249,7 +249,7 @@ consumidor, ou não nasce.
 \textbf{Na transferência, o dado FICA e a identidade SEGUE} (\adrr{ADR-32}). Tudo
 o que a criança produziu continua com o \cd{escola\_id} da escola onde produziu ---
 verdade histórica que um \emph{UPDATE} em massa apagaria. O que atravessa é a
-leitura: \rota{GET /alunos/:id/historico}, uma porta só, restrita a quem tem
+leitura: \rota{GET /estudantes/:id/historico}, uma porta só, restrita a quem tem
 lotação na escola onde ela está hoje, devolvendo participações e nunca o conteúdo
 dos instrumentos.
 
@@ -296,7 +296,7 @@ o padrão em si só aparece na fronteira de importação.
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
      \fk{escola\_id}, \fk{turma\_id}, \fk{usuario\_id}\\
-     \texttt{papel} \small(aluno$|$professor)\\
+     \texttt{papel} \small(estudante$|$professor)\\
      \texttt{principal} \texttt{BOOL}\\
      \texttt{inicio}, \texttt{fim} \texttt{DATE}\\
      \texttt{UNIQUE (escola\_id, turma\_id, usuario\_id, papel)}};
@@ -325,11 +325,11 @@ o padrão em si só aparece na fronteira de importação.
 \toprule
 \headrow \thd{Decisão de esquema} & \thd{Por quê}\\
 \midrule
-\cd{papel} só admite \cd{aluno} e \cd{professor} & Gestor é papel no
+\cd{papel} só admite \cd{estudante} e \cd{professor} & Gestor é papel no
   \textbf{nível da escola} (o \cd{roles.csv} do padrão), não matrícula de turma
   --- e é por isso que ele continua enxergando a escola inteira enquanto o
   professor passa a ver só as turmas dele.\\
-\zebra \cd{fim} em vez de \cd{DELETE} & Há dado de aluno pendurado em oito
+\zebra \cd{fim} em vez de \cd{DELETE} & Há dado de estudante pendurado em oito
   tabelas. Apagar a matrícula deixaria esse histórico órfão de turma; encerrar
   preserva \enquote{esteve no 8A até março}.\\
 \cd{matriculas} tem RLS, \cd{turmas} e \cd{users} não & A exceção de identidade
@@ -383,7 +383,7 @@ faixas vão até 2028-12. Verificar a contagem da partição \cd{DEFAULT} é ite
 \section{Modelo da exp-01 (Instanooria)}
 
 A exp-01 é a experiência mais rica em dados: um motor de \emph{feed} adaptativo
-com geração de conteúdo por IA, sessão por aluno e dossiê de fechamento. São doze
+com geração de conteúdo por IA, sessão por estudante e dossiê de fechamento. São doze
 tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 
 \begin{figure}[H]
@@ -472,17 +472,17 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   \node[tabela, text width=46mm] (run) at (3.1,0)
-    {\etitulo{exp\_01\_runs} --- sessão de um aluno
+    {\etitulo{exp\_01\_runs} --- sessão de um estudante
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
-     \fk{aluno\_id}\\
+     \fk{estudante\_id}\\
      \texttt{fase}: onboarding\ldots{}comparacao\\
      \texttt{lado\_inicial}, \texttt{lado\_origem}\\
      \texttt{perfil\_jogo} JSONB, \texttt{perfil\_origem}\\
      \texttt{engine\_state} JSONB --- estado do motor\\
      \texttt{nome\_no\_app}, \texttt{avatar\_escolhido}\\
      \texttt{started\_at}, \texttt{finished\_at}\\
-     \texttt{UNIQUE (activity\_id, aluno\_id)}};
+     \texttt{UNIQUE (activity\_id, estudante\_id)}};
 
   \node[tabela, text width=40mm] (ev) at (9.2,0.6)
     {\etitulo{exp\_01\_events} --- canal OPERACIONAL
@@ -527,24 +527,24 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
      \fk{post\_id} \textbf{XOR} \fk{student\_post\_id}\\
-     \texttt{handle} --- NULL = o próprio aluno\\
+     \texttt{handle} --- NULL = o próprio estudante\\
      \texttt{de\_ia}, \texttt{texto}};
 
   \node[tabela, text width=48mm, rectangle split part fill={unooOrange, unooOrangeWash}] (pi) at (5.4,-9.6)
     {\etitulo{exp\_01\_exp\_70\_perfis\_importados}
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{activity\_id}, \fk{aluno\_id}\\
+     \pk{id}, \fk{escola\_id}, \fk{activity\_id}, \fk{estudante\_id}\\
      \texttt{escores} JSONB --- 4 quadrantes, 0--1\\
      \texttt{dominante}, \texttt{origem}: jogo $|$ professor\\
      \texttt{lado\_forcado} --- redistribuição do professor\\
      \texttt{vila\_sessao\_id} --- rastro, SEM FK\\
      \texttt{versao\_mapeamento}, \texttt{medido\_em}\\
-     \texttt{UNIQUE (activity\_id, aluno\_id)}};
+     \texttt{UNIQUE (activity\_id, estudante\_id)}};
 
   \node[actnote, text width=52mm, anchor=north west] at (11.0,-8.4)
     {\textbf{A tabela laranja é o contrato entre duas experiências.} A exp-70
      escreve (\rota{POST /atividades/:id/perfis/da-vila}); a exp-01 lê em
-     \arq{perfis/largada.ts} para decidir de que lado o \emph{feed} de cada aluno
+     \arq{perfis/largada.ts} para decidir de que lado o \emph{feed} de cada estudante
      nasce. O nome carrega os dois números porque a dependência é real --- e um
      nome com um número só faria parecer que apagar a exp-70 não afeta ninguém.};
 
@@ -556,11 +556,11 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   \draw[erel] (run.south east) -- (dos.north) node[ercard, pos=0.82]{1};
   \draw[erel] (run.south east) -- (11.4,-2.4) -- (cs.north) node[ercard, pos=0.88]{N};
   \draw[erel, dashed] (con.south) -- (2.2,-9.6) -- (pi.west)
-    node[ercard, pos=0.72, above]{mesmo aluno};
+    node[ercard, pos=0.72, above]{mesmo estudante};
 
 \end{tikzpicture}}
-\caption[Modelo de dados da exp-01: sessão do aluno]{Modelo de dados da exp-01,
-  parte 2: a sessão do aluno. A \cd{run} é o centro --- carrega o estado do motor
+\caption[Modelo de dados da exp-01: sessão do estudante]{Modelo de dados da exp-01,
+  parte 2: a sessão do estudante. A \cd{run} é o centro --- carrega o estado do motor
   em JSONB e é a unidade de \emph{lock} da curadoria. \cd{exp\_01\_events} é o
   canal \emph{operacional} de telemetria, síncrono e transacional, e não deve ser
   confundido com \cd{telemetria\_eventos}, o canal analítico
@@ -581,14 +581,14 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \cd{pergunta\_origem} & Distingue pergunta gerada por IA de pergunta escrita ou
   editada pelo professor. É auditoria de autoria pedagógica, e custa uma coluna.\\
 \zebra \cd{lado\_origem} na \cd{run} & \cd{perfil}, \cd{sorteio} ou
-  \cd{redistribuido}: auditoria de \emph{por que} aquele aluno caiu naquele lado.
+  \cd{redistribuido}: auditoria de \emph{por que} aquele estudante caiu naquele lado.
   Sem isso, uma reclamação de professor não tem resposta.\\
 \cd{post\_id} \textbf{XOR} \cd{student\_post\_id} em
   \cd{comentarios\_da\_sessao} & O comentário ancora num post do banco
-  \emph{ou} no post que o aluno publicou. Nunca nos dois --- e o \emph{CHECK}
+  \emph{ou} no post que o estudante publicou. Nunca nos dois --- e o \emph{CHECK}
   está na migração.\\
 \zebra \cd{de\_ia} & Permite ao professor distinguir, na auditoria, o comentário
-  escrito pela persona (modelo) do escrito pelo aluno.\\
+  escrito pela persona (modelo) do escrito pelo estudante.\\
 \bottomrule
 \end{tabularx}
 
@@ -603,7 +603,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   \node[tabela, text width=46mm] (u) at (3.4,-0.2)
     {\etitulo{exp\_02\_sessoes}
      \nodepart{two}
-     \pk{escola\_id, aluno\_id} --- 1 linha por aluno\\
+     \pk{escola\_id, estudante\_id} --- 1 linha por estudante\\
      \texttt{salvos[]} --- ids do catálogo, CHECK $\leq$ 3\\
      \texttt{curtidos[]}\\
      \texttt{ranking\_desbloqueado} --- \emph{latch}\\
@@ -613,7 +613,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 
   \node[actnote, text width=54mm, anchor=north west] at (7.6,1.2)
     {O gabarito (\texttt{factual}) \textbf{não} está aqui e não é devolvido em
-     nenhuma rota de aluno: vive em \arq{src/unootube/catalogo.ts}. Os
+     nenhuma rota de estudante: vive em \arq{src/unootube/catalogo.ts}. Os
      \emph{CHECK} de cardinalidade dos salvos e de \enquote{conclusão implica
      \texttt{concluido\_em}} vivem na migração, porque o Prisma não os modela.};
 
@@ -621,7 +621,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   \node[tabela, text width=50mm] (vs) at (3.6,-8.0)
     {\etitulo{exp\_70\_sessoes} --- uma partida
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{aluno\_id}, \fk{turma\_id}\\
+     \pk{id}, \fk{escola\_id}, \fk{estudante\_id}, \fk{turma\_id}\\
      \texttt{exp\_version}, \texttt{schema\_version}\\
      \texttt{bolha}: A$|$B$|$C --- do SERVIDOR\\
      \texttt{cartoes\_servidos} --- $\neq$ apareceram\\
@@ -637,7 +637,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   \node[tabela, text width=48mm] (vp) at (11.4,-7.6)
     {\etitulo{exp\_70\_perfis} --- retrato Schwartz
      \nodepart{two}
-     \pk{id}, \fk{escola\_id}, \fk{sessao\_id}, \fk{aluno\_id}\\
+     \pk{id}, \fk{escola\_id}, \fk{sessao\_id}, \fk{estudante\_id}\\
      \texttt{versao\_mapeamento} --- hoje 3\\
      \texttt{valores} JSONB --- 10 valores; \texttt{null} $\neq$ 0\\
      \texttt{graus} JSONB --- scored $|$ indicative $|$\\
@@ -649,13 +649,13 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{UNIQUE (sessao\_id, versao\_mapeamento)}};
 
   \node[tabela, text width=40mm] (vb) at (11.6,-12.4)
-    {\etitulo{exp\_70\_bolhas} --- 1 linha por ALUNO
+    {\etitulo{exp\_70\_bolhas} --- 1 linha por ESTUDANTE
      \nodepart{two}
-     \pk{escola\_id, aluno\_id}\\
+     \pk{escola\_id, estudante\_id}\\
      \texttt{bolha}, \texttt{atribuida\_em}};
 
   \node[actnote, text width=48mm, anchor=north west] at (3.0,-13.4)
-    {Por \textbf{aluno}, não por partida: repetir a partida não pode trocar o
+    {Por \textbf{estudante}, não por partida: repetir a partida não pode trocar o
      nível, porque a folha do professor diz \enquote{esse estava na C} e o
      relatório abre pelo nível. A atribuição é balanceada \emph{dentro da turma}
      --- \emph{hash} de UUID pode dar 14/6/5 numa sala de 25, e aí o debate da
@@ -665,7 +665,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   \draw[erel] (vs.east) -- (vp.west)
     node[ercard, pos=0.16]{1} node[ercard, pos=0.84]{N};
   \draw[erel, dashed] (vp.south) -- (vb.north)
-    node[ercard, pos=0.5, right=2pt]{mesmo aluno};
+    node[ercard, pos=0.5, right=2pt]{mesmo estudante};
 
 \end{tikzpicture}}
 \caption[Modelo de dados das exps 02 e 70]{Modelo de dados da exp-02 e da
@@ -750,12 +750,12 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_03\_sessoes} & O estado da partida, uma linha por aluno. Chave
-  \cd{(escola\_id, aluno\_id)} --- \textbf{não há id de sessão}: a identidade vem
+\cd{exp\_03\_sessoes} & O estado da partida, uma linha por estudante. Chave
+  \cd{(escola\_id, estudante\_id)} --- \textbf{não há id de sessão}: a identidade vem
   do \emph{token}, e foi isso que dispensou a guarda de posse do projeto de
   origem, onde a sessão era um \emph{uuid} na URL. Inclui
   \cd{tokens\_gastos} e \cd{chamadas\_ia} (\adrr{ADR-24}).\\
-\zebra \cd{exp\_03\_mensagens} & A \textbf{Transcrição}: a conversa entre o aluno e
+\zebra \cd{exp\_03\_mensagens} & A \textbf{Transcrição}: a conversa entre o estudante e
   o agente. \cd{texto} é caixa livre escrita por menor de idade --- o dado mais
   sensível da experiência (\adrr{ADR-27}).\\
 \cd{exp\_03\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
@@ -770,7 +770,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \end{tabularx}
 
 \begin{regra}
-Os filhos apontam para o \textbf{par} \cd{(escola\_id, aluno\_id)}, não para um
+Os filhos apontam para o \textbf{par} \cd{(escola\_id, estudante\_id)}, não para um
 id de sessão. Cada linha filha carrega \cd{escola\_id} por construção --- que é o
 que a RLS precisa --- e nenhuma consulta nova pode esquecê-lo.
 \end{regra}
@@ -785,7 +785,7 @@ em \cd{rodadas}). Centavo virou \emph{token}: preço depende de tabela do
 \textbf{Nenhuma coluna de prazo} (\adrr{ADR-26}). E 18 \emph{CHECKs} de estado
 impossível na migração, entre eles: justificativa sem destino, encerrar relógio
 que nunca começou, duração de relógio igual a zero (dividiria por zero no minuto
-narrativo) e \cd{debitou} numa fala que não é do aluno.
+narrativo) e \cd{debitou} numa fala que não é do estudante.
 
 \begin{atencao}
 As duas tabelas com \cd{BIGSERIAL} (\cd{exp\_03\_mensagens} e
@@ -803,7 +803,7 @@ As duas tabelas com \cd{BIGSERIAL} (\cd{exp\_03\_mensagens} e
 \toprule
 \headrow \thd{Decisão} & \thd{Por quê}\\
 \midrule
-\cd{turma\_id} desnormalizado na sessão & O aluno troca de turma entre anos
+\cd{turma\_id} desnormalizado na sessão & O estudante troca de turma entre anos
   letivos, e o resultado precisa continuar \emph{na turma em que foi medido}.\\
 \zebra Datas cravadas pelo \textbf{servidor} & O aplicativo de origem derivava do
   relógio do cliente, e documentava que a hora numa máquina de escola costuma
@@ -888,7 +888,7 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{matriculas} (com RLS), colunas de identidade em \cd{users} e o
   \emph{backfill} de \cd{users.turma\_id} para matrícula principal.\\
 \arq{20260828140000\_rede\_lotacoes\_e\_cpf} & \cd{lotacoes} e o índice único
-  parcial que impede aluno ativo em duas escolas.\\
+  parcial que impede estudante ativo em duas escolas.\\
 \zebra \arq{20260828170000\_cpf\_em\_claro} & Troca de \cd{cpf\_hash} por
   \cd{users.cpf} (11 dígitos, \emph{CHECK} e único parcial) --- \adrr{ADR-33}.\\
 \arq{20260828200000\_nivel\_regional} & Vocabulário \cd{escola} $|$
@@ -897,7 +897,7 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   --- \adrr{ADR-34}.\\
 \zebra \arq{20260828230000\_perfil\_portatil} & \cd{perfis\_portateis}, com RLS,
   \emph{CHECK} do vocabulário de \cd{verificacao} e único por
-  (escola, aluno, emissor, emissão) --- \adrr{ADR-35}.\\
+  (escola, estudante, emissor, emissão) --- \adrr{ADR-35}.\\
 \bottomrule
 \end{tabularx}
 

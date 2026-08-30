@@ -93,7 +93,7 @@ try {
      e aí o smoke não tem o que exercitar. */
   exigir(
     importados > 0 || temDescartados,
-    "a importação não importou nem descartou ninguém — rode o walkthrough do aluno antes",
+    "a importação não importou nem descartou ninguém — rode o walkthrough do estudante antes",
   );
   /* A parte que mais importa: quem ficou de fora aparece NOMEADO e com motivo. */
   if (temDescartados) {

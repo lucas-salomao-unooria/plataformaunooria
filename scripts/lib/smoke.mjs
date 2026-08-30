@@ -86,7 +86,7 @@ export async function esperarOuFalharCedo(sucesso, erro, opcoes = {}) {
  *
  * @param {import('playwright').Page} pagina
  * @param {string[]} falhas  lista compartilhada, impressa no fim do roteiro
- * @param {string} [rotulo]  qual contexto (professor/aluno), nos roteiros de dois
+ * @param {string} [rotulo]  qual contexto (professor/estudante), nos roteiros de dois
  */
 export function vigiarFalhasDaApi(pagina, falhas, rotulo = "") {
   const prefixo = rotulo ? `[${rotulo}] ` : "";

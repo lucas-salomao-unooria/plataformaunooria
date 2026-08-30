@@ -15,7 +15,7 @@
 6. **Pub/Sub para telemetria desde o início** — 4k simultâneos × evento/10s
    sufocaria o transacional. Resto da app fala Postgres direto.
 7. **IA atrás de gateway na própria api** — chave e prompt de sistema no server,
-   quota/dia por aluno, cache, provider plugável (Vertex default). Pré-gerar em
+   quota/dia por estudante, cache, provider plugável (Vertex default). Pré-gerar em
    lote sempre que a pedagogia permitir.
 8. **JWT curto + memória no iframe** — roubo mitigado por HTTPS, expiração 1h,
    escopo mínimo, rate limit; validação de nota é server-side de qualquer forma.
@@ -26,9 +26,9 @@
    (`apps/api/src/<slug>/`), como `motor/` para a exp-01. Decisões da missão:
    ranking com colegas FICTÍCIOS (distribuição desenhada para a lição; sem
    pontuação de menores reais — LGPD), URLs das fontes como TEXTO (sandbox do
-   iframe bloqueia popups; aluno não sai da plataforma), salvos CONGELADOS após
+   iframe bloqueia popups; estudante não sai da plataforma), salvos CONGELADOS após
    "adicionar credibilidade" (o score já foi reportado — nota e estado não
-   divergem; reiniciar descongela), aluno roteado pela SÉRIE
+   divergem; reiniciar descongela), estudante roteado pela SÉRIE
    (`4EF → exp-02-unootube`, mapa estático até o manifesto ser a fonte).
 10. **Check-in de bem-estar do professor: DASS-21 fixo, IA só no entorno,
    dado que só o professor lê** (exp-91, 2026-08-25). O instrumento entra
@@ -45,7 +45,7 @@
 11. **Uma conta por PESSOA; enturmamento em `matriculas`; OneRoster só na
    fronteira** (2026-08-28). As experiências vieram de projetos com cadastro
    próprio por atividade. A unificação técnica já existia (todas recebem
-   `aluno.id` pelo `hub:init`), mas a conta era de **assento** — está escrito no
+   `estudante.id` pelo `hub:init`), mas a conta era de **assento** — está escrito no
    schema: `exp_01_runs.nome_no_app` existe "porque a conta é do APARELHO: outra
    turma reusa o mesmo login" — e o nome real da criança vivia dentro de uma
    experiência só. Entram `periodos_letivos` (≈ `academicSessions`) e
@@ -69,14 +69,14 @@
 12. **Senha provisória com troca obrigatória** (2026-08-28). A planilha não tem
    coluna de senha: arquivo com senha em texto claro circula por e-mail e pen
    drive. A senha inicial é escolhida na tela de importação (uma para o lote, ou
-   uma por pessoa — recomendada para alunos), marca `senha_provisoria` e o
+   uma por pessoa — recomendada para estudantes), marca `senha_provisoria` e o
    primeiro acesso cai em `/trocar-senha` sem saída. A trava é **tripla**:
    middleware, BFF e `/api/exp-token` — só com o middleware, bastaria digitar
    `/exp/...` para pular. Ao trocar, a sessão é **refeita** com a senha nova em
    vez de remendada: o cookie antigo ainda diz "precisa trocar", e sem refazê-lo
    a pessoa voltaria à mesma tela com a senha anterior já inválida.
    Consequência ruim, aceita e dita na própria tela: com uma senha só para o
-   lote, qualquer aluno entra na conta de outro até o primeiro acesso dele.
+   lote, qualquer estudante entra na conta de outro até o primeiro acesso dele.
 13. **A rede: lotação por escola, escola ativa no token, e o dado que fica**
    (2026-08-28). Vender a uma rede estadual exigia três coisas que
    `users.escola_id` único não dava: identificar milhares de escolas, professor em
@@ -84,15 +84,15 @@
    isso barato é o que **não** muda: o token continua carregando UMA escola —
    medido, são 31 tabelas com `escola_id` e 19 arquivos que derivam a escola do
    token, e nenhum foi tocado. Entra a camada acima: `lotacoes` (pessoa × escola,
-   datado; professor ACUMULA, aluno tem uma ativa garantida por índice único
+   datado; professor ACUMULA, estudante tem uma ativa garantida por índice único
    parcial) e a escola ativa como estado de SESSÃO, validada contra as lotações
    pela api e nunca contra a lista do cookie. Descartados: token com conjunto de
    escolas e RLS em `= ANY` (tocaria as 31 tabelas e trocaria "esta conexão vê UMA
    escola" por "vê um conjunto", que é justamente a propriedade que sustenta o
    isolamento de um contrato B2G); e dois cadastros para o mesmo professor, que é
    o que acontece hoje sem isso — duas senhas e nada ligando as metades.
-   Na transferência o **dado fica onde foi produzido** e o que segue o aluno é a
-   identidade; a leitura atravessada é uma porta só (`GET /alunos/:id/historico`),
+   Na transferência o **dado fica onde foi produzido** e o que segue o estudante é a
+   identidade; a leitura atravessada é uma porta só (`GET /estudantes/:id/historico`),
    restrita a quem tem lotação na escola onde ele está hoje, devolvendo
    participações e nunca o conteúdo dos instrumentos. Reescrever `escola_id` nas 31
    tabelas foi descartado: apaga de onde o fato veio.
@@ -167,7 +167,7 @@
    fora nunca se mistura** com o dado local, porque é a afirmação de outra
    instalação, possivelmente de outra versão do instrumento; **assinatura inválida
    é recusa, emissor inalcançável é rótulo visível**; e **importar não cria
-   aluno** — matricular é ato da escola, e só depois o perfil se anexa pelo CPF.
+   estudante** — matricular é ato da escola, e só depois o perfil se anexa pelo CPF.
    Descartados: API entre instalações (exige que as duas existam e se conheçam);
    um banco para várias redes (já descartado antes, e não cobriria o destino não
    cliente); CSV sem assinatura (histórico sem procedência não decide nada);

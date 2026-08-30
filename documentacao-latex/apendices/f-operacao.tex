@@ -18,7 +18,7 @@ docker compose up -d pg
 cp .env.example apps/api/.env && cp .env.example apps/hub/.env.local   # e editar
 node scripts/gerar-chave-token.mjs --env      # chave RS256 do hub
 pnpm --filter @edu/api migrate:dev            # migrations (Prisma + RLS)
-pnpm --filter @edu/api seed                   # escola-demo, prof/gestor/aluno01-40
+pnpm --filter @edu/api seed                   # escola-demo, prof/gestor/estudante01-40
 pnpm --filter @edu/api seed:demo              # atividade DEMO com 92 posts, sem IA
 pnpm dev                                      # hub :3000, api :3001, exp :5173
 
@@ -73,9 +73,9 @@ não \emph{commitar}}.
 \section{\emph{Smoke} visual}
 
 \begin{lstlisting}[language=bashunoo]
-node scripts/walkthrough-aluno.mjs            testes/wt-aluno
+node scripts/walkthrough-estudante.mjs            testes/wt-estudante
 node scripts/walkthrough-professor.mjs        testes/wt-professor
-node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube
+node scripts/walkthrough-estudante-unootube.mjs   testes/walkthrough-unootube
 node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila
 node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
 node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
@@ -123,8 +123,8 @@ Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
   aparecer o seletor de escola no cabeçalho dele. \cd{gestor.vilanova} administra a
   segunda.\\
 \emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
-  \cd{prof.demo} \seta{} \rota{/professor}; \cd{aluno01}--\cd{aluno40} \seta{}
-  \rota{/aluno}; \cd{aluno4a01} para a exp-02. Senha de todos:
+  \cd{prof.demo} \seta{} \rota{/professor}; \cd{estudante01}--\cd{estudante40} \seta{}
+  \rota{/estudante}; \cd{estudante4a01} para a exp-02. Senha de todos:
   \cd{unooria123}. Eles nascem com \cd{senha\_provisoria = false} de propósito:
   prendê-los na troca do primeiro acesso pararia os sete \emph{walkthroughs} na
   mesma tela. \cd{prof.demo} é matriculado nas quatro turmas --- sem isso, as
@@ -264,7 +264,7 @@ testado no container} &
   escolas}.\\
 \zebra \textbf{Lotei em lote e o relatório diz menos escolas do que marquei} &
   Havia \cd{regional} ou \cd{rede} na seleção, e elas não recebem lotação: não têm
-  turma, aluno nem dado, e virariam escola fantasma no seletor do cabeçalho. A
+  turma, estudante nem dado, e virariam escola fantasma no seletor do cabeçalho. A
   barra de seleção da tela já avisa quantas serão ignoradas.\\
 \textbf{O \cd{orgs.csv} entrou mas as escolas ficaram sem regional} &
   \cd{parentSourcedId} apontou para uma organização que não veio no arquivo, ou
@@ -290,7 +290,7 @@ testado no container} &
   Falta \env{CONTRATO\_ID} no hub. Documento cujo emissor não se identifica não
   vale nada no destino, que precisa dele para achar o JWKS e para dizer de quem
   veio.\\
-\zebra \textbf{\enquote{Não há aluno com este CPF nesta rede}} &
+\zebra \textbf{\enquote{Não há estudante com este CPF nesta rede}} &
   O documento não cria pessoa. Matricule a criança primeiro (planilha ou
   OneRoster) e importe o perfil depois --- a matrícula é ato da escola.\\
 \textbf{O item \enquote{Minhas escolas} não aparece na navegação} &
@@ -314,7 +314,7 @@ testado no container} &
   Ordem dos arquivos. \cd{enrollments.csv} referencia \cd{classSourcedId}, que
   vem de \cd{classes.csv}, que referencia \cd{termSourcedIds}, que vêm de
   \cd{academicSessions.csv}. O relatório nomeia o arquivo que falta.\\
-\zebra \textbf{Todo mundo importado pelo OneRoster virou aluno} &
+\zebra \textbf{Todo mundo importado pelo OneRoster virou estudante} &
   Na 1.2 o papel não está em \cd{users.csv} --- foi para \cd{roles.csv}. Sem a
   coluna \cd{role}, a pessoa nasce com o menor privilégio de propósito; aplique
   \cd{roles.csv} para corrigir.\\
@@ -367,7 +367,7 @@ testado no container} &
   \cd{play()} manual funciona e o \cd{readyState} é 4. Clicar dentro do
   \cd{iframe} tira o foco da janela do hub, o \arq{ExpFrame.tsx} traduzia esse
   \cd{blur} em \cd{hub:pause} e o \cd{focus} correspondente nunca voltava
-  enquanto o aluno continuasse ali. A evidência é \cd{visivel: false} em
+  enquanto o estudante continuasse ali. A evidência é \cd{visivel: false} em
   \arq{lib/visibilidade.ts}. Corrigido em 2026-08-27: \cd{blur} com
   \cd{document.activeElement} igual ao próprio \cd{iframe} não é perda de
   visibilidade nenhuma.\\
@@ -432,7 +432,7 @@ testado no container} &
   renomeação &
   \cd{FOR ... IN SELECT} sobre o catálogo releu o que o laço alterou, ou
   \cd{RENAME CONSTRAINT} renomeou também o índice. Ver a migração de referência.\\
-\textbf{Na exp-03, o aluno digita a pergunta, aperta Enter e NADA acontece} ---
+\textbf{Na exp-03, o estudante digita a pergunta, aperta Enter e NADA acontece} ---
   a conversa parece viva, porque a fala de abertura do agente está na tela &
   Falta \cd{allow-forms} no \emph{sandbox} do \cd{iframe}: o \cd{Composer} do
   \emph{design system} é um \cd{<form>}. O manifesto tem de declarar
@@ -448,7 +448,7 @@ testado no container} &
   Credencial do Vertex ausente ou \env{AI\_PROVIDER=vertex} sem ADC montado. A
   API traduz falha do provedor em \cd{cientista-indisponivel} (503) de propósito
   --- em desenvolvimento, use \env{AI\_PROVIDER=mock}. Confira também
-  \cd{tokens\_gastos} da sessão: teto estourado dá a mesma cara para o aluno,
+  \cd{tokens\_gastos} da sessão: teto estourado dá a mesma cara para o estudante,
   com outra frase.\\
 \zebra \textbf{Na exp-03, a turma inteira vê o cronômetro parado} e ninguém
   consegue falar &
@@ -518,8 +518,8 @@ testado no container} &
   explicação ou a reflexão ainda registra \cd{perdeu\_foco}. Se a janela do
   tempo não terminar no último \cd{visto} (\cd{fimDoFeedDe}, \adrr{ADR-44}),
   \cd{feedMs} cresce depois de o feed fechar e \cd{ativoMs / feedMs} derrete.
-  Conferir a versão do relatório antes de olhar para o aluno.\\
-\textbf{O aparelho do aluno recarrega e ele volta para a revelação} &
+  Conferir a versão do relatório antes de olhar para o estudante.\\
+\textbf{O aparelho do estudante recarrega e ele volta para a revelação} &
   Alguém tirou o \cd{children} de dentro do \cd{DispositivoFrame} em vez de
   ligar a \emph{prop} \cd{expandido}. Trocar a árvore desmonta o \cd{<iframe>};
   o modo expandido é ESTILO, e só (\adrr{ADR-41}).\\
@@ -562,7 +562,7 @@ testado no container} &
   navegador de sobra, e o banner do próprio Playwright manda rodar exatamente o
   \cd{npx} que causou o descasamento. Conferir com \cd{pnpm exec playwright
   --version} e reinstalar por ali.\\
-\zebra \textbf{O relatório do aluno abre em tela cheia no meio do FEED} &
+\zebra \textbf{O relatório do estudante abre em tela cheia no meio do FEED} &
   Alguém inverteu a condição do \cd{ExpHost} para expandir por \emph{default}.
   O \cd{IntersectionObserver} do \emph{dwell} se refere ao \emph{iframe}:
   numa área larga o sinal central do motor infla em silêncio, e nada na tela
@@ -594,7 +594,7 @@ testado no container} &
   ainda está subindo, ou a porta 9443 não responde --- o \emph{healthcheck} do
   \emph{compose} deveria ter segurado; conferir
   \cd{docker compose -f wso2/docker-compose.yml ps}.\\
-\zebra \textbf{O painel da atividade lista alunos que não são meus} &
+\zebra \textbf{O painel da atividade lista estudantes que não são meus} &
   Se a atividade tem turma, é bug --- abrir um chamado. Se ela NÃO tem
   (\cd{exp\_01\_activities.turma\_id IS NULL}), é o comportamento das
   atividades anteriores à \adrr{ADR-49}: elas valem para a escola inteira, e o
@@ -609,10 +609,10 @@ testado no container} &
   lado do feed. O painel do Ato 1 mostra quantos vieram de versão anterior;
   ``Trazer perfis da Vila do Lume'' atualiza, e NÃO desfaz quem o professor
   moveu de lado (\adrr{ADR-50}). Não há rotina automática, de propósito.\\
-\zebra \textbf{O aluno entra e vê ``Nada rolando por aqui agora''} &
+\zebra \textbf{O estudante entra e vê ``Nada rolando por aqui agora''} &
   Com \adrr{ADR-49}, \cd{POST /runs} só entrega atividade SEM turma ou da turma
   DELE --- e a turma sai de \cd{users.turma\_id}, o cache da matrícula
-  principal. Aluno sem \cd{turma\_id} (importado sem enturmar, ou movido pela
+  principal. Estudante sem \cd{turma\_id} (importado sem enturmar, ou movido pela
   metade) só alcança atividade sem turma. Conferir em \rota{/admin/turmas}.\\
 \bottomrule
 \end{tabularx}
@@ -624,7 +624,7 @@ testado no container} &
 \headrow \thd{Frequência} & \thd{Item}\\
 \midrule
 Após cada \emph{deploy} & Conferir que a migração rodou (\cd{--wait} no
-  \emph{job}); abrir \rota{/readyz}; abrir uma experiência de aluno e uma
+  \emph{job}); abrir \rota{/readyz}; abrir uma experiência de estudante e uma
   ferramenta de professor.\\
 \zebra Semanal & Taxa de 5xx do Cloud Run; conexões ativas do Cloud SQL;
   contagem de \cd{status = 'aberta'} em \cd{exp\_70\_sessoes} (partidas

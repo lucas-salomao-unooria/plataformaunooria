@@ -44,17 +44,17 @@ Quem lê & O motor de curadoria, o painel do professor, o dossiê &
 \textbf{\emph{Dwell} NUNCA passa pelo Pub/Sub.} A latência e a falta de ordenação
 quebrariam a adaptação do \emph{feed} e o \emph{lock} por \cd{run}: o motor
 precisa saber, no instante em que cura o próximo bloco, exatamente quais posts o
-aluno viu e por quanto tempo. Um evento que chega dois minutos depois, fora de
-ordem, produziria uma curadoria baseada em passado errado --- e o aluno não teria
+estudante viu e por quanto tempo. Um evento que chega dois minutos depois, fora de
+ordem, produziria uma curadoria baseada em passado errado --- e o estudante não teria
 como perceber.
 \end{regra}
 
 \begin{nota}
 A recíproca também vale, e é o que justifica o segundo canal: mandar \emph{tudo}
 pelo caminho transacional colocaria, no pico de quatro mil simultâneos, um
-\cd{INSERT} sincronizado por interação de aluno dentro da mesma transação que
+\cd{INSERT} sincronizado por interação de estudante dentro da mesma transação que
 serve a tela. O canal analítico existe para absorver volume sem competir com o
-que o aluno está esperando.
+que o estudante está esperando.
 \end{nota}
 
 \section{O canal analítico, ponta a ponta}
@@ -129,7 +129,7 @@ que o aluno está esperando.
 \section{A rota de ingestão e sua tranca}
 
 \rota{POST /telemetry/ingest} é a rota mais delicada da API: ela grava dado de
-aluno, o \cd{escolaId} vem no corpo (já enriquecido pelo \rota{/batch}) e ela
+estudante, o \cd{escolaId} vem no corpo (já enriquecido pelo \rota{/batch}) e ela
 \textbf{não passa pelo \cd{OidcGuard}} --- porque quem chama é o Pub/Sub, não um
 usuário, e não existe \emph{token} do hub nessa chamada.
 
@@ -159,7 +159,7 @@ dedicado.} O desenho original previa
 subscription} entrega o mesmo resultado com uma peça a menos para operar --- um
 serviço a menos com \emph{deploy}, log, escala e \emph{alerting} próprios. O
 \emph{worker} separado volta se o volume justificar isolar o consumo do tráfego
-de aluno.
+de estudante.
 \end{decisao}
 
 \section{Destino: PostgreSQL, não BigQuery}
@@ -188,7 +188,7 @@ serviço novo:
 \begin{lstlisting}[language=tsunoo, caption={O gargalo real, e a correção (\arq{src/telemetry/telemetry.controller.ts})}, label={lst:insert}]
 // UM INSERT multi-linha, nao um por evento. E o gargalo real deste caminho:
 // um lote de 50 eventos custava 50 round-trips ao banco, e no pico da manha
-// (~4k alunos simultaneos) isso e ~800 INSERTs/s numa instancia pequena.
+// (~4k estudantes simultaneos) isso e ~800 INSERTs/s numa instancia pequena.
 // Em lote vira ~16/s, que e trivial.
 //
 // Nao e caso para Redis: quem amortece o pico ja e o Pub/Sub, que ainda por
@@ -196,14 +196,14 @@ serviço novo:
 // morre antes do flush.
 const linhas = doGrupo.map(
   (e) => Prisma.sql`(
-    ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${e.alunoId}, ${e.expId},
+    ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${e.estudanteId}, ${e.expId},
     ${e.expVersion}, ${e.sessaoId}::uuid, ${e.verbo}, ${e.objeto},
     ${JSON.stringify(e.resultado ?? null)}::jsonb,
     ${JSON.stringify(e.contexto  ?? null)}::jsonb)`,
 );
 await tx.$executeRaw(Prisma.sql`
   INSERT INTO telemetria_eventos
-    (event_id, ts, escola_id, aluno_id, exp_id, exp_version, sessao_id,
+    (event_id, ts, escola_id, estudante_id, exp_id, exp_version, sessao_id,
      verbo, objeto, resultado, contexto)
   VALUES ${Prisma.join(linhas)}
   ON CONFLICT (event_id, ts) DO NOTHING`);
@@ -236,7 +236,7 @@ gargalo medido aqui era o laço de \cd{INSERT}.
 
 \begin{regra}
 \begin{itemize}
-  \item O evento carrega \cd{aluno\_id} \textbf{opaco} (UUID), nunca nome ou
+  \item O evento carrega \cd{estudante\_id} \textbf{opaco} (UUID), nunca nome ou
     \emph{e-mail}.
   \item A identidade é \textbf{derivada do \emph{token}} no servidor. O que o
     cliente enviou nesses campos é descartado --- então o cliente não
@@ -254,7 +254,7 @@ gargalo medido aqui era o laço de \cd{INSERT}.
 
 \begin{limitacao}
 \textbf{Retenção sem prazo declarado} também aqui. \cd{telemetria\_eventos}
-guarda evento por \cd{aluno\_id} de \emph{todas} as experiências e não tem prazo
+guarda evento por \cd{estudante\_id} de \emph{todas} as experiências e não tem prazo
 --- pela mesma razão registrada na Seção~\ref{sec:particao} e em \adrr{ADR-13}:
 prazo só existe junto com a rotina que o cumpre. A diferença é que, particionada,
 essa rotina passou a ser trivial de escrever (\cd{DROP TABLE

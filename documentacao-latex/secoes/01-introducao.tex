@@ -45,7 +45,7 @@ produto educacional comercial:
     \emph{stack} e são isoladas logicamente.
   \item \textbf{Pico de carga previsível e brutal.} A rede toda entra na
     plataforma às oito da manhã. O alvo de projeto é de aproximadamente dez mil
-    alunos por contrato com dois a quatro mil simultâneos nesse pico --- uma
+    estudantes por contrato com dois a quatro mil simultâneos nesse pico --- uma
     curva de carga que não se parece com a de um SaaS de escritório.
   \item \textbf{Dados de menores.} A maior parte dos titulares dos dados
     tratados é criança ou adolescente. Isso não é um detalhe de conformidade
@@ -96,7 +96,7 @@ arquivos para um \emph{bucket}. \emph{Rollback} é o hub passar a apontar para a
 versão anterior --- uma linha de \cd{UPDATE}, não um \emph{deploy}.
 \end{regra}
 
-A Figura~\ref{fig:visao-geral} resume o caminho de uma sessão de aluno, do
+A Figura~\ref{fig:visao-geral} resume o caminho de uma sessão de estudante, do
 \emph{login} à coleta de telemetria.
 
 \begin{figure}[H]
@@ -104,8 +104,8 @@ A Figura~\ref{fig:visao-geral} resume o caminho de uma sessão de aluno, do
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[c4person, text width=22mm, minimum height=12mm] (aluno) at (0,0)
-    {\textbf{Aluno}};
+  \node[c4person, text width=22mm, minimum height=12mm] (estudante) at (0,0)
+    {\textbf{Estudante}};
 
   \node[c4container, text width=30mm, minimum height=14mm] (hub) at (4.1,0)
     {\textbf{Hub}\tech{Next.js}\desc{autentica, roteia, embeda}};
@@ -128,7 +128,7 @@ A Figura~\ref{fig:visao-geral} resume o caminho de uma sessão de aluno, do
   \node[c4systemext, text width=26mm, minimum height=12mm] (idp) at (12.9,0)
     {\textbf{WSO2 IS}\desc{identidade, futuro}};
 
-  \draw[c4rel] (aluno) -- (hub) node[cxlabel, midway, above]{HTTPS};
+  \draw[c4rel] (estudante) -- (hub) node[cxlabel, midway, above]{HTTPS};
   \draw[c4relbi] (hub) -- (exp)
     node[cxlabel, midway, above]{\texttt{postMessage}}
     node[cxlabel, midway, below]{token, contexto};

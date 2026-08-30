@@ -27,7 +27,7 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   argumento técnico. \textbf{Pendente de decisão de produto e contrato}, e é da
   plataforma inteira.\\
 \cd{R-13} & \textbf{Latência de IA numa sala inteira.} O turno da exp-03 é
-  síncrono e leva de 10 a 30 segundos, e a largada é simultânea: 30 alunos
+  síncrono e leva de 10 a 30 segundos, e a largada é simultânea: 30 estudantes
   perguntam ao mesmo tempo. & Média & \textbf{Alto} &
   O desenho aceita a latência (a tela cobre com indicador de \enquote{consultando},
   e a SDK espera 45\,s). O que \textbf{não} foi medido é a concorrência: 30 turnos
@@ -50,7 +50,7 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   está marcada como ponto de partida. \textbf{Pendente de revisão pedagógica} ---
   é a lacuna mais séria desta experiência, e não é técnica.\\
 \zebra \cd{R-03} & \textbf{Localidade de processamento de IA.} O tráfego de IA sai de
-  São Paulo, inclusive o do aluno. & Certa & Médio &
+  São Paulo, inclusive o do estudante. & Certa & Médio &
   Consequência aceita e documentada (\adrr{ADR-16}). \textbf{Precisa constar do
   contrato e do DPA de cada rede.} Voltar à região exige trocar modelo e
   localização juntos.\\
@@ -112,7 +112,7 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   virada --- criar o período de 2027 e importar o enturmamento novo --- e ela é
   manual hoje.\\
 \cd{R-15} & \textbf{Senha compartilhada até o primeiro acesso.} Importação com
-  uma senha para o lote inteiro deixa qualquer aluno entrar na conta de outro
+  uma senha para o lote inteiro deixa qualquer estudante entrar na conta de outro
   antes do primeiro acesso dele. & Média & Médio &
   Aceito e \textbf{dito na própria tela} (\adrr{ADR-29}), com o modo
   \enquote{uma senha por pessoa} ao lado, recomendado para turma grande. Fecha de
@@ -184,8 +184,8 @@ M4 & Ferramentas de professor: exp-90, exp-91 & \yes{} Concluído &
   Armazenamento privado, \emph{guardrails}\\
 \zebra M5 & exp-70 e o Ato 1 integrado & \yes{} Concluído &
   \cd{exp\_01\_exp\_70\_perfis\_importados}\\
-M6 & Hub do aluno, \emph{header} único, casca compartilhada &
-  \yes{} Concluído & \rota{/aluno}, \cd{CascaPlataforma}\\
+M6 & Hub do estudante, \emph{header} único, casca compartilhada &
+  \yes{} Concluído & \rota{/estudante}, \cd{CascaPlataforma}\\
 \zebra --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
   CI/CD completo com WIF\\
 --- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
@@ -223,7 +223,7 @@ M6 & Hub do aluno, \emph{header} único, casca compartilhada &
 \midrule
 \emph{Rsync} de mídia no CI & \cd{R-09}. Com 48 experiências, publicação manual
   de mídia deixa de ser aceitável.\\
-\zebra Filtro por série vindo do manifesto & Hoje o hub do aluno lista missões de
+\zebra Filtro por série vindo do manifesto & Hoje o hub do estudante lista missões de
   um mapa estático. Quando o manifesto virar a fonte, \cd{series: []} tem de
   \textbf{continuar} querendo dizer \enquote{todas} --- o contrário faz a
   experiência transversal desaparecer da tela sozinha.\\
@@ -233,7 +233,7 @@ Acessibilidade no \emph{design system} & \cd{R-07}. Resolver no pacote é resolv
   há um \cd{TODO} explícito na SDK. Rede pública tem escola com conectividade
   ruim, e é lá que o dado se perde.\\
 Métricas de aplicação & Hoje só métrica nativa de infraestrutura. Nada mede
-  \enquote{quantos alunos concluíram a missão hoje}.\\
+  \enquote{quantos estudantes concluíram a missão hoje}.\\
 \zebra Reprocessamento do mapeamento & \cd{VERSAO\_MAPEAMENTO} vai subir, e o
   \emph{payload} está guardado justamente para isso (\adrr{ADR-13}). Falta a
   rotina que reprocessa e o relatório que compara duas gerações.\\

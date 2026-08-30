@@ -39,7 +39,7 @@ sob erro de programação --- devolver o dado de uma escola a outra.
     {\ldots{} 100+};
 
   \node[tabelaplat, text width=52mm] (tab) at (3.8,-5.2)
-    {\etitulo{Toda tabela de dado de aluno}
+    {\etitulo{Toda tabela de dado de estudante}
      \nodepart{two}
      \pk{escola\_id} \texttt{TEXT NOT NULL}\\
      \texttt{ENABLE ROW LEVEL SECURITY}\\
@@ -63,7 +63,7 @@ sob erro de programação --- devolver o dado de uma escola a outra.
 \end{tikzpicture}}
 \caption[Os três níveis de isolamento]{Isolamento em três níveis: físico entre
   contratos, lógico entre escolas de um contrato, e por autorização entre
-  turmas e alunos de uma escola.}
+  turmas e estudantes de uma escola.}
 \label{fig:tenancy-niveis}
 \end{figure}
 
@@ -71,7 +71,7 @@ sob erro de programação --- devolver o dado de uma escola a outra.
 
 \subsection{Como a política é armada}
 
-Toda tabela de dado de aluno tem \cd{escola\_id TEXT NOT NULL} desnormalizado e
+Toda tabela de dado de estudante tem \cd{escola\_id TEXT NOT NULL} desnormalizado e
 uma política de RLS~\cite{postgresrls}. A migração inicial aplica isso em laço
 sobre a lista de tabelas:
 
@@ -79,7 +79,7 @@ sobre a lista de tabelas:
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY[ /* ... tabelas de dado de aluno ... */ ] LOOP
+  FOREACH t IN ARRAY ARRAY[ /* ... tabelas de dado de estudante ... */ ] LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format(
@@ -151,9 +151,9 @@ profundidade: \textbf{é a única tranca}.
 
 Isso já custou um vazamento real. \cd{distribuicaoDaTurma}, que monta o painel
 de perfis do Instanooria, rodava \cd{user.findMany(\{ where: \{ role:
-'aluno' \} \})} --- dentro de um \cd{comTenancy}, o que dava a impressão de
+'estudante' \} \})} --- dentro de um \cd{comTenancy}, o que dava a impressão de
 estar protegido. O painel listava nome e login de crianças de TODAS as escolas do
-contrato, e os contadores que decidem quantos alunos o botão
+contrato, e os contadores que decidem quantos estudantes o botão
 \enquote{Redistribuir a turma} move eram calculados sobre esse universo. Ver
 \adrr{ADR-49}; a regressão é coberta por
 \arq{tests/perfis-distribuicao-tenancy.spec.ts}, que roda como superusuário
@@ -237,12 +237,12 @@ silenciosamente a permissão do vizinho.
 \toprule
 \headrow \thd{Papel} & \thd{Escopo de dados} & \thd{Pode}\\
 \midrule
-\cd{aluno} & Os próprios dados, na própria escola &
+\cd{estudante} & Os próprios dados, na própria escola &
   Realizar experiência, salvar progresso, ver o próprio resultado.
   \textbf{Nunca} vê gabarito, nem dado de colega.\\
 \zebra \cd{professor} & A própria escola; \textbf{as turmas em que tem
   matrícula} &
-  Preparar e conduzir atividade, ler turma e aluno individual, gerar plano de
+  Preparar e conduzir atividade, ler turma e estudante individual, gerar plano de
   aula, fazer o próprio \emph{check-in}. \textbf{Não} vê bem-estar de outro
   professor, nem turma em que não leciona.\\
 \cd{gestor} & A própria escola &
@@ -296,8 +296,8 @@ autorização lê \cd{escolas.pai\_id}. Autorizar por hierarquia seria uma segun
 fonte de verdade sobre acesso, divergente da lotação no dia em que alguém
 corrigisse um pai (\adrr{ADR-34}).
 
-E na transferência de um aluno, o dado \textbf{fica onde foi produzido}. O que
-atravessa é uma leitura única e estreita (\rota{GET /alunos/:id/historico}),
+E na transferência de um estudante, o dado \textbf{fica onde foi produzido}. O que
+atravessa é uma leitura única e estreita (\rota{GET /estudantes/:id/historico}),
 restrita a quem tem lotação na escola onde a criança está hoje, devolvendo
 participações e nunca o conteúdo dos instrumentos (\adrr{ADR-32}).
 \end{decisao}
@@ -380,7 +380,7 @@ topo da página.
 
 \begin{decisao}
 \textbf{Permissão de \cd{iframe} é por experiência, não \emph{default} do
-\emph{frame}.} Prender o ponteiro do mouse de um aluno é capacidade de quem a
+\emph{frame}.} Prender o ponteiro do mouse de um estudante é capacidade de quem a
 declarou --- e concedê-la a todas as experiências significaria que qualquer
 \emph{bundle} publicado pode capturar o mouse. Já \cd{fullscreen}
 \emph{não} entra no manifesto: o \cd{allow} do \emph{frame} já o delega a todas,
@@ -397,8 +397,8 @@ acredita ter declarado algo.
   \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
     \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
     devolvido.
-  \item O gabarito da exp-02 (\cd{factual}) não é persistido no estado do aluno
-    nem devolvido em nenhuma rota de aluno.
+  \item O gabarito da exp-02 (\cd{factual}) não é persistido no estado do estudante
+    nem devolvido em nenhuma rota de estudante.
   \item Os textos dos cartões da exp-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
   \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp-01 são
@@ -428,7 +428,7 @@ carregue onze dígitos seguidos, que é o caminho mais fácil de ele escapar.
 \toprule
 \headrow \thd{Prática} & \thd{Como é garantida}\\
 \midrule
-Telemetria sem PII & O evento carrega \cd{aluno\_id} opaco (UUID), nunca nome ou
+Telemetria sem PII & O evento carrega \cd{estudante\_id} opaco (UUID), nunca nome ou
   \emph{e-mail}. A identidade é derivada do \emph{token} no servidor, não do
   corpo enviado pelo cliente --- o que é, ao mesmo tempo, anti-\emph{spoof} e
   garantia de que o cliente não \emph{pode} enviar PII no lugar do id.\\
@@ -479,7 +479,7 @@ Se um contrato exigir prazo, ele volta \textbf{junto com a rotina que o cumpre}
 A pergunta \enquote{qual é o prazo de retenção do dado comportamental de menor}
 está \textbf{aberta} e é decisão de produto e de contrato, não de módulo: ela vale
 para a plataforma inteira, porque \cd{telemetria\_eventos} guarda evento por
-\cd{aluno\_id} de \emph{todas} as experiências. Enquanto não for respondida, o
+\cd{estudante\_id} de \emph{todas} as experiências. Enquanto não for respondida, o
 que existe é esta seção --- que é melhor que uma coluna mentindo.
 \end{limitacao}
 
@@ -490,7 +490,7 @@ O modelo de IA em uso (\cd{gemini-3.6-flash}) só é publicado no endpoint
 \cd{global}: medido no projeto do contrato, ele responde 404 em
 \cd{southamerica-east1}, \cd{us-east1} e \cd{us-central1}. A consequência é
 explícita e foi aceita: \textbf{o tráfego de IA sai de São Paulo, inclusive o do
-aluno}, e isso precisa constar do contrato e do DPA da rede. Voltar à região é
+estudante}, e isso precisa constar do contrato e do DPA da rede. Voltar à região é
 possível a qualquer momento, mas exige trocar \emph{também} o modelo pelo que a
 região publica (lá, a família 2.5) --- as duas variáveis mudam juntas ou a
 geração para de funcionar.
@@ -534,11 +534,11 @@ específico desta plataforma.
 \toprule
 \headrow \thd{Ameaça} & \thd{Categoria} & \thd{Mitigação}\\
 \midrule
-Aluno lê dado de outra escola & \emph{Broken access control} &
+Estudante lê dado de outra escola & \emph{Broken access control} &
   RLS forçada + filtro explícito + \emph{claims} do \emph{token}. Duas trancas
   independentes, uma delas no banco.\\
-\zebra Aluno lê o gabarito & Exposição de dado sensível ao negócio &
-  Correção \emph{server-side}; gabarito não persistido no estado do aluno nem
+\zebra Estudante lê o gabarito & Exposição de dado sensível ao negócio &
+  Correção \emph{server-side}; gabarito não persistido no estado do estudante nem
   devolvido; sanitizador remove metadados de curadoria.\\
 Cliente adulterado envia perfil pronto & Integridade de medida &
   Servidor \emph{recalcula} e recusa \emph{payload} que traga chave de perfil;

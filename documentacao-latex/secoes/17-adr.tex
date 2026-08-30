@@ -41,7 +41,7 @@ reavaliação não é decisão registrada: é justificativa.
 \zebra \adrr{ADR-24} & Teto de custo de IA por SESSÃO; a quota diária é fusível & 2026-08-27 & Aceita, com número a medir\\
 \adrr{ADR-25} & O Relógio da Aula é tabela da experiência, não coluna em \cd{turmas} & 2026-08-27 & Aceita\\
 \zebra \adrr{ADR-26} & Sem prazo de retenção na exp-03; exclusão por \enquote{zerar a turma} & 2026-08-27 & Aceita\\
-\adrr{ADR-27} & Transcrição do aluno é dado do instrumento: professor lê, gestor não & 2026-08-27 & Aceita\\
+\adrr{ADR-27} & Transcrição do estudante é dado do instrumento: professor lê, gestor não & 2026-08-27 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -99,7 +99,7 @@ Turborepo~\cite{turborepo2026}. \cd{apps/*}, \cd{apps/experiencias/*},
 
 \textbf{Alternativa descartada.} Repositório por experiência, com a SDK publicada
 em npm. Uma mudança na SDK só seria testada contra as 48 aplicações depois de
-publicada --- e a incompatibilidade apareceria num \emph{bundle} servido a alunos
+publicada --- e a incompatibilidade apareceria num \emph{bundle} servido a estudantes
 semanas depois.
 
 \textbf{Consequências.} Mudança na SDK testa tudo no mesmo \emph{pull request};
@@ -151,7 +151,7 @@ inteira, por \emph{module} Terraform) e \textbf{lógico} entre escolas
     análise jurídica de um edital.
 \end{itemize}
 
-\textbf{Consequências.} \cd{escola\_id} em toda tabela de dado de aluno, RLS
+\textbf{Consequências.} \cd{escola\_id} em toda tabela de dado de estudante, RLS
 forçada, e \cd{admin-contrato} como única exceção cross-escola. \emph{Ruim}: cada
 contrato novo é uma \emph{stack} nova para provisionar, monitorar e faturar.
 
@@ -179,7 +179,7 @@ rodar como Cloud Run Job dentro da VPC.
 % ---------------------------------------------------------------------------
 \section{ADR-06 --- Pub/Sub para telemetria desde o início}
 
-\textbf{Contexto.} No pico, quatro mil alunos simultâneos gerando evento a cada
+\textbf{Contexto.} No pico, quatro mil estudantes simultâneos gerando evento a cada
 poucos segundos.
 
 \textbf{Decisão.} O canal \emph{analítico} de telemetria vai para o Pub/Sub.
@@ -187,7 +187,7 @@ poucos segundos.
 \emph{operacional} do motor.
 
 \textbf{Alternativa descartada.} Tudo síncrono no PostgreSQL. Colocaria um
-\cd{INSERT} sincronizado por interação de aluno dentro da mesma transação que
+\cd{INSERT} sincronizado por interação de estudante dentro da mesma transação que
 serve a tela.
 
 \textbf{Consequências.} Uma peça de infraestrutura a mais --- e é a única exceção
@@ -225,7 +225,7 @@ GPU própria.
 \section{ADR-08 --- RLS forçada e uma porta única de banco}
 
 \textbf{Decisão.} \cd{ENABLE} \emph{e} \cd{FORCE ROW LEVEL SECURITY} em toda
-tabela de dado de aluno; acesso ao banco \textbf{exclusivamente} por
+tabela de dado de estudante; acesso ao banco \textbf{exclusivamente} por
 \cd{PrismaService.comTenancy}, que abre transação e executa
 \cd{set\_config('app.escola\_id', ..., true)} antes do trabalho.
 
@@ -265,8 +265,8 @@ que não cabe num formato comum.
 \textbf{Consequências.} Decisões concretas herdadas desta ADR: ranking com
 colegas \textbf{fictícios} (sem pontuação de menor real exposta a outro menor);
 URLs das fontes como \textbf{texto} (o \emph{sandbox} bloqueia \emph{popups}, e o
-aluno não sai da plataforma); salvos \textbf{congelados} depois da conclusão
-(nota e estado não podem divergir); aluno roteado pela \textbf{série}.
+estudante não sai da plataforma); salvos \textbf{congelados} depois da conclusão
+(nota e estado não podem divergir); estudante roteado pela \textbf{série}.
 \emph{Ruim}: um módulo novo por experiência --- 48 módulos no limite.
 
 \textbf{Gatilho.} Se três experiências consecutivas tiverem mecânica idêntica,
@@ -310,7 +310,7 @@ real de informação de gestão, aceita.
 % ---------------------------------------------------------------------------
 \section{ADR-11 --- Telemetria sem PII e vocabulário fechado}
 
-\textbf{Decisão.} A telemetria carrega \cd{aluno\_id} \textbf{opaco}, e a
+\textbf{Decisão.} A telemetria carrega \cd{estudante\_id} \textbf{opaco}, e a
 identidade é derivada do \emph{token} no servidor --- o que o cliente enviou nesses
 campos é descartado. Em \cd{exp\_70\_sessoes.payload}, \cd{eventos[].dados} aceita
 apenas número, booleano ou \emph{string} de um \textbf{vocabulário fechado}.
@@ -465,7 +465,7 @@ localização \cd{global}, para texto \emph{e} para plano de aula.
 \cd{us-east1} e \cd{us-central1}. Só o endpoint \cd{global} o serve.
 
 \textbf{Consequência aceita, e ela é séria.} \textbf{O tráfego de IA sai de São
-Paulo, inclusive o do aluno}, e isso precisa constar do contrato e do DPA da rede.
+Paulo, inclusive o do estudante}, e isso precisa constar do contrato e do DPA da rede.
 
 \textbf{Gatilho.} Exigência de residência de dados. Voltar à região é trocar
 \env{VERTEX\_LOCATION} \textbf{e} o modelo, juntos --- a região publica a família
@@ -594,19 +594,19 @@ por um \cd{\{contrato\}-telemetry-worker} separado.
 original de infraestrutura. Seria um Cloud Run a mais com \emph{deploy}, log,
 escala e \emph{alerting} próprios.
 
-\textbf{Consequências.} A rota grava dado de aluno e \textbf{não} passa pelo
+\textbf{Consequências.} A rota grava dado de estudante e \textbf{não} passa pelo
 \cd{OidcGuard}, então precisa de tranca própria: \cd{PubSubPushGuard} verifica
 emissor Google, \cd{aud} e \cd{email} da conta de serviço de \emph{push}, e
 \textbf{falha fechada} sem configuração. O Terraform casa os dois lados. Gravação
 idempotente por \cd{ON CONFLICT}, porque a entrega é \emph{at least once}.
 
-\textbf{Gatilho.} Volume que justifique isolar o consumo do tráfego de aluno.
+\textbf{Gatilho.} Volume que justifique isolar o consumo do tráfego de estudante.
 
 % ---------------------------------------------------------------------------
 
 \section{ADR-22 --- exp-02 1.1.0: \emph{briefing} antes do disfarce}
 
-\textbf{Contexto.} Até a 1.0.0 o aluno da exp-02 caía direto no \emph{feed} de
+\textbf{Contexto.} Até a 1.0.0 o estudante da exp-02 caía direto no \emph{feed} de
 \emph{Shorts} sem nenhum enquadramento: a primeira vez que a palavra
 \enquote{missão} aparecia para ele era no diálogo que abria sozinho depois do
 terceiro salvo --- isto é, \emph{depois} de a medida já ter sido tomada. Não havia
@@ -632,7 +632,7 @@ acrescentou o enquadramento antes da ação e o retorno durante ela.
 
 \textbf{Alternativas descartadas.} (a) Reproduzir o \emph{wireframe} ao pé da
 letra, com o azul e o tema claro fixo dele --- forçaria a paleta da plataforma
-para dentro da ficção e quebraria o seletor claro/escuro do aluno; o Figma é
+para dentro da ficção e quebraria o seletor claro/escuro do estudante; o Figma é
 \emph{wireframe}, e vale como especificação de estrutura, texto e estados, não de
 cor. (b) Reduzir o catálogo a oito vídeos, como o \emph{wireframe} ilustra ---
 mexeria no instrumento (o balanço 10~\emph{fake} / 11 factual) e na
@@ -647,7 +647,7 @@ seja, expõe o padrão que o \emph{ranking} existe para revelar. Foi aceito porq
 o total já se movia --- o delta sempre foi derivável de dois quadros seguidos ---
 e porque a nota da etapa 3 do Figma decide isso explicitamente: o ganho varia, e
 o motivo \textbf{não} é explicado ali. A tela de entrada também gasta um toque a
-mais antes do \emph{feed}, e um aluno apressado a atravessa sem ler.
+mais antes do \emph{feed}, e um estudante apressado a atravessa sem ler.
 
 \textbf{O que não mudou.} As curtidas continuam fora do cálculo; o gabarito
 (\cd{factual}) continua no servidor e fora do \emph{wire} --- há teste que
@@ -658,7 +658,7 @@ enumera os campos públicos do catálogo; o \emph{score} continua saindo de
 de um clique \emph{dentro} do \cd{iframe}, e isso revelou um defeito que já
 existia: clicar dentro do \cd{iframe} tira o foco da janela do hub, o
 \arq{ExpFrame.tsx} traduzia esse \cd{blur} em \cd{hub:pause}, e o \cd{focus}
-correspondente nunca voltava enquanto o aluno continuasse ali --- o vídeo parava
+correspondente nunca voltava enquanto o estudante continuasse ali --- o vídeo parava
 no primeiro toque em \enquote{Salvar} e não voltava mais, em qualquer versão. A
 correção é uma linha: quando \cd{document.activeElement} é o próprio
 \cd{iframe}, o foco foi para a experiência e não há perda de visibilidade
@@ -721,7 +721,7 @@ rejeitadas} --- é o que foi pago.
     dublado: a assinatura de raciocínio reenviada \emph{verbatim} (sem ela o
     Vertex recusa a continuação com 400 e a narrativa nunca chega), o descarte
     das partes de pensamento (senão o raciocínio do modelo aparece na tela do
-    aluno) e o teto de voltas (modelo preso pedindo ferramenta vira recusa, não
+    estudante) e o teto de voltas (modelo preso pedindo ferramenta vira recusa, não
     bolha vazia).
 \end{itemize}
 
@@ -736,7 +736,7 @@ mesma volta. Ou latência de turno acima do que a sala tolera, que empurraria pa
 
 \begin{especificacao}{Contexto}
 O \cd{QuotaService} limita tokens por usuário e por dia, com teto por perfil
-(\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} valia 20.000). Esse número foi
+(\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} valia 20.000). Esse número foi
 dimensionado para o tutor da exp-01: uma conversa curta. O agente da exp-03 tem
 \emph{prompt} de sistema de cerca de 11.500 caracteres, reenviado inteiro a cada
 volta de ferramenta e a cada tentativa; uma partida de sete turnos fica na ordem
@@ -788,7 +788,7 @@ este é a rede contra o laço, não o controle de custo.
 
 \begin{atencao}
 A medição encontrou um defeito que a estimativa não teria encontrado: com
-\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO} em \num{20000} --- o valor dimensionado
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} em \num{20000} --- o valor dimensionado
 para o tutor da exp-01, e que estava \textbf{fixo no \emph{compose} de
 produção} --- a missão recusava o \textbf{quarto turno} com \enquote{a sala de
 operações fechou por hoje}. A quota subiu para \num{300000} (cerca de quatro
@@ -799,7 +799,7 @@ partidas, porque \enquote{Recomeçar} abre partida nova) em quatro lugares: os d
 
 \textbf{Consequências.} O custo fica limitado onde ele acontece, e a mensagem de
 estouro é uma frase de jogo (\enquote{a sala de operações fechou por hoje}) em vez
-de vocabulário de infraestrutura --- o aluno não sabe o que é quota. \emph{Ruim}:
+de vocabulário de infraestrutura --- o estudante não sabe o que é quota. \emph{Ruim}:
 são dois tetos no mesmo caminho, e um estouro exige olhar os dois para saber qual
 disparou.
 
@@ -814,7 +814,7 @@ subir para a plataforma.
 \begin{especificacao}{Contexto}
 A Missão Tempestade tem uma restrição de tempo que é parte do instrumento: cinco
 minutos de relógio de parede valem a hora do cenário. No projeto de origem esse
-cronômetro armava sozinho quando o aluno entrava na investigação --- e numa sala
+cronômetro armava sozinho quando o estudante entrava na investigação --- e numa sala
 isso é uma corrida com largadas diferentes: quem chegou primeiro terminava antes
 de o professor acabar de explicar. As colunas do relógio moravam em
 \cd{turmas}.
@@ -824,7 +824,7 @@ de o professor acabar de explicar. As colunas do relógio moravam em
 \cd{exp\_03\_relogio\_turma} --- tabela \emph{da experiência}, com
 \cd{escola\_id} e RLS como as outras. Quem dá a largada é o professor, no painel,
 e ela vale para a sala inteira ao mesmo tempo. Enquanto \cd{iniciado\_em} é nulo o
-aluno vê o cronômetro parado e o campo de fala desabilitado.
+estudante vê o cronômetro parado e o campo de fala desabilitado.
 
 \textbf{Alternativa descartada.} \emph{Colunas em \cd{turmas}}, como no origem.
 \cd{turmas} serve a plataforma inteira: uma coluna de cronômetro de uma missão
@@ -843,8 +843,8 @@ adicionar as suas. É o mesmo raciocínio do prefixo \cd{exp\_NN\_}
     trás na cara da turma.
   \item A largada é \textbf{idempotente} --- é exatamente o clique que um
     professor nervoso dá duas vezes.
-  \item Aluno sem turma vê \enquote{aguardando}, que é a verdade. O
-    \emph{fallback} do origem armava um cronômetro individual, e com ele um aluno
+  \item Estudante sem turma vê \enquote{aguardando}, que é a verdade. O
+    \emph{fallback} do origem armava um cronômetro individual, e com ele um estudante
     solto jogava sem largada.
   \item \emph{Ruim}: o professor passa a ter uma ação sem a qual a aula não
     acontece. É dependência operacional nova, e o suporte precisa saber dela.
@@ -881,7 +881,7 @@ relógio ao início.
     evitou. Se um contrato exigir prazo, ele volta \textbf{junto com a rotina},
     nunca só a coluna.
   \item \emph{\cd{DELETE /unoogpt/dados} no estilo do bem-estar}: lá o professor
-    é dono das linhas; aqui o dado é do aluno, e um botão \enquote{apagar tudo} no
+    é dono das linhas; aqui o dado é do estudante, e um botão \enquote{apagar tudo} no
     professor seria posse que ele não tem.
 \end{itemize}
 
@@ -913,7 +913,7 @@ chegaria a um JSONB de 90 dias.
 \textbf{apenas ao professor}: \cd{UnoogptTurmasController} tem
 \cd{@Roles("professor")}, e o agregado do gestor está em
 \cd{UnoogptAgregadoController}, que \textbf{não tem nenhuma rota que aceite
-\cd{alunoId}}. Ela nunca vai a log nem à telemetria.
+\cd{estudanteId}}. Ela nunca vai a log nem à telemetria.
 
 \textbf{Alternativa descartada.} Um controller só, com \cd{@Roles} incluindo
 gestor e uma exceção dentro do método que devolve a criança. É a forma que vaza:
@@ -947,9 +947,9 @@ linha da criança.
 \begin{especificacao}{Contexto}
 As experiências foram portadas de projetos onde \textbf{cada atividade tinha o
 próprio cadastro de usuário}. No monorepo a unificação técnica já existia --- toda
-experiência recebe \cd{aluno.id} pelo \cd{hub:init} e grava \cd{aluno\_id} com
+experiência recebe \cd{estudante.id} pelo \cd{hub:init} e grava \cd{estudante\_id} com
 chave estrangeira para \cd{users} ---, mas três resíduos impediam que
-\enquote{acompanhar por aluno} fosse verdade:
+\enquote{acompanhar por estudante} fosse verdade:
 
 \begin{enumerate}
   \item A conta era de \textbf{assento}, não de pessoa. Está escrito no
@@ -958,13 +958,13 @@ chave estrangeira para \cd{users} ---, mas três resíduos impediam que
     real da criança vivia dentro de UMA experiência, e nenhuma das outras o
     enxergava.
   \item Não existia \textbf{enturmamento}. O vínculo era a coluna
-    \cd{users.turma\_id}: um aluno cabia em uma turma só, o PROFESSOR não tinha
+    \cd{users.turma\_id}: um estudante cabia em uma turma só, o PROFESSOR não tinha
     turma nenhuma --- e por isso todo professor enxergava todas as turmas da
     escola --- e não havia ano letivo. Em fevereiro o 8A vira 9A e todo o
     acumulado do ano anterior passaria a ser lido pela turma nova, em silêncio.
   \item A entrada de pessoas fazia \emph{upsert} por \cd{usuario} e exigia
     \textbf{senha em texto claro no arquivo}. Corrigir um login criava um segundo
-    aluno, com o histórico preso no primeiro.
+    estudante, com o histórico preso no primeiro.
 \end{enumerate}
 \end{especificacao}
 
@@ -1038,9 +1038,9 @@ falta}, em vez de criar meia entidade. Quatro decisões dentro dessa leitura:
     menores por trás de um clique.
   \item Na 1.2 o papel saiu de \cd{users.csv} e foi para \cd{roles.csv}. A
     coluna \cd{role} é aceita quando vem (provedores seguem emitindo a da 1.1);
-    sem ela, a pessoa nasce como \textbf{aluno} --- o menor privilégio --- e o
+    sem ela, a pessoa nasce como \textbf{estudante} --- o menor privilégio --- e o
     relatório diz quantas linhas dependem do \cd{roles.csv}. Falhar fechado: um
-    professor que entra como aluno perde acesso e reclama; um aluno que entrasse
+    professor que entra como estudante perde acesso e reclama; um estudante que entrasse
     como professor leria a turma inteira.
   \item A coluna \cd{password}, que o padrão permite, é \textbf{ignorada}
     (\adrr{ADR-29}) --- e a contagem de linhas que a traziam vai ao relatório,
@@ -1068,7 +1068,7 @@ e-mail, WhatsApp e \emph{pen drive}, e que fica no computador da secretaria.
 
 \textbf{Decisão.} A planilha \textbf{não tem coluna de senha}. A senha inicial é
 escolhida na tela de importação, em dois modos: uma para o lote inteiro, ou uma
-por pessoa (recomendado para alunos). Quem nasce da importação recebe
+por pessoa (recomendado para estudantes). Quem nasce da importação recebe
 \cd{senha\_provisoria = true}, e o primeiro acesso cai em \rota{/trocar-senha}
 sem saída. Reimportar \textbf{não} redefine a senha de quem já entrou.
 
@@ -1079,7 +1079,7 @@ sem saída. Reimportar \textbf{não} redefine a senha de quem já entrou.
   \item \emph{Delegar tudo ao WSO2 agora}: o piloto precisa de contas antes do
     provedor de identidade existir, e a plataforma continuaria sem caminho para a
     escola sem federação.
-  \item \emph{Link mágico por e-mail}: a maioria dos alunos da rede pública não
+  \item \emph{Link mágico por e-mail}: a maioria dos estudantes da rede pública não
     tem e-mail institucional em uso, e a plataforma não envia e-mail hoje.
 \end{itemize}
 
@@ -1096,7 +1096,7 @@ sem saída. Reimportar \textbf{não} redefine a senha de quem já entrou.
     ficam em coluna nem em \emph{log}; depois disso o caminho é o reajuste de
     senha pelo gestor, que remarca a conta como provisória.
   \item \emph{Ruim, e dito na própria tela}: com uma senha só para o lote,
-    qualquer aluno entra na conta de outro até o primeiro acesso dele. Por isso o
+    qualquer estudante entra na conta de outro até o primeiro acesso dele. Por isso o
     modo \enquote{uma por pessoa} existe e é o recomendado para turma grande.
   \item O \emph{seed} de desenvolvimento nasce com \cd{senha\_provisoria = false}:
     prender os usuários de demonstração na troca pararia os seis
@@ -1130,7 +1130,7 @@ continua literalmente verdadeira. O que entra é a camada \emph{acima}:
   \item \cd{lotacoes} --- o vínculo PESSOA $\times$ ESCOLA, datado.
     \enquote{Lotação} é o termo que a rede pública usa para a alocação de um
     servidor a uma unidade. Professor e gestor \textbf{acumulam}: lotação nova não
-    encerra a anterior. Aluno tem \textbf{uma ativa}, garantida por índice único
+    encerra a anterior. Estudante tem \textbf{uma ativa}, garantida por índice único
     parcial no banco.
   \item \textbf{Escola ativa na sessão.} Quem tem mais de uma escolhe no
     cabeçalho; a troca passa pelo servidor (\rota{POST /api/escola-ativa}), que
@@ -1254,17 +1254,17 @@ ser onde a chave de cifra mora, não se o número existe.
 \label{adr:transferencia}
 
 \begin{especificacao}{Contexto}
-\enquote{Os dados do aluno seguem o aluno, independente da escola} é requisito de
+\enquote{Os dados do estudante seguem o estudante, independente da escola} é requisito de
 produto. E colide de frente com a regra inviolável nº 1: tudo o que a criança
 produziu tem \cd{escola\_id} da escola onde produziu, com RLS por cima. Depois de
 uma transferência, a escola nova não alcança nada disso --- e a antiga continua
 alcançando tudo.
 \end{especificacao}
 
-\textbf{Decisão.} O \textbf{dado fica onde foi produzido}; o que segue o aluno é a
+\textbf{Decisão.} O \textbf{dado fica onde foi produzido}; o que segue o estudante é a
 \textbf{identidade}. A transferência encerra a lotação e as matrículas na origem,
 abre na destino e move o \emph{cache} \cd{users.escola\_id} --- e mais nada. Para
-a leitura atravessada existe \textbf{uma} porta: \rota{GET /alunos/:id/historico},
+a leitura atravessada existe \textbf{uma} porta: \rota{GET /estudantes/:id/historico},
 que devolve \textbf{participações} (em que escola, em que turma, em que missão,
 quando), nunca o conteúdo dos instrumentos.
 
@@ -1274,7 +1274,7 @@ quando), nunca o conteúdo dos instrumentos.
     de onde o fato veio. \enquote{Esta criança respondeu isso na escola A, em
     2026} deixaria de ser recuperável, e um \emph{UPDATE} em massa por
     transferência é a operação mais fácil de deixar pela metade.
-  \item \emph{Afrouxar a RLS para o \cd{aluno\_id} atravessar}: transformaria a
+  \item \emph{Afrouxar a RLS para o \cd{estudante\_id} atravessar}: transformaria a
     exceção numa regra geral. A porta única é auditável; uma política mais larga
     não é.
   \item \emph{O histórico devolver o instrumento completo}: abriria, por uma tela
@@ -1286,7 +1286,7 @@ quando), nunca o conteúdo dos instrumentos.
 \textbf{Consequências.}
 \begin{itemize}
   \item O \cd{historico} só abre para quem tem \textbf{lotação na escola onde o
-    aluno está hoje} --- é a unidade responsável por ele --- ou para
+    estudante está hoje} --- é a unidade responsável por ele --- ou para
     \cd{admin-contrato}.
   \item A transferência é a única operação que troca o \cd{app.escola\_id}
     \textbf{no meio de uma transação}: ela encerra na origem e abre no destino, e
@@ -1404,7 +1404,7 @@ nela.
 
 \textbf{Decisão.} O nível regional passa a ser \textbf{real e lido}, com um
 vocabulário fechado de três valores em \cd{escolas.tipo} --- \cd{escola} (a
-unidade, onde há turma, aluno e dado), \cd{regional} (o que agrupa unidades) e
+unidade, onde há turma, estudante e dado), \cd{regional} (o que agrupa unidades) e
 \cd{rede} (a raiz). \cd{pai\_id} liga unidade a regional, e um \emph{trigger} no
 banco recusa \cd{pai\_id} apontando para uma \cd{escola} ou para si mesma.
 
@@ -1442,10 +1442,10 @@ admin do contrato confirma antes de conceder.
     \cd{escola\_id} não foram tocadas. O nível regional inteiro vive acima delas.
   \item A regional \textbf{não recebe lotação}: \cd{lotarEmLote} ignora o que não
     for \cd{tipo = 'escola'} e devolve a lista de ignoradas. Lotar alguém numa
-    regional daria uma escola sem turma nem aluno no seletor do cabeçalho.
+    regional daria uma escola sem turma nem estudante no seletor do cabeçalho.
   \item O panorama (\rota{GET /escolas/minhas/resumo}, tela
     \cd{/admin/minhas-escolas}) \textbf{lista, não soma}: uma linha por unidade,
-    com turmas, alunos e quantos ainda não fizeram o primeiro acesso. Somar as
+    com turmas, estudantes e quantos ainda não fizeram o primeiro acesso. Somar as
     escolas numa métrica só seria a tela que a decisão acima recusa.
   \item O \cd{orgs.csv} do OneRoster passa a criar regionais a partir de
     \cd{district}/\cd{local} e a ligar unidades por \cd{parentSourcedId}. Pai
@@ -1504,7 +1504,7 @@ Quatro decisões dentro dessa:
     coisas diferentes e a tela diz qual foi. Não conseguir falar com o emissor é
     limitação de rede; assinatura que não confere é adulteração, e essa não entra.
   \item \textbf{O documento se liga a alguém que já está aqui.} Importar não cria
-    aluno: a matrícula é ato da escola (planilha ou OneRoster), e só depois o
+    estudante: a matrícula é ato da escola (planilha ou OneRoster), e só depois o
     perfil se anexa --- pelo CPF, que é a única chave que significa alguma coisa
     numa base onde nenhum id da origem existe.
 \end{itemize}
@@ -1567,7 +1567,7 @@ Quatro decisões dentro dessa:
     Documento FORJADO entraria marcado \enquote{não deu para conferir} em vez de
     recusado. Hoje a classificação é pelo \cd{code} da biblioteca.
   \item \emph{Ruim}: reemitir gera outro documento, e a escola de destino pode
-    acabar com dois do mesmo aluno. A lista mostra data \emph{e hora} e permite
+    acabar com dois do mesmo estudante. A lista mostra data \emph{e hora} e permite
     apagar; unificar por conteúdo esconderia que foram duas emissões.
 \end{itemize}
 
@@ -1943,7 +1943,7 @@ pessoa à área certa sem o \emph{client} conhecer o papel.
 \cd{(publico)} com \emph{layout} próprio, e os \emph{links} do rodapé deixam de
 ser \cd{\#}.
 
-\section{ADR-41 --- O relatório do aluno sai do aparelho: o iframe expande, não remonta}
+\section{ADR-41 --- O relatório do estudante sai do aparelho: o iframe expande, não remonta}
 \label{adr:relatorio-expandido}
 
 \begin{especificacao}{Contexto}
@@ -1955,7 +1955,7 @@ tinham consumidor de tela; a ``escalada'' virara uma frase por falta de espaço.
 
 Ela acontece DEPOIS da revelação, e nesse ponto não há mais disfarce a proteger:
 a regra da ponte (\arq{packages/ui/src/ds.ts}) já autorizava o DS da plataforma
-nas ``telas pós-revelação do aluno''.
+nas ``telas pós-revelação do estudante''.
 \end{especificacao}
 
 \textbf{Decisão.} No passo do relatório, a experiência publica
@@ -1968,12 +1968,12 @@ a fronteira, e não estava comprimida.
 \textbf{Alternativas descartadas.}
 \begin{itemize}
   \item \emph{Um \cd{Modal size="full"} do hub buscando \rota{/runs/:id/dossie}}:
-    o BFF já permitiria (a rota autoriza o aluno a ler o próprio) e havia
-    precedente em \arq{modal-aluno.tsx}. Descartado porque duplicaria a
+    o BFF já permitiria (a rota autoriza o estudante a ler o próprio) e havia
+    precedente em \arq{modal-estudante.tsx}. Descartado porque duplicaria a
     renderização do relatório em dois apps --- ou obrigaria a experiência a
     perder os \emph{exports} em texto e PNG, que são dela.
-  \item \emph{Uma rota própria do hub} (\rota{/aluno/relatorio/:runId}): tira o
-    aluno do aparelho no meio de uma aula conduzida por botão.
+  \item \emph{Uma rota própria do hub} (\rota{/estudante/relatorio/:runId}): tira o
+    estudante do aparelho no meio de uma aula conduzida por botão.
   \item \emph{\cd{requestFullscreen()} de dentro do \emph{iframe}}: o
     \cd{allow="\ldots fullscreen"} já está delegado a todas as experiências e
     ninguém usa. O hub perderia o controle da moldura, e a largura lógica
@@ -1984,14 +1984,14 @@ a fronteira, e não estava comprimida.
 \begin{itemize}
   \item \textbf{Expandir é ESTILO, nunca árvore.} Tirar o \cd{children} do
     \cd{DispositivoFrame} para renderizá-lo fora desmontaria o \cd{<iframe>} e
-    o aluno voltaria à revelação com a sessão recarregada. É por isso que o
+    o estudante voltaria à revelação com a sessão recarregada. É por isso que o
     modo é uma \emph{prop}, e não um \cd{if} trocando o \emph{wrapper}.
   \item \textbf{A condição é POSITIVA, e o \emph{default} é contraído.}
     Qualquer outro estado --- inclusive mensagem perdida --- cai no aparelho de
     375px. O \cd{IntersectionObserver} do \emph{dwell} se refere ao
     \emph{iframe}: um FEED numa área larga inflaria o sinal central do motor.
   \item \textbf{O layout largo é \cd{md:}, o estreito é o \emph{default}.} Se a
-    expansão não acontecer, o aluno vê exatamente o que via.
+    expansão não acontecer, o estudante vê exatamente o que via.
   \item \textbf{Nenhuma mensagem hub$\rightarrow$exp para o layout}: o
     \emph{iframe} muda de largura de verdade, e as \emph{media queries} de
     dentro respondem sozinhas. Os dois gráficos a mais são renderizados e
@@ -2001,7 +2001,7 @@ a fronteira, e não estava comprimida.
     \emph{polling} de 5s vê a fase nova, a experiência publica
     \cd{\{ fase: "perdidos" \}} sem \cd{passo}, e o aparelho volta. Até 5s de
     atraso, que é a latência que a troca de tela já tinha.
-  \item \textbf{Paridade}: o relatório do professor (\arq{modal-aluno.tsx})
+  \item \textbf{Paridade}: o relatório do professor (\arq{modal-estudante.tsx})
     ganhou a seção \emph{``por que o feed dele começou desse lado''}, que ele
     não lia --- e é a frase que a criança acabou de ler.
 \end{itemize}
@@ -2016,19 +2016,19 @@ de \cd{protocolVersion}.
 \label{adr:exposicao}
 
 \begin{especificacao}{Contexto}
-Havia duas contas para a mesma frase. A tela do aluno (\rota{/runs/:id/perdidos})
+Havia duas contas para a mesma frase. A tela do estudante (\rota{/runs/:id/perdidos})
 decidia qual era ``o lado dele'' CONTANDO os posts servidos
 (\cd{consumo.A >= consumo.B}); o relatório do professor
 (\arq{dossie/computar.ts}) decidia pelo \cd{dominioDe()}, o \emph{score} do
 motor --- \emph{dwell}, sinais, escada de intensidade.
 
 Enquanto as duas apontam o mesmo lado, os números batem. Elas divergem
-exatamente quando o aluno VIRA O JOGO, porque virar o jogo \emph{é} a definição
+exatamente quando o estudante VIRA O JOGO, porque virar o jogo \emph{é} a definição
 de a atenção ter terminado do lado oposto ao que o feed empurrou. Ou seja: as
-duas telas se contradiziam justamente sobre os alunos que o professor mais quer
+duas telas se contradiziam justamente sobre os estudantes que o professor mais quer
 discutir.
 
-O caso está registrado numa auditoria de UX: sobre o MESMO aluno, o painel dizia
+O caso está registrado numa auditoria de UX: sobre o MESMO estudante, o painel dizia
 ``terminou dominante em Processo Lento e Gradual, virou o jogo'' e a tela dele
 dizia ``32 posts que nunca chegaram até você, todos de Processo Lento e
 Gradual''. Duas frases sobre a mesma criança, nomeando lados opostos. O
@@ -2044,7 +2044,7 @@ número é quantos aprovados do outro lado nunca foram servidos.
 ``virou o jogo''.
 
 \textbf{Alternativa descartada.} \emph{Padronizar no domínio.} É a leitura mais
-fiel ao que a atenção do aluno fez, mas ``o algoritmo escondeu'' é uma
+fiel ao que a atenção do estudante fez, mas ``o algoritmo escondeu'' é uma
 afirmação sobre o que o feed ENTREGOU: medir pelo domínio credita à máquina o
 resultado do comportamento da criança. E com \cd{dominio $\le$ 0{,}5} o
 resultado era \cd{indefinido}, que virava ``escondeu 0 posts''.
@@ -2063,7 +2063,7 @@ resultado era \cd{indefinido}, que virava ``escondeu 0 posts''.
     aparecer para ninguém, e culpar o algoritmo por uma decisão editorial do
     professor seria outra mentira pequena.
   \item A trava é \arq{apps/api/tests/exposicao-lado-oposto.spec.ts}, e o teste
-    do meio monta exatamente o aluno que virou o jogo.
+    do meio monta exatamente o estudante que virou o jogo.
 \end{itemize}
 
 \textbf{Gatilho de reavaliação.} Alguém precisar de ``o oposto do lado
@@ -2071,12 +2071,12 @@ dominante'' para outra tela: é uma terceira grandeza, e ela nasce com nome
 próprio --- nunca reaproveitando esta.
 
 
-\section{ADR-43 --- A resposta do aluno guarda a primeira e a última}
+\section{ADR-43 --- A resposta do estudante guarda a primeira e a última}
 \label{adr:conclusao-primeira}
 
 \begin{especificacao}{Contexto}
 A tela da resposta não tem botão de confirmar: tocar na pílula já registra, e o
-quadro diz ``pode trocar de ideia enquanto espera --- vale a última''. O aluno
+quadro diz ``pode trocar de ideia enquanto espera --- vale a última''. O estudante
 oscila de propósito enquanto os colegas terminam.
 
 O \cd{upsert} sobrescrevia \cd{inclinacao} e a primeira escolha desaparecia. O
@@ -2090,14 +2090,14 @@ colega.
 
 \textbf{Decisão.} Migração aditiva em \cd{exp\_01\_conclusoes}:
 \cd{inclinacao\_inicial} (gravada uma vez, nunca mais tocada), \cd{trocas} e
-\cd{atualizado\_em}. A correlação continua usando a ÚLTIMA --- é a que o aluno
+\cd{atualizado\_em}. A correlação continua usando a ÚLTIMA --- é a que o estudante
 assumiu e é a que ele vai defender no debate --- e a análise da turma passa a
 DIZER isso, com quantos mexeram na resposta e quantos terminaram noutro lado.
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
   \item \emph{Emitir evento de telemetria a cada toque}: o canal analítico tem
-    retenção indefinida e \cd{aluno\_id}; guardar a oscilação de opinião de uma
+    retenção indefinida e \cd{estudante\_id}; guardar a oscilação de opinião de uma
     criança num JSONB de eventos é mais dado do que a pergunta pede.
   \item \emph{Trocar a correlação para a primeira escolha}: seria decidir pelo
     professor qual das duas conta. A decisão é dele, e agora ele tem os dois
@@ -2140,8 +2140,8 @@ das sessões, então o teto real não é 100.
 \textbf{Decisão.} \cd{fimDoFeedDe(eventos)} --- o último \cd{visto}, que é o fim
 do feed por definição --- corta a janela em \cd{calcularTempo} E no desconto por
 perda de foco de \cd{calcularImersao}. E o total sai das duas listagens por
-aluno, ficando as cinco barras (com o eixo no \cd{title}); o número segue no
-popup do aluno, que é uma criança por vez, e nos agregados de turma. Um nome só:
+estudante, ficando as cinco barras (com o eixo no \cd{title}); o número segue no
+popup do estudante, que é uma criança por vez, e nos agregados de turma. Um nome só:
 \emph{Envolvimento}, que estava ``Imersão'' em quatro telas e ``Envolvimento''
 numa.
 
@@ -2163,7 +2163,7 @@ está congelado. Um teste do \arq{dossie-relatorio.spec.ts} precisou de um
 \cd{visto} para delimitar o feed: ele montava trinta \cd{perdeu\_foco} e nenhum
 post visto, ou seja, descrevia perdas de foco fora de qualquer feed --- uma
 distinção que antes não existia. O professor perde a leitura de um número por
-aluno na tabela; ganha o padrão dos cinco eixos, que é o que a conversa com ele
+estudante na tabela; ganha o padrão dos cinco eixos, que é o que a conversa com ele
 usa.
 
 \textbf{Gatilho de reavaliação.} Dados de turmas reais mostrarem que
@@ -2244,7 +2244,7 @@ O \emph{bundle} da experiência é público por construção (ADR-01: ele mora n
 \arq{https://cdn/exp-01/1.0.0/index.html?hubOrigin=https://evil.tld} dentro de
 um \emph{iframe} próprio escrevia, com aquele parâmetro, a política de confiança
 da experiência: passava a poder entregar um \cd{hub:init} forjado --- com
-\cd{aluno}, \cd{apiUrl} e \cd{token} escolhidos por ele --- e a receber
+\cd{estudante}, \cd{apiUrl} e \cd{token} escolhidos por ele --- e a receber
 \textbf{tudo} o que a experiência emitisse depois (\cd{exp:concluir},
 \cd{exp:estado}). O Snyk classificou como \emph{code injection} no ponto em que
 o parâmetro entra; a leitura é discutível, o caminho não.
@@ -2411,7 +2411,7 @@ O teto do corpo era \SI{10}{\mega\byte}, dimensionado para a planilha de UMA
 escola, e o \cd{MAX\_LINHAS} de 50 mil, que existe do lado da planilha, não vale
 para o caminho OneRoster. Medido com o formato real do padrão
 (\textasciitilde\SI{130}{\byte} por linha de \arq{enrollments.csv}), o pior
-caso realista de UM contrato --- \textasciitilde10 mil alunos, cinco
+caso realista de UM contrato --- \textasciitilde10 mil estudantes, cinco
 componentes cada --- dá \textasciitilde\SI{7}{\mega\byte}. Os
 \SI{10}{\mega\byte} apertavam exatamente ali.
 
@@ -2527,13 +2527,13 @@ função que monta o painel de perfis se chama \cd{distribuicaoDaTurma}.
 
 Ao investigar por que a importação dos perfis da Vila do Lume
 (\cd{POST /atividades/:id/perfis/da-vila}) varria a escola, apareceu uma coisa
-pior: aquela função rodava \cd{user.findMany(\{ where: \{ role: 'aluno' \} \})}
+pior: aquela função rodava \cd{user.findMany(\{ where: \{ role: 'estudante' \} \})}
 --- \textbf{sem \cd{escola\_id}}. E \cd{users} está FORA da RLS: a lista de
 tabelas com política em \arq{20260824145301\_init} não a inclui, e o
 \cd{comTenancy} apenas arma \cd{app.escola\_id} para o Postgres, sem tocar no
 \cd{where} do Prisma. O painel do professor listava nome e login de crianças de
 TODAS as escolas do contrato, e \cd{contagem}, \cd{desequilibrio} e
-\cd{precisaRedistribuir} --- que decidem quantos alunos o botão
+\cd{precisaRedistribuir} --- que decidem quantos estudantes o botão
 ``Redistribuir a turma'' move --- eram calculados sobre esse universo.
 
 O \cd{DaVilaSchema} já aceitava \cd{turmaId} opcional desde que a rota nasceu, e
@@ -2549,7 +2549,7 @@ jogaram'' sobre crianças de salas que o professor não tem.
     e aqui a RLS nem existia como rede.
   \item \textbf{\cd{exp\_01\_activities.turma\_id}}, ANULÁVEL e sem
     \emph{backfill} (\arq{20260830090000\_atividade\_por\_turma}). Com turma, o
-    painel, a listagem de perfis, a importação da Vila e a entrada do aluno em
+    painel, a listagem de perfis, a importação da Vila e a entrada do estudante em
     \cd{POST /runs} falam todos da MESMA sala. Sem turma --- que é o caso de toda
     atividade anterior à migração --- vale a escola inteira, o comportamento de
     antes. A turma é conferida contra a MATRÍCULA do professor
@@ -2560,7 +2560,7 @@ jogaram'' sobre crianças de salas que o professor não tem.
 \begin{itemize}
   \item \emph{Só um seletor de turma na tela, sem coluna}: o professor
     escolheria a sala a cada visita e nada registraria para qual turma a
-    atividade foi feita. Pior: \cd{POST /runs} não teria como saber, e o aluno do
+    atividade foi feita. Pior: \cd{POST /runs} não teria como saber, e o estudante do
     8B continuaria entrando na atividade do 8A.
   \item \emph{\cd{turma\_id} NOT NULL, com \emph{backfill}}: escolher uma turma
     para as atividades que já existem afirmaria uma decisão que nenhum professor

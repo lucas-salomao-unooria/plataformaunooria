@@ -31,7 +31,7 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \cd{--unooria-*}, classe \cd{.unooria-theme-light|dark} &
   Hub: \emph{landing} (\rota{/}), \emph{login}, \rota{/professor},
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
-  \textbf{pós-revelação} do aluno\\
+  \textbf{pós-revelação} do estudante\\
 \zebra \cd{instanooria} (21) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
   exp-01\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
@@ -48,7 +48,7 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
 \end{tabularx}
 
 \begin{nota}[title={NOTA --- ``pós-revelação'' virou uma tela de verdade}]
-Por muito tempo a linha ``telas pós-revelação do aluno'' descrevia um único
+Por muito tempo a linha ``telas pós-revelação do estudante'' descrevia um único
 componente: o \cd{DonutChart} do relatório, num \emph{chunk} tardio. O resto do
 relatório era Tailwind do clone sobre \cd{bg-night}.
 
@@ -85,7 +85,7 @@ uma aproximação, e a experiência mede reconhecimento.
   \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (play) at (2.4,-2.4)
     {\emph{playlists}};
   \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (canal) at (6.0,-2.4)
-    {canal do aluno};
+    {canal do estudante};
   \node[c4component, text width=26mm, fill=unooPaper, draw=unooAxis] (toast) at (4.2,-3.9)
     {\emph{toast}: \enquote{Vídeo salvo!}};
   \node[cxlabel, anchor=north] at (4.2,0.55) {\texttt{@edu/ui/ds-unootube} --- seção do CLONE};
@@ -101,7 +101,7 @@ uma aproximação, e a experiência mede reconhecimento.
   \node[cxlabel, anchor=north] at (12.3,0.55) {\texttt{@edu/ui/ds} --- seção da PLATAFORMA};
 
   \node[actnote, text width=52mm, anchor=north west] at (0.5,-5.4)
-    {\textbf{A linha é a revelação, não o arquivo.} Enquanto o aluno acha que
+    {\textbf{A linha é a revelação, não o arquivo.} Enquanto o estudante acha que
      está num aplicativo de vídeo, tudo é clone. Da virada da missão em diante ele
      está de volta na Unooria, e a linguagem institucional é \emph{parte do que se
      ensina}. Um \texttt{Button} da plataforma no \emph{feed} quebra a ilusão que
@@ -249,9 +249,9 @@ Clone (\cd{unitube}) & Lê \cd{data-uni-theme} na raiz do documento.\\
 
 \begin{atencao}
 Quem troca o tema escreve nos \textbf{dois} (\arq{exp-02/src/lib/tema.ts}),
-senão o aluno escolhe escuro no \emph{feed} e o ranking volta branco --- porque
+senão o estudante escolhe escuro no \emph{feed} e o ranking volta branco --- porque
 o ranking é da seção da plataforma, que não lê o atributo da raiz. Na exp-02 a
-escolha é do aluno (Perfil \seta{} APARÊNCIA) e é lembrada em
+escolha é do estudante (Perfil \seta{} APARÊNCIA) e é lembrada em
 \cd{localStorage}, que a regra 4 proíbe para \emph{token}, não para preferência
 de tela.
 \end{atencao}
@@ -294,7 +294,7 @@ apareceram na 1.1.0 da experiência e estão registradas logo depois.
 \cd{unitube} não publica \emph{toast}, diálogo, tabela nem estado vazio &
   Quatro compensações locais na exp-02.\\
 \zebra \cd{ChannelHeader} não tem \cd{showSubscribe} & O botão de inscrever-se é
-  \emph{sempre} desenhado, e o canal da exp-02 é o do \textbf{próprio aluno}.\\
+  \emph{sempre} desenhado, e o canal da exp-02 é o do \textbf{próprio estudante}.\\
 \cd{.uni-channel-header\_\_cover} usa a primitiva
   \cd{--uni-color-neutral-50}, não um token semântico & No escuro vira uma laje
   branca.\\
@@ -364,7 +364,7 @@ igual, quem ganha é sempre o pacote.
 A cor das superfícies da plataforma vem de classes escritas à mão em
 \arq{packages/ui/styles/plataforma.css}, e o tema do Tailwind está
 \textbf{vazio} (\cd{theme.extend: \{\}}) --- de propósito, para que nada da
-marca institucional vaze para a superfície do aluno, nem por nome de classe.
+marca institucional vaze para a superfície do estudante, nem por nome de classe.
 
 A consequência é uma armadilha real: \textbf{classe de cor que não existe ali não
 é erro em lugar nenhum}. Em texto, ela herda a cor e passa desapercebida; em
@@ -395,5 +395,5 @@ não elementos: sem o \emph{reset}, todo \cd{<a>} volta a ser sublinhado e todo
 é jogo em \emph{canvas} 3D, sem DOM de interface (\adrr{ADR-18}). A pendência da
 exp-02 --- que tinha CSS próprio em \arq{src/estilos} --- foi
 \textbf{resolvida}: ela consome a seção \cd{unitube} pela ponte
-\cd{@edu/ui/ds-unootube}, com a aparência escolhida pelo aluno.
+\cd{@edu/ui/ds-unootube}, com a aparência escolhida pelo estudante.
 \end{decisao}

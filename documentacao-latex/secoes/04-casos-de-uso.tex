@@ -15,7 +15,7 @@ requisitos está na Seção~\ref{sec:uc-rastreio}.
 \toprule
 \headrow \thd{Ator} & \thd{Tipo} & \thd{Descrição}\\
 \midrule
-Aluno & Primário & Estudante da rede. Escolhe a missão no hub próprio e entra na
+Estudante & Primário & Estudante da rede. Escolhe a missão no hub próprio e entra na
   experiência. É titular de dado de menor.\\
 \zebra Professor & Primário & Prepara e conduz a aula, lê a turma, gera plano de
   aula e faz o próprio \emph{check-in} de bem-estar.\\
@@ -45,7 +45,7 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
     {Plataforma Unooria};
 
   % ---- atores primarios (esquerda)
-  \ator{aluno}{(1.4,-2.4)}{Aluno}
+  \ator{estudante}{(1.4,-2.4)}{Estudante}
   \ator{prof}{(1.4,-7.4)}{Professor}
   \ator{gestor}{(1.4,-12.4)}{Gestor escolar}
   \ator{admin}{(1.4,-15.6)}{Admin do contrato}
@@ -56,7 +56,7 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   \atorsys{pubsub}{(15.3,-11.0)}{Pub/Sub}
   \atorsys{ci}{(15.3,-15.6)}{CI/CD}
 
-  % ---- casos de uso: aluno
+  % ---- casos de uso: estudante
   \node[ucase] (uc01) at (6.2,-1.1)  {\ucr{UC-01} Autenticar-se};
   \node[ucase] (uc02) at (6.2,-2.6)  {\ucr{UC-02} Escolher missão no hub};
   \node[ucase] (uc03) at (6.2,-4.1)  {\ucr{UC-03} Realizar experiência};
@@ -80,11 +80,11 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   \node[ucase] (uc23) at (10.6,-15.7) {\ucr{UC-23} Publicar manifesto};
   \node[ucasesec] (uc24) at (6.2,-16.0) {\ucr{UC-24} Reverter versão};
 
-  % ---- relacoes: aluno
-  \draw[ucrel] (aluno) -- (uc01);
-  \draw[ucrel] (aluno) -- (uc02);
-  \draw[ucrel] (aluno) -- (uc03);
-  \draw[ucrel] (aluno) -- (uc06);
+  % ---- relacoes: estudante
+  \draw[ucrel] (estudante) -- (uc01);
+  \draw[ucrel] (estudante) -- (uc02);
+  \draw[ucrel] (estudante) -- (uc03);
+  \draw[ucrel] (estudante) -- (uc06);
 
   % ---- relacoes: professor
   \draw[ucrel] (prof) -- (uc10);
@@ -151,7 +151,7 @@ Pub/Sub & Secundário & Transporte durável do canal analítico de telemetria.\\
   \item O hub valida a credencial e cria a sessão, com \cd{papel},
     \cd{escolaId}, \cd{turmaId} e \cd{serie}.
   \item O \emph{middleware} redireciona para a \emph{home} do papel:
-    \rota{/aluno}, \rota{/professor} ou \rota{/admin/usuarios}.
+    \rota{/estudante}, \rota{/professor} ou \rota{/admin/usuarios}.
 \end{enumerate}
 
 \textbf{Fluxo do PRIMEIRO acesso.} Se a senha veio de uma importação ou de um
@@ -167,7 +167,7 @@ nova, porque o \emph{cookie} antigo ainda diz que falta trocar (\adrr{ADR-29}).
     mensagem; nenhuma sessão é criada.
   \item \textbf{A2 --- usuário já autenticado acessa área de outro papel:}
     redirecionado para a \emph{home} do próprio papel. \emph{Não} recebe 403 ---
-    um aluno que digita \rota{/professor} volta ao lugar dele sem mensagem de
+    um estudante que digita \rota{/professor} volta ao lugar dele sem mensagem de
     erro, o que é decisão de produto, não descuido de segurança (a autorização
     real é verificada de novo na API).
   \item \textbf{A3 --- WSO2 como emissor:} o passo 2 passa a ser um
@@ -180,7 +180,7 @@ Este é o caso de uso central da plataforma e o que mais determina a arquitetura
 
 \begin{especificacao}{\ucr{UC-03} Realizar experiência}
 \begin{tabularx}{\linewidth}{@{}L{28mm}X@{}}
-\textbf{Ator primário} & Aluno (ou Professor, nas ferramentas de professor)\\
+\textbf{Ator primário} & Estudante (ou Professor, nas ferramentas de professor)\\
 \textbf{Pré-condição} & Sessão válida; experiência disponível para o papel\\
 \textbf{Pós-condição} & Progresso e telemetria registrados; conclusão notificada
   ao hub\\
@@ -192,7 +192,7 @@ Este é o caso de uso central da plataforma e o que mais determina a arquitetura
 
 \textbf{Fluxo principal}
 \begin{enumerate}
-  \item O aluno escolhe a missão em \rota{/aluno} e o hub navega para
+  \item O estudante escolhe a missão em \rota{/estudante} e o hub navega para
     \rota{/exp/\{expId\}}.
   \item O hub monta o \emph{embed}: assina o \emph{token} de experiência
     (RS256, 15 min), consulta o manifesto e resolve a URL versionada do
@@ -200,7 +200,7 @@ Este é o caso de uso central da plataforma e o que mais determina a arquitetura
   \item Se o manifesto declara \cd{viewport}, o hub desenha a casca de aparelho
     em volta do \cd{iframe}.
   \item O \emph{bundle} carrega, a SDK emite \cd{exp:ready} e o hub responde
-    \cd{hub:init} com \emph{token}, dados do aluno, \cd{apiUrl} e \cd{config}.
+    \cd{hub:init} com \emph{token}, dados do estudante, \cd{apiUrl} e \cd{config}.
   \item A experiência opera: chama rotas de domínio da API, registra telemetria
     em lote e salva progresso.
   \item Ao terminar, emite \cd{exp:concluir}; o hub registra progresso e libera
@@ -222,7 +222,7 @@ Este é o caso de uso central da plataforma e o que mais determina a arquitetura
   \item \textbf{A4 --- página do hub perde foco:} o hub emite \cd{hub:pause}; a
     experiência congela cronômetros. Ao voltar, \cd{hub:resume}.
   \item \textbf{A5 --- experiência de professor acessada por \rota{/exp/*}:}
-    a rota responde 404. Ferramenta de professor não é missão de aluno.
+    a rota responde 404. Ferramenta de professor não é missão de estudante.
 \end{itemize}
 
 \begin{atencao}
@@ -423,7 +423,7 @@ que não subiu.
 
 \textbf{\ucr{UC-24} --- Reverter versão:} o mesmo \emph{script} com
 \cd{--versao <anterior>}. Não há \emph{build}, não há imagem, não há
-\emph{deploy}: é um \cd{UPDATE} de \cd{versao\_ativa}, e o próximo aluno que
+\emph{deploy}: é um \cd{UPDATE} de \cd{versao\_ativa}, e o próximo estudante que
 abrir a experiência recebe o \emph{bundle} anterior. É a operação de emergência
 mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
 
@@ -436,7 +436,7 @@ mais rápida da plataforma, e existe por desenho (\adrr{ADR-01}).
 \midrule
 \ucr{UC-01} & \rf{RF-01}, \rf{RF-02}, \rf{RF-05} & \rota{/login} &
   \arq{auth}\\
-\zebra \ucr{UC-02} & \rf{RF-10} & \rota{/aluno} & \arq{experiencias}\\
+\zebra \ucr{UC-02} & \rf{RF-10} & \rota{/estudante} & \arq{experiencias}\\
 \ucr{UC-03} & \rf{RF-12}--\rf{RF-17} & \rota{/exp/:expId} &
   \arq{motor}, \arq{unootube}, \arq{vila}, \arq{progress}\\
 \zebra \ucr{UC-04} & \rf{RF-20}--\rf{RF-25} & SDK & \arq{telemetry}\\

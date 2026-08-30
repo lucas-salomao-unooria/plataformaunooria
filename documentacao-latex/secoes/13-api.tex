@@ -85,7 +85,7 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   \node[c4component, text width=27mm] (ex) at (9.1,-0.4)
     {\rota{/experiencias}\desc{GET: qualquer; PUT: admin}};
   \node[c4component, text width=27mm] (pg) at (12.5,-0.4)
-    {\rota{/progresso/:expId}\desc{aluno}};
+    {\rota{/progresso/:expId}\desc{estudante}};
   \node[c4component, text width=27mm] (te) at (14.4,-1.9)
     {\rota{/telemetry/*}\desc{ver acima}};
   \node[c4component, text width=27mm] (us) at (2.3,-1.9)
@@ -109,19 +109,19 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
     {\rota{/atividades/*}\desc{professor}};
   \node[c4component, text width=27mm] (rn) at (5.7,-4.6)
-    {\rota{/runs/*}\desc{aluno (\cd{/eventos}: professor tb.)}};
+    {\rota{/runs/*}\desc{estudante (\cd{/eventos}: professor tb.)}};
   \node[c4component, text width=27mm] (po) at (9.1,-4.6)
-    {\rota{/posts/:id/comentarios}\desc{aluno}};
+    {\rota{/posts/:id/comentarios}\desc{estudante}};
   \node[c4component, text width=27mm] (pf) at (12.5,-4.6)
     {\rota{/perfis/importar}\desc{chave de serviço}};
 
   \node[camadalbl, anchor=west] at (0.3,-6.1) {Demais experiências};
   \node[c4component, text width=27mm] (ut) at (2.3,-7.3)
-    {\rota{/unootube/*}\desc{aluno}};
+    {\rota{/unootube/*}\desc{estudante}};
   \node[c4component, text width=27mm] (utt) at (5.7,-7.3)
     {\rota{/unootube/turmas/*}\desc{prof., gestor, admin}};
   \node[c4component, text width=27mm] (vi) at (9.1,-7.3)
-    {\rota{/vila/sessoes}\desc{aluno}};
+    {\rota{/vila/sessoes}\desc{estudante}};
   \node[c4component, text width=27mm] (vp) at (12.5,-7.3)
     {\rota{/vila/professor/*}\desc{\textbf{professor}}};
   \node[c4component, text width=27mm] (va) at (2.3,-8.8)
@@ -133,18 +133,18 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (be) at (12.5,-8.8)
     {\rota{/bemestar/*}\desc{\textbf{só professor}, posse}};
   \node[c4component, text width=27mm] (ug) at (2.3,-10.3)
-    {\texttt{/unoogpt/*}\desc{aluno}};
+    {\texttt{/unoogpt/*}\desc{estudante}};
   \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (ugp) at (5.7,-10.3)
     {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
   \node[c4component, text width=27mm] (uga) at (9.1,-10.3)
-    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{alunoId}}};
+    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
 
 \end{tikzpicture}}
 \caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
   áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não tem
-  nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do aluno só
+  nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do estudante só
   existe no controller do professor --- o do gestor \textbf{não tem uma rota que
-  aceite \texttt{alunoId}}, o que torna estrutural, e não disciplinar, o limite do
+  aceite \texttt{estudanteId}}, o que torna estrutural, e não disciplinar, o limite do
   que ele alcança (\adrr{ADR-27}). Em \rota{/turmas/*} a autorização do professor
   é por \textbf{matrícula}, não por escola: é a diferença entre \enquote{dá aula
   nesta turma} e \enquote{trabalha nesta escola} (\adrr{ADR-28}).}
@@ -158,7 +158,7 @@ oferece exatamente quatro capacidades.
 
 \begin{lstlisting}[language=tsunoo, caption={\cd{ExperienciaHandle} --- tudo que a experiência pode fazer}, label={lst:handle}]
 export interface ExperienciaHandle {
-  aluno: Aluno;
+  estudante: Estudante;
   config: Record<string, unknown>;
 
   /** Cliente HTTP autenticado. Sem retry fora do GET — repetir um POST
@@ -203,33 +203,33 @@ API genérica de avaliação convidaria a mandar a resposta certa junto.
 \subsection{Motor de \emph{feed} (exp-01)}
 
 O grupo com mais rotas da plataforma, todas escopadas por \cd{run} e todas de
-papel \cd{aluno}, com duas exceções marcadas.
+papel \cd{estudante}, com duas exceções marcadas.
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
 \headrow \thd{Rota} & \thd{Papel} & \thd{Semântica}\\
 \midrule
-\rota{POST /runs} & aluno & Cria ou recupera a sessão; resolve a largada
+\rota{POST /runs} & estudante & Cria ou recupera a sessão; resolve a largada
   (perfil, sorteio ou redistribuição).\\
-\zebra \rota{GET /runs/boot} & aluno & Estado inicial que a experiência precisa
+\zebra \rota{GET /runs/boot} & estudante & Estado inicial que a experiência precisa
   para montar a primeira tela.\\
-\rota{POST /runs/:id/entrar} & aluno & Nome no aplicativo e avatar escolhidos.\\
-\zebra \rota{GET /runs/:id/feed} & aluno & \textbf{Próximo bloco curado.} Abre
+\rota{POST /runs/:id/entrar} & estudante & Nome no aplicativo e avatar escolhidos.\\
+\zebra \rota{GET /runs/:id/feed} & estudante & \textbf{Próximo bloco curado.} Abre
   transação, toma o \emph{lock} da \cd{run}, aplica eventos pendentes, cura,
   persiste e sanitiza.\\
-\rota{POST /runs/:id/eventos} & \textbf{aluno, professor} & Canal operacional de
+\rota{POST /runs/:id/eventos} & \textbf{estudante, professor} & Canal operacional de
   telemetria (\emph{dwell}, curtidas, salvos). Síncrono e transacional.\\
-\zebra \rota{GET /runs/:id/fase} & aluno & Fase atual, para travar a tela conforme
+\zebra \rota{GET /runs/:id/fase} & estudante & Fase atual, para travar a tela conforme
   o relógio coletivo da turma.\\
-\rota{POST /runs/:id/conclusao} & aluno & Inclinação escolhida (A, B ou dúvida).\\
-\zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & aluno &
+\rota{POST /runs/:id/conclusao} & estudante & Inclinação escolhida (A, B ou dúvida).\\
+\zebra \rota{POST /runs/:id/reflexao}, \rota{GET .../reflexao} & estudante &
   Texto livre de fechamento, sem limite de caracteres.\\
-\rota{POST /runs/:id/student-post} & aluno & Post publicado pelo aluno.\\
-\zebra \rota{POST /runs/:id/reacoes} & aluno & Dispara reações de persona ao vivo
+\rota{POST /runs/:id/student-post} & estudante & Post publicado pelo estudante.\\
+\zebra \rota{POST /runs/:id/reacoes} & estudante & Dispara reações de persona ao vivo
   (se \cd{ia\_ao\_vivo}).\\
-\rota{GET /runs/:id/dossie} & \textbf{aluno, professor} & O dossiê de fechamento
+\rota{GET /runs/:id/dossie} & \textbf{estudante, professor} & O dossiê de fechamento
   --- a única rota do grupo que o professor também lê.\\
-\zebra \rota{GET /runs/:id/perdidos} & aluno & Os posts que o aluno \emph{não}
+\zebra \rota{GET /runs/:id/perdidos} & estudante & Os posts que o estudante \emph{não}
   viu. É a virada pedagógica da missão.\\
 \rota{POST /runs/:id/reset} & \textbf{professor} & Zera a sessão. Recalcula a
   largada pela \emph{mesma} regra do primeiro início.\\

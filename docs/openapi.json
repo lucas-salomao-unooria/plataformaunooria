@@ -49,7 +49,7 @@
                     "papel": {
                       "type": "string",
                       "enum": [
-                        "aluno",
+                        "estudante",
                         "professor",
                         "gestor",
                         "admin-contrato"
@@ -265,14 +265,14 @@
           "escolas"
         ],
         "summary": "As escolas de QUEM ESTÁ PEDINDO.",
-        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence.\n\nÉ com ela que o hub monta o seletor de escola do professor de duas unidades — e **valida a troca** antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\n\n**Papéis:** aluno, professor, gestor, admin-contrato.\n\n**Restrições:**\n- Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.\n- Professor e gestor ACUMULAM lotação; aluno tem UMA ativa, garantida por índice único parcial no banco.",
+        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence.\n\nÉ com ela que o hub monta o seletor de escola do professor de duas unidades — e **valida a troca** antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\n\n**Papéis:** estudante, professor, gestor, admin-contrato.\n\n**Restrições:**\n- Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.\n- Professor e gestor ACUMULAM lotação; aluno tem UMA ativa, garantida por índice único parcial no banco.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno",
+          "estudante",
           "professor",
           "gestor",
           "admin-contrato"
@@ -317,6 +317,10 @@
                       "regional": {
                         "type": "string",
                         "nullable": true
+                      },
+                      "estudantes": {
+                        "type": "integer",
+                        "minimum": 0
                       },
                       "alunos": {
                         "type": "integer",
@@ -456,6 +460,10 @@
                       "pai": {
                         "type": "string",
                         "nullable": true
+                      },
+                      "estudantes": {
+                        "type": "integer",
+                        "minimum": 0
                       },
                       "alunos": {
                         "type": "integer",
@@ -924,6 +932,7 @@
             "schema": {
               "type": "string",
               "enum": [
+                "estudante",
                 "aluno",
                 "professor",
                 "gestor"
@@ -1141,9 +1150,9 @@
         "x-acesso": "token"
       }
     },
-    "/alunos/{id}/transferir": {
+    "/estudantes/{id}/transferir": {
       "post": {
-        "operationId": "AlunosController_transferir",
+        "operationId": "EstudantesController_transferir",
         "parameters": [
           {
             "name": "id",
@@ -1189,10 +1198,10 @@
           }
         },
         "tags": [
-          "alunos"
+          "estudantes"
         ],
-        "summary": "Transfere o aluno entre escolas da rede.",
-        "description": "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `admin-contrato` pode mover para qualquer uma.\n\n**O dado que o aluno produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o aluno é a identidade (ADR-32).\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- É a única operação que troca o `app.escola_id` no MEIO de uma transação: sem isso o update na origem não veria linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.\n- `jaEstava: true` quando o destino já era a escola atual — nada foi movido.",
+        "summary": "Transfere o estudante entre escolas da rede.",
+        "description": "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `admin-contrato` pode mover para qualquer uma.\n\n**O dado que o estudante produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o estudante é a identidade (ADR-32).\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- É a única operação que troca o `app.escola_id` no MEIO de uma transação: sem isso o update na origem não veria linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.\n- `jaEstava: true` quando o destino já era a escola atual — nada foi movido.",
         "security": [
           {
             "token-da-plataforma": []
@@ -1229,9 +1238,9 @@
         }
       }
     },
-    "/alunos/{id}/historico": {
+    "/estudantes/{id}/historico": {
       "get": {
-        "operationId": "AlunosController_historico",
+        "operationId": "EstudantesController_historico",
         "parameters": [
           {
             "name": "id",
@@ -1251,6 +1260,32 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "usuario": {
+                          "type": "string"
+                        },
+                        "cpf": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "usuario",
+                        "cpf"
+                      ],
+                      "additionalProperties": false
+                    },
                     "aluno": {
                       "type": "object",
                       "properties": {
@@ -1385,7 +1420,6 @@
                     }
                   },
                   "required": [
-                    "aluno",
                     "escolas",
                     "turmas",
                     "participacoes"
@@ -1397,10 +1431,10 @@
           }
         },
         "tags": [
-          "alunos"
+          "estudantes"
         ],
-        "summary": "O histórico do aluno ATRAVESSANDO escolas.",
-        "description": "A única leitura fora de `admin-contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o aluno está HOJE**: é a unidade responsável por ele.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Devolve PARTICIPAÇÕES, **nunca o conteúdo dos instrumentos**: o retrato de valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem tem a posse pedagógica na escola onde aquilo aconteceu.\n- A escola de HOJE é a PRIMEIRA da lista `escolas` — a tela imprime nessa ordem, e a primeira linha é a que o adulto lê como \"a escola dela\".",
+        "summary": "O histórico do estudante ATRAVESSANDO escolas.",
+        "description": "A única leitura fora de `admin-contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o estudante está HOJE**: é a unidade responsável por ele.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Devolve PARTICIPAÇÕES, **nunca o conteúdo dos instrumentos**: o retrato de valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem tem a posse pedagógica na escola onde aquilo aconteceu.\n- A escola de HOJE é a PRIMEIRA da lista `escolas` — a tela imprime nessa ordem, e a primeira linha é a que o adulto lê como \"a escola dela\".",
         "security": [
           {
             "token-da-plataforma": []
@@ -2155,6 +2189,10 @@
                         "type": "string",
                         "nullable": true
                       },
+                      "estudantes": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
                       "alunos": {
                         "type": "integer",
                         "minimum": 0
@@ -2251,6 +2289,10 @@
                       "periodo": {
                         "type": "string",
                         "nullable": true
+                      },
+                      "estudantes": {
+                        "type": "integer",
+                        "minimum": 0
                       },
                       "alunos": {
                         "type": "integer",
@@ -2643,6 +2685,57 @@
                       ],
                       "additionalProperties": false
                     },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "matriculaId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "matricula": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ativo": {
+                            "type": "boolean"
+                          },
+                          "principal": {
+                            "type": "boolean"
+                          },
+                          "senhaProvisoria": {
+                            "type": "boolean"
+                          },
+                          "desde": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "matriculaId",
+                          "id",
+                          "nome",
+                          "usuario",
+                          "matricula",
+                          "ativo",
+                          "principal",
+                          "senhaProvisoria",
+                          "desde"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "alunos": {
                       "type": "array",
                       "items": {
@@ -2825,7 +2918,7 @@
           "turmas"
         ],
         "summary": "Matricula uma pessoa na turma.",
-        "description": "`papel` só admite `aluno` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "`papel` só admite `estudante` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.\n\n**Papéis:** gestor, admin-contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -2850,6 +2943,7 @@
                   "papel": {
                     "type": "string",
                     "enum": [
+                      "estudante",
                       "aluno",
                       "professor"
                     ]
@@ -2916,7 +3010,7 @@
           "matriculas"
         ],
         "summary": "Move de turma, ou torna esta a turma de referência.",
-        "description": "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o aluno fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Informe `turmaDestinoId` OU `principal`, nunca os dois nem nenhum — é um `.refine()`, que o JSON Schema não sabe expressar.",
+        "description": "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o estudante fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Informe `turmaDestinoId` OU `principal`, nunca os dois nem nenhum — é um `.refine()`, que o JSON Schema não sabe expressar.",
         "security": [
           {
             "token-da-plataforma": []
@@ -3346,7 +3440,7 @@
           "telemetry"
         ],
         "summary": "Recebe um lote do canal ANALÍTICO da SDK.",
-        "description": "Publica no Pub/Sub, que entrega em `POST /telemetry/ingest`. É o canal analítico — **não** o operacional: `dwell` e o feed adaptativo do motor passam por `/runs/:id/eventos`, que é síncrono e ordenado.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `alunoId` e `escolaId` NÃO vêm do corpo: são acrescentados a partir do token. Aceitá-los do cliente deixaria um bundle gravar evento no nome de outra criança.\n- `recebidos` conta o que foi PUBLICADO, não o que foi gravado — a gravação acontece do outro lado do Pub/Sub.",
+        "description": "Publica no Pub/Sub, que entrega em `POST /telemetry/ingest`. É o canal analítico — **não** o operacional: `dwell` e o feed adaptativo do motor passam por `/runs/:id/eventos`, que é síncrono e ordenado.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `estudanteId` e `escolaId` NÃO vêm do corpo: são acrescentados a partir do token. Aceitá-los do cliente deixaria um bundle gravar evento no nome de outra criança.\n- `recebidos` conta o que foi PUBLICADO, não o que foi gravado — a gravação acontece do outro lado do Pub/Sub.",
         "security": [
           {
             "token-da-plataforma": []
@@ -3529,7 +3623,7 @@
           "telemetry"
         ],
         "summary": "Consome a push subscription do Pub/Sub e grava os eventos.",
-        "description": "Push, e não um worker próprio, é uma peça a menos para operar. Grava em `telemetria_eventos` (particionada por mês, schema `particoes`).\n\n**Acesso:** _push_ do Pub/Sub (ID token do Google). Com as variáveis ausentes a rota responde **401**, nunca aberta.\n\n**Restrições:**\n- `ON CONFLICT (event_id, ts) DO NOTHING`: o Pub/Sub entrega *at least once*, então reentrega é rotina, não exceção.\n- UM INSERT multi-linha por escola, não um por evento — no pico da manhã o laço custava ~800 INSERTs/s.\n- Sem `TELEMETRIA_PUSH_SA`/`TELEMETRIA_PUSH_AUDIENCE` a rota responde 401, nunca aberta: ela escreve dado de aluno.",
+        "description": "Push, e não um worker próprio, é uma peça a menos para operar. Grava em `telemetria_eventos` (particionada por mês, schema `particoes`).\n\n**Acesso:** _push_ do Pub/Sub (ID token do Google). Com as variáveis ausentes a rota responde **401**, nunca aberta.\n\n**Restrições:**\n- `ON CONFLICT (event_id, ts) DO NOTHING`: o Pub/Sub entrega *at least once*, então reentrega é rotina, não exceção.\n- UM INSERT multi-linha por escola, não um por evento — no pico da manhã o laço custava ~800 INSERTs/s.\n- Sem `TELEMETRIA_PUSH_SA`/`TELEMETRIA_PUSH_AUDIENCE` a rota responde 401, nunca aberta: ela escreve dado de estudante.",
         "security": [],
         "x-papeis": [],
         "x-acesso": "push",
@@ -3605,8 +3699,8 @@
         "tags": [
           "progresso"
         ],
-        "summary": "O progresso do aluno autenticado nesta experiência.",
-        "description": "Escopado por `escola_id` + `aluno_id` do token — nunca por parâmetro. O aluno da requisição é o único progresso que esta rota alcança.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `dados: null` = a criança ainda não começou; não é erro.",
+        "summary": "O progresso do estudante autenticado nesta experiência.",
+        "description": "Escopado por `escola_id` + `estudante_id` do token — nunca por parâmetro. O estudante da requisição é o único progresso que esta rota alcança.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `dados: null` = a criança ainda não começou; não é erro.",
         "security": [
           {
             "token-da-plataforma": []
@@ -3785,7 +3879,7 @@
           "ai"
         ],
         "summary": "Conversa com o tutor de IA da experiência.",
-        "description": "Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo `expId` e **nunca sai daqui** — segredo em bundle de experiência é regra 2.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ALUNO` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.\n- A série do aluno vai ao prompt a partir do TOKEN, não do corpo.",
+        "description": "Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo `expId` e **nunca sai daqui** — segredo em bundle de experiência é regra 2.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.\n- A série do estudante vai ao prompt a partir do TOKEN, não do corpo.",
         "security": [
           {
             "token-da-plataforma": []
@@ -3835,6 +3929,7 @@
             "schema": {
               "type": "string",
               "enum": [
+                "estudante",
                 "aluno",
                 "professor",
                 "gestor"
@@ -4308,7 +4403,7 @@
           "usuarios"
         ],
         "summary": "Edita nome, CPF, e-mail, papel ou situação da pessoa.",
-        "description": "Caminho de balcão: a planilha veio com o dígito trocado e a família traz o documento.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `cpf: \"\"` **APAGA** o campo — é o que se faz quando o número era de outra pessoa.\n- Sair da REDE é `ativo: false`, não DELETE: há dado de aluno pendurado em oito tabelas.",
+        "description": "Caminho de balcão: a planilha veio com o dígito trocado e a família traz o documento.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `cpf: \"\"` **APAGA** o campo — é o que se faz quando o número era de outra pessoa.\n- Sair da REDE é `ativo: false`, não DELETE: há dado de estudante pendurado em oito tabelas.",
         "security": [
           {
             "token-da-plataforma": []
@@ -4362,6 +4457,7 @@
                   "papel": {
                     "type": "string",
                     "enum": [
+                      "estudante",
                       "aluno",
                       "professor",
                       "gestor"
@@ -4442,7 +4538,7 @@
         "x-acesso": "token"
       }
     },
-    "/alunos/{id}/perfil-portatil": {
+    "/estudantes/{id}/perfil-portatil": {
       "get": {
         "operationId": "PortabilidadeController_emitir",
         "parameters": [
@@ -4796,10 +4892,10 @@
           }
         },
         "tags": [
-          "alunos"
+          "estudantes"
         ],
         "summary": "Monta o documento SEM assinatura, para o hub assinar.",
-        "description": "A api monta; **o hub assina**, porque é ele que tem a chave e publica o JWKS. Os campos `emissor` e `emitidoEm` são preenchidos na assinatura, e por isso não vêm daqui.\n\nTransferir é dentro do contrato; o perfil portátil é para FORA dele — a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto (ADR-35).\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Mesma tranca de `GET /alunos/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.\n- **Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\n- Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.\n- Sem `CONTRATO_ID` no hub, a emissão é **503**.",
+        "description": "A api monta; **o hub assina**, porque é ele que tem a chave e publica o JWKS. Os campos `emissor` e `emitidoEm` são preenchidos na assinatura, e por isso não vêm daqui.\n\nTransferir é dentro do contrato; o perfil portátil é para FORA dele — a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto (ADR-35).\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.\n- **Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\n- Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.\n- Sem `CONTRATO_ID` no hub, a emissão é **503**.",
         "security": [
           {
             "token-da-plataforma": []
@@ -4812,7 +4908,7 @@
         "x-acesso": "token"
       }
     },
-    "/alunos/{id}/perfis-recebidos": {
+    "/estudantes/{id}/perfis-recebidos": {
       "get": {
         "operationId": "PortabilidadeController_recebidos",
         "parameters": [
@@ -4911,7 +5007,7 @@
           }
         },
         "tags": [
-          "alunos"
+          "estudantes"
         ],
         "summary": "Os documentos que esta escola já recebeu sobre esta criança.",
         "description": "Contagens, não conteúdo: a tela diz o que veio sem despejar o documento inteiro.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- O que vem de fora vive SÓ em `perfis_portateis`: não vira matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de outra instalação.",
@@ -5166,7 +5262,7 @@
           "perfis-recebidos"
         ],
         "summary": "Recebe um documento de outra rede.",
-        "description": "Receber é **ato da escola de destino** — ninguém empurra perfil para dentro de uma rede; alguém de lá importa o arquivo, olhando para ele.\n\nA api verifica porque verificar é o passo que **não pode confiar em quem chama**.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **Assinatura inválida é RECUSA (400)** — isso é adulteração. Emissor inalcançável **não** é: entra marcado `nao-verificada`, e a tela sai em âmbar em vez de fingir que conferiu.\n- A classificação é pelo `code` da jose, NUNCA pelo texto: \"signature verification failed\" contém \"failed\", e uma versão anterior classificava documento FORJADO como \"não deu para conferir\".\n- `PORTABILIDADE_EMISSORES` é a decisão de confiança: o `emissor.hub` vem de dentro do arquivo, então o documento SELECIONA entre origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia = tudo entra `nao-verificada`.\n- **Importar não cria aluno**: liga pelo CPF a quem já está aqui. Matricular é ato da escola.",
+        "description": "Receber é **ato da escola de destino** — ninguém empurra perfil para dentro de uma rede; alguém de lá importa o arquivo, olhando para ele.\n\nA api verifica porque verificar é o passo que **não pode confiar em quem chama**.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **Assinatura inválida é RECUSA (400)** — isso é adulteração. Emissor inalcançável **não** é: entra marcado `nao-verificada`, e a tela sai em âmbar em vez de fingir que conferiu.\n- A classificação é pelo `code` da jose, NUNCA pelo texto: \"signature verification failed\" contém \"failed\", e uma versão anterior classificava documento FORJADO como \"não deu para conferir\".\n- `PORTABILIDADE_EMISSORES` é a decisão de confiança: o `emissor.hub` vem de dentro do arquivo, então o documento SELECIONA entre origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia = tudo entra `nao-verificada`.\n- **Importar não cria estudante**: liga pelo CPF a quem já está aqui. Matricular é ato da escola.",
         "security": [
           {
             "token-da-plataforma": []
@@ -5674,7 +5770,7 @@
           "experiencias"
         ],
         "summary": "O catálogo de experiências do contrato.",
-        "description": "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de aluno. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (exp-70).",
+        "description": "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de estudante. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (exp-70).",
         "security": [
           {
             "token-da-plataforma": []
@@ -5909,7 +6005,7 @@
           "experiencias"
         ],
         "summary": "Publica ou faz rollback de uma versão.",
-        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do aluno é capacidade de quem declarou, nunca default do frame.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
+        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
         "security": [
           {
             "token-da-plataforma": []
@@ -5994,10 +6090,11 @@
                   "publico": {
                     "type": "string",
                     "enum": [
+                      "estudante",
                       "aluno",
                       "professor"
                     ],
-                    "default": "aluno"
+                    "default": "estudante"
                   },
                   "permissoes": {
                     "type": "array",
@@ -6055,15 +6152,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "Cria a run do aluno na atividade ativa.",
-        "description": "A LARGADA: é aqui que o lado do feed é decidido — pelo perfil do Ato 1, por redistribuição do professor, ou por sorteio balanceado quando não há perfil.\n\n**Papéis:** aluno.",
+        "summary": "Cria a run do estudante na atividade ativa.",
+        "description": "A LARGADA: é aqui que o lado do feed é decidido — pelo perfil do Ato 1, por redistribuição do professor, ou por sorteio balanceado quando não há perfil.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -6126,6 +6223,26 @@
                       ],
                       "additionalProperties": false
                     },
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "handle": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "displayName",
+                        "handle",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
                     "aluno": {
                       "type": "object",
                       "properties": {
@@ -6150,8 +6267,7 @@
                   "required": [
                     "runId",
                     "fase",
-                    "missao",
-                    "aluno"
+                    "missao"
                   ],
                   "additionalProperties": false
                 }
@@ -6162,15 +6278,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "O bootstrap da experiência — o servidor decide a fase.",
-        "description": "Resolve o que o Server Component da tela resolvia no app de origem; agora a experiência é um bundle Vite estático e chama isto no primeiro fetch.\n\n**Só os RÓTULOS dos lados saem daqui** — são os únicos campos do antagonismo que o cliente pode ver antes da revelação.\n\n**Papéis:** aluno.",
+        "summary": "O bootstrap do aparelho — o que a tela de entrada precisa saber.",
+        "description": "Só os RÓTULOS dos lados — os únicos campos do antagonismo que o cliente pode ver antes da revelação. Zero lado/intensidade dos posts.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -6220,15 +6336,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "O aluno entra no aparelho e vai ao feed.",
-        "description": "`nome` é APELIDO dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.\n\n**Papéis:** aluno.",
+        "summary": "O estudante entra no aparelho e vai ao feed.",
+        "description": "`nome` é APELIDO dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -6241,12 +6357,12 @@
                   "nome": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 40
+                    "maxLength": 30
                   },
                   "avatar": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 60
+                    "maxLength": 30
                   }
                 },
                 "required": [
@@ -6521,14 +6637,14 @@
           "runs"
         ],
         "summary": "O próximo bloco do feed.",
-        "description": "O post sai **sem `lado`, sem `perfil` e sem `intensidade`** — o disfarce depende disso: um bundle que soubesse o lado de cada post entregaria o experimento antes da revelação.\n\nO `diagnostico` do motor (domínio, lado dominante, bloco) fica no SERVIDOR.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- Lock consultivo por run: duas abas pedindo bloco ao mesmo tempo se sobrescreviam, e um bloco se perdia.",
+        "description": "O post sai **sem `lado`, sem `perfil` e sem `intensidade`** — o disfarce depende disso: um bundle que soubesse o lado de cada post entregaria o experimento antes da revelação.\n\nO `diagnostico` do motor (domínio, lado dominante, bloco) fica no SERVIDOR.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Lock consultivo por run: duas abas pedindo bloco ao mesmo tempo se sobrescreviam, e um bloco se perdia.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -6575,15 +6691,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "A tela que o aluno deve estar vendo agora.",
-        "description": "Já reconciliada com a etapa da TURMA — o cliente faz polling porque os momentos coletivos são do professor, não do aluno.\n\n**Papéis:** aluno.",
+        "summary": "A tela que o estudante deve estar vendo agora.",
+        "description": "Já reconciliada com a etapa da TURMA — o cliente faz polling porque os momentos coletivos são do professor, não do estudante.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -6634,14 +6750,14 @@
           "runs"
         ],
         "summary": "Congela a run e computa o dossiê.",
-        "description": "Encerrar antes da hora é **409** — e a mensagem é de app real (\"sua sessão ainda está rolando\"), não de sistema.\n\n**Papéis:** aluno.",
+        "description": "Encerrar antes da hora é **409** — e a mensagem é de app real (\"sua sessão ainda está rolando\"), não de sistema.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -6683,6 +6799,9 @@
                     },
                     "ladoOrigem": {
                       "type": "string"
+                    },
+                    "rotuloDoLadoInicial": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -6699,7 +6818,7 @@
         "tags": [
           "runs"
         ],
-        "summary": "Reabre a run de um aluno, sorteando a largada de novo.",
+        "summary": "Reabre a run de um estudante, sorteando a largada de novo.",
         "description": "Rota de PROFESSOR: é o socorro para a sessão que travou no meio da aula.\n\n**Papéis:** professor.",
         "security": [
           {
@@ -6769,14 +6888,14 @@
           "runs"
         ],
         "summary": "Lote de eventos do cliente — o canal OPERACIONAL.",
-        "description": "Síncrono e transacional, lido em tempo quase real para curar o próximo bloco. **`dwell` nunca passa por Pub/Sub**: latência e falta de ordenação quebrariam a adaptação e o lock por run.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- Idempotência por `(client_ts, tipo, postId)`: `descartados` conta o que já existia — reenvio é rotina no cliente, não erro.\n- Cota por SESSÃO, não por IP: a turma toda compartilha a rede da escola.",
+        "description": "Síncrono e transacional, lido em tempo quase real para curar o próximo bloco. **`dwell` nunca passa por Pub/Sub**: latência e falta de ordenação quebrariam a adaptação e o lock por run.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Idempotência por `(client_ts, tipo, postId)`: `descartados` conta o que já existia — reenvio é rotina no cliente, não erro.\n- Cota por SESSÃO, não por IP: a turma toda compartilha a rede da escola.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -7063,14 +7182,14 @@
           "runs"
         ],
         "summary": "Busca no acervo da atividade.",
-        "description": "Usar a busca é o sinal de INVESTIGAÇÃO que o relatório conta — por isso ela é uma rota, e não um filtro no cliente.\n\n**Papéis:** aluno.",
+        "description": "Usar a busca é o sinal de INVESTIGAÇÃO que o relatório conta — por isso ela é uma rota, e não um filtro no cliente.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -7224,15 +7343,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "A coleção do aluno — o que ele salvou.",
-        "description": "O ÚLTIMO evento por post decide: salvar e dessalvar se anulam. É a coleção que ele vai defender no debate.\n\n**Papéis:** aluno.",
+        "summary": "A coleção do estudante — o que ele salvou.",
+        "description": "O ÚLTIMO evento por post decide: salvar e dessalvar se anulam. É a coleção que ele vai defender no debate.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -7372,15 +7491,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "O que o aluno PERDEU — posts do lado oposto que nunca foram servidos.",
-        "description": "**Só das etapas `perdidos` em diante**: antes disso derrubaria o disfarce, que é o que a atividade inteira depende de manter até a revelação.\n\n**Papéis:** aluno.",
+        "summary": "O que o estudante PERDEU — posts do lado oposto que nunca foram servidos.",
+        "description": "**Só das etapas `perdidos` em diante**: antes disso derrubaria o disfarce, que é o que a atividade inteira depende de manter até a revelação.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -7434,14 +7553,14 @@
           "runs"
         ],
         "summary": "A escolha de um lado no fim da missão.",
-        "description": "Enviar duas vezes é **409**, com linguagem de app real: \"isso já foi enviado\", nada de \"fase\" ou \"atividade\".\n\n**Papéis:** aluno.",
+        "description": "Enviar duas vezes é **409**, com linguagem de app real: \"isso já foi enviado\", nada de \"fase\" ou \"atividade\".\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -7517,14 +7636,14 @@
           "runs"
         ],
         "summary": "O fechamento escrito da atividade.",
-        "description": "É sobre a ATIVIDADE (letramento digital), não sobre a pergunta-chave — a conclusão já foi a escolha de um lado.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- 60 caracteres é o PISO: passa \"o algoritmo me mostrou mais de um lado\" e barra \"gostei\". Não é medida de qualidade, é filtro de vazio.",
+        "description": "É sobre a ATIVIDADE (letramento digital), não sobre a pergunta-chave — a conclusão já foi a escolha de um lado.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- 60 caracteres é o PISO: passa \"o algoritmo me mostrou mais de um lado\" e barra \"gostei\". Não é medida de qualidade, é filtro de vazio.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -7591,15 +7710,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "O texto da reflexão que o aluno já escreveu.",
-        "description": "Lê a reflexão desta run — a dele, e só a dele: o `where` casa `alunoId` do token junto com o id.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- `texto: \"\"` quando ainda não escreveu — o campo abre vazio, não com erro.",
+        "summary": "O texto da reflexão que o estudante já escreveu.",
+        "description": "Lê a reflexão desta run — a dele, e só a dele: o `where` casa `estudanteId` do token junto com o id.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `texto: \"\"` quando ainda não escreveu — o campo abre vazio, não com erro.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -7644,15 +7763,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "O aluno publica no app, e as personas reagem.",
-        "description": "**Falha fechada**: IA desligada, erro de rede ou reação recusada ⇒ lista vazia, e o post é publicado do mesmo jeito — como num app real quando ninguém responde. A chamada de IA fica FORA da transação, de propósito.\n\n**Papéis:** aluno.",
+        "summary": "O estudante publica no app, e as personas reagem.",
+        "description": "**Falha fechada**: IA desligada, erro de rede ou reação recusada ⇒ lista vazia, e o post é publicado do mesmo jeito — como num app real quando ninguém responde. A chamada de IA fica FORA da transação, de propósito.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -7735,15 +7854,15 @@
         "tags": [
           "runs"
         ],
-        "summary": "Reações das personas ao que o aluno escreveu.",
-        "description": "Nunca falha para o aluno: sem IA, sem cota ou com erro, devolve `reacoes: []` e diz por quê.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- `desligada: true` = o professor desligou a IA ao vivo.\n- `limite: true` = teto de 12 reações por sessão — aluno comentando sem parar não queima a cota da turma.",
+        "summary": "Reações das personas ao que o estudante escreveu.",
+        "description": "Nunca falha para o estudante: sem IA, sem cota ou com erro, devolve `reacoes: []` e diz por quê.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `desligada: true` = o professor desligou a IA ao vivo.\n- `limite: true` = teto de 12 reações por sessão — estudante comentando sem parar não queima a cota da turma.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -7758,6 +7877,7 @@
                       "tipo": {
                         "type": "string",
                         "enum": [
+                          "post_do_estudante",
                           "post_do_aluno"
                         ]
                       },
@@ -8591,14 +8711,14 @@
           "runs"
         ],
         "summary": "O dossiê da sessão — o relatório da revelação.",
-        "description": "Aqui o disfarce JÁ CAIU, e por isso o `lado` de cada post pode aparecer. A seção mais importante é `explicacaoDoLado`: **por que o feed começou daquele lado**.\n\n**Papéis:** aluno, professor.\n\n**Restrições:**\n- `conclusao` é anexada na LEITURA, não no congelamento: o dossiê é computado no `finish`, antes de o aluno escrever. `undefined` quando a sessão foi interrompida — e o relatório precisa funcionar assim.\n- Os rótulos de perfil vêm prontos no payload em vez de o cliente importar as FICHAS: elas carregam o vocabulário dos prompts, que não tem por que viajar até o navegador.\n- `imersao.total` nunca vem sem os componentes.",
+        "description": "Aqui o disfarce JÁ CAIU, e por isso o `lado` de cada post pode aparecer. A seção mais importante é `explicacaoDoLado`: **por que o feed começou daquele lado**.\n\n**Papéis:** estudante, professor.\n\n**Restrições:**\n- `conclusao` é anexada na LEITURA, não no congelamento: o dossiê é computado no `finish`, antes de o estudante escrever. `undefined` quando a sessão foi interrompida — e o relatório precisa funcionar assim.\n- Os rótulos de perfil vêm prontos no payload em vez de o cliente importar as FICHAS: elas carregam o vocabulário dos prompts, que não tem por que viajar até o navegador.\n- `imersao.total` nunca vem sem os componentes.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno",
+          "estudante",
           "professor"
         ],
         "x-acesso": "token"
@@ -8647,7 +8767,7 @@
                           "timestampLabel": {
                             "type": "string"
                           },
-                          "doAluno": {
+                          "doEstudante": {
                             "type": "boolean"
                           }
                         },
@@ -8657,7 +8777,7 @@
                           "texto",
                           "likesCount",
                           "timestampLabel",
-                          "doAluno"
+                          "doEstudante"
                         ],
                         "additionalProperties": false
                       }
@@ -8681,7 +8801,7 @@
           "posts"
         ],
         "summary": "Os comentários de um post do feed.",
-        "description": "Na ordem de uma CONVERSA: o comentário do aluno no topo (como o Instagram faz com o seu), as reações da IA logo depois, e os do roteiro por último.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `doAluno` distingue o que a criança escreveu do que veio do roteiro — só o aluno da própria run vê os dele.",
+        "description": "Na ordem de uma CONVERSA: o comentário do estudante no topo (como o Instagram faz com o seu), as reações da IA logo depois, e os do roteiro por último.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `doEstudante` distingue o que a criança escreveu do que veio do roteiro — só o estudante da própria run vê os dele.",
         "security": [
           {
             "token-da-plataforma": []
@@ -8733,6 +8853,10 @@
                           "criadoEm": {
                             "type": "string",
                             "format": "date-time"
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
                           },
                           "alunos": {
                             "type": "integer",
@@ -9056,6 +9180,10 @@
                           ],
                           "additionalProperties": false
                         },
+                        "estudantes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
                         "alunos": {
                           "type": "integer",
                           "minimum": 0
@@ -9225,7 +9353,7 @@
         "tags": [
           "atividades"
         ],
-        "summary": "Apaga as sessões dos alunos, mantendo a atividade e os posts.",
+        "summary": "Apaga as sessões dos estudantes, mantendo a atividade e os posts.",
         "description": "É o botão de rodar a mesma atividade com outra turma.\n\n**Papéis:** professor.",
         "security": [
           {
@@ -9400,8 +9528,8 @@
         "tags": [
           "atividades"
         ],
-        "summary": "Ativa a atividade para os alunos entrarem.",
-        "description": "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele aluno nasceria torto.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso.",
+        "summary": "Ativa a atividade para os estudantes entrarem.",
+        "description": "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele estudante nasceria torto.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `forcar: true` ativa com a matriz incompleta, de propósito — e a resposta devolve `forcado: true` para a tela dizer isso.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9609,7 +9737,7 @@
         "tags": [
           "atividades"
         ],
-        "summary": "Etapa atual e quantos alunos em cada tela.",
+        "summary": "Etapa atual e quantos estudantes em cada tela.",
         "description": "É com isto que o painel decide se dá para avançar a turma.\n\n**Papéis:** professor.",
         "security": [
           {
@@ -9652,6 +9780,27 @@
                           "runId": {
                             "type": "string",
                             "format": "uuid"
+                          },
+                          "estudante": {
+                            "type": "object",
+                            "properties": {
+                              "username": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              },
+                              "avatar": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "username",
+                              "displayName",
+                              "avatar"
+                            ],
+                            "additionalProperties": false
                           },
                           "aluno": {
                             "type": "object",
@@ -9960,9 +10109,9 @@
         "x-acesso": "token"
       }
     },
-    "/atividades/{id}/alunos/{runId}": {
+    "/atividades/{id}/estudantes/{runId}": {
       "get": {
-        "operationId": "AtividadesController_aluno",
+        "operationId": "AtividadesController_estudante",
         "parameters": [
           {
             "name": "id",
@@ -9991,6 +10140,32 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "username": {
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "nomeNoApp": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "avatar": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "username",
+                        "displayName",
+                        "nomeNoApp",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
                     "aluno": {
                       "type": "object",
                       "properties": {
@@ -10199,8 +10374,8 @@
         "tags": [
           "atividades"
         ],
-        "summary": "Tudo o que UM aluno fez, durante a atividade.",
-        "description": "As interações vêm com os **salvos primeiro**: é a coleção que o aluno vai defender no debate.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `doLadoSemeado` é a definição de COERÊNCIA: o post é do lado em que o feed dele nasceu?\n- `nomeNoApp` é apelido dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.",
+        "summary": "Tudo o que UM estudante fez, durante a atividade.",
+        "description": "As interações vêm com os **salvos primeiro**: é a coleção que o estudante vai defender no debate.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `doLadoSemeado` é a definição de COERÊNCIA: o post é do lado em que o feed dele nasceu?\n- `nomeNoApp` é apelido dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.",
         "security": [
           {
             "token-da-plataforma": []
@@ -10577,7 +10752,7 @@
           "atividades"
         ],
         "summary": "O professor aprova (ou reescreve) os dois lados e os neutros.",
-        "description": "Nada é gerado antes desta aprovação: os dois lados e as justificativas de eixo são o que decide de que lado cada aluno começa, e isso não sai da IA direto para a turma.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `forcar: true` passa por cima do medidor de equilíbrio, de propósito e explicitamente.",
+        "description": "Nada é gerado antes desta aprovação: os dois lados e as justificativas de eixo são o que decide de que lado cada estudante começa, e isso não sai da IA direto para a turma.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `forcar: true` passa por cima do medidor de equilíbrio, de propósito e explicitamente.",
         "security": [
           {
             "token-da-plataforma": []
@@ -11797,6 +11972,48 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "origem": {
+                            "type": "string"
+                          },
+                          "dominante": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "rotulo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "escores": {
+                            "nullable": true
+                          },
+                          "medidoEm": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "username",
+                          "displayName",
+                          "origem",
+                          "dominante",
+                          "rotulo",
+                          "medidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
                     "alunos": {
                       "type": "array",
                       "items": {
@@ -11881,7 +12098,7 @@
         "tags": [
           "atividades"
         ],
-        "summary": "O estado do perfil de cada aluno, para conferência.",
+        "summary": "O estado do perfil de cada estudante, para conferência.",
         "description": "**Papéis:** professor.\n\n**Restrições:**\n- `origem: \"ausente\"` = a criança ainda não tem perfil; ela cai no sorteio.",
         "security": [
           {
@@ -11968,7 +12185,7 @@
           "atividades"
         ],
         "summary": "Traz os perfis da Vila do Lume para a largada do Instanooria.",
-        "description": "Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.\n\n**Papéis:** professor.\n\n**Restrições:**\n- O colapso tem duas travas que CUSTAM alunos, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.\n- Sem perfil, o Instanooria cai no sorteio balanceado — que é honesto sobre não saber.\n- Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise` ao lado da identidade da criança.\n- `ladoForcado` é PRESERVADO no upsert.",
+        "description": "Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.\n\n**Papéis:** professor.\n\n**Restrições:**\n- O colapso tem duas travas que CUSTAM estudantes, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.\n- Sem perfil, o Instanooria cai no sorteio balanceado — que é honesto sobre não saber.\n- Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise` ao lado da identidade da criança.\n- `ladoForcado` é PRESERVADO no upsert.",
         "security": [
           {
             "token-da-plataforma": []
@@ -12051,6 +12268,73 @@
                       ],
                       "additionalProperties": false,
                       "nullable": true
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "dominante": {
+                            "type": "string"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "margem": {
+                            "type": "number"
+                          },
+                          "origemDoPerfil": {
+                            "type": "string",
+                            "enum": [
+                              "jogo",
+                              "professor",
+                              "ausente"
+                            ]
+                          },
+                          "mapeamentoDesatualizado": {
+                            "type": "boolean"
+                          },
+                          "lado": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B"
+                            ],
+                            "nullable": true
+                          },
+                          "ladoOrigem": {
+                            "type": "string",
+                            "enum": [
+                              "perfil",
+                              "sorteio",
+                              "redistribuido",
+                              "projetado"
+                            ]
+                          },
+                          "jaComecou": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "username",
+                          "displayName",
+                          "dominante",
+                          "rotulo",
+                          "margem",
+                          "origemDoPerfil",
+                          "mapeamentoDesatualizado",
+                          "lado",
+                          "ladoOrigem",
+                          "jaComecou"
+                        ],
+                        "additionalProperties": false
+                      }
                     },
                     "alunos": {
                       "type": "array",
@@ -12168,7 +12452,7 @@
         "tags": [
           "atividades"
         ],
-        "summary": "Onde cada aluno vai cair — antes de começar.",
+        "summary": "Onde cada estudante vai cair — antes de começar.",
         "description": "Existe para o professor **ver antes**. A distribuição de perfis varia por sala, e aí os lados nascem desequilibrados: não é defeito do sistema, é a turma — mas o professor precisa saber antes, não descobrir no meio da aula.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `semLado` são os que caem no SORTEIO (perfil ausente ou `misto`): não entram na projeção porque o lado só é decidido quando a run nasce.\n- `precisaRedistribuir` é `desequilibrio > 0.15`.",
         "security": [
           {
@@ -12393,6 +12677,54 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "estudantes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "username": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "escores": {
+                          "type": "object",
+                          "required": [
+                            "abertura",
+                            "autotranscendencia",
+                            "autopromocao",
+                            "conservacao"
+                          ],
+                          "properties": {
+                            "abertura": {
+                              "type": "number"
+                            },
+                            "autotranscendencia": {
+                              "type": "number"
+                            },
+                            "autopromocao": {
+                              "type": "number"
+                            },
+                            "conservacao": {
+                              "type": "number"
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "medidoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "username",
+                        "escores"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  },
                   "alunos": {
                     "type": "array",
                     "items": {
@@ -12444,8 +12776,7 @@
                 },
                 "required": [
                   "escolaId",
-                  "activityId",
-                  "alunos"
+                  "activityId"
                 ],
                 "additionalProperties": false
               }
@@ -12556,14 +12887,14 @@
           "vila"
         ],
         "summary": "Abre a partida e entrega os cartões DESTA criança.",
-        "description": "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `alunoSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- Os cartões vêm **sem gabarito** e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.\n- Nos anos iniciais (1EF–5EF) a bolha B **não é servida** — \"suporte\" exige entender o que é suporte, e só a api sabe a série.\n- Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.\n- Identidade sempre do token: o payload não traz aluno nem turma.",
+        "description": "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `alunoSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Os cartões vêm **sem gabarito** e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.\n- Nos anos iniciais (1EF–5EF) a bolha B **não é servida** — \"suporte\" exige entender o que é suporte, e só a api sabe a série.\n- Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.\n- Identidade sempre do token: o payload não traz aluno nem turma.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -12637,14 +12968,14 @@
           "vila"
         ],
         "summary": "Fecha a partida e grava o payload bruto.",
-        "description": "**Idempotente**: a criança pode recarregar, e o `pagehide` pode disparar duas vezes — daí `status: \"jaEstava\"`.\n\nO servidor RECALCULA o retrato; nunca aceita o perfil do cliente. É isso que permite reprocessar o histórico quando `VERSAO_MAPEAMENTO` subir.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- `CHAVES_DE_PERFIL` recusa payload que traga valores/graus/perfil calculados: o jogo sabe computar o retrato e deliberadamente não o envia.\n- `eventos[].dados` só aceita número, booleano ou string de um **vocabulário fechado** — o `texto` livre era o caminho por onde o nome de uma criança chegaria a um JSONB.\n- O gabarito da missão fica no servidor: o cliente manda qual opção escolheu, a api corrige (regra 3).",
+        "description": "**Idempotente**: a criança pode recarregar, e o `pagehide` pode disparar duas vezes — daí `status: \"jaEstava\"`.\n\nO servidor RECALCULA o retrato; nunca aceita o perfil do cliente. É isso que permite reprocessar o histórico quando `VERSAO_MAPEAMENTO` subir.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `CHAVES_DE_PERFIL` recusa payload que traga valores/graus/perfil calculados: o jogo sabe computar o retrato e deliberadamente não o envia.\n- `eventos[].dados` só aceita número, booleano ou string de um **vocabulário fechado** — o `texto` livre era o caminho por onde o nome de uma criança chegaria a um JSONB.\n- O gabarito da missão fica no servidor: o cliente manda qual opção escolheu, a api corrige (regra 3).",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -13145,6 +13476,10 @@
                           "serie": {
                             "type": "string"
                           },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
                           "alunos": {
                             "type": "integer",
                             "minimum": 0
@@ -13153,8 +13488,7 @@
                         "required": [
                           "id",
                           "nome",
-                          "serie",
-                          "alunos"
+                          "serie"
                         ],
                         "additionalProperties": false
                       }
@@ -13211,6 +13545,10 @@
                     "resumo": {
                       "type": "object",
                       "properties": {
+                        "estudantes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
                         "alunos": {
                           "type": "integer",
                           "minimum": 0
@@ -13273,7 +13611,6 @@
                         }
                       },
                       "required": [
-                        "alunos",
                         "jogaram",
                         "concluiram",
                         "abandonaram",
@@ -13332,12 +13669,20 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "alunos": {
+                    "estudantes": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "alunoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "id": {
                             "type": "string",
                             "format": "uuid"
                           },
@@ -13372,7 +13717,64 @@
                           }
                         },
                         "required": [
-                          "alunoId",
+                          "nome",
+                          "partidas",
+                          "ultimaEm",
+                          "bolha",
+                          "fogueirasAcesas",
+                          "amostraSuficiente"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "alunos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "alunoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "partidas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "ultimaEm": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "bolha": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B",
+                              "C"
+                            ],
+                            "nullable": true
+                          },
+                          "fogueirasAcesas": {
+                            "type": "number",
+                            "nullable": true
+                          },
+                          "amostraSuficiente": {
+                            "type": "boolean",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
                           "nome",
                           "partidas",
                           "ultimaEm",
@@ -13384,9 +13786,6 @@
                       }
                     }
                   },
-                  "required": [
-                    "alunos"
-                  ],
                   "additionalProperties": false
                 }
               }
@@ -13396,7 +13795,7 @@
         "tags": [
           "vila"
         ],
-        "summary": "Uma linha por aluno da turma.",
+        "summary": "Uma linha por estudante da turma.",
         "description": "Quantas partidas, a bolha, e se a última sustenta leitura.\n\n**Sem valor de Schwartz nenhum**: listagem é ordenável, e uma coluna \"Poder\" viraria ranking de crianças. Os valores vivem na tela individual, uma criança por vez, com o grau ao lado.\n\n**Papéis:** professor.",
         "security": [
           {
@@ -13625,7 +14024,7 @@
         "x-acesso": "token"
       }
     },
-    "/vila/professor/alunos/{alunoId}": {
+    "/vila/professor/estudantes/{alunoId}": {
       "get": {
         "operationId": "VilaProfessorController_aluno",
         "parameters": [
@@ -13994,8 +14393,8 @@
         "tags": [
           "vila"
         ],
-        "summary": "O relatório da última partida concluída de um aluno.",
-        "description": "**Professor only** — o gestor tem o agregado, nunca a linha de uma criança. São controllers separados de propósito: um `@Roles` misto com exceção por método é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\nA seção das mensagens abre pelo **NÍVEL** que ela recebeu, antes do que ela fez: \"caiu em 2 de 3\" sem dizer que era o nível C faz o adulto concluir que a criança é ingênua — o rótulo que este projeto existe para não produzir.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `relatorio: null` é resposta legítima: o aluno existe e não jogou. Um 404 faria a tela dizer \"não encontrado\" para uma criança da turma dele.\n- `grau` é invariante de API: só a variante `scored` tem número; as outras têm `null` POR TIPO, então o hub não consegue imprimir \"Poder 100\" a partir de um sinal só.\n- `mensagens: null` = nenhum cartão chegou a aparecer — **não** é \"ela ignorou tudo\".",
+        "summary": "O relatório da última partida concluída de um estudante.",
+        "description": "**Professor only** — o gestor tem o agregado, nunca a linha de uma criança. São controllers separados de propósito: um `@Roles` misto com exceção por método é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\nA seção das mensagens abre pelo **NÍVEL** que ela recebeu, antes do que ela fez: \"caiu em 2 de 3\" sem dizer que era o nível C faz o adulto concluir que a criança é ingênua — o rótulo que este projeto existe para não produzir.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `relatorio: null` é resposta legítima: o estudante existe e não jogou. Um 404 faria a tela dizer \"não encontrado\" para uma criança da turma dele.\n- `grau` é invariante de API: só a variante `scored` tem número; as outras têm `null` POR TIPO, então o hub não consegue imprimir \"Poder 100\" a partir de um sinal só.\n- `mensagens: null` = nenhum cartão chegou a aparecer — **não** é \"ela ignorou tudo\".",
         "security": [
           {
             "token-da-plataforma": []
@@ -14310,7 +14709,7 @@
                       ],
                       "additionalProperties": false
                     },
-                    "alunos": {
+                    "estudantes": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -14318,6 +14717,22 @@
                           "runId": {
                             "type": "string",
                             "format": "uuid"
+                          },
+                          "estudante": {
+                            "type": "object",
+                            "properties": {
+                              "username": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "username",
+                              "displayName"
+                            ],
+                            "additionalProperties": false
                           },
                           "aluno": {
                             "type": "object",
@@ -14775,6 +15190,514 @@
                         },
                         "required": [
                           "runId",
+                          "estudante",
+                          "aluno",
+                          "fase",
+                          "iniciadaEm",
+                          "encerradaEm",
+                          "perfilJogo",
+                          "perfilObservado",
+                          "bolha",
+                          "ladoDominante",
+                          "dominio",
+                          "postsConsumidos",
+                          "blocos",
+                          "escada",
+                          "tempo",
+                          "ritmo",
+                          "imersao",
+                          "investigacao",
+                          "interacoes",
+                          "colecao",
+                          "conclusao",
+                          "reflexao",
+                          "ociosoHaMs"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "alunos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "runId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "estudante": {
+                            "type": "object",
+                            "properties": {
+                              "username": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "username",
+                              "displayName"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "aluno": {
+                            "type": "object",
+                            "properties": {
+                              "username": {
+                                "type": "string"
+                              },
+                              "displayName": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "username",
+                              "displayName"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "fase": {
+                            "type": "string"
+                          },
+                          "iniciadaEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "encerradaEm": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "perfilJogo": {
+                            "type": "object",
+                            "properties": {
+                              "dominante": {
+                                "type": "string"
+                              },
+                              "origem": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "dominante",
+                              "origem"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "perfilObservado": {
+                            "type": "object",
+                            "properties": {
+                              "normalizado": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "number"
+                                }
+                              },
+                              "dominante": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "margem": {
+                                "type": "number"
+                              },
+                              "veredito": {
+                                "type": "string",
+                                "enum": [
+                                  "reforcou",
+                                  "divergiu",
+                                  "sem_referencia"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "normalizado",
+                              "dominante",
+                              "margem",
+                              "veredito"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "bolha": {
+                            "type": "object",
+                            "properties": {
+                              "ladoInicial": {
+                                "type": "string",
+                                "enum": [
+                                  "A",
+                                  "B"
+                                ]
+                              },
+                              "ladoOrigem": {
+                                "type": "string"
+                              },
+                              "inverteu": {
+                                "type": "boolean"
+                              },
+                              "blocoDaInversao": {
+                                "type": "number",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "ladoInicial",
+                              "ladoOrigem",
+                              "inverteu",
+                              "blocoDaInversao"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "ladoDominante": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B",
+                              "indefinido"
+                            ]
+                          },
+                          "dominio": {
+                            "type": "number"
+                          },
+                          "postsConsumidos": {
+                            "type": "number"
+                          },
+                          "blocos": {
+                            "type": "number"
+                          },
+                          "escada": {
+                            "type": "object",
+                            "properties": {
+                              "A": {
+                                "type": "number"
+                              },
+                              "B": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "A",
+                              "B"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "tempo": {
+                            "type": "object",
+                            "properties": {
+                              "sessaoMs": {
+                                "type": "number"
+                              },
+                              "feedMs": {
+                                "type": "number"
+                              },
+                              "ativoMs": {
+                                "type": "number"
+                              },
+                              "ociosoMs": {
+                                "type": "number"
+                              },
+                              "vaosOciosos": {
+                                "type": "number"
+                              },
+                              "porLadoMs": {
+                                "type": "object",
+                                "properties": {
+                                  "A": {
+                                    "type": "number"
+                                  },
+                                  "B": {
+                                    "type": "number"
+                                  },
+                                  "neutro": {
+                                    "type": "number"
+                                  }
+                                },
+                                "required": [
+                                  "A",
+                                  "B",
+                                  "neutro"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "porPerfilMs": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "required": [
+                              "sessaoMs",
+                              "feedMs",
+                              "ativoMs",
+                              "ociosoMs",
+                              "vaosOciosos",
+                              "porLadoMs",
+                              "porPerfilMs"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "ritmo": {
+                            "type": "object",
+                            "properties": {
+                              "postsPorMinuto": {
+                                "type": "number"
+                              },
+                              "variacaoDoRitmo": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "postsPorMinuto",
+                              "variacaoDoRitmo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "imersao": {
+                            "type": "object",
+                            "properties": {
+                              "total": {
+                                "type": "number"
+                              },
+                              "componentes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "chave": {
+                                      "type": "string",
+                                      "enum": [
+                                        "continuidade",
+                                        "atencao",
+                                        "gestos",
+                                        "voluntariedade",
+                                        "exploracao"
+                                      ]
+                                    },
+                                    "rotulo": {
+                                      "type": "string"
+                                    },
+                                    "pontos": {
+                                      "type": "number"
+                                    },
+                                    "detalhe": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "chave",
+                                    "rotulo",
+                                    "pontos",
+                                    "detalhe"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "total",
+                              "componentes"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "investigacao": {
+                            "type": "object",
+                            "properties": {
+                              "usosDaBusca": {
+                                "type": "number"
+                              },
+                              "termosBuscados": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "postsPelaBusca": {
+                                "type": "number"
+                              },
+                              "comentariosLidos": {
+                                "type": "number"
+                              },
+                              "revisitas": {
+                                "type": "number"
+                              },
+                              "perdasDeFoco": {
+                                "type": "number"
+                              },
+                              "coberturaDosLados": {
+                                "type": "object",
+                                "properties": {
+                                  "A": {
+                                    "type": "object",
+                                    "properties": {
+                                      "posts": {
+                                        "type": "number"
+                                      },
+                                      "segundos": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "posts",
+                                      "segundos"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "B": {
+                                    "type": "object",
+                                    "properties": {
+                                      "posts": {
+                                        "type": "number"
+                                      },
+                                      "segundos": {
+                                        "type": "number"
+                                      }
+                                    },
+                                    "required": [
+                                      "posts",
+                                      "segundos"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "required": [
+                                  "A",
+                                  "B"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "consideracaoDoOposto": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "usosDaBusca",
+                              "termosBuscados",
+                              "postsPelaBusca",
+                              "comentariosLidos",
+                              "revisitas",
+                              "perdasDeFoco",
+                              "coberturaDosLados",
+                              "consideracaoDoOposto"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "interacoes": {
+                            "type": "object",
+                            "properties": {
+                              "curtidas": {
+                                "type": "number"
+                              },
+                              "comentarios": {
+                                "type": "number"
+                              },
+                              "salvos": {
+                                "type": "number"
+                              },
+                              "compartilhados": {
+                                "type": "number"
+                              },
+                              "seguidos": {
+                                "type": "number"
+                              },
+                              "naoInteressa": {
+                                "type": "number"
+                              },
+                              "publicou": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "curtidas",
+                              "comentarios",
+                              "salvos",
+                              "compartilhados",
+                              "seguidos",
+                              "naoInteressa",
+                              "publicou"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "colecao": {
+                            "type": "object",
+                            "properties": {
+                              "total": {
+                                "type": "number"
+                              },
+                              "doLadoSemeado": {
+                                "type": "number"
+                              },
+                              "doOutroLado": {
+                                "type": "number"
+                              },
+                              "neutros": {
+                                "type": "number"
+                              },
+                              "comentados": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "total",
+                              "doLadoSemeado",
+                              "doOutroLado",
+                              "neutros",
+                              "comentados"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "conclusao": {
+                            "type": "object",
+                            "properties": {
+                              "inclinacao": {
+                                "type": "string",
+                                "enum": [
+                                  "A",
+                                  "B",
+                                  "duvida"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "caracteres": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "inclinacao",
+                              "texto",
+                              "caracteres"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "reflexao": {
+                            "type": "object",
+                            "properties": {
+                              "texto": {
+                                "type": "string"
+                              },
+                              "caracteres": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "texto",
+                              "caracteres"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "ociosoHaMs": {
+                            "type": "number",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "runId",
+                          "estudante",
                           "aluno",
                           "fase",
                           "iniciadaEm",
@@ -14821,7 +15744,7 @@
           "atividades"
         ],
         "summary": "A análise pedagógica da turma — identificada.",
-        "description": "É a turma DELE, e o professor precisa saber com quem falar. Só o professor DONO da atividade lê.\n\nA peça central é `conclusaoPorLadoSemeado`: se o lado em que o feed nasceu prevê a conclusão que o aluno escreveu, o resultado experimental da turma está nessa grade — e é ela que o professor projeta no momento-espelho. Tudo o mais na tela existe para explicar essa grade.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `imersao.total` nunca aparece sem os componentes — regra do doc, e vale para o relatório, o monitor e a análise.\n- `ociosoHaMs` é `null` quando a run acabou: ninguém precisa ser cutucado por estar \"ocioso\" num relatório.\n- `colecao` conta o ÚLTIMO evento por post (salvar e dessalvar se anulam); `interacoes.salvos` conta eventos.",
+        "description": "É a turma DELE, e o professor precisa saber com quem falar. Só o professor DONO da atividade lê.\n\nA peça central é `conclusaoPorLadoSemeado`: se o lado em que o feed nasceu prevê a conclusão que o estudante escreveu, o resultado experimental da turma está nessa grade — e é ela que o professor projeta no momento-espelho. Tudo o mais na tela existe para explicar essa grade.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `imersao.total` nunca aparece sem os componentes — regra do doc, e vale para o relatório, o monitor e a análise.\n- `ociosoHaMs` é `null` quando a run acabou: ninguém precisa ser cutucado por estar \"ocioso\" num relatório.\n- `colecao` conta o ÚLTIMO evento por post (salvar e dessalvar se anulam); `interacoes.salvos` conta eventos.",
         "security": [
           {
             "token-da-plataforma": []
@@ -15017,7 +15940,7 @@
           "analise"
         ],
         "summary": "Uma linha por atividade — o nível de produto.",
-        "description": "Guarda de papel própria: `admin-contrato` não é professor nem aluno, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**\n\n**Papéis:** admin-contrato.",
+        "description": "Guarda de papel própria: `admin-contrato` não é professor nem estudante, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**\n\n**Papéis:** admin-contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -15210,7 +16133,13 @@
                           "amostra": {
                             "type": "object",
                             "properties": {
+                              "estudantesDoPerfil": {
+                                "type": "number"
+                              },
                               "alunosDoPerfil": {
+                                "type": "number"
+                              },
+                              "estudantesDeOutros": {
                                 "type": "number"
                               },
                               "alunosDeOutros": {
@@ -15256,7 +16185,7 @@
           "analise"
         ],
         "summary": "O detalhe de uma atividade, com a eficácia da escrita por perfil.",
-        "description": "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre alunos daquele perfil, menos o dwell dos MESMOS posts entre alunos de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do aluno) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.\n\n**Papéis:** admin-contrato.",
+        "description": "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre estudantes daquele perfil, menos o dwell dos MESMOS posts entre estudantes de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do estudante) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.\n\n**Papéis:** admin-contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -15463,6 +16392,22 @@
                       ],
                       "additionalProperties": false
                     },
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nome",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    },
                     "aluno": {
                       "type": "object",
                       "properties": {
@@ -15553,7 +16498,6 @@
                     "derivados",
                     "limiteSalvos",
                     "catalogo",
-                    "aluno",
                     "ranking"
                   ],
                   "additionalProperties": false
@@ -15566,14 +16510,14 @@
           "unootube"
         ],
         "summary": "O estado da missão e o catálogo de vídeos.",
-        "description": "O catálogo sai **sem `factual`** — o tipo do servidor é `Omit<Video, \"factual\">`, então o gabarito é impossível de vazar aqui, não só ausente por descuido.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- As métricas de popularidade são COSMÉTICAS: nenhuma entra em conta nenhuma. O vídeo fake é o que tem os números grandes, e é esse contraste que o ranking desmonta.\n- `ranking: null` até ele ser desbloqueado — é a virada da missão.",
+        "description": "O catálogo sai **sem `factual`** — o tipo do servidor é `Omit<Video, \"factual\">`, então o gabarito é impossível de vazar aqui, não só ausente por descuido.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- As métricas de popularidade são COSMÉTICAS: nenhuma entra em conta nenhuma. O vídeo fake é o que tem os números grandes, e é esse contraste que o ranking desmonta.\n- `ranking: null` até ele ser desbloqueado — é a virada da missão.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -15674,14 +16618,14 @@
           "unootube"
         ],
         "summary": "Salva um vídeo na playlist.",
-        "description": "A api corrige contra o `factual` e devolve inscritos e fontes recalculados no servidor (regra 3) — o cliente manda só qual vídeo salvou.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- A playlist tem 3 lugares. Cheia, a api recusa — é o diálogo de limite da experiência.\n- Vídeo fora do catálogo é **400** com `codigo: VIDEO_DESCONHECIDO`.",
+        "description": "A api corrige contra o `factual` e devolve inscritos e fontes recalculados no servidor (regra 3) — o cliente manda só qual vídeo salvou.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A playlist tem 3 lugares. Cheia, a api recusa — é o diálogo de limite da experiência.\n- Vídeo fora do catálogo é **400** com `codigo: VIDEO_DESCONHECIDO`.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -15856,14 +16800,14 @@
           "unootube"
         ],
         "summary": "Tira um vídeo da playlist.",
-        "description": "`POST` em vez de `DELETE` porque a SDK só expõe get/post — a semântica idempotente é a mesma.\n\n**Papéis:** aluno.",
+        "description": "`POST` em vez de `DELETE` porque a SDK só expõe get/post — a semântica idempotente é a mesma.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -15996,14 +16940,14 @@
           "unootube"
         ],
         "summary": "Curte (ou descurte) um vídeo.",
-        "description": "**Papéis:** aluno.\n\n**Restrições:**\n- Curtir não conta para nada na missão: o que vale é o que a criança SALVA.",
+        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- Curtir não conta para nada na missão: o que vale é o que a criança SALVA.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -16092,14 +17036,14 @@
           "unootube"
         ],
         "summary": "O ranking — a virada da missão.",
-        "description": "Os colegas são **fictícios**: ranquear colegas reais exporia pontuação de menores (regra 6). `voce` marca a linha do aluno.\n\nÉ aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.\n\n**Papéis:** aluno.",
+        "description": "Os colegas são **fictícios**: ranquear colegas reais exporia pontuação de menores (regra 6). `voce` marca a linha do aluno.\n\nÉ aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -16204,14 +17148,14 @@
           "unootube"
         ],
         "summary": "Fecha a missão trocando inscritos por credibilidade.",
-        "description": "É a única rota que acrescenta `score`, e ele é `derivados.fontesConfiaveis` — a correção server-side. É o valor que a experiência devolve ao hub no `exp:concluir`.\n\n**Papéis:** aluno.",
+        "description": "É a única rota que acrescenta `score`, e ele é `derivados.fontesConfiaveis` — a correção server-side. É o valor que a experiência devolve ao hub no `exp:concluir`.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -16312,14 +17256,14 @@
           "unootube"
         ],
         "summary": "Começa a missão do zero.",
-        "description": "**Papéis:** aluno.",
+        "description": "**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -16360,6 +17304,10 @@
                           "serie": {
                             "type": "string"
                           },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
                           "alunos": {
                             "type": "integer",
                             "minimum": 0
@@ -16368,8 +17316,7 @@
                         "required": [
                           "id",
                           "nome",
-                          "serie",
-                          "alunos"
+                          "serie"
                         ],
                         "additionalProperties": false
                       }
@@ -16453,11 +17400,19 @@
                       ],
                       "additionalProperties": false
                     },
-                    "alunos": {
+                    "estudantes": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "alunoId": {
                             "type": "string",
                             "format": "uuid"
@@ -16495,7 +17450,69 @@
                           }
                         },
                         "required": [
-                          "alunoId",
+                          "nome",
+                          "usuario",
+                          "iniciou",
+                          "salvos",
+                          "fontesConfiaveis",
+                          "inscritos",
+                          "rankingDesbloqueado",
+                          "credibilidadeAdicionada",
+                          "concluidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "alunos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "alunoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "iniciou": {
+                            "type": "boolean"
+                          },
+                          "salvos": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "fontesConfiaveis": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "inscritos": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "rankingDesbloqueado": {
+                            "type": "boolean"
+                          },
+                          "credibilidadeAdicionada": {
+                            "type": "boolean"
+                          },
+                          "concluidoEm": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
                           "nome",
                           "usuario",
                           "iniciou",
@@ -16553,7 +17570,6 @@
                   },
                   "required": [
                     "turma",
-                    "alunos",
                     "resumo"
                   ],
                   "additionalProperties": false
@@ -16566,7 +17582,7 @@
           "unootube"
         ],
         "summary": "O que a turma fez na missão do UnooTube.",
-        "description": "Uma linha por aluno mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Uma linha por estudante mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.\n\n**Papéis:** professor, gestor, admin-contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -17093,7 +18109,7 @@
                           "papel": {
                             "type": "string",
                             "enum": [
-                              "aluno",
+                              "estudante",
                               "agente"
                             ]
                           },
@@ -17709,14 +18725,14 @@
           "unoogpt"
         ],
         "summary": "O bootstrap da Missão Tempestade. Cria a sessão na primeira visita.",
-        "description": "Repare no que NÃO existe nestas rotas: **id de sessão**. No app de origem toda rota era `/api/missao/:id/*` com uma guarda `donoDaSessao` para provar a posse; aqui a identidade é `(escola, aluno)` vinda do TOKEN, e não há como pedir a partida de outra pessoa. A guarda desapareceu junto com a classe de bug que ela protegia.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- A `projecao` é SERVIDA, nunca calculada no navegador: um bundle capaz de computá-la deixaria o aluno prever o desfecho antes de enviar.\n- O mapa começa vazio: só o que uma Pergunta revelou chega ao navegador — `estimativa: null` é o cartão em branco, e **branco é informação**.\n- A `ficha` sai por allowlist, sem os números por bairro: eles são a verdade do mundo, e mandá-los daria de graça a resposta que a missão existe para o aluno não ter.",
+        "description": "Repare no que NÃO existe nestas rotas: **id de sessão**. No app de origem toda rota era `/api/missao/:id/*` com uma guarda `donoDaSessao` para provar a posse; aqui a identidade é `(escola, aluno)` vinda do TOKEN, e não há como pedir a partida de outra pessoa. A guarda desapareceu junto com a classe de bug que ela protegia.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A `projecao` é SERVIDA, nunca calculada no navegador: um bundle capaz de computá-la deixaria o aluno prever o desfecho antes de enviar.\n- O mapa começa vazio: só o que uma Pergunta revelou chega ao navegador — `estimativa: null` é o cartão em branco, e **branco é informação**.\n- A `ficha` sai por allowlist, sem os números por bairro: eles são a verdade do mundo, e mandá-los daria de graça a resposta que a missão existe para o aluno não ter.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -17820,14 +18836,14 @@
           "unoogpt"
         ],
         "summary": "O relógio da turma — polling de ~5s.",
-        "description": "Leve de propósito: sem IA e sem mapa. `agora` é o instante do SERVIDOR, senão o relógio da máquina da escola (que atrasa) decide quanto tempo a turma tem.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- 240 chamadas por minuto por aluno.",
+        "description": "Leve de propósito: sem IA e sem mapa. `agora` é o instante do SERVIDOR, senão o relógio da máquina da escola (que atrasa) decide quanto tempo a turma tem.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- 240 chamadas por minuto por aluno.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -18757,14 +19773,14 @@
           "unoogpt"
         ],
         "summary": "O turno do Cientista — a rota que fala com o modelo.",
-        "description": "Rate limit apertado (**12/min**) porque cada chamada custa tokens de verdade: o teto por sessão é o controle de custo, e este é o freio contra o laço.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- Falha do PROVEDOR **não** chega ao aluno como 500: vira `cientista-indisponivel` (**503**), que a tela traduz em \"tente falar de novo\". E **não debita** — o débito acontece só depois de resposta válida.\n- O log fica com o motivo técnico, **sem o texto do aluno**: é caixa livre escrita por menor de idade.\n- O número que um botão de opção mostra sai do MOTOR, nunca da LLM.",
+        "description": "Rate limit apertado (**12/min**) porque cada chamada custa tokens de verdade: o teto por sessão é o controle de custo, e este é o freio contra o laço.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Falha do PROVEDOR **não** chega ao aluno como 500: vira `cientista-indisponivel` (**503**), que a tela traduz em \"tente falar de novo\". E **não debita** — o débito acontece só depois de resposta válida.\n- O log fica com o motivo técnico, **sem o texto do aluno**: é caixa livre escrita por menor de idade.\n- O número que um botão de opção mostra sai do MOTOR, nunca da LLM.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -19107,14 +20123,14 @@
           "unoogpt"
         ],
         "summary": "Carrega fontes no modelo pelo painel.",
-        "description": "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.\n\n**Papéis:** aluno.",
+        "description": "`PUT` porque é atribuição de conjunto. As camadas ACUMULAM.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -19337,14 +20353,14 @@
           "unoogpt"
         ],
         "summary": "Manda uma equipe para um bairro.",
-        "description": "`bairro: null` tira a equipe do destino. A justificativa é **portão de servidor**: só vale fonte que o aluno carregou, ou \"foi intuição\" — que está sempre disponível, porque sem essa saída a pergunta vira pegadinha e o aluno aprende a mentir para o formulário.\n\n**Papéis:** aluno.",
+        "description": "`bairro: null` tira a equipe do destino. A justificativa é **portão de servidor**: só vale fonte que o aluno carregou, ou \"foi intuição\" — que está sempre disponível, porque sem essa saída a pergunta vira pegadinha e o aluno aprende a mentir para o formulário.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -19847,14 +20863,14 @@
           "unoogpt"
         ],
         "summary": "Enfrenta a tempestade e fecha a tentativa.",
-        "description": "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Devolve o mesmo que `GET /unoogpt/resultado`.\n\n**Papéis:** aluno.",
+        "description": "Exige justificativa de **cada equipe com destino** — sem isso, `falta-justificar`. Devolve o mesmo que `GET /unoogpt/resultado`.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -20308,14 +21324,14 @@
           "unoogpt"
         ],
         "summary": "O resultado da tentativa, com a faixa e o que ele nunca consultou.",
-        "description": "A **faixa é a manchete**: corridas da MESMA decisão, para \"não repete igual\" sair do texto e virar gráfico. Uma rodada é anedota — o aluno lê 1.345 e conclui que tirou uma nota.\n\n**Papéis:** aluno.\n\n**Restrições:**\n- `sobrou` é um FATO com nome de bairro e número de pessoas, **não um veredito**: quem transforma fato em lição é o professor, no debate.\n- `naoConsultados` traz só `comoFalar`/`rotuloCurto`/`serve` — o nome técnico, o viés e a cobertura são o instrumento, e ficam com o professor.",
+        "description": "A **faixa é a manchete**: corridas da MESMA decisão, para \"não repete igual\" sair do texto e virar gráfico. Uma rodada é anedota — o aluno lê 1.345 e conclui que tirou uma nota.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `sobrou` é um FATO com nome de bairro e número de pessoas, **não um veredito**: quem transforma fato em lição é o professor, no debate.\n- `naoConsultados` traz só `comoFalar`/`rotuloCurto`/`serve` — o nome técnico, o viés e a cobertura são o instrumento, e ficam com o professor.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -20382,14 +21398,14 @@
           "unoogpt"
         ],
         "summary": "\"E se eu tivesse mandado para…\" — calculado e descartado.",
-        "description": "**Não grava e não debita**: é a pergunta que o aluno faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Papéis:** aluno.",
+        "description": "**Não grava e não debita**: é a pergunta que o aluno faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -20536,14 +21552,14 @@
           "unoogpt"
         ],
         "summary": "Move a sessão para outro passo da missão.",
-        "description": "**Papéis:** aluno.",
+        "description": "**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -20678,14 +21694,14 @@
           "unoogpt"
         ],
         "summary": "Recomeça — abre uma tentativa NOVA.",
-        "description": "**Não apaga a conversa anterior.** Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.\n\n**Papéis:** aluno.",
+        "description": "**Não apaga a conversa anterior.** Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "aluno"
+          "estudante"
         ],
         "x-acesso": "token"
       }
@@ -20726,6 +21742,10 @@
                           "serie": {
                             "type": "string"
                           },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
                           "alunos": {
                             "type": "integer",
                             "minimum": 0
@@ -20734,8 +21754,7 @@
                         "required": [
                           "id",
                           "nome",
-                          "serie",
-                          "alunos"
+                          "serie"
                         ],
                         "additionalProperties": false
                       }
@@ -20885,6 +21904,10 @@
                     "retrato": {
                       "type": "object",
                       "properties": {
+                        "estudantes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
                         "alunos": {
                           "type": "integer",
                           "minimum": 0
@@ -20911,7 +21934,6 @@
                         }
                       },
                       "required": [
-                        "alunos",
                         "comecaram",
                         "concluiram",
                         "viramConflito",
@@ -20925,6 +21947,14 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "alunoId": {
                             "type": "string",
                             "format": "uuid"
@@ -20964,7 +21994,6 @@
                           }
                         },
                         "required": [
-                          "alunoId",
                           "nome",
                           "usuario",
                           "comecou",
@@ -21214,7 +22243,7 @@
         }
       }
     },
-    "/unoogpt/professor/alunos/{alunoId}": {
+    "/unoogpt/professor/estudantes/{alunoId}": {
       "get": {
         "operationId": "UnoogptTurmasController_aluno",
         "parameters": [
@@ -21244,6 +22273,23 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    },
                     "aluno": {
                       "type": "object",
                       "properties": {
@@ -21436,7 +22482,6 @@
                     }
                   },
                   "required": [
-                    "aluno",
                     "versaoLeitura",
                     "linhas",
                     "porGrau",
@@ -21456,7 +22501,7 @@
           "unoogpt"
         ],
         "summary": "A linha de UMA criança: leitura em graus e a Transcrição.",
-        "description": "**Professor only.** O relatório abre pelo que a missão MEDIU, em graus.\n\n**Papéis:** professor, admin-contrato.\n\n**Restrições:**\n- Número só com `grau: \"scored\"`. E `zero` (\"teve a chance e não foi\") nunca se confunde com `none` (\"a oportunidade não chegou\") — é a distinção mais importante do modelo, e ela está no TIPO.\n- `resumo` nunca afirma o que o aluno É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
+        "description": "**Professor only.** O relatório abre pelo que a missão MEDIU, em graus.\n\n**Papéis:** professor, admin-contrato.\n\n**Restrições:**\n- Número só com `grau: \"scored\"`. E `zero` (\"teve a chance e não foi\") nunca se confunde com `none` (\"a oportunidade não chegou\") — é a distinção mais importante do modelo, e ela está no TIPO.\n- `resumo` nunca afirma o que o estudante É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
         "security": [
           {
             "token-da-plataforma": []
@@ -23460,7 +24505,7 @@
   },
   "info": {
     "title": "Plataforma Unooria — API",
-    "description": "API da Plataforma Unooria. Um contrato = uma stack; dentro dela, as escolas\ncompartilham o banco com isolamento lógico por `escola_id` e Row-Level Security.\n\n**Autenticação.** Quase toda rota exige o token da plataforma no cabeçalho\n`Authorization: Bearer`. Ele é assinado pelo hub (RS256, 15min) e traz\n`{sub, escola_id, turma_id?, perfil}`. Para experimentar aqui, pegue um token\nde uma sessão do hub e cole em **Authorize**.\n\n**Papéis.** `aluno`, `professor`, `gestor` e `admin-contrato` — este último é a\núnica exceção que atravessa escolas. Cada operação diz quais aceita; sem essa\nlinha, qualquer papel autenticado passa.\n\n**O que este documento não consegue dizer.** Restrições escritas em `.refine()`\nnão têm tradução em JSON Schema e aparecem como texto em _Restrições_, não como\nesquema. A validação continua sendo a do Zod.",
+    "description": "API da Plataforma Unooria. Um contrato = uma stack; dentro dela, as escolas\ncompartilham o banco com isolamento lógico por `escola_id` e Row-Level Security.\n\n**Autenticação.** Quase toda rota exige o token da plataforma no cabeçalho\n`Authorization: Bearer`. Ele é assinado pelo hub (RS256, 15min) e traz\n`{sub, escola_id, turma_id?, perfil}`. Para experimentar aqui, pegue um token\nde uma sessão do hub e cole em **Authorize**.\n\n**Papéis.** `estudante`, `aluno`, `professor`, `gestor` e `admin-contrato` — este último é a\núnica exceção que atravessa escolas. Cada operação diz quais aceita; sem essa\nlinha, qualquer papel autenticado passa.\n\n**O que este documento não consegue dizer.** Restrições escritas em `.refine()`\nnão têm tradução em JSON Schema e aparecem como texto em _Restrições_, não como\nesquema. A validação continua sendo a do Zod.",
     "version": "0.1.0",
     "contact": {}
   },

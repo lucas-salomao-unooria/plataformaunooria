@@ -55,7 +55,7 @@ Os princípios que atravessam todo o código:
   \item[Validação na fronteira, sempre.] Todo \emph{input} externo passa por
     Zod~\cite{zod2026}: corpo, \emph{query}, \emph{postMessage} recebido e as
     variáveis de ambiente --- estas no \emph{boot}, de modo que configuração
-    errada derruba o processo na subida, não no meio de uma requisição de aluno.
+    errada derruba o processo na subida, não no meio de uma requisição de estudante.
   \item[Uma porta por recurso crítico.] O banco só é acessado por
     \cd{PrismaService.comTenancy}; a IA só por \arq{src/ai}; o
     \emph{design system} só pela ponte \arq{packages/ui}; a entrada de pessoas e
@@ -84,7 +84,7 @@ Os princípios que atravessam todo o código:
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   % --- pessoas
-  \node[c4person] (aluno) at (1.9,0)  {\textbf{Aluno}\desc{1º EF ao 3º EM}};
+  \node[c4person] (estudante) at (1.9,0)  {\textbf{Estudante}\desc{1º EF ao 3º EM}};
   \node[c4person] (prof)  at (6.0,0)  {\textbf{Professor}\desc{Conduz a aula}};
   \node[c4person] (gest)  at (10.1,0) {\textbf{Gestor escolar}\desc{Mantém usuários}};
   \node[c4person] (admin) at (14.2,0) {\textbf{Admin do contrato}\desc{Rede}};
@@ -107,7 +107,7 @@ Os princípios que atravessam todo o código:
     {\textbf{Terraform (repo separado)}\desc{Provisiona a \emph{stack} do contrato}};
 
   % --- relações
-  \draw[c4rel] (aluno.south) -- (4.4,-3.1)
+  \draw[c4rel] (estudante.south) -- (4.4,-3.1)
     node[cxlabel, pos=0.42, left=1pt]{realiza missões};
   \draw[c4rel] (prof.south) -- (6.6,-3.1)
     node[cxlabel, pos=0.40, right=1pt]{prepara, conduz, lê};
@@ -161,8 +161,8 @@ desenho existe para evitar.
     {Plataforma Unooria --- \emph{stack} de um contrato};
 
   % --- pessoas
-  \node[c4person, text width=24mm, minimum height=12mm] (aluno) at (3.0,-0.2)
-    {\textbf{Aluno}};
+  \node[c4person, text width=24mm, minimum height=12mm] (estudante) at (3.0,-0.2)
+    {\textbf{Estudante}};
   \node[c4person, text width=24mm, minimum height=12mm] (prof) at (7.0,-0.2)
     {\textbf{Professor}};
   \node[c4person, text width=26mm, minimum height=12mm] (adm) at (11.4,-0.2)
@@ -179,7 +179,7 @@ desenho existe para evitar.
 
   \node[bundle, text width=34mm, minimum height=17mm] (exp) at (11.9,-4.2)
     {\textbf{Experiência}\tech{Vite + React, estático}\desc{Uma por missão.
-     Roda no navegador do aluno; nunca é um processo do servidor}};
+     Roda no navegador do estudante; nunca é um processo do servidor}};
 
   \node[c4component, text width=24mm, minimum height=11mm] (sdk) at (11.9,-7.3)
     {\textbf{\texttt{@edu/sdk}}\tech{TypeScript}\desc{Ponte, telemetria, API,
@@ -207,7 +207,7 @@ desenho existe para evitar.
     {\textbf{WSO2 IS}\desc{externo à \emph{stack}}};
 
   % --- relações
-  \draw[c4rel] (aluno.south) -- (3.6,-3.1) node[cxlabel, pos=0.45, left=1pt]{HTTPS};
+  \draw[c4rel] (estudante.south) -- (3.6,-3.1) node[cxlabel, pos=0.45, left=1pt]{HTTPS};
   \draw[c4rel] (prof.south) -- (5.0,-3.1) node[cxlabel, pos=0.45, right=1pt]{HTTPS};
   \draw[c4rel] (adm.south) -- (5.4,-3.3);
   \draw[c4relbi] (hub.east) -- (exp.west)
@@ -469,7 +469,7 @@ mentiria sobre quem depende dela.
     {\texttt{ExpFrame}\desc{\emph{sandbox} + protocolo v1}};
 
   \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
-    {Rotas: \texttt{/} (\emph{landing}), \texttt{/aluno}, \texttt{/professor/*},
+    {Rotas: \texttt{/} (\emph{landing}), \texttt{/estudante}, \texttt{/professor/*},
      \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
   \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
     {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
@@ -492,7 +492,7 @@ mentiria sobre quem depende dela.
 \begin{decisao}
 \textbf{Um único \emph{header} para todos os papéis, e uma única casca visual.}
 Antes, cada área copiava o próprio \emph{header} e a experiência não tinha
-nenhum. Hoje \cd{HeaderPlataforma} serve \rota{/aluno}, \rota{/professor},
+nenhum. Hoje \cd{HeaderPlataforma} serve \rota{/estudante}, \rota{/professor},
 \rota{/admin}, \rota{/analise} \emph{e} \rota{/exp/*}, e a casca visual saiu do
 \emph{layout} do grupo de rotas para \cd{CascaPlataforma}, porque \rota{/exp/*} e
 \rota{/dev-embed} estão fora do grupo e também precisam dela. A regra de ouro
@@ -614,13 +614,13 @@ apps/api/src/<slug>/
   regras.ts       // REGRA: funcoes puras. Sem Prisma, sem fetch, sem Date.
   <slug>.service.ts   // PERSISTENCIA: le com lock, aplica a regra, grava.
                       // Toda query dentro de comTenancy e filtrando escola_id.
-  <slug>.controller.ts        // casca HTTP do papel "aluno"
+  <slug>.controller.ts        // casca HTTP do papel "estudante"
   <slug>-professor.controller.ts  // casca HTTP do papel "professor"
   <slug>.module.ts
 
 // A separacao de controllers POR PAPEL e deliberada: um @Roles misto com
 // excecao por metodo e o caminho mais curto para um GET de professor herdar
-// silenciosamente a permissao de um POST de aluno.
+// silenciosamente a permissao de um POST de estudante.
 \end{lstlisting}
 
 \begin{nota}
@@ -749,7 +749,7 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
   \node[actnote, text width=44mm, anchor=north west] at (15.0,-6.0)
     {\textbf{Por que o sanitizador:} \texttt{lado}, \texttt{perfil} e \texttt{intensidade}
      são \emph{a variável independente do experimento}. Se chegassem ao cliente,
-     a experiência poderia exibi-los --- e o aluno saberia de que lado o
+     a experiência poderia exibi-los --- e o estudante saberia de que lado o
      algoritmo o colocou antes da revelação.};
 
 \end{tikzpicture}}

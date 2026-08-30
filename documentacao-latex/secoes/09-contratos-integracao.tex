@@ -13,7 +13,7 @@ especifica os quatro e a política de versionamento de cada um.
 \begin{regra}
 \textbf{Mudança em contrato exige cuidado extremo e atualização deste
 documento.} Um \emph{bundle} publicado há três meses no \emph{bucket} de um
-contrato continua sendo servido a alunos: ele não é reconstruído quando a API
+contrato continua sendo servido a estudantes: ele não é reconstruído quando a API
 muda. Toda alteração de contrato é, por definição, uma alteração
 \emph{retrocompatível} ou um \emph{bump} de versão maior com suporte à anterior.
 \end{regra}
@@ -31,7 +31,7 @@ exp \seta{} hub & \cd{exp:ready} &
   \cd{\{ protocolVersion \}}. Anúncio de que o \emph{bundle} carregou. É
   \textbf{reenviado} a cada \SI{400}{\milli\second} até o hub responder.\\
 \zebra hub \seta{} exp & \cd{hub:init} &
-  \cd{\{ protocolVersion, token, aluno\{id,nome,serie,turmaId,escolaId\},
+  \cd{\{ protocolVersion, token, estudante\{id,nome,serie,turmaId,escolaId\},
   apiUrl, config \}}. Resposta ao \cd{exp:ready}; só a primeira conta.\\
 exp \seta{} hub & \cd{exp:concluir} &
   \cd{\{ payload: \{ score?, dados? \} \}}. Conclusão da missão. O hub registra
@@ -85,7 +85,7 @@ ignora --- o canal é genérico de propósito.
   \msgself{1.6}{-4.4}{\texttt{connectToHub(\{ hubOrigin \})}}
   \msgs{1.6}{6.2}{-5.4}{\texttt{exp:ready \{ protocolVersion: 1 \}}}
   \msgself{6.2}{-6.2}{valida \texttt{ev.origin} e a versão MAIOR}
-  \msgr{6.2}{1.6}{-7.2}{\texttt{hub:init \{ token, aluno, apiUrl, config \}}}
+  \msgr{6.2}{1.6}{-7.2}{\texttt{hub:init \{ token, estudante, apiUrl, config \}}}
   \msgself{1.6}{-8.0}{valida com Zod; resolve a \emph{Promise}}
 
   \msgs{1.6}{15.0}{-9.2}{chamadas de domínio, \rota{/telemetry/batch}, \rota{/ai/gerar}}
@@ -201,14 +201,14 @@ Campo existente muda de tipo ou semântica & \textbf{v2} &
 \begin{atencao}
 \cd{hub:pause} e \cd{hub:resume} existem porque \textbf{esconder um
 \cd{iframe} não dispara \cd{visibilitychange} nele}. Sem essas mensagens, o
-cronômetro de \emph{dwell} da experiência correria com o aluno de costas --- e
+cronômetro de \emph{dwell} da experiência correria com o estudante de costas --- e
 \emph{dwell} é a medida central do motor de \emph{feed} da exp-01. O hub escuta
 \cd{visibilitychange} \emph{e} \cd{blur}/\cd{focus} da janela, porque trocar de
 janela ou de aplicativo não muda \cd{visibilityState}.
 
 \textbf{Uma exceção, e ela custou um bug:} clicar em qualquer lugar
 \textbf{dentro} do \cd{iframe} move o foco para a experiência, e o navegador
-dispara \cd{blur} no documento de cima. Isso \emph{não} é o aluno saindo --- e
+dispara \cd{blur} no documento de cima. Isso \emph{não} é o estudante saindo --- e
 como o \cd{focus} correspondente não volta enquanto ele continua ali, um
 \cd{hub:pause} nesse caso é definitivo. Na exp-02 o vídeo parava no primeiro
 toque em \enquote{Salvar} e não voltava mais. Quando o foco foi para a nossa
@@ -261,7 +261,7 @@ lendo o arquivo.
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
   exp-01 é 375$\times$812; a exp-02 \emph{não} tem \cd{viewport}, porque foi
   desenhada para \emph{desktop}.\\
-\cd{publico} & \cd{aluno|professor} & \cd{professor} \implica{} ferramenta do
+\cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
 \zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
   experiência precisa. Hoje só \cd{pointer-lock}. Vazio (o \emph{default}) =
@@ -275,7 +275,7 @@ lendo o arquivo.
 \begin{regra}
 \cd{series: []} significa \textbf{todas as séries}, não nenhuma: é assim que uma
 experiência \emph{transversal} se declara (é o caso da exp-70, que não pertence a
-ano nenhum). Quando o filtro por série voltar a valer no hub do aluno, vazio tem
+ano nenhum). Quando o filtro por série voltar a valer no hub do estudante, vazio tem
 de continuar querendo dizer \enquote{todas} --- o contrário faz a experiência
 desaparecer da tela sozinha, sem erro em lugar nenhum.
 \end{regra}
@@ -376,7 +376,7 @@ plataforma efetivamente usa.
 {
   "eventId":    "uuid",          // gerado pela SDK; chave de dedupe
   "ts":         "ISO-8601",      // relogio do cliente
-  "alunoId":    "...",           // SOBRESCRITO pelo servidor, a partir do token
+  "estudanteId":    "...",           // SOBRESCRITO pelo servidor, a partir do token
   "escolaId":   "...",           // SOBRESCRITO pelo servidor
   "expId":      "exp-01",
   "expVersion": "1.2.0",
@@ -395,7 +395,7 @@ plataforma efetivamente usa.
 Quem preenche o quê & A SDK preenche tudo \textbf{exceto} \cd{verbo},
   \cd{objeto} e \cd{resultado} --- esses são a única coisa que a experiência
   informa.\\
-\zebra Identidade & \cd{alunoId} e \cd{escolaId} enviados pelo cliente são
+\zebra Identidade & \cd{estudanteId} e \cd{escolaId} enviados pelo cliente são
   \textbf{descartados}: o servidor os deriva do \emph{token}. É anti-\emph{spoof}
   e, ao mesmo tempo, garantia de que o cliente não \emph{pode} colocar PII no
   lugar do id.\\
@@ -445,7 +445,7 @@ export interface AiFerramenta {
 
 export interface AiConversaRequest {
   system: string;
-  historico: Array<{ papel: "aluno" | "agente"; texto: string }>;
+  historico: Array<{ papel: "estudante" | "agente"; texto: string }>;
   ferramentas?: {
     declaracoes: AiFerramenta[];
     executar: (nome: string, args: Record<string, unknown>) => Promise<unknown>;
@@ -510,7 +510,7 @@ direta --- módulos de domínio não se conhecem (Seção~\ref{sec:c4l3}). O con
   \node[bundle, text width=28mm] (i) at (13.6,-3.2) {\textbf{exp-01}\desc{Instanooria}};
 
   \node[actnote, text width=52mm, anchor=north west] at (0.2,-2.2)
-    {\textbf{Duas travas que custam alunos, de propósito:} valor não observado
+    {\textbf{Duas travas que custam estudantes, de propósito:} valor não observado
      (\texttt{indicative} ou \texttt{none}) \textbf{fica fora da média} --- nunca
      entra como zero; e quadrante \emph{sem nenhum membro observado} invalida o
      perfil inteiro. Sem perfil, o Instanooria cai no sorteio balanceado, que é

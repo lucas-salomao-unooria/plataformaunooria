@@ -5,12 +5,12 @@ import { vigiarFalhasDaApi } from "./lib/smoke.mjs";
 /**
  * Smoke VISUAL da EXPLICABILIDADE da exp-01 — o fechamento da missão.
  *
- * O `walkthrough-aluno.mjs` para no feed, de propósito: ele cobre a entrada. Da
+ * O `walkthrough-estudante.mjs` para no feed, de propósito: ele cobre a entrada. Da
  * revelação em diante ninguém chegava por script, e é justamente onde mora a
  * tela mais densa do produto e a única que sai do aparelho.
  *
  * DOIS CONTEXTOS, como o da exp-03: o professor conduz o relógio da turma e o
- * aluno joga. Nada avança sem o botão do professor, então um contexto só não
+ * estudante joga. Nada avança sem o botão do professor, então um contexto só não
  * consegue chegar ao fim.
  *
  * O que ele PROVA, e que typecheck nenhum pega:
@@ -19,7 +19,7 @@ import { vigiarFalhasDaApi } from "./lib/smoke.mjs";
  *    antes e depois do "Ver meu relatório".
  * 2. E expande SEM RECARREGAR: uma marca é escrita dentro do frame antes da
  *    expansão e precisa continuar lá depois. Se a árvore React trocar, o
- *    `<iframe>` é remontado, a marca some e o aluno volta para a revelação com
+ *    `<iframe>` é remontado, a marca some e o estudante volta para a revelação com
  *    a sessão recarregada — o modo de falha que a ADR-41 existe para impedir.
  * 3. O relatório é CLARO: o `backgroundColor` COMPUTADO do fundo, não a classe.
  * 4. E CONTRAI quando o professor avança para "o que perderam", ainda sem
@@ -31,7 +31,7 @@ import { vigiarFalhasDaApi } from "./lib/smoke.mjs";
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/wt-explicabilidade";
-const ALUNO = process.argv[3] ?? "aluno03";
+const ESTUDANTE = process.argv[3] ?? "estudante03";
 const PROFESSOR = "prof.demo";
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
@@ -93,7 +93,7 @@ try {
   if (!atividade) throw new Error("nenhuma atividade no seed — rode `seed:demo`");
 
   /**
-   * Zera a turma e volta o relógio. Sem isto a segunda execução acha o aluno já
+   * Zera a turma e volta o relógio. Sem isto a segunda execução acha o estudante já
    * na explicabilidade e não exercita nada do caminho.
    */
   await prof.request.post(`${HUB}/api/plataforma/atividades/${atividade.id}/limpar`);
@@ -104,18 +104,18 @@ try {
   await prof.waitForTimeout(2500);
   await registrar(prof, "professor-na-atividade", `${atividade.titulo} · turma zerada`);
 
-  // ---- o aluno entra e usa o feed ----------------------------------------
-  const ctxAluno = await browser.newContext({
+  // ---- o estudante entra e usa o feed ----------------------------------------
+  const ctxEstudante = await browser.newContext({
     viewport: { width: 1280, height: 950 },
     deviceScaleFactor: 2,
   });
-  const p = await ctxAluno.newPage();
+  const p = await ctxEstudante.newPage();
   const erros = [];
   p.on("console", (m) => m.type() === "error" && erros.push(m.text().slice(0, 200)));
   p.on("pageerror", (e) => erros.push("PAGEERROR: " + String(e).slice(0, 200)));
-  vigiarFalhasDaApi(p, falhasDaApi, "aluno");
+  vigiarFalhasDaApi(p, falhasDaApi, "estudante");
 
-  await entrar(p, ALUNO);
+  await entrar(p, ESTUDANTE);
   await p.goto(`${HUB}/exp/exp-01-instanooria`, { waitUntil: "domcontentloaded" });
 
   const aparelho = p.locator('iframe[title="experiencia"]');
@@ -142,7 +142,7 @@ try {
   const caixaNoFeed = await aparelho.boundingBox();
   await registrar(
     p,
-    "aluno-no-feed",
+    "estudante-no-feed",
     `${quantosCards} cards · iframe ${Math.round(caixaNoFeed.width)}×${Math.round(caixaNoFeed.height)}`,
   );
   exigir(
@@ -162,7 +162,7 @@ try {
   await prof.waitForTimeout(2500);
   await registrar(prof, "painel-na-explicacao");
 
-  // O aluno é levado pelo polling de 5s do relógio da turma.
+  // O estudante é levado pelo polling de 5s do relógio da turma.
   await tela
     .locator("text=O Instanooria não é uma rede social de verdade")
     .waitFor({ timeout: 30_000 });
@@ -305,7 +305,7 @@ try {
    * por clique programático neste contexto (nem dialog nem overlay aparecem no
    * DOM depois dele), e forçar isso testaria o Playwright, não o produto. O que
    * importa aqui é que o dado chega — a renderização é a mesma expressão que a
-   * tela do aluno já usa, e essa o smoke exercita acima.
+   * tela do estudante já usa, e essa o smoke exercita acima.
    */
   const runs = await prof.request.get(`${HUB}/api/plataforma/atividades/${atividade.id}/monitor`);
   const { runs: linhas } = await runs.json();
@@ -327,7 +327,7 @@ try {
 
   console.log("\n--- passos ---");
   passos.forEach((linha) => console.log(linha));
-  console.log("\n--- erros de console (aluno) ---");
+  console.log("\n--- erros de console (estudante) ---");
   console.log(erros.length ? erros.join("\n") : "(nenhum)");
   console.log("\n--- respostas de erro da api ---");
   console.log(falhasDaApi.length ? [...new Set(falhasDaApi)].join("\n") : "(nenhuma)");

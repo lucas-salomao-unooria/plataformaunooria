@@ -71,7 +71,7 @@ pnpm install
 docker compose up -d pg                # só o banco
 cp .env.example apps/api/.env && cp .env.example apps/hub/.env.local   # e edite
 pnpm --filter @edu/api migrate:dev     # migrations (Prisma + RLS)
-pnpm --filter @edu/api seed            # escola-demo: prof.demo/gestor.demo/aluno01–40
+pnpm --filter @edu/api seed            # escola-demo: prof.demo/gestor.demo/estudante01–40
 pnpm --filter @edu/api seed:demo       # atividade DEMO com 92 posts, sem Gemini
 pnpm dev                               # hub :3000, api :3001, exp :5173
 ```
@@ -99,12 +99,12 @@ prefixe o comando. O seed NÃO tem senha padrão no fonte: ele roda contra o
 `DATABASE_URL` que estiver no ambiente, e uma constante ali criaria contas com
 senha conhecida se ele fosse apontado por engano ao banco de um contrato.
 Login: `gestor.demo` → `/admin/usuarios` (importação CSV); `prof.demo` →
-`/professor`; `aluno01` → experiência. Teste de experiência local:
+`/professor`; `estudante01` → `/estudante` (experiência). Teste de experiência local:
 `/dev-embed`. Sanidade do DS: `/ds-smoke` (dev only).
 
 ## Smoke visual
 ```bash
-node scripts/walkthrough-aluno.mjs testes/wt-aluno
+node scripts/walkthrough-estudante.mjs testes/wt-estudante
 node scripts/walkthrough-professor.mjs testes/wt-professor
 ```
 Typecheck não pega ícone virando texto, link sublinhado nem iframe vazio —

@@ -20,14 +20,14 @@ const SENHA_DO_LOTE = "PlanilhaSmoke2026";
 const SENHA_ESCOLHIDA = "MinhaSenhaSmoke1";
 const TURMA = "9Z";
 
-/** Uma linha por pessoa. O professor traz login; os alunos deixam a api gerar. */
+/** Uma linha por pessoa. O professor traz login; os estudantes deixam a api gerar. */
 const PLANILHA = [
   "matricula,nome,usuario,email,papel,turma,serie,turno",
   `SMOKE-P1,Marta Nunes Alves,marta.smoke,marta@escola.exemplo,professor,${TURMA},9EF,manha`,
-  `SMOKE-A1,Ana Paula Ribeiro,,,aluno,${TURMA},9EF,manha`,
-  `SMOKE-A2,Bruno Reis Silva,,,aluno,${TURMA},9EF,manha`,
-  `SMOKE-A3,Caio Prado Lima,,,aluno,${TURMA},9EF,manha`,
-  `SMOKE-A4,Duda Nogueira Melo,,,aluno,${TURMA},9EF,manha`,
+  `SMOKE-A1,Ana Paula Ribeiro,,,estudante,${TURMA},9EF,manha`,
+  `SMOKE-A2,Bruno Reis Silva,,,estudante,${TURMA},9EF,manha`,
+  `SMOKE-A3,Caio Prado Lima,,,estudante,${TURMA},9EF,manha`,
+  `SMOKE-A4,Duda Nogueira Melo,,,estudante,${TURMA},9EF,manha`,
   `SMOKE-A5,Elis Ramos Costa,,,coordenacao,,,`,
   "",
 ].join("\n");
@@ -74,15 +74,15 @@ const LOTE_ONEROSTER = {
   users: [
     "sourcedId,enabledUser,username,givenName,familyName,identifier,role",
     "sm-prof-1,true,,Helena,Braga,SM-P1,teacher",
-    "sm-aluno-1,true,,Tiago,Amorim,SM-A1,student",
-    "sm-aluno-2,true,,Vera,Pontes,SM-A2,student",
+    "sm-estudante-1,true,,Tiago,Amorim,SM-A1,student",
+    "sm-estudante-2,true,,Vera,Pontes,SM-A2,student",
     "",
   ].join("\n"),
   enrollments: [
     "sourcedId,classSourcedId,schoolSourcedId,userSourcedId,role,primary,beginDate",
     "sm-mat-1,sm-turma-6c,escola-demo,sm-prof-1,teacher,true,2026-02-01",
-    "sm-mat-2,sm-turma-6c,escola-demo,sm-aluno-1,student,true,2026-02-01",
-    "sm-mat-3,sm-turma-6c,escola-demo,sm-aluno-2,student,true,2026-02-01",
+    "sm-mat-2,sm-turma-6c,escola-demo,sm-estudante-1,student,true,2026-02-01",
+    "sm-mat-3,sm-turma-6c,escola-demo,sm-estudante-2,student,true,2026-02-01",
     "",
   ].join("\n"),
 };
@@ -181,8 +181,8 @@ try {
     await linhaDaTurma.getByRole("button", { name: "Abrir" }).click();
     await p.waitForURL("**/admin/turmas/**", { timeout: 15_000 });
     await p.waitForTimeout(1500);
-    const alunos = await p.locator("table tbody tr").count();
-    await registrar("admin-turma-alunos", `${alunos} aluno(s) matriculados`);
+    const estudantes = await p.locator("table tbody tr").count();
+    await registrar("admin-turma-estudantes", `${estudantes} estudante(s) matriculados`);
   }
 
   // ---- o outro caminho: o binding CSV do OneRoster ------------------------
@@ -310,14 +310,14 @@ try {
   );
 
   // Espera a navegação de verdade: o print sem isto sai da LISTA, e o teste
-  // seguinte conta zero aluno numa tela que nem é a da turma.
+  // seguinte conta zero estudante numa tela que nem é a da turma.
   await Promise.all([
     p.waitForURL(/\/professor\/turmas\/[0-9a-f-]{36}/, { timeout: 20_000 }),
     p.locator('a[href^="/professor/turmas/"]').first().click(),
   ]);
   await p.waitForTimeout(1500);
-  const alunosNominais = await p.locator("a[href^='/professor/entre-redes/vila-do-lume/alunos/']").count();
-  await registrar("turma-do-professor", `${alunosNominais} aluno(s) nominais na lista`);
+  const estudantesNominais = await p.locator("a[href^='/professor/entre-redes/vila-do-lume/estudantes/'], a[href^='/professor/entre-redes/vila-do-lume/alunos/']").count();
+  await registrar("turma-do-professor", `${estudantesNominais} estudante(s) nominais na lista`);
 
   console.log("\n--- passos ---");
   passos.forEach((linha) => console.log(linha));

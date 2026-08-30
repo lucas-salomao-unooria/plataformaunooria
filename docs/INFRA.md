@@ -100,7 +100,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   duas ordens de grandeza: o jogo tem 7 pontos de log, todos atos discretos com
   guarda própria (8 Chamas, 4 aldeões, 1 Borda + 3 Destaques, 4 cartões, 1
   primeira conversa) — teto real ~22 eventos, nada por quadro nem por metro
-  andado. **~30 MB por contrato** de 10 mil alunos jogando uma vez. O cap do
+  andado. **~30 MB por contrato** de 10 mil estudantes jogando uma vez. O cap do
   contrato foi de 2000 para 200, que é o que de fato limita a linha se um cliente
   adulterado mandar lixo.
   **Sem prazo de retenção declarado** (decisão de 2026-08-26). Houve um
@@ -113,7 +113,7 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   **Em aberto, e é decisão de produto/contrato:** se uma rede exigir prazo para o
   dado comportamental bruto de menores, ele volta junto com a rotina que o
   cumpre. A mesma pergunta vale para `telemetria_eventos`, que guarda evento por
-  `aluno_id` de TODAS as experiências, também sem prazo — se a resposta importar,
+  `estudante_id` de TODAS as experiências, também sem prazo — se a resposta importar,
   ela é da plataforma inteira, não de um módulo.
 
 - **Check-in de bem-estar** (exp-91, 2026-08): sem recurso novo de infra —

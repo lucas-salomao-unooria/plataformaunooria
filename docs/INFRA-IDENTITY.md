@@ -67,10 +67,10 @@ O IS 7.x invalida cache entre nós via Hazelcast, cujos `membership_scheme` supo
 estável nem descoberta. Uma instância elimina de uma vez toda a classe de problemas de
 coerência de cache, clustering e sticky session.
 
-E a carga comporta com folga. Três contratos × 4.000 alunos logando nos cinco minutos mais
+E a carga comporta com folga. Três contratos × 4.000 estudantes logando nos cinco minutos mais
 agudos ≈ 40 logins/s. Cada authorization-code flow são ~4 requests (authorize, POST do
 login, callback, token exchange) ≈ 160 req/s, a ~150 ms cada ≈ **24 requests concorrentes**.
-Depois do login o aluno não toca mais no WSO2 por uma hora. **A carga do IdP é minúscula
+Depois do login o estudante não toca mais no WSO2 por uma hora. **A carga do IdP é minúscula
 comparada à da api** — ele só vê o instante do login.
 
 Também não custa disponibilidade no deploy: `max-instances` é *por revisão*, então durante
@@ -388,7 +388,7 @@ resposta pronta.
 | IP global estático | `identity-lb-ip` | Premium tier. Grátis enquanto atachado. |
 | Certificado | `identity-cert` (Certificate Manager, **DNS authorization**) | Prefira ao `managedSslCertificate` clássico: a autorização por DNS permite **provisionar o certificado antes de cortar o tráfego**, enquanto o clássico exige que o DNS já aponte para o LB, criando uma janela de erro de certificado. Provisiona em 15-60 min — **comece cedo**. |
 | Serverless NEG | `identity-neg` | → Cloud Run `identity-is` |
-| Backend service | `identity-backend` | **Cloud CDN OFF** (CDN em endpoint de auth é como se vaza o token de um aluno para outro); logging sample 1.0 no início, 0.1 depois. |
+| Backend service | `identity-backend` | **Cloud CDN OFF** (CDN em endpoint de auth é como se vaza o token de um estudante para outro); logging sample 1.0 no início, 0.1 depois. |
 | URL map / proxy / forwarding rules | `identity-urlmap`, `identity-https-proxy`, `identity-fr` (443) + `identity-http-redirect` (80 → 301) | ~$18/mês |
 
 ⚠️ **`idp.unooria.com.br` é uma decisão para congelar hoje e nunca mais mudar.** Este
@@ -414,7 +414,7 @@ Armor**, transformando toda a política abaixo em decoração. Efeito colateral 
 | Por tenant (bônus) | `request.path.matches('/t/sp-piloto/')` permite limitar um contrato sem afetar os outros — só possível porque os tenants são path-based. |
 
 ⚠️ **A armadilha do rate limit: uma escola inteira sai por um único IP público (NAT).**
-Quinhentos alunos às 8h vindos do mesmo IP. Um `enforce_on_key = IP` com threshold
+Quinhentos estudantes às 8h vindos do mesmo IP. Um `enforce_on_key = IP` com threshold
 "razoável" de 30/min **bloqueia a escola inteira no primeiro dia de aula**. O objetivo da
 regra é só cortar abuso grosseiro; a defesa contra credential stuffing fica na **política de
 lockout de conta do WSO2**, que é por usuário. O `auth.controller.ts` da api já documenta
@@ -451,9 +451,9 @@ exatamente quebra quando ele cai**:
 
 | Situação | Impacto |
 |---|---|
-| Aluno já logado, sessão do hub viva | **Nenhum** |
-| Aluno já logado chamando a api | **Nenhum** — `jose` já cacheia o JWKS e só refaz fetch em `kid` novo |
-| Aluno tentando logar agora | Bloqueado por 60-120 s |
+| Estudante já logado, sessão do hub viva | **Nenhum** |
+| Estudante já logado chamando a api | **Nenhum** — `jose` já cacheia o JWKS e só refaz fetch em `kid` novo |
+| Estudante tentando logar agora | Bloqueado por 60-120 s |
 
 O SPOF custa *"quem tentar logar nos próximos dois minutos vê erro"*, não "a plataforma
 caiu" — desde que: (1) access token de 1 h, para que a janela de indisponibilidade seja
@@ -541,10 +541,10 @@ token endpoint, ora o entity ID do IdP residente. **Leia `/.well-known/openid-co
 depois do deploy e copie o campo `issuer` literalmente.**
 
 ⚠️ **`perfil` precisa ser single-valued.** O `token.service.ts` faz
-`PERFIS.includes(String(payload["perfil"]))`; se o WSO2 emitir `["aluno"]` — formato natural
+`PERFIS.includes(String(payload["perfil"]))`; se o WSO2 emitir `["estudante"]` — formato natural
 de roles/groups — a verificação falha e **todo mundo toma 401**. Mantenha `perfil` como
 atributo de usuário, não role. E trate a escrita desse atributo como privilegiada: um bug
-de escrita no userstore promove um aluno a `admin-contrato`.
+de escrita no userstore promove um estudante a `admin-contrato`.
 
 ---
 
@@ -594,12 +594,12 @@ novembro/2026 é o que está abaixo**, e as três primeiras precisam de decisão
 1. **Subscrição WSO2 vs. imagem GA** (§1). Decisão de negócio sobre patching de CVE em
    contrato de governo.
 
-2. **Como 10.000 alunos por contrato entram no WSO2.** Duas arquiteturas:
+2. **Como 10.000 estudantes por contrato entram no WSO2.** Duas arquiteturas:
    - **(A) WSO2 como userstore mestre.** Migrar a tabela `users` via SCIM2 Bulk. O hash
      bcrypt **não é portável** para o formato do WSO2 — ou todos resetam senha, ou se
      escreve um userstore customizado apontando para o Postgres da api. Você vira
      custodiante de senhas de menores, com o peso de LGPD que isso carrega.
-   - **(B) WSO2 como federador + JIT provisioning.** Alunos logam com o Google Workspace
+   - **(B) WSO2 como federador + JIT provisioning.** Estudantes logam com o Google Workspace
      for Education da rede (**extremamente comum em redes públicas brasileiras**) ou Gov.br
      para gestores; o WSO2 federa e enriquece `escola_id`/`turma_id`. **Você não guarda
      senha de menor nenhuma** — resposta muito melhor num questionário de LGPD de edital.
@@ -612,10 +612,10 @@ novembro/2026 é o que está abaixo**, e as três primeiras precisam de decisão
 3. **Formato de username.** `@@unique([escolaId, username])` no `schema.prisma` permite
    `joao.silva` em duas escolas do mesmo contrato, e o `auth.controller.ts` desambigua pela
    senha. **Num tenant WSO2 o username é único no tenant inteiro** — não há workaround de
-   configuração. É migração de dados com impacto de UX em 10k alunos, e **o usuário é uma
+   configuração. É migração de dados com impacto de UX em 10k estudantes, e **o usuário é uma
    criança de 6 anos digitando numa Chromebook compartilhada**. Opções: `sp042.joao` (código
    curto da escola) ou, melhor, **não digitar nada** — código de turma + QR code ou seleção
-   visual do aluno numa lista da turma.
+   visual do estudante numa lista da turma.
 
 4. **Tela de login.** O `authenticationendpoint` padrão do WSO2 é um formulário corporativo.
    Do 1º ano EF ao 3º EM exige outra coisa. É trabalho de produto, e é meses.

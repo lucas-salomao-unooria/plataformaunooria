@@ -13,7 +13,7 @@ esquema aqui é decorativo.
 \begin{lstlisting}[language=tsunoo, caption={\arq{packages/sdk/src/types.ts} --- os esquemas do protocolo}]
 export const PROTOCOL_VERSION = 1;
 
-export const AlunoSchema = z.object({
+export const EstudanteSchema = z.object({
   id: z.string(), nome: z.string(),
   serie: z.string(),          // "6EF", "2EM"
   turmaId: z.string(), escolaId: z.string(),
@@ -23,7 +23,7 @@ export const HubInitSchema = z.object({
   type: z.literal("hub:init"),
   protocolVersion: z.number(),
   token: z.string(),
-  aluno: AlunoSchema,
+  estudante: EstudanteSchema,
   apiUrl: z.string().url(),
   config: z.record(z.unknown()).default({}),
 });
@@ -52,7 +52,7 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
   "type": "hub:init",
   "protocolVersion": 1,
   "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "aluno": {
+  "estudante": {
     "id": "8f2c1a44-...", "nome": "Ana",
     "serie": "8EF",
     "turmaId": "b17e...", "escolaId": "sp-001"
@@ -66,11 +66,11 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
 
 \begin{lstlisting}[language=jsonunoo, caption={\emph{Claims} do JWT --- contrato congelado}]
 {
-  "sub":       "8f2c1a44-...",       // usuarioId (nao "alunoId": professor
+  "sub":       "8f2c1a44-...",       // usuarioId (nao "estudanteId": professor
                                      // passa pelo MESMO guard)
   "escola_id": "sp-001",             // vazio APENAS para admin-contrato
   "turma_id":  "b17e...",            // opcional
-  "perfil":    "aluno",              // aluno | professor | gestor | admin-contrato
+  "perfil":    "estudante",              // estudante | professor | gestor | admin-contrato
   "aud":       "plataforma-api",
   "iss":       "https://entreredes.unooria.com",
   "exp":       1756290000            // TTL de 15 minutos
@@ -79,9 +79,9 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
 
 \begin{nota}
 \cd{sub} vira \cd{usuarioId} nas \emph{claims} tipadas da API
-(\arq{src/auth/claims.ts}) --- e não \cd{alunoId}, porque professor, gestor e
+(\arq{src/auth/claims.ts}) --- e não \cd{estudanteId}, porque professor, gestor e
 admin passam pelo mesmo \emph{guard}. O nome do campo é documentação: um
-\cd{alunoId} que às vezes contém um professor é uma armadilha para quem lê a
+\cd{estudanteId} que às vezes contém um professor é uma armadilha para quem lê a
 \emph{query} seis meses depois.
 \end{nota}
 
@@ -99,7 +99,7 @@ const EventoSchema = z.object({
   resultado:  z.record(z.unknown()).optional(),
   contexto:   z.record(z.unknown()).optional(),
 });
-// alunoId e escolaId NAO estao no esquema de entrada: sao SOBRESCRITOS a
+// estudanteId e escolaId NAO estao no esquema de entrada: sao SOBRESCRITOS a
 // partir do token. O cliente nao PODE colocar PII no lugar do id.
 
 const BatchSchema  = z.object({ eventos: z.array(EventoSchema).max(50) });
@@ -262,13 +262,13 @@ decisões de projeto por campo.
 \headrow \thd{Trava} & \thd{Como funciona}\\
 \midrule
 \cd{CHAVES\_PROIBIDAS} (por \emph{substring}) &
-  \cd{nome}, \cd{name}, \cd{apelido}, \cd{nick}, \cd{aluno}, \cd{crianca},
+  \cd{nome}, \cd{name}, \cd{apelido}, \cd{nick}, \cd{estudante}, \cd{crianca},
   \cd{jogador}, \cd{player}, \cd{cpf}, \cd{matricula}, \cd{email},
   \cd{telefone}, \cd{responsavel}, \cd{professor}, \cd{endereco},
   \cd{nascimento}. Por \emph{substring}, porque \cd{nomeCompleto},
-  \cd{nome\_do\_aluno} e \cd{playerName} são a mesma coisa para quem for
+  \cd{nome\_do\_estudante} e \cd{playerName} são a mesma coisa para quem for
   reidentificar a criança.\\
-\zebra \cd{CHAVES\_PROIBIDAS\_EXATAS} & \cd{rg}, \cd{ra}, \cd{id\_aluno},
+\zebra \cd{CHAVES\_PROIBIDAS\_EXATAS} & \cd{rg}, \cd{ra}, \cd{id\_estudante},
   \cd{doc} --- \textbf{só por igualdade}. \cd{rg} casaria dentro de
   \cd{perguntasCaminho}, e um falso positivo recusa a partida inteira de uma
   criança.\\
@@ -305,7 +305,7 @@ ignorar em silêncio, porque um campo de nome aparecendo é \emph{bug do jogo}.
  *
  * Herdamos 2000 do app de origem. Cabe baixar: o cap e a UNICA coisa que
  * limita o tamanho da linha se um cliente adulterado mandar lixo, e
- * 2000 x ~80 bytes = 160KB por partida (1,6GB num contrato de 10 mil alunos)
+ * 2000 x ~80 bytes = 160KB por partida (1,6GB num contrato de 10 mil estudantes)
  * contra ~2KB reais. Com 200 ha 9x de folga para eventos novos.
  */
 \end{lstlisting}
@@ -347,9 +347,9 @@ ignorar em silêncio, porque um campo de nome aparecendo é \emph{bug do jogo}.
 \begin{nota}
 \cd{series: []} na exp-90 significa \enquote{não se aplica} porque
 \cd{publico: "professor"}; na exp-70 significa \textbf{todas as séries}, porque é
-experiência de aluno \emph{transversal}. O mesmo valor, duas leituras --- e o que
+experiência de estudante \emph{transversal}. O mesmo valor, duas leituras --- e o que
 as distingue é \cd{publico}. Quando o filtro por série voltar a valer, vazio tem
-de continuar querendo dizer \enquote{todas} para o público \cd{aluno}.
+de continuar querendo dizer \enquote{todas} para o público \cd{estudante}.
 \end{nota}
 
 \section{Validação de variáveis de ambiente}
@@ -390,8 +390,8 @@ só o que está errado.
 
 \begin{lstlisting}[language=bashunoo, caption={\rota{POST /usuarios/importar-csv} --- corpo \cd{text/csv} cru}]
 nome,usuario,senha,papel,turma,serie
-Ana Souza,ana.souza,trocar123,aluno,8A,8EF
-Bruno Lima,bruno.lima,trocar123,aluno,8A,8EF
+Ana Souza,ana.souza,trocar123,estudante,8A,8EF
+Bruno Lima,bruno.lima,trocar123,estudante,8A,8EF
 Carla Dias,carla.dias,trocar123,professor,,
 \end{lstlisting}
 
