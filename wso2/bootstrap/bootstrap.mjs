@@ -63,7 +63,7 @@ const SCOPE = "escola";
 const CLAIMS = [
   { nome: "escola_id", rotulo: "Escola", descricao: "Identificador da escola (tenancy)" },
   { nome: "turma_id", rotulo: "Turma", descricao: "Identificador da turma" },
-  { nome: "perfil", rotulo: "Perfil", descricao: "aluno | professor | gestor | admin-contrato" },
+  { nome: "perfil", rotulo: "Perfil", descricao: "estudante | professor | gestor | admin-contrato" },
 ];
 
 const LOCAL_DIALECT_ID = "local";
@@ -409,11 +409,11 @@ async function credenciaisDaApp(idApp) {
 // ---------------------------------------------------------------------------
 
 const SEEDS = [
-  { usuario: "aluno.teste", nome: "Aluno", perfil: "aluno", escola: ESCOLA_DEMO, turma: "8A" },
-  { usuario: "professor.teste", nome: "Professor", perfil: "professor", escola: ESCOLA_DEMO },
-  { usuario: "gestor.teste", nome: "Gestor", perfil: "gestor", escola: ESCOLA_DEMO },
+  { usuario: "estudante.teste", nome: "Estudante", displayName: "Estudante Teste", perfil: "estudante", escola: ESCOLA_DEMO, turma: "8A" },
+  { usuario: "professor.teste", nome: "Professor", displayName: "Professor Teste", perfil: "professor", escola: ESCOLA_DEMO },
+  { usuario: "gestor.teste", nome: "Gestor", displayName: "Gestor Teste", perfil: "gestor", escola: ESCOLA_DEMO },
   // Sem escola_id de propósito: exercita a única exceção cross-escola da regra 1.
-  { usuario: "admin.contrato", nome: "Admin Contrato", perfil: "admin-contrato", escola: "" },
+  { usuario: "admin.contrato", nome: "Admin Contrato", displayName: "Admin Contrato", perfil: "admin-contrato", escola: "" },
 ];
 
 async function criarUsuarios() {
@@ -434,7 +434,8 @@ async function criarUsuarios() {
       schemas: ["urn:ietf:params:scim:schemas:core:2.0:User"],
       userName: s.usuario,
       password: SEED_PASSWORD,
-      name: { givenName: s.nome, familyName: "Teste" },
+      displayName: s.displayName ?? `${s.nome} Teste`,
+      name: { givenName: s.nome, familyName: s.nome === "Admin Contrato" ? "" : "Teste" },
       emails: [{ primary: true, value: `${s.usuario}@${CONTRATO}.local` }],
       [SCIM_CUSTOM_URI]: custom,
     }, { scim: true });

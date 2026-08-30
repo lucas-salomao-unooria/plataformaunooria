@@ -180,10 +180,10 @@ services:
       VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-3.1-flash-image}
       VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
-      # 300k por aluno/dia: uma partida completa da exp-03 custa ~77k tokens
+      # 300k por estudante/dia: uma partida completa da exp-03 custa ~77k tokens
       # (MEDIDO, ver `unoogpt/regras/defaults.ts`), e "Recomeçar" abre partida
       # nova. 20000 era o teto do tutor da exp-01 e matava a missao no 4o turno.
-      AI_DAILY_TOKEN_QUOTA_PER_ALUNO: ${AI_DAILY_TOKEN_QUOTA_PER_ALUNO:-300000}
+      AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: ${AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE:-300000}
       AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: ${AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR:-2000000}
       ASSETS_DRIVER: local
       ASSETS_LOCAL_DIR: /repo/apps/api/storage

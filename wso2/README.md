@@ -137,7 +137,7 @@ escola que `apps/api/prisma/seed.ts` cria):
 
 | Usuário | `perfil` | `escola_id` |
 |---|---|---|
-| `aluno.teste` | `aluno` | `escola-demo` |
+| `estudante.teste` | `estudante` | `escola-demo` |
 | `professor.teste` | `professor` | `escola-demo` |
 | `gestor.teste` | `gestor` | `escola-demo` |
 | `admin.contrato` | `admin-contrato` | *(vazio)* |
@@ -161,7 +161,7 @@ curl -sk https://localhost:9443/t/dev-local/oauth2/jwks | jq '.keys | length'
 docker compose up -d
 ```
 
-O teste que realmente importa é o ponta a ponta: logar no hub com `aluno.teste`, abrir uma
+O teste que realmente importa é o ponta a ponta: logar no hub com `estudante.teste`, abrir uma
 experiência e confirmar que a chamada à api volta **200 com o `escola_id` certo**. É o que
 prova que os atributos estão no *access token*, e não só no ID token.
 
@@ -179,7 +179,7 @@ A api agora loga o motivo real (`ERR_JWT_CLAIM_VALIDATION_FAILED`, `claim=iss`, 
 de engolir o erro. Olhe o log da api antes de investigar o WSO2.
 
 **Todo mundo toma 401 e o log diz `claim perfil inválido`.**
-`perfil` chegou como array (`["aluno"]`). Ele precisa ser um atributo de usuário
+`perfil` chegou como array (`["estudante"]`). Ele precisa ser um atributo de usuário
 single-valued, não uma role.
 
 **`relation already exists` no dbinit.**

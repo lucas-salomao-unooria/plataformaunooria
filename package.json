@@ -39,6 +39,8 @@
     "mammoth": "^1",
     "pdf-parse": "^2",
     "playwright": "^1.62.1",
+    "pptxgenjs": "^4.0.1",
+    "sharp": "^0.35.3",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8"

@@ -117,7 +117,7 @@ services:
       CONTRATO: ${CONTRATO:-dev-local}
       TENANT_ADMIN_PASSWORD: ${TENANT_ADMIN_PASSWORD:-Admin@Unooria1}
       HUB_CALLBACK_URL: ${HUB_CALLBACK_URL:-http://localhost:3000/api/auth/callback/wso2}
-      SEED_PASSWORD: ${SEED_PASSWORD:-Aluno@Unooria1}
+      SEED_PASSWORD: ${SEED_PASSWORD:-Estudante@Unooria1}
       ESCOLA_DEMO_ID: ${ESCOLA_DEMO_ID:-escola-demo}
     volumes:
       - ./bootstrap:/app:ro
