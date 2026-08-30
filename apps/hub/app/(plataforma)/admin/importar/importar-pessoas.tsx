@@ -125,6 +125,13 @@ export function ImportarPessoas({
   const linkDoModelo = (arquivo: string) =>
     `/api/plataforma/rostering/modelos/${arquivo}${sufixoEscola ? `?${sufixoEscola}` : ""}`;
 
+  /* O par modelo/exemplo de cada arquivo do padrão, igual ao da planilha da
+     escola. O exemplo sai com a escola de VERDADE no `sourcedId` do `orgs.csv`,
+     e por isso carrega o `?escolaId=` quando quem baixa é o admin do contrato. */
+  const linkOneRoster = (arquivo: string, tipo: "modelo" | "exemplo") =>
+    `/api/plataforma/rostering/modelos/oneroster/${arquivo}${tipo === "exemplo" ? "/exemplo" : ""}` +
+    (sufixoEscola ? `?${sufixoEscola}` : "");
+
   async function importar(arquivos: UploadFileItem[]) {
     const arquivo = arquivos[0]?.file;
     if (!arquivo) return;
@@ -388,6 +395,13 @@ export function ImportarPessoas({
             exclusão (<code>status = tobedeleted</code>) <strong>desativa</strong> aqui: pessoa fica
             inativa, matrícula é encerrada, e nada é apagado.
           </p>
+          <p className="text-[14px] text-unooria-neutral-700">
+            Cada arquivo tem <strong>modelo</strong> (só o cabeçalho, para preencher) e{" "}
+            <strong>exemplo</strong> (preenchido, com <em>esta</em> escola no{" "}
+            <code>sourcedId</code>). Os sete exemplos formam um lote coerente — uma escola, um ano
+            letivo, duas turmas e quatro pessoas: enviados nesta ordem, entram inteiros, e é assim
+            que se confere o caminho antes de mandar a rede.
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -426,7 +440,7 @@ export function ImportarPessoas({
                     {arquivo.descricao}
                   </span>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex shrink-0 items-center gap-2">
                   {feito ? (
                     <Tag>
                       {feito.erros.length > 0
@@ -434,6 +448,20 @@ export function ImportarPessoas({
                         : `${feito.criados} novos · ${feito.atualizados} atualizados`}
                     </Tag>
                   ) : null}
+                  <a href={linkOneRoster(arquivo.nome, "modelo")} download>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<Icon name="download" size={16} />}
+                    >
+                      Modelo
+                    </Button>
+                  </a>
+                  <a href={linkOneRoster(arquivo.nome, "exemplo")} download>
+                    <Button variant="ghost" size="sm">
+                      Exemplo
+                    </Button>
+                  </a>
                   <Button variant="secondary" size="sm" onClick={() => setArquivoAlvo(arquivo.nome)}>
                     Enviar
                   </Button>
@@ -599,7 +627,7 @@ export function ImportarPessoas({
         isOpen={Boolean(arquivoAlvo)}
         onClose={() => setArquivoAlvo(null)}
         title={`Enviar ${arquivoAlvo}.csv`}
-        description={`Arquivo .csv do OneRoster 1.2, modo ${modoLote}. Até 10MB.`}
+        description={`Arquivo .csv do OneRoster 1.2, modo ${modoLote}. Até 30MB.`}
         accept=".csv,text/csv"
         multiple={false}
         isSubmitting={importando}
@@ -612,7 +640,7 @@ export function ImportarPessoas({
         isOpen={aberto}
         onClose={() => setAberto(false)}
         title="Importar pessoas"
-        description="Arquivo .csv em UTF-8, até 10MB."
+        description="Arquivo .csv em UTF-8, até 30MB."
         accept=".csv,text/csv"
         multiple={false}
         isSubmitting={importando}

@@ -33,6 +33,18 @@ const PLANILHA = [
 ].join("\n");
 
 const TURMA_ONEROSTER = "6C";
+const ESCOLA_DEMO = "escola-demo";
+
+/** Os sete arquivos do padrão, na ordem da tela. */
+const ARQUIVOS_ONEROSTER = [
+  "manifest",
+  "orgs",
+  "academicSessions",
+  "classes",
+  "users",
+  "enrollments",
+  "roles",
+];
 const MANIFESTO = [
   "propertyName,value",
   "manifest.version,1.0",
@@ -181,6 +193,37 @@ try {
   });
   await p.waitForTimeout(600);
   await registrar("oneroster-arquivos", "os sete arquivos, na ordem de dependência");
+
+  /* Modelo e exemplo de CADA arquivo. O que se prova aqui é o caminho inteiro
+     do download — sessão, BFF, cabeçalhos —, não o conteúdo, que
+     `tests/oneroster-modelos.spec.ts` cobre linha a linha. O exemplo tem de
+     trazer a escola de VERDADE: com um id fictício, o lote que o gestor baixa
+     para conferir o caminho volta inteiro como "escola não é a desta
+     importação". */
+  for (const arquivo of ARQUIVOS_ONEROSTER) {
+    for (const tipo of ["modelo", "exemplo"]) {
+      const sufixo = tipo === "exemplo" ? "/exemplo" : "";
+      const r = await p.request.get(
+        `${HUB}/api/plataforma/rostering/modelos/oneroster/${arquivo}${sufixo}`,
+      );
+      const corpo = await r.text();
+      const linhas = corpo.trim().split("\n");
+      const ok =
+        r.status() === 200 &&
+        (r.headers()["content-type"] ?? "").includes("text/csv") &&
+        (tipo === "modelo" ? linhas.length === 1 : linhas.length > 1);
+      if (!ok) {
+        throw new Error(
+          `${tipo} de ${arquivo}: HTTP ${r.status()}, ${linhas.length} linha(s), ` +
+            `content-type "${r.headers()["content-type"]}"`,
+        );
+      }
+      if (tipo === "exemplo" && arquivo === "orgs" && !corpo.includes(ESCOLA_DEMO)) {
+        throw new Error(`o exemplo de orgs.csv não trouxe a escola "${ESCOLA_DEMO}": ${corpo}`);
+      }
+    }
+  }
+  console.log(`   modelo + exemplo baixados para os ${ARQUIVOS_ONEROSTER.length} arquivos`);
 
   // O manifesto pela TELA (prova a aba + o modal); os demais pela api, porque o
   // valor do smoke aqui é visual, não sete danças de modal.

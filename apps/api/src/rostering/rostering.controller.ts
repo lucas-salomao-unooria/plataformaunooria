@@ -17,21 +17,22 @@ import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import { ARQUIVOS_ONEROSTER, type ArquivoOneRoster } from "./catalogo";
 import {
+  ArquivoOneRosterParam,
   ContasDeAssentoSchema,
   CsvSchema,
+  EscolaAlvoQuery,
   ImportarQuery,
   OneRosterQuery,
   RelatorioDeImportacaoSchema,
 } from "./contrato-de-rotas";
 import { OneRosterService } from "./oneroster.service";
+import { exemploOneRoster, modeloOneRoster } from "./modelos-oneroster";
 import { exemploPreenchido, modeloEmBranco } from "./planilha";
-import { MAX_LINHAS, RosteringService } from "./rostering.service";
+import { MAX_LINHAS, TETO_DO_ARQUIVO, TETO_EM_MB, RosteringService } from "./rostering.service";
 
 interface RespostaHttp {
   setHeader(nome: string, valor: string): void;
 }
-
-const TETO_DO_ARQUIVO = 10_000_000; // 10 MB — 10 mil alunos não cabem em 1 MB
 
 /**
  * Fronteira de entrada de pessoas e turmas. Só gestor (própria escola) e
@@ -74,6 +75,65 @@ export class RosteringController {
     return this.comoCsv(res, "exemplo-usuarios.csv", exemploPreenchido());
   }
 
+  /**
+   * O modelo em branco de UM arquivo do binding CSV — o par do
+   * `modelos/usuarios.csv`, para quem monta o lote à mão. As colunas saem da
+   * mesma constante que o leitor confere.
+   */
+  @Get("modelos/oneroster/:arquivo")
+  @Contrato({
+    resumo: "O modelo em branco de um arquivo do OneRoster 1.2.",
+    descricao:
+      "Só o cabeçalho, na grafia do padrão. É um SUBCONJUNTO das colunas que a api sabe ler — as que ela ignora ficam de fora, porque modelo com 24 colunas não é modelo, é a especificação.",
+    params: ArquivoOneRosterParam,
+    resposta: CsvSchema,
+    tipoDaResposta: "text/csv",
+    notas: ["Modelo e exemplo são arquivos SEPARADOS: linha de exemplo dentro do modelo vira pessoa fantasma importada no primeiro uso."],
+  })
+  modeloOneRoster(@Param("arquivo") arquivo: string, @Res({ passthrough: true }) res: RespostaHttp): string {
+    const alvo = this.arquivoValido(arquivo);
+    return this.comoCsv(res, `${alvo}.csv`, modeloOneRoster(alvo));
+  }
+
+  /**
+   * O mesmo arquivo, preenchido com um lote pequeno e coerente: uma escola, um
+   * ano letivo, duas turmas, quatro pessoas e o enturmamento delas. Enviado na
+   * ordem da tela, ele passa inteiro — é assim que o gestor confere o caminho
+   * antes de mandar a rede.
+   */
+  @Get("modelos/oneroster/:arquivo/exemplo")
+  @Contrato({
+    resumo: "O mesmo arquivo do OneRoster, preenchido com um exemplo.",
+    descricao:
+      "Gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das turmas: um id fictício faria o lote voltar como \"escola não é a desta importação\" para o gestor e, para o `admin-contrato` (que PODE criar escola por CSV), abriria um tenant de mentira.",
+    params: ArquivoOneRosterParam,
+    query: EscolaAlvoQuery,
+    resposta: CsvSchema,
+    tipoDaResposta: "text/csv",
+  })
+  async exemploOneRoster(
+    @Param("arquivo") arquivo: string,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: { auth: AuthClaims },
+    @Res({ passthrough: true }) res: RespostaHttp,
+  ): Promise<string> {
+    const alvo = this.arquivoValido(arquivo);
+    const ctx = await this.rostering.contextoDeExemplo(escolaAlvo(req.auth, escolaIdPedida));
+    return this.comoCsv(res, `exemplo-${alvo}.csv`, exemploOneRoster(alvo, ctx));
+  }
+
+  /** O nome do arquivo é vocabulário fechado — 404 seria mentir sobre a rota. */
+  private arquivoValido(arquivo: string): ArquivoOneRoster {
+    const limpo = arquivo.replace(/\.csv$/i, "");
+    if (!(ARQUIVOS_ONEROSTER as readonly string[]).includes(limpo)) {
+      throw new HttpException(
+        { mensagem: `arquivo desconhecido — use um de: ${ARQUIVOS_ONEROSTER.join(", ")}` },
+        400,
+      );
+    }
+    return limpo as ArquivoOneRoster;
+  }
+
   private comoCsv(res: RespostaHttp, arquivo: string, conteudo: string): string {
     // BOM + charset: um sem o outro ainda quebra acento em alguma planilha.
     res.setHeader("content-type", "text/csv; charset=utf-8");
@@ -86,7 +146,7 @@ export class RosteringController {
   @Contrato({
     resumo: "Importa a planilha de pessoas.",
     descricao:
-      "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 10MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.",
+      "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.",
     query: ImportarQuery,
     corpo: CsvSchema,
     tipoDoCorpo: "text/csv",
@@ -95,7 +155,7 @@ export class RosteringController {
       "**O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).",
       "Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.",
       "Coluna desconhecida é ERRO, não coluna ignorada.",
-      "5 importações por minuto por usuário (429); acima de 10MB ou 50k linhas, 400.",
+      "5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
     ],
   })
   async importar(
@@ -113,7 +173,7 @@ export class RosteringController {
     }
     if (req.body.length > TETO_DO_ARQUIVO) {
       throw new HttpException(
-        { mensagem: `CSV acima de 10MB — divida o arquivo (máx. ${MAX_LINHAS} linhas)` },
+        { mensagem: `CSV acima de ${TETO_EM_MB}MB — divida o arquivo (máx. ${MAX_LINHAS} linhas)` },
         400,
       );
     }
@@ -135,7 +195,7 @@ export class RosteringController {
     resumo: "Binding CSV do OneRoster 1.2 — UM arquivo por chamada.",
     descricao:
       "Ordem: `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`, `roles`. **Fora de ordem não corrompe nada**: a linha que aponta para um `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta.\n\nO padrão vive só nesta fronteira: nada do domínio conhece `sourcedId`.",
-    params: z.object({ arquivo: z.enum(ARQUIVOS_ONEROSTER) }),
+    params: ArquivoOneRosterParam,
     query: OneRosterQuery,
     corpo: CsvSchema,
     tipoDoCorpo: "text/csv",
@@ -156,12 +216,7 @@ export class RosteringController {
     const q = OneRosterQuery.parse(query);
     const escolaId = escolaAlvo(req.auth, q.escolaId);
 
-    if (!(ARQUIVOS_ONEROSTER as readonly string[]).includes(arquivo)) {
-      throw new HttpException(
-        { mensagem: `arquivo desconhecido — use um de: ${ARQUIVOS_ONEROSTER.join(", ")}` },
-        400,
-      );
-    }
+    const alvo = this.arquivoValido(arquivo);
 
     const cota = rateLimit(`oneroster:${req.auth.usuarioId}`, 20, 60_000);
     if (!cota.ok) throw new HttpException("Muitas importações — aguarde um minuto", 429);
@@ -170,10 +225,10 @@ export class RosteringController {
       throw new HttpException({ mensagem: "Envie o CSV cru no corpo com Content-Type: text/csv" }, 400);
     }
     if (req.body.length > TETO_DO_ARQUIVO) {
-      throw new HttpException({ mensagem: "CSV acima de 10MB — divida o arquivo" }, 400);
+      throw new HttpException({ mensagem: `CSV acima de ${TETO_EM_MB}MB — divida o arquivo` }, 400);
     }
 
-    return this.oneroster.importar(escolaId, arquivo as ArquivoOneRoster, req.body, {
+    return this.oneroster.importar(escolaId, alvo, req.body, {
       modo: q.modo,
       senhaPadrao: q.senhaPadrao,
       gerarSenhas: q.gerarSenhas === "1",

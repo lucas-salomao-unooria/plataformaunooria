@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SerieSchema } from "../comum/series";
-import { TURNOS } from "./catalogo";
+import { ARQUIVOS_ONEROSTER, TURNOS } from "./catalogo";
 
 /** Um uuid v4 gerado pelo banco. Nem todo id da api é uuid — `Escola.id` vem
  *  da rede e é string livre —, então isto só vale onde o schema diz `@db.Uuid`. */
@@ -46,6 +46,9 @@ export const NovoPeriodoSchema = z.object({
 /** `?escolaId=` — só `admin-contrato` pode apontar para outra escola; para os
  *  demais o valor é ignorado em favor da escola do token (`escolaAlvo`). */
 export const EscolaAlvoQuery = z.object({ escolaId: z.string().optional() });
+
+/** O nome do arquivo do binding CSV, nas rotas que o levam no caminho. */
+export const ArquivoOneRosterParam = z.object({ arquivo: z.enum(ARQUIVOS_ONEROSTER) });
 
 // -------------------------------------------------------------------- saída
 

@@ -5,17 +5,22 @@ import { AppModule } from "./app.module";
 import { AssetsService } from "./assets/assets.service";
 import { construirDocumento } from "./openapi/documento";
 import { credenciaisDoDocs, portaDoDocs } from "./openapi/porta-do-docs";
+import { TETO_EM_MB } from "./rostering/rostering.service";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
   // Parsers explícitos: JSON com teto e text/csv cru para a importação de
   // pessoas (`POST /rostering/importar` lê o corpo como string).
   //
-  // O teto do CSV é 10mb porque o de 2mb não cobria o caso real: uma planilha
-  // de 10 mil alunos passa de 1mb, e o erro que aparecia era "PayloadTooLarge"
-  // no meio da matrícula da rede inteira.
+  // O teto do CSV é o `TETO_DO_ARQUIVO` do rostering, e a ORDEM entre os dois
+  // importa: com o parser menor que a rota, o corpo morre no middleware e o
+  // gestor recebe um "PayloadTooLarge" do Express, sem o texto que diz o que
+  // fazer. O `mb` do parser é MEBIbyte (30mb = 31,4 MB), então ele fica ~5%
+  // ACIMA do teto da rota — e é essa folga que faz a nossa mensagem ser a que
+  // aparece. Eram 10mb, que cobriam a planilha de uma escola mas não o binding
+  // OneRoster de uma rede.
   app.useBodyParser("json", { limit: "2mb" });
-  app.useBodyParser("text", { type: "text/csv", limit: "10mb" });
+  app.useBodyParser("text", { type: "text/csv", limit: `${TETO_EM_MB}mb` });
   // Driver LOCAL de assets (dev): a api serve as imagens geradas em /assets.
   // Em produção (gcs) a CDN serve o bucket e este static nunca é usado.
   if ((process.env.ASSETS_DRIVER ?? "local") !== "gcs") {

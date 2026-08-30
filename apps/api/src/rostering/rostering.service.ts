@@ -7,10 +7,28 @@ import { PrismaService } from "../prisma/prisma.service";
 import { EscolasService } from "./escolas.service";
 import { garantirLotacao } from "./lotacao";
 import { matricularEm } from "./matricula";
+import type { ContextoDoExemplo } from "./modelos-oneroster";
 import { lerPlanilha, type ErroDeLinha, type PessoaDaPlanilha } from "./planilha";
 import { gerarSenha, gerarUsuario, periodoVigente, senhaAceitavel } from "./regras";
 
 export const MAX_LINHAS = 50_000;
+
+/**
+ * O teto em BYTES do CSV cru, para as duas fronteiras de importação. Ele é do
+ * TRANSPORTE (o `bodyParser` de `main.ts` tem de casar com ele), enquanto
+ * `MAX_LINHAS` é da planilha simples — e são coisas diferentes: o binding
+ * OneRoster de uma rede estadual traz um `enrollments.csv` que não é planilha
+ * de escola nenhuma.
+ *
+ * 30 MB é escolhido para caber DEBAIXO do teto do ambiente: o Cloud Run recusa
+ * requisição acima de 32 MiB em HTTP/1, e recusa antes do contêiner — aquele
+ * 413 não é nosso, não diz o que fazer e não deixa linha no log. Prometer mais
+ * do que o ambiente entrega é o que produz o erro que ninguém consegue
+ * diagnosticar. Folga medida: o pior caso realista de UM contrato (~10 mil
+ * alunos, cinco componentes cada) dá ~7 MB de `enrollments.csv` (ADR-48).
+ */
+export const TETO_DO_ARQUIVO = 30_000_000;
+export const TETO_EM_MB = TETO_DO_ARQUIVO / 1_000_000;
 const CHUNK = 100;
 const TIMEOUT_DA_ESCRITA = 30_000;
 const TETO_DE_ASSENTOS = 200;
@@ -117,6 +135,26 @@ export class RosteringService {
 
   async criarPeriodo(dados: { tipo: string; titulo: string; ano: number; inicio: Date; fim: Date }) {
     return this.prisma.periodoLetivo.create({ data: dados });
+  }
+
+  /**
+   * O que o exemplo do OneRoster precisa saber do mundo real. A escola de
+   * VERDADE entra no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das
+   * turmas: um id fictício faria o lote inteiro voltar como "escola não é a
+   * desta importação" para o gestor e, para o `admin-contrato`, abriria um
+   * tenant de mentira.
+   */
+  async contextoDeExemplo(escolaId: string): Promise<ContextoDoExemplo> {
+    const escola = await this.prisma.escola.findUnique({
+      where: { id: escolaId },
+      select: { nome: true, codigoInep: true },
+    });
+    return {
+      escolaId,
+      escolaNome: escola?.nome ?? "Escola",
+      codigoInep: escola?.codigoInep ?? null,
+      ano: new Date().getFullYear(),
+    };
   }
 
   // --------------------------------------------------------------- importação

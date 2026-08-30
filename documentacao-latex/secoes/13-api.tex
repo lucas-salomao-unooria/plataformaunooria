@@ -27,8 +27,13 @@ Autenticação & \cd{Authorization: Bearer <JWT>}, validado por
 \zebra Validação de entrada & Zod em todo corpo e \emph{query}. Não há
   \cd{class-validator} nem \emph{pipes} de DTO: o esquema Zod é a fonte única do
   tipo e da validação.\\
-Corpo & JSON com teto de \SI{2}{\mega\byte}; \cd{text/csv} cru também com
-  \SI{2}{\mega\byte}, para a importação de usuários.\\
+Corpo & JSON com teto de \SI{2}{\mega\byte}; \cd{text/csv} cru com
+  \SI{30}{\mega\byte}, para a importação de pessoas --- o teto do
+  \emph{bodyParser} e o da rota saem da MESMA constante
+  (\cd{TETO\_DO\_ARQUIVO}, em \arq{rostering.service.ts}). O número cabe
+  debaixo dos \SI{32}{\mebi\byte} que o Cloud Run recusa por requisição
+  HTTP/1, para o 413 do ambiente nunca ser o que o gestor vê
+  (\adrr{ADR-48}).\\
 \zebra CORS & Lista explícita em \env{CORS\_ORIGINS} --- hub mais os
   \emph{dev servers} das experiências. Nunca \cd{*}.\\
 Erros & \emph{Exceptions} do Nest (\cd{BadRequestException},
