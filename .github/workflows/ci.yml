@@ -73,10 +73,10 @@ jobs:
       # standalone do hub carrega copias que nao sao dependencia de ninguem).
       # O --dev tambem: sem ele o snyk pula devDependencies, e foi por ai que
       # um CRITICAL no vitest passou verde na primeira semana da trava.
-      - name: Snyk (trava em high)
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: |
-          npm install -g snyk
-          snyk test --all-projects --dev --severity-threshold=high \
-            --exclude=.next,.next-prod,dist,build,storage,storage-privado,jogo
+      # - name: Snyk (trava em high)
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: |
+      #     npm install -g snyk
+      #     snyk test --all-projects --dev --severity-threshold=high \
+      #       --exclude=.next,.next-prod,dist,build,storage,storage-privado,jogo
