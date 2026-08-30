@@ -20,18 +20,25 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
 
   const embed = await montarEmbed(expId, usuario);
 
-  // Ferramenta de professor (exp-90) não é uma experiência do aluno: a api
+  // Ferramenta de professor (exp-90) não é uma experiência do estudante: a api
   // recusaria as chamadas com 403, mas a tela quebraria feio. 404 é o certo.
-  if (embed.manifesto && (embed.manifesto.publico ?? "aluno") !== "aluno") notFound();
+  if (
+    embed.manifesto &&
+    (embed.manifesto.publico ?? "estudante") !== "estudante" &&
+    embed.manifesto.publico !== "aluno"
+  ) {
+    notFound();
+  }
 
   return (
     <>
-      <HeaderPlataforma largura="cheia" voltar={{ href: "/aluno", rotulo: "Missões" }} />
+      <HeaderPlataforma largura="cheia" voltar={{ href: "/estudante", rotulo: "Missões" }} />
       <ExpHost
         expId={expId}
         src={embed.src}
         expOrigin={embed.expOrigin}
         token={embed.token}
+        estudante={embed.estudante}
         aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         viewport={embed.viewport}

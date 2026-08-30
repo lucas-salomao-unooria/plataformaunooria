@@ -13,12 +13,13 @@ import {
   UNOORIA_DATAVIZ_PALETTE,
 } from "@edu/ui/ds";
 
-import { ModalAluno } from "./modal-aluno";
+import { ModalEstudante } from "./modal-estudante";
 import { PainelEtapas } from "./painel-etapas";
 
 interface LinhaMonitor {
   runId: string;
-  aluno: { username: string; displayName: string; avatar: string | null };
+  estudante?: { username: string; displayName: string; avatar: string | null };
+  aluno?: { username: string; displayName: string; avatar: string | null };
   fase: string;
   postsConsumidos: number;
   blocos: number;
@@ -58,16 +59,14 @@ interface RespostaMonitor {
     total: number;
     emFeed: number;
     concluidas: number;
+    inverteram: number;
+    concluiram: number;
+    salvosNaTurma: number;
+    salvosDoOutroLado: number;
+    porLadoInicial: { A: number; B: number };
     ladoA: number;
     ladoB: number;
     semLado: number;
-    porLadoInicial: { A: number; B: number };
-    porPerfil: Record<string, number>;
-    inverteram: number;
-    concluiram: number;
-    ociosos: number;
-    salvosNaTurma: number;
-    salvosDoOutroLado: number;
   };
   limiteDeOciosidadeMs: number;
 }
@@ -85,43 +84,42 @@ const PALETA = UNOORIA_DATAVIZ_PALETTE;
  * branco em quem nem entrou.
  */
 const COR_DA_FASE: Record<string, string> = {
-  onboarding: PALETA[10], // quase branco: ainda não entrou no aparelho
-  feed: PALETA[0], // azul principal: o momento mais longo
-  encerramento: PALETA[1],
-  conclusao: PALETA[8], // laranja: estão respondendo, é hora de olhar
-  debate: PALETA[9], // violeta: momento coletivo
-  explicabilidade: PALETA[4], // navy escuro
-  perdidos: PALETA[2],
-  reflexao: PALETA[6], // verde: entregando
-  fim: PALETA[3],
+  onboarding: PALETA[0],
+  feed: PALETA[1],
+  encerramento: PALETA[2],
+  conclusao: PALETA[3],
+  debate: PALETA[4],
+  explicabilidade: PALETA[5],
+  perdidos: PALETA[6],
+  reflexao: PALETA[7],
+  fim: PALETA[8],
+  dossie: PALETA[9],
 };
 
 const ORIGEM_DO_LADO: Record<string, string> = {
   perfil: "perfil do jogo",
-  sorteio: "sorteio",
+  sorteio: "sorteado",
   redistribuido: "redistribuído",
 };
 
 const FASE: Record<
   string,
-  { rotulo: string; variante: "neutral" | "info" | "warning" | "success" }
+  { rotulo: string; variante: "neutral" | "info" | "warning" | "success" | "danger" }
 > = {
   onboarding: { rotulo: "entrando", variante: "neutral" },
   feed: { rotulo: "no feed", variante: "info" },
   encerramento: { rotulo: "encerrando", variante: "warning" },
-  conclusao: { rotulo: "respondendo", variante: "warning" },
-  debate: { rotulo: "no debate", variante: "info" },
-  explicabilidade: { rotulo: "vendo a explicação", variante: "success" },
-  perdidos: { rotulo: "vendo o que perdeu", variante: "success" },
-  reflexao: { rotulo: "escrevendo a reflexão", variante: "success" },
+  conclusao: { rotulo: "respondendo", variante: "info" },
+  debate: { rotulo: "no debate", variante: "neutral" },
+  explicabilidade: { rotulo: "explicação", variante: "neutral" },
+  perdidos: { rotulo: "o que perdeu", variante: "neutral" },
+  reflexao: { rotulo: "reflexão", variante: "warning" },
   fim: { rotulo: "terminou", variante: "success" },
-  // Fases antigas, de runs congeladas antes do fluxo v2.
-  revelacao: { rotulo: "na revelação", variante: "warning" },
   dossie: { rotulo: "no relatório", variante: "success" },
 };
 
 /**
- * Monitor da turma ao vivo (doc 07, polling 5s) + reset de sessão por aluno
+ * Monitor da turma ao vivo (doc 07, polling 5s) + reset de sessão por estudante
  * para reutilizar aparelhos. Só o professor vê lado e domínio.
  */
 export function PainelMonitor({
@@ -136,8 +134,7 @@ export function PainelMonitor({
   const [dados, setDados] = useState<RespostaMonitor | null>(null);
   const [erro, setErro] = useState(false);
   const [resetando, setResetando] = useState<string | null>(null);
-  /** Qual aluno está aberto no popup. */
-  const [alunoAberto, setAlunoAberto] = useState<{ runId: string; nome: string } | null>(null);
+  const [estudanteAberto, setEstudanteAberto] = useState<{ runId: string; nome: string } | null>(null);
 
   const buscar = useCallback(async () => {
     try {
@@ -228,7 +225,7 @@ export function PainelMonitor({
             title="Onde a turma está"
             subtitle="cada cor é um momento da aula"
             segments={porEtapa}
-            totalLabel="alunos"
+            totalLabel="estudantes"
             totalValue={dados?.resumo.total ?? 0}
           />
 
@@ -297,31 +294,31 @@ export function PainelMonitor({
           theme="light"
           variant="warning"
           device="auto"
-          title={`${ociosos.length} aluno(s) parado(s) há mais de ${Math.round((dados?.limiteDeOciosidadeMs ?? 120000) / 60000)} min`}
+          title={`${ociosos.length} estudante(s) parado(s) há mais de ${Math.round((dados?.limiteDeOciosidadeMs ?? 120000) / 60000)} min`}
           description={ociosos
-            .map((linha) => `${linha.aluno.displayName} (${Math.round((linha.ociosoHaMs ?? 0) / 60000)} min)`)
+            .map((linha) => `${(linha.estudante ?? linha.aluno)?.displayName} (${Math.round((linha.ociosoHaMs ?? 0) / 60000)} min)`)
             .join(" · ")}
         />
       ) : null}
 
-      <ModalAluno
+      <ModalEstudante
         activityId={activityId}
-        runId={alunoAberto?.runId ?? null}
-        nome={alunoAberto?.nome ?? ""}
-        aoFechar={() => setAlunoAberto(null)}
+        runId={estudanteAberto?.runId ?? null}
+        nome={estudanteAberto?.nome ?? ""}
+        aoFechar={() => setEstudanteAberto(null)}
       />
 
       <div className="overflow-x-auto rounded-xl border border-unooria-neutral-200">
         <table className="w-full min-w-[980px] border-collapse text-left">
           {/*
             Sete colunas, não dez. Domínio, escalada e contagem de posts saíram
-            para o popup do aluno: são leitura de detalhe, e numa tabela de 40
+            para o popup do estudante: são leitura de detalhe, e numa tabela de 40
             linhas competiam com o que se lê de relance. O que ficou responde
             "quem é, onde está, o que coletou e quanto se envolveu".
           */}
           <thead className="bg-unooria-neutral-100">
             <tr className="text-[12px] text-unooria-neutral-700">
-              <th className="px-3 py-2 font-semibold">Aluno</th>
+              <th className="px-3 py-2 font-semibold">Estudante</th>
               <th className="px-3 py-2 font-semibold">Fase</th>
               <th className="px-3 py-2 font-semibold">Largada</th>
               <th className="px-3 py-2 font-semibold">Coleção</th>
@@ -337,6 +334,7 @@ export function PainelMonitor({
                 rotulo: linha.fase,
                 variante: "neutral" as const,
               };
+              const infoEstudante = linha.estudante ?? linha.aluno;
               return (
                 <tr
                   key={linha.runId}
@@ -344,10 +342,10 @@ export function PainelMonitor({
                 >
                   <td className="px-3 py-2">
                     <span className="font-semibold text-unooria-neutral-950">
-                      {linha.aluno.displayName}
+                      {infoEstudante?.displayName}
                     </span>
                     <span className="block text-[11px] text-unooria-neutral-500">
-                      {linha.aluno.username}
+                      {infoEstudante?.username}
                     </span>
                   </td>
                   <td className="px-3 py-2">
@@ -364,7 +362,7 @@ export function PainelMonitor({
                     {linha.caracteresDaReflexao > 0 ? (
                       <span
                         className="mt-1 block text-[11px] text-unooria-navy-800"
-                        title="Abra o aluno para ler o que ele escreveu"
+                        title="Abra o estudante para ler o que ele escreveu"
                       >
                         escreveu {linha.caracteresDaReflexao} caracteres
                       </span>
@@ -406,11 +404,11 @@ export function PainelMonitor({
                   </td>
                   {/*
                     As 5 barras, e SÓ elas (ADR-44). O total vinha junto e, numa
-                    coluna de tabela, virava nota de aluno — ordenável, comparável,
+                    coluna de tabela, virava nota de estudante — ordenável, comparável,
                     lida como ranking. O aviso "nunca leia o total sozinho" já
                     estava escrito no código e a tela o mostrava sozinho mesmo
                     assim. Passe o mouse para ver eixo por eixo; o número segue no
-                    popup do aluno, que é uma criança por vez.
+                    popup do estudante, que é uma criança por vez.
                   */}
                   <td className="px-3 py-2">
                     <span className="flex gap-0.5">
@@ -447,16 +445,16 @@ export function PainelMonitor({
                       {/*
                         Antes isto era um link para `/api/runs/:id/dossier`, que
                         abria um JSON de milhares de linhas em aba nova. Agora abre
-                        o popup com o que o aluno tocou — que é o que o professor
+                        o popup com o que o estudante tocou — que é o que o professor
                         precisa ler, e durante a aula, não depois.
                       */}
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() =>
-                          setAlunoAberto({
+                          setEstudanteAberto({
                             runId: linha.runId,
-                            nome: linha.aluno.displayName,
+                            nome: infoEstudante?.displayName ?? "",
                           })
                         }
                       >
@@ -469,7 +467,7 @@ export function PainelMonitor({
                         onClick={async () => {
                           if (
                             !window.confirm(
-                              `Zerar a sessão de ${linha.aluno.displayName}?`,
+                              `Zerar a sessão de ${infoEstudante?.displayName}?`,
                             )
                           )
                             return;

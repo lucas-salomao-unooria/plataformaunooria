@@ -10,7 +10,7 @@ import { ExpParaHubSchema, PROTOCOL_VERSION } from "@edu/sdk";
  *    hub:token);
  *  - emite hub:pause/hub:resume quando a PÁGINA DO HUB perde visibilidade ou
  *    foco — esconder um iframe não dispara visibilitychange nele, e sem isso
- *    o cronômetro de dwell da experiência correria com o aluno de costas
+ *    o cronômetro de dwell da experiência correria com o estudante de costas
  *    (lição do projeto origem). O foco indo para DENTRO do próprio iframe é a
  *    exceção, e está explicada em `aoPerderFoco`;
  *  - valida TUDO que recebe com Zod (regra: Zod em todo postMessage) e
@@ -22,7 +22,9 @@ export function ExpFrame(props: {
   src: string;
   expOrigin: string;
   token: string;
-  aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
+  estudante?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
+  /** @deprecated Use `estudante`. */
+  aluno?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   config?: Record<string, unknown>;
   /**
@@ -61,11 +63,13 @@ export function ExpFrame(props: {
           );
           return; // sem hub:init — a experiência expira e mostra o erro dela
         }
+        const estudantePayload = atual.current.estudante ?? atual.current.aluno;
         post({
           type: "hub:init",
           protocolVersion: PROTOCOL_VERSION,
           token: atual.current.token,
-          aluno: atual.current.aluno,
+          estudante: estudantePayload,
+          aluno: estudantePayload,
           apiUrl: atual.current.apiUrl,
           config: atual.current.config ?? {},
         });
@@ -91,7 +95,7 @@ export function ExpFrame(props: {
     const aoTrocarVisibilidade = () =>
       post({ type: document.visibilityState === "hidden" ? "hub:pause" : "hub:resume" });
     /*
-     * `blur` da janela do hub NÃO é sempre o aluno saindo: clicar em qualquer
+     * `blur` da janela do hub NÃO é sempre o estudante saindo: clicar em qualquer
      * lugar DENTRO do iframe move o foco para a experiência, e o navegador
      * dispara `blur` no documento de cima. Como o `focus` correspondente nunca
      * volta enquanto ele continua ali, um `hub:pause` aqui é definitivo — na
@@ -128,7 +132,7 @@ export function ExpFrame(props: {
    * pedir. `allow-pointer-lock` só entra para quem declarou (exp-70, o jogo 3D
    * em primeira pessoa): num iframe com sandbox, `requestPointerLock()` é
    * ignorado sem esse token — e dá-lo a todas as experiências significaria que
-   * qualquer bundle pode capturar o mouse do aluno.
+   * qualquer bundle pode capturar o mouse do estudante.
    *
    * `fullscreen` não é gateado aqui: o `allow` abaixo já o delega a todas.
    */
@@ -146,7 +150,7 @@ export function ExpFrame(props: {
      * `allow-forms` só para quem declarou (exp-03, a Missão Tempestade).
      *
      * O `Composer` do design system é um `<form>`, e num iframe com sandbox sem
-     * este token o navegador BLOQUEIA o submit — o aluno digita a pergunta,
+     * este token o navegador BLOQUEIA o submit — o estudante digita a pergunta,
      * aperta Enter e nada acontece. O sintoma engana: a conversa parece viva,
      * porque a mensagem de abertura do agente já está na tela, e o único rastro
      * é um aviso no console sobre "form's frame is sandboxed".

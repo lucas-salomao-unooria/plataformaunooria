@@ -25,6 +25,7 @@ export interface RetratoDoRelogio {
 
 /** Uma criança na folha da turma. Conduta, nunca placar. */
 export interface LinhaDaTurma {
+  estudanteId?: string;
   alunoId: string;
   nome: string;
   usuario: string;
@@ -44,6 +45,7 @@ export interface FolhaDaTurma {
   turma: { id: string; nome: string; serie: string };
   relogio: RetratoDoRelogio;
   retrato: {
+    estudantes?: number;
     alunos: number;
     comecaram: number;
     concluiram: number;
@@ -71,7 +73,8 @@ export interface LinhaDeLeitura {
   porQue: string[];
 }
 
-export interface RelatorioDoAluno {
+export interface RelatorioDoEstudante {
+  estudante?: { id: string; nome: string };
   aluno: { id: string; nome: string };
   versaoLeitura: number;
   linhas: LinhaDeLeitura[];
@@ -106,6 +109,9 @@ export interface RelatorioDoAluno {
   }[];
 }
 
+/** @deprecated Alias de compatibilidade. Use `RelatorioDoEstudante`. */
+export type RelatorioDoAluno = RelatorioDoEstudante;
+
 /**
  * Uma turma no seletor. A forma tem de casar com a que `SeletorDeTurma` espera
  * (hoje declarada em `unootube-tipos.ts`) — o componente é compartilhado entre
@@ -115,5 +121,6 @@ export interface TurmaResumo {
   id: string;
   nome: string;
   serie: string;
+  estudantes?: number;
   alunos: number;
 }

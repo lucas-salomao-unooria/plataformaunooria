@@ -96,10 +96,11 @@ export interface PerfilObservado {
  * centenas de eventos) e evita a pior armadilha de analytics: número gravado que
  * ninguém sabe mais como foi computado. Quando a definição de "tempo ativo" muda,
  * muda em um lugar — `lib/dossie/telemetria.ts` — e as três superfícies
- * (relatório do aluno, análise do professor, análise de produto) concordam.
+ * (relatório do estudante, análise do professor, análise de produto) concordam.
  */
 export interface MetricasDaRun {
   runId: string;
+  estudante?: { username: string; displayName: string };
   aluno: { username: string; displayName: string };
   fase: string;
   /** `Date` no servidor, string no JSON. */
@@ -134,7 +135,7 @@ export interface MetricasDaRun {
   };
 
   /**
-   * A COLEÇÃO do aluno — os posts que ele salvou, que no fluxo v2 são o artefato
+   * A COLEÇÃO do estudante — os posts que ele salvou, que no fluxo v2 são o artefato
    * da missão e o material do debate.
    *
    * Diferente de `interacoes.salvos`, que conta eventos: aqui o último evento por
@@ -166,7 +167,7 @@ export interface MetricasDaRun {
   reflexao: { texto: string; caracteres: number } | null;
 
   /**
-   * Há quanto tempo o aluno não gera evento nenhum. É o número que faz o
+   * Há quanto tempo o estudante não gera evento nenhum. É o número que faz o
    * professor levantar da cadeira — e por isso é `null` quando a run já acabou:
    * ninguém precisa ser cutucado por estar "ocioso" num relatório.
    */
@@ -181,7 +182,7 @@ export interface MetricasDaRun {
  * Agregados de uma turma — o nível PEDAGÓGICO (doc 11 §4).
  *
  * A peça central é a tabela `conclusão × lado semeado`. Se o lado em que o feed
- * nasceu prevê a conclusão que o aluno escreveu, o resultado experimental da
+ * nasceu prevê a conclusão que o estudante escreveu, o resultado experimental da
  * turma está nessa grade — e é ela que o professor projeta no momento-espelho
  * (doc 09). Tudo o mais nesta tela existe para explicar essa grade.
  */
@@ -230,6 +231,7 @@ export interface AnaliseDaTurma {
     porComponente: { chave: string; rotulo: string; media: number }[];
   };
 
+  estudantes?: MetricasDaRun[];
   alunos: MetricasDaRun[];
 }
 
@@ -264,11 +266,11 @@ export interface ResumoDeAtividade {
 /**
  * A métrica que valida — ou refuta — a premissa do projeto (doc 11 §5.2).
  *
- * `delta` = dwell médio dos posts do perfil P entre alunos de perfil P
- *           menos o dwell médio dos MESMOS posts entre alunos de outro perfil.
+ * `delta` = dwell médio dos posts do perfil P entre estudantes de perfil P
+ *           menos o dwell médio dos MESMOS posts entre estudantes de outro perfil.
  *
  * Sempre com a exposição no denominador (doc 04 §7): sem isso, mediria o próprio
- * viés do feed — que serve mais posts do perfil do aluno — e "confirmaria" a
+ * viés do feed — que serve mais posts do perfil do estudante — e "confirmaria" a
  * premissa por construção.
  *
  * Se o delta for consistentemente positivo, as fichas de linguagem do doc 10 §3
@@ -278,12 +280,12 @@ export interface ResumoDeAtividade {
 export interface EficaciaDaEscrita {
   perfil: string;
   rotulo: string;
-  /** Segundos por post, entre alunos DESTE perfil. */
+  /** Segundos por post, entre estudantes DESTE perfil. */
   dwellDosDoPerfil: number | null;
-  /** Segundos por post, entre alunos de OUTROS perfis. */
+  /** Segundos por post, entre estudantes de OUTROS perfis. */
   dwellDosOutros: number | null;
   delta: number | null;
-  amostra: { alunosDoPerfil: number; alunosDeOutros: number };
+  amostra: { estudantesDoPerfil?: number; alunosDoPerfil: number; estudantesDeOutros?: number; alunosDeOutros: number };
 }
 
 export interface AnaliseDeProduto {

@@ -74,7 +74,7 @@ export default async function AnalisePage({
       ) : comRuns.length === 0 ? (
         <Card variant="elevated">
           <p className="text-[14px] text-unooria-neutral-700">
-            Nenhuma atividade com sessão de aluno ainda. As métricas aparecem depois da primeira
+            Nenhuma atividade com sessão de estudante ainda. As métricas aparecem depois da primeira
             turma rodar.
           </p>
         </Card>
@@ -181,7 +181,7 @@ export default async function AnalisePage({
               apontou.
             </li>
             <li>
-              <strong>Conteúdo morto</strong> são posts aprovados que nenhum aluno recebeu — geração
+              <strong>Conteúdo morto</strong> são posts aprovados que nenhum estudante recebeu — geração
               paga e não usada.
             </li>
             <li>

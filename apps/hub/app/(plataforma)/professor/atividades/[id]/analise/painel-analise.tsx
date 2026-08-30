@@ -29,7 +29,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
           theme="light"
           variant="info"
           device="auto"
-          title={`${analise.turma.naMissao} aluno(s) ainda na missão`}
+          title={`${analise.turma.naMissao} estudante(s) ainda na missão`}
           description="Os números abaixo mudam enquanto eles terminam. Vale esperar antes de projetar a tabela para a sala."
         />
       ) : null}
@@ -42,7 +42,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
               Conclusão × lado em que o feed nasceu
             </h2>
             <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-600">
-              As linhas são o lado que o perfil do Ato 1 escolheu para cada aluno. As colunas são o que
+              As linhas são o lado que o perfil do Ato 1 escolheu para cada estudante. As colunas são o que
               cada um escreveu no fim, antes de saber que existia um lado. Se a diagonal for forte, o
               viés semeado previu a conclusão da turma.
             </p>
@@ -119,7 +119,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
           </p>
 
           {/*
-            QUAL resposta a tabela está lendo. A tela do aluno convida a mudar de
+            QUAL resposta a tabela está lendo. A tela do estudante convida a mudar de
             ideia ("vale a última") enquanto a turma termina, e a tabela usa a
             última — mas se boa parte da sala trocou depois de sair do feed, a
             correlação está falando de um momento diferente do que parece. Antes
@@ -129,8 +129,8 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
             <p className="text-[12px] leading-relaxed text-unooria-neutral-500">
               A tabela usa a <strong>última</strong> resposta de cada um.{' '}
               {poder.trocaramDeIdeia === 1
-                ? '1 aluno mexeu na resposta'
-                : `${poder.trocaramDeIdeia} alunos mexeram na resposta`}{' '}
+                ? '1 estudante mexeu na resposta'
+                : `${poder.trocaramDeIdeia} estudantes mexeram na resposta`}{' '}
               depois de escolher pela primeira vez
               {poder.terminaramNoutroLado > 0
                 ? `, e ${poder.terminaramNoutroLado} terminaram num lado diferente do que marcaram de cara`
@@ -176,15 +176,15 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5 text-[13px]">
-                {analise.turma.inverteram.map((aluno) => (
-                  <li key={aluno.username} className="flex flex-wrap items-baseline gap-1.5">
-                    <span className="font-semibold text-unooria-neutral-950">{aluno.displayName}</span>
+                {analise.turma.inverteram.map((estudante) => (
+                  <li key={estudante.username} className="flex flex-wrap items-baseline gap-1.5">
+                    <span className="font-semibold text-unooria-neutral-950">{estudante.displayName}</span>
                     <span className="text-unooria-neutral-600">
-                      {aluno.de} → {aluno.para}
+                      {estudante.de} → {estudante.para}
                     </span>
-                    {aluno.bloco ? (
+                    {estudante.bloco ? (
                       <Badge variant="info" size="sm">
-                        bloco {aluno.bloco}
+                        bloco {estudante.bloco}
                       </Badge>
                     ) : null}
                   </li>
@@ -259,22 +259,22 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
             </h2>
             <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
               {analise.turma.semConcluir
-                .map((aluno) => `${aluno.displayName} (${aluno.fase})`)
+                .map((estudante) => `${estudante.displayName} (${estudante.fase})`)
                 .join(' · ')}
             </p>
           </div>
         </Card>
       ) : null}
 
-      {/* 4. Drill-down por aluno */}
+      {/* 4. Drill-down por estudante */}
       <Card variant="elevated">
         <div className="flex flex-col gap-3">
-          <h2 className="text-[16px] font-semibold text-unooria-neutral-950">Aluno por aluno</h2>
+          <h2 className="text-[16px] font-semibold text-unooria-neutral-950">Estudante por estudante</h2>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
-                  <th className="px-3 py-2 font-semibold">Aluno</th>
+                  <th className="px-3 py-2 font-semibold">Estudante</th>
                   <th className="px-3 py-2 font-semibold">Perfil (jogo)</th>
                   <th className="px-3 py-2 font-semibold">Nasceu em</th>
                   <th className="px-3 py-2 font-semibold">Terminou em</th>
@@ -285,48 +285,49 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                 </tr>
               </thead>
               <tbody>
-                {analise.alunos.map((aluno) => {
-                  const outro = aluno.bolha.ladoInicial === 'A' ? 'B' : 'A';
-                  const expandido = aberto === aluno.runId;
+                {(analise.estudantes ?? analise.alunos).map((estudante) => {
+                  const outro = estudante.bolha.ladoInicial === 'A' ? 'B' : 'A';
+                  const expandido = aberto === estudante.runId;
+                  const perfilEstudante = estudante.estudante ?? estudante.aluno;
                   return (
-                    <Fragment key={aluno.runId}>
+                    <Fragment key={estudante.runId}>
                       <tr
                         className="cursor-pointer border-t border-unooria-neutral-200 text-[13px] hover:bg-unooria-neutral-50"
-                        onClick={() => setAberto(expandido ? null : aluno.runId)}
+                        onClick={() => setAberto(expandido ? null : estudante.runId)}
                       >
                         <td className="px-3 py-2">
                           <span className="font-semibold text-unooria-neutral-950">
-                            {aluno.aluno.displayName}
+                            {perfilEstudante.displayName}
                           </span>
                           <span className="block text-[11px] text-unooria-neutral-500">
-                            {aluno.aluno.username}
+                            {perfilEstudante.username}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
-                          {aluno.perfilJogo?.dominante ?? '—'}
+                          {estudante.perfilJogo?.dominante ?? '—'}
                         </td>
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
-                          {rotulo(aluno.bolha.ladoInicial)}
+                          {rotulo(estudante.bolha.ladoInicial)}
                         </td>
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
-                          {aluno.ladoDominante === 'indefinido'
+                          {estudante.ladoDominante === 'indefinido'
                             ? 'sem lado'
-                            : rotulo(aluno.ladoDominante)}
-                          {aluno.bolha.inverteu ? ' ↺' : ''}
+                            : rotulo(estudante.ladoDominante)}
+                          {estudante.bolha.inverteu ? ' ↺' : ''}
                         </td>
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
-                          {aluno.conclusao
-                            ? aluno.conclusao.inclinacao === 'duvida'
+                          {estudante.conclusao
+                            ? estudante.conclusao.inclinacao === 'duvida'
                               ? 'em dúvida'
-                              : rotulo(aluno.conclusao.inclinacao)
+                              : rotulo(estudante.conclusao.inclinacao)
                             : '—'}
                         </td>
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
-                          {duracao(aluno.tempo.porLadoMs[aluno.bolha.ladoInicial])} ·{' '}
-                          {duracao(aluno.tempo.porLadoMs[outro])}
+                          {duracao(estudante.tempo.porLadoMs[estudante.bolha.ladoInicial])} ·{' '}
+                          {duracao(estudante.tempo.porLadoMs[outro])}
                         </td>
                         <td className="px-3 py-2 text-[12px] text-unooria-neutral-700">
-                          {aluno.investigacao.usosDaBusca}
+                          {estudante.investigacao.usosDaBusca}
                         </td>
                         {/*
                           As cinco barras, sem o total (ADR-44). O número existe e
@@ -335,13 +336,13 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                           ranking de crianças. E ele é somável justamente onde
                           menos se sustenta: Gestos e Exploração ficam em 0/20 na
                           maioria das sessões, então o teto real não é 100 e dois
-                          alunos com o mesmo número chegaram lá por caminhos
+                          estudantes com o mesmo número chegaram lá por caminhos
                           diferentes — que é exatamente o que a própria tela
                           avisa, três parágrafos abaixo, e mostrava assim mesmo.
                         */}
                         <td className="px-3 py-2">
                           <span className="flex gap-0.5" aria-hidden>
-                            {aluno.imersao.componentes.map((componente) => (
+                            {estudante.imersao.componentes.map((componente) => (
                               <span
                                 key={componente.chave}
                                 title={`${componente.rotulo}: ${componente.pontos}/20 — ${componente.detalhe}`}
@@ -358,7 +359,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                             ))}
                           </span>
                           <span className="sr-only">
-                            {aluno.imersao.componentes
+                            {estudante.imersao.componentes
                               .map((componente) => `${componente.rotulo} ${componente.pontos} de 20`)
                               .join(', ')}
                           </span>
@@ -369,11 +370,11 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                         <tr className="bg-unooria-neutral-50">
                           <td colSpan={8} className="px-3 py-3">
                             <div className="flex flex-col gap-3 text-[12px] leading-relaxed text-unooria-neutral-700">
-                              {aluno.conclusao ? (
+                              {estudante.conclusao ? (
                                 <blockquote className="rounded-lg border border-unooria-neutral-200 bg-white p-3 text-[13px]">
-                                  “{aluno.conclusao.texto}”
+                                  “{estudante.conclusao.texto}”
                                   <span className="mt-1 block text-[11px] text-unooria-neutral-500">
-                                    {aluno.conclusao.caracteres} caracteres
+                                    {estudante.conclusao.caracteres} caracteres
                                   </span>
                                 </blockquote>
                               ) : (
@@ -381,7 +382,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                               )}
 
                               <ul className="grid gap-1.5 sm:grid-cols-2">
-                                {aluno.imersao.componentes.map((componente) => (
+                                {estudante.imersao.componentes.map((componente) => (
                                   <li key={componente.chave}>
                                     <strong>{componente.rotulo}</strong> {componente.pontos}/20 —{' '}
                                     {componente.detalhe}
@@ -390,18 +391,18 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                               </ul>
 
                               <p>
-                                {aluno.postsConsumidos} posts em {duracao(aluno.tempo.feedMs)} (ativo{' '}
-                                {duracao(aluno.tempo.ativoMs)}, {aluno.tempo.vaosOciosos} pausa(s) longa(s))
-                                · {aluno.ritmo.postsPorMinuto} posts/min · variação do ritmo{' '}
-                                {aluno.ritmo.variacaoDoRitmo}
+                                {estudante.postsConsumidos} posts em {duracao(estudante.tempo.feedMs)} (ativo{' '}
+                                {duracao(estudante.tempo.ativoMs)}, {estudante.tempo.vaosOciosos} pausa(s) longa(s))
+                                · {estudante.ritmo.postsPorMinuto} posts/min · variação do ritmo{' '}
+                                {estudante.ritmo.variacaoDoRitmo}
                               </p>
                               <p>
-                                curtidas {aluno.interacoes.curtidas} · comentários{' '}
-                                {aluno.interacoes.comentarios} · salvos {aluno.interacoes.salvos} ·
-                                seguiu {aluno.interacoes.seguidos} · parou de verdade em{' '}
-                                {aluno.investigacao.consideracaoDoOposto} post(s) do outro lado
-                                {aluno.investigacao.termosBuscados.length > 0
-                                  ? ` · buscou: ${aluno.investigacao.termosBuscados.join(', ')}`
+                                curtidas {estudante.interacoes.curtidas} · comentários{' '}
+                                {estudante.interacoes.comentarios} · salvos {estudante.interacoes.salvos} ·
+                                seguiu {estudante.interacoes.seguidos} · parou de verdade em{' '}
+                                {estudante.investigacao.consideracaoDoOposto} post(s) do outro lado
+                                {estudante.investigacao.termosBuscados.length > 0
+                                  ? ` · buscou: ${estudante.investigacao.termosBuscados.join(', ')}`
                                   : ''}
                               </p>
                             </div>

@@ -151,7 +151,7 @@ export default async function GuiaDaVilaPage({
       <Card variant="elevated" title="3 · A folha, enquanto a sala discute">
         <div className="flex flex-col gap-3">
           <p className="text-[14px] leading-relaxed text-unooria-neutral-700">
-            Marque <strong>uma</strong> letra ao lado do nome de cada aluno:
+            Marque <strong>uma</strong> letra ao lado do nome de cada estudante:
           </p>
           <ul className="flex flex-col gap-1.5 text-[14px] text-unooria-neutral-700">
             {[
@@ -183,7 +183,7 @@ export default async function GuiaDaVilaPage({
             4 · A revelação — projete as três versões
           </h2>
           <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-600">
-            É a primeira vez que a turma vê as outras. Cada aluno recebeu as duas mensagens
+            É a primeira vez que a turma vê as outras. Cada estudante recebeu as duas mensagens
             comuns e <strong>um só</strong> dos golpes abaixo.
           </p>
         </div>

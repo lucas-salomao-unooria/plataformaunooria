@@ -15,7 +15,7 @@ const ROTULO_LADO: Record<string, string> = {
 };
 
 /**
- * Preview do post na revisão do professor: mesma anatomia do card do aluno
+ * Preview do post na revisão do professor: mesma anatomia do card do estudante
  * (doc 03) mais os rótulos que só o professor pode ver — lado, intensidade,
  * categoria e gancho emocional.
  */

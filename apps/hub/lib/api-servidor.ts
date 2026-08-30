@@ -43,7 +43,7 @@ export async function apiDoServidor<T>(
  * O `apiDoServidor` engole a falha em `null`, o que serve para uma página que
  * simplesmente não tem o que mostrar. Não serve para uma AÇÃO do gestor: quando
  * a importação de um perfil é recusada, a diferença entre "assinatura
- * adulterada", "não existe aluno com esse CPF aqui" e "documento de uma versão
+ * adulterada", "não existe estudante com esse CPF aqui" e "documento de uma versão
  * que não sei ler" é a única coisa que ele precisa ler na tela.
  */
 export async function apiDoServidorBruto<T>(

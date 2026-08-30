@@ -190,7 +190,7 @@ export function FormularioAtividade() {
             A TURMA. Opcional de propósito: sem ela a atividade vale para a
             escola inteira, que é como toda atividade funcionava antes da coluna
             `turma_id`. Com ela, o painel de perfis, a importação da Vila e a
-            entrada do aluno passam a falar da MESMA sala — antes o painel
+            entrada do estudante passam a falar da MESMA sala — antes o painel
             listava a escola e o "N ainda não jogaram" contava crianças de
             outras turmas.
           */}
@@ -214,7 +214,7 @@ export function FormularioAtividade() {
               </select>
               <p className="mt-1 text-[12px] text-unooria-neutral-500">
                 Escolher a turma faz o painel de perfis, a importação da Vila do
-                Lume e a entrada dos alunos falarem só dessa sala.
+                Lume e a entrada dos estudantes falarem só dessa sala.
               </p>
             </div>
           ) : null}

@@ -1,19 +1,19 @@
 import { ANOS, MISSOES_TRANSVERSAIS } from "./entre-redes/catalogo";
 
 /**
- * O que o ALUNO vê no hub dele (`/aluno`): as missões jogáveis hoje.
+ * O que o ESTUDANTE vê no hub dele (`/estudante`): as missões jogáveis hoje.
  *
  * SEM SEGREGAÇÃO POR SÉRIE (decisão atual): com duas missões publicadas,
- * amarrar cada aluno à série dele deixaria a maioria das turmas com um hub
- * vazio. O aluno escolhe a missão; a série volta a filtrar quando o catálogo
+ * amarrar cada estudante à série dele deixaria a maioria das turmas com um hub
+ * vazio. O estudante escolhe a missão; a série volta a filtrar quando o catálogo
  * cobrir os 12 anos (a fonte então é `experiencias.series` do manifesto).
  *
- * Só entra missão com copy de aluno (`missao.aluno`): a copy do professor fala
+ * Só entra missão com copy de estudante (`missao.estudante` ou `missao.aluno`): a copy do professor fala
  * em competência, ficha e — no Instanooria — entrega a virada da missão. Quem
  * publicar uma missão nova precisa escrever essa copy, senão ela não aparece
- * para o aluno (o teste deste arquivo cobra isso).
+ * para o estudante (o teste deste arquivo cobra isso).
  */
-export type MissaoDoAluno = {
+export type MissaoDoEstudante = {
   expId: string;
   titulo: string;
   chamada: string;
@@ -21,7 +21,9 @@ export type MissaoDoAluno = {
   rota: string;
 };
 
-export const MISSOES_DO_ALUNO: MissaoDoAluno[] = [
+export type MissaoDoAluno = MissaoDoEstudante;
+
+export const MISSOES_DO_ESTUDANTE: MissaoDoEstudante[] = [
   /* As transversais vêm PRIMEIRO, e isso é sobre ordem pedagógica, não estética.
      Elas não pertencem a ano nenhum — logo não são "depois" de nada —, e a Vila
      do Lume é o Ato 1 do Instanooria: é o perfil medido lá que decide de que
@@ -38,10 +40,15 @@ export const MISSOES_DO_ALUNO: MissaoDoAluno[] = [
   ...MISSOES_TRANSVERSAIS,
   ...ANOS.flatMap((ano) => ano.missoes),
 ]
-  .filter((missao) => missao.status === "disponivel" && missao.expId && missao.aluno)
-  .map((missao) => ({
-    expId: missao.expId!,
-    titulo: missao.aluno!.titulo,
-    chamada: missao.aluno!.chamada,
-    rota: `/exp/${missao.expId!}`,
-  }));
+  .filter((missao) => missao.status === "disponivel" && missao.expId && (missao.estudante || missao.aluno))
+  .map((missao) => {
+    const copy = missao.estudante ?? missao.aluno!;
+    return {
+      expId: missao.expId!,
+      titulo: copy.titulo,
+      chamada: copy.chamada,
+      rota: `/exp/${missao.expId!}`,
+    };
+  });
+
+export const MISSOES_DO_ALUNO = MISSOES_DO_ESTUDANTE;

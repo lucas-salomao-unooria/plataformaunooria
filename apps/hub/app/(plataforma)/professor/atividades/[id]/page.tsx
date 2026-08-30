@@ -151,7 +151,7 @@ export default async function AtividadePage({
         Em `encerrada` ela CONTINUA aparecendo, em leitura: a partida da Vila
         pode acontecer depois de a atividade começar (é o que o comentário do
         `importarDaVila` já previa), e o professor precisa poder conferir de onde
-        veio o lado de cada aluno quando for ler o relatório. O que some ali é a
+        veio o lado de cada estudante quando for ler o relatório. O que some ali é a
         ação — não há o que redistribuir numa atividade encerrada.
       */}
       {atividade.status === "revisao" ||

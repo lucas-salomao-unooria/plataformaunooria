@@ -37,5 +37,5 @@ export function nomeDoArquivo(nome: string, emitidoEm: Date): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 60);
-  return `perfil-${semAcento || "aluno"}-${emitidoEm.toISOString().slice(0, 10)}.json`;
+  return `perfil-${semAcento || "estudante"}-${emitidoEm.toISOString().slice(0, 10)}.json`;
 }

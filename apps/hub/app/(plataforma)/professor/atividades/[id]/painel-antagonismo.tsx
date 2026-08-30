@@ -414,7 +414,7 @@ export function PainelAntagonismo({
                 <p className="text-[12px] text-unooria-neutral-500">
                   Fato sem lado: cronologia, fontes, &ldquo;como se sabe
                   isso&rdquo;. Informa sem defender nenhuma das duas leituras — é
-                  a terceira opção que o aluno tem no feed.
+                  a terceira opção que o estudante tem no feed.
                 </p>
                 <ul className="flex flex-wrap gap-2">
                   {neutrosNoTema.map((rotulo) => (

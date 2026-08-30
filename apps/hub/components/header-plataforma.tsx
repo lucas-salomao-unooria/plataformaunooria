@@ -16,9 +16,9 @@ const LARGURAS = {
 /**
  * Header padrão da plataforma: marca à esquerda, identidade + "Sair" à direita.
  *
- * É UM só para TODOS os papéis (aluno, professor, gestor, admin-contrato) e
- * para todas as superfícies — inclusive `/exp/**`, o aparelho do aluno. Antes
- * cada área desenhava o próprio header copiado (professor, aluno, admin,
+ * É UM só para TODOS os papéis (estudante, professor, gestor, admin-contrato) e
+ * para todas as superfícies — inclusive `/exp/**`, o aparelho do estudante. Antes
+ * cada área desenhava o próprio header copiado (professor, estudante, admin,
  * análise) e a experiência não tinha nenhum: quem entrava numa missão perdia a
  * marca, o nome e o caminho de saída.
  *
@@ -33,7 +33,7 @@ export async function HeaderPlataforma({
 }: {
   /** Onde a marca leva. Default: a home do papel de quem está logado. */
   href?: string;
-  /** Linha de apoio sob o nome. Default: a série (aluno) ou o rótulo do papel. */
+  /** Linha de apoio sob o nome. Default: a série (estudante) ou o rótulo do papel. */
   legenda?: string;
   /** Caminho de volta, desenhado ao lado da marca (usado dentro da missão). */
   voltar?: { href: string; rotulo: string };

@@ -47,7 +47,7 @@ export type FichaDaMissao = {
   competencia: string;
   /** Tempo de aula previsto. */
   duracao: string;
-  /** Como a missão se apresenta ao aluno. */
+  /** Como a missão se apresenta ao estudante. */
   formato: string;
   atos: AtoDaMissao[];
   /** O que o professor faz antes de rodar com a turma. */
@@ -59,7 +59,7 @@ export type Missao = {
   unidadeSlug: string;
   unidade: number;
   /**
-   * Id da experiência do aluno (`apps/experiencias/<expId>`): a chave que liga
+   * Id da experiência do estudante (`apps/experiencias/<expId>`): a chave que liga
    * catálogo, manifesto `experiencias` e `/exp/:expId`. Só em missão disponível.
    */
   expId?: string;
@@ -69,11 +69,13 @@ export type Missao = {
   /** Presente apenas quando `status === 'disponivel'`. */
   ficha?: FichaDaMissao;
   /**
-   * Como a missão se apresenta AO ALUNO no hub dele (`/aluno`). Separado de
-   * `titulo`/`resumo`, que são escritos para o professor: o aluno não lê
-   * "competência" nem "o aluno investiga", e a copy dele não pode entregar a
+   * Como a missão se apresenta AO ESTUDANTE no hub dele (`/estudante`). Separado de
+   * `titulo`/`resumo`, que são escritos para o professor: o estudante não lê
+   * "competência" nem "o estudante investiga", e a copy dele não pode entregar a
    * virada da missão antes da hora.
    */
+  estudante?: { titulo: string; chamada: string };
+  /** @deprecated Alias de compatibilidade. Use `estudante`. */
   aluno?: { titulo: string; chamada: string };
 };
 
@@ -132,10 +134,10 @@ export const MISSAO_ATUAL: Missao = {
   expId: "exp-01-instanooria",
   titulo: "O Conteúdo que não chegou",
   resumo:
-    "O aluno investiga uma pergunta do seu conteúdo dentro de uma rede social — e só na revelação final descobre que o feed dele foi montado para puxá-lo para um dos lados.",
+    "O estudante investiga uma pergunta do seu conteúdo dentro de uma rede social — e só na revelação final descobre que o feed dele foi montado para puxá-lo para um dos lados.",
   status: "disponivel",
   // Sem spoiler: a missão só funciona se a revelação chegar de surpresa.
-  aluno: {
+  estudante: {
     titulo: "Instanooria",
     chamada:
       "Entre na rede social da turma, investigue a pergunta da missão pelo feed e escreva a sua conclusão.",
@@ -149,7 +151,7 @@ export const MISSAO_ATUAL: Missao = {
       {
         rotulo: "Ato 1 — o jogo",
         texto:
-          "A turma joga a Vila do Lume (a missão transversal), e o perfil de valores dela decide de que lado o feed de cada aluno nasce. No momento em que joga, nada liga o jogo a esta missão — e é essa desconexão que faz a revelação funcionar. Traga os perfis na tela da atividade; quem não jogou entra no sorteio balanceado.",
+          "A turma joga a Vila do Lume (a missão transversal), e o perfil de valores dela decide de que lado o feed de cada estudante nasce. No momento em que joga, nada liga o jogo a esta missão — e é essa desconexão que faz a revelação funcionar. Traga os perfis na tela da atividade; quem não jogou entra no sorteio balanceado.",
         link: {
           href: "/professor/entre-redes/vila-do-lume",
           rotulo: "Abrir a Vila do Lume",
@@ -158,12 +160,12 @@ export const MISSAO_ATUAL: Missao = {
       {
         rotulo: "Ato 2 — a missão",
         texto:
-          "Você informa o tema da sua disciplina; a IA propõe a pergunta-chave, você valida, e o banco de posts nasce com o mesmo argumento escrito em quatro linguagens. O feed de cada aluno já começa puxado para um lado — e o motor fecha a bolha pela rolagem.",
+          "Você informa o tema da sua disciplina; a IA propõe a pergunta-chave, você valida, e o banco de posts nasce com o mesmo argumento escrito em quatro linguagens. O feed de cada estudante já começa puxado para um lado — e o motor fecha a bolha pela rolagem.",
       },
       {
         rotulo: "Fechamento",
         texto:
-          "O aluno escreve a própria conclusão, recebe a revelação, lê o relatório do que o feed fez com ele e vê a comparação lado a lado com a turma.",
+          "O estudante escreve a própria conclusão, recebe a revelação, lê o relatório do que o feed fez com ele e vê a comparação lado a lado com a turma.",
       },
     ],
     preparo: [
@@ -187,9 +189,9 @@ export const MISSAO_UNOOTUBE: Missao = {
   expId: "exp-02-unootube",
   titulo: "UnooTube — Em quais fontes você confiaria?",
   resumo:
-    "Num feed de vídeos curtos sobre História, o aluno salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
+    "Num feed de vídeos curtos sobre História, o estudante salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
   status: "disponivel",
-  aluno: {
+  estudante: {
     titulo: "UnooTube",
     chamada:
       "Um feed de vídeos curtos sobre História: assista e salve as 3 fontes em que você confiaria.",
@@ -203,12 +205,12 @@ export const MISSAO_UNOOTUBE: Missao = {
       {
         rotulo: "1 — Explorar o feed",
         texto:
-          "O aluno assiste aos Shorts e salva até 3 vídeos que pareçam contar uma história confiável. Metade cita fonte verificável e tem poucos inscritos; a outra metade é sensacionalista e tem '1 mil inscritos'.",
+          "O estudante assiste aos Shorts e salva até 3 vídeos que pareçam contar uma história confiável. Metade cita fonte verificável e tem poucos inscritos; a outra metade é sensacionalista e tem '1 mil inscritos'.",
       },
       {
         rotulo: "2 — Ranking por inscritos",
         texto:
-          "Ao 3º salvo, o ranking da turma abre ordenado por inscritos — e quem escolheu fake aparece no topo. O aluno se vê perdendo por ter acertado.",
+          "Ao 3º salvo, o ranking da turma abre ordenado por inscritos — e quem escolheu fake aparece no topo. O estudante se vê perdendo por ter acertado.",
       },
       {
         rotulo: "3 — Adicionar credibilidade",
@@ -217,7 +219,7 @@ export const MISSAO_UNOOTUBE: Missao = {
       },
     ],
     preparo: [
-      "Conferir som ou fones: os vídeos começam mudos e o aluno liga o som.",
+      "Conferir som ou fones: os vídeos começam mudos e o estudante liga o som.",
       "Avisar que a pesquisa do app está bloqueada durante a missão — é de propósito.",
       "Nada a configurar: é só entrar com a turma e acompanhar os resultados aqui.",
     ],
@@ -242,9 +244,9 @@ export const MISSAO_UNOOGPT: Missao = {
   expId: "exp-03-unoogpt",
   titulo: "unooGPT — Decidir com o que os dados mostram",
   resumo:
-    "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O aluno conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
+    "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O estudante conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
   status: "disponivel",
-  aluno: {
+  estudante: {
     titulo: "unooGPT",
     chamada:
       "Uma tempestade chega a Serra do Sauá em uma hora. Você tem duas equipes, quatro bairros e um assistente que consulta os dados da cidade. Decida para onde mandar cada equipe.",
@@ -252,9 +254,9 @@ export const MISSAO_UNOOGPT: Missao = {
   ficha: {
     competencia:
       "Letramento de dados — perguntar melhor, perceber que fontes discordam entre si e decidir sob incerteza, sem confundir 'não sabemos' com 'zero'.",
-    duracao: "1 aula (50 min): ~5 min de missão por aluno, o resto é o debate",
+    duracao: "1 aula (50 min): ~5 min de missão por estudante, o resto é o debate",
     formato:
-      "Clone de assistente de IA. O aluno conversa com um 'Cientista de Dados' que consulta 8 fontes sobre a cidade — cada uma com um viés que ele não vê",
+      "Clone de assistente de IA. O estudante conversa com um 'Cientista de Dados' que consulta 8 fontes sobre a cidade — cada uma com um viés que ele não vê",
     atos: [
       {
         rotulo: "1 — Briefing, e a espera",
@@ -264,7 +266,7 @@ export const MISSAO_UNOOGPT: Missao = {
       {
         rotulo: "2 — Investigação: 3 perguntas, 5 minutos",
         texto:
-          "O mapa começa VAZIO e só acende o que uma fonte carregada cobre. Conversar é de graça; investigar custa. Bairro sem cobertura fica em branco — e branco quer dizer 'não sabemos', nunca 'zero em risco'. É aqui que o aluno descobre que duas fontes discordam sobre o mesmo bairro.",
+          "O mapa começa VAZIO e só acende o que uma fonte carregada cobre. Conversar é de graça; investigar custa. Bairro sem cobertura fica em branco — e branco quer dizer 'não sabemos', nunca 'zero em risco'. É aqui que o estudante descobre que duas fontes discordam sobre o mesmo bairro.",
       },
       {
         rotulo: "3 — Decidir e dizer por quê",
@@ -278,7 +280,7 @@ export const MISSAO_UNOOGPT: Missao = {
       },
     ],
     preparo: [
-      "Abra /professor/entre-redes/2-serie/unidade-1/resultados ANTES da aula: é de lá que sai a largada, e nenhum aluno fala com o assistente antes dela.",
+      "Abra /professor/entre-redes/2-serie/unidade-1/resultados ANTES da aula: é de lá que sai a largada, e nenhum estudante fala com o assistente antes dela.",
       "Combine a largada em voz alta. O relógio é da turma: quem chega antes espera, e a espera é a aula — não a tela travada.",
       "Você pode somar +2 minutos ou encerrar a qualquer momento. Somar não faz a chuva andar para trás.",
       "Guarde metade da aula para o debate: o software NÃO conta a ninguém qual fonte engana em quê. Esse é o seu material, e está no guia.",
@@ -359,12 +361,14 @@ export type MissaoTransversal = {
   porQueTransversal: string;
   status: StatusMissao;
   ficha?: FichaDaMissao;
+  estudante?: { titulo: string; chamada: string };
+  /** @deprecated Alias de compatibilidade. Use `estudante`. */
   aluno?: { titulo: string; chamada: string };
 };
 
 /**
  * Vila do Lume — o jogo 3D que a ficha do Instanooria sempre chamou de "Ato 1":
- * *"fora da plataforma, um jogo mede o perfil de valores do aluno"*. Ele deixou
+ * *"fora da plataforma, um jogo mede o perfil de valores do estudante"*. Ele deixou
  * de estar fora.
  *
  * É transversal porque não é a missão de um ano: é o instrumento que alimenta
@@ -377,31 +381,31 @@ export const MISSAO_VILA: MissaoTransversal = {
   expId: "exp-70-vila-do-lume",
   titulo: "Vila do Lume — A Noite Longa",
   resumo:
-    "A turma reacende as oito fogueiras de uma vila no escuro. Pelo caminho chegam mensagens: duas são verdadeiras, e cada aluno recebe um golpe de um nível diferente — é isso que faz o debate funcionar.",
+    "A turma reacende as oito fogueiras de uma vila no escuro. Pelo caminho chegam mensagens: duas são verdadeiras, e cada estudante recebe um golpe de um nível diferente — é isso que faz o debate funcionar.",
   porQueTransversal:
     "Não pertence a nenhum ano: o que ela lê é como a criança escolhe quando escolher custa algo, e alimenta as missões dos outros anos.",
   status: "disponivel",
   // Sem spoiler: a criança não pode saber que está sendo lida, e a copy dela é
   // só a tarefa. Ver a regra de ouro no README da experiência.
-  aluno: {
+  estudante: {
     titulo: "Vila do Lume",
     chamada: "A vila apagou. Acenda as oito fogueiras antes que a noite acabe.",
   },
   ficha: {
     competencia:
       "Letramento digital — reconhecer golpe quando ele não tem nenhum dos sinais que se ensina a procurar; e, no fundo, como cada criança decide quando decidir custa algo.",
-    duracao: "1 aula de jogo (15–25 min por aluno) + 10 a 15 min de debate",
+    duracao: "1 aula de jogo (15–25 min por estudante) + 10 a 15 min de debate",
     formato: "Jogo 3D em primeira pessoa, no navegador. Roda no aparelho da plataforma.",
     atos: [
       {
         rotulo: "1 — A vila no escuro",
         texto:
-          "O aluno minera fagulha, acende as 8 fogueiras e recolhe as Chamas Sagradas. Pelo caminho aparecem coisas que ele pode fazer ou não — ajudar um aldeão, acender um lampião, gravar o nome na Pedra — e nada disso pontua. É aí que está o sinal.",
+          "O estudante minera fagulha, acende as 8 fogueiras e recolhe as Chamas Sagradas. Pelo caminho aparecem coisas que ele pode fazer ou não — ajudar um aldeão, acender um lampião, gravar o nome na Pedra — e nada disso pontua. É aí que está o sinal.",
       },
       {
         rotulo: "2 — As mensagens",
         texto:
-          "Durante a partida chegam 5 mensagens, sem pausar o jogo. Duas são VERDADEIRAS e ajudam de verdade. O golpe principal chega em três níveis, e cada aluno recebe um só: grosseiro, autoridade com urgência, ou um colega pedindo um passo pequeno no minuto em que ele está travado.",
+          "Durante a partida chegam 5 mensagens, sem pausar o jogo. Duas são VERDADEIRAS e ajudam de verdade. O golpe principal chega em três níveis, e cada estudante recebe um só: grosseiro, autoridade com urgência, ou um colega pedindo um passo pequeno no minuto em que ele está travado.",
       },
       {
         rotulo: "3 — O debate",

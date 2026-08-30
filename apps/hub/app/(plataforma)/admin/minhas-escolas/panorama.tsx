@@ -21,7 +21,8 @@ interface EscolaDoPanorama extends Record<string, unknown> {
   regional: string | null;
   papel: string;
   principal: boolean;
-  alunos: number;
+  estudantes?: number;
+  alunos?: number;
   professores: number;
   turmas: number;
   semPrimeiroAcesso: number;
@@ -100,7 +101,12 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
         ),
       },
       { key: "turmas", title: "Turmas", align: "right" },
-      { key: "alunos", title: "Alunos", align: "right" },
+      {
+        key: "estudantes",
+        title: "Estudantes",
+        align: "right",
+        render: (_, l) => String(l.estudantes ?? l.alunos),
+      },
       { key: "professores", title: "Professores", align: "right" },
       {
         key: "semPrimeiroAcesso",
@@ -135,11 +141,12 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
 
   const totais = (escolas ?? []).reduce(
     (soma, e) => ({
-      alunos: soma.alunos + e.alunos,
+      estudantes: soma.estudantes + (e.estudantes ?? e.alunos ?? 0),
+      alunos: soma.alunos + (e.alunos ?? e.estudantes ?? 0),
       turmas: soma.turmas + e.turmas,
       pendentes: soma.pendentes + e.semPrimeiroAcesso,
     }),
-    { alunos: 0, turmas: 0, pendentes: 0 },
+    { estudantes: 0, alunos: 0, turmas: 0, pendentes: 0 },
   );
 
   return (
@@ -161,7 +168,7 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
       {escolas && escolas.length > 0 ? (
         <>
           <p className="text-[14px] text-unooria-neutral-500">
-            {escolas.length} escolas · {totais.turmas} turmas · {totais.alunos} alunos
+            {escolas.length} escolas · {totais.turmas} turmas · {totais.estudantes} estudantes
             {totais.pendentes > 0 ? ` · ${totais.pendentes} sem primeiro acesso` : ""}
           </p>
 

@@ -33,6 +33,7 @@ export default async function PlanoDeAulaPage({
         src={embed.src}
         expOrigin={embed.expOrigin}
         token={embed.token}
+        estudante={embed.estudante}
         aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_PLANO_DE_AULA }}

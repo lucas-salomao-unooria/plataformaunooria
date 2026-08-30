@@ -3,23 +3,23 @@
 import { Badge, Table, Tag, type TableColumn } from "@edu/ui/ds";
 import {
   formatarQuando,
-  ordenarAlunos,
-  situacaoDoAluno,
-  type LinhaAlunoUnootube,
+  ordenarEstudantes,
+  situacaoDoEstudante,
+  type LinhaEstudanteUnootube,
 } from "@/lib/unootube-tipos";
 
 /**
  * Client component de propósito: `columns[].render` do `Table` do DS é função e
  * não atravessa a fronteira RSC. A página (server) só passa os dados.
  */
-interface Linha extends Record<string, unknown>, LinhaAlunoUnootube {}
+interface Linha extends Record<string, unknown>, LinhaEstudanteUnootube {}
 
 const numero = new Intl.NumberFormat("pt-BR");
 
 const colunas: TableColumn<Linha>[] = [
   {
     key: "nome",
-    title: "Aluno",
+    title: "Estudante",
     render: (_, l) => (
       <span className="flex flex-col">
         <span className="font-semibold text-unooria-neutral-950">{l.nome}</span>
@@ -54,7 +54,7 @@ const colunas: TableColumn<Linha>[] = [
     title: "Situação",
     width: 200,
     render: (_, l) => {
-      const situacao = situacaoDoAluno(l);
+      const situacao = situacaoDoEstudante(l);
       if (situacao === "concluiu") return <Badge variant="success">Concluiu</Badge>;
       if (situacao === "nao-iniciou") return <Badge variant="disable">Não iniciou</Badge>;
       return (
@@ -74,13 +74,20 @@ const colunas: TableColumn<Linha>[] = [
   { key: "concluidoEm", title: "Concluiu em", width: 130, render: (_, l) => formatarQuando(l.concluidoEm) },
 ];
 
-export function TabelaResultados({ alunos }: { alunos: LinhaAlunoUnootube[] }) {
-  const linhas: Linha[] = ordenarAlunos(alunos).map((a) => ({ ...a }));
+export function TabelaResultados({
+  estudantes,
+  alunos,
+}: {
+  estudantes?: LinhaEstudanteUnootube[];
+  alunos?: LinhaEstudanteUnootube[];
+}) {
+  const lista = estudantes ?? alunos ?? [];
+  const linhas: Linha[] = ordenarEstudantes(lista).map((a) => ({ ...a }));
   return (
     <Table<Linha>
       columns={colunas}
       data={linhas}
-      keyExtractor={(l) => l.alunoId}
+      keyExtractor={(l) => l.estudanteId ?? l.alunoId}
       emptyText="Ninguém desta turma entrou no UnooTube ainda."
       size="md"
       theme="light"

@@ -1,14 +1,14 @@
 import { HeaderPlataforma } from "@/components/header-plataforma";
 
 /**
- * Casca do hub do aluno.
+ * Casca do hub do estudante.
  *
  * É a plataforma, não o aparelho: aqui a marca institucional pode aparecer, no
  * mesmo `HeaderPlataforma` do professor e das demais áreas. A regra de ouro
  * vale um nível abaixo — nada da marca, da aula ou do professor entra DENTRO
  * do iframe da experiência.
  */
-export default function AlunoLayout({ children }: { children: React.ReactNode }) {
+export default function EstudanteLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh unooria-surface">
       <HeaderPlataforma />

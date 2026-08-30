@@ -18,7 +18,7 @@ export function rotuloDaSerie(serie: Serie): string {
 /**
  * Normaliza qualquer grafia de série para o enum; `null` se não reconhecer.
  * Hoje a sessão já carrega o enum (o CSV valida na entrada), mas o WSO2 pode
- * trazer "8º ano" e um aluno sem turma chega sem série — defensivo, não corretivo.
+ * trazer "8º ano" e um estudante sem turma chega sem série — defensivo, não corretivo.
  */
 export function normalizarSerie(bruta: string | null | undefined): Serie | null {
   if (!bruta) return null;

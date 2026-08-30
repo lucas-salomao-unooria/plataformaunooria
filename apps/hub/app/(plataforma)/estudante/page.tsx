@@ -1,7 +1,7 @@
 import { EmptyState } from "@edu/ui/ds";
-import { CartaoMissaoAluno } from "@/components/cartao-missao-aluno";
+import { CartaoMissaoEstudante } from "@/components/cartao-missao-estudante";
 import { auth } from "@/lib/auth";
-import { MISSOES_DO_ALUNO } from "@/lib/missoes-do-aluno";
+import { MISSOES_DO_ESTUDANTE } from "@/lib/missoes-do-estudante";
 
 export const metadata = { title: "Missões — Plataforma Unooria" };
 
@@ -11,12 +11,12 @@ function primeiroNome(nome: string): string {
 }
 
 /**
- * Hub do ALUNO: a lista de missões que ele pode entrar.
+ * Hub do ESTUDANTE: a lista de missões que ele pode entrar.
  *
- * Antes o aluno caía direto na experiência da série dele; agora ele escolhe.
- * A lista não é filtrada por série hoje (ver `lib/missoes-do-aluno.ts`).
+ * Antes o estudante caía direto na experiência da série dele; agora ele escolhe.
+ * A lista não é filtrada por série hoje (ver `lib/missoes-do-estudante.ts`).
  */
-export default async function HubAluno() {
+export default async function HubEstudante() {
   const session = await auth();
   const usuario = session!.usuario;
 
@@ -31,7 +31,7 @@ export default async function HubAluno() {
         </p>
       </div>
 
-      {MISSOES_DO_ALUNO.length === 0 ? (
+      {MISSOES_DO_ESTUDANTE.length === 0 ? (
         <EmptyState
           variant="no-data"
           size="lg"
@@ -42,9 +42,9 @@ export default async function HubAluno() {
         />
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
-          {MISSOES_DO_ALUNO.map((missao) => (
+          {MISSOES_DO_ESTUDANTE.map((missao) => (
             <li key={missao.expId} className="h-full">
-              <CartaoMissaoAluno missao={missao} />
+              <CartaoMissaoEstudante missao={missao} />
             </li>
           ))}
         </ul>

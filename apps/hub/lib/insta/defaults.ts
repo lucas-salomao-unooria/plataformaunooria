@@ -1,6 +1,6 @@
 /**
  * Defaults da atividade e do motor (docs 04 e 05). Ficam no servidor: nenhum
- * peso pode chegar ao bundle do aluno (doc 04 §7).
+ * peso pode chegar ao bundle do estudante (doc 04 §7).
  */
 
 /**
@@ -94,10 +94,10 @@ export const ENGINE_CONFIG_DEFAULT = {
    * Mixagem por bloco (doc 04 §5). **O lado oposto NUNCA zera** — é a regra mais
    * importante desta tabela.
    *
-   * Com o viés vindo do perfil, o aluno já nasce com o domínio empurrado e
+   * Com o viés vindo do perfil, o estudante já nasce com o domínio empurrado e
    * atravessa as faixas iniciais rápido. Na versão anterior o oposto ia a 0 acima
    * de 0,75, o que tornava a virada de lado **mecanicamente impossível** — não por
-   * convicção do aluno, mas porque o outro lado parava de aparecer. E o relatório
+   * convicção do estudante, mas porque o outro lado parava de aparecer. E o relatório
    * afirmaria "você podia ter mudado de lado" sendo mentira.
    *
    * 33% do outro lado no começo, piso de 1 em 6 na bolha fechada. É a faixa em que
@@ -125,7 +125,7 @@ export const ENGINE_CONFIG_DEFAULT = {
   sementeInicial: 6,
   /**
    * Probabilidade de a escolha dentro de (lado, intensidade) priorizar o perfil de
-   * linguagem do aluno (doc 04 §5.5). Com 0, o feed distribui os 4 perfis por
+   * linguagem do estudante (doc 04 §5.5). Com 0, o feed distribui os 4 perfis por
    * igual — é também o comportamento quando não há perfil importado.
    */
   pesoPerfil: 0.5,
@@ -151,7 +151,7 @@ export const ENGINE_CONFIG_DEFAULT = {
    * comparar, voltar —, e 60 posts em 18 min dá ~18s de média com folga real.
    *
    * Efeito colateral que interessa: com o mesmo piso de 17% do outro lado, o
-   * aluno passa a ver ~14 posts do lado oposto em vez de ~6.
+   * estudante passa a ver ~14 posts do lado oposto em vez de ~6.
    */
   encerramento: {
     maxPosts: 60,
@@ -171,7 +171,7 @@ export const MINIMOS_ATIVACAO = {
   toleranciaEquilibrioLados: 0.1,
   /**
    * Fração mínima do esperado em cada célula (lado, perfil) — doc 05 §4. Célula
-   * rasa significa que aquele aluno receberia pouco da linguagem que mais fala
+   * rasa significa que aquele estudante receberia pouco da linguagem que mais fala
    * com ele; célula vazia significa que não receberia nenhuma.
    */
   fracaoMinimaPorCelula: 0.1,

@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { areaDoPapel, areaDoPathname, homeDoPapel } from "@/lib/papeis";
 
-/** Fora das áreas de papel: vale para aluno, professor, gestor e admin. */
+/** Fora das áreas de papel: vale para estudante, professor, gestor e admin. */
 const TROCAR_SENHA = "/trocar-senha";
 
 /**
  * Duas trancas, como no projeto origem: middleware (aqui) + verificação de
  * papel em cada rota de dados (na api, via RolesGuard). Sem sessão → /login
  * com ?next=; sessão em área de OUTRO papel → home do papel (nada de 403:
- * aluno que digita /professor só volta para o lugar dele).
+ * estudante que digita /professor só volta para o lugar dele).
  */
 export default auth((request) => {
   const { pathname } = request.nextUrl;
@@ -52,7 +52,7 @@ export default auth((request) => {
 
 export const config = {
   matcher: [
-    "/aluno/:path*",
+    "/estudante/:path*",
     "/professor/:path*",
     "/exp/:path*",
     "/admin/:path*",

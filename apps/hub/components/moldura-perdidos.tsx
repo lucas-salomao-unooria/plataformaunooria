@@ -14,7 +14,7 @@
  * lê de longe. As duas coisas juntas é que tornam o momento óbvio.
  *
  * Cores fixas (não tokens do DS institucional): esta tela acompanha a
- * linguagem do aparelho do aluno, que NÃO carrega o CSS da plataforma.
+ * linguagem do aparelho do estudante, que NÃO carrega o CSS da plataforma.
  */
 export function MolduraPerdidos() {
   return (

@@ -8,7 +8,7 @@ import { montarEmbed } from "@/lib/embed-experiencia";
  * casca do professor — mesma sessão, mesmo token, mesma api (o desenho da
  * exp-90 em `/professor/plano-de-aula`).
  *
- * `ExpFrame` direto (sem `ExpHost`): não há aparelho nem chrome de aluno. O
+ * `ExpFrame` direto (sem `ExpHost`): não há aparelho nem chrome de estudante. O
  * wrapper anula o padding do layout para a experiência usar a altura toda.
  *
  * Em dev, sem manifesto: `?src=http://localhost:5176` (ou a porta registrada
@@ -32,6 +32,7 @@ export default async function BemEstarPage({
         src={embed.src}
         expOrigin={embed.expOrigin}
         token={embed.token}
+        estudante={embed.estudante}
         aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_BEM_ESTAR }}

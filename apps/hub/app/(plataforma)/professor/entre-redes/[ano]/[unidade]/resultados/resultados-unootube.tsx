@@ -49,7 +49,7 @@ export async function ResultadosUnooTube({
   const paleta = UNOORIA_DATAVIZ_PALETTE;
   const resumo = resultados?.resumo;
   // O BarChart do DS tem eixo fixo 0–100: os valores vão em % dos concluídos
-  // (contagens de 0 a 40 alunos sumiriam na escala). Rótulos curtos: o eixo x
+  // (contagens de 0 a 40 estudantes sumiriam na escala). Rótulos curtos: o eixo x
   // trunca texto acima de ~8 caracteres.
   const distribuicao = resumo
     ? (["0", "1", "2", "3"] as const).map((chave, i) => ({
@@ -84,7 +84,7 @@ export async function ResultadosUnooTube({
       {turma === "" ? (
         <Card variant="elevated">
           <p className="text-[14px] text-unooria-neutral-700">
-            Escolha a turma acima. Os resultados aparecem por aluno, inclusive quem ainda não entrou.
+            Escolha a turma acima. Os resultados aparecem por estudante, inclusive quem ainda não entrou.
           </p>
         </Card>
       ) : resultados === null ? (
@@ -99,7 +99,7 @@ export async function ResultadosUnooTube({
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <MetricCard title="Alunos na turma" value={resultados.resumo.total} />
+            <MetricCard title="Estudantes na turma" value={resultados.resumo.total} />
             <MetricCard title="Concluíram" value={`${resultados.resumo.concluiram}/${resultados.resumo.total}`} />
             <MetricCard
               title="Média de fontes confiáveis"
@@ -115,7 +115,7 @@ export async function ResultadosUnooTube({
             <Card variant="elevated">
               <BarChart
                 title="Fontes confiáveis (0 a 3) — % dos concluídos"
-                subtitle={`${resultados.resumo.concluiram} ${resultados.resumo.concluiram === 1 ? "aluno concluiu" : "alunos concluíram"} · eixo x = quantas das 3 escolhas eram fontes confiáveis`}
+                subtitle={`${resultados.resumo.concluiram} ${resultados.resumo.concluiram === 1 ? "estudante concluiu" : "estudantes concluíram"} · eixo x = quantas das 3 escolhas eram fontes confiáveis`}
                 data={distribuicao}
                 height={200}
               />
@@ -134,7 +134,7 @@ export async function ResultadosUnooTube({
                   </li>
                   <li>
                     <strong>Concluiu</strong> = clicou em "Adicionar credibilidade" e viu a virada do
-                    ranking. Antes disso o aluno ainda pode trocar os salvos.
+                    ranking. Antes disso o estudante ainda pode trocar os salvos.
                   </li>
                 </ul>
               </div>
@@ -142,7 +142,7 @@ export async function ResultadosUnooTube({
           </div>
 
           <Card variant="elevated" title={`${resultados.turma.nome} · ${resultados.turma.serie}`}>
-            <TabelaResultados alunos={resultados.alunos} />
+            <TabelaResultados estudantes={resultados.estudantes ?? resultados.alunos} />
           </Card>
 
           <div>

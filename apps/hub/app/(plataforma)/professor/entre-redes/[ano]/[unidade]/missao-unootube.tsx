@@ -72,7 +72,7 @@ export function MissaoUnooTube({
             ))}
           </ol>
           <p className="pt-4 text-[13px] text-unooria-neutral-500">
-            O aluno do 4º ano entra no UnooTube ao fazer login — não há nada para ativar.
+            O estudante do 4º ano entra no UnooTube ao fazer login — não há nada para ativar.
           </p>
         </Card>
       </section>
@@ -80,7 +80,7 @@ export function MissaoUnooTube({
       <Card variant="elevated" title="Resultados da turma">
         <div className="flex flex-col gap-3">
           <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-            Por aluno: quantos vídeos salvou, quantas fontes confiáveis escolheu, quantos inscritos
+            Por estudante: quantos vídeos salvou, quantas fontes confiáveis escolheu, quantos inscritos
             "ganhou" e se já chegou à virada do ranking. Os números são recalculados a cada visita.
           </p>
           <div>

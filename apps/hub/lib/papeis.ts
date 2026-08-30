@@ -3,9 +3,9 @@
  * Contrato congelado com a api (apps/api/src/auth/claims.ts).
  */
 
-export type Papel = "aluno" | "professor" | "gestor" | "admin-contrato";
+export type Papel = "estudante" | "professor" | "gestor" | "admin-contrato";
 
-export const PAPEIS: readonly Papel[] = ["aluno", "professor", "gestor", "admin-contrato"];
+export const PAPEIS: readonly Papel[] = ["estudante", "professor", "gestor", "admin-contrato"];
 
 /** Área inicial de cada papel. Papéis são mutuamente exclusivos. */
 export function homeDoPapel(papel: Papel): string {
@@ -13,26 +13,26 @@ export function homeDoPapel(papel: Papel): string {
   if (papel === "gestor") return "/admin/usuarios";
   // admin-contrato ganha /analise na fase M6; até lá administra usuários.
   if (papel === "admin-contrato") return "/admin/usuarios";
-  // O aluno tem hub próprio: ele escolhe a missão e de lá entra no aparelho
+  // O estudante tem hub próprio: ele escolhe a missão e de lá entra no aparelho
   // (`/exp/:expId`). Antes caía direto na experiência da série dele.
-  return "/aluno";
+  return "/estudante";
 }
 
 /**
- * A que área um pathname pertence, para o redirect cross-área. `/aluno` e
- * `/exp` são a MESMA área: o hub e o aparelho do aluno.
+ * A que área um pathname pertence, para o redirect cross-área. `/estudante` e
+ * `/exp` são a MESMA área: o hub e o aparelho do estudante.
  */
 export function areaDoPathname(pathname: string): string {
   if (pathname.startsWith("/professor")) return "/professor";
   if (pathname.startsWith("/admin")) return "/admin/usuarios";
   if (pathname.startsWith("/analise")) return "/admin/usuarios";
-  return "/aluno";
+  return "/estudante";
 }
 
 export function areaDoPapel(papel: Papel): string {
   if (papel === "professor") return "/professor";
   if (papel === "gestor" || papel === "admin-contrato") return "/admin/usuarios";
-  return "/aluno";
+  return "/estudante";
 }
 
 /**
@@ -44,5 +44,5 @@ export function rotuloDoPapel(papel: Papel): string {
   if (papel === "professor") return "Professor";
   if (papel === "gestor") return "Gestor";
   if (papel === "admin-contrato") return "Admin do contrato";
-  return "Aluno";
+  return "Estudante";
 }

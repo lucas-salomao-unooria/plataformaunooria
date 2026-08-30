@@ -36,7 +36,7 @@ export function ZerarTurma({
 }: {
   turmaId: string;
   nomeDaTurma: string;
-  /** Quantos alunos já jogaram — o botão fica inerte quando não há nada. */
+  /** Quantos estudantes já jogaram — o botão fica inerte quando não há nada. */
   partidas: number;
 }) {
   const router = useRouter();
@@ -97,7 +97,7 @@ export function ZerarTurma({
             <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
               As <strong>{partidas}</strong>{" "}
               {partidas === 1 ? "partida vai sumir" : "partidas vão sumir"} com tudo que veio
-              delas: o retrato de valores de cada aluno e a leitura das mensagens.{" "}
+              delas: o retrato de valores de cada estudante e a leitura das mensagens.{" "}
               <strong>Isso não tem volta.</strong>
             </p>
             <p className="text-[14px] leading-relaxed text-unooria-neutral-800">

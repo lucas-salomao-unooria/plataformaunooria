@@ -28,7 +28,9 @@ export function ExpHost(props: {
   src: string;
   expOrigin: string;
   token: string;
-  aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
+  estudante?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
+  /** @deprecated Use `estudante`. */
+  aluno?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   config?: Record<string, unknown>;
   /**
@@ -60,7 +62,7 @@ export function ExpHost(props: {
   const mostrarMolduraPerdidos = estado.fase === "perdidos";
 
   /**
-   * O relatório do aluno sai do aparelho (ADR-41). É a única tela que expande, e
+   * O relatório do estudante sai do aparelho (ADR-41). É a única tela que expande, e
    * a condição é POSITIVA de propósito: qualquer outro estado — inclusive uma
    * mensagem que se perdeu — cai no aparelho de 375px, que é o comportamento de
    * sempre. O contrário (expandir por default e contrair em casos conhecidos)

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AlertBox, Button, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 
-interface AlunoNaLista {
+interface EstudanteNaLista {
   username: string;
   displayName: string;
   dominante: string;
@@ -19,6 +19,8 @@ interface AlunoNaLista {
   jaComecou: boolean;
 }
 
+export type AlunoNaLista = EstudanteNaLista;
+
 interface Distribuicao {
   temAfinidade: boolean;
   afinidade: {
@@ -27,7 +29,8 @@ interface Distribuicao {
     por_que_abertura: string;
     por_que_autopromocao: string;
   } | null;
-  alunos: AlunoNaLista[];
+  estudantes?: EstudanteNaLista[];
+  alunos?: EstudanteNaLista[];
   contagem: { A: number; B: number };
   semLado: number;
   desequilibrio: number;
@@ -44,13 +47,13 @@ interface ResultadoDaVila {
   descartados: Array<{ nome: string; motivo: string }>;
 }
 
-const ORIGEM_DO_PERFIL: Record<AlunoNaLista["origemDoPerfil"], string> = {
+const ORIGEM_DO_PERFIL: Record<EstudanteNaLista["origemDoPerfil"], string> = {
   jogo: "do jogo",
   professor: "manual",
   ausente: "sem perfil",
 };
 
-const ORIGEM_DO_LADO: Record<AlunoNaLista["ladoOrigem"], string> = {
+const ORIGEM_DO_LADO: Record<EstudanteNaLista["ladoOrigem"], string> = {
   perfil: "pelo perfil",
   sorteio: "sorteado",
   redistribuido: "redistribuído",
@@ -76,11 +79,11 @@ export function PainelPerfis({
   ladoALabel: string;
   ladoBLabel: string;
   /** Atividade encerrada: o painel ainda EXPLICA de onde veio o lado de cada
-   *  aluno (é o que o professor lê junto do relatório), mas não age. */
+   *  estudante (é o que o professor lê junto do relatório), mas não age. */
   somenteLeitura?: boolean;
   /** A turma da atividade. `null` = atividade anterior à coluna `turma_id`, que
    *  vale para a escola inteira — e o painel PRECISA dizer isso, senão o
-   *  professor lê uma lista de alunos que não são dele achando que é a sala. */
+   *  professor lê uma lista de estudantes que não são dele achando que é a sala. */
   turma: { id: string; nome: string; serie: string } | null;
 }) {
   const [dados, setDados] = useState<Distribuicao | null>(null);
@@ -159,7 +162,7 @@ export function PainelPerfis({
       setUltimaAcao(
         movidos.length === 0
           ? (corpo?.mensagem ?? "A turma já está equilibrada.")
-          : `${movidos.length} aluno(s) movido(s), começando pelos de perfil menos decidido: ${movidos
+          : `${movidos.length} estudante(s) movido(s), começando pelos de perfil menos decidido: ${movidos
               .map((m) => `${m.displayName} (${m.perfil}, margem ${m.margem})`)
               .join(" · ")}`,
       );
@@ -179,9 +182,10 @@ export function PainelPerfis({
     );
   }
 
+  const listaEstudantes = dados.estudantes ?? dados.alunos ?? [];
   const total = dados.contagem.A + dados.contagem.B;
-  const comPerfil = dados.alunos.filter((a) => a.origemDoPerfil !== "ausente").length;
-  const desatualizados = dados.alunos.filter((a) => a.mapeamentoDesatualizado).length;
+  const comPerfil = listaEstudantes.filter((a) => a.origemDoPerfil !== "ausente").length;
+  const desatualizados = listaEstudantes.filter((a) => a.mapeamentoDesatualizado).length;
   const rotuloDoLado = (lado: "A" | "B" | null) =>
     lado === "A" ? ladoALabel : lado === "B" ? ladoBLabel : "—";
 
@@ -194,19 +198,19 @@ export function PainelPerfis({
       {/*
         DE QUE SALA ESTE PAINEL FALA. Sem turma, a atividade vale para a escola
         inteira — era o comportamento único antes da coluna `turma_id`, e sem
-        dizê-lo o professor lê uma lista com alunos que não são dele achando que
+        dizê-lo o professor lê uma lista com estudantes que não são dele achando que
         é a sala.
       */}
       {turma ? (
         <p className="text-[13px] text-unooria-neutral-500">
           Turma <strong className="text-unooria-neutral-800">{turma.nome}</strong> ·{" "}
-          {turma.serie} — {dados.alunos.length} aluno(s).
+          {turma.serie} — {listaEstudantes.length} estudante(s).
         </p>
       ) : (
         <FeedbackAlert
           type="info"
           title="Esta atividade não tem turma"
-          description={`Ela vale para a escola inteira, e a lista abaixo tem ${dados.alunos.length} aluno(s) de todas as turmas. Atividades criadas a partir de agora podem escolher a turma.`}
+          description={`Ela vale para a escola inteira, e a lista abaixo tem ${listaEstudantes.length} estudante(s) de todas as turmas. Atividades criadas a partir de agora podem escolher a turma.`}
         />
       )}
 
@@ -216,7 +220,7 @@ export function PainelPerfis({
           variant="warning"
           device="auto"
           title="Ainda não há afinidade aprovada"
-          description="Aprove a pergunta e os dois lados. É a afinidade que decide em que lado cada aluno começa."
+          description="Aprove a pergunta e os dois lados. É a afinidade que decide em que lado cada estudante começa."
         />
       ) : null}
 
@@ -228,7 +232,7 @@ export function PainelPerfis({
         >
           <div className="flex flex-col gap-3">
             <p className="text-[13px] text-unooria-neutral-700">
-              O perfil de valores de cada aluno define seu lado inicial. Perfis
+              O perfil de valores de cada estudante define seu lado inicial. Perfis
               opostos vão para lados opostos, então sempre saem dois perfis por
               lado.
             </p>
@@ -284,15 +288,15 @@ export function PainelPerfis({
 
           {/*
             QUANTOS JÁ TÊM PERFIL, antes de clicar. A `/distribuicao` já traz
-            `origemDoPerfil` por aluno, então isto é agregação, não busca nova.
+            `origemDoPerfil` por estudante, então isto é agregação, não busca nova.
             Antes o professor só descobria depois de importar — e se a turma
             inteira estivesse sem partida, ele descobria com um "0 perfis
             importados" que parece erro do sistema.
           */}
           <p className="text-[13px] text-unooria-neutral-700">
             {comPerfil === 0
-              ? `Nenhum dos ${dados.alunos.length} alunos tem perfil ainda — hoje todos cairiam no sorteio.`
-              : `${comPerfil} de ${dados.alunos.length} já têm perfil.`}
+              ? `Nenhum dos ${listaEstudantes.length} estudantes tem perfil ainda — hoje todos cairiam no sorteio.`
+              : `${comPerfil} de ${listaEstudantes.length} já têm perfil.`}
           </p>
 
           {/*
@@ -361,7 +365,7 @@ export function PainelPerfis({
                   ? `${Math.round((dados.contagem.A / total) * 100)}% / ${Math.round(
                       (dados.contagem.B / total) * 100,
                     )}%`
-                  : "sem alunos"}
+                  : "sem estudantes"}
               </Tag>
               <span className="text-[13px] text-unooria-neutral-700">
                 {dados.contagem.A} em {ladoALabel} · {dados.contagem.B} em{" "}
@@ -389,7 +393,7 @@ export function PainelPerfis({
               title="A turma está concentrada num lado"
               description={`O desequilíbrio passou de ${Math.round(
                 dados.tolerancia * 100,
-              )}%. Redistribuir move primeiro os alunos de perfil menos decidido — preserva a pedagogia onde o sinal é forte.`}
+              )}%. Redistribuir move primeiro os estudantes de perfil menos decidido — preserva a pedagogia onde o sinal é forte.`}
             />
           ) : null}
 
@@ -401,7 +405,7 @@ export function PainelPerfis({
             <table className="w-full min-w-[640px] border-collapse text-[13px]">
               <thead>
                 <tr className="text-left text-unooria-neutral-700">
-                  <th className="p-2 font-semibold">Aluno</th>
+                  <th className="p-2 font-semibold">Estudante</th>
                   <th className="p-2 font-semibold">Perfil</th>
                   <th className="p-2 font-semibold">Origem</th>
                   <th className="p-2 font-semibold">Margem</th>
@@ -410,39 +414,39 @@ export function PainelPerfis({
                 </tr>
               </thead>
               <tbody>
-                {dados.alunos.map((aluno) => (
+                {listaEstudantes.map((estudante) => (
                   <tr
-                    key={aluno.username}
+                    key={estudante.username}
                     className="border-t border-unooria-neutral-200"
                   >
                     <td className="p-2 text-unooria-neutral-950">
-                      {aluno.displayName}
-                      {aluno.jaComecou ? (
+                      {estudante.displayName}
+                      {estudante.jaComecou ? (
                         <span className="ml-2 text-[11px] text-unooria-neutral-500">
                           já começou
                         </span>
                       ) : null}
                     </td>
-                    <td className="p-2">{aluno.rotulo}</td>
+                    <td className="p-2">{estudante.rotulo}</td>
                     <td className="p-2 text-unooria-neutral-500">
-                      {ORIGEM_DO_PERFIL[aluno.origemDoPerfil]}
+                      {ORIGEM_DO_PERFIL[estudante.origemDoPerfil]}
                     </td>
                     <td className="p-2 text-unooria-neutral-500">
-                      {aluno.dominante === "misto"
+                      {estudante.dominante === "misto"
                         ? "—"
-                        : aluno.margem.toFixed(2)}
+                        : estudante.margem.toFixed(2)}
                     </td>
                     <td className="p-2">
-                      {aluno.lado ? (
-                        <Tag variant={aluno.lado === "A" ? "info" : "warning"} size="sm">
-                          {rotuloDoLado(aluno.lado)}
+                      {estudante.lado ? (
+                        <Tag variant={estudante.lado === "A" ? "info" : "warning"} size="sm">
+                          {rotuloDoLado(estudante.lado)}
                         </Tag>
                       ) : (
                         <span className="text-unooria-neutral-500">no sorteio</span>
                       )}
                     </td>
                     <td className="p-2 text-unooria-neutral-500">
-                      {ORIGEM_DO_LADO[aluno.ladoOrigem]}
+                      {ORIGEM_DO_LADO[estudante.ladoOrigem]}
                     </td>
                   </tr>
                 ))}

@@ -2,8 +2,8 @@ import { describe, expect, test } from "vitest";
 import { areaDoPapel, areaDoPathname, homeDoPapel } from "./papeis";
 
 describe("homeDoPapel", () => {
-  test("aluno cai no hub dele, não mais direto na experiência", () => {
-    expect(homeDoPapel("aluno")).toBe("/aluno");
+  test("estudante cai no hub dele, não mais direto na experiência", () => {
+    expect(homeDoPapel("estudante")).toBe("/estudante");
   });
 
   test("os outros papéis vão para a área deles", () => {
@@ -14,10 +14,10 @@ describe("homeDoPapel", () => {
 });
 
 describe("areaDoPathname", () => {
-  test("hub e aparelho do aluno são a MESMA área (senão o middleware faz pingue-pongue)", () => {
-    expect(areaDoPathname("/aluno")).toBe(areaDoPapel("aluno"));
-    expect(areaDoPathname("/exp/exp-02-unootube")).toBe(areaDoPapel("aluno"));
-    expect(areaDoPathname("/dev-embed")).toBe(areaDoPapel("aluno"));
+  test("hub e aparelho do estudante são a MESMA área (senão o middleware faz pingue-pongue)", () => {
+    expect(areaDoPathname("/estudante")).toBe(areaDoPapel("estudante"));
+    expect(areaDoPathname("/exp/exp-02-unootube")).toBe(areaDoPapel("estudante"));
+    expect(areaDoPathname("/dev-embed")).toBe(areaDoPapel("estudante"));
   });
 
   test("áreas dos outros papéis continuam separadas", () => {

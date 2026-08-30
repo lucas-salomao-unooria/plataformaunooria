@@ -13,7 +13,7 @@ import {
 
 import { EixosDoCircumplexo } from "./eixos-do-circumplexo";
 
-export const metadata = { title: "Vila do Lume · aluno — Plataforma Unooria" };
+export const metadata = { title: "Vila do Lume · estudante — Plataforma Unooria" };
 
 const TOM: Record<"bom" | "ruim" | "neutro", "success" | "error" | "disable"> = {
   bom: "success",
@@ -49,19 +49,23 @@ function duracao(seg: number | null): string {
  * sustentam frase nenhuma, e uma frase mal-calibrada no topo é a coisa que o
  * professor vai lembrar depois de fechar a tela.
  */
-export default async function AlunoDaVilaPage({
+export default async function EstudanteDaVilaPage({
   params,
 }: {
-  params: Promise<{ alunoId: string }>;
+  params: Promise<{ estudanteId: string }>;
 }) {
-  const { alunoId } = await params;
+  const { estudanteId } = await params;
   const missao = buscarMissaoTransversal("vila-do-lume");
   if (!missao) notFound();
   const rota = rotaDaTransversal(missao);
 
   const resposta = await apiDoServidor<{ relatorio: RelatorioDaPartida | null }>(
-    `/vila/professor/alunos/${encodeURIComponent(alunoId)}`,
-  );
+    `/vila/professor/estudantes/${encodeURIComponent(estudanteId)}`,
+  ).catch(async () => {
+    return apiDoServidor<{ relatorio: RelatorioDaPartida | null }>(
+      `/vila/professor/alunos/${encodeURIComponent(estudanteId)}`,
+    );
+  });
   const relatorio = resposta?.relatorio ?? null;
 
   const trilha = [
@@ -69,7 +73,7 @@ export default async function AlunoDaVilaPage({
     { label: "Entre Redes", href: "/professor/entre-redes" },
     { label: missao.titulo, href: rota },
     { label: "Resultados da turma", href: `${rota}/resultados` },
-    { label: "Aluno" },
+    { label: "Estudante" },
   ];
 
   if (!relatorio) {
@@ -81,7 +85,7 @@ export default async function AlunoDaVilaPage({
           size="lg"
           bordered
           fullWidth
-          title="Este aluno ainda não terminou uma partida"
+          title="Este estudante ainda não terminou uma partida"
           description="O relatório aparece depois da primeira partida concluída."
         />
       </div>

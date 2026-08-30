@@ -29,11 +29,11 @@ const FOLGA = { vertical: 32, horizontal: 16 };
  * o ExpFrame ocupa a área inteira (exp-02, desenhada para desktop).
  *
  * `expandido` solta o aparelho e deixa a experiência ocupar a área toda — hoje
- * só o relatório do aluno, DEPOIS da revelação, onde não há mais disfarce a
+ * só o relatório do estudante, DEPOIS da revelação, onde não há mais disfarce a
  * proteger e 375px comprimiam a tela mais densa do produto.
  *
  * Ele muda ESTILO, nunca a árvore. Tirar o `children` daqui para renderizá-lo
- * fora desmontaria o `<iframe>`, e o aluno voltaria à revelação com a sessão
+ * fora desmontaria o `<iframe>`, e o estudante voltaria à revelação com a sessão
  * recarregada. É por isso que o modo expandido é uma prop, e não um `if` no
  * `ExpHost` trocando o wrapper.
  *

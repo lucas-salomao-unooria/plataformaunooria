@@ -5,7 +5,7 @@ import { baseDevDaExperiencia } from "./experiencias-dev";
 
 /**
  * Montagem do embed de uma experiência — o que `/exp/[expId]` fazia inline,
- * extraído porque agora há DUAS superfícies que embedam: a do aluno
+ * extraído porque agora há DUAS superfícies que embedam: a do estudante
  * (`/exp/[expId]`) e a do professor (`/professor/plano-de-aula`, exp-90).
  *
  * Regras que valem para as duas:
@@ -18,14 +18,14 @@ import { baseDevDaExperiencia } from "./experiencias-dev";
  *    descarta o `exp:ready` por origin e o handshake expira.
  */
 
-export type PublicoDaExperiencia = "aluno" | "professor";
+export type PublicoDaExperiencia = "estudante" | "professor" | "aluno";
 
 export interface ManifestoDeExperiencia {
   expId: string;
   nome: string;
   versaoAtiva: string;
   viewport?: { largura: number; altura: number } | null;
-  /** Ausente em linhas antigas = aluno (default do schema da api). */
+  /** Ausente em linhas antigas = estudante (default do schema da api). */
   publico?: PublicoDaExperiencia;
   /** Permissões de iframe (hoje só `pointer-lock`). Ausente = nenhuma. */
   permissoes?: readonly string[];
@@ -38,7 +38,9 @@ export interface Embed {
   src: string;
   expOrigin: string;
   token: string;
-  /** Nome herdado do protocolo v1: carrega o usuário logado, seja aluno ou professor. */
+  /** Usuário logado que carrega os dados no handshake do hub:init. */
+  estudante: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
+  /** @deprecated Alias mantido para compatibilidade. Use `estudante`. */
   aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   viewport: { largura: number; altura: number } | null;
@@ -183,18 +185,21 @@ export async function montarEmbed(
     ? `${cdn}/${manifesto.expId}/${manifesto.versaoAtiva}/index.html?hubOrigin=${hubOrigin}`
     : `${base}/?hubOrigin=${hubOrigin}`;
 
+  const estudantePayload = {
+    id: usuario.id,
+    nome: usuario.nome,
+    serie: usuario.serie ?? "",
+    turmaId: usuario.turmaId ?? "",
+    escolaId: usuario.escolaId,
+  };
+
   return {
     manifesto,
     src,
     expOrigin: new URL(base).origin,
     token,
-    aluno: {
-      id: usuario.id,
-      nome: usuario.nome,
-      serie: usuario.serie ?? "",
-      turmaId: usuario.turmaId ?? "",
-      escolaId: usuario.escolaId,
-    },
+    estudante: estudantePayload,
+    aluno: estudantePayload,
     apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
     viewport: manifesto?.viewport ?? viewportDoBundle,
     permissoes: manifesto?.permissoes ?? permissoesDoBundle,

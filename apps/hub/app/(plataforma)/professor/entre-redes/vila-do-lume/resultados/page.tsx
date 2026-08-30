@@ -42,14 +42,14 @@ export default async function ResultadosDaVilaPage({
         apiDoServidor<{ resumo: ResumoDaTurma | null }>(
           `/vila/agregado/turmas/${encodeURIComponent(turma)}`,
         ),
-        apiDoServidor<{ alunos: LinhaDaTurma[] }>(
+        apiDoServidor<{ estudantes?: LinhaDaTurma[]; alunos?: LinhaDaTurma[] }>(
           `/vila/professor/turmas/${encodeURIComponent(turma)}`,
         ),
       ])
     : [null, null];
 
   const resumo = agregado?.resumo ?? null;
-  const alunos = listagem?.alunos ?? null;
+  const estudantes = listagem?.estudantes ?? listagem?.alunos ?? null;
 
   /* A pergunta que decide se o debate funciona. Uma bolha ausente não é detalhe:
      o roteiro conta com a A dizendo que era óbvio, a C não conseguindo explicar
@@ -78,7 +78,7 @@ export default async function ResultadosDaVilaPage({
           Resultados da turma
         </h1>
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
-          Quem jogou, qual bolha cada aluno recebeu e o que aconteceu com as mensagens.
+          Quem jogou, qual bolha cada estudante recebeu e o que aconteceu com as mensagens.
           Recalculado a cada visita — atualize a página durante a aula.
         </p>
       </header>
@@ -88,11 +88,11 @@ export default async function ResultadosDaVilaPage({
       {turma === "" ? (
         <Card variant="elevated">
           <p className="text-[14px] text-unooria-neutral-700">
-            Escolha a turma acima. A lista mostra todos os alunos, inclusive quem ainda não
+            Escolha a turma acima. A lista mostra todos os estudantes, inclusive quem ainda não
             entrou na vila.
           </p>
         </Card>
-      ) : resumo === null || alunos === null ? (
+      ) : resumo === null || estudantes === null ? (
         <EmptyState
           variant="no-data"
           size="lg"
@@ -111,8 +111,8 @@ export default async function ResultadosDaVilaPage({
             repete numa reunião achando que é dado.
           */}
           <div className="grid gap-3 sm:grid-cols-4">
-            <MetricCard title="Alunos na turma" value={resumo.alunos} />
-            <MetricCard title="Jogaram" value={`${resumo.jogaram}/${resumo.alunos}`} />
+            <MetricCard title="Estudantes na turma" value={resumo.estudantes ?? resumo.alunos} />
+            <MetricCard title="Jogaram" value={`${resumo.jogaram}/${resumo.estudantes ?? resumo.alunos}`} />
             <MetricCard title="Terminaram a vila" value={resumo.concluiram} />
             <MetricCard
               title="Partidas que sustentam leitura"
@@ -136,7 +136,7 @@ export default async function ResultadosDaVilaPage({
                       {resumo.porBolha[bolha]}
                     </span>
                     <span className="text-[12px] text-unooria-neutral-500">
-                      {resumo.porBolha[bolha] === 1 ? "aluno" : "alunos"}
+                      {resumo.porBolha[bolha] === 1 ? "estudante" : "estudantes"}
                     </span>
                   </div>
                 ))}
@@ -145,12 +145,12 @@ export default async function ResultadosDaVilaPage({
                 <FeedbackAlert
                   type="warning"
                   title={`Falta a bolha ${bolhasAusentes.join(" e ")} nesta turma`}
-                  description="A revelação final compara as três versões da mensagem. Com uma bolha faltando, a turma não tem com o que comparar — vale esperar mais alunos jogarem antes do debate."
+                  description="A revelação final compara as três versões da mensagem. Com uma bolha faltando, a turma não tem com o que comparar — vale esperar mais estudantes jogarem antes do debate."
                 />
               ) : null}
               <p className="text-[12px] leading-snug text-unooria-neutral-600">
                 A divisão é feita pela plataforma, equilibrada dentro da turma, e não muda se
-                o aluno jogar de novo. Nos anos iniciais a bolha B não é servida.
+                o estudante jogar de novo. Nos anos iniciais a bolha B não é servida.
               </p>
             </div>
           </Card>
@@ -188,8 +188,8 @@ export default async function ResultadosDaVilaPage({
             </Card>
           ) : null}
 
-          <Card variant="elevated" title="Aluno por aluno">
-            <TabelaTurma alunos={alunos} rotaBase={rota} />
+          <Card variant="elevated" title="Estudante por estudante">
+            <TabelaTurma estudantes={estudantes} rotaBase={rota} />
           </Card>
 
           <div className="flex flex-wrap items-center gap-3">

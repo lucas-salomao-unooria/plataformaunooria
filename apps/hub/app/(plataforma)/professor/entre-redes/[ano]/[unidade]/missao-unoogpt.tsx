@@ -64,12 +64,12 @@ export function MissaoUnooGPT({
       </header>
 
       {/* A informação que decide se a aula acontece. Ela não pode estar no fim
-          de uma lista: sem a largada o aluno vê o cronômetro parado, e "não
+          de uma lista: sem a largada o estudante vê o cronômetro parado, e "não
           abre" é o suporte que esta faixa existe para evitar. */}
       <FeedbackAlert
         type="warning"
         title="Esta missão só começa quando você der a largada"
-        description="O relógio é da TURMA, não de cada aluno. Enquanto você não largar, todos veem o cronômetro parado e ninguém fala com o assistente. A largada, o +2 min e o encerrar ficam em Resultados da turma."
+        description="O relógio é da TURMA, não de cada estudante. Enquanto você não largar, todos veem o cronômetro parado e ninguém fala com o assistente. A largada, o +2 min e o encerrar ficam em Resultados da turma."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -93,7 +93,7 @@ export function MissaoUnooGPT({
         </Card>
       </section>
 
-      <Card variant="outlined" title="O que o software NÃO conta ao aluno">
+      <Card variant="outlined" title="O que o software NÃO conta ao estudante">
         <div className="flex flex-col gap-3 text-[14px] leading-relaxed text-unooria-neutral-800">
           <p className="max-w-3xl">
             Cada uma das 8 fontes distorce a cidade de um jeito: o satélite vê telhado e não vê
@@ -101,15 +101,15 @@ export function MissaoUnooGPT({
             cresceu. <strong className="text-unooria-neutral-950">A missão nunca revela isso.</strong>
           </p>
           <p className="max-w-3xl">
-            Não é omissão — é o desenho. Um aluno que descobre pela tela qual fonte engana em quê
-            aprende a decorar uma tabela; um aluno que descobre no debate, comparando o que ele viu
+            Não é omissão — é o desenho. Um estudante que descobre pela tela qual fonte engana em quê
+            aprende a decorar uma tabela; um estudante que descobre no debate, comparando o que ele viu
             com o que o colega viu, aprende a desconfiar de fonte única. O material da conversa é
-            seu, e o relatório de cada aluno mostra em que ordem ele olhou as coisas.
+            seu, e o relatório de cada estudante mostra em que ordem ele olhou as coisas.
           </p>
           <p className="max-w-3xl text-[13px] text-unooria-neutral-500">
             O relatório também distingue duas coisas que parecem iguais: “teve a chance e não foi” é
             diferente de “a oportunidade não chegou”. Bairro sem fonte carregada aparece em branco
-            para o aluno, nunca como “zero em risco”.
+            para o estudante, nunca como “zero em risco”.
           </p>
         </div>
       </Card>

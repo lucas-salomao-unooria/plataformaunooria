@@ -31,7 +31,8 @@ interface LinhaDeTurma extends Record<string, unknown> {
   serie: string;
   turno: string | null;
   periodo: string | null;
-  alunos: number;
+  estudantes?: number;
+  alunos?: number;
   professores: number;
 }
 
@@ -45,7 +46,7 @@ const TURNOS = [
 /**
  * As turmas da escola, com quantas pessoas cada uma tem.
  *
- * A contagem na lista não é enfeite: turma com 0 alunos é o sintoma nº 1 de
+ * A contagem na lista não é enfeite: turma com 0 estudantes é o sintoma nº 1 de
  * importação que entrou pela metade, e sem ela o gestor só descobriria pela
  * reclamação do professor.
  */
@@ -141,7 +142,12 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
           TURNOS.find((t) => t.valor === linha.turno)?.rotulo ?? "—",
       },
       { key: "periodo", title: "Ano letivo", render: (_, linha) => linha.periodo ?? "—" },
-      { key: "alunos", title: "Alunos", align: "right" },
+      {
+        key: "estudantes",
+        title: "Estudantes",
+        align: "right",
+        render: (_, linha) => String(linha.estudantes ?? linha.alunos ?? 0),
+      },
       { key: "professores", title: "Professores", align: "right" },
       {
         key: "acoes",

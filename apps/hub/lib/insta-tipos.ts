@@ -77,7 +77,7 @@ export const afinidadeSchema = z.object({
   por_que_autopromocao: z.string().trim().min(10).max(400),
   /**
    * Justificativa do POLO OPOSTO de cada eixo. Opcionais porque atividades
-   * geradas antes do M8 não as têm — mas sem elas o relatório de um aluno de
+   * geradas antes do M8 não as têm — mas sem elas o relatório de um estudante de
    * Conservação teria de explicar o lado dele com a frase da Abertura, que
    * defende o lado CONTRÁRIO. Quando faltam, a frase simplesmente não aparece:
    * melhor uma explicação mais curta que uma explicação incoerente.
@@ -260,7 +260,7 @@ export const CONTROLE_DO_PROFESSOR: {
     etapa: 'conclusao',
     nome: 'Resposta',
     rotulo: 'Encerrar investigação',
-    descricao: 'Fecha o feed e pede a resposta: cada aluno escolhe um dos três lados.',
+    descricao: 'Fecha o feed e pede a resposta: cada estudante escolhe um dos três lados.',
   },
   {
     etapa: 'debate',

@@ -158,7 +158,7 @@ export function Landing() {
                 <div>
                   <h2 className="landing-titulo mb-6">Nossa Resposta</h2>
                   <p className="landing-corpo-lg landing-cor-primaria mb-8 font-semibold">
-                    “Aprender a partir do mundo que os alunos já vivem.”
+                    “Aprender a partir do mundo que os estudantes já vivem.”
                   </p>
                   <ul className="flex flex-col gap-6">
                     {RESPOSTAS.map((item) => (
@@ -216,7 +216,7 @@ export function Landing() {
               <div className="md:col-span-2">
                 <Logo size="md" color="navy" ariaLabel="Unooria" className="mb-4" />
                 <p className="landing-corpo landing-cor-apoio max-w-sm">
-                  Transforme a forma como seus alunos interagem com o mundo digital.
+                  Transforme a forma como seus estudantes interagem com o mundo digital.
                 </p>
               </div>
               <div>

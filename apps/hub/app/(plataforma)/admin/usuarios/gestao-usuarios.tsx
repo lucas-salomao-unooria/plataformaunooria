@@ -42,7 +42,7 @@ const POR_PAGINA = 25;
 
 const PAPEIS = [
   { value: "", label: "Todos os papéis" },
-  { value: "aluno", label: "Alunos" },
+  { value: "estudante", label: "Estudantes" },
   { value: "professor", label: "Professores" },
   { value: "gestor", label: "Coordenação" },
 ];

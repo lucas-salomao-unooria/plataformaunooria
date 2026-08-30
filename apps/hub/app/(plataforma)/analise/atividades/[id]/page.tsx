@@ -87,7 +87,7 @@ export default async function AnaliseDaAtividadePage({
               Eficácia da escrita por perfil
             </h2>
             <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-600">
-              Segundos por post de cada linguagem, entre alunos daquele perfil e entre os demais. O
+              Segundos por post de cada linguagem, entre estudantes daquele perfil e entre os demais. O
               denominador é a <strong>exposição</strong> — sem isso a métrica mediria o próprio viés
               do feed e confirmaria a premissa por construção.
             </p>
@@ -98,7 +98,7 @@ export default async function AnaliseDaAtividadePage({
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
                   <th className="px-3 py-2 font-semibold">Linguagem</th>
-                  <th className="px-3 py-2 font-semibold">Entre alunos do perfil</th>
+                  <th className="px-3 py-2 font-semibold">Entre estudantes do perfil</th>
                   <th className="px-3 py-2 font-semibold">Entre os outros</th>
                   <th className="px-3 py-2 font-semibold">Delta</th>
                   <th className="px-3 py-2 font-semibold">Amostra</th>
@@ -128,7 +128,7 @@ export default async function AnaliseDaAtividadePage({
                         : `${linha.delta > 0 ? '+' : ''}${linha.delta.toFixed(2).replace('.', ',')}s`}
                     </td>
                     <td className="px-3 py-2 text-[12px] text-unooria-neutral-500">
-                      {linha.amostra.alunosDoPerfil} × {linha.amostra.alunosDeOutros}
+                      {linha.amostra.estudantesDoPerfil ?? linha.amostra.alunosDoPerfil} × {linha.amostra.estudantesDeOutros ?? linha.amostra.alunosDeOutros}
                     </td>
                   </tr>
                 ))}

@@ -59,7 +59,7 @@ const corpo = {
   series: manifesto.series ?? [],
   capabilities: manifesto.capabilities ?? [],
   viewport: manifesto.viewport ?? null,
-  publico: manifesto.publico ?? "aluno",
+  publico: manifesto.publico ?? "estudante",
   /* Esquecer este campo aqui é INVISÍVEL em dev e quebra em produção: sem
      manifesto o hub lê `permissoes` do `experiencia.json` do bundle, então a
      bancada funciona; COM manifesto ele lê a coluna, que nasceria `[]`. Para a

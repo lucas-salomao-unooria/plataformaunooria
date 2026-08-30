@@ -77,6 +77,7 @@ export interface RelatorioDaPartida {
 }
 
 export interface LinhaDaTurma {
+  estudanteId?: string;
   alunoId: string;
   nome: string;
   partidas: number;
@@ -87,6 +88,7 @@ export interface LinhaDaTurma {
 }
 
 export interface ResumoDaTurma {
+  estudantes?: number;
   alunos: number;
   jogaram: number;
   concluiram: number;
@@ -106,6 +108,7 @@ export interface TurmaResumida {
   id: string;
   nome: string;
   serie: string;
+  estudantes?: number;
   alunos: number;
 }
 

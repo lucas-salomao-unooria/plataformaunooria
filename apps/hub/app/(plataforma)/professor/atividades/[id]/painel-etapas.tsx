@@ -9,12 +9,12 @@ import { CONTROLE_DO_PROFESSOR, type EtapaDaTurma } from "@/lib/insta-tipos";
  * O relógio da aula: onde a turma está e o que o próximo botão faz.
  *
  * Três decisões de UX que valem explicação, porque todas nasceram de imaginar o
- * professor com 30 alunos olhando para ele:
+ * professor com 30 estudantes olhando para ele:
  *
  * 1. **O botão principal é a PRÓXIMA ação, com o nome do que ela faz.** Não é um
  *    seletor de etapa — é um único caminho para frente. Ninguém escolhe "etapa 4"
  *    no meio de uma aula.
- * 2. **Uma linha embaixo diz a consequência.** Trocar a tela de 30 alunos é
+ * 2. **Uma linha embaixo diz a consequência.** Trocar a tela de 30 estudantes é
  *    irreversível na prática: eles já viram. Saber antes de clicar é o mínimo.
  * 3. **O passo do stepper não é clicável.** Pular momento por toque acidental,
  *    com a sala inteira olhando, é o pior erro possível aqui. Voltar existe, mas
@@ -132,7 +132,7 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
             Momento da aula
           </h2>
           <span className="text-[12px] text-unooria-neutral-500">
-            {estado ? `${estado.total} aluno(s) na atividade` : "carregando…"}
+            {estado ? `${estado.total} estudante(s) na atividade` : "carregando…"}
           </span>
         </div>
 
@@ -215,7 +215,7 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
         <div className="flex items-start justify-between gap-3 border-t border-unooria-neutral-200 pt-3">
           <div>
             <p className="text-[13px] font-semibold text-unooria-neutral-950">
-              Perfis respondem ao aluno
+              Perfis respondem ao estudante
             </p>
             <p className="mt-0.5 text-[12px] leading-snug text-unooria-neutral-600">
               Quando ele publica ou comenta, os perfis do feed reagem na hora. É o
@@ -225,7 +225,7 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
           <Toggle
             checked={estado?.iaAoVivo ?? true}
             disabled={mudandoIa || !estado}
-            aria-label="Perfis respondem ao aluno"
+            aria-label="Perfis respondem ao estudante"
             onChange={async (ativo) => {
               setMudandoIa(true);
               try {

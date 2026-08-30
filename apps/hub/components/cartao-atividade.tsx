@@ -27,8 +27,9 @@ export type ResumoDaAtividade = {
   status: { rotulo: string; variante: VarianteDeStatus };
   posts: number;
   sessoes: number;
-  /** Alunos com perfil importado do Ato 1 — a "turma" desta atividade. */
-  alunos: number;
+  /** Estudantes com perfil importado do Ato 1 — a "turma" desta atividade. */
+  estudantes?: number;
+  alunos?: number;
   /** Quando foi criada, para separar três atividades do mesmo tema. */
   criadoEm: string;
 };
@@ -159,7 +160,7 @@ export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade })
           */}
           <p className="text-[12px] text-unooria-neutral-500">
             {atividade.posts} posts · {atividade.sessoes} sessões
-            {atividade.alunos > 0 ? ` · ${atividade.alunos} com perfil do jogo` : null}
+            {(atividade.estudantes ?? atividade.alunos ?? 0) > 0 ? ` · ${atividade.estudantes ?? atividade.alunos} com perfil do jogo` : null}
           </p>
           <p className="text-[12px] text-unooria-neutral-500">
             criada em {formatarData(atividade.criadoEm)}
@@ -180,7 +181,7 @@ export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade })
             <ul className="flex list-disc flex-col gap-1 pl-5 text-[13px] leading-relaxed text-unooria-neutral-700">
               <li>{atividade.posts} posts gerados, as personas e as imagens no servidor;</li>
               <li>
-                {atividade.sessoes} sessões de aluno, com tudo que a turma produziu — leitura,
+                {atividade.sessoes} sessões de estudante, com tudo que a turma produziu — leitura,
                 conclusões escritas e relatórios;
               </li>
               <li>os perfis do Ato 1 importados para esta atividade.</li>
@@ -191,7 +192,7 @@ export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade })
                 theme="light"
                 variant="warning"
                 device="auto"
-                description="Esta atividade já rodou com turma. Se você só quer usá-la de novo do zero, abra a atividade e use “Limpar dados dos alunos” — o conteúdo gerado fica de pé."
+                description="Esta atividade já rodou com turma. Se você só quer usá-la de novo do zero, abra a atividade e use “Limpar dados dos estudantes” — o conteúdo gerado fica de pé."
               />
             ) : null}
 

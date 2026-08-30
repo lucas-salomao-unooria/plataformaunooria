@@ -1,16 +1,16 @@
 import Link from "next/link";
 
 import { Card } from "@edu/ui/ds";
-import type { MissaoDoAluno } from "@/lib/missoes-do-aluno";
+import type { MissaoDoEstudante } from "@/lib/missoes-do-estudante";
 
 /**
- * Cartão de missão no hub do aluno.
+ * Cartão de missão no hub do estudante.
  *
  * Nada de "aula", "plano" ou "professor" aqui — e nada que entregue a virada
- * da missão: a copy vem de `missao.aluno` no catálogo, escrita para ser lida
+ * da missão: a copy vem de `missao.estudante` (ou `missao.aluno`) no catálogo, escrita para ser lida
  * ANTES de jogar.
  */
-export function CartaoMissaoAluno({ missao }: { missao: MissaoDoAluno }) {
+export function CartaoMissaoEstudante({ missao }: { missao: MissaoDoEstudante }) {
   return (
     <Link href={missao.rota} className="block h-full">
       <Card variant="interactive" interactive className="h-full">
@@ -43,3 +43,5 @@ export function CartaoMissaoAluno({ missao }: { missao: MissaoDoAluno }) {
     </Link>
   );
 }
+
+export const CartaoMissaoAluno = CartaoMissaoEstudante;

@@ -14,7 +14,7 @@ import {
 } from '@edu/ui/ds';
 
 /**
- * "Limpar dados dos alunos" — o botão de rodar a mesma atividade do zero.
+ * "Limpar dados dos estudantes" — o botão de rodar a mesma atividade do zero.
  *
  * Mora aqui, dentro da atividade, e não no card da missão: excluir é a decisão
  * de fora ("não vou mais usar isto"), limpar é a decisão de dentro ("vou usar de
@@ -72,7 +72,7 @@ export function LimparSessoes({
         disabled={vazia}
         title={
           vazia
-            ? 'Nenhum aluno usou esta atividade ainda — não há o que limpar.'
+            ? 'Nenhum estudante usou esta atividade ainda — não há o que limpar.'
             : undefined
         }
       >
@@ -94,11 +94,11 @@ export function LimparSessoes({
             </p>
             <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
               A atividade continua de pé — pergunta-chave, os dois lados, posts, imagens e os
-              perfis importados ficam como estão. Na próxima entrada, cada aluno começa uma sessão
+              perfis importados ficam como estão. Na próxima entrada, cada estudante começa uma sessão
               nova.
             </p>
             {/*
-              A pergunta que o rótulo antigo ("Limpar dados dos alunos") deixava
+              A pergunta que o rótulo antigo ("Limpar dados dos estudantes") deixava
               em aberto: serve para reusar, ou apaga o histórico? As duas coisas
               — e é por isso que ela precisa estar escrita antes do clique.
             */}

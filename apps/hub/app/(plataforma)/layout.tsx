@@ -1,7 +1,7 @@
 import { CascaPlataforma } from "@/components/casca-plataforma";
 
 /**
- * Grupo de rotas da PLATAFORMA (login, /aluno/**, /professor/**, /admin/**,
+ * Grupo de rotas da PLATAFORMA (login, /estudante/**, /professor/**, /admin/**,
  * /analise/**). A casca visual — CSS do DS, compensações e fontes — vive em
  * `components/casca-plataforma.tsx`, compartilhada com `/exp/**`.
  */

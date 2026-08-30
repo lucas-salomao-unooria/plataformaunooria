@@ -29,7 +29,8 @@ interface Escola extends Record<string, unknown> {
   uf: string | null;
   paiId: string | null;
   pai: string | null;
-  alunos: number;
+  estudantes?: number;
+  alunos?: number;
   professores: number;
   turmas: number;
 }
@@ -196,7 +197,7 @@ export function EscolasDaRede() {
 
   // ------------------------------------------------------------- lote
 
-  /** Regional e rede não recebem lotação: não têm turma, aluno nem dado. */
+  /** Regional e rede não recebem lotação: não têm turma, estudante nem dado. */
   const unidadesSelecionadas = useMemo(
     () => escolas.filter((e) => selecionadas.includes(e.id) && e.tipo === "escola"),
     [escolas, selecionadas],
@@ -313,10 +314,10 @@ export function EscolasDaRede() {
         render: (_, l) => (l.tipo === "escola" ? String(l.turmas) : "—"),
       },
       {
-        key: "alunos",
-        title: "Alunos",
+        key: "estudantes",
+        title: "Estudantes",
         align: "right",
-        render: (_, l) => (l.tipo === "escola" ? String(l.alunos) : "—"),
+        render: (_, l) => (l.tipo === "escola" ? String(l.estudantes ?? l.alunos) : "—"),
       },
       {
         key: "professores",
@@ -375,11 +376,12 @@ export function EscolasDaRede() {
   const unidades = escolas.filter((e) => e.tipo === "escola");
   const totais = unidades.reduce(
     (soma, e) => ({
-      alunos: soma.alunos + e.alunos,
+      estudantes: soma.estudantes + (e.estudantes ?? e.alunos ?? 0),
+      alunos: soma.alunos + (e.alunos ?? e.estudantes ?? 0),
       professores: soma.professores + e.professores,
       turmas: soma.turmas + e.turmas,
     }),
-    { alunos: 0, professores: 0, turmas: 0 },
+    { estudantes: 0, alunos: 0, professores: 0, turmas: 0 },
   );
 
   const opcoesDeRegional = [
@@ -391,7 +393,7 @@ export function EscolasDaRede() {
     <div className="plataforma-largura-cheia mx-auto flex max-w-[1180px] flex-col gap-6">
       <SectionHeader
         title="Escolas da rede"
-        description="Cada escola é um espaço isolado: os dados de uma nunca aparecem na outra. O que atravessa é a pessoa — professor lotado em várias, aluno transferido. A regional agrupa unidades para você trabalhar em lote; ela não dá acesso a nada."
+        description="Cada escola é um espaço isolado: os dados de uma nunca aparecem na outra. O que atravessa é a pessoa — professor lotado em várias, estudante transferido. A regional agrupa unidades para você trabalhar em lote; ela não dá acesso a nada."
       />
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
@@ -409,33 +411,40 @@ export function EscolasDaRede() {
           </div>
           <div className="w-[180px]">
             <Selection
-              label="Nível"
-              value={tipo}
-              onChange={(valor) => setTipo(String(valor))}
-              options={[
-                { value: "", label: "Todos os níveis" },
-                { value: "escola", label: "Unidades" },
-                { value: "regional", label: "Regionais" },
-                { value: "rede", label: "Rede" },
-              ]}
-            />
-          </div>
-          <div className="w-[240px]">
-            <Selection
+              id="filtro-regional"
               label="Regional"
               value={regional}
-              onChange={(valor) => setRegional(String(valor))}
+              options={opcoesDeRegional}
+              onChange={(v) => setRegional(String(v))}
+            />
+          </div>
+          <div className="w-[180px]">
+            <Selection
+              id="filtro-tipo"
+              label="Tipo"
+              value={tipo}
               options={[
-                { value: "", label: "Todas as regionais" },
-                ...regionais.map((r) => ({ value: r.id, label: r.nome })),
+                { value: "", label: "Todos os tipos" },
+                { value: "escola", label: "Unidades" },
+                { value: "regional", label: "Regionais" },
+                { value: "rede", label: "Redes" },
               ]}
+              onChange={(v) => setTipo(String(v))}
             />
           </div>
         </div>
+
         <div className="flex gap-2">
-          {/* `outline` e não `secondary`: o secundário do DS é navy cheio, e ao
-              lado do primário azul-claro ele rouba a ação principal da tela. */}
-          <Button variant="outline" size="md" onClick={() => abrirNova("regional")}>
+          {unidadesSelecionadas.length > 0 ? (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={abrirLote}
+            >
+              Lotação em lote ({unidadesSelecionadas.length})
+            </Button>
+          ) : null}
+          <Button variant="ghost" size="md" onClick={() => abrirNova("regional")}>
             Nova regional
           </Button>
           <Button variant="primary" size="md" onClick={() => abrirNova("escola")}>
@@ -446,7 +455,7 @@ export function EscolasDaRede() {
 
       <p className="text-[14px] text-unooria-neutral-500">
         {escolas.length} registro{escolas.length === 1 ? "" : "s"} · {unidades.length} unidade
-        {unidades.length === 1 ? "" : "s"} · {totais.turmas} turmas · {totais.alunos} alunos ·{" "}
+        {unidades.length === 1 ? "" : "s"} · {totais.turmas} turmas · {totais.estudantes} estudantes ·{" "}
         {totais.professores} vínculos de professor
       </p>
 

@@ -24,7 +24,8 @@ type RespostaAtividades = {
     status: string;
     etapa: string;
     criadoEm: string;
-    alunos: number;
+    estudantes?: number;
+    alunos?: number;
     posts: number;
     sessoes: number;
   }>;
@@ -159,7 +160,7 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
                     status: statusDaAtividade(atividade.status),
                     posts: atividade.posts,
                     sessoes: atividade.sessoes,
-                    alunos: atividade.alunos,
+                    estudantes: atividade.estudantes ?? atividade.alunos ?? 0,
                     criadoEm: atividade.criadoEm,
                   }}
                 />

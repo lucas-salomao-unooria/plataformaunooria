@@ -11,7 +11,7 @@ import { auth } from "@/lib/auth";
  *
  * A rota existe porque o BFF engole a falha em `null`, e aqui o MOTIVO da recusa
  * é a única coisa que o gestor precisa ler: "assinatura adulterada", "não há
- * aluno com este CPF nesta rede" e "documento de uma versão que não sei ler"
+ * estudante com este CPF nesta rede" e "documento de uma versão que não sei ler"
  * pedem três ações diferentes dele.
  */
 export async function POST(request: NextRequest) {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   });
   if (!resposta.ok) {
     /* A api devolve `{ erro, detalhe }` dentro do 400. Repassar o detalhe é o
-       ponto: "assinatura adulterada", "não há aluno com este CPF aqui" e
+       ponto: "assinatura adulterada", "não há estudante com este CPF aqui" e
        "versão que não sei ler" pedem três ações diferentes do gestor. */
     const corpoDoErro = (resposta.dados ?? {}) as { message?: unknown };
     const dentro = (corpoDoErro.message ?? corpoDoErro) as { erro?: string; detalhe?: string };

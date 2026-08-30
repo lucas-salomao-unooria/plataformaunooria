@@ -10,7 +10,7 @@ import {
   rotaDaMissao,
   rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
-import type { LinhaDeLeitura, RelatorioDoAluno } from "@/lib/unoogpt-tipos";
+import type { LinhaDeLeitura, RelatorioDoEstudante } from "@/lib/unoogpt-tipos";
 
 /**
  * A linha de UMA criança na Missão Tempestade.
@@ -45,19 +45,23 @@ const ROTULO_DO_GRAU: Record<LinhaDeLeitura["grau"], string> = {
   none: "a oportunidade não chegou",
 };
 
-export default async function AlunoPage({
+export default async function EstudantePage({
   params,
 }: {
-  params: Promise<{ ano: string; unidade: string; alunoId: string }>;
+  params: Promise<{ ano: string; unidade: string; estudanteId: string }>;
 }) {
-  const { ano: anoSlug, unidade: unidadeSlug, alunoId } = await params;
+  const { ano: anoSlug, unidade: unidadeSlug, estudanteId } = await params;
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   if (!encontrado || encontrado.missao.expId !== MISSAO_UNOOGPT.expId) notFound();
   const { ano, missao } = encontrado;
 
-  const relatorio = await apiDoServidor<RelatorioDoAluno>(
-    `/unoogpt/professor/alunos/${encodeURIComponent(alunoId)}`,
-  );
+  const relatorio = await apiDoServidor<RelatorioDoEstudante>(
+    `/unoogpt/professor/estudantes/${encodeURIComponent(estudanteId)}`,
+  ).catch(async () => {
+    return apiDoServidor<RelatorioDoEstudante>(
+      `/unoogpt/professor/alunos/${encodeURIComponent(estudanteId)}`,
+    );
+  });
 
   const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
 
@@ -69,7 +73,7 @@ export default async function AlunoPage({
             { label: "Início", href: "/professor" },
             { label: "Entre Redes", href: "/professor/entre-redes" },
             { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-            { label: "Aluno" },
+            { label: "Estudante" },
           ]}
         />
         <EmptyState
@@ -77,7 +81,7 @@ export default async function AlunoPage({
           size="lg"
           bordered
           fullWidth
-          title="Não conseguimos abrir este aluno"
+          title="Não conseguimos abrir este estudante"
           description="Confira se ele é da sua escola e tente de novo."
         />
         <div>
@@ -89,6 +93,7 @@ export default async function AlunoPage({
     );
   }
 
+  const nomeEstudante = (relatorio.estudante ?? relatorio.aluno).nome;
   const ultima = relatorio.tentativas[relatorio.tentativas.length - 1];
   const desfecho = ultima?.desfecho as { totais?: { salvas?: number; emRisco?: number } } | undefined;
 
@@ -99,7 +104,7 @@ export default async function AlunoPage({
           { label: "Início", href: "/professor" },
           { label: "Entre Redes", href: "/professor/entre-redes" },
           { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: relatorio.aluno.nome },
+          { label: nomeEstudante },
         ]}
       />
 
@@ -108,7 +113,7 @@ export default async function AlunoPage({
           {missao.titulo}
         </p>
         <h1 className="text-[24px] font-bold leading-tight text-unooria-neutral-950">
-          {relatorio.aluno.nome}
+          {nomeEstudante}
         </h1>
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
           {relatorio.resumo}
@@ -179,7 +184,7 @@ export default async function AlunoPage({
           </dl>
           <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
             “Intuição, sem dado” está sempre disponível de propósito: sem essa saída a pergunta
-            viraria pegadinha e o aluno aprenderia a mentir para o formulário. Não há resposta certa
+            viraria pegadinha e o estudante aprenderia a mentir para o formulário. Não há resposta certa
             aqui — o software não julga.
           </p>
         </Card>
@@ -197,13 +202,13 @@ export default async function AlunoPage({
                 <li
                   key={`${f.criadoEm}-${i}`}
                   className={`rounded-lg p-3 text-[13px] leading-relaxed ${
-                    f.papel === "aluno"
+                    f.papel === "estudante" || (f.papel as string) === "aluno"
                       ? "bg-unooria-neutral-100 text-unooria-neutral-950"
                       : "border border-unooria-neutral-200 text-unooria-neutral-800"
                   }`}
                 >
                   <span className="mr-2 text-[11px] uppercase tracking-widest text-unooria-neutral-500">
-                    {f.papel === "aluno" ? "aluno" : "assistente"}
+                    {f.papel === "estudante" || (f.papel as string) === "aluno" ? "estudante" : "assistente"}
                     {f.debitou && " · gastou pergunta"}
                     {relatorio.tentativas.length > 1 && ` · rodada ${f.tentativa}`}
                   </span>

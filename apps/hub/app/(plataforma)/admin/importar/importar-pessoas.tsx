@@ -73,7 +73,7 @@ const ARQUIVOS_ONEROSTER = [
   { nome: "classes", descricao: "Turmas. `homeroom` vira regular; `scheduled`, componente." },
   { nome: "users", descricao: "Pessoas. A coluna `password` do padrão é ignorada." },
   { nome: "enrollments", descricao: "O enturmamento: quem está em qual turma, com que papel." },
-  { nome: "roles", descricao: "Papel no nível da escola. Corrige quem entrou como aluno." },
+  { nome: "roles", descricao: "Papel no nível da escola. Corrige quem entrou como estudante." },
 ] as const;
 
 /**
@@ -297,7 +297,7 @@ export function ImportarPessoas({
         <p className="text-[14px] text-unooria-neutral-700">
           Colunas: <code>cpf, matricula, nome, usuario, email, papel, turma, serie, turno</code>.
           Obrigatórias: <strong>nome</strong> e <strong>papel</strong> (
-          <code>aluno</code>, <code>professor</code> ou <code>coordenacao</code>); para aluno,
+          <code>estudante</code> ou <code>aluno</code>, <code>professor</code> ou <code>coordenacao</code>); para estudante,
           também <strong>turma</strong> e <strong>serie</strong>. A ordem das colunas não importa.
         </p>
         <p className="text-[14px] text-unooria-neutral-700">
@@ -343,7 +343,7 @@ export function ImportarPessoas({
           <RadioButton
             id="modo-por-pessoa"
             name="modo-senha"
-            label="Uma senha diferente por pessoa (recomendado para alunos)"
+            label="Uma senha diferente por pessoa (recomendado para estudantes)"
             checked={modoSenha === "por-pessoa"}
             onChange={() => setModoSenha("por-pessoa")}
           />
@@ -361,7 +361,7 @@ export function ImportarPessoas({
             </div>
             <FeedbackAlert
               type="warning"
-              description="Com uma senha só, qualquer aluno consegue entrar na conta de outro até o primeiro acesso dele. Em turma grande, prefira uma senha por pessoa."
+              description="Com uma senha só, qualquer estudante consegue entrar na conta de outro até o primeiro acesso dele. Em turma grande, prefira uma senha por pessoa."
             />
           </>
         ) : null}
@@ -474,7 +474,7 @@ export function ImportarPessoas({
         <p className="text-[13px] text-unooria-neutral-500">
           Em <code>users.csv</code> a senha inicial é a escolhida na aba
           <strong> Planilha da escola</strong> — a coluna <code>password</code> do padrão é
-          ignorada. Sem a coluna <code>role</code>, a pessoa entra como <strong>aluno</strong> (o
+          ignorada. Sem a coluna <code>role</code>, a pessoa entra como <strong>estudante</strong> (o
           menor privilégio) e o <code>roles.csv</code> corrige.
         </p>
       </section>

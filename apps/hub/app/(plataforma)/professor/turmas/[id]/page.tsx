@@ -38,7 +38,7 @@ export default async function TurmaDoProfessorPage({
         <h1 className="text-[24px] font-bold text-unooria-neutral-950">Turma {turma.nome}</h1>
         <p className="text-[14px] text-unooria-neutral-500">
           {rotuloDaSerie(turma.serie as Serie)}
-          {turno ? ` · ${turno}` : ""} · {turma.periodo} · {alunos.length} aluno
+          {turno ? ` · ${turno}` : ""} · {turma.periodo} · {alunos.length} estudante
           {alunos.length === 1 ? "" : "s"}
         </p>
       </div>
@@ -47,13 +47,13 @@ export default async function TurmaDoProfessorPage({
         <ul className="flex flex-col">
           {alunos.length === 0 ? (
             <li className="py-4 text-[14px] text-unooria-neutral-500">
-              Nenhum aluno matriculado nesta turma ainda — quem enturma é a coordenação.
+              Nenhum estudante matriculado nesta turma ainda — quem enturma é a coordenação.
             </li>
           ) : (
             alunos.map((aluno) => (
               <li key={aluno.id} className="linha-de-lista">
                 <Link
-                  href={`/professor/entre-redes/vila-do-lume/alunos/${aluno.id}`}
+                  href={`/professor/entre-redes/vila-do-lume/estudantes/${aluno.id}`}
                   className="flex items-center justify-between gap-3 py-3"
                 >
                   <span className="min-w-0">

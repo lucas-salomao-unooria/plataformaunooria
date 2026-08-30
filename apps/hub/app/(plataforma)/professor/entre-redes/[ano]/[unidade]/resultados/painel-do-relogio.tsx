@@ -6,7 +6,7 @@ import { Button, Card, FeedbackAlert } from "@edu/ui/ds";
 import type { RetratoDoRelogio } from "@/lib/unoogpt-tipos";
 
 /**
- * O RELÓGIO DA AULA — a única tela do hub em que o professor muda o que o aluno
+ * O RELÓGIO DA AULA — a única tela do hub em que o professor muda o que o estudante
  * vê, ao vivo.
  *
  * Client component de propósito: ele aperta "dar a largada" no meio da aula e
@@ -44,7 +44,7 @@ export function PainelDoRelogio({
   const [enviando, setEnviando] = useState<Acao | null>(null);
   const [, transicionar] = useTransition();
 
-  // O aluno também está olhando o cronômetro. Aqui a atualização é mais lenta
+  // O estudante também está olhando o cronômetro. Aqui a atualização é mais lenta
   // (10s): o professor precisa saber a FASE, não acompanhar segundo a segundo.
   useEffect(() => {
     const id = setInterval(() => {

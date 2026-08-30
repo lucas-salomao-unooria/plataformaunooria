@@ -98,15 +98,15 @@ export async function ResultadosUnooGPT({
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
               title="Começaram"
-              value={`${folha.retrato.comecaram}/${folha.retrato.alunos}`}
+              value={`${folha.retrato.comecaram}/${folha.retrato.estudantes ?? folha.retrato.alunos}`}
             />
             <MetricCard
               title="Enfrentaram a tempestade"
-              value={`${folha.retrato.concluiram}/${folha.retrato.alunos}`}
+              value={`${folha.retrato.concluiram}/${folha.retrato.estudantes ?? folha.retrato.alunos}`}
             />
             <MetricCard
               title="Viram fontes em conflito"
-              value={`${folha.retrato.viramConflito}/${folha.retrato.alunos}`}
+              value={`${folha.retrato.viramConflito}/${folha.retrato.estudantes ?? folha.retrato.alunos}`}
             />
           </div>
           <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">
@@ -117,7 +117,7 @@ export async function ResultadosUnooGPT({
           <Card variant="outlined" title="Como usar isto no debate">
             <ul className="flex list-disc flex-col gap-2 pl-5 text-[13px] leading-relaxed text-unooria-neutral-700">
               <li>
-                <strong>Viu conflito</strong> é o gancho mais forte: pergunte a esse aluno o que ele
+                <strong>Viu conflito</strong> é o gancho mais forte: pergunte a esse estudante o que ele
                 fez quando duas fontes discordaram sobre o mesmo bairro.
               </li>
               <li>
@@ -126,7 +126,7 @@ export async function ResultadosUnooGPT({
               </li>
               <li>
                 <strong>Justificou por intuição</strong> está sempre disponível de propósito. Sem
-                essa saída a pergunta viraria pegadinha e o aluno aprenderia a mentir para o
+                essa saída a pergunta viraria pegadinha e o estudante aprenderia a mentir para o
                 formulário.
               </li>
             </ul>
@@ -137,7 +137,7 @@ export async function ResultadosUnooGPT({
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
-                    <th className="py-2 pr-3 font-semibold">Aluno</th>
+                    <th className="py-2 pr-3 font-semibold">Estudante</th>
                     <th className="py-2 pr-3 font-semibold">Fontes</th>
                     <th className="py-2 pr-3 font-semibold">Leituras</th>
                     <th className="py-2 pr-3 font-semibold">Viu conflito</th>
@@ -150,9 +150,9 @@ export async function ResultadosUnooGPT({
                 <tbody>
                   {folha.linhas.map((l) => (
                     <tr
-                      key={l.alunoId}
+                      key={l.estudanteId ?? l.alunoId}
                       className="border-b border-unooria-neutral-100 text-unooria-neutral-800"
-                      data-aluno={l.usuario}
+                      data-estudante={l.usuario}
                     >
                       <td className="py-2 pr-3">
                         <span className="font-medium text-unooria-neutral-950">{l.nome}</span>
@@ -168,7 +168,7 @@ export async function ResultadosUnooGPT({
                       <td className="py-2 pr-3 tabular-nums">{l.tentativas}</td>
                       <td className="py-2">
                         <LinkButton
-                          href={`${rotaDaMissao(missao)}/alunos/${l.alunoId}`}
+                          href={`${rotaDaMissao(missao)}/estudantes/${l.estudanteId ?? l.alunoId}`}
                           variant="secondary"
                           size="sm"
                         >
@@ -182,7 +182,7 @@ export async function ResultadosUnooGPT({
             </div>
             <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
               Não há coluna de resgatados aqui, de propósito: listagem é ordenável, e ordenar
-              crianças por acerto viraria ranking. O número está na tela de cada aluno.
+              crianças por acerto viraria ranking. O número está na tela de cada estudante.
             </p>
           </Card>
 

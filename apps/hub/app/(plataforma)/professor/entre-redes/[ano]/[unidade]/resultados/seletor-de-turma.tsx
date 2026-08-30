@@ -38,11 +38,14 @@ export function SeletorDeTurma({
             className="min-w-[260px] rounded-md border border-unooria-neutral-300 bg-white px-3 py-2 text-[14px] font-normal text-unooria-neutral-950"
           >
             <option value="">Escolha a turma…</option>
-            {turmas.map((turma) => (
-              <option key={turma.id} value={turma.id}>
-                {turma.nome} · {turma.serie} · {turma.alunos} {turma.alunos === 1 ? "aluno" : "alunos"}
-              </option>
-            ))}
+            {turmas.map((turma) => {
+              const contagem = turma.estudantes ?? turma.alunos ?? 0;
+              return (
+                <option key={turma.id} value={turma.id}>
+                  {turma.nome} · {turma.serie} · {contagem} {contagem === 1 ? "estudante" : "estudantes"}
+                </option>
+              );
+            })}
           </select>
         </label>
         {aviso ? <p className="text-[12px] text-unooria-neutral-500">{aviso}</p> : null}

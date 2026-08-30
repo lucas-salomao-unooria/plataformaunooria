@@ -7,10 +7,12 @@ export interface TurmaResumo {
   id: string;
   nome: string;
   serie: string;
+  estudantes?: number;
   alunos: number;
 }
 
-export interface LinhaAlunoUnootube {
+export interface LinhaEstudanteUnootube {
+  estudanteId?: string;
   alunoId: string;
   nome: string;
   usuario: string;
@@ -22,6 +24,9 @@ export interface LinhaAlunoUnootube {
   credibilidadeAdicionada: boolean;
   concluidoEm: string | null;
 }
+
+/** @deprecated Alias de compatibilidade. Use `LinhaEstudanteUnootube`. */
+export type LinhaAlunoUnootube = LinhaEstudanteUnootube;
 
 export interface ResumoTurmaUnootube {
   total: number;
@@ -35,7 +40,8 @@ export interface ResumoTurmaUnootube {
 
 export interface ResultadosDaTurma {
   turma: { id: string; nome: string; serie: string };
-  alunos: LinhaAlunoUnootube[];
+  estudantes?: LinhaEstudanteUnootube[];
+  alunos: LinhaEstudanteUnootube[];
   resumo: ResumoTurmaUnootube;
 }
 
@@ -53,18 +59,24 @@ export function formatarQuando(iso: string | null, agora: Date = new Date()): st
 }
 
 /** Situação legível de uma linha — usada na tabela e nos testes. */
-export function situacaoDoAluno(l: Pick<LinhaAlunoUnootube, "iniciou" | "credibilidadeAdicionada">): "concluiu" | "em-andamento" | "nao-iniciou" {
+export function situacaoDoEstudante(l: Pick<LinhaEstudanteUnootube, "iniciou" | "credibilidadeAdicionada">): "concluiu" | "em-andamento" | "nao-iniciou" {
   if (l.credibilidadeAdicionada) return "concluiu";
   if (l.iniciou) return "em-andamento";
   return "nao-iniciou";
 }
 
+/** @deprecated Alias de compatibilidade. Use `situacaoDoEstudante`. */
+export const situacaoDoAluno = situacaoDoEstudante;
+
 /** Concluídos primeiro, depois em andamento, depois quem não iniciou; nome pt-BR dentro do grupo. */
-export function ordenarAlunos(alunos: readonly LinhaAlunoUnootube[]): LinhaAlunoUnootube[] {
+export function ordenarEstudantes(estudantes: readonly LinhaEstudanteUnootube[]): LinhaEstudanteUnootube[] {
   const peso = { concluiu: 0, "em-andamento": 1, "nao-iniciou": 2 } as const;
-  return [...alunos].sort(
+  return [...estudantes].sort(
     (a, b) =>
-      peso[situacaoDoAluno(a)] - peso[situacaoDoAluno(b)] ||
+      peso[situacaoDoEstudante(a)] - peso[situacaoDoEstudante(b)] ||
       a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }),
   );
 }
+
+/** @deprecated Alias de compatibilidade. Use `ordenarEstudantes`. */
+export const ordenarAlunos = ordenarEstudantes;

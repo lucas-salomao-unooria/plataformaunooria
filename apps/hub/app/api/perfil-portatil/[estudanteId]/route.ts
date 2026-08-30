@@ -19,7 +19,7 @@ import { hashDoPerfil, nomeDoArquivo } from "@/lib/perfil-portatil";
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ alunoId: string }> },
+  { params }: { params: Promise<{ estudanteId: string }> },
 ) {
   const session = await auth();
   if (!session?.usuario) {
@@ -40,13 +40,18 @@ export async function GET(
     );
   }
 
-  const { alunoId } = await params;
+  const { estudanteId } = await params;
   const montado = await apiDoServidor<Record<string, unknown>>(
-    `/alunos/${encodeURIComponent(alunoId)}/perfil-portatil`,
-  );
+    `/estudantes/${encodeURIComponent(estudanteId)}/perfil-portatil`,
+  ).catch(async () => {
+    // Fallback para api antiga caso ainda use /alunos/
+    return apiDoServidor<Record<string, unknown>>(
+      `/alunos/${encodeURIComponent(estudanteId)}/perfil-portatil`,
+    );
+  });
   if (!montado) {
     return NextResponse.json(
-      { mensagem: "não foi possível emitir — o aluno precisa estar numa escola sua e ter CPF" },
+      { mensagem: "não foi possível emitir — o estudante precisa estar numa escola sua e ter CPF" },
       { status: 404 },
     );
   }
@@ -69,7 +74,7 @@ export async function GET(
   return new NextResponse(arquivo, {
     headers: {
       "content-type": "application/json; charset=utf-8",
-      "content-disposition": `attachment; filename="${nomeDoArquivo(titular.nome ?? "aluno", emitidoEm)}"`,
+      "content-disposition": `attachment; filename="${nomeDoArquivo(titular.nome ?? "estudante", emitidoEm)}"`,
       "cache-control": "no-store",
     },
   });

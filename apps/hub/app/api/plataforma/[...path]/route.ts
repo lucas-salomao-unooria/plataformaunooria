@@ -20,7 +20,7 @@ const PREFIXOS_PERMITIDOS = [
   "matriculas",
   "periodos-letivos",
   /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a
-     transferência de aluno entre escolas. */
+     transferência de estudante entre escolas. */
   "escolas",
   /* Perfil portátil RECEBIDO de outra rede: ler e apagar. A importação tem rota
      própria do hub (`/api/perfil-recebido`) porque precisa devolver o MOTIVO da
@@ -28,6 +28,7 @@ const PREFIXOS_PERMITIDOS = [
      é a api, justamente para não depender de quem chama. */
   "perfis-recebidos",
   "lotacoes",
+  "estudantes",
   "alunos",
   "atividades",
   "runs",

@@ -16,7 +16,7 @@
  * "Plano de aula": eram links de uma plataforma de atividade única. A navegação
  * agora desce pelo hub (produto → missão → atividade) e volta pelo breadcrumb.
  *
- * Nada aqui aparece para o aluno: o aparelho não menciona aula, plano nem
+ * Nada aqui aparece para o estudante: o aparelho não menciona aula, plano nem
  * professor (regra de ouro 1 do CLAUDE.md).
  */
 

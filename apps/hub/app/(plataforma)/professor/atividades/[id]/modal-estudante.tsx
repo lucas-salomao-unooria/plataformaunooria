@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Badge, Modal, ModalBody, ModalHeader, ModalTitle, Tabs, Tag } from "@edu/ui/ds";
 
 /**
- * O aparelho do aluno, aberto para o professor **durante** a atividade.
+ * O aparelho do estudante, aberto para o professor **durante** a atividade.
  *
  * O pedido era "clicar e abrir o Instanooria dele num popup". A tradução honesta
  * disso não é um clone do feed em miniatura — é a lista do que ele TOCOU, que é
@@ -41,7 +41,7 @@ interface Interacao {
   segundos: number;
 }
 
-/** O relatório do aluno, já computado no encerramento da investigação. */
+/** O relatório do estudante, já computado no encerramento da investigação. */
 interface Relatorio {
   ladoDominante: string;
   dominio: number;
@@ -56,7 +56,7 @@ interface Relatorio {
     comentariosLidos: number;
   };
   perfilObservado: { dominante: string | null; veredito: string; normalizado: Record<string, number> };
-  /** Por que o feed dele nasceu naquele lado — o que o aluno lê no bloco 2. */
+  /** Por que o feed dele nasceu naquele lado — o que o estudante lê no bloco 2. */
   explicacaoDoLado: {
     origem: 'perfil' | 'sorteio' | 'redistribuido';
     perfilRotulo: string;
@@ -70,7 +70,8 @@ interface Relatorio {
 }
 
 interface Dados {
-  aluno: { username: string; displayName: string; nomeNoApp: string | null; avatar: string | null };
+  estudante?: { username: string; displayName: string; nomeNoApp: string | null; avatar: string | null };
+  aluno?: { username: string; displayName: string; nomeNoApp: string | null; avatar: string | null };
   sessao: {
     fase: string;
     ladoInicialRotulo: string;
@@ -91,7 +92,7 @@ interface Dados {
   interacoes: Interacao[];
 }
 
-export function ModalAluno({
+export function ModalEstudante({
   activityId,
   runId,
   nome,
@@ -115,9 +116,14 @@ export function ModalAluno({
 
     const buscar = async () => {
       try {
-        const resposta = await fetch(`/api/plataforma/atividades/${activityId}/alunos/${runId}`, {
+        let resposta = await fetch(`/api/plataforma/atividades/${activityId}/estudantes/${runId}`, {
           cache: "no-store",
-        });
+        }).catch(() => null);
+        if (!resposta || !resposta.ok) {
+          resposta = await fetch(`/api/plataforma/atividades/${activityId}/alunos/${runId}`, {
+            cache: "no-store",
+          });
+        }
         if (!resposta.ok) throw new Error("falhou");
         const corpo = (await resposta.json()) as Dados;
         if (ativo) setDados(corpo);
@@ -139,7 +145,7 @@ export function ModalAluno({
       .catch(() => undefined);
 
     void buscar();
-    // Em tempo real: o professor abre e vê o aluno mexendo.
+    // Em tempo real: o professor abre e vê o estudante mexendo.
     const intervalo = setInterval(() => void buscar(), 5000);
     return () => {
       ativo = false;
@@ -148,6 +154,8 @@ export function ModalAluno({
   }, [activityId, runId]);
 
   if (!runId) return null;
+
+  const infoEstudante = dados?.estudante ?? dados?.aluno;
 
   return (
     <Modal isOpen size="lg" onClose={aoFechar} closeOnOverlayClick closeOnEsc>
@@ -159,10 +167,10 @@ export function ModalAluno({
           era a única pista de quem estava jogando. Agora cada pessoa tem a conta
           dela, e o apelido é o que é: decoração da experiência.
         */}
-        <ModalTitle>{dados?.aluno.displayName || nome}</ModalTitle>
-        {dados?.aluno.nomeNoApp ? (
+        <ModalTitle>{infoEstudante?.displayName || nome}</ModalTitle>
+        {infoEstudante?.nomeNoApp ? (
           <p className="text-[13px] text-unooria-neutral-500">
-            no app: {dados.aluno.nomeNoApp}
+            no app: {infoEstudante.nomeNoApp}
           </p>
         ) : null}
       </ModalHeader>
@@ -170,7 +178,7 @@ export function ModalAluno({
       <ModalBody>
         {/*
           Duas abas porque são dois usos diferentes do mesmo popup: DURANTE a aula
-          o professor quer ver o que o aluno está coletando; DEPOIS ele quer o
+          o professor quer ver o que o estudante está coletando; DEPOIS ele quer o
           relatório. Empilhar tudo numa rolagem faria a informação da aula ficar
           soterrada pela do fim.
         */}
@@ -206,7 +214,7 @@ export function ModalAluno({
                   A coleção dele
                 </h3>
                 <span className="text-[12px] text-unooria-neutral-500">
-                  {dados.aluno.displayName} · {dados.aluno.username}
+                  {infoEstudante?.displayName} · {infoEstudante?.username}
                 </span>
               </div>
 
@@ -339,7 +347,7 @@ export function ModalAluno({
 }
 
 /**
- * O relatório do aluno para o PROFESSOR — o mesmo dado que o aluno vê, arrumado
+ * O relatório do estudante para o PROFESSOR — o mesmo dado que o estudante vê, arrumado
  * para quem vai conversar com ele.
  *
  * A ordem é a das perguntas que um professor faz: onde ele largou e onde
@@ -399,7 +407,7 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
       </section>
 
       {/*
-        A MESMA explicação que o aluno lê no bloco 2 do relatório dele, em 3ª
+        A MESMA explicação que o estudante lê no bloco 2 do relatório dele, em 3ª
         pessoa. Faltava aqui, e a falta tinha consequência de aula: o professor
         conduzia a conversa sobre a bolha sem ver a frase que a criança acabara
         de ler — e é essa frase, não a porcentagem, que ela vai querer discutir.
@@ -424,7 +432,7 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
           ) : (
             <>
               Começou em <strong>{relatorio.explicacaoDoLado.ladoRotulo}</strong> por{' '}
-              <strong>sorteio</strong>: não havia perfil do Ato 1 para este aluno.
+              <strong>sorteio</strong>: não havia perfil do Ato 1 para este estudante.
             </>
           )}
         </p>
@@ -470,7 +478,7 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
           ))}
         </ul>
         <p className="text-[11px] leading-relaxed text-unooria-neutral-500">
-          Nunca leia o total sozinho: dois alunos com 60 podem ter chegado lá por caminhos opostos.
+          Nunca leia o total sozinho: dois estudantes com 60 podem ter chegado lá por caminhos opostos.
         </p>
       </section>
 
@@ -527,3 +535,5 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
     </div>
   );
 }
+
+export { ModalEstudante as ModalAluno };

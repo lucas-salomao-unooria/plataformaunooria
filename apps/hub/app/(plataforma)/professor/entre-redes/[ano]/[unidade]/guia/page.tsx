@@ -25,7 +25,7 @@ import {
  * fora da missão não diria de qual aula está falando.
  *
  * A missão tem **dois atos**: o jogo (fora da plataforma, que mede o perfil de
- * valores) e o Instanooria. Nenhum aluno deve suspeitar que os dois se conectam
+ * valores) e o Instanooria. Nenhum estudante deve suspeitar que os dois se conectam
  * antes da revelação — é essa surpresa que faz o relatório final funcionar.
  */
 /**
@@ -100,7 +100,7 @@ export default async function GuiaPage({
         variant="warning"
         device="auto"
         title="O que você sabe e a turma não"
-        description="Cada aluno recebe um feed já puxado para um dos dois lados, e o lado vem do perfil que o jogo mediu — não é sorteio. O mesmo argumento foi escrito em quatro linguagens, e cada um recebe mais a que combina com ele. O outro lado nunca desaparece: passa sempre pelo menos 1 post em 6, o mais calmo, para que virar de lado seja possível. Nada disso é dito antes da revelação."
+        description="Cada estudante recebe um feed já puxado para um dos dois lados, e o lado vem do perfil que o jogo mediu — não é sorteio. O mesmo argumento foi escrito em quatro linguagens, e cada um recebe mais a que combina com ele. O outro lado nunca desaparece: passa sempre pelo menos 1 post em 6, o mais calmo, para que virar de lado seja possível. Nada disso é dito antes da revelação."
       />
 
       <Card variant="outlined" title="Antes da aula">
@@ -127,17 +127,17 @@ export default async function GuiaPage({
             <strong>Revise os posts gerados.</strong> Use a visão de matriz (2
             lados × 4 perfis) para checar se alguma linguagem ficou fraca.
           </li>
-          <li>Ative a atividade e teste você mesmo com um login de aluno.</li>
+          <li>Ative a atividade e teste você mesmo com um login de estudante.</li>
           <li>
             <strong>Confira os perfis e a distribuição da turma.</strong> Você vê,
-            antes de começar, em que lado cada aluno vai cair. Se a turma cair
+            antes de começar, em que lado cada estudante vai cair. Se a turma cair
             quase toda num lado, use o botão de <strong>redistribuir</strong>: ele
             move primeiro os de perfil menos decidido, preservando a pedagogia
             onde o sinal é forte.
           </li>
           <li>
             <strong>Decida se os perfis respondem.</strong> Um botão nesta
-            atividade liga a interação ao vivo: quando um aluno publica algo, os
+            atividade liga a interação ao vivo: quando um estudante publica algo, os
             perfis do feed comentam de verdade, com texto gerado na hora. Passa
             por quatro camadas de proteção — elenco fechado, vocabulário
             bloqueado, sem link/contato/dado pessoal e nada que instrua
@@ -165,7 +165,7 @@ export default async function GuiaPage({
           <strong>junta</strong> no debate e na revelação — o momento-espelho
           depende de todos terem acabado de sair do feed. O painel da atividade
           mostra o momento de agora em destaque, o botão da próxima ação e uma
-          linha dizendo o que vai mudar na tela dos alunos. Em cada momento há
+          linha dizendo o que vai mudar na tela dos estudantes. Em cada momento há
           também <strong>voltar um momento</strong>, se você adiantou sem querer.
         </p>
         <div className="mt-4 overflow-x-auto">
@@ -174,7 +174,7 @@ export default async function GuiaPage({
               <tr className="text-[12px] text-unooria-neutral-500">
                 <th className="w-52 py-2 font-semibold">Botão</th>
                 <th className="py-2 font-semibold">
-                  O que acontece na tela do aluno
+                  O que acontece na tela do estudante
                 </th>
               </tr>
             </thead>
@@ -207,17 +207,14 @@ export default async function GuiaPage({
       </Card>
 
       {/*
-        A REVELAÇÃO, palavra por palavra.
-        Era a única superfície do produto que o professor não lia antes de entrar
-        em sala — ele conduzia a conversa mais importante das duas aulas sem
-        saber o que a turma tinha acabado de ver. E o texto vem do MESMO módulo
-        que a experiência exibe (`@edu/conteudo-exp-01`): copiado para cá, ele
+        O ROTEIRO DA REVELAÇÃO (doc 09 §4) — renderizado direto da fonte de
+        verdade (`REVELACAO_FIXA` de @/lib/insta-tipos). Se fosse texto solto aqui,
         divergiria na primeira revisão de copy e o guia passaria a mentir.
       */}
       <Card variant="outlined" title="O que a turma lê na revelação">
         <p className="text-[14px] leading-relaxed text-unooria-neutral-800">
           São <strong>{REVELACAO_FIXA.length + 3} telas</strong> de fundo preto, uma frase por vez, no
-          ritmo de cada aluno — não um cartão. Leia antes da aula: é o argumento inteiro da atividade,
+          ritmo de cada estudante — não um cartão. Leia antes da aula: é o argumento inteiro da atividade,
           e a conversa que vem depois parte daqui. O tom nunca culpa a criança: o sujeito da frase é
           sempre o sistema.
         </p>
@@ -230,12 +227,12 @@ export default async function GuiaPage({
                 className="rounded-lg border border-unooria-neutral-200 bg-unooria-neutral-50 p-3"
               >
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-unooria-neutral-500">
-                  tela {indice + 1} · muda conforme o aluno
+                  tela {indice + 1} · muda conforme o estudante
                 </p>
                 <p className="mt-1 text-[13px] leading-relaxed text-unooria-neutral-700">
                   Esta é a única que não é igual para todo mundo. Dizer “foi escolhido a partir de como
                   você jogou” para quem caiu no sorteio seria mentir na única tela que existe para não
-                  mentir — então cada aluno lê a versão verdadeira do caso dele:
+                  mentir — então cada estudante lê a versão verdadeira do caso dele:
                 </p>
                 <ul className="mt-2 flex flex-col gap-2">
                   {(["perfil", "redistribuido", "sorteio"] as const).map((origem) => (
@@ -297,22 +294,22 @@ export default async function GuiaPage({
               {[
                 [
                   "0–5",
-                  "Enquadramento da missão e login dos alunos.",
+                  "Enquadramento da missão e login dos estudantes.",
                   "Começar investigação",
                 ],
                 [
                   "5–25",
-                  "Investigação individual. Diga em voz alta a única instrução que importa: “salvem os posts que vão ajudar vocês a responder”. Enquanto eles rolam, o monitor mostra em tempo real quem salvou o quê — clique em qualquer aluno e abre o aparelho dele num popup. Fique de olho no alerta de ocioso: é o único que pede ação sua na hora.",
+                  "Investigação individual. Diga em voz alta a única instrução que importa: “salvem os posts que vão ajudar vocês a responder”. Enquanto eles rolam, o monitor mostra em tempo real quem salvou o quê — clique em qualquer estudante e abre o aparelho dele num popup. Fique de olho no alerta de ocioso: é o único que pede ação sua na hora.",
                   "—",
                 ],
                 [
                   "25–30",
-                  "A resposta. Quando o monitor mostrar a maioria com coleção formada, encerre. Cada aluno escolhe um dos três lados; ninguém escreve nada ainda.",
+                  "A resposta. Quando o monitor mostrar a maioria com coleção formada, encerre. Cada estudante escolhe um dos três lados; ninguém escreve nada ainda.",
                   "Encerrar investigação",
                 ],
                 [
                   "30–45",
-                  "Debate. As telas travam na coleção de cada um. Projete a pergunta-chave e peça que defendam a resposta usando os posts que salvaram. Quem está em dúvida fala por último. Você ainda não revelou nada — e é isso que faz funcionar: dois alunos citam posts diferentes sobre o mesmo tema e a sala estranha sozinha.",
+                  "Debate. As telas travam na coleção de cada um. Projete a pergunta-chave e peça que defendam a resposta usando os posts que salvaram. Quem está em dúvida fala por último. Você ainda não revelou nada — e é isso que faz funcionar: dois estudantes citam posts diferentes sobre o mesmo tema e a sala estranha sozinha.",
                   "Iniciar debate",
                 ],
                 [
@@ -373,7 +370,7 @@ export default async function GuiaPage({
 
       <Card
         variant="outlined"
-        title="Relatório comparativo (entregável do aluno)"
+        title="Relatório comparativo (entregável do estudante)"
       >
         <ol className="flex list-decimal flex-col gap-2 pl-5 text-[14px] leading-relaxed text-unooria-neutral-800">
           <li>
@@ -411,10 +408,10 @@ export default async function GuiaPage({
       <Card variant="outlined" title="Cuidados">
         <ul className="flex list-disc flex-col gap-2 pl-5 text-[14px] leading-relaxed text-unooria-neutral-800">
           <li>
-            Nunca avaliar o “lado” em que o aluno caiu; avaliar a análise.
+            Nunca avaliar o “lado” em que o estudante caiu; avaliar a análise.
           </li>
           <li>
-            <strong>O perfil de valores não é rótulo de aluno.</strong> Não usar
+            <strong>O perfil de valores não é rótulo de estudante.</strong> Não usar
             como apelido, categoria de turma, nota ou adjetivo (“o competitivo”,
             “a que se importa com os outros”). É o que o jogo captou naquele dia,
             e a divergência entre o jogo e o feed é dado interessante — não erro

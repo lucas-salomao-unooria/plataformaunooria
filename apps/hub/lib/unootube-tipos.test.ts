@@ -1,7 +1,15 @@
 import { describe, expect, test } from "vitest";
-import { formatarQuando, ordenarAlunos, situacaoDoAluno, type LinhaAlunoUnootube } from "./unootube-tipos";
+import {
+  formatarQuando,
+  ordenarEstudantes,
+  ordenarAlunos,
+  situacaoDoEstudante,
+  situacaoDoAluno,
+  type LinhaEstudanteUnootube,
+} from "./unootube-tipos";
 
-const linha = (nome: string, extra: Partial<LinhaAlunoUnootube> = {}): LinhaAlunoUnootube => ({
+const linha = (nome: string, extra: Partial<LinhaEstudanteUnootube> = {}): LinhaEstudanteUnootube => ({
+  estudanteId: nome,
   alunoId: nome,
   nome,
   usuario: nome.toLowerCase(),
@@ -29,17 +37,19 @@ describe("formatarQuando", () => {
   });
 });
 
-describe("situacaoDoAluno / ordenarAlunos", () => {
+describe("situacaoDoEstudante / ordenarEstudantes", () => {
   test("concluídos primeiro, depois em andamento, depois quem não iniciou", () => {
-    const alunos = [
+    const estudantes = [
       linha("Zeca"),
       linha("Ana", { iniciou: true }),
       linha("Bia", { iniciou: true, credibilidadeAdicionada: true }),
       linha("Álvaro", { iniciou: true, credibilidadeAdicionada: true }),
     ];
-    expect(ordenarAlunos(alunos).map((a) => a.nome)).toEqual(["Álvaro", "Bia", "Ana", "Zeca"]);
-    expect(situacaoDoAluno(alunos[0]!)).toBe("nao-iniciou");
-    expect(situacaoDoAluno(alunos[1]!)).toBe("em-andamento");
-    expect(situacaoDoAluno(alunos[2]!)).toBe("concluiu");
+    expect(ordenarEstudantes(estudantes).map((a) => a.nome)).toEqual(["Álvaro", "Bia", "Ana", "Zeca"]);
+    expect(ordenarAlunos(estudantes).map((a) => a.nome)).toEqual(["Álvaro", "Bia", "Ana", "Zeca"]);
+    expect(situacaoDoEstudante(estudantes[0]!)).toBe("nao-iniciou");
+    expect(situacaoDoEstudante(estudantes[1]!)).toBe("em-andamento");
+    expect(situacaoDoEstudante(estudantes[2]!)).toBe("concluiu");
+    expect(situacaoDoAluno(estudantes[0]!)).toBe("nao-iniciou");
   });
 });

@@ -19,7 +19,7 @@ export const metadata = { title: "Vila do Lume — Plataforma Unooria" };
  * duração, atos, preparo), sem breadcrumb de ano/unidade — ela não tem.
  *
  * O que esta tela tem e as outras não: as TRÊS BOLHAS explicadas. O professor
- * precisa saber, antes de entrar na sala, que os alunos dele receberam golpes de
+ * precisa saber, antes de entrar na sala, que os estudantes dele receberam golpes de
  * níveis diferentes — é sobre isso que o debate é. Ler o resultado de uma
  * criança sem saber o nível que ela recebeu produz a conclusão errada, e é a
  * conclusão mais fácil de tirar: a de que ela é ingênua.
@@ -102,7 +102,7 @@ export default async function VilaDoLumePage() {
           <p>
             <strong>Ela rende duas coisas.</strong> A primeira é o debate — que é metade da
             missão, e tem roteiro próprio no guia. A segunda é um retrato de valores por
-            aluno, que você lê nos resultados da turma.
+            estudante, que você lê nos resultados da turma.
           </p>
           <p>
             <strong>E esse retrato alimenta outra missão.</strong> Hoje, o{" "}
@@ -116,7 +116,7 @@ export default async function VilaDoLumePage() {
               Instanooria
             </Link>{" "}
             (8º ano · Unidade 1): é o perfil da Vila que decide
-            de que lado o feed de cada aluno nasce lá — o &quot;Ato 1&quot; que a ficha
+            de que lado o feed de cada estudante nasce lá — o &quot;Ato 1&quot; que a ficha
             daquela missão descreve. Na tela da atividade do Instanooria há um botão{" "}
             <em>Trazer perfis da Vila do Lume</em>. Quem não jogou entra no sorteio
             balanceado, e você pode completar à mão.
@@ -141,20 +141,20 @@ export default async function VilaDoLumePage() {
             nada à turma de antemão.
           </li>
           <li>
-            <strong>Mande a turma jogar.</strong> Cada aluno entra pelo hub dele e escolhe a
+            <strong>Mande a turma jogar.</strong> Cada estudante entra pelo hub dele e escolhe a
             Vila do Lume. São 15 a 25 minutos, e a partida se perde se ele fechar a aba —
             reserve o tempo de uma aula.
           </li>
           <li>
             <strong>Confira os resultados.</strong> Veja se as três bolhas estão na sua
             turma: sem as três, a revelação não tem o que comparar, e vale esperar mais
-            alunos jogarem.
+            estudantes jogarem.
           </li>
           <li>
             <strong>Faça o debate</strong>, com o roteiro do guia. 10 a 15 minutos.
           </li>
           <li>
-            <strong>Depois, se quiser:</strong> leia o relatório de um aluno específico, e/ou
+            <strong>Depois, se quiser:</strong> leia o relatório de um estudante específico, e/ou
             traga os perfis para uma atividade do Instanooria.
           </li>
         </ol>
@@ -181,7 +181,7 @@ export default async function VilaDoLumePage() {
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-[18px] font-bold text-unooria-neutral-950">
-            As três bolhas — cada aluno recebe UMA
+            As três bolhas — cada estudante recebe UMA
           </h2>
           <p className="max-w-3xl text-[13px] leading-relaxed text-unooria-neutral-600">
             As três recebem as <strong>mesmas duas mensagens verdadeiras</strong>. Só o golpe

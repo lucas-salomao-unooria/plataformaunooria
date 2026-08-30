@@ -7,7 +7,7 @@
  * em `/professor/plano-de-aula` com a MESMA sessão e o MESMO token da
  * plataforma. O lado server é `apps/api/src/planos`.
  *
- * Só aparece em superfícies do professor. O aparelho do aluno nunca menciona
+ * Só aparece em superfícies do professor. O aparelho do estudante nunca menciona
  * "aula" nem "plano de aula" (regra de ouro 1), e `/exp/exp-90-...` responde 404.
  */
 export const EXP_PLANO_DE_AULA = "exp-90-plano-de-aula";

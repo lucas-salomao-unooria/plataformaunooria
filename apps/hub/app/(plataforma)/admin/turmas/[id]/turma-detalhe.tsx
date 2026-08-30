@@ -31,7 +31,7 @@ interface Matriculado extends Record<string, unknown> {
   matricula: string | null;
   ativo: boolean;
   senhaProvisoria: boolean;
-  /** Turma de referência do aluno — a que alimenta o cache e o token. */
+  /** Turma de referência do estudante — a que alimenta o cache e o token. */
   principal: boolean;
 }
 
@@ -64,7 +64,8 @@ interface EscolaDaRede {
 }
 
 interface Historico {
-  aluno: { nome: string; usuario: string; cpf: string | null };
+  estudante?: { nome: string; usuario: string; cpf: string | null };
+  aluno?: { nome: string; usuario: string; cpf: string | null };
   escolas: Array<{
     id: string;
     nome: string;
@@ -83,7 +84,8 @@ const dataCurta = (iso: string | null) =>
 
 interface DadosDaTurma {
   turma: { id: string; nome: string; serie: string; turno: string | null; periodo: string };
-  alunos: Matriculado[];
+  estudantes?: Matriculado[];
+  alunos?: Matriculado[];
   professores: Matriculado[];
 }
 
@@ -98,8 +100,8 @@ interface Candidato {
  * A lista NOMINAL de quem está na turma — o ponto de todo o enturmamento.
  *
  * Remover alguém aqui ENCERRA a matrícula; não apaga linha nenhuma. O que o
- * aluno fez na Vila, no UnooTube e no unooGPT continua pendurado nela, e apagar
- * deixaria esse histórico órfão de turma.
+ * estudante fez na Vila, no UnooTube e no unooGPT continua pendurado nela, e apagar
+ * a linha apagaria o histórico da turma.
  */
 export function TurmaDetalhe({
   turmaId,
@@ -117,7 +119,7 @@ export function TurmaDetalhe({
   const escolaDaUrl = useSearchParams().get("escolaId") ?? "";
   const escolaId = escolaDaUrl || escolaIdDaSessao;
   const [dados, setDados] = useState<DadosDaTurma | null>(null);
-  const [aba, setAba] = useState<"alunos" | "professores">("alunos");
+  const [aba, setAba] = useState<"estudantes" | "professores">("estudantes");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -177,7 +179,7 @@ export function TurmaDetalhe({
       }
       const params = new URLSearchParams({
         busca: termo.trim(),
-        papel: aba === "alunos" ? "aluno" : "professor",
+        papel: aba === "estudantes" ? "estudante" : "professor",
         porPagina: "10",
       });
       if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
@@ -195,7 +197,7 @@ export function TurmaDetalhe({
       const resposta = await fetch(`/api/plataforma/turmas/${turmaId}/matriculas${sufixo}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ usuarioId, papel: aba === "alunos" ? "aluno" : "professor" }),
+        body: JSON.stringify({ usuarioId, papel: aba === "estudantes" ? "estudante" : "professor" }),
       });
       if (!resposta.ok) throw new Error(String(resposta.status));
       setAdicionarAberto(false);
@@ -239,7 +241,10 @@ export function TurmaDetalhe({
   async function verHistorico(linha: Matriculado) {
     setHistorico(null);
     try {
-      const resposta = await fetch(`/api/plataforma/alunos/${linha.id}/historico${sufixo}`);
+      let resposta = await fetch(`/api/plataforma/estudantes/${linha.id}/historico${sufixo}`);
+      if (!resposta.ok) {
+        resposta = await fetch(`/api/plataforma/alunos/${linha.id}/historico${sufixo}`);
+      }
       if (!resposta.ok) throw new Error(String(resposta.status));
       setHistorico((await resposta.json()) as Historico);
     } catch {
@@ -249,11 +254,16 @@ export function TurmaDetalhe({
 
   /** Só a lista. Separada de `abrirPerfilPortatil` porque recarregar DEPOIS de
    *  importar não pode apagar a mensagem que acabou de explicar o que aconteceu. */
-  async function carregarRecebidos(alunoIdDaLinha: string) {
+  async function carregarRecebidos(estudanteIdDaLinha: string) {
     try {
-      const resposta = await fetch(
-        `/api/plataforma/alunos/${alunoIdDaLinha}/perfis-recebidos${sufixo}`,
+      let resposta = await fetch(
+        `/api/plataforma/estudantes/${estudanteIdDaLinha}/perfis-recebidos${sufixo}`,
       );
+      if (!resposta.ok) {
+        resposta = await fetch(
+          `/api/plataforma/alunos/${estudanteIdDaLinha}/perfis-recebidos${sufixo}`,
+        );
+      }
       setRecebidos(resposta.ok ? ((await resposta.json()) as PerfilRecebido[]) : []);
     } catch {
       setRecebidos([]);
@@ -337,14 +347,24 @@ export function TurmaDetalhe({
     if (!transferir || !escolaDestino) return;
     setSalvando(true);
     try {
-      const resposta = await fetch(
-        `/api/plataforma/alunos/${transferir.id}/transferir?escolaId=${encodeURIComponent(escolaDestino)}`,
+      let resposta = await fetch(
+        `/api/plataforma/estudantes/${transferir.id}/transferir?escolaId=${encodeURIComponent(escolaDestino)}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ escolaDestinoId: escolaDestino }),
         },
       );
+      if (!resposta.ok) {
+        resposta = await fetch(
+          `/api/plataforma/alunos/${transferir.id}/transferir?escolaId=${encodeURIComponent(escolaDestino)}`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ escolaDestinoId: escolaDestino }),
+          },
+        );
+      }
       if (!resposta.ok) throw new Error(String(resposta.status));
       setTransferir(null);
       await carregar();
@@ -393,7 +413,7 @@ export function TurmaDetalhe({
         align: "right",
         render: (_, linha) => (
           <div className="flex justify-end gap-1">
-            {aba === "alunos" && !linha.principal ? (
+            {aba === "estudantes" && !linha.principal ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -402,17 +422,17 @@ export function TurmaDetalhe({
                 Tornar referência
               </Button>
             ) : null}
-            {aba === "alunos" ? (
+            {aba === "estudantes" ? (
               <Button variant="ghost" size="sm" onClick={() => void verHistorico(linha)}>
                 Histórico
               </Button>
             ) : null}
-            {aba === "alunos" && papel === "admin-contrato" ? (
+            {aba === "estudantes" && papel === "admin-contrato" ? (
               <Button variant="ghost" size="sm" onClick={() => void abrirTransferencia(linha)}>
                 Transferir
               </Button>
             ) : null}
-            {aba === "alunos" ? (
+            {aba === "estudantes" ? (
               <Button variant="ghost" size="sm" onClick={() => void abrirPerfilPortatil(linha)}>
                 Perfil portátil
               </Button>
@@ -433,7 +453,10 @@ export function TurmaDetalhe({
     [aba, papel],
   );
 
-  const lista = aba === "alunos" ? (dados?.alunos ?? []) : (dados?.professores ?? []);
+  const lista =
+    aba === "estudantes"
+      ? (dados?.estudantes ?? dados?.alunos ?? [])
+      : (dados?.professores ?? []);
 
   return (
     <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
@@ -453,9 +476,14 @@ export function TurmaDetalhe({
       <Tabs
         theme="light"
         value={aba}
-        onChange={(valor) => setAba(valor === "professores" ? "professores" : "alunos")}
+        onChange={(valor) => setAba(valor === "professores" ? "professores" : "estudantes")}
         items={[
-          { value: "alunos", label: "Alunos", badge: dados?.alunos.length ?? 0, showIcon: false },
+          {
+            value: "estudantes",
+            label: "Estudantes",
+            badge: (dados?.estudantes ?? dados?.alunos ?? []).length,
+            showIcon: false,
+          },
           {
             value: "professores",
             label: "Professores",
@@ -470,7 +498,7 @@ export function TurmaDetalhe({
           Voltar para as turmas
         </Button>
         <Button variant="primary" size="md" onClick={() => setAdicionarAberto(true)}>
-          {aba === "alunos" ? "Adicionar aluno" : "Adicionar professor"}
+          {aba === "estudantes" ? "Adicionar estudante" : "Adicionar professor"}
         </Button>
       </div>
 
@@ -480,8 +508,8 @@ export function TurmaDetalhe({
         keyExtractor={(linha) => linha.matriculaId}
         loading={carregando}
         emptyText={
-          aba === "alunos"
-            ? "Nenhum aluno matriculado nesta turma."
+          aba === "estudantes"
+            ? "Nenhum estudante matriculado nesta turma."
             : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
         }
         size="md"
@@ -495,7 +523,7 @@ export function TurmaDetalhe({
         theme="light"
       >
         <ModalHeader>
-          <ModalTitle>{aba === "alunos" ? "Adicionar aluno" : "Adicionar professor"}</ModalTitle>
+          <ModalTitle>{aba === "estudantes" ? "Adicionar estudante" : "Adicionar professor"}</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-3">
@@ -536,13 +564,13 @@ export function TurmaDetalhe({
 
       <Modal isOpen={Boolean(historico)} onClose={() => setHistorico(null)} size="md" theme="light">
         <ModalHeader>
-          <ModalTitle>Histórico de {historico?.aluno.nome}</ModalTitle>
+          <ModalTitle>Histórico de {historico?.estudante?.nome ?? historico?.aluno?.nome}</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-5">
             <p className="text-[13px] text-unooria-neutral-500">
-              {historico?.aluno.usuario}
-              {historico?.aluno.cpf ? ` · CPF ${historico.aluno.cpf}` : ""}
+              {historico?.estudante?.usuario ?? historico?.aluno?.usuario}
+              {(historico?.estudante?.cpf ?? historico?.aluno?.cpf) ? ` · CPF ${historico?.estudante?.cpf ?? historico?.aluno?.cpf}` : ""}
             </p>
 
             <section className="flex flex-col gap-2">

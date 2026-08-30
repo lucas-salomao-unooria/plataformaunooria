@@ -146,7 +146,7 @@ export function PainelRevisao({
       {/*
         Matriz 2×4 (doc 05 §4). Existe porque a contagem por lado ESCONDE o que
         mais importa agora: os lados podem estar 50/50 e um perfil inteiro estar
-        vazio — e aí o aluno daquele perfil nunca receberia, daquele lado, a
+        vazio — e aí o estudante daquele perfil nunca receberia, daquele lado, a
         linguagem que mais fala com ele.
       */}
       {dados && dados.matriz.length > 0 ? (
