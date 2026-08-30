@@ -2,7 +2,7 @@
  * Ícones das fontes de dados. Linha simples, herdam a cor do texto.
  *
  * Existem porque a lista do Resultado — "o que você não consultou" — é oito
- * blocos de texto iguais, e o aluno lê os dois primeiros e desiste. Ícone dá
+ * blocos de texto iguais, e o estudante lê os dois primeiros e desiste. Ícone dá
  * ponto de entrada por item.
  *
  * POR QUE NÃO SÃO O `Icon` DO PACOTE, desde a 0.1.14 que o publica:
@@ -13,7 +13,7 @@
  * moradores, satélite, telefonia, malha viária, estudo de campo. Dois ou três
  * dariam para forçar (`user` para o censo, `sun` para a previsão), e os outros
  * cinco cairiam num ícone que diz outra coisa — o que é pior do que um desenho
- * honesto, porque desinforma sobre a fonte que o aluno deixou de consultar.
+ * honesto, porque desinforma sobre a fonte que o estudante deixou de consultar.
  *
  * Então são ilustração de domínio, como o terreno do mapa (`mapa-base.tsx`), e
  * ficam aqui declaradas em um lugar só. Isto NÃO contradiz a proibição do DS de

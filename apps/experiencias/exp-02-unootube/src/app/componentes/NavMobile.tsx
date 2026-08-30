@@ -13,7 +13,7 @@ interface Props {
 
 /**
  * Barra de abas do rodapé (`MobileTabBar`, 0.1.14). Não há `CreateButton` aqui
- * de propósito: o aluno não publica nada nesta missão, e um botão de criar no
+ * de propósito: o estudante não publica nada nesta missão, e um botão de criar no
  * meio da barra prometeria uma ação que não existe.
  */
 export function NavMobile({

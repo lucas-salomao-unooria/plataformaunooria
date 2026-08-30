@@ -35,11 +35,12 @@ export interface ComentarioCliente {
   texto: string;
   likesCount: number;
   timestampLabel: string;
+  doEstudante?: boolean;
   doAluno?: boolean;
 }
 
-/** Item da timeline do feed: post, módulo de sugestões ou o post do aluno. */
+/** Item da timeline do feed: post, módulo de sugestões ou o post do estudante. */
 export type ItemFeed =
   | { tipo: 'post'; post: FeedPostCliente }
   | { tipo: 'sugestoes'; perfis: PerfilCliente[] }
-  | { tipo: 'post_do_aluno'; texto: string; template: string; criadoEm: number };
+  | { tipo: 'post_do_estudante' | 'post_do_aluno'; texto: string; template: string; criadoEm: number };

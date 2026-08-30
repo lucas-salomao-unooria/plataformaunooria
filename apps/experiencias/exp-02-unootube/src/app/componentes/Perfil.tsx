@@ -19,7 +19,7 @@ interface Props {
   aoPedirReinicio: () => void;
 }
 
-/** "@handle" derivado do nome real do aluno (no origem era a persona fixa "Lia"). */
+/** "@handle" derivado do nome real do estudante (no origem era a persona fixa "Lia"). */
 export function handleDoNome(nome: string): string {
   const base = nome
     .normalize("NFD")
@@ -27,11 +27,11 @@ export function handleDoNome(nome: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
-  return `@${base || "aluno"}`;
+  return `@${base || "estudante"}`;
 }
 
 /**
- * Canal do aluno, montado com o `ChannelHeader` do DS — capa, retrato de 80px,
+ * Canal do estudante, montado com o `ChannelHeader` do DS — capa, retrato de 80px,
  * nome, arroba e contagem de inscritos são os campos que ele já publica.
  *
  * É aqui que mora a troca de aparência. O lugar é o mesmo em que um app de
@@ -56,7 +56,7 @@ export function Perfil(props: Props) {
         }
         showSearch={false}
         /*
-         * O canal é o do PRÓPRIO aluno: inscrever-se em si mesmo não existe, e
+         * O canal é o do PRÓPRIO estudante: inscrever-se em si mesmo não existe, e
          * um botão morto no clímax da tela confundiria a métrica que a missão
          * ensina a ler. Prop da 0.1.17 — antes isto era um `display: none` no
          * `globals.css`.

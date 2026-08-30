@@ -7,7 +7,7 @@ import type { PontePlataforma } from "./tipos";
  * Shim da Vila do Lume — o único código desta experiência que o Vite compila.
  *
  * Faz três coisas, na ordem, e nada mais:
- *   1. handshake com o hub (SDK) → identidade do aluno LOGADO;
+ *   1. handshake com o hub (SDK) → identidade do estudante LOGADO;
  *   2. abre a partida na api → a bolha da missão "A Noite Longa";
  *   3. só então injeta os scripts do jogo.
  *
@@ -17,8 +17,8 @@ import type { PontePlataforma } from "./tipos";
  * bolha seria escolhida antes de a api ter opinião.
  *
  * A IDENTIDADE VEM DA SESSÃO, não de um número na URL. O jogo de origem lia
- * `?aluno=7&turma=<uuid>` de um link que o professor distribuía; na plataforma
- * o aluno já está logado, e isso é mais forte: não se digita errado, não se
+ * `?estudante=7&turma=<uuid>` de um link que o professor distribuía; na plataforma
+ * o estudante já está logado, e isso é mais forte: não se digita errado, não se
  * cola no lugar errado, e não existe mais "modo livre" com partida órfã.
  */
 
@@ -57,14 +57,14 @@ async function iniciar(): Promise<void> {
   let atual = await abrirSessao(exp, EXP_VERSION);
 
   const ponte: PontePlataforma = {
-    identidade: { primeiroNome: primeiroNome(exp.aluno.nome) },
+    identidade: { primeiroNome: primeiroNome((exp.estudante ?? (exp as any).aluno)?.nome) },
     bolha: atual.bolha,
     cartoes: atual.cartoes,
     reabrir: () => {
       void abrirSessao(exp, EXP_VERSION)
         .then((nova) => {
           atual = nova;
-          /* A bolha é estável por aluno (a api garante), então na prática estes
+          /* A bolha é estável por estudante (a api garante), então na prática estes
              dois não mudam. Reatribuir de qualquer jeito: se algum dia a regra
              mudar, o jogo não fica com a lista da partida anterior. */
           ponte.bolha = nova.bolha;
@@ -85,7 +85,7 @@ async function iniciar(): Promise<void> {
       /* E o sinal PADRÃO da plataforma de que a experiência terminou
          (`exp:concluir` → o hub grava progresso). São coisas diferentes: a
          partida vai para `/vila/*`, que é domínio da exp-70; isto é o que faz o
-         hub e o `/aluno` saberem que ela concluiu, igual a qualquer experiência.
+         hub e o `/estudante` saberem que ela concluiu, igual a qualquer experiência.
 
          Sem `score`: o número da HUD existe só para motivar a criança a terminar
          o objetivo, e Ato Opcional vale zero de propósito. Passá-lo como `score`

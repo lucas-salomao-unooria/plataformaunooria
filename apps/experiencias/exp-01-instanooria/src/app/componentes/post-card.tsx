@@ -20,7 +20,7 @@ export interface AcoesDoPost {
   /**
    * Telemetria de imersão (doc 11 §2.2). Não pontuam no motor — só medem. O
    * duplo-toque é o sinal mais forte do conjunto: é memória muscular de
-   * Instagram, ninguém ensina esse gesto, e fazê-lo aqui significa que o aluno
+   * Instagram, ninguém ensina esse gesto, e fazê-lo aqui significa que o estudante
    * acredita que está num app de verdade.
    */
   aoGesto: (tipo: 'duplo_toque' | 'expandiu_legenda', post: FeedPostCliente) => void;
@@ -37,6 +37,7 @@ export function PostCard({
   curtido,
   salvo,
   seguindo,
+  comentariosDoEstudante,
   comentariosDoAluno,
 }: {
   post: FeedPostCliente;
@@ -44,7 +45,8 @@ export function PostCard({
   curtido: boolean;
   salvo: boolean;
   seguindo: boolean;
-  comentariosDoAluno: number;
+  comentariosDoEstudante?: number;
+  comentariosDoAluno?: number;
 }) {
   const [expandido, setExpandido] = useState(false);
   const [mostrarCoracao, setMostrarCoracao] = useState(false);
@@ -93,7 +95,8 @@ export function PostCard({
   const precisaTruncar = caption.length > LIMITE_CAPTION && !expandido;
   const textoCaption = precisaTruncar ? `${caption.slice(0, LIMITE_CAPTION)}…` : caption;
   const totalCurtidas = post.likesCount + (curtido ? 1 : 0);
-  const totalComentarios = post.commentsTotal + comentariosDoAluno;
+  const meusComentarios = comentariosDoEstudante ?? comentariosDoAluno ?? 0;
+  const totalComentarios = post.commentsTotal + meusComentarios;
 
   return (
     <article

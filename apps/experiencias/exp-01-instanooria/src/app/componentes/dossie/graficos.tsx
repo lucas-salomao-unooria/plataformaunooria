@@ -2,7 +2,7 @@
  * Gráficos do dossiê com o Design System da plataforma.
  *
  * Este módulo é carregado por `React.lazy` a partir do dossiê — assim o CSS
- * do DS entra num chunk próprio e NÃO acompanha o feed do aluno (o disfarce
+ * do DS entra num chunk próprio e NÃO acompanha o feed do estudante (o disfarce
  * continua intacto até a revelação).
  */
 import '@unooria/design-system/unooria.css';

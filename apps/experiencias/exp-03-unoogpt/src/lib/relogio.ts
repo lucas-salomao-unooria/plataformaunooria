@@ -69,10 +69,10 @@ export function urgencia(segundos: number | null): "calma" | "atencao" | "fim" {
 }
 
 /**
- * Por que o campo está fechado, em uma frase que o aluno entende.
+ * Por que o campo está fechado, em uma frase que o estudante entende.
  *
  * Nunca "aguardando" seco: a espera pela largada é a AULA acontecendo, e um
- * campo desabilitado sem explicação parece tela travada — o aluno recarrega a
+ * campo desabilitado sem explicação parece tela travada — o estudante recarrega a
  * página e perde o lugar.
  */
 export function motivoDeBloqueio(estado: EstadoDoRelogio): string | null {

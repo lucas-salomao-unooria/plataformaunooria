@@ -176,10 +176,11 @@ export function AbaNotificacoes({
   );
 }
 
-/** Perfil próprio do aluno (doc 03 §5): contadores fake + grade de salvos. */
+/** Perfil próprio do estudante (doc 03 §5): contadores fake + grade de salvos. */
 export function AbaPerfil({
   handle,
   displayName,
+  avatarDoEstudante,
   avatarDoAluno,
   salvos,
   meusPosts,
@@ -187,17 +188,19 @@ export function AbaPerfil({
 }: {
   handle: string;
   displayName: string;
-  avatarDoAluno: string;
+  avatarDoEstudante?: string;
+  avatarDoAluno?: string;
   salvos: FeedPostCliente[];
   meusPosts: { texto: string; template: string; criadoEm: number }[];
   aoAbrirMenu: () => void;
 }) {
   const publicacoes = meusPosts.length;
+  const avatar = avatarDoEstudante ?? avatarDoAluno ?? "";
 
   return (
     <div className="flex flex-col">
       {/* Cabeçalho do perfil: handle à esquerda e ☰ à direita, como no app real.
-          É por aqui que o aluno sai da conta (aparelho compartilhado em aula). */}
+          É por aqui que o estudante sai da conta (aparelho compartilhado em aula). */}
       <div className="flex h-topbar items-center justify-between px-4">
         <p className="text-[16px] font-semibold text-ink">{handle.replace(/^@/, '')}</p>
         <button
@@ -215,7 +218,7 @@ export function AbaPerfil({
       </div>
 
       <div className="flex items-center gap-6 px-4 py-4">
-        <AvatarPerfil seed={avatarDoAluno} tamanho={82} />
+        <AvatarPerfil seed={avatar} tamanho={82} />
         <dl className="flex flex-1 justify-around text-center">
           {[
             ['publicações', publicacoes],

@@ -14,7 +14,7 @@ import { MissaoApp } from "./app/unoogpt-app";
  * na primeira visita.
  *
  * A tela de espera e a de erro falam a língua de um app de verdade. Nada aqui
- * pode dizer "experiência", "atividade" ou "exercício": o aluno acha que abriu
+ * pode dizer "experiência", "atividade" ou "exercício": o estudante acha que abriu
  * um assistente, e é essa premissa que a missão mede.
  */
 export function Bootstrap() {
@@ -54,7 +54,7 @@ export function Bootstrap() {
   }
 
   if (!inicial) {
-    // Esqueleto do cliente, não spinner genérico: o aluno vê a moldura do app
+    // Esqueleto do cliente, não spinner genérico: o estudante vê a moldura do app
     // que ele espera, com o campo desabilitado, e não uma tela de carregamento
     // que denuncia que algo está sendo montado para ele.
     return (

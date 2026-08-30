@@ -13,7 +13,7 @@ export const TELA = { largura: 1560, altura: 2080 };
  * A cidade NUNCA cabe inteira na janela: a escala mínima é a que caberia
  * (contain) multiplicada por 1.35, então sempre sobra cidade fora do quadro.
  * É decisão de produto, não de layout — se desse para bater o olho e decidir,
- * investigar viraria opcional. O aluno tem que percorrer.
+ * investigar viraria opcional. O estudante tem que percorrer.
  *
  * Usar "cobrir" (max dos lados) em vez de "caber" (min) parece equivalente e
  * não é: numa janela larga e baixa, cobrir força um zoom absurdo e o mapa fica
@@ -107,7 +107,7 @@ export function useCamera() {
       const mudouMuito = Math.abs(largura - janela.current.largura) > 40;
       janela.current = { largura, altura };
       // Reenquadra na primeira medida e quando a coluna muda de tamanho; fora
-      // disso o zoom que o aluno deu é dele.
+      // disso o zoom que o estudante deu é dele.
       if (primeira || mudouMuito) enquadrar();
       else mover((c) => c);
     },

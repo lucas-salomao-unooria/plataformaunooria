@@ -4,7 +4,7 @@ import type { RodadaDoModelo } from './tipos';
  * Quais cartões de leitura ficam abertos, e o que neles ainda é novidade.
  * PURO — sem React, sem Prisma.
  *
- * No playtest o aluno recebeu a mesma tabela de seis bairros a cada turno, com
+ * No playtest o estudante recebeu a mesma tabela de seis bairros a cada turno, com
  * os mesmos dois avisos de empate repetidos palavra por palavra, e o mesmo
  * disclaimer. Nada disso era falso; tudo isso era ruído. Ele leu o primeiro,
  * folheou o segundo e parou no terceiro.

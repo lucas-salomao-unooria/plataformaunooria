@@ -6,6 +6,7 @@ import { marcarVisibilidade } from "./lib/visibilidade";
 import {
   InstanooriaApp,
   type AlunoCliente,
+  type EstudanteCliente,
   type FaseCliente,
   type MissaoCliente,
 } from "./app/instanooria-app";
@@ -14,7 +15,7 @@ import {
  * A entrada da experiência — o que o Server Component `tela/page.tsx` fazia no
  * origem, agora em duas etapas client-side:
  *
- *  1. handshake com o hub (SDK): token, aluno, apiUrl chegam por `hub:init`;
+ *  1. handshake com o hub (SDK): token, estudante, apiUrl chegam por `hub:init`;
  *  2. `GET /runs/boot`: o SERVIDOR decide a fase e entrega a missão — o
  *     cliente assume dali (recarga direta nunca perde a fase, a lição do
  *     origem).
@@ -26,7 +27,8 @@ interface Boot {
   runId: string | null;
   fase: FaseCliente;
   missao: MissaoCliente;
-  aluno: AlunoCliente;
+  estudante?: EstudanteCliente;
+  aluno?: AlunoCliente;
 }
 
 export function Bootstrap() {
@@ -73,12 +75,15 @@ export function Bootstrap() {
     );
   }
 
+  const dadosEstudante = boot.estudante ?? boot.aluno;
+
   return (
     <InstanooriaApp
       runIdInicial={boot.runId}
       faseInicial={boot.runId ? boot.fase : "onboarding"}
       missao={boot.missao}
-      aluno={boot.aluno}
+      estudante={dadosEstudante}
+      aluno={dadosEstudante}
     />
   );
 }

@@ -6,7 +6,7 @@ import type { EstadoDoRelogio, RelogioPublico, RespostaRelogio } from "../../lib
 /**
  * O relógio da tempestade — de parede, e da TURMA.
  *
- * Quem dá a partida é o professor, e ela vale para todos ao mesmo tempo. O aluno
+ * Quem dá a partida é o professor, e ela vale para todos ao mesmo tempo. O estudante
  * que chega antes vê o cronômetro parado e cheio; quando o professor libera,
  * todos marcam o mesmo, porque a conta parte do instante ABSOLUTO gravado na
  * turma — a latência do polling atrasa a notícia, nunca o relógio.
@@ -20,7 +20,7 @@ import type { EstadoDoRelogio, RelogioPublico, RespostaRelogio } from "../../lib
 
 /**
  * Busca o relógio da turma de tempos em tempos: é assim que a partida dada pelo
- * professor chega ao aluno que está esperando, sem ele ter o que enviar.
+ * professor chega ao estudante que está esperando, sem ele ter o que enviar.
  */
 export function useRelogioDaTurma(
   inicial: { relogio: RelogioPublico; estado: EstadoDoRelogio },

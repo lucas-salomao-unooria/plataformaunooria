@@ -6,13 +6,13 @@ Clone educacional do YouTube Shorts sobre **fontes confiáveis vs. sensacionalis
 
 ## A missão
 
-1. O aluno abre um feed com 21 vídeos curtos de História (Grandes Navegações,
+1. O estudante abre um feed com 21 vídeos curtos de História (Grandes Navegações,
    escrita cuneiforme, arqueologia…). Metade tem fonte verificável e poucos
    inscritos; a outra metade é sensacionalista e tem "1 mil inscritos".
 2. Ele salva **até 3** vídeos em que confiaria. Cada salvo muda o canal dele:
    fake dá +1000 inscritos, confiável dá +50 e conta 1 "fonte confiável".
 3. Ao 3º salvo o **ranking da turma** desbloqueia — 39 colegas fictícios + o
-   aluno, ordenados por inscritos: quem escolheu fake vence.
+   estudante, ordenados por inscritos: quem escolheu fake vence.
 4. **"Adicionar credibilidade"** revela a coluna de fontes confiáveis e a
    métrica vira: *"Ter muitos inscritos não significa contar a verdade."*
    Esse clique é a conclusão (`exp.concluir({ score })`).
@@ -24,7 +24,7 @@ A experiência só recebe o catálogo sem gabarito e manda escolhas:
 
 | Chamada | Quando |
 |---|---|
-| `GET /unootube/sessao` | boot (catálogo, estado, aluno, ranking se desbloqueado) |
+| `GET /unootube/sessao` | boot (catálogo, estado, estudante, ranking se desbloqueado) |
 | `POST /unootube/salvos {videoId}` / `POST /unootube/salvos/:id/remover` | salvar / remover |
 | `POST /unootube/curtidos/:id` | curtir (toggle, sem efeito no jogo) |
 | `GET /unootube/ranking` | abrir o ranking (409 `RANKING_BLOQUEADO` antes dos 3) |
@@ -76,7 +76,7 @@ para o bucket").
 pnpm --filter @edu/exp-02-unootube dev      # :5174 (a exp-01 usa :5173)
 ```
 
-Logado no hub como aluno do 4º ano (`aluno4a01` / `unooria123` no seed), a
+Logado no hub como estudante do 4º ano (`aluno4a01` / `unooria123` no seed), a
 home é `/exp/exp-02-unootube`. Em dev o hub acha o Vite pela porta mapeada em
 `apps/hub/lib/experiencias-dev.ts`. Sem `viewport` no manifesto: tela cheia.
 
@@ -105,12 +105,12 @@ carrossel), UMA COMPENSAÇÃO (o girador de carregamento) e as LIGAÇÕES de
 encaixe. Zero hexadecimal. Toast, estado vazio, diálogo e tabela deixaram de ser
 compensação na 0.1.17, quando a seção passou a publicá-los.
 
-**Aparência clara/escura é escolha do aluno**, em Perfil → APARÊNCIA
+**Aparência clara/escura é escolha do estudante**, em Perfil → APARÊNCIA
 (`src/lib/tema.ts`), lembrada em `localStorage`.
 
 ## Contrato com o smoke visual
 
-`scripts/walkthrough-aluno-unootube.mjs` depende destes textos/seletores:
+`scripts/walkthrough-estudante-unootube.mjs` depende destes textos/seletores:
 `.uni-topbar .uni-logo`, `article.short-item`,
 `button[aria-label="Salvar vídeo"]`, `button[aria-label="Abrir seu perfil"]`,
 `nav.uni-sidebar button` (Playlists/Ranking), `.library-preview video`,
@@ -123,7 +123,7 @@ verdade". Do ranking em diante os seletores são da seção da PLATAFORMA:
 ## Decisões
 
 - URLs das fontes são **texto**, não link (sandbox do iframe bloqueia popups;
-  alunos não saem da plataforma).
+  estudantes não saem da plataforma).
 - Colegas do ranking são **fictícios** (distribuição fixa para a lição; sem
   pontuação de colegas reais — LGPD).
 - Sem Tailwind. O disfarce é YouTube e quem o desenha é a seção `unootube` do
@@ -131,7 +131,7 @@ verdade". Do ranking em diante os seletores são da seção da PLATAFORMA:
   com 111 cores literais e nenhum tema escuro possível.
 - O `ShortsPlayer` não mostra a faixa de canal pronta do DS (`showChannel`):
   ela traz um botão de INSCREVER-SE sempre visível, e nesta missão inscrever-se
-  não existe — "inscritos" é o placar do aluno, não uma ação sobre o canal do
+  não existe — "inscritos" é o placar do estudante, não uma ação sobre o canal do
   vídeo. Um botão morto ali confundiria a métrica que a missão ensina a ler.
 - O som é um item da trilha de ações, e não um botão sobre o vídeo: a seção não
   publica glifo de MUDO, então o estado aparece pelo realce de `active` e pelo

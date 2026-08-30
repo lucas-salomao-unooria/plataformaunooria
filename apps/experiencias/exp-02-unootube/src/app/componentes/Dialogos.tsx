@@ -70,7 +70,7 @@ export function DialogoMissaoConcluida({
       size="md"
       onClose={aoFechar}
       title={`Você salvou ${limite} vídeos!`}
-      description="Agora compare popularidade e credibilidade com os outros 39 alunos da turma."
+      description="Agora compare popularidade e credibilidade com os outros 39 estudantes da turma."
       footerAlign="end"
       secondaryAction={
         <Button theme={tema} variant="ghost" onClick={aoFechar}>

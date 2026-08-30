@@ -12,7 +12,7 @@ function milhar(n: number) {
 /**
  * A operação acontecendo, e a conclusão dela.
  *
- * Tudo aqui é curto de propósito: o aluno acabou de ver as equipes cruzarem o
+ * Tudo aqui é curto de propósito: o estudante acabou de ver as equipes cruzarem o
  * mapa e quer saber se foi bom. Um parágrafo de contexto neste momento não é
  * lido — e a versão anterior tinha quatro, sem nem caber na tela.
  */

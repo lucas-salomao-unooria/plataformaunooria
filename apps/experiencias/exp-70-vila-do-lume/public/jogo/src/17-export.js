@@ -58,7 +58,7 @@ function construirPayloadSessao(){
 
      Uma criança de 6 leva vários minutos nos nove cartões do Lume. Sem o total, o
      professor cronometra a atividade inteira e vê um número bem menor no painel — foi
-     exatamente o que aconteceu com o Aluno 05: 4min18 de jogo dentro de uma sessão que
+     exatamente o que aconteceu com o Estudante 05: 4min18 de jogo dentro de uma sessão que
      durou bem mais. */
   const duracao = sessionStartedAt ? Math.round((performance.now() - sessionStartedAt)/1000) : 0;
   const duracaoTotal = Math.round((performance.now() - pageOpenedAt)/1000);
@@ -190,7 +190,7 @@ function construirPayloadSessao(){
 /* Rede contra o próprio descuido: se algum dia alguém adicionar um campo de nome ao
    payload, isto quebra aqui, na máquina do desenvolvedor, em vez de gravar dado de criança
    num banco. O servidor faz a mesma checagem — as duas pontas, de propósito. */
-const CHAVES_PROIBIDAS = ['nome','name','playername','aluno','crianca','criança','apelido'];
+const CHAVES_PROIBIDAS = ['nome','name','playername','aluno','estudante','crianca','criança','apelido'];
 function verificarSemNome(obj, caminho){
   caminho = caminho || '$';
   if(obj === null || typeof obj !== 'object') return [];
@@ -205,12 +205,12 @@ function verificarSemNome(obj, caminho){
 
    Saíram daqui, no porte para a plataforma:
 
-     · `exportarSessao()` / `exportarSessaoDoAluno()` / `baixarPayload()` — o `.json` que o
+     · `exportarSessao()` / `exportarSessaoDoEstudante()` / `baixarPayload()` — o `.json` que o
        professor levava no pendrive;
      · `vilaExportarTudo()` — a saída pelo console, sem botão, porque botão é convite;
      · `enviarSessaoAoServidor()` com `fetch('/api/v1/sessoes')` e a checagem de
        `location.protocol` — o jogo já não é servido pelo mesmo host da api, e quem fala com
-       ela é o shim, com o token da sessão do aluno.
+       ela é o shim, com o token da sessão do estudante.
 
    O jogo agora entrega o payload por `window.VILA.concluir()` e não sabe o que acontece
    depois — nem se deu certo. Isso é deliberado, e é a mesma regra do jogo de origem: erro de

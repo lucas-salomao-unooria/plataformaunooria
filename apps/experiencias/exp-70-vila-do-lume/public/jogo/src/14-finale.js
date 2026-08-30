@@ -267,7 +267,7 @@ function buildResults(){
    Com a partida terminada o jogo faz UMA coisa, e ela não desenha na tela: entrega o payload
    à plataforma (`entregarPartida()`).
 
-   Saiu daqui o `vilaExportarTudo()`, que baixava um `.json` por aluno pelo console — sem
+   Saiu daqui o `vilaExportarTudo()`, que baixava um `.json` por estudante pelo console — sem
    botão, porque botão é convite. Não existe mais localStorage para exportar, e o caminho do
    pendrive não existe mais.
 
@@ -360,7 +360,7 @@ function restart(){
   state.nameOnDestaque = false;
   /* Sem isto a próxima criança herda o id da anterior e a partida dela é descartada como
      duplicada. Confirmado contra o banco: a segunda importação com o mesmo id devolve
-     `duplicada` e o dado do segundo aluno nunca entra. */
+     `duplicada` e o dado do segundo estudante nunca entra. */
   state.sessaoLocalId = null;
   /* E o relógio total precisa recomeçar, senão a segunda partida reporta a duração da
      primeira somada, e `iniciadaEm` fica errado na mesma proporção. */

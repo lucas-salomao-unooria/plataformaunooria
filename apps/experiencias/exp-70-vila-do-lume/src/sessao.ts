@@ -9,7 +9,7 @@ import type { Bolha, CartaoServido } from "./tipos";
  *
  * O app de origem era um Next.js só, e a partida existia primeiro no navegador:
  * o jogo escolhia o próprio id, cravava o próprio horário de início, decidia a
- * própria bolha (`alunoSlot % 3`) e classificava as próprias respostas. Quando
+ * própria bolha (`estudanteSlot % 3`) e classificava as próprias respostas. Quando
  * chegava ao banco, tudo já estava decidido.
  *
  * Aqui a ordem inverte. Abrir uma partida é uma escrita no servidor, e é ela que

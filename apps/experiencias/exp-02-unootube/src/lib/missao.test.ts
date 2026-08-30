@@ -25,7 +25,7 @@ describe("telaInicial", () => {
   });
 
   /**
-   * O aluno pode ter salvo 3 e removido depois: `salvos` volta a zero, mas o
+   * O estudante pode ter salvo 3 e removido depois: `salvos` volta a zero, mas o
    * ranking já destravou (é latch no servidor) e a missão claramente começou.
    */
   test("ranking destravado com salvos zerados ainda é missão começada", () => {

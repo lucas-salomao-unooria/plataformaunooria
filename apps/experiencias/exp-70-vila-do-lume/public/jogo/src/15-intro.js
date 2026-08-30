@@ -159,12 +159,12 @@ const INTRO_STEPS = [
    autenticada da plataforma, por `window.VILA.identidade`. Não existe caminho pelo qual um
    nome de criança chegue ao payload, porque não existe onde escrevê-lo — e o exportador e a
    api conferem isso mesmo assim, cada um do seu lado. */
-const TELAS = { inicio:'inicio', intro:'intro' };   // não há mais tela de escolha de aluno
+const TELAS = { inicio:'inicio', intro:'intro' };   // não há mais tela de escolha de estudante
 let telaAtual = TELAS.inicio;
 
 /* ---- A identidade NÃO entra por aqui. Nem por URL, nem por tela. ----
 
-   Havia `lerDestinoDaURL()`, que lia `?aluno=7&turma=<uuid>` de um link que o professor
+   Havia `lerDestinoDaURL()`, que lia `?estudante=7&turma=<uuid>` de um link que o professor
    distribuía, e antes disso houve uma grade de 40 números com "QUEM É VOCÊ HOJE?".
 
    Os dois morreram no porte para a plataforma, e o substituto é mais forte que ambos: quem
@@ -197,7 +197,7 @@ function renderInicio(){
            e o que ele abria era o retrato dela e o dos colegas. O relatório vive na
            aplicação de acompanhamento, que a criança nunca abre.
 
-           Também NÃO existe escolha de aluno aqui. Havia uma grade de 40 números com
+           Também NÃO existe escolha de estudante aqui. Havia uma grade de 40 números com
            "QUEM É VOCÊ HOJE?", e ela era errada duas vezes: identidade auto-declarada não
            tem como ser conferida (a criança toca no 13 em vez do 7 e a partida dela entra
            no perfil de outra, sem nada detectar), e a própria grade conta à criança que

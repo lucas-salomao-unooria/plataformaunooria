@@ -13,7 +13,7 @@ import { PreviaVideo } from "./PreviaVideo";
  * seção publica `Modal` desde a 0.1.17 justamente para isto.
  *
  * Substituiu o toast de "playlist cheia". O toast sumia em 5,2 s e não dava
- * saída: o aluno via a mensagem, não entendia o que fazer, e tentava salvar de
+ * saída: o estudante via a mensagem, não entendia o que fazer, e tentava salvar de
  * novo. Aqui a troca está na tela, com os três favoritos atuais e um "Remover"
  * em cada.
  *
@@ -21,7 +21,7 @@ import { PreviaVideo } from "./PreviaVideo";
  * explica a troca e oferece as duas saídas.
  *
  * Remover fecha o diálogo e libera o lugar — o fluxo de jornada devolve a seta
- * para "Toca em Salvar", ou seja, o aluno salva de novo por conta própria. Isso
+ * para "Toca em Salvar", ou seja, o estudante salva de novo por conta própria. Isso
  * é de propósito: salvar por ele decidiria uma escolha que é dele.
  */
 

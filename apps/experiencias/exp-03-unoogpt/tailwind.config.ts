@@ -15,7 +15,7 @@ import type { Config } from 'tailwindcss';
  * do pacote, pela ponte `@edu/ui/ds-chatgpt`.
  *
  * O bloco `un-*` do projeto de origem NÃO veio: lá o mesmo config servia à área
- * do aluno e ao painel do professor. Aqui o painel é do hub, e dentro do iframe
+ * do estudante e ao painel do professor. Aqui o painel é do hub, e dentro do iframe
  * só existe o clone — a marca institucional é chrome do HUB, desenhada acima do
  * aparelho.
  *
@@ -29,7 +29,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── Módulo chatgpt · área do aluno ───────────────────────────────
+        // ── Módulo chatgpt · área do estudante ───────────────────────────
         // Semantic/Colors do arquivo "ChatGPT UI Kit (AI Chat)". Trocam
         // sozinhas com `data-gpt-theme`.
         gpt: {
@@ -82,7 +82,7 @@ const config: Config = {
           veu: 'var(--gpt-web-veil)',
 
           // Primitivas. Só onde a semântica não alcança: as duas Equipes
-          // precisam de duas cores que o aluno reencontre no mapa, e o kit
+          // precisam de duas cores que o estudante reencontre no mapa, e o kit
           // não tem token para "Equipe Alfa".
           azul: 'var(--gpt-color-blue-500)',
           roxo: 'var(--gpt-color-purple-600)',
@@ -127,7 +127,7 @@ const config: Config = {
           '35%': { transform: 'scale(1.06)' },
           '100%': { transform: 'scale(1)' },
         },
-        // Bairro que acabou de ganhar dado: pisca para o aluno ligar a fonte
+        // Bairro que acabou de ganhar dado: pisca para o estudante ligar a fonte
         // que ele pediu ao que apareceu no mapa. A cor sai do token da marca.
         acender: {
           '0%': { boxShadow: '0 0 0 0 transparent', transform: 'scale(1)' },

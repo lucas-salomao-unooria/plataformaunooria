@@ -11,11 +11,11 @@ export type Inclinacao = 'A' | 'B' | 'duvida';
  *    "lado que o feed dele nasceu × lado que ele escolheu" é o resultado
  *    experimental da turma, e é o que o professor projeta no momento-espelho.
  * 2. O texto livre virou a REFLEXÃO do fim, e mudou de assunto: em vez de defender
- *    uma tese histórica, o aluno escreve sobre o que entendeu do próprio viés.
+ *    uma tese histórica, o estudante escreve sobre o que entendeu do próprio viés.
  *    Pedir texto duas vezes cansaria, e a segunda vez é a que importa.
  *
  * Depois de responder, a tela NÃO avança: quem move a turma é quem está
- * conduzindo a aula. O aluno vê que registrou e pode trocar de ideia enquanto
+ * conduzindo a aula. O estudante vê que registrou e pode trocar de ideia enquanto
  * espera.
  *
  * Nada aqui antecipa a revelação — sem menção a lado semeado, algoritmo ou bolha
@@ -55,7 +55,7 @@ export function Conclusao({
   return (
     /**
      * Cobre a tela inteira, sem o feed atrás: a investigação acabou, e deixar o
-     * feed acessível aqui faria o aluno voltar a rolar em vez de decidir.
+     * feed acessível aqui faria o estudante voltar a rolar em vez de decidir.
      */
     <div className="fixed inset-0 z-[85] flex flex-col overflow-y-auto overscroll-contain bg-surface px-5 py-8">
       <div className="mx-auto flex w-full max-w-[340px] flex-col gap-5">

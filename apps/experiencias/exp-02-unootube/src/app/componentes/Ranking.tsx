@@ -1,7 +1,7 @@
 import { AlertBox, Avatar, Button, MetricCard, SectionHeader, Table, Tabs, Tag } from "@edu/ui/ds";
 import type { TableColumn } from "@edu/ui/ds";
 
-import { ordenarRanking, posicaoDoAluno } from "../../lib/ranking";
+import { ordenarRanking, posicaoDoEstudante } from "../../lib/ranking";
 import type { Aparencia } from "../../lib/tema";
 import type { ModoRanking, RankingLinha, RespostaRanking } from "../../lib/tipos";
 
@@ -25,19 +25,19 @@ interface Props {
  *
  * ESTA TELA É A ÚNICA DA EXPERIÊNCIA QUE USA O DS DA PLATAFORMA (`@edu/ui/ds`)
  * em vez do clone (`@edu/ui/ds-unootube`). É deliberado e é a regra que o
- * `ds.ts` já descreve: o clone vale enquanto o aluno acha que está num app de
+ * `ds.ts` já descreve: o clone vale enquanto o estudante acha que está num app de
  * vídeo; a partir da revelação ele está de volta na Unooria, e a troca de
  * linguagem visual é parte do que a missão ensina. As duas seções não colidem
  * porque os namespaces são distintos (`--unooria-*` contra `--uni-*`).
  *
- * `theme` acompanha a aparência escolhida pelo aluno: a seção da plataforma
+ * `theme` acompanha a aparência escolhida pelo estudante: a seção da plataforma
  * não lê `data-uni-theme`, ela recebe o tema por prop.
  */
 export function Ranking(props: Props) {
   const { ranking, modo, credibilidadeAdicionada, limite } = props;
   const tema = props.aparencia === "escuro" ? "dark" : "light";
   const linhas = ranking ? ordenarRanking(ranking.linhas, modo) : [];
-  const posicao = ranking ? posicaoDoAluno(ranking.linhas, modo) : 0;
+  const posicao = ranking ? posicaoDoEstudante(ranking.linhas, modo) : 0;
 
   const colunas: TableColumn<RankingLinha>[] = [
     {
@@ -48,7 +48,7 @@ export function Ranking(props: Props) {
     },
     {
       key: "nome",
-      title: "Aluno",
+      title: "Estudante",
       minWidth: 220,
       render: (_valor, linha) => (
         <span className="ranking-student">

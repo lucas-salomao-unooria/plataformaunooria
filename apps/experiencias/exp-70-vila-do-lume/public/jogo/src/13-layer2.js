@@ -233,8 +233,8 @@ function computeValueProfile(){
 
 /* ===================== NÃO HÁ ARMAZENAMENTO LOCAL =====================
 
-   Havia aqui `chaveDoAluno()`, `lerSessaoDoAluno()`, `alunosComSessao()`,
-   `apagarSessaoDoAluno()`, `marcarEnvioNoStorage()` e `saveLog()`: quarenta chaves de
+   Havia aqui `chaveDoEstudante()`, `lerSessaoDoEstudante()`, `estudantesComSessao()`,
+   `apagarSessaoDoEstudante()`, `marcarEnvioNoStorage()` e `saveLog()`: quarenta chaves de
    localStorage, uma por slot, porque trinta crianças dividiam a mesma máquina e a partida
    tinha que sobreviver até o professor exportar o `.json` no pendrive.
 

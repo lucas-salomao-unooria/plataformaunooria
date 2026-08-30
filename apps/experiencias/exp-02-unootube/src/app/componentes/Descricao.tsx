@@ -1,6 +1,6 @@
 /**
  * URLs das fontes aparecem como TEXTO, não como link: dentro do iframe sandbox
- * do hub popups são bloqueados e, por decisão de produto, alunos de 9-10 anos
+ * do hub popups são bloqueados e, por decisão de produto, estudantes de 9-10 anos
  * não saem da plataforma. O sinal pedagógico (a fonte citada) continua visível.
  */
 export function Descricao({ texto }: { texto: string }) {

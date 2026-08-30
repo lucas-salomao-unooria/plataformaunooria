@@ -1,7 +1,7 @@
 /**
  * A linha de orientação sob o reprodutor.
  *
- * É a única voz que acompanha o aluno durante o feed, e por isso ela é uma
+ * É a única voz que acompanha o estudante durante o feed, e por isso ela é uma
  * FUNÇÃO PURA e não texto espalhado pelos componentes: o que a criança lê em
  * cada momento da missão é decisão de design, e decisão de design que mora em
  * quatro `&&` dentro do JSX não tem como ser revisada nem testada.
@@ -15,7 +15,7 @@
 export interface EstadoDaDica {
   /** O vídeo em foco ainda está sendo preparado. */
   carregando: boolean;
-  /** Quantos favoritos o aluno já salvou. */
+  /** Quantos favoritos o estudante já salvou. */
   salvos: number;
   /** O teto de favoritos (o servidor manda; hoje, 3). */
   limite: number;

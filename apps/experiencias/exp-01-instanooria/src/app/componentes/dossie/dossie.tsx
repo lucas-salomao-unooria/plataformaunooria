@@ -6,7 +6,7 @@ import type { RespostaDossie } from '../../../lib/dossie-tipos';
 import { dossieEmPng, dossieEmTexto } from './exportar';
 
 /**
- * O RELATÓRIO do aluno — a explicabilidade.
+ * O RELATÓRIO do estudante — a explicabilidade.
  *
  * Passou de 13 seções (≈5.900px de rolagem) para **6 blocos**. O corte foi de
  * design, não de preguiça: é uma criança de 13 anos no fim de 40 minutos de
@@ -34,19 +34,19 @@ import { dossieEmPng, dossieEmTexto } from './exportar';
  * - **Uso da busca** é dado valioso — mas para o PROFESSOR. Virou uma linha.
  *
  * O export em texto continua completo: quem quiser tudo tem tudo, só não na cara
- * do aluno.
+ * do estudante.
  *
  * DUAS LARGURAS, um relatório (ADR-41). Esta tela deixou de morar só no aparelho
  * de 375px: no passo do relatório o hub solta o iframe e ela recebe a área
  * inteira. Nada aqui pergunta ao hub o que aconteceu — o iframe muda de largura
  * de verdade, então as media queries do próprio CSS respondem. É por isso que o
  * layout estreito continua sendo o default e o largo é `md:`: se a expansão não
- * acontecer (mensagem perdida, hub antigo), o aluno vê exatamente o que via.
+ * acontecer (mensagem perdida, hub antigo), o estudante vê exatamente o que via.
  *
  * E o TEMA vira claro. O escuro marcava "fora do disfarce", e isso quem faz
  * agora é a revelação, que continua `bg-night` e continua sendo a fronteira. Da
  * revelação em diante quem fala é a escola, na língua da plataforma — é o que
- * `packages/ui/src/ds.ts` já autorizava em "telas pós-revelação do aluno".
+ * `packages/ui/src/ds.ts` já autorizava em "telas pós-revelação do estudante".
  */
 const Graficos = lazy(() =>
   import('./graficos').then((modulo) => ({ default: modulo.PainelDeGraficos })),
@@ -63,7 +63,7 @@ export function Dossie({ runId }: { runId: string }) {
      * Não marca fase nenhuma. No fluxo v2 o relatório é um PASSO INTERNO da
      * explicabilidade (`explicabilidade.tsx`), e a rota que existia aqui movia a
      * run para `dossie` — fase que o relógio da turma não conhece, o que fazia o
-     * polling devolver "onboarding" e expulsar o aluno para o seletor de avatar.
+     * polling devolver "onboarding" e expulsar o estudante para o seletor de avatar.
      */
     api
       .get<RespostaDossie>(`/runs/${runId}/dossie`)
@@ -410,7 +410,8 @@ export function Dossie({ runId }: { runId: string }) {
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
               link.href = url;
-              link.download = `relatorio-${dossie.aluno.displayName.replace(/\s+/g, '-').toLowerCase()}.png`;
+              const nomeEstudante = dossie.estudante?.displayName ?? dossie.aluno?.displayName ?? 'estudante';
+              link.download = `relatorio-${nomeEstudante.replace(/\s+/g, '-').toLowerCase()}.png`;
               link.click();
               URL.revokeObjectURL(url);
               mostrar('Imagem baixada');

@@ -6,7 +6,7 @@ import { telasDaRevelacao, type TelaDaRevelacao } from '@edu/conteudo-exp-01';
 import type { RespostaDossie } from '../../lib/dossie-tipos';
 
 /**
- * A revelação: sete telas, uma frase por vez, no ritmo do aluno.
+ * A revelação: sete telas, uma frase por vez, no ritmo do estudante.
  *
  * A COPY não mora aqui — ela é a peça que carrega o argumento do produto, e o
  * professor precisa lê-la no guia antes de conduzir a aula. Fonte única em

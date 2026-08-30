@@ -1,7 +1,7 @@
 /**
  * Os textos e rótulos da tela, e as regras que só servem para HABILITAR botão.
  *
- * A fronteira que este arquivo respeita: aqui entra o que o aluno JÁ LÊ na tela
+ * A fronteira que este arquivo respeita: aqui entra o que o estudante JÁ LÊ na tela
  * — nome de bairro, rótulo de fonte, aviso de portão. O que fica de fora é todo
  * o resto do catálogo de fontes da api (`modelo/conjuntos.ts`): `instrucao` (a
  * instrução de VIÉS que cada fonte injeta no Cientista), `vies` (o multiplicador
@@ -13,7 +13,7 @@
  * linha os usasse.
  */
 
-/** Os 4 bairros. Nome público — o aluno lê em toda tela. */
+/** Os 4 bairros. Nome público — o estudante lê em toda tela. */
 export const NOMES_DOS_BAIRROS: Record<string, string> = {
   ribeirinha: "Ribeirinha",
   valeverde: "Vale Verde",
@@ -29,7 +29,7 @@ export function nomeDoBairro(slug: string | null | undefined): string {
 /**
  * As 8 fontes, pelo rótulo curto — o mesmo que a api usa em `rotuloCurto`.
  *
- * É duplicação deliberada e mínima: são as palavras que o aluno vê no cartão
+ * É duplicação deliberada e mínima: são as palavras que o estudante vê no cartão
  * ("Depois de somar cadastro de moradores:"), e trazê-las pelo payload
  * obrigaria a api a mandar o catálogo em toda resposta de turno.
  */
@@ -75,7 +75,7 @@ export function rotuloDoOrcamento(gastas: number): string {
 }
 
 /**
- * O campo NÃO fecha quando as perguntas acabam: o aluno ainda precisa dizer
+ * O campo NÃO fecha quando as perguntas acabam: o estudante ainda precisa dizer
  * para onde vai cada equipe, e fechar a conversa aqui o deixaria com uma
  * decisão para tomar e nenhuma forma de tomá-la. O que acabou é a investigação.
  */

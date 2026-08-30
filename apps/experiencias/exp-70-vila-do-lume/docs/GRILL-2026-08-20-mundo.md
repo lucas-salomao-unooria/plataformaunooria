@@ -9,15 +9,15 @@
 >
 > O porte para a plataforma (26/08/2026) invalidou parte do que está escrito abaixo:
 >
-> - **Identidade.** Não há mais `?aluno=N&turma=`, grade de slots nem "modo livre". Quem
->   joga é o aluno autenticado da plataforma; sem sessão, o jogo não sobe.
+> - **Identidade.** Não há mais `?estudante=N&turma=`, grade de slots nem "modo livre". Quem
+>   joga é o estudante autenticado da plataforma; sem sessão, o jogo não sobe.
 > - **Persistência.** Não há mais `localStorage`, chave de partida no navegador, export de
 >   `.json` pelo console nem cópia por pendrive. A partida é aberta e gravada na api
 >   (`/vila/*`), e o id vem de lá.
 > - **Painel.** Não existe `?painel` nem qualquer tela de resultado dentro do jogo — e o
 >   `?painel` que este texto DECIDE implementar foi justamente o que se abandonou. O
 >   relatório vive no hub do professor.
-> - **Bolha da missão.** Não é mais `alunoSlot % 3` no navegador; é atribuída pela api,
+> - **Bolha da missão.** Não é mais `estudanteSlot % 3` no navegador; é atribuída pela api,
 >   balanceada por turma, e não é servida a bolha B nos anos iniciais.
 > - **Nome de Jogo.** A criança não digita nome nenhum, e não há campo nem validação. O jogo
 >   recebe o primeiro nome da sessão e apenas o mostra antes de entrar. Continua valendo que

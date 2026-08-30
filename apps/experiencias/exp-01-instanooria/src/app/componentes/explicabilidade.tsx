@@ -11,11 +11,11 @@ import { Revelacao } from './revelacao';
  *
  * O cliente marcava `fase = "dossie"` ao terminar a revelação, mas o servidor
  * continuava em `explicabilidade` — e o polling do relógio da turma, vendo a
- * divergência, empurrava o aluno de volta para a revelação. A cada 5 segundos.
+ * divergência, empurrava o estudante de volta para a revelação. A cada 5 segundos.
  * Reassistir a revelação em loop é o pior desfecho possível para esta tela.
  *
- * A troca de passo é estado LOCAL. O servidor não precisa saber se o aluno já
- * passou dos 7 slides; ele precisa saber que o aluno está na explicabilidade.
+ * A troca de passo é estado LOCAL. O servidor não precisa saber se o estudante já
+ * passou dos 7 slides; ele precisa saber que o estudante está na explicabilidade.
  *
  * O HUB, esse sim, precisa saber: é o passo que tira o relatório do aparelho de
  * 375px e o abre em tela cheia (`ExpHost`). Por isso o `enviarEstado` daqui, e

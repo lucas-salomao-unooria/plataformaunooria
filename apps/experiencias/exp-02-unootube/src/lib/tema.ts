@@ -5,7 +5,7 @@
  * cada um atrás de um seletor: `[data-uni-theme=light|dark]` no clone e a
  * classe `.unooria-theme-dark` na seção da plataforma — que é a que desenha o
  * ranking. Por isso a troca escreve nos dois lugares ao mesmo tempo: sem a
- * classe, o aluno escolhe escuro no feed e a virada do ranking volta branca.
+ * classe, o estudante escolhe escuro no feed e a virada do ranking volta branca.
  *
  * A escolha é lembrada em `localStorage`. Isso NÃO fere a regra do CLAUDE.md,
  * que proíbe `localStorage` para TOKEN — aqui é preferência de tela, sem valor
@@ -17,7 +17,7 @@ export type Aparencia = "claro" | "escuro";
 
 const CHAVE = "unootube:aparencia";
 
-/** Claro é o padrão: é o que o aluno já via antes desta migração. */
+/** Claro é o padrão: é o que o estudante já via antes desta migração. */
 export const APARENCIA_PADRAO: Aparencia = "claro";
 
 export function lerAparencia(): Aparencia {

@@ -108,7 +108,7 @@ quebra nada em tempo de execução: vira **zero silencioso**. Já aconteceu.
 é o smoke visual:
 
 ```bash
-node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila     # aluno; usa o CHROME do sistema
+node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila     # estudante; usa o CHROME do sistema
 node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A    # telas do professor
 pnpm --filter @edu/api test                                           # contrato, bolha, correção, tenancy
 node --check public/jogo/src/<arquivo>.js                              # erro de sintaxe antes de recarregar

@@ -4,11 +4,11 @@ import { api } from '../../lib/api';
 
 /**
  * A REFLEXÃO que fecha a atividade (fluxo v2). É pós-revelação: aqui o
- * vocabulário do mecanismo é permitido — o aluno acabou de aprender as palavras.
+ * vocabulário do mecanismo é permitido — o estudante acabou de aprender as palavras.
  *
  * O enunciado é a peça pedagógica desta tela, e foi escrito com três cuidados:
  *
- * 1. **Uma pergunta, não uma lista.** Cinco perguntas fazem o aluno responder a
+ * 1. **Uma pergunta, não uma lista.** Cinco perguntas fazem o estudante responder a
  *    primeira e parar. A pergunta central é aberta e curta.
  * 2. **Andaimes opcionais, em três níveis.** Se ele travar, os três marcadores vão
  *    do concreto ("o que te fez salvar o que salvou") ao mecanismo ("por que o
@@ -21,7 +21,7 @@ import { api } from '../../lib/api';
  * Sem limite de caracteres. O mínimo é curto e existe só para "gostei" não passar
  * — e ele VEM DA API (`GET /runs/:id/reflexao`), que é quem vai recusar o texto.
  * Havia um 60 aqui e outro no schema da rota, sem nada que os obrigasse a
- * concordar: no dia em que divergissem, quem descobriria seria o aluno, com o
+ * concordar: no dia em que divergissem, quem descobriria seria o estudante, com o
  * botão liberado e a api dizendo que estava curto.
  *
  * O fallback existe só para a tela abrir antes da resposta chegar.

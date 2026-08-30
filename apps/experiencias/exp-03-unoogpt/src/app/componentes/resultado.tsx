@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
  * Os tipos vêm do ESPELHO da api (`lib/tipos.ts`), não declarados aqui: no
  * projeto de origem este arquivo tinha os seus, e eles divergiram do que o
  * servidor mandava (`localidades` que não existia mais, `nome` da fonte que o
- * catálogo proíbe mostrar ao aluno).
+ * catálogo proíbe mostrar ao estudante).
  */
 import type { Desfecho, MarcoDaTrilha, Tentativa } from '../../lib/tipos';
 import { agruparEmpatados } from '../../lib/visao';
@@ -14,7 +14,7 @@ import { IconeDaFonte } from '../arte/icones';
 const milhar = (n: number) => n.toLocaleString('pt-BR');
 
 /**
- * O instante no CRONÔMETRO, que é o único relógio que o aluno vê: quanto ainda
+ * O instante no CRONÔMETRO, que é o único relógio que o estudante vê: quanto ainda
  * faltava quando aquilo aconteceu.
  */
 const cronometroEm = (minuto: number) => {
@@ -82,7 +82,7 @@ export interface DadosDoResultado {
   /**
    * O que ele NUNCA consultou — a peça mais forte do fechamento. SEM o `nome`
    * técnico da fonte: o catálogo da api é explícito de que ele "aparece no
-   * painel do professor, nunca para o aluno".
+   * painel do professor, nunca para o estudante".
    */
   naoConsultados: {
     slug: string;
@@ -100,7 +100,7 @@ export interface DadosDoResultado {
   leitura?: { nome: string; esperado: number; margem: number }[];
   /**
    * O maior bolsão de gente que ficou sem equipe, e a fonte que o enxergaria.
-   * Fato, não veredito: o aluno terminava sem conseguir dizer o que aconteceu
+   * Fato, não veredito: o estudante terminava sem conseguir dizer o que aconteceu
    * com quem ele não atendeu.
    */
   sobrou?: { nome: string; pessoas: number; fonte: string | null } | null;
@@ -161,9 +161,9 @@ function Nuvem({ amostras, atual }: { amostras: number[]; atual: number }) {
 /**
  * O EMPATE que os dados não desfaziam.
  *
- * A margem só vira decisão quando o aluno vê o que ela escondia: dois bairros
+ * A margem só vira decisão quando o estudante vê o que ela escondia: dois bairros
  * que a leitura não separava, e o número que a tempestade acabou revelando.
- * Sem isto, ignorar o ± não custa nada — e o aluno aprende a pular o ±.
+ * Sem isto, ignorar o ± não custa nada — e o estudante aprende a pular o ±.
  */
 function Empates({
   topo,
@@ -235,7 +235,7 @@ function Empates({
 /**
  * "E se eu tivesse mandado para ___?"
  *
- * A mesma tempestade, na mesma hora, com outro destino. Existe porque o aluno
+ * A mesma tempestade, na mesma hora, com outro destino. Existe porque o estudante
  * lê a tabela, vê um bairro grande sem equipe e não tem como saber o que teria
  * mudado — então guarda o resultado como acaso, em vez de método.
  *
@@ -261,7 +261,7 @@ function Contrafactual({
     setOcupado(true);
     setErro(null);
     try {
-      // Não grava e não debita: é a pergunta que o aluno faz ao VER o
+      // Não grava e não debita: é a pergunta que o estudante faz ao VER o
       // resultado, e transformá-la em tentativa nova apagaria a diferença
       // entre a decisão que ele tomou e a que imaginou depois.
       const r = await api.post<{ media: number; faixa: readonly [number, number] }>(
@@ -331,7 +331,7 @@ function Contrafactual({
 
 /**
  * Passo 4: o Resultado. É TELA, não cartão perdido na conversa — é o fim da
- * Missão, e o aluno precisa poder olhar para ele.
+ * Missão, e o estudante precisa poder olhar para ele.
  *
  * NÃO existe nota, acerto ou erro. A frase que fecha é sempre a mesma: não
  * havia resposta certa. Quem dá o sentido é o professor, no debate; o software
@@ -376,7 +376,7 @@ export function Resultado({
     )?.topo ?? [];
   // O marco de leitura só nasce quando o Cientista rodou o modelo naquela
   // pergunta. Quando ele não rodou, a leitura é a do mapa — que é o que o
-  // aluno tinha na frente quando decidiu.
+  // estudante tinha na frente quando decidiu.
   const empateNaTela = doMarco.length > 0 ? doMarco : (leitura ?? []);
 
   const desfechoNaTela = emCartaz?.desfecho ?? desfecho;
@@ -424,7 +424,7 @@ export function Resultado({
         </div>
       </div>
 
-      {/* O FATO que fechava a Missão sem resposta: o aluno saía sem conseguir
+      {/* O FATO que fechava a Missão sem resposta: o estudante saía sem conseguir
           dizer o que tinha acontecido com quem ele não atendeu, entre quatro
           leituras do mesmo número. Aqui não há nota nem veredito — há um bairro,
           um número de pessoas e a fonte que ele não abriu. O sentido disso é do
@@ -502,7 +502,7 @@ export function Resultado({
       </div>
 
       {/* A conta precisa fechar na tela: tabela que não fecha parece defeito, e
-          o aluno para de confiar no resto dos números. */}
+          o estudante para de confiar no resto dos números. */}
       <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gpt-suave-60">
         {milhar(totais.emRisco)} pessoas estavam em risco. Estar em risco não é ser afetado: a
         maioria conseguiu se proteger sem que uma equipe chegasse até ela.
@@ -619,7 +619,7 @@ export function Resultado({
 
       {/* Uma rodada só ensina que aconteceu; duas ensinam que podia ter sido
           diferente. Recomeçar é livre e precisa ser dito aqui, no momento em
-          que o aluno tem um número na mão para comparar. */}
+          que o estudante tem um número na mão para comparar. */}
       <p className="mt-8 max-w-2xl text-sm text-gpt-suave-60">
         Guarde o que você decidiu e por quê — a conversa sobre o que isso significa acontece na
         aula.

@@ -151,7 +151,7 @@ export function MapaBase() {
         </text>
       </g>
 
-      {/* Rótulos de orientação: a cidade é longa, e o aluno precisa saber para
+      {/* Rótulos de orientação: a cidade é longa, e o estudante precisa saber para
           que lado está arrastando. */}
       <text x="24" y="34" fontSize="16" fill={MALHA.bussola} fontWeight="700" letterSpacing="2">
         NORTE

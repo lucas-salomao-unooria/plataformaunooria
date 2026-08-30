@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ordenarRanking, posicaoDoAluno } from "./ranking";
+import { ordenarRanking, posicaoDoEstudante, posicaoDoAluno } from "./ranking";
 import type { RankingLinha } from "./tipos";
 
 const linha = (id: string, nome: string, fontes: number, inscritos: number, voce = false): RankingLinha => ({
@@ -36,13 +36,14 @@ describe("ordenarRanking", () => {
   });
 });
 
-describe("posicaoDoAluno", () => {
+describe("posicaoDoEstudante", () => {
   test("1-based nas duas ordenações", () => {
+    expect(posicaoDoEstudante(turma, "inscritos")).toBe(5);
+    expect(posicaoDoEstudante(turma, "confiaveis")).toBe(2);
     expect(posicaoDoAluno(turma, "inscritos")).toBe(5);
-    expect(posicaoDoAluno(turma, "confiaveis")).toBe(2);
   });
 
   test("0 quando não há linha 'você'", () => {
-    expect(posicaoDoAluno(turma.filter((l) => !l.voce), "inscritos")).toBe(0);
+    expect(posicaoDoEstudante(turma.filter((l) => !l.voce), "inscritos")).toBe(0);
   });
 });

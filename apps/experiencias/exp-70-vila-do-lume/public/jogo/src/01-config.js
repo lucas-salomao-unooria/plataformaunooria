@@ -79,20 +79,21 @@ const MIRROR = {id:"espelho", label:"Fogo Sagrado", icon:"🔥", color:0xFF8A2E,
 
 /** A bolha desta criança, e os cartões dela. QUEM DECIDE É A API; o jogo só lê.
  *
- *  Era `alunoSlot % 3` calculado aqui. Três motivos para ter saído do bundle:
+ *  Era `estudanteSlot % 3` calculado aqui. Três motivos para ter saído do bundle:
  *
  *   · o slot não existe mais — a identidade vem da sessão da plataforma;
  *   · o que precisa ficar equilibrado é a TURMA, e o navegador não conhece a
- *     turma inteira. Hash de id de aluno dá terços na média da rede e pode dar
+ *     turma inteira. Hash de id de estudante dá terços na média da rede e pode dar
  *     14/6/5 numa sala de 25 — e aí o debate da missão não acontece, porque ele
  *     depende de as três bolhas estarem na mesma sala;
  *   · era o cliente escolhendo a condição do próprio teste, a uma linha de
  *     console de distância.
  *
  *  Ver `src/sessao.ts`. */
-function bolhaDoAluno(){
+function bolhaDoEstudante(){
   return (window.VILA && window.VILA.bolha) || 'A';
 }
+const bolhaDoAluno = bolhaDoEstudante;
 
 /** Os cartões servidos pela api para esta partida. Vazio = a missão não roda, e é
  *  isso que a api grava como `cartoesServidos: 0` — diferente de "ela ignorou tudo". */
@@ -171,7 +172,7 @@ const state = {
   detourDistance:0,    // self-direction — distance beyond the minimum route
 
   /* ---- Identidade: NÃO MORA AQUI.
-     Havia `alunoSlot` (1 a 40, do link do professor), `turmaId` e `sessaoLocalId`.
+     Havia `estudanteSlot` (1 a 40, do link do professor), `turmaId` e `sessaoLocalId`.
      Os três saíram no porte para a plataforma: quem é a criança vem da sessão
      autenticada, por `window.VILA.identidade`, e o id da partida é emitido pela
      api quando ela abre. O jogo não guarda, não escolhe e não adivinha

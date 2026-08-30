@@ -23,7 +23,7 @@ function milhar(n: number) {
 }
 
 /**
- * A Decisão Operacional. O aluno já disse os destinos conversando; aqui ele vê
+ * A Decisão Operacional. O estudante já disse os destinos conversando; aqui ele vê
  * a decisão inteira em uma tela antes de mandar — rotas, o que ela projeta e o
  * que ela deixa de fora.
  *
@@ -45,7 +45,7 @@ export function Decisao({
 }: {
   bairros: BairroPublico[];
   alocacao: { alfa: string | null; bravo: string | null };
-  /** Por que cada equipe vai para lá. Vazio até o aluno responder. */
+  /** Por que cada equipe vai para lá. Vazio até o estudante responder. */
   justificativas: { alfa: string | null; bravo: string | null };
   /**
    * As fontes que ele ABRIU, mais "foi intuição" — vem da api. Mostrar a fonte
@@ -61,7 +61,7 @@ export function Decisao({
   onJustificar: (equipe: 'alfa' | 'bravo', valor: string) => void;
   /**
    * Manda as equipes daqui mesmo. Null quando não há destino nenhum. Quem
-   * clica é o aluno (regra de ouro 5); o portão da justificativa vale igual.
+   * clica é o estudante (regra de ouro 5); o portão da justificativa vale igual.
    */
   onEnviar: (() => void) | null;
   onFechar: () => void;
@@ -161,7 +161,7 @@ export function Decisao({
                   fonte que ele não consultou seria dizer, pela interface, o que
                   ele deveria ter olhado. "Foi intuição" fica sempre disponível,
                   porque erro aqui vira aprendizado, não punição — e porque sem
-                  essa saída o aluno aprende a mentir para o formulário. */}
+                  essa saída o estudante aprende a mentir para o formulário. */}
               {r.bairro && (
                 <label className="mt-2.5 block">
                   <span
@@ -262,7 +262,7 @@ export function Decisao({
         {/* O envio acontece AQUI. Este painel era só de leitura — "duas portas
             para a mesma ação irreversível" — mas desde que justificar virou
             obrigatório, o botão de enviar do rodapé ABRE este painel; e mandar o
-            aluno fechar para clicar em Enviar de novo era exigir dois cliques
+            estudante fechar para clicar em Enviar de novo era exigir dois cliques
             onde a intenção é uma só. O botão só libera com tudo respondido, e o
             irreversível está escrito acima dele, não num parágrafo que ninguém
             lê até o fim. */}
@@ -270,7 +270,7 @@ export function Decisao({
 
       {/* Rodapé FIXO ao pé do painel: o conteúdo acima rola, o botão não sai
           de vista. Num laptop de 800 px de altura ele ficava abaixo da dobra
-          do modal, e o aluno tinha que descobrir que o popup rolava. */}
+          do modal, e o estudante tinha que descobrir que o popup rolava. */}
       <Modal.Footer className="sticky bottom-0 !flex-col !items-stretch gap-2 border-t border-gpt-borda bg-gpt-fundo">
         {onEnviar && (
           <>

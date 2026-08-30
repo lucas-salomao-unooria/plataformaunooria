@@ -46,7 +46,7 @@ function Cartao({
         />
         {/* Só a proposta mais recente é clicável: a alocação pode ter mudado
             desde uma fala antiga, e o botão mandaria a equipe para um destino
-            que o aluno já trocou. */}
+            que o estudante já trocou. */}
         <CartaoOpcoes
           opcoes={anexo.opcoes}
           rodada={anexo.rodada}
@@ -91,7 +91,7 @@ function Cartao({
 
 /**
  * A espera. O modelo leva de 10 a 30 segundos e o cronômetro corre — sem nada
- * na tela além de uma frase parada, o aluno acha que travou e clica de novo.
+ * na tela além de uma frase parada, o estudante acha que travou e clica de novo.
  *
  * O que se mostra é VERDADE: os segundos que já passaram e quantas fontes
  * entram na conta. Barra de progresso seria mentira — não existe percentual
@@ -130,7 +130,7 @@ function Consultando({ fontes }: { fontes: number }) {
         <span className="tabular-nums text-gpt-suave-60">{segundos}s</span>
       </span>
       {/* Enquanto ele responde, o campo continua vivo: escrever a próxima
-          pergunta é a única coisa que o aluno pode fazer com o tempo que o
+          pergunta é a única coisa que o estudante pode fazer com o tempo que o
           modelo está gastando. */}
       <span className="mt-1 block text-xs text-gpt-suave-60">
         Pode ir escrevendo a próxima pergunta.
@@ -152,11 +152,11 @@ function Consultando({ fontes }: { fontes: number }) {
  * Os dois alvos que antecedem o campo — microfone e imagem — ficam OCULTOS
  * (`hideLeadingActions`). Eles existem no arquivo, mas aqui não teriam o que
  * fazer, e controle morto numa tela sob cronômetro é pior que controle
- * ausente: o aluno clica, não acontece nada, e ele perde o turno achando que
+ * ausente: o estudante clica, não acontece nada, e ele perde o turno achando que
  * travou.
  *
  * NÃO existe lista de perguntas sugeridas por padrão. Um chip com o nome de um
- * conjunto já diz ao aluno qual conjunto importa antes de ele investigar — é
+ * conjunto já diz ao estudante qual conjunto importa antes de ele investigar — é
  * gabarito disfarçado de atalho, e enviesa a decisão que a Missão inteira
  * existe para ele tomar sozinho. As `Tag` do destravamento são a exceção
  * declarada, e só aparecem depois de dois turnos sem nada da cidade.
@@ -192,9 +192,9 @@ export function PainelCientista({
   emUso: string[];
   onPerguntar: (texto: string) => void | Promise<boolean | void>;
   /** Abre o painel de decisão. Existe a Investigação inteira, com ou sem destino
-   *  registrado — quem clica é o aluno (regra de ouro 5). */
+   *  registrado — quem clica é o estudante (regra de ouro 5). */
   onDecidir: (() => void) | null;
-  /** Manda as equipes sem passar pelo painel. Quem clica é o aluno. */
+  /** Manda as equipes sem passar pelo painel. Quem clica é o estudante. */
   onEnviar: (() => void) | null;
   destinos: { equipe: 'alfa' | 'bravo'; nome: string | null }[];
   /** Clique numa das duas alternativas que o Cientista pôs na mesa. */
@@ -211,7 +211,7 @@ export function PainelCientista({
   const algumDestino = destinos.some((d) => d.nome !== null);
 
   // Só a leitura mais recente fica aberta. As de trás repetiam a mesma tabela,
-  // o mesmo empate e o mesmo disclaimer a cada turno, e o aluno parava de ler.
+  // o mesmo empate e o mesmo disclaimer a cada turno, e o estudante parava de ler.
   const ultimoCartao = indiceDoUltimoCartao(falas);
   const leituraAnteriorA = (i: number): RodadaDoModelo | null => {
     for (let j = i - 1; j >= 0; j -= 1) {
@@ -221,13 +221,13 @@ export function PainelCientista({
     return null;
   };
 
-  // Conversa nova entra por baixo: sem isto o aluno tem que rolar para ler a
+  // Conversa nova entra por baixo: sem isto o estudante tem que rolar para ler a
   // resposta que acabou de pedir.
   useEffect(() => {
     fim.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [falas.length, ocupado]);
   const bloqueio = motivoDeBloqueio(estadoDoTempo);
-  // As Perguntas acabaram: o campo NÃO fecha. O aluno ainda precisa dizer para
+  // As Perguntas acabaram: o campo NÃO fecha. O estudante ainda precisa dizer para
   // onde vai cada equipe, e fechar aqui o deixaria com uma decisão para tomar e
   // nenhuma forma de tomá-la.
   const semPerguntas = perguntasRestantes(perguntasGastas) === 0;
@@ -240,7 +240,7 @@ export function PainelCientista({
    * O rascunho só some quando a pergunta ENTRA.
    *
    * Antes o campo era limpo antes da ida ao servidor: falha de rede levava
-   * junto a pergunta que o aluno tinha acabado de escrever, e ele redigitava
+   * junto a pergunta que o estudante tinha acabado de escrever, e ele redigitava
    * com o cronômetro correndo — quando não desistia em silêncio.
    */
   async function enviar(valor: string) {
@@ -272,7 +272,7 @@ export function PainelCientista({
         )}
 
         {falas.map((f, i) =>
-          f.papel === 'aluno' ? (
+          f.papel === 'estudante' || f.papel === 'aluno' ? (
             <div key={i} className="flex justify-end">
               <ChatBubble role="user" className="max-w-[85%]">
                 {f.texto}
@@ -297,7 +297,7 @@ export function PainelCientista({
         <div ref={fim} />
       </div>
 
-      {/* Faixa de leitura, não painel de controle: o aluno vê o que está em uso
+      {/* Faixa de leitura, não painel de controle: o estudante vê o que está em uso
           e troca CONVERSANDO. Rótulos curtos e sem adjetivo — dizer "feito há
           nove anos" aqui entrega pela interface o que ele deveria descobrir
           conversando. */}
@@ -317,7 +317,7 @@ export function PainelCientista({
           )}
         </p>
         {/* O contador fica onde a Pergunta é feita. Ele conta o que RESTA:
-            saber que sobrou uma é o que faz o aluno pensar antes de gastá-la —
+            saber que sobrou uma é o que faz o estudante pensar antes de gastá-la —
             e é para isso que o limite existe. */}
         <Badge variant={semPerguntas ? 'warning' : 'default'}>
           {rotuloDoOrcamento(perguntasGastas)}
@@ -327,8 +327,8 @@ export function PainelCientista({
       {/* Dockado no rodapé: nunca sai de vista. */}
       <div className="shrink-0 px-4 pt-4">
         {/* Altura reservada: entrar empurrando o campo para baixo tira do lugar
-            justamente o elemento que o aluno está olhando. */}
-        {/* Board 2b: o aluno "volta com uma pergunta na mão". São PERGUNTAS,
+            justamente o elemento que o estudante está olhando. */}
+        {/* Board 2b: o estudante "volta com uma pergunta na mão". São PERGUNTAS,
             não fontes — quem escolhe o que consultar continua sendo o
             Cientista. E são de três tipos diferentes: ver quem, onde e quanto
             tempo lado a lado já ensina que existe mais de uma coisa que dá para
@@ -370,7 +370,7 @@ export function PainelCientista({
           )}
         </div>
         {/* O destino de cada equipe fica à vista, no rodapé, junto do campo:
-            o aluno decidiu conversando e a decisão sumia scroll acima. Aqui ele
+            o estudante decidiu conversando e a decisão sumia scroll acima. Aqui ele
             lê o que está prestes a mandar sem sair do lugar. */}
         {onDecidir && (
           <div

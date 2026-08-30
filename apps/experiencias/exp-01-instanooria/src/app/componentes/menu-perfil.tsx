@@ -5,10 +5,10 @@ import { experiencia } from '../../lib/api';
 import { Sheet } from './sheet';
 
 /**
- * Menu do perfil — o caminho de saída do aluno.
+ * Menu do perfil — o caminho de saída do estudante.
  *
  * Existe por dois motivos práticos de sala de aula: o mesmo aparelho passa de
- * mão em mão (o próximo aluno precisa entrar com o login dele) e quem precisa
+ * mão em mão (o próximo estudante precisa entrar com o login dele) e quem precisa
  * sair no meio não pode ficar preso. A gramática é a de um app real: ☰ no
  * perfil → "Sair da conta". Nenhuma palavra sobre a atividade (regra de ouro 1).
  *

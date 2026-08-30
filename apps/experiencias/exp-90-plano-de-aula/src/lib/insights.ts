@@ -32,7 +32,7 @@ export const INSIGHTS_SEMENTE: Insight[] = [
     categoria: "Sala de aula",
     titulo: "Use a IA como objeto de estudo, não só como ferramenta",
     texto:
-      "Mostrar à turma uma resposta errada da IA e pedir que encontrem o erro desenvolve leitura crítica. O aluno deixa de ser consumidor da resposta e passa a avaliá-la.",
+      "Mostrar à turma uma resposta errada da IA e pedir que encontrem o erro desenvolve leitura crítica. O estudante deixa de ser consumidor da resposta e passa a avaliá-la.",
     icone: "psychology",
   },
   {
@@ -44,16 +44,16 @@ export const INSIGHTS_SEMENTE: Insight[] = [
   },
   {
     categoria: "Equidade",
-    titulo: "Nem todo aluno chega com o mesmo acesso",
+    titulo: "Nem todo estudante chega com o mesmo acesso",
     texto:
       "Antes de propor uma atividade que dependa de IA em casa, verifique quem tem dispositivo e internet. Prever uma alternativa offline evita transformar a proposta em mais um filtro de desigualdade.",
     icone: "diversity_3",
   },
   {
     categoria: "Dados",
-    titulo: "Dado de aluno não entra no prompt",
+    titulo: "Dado de estudante não entra no prompt",
     texto:
-      "Nome, matrícula, laudo, endereço e foto de estudante não devem ser colados em ferramentas de IA. Descreva a situação de forma anônima — “aluno do 6º ano com dificuldade em interpretação” já basta para obter uma boa sugestão.",
+      "Nome, matrícula, laudo, endereço e foto de estudante não devem ser colados em ferramentas de IA. Descreva a situação de forma anônima — “estudante do 6º ano com dificuldade em interpretação” já basta para obter uma boa sugestão.",
     icone: "shield_lock",
   },
   {

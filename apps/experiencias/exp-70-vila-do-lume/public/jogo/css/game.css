@@ -264,7 +264,7 @@ p.warn{font-size:1rem;color:var(--redstone);margin:-2px 0 14px;line-height:1.5;}
 .hub-nota{font-size:1.1rem;color:var(--cream-dim);margin:6px 0 0;}
 .hub-rodape{font-size:1rem;color:var(--stone);margin:0;}
 
-/* ===================== GRADE DE ALUNOS ===================== */
+/* ===================== GRADE DE ESTUDANTES ===================== */
 .slots-ajuda{font-size:1.2rem;color:var(--cream-dim);text-align:center;margin:-6px 0 16px;}
 .slots-grade{
   display:grid;grid-template-columns:repeat(8, 1fr);gap:8px;margin-bottom:16px;
@@ -277,7 +277,7 @@ p.warn{font-size:1rem;color:var(--redstone);margin:-2px 0 14px;line-height:1.5;}
 .slot:hover{background:#241C16;border-color:var(--gold);}
 .slot .slot-n{font-family:'Press Start 2P';font-size:0.62rem;}
 /* Quem já jogou fica marcado, mas continua clicável: repetir é decisão do professor,
-   e a confirmação avisa que a partida anterior daquele aluno será substituída. */
+   e a confirmação avisa que a partida anterior daquele estudante será substituída. */
 .slot.feito{border-color:var(--emerald);background:#16211B;}
 .slot.feito .slot-n{color:var(--emerald);}
 .slot .slot-ok{position:absolute;top:2px;right:4px;font-size:0.6rem;color:var(--emerald);}
@@ -286,14 +286,14 @@ p.warn{font-size:1rem;color:var(--redstone);margin:-2px 0 14px;line-height:1.5;}
 .slots-legenda{font-size:1rem;color:var(--cream-dim);display:flex;align-items:center;gap:7px;margin:0 0 14px;}
 .slot-escolhido{font-family:'Press Start 2P';font-size:0.85rem;color:var(--gold);letter-spacing:0.04em;}
 
-/* ===================== LISTA DE ALUNOS (resultados) ===================== */
-.lista-alunos{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-.aluno-linha{
+/* ===================== LISTA DE ESTUDANTES (resultados) ===================== */
+.lista-estudantes, .lista-alunos{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.estudante-linha, .aluno-linha{
   display:flex;align-items:center;gap:12px;width:100%;text-align:left;
   background:var(--panel);border:2px solid var(--stone-dark);padding:10px 12px;
   color:var(--cream);cursor:pointer;transition:border-color 0.12s ease;
 }
-.aluno-linha:hover{border-color:var(--gold);}
+.estudante-linha:hover, .aluno-linha:hover{border-color:var(--gold);}
 .al-num{
   font-family:'Press Start 2P';font-size:0.7rem;color:var(--gold);
   min-width:2.4rem;text-align:center;

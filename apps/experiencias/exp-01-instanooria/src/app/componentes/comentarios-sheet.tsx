@@ -10,24 +10,30 @@ import { Sheet } from './sheet';
 
 /**
  * Sheet de comentários (doc 03 §3.6): 75% da tela, lista completa (lazy),
- * curtida por comentário e campo fixo embaixo. O comentário do aluno entra no
+ * curtida por comentário e campo fixo embaixo. O comentário do estudante entra no
  * topo e ganha 2–5 curtidas fake nos 30s seguintes.
  */
 export function ComentariosSheet({
   post,
+  avatarDoEstudante,
   avatarDoAluno,
+  handleDoEstudante,
   handleDoAluno,
   aoFechar,
   aoComentar,
   aoCurtirComentario,
 }: {
   post: FeedPostCliente | null;
-  avatarDoAluno: string;
-  handleDoAluno: string;
+  avatarDoEstudante?: string;
+  avatarDoAluno?: string;
+  handleDoEstudante?: string;
+  handleDoAluno?: string;
   aoFechar: () => void;
   aoComentar: (post: FeedPostCliente, texto: string) => void;
   aoCurtirComentario: (post: FeedPostCliente) => void;
 }) {
+  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
+  const handle = handleDoEstudante ?? handleDoAluno ?? '';
   const [comentarios, setComentarios] = useState<ComentarioCliente[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [texto, setTexto] = useState('');
@@ -60,10 +66,11 @@ export function ComentariosSheet({
 
     const meu: ComentarioCliente = {
       id: `meu-${Date.now()}`,
-      handle: handleDoAluno,
+      handle: handle,
       texto: conteudo,
       likesCount: 0,
       timestampLabel: 'agora',
+      doEstudante: true,
       doAluno: true,
     };
 
@@ -92,9 +99,10 @@ export function ComentariosSheet({
 
           {comentarios.map((comentario) => {
             const curtido = curtidos.has(comentario.id);
+            const ehDoEstudante = comentario.doEstudante || comentario.doAluno;
             return (
               <li key={comentario.id} className="flex items-start gap-2.5 py-2.5">
-                <AvatarPerfil seed={comentario.doAluno ? avatarDoAluno : comentario.handle} tamanho={24} />
+                <AvatarPerfil seed={ehDoEstudante ? avatar : comentario.handle} tamanho={24} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] leading-snug text-ink">
                     <span className="font-semibold">{comentario.handle.replace(/^@/, '')}</span>{' '}
@@ -133,7 +141,7 @@ export function ComentariosSheet({
         </ul>
 
         <div className="flex items-center gap-2 border-t border-hairline px-3 py-2.5 pb-[calc(10px+env(safe-area-inset-bottom))]">
-          <AvatarPerfil seed={avatarDoAluno} tamanho={28} />
+          <AvatarPerfil seed={avatar} tamanho={28} />
           <input
             className="flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-muted"
             placeholder="Adicione um comentário…"

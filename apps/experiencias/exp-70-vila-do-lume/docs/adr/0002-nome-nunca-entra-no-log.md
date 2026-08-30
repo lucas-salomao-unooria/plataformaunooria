@@ -29,11 +29,11 @@ fechada na api. O que substitui "nunca é escrito no localStorage" é mais forte
 serializado** — `verificarSemNome()` bloqueia antes de entregar, e `semNomeDeCrianca()`
 recusa com 422 do outro lado.
 
-**A premissa caiu: a plataforma SABE quem é a criança.** `vila_sessoes.aluno_id` e
-`vila_perfis.aluno_id` são FK para `users`, que tem `display_name`. A proteção já não vem da
+**A premissa caiu: a plataforma SABE quem é a criança.** `vila_sessoes.estudante_id` e
+`vila_perfis.estudante_id` são FK para `users`, que tem `display_name`. A proteção já não vem da
 ausência de identidade — vem de **não deixar o nome viajar junto do retrato**: as tabelas
 `vila_*` guardam só o uuid, o `payload` JSONB não tem campo de nome, e a telemetria carrega
-`aluno_id` opaco.
+`estudante_id` opaco.
 
 Isso torna a regra **mais** necessária, não menos: existe agora um nome em memória que não
 existia no bundle de origem, e o `payload` não tem prazo para sair do banco.
@@ -48,7 +48,7 @@ existia no bundle de origem, e o `payload` não tem prazo para sair do banco.
   `vila_sessoes.id`, uuid **emitido pela api** na abertura; o cliente não escolhe mais a
   própria chave, o que resolveu de raiz a colisão entre duas crianças na mesma máquina.
 - O leitor não é mais "o responsável": é o **professor**, escopado pelas próprias turmas, e o
-  relatório abre pelo aluno, não pela data e hora.
+  relatório abre pelo estudante, não pela data e hora.
 
 O parágrafo sobre o Art. 14 da LGPD e sobre "legível fora de contexto anos depois" sobreviveu
 intacto, e é a razão da decisão.

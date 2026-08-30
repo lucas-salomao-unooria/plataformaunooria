@@ -92,7 +92,7 @@ export function Mapa({
   /**
    * Mandar uma equipe para o bairro selecionado, direto no mapa (board: "toque
    * em 2 bairros para enviar as equipes, sem arrastar"). Existe só na
-   * Investigação: quem clica é o aluno (regra de ouro 5), e o Cientista
+   * Investigação: quem clica é o estudante (regra de ouro 5), e o Cientista
    * continua sem escolher nada.
    */
   onMandarEquipe?: (equipe: 'alfa' | 'bravo', slug: string) => void;
@@ -105,7 +105,7 @@ export function Mapa({
   const nada = camadas.length === 0;
 
   /**
-   * Bairros que ACABARAM de ganhar dado. O mapa acendia em silêncio: o aluno
+   * Bairros que ACABARAM de ganhar dado. O mapa acendia em silêncio: o estudante
    * pedia uma fonte, lia a resposta no chat, e o mapa mudava no canto sem que
    * ele ligasse uma coisa à outra. A causa precisa ser sentida.
    */
@@ -243,7 +243,7 @@ export function Mapa({
 
             /**
              * Alcance: o tempo de viagem conta A PARTIR DE AGORA. Um bairro que
-             * era alcançável às 17h00 pode não ser mais às 17h24 — e o aluno
+             * era alcançável às 17h00 pode não ser mais às 17h24 — e o estudante
              * precisa ver a porta fechando, não descobrir no Resultado.
              */
             const alcance = visao === 'alcance' ? b.alcance : null;
@@ -348,7 +348,7 @@ export function Mapa({
                     {equipe.nome} ✓
                   </p>
                 )}
-                {/* Decidir sem passar pelo chat. O aluno que não sabe escrever a
+                {/* Decidir sem passar pelo chat. O estudante que não sabe escrever a
                     frase — ou que ficou sem tempo — ainda tem para onde clicar. */}
                 {ativo && onMandarEquipe && (
                   <div className="mt-2.5 flex gap-2 border-t border-gpt-borda pt-2.5">

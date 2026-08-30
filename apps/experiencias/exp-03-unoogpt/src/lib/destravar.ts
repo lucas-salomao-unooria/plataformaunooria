@@ -1,8 +1,8 @@
 /**
- * Quando o aluno trava, ele volta com uma pergunta na mão. PURO.
+ * Quando o estudante trava, ele volta com uma pergunta na mão. PURO.
  *
  * Do board (2b): "após 2 perguntas sem resposta útil, o agente oferece escolher
- * entre 3 perguntas prontas". No playtest o aluno escreveu "num intindi",
+ * entre 3 perguntas prontas". No playtest o estudante escreveu "num intindi",
  * "manda la" e "no melio" em sequência — três turnos em que ele não recebeu
  * nada da cidade porque não sabia o que pedir. O relógio correu do mesmo jeito.
  *
@@ -11,7 +11,7 @@
  * 1. São PERGUNTAS, não fontes. Quem escolhe o que consultar continua sendo o
  *    Cientista — a competência que a Missão treina é formular o que se quer
  *    saber, e é exatamente ela que estas três frases exercitam.
- * 2. Elas só aparecem depois de o aluno estar demonstravelmente travado. Quem
+ * 2. Elas só aparecem depois de o estudante estar demonstravelmente travado. Quem
  *    está investigando bem nunca as vê.
  * 3. São de TIPOS diferentes — quem, onde, quanto tempo —, não três versões da
  *    mesma pergunta. Ver os três tipos lado a lado é a aula: existe mais de uma
@@ -19,7 +19,7 @@
  */
 
 export interface PerguntaPronta {
-  /** O tipo, para o aluno ver que são três coisas diferentes. */
+  /** O tipo, para o estudante ver que são três coisas diferentes. */
   tipo: 'quem' | 'onde' | 'quanto tempo';
   texto: string;
 }
@@ -37,11 +37,11 @@ export const CHAMADA_DESTRAVAR = 'Não sabe o que perguntar? Comece por uma dest
 export const TURNOS_ATE_DESTRAVAR = 2;
 
 /**
- * O aluno está travado?
+ * O estudante está travado?
  *
  * Travado = os últimos turnos do Cientista não trouxeram leitura nenhuma. É o
  * mesmo sinal que decide se a Pergunta gastou orçamento, e por um bom motivo:
- * turno sem consulta é turno em que o aluno não recebeu nada.
+ * turno sem consulta é turno em que o estudante não recebeu nada.
  *
  * Alocação e desfecho não contam como leitura, mas também não são estar
  * travado — quem alocou está decidindo. Por isso a conta para no primeiro
@@ -54,7 +54,7 @@ export function estaTravado(
   for (let i = falas.length - 1; i >= 0; i -= 1) {
     const f = falas[i];
     if (!f) continue;
-    if (f.papel === 'aluno') continue;
+    if (f.papel === 'estudante' || f.papel === 'aluno') continue;
     const tipo = f.anexo?.tipo;
     if (tipo === 'tendencia' || tipo === 'opcoes') return false;
     if (tipo === 'alocacao' || tipo === 'desfecho') return false;

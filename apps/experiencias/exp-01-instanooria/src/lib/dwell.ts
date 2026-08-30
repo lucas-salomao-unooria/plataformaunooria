@@ -61,7 +61,7 @@ export function criarRastreadorDeDwell(
   };
 
   const retomar = () => {
-    // Retoma a medição do que está na tela. Sem isto, o post que o aluno estava
+    // Retoma a medição do que está na tela. Sem isto, o post que o estudante estava
     // lendo deixava de ser medido até sair e voltar ao viewport.
     for (const postId of visiveis) abrir(postId);
   };

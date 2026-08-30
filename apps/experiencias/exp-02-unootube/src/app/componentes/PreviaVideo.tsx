@@ -12,7 +12,7 @@ interface Props {
    * Sem ela a prévia é só imagem: o quadro vira `<span>` e não entra na ordem
    * de foco. É o que o diálogo de limite precisa — lá as três miniaturas
    * ilustram a troca, e cada uma já tem o seu "Remover" ao lado; um segundo
-   * alvo clicável no mesmo cartão levaria o aluno para fora do diálogo.
+   * alvo clicável no mesmo cartão levaria o estudante para fora do diálogo.
    */
   aoAssistir?: (id: string) => void;
 }

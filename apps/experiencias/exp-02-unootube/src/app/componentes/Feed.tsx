@@ -138,7 +138,7 @@ export function Feed(props: Props) {
                    * `showChannel={false}` e a faixa do canal composta aqui: o
                    * bloco pronto do DS traz um botão de INSCREVER-SE sempre
                    * visível, e nesta missão inscrever-se não existe — "inscritos"
-                   * é o placar do aluno, não uma ação sobre o canal do vídeo. Um
+                   * é o placar do estudante, não uma ação sobre o canal do vídeo. Um
                    * botão morto ali confundiria justamente a métrica que a
                    * missão quer ensinar a ler.
                    */

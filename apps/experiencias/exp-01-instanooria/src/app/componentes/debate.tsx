@@ -91,6 +91,7 @@ export function Debate({ runId }: { runId: string }) {
             curtido={false}
             salvo
             seguindo={false}
+            comentariosDoEstudante={meus.length}
             comentariosDoAluno={meus.length}
           />
 
@@ -165,7 +166,7 @@ export function Debate({ runId }: { runId: string }) {
       )}
 
       {/*
-        O rodapé existe para o aluno não ficar procurando o que fazer. Ele diz que
+        O rodapé existe para o estudante não ficar procurando o que fazer. Ele diz que
         a espera é esperada — sem prometer tempo, porque quem decide o fim do
         momento não é o aparelho.
       */}

@@ -26,7 +26,7 @@ import { Bootstrap } from "./bootstrap";
 /**
  * Tema fixo em CLARO, antes do primeiro quadro.
  *
- * A seção lê `data-gpt-theme` na raiz. Aqui não há escolha do aluno (a exp-02
+ * A seção lê `data-gpt-theme` na raiz. Aqui não há escolha do estudante (a exp-02
  * tem, e por isso lembra em `localStorage`): a missão é medida em laboratório e
  * o desenho de origem foi calibrado no tema claro. Fixar antes do render evita
  * o lampejo escuro do primeiro quadro.

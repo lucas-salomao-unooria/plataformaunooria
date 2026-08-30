@@ -15,7 +15,10 @@ export function ordenarRanking(linhas: readonly RankingLinha[], modo: ModoRankin
   );
 }
 
-/** Posição 1-based do aluno na ordenação dada. */
-export function posicaoDoAluno(linhas: readonly RankingLinha[], modo: ModoRanking): number {
+/** Posição 1-based do estudante na ordenação dada. */
+export function posicaoDoEstudante(linhas: readonly RankingLinha[], modo: ModoRanking): number {
   return ordenarRanking(linhas, modo).findIndex((l) => l.voce) + 1;
 }
+
+/** @deprecated Use posicaoDoEstudante */
+export const posicaoDoAluno = posicaoDoEstudante;

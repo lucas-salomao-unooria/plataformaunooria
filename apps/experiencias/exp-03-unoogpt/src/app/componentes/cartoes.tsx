@@ -10,7 +10,7 @@ const milhar = (n: number) => n.toLocaleString('pt-BR');
  * A confiança em português de gente, com o termo técnico do lado.
  *
  * "Confiança: baixa" não foi entendido nem perguntado — que é a pior
- * combinação: o aluno segue em frente achando que entendeu um número que ele
+ * combinação: o estudante segue em frente achando que entendeu um número que ele
  * deveria estar duvidando.
  */
 const EM_MIUDOS: Record<string, string> = {
@@ -26,7 +26,7 @@ const EM_MIUDOS: Record<string, string> = {
  *
  * Da Investigação em diante a Missão inteira acontece na conversa: o que antes
  * era tela com botão é anexo de mensagem, gravado na Transcrição. Uma
- * superfície só — o aluno não precisa aprender a navegar antes de aprender
+ * superfície só — o estudante não precisa aprender a navegar antes de aprender
  * sobre dados.
  */
 const rotulos = (fontes: string[]) =>
@@ -64,7 +64,7 @@ export function CartaoTendencia({
           {hora && <span className="ml-2 font-normal normal-case">· com {hora} no relógio</span>}
         </p>
         {/* "78% da cidade sob algum dado" é jargão de quem fez o modelo. O que
-            o aluno precisa saber é quanto ele está enxergando. */}
+            o estudante precisa saber é quanto ele está enxergando. */}
         <p className="text-xs text-gpt-suave-60">
           você enxerga {Math.round(rodada.coberturaDaCidade * 100)}% da cidade
           {procedenciaComum && <span className="block text-right">com {procedenciaComum}</span>}
@@ -95,7 +95,7 @@ export function CartaoTendencia({
               </td>
               {/* O intervalo dito por extenso já É a margem: "pode ser 2.166 ou
                   3.688". O "±761" ao lado era a MESMA ideia em jargão, e o
-                  aluno lia a linha duas vezes para descobrir isso. */}
+                  estudante lia a linha duas vezes para descobrir isso. */}
               <td className="py-2 pr-3 text-gpt-tinta">
                 {milhar(e.pessoasEmRisco.esperado)}
                 <span className="block text-[10px] leading-tight text-gpt-suave-60">
@@ -116,7 +116,7 @@ export function CartaoTendencia({
       {/* Empate geral não informa nada: se TODOS se cruzam, o recado é que a
           leitura atual não separa a cidade — e isso se diz em uma frase. */}
       {/* O empate é a informação que quebra a decisão e era a quinta linha de
-          um bloco de texto: o aluno leu, mandou as duas equipes para os dois
+          um bloco de texto: o estudante leu, mandou as duas equipes para os dois
           bairros empatados e seguiu. Agora tem caixa, cor e peso próprios. */}
       {rodada.empates.length > 0 && !mudou.empates && (
         <p className="mt-3 text-xs leading-relaxed text-gpt-alerta">
@@ -177,7 +177,7 @@ export function CartaoTendencia({
       )}
       {/* Causalidade por subtração: o que ESTA fonte fez com a leitura. Só no
           cartão aberto: no fechado ele é a terceira linha de uma coisa que o
-          aluno já leu. */}
+          estudante já leu. */}
       {expandido && rodada.efeito && rodada.efeito.mudou.length > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-gpt-tinta">
           <strong>
@@ -204,7 +204,7 @@ export function CartaoTendencia({
  *
  * Simétricos de propósito: mesma cor, mesmo peso, ordem que a LLM propôs, sem
  * "recomendada". A proposta já existia em prosa — o prompt obriga o Cientista a
- * pôr duas opções na mesa e perguntar qual o aluno quer. O que muda é ele não
+ * pôr duas opções na mesa e perguntar qual o estudante quer. O que muda é ele não
  * precisar digitar a resposta com o cronômetro correndo.
  *
  * O número de pessoas sai da RODADA, que é o motor. A LLM não põe número aqui.

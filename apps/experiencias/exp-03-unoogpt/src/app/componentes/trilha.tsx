@@ -33,7 +33,7 @@ const VISIVEIS = PASSOS.filter((p) => p !== 'orientacao');
  *
  * Antes esta tela usava `Sidebar` + `NavItem`, que é a régua de documentação.
  * Trocar para a do cliente web é o que faz a Missão parecer o ChatGPT que o
- * aluno abre fora da aula — e é isso que a Missão inteira está ensinando.
+ * estudante abre fora da aula — e é isso que a Missão inteira está ensinando.
  *
  * Os Passos entram como as conversas entram na barra do arquivo (`chatText`),
  * e Recomeçar entra no rodapé com `trash`, que é exatamente onde e como o
@@ -41,7 +41,7 @@ const VISIVEIS = PASSOS.filter((p) => p !== 'orientacao');
  *
  * Colapsável porque a Investigação precisa de largura: o mapa e a conversa
  * disputam a tela, e a trilha é orientação, não trabalho. Colapsada, mantém os
- * números — o aluno continua sabendo onde está. A largura é a única medida
+ * números — o estudante continua sabendo onde está. A largura é a única medida
  * sobrescrita, e por comportamento do produto, não por gosto.
  */
 export function Trilha({

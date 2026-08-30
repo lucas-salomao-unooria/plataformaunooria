@@ -20,7 +20,7 @@ interface Props {
 }
 
 /**
- * Coleção do aluno. As abas são a faixa de pílulas do DS (`TopMenuBar`) e a
+ * Coleção do estudante. As abas são a faixa de pílulas do DS (`TopMenuBar`) e a
  * grade é a prateleira de Shorts (`ShortsShelf` em `grid`) — as duas peças que
  * o arquivo de origem publica para exatamente estes papéis.
  *

@@ -4,7 +4,7 @@ import { avatarProcedural } from '../../lib/avatar';
 import { IDS_DE_AVATAR, urlDoAvatar } from '../../lib/avatares';
 
 /**
- * Avatar do aluno ou de uma persona.
+ * Avatar do estudante ou de uma persona.
  *
  * Duas naturezas, e a escolha é automática:
  *

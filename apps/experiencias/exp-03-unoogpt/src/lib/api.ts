@@ -22,7 +22,7 @@ function exigir(): ExperienciaHandle {
  * O default do SDK é 10s — certo para ler catálogo e ERRADO aqui: a resposta
  * passa por até 6 voltas de ferramenta e leva de 10 a 30 segundos. Com o teto
  * padrão o `AbortController` cortava a resposta que já estava sendo gerada, e o
- * aluno lia "não consegui responder" enquanto a api tinha respondido.
+ * estudante lia "não consegui responder" enquanto a api tinha respondido.
  */
 export const TIMEOUT_DO_TURNO_MS = 45_000;
 
@@ -35,9 +35,11 @@ export const api = {
     exigir().api.post<T>(path, body, { timeoutMs: TIMEOUT_DO_TURNO_MS }),
 };
 
-export function alunoAtual() {
-  return exigir().aluno;
+export function estudanteAtual() {
+  return exigir().estudante ?? (exigir() as any).aluno;
 }
+
+export const alunoAtual = estudanteAtual;
 
 export function concluir(dados: Record<string, unknown>) {
   // SEM `score`: a missão não dá nota. "O propósito não é acertar a alocação" —

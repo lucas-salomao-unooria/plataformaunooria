@@ -9,7 +9,7 @@ import { AvatarPerfil } from './avatar-perfil';
  * FASE 1 do doc 02 (~40s): **cartão de missão** + escolha de avatar + splash.
  *
  * A narrativa de "app beta / acesso antecipado / sessões de teste" SAIU. Ela
- * justificava o encerramento, mas dava ao aluno um papel passivo e obrigava a
+ * justificava o encerramento, mas dava ao estudante um papel passivo e obrigava a
  * mentir sobre o que o Instanooria é. Agora ele recebe uma missão explícita: o
  * que fica escondido é o **mecanismo**, não a existência da atividade.
  *
@@ -22,7 +22,7 @@ export function Onboarding({
   aoEntrar,
 }: {
   primeiroNome: string;
-  /** A pergunta que o aluno vai investigar — o enunciado da missão. */
+  /** A pergunta que o estudante vai investigar — o enunciado da missão. */
   perguntaChave: string;
   aoEntrar: (avatar: string, nome: string) => Promise<void>;
 }) {
@@ -116,10 +116,10 @@ export function Onboarding({
   }
 
   /**
-   * Sem pergunta não há missão: acontece quando o aluno entra antes de a atividade
+   * Sem pergunta não há missão: acontece quando o estudante entra antes de a atividade
    * estar ativa (aparelho ligado cedo, ou o professor ainda revisando). Mostrar o
    * cartão com as aspas vazias — “” — parece defeito, e o botão levaria a um beco:
-   * o `POST /api/runs` recusa e o aluno volta para cá sem entender.
+   * o `POST /api/runs` recusa e o estudante volta para cá sem entender.
    *
    * A espera é dita na língua do app. Nada de "aguarde o professor liberar", que
    * entregaria a escola (regra de ouro 1).
@@ -154,7 +154,7 @@ export function Onboarding({
             Tem uma discussão rolando no Instanooria:
           </p>
           {/* A pergunta é o enunciado da missão — em destaque, porque é o que o
-              aluno vai investigar e o que ele vai responder no fim. */}
+              estudante vai investigar e o que ele vai responder no fim. */}
           <p className="rounded-xl bg-canvas px-4 py-3 text-[17px] font-semibold leading-snug text-ink">
             “{perguntaChave}”
           </p>
@@ -163,7 +163,7 @@ export function Onboarding({
           </p>
           {/*
             A instrução central do fluxo v2. Salvar não é enfeite: os posts salvos
-            são o que o aluno vai defender na conversa e o que sustenta a resposta
+            são o que o estudante vai defender na conversa e o que sustenta a resposta
             dele no fim. Precisa estar dito com essas palavras, e antes do feed.
           */}
           <p className="rounded-xl bg-action/10 px-4 py-3 text-[15px] font-semibold leading-snug text-ink">
@@ -183,7 +183,7 @@ export function Onboarding({
               Aqui dizia "a missão tem tempo limitado", e não existe cronômetro
               nenhum no produto: quem abre e fecha cada momento é o professor,
               pelo botão. A frase criava pressa onde não havia relógio, e a
-              pressa muda o que a atividade mede — um aluno apressado rola mais
+              pressa muda o que a atividade mede — um estudante apressado rola mais
               rápido, e o dwell é o sinal central do motor.
             */}
             <p className="text-[12px] text-muted">quem abre cada etapa é quem está conduzindo a aula</p>

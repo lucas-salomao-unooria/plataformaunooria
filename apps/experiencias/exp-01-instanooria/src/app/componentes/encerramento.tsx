@@ -4,7 +4,7 @@ import { useState } from 'react';
  * FASE 3 do doc 02 (~15s): tela sobre o feed, que congela desfocado ao fundo.
  *
  * "Fim da missão", não "fim do beta": a narrativa mudou (doc 02 fase 1). O que
- * vem depois não é a revelação — é a **conclusão** do aluno (fase 4). O disfarce
+ * vem depois não é a revelação — é a **conclusão** do estudante (fase 4). O disfarce
  * do mecanismo cai só depois dela.
  */
 export function Encerramento({

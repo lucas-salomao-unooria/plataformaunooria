@@ -10,7 +10,7 @@ import { UnooTubeApp } from "./app/unootube-app";
 /**
  * Entrada da experiência, em duas etapas client-side (mesmo desenho da exp-01):
  *
- *  1. handshake com o hub (SDK): token, aluno e apiUrl chegam por `hub:init`;
+ *  1. handshake com o hub (SDK): token, estudante e apiUrl chegam por `hub:init`;
  *  2. `GET /unootube/sessao`: o SERVIDOR entrega catálogo (sem gabarito) e o
  *     estado da missão — recarregar a página nunca perde os salvos.
  *

@@ -17,7 +17,7 @@ import { MapaBase } from '../arte/mapa-base';
  * - UMA manchete só. O painel escuro carrega a história e o dilema juntos; a
  *   coluna da direita é só o passo a passo, sem título concorrente.
  * - O dilema virou coisa que se VÊ, não que se lê: quatro quarteirões e duas
- *   equipes, nas mesmas cores que o aluno vai reencontrar no mapa da tela
+ *   equipes, nas mesmas cores que o estudante vai reencontrar no mapa da tela
  *   seguinte — Alfa em azul, Bravo em roxo. Antes eram dois cartões com um
  *   número cada, e a frase que os liga em cinza de 11px.
  * - A cidade está ATRÁS da manchete: o mesmo terreno do mapa, sob a chuva. É
@@ -25,7 +25,7 @@ import { MapaBase } from '../arte/mapa-base';
  * - TRÊS passos, não cinco, cada um com um ícone. Perguntar, escolher, mandar.
  * - Saiu daqui a lição da faixa ("entre 2.400 e 3.500 — quanto mais longe,
  *   menos certeza"). É o conceito mais difícil do produto e estava no item 2 de
- *   uma lista que ninguém termina, antes de o aluno ver um número. Ele aprende
+ *   uma lista que ninguém termina, antes de o estudante ver um número. Ele aprende
  *   isso quando a primeira faixa aparece na tela, que é onde a frase tem o que
  *   apontar.
  * - Entraram as 3 Perguntas, que é a regra que mais aperta e não estava dita em
@@ -79,7 +79,7 @@ export function Abertura({
   contexto: string;
   /**
    * Os bairros vêm do MAPA servido pela api, não de uma constante local: o
-   * briefing desenha um quarteirão por bairro e o aluno CONTA quatro em vez de
+   * briefing desenha um quarteirão por bairro e o estudante CONTA quatro em vez de
    * ler um "4". Uma cópia da ficha no cliente seria uma segunda fonte da
    * verdade sobre quantos bairros a cidade tem.
    */
@@ -152,7 +152,7 @@ export function Abertura({
 
         <div className="relative rounded-gpt-2xl border border-gpt-borda bg-gpt-fill-8 p-5 backdrop-blur-sm lg:p-6">
           <div className="grid gap-5 sm:grid-cols-2">
-            {/* Os quarteirões: quatro, e o aluno CONTA — não lê um "4". */}
+            {/* Os quarteirões: quatro, e o estudante CONTA — não lê um "4". */}
             <div>
               <div className="flex gap-2">
                 {bairros.map((b) => (

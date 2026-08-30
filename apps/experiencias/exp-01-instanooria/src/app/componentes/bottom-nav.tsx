@@ -13,15 +13,18 @@ export type Aba = 'feed' | 'busca' | 'criar' | 'notificacoes' | 'perfil';
 export function BottomNav({
   ativa,
   aoTrocar,
+  avatarDoEstudante,
   avatarDoAluno,
   naoLidas,
 }: {
   ativa: Aba;
   aoTrocar: (aba: Aba) => void;
-  avatarDoAluno: string;
+  avatarDoEstudante?: string;
+  avatarDoAluno?: string;
   naoLidas: number;
 }) {
   const cor = (aba: Aba) => (ativa === aba ? '#262626' : '#8E8E93');
+  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
 
   return (
     <nav className="sticky bottom-0 z-30 flex h-bottomnav items-stretch bg-canvas shadow-[0px_-0.33px_0px_0px_theme(colors.hairlineBarra)]">
@@ -77,7 +80,7 @@ export function BottomNav({
         className="flex flex-1 items-center justify-center active:opacity-50"
       >
         <span className={`inline-block rounded-full ${ativa === 'perfil' ? 'ring-[1.5px] ring-ink' : ''}`}>
-          <AvatarPerfil seed={avatarDoAluno} tamanho={23} />
+          <AvatarPerfil seed={avatar} tamanho={23} />
         </span>
       </button>
     </nav>

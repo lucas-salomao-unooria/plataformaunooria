@@ -29,7 +29,7 @@ export function Sidebar({ tela, rankingDesbloqueado, aoIrParaFeed, aoAbrirPlayli
           activeIcon="homeFill"
           menuLabel="Início"
           /* Leva ao mesmo lugar que "Shorts", mas quem marca o feed é o Shorts:
-             duas linhas acesas ao mesmo tempo não diriam onde o aluno está. */
+             duas linhas acesas ao mesmo tempo não diriam onde o estudante está. */
           onClick={aoIrParaFeed}
         />
         <SidebarMenuItem

@@ -1,8 +1,8 @@
 /**
- * O catálogo de avatares que o aluno escolhe no onboarding.
+ * O catálogo de avatares que o estudante escolhe no onboarding.
  *
  * Personagens-símbolo, não pessoas: sem rosto humano realista e sem ninguém
- * identificável. Um aluno de 13 anos escolhe uma identidade para usar dentro do
+ * identificável. Um estudante de 13 anos escolhe uma identidade para usar dentro do
  * app, e um bicho ou objeto faz isso melhor que um retrato — além de evitar a
  * pergunta "por que esse avatar não parece comigo?".
  *

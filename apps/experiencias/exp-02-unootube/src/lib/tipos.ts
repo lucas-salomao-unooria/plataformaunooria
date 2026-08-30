@@ -57,12 +57,13 @@ export interface RespostaRanking {
 
 export interface RespostaSessao extends RespostaEstado {
   catalogo: { videos: VideoPublico[] };
-  aluno: { nome: string; avatar: string };
+  estudante?: { nome: string; avatar: string };
+  aluno?: { nome: string; avatar: string };
   ranking: RespostaRanking | null;
 }
 
 /**
- * `entrada` é a tela de briefing da missão — a primeira coisa que o aluno vê
+ * `entrada` é a tela de briefing da missão — a primeira coisa que o estudante vê
  * quando ainda não salvou nem curtiu nada. Não é uma tela navegável: não tem
  * item na barra lateral nem nas abas, e o único caminho de volta a ela é
  * reiniciar a missão.

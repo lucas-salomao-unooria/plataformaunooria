@@ -38,7 +38,7 @@ body {
   overflow-x: hidden;
 }
 
-/* O aluno pode estar num laboratório com o sistema em "reduzir movimento". A
+/* O estudante pode estar num laboratório com o sistema em "reduzir movimento". A
    chuva do briefing é cenário, e cenário não é informação: ela some inteira. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -56,7 +56,7 @@ body {
 
 /**
  * (b1) A seção `chatgpt` não publica INDICADOR DE CARREGAMENTO, e um turno do
- * Cientista leva de 10 a 30 segundos. Sem sinal de vida o aluno reenvia a
+ * Cientista leva de 10 a 30 segundos. Sem sinal de vida o estudante reenvia a
  * pergunta — que é justamente o que o orçamento de 3 perguntas não perdoa.
  * Três pontos que pulsam, com o token de texto secundário.
  */

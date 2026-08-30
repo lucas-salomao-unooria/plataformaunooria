@@ -16,18 +16,21 @@ export const TEMPLATES = [
 ];
 
 /**
- * Compositor em 2 passos (doc 03 §7). Nada na interface convida o aluno até
+ * Compositor em 2 passos (doc 03 §7). Nada na interface convida o estudante até
  * aqui — é descoberta espontânea, como no app real.
  */
 export function Compositor({
+  avatarDoEstudante,
   avatarDoAluno,
   aoFechar,
   aoPublicar,
 }: {
-  avatarDoAluno: string;
+  avatarDoEstudante?: string;
+  avatarDoAluno?: string;
   aoFechar: () => void;
   aoPublicar: (texto: string, template: string) => void;
 }) {
+  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
   const [passo, setPasso] = useState<1 | 2>(1);
 
   // Cobre a tela inteira: trava o feed atrás.
@@ -108,7 +111,7 @@ export function Compositor({
               />
             </div>
             <div className="flex items-center gap-2 border-t border-hairline px-3 py-3">
-              <AvatarPerfil seed={avatarDoAluno} tamanho={28} />
+              <AvatarPerfil seed={avatar} tamanho={28} />
               <span className="flex-1 text-[12px] text-muted">{280 - texto.length} caracteres restantes</span>
             </div>
           </div>

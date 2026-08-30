@@ -13,16 +13,19 @@ import { AvatarPerfil } from './avatar-perfil';
  */
 export function Stories({
   posts,
+  avatarDoEstudante,
   avatarDoAluno,
   aoDwellDeStory,
   aoGestoDeStory,
 }: {
   posts: FeedPostCliente[];
-  avatarDoAluno: string;
+  avatarDoEstudante?: string;
+  avatarDoAluno?: string;
   aoDwellDeStory: (postId: string, dwellMs: number) => void;
   /** Telemetria de exploração (doc 11 §3.1): abrir e avançar story. */
   aoGestoDeStory?: (tipo: 'abriu_story' | 'avancou_story', postId: string) => void;
 }) {
+  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
   const [aberto, setAberto] = useState<number | null>(null);
   const [vistos, setVistos] = useState<Set<string>>(new Set());
 
@@ -35,7 +38,7 @@ export function Stories({
       <div className="sem-scrollbar flex h-stories items-center gap-3 overflow-x-auto bg-surface px-2.5 shadow-[0px_0.33px_0px_0px_theme(colors.hairline)]">
         <div className="flex w-[74px] shrink-0 flex-col items-center gap-1.5">
           <span className="flex h-[62px] w-[62px] items-center justify-center rounded-full border border-hairline">
-            <AvatarPerfil seed={avatarDoAluno} tamanho={56} />
+            <AvatarPerfil seed={avatar} tamanho={56} />
           </span>
           <span className="w-full truncate text-center text-[12px] leading-none text-ink">Seu story</span>
         </div>

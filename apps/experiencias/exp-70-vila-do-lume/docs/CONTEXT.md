@@ -43,7 +43,7 @@ _Avoid_: exposição, trigger
 ## Saída
 
 **Relatório do professor**:
-Única superfície onde o vocabulário Schwartz aparece. Vive no **hub do professor** (`/professor/entre-redes/vila-do-lume/alunos/:id`) — fora do jogo, e a criança não o abre. Publica os 10 valores, cada um com seu grau de sustentação: número só onde há duas ou mais **fontes de medida distintas**, texto descritivo onde há uma só, "não observado" onde não houve Oportunidade Percebida.
+Única superfície onde o vocabulário Schwartz aparece. Vive no **hub do professor** (`/professor/entre-redes/vila-do-lume/estudantes/:id`) — fora do jogo, e a criança não o abre. Publica os 10 valores, cada um com seu grau de sustentação: número só onde há duas ou mais **fontes de medida distintas**, texto descritivo onde há uma só, "não observado" onde não houve Oportunidade Percebida.
 
 Duas travas que o porte acrescentou: a regra do número deixou de ser convenção de tela e virou **tipo** (`leitura.ts` — só a variante `scored` carrega `numero: number`, então o hub nunca recebe o número que não pode desenhar); e na **listagem da turma nenhum valor aparece**, porque listagem é ordenável e uma coluna "Poder" viraria ranking de crianças.
 _Avoid_: painel do responsável, dashboard, resultado

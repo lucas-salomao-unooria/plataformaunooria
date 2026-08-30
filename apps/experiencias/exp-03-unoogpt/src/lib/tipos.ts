@@ -47,7 +47,7 @@ export interface BairroPublico {
   /**
    * Se cada equipe ALCANÇA este bairro antes da chuva. Vem do servidor: quem
    * responde é `chegaATempo`, que conhece o bloqueio de via e o prazo, e um
-   * bundle capaz de calcular isso deixaria o aluno antecipar o desfecho.
+   * bundle capaz de calcular isso deixaria o estudante antecipar o desfecho.
    * `aperto` = chega, mas raspando. `null` sem a malha viária carregada.
    */
   alcance: {
@@ -182,7 +182,7 @@ export interface Desfecho {
  * A projeção da alocação atual, calculada NO SERVIDOR.
  *
  * Ela usa `chegaATempo` e a capacidade da equipe — matemática do modelo. Um
- * bundle capaz de computar isso deixaria o aluno prever o desfecho antes de
+ * bundle capaz de computar isso deixaria o estudante prever o desfecho antes de
  * enviar, e a missão perderia o ponto.
  */
 export interface Rota {
@@ -221,7 +221,7 @@ export type Anexo =
     };
 
 export interface Fala {
-  papel: "aluno" | "agente";
+  papel: "estudante" | "aluno" | "agente";
   texto: string;
   anexo: Anexo | null;
 }
@@ -312,7 +312,7 @@ export interface Tentativa {
  * `GET /unoogpt/resultado` — a faixa é a manchete.
  *
  * `naoConsultados` NÃO traz o `nome` técnico da fonte: o catálogo da api é
- * explícito de que ele "aparece no painel do professor, nunca para o aluno".
+ * explícito de que ele "aparece no painel do professor, nunca para o estudante".
  * E não traz `instrucao`, `vies` nem `cobertura` — esses são o instrumento.
  */
 export interface RespostaResultado {

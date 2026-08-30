@@ -19,7 +19,7 @@ interface Props {
  * `search`: o campo é do DS, mas a busca está BLOQUEADA durante a missão. Em
  * vez de um `readOnly` (que não avisa nada a quem digita), o campo é
  * controlado em string vazia: qualquer tecla devolve o valor para "" e dispara
- * o aviso. O aluno vê que o campo existe, como num app real, e entende por que
+ * o aviso. O estudante vê que o campo existe, como num app real, e entende por que
  * não anda. O wireframe só mostra o campo apagado; este comportamento é um
  * desvio deliberado, e é o que explica o bloqueio em vez de o esconder.
  *

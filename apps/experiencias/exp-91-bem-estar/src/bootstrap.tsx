@@ -28,8 +28,8 @@ export function Bootstrap() {
         const exp = await createExperiencia({ expId: "exp-91-bem-estar", expVersion: "1.0.0" });
         definirExperiencia(exp);
         const hoje = await api.get<Hoje>("/bemestar/hoje");
-        // `aluno` é o nome do campo no protocolo v1; carrega o usuário logado.
-        if (ativo) setBoot({ professorNome: exp.aluno.nome, hoje });
+        // `estudante` / `aluno` carrega o usuário logado no protocolo v1.
+        if (ativo) setBoot({ professorNome: (exp.estudante ?? (exp as any).aluno)?.nome, hoje });
       } catch (falha) {
         console.error("[bem-estar] boot falhou", falha);
         if (ativo) setErro("Não foi possível abrir o check-in agora. Recarregue a página ou tente mais tarde.");

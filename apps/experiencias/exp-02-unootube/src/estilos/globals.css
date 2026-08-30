@@ -640,7 +640,7 @@ video {
   font-size: var(--uni-font-caption-size);
 }
 
-/* ---- (c) ligação: canal do aluno ---- */
+/* ---- (c) ligação: canal do estudante ---- */
 .profile-appearance {
   display: grid;
   gap: var(--uni-spacing-8);

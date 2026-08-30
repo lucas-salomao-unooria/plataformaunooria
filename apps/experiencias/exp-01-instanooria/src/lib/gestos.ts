@@ -1,7 +1,7 @@
 /**
  * Tradução de mouse e teclado para os gestos do celular.
  *
- * O aluno navega com teclado e mouse, mas a gramática da interface é de toque.
+ * O estudante navega com teclado e mouse, mas a gramática da interface é de toque.
  * Nada disto aparece como dica na tela (regra de ouro 3): é memória muscular de
  * quem já usa app de celular no navegador.
  */

@@ -31,7 +31,7 @@ import { Mapa, type EquipeNoMapa } from "./arte/mapa";
  * Layout: a conversa ocupa 2/3 à esquerda, o mapa 1/3 à direita, e a trilha
  * colapsa quando a Investigação precisa de largura.
  *
- * O MAPA É PERMANENTE da Investigação em diante: o aluno investiga sobre ele,
+ * O MAPA É PERMANENTE da Investigação em diante: o estudante investiga sobre ele,
  * aloca sobre ele e vai ver a tempestade sobre ele. Um mapa por Passo faria a
  * cidade parecer outra a cada tela.
  *
@@ -41,7 +41,7 @@ import { Mapa, type EquipeNoMapa } from "./arte/mapa";
  * sessão em lugar nenhum, porque a identidade vem do token. E três coisas que
  * ele calculava saíram para a api: a projeção das rotas, o alcance de cada
  * equipe e o minuto da cidade. Todas dependiam do modelo, e um bundle capaz de
- * computá-las deixaria o aluno antecipar o desfecho antes de enviar.
+ * computá-las deixaria o estudante antecipar o desfecho antes de enviar.
  */
 export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   const [sessao, setSessao] = useState<SessaoPublica>(inicial.sessao);
@@ -66,7 +66,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
 
   /**
    * O relógio é da turma e corre sozinho. O polling existe porque a partida é
-   * dada no painel do professor: o aluno está esperando com o cronômetro parado
+   * dada no painel do professor: o estudante está esperando com o cronômetro parado
    * e não tem o que enviar para descobrir que já pode falar.
    */
   const { relogio, estado: estadoDoTempo } = useRelogioDaTurma(
@@ -85,7 +85,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
    *
    * A api devolve código de JOGO (`sem-perguntas`, `relogio-encerrado`), e cada
    * um tem uma frase. O que nunca aparece aqui é vocabulário de infraestrutura:
-   * o aluno não sabe o que é token, quota nem 429.
+   * o estudante não sabe o que é token, quota nem 429.
    */
   const reclamar = useCallback((erro: unknown) => {
     const codigo = codigoDoErro(erro);
@@ -113,9 +113,9 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   /** Devolve se a pergunta entrou: é o que decide se o rascunho pode sumir. */
   async function perguntar(texto: string): Promise<boolean> {
     setOcupado(true);
-    // A fala do aluno aparece na hora — o turno leva de 10 a 30 segundos, e um
+    // A fala do estudante aparece na hora — o turno leva de 10 a 30 segundos, e um
     // campo que engole o texto e não mostra nada parece travado.
-    setFalas((f) => [...f, { papel: "aluno", texto, anexo: null }]);
+    setFalas((f) => [...f, { papel: "estudante", texto, anexo: null }]);
     try {
       // `postLento`: 45s. O default do SDK é 10s e cortaria a resposta que já
       // estava sendo gerada.
@@ -169,7 +169,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   }
 
   // As duas bases ficam no mapa desde o começo; ganham destino e rota quando o
-  // aluno decide e o Cientista registra.
+  // estudante decide e o Cientista registra.
   const equipesNoMapa: EquipeNoMapa[] = [
     {
       id: "alfa",
@@ -196,7 +196,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   /**
    * Confirmar não corta direto para o Resultado: as equipes percorrem o mapa
    * primeiro. O número que aparece no fim precisa estar preso ao trajeto que o
-   * aluno mandou fazer, senão é só um placar caindo do céu.
+   * estudante mandou fazer, senão é só um placar caindo do céu.
    */
   async function enfrentarAgora() {
     // O botão não manda enquanto faltar dizer por quê: em vez de recusar, ele
@@ -234,7 +234,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
 
   /**
    * Trocar destino pelo painel ou pelo mapa vale o mesmo que dizer no chat: quem
-   * decide é o aluno, e o Cientista continua sendo só o rádio.
+   * decide é o estudante, e o Cientista continua sendo só o rádio.
    */
   async function trocarDestino(equipe: "alfa" | "bravo", bairro: string) {
     setOcupado(true);
@@ -281,7 +281,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
 
   /**
    * Recomeçar abre tentativa NOVA no servidor — não apaga a conversa anterior.
-   * Para o aluno a tela limpa; para o professor a aula inteira continua legível.
+   * Para o estudante a tela limpa; para o professor a aula inteira continua legível.
    */
   async function reiniciar() {
     setOcupado(true);
@@ -323,7 +323,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
         // Recomecar mora no RODAPE da barra, com `trash`, que e onde e como o
         // arquivo poe "Clear conversations". Ele saiu do cabecalho: uma acao
         // destrutiva ao lado do cronometro competia com o relogio pela atencao
-        // no momento em que o aluno mais precisa olhar para o tempo.
+        // no momento em que o estudante mais precisa olhar para o tempo.
         onRecomecar={
           sessao.passo === 'investigacao' && !operacao ? () => setConfirmandoReinicio(true) : null
         }
@@ -367,20 +367,20 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
 
                 <div className="flex items-center gap-3">
                   {/* Só na Investigação. Na Orientação ele aparecia — zerado, se
-                    o aluno já tinha rodado antes — e apressava justamente a
+                    o estudante já tinha rodado antes — e apressava justamente a
                     tela que existe para ser lida com calma. */}
                   {/* Durante a operação o cronômetro para: as equipes já saíram,
                     e um relógio correndo ali só sugere que ainda dá para
                     mudar alguma coisa. */}
                   {/* O cronômetro aparece PARADO enquanto a missão não começa:
-                      é ele que diz ao aluno que a espera é a aula e não a tela
+                      é ele que diz ao estudante que a espera é a aula e não a tela
                       travada. */}
                   {!operacao && sessao.passo === 'investigacao' && (
                     <RelogioDaTempestade estado={estadoDoTempo} segundos={segundos} />
                   )}
                 </div>
                 {/* Não há botão de avançar: quem move a Missão é a conversa. O
-                  aluno diz para onde mandar as equipes e o Cientista registra —
+                  estudante diz para onde mandar as equipes e o Cientista registra —
                   botão aqui piscava a trilha e o servidor desfazia no turno
                   seguinte, porque o Passo é derivado do que aconteceu. */}
               </header>
@@ -389,7 +389,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
             <div className="flex min-h-0 flex-1">
               {/* Proporção única na Missão inteira: conversa e Resultado ficam
                   com 2/3, o mapa com 1/3. Trocar no fim reflow a tela toda no
-                  momento em que o aluno mais precisa ler com calma. */}
+                  momento em que o estudante mais precisa ler com calma. */}
               <div className={`flex min-h-0 flex-col ${operacao ? 'w-1/3' : 'w-2/3'}`}>
                 {sessao.passo === 'resultado' && resultado && (
                   <Resultado
@@ -399,7 +399,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                     tentativas={resultado.tentativas}
                     trilha={resultado.trilha}
                     sobrou={resultado.sobrou}
-                    // O mapa como ele ficou: é a leitura sobre a qual o aluno
+                    // O mapa como ele ficou: é a leitura sobre a qual o estudante
                     // decidiu, e é dela que sai o empate quando o marco de
                     // leitura não existe naquela rodada.
                     leitura={mapa
@@ -444,13 +444,13 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                   <PainelCientista
                     falas={falas}
                     // O erro mora ao lado do campo, não no alto da página: ele
-                    // renderizava acima do cabeçalho enquanto o aluno olhava o
+                    // renderizava acima do cabeçalho enquanto o estudante olhava o
                     // input no rodapé, e a única pista era o layout inteiro
                     // pulando.
                     aviso={aviso}
                     // O que já se sabe sobre a viagem: sai do texto corrido do
                     // Cientista e vira alerta ao lado do botão que manda. O
-                    // aluno confirmou com "chega com 1 minuto de sobra" escrito
+                    // estudante confirmou com "chega com 1 minuto de sobra" escrito
                     // no meio de um parágrafo — e a equipe chegou 4 min tarde.
                     alertas={projecao.rotas
                       .filter((r) => r.aviso !== null)
@@ -460,7 +460,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                     onPerguntar={perguntar}
                     // O painel de decisão existe DESDE O COMEÇO da Investigação.
                     // Antes ele só aparecia depois de já haver destino
-                    // registrado — e o aluno que não conseguiu registrar nada
+                    // registrado — e o estudante que não conseguiu registrar nada
                     // pelo chat ficava sem saída: no playtest o relógio zerou
                     // com o campo desabilitado e nenhum botão na tela.
                     onDecidir={sessao.passo === 'investigacao' ? () => setDecidindo(true) : null}
@@ -529,7 +529,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                   selecionado={bairroSelecionado}
                   onSelecionar={setSelecionado}
                   // Tocar no bairro e mandar a equipe: a mesma ação que o chat
-                  // faz, pela mão do aluno (board, tela 3).
+                  // faz, pela mão do estudante (board, tela 3).
                   onMandarEquipe={
                     sessao.passo === 'investigacao' && !operacao ? trocarDestino : undefined
                   }

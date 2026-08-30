@@ -35,7 +35,7 @@ retrato de valores, e nada no relatório mostraria a contaminação.
 ## Identidade
 
 Vem da sessão autenticada da plataforma, via `hub:init`. Não há tela de escolha de
-aluno, não há link por aluno, não há modo livre: sem handshake o shim não sobe o jogo,
+estudante, não há link por estudante, não há modo livre: sem handshake o shim não sobe o jogo,
 porque partida órfã é pior que partida nenhuma — ela desaparece e o professor lê a
 lista achando que a criança não jogou.
 
@@ -47,7 +47,7 @@ jogo confere isso antes de entregar e a api recusa payload que tenha.
 
 ```bash
 pnpm --filter @edu/exp-70-vila-do-lume dev   # :5177
-# embedado, com sessão de aluno:
+# embedado, com sessão de estudante:
 #   /dev-embed?src=http://localhost:5177   ou   /exp/exp-70-vila-do-lume
 ```
 
@@ -89,7 +89,7 @@ SDK; a partida em si vai por `window.VILA.concluir()` → `POST /vila/sessoes/:i
 
 O app de origem era **um Next.js só**, e a partida existia primeiro no navegador: o
 jogo escolhia o próprio id, cravava o próprio horário de início, decidia a própria
-bolha (`alunoSlot % 3`) e classificava as próprias respostas. Quando o dado chegava ao
+bolha (`estudanteSlot % 3`) e classificava as próprias respostas. Quando o dado chegava ao
 banco, tudo já estava decidido.
 
 Aqui a linha é essa:
@@ -97,7 +97,7 @@ Aqui a linha é essa:
 | decide | quem |
 |---|---|
 | id da partida, horário de início, retenção | api |
-| bolha (balanceada na turma, estável por aluno) | api |
+| bolha (balanceada na turma, estável por estudante) | api |
 | **quais** cartões esta criança recebe | api |
 | **quando** cada cartão chega (gatilho) | jogo — só ele sabe o estado da partida |
 | o que ela respondeu (índice, se viu, quanto tempo) | jogo |
@@ -114,7 +114,7 @@ por `concluir`. Nada de gabarito no bundle.
 ligados: partida abre e fecha no servidor, cartões servidos sem gabarito, telemetria
 nos 4 verbos do manifesto, replay abre partida nova · **M4** telas do professor
 (card transversal na trilha, ficha, resultados por turma, relatório individual) e
-card no hub do aluno · **M5** Ato 1 nativo: o perfil alimenta a largada do
+card no hub do estudante · **M5** Ato 1 nativo: o perfil alimenta a largada do
 Instanooria (`POST /atividades/:id/perfis/da-vila`).
 
 **M6** guia do debate do professor, e a decisão de retenção fechada (ver abaixo).
@@ -129,12 +129,12 @@ vai mudar. Se um contrato exigir prazo, ele volta junto com a rotina que o cumpr
 ## O Ato 1
 
 A ficha do Instanooria sempre descreveu um "Ato 1" em que *"fora da plataforma,
-um jogo mede o perfil de valores do aluno"*. Este é o jogo, e ele deixou de estar
+um jogo mede o perfil de valores do estudante"*. Este é o jogo, e ele deixou de estar
 fora: o professor traz os perfis pela tela da atividade, e eles decidem de que
-lado o feed de cada aluno nasce.
+lado o feed de cada estudante nasce.
 
 Os dez valores colapsam nos quatro quadrantes do Instanooria
-(`apps/api/src/vila/quadrantes.ts`) com duas travas que **custam alunos**, de
+(`apps/api/src/vila/quadrantes.ts`) com duas travas que **custam estudantes**, de
 propósito: valor não observado fica FORA da média (nunca entra como zero), e
 quadrante sem nenhum membro observado invalida o perfil inteiro. Sem perfil, o
 Instanooria cai no sorteio balanceado — que é honesto sobre não saber, e é o que
@@ -145,10 +145,10 @@ acontecia com a turma toda antes desta integração existir.
 `/professor/entre-redes/vila-do-lume` — ficha, com as três bolhas explicadas.
 `…/guia` — o debate: o roteiro, a folha `P/S/N/?` e a revelação com as três
 versões do golpe lado a lado.
-`…/resultados?turmaId=` — agregado da turma, uma linha por aluno, e o botão de
+`…/resultados?turmaId=` — agregado da turma, uma linha por estudante, e o botão de
 **zerar os dados da turma** (apaga partidas, perfis E bolhas: sem sortear de novo,
 a segunda rodada serviria o mesmo golpe e não mediria nada).
-`…/alunos/:id` — o relatório de uma partida.
+`…/estudantes/:id` — o relatório de uma partida.
 
 ## Documentação de design
 

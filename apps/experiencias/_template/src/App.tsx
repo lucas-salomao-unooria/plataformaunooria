@@ -24,7 +24,7 @@ export function App() {
 
   return (
     <main style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h1>Olá, {exp.aluno.nome} ({exp.aluno.serie})</h1>
+      <h1>Olá, {(exp.estudante ?? (exp as any).aluno)?.nome} ({(exp.estudante ?? (exp as any).aluno)?.serie})</h1>
       <p>Cliques: {cliques}</p>
       <button
         onClick={() => {

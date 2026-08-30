@@ -59,7 +59,7 @@ motora, leitura, memória espacial e fôlego de atenção. Ver §8.
 **A criança nunca declara quem ela é.** A identidade vem da **sessão autenticada da
 plataforma** (`hub:init` → `src/main.ts`), e a partida é aberta no servidor
 (`POST /vila/sessoes`), que crava o id e o horário de início e devolve a bolha. Não há tela de
-escolha, link por aluno nem modo livre: sem handshake o shim **não sobe o jogo**, porque
+escolha, link por estudante nem modo livre: sem handshake o shim **não sobe o jogo**, porque
 partida órfã é pior que partida nenhuma — ela desaparece e o professor lê a lista achando que
 a criança não jogou.
 
@@ -373,7 +373,7 @@ Proteções contra melhoria bem-intencionada. Cada uma já foi "consertada" para
 
 Rodando na mesma partida existe um **segundo instrumento**, separado deste: a missão
 **"A Noite Longa"**. Mensagens chegam durante o jogo — duas verdadeiras, duas golpe — e o
-nível do golpe varia por **bolha (A/B/C), atribuída pela api** — estável por aluno,
+nível do golpe varia por **bolha (A/B/C), atribuída pela api** — estável por estudante,
 balanceada dentro da turma (é a sala que precisa ter as três para o debate acontecer) e sem a
 bolha B nos anos iniciais. Os cartões chegam por `window.VILA.cartoes` **sem gabarito**; o
 jogo registra só o índice escolhido e a api corrige. Assim a turma se divide entre "era

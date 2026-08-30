@@ -49,7 +49,8 @@ interface Props {
 }
 
 export function UnooTubeApp({ sessaoInicial }: Props) {
-  const { catalogo, aluno, limiteSalvos } = sessaoInicial;
+  const { catalogo, limiteSalvos } = sessaoInicial;
+  const estudante = (sessaoInicial.estudante ?? sessaoInicial.aluno)!;
   const limite = limiteSalvos || LIMITE;
 
   const [estado, setEstado] = useState<EstadoMissao>(sessaoInicial.estado);
@@ -84,7 +85,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     setAtivoId(primeiro);
     telemetria.abriu();
     // O hub desenha o "chrome" a partir daqui: mandar sempre "feed" faria a
-    // tela de entrada aparecer como se o aluno já estivesse assistindo.
+    // tela de entrada aparecer como se o estudante já estivesse assistindo.
     experiencia().enviarEstado({ tela: telaInicial(sessaoInicial.estado) });
     window.setTimeout(() => rolarPara(primeiro, "auto"), 30);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -327,7 +328,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
   return (
     <main className={`app-shell view-${tela === "playlists" ? "library" : tela === "perfil" ? "profile" : tela}`}>
       <Topbar
-        avatar={aluno.avatar}
+        avatar={estudante.avatar}
         inscritos={derivados.inscritos}
         perfilSelecionado={tela === "perfil"}
         aoIrParaFeed={() => irParaFeed()}
@@ -396,7 +397,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
           salvos={salvos}
           curtidos={curtidos}
           limite={limite}
-          avatar={aluno.avatar}
+          avatar={estudante.avatar}
           inscritos={derivados.inscritos}
           fontesConfiaveis={rankingDesbloqueado ? derivados.fontesConfiaveis : null}
           aoAssistir={irParaFeed}
@@ -412,7 +413,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
           modo={modoRanking}
           credibilidadeAdicionada={estado.credibilidadeAdicionada}
           aparencia={aparencia}
-          avatar={aluno.avatar}
+          avatar={estudante.avatar}
           inscritos={derivados.inscritos}
           fontesConfiaveis={derivados.fontesConfiaveis}
           limite={limite}
@@ -426,8 +427,8 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
 
       {tela === "perfil" && (
         <Perfil
-          nome={aluno.nome}
-          avatar={aluno.avatar}
+          nome={estudante.nome}
+          avatar={estudante.avatar}
           aparencia={aparencia}
           aoTrocarAparencia={setAparencia}
           inscritos={derivados.inscritos}

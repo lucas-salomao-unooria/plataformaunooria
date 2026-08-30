@@ -3,7 +3,7 @@ import { Badge, Button, Card, CardContent, FeedbackAlert, Tag } from "@edu/ui/ds
 import type { Aparencia } from "../../lib/tema";
 
 /**
- * Briefing da missão — a primeira tela do aluno (Figma `3:24`).
+ * Briefing da missão — a primeira tela do estudante (Figma `3:24`).
  *
  * ELA USA O DS DA PLATAFORMA, e é a primeira vez que isso acontece ANTES da
  * revelação. O critério é o que `Dialogos.tsx` já registra: o que fala de

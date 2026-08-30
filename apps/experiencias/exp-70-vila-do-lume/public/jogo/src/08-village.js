@@ -57,7 +57,7 @@ function lightBrazier(zone){
   b.lit = true;
   addScore('fire');
   /* Canal ANALÍTICO (telemetria do SDK), separado do canal da partida. Os dois existem de
-     propósito: este agrega entre experiências e alunos; o payload da partida é o registro
+     propósito: este agrega entre experiências e estudantes; o payload da partida é o registro
      de verdade, transacional, e é dele que o perfil é recalculado. Nada aqui é lido pelo
      relatório do professor. */
   if(window.VILA) window.VILA.registrar('progressed', 'fogueira', {
@@ -401,7 +401,7 @@ function updateVillagers(dt){
 /* Village leaderboard: three podium steps with other kids' names on them. Stepping onto a
    step you outrank is a deliberate "I'm taking your place" act — a Killer signal with no
    violence anywhere near it. Purely optional; ignoring the podium costs nothing. */
-/* Nomes de quem passou antes. Eram "ALUNO 12/31/5", derivados do formato do slot; o slot
+/* Nomes de quem passou antes. Eram "ESTUDANTE 12/31/5", derivados do formato do slot; o slot
    morreu no porte para a plataforma, e o substituto NÃO PODE ser nome de colega de turma.
 
    Na plataforma a turma é real e a criança conhece os nomes dela. Gravar aqui o nome de um
@@ -479,7 +479,7 @@ function carveOnPedra(){
 }
 
 /* O PRIMEIRO NOME da criança, vindo da sessão autenticada da plataforma (nunca de um campo
-   que ela digite, nunca de um número que ela escolha). Era 'ALUNO 7', do link do professor.
+   que ela digite, nunca de um número que ela escolha). Era 'ESTUDANTE 7', do link do professor.
 
    Vive só na Camada 1 — a fala do Lume e a Pedra dos Nomes — e NUNCA é serializado: o
    payload que sobe para a api não tem campo de nome, e a api recusa payload que tenha. É a

@@ -25,7 +25,7 @@ import { MenuPerfil } from "./componentes/menu-perfil";
  * As telas do fechamento entram por `lazy` pelo mesmo motivo do origem
  * (lá era next/dynamic): a copy delas ("posts que nunca chegaram até você",
  * "O algoritmo escondeu…") entrega o mecanismo, e em import estático viajaria
- * no chunk do feed — onde o aluno pode ler antes da hora abrindo o DevTools.
+ * no chunk do feed — onde o estudante pode ler antes da hora abrindo o DevTools.
  */
 const Explicabilidade = lazy(() =>
   import("./componentes/explicabilidade").then((modulo) => ({ default: modulo.Explicabilidade })),
@@ -77,11 +77,13 @@ export interface MissaoCliente {
   ladoBLabel: string;
 }
 
-export interface AlunoCliente {
+export interface EstudanteCliente {
   displayName: string;
   handle: string;
   avatar: string;
 }
+
+export type AlunoCliente = EstudanteCliente;
 
 /**
  * Shell do Instanooria (SPA): onboarding → feed → encerramento. O cliente só
@@ -99,13 +101,16 @@ export function InstanooriaApp({
   runIdInicial,
   faseInicial,
   missao,
+  estudante,
   aluno,
 }: {
   runIdInicial: string | null;
   faseInicial: FaseCliente;
   missao: MissaoCliente;
-  aluno: AlunoCliente;
+  estudante?: EstudanteCliente;
+  aluno?: AlunoCliente;
 }) {
+  const dadosEstudante = (estudante ?? aluno)!;
   const [runId, setRunId] = useState(runIdInicial);
   const [fase, setFase] = useState<FaseCliente>(faseInicial);
   const [itens, setItens] = useState<ItemFeed[]>([]);
@@ -207,7 +212,7 @@ export function InstanooriaApp({
      * repassados pelo bootstrap) — esconder um iframe NÃO dispara
      * `visibilitychange` nele, e o cronômetro seguiria correndo com a tela
      * apagada. Cada perda de foco também é telemetria de CONTINUIDADE: o
-     * momento em que o aluno olhou para o professor, o colega ou o teto.
+     * momento em que o estudante olhou para o professor, o colega ou o teto.
      */
     const pararDeOuvir = aoMudarVisibilidade((visivel) => {
       if (!visivel) {
@@ -433,7 +438,7 @@ export function InstanooriaApp({
    * polling, "agora todas as telas mudam" só aconteceria se cada um recarregasse.
    *
    * Roda desde o onboarding: a investigação pode ser encerrada a qualquer
-   * momento, inclusive com aluno que acabou de entrar.
+   * momento, inclusive com estudante que acabou de entrar.
    */
   useEffect(() => {
     if (!runId) return;
@@ -443,7 +448,7 @@ export function InstanooriaApp({
         const { fase: noServidor } = await api.get<{ fase: FaseCliente }>(`/runs/${runId}/fase`);
 
         /**
-         * O servidor já reconcilia turma × aluno e devolve a tela certa. O
+         * O servidor já reconcilia turma × estudante e devolve a tela certa. O
          * cliente só obedece — com uma exceção: nunca puxa ninguém de volta para
          * a revelação/explicabilidade que ele já passou.
          */
@@ -461,7 +466,7 @@ export function InstanooriaApp({
   if (fase === "onboarding") {
     return (
       <Onboarding
-        primeiroNome={aluno.displayName.split(" ")[0] ?? aluno.displayName}
+        primeiroNome={dadosEstudante.displayName.split(" ")[0] ?? dadosEstudante.displayName}
         perguntaChave={missao.perguntaChave}
         aoEntrar={async (avatar, nome) => {
           const dados = await api.post<{ runId: string }>("/runs", { avatar });
@@ -484,7 +489,7 @@ export function InstanooriaApp({
 
   /**
    * FASE 4: a conclusão da missão, ANTES da revelação. Cobre a tela inteira e o
-   * feed não é renderizado atrás — o aluno não deve consultar o feed para
+   * feed não é renderizado atrás — o estudante não deve consultar o feed para
    * escrever.
    */
   if (fase === "conclusao" && runId) {
@@ -509,7 +514,7 @@ export function InstanooriaApp({
   /**
    * EXPLICABILIDADE (fluxo v2) = revelação e, em seguida, o relatório. As duas
    * num componente só: o passo entre elas é estado local, porque marcá-lo como
-   * fase fazia o polling da turma empurrar o aluno de volta para a revelação.
+   * fase fazia o polling da turma empurrar o estudante de volta para a revelação.
    *
    * `revelacao` e `dossie` são fases de runs congeladas antes do fluxo v2 e
    * caem aqui também — melhor a tela nova que uma tela órfã.
@@ -523,7 +528,7 @@ export function InstanooriaApp({
   }
 
   /**
-   * DEBATE (fluxo v2): a tela trava nos posts que o aluno salvou. É o único
+   * DEBATE (fluxo v2): a tela trava nos posts que o estudante salvou. É o único
    * momento em que ele não pode navegar — a conversa é entre pares, e o feed
    * aberto faria metade da sala rolar post novo em vez de defender o que coletou.
    */
@@ -553,7 +558,7 @@ export function InstanooriaApp({
   }
 
   /**
-   * Rede de segurança. Se o servidor mover o aluno para uma fase que ainda não
+   * Rede de segurança. Se o servidor mover o estudante para uma fase que ainda não
    * tem tela, ele NÃO pode ver o aparelho em branco. Melhor uma tela de espera
    * honesta, na língua do app.
    */
@@ -623,7 +628,8 @@ export function InstanooriaApp({
             <>
               <Stories
                 posts={posts}
-                avatarDoAluno={aluno.avatar}
+                avatarDoEstudante={dadosEstudante.avatar}
+                avatarDoAluno={dadosEstudante.avatar}
                 aoGestoDeStory={(tipo, postId) => registrar(tipo, postId)}
                 aoDwellDeStory={(postId, dwellMs) =>
                   registrar("visto", postId, { dwellMs, contexto: "story" })
@@ -632,13 +638,13 @@ export function InstanooriaApp({
 
               {meusPosts.map((post) => (
                 <article key={post.criadoEm} className="border-b border-hairline">
-                  <MeuPost post={post} avatar={aluno.avatar} handle={aluno.handle} />
+                  <MeuPost post={post} avatar={dadosEstudante.avatar} handle={dadosEstudante.handle} />
                 </article>
               ))}
 
               {itens.map((item, indice) => {
                 // A sentinela vive 3 posts antes do fim — no fim da lista, o
-                // bloco só era pedido quando o aluno já via o vazio.
+                // bloco só era pedido quando o estudante já via o vazio.
                 const faltamTresPosts = indice === Math.max(0, itens.length - 3);
 
                 return (
@@ -651,6 +657,7 @@ export function InstanooriaApp({
                         curtido={curtidos.has(item.post.id)}
                         salvo={salvos.has(item.post.id)}
                         seguindo={seguidosPorPost.has(item.post.id)}
+                        comentariosDoEstudante={comentariosMeus[item.post.id] ?? 0}
                         comentariosDoAluno={comentariosMeus[item.post.id] ?? 0}
                       />
                     ) : item.tipo === "sugestoes" ? (
@@ -677,7 +684,7 @@ export function InstanooriaApp({
                 // Post alcançado FORA do feed curado: é o dado que mostra quem
                 // furou a própria bolha por conta própria.
                 registrar("abriu_da_busca", post.id);
-                // Volta ao feed e leva o aluno até o post (como a busca do app real).
+                // Volta ao feed e leva o estudante até o post (como a busca do app real).
                 setAba("feed");
                 window.setTimeout(() => {
                   document
@@ -694,9 +701,10 @@ export function InstanooriaApp({
 
           {aba === "perfil" ? (
             <AbaPerfil
-              handle={aluno.handle}
-              displayName={aluno.displayName}
-              avatarDoAluno={aluno.avatar}
+              handle={dadosEstudante.handle}
+              displayName={dadosEstudante.displayName}
+              avatarDoEstudante={dadosEstudante.avatar}
+              avatarDoAluno={dadosEstudante.avatar}
               salvos={salvosCompletos}
               meusPosts={meusPosts}
               aoAbrirMenu={() => setMenuDaContaAberto(true)}
@@ -719,14 +727,17 @@ export function InstanooriaApp({
             if (proxima === "busca") registrar("abriu_busca");
             if (proxima === "notificacoes") setNaoLidas(0);
           }}
-          avatarDoAluno={aluno.avatar}
+          avatarDoEstudante={dadosEstudante.avatar}
+          avatarDoAluno={dadosEstudante.avatar}
           naoLidas={naoLidas}
         />
 
         <ComentariosSheet
           post={postDeComentarios}
-          avatarDoAluno={aluno.avatar}
-          handleDoAluno={aluno.handle}
+          avatarDoEstudante={dadosEstudante.avatar}
+          avatarDoAluno={dadosEstudante.avatar}
+          handleDoEstudante={dadosEstudante.handle}
+          handleDoAluno={dadosEstudante.handle}
           aoFechar={() => setPostDeComentarios(null)}
           aoComentar={(post, texto) => {
             setComentariosMeus((atual) => ({
@@ -796,7 +807,8 @@ export function InstanooriaApp({
 
         {compositorAberto ? (
           <Compositor
-            avatarDoAluno={aluno.avatar}
+            avatarDoEstudante={dadosEstudante.avatar}
+            avatarDoAluno={dadosEstudante.avatar}
             aoFechar={() => setCompositorAberto(false)}
             aoPublicar={async (texto, template) => {
               setCompositorAberto(false);
@@ -817,7 +829,7 @@ export function InstanooriaApp({
                   ),
                 );
               } catch {
-                // sem rede: o post fica no feed do aluno de todo jeito
+                // sem rede: o post fica no feed do estudante de todo jeito
               }
             }}
           />
@@ -840,7 +852,7 @@ export function InstanooriaApp({
             await buffer.current?.flush();
             /**
              * `finish` congela a run e computa o dossiê, mas leva para
-             * `conclusao`, não para `revelacao`: o aluno responde a pergunta
+             * `conclusao`, não para `revelacao`: o estudante responde a pergunta
              * ANTES de saber que o feed era enviesado.
              */
             await api.post(`/runs/${runId}/finish`).catch(() => undefined);
@@ -852,7 +864,7 @@ export function InstanooriaApp({
   );
 }
 
-/** Post do aluno no topo do feed, com curtidas fake subindo. */
+/** Post do estudante no topo do feed, com curtidas fake subindo. */
 function MeuPost({
   post,
   avatar,
@@ -909,7 +921,7 @@ function MeuPost({
       >
         {post.texto}
       </div>
-      {/* Mesma barra de ações dos outros cards: sem ela, o post do aluno era o
+      {/* Mesma barra de ações dos outros cards: sem ela, o post do estudante era o
           único card diferente do feed e saltava aos olhos. */}
       <div className="flex h-actionbar items-center justify-between px-3">
         <div className="flex items-center gap-4">

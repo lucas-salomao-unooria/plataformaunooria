@@ -52,7 +52,7 @@ dois.
 ## As três bolhas
 
 A **api** atribui a bolha e a guarda: balanceada dentro da turma (é a sala que precisa ter
-as três para o debate acontecer) e estável — o mesmo aluno recebe sempre a mesma, mesmo
+as três para o debate acontecer) e estável — o mesmo estudante recebe sempre a mesma, mesmo
 jogando de novo. O professor não escolhe, e o jogo também não: o navegador não conhece a
 turma inteira, e o cliente escolhendo a própria condição de teste está a uma linha de
 console de distância. Ver `regras.escolherBolha` na api.
@@ -85,7 +85,7 @@ contra ela.
 
 > **BRILHO_MASTER_99**
 > *"ei psiu 👀 achei um GERADOR DE FAGULHAS INFINITAS"*
-> *"vila-do-1ume-fagulhas.com — põe teu número de aluno e a senha da sala que DOBRA na hora!!!"*
+> *"vila-do-1ume-fagulhas.com — põe teu número de estudante e a senha da sala que DOBRA na hora!!!"*
 >
 > `1` Entrar no site · `2` Ignorar · `3` Avisar um adulto
 
@@ -123,7 +123,7 @@ contador, explicitamente.
 > **Lume · Suporte da Vila** ✓
 > *"Oi. Detectamos um acesso estranho na sua sala hoje."*
 > *"Suas fogueiras estão marcadas pra apagar em 2 minutos. Pra cancelar, confirma que é
-> você: manda teu número de aluno e a senha da sala aqui."*
+> você: manda teu número de estudante e a senha da sala aqui."*
 > *"Se não responder, não tem como recuperar depois."*
 
 Remetente **conhecido**, selo, português correto, ameaça ao que ela **construiu**, prazo
@@ -132,7 +132,7 @@ batida 2 — que é o que faz esse golpe ser bom.
 
 **Bolha C · o colega e o momento.** No instante em que ela fica sem fagulha.
 
-> **Aluno 14 · sua turma**
+> **Estudante 14 · sua turma**
 > *"opa, tu tá na Vila agora? sou da tua sala, sentei atrás de ti"*
 > *"tô com fagulha sobrando aqui, te mando"*
 > *"me passa o link da tua sala que eu mando direto pro teu número"*
@@ -145,7 +145,7 @@ sem link torto, sem promessa absurda, sem pressa explícita.
 
 Chega **depois** do golpe da batida 3, e é **verdadeira**.
 
-> **Aluno 07 · sua turma**
+> **Estudante 07 · sua turma**
 > *"ei, acho que te mandaram uma mensagem estranha agora há pouco"*
 > *"chegou uma igual aqui pra mim. não clica não"*
 >
@@ -171,7 +171,7 @@ como quem conseguiu o que queria.
 
 > **BRILHO_MASTER_99** — *"boa! já tô vendo aqui 👀"*
 > **Lume · Suporte da Vila** — *"Confirmado. Obrigado, sua conta está protegida."*
-> **Aluno 14** — *"valeu! te mando já já"*
+> **Estudante 14** — *"valeu! te mando já já"*
 
 E nunca chega nada. É só isso. A criança fica com a sensação de que alguma coisa não fecha, e
 o jogo não comenta.
@@ -208,7 +208,7 @@ O que vai acontecer:
 
 ### A folha do professor
 
-Enquanto a sala discute, o professor marca ao lado do nome de cada aluno **uma** letra:
+Enquanto a sala discute, o professor marca ao lado do nome de cada estudante **uma** letra:
 
 | | |
 |---|---|
@@ -255,7 +255,7 @@ E então, para o grupo que não confiou em nada:
 
 > Duas daquelas mensagens eram **verdadeiras**.
 >
-> O Lume ia te mostrar onde tinha fagulha. O Aluno 07 tentou te avisar. Vocês recusaram as
+> O Lume ia te mostrar onde tinha fagulha. O Estudante 07 tentou te avisar. Vocês recusaram as
 > duas — e recusaram o único aviso honesto que receberam naquela noite.
 >
 > Não confiar em nada não é estar seguro. É estar sozinho.
@@ -276,8 +276,8 @@ barato, não porque funciona.
 **4. A regra que sobrevive** — a única coisa da aula para decorar:
 
 > **Confere por outro caminho.**
-> Diz que é o suporte? Sai do chat e procura o suporte. Diz que é o Aluno 14? **Vira e
-> pergunta pro Aluno 14.** Diz que é sua mãe? Liga pra sua mãe.
+> Diz que é o suporte? Sai do chat e procura o suporte. Diz que é o Estudante 14? **Vira e
+> pergunta pro Estudante 14.** Diz que é sua mãe? Liga pra sua mãe.
 >
 > Golpe nenhum sobrevive a uma segunda conversa — e é exatamente por isso que todo golpe tem
 > pressa. **Pressa é o único sinal que atravessa os três níveis.**
@@ -299,11 +299,11 @@ a bolha B quando a turma escolhida é dos anos iniciais.
 sem essa pergunta; fazê-la destrói o resultado, porque quem caiu passa a defender que não
 caiu, e a lição vira vergonha.
 
-**Não há como garantir que "Aluno 14" seja um número vago:** a turma da plataforma é real e
+**Não há como garantir que "Estudante 14" seja um número vago:** a turma da plataforma é real e
 o texto do cartão é fixo no catálogo da api. Por isso a segunda metade virou requisito, não
 recomendação — a revelação **tem** que dizer, com todas as letras, que **não foi um colega de
 verdade**. Está em destaque no guia do professor por esse motivo. Se a turma sair achando que
-o Aluno 14 fez algo, a missão causou dano.
+o Estudante 14 fez algo, a missão causou dano.
 
 **A consequência dentro do jogo nunca é rotulada.** Regra do projeto, não estilo.
 

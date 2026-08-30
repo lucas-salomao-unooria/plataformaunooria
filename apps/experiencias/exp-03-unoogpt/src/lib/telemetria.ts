@@ -8,7 +8,7 @@ import type { ExperienciaHandle } from "@edu/sdk";
  * síncrona e transacional, e é ela que o professor lê. Os dois canais existem
  * separados de propósito (ver CLAUDE.md, "Telemetria: dois canais, não um").
  *
- * O TEXTO DO ALUNO NUNCA ENTRA AQUI. A conversa é caixa livre escrita por menor
+ * O TEXTO DO ESTUDANTE NUNCA ENTRA AQUI. A conversa é caixa livre escrita por menor
  * de idade; o que a telemetria carrega é contagem e nome de etapa.
  */
 let exp: ExperienciaHandle | null = null;
@@ -23,7 +23,7 @@ function track(verbo: string, objeto: string, resultado?: Dados) {
   exp?.track(verbo, objeto, resultado ? { resultado } : undefined);
 }
 
-/** O aluno abriu o briefing. */
+/** O estudante abriu o briefing. */
 export const briefingAberto = () => track("attempted", "briefing");
 
 /** Entrou na investigação — a conversa começa aqui. */
@@ -34,7 +34,7 @@ export const investigacaoAberta = (tentativa: number) =>
 export const turnoFeito = (dados: { debitou: boolean; comCartao: boolean; perguntasGastas: number }) =>
   track("interacted", "turno", dados);
 
-/** Fontes carregadas — quantas, não quais palavras o aluno usou para pedir. */
+/** Fontes carregadas — quantas, não quais palavras o estudante usou para pedir. */
 export const fontesCarregadas = (quantas: number) =>
   track("interacted", "fontes", { carregadas: quantas });
 

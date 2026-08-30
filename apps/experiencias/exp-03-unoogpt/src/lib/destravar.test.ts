@@ -7,6 +7,7 @@ import {
 } from './destravar';
 
 const agente = (tipo?: string) => ({ papel: 'agente', anexo: tipo ? { tipo } : null });
+const estudante = { papel: 'estudante', anexo: null };
 const aluno = { papel: 'aluno', anexo: null };
 
 describe('as três perguntas prontas', () => {
@@ -31,30 +32,31 @@ describe('as três perguntas prontas', () => {
   });
 });
 
-describe('quando o aluno está travado', () => {
+describe('quando o estudante está travado', () => {
   it('dois turnos seguidos sem leitura nenhuma destravam a ajuda', () => {
     // A sequência do playtest: "num intindi" e depois "no melio". Dois turnos
     // em que ele não recebeu nada da cidade.
+    expect(estaTravado([estudante, agente(), estudante, agente()])).toBe(true);
     expect(estaTravado([aluno, agente(), aluno, agente()])).toBe(true);
   });
 
   it('um turno só não basta: perguntar e não achar acontece', () => {
-    expect(estaTravado([aluno, agente()])).toBe(false);
+    expect(estaTravado([estudante, agente()])).toBe(false);
     expect(estaTravado([])).toBe(false);
   });
 
   it('leitura na tela destrava: quem recebeu dado não está perdido', () => {
-    expect(estaTravado([aluno, agente(), aluno, agente('tendencia')])).toBe(false);
-    expect(estaTravado([aluno, agente(), aluno, agente('opcoes')])).toBe(false);
+    expect(estaTravado([estudante, agente(), estudante, agente('tendencia')])).toBe(false);
+    expect(estaTravado([estudante, agente(), estudante, agente('opcoes')])).toBe(false);
   });
 
   it('quem já está alocando não está travado, está decidindo', () => {
-    expect(estaTravado([aluno, agente(), aluno, agente('alocacao')])).toBe(false);
-    expect(estaTravado([aluno, agente(), aluno, agente('desfecho')])).toBe(false);
+    expect(estaTravado([estudante, agente(), estudante, agente('alocacao')])).toBe(false);
+    expect(estaTravado([estudante, agente(), estudante, agente('desfecho')])).toBe(false);
   });
 
   it('a leitura antiga não conta: o que vale são os últimos turnos', () => {
-    const historico = [aluno, agente('tendencia'), aluno, agente(), aluno, agente()];
+    const historico = [estudante, agente('tendencia'), estudante, agente(), estudante, agente()];
     expect(historico.filter((f) => f.papel === 'agente')).toHaveLength(3);
     expect(estaTravado(historico)).toBe(true);
     expect(TURNOS_ATE_DESTRAVAR).toBe(2);
