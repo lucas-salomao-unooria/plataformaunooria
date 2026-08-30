@@ -5,11 +5,11 @@
 -- o vínculo não existia — `exp_01_activities` só tinha `escola_id` e
 -- `professor_id`. As consequências eram todas silenciosas:
 --
---   * o painel de perfis listava os alunos da ESCOLA, misturando salas;
+--   * o painel de perfis listava os estudantes da ESCOLA, misturando salas;
 --   * `POST :id/perfis/da-vila` mandava `{}` e varria a escola, então o
 --     "N ainda não jogaram" contava crianças de outras turmas;
---   * `POST /runs` entrega ao aluno a atividade ativa mais recente da escola,
---     então o aluno do 8B entrava na atividade do 8A.
+--   * `POST /runs` entrega ao estudante a atividade ativa mais recente da escola,
+--     então o estudante do 8B entrava na atividade do 8A.
 --
 -- Anulável e SEM backfill, de propósito. `NULL` quer dizer "atividade anterior a
 -- esta mudança", e é assim que ela continua se comportando como antes — escolher

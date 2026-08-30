@@ -6,8 +6,8 @@
  * perdidos — sem esperar a geração de centenas de posts com imagem a cada
  * rodada. O conteúdo é marcado no título; não confunda com atividade real.
  *
- * Uso:  pnpm --filter @edu/api seed:demo            (8 alunos com perfil do Ato 1)
- *       pnpm --filter @edu/api seed:demo -- 24      (24 alunos)
+ * Uso:  pnpm --filter @edu/api seed:demo            (8 estudantes com perfil do Ato 1)
+ *       pnpm --filter @edu/api seed:demo -- 24      (24 estudantes)
  *       pnpm --filter @edu/api seed:demo -- --apagar
  */
 import { PrismaClient } from "@prisma/client";
@@ -89,7 +89,7 @@ async function apagar() {
   console.log(`atividade de demonstração apagada (${ids.length}).`);
 }
 
-async function semear(qtdAlunos: number) {
+async function semear(qtdEstudantes: number) {
   const professor = await prisma.user.findFirst({
     where: { username: "prof.demo", escolaId: ESCOLA_ID },
   });
@@ -243,21 +243,21 @@ async function semear(qtdAlunos: number) {
   });
 
   /** Perfis do Ato 1 em rodízio pelos 4, para a turma nascer dividida. */
-  const alunos = await prisma.user.findMany({
+  const estudantes = await prisma.user.findMany({
     // Só o 8º ano: a turma 4A do seed pertence à exp-02-unootube, não ao Instanooria.
-    where: { role: "aluno", escolaId: ESCOLA_ID, turma: { serie: "8EF" } },
+    where: { role: "estudante", escolaId: ESCOLA_ID, turma: { serie: "8EF" } },
     orderBy: { username: "asc" },
-    take: qtdAlunos,
+    take: qtdEstudantes,
     select: { id: true, username: true },
   });
 
-  for (const [indice, aluno] of alunos.entries()) {
+  for (const [indice, estudante] of estudantes.entries()) {
     const dominante = PERFIS[indice % PERFIS.length]!;
     await prisma.perfilImportado.create({
       data: {
         escolaId: ESCOLA_ID,
         activityId: atividade.id,
-        alunoId: aluno.id,
+        estudanteId: estudante.id,
         escores: Object.fromEntries(
           PERFIS.map((perfil) => [perfil, perfil === dominante ? 0.4 : 0.2]),
         ),
@@ -270,7 +270,7 @@ async function semear(qtdAlunos: number) {
 
   console.log(`atividade ....... ${atividade.id}`);
   console.log(`posts ........... ${posts.length} (imagem em fallback procedural)`);
-  console.log(`perfis do Ato 1 . ${alunos.length} alunos`);
+  console.log(`perfis do Ato 1 . ${estudantes.length} estudantes`);
 }
 
 // Sem top-level await: o ts-node compila este arquivo como CJS.

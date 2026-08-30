@@ -14,7 +14,7 @@
 -- 1. `lotacoes` — o vínculo PESSOA × ESCOLA, datado. "Lotação" é o termo que a
 --    rede pública usa para a alocação de um servidor a uma unidade, e é
 --    exatamente isso. O professor tem lotação em várias escolas; ao entrar, ele
---    ESCOLHE em qual está trabalhando, e o token leva essa. O aluno tem uma
+--    ESCOLHE em qual está trabalhando, e o token leva essa. O estudante tem uma
 --    ativa; trocar de escola é transferência, que encerra a anterior.
 --    É o `roles.csv` do OneRoster: papel no nível da organização.
 --
@@ -69,7 +69,7 @@ CREATE INDEX "lotacoes_usuario_id_idx" ON "lotacoes"("usuario_id");
 CREATE INDEX "lotacoes_escola_id_papel_idx" ON "lotacoes"("escola_id", "papel");
 
 ALTER TABLE "lotacoes"
-  ADD CONSTRAINT "lotacoes_papel_check" CHECK ("papel" IN ('aluno','professor','gestor')),
+  ADD CONSTRAINT "lotacoes_papel_check" CHECK ("papel" IN ('estudante','professor','gestor')),
   ADD CONSTRAINT "lotacoes_intervalo_check" CHECK ("fim" IS NULL OR "fim" >= "inicio"),
   ADD CONSTRAINT "lotacoes_escola_id_fkey"
     FOREIGN KEY ("escola_id") REFERENCES "escolas"("id")
@@ -78,12 +78,12 @@ ALTER TABLE "lotacoes"
     FOREIGN KEY ("usuario_id") REFERENCES "users"("id")
     ON DELETE CASCADE ON UPDATE CASCADE;
 
--- O ALUNO tem UMA lotação ativa. Não é regra de tela: é o banco que garante,
--- porque "aluno em duas escolas ao mesmo tempo" quebra a leitura do histórico e
+-- O ESTUDANTE tem UMA lotação ativa. Não é regra de tela: é o banco que garante,
+-- porque "estudante em duas escolas ao mesmo tempo" quebra a leitura do histórico e
 -- é indistinguível de uma transferência que ficou pela metade.
-CREATE UNIQUE INDEX "lotacoes_uma_escola_por_aluno_ativo"
+CREATE UNIQUE INDEX "lotacoes_uma_escola_por_estudante_ativo"
   ON "lotacoes"("usuario_id")
-  WHERE "papel" = 'aluno' AND "fim" IS NULL;
+  WHERE "papel" = 'estudante' AND "fim" IS NULL;
 
 -- SEM RLS, de propósito, e pelo mesmo motivo de `users`/`turmas`: esta tabela é
 -- lida no LOGIN, antes de se saber a escola — é ela que responde "quais escolas
@@ -101,7 +101,7 @@ SELECT u."escola_id", u."id", u."role", true,
        )
   FROM "users" u
  WHERE u."escola_id" IS NOT NULL
-   AND u."role" IN ('aluno','professor','gestor')
+   AND u."role" IN ('estudante','professor','gestor')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================

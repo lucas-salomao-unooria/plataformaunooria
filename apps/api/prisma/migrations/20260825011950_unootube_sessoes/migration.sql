@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "unootube_sessoes" (
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "salvos" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "curtidos" TEXT[] DEFAULT ARRAY[]::TEXT[],
     "ranking_desbloqueado" BOOLEAN NOT NULL DEFAULT false,
@@ -11,14 +11,14 @@ CREATE TABLE "unootube_sessoes" (
     "criado_em" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "atualizado_em" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "unootube_sessoes_pkey" PRIMARY KEY ("escola_id","aluno_id")
+    CONSTRAINT "unootube_sessoes_pkey" PRIMARY KEY ("escola_id","estudante_id")
 );
 
 -- CreateIndex
 CREATE INDEX "unootube_sessoes_escola_id_idx" ON "unootube_sessoes"("escola_id");
 
 -- AddForeignKey
-ALTER TABLE "unootube_sessoes" ADD CONSTRAINT "unootube_sessoes_aluno_id_fkey" FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "unootube_sessoes" ADD CONSTRAINT "unootube_sessoes_estudante_id_fkey" FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- ============================================================================
 -- exp-02-unootube — o que o Prisma não modela (mesmo padrão da init).
@@ -32,7 +32,7 @@ ALTER TABLE "unootube_sessoes"
   ADD CONSTRAINT "unootube_sessoes_conclusao_check"
     CHECK ("credibilidade_adicionada" = false OR "concluido_em" IS NOT NULL);
 
--- RLS (regra inviolável nº 1) — mesma expressão das outras tabelas de aluno.
+-- RLS (regra inviolável nº 1) — mesma expressão das outras tabelas de estudante.
 ALTER TABLE "unootube_sessoes" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "unootube_sessoes" FORCE ROW LEVEL SECURITY;
 CREATE POLICY "unootube_sessoes_por_escola" ON "unootube_sessoes"

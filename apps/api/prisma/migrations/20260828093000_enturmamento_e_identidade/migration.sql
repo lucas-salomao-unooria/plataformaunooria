@@ -4,13 +4,13 @@
 --
 -- 1. A conta era de ASSENTO, não de pessoa. Está escrito no schema desde o
 --    port: `exp_01_runs.nome_no_app` existe "porque a conta é do APARELHO:
---    outra turma reusa o mesmo login". Consequência: o nome real do aluno vivia
+--    outra turma reusa o mesmo login". Consequência: o nome real do estudante vivia
 --    dentro de UMA experiência, e nenhuma das outras o enxergava. Entram
 --    `users.matricula_externa` (o RA da rede) como chave de PESSOA, `fonte_id`
 --    para reconciliar com o SIS, `email` e `ativo`.
 --
 -- 2. Não existia enturmamento. O vínculo era a coluna `users.turma_id`: um
---    aluno cabia em uma turma só, o PROFESSOR não tinha turma nenhuma (e por
+--    estudante cabia em uma turma só, o PROFESSOR não tinha turma nenhuma (e por
 --    isso todo professor enxergava todas as turmas da escola), e não havia ano
 --    letivo — em fevereiro o 8A vira 9A e todo o acumulado do ano anterior
 --    passaria a ser lido pela turma nova, em silêncio. Entram
@@ -146,7 +146,7 @@ CREATE UNIQUE INDEX "users_escola_id_matricula_externa_key"
 -- ============================================================================
 -- 5. MATRÍCULAS (≈ enrollments) — o enturmamento
 -- ============================================================================
--- `papel` só admite aluno e professor: gestor é papel no NÍVEL DA ESCOLA (o
+-- `papel` só admite estudante e professor: gestor é papel no NÍVEL DA ESCOLA (o
 -- `roles.csv` do padrão), não matrícula de turma — e é por isso que ele continua
 -- enxergando a escola inteira enquanto o professor passa a ver só as turmas
 -- dele.
@@ -174,7 +174,7 @@ CREATE INDEX "matriculas_escola_id_turma_id_idx"
   ON "matriculas"("escola_id", "turma_id");
 
 ALTER TABLE "matriculas"
-  ADD CONSTRAINT "matriculas_papel_check" CHECK ("papel" IN ('aluno','professor')),
+  ADD CONSTRAINT "matriculas_papel_check" CHECK ("papel" IN ('estudante','professor')),
   ADD CONSTRAINT "matriculas_intervalo_check"
     CHECK ("fim" IS NULL OR "fim" >= "inicio"),
   ADD CONSTRAINT "matriculas_turma_id_fkey"
@@ -184,17 +184,17 @@ ALTER TABLE "matriculas"
     FOREIGN KEY ("usuario_id") REFERENCES "users"("id")
     ON DELETE CASCADE ON UPDATE CASCADE;
 
--- Backfill: cada `users.turma_id` vira UMA matrícula principal de aluno. É o
+-- Backfill: cada `users.turma_id` vira UMA matrícula principal de estudante. É o
 -- passo que faz o histórico de 2026 continuar apontando para a turma de 2026
 -- depois que a de 2027 existir.
 INSERT INTO "matriculas" ("escola_id", "turma_id", "usuario_id", "papel", "principal", "inicio")
-SELECT u."escola_id", u."turma_id", u."id", 'aluno', true,
+SELECT u."escola_id", u."turma_id", u."id", 'estudante', true,
        (SELECT "inicio" FROM "periodos_letivos"
          WHERE "tipo" = 'ano_letivo' AND "titulo" = 'Ano letivo 2026')
   FROM "users" u
  WHERE u."turma_id" IS NOT NULL
    AND u."escola_id" IS NOT NULL
-   AND u."role" = 'aluno'
+   AND u."role" = 'estudante'
 ON CONFLICT DO NOTHING;
 
 -- RLS. `matriculas` NÃO entra na exceção de identidade que vale para

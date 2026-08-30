@@ -1,7 +1,7 @@
 -- `telemetria_eventos` particionada por mês.
 --
 -- O problema: a tabela é append-only, cresce para sempre (não há prazo de
--- retenção declarado — decisão registrada no CLAUDE.md) e a 10 mil alunos dá
+-- retenção declarado — decisão registrada no CLAUDE.md) e a 10 mil estudantes dá
 -- ~60M linhas/ano. Numa tabela única isso vira índice inchado, VACUUM lento, e
 -- qualquer retenção futura seria um `DELETE` que trava a tabela e deixa bloat.
 --
@@ -43,7 +43,7 @@ CREATE TABLE telemetria_eventos (
   event_id    uuid          NOT NULL,
   ts          timestamptz(6) NOT NULL,
   escola_id   text          NOT NULL,
-  aluno_id    text          NOT NULL,
+  estudante_id text         NOT NULL,
   exp_id      text          NOT NULL,
   exp_version text          NOT NULL,
   sessao_id   uuid          NOT NULL,
@@ -85,8 +85,8 @@ CREATE INDEX idx_tel_escola_exp_ts
 -- `app.escola_id` no contexto, a política reprovaria o próprio INSERT da
 -- migration (o USING vale como WITH CHECK numa policy FOR ALL).
 INSERT INTO telemetria_eventos
-  (event_id, ts, escola_id, aluno_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto)
-SELECT event_id, ts, escola_id, aluno_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto
+  (event_id, ts, escola_id, estudante_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto)
+SELECT event_id, ts, escola_id, estudante_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto
   FROM telemetria_eventos_antiga;
 
 DROP TABLE telemetria_eventos_antiga;

@@ -32,7 +32,7 @@
 CREATE TABLE "perfis_portateis" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     /* Quem emitiu: o id do contrato de origem e a origem HTTPS do hub que
        assinou. Os dois ficam na linha porque o documento pode chegar de uma rede
        que esta instalação nunca viu. */
@@ -62,8 +62,8 @@ ALTER TABLE "perfis_portateis"
     FOREIGN KEY ("escola_id") REFERENCES "escolas"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE "perfis_portateis"
-  ADD CONSTRAINT "perfis_portateis_aluno_id_fkey"
-    FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT "perfis_portateis_estudante_id_fkey"
+    FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE "perfis_portateis"
   ADD CONSTRAINT "perfis_portateis_importado_por_fkey"
@@ -73,11 +73,11 @@ ALTER TABLE "perfis_portateis"
 -- arquivo por e-mail, alguém importa duas vezes, e duas cópias do mesmo fato
 -- pareceriam duas medidas.
 CREATE UNIQUE INDEX "perfis_portateis_documento_unico"
-  ON "perfis_portateis"("escola_id", "aluno_id", "emissor_contrato", "emitido_em");
+  ON "perfis_portateis"("escola_id", "estudante_id", "emissor_contrato", "emitido_em");
 
-CREATE INDEX "perfis_portateis_por_aluno" ON "perfis_portateis"("escola_id", "aluno_id");
+CREATE INDEX "perfis_portateis_por_estudante" ON "perfis_portateis"("escola_id", "estudante_id");
 
--- RLS pela mesma política de sempre. Perfil importado é dado de aluno: pertence
+-- RLS pela mesma política de sempre. Perfil importado é dado de estudante: pertence
 -- à escola que o recebeu, e some da vista de todas as outras.
 ALTER TABLE "perfis_portateis" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "perfis_portateis" FORCE ROW LEVEL SECURITY;

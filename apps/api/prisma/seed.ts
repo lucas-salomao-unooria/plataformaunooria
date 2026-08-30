@@ -4,9 +4,9 @@ import bcrypt from "bcryptjs";
 
 /**
  * Seed de desenvolvimento — evolução multi-tenant do seed do projeto origem:
- * 1 escola demo com 2 turmas de 8º ano (40 alunos, 20 por turma), 1 turma de
- * 4º ano (10 alunos, para a exp-02-unootube) e 1 turma de 2ª série do EM
- * (10 alunos, para a exp-03-unoogpt), 1 professor, 1 gestor e
+ * 1 escola demo com 2 turmas de 8º ano (40 estudantes, 20 por turma), 1 turma de
+ * 4º ano (10 estudantes, para a exp-02-unootube) e 1 turma de 2ª série do EM
+ * (10 estudantes, para a exp-03-unoogpt), 1 professor, 1 gestor e
  * 1 admin-contrato (sem escola — única exceção da regra de tenancy).
  * Idempotente — pode rodar quantas vezes quiser.
  *
@@ -14,7 +14,7 @@ import bcrypt from "bcryptjs";
  * (`POST /rostering/importar`, papel gestor/admin-contrato).
  *
  * `SEED_MINIMO=1` cria só a escola, o gestor e o admin-contrato — nada de
- * turmas, alunos nem professor. É o ponto de partida para percorrer a plataforma
+ * turmas, estudantes nem professor. É o ponto de partida para percorrer a plataforma
  * do zero: com o seed completo, as 61 contas de demonstração aparecem no
  * diagnóstico de contas de assento e poluem o caminho que se quer testar.
  * Os walkthroughs visuais exigem o seed COMPLETO — o mínimo não os serve.
@@ -46,16 +46,16 @@ function senhaDoSeed(): string {
 }
 const ANO_LETIVO = 2026;
 const TITULO_PERIODO = `Ano letivo ${ANO_LETIVO}`;
-const TOTAL_ALUNOS = 40;
-const TOTAL_ALUNOS_4A = 10;
+const TOTAL_ESTUDANTES = 40;
+const TOTAL_ESTUDANTES_4A = 10;
 /** 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). */
-const TOTAL_ALUNOS_2A = 10;
+const TOTAL_ESTUDANTES_2A = 10;
 const ESCOLA_ID = "escola-demo";
 /** Segunda escola: é ela que torna visível o professor lotado em DUAS. */
 const ESCOLA_2_ID = "escola-demo-2";
 /** A regional que agrupa as duas — o nível entre a escola e o contrato. */
 const REGIONAL_ID = "de-demo";
-const TOTAL_ALUNOS_5A = 10;
+const TOTAL_ESTUDANTES_5A = 10;
 const MINIMO = process.env.SEED_MINIMO === "1";
 
 async function main() {
@@ -135,7 +135,7 @@ async function main() {
    * contexto de tenancy); a verdade é a linha em `matriculas`.
    */
   /**
-   * Lotação: o vínculo com a ESCOLA. Professor acumula; aluno tem uma só.
+   * Lotação: o vínculo com a ESCOLA. Professor acumula; estudante tem uma só.
    * `users.escola_id` é o cache da principal.
    */
   const lotar = (escolaId: string, usuarioId: string, papel: string, principal: boolean) =>
@@ -151,7 +151,7 @@ async function main() {
   const matricular = (
     turmaId: string,
     usuarioId: string,
-    papel: "aluno" | "professor",
+    papel: "estudante" | "professor",
     escolaId = ESCOLA_ID,
   ) =>
     comEscola(prisma, escolaId, (tx) =>
@@ -165,7 +165,7 @@ async function main() {
         turmaId,
         usuarioId,
         papel,
-        principal: papel === "aluno",
+        principal: papel === "estudante",
         inicio: periodo.inicio,
       },
       }),
@@ -208,7 +208,7 @@ async function main() {
     await upsertAdminContrato();
     console.log(
       `Seed MÍNIMO: escola "${ESCOLA_ID}", período "${periodo.titulo}", gestor.demo e ` +
-        `analise.unooria (senha: a de SEED_SENHA). Nenhuma turma, nenhum aluno — ` +
+        `analise.unooria (senha: a de SEED_SENHA). Nenhuma turma, nenhum estudante — ` +
         `as pessoas entram por /admin/importar.`,
     );
     return;
@@ -242,39 +242,39 @@ async function main() {
   const professor = await upsertUsuario("prof.demo", "Prof. Demo", "professor");
   const gestor = await upsertUsuario("gestor.demo", "Gestor Demo", "gestor");
 
-  for (let i = 1; i <= TOTAL_ALUNOS; i += 1) {
+  for (let i = 1; i <= TOTAL_ESTUDANTES; i += 1) {
     const numero = String(i).padStart(2, "0");
-    const turma = turmas[i <= TOTAL_ALUNOS / 2 ? 0 : 1]!;
-    const aluno = await upsertUsuario(`aluno${numero}`, `Aluno ${numero}`, "aluno", {
+    const turma = turmas[i <= TOTAL_ESTUDANTES / 2 ? 0 : 1]!;
+    const estudante = await upsertUsuario(`estudante${numero}`, `Estudante ${numero}`, "estudante", {
       turmaId: turma.id,
     });
-    await lotar(ESCOLA_ID, aluno.id, "aluno", true);
-    await matricular(turma.id, aluno.id, "aluno");
+    await lotar(ESCOLA_ID, estudante.id, "estudante", true);
+    await matricular(turma.id, estudante.id, "estudante");
   }
 
-  // 4º ano: a série roteia o aluno para a exp-02-unootube (apps/hub/lib/experiencia-do-aluno.ts).
+  // 4º ano: a série roteia o estudante para a exp-02-unootube (apps/hub/lib/experiencia-do-estudante.ts).
   const turma4A = await upsertTurma("4A", "4EF");
-  for (let i = 1; i <= TOTAL_ALUNOS_4A; i += 1) {
+  for (let i = 1; i <= TOTAL_ESTUDANTES_4A; i += 1) {
     const numero = String(i).padStart(2, "0");
-    const aluno = await upsertUsuario(`aluno4a${numero}`, `Aluno 4A ${numero}`, "aluno", {
+    const estudante = await upsertUsuario(`estudante4a${numero}`, `Estudante 4A ${numero}`, "estudante", {
       turmaId: turma4A.id,
     });
-    await lotar(ESCOLA_ID, aluno.id, "aluno", true);
-    await matricular(turma4A.id, aluno.id, "aluno");
+    await lotar(ESCOLA_ID, estudante.id, "estudante", true);
+    await matricular(turma4A.id, estudante.id, "estudante");
   }
 
   // 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). O relógio
   // dela é por TURMA — quem dá a largada é o professor, em
-  // /professor/entre-redes/2-serie/unidade-1/resultados. Sem a largada o aluno
+  // /professor/entre-redes/2-serie/unidade-1/resultados. Sem a largada o estudante
   // vê o cronômetro parado, e é o motivo nº 1 de "a missão não abre".
   const turma2A = await upsertTurma("2A", "2EM");
-  for (let i = 1; i <= TOTAL_ALUNOS_2A; i += 1) {
+  for (let i = 1; i <= TOTAL_ESTUDANTES_2A; i += 1) {
     const numero = String(i).padStart(2, "0");
-    const aluno = await upsertUsuario(`aluno2a${numero}`, `Aluno 2A ${numero}`, "aluno", {
+    const estudante = await upsertUsuario(`estudante2a${numero}`, `Estudante 2A ${numero}`, "estudante", {
       turmaId: turma2A.id,
     });
-    await lotar(ESCOLA_ID, aluno.id, "aluno", true);
-    await matricular(turma2A.id, aluno.id, "aluno");
+    await lotar(ESCOLA_ID, estudante.id, "estudante", true);
+    await matricular(turma2A.id, estudante.id, "estudante");
   }
 
   // O professor demo é matriculado nas QUATRO turmas. Sem isso as telas dele
@@ -307,18 +307,18 @@ async function main() {
   await lotar(ESCOLA_2_ID, gestor2.id, "gestor", true);
   await lotar(ESCOLA_2_ID, professor.id, "professor", false);
   await matricular(turma5A.id, professor.id, "professor", ESCOLA_2_ID);
-  for (let i = 1; i <= TOTAL_ALUNOS_5A; i += 1) {
+  for (let i = 1; i <= TOTAL_ESTUDANTES_5A; i += 1) {
     const numero = String(i).padStart(2, "0");
-    const aluno = await upsertUsuario(`aluno5a${numero}`, `Aluno 5A ${numero}`, "aluno", {
+    const estudante = await upsertUsuario(`estudante5a${numero}`, `Estudante 5A ${numero}`, "estudante", {
       escolaId: ESCOLA_2_ID,
       turmaId: turma5A.id,
     });
-    await lotar(ESCOLA_2_ID, aluno.id, "aluno", true);
-    await matricular(turma5A.id, aluno.id, "aluno", ESCOLA_2_ID);
+    await lotar(ESCOLA_2_ID, estudante.id, "estudante", true);
+    await matricular(turma5A.id, estudante.id, "estudante", ESCOLA_2_ID);
   }
 
   // admin-contrato: papel de nível de produto (o "analista" do origem). Vê a
-  // análise entre escolas/turmas; não alcança as telas do professor nem a do aluno.
+  // análise entre escolas/turmas; não alcança as telas do professor nem a do estudante.
   await upsertAdminContrato();
 
   const total = await prisma.user.count();
@@ -326,7 +326,7 @@ async function main() {
     `Seed ok: regional "${REGIONAL_ID}" com 2 escolas ("${ESCOLA_ID}" com 8A, 8B, 4A, 2A e ` +
       `"${ESCOLA_2_ID}" com 5A), prof.demo e supervisor.demo lotados nas DUAS, ` +
       `gestor.demo, gestor.vilanova, ` +
-      `${TOTAL_ALUNOS + TOTAL_ALUNOS_4A + TOTAL_ALUNOS_2A + TOTAL_ALUNOS_5A} alunos e ` +
+      `${TOTAL_ESTUDANTES + TOTAL_ESTUDANTES_4A + TOTAL_ESTUDANTES_2A + TOTAL_ESTUDANTES_5A} estudantes e ` +
       `1 admin-contrato (senha: a de SEED_SENHA). Usuários na base: ${total}.`,
   );
 }

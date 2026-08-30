@@ -1,6 +1,6 @@
--- A resposta do aluno guardava só a ÚLTIMA escolha.
+-- A resposta do estudante guardava só a ÚLTIMA escolha.
 --
--- A tela diz "pode trocar de ideia enquanto espera — vale a última", e o aluno
+-- A tela diz "pode trocar de ideia enquanto espera — vale a última", e o estudante
 -- oscila de propósito enquanto os colegas terminam. O upsert sobrescrevia
 -- `inclinacao`, e a primeira escolha — a reação imediata ao feed, antes de dois
 -- minutos de espera e de olhar a tela do colega — não existia em lugar nenhum.

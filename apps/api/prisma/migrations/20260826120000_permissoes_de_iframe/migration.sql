@@ -9,7 +9,7 @@
 -- é pior que valor nenhum.
 --
 -- Isto entra POR EXPERIÊNCIA, e não como default do frame, porque prender o
--- ponteiro do aluno é capacidade que só quem declarou deve ter: um bundle
+-- ponteiro do estudante é capacidade que só quem declarou deve ter: um bundle
 -- qualquer com essa permissão captura o mouse e a criança não sabe como sair.
 --
 -- Default `{}` = nenhuma permissão, que é o que toda experiência existente

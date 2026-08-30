@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "exp_03_sessoes" (
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "turma_id" UUID,
     "passo" TEXT NOT NULL DEFAULT 'abertura',
     "tentativa" SMALLINT NOT NULL DEFAULT 1,
@@ -19,14 +19,14 @@ CREATE TABLE "exp_03_sessoes" (
     "atualizado_em" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "concluido_em" TIMESTAMPTZ(6),
 
-    CONSTRAINT "exp_03_sessoes_pkey" PRIMARY KEY ("escola_id","aluno_id")
+    CONSTRAINT "exp_03_sessoes_pkey" PRIMARY KEY ("escola_id","estudante_id")
 );
 
 -- CreateTable
 CREATE TABLE "exp_03_mensagens" (
     "id" BIGSERIAL NOT NULL,
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "papel" TEXT NOT NULL,
     "texto" TEXT NOT NULL,
     "passo" TEXT NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE "exp_03_mensagens" (
 CREATE TABLE "exp_03_marcos" (
     "id" BIGSERIAL NOT NULL,
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "tentativa" SMALLINT NOT NULL,
     "ordem" INTEGER NOT NULL,
     "tipo" TEXT NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE "exp_03_marcos" (
 CREATE TABLE "exp_03_simulacoes" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "ordem" INTEGER NOT NULL,
     "alocacao" JSONB NOT NULL,
     "desfecho" JSONB NOT NULL,
@@ -90,34 +90,34 @@ CREATE INDEX "exp_03_sessoes_escola_id_idx" ON "exp_03_sessoes"("escola_id");
 CREATE INDEX "exp_03_sessoes_escola_id_turma_id_idx" ON "exp_03_sessoes"("escola_id", "turma_id");
 
 -- CreateIndex
-CREATE INDEX "exp_03_mensagens_escola_id_aluno_id_id_idx" ON "exp_03_mensagens"("escola_id", "aluno_id", "id");
+CREATE INDEX "exp_03_mensagens_escola_id_estudante_id_id_idx" ON "exp_03_mensagens"("escola_id", "estudante_id", "id");
 
 -- CreateIndex
-CREATE INDEX "exp_03_marcos_escola_id_aluno_id_idx" ON "exp_03_marcos"("escola_id", "aluno_id");
+CREATE INDEX "exp_03_marcos_escola_id_estudante_id_idx" ON "exp_03_marcos"("escola_id", "estudante_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "exp_03_marcos_escola_id_aluno_id_tentativa_ordem_key" ON "exp_03_marcos"("escola_id", "aluno_id", "tentativa", "ordem");
+CREATE UNIQUE INDEX "exp_03_marcos_escola_id_estudante_id_tentativa_ordem_key" ON "exp_03_marcos"("escola_id", "estudante_id", "tentativa", "ordem");
 
 -- CreateIndex
-CREATE INDEX "exp_03_simulacoes_escola_id_aluno_id_idx" ON "exp_03_simulacoes"("escola_id", "aluno_id");
+CREATE INDEX "exp_03_simulacoes_escola_id_estudante_id_idx" ON "exp_03_simulacoes"("escola_id", "estudante_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "exp_03_simulacoes_escola_id_aluno_id_ordem_key" ON "exp_03_simulacoes"("escola_id", "aluno_id", "ordem");
+CREATE UNIQUE INDEX "exp_03_simulacoes_escola_id_estudante_id_ordem_key" ON "exp_03_simulacoes"("escola_id", "estudante_id", "ordem");
 
 -- CreateIndex
 CREATE INDEX "exp_03_relogio_turma_escola_id_idx" ON "exp_03_relogio_turma"("escola_id");
 
 -- AddForeignKey
-ALTER TABLE "exp_03_sessoes" ADD CONSTRAINT "exp_03_sessoes_aluno_id_fkey" FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "exp_03_sessoes" ADD CONSTRAINT "exp_03_sessoes_estudante_id_fkey" FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "exp_03_mensagens" ADD CONSTRAINT "exp_03_mensagens_escola_id_aluno_id_fkey" FOREIGN KEY ("escola_id", "aluno_id") REFERENCES "exp_03_sessoes"("escola_id", "aluno_id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "exp_03_mensagens" ADD CONSTRAINT "exp_03_mensagens_escola_id_estudante_id_fkey" FOREIGN KEY ("escola_id", "estudante_id") REFERENCES "exp_03_sessoes"("escola_id", "estudante_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "exp_03_marcos" ADD CONSTRAINT "exp_03_marcos_escola_id_aluno_id_fkey" FOREIGN KEY ("escola_id", "aluno_id") REFERENCES "exp_03_sessoes"("escola_id", "aluno_id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "exp_03_marcos" ADD CONSTRAINT "exp_03_marcos_escola_id_estudante_id_fkey" FOREIGN KEY ("escola_id", "estudante_id") REFERENCES "exp_03_sessoes"("escola_id", "estudante_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "exp_03_simulacoes" ADD CONSTRAINT "exp_03_simulacoes_escola_id_aluno_id_fkey" FOREIGN KEY ("escola_id", "aluno_id") REFERENCES "exp_03_sessoes"("escola_id", "aluno_id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "exp_03_simulacoes" ADD CONSTRAINT "exp_03_simulacoes_escola_id_estudante_id_fkey" FOREIGN KEY ("escola_id", "estudante_id") REFERENCES "exp_03_sessoes"("escola_id", "estudante_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "exp_03_relogio_turma" ADD CONSTRAINT "exp_03_relogio_turma_turma_id_fkey" FOREIGN KEY ("turma_id") REFERENCES "turmas"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -155,10 +155,10 @@ ALTER TABLE "exp_03_sessoes"
 
 ALTER TABLE "exp_03_mensagens"
   ADD CONSTRAINT "exp_03_mensagens_papel_check"
-    CHECK ("papel" IN ('aluno', 'agente')),
-  -- Só fala do ALUNO debita pergunta: a resposta do Cientista nunca custa.
+    CHECK ("papel" IN ('estudante', 'agente')),
+  -- Só fala do ESTUDANTE debita pergunta: a resposta do Cientista nunca custa.
   ADD CONSTRAINT "exp_03_mensagens_debito_check"
-    CHECK ("debitou" = false OR "papel" = 'aluno');
+    CHECK ("debitou" = false OR "papel" = 'estudante');
 
 ALTER TABLE "exp_03_marcos"
   ADD CONSTRAINT "exp_03_marcos_tipo_check"
@@ -185,8 +185,8 @@ ALTER TABLE "exp_03_relogio_turma"
   ADD CONSTRAINT "exp_03_relogio_turma_pivo_check"
     CHECK ("pivo_seg" >= 0 AND "pivo_min" >= 0 AND "pivo_min" <= 60);
 
--- RLS (regra inviolável nº 1) — mesma expressão das outras tabelas de aluno.
--- As quatro tabelas de dado do aluno E o relógio: a folha do professor é por
+-- RLS (regra inviolável nº 1) — mesma expressão das outras tabelas de estudante.
+-- As quatro tabelas de dado do estudante E o relógio: a folha do professor é por
 -- turma da ESCOLA dele, e uma rede vizinha não vê a largada da outra.
 ALTER TABLE "exp_03_sessoes" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "exp_03_sessoes" FORCE ROW LEVEL SECURITY;

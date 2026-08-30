@@ -7,10 +7,11 @@
 -- duas histórias de retenção para o mesmo dado.
 
 -- CreateTable
+-- CreateTable
 CREATE TABLE "vila_sessoes" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "turma_id" UUID,
     "exp_version" TEXT NOT NULL,
     "schema_version" SMALLINT NOT NULL,
@@ -41,7 +42,7 @@ CREATE TABLE "vila_perfis" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "escola_id" TEXT NOT NULL,
     "sessao_id" UUID NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "versao_mapeamento" SMALLINT NOT NULL,
     "valores" JSONB NOT NULL,
     "graus" JSONB NOT NULL,
@@ -55,30 +56,30 @@ CREATE TABLE "vila_perfis" (
 
 CREATE TABLE "vila_bolhas" (
     "escola_id" TEXT NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "bolha" TEXT NOT NULL,
     "atribuida_em" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "vila_bolhas_pkey" PRIMARY KEY ("escola_id","aluno_id")
+    CONSTRAINT "vila_bolhas_pkey" PRIMARY KEY ("escola_id","estudante_id")
 );
 
 -- CreateIndex
 CREATE INDEX "idx_vila_sessoes_consulta" ON "vila_sessoes"("escola_id", "turma_id", "aberta_em");
 CREATE INDEX "idx_vila_sessoes_purga" ON "vila_sessoes"("expires_at");
-CREATE INDEX "idx_vila_sessoes_aluno" ON "vila_sessoes"("escola_id", "aluno_id");
+CREATE INDEX "idx_vila_sessoes_estudante" ON "vila_sessoes"("escola_id", "estudante_id");
 CREATE UNIQUE INDEX "vila_perfis_sessao_id_versao_mapeamento_key" ON "vila_perfis"("sessao_id", "versao_mapeamento");
-CREATE INDEX "idx_vila_perfis_consulta" ON "vila_perfis"("escola_id", "aluno_id", "created_at");
+CREATE INDEX "idx_vila_perfis_consulta" ON "vila_perfis"("escola_id", "estudante_id", "created_at");
 CREATE INDEX "idx_vila_bolhas_escola" ON "vila_bolhas"("escola_id");
 
 -- AddForeignKey
-ALTER TABLE "vila_sessoes" ADD CONSTRAINT "vila_sessoes_aluno_id_fkey"
-  FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "vila_sessoes" ADD CONSTRAINT "vila_sessoes_estudante_id_fkey"
+  FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "vila_perfis" ADD CONSTRAINT "vila_perfis_sessao_id_fkey"
   FOREIGN KEY ("sessao_id") REFERENCES "vila_sessoes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "vila_perfis" ADD CONSTRAINT "vila_perfis_aluno_id_fkey"
-  FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-ALTER TABLE "vila_bolhas" ADD CONSTRAINT "vila_bolhas_aluno_id_fkey"
-  FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "vila_perfis" ADD CONSTRAINT "vila_perfis_estudante_id_fkey"
+  FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "vila_bolhas" ADD CONSTRAINT "vila_bolhas_estudante_id_fkey"
+  FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- ============================================================================
 -- O que o Prisma não modela.
@@ -120,7 +121,7 @@ ALTER TABLE "vila_perfis"
   ADD CONSTRAINT "ck_vila_perfis_eixo_ta"
     CHECK ("transcendencia_vs_autopromocao" IS NULL OR "transcendencia_vs_autopromocao" BETWEEN -1 AND 1);
 
--- RLS (regra inviolável nº 1) — mesma expressão das outras tabelas de aluno.
+-- RLS (regra inviolável nº 1) — mesma expressão das outras tabelas de estudante.
 -- O que estas guardam é retrato comportamental de criança com a palavra "Poder"
 -- numa das linhas; travessia entre escolas aqui não é vazamento de contagem.
 ALTER TABLE "vila_sessoes" ENABLE ROW LEVEL SECURITY;

@@ -1,12 +1,12 @@
 // Schema da api — evolução do schema do projeto origem (Instanooria) para o
 // monorepo multi-tenant. Diferenças estruturais em relação ao origem:
 //
-// 1. TENANCY: `escolas`/`turmas` novas; TODA tabela de dados de aluno carrega
+// 1. TENANCY: `escolas`/`turmas` novas; TODA tabela de dados de estudante carrega
 //    `escola_id` NOT NULL denormalizado + RLS (política na migration — Prisma
 //    não modela RLS). A api conecta com role sem ownership e as queries rodam
 //    dentro de transação com `set_config('app.escola_id', ..., true)`.
-// 2. PAPÉIS: aluno | professor | gestor | admin-contrato (origem tinha
-//    professor|aluno|analista; analista → admin-contrato).
+// 2. PAPÉIS: estudante | professor | gestor | admin-contrato (origem tinha
+//    professor|estudante|analista; analista → admin-contrato).
 // 3. `users.username` é único POR ESCOLA (não mais global).
 // 4. Absorve as tabelas do scaffold (`progresso`, `telemetria_eventos`) e as
 //    novas `experiencias` (manifesto de versões) e `ia_uso_diario` (quota).
@@ -78,7 +78,7 @@ model Escola {
 /// `lotação` é o termo que a rede pública usa para a alocação de um servidor a
 /// uma unidade, e é exatamente isto: o professor tem lotação em mais de uma
 /// escola — o caso que `users.escola_id` sozinho não conseguia representar. O
-/// ALUNO tem uma só ativa; trocar de escola é transferência, que encerra a
+/// ESTUDANTE tem uma só ativa; trocar de escola é transferência, que encerra a
 /// anterior.
 ///
 /// FORA da RLS, de propósito e pelo mesmo motivo de `users`/`turmas`: é lida no
@@ -88,7 +88,7 @@ model Lotacao {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId     String    @map("escola_id")
   usuarioId    String    @map("usuario_id") @db.Uuid
-  /// aluno | professor | gestor — CHECK na migration
+  /// estudante | professor | gestor — CHECK na migration
   papel        String
   /// A escola padrão da pessoa: alimenta o cache `users.escola_id` e é a que o
   /// token carrega quando ela entra sem escolher.
@@ -123,7 +123,7 @@ model Lotacao {
 model PerfilPortatil {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId        String   @map("escola_id")
-  alunoId         String   @map("aluno_id") @db.Uuid
+  estudanteId     String   @map("estudante_id") @db.Uuid
   emissorContrato String   @map("emissor_contrato")
   emissorHub      String   @map("emissor_hub")
   emissorNome     String?  @map("emissor_nome")
@@ -140,11 +140,11 @@ model PerfilPortatil {
   importadoEm     DateTime @default(now()) @map("importado_em") @db.Timestamptz(6)
 
   escola       Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
-  aluno        User   @relation("PerfilPortatilAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  estudante    User   @relation("PerfilPortatilEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   quemImportou User   @relation("PerfilPortatilImportador", fields: [importadoPor], references: [id])
 
-  @@unique([escolaId, alunoId, emissorContrato, emitidoEm], map: "perfis_portateis_documento_unico")
-  @@index([escolaId, alunoId], map: "perfis_portateis_por_aluno")
+  @@unique([escolaId, estudanteId, emissorContrato, emitidoEm], map: "perfis_portateis_documento_unico")
+  @@index([escolaId, estudanteId], map: "perfis_portateis_por_estudante")
   @@map("perfis_portateis")
 }
 
@@ -189,7 +189,7 @@ model Turma {
   serie           String
   /// regular | componente — o `classType` do OneRoster (`homeroom|scheduled`).
   /// `regular` é a turma de referência (o enturmamento); `componente` é a turma
-  /// de uma disciplina/eletiva, que o mesmo aluno pode cursar em paralelo.
+  /// de uma disciplina/eletiva, que o mesmo estudante pode cursar em paralelo.
   tipo            String   @default("regular")
   /// manha | tarde | noite | integral — CHECK na migration
   turno           String?
@@ -201,7 +201,7 @@ model Turma {
   escola        Escola        @relation(fields: [escolaId], references: [id])
   periodoLetivo PeriodoLetivo @relation(fields: [periodoLetivoId], references: [id])
   /// Cache da matrícula principal (`users.turma_id`). A VERDADE é `matriculas`.
-  alunos        User[]
+  estudantes    User[]
   matriculas    Matricula[]
   /// Atividades do Instanooria desta turma (`exp_01_activities.turma_id`).
   atividades    Activity[]
@@ -220,12 +220,12 @@ model Turma {
 /// (≈ `enrollments` do OneRoster — a tripla usuário × turma × escola).
 ///
 /// Três coisas que a coluna `users.turma_id` não conseguia dizer e esta tabela
-/// diz: o aluno em mais de uma turma (eletiva, reforço, contraturno); o
+/// diz: o estudante em mais de uma turma (eletiva, reforço, contraturno); o
 /// PROFESSOR ligado à turma dele — vínculo que simplesmente não existia, e por
 /// isso todo professor enxergava todas as turmas da escola; e o tempo, que é o
 /// que permite entrar e sair no meio do ano sem apagar o passado.
 ///
-/// `papel` aqui só admite `aluno` e `professor`: gestor é papel no NÍVEL DA
+/// `papel` aqui só admite `estudante` e `professor`: gestor é papel no NÍVEL DA
 /// ESCOLA (o `roles.csv` do padrão), não matrícula de turma — e é por isso que
 /// ele continua enxergando a escola inteira.
 model Matricula {
@@ -233,13 +233,13 @@ model Matricula {
   escolaId     String    @map("escola_id")
   turmaId      String    @map("turma_id") @db.Uuid
   usuarioId    String    @map("usuario_id") @db.Uuid
-  /// aluno | professor — CHECK na migration
+  /// estudante | professor — CHECK na migration
   papel        String
   /// A turma de referência da pessoa. É ela que alimenta o cache
   /// `users.turma_id` e, por ele, o claim `turma_id` do token.
   principal    Boolean   @default(false)
   inicio       DateTime  @db.Date
-  /// Preenchido em vez de DELETE quando a pessoa sai: há dado de aluno pendurado
+  /// Preenchido em vez de DELETE quando a pessoa sai: há dado de estudante pendurado
   /// em oito tabelas, e apagar a matrícula tornaria esse dado órfão de turma.
   fim          DateTime? @db.Date
   fonteId      String?   @map("fonte_id")
@@ -254,7 +254,7 @@ model Matricula {
   @@map("matriculas")
 }
 
-/// aluno | professor | gestor | admin-contrato
+/// estudante | professor | gestor | admin-contrato
 /// CHECK na migration: escola_id NOT NULL exceto quando role = 'admin-contrato'.
 model User {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -268,7 +268,7 @@ model User {
   /// Identificador da PESSOA na rede (RA/matrícula). É a chave de reconciliação
   /// da importação: com ela, corrigir nome ou login continua sendo a mesma
   /// pessoa; sem ela, o upsert cai no `username` e um login corrigido vira um
-  /// segundo aluno com o histórico preso no primeiro.
+  /// segundo estudante com o histórico preso no primeiro.
   /// Índice único parcial por escola vive na migration (o Prisma não modela
   /// índice parcial, e NULL não pode colidir).
   matriculaExterna String?   @map("matricula_externa")
@@ -288,7 +288,7 @@ model User {
   /// não são a mesma.
   fonteId          String?   @map("fonte_id")
   email            String?
-  /// Saiu da rede ⇒ `false`. Nunca DELETE: dado de aluno pendurado.
+  /// Saiu da rede ⇒ `false`. Nunca DELETE: dado de estudante pendurado.
   ativo            Boolean   @default(true)
   /// Senha veio da importação e ainda não foi trocada pela pessoa. Enquanto
   /// verdadeiro, o hub prende em /trocar-senha e não emite token de experiência.
@@ -307,10 +307,10 @@ model User {
   /// fora de contexto de tenancy, onde `matriculas` (com RLS) não é alcançável.
   turma             Turma?           @relation(fields: [turmaId], references: [id])
   matriculas        Matricula[]      @relation("MatriculaUsuario")
-  /// As escolas da pessoa. Professor tem mais de uma; aluno, uma ativa.
+  /// As escolas da pessoa. Professor tem mais de uma; estudante, uma ativa.
   lotacoes          Lotacao[]        @relation("LotacaoUsuario")
   /// Perfis vindos de outra instalação — nunca misturados ao dado local.
-  perfisPortateis   PerfilPortatil[] @relation("PerfilPortatilAluno")
+  perfisPortateis   PerfilPortatil[] @relation("PerfilPortatilEstudante")
   perfisQueImportou PerfilPortatil[] @relation("PerfilPortatilImportador")
 
   activities       Activity[]        @relation("ActivityProfessor")
@@ -318,16 +318,16 @@ model User {
   perfis           PerfilImportado[]
   unootube         UnootubeSessao[]
   planos           PlanoDeAula[]     @relation("PlanoProfessor")
-  vilaSessoes      VilaSessao[]      @relation("VilaAluno")
-  vilaPerfis       VilaPerfil[]      @relation("VilaPerfilAluno")
-  /// Lista, não `VilaBolha?`: a PK é composta (`escola_id, aluno_id`), então
-  /// `aluno_id` sozinho não é único e o Prisma recusa um-para-um. É a mesma
-  /// forma de `unootube` acima, que também é uma linha por aluno.
-  vilaBolhas       VilaBolha[]       @relation("VilaBolhaAluno")
+  vilaSessoes      VilaSessao[]      @relation("VilaEstudante")
+  vilaPerfis       VilaPerfil[]      @relation("VilaPerfilEstudante")
+  /// Lista, não `VilaBolha?`: a PK é composta (`escola_id, estudante_id`), então
+  /// `estudante_id` sozinho não é único e o Prisma recusa um-para-um. É a mesma
+  /// forma de `unootube` acima, que também é uma linha por estudante.
+  vilaBolhas       VilaBolha[]       @relation("VilaBolhaEstudante")
   bemEstarCiclos   BemEstarCiclo[]   @relation("BemEstarCicloProfessor")
   bemEstarCheckins BemEstarCheckin[] @relation("BemEstarCheckinProfessor")
-  /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por aluno.
-  unoogptSessoes   UnoogptSessao[]   @relation("UnoogptAluno")
+  /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
+  unoogptSessoes   UnoogptSessao[]   @relation("UnoogptEstudante")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -341,7 +341,7 @@ model Activity {
   /// A turma para a qual esta atividade é. NULL = atividade anterior à migration
   /// `20260830090000_atividade_por_turma`, que segue valendo para a escola
   /// inteira — o comportamento de antes. Com turma, o painel de perfis, a
-  /// importação da Vila e a entrada do aluno em `POST /runs` falam todos da
+  /// importação da Vila e a entrada do estudante em `POST /runs` falam todos da
   /// MESMA sala.
   turmaId           String?  @map("turma_id") @db.Uuid
   titulo            String
@@ -355,9 +355,9 @@ model Activity {
   perguntaOrigem    String   @default("ia") @map("pergunta_origem")
   /// investigacao | conclusao | debate | explicabilidade | perdidos | reflexao | fim
   /// Relógio COLETIVO da turma: os momentos de turma são abertos e fechados pelo
-  /// professor, e a tela do aluno trava conforme esta etapa.
+  /// professor, e a tela do estudante trava conforme esta etapa.
   etapa             String   @default("investigacao")
-  /// Personas reagem ao vivo ao que o aluno publica e comenta. Desligável pelo
+  /// Personas reagem ao vivo ao que o estudante publica e comenta. Desligável pelo
   /// professor no meio da aula, sem deploy.
   iaAoVivo          Boolean  @default(true) @map("ia_ao_vivo")
   /// destilação APROVADA pelo professor: {equilibrio, ladoA{...}, ladoB{...}}
@@ -495,12 +495,12 @@ model GenerationJob {
   @@map("exp_01_generation_jobs")
 }
 
-/// sessão de uso do aluno
+/// sessão de uso do estudante
 model Run {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId     String    @map("escola_id")
   activityId   String    @map("activity_id") @db.Uuid
-  alunoId      String    @map("aluno_id") @db.Uuid
+  estudanteId  String    @map("estudante_id") @db.Uuid
   /// onboarding | feed | encerramento | conclusao | revelacao | dossie | comparacao
   fase         String    @default("onboarding")
   /// A | B — vem da afinidade do perfil; nunca muda
@@ -516,13 +516,13 @@ model Run {
   startedAt    DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
   finishedAt   DateTime? @map("finished_at") @db.Timestamptz(6)
 
-  /// Nome que o aluno digitou no aparelho, e o avatar que escolheu. Ficam na
+  /// Nome que o estudante digitou no aparelho, e o avatar que escolheu. Ficam na
   /// run porque a conta é do APARELHO: outra turma reusa o mesmo login.
   nomeNoApp       String? @map("nome_no_app")
   avatarEscolhido String? @map("avatar_escolhido")
 
   activity     Activity             @relation(fields: [activityId], references: [id])
-  aluno        User                 @relation(fields: [alunoId], references: [id])
+  estudante    User                 @relation(fields: [estudanteId], references: [id])
   events       Event[]
   studentPosts StudentPost[]
   conclusao    Conclusao?
@@ -530,7 +530,7 @@ model Run {
   comentarios  ComentarioDaSessao[]
   dossier      Dossier?
 
-  @@unique([activityId, alunoId])
+  @@unique([activityId, estudanteId])
   @@index([escolaId])
   @@map("exp_01_runs")
 }
@@ -556,7 +556,7 @@ model Event {
   @@map("exp_01_events")
 }
 
-/// post publicado pelo aluno (opcional, espontâneo)
+/// post publicado pelo estudante (opcional, espontâneo)
 model StudentPost {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId     String   @map("escola_id")
@@ -579,7 +579,7 @@ model PerfilImportado {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId    String   @map("escola_id")
   activityId  String   @map("activity_id") @db.Uuid
-  alunoId     String   @map("aluno_id") @db.Uuid
+  estudanteId String   @map("estudante_id") @db.Uuid
   /// {abertura,autotranscendencia,autopromocao,conservacao} normalizados 0–1
   escores     Json
   /// abertura | autotranscendencia | autopromocao | conservacao | misto
@@ -603,14 +603,14 @@ model PerfilImportado {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  aluno    User     @relation(fields: [alunoId], references: [id])
+  estudante User    @relation(fields: [estudanteId], references: [id])
 
-  @@unique([activityId, alunoId])
+  @@unique([activityId, estudanteId])
   @@index([escolaId])
   @@map("exp_01_exp_70_perfis_importados")
 }
 
-/// conclusão da missão: neste fluxo o aluno só escolhe um lado; o texto livre
+/// conclusão da missão: neste fluxo o estudante só escolhe um lado; o texto livre
 /// virou a reflexão do fim, e é sobre a atividade, não sobre a pergunta.
 model Conclusao {
   runId      String   @id @map("run_id") @db.Uuid
@@ -620,7 +620,7 @@ model Conclusao {
   /// A PRIMEIRA escolha, imutável depois de gravada.
   ///
   /// A tela diz "pode trocar de ideia enquanto espera — vale a última", e o
-  /// aluno troca de propósito. O upsert sobrescrevia `inclinacao` e a primeira
+  /// estudante troca de propósito. O upsert sobrescrevia `inclinacao` e a primeira
   /// se perdia para sempre: a correlação "lado do feed × resposta", que é o dado
   /// mais forte do produto, não tinha como dizer se estava lendo a reação ao
   /// feed ou o que sobrou depois de dois minutos esperando a turma.
@@ -651,7 +651,7 @@ model Dossier {
   @@map("exp_01_dossiers")
 }
 
-/// Fechamento da atividade: o que o aluno entendeu sobre viés, algoritmo e as
+/// Fechamento da atividade: o que o estudante entendeu sobre viés, algoritmo e as
 /// próprias escolhas. Sem limite de caracteres de propósito.
 model Reflexao {
   runId     String   @id @map("run_id") @db.Uuid
@@ -666,16 +666,16 @@ model Reflexao {
   @@map("exp_01_reflexoes")
 }
 
-/// Comentário que existe SÓ nesta sessão: escrito pelo aluno ou por uma persona
+/// Comentário que existe SÓ nesta sessão: escrito pelo estudante ou por uma persona
 /// reagindo a ele. Não vai para `post_comments` porque os posts são da turma.
 model ComentarioDaSessao {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId      String   @map("escola_id")
   runId         String   @map("run_id") @db.Uuid
-  /// Ancoragem: um post do banco OU o post que o aluno publicou. Nunca os dois.
+  /// Ancoragem: um post do banco OU o post que o estudante publicou. Nunca os dois.
   postId        String?  @map("post_id") @db.Uuid
   studentPostId String?  @map("student_post_id") @db.Uuid
-  /// NULL = o próprio aluno. Preenchido = a persona que respondeu.
+  /// NULL = o próprio estudante. Preenchido = a persona que respondeu.
   handle        String?
   /// Escrito pelo modelo. Existe para o professor distinguir na auditoria.
   deIa          Boolean  @default(false) @map("de_ia")
@@ -697,22 +697,22 @@ model ComentarioDaSessao {
 /// Progresso salvo pela experiência via SDK (`progresso.salvar/carregar`).
 model Progresso {
   escolaId     String   @map("escola_id")
-  alunoId      String   @map("aluno_id")
+  estudanteId  String   @map("estudante_id")
   expId        String   @map("exp_id")
   dados        Json     @default("{}")
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  @@id([escolaId, alunoId, expId])
+  @@id([escolaId, estudanteId, expId])
   @@map("progresso")
 }
 
-/// Estado server-side da exp-02-unootube (uma linha por aluno). `salvos`
+/// Estado server-side da exp-02-unootube (uma linha por estudante). `salvos`
 /// guarda ids do catálogo (`src/unootube/catalogo.ts`); o gabarito `factual`
 /// não é persistido nem devolvido. CHECKs (cardinality(salvos) <= 3,
 /// conclusão implica concluido_em) e RLS vivem na migration.
 model UnootubeSessao {
   escolaId                String    @map("escola_id")
-  alunoId                 String    @map("aluno_id") @db.Uuid
+  estudanteId             String    @map("estudante_id") @db.Uuid
   salvos                  String[]  @default([])
   curtidos                String[]  @default([])
   rankingDesbloqueado     Boolean   @default(false) @map("ranking_desbloqueado")
@@ -722,9 +722,9 @@ model UnootubeSessao {
   criadoEm                DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm            DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  aluno User @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  estudante User @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
 
-  @@id([escolaId, alunoId])
+  @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@map("exp_02_sessoes")
 }
@@ -738,17 +738,17 @@ model UnootubeSessao {
 /// único. A dedupe do Pub/Sub segue correta: reentrega da mesma mensagem traz
 /// o mesmo `ts`.
 model TelemetriaEvento {
-  eventId    String   @map("event_id") @db.Uuid
-  ts         DateTime @db.Timestamptz(6)
-  escolaId   String   @map("escola_id")
-  alunoId    String   @map("aluno_id")
-  expId      String   @map("exp_id")
-  expVersion String   @map("exp_version")
-  sessaoId   String   @map("sessao_id") @db.Uuid
-  verbo      String
-  objeto     String
-  resultado  Json?
-  contexto   Json?
+  eventId     String   @map("event_id") @db.Uuid
+  ts          DateTime @db.Timestamptz(6)
+  escolaId    String   @map("escola_id")
+  estudanteId String   @map("estudante_id")
+  expId       String   @map("exp_id")
+  expVersion  String   @map("exp_version")
+  sessaoId    String   @map("sessao_id") @db.Uuid
+  verbo       String
+  objeto      String
+  resultado   Json?
+  contexto    Json?
 
   @@id([eventId, ts])
   @@index([escolaId, expId, ts], map: "idx_tel_escola_exp_ts")
@@ -765,9 +765,9 @@ model Experiencia {
   capabilities String[] @default([])
   /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
   viewport     Json?
-  /// aluno | professor — CHECK na migration. Ferramenta de professor (exp-90)
-  /// não é embedada em /exp/* nem listada para aluno.
-  publico      String   @default("aluno")
+  /// estudante | professor — CHECK na migration. Ferramenta de professor (exp-90)
+  /// não é embedada em /exp/* nem listada para estudante.
+  publico      String   @default("estudante")
   /// Permissões de iframe que esta experiência precisa. Hoje só
   /// `pointer-lock`, que liga o token `allow-pointer-lock` do sandbox do
   /// `ExpFrame` — jogo 3D em primeira pessoa (exp-70). Vazio = nenhuma, que é
@@ -782,7 +782,7 @@ model Experiencia {
   @@map("experiencias")
 }
 
-/// Quota diária de IA por aluno — persistida (o Map em memória zera a cada
+/// Quota diária de IA por estudante — persistida (o Map em memória zera a cada
 /// restart e é contornável com múltiplas instâncias).
 model IaUsoDiario {
   escolaId     String @map("escola_id")
@@ -867,8 +867,8 @@ model PlanoReferencia {
 model VilaSessao {
   id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId String  @map("escola_id")
-  alunoId  String  @map("aluno_id") @db.Uuid
-  /// Turma NO MOMENTO DA PARTIDA, desnormalizada: o aluno troca de turma entre
+  estudanteId String @map("estudante_id") @db.Uuid
+  /// Turma NO MOMENTO DA PARTIDA, desnormalizada: o estudante troca de turma entre
   /// anos letivos, e o resultado precisa continuar na turma em que foi medido.
   turmaId  String? @map("turma_id") @db.Uuid
 
@@ -933,11 +933,11 @@ model VilaSessao {
   /// exigir prazo, ele volta COM a rotina que o cumpre.
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  aluno  User         @relation("VilaAluno", fields: [alunoId], references: [id], onDelete: Cascade)
-  perfis VilaPerfil[]
+  estudante User         @relation("VilaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  perfis    VilaPerfil[]
 
   @@index([escolaId, turmaId, abertaEm], map: "idx_exp_70_sessoes_consulta")
-  @@index([escolaId, alunoId], map: "idx_exp_70_sessoes_aluno")
+  @@index([escolaId, estudanteId], map: "idx_exp_70_sessoes_estudante")
   @@map("exp_70_sessoes")
 }
 
@@ -952,10 +952,10 @@ model VilaSessao {
 ///
 /// Sem prazo, como `vila_sessoes` — ver a nota lá.
 model VilaPerfil {
-  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  escolaId String @map("escola_id")
-  sessaoId String @map("sessao_id") @db.Uuid
-  alunoId  String @map("aluno_id") @db.Uuid
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  sessaoId    String @map("sessao_id") @db.Uuid
+  estudanteId String @map("estudante_id") @db.Uuid
 
   versaoMapeamento Int @map("versao_mapeamento") @db.SmallInt
 
@@ -979,33 +979,33 @@ model VilaPerfil {
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  sessao VilaSessao @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
-  aluno  User       @relation("VilaPerfilAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  sessao    VilaSessao @relation(fields: [sessaoId], references: [id], onDelete: Cascade)
+  estudante User       @relation("VilaPerfilEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
 
   @@unique([sessaoId, versaoMapeamento])
-  @@index([escolaId, alunoId, createdAt], map: "idx_exp_70_perfis_consulta")
+  @@index([escolaId, estudanteId, createdAt], map: "idx_exp_70_perfis_consulta")
   @@map("exp_70_perfis")
 }
 
-/// Que bolha cada aluno recebeu. Uma linha por aluno, POR ALUNO e não por
+/// Que bolha cada estudante recebeu. Uma linha por estudante, POR ESTUDANTE e não por
 /// partida, porque repetir a partida não pode trocar o nível: a folha do
 /// professor diz "esse estava na C", e o relatório abre pelo nível.
 ///
 /// A atribuição é balanceada DENTRO DA TURMA. O app de origem fazia
-/// `nº do aluno mod 3`, que dava terços de graça porque os números eram
+/// `nº do estudante mod 3`, que dava terços de graça porque os números eram
 /// contíguos de 1 a 40. Hash de uuid dá terços na média da rede e pode dar
 /// 14/6/5 numa sala de 25 — e aí o debate da missão não acontece, porque ele
 /// depende de as três bolhas estarem na mesma sala.
 model VilaBolha {
   escolaId    String   @map("escola_id")
-  alunoId     String   @map("aluno_id") @db.Uuid
+  estudanteId String   @map("estudante_id") @db.Uuid
   /// A | B | C
   bolha       String
   atribuidaEm DateTime @default(now()) @map("atribuida_em") @db.Timestamptz(6)
 
-  aluno User @relation("VilaBolhaAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  estudante User @relation("VilaBolhaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
 
-  @@id([escolaId, alunoId])
+  @@id([escolaId, estudanteId])
   @@index([escolaId], map: "idx_exp_70_bolhas_escola")
   @@map("exp_70_bolhas")
 }
@@ -1089,16 +1089,16 @@ model BemEstarCheckin {
 // `simulacoes_restantes` e `custo_cents` (zero leituras). Centavo virou token:
 // preço depende de tabela do vendor, token é o que o provider devolve.
 //
-// A sessão NÃO tem id próprio: a identidade é `(escola_id, aluno_id)`, vinda do
+// A sessão NÃO tem id próprio: a identidade é `(escola_id, estudante_id)`, vinda do
 // token, e os filhos apontam para o par. Foi o que dispensou a guarda
 // `donoDaSessao` do origem, onde a sessão era identificada por uuid na URL.
 // CHECKs e RLS vivem na migration.
 // ---------------------------------------------------------------------------
 
-/// Estado server-side de uma partida (uma linha por aluno, como a exp-02).
+/// Estado server-side de uma partida (uma linha por estudante, como a exp-02).
 model UnoogptSessao {
   escolaId String  @map("escola_id")
-  alunoId  String  @map("aluno_id") @db.Uuid
+  estudanteId String @map("estudante_id") @db.Uuid
   /// Denormalizado da identidade: o painel do professor consulta por turma o
   /// tempo todo, e resolver isso por join a cada leitura era o caminho para
   /// esquecer o filtro em alguma consulta nova.
@@ -1106,8 +1106,8 @@ model UnoogptSessao {
 
   /// abertura | orientacao | investigacao | resultado (CHECK na migration).
   passo              String   @default("abertura")
-  /// Qual partida do aluno. Recomeçar ABRE tentativa nova em vez de apagar a
-  /// conversa: para o aluno a tela limpa, para o professor a aula continua
+  /// Qual partida do estudante. Recomeçar ABRE tentativa nova em vez de apagar a
+  /// conversa: para o estudante a tela limpa, para o professor a aula continua
   /// legível.
   tentativa          Int      @default(1) @db.SmallInt
   /// Minuto NARRATIVO decorrido desde as 17h00 — snapshot do que o relógio da
@@ -1124,10 +1124,10 @@ model UnoogptSessao {
   /// teto passa a valer para partida em curso.
   perguntasGastas    Int      @default(0) @map("perguntas_gastas")
   /// Slug do bairro de destino de cada equipe. O Cientista NÃO escolhe — ele
-  /// registra a escolha do aluno.
+  /// registra a escolha do estudante.
   alocacaoAlfa       String?  @map("alocacao_alfa")
   alocacaoBravo      String?  @map("alocacao_bravo")
-  /// Slug de um conjunto que o aluno carregou, ou 'intuicao'. O software não
+  /// Slug de um conjunto que o estudante carregou, ou 'intuicao'. O software não
   /// julga a resposta; quem lê é o professor.
   justificativaAlfa  String?  @map("justificativa_alfa")
   justificativaBravo String?  @map("justificativa_bravo")
@@ -1141,70 +1141,70 @@ model UnoogptSessao {
   atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
 
-  aluno      User               @relation("UnoogptAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  estudante  User               @relation("UnoogptEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   mensagens  UnoogptMensagem[]
   marcos     UnoogptMarco[]
   simulacoes UnoogptSimulacao[]
 
-  @@id([escolaId, alunoId])
+  @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
   @@map("exp_03_sessoes")
 }
 
-/// A Transcrição: a conversa entre o aluno e o Cientista.
+/// A Transcrição: a conversa entre o estudante e o Cientista.
 ///
 /// `texto` é CAIXA LIVRE escrita por menor de idade, e é o dado mais sensível
 /// da experiência. Ele existe porque o professor precisa ler a conversa no
 /// relatório — é o instrumento. Nunca vai a log, nunca à telemetria, e nenhuma
 /// rota de gestor o alcança (só o professor da escola).
 model UnoogptMensagem {
-  id        BigInt   @id @default(autoincrement())
-  escolaId  String   @map("escola_id")
-  alunoId   String   @map("aluno_id") @db.Uuid
-  /// aluno | agente (CHECK na migration).
-  papel     String
-  texto     String
+  id          BigInt   @id @default(autoincrement())
+  escolaId    String   @map("escola_id")
+  estudanteId String   @map("estudante_id") @db.Uuid
+  /// estudante | agente (CHECK na migration).
+  papel       String
+  texto       String
   /// Passo em que a fala aconteceu.
-  passo     String
+  passo       String
   /// Cartão anexado a esta fala: tendência do modelo, alocação, opções ou
   /// desfecho. Fica na Transcrição para a conversa voltar inteira depois de um
   /// F5 — da Investigação em diante tudo acontece no chat.
-  anexo     Json?
+  anexo       Json?
   /// Se esta fala debitou uma Pergunta do orçamento.
-  debitou   Boolean  @default(false)
-  tentativa Int      @default(1) @db.SmallInt
-  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  debitou     Boolean  @default(false)
+  tentativa   Int      @default(1) @db.SmallInt
+  criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao UnoogptSessao @relation(fields: [escolaId, alunoId], references: [escolaId, alunoId], onDelete: Cascade)
+  sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
   /// Paginação por id é estável; por timestamp não.
-  @@index([escolaId, alunoId, id])
+  @@index([escolaId, estudanteId, id])
   @@map("exp_03_mensagens")
 }
 
-/// A trilha da decisão: o que o aluno fez, em que minuto da cidade.
+/// A trilha da decisão: o que o estudante fez, em que minuto da cidade.
 ///
 /// `dados` traz SÓ dado público — nada de viés, Lacuna ou parâmetro oculto:
 /// este JSON chega ao navegador.
 model UnoogptMarco {
-  id        BigInt   @id @default(autoincrement())
-  escolaId  String   @map("escola_id")
-  alunoId   String   @map("aluno_id") @db.Uuid
-  tentativa Int      @db.SmallInt
+  id          BigInt   @id @default(autoincrement())
+  escolaId    String   @map("escola_id")
+  estudanteId String   @map("estudante_id") @db.Uuid
+  tentativa   Int      @db.SmallInt
   /// Sequência dentro da tentativa.
-  ordem     Int
+  ordem       Int
   /// fontes | leitura | alocacao | envio (CHECK na migration).
-  tipo      String
+  tipo        String
   /// Minuto do relógio em que aconteceu: vira hora da cidade na tela.
-  minuto    Int
-  dados     Json
-  criadoEm  DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  minuto      Int
+  dados       Json
+  criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao UnoogptSessao @relation(fields: [escolaId, alunoId], references: [escolaId, alunoId], onDelete: Cascade)
+  sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
-  @@unique([escolaId, alunoId, tentativa, ordem])
-  @@index([escolaId, alunoId])
+  @@unique([escolaId, estudanteId, tentativa, ordem])
+  @@index([escolaId, estudanteId])
   @@map("exp_03_marcos")
 }
 
@@ -1214,7 +1214,7 @@ model UnoogptMarco {
 model UnoogptSimulacao {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId      String   @map("escola_id")
-  alunoId       String   @map("aluno_id") @db.Uuid
+  estudanteId   String   @map("estudante_id") @db.Uuid
   ordem         Int
   /// { v:1, alfa, bravo } — os slugs de destino.
   alocacao      Json
@@ -1228,16 +1228,16 @@ model UnoogptSimulacao {
   versaoPrompt  Int      @map("versao_prompt")
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao UnoogptSessao @relation(fields: [escolaId, alunoId], references: [escolaId, alunoId], onDelete: Cascade)
+  sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
-  @@unique([escolaId, alunoId, ordem])
-  @@index([escolaId, alunoId])
+  @@unique([escolaId, estudanteId, ordem])
+  @@index([escolaId, estudanteId])
   @@map("exp_03_simulacoes")
 }
 
-/// O Relógio da AULA — por TURMA, não por aluno.
+/// O Relógio da AULA — por TURMA, não por estudante.
 ///
-/// Antes o cronômetro armava sozinho quando o aluno entrava na Investigação, e
+/// Antes o cronômetro armava sozinho quando o estudante entrava na Investigação, e
 /// cada um começava quando abria o link. Numa sala isso é uma corrida com
 /// largadas diferentes: quem chegou primeiro terminava antes de o professor
 /// acabar de explicar. Quem dá a partida é o professor, e ela vale para todo
@@ -1248,7 +1248,7 @@ model UnoogptRelogioTurma {
 
   /// cronometrado | livre (CHECK na migration).
   modo        String    @default("cronometrado")
-  /// Null = a missão ainda não começou: o aluno vê o cronômetro parado e não
+  /// Null = a missão ainda não começou: o estudante vê o cronômetro parado e não
   /// consegue falar com o Cientista.
   iniciadoEm  DateTime? @map("iniciado_em") @db.Timestamptz(6)
   /// Duração em segundos de parede. "+2 min" soma 120.
@@ -1257,7 +1257,7 @@ model UnoogptRelogioTurma {
   encerradoEm DateTime? @map("encerrado_em") @db.Timestamptz(6)
   /// Pivô da extensão (`regras/relogio.ts`): onde o relógio da cidade estava
   /// quando a duração mudou. É o que impede o minuto narrativo de rebobinar —
-  /// aos 4:00 de 5:00 o aluno está no minuto 48, e recalcular com 7:00 daria 34.
+  /// aos 4:00 de 5:00 o estudante está no minuto 48, e recalcular com 7:00 daria 34.
   pivoSeg     Int       @default(0) @map("pivo_seg")
   pivoMin     Int       @default(0) @map("pivo_min")
 

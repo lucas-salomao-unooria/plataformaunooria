@@ -1,5 +1,5 @@
--- AlterTable: manifesto ganha o público-alvo (aluno | professor).
-ALTER TABLE "experiencias" ADD COLUMN "publico" TEXT NOT NULL DEFAULT 'aluno';
+-- AlterTable: manifesto ganha o público-alvo (estudante | professor).
+ALTER TABLE "experiencias" ADD COLUMN "publico" TEXT NOT NULL DEFAULT 'estudante';
 
 -- CreateTable
 CREATE TABLE "planos_de_aula" (
@@ -52,7 +52,7 @@ ALTER TABLE "planos_de_aula" ADD CONSTRAINT "planos_de_aula_professor_id_fkey" F
 -- ============================================================================
 
 ALTER TABLE "experiencias"
-  ADD CONSTRAINT "experiencias_publico_check" CHECK ("publico" IN ('aluno','professor'));
+  ADD CONSTRAINT "experiencias_publico_check" CHECK ("publico" IN ('estudante','professor'));
 
 ALTER TABLE "planos_de_aula"
   ADD CONSTRAINT "planos_de_aula_status_check"

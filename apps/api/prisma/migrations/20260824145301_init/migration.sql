@@ -137,7 +137,7 @@ CREATE TABLE "runs" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "escola_id" TEXT NOT NULL,
     "activity_id" UUID NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "fase" TEXT NOT NULL DEFAULT 'onboarding',
     "lado_inicial" TEXT NOT NULL,
     "lado_origem" TEXT NOT NULL DEFAULT 'sorteio',
@@ -184,7 +184,7 @@ CREATE TABLE "perfis_importados" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "escola_id" TEXT NOT NULL,
     "activity_id" UUID NOT NULL,
-    "aluno_id" UUID NOT NULL,
+    "estudante_id" UUID NOT NULL,
     "escores" JSONB NOT NULL,
     "dominante" TEXT NOT NULL,
     "origem" TEXT NOT NULL,
@@ -245,12 +245,12 @@ CREATE TABLE "comentarios_da_sessao" (
 -- CreateTable
 CREATE TABLE "progresso" (
     "escola_id" TEXT NOT NULL,
-    "aluno_id" TEXT NOT NULL,
+    "estudante_id" TEXT NOT NULL,
     "exp_id" TEXT NOT NULL,
     "dados" JSONB NOT NULL DEFAULT '{}',
     "atualizado_em" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "progresso_pkey" PRIMARY KEY ("escola_id","aluno_id","exp_id")
+    CONSTRAINT "progresso_pkey" PRIMARY KEY ("escola_id","estudante_id","exp_id")
 );
 
 -- CreateTable
@@ -258,7 +258,7 @@ CREATE TABLE "telemetria_eventos" (
     "event_id" UUID NOT NULL,
     "ts" TIMESTAMPTZ(6) NOT NULL,
     "escola_id" TEXT NOT NULL,
-    "aluno_id" TEXT NOT NULL,
+    "estudante_id" TEXT NOT NULL,
     "exp_id" TEXT NOT NULL,
     "exp_version" TEXT NOT NULL,
     "sessao_id" UUID NOT NULL,
@@ -330,7 +330,7 @@ CREATE INDEX "generation_jobs_escola_id_idx" ON "generation_jobs"("escola_id");
 CREATE INDEX "runs_escola_id_idx" ON "runs"("escola_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "runs_activity_id_aluno_id_key" ON "runs"("activity_id", "aluno_id");
+CREATE UNIQUE INDEX "runs_activity_id_estudante_id_key" ON "runs"("activity_id", "estudante_id");
 
 -- CreateIndex
 CREATE INDEX "idx_events_run" ON "events"("run_id", "id");
@@ -345,7 +345,7 @@ CREATE INDEX "student_posts_escola_id_idx" ON "student_posts"("escola_id");
 CREATE INDEX "perfis_importados_escola_id_idx" ON "perfis_importados"("escola_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "perfis_importados_activity_id_aluno_id_key" ON "perfis_importados"("activity_id", "aluno_id");
+CREATE UNIQUE INDEX "perfis_importados_activity_id_estudante_id_key" ON "perfis_importados"("activity_id", "estudante_id");
 
 -- CreateIndex
 CREATE INDEX "conclusoes_escola_id_idx" ON "conclusoes"("escola_id");
@@ -402,7 +402,7 @@ ALTER TABLE "generation_jobs" ADD CONSTRAINT "generation_jobs_activity_id_fkey" 
 ALTER TABLE "runs" ADD CONSTRAINT "runs_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "runs" ADD CONSTRAINT "runs_aluno_id_fkey" FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "runs" ADD CONSTRAINT "runs_estudante_id_fkey" FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "events" ADD CONSTRAINT "events_run_id_fkey" FOREIGN KEY ("run_id") REFERENCES "runs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -417,7 +417,7 @@ ALTER TABLE "student_posts" ADD CONSTRAINT "student_posts_run_id_fkey" FOREIGN K
 ALTER TABLE "perfis_importados" ADD CONSTRAINT "perfis_importados_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "perfis_importados" ADD CONSTRAINT "perfis_importados_aluno_id_fkey" FOREIGN KEY ("aluno_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "perfis_importados" ADD CONSTRAINT "perfis_importados_estudante_id_fkey" FOREIGN KEY ("estudante_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "conclusoes" ADD CONSTRAINT "conclusoes_run_id_fkey" FOREIGN KEY ("run_id") REFERENCES "runs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -440,7 +440,7 @@ ALTER TABLE "comentarios_da_sessao" ADD CONSTRAINT "comentarios_da_sessao_studen
 -- ============================================================================
 -- TENANCY (regra inviolável nº 1 do CLAUDE.md)
 --
--- RLS + FORCE em TODA tabela de dados de aluno/turma. A api conecta em
+-- RLS + FORCE em TODA tabela de dados de estudante/turma. A api conecta em
 -- produção com uma role SEM ownership (`app_runtime`, criada pela infra — ver
 -- docs/INFRA.md) e toda query roda dentro de transação com
 -- `set_config('app.escola_id', <escola do token>, true)` (PrismaService.comTenancy).
@@ -448,14 +448,14 @@ ALTER TABLE "comentarios_da_sessao" ADD CONSTRAINT "comentarios_da_sessao_studen
 -- Ficam FORA da RLS, de propósito:
 --   * users/escolas/turmas — tabelas de IDENTIDADE: o login precisa achar o
 --     usuário ANTES de saber a escola. Não carregam dado comportamental de
---     aluno; os services filtram escola_id explicitamente.
+--     estudante; os services filtram escola_id explicitamente.
 --   * experiencias — catálogo do contrato, global.
 -- ============================================================================
 
 -- CHECKs (o Prisma não os modela, mas o banco os garante — padrão do origem).
 ALTER TABLE "users"
   ADD CONSTRAINT "users_role_check"
-    CHECK ("role" IN ('aluno','professor','gestor','admin-contrato')),
+    CHECK ("role" IN ('estudante','professor','gestor','admin-contrato')),
   ADD CONSTRAINT "users_escola_check"
     CHECK ("role" = 'admin-contrato' OR "escola_id" IS NOT NULL);
 
