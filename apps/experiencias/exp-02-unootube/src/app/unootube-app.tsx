@@ -145,11 +145,21 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     window.setTimeout(() => rolarPara(alvo, "auto"), 30);
   }, [ativoId]);
 
-  function moverFeed(direcao: number) {
-    const alvo = Math.min(videos.length - 1, Math.max(0, indiceAtivo + direcao));
-    const video = videos[alvo];
-    if (video) rolarPara(video.id, "smooth");
-  }
+  /* `useCallback` porque este vai para o array de dependências do efeito de
+     teclado. Declarado como função solta, ele muda de identidade a cada render
+     e o listener seria removido e readicionado sem parar; listar à mão o que
+     ele fecha (`videos`, `indiceAtivo`) resolvia hoje e envelhecia mal — no dia
+     em que o corpo fechasse sobre mais uma coisa, a dependência ficaria velha
+     em silêncio. `rolarPara` fica de fora de propósito: só toca o DOM, sem
+     nenhuma dependência reativa. */
+  const moverFeed = useCallback(
+    (direcao: number) => {
+      const alvo = Math.min(videos.length - 1, Math.max(0, indiceAtivo + direcao));
+      const video = videos[alvo];
+      if (video) rolarPara(video.id, "smooth");
+    },
+    [videos, indiceAtivo],
+  );
 
   function abrirPlaylists(qual: AbaPlaylists = "salvos") {
     setAba(qual);
@@ -310,7 +320,7 @@ export function UnooTubeApp({ sessaoInicial }: Props) {
     };
     window.addEventListener("keydown", aoTeclar);
     return () => window.removeEventListener("keydown", aoTeclar);
-  }, [tela, reiniciarAberto, limiteAberto, missaoConcluidaAberta, indiceAtivo, videos]);
+  }, [tela, reiniciarAberto, limiteAberto, missaoConcluidaAberta, moverFeed]);
 
   const rankingDesbloqueado = estado.rankingDesbloqueado;
 

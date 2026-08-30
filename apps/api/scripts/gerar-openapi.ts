@@ -29,7 +29,7 @@ async function main() {
 
   writeFileSync(destino, JSON.stringify(documento, null, 2) + "\n", "utf8");
   const rotas = Object.values(documento.paths).flatMap((c) => Object.keys(c ?? {}));
-  console.log(`${destino}: ${Object.keys(documento.paths).length} caminhos, ${rotas.length} operações`);
+  console.info(`${destino}: ${Object.keys(documento.paths).length} caminhos, ${rotas.length} operações`);
 }
 
 void main();

@@ -140,7 +140,7 @@ try {
   // O modelo vem da MESMA constante que o parser lê: se o cabeçalho aqui não
   // for o esperado, a importação de amanhã falha com "coluna desconhecida".
   const modelo = await p.request.get(`${HUB}/api/plataforma/rostering/modelos/usuarios.csv`);
-  const cabecalho = (await modelo.text()).replace(/^﻿/, "").split("\n")[0].trim();
+  const cabecalho = (await modelo.text()).replace(/^\uFEFF/, "").split("\n")[0].trim();
   const esperado = "matricula,nome,usuario,email,papel,turma,serie,turno";
   console.log("   modelo para download:", cabecalho === esperado ? "ok" : `DIVERGENTE (${cabecalho})`);
 

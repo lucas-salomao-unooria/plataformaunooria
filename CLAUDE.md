@@ -506,11 +506,11 @@ ao dinâmico.
 
 ### Plano de aula (exp-90, `apps/api/src/planos`)
 Ferramenta do professor: `POST /planos` (202) gera em background (claim atômico
-em `planos_de_aula`, `marked` roda na api), o cliente faz polling em `GET /planos/:id`.
+em `exp_90_planos`, `marked` roda na api), o cliente faz polling em `GET /planos/:id`.
 Conteúdo em object storage PRIVADO (`{contrato}-planos`; `PLANOS_DRIVER=local`
 em dev → `storage-privado/`): `gerado.md` imutável + `atual.html` do editor
 (sanitizado com allowlist). Referências curriculares = texto no Postgres
-(`planos_referencias`, catálogo do contrato, sem RLS), importadas por
+(`exp_90_referencias`, catálogo do contrato, sem RLS), importadas por
 `scripts/importar-referencias-plano.mjs` com `PLANOS_IMPORT_TOKEN`.
 O teto de saída é 64k tokens, não os 32k do app origem (que eram o limite do
 Claude): com o material real (currículo da rede + as 4 unidades do ano, ~190k
@@ -899,6 +899,13 @@ SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: 
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
+pnpm exec playwright install chromium     # PRE-REQUISITO dos walkthroughs, uma vez por maquina.
+                                          # `npx playwright install` NAO serve: o npx resolve o
+                                          # playwright mais NOVO do npm e baixa a build de navegador
+                                          # DELE, enquanto o repo fixa 1.62.1 (build 1234). O erro sai
+                                          # como "Executable doesn't exist at .../chromium_headless_
+                                          # shell-1234" com o cache CHEIO de navegador, e o banner
+                                          # manda rodar justamente o npx que causou o descasamento.
 node scripts/walkthrough-landing.mjs testes/wt-landing        # smoke da LANDING (/ sem sessão): fontes do DS, shader, revelação, CTA -> /login. Só o hub.
 node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
 node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, aluno transferido pelo CPF
@@ -919,7 +926,7 @@ node scripts/walkthrough-aluno-unoogpt.mjs testes/walkthrough-unoogpt   # smoke 
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~245p). Atualizar SEMPRE (ver seção própria)
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~314p). Atualizar SEMPRE (ver seção própria)
 ```
 
 ## Como criar uma experiência nova
@@ -961,12 +968,12 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~245 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~314 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **27 ADRs**, riscos e
+especificação da API, design system, entrega, qualidade, **45 ADRs**, riscos e
 evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
@@ -1008,6 +1015,11 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 - [ ] Se mexeu em tela: smoke VISUAL (`node scripts/walkthrough-aluno.mjs <pasta>`
       e `walkthrough-professor.mjs`, que também cobre a exp-90 embedada) —
       typecheck verde não pega ícone virando texto, link sublinhado nem iframe vazio
+      Espera nova de IA **corre contra o erro** (`scripts/lib/smoke.mjs`:
+      `esperarOuFalharCedo` + `ALERTA_DE_ERRO` nas telas da plataforma,
+      `vigiarFalhasDaApi` nas experiências disfarçadas). Espera cega paga o
+      timeout inteiro e reporta o seletor que faltou em vez da causa: a api
+      falhou em 306ms e o roteiro esperou 180s pela `<table>`
 - [ ] Input externo validado com Zod
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client

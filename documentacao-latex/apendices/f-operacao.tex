@@ -106,17 +106,23 @@ fundo transparente e zero gráfico.
 \toprule
 \headrow \thd{Pré-requisito} & \thd{Detalhe}\\
 \midrule
-Plataforma no ar & Contêineres \textbf{ou} \cd{pnpm dev} --- um \emph{ou} outro,
+\emph{Browsers} do Playwright & \cd{pnpm exec playwright install chromium},
+  uma vez por máquina --- o pacote está nas \cd{devDependencies} desde a fundação
+  do monorepo, mas os navegadores ficam FORA dele, num cache do usuário.
+  \textbf{Não} \cd{npx playwright install}: o \cd{npx} resolve o \emph{playwright}
+  mais NOVO do npm e baixa a \emph{build} de navegador DELE, deixando
+  \arq{node\_modules} e cache em versões diferentes.\\
+\zebra Plataforma no ar & Contêineres \textbf{ou} \cd{pnpm dev} --- um \emph{ou} outro,
   nunca os dois na mesma porta: o navegador e o servidor passam a ler
   \emph{dev servers} diferentes.\\
-\zebra Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
+Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
   exp-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
   não concede \emph{pointer lock} nem no topo da página.\\
-Duas escolas no \emph{seed} & \cd{escola-demo} (8A, 8B, 4A, 2A) e
+\zebra Duas escolas no \emph{seed} & \cd{escola-demo} (8A, 8B, 4A, 2A) e
   \cd{escola-demo-2} (5A), com \cd{prof.demo} lotado nas DUAS --- é o que faz
   aparecer o seletor de escola no cabeçalho dele. \cd{gestor.vilanova} administra a
   segunda.\\
-\zebra \emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
+\emph{Logins} do \emph{seed} & \cd{gestor.demo} \seta{} \rota{/admin/usuarios};
   \cd{prof.demo} \seta{} \rota{/professor}; \cd{aluno01}--\cd{aluno40} \seta{}
   \rota{/aluno}; \cd{aluno4a01} para a exp-02. Senha de todos:
   \cd{unooria123}. Eles nascem com \cd{senha\_provisoria = false} de propósito:
@@ -455,7 +461,11 @@ testado no container} &
   A credencial de usuário precisa de \textbf{reautenticação periódica} (política
   da organização). O erro real, visível só ao pedir o token à mão, é
   \cd{invalid\_grant} com \cd{error\_subtype: invalid\_rapt} --- \emph{RAPT} é
-  \emph{Reauth Proof Token}. Resolve com \cd{gcloud auth application-default
+  \emph{Reauth Proof Token}. \textbf{A janela é de ~1 hora} (MEDIDO: login
+  22h20, expirado 23h31), ou seja, ela vence NO MEIO de uma sessão de trabalho e
+  a suíte de \emph{walkthroughs} cai de 12/12 para 10/12 sem que uma linha de
+  código tenha mudado. Antes de investigar \enquote{regressão} nos caminhos de
+  IA, peça o token. Resolve com \cd{gcloud auth application-default
   login} no HOST. Não é permissão nem \emph{mount}: confira nessa ordem
   (existe? legível? token?), porque as três falham com a mesma mensagem na API.
   O \cd{gcloud} reescreve o arquivo \emph{no lugar}, então o \emph{bind mount}
@@ -513,6 +523,45 @@ testado no container} &
   Alguém tirou o \cd{children} de dentro do \cd{DispositivoFrame} em vez de
   ligar a \emph{prop} \cd{expandido}. Trocar a árvore desmonta o \cd{<iframe>};
   o modo expandido é ESTILO, e só (\adrr{ADR-41}).\\
+\zebra \textbf{TODA chamada de IA morre com} \cd{fetch failed} --- e o
+  \cd{getAccessToken()} à mão devolve token &
+  \textbf{Não é credencial}: é o \cd{Agent} do pacote \cd{undici} passado ao
+  \cd{fetch} GLOBAL, que usa o undici EMBUTIDO na \emph{runtime} --- outro
+  pacote, outra versão (Node 26.7 traz a 8.x; a api declarava \cd{\^{}6}). A v6
+  não satisfaz mais a interface de \emph{handler} da v8. A razão real,
+  \cd{invalid onError method}, vive só em \cd{error.cause}, e o \cd{catch}
+  logava só \cd{message} --- por isso passou dias parecendo ADC vencido, que era
+  um problema DE VERDADE por cima. Conferir com
+  \cd{node -p "process.versions.undici"} contra
+  \cd{require("undici/package.json").version}. Resolvido pela \adrr{ADR-45}:
+  \cd{Agent} e \cd{fetch} do MESMO pacote.\\
+\textbf{Reautenticou o ADC, o token novo funciona, e a api continua dizendo
+  \enquote{Sem credencial}} &
+  O processo cacheia a credencial: \cd{new GoogleAuth()} é criado UMA vez, no
+  escopo do módulo (\arq{vertex.provider.ts}), e segura o \emph{refresh token}
+  lido na subida. \cd{gcloud auth application-default login} reescreve o arquivo,
+  mas quem já subiu não relê. \textbf{Reautenticar não basta: reinicie a api.}
+  Comparar \cd{docker inspect -f '\{\{.State.StartedAt\}\}'} com o \cd{mtime} do
+  ADC responde na hora.\\
+\zebra \textbf{O \emph{walkthrough} acusa \enquote{turma 2A não está no seletor (rode o
+  seed)}} --- e a turma ESTÁ no banco, com o professor matriculado nela &
+  O roteiro pegava \cd{locator("select").first()}, e quem tem mais de uma
+  lotação (\cd{prof.demo} tem duas) ganhou um seletor de ESCOLA no cabeçalho,
+  que vem ANTES no DOM. Ele procurava \enquote{2A} entre nomes de escola.
+  \textbf{A mensagem culpava o banco por uma mudança de \emph{header}} --- e o
+  seed é o primeiro lugar onde ninguém acha nada. Usar \cd{select\#turma}, como
+  os outros roteiros já faziam. Corrigido em 2026-08-29; era o único \cd{select}
+  cru em \arq{scripts/}.\\
+\textbf{Todo \emph{walkthrough} morre em} \cd{Executable} \cd{doesn't
+  exist} --- \textbf{com o cache de navegadores CHEIO} &
+  O executável que falta é o \cd{chromium\_headless\_shell-1234}, e alguém rodou
+  \cd{npx playwright install} em vez de \cd{pnpm exec playwright install}. O
+  \cd{npx} ignora o \arq{node\_modules} do repo, resolve o \emph{playwright} mais
+  novo do npm e baixa a \emph{build} de navegador DELE (a 1237); o repo fixa a
+  1.62.1, que procura a 1234. \textbf{O sintoma mente duas vezes}: o cache tem
+  navegador de sobra, e o banner do próprio Playwright manda rodar exatamente o
+  \cd{npx} que causou o descasamento. Conferir com \cd{pnpm exec playwright
+  --version} e reinstalar por ali.\\
 \zebra \textbf{O relatório do aluno abre em tela cheia no meio do FEED} &
   Alguém inverteu a condição do \cd{ExpHost} para expandir por \emph{default}.
   O \cd{IntersectionObserver} do \emph{dwell} se refere ao \emph{iframe}:

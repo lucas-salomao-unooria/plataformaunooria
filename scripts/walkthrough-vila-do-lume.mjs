@@ -1,6 +1,15 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
+/* Globais do JOGO, que só existem DENTRO da página (`public/jogo/`, ~10k linhas
+   de JS clássico com estado compartilhado — a exceção de ADR das convenções).
+   Elas aparecem em `evaluate()`, cujo corpo roda no navegador, não aqui: sem
+   esta linha o ESLint acusa nove `no-undef` que não são defeito nenhum. A lista
+   é explícita para que se veja de relance TUDO o que este roteiro alcança de
+   dentro do jogo — se crescer sem motivo, o shim (`window.VILA`) é que deveria
+   estar sendo usado. */
+/* global state, zones, openDM, buildResults, gatilhoAtendido, construirPayloadSessao */
+
 /**
  * Smoke VISUAL da exp-70 (Vila do Lume), do login ao jogo 3D rodando dentro do
  * iframe do hub.
