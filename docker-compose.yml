@@ -57,6 +57,10 @@ services:
              node dist/prisma/semear-demo.js"
     environment:
       DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+      # Senha das contas de demonstração. O seed NÃO tem default no fonte (uma
+      # constante ali criaria contas com senha conhecida se ele rodasse contra
+      # o banco de um contrato) — é aqui, no compose de DEV, que ela vive.
+      SEED_SENHA: ${SEED_SENHA:-unooria123}
     depends_on:
       pg:
         condition: service_healthy

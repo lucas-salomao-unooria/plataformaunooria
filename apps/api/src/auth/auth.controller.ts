@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, HttpException, Post } from "@nestjs/common";
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
@@ -168,6 +169,8 @@ export class AuthController {
   }
 }
 
-// Hash real (de uma senha aleatória descartada) para o caminho "usuário não
-// existe" custar o mesmo tempo do caminho "senha errada".
-const HASH_DUMMY = bcrypt.hashSync("senha-dummy-anti-timing", 10);
+// Hash real para o caminho "usuário não existe" custar o mesmo tempo do
+// caminho "senha errada". A entrada é sorteada A CADA SUBIDA e descartada no
+// mesmo instante: nada nunca é comparado contra ela, e uma constante no fonte
+// só serviria para alguém enviá-la e cronometrar a resposta.
+const HASH_DUMMY = bcrypt.hashSync(randomBytes(32).toString("hex"), 10);

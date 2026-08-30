@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { READY_RETRY_MS, connectToHub } from "./bridge";
+import { READY_RETRY_MS, connectToHub, normalizarHubOrigin } from "./bridge";
 import { PROTOCOL_VERSION, type HubParaExp } from "./types";
 
 /**
@@ -97,5 +97,39 @@ describe("connectToHub", () => {
       { type: "hub:token", token: "token-novo" },
       { type: "hub:pause" },
     ]);
+  });
+});
+
+/**
+ * O `?hubOrigin=` vem da URL, e o bundle da experiência é público: sem estas
+ * travas, quem embeda a experiência num iframe próprio escolhe a origem em que
+ * ela confia — e recebe tudo o que ela envia depois.
+ */
+describe("normalizarHubOrigin", () => {
+  test("reduz à origem canônica, descartando caminho e query", () => {
+    expect(normalizarHubOrigin("http://hub.teste/exp/abc?x=1#y")).toBe("http://hub.teste");
+    expect(normalizarHubOrigin("https://hub.teste:8443/")).toBe("https://hub.teste:8443");
+  });
+
+  test("recusa o que não é origem http(s) utilizável", () => {
+    expect(() => normalizarHubOrigin("")).toThrow(/URL absoluta/);
+    expect(() => normalizarHubOrigin("//evil.tld")).toThrow(/URL absoluta/);
+    expect(() => normalizarHubOrigin("javascript:alert(1)")).toThrow(/esquema/);
+    expect(() => normalizarHubOrigin("data:text/html,<b>")).toThrow(/esquema|opaca/);
+    expect(() => normalizarHubOrigin("http://user:senha@hub.teste")).toThrow(/credencial/);
+  });
+
+  test("recusa origem diferente de quem realmente embedou", () => {
+    const original = Object.getOwnPropertyDescriptor(window, "location");
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...window.location, protocol: "http:", ancestorOrigins: ["http://hub.teste"] },
+    });
+    try {
+      expect(normalizarHubOrigin("http://hub.teste")).toBe("http://hub.teste");
+      expect(() => normalizarHubOrigin("http://evil.tld")).toThrow(/não é quem embedou/);
+    } finally {
+      if (original) Object.defineProperty(window, "location", original);
+    }
   });
 });

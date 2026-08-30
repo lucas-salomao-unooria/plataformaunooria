@@ -1,4 +1,4 @@
-import { connectToHub } from "./bridge";
+import { connectToHub, normalizarHubOrigin } from "./bridge";
 import { TelemetryClient } from "./telemetry";
 import type { ExperienciaHandle, OpcoesDeChamada } from "./types";
 export * from "./types";
@@ -15,8 +15,11 @@ export async function createExperiencia(meta: {
   /** origin do hub; em dev o template usa http://localhost:3000 */
   hubOrigin?: string;
 }): Promise<ExperienciaHandle> {
-  const hubOrigin = meta.hubOrigin ?? new URLSearchParams(location.search).get("hubOrigin") ?? "";
-  if (!hubOrigin) throw new Error("hubOrigin ausente (query ?hubOrigin= em dev)");
+  const bruto = meta.hubOrigin ?? new URLSearchParams(location.search).get("hubOrigin") ?? "";
+  if (!bruto) throw new Error("hubOrigin ausente (query ?hubOrigin= em dev)");
+  // A query string é ATACANTE-CONTROLÁVEL e decide de quem esta experiência
+  // aceita o hub:init — ver normalizarHubOrigin.
+  const hubOrigin = normalizarHubOrigin(bruto);
 
   const { init, send, onMessage } = await connectToHub({ hubOrigin });
   let token = init.token;

@@ -2226,3 +2226,149 @@ reabre exatamente este defeito.
 \cd{streamGenerateContent?alt=sse}: com \emph{streaming} os \emph{headers} chegam
 de imediato, o teto de 300\,s deixa de incomodar, e o \emph{dispatcher} ---
 junto com todo este acoplamento --- pode simplesmente sair.
+
+% ---------------------------------------------------------------------------
+\section{ADR-46 --- O \cd{?hubOrigin=} é entrada não confiável: a experiência confirma quem a embedou}
+\label{adr:hub-origin}
+
+\begin{especificacao}{Contexto}
+A regra 4 diz que o \emph{token} passa do hub para a experiência por
+\cd{postMessage} com \cd{targetOrigin} explícito, nunca \cd{"*"}. A bridge
+cumpria a letra da regra e não o espírito: o valor do \cd{targetOrigin} ---
+e, o que é pior, o valor comparado em \cd{ev.origin !== hubOrigin} para decidir
+de quem se aceita o \cd{hub:init} --- vinha CRU da \emph{query string}
+(\cd{new URLSearchParams(location.search).get("hubOrigin")}).
+
+O \emph{bundle} da experiência é público por construção (ADR-01: ele mora num
+\emph{bucket} servido por CDN). Quem abrisse
+\arq{https://cdn/exp-01/1.0.0/index.html?hubOrigin=https://evil.tld} dentro de
+um \emph{iframe} próprio escrevia, com aquele parâmetro, a política de confiança
+da experiência: passava a poder entregar um \cd{hub:init} forjado --- com
+\cd{aluno}, \cd{apiUrl} e \cd{token} escolhidos por ele --- e a receber
+\textbf{tudo} o que a experiência emitisse depois (\cd{exp:concluir},
+\cd{exp:estado}). O Snyk classificou como \emph{code injection} no ponto em que
+o parâmetro entra; a leitura é discutível, o caminho não.
+\end{especificacao}
+
+\textbf{Decisão.} Todo \cd{hubOrigin} passa por \cd{normalizarHubOrigin()}
+(\arq{packages/sdk/src/bridge.ts}), chamado tanto onde o parâmetro é lido quanto
+dentro do \cd{connectToHub} --- a função é idempotente, e a segunda chamada
+existe porque é ali que o valor vira \cd{targetOrigin}. São três travas:
+
+\begin{enumerate}
+  \item \cd{new URL(...).origin}: o valor vira uma ORIGEM canônica, nunca uma
+    \emph{string} com caminho, credencial ou \emph{query}. Não é higiene:
+    \cd{postMessage} compara só a origem, mas a igualdade do \emph{handler}
+    nunca casaria, e o sintoma seria \emph{timeout} de \emph{handshake} em vez
+    de ``o parâmetro está errado''. Esquema fora de http(s) e origem opaca
+    (\cd{"null"}) são recusados.
+  \item Experiência servida por https exige hub em https --- a mesma regra do
+    JWKS da portabilidade. Em desenvolvimento tudo é http e a trava não pesa.
+  \item \cd{location.ancestorOrigins[0]}, quando o navegador publica: é a origem
+    REAL de quem embedou, e ela VENCE a \emph{query string}. É a trava que
+    fecha o caminho de fato --- o atacante controla o parâmetro, não o endereço
+    do documento que abriu o \emph{iframe}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Lista de origens permitidas embutida no \emph{bundle}}: a
+    experiência é a mesma em todos os contratos, e cada contrato tem o seu
+    domínio de hub. A lista viraria \emph{env} de \emph{build}, ou seja, um
+    \emph{bundle} por contrato --- exatamente o que a ADR-01 evita.
+  \item \emph{Deduzir a origem de \cd{document.referrer}}: depende da
+    \emph{referrer policy} do hub e some com \cd{no-referrer}. O
+    \cd{ancestorOrigins} não é forjável pela página.
+  \item \emph{Deixar como estava, porque o \emph{token} forjado é do próprio
+    atacante}: verdadeiro para o roubo direto e irrelevante para o resto ---
+    o que o atacante ganha é uma experiência que fala com a API dele e devolve
+    a ele o que a criança produziu.
+\end{itemize}
+
+\textbf{Consequências.} O Firefox não implementa \cd{ancestorOrigins}; lá
+sobram as duas primeiras travas. \cd{hubOrigin} malformado deixa de morrer por
+\emph{timeout} de \emph{handshake} e passa a lançar com a razão escrita ---
+diagnóstico melhor, mas é uma falha NOVA para quem embedar a experiência fora
+do hub. \cd{HUB\_ORIGIN} mal configurado no hub, que antes só travava o
+\emph{handshake}, agora recusa explicitamente.
+
+\textbf{Gatilho de reavaliação.} O dia em que uma experiência precisar ser
+embedada por um hub de terceiros (LTI, por exemplo): a trava 3 passa a exigir
+uma lista de embedadores conhecidos, e ela terá de vir do manifesto --- não do
+parâmetro.
+
+% ---------------------------------------------------------------------------
+\section{ADR-47 --- Nem senha de demonstração nem verificação de TLS moram no fonte}
+\label{adr:segredo-fora-do-fonte}
+
+\begin{especificacao}{Contexto}
+Três apontamentos do Snyk com a mesma raiz: credencial e política de segurança
+escritas como constante no código, onde não há como diferenciar
+desenvolvimento de produção.
+
+\begin{itemize}
+  \item \arq{apps/api/prisma/seed.ts} trazia \cd{SENHA\_PADRAO = "unooria123"}.
+    O seed é idempotente e roda contra o \cd{DATABASE\_URL} que estiver no
+    ambiente: apontado por engano para o banco de um contrato, ele criaria 61
+    contas --- inclusive o \cd{admin-contrato}, o único papel que atravessa
+    escolas --- com uma senha publicada no \arq{README}.
+  \item \arq{wso2/bootstrap/bootstrap.mjs} abria com
+    \cd{process.env.NODE\_TLS\_REJECT\_UNAUTHORIZED = "0"}, porque o IS local usa
+    o certificado \emph{self-signed} da distribuição (CN=\cd{localhost}, host
+    \cd{identity-server}). Aquilo desliga a verificação do PROCESSO INTEIRO,
+    para toda origem: o \emph{script} que carrega a senha do \emph{admin} do
+    \emph{tenant} passava a aceitar qualquer certificado de qualquer servidor.
+  \item \arq{apps/api/src/auth/auth.controller.ts} calculava o \emph{hash}
+    ``dummy'' anti-\emph{timing} sobre uma \emph{string} literal.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão.} O princípio é um só: o que é credencial vem do AMBIENTE, e o
+que é confiança se PROVA em vez de ser dispensada.
+
+\begin{itemize}
+  \item \cd{SEED\_SENHA} é obrigatória e não tem \emph{default} no fonte ---
+    ausente, o seed falha alto. O \emph{default} de desenvolvimento vive nos
+    dois \arq{docker-compose}, exatamente como o \cd{docs}/\cd{unooria-docs-local}
+    do Swagger (ADR-36). O seed também deixou de imprimir a senha.
+  \item O \emph{bootstrap} do WSO2 PINA o certificado: lê o certificado do IS no
+    primeiro contato (o único \cd{rejectUnauthorized: false} que resta, e ele
+    não autentica nada --- serve para DESCOBRIR a chave), grava o PEM que api e
+    hub já consumiam por \cd{NODE\_EXTRA\_CA\_CERTS} e o usa como a ÚNICA CA
+    aceita nas chamadas seguintes. Só a conferência de NOME do host é
+    dispensada, com \cd{checkServerIdentity}, porque o CN da distribuição não
+    bate com o nome do serviço --- a identidade da chave continua obrigatória.
+  \item O \emph{hash} dummy passa a ser calculado sobre
+    \cd{randomBytes(32)}, sorteado a cada subida e descartado no mesmo instante.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter o literal do seed e ignorar o apontamento no
+    \arq{.snyk}}: o \arq{.snyk} deste repo é para vulnerabilidade cujo
+    \emph{fix} exige \emph{major} de \emph{framework}, com prazo cobrado pelo
+    CI. Aqui o \emph{fix} custa dez linhas.
+  \item \emph{Sortear a senha do seed quando a \emph{env} falta}: nada ficaria
+    no fonte, mas os sete \emph{walkthroughs} passariam a depender de ler
+    \cd{stdout}, e o \arq{README} não teria o que documentar.
+  \item \emph{Passar a CA do IS por \cd{NODE\_EXTRA\_CA\_CERTS} no
+    \emph{bootstrap}}: a variável é lida na SUBIDA do processo, e o certificado
+    só existe depois que o \emph{script} o busca. Exigiria dois processos.
+  \item \emph{Aceitar também o nome do host, reescrevendo o certificado do IS}:
+    trocar a distribuição por um certificado gerado no \emph{up} é mais infra
+    local para operar, num serviço que já leva dois minutos para subir.
+\end{itemize}
+
+\textbf{Consequências.} \cd{pnpm --filter @edu/api seed} no \emph{host} exige
+\cd{SEED\_SENHA} --- no \arq{apps/api/.env} (que o Prisma carrega) ou na linha
+de comando. Nos dois \emph{compose} nada muda. O \emph{bootstrap} do WSO2 trocou
+o \cd{fetch} global pelo \cd{node:https}, porque o \cd{fetch} do Node não aceita
+agente e é por agente que se passa uma CA; são vinte linhas a mais, e é o preço
+de não desligar o TLS do processo. O \emph{bootstrap} passou a FALHAR se não
+conseguir ler o certificado, onde antes seguia com um aviso: sem CA não há como
+falar com o IS sem voltar a aceitar qualquer certificado.
+
+\textbf{Gatilho de reavaliação.} O WSO2 deixar de ser \emph{self-signed} em
+desenvolvimento (certificado de uma CA local no \emph{up}): a pinagem e o
+\cd{checkServerIdentity} saem juntos, e o \cd{chamar} pode voltar ao
+\cd{fetch}.

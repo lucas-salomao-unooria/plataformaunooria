@@ -93,7 +93,11 @@ Vem configurado (tenant `dev-local`, app OIDC do hub, usuários de teste);
 prontas para colar. Detalhes: `wso2/README.md`. Enquanto ele não é o emissor, o
 próprio hub assina os tokens e publica o JWKS em `/.well-known/jwks.json`.
 
-Senha de todos os usuários de demonstração: `unooria123`.
+Senha de todos os usuários de demonstração: a de `SEED_SENHA` — nos dois
+compose ela já vem (`unooria123`); no host, ponha-a no `apps/api/.env` ou
+prefixe o comando. O seed NÃO tem senha padrão no fonte: ele roda contra o
+`DATABASE_URL` que estiver no ambiente, e uma constante ali criaria contas com
+senha conhecida se ele fosse apontado por engano ao banco de um contrato.
 Login: `gestor.demo` → `/admin/usuarios` (importação CSV); `prof.demo` →
 `/professor`; `aluno01` → experiência. Teste de experiência local:
 `/dev-embed`. Sanidade do DS: `/ds-smoke` (dev only).

@@ -125,6 +125,14 @@ ignora --- o canal é genérico de propósito.
     usa o \cd{hubOrigin} que recebeu por \emph{query string}. Com \cd{"*"}, o
     \emph{token} iria para qualquer documento que conseguisse virar o pai do
     \emph{frame}.
+  \item \textbf{Aquela \emph{query string} é entrada NÃO CONFIÁVEL, e passa por
+    \cd{normalizarHubOrigin()}.} O \emph{bundle} é público: quem embeda a
+    experiência num \cd{iframe} próprio escreve o parâmetro, e com ele escolheria
+    de quem se aceita o \cd{hub:init} e para onde vai tudo o que sai depois. A
+    função reduz o valor a uma origem canônica, recusa esquema fora de http(s),
+    credencial e origem opaca, exige hub em https quando a experiência está em
+    https, e confere contra \cd{location.ancestorOrigins[0]} --- a origem REAL de
+    quem embedou, que VENCE o parâmetro (\adrr{ADR-46}).
   \item \textbf{Toda mensagem pós-\emph{init} é validada com Zod nos DOIS
     lados.} Mensagem inválida é descartada com aviso, nunca despachada crua aos
     \emph{listeners}.

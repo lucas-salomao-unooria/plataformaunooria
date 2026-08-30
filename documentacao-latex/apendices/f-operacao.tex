@@ -568,6 +568,22 @@ testado no container} &
   numa área larga o sinal central do motor infla em silêncio, e nada na tela
   denuncia. A condição é positiva --- \cd{fase === "explicabilidade"} E
   \cd{passo === "relatorio"} ---, tudo o mais é aparelho.\\
+\textbf{O seed morre com \enquote{SEED\_SENHA não definida}} & Não é regressão:
+  a senha das contas de demonstração saiu do fonte (\adrr{ADR-47}). Nos dois
+  \emph{compose} ela já vem; no \emph{host}, ponha \cd{SEED\_SENHA} no
+  \arq{apps/api/.env} (o Prisma carrega esse arquivo) ou prefixe o comando.\\
+\zebra \textbf{A experiência lança \enquote{hubOrigin não é quem embedou}} &
+  O \cd{?hubOrigin=} da URL não bate com \cd{location.ancestorOrigins[0]}
+  (\adrr{ADR-46}). Em desenvolvimento, quase sempre é \env{HUB\_ORIGIN} do hub
+  apontando para outro endereço --- \cd{host.docker.internal} onde o navegador
+  vê \cd{localhost}, por exemplo. \textbf{Antes desta trava o sintoma era
+  outro}: \emph{handshake} expirando em 8\,s sem dizer por quê.\\
+\textbf{O \emph{bootstrap} do WSO2 falha em \enquote{TLS com identity-server:9443}} &
+  Ele agora PINA o certificado do IS e falha se não conseguir lê-lo, onde antes
+  desligava a verificação de TLS do processo e seguia (\adrr{ADR-47}). O IS
+  ainda está subindo, ou a porta 9443 não responde --- o \emph{healthcheck} do
+  \emph{compose} deveria ter segurado; conferir
+  \cd{docker compose -f wso2/docker-compose.yml ps}.\\
 \bottomrule
 \end{tabularx}
 

@@ -23,12 +23,21 @@
  *     claims OIDC existentes — a ordem claims → app importa.
  */
 import { writeFileSync } from "node:fs";
+import { request } from "node:https";
 import { connect } from "node:tls";
 
-// O IS local usa o certificado de demonstração da distribuição. Dentro do
-// compose isso é aceitável; o certificado é exportado no final para que api e
-// hub confiem nele via NODE_EXTRA_CA_CERTS em vez de desligar a verificação.
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// O IS local usa o certificado de demonstração da distribuição (self-signed,
+// CN=localhost, enquanto o host no compose é `identity-server`) — nenhuma CA
+// pública o assina, e a verificação padrão o recusa.
+//
+// A saída NÃO é `NODE_TLS_REJECT_UNAUTHORIZED=0`: aquilo desliga a verificação
+// do PROCESSO INTEIRO e para toda origem, o que faz este script aceitar
+// qualquer certificado de qualquer servidor — inclusive um MITM no meio do
+// compose. O que ele faz agora é PINAR: lê o certificado uma vez (primeiro
+// contato, é o mesmo arquivo que api e hub vão consumir por NODE_EXTRA_CA_CERTS)
+// e passa esse PEM como a ÚNICA CA aceita nas chamadas seguintes. O que é
+// dispensado é só a conferência de NOME do host, porque o CN da distribuição
+// não bate com o nome do serviço; a identidade da chave continua obrigatória.
 
 const env = (nome) => {
   const v = process.env[nome];
@@ -78,18 +87,59 @@ function credenciais(tenant) {
   return "Basic " + Buffer.from(`${usuario}:${senha}`).toString("base64");
 }
 
-async function chamar(metodo, url, { auth, corpo, scim = false } = {}) {
-  const resp = await fetch(url, {
-    method: metodo,
-    headers: {
-      Authorization: auth,
-      "Content-Type": scim ? "application/scim+json" : "application/json",
-      Accept: "application/json, application/scim+json",
-    },
-    body: corpo === undefined ? undefined : JSON.stringify(corpo),
+/**
+ * A CA pinada — preenchida por `fixarCertificadoDoIs()` antes da primeira
+ * chamada. Enquanto for null, nada de https sai daqui.
+ */
+let CA_DO_IS = null;
+
+/**
+ * `fetch` global não aceita agente, e é por agente que se passa uma CA. Daí o
+ * `node:https` cru: são vinte linhas, e é o preço de não desligar a verificação
+ * de TLS do processo. Mantém a mesma forma de retorno de antes.
+ */
+function chamar(metodo, url, { auth, corpo, scim = false } = {}) {
+  if (!CA_DO_IS) throw new Error("certificado do IS ainda não foi fixado");
+  const alvo = new URL(url);
+  const body = corpo === undefined ? undefined : Buffer.from(JSON.stringify(corpo));
+
+  return new Promise((resolve, reject) => {
+    const req = request(
+      {
+        hostname: alvo.hostname,
+        port: alvo.port || 443,
+        path: `${alvo.pathname}${alvo.search}`,
+        method: metodo,
+        ca: CA_DO_IS,
+        // O certificado é conferido contra a CA acima; só o NOME do host não,
+        // porque a distribuição vem com CN=localhost. Ver o topo do arquivo.
+        checkServerIdentity: () => undefined,
+        headers: {
+          ...(auth ? { Authorization: auth } : {}),
+          "Content-Type": scim ? "application/scim+json" : "application/json",
+          Accept: "application/json, application/scim+json",
+          ...(body ? { "Content-Length": body.length } : {}),
+        },
+      },
+      (resp) => {
+        const pedacos = [];
+        resp.on("data", (d) => pedacos.push(d));
+        resp.on("end", () => {
+          const texto = Buffer.concat(pedacos).toString("utf8");
+          const status = resp.statusCode;
+          resolve({
+            status,
+            ok: status >= 200 && status < 300,
+            corpo: texto ? JSON.parse(texto) : null,
+            texto,
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    if (body) req.write(body);
+    req.end();
   });
-  const texto = await resp.text();
-  return { status: resp.status, ok: resp.ok, corpo: texto ? JSON.parse(texto) : null, texto };
 }
 
 /** Chamada à Management API do tenant do contrato; lança em erro. */
@@ -402,33 +452,39 @@ async function criarUsuarios() {
 // Certificado + saída
 // ---------------------------------------------------------------------------
 
-function exportarCertificado() {
+/**
+ * PRIMEIRO passo do bootstrap: lê o certificado do IS e o adota como a única CA
+ * das chamadas seguintes (`CA_DO_IS`), além de gravá-lo para api e hub o
+ * consumirem por `NODE_EXTRA_CA_CERTS`.
+ *
+ * Este é o único ponto do script com `rejectUnauthorized: false`, e ele não
+ * autentica nada: é o primeiro contato, feito para DESCOBRIR a chave. Falhar
+ * aqui é fatal — sem CA não há como falar com o IS sem voltar a aceitar
+ * qualquer certificado, que é justamente o que se está removendo.
+ */
+function fixarCertificadoDoIs() {
   passo("Certificado do IS");
   const { hostname, port } = new URL(IS_URL);
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const socket = connect(
       { host: hostname, port: Number(port || 443), servername: hostname, rejectUnauthorized: false },
       () => {
         const cert = socket.getPeerCertificate();
         socket.end();
         if (!cert?.raw) {
-          log("não foi possível obter o certificado (siga sem NODE_EXTRA_CA_CERTS)");
-          return resolve();
+          return reject(new Error("não foi possível ler o certificado do IS"));
         }
         const b64 = cert.raw.toString("base64").match(/.{1,64}/g).join("\n");
-        writeFileSync(
-          "/certs/wso2-local.pem",
-          `-----BEGIN CERTIFICATE-----\n${b64}\n-----END CERTIFICATE-----\n`,
-        );
+        const pem = `-----BEGIN CERTIFICATE-----\n${b64}\n-----END CERTIFICATE-----\n`;
+        CA_DO_IS = pem;
+        writeFileSync("/certs/wso2-local.pem", pem);
+        log(`fixado (${cert.subject?.CN ?? "?"}, impressão ${cert.fingerprint256 ?? "?"})`);
         log("salvo em wso2/certs/wso2-local.pem");
         resolve();
       },
     );
-    socket.on("error", () => {
-      log("não foi possível obter o certificado");
-      resolve();
-    });
+    socket.on("error", (err) => reject(new Error(`TLS com ${hostname}:${port} falhou: ${err.message}`)));
   });
 }
 
@@ -475,6 +531,9 @@ ${"═".repeat(74)}
 async function main() {
   console.log(`Configurando WSO2 IS em ${IS_URL} — contrato "${CONTRATO}"`);
 
+  // Antes de tudo: o certificado. Ele é a CA de todas as chamadas abaixo.
+  await fixarCertificadoDoIs();
+
   await criarTenant();
   await criarClaimsLocais();
   await criarClaimsOidc();
@@ -482,7 +541,6 @@ async function main() {
   await criarScope();
   const idApp = await criarAplicacao();
   await criarUsuarios();
-  await exportarCertificado();
 
   const { clientId, clientSecret } = await credenciaisDaApp(idApp);
   const issuer = await issuerDoDiscovery();

@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
  * 4º ano (10 alunos, para a exp-02-unootube) e 1 turma de 2ª série do EM
  * (10 alunos, para a exp-03-unoogpt), 1 professor, 1 gestor e
  * 1 admin-contrato (sem escola — única exceção da regra de tenancy).
- * Todos com a senha "unooria123". Idempotente — pode rodar quantas vezes quiser.
+ * Idempotente — pode rodar quantas vezes quiser.
  *
  * Usuários reais NÃO nascem aqui: entram por importação
  * (`POST /rostering/importar`, papel gestor/admin-contrato).
@@ -20,7 +20,30 @@ import bcrypt from "bcryptjs";
  * Os walkthroughs visuais exigem o seed COMPLETO — o mínimo não os serve.
  */
 const prisma = new PrismaClient();
-const SENHA_PADRAO = "unooria123";
+
+/**
+ * A senha das contas de demonstração vem do AMBIENTE, nunca do código.
+ * O default de DEV vive nos dois compose (como o `docs`/`unooria-docs-local`
+ * do Swagger); no host, `SEED_SENHA=... pnpm --filter @edu/api seed`.
+ *
+ * Sem env o seed FALHA, e falha alto: constante no fonte significa que este
+ * script, rodado por engano contra o banco de um contrato, criaria 61 contas
+ * com uma senha publicada no README — inclusive o `admin-contrato`, o único
+ * papel que atravessa escolas.
+ */
+const SENHA_PADRAO = senhaDoSeed();
+
+function senhaDoSeed(): string {
+  const senha = process.env.SEED_SENHA?.trim();
+  if (!senha) {
+    throw new Error(
+      "SEED_SENHA não definida — o seed não inventa senha. " +
+        "No compose ela já vem; no host: SEED_SENHA=<senha> pnpm --filter @edu/api seed",
+    );
+  }
+  if (senha.length < 8) throw new Error("SEED_SENHA precisa de ao menos 8 caracteres");
+  return senha;
+}
 const ANO_LETIVO = 2026;
 const TITULO_PERIODO = `Ano letivo ${ANO_LETIVO}`;
 const TOTAL_ALUNOS = 40;
@@ -185,7 +208,7 @@ async function main() {
     await upsertAdminContrato();
     console.log(
       `Seed MÍNIMO: escola "${ESCOLA_ID}", período "${periodo.titulo}", gestor.demo e ` +
-        `analise.unooria (senha "${SENHA_PADRAO}"). Nenhuma turma, nenhum aluno — ` +
+        `analise.unooria (senha: a de SEED_SENHA). Nenhuma turma, nenhum aluno — ` +
         `as pessoas entram por /admin/importar.`,
     );
     return;
@@ -304,7 +327,7 @@ async function main() {
       `"${ESCOLA_2_ID}" com 5A), prof.demo e supervisor.demo lotados nas DUAS, ` +
       `gestor.demo, gestor.vilanova, ` +
       `${TOTAL_ALUNOS + TOTAL_ALUNOS_4A + TOTAL_ALUNOS_2A + TOTAL_ALUNOS_5A} alunos e ` +
-      `1 admin-contrato (senha "${SENHA_PADRAO}"). Usuários na base: ${total}.`,
+      `1 admin-contrato (senha: a de SEED_SENHA). Usuários na base: ${total}.`,
   );
 }
 

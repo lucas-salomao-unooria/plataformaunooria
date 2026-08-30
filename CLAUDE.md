@@ -59,6 +59,15 @@ exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:tok
 exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo v1)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
+O `?hubOrigin=` que o hub põe na URL do iframe é ENTRADA NÃO CONFIÁVEL: o bundle
+é público, então quem embeda a experiência num iframe próprio escolheria, por
+aquele parâmetro, de quem ela aceita o `hub:init` e para onde vai tudo o que sai
+depois. `normalizarHubOrigin()` (bridge.ts) reduz a origem canônica, recusa
+esquema fora de http(s), credencial e origem opaca, exige hub em https quando a
+experiência está em https, e confere contra `location.ancestorOrigins[0]` — a
+origem REAL de quem embedou, que VENCE a query string (ADR-46). Sintoma novo:
+"hubOrigin não é quem embedou" onde antes o handshake só expirava em 8s.
+
 O `blur` da janela do hub NÃO é sempre o aluno saindo: clicar dentro do iframe
 move o foco para a experiência e dispara `blur` no documento de cima — e o
 `focus` correspondente não volta enquanto ele continuar ali, então um
@@ -895,6 +904,10 @@ node scripts/gerar-endpoints-tex.mjs                            # apendices/c-en
 # /docs já vem LIGADO no docker:dev — http://localhost:3001/docs (docs / unooria-docs-local).
 # No host (`pnpm dev`) as envs não existem e a rota some; exporte-as para ligar:
 SWAGGER_USUARIO=docs SWAGGER_SENHA=unooria-docs-local pnpm dev
+SEED_SENHA=<senha> pnpm --filter @edu/api seed  # a senha das contas de demo vem do AMBIENTE (ADR-47).
+                                          # Nos dois compose ela já vem (unooria123); no host, no
+                                          # apps/api/.env (o Prisma carrega) ou na linha de comando.
+                                          # Ausente, o seed FALHA — não inventa senha.
 SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)

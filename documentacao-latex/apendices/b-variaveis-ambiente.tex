@@ -161,6 +161,16 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
   \cd{unooria-docs-local}) --- sem ele o \rota{/docs} só funcionaria para quem
   descobrisse que precisa exportar variável, isto é, para ninguém. Em produção
   vêm do Secret Manager.\\
+\zebra \env{SEED\_SENHA} & \textbf{o seed falha} & Senha das contas de
+  demonstração criadas por \arq{prisma/seed.ts} (mínimo 8 caracteres). \textbf{Não
+  tem \emph{default} no fonte}: o seed é idempotente e roda contra o
+  \env{DATABASE\_URL} que estiver no ambiente, e uma constante ali criaria 61
+  contas com senha conhecida --- inclusive o \cd{admin-contrato}, o único papel
+  que atravessa escolas --- se ele fosse apontado por engano ao banco de um
+  contrato. O \emph{default} de \emph{dev} vive nos dois \emph{compose}, como o
+  do Swagger acima; no \emph{host}, no \arq{apps/api/.env} (o Prisma o carrega) ou
+  na linha de comando. O seed não imprime mais a senha (\adrr{ADR-47}). Só
+  \emph{dev}: nenhum \emph{pipeline} de entrega roda o seed.\\
 \bottomrule
 \end{tabularx}
 

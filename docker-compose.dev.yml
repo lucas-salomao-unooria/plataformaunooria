@@ -140,6 +140,9 @@ services:
     environment:
       <<: *dev-env
       DATABASE_URL: postgresql://postgres:pass@pg:5432/unooria
+      # Ver o comentário gêmeo no docker-compose.yml: a senha do seed é do
+      # AMBIENTE, e o default de dev vive aqui, não no prisma/seed.ts.
+      SEED_SENHA: ${SEED_SENHA:-unooria123}
     depends_on:
       pg:
         condition: service_healthy

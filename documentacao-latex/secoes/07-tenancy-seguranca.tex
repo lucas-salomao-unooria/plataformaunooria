@@ -318,21 +318,28 @@ roda código que, em produção, vem de outra \emph{origin} (a CDN) e que recebe
   \cd{hubOrigin} recebido por \emph{query string}. \cd{"*"} entregaria o
   \emph{token} a qualquer documento que conseguisse virar o pai do
   \emph{frame}~\cite{mdnpostmessage}.\\
-\zebra Validação de \cd{ev.origin} & Os dois lados descartam mensagem cuja
+\zebra \cd{hubOrigin} normalizado & A \emph{query string} é entrada NÃO
+  CONFIÁVEL --- o \emph{bundle} é público, e quem embedar a experiência escolhe
+  aquele parâmetro. \cd{normalizarHubOrigin()} o reduz a uma origem canônica,
+  recusa esquema fora de http(s), credencial e origem opaca, exige hub em https
+  quando a experiência está em https, e --- a trava que fecha o caminho ---
+  confere contra \cd{location.ancestorOrigins[0]}, a origem REAL de quem
+  embedou, que vence a \emph{query string} (\adrr{ADR-46}).\\
+Validação de \cd{ev.origin} & Os dois lados descartam mensagem cuja
   \emph{origin} não bate, \emph{antes} de olhar o conteúdo.\\
-Validação por esquema & Toda mensagem pós-\emph{init} passa por Zod nos dois
+\zebra Validação por esquema & Toda mensagem pós-\emph{init} passa por Zod nos dois
   lados; o que não casa é descartado com aviso, \textbf{nunca} despachado cru aos
   \emph{listeners}.\\
-\zebra Verificação de versão maior & Hub e experiência comparam
+Verificação de versão maior & Hub e experiência comparam
   \cd{protocolVersion}. Incompatível falha alto: sem \cd{hub:init}, o
   \emph{handshake} expira e a experiência mostra erro.\\
-\emph{Token} só em memória & A experiência nunca escreve o \emph{token} em
+\zebra \emph{Token} só em memória & A experiência nunca escreve o \emph{token} em
   \cd{localStorage} nem em \emph{cookie}. TTL de 15 minutos, renovado por
   mensagem.\\
-\zebra \emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
+\emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
   allow-modals}, mais \cd{allow-pointer-lock} \textbf{apenas} para quem declara
   \cd{pointer-lock} no manifesto~\cite{mdnsandbox}.\\
-\cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
+\zebra \cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}: sem delegar
   \cd{autoplay}, um \cd{<video muted autoplay>} cross-origin rejeita
   \cd{play()} em silêncio.\\
