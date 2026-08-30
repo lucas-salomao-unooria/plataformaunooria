@@ -578,12 +578,42 @@ testado no container} &
   apontando para outro endereço --- \cd{host.docker.internal} onde o navegador
   vê \cd{localhost}, por exemplo. \textbf{Antes desta trava o sintoma era
   outro}: \emph{handshake} expirando em 8\,s sem dizer por quê.\\
-\textbf{O \emph{bootstrap} do WSO2 falha em \enquote{TLS com identity-server:9443}} &
+\textbf{O CSV grande é recusado --- e a mensagem diz QUAL dos três tetos foi} &
+  São três, em ordem (\adrr{ADR-48}). \enquote{CSV acima de 30MB --- divida o
+  arquivo}: o nosso, e é o esperado. \cd{PayloadTooLarge} do Express: o
+  \emph{bodyParser} de \arq{main.ts} ficou menor que o
+  \cd{TETO\_DO\_ARQUIVO} da rota --- os dois saem da mesma constante, e o
+  \cd{mb} do \emph{parser} é MEBIbyte justamente para ficar acima. 413 SEM
+  mensagem nossa e sem linha nenhuma no log: é o Cloud Run, que recusa acima de
+  \SI{32}{\mebi\byte} em HTTP/1 antes do contêiner --- só acontece se alguém
+  chamar a rota fora da tela. Caminho, nos três: dividir o
+  \arq{enrollments.csv} por escola ou por diretoria.\\
+\zebra \textbf{O \emph{bootstrap} do WSO2 falha em \enquote{TLS com identity-server:9443}} &
   Ele agora PINA o certificado do IS e falha se não conseguir lê-lo, onde antes
   desligava a verificação de TLS do processo e seguia (\adrr{ADR-47}). O IS
   ainda está subindo, ou a porta 9443 não responde --- o \emph{healthcheck} do
   \emph{compose} deveria ter segurado; conferir
   \cd{docker compose -f wso2/docker-compose.yml ps}.\\
+\zebra \textbf{O painel da atividade lista alunos que não são meus} &
+  Se a atividade tem turma, é bug --- abrir um chamado. Se ela NÃO tem
+  (\cd{exp\_01\_activities.turma\_id IS NULL}), é o comportamento das
+  atividades anteriores à \adrr{ADR-49}: elas valem para a escola inteira, e o
+  painel diz isso numa faixa azul. Criar a atividade de novo, agora escolhendo a
+  turma. \textbf{Antes da ADR-49 o sintoma era pior e mudo}: a consulta rodava
+  sem \cd{escola\_id} numa tabela FORA da RLS, então apareciam crianças de
+  OUTRAS escolas do contrato.\\
+\textbf{Os perfis da Vila não mudam de lado depois de subir a
+\cd{VERSAO\_MAPEAMENTO}} &
+  Esperado: o que a constante nova recalcula é \cd{exp\_70\_perfis}, não a
+  cópia em \cd{exp\_01\_exp\_70\_perfis\_importados}, que é a que decide o
+  lado do feed. O painel do Ato 1 mostra quantos vieram de versão anterior;
+  ``Trazer perfis da Vila do Lume'' atualiza, e NÃO desfaz quem o professor
+  moveu de lado (\adrr{ADR-50}). Não há rotina automática, de propósito.\\
+\zebra \textbf{O aluno entra e vê ``Nada rolando por aqui agora''} &
+  Com \adrr{ADR-49}, \cd{POST /runs} só entrega atividade SEM turma ou da turma
+  DELE --- e a turma sai de \cd{users.turma\_id}, o cache da matrícula
+  principal. Aluno sem \cd{turma\_id} (importado sem enturmar, ou movido pela
+  metade) só alcança atividade sem turma. Conferir em \rota{/admin/turmas}.\\
 \bottomrule
 \end{tabularx}
 

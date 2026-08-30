@@ -395,6 +395,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
     {\etitulo{exp\_01\_activities}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
+     \fk{turma\_id} --- NULL = escola inteira\\
      \texttt{titulo}, \texttt{disciplina}, \texttt{tema\_geral}\\
      \texttt{recorte}, \texttt{contexto\_aula}\\
      \texttt{pergunta\_chave}, \texttt{pergunta\_origem}\\
@@ -536,7 +537,8 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{escores} JSONB --- 4 quadrantes, 0--1\\
      \texttt{dominante}, \texttt{origem}: jogo $|$ professor\\
      \texttt{lado\_forcado} --- redistribuição do professor\\
-     \texttt{medido\_em}\\
+     \texttt{vila\_sessao\_id} --- rastro, SEM FK\\
+     \texttt{versao\_mapeamento}, \texttt{medido\_em}\\
      \texttt{UNIQUE (activity\_id, aluno\_id)}};
 
   \node[actnote, text width=52mm, anchor=north west] at (11.0,-8.4)

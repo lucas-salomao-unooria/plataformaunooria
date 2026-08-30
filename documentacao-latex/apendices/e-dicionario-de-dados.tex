@@ -352,8 +352,14 @@ sobrescrevam.
 \midrule
 \pk{id} & \cd{UUID} PK & \\
 \zebra \fk{professor\_id} & \cd{UUID} FK & \\
-\cd{titulo}, \cd{disciplina}, \cd{tema\_geral}, \cd{recorte} & \cd{TEXT} & \\
-\zebra \cd{contexto\_aula} & \cd{TEXT?} & \\
+\fk{turma\_id} & \cd{UUID?} FK & Para qual TURMA é esta atividade
+  (\adrr{ADR-49}). \cd{NULL} = atividade anterior à coluna, que vale para a
+  escola inteira --- o comportamento antigo, preservado sem
+  \emph{backfill}. Com turma, o painel de perfis, a importação da Vila e a
+  entrada do aluno em \cd{POST /runs} falam todos da MESMA sala.
+  \cd{ON DELETE RESTRICT}.\\
+\zebra \cd{titulo}, \cd{disciplina}, \cd{tema\_geral}, \cd{recorte} & \cd{TEXT} & \\
+\cd{contexto\_aula} & \cd{TEXT?} & \\
 \cd{pergunta\_chave} & \cd{TEXT} & Gerada pela IA a partir do tema, validada pelo
   professor.\\
 \zebra \cd{pergunta\_origem} & \cd{TEXT} & \cd{ia} $|$ \cd{professor} ---
@@ -489,6 +495,15 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
   \textbf{PRESERVADO no \emph{upsert}} --- importar sozinho, ou levar o objeto
   inteiro no \cd{update}, desfaria em silêncio uma redistribuição feita antes da
   aula.\\
+\cd{vila\_sessao\_id} & \cd{UUID?} & De QUE partida da Vila esta medida saiu.
+  \textbf{SEM chave estrangeira}, de propósito (\adrr{ADR-50}): zerar a turma na
+  Vila apaga sessões, e uma cascata --- ou um \cd{RESTRICT} --- levaria junto o
+  perfil que está decidindo o lado de uma aula em andamento. É RASTRO da medida,
+  não integridade. \cd{NULL} = não veio da Vila desta instalação.\\
+\zebra \cd{versao\_mapeamento} & \cd{SMALLINT?} & A \cd{VERSAO\_MAPEAMENTO}
+  sob a qual o perfil foi medido. É o que permite o painel dizer que o mapeamento
+  mudou desde a importação --- sem ela, subir a constante deixava as cópias
+  velhas decidindo o feed em silêncio.\\
 \cd{medido\_em} & \cd{TIMESTAMPTZ} & \\
 \bottomrule
 \end{tabularx}

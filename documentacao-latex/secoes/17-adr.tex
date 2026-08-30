@@ -2392,3 +2392,261 @@ falar com o IS sem voltar a aceitar qualquer certificado.
 desenvolvimento (certificado de uma CA local no \emph{up}): a pinagem e o
 \cd{checkServerIdentity} saem juntos, e o \cd{chamar} pode voltar ao
 \cd{fetch}.
+
+\section{ADR-48 --- O teto do CSV é de BYTES e cabe debaixo do limite do
+ambiente; o modelo do OneRoster vem em pares, e o exemplo leva a escola de
+verdade}
+\label{adr:modelos-oneroster}
+
+\begin{especificacao}{Contexto}
+A tela de importação tem duas abas. A da \emph{planilha da escola} oferece dois
+arquivos para \emph{download} --- o modelo em branco e um exemplo preenchido ---
+e os dois são GERADOS da mesma constante que o \emph{parser} consome. A do
+\textbf{OneRoster 1.2} lista os sete arquivos do \emph{binding} CSV e não
+oferecia nenhum: quem não tem o \emph{export} pronto do sistema de gestão --- e
+é a maioria antes da primeira integração --- tinha de montar o cabeçalho lendo a
+especificação da 1EdTech.
+
+O teto do corpo era \SI{10}{\mega\byte}, dimensionado para a planilha de UMA
+escola, e o \cd{MAX\_LINHAS} de 50 mil, que existe do lado da planilha, não vale
+para o caminho OneRoster. Medido com o formato real do padrão
+(\textasciitilde\SI{130}{\byte} por linha de \arq{enrollments.csv}), o pior
+caso realista de UM contrato --- \textasciitilde10 mil alunos, cinco
+componentes cada --- dá \textasciitilde\SI{7}{\mega\byte}. Os
+\SI{10}{\mega\byte} apertavam exatamente ali.
+
+Acima da aplicação há um teto que não é nosso: o Cloud Run recusa requisição
+maior que \SI{32}{\mebi\byte} em HTTP/1, no \emph{frontend} do Google e
+ANTES do contêiner. Não é quota que se peça para aumentar --- é como a camada de
+\emph{serving} funciona, porque ela bufferiza o corpo inteiro antes de
+repassar.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item O teto de BYTES sobe para \SI{30}{\mega\byte} e passa a viver numa
+    constante só, \cd{TETO\_DO\_ARQUIVO} em \arq{rostering.service.ts}, que o
+    \emph{bodyParser} de \arq{main.ts} também lê. O número é escolhido para
+    ficar DEBAIXO dos \SI{32}{\mebi\byte} do ambiente: a aplicação não promete
+    o que o Cloud Run não entrega, e a mensagem que o gestor vê é sempre a nossa
+    --- a que diz para dividir o arquivo. Ainda são
+    \textasciitilde4$\times$ o pior caso medido.
+  \item A ORDEM entre os dois tetos importa: com o \emph{parser} menor que a
+    rota, o corpo morre no \emph{middleware} e o gestor recebe um
+    \cd{PayloadTooLarge} do Express, sem o texto que diz o que fazer. O
+    \cd{mb} do \emph{parser} é MEBIbyte (\cd{30mb} = \SI{31.4}{\mega\byte}),
+    então ele fica \textasciitilde5\% ACIMA da rota --- e é essa folga que faz
+    a nossa mensagem ser a que aparece.
+  \item O \cd{MAX\_LINHAS} de 50 mil NÃO sobe: ele é da planilha de uma escola,
+    e 50 mil pessoas numa unidade é um arquivo errado, não um arquivo grande.
+  \item Cada arquivo do padrão ganha o mesmo par da planilha:
+    \rota{GET /rostering/modelos/oneroster/:arquivo} (só o cabeçalho) e
+    \rota{.../:arquivo/exemplo} (preenchido). As colunas do modelo são um
+    SUBCONJUNTO declarado de \cd{COLUNAS\_POR\_ARQUIVO}, a constante que o leitor
+    confere, e \arq{tests/oneroster-modelos.spec.ts} cobra as DUAS direções ---
+    obrigatória que falte no modelo, e coluna do modelo que o \emph{parser} não
+    conheça (o dado entraria e sumiria).
+  \item O exemplo é gerado com a escola de VERDADE no \cd{sourcedId} do
+    \arq{orgs.csv} e no \cd{schoolSourcedId} das turmas e matrículas, e com o ano
+    corrente no calendário.
+  \item Os sete exemplos formam um lote COERENTE --- uma escola, um ano letivo,
+    duas turmas, quatro pessoas e o enturmamento delas. O teste aplica os sete
+    contra o banco, na ordem da tela, e afirma turma, papéis e matrículas.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Escrever os sete arquivos à mão, como texto fixo}: é a armadilha
+    que o modelo da planilha já evitou uma vez. Modelo escrito à mão diverge do
+    \emph{parser} no primeiro campo novo, e o sintoma chega como ``baixei o
+    modelo de vocês e deu erro de cabeçalho''.
+  \item \emph{Publicar o modelo com TODAS as colunas que a api sabe ler}:
+    \arq{users.csv} tem 24. Modelo com 24 colunas não é modelo, é a
+    especificação --- e a escola preencheria \cd{sms}, \cd{phone} e
+    \cd{agentSourcedIds} sem que nada os leia.
+  \item \emph{Um \cd{esc.exemplo} fixo no \arq{orgs.csv}}: para o gestor, o lote
+    inteiro voltaria como ``escola não é a desta importação'', e o arquivo que
+    existe para conferir o caminho provaria o contrário. Para o
+    \cd{admin-contrato}, que PODE criar escola por CSV (ADR-34), o exemplo
+    abriria um \emph{tenant} de mentira --- com RLS e dado de menor atrás dele.
+  \item \emph{Um único arquivo por item, sem o modelo em branco}: é o exemplo que
+    o gestor abre para entender, e o modelo que ele preenche. Linha de exemplo
+    dentro do modelo vira pessoa fantasma importada no primeiro uso --- a mesma
+    razão pela qual \arq{planilha.ts} mantém os dois separados.
+  \item \emph{Empacotar os sete num \emph{zip}}: empacotamento é embalagem, não
+    semântica. A rota de importação já é um arquivo por chamada, e um
+    \emph{zip} para baixar exigiria dependência nova para produzir algo que o
+    gestor descompactaria antes de usar.
+  \item \emph{\SI{100}{\mega\byte}} --- foi o primeiro número escolhido, e ele
+    é PIOR que \SI{30}{\mega\byte}: entre \SI{33.5}{\mega\byte} e
+    \SI{100}{\mega\byte} a plataforma prometeria algo que o ambiente recusa, e
+    o gestor receberia um 413 que não é nosso, sem mensagem útil e sem linha
+    nenhuma no log da api. Teto que promete mais do que o ambiente entrega não é
+    folga, é o erro que ninguém diagnostica.
+  \item \emph{HTTP/2 ponta a ponta (h2c) para tirar o limite do Cloud Run}: é a
+    saída documentada, porque em HTTP/2 a requisição é \emph{streamada} em vez
+    de bufferizada. Custa trocar o servidor HTTP do Nest e fazer o hub repassar
+    em HTTP/2 --- um modo de transporte novo para operar, por um problema que os
+    números acima dizem que não existe.
+  \item \emph{Streaming do corpo em vez de teto maior}: resolveria a memória, mas
+    a leitura inteira do CSV é o que permite recusar o lote com o número da linha
+    e o nome do campo. Trocar isso por um \emph{parser} incremental é reescrever
+    as duas fronteiras para um caso que ainda não apareceu.
+\end{itemize}
+
+\textbf{Consequências.} O corpo do CSV é lido inteiro para a memória em três
+lugares --- o \emph{route handler} do BFF do hub, o \emph{bodyParser} da api e o
+\cd{parseCsv} ---, então \SI{30}{\mega\byte} de arquivo custam alguns múltiplos
+disso em pico de \emph{heap} por importação simultânea. O \emph{rate limit} de
+5 por minuto por usuário é o que segura isso hoje, e ele ficou
+\textasciitilde3$\times$ mais barato do que ficaria com
+\SI{100}{\mega\byte}.
+
+A rede que precisar de mais que \SI{30}{\mega\byte} num arquivo só NÃO tem
+saída pela tela: ela divide o \arq{enrollments.csv} por escola ou por diretoria,
+que é uma operação que o formato já suporta (um arquivo por chamada). Os
+sintomas dos três tetos --- o nosso, o do \emph{parser} e o do ambiente ---
+estão no Apêndice~\ref{ap:operacao}.
+
+\textbf{Gatilho de reavaliação.} Uma rede chegar com \emph{export} que não caiba
+em \SI{30}{\mega\byte} depois de dividido: aí a conversa é sobre o CAMINHO ---
+\emph{upload} direto para o \emph{bucket} com URL assinada e importação
+assíncrona a partir dele ---, não sobre subir o número. Aquele caminho tira o
+limite do ambiente e o pico de \emph{heap} de uma vez.
+
+\section{ADR-49 --- A atividade do Instanooria declara a TURMA, e o painel dela
+para de ler a escola inteira}
+\label{adr:atividade-por-turma}
+
+\begin{especificacao}{Contexto}
+A \cd{exp\_01\_activities} tinha \cd{escola\_id} e \cd{professor\_id}, e nenhum
+vínculo com \cd{turmas} --- embora o próprio esquema já falasse como se tivesse:
+o comentário de \cd{etapa} chama o campo de ``relógio COLETIVO da turma'', e a
+função que monta o painel de perfis se chama \cd{distribuicaoDaTurma}.
+
+Ao investigar por que a importação dos perfis da Vila do Lume
+(\cd{POST /atividades/:id/perfis/da-vila}) varria a escola, apareceu uma coisa
+pior: aquela função rodava \cd{user.findMany(\{ where: \{ role: 'aluno' \} \})}
+--- \textbf{sem \cd{escola\_id}}. E \cd{users} está FORA da RLS: a lista de
+tabelas com política em \arq{20260824145301\_init} não a inclui, e o
+\cd{comTenancy} apenas arma \cd{app.escola\_id} para o Postgres, sem tocar no
+\cd{where} do Prisma. O painel do professor listava nome e login de crianças de
+TODAS as escolas do contrato, e \cd{contagem}, \cd{desequilibrio} e
+\cd{precisaRedistribuir} --- que decidem quantos alunos o botão
+``Redistribuir a turma'' move --- eram calculados sobre esse universo.
+
+O \cd{DaVilaSchema} já aceitava \cd{turmaId} opcional desde que a rota nasceu, e
+a tela nunca o enviou: mandava \cd{\{\}}. O relatório dizia ``N ainda não
+jogaram'' sobre crianças de salas que o professor não tem.
+\end{especificacao}
+
+\textbf{Decisão.} Duas coisas, e a primeira vale sozinha.
+
+\begin{enumerate}
+  \item \textbf{\cd{escola\_id} explícito} em \cd{distribuicaoDaTurma}. É a
+    regra inviolável nº 1 --- toda \emph{query} filtra por escola ALÉM da RLS ---
+    e aqui a RLS nem existia como rede.
+  \item \textbf{\cd{exp\_01\_activities.turma\_id}}, ANULÁVEL e sem
+    \emph{backfill} (\arq{20260830090000\_atividade\_por\_turma}). Com turma, o
+    painel, a listagem de perfis, a importação da Vila e a entrada do aluno em
+    \cd{POST /runs} falam todos da MESMA sala. Sem turma --- que é o caso de toda
+    atividade anterior à migração --- vale a escola inteira, o comportamento de
+    antes. A turma é conferida contra a MATRÍCULA do professor
+    (\cd{professorLeciona}), nunca contra a escola do \emph{token}.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Só um seletor de turma na tela, sem coluna}: o professor
+    escolheria a sala a cada visita e nada registraria para qual turma a
+    atividade foi feita. Pior: \cd{POST /runs} não teria como saber, e o aluno do
+    8B continuaria entrando na atividade do 8A.
+  \item \emph{\cd{turma\_id} NOT NULL, com \emph{backfill}}: escolher uma turma
+    para as atividades que já existem afirmaria uma decisão que nenhum professor
+    tomou. É a mesma regra do \cd{inclinacao\_inicial} em
+    \arq{20260829120000\_conclusao\_primeira\_e\_ultima}: NULL quer dizer
+    ``anterior à mudança'', e isso é informação.
+  \item \emph{Confiar só na RLS para o vazamento}: \cd{users} não tem política, e
+    não deve ter --- ela é lida no \emph{login}, antes de se saber a escola. A
+    tranca correta é o \cd{where}.
+  \item \emph{Uma atividade por turma, obrigatória}: transformaria a criação de
+    atividade num laço para o professor que dá a mesma aula em quatro salas, sem
+    que nada no produto peça isso hoje.
+\end{itemize}
+
+\textbf{Consequências.} Atividades antigas seguem escolares, e o painel agora
+DIZ isso em uma faixa --- antes ele mostrava a lista sem explicar de quem era. O
+\cd{POST /runs} ganhou uma leitura a mais (\cd{users.turma\_id}, o cache da
+matrícula principal) antes de escolher a atividade; a ordenação põe a atividade
+DA SALA à frente da geral quando as duas estão ativas. O professor que criar
+atividade sem escolher turma continua no comportamento antigo, sem aviso de
+erro: é opção, não omissão.
+
+\textbf{Gatilho de reavaliação.} Uma rede rodar o Instanooria em várias turmas
+simultâneas com a MESMA pergunta: aí a pergunta é se a atividade deve ter várias
+turmas (tabela de junção) em vez de uma, e a resposta muda o painel inteiro.
+
+\section{ADR-50 --- O perfil importado guarda a PARTIDA e a VERSÃO do
+mapeamento, e não ganha chave estrangeira}
+\label{adr:perfil-importado-versao}
+
+\begin{especificacao}{Contexto}
+\cd{vila\_sessoes} não tem prazo de retenção por uma decisão registrada em
+\arq{20260826170000\_vila\_sem\_prazo}: o bruto do jogo é a ÚNICA fonte para
+recalcular o perfil quando \cd{VERSAO\_MAPEAMENTO} subir, e o mapeamento é
+hipótese de design que vai mudar.
+
+Só que a cópia que alimenta o Instanooria
+(\cd{exp\_01\_exp\_70\_perfis\_importados}) guardava \cd{escores},
+\cd{dominante}, \cd{origem}, \cd{lado\_forcado} e \cd{medido\_em} --- e nem a
+sessão de onde veio, nem a versão sob a qual foi medida. Ao subir a constante,
+os \cd{exp\_70\_perfis} seriam recalculados e as cópias ficariam na geração
+anterior, decidindo o lado do feed, sem nada em lugar nenhum dizendo isso. É
+exatamente a armadilha do \cd{expires\_at}: o registro fica, a regra sai, e quem
+lê acredita.
+\end{especificacao}
+
+\textbf{Decisão.} Duas colunas anuláveis, sem \emph{backfill}
+(\arq{20260830100000\_perfil\_importado\_sabe\_a\_partida}):
+\cd{vila\_sessao\_id} e \cd{versao\_mapeamento}. Gravadas no \cd{create} E no
+\cd{update} do \emph{upsert} --- se só o \cd{create} gravasse, reimportar não
+tiraria a linha do estado ``desatualizada'' e o aviso da tela nunca sumiria. O
+painel do professor passa a dizer quantos perfis vieram de uma versão anterior,
+como AVISO: perfil de geração antiga ainda é melhor informação que o sorteio.
+
+\textbf{SEM chave estrangeira para \cd{vila\_sessoes}}, e isso é o centro da
+decisão. Zerar a turma na Vila apaga sessões e bolhas; com FK, isso levaria em
+cascata --- ou travaria com \cd{RESTRICT} --- o perfil que está decidindo o lado
+de uma aula em andamento. Hoje zerar a Vila NÃO toca \cd{perfis\_importados}, de
+propósito, e a coluna não pode mudar isso: ela é RASTRO da medida, não vínculo
+de integridade. Sessão apagada vira um id que não resolve, que é exatamente a
+verdade do que aconteceu.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um valor novo em \cd{origem}} (por exemplo \cd{jogo-v3}):
+    \cd{perfis\_importados\_origem\_check} e \cd{runs\_perfil\_origem\_check}
+    congelam o vocabulário em dois lugares, e o contrato Zod num terceiro.
+    \cd{vila\_sessao\_id IS NULL} já responde ``não veio da Vila desta
+    instalação'' sem mexer em nenhum deles.
+  \item \emph{Preencher a versão das linhas existentes com a atual}: afirmaria
+    uma medida que ninguém fez. NULL é a leitura honesta de ``anterior a esta
+    migração, ou preenchido à mão pelo professor''.
+  \item \emph{Reimportar sozinho quando a versão sobe}: desfaria em silêncio a
+    redistribuição que o professor fez antes da aula. O disparo continua sendo
+    dele (ADR do Ato 1), e o que muda é que agora a tela AVISA que vale
+    reimportar.
+  \item \emph{Uma rotina de reprocessamento agora}: ela não existe nem para a
+    própria Vila. Escrever a coluna sem o consumidor seria a armadilha de novo,
+    ao contrário --- por isso a coluna nasce COM o aviso na tela que a lê.
+\end{itemize}
+
+\textbf{Consequências.} A capacidade de reprocessar continua sendo capacidade, e
+não rotina: nada recalcula sozinho. O que existe agora é a informação para
+decidir --- o painel sabe dizer que a medida envelheceu. Um perfil cuja sessão
+foi apagada mantém o id órfão, e isso é aceito.
+
+\textbf{Gatilho de reavaliação.} A primeira subida real de
+\cd{VERSAO\_MAPEAMENTO} com dado de contrato em produção: aí se descobre se o
+aviso basta ou se a reimportação precisa virar rotina assistida.

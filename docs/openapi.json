@@ -1480,6 +1480,116 @@
         "x-acesso": "token"
       }
     },
+    "/rostering/modelos/oneroster/{arquivo}": {
+      "get": {
+        "operationId": "RosteringController_modeloOneRoster",
+        "parameters": [
+          {
+            "name": "arquivo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "manifest",
+                "orgs",
+                "academicSessions",
+                "classes",
+                "users",
+                "enrollments",
+                "roles"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rostering"
+        ],
+        "summary": "O modelo em branco de um arquivo do OneRoster 1.2.",
+        "description": "Só o cabeçalho, na grafia do padrão. É um SUBCONJUNTO das colunas que a api sabe ler — as que ela ignora ficam de fora, porque modelo com 24 colunas não é modelo, é a especificação.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Modelo e exemplo são arquivos SEPARADOS: linha de exemplo dentro do modelo vira pessoa fantasma importada no primeiro uso.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rostering/modelos/oneroster/{arquivo}/exemplo": {
+      "get": {
+        "operationId": "RosteringController_exemploOneRoster",
+        "parameters": [
+          {
+            "name": "arquivo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "manifest",
+                "orgs",
+                "academicSessions",
+                "classes",
+                "users",
+                "enrollments",
+                "roles"
+              ]
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rostering"
+        ],
+        "summary": "O mesmo arquivo do OneRoster, preenchido com um exemplo.",
+        "description": "Gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das turmas: um id fictício faria o lote voltar como \"escola não é a desta importação\" para o gestor e, para o `admin-contrato` (que PODE criar escola por CSV), abriria um tenant de mentira.\n\n**Papéis:** gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/rostering/importar": {
       "post": {
         "operationId": "RosteringController_importar",
@@ -1656,7 +1766,7 @@
           "rostering"
         ],
         "summary": "Importa a planilha de pessoas.",
-        "description": "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 10MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).\n- Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.\n- Coluna desconhecida é ERRO, não coluna ignorada.\n- 5 importações por minuto por usuário (429); acima de 10MB ou 50k linhas, 400.",
+        "description": "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).\n- Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.\n- Coluna desconhecida é ERRO, não coluna ignorada.\n- 5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
         "security": [
           {
             "token-da-plataforma": []
@@ -8793,6 +8903,10 @@
                       "foto editorial",
                       "colagem"
                     ]
+                  },
+                  "turmaId": {
+                    "type": "string",
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -8902,6 +9016,33 @@
                           "type": "string",
                           "format": "date-time"
                         },
+                        "turmaId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "turma": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "nome": {
+                              "type": "string"
+                            },
+                            "serie": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "nome",
+                            "serie"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
                         "_count": {
                           "type": "object",
                           "properties": {
@@ -8943,6 +9084,8 @@
                         "qtdPostsTese",
                         "status",
                         "createdAt",
+                        "turmaId",
+                        "turma",
                         "_count",
                         "alunos",
                         "postsAprovados"
@@ -11937,6 +12080,9 @@
                               "ausente"
                             ]
                           },
+                          "mapeamentoDesatualizado": {
+                            "type": "boolean"
+                          },
                           "lado": {
                             "type": "string",
                             "enum": [
@@ -11965,6 +12111,7 @@
                           "rotulo",
                           "margem",
                           "origemDoPerfil",
+                          "mapeamentoDesatualizado",
                           "lado",
                           "ladoOrigem",
                           "jaComecou"

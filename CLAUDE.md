@@ -247,6 +247,21 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
 - **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
   silêncio. O sintoma é lista de pessoas "sem turma".
+- **ARMADILHA MAIOR, e do lado oposto**: `users`, `turmas` e `lotacoes` estão
+  FORA da RLS (são lidas no login, antes de haver escola). Nelas o `comTenancy`
+  NÃO protege nada — ele arma `app.escola_id`, que só as políticas leem —, e o
+  `escola_id` no `where` é a ÚNICA tranca, não defesa em profundidade. Custou um
+  vazamento real: `distribuicaoDaTurma` (painel do Instanooria) rodava
+  `user.findMany({ where: { role: 'aluno' } })` dentro de um `comTenancy` e
+  listava crianças de TODAS as escolas do contrato (ADR-49).
+  `tests/perfis-distribuicao-tenancy.spec.ts` roda como superusuário de
+  propósito, para a RLS não mascarar a falta do `where`.
+- **A atividade do Instanooria declara a turma** (`exp_01_activities.turma_id`,
+  ADR-49). `NULL` = atividade anterior à coluna, que vale para a escola inteira —
+  e o painel DIZ isso numa faixa. Com turma, painel, listagem de perfis,
+  importação da Vila e `POST /runs` falam todos da MESMA sala; a turma é
+  conferida contra a MATRÍCULA (`professorLeciona`), nunca contra a escola do
+  token. Sem o ajuste no `POST /runs`, o aluno do 8B entrava na atividade do 8A.
 - Sair da turma é `fim`, não `DELETE`; sair da rede é `ativo = false`. Há dado de
   aluno pendurado em oito tabelas. Mover de turma (`PATCH /matriculas/:id` com
   `turmaDestinoId`) é UM passo: à mão, o gestor tira da antiga e esquece de pôr
@@ -254,7 +269,15 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   tela dizendo o que faltou.
 
 **Entrada de pessoas**: `POST /rostering/importar` (gestor/admin), corpo
-`text/csv` cru, até 10MB/50k linhas. Planilha de UMA linha por pessoa, cabeçalho
+`text/csv` cru, até 30MB (o teto de BYTES vale para as duas fronteiras e sai de
+`TETO_DO_ARQUIVO`, que o `bodyParser` de `main.ts` também lê) e 50k linhas — o
+limite de linhas é da planilha simples, não do OneRoster. **Os 30MB são
+escolhidos para caber DEBAIXO do teto do ambiente**: o Cloud Run recusa
+requisição acima de 32 MiB em HTTP/1, antes do contêiner, com um 413 que não é
+nosso e não deixa linha no log (ADR-48). Prometer mais do que o ambiente entrega
+é o que produz o erro que ninguém diagnostica. Folga: o pior caso realista de um
+contrato (~10 mil alunos, 5 componentes cada) dá ~7MB de `enrollments.csv`.
+Planilha de UMA linha por pessoa, cabeçalho
 lido por NOME (ordem livre; coluna desconhecida é erro, não coluna ignorada):
 `matricula,nome,usuario,email,papel,turma,serie,turno` — só `nome` e `papel` são
 obrigatórios (aluno também exige `turma`+`serie`). `usuario` vazio ⇒ o login é
@@ -276,6 +299,16 @@ regras que não são óbvias: `orgs.csv` só APRENDE o código INEP desta escola
 relatório; e em `bulk` a ausência de linha **não desativa ninguém** — é contada e
 listada, porque lote que chegou pela metade não pode apagar uma rede por omissão.
 `status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.
+Cada um dos sete tem **modelo** (`GET /rostering/modelos/oneroster/:arquivo`, só o
+cabeçalho) e **exemplo** (`.../:arquivo/exemplo`), o mesmo par da planilha da
+escola. Duas coisas neles não são detalhe: as colunas do modelo são um
+SUBCONJUNTO conferido de `COLUNAS_POR_ARQUIVO` (o teste cobra as duas direções —
+obrigatória que falte e coluna que o parser não leia), e o exemplo é gerado com a
+escola de VERDADE no `sourcedId`, porque um `esc.exemplo` fixo voltaria como
+"escola não é a desta importação" para o gestor e, para `admin-contrato` (que
+PODE criar escola por CSV), abriria um tenant de mentira. Os sete exemplos são um
+lote coerente: enviados na ordem, entram inteiros —
+`tests/oneroster-modelos.spec.ts` aplica os sete contra o banco.
 
 **Contas de assento**: `GET /rostering/contas-de-assento` lista as contas sem
 `matricula_externa` com quanto cada uma acumulou de dado, para o gestor desativar
@@ -393,7 +426,13 @@ O aluno tem hub próprio (`/aluno`): ele ESCOLHE a missão, sem filtro por séri
 por enquanto (`apps/hub/lib/missoes-do-aluno.ts`, derivado do catálogo do Entre
 Redes; a série volta a filtrar quando o manifesto virar a fonte). Missão só
 aparece lá se tiver copy de aluno (`missao.aluno` no catálogo) — a copy do
-professor entrega a virada. `/aluno` e `/exp/*` são a MESMA área no middleware
+professor entrega a virada. **As TRANSVERSAIS vêm primeiro na lista**: não
+pertencem a ano nenhum, logo não são "depois" de nada, e a Vila do Lume é o Ato 1
+do Instanooria — com ela no fim, a criança encontrava o Ato 2 antes do Ato 1 e
+nada dizia o que faltou. Não há GATE, e não deve haver: falta de partida na Vila
+nunca bloqueia a exp-01, ela só cai no sorteio. O caminho entre as duas fichas do
+professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo).
+`/aluno` e `/exp/*` são a MESMA área no middleware
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
@@ -635,6 +674,18 @@ dizer pelas costas o que o relatório se recusa a dizer na frente.
 O disparo é do PROFESSOR e `ladoForcado` é PRESERVADO no upsert: importar
 sozinho, ou levar o objeto inteiro no `update`, desfaria em silêncio uma
 redistribuição que ele fez antes da aula.
+
+**O perfil importado guarda a PARTIDA e a VERSÃO** (`vila_sessao_id`,
+`versao_mapeamento` — ADR-50). Sem elas, subir `VERSAO_MAPEAMENTO` recalculava
+`exp_70_perfis` e deixava a CÓPIA que decide o feed na geração anterior, em
+silêncio: a armadilha do `expires_at` de novo. **Sem FK** para `vila_sessoes`, de
+propósito — zerar a turma na Vila apaga sessões, e a cascata levaria o perfil que
+está decidindo o lado de uma aula em andamento; é rastro da medida, não
+integridade. Gravadas no `create` E no `update`, senão reimportar não tiraria a
+linha do estado "desatualizada" e o aviso da tela nunca sumiria. Nenhum valor
+novo de `origem`: duas CHECKs congelam o vocabulário, e `vila_sessao_id IS NULL`
+já diz "não veio da Vila desta instalação". Não há rotina de reprocessamento, e
+continua não havendo — o que existe é o AVISO no painel.
 
 **Retenção: NÃO HÁ PRAZO DECLARADO** (decisão de 2026-08-26). Houve um
 `expires_at` de 90 dias no schema e nenhuma rotina que o cumprisse — e coluna de

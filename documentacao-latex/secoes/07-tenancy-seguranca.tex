@@ -141,6 +141,25 @@ Três detalhes desse método carregam a segurança inteira:
     \emph{worker}, testes.
 \end{enumerate}
 
+\begin{regra}
+\textbf{O \cd{comTenancy} arma a RLS; ele NÃO filtra a \emph{query}.} Ele
+executa um \cd{set\_config} que as POLÍTICAS leem --- e tabela sem política não
+é alcançada por ele. \cd{users}, \cd{turmas} e \cd{lotacoes} estão
+deliberadamente fora da RLS (são lidas no \emph{login}, antes de se saber a
+escola), então nelas o \cd{escola\_id} no \cd{where} não é defesa em
+profundidade: \textbf{é a única tranca}.
+
+Isso já custou um vazamento real. \cd{distribuicaoDaTurma}, que monta o painel
+de perfis do Instanooria, rodava \cd{user.findMany(\{ where: \{ role:
+'aluno' \} \})} --- dentro de um \cd{comTenancy}, o que dava a impressão de
+estar protegido. O painel listava nome e login de crianças de TODAS as escolas do
+contrato, e os contadores que decidem quantos alunos o botão
+\enquote{Redistribuir a turma} move eram calculados sobre esse universo. Ver
+\adrr{ADR-49}; a regressão é coberta por
+\arq{tests/perfis-distribuicao-tenancy.spec.ts}, que roda como superusuário
+justamente para que a RLS não mascare a ausência do \cd{where}.
+\end{regra}
+
 \subsection{Como a escola chega ao contexto}
 
 \begin{figure}[H]
