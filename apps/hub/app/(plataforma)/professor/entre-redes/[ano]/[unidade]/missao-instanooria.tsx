@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { Badge, Card, EmptyState, Tag } from "@edu/ui/ds";
 import { CartaoAtividade } from "@/components/cartao-atividade";
 import { LinkButton } from "@/components/link-button";
@@ -88,6 +90,17 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
                   {ato.rotulo}
                 </strong>
                 {ato.texto}
+                {/* O caminho para FAZER o que o ato descreve. O Ato 1 manda a
+                    turma jogar a Vila do Lume e, sem isto, o professor tinha de
+                    achá-la sozinho na trilha. */}
+                {ato.link ? (
+                  <Link
+                    href={ato.link.href}
+                    className="mt-1 block font-semibold text-unooria-navy-900 underline"
+                  >
+                    {ato.link.rotulo}
+                  </Link>
+                ) : null}
               </li>
             ))}
           </ol>

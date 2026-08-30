@@ -22,11 +22,21 @@ export type MissaoDoAluno = {
 };
 
 export const MISSOES_DO_ALUNO: MissaoDoAluno[] = [
-  ...ANOS.flatMap((ano) => ano.missoes),
-  /* As transversais entram sem condição nenhuma — é o que "transversal"
-     significa aqui. Quando o filtro por série voltar, elas continuam entrando:
-     `series: []` no manifesto quer dizer TODAS as séries, não nenhuma. */
+  /* As transversais vêm PRIMEIRO, e isso é sobre ordem pedagógica, não estética.
+     Elas não pertencem a ano nenhum — logo não são "depois" de nada —, e a Vila
+     do Lume é o Ato 1 do Instanooria: é o perfil medido lá que decide de que
+     lado o feed nasce aqui. Com ela no fim da lista, a criança encontrava o Ato
+     2 antes do Ato 1 e nada na tela dizia o que faltou; ela entrava no
+     Instanooria pelo sorteio balanceado, que é o caminho de quem não jogou.
+
+     Não há GATE, e não deve haver: a falta de partida na Vila nunca bloqueia o
+     Instanooria. O que muda aqui é só a ordem em que a escolha é oferecida.
+
+     Elas entram sem condição nenhuma — é o que "transversal" significa aqui.
+     Quando o filtro por série voltar, continuam entrando: `series: []` no
+     manifesto quer dizer TODAS as séries, não nenhuma. */
   ...MISSOES_TRANSVERSAIS,
+  ...ANOS.flatMap((ano) => ano.missoes),
 ]
   .filter((missao) => missao.status === "disponivel" && missao.expId && missao.aluno)
   .map((missao) => ({

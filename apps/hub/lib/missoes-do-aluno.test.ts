@@ -18,21 +18,37 @@ describe("missões do aluno", () => {
   });
 
   test("as missões publicadas hoje aparecem, com rota para o aparelho", () => {
-    // A ORDEM é a de `ANOS`: 1º ao 9º ano do Fundamental e depois as 3 séries
-    // do Médio. A 2ª série vem DEPOIS do 8º ano, e as transversais no fim.
+    // As TRANSVERSAIS vêm primeiro: não pertencem a ano nenhum, e a Vila do Lume
+    // é o Ato 1 do Instanooria — o perfil medido nela decide de que lado o feed
+    // do Instanooria nasce. Depois vem a ordem de `ANOS`: 1º ao 9º ano do
+    // Fundamental e então as 3 séries do Médio, então a 2ª série fica DEPOIS do
+    // 8º ano.
     expect(MISSOES_DO_ALUNO.map((m) => m.expId)).toEqual([
+      "exp-70-vila-do-lume",
       "exp-02-unootube",
       "exp-01-instanooria",
       "exp-03-unoogpt",
-      // Transversal: entra sem série e sem filtro nenhum.
-      "exp-70-vila-do-lume",
     ]);
     expect(MISSOES_DO_ALUNO.map((m) => m.rota)).toEqual([
+      "/exp/exp-70-vila-do-lume",
       "/exp/exp-02-unootube",
       "/exp/exp-01-instanooria",
       "/exp/exp-03-unoogpt",
-      "/exp/exp-70-vila-do-lume",
     ]);
+  });
+
+  test("a Vila do Lume vem antes do Instanooria: ela é o Ato 1 dele", () => {
+    const ordem = MISSOES_DO_ALUNO.map((m) => m.expId);
+    const vila = ordem.indexOf("exp-70-vila-do-lume");
+    const insta = ordem.indexOf("exp-01-instanooria");
+
+    expect(vila).toBeGreaterThanOrEqual(0);
+    expect(insta).toBeGreaterThanOrEqual(0);
+    // É o perfil medido na Vila que decide de que lado o feed do Instanooria
+    // nasce (`resolverLargada`). Oferecer o Ato 2 primeiro não bloqueia nada —
+    // o aluno sem partida cai no sorteio balanceado —, mas convida à ordem
+    // errada sem nada na tela dizendo o que faltou.
+    expect(vila).toBeLessThan(insta);
   });
 
   test("a transversal aparece para o aluno sem depender de série", () => {

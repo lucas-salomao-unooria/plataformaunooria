@@ -1,9 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
-import { buscarMissaoTransversal, rotaDaTransversal } from "@/lib/entre-redes/catalogo";
+import {
+  buscarMissaoTransversal,
+  MISSAO_ATUAL,
+  rotaDaMissao,
+  rotaDaTransversal,
+} from "@/lib/entre-redes/catalogo";
 import { DESCRICAO_BOLHA } from "@/lib/vila-tipos";
 
 export const metadata = { title: "Vila do Lume — Plataforma Unooria" };
@@ -100,7 +106,16 @@ export default async function VilaDoLumePage() {
           </p>
           <p>
             <strong>E esse retrato alimenta outra missão.</strong> Hoje, o{" "}
-            <strong>Instanooria</strong> (8º ano · Unidade 1): é o perfil da Vila que decide
+            {/* Rota DERIVADA do catálogo: se a missão mudar de ano ou de unidade,
+                o link acompanha. Fixá-la aqui criaria uma segunda verdade sobre
+                onde o Instanooria mora. */}
+            <Link
+              href={rotaDaMissao(MISSAO_ATUAL)}
+              className="font-semibold text-unooria-navy-900 underline"
+            >
+              Instanooria
+            </Link>{" "}
+            (8º ano · Unidade 1): é o perfil da Vila que decide
             de que lado o feed de cada aluno nasce lá — o &quot;Ato 1&quot; que a ficha
             daquela missão descreve. Na tela da atividade do Instanooria há um botão{" "}
             <em>Trazer perfis da Vila do Lume</em>. Quem não jogou entra no sorteio

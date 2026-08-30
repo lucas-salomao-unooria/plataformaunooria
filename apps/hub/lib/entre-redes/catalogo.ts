@@ -29,6 +29,16 @@ export type StatusMissao = "disponivel" | "em-breve";
 export type AtoDaMissao = {
   rotulo: string;
   texto: string;
+  /**
+   * Para onde ir para FAZER o que o ato descreve.
+   *
+   * Existe porque o Ato 1 do Instanooria manda a turma jogar a Vila do Lume e
+   * não havia caminho nenhum até ela: o texto citava a missão pelo nome e o
+   * professor tinha de encontrá-la sozinho na trilha. O `texto` é interpolado
+   * como string, então o link não cabe dentro dele — ele é um campo à parte, e
+   * a tela o renderiza depois do parágrafo.
+   */
+  link?: { href: string; rotulo: string };
 };
 
 /** Ficha pedagógica — só existe em missão publicada. */
@@ -140,6 +150,10 @@ export const MISSAO_ATUAL: Missao = {
         rotulo: "Ato 1 — o jogo",
         texto:
           "A turma joga a Vila do Lume (a missão transversal), e o perfil de valores dela decide de que lado o feed de cada aluno nasce. No momento em que joga, nada liga o jogo a esta missão — e é essa desconexão que faz a revelação funcionar. Traga os perfis na tela da atividade; quem não jogou entra no sorteio balanceado.",
+        link: {
+          href: "/professor/entre-redes/vila-do-lume",
+          rotulo: "Abrir a Vila do Lume",
+        },
       },
       {
         rotulo: "Ato 2 — a missão",
