@@ -90,6 +90,9 @@ export function connectToHub(opts: { hubOrigin: string; timeoutMs?: number }): P
      */
     const anunciar = () =>
       window.parent.postMessage({ type: "exp:ready", protocolVersion: PROTOCOL_VERSION }, hubOrigin);
+    // `anunciar` é referência de FUNÇÃO. `setInterval` só avalia código quando
+    // recebe string, e é por confundir os dois que o Snyk marca este caminho
+    // como "Code Injection" — ver a nota em index.ts.
     const reenvio = setInterval(anunciar, READY_RETRY_MS);
     const timer = setTimeout(() => {
       clearInterval(reenvio);

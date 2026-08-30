@@ -21,6 +21,24 @@ export async function createExperiencia(meta: {
   // aceita o hub:init — ver normalizarHubOrigin.
   const hubOrigin = normalizarHubOrigin(bruto);
 
+  /*
+   * FALSO POSITIVO conhecido do Snyk aqui: "Code Injection" (CWE-94), com o
+   * fluxo location.search -> ... -> setInterval. O sink que ele aponta é o
+   * `setInterval(anunciar, READY_RETRY_MS)` da bridge, e `setInterval` só
+   * AVALIA código quando o primeiro argumento é uma STRING — ali ele recebe uma
+   * referência de função, e o `hubOrigin` entra por captura de closure para
+   * terminar como `targetOrigin` de um `postMessage`, que não executa nada.
+   *
+   * O valor tem exatamente três usos, e nenhum é sink de execução: dois
+   * `postMessage` e uma comparação com `ev.origin`. A vulnerabilidade REAL
+   * daquele fluxo — a origem de confiança vinda da URL — é a que o
+   * `normalizarHubOrigin` acima fecha (ADR-46).
+   *
+   * Não contorça este código para agradar o scanner: a alternativa seria
+   * esconder a captura do closure, o que deixa o retry ilegível sem tirar um
+   * risco que não existe.
+   */
+  // deepcode ignore javascript/CodeInjection: setInterval recebe função, não string — ver acima
   const { init, send, onMessage } = await connectToHub({ hubOrigin });
   let token = init.token;
   const sessaoId = crypto.randomUUID();

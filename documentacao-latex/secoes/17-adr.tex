@@ -2292,6 +2292,26 @@ diagnóstico melhor, mas é uma falha NOVA para quem embedar a experiência fora
 do hub. \cd{HUB\_ORIGIN} mal configurado no hub, que antes só travava o
 \emph{handshake}, agora recusa explicitamente.
 
+\begin{nota}
+\textbf{O apontamento do Snyk que originou esta ADR NÃO some com ela, e está
+certo assim.} A regra \emph{Code Injection} (CWE-94) desenha o fluxo
+\cd{location.search} \seta{} \cd{setInterval} e afirma que o valor ``é
+executado como JavaScript''. O \emph{sink} apontado é o
+\cd{setInterval(anunciar, READY\_RETRY\_MS)} do \emph{retry} do
+\cd{exp:ready}, e \cd{setInterval} só AVALIA código quando o primeiro
+argumento é uma \emph{string}: ali ele recebe uma referência de FUNÇÃO, e o
+\cd{hubOrigin} entra por captura de \emph{closure} para terminar como
+\cd{targetOrigin} de um \cd{postMessage}, que não executa nada. O valor tem
+três usos no pacote --- dois \cd{postMessage} e uma comparação com
+\cd{ev.origin} ---, e nenhum é \emph{sink} de execução.
+
+O que aquele fluxo tinha de verdadeiro era a origem de confiança vindo da URL, e
+é isso que esta ADR fecha. Fica registrado para que ninguém CONTORÇA o código
+para agradar o \emph{scanner}: esconder a captura do \emph{closure} deixaria o
+\emph{retry} ilegível sem tirar risco nenhum. A nota vive junto da chamada, em
+\arq{packages/sdk/src/index.ts}.
+\end{nota}
+
 \textbf{Gatilho de reavaliação.} O dia em que uma experiência precisar ser
 embedada por um hub de terceiros (LTI, por exemplo): a trava 3 passa a exigir
 uma lista de embedadores conhecidos, e ela terá de vir do manifesto --- não do
