@@ -1,5 +1,5 @@
 import { GoogleAuth } from "google-auth-library";
-import { Agent } from "undici";
+import { Agent, fetch as fetchDoUndici } from "undici";
 import type {
   AiConversaRequest,
   AiJsonRequest,
@@ -16,6 +16,14 @@ import { ErroDeGeracao } from "./provider";
  * termina — um plano anual de 20–30k tokens leva minutos e estourava no meio.
  * O dispatcher próprio sobe o teto para 15 min só nas chamadas ao Vertex.
  * Evolução, se passar disso: `streamGenerateContent?alt=sse` acumulando chunks.
+ *
+ * O `fetch` é o DO UNDICI, não o global do Node — e isso não é estilo. O fetch
+ * global usa o undici EMBUTIDO na runtime (`process.versions.undici`), que é
+ * outro pacote: em Node 26.7 é o 8.x, enquanto a api instala o 6.x. Passar um
+ * `Agent` de um para o `fetch` do outro morre com `invalid onError method`, que
+ * o Node embrulha como um `fetch failed` sem nenhuma pista — e derrubava TODA
+ * chamada de IA (medido em 2026-08-29). Vindos do mesmo pacote, `Agent` e
+ * `fetch` concordam por construção, e o próximo bump de Node não reabre isto.
  */
 const TIMEOUT_MS = 15 * 60_000;
 const dispatcher = new Agent({ headersTimeout: TIMEOUT_MS, bodyTimeout: TIMEOUT_MS });
@@ -144,7 +152,7 @@ export class VertexProvider implements AiProvider {
   }
 
   async generate(req: AiRequest): Promise<AiResult> {
-    const res = await fetch(this.endpoint(this.modeloPara(req.modelo)), {
+    const res = await fetchDoUndici(this.endpoint(this.modeloPara(req.modelo)), {
       method: "POST",
       headers: { authorization: `Bearer ${await this.accessToken()}`, "content-type": "application/json" },
       body: JSON.stringify({
@@ -156,8 +164,7 @@ export class VertexProvider implements AiProvider {
           ...thinkingConfig(),
         },
       }),
-      // `dispatcher` é extensão do undici, fora do tipo padrão de RequestInit.
-      ...({ dispatcher } as Record<string, unknown>),
+      dispatcher,
     });
     if (!res.ok) {
       const corpo = (await res.text()).slice(0, 300);
@@ -196,7 +203,7 @@ export class VertexProvider implements AiProvider {
         ? `\n\nA tentativa anterior foi rejeitada por: ${ultimoErro}. Corrija e devolva JSON válido.`
         : "";
       try {
-        const res = await fetch(this.endpoint(), {
+        const res = await fetchDoUndici(this.endpoint(), {
           method: "POST",
           headers: {
             authorization: `Bearer ${await this.accessToken()}`,
@@ -212,7 +219,7 @@ export class VertexProvider implements AiProvider {
               ...thinkingConfig(),
             },
           }),
-          ...({ dispatcher } as Record<string, unknown>),
+          dispatcher,
         });
         const data = (await res.json()) as RespostaGenerate;
         const texto = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
@@ -269,7 +276,7 @@ export class VertexProvider implements AiProvider {
       }));
 
       for (let volta = 0; volta < maxVoltas; volta += 1) {
-        const res = await fetch(this.endpoint(), {
+        const res = await fetchDoUndici(this.endpoint(), {
           method: "POST",
           headers: {
             authorization: `Bearer ${await this.accessToken()}`,
@@ -285,7 +292,7 @@ export class VertexProvider implements AiProvider {
               ...thinkingConfig(),
             },
           }),
-          ...({ dispatcher } as Record<string, unknown>),
+          dispatcher,
         });
         if (!res.ok) {
           const corpo = (await res.text()).slice(0, 300);
@@ -388,7 +395,7 @@ export class VertexProvider implements AiProvider {
    *  porte do `gerarImagemBytes` do origem para o endpoint Vertex/ADC. */
   async generateImage(prompt: string): Promise<Buffer> {
     const modelo = process.env.VERTEX_IMAGE_MODEL ?? MODELO_IMAGEM_PADRAO;
-    const res = await fetch(this.endpoint(modelo), {
+    const res = await fetchDoUndici(this.endpoint(modelo), {
       method: "POST",
       headers: {
         authorization: `Bearer ${await this.accessToken()}`,
@@ -401,7 +408,7 @@ export class VertexProvider implements AiProvider {
           imageConfig: { aspectRatio: PROPORCAO_IMAGEM, imageSize: TAMANHO_IMAGEM },
         },
       }),
-      ...({ dispatcher } as Record<string, unknown>),
+      dispatcher,
     });
     const data = (await res.json()) as {
       candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;

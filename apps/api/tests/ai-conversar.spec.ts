@@ -16,6 +16,19 @@ import type { AiFerramenta } from "../src/ai/provider";
 import { ErroDeGeracao } from "../src/ai/provider";
 import { VertexProvider } from "../src/ai/vertex.provider";
 
+/**
+ * O provider chama o `fetch` DO UNDICI, não o global (ver a razão em
+ * `vertex.provider.ts`: `Agent` e `fetch` têm de vir do mesmo pacote). Este
+ * duplo o encaminha para `global.fetch`, que é o que os testes abaixo trocam —
+ * assim a dublagem continua sendo uma linha, e o que se testa segue sendo a
+ * lógica do provider, não qual implementação de fetch ele usa. Sem isto os
+ * testes passam a chamar a rede DE VERDADE e voltam com array vazio.
+ */
+jest.mock("undici", () => ({
+  ...jest.requireActual("undici"),
+  fetch: (...args: unknown[]) => (global.fetch as (...a: unknown[]) => unknown)(...args),
+}));
+
 jest.mock("google-auth-library", () => ({
   GoogleAuth: class {
     async getAccessToken() {

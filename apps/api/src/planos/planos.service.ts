@@ -403,7 +403,12 @@ export class PlanosService {
           : erro instanceof Error
             ? erro.message
             : "erro desconhecido";
-      console.error("[planos] geração com erro", planoId, mensagem.slice(0, 200));
+      // `fetch failed` NUNCA diz nada sozinho: a razão real (DNS, TLS,
+      // dispatcher incompatível) vive só em `cause`. Sem imprimi-la, uma
+      // incompatibilidade de undici passou dias parecendo falha de credencial.
+      // Só o log — a `mensagem` que vai ao banco é a que o professor lê.
+      const causa = erro instanceof Error && erro.cause instanceof Error ? ` (causa: ${erro.cause.message})` : "";
+      console.error("[planos] geração com erro", planoId, mensagem.slice(0, 200) + causa);
       await falhar(mensagem);
     }
   }

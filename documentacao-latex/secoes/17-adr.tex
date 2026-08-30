@@ -2169,3 +2169,60 @@ usa.
 \textbf{Gatilho de reavaliação.} Dados de turmas reais mostrarem que
 \emph{Gestos} e \emph{Exploração} pontuam: aí os tetos são recalibrados e a
 pergunta de exibir o total volta a fazer sentido.
+
+\section{ADR-45 --- \emph{Agent} e \cd{fetch} vêm do MESMO pacote undici}
+\label{adr:undici-fetch}
+
+\begin{especificacao}{Contexto}
+O provider do Vertex usa um \emph{dispatcher} próprio: \cd{generateContent}
+não-\emph{streaming} só devolve os \emph{headers} quando a geração termina, e o
+teto de 300\,s do \cd{fetch} do Node estourava no meio de um plano anual. A
+solução era um \cd{Agent} do pacote \cd{undici} com 15 minutos, passado como
+opção \cd{dispatcher} ao \cd{fetch} GLOBAL.
+
+Isso acopla duas coisas que ninguém obriga a concordar. O \cd{fetch} global usa
+o undici EMBUTIDO na \emph{runtime} (\cd{process.versions.undici}), que é outro
+pacote, com outra versão. Com os \arq{Dockerfile} fixados em \textbf{Node 26.7}
+(undici \textbf{8.x}) e a API declarando \cd{"undici": "\^{}6"}, o \cd{Agent} da
+6 deixou de satisfazer a interface de \emph{handler} da 8.
+
+O sintoma não aponta para nada: \cd{fetch failed}. A razão real
+(\cd{invalid onError method}) vive só em \cd{error.cause}, e o \cd{catch} da
+geração logava apenas \cd{error.message}. \textbf{TODA} chamada de IA morria ---
+plano de aula, \emph{unooGPT}, arte --- e por dias isso pareceu falha de
+credencial, porque havia de fato um ADC vencido por cima.
+\end{especificacao}
+
+\textbf{Decisão.} Importar o \cd{fetch} do PRÓPRIO undici
+(\cd{import \{ Agent, fetch \} from "undici"}). Vindos do mesmo pacote, os dois
+concordam por construção, e a versão embutida na \emph{runtime} deixa de ser
+uma dependência invisível. O \emph{log} da geração passa a imprimir o
+\cd{cause} junto --- só no \emph{log}: a mensagem que vai ao banco é a que o
+professor lê.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Subir \cd{undici} para \cd{\^{}8}}: funciona hoje e quebra no
+    próximo \emph{bump} de Node, porque a condição continua sendo ``duas versões
+    coincidirem'' --- e nada no CI verifica isso. Seria a mesma armadilha,
+    adiada.
+  \item \emph{Largar o \emph{dispatcher} e usar o \cd{fetch} global puro}:
+    devolveria o teto de 300\,s que motivou o \emph{dispatcher}, e o plano anual
+    voltaria a morrer no meio.
+  \item \emph{Fixar o \cd{undici} pela versão da \emph{runtime}}: exigiria ler
+    \cd{process.versions.undici} e casar no \arq{package.json}. Duas fontes de
+    verdade sobre a mesma versão, uma delas fora do controle do repo.
+\end{itemize}
+
+\textbf{Consequências.} O teste \arq{ai-conversar.spec.ts} dublava
+\cd{global.fetch} e passou a não interceptar nada --- voltava \emph{array}
+vazio. Ele agora mocka o módulo \cd{undici} encaminhando para \cd{global.fetch},
+o que mantém a dublagem em uma linha e o que se testa segue sendo a lógica do
+provider. Fica registrado que o \cd{dispatcher} é a razão de o \cd{fetch} não
+poder ser o global: quem apagar a importação ``porque o Node já tem \cd{fetch}''
+reabre exatamente este defeito.
+
+\textbf{Gatilho de reavaliação.} O Vertex passar a ser consumido por
+\cd{streamGenerateContent?alt=sse}: com \emph{streaming} os \emph{headers} chegam
+de imediato, o teto de 300\,s deixa de incomodar, e o \emph{dispatcher} ---
+junto com todo este acoplamento --- pode simplesmente sair.
