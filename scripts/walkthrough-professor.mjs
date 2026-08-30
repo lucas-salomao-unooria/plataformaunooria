@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { ALERTA_DE_ERRO, esperarOuFalharCedo, vigiarFalhasDaApi } from "./lib/smoke.mjs";
 
 /**
  * Smoke VISUAL das telas da plataforma (professor e gestor).
@@ -24,6 +25,9 @@ const p = await contexto.newPage();
 const erros = [];
 p.on("console", (m) => m.type() === "error" && erros.push(m.text().slice(0, 200)));
 p.on("pageerror", (e) => erros.push("PAGEERROR: " + String(e).slice(0, 200)));
+
+const falhasDaApi = [];
+vigiarFalhasDaApi(p, falhasDaApi);
 
 const passos = [];
 const registrar = async (nome, detalhe = "") => {
@@ -144,7 +148,12 @@ try {
   // Com o Vertex de verdade e o material real da rede a geração levou 30–60 s
   // nas medições; o mock devolve em segundos. O teto cobre os dois com folga,
   // porque um plano cortado por timeout aqui viraria "iframe vazio" no print.
-  await exp.locator("table").first().waitFor({ timeout: 180_000 });
+  // A CORRIDA contra o alerta é o que impede pagar esse teto quando a api já
+  // respondeu erro — o ADC vencido falha em 300 ms.
+  await esperarOuFalharCedo(exp.locator("table"), exp.locator(ALERTA_DE_ERRO), {
+    timeout: 180_000,
+    oQue: "a geração do plano (exp-90)",
+  });
   await registrar("plano-de-aula-editor", "tabela do plano renderizada no editor");
 
   const editor = exp.locator('[contenteditable="true"]').first();
@@ -207,7 +216,11 @@ try {
     await bem.locator("textarea").fill("Semana corrida, mas a aula de hoje rendeu.");
     await registrar("bem-estar-respondido");
     await bem.getByRole("button", { name: "Enviar check-in" }).click();
-    await bem.getByText("Check-in de hoje feito").waitFor({ timeout: 60_000 });
+    await esperarOuFalharCedo(
+      bem.getByText("Check-in de hoje feito"),
+      bem.locator(ALERTA_DE_ERRO),
+      { timeout: 60_000, oQue: "o envio do check-in (exp-91)" },
+    );
     await registrar("bem-estar-feito", "acolhimento + progresso do ciclo");
   }
   await bem.getByRole("button", { name: "Histórico" }).click();
@@ -227,11 +240,14 @@ try {
   passos.forEach((linha) => console.log(linha));
   console.log("\n--- erros de console ---");
   console.log(erros.length ? erros.join("\n") : "(nenhum)");
+  console.log("\n--- respostas de erro da api ---");
+  console.log(falhasDaApi.length ? [...new Set(falhasDaApi)].join("\n") : "(nenhuma)");
   console.log(`\nprints em ${OUT}/`);
 } catch (falha) {
   await p.screenshot({ path: `${OUT}/erro.png` }).catch(() => {});
   console.error("\n✗ walkthrough interrompido:", String(falha).slice(0, 400));
   console.error("erros de console:", erros.length ? erros.join("\n") : "(nenhum)");
+  console.error("respostas de erro da api:", falhasDaApi.length ? [...new Set(falhasDaApi)].join(" | ") : "(nenhuma)");
   process.exitCode = 1;
 } finally {
   await browser.close();

@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { ehRuidoDeDev, vigiarFalhasDaApi } from "./lib/smoke.mjs";
 
 /**
  * Smoke VISUAL da exp-03-unoogpt (a Missão Tempestade), do login ao resultado.
@@ -30,6 +31,8 @@ mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();
 const passos = [];
 const erros = [];
+const falhasDaApi = [];
+let ruidoIgnorado = 0;
 
 /** Login com portão de hidratação: em dev o SSR chega antes do bundle, e o
  *  `fill` do Playwright não move o estado do React. */
@@ -47,9 +50,16 @@ async function entrar(pagina, usuario) {
   await pagina.click("button[type=submit]");
 }
 
+/* A exp-03 mostra erro em `<p>` avulso, com classe diferente em cada tela — não
+   há gancho estável para correr contra, como há na exp-90. Aqui o sinal é a
+   RESPOSTA da api: ela não derruba o roteiro (um 404 de sondagem é esperado),
+   mas põe a causa no relatório em vez de deixá-la invisível. */
 function vigiar(pagina, rotulo) {
-  pagina.on("console", (m) => m.type() === "error" && erros.push(`[${rotulo}] ${m.text().slice(0, 200)}`));
-  pagina.on("pageerror", (e) => erros.push(`[${rotulo}] PAGEERROR: ${String(e).slice(0, 200)}`));
+  // Reprova por erro de console, MENOS o ruído conhecido do Next (`lib/smoke.mjs`).
+  const anotar = (texto) => (ehRuidoDeDev(texto) ? (ruidoIgnorado += 1) : erros.push(`[${rotulo}] ${texto}`));
+  pagina.on("console", (m) => m.type() === "error" && anotar(m.text().slice(0, 200)));
+  pagina.on("pageerror", (e) => anotar("PAGEERROR: " + String(e).slice(0, 200)));
+  vigiarFalhasDaApi(pagina, falhasDaApi, rotulo);
 }
 
 const registrar = async (pagina, nome, detalhe = "") => {
@@ -74,7 +84,11 @@ try {
   await prof.click("text=Abrir a aula e os resultados");
   await prof.waitForURL("**/resultados**", { timeout: 20_000 });
   // O seletor de turma vem do banco: escolhe a 2A pelo rótulo.
-  const seletor = prof.locator("select").first();
+  // `select#turma`, NÃO o primeiro `<select>` da página: quem tem mais de uma
+  // lotação (prof.demo tem duas) ganhou um seletor de ESCOLA no cabeçalho, que
+  // vem antes no DOM. Pegar o primeiro procurava "2A" entre nomes de escola e
+  // acusava "rode o seed" — culpando o banco por uma mudança de header.
+  const seletor = prof.locator("select#turma");
   await seletor.waitFor({ timeout: 15_000 });
   // `selectOption` só aceita label literal: acha o value da 2A entre as opções.
   const opcoes = await seletor.locator("option").evaluateAll((os) =>
@@ -223,14 +237,20 @@ try {
   await registrar(prof, "relatorio-individual", "graus + transcrição");
 
   console.log("\n" + passos.join("\n"));
+  if (falhasDaApi.length > 0) {
+    console.error(`\n! respostas de erro da api:\n` + [...new Set(falhasDaApi)].join("\n"));
+  }
   if (erros.length > 0) {
     console.error(`\n✗ ${erros.length} erro(s) de console:\n` + erros.join("\n"));
     process.exitCode = 1;
   } else {
-    console.log("\n✓ sem erros de console");
+    console.log(`\n✓ sem erros de console${ruidoIgnorado ? ` (${ruidoIgnorado} de ruído conhecido do Next ignorados)` : ""}`);
   }
 } catch (erro) {
   console.error("\n✗ FALHOU:", erro.message);
+  if (falhasDaApi.length > 0) {
+    console.error("respostas de erro da api:", [...new Set(falhasDaApi)].join(" | "));
+  }
   // Diagnóstico: o que estava DENTRO do iframe quando quebrou. Sem isto o
   // timeout de um seletor não diz se a tela errada apareceu ou nenhuma.
   for (const pagina of browser.contexts().flatMap((c) => c.pages())) {

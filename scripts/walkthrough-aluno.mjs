@@ -38,7 +38,45 @@ const registrar = async (nome, detalhe = "") => {
   console.log(`✓ ${nome}${detalhe ? ` — ${detalhe}` : ""}`);
 };
 
+/** Login, com o portão de hidratação (a razão está no bloco do aluno, abaixo). */
+async function entrar(pagina, usuario) {
+  await pagina.goto(`${HUB}/login`, { waitUntil: "domcontentloaded" });
+  await pagina.waitForSelector("button[type=submit]");
+  await pagina.waitForTimeout(1500);
+  await pagina.locator("#username").pressSequentially(usuario, { delay: 20 });
+  await pagina.locator("#password").pressSequentially(SENHA, { delay: 20 });
+  await pagina.waitForFunction(
+    () => !document.querySelector("button[type=submit]")?.hasAttribute("disabled"),
+    null,
+    { timeout: 10_000 },
+  );
+  await pagina.click("button[type=submit]");
+  await pagina.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
+}
+
 try {
+  /**
+   * ZERA A TURMA ANTES, como o `walkthrough-explicabilidade` já fazia. Este
+   * roteiro cobre login -> ONBOARDING -> feed, e o onboarding só aparece uma
+   * vez: na segunda execução o aluno cai direto no feed e a espera por
+   * "Instanooria" (texto da tela de entrada) estoura em 30 s dizendo
+   * "iframe vazio" — quando o iframe está perfeito, só adiantado. Um smoke que
+   * só passa uma vez por banco não é smoke.
+   */
+  const ctxProf = await browser.newContext();
+  const prof = await ctxProf.newPage();
+  await entrar(prof, process.env.PROF_DEMO ?? "prof.demo");
+  const lista = await prof.request.get(`${HUB}/api/plataforma/atividades`);
+  const { atividades } = await lista.json();
+  const atividade = (atividades ?? []).find((a) => a.status === "ativa") ?? atividades?.[0];
+  if (!atividade) throw new Error("nenhuma atividade no seed — rode `seed:demo`");
+  await prof.request.post(`${HUB}/api/plataforma/atividades/${atividade.id}/limpar`);
+  await prof.request.post(`${HUB}/api/plataforma/atividades/${atividade.id}/etapa`, {
+    data: { etapa: "investigacao" },
+  });
+  await ctxProf.close();
+  console.log(`   turma zerada em "${atividade.titulo}"`);
+
   // ---- login -------------------------------------------------------------
   await p.goto(`${HUB}/login`, { waitUntil: "domcontentloaded" });
   await p.waitForSelector("button[type=submit]");

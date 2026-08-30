@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { vigiarFalhasDaApi } from "./lib/smoke.mjs";
 
 /**
  * Smoke VISUAL da EXPLICABILIDADE da exp-01 — o fechamento da missão.
@@ -72,10 +73,18 @@ async function entrar(pagina, usuario) {
   await pagina.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 30_000 });
 }
 
+/* A exp-01 mostra erro em `<p>` avulso, com classe diferente em cada tela — não
+   há gancho estável para correr contra, como há na exp-90. O sinal aqui é a
+   RESPOSTA da api: não derruba o roteiro, mas põe a causa no relatório.
+   Declarado FORA do `try`: `const` dentro do bloco é invisível ao `catch`, e a
+   referência de lá viraria ReferenceError mascarando a falha de verdade. */
+const falhasDaApi = [];
+
 try {
   // ---- o professor, e a atividade ----------------------------------------
   const ctxProf = await browser.newContext({ viewport: { width: 1440, height: 960 } });
   const prof = await ctxProf.newPage();
+  vigiarFalhasDaApi(prof, falhasDaApi, "professor");
   await entrar(prof, PROFESSOR);
 
   const lista = await prof.request.get(`${HUB}/api/plataforma/atividades`);
@@ -104,6 +113,7 @@ try {
   const erros = [];
   p.on("console", (m) => m.type() === "error" && erros.push(m.text().slice(0, 200)));
   p.on("pageerror", (e) => erros.push("PAGEERROR: " + String(e).slice(0, 200)));
+  vigiarFalhasDaApi(p, falhasDaApi, "aluno");
 
   await entrar(p, ALUNO);
   await p.goto(`${HUB}/exp/exp-01-instanooria`, { waitUntil: "domcontentloaded" });
@@ -319,6 +329,8 @@ try {
   passos.forEach((linha) => console.log(linha));
   console.log("\n--- erros de console (aluno) ---");
   console.log(erros.length ? erros.join("\n") : "(nenhum)");
+  console.log("\n--- respostas de erro da api ---");
+  console.log(falhasDaApi.length ? [...new Set(falhasDaApi)].join("\n") : "(nenhuma)");
 
   if (problemas.length > 0) {
     console.error(`\n✗ ${problemas.length} verificação(ões) falharam:`);
@@ -329,6 +341,7 @@ try {
   }
 } catch (falha) {
   console.error("\n✗ walkthrough interrompido:", String(falha).slice(0, 600));
+  console.error("respostas de erro da api:", falhasDaApi.length ? [...new Set(falhasDaApi)].join(" | ") : "(nenhuma)");
   process.exitCode = 1;
 } finally {
   await browser.close();

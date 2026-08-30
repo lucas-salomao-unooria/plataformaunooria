@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { ehRuidoDeDev, vigiarFalhasDaApi } from "./lib/smoke.mjs";
 
 /**
  * Smoke VISUAL da exp-02-unootube, do login à virada do ranking.
@@ -26,8 +27,13 @@ const contexto = await browser.newContext({ viewport: { width: 1280, height: 950
 const p = await contexto.newPage();
 
 const erros = [];
-p.on("console", (m) => m.type() === "error" && erros.push(m.text().slice(0, 200)));
-p.on("pageerror", (e) => erros.push("PAGEERROR: " + String(e).slice(0, 200)));
+const falhasDaApi = [];
+let ruidoIgnorado = 0;
+/** Reprova por erro de console, MENOS o ruído conhecido do Next (ver `lib/smoke.mjs`). */
+const anotar = (texto) => (ehRuidoDeDev(texto) ? (ruidoIgnorado += 1) : erros.push(texto));
+p.on("console", (m) => m.type() === "error" && anotar(m.text().slice(0, 200)));
+p.on("pageerror", (e) => anotar("PAGEERROR: " + String(e).slice(0, 200)));
+vigiarFalhasDaApi(p, falhasDaApi);
 
 const passos = [];
 const registrar = async (nome, detalhe = "") => {
@@ -123,6 +129,45 @@ try {
     `${quantosVideos} shorts · autoplay: ${tocando ? "ok" : "BLOQUEADO"} · ${bandejaVazia} lugares vazios`,
   );
 
+  /* ---- navegação por TECLADO ---------------------------------------------
+     O feed anda por seta, e isso vive num `useEffect` cujo listener depende de
+     `moverFeed`. É um caminho que o typecheck não alcança e que quebra calado:
+     dependência velha e a seta passa a mover para o vídeo ERRADO; listener
+     recriado a cada render e ele some entre o `keydown` e o handler. Mede o
+     item mais perto do centro, que é o que a pessoa vê — `scrollIntoView` é
+     suave, então a asserção vem depois da animação. */
+  const itemCentral = () =>
+    tela
+      .locator("article.short-item")
+      .first()
+      .evaluate(() => {
+        const meio = window.innerHeight / 2;
+        const perto = [...document.querySelectorAll("article.short-item")]
+          .map((el, i) => {
+            const r = el.getBoundingClientRect();
+            return { i, d: Math.abs(r.top + r.height / 2 - meio) };
+          })
+          .sort((a, z) => a.d - z.d)[0];
+        return perto ? perto.i : -1;
+      });
+  await tela.locator("article.short-item").first().click({ position: { x: 5, y: 5 } }).catch(() => {});
+  const noComeco = await itemCentral();
+  await p.keyboard.press("ArrowDown");
+  await p.waitForTimeout(1600);
+  const depoisDeDescer = await itemCentral();
+  await p.keyboard.press("ArrowUp");
+  await p.waitForTimeout(1600);
+  const depoisDeSubir = await itemCentral();
+  const tecladoOk = depoisDeDescer > noComeco && depoisDeSubir === noComeco;
+  if (!tecladoOk) {
+    console.error(`\n✗ seta não moveu o feed (${noComeco} -> ${depoisDeDescer} -> ${depoisDeSubir})`);
+    process.exitCode = 1;
+  }
+  await registrar(
+    "feed-por-teclado",
+    `${noComeco} \u2192 ${depoisDeDescer} \u2192 ${depoisDeSubir}${tecladoOk ? "" : " — NÃO MOVEU"}`,
+  );
+
   // ---- salvar 3 vídeos ----------------------------------------------------
   for (let i = 0; i < 3; i += 1) {
     const botoes = tela.locator('button[aria-label="Salvar vídeo"]:not([disabled])');
@@ -209,7 +254,9 @@ try {
   console.log("\n--- passos ---");
   passos.forEach((linha) => console.log(linha));
   console.log("\n--- erros de console ---");
-  console.log(erros.length ? erros.join("\n") : "(nenhum)");
+  console.log(erros.length ? erros.join("\n") : `(nenhum${ruidoIgnorado ? `; ${ruidoIgnorado} de ruído conhecido do Next ignorados` : ""})`);
+  console.log("--- respostas de erro da api ---");
+  console.log(falhasDaApi.length ? [...new Set(falhasDaApi)].join("\n") : "(nenhuma)");
   if (!tocando) console.log("\n! autoplay bloqueado — conferir allow=\"autoplay\" no ExpFrame");
   if (salvosDepois !== 3) {
     console.error(`\n✗ esperava 3 salvos após recarga, veio ${salvosDepois}`);

@@ -109,6 +109,8 @@ Contrato externo & Jest com \emph{fake} de rede &
 \section{O \emph{smoke} visual, em detalhe}
 
 \begin{lstlisting}[language=bashunoo, caption={Os \emph{walkthroughs} disponíveis}]
+pnpm exec playwright install chromium    # uma vez por maquina. NAO `npx playwright install`:
+                                        # o npx baixa a build de navegador de OUTRA versao
 node scripts/walkthrough-aluno.mjs      testes/wt-aluno
 node scripts/walkthrough-professor.mjs  testes/wt-professor   # cobre a exp-90 embedada
 node scripts/walkthrough-aluno-unootube.mjs   testes/walkthrough-unootube   # aluno4a01
@@ -134,6 +136,73 @@ Os \emph{walkthroughs} precisam da plataforma no ar (contêineres ou
 \cd{unooria123}; os \emph{logins} do \emph{seed} são \cd{gestor.demo},
 \cd{prof.demo} e \cd{aluno01}--\cd{aluno40}.
 \end{nota}
+
+\subsection{O roteiro tem de PERDER a corrida para o erro}
+
+Peças compartilhadas em \arq{scripts/lib/smoke.mjs} (o primeiro módulo comum
+entre \emph{walkthroughs} --- antes cada um era um arquivo solto).
+
+Medido em 2026-08-29: ao gerar um plano de aula, a API falhou em
+\textbf{306\,ms} e o roteiro ficou \textbf{180\,s} esperando uma \cd{<table>}
+que nunca viria --- 588 vezes o tempo que a resposta levou. O erro estava
+escrito em vermelho na tela desde o primeiro segundo, e o que saiu no console
+foi \cd{Timeout waiting for locator('table')}: um sintoma que não aponta para a
+causa, dentro do próprio instrumento que existe para encontrá-la.
+
+Os 3 minutos são o menor dos problemas. \textbf{Nenhum \emph{walkthrough} olhava
+estado de erro} --- nenhuma ocorrência de \cd{FeedbackAlert} em
+\arq{scripts/}. Uma falha que ainda deixasse uma \cd{<table>} na tela (plano
+cortado por \cd{MAX\_TOKENS} caindo num \emph{fallback}) passaria \textbf{verde}.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Peça} & \thd{O que faz, e onde vale}\\
+\midrule
+\cd{esperarOuFalharCedo} & Corrida entre o sinal de sucesso e o alerta de erro;
+  sobe a mensagem que o professor LEU, não o nome do seletor que faltou. O
+  \emph{timeout} continua alto (a geração real leva de 30 a 60\,s) --- o que
+  muda é que o caminho de falha não o paga.\\
+\zebra \cd{ALERTA\_DE\_ERRO} & \cd{.unooria-feedback-alert--error}. É a CLASSE,
+  não \cd{[role="alert"]}: o \emph{role} é o mesmo para \emph{info},
+  \emph{warning} e \emph{success}, e esperar por ele faria um aviso benigno
+  derrubar o roteiro. Vale para quem fala pela PLATAFORMA (exp-90, exp-91).\\
+\cd{vigiarFalhasDaApi} & Anota respostas 4xx/5xx para o relatório, com rótulo do
+  contexto. É o sinal das experiências DISFARÇADAS (exp-01, exp-03), que
+  mostram erro em \cd{<p>} avulso, com classe diferente em cada tela, e por isso
+  não têm gancho estável. \textbf{Não derruba o roteiro}: um 404 de sondagem é
+  esperado, e derrubar por \emph{status} inventaria falha.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+Os dois mecanismos são complementares, e o caso da exp-90 mostra por quê: o
+\cd{POST /planos} devolve \textbf{202}, e o erro só aparece no CORPO do
+\emph{polling}. Um vigia de \emph{status} HTTP não o pegaria --- ali o sinal é o
+alerta no DOM. Na exp-03 é o contrário: a rota devolve \textbf{503} e não há
+classe estável para esperar.
+\end{atencao}
+
+\subsection{Duas condições para o vermelho significar alguma coisa}
+
+\textbf{Idempotência.} O roteiro do aluno cobre \emph{login} \seta{}
+\textbf{onboarding} \seta{} \emph{feed}, e o \emph{onboarding} só acontece uma
+vez: na segunda execução a criança cai direto no \emph{feed}, a espera pelo
+texto da tela de entrada estoura em 30\,s, e o relatório diz \emph{iframe}
+vazio quando o \emph{iframe} está perfeito, só adiantado. Ele passou a zerar a
+turma no começo, como o da explicabilidade e o da exp-03 já faziam.
+\textbf{\emph{Smoke} que só passa uma vez por banco não é \emph{smoke}} --- e o
+sintoma dessa falha é indistinguível de um defeito de produto.
+
+\textbf{Ruído de dev não pode pintar de vermelho.} O
+\cd{performance.measure(routeChangeToRender, \ldots)} de
+\arq{next/dist/client/index.js} pode receber \emph{timestamp} negativo numa
+navegação cliente e lança \cd{Failed to execute 'measure' on 'Performance'}.
+Aparece em 11 dos 12 roteiros; como o da exp-02 e o da exp-03 reprovam por
+QUALQUER erro de console, os dois viviam vermelhos por um defeito que não é
+nosso --- e vermelho permanente treina a pessoa a ignorar o vermelho, que é o
+único jeito de um \emph{smoke} deixar de servir. A lista de ruído
+(\cd{ehRuidoDeDev}) é explícita, curta, e quem filtra \textbf{conta e diz
+quantos ignorou}: silenciar por padrão devolveria o problema em outra forma.
 
 \subsection{O que só o \emph{smoke} visual pega}
 
