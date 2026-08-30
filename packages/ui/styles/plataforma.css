@@ -1,7 +1,7 @@
 /*
  * Estilos das superfícies da Plataforma Unooria (/login, /professor/**, /admin/**).
  * Importado junto do CSS do @unooria/design-system, e SÓ nessas rotas: a
- * superfície do aluno não carrega tokens nem classes institucionais.
+ * superfície do estudante não carrega tokens nem classes institucionais.
  * Regra: nada de cor solta aqui — só tokens `--unooria-*`.
  *
  * Este arquivo é EXCEÇÃO CONTROLADA E DECRESCENTE (política B1.5 do plano):
@@ -48,7 +48,7 @@
 /*
  * Classes utilitárias das telas da plataforma. Ficam AQUI (e não no tema do
  * Tailwind) de propósito: nada da marca institucional pode vazar para a
- * superfície do aluno — nem em nome de classe, nem em nome de variável.
+ * superfície do estudante — nem em nome de classe, nem em nome de variável.
  */
 .text-unooria-neutral-950 { color: var(--unooria-color-neutral-950, #22272a); }
 .text-unooria-neutral-800 { color: var(--unooria-color-neutral-800, #3d4448); }

@@ -8,7 +8,7 @@
  * client components de uma vez, e Server Components podem importá-los.
  *
  * ONDE USAR: superfícies da plataforma no hub (login, /professor/**, /admin/**)
- * e as telas pós-revelação do aluno. NÃO usar no feed do aluno: lá a fidelidade
+ * e as telas pós-revelação do estudante. NÃO usar no feed do estudante: lá a fidelidade
  * é ao padrão de interface do clone — valem `@edu/ui/ds-insta` e os tokens do
  * clone da própria experiência.
  */

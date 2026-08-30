@@ -12,7 +12,7 @@
  *    da plataforma. Sem destruturar aqui, cada arquivo do feed teria que
  *    escrever `InstanooriaUI.Icon` e o bundler perderia o tree-shaking.
  *
- * ONDE USAR: apenas a superfície do aluno (experiência exp-01-instanooria).
+ * ONDE USAR: apenas a superfície do estudante (experiência exp-01-instanooria).
  * É o inverso de `ds.ts`, que vale só para as superfícies da plataforma.
  * Os dois nunca se cruzam.
  */

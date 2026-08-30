@@ -1,4 +1,4 @@
-import type { Aluno, TelemetryEvent } from "./types";
+import type { Estudante, TelemetryEvent } from "./types";
 
 const FLUSH_INTERVAL_MS = 10_000;
 const MAX_BATCH = 50;
@@ -13,7 +13,7 @@ export class TelemetryClient {
     private readonly cfg: {
       apiUrl: string;
       getToken: () => string;
-      aluno: Aluno;
+      estudante: Estudante;
       expId: string;
       expVersion: string;
       sessaoId: string;
@@ -27,8 +27,8 @@ export class TelemetryClient {
     this.buffer.push({
       eventId: crypto.randomUUID(),
       ts: new Date().toISOString(),
-      alunoId: this.cfg.aluno.id,
-      escolaId: this.cfg.aluno.escolaId,
+      estudanteId: this.cfg.estudante.id,
+      escolaId: this.cfg.estudante.escolaId,
       expId: this.cfg.expId,
       expVersion: this.cfg.expVersion,
       sessaoId: this.cfg.sessaoId,

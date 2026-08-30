@@ -8,7 +8,7 @@ import { PROTOCOL_VERSION } from "./types";
  * O teto fixo de 10 s era certo para ler catálogo e ERRADO para rota que espera
  * um modelo de linguagem: um turno de conversa com ferramentas leva de dez a
  * trinta segundos, e o AbortController cortava a resposta que já estava sendo
- * gerada — o aluno lia "não consegui responder" enquanto a api tinha
+ * gerada — o estudante lia "não consegui responder" enquanto a api tinha
  * respondido. Subir o default para todos seria pior: uma api travada
  * penduraria toda experiência por meio minuto.
  */
@@ -18,7 +18,7 @@ const INIT = {
   type: "hub:init",
   protocolVersion: PROTOCOL_VERSION,
   token: "token-inicial",
-  aluno: { id: "a1", nome: "Aluno", serie: "2EM", turmaId: "t1", escolaId: "e1" },
+  estudante: { id: "a1", nome: "Estudante", serie: "2EM", turmaId: "t1", escolaId: "e1" },
   apiUrl: "http://api.teste",
   config: {},
 };

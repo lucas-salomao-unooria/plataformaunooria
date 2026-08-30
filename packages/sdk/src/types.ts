@@ -2,20 +2,20 @@ import { z } from "zod";
 
 export const PROTOCOL_VERSION = 1;
 
-export const AlunoSchema = z.object({
+export const EstudanteSchema = z.object({
   id: z.string(),
   nome: z.string(),
   serie: z.string(),          // ex: "6EF", "2EM"
   turmaId: z.string(),
   escolaId: z.string(),
 });
-export type Aluno = z.infer<typeof AlunoSchema>;
+export type Estudante = z.infer<typeof EstudanteSchema>;
 
 export const HubInitSchema = z.object({
   type: z.literal("hub:init"),
   protocolVersion: z.number(),
   token: z.string(),
-  aluno: AlunoSchema,
+  estudante: EstudanteSchema,
   apiUrl: z.string().url(),
   config: z.record(z.unknown()).default({}),
 });
@@ -65,7 +65,7 @@ export interface TelemetryEvent {
  * `timeoutMs` existe porque o teto de 10 s do SDK é certo para leitura de
  * catálogo e ERRADO para rota que espera um modelo de linguagem: um turno de
  * conversa com ferramentas leva de dez a trinta segundos, e o `AbortController`
- * cortava a resposta que já estava sendo gerada — o aluno via "não consegui
+ * cortava a resposta que já estava sendo gerada — o estudante via "não consegui
  * responder" enquanto a api tinha respondido. Subir o default para todo mundo
  * seria pior: uma api travada deixaria toda experiência pendurada meio minuto.
  */
@@ -74,7 +74,7 @@ export interface OpcoesDeChamada {
 }
 
 export interface ExperienciaHandle {
-  aluno: Aluno;
+  estudante: Estudante;
   config: Record<string, unknown>;
   api: {
     get<T = unknown>(path: string, opcoes?: OpcoesDeChamada): Promise<T>;

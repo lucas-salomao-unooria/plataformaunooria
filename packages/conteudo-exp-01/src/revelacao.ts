@@ -25,13 +25,13 @@ export interface TelaDaRevelacao {
   complemento?: string;
 }
 
-/** De onde veio o lado em que o feed do aluno nasceu. */
+/** De onde veio o lado em que o feed do estudante nasceu. */
 export type OrigemDoLado = 'perfil' | 'redistribuido' | 'sorteio';
 
 /**
  * As quatro primeiras. Uma ideia por tela, fundo escuro, tipografia grande e
  * transições lentas — a tela inteira sinaliza "saímos do jogo". O tom nunca
- * humilha: o sujeito da frase é o SISTEMA, nunca o aluno.
+ * humilha: o sujeito da frase é o SISTEMA, nunca o estudante.
  */
 export const REVELACAO_FIXA: TelaDaRevelacao[] = [
   {
@@ -80,7 +80,7 @@ export function telaDoLadoSemeado(origem: string): TelaDaRevelacao {
 
 /**
  * Tela 6 — a linguagem. É **obrigatória**: usar o perfil de valores para
- * escolher como falar com o aluno e depois esconder que isso aconteceu seria
+ * escolher como falar com o estudante e depois esconder que isso aconteceu seria
  * repetir exatamente o que o exercício critica.
  */
 export const TELA_DA_LINGUAGEM: TelaDaRevelacao = {
@@ -90,7 +90,7 @@ export const TELA_DA_LINGUAGEM: TelaDaRevelacao = {
     'O mesmo argumento foi escrito de quatro jeitos diferentes; você recebeu mais o jeito que combina com o que te move.',
 };
 
-/** A última fecha sempre igual: o problema é do sistema, não do aluno. */
+/** A última fecha sempre igual: o problema é do sistema, não do estudante. */
 export const TELA_FINAL: TelaDaRevelacao = {
   texto: 'Isso acontece com todo mundo — inclusive com adultos.',
   complemento: 'É assim que as redes que você usa funcionam.',

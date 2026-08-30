@@ -19,7 +19,7 @@ const INIT_VALIDO = {
   type: "hub:init",
   protocolVersion: PROTOCOL_VERSION,
   token: "token-inicial",
-  aluno: { id: "a1", nome: "Aluno", serie: "8EF", turmaId: "t1", escolaId: "e1" },
+  estudante: { id: "a1", nome: "Estudante", serie: "8EF", turmaId: "t1", escolaId: "e1" },
   apiUrl: "http://localhost:3001",
   config: {},
 };
@@ -34,7 +34,7 @@ describe("connectToHub", () => {
     );
     mensagemDoHub(INIT_VALIDO);
     const { init } = await promessa;
-    expect(init.aluno.escolaId).toBe("e1");
+    expect(init.estudante.escolaId).toBe("e1");
     expect(init.token).toBe("token-inicial");
     spy.mockRestore();
   });

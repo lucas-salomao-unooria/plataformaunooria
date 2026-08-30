@@ -15,7 +15,7 @@
  * plataforma, e quem importa daqui sabe que está no clone.
  *
  * ONDE USAR: a superfície disfarçada da exp-02-unootube — feed de Shorts,
- * cromo (barra superior, barra lateral, abas), playlists e canal do aluno.
+ * cromo (barra superior, barra lateral, abas), playlists e canal do estudante.
  * NÃO usar nas telas pós-revelação (ranking, diálogo de conclusão): lá vale
  * `@edu/ui/ds`, porque a virada da missão é justamente sair do disfarce.
  * É a mesma divisão que `ds.ts` já descreve, um nível abaixo.
@@ -51,7 +51,7 @@ export {
  */
 export { ShortsPlayer, ShortsActionRail, ShortsCard, ShortsShelf, ShortsLogo } from '@unooria/design-system/unootube';
 
-/** Vitrine e canal: cartões, prateleiras e cabeçalho do canal do aluno. */
+/** Vitrine e canal: cartões, prateleiras e cabeçalho do canal do estudante. */
 export {
   ThumbnailImage,
   VideoCard,

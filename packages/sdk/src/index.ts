@@ -54,7 +54,7 @@ export async function createExperiencia(meta: {
   setInterval(() => send({ type: "exp:token-expirando" }), 10 * 60 * 1000); // TTL do token é 15min
 
   const telemetry = new TelemetryClient({
-    apiUrl: init.apiUrl, getToken: () => token, aluno: init.aluno,
+    apiUrl: init.apiUrl, getToken: () => token, estudante: init.estudante,
     expId: meta.expId, expVersion: meta.expVersion, sessaoId,
   });
 
@@ -105,7 +105,7 @@ export async function createExperiencia(meta: {
   }
 
   return {
-    aluno: init.aluno,
+    estudante: init.estudante,
     config: init.config,
     api: {
       get: (p, o) => call("GET", p, undefined, o),

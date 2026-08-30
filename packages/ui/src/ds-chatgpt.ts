@@ -45,7 +45,7 @@ export { WebSidebar, SidebarRow } from '@unooria/design-system/chatgpt';
  * O campo de escrever, com a doca que o ancora no rodapé.
  *
  * `hideLeadingActions` é o que a missão usa: anexar imagem e entrada de voz não
- * existem nesta conversa, e um alvo que não faz nada ensina o aluno a
+ * existem nesta conversa, e um alvo que não faz nada ensina o estudante a
  * desconfiar da tela.
  */
 export { Composer } from '@unooria/design-system/chatgpt';
@@ -54,7 +54,7 @@ export { Composer } from '@unooria/design-system/chatgpt';
 export { ChatBubble } from '@unooria/design-system/chatgpt';
 
 /**
- * As perguntas prontas que aparecem quando o aluno trava: uma coluna de tópico
+ * As perguntas prontas que aparecem quando o estudante trava: uma coluna de tópico
  * com sugestões clicáveis. É o destravamento do ADR-0008 do projeto de origem.
  */
 export { TopicColumn, PromptSuggestion } from '@unooria/design-system/chatgpt';
