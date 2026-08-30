@@ -203,6 +203,8 @@ model Turma {
   /// Cache da matrícula principal (`users.turma_id`). A VERDADE é `matriculas`.
   alunos        User[]
   matriculas    Matricula[]
+  /// Atividades do Instanooria desta turma (`exp_01_activities.turma_id`).
+  atividades    Activity[]
 
   /// O Relógio da AULA da exp-03 mora em tabela DA EXPERIÊNCIA, não em coluna
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
@@ -336,6 +338,12 @@ model Activity {
   id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId          String   @map("escola_id")
   professorId       String   @map("professor_id") @db.Uuid
+  /// A turma para a qual esta atividade é. NULL = atividade anterior à migration
+  /// `20260830090000_atividade_por_turma`, que segue valendo para a escola
+  /// inteira — o comportamento de antes. Com turma, o painel de perfis, a
+  /// importação da Vila e a entrada do aluno em `POST /runs` falam todos da
+  /// MESMA sala.
+  turmaId           String?  @map("turma_id") @db.Uuid
   titulo            String
   disciplina        String
   temaGeral         String   @map("tema_geral")
@@ -370,6 +378,7 @@ model Activity {
   createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   professor User              @relation("ActivityProfessor", fields: [professorId], references: [id])
+  turma     Turma?            @relation(fields: [turmaId], references: [id])
   authors   Author[]
   posts     Post[]
   jobs      GenerationJob[]
@@ -377,6 +386,7 @@ model Activity {
   perfis    PerfilImportado[]
 
   @@index([escolaId])
+  @@index([turmaId])
   @@map("exp_01_activities")
 }
 
@@ -578,6 +588,17 @@ model PerfilImportado {
   origem      String
   /// A | B quando o professor redistribuiu a turma; null = segue a afinidade
   ladoForcado String?  @map("lado_forcado")
+  /// A partida da Vila de onde este perfil saiu. SEM relação Prisma e sem FK:
+  /// zerar a turma na Vila apaga sessões, e uma cascata (ou um RESTRICT) levaria
+  /// junto o perfil que está decidindo o lado de uma aula em andamento. É rastro
+  /// da medida, não integridade — id que não resolve mais é a verdade do caso.
+  /// `null` = não veio da Vila desta instalação (preenchido à mão pelo professor,
+  /// ou pela rota de compatibilidade `POST /perfis/importar`).
+  vilaSessaoId String? @map("vila_sessao_id") @db.Uuid
+  /// A `VERSAO_MAPEAMENTO` sob a qual o perfil foi medido. É o que permite a tela
+  /// dizer "o mapeamento mudou desde esta importação" — sem ela, subir a
+  /// constante deixava as cópias velhas em silêncio.
+  versaoMapeamento Int? @map("versao_mapeamento") @db.SmallInt
   medidoEm    DateTime @map("medido_em") @db.Timestamptz(6)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

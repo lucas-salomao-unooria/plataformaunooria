@@ -185,12 +185,28 @@ export class PerfisController {
     const filtro = DaVilaSchema.parse(body ?? {});
     const { usuarioId, escolaId } = req.auth;
 
+    /* A TURMA sai da atividade, então ela é lida antes de tudo — e essa leitura
+       vale como o 404 de quem não é dono. O corpo só sobrescreve quando o
+       professor quer importar de outra sala de propósito; antes ele era a única
+       fonte, e a tela mandava `{}`, então `semPartida` contava a escola inteira
+       e o relatório dizia "N ainda não jogaram" sobre crianças de outras turmas. */
+    const daAtividade = await this.prisma.comTenancy(
+      (tx) => atividadeDoProfessor(tx, id, usuarioId, escolaId),
+      escolaId,
+    );
+    if (!daAtividade) naoEncontrado();
+
     /* A leitura acontece FORA da transação de escrita, e de propósito: ela abre
        o próprio `comTenancy` (é do módulo `vila`, dono daquelas tabelas).
        Aninhar transação do Prisma dentro de transação não faz o que parece. */
-    const doJogo = await this.vila.perfisParaOAto1(escolaId, filtro.turmaId);
+    const doJogo = await this.vila.perfisParaOAto1(
+      escolaId,
+      filtro.turmaId ?? daAtividade.turmaId ?? undefined,
+    );
 
     return this.prisma.comTenancy(async (tx) => {
+      /* Reconferido DENTRO da transação de escrita: entre a leitura acima e
+         aqui, a atividade pode ter mudado de dono ou sumido. */
       const atividade = await atividadeDoProfessor(tx, id, usuarioId, escolaId);
       if (!atividade) naoEncontrado();
 
@@ -204,6 +220,12 @@ export class PerfisController {
           dominante: perfil.dominante,
           origem: "jogo",
           medidoEm: entrada.medidoEm,
+          /* De QUE partida e sob QUE mapeamento. Vai no `update` também: quem
+             reimporta depois de a `VERSAO_MAPEAMENTO` subir precisa que a linha
+             deixe de estar desatualizada — se só o `create` gravasse, o aviso da
+             tela nunca sumiria. */
+          vilaSessaoId: entrada.sessaoId,
+          versaoMapeamento: entrada.versaoMapeamento,
         };
         await tx.perfilImportado.upsert({
           where: { activityId_alunoId: { activityId: id, alunoId: entrada.alunoId } },
@@ -221,7 +243,9 @@ export class PerfisController {
     });
   }
 
-  /** Lista da turma com o estado do perfil por aluno, para conferência. */
+  /** Lista da turma com o estado do perfil por aluno, para conferência.
+   *  Escopada pela turma da atividade desde `20260830090000_atividade_por_turma`
+   *  — antes o nome dizia "turma" e a query lia a escola. */
   @Get(":id/perfis")
   @Contrato({
     resumo: "O estado do perfil de cada aluno, para conferência.",
@@ -239,7 +263,9 @@ export class PerfisController {
 
       const [alunos, perfis] = await Promise.all([
         tx.user.findMany({
-          where: { role: "aluno", escolaId },
+          /* Mesma regra do painel: a turma da atividade quando ela tem uma;
+             sem turma (atividade anterior à migration) vale a escola. */
+          where: { role: "aluno", escolaId, ...(atividade.turmaId ? { turmaId: atividade.turmaId } : {}) },
           select: { id: true, username: true, displayName: true },
           orderBy: { username: "asc" },
         }),
@@ -298,7 +324,7 @@ export class PerfisController {
       const atividade = await atividadeDoProfessor(tx, id, usuarioId, escolaId);
       if (!atividade) naoEncontrado();
 
-      const distribuicao = await distribuicaoDaTurma(tx, id, atividade.antagonismo);
+      const distribuicao = await distribuicaoDaTurma(tx, id, atividade.antagonismo, escolaId, atividade.turmaId);
 
       return {
         ...distribuicao,
@@ -342,7 +368,7 @@ export class PerfisController {
       const atividade = await atividadeDoProfessor(tx, id, usuarioId, escolaId);
       if (!atividade) naoEncontrado();
 
-      const distribuicao = await distribuicaoDaTurma(tx, id, atividade.antagonismo);
+      const distribuicao = await distribuicaoDaTurma(tx, id, atividade.antagonismo, escolaId, atividade.turmaId);
 
       if (!distribuicao.temAfinidade) {
         throw new HttpException(

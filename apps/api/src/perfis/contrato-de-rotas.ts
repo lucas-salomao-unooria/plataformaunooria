@@ -84,6 +84,9 @@ export const DistribuicaoSchema = z.object({
       rotulo: z.string(),
       margem: z.number(),
       origemDoPerfil: z.enum(["jogo", "professor", "ausente"]),
+      /** O perfil veio da Vila sob uma `VERSAO_MAPEAMENTO` anterior à atual.
+       *  Reimportar atualiza; é aviso, nunca bloqueio. */
+      mapeamentoDesatualizado: z.boolean(),
       lado: LadoSchema.nullable(),
       ladoOrigem: z.enum(["perfil", "sorteio", "redistribuido", "projetado"]),
       jaComecou: z.boolean(),

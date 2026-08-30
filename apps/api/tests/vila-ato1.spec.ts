@@ -498,3 +498,183 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
     expect(depois.ladoInicial).toBe("A");
   });
 });
+
+/* ------------------------------- a turma da atividade, e a versão da medida */
+
+/**
+ * Duas coisas que a integração não sabia dizer, e que faziam o painel do
+ * professor afirmar o que não podia.
+ *
+ * **A turma.** `POST :id/perfis/da-vila` só recebia turma pelo CORPO, e a tela
+ * mandava `{}` — então a importação varria a ESCOLA e o "N ainda não jogaram"
+ * contava crianças de outras salas. Desde
+ * `20260830090000_atividade_por_turma` a atividade declara a turma, e ela é o
+ * default.
+ *
+ * **A versão.** O perfil importado não guardava de que partida vinha nem sob que
+ * `VERSAO_MAPEAMENTO`. Ao subir a constante, a Vila recalcularia e esta cópia
+ * ficaria velha em silêncio — a armadilha do `expires_at`.
+ */
+describe("a importação sabe de que turma e de que medida está falando", () => {
+  const ESCOLA_TT = "teste-vila-ato1-turma";
+  const controller = new PerfisController(prisma, service);
+  let professorId = "";
+  let turmaA = "";
+  let turmaB = "";
+  let alunoDaTurmaA = "";
+  let alunoDaTurmaB = "";
+  let atividadeDaTurmaA = "";
+  let atividadeSemTurma = "";
+
+  async function limpar() {
+    await prisma.perfilImportado.deleteMany({ where: { escolaId: ESCOLA_TT } });
+    await prisma.activity.deleteMany({ where: { escolaId: ESCOLA_TT } });
+    await prisma.vilaPerfil.deleteMany({ where: { escolaId: ESCOLA_TT } });
+    await prisma.vilaSessao.deleteMany({ where: { escolaId: ESCOLA_TT } });
+    await prisma.user.deleteMany({ where: { escolaId: ESCOLA_TT } });
+    await prisma.turma.deleteMany({ where: { escolaId: ESCOLA_TT } });
+    await prisma.escola.deleteMany({ where: { id: ESCOLA_TT } });
+  }
+
+  /** Uma partida completa, com perfil medido na versão vigente. */
+  async function semear(alunoId: string, turmaId: string) {
+    const base = perfilCheio();
+    const sessao = await prisma.vilaSessao.create({
+      data: {
+        escolaId: ESCOLA_TT, alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
+      },
+      select: { id: true },
+    });
+    await prisma.vilaPerfil.create({
+      data: {
+        escolaId: ESCOLA_TT, sessaoId: sessao.id, alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        valores: base.valores, graus: base.graus, amostraSuficiente: true,
+      },
+    });
+    return sessao.id;
+  }
+
+  const criarAtividade = (turmaId: string | null) =>
+    prisma.activity.create({
+      data: {
+        escolaId: ESCOLA_TT, professorId, turmaId, titulo: "T", disciplina: "D",
+        temaGeral: "TG", recorte: "R", perguntaChave: "PC", estiloVisual: "EV",
+        proporcoes: {}, engineConfig: {},
+      },
+      select: { id: true },
+    });
+
+  beforeAll(async () => {
+    await limpar();
+    await prisma.escola.create({ data: { id: ESCOLA_TT, nome: "Escola turma (teste)" } });
+
+    turmaA = (await criarTurmaDeTeste(prisma, ESCOLA_TT, "8A", "8EF")).id;
+    turmaB = (await criarTurmaDeTeste(prisma, ESCOLA_TT, "8B", "8EF")).id;
+
+    professorId = (
+      await prisma.user.create({
+        data: { role: "professor", escolaId: ESCOLA_TT, username: "tt.prof", displayName: "Prof", passwordHash: "x" },
+        select: { id: true },
+      })
+    ).id;
+
+    const criarAluno = (username: string, turmaId: string) =>
+      prisma.user.create({
+        data: { role: "aluno", escolaId: ESCOLA_TT, turmaId, username, displayName: username, passwordHash: "x" },
+        select: { id: true },
+      });
+
+    alunoDaTurmaA = (await criarAluno("tt.a", turmaA)).id;
+    alunoDaTurmaB = (await criarAluno("tt.b", turmaB)).id;
+    await semear(alunoDaTurmaA, turmaA);
+    await semear(alunoDaTurmaB, turmaB);
+
+    atividadeDaTurmaA = (await criarAtividade(turmaA)).id;
+    atividadeSemTurma = (await criarAtividade(null)).id;
+  });
+
+  afterAll(limpar);
+
+  const req = () =>
+    ({ auth: { usuarioId: professorId, escolaId: ESCOLA_TT, perfil: "professor" } }) as never;
+
+  const importar = (activityId: string, corpo: unknown = {}) =>
+    comEscolaNoContexto(ESCOLA_TT, () =>
+      controller.importarDaVila(activityId, corpo, req()),
+    ) as Promise<{ importados: number; semPartida: number; descartados: unknown[] }>;
+
+  test("com CORPO VAZIO, a turma sai da atividade — não é a escola inteira", async () => {
+    const r = await importar(atividadeDaTurmaA);
+
+    /* A escola tem dois alunos com partida, um em cada turma. Só o da turma da
+       atividade entra — e `semPartida` conta zero, porque a única criança da
+       turma A já jogou. Antes, isto importava 2 e dizia "0 ainda não jogaram"
+       sobre uma sala que o professor nem tem. */
+    expect(r.importados).toBe(1);
+    expect(r.semPartida).toBe(0);
+
+    const linhas = await prisma.perfilImportado.findMany({
+      where: { activityId: atividadeDaTurmaA },
+      select: { alunoId: true },
+    });
+    expect(linhas.map((l) => l.alunoId)).toEqual([alunoDaTurmaA]);
+  });
+
+  test("o aluno de outra turma não entra", async () => {
+    await importar(atividadeDaTurmaA);
+    const doOutro = await prisma.perfilImportado.findFirst({
+      where: { activityId: atividadeDaTurmaA, alunoId: alunoDaTurmaB },
+    });
+    expect(doOutro).toBeNull();
+  });
+
+  test("atividade SEM turma continua valendo para a escola inteira", async () => {
+    const r = await importar(atividadeSemTurma);
+    // O comportamento anterior à coluna, preservado para as atividades antigas.
+    expect(r.importados).toBe(2);
+  });
+
+  test("o perfil importado guarda a partida e a versão do mapeamento", async () => {
+    await importar(atividadeDaTurmaA);
+
+    const linha = await prisma.perfilImportado.findUniqueOrThrow({
+      where: { activityId_alunoId: { activityId: atividadeDaTurmaA, alunoId: alunoDaTurmaA } },
+      select: { vilaSessaoId: true, versaoMapeamento: true, origem: true },
+    });
+
+    expect(linha.origem).toBe("jogo");
+    expect(linha.versaoMapeamento).toBe(VERSAO_MAPEAMENTO);
+    expect(linha.vilaSessaoId).not.toBeNull();
+
+    /* E o id tem de ser o da sessão REAL daquela criança — não um qualquer.
+       Sem isso, a coluna existiria sem dizer nada, que é o defeito que ela
+       veio corrigir. */
+    const sessao = await prisma.vilaSessao.findUniqueOrThrow({
+      where: { id: linha.vilaSessaoId! },
+      select: { alunoId: true },
+    });
+    expect(sessao.alunoId).toBe(alunoDaTurmaA);
+  });
+
+  test("reimportar ATUALIZA a versão, senão o aviso da tela nunca sumiria", async () => {
+    await importar(atividadeDaTurmaA);
+    const chave = { activityId_alunoId: { activityId: atividadeDaTurmaA, alunoId: alunoDaTurmaA } };
+
+    // Simula uma linha medida sob mapeamento antigo (o estado que a tela avisa).
+    await prisma.perfilImportado.update({
+      where: chave,
+      data: { versaoMapeamento: VERSAO_MAPEAMENTO - 1, ladoForcado: "A" },
+    });
+
+    await importar(atividadeDaTurmaA);
+
+    const depois = await prisma.perfilImportado.findUniqueOrThrow({
+      where: chave,
+      select: { versaoMapeamento: true, ladoForcado: true },
+    });
+    expect(depois.versaoMapeamento).toBe(VERSAO_MAPEAMENTO);
+    // E a redistribuição do professor CONTINUA de pé — o invariante de sempre.
+    expect(depois.ladoForcado).toBe("A");
+  });
+});

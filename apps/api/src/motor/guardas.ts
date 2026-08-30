@@ -59,3 +59,33 @@ export async function atividadeDoProfessor(
   if (!ehUuid(activityId)) return null;
   return tx.activity.findFirst({ where: { id: activityId, professorId, escolaId } });
 }
+
+/**
+ * A atividade ATIVA que vale para um aluno — o `where` e a `orderBy` que
+ * `POST /runs` e `GET /runs/boot` têm de compartilhar.
+ *
+ * Vive aqui, e não copiado nas duas rotas, pelo mesmo motivo de
+ * `resolverLargada`: quando o `boot` tinha regra própria ele mostrava a pergunta
+ * de uma atividade e a run nascia em outra, e o aluno lia na tela uma missão que
+ * não era a dele.
+ *
+ * A atividade SEM turma (`turma_id IS NULL`) é a anterior à migration
+ * `20260830090000_atividade_por_turma` e continua valendo para a escola inteira.
+ * A ordem por `turmaId` com `nulls: "last"` é o que faz a atividade DA SALA
+ * ganhar da geral quando as duas estão ativas ao mesmo tempo.
+ */
+export function ondeAAtividadeVale(
+  escolaId: string,
+  turmaId: string | null | undefined,
+): Prisma.ActivityWhereInput {
+  return {
+    status: "ativa",
+    escolaId,
+    OR: [{ turmaId: null }, ...(turmaId ? [{ turmaId }] : [])],
+  };
+}
+
+export const ORDEM_DA_ATIVIDADE_DO_ALUNO = [
+  { turmaId: { sort: "desc", nulls: "last" } },
+  { createdAt: "desc" },
+] satisfies Prisma.ActivityOrderByWithRelationInput[];

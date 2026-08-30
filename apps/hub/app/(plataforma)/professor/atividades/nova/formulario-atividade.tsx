@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   AlertBox,
@@ -29,6 +29,13 @@ const APOIO_MODO: Record<(typeof MODOS_NEUTROS)[number], string> = {
   fora_do_tema: "Só assuntos leves, fora da disputa.",
 };
 
+/** Turma do professor, como `GET /turmas/minhas` devolve. */
+interface TurmaDoProfessor {
+  id: string;
+  nome: string;
+  serie: string;
+}
+
 /**
  * Passo 1 do doc 05: tema e recorte. A **pergunta-chave não é digitada aqui** —
  * a IA propõe candidatas no passo 2 e o professor escolhe, edita ou escreve a
@@ -38,8 +45,33 @@ export function FormularioAtividade() {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [turmas, setTurmas] = useState<TurmaDoProfessor[]>([]);
+
+  /* As turmas do professor vêm de `GET /turmas/minhas`, que já devolve
+     exatamente aquelas em que ele TEM MATRÍCULA — não as da escola. Falhar aqui
+     não impede criar a atividade: sem turma ela vale para a escola inteira, que
+     é como toda atividade funcionava antes. */
+  useEffect(() => {
+    let vivo = true;
+    void (async () => {
+      try {
+        const resposta = await fetch("/api/plataforma/turmas/minhas", { cache: "no-store" });
+        if (!resposta.ok) return;
+        /* `GET /turmas/minhas` devolve o ARRAY cru (`TurmasSchema`), não um
+           envelope — conferido no contrato Zod da api. */
+        const lista = (await resposta.json()) as TurmaDoProfessor[];
+        if (vivo && Array.isArray(lista)) setTurmas(lista);
+      } catch {
+        /* silêncio proposital: ver comentário acima */
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   const [form, setForm] = useState({
+    turmaId: "",
     titulo: "",
     disciplina: "",
     recorte: "",
@@ -67,6 +99,9 @@ export function FormularioAtividade() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          /* Vazio = sem turma: a atividade vale para a escola inteira, o
+             comportamento de toda atividade anterior à coluna `turma_id`. */
+          ...(form.turmaId ? { turmaId: form.turmaId } : {}),
           titulo: form.titulo,
           disciplina: form.disciplina,
           recorte: form.recorte,
@@ -150,6 +185,39 @@ export function FormularioAtividade() {
               required
             />
           </div>
+
+          {/*
+            A TURMA. Opcional de propósito: sem ela a atividade vale para a
+            escola inteira, que é como toda atividade funcionava antes da coluna
+            `turma_id`. Com ela, o painel de perfis, a importação da Vila e a
+            entrada do aluno passam a falar da MESMA sala — antes o painel
+            listava a escola e o "N ainda não jogaram" contava crianças de
+            outras turmas.
+          */}
+          {turmas.length > 0 ? (
+            <div>
+              <label className="unooria-rotulo-de-campo" htmlFor="turma">
+                Turma
+              </label>
+              <select
+                id="turma"
+                className="unooria-select"
+                value={form.turmaId}
+                onChange={(e) => atualizar("turmaId", e.target.value)}
+              >
+                <option value="">Todas as turmas da escola</option>
+                {turmas.map((turma) => (
+                  <option key={turma.id} value={turma.id}>
+                    {turma.nome} · {turma.serie}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[12px] text-unooria-neutral-500">
+                Escolher a turma faz o painel de perfis, a importação da Vila do
+                Lume e a entrada dos alunos falarem só dessa sala.
+              </p>
+            </div>
+          ) : null}
         </div>
       </Card>
 

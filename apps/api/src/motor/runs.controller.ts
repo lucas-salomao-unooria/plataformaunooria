@@ -30,7 +30,13 @@ import { PrismaService } from "../prisma/prisma.service";
 import { deveEncerrar } from "./curadoria";
 import { estadoInicial, normalizarEstado, semearEstado } from "./estado";
 import { dominioDe } from "./eventos";
-import { ehUuid, naoEncontrado, runDoAluno } from "./guardas";
+import {
+  ehUuid,
+  naoEncontrado,
+  ondeAAtividadeVale,
+  ORDEM_DA_ATIVIDADE_DO_ALUNO,
+  runDoAluno,
+} from "./guardas";
 import { paraFeedPost } from "./sanitizador";
 import { proximoBlocoDoFeed } from "./servico";
 import type { EngineConfig } from "./tipos";
@@ -96,9 +102,28 @@ export class RunsController {
     const { usuarioId, escolaId } = req.auth;
 
     return this.prisma.comTenancy(async (tx) => {
+      /**
+       * A atividade DESTA criança.
+       *
+       * A busca era só `{ status: "ativa", escolaId }`, e com uma atividade por
+       * escola isso bastava. Desde `20260830090000_atividade_por_turma` a
+       * atividade pode declarar turma, e aí a da sala do lado não é a dela: o
+       * aluno do 8B entrava na atividade do 8A e aparecia no painel de um
+       * professor que não é o dele.
+       *
+       * A turma sai de `users.turma_id` — o CACHE da matrícula principal — e não
+       * de `matriculas`, pelo mesmo motivo do login: aqui ainda não há turma no
+       * contexto, e `matriculas` tem RLS. A regra de qual atividade vale está em
+       * `ondeAAtividadeVale`, compartilhada com o `boot`.
+       */
+      const aluno = await tx.user.findUnique({
+        where: { id: usuarioId },
+        select: { turmaId: true },
+      });
+
       const atividade = await tx.activity.findFirst({
-        where: { status: "ativa", escolaId },
-        orderBy: { createdAt: "desc" },
+        where: ondeAAtividadeVale(escolaId, aluno?.turmaId),
+        orderBy: ORDEM_DA_ATIVIDADE_DO_ALUNO,
         select: { id: true, antagonismo: true, engineConfig: true },
       });
 
@@ -169,7 +194,7 @@ export class RunsController {
       const [aluno, run] = await Promise.all([
         tx.user.findUniqueOrThrow({
           where: { id: usuarioId },
-          select: { displayName: true, username: true, avatar: true },
+          select: { displayName: true, username: true, avatar: true, turmaId: true },
         }),
         tx.run.findFirst({
           where: { alunoId: usuarioId, escolaId, activity: { status: "ativa" } },
@@ -182,11 +207,14 @@ export class RunsController {
         }),
       ]);
 
+      /* Mesma regra do `POST /runs`: sem ela o aluno lia na tela a pergunta de
+         uma atividade e a run nascia em outra. `aluno.turmaId` vem do select
+         acima. */
       const atividade =
         run?.activity ??
         (await tx.activity.findFirst({
-          where: { status: "ativa", escolaId },
-          orderBy: { createdAt: "desc" },
+          where: ondeAAtividadeVale(escolaId, aluno.turmaId),
+          orderBy: ORDEM_DA_ATIVIDADE_DO_ALUNO,
           select: { perguntaChave: true, antagonismo: true },
         }));
 

@@ -40,6 +40,9 @@ interface AtividadeDetalhe {
   proporcoes: unknown;
   /** JSON do antagonismo aprovado — validado com `antagonismoSchema`. */
   antagonismo: unknown;
+  /** A turma desta atividade. `null` = atividade anterior à coluna `turma_id`:
+   *  ela vale para a escola inteira. */
+  turma: { id: string; nome: string; serie: string } | null;
   _count: { runs: number };
 }
 
@@ -144,14 +147,22 @@ export default async function AtividadePage({
 
       {/*
         Distribuição da turma (doc 04 §3.1). Aparece a partir de `revisao`: antes
-        disso não existe conteúdo, e depois de `encerrada` não há o que
-        redistribuir.
+        disso não existe conteúdo.
+        Em `encerrada` ela CONTINUA aparecendo, em leitura: a partida da Vila
+        pode acontecer depois de a atividade começar (é o que o comentário do
+        `importarDaVila` já previa), e o professor precisa poder conferir de onde
+        veio o lado de cada aluno quando for ler o relatório. O que some ali é a
+        ação — não há o que redistribuir numa atividade encerrada.
       */}
-      {atividade.status === "revisao" || atividade.status === "ativa" ? (
+      {atividade.status === "revisao" ||
+      atividade.status === "ativa" ||
+      atividade.status === "encerrada" ? (
         <PainelPerfis
           activityId={atividade.id}
           ladoALabel={antagonismo?.ladoA.label ?? "Lado A"}
           ladoBLabel={antagonismo?.ladoB.label ?? "Lado B"}
+          turma={atividade.turma}
+          somenteLeitura={atividade.status === "encerrada"}
         />
       ) : null}
 

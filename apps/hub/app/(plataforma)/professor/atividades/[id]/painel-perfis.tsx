@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { AlertBox, Button, Card, Tag } from "@edu/ui/ds";
+import { AlertBox, Button, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 
 interface AlunoNaLista {
   username: string;
@@ -11,6 +12,8 @@ interface AlunoNaLista {
   rotulo: string;
   margem: number;
   origemDoPerfil: "jogo" | "professor" | "ausente";
+  /** Medido sob uma versão anterior do mapeamento da Vila. Reimportar resolve. */
+  mapeamentoDesatualizado: boolean;
   lado: "A" | "B" | null;
   ladoOrigem: "perfil" | "sorteio" | "redistribuido" | "projetado";
   jaComecou: boolean;
@@ -66,10 +69,19 @@ export function PainelPerfis({
   activityId,
   ladoALabel,
   ladoBLabel,
+  turma,
+  somenteLeitura = false,
 }: {
   activityId: string;
   ladoALabel: string;
   ladoBLabel: string;
+  /** Atividade encerrada: o painel ainda EXPLICA de onde veio o lado de cada
+   *  aluno (é o que o professor lê junto do relatório), mas não age. */
+  somenteLeitura?: boolean;
+  /** A turma da atividade. `null` = atividade anterior à coluna `turma_id`, que
+   *  vale para a escola inteira — e o painel PRECISA dizer isso, senão o
+   *  professor lê uma lista de alunos que não são dele achando que é a sala. */
+  turma: { id: string; nome: string; serie: string } | null;
 }) {
   const [dados, setDados] = useState<Distribuicao | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -168,6 +180,8 @@ export function PainelPerfis({
   }
 
   const total = dados.contagem.A + dados.contagem.B;
+  const comPerfil = dados.alunos.filter((a) => a.origemDoPerfil !== "ausente").length;
+  const desatualizados = dados.alunos.filter((a) => a.mapeamentoDesatualizado).length;
   const rotuloDoLado = (lado: "A" | "B" | null) =>
     lado === "A" ? ladoALabel : lado === "B" ? ladoBLabel : "—";
 
@@ -176,6 +190,25 @@ export function PainelPerfis({
       {erro ? (
         <AlertBox theme="light" variant="error" device="auto" description={erro} />
       ) : null}
+
+      {/*
+        DE QUE SALA ESTE PAINEL FALA. Sem turma, a atividade vale para a escola
+        inteira — era o comportamento único antes da coluna `turma_id`, e sem
+        dizê-lo o professor lê uma lista com alunos que não são dele achando que
+        é a sala.
+      */}
+      {turma ? (
+        <p className="text-[13px] text-unooria-neutral-500">
+          Turma <strong className="text-unooria-neutral-800">{turma.nome}</strong> ·{" "}
+          {turma.serie} — {dados.alunos.length} aluno(s).
+        </p>
+      ) : (
+        <FeedbackAlert
+          type="info"
+          title="Esta atividade não tem turma"
+          description={`Ela vale para a escola inteira, e a lista abaixo tem ${dados.alunos.length} aluno(s) de todas as turmas. Atividades criadas a partir de agora podem escolher a turma.`}
+        />
+      )}
 
       {!dados.temAfinidade ? (
         <AlertBox
@@ -236,16 +269,53 @@ export function PainelPerfis({
       >
         <div className="flex flex-col gap-3">
           <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
-            O perfil de valores vem da <strong>Vila do Lume</strong>, a missão
-            transversal do Entre Redes. Traga os perfis de quem já jogou — quem
-            não tiver perfil entra no sorteio balanceado, e você pode completar à
-            mão. Reimportar não desfaz quem você já moveu de lado.
+            O perfil de valores vem da{" "}
+            <Link
+              href="/professor/entre-redes/vila-do-lume"
+              className="font-semibold text-unooria-navy-900 underline"
+            >
+              Vila do Lume
+            </Link>
+            , a missão transversal do Entre Redes. Traga os perfis de quem já
+            jogou — quem não tiver perfil entra no sorteio balanceado, e você
+            pode completar à mão. Reimportar não desfaz quem você já moveu de
+            lado.
           </p>
+
+          {/*
+            QUANTOS JÁ TÊM PERFIL, antes de clicar. A `/distribuicao` já traz
+            `origemDoPerfil` por aluno, então isto é agregação, não busca nova.
+            Antes o professor só descobria depois de importar — e se a turma
+            inteira estivesse sem partida, ele descobria com um "0 perfis
+            importados" que parece erro do sistema.
+          */}
+          <p className="text-[13px] text-unooria-neutral-700">
+            {comPerfil === 0
+              ? `Nenhum dos ${dados.alunos.length} alunos tem perfil ainda — hoje todos cairiam no sorteio.`
+              : `${comPerfil} de ${dados.alunos.length} já têm perfil.`}
+          </p>
+
+          {/*
+            O mapeamento da Vila é hipótese de design e MUDA. Quando ele muda, a
+            Vila recalcula os perfis dela — mas a cópia que decide o lado aqui é
+            de antes, e sem este aviso ela seguiria valendo em silêncio. Aviso,
+            nunca bloqueio: um perfil de versão anterior ainda é melhor que o
+            sorteio.
+          */}
+          {desatualizados > 0 ? (
+            <FeedbackAlert
+              type="warning"
+              title="O mapeamento da Vila mudou desde a importação"
+              description={`${desatualizados} perfil(is) foram medidos com uma versão anterior. Trazer os perfis de novo atualiza — e não desfaz quem você moveu de lado.`}
+            />
+          ) : null}
+
           <div>
             <Button
               variant="outline"
               size="sm"
               isLoading={importando}
+              isDisabled={somenteLeitura}
               onClick={() => void importarDaVila()}
             >
               Trazer perfis da Vila do Lume
@@ -305,7 +375,7 @@ export function PainelPerfis({
               size="sm"
               isLoading={redistribuindo}
               onClick={() => void redistribuir()}
-              isDisabled={!dados.temAfinidade}
+              isDisabled={!dados.temAfinidade || somenteLeitura}
             >
               Redistribuir a turma
             </Button>

@@ -557,7 +557,15 @@ export class VilaService {
     escolaId: string,
     turmaId?: string,
   ): Promise<{
-    prontos: Array<{ alunoId: string; escores: EscoresPorQuadrante; medidoEm: Date }>;
+    prontos: Array<{
+      alunoId: string;
+      escores: EscoresPorQuadrante;
+      medidoEm: Date;
+      /** A partida de onde a medida saiu, e sob que mapeamento — o que permite
+       *  ao painel dizer depois que a versão mudou desde a importação. */
+      sessaoId: string;
+      versaoMapeamento: number;
+    }>;
     descartados: Array<{ alunoId: string; nome: string; motivo: string }>;
     semPartida: number;
   }> {
@@ -580,7 +588,13 @@ export class VilaService {
       const ultimoDe = new Map<string, (typeof perfis)[number]>();
       for (const perfil of perfis) if (!ultimoDe.has(perfil.alunoId)) ultimoDe.set(perfil.alunoId, perfil);
 
-      const prontos: Array<{ alunoId: string; escores: EscoresPorQuadrante; medidoEm: Date }> = [];
+      const prontos: Array<{
+        alunoId: string;
+        escores: EscoresPorQuadrante;
+        medidoEm: Date;
+        sessaoId: string;
+        versaoMapeamento: number;
+      }> = [];
       const descartados: Array<{ alunoId: string; nome: string; motivo: string }> = [];
       let semPartida = 0;
 
@@ -599,7 +613,13 @@ export class VilaService {
           descartados.push({ alunoId: aluno.id, nome: aluno.displayName, motivo: colapso.detalhe });
           continue;
         }
-        prontos.push({ alunoId: aluno.id, escores: colapso.escores, medidoEm: perfil.createdAt });
+        prontos.push({
+          alunoId: aluno.id,
+          escores: colapso.escores,
+          medidoEm: perfil.createdAt,
+          sessaoId: perfil.sessaoId,
+          versaoMapeamento: perfil.versaoMapeamento,
+        });
       }
 
       return { prontos, descartados, semPartida };

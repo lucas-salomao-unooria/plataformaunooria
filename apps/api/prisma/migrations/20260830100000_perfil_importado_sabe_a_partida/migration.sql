@@ -1,0 +1,32 @@
+-- O perfil importado da Vila não sabia de que PARTIDA veio, nem sob que versão
+-- do mapeamento tinha sido medido.
+--
+-- `vila_sessoes` não tem prazo de retenção por uma razão declarada em
+-- `20260826170000_vila_sem_prazo`: o bruto é a única fonte para RECALCULAR o
+-- perfil quando `VERSAO_MAPEAMENTO` subir, e o mapeamento é hipótese de design
+-- que vai mudar. Só que a cópia que alimenta o Instanooria
+-- (`exp_01_exp_70_perfis_importados`) não carregava a versão. Ao subir a
+-- constante, os `exp_70_perfis` seriam recalculados e as cópias ficariam na
+-- versão anterior — sem nada, em lugar nenhum, dizendo isso. É a armadilha do
+-- `expires_at`: o registro fica, a regra sai, e quem lê acredita.
+--
+-- SEM FOREIGN KEY para `vila_sessoes`, e é deliberado. Zerar a turma na Vila
+-- (`/professor/entre-redes/vila-do-lume/resultados`) apaga sessões e bolhas; com
+-- FK, isso apagaria em cascata — ou travaria — o perfil que está decidindo o
+-- lado do feed de uma aula em andamento. Hoje zerar a Vila NÃO toca
+-- `perfis_importados`, de propósito, e a coluna não pode mudar isso: ela é
+-- RASTRO da medida, não vínculo de integridade. Sessão apagada vira um id que
+-- não resolve, que é exatamente a verdade do que aconteceu.
+--
+-- Anuláveis e sem backfill: `NULL` quer dizer "não veio da Vila desta
+-- instalação" — perfil preenchido à mão pelo professor (`origem = 'professor'`),
+-- ou vindo da rota de compatibilidade `POST /perfis/importar`, que é integração
+-- externa. Inventar uma versão para as linhas antigas afirmaria uma medida que
+-- ninguém fez.
+--
+-- Nenhum valor novo de `origem`: `perfis_importados_origem_check` e
+-- `runs_perfil_origem_check` congelam o vocabulário, e `vila_sessao_id IS NULL`
+-- já responde a pergunta sem mexer em duas CHECKs e no contrato Zod.
+ALTER TABLE "exp_01_exp_70_perfis_importados"
+  ADD COLUMN "vila_sessao_id" UUID,
+  ADD COLUMN "versao_mapeamento" SMALLINT;

@@ -39,6 +39,7 @@ import { encerrarRun } from "../dossie/computar";
 import { arteFallback } from "../geracao/arte-fallback";
 import { equilibrioLados } from "../geracao/validacao";
 import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
+import { professorDoToken, professorLeciona } from "../comum/turmas-do-professor";
 import { normalizarEstado } from "../motor/estado";
 import { PrismaService } from "../prisma/prisma.service";
 import { excluirAtividade, limparDadosDosAlunos } from "./manutencao";
@@ -135,14 +136,22 @@ export class AtividadesController {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!atividade) naoEncontrado();
-      const [runs, posts] = await Promise.all([
+      const [runs, posts, turma] = await Promise.all([
         tx.run.count({ where: { activityId: id } }),
         tx.post.count({ where: { activityId: id, aprovado: true } }),
+        /* Resolvida aqui para a tela poder NOMEAR a sala. Sem o nome, o painel
+           diria "a turma" sobre uma lista que o professor não tem como conferir. */
+        atividade.turmaId
+          ? tx.turma.findFirst({
+              where: { id: atividade.turmaId, escolaId: req.auth.escolaId },
+              select: { id: true, nome: true, serie: true },
+            })
+          : Promise.resolve(null),
       ]);
       // `_count` espelha o select prisma da página origem (o porte dos painéis
       // consome exatamente esse shape); os agregados nomeados ficam junto.
       return {
-        atividade: { ...atividade, _count: { runs }, alunos: runs, postsAprovados: posts },
+        atividade: { ...atividade, turma, _count: { runs }, alunos: runs, postsAprovados: posts },
       };
     });
   }
@@ -170,10 +179,29 @@ export class AtividadesController {
     const dados = parsed.data;
 
     return this.prisma.comTenancy(async (tx) => {
+      /**
+       * A turma é conferida contra a MATRÍCULA do professor, não contra a
+       * escola do token: "mesma escola" é a regra de tenancy, não a de quem dá
+       * aula ali (`comum/turmas-do-professor.ts`). Sem isso, o professor do 8A
+       * abriria uma atividade sobre o 8B e o painel dela mostraria os alunos de
+       * uma sala que não é dele.
+       */
+      if (dados.turmaId) {
+        const turma = await tx.turma.findFirst({
+          where: { id: dados.turmaId, escolaId: req.auth.escolaId },
+          select: { id: true },
+        });
+        if (!turma) throw new BadRequestException({ mensagem: "Turma não encontrada nesta escola." });
+        if (!(await professorLeciona(tx, req.auth.escolaId, dados.turmaId, professorDoToken(req.auth)))) {
+          throw new BadRequestException({ mensagem: "Você não tem matrícula de professor nessa turma." });
+        }
+      }
+
       const atividade = await tx.activity.create({
         data: {
           escolaId: req.auth.escolaId,
           professorId: req.auth.usuarioId,
+          turmaId: dados.turmaId ?? null,
           titulo: dados.titulo,
           disciplina: dados.disciplina,
           recorte: dados.recorte,

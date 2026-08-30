@@ -32,6 +32,12 @@ export const CriarSchema = z.object({
     })
     .default({ ativo: true, modo: "ambos", proporcao: 0.4 }),
   estiloVisual: z.enum(ESTILOS_VISUAIS),
+  /** A turma desta atividade. Opcional porque o campo nasceu depois das
+   *  atividades que já existiam: sem ela a atividade vale para a escola
+   *  inteira, que era o comportamento único até
+   *  `20260830090000_atividade_por_turma`. Com ela, o painel de perfis, a
+   *  importação da Vila e a entrada do aluno falam todos da MESMA sala. */
+  turmaId: z.string().uuid().optional(),
 });
 
 export const EtapaSchema = z.object({ etapa: z.enum(ETAPAS_DA_TURMA) });
@@ -89,6 +95,14 @@ export const DetalheDaAtividadeSchema = z.object({
       engineConfig: z.unknown(),
       status: z.string(),
       createdAt: z.string().datetime(),
+      /** `null` = atividade anterior a `20260830090000_atividade_por_turma`:
+       *  ela segue valendo para a escola inteira. */
+      turmaId: Uuid.nullable(),
+      /** A turma resolvida, para a tela poder DIZER de que sala ela fala.
+       *  `null` acompanha `turmaId`. */
+      turma: z
+        .object({ id: Uuid, nome: z.string(), serie: z.string() })
+        .nullable(),
       _count: z.object({ runs: z.number().int().nonnegative() }),
       alunos: z.number().int().nonnegative(),
       postsAprovados: z.number().int().nonnegative(),
