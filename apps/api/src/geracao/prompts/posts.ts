@@ -88,7 +88,7 @@ function blocoDoLado(entrada: EntradaLote): string {
   if (spec.lado === 'neutro') {
     /**
      * Neutro DENTRO do tema (doc 05 §1): fala do assunto **sem defender lado**.
-     * É a terceira opção que o aluno tem no feed, e o material que permite ao
+     * É a terceira opção que o estudante tem no feed, e o material que permite ao
      * dossiê dizer "existiam N posts que só davam fato".
      */
     if (spec.categoria === 'tema') {

@@ -208,9 +208,9 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
       daLinha.push({ linha, campo: "turno", mensagem: `turno não reconhecido: "${turnoBruto}"` });
     }
 
-    if (papel === "aluno") {
-      if (!turma) daLinha.push({ linha, campo: "turma", mensagem: "turma: obrigatória para aluno" });
-      if (!serie) daLinha.push({ linha, campo: "serie", mensagem: "serie: obrigatória para aluno" });
+    if (papel === "estudante") {
+      if (!turma) daLinha.push({ linha, campo: "turma", mensagem: "turma: obrigatória para estudante" });
+      if (!serie) daLinha.push({ linha, campo: "serie", mensagem: "serie: obrigatória para estudante" });
     }
 
     const senha = campo("senha");

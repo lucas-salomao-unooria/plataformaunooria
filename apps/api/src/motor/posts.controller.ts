@@ -8,12 +8,12 @@ import { ComentariosDoPostSchema } from "../geracao/contrato-de-rotas";
 
 /**
  * GET /posts/:id/comentarios — comentários completos do sheet. Lazy: só o que
- * o card precisa quando o aluno abre. Nada de lado/intensidade na resposta.
+ * o card precisa quando o estudante abre. Nada de lado/intensidade na resposta.
  *
- * Devolve os comentários do post **mais os que o próprio aluno escreveu**
+ * Devolve os comentários do post **mais os que o próprio estudante escreveu**
  * nesta sessão (sem isso, reabrir o sheet apagava da tela o que ele acabou de
  * comentar). Os comentários da sessão são os DELE, nunca de outro: a consulta
- * filtra pela run do aluno. Professor e admin leem só os do post.
+ * filtra pela run do estudante. Professor e admin leem só os do post.
  */
 @Controller("posts")
 @UseGuards(OidcGuard)
@@ -24,10 +24,10 @@ export class PostsController {
   @Contrato({
     resumo: "Os comentários de um post do feed.",
     descricao:
-      "Na ordem de uma CONVERSA: o comentário do aluno no topo (como o Instagram faz com o seu), as reações da IA logo depois, e os do roteiro por último.",
+      "Na ordem de uma CONVERSA: o comentário do estudante no topo (como o Instagram faz com o seu), as reações da IA logo depois, e os do roteiro por último.",
     params: z.object({ id: z.string().uuid() }),
     resposta: ComentariosDoPostSchema,
-    notas: ["`doAluno` distingue o que a criança escreveu do que veio do roteiro — só o aluno da própria run vê os dele."],
+    notas: ["`doEstudante` distingue o que a criança escreveu do que veio do roteiro — só o estudante da própria run vê os dele."],
   })
   async comentarios(@Param("id") id: string, @Req() req: { auth: AuthClaims }) {
     if (!ehUuid(id)) naoEncontrado();
@@ -47,9 +47,9 @@ export class PostsController {
       if (!post) naoEncontrado();
 
       const daSessao =
-        perfil === "aluno"
+        perfil === "estudante" || (perfil as string) === "aluno"
           ? await tx.comentarioDaSessao.findMany({
-              where: { postId: id, run: { alunoId: usuarioId } },
+              where: { postId: id, run: { estudanteId: usuarioId } },
               orderBy: { createdAt: "asc" },
               select: { id: true, texto: true, handle: true, deIa: true },
             })
@@ -62,7 +62,7 @@ export class PostsController {
           ? await tx.user.findUnique({ where: { id: usuarioId }, select: { username: true } })
           : null;
 
-      /** O comentário do aluno entra no TOPO, como o Instagram faz com o seu;
+      /** O comentário do estudante entra no TOPO, como o Instagram faz com o seu;
        *  as reações vêm logo depois — é a ordem de uma conversa. */
       const comments = [
         ...meus.map((c) => ({
@@ -71,7 +71,7 @@ export class PostsController {
           texto: c.texto,
           likesCount: 0,
           timestampLabel: "agora",
-          doAluno: true,
+          doEstudante: true,
         })),
         ...reacoes.map((r) => ({
           id: r.id,
@@ -79,9 +79,9 @@ export class PostsController {
           texto: r.texto,
           likesCount: 0,
           timestampLabel: "agora",
-          doAluno: false,
+          doEstudante: false,
         })),
-        ...post.comments.map((c) => ({ ...c, doAluno: false })),
+        ...post.comments.map((c) => ({ ...c, doEstudante: false })),
       ];
 
       return { comments, total: comments.length };

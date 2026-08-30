@@ -8,7 +8,7 @@ import { metricasDaAtividade, type MetricasDaRun } from './metricas';
  * Agregados de uma turma — o nível PEDAGÓGICO (doc 11 §4).
  *
  * A peça central é a tabela `conclusão × lado semeado`. Se o lado em que o feed
- * nasceu prevê a conclusão que o aluno escreveu, o resultado experimental da
+ * nasceu prevê a conclusão que o estudante escreveu, o resultado experimental da
  * turma está nessa grade — e é ela que o professor projeta no momento-espelho
  * (doc 09). Tudo o mais nesta tela existe para explicar essa grade.
  */
@@ -57,6 +57,7 @@ export interface AnaliseDaTurma {
     porComponente: { chave: string; rotulo: string; media: number }[];
   };
 
+  estudantes?: MetricasDaRun[];
   alunos: MetricasDaRun[];
 }
 
@@ -192,6 +193,7 @@ export async function analiseDaTurma(
           ) ?? 0,
       })),
     },
+    estudantes: alunos,
     alunos,
   };
 }
@@ -212,7 +214,7 @@ export function turmaEmCsv(analise: AnaliseDaTurma): string {
     lado === 'A' ? analise.atividade.ladoALabel : lado === 'B' ? analise.atividade.ladoBLabel : 'nenhum lado';
 
   const colunas = [
-    'aluno',
+    'estudante',
     'usuario',
     'fase',
     'perfil_do_jogo',
@@ -253,14 +255,14 @@ export function turmaEmCsv(analise: AnaliseDaTurma): string {
     'publicou',
   ];
 
-  const linhas = analise.alunos.map((aluno) => {
+  const linhas = (analise.estudantes ?? analise.alunos).map((aluno) => {
     const outro = aluno.bolha.ladoInicial === 'A' ? 'B' : 'A';
     const ponto = (chave: string) =>
       num(aluno.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0);
 
     return [
-      texto(aluno.aluno.displayName),
-      aluno.aluno.username,
+      texto(aluno.estudante?.displayName ?? aluno.aluno.displayName),
+      aluno.estudante?.username ?? aluno.aluno.username,
       aluno.fase,
       aluno.perfilJogo?.dominante ?? 'ausente',
       aluno.perfilJogo?.origem ?? 'ausente',

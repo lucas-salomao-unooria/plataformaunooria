@@ -75,7 +75,7 @@ export class AnaliseDaTurmaController {
   @Contrato({
     resumo: "A análise pedagógica da turma — identificada.",
     descricao:
-      "É a turma DELE, e o professor precisa saber com quem falar. Só o professor DONO da atividade lê.\n\nA peça central é `conclusaoPorLadoSemeado`: se o lado em que o feed nasceu prevê a conclusão que o aluno escreveu, o resultado experimental da turma está nessa grade — e é ela que o professor projeta no momento-espelho. Tudo o mais na tela existe para explicar essa grade.",
+      "É a turma DELE, e o professor precisa saber com quem falar. Só o professor DONO da atividade lê.\n\nA peça central é `conclusaoPorLadoSemeado`: se o lado em que o feed nasceu prevê a conclusão que o estudante escreveu, o resultado experimental da turma está nessa grade — e é ela que o professor projeta no momento-espelho. Tudo o mais na tela existe para explicar essa grade.",
     params: z.object({ id: z.string().uuid() }),
     resposta: AnaliseDaTurmaSchema,
     notas: [
@@ -149,14 +149,14 @@ export class AnaliseDeProdutoController {
    * GET /analise/resumo — uma linha por atividade, para o time da Unooria
    * (doc 11 §5.1 e §5.3).
    *
-   * Guarda de papel própria: `admin-contrato` não é professor nem aluno, e as
+   * Guarda de papel própria: `admin-contrato` não é professor nem estudante, e as
    * guardas existentes recusariam os dois. O professor NÃO alcança esta rota.
    */
   @Get("resumo")
   @Contrato({
     resumo: "Uma linha por atividade — o nível de produto.",
     descricao:
-      "Guarda de papel própria: `admin-contrato` não é professor nem aluno, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**",
+      "Guarda de papel própria: `admin-contrato` não é professor nem estudante, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**",
     query: EscolaQuery,
     resposta: ResumoDeProdutoSchema,
   })
@@ -177,7 +177,7 @@ export class AnaliseDeProdutoController {
   @Contrato({
     resumo: "O detalhe de uma atividade, com a eficácia da escrita por perfil.",
     descricao:
-      "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre alunos daquele perfil, menos o dwell dos MESMOS posts entre alunos de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do aluno) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.",
+      "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre estudantes daquele perfil, menos o dwell dos MESMOS posts entre estudantes de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do estudante) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.",
     params: z.object({ id: z.string().uuid() }),
     query: EscolaQuery,
     resposta: AnaliseDeProdutoSchema,
@@ -262,41 +262,41 @@ export class AnaliseDeProdutoController {
 
         const linhas: string[] = [];
         for (const atividade of atividades) {
-          for (const aluno of await metricasDaAtividade(tx, atividade.id)) {
-            const outro = aluno.bolha.ladoInicial === "A" ? "B" : "A";
+          for (const estudante of await metricasDaAtividade(tx, atividade.id)) {
+            const outro = estudante.bolha.ladoInicial === "A" ? "B" : "A";
             const ponto = (chave: string) =>
-              num(aluno.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0);
+              num(estudante.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0);
 
             linhas.push(
               [
                 txt(atividade.titulo),
                 atividade.status,
-                aluno.aluno.username,
-                aluno.fase,
-                aluno.perfilJogo?.dominante ?? "ausente",
-                aluno.bolha.ladoInicial,
-                aluno.bolha.ladoOrigem,
-                aluno.ladoDominante,
-                aluno.bolha.inverteu ? "sim" : "nao",
-                aluno.bolha.blocoDaInversao ?? "",
-                aluno.conclusao?.inclinacao ?? "nao concluiu",
-                aluno.postsConsumidos,
-                aluno.tempo.feedMs,
-                aluno.tempo.ativoMs,
-                aluno.tempo.porLadoMs[aluno.bolha.ladoInicial],
-                aluno.tempo.porLadoMs[outro],
-                aluno.investigacao.usosDaBusca,
-                aluno.investigacao.consideracaoDoOposto,
-                num(aluno.imersao.total),
+                estudante.estudante.username,
+                estudante.fase,
+                estudante.perfilJogo?.dominante ?? "ausente",
+                estudante.bolha.ladoInicial,
+                estudante.bolha.ladoOrigem,
+                estudante.ladoDominante,
+                estudante.bolha.inverteu ? "sim" : "nao",
+                estudante.bolha.blocoDaInversao ?? "",
+                estudante.conclusao?.inclinacao ?? "nao concluiu",
+                estudante.postsConsumidos,
+                estudante.tempo.feedMs,
+                estudante.tempo.ativoMs,
+                estudante.tempo.porLadoMs[estudante.bolha.ladoInicial],
+                estudante.tempo.porLadoMs[outro],
+                estudante.investigacao.usosDaBusca,
+                estudante.investigacao.consideracaoDoOposto,
+                num(estudante.imersao.total),
                 ponto("continuidade"),
                 ponto("atencao"),
                 ponto("gestos"),
                 ponto("voluntariedade"),
                 ponto("exploracao"),
-                num(aluno.ritmo.postsPorMinuto),
-                num(aluno.ritmo.variacaoDoRitmo),
-                aluno.perfilObservado.dominante ?? "nenhum",
-                aluno.perfilObservado.veredito,
+                num(estudante.ritmo.postsPorMinuto),
+                num(estudante.ritmo.variacaoDoRitmo),
+                estudante.perfilObservado.dominante ?? "nenhum",
+                estudante.perfilObservado.veredito,
               ].join(sep),
             );
           }
@@ -321,7 +321,7 @@ export class AnaliseDeProdutoController {
               select: {
                 id: true,
                 ladoInicial: true,
-                aluno: { select: { username: true } },
+                estudante: { select: { username: true } },
                 activity: { select: { titulo: true } },
               },
             },
@@ -356,7 +356,7 @@ export class AnaliseDeProdutoController {
           .map((evento) =>
             [
               txt(evento.run.activity.titulo),
-              evento.run.aluno.username,
+              evento.run.estudante.username,
               evento.run.id,
               evento.run.ladoInicial,
               evento.tipo,

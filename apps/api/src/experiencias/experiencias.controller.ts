@@ -11,7 +11,7 @@ import { CatalogoSchema, UmaExperienciaSchema, UpsertSchema } from "./contrato-d
  * LIDO: o CI faz upsert aqui ao publicar um bundle em
  * `gs://{contrato}-exp/{expId}/{versao}/`, e o hub monta a URL do iframe com
  * `versaoAtiva`. Rollback = PUT trocando a versão. Catálogo do contrato:
- * tabela global, sem RLS (não é dado de aluno).
+ * tabela global, sem RLS (não é dado de estudante).
  */
 
 
@@ -27,7 +27,7 @@ export class ExperienciasController {
   @Contrato({
     resumo: "O catálogo de experiências do contrato.",
     descricao:
-      "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de aluno. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.",
+      "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de estudante. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.",
     resposta: CatalogoSchema,
     notas: [
       "`series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (exp-70).",
@@ -62,7 +62,7 @@ export class ExperienciasController {
     corpo: UpsertSchema,
     resposta: UmaExperienciaSchema,
     notas: [
-      "`permissoes` é POR EXPERIÊNCIA: prender o ponteiro do aluno é capacidade de quem declarou, nunca default do frame.",
+      "`permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.",
       "`viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
     ],
   })

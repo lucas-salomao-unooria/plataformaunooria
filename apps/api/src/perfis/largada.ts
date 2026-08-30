@@ -16,7 +16,7 @@ export interface Largada {
 }
 
 /**
- * Resolve em que lado o feed de um aluno nasce (doc 04 §3.1, doc 10 §5.2).
+ * Resolve em que lado o feed de um estudante nasce (doc 04 §3.1, doc 10 §5.2).
  *
  * Precedência, e cada nível existe por um motivo:
  *
@@ -34,12 +34,12 @@ export interface Largada {
 export async function resolverLargada(
   prisma: Prisma.TransactionClient | PrismaService,
   activityId: string,
-  alunoId: string,
+  estudanteId: string,
   antagonismo: unknown,
   opcoes: { ignorarRunAtual?: string } = {},
 ): Promise<Largada> {
   const perfil = await prisma.perfilImportado.findUnique({
-    where: { activityId_alunoId: { activityId, alunoId } },
+    where: { activityId_estudanteId: { activityId, estudanteId } },
   });
 
   const afinidade = afinidadeDaAtividade(antagonismo);

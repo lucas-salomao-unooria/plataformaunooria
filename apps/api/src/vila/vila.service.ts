@@ -66,6 +66,7 @@ export interface TurmaResumida {
   id: string;
   nome: string;
   serie: string;
+  estudantes?: number;
   alunos: number;
 }
 
@@ -79,6 +80,7 @@ export interface TurmaResumida {
  * momento em que a turma descobre que recebeu mensagens diferentes não acontece.
  */
 export interface ResumoDaTurma {
+  estudantes?: number;
   alunos: number;
   jogaram: number;
   concluiram: number;
@@ -97,7 +99,9 @@ export interface ResumoDaTurma {
 }
 
 export interface LinhaDaTurma {
+  estudanteId?: string;
   alunoId: string;
+  id?: string;
   nome: string;
   partidas: number;
   ultimaEm: string | null;
@@ -131,26 +135,26 @@ export class VilaService {
   async abrir(escolaId: string, alunoId: string, expVersion: string): Promise<SessaoAberta> {
     return this.prisma.comTenancy(async (tx) => {
       const aluno = await tx.user.findFirst({
-        where: { id: alunoId, escolaId, role: "aluno" },
+        where: { id: alunoId, escolaId, role: { in: ["estudante", "aluno"] } },
         select: { turmaId: true, turma: { select: { serie: true } } },
       });
-      if (!aluno) throw new HttpException({ mensagem: "Aluno não encontrado nesta escola." }, 404);
+      if (!aluno) throw new HttpException({ mensagem: "Estudante não encontrado nesta escola." }, 404);
 
       const bolha = await this.resolverBolha(tx, escolaId, alunoId, aluno.turmaId, aluno.turma?.serie ?? null);
       const cartoes = cartoesDaBolha(bolha);
 
       /* Fecha o que ficou aberto ANTES de criar a nova, para nunca haver duas
-         abertas do mesmo aluno — o `concluir` procura por id, mas o painel conta
+         abertas do mesmo estudante — o `concluir` procura por id, mas o painel conta
          partidas e duas abertas seriam duas partidas que ninguém jogou. */
       await tx.vilaSessao.updateMany({
-        where: { escolaId, alunoId, status: "aberta" },
+        where: { escolaId, estudanteId: alunoId, status: "aberta" },
         data: { status: "abandonada", concluidaEm: new Date() },
       });
 
       const sessao = await tx.vilaSessao.create({
         data: {
           escolaId,
-          alunoId,
+          estudanteId: alunoId,
           turmaId: aluno.turmaId,
           expVersion,
           schemaVersion: 1,
@@ -173,7 +177,7 @@ export class VilaService {
   }
 
   /**
-   * A bolha do aluno: reusa a que ele já tem, ou atribui a menos usada na turma.
+   * A bolha do estudante: reusa a que ele já tem, ou atribui a menos usada na turma.
    *
    * O LOCK CONSULTIVO não é zelo: a sala inteira clica "jogar" no mesmo minuto,
    * e sem ele os 25 leriam a mesma contagem vazia e todos cairiam na bolha A —
@@ -188,7 +192,7 @@ export class VilaService {
     serie: string | null,
   ): Promise<Bolha> {
     const existente = await tx.vilaBolha.findUnique({
-      where: { escolaId_alunoId: { escolaId, alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       select: { bolha: true },
     });
     if (existente) return existente.bolha as Bolha;
@@ -197,23 +201,23 @@ export class VilaService {
 
     /* Relê depois do lock: quem esperou pode ter sido atendido enquanto esperava. */
     const depoisDoLock = await tx.vilaBolha.findUnique({
-      where: { escolaId_alunoId: { escolaId, alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       select: { bolha: true },
     });
     if (depoisDoLock) return depoisDoLock.bolha as Bolha;
 
     /* Contagem DENTRO DA TURMA: é a sala que precisa ter as três bolhas.
-       Aluno sem turma conta contra os outros sem turma — não contra a rede. */
+       Estudante sem turma conta contra os outros sem turma — não contra a rede. */
     const naTurma = await tx.vilaBolha.groupBy({
       by: ["bolha"],
-      where: { escolaId, aluno: { turmaId } },
+      where: { escolaId, estudante: { turmaId } },
       _count: { bolha: true },
     });
     const contagem: Partial<Record<Bolha, number>> = {};
     for (const linha of naTurma) contagem[linha.bolha as Bolha] = linha._count.bolha;
 
     const bolha = escolherBolha(contagem, serie);
-    await tx.vilaBolha.create({ data: { escolaId, alunoId, bolha } });
+    await tx.vilaBolha.create({ data: { escolaId, estudanteId: alunoId, bolha } });
     return bolha;
   }
 
@@ -246,7 +250,7 @@ export class VilaService {
 
     return this.prisma.comTenancy(async (tx) => {
       const sessao = await tx.vilaSessao.findFirst({
-        where: { id: sessaoId, escolaId, alunoId },
+        where: { id: sessaoId, escolaId, estudanteId: alunoId },
         select: { id: true, bolha: true, status: true },
       });
       if (!sessao) naoEncontrado();
@@ -314,7 +318,7 @@ export class VilaService {
           data: {
             escolaId,
             sessaoId,
-            alunoId,
+            estudanteId: alunoId,
             versaoMapeamento: VERSAO_MAPEAMENTO,
             valores: { v: 1, ...perfil.valores } as unknown as Prisma.InputJsonObject,
             graus: { v: 1, ...perfil.graus } as unknown as Prisma.InputJsonObject,
@@ -342,17 +346,23 @@ export class VilaService {
     return this.prisma.comTenancy(async (tx) => {
       const turmas = await tx.turma.findMany({
         where: ondeAsTurmasSaoVisiveis(escolaId, professorId),
-        select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
+        select: { id: true, nome: true, serie: true, _count: { select: { estudantes: true } } },
         orderBy: [{ serie: "asc" }, { nome: "asc" }],
       });
-      return turmas.map((t) => ({ id: t.id, nome: t.nome, serie: t.serie, alunos: t._count.alunos }));
+      return turmas.map((t) => ({
+        id: t.id,
+        nome: t.nome,
+        serie: t.serie,
+        estudantes: t._count.estudantes,
+        alunos: t._count.estudantes,
+      }));
     }, escolaId);
   }
 
   /**
    * Agregado da turma. É o que o GESTOR pode ver — nenhuma linha de criança.
    *
-   * Conta a ÚLTIMA partida concluída de cada aluno, não todas: quem jogou três
+   * Conta a ÚLTIMA partida concluída de cada estudante, não todas: quem jogou três
    * vezes contaria três golpes recusados e enviesaria a distribuição da sala.
    */
   async resumoDaTurma(
@@ -367,11 +377,12 @@ export class VilaService {
       if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return null;
 
       const alunos = await tx.user.findMany({
-        where: { escolaId, turmaId, role: "aluno" },
+        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true },
       });
       const ids = alunos.map((a) => a.id);
       const vazio: ResumoDaTurma = {
+        estudantes: alunos.length,
         alunos: alunos.length,
         jogaram: 0,
         concluiram: 0,
@@ -384,13 +395,13 @@ export class VilaService {
 
       const [sessoes, bolhas, perfis] = await Promise.all([
         tx.vilaSessao.findMany({
-          where: { escolaId, alunoId: { in: ids }, status: { not: "aberta" } },
-          select: { id: true, alunoId: true, status: true, leituraMensagens: true, abertaEm: true },
+          where: { escolaId, estudanteId: { in: ids }, status: { not: "aberta" } },
+          select: { id: true, estudanteId: true, status: true, leituraMensagens: true, abertaEm: true },
           orderBy: { abertaEm: "desc" },
         }),
-        tx.vilaBolha.findMany({ where: { escolaId, alunoId: { in: ids } }, select: { bolha: true } }),
+        tx.vilaBolha.findMany({ where: { escolaId, estudanteId: { in: ids } }, select: { bolha: true } }),
         tx.vilaPerfil.findMany({
-          where: { escolaId, alunoId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
+          where: { escolaId, estudanteId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
           select: { sessaoId: true, amostraSuficiente: true },
         }),
       ]);
@@ -402,7 +413,7 @@ export class VilaService {
 
       const amostraDe = new Map(perfis.map((p) => [p.sessaoId, p.amostraSuficiente]));
       const ultimaDe = new Map<string, (typeof sessoes)[number]>();
-      for (const s of sessoes) if (!ultimaDe.has(s.alunoId)) ultimaDe.set(s.alunoId, s);
+      for (const s of sessoes) if (!ultimaDe.has(s.estudanteId)) ultimaDe.set(s.estudanteId, s);
 
       for (const s of ultimaDe.values()) {
         vazio.jogaram += 1;
@@ -431,7 +442,7 @@ export class VilaService {
     return this.prisma.comTenancy(async (tx) => {
       if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return [];
       const alunos = await tx.user.findMany({
-        where: { escolaId, turmaId, role: "aluno" },
+        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true, displayName: true },
         orderBy: { displayName: "asc" },
       });
@@ -440,36 +451,38 @@ export class VilaService {
       const ids = alunos.map((a) => a.id);
       const [sessoes, bolhas, perfis] = await Promise.all([
         tx.vilaSessao.findMany({
-          where: { escolaId, alunoId: { in: ids } },
-          select: { id: true, alunoId: true, abertaEm: true, status: true, fogueirasAcesas: true },
+          where: { escolaId, estudanteId: { in: ids } },
+          select: { id: true, estudanteId: true, abertaEm: true, status: true, fogueirasAcesas: true },
           orderBy: { abertaEm: "desc" },
         }),
-        tx.vilaBolha.findMany({ where: { escolaId, alunoId: { in: ids } }, select: { alunoId: true, bolha: true } }),
+        tx.vilaBolha.findMany({ where: { escolaId, estudanteId: { in: ids } }, select: { estudanteId: true, bolha: true } }),
         tx.vilaPerfil.findMany({
-          where: { escolaId, alunoId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
-          select: { alunoId: true, sessaoId: true, amostraSuficiente: true, createdAt: true },
+          where: { escolaId, estudanteId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
+          select: { estudanteId: true, sessaoId: true, amostraSuficiente: true, createdAt: true },
           orderBy: { createdAt: "desc" },
         }),
       ]);
 
-      const bolhaDe = new Map(bolhas.map((b) => [b.alunoId, b.bolha as Bolha]));
+      const bolhaDe = new Map(bolhas.map((b) => [b.estudanteId, b.bolha as Bolha]));
       /* Só partidas CONCLUÍDAS contam como "última": uma aberta agora mesmo não
          tem números, e mostrá-la faria a linha do aluno piscar zeros no meio da
          aula. */
       const ultimaDe = new Map<string, (typeof sessoes)[number]>();
       const totalDe = new Map<string, number>();
       for (const s of sessoes) {
-        totalDe.set(s.alunoId, (totalDe.get(s.alunoId) ?? 0) + 1);
-        if (s.status !== "aberta" && !ultimaDe.has(s.alunoId)) ultimaDe.set(s.alunoId, s);
+        totalDe.set(s.estudanteId, (totalDe.get(s.estudanteId) ?? 0) + 1);
+        if (s.status !== "aberta" && !ultimaDe.has(s.estudanteId)) ultimaDe.set(s.estudanteId, s);
       }
       const perfilDe = new Map<string, (typeof perfis)[number]>();
-      for (const perfil of perfis) if (!perfilDe.has(perfil.alunoId)) perfilDe.set(perfil.alunoId, perfil);
+      for (const perfil of perfis) if (!perfilDe.has(perfil.estudanteId)) perfilDe.set(perfil.estudanteId, perfil);
 
       return alunos.map((a) => {
         const ultima = ultimaDe.get(a.id);
         const perfil = perfilDe.get(a.id);
         return {
+          estudanteId: a.id,
           alunoId: a.id,
+          id: a.id,
           nome: a.displayName,
           partidas: totalDe.get(a.id) ?? 0,
           ultimaEm: ultima ? ultima.abertaEm.toISOString() : null,
@@ -521,7 +534,7 @@ export class VilaService {
       if (!turma) return null;
 
       const alunos = await tx.user.findMany({
-        where: { escolaId, turmaId, role: "aluno" },
+        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true },
       });
       const ids = alunos.map((a) => a.id);
@@ -531,9 +544,9 @@ export class VilaService {
          ON DELETE CASCADE, então apagar a sessão levaria o perfil junto — mas
          contar depois de o cascade rodar daria zero, e o professor precisa ver
          quantos perfis sumiram. */
-      const perfis = await tx.vilaPerfil.deleteMany({ where: { escolaId, alunoId: { in: ids } } });
-      const partidas = await tx.vilaSessao.deleteMany({ where: { escolaId, alunoId: { in: ids } } });
-      const bolhas = await tx.vilaBolha.deleteMany({ where: { escolaId, alunoId: { in: ids } } });
+      const perfis = await tx.vilaPerfil.deleteMany({ where: { escolaId, estudanteId: { in: ids } } });
+      const partidas = await tx.vilaSessao.deleteMany({ where: { escolaId, estudanteId: { in: ids } } });
+      const bolhas = await tx.vilaBolha.deleteMany({ where: { escolaId, estudanteId: { in: ids } } });
 
       return { partidas: partidas.count, perfis: perfis.count, bolhas: bolhas.count };
     }, escolaId);
@@ -558,6 +571,8 @@ export class VilaService {
     turmaId?: string,
   ): Promise<{
     prontos: Array<{
+      id: string;
+      estudanteId: string;
       alunoId: string;
       escores: EscoresPorQuadrante;
       medidoEm: Date;
@@ -566,19 +581,19 @@ export class VilaService {
       sessaoId: string;
       versaoMapeamento: number;
     }>;
-    descartados: Array<{ alunoId: string; nome: string; motivo: string }>;
+    descartados: Array<{ id: string; estudanteId: string; alunoId: string; nome: string; motivo: string }>;
     semPartida: number;
   }> {
     return this.prisma.comTenancy(async (tx) => {
       const alunos = await tx.user.findMany({
-        where: { escolaId, role: "aluno", ...(turmaId ? { turmaId } : {}) },
+        where: { escolaId, role: { in: ["estudante", "aluno"] }, ...(turmaId ? { turmaId } : {}) },
         select: { id: true, displayName: true },
       });
       if (alunos.length === 0) return { prontos: [], descartados: [], semPartida: 0 };
 
       const ids = alunos.map((a) => a.id);
       const perfis = await tx.vilaPerfil.findMany({
-        where: { escolaId, alunoId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
+        where: { escolaId, estudanteId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
         orderBy: { createdAt: "desc" },
       });
 
@@ -586,16 +601,18 @@ export class VilaService {
          que vale é o último — não a média, que misturaria partidas de dias
          diferentes num número que não descreve nenhuma delas. */
       const ultimoDe = new Map<string, (typeof perfis)[number]>();
-      for (const perfil of perfis) if (!ultimoDe.has(perfil.alunoId)) ultimoDe.set(perfil.alunoId, perfil);
+      for (const perfil of perfis) if (!ultimoDe.has(perfil.estudanteId)) ultimoDe.set(perfil.estudanteId, perfil);
 
       const prontos: Array<{
+        id: string;
+        estudanteId: string;
         alunoId: string;
         escores: EscoresPorQuadrante;
         medidoEm: Date;
         sessaoId: string;
         versaoMapeamento: number;
       }> = [];
-      const descartados: Array<{ alunoId: string; nome: string; motivo: string }> = [];
+      const descartados: Array<{ id: string; estudanteId: string; alunoId: string; nome: string; motivo: string }> = [];
       let semPartida = 0;
 
       for (const aluno of alunos) {
@@ -610,10 +627,12 @@ export class VilaService {
           perfil.amostraSuficiente,
         );
         if (!colapso.ok) {
-          descartados.push({ alunoId: aluno.id, nome: aluno.displayName, motivo: colapso.detalhe });
+          descartados.push({ id: aluno.id, estudanteId: aluno.id, alunoId: aluno.id, nome: aluno.displayName, motivo: colapso.detalhe });
           continue;
         }
         prontos.push({
+          id: aluno.id,
+          estudanteId: aluno.id,
           alunoId: aluno.id,
           escores: colapso.escores,
           medidoEm: perfil.createdAt,
@@ -627,17 +646,17 @@ export class VilaService {
   }
 
   /**
-   * O relatório da última partida concluída de um aluno.
+   * O relatório da última partida concluída de um estudante.
    *
    * As linhas do perfil saem daqui JÁ COM A DECISÃO de mostrar número tomada
    * (`leitura.ts`): a api não devolve número para valor não-`scored`, e o tipo
    * da linha não tem onde carregá-lo. O hub fica incapaz de imprimir "Poder 100"
    * a partir de um sinal só.
    */
-  async doAluno(escolaId: string, alunoId: string): Promise<RelatorioDaPartida | null> {
+  async doEstudante(escolaId: string, estudanteId: string): Promise<RelatorioDaPartida | null> {
     return this.prisma.comTenancy(async (tx) => {
       const sessao = await tx.vilaSessao.findFirst({
-        where: { escolaId, alunoId, status: { not: "aberta" } },
+        where: { escolaId, estudanteId, status: { not: "aberta" } },
         orderBy: { abertaEm: "desc" },
       });
       if (!sessao) return null;
@@ -684,6 +703,10 @@ export class VilaService {
         mensagens: leituraGravada(sessao.leituraMensagens),
       };
     }, escolaId);
+  }
+
+  async doAluno(escolaId: string, alunoId: string): Promise<RelatorioDaPartida | null> {
+    return this.doEstudante(escolaId, alunoId);
   }
 }
 

@@ -183,7 +183,7 @@ export class TurmasController {
   @Contrato({
     resumo: "Matricula uma pessoa na turma.",
     descricao:
-      "`papel` só admite `aluno` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.",
+      "`papel` só admite `estudante` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.",
     params: z.object({ id: z.string().uuid() }),
     query: EscolaAlvoQuery,
     corpo: MatricularSchema,
@@ -227,7 +227,7 @@ export class MatriculasController {
   @Contrato({
     resumo: "Move de turma, ou torna esta a turma de referência.",
     descricao:
-      "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o aluno fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.",
+      "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o estudante fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.",
     params: z.object({ id: z.string().uuid() }),
     query: EscolaAlvoQuery,
     corpo: AjustarMatriculaSchema,

@@ -56,7 +56,7 @@ beforeAll(async () => {
   const criar = (username: string, displayName: string, comTurma: boolean) =>
     prisma.user.create({
       data: {
-        role: "aluno",
+        role: "estudante",
         escolaId: ESCOLA,
         turmaId: comTurma ? turmaId : null,
         username,
@@ -155,7 +155,7 @@ describe("corrida", () => {
     expect(ok).toHaveLength(2);
     expect(falhas).toHaveLength(1);
     const linha = await prisma.unootubeSessao.findUniqueOrThrow({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: alunoB } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: alunoB } },
     });
     expect(linha.salvos).toHaveLength(3);
     expect(linha.rankingDesbloqueado).toBe(true);
@@ -169,7 +169,7 @@ describe("corrida", () => {
       service.salvar(ESCOLA, alunoB, "v02"),
     ]);
     const linha = await prisma.unootubeSessao.findUniqueOrThrow({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: alunoB } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: alunoB } },
     });
     expect(linha.salvos).toEqual(["v02"]);
     expect(linha.reinicios).toBe(2);
@@ -180,8 +180,8 @@ describe("professor", () => {
   test("resultados da turma: inclui quem não iniciou, exclui aluno sem turma, resume", async () => {
     const r = await service.resultadosDaTurma(ESCOLA, turmaId);
     expect(r.turma).toMatchObject({ id: turmaId, nome: "4A", serie: "4EF" });
-    expect(r.alunos.map((a) => a.nome)).toEqual(["Ana Teste", "Bia Teste"]);
-    const ana = r.alunos.find((a) => a.nome === "Ana Teste")!;
+    expect((r.estudantes ?? r.alunos).map((a) => a.nome)).toEqual(["Ana Teste", "Bia Teste"]);
+    const ana = (r.estudantes ?? r.alunos).find((a) => a.nome === "Ana Teste")!;
     expect(ana).toMatchObject({
       iniciou: true,
       salvos: 3,
@@ -190,7 +190,7 @@ describe("professor", () => {
       credibilidadeAdicionada: true,
     });
     expect(ana.concluidoEm).not.toBeNull();
-    const bia = r.alunos.find((a) => a.nome === "Bia Teste")!;
+    const bia = (r.estudantes ?? r.alunos).find((a) => a.nome === "Bia Teste")!;
     expect(bia).toMatchObject({ iniciou: true, salvos: 1, credibilidadeAdicionada: false });
     expect(r.resumo).toMatchObject({ total: 2, iniciaram: 2, concluiram: 1, distribuicaoFontes: { "3": 1 } });
     expect(JSON.stringify(r)).not.toContain(alunoSemTurma);
@@ -198,7 +198,7 @@ describe("professor", () => {
 
   test("lista de turmas da escola", async () => {
     const r = await service.turmas(ESCOLA);
-    expect(r.turmas).toEqual([{ id: turmaId, nome: "4A", serie: "4EF", alunos: 2 }]);
+    expect(r.turmas).toEqual([{ id: turmaId, nome: "4A", serie: "4EF", estudantes: 2, alunos: 2 }]);
   });
 });
 

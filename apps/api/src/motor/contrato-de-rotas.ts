@@ -13,10 +13,10 @@ export const CriarRunSchema = z
   .default({});
 
 export const EntrarSchema = z.object({
-  /** O nome que aparece no aparelho. Pode ser apelido; é ele que o aluno lê —
-   *  e é APELIDO dentro da ficção, nunca identidade em relatório. */
-  nome: z.string().trim().min(1).max(40),
-  avatar: z.string().trim().min(1).max(60),
+  /** O nome que aparece no aparelho. Pode ser apelido; é ele que o estudante lê —
+   *  não tem relação com o nome real do estudante. */
+  nome: z.string().trim().min(1).max(30),
+  avatar: z.string().trim().min(1).max(30),
 });
 
 export const EventosSchema = z.object({ events: z.array(eventoSchema).min(1).max(200) });
@@ -34,7 +34,7 @@ export const StudentPostSchema = z.object({
 
 export const ReacoesSchema = z.union([
   z.object({
-    tipo: z.literal("post_do_aluno"),
+    tipo: z.enum(["post_do_estudante", "post_do_aluno"]),
     studentPostId: Uuid,
     texto: z.string().trim().min(1).max(600),
   }),
@@ -48,7 +48,7 @@ export const ReacoesSchema = z.union([
 // -------------------------------------------------------------------- saída
 
 /**
- * Um post como o ALUNO o recebe. **Sem `lado`, sem `perfil`, sem
+ * Um post como o ESTUDANTE o recebe. **Sem `lado`, sem `perfil`, sem
  * `intensidade`** — o disfarce depende disso: um bundle que soubesse o lado de
  * cada post entregaria o experimento inteiro antes da revelação.
  */
@@ -88,7 +88,7 @@ export const ModuloFeedSchema = z.union([
 ]);
 
 /** O `diagnostico` do motor (domínio, lado dominante, bloco) **não sai daqui**:
- *  fica no servidor. Nada de domínio ou lado no bundle do aluno. */
+ *  fica no servidor. Nada de domínio ou lado no bundle do estudante. */
 export const BlocoDoFeedSchema = z.object({
   posts: z.array(FeedPostSchema),
   modulos: z.array(ModuloFeedSchema),
@@ -108,16 +108,25 @@ export const BootSchema = z.object({
     ladoALabel: z.string(),
     ladoBLabel: z.string(),
   }),
-  aluno: z.object({
-    displayName: z.string(),
-    handle: z.string(),
-    avatar: z.string(),
-  }),
+  estudante: z
+    .object({
+      displayName: z.string(),
+      handle: z.string(),
+      avatar: z.string(),
+    })
+    .optional(),
+  aluno: z
+    .object({
+      displayName: z.string(),
+      handle: z.string(),
+      avatar: z.string(),
+    })
+    .optional(),
 });
 
 export const FaseSchema = z.object({ ok: z.literal(true), fase: z.string() });
 
-/** A tela que o aluno deve estar vendo AGORA, já reconciliada com a etapa da
+/** A tela que o estudante deve estar vendo AGORA, já reconciliada com a etapa da
  *  turma: os momentos coletivos são do PROFESSOR. */
 export const FaseAtualSchema = z.object({ fase: z.string(), etapa: z.string() });
 
@@ -125,6 +134,7 @@ export const RunResetadaSchema = z.object({
   ok: z.literal(true),
   ladoInicial: LadoSchema,
   ladoOrigem: z.string(),
+  rotuloDoLadoInicial: z.string().optional(),
 });
 
 /** `descartados` são os eventos que a idempotência por `(client_ts, tipo,
@@ -157,7 +167,7 @@ const PostPerdidoSchema = z.object({
 });
 
 /**
- * O que o aluno PERDEU: posts do lado oposto que nunca foram servidos.
+ * O que o estudante PERDEU: posts do lado oposto que nunca foram servidos.
  *
  * Só das etapas `perdidos` em diante — antes disso derrubaria o disfarce, que é
  * o que a atividade inteira depende de manter até a revelação.
@@ -186,7 +196,7 @@ export const ConclusaoGravadaSchema = z.object({
 /** `texto: ""` quando ainda não escreveu — o campo abre vazio, não com erro. */
 export const ReflexaoSalvaSchema = z.object({
   texto: z.string(),
-  /** O piso, dito pela api: o campo do aluno não tem mais um 60 próprio. */
+  /** O piso, dito pela api: o campo do estudante não tem mais um 60 próprio. */
   minimo: z.number().int().positive(),
 });
 
@@ -196,22 +206,23 @@ export const ReflexaoGravadaSchema = z.object({
 });
 
 /**
- * O post do aluno publicado no app, com as reações das personas.
+ * O post do estudante publicado no app, com as reações das personas.
  *
  * **Falha fechada**: IA desligada, erro de rede ou reação recusada ⇒ lista
  * vazia, e o post é publicado do mesmo jeito — como num app real quando ninguém
  * responde.
  */
-export const PostDoAlunoSchema = z.object({
+export const PostDoEstudanteSchema = z.object({
   post: z.unknown(),
   comentariosDeApoio: z.array(z.unknown()),
 });
+export const PostDoAlunoSchema = PostDoEstudanteSchema;
 
 export const ReacoesGeradasSchema = z.object({
   reacoes: z.array(z.unknown()),
   /** `true` quando o professor desligou a IA ao vivo. */
   desligada: z.literal(true).optional(),
-  /** `true` no teto de 12 reações por sessão: aluno comentando sem parar não
+  /** `true` no teto de 12 reações por sessão: estudante comentando sem parar não
    *  queima a cota da turma. */
   limite: z.literal(true).optional(),
 });
@@ -283,7 +294,7 @@ export const DossieSchema = z.object({
       ),
       studentPost: z.object({ texto: z.string(), ladoInferido: z.string() }).optional(),
       /** Anexada na LEITURA, não no congelamento: o dossiê é computado no
-       *  `finish`, antes de o aluno escrever. `undefined` quando a sessão foi
+       *  `finish`, antes de o estudante escrever. `undefined` quando a sessão foi
        *  interrompida — e o relatório precisa funcionar assim. */
       conclusao: z
         .object({

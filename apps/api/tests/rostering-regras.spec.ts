@@ -16,11 +16,12 @@ describe("papéis", () => {
     }
   });
 
-  test("docente/teacher viram professor; estudante/student viram aluno", () => {
+  test("docente/teacher viram professor; estudante/student/aluno viram estudante", () => {
     expect(normalizarPapel("Docente")).toBe("professor");
     expect(normalizarPapel("teacher")).toBe("professor");
-    expect(normalizarPapel("estudante")).toBe("aluno");
-    expect(normalizarPapel("student")).toBe("aluno");
+    expect(normalizarPapel("estudante")).toBe("estudante");
+    expect(normalizarPapel("student")).toBe("estudante");
+    expect(normalizarPapel("aluno")).toBe("estudante");
   });
 
   test("papel desconhecido devolve null — quem chama transforma em linha de relatório", () => {
@@ -106,7 +107,7 @@ describe("leitura da planilha", () => {
   test("cabeçalho é lido por nome: ordem trocada continua funcionando", () => {
     const leitura = lerPlanilha(["papel,nome,turma,serie", "aluno,Ana Lima,8A,8EF"].join("\n"));
     expect(leitura.erros).toEqual([]);
-    expect(leitura.pessoas[0]).toMatchObject({ nome: "Ana Lima", papel: "aluno", turma: "8A" });
+    expect(leitura.pessoas[0]).toMatchObject({ nome: "Ana Lima", papel: "estudante", turma: "8A" });
   });
 
   test("coluna desconhecida é erro de cabeçalho — não coluna ignorada em silêncio", () => {

@@ -43,7 +43,11 @@ class ProviderFake implements AiProvider {
   }
 }
 
-const config = new ConfigService({ AI_DAILY_TOKEN_QUOTA_PER_ALUNO: 20000, AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000 });
+const config = new ConfigService({
+  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
+  AI_DAILY_TOKEN_QUOTA_PER_ALUNO: 20000,
+  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
+});
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const provider = new ProviderFake();
 const quota = new QuotaService(prisma, config);

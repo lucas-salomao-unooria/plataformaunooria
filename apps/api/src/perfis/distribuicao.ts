@@ -10,7 +10,7 @@ import {
 import type { PrismaService } from '../prisma/prisma.service';
 import { VERSAO_MAPEAMENTO } from '../vila/mapeamento';
 
-export interface AlunoNaDistribuicao {
+export interface EstudanteNaDistribuicao {
   username: string;
   displayName: string;
   dominante: string;
@@ -34,6 +34,8 @@ export interface AlunoNaDistribuicao {
   jaComecou: boolean;
 }
 
+export type AlunoNaDistribuicao = EstudanteNaDistribuicao;
+
 /** Lê a afinidade aprovada da atividade. Null quando ainda não há antagonismo. */
 export function afinidadeDaAtividade(antagonismo: unknown): Afinidade | null {
   const parsed = antagonismoSchema.safeParse(antagonismo);
@@ -41,7 +43,7 @@ export function afinidadeDaAtividade(antagonismo: unknown): Afinidade | null {
 }
 
 /**
- * A distribuição da turma: onde cada aluno vai cair (ou já caiu).
+ * A distribuição da turma: onde cada estudante vai cair (ou já caiu).
  *
  * Existe para o professor VER antes de começar. A distribuição de perfis varia
  * por sala — uma turma pode ter muita Autotranscendência e pouca Conservação —, e
@@ -62,36 +64,36 @@ export async function distribuicaoDaTurma(
 ) {
   const afinidade = afinidadeDaAtividade(antagonismo);
 
-  const [perfis, runs, alunos] = await Promise.all([
+  const [perfis, runs, estudantes] = await Promise.all([
     prisma.perfilImportado.findMany({ where: { activityId } }),
     prisma.run.findMany({
       where: { activityId },
-      select: { alunoId: true, ladoInicial: true, ladoOrigem: true, fase: true },
+      select: { estudanteId: true, ladoInicial: true, ladoOrigem: true, fase: true },
     }),
     /**
      * `escolaId` EXPLÍCITO: `users` está fora da RLS (a lista de políticas em
      * `20260824145301_init` não a inclui), então o `comTenancy` não protege esta
      * query — ele só arma `app.escola_id` para as tabelas que têm policy. Sem o
-     * filtro, esta linha devolvia aluno de TODA escola do contrato, e o nome e o
+     * filtro, esta linha devolvia estudante de TODA escola do contrato, e o nome e o
      * login de crianças de outra rede apareciam no painel do professor.
      *
      * `contagem`, `desequilibrio` e `precisaRedistribuir` saem daqui, e
-     * `POST :id/redistribuir` decide quantos alunos mover a partir deles — o
+     * `POST :id/redistribuir` decide quantos estudantes mover a partir deles — o
      * vazamento não era só de leitura.
      */
     prisma.user.findMany({
-      where: { role: 'aluno', escolaId, ...(turmaId ? { turmaId } : {}) },
+      where: { role: 'estudante', escolaId, ...(turmaId ? { turmaId } : {}) },
       select: { id: true, username: true, displayName: true },
       orderBy: { username: 'asc' },
     }),
   ]);
 
-  const perfilPorAluno = new Map(perfis.map((perfil) => [perfil.alunoId, perfil]));
-  const runPorAluno = new Map(runs.map((run) => [run.alunoId, run]));
+  const perfilPorEstudante = new Map(perfis.map((perfil) => [perfil.estudanteId, perfil]));
+  const runPorEstudante = new Map(runs.map((run) => [run.estudanteId, run]));
 
-  const linhas: AlunoNaDistribuicao[] = alunos.map((aluno) => {
-    const perfil = perfilPorAluno.get(aluno.id);
-    const run = runPorAluno.get(aluno.id);
+  const linhas: EstudanteNaDistribuicao[] = estudantes.map((estudante) => {
+    const perfil = perfilPorEstudante.get(estudante.id);
+    const run = runPorEstudante.get(estudante.id);
 
     const normalizado = perfil
       ? normalizarPerfil(perfil.escores as never)
@@ -105,8 +107,8 @@ export async function distribuicaoDaTurma(
     const projetado = forcado ?? (afinidade ? ladoDoPerfil(normalizado.dominante, afinidade) : null);
 
     return {
-      username: aluno.username,
-      displayName: aluno.displayName,
+      username: estudante.username,
+      displayName: estudante.displayName,
       dominante: normalizado.dominante,
       rotulo: rotuloDoPerfil(normalizado.dominante),
       margem: normalizado.margem,
@@ -134,6 +136,7 @@ export async function distribuicaoDaTurma(
   return {
     temAfinidade: Boolean(afinidade),
     afinidade,
+    estudantes: linhas,
     alunos: linhas,
     contagem,
     /**

@@ -45,26 +45,27 @@ export const ImportadosDaVilaSchema = z.object({
   importados: z.number().int().nonnegative(),
   /** Crianças da turma que ainda não jogaram a Vila. */
   semPartida: z.number().int().nonnegative(),
-  /** Perfis que a Vila mediu e o colapso INVALIDOU. Custa alunos de propósito:
+  /** Perfis que a Vila mediu e o colapso INVALIDOU. Custa estudantes de propósito:
    *  quadrante sem nenhum membro observado invalida o perfil inteiro, e sem
    *  perfil o Instanooria cai no sorteio balanceado — que é honesto sobre não
    *  saber. */
   descartados: z.array(z.object({ nome: z.string(), motivo: z.string() })),
 });
 
+const ItemPerfilEstudanteSchema = z.object({
+  username: z.string(),
+  displayName: z.string(),
+  /** `jogo` (Vila), `professor` (manual) ou `ausente`. */
+  origem: z.string(),
+  dominante: z.string().nullable(),
+  rotulo: z.string().nullable(),
+  escores: z.unknown().nullable(),
+  medidoEm: z.string().datetime().nullable(),
+});
+
 export const ListaDePerfisSchema = z.object({
-  alunos: z.array(
-    z.object({
-      username: z.string(),
-      displayName: z.string(),
-      /** `jogo` (Vila), `professor` (manual) ou `ausente`. */
-      origem: z.string(),
-      dominante: z.string().nullable(),
-      rotulo: z.string().nullable(),
-      escores: z.unknown().nullable(),
-      medidoEm: z.string().datetime().nullable(),
-    }),
-  ),
+  estudantes: z.array(ItemPerfilEstudanteSchema).optional(),
+  alunos: z.array(ItemPerfilEstudanteSchema),
   resumo: z.object({
     comPerfil: z.number().int().nonnegative(),
     semPerfil: z.number().int().nonnegative(),
@@ -73,25 +74,26 @@ export const ListaDePerfisSchema = z.object({
   }),
 });
 
+const ItemDistribuicaoEstudanteSchema = z.object({
+  username: z.string(),
+  displayName: z.string(),
+  dominante: z.string(),
+  rotulo: z.string(),
+  margem: z.number(),
+  origemDoPerfil: z.enum(["jogo", "professor", "ausente"]),
+  /** O perfil veio da Vila sob uma `VERSAO_MAPEAMENTO` anterior à atual.
+   *  Reimportar atualiza; é aviso, nunca bloqueio. */
+  mapeamentoDesatualizado: z.boolean(),
+  lado: LadoSchema.nullable(),
+  ladoOrigem: z.enum(["perfil", "sorteio", "redistribuido", "projetado"]),
+  jaComecou: z.boolean(),
+});
+
 export const DistribuicaoSchema = z.object({
   temAfinidade: z.boolean(),
   afinidade: afinidadeSchema.nullable(),
-  alunos: z.array(
-    z.object({
-      username: z.string(),
-      displayName: z.string(),
-      dominante: z.string(),
-      rotulo: z.string(),
-      margem: z.number(),
-      origemDoPerfil: z.enum(["jogo", "professor", "ausente"]),
-      /** O perfil veio da Vila sob uma `VERSAO_MAPEAMENTO` anterior à atual.
-       *  Reimportar atualiza; é aviso, nunca bloqueio. */
-      mapeamentoDesatualizado: z.boolean(),
-      lado: LadoSchema.nullable(),
-      ladoOrigem: z.enum(["perfil", "sorteio", "redistribuido", "projetado"]),
-      jaComecou: z.boolean(),
-    }),
-  ),
+  estudantes: z.array(ItemDistribuicaoEstudanteSchema).optional(),
+  alunos: z.array(ItemDistribuicaoEstudanteSchema),
   contagem: z.object({ A: z.number().int(), B: z.number().int() }),
   /** Perfil ausente ou `misto`: caem no SORTEIO, e por isso não entram na
    *  projeção — o lado só é decidido quando a run nasce. */
@@ -128,19 +130,27 @@ export const RedistribuicaoSchema = z.union([
   }),
 ]);
 
+const ItemImportacaoEstudanteSchema = z.object({
+  username: z.string().trim().min(1).max(64),
+  escores: EscoresSchema,
+  medidoEm: z.string().datetime().optional(),
+});
+
 /** A ponte externa do Ato 1. `escolaId` vem no CORPO porque esta rota não tem
  *  token: sem ele não há escola no contexto, e `comTenancy` falha alto. */
-export const ImportarPerfisSchema = z.object({
-  escolaId: z.string().trim().min(1).max(64),
-  activityId: Uuid,
-  alunos: z
-    .array(
-      z.object({
-        username: z.string().trim().min(1).max(64),
-        escores: EscoresSchema,
-        medidoEm: z.string().datetime().optional(),
-      }),
-    )
-    .min(1)
-    .max(200),
-});
+export const ImportarPerfisSchema = z
+  .object({
+    escolaId: z.string().trim().min(1).max(64),
+    activityId: Uuid,
+    estudantes: z.array(ItemImportacaoEstudanteSchema).min(1).max(200).optional(),
+    alunos: z.array(ItemImportacaoEstudanteSchema).min(1).max(200).optional(),
+  })
+  .refine((data) => (data.estudantes && data.estudantes.length > 0) || (data.alunos && data.alunos.length > 0), {
+    message: "Envie a lista de estudantes.",
+  })
+  .transform((data) => ({
+    escolaId: data.escolaId,
+    activityId: data.activityId,
+    estudantes: data.estudantes ?? data.alunos ?? [],
+    alunos: data.alunos ?? data.estudantes ?? [],
+  }));

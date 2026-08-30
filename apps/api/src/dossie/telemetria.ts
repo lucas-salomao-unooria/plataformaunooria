@@ -15,7 +15,7 @@ import type {
 /**
  * As definições operacionais do doc 11 §3, em funções puras.
  *
- * Puras de propósito: são elas que alimentam o relatório do aluno (M8), o painel
+ * Puras de propósito: são elas que alimentam o relatório do estudante (M8), o painel
  * do professor e a análise de produto (M9). Se cada superfície calculasse "tempo
  * ativo" do seu jeito, os três números divergiriam e ninguém saberia qual está
  * certo. Aqui existe uma definição só, testável sem banco.
@@ -23,12 +23,12 @@ import type {
 
 /**
  * Piso de ociosidade (doc 11 §3.1). Abaixo de 20s o vão é compatível com ler uma
- * legenda longa ou os comentários; acima, o aluno provavelmente olhou para outro
+ * legenda longa ou os comentários; acima, o estudante provavelmente olhou para outro
  * lugar da sala.
  */
 export const PISO_OCIOSIDADE_MS = 20_000;
 
-/** Dwell normalizado a partir do qual o aluno não só viu: considerou (doc 11 §3.4). */
+/** Dwell normalizado a partir do qual o estudante não só viu: considerou (doc 11 §3.4). */
 const CONSIDEROU = 2.2;
 
 export interface EventoDeTelemetria {
@@ -190,7 +190,7 @@ export function calcularRitmo(entrada: Entrada, tempo: TempoDaSessao): Ritmo {
  * doc 11 §3.3 — índice de imersão.
  *
  * Cinco componentes de 20 pontos, **sempre devolvidos separados**. O total existe
- * para ordenar uma lista de turma, não para ser exibido sozinho: dois alunos com
+ * para ordenar uma lista de turma, não para ser exibido sozinho: dois estudantes com
  * 60 podem ter chegado lá por caminhos opostos, e a conversa do professor com
  * cada um é diferente.
  */
@@ -203,7 +203,7 @@ export function calcularImersao(entrada: Entrada, tempo: TempoDaSessao): Imersao
   /**
    * 1. Continuidade — proporção de tempo ativo, com desconto por perda de foco.
    *
-   * Só as perdas de foco DENTRO do feed. Fora dele o aluno está assistindo à
+   * Só as perdas de foco DENTRO do feed. Fora dele o estudante está assistindo à
    * revelação, conversando no debate ou escrevendo — sair da aba ali não diz
    * nada sobre a atenção que ele deu ao feed, e descontava 2 pontos do mesmo
    * jeito. Ver a janela de `calcularTempo`.
@@ -255,7 +255,7 @@ export function calcularImersao(entrada: Entrada, tempo: TempoDaSessao): Imersao
       rotulo: 'Atenção',
       pontos: pontos(fracaoAtenta, 0.7),
       /**
-       * Sem "você": o mesmo texto aparece no relatório do aluno E no popup do
+       * Sem "você": o mesmo texto aparece no relatório do estudante E no popup do
        * professor. Escrito em 2ª pessoa, ele dizia "prenderam você" na tela de
        * quem estava lendo sobre outra pessoa.
        */
@@ -306,7 +306,7 @@ export function calcularInvestigacao(entrada: Entrada): Investigacao {
     estado.servedPostIds.filter((id) => porId.get(id)?.lado === lado).length;
 
   /**
-   * Considerar ≠ ver. Um aluno pode receber 14 posts do outro lado e rolar reto
+   * Considerar ≠ ver. Um estudante pode receber 14 posts do outro lado e rolar reto
    * por todos; outro para 8 segundos em três deles. Só o segundo investigou — e é
    * esse número que sustenta a seção "a saída que existia" do relatório.
    */
@@ -396,7 +396,7 @@ export function calcularBolha(
  * doc 11 §3.6 e doc 04 §7 — perfil observado, **normalizado pela exposição**.
  *
  * A normalização não é preciosismo estatístico: o feed serve mais conteúdo do
- * perfil que o jogo apontou, então o aluno naturalmente para mais nele. Sem
+ * perfil que o jogo apontou, então o estudante naturalmente para mais nele. Sem
  * dividir pela exposição, o relatório "confirmaria" o perfil do jogo sempre — uma
  * profecia autorrealizável escrita com dados reais, que é o pior tipo de mentira.
  */

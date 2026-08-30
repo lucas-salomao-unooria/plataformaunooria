@@ -23,6 +23,7 @@ import {
   EscolaCruaSchema,
   EscolasDaPessoaSchema,
   EscolasDaRedeSchema,
+  HistoricoDoEstudanteSchema,
   HistoricoDoAlunoSchema,
   ListarEscolasSchema,
   LotarEmLoteSchema,
@@ -65,7 +66,7 @@ export class EscolasController {
    * escola nova. Sem ela, bastaria pedir uma escola qualquer.
    */
   @Get("minhas")
-  @Roles("aluno", "professor", "gestor", "admin-contrato")
+  @Roles("estudante", "professor", "gestor", "admin-contrato")
   @Contrato({
     resumo: "As escolas de QUEM ESTÁ PEDINDO.",
     descricao:
@@ -199,7 +200,7 @@ export class EscolasController {
   })
   pessoas(@Param("id") id: string, @Query("papel") papel: string, @Req() req: Autenticado) {
     const escolaId = escolaAlvo(req.auth, id);
-    const alvo = papel === "aluno" || papel === "gestor" ? papel : "professor";
+    const alvo = papel === "estudante" || papel === "aluno" || papel === "gestor" ? (papel === "aluno" ? "estudante" : papel) : "professor";
     return this.escolas.pessoasDaEscola(escolaId, alvo);
   }
 
@@ -259,9 +260,9 @@ export class LotacoesController {
   }
 }
 
-@Controller("alunos")
+@Controller("estudantes")
 @UseGuards(OidcGuard, RolesGuard)
-export class AlunosController {
+export class EstudantesController {
   constructor(private readonly escolas: EscolasService) {}
 
   /**
@@ -271,16 +272,16 @@ export class AlunosController {
    * unidade que recebe a criança que a família matriculou nela. `admin-contrato`
    * pode mover para qualquer uma.
    *
-   * O dado que o aluno produziu NÃO se move — continua com o `escola_id` da
-   * escola onde aconteceu, que é verdade histórica. O que segue o aluno é a
+   * O dado que o estudante produziu NÃO se move — continua com o `escola_id` da
+   * escola onde aconteceu, que é verdade histórica. O que segue o estudante é a
    * identidade, e é o `historico` abaixo que a lê atravessada.
    */
   @Post(":id/transferir")
   @Roles("gestor", "admin-contrato")
   @Contrato({
-    resumo: "Transfere o aluno entre escolas da rede.",
+    resumo: "Transfere o estudante entre escolas da rede.",
     descricao:
-      "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `admin-contrato` pode mover para qualquer uma.\n\n**O dado que o aluno produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o aluno é a identidade (ADR-32).",
+      "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `admin-contrato` pode mover para qualquer uma.\n\n**O dado que o estudante produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o estudante é a identidade (ADR-32).",
     params: z.object({ id: z.string().uuid() }),
     corpo: TransferirSchema,
     resposta: TransferenciaSchema,
@@ -290,23 +291,23 @@ export class AlunosController {
     ],
   })
   async transferir(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
-    if (!UUID.test(id)) throw new NotFoundException("aluno não encontrado");
+    if (!UUID.test(id)) throw new NotFoundException("estudante não encontrado");
     const dados = TransferirSchema.parse(body);
     const destino = escolaAlvo(req.auth, dados.escolaDestinoId);
-    const feito = await this.escolas.transferirAluno({
-      alunoId: id,
+    const feito = await this.escolas.transferirEstudante({
+      estudanteId: id,
       escolaDestinoId: destino,
       turmaDestinoId: dados.turmaDestinoId ?? null,
     });
-    if (!feito) throw new NotFoundException("aluno ou escola de destino não encontrada");
+    if (!feito) throw new NotFoundException("estudante ou escola de destino não encontrada");
     return feito;
   }
 
   /**
-   * O histórico do aluno ATRAVESSANDO escolas — a única leitura fora de
+   * O histórico do estudante ATRAVESSANDO escolas — a única leitura fora de
    * `admin-contrato` que faz isso.
    *
-   * Só alcança quem tem lotação na escola ONDE O ALUNO ESTÁ HOJE: é a unidade
+   * Só alcança quem tem lotação na escola ONDE O ESTUDANTE ESTÁ HOJE: é a unidade
    * responsável por ele. Devolve participações (em que experiência, em que turma,
    * em que escola, quando), nunca o conteúdo dos instrumentos — o retrato de
    * valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem
@@ -315,27 +316,29 @@ export class AlunosController {
   @Get(":id/historico")
   @Roles("professor", "gestor", "admin-contrato")
   @Contrato({
-    resumo: "O histórico do aluno ATRAVESSANDO escolas.",
+    resumo: "O histórico do estudante ATRAVESSANDO escolas.",
     descricao:
-      "A única leitura fora de `admin-contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o aluno está HOJE**: é a unidade responsável por ele.",
+      "A única leitura fora de `admin-contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o estudante está HOJE**: é a unidade responsável por ele.",
     params: z.object({ id: z.string().uuid() }),
-    resposta: HistoricoDoAlunoSchema,
+    resposta: HistoricoDoEstudanteSchema,
     notas: [
       "Devolve PARTICIPAÇÕES, **nunca o conteúdo dos instrumentos**: o retrato de valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem tem a posse pedagógica na escola onde aquilo aconteceu.",
       "A escola de HOJE é a PRIMEIRA da lista `escolas` — a tela imprime nessa ordem, e a primeira linha é a que o adulto lê como \"a escola dela\".",
     ],
   })
   async historico(@Param("id") id: string, @Req() req: Autenticado) {
-    if (!UUID.test(id)) throw new NotFoundException("aluno não encontrado");
-    const historico = await this.escolas.historicoDoAluno(id);
-    if (!historico) throw new NotFoundException("aluno não encontrado");
+    if (!UUID.test(id)) throw new NotFoundException("estudante não encontrado");
+    const historico = await this.escolas.historicoDoEstudante(id);
+    if (!historico) throw new NotFoundException("estudante não encontrado");
 
     if (req.auth.perfil !== "admin-contrato") {
       const escolaAtual = historico.escolas.find((e) => e.atual)?.id;
       const podeVer =
         escolaAtual !== undefined && (await this.escolas.temLotacao(req.auth.usuarioId, escolaAtual));
-      if (!podeVer) throw new ForbiddenException("este aluno não está numa escola sua");
+      if (!podeVer) throw new ForbiddenException("este estudante não está numa escola sua");
     }
     return historico;
   }
 }
+
+export const AlunosController = EstudantesController;

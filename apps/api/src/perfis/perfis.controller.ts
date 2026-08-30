@@ -103,7 +103,7 @@ export class PerfisController {
       if (!atividade) naoEncontrado();
 
       const usuarios = await tx.user.findMany({
-        where: { role: "aluno", escolaId, username: { in: parsed.data.perfis.map((p) => p.username) } },
+        where: { role: "estudante", escolaId, username: { in: parsed.data.perfis.map((p) => p.username) } },
         select: { id: true, username: true },
       });
       const idPorUsername = new Map(usuarios.map((u) => [u.username, u.id]));
@@ -112,8 +112,8 @@ export class PerfisController {
       let importados = 0;
 
       for (const entrada of parsed.data.perfis) {
-        const alunoId = idPorUsername.get(entrada.username);
-        if (!alunoId) {
+        const estudanteId = idPorUsername.get(entrada.username);
+        if (!estudanteId) {
           desconhecidos.push(entrada.username);
           continue;
         }
@@ -128,8 +128,8 @@ export class PerfisController {
         };
 
         await tx.perfilImportado.upsert({
-          where: { activityId_alunoId: { activityId: id, alunoId } },
-          create: { escolaId, activityId: id, alunoId, ...dados },
+          where: { activityId_estudanteId: { activityId: id, estudanteId } },
+          create: { escolaId, activityId: id, estudanteId, ...dados },
           update: dados,
         });
         importados += 1;
@@ -143,7 +143,7 @@ export class PerfisController {
    * IMPORTA OS PERFIS DA VILA DO LUME (exp-70) para esta atividade.
    *
    * Fecha o "Ato 1" que a ficha do Instanooria sempre descreveu: *"fora da
-   * plataforma, um jogo mede o perfil de valores do aluno"*. O jogo deixou de
+   * plataforma, um jogo mede o perfil de valores do estudante"*. O jogo deixou de
    * estar fora — e o comentário do `PerfisImportacaoController` lá embaixo, que
    * chama a importação manual de "fallback do professor quando o jogo do Ato 1
    * ainda não integra", tem uma resposta agora.
@@ -173,7 +173,7 @@ export class PerfisController {
     query: DaVilaSchema,
     resposta: ImportadosDaVilaSchema,
     notas: [
-      "O colapso tem duas travas que CUSTAM alunos, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.",
+      "O colapso tem duas travas que CUSTAM estudantes, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.",
       "Sem perfil, o Instanooria cai no sorteio balanceado — que é honesto sobre não saber.",
       "Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise` ao lado da identidade da criança.",
       "`ladoForcado` é PRESERVADO no upsert.",
@@ -228,8 +228,8 @@ export class PerfisController {
           versaoMapeamento: entrada.versaoMapeamento,
         };
         await tx.perfilImportado.upsert({
-          where: { activityId_alunoId: { activityId: id, alunoId: entrada.alunoId } },
-          create: { escolaId, activityId: id, alunoId: entrada.alunoId, ...dados },
+          where: { activityId_estudanteId: { activityId: id, estudanteId: entrada.estudanteId } },
+          create: { escolaId, activityId: id, estudanteId: entrada.estudanteId, ...dados },
           update: dados,
         });
         importados += 1;
@@ -243,12 +243,12 @@ export class PerfisController {
     });
   }
 
-  /** Lista da turma com o estado do perfil por aluno, para conferência.
+  /** Lista da turma com o estado do perfil por estudante, para conferência.
    *  Escopada pela turma da atividade desde `20260830090000_atividade_por_turma`
    *  — antes o nome dizia "turma" e a query lia a escola. */
   @Get(":id/perfis")
   @Contrato({
-    resumo: "O estado do perfil de cada aluno, para conferência.",
+    resumo: "O estado do perfil de cada estudante, para conferência.",
     params: z.object({ id: z.string().uuid() }),
     resposta: ListaDePerfisSchema,
     notas: ["`origem: \"ausente\"` = a criança ainda não tem perfil; ela cai no sorteio."],
@@ -261,35 +261,38 @@ export class PerfisController {
       const atividade = await atividadeDoProfessor(tx, id, usuarioId, escolaId);
       if (!atividade) naoEncontrado();
 
-      const [alunos, perfis] = await Promise.all([
+      const [estudantes, perfis] = await Promise.all([
         tx.user.findMany({
           /* Mesma regra do painel: a turma da atividade quando ela tem uma;
              sem turma (atividade anterior à migration) vale a escola. */
-          where: { role: "aluno", escolaId, ...(atividade.turmaId ? { turmaId: atividade.turmaId } : {}) },
+          where: { role: "estudante", escolaId, ...(atividade.turmaId ? { turmaId: atividade.turmaId } : {}) },
           select: { id: true, username: true, displayName: true },
           orderBy: { username: "asc" },
         }),
         tx.perfilImportado.findMany({ where: { activityId: id, escolaId } }),
       ]);
 
-      const porAluno = new Map(perfis.map((perfil) => [perfil.alunoId, perfil]));
+      const porEstudante = new Map(perfis.map((perfil) => [perfil.estudanteId, perfil]));
+
+      const lista = estudantes.map((estudante) => {
+        const perfil = porEstudante.get(estudante.id);
+        return {
+          username: estudante.username,
+          displayName: estudante.displayName,
+          origem: perfil?.origem ?? "ausente",
+          dominante: perfil?.dominante ?? null,
+          rotulo: perfil ? rotuloDoPerfil(perfil.dominante as never) : null,
+          escores: perfil?.escores ?? null,
+          medidoEm: perfil?.medidoEm ?? null,
+        };
+      });
 
       return {
-        alunos: alunos.map((aluno) => {
-          const perfil = porAluno.get(aluno.id);
-          return {
-            username: aluno.username,
-            displayName: aluno.displayName,
-            origem: perfil?.origem ?? "ausente",
-            dominante: perfil?.dominante ?? null,
-            rotulo: perfil ? rotuloDoPerfil(perfil.dominante as never) : null,
-            escores: perfil?.escores ?? null,
-            medidoEm: perfil?.medidoEm ?? null,
-          };
-        }),
+        estudantes: lista,
+        alunos: lista,
         resumo: {
           comPerfil: perfis.length,
-          semPerfil: alunos.length - perfis.length,
+          semPerfil: estudantes.length - perfis.length,
           doJogo: perfis.filter((p) => p.origem === "jogo").length,
           doProfessor: perfis.filter((p) => p.origem === "professor").length,
         },
@@ -298,7 +301,7 @@ export class PerfisController {
   }
 
   /**
-   * Onde cada aluno vai cair, ANTES de a turma começar (doc 07).
+   * Onde cada estudante vai cair, ANTES de a turma começar (doc 07).
    *
    * O professor precisa ver isso antes porque a distribuição de perfis varia por
    * sala: se ela estiver muito torta, ele redistribui — e redistribuir depois que
@@ -306,7 +309,7 @@ export class PerfisController {
    */
   @Get(":id/distribuicao")
   @Contrato({
-    resumo: "Onde cada aluno vai cair — antes de começar.",
+    resumo: "Onde cada estudante vai cair — antes de começar.",
     descricao:
       "Existe para o professor **ver antes**. A distribuição de perfis varia por sala, e aí os lados nascem desequilibrados: não é defeito do sistema, é a turma — mas o professor precisa saber antes, não descobrir no meio da aula.",
     params: z.object({ id: z.string().uuid() }),
@@ -331,17 +334,13 @@ export class PerfisController {
         tolerancia: TOLERANCIA,
         precisaRedistribuir: distribuicao.desequilibrio > TOLERANCIA,
       };
-    });
+    }, escolaId);
   }
 
   /**
-   * Rebalanceia a turma quando ela cai quase toda num lado (doc 04 §3.1).
-   *
-   * Duas regras que definem o comportamento:
-   *
    * 1. **Move os de afinidade mais fraca primeiro** — `misto` antes de todos,
    *    depois por margem crescente. Preserva a pedagogia onde o sinal do perfil é
-   *    forte; o contrário seria mover um aluno de perfil claríssimo e depois ter
+   *    forte; o contrário seria mover um estudante de perfil claríssimo e depois ter
    *    que explicar isso a ele no relatório.
    * 2. **Só age em quem ainda não começou.** Trocar o lado de quem já está rolando
    *    o feed invalidaria a sessão: os scores acumulados passariam a contar para o
@@ -395,19 +394,19 @@ export class PerfisController {
        * que o rebalanceamento pode não ter chegado ao alvo.
        */
       const candidatos = ordemDeRedistribuicao(
-        distribuicao.alunos
-          .filter((aluno) => aluno.lado === alvo.de && !aluno.jaComecou)
-          .map((aluno) => ({
-            username: aluno.username,
-            displayName: aluno.displayName,
-            dominante: aluno.dominante as never,
-            margem: aluno.margem,
-            rotulo: aluno.rotulo,
+        distribuicao.estudantes
+          .filter((estudante) => estudante.lado === alvo.de && !estudante.jaComecou)
+          .map((estudante) => ({
+            username: estudante.username,
+            displayName: estudante.displayName,
+            dominante: estudante.dominante as never,
+            margem: estudante.margem,
+            rotulo: estudante.rotulo,
           })),
       ).slice(0, alvo.quantos);
 
-      const bloqueados = distribuicao.alunos.filter(
-        (aluno) => aluno.lado === alvo.de && aluno.jaComecou,
+      const bloqueados = distribuicao.estudantes.filter(
+        (estudante) => estudante.lado === alvo.de && estudante.jaComecou,
       ).length;
 
       if (candidatos.length === 0) {
@@ -415,8 +414,8 @@ export class PerfisController {
           {
             mensagem:
               bloqueados > 0
-                ? "Todos os alunos do lado excedente já começaram a atividade — trocar o lado deles invalidaria a sessão."
-                : "Não há alunos para mover.",
+                ? "Todos os estudantes do lado excedente já começaram a atividade — trocar o lado deles invalidaria a sessão."
+                : "Não há estudantes para mover.",
             bloqueados,
           },
           409,
@@ -446,13 +445,13 @@ export class PerfisController {
        * gravações vão em sequência na mesma transação — mesma atomicidade.
        */
       for (const candidato of candidatos) {
-        const alunoId = idPorUsername.get(candidato.username)!;
+        const estudanteId = idPorUsername.get(candidato.username)!;
         await tx.perfilImportado.updateMany({
-          where: { activityId: id, alunoId, escolaId },
+          where: { activityId: id, estudanteId, escolaId },
           data: { ladoForcado: paraOutroLado },
         });
         await tx.run.updateMany({
-          where: { activityId: id, alunoId, escolaId, fase: "onboarding" },
+          where: { activityId: id, estudanteId, escolaId, fase: "onboarding" },
           data: {
             ladoInicial: paraOutroLado,
             ladoOrigem: "redistribuido",
@@ -540,7 +539,7 @@ export class PerfisImportacaoController {
       });
     }
 
-    const { escolaId, activityId, alunos } = parsed.data;
+    const { escolaId, activityId, estudantes } = parsed.data;
 
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await tx.activity.findFirst({
@@ -550,7 +549,7 @@ export class PerfisImportacaoController {
       if (!atividade) throw new HttpException({ mensagem: "Atividade não encontrada." }, 404);
 
       const usuarios = await tx.user.findMany({
-        where: { role: "aluno", escolaId, username: { in: alunos.map((aluno) => aluno.username) } },
+        where: { role: "estudante", escolaId, username: { in: estudantes.map((estudante) => estudante.username) } },
         select: { id: true, username: true },
       });
       const idPorUsername = new Map(usuarios.map((usuario) => [usuario.username, usuario.id]));
@@ -558,26 +557,26 @@ export class PerfisImportacaoController {
       const desconhecidos: string[] = [];
       let importados = 0;
 
-      for (const aluno of alunos) {
-        const alunoId = idPorUsername.get(aluno.username);
-        if (!alunoId) {
+      for (const estudante of estudantes) {
+        const estudanteId = idPorUsername.get(estudante.username);
+        if (!estudanteId) {
           // Um username errado não derruba o lote inteiro: o jogo pode ter uma
           // turma a mais, e o professor precisa saber quais faltaram.
-          desconhecidos.push(aluno.username);
+          desconhecidos.push(estudante.username);
           continue;
         }
 
-        const perfil = normalizarPerfil(aluno.escores);
+        const perfil = normalizarPerfil(estudante.escores);
         const dados = {
           escores: perfil.escores as unknown as Prisma.InputJsonObject,
           dominante: perfil.dominante,
           origem: "jogo",
-          medidoEm: aluno.medidoEm ? new Date(aluno.medidoEm) : new Date(),
+          medidoEm: estudante.medidoEm ? new Date(estudante.medidoEm) : new Date(),
         };
 
         await tx.perfilImportado.upsert({
-          where: { activityId_alunoId: { activityId, alunoId } },
-          create: { escolaId, activityId, alunoId, ...dados },
+          where: { activityId_estudanteId: { activityId, estudanteId } },
+          create: { escolaId, activityId, estudanteId, ...dados },
           update: dados,
         });
         importados += 1;
@@ -591,3 +590,4 @@ export class PerfisImportacaoController {
     }, escolaId);
   }
 }
+

@@ -9,6 +9,7 @@ import { Contrato } from "../openapi/contrato";
 import {
   AcaoDoRelogioSchema,
   AlunoDoProfessorSchema,
+  EstudanteDoProfessorSchema,
   RelogioDoProfessorSchema,
   TurmaDoProfessorSchema,
   TurmaZeradaDoUnoogptSchema,
@@ -136,17 +137,17 @@ export class UnoogptTurmasController {
   }
 
   /** A linha de UMA criança: leitura em graus + a Transcrição. */
-  @Get("alunos/:alunoId")
+  @Get("estudantes/:alunoId")
   @Contrato({
     resumo: "A linha de UMA criança: leitura em graus e a Transcrição.",
     descricao:
       "**Professor only.** O relatório abre pelo que a missão MEDIU, em graus.",
     params: z.object({ alunoId: z.string().uuid() }),
     query: z.object({ escolaId: z.string().optional() }),
-    resposta: AlunoDoProfessorSchema,
+    resposta: EstudanteDoProfessorSchema,
     notas: [
       "Número só com `grau: \"scored\"`. E `zero` (\"teve a chance e não foi\") nunca se confunde com `none` (\"a oportunidade não chegou\") — é a distinção mais importante do modelo, e ela está no TIPO.",
-      "`resumo` nunca afirma o que o aluno É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
+      "`resumo` nunca afirma o que o estudante É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
     ],
   })
   aluno(

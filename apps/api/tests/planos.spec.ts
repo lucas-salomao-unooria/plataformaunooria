@@ -280,7 +280,7 @@ describe("geração assíncrona", () => {
     expect(provider.chamadas.length).toBe(chamadasAntes);
     // O mesmo consumo, medido pela régua do ALUNO, também estaria estourado —
     // e a régua do professor (2M) não: é isso que `perfil` muda.
-    expect(await quota.temSaldo(ESCOLA, profA, "aluno")).toBe(true); // 20k > ~3k gastos
+    expect(await quota.temSaldo(ESCOLA, profA, "estudante")).toBe(true); // 300k > ~3k gastos
     expect(await new QuotaService(prisma, configApertada).temSaldo(ESCOLA, profA, "professor")).toBe(false);
   }
 });

@@ -57,7 +57,7 @@ import { CARTOES } from "./catalogo";
  * para o Lume chamá-la e para a Pedra dos Nomes. Existe um nome a vazar agora.
  */
 export const CHAVES_PROIBIDAS = [
-  "nome", "name", "apelido", "nick", "aluno", "crianca", "criança", "jogador", "player",
+  "nome", "name", "apelido", "nick", "aluno", "estudante", "crianca", "criança", "jogador", "player",
   "cpf", "matricula", "matrícula", "email", "telefone", "celular",
   "responsavel", "responsável", "professor", "endereco", "endereço", "nascimento",
 ] as const;
@@ -65,7 +65,7 @@ export const CHAVES_PROIBIDAS = [
 /** Termos curtos demais para casar por substring — `rg` casa dentro de
  *  `perguntasCaminho`, e um falso positivo recusa a partida inteira de uma
  *  criança. Só igualdade. */
-export const CHAVES_PROIBIDAS_EXATAS = ["rg", "ra", "id_aluno", "doc"] as const;
+export const CHAVES_PROIBIDAS_EXATAS = ["rg", "ra", "id_aluno", "id_estudante", "doc"] as const;
 
 /**
  * Chaves legítimas do contrato que contêm um termo proibido como substring:

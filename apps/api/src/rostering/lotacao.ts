@@ -8,19 +8,19 @@ import type { Prisma } from "@prisma/client";
  * - PROFESSOR e GESTOR **acumulam**. Lotação nova não encerra a anterior: quem
  *   dá aula em duas escolas da rede tem duas, e ao entrar escolhe em qual está
  *   trabalhando. Era o caso que `users.escola_id` sozinho não representava.
- * - ALUNO tem **uma ativa**. Escola nova é TRANSFERÊNCIA, e o banco garante
- *   isso com índice único parcial — aluno em duas escolas ao mesmo tempo é
+ * - ESTUDANTE tem **uma ativa**. Escola nova é TRANSFERÊNCIA, e o banco garante
+ *   isso com índice único parcial — estudante em duas escolas ao mesmo tempo é
  *   indistinguível de uma transferência que ficou pela metade.
  *
  * `lotacoes` não tem RLS (é lida no login, antes de haver escola), então estas
  * funções servem tanto dentro quanto fora de contexto de tenancy.
  */
 
-export type PapelDeLotacao = "aluno" | "professor" | "gestor";
+export type PapelDeLotacao = "estudante" | "professor" | "gestor" | "aluno";
 
 /**
  * Abre (ou reabre) a lotação, sem tocar nas outras. É o caminho de professor e
- * gestor — e do aluno **na escola de destino**, depois de a transferência ter
+ * gestor — e do estudante **na escola de destino**, depois de a transferência ter
  * encerrado a de origem.
  */
 export async function garantirLotacao(
@@ -34,7 +34,8 @@ export async function garantirLotacao(
     fonteId?: string | null;
   },
 ): Promise<void> {
-  const { escolaId, usuarioId, papel, inicio, principal = false, fonteId = null } = dados;
+  const { escolaId, usuarioId, papel: papelBruto, inicio, principal = false, fonteId = null } = dados;
+  const papel = papelBruto === "aluno" ? "estudante" : papelBruto;
   await tx.lotacao.upsert({
     where: { escolaId_usuarioId_papel: { escolaId, usuarioId, papel } },
     update: { fim: null, ...(principal ? { principal: true } : {}), ...(fonteId ? { fonteId } : {}) },
@@ -49,14 +50,16 @@ export async function garantirLotacao(
   }
 }
 
-/** A escola em que o aluno está agora, se houver. Lê sem tenancy, de propósito. */
-export async function escolaAtualDoAluno(
+/** A escola em que o estudante está agora, se houver. Lê sem tenancy, de propósito. */
+export async function escolaAtualDoEstudante(
   tx: Prisma.TransactionClient,
   usuarioId: string,
 ): Promise<string | null> {
   const lotacao = await tx.lotacao.findFirst({
-    where: { usuarioId, papel: "aluno", fim: null },
+    where: { usuarioId, papel: { in: ["estudante", "aluno"] }, fim: null },
     select: { escolaId: true },
   });
   return lotacao?.escolaId ?? null;
 }
+
+export const escolaAtualDoAluno = escolaAtualDoEstudante;

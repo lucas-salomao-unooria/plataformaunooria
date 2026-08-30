@@ -15,7 +15,7 @@ export const TURNOS = ["manha", "tarde", "noite", "integral"] as const;
 export type Turno = (typeof TURNOS)[number];
 
 /** `admin-contrato` NUNCA nasce de importação — é papel de operação do produto. */
-export const PAPEIS_IMPORTAVEIS = ["aluno", "professor", "gestor"] as const;
+export const PAPEIS_IMPORTAVEIS = ["estudante", "professor", "gestor"] as const;
 export type PapelImportavel = (typeof PAPEIS_IMPORTAVEIS)[number];
 
 /**
@@ -31,11 +31,12 @@ export type PapelImportavel = (typeof PAPEIS_IMPORTAVEIS)[number];
  * ninguém cumpre — o arquivo diz uma coisa, o banco tem outra, e ninguém vê.
  */
 export const SINONIMOS_DE_PAPEL: Readonly<Record<string, PapelImportavel>> = {
-  aluno: "aluno",
-  alunos: "aluno",
-  estudante: "aluno",
-  discente: "aluno",
-  student: "aluno",
+  estudante: "estudante",
+  estudantes: "estudante",
+  aluno: "estudante",
+  alunos: "estudante",
+  discente: "estudante",
+  student: "estudante",
   professor: "professor",
   professora: "professor",
   docente: "professor",

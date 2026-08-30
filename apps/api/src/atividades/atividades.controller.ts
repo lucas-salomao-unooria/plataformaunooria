@@ -42,7 +42,7 @@ import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { professorDoToken, professorLeciona } from "../comum/turmas-do-professor";
 import { normalizarEstado } from "../motor/estado";
 import { PrismaService } from "../prisma/prisma.service";
-import { excluirAtividade, limparDadosDosAlunos } from "./manutencao";
+import { excluirAtividade, limparDadosDosEstudantes } from "./manutencao";
 import { Contrato } from "../openapi/contrato";
 import {
   AlunoDaAtividadeSchema,
@@ -54,6 +54,7 @@ import {
   EtapaAtualSchema,
   EtapaMovidaSchema,
   EtapaSchema,
+  EstudanteDaAtividadeSchema,
   ExcluidaSchema,
   IaAlternadaSchema,
   IaSchema,
@@ -113,6 +114,7 @@ export class AtividadesController {
           status: a.status,
           etapa: a.etapa,
           criadoEm: a.createdAt,
+          estudantes: a._count.runs,
           alunos: a._count.runs,
           /** Sinônimo de `alunos` (1 run = 1 aluno na atividade) — as telas
            *  portadas usam os dois nomes; manter ambos evita drift no port. */
@@ -151,7 +153,14 @@ export class AtividadesController {
       // `_count` espelha o select prisma da página origem (o porte dos painéis
       // consome exatamente esse shape); os agregados nomeados ficam junto.
       return {
-        atividade: { ...atividade, turma, _count: { runs }, alunos: runs, postsAprovados: posts },
+        atividade: { 
+          ...atividade, 
+          turma, 
+          _count: { runs }, 
+          estudantes: runs, 
+          alunos: runs, 
+          postsAprovados: posts 
+        },
       };
     });
   }
@@ -183,7 +192,7 @@ export class AtividadesController {
        * A turma é conferida contra a MATRÍCULA do professor, não contra a
        * escola do token: "mesma escola" é a regra de tenancy, não a de quem dá
        * aula ali (`comum/turmas-do-professor.ts`). Sem isso, o professor do 8A
-       * abriria uma atividade sobre o 8B e o painel dela mostraria os alunos de
+       * abriria uma atividade sobre o 8B e o painel dela mostraria os estudantes de
        * uma sala que não é dele.
        */
       if (dados.turmaId) {
@@ -251,7 +260,7 @@ export class AtividadesController {
   @Post(":id/limpar")
   @HttpCode(200)
   @Contrato({
-    resumo: "Apaga as sessões dos alunos, mantendo a atividade e os posts.",
+    resumo: "Apaga as sessões dos estudantes, mantendo a atividade e os posts.",
     descricao: "É o botão de rodar a mesma atividade com outra turma.",
     params: z.object({ id: z.string().uuid() }),
     resposta: LimpaSchema,
@@ -261,7 +270,7 @@ export class AtividadesController {
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!atividade) naoEncontrado();
-      const { sessoes } = await limparDadosDosAlunos(tx, id);
+      const { sessoes } = await limparDadosDosEstudantes(tx, id);
       return { ok: true, sessoes };
     });
   }
@@ -289,9 +298,9 @@ export class AtividadesController {
   @Post(":id/ativar")
   @HttpCode(200)
   @Contrato({
-    resumo: "Ativa a atividade para os alunos entrarem.",
+    resumo: "Ativa a atividade para os estudantes entrarem.",
     descricao:
-      "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele aluno nasceria torto.",
+      "Devolve a MATRIZ 2 lados × 4 perfis: é ela que diz se a geração fechou. Célula vazia significa que um perfil de um lado não tem post — e o feed daquele estudante nasceria torto.",
     params: z.object({ id: z.string().uuid() }),
     corpo: AtivarSchema,
     resposta: AtivadaSchema,
@@ -316,7 +325,7 @@ export class AtividadesController {
 
       /**
        * Cobertura da matriz: célula (lado, perfil) vazia = o mecanismo do Ato 2
-       * simplesmente não acontece para o aluno daquele perfil. Pendência de
+       * simplesmente não acontece para o estudante daquele perfil. Pendência de
        * ativação, não aviso.
        */
       const porCelula = await tx.post.groupBy({
@@ -358,7 +367,7 @@ export class AtividadesController {
       const pendencias: string[] = [];
       if (comPerfil === 0) {
         pendencias.push(
-          "Nenhum aluno tem perfil do Ato 1 — o lado de todos vai ser sorteado, e a revelação vai dizer isso para a turma inteira.",
+          "Nenhum estudante tem perfil do Ato 1 — o lado de todos vai ser sorteado, e a revelação vai dizer isso para a turma inteira.",
         );
       }
       if (aprovados < MINIMOS_ATIVACAO.postsAprovados) {
@@ -491,10 +500,10 @@ export class AtividadesController {
     });
   }
 
-  /** Etapa atual + quantos alunos em cada tela — o painel decide se pode avançar. */
+  /** Etapa atual + quantos estudantes em cada tela — o painel decide se pode avançar. */
   @Get(":id/etapa")
   @Contrato({
-    resumo: "Etapa atual e quantos alunos em cada tela.",
+    resumo: "Etapa atual e quantos estudantes em cada tela.",
     descricao: "É com isto que o painel decide se dá para avançar a turma.",
     params: z.object({ id: z.string().uuid() }),
     resposta: EtapaAtualSchema,
@@ -544,49 +553,54 @@ export class AtividadesController {
       ]);
       const comDossie = new Set(dossies.map((registro) => registro.runId));
 
-      const linhas = metricas.map((aluno) => ({
-        runId: aluno.runId,
-        aluno: {
-          username: aluno.aluno.username,
-          displayName: aluno.aluno.displayName,
+      const linhas = metricas.map((estudante) => ({
+        runId: estudante.runId,
+        estudante: {
+          username: estudante.estudante.username,
+          displayName: estudante.estudante.displayName,
           avatar: null as string | null,
         },
-        fase: aluno.fase,
-        postsConsumidos: aluno.postsConsumidos,
-        blocos: aluno.blocos,
-        dominio: aluno.dominio,
-        ladoDominante: aluno.ladoDominante === "indefinido" ? "neutro" : aluno.ladoDominante,
-        escada: aluno.escada,
-        ladoInicial: aluno.bolha.ladoInicial,
-        ladoOrigem: aluno.bolha.ladoOrigem,
-        inverteu: aluno.bolha.inverteu,
-        perfilOrigem: aluno.perfilJogo?.origem ?? "ausente",
-        perfilJogo: aluno.perfilJogo?.dominante ?? null,
-        concluiu: aluno.conclusao !== null,
-        colecao: aluno.colecao,
-        imersaoParcial: aluno.imersao.total,
-        imersaoComponentes: aluno.imersao.componentes,
+        aluno: {
+          username: estudante.estudante.username,
+          displayName: estudante.estudante.displayName,
+          avatar: null as string | null,
+        },
+        fase: estudante.fase,
+        postsConsumidos: estudante.postsConsumidos,
+        blocos: estudante.blocos,
+        dominio: estudante.dominio,
+        ladoDominante: estudante.ladoDominante === "indefinido" ? "neutro" : estudante.ladoDominante,
+        escada: estudante.escada,
+        ladoInicial: estudante.bolha.ladoInicial,
+        ladoOrigem: estudante.bolha.ladoOrigem,
+        inverteu: estudante.bolha.inverteu,
+        perfilOrigem: estudante.perfilJogo?.origem ?? "ausente",
+        perfilJogo: estudante.perfilJogo?.dominante ?? null,
+        concluiu: estudante.conclusao !== null,
+        colecao: estudante.colecao,
+        imersaoParcial: estudante.imersao.total,
+        imersaoComponentes: estudante.imersao.componentes,
         /**
          * Relógio de PAREDE desde o início da sessão — no monitor ao vivo a
-         * pergunta é "há quanto tempo esse aluno está nisso?".
+         * pergunta é "há quanto tempo esse estudante está nisso?".
          */
         minutos: Math.round(
-          ((aluno.encerradaEm ?? new Date()).getTime() - aluno.iniciadaEm.getTime()) / 60_000,
+          ((estudante.encerradaEm ?? new Date()).getTime() - estudante.iniciadaEm.getTime()) / 60_000,
         ),
-        minutosDeFeed: Math.round(aluno.tempo.feedMs / 60_000),
-        ociosoHaMs: aluno.ociosoHaMs,
-        alertaDeOcioso: aluno.ociosoHaMs !== null && aluno.ociosoHaMs >= OCIOSO_ALERTA_MS,
-        temDossie: comDossie.has(aluno.runId),
-        publicou: aluno.interacoes.publicou,
+        minutosDeFeed: Math.round(estudante.tempo.feedMs / 60_000),
+        ociosoHaMs: estudante.ociosoHaMs,
+        alertaDeOcioso: estudante.ociosoHaMs !== null && estudante.ociosoHaMs >= OCIOSO_ALERTA_MS,
+        temDossie: comDossie.has(estudante.runId),
+        publicou: estudante.interacoes.publicou,
         /**
          * SE existe reflexão, não O QUE ela diz. O texto é livre e sem
-         * moderação — num teste um aluno escreveu uma ofensa e o campo aceitou —
+         * moderação — num teste um estudante escreveu uma ofensa e o campo aceitou —
          * e a única pessoa que pode lidar com isso é o professor, lendo. Ele só
          * não tinha como saber que havia o que ler: a reflexão aparecia no popup
-         * do aluno e em nenhum lugar da tabela. Aqui vai a contagem, nunca o
+         * do estudante e em nenhum lugar da tabela. Aqui vai a contagem, nunca o
          * conteúdo, que é texto de criança e não passeia por listagem.
          */
-        caracteresDaReflexao: aluno.reflexao?.caracteres ?? 0,
+        caracteresDaReflexao: estudante.reflexao?.caracteres ?? 0,
       }));
 
       const comLado = linhas.filter((linha) => linha.ladoDominante !== "neutro");
@@ -621,20 +635,20 @@ export class AtividadesController {
     });
   }
 
-  /** Tudo o que UM aluno fez, para o professor ler durante a atividade. */
-  @Get(":id/alunos/:runId")
+  /** Tudo o que UM estudante fez, para o professor ler durante a atividade. */
+  @Get(":id/estudantes/:runId")
   @Contrato({
-    resumo: "Tudo o que UM aluno fez, durante a atividade.",
+    resumo: "Tudo o que UM estudante fez, durante a atividade.",
     descricao:
-      "As interações vêm com os **salvos primeiro**: é a coleção que o aluno vai defender no debate.",
+      "As interações vêm com os **salvos primeiro**: é a coleção que o estudante vai defender no debate.",
     params: z.object({ id: z.string().uuid(), runId: z.string().uuid() }),
-    resposta: AlunoDaAtividadeSchema,
+    resposta: EstudanteDaAtividadeSchema,
     notas: [
       "`doLadoSemeado` é a definição de COERÊNCIA: o post é do lado em que o feed dele nasceu?",
       "`nomeNoApp` é apelido dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.",
     ],
   })
-  async aluno(@Param("id") id: string, @Param("runId") runId: string, @Req() req: Autenticado) {
+  async estudante(@Param("id") id: string, @Param("runId") runId: string, @Req() req: Autenticado) {
     if (!ehUuid(runId)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
       const atividade = await atividadeDoProfessor(tx, id, req.auth.usuarioId, req.auth.escolaId);
@@ -653,7 +667,7 @@ export class AtividadesController {
           avatarEscolhido: true,
           startedAt: true,
           engineState: true,
-          aluno: { select: { username: true, displayName: true } },
+          estudante: { select: { username: true, displayName: true } },
           conclusao: { select: { inclinacao: true } },
           reflexao: { select: { texto: true } },
           studentPosts: { select: { texto: true, ladoInferido: true, createdAt: true } },
@@ -756,7 +770,7 @@ export class AtividadesController {
           comentarios: comentadosPorPost.get(post.id) ?? [],
           segundos: Math.round(((dwellPorPost[post.id] ?? 0) / 1000) * 10) / 10,
         }))
-        // Salvos primeiro: é a coleção que o aluno vai defender no debate.
+        // Salvos primeiro: é a coleção que o estudante vai defender no debate.
         .sort((a, b) => Number(b.salvou) - Number(a.salvou) || b.segundos - a.segundos);
 
       const salvosDoLado = interacoes.filter((p) => p.salvou && p.doLadoSemeado).length;
@@ -766,9 +780,15 @@ export class AtividadesController {
       const perfil = run.perfilJogo as { dominante?: string } | null;
 
       return {
+        estudante: {
+          username: run.estudante.username,
+          displayName: run.estudante.displayName,
+          nomeNoApp: run.nomeNoApp,
+          avatar: run.avatarEscolhido,
+        },
         aluno: {
-          username: run.aluno.username,
-          displayName: run.aluno.displayName,
+          username: run.estudante.username,
+          displayName: run.estudante.displayName,
           nomeNoApp: run.nomeNoApp,
           avatar: run.avatarEscolhido,
         },

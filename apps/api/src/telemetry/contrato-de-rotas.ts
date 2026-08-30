@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * O evento de telemetria — inspirado em xAPI, simplificado.
  *
- * O que o CLIENTE manda é o que ele FEZ. `alunoId` e `escolaId` NÃO estão aqui:
+ * O que o CLIENTE manda é o que ele FEZ. `estudanteId` e `escolaId` NÃO estão aqui:
  * a identidade vem do token e é acrescentada no servidor. Aceitá-la do corpo
  * deixaria qualquer bundle gravar evento no nome de outra criança.
  */

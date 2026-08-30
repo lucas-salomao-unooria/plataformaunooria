@@ -17,7 +17,9 @@ import { CARTOES, DESCRICAO_BOLHA } from "./catalogo";
 import {
   AlunosDaTurmaSchema,
   CartoesDoProfessorSchema,
+  EstudantesDaTurmaSchema,
   RelatorioDoAlunoSchema,
+  RelatorioDoEstudanteSchema,
   ResumoDaTurmaSchema,
   TurmaZeradaSchema,
   TurmasDaVilaSchema,
@@ -26,8 +28,8 @@ import { VilaService } from "./vila.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
 
 /**
- * Rotas do PROFESSOR. Superfície separada da do aluno, e não é organização: é a
- * única forma de o `@Roles("aluno")` da outra e o `@Roles("professor")` desta
+ * Rotas do PROFESSOR. Superfície separada da do estudante, e não é organização: é a
+ * única forma de o `@Roles("estudante")` da outra e o `@Roles("professor")` desta
  * serem verdade ao mesmo tempo.
  *
  * ## Quem vê o quê
@@ -38,7 +40,7 @@ import { professorDoToken } from "../comum/turmas-do-professor";
  * **Admin-contrato** não entra aqui.
  *
  * Duas classes, e não um `@Roles` misto: a lista de turmas e o AGREGADO abrem
- * para gestor; a linha de um aluno e o relatório individual, não. Um único
+ * para gestor; a linha de um estudante e o relatório individual, não. Um único
  * controller com o papel mais largo no topo e exceções por método é como uma
  * rota individual acaba aberta para gestor sem ninguém notar.
  *
@@ -115,19 +117,21 @@ export class VilaAgregadoController {
 export class VilaProfessorController {
   constructor(private readonly vila: VilaService) {}
 
-  /** Uma linha por aluno da turma: quantas partidas, a bolha, e se a última
+  /** Uma linha por estudante da turma: quantas partidas, a bolha, e se a última
    *  sustenta leitura. Sem números de valor — esses são da tela individual. */
   @Get("turmas/:turmaId")
   @Contrato({
-    resumo: "Uma linha por aluno da turma.",
+    resumo: "Uma linha por estudante da turma.",
     descricao:
       "Quantas partidas, a bolha, e se a última sustenta leitura.\n\n**Sem valor de Schwartz nenhum**: listagem é ordenável, e uma coluna \"Poder\" viraria ranking de crianças. Os valores vivem na tela individual, uma criança por vez, com o grau ao lado.",
     params: z.object({ turmaId: z.string().uuid() }),
-    resposta: AlunosDaTurmaSchema,
+    resposta: EstudantesDaTurmaSchema,
   })
   async turma(@Param("turmaId") turmaId: string, @Req() req: Autenticado) {
+    const lista = await this.vila.daTurma(req.auth.escolaId, idOu404(turmaId), professorDoToken(req.auth));
     return {
-      alunos: await this.vila.daTurma(req.auth.escolaId, idOu404(turmaId), professorDoToken(req.auth)),
+      estudantes: lista,
+      alunos: lista,
     };
   }
 
@@ -214,28 +218,28 @@ export class VilaProfessorController {
   }
 
   /**
-   * O relatório da última partida concluída de um aluno.
+   * O relatório da última partida concluída de um estudante.
    *
    * A seção das mensagens abre pelo NÍVEL que ela recebeu, antes do que ela fez:
    * "caiu em 2 de 3" sem dizer que era o nível C faz o adulto concluir que a
    * criança é ingênua — o rótulo que este projeto existe para não produzir.
    */
-  @Get("alunos/:alunoId")
+  @Get("estudantes/:alunoId")
   @Contrato({
-    resumo: "O relatório da última partida concluída de um aluno.",
+    resumo: "O relatório da última partida concluída de um estudante.",
     descricao:
       "**Professor only** — o gestor tem o agregado, nunca a linha de uma criança. São controllers separados de propósito: um `@Roles` misto com exceção por método é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\nA seção das mensagens abre pelo **NÍVEL** que ela recebeu, antes do que ela fez: \"caiu em 2 de 3\" sem dizer que era o nível C faz o adulto concluir que a criança é ingênua — o rótulo que este projeto existe para não produzir.",
     params: z.object({ alunoId: z.string().uuid() }),
-    resposta: RelatorioDoAlunoSchema,
+    resposta: RelatorioDoEstudanteSchema,
     notas: [
-      "`relatorio: null` é resposta legítima: o aluno existe e não jogou. Um 404 faria a tela dizer \"não encontrado\" para uma criança da turma dele.",
+      "`relatorio: null` é resposta legítima: o estudante existe e não jogou. Um 404 faria a tela dizer \"não encontrado\" para uma criança da turma dele.",
       "`grau` é invariante de API: só a variante `scored` tem número; as outras têm `null` POR TIPO, então o hub não consegue imprimir \"Poder 100\" a partir de um sinal só.",
       "`mensagens: null` = nenhum cartão chegou a aparecer — **não** é \"ela ignorou tudo\".",
     ],
   })
   async aluno(@Param("alunoId") alunoId: string, @Req() req: Autenticado) {
-    const relatorio = await this.vila.doAluno(req.auth.escolaId, idOu404(alunoId));
-    /* `null` é resposta legítima: o aluno existe e não jogou. 404 aqui faria a
+    const relatorio = await this.vila.doEstudante(req.auth.escolaId, idOu404(alunoId));
+    /* `null` é resposta legítima: o estudante existe e não jogou. 404 aqui faria a
        tela do professor dizer "não encontrado" para uma criança da turma dele. */
     return { relatorio };
   }

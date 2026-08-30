@@ -55,11 +55,11 @@ export class PortabilidadeController {
   /**
    * O documento SEM assinatura, para o hub assinar e entregar.
    *
-   * A mesma tranca de `GET /alunos/:id/historico`: quem pede precisa ter lotação
+   * A mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa ter lotação
    * na escola onde a criança está HOJE. Emitir o histórico inteiro de uma criança
    * é leitura atravessada, e ela tem uma porta só, com dono.
    */
-  @Get("alunos/:id/perfil-portatil")
+  @Get("estudantes/:id/perfil-portatil")
   @Roles("gestor", "admin-contrato")
   @Contrato({
     resumo: "Monta o documento SEM assinatura, para o hub assinar.",
@@ -68,7 +68,7 @@ export class PortabilidadeController {
     params: z.object({ id: z.string().uuid() }),
     resposta: PerfilParaAssinarSchema,
     notas: [
-      "Mesma tranca de `GET /alunos/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.",
+      "Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.",
       "**Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.",
       "Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.",
       "Sem `CONTRATO_ID` no hub, a emissão é **503**.",
@@ -77,17 +77,17 @@ export class PortabilidadeController {
   async emitir(@Param("id") id: string, @Req() req: Autenticado) {
     if (!UUID.safeParse(id).success) throw new BadRequestException("id inválido");
 
-    /* A MESMA tranca de `GET /alunos/:id/historico`, e de propósito: as duas
+    /* A MESMA tranca de `GET /estudantes/:id/historico`, e de propósito: as duas
        leituras atravessam escolas, e quem responde pela criança é a unidade onde
        ela está hoje. */
-    const historico = await this.escolas.historicoDoAluno(id);
-    if (!historico) throw new NotFoundException("aluno não encontrado");
+    const historico = await this.escolas.historicoDoEstudante(id);
+    if (!historico) throw new NotFoundException("estudante não encontrado");
     if (req.auth.perfil !== "admin-contrato") {
       const escolaAtual = historico.escolas.find((e) => e.atual)?.id;
       const podeVer =
         escolaAtual !== undefined &&
         (await this.escolas.temLotacao(req.auth.usuarioId, escolaAtual));
-      if (!podeVer) throw new ForbiddenException("este aluno não está numa escola sua");
+      if (!podeVer) throw new ForbiddenException("este estudante não está numa escola sua");
     }
 
     const perfil = await this.portabilidade.montar(id);
@@ -100,7 +100,7 @@ export class PortabilidadeController {
   }
 
   /** O que esta escola já recebeu sobre esta criança. */
-  @Get("alunos/:id/perfis-recebidos")
+  @Get("estudantes/:id/perfis-recebidos")
   @Roles("gestor", "admin-contrato")
   @Contrato({
     resumo: "Os documentos que esta escola já recebeu sobre esta criança.",
@@ -171,7 +171,7 @@ export class PortabilidadeController {
       "**Assinatura inválida é RECUSA (400)** — isso é adulteração. Emissor inalcançável **não** é: entra marcado `nao-verificada`, e a tela sai em âmbar em vez de fingir que conferiu.",
       "A classificação é pelo `code` da jose, NUNCA pelo texto: \"signature verification failed\" contém \"failed\", e uma versão anterior classificava documento FORJADO como \"não deu para conferir\".",
       "`PORTABILIDADE_EMISSORES` é a decisão de confiança: o `emissor.hub` vem de dentro do arquivo, então o documento SELECIONA entre origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia = tudo entra `nao-verificada`.",
-      "**Importar não cria aluno**: liga pelo CPF a quem já está aqui. Matricular é ato da escola.",
+      "**Importar não cria estudante**: liga pelo CPF a quem já está aqui. Matricular é ato da escola.",
     ],
   })
   async importar(

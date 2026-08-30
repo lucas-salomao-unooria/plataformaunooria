@@ -52,6 +52,7 @@ const InvestigacaoSchema = z.object({
 
 export const MetricasDaRunSchema = z.object({
   runId: Uuid,
+  estudante: z.object({ username: z.string(), displayName: z.string() }),
   aluno: z.object({ username: z.string(), displayName: z.string() }),
   fase: z.string(),
   iniciadaEm: z.string().datetime(),
@@ -122,7 +123,7 @@ export const AnaliseDaTurmaSchema = z.object({
     ladoBLabel: z.string(),
   }),
   /** **A tabela que vale a aula**: linhas = lado semeado, colunas = conclusão.
-   *  Se o lado em que o feed nasceu prevê a conclusão que o aluno escreveu, o
+   *  Se o lado em que o feed nasceu prevê a conclusão que o estudante escreveu, o
    *  resultado experimental da turma está nessa grade. */
   conclusaoPorLadoSemeado: z.object({ semeadoEmA: CelulaSchema, semeadoEmB: CelulaSchema }),
   poderDoViesSemeado: z.object({
@@ -169,6 +170,7 @@ export const AnaliseDaTurmaSchema = z.object({
       z.object({ chave: z.string(), rotulo: z.string(), media: z.number() }),
     ),
   }),
+  estudantes: z.array(MetricasDaRunSchema).optional(),
   alunos: z.array(MetricasDaRunSchema),
 });
 
@@ -203,8 +205,8 @@ export const ResumoDeProdutoSchema = z.object({
 /**
  * **A métrica que valida — ou refuta — a premissa do projeto.**
  *
- * `delta` = dwell médio dos posts do perfil P entre alunos de perfil P menos o
- * dwell médio dos MESMOS posts entre alunos de outro perfil, sempre com a
+ * `delta` = dwell médio dos posts do perfil P entre estudantes de perfil P menos o
+ * dwell médio dos MESMOS posts entre estudantes de outro perfil, sempre com a
  * exposição no denominador. Sem isso mediria o próprio viés do feed e
  * "confirmaria" a premissa por construção.
  *
@@ -222,7 +224,9 @@ export const AnaliseDeProdutoSchema = z.object({
       dwellDosOutros: z.number().nullable(),
       delta: z.number().nullable(),
       amostra: z.object({
+        estudantesDoPerfil: z.number().optional(),
         alunosDoPerfil: z.number(),
+        estudantesDeOutros: z.number().optional(),
         alunosDeOutros: z.number(),
       }),
     }),

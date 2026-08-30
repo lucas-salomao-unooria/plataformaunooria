@@ -8,5 +8,5 @@ export const GerarSchema = z.object({
 
 /** Só o texto. O prompt de sistema, o modelo e a contagem de tokens NÃO saem
  *  daqui: prompt é segredo que não vai a bundle client (regra 2), e o consumo
- *  é assunto da quota, não do aluno. */
+ *  é assunto da quota, não do estudante. */
 export const GerarRespostaSchema = z.object({ texto: z.string() });

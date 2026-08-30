@@ -19,7 +19,7 @@ import { PrismaService } from "../prisma/prisma.service";
  * `exp_01_exp_70_perfis_importados` (insumo do Ato 1, valem para a próxima turma) e o
  * `status` da atividade.
  */
-export async function limparDadosDosAlunos(
+export async function limparDadosDosEstudantes(
   tx: Prisma.TransactionClient,
   activityId: string,
 ): Promise<{ sessoes: number }> {
@@ -27,11 +27,13 @@ export async function limparDadosDosAlunos(
   return { sessoes: count };
 }
 
+export const limparDadosDosAlunos = limparDadosDosEstudantes;
+
 /**
  * Apaga a atividade inteira e tudo que pende dela.
  *
  * As `runs` saem **explicitamente** porque `runs.activity_id` é
- * `ON DELETE RESTRICT` (de propósito — sessão de aluno não evapora por clique
+ * `ON DELETE RESTRICT` (de propósito — sessão de estudante não evapora por clique
  * errado). O resto — `posts`, `exp_01_authors`, `exp_01_post_comments`, `exp_01_generation_jobs`,
  * `exp_01_exp_70_perfis_importados` — cai por CASCADE.
  *

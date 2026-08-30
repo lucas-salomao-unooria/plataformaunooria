@@ -138,7 +138,7 @@ export const GradeDePostsSchema = z.object({
 });
 
 /**
- * Os comentários de um post, na ordem de uma CONVERSA: o do aluno no topo (como
+ * Os comentários de um post, na ordem de uma CONVERSA: o do estudante no topo (como
  * o Instagram faz com o seu), as reações logo depois, e os do roteiro por
  * último.
  */
@@ -150,7 +150,7 @@ export const ComentariosDoPostSchema = z.object({
       texto: z.string(),
       likesCount: z.number().int(),
       timestampLabel: z.string(),
-      doAluno: z.boolean(),
+      doEstudante: z.boolean(),
     }),
   ),
   total: z.number().int().nonnegative(),

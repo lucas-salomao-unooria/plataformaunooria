@@ -173,7 +173,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
   test("uma lotação ativa só, e a anterior fica registrada com data de saída", async () => {
     const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
     const lotacoes = await prisma.lotacao.findMany({
-      where: { usuarioId: helena.id, papel: "aluno" },
+      where: { usuarioId: helena.id, papel: { in: ["estudante", "aluno"] } },
       orderBy: { escolaId: "asc" },
     });
     expect(lotacoes).toHaveLength(2);
@@ -231,7 +231,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
     const feito = await escolas.transferirAluno({ alunoId: helena.id, escolaDestinoId: ESCOLA_B });
     expect(feito).toMatchObject({ jaEstava: true });
     const ativas = await prisma.lotacao.count({
-      where: { usuarioId: helena.id, papel: "aluno", fim: null },
+      where: { usuarioId: helena.id, papel: { in: ["estudante", "aluno"] }, fim: null },
     });
     expect(ativas).toBe(1);
   });

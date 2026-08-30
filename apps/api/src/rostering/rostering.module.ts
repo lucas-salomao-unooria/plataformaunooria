@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
 import { PrismaModule } from "../prisma/prisma.module";
 import {
-  AlunosController,
   EscolasController,
+  EstudantesController,
   LotacoesController,
 } from "./escolas.controller";
 import { EscolasService } from "./escolas.service";
@@ -20,7 +20,7 @@ import {
   controllers: [
     EscolasController,
     LotacoesController,
-    AlunosController,
+    EstudantesController,
     RosteringController,
     TurmasController,
     MatriculasController,

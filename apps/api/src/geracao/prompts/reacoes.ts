@@ -2,7 +2,7 @@ import type { AiJsonSchema, AiProvider } from "../../ai/provider";
 import { filtrarReacoes, MAX_CARACTERES, type Reacao } from "./reacao-segura";
 
 /**
- * Personas reagindo **ao vivo** ao que o aluno publica ou comenta.
+ * Personas reagindo **ao vivo** ao que o estudante publica ou comenta.
  *
  * O que faz isto valer o risco: no momento em que a criança publica algo, ela
  * espera reação. Um feed que nunca responde é obviamente falso, e a atividade
@@ -68,7 +68,7 @@ REGRAS DURAS. Quebrar qualquer uma faz a reação ser descartada:
 function prompt(opts: {
   elenco: PersonaParaReagir[];
   perguntaChave: string;
-  textoDoAluno: string;
+  textoDoEstudante: string;
   contexto: string;
   quantas: number;
 }): string {
@@ -78,12 +78,12 @@ function prompt(opts: {
 
   return `Você escreve comentários de perfis fictícios num app de fotos, num debate sobre:
 "${opts.perguntaChave}"
-
+ 
 ELENCO (use só estes handles):
 ${elenco}
 
 ${opts.contexto}
-O QUE O ALUNO ESCREVEU: "${opts.textoDoAluno}"
+O QUE O ESTUDANTE ESCREVEU: "${opts.textoDoEstudante}"
 
 Escreva ${opts.quantas} reação(ões) de perfis DIFERENTES do elenco, reagindo ao que ele
 escreveu. Cada perfil fala do jeito dele. Reaja ao CONTEÚDO — concorde, discorde,
@@ -94,7 +94,7 @@ ${REGRAS}`;
 /**
  * Gera e **filtra** as reações. Devolve só o que passou.
  *
- * Nunca lança: quem chama está no meio de uma interação do aluno, e uma exceção
+ * Nunca lança: quem chama está no meio de uma interação do estudante, e uma exceção
  * aqui não pode derrubar a publicação dele. Erro vira lista vazia.
  */
 export async function gerarReacoes(
@@ -102,13 +102,13 @@ export async function gerarReacoes(
   opts: {
     elenco: PersonaParaReagir[];
     perguntaChave: string;
-    textoDoAluno: string;
+    textoDoEstudante: string;
     /** Uma frase dizendo a que ele reagiu — post próprio ou post do feed. */
     contexto: string;
     quantas?: number;
   },
 ): Promise<{ reacoes: Reacao[]; recusadas: number }> {
-  if (opts.elenco.length === 0 || opts.textoDoAluno.trim().length === 0) {
+  if (opts.elenco.length === 0 || opts.textoDoEstudante.trim().length === 0) {
     return { reacoes: [], recusadas: 0 };
   }
 
@@ -122,7 +122,7 @@ export async function gerarReacoes(
         "Você escreve comentários curtos de perfis fictícios para adolescentes. " +
         "Obedece às regras duras sem exceção. Devolve apenas JSON.",
       responseSchema: ESQUEMA,
-      // Uma tentativa só: o aluno está esperando. Regerar dobraria a espera.
+      // Uma tentativa só: o estudante está esperando. Regerar dobraria a espera.
       tentativas: 1,
       temperatura: 1.1,
       validar: (resposta) => resposta as { reacoes: unknown },

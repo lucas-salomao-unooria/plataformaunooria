@@ -9,7 +9,7 @@ import { z } from "zod";
  *
  * Payload JWT: { sub, escola_id, turma_id?, perfil, aud: "plataforma-api" }.
  * `usuarioId` = `sub` (professor/gestor/admin passam pelo mesmo guard, daí não
- * se chamar mais alunoId).
+ * se chamar mais estudanteId).
  */
 export type Perfil = (typeof PERFIS)[number];
 
@@ -21,7 +21,7 @@ export interface AuthClaims {
   perfil: Perfil;
 }
 
-export const PERFIS = ["aluno", "professor", "gestor", "admin-contrato"] as const;
+export const PERFIS = ["estudante", "professor", "gestor", "admin-contrato"] as const;
 
 /** Os mesmos quatro papéis para quem valida com Zod — schema de rota, sobretudo.
  *  Derivado de `PERFIS` (que agora é tupla) para não haver duas listas: uma

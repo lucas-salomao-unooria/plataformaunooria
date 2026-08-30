@@ -1,18 +1,18 @@
 /**
- * As etapas da missão e a regra que reconcilia **a turma** com **o aluno**.
+ * As etapas da missão e a regra que reconcilia **a turma** com **o estudante**.
  *
  * O fluxo v2 tem dois relógios:
  *
  * - `activities.etapa` — o relógio da TURMA, que o professor controla. É o que
  *   permite dizer "agora é debate" e travar 30 telas de uma vez.
- * - `runs.fase` — a tela daquele aluno. Dentro de um mesmo momento os alunos
+ * - `runs.fase` — a tela daquele estudante. Dentro de um mesmo momento os estudantes
  *   andam em ritmos diferentes: um ainda lê a explicabilidade enquanto o outro já
  *   está olhando os posts perdidos.
  *
  * A função `faseEfetiva` resolve os dois num só valor, e ela mora aqui — pura e
  * testável — porque tanto a API quanto a renderização do servidor precisam
  * chegar à MESMA resposta. Duas implementações divergentes disso significariam a
- * tela do aluno discordando do que o servidor acha que ele está vendo.
+ * tela do estudante discordando do que o servidor acha que ele está vendo.
  */
 
 /** Etapas da turma, na ordem em que o professor as abre. */
@@ -28,7 +28,7 @@ export const ETAPAS_DA_TURMA = [
 
 export type EtapaDaTurma = (typeof ETAPAS_DA_TURMA)[number];
 
-/** Fases da run, na ordem em que o aluno as percorre. */
+/** Fases da run, na ordem em que o estudante as percorre. */
 export const FASES_DA_RUN = [
   'onboarding',
   'feed',
@@ -43,7 +43,7 @@ export const FASES_DA_RUN = [
 
 export type FaseDaRun = (typeof FASES_DA_RUN)[number];
 
-/** Onde cada etapa da turma coloca, no mínimo, a tela do aluno. */
+/** Onde cada etapa da turma coloca, no mínimo, a tela do estudante. */
 const PISO_DA_ETAPA: Record<EtapaDaTurma, FaseDaRun> = {
   investigacao: 'onboarding',
   conclusao: 'conclusao',
@@ -74,7 +74,7 @@ const LEGADAS: Record<string, FaseDaRun> = {
  * Traduz qualquer valor de `runs.fase` para uma fase conhecida.
  *
  * Existe porque o fallback ingênuo era `'onboarding'` — e uma run legada em
- * `dossie` fazia o aluno ser **expulso para o seletor de avatar** no meio da
+ * `dossie` fazia o estudante ser **expulso para o seletor de avatar** no meio da
  * explicabilidade. Fase desconhecida agora vira a fase equivalente, não o começo.
  */
 export function normalizarFase(valor: string): FaseDaRun {
@@ -87,11 +87,11 @@ export function ehEtapaDaTurma(valor: string): valor is EtapaDaTurma {
 }
 
 /**
- * A tela que o aluno deve ver, dada a fase dele e a etapa da turma.
+ * A tela que o estudante deve ver, dada a fase dele e a etapa da turma.
  *
  * Duas regras, e a diferença entre elas é o ponto pedagógico:
  *
- * 1. **A etapa é PISO, não teto.** O aluno pode estar à frente da turma —
+ * 1. **A etapa é PISO, não teto.** O estudante pode estar à frente da turma —
  *    terminou de ler a explicabilidade e já foi ver os posts perdidos. Puxá-lo de
  *    volta seria punir quem leu mais rápido.
  * 2. **`debate` é EXCEÇÃO: trava.** No debate a turma tem de estar na mesma tela,
@@ -121,7 +121,7 @@ export function faseEfetiva(faseDaRun: FaseDaRun, etapa: EtapaDaTurma): FaseDaRu
  * do momento que o professor liberou. Voltar é outra intenção: o professor
  * adiantou sem querer, ou quer refazer um momento com a turma. Se a regra do piso
  * valesse aqui também, "voltar um momento" mudaria o rótulo no painel e **nada**
- * na tela dos alunos.
+ * na tela dos estudantes.
  *
  * Foi exactamente o que aconteceu na primeira turma real: a aula foi para o
  * debate por engano, voltar não trouxe ninguém, e a resposta de todo mundo passou
@@ -147,7 +147,7 @@ export function faseAoVoltar(
    *    volta para o seletor de figurinha — quem já entrou no aparelho não escolhe
    *    avatar de novo.
    * 2. **Sessão congelada não reabre.** Se o relatório já foi computado, devolver
-   *    o feed daria ao aluno posts que não entram em conta nenhuma e faria o
+   *    o feed daria ao estudante posts que não entram em conta nenhuma e faria o
    *    relatório mentir. Esses param na tela da resposta, que ele pode refazer.
    */
   const teto: FaseDaRun =
@@ -186,7 +186,7 @@ export const CONTROLE_DO_PROFESSOR: {
     etapa: 'conclusao',
     nome: 'Resposta',
     rotulo: 'Encerrar investigação',
-    descricao: 'Fecha o feed e pede a resposta: cada aluno escolhe um dos três lados.',
+    descricao: 'Fecha o feed e pede a resposta: cada estudante escolhe um dos três lados.',
   },
   {
     etapa: 'debate',

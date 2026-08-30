@@ -5,7 +5,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 /**
  * Tranca do `POST /telemetry/ingest`, o consumo da push subscription do Pub/Sub.
  *
- * A rota grava evento de aluno e NÃO passa pelo OidcGuard — quem chama é o
+ * A rota grava evento de estudante e NÃO passa pelo OidcGuard — quem chama é o
  * Pub/Sub, não um usuário, e não existe token do hub nessa chamada. Com a api
  * publicada atrás do Load Balancer, sem esta verificação qualquer um na
  * internet poderia injetar telemetria falsa em qualquer escola (o `escolaId`

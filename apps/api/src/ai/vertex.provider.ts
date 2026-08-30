@@ -99,7 +99,7 @@ export function thinkingConfig(): Record<string, unknown> {
 
 /**
  * Uma parte do turno do modelo. `thought: true` marca raciocínio — que NÃO é
- * fala: incluí-lo faria o pensamento do modelo aparecer na tela do aluno.
+ * fala: incluí-lo faria o pensamento do modelo aparecer na tela do estudante.
  */
 type ParteVertex = {
   text?: string;
@@ -271,7 +271,7 @@ export class VertexProvider implements AiProvider {
       // O histórico é remontado a cada tentativa: a tentativa anterior foi
       // REJEITADA, e deixar a fala recusada no contexto ensinaria o erro.
       const contents: ConteudoVertex[] = req.historico.map((m) => ({
-        role: m.papel === "aluno" ? "user" : "model",
+        role: m.papel === "estudante" ? "user" : "model",
         parts: [{ text: m.texto }],
       }));
 
@@ -311,7 +311,7 @@ export class VertexProvider implements AiProvider {
          * Vertex exige uma `functionResponse` para CADA uma — responder só a
          * primeira devolve 400 com "the number of function response parts is
          * equal to the number of function call parts". MEDIDO: acontece na
-         * primeira volta de um turno em que o aluno pede fonte e leitura na
+         * primeira volta de um turno em que o estudante pede fonte e leitura na
          * mesma frase.
          */
         const chamadas = partes.flatMap((parte) => (parte.functionCall ? [parte.functionCall] : []));
@@ -375,7 +375,7 @@ export class VertexProvider implements AiProvider {
         // número, tamanho zero — e só estourava depois, como erro seco.
         ...(texto.trim().length === 0 ? ["você não escreveu nada. Responda em uma frase curta"] : []),
         // Cortada no teto é cortada no meio de uma frase. Sem isto ela chegava
-        // ao aluno assim, em silêncio.
+        // ao estudante assim, em silêncio.
         ...(finishReason === "MAX_TOKENS"
           ? ["sua resposta foi cortada por ser longa demais. Responda em bem menos palavras"]
           : []),

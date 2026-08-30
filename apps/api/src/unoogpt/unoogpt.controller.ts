@@ -36,7 +36,7 @@ import { UnoogptService } from "./unoogpt.service";
  */
 @Controller("unoogpt")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("aluno")
+@Roles("estudante")
 export class UnoogptController {
   constructor(private readonly service: UnoogptService) {}
 

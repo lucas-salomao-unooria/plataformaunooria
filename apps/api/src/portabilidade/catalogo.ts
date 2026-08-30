@@ -3,7 +3,7 @@
  *
  * Transferência entre escolas do mesmo contrato já é resolvida pela lotação —
  * lá o dado fica onde foi produzido e a leitura atravessa por uma porta só
- * (`GET /alunos/:id/historico`). Este módulo é para o outro caso: a criança sai
+ * (`GET /estudantes/:id/historico`). Este módulo é para o outro caso: a criança sai
  * da rede estadual para a municipal, que é outro contrato, outra stack, outro
  * banco. Não há JOIN possível, e **não há garantia nenhuma de que a rede de
  * destino comprou o produto**.
@@ -45,7 +45,7 @@ export const VERSAO_DOCUMENTO = 1;
  *   que nem o gestor pode ler.
  * - **Conteúdo de instrumento**: as respostas, as conversas, os textos que a
  *   criança escreveu. O documento diz o que ela fez e o que se mediu, nunca o
- *   material bruto — pela mesma razão que `GET /alunos/:id/historico` devolve
+ *   material bruto — pela mesma razão que `GET /estudantes/:id/historico` devolve
  *   participações e não o conteúdo.
  * - **Texto livre de qualquer origem.** Pelo mesmo motivo que `eventos[].dados`
  *   da Vila só aceita vocabulário fechado: texto livre é o caminho por onde o

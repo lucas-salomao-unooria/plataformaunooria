@@ -38,7 +38,7 @@ beforeAll(async () => {
   ] as const) {
     await admin.escola.create({ data: { id, nome } });
     await admin.progresso.create({
-      data: { escolaId: id, alunoId: `aluno-${id}`, expId: "exp-teste", dados: { origem: id } },
+      data: { escolaId: id, estudanteId: `aluno-${id}`, expId: "exp-teste", dados: { origem: id } },
     });
   }
 
@@ -71,9 +71,9 @@ describe("RLS por escola (role de runtime, sem ownership)", () => {
       (tx) =>
         tx.progresso.findUnique({
           where: {
-            escolaId_alunoId_expId: {
+            escolaId_estudanteId_expId: {
               escolaId: ESCOLA_B,
-              alunoId: `aluno-${ESCOLA_B}`,
+              estudanteId: `aluno-${ESCOLA_B}`,
               expId: "exp-teste",
             },
           },
@@ -88,7 +88,7 @@ describe("RLS por escola (role de runtime, sem ownership)", () => {
       runtime.comTenancy(
         (tx) =>
           tx.progresso.create({
-            data: { escolaId: ESCOLA_B, alunoId: "intruso", expId: "exp-teste", dados: {} },
+            data: { escolaId: ESCOLA_B, estudanteId: "intruso", expId: "exp-teste", dados: {} },
           }),
         ESCOLA_A,
       ),

@@ -23,7 +23,7 @@ export const EditarTurmaSchema = z.object({
 
 export const MatricularSchema = z.object({
   usuarioId: Uuid,
-  papel: z.enum(["aluno", "professor"]),
+  papel: z.enum(["estudante", "aluno", "professor"]),
 });
 
 export const AjustarMatriculaSchema = z
@@ -68,6 +68,7 @@ export const TurmaEmListaSchema = z.object({
   turno: z.string().nullable(),
   tipo: z.string(),
   periodo: z.string().nullable(),
+  estudantes: z.number().int().nonnegative().optional(),
   alunos: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
 });
@@ -98,7 +99,7 @@ export const PessoaMatriculadaSchema = z.object({
   /** O RA da rede. Nulo em conta que nasceu sem planilha (conta de assento). */
   matricula: z.string().nullable(),
   ativo: z.boolean(),
-  /** Turma de REFERÊNCIA da pessoa; só significa algo para aluno. */
+  /** Turma de REFERÊNCIA da pessoa; só significa algo para estudante. */
   principal: z.boolean(),
   /** Ainda não fez o primeiro acesso. */
   senhaProvisoria: z.boolean(),
@@ -113,9 +114,12 @@ export const PessoasDaTurmaSchema = z.object({
     turno: z.string().nullable(),
     periodo: z.string(),
   }),
+  estudantes: z.array(PessoaMatriculadaSchema).optional(),
   alunos: z.array(PessoaMatriculadaSchema),
   professores: z.array(PessoaMatriculadaSchema),
 });
+export const EstudantesDaTurmaSchema = PessoasDaTurmaSchema;
+export const AlunosDaTurmaSchema = PessoasDaTurmaSchema;
 
 export const PeriodoLetivoSchema = z.object({
   id: Uuid,
@@ -197,11 +201,12 @@ export const TransferirSchema = z.object({
 });
 
 export const PapelDeLotacaoQuery = z.object({
-  papel: z.enum(["aluno", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "aluno", "professor", "gestor"]).optional(),
 });
 
 // -------------------------------------------------------------------- saída
 
+/** Uma escola do contrato, com contagem. `pai` é o NOME da regional. */
 /** Uma escola do contrato, com contagem. `pai` é o NOME da regional. */
 export const EscolaDaRedeSchema = z.object({
   id: z.string(),
@@ -212,6 +217,7 @@ export const EscolaDaRedeSchema = z.object({
   uf: z.string().nullable(),
   paiId: z.string().nullable(),
   pai: z.string().nullable(),
+  estudantes: z.number().int().nonnegative().optional(),
   alunos: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
   turmas: z.number().int().nonnegative(),
@@ -252,6 +258,7 @@ export const EscolasDaPessoaSchema = z.array(EscolaDaPessoaSchema);
  */
 export const ResumoDaEscolaSchema = EscolaDaPessoaSchema.extend({
   regional: z.string().nullable(),
+  estudantes: z.number().int().nonnegative().optional(),
   alunos: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
   turmas: z.number().int().nonnegative(),
@@ -285,27 +292,37 @@ export const LoteDeLotacoesSchema = z.object({
 
 export const TransferenciaSchema = z.object({
   ok: z.literal(true),
-  /** A escola de onde saiu; `null` quando o aluno não tinha lotação ativa. */
+  /** A escola de onde saiu; `null` quando o estudante não tinha lotação ativa. */
   origem: z.string().nullable(),
   /** `true` quando o destino já era a escola atual — nada foi movido. */
   jaEstava: z.boolean(),
 });
 
 /**
- * O histórico do aluno ATRAVESSANDO escolas.
+ * O histórico do estudante ATRAVESSANDO escolas.
  *
  * Devolve PARTICIPAÇÕES — em que experiência, em que turma, em que escola,
  * quando —, **nunca o conteúdo dos instrumentos**: o retrato de valores da Vila
  * e a transcrição do unooGPT continuam atrás das telas de quem tem a posse
  * pedagógica na escola onde aquilo aconteceu.
  */
-export const HistoricoDoAlunoSchema = z.object({
-  aluno: z.object({
-    id: Uuid,
-    nome: z.string(),
-    usuario: z.string(),
-    cpf: z.string().nullable(),
-  }),
+export const HistoricoDoEstudanteSchema = z.object({
+  estudante: z
+    .object({
+      id: Uuid,
+      nome: z.string(),
+      usuario: z.string(),
+      cpf: z.string().nullable(),
+    })
+    .optional(),
+  aluno: z
+    .object({
+      id: Uuid,
+      nome: z.string(),
+      usuario: z.string(),
+      cpf: z.string().nullable(),
+    })
+    .optional(),
   escolas: z.array(
     z.object({
       id: z.string(),
@@ -337,6 +354,7 @@ export const HistoricoDoAlunoSchema = z.object({
     }),
   ),
 });
+export const HistoricoDoAlunoSchema = HistoricoDoEstudanteSchema;
 
 // ========================================================= importação de pessoas
 
@@ -345,7 +363,7 @@ export const ImportarQuery = z.object({
   /** Senha única do lote, escolhida na TELA — a planilha não tem coluna de
    *  senha (ADR-29). Vale só para quem NASCE nesta importação. */
   senhaPadrao: z.string().min(8).max(200).optional(),
-  /** "1" = uma senha diferente por pessoa (recomendado para alunos). */
+  /** "1" = uma senha diferente por pessoa (recomendado para estudantes). */
   gerarSenhas: z.enum(["0", "1"]).optional(),
 });
 
@@ -377,7 +395,7 @@ export const RelatorioDeImportacaoSchema = z.object({
    *  lote completo não é ordem de exclusão — mas também não passa em silêncio,
    *  senão a rede some da plataforma por omissão. */
   candidatosAInativacao: z.number().int().nonnegative(),
-  /** Alunos que já existiam em OUTRA escola da rede, reconhecidos pelo CPF.
+  /** Estudantes que já existiam em OUTRA escola da rede, reconhecidos pelo CPF.
    *  Sem ele cada um nasceria de novo, com o histórico partido em duas pessoas. */
   transferidos: z.number().int().nonnegative(),
   /** Professores e gestores que ganharam lotação NESTA escola sem perder a de lá. */

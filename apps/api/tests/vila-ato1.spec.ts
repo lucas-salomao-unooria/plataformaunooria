@@ -145,14 +145,14 @@ describe("perfisParaOAto1", () => {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA, alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA, estudanteId: alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA, sessaoId: sessao.id, alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA, sessaoId: sessao.id, estudanteId: alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: graus ?? base.graus, amostraSuficiente,
       },
     });
@@ -166,7 +166,7 @@ describe("perfisParaOAto1", () => {
     turmaId = turma.id;
     const criar = (username: string) =>
       prisma.user.create({
-        data: { role: "aluno", escolaId: ESCOLA, turmaId, username, displayName: username, passwordHash: "x" },
+        data: { role: "estudante", escolaId: ESCOLA, turmaId, username, displayName: username, passwordHash: "x" },
         select: { id: true },
       });
     comPerfil = (await criar("ato1.a")).id;
@@ -237,14 +237,14 @@ describe("importar para a atividade (Ato 1)", () => {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA_AT, alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA_AT, estudanteId: alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA_AT, sessaoId: sessao.id, alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA_AT, sessaoId: sessao.id, estudanteId: alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: base.graus, amostraSuficiente: true,
       },
     });
@@ -263,7 +263,7 @@ describe("importar para a atividade (Ato 1)", () => {
     ).id;
     const criar = (u: string) =>
       prisma.user.create({
-        data: { role: "aluno", escolaId: ESCOLA_AT, turmaId, username: u, displayName: u, passwordHash: "x" },
+        data: { role: "estudante", escolaId: ESCOLA_AT, turmaId, username: u, displayName: u, passwordHash: "x" },
         select: { id: true },
       });
     redistribuido = (await criar("at.a")).id;
@@ -316,21 +316,21 @@ describe("importar para a atividade (Ato 1)", () => {
     // aula — e uma importação que a apagasse faria isso em silêncio, com o feed
     // do aluno nascendo do outro lado sem ninguém entender por quê.
     await prisma.perfilImportado.update({
-      where: { activityId_alunoId: { activityId, alunoId: redistribuido } },
+      where: { activityId_estudanteId: { activityId, estudanteId: redistribuido } },
       data: { ladoForcado: "B" },
     });
 
     await importar();
 
     const movido = await prisma.perfilImportado.findUniqueOrThrow({
-      where: { activityId_alunoId: { activityId, alunoId: redistribuido } },
+      where: { activityId_estudanteId: { activityId, estudanteId: redistribuido } },
     });
     expect(movido.ladoForcado).toBe("B");
     // e o resto FOI atualizado — a reimportação não é no-op.
     expect(movido.origem).toBe("jogo");
 
     const outro = await prisma.perfilImportado.findUniqueOrThrow({
-      where: { activityId_alunoId: { activityId, alunoId: normal } },
+      where: { activityId_estudanteId: { activityId, estudanteId: normal } },
     });
     expect(outro.ladoForcado).toBeNull();
   });
@@ -426,7 +426,7 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
     ).id;
     aluno = (
       await prisma.user.create({
-        data: { role: "aluno", escolaId: ESCOLA_LG, turmaId, username: "lg.a", displayName: "Aluno LG", passwordHash: "x" },
+        data: { role: "estudante", escolaId: ESCOLA_LG, turmaId, username: "lg.a", displayName: "Aluno LG", passwordHash: "x" },
         select: { id: true },
       })
     ).id;
@@ -436,14 +436,14 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA_LG, alunoId: aluno, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA_LG, estudanteId: aluno, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA_LG, sessaoId: sessao.id, alunoId: aluno, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA_LG, sessaoId: sessao.id, estudanteId: aluno, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: base.graus, amostraSuficiente: true,
       },
     });
@@ -490,7 +490,7 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
 
   test("o professor redistribuir continua vencendo o perfil", async () => {
     await prisma.perfilImportado.update({
-      where: { activityId_alunoId: { activityId, alunoId: aluno } },
+      where: { activityId_estudanteId: { activityId, estudanteId: aluno } },
       data: { ladoForcado: "A" },
     });
     const depois = await resolverLargada(prisma, activityId, aluno, ANTAGONISMO);
@@ -541,14 +541,14 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA_TT, alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA_TT, estudanteId: alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA_TT, sessaoId: sessao.id, alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA_TT, sessaoId: sessao.id, estudanteId: alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: base.graus, amostraSuficiente: true,
       },
     });
@@ -581,7 +581,7 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
 
     const criarAluno = (username: string, turmaId: string) =>
       prisma.user.create({
-        data: { role: "aluno", escolaId: ESCOLA_TT, turmaId, username, displayName: username, passwordHash: "x" },
+        data: { role: "estudante", escolaId: ESCOLA_TT, turmaId, username, displayName: username, passwordHash: "x" },
         select: { id: true },
       });
 
@@ -616,15 +616,15 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
 
     const linhas = await prisma.perfilImportado.findMany({
       where: { activityId: atividadeDaTurmaA },
-      select: { alunoId: true },
+      select: { estudanteId: true },
     });
-    expect(linhas.map((l) => l.alunoId)).toEqual([alunoDaTurmaA]);
+    expect(linhas.map((l) => l.estudanteId)).toEqual([alunoDaTurmaA]);
   });
 
   test("o aluno de outra turma não entra", async () => {
     await importar(atividadeDaTurmaA);
     const doOutro = await prisma.perfilImportado.findFirst({
-      where: { activityId: atividadeDaTurmaA, alunoId: alunoDaTurmaB },
+      where: { activityId: atividadeDaTurmaA, estudanteId: alunoDaTurmaB },
     });
     expect(doOutro).toBeNull();
   });
@@ -639,7 +639,7 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
     await importar(atividadeDaTurmaA);
 
     const linha = await prisma.perfilImportado.findUniqueOrThrow({
-      where: { activityId_alunoId: { activityId: atividadeDaTurmaA, alunoId: alunoDaTurmaA } },
+      where: { activityId_estudanteId: { activityId: atividadeDaTurmaA, estudanteId: alunoDaTurmaA } },
       select: { vilaSessaoId: true, versaoMapeamento: true, origem: true },
     });
 
@@ -652,14 +652,14 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
        veio corrigir. */
     const sessao = await prisma.vilaSessao.findUniqueOrThrow({
       where: { id: linha.vilaSessaoId! },
-      select: { alunoId: true },
+      select: { estudanteId: true },
     });
-    expect(sessao.alunoId).toBe(alunoDaTurmaA);
+    expect(sessao.estudanteId).toBe(alunoDaTurmaA);
   });
 
   test("reimportar ATUALIZA a versão, senão o aviso da tela nunca sumiria", async () => {
     await importar(atividadeDaTurmaA);
-    const chave = { activityId_alunoId: { activityId: atividadeDaTurmaA, alunoId: alunoDaTurmaA } };
+    const chave = { activityId_estudanteId: { activityId: atividadeDaTurmaA, estudanteId: alunoDaTurmaA } };
 
     // Simula uma linha medida sob mapeamento antigo (o estado que a tela avisa).
     await prisma.perfilImportado.update({

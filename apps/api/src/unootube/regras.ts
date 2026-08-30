@@ -163,8 +163,8 @@ export function ordenarPorFontes(linhas: readonly RankingLinha[]): RankingLinha[
   );
 }
 
-/** Posições 1-based do aluno nas duas ordenações. */
-export function posicaoDoAluno(linhas: readonly RankingLinha[]): {
+/** Posições 1-based do estudante nas duas ordenações. */
+export function posicaoDoEstudante(linhas: readonly RankingLinha[]): {
   porInscritos: number;
   porFontes: number;
 } {
@@ -173,12 +173,15 @@ export function posicaoDoAluno(linhas: readonly RankingLinha[]): {
     porFontes: ordenarPorFontes(linhas).findIndex((l) => l.voce) + 1,
   };
 }
+export const posicaoDoAluno = posicaoDoEstudante;
 
 // ---------------------------------------------------------------------------
 // Visão do professor
 // ---------------------------------------------------------------------------
 
 export interface LinhaTurma {
+  id?: string;
+  estudanteId?: string;
   alunoId: string;
   nome: string;
   usuario: string;

@@ -2,7 +2,7 @@
  * A validação das reações que a IA escreve **ao vivo**, na frente de uma criança
  * de 13 anos.
  *
- * Esta é a única parte do sistema em que texto de modelo chega ao aluno sem
+ * Esta é a única parte do sistema em que texto de modelo chega ao estudante sem
  * ninguém ter lido antes. Todo o resto do conteúdo é gerado em lote e o professor
  * aprova post por post. Aqui não há essa rede — então a rede é esta função.
  *
@@ -83,7 +83,7 @@ const PADROES_PROIBIDOS: { nome: string; regex: RegExp }[] = [
      *
      * Aceito o custo de recusar um falso positivo ("quem curte história vai
      * gostar"): o princípio é falha fechada, e deixar passar uma instrução
-     * contamina o dwell e as curtidas — o aluno passa a agir para atender ao
+     * contamina o dwell e as curtidas — o estudante passa a agir para atender ao
      * pedido, e a bolha medida deixa de ser dele (regra de ouro 3).
      */
     nome: 'instrução de comportamento',

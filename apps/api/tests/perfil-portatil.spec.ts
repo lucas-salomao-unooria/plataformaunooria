@@ -71,7 +71,7 @@ beforeAll(async () => {
       username: "pp.aluno",
       displayName: "Ana Portátil da Silva",
       passwordHash: "x",
-      role: "aluno",
+      role: "estudante",
       cpf: CPF_ALUNO,
       turmaId: turma.id,
     },
@@ -81,7 +81,7 @@ beforeAll(async () => {
     data: {
       escolaId: ESCOLA,
       usuarioId: aluno.id,
-      papel: "aluno",
+      papel: "estudante",
       principal: true,
       inicio: periodo.inicio,
     },
@@ -93,7 +93,7 @@ beforeAll(async () => {
           escolaId: ESCOLA,
           turmaId: turma.id,
           usuarioId: aluno.id,
-          papel: "aluno",
+          papel: "estudante",
           principal: true,
           inicio: periodo.inicio,
         },
@@ -140,7 +140,7 @@ describe("montar o documento", () => {
         username: "pp.sem.cpf",
         displayName: "Sem Documento",
         passwordHash: "x",
-        role: "aluno",
+        role: "estudante",
       },
     });
     expect(await portabilidade.montar(semCpf.id)).toBeNull();
@@ -428,7 +428,7 @@ describe("importar um documento", () => {
       where: { usuarioId: alunoId, escolaId: ESCOLA_DESTINO },
     });
     const matriculas = await prisma.matricula.count({ where: { usuarioId: alunoId } });
-    const progresso = await prisma.progresso.count({ where: { alunoId } });
+    const progresso = await prisma.progresso.count({ where: { estudanteId: alunoId } });
     expect(lotacoes).toBe(0);
     expect(matriculas).toBe(1); // só a daqui, criada no beforeAll
     expect(progresso).toBe(0);

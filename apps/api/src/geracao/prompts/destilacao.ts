@@ -130,7 +130,7 @@ export async function destilarAntagonismo(
    partir do tema e do recorte. Cada candidata precisa:
    - ter dois lados genuinamente defensáveis, com fatos reais do conteúdo
      sustentando cada um;
-   - caber numa frase que um aluno de ${PUBLICO_ALVO.idade} anos entenda de
+   - caber numa frase que um estudante de ${PUBLICO_ALVO.idade} anos entenda de
      primeira;
    - ser uma disputa de INTERPRETAÇÃO, não de fato ("foi planejado ou por
      acaso?", não "em que ano aconteceu?");
@@ -197,8 +197,8 @@ ${tarefaDaPergunta}
    REGRAS DURAS:
    - Julgue pela LINGUAGEM e pelo enquadramento de cada lado, não por juízo moral
      sobre eles. Os dois lados são defensáveis.
-   - As justificativas serão MOSTRADAS ao aluno de 13 anos no relatório final:
-     escreva em português simples, sem jargão de psicologia. Cada aluno lê a
+   - As justificativas serão MOSTRADAS ao estudante de 13 anos no relatório final:
+     escreva em português simples, sem jargão de psicologia. Cada estudante lê a
      justificativa DO PERFIL DELE, então as quatro precisam funcionar sozinhas.
    - Complete a frase "o lado que fala essa língua é X porque…": a justificativa
      tem de explicar o lado, não descrever o perfil.

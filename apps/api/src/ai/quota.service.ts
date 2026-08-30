@@ -15,10 +15,10 @@ import { PrismaService } from "../prisma/prisma.service";
  * A checagem acontece ANTES de chamar o provider: gastar token e depois
  * recusar seria pagar pelo que não se entrega.
  *
- * O LIMITE depende do perfil: o aluno conversa com o tutor (20k tokens/dia
+ * O LIMITE depende do perfil: o estudante conversa com o tutor (300k tokens/dia
  * bastam); o professor gera planos anuais em que só o PROMPT (currículo da
  * rede + material didático) passa de 200k tokens — o teto dele é outro
- * (`AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`). Sem o perfil, vale o do aluno.
+ * (`AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`). Sem o perfil, vale o do estudante.
  */
 @Injectable()
 export class QuotaService {
@@ -31,7 +31,10 @@ export class QuotaService {
     if (perfil === "professor" || perfil === "gestor" || perfil === "admin-contrato") {
       return Number(this.config.get("AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR") ?? 2_000_000);
     }
-    return Number(this.config.get("AI_DAILY_TOKEN_QUOTA_PER_ALUNO") ?? 20000);
+    return Number(
+      this.config.get("AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE") ??
+        300_000,
+    );
   }
 
   private hoje(): string {
@@ -53,7 +56,7 @@ export class QuotaService {
   }
 
   /** `true` quando ainda há saldo — checar antes de chamar o provider. */
-  async temSaldo(escolaId: string, usuarioId: string, perfil: Perfil = "aluno"): Promise<boolean> {
+  async temSaldo(escolaId: string, usuarioId: string, perfil: Perfil = "estudante"): Promise<boolean> {
     return (await this.usadoHoje(escolaId, usuarioId)) < this.limite(perfil);
   }
 

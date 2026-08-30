@@ -74,7 +74,7 @@ export const tipoEventoSchema = z.enum([
   'descurtiu',
   'salvou',
   /**
-   * Dessalvar não era registrado, e por isso a coleção do aluno ficava errada: um
+   * Dessalvar não era registrado, e por isso a coleção do estudante ficava errada: um
    * post salvo e depois removido continuava na lista. No fluxo v2 essa coleção é
    * o artefato da missão e o material do debate — ela tem de estar certa.
    */

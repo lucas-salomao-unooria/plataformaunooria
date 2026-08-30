@@ -166,9 +166,9 @@ describe("o lote de exemplo aplicado, na ordem da tela", () => {
       orderBy: { username: "asc" },
     });
     expect(pessoas.map((p) => `${p.username}:${p.role}`)).toEqual([
-      "ana.ribeiro:aluno",
+      "ana.ribeiro:estudante",
       "carlos.dias:gestor",
-      "joao.souza:aluno",
+      "joao.souza:estudante",
       "marta.alves:professor",
     ]);
 

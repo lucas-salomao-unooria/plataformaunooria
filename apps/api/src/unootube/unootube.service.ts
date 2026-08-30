@@ -51,12 +51,14 @@ export interface RespostaRanking {
 /** O tipo usa `VideoPublico`: `factual` é impossível aqui, não só omitido. */
 export interface RespostaSessao extends RespostaEstado {
   catalogo: { videos: VideoPublico[] };
+  estudante?: { nome: string; avatar: string };
   aluno: { nome: string; avatar: string };
   ranking: RespostaRanking | null;
 }
 
 export interface RespostaTurma {
   turma: { id: string; nome: string; serie: string };
+  estudantes?: LinhaTurma[];
   alunos: LinhaTurma[];
   resumo: ResumoTurma;
 }
@@ -109,12 +111,13 @@ export class UnootubeService {
     return this.prisma.comTenancy(async (tx) => {
       const aluno = await this.alunoDaEscola(tx, escolaId, alunoId);
       const linha = await tx.unootubeSessao.findUnique({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const estado = paraEstado(linha);
       return {
         ...respostaDe(estado),
         catalogo: { videos: VIDEOS.map(semGabarito) },
+        estudante: { nome: aluno.displayName, avatar: avatarDe(aluno) },
         aluno: { nome: aluno.displayName, avatar: avatarDe(aluno) },
         ranking: estado.rankingDesbloqueado ? this.rankingDe(aluno, estado) : null,
       };
@@ -137,7 +140,7 @@ export class UnootubeService {
     return this.prisma.comTenancy(async (tx) => {
       const aluno = await this.alunoDaEscola(tx, escolaId, alunoId);
       const linha = await tx.unootubeSessao.findUnique({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const estado = paraEstado(linha);
       if (!estado.rankingDesbloqueado) erroDeJogo("RANKING_BLOQUEADO");
@@ -169,11 +172,17 @@ export class UnootubeService {
     return this.prisma.comTenancy(async (tx) => {
       const turmas = await tx.turma.findMany({
         where: ondeAsTurmasSaoVisiveis(escolaId, professorId),
-        select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
+        select: { id: true, nome: true, serie: true, _count: { select: { estudantes: true } } },
         orderBy: [{ serie: "asc" }, { nome: "asc" }],
       });
       return {
-        turmas: turmas.map((t) => ({ id: t.id, nome: t.nome, serie: t.serie, alunos: t._count.alunos })),
+        turmas: turmas.map((t) => ({
+          id: t.id,
+          nome: t.nome,
+          serie: t.serie,
+          estudantes: t._count.estudantes,
+          alunos: t._count.estudantes,
+        })),
       };
     }, escolaId);
   }
@@ -202,7 +211,7 @@ export class UnootubeService {
       }
 
       const alunos = await tx.user.findMany({
-        where: { escolaId, turmaId, role: "aluno" },
+        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: {
           id: true,
           displayName: true,
@@ -217,6 +226,8 @@ export class UnootubeService {
         const estado = paraEstado(sessao);
         const d = derivados(estado.salvos);
         return {
+          id: a.id,
+          estudanteId: a.id,
           alunoId: a.id,
           nome: a.displayName,
           usuario: a.username,
@@ -230,7 +241,7 @@ export class UnootubeService {
         };
       });
 
-      return { turma, alunos: linhas, resumo: resumirTurma(linhas) };
+      return { turma, estudantes: linhas, alunos: linhas, resumo: resumirTurma(linhas) };
     }, escolaId);
   }
 
@@ -270,21 +281,21 @@ export class UnootubeService {
       // Antes de criar linha: o aluno precisa ser desta escola (users está fora da RLS).
       await this.alunoDaEscola(tx, escolaId, alunoId);
       await tx.$executeRaw`
-        INSERT INTO exp_02_sessoes (escola_id, aluno_id)
+        INSERT INTO exp_02_sessoes (escola_id, estudante_id)
         VALUES (${escolaId}, ${alunoId}::uuid)
         ON CONFLICT DO NOTHING`;
       await tx.$executeRaw`
         SELECT 1 FROM exp_02_sessoes
-        WHERE escola_id = ${escolaId} AND aluno_id = ${alunoId}::uuid
+        WHERE escola_id = ${escolaId} AND estudante_id = ${alunoId}::uuid
         FOR UPDATE`;
       const atual = await tx.unootubeSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const resultado = regra(paraEstado(atual), new Date());
       if (!resultado.ok) erroDeJogo(resultado.codigo);
       if (resultado.mudou) {
         await tx.unootubeSessao.update({
-          where: { escolaId_alunoId: { escolaId, alunoId } },
+          where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
           data: { ...paraColunas(resultado.estado), ...extra },
         });
       }

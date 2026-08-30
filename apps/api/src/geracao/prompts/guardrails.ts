@@ -7,7 +7,7 @@ REGRAS INVIOLÁVEIS:
 2. Os dois lados são defensáveis. Intensidade 3 exagera o TOM e a ênfase, mas
    NUNCA inventa fato falso sobre a matéria.
 3. Zero conteúdo sexual, gore, ódio a grupos reais, drogas, automutilação, e
-   nenhuma menção a alunos ou escolas reais.
+   nenhuma menção a estudantes ou escolas reais.
 4. Linguagem de adolescente brasileiro, sem palavrões.
 5. NUNCA mencione, nem de leve: algoritmo, bolha, viés, feed personalizado,
    professor, aula, escola como instituição do leitor, atividade, exercício,

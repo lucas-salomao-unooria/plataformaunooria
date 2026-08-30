@@ -103,7 +103,7 @@ beforeAll(async () => {
 
   const criar = (escolaId: string, turmaId: string | null, username: string, nome: string) =>
     prisma.user.create({
-      data: { role: "aluno", escolaId, turmaId, username, displayName: nome, passwordHash: "x" },
+      data: { role: "estudante", escolaId, turmaId, username, displayName: nome, passwordHash: "x" },
       select: { id: true },
     });
 
@@ -169,7 +169,7 @@ describe("abrir a partida", () => {
     const antiga = await prisma.vilaSessao.findUniqueOrThrow({ where: { id: primeira.sessaoId } });
     expect(antiga.status).toBe("abandonada");
     expect(antiga.concluidaEm).not.toBeNull();
-    const abertas = await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, alunoId: aluno, status: "aberta" } });
+    const abertas = await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: aluno, status: "aberta" } });
     expect(abertas).toBe(1);
   });
 
@@ -181,7 +181,7 @@ describe("abrir a partida", () => {
     await Promise.all(alunos8.map((id) => service.abrir(ESCOLA, id, "1.0.0")));
     const porBolha = await prisma.vilaBolha.groupBy({
       by: ["bolha"],
-      where: { escolaId: ESCOLA, aluno: { turmaId: turma8 } },
+      where: { escolaId: ESCOLA, estudante: { turmaId: turma8 } },
       _count: { bolha: true },
     });
     expect(porBolha.length).toBe(3);
@@ -353,7 +353,7 @@ describe("leitura do professor", () => {
 
   test("aluno que não jogou devolve null, não erro", async () => {
     const novo = await prisma.user.create({
-      data: { role: "aluno", escolaId: ESCOLA, turmaId: turma8, username: "vila.novo", displayName: "Novo", passwordHash: "x" },
+      data: { role: "estudante", escolaId: ESCOLA, turmaId: turma8, username: "vila.novo", displayName: "Novo", passwordHash: "x" },
       select: { id: true },
     });
     expect(await service.doAluno(ESCOLA, novo.id)).toBeNull();
@@ -376,16 +376,16 @@ describe("zerar os dados da turma", () => {
     expect(r!.partidas).toBeGreaterThan(0);
 
     const daTurma = alunos8;
-    expect(await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, alunoId: { in: daTurma } } })).toBe(0);
-    expect(await prisma.vilaPerfil.count({ where: { escolaId: ESCOLA, alunoId: { in: daTurma } } })).toBe(0);
-    expect(await prisma.vilaBolha.count({ where: { escolaId: ESCOLA, alunoId: { in: daTurma } } })).toBe(0);
+    expect(await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: { in: daTurma } } })).toBe(0);
+    expect(await prisma.vilaPerfil.count({ where: { escolaId: ESCOLA, estudanteId: { in: daTurma } } })).toBe(0);
+    expect(await prisma.vilaBolha.count({ where: { escolaId: ESCOLA, estudanteId: { in: daTurma } } })).toBe(0);
   });
 
   /* Contagem RELATIVA, não absoluta: `aluno3` acumulou partidas dos describes
      anteriores, e fixar um número aqui quebra sempre que um teste acima abrir mais
      uma. O que este teste afirma é que zerar a turma 8A não encosta nele. */
   const partidasDoAluno3 = () =>
-    prisma.vilaSessao.count({ where: { escolaId: ESCOLA, alunoId: aluno3 } });
+    prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: aluno3 } });
 
   test("não atravessa turma: quem é de outra turma da mesma escola fica", async () => {
     await service.abrir(ESCOLA, aluno3, "1.0.0");

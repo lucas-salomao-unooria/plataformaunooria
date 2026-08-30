@@ -44,14 +44,19 @@ export class TelemetryController {
     corpo: BatchSchema,
     resposta: BatchRespostaSchema,
     notas: [
-      "`alunoId` e `escolaId` NÃO vêm do corpo: são acrescentados a partir do token. Aceitá-los do cliente deixaria um bundle gravar evento no nome de outra criança.",
+      "`estudanteId` e `escolaId` NÃO vêm do corpo: são acrescentados a partir do token. Aceitá-los do cliente deixaria um bundle gravar evento no nome de outra criança.",
       "`recebidos` conta o que foi PUBLICADO, não o que foi gravado — a gravação acontece do outro lado do Pub/Sub.",
     ],
   })
   async batch(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
     const { eventos } = BatchSchema.parse(body);
     // identidade vem do TOKEN, nunca do payload do client (anti-spoof)
-    const enriched = eventos.map((e) => ({ ...e, alunoId: req.auth.usuarioId, escolaId: req.auth.escolaId }));
+    const enriched = eventos.map((e) => ({
+      ...e,
+      estudanteId: req.auth.usuarioId,
+      alunoId: req.auth.usuarioId,
+      escolaId: req.auth.escolaId,
+    }));
     return { ok: true, recebidos: await this.publicar(enriched) };
   }
 
@@ -81,6 +86,7 @@ export class TelemetryController {
       const auth = await this.tokens.verificar(parsed.data.token);
       const enriched = parsed.data.eventos.map((e) => ({
         ...e,
+        estudanteId: auth.usuarioId,
         alunoId: auth.usuarioId,
         escolaId: auth.escolaId,
       }));
@@ -98,7 +104,7 @@ export class TelemetryController {
    *
    * `PubSubPushGuard` verifica o ID token que o Pub/Sub assina (emissor Google
    * + audience + SA de push). Sem ele a rota seria um endpoint público que
-   * escreve dado de aluno com o `escolaId` vindo do corpo. Em dev, sem
+   * escreve dado de estudante com o `escolaId` vindo do corpo. Em dev, sem
    * `TELEMETRIA_TOPIC`, nada chega aqui.
    *
    * `ON CONFLICT DO NOTHING` no `event_id`: o Pub/Sub garante *at least once*,
@@ -117,7 +123,7 @@ export class TelemetryController {
     notas: [
       "`ON CONFLICT (event_id, ts) DO NOTHING`: o Pub/Sub entrega *at least once*, então reentrega é rotina, não exceção.",
       "UM INSERT multi-linha por escola, não um por evento — no pico da manhã o laço custava ~800 INSERTs/s.",
-      "Sem `TELEMETRIA_PUSH_SA`/`TELEMETRIA_PUSH_AUDIENCE` a rota responde 401, nunca aberta: ela escreve dado de aluno.",
+      "Sem `TELEMETRIA_PUSH_SA`/`TELEMETRIA_PUSH_AUDIENCE` a rota responde 401, nunca aberta: ela escreve dado de estudante.",
     ],
   })
   async ingest(@Body() body: unknown) {
@@ -137,7 +143,7 @@ export class TelemetryController {
     }
 
     const lote = z
-      .array(EventoSchema.extend({ alunoId: z.string(), escolaId: z.string() }))
+      .array(EventoSchema.extend({ estudanteId: z.string().optional(), alunoId: z.string().optional(), escolaId: z.string() }))
       .safeParse(eventos);
     if (!lote.success) {
       console.warn("[telemetria/ingest] lote inválido — descartado");
@@ -154,21 +160,24 @@ export class TelemetryController {
       await this.prisma.comTenancy(async (tx) => {
         // UM INSERT multi-linha, não um por evento. É o gargalo real deste
         // caminho: um lote de 50 eventos custava 50 round-trips ao banco, e no
-        // pico da manhã (~4k alunos simultâneos) isso é ~800 INSERTs/s numa
+        // pico da manhã (~4k estudantes simultâneos) isso é ~800 INSERTs/s numa
         // instância pequena. Em lote vira ~16/s, que é trivial.
         //
         // Não é caso para Redis: quem amortece o pico já é o Pub/Sub, que ainda
         // por cima é durável — um buffer em memória perderia eventos no
         // processo que morre antes do flush.
         const linhas = doGrupo.map(
-          (e) => Prisma.sql`(
-            ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${e.alunoId}, ${e.expId},
+          (e) => {
+            const estudanteId = e.estudanteId ?? e.alunoId ?? "";
+            return Prisma.sql`(
+            ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${estudanteId}, ${e.expId},
             ${e.expVersion}, ${e.sessaoId}::uuid, ${e.verbo}, ${e.objeto},
-            ${JSON.stringify(e.resultado ?? null)}::jsonb, ${JSON.stringify(e.contexto ?? null)}::jsonb)`,
+            ${JSON.stringify(e.resultado ?? null)}::jsonb, ${JSON.stringify(e.contexto ?? null)}::jsonb)`;
+          },
         );
         await tx.$executeRaw(Prisma.sql`
           INSERT INTO telemetria_eventos
-            (event_id, ts, escola_id, aluno_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto)
+            (event_id, ts, escola_id, estudante_id, exp_id, exp_version, sessao_id, verbo, objeto, resultado, contexto)
           VALUES ${Prisma.join(linhas)}
           ON CONFLICT (event_id, ts) DO NOTHING`);
       }, escolaId);

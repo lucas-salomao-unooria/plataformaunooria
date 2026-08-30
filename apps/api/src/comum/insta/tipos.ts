@@ -59,7 +59,7 @@ export const afinidadeSchema = z.object({
   por_que_autopromocao: z.string().trim().min(10).max(400),
   /**
    * Justificativa do POLO OPOSTO de cada eixo. Opcionais porque atividades
-   * geradas antes do M8 não as têm — mas sem elas o relatório de um aluno de
+   * geradas antes do M8 não as têm — mas sem elas o relatório de um estudante de
    * Conservação teria de explicar o lado dele com a frase da Abertura, que
    * defende o lado CONTRÁRIO. Quando faltam, a frase simplesmente não aparece:
    * melhor uma explicação mais curta que uma explicação incoerente.
@@ -72,7 +72,7 @@ export type Afinidade = z.infer<typeof afinidadeSchema>;
 
 /**
  * Resolve os 4 perfis a partir dos 2 eixos. Função pura e testada: é ela que
- * decide em que lado cada aluno da turma começa.
+ * decide em que lado cada estudante da turma começa.
  */
 export function ladoPorPerfil(afinidade: Afinidade): Record<Perfil, 'A' | 'B'> {
   const oposto = (lado: 'A' | 'B') => (lado === 'A' ? 'B' : 'A');

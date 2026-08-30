@@ -72,8 +72,8 @@ export interface AiFerramenta {
 
 export interface AiConversaRequest {
   system: string;
-  /** A conversa até aqui, em ordem. `aluno` é quem fala com o modelo. */
-  historico: Array<{ papel: "aluno" | "agente"; texto: string }>;
+  /** A conversa até aqui, em ordem. `estudante` é quem fala com o modelo. */
+  historico: Array<{ papel: "estudante" | "agente"; texto: string }>;
   ferramentas?: {
     declaracoes: AiFerramenta[];
     /** Executa a ferramenta e devolve o resultado que volta ao modelo. */

@@ -6,7 +6,7 @@ import { PortabilidadeService } from "./portabilidade.service";
 /**
  * Perfil portátil — a saída da criança da REDE (ver `catalogo.ts`).
  *
- * Depende do `RosteringModule` por uma coisa só: saber em que escola o aluno
+ * Depende do `RosteringModule` por uma coisa só: saber em que escola o estudante
  * está HOJE, que é a tranca da emissão.
  */
 @Module({

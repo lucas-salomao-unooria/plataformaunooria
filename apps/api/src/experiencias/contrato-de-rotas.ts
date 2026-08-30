@@ -24,7 +24,10 @@ export const UpsertSchema = z.object({
   series: z.array(z.enum(SERIES)).default([]),
   capabilities: z.array(z.enum(CAPABILITIES)).default([]),
   viewport: ViewportSchema.nullish(),
-  publico: z.enum(["aluno", "professor"]).default("aluno"),
+  publico: z
+    .enum(["estudante", "aluno", "professor"])
+    .default("estudante")
+    .transform((v) => (v === "aluno" ? "estudante" : v)),
   permissoes: z.array(z.enum(PERMISSOES_DE_IFRAME)).default([]),
 });
 

@@ -183,7 +183,7 @@ describe("lote completo, na ordem", () => {
     const ana = await prisma.user.findFirstOrThrow({ where: { escolaId: ESCOLA, fonteId: "or-u1" } });
     // Login gerado (a coluna veio vazia) e papel de MENOR privilégio.
     expect(ana.username).toBe("ana.ribeiro");
-    expect(ana.role).toBe("aluno");
+    expect(ana.role).toBe("estudante");
     expect(ana.matriculaExterna).toBe("OR-A1");
     expect(ana.senhaProvisoria).toBe(true);
     // A senha do arquivo não foi usada: a do lote é que valeu.
@@ -207,7 +207,7 @@ describe("lote completo, na ordem", () => {
     const marta = await prisma.user.findFirstOrThrow({ where: { escolaId: ESCOLA, fonteId: "or-u2" } });
     expect(marta.role).toBe("professor");
     const ana = await prisma.user.findFirstOrThrow({ where: { escolaId: ESCOLA, fonteId: "or-u1" } });
-    expect(ana.role).toBe("aluno"); // o secundário não promoveu ninguém
+    expect(ana.role).toBe("estudante"); // o secundário não promoveu ninguém
   });
 
   test("enrollments matricula aluno e professor, e o aluno em DUAS turmas", async () => {
@@ -225,7 +225,7 @@ describe("lote completo, na ordem", () => {
 
     const ana = await prisma.user.findFirstOrThrow({ where: { escolaId: ESCOLA, fonteId: "or-u1" } });
     const ativas = await prisma.matricula.findMany({
-      where: { escolaId: ESCOLA, usuarioId: ana.id, papel: "aluno", fim: null },
+      where: { escolaId: ESCOLA, usuarioId: ana.id, papel: "estudante", fim: null },
     });
     // Eletiva e turma regular ao mesmo tempo — o que a coluna users.turma_id
     // não conseguia representar.

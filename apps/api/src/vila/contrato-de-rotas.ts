@@ -136,11 +136,13 @@ export const RelatorioDaPartidaSchema = z.object({
   mensagens: LeituraMensagensSchema.nullable(),
 });
 
-export const RelatorioDoAlunoSchema = z.object({
-  /** `null` é resposta legítima: o aluno existe e não jogou. Um 404 faria a tela
+export const RelatorioDoEstudanteSchema = z.object({
+  /** `null` é resposta legítima: o estudante existe e não jogou. Um 404 faria a tela
    *  do professor dizer "não encontrado" para uma criança da turma dele. */
   relatorio: RelatorioDaPartidaSchema.nullable(),
 });
+
+export const RelatorioDoAlunoSchema = RelatorioDoEstudanteSchema;
 
 export const TurmasDaVilaSchema = z.object({
   turmas: z.array(
@@ -148,7 +150,8 @@ export const TurmasDaVilaSchema = z.object({
       id: Uuid,
       nome: z.string(),
       serie: z.string(),
-      alunos: z.number().int().nonnegative(),
+      estudantes: z.number().int().nonnegative().optional(),
+      alunos: z.number().int().nonnegative().optional(),
     }),
   ),
 });
@@ -156,7 +159,8 @@ export const TurmasDaVilaSchema = z.object({
 /** O AGREGADO — nenhum campo aqui identifica uma criança, e isso é o desenho. */
 export const ResumoDaTurmaSchema = z.object({
   resumo: z.object({
-    alunos: z.number().int().nonnegative(),
+    estudantes: z.number().int().nonnegative().optional(),
+    alunos: z.number().int().nonnegative().optional(),
     jogaram: z.number().int().nonnegative(),
     concluiram: z.number().int().nonnegative(),
     abandonaram: z.number().int().nonnegative(),
@@ -173,24 +177,29 @@ export const ResumoDaTurmaSchema = z.object({
   }),
 });
 
+export const EstudanteDaTurmaSchema = z.object({
+  estudanteId: Uuid.optional(),
+  alunoId: Uuid.optional(),
+  id: Uuid.optional(),
+  nome: z.string(),
+  partidas: z.number().int().nonnegative(),
+  ultimaEm: z.string().datetime().nullable(),
+  bolha: BolhaSchema.nullable(),
+  fogueirasAcesas: z.number().nullable(),
+  amostraSuficiente: z.boolean().nullable(),
+});
+
 /**
- * Uma linha por aluno. **Sem valor de Schwartz nenhum**: listagem é ordenável, e
+ * Uma linha por estudante. **Sem valor de Schwartz nenhum**: listagem é ordenável, e
  * uma coluna "Poder" viraria ranking de crianças. Os valores vivem na tela
  * individual, uma criança por vez, com o grau ao lado.
  */
-export const AlunosDaTurmaSchema = z.object({
-  alunos: z.array(
-    z.object({
-      alunoId: Uuid,
-      nome: z.string(),
-      partidas: z.number().int().nonnegative(),
-      ultimaEm: z.string().datetime().nullable(),
-      bolha: BolhaSchema.nullable(),
-      fogueirasAcesas: z.number().nullable(),
-      amostraSuficiente: z.boolean().nullable(),
-    }),
-  ),
+export const EstudantesDaTurmaSchema = z.object({
+  estudantes: z.array(EstudanteDaTurmaSchema).optional(),
+  alunos: z.array(EstudanteDaTurmaSchema).optional(),
 });
+
+export const AlunosDaTurmaSchema = EstudantesDaTurmaSchema;
 
 export const TurmaZeradaSchema = z.object({
   partidas: z.number().int().nonnegative(),

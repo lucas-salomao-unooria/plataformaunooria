@@ -44,7 +44,7 @@ export const EnvSchema = z.object({
    * cabe ~4 partidas. O valor anterior, 20000, era dimensionado para o tutor da
    * exp-01 e recusava o 4o turno da missão com "a sala de operações fechou".
    */
-  AI_DAILY_TOKEN_QUOTA_PER_ALUNO: z.coerce.number().int().positive().default(300_000),
+  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: z.coerce.number().int().positive().default(300_000),
   // Professor gera planos cujo PROMPT sozinho tem ~220k tokens (currículo +
   // material didático); 2M/dia ≈ 6–9 planos. Regra 5 do CLAUDE.md, por perfil.
   AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: z.coerce.number().int().positive().default(2_000_000),
@@ -134,7 +134,15 @@ export const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 export function validarEnv(config: Record<string, unknown>): Env {
-  const parsed = EnvSchema.safeParse(config);
+  const merged = {
+    ...config,
+    AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE:
+      config.AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE ??
+      (typeof process !== "undefined"
+        ? process.env.AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE
+        : undefined),
+  };
+  const parsed = EnvSchema.safeParse(merged);
   if (!parsed.success) {
     const erros = parsed.error.issues
       .map((i) => `  ${i.path.join(".")}: ${i.message}`)

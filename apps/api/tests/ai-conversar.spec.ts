@@ -116,7 +116,7 @@ afterEach(() => {
 });
 
 const provider = new VertexProvider();
-const base = { system: "Você é o Cientista.", historico: [{ papel: "aluno" as const, texto: "onde chove mais?" }] };
+const base = { system: "Você é o Cientista.", historico: [{ papel: "estudante" as const, texto: "onde chove mais?" }] };
 
 describe("VertexProvider.conversar", () => {
   it("encadeia ferramenta e devolve a narrativa, somando os tokens das duas voltas", async () => {

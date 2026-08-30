@@ -36,7 +36,7 @@ export const CriarSchema = z.object({
    *  atividades que já existiam: sem ela a atividade vale para a escola
    *  inteira, que era o comportamento único até
    *  `20260830090000_atividade_por_turma`. Com ela, o painel de perfis, a
-   *  importação da Vila e a entrada do aluno falam todos da MESMA sala. */
+   *  importação da Vila e a entrada do estudante falam todos da MESMA sala. */
   turmaId: z.string().uuid().optional(),
 });
 
@@ -57,8 +57,9 @@ export const AtividadeEmListaSchema = z.object({
   status: z.string(),
   etapa: z.string(),
   criadoEm: z.string().datetime(),
+  estudantes: z.number().int().nonnegative().optional(),
   alunos: z.number().int().nonnegative(),
-  /** Sinônimo de `alunos` (1 run = 1 aluno). As telas portadas usam os dois
+  /** Sinônimo de `estudantes`/`alunos` (1 run = 1 estudante). As telas portadas usam os dois
    *  nomes; manter ambos evita drift no porte. */
   sessoes: z.number().int().nonnegative(),
   posts: z.number().int().nonnegative(),
@@ -104,6 +105,7 @@ export const DetalheDaAtividadeSchema = z.object({
         .object({ id: Uuid, nome: z.string(), serie: z.string() })
         .nullable(),
       _count: z.object({ runs: z.number().int().nonnegative() }),
+      estudantes: z.number().int().nonnegative().optional(),
       alunos: z.number().int().nonnegative(),
       postsAprovados: z.number().int().nonnegative(),
     })
@@ -171,6 +173,13 @@ const ComponenteDeImersaoSchema = z.object({
  *  é o número que faz o professor levantar da cadeira. */
 export const LinhaDoMonitorSchema = z.object({
   runId: Uuid,
+  estudante: z
+    .object({
+      username: z.string(),
+      displayName: z.string(),
+      avatar: z.string().nullable(),
+    })
+    .optional(),
   aluno: z.object({
     username: z.string(),
     displayName: z.string(),
@@ -229,8 +238,18 @@ export const MonitorSchema = z.object({
   limiteDeOciosidadeMs: z.number().int().positive(),
 });
 
-/** Tudo o que UM aluno fez, para o professor ler DURANTE a atividade. */
-export const AlunoDaAtividadeSchema = z.object({
+/** Tudo o que UM estudante fez, para o professor ler DURANTE a atividade. */
+export const EstudanteDaAtividadeSchema = z.object({
+  estudante: z
+    .object({
+      username: z.string(),
+      displayName: z.string(),
+      /** APELIDO dentro da ficção do Instanooria, nunca identidade em tela de
+       *  professor ou relatório. */
+      nomeNoApp: z.string().nullable(),
+      avatar: z.string().nullable(),
+    })
+    .optional(),
   aluno: z.object({
     username: z.string(),
     displayName: z.string(),
@@ -259,7 +278,7 @@ export const AlunoDaAtividadeSchema = z.object({
     curtidos: z.number().int().nonnegative(),
     comentados: z.number().int().nonnegative(),
   }),
-  /** Ordenada com os SALVOS primeiro: é a coleção que o aluno vai defender no
+  /** Ordenada com os SALVOS primeiro: é a coleção que o estudante vai defender no
    *  debate. */
   interacoes: z.array(
     z.object({
@@ -284,3 +303,5 @@ export const AlunoDaAtividadeSchema = z.object({
     }),
   ),
 });
+
+export const AlunoDaAtividadeSchema = EstudanteDaAtividadeSchema;

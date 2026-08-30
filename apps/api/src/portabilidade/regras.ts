@@ -143,7 +143,7 @@ export function nomeDoArquivo(nome: string, emitidoEm: Date): string {
     .replace(/^-|-$/g, "")
     .slice(0, 60);
   const dia = emitidoEm.toISOString().slice(0, 10);
-  return `perfil-${semAcento || "aluno"}-${dia}.json`;
+  return `perfil-${semAcento || "estudante"}-${dia}.json`;
 }
 
 export const TIPOS = TIPOS_DE_RESULTADO;

@@ -196,7 +196,7 @@ export function aplicarEventos(
         if (!estado.postsConsumidos.includes(evento.postId!)) estado.postsConsumidos.push(evento.postId!);
 
         if (jaVisto) {
-          // Revisita: só pontua se o aluno realmente voltou a olhar.
+          // Revisita: só pontua se o estudante realmente voltou a olhar.
           if (dwellMs >= config.dwell.revisitaMinMs) creditar(meta, config.pesos.rever ?? 4);
           break;
         }

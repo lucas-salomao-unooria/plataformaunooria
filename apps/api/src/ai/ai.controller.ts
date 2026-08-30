@@ -22,8 +22,8 @@ export class AiController {
     corpo: GerarSchema,
     resposta: GerarRespostaSchema,
     notas: [
-      "Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ALUNO` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.",
-      "A série do aluno vai ao prompt a partir do TOKEN, não do corpo.",
+      "Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.",
+      "A série do estudante vai ao prompt a partir do TOKEN, não do corpo.",
     ],
   })
   async gerar(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
@@ -39,7 +39,7 @@ export class AiController {
 
     const system = PROMPTS[expId] ?? PROMPTS["tutor"]!;
     const result = await this.provider.generate({
-      system: `${system}\nSérie do aluno: ${req.auth.turmaId ?? "n/d"}. Atividade: ${atividade}.`,
+      system: `${system}\nSérie do estudante: ${req.auth.turmaId ?? "n/d"}. Atividade: ${atividade}.`,
       user: mensagem,
     });
 

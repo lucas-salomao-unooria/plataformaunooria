@@ -76,7 +76,8 @@ export const RankingSchema = z.object({
 
 export const SessaoSchema = EstadoSchema.extend({
   catalogo: z.object({ videos: z.array(VideoPublicoSchema) }),
-  aluno: z.object({ nome: z.string(), avatar: z.string() }),
+  estudante: z.object({ nome: z.string(), avatar: z.string() }).optional(),
+  aluno: z.object({ nome: z.string(), avatar: z.string() }).optional(),
   /** `null` até o ranking ser desbloqueado — é a virada da missão. */
   ranking: RankingSchema.nullable(),
 });
@@ -87,27 +88,31 @@ export const TurmasDoUnootubeSchema = z.object({
       id: Uuid,
       nome: z.string(),
       serie: z.string(),
-      alunos: z.number().int().nonnegative(),
+      estudantes: z.number().int().nonnegative().optional(),
+      alunos: z.number().int().nonnegative().optional(),
     }),
   ),
 });
 
+export const EstudanteDoResultadoSchema = z.object({
+  id: Uuid.optional(),
+  estudanteId: Uuid.optional(),
+  alunoId: Uuid.optional(),
+  nome: z.string(),
+  usuario: z.string(),
+  iniciou: z.boolean(),
+  salvos: z.number().int().nonnegative(),
+  fontesConfiaveis: z.number().int().nonnegative(),
+  inscritos: z.number().int().nonnegative(),
+  rankingDesbloqueado: z.boolean(),
+  credibilidadeAdicionada: z.boolean(),
+  concluidoEm: z.string().nullable(),
+});
+
 export const ResultadosDaTurmaSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
-  alunos: z.array(
-    z.object({
-      alunoId: Uuid,
-      nome: z.string(),
-      usuario: z.string(),
-      iniciou: z.boolean(),
-      salvos: z.number().int().nonnegative(),
-      fontesConfiaveis: z.number().int().nonnegative(),
-      inscritos: z.number().int().nonnegative(),
-      rankingDesbloqueado: z.boolean(),
-      credibilidadeAdicionada: z.boolean(),
-      concluidoEm: z.string().nullable(),
-    }),
-  ),
+  estudantes: z.array(EstudanteDoResultadoSchema).optional(),
+  alunos: z.array(EstudanteDoResultadoSchema).optional(),
   resumo: z.object({
     total: z.number().int().nonnegative(),
     iniciaram: z.number().int().nonnegative(),

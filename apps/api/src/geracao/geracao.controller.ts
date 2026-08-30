@@ -144,7 +144,7 @@ export class GeracaoController {
   @Contrato({
     resumo: "O professor aprova (ou reescreve) os dois lados e os neutros.",
     descricao:
-      "Nada é gerado antes desta aprovação: os dois lados e as justificativas de eixo são o que decide de que lado cada aluno começa, e isso não sai da IA direto para a turma.",
+      "Nada é gerado antes desta aprovação: os dois lados e as justificativas de eixo são o que decide de que lado cada estudante começa, e isso não sai da IA direto para a turma.",
     params: z.object({ id: z.string().uuid() }),
     corpo: AntagonismoDoProfessorSchema,
     resposta: OkSchema,

@@ -150,7 +150,7 @@ async function curarDentroDaTransacao(prisma: Transacao, runId: string): Promise
       : curarBloco(estado, catalogo, config);
 
   // Catálogo esgotado: encerra a sessão em vez de devolver um feed vazio (que
-  // deixaria o aluno numa tela morta, sem próximo bloco e sem encerramento).
+  // deixaria o estudante numa tela morta, sem próximo bloco e sem encerramento).
   if (bloco.ids.length === 0) {
     await prisma.run.update({
       where: { id: runId },
@@ -165,7 +165,7 @@ async function curarDentroDaTransacao(prisma: Transacao, runId: string): Promise
 
   /**
    * Exposição por perfil (doc 04 §7). É o DENOMINADOR da métrica de perfil
-   * observado: sem ele, o dossiê afirmaria que o aluno prefere a linguagem X
+   * observado: sem ele, o dossiê afirmaria que o estudante prefere a linguagem X
    * quando o feed simplesmente serviu mais X. Contar aqui, no momento de servir,
    * é o único lugar em que a informação existe.
    */

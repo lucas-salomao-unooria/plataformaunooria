@@ -34,8 +34,8 @@ import {
   ehUuid,
   naoEncontrado,
   ondeAAtividadeVale,
-  ORDEM_DA_ATIVIDADE_DO_ALUNO,
-  runDoAluno,
+  ORDEM_DA_ATIVIDADE_DO_ESTUDANTE,
+  runDoEstudante,
 } from "./guardas";
 import { paraFeedPost } from "./sanitizador";
 import { proximoBlocoDoFeed } from "./servico";
@@ -55,7 +55,7 @@ import {
   FaseAtualSchema,
   FaseSchema,
   PerdidosSchema,
-  PostDoAlunoSchema,
+  PostDoEstudanteSchema,
   ReacoesGeradasSchema,
   ReacoesSchema,
   ReflexaoGravadaSchema,
@@ -68,7 +68,7 @@ import {
 } from "./contrato-de-rotas";
 
 /**
- * Rotas de RUN do aluno (e o reset do professor) — porte fiel dos handlers de
+ * Rotas de RUN do estudante (e o reset do professor) — porte fiel dos handlers de
  * `app/api/runs/**` do origem para NestJS. As decisões de produto vivem nos
  * comentários de cada handler do origem; aqui só muda a casca (guards, tenancy
  * explícita por `escola_id` + RLS via comTenancy).
@@ -84,12 +84,12 @@ export class RunsController {
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
   ) {}
 
-  /** POST /runs — inicia ou retoma a sessão do aluno na atividade ativa. */
+  /** POST /runs — inicia ou retoma a sessão do estudante na atividade ativa. */
   @Post()
-  @Roles("aluno")
+  @Roles("estudante")
   @HttpCode(201)
   @Contrato({
-    resumo: "Cria a run do aluno na atividade ativa.",
+    resumo: "Cria a run do estudante na atividade ativa.",
     descricao:
       "A LARGADA: é aqui que o lado do feed é decidido — pelo perfil do Ato 1, por redistribuição do professor, ou por sorteio balanceado quando não há perfil.",
     corpo: CriarRunSchema,
@@ -108,7 +108,7 @@ export class RunsController {
        * A busca era só `{ status: "ativa", escolaId }`, e com uma atividade por
        * escola isso bastava. Desde `20260830090000_atividade_por_turma` a
        * atividade pode declarar turma, e aí a da sala do lado não é a dela: o
-       * aluno do 8B entrava na atividade do 8A e aparecia no painel de um
+       * estudante do 8B entrava na atividade do 8A e aparecia no painel de um
        * professor que não é o dele.
        *
        * A turma sai de `users.turma_id` — o CACHE da matrícula principal — e não
@@ -116,14 +116,14 @@ export class RunsController {
        * contexto, e `matriculas` tem RLS. A regra de qual atividade vale está em
        * `ondeAAtividadeVale`, compartilhada com o `boot`.
        */
-      const aluno = await tx.user.findUnique({
+      const estudante = await tx.user.findUnique({
         where: { id: usuarioId },
         select: { turmaId: true },
       });
 
       const atividade = await tx.activity.findFirst({
-        where: ondeAAtividadeVale(escolaId, aluno?.turmaId),
-        orderBy: ORDEM_DA_ATIVIDADE_DO_ALUNO,
+        where: ondeAAtividadeVale(escolaId, estudante?.turmaId),
+        orderBy: ORDEM_DA_ATIVIDADE_DO_ESTUDANTE,
         select: { id: true, antagonismo: true, engineConfig: true },
       });
 
@@ -137,7 +137,7 @@ export class RunsController {
       }
 
       const existente = await tx.run.findUnique({
-        where: { activityId_alunoId: { activityId: atividade.id, alunoId: usuarioId } },
+        where: { activityId_estudanteId: { activityId: atividade.id, estudanteId: usuarioId } },
         select: { id: true, fase: true },
       });
       if (existente) return { runId: existente.id, fase: existente.fase };
@@ -153,7 +153,7 @@ export class RunsController {
         data: {
           escolaId,
           activityId: atividade.id,
-          alunoId: usuarioId,
+          estudanteId: usuarioId,
           fase: "onboarding",
           ladoInicial: largada.ladoInicial,
           ladoOrigem: largada.ladoOrigem,
@@ -181,23 +181,23 @@ export class RunsController {
    * revelação.
    */
   @Get("boot")
-  @Roles("aluno")
+  @Roles("estudante")
   @Contrato({
-    resumo: "O bootstrap da experiência — o servidor decide a fase.",
+    resumo: "O bootstrap do aparelho — o que a tela de entrada precisa saber.",
     descricao:
-      "Resolve o que o Server Component da tela resolvia no app de origem; agora a experiência é um bundle Vite estático e chama isto no primeiro fetch.\n\n**Só os RÓTULOS dos lados saem daqui** — são os únicos campos do antagonismo que o cliente pode ver antes da revelação.",
+      "Só os RÓTULOS dos lados — os únicos campos do antagonismo que o cliente pode ver antes da revelação. Zero lado/intensidade dos posts.",
     resposta: BootSchema,
   })
   async boot(@Req() req: Autenticado) {
     const { usuarioId, escolaId } = req.auth;
     return this.prisma.comTenancy(async (tx) => {
-      const [aluno, run] = await Promise.all([
+      const [estudante, run] = await Promise.all([
         tx.user.findUniqueOrThrow({
           where: { id: usuarioId },
           select: { displayName: true, username: true, avatar: true, turmaId: true },
         }),
         tx.run.findFirst({
-          where: { alunoId: usuarioId, escolaId, activity: { status: "ativa" } },
+          where: { estudanteId: usuarioId, escolaId, activity: { status: "ativa" } },
           orderBy: { startedAt: "desc" },
           select: {
             id: true,
@@ -207,14 +207,14 @@ export class RunsController {
         }),
       ]);
 
-      /* Mesma regra do `POST /runs`: sem ela o aluno lia na tela a pergunta de
-         uma atividade e a run nascia em outra. `aluno.turmaId` vem do select
+      /* Mesma regra do `POST /runs`: sem ela o estudante lia na tela a pergunta de
+         uma atividade e a run nascia em outra. `estudante.turmaId` vem do select
          acima. */
       const atividade =
         run?.activity ??
         (await tx.activity.findFirst({
-          where: ondeAAtividadeVale(escolaId, aluno.turmaId),
-          orderBy: ORDEM_DA_ATIVIDADE_DO_ALUNO,
+          where: ondeAAtividadeVale(escolaId, estudante.turmaId),
+          orderBy: ORDEM_DA_ATIVIDADE_DO_ESTUDANTE,
           select: { perguntaChave: true, antagonismo: true },
         }));
 
@@ -222,6 +222,12 @@ export class RunsController {
         | { ladoA?: { label?: string }; ladoB?: { label?: string } }
         | null
         | undefined;
+
+      const dadosEstudante = {
+        displayName: estudante.displayName,
+        handle: `@${estudante.username}`,
+        avatar: estudante.avatar ?? `avatar-${estudante.username.slice(-2)}`,
+      };
 
       return {
         runId: run?.id ?? null,
@@ -231,25 +237,22 @@ export class RunsController {
           ladoALabel: bruto?.ladoA?.label ?? "Um lado",
           ladoBLabel: bruto?.ladoB?.label ?? "O outro lado",
         },
-        aluno: {
-          displayName: aluno.displayName,
-          handle: `@${aluno.username}`,
-          avatar: aluno.avatar ?? `avatar-${aluno.username.slice(-2)}`,
-        },
+        estudante: dadosEstudante,
+        aluno: dadosEstudante,
       };
     });
   }
 
-  /** O aluno entra no aparelho: escolheu avatar, digitou o nome, vai ao feed. */
+  /** O estudante entra no aparelho: escolheu avatar, digitou o nome, vai ao feed. */
   @Post(":id/entrar")
   @Contrato({
-    resumo: "O aluno entra no aparelho e vai ao feed.",
+    resumo: "O estudante entra no aparelho e vai ao feed.",
     descricao: "`nome` é APELIDO dentro da ficção do Instanooria — nunca identidade em tela de professor ou relatório.",
     params: z.object({ id: z.string().uuid() }),
     corpo: EntrarSchema,
     resposta: FaseSchema,
   })
-  @Roles("aluno")
+  @Roles("estudante")
   @HttpCode(200)
   async entrar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -259,12 +262,12 @@ export class RunsController {
     }
 
     return this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, req.auth.usuarioId, req.auth.escolaId);
+      const run = await runDoEstudante(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!run) naoEncontrado();
 
       /**
        * Só avança quem está no onboarding. Reentrar depois — aparelho que
-       * travou, aba fechada — não pode jogar o aluno de volta para o feed se a
+       * travou, aba fechada — não pode jogar o estudante de volta para o feed se a
        * turma já está no debate.
        */
       const avancou = run.fase === "onboarding";
@@ -293,35 +296,35 @@ export class RunsController {
     resposta: BlocoDoFeedSchema,
     notas: ["Lock consultivo por run: duas abas pedindo bloco ao mesmo tempo se sobrescreviam, e um bloco se perdia."],
   })
-  @Roles("aluno")
+  @Roles("estudante")
   async feed(@Param("id") id: string, @Req() req: Autenticado) {
     const run = await this.prisma.comTenancy((tx) =>
-      runDoAluno(tx, id, req.auth.usuarioId, req.auth.escolaId),
+      runDoEstudante(tx, id, req.auth.usuarioId, req.auth.escolaId),
     );
     if (!run) naoEncontrado();
 
     const { posts, modulos } = await proximoBlocoDoFeed(this.prisma, id, req.auth.escolaId);
-    // diagnostico fica no servidor: nada de domínio/lado no bundle do aluno.
+    // diagnostico fica no servidor: nada de domínio/lado no bundle do estudante.
     return { posts, modulos };
   }
 
   /**
-   * A tela que o aluno deve estar vendo agora — já reconciliada com a etapa da
+   * A tela que o estudante deve estar vendo agora — já reconciliada com a etapa da
    * turma. O cliente faz polling: os momentos coletivos são do PROFESSOR.
    */
   @Get(":id/fase")
-  @Roles("aluno")
+  @Roles("estudante")
   @Contrato({
-    resumo: "A tela que o aluno deve estar vendo agora.",
+    resumo: "A tela que o estudante deve estar vendo agora.",
     descricao:
-      "Já reconciliada com a etapa da TURMA — o cliente faz polling porque os momentos coletivos são do professor, não do aluno.",
+      "Já reconciliada com a etapa da TURMA — o cliente faz polling porque os momentos coletivos são do professor, não do estudante.",
     params: z.object({ id: z.string().uuid() }),
     resposta: FaseAtualSchema,
   })
   async fase(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, req.auth.usuarioId, req.auth.escolaId);
+      const run = await runDoEstudante(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!run) naoEncontrado();
       const etapa = ehEtapaDaTurma(run.activity.etapa) ? run.activity.etapa : "investigacao";
       return { fase: faseEfetiva(normalizarFase(run.fase), etapa), etapa };
@@ -336,7 +339,7 @@ export class RunsController {
     params: z.object({ id: z.string().uuid() }),
     resposta: FaseSchema,
   })
-  @Roles("aluno")
+  @Roles("estudante")
   @HttpCode(200)
   async finish(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -344,7 +347,7 @@ export class RunsController {
 
     const gate = await this.prisma.comTenancy(async (tx) => {
       const run = await tx.run.findFirst({
-        where: { id, alunoId: usuarioId, escolaId },
+        where: { id, estudanteId: usuarioId, escolaId },
         select: {
           fase: true,
           startedAt: true,
@@ -385,7 +388,7 @@ export class RunsController {
   @Post(":id/reset")
   @Roles("professor")
   @Contrato({
-    resumo: "Reabre a run de um aluno, sorteando a largada de novo.",
+    resumo: "Reabre a run de um estudante, sorteando a largada de novo.",
     descricao: "Rota de PROFESSOR: é o socorro para a sessão que travou no meio da aula.",
     params: z.object({ id: z.string().uuid() }),
     resposta: RunResetadaSchema,
@@ -400,21 +403,21 @@ export class RunsController {
         where: { id, escolaId, activity: { professorId: usuarioId } },
         select: {
           id: true,
-          alunoId: true,
+          estudanteId: true,
           activityId: true,
           activity: { select: { antagonismo: true, engineConfig: true } },
         },
       });
       if (!run) naoEncontrado();
 
-      const largada = await resolverLargada(tx, run.activityId, run.alunoId, run.activity.antagonismo, {
+      const largada = await resolverLargada(tx, run.activityId, run.estudanteId, run.activity.antagonismo, {
         ignorarRunAtual: run.id,
       });
       const config = run.activity.engineConfig as { sementeInicial?: number };
 
       /**
-       * Tudo que o aluno PRODUZIU vai embora com a sessão: sobra de dado aqui
-       * vira vazamento entre alunos (comentários e reflexão inclusos — a lição
+       * Tudo que o estudante PRODUZIU vai embora com a sessão: sobra de dado aqui
+       * vira vazamento entre estudantes (comentários e reflexão inclusos — a lição
        * do teste de comentário duplicado do origem).
        */
       await tx.event.deleteMany({ where: { runId: id } });
@@ -460,7 +463,7 @@ export class RunsController {
       "Cota por SESSÃO, não por IP: a turma toda compartilha a rede da escola.",
     ],
   })
-  @Roles("aluno")
+  @Roles("estudante")
   @HttpCode(200)
   async eventos(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -475,7 +478,7 @@ export class RunsController {
     const { usuarioId, escolaId } = req.auth;
     return this.prisma.comTenancy(async (tx) => {
       const run = await tx.run.findFirst({
-        where: { id, alunoId: usuarioId, escolaId },
+        where: { id, estudanteId: usuarioId, escolaId },
         select: { id: true },
       });
       if (!run) naoEncontrado();
@@ -497,7 +500,7 @@ export class RunsController {
       const novos = [...unicos.values()].filter((e) => !existentes.has(chave(e)));
 
       /**
-       * O comentário do aluno vira LINHA PRÓPRIA, além do evento — escrito na
+       * O comentário do estudante vira LINHA PRÓPRIA, além do evento — escrito na
        * MESMA transação e só para eventos novos: a deduplicação protege o
        * comentário também (reenviar o lote não duplica o que ele escreveu).
        */
@@ -534,9 +537,9 @@ export class RunsController {
     });
   }
 
-  /** A busca do aluno — e ela NÃO é enviesada: é o acervo, não a bolha. */
+  /** A busca do estudante — e ela NÃO é enviesada: é o acervo, não a bolha. */
   @Get(":id/busca")
-  @Roles("aluno")
+  @Roles("estudante")
   @Contrato({
     resumo: "Busca no acervo da atividade.",
     descricao: "Usar a busca é o sinal de INVESTIGAÇÃO que o relatório conta — por isso ela é uma rota, e não um filtro no cliente.",
@@ -549,7 +552,7 @@ export class RunsController {
     const termo = z.string().trim().max(80).optional().parse(q ?? undefined)?.trim();
 
     return this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, req.auth.usuarioId, req.auth.escolaId);
+      const run = await runDoEstudante(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!run) naoEncontrado();
 
       const posts = await tx.post.findMany({
@@ -582,19 +585,19 @@ export class RunsController {
     });
   }
 
-  /** Os posts que o ALUNO salvou — o último evento por post decide. */
+  /** Os posts que o ESTUDANTE salvou — o último evento por post decide. */
   @Get(":id/salvos")
   @Contrato({
-    resumo: "A coleção do aluno — o que ele salvou.",
+    resumo: "A coleção do estudante — o que ele salvou.",
     descricao: "O ÚLTIMO evento por post decide: salvar e dessalvar se anulam. É a coleção que ele vai defender no debate.",
     params: z.object({ id: z.string().uuid() }),
     resposta: SalvosSchema,
   })
-  @Roles("aluno")
+  @Roles("estudante")
   async salvos(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, req.auth.usuarioId, req.auth.escolaId);
+      const run = await runDoEstudante(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!run) naoEncontrado();
 
       const eventos = await tx.event.findMany({
@@ -641,20 +644,20 @@ export class RunsController {
     });
   }
 
-  /** O que o aluno PERDEU: posts do lado oposto que nunca foram servidos. */
+  /** O que o estudante PERDEU: posts do lado oposto que nunca foram servidos. */
   @Get(":id/perdidos")
   @Contrato({
-    resumo: "O que o aluno PERDEU — posts do lado oposto que nunca foram servidos.",
+    resumo: "O que o estudante PERDEU — posts do lado oposto que nunca foram servidos.",
     descricao:
       "**Só das etapas `perdidos` em diante**: antes disso derrubaria o disfarce, que é o que a atividade inteira depende de manter até a revelação.",
     params: z.object({ id: z.string().uuid() }),
     resposta: PerdidosSchema,
   })
-  @Roles("aluno")
+  @Roles("estudante")
   async perdidos(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, req.auth.usuarioId, req.auth.escolaId);
+      const run = await runDoEstudante(tx, id, req.auth.usuarioId, req.auth.escolaId);
       if (!run) naoEncontrado();
       // Só nas etapas `perdidos` em diante: antes disso derrubaria o disfarce.
       if (!["perdidos", "reflexao", "fim"].includes(run.fase)) naoEncontrado();
@@ -670,7 +673,7 @@ export class RunsController {
       /**
        * O lado dele = onde o FEED mais serviu. A conta vive em `calcularExposicao`
        * porque o relatório do professor faz a mesma pergunta e precisa da mesma
-       * resposta — antes cada um tinha a sua, e nos alunos que viraram o jogo as
+       * resposta — antes cada um tinha a sua, e nos estudantes que viraram o jogo as
        * duas telas nomeavam lados opostos para a mesma criança (ADR-42).
        */
       const metas = await tx.post.findMany({
@@ -682,7 +685,7 @@ export class RunsController {
       /**
        * Sem post de tese servido não há lado a nomear. Acontece com sessão
        * interrompida cedo, e é raro — mas inventar um lado aqui poria na tela do
-       * aluno uma frase sobre um feed que ele não chegou a ter.
+       * estudante uma frase sobre um feed que ele não chegou a ter.
        */
       if (!exposicao.ladoDele || !exposicao.ladoPerdido) {
         return {
@@ -755,7 +758,7 @@ export class RunsController {
    * `conclusao`, e NÃO avança a fase: quem move a turma é o professor.
    */
   @Post(":id/conclusao")
-  @Roles("aluno")
+  @Roles("estudante")
   @Contrato({
     resumo: "A escolha de um lado no fim da missão.",
     descricao: "Enviar duas vezes é **409**, com linguagem de app real: \"isso já foi enviado\", nada de \"fase\" ou \"atividade\".",
@@ -769,7 +772,7 @@ export class RunsController {
     const { usuarioId, escolaId } = req.auth;
     return this.prisma.comTenancy(async (tx) => {
       const run = await tx.run.findFirst({
-        where: { id, alunoId: usuarioId, escolaId },
+        where: { id, estudanteId: usuarioId, escolaId },
         select: { id: true, fase: true },
       });
       if (!run) naoEncontrado();
@@ -782,7 +785,7 @@ export class RunsController {
 
       /**
        * A PRIMEIRA escolha é gravada uma vez e nunca mais tocada; `inclinacao`
-       * segue sendo a última, que é a que vale. A tela convida o aluno a mudar
+       * segue sendo a última, que é a que vale. A tela convida o estudante a mudar
        * de ideia enquanto espera a turma, e antes disso a primeira reação ao
        * feed — a que acontece antes de dois minutos de espera e de olhar a tela
        * do colega — desaparecia no `update`.
@@ -821,7 +824,7 @@ export class RunsController {
 
   /** A reflexão que fecha a atividade: assunto próprio, sem teto, editável. */
   @Post(":id/reflexao")
-  @Roles("aluno")
+  @Roles("estudante")
   @Contrato({
     resumo: "O fechamento escrito da atividade.",
     descricao:
@@ -839,7 +842,7 @@ export class RunsController {
     const { usuarioId, escolaId } = req.auth;
     return this.prisma.comTenancy(async (tx) => {
       const run = await tx.run.findFirst({
-        where: { id, alunoId: usuarioId, escolaId },
+        where: { id, estudanteId: usuarioId, escolaId },
         select: { id: true, fase: true },
       });
       if (!run) naoEncontrado();
@@ -861,11 +864,11 @@ export class RunsController {
 
   /** O que ele já escreveu — para reabrir a tela sem perder o texto. */
   @Get(":id/reflexao")
-  @Roles("aluno")
+  @Roles("estudante")
   @Contrato({
-    resumo: "O texto da reflexão que o aluno já escreveu.",
+    resumo: "O texto da reflexão que o estudante já escreveu.",
     descricao:
-      "Lê a reflexão desta run — a dele, e só a dele: o `where` casa `alunoId` do token junto com o id.",
+      "Lê a reflexão desta run — a dele, e só a dele: o `where` casa `estudanteId` do token junto com o id.",
     params: z.object({ id: z.string().uuid() }),
     resposta: ReflexaoSalvaSchema,
     notas: ["`texto: \"\"` quando ainda não escreveu — o campo abre vazio, não com erro."],
@@ -874,7 +877,7 @@ export class RunsController {
     if (!ehUuid(id)) naoEncontrado();
     return this.prisma.comTenancy(async (tx) => {
       const run = await tx.run.findFirst({
-        where: { id, alunoId: req.auth.usuarioId, escolaId: req.auth.escolaId },
+        where: { id, estudanteId: req.auth.usuarioId, escolaId: req.auth.escolaId },
         select: { reflexao: { select: { texto: true } } },
       });
       if (!run) naoEncontrado();
@@ -882,17 +885,17 @@ export class RunsController {
     });
   }
 
-  /** O post espontâneo do aluno (nunca sugerido pela interface). */
+  /** O post espontâneo do estudante (nunca sugerido pela interface). */
   @Post(":id/student-post")
   @Contrato({
-    resumo: "O aluno publica no app, e as personas reagem.",
+    resumo: "O estudante publica no app, e as personas reagem.",
     descricao:
       "**Falha fechada**: IA desligada, erro de rede ou reação recusada ⇒ lista vazia, e o post é publicado do mesmo jeito — como num app real quando ninguém responde. A chamada de IA fica FORA da transação, de propósito.",
     params: z.object({ id: z.string().uuid() }),
     corpo: StudentPostSchema,
-    resposta: PostDoAlunoSchema,
+    resposta: PostDoEstudanteSchema,
   })
-  @Roles("aluno")
+  @Roles("estudante")
   @HttpCode(201)
   async studentPost(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -904,7 +907,7 @@ export class RunsController {
 
     const { usuarioId, escolaId } = req.auth;
     const contexto = await this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, usuarioId, escolaId);
+      const run = await runDoEstudante(tx, id, usuarioId, escolaId);
       if (!run) naoEncontrado();
 
       const estado = normalizarEstado(run.engineState);
@@ -933,7 +936,7 @@ export class RunsController {
     /**
      * Reações geradas na hora pelas personas aprovadas. Falha fechada: IA
      * desligada, erro de rede ou reação recusada ⇒ lista vazia, e o post do
-     * aluno é publicado do mesmo jeito — como num app real quando ninguém
+     * estudante é publicado do mesmo jeito — como num app real quando ninguém
      * responde. (A chamada de IA fica FORA da transação de propósito.)
      */
     const { reacoes } = contexto.iaAoVivo
@@ -945,8 +948,8 @@ export class RunsController {
             perfil: autor.perfilAfim ?? "",
           })),
           perguntaChave: contexto.perguntaChave,
-          textoDoAluno: parsed.data.texto,
-          contexto: "O ALUNO PUBLICOU UM POST no feed.",
+          textoDoEstudante: parsed.data.texto,
+          contexto: "O ESTUDANTE PUBLICOU UM POST no feed.",
           quantas: 3,
         })
       : { reacoes: [] };
@@ -969,20 +972,20 @@ export class RunsController {
     return { post: contexto.criado, comentariosDeApoio: reacoes };
   }
 
-  /** Personas reagem ao que o aluno acabou de escrever. Vazio é resultado válido. */
+  /** Personas reagem ao que o estudante acabou de escrever. Vazio é resultado válido. */
   @Post(":id/reacoes")
   @Contrato({
-    resumo: "Reações das personas ao que o aluno escreveu.",
-    descricao: "Nunca falha para o aluno: sem IA, sem cota ou com erro, devolve `reacoes: []` e diz por quê.",
+    resumo: "Reações das personas ao que o estudante escreveu.",
+    descricao: "Nunca falha para o estudante: sem IA, sem cota ou com erro, devolve `reacoes: []` e diz por quê.",
     params: z.object({ id: z.string().uuid() }),
     corpo: ReacoesSchema,
     resposta: ReacoesGeradasSchema,
     notas: [
       "`desligada: true` = o professor desligou a IA ao vivo.",
-      "`limite: true` = teto de 12 reações por sessão — aluno comentando sem parar não queima a cota da turma.",
+      "`limite: true` = teto de 12 reações por sessão — estudante comentando sem parar não queima a cota da turma.",
     ],
   })
-  @Roles("aluno")
+  @Roles("estudante")
   @HttpCode(200)
   async reacoes(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
@@ -992,7 +995,7 @@ export class RunsController {
     if (!corpo.success) return { reacoes: [] };
 
     const contexto = await this.prisma.comTenancy(async (tx) => {
-      const run = await runDoAluno(tx, id, usuarioId, escolaId);
+      const run = await runDoEstudante(tx, id, usuarioId, escolaId);
       if (!run) naoEncontrado();
       // Sessão congelada não recebe conteúdo novo.
       if (run.fase !== "feed" && run.fase !== "encerramento") return null;
@@ -1009,9 +1012,11 @@ export class RunsController {
     if (!contexto) return { reacoes: [] };
     if ("desligada" in contexto) return { reacoes: [], desligada: true };
 
-    // 12 reações por sessão: aluno comentando sem parar não queima a cota da turma.
+    // 12 reações por sessão: estudante comentando sem parar não queima a cota da turma.
     const cota = rateLimit(`reacoes:${id}`, 12, 30 * 60_000);
     if (!cota.ok) return { reacoes: [], limite: true };
+
+    const ehPostEstudante = corpo.data.tipo === "post_do_estudante" || corpo.data.tipo === "post_do_aluno";
 
     const { reacoes } = await gerarReacoes(this.ia, {
       elenco: contexto.autores.map((autor) => ({
@@ -1021,12 +1026,11 @@ export class RunsController {
         perfil: autor.perfilAfim ?? "",
       })),
       perguntaChave: contexto.perguntaChave,
-      textoDoAluno: corpo.data.texto,
-      contexto:
-        corpo.data.tipo === "post_do_aluno"
-          ? "O ALUNO PUBLICOU UM POST no feed."
-          : "O ALUNO COMENTOU num post do feed.",
-      quantas: corpo.data.tipo === "post_do_aluno" ? 3 : 1,
+      textoDoEstudante: corpo.data.texto,
+      contexto: ehPostEstudante
+        ? "O ESTUDANTE PUBLICOU UM POST no feed."
+        : "O ESTUDANTE COMENTOU num post do feed.",
+      quantas: ehPostEstudante ? 3 : 1,
     });
 
     if (reacoes.length === 0) return { reacoes: [] };
@@ -1037,7 +1041,7 @@ export class RunsController {
           escolaId,
           runId: id,
           postId: corpo.data.tipo === "comentario" ? corpo.data.postId : null,
-          studentPostId: corpo.data.tipo === "post_do_aluno" ? corpo.data.studentPostId : null,
+          studentPostId: corpo.data.tipo !== "comentario" ? corpo.data.studentPostId : null,
           handle: reacao.handle,
           deIa: true,
           texto: reacao.texto,
@@ -1049,7 +1053,7 @@ export class RunsController {
   }
 
   /**
-   * GET /runs/:id/dossie — o aluno lê o próprio; o professor, qualquer um da
+   * GET /runs/:id/dossie — o estudante lê o próprio; o professor, qualquer um da
    * sua atividade (para projetar em aula). Aqui lado/intensidade PODEM
    * aparecer: o disfarce já caiu.
    */
@@ -1061,12 +1065,12 @@ export class RunsController {
     params: z.object({ id: z.string().uuid() }),
     resposta: DossieSchema,
     notas: [
-      "`conclusao` é anexada na LEITURA, não no congelamento: o dossiê é computado no `finish`, antes de o aluno escrever. `undefined` quando a sessão foi interrompida — e o relatório precisa funcionar assim.",
+      "`conclusao` é anexada na LEITURA, não no congelamento: o dossiê é computado no `finish`, antes de o estudante escrever. `undefined` quando a sessão foi interrompida — e o relatório precisa funcionar assim.",
       "Os rótulos de perfil vêm prontos no payload em vez de o cliente importar as FICHAS: elas carregam o vocabulário dos prompts, que não tem por que viajar até o navegador.",
       "`imersao.total` nunca vem sem os componentes.",
     ],
   })
-  @Roles("aluno", "professor")
+  @Roles("estudante", "professor")
   async dossie(@Param("id") id: string, @Req() req: Autenticado) {
     if (!ehUuid(id)) naoEncontrado();
     const { usuarioId, escolaId, perfil } = req.auth;
@@ -1074,8 +1078,8 @@ export class RunsController {
     const run = await this.prisma.comTenancy((tx) =>
       tx.run.findFirst({
         where:
-          perfil === "aluno"
-            ? { id, alunoId: usuarioId, escolaId }
+          perfil === "estudante" || (perfil as string) === "aluno"
+            ? { id, estudanteId: usuarioId, escolaId }
             : { id, escolaId, activity: { professorId: usuarioId } },
         select: { id: true, fase: true },
       }),
@@ -1089,7 +1093,7 @@ export class RunsController {
      * por causa de runs congeladas antes da mudança.
      */
     const PODE_LER = ["explicabilidade", "perdidos", "reflexao", "fim", "revelacao", "dossie"];
-    if (perfil === "aluno" && !PODE_LER.includes(run.fase)) naoEncontrado();
+    if ((perfil === "estudante" || (perfil as string) === "aluno") && !PODE_LER.includes(run.fase)) naoEncontrado();
 
     try {
       return await montarRespostaDossie(this.prisma, id, escolaId);

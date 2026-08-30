@@ -23,10 +23,11 @@ import type { Prisma } from '@prisma/client';
  * centenas de eventos) e evita a pior armadilha de analytics: número gravado que
  * ninguém sabe mais como foi computado. Quando a definição de "tempo ativo" muda,
  * muda em um lugar — `lib/dossie/telemetria.ts` — e as três superfícies
- * (relatório do aluno, análise do professor, análise de produto) concordam.
+ * (relatório do estudante, análise do professor, análise de produto) concordam.
  */
 export interface MetricasDaRun {
   runId: string;
+  estudante: { username: string; displayName: string };
   aluno: { username: string; displayName: string };
   fase: string;
   iniciadaEm: Date;
@@ -60,7 +61,7 @@ export interface MetricasDaRun {
   };
 
   /**
-   * A COLEÇÃO do aluno — os posts que ele salvou, que no fluxo v2 são o artefato
+   * A COLEÇÃO do estudante — os posts que ele salvou, que no fluxo v2 são o artefato
    * da missão e o material do debate.
    *
    * Diferente de `interacoes.salvos`, que conta eventos: aqui o último evento por
@@ -85,7 +86,7 @@ export interface MetricasDaRun {
     /**
      * A PRIMEIRA escolha — `null` nas respostas anteriores à migração que passou
      * a guardá-la. A correlação "lado do feed × resposta" usa a ÚLTIMA, que é a
-     * que o aluno assumiu; esta existe para ser possível perguntar se as duas
+     * que o estudante assumiu; esta existe para ser possível perguntar se as duas
      * contam a mesma história.
      */
     inclinacaoInicial: 'A' | 'B' | 'duvida' | null;
@@ -97,7 +98,7 @@ export interface MetricasDaRun {
   reflexao: { texto: string; caracteres: number } | null;
 
   /**
-   * Há quanto tempo o aluno não gera evento nenhum. É o número que faz o
+   * Há quanto tempo o estudante não gera evento nenhum. É o número que faz o
    * professor levantar da cadeira — e por isso é `null` quando a run já acabou:
    * ninguém precisa ser cutucado por estar "ocioso" num relatório.
    */
@@ -139,7 +140,7 @@ export async function metricasDaAtividade(prisma: Prisma.TransactionClient, acti
         perfilJogo: true,
         perfilOrigem: true,
         engineState: true,
-        aluno: { select: { username: true, displayName: true } },
+        estudante: { select: { username: true, displayName: true } },
         conclusao: { select: { inclinacao: true, inclinacaoInicial: true, trocas: true, texto: true } },
         reflexao: { select: { texto: true } },
         _count: { select: { studentPosts: true } },
@@ -243,7 +244,8 @@ export async function metricasDaAtividade(prisma: Prisma.TransactionClient, acti
 
     return {
       runId: run.id,
-      aluno: run.aluno,
+      estudante: run.estudante,
+      aluno: run.estudante,
       fase: run.fase,
       iniciadaEm: run.startedAt,
       encerradaEm: run.finishedAt,

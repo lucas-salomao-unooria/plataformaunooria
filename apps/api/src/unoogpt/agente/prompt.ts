@@ -310,7 +310,7 @@ export async function responder(
    * os minutos da cidade já decorridos (é o que decide se a equipe chega).
    */
   tempo: { segundosAteFechar: number | null; minutosGastos: number },
-  historico: { papel: 'aluno' | 'agente'; texto: string }[],
+  historico: { papel: 'estudante' | 'agente'; texto: string }[],
   texto: string,
   aoUsarDados: (dados: string[]) => Promise<string[]>,
   aoAlocar: (destinos: {
@@ -363,7 +363,7 @@ export async function responder(
       protocolo: protocoloDoTurno(tipo, { temDados: conjuntos.length > 0 }),
       perguntasRestantes: estado.perguntasRestantes,
     }),
-    historico: [...historico, { papel: 'aluno' as const, texto }],
+    historico: [...historico, { papel: 'estudante' as const, texto }],
     // Número na resposta sem a ferramenta ter rodado é número inventado — o
     // defeito mais grave possível numa Missão sobre confiar em dados.
     validar: (saida) => {

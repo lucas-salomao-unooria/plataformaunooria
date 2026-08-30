@@ -4,7 +4,7 @@ import type { FeedPost } from './tipos';
 
 /**
  * Doc 04 §7 e doc 06: o que chega ao cliente. NUNCA lado, intensidade,
- * categoria ou emotional_hook — um aluno curioso não pode abrir o DevTools e
+ * categoria ou emotional_hook — um estudante curioso não pode abrir o DevTools e
  * ver o truque.
  */
 export interface PostCompleto {

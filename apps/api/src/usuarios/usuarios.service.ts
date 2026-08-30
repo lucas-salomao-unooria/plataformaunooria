@@ -31,7 +31,9 @@ export class UsuariosService {
     const busca = filtro.busca?.trim();
     const where = {
       escolaId,
-      ...(filtro.papel ? { role: filtro.papel } : {}),
+      ...(filtro.papel
+        ? { role: filtro.papel === "aluno" || filtro.papel === "estudante" ? { in: ["estudante", "aluno"] } : filtro.papel }
+        : {}),
       ...(filtro.situacao === "ativos" ? { ativo: true } : {}),
       ...(filtro.situacao === "inativos" ? { ativo: false } : {}),
       ...(filtro.situacao === "sem-primeiro-acesso" ? { senhaProvisoria: true } : {}),

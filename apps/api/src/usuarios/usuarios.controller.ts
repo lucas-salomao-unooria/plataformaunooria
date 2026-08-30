@@ -108,7 +108,7 @@ export class UsuariosController {
     resposta: UsuarioEditadoSchema,
     notas: [
       "`cpf: \"\"` **APAGA** o campo — é o que se faz quando o número era de outra pessoa.",
-      "Sair da REDE é `ativo: false`, não DELETE: há dado de aluno pendurado em oito tabelas.",
+      "Sair da REDE é `ativo: false`, não DELETE: há dado de estudante pendurado em oito tabelas.",
     ],
   })
   async editar(

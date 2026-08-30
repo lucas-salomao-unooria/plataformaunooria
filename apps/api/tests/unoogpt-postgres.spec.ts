@@ -74,7 +74,7 @@ beforeAll(async () => {
 
   const criar = (escolaId: string, turma: string | null, username: string) =>
     prisma.user.create({
-      data: { role: "aluno", escolaId, turmaId: turma, username, displayName: username, passwordHash: "x" },
+      data: { role: "estudante", escolaId, turmaId: turma, username, displayName: username, passwordHash: "x" },
       select: { id: true },
     });
   ana = (await criar(ESCOLA, turmaId, "ug.ana")).id;
@@ -94,7 +94,7 @@ describe("a largada é da TURMA, não do aluno", () => {
     expect(abertura.estado.fase).toBe("aguardando");
     expect(abertura.estado.aberta).toBe(false);
     // Falar antes da largada é o que a sala inteira tentaria fazer.
-    expect(await codigoDe(service.pergunta(ESCOLA, ana, "aluno", "onde chove mais?"))).toBe(
+    expect(await codigoDe(service.pergunta(ESCOLA, ana, "estudante", "onde chove mais?"))).toBe(
       "relogio-nao-comecou",
     );
   });
@@ -143,18 +143,18 @@ describe("a largada é da TURMA, não do aluno", () => {
 
 describe("o turno do Cientista", () => {
   it("responde, grava a Transcrição e conta o custo na sessão", async () => {
-    const r = await service.pergunta(ESCOLA, ana, "aluno", "onde mora mais gente?");
+    const r = await service.pergunta(ESCOLA, ana, "estudante", "onde mora mais gente?");
     expect(r.texto).toContain("[mock]");
 
     const falas = await prisma.unoogptMensagem.findMany({
-      where: { escolaId: ESCOLA, alunoId: ana },
+      where: { escolaId: ESCOLA, estudanteId: ana },
       orderBy: { id: "asc" },
     });
-    expect(falas.map((f) => f.papel)).toEqual(["aluno", "agente"]);
+    expect(falas.map((f) => f.papel)).toEqual(["estudante", "agente"]);
     expect(falas[0]?.texto).toBe("onde mora mais gente?");
 
     const sessao = await prisma.unoogptSessao.findUniqueOrThrow({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: ana } },
     });
     expect(sessao.chamadasIa).toBe(1);
     expect(sessao.tokensGastos).toBeGreaterThan(0);
@@ -170,7 +170,7 @@ describe("o turno do Cientista", () => {
     // teste próprio em `ai-conversar.spec.ts`.)
     const antes = await service.sessao(ESCOLA, ana);
     expect(antes.sessao.conjuntos).toEqual([]);
-    const r = await service.pergunta(ESCOLA, ana, "aluno", "e a previsão do tempo?");
+    const r = await service.pergunta(ESCOLA, ana, "estudante", "e a previsão do tempo?");
     expect(r.texto).toContain("[mock]");
   });
 
@@ -200,13 +200,13 @@ describe("o turno do Cientista", () => {
     // carregada o Cientista consulta de verdade e o débito é correto — foi o que
     // esta suíte pegou na primeira versão do teste.
     await prisma.unoogptSessao.update({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: ana } },
       data: { conjuntos: [], rodadas: 0, perguntasGastas: 0 },
     });
     const gastasAntes = 0;
-    await service.pergunta(ESCOLA, ana, "aluno", "quantas pessoas moram na Ribeirinha?");
+    await service.pergunta(ESCOLA, ana, "estudante", "quantas pessoas moram na Ribeirinha?");
     const depois = await prisma.unoogptSessao.findUniqueOrThrow({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: ana } },
     });
     expect(depois.perguntasGastas).toBe(gastasAntes);
     // Mas a CHAMADA contou: o token foi gasto de todo modo.
@@ -215,28 +215,28 @@ describe("o turno do Cientista", () => {
 
   it("o orçamento de 3 perguntas é debitado no SERVIDOR e trava na quarta", async () => {
     for (let i = 0; i < 6; i += 1) {
-      const codigo = await codigoDe(service.pergunta(ESCOLA, bia, "aluno", `pergunta ${i} sobre a chuva?`));
+      const codigo = await codigoDe(service.pergunta(ESCOLA, bia, "estudante", `pergunta ${i} sobre a chuva?`));
       if (codigo === "sem-perguntas") break;
     }
     const sessao = await prisma.unoogptSessao.findUniqueOrThrow({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: bia } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: bia } },
     });
     expect(sessao.perguntasGastas).toBeLessThanOrEqual(3);
     // E a fala que debitou está marcada: é a trilha de auditoria do orçamento.
     const debitadas = await prisma.unoogptMensagem.count({
-      where: { escolaId: ESCOLA, alunoId: bia, debitou: true },
+      where: { escolaId: ESCOLA, estudanteId: bia, debitou: true },
     });
     expect(debitadas).toBe(sessao.perguntasGastas);
   });
 
   it("estourar o teto POR SESSÃO fecha a sala de operações", async () => {
     await prisma.unoogptSessao.update({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: ana } },
       data: { tokensGastos: 999_999 },
     });
-    expect(await codigoDe(service.pergunta(ESCOLA, ana, "aluno", "e agora?"))).toBe("teto-da-sessao");
+    expect(await codigoDe(service.pergunta(ESCOLA, ana, "estudante", "e agora?"))).toBe("teto-da-sessao");
     await prisma.unoogptSessao.update({
-      where: { escolaId_alunoId: { escolaId: ESCOLA, alunoId: ana } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: ana } },
       data: { tokensGastos: 0 },
     });
   });
@@ -288,24 +288,24 @@ describe("decidir, justificar e enfrentar a tempestade", () => {
     // Idempotente por tentativa: enfrentar de novo não sorteia outra chuva.
     const denovo = await service.simular(ESCOLA, ana);
     expect(denovo.desfecho.totais.salvas).toBe(r.desfecho.totais.salvas);
-    expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, alunoId: ana } })).toBe(1);
+    expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: ana } })).toBe(1);
   });
 
   it("o contrafactual não grava nada e não debita", async () => {
-    const antes = await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, alunoId: ana } });
+    const antes = await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: ana } });
     const r = await service.contrafactual(ESCOLA, ana, { alfa: "morroalto", bravo: "industrial" });
     expect(r.media).toBeGreaterThanOrEqual(0);
-    expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, alunoId: ana } })).toBe(antes);
+    expect(await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: ana } })).toBe(antes);
   });
 
   it("recomeçar abre tentativa NOVA e preserva a conversa anterior", async () => {
-    const falasAntes = await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, alunoId: ana } });
+    const falasAntes = await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, estudanteId: ana } });
     const { sessao } = await service.reiniciar(ESCOLA, ana);
     expect(sessao.tentativa).toBe(2);
     expect(sessao.conjuntos).toEqual([]);
     expect(sessao.alocacao).toEqual({ alfa: null, bravo: null });
     // Para o aluno a tela limpa; para o professor a aula inteira continua.
-    expect(await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, alunoId: ana } })).toBe(
+    expect(await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, estudanteId: ana } })).toBe(
       falasAntes,
     );
   });
@@ -384,7 +384,7 @@ describe("tenancy: a segunda escola não vê a primeira", () => {
   it("abrir a sessão de um aluno de outra escola não cria linha nenhuma", async () => {
     expect(await codigoDe(service.sessao(ESCOLA, deOutraEscola))).toBe("sessao-encerrada");
     expect(
-      await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, alunoId: deOutraEscola } }),
+      await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: deOutraEscola } }),
     ).toBe(0);
   });
 
@@ -406,20 +406,20 @@ describe("zerar a turma", () => {
     // As partidas DA TURMA somem, e os filhos vão por ON DELETE CASCADE.
     for (const aluno of [ana, bia]) {
       expect(
-        await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, alunoId: aluno } }),
+        await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: aluno } }),
       ).toBe(0);
       expect(
-        await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, alunoId: aluno } }),
+        await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, estudanteId: aluno } }),
       ).toBe(0);
-      expect(await prisma.unoogptMarco.count({ where: { escolaId: ESCOLA, alunoId: aluno } })).toBe(0);
+      expect(await prisma.unoogptMarco.count({ where: { escolaId: ESCOLA, estudanteId: aluno } })).toBe(0);
       expect(
-        await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, alunoId: aluno } }),
+        await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: aluno } }),
       ).toBe(0);
     }
     // E o aluno que NÃO é da turma continua intocado: "zerar a turma" é da
     // turma, não da escola — o professor da 2A não apaga a partida da 2B.
     expect(
-      await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, alunoId: semTurma } }),
+      await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: semTurma } }),
     ).toBe(1);
     // O relógio vai junto: rodar de novo com a aula "já começada" faria a
     // segunda rodada nascer no meio da tempestade.

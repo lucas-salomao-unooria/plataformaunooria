@@ -559,7 +559,7 @@ export class GeracaoWorker {
         /**
          * Doc 05 etapa 4. Mudou de "as proporções fecham?" para "a MATRIZ fecha?":
          * o que importa agora é cada célula (lado, perfil) ter conteúdo, porque uma
-         * célula vazia significa que aquele aluno nunca receberia a linguagem que
+         * célula vazia significa que aquele estudante nunca receberia a linguagem que
          * mais fala com ele. O desvio fica registrado no job, para o professor ver
          * na revisão em vez de descobrir no feed.
          */

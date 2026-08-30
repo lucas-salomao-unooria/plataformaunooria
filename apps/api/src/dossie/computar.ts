@@ -33,7 +33,7 @@ type Transacao = Prisma.TransactionClient;
 
 /**
  * Cômputo do dossiê (doc 04 §6 e doc 06). Roda no finish: congela a run e
- * transforma a sessão em evidência — com os números reais do aluno.
+ * transforma a sessão em evidência — com os números reais do estudante.
  */
 export async function computarDossie(
   prisma: PrismaService,
@@ -47,7 +47,7 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
   const run = await prisma.run.findUniqueOrThrow({
     where: { id: runId },
     include: {
-      aluno: { select: { displayName: true, avatar: true } },
+      estudante: { select: { displayName: true, avatar: true } },
       activity: {
         select: { id: true, titulo: true, perguntaChave: true, antagonismo: true, engineConfig: true },
       },
@@ -110,8 +110,8 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
    * ---- o que o algoritmo escondeu ----
    *
    * Pela EXPOSIÇÃO, não pelo domínio (ADR-42): esta é a mesma conta que a tela
-   * dos posts perdidos mostra ao aluno, e as duas precisavam nomear o mesmo
-   * lado. Antes esta linha usava `dominanteFinal`, e nos alunos que viraram o
+   * dos posts perdidos mostra ao estudante, e as duas precisavam nomear o mesmo
+   * lado. Antes esta linha usava `dominanteFinal`, e nos estudantes que viraram o
    * jogo ela contava os posts do lado que o algoritmo estava EMPURRANDO neles.
    */
   const exposicao = calcularExposicao(estado.servedPostIds, metas);
@@ -245,7 +245,7 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
    * `perfil_jogo` guarda o PerfilDeValores inteiro (`{escores, dominante}`), não
    * os escores soltos — é o shape do doc 10 §4. Normalizar o envelope em vez dos
    * escores fazia `normalizarPerfil` ler quatro `undefined`, cair no empate e
-   * devolver `misto` para TODO aluno com perfil: a explicabilidade do relatório
+   * devolver `misto` para TODO estudante com perfil: a explicabilidade do relatório
    * virava "seu lado foi sorteado" mesmo quando tinha vindo do jogo.
    */
   const perfilBruto = run.perfilJogo as Record<string, unknown> | null;
@@ -272,7 +272,7 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
 
   return {
     versaoDoRelatorio: VERSAO_DO_RELATORIO,
-    aluno: { displayName: run.aluno.displayName, avatar: run.aluno.avatar ?? 'avatar-01' },
+    aluno: { displayName: run.estudante.displayName, avatar: run.estudante.avatar ?? 'avatar-01' },
     atividade: {
       titulo: run.activity.titulo,
       perguntaChave: run.activity.perguntaChave,
@@ -324,7 +324,7 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
  *
  * Três origens, três frases — e nenhuma delas pode fingir. Quando o lado veio de
  * sorteio, dizer "foi escolhido a partir de como você jogou" seria mentir para o
- * aluno na única tela do exercício que existe para não mentir.
+ * estudante na única tela do exercício que existe para não mentir.
  */
 function montarExplicacao({
   origem,
@@ -348,13 +348,13 @@ function montarExplicacao({
   const temPerfil = origem === 'perfil' && dominante !== null && dominante !== 'misto';
 
   /**
-   * O "por quê" é o DO PERFIL DO ALUNO, não o do eixo.
+   * O "por quê" é o DO PERFIL DO ESTUDANTE, não o do eixo.
    *
    * A afinidade é decidida por eixo (doc 10 §5.2), mas a justificativa que a IA
    * escreve para o polo nomeado defende o lado DELE. Usá-la para o polo oposto
    * produzia uma frase incoerente no relatório: "o lado que fala a sua língua é B
    * — porque quem gosta de estratégia se identifica com A". Quando a justificativa
-   * do polo do aluno não existe (atividade gerada antes do M8), a frase some.
+   * do polo do estudante não existe (atividade gerada antes do M8), a frase some.
    */
   const porQue = (() => {
     if (!temPerfil || !afinidade) return null;
@@ -375,14 +375,14 @@ function montarExplicacao({
 /**
  * Congela a run, grava o dossiê e move a fase para **`conclusao`** (doc 07).
  *
- * Mudou no M7: antes ia direto para `revelacao`. Agora o aluno responde a
+ * Mudou no M7: antes ia direto para `revelacao`. Agora o estudante responde a
  * pergunta-chave primeiro — uma conclusão escrita depois de saber que o feed era
  * enviesado não serve para nada, e é o par "conclusão × lado semeado" que dá a
  * punchline do relatório.
  *
  * O dossiê é COMPUTADO aqui e só fica legível a partir de `revelacao`: computar
  * antes garante que os dados congelam no instante em que a sessão terminou, e não
- * dependem de quanto tempo o aluno leva escrevendo.
+ * dependem de quanto tempo o estudante leva escrevendo.
  */
 export async function encerrarRun(
   prisma: PrismaService,
@@ -473,7 +473,7 @@ async function montarRespostaDossieNaTransacao(
 
   /**
    * A conclusão é anexada AQUI, não no congelamento: o dossiê é computado no
-   * `finish`, antes de o aluno escrever. Anexar na leitura também deixa o dado
+   * `finish`, antes de o estudante escrever. Anexar na leitura também deixa o dado
    * comportamental (congelado) separado do reflexivo (escrito depois) — que é a
    * distinção que o doc 06 registra ao manter `exp_01_conclusoes` fora de `exp_01_dossiers`.
    */

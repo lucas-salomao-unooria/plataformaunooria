@@ -96,13 +96,13 @@ export interface ExplicacaoDoLado {
  *
  * 1 → dossiê pré-M8 (8 seções).
  * 2 → M8: seções novas + correção do envelope de `perfil_jogo`, que fazia todo
- *     aluno com perfil ser lido como `misto`.
+ *     estudante com perfil ser lido como `misto`.
  * 3 → M8: `blocoDaInversao` pelo acumulado (bloco-cauda apagava a virada) e o
- *     "por quê" do lado passa a ser o do PERFIL do aluno, não o do polo nomeado
- *     do eixo — antes um aluno de Conservação lia a justificativa da Abertura,
+ *     "por quê" do lado passa a ser o do PERFIL do estudante, não o do polo nomeado
+ *     do eixo — antes um estudante de Conservação lia a justificativa da Abertura,
  *     que defende o lado contrário ao dele.
  * 4 → `postsOcultados` passa a ser contado pela EXPOSIÇÃO e não pelo domínio
- *     (ADR-42): nos alunos que viraram o jogo, o relatório do professor contava
+ *     (ADR-42): nos estudantes que viraram o jogo, o relatório do professor contava
  *     os posts do lado que o algoritmo estava EMPURRANDO neles, e divergia do
  *     número que a criança lia na tela. E a janela do tempo passa a terminar com
  *     o feed (ADR-44), o que devolve a imersão que derretia durante a aula.
@@ -139,7 +139,7 @@ export interface DossierData {
   studentPost?: { texto: string; ladoInferido: string };
   /**
    * A conclusão escrita da missão (doc 02 fase 4). Anexada na LEITURA, não no
-   * congelamento: o dossiê é computado no `finish`, antes de o aluno escrever.
+   * congelamento: o dossiê é computado no `finish`, antes de o estudante escrever.
    * `undefined` quando a sessão foi interrompida — e o relatório precisa
    * funcionar assim (doc 02 fase 4).
    */

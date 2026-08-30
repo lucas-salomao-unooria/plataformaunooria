@@ -113,7 +113,7 @@ describe("importação da planilha de pessoas", () => {
       include: { turma: true },
     });
     const matriculas = await prisma.matricula.findMany({
-      where: { escolaId: ESCOLA, usuarioId: ana.id, papel: "aluno" },
+      where: { escolaId: ESCOLA, usuarioId: ana.id, papel: { in: ["estudante", "aluno"] } },
       include: { turma: true },
       orderBy: { turma: { nome: "asc" } },
     });

@@ -59,7 +59,7 @@ function pareceIsca(meta: PostMeta): boolean {
  * int.1. Post sensacionalista no primeiro contato quebraria o disfarce.
  *
  * Os 8 posts cobrem os **4 perfis de forma equilibrada**, sem ponderação — é a
- * leitura mais limpa da preferência de linguagem do aluno, antes de o perfil do
+ * leitura mais limpa da preferência de linguagem do estudante, antes de o perfil do
  * jogo pesar na escolha.
  *
  * Sem neutros no catálogo, o bloco vira 5 do lado semeado + 3 do oposto, todos
@@ -175,7 +175,7 @@ function niveisParaServir(
  *
  * 1. **Autor seguido** — bônus de sinal social, como no app real.
  * 2. **Perfil de linguagem** (doc 04 §5.5): com probabilidade `pesoPerfil`, o
- *    sorteio é restrito ao perfil do aluno. Se essa célula esgotou, cai no perfil
+ *    sorteio é restrito ao perfil do estudante. Se essa célula esgotou, cai no perfil
  *    **vizinho** no círculo de Schwartz antes do oposto — descer direto para o
  *    oposto seria servir justamente a linguagem que prende menos (doc 10 §3.5).
  *
@@ -191,11 +191,11 @@ function escolher(
   const porAutor = (post: PostMeta) =>
     estado.followedAuthors.includes(post.authorId) ? config.bonusAutorSeguido : 1;
 
-  const perfilDoAluno = estado.perfilDominante;
+  const perfilDoEstudante = estado.perfilDominante;
   const peso = config.pesoPerfil ?? 0;
 
-  if (perfilDoAluno && peso > 0 && aleatorio() < peso) {
-    for (const perfil of ordemDeFallback(perfilDoAluno as Perfil)) {
+  if (perfilDoEstudante && peso > 0 && aleatorio() < peso) {
+    for (const perfil of ordemDeFallback(perfilDoEstudante as Perfil)) {
       const doPerfil = candidatos.filter((post) => post.perfil === perfil);
       if (doPerfil.length > 0) return sortearPonderado(doPerfil, porAutor, aleatorio);
     }
@@ -336,7 +336,7 @@ export function curarBloco(
   };
 
   // Lado dominante: escada de intensidade. O rótulo "Sugerido para você" entra
-  // em só parte dos posts — marcar 100% do lado dominante daria ao aluno um
+  // em só parte dos posts — marcar 100% do lado dominante daria ao estudante um
   // marcador visual da curadoria antes da revelação (e destoa do padrão do IG).
   const niveisDominante = niveisParaServir(estado.intensityUnlocked[dominante], mix.dominante, config, aleatorio);
   const fracaoSugeridos = config.proporcaoSugeridos ?? 0.34;

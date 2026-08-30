@@ -66,13 +66,13 @@ export function rotuloDoPerfil(dominante: Perfil | 'misto'): string {
  *
  * Move quem tem o perfil menos decidido — `misto` antes de todos, depois por
  * margem crescente. Preserva a pedagogia onde o sinal do perfil é forte e
- * sacrifica onde ele já era ambíguo; o contrário seria mover um aluno de perfil
+ * sacrifica onde ele já era ambíguo; o contrário seria mover um estudante de perfil
  * claríssimo e depois ter que explicar isso a ele no relatório.
  */
 export function ordemDeRedistribuicao<T extends { dominante: Perfil | 'misto'; margem: number }>(
-  alunos: T[],
+  estudantes: T[],
 ): T[] {
-  return [...alunos].sort((a, b) => {
+  return [...estudantes].sort((a, b) => {
     const mistoA = a.dominante === 'misto' ? 0 : 1;
     const mistoB = b.dominante === 'misto' ? 0 : 1;
     if (mistoA !== mistoB) return mistoA - mistoB;
@@ -81,7 +81,7 @@ export function ordemDeRedistribuicao<T extends { dominante: Perfil | 'misto'; m
 }
 
 /**
- * Quantos alunos precisam trocar de lado para o desequilíbrio entrar na
+ * Quantos estudantes precisam trocar de lado para o desequilíbrio entrar na
  * tolerância. Devolve o lado que está sobrando e quantos mover.
  */
 export function quantosMover(

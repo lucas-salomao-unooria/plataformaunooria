@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
 import { formatarCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
-import { escolaAtualDoAluno, garantirLotacao, type PapelDeLotacao } from "./lotacao";
+import { escolaAtualDoEstudante, garantirLotacao, type PapelDeLotacao } from "./lotacao";
 import { periodoVigente } from "./regras";
 
 export interface EscolaDaRede {
@@ -15,6 +15,7 @@ export interface EscolaDaRede {
   paiId: string | null;
   /** Nome da regional (ou da rede) a que a unidade pertence. */
   pai: string | null;
+  estudantes?: number;
   alunos: number;
   professores: number;
   turmas: number;
@@ -92,7 +93,8 @@ export class EscolasService {
       uf: e.uf,
       paiId: e.paiId,
       pai: e.pai?.nome ?? null,
-      alunos: conta(e.id, "aluno"),
+      estudantes: conta(e.id, "estudante") + conta(e.id, "aluno"),
+      alunos: conta(e.id, "estudante") + conta(e.id, "aluno"),
       professores: conta(e.id, "professor"),
       turmas: turmas.find((t) => t.escolaId === e.id)?._count._all ?? 0,
     }));
@@ -291,7 +293,8 @@ export class EscolasService {
         regional: l.escola.pai?.nome ?? null,
         papel: l.papel,
         principal: l.principal,
-        alunos: conta(l.escola.id, "aluno"),
+        estudantes: conta(l.escola.id, "estudante") + conta(l.escola.id, "aluno"),
+        alunos: conta(l.escola.id, "estudante") + conta(l.escola.id, "aluno"),
         professores: conta(l.escola.id, "professor"),
         turmas: turmas.find((t) => t.escolaId === l.escola.id)?._count._all ?? 0,
         /** Quantos ainda não fizeram o primeiro acesso — o que falta fazer ali. */
@@ -359,46 +362,51 @@ export class EscolasService {
 
   // ------------------------------------------------------------ transferência
 
+  // ------------------------------------------------------------ transferência
+
   /**
-   * Transfere o ALUNO para outra escola da rede.
+   * Transfere o ESTUDANTE para outra escola da rede.
    *
    * A transferência é a única operação da plataforma que, por definição,
    * atravessa duas escolas — e é o que o CPF existe para tornar possível: sem
    * uma identidade imutável, a criança que muda de escola nasce de novo e o
    * histórico dela fica partido em duas pessoas.
    *
-   * O QUE SEGUE O ALUNO É A IDENTIDADE, NÃO O DADO. Tudo o que ele produziu
+   * O QUE SEGUE O ESTUDANTE É A IDENTIDADE, NÃO O DADO. Tudo o que ele produziu
    * continua com o `escola_id` da escola onde produziu — é verdade histórica, e
    * mexer nisso apagaria de onde o fato veio. O que a plataforma passa a
-   * conseguir é LER esse histórico atravessado (`historicoDoAluno`), por uma
+   * conseguir é LER esse histórico atravessado (`historicoDoEstudante`), por uma
    * porta só e estreita.
    */
-  async transferirAluno(dados: {
-    alunoId: string;
+  async transferirEstudante(dados: {
+    estudanteId?: string;
+    alunoId?: string;
     escolaDestinoId: string;
     turmaDestinoId?: string | null;
   }) {
+    const alvoId = dados.estudanteId ?? dados.alunoId;
+    if (!alvoId) return null;
     const periodo = await this.periodoDeHoje();
     const inicio = periodo?.inicio ?? new Date();
 
     return this.prisma.$transaction(async (tx) => {
-      const aluno = await tx.user.findUnique({ where: { id: dados.alunoId } });
-      if (!aluno || aluno.role !== "aluno") return null;
+      const estudante = await tx.user.findUnique({ where: { id: alvoId } });
+      if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "aluno")) return null;
       const destino = await tx.escola.findUnique({ where: { id: dados.escolaDestinoId } });
       if (!destino) return null;
 
-      const origemId = await escolaAtualDoAluno(tx, aluno.id);
+      const origemId = await escolaAtualDoEstudante(tx, estudante.id);
       if (origemId === destino.id) return { ok: true as const, origem: origemId, jaEstava: true };
 
       // --- sai da origem -------------------------------------------------
       if (origemId) {
         await tx.lotacao.updateMany({
-          where: { usuarioId: aluno.id, escolaId: origemId, papel: "aluno", fim: null },
+          where: { usuarioId: estudante.id, escolaId: origemId, papel: { in: ["estudante", "aluno"] }, fim: null },
           data: { fim: new Date(), principal: false },
         });
         await this.comEscolaNaTransacao(tx, origemId, async () => {
           await tx.matricula.updateMany({
-            where: { escolaId: origemId, usuarioId: aluno.id, fim: null },
+            where: { escolaId: origemId, usuarioId: estudante.id, fim: null },
             data: { fim: new Date(), principal: false },
           });
         });
@@ -407,8 +415,8 @@ export class EscolasService {
       // --- entra no destino ----------------------------------------------
       await garantirLotacao(tx, {
         escolaId: destino.id,
-        usuarioId: aluno.id,
-        papel: "aluno",
+        usuarioId: estudante.id,
+        papel: "estudante",
         inicio,
         principal: true,
       });
@@ -424,36 +432,44 @@ export class EscolasService {
                 escolaId_turmaId_usuarioId_papel: {
                   escolaId: destino.id,
                   turmaId: turma.id,
-                  usuarioId: aluno.id,
-                  papel: "aluno",
+                  usuarioId: estudante.id,
+                  papel: "estudante",
                 },
               },
               update: { fim: null, principal: true },
               create: {
                 escolaId: destino.id,
                 turmaId: turma.id,
-                usuarioId: aluno.id,
-                papel: "aluno",
+                usuarioId: estudante.id,
+                papel: "estudante",
                 principal: true,
                 inicio,
               },
             });
-            await tx.user.update({ where: { id: aluno.id }, data: { turmaId: turma.id } });
+            await tx.user.update({ where: { id: estudante.id }, data: { turmaId: turma.id } });
           }
         });
       } else {
-        // Sem turma no destino o aluno fica lotado e SEM turma — é estado
+        // Sem turma no destino o estudante fica lotado e SEM turma — é estado
         // legítimo (chegou no meio do ano, a turma ainda não foi decidida) e
         // aparece na lista de usuários como "sem turma".
-        await tx.user.update({ where: { id: aluno.id }, data: { turmaId: null } });
+        await tx.user.update({ where: { id: estudante.id }, data: { turmaId: null } });
       }
 
       return { ok: true as const, origem: origemId, jaEstava: false };
     });
   }
 
+  async transferirAluno(dados: {
+    alunoId: string;
+    escolaDestinoId: string;
+    turmaDestinoId?: string | null;
+  }) {
+    return this.transferirEstudante(dados);
+  }
+
   /**
-   * O histórico do aluno ATRAVESSANDO escolas — a única leitura da plataforma
+   * O histórico do estudante ATRAVESSANDO escolas — a única leitura da plataforma
    * que faz isso fora de `admin-contrato`.
    *
    * Devolve PARTICIPAÇÕES, não o conteúdo dos instrumentos: em que experiência
@@ -463,16 +479,16 @@ export class EscolasService {
    * aconteceu — atravessar a fronteira com o dado sensível junto seria abrir, por
    * uma tela de secretaria, o que quatro ADRs fecharam.
    */
-  async historicoDoAluno(alunoId: string) {
-    const aluno = await this.prisma.user.findUnique({
-      where: { id: alunoId },
+  async historicoDoEstudante(estudanteId: string) {
+    const estudante = await this.prisma.user.findUnique({
+      where: { id: estudanteId },
       select: { id: true, displayName: true, username: true, cpf: true, role: true },
     });
-    if (!aluno || aluno.role !== "aluno") return null;
+    if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "aluno")) return null;
 
     const [lotacoes, matriculas, progresso] = await Promise.all([
       this.prisma.lotacao.findMany({
-        where: { usuarioId: alunoId, papel: "aluno" },
+        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
         /* ONDE ELA ESTÁ HOJE VEM PRIMEIRO — a tela imprime nesta ordem, e a
            primeira linha é a que o adulto lê como "a escola dela".
@@ -488,7 +504,7 @@ export class EscolasService {
         ],
       }),
       this.prisma.matricula.findMany({
-        where: { usuarioId: alunoId, papel: "aluno" },
+        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
         include: {
           turma: { select: { nome: true, serie: true, periodoLetivo: { select: { titulo: true } } } },
         },
@@ -499,21 +515,23 @@ export class EscolasService {
         ],
       }),
       this.prisma.progresso.findMany({
-        where: { alunoId },
+        where: { estudanteId },
         select: { escolaId: true, expId: true, atualizadoEm: true },
         orderBy: [{ atualizadoEm: "desc" }],
       }),
     ]);
 
     const nomeDaEscola = new Map(lotacoes.map((l) => [l.escola.id, l.escola.nome]));
+    const objetoPessoa = {
+      id: estudante.id,
+      nome: estudante.displayName,
+      usuario: estudante.username,
+      cpf: estudante.cpf ? formatarCpf(estudante.cpf) : null,
+    };
 
     return {
-      aluno: {
-        id: aluno.id,
-        nome: aluno.displayName,
-        usuario: aluno.username,
-        cpf: aluno.cpf ? formatarCpf(aluno.cpf) : null,
-      },
+      estudante: objetoPessoa,
+      aluno: objetoPessoa,
       escolas: lotacoes.map((l) => ({
         id: l.escola.id,
         nome: l.escola.nome,
@@ -537,6 +555,10 @@ export class EscolasService {
         em: p.atualizadoEm,
       })),
     };
+  }
+
+  async historicoDoAluno(alunoId: string) {
+    return this.historicoDoEstudante(alunoId);
   }
 
   // ------------------------------------------------------------------ comuns

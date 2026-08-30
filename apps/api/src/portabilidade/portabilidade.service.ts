@@ -36,7 +36,7 @@ export interface PerfilRecebido {
  *
  * - **Emitir** monta o documento a partir do que esta instalação sabe. Ler o
  *   histórico atravessa escolas do contrato, pela mesma justificativa da porta
- *   única `GET /alunos/:id/historico`: é o dado do titular, pedido por ele,
+ *   única `GET /estudantes/:id/historico`: é o dado do titular, pedido por ele,
  *   entregue por quem tem lotação onde ele está HOJE. A assinatura não acontece
  *   aqui — quem tem a chave é o hub.
  * - **Receber** grava o documento inteiro numa tabela só dele e NUNCA o mistura
@@ -54,20 +54,20 @@ export class PortabilidadeService {
   // ------------------------------------------------------------------ emitir
 
   /**
-   * Monta o documento SEM assinatura. Devolve `null` se não houver aluno com
+   * Monta o documento SEM assinatura. Devolve `null` se não houver estudante com
    * CPF — sem CPF o documento não significa nada na base do destino, onde
    * nenhum id daqui existe.
    */
-  async montar(alunoId: string): Promise<Omit<PerfilPortatil, "emissor" | "emitidoEm"> | null> {
-    const aluno = await this.prisma.user.findUnique({
-      where: { id: alunoId },
+  async montar(estudanteId: string): Promise<Omit<PerfilPortatil, "emissor" | "emitidoEm"> | null> {
+    const estudante = await this.prisma.user.findUnique({
+      where: { id: estudanteId },
       select: { id: true, displayName: true, cpf: true, role: true },
     });
-    if (!aluno || aluno.role !== "aluno" || !aluno.cpf) return null;
+    if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "aluno") || !estudante.cpf) return null;
 
     const [lotacoes, matriculas, progresso, experiencias] = await Promise.all([
       this.prisma.lotacao.findMany({
-        where: { usuarioId: alunoId, papel: "aluno" },
+        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
         /* Ordem estável: o documento é ASSINADO, e o hash cobre o JSON canônico.
            Com `inicio` DATE empatando numa transferência do mesmo dia, duas
@@ -75,7 +75,7 @@ export class PortabilidadeService {
         orderBy: [{ inicio: "asc" }, { escolaId: "asc" }],
       }),
       this.prisma.matricula.findMany({
-        where: { usuarioId: alunoId, papel: "aluno" },
+        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
         include: {
           turma: {
             select: { nome: true, serie: true, periodoLetivo: { select: { titulo: true } } },
@@ -84,7 +84,7 @@ export class PortabilidadeService {
         orderBy: [{ inicio: "asc" }, { turmaId: "asc" }],
       }),
       this.prisma.progresso.findMany({
-        where: { alunoId },
+        where: { estudanteId },
         select: { escolaId: true, expId: true, atualizadoEm: true },
         orderBy: [{ atualizadoEm: "asc" }, { escolaId: "asc" }, { expId: "asc" }],
       }),
@@ -99,7 +99,7 @@ export class PortabilidadeService {
     const nomeDaExp = new Map(experiencias.map((e) => [e.expId, e.nome]));
 
     const resultados = await this.resultadosDasEscolas(
-      alunoId,
+      estudanteId,
       lotacoes.map((l) => l.escola.id),
       nomeDaEscola,
     );
@@ -107,7 +107,7 @@ export class PortabilidadeService {
     return {
       documento: TIPO_DOCUMENTO,
       versao: VERSAO_DOCUMENTO,
-      titular: { cpf: formatarCpf(aluno.cpf), nome: aluno.displayName },
+      titular: { cpf: formatarCpf(estudante.cpf), nome: estudante.displayName },
       trajetoria: {
         escolas: lotacoes.map((l) => ({
           nome: l.escola.nome,
@@ -147,7 +147,7 @@ export class PortabilidadeService {
    * sem ela, dois retratos de gerações diferentes pareceriam comparáveis.
    */
   private async resultadosDasEscolas(
-    alunoId: string,
+    estudanteId: string,
     escolaIds: string[],
     nomeDaEscola: Map<string, string>,
   ): Promise<PerfilPortatil["resultados"]> {
@@ -156,7 +156,7 @@ export class PortabilidadeService {
       const perfil = await this.prisma.comTenancy(
         (tx) =>
           tx.vilaPerfil.findFirst({
-            where: { escolaId, alunoId },
+            where: { escolaId, estudanteId },
             orderBy: { createdAt: "desc" },
           }),
         escolaId,
@@ -226,20 +226,20 @@ export class PortabilidadeService {
       return { ok: false, erro: "assinatura-invalida", detalhe: veredito.motivo };
     }
 
-    /* O documento se liga a uma pessoa que JÁ está aqui. Criar o aluno a partir
+    /* O documento se liga a uma pessoa que JÁ está aqui. Criar o estudante a partir
        dele seria deixar um arquivo de fora abrir conta nesta rede — a matrícula
        é ato da escola (planilha ou OneRoster), e só depois o perfil se anexa. */
     const digitos = perfil.titular.cpf.replace(/\D/g, "");
-    const aluno = await this.prisma.user.findFirst({
-      where: { cpf: digitos, role: "aluno" },
+    const estudante = await this.prisma.user.findFirst({
+      where: { cpf: digitos, role: { in: ["estudante", "aluno"] } },
       select: { id: true },
     });
-    if (!aluno) {
+    if (!estudante) {
       return {
         ok: false,
         erro: "titular-desconhecido",
         detalhe:
-          "não há aluno com este CPF nesta rede — matricule a criança primeiro, depois anexe o perfil",
+          "não há estudante com este CPF nesta rede — matricule a criança primeiro, depois anexe o perfil",
       };
     }
 
@@ -247,9 +247,9 @@ export class PortabilidadeService {
       (tx) =>
         tx.perfilPortatil.upsert({
           where: {
-            escolaId_alunoId_emissorContrato_emitidoEm: {
+            escolaId_estudanteId_emissorContrato_emitidoEm: {
               escolaId,
-              alunoId: aluno.id,
+              estudanteId: estudante.id,
               emissorContrato: perfil.emissor.contrato,
               emitidoEm: new Date(perfil.emitidoEm),
             },
@@ -260,7 +260,7 @@ export class PortabilidadeService {
           update: { verificacao: veredito.estado, importadoPor },
           create: {
             escolaId,
-            alunoId: aluno.id,
+            estudanteId: estudante.id,
             emissorContrato: perfil.emissor.contrato,
             emissorHub: perfil.emissor.hub,
             emissorNome: perfil.emissor.nome,
@@ -278,11 +278,11 @@ export class PortabilidadeService {
   }
 
   /** O que esta escola recebeu sobre esta criança. */
-  async recebidos(escolaId: string, alunoId: string): Promise<PerfilRecebido[]> {
+  async recebidos(escolaId: string, estudanteId: string): Promise<PerfilRecebido[]> {
     const linhas = await this.prisma.comTenancy(
       (tx) =>
         tx.perfilPortatil.findMany({
-          where: { escolaId, alunoId },
+          where: { escolaId, estudanteId },
           orderBy: { emitidoEm: "desc" },
         }),
       escolaId,

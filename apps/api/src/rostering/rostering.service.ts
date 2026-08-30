@@ -385,7 +385,7 @@ export class RosteringService {
      */
     for (const p of preparadas) {
       if (!p.deOutraEscola) continue;
-      if (p.pessoa.papel === "aluno") {
+      if (p.pessoa.papel === "estudante") {
         const feito = await this.escolas.transferirAluno({
           alunoId: p.deOutraEscola.id,
           escolaDestinoId: escolaId,
@@ -432,7 +432,7 @@ export class RosteringService {
                   ...comum,
                   username: usuario,
                   ...(hash ? { passwordHash: hash, senhaProvisoria: true } : {}),
-                  ...(pessoa.papel === "aluno" && turmaId ? { turmaId } : {}),
+                  ...(pessoa.papel === "estudante" && turmaId ? { turmaId } : {}),
                 },
               });
               usuarioId = existenteId;
@@ -445,7 +445,7 @@ export class RosteringService {
                   username: usuario,
                   passwordHash: hash!,
                   senhaProvisoria: true,
-                  ...(pessoa.papel === "aluno" && turmaId ? { turmaId } : {}),
+                  ...(pessoa.papel === "estudante" && turmaId ? { turmaId } : {}),
                 },
               });
               usuarioId = criado.id;
@@ -469,10 +469,10 @@ export class RosteringService {
               usuarioId,
               papel: pessoa.papel,
               inicio: periodo.inicio,
-              principal: pessoa.papel === "aluno" || !existenteId,
+              principal: pessoa.papel === "estudante" || !existenteId,
             });
 
-            if (turmaId && (pessoa.papel === "aluno" || pessoa.papel === "professor")) {
+            if (turmaId && (pessoa.papel === "estudante" || pessoa.papel === "professor")) {
               await matricularEm(tx, {
                 escolaId,
                 turmaId,
@@ -480,7 +480,7 @@ export class RosteringService {
                 papel: pessoa.papel,
                 /* A planilha simples tem UMA turma por pessoa (linha repetida é
                    erro de arquivo), então essa turma é a de referência. */
-                principal: pessoa.papel === "aluno",
+                principal: pessoa.papel === "estudante",
                 inicio: periodo.inicio,
               });
               relatorio.matriculados += 1;
@@ -497,7 +497,7 @@ export class RosteringService {
 
   // --------------------------------------------------------------- matrículas
 
-  async matricular(escolaId: string, turmaId: string, usuarioId: string, papel: "aluno" | "professor") {
+  async matricular(escolaId: string, turmaId: string, usuarioId: string, papel: "estudante" | "professor" | "aluno") {
     const periodo = await this.periodoDeHoje();
     return this.prisma.comTenancy(async (tx) => {
       const turma = await tx.turma.findFirst({ where: { id: turmaId, escolaId } });
@@ -511,7 +511,7 @@ export class RosteringService {
         papel,
         /* Matrícula pela tela do gestor: turma regular é a de referência;
            componente (eletiva, reforço) entra ao lado dela. */
-        principal: papel === "aluno" && turma.tipo === "regular",
+        principal: (papel === "estudante" || papel === "aluno") && turma.tipo === "regular",
         inicio: periodo?.inicio ?? new Date(),
       });
       return { ok: true as const };
@@ -528,14 +528,14 @@ export class RosteringService {
   async tornarPrincipal(escolaId: string, matriculaId: string) {
     return this.prisma.comTenancy(async (tx) => {
       const matricula = await tx.matricula.findFirst({
-        where: { id: matriculaId, escolaId, papel: "aluno", fim: null },
+        where: { id: matriculaId, escolaId, papel: { in: ["estudante", "aluno"] }, fim: null },
       });
       if (!matricula) return null;
       await tx.matricula.updateMany({
         where: {
           escolaId,
           usuarioId: matricula.usuarioId,
-          papel: "aluno",
+          papel: { in: ["estudante", "aluno"] },
           fim: null,
           id: { not: matricula.id },
         },
@@ -568,7 +568,7 @@ export class RosteringService {
       if (!destino) return null;
       if (destino.id === matricula.turmaId) return { ok: true as const };
 
-      const papel = matricula.papel as "aluno" | "professor";
+      const papel = (matricula.papel === "aluno" ? "estudante" : matricula.papel) as "estudante" | "professor";
       await tx.matricula.update({
         where: { id: matricula.id },
         data: { fim: new Date(), principal: false },
@@ -578,7 +578,7 @@ export class RosteringService {
         turmaId: destino.id,
         usuarioId: matricula.usuarioId,
         papel,
-        principal: papel === "aluno" && matricula.principal,
+        principal: (papel === "estudante" || (papel as string) === "aluno") && matricula.principal,
         inicio: periodo?.inicio ?? new Date(),
       });
       return { ok: true as const };
@@ -594,7 +594,7 @@ export class RosteringService {
         where: { id: matricula.id },
         data: { fim: new Date(), principal: false },
       });
-      if (matricula.papel === "aluno") {
+      if (matricula.papel === "estudante" || matricula.papel === "aluno") {
         await tx.user.updateMany({
           where: { id: matricula.usuarioId, turmaId: matricula.turmaId },
           data: { turmaId: null },
@@ -673,7 +673,7 @@ export class RosteringService {
     turma: { id: string; nome: string; serie: string; turno: string | null; tipo: string; periodoLetivo?: { titulo: string } | null },
   ) {
     const [alunos, professores] = await Promise.all([
-      tx.matricula.count({ where: { escolaId, turmaId: turma.id, papel: "aluno", fim: null } }),
+      tx.matricula.count({ where: { escolaId, turmaId: turma.id, papel: { in: ["estudante", "aluno"] }, fim: null } }),
       tx.matricula.count({ where: { escolaId, turmaId: turma.id, papel: "professor", fim: null } }),
     ]);
     return {
@@ -683,6 +683,7 @@ export class RosteringService {
       turno: turma.turno,
       tipo: turma.tipo,
       periodo: turma.periodoLetivo?.titulo ?? null,
+      estudantes: alunos,
       alunos,
       professores,
     };
@@ -725,7 +726,7 @@ export class RosteringService {
       });
       const linhas = (papel: string) =>
         matriculas
-          .filter((m) => m.papel === papel)
+          .filter((m) => m.papel === papel || (papel === "estudante" && m.papel === "aluno"))
           .map((m) => ({
             matriculaId: m.id,
             id: m.usuario.id,
@@ -733,12 +734,13 @@ export class RosteringService {
             usuario: m.usuario.username,
             matricula: m.usuario.matriculaExterna,
             ativo: m.usuario.ativo,
-            /** Turma de REFERÊNCIA da pessoa (só faz sentido para aluno). */
+            /** Turma de REFERÊNCIA da pessoa (só faz sentido para estudante). */
             principal: m.principal,
             /** Ainda não entrou pela primeira vez. */
             senhaProvisoria: m.usuario.senhaProvisoria,
             desde: m.inicio,
           }));
+      const estudantes = linhas("estudante");
       return {
         turma: {
           id: turma.id,
@@ -747,7 +749,8 @@ export class RosteringService {
           turno: turma.turno,
           periodo: turma.periodoLetivo.titulo,
         },
-        alunos: linhas("aluno"),
+        estudantes,
+        alunos: estudantes,
         professores: linhas("professor"),
       };
     }, escolaId);
@@ -767,7 +770,7 @@ export class RosteringService {
          lista de 10 mil linhas não é diagnóstico — é uma tela que trava. O corte
          é dito na resposta (`truncado`), nunca silencioso. */
       const usuarios = await tx.user.findMany({
-        where: { escolaId, matriculaExterna: null, role: { in: ["aluno", "professor"] } },
+        where: { escolaId, matriculaExterna: null, role: { in: ["estudante", "aluno", "professor"] } },
         select: { id: true, username: true, displayName: true, role: true, ativo: true },
         orderBy: [{ username: "asc" }],
         take: TETO_DE_ASSENTOS + 1,
@@ -777,13 +780,13 @@ export class RosteringService {
       if (usuarios.length === 0) return { total: 0, truncado: false, contas: [] };
       const ids = usuarios.map((u) => u.id);
       const [runs, vila, unootube, unoogpt] = await Promise.all([
-        tx.run.groupBy({ by: ["alunoId"], where: { escolaId, alunoId: { in: ids } }, _count: true }),
-        tx.vilaSessao.groupBy({ by: ["alunoId"], where: { escolaId, alunoId: { in: ids } }, _count: true }),
-        tx.unootubeSessao.groupBy({ by: ["alunoId"], where: { escolaId, alunoId: { in: ids } }, _count: true }),
-        tx.unoogptSessao.groupBy({ by: ["alunoId"], where: { escolaId, alunoId: { in: ids } }, _count: true }),
+        tx.run.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
+        tx.vilaSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
+        tx.unootubeSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
+        tx.unoogptSessao.groupBy({ by: ["estudanteId"], where: { escolaId, estudanteId: { in: ids } }, _count: true }),
       ]);
-      const somar = (linhas: Array<{ alunoId: string; _count: number }>, alvo: Map<string, number>) => {
-        for (const linha of linhas) alvo.set(linha.alunoId, (alvo.get(linha.alunoId) ?? 0) + linha._count);
+      const somar = (linhas: Array<{ estudanteId: string; _count: number }>, alvo: Map<string, number>) => {
+        for (const linha of linhas) alvo.set(linha.estudanteId, (alvo.get(linha.estudanteId) ?? 0) + linha._count);
         return alvo;
       };
       const totais = new Map<string, number>();

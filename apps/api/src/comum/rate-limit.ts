@@ -1,6 +1,6 @@
 /**
  * Rate limit em memória, por instância — porte da lição do projeto origem:
- * a CHAVE certa é o usuário (ou o token), NUNCA o IP: uma turma de 30 alunos
+ * a CHAVE certa é o usuário (ou o token), NUNCA o IP: uma turma de 30 estudantes
  * entra ao mesmo tempo pela mesma rede NAT da escola e um limite por IP
  * derrubaria a turma inteira.
  *

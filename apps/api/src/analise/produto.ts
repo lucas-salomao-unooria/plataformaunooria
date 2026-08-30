@@ -31,11 +31,11 @@ export interface ResumoDeAtividade {
 /**
  * A métrica que valida — ou refuta — a premissa do projeto (doc 11 §5.2).
  *
- * `delta` = dwell médio dos posts do perfil P entre alunos de perfil P
- *           menos o dwell médio dos MESMOS posts entre alunos de outro perfil.
+ * `delta` = dwell médio dos posts do perfil P entre estudantes de perfil P
+ *           menos o dwell médio dos MESMOS posts entre estudantes de outro perfil.
  *
  * Sempre com a exposição no denominador (doc 04 §7): sem isso, mediria o próprio
- * viés do feed — que serve mais posts do perfil do aluno — e "confirmaria" a
+ * viés do feed — que serve mais posts do perfil do estudante — e "confirmaria" a
  * premissa por construção.
  *
  * Se o delta for consistentemente positivo, as fichas de linguagem do doc 10 §3
@@ -45,12 +45,17 @@ export interface ResumoDeAtividade {
 export interface EficaciaDaEscrita {
   perfil: string;
   rotulo: string;
-  /** Segundos por post, entre alunos DESTE perfil. */
+  /** Segundos por post, entre estudantes DESTE perfil. */
   dwellDosDoPerfil: number | null;
-  /** Segundos por post, entre alunos de OUTROS perfis. */
+  /** Segundos por post, entre estudantes de OUTROS perfis. */
   dwellDosOutros: number | null;
   delta: number | null;
-  amostra: { alunosDoPerfil: number; alunosDeOutros: number };
+  amostra: {
+    estudantesDoPerfil?: number;
+    alunosDoPerfil: number;
+    estudantesDeOutros?: number;
+    alunosDeOutros: number;
+  };
 }
 
 export interface AnaliseDeProduto {
@@ -141,9 +146,9 @@ async function resumoDe(
 /**
  * Eficácia da escrita por perfil, numa atividade.
  *
- * O denominador é a **exposição**: para cada aluno, `tempoPorPerfil[P]` dividido
+ * O denominador é a **exposição**: para cada estudante, `tempoPorPerfil[P]` dividido
  * por quantos posts de P ele recebeu. Isso dá "segundos por post daquele jeito de
- * escrever", que é comparável entre alunos que receberam quantidades diferentes.
+ * escrever", que é comparável entre estudantes que receberam quantidades diferentes.
  */
 export async function eficaciaDaEscrita(
   prisma: Prisma.TransactionClient,
@@ -168,7 +173,7 @@ export async function eficaciaDaEscrita(
     ]),
   );
 
-  /** Segundos por post do perfil `alvo`, para um aluno. `null` sem exposição. */
+  /** Segundos por post do perfil `alvo`, para um estudante. `null` sem exposição. */
   const segundosPorPost = (aluno: MetricasDaRun, alvo: Perfil): number | null => {
     const servidos = exposicaoPorRun.get(aluno.runId)?.[alvo] ?? 0;
     if (servidos === 0) return null;
@@ -200,7 +205,12 @@ export async function eficaciaDaEscrita(
         mediaDoPerfil !== null && mediaDosOutros !== null
           ? arredondar(mediaDoPerfil - mediaDosOutros)
           : null,
-      amostra: { alunosDoPerfil: doPerfil.length, alunosDeOutros: dosOutros.length },
+      amostra: {
+        estudantesDoPerfil: doPerfil.length,
+        alunosDoPerfil: doPerfil.length,
+        estudantesDeOutros: dosOutros.length,
+        alunosDeOutros: dosOutros.length,
+      },
     };
   });
 }

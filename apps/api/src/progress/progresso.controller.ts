@@ -18,22 +18,22 @@ export class ProgressoController {
 
   @Get(":expId")
   @Contrato({
-    resumo: "O progresso do aluno autenticado nesta experiência.",
+    resumo: "O progresso do estudante autenticado nesta experiência.",
     descricao:
-      "Escopado por `escola_id` + `aluno_id` do token — nunca por parâmetro. O aluno da requisição é o único progresso que esta rota alcança.",
+      "Escopado por `escola_id` + `estudante_id` do token — nunca por parâmetro. O estudante da requisição é o único progresso que esta rota alcança.",
     params: z.object({ expId: z.string() }),
     resposta: ProgressoSalvoSchema,
     notas: ["`dados: null` = a criança ainda não começou; não é erro."],
   })
   async carregar(@Param("expId") expId: string, @Req() req: { auth: AuthClaims }) {
-    // escopado por escola_id + aluno_id (regra inviolável nº 1); a transação
+    // escopado por escola_id + estudante_id (regra inviolável nº 1); a transação
     // do comTenancy também arma a RLS como rede de segurança
     const r = await this.prisma.comTenancy((tx) =>
       tx.progresso.findUnique({
         where: {
-          escolaId_alunoId_expId: {
+          escolaId_estudanteId_expId: {
             escolaId: req.auth.escolaId,
-            alunoId: req.auth.usuarioId,
+            estudanteId: req.auth.usuarioId,
             expId,
           },
         },
@@ -67,10 +67,10 @@ export class ProgressoController {
     const conclusao = { em: new Date().toISOString(), ...payload };
     await this.prisma.comTenancy(async (tx) => {
       await tx.$executeRaw`
-        INSERT INTO progresso (escola_id, aluno_id, exp_id, dados, atualizado_em)
+        INSERT INTO progresso (escola_id, estudante_id, exp_id, dados, atualizado_em)
         VALUES (${req.auth.escolaId}, ${req.auth.usuarioId}, ${expId},
                 jsonb_build_object('__conclusao', ${JSON.stringify(conclusao)}::jsonb), now())
-        ON CONFLICT (escola_id, aluno_id, exp_id) DO UPDATE
+        ON CONFLICT (escola_id, estudante_id, exp_id) DO UPDATE
           SET dados = progresso.dados || jsonb_build_object('__conclusao', ${JSON.stringify(conclusao)}::jsonb),
               atualizado_em = now()`;
     });
@@ -94,13 +94,13 @@ export class ProgressoController {
     await this.prisma.comTenancy((tx) =>
       tx.progresso.upsert({
         where: {
-          escolaId_alunoId_expId: {
+          escolaId_estudanteId_expId: {
             escolaId: req.auth.escolaId,
-            alunoId: req.auth.usuarioId,
+            estudanteId: req.auth.usuarioId,
             expId,
           },
         },
-        create: { escolaId: req.auth.escolaId, alunoId: req.auth.usuarioId, expId, dados },
+        create: { escolaId: req.auth.escolaId, estudanteId: req.auth.usuarioId, expId, dados },
         update: { dados },
       }),
     );

@@ -31,7 +31,7 @@ function limitar(usuarioId: string, teto: number) {
 
 @Controller("vila")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("aluno")
+@Roles("estudante")
 export class VilaController {
   constructor(private readonly vila: VilaService) {}
 

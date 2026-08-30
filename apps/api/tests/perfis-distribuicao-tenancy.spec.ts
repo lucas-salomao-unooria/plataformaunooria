@@ -64,14 +64,14 @@ beforeAll(async () => {
   for (const i of [0, 1]) {
     await prisma.user.create({
       data: {
-        role: "aluno", escolaId: ESCOLA_A, turmaId: turmaA.id,
+        role: "estudante", escolaId: ESCOLA_A, turmaId: turmaA.id,
         username: `distrib.a${i}`, displayName: `Aluno A${i}`, passwordHash: "x",
       },
     });
   }
   await prisma.user.create({
     data: {
-      role: "aluno", escolaId: ESCOLA_B, turmaId: turmaB.id,
+      role: "estudante", escolaId: ESCOLA_B, turmaId: turmaB.id,
       username: "distrib.b0", displayName: "Aluno da outra escola", passwordHash: "x",
     },
   });

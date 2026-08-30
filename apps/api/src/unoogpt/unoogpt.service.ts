@@ -98,7 +98,7 @@ export class UnoogptService {
       const estado = estadoDoRelogio(relogio, agora);
 
       const falas = await tx.unoogptMensagem.findMany({
-        where: { escolaId, alunoId, tentativa: sessao.tentativa },
+        where: { escolaId, estudanteId: alunoId, tentativa: sessao.tentativa },
         orderBy: { id: "asc" },
         select: { papel: true, texto: true, anexo: true, criadoEm: true },
       });
@@ -127,7 +127,7 @@ export class UnoogptService {
         },
         mapa: bairros,
         conversa: falas.map((f) => ({
-          papel: f.papel as "aluno" | "agente",
+          papel: f.papel as "estudante" | "agente",
           texto: f.texto,
           anexo: f.anexo ?? null,
         })),
@@ -169,12 +169,12 @@ export class UnoogptService {
       const sessao = await this.garantirSessao(tx, escolaId, alunoId);
       const relogio = await this.relogioDaTurma(tx, escolaId, sessao.turmaId);
       const ultima = await tx.unoogptMensagem.findFirst({
-        where: { escolaId, alunoId, tentativa: sessao.tentativa, papel: "agente" },
+        where: { escolaId, estudanteId: alunoId, tentativa: sessao.tentativa, papel: "agente" },
         orderBy: { id: "desc" },
         select: { texto: true },
       });
       const quantas = await tx.unoogptMensagem.count({
-        where: { escolaId, alunoId, tentativa: sessao.tentativa },
+        where: { escolaId, estudanteId: alunoId, tentativa: sessao.tentativa },
       });
       return { sessao, relogio, ultimaFalaDoAgente: ultima?.texto ?? null, primeiraFala: quantas === 0 };
     }, escolaId);
@@ -236,7 +236,7 @@ export class UnoogptService {
       return await this.prisma.comTenancy(async (tx) => {
         await this.lock(tx, escolaId, alunoId);
         const atual = await tx.unoogptSessao.findUniqueOrThrow({
-          where: { escolaId_alunoId: { escolaId, alunoId } },
+          where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         });
         // Reconferido com o relógio de AGORA: a resposta do provedor pode ter
         // demorado e atravessado o fechamento da investigação.
@@ -266,8 +266,8 @@ export class UnoogptService {
           resposta.rodada !== null || (resposta.dadosUsados?.length ?? 0) > 0;
         const debita = gastaPergunta(tipo, consultou);
 
-        const comum = { escolaId, alunoId, passo: atual.passo, tentativa: atual.tentativa };
-        await tx.unoogptMensagem.create({ data: { ...comum, papel: "aluno", texto, debitou: debita } });
+        const comum = { escolaId, estudanteId: alunoId, passo: atual.passo, tentativa: atual.tentativa };
+        await tx.unoogptMensagem.create({ data: { ...comum, papel: "estudante", texto, debitou: debita } });
 
         await tx.unoogptMensagem.create({
           data: {
@@ -285,7 +285,7 @@ export class UnoogptService {
         }
 
         const atualizada = await tx.unoogptSessao.update({
-          where: { escolaId_alunoId: { escolaId, alunoId } },
+          where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
           data: {
             minutosGastos: depois.minutosGastos,
             // Débito em TRANSAÇÃO, sob o lock acima: duas abas não gastam a
@@ -345,14 +345,14 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, alunoId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const somadas = validos.filter((v) => !atual.conjuntos.includes(v));
       if (somadas.length === 0) return atual.conjuntos;
 
       const conjuntos = [...atual.conjuntos, ...somadas];
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         data: { conjuntos, rodadas: { increment: 1 } },
       });
       await this.gravarMarco(tx, escolaId, alunoId, atual.tentativa, marcoDeFontes(atual.minutosGastos, somadas));
@@ -372,14 +372,14 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, alunoId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const alocacao: Alocacao = {
         alfa: destinos.alfa ?? atual.alocacaoAlfa,
         bravo: destinos.bravo ?? atual.alocacaoBravo,
       };
       await tx.unoogptSessao.update({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         data: { alocacaoAlfa: alocacao.alfa, alocacaoBravo: alocacao.bravo },
       });
       await this.gravarMarco(tx, escolaId, alunoId, atual.tentativa, marcoDeAlocacao(atual.minutosGastos, alocacao));
@@ -392,12 +392,12 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, alunoId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       if (!atual.alocacaoAlfa || !atual.alocacaoBravo) return null;
 
       const ja = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_alunoId_ordem: { escolaId, alunoId, ordem: atual.tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: alunoId, ordem: atual.tentativa } },
       });
       if (ja) return ja.desfecho;
 
@@ -410,7 +410,7 @@ export class UnoogptService {
       await tx.unoogptSimulacao.create({
         data: {
           escolaId,
-          alunoId,
+          estudanteId: alunoId,
           ordem: atual.tentativa,
           alocacao: { v: 1, ...alocacao } as Prisma.InputJsonValue,
           desfecho: desfecho as unknown as Prisma.InputJsonValue,
@@ -419,7 +419,7 @@ export class UnoogptService {
         },
       });
       await tx.unoogptSessao.update({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         data: { passo: "resultado", minutosGastos: saida, concluidoEm: new Date() },
       });
       await this.gravarMarco(
@@ -460,7 +460,7 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, alunoId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       if (atual.concluidoEm) throw erroDeJogo("sessao-encerrada");
       if (bairro !== null && !MISSAO_TEMPESTADE.bairros.some((b) => b.slug === bairro)) {
@@ -473,7 +473,7 @@ export class UnoogptService {
       const alvo = equipe === "alfa" ? "alocacaoAlfa" : "alocacaoBravo";
       const porque = equipe === "alfa" ? "justificativaAlfa" : "justificativaBravo";
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         data: {
           [alvo]: bairro,
           // Tirar a equipe do bairro apaga o porquê junto: justificativa sem
@@ -513,7 +513,7 @@ export class UnoogptService {
   async simular(escolaId: string, alunoId: string) {
     const pendentes = await this.prisma.comTenancy(async (tx) => {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       return faltaJustificar(
         { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo },
@@ -523,7 +523,7 @@ export class UnoogptService {
     }, escolaId);
     if (pendentes.length > 0) throw erroDeJogo("falta-justificar");
 
-    const desfecho = await this.aoConfirmar(escolaId, alunoId, "aluno");
+    const desfecho = await this.aoConfirmar(escolaId, alunoId, "estudante");
     if (!desfecho) throw erroDeJogo("falta-justificar");
     return this.resultado(escolaId, alunoId);
   }
@@ -538,7 +538,7 @@ export class UnoogptService {
   async contrafactual(escolaId: string, alunoId: string, alocacao: Alocacao) {
     return this.prisma.comTenancy(async (tx) => {
       const real = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_alunoId_ordem: { escolaId, alunoId, ordem: (await tx.unoogptSessao.findUniqueOrThrow({ where: { escolaId_alunoId: { escolaId, alunoId } } })).tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: alunoId, ordem: (await tx.unoogptSessao.findUniqueOrThrow({ where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } } })).tentativa } },
       });
       if (!real) throw erroDeJogo("sessao-encerrada");
       const faixa = esperadoDe(alocacao, { saidaEmMinutos: real.minutoDaSaida }, 200);
@@ -550,7 +550,7 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, alunoId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       // ENVELOPE `{ sessao }` — o mesmo de `alocar` e `carregarConjuntos`.
       // Devolver a sessão crua daqui fazia o cliente ler `dados.sessao` como
@@ -560,7 +560,7 @@ export class UnoogptService {
       if (atual.passo === para) return { sessao: sanitizarSessao(atual) };
       if (!podeIr(atual.passo as Passo, para)) throw erroDeJogo("passo-invalido");
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         data: { passo: para },
       });
       return { sessao: sanitizarSessao(atualizada) };
@@ -576,10 +576,10 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, alunoId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
         data: {
           tentativa: atual.tentativa + 1,
           passo: "abertura",
@@ -602,10 +602,10 @@ export class UnoogptService {
   async resultado(escolaId: string, alunoId: string) {
     return this.prisma.comTenancy(async (tx) => {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       const sim = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_alunoId_ordem: { escolaId, alunoId, ordem: atual.tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: alunoId, ordem: atual.tentativa } },
       });
       if (!sim) throw erroDeJogo("sessao-encerrada");
 
@@ -616,7 +616,7 @@ export class UnoogptService {
       // `tentativa` e `ordem` vão junto: a tela do resultado agrupa a trilha por
       // tentativa para o aluno comparar duas rodadas lado a lado.
       const marcos = await tx.unoogptMarco.findMany({
-        where: { escolaId, alunoId },
+        where: { escolaId, estudanteId: alunoId },
         orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
         select: { tentativa: true, ordem: true, tipo: true, minuto: true, dados: true },
       });
@@ -625,7 +625,7 @@ export class UnoogptService {
       // nova em vez de apagar a anterior justamente por isto: ver que a mesma
       // cidade dá números diferentes é a lição sobre variância.
       const tentativas = await tx.unoogptSimulacao.findMany({
-        where: { escolaId, alunoId },
+        where: { escolaId, estudanteId: alunoId },
         orderBy: { ordem: "asc" },
         select: { ordem: true, alocacao: true, desfecho: true, minutoDaSaida: true },
       });
@@ -718,10 +718,10 @@ export class UnoogptService {
     if (!aluno || aluno.escolaId !== escolaId) throw erroDeJogo("sessao-encerrada");
 
     const existente = await tx.unoogptSessao.findUnique({
-      where: { escolaId_alunoId: { escolaId, alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
     });
     if (existente) return existente;
-    return tx.unoogptSessao.create({ data: { escolaId, alunoId, turmaId: aluno.turmaId } });
+    return tx.unoogptSessao.create({ data: { escolaId, estudanteId: alunoId, turmaId: aluno.turmaId } });
   }
 
   /**
@@ -755,11 +755,11 @@ export class UnoogptService {
   private async historico(escolaId: string, alunoId: string, tentativa: number) {
     return this.prisma.comTenancy(async (tx) => {
       const falas = await tx.unoogptMensagem.findMany({
-        where: { escolaId, alunoId, tentativa },
+        where: { escolaId, estudanteId: alunoId, tentativa },
         orderBy: { id: "asc" },
         select: { papel: true, texto: true },
       });
-      return falas.map((f) => ({ papel: f.papel as "aluno" | "agente", texto: f.texto }));
+      return falas.map((f) => ({ papel: f.papel as "estudante" | "agente", texto: f.texto }));
     }, escolaId);
   }
 
@@ -771,11 +771,11 @@ export class UnoogptService {
     tentativa: number,
     marco: Marco,
   ) {
-    const anteriores = await tx.unoogptMarco.count({ where: { escolaId, alunoId, tentativa } });
+    const anteriores = await tx.unoogptMarco.count({ where: { escolaId, estudanteId: alunoId, tentativa } });
     await tx.unoogptMarco.create({
       data: {
         escolaId,
-        alunoId,
+        estudanteId: alunoId,
         tentativa,
         ordem: anteriores + 1,
         tipo: marco.tipo,
@@ -882,11 +882,17 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       const turmas = await tx.turma.findMany({
         where: ondeAsTurmasSaoVisiveis(escolaId, professorId),
-        select: { id: true, nome: true, serie: true, _count: { select: { alunos: true } } },
+        select: { id: true, nome: true, serie: true, _count: { select: { estudantes: true } } },
         orderBy: [{ serie: "asc" }, { nome: "asc" }],
       });
       return {
-        turmas: turmas.map((t) => ({ id: t.id, nome: t.nome, serie: t.serie, alunos: t._count.alunos })),
+        turmas: turmas.map((t) => ({
+          id: t.id,
+          nome: t.nome,
+          serie: t.serie,
+          estudantes: t._count.estudantes,
+          alunos: t._count.estudantes,
+        })),
       };
     }, escolaId);
   }
@@ -906,7 +912,7 @@ export class UnoogptService {
       const relogio = await this.relogioDaTurma(tx, escolaId, turmaId);
 
       const alunos = await tx.user.findMany({
-        where: { escolaId, turmaId, role: "aluno" },
+        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         orderBy: { username: "asc" },
         select: { id: true, displayName: true, username: true },
       });
@@ -915,6 +921,8 @@ export class UnoogptService {
         alunos.map(async (a) => {
           const sinais = await this.sinaisDaPartida(tx, escolaId, a.id);
           return {
+            id: a.id,
+            estudanteId: a.id,
             alunoId: a.id,
             nome: a.displayName,
             usuario: a.username,
@@ -936,6 +944,7 @@ export class UnoogptService {
         relogio: this.retratoDoRelogio(relogio, agora),
         // O RETRATO da turma, e ele fala de conduta, não de nota.
         retrato: {
+          estudantes: linhas.length,
           alunos: linhas.length,
           comecaram: linhas.filter((l) => l.comecou).length,
           concluiram: linhas.filter((l) => l.concluiu).length,
@@ -955,37 +964,38 @@ export class UnoogptService {
    * função, e isso é controller separado, não `@Roles` misto com exceção por
    * método. A transcrição é caixa livre escrita por menor de idade.
    */
-  async alunoDoProfessor(escolaId: string, alunoId: string) {
+  async doEstudante(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
       const aluno = await tx.user.findFirst({
-        where: { id: alunoId, escolaId, role: "aluno" },
+        where: { id: estudanteId, escolaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true, displayName: true, turmaId: true },
       });
       if (!aluno) throw erroDeJogo("sessao-encerrada");
 
-      const sinais = await this.sinaisDaPartida(tx, escolaId, alunoId);
+      const sinais = await this.sinaisDaPartida(tx, escolaId, estudanteId);
       const linhas = linhasDeLeitura(sinais);
 
       const tentativas = await tx.unoogptSimulacao.findMany({
-        where: { escolaId, alunoId },
+        where: { escolaId, estudanteId },
         orderBy: { ordem: "asc" },
         select: { ordem: true, alocacao: true, desfecho: true, minutoDaSaida: true, criadoEm: true },
       });
       const conversa = await tx.unoogptMensagem.findMany({
-        where: { escolaId, alunoId },
+        where: { escolaId, estudanteId },
         orderBy: { id: "asc" },
         select: { papel: true, texto: true, tentativa: true, debitou: true, criadoEm: true },
       });
       const trilha = await tx.unoogptMarco.findMany({
-        where: { escolaId, alunoId },
+        where: { escolaId, estudanteId },
         orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
         select: { tentativa: true, ordem: true, tipo: true, minuto: true, dados: true },
       });
       const sessao = await tx.unoogptSessao.findUnique({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId } },
       });
 
       return {
+        estudante: { id: aluno.id, nome: aluno.displayName },
         aluno: { id: aluno.id, nome: aluno.displayName },
         versaoLeitura: VERSAO_LEITURA,
         // O relatório abre pelo que a missão MEDIU, em graus — e `zero` ("teve
@@ -1007,6 +1017,10 @@ export class UnoogptService {
     }, escolaId);
   }
 
+  async alunoDoProfessor(escolaId: string, alunoId: string) {
+    return this.doEstudante(escolaId, alunoId);
+  }
+
   /**
    * Zerar a turma: apaga as partidas E o relógio.
    *
@@ -1021,13 +1035,13 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaDaEscola(tx, escolaId, turmaId);
       const alunos = await tx.user.findMany({
-        where: { escolaId, turmaId, role: "aluno" },
+        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true },
       });
       const ids = alunos.map((a) => a.id);
       // As tabelas filhas caem por ON DELETE CASCADE da sessão.
       const { count } = await tx.unoogptSessao.deleteMany({
-        where: { escolaId, alunoId: { in: ids } },
+        where: { escolaId, estudanteId: { in: ids } },
       });
       await tx.unoogptRelogioTurma.deleteMany({ where: { escolaId, turmaId } });
       return { partidasApagadas: count, relogioRedefinido: true };
@@ -1109,18 +1123,18 @@ export class UnoogptService {
     alunoId: string,
   ): Promise<SinaisDaPartida & { justificouPorIntuicao: boolean }> {
     const sessao = await tx.unoogptSessao.findUnique({
-      where: { escolaId_alunoId: { escolaId, alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
     });
     const marcos = sessao
       ? await tx.unoogptMarco.findMany({
-          where: { escolaId, alunoId },
+          where: { escolaId, estudanteId: alunoId },
           orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
           select: { tipo: true, ordem: true, tentativa: true, dados: true },
         })
       : [];
     const simulacoes = sessao
       ? await tx.unoogptSimulacao.findMany({
-          where: { escolaId, alunoId },
+          where: { escolaId, estudanteId: alunoId },
           orderBy: { ordem: "asc" },
           select: { desfecho: true },
         })
@@ -1170,7 +1184,7 @@ export class UnoogptService {
   private async estadoPublico(escolaId: string, alunoId: string, conjuntos: string[]) {
     return this.prisma.comTenancy(async (tx) => {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_alunoId: { escolaId, alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
       });
       return {
         sessao: sanitizarSessao(atual),

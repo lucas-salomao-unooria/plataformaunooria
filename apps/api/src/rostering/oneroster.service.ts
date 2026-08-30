@@ -622,7 +622,7 @@ export class OneRosterService {
 
       const papelDeclarado = linha.campo("role") ? normalizarPapel(linha.campo("role")) : null;
       if (!papelDeclarado && !existente) semPapelDeclarado += 1;
-      const papel = papelDeclarado ?? existente?.role ?? "aluno";
+      const papel = papelDeclarado ?? existente?.role ?? "estudante";
 
       let usuario = linha.campo("username") || existente?.username || "";
       if (!usuario) usuario = gerarUsuario(nome, loginsUsados);
@@ -700,7 +700,7 @@ export class OneRosterService {
        dentro de uma transação já presa ao `escola_id` desta importação. */
     for (const p of preparadas) {
       if (!p.deOutraEscola) continue;
-      if (p.papel === "aluno") {
+      if (p.papel === "estudante" || p.papel === "aluno") {
         const feito = await this.escolasDaRede.transferirAluno({
           alunoId: p.deOutraEscola.id,
           escolaDestinoId: escolaId,
@@ -744,7 +744,7 @@ export class OneRosterService {
               await garantirLotacao(tx, {
                 escolaId,
                 usuarioId: p.existenteId,
-                papel: p.papel as "aluno" | "professor" | "gestor",
+                papel: p.papel as "estudante" | "aluno" | "professor" | "gestor",
                 inicio: inicioDaLotacao,
                 fonteId: p.sourcedId || null,
               });
@@ -766,7 +766,7 @@ export class OneRosterService {
           await garantirLotacao(tx, {
             escolaId,
             usuarioId: criado.id,
-            papel: p.papel as "aluno" | "professor" | "gestor",
+            papel: p.papel as "estudante" | "aluno" | "professor" | "gestor",
             inicio: inicioDaLotacao,
             principal: true,
             fonteId: p.sourcedId || null,

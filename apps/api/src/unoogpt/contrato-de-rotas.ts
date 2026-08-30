@@ -225,7 +225,7 @@ export const AnexoSchema = z.union([
   }),
 ]);
 
-export const SessaoDoAlunoSchema = z.object({
+export const SessaoDoEstudanteSchema = z.object({
   ficha: FichaPublicaSchema,
   projecao: ProjecaoSchema,
   sessao: SessaoPublicaSchema,
@@ -234,7 +234,7 @@ export const SessaoDoAlunoSchema = z.object({
   mapa: z.array(BairroPublicoSchema),
   conversa: z.array(
     z.object({
-      papel: z.enum(["aluno", "agente"]),
+      papel: z.enum(["estudante", "agente"]),
       texto: z.string(),
       anexo: AnexoSchema.nullable(),
     }),
@@ -242,11 +242,13 @@ export const SessaoDoAlunoSchema = z.object({
   orcamento: OrcamentoSchema,
   justificativas: OpcoesDeJustificativaSchema,
 });
+export const SessaoDoAlunoSchema = SessaoDoEstudanteSchema;
 
-export const RelogioDoAlunoSchema = z.object({
+export const RelogioDoEstudanteSchema = z.object({
   relogio: RelogioPublicoSchema,
   estado: EstadoDoRelogioSchema,
 });
+export const RelogioDoAlunoSchema = RelogioDoEstudanteSchema;
 
 export const TurnoDoCientistaSchema = z.object({
   texto: z.string(),
@@ -380,7 +382,8 @@ export const TurmasDoUnoogptSchema = z.object({
       id: Uuid,
       nome: z.string(),
       serie: z.string(),
-      alunos: z.number().int().nonnegative(),
+      estudantes: z.number().int().nonnegative().optional(),
+      alunos: z.number().int().nonnegative().optional(),
     }),
   ),
 });
@@ -402,7 +405,8 @@ export const TurmaDoProfessorSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
   relogio: RelogioDoProfessorSchema,
   retrato: z.object({
-    alunos: z.number().int().nonnegative(),
+    estudantes: z.number().int().nonnegative().optional(),
+    alunos: z.number().int().nonnegative().optional(),
     comecaram: z.number().int().nonnegative(),
     concluiram: z.number().int().nonnegative(),
     viramConflito: z.number().int().nonnegative(),
@@ -411,7 +415,9 @@ export const TurmaDoProfessorSchema = z.object({
   }),
   linhas: z.array(
     z.object({
-      alunoId: Uuid,
+      id: Uuid.optional(),
+      estudanteId: Uuid.optional(),
+      alunoId: Uuid.optional(),
       nome: z.string(),
       usuario: z.string(),
       comecou: z.boolean(),
@@ -454,8 +460,9 @@ export const LinhaDeLeituraDoUnoogptSchema = z.union([
   }),
 ]);
 
-export const AlunoDoProfessorSchema = z.object({
-  aluno: z.object({ id: Uuid, nome: z.string() }),
+export const EstudanteDoProfessorSchema = z.object({
+  estudante: z.object({ id: Uuid, nome: z.string() }).optional(),
+  aluno: z.object({ id: Uuid, nome: z.string() }).optional(),
   versaoLeitura: z.number().int(),
   linhas: z.array(LinhaDeLeituraDoUnoogptSchema),
   porGrau: z.object({
@@ -464,7 +471,7 @@ export const AlunoDoProfessorSchema = z.object({
     zero: z.number().int().nonnegative(),
     naoObservado: z.number().int().nonnegative(),
   }),
-  /** Frase única para o topo. **Nunca afirma o que o aluno É** — e partida
+  /** Frase única para o topo. **Nunca afirma o que o estudante É** — e partida
    *  curta some com o resto: dois minutos de jogo não sustentam frase. */
   resumo: z.string(),
   justificativas: z
@@ -475,6 +482,7 @@ export const AlunoDoProfessorSchema = z.object({
   /** A TRANSCRIÇÃO — o que a criança escreveu ao Cientista. Só o professor. */
   conversa: z.array(z.unknown()),
 });
+export const AlunoDoProfessorSchema = EstudanteDoProfessorSchema;
 
 export const TurmaZeradaDoUnoogptSchema = z.object({
   partidasApagadas: z.number().int().nonnegative(),

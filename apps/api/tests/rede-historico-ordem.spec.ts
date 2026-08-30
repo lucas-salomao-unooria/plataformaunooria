@@ -41,15 +41,15 @@ beforeAll(async () => {
   await prisma.escola.create({ data: { id: B, nome: "EE Ordem B", tipo: "escola" } });
   const aluno = await prisma.user.create({
     data: { escolaId: B, username: "ordem.aluno", displayName: "Ordem Teste",
-            passwordHash: "x", role: "aluno", cpf: "70010020462" },
+            passwordHash: "x", role: "estudante", cpf: "70010020462" },
   });
   alunoId = aluno.id;
   // As DUAS com o mesmo `inicio` — é a transferência no mesmo dia, e `inicio` é DATE.
   await prisma.lotacao.create({
-    data: { escolaId: A, usuarioId: aluno.id, papel: "aluno", inicio: periodo.inicio, fim: periodo.inicio },
+    data: { escolaId: A, usuarioId: aluno.id, papel: "estudante", inicio: periodo.inicio, fim: periodo.inicio },
   });
   await prisma.lotacao.create({
-    data: { escolaId: B, usuarioId: aluno.id, papel: "aluno", principal: true, inicio: periodo.inicio },
+    data: { escolaId: B, usuarioId: aluno.id, papel: "estudante", principal: true, inicio: periodo.inicio },
   });
 });
 

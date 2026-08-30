@@ -54,15 +54,15 @@ beforeAll(async () => {
     ).id;
   ids.prof8A = await pessoa(ESCOLA, "prof-8a", "professor");
   ids.prof9B = await pessoa(ESCOLA, "prof-9b", "professor");
-  ids.ana = await pessoa(ESCOLA, "ana-8a", "aluno");
+  ids.ana = await pessoa(ESCOLA, "ana-8a", "estudante");
 
   const matricular = (escolaId: string, turmaId: string, usuarioId: string, papel: string) =>
     admin.matricula.create({
-      data: { escolaId, turmaId, usuarioId, papel, principal: papel === "aluno", inicio: periodo.inicio },
+      data: { escolaId, turmaId, usuarioId, papel, principal: papel === "estudante" || papel === "aluno", inicio: periodo.inicio },
     });
   await matricular(ESCOLA, ids.turma8A, ids.prof8A, "professor");
   await matricular(ESCOLA, ids.turma9B, ids.prof9B, "professor");
-  await matricular(ESCOLA, ids.turma8A, ids.ana, "aluno");
+  await matricular(ESCOLA, ids.turma8A, ids.ana, "estudante");
 
   runtime = new PrismaService({ datasources: { db: { url: urlDeRuntime(ADMIN_URL) } } });
   rostering = servicosDeTeste(runtime).rostering;
@@ -78,7 +78,7 @@ describe("as turmas do professor", () => {
   test("cada professor recebe as SUAS turmas, não as da escola", async () => {
     const doOito = await rostering.turmasDoProfessor(ESCOLA, ids.prof8A);
     expect(doOito.map((t) => t.nome)).toEqual(["8A"]);
-    expect(doOito[0]?.alunos).toBe(1);
+    expect(doOito[0]?.estudantes ?? doOito[0]?.alunos).toBe(1);
 
     const doNono = await rostering.turmasDoProfessor(ESCOLA, ids.prof9B);
     expect(doNono.map((t) => t.nome)).toEqual(["9B"]);
@@ -96,7 +96,7 @@ describe("as turmas do professor", () => {
 
   test("a lista nominal da turma traz os alunos matriculados", async () => {
     const turma = await rostering.pessoasDaTurma(ESCOLA, ids.turma8A);
-    expect(turma?.alunos.map((a) => a.usuario)).toEqual(["ana-8a"]);
+    expect((turma?.estudantes ?? turma?.alunos)?.map((a) => a.usuario)).toEqual(["ana-8a"]);
     expect(turma?.professores.map((p) => p.usuario)).toEqual(["prof-8a"]);
   });
 
@@ -131,10 +131,10 @@ describe("as turmas do professor", () => {
       },
     });
 
-    await rostering.matricular(ESCOLA, eletiva.id, ids.ana, "aluno");
+    await rostering.matricular(ESCOLA, eletiva.id, ids.ana, "estudante");
 
     const ativas = await admin.matricula.findMany({
-      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "estudante", fim: null },
       include: { turma: { select: { nome: true } } },
       orderBy: { turma: { nome: "asc" } },
     });
@@ -164,7 +164,7 @@ describe("as turmas do professor", () => {
         tipo: "componente",
       },
     });
-    await rostering.matricular(ESCOLA, eletiva.id, ids.ana, "aluno");
+    await rostering.matricular(ESCOLA, eletiva.id, ids.ana, "estudante");
 
     const naEletiva = await admin.matricula.findFirstOrThrow({
       where: { escolaId: ESCOLA, usuarioId: ids.ana, turmaId: eletiva.id },
@@ -172,7 +172,7 @@ describe("as turmas do professor", () => {
     await rostering.tornarPrincipal(ESCOLA, naEletiva.id);
 
     const todas = await admin.matricula.findMany({
-      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "estudante", fim: null },
     });
     expect(todas).toHaveLength(2); // nada foi encerrado
     expect(todas.filter((m) => m.principal)).toHaveLength(1);
@@ -201,7 +201,7 @@ describe("as turmas do professor", () => {
     await rostering.moverDeTurma(ESCOLA, daOito.id, ids.turma9B);
 
     const ativas = await admin.matricula.findMany({
-      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "estudante", fim: null },
     });
     expect(ativas.map((m) => m.turmaId)).toEqual([ids.turma9B]);
     // A linha antiga continua lá, encerrada: é ela que dá turma ao histórico.
@@ -219,12 +219,12 @@ describe("as turmas do professor", () => {
     // `fim: null`: depois de mover e voltar, a Ana tem linhas ENCERRADAS no 8A
     // também — e encerrar uma delas não tiraria ninguém de turma nenhuma.
     const matricula = await admin.matricula.findFirstOrThrow({
-      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "aluno", fim: null },
+      where: { escolaId: ESCOLA, usuarioId: ids.ana, papel: "estudante", fim: null },
     });
     await rostering.encerrarMatricula(ESCOLA, matricula.id);
 
     const turma = await rostering.pessoasDaTurma(ESCOLA, ids.turma8A);
-    expect(turma?.alunos).toHaveLength(0);
+    expect(turma?.estudantes ?? turma?.alunos).toHaveLength(0);
     const depois = await admin.matricula.findUniqueOrThrow({ where: { id: matricula.id } });
     expect(depois.fim).not.toBeNull();
   });

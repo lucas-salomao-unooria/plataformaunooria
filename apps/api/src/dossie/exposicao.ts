@@ -1,19 +1,19 @@
 /**
  * O QUE O ALGORITMO ESCONDEU — uma conta só, para as duas telas.
  *
- * Havia duas, e elas discordavam. A tela do aluno ("32 posts que nunca chegaram
+ * Havia duas, e elas discordavam. A tela do estudante ("32 posts que nunca chegaram
  * até você") decidia o lado dele CONTANDO os posts servidos; o relatório do
  * professor ("o algoritmo escondeu 30 posts do outro lado dele") decidia pelo
  * `dominioDe()`, que é o score do motor — dwell, sinais, escada de intensidade.
  *
  * Enquanto os dois apontam o mesmo lado, os números batem. Eles divergem
- * exatamente quando o aluno VIRA O JOGO, porque virar o jogo *é* a definição de
+ * exatamente quando o estudante VIRA O JOGO, porque virar o jogo *é* a definição de
  * a atenção ter terminado do lado oposto ao que o feed empurrou. Ou seja: as
- * duas telas se contradiziam justamente sobre os alunos que o professor mais
+ * duas telas se contradiziam justamente sobre os estudantes que o professor mais
  * quer discutir, e cada uma nomeava um lado diferente para a mesma criança.
  *
  * A exposição venceu (ADR-42). "O algoritmo escondeu" é uma afirmação sobre o
- * que o feed SERVIU — o algoritmo escolheu o que entregar, não o que o aluno
+ * que o feed SERVIU — o algoritmo escolheu o que entregar, não o que o estudante
  * olhou. Medir isso pelo domínio credita ao algoritmo o resultado do
  * comportamento da criança, que é o contrário do que a tela existe para mostrar.
  *

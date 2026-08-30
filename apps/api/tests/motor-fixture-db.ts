@@ -51,7 +51,7 @@ export async function criarAtividadeDeTeste(escolaId: string, opcoes: { posts?: 
   const aluno = await prisma.user.create({
     data: {
       escolaId,
-      role: "aluno",
+      role: "estudante",
       username: `aluno.${randomUUID().slice(0, 8)}`,
       displayName: "Aluno Teste",
       passwordHash: "x",
@@ -208,7 +208,7 @@ export async function criarAtividadeDeTeste(escolaId: string, opcoes: { posts?: 
     data: {
       escolaId,
       activityId: atividade.id,
-      alunoId: aluno.id,
+      estudanteId: aluno.id,
       fase: "onboarding",
       // Sorteio simples; o balanceamento na turma é do resolverLargada.
       ladoInicial: Math.random() < 0.5 ? "A" : "B",
