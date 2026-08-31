@@ -27,8 +27,6 @@ interface Boot {
   fase: FaseCliente;
   missao: MissaoCliente;
   estudante?: EstudanteCliente;
-  /** @deprecated Alias do payload anterior ao rename (ADR-51). */
-  aluno?: EstudanteCliente;
 }
 
 export function Bootstrap() {
@@ -75,7 +73,7 @@ export function Bootstrap() {
     );
   }
 
-  const dadosEstudante = boot.estudante ?? boot.aluno;
+  const dadosEstudante = boot.estudante;
 
   return (
     <InstanooriaApp
@@ -83,7 +81,6 @@ export function Bootstrap() {
       faseInicial={boot.runId ? boot.fase : "onboarding"}
       missao={boot.missao}
       estudante={dadosEstudante}
-      aluno={dadosEstudante}
     />
   );
 }

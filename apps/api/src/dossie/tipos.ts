@@ -114,7 +114,7 @@ export const VERSAO_DO_RELATORIO = 4;
 export interface DossierData {
   /** Ausente nos dossiês congelados antes do M8. */
   versaoDoRelatorio?: number;
-  aluno: { displayName: string; avatar: string };
+  estudante: { displayName: string; avatar: string };
   atividade: { titulo: string; perguntaChave: string; ladoALabel: string; ladoBLabel: string };
   proporcaoFinal: { A: number; B: number; neutro: number };
   ladoDominante: 'A' | 'B' | 'indefinido';

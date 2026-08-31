@@ -87,8 +87,7 @@ export interface LinhaDaTurma {
 }
 
 export interface ResumoDaTurma {
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
   jogaram: number;
   concluiram: number;
   abandonaram: number;
@@ -107,8 +106,7 @@ export interface TurmaResumida {
   id: string;
   nome: string;
   serie: string;
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
 }
 
 /** Um cartão COM gabarito — só a tela do guia recebe isto (`@Roles("professor")`).

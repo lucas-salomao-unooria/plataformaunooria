@@ -22,7 +22,7 @@ type RespostaAtividades = {
     status: string;
     etapa: string;
     criadoEm: string;
-    alunos: number;
+    estudantes: number;
     posts: number;
     sessoes: number;
   }>;
@@ -125,8 +125,8 @@ export default async function HubProfessor() {
                         </span>
                         <span className="text-[13px] text-unooria-neutral-500">
                           {rotuloDaSerie(turma.serie as Serie)}
-                          {turno ? ` · ${turno}` : ""} · {turma.alunos} estudante
-                          {turma.alunos === 1 ? "" : "s"}
+                          {turno ? ` · ${turno}` : ""} · {turma.estudantes} estudante
+                          {turma.estudantes === 1 ? "" : "s"}
                         </span>
                       </div>
                     </Card>

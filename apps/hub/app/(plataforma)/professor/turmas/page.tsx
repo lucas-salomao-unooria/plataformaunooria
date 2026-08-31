@@ -47,7 +47,7 @@ export default async function MinhasTurmasPage() {
                         {turno ? ` · ${turno}` : ""}
                       </span>
                       <span className="text-[13px] text-unooria-neutral-500">
-                        {turma.alunos} estudante{turma.alunos === 1 ? "" : "s"}
+                        {turma.estudantes} estudante{turma.estudantes === 1 ? "" : "s"}
                         {turma.periodo ? ` · ${turma.periodo}` : ""}
                       </span>
                     </div>

@@ -66,8 +66,7 @@ export interface TurmaResumida {
   id: string;
   nome: string;
   serie: string;
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
 }
 
 /**
@@ -80,8 +79,7 @@ export interface TurmaResumida {
  * momento em que a turma descobre que recebeu mensagens diferentes não acontece.
  */
 export interface ResumoDaTurma {
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
   jogaram: number;
   concluiram: number;
   abandonaram: number;
@@ -134,7 +132,7 @@ export class VilaService {
   async abrir(escolaId: string, estudanteId: string, expVersion: string): Promise<SessaoAberta> {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await tx.user.findFirst({
-        where: { id: estudanteId, escolaId, role: { in: ["estudante", "aluno"] } },
+        where: { id: estudanteId, escolaId, role: "estudante" },
         select: { turmaId: true, turma: { select: { serie: true } } },
       });
       if (!estudante) throw new HttpException({ mensagem: "Estudante não encontrado nesta escola." }, 404);
@@ -353,7 +351,6 @@ export class VilaService {
         nome: t.nome,
         serie: t.serie,
         estudantes: t._count.estudantes,
-        alunos: t._count.estudantes,
       }));
     }, escolaId);
   }
@@ -376,13 +373,12 @@ export class VilaService {
       if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return null;
 
       const estudantes = await tx.user.findMany({
-        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
+        where: { escolaId, turmaId, role: "estudante" },
         select: { id: true },
       });
       const ids = estudantes.map((a) => a.id);
       const vazio: ResumoDaTurma = {
         estudantes: estudantes.length,
-        alunos: estudantes.length,
         jogaram: 0,
         concluiram: 0,
         abandonaram: 0,
@@ -441,7 +437,7 @@ export class VilaService {
     return this.prisma.comTenancy(async (tx) => {
       if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return [];
       const estudantes = await tx.user.findMany({
-        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
+        where: { escolaId, turmaId, role: "estudante" },
         select: { id: true, displayName: true },
         orderBy: { displayName: "asc" },
       });
@@ -532,7 +528,7 @@ export class VilaService {
       if (!turma) return null;
 
       const estudantes = await tx.user.findMany({
-        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
+        where: { escolaId, turmaId, role: "estudante" },
         select: { id: true },
       });
       const ids = estudantes.map((a) => a.id);
@@ -583,7 +579,7 @@ export class VilaService {
   }> {
     return this.prisma.comTenancy(async (tx) => {
       const estudantes = await tx.user.findMany({
-        where: { escolaId, role: { in: ["estudante", "aluno"] }, ...(turmaId ? { turmaId } : {}) },
+        where: { escolaId, role: "estudante", ...(turmaId ? { turmaId } : {}) },
         select: { id: true, displayName: true },
       });
       if (estudantes.length === 0) return { prontos: [], descartados: [], semPartida: 0 };

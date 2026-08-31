@@ -7,8 +7,7 @@ export interface TurmaResumo {
   id: string;
   nome: string;
   serie: string;
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
 }
 
 export interface LinhaEstudanteUnootube {
@@ -37,8 +36,7 @@ export interface ResumoTurmaUnootube {
 
 export interface ResultadosDaTurma {
   turma: { id: string; nome: string; serie: string };
-  estudantes?: LinhaEstudanteUnootube[];
-  alunos: LinhaEstudanteUnootube[];
+  estudantes: LinhaEstudanteUnootube[];
   resumo: ResumoTurmaUnootube;
 }
 

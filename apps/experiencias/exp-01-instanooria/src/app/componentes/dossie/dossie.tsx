@@ -410,7 +410,7 @@ export function Dossie({ runId }: { runId: string }) {
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
               link.href = url;
-              const nomeEstudante = dossie.estudante?.displayName ?? dossie.aluno?.displayName ?? 'estudante';
+              const nomeEstudante = dossie.estudante?.displayName ?? 'estudante';
               link.download = `relatorio-${nomeEstudante.replace(/\s+/g, '-').toLowerCase()}.png`;
               link.click();
               URL.revokeObjectURL(url);

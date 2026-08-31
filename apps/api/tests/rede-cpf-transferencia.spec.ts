@@ -173,7 +173,7 @@ describe("estudante é TRANSFERIDO, não duplicado", () => {
   test("uma lotação ativa só, e a anterior fica registrada com data de saída", async () => {
     const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ESTUDANTE) } });
     const lotacoes = await prisma.lotacao.findMany({
-      where: { usuarioId: helena.id, papel: { in: ["estudante", "aluno"] } },
+      where: { usuarioId: helena.id, papel: "estudante" },
       orderBy: { escolaId: "asc" },
     });
     expect(lotacoes).toHaveLength(2);
@@ -199,7 +199,7 @@ describe("estudante é TRANSFERIDO, não duplicado", () => {
   test("o professor da escola de ORIGEM deixa de ver a estudante", async () => {
     const turma6A = await prisma.turma.findFirstOrThrow({ where: { escolaId: ESCOLA_A, nome: "6A" } });
     const pessoas = await rostering.pessoasDaTurma(ESCOLA_A, turma6A.id);
-    expect(pessoas?.alunos.map((a) => a.nome)).not.toContain("Helena Braga");
+    expect(pessoas?.estudantes.map((a) => a.nome)).not.toContain("Helena Braga");
   });
 
   test("o histórico ATRAVESSA as escolas — é a identidade que segue o estudante", async () => {
@@ -223,7 +223,7 @@ describe("estudante é TRANSFERIDO, não duplicado", () => {
     ]);
     // O gestor VÊ o CPF, formatado como em qualquer documento: é como ele confere
     // que é a criança certa.
-    expect(historico?.aluno.cpf).toBe(CPF_ESTUDANTE);
+    expect(historico?.estudante.cpf).toBe(CPF_ESTUDANTE);
   });
 
   test("transferir para a escola onde já está é no-op, não uma segunda entrada", async () => {
@@ -231,7 +231,7 @@ describe("estudante é TRANSFERIDO, não duplicado", () => {
     const feito = await escolas.transferirEstudante({ estudanteId: helena.id, escolaDestinoId: ESCOLA_B });
     expect(feito).toMatchObject({ jaEstava: true });
     const ativas = await prisma.lotacao.count({
-      where: { usuarioId: helena.id, papel: { in: ["estudante", "aluno"] }, fim: null },
+      where: { usuarioId: helena.id, papel: "estudante", fim: null },
     });
     expect(ativas).toBe(1);
   });
@@ -245,8 +245,8 @@ describe("escolas da rede", () => {
     expect(a?.municipio).toBe("São Paulo");
     expect(a?.codigoInep).toBe("35000001");
     expect(a?.professores).toBe(1); // a Marta continua lotada na A
-    expect(a?.alunos).toBe(0); // a Helena saiu
-    expect(b?.alunos).toBe(1);
+    expect(a?.estudantes).toBe(0); // a Helena saiu
+    expect(b?.estudantes).toBe(1);
     expect(b?.professores).toBe(1);
   });
 

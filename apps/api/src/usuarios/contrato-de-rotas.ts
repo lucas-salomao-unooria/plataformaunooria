@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cpfEhValido } from "../comum/cpf";
 
 export const ListarSchema = z.object({
-  papel: z.enum(["estudante", "aluno", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
   turmaId: z.string().uuid().optional(),
   situacao: z.enum(["ativos", "inativos", "sem-primeiro-acesso"]).optional(),
   /** Nome, login, matrícula — e CPF, com ou sem pontuação. */
@@ -21,7 +21,7 @@ export const EditarSchema = z.object({
     .union([z.literal(""), z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos")])
     .optional(),
   email: z.union([z.literal(""), z.string().email().max(180)]).optional(),
-  papel: z.enum(["estudante", "aluno", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
   ativo: z.boolean().optional(),
 });
 

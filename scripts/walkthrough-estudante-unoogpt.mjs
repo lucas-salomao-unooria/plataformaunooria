@@ -121,7 +121,7 @@ try {
   const estudante = await ctxEstudante.newPage();
   vigiar(estudante, "estudante");
   await entrar(estudante, USER);
-  await estudante.waitForURL((url) => url.pathname.includes("/estudante") || url.pathname.includes("/aluno"), { timeout: 30_000 });
+  await estudante.waitForURL((url) => url.pathname.includes("/estudante"), { timeout: 30_000 });
 
   const cartao = estudante.locator("a", { hasText: "unooGPT" }).first();
   await cartao.waitFor({ timeout: 15_000 });
@@ -218,8 +218,8 @@ try {
 
   // ═══ PROFESSOR: a folha da turma já mostra a criança ══════════════════════
   await prof.reload({ waitUntil: "domcontentloaded" });
-  await prof.waitForSelector(`[data-estudante="${USER}"], [data-aluno="${USER}"]`, { timeout: 20_000 });
-  const linha = await prof.locator(`[data-estudante="${USER}"], [data-aluno="${USER}"]`).innerText();
+  await prof.waitForSelector(`[data-estudante="${USER}"], [data-estudante="${USER}"]`, { timeout: 20_000 });
+  const linha = await prof.locator(`[data-estudante="${USER}"], [data-estudante="${USER}"]`).innerText();
   await registrar(prof, "folha-da-turma", linha.replace(/\s+/g, " ").slice(0, 90));
 
   // A listagem NÃO pode ter coluna de resgatados — é ranking de crianças.
@@ -230,7 +230,7 @@ try {
   await registrar(prof, "sem-ranking", "nenhuma coluna de resgatados na listagem");
 
   // ═══ PROFESSOR: a linha de uma criança, com a transcrição ═════════════════
-  await prof.locator(`[data-estudante="${USER}"] a, [data-aluno="${USER}"] a`).first().click();
+  await prof.locator(`[data-estudante="${USER}"] a, [data-estudante="${USER}"] a`).first().click();
   await prof.waitForSelector("text=O que a missão mediu", { timeout: 20_000 });
   await prof.waitForSelector("text=A conversa", { timeout: 20_000 });
   await registrar(prof, "relatorio-individual", "graus + transcrição");

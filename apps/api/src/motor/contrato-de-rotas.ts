@@ -34,7 +34,7 @@ export const StudentPostSchema = z.object({
 
 export const ReacoesSchema = z.union([
   z.object({
-    tipo: z.enum(["post_do_estudante", "post_do_aluno"]),
+    tipo: z.enum(["post_do_estudante"]),
     studentPostId: Uuid,
     texto: z.string().trim().min(1).max(600),
   }),
@@ -109,13 +109,6 @@ export const BootSchema = z.object({
     ladoBLabel: z.string(),
   }),
   estudante: z
-    .object({
-      displayName: z.string(),
-      handle: z.string(),
-      avatar: z.string(),
-    })
-    .optional(),
-  aluno: z
     .object({
       displayName: z.string(),
       handle: z.string(),
@@ -251,7 +244,7 @@ export const DossieSchema = z.object({
     .object({
       /** Ausente nos dossiês congelados antes do M8. */
       versaoDoRelatorio: z.number().int().optional(),
-      aluno: z.object({ displayName: z.string(), avatar: z.string() }),
+      estudante: z.object({ displayName: z.string(), avatar: z.string() }),
       atividade: z.object({
         titulo: z.string(),
         perguntaChave: z.string(),

@@ -114,7 +114,6 @@ export class AtividadesController {
           etapa: a.etapa,
           criadoEm: a.createdAt,
           estudantes: a._count.runs,
-          alunos: a._count.runs,
           /** Sinônimo de `estudantes` (1 run = 1 estudante na atividade) — as telas
            *  portadas usam os dois nomes; manter ambos evita drift no port. */
           sessoes: a._count.runs,
@@ -157,7 +156,6 @@ export class AtividadesController {
           turma, 
           _count: { runs }, 
           estudantes: runs, 
-          alunos: runs, 
           postsAprovados: posts 
         },
       };
@@ -559,11 +557,6 @@ export class AtividadesController {
           displayName: estudante.estudante.displayName,
           avatar: null as string | null,
         },
-        aluno: {
-          username: estudante.estudante.username,
-          displayName: estudante.estudante.displayName,
-          avatar: null as string | null,
-        },
         fase: estudante.fase,
         postsConsumidos: estudante.postsConsumidos,
         blocos: estudante.blocos,
@@ -780,12 +773,6 @@ export class AtividadesController {
 
       return {
         estudante: {
-          username: run.estudante.username,
-          displayName: run.estudante.displayName,
-          nomeNoApp: run.nomeNoApp,
-          avatar: run.avatarEscolhido,
-        },
-        aluno: {
           username: run.estudante.username,
           displayName: run.estudante.displayName,
           nomeNoApp: run.nomeNoApp,

@@ -25,7 +25,7 @@ export async function matricularEm(
     escolaId: string;
     turmaId: string;
     usuarioId: string;
-    papel: "estudante" | "professor" | "aluno";
+    papel: "estudante" | "professor" | "estudante";
     /** Turma de referência da pessoa. Professor nunca é principal. */
     principal: boolean;
     inicio: Date;
@@ -33,16 +33,15 @@ export async function matricularEm(
     fonteId?: string | null;
   },
 ): Promise<void> {
-  const { escolaId, turmaId, usuarioId, papel: papelBruto, inicio, fim = null, fonteId = null } = dados;
-  const papel = papelBruto === "aluno" ? "estudante" : papelBruto;
-  const principal = (papelBruto === "estudante" || papelBruto === "aluno") && dados.principal && !fim;
+  const { escolaId, turmaId, usuarioId, papel, inicio, fim = null, fonteId = null } = dados;
+  const principal = papel === "estudante" && dados.principal && !fim;
 
   if (principal) {
     await tx.matricula.updateMany({
       where: {
         escolaId,
         usuarioId,
-        papel: { in: ["estudante", "aluno"] },
+        papel: "estudante",
         principal: true,
         turmaId: { not: turmaId },
         fim: null,

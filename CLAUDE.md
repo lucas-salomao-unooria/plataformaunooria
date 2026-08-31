@@ -52,11 +52,11 @@ Experiências NUNCA viram serviços no Cloud Run. São bundles estáticos:
 
 ### postMessage hub ⇄ experiência (`packages/sdk/src/bridge.ts`)
 ```
-exp → hub : { type: "exp:ready", protocolVersion: 1 }
+exp → hub : { type: "exp:ready", protocolVersion: 2 }
 hub → exp : { type: "hub:init", token, estudante:{id,nome,serie,turmaId,escolaId}, config, apiUrl }
 exp → hub : { type: "exp:concluir", payload:{ score?, dados? } }
 exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:token", token }
-exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo v1)
+exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
 O `?hubOrigin=` que o hub põe na URL do iframe é ENTRADA NÃO CONFIÁVEL: o bundle
@@ -76,7 +76,10 @@ Quando o foco foi para a nossa experiência, `document.activeElement` é o próp
 `<iframe>`; o `ExpFrame` não emite nada nesse caso.
 Versione com `protocolVersion` (major verificado nos DOIS lados — incompatível
 falha alto). Toda mensagem pós-init é validada com Zod nos dois lados; inválida
-é descartada com aviso. Nunca quebre compatibilidade sem bump + suporte à anterior.
+é descartada com aviso. **A v2 trocou a chave `aluno` por `estudante`** (ADR-51),
+e por isso o `rollback` do hub para um bundle publicado antes dela NÃO funciona:
+ele falha alto com "Protocolo incompatível", e reverter exige republicar a
+experiência (ADR-52). Mudança ADITIVA de mensagem pós-init não pede bump.
 
 ### Token e emissor (decisão da migração, 2026-08)
 O HUB assina os tokens de experiência (RS256, TTL 15min, claims

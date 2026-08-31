@@ -129,7 +129,6 @@ export class VilaProfessorController {
     const lista = await this.vila.daTurma(req.auth.escolaId, idOu404(turmaId), professorDoToken(req.auth));
     return {
       estudantes: lista,
-      alunos: lista,
     };
   }
 

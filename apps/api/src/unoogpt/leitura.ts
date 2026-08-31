@@ -7,7 +7,7 @@
  * telemetria de jogo; aqui são condutas de investigação a partir da trilha da
  * decisão.
  *
- * O que foi copiado sem mudança, porque é o que protege o aluno:
+ * O que foi copiado sem mudança, porque é o que protege o estudante:
  *
  *  - O SERVIDOR RECALCULA. Nada do que o navegador mandou vira leitura; tudo
  *    sai dos Marcos gravados.

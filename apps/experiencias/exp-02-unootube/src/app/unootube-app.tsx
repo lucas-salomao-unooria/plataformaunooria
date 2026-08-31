@@ -50,7 +50,7 @@ interface Props {
 
 export function UnooTubeApp({ sessaoInicial }: Props) {
   const { catalogo, limiteSalvos } = sessaoInicial;
-  const estudante = (sessaoInicial.estudante ?? sessaoInicial.aluno)!;
+  const estudante = (sessaoInicial.estudante)!;
   const limite = limiteSalvos || LIMITE;
 
   const [estado, setEstado] = useState<EstadoMissao>(sessaoInicial.estado);

@@ -141,7 +141,7 @@ export function alcancaveisAgora(saidaEmMinutos: number) {
  * Uma cidade, uma tempestade.
  *
  * A força do evento em cada bairro é sorteada com a semente da TURMA, não do
- * aluno: todos enfrentam a mesma tempestade. Assim dois estudantes que mandarem
+ * estudante: todos enfrentam a mesma tempestade. Assim dois estudantes que mandarem
  * para os mesmos lugares, na mesma hora, terminam com números próximos — e a
  * diferença entre eles vem da decisão, não de dado do sistema.
  *

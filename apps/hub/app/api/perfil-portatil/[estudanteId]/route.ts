@@ -44,9 +44,9 @@ export async function GET(
   const montado = await apiDoServidor<Record<string, unknown>>(
     `/estudantes/${encodeURIComponent(estudanteId)}/perfil-portatil`,
   ).catch(async () => {
-    // Fallback para api antiga caso ainda use /alunos/
+    // Fallback para api antiga caso ainda use /estudantes/
     return apiDoServidor<Record<string, unknown>>(
-      `/alunos/${encodeURIComponent(estudanteId)}/perfil-portatil`,
+      `/estudantes/${encodeURIComponent(estudanteId)}/perfil-portatil`,
     );
   });
   if (!montado) {

@@ -21,7 +21,7 @@ describe("papéis", () => {
     expect(normalizarPapel("teacher")).toBe("professor");
     expect(normalizarPapel("estudante")).toBe("estudante");
     expect(normalizarPapel("student")).toBe("estudante");
-    expect(normalizarPapel("aluno")).toBe("estudante");
+    expect(normalizarPapel("estudante")).toBe("estudante");
   });
 
   test("papel desconhecido devolve null — quem chama transforma em linha de relatório", () => {

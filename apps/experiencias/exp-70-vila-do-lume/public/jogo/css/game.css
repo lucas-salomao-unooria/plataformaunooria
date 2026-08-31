@@ -287,13 +287,13 @@ p.warn{font-size:1rem;color:var(--redstone);margin:-2px 0 14px;line-height:1.5;}
 .slot-escolhido{font-family:'Press Start 2P';font-size:0.85rem;color:var(--gold);letter-spacing:0.04em;}
 
 /* ===================== LISTA DE ESTUDANTES (resultados) ===================== */
-.lista-estudantes, .lista-alunos{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
-.estudante-linha, .aluno-linha{
+.lista-estudantes, .lista-estudantes{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.estudante-linha{
   display:flex;align-items:center;gap:12px;width:100%;text-align:left;
   background:var(--panel);border:2px solid var(--stone-dark);padding:10px 12px;
   color:var(--cream);cursor:pointer;transition:border-color 0.12s ease;
 }
-.estudante-linha:hover, .aluno-linha:hover{border-color:var(--gold);}
+.estudante-linha:hover{border-color:var(--gold);}
 .al-num{
   font-family:'Press Start 2P';font-size:0.7rem;color:var(--gold);
   min-width:2.4rem;text-align:center;

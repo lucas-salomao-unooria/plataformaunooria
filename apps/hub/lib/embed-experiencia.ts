@@ -18,7 +18,7 @@ import { baseDevDaExperiencia } from "./experiencias-dev";
  *    descarta o `exp:ready` por origin e o handshake expira.
  */
 
-export type PublicoDaExperiencia = "estudante" | "professor" | "aluno";
+export type PublicoDaExperiencia = "estudante" | "professor" | "estudante";
 
 export interface ManifestoDeExperiencia {
   expId: string;
@@ -40,8 +40,6 @@ export interface Embed {
   token: string;
   /** Usuário logado que carrega os dados no handshake do hub:init. */
   estudante: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
-  /** @deprecated Alias mantido para compatibilidade. Use `estudante`. */
-  aluno: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   viewport: { largura: number; altura: number } | null;
   /** Repassado ao `ExpFrame`: liga `allow-pointer-lock` no sandbox. */
@@ -199,7 +197,6 @@ export async function montarEmbed(
     expOrigin: new URL(base).origin,
     token,
     estudante: estudantePayload,
-    aluno: estudantePayload,
     apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
     viewport: manifesto?.viewport ?? viewportDoBundle,
     permissoes: manifesto?.permissoes ?? permissoesDoBundle,

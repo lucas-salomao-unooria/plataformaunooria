@@ -44,8 +44,7 @@ export interface FolhaDaTurma {
   turma: { id: string; nome: string; serie: string };
   relogio: RetratoDoRelogio;
   retrato: {
-    estudantes?: number;
-    alunos: number;
+    estudantes: number;
     comecaram: number;
     concluiram: number;
     viramConflito: number;
@@ -73,8 +72,7 @@ export interface LinhaDeLeitura {
 }
 
 export interface RelatorioDoEstudante {
-  estudante?: { id: string; nome: string };
-  aluno: { id: string; nome: string };
+  estudante: { id: string; nome: string };
   versaoLeitura: number;
   linhas: LinhaDeLeitura[];
   porGrau: Record<string, number>;
@@ -118,6 +116,5 @@ export interface TurmaResumo {
   id: string;
   nome: string;
   serie: string;
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
 }

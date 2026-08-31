@@ -13,8 +13,7 @@ export interface TurmaDoProfessor {
   turno: string | null;
   tipo: string;
   periodo: string | null;
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
   professores: number;
 }
 
@@ -30,8 +29,7 @@ export interface PessoaDaTurma {
 
 export interface TurmaComPessoas {
   turma: { id: string; nome: string; serie: string; turno: string | null; periodo: string };
-  estudantes?: PessoaDaTurma[];
-  alunos: PessoaDaTurma[];
+  estudantes: PessoaDaTurma[];
   professores: PessoaDaTurma[];
 }
 

@@ -77,7 +77,6 @@ export const RankingSchema = z.object({
 export const SessaoSchema = EstadoSchema.extend({
   catalogo: z.object({ videos: z.array(VideoPublicoSchema) }),
   estudante: z.object({ nome: z.string(), avatar: z.string() }).optional(),
-  aluno: z.object({ nome: z.string(), avatar: z.string() }).optional(),
   /** `null` até o ranking ser desbloqueado — é a virada da missão. */
   ranking: RankingSchema.nullable(),
 });
@@ -89,7 +88,6 @@ export const TurmasDoUnootubeSchema = z.object({
       nome: z.string(),
       serie: z.string(),
       estudantes: z.number().int().nonnegative().optional(),
-      alunos: z.number().int().nonnegative().optional(),
     }),
   ),
 });
@@ -111,7 +109,6 @@ export const EstudanteDoResultadoSchema = z.object({
 export const ResultadosDaTurmaSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
   estudantes: z.array(EstudanteDoResultadoSchema).optional(),
-  alunos: z.array(EstudanteDoResultadoSchema).optional(),
   resumo: z.object({
     total: z.number().int().nonnegative(),
     iniciaram: z.number().int().nonnegative(),

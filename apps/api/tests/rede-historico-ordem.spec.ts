@@ -40,7 +40,7 @@ beforeAll(async () => {
   await prisma.escola.create({ data: { id: A, nome: "EE Ordem A", tipo: "escola" } });
   await prisma.escola.create({ data: { id: B, nome: "EE Ordem B", tipo: "escola" } });
   const estudante = await prisma.user.create({
-    data: { escolaId: B, username: "ordem.aluno", displayName: "Ordem Teste",
+    data: { escolaId: B, username: "ordem.estudante", displayName: "Ordem Teste",
             passwordHash: "x", role: "estudante", cpf: "70010020462" },
   });
   estudanteId = estudante.id;

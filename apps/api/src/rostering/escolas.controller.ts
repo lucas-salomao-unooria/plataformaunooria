@@ -199,7 +199,7 @@ export class EscolasController {
   })
   pessoas(@Param("id") id: string, @Query("papel") papel: string, @Req() req: Autenticado) {
     const escolaId = escolaAlvo(req.auth, id);
-    const alvo = papel === "estudante" || papel === "aluno" || papel === "gestor" ? (papel === "aluno" ? "estudante" : papel) : "professor";
+    const alvo = papel === "estudante" || papel === "gestor" ? (papel) : "professor";
     return this.escolas.pessoasDaEscola(escolaId, alvo);
   }
 

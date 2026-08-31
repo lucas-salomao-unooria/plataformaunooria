@@ -69,7 +69,9 @@ describe("connectToHub", () => {
 
   test("rejeita protocolVersion incompatível com erro visível", async () => {
     const promessa = connectToHub({ hubOrigin: HUB_ORIGIN, timeoutMs: 500 });
-    mensagemDoHub({ ...INIT_VALIDO, protocolVersion: 2 });
+    /* Derivado da constante, não fixado: o teste tem de continuar afirmando
+       "major diferente falha alto" depois do próximo bump. */
+    mensagemDoHub({ ...INIT_VALIDO, protocolVersion: PROTOCOL_VERSION + 1 });
     await expect(promessa).rejects.toThrow(/Protocolo incompatível/);
   });
 

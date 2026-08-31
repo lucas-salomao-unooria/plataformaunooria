@@ -891,7 +891,6 @@ export class UnoogptService {
           nome: t.nome,
           serie: t.serie,
           estudantes: t._count.estudantes,
-          alunos: t._count.estudantes,
         })),
       };
     }, escolaId);
@@ -912,7 +911,7 @@ export class UnoogptService {
       const relogio = await this.relogioDaTurma(tx, escolaId, turmaId);
 
       const estudantes = await tx.user.findMany({
-        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
+        where: { escolaId, turmaId, role: "estudante" },
         orderBy: { username: "asc" },
         select: { id: true, displayName: true, username: true },
       });
@@ -944,7 +943,6 @@ export class UnoogptService {
         // O RETRATO da turma, e ele fala de conduta, não de nota.
         retrato: {
           estudantes: linhas.length,
-          alunos: linhas.length,
           comecaram: linhas.filter((l) => l.comecou).length,
           concluiram: linhas.filter((l) => l.concluiu).length,
           viramConflito: linhas.filter((l) => l.viuConflito).length,
@@ -966,7 +964,7 @@ export class UnoogptService {
   async doEstudante(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await tx.user.findFirst({
-        where: { id: estudanteId, escolaId, role: { in: ["estudante", "aluno"] } },
+        where: { id: estudanteId, escolaId, role: "estudante" },
         select: { id: true, displayName: true, turmaId: true },
       });
       if (!estudante) throw erroDeJogo("sessao-encerrada");
@@ -995,7 +993,6 @@ export class UnoogptService {
 
       return {
         estudante: { id: estudante.id, nome: estudante.displayName },
-        aluno: { id: estudante.id, nome: estudante.displayName },
         versaoLeitura: VERSAO_LEITURA,
         // O relatório abre pelo que a missão MEDIU, em graus — e `zero` ("teve
         // a chance e não foi") nunca se confunde com `none` ("a oportunidade
@@ -1030,7 +1027,7 @@ export class UnoogptService {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaDaEscola(tx, escolaId, turmaId);
       const estudantes = await tx.user.findMany({
-        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
+        where: { escolaId, turmaId, role: "estudante" },
         select: { id: true },
       });
       const ids = estudantes.map((a) => a.id);

@@ -322,10 +322,6 @@
                         "type": "integer",
                         "minimum": 0
                       },
-                      "alunos": {
-                        "type": "integer",
-                        "minimum": 0
-                      },
                       "professores": {
                         "type": "integer",
                         "minimum": 0
@@ -347,7 +343,7 @@
                       "papel",
                       "principal",
                       "regional",
-                      "alunos",
+                      "estudantes",
                       "professores",
                       "turmas",
                       "semPrimeiroAcesso"
@@ -465,10 +461,6 @@
                         "type": "integer",
                         "minimum": 0
                       },
-                      "alunos": {
-                        "type": "integer",
-                        "minimum": 0
-                      },
                       "professores": {
                         "type": "integer",
                         "minimum": 0
@@ -487,7 +479,7 @@
                       "uf",
                       "paiId",
                       "pai",
-                      "alunos",
+                      "estudantes",
                       "professores",
                       "turmas"
                     ],
@@ -933,7 +925,6 @@
               "type": "string",
               "enum": [
                 "estudante",
-                "aluno",
                 "professor",
                 "gestor"
               ]
@@ -1261,32 +1252,6 @@
                   "type": "object",
                   "properties": {
                     "estudante": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "nome": {
-                          "type": "string"
-                        },
-                        "usuario": {
-                          "type": "string"
-                        },
-                        "cpf": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "nome",
-                        "usuario",
-                        "cpf"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "aluno": {
                       "type": "object",
                       "properties": {
                         "id": {
@@ -2193,10 +2158,6 @@
                         "type": "integer",
                         "minimum": 0
                       },
-                      "alunos": {
-                        "type": "integer",
-                        "minimum": 0
-                      },
                       "professores": {
                         "type": "integer",
                         "minimum": 0
@@ -2209,7 +2170,7 @@
                       "turno",
                       "tipo",
                       "periodo",
-                      "alunos",
+                      "estudantes",
                       "professores"
                     ],
                     "additionalProperties": false
@@ -2294,10 +2255,6 @@
                         "type": "integer",
                         "minimum": 0
                       },
-                      "alunos": {
-                        "type": "integer",
-                        "minimum": 0
-                      },
                       "professores": {
                         "type": "integer",
                         "minimum": 0
@@ -2310,7 +2267,7 @@
                       "turno",
                       "tipo",
                       "periodo",
-                      "alunos",
+                      "estudantes",
                       "professores"
                     ],
                     "additionalProperties": false
@@ -2736,57 +2693,6 @@
                         "additionalProperties": false
                       }
                     },
-                    "alunos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "matriculaId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "usuario": {
-                            "type": "string"
-                          },
-                          "matricula": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "ativo": {
-                            "type": "boolean"
-                          },
-                          "principal": {
-                            "type": "boolean"
-                          },
-                          "senhaProvisoria": {
-                            "type": "boolean"
-                          },
-                          "desde": {
-                            "type": "string",
-                            "format": "date-time"
-                          }
-                        },
-                        "required": [
-                          "matriculaId",
-                          "id",
-                          "nome",
-                          "usuario",
-                          "matricula",
-                          "ativo",
-                          "principal",
-                          "senhaProvisoria",
-                          "desde"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
                     "professores": {
                       "type": "array",
                       "items": {
@@ -2841,7 +2747,7 @@
                   },
                   "required": [
                     "turma",
-                    "alunos",
+                    "estudantes",
                     "professores"
                   ],
                   "additionalProperties": false
@@ -2944,7 +2850,6 @@
                     "type": "string",
                     "enum": [
                       "estudante",
-                      "aluno",
                       "professor"
                     ]
                   }
@@ -3930,7 +3835,6 @@
               "type": "string",
               "enum": [
                 "estudante",
-                "aluno",
                 "professor",
                 "gestor"
               ]
@@ -4458,7 +4362,6 @@
                     "type": "string",
                     "enum": [
                       "estudante",
-                      "aluno",
                       "professor",
                       "gestor"
                     ]
@@ -6091,7 +5994,6 @@
                     "type": "string",
                     "enum": [
                       "estudante",
-                      "aluno",
                       "professor"
                     ],
                     "default": "estudante"
@@ -6224,26 +6126,6 @@
                       "additionalProperties": false
                     },
                     "estudante": {
-                      "type": "object",
-                      "properties": {
-                        "displayName": {
-                          "type": "string"
-                        },
-                        "handle": {
-                          "type": "string"
-                        },
-                        "avatar": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "displayName",
-                        "handle",
-                        "avatar"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "aluno": {
                       "type": "object",
                       "properties": {
                         "displayName": {
@@ -7877,8 +7759,7 @@
                       "tipo": {
                         "type": "string",
                         "enum": [
-                          "post_do_estudante",
-                          "post_do_aluno"
+                          "post_do_estudante"
                         ]
                       },
                       "studentPostId": {
@@ -7959,7 +7840,7 @@
                         "versaoDoRelatorio": {
                           "type": "integer"
                         },
-                        "aluno": {
+                        "estudante": {
                           "type": "object",
                           "properties": {
                             "displayName": {
@@ -8532,7 +8413,7 @@
                         }
                       },
                       "required": [
-                        "aluno",
+                        "estudante",
                         "atividade",
                         "proporcaoFinal",
                         "ladoDominante",
@@ -8858,10 +8739,6 @@
                             "type": "integer",
                             "minimum": 0
                           },
-                          "alunos": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
                           "sessoes": {
                             "type": "integer",
                             "minimum": 0
@@ -8880,7 +8757,7 @@
                           "status",
                           "etapa",
                           "criadoEm",
-                          "alunos",
+                          "estudantes",
                           "sessoes",
                           "posts"
                         ],
@@ -9184,10 +9061,6 @@
                           "type": "integer",
                           "minimum": 0
                         },
-                        "alunos": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
                         "postsAprovados": {
                           "type": "integer",
                           "minimum": 0
@@ -9215,7 +9088,7 @@
                         "turmaId",
                         "turma",
                         "_count",
-                        "alunos",
+                        "estudantes",
                         "postsAprovados"
                       ],
                       "additionalProperties": true
@@ -9802,27 +9675,6 @@
                             ],
                             "additionalProperties": false
                           },
-                          "aluno": {
-                            "type": "object",
-                            "properties": {
-                              "username": {
-                                "type": "string"
-                              },
-                              "displayName": {
-                                "type": "string"
-                              },
-                              "avatar": {
-                                "type": "string",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "username",
-                              "displayName",
-                              "avatar"
-                            ],
-                            "additionalProperties": false
-                          },
                           "fase": {
                             "type": "string"
                           },
@@ -9961,7 +9813,7 @@
                         },
                         "required": [
                           "runId",
-                          "aluno",
+                          "estudante",
                           "fase",
                           "postsConsumidos",
                           "blocos",
@@ -10166,32 +10018,6 @@
                       ],
                       "additionalProperties": false
                     },
-                    "aluno": {
-                      "type": "object",
-                      "properties": {
-                        "username": {
-                          "type": "string"
-                        },
-                        "displayName": {
-                          "type": "string"
-                        },
-                        "nomeNoApp": {
-                          "type": "string",
-                          "nullable": true
-                        },
-                        "avatar": {
-                          "type": "string",
-                          "nullable": true
-                        }
-                      },
-                      "required": [
-                        "username",
-                        "displayName",
-                        "nomeNoApp",
-                        "avatar"
-                      ],
-                      "additionalProperties": false
-                    },
                     "sessao": {
                       "type": "object",
                       "properties": {
@@ -10360,7 +10186,7 @@
                     }
                   },
                   "required": [
-                    "aluno",
+                    "estudante",
                     "sessao",
                     "resumo",
                     "interacoes"
@@ -12014,48 +11840,6 @@
                         "additionalProperties": false
                       }
                     },
-                    "alunos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "username": {
-                            "type": "string"
-                          },
-                          "displayName": {
-                            "type": "string"
-                          },
-                          "origem": {
-                            "type": "string"
-                          },
-                          "dominante": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "rotulo": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "escores": {
-                            "nullable": true
-                          },
-                          "medidoEm": {
-                            "type": "string",
-                            "format": "date-time",
-                            "nullable": true
-                          }
-                        },
-                        "required": [
-                          "username",
-                          "displayName",
-                          "origem",
-                          "dominante",
-                          "rotulo",
-                          "medidoEm"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
                     "resumo": {
                       "type": "object",
                       "properties": {
@@ -12086,7 +11870,7 @@
                     }
                   },
                   "required": [
-                    "alunos",
+                    "estudantes",
                     "resumo"
                   ],
                   "additionalProperties": false
@@ -12336,73 +12120,6 @@
                         "additionalProperties": false
                       }
                     },
-                    "alunos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "username": {
-                            "type": "string"
-                          },
-                          "displayName": {
-                            "type": "string"
-                          },
-                          "dominante": {
-                            "type": "string"
-                          },
-                          "rotulo": {
-                            "type": "string"
-                          },
-                          "margem": {
-                            "type": "number"
-                          },
-                          "origemDoPerfil": {
-                            "type": "string",
-                            "enum": [
-                              "jogo",
-                              "professor",
-                              "ausente"
-                            ]
-                          },
-                          "mapeamentoDesatualizado": {
-                            "type": "boolean"
-                          },
-                          "lado": {
-                            "type": "string",
-                            "enum": [
-                              "A",
-                              "B"
-                            ],
-                            "nullable": true
-                          },
-                          "ladoOrigem": {
-                            "type": "string",
-                            "enum": [
-                              "perfil",
-                              "sorteio",
-                              "redistribuido",
-                              "projetado"
-                            ]
-                          },
-                          "jaComecou": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": [
-                          "username",
-                          "displayName",
-                          "dominante",
-                          "rotulo",
-                          "margem",
-                          "origemDoPerfil",
-                          "mapeamentoDesatualizado",
-                          "lado",
-                          "ladoOrigem",
-                          "jaComecou"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
                     "contagem": {
                       "type": "object",
                       "properties": {
@@ -12436,7 +12153,7 @@
                   "required": [
                     "temAfinidade",
                     "afinidade",
-                    "alunos",
+                    "estudantes",
                     "contagem",
                     "semLado",
                     "desequilibrio",
@@ -12678,54 +12395,6 @@
                     "format": "uuid"
                   },
                   "estudantes": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "username": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 64
-                        },
-                        "escores": {
-                          "type": "object",
-                          "required": [
-                            "abertura",
-                            "autotranscendencia",
-                            "autopromocao",
-                            "conservacao"
-                          ],
-                          "properties": {
-                            "abertura": {
-                              "type": "number"
-                            },
-                            "autotranscendencia": {
-                              "type": "number"
-                            },
-                            "autopromocao": {
-                              "type": "number"
-                            },
-                            "conservacao": {
-                              "type": "number"
-                            }
-                          },
-                          "additionalProperties": false
-                        },
-                        "medidoEm": {
-                          "type": "string",
-                          "format": "date-time"
-                        }
-                      },
-                      "required": [
-                        "username",
-                        "escores"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "minItems": 1,
-                    "maxItems": 200
-                  },
-                  "alunos": {
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -13479,10 +13148,6 @@
                           "estudantes": {
                             "type": "integer",
                             "minimum": 0
-                          },
-                          "alunos": {
-                            "type": "integer",
-                            "minimum": 0
                           }
                         },
                         "required": [
@@ -13546,10 +13211,6 @@
                       "type": "object",
                       "properties": {
                         "estudantes": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
-                        "alunos": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -13670,60 +13331,6 @@
                   "type": "object",
                   "properties": {
                     "estudantes": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "estudanteId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "partidas": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
-                          "ultimaEm": {
-                            "type": "string",
-                            "format": "date-time",
-                            "nullable": true
-                          },
-                          "bolha": {
-                            "type": "string",
-                            "enum": [
-                              "A",
-                              "B",
-                              "C"
-                            ],
-                            "nullable": true
-                          },
-                          "fogueirasAcesas": {
-                            "type": "number",
-                            "nullable": true
-                          },
-                          "amostraSuficiente": {
-                            "type": "boolean",
-                            "nullable": true
-                          }
-                        },
-                        "required": [
-                          "nome",
-                          "partidas",
-                          "ultimaEm",
-                          "bolha",
-                          "fogueirasAcesas",
-                          "amostraSuficiente"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "alunos": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -14726,22 +14333,6 @@
                             ],
                             "additionalProperties": false
                           },
-                          "aluno": {
-                            "type": "object",
-                            "properties": {
-                              "username": {
-                                "type": "string"
-                              },
-                              "displayName": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "username",
-                              "displayName"
-                            ],
-                            "additionalProperties": false
-                          },
                           "fase": {
                             "type": "string"
                           },
@@ -15183,514 +14774,6 @@
                         "required": [
                           "runId",
                           "estudante",
-                          "aluno",
-                          "fase",
-                          "iniciadaEm",
-                          "encerradaEm",
-                          "perfilJogo",
-                          "perfilObservado",
-                          "bolha",
-                          "ladoDominante",
-                          "dominio",
-                          "postsConsumidos",
-                          "blocos",
-                          "escada",
-                          "tempo",
-                          "ritmo",
-                          "imersao",
-                          "investigacao",
-                          "interacoes",
-                          "colecao",
-                          "conclusao",
-                          "reflexao",
-                          "ociosoHaMs"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "alunos": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "runId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "estudante": {
-                            "type": "object",
-                            "properties": {
-                              "username": {
-                                "type": "string"
-                              },
-                              "displayName": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "username",
-                              "displayName"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "aluno": {
-                            "type": "object",
-                            "properties": {
-                              "username": {
-                                "type": "string"
-                              },
-                              "displayName": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "username",
-                              "displayName"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "fase": {
-                            "type": "string"
-                          },
-                          "iniciadaEm": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "encerradaEm": {
-                            "type": "string",
-                            "format": "date-time",
-                            "nullable": true
-                          },
-                          "perfilJogo": {
-                            "type": "object",
-                            "properties": {
-                              "dominante": {
-                                "type": "string"
-                              },
-                              "origem": {
-                                "type": "string"
-                              }
-                            },
-                            "required": [
-                              "dominante",
-                              "origem"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
-                          },
-                          "perfilObservado": {
-                            "type": "object",
-                            "properties": {
-                              "normalizado": {
-                                "type": "object",
-                                "additionalProperties": {
-                                  "type": "number"
-                                }
-                              },
-                              "dominante": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "margem": {
-                                "type": "number"
-                              },
-                              "veredito": {
-                                "type": "string",
-                                "enum": [
-                                  "reforcou",
-                                  "divergiu",
-                                  "sem_referencia"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "normalizado",
-                              "dominante",
-                              "margem",
-                              "veredito"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "bolha": {
-                            "type": "object",
-                            "properties": {
-                              "ladoInicial": {
-                                "type": "string",
-                                "enum": [
-                                  "A",
-                                  "B"
-                                ]
-                              },
-                              "ladoOrigem": {
-                                "type": "string"
-                              },
-                              "inverteu": {
-                                "type": "boolean"
-                              },
-                              "blocoDaInversao": {
-                                "type": "number",
-                                "nullable": true
-                              }
-                            },
-                            "required": [
-                              "ladoInicial",
-                              "ladoOrigem",
-                              "inverteu",
-                              "blocoDaInversao"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "ladoDominante": {
-                            "type": "string",
-                            "enum": [
-                              "A",
-                              "B",
-                              "indefinido"
-                            ]
-                          },
-                          "dominio": {
-                            "type": "number"
-                          },
-                          "postsConsumidos": {
-                            "type": "number"
-                          },
-                          "blocos": {
-                            "type": "number"
-                          },
-                          "escada": {
-                            "type": "object",
-                            "properties": {
-                              "A": {
-                                "type": "number"
-                              },
-                              "B": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "A",
-                              "B"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "tempo": {
-                            "type": "object",
-                            "properties": {
-                              "sessaoMs": {
-                                "type": "number"
-                              },
-                              "feedMs": {
-                                "type": "number"
-                              },
-                              "ativoMs": {
-                                "type": "number"
-                              },
-                              "ociosoMs": {
-                                "type": "number"
-                              },
-                              "vaosOciosos": {
-                                "type": "number"
-                              },
-                              "porLadoMs": {
-                                "type": "object",
-                                "properties": {
-                                  "A": {
-                                    "type": "number"
-                                  },
-                                  "B": {
-                                    "type": "number"
-                                  },
-                                  "neutro": {
-                                    "type": "number"
-                                  }
-                                },
-                                "required": [
-                                  "A",
-                                  "B",
-                                  "neutro"
-                                ],
-                                "additionalProperties": false
-                              },
-                              "porPerfilMs": {
-                                "type": "object",
-                                "additionalProperties": {
-                                  "type": "number"
-                                }
-                              }
-                            },
-                            "required": [
-                              "sessaoMs",
-                              "feedMs",
-                              "ativoMs",
-                              "ociosoMs",
-                              "vaosOciosos",
-                              "porLadoMs",
-                              "porPerfilMs"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "ritmo": {
-                            "type": "object",
-                            "properties": {
-                              "postsPorMinuto": {
-                                "type": "number"
-                              },
-                              "variacaoDoRitmo": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "postsPorMinuto",
-                              "variacaoDoRitmo"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "imersao": {
-                            "type": "object",
-                            "properties": {
-                              "total": {
-                                "type": "number"
-                              },
-                              "componentes": {
-                                "type": "array",
-                                "items": {
-                                  "type": "object",
-                                  "properties": {
-                                    "chave": {
-                                      "type": "string",
-                                      "enum": [
-                                        "continuidade",
-                                        "atencao",
-                                        "gestos",
-                                        "voluntariedade",
-                                        "exploracao"
-                                      ]
-                                    },
-                                    "rotulo": {
-                                      "type": "string"
-                                    },
-                                    "pontos": {
-                                      "type": "number"
-                                    },
-                                    "detalhe": {
-                                      "type": "string"
-                                    }
-                                  },
-                                  "required": [
-                                    "chave",
-                                    "rotulo",
-                                    "pontos",
-                                    "detalhe"
-                                  ],
-                                  "additionalProperties": false
-                                }
-                              }
-                            },
-                            "required": [
-                              "total",
-                              "componentes"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "investigacao": {
-                            "type": "object",
-                            "properties": {
-                              "usosDaBusca": {
-                                "type": "number"
-                              },
-                              "termosBuscados": {
-                                "type": "array",
-                                "items": {
-                                  "type": "string"
-                                }
-                              },
-                              "postsPelaBusca": {
-                                "type": "number"
-                              },
-                              "comentariosLidos": {
-                                "type": "number"
-                              },
-                              "revisitas": {
-                                "type": "number"
-                              },
-                              "perdasDeFoco": {
-                                "type": "number"
-                              },
-                              "coberturaDosLados": {
-                                "type": "object",
-                                "properties": {
-                                  "A": {
-                                    "type": "object",
-                                    "properties": {
-                                      "posts": {
-                                        "type": "number"
-                                      },
-                                      "segundos": {
-                                        "type": "number"
-                                      }
-                                    },
-                                    "required": [
-                                      "posts",
-                                      "segundos"
-                                    ],
-                                    "additionalProperties": false
-                                  },
-                                  "B": {
-                                    "type": "object",
-                                    "properties": {
-                                      "posts": {
-                                        "type": "number"
-                                      },
-                                      "segundos": {
-                                        "type": "number"
-                                      }
-                                    },
-                                    "required": [
-                                      "posts",
-                                      "segundos"
-                                    ],
-                                    "additionalProperties": false
-                                  }
-                                },
-                                "required": [
-                                  "A",
-                                  "B"
-                                ],
-                                "additionalProperties": false
-                              },
-                              "consideracaoDoOposto": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "usosDaBusca",
-                              "termosBuscados",
-                              "postsPelaBusca",
-                              "comentariosLidos",
-                              "revisitas",
-                              "perdasDeFoco",
-                              "coberturaDosLados",
-                              "consideracaoDoOposto"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "interacoes": {
-                            "type": "object",
-                            "properties": {
-                              "curtidas": {
-                                "type": "number"
-                              },
-                              "comentarios": {
-                                "type": "number"
-                              },
-                              "salvos": {
-                                "type": "number"
-                              },
-                              "compartilhados": {
-                                "type": "number"
-                              },
-                              "seguidos": {
-                                "type": "number"
-                              },
-                              "naoInteressa": {
-                                "type": "number"
-                              },
-                              "publicou": {
-                                "type": "boolean"
-                              }
-                            },
-                            "required": [
-                              "curtidas",
-                              "comentarios",
-                              "salvos",
-                              "compartilhados",
-                              "seguidos",
-                              "naoInteressa",
-                              "publicou"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "colecao": {
-                            "type": "object",
-                            "properties": {
-                              "total": {
-                                "type": "number"
-                              },
-                              "doLadoSemeado": {
-                                "type": "number"
-                              },
-                              "doOutroLado": {
-                                "type": "number"
-                              },
-                              "neutros": {
-                                "type": "number"
-                              },
-                              "comentados": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "total",
-                              "doLadoSemeado",
-                              "doOutroLado",
-                              "neutros",
-                              "comentados"
-                            ],
-                            "additionalProperties": false
-                          },
-                          "conclusao": {
-                            "type": "object",
-                            "properties": {
-                              "inclinacao": {
-                                "type": "string",
-                                "enum": [
-                                  "A",
-                                  "B",
-                                  "duvida"
-                                ]
-                              },
-                              "texto": {
-                                "type": "string",
-                                "nullable": true
-                              },
-                              "caracteres": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "inclinacao",
-                              "texto",
-                              "caracteres"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
-                          },
-                          "reflexao": {
-                            "type": "object",
-                            "properties": {
-                              "texto": {
-                                "type": "string"
-                              },
-                              "caracteres": {
-                                "type": "number"
-                              }
-                            },
-                            "required": [
-                              "texto",
-                              "caracteres"
-                            ],
-                            "additionalProperties": false,
-                            "nullable": true
-                          },
-                          "ociosoHaMs": {
-                            "type": "number",
-                            "nullable": true
-                          }
-                        },
-                        "required": [
-                          "runId",
-                          "estudante",
-                          "aluno",
                           "fase",
                           "iniciadaEm",
                           "encerradaEm",
@@ -15724,7 +14807,7 @@
                     "largada",
                     "busca",
                     "imersao",
-                    "alunos"
+                    "estudantes"
                   ],
                   "additionalProperties": false
                 }
@@ -16379,22 +15462,6 @@
                       "additionalProperties": false
                     },
                     "estudante": {
-                      "type": "object",
-                      "properties": {
-                        "nome": {
-                          "type": "string"
-                        },
-                        "avatar": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "nome",
-                        "avatar"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "aluno": {
                       "type": "object",
                       "properties": {
                         "nome": {
@@ -17293,10 +16360,6 @@
                           "estudantes": {
                             "type": "integer",
                             "minimum": 0
-                          },
-                          "alunos": {
-                            "type": "integer",
-                            "minimum": 0
                           }
                         },
                         "required": [
@@ -17387,65 +16450,6 @@
                       "additionalProperties": false
                     },
                     "estudantes": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "estudanteId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "nome": {
-                            "type": "string"
-                          },
-                          "usuario": {
-                            "type": "string"
-                          },
-                          "iniciou": {
-                            "type": "boolean"
-                          },
-                          "salvos": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
-                          "fontesConfiaveis": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
-                          "inscritos": {
-                            "type": "integer",
-                            "minimum": 0
-                          },
-                          "rankingDesbloqueado": {
-                            "type": "boolean"
-                          },
-                          "credibilidadeAdicionada": {
-                            "type": "boolean"
-                          },
-                          "concluidoEm": {
-                            "type": "string",
-                            "nullable": true
-                          }
-                        },
-                        "required": [
-                          "nome",
-                          "usuario",
-                          "iniciou",
-                          "salvos",
-                          "fontesConfiaveis",
-                          "inscritos",
-                          "rankingDesbloqueado",
-                          "credibilidadeAdicionada",
-                          "concluidoEm"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "alunos": {
                       "type": "array",
                       "items": {
                         "type": "object",
@@ -21723,10 +20727,6 @@
                           "estudantes": {
                             "type": "integer",
                             "minimum": 0
-                          },
-                          "alunos": {
-                            "type": "integer",
-                            "minimum": 0
                           }
                         },
                         "required": [
@@ -21883,10 +20883,6 @@
                       "type": "object",
                       "properties": {
                         "estudantes": {
-                          "type": "integer",
-                          "minimum": 0
-                        },
-                        "alunos": {
                           "type": "integer",
                           "minimum": 0
                         },
@@ -22248,23 +21244,6 @@
                   "type": "object",
                   "properties": {
                     "estudante": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "nome": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "id",
-                        "nome"
-                      ],
-                      "additionalProperties": false
-                    },
-                    "aluno": {
                       "type": "object",
                       "properties": {
                         "id": {

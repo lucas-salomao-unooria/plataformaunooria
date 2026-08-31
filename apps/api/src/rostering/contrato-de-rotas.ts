@@ -23,7 +23,7 @@ export const EditarTurmaSchema = z.object({
 
 export const MatricularSchema = z.object({
   usuarioId: Uuid,
-  papel: z.enum(["estudante", "aluno", "professor"]),
+  papel: z.enum(["estudante", "professor"]),
 });
 
 export const AjustarMatriculaSchema = z
@@ -68,8 +68,7 @@ export const TurmaEmListaSchema = z.object({
   turno: z.string().nullable(),
   tipo: z.string(),
   periodo: z.string().nullable(),
-  estudantes: z.number().int().nonnegative().optional(),
-  alunos: z.number().int().nonnegative(),
+  estudantes: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
 });
 
@@ -114,8 +113,7 @@ export const PessoasDaTurmaSchema = z.object({
     turno: z.string().nullable(),
     periodo: z.string(),
   }),
-  estudantes: z.array(PessoaMatriculadaSchema).optional(),
-  alunos: z.array(PessoaMatriculadaSchema),
+  estudantes: z.array(PessoaMatriculadaSchema),
   professores: z.array(PessoaMatriculadaSchema),
 });
 export const EstudantesDaTurmaSchema = PessoasDaTurmaSchema;
@@ -200,7 +198,7 @@ export const TransferirSchema = z.object({
 });
 
 export const PapelDeLotacaoQuery = z.object({
-  papel: z.enum(["estudante", "aluno", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
 });
 
 // -------------------------------------------------------------------- saída
@@ -216,8 +214,7 @@ export const EscolaDaRedeSchema = z.object({
   uf: z.string().nullable(),
   paiId: z.string().nullable(),
   pai: z.string().nullable(),
-  estudantes: z.number().int().nonnegative().optional(),
-  alunos: z.number().int().nonnegative(),
+  estudantes: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
   turmas: z.number().int().nonnegative(),
 });
@@ -257,8 +254,7 @@ export const EscolasDaPessoaSchema = z.array(EscolaDaPessoaSchema);
  */
 export const ResumoDaEscolaSchema = EscolaDaPessoaSchema.extend({
   regional: z.string().nullable(),
-  estudantes: z.number().int().nonnegative().optional(),
-  alunos: z.number().int().nonnegative(),
+  estudantes: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
   turmas: z.number().int().nonnegative(),
   /** Quantos ainda não fizeram o primeiro acesso — o que falta fazer ali. */
@@ -307,14 +303,6 @@ export const TransferenciaSchema = z.object({
  */
 export const HistoricoDoEstudanteSchema = z.object({
   estudante: z
-    .object({
-      id: Uuid,
-      nome: z.string(),
-      usuario: z.string(),
-      cpf: z.string().nullable(),
-    })
-    .optional(),
-  aluno: z
     .object({
       id: Uuid,
       nome: z.string(),

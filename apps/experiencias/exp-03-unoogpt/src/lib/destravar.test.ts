@@ -10,7 +10,7 @@ const agente = (tipo?: string) => ({ papel: 'agente', anexo: tipo ? { tipo } : n
 const estudante = { papel: 'estudante', anexo: null };
 /* Vocabulário ANTIGO, de propósito: `estaTravado` tem de continuar contando
    a fala da criança num histórico gravado antes do rename (ADR-51). */
-const estudanteLegado = { papel: 'aluno', anexo: null };
+const estudanteLegado = { papel: 'estudante', anexo: null };
 
 describe('as três perguntas prontas', () => {
   it('são de tipos diferentes, não três versões da mesma', () => {

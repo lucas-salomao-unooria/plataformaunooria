@@ -241,7 +241,7 @@ export function TurmaDetalhe({
     try {
       let resposta = await fetch(`/api/plataforma/estudantes/${linha.id}/historico${sufixo}`);
       if (!resposta.ok) {
-        resposta = await fetch(`/api/plataforma/alunos/${linha.id}/historico${sufixo}`);
+        resposta = await fetch(`/api/plataforma/estudantes/${linha.id}/historico${sufixo}`);
       }
       if (!resposta.ok) throw new Error(String(resposta.status));
       setHistorico((await resposta.json()) as Historico);
@@ -259,7 +259,7 @@ export function TurmaDetalhe({
       );
       if (!resposta.ok) {
         resposta = await fetch(
-          `/api/plataforma/alunos/${estudanteIdDaLinha}/perfis-recebidos${sufixo}`,
+          `/api/plataforma/estudantes/${estudanteIdDaLinha}/perfis-recebidos${sufixo}`,
         );
       }
       setRecebidos(resposta.ok ? ((await resposta.json()) as PerfilRecebido[]) : []);
@@ -355,7 +355,7 @@ export function TurmaDetalhe({
       );
       if (!resposta.ok) {
         resposta = await fetch(
-          `/api/plataforma/alunos/${transferir.id}/transferir?escolaId=${encodeURIComponent(escolaDestino)}`,
+          `/api/plataforma/estudantes/${transferir.id}/transferir?escolaId=${encodeURIComponent(escolaDestino)}`,
           {
             method: "POST",
             headers: { "content-type": "application/json" },

@@ -238,7 +238,6 @@ export class RunsController {
           ladoBLabel: bruto?.ladoB?.label ?? "O outro lado",
         },
         estudante: dadosEstudante,
-        aluno: dadosEstudante,
       };
     });
   }
@@ -1016,7 +1015,7 @@ export class RunsController {
     const cota = rateLimit(`reacoes:${id}`, 12, 30 * 60_000);
     if (!cota.ok) return { reacoes: [], limite: true };
 
-    const ehPostEstudante = corpo.data.tipo === "post_do_estudante" || corpo.data.tipo === "post_do_aluno";
+    const ehPostEstudante = corpo.data.tipo === "post_do_estudante";
 
     const { reacoes } = await gerarReacoes(this.ia, {
       elenco: contexto.autores.map((autor) => ({
@@ -1078,7 +1077,7 @@ export class RunsController {
     const run = await this.prisma.comTenancy((tx) =>
       tx.run.findFirst({
         where:
-          perfil === "estudante" || (perfil as string) === "aluno"
+          perfil === "estudante" || (perfil as string) === "estudante"
             ? { id, estudanteId: usuarioId, escolaId }
             : { id, escolaId, activity: { professorId: usuarioId } },
         select: { id: true, fase: true },
@@ -1093,7 +1092,7 @@ export class RunsController {
      * por causa de runs congeladas antes da mudança.
      */
     const PODE_LER = ["explicabilidade", "perdidos", "reflexao", "fim", "revelacao", "dossie"];
-    if ((perfil === "estudante" || (perfil as string) === "aluno") && !PODE_LER.includes(run.fase)) naoEncontrado();
+    if ((perfil === "estudante" || (perfil as string) === "estudante") && !PODE_LER.includes(run.fase)) naoEncontrado();
 
     try {
       return await montarRespostaDossie(this.prisma, id, escolaId);

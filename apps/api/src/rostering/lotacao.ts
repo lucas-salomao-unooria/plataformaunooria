@@ -16,7 +16,7 @@ import type { Prisma } from "@prisma/client";
  * funções servem tanto dentro quanto fora de contexto de tenancy.
  */
 
-export type PapelDeLotacao = "estudante" | "professor" | "gestor" | "aluno";
+export type PapelDeLotacao = "estudante" | "professor" | "gestor" | "estudante";
 
 /**
  * Abre (ou reabre) a lotação, sem tocar nas outras. É o caminho de professor e
@@ -34,8 +34,7 @@ export async function garantirLotacao(
     fonteId?: string | null;
   },
 ): Promise<void> {
-  const { escolaId, usuarioId, papel: papelBruto, inicio, principal = false, fonteId = null } = dados;
-  const papel = papelBruto === "aluno" ? "estudante" : papelBruto;
+  const { escolaId, usuarioId, papel, inicio, principal = false, fonteId = null } = dados;
   await tx.lotacao.upsert({
     where: { escolaId_usuarioId_papel: { escolaId, usuarioId, papel } },
     update: { fim: null, ...(principal ? { principal: true } : {}), ...(fonteId ? { fonteId } : {}) },
@@ -56,7 +55,7 @@ export async function escolaAtualDoEstudante(
   usuarioId: string,
 ): Promise<string | null> {
   const lotacao = await tx.lotacao.findFirst({
-    where: { usuarioId, papel: { in: ["estudante", "aluno"] }, fim: null },
+    where: { usuarioId, papel: "estudante", fim: null },
     select: { escolaId: true },
   });
   return lotacao?.escolaId ?? null;

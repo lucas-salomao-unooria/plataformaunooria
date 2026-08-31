@@ -316,7 +316,7 @@ try {
     p.locator('a[href^="/professor/turmas/"]').first().click(),
   ]);
   await p.waitForTimeout(1500);
-  const estudantesNominais = await p.locator("a[href^='/professor/entre-redes/vila-do-lume/estudantes/'], a[href^='/professor/entre-redes/vila-do-lume/alunos/']").count();
+  const estudantesNominais = await p.locator("a[href^='/professor/entre-redes/vila-do-lume/estudantes/'], a[href^='/professor/entre-redes/vila-do-lume/estudantes/']").count();
   await registrar("turma-do-professor", `${estudantesNominais} estudante(s) nominais na lista`);
 
   console.log("\n--- passos ---");

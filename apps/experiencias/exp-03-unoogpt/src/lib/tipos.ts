@@ -221,7 +221,7 @@ export type Anexo =
     };
 
 export interface Fala {
-  papel: "estudante" | "aluno" | "agente";
+  papel: "estudante" | "agente";
   texto: string;
   anexo: Anexo | null;
 }

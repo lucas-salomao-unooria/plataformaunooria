@@ -15,8 +15,7 @@ export interface EscolaDaRede {
   paiId: string | null;
   /** Nome da regional (ou da rede) a que a unidade pertence. */
   pai: string | null;
-  estudantes?: number;
-  alunos: number;
+  estudantes: number;
   professores: number;
   turmas: number;
 }
@@ -93,8 +92,7 @@ export class EscolasService {
       uf: e.uf,
       paiId: e.paiId,
       pai: e.pai?.nome ?? null,
-      estudantes: conta(e.id, "estudante") + conta(e.id, "aluno"),
-      alunos: conta(e.id, "estudante") + conta(e.id, "aluno"),
+      estudantes: conta(e.id, "estudante"),
       professores: conta(e.id, "professor"),
       turmas: turmas.find((t) => t.escolaId === e.id)?._count._all ?? 0,
     }));
@@ -293,8 +291,7 @@ export class EscolasService {
         regional: l.escola.pai?.nome ?? null,
         papel: l.papel,
         principal: l.principal,
-        estudantes: conta(l.escola.id, "estudante") + conta(l.escola.id, "aluno"),
-        alunos: conta(l.escola.id, "estudante") + conta(l.escola.id, "aluno"),
+        estudantes: conta(l.escola.id, "estudante"),
         professores: conta(l.escola.id, "professor"),
         turmas: turmas.find((t) => t.escolaId === l.escola.id)?._count._all ?? 0,
         /** Quantos ainda não fizeram o primeiro acesso — o que falta fazer ali. */
@@ -380,18 +377,17 @@ export class EscolasService {
    */
   async transferirEstudante(dados: {
     estudanteId?: string;
-    alunoId?: string;
     escolaDestinoId: string;
     turmaDestinoId?: string | null;
   }) {
-    const alvoId = dados.estudanteId ?? dados.alunoId;
+    const alvoId = dados.estudanteId;
     if (!alvoId) return null;
     const periodo = await this.periodoDeHoje();
     const inicio = periodo?.inicio ?? new Date();
 
     return this.prisma.$transaction(async (tx) => {
       const estudante = await tx.user.findUnique({ where: { id: alvoId } });
-      if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "aluno")) return null;
+      if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "estudante")) return null;
       const destino = await tx.escola.findUnique({ where: { id: dados.escolaDestinoId } });
       if (!destino) return null;
 
@@ -401,7 +397,7 @@ export class EscolasService {
       // --- sai da origem -------------------------------------------------
       if (origemId) {
         await tx.lotacao.updateMany({
-          where: { usuarioId: estudante.id, escolaId: origemId, papel: { in: ["estudante", "aluno"] }, fim: null },
+          where: { usuarioId: estudante.id, escolaId: origemId, papel: "estudante", fim: null },
           data: { fim: new Date(), principal: false },
         });
         await this.comEscolaNaTransacao(tx, origemId, async () => {
@@ -476,11 +472,11 @@ export class EscolasService {
       where: { id: estudanteId },
       select: { id: true, displayName: true, username: true, cpf: true, role: true },
     });
-    if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "aluno")) return null;
+    if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "estudante")) return null;
 
     const [lotacoes, matriculas, progresso] = await Promise.all([
       this.prisma.lotacao.findMany({
-        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
+        where: { usuarioId: estudanteId, papel: "estudante" },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
         /* ONDE ELA ESTÁ HOJE VEM PRIMEIRO — a tela imprime nesta ordem, e a
            primeira linha é a que o adulto lê como "a escola dela".
@@ -496,7 +492,7 @@ export class EscolasService {
         ],
       }),
       this.prisma.matricula.findMany({
-        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
+        where: { usuarioId: estudanteId, papel: "estudante" },
         include: {
           turma: { select: { nome: true, serie: true, periodoLetivo: { select: { titulo: true } } } },
         },
@@ -523,7 +519,6 @@ export class EscolasService {
 
     return {
       estudante: objetoPessoa,
-      aluno: objetoPessoa,
       escolas: lotacoes.map((l) => ({
         id: l.escola.id,
         nome: l.escola.nome,

@@ -272,7 +272,7 @@ export function PainelCientista({
         )}
 
         {falas.map((f, i) =>
-          f.papel === 'estudante' || f.papel === 'aluno' ? (
+          f.papel === 'estudante' || f.papel === 'estudante' ? (
             <div key={i} className="flex justify-end">
               <ChatBubble role="user" className="max-w-[85%]">
                 {f.texto}

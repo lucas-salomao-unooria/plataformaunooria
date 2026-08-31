@@ -190,7 +190,7 @@ function construirPayloadSessao(){
 /* Rede contra o próprio descuido: se algum dia alguém adicionar um campo de nome ao
    payload, isto quebra aqui, na máquina do desenvolvedor, em vez de gravar dado de criança
    num banco. O servidor faz a mesma checagem — as duas pontas, de propósito. */
-const CHAVES_PROIBIDAS = ['nome','name','playername','aluno','estudante','crianca','criança','apelido'];
+const CHAVES_PROIBIDAS = ['nome','name','playername','estudante','crianca','criança','apelido'];
 function verificarSemNome(obj, caminho){
   caminho = caminho || '$';
   if(obj === null || typeof obj !== 'object') return [];

@@ -354,7 +354,7 @@ describe("importar para a atividade (Ato 1)", () => {
  *
  * Os testes acima provam cada elo (colapso → `normalizarPerfil` → linha em
  * `exp_01_exp_70_perfis_importados`). Este prova o elo final, que é o único que importa para o
- * aluno: `resolverLargada` — a função que o `POST /api/runs` chama quando a
+ * estudante: `resolverLargada` — a função que o `POST /api/runs` chama quando a
  * criança entra na atividade — devolvendo `ladoOrigem: "perfil"` em vez de
  * `"sorteio"`.
  *

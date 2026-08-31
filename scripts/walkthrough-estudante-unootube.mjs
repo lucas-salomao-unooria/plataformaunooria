@@ -61,7 +61,7 @@ try {
 
   // ---- hub do estudante -------------------------------------------------------
   // O roteamento não olha mais a série: o estudante escolhe a missão no hub dele.
-  await p.waitForURL((url) => url.pathname.includes("/estudante") || url.pathname.includes("/aluno"), { timeout: 30_000 });
+  await p.waitForURL((url) => url.pathname.includes("/estudante"), { timeout: 30_000 });
   const cartao = p.locator("a", { hasText: "UnooTube" }).first();
   await cartao.waitFor({ timeout: 15_000 });
   await registrar("hub-do-estudante", `${await p.locator("main ul > li").count()} missões`);
@@ -231,7 +231,7 @@ try {
   // seções do DS: `data-uni-theme` no clone e `.unooria-theme-dark` na
   // plataforma. Sem este passo, o modo escuro nunca entra no smoke visual.
   await tela.locator('button[aria-label="Abrir seu perfil"]').click();
-  await tela.locator("h1", { hasText: /Aluno|Estudante/i }).first().waitFor({ timeout: 15_000 });
+  await tela.locator("h1", { hasText: /Estudante|Estudante/i }).first().waitFor({ timeout: 15_000 });
   await tela.locator("button", { hasText: "Escuro" }).click();
   await p.waitForTimeout(600);
   const temaEscuro = await tela.locator("html").getAttribute("data-uni-theme");

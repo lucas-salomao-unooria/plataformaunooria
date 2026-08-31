@@ -100,8 +100,7 @@ export interface PerfilObservado {
  */
 export interface MetricasDaRun {
   runId: string;
-  estudante?: { username: string; displayName: string };
-  aluno: { username: string; displayName: string };
+  estudante: { username: string; displayName: string };
   fase: string;
   /** `Date` no servidor, string no JSON. */
   iniciadaEm: string;
@@ -231,8 +230,7 @@ export interface AnaliseDaTurma {
     porComponente: { chave: string; rotulo: string; media: number }[];
   };
 
-  estudantes?: MetricasDaRun[];
-  alunos: MetricasDaRun[];
+  estudantes: MetricasDaRun[];
 }
 
 /* ------------------------------------------------------------------ */

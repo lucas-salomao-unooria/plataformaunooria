@@ -201,7 +201,7 @@ try {
   const abrir = p.locator("table tbody a", { hasText: "Abrir" }).first();
   exigir((await abrir.count()) > 0, "nenhum estudante com partida para abrir");
   await abrir.click();
-  await p.waitForURL((url) => /vila-do-lume\/(alunos|estudantes)\//.test(url.pathname), { timeout: 20_000 });
+  await p.waitForURL((url) => /vila-do-lume\/(estudantes|estudantes)\//.test(url.pathname), { timeout: 20_000 });
   await p.locator("text=Os dez valores").first().waitFor({ timeout: 20_000 });
   await p.waitForTimeout(600);
 

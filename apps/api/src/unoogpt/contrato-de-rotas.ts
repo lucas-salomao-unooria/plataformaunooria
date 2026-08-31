@@ -381,7 +381,6 @@ export const TurmasDoUnoogptSchema = z.object({
       nome: z.string(),
       serie: z.string(),
       estudantes: z.number().int().nonnegative().optional(),
-      alunos: z.number().int().nonnegative().optional(),
     }),
   ),
 });
@@ -404,7 +403,6 @@ export const TurmaDoProfessorSchema = z.object({
   relogio: RelogioDoProfessorSchema,
   retrato: z.object({
     estudantes: z.number().int().nonnegative().optional(),
-    alunos: z.number().int().nonnegative().optional(),
     comecaram: z.number().int().nonnegative(),
     concluiram: z.number().int().nonnegative(),
     viramConflito: z.number().int().nonnegative(),
@@ -459,7 +457,6 @@ export const LinhaDeLeituraDoUnoogptSchema = z.union([
 
 export const EstudanteDoProfessorSchema = z.object({
   estudante: z.object({ id: Uuid, nome: z.string() }).optional(),
-  aluno: z.object({ id: Uuid, nome: z.string() }).optional(),
   versaoLeitura: z.number().int(),
   linhas: z.array(LinhaDeLeituraDoUnoogptSchema),
   porGrau: z.object({

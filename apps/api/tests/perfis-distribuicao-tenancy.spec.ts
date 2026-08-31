@@ -9,7 +9,7 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * escola.
  *
  * Este teste existe porque `distribuicaoDaTurma` rodava
- * `user.findMany({ where: { role: 'aluno' } })` — sem `escolaId`. E `users` está
+ * `user.findMany({ where: { role: 'estudante' } })` — sem `escolaId`. E `users` está
  * FORA da RLS: a lista de tabelas com policy em `20260824145301_init` não a
  * inclui, e o `comTenancy` só arma `app.escola_id`, sem tocar no `where` do
  * Prisma. O painel do professor listava nome e login de crianças de toda escola
@@ -97,8 +97,8 @@ describe("distribuição da atividade e as fronteiras da escola", () => {
   test("só lista estudantes da escola da atividade", async () => {
     const distribuicao = await distribuicaoDaTurma(prisma, activityId, null, ESCOLA_A);
 
-    expect(distribuicao.alunos).toHaveLength(2);
-    expect(distribuicao.alunos.map((a) => a.username).sort()).toEqual([
+    expect(distribuicao.estudantes).toHaveLength(2);
+    expect(distribuicao.estudantes.map((a) => a.username).sort()).toEqual([
       "distrib.a0",
       "distrib.a1",
     ]);
@@ -107,9 +107,9 @@ describe("distribuição da atividade e as fronteiras da escola", () => {
   test("o estudante da outra escola não aparece nem pelo nome", async () => {
     const distribuicao = await distribuicaoDaTurma(prisma, activityId, null, ESCOLA_A);
 
-    const nomes = distribuicao.alunos.map((a) => a.displayName);
+    const nomes = distribuicao.estudantes.map((a) => a.displayName);
     expect(nomes).not.toContain("Estudante da outra escola");
-    expect(distribuicao.alunos.some((a) => a.username.startsWith("distrib.b"))).toBe(false);
+    expect(distribuicao.estudantes.some((a) => a.username.startsWith("distrib.b"))).toBe(false);
   });
 
   /**

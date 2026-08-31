@@ -95,7 +95,7 @@ describe("hierarquia: agrupa, não autoriza", () => {
   test("filtrar por tipo separa as unidades das regionais", async () => {
     const regionais = await escolas.listar({ tipo: "regional", busca: "DE Teste" });
     expect(regionais.map((e) => e.id).sort()).toEqual([OUTRA_REGIONAL, REGIONAL].sort());
-    expect(regionais.every((e) => e.turmas === 0 && e.alunos === 0)).toBe(true);
+    expect(regionais.every((e) => e.turmas === 0 && e.estudantes === 0)).toBe(true);
   });
 
   test("filtrar por município é o outro caminho de montar o lote", async () => {
@@ -180,7 +180,7 @@ describe("panorama de quem tem muitas escolas", () => {
     );
     const resumo = await escolas.resumoDasEscolasDaPessoa(supervisorId);
     const unidade = resumo.find((e) => e.id === ESCOLAS[0]);
-    expect(unidade?.alunos).toBe(1);
+    expect(unidade?.estudantes).toBe(1);
     expect(unidade?.semPrimeiroAcesso).toBe(1);
   });
 
@@ -191,8 +191,8 @@ describe("panorama de quem tem muitas escolas", () => {
     const naSegunda = await rostering.turmasDaEscola(ESCOLAS[1]!);
     expect(naPrimeira.map((t) => t.nome)).toEqual(["6A"]);
     expect(naSegunda.map((t) => t.nome)).toEqual(["6A"]);
-    expect(naPrimeira[0]?.alunos).toBe(1);
-    expect(naSegunda[0]?.alunos).toBe(0);
+    expect(naPrimeira[0]?.estudantes).toBe(1);
+    expect(naSegunda[0]?.estudantes).toBe(0);
   });
 
   test("encerrar uma lotação tira só aquela escola do panorama", async () => {

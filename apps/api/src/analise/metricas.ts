@@ -28,7 +28,6 @@ import type { Prisma } from '@prisma/client';
 export interface MetricasDaRun {
   runId: string;
   estudante: { username: string; displayName: string };
-  aluno: { username: string; displayName: string };
   fase: string;
   iniciadaEm: Date;
   encerradaEm: Date | null;
@@ -245,7 +244,6 @@ export async function metricasDaAtividade(prisma: Prisma.TransactionClient, acti
     return {
       runId: run.id,
       estudante: run.estudante,
-      aluno: run.estudante,
       fase: run.fase,
       iniciadaEm: run.startedAt,
       encerradaEm: run.finishedAt,

@@ -42,4 +42,4 @@ export interface ComentarioCliente {
 export type ItemFeed =
   | { tipo: 'post'; post: FeedPostCliente }
   | { tipo: 'sugestoes'; perfis: PerfilCliente[] }
-  | { tipo: 'post_do_estudante' | 'post_do_aluno'; texto: string; template: string; criadoEm: number };
+  | { tipo: 'post_do_estudante'; texto: string; template: string; criadoEm: number };

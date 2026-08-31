@@ -5,7 +5,7 @@ import { CORES_DE_SERIE } from './cores';
 /** Dossiê em texto (doc 02 §5.8): insumo do relatório em dupla do doc 09. */
 export function dossieEmTexto(dados: RespostaDossie): string {
   const { dossie, posts } = dados;
-  const nomeEstudante = dossie.estudante?.displayName ?? dossie.aluno?.displayName ?? 'Estudante';
+  const nomeEstudante = dossie.estudante?.displayName ?? 'Estudante';
   const pct = (valor: number) => `${Math.round(valor * 100)}%`;
   const rotulo =
     dossie.ladoDominante === 'A'
@@ -194,7 +194,7 @@ export function dossieEmPng(dados: RespostaDossie): Promise<Blob | null> {
 
   ctx.fillStyle = 'rgba(255,255,255,0.45)';
   ctx.font = '24px -apple-system, Helvetica, Arial, sans-serif';
-  const nomeEstudantePng = dossie.estudante?.displayName ?? dossie.aluno?.displayName ?? 'Estudante';
+  const nomeEstudantePng = dossie.estudante?.displayName ?? 'Estudante';
   ctx.fillText(`${nomeEstudantePng} · simulação educacional · posts gerados por IA`, 80, altura - 70);
 
   return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), 'image/png'));

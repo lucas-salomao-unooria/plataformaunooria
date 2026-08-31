@@ -88,7 +88,7 @@ describe("contrato do payload", () => {
   test("campo de nome de criança é RECUSADO, nunca descartado em silêncio", () => {
     // O bug do app de origem: com `.refine()`, zod removia a chave antes de
     // checar, e o nome sumia sem ninguém saber que tinha chegado.
-    for (const chave of ["nome", "nomeCompleto", "playerName", "nome_do_aluno", "cpf"]) {
+    for (const chave of ["nome", "nomeCompleto", "playerName", "nome_do_estudante", "cpf"]) {
       const r = validarPayload({ ...partidaCompleta(), [chave]: "Lara" });
       expect(r.ok).toBe(false);
       if (!r.ok) expect(r.motivo).toMatch(/nome de criança/);

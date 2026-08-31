@@ -112,7 +112,7 @@ try {
     { timeout: 10_000 },
   );
   await p.click("button[type=submit]");
-  await p.waitForURL((url) => url.pathname.includes("/estudante") || url.pathname.includes("/aluno"), { timeout: 30_000 });
+  await p.waitForURL((url) => url.pathname.includes("/estudante"), { timeout: 30_000 });
   await registrar("hub-do-estudante");
 
   // ---- entra na experiência ---------------------------------------------

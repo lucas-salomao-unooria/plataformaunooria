@@ -193,7 +193,7 @@ export function tipoDeTurma(bruto: string): string {
 /** `enrollments.role` — só `student` e `teacher` viram matrícula aqui. */
 export function papelDaMatricula(bruto: string): "estudante" | "professor" | null {
   const valor = chave(bruto).replace(/^ext:/, "");
-  if (valor === "student" || valor === "aluno" || valor === "estudante") return "estudante";
+  if (valor === "student" || valor === "estudante") return "estudante";
   if (valor === "teacher" || valor === "professor") return "professor";
   return null;
 }

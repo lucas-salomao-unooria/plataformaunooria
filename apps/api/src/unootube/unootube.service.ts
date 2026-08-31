@@ -51,15 +51,13 @@ export interface RespostaRanking {
 /** O tipo usa `VideoPublico`: `factual` é impossível aqui, não só omitido. */
 export interface RespostaSessao extends RespostaEstado {
   catalogo: { videos: VideoPublico[] };
-  estudante?: { nome: string; avatar: string };
-  aluno: { nome: string; avatar: string };
+  estudante: { nome: string; avatar: string };
   ranking: RespostaRanking | null;
 }
 
 export interface RespostaTurma {
   turma: { id: string; nome: string; serie: string };
-  estudantes?: LinhaTurma[];
-  alunos: LinhaTurma[];
+  estudantes: LinhaTurma[];
   resumo: ResumoTurma;
 }
 
@@ -118,7 +116,6 @@ export class UnootubeService {
         ...respostaDe(estado),
         catalogo: { videos: VIDEOS.map(semGabarito) },
         estudante: { nome: estudante.displayName, avatar: avatarDe(estudante) },
-        aluno: { nome: estudante.displayName, avatar: avatarDe(estudante) },
         ranking: estado.rankingDesbloqueado ? this.rankingDe(estudante, estado) : null,
       };
     }, escolaId);
@@ -181,7 +178,6 @@ export class UnootubeService {
           nome: t.nome,
           serie: t.serie,
           estudantes: t._count.estudantes,
-          alunos: t._count.estudantes,
         })),
       };
     }, escolaId);
@@ -211,7 +207,7 @@ export class UnootubeService {
       }
 
       const estudantes = await tx.user.findMany({
-        where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
+        where: { escolaId, turmaId, role: "estudante" },
         select: {
           id: true,
           displayName: true,
@@ -240,7 +236,7 @@ export class UnootubeService {
         };
       });
 
-      return { turma, estudantes: linhas, alunos: linhas, resumo: resumirTurma(linhas) };
+      return { turma, estudantes: linhas, resumo: resumirTurma(linhas) };
     }, escolaId);
   }
 

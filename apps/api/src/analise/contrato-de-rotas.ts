@@ -53,7 +53,6 @@ const InvestigacaoSchema = z.object({
 export const MetricasDaRunSchema = z.object({
   runId: Uuid,
   estudante: z.object({ username: z.string(), displayName: z.string() }),
-  aluno: z.object({ username: z.string(), displayName: z.string() }),
   fase: z.string(),
   iniciadaEm: z.string().datetime(),
   encerradaEm: z.string().datetime().nullable(),
@@ -170,8 +169,7 @@ export const AnaliseDaTurmaSchema = z.object({
       z.object({ chave: z.string(), rotulo: z.string(), media: z.number() }),
     ),
   }),
-  estudantes: z.array(MetricasDaRunSchema).optional(),
-  alunos: z.array(MetricasDaRunSchema),
+  estudantes: z.array(MetricasDaRunSchema),
 });
 
 // ------------------------------------------------------------ nível produto

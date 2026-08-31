@@ -87,7 +87,7 @@ describe("sessão", () => {
     });
     expect(r.catalogo.videos).toHaveLength(21);
     expect(JSON.stringify(r)).not.toContain("factual");
-    expect(r.aluno).toEqual({ nome: "Ana Teste", avatar: "A" });
+    expect(r.estudante).toEqual({ nome: "Ana Teste", avatar: "A" });
     expect(r.ranking).toBeNull();
     expect(await prisma.unootubeSessao.count({ where: { escolaId: ESCOLA } })).toBe(0);
   });
@@ -178,8 +178,8 @@ describe("professor", () => {
   test("resultados da turma: inclui quem não iniciou, exclui estudante sem turma, resume", async () => {
     const r = await service.resultadosDaTurma(ESCOLA, turmaId);
     expect(r.turma).toMatchObject({ id: turmaId, nome: "4A", serie: "4EF" });
-    expect((r.estudantes ?? r.alunos).map((a) => a.nome)).toEqual(["Ana Teste", "Bia Teste"]);
-    const ana = (r.estudantes ?? r.alunos).find((a) => a.nome === "Ana Teste")!;
+    expect((r.estudantes).map((a) => a.nome)).toEqual(["Ana Teste", "Bia Teste"]);
+    const ana = (r.estudantes).find((a) => a.nome === "Ana Teste")!;
     expect(ana).toMatchObject({
       iniciou: true,
       salvos: 3,
@@ -188,7 +188,7 @@ describe("professor", () => {
       credibilidadeAdicionada: true,
     });
     expect(ana.concluidoEm).not.toBeNull();
-    const bia = (r.estudantes ?? r.alunos).find((a) => a.nome === "Bia Teste")!;
+    const bia = (r.estudantes).find((a) => a.nome === "Bia Teste")!;
     expect(bia).toMatchObject({ iniciou: true, salvos: 1, credibilidadeAdicionada: false });
     expect(r.resumo).toMatchObject({ total: 2, iniciaram: 2, concluiram: 1, distribuicaoFontes: { "3": 1 } });
     expect(JSON.stringify(r)).not.toContain(estudanteSemTurma);
@@ -196,7 +196,7 @@ describe("professor", () => {
 
   test("lista de turmas da escola", async () => {
     const r = await service.turmas(ESCOLA);
-    expect(r.turmas).toEqual([{ id: turmaId, nome: "4A", serie: "4EF", estudantes: 2, alunos: 2 }]);
+    expect(r.turmas).toEqual([{ id: turmaId, nome: "4A", serie: "4EF", estudantes: 2}]);
   });
 });
 

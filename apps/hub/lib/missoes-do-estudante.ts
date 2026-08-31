@@ -8,7 +8,7 @@ import { ANOS, MISSOES_TRANSVERSAIS } from "./entre-redes/catalogo";
  * vazio. O estudante escolhe a missão; a série volta a filtrar quando o catálogo
  * cobrir os 12 anos (a fonte então é `experiencias.series` do manifesto).
  *
- * Só entra missão com copy de estudante (`missao.estudante` ou `missao.aluno`): a copy do professor fala
+ * Só entra missão com copy de estudante (`missao.estudante` ou `missao.estudante`): a copy do professor fala
  * em competência, ficha e — no Instanooria — entrega a virada da missão. Quem
  * publicar uma missão nova precisa escrever essa copy, senão ela não aparece
  * para o estudante (o teste deste arquivo cobra isso).

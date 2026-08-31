@@ -141,7 +141,7 @@ export class TelemetryController {
     }
 
     const lote = z
-      .array(EventoSchema.extend({ estudanteId: z.string().optional(), alunoId: z.string().optional(), escolaId: z.string() }))
+      .array(EventoSchema.extend({ estudanteId: z.string().optional(), escolaId: z.string() }))
       .safeParse(eventos);
     if (!lote.success) {
       console.warn("[telemetria/ingest] lote inválido — descartado");
@@ -166,8 +166,7 @@ export class TelemetryController {
         // processo que morre antes do flush.
         const linhas = doGrupo.map(
           (e) => {
-            /* Bundle publicado antes do rename ainda manda `alunoId` (ADR-51). */
-            const estudanteId = e.estudanteId ?? e.alunoId ?? "";
+            const estudanteId = e.estudanteId ?? "";
             return Prisma.sql`(
             ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${estudanteId}, ${e.expId},
             ${e.expVersion}, ${e.sessaoId}::uuid, ${e.verbo}, ${e.objeto},

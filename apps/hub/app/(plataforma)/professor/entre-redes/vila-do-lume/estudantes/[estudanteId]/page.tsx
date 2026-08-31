@@ -63,7 +63,7 @@ export default async function EstudanteDaVilaPage({
     `/vila/professor/estudantes/${encodeURIComponent(estudanteId)}`,
   ).catch(async () => {
     return apiDoServidor<{ relatorio: RelatorioDaPartida | null }>(
-      `/vila/professor/alunos/${encodeURIComponent(estudanteId)}`,
+      `/vila/professor/estudantes/${encodeURIComponent(estudanteId)}`,
     );
   });
   const relatorio = resposta?.relatorio ?? null;

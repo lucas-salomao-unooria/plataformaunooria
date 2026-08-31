@@ -63,11 +63,11 @@ export class PortabilidadeService {
       where: { id: estudanteId },
       select: { id: true, displayName: true, cpf: true, role: true },
     });
-    if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "aluno") || !estudante.cpf) return null;
+    if (!estudante || (estudante.role !== "estudante" && (estudante.role as string) !== "estudante") || !estudante.cpf) return null;
 
     const [lotacoes, matriculas, progresso, experiencias] = await Promise.all([
       this.prisma.lotacao.findMany({
-        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
+        where: { usuarioId: estudanteId, papel: "estudante" },
         include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
         /* Ordem estável: o documento é ASSINADO, e o hash cobre o JSON canônico.
            Com `inicio` DATE empatando numa transferência do mesmo dia, duas
@@ -75,7 +75,7 @@ export class PortabilidadeService {
         orderBy: [{ inicio: "asc" }, { escolaId: "asc" }],
       }),
       this.prisma.matricula.findMany({
-        where: { usuarioId: estudanteId, papel: { in: ["estudante", "aluno"] } },
+        where: { usuarioId: estudanteId, papel: "estudante" },
         include: {
           turma: {
             select: { nome: true, serie: true, periodoLetivo: { select: { titulo: true } } },
@@ -231,7 +231,7 @@ export class PortabilidadeService {
        é ato da escola (planilha ou OneRoster), e só depois o perfil se anexa. */
     const digitos = perfil.titular.cpf.replace(/\D/g, "");
     const estudante = await this.prisma.user.findFirst({
-      where: { cpf: digitos, role: { in: ["estudante", "aluno"] } },
+      where: { cpf: digitos, role: "estudante" },
       select: { id: true },
     });
     if (!estudante) {

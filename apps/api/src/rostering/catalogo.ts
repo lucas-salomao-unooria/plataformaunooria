@@ -33,8 +33,6 @@ export type PapelImportavel = (typeof PAPEIS_IMPORTAVEIS)[number];
 export const SINONIMOS_DE_PAPEL: Readonly<Record<string, PapelImportavel>> = {
   estudante: "estudante",
   estudantes: "estudante",
-  aluno: "estudante",
-  alunos: "estudante",
   discente: "estudante",
   student: "estudante",
   professor: "professor",

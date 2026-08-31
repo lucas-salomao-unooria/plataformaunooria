@@ -57,8 +57,7 @@ export const AtividadeEmListaSchema = z.object({
   status: z.string(),
   etapa: z.string(),
   criadoEm: z.string().datetime(),
-  estudantes: z.number().int().nonnegative().optional(),
-  alunos: z.number().int().nonnegative(),
+  estudantes: z.number().int().nonnegative(),
   /** Sinônimo de `estudantes`/`estudantes` (1 run = 1 estudante). As telas portadas usam os dois
    *  nomes; manter ambos evita drift no porte. */
   sessoes: z.number().int().nonnegative(),
@@ -105,8 +104,7 @@ export const DetalheDaAtividadeSchema = z.object({
         .object({ id: Uuid, nome: z.string(), serie: z.string() })
         .nullable(),
       _count: z.object({ runs: z.number().int().nonnegative() }),
-      estudantes: z.number().int().nonnegative().optional(),
-      alunos: z.number().int().nonnegative(),
+      estudantes: z.number().int().nonnegative(),
       postsAprovados: z.number().int().nonnegative(),
     })
     .passthrough(),
@@ -173,14 +171,7 @@ const ComponenteDeImersaoSchema = z.object({
  *  é o número que faz o professor levantar da cadeira. */
 export const LinhaDoMonitorSchema = z.object({
   runId: Uuid,
-  estudante: z
-    .object({
-      username: z.string(),
-      displayName: z.string(),
-      avatar: z.string().nullable(),
-    })
-    .optional(),
-  aluno: z.object({
+  estudante: z.object({
     username: z.string(),
     displayName: z.string(),
     avatar: z.string().nullable(),
@@ -240,17 +231,7 @@ export const MonitorSchema = z.object({
 
 /** Tudo o que UM estudante fez, para o professor ler DURANTE a atividade. */
 export const EstudanteDaAtividadeSchema = z.object({
-  estudante: z
-    .object({
-      username: z.string(),
-      displayName: z.string(),
-      /** APELIDO dentro da ficção do Instanooria, nunca identidade em tela de
-       *  professor ou relatório. */
-      nomeNoApp: z.string().nullable(),
-      avatar: z.string().nullable(),
-    })
-    .optional(),
-  aluno: z.object({
+  estudante: z.object({
     username: z.string(),
     displayName: z.string(),
     /** APELIDO dentro da ficção do Instanooria, nunca identidade em tela de

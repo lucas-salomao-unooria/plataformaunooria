@@ -272,7 +272,7 @@ async function computarDossieNaTransacao(prisma: Transacao, runId: string): Prom
 
   return {
     versaoDoRelatorio: VERSAO_DO_RELATORIO,
-    aluno: { displayName: run.estudante.displayName, avatar: run.estudante.avatar ?? 'avatar-01' },
+    estudante: { displayName: run.estudante.displayName, avatar: run.estudante.avatar ?? 'avatar-01' },
     atividade: {
       titulo: run.activity.titulo,
       perguntaChave: run.activity.perguntaChave,

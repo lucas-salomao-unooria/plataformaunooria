@@ -25,7 +25,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
   if (
     embed.manifesto &&
     (embed.manifesto.publico ?? "estudante") !== "estudante" &&
-    embed.manifesto.publico !== "aluno"
+    embed.manifesto.publico !== "estudante"
   ) {
     notFound();
   }

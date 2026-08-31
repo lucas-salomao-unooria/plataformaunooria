@@ -94,7 +94,7 @@ export function ComentariosSheet({
 
           {comentarios.map((comentario) => {
             const curtido = curtidos.has(comentario.id);
-            const ehDoEstudante = comentario.doEstudante || comentario.doEstudante;
+            const ehDoEstudante = comentario.doEstudante;
             return (
               <li key={comentario.id} className="flex items-start gap-2.5 py-2.5">
                 <AvatarPerfil seed={ehDoEstudante ? avatar : comentario.handle} tamanho={24} />

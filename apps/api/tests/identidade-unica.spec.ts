@@ -21,14 +21,12 @@ afterAll(() => prisma.$disconnect());
  * `telemetria_eventos` é particionada e escrita em lote pelo push do Pub/Sub —
  * uma FK por linha cobraria uma verificação a cada evento no pico da manhã.
  * `progresso` e `ia_uso_diario` têm chave composta e são escritas no caminho
- * quente. Nos três, o `aluno_id`/`usuario_id` continua sendo o id de `users`;
+ * quente. Nos três, o `estudante_id`/`usuario_id` continua sendo o id de `users`;
  * o que não existe é a garantia do banco.
  */
 const SEM_CHAVE_POR_DECISAO = new Set([
   "telemetria_eventos.estudante_id",
-  "telemetria_eventos.aluno_id",
   "progresso.estudante_id",
-  "progresso.aluno_id",
   "ia_uso_diario.usuario_id",
 ]);
 
@@ -47,7 +45,7 @@ describe("identidade única", () => {
       SELECT c.table_name || '.' || c.column_name AS coluna
         FROM information_schema.columns c
        WHERE c.table_schema = 'public'
-         AND c.column_name IN ('estudante_id', 'aluno_id', 'professor_id', 'usuario_id')
+         AND c.column_name IN ('estudante_id', 'professor_id', 'usuario_id')
          AND NOT EXISTS (
            SELECT 1
              FROM information_schema.table_constraints tc
@@ -150,7 +148,7 @@ describe("identidade única", () => {
       SELECT count(*)::bigint AS total
         FROM users u
        WHERE u.escola_id IS NOT NULL
-         AND u.role IN ('estudante','aluno','professor','gestor')
+         AND u.role IN ('estudante','professor','gestor')
          AND u.escola_id NOT LIKE 'teste-%'
          AND NOT EXISTS (
            SELECT 1 FROM lotacoes l
@@ -165,12 +163,12 @@ describe("identidade única", () => {
       SELECT count(*)::bigint AS total
         FROM users u
        WHERE u.turma_id IS NOT NULL
-         AND u.role IN ('estudante','aluno')
+         AND u.role IN ('estudante')
          AND u.escola_id NOT LIKE 'teste-%'
          AND NOT EXISTS (
            SELECT 1 FROM matriculas m
             WHERE m.usuario_id = u.id AND m.turma_id = u.turma_id
-              AND m.papel IN ('estudante','aluno') AND m.fim IS NULL
+              AND m.papel IN ('estudante') AND m.fim IS NULL
          )
     `;
     expect(Number(divergentes[0]?.total ?? 0)).toBe(0);

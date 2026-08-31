@@ -54,7 +54,7 @@ export function estaTravado(
   for (let i = falas.length - 1; i >= 0; i -= 1) {
     const f = falas[i];
     if (!f) continue;
-    if (f.papel === 'estudante' || f.papel === 'aluno') continue;
+    if (f.papel === 'estudante' || f.papel === 'estudante') continue;
     const tipo = f.anexo?.tipo;
     if (tipo === 'tendencia' || tipo === 'opcoes') return false;
     if (tipo === 'alocacao' || tipo === 'desfecho') return false;

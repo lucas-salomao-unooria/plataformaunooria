@@ -57,8 +57,7 @@ export interface AnaliseDaTurma {
     porComponente: { chave: string; rotulo: string; media: number }[];
   };
 
-  estudantes?: MetricasDaRun[];
-  alunos: MetricasDaRun[];
+  estudantes: MetricasDaRun[];
 }
 
 const vazia = (): Celula => ({ A: 0, duvida: 0, B: 0 });
@@ -159,11 +158,11 @@ export async function analiseDaTurma(
       concluiram: estudantes.filter((estudante) => estudante.conclusao !== null).length,
       semConcluir: estudantes
         .filter((estudante) => estudante.conclusao === null)
-        .map((estudante) => ({ ...estudante.aluno, fase: estudante.fase })),
+        .map((estudante) => ({ ...estudante.estudante, fase: estudante.fase })),
       inverteram: estudantes
         .filter((estudante) => estudante.bolha.inverteu)
         .map((estudante) => ({
-          ...estudante.aluno,
+          ...estudante.estudante,
           de: rotulo(estudante.bolha.ladoInicial),
           para: rotulo(estudante.ladoDominante),
           bloco: estudante.bolha.blocoDaInversao,
@@ -194,7 +193,6 @@ export async function analiseDaTurma(
       })),
     },
     estudantes,
-    alunos: estudantes,
   };
 }
 
@@ -255,14 +253,14 @@ export function turmaEmCsv(analise: AnaliseDaTurma): string {
     'publicou',
   ];
 
-  const linhas = (analise.estudantes ?? analise.alunos).map((estudante) => {
+  const linhas = (analise.estudantes).map((estudante) => {
     const outro = estudante.bolha.ladoInicial === 'A' ? 'B' : 'A';
     const ponto = (chave: string) =>
       num(estudante.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0);
 
     return [
-      texto(estudante.estudante?.displayName ?? estudante.aluno.displayName),
-      estudante.estudante?.username ?? estudante.aluno.username,
+      texto(estudante.estudante?.displayName ?? estudante.estudante.displayName),
+      estudante.estudante?.username ?? estudante.estudante.username,
       estudante.fase,
       estudante.perfilJogo?.dominante ?? 'ausente',
       estudante.perfilJogo?.origem ?? 'ausente',

@@ -32,7 +32,7 @@ export class UsuariosService {
     const where = {
       escolaId,
       ...(filtro.papel
-        ? { role: filtro.papel === "aluno" || filtro.papel === "estudante" ? { in: ["estudante", "aluno"] } : filtro.papel }
+        ? { role: filtro.papel === "estudante" ? { in: ["estudante"] } : filtro.papel }
         : {}),
       ...(filtro.situacao === "ativos" ? { ativo: true } : {}),
       ...(filtro.situacao === "inativos" ? { ativo: false } : {}),
@@ -129,11 +129,11 @@ export class UsuariosService {
       data: {
         ...(dados.nome !== undefined ? { displayName: dados.nome } : {}),
         ...(dados.email !== undefined ? { email: dados.email } : {}),
-        /* `aluno` ainda entra pelo schema (tolerância do vocabulário antigo,
+        /* `estudante` ainda entra pelo schema (tolerância do vocabulário antigo,
            ADR-51), mas `users.role` tem CHECK e só admite `estudante` — sem esta
            normalização o valor cru virava 500 em vez de um 400 (ADR-53). */
         ...(dados.papel !== undefined
-          ? { role: dados.papel === "aluno" ? "estudante" : dados.papel }
+          ? { role: dados.papel }
           : {}),
         ...(dados.ativo !== undefined ? { ativo: dados.ativo } : {}),
         ...(dados.cpf !== undefined ? { cpf: dados.cpf } : {}),

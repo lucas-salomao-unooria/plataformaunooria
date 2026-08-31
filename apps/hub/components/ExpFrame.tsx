@@ -67,7 +67,6 @@ export function ExpFrame(props: {
           protocolVersion: PROTOCOL_VERSION,
           token: atual.current.token,
           estudante: estudantePayload,
-          aluno: estudantePayload,
           apiUrl: atual.current.apiUrl,
           config: atual.current.config ?? {},
         });

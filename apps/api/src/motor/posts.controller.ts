@@ -47,7 +47,7 @@ export class PostsController {
       if (!post) naoEncontrado();
 
       const daSessao =
-        perfil === "estudante" || (perfil as string) === "aluno"
+        perfil === "estudante" || (perfil as string) === "estudante"
           ? await tx.comentarioDaSessao.findMany({
               where: { postId: id, run: { estudanteId: usuarioId } },
               orderBy: { createdAt: "asc" },

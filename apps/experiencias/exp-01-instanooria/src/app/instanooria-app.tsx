@@ -101,16 +101,13 @@ export function InstanooriaApp({
   faseInicial,
   missao,
   estudante,
-  aluno,
 }: {
   runIdInicial: string | null;
   faseInicial: FaseCliente;
   missao: MissaoCliente;
   estudante?: EstudanteCliente;
-  /** @deprecated Alias do payload anterior ao rename (ADR-51). */
-  aluno?: EstudanteCliente;
 }) {
-  const dadosEstudante = (estudante ?? aluno)!;
+  const dadosEstudante = (estudante)!;
   const [runId, setRunId] = useState(runIdInicial);
   const [fase, setFase] = useState<FaseCliente>(faseInicial);
   const [itens, setItens] = useState<ItemFeed[]>([]);

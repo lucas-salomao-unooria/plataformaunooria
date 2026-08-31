@@ -59,7 +59,7 @@ export default async function EstudantePage({
     `/unoogpt/professor/estudantes/${encodeURIComponent(estudanteId)}`,
   ).catch(async () => {
     return apiDoServidor<RelatorioDoEstudante>(
-      `/unoogpt/professor/alunos/${encodeURIComponent(estudanteId)}`,
+      `/unoogpt/professor/estudantes/${encodeURIComponent(estudanteId)}`,
     );
   });
 
@@ -202,13 +202,13 @@ export default async function EstudantePage({
                 <li
                   key={`${f.criadoEm}-${i}`}
                   className={`rounded-lg p-3 text-[13px] leading-relaxed ${
-                    f.papel === "estudante" || (f.papel as string) === "aluno"
+                    f.papel === "estudante" || (f.papel as string) === "estudante"
                       ? "bg-unooria-neutral-100 text-unooria-neutral-950"
                       : "border border-unooria-neutral-200 text-unooria-neutral-800"
                   }`}
                 >
                   <span className="mr-2 text-[11px] uppercase tracking-widest text-unooria-neutral-500">
-                    {f.papel === "estudante" || (f.papel as string) === "aluno" ? "estudante" : "assistente"}
+                    {f.papel === "estudante" || (f.papel as string) === "estudante" ? "estudante" : "assistente"}
                     {f.debitou && " · gastou pergunta"}
                     {relatorio.tentativas.length > 1 && ` · rodada ${f.tentativa}`}
                   </span>

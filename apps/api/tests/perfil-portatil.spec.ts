@@ -68,7 +68,7 @@ beforeAll(async () => {
   const estudante = await prisma.user.create({
     data: {
       escolaId: ESCOLA,
-      username: "pp.aluno",
+      username: "pp.estudante",
       displayName: "Ana Portátil da Silva",
       passwordHash: "x",
       role: "estudante",

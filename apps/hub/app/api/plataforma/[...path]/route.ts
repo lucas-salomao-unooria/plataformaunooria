@@ -29,7 +29,6 @@ const PREFIXOS_PERMITIDOS = [
   "perfis-recebidos",
   "lotacoes",
   "estudantes",
-  "alunos",
   "atividades",
   "runs",
   "posts",

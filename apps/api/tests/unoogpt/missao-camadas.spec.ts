@@ -6,7 +6,7 @@ const bairro = (m: ReturnType<typeof montarMapa>, slug: string) =>
   m.bairros.find((b) => b.slug === slug)!;
 
 /**
- * A regra que a tela 2 promete ao aluno: o mapa é a leitura dos Conjuntos que
+ * A regra que a tela 2 promete ao estudante: o mapa é a leitura dos Conjuntos que
  * ele carregou — nada mais. Se este teste cair, a Missão mente na segunda tela.
  *
  * As asserções sobre a VISÃO (níveis de risco, faixa em vez de número seco)

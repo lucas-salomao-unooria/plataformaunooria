@@ -64,8 +64,7 @@ const ItemPerfilEstudanteSchema = z.object({
 });
 
 export const ListaDePerfisSchema = z.object({
-  estudantes: z.array(ItemPerfilEstudanteSchema).optional(),
-  alunos: z.array(ItemPerfilEstudanteSchema),
+  estudantes: z.array(ItemPerfilEstudanteSchema),
   resumo: z.object({
     comPerfil: z.number().int().nonnegative(),
     semPerfil: z.number().int().nonnegative(),
@@ -92,8 +91,7 @@ const ItemDistribuicaoEstudanteSchema = z.object({
 export const DistribuicaoSchema = z.object({
   temAfinidade: z.boolean(),
   afinidade: afinidadeSchema.nullable(),
-  estudantes: z.array(ItemDistribuicaoEstudanteSchema).optional(),
-  alunos: z.array(ItemDistribuicaoEstudanteSchema),
+  estudantes: z.array(ItemDistribuicaoEstudanteSchema),
   contagem: z.object({ A: z.number().int(), B: z.number().int() }),
   /** Perfil ausente ou `misto`: caem no SORTEIO, e por isso não entram na
    *  projeção — o lado só é decidido quando a run nasce. */
@@ -143,14 +141,12 @@ export const ImportarPerfisSchema = z
     escolaId: z.string().trim().min(1).max(64),
     activityId: Uuid,
     estudantes: z.array(ItemImportacaoEstudanteSchema).min(1).max(200).optional(),
-    alunos: z.array(ItemImportacaoEstudanteSchema).min(1).max(200).optional(),
   })
-  .refine((data) => (data.estudantes && data.estudantes.length > 0) || (data.alunos && data.alunos.length > 0), {
+  .refine((data) => (data.estudantes && data.estudantes.length > 0) || (data.estudantes && data.estudantes.length > 0), {
     message: "Envie a lista de estudantes.",
   })
   .transform((data) => ({
     escolaId: data.escolaId,
     activityId: data.activityId,
-    estudantes: data.estudantes ?? data.alunos ?? [],
-    alunos: data.alunos ?? data.estudantes ?? [],
+    estudantes: data.estudantes ?? [],
   }));

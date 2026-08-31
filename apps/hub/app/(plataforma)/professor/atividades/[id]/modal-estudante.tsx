@@ -119,7 +119,7 @@ export function ModalEstudante({
           cache: "no-store",
         }).catch(() => null);
         if (!resposta || !resposta.ok) {
-          resposta = await fetch(`/api/plataforma/atividades/${activityId}/alunos/${runId}`, {
+          resposta = await fetch(`/api/plataforma/atividades/${activityId}/estudantes/${runId}`, {
             cache: "no-store",
           });
         }

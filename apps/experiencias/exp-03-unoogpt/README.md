@@ -101,7 +101,7 @@ Mudar um deles é mudar o teste.
 | bairro no mapa | `[data-bairro="<slug>"]` |
 | bairro COM dado | `[data-bairro][data-com-dado="true"]` — deve ser 0 antes de carregar fonte |
 | zerar a turma (professor) | `[data-zerar-turma]` |
-| linha do estudante (professor) | `[data-estudante="<usuario>"]` (ou `[data-aluno="<usuario>"]`) |
+| linha do estudante (professor) | `[data-estudante="<usuario>"]` (ou `[data-estudante="<usuario>"]`) |
 
 **Duas armadilhas que este roteiro já pagou**, e que valem para qualquer smoke
 desta missão:

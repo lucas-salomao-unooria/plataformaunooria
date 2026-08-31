@@ -76,7 +76,7 @@ para o bucket").
 pnpm --filter @edu/exp-02-unootube dev      # :5174 (a exp-01 usa :5173)
 ```
 
-Logado no hub como estudante do 4º ano (`aluno4a01` / `unooria123` no seed), a
+Logado no hub como estudante do 4º ano (`estudante4a01` / `unooria123` no seed), a
 home é `/exp/exp-02-unootube`. Em dev o hub acha o Vite pela porta mapeada em
 `apps/hub/lib/experiencias-dev.ts`. Sem `viewport` no manifesto: tela cheia.
 

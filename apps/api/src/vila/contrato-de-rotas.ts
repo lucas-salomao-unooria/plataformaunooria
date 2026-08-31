@@ -150,7 +150,6 @@ export const TurmasDaVilaSchema = z.object({
       nome: z.string(),
       serie: z.string(),
       estudantes: z.number().int().nonnegative().optional(),
-      alunos: z.number().int().nonnegative().optional(),
     }),
   ),
 });
@@ -159,7 +158,6 @@ export const TurmasDaVilaSchema = z.object({
 export const ResumoDaTurmaSchema = z.object({
   resumo: z.object({
     estudantes: z.number().int().nonnegative().optional(),
-    alunos: z.number().int().nonnegative().optional(),
     jogaram: z.number().int().nonnegative(),
     concluiram: z.number().int().nonnegative(),
     abandonaram: z.number().int().nonnegative(),
@@ -194,7 +192,6 @@ export const EstudanteDaTurmaSchema = z.object({
  */
 export const EstudantesDaTurmaSchema = z.object({
   estudantes: z.array(EstudanteDaTurmaSchema).optional(),
-  alunos: z.array(EstudanteDaTurmaSchema).optional(),
 });
 
 

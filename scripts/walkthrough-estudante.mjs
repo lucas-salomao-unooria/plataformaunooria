@@ -99,7 +99,7 @@ try {
   await p.click("button[type=submit]");
 
   // ---- hub do estudante: ele escolhe a missão ---------------------------------
-  await p.waitForURL((url) => url.pathname.includes("/estudante") || url.pathname.includes("/aluno"), { timeout: 30_000 });
+  await p.waitForURL((url) => url.pathname.includes("/estudante"), { timeout: 30_000 });
   const cartao = p.locator("a", { hasText: "Instanooria" }).first();
   await cartao.waitFor({ timeout: 15_000 });
   await registrar("hub-do-estudante", `${await p.locator("main ul > li").count()} missões`);

@@ -289,7 +289,6 @@ export class PerfisController {
 
       return {
         estudantes: lista,
-        alunos: lista,
         resumo: {
           comPerfil: perfis.length,
           semPerfil: estudantes.length - perfis.length,

@@ -7,7 +7,7 @@ import type { MissaoDoEstudante } from "@/lib/missoes-do-estudante";
  * Cartão de missão no hub do estudante.
  *
  * Nada de "aula", "plano" ou "professor" aqui — e nada que entregue a virada
- * da missão: a copy vem de `missao.estudante` (ou `missao.aluno`) no catálogo, escrita para ser lida
+ * da missão: a copy vem de `missao.estudante` (ou `missao.estudante`) no catálogo, escrita para ser lida
  * ANTES de jogar.
  */
 export function CartaoMissaoEstudante({ missao }: { missao: MissaoDoEstudante }) {

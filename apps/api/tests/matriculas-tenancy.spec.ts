@@ -58,7 +58,7 @@ beforeAll(async () => {
 
   const matricular = (escolaId: string, turmaId: string, usuarioId: string, papel: string) =>
     admin.matricula.create({
-      data: { escolaId, turmaId, usuarioId, papel, principal: papel === "estudante" || papel === "aluno", inicio: periodo.inicio },
+      data: { escolaId, turmaId, usuarioId, papel, principal: papel === "estudante", inicio: periodo.inicio },
     });
   await matricular(ESCOLA, ids.turma8A, ids.prof8A, "professor");
   await matricular(ESCOLA, ids.turma9B, ids.prof9B, "professor");
@@ -78,7 +78,7 @@ describe("as turmas do professor", () => {
   test("cada professor recebe as SUAS turmas, não as da escola", async () => {
     const doOito = await rostering.turmasDoProfessor(ESCOLA, ids.prof8A);
     expect(doOito.map((t) => t.nome)).toEqual(["8A"]);
-    expect(doOito[0]?.estudantes ?? doOito[0]?.alunos).toBe(1);
+    expect(doOito[0]?.estudantes ?? doOito[0]?.estudantes).toBe(1);
 
     const doNono = await rostering.turmasDoProfessor(ESCOLA, ids.prof9B);
     expect(doNono.map((t) => t.nome)).toEqual(["9B"]);
@@ -96,7 +96,7 @@ describe("as turmas do professor", () => {
 
   test("a lista nominal da turma traz os estudantes matriculados", async () => {
     const turma = await rostering.pessoasDaTurma(ESCOLA, ids.turma8A);
-    expect((turma?.estudantes ?? turma?.alunos)?.map((a) => a.usuario)).toEqual(["ana-8a"]);
+    expect((turma?.estudantes)?.map((a) => a.usuario)).toEqual(["ana-8a"]);
     expect(turma?.professores.map((p) => p.usuario)).toEqual(["prof-8a"]);
   });
 
@@ -224,7 +224,7 @@ describe("as turmas do professor", () => {
     await rostering.encerrarMatricula(ESCOLA, matricula.id);
 
     const turma = await rostering.pessoasDaTurma(ESCOLA, ids.turma8A);
-    expect(turma?.estudantes ?? turma?.alunos).toHaveLength(0);
+    expect(turma?.estudantes).toHaveLength(0);
     const depois = await admin.matricula.findUniqueOrThrow({ where: { id: matricula.id } });
     expect(depois.fim).not.toBeNull();
   });

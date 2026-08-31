@@ -136,7 +136,6 @@ export async function distribuicaoDaTurma(
     temAfinidade: Boolean(afinidade),
     afinidade,
     estudantes: linhas,
-    alunos: linhas,
     contagem,
     /**
      * `semLado` são os que caem no sorteio: perfil ausente ou `misto`. Eles não
