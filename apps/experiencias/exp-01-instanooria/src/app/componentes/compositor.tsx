@@ -21,16 +21,14 @@ export const TEMPLATES = [
  */
 export function Compositor({
   avatarDoEstudante,
-  avatarDoAluno,
   aoFechar,
   aoPublicar,
 }: {
   avatarDoEstudante?: string;
-  avatarDoAluno?: string;
   aoFechar: () => void;
   aoPublicar: (texto: string, template: string) => void;
 }) {
-  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
+  const avatar = avatarDoEstudante ?? '';
   const [passo, setPasso] = useState<1 | 2>(1);
 
   // Cobre a tela inteira: trava o feed atrás.

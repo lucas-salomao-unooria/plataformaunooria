@@ -14,18 +14,16 @@ import { AvatarPerfil } from './avatar-perfil';
 export function Stories({
   posts,
   avatarDoEstudante,
-  avatarDoAluno,
   aoDwellDeStory,
   aoGestoDeStory,
 }: {
   posts: FeedPostCliente[];
   avatarDoEstudante?: string;
-  avatarDoAluno?: string;
   aoDwellDeStory: (postId: string, dwellMs: number) => void;
   /** Telemetria de exploração (doc 11 §3.1): abrir e avançar story. */
   aoGestoDeStory?: (tipo: 'abriu_story' | 'avancou_story', postId: string) => void;
 }) {
-  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
+  const avatar = avatarDoEstudante ?? '';
   const [aberto, setAberto] = useState<number | null>(null);
   const [vistos, setVistos] = useState<Set<string>>(new Set());
 

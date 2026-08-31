@@ -20,7 +20,7 @@ export default async function MinhasTurmasPage() {
       <div>
         <h1 className="text-[24px] font-bold text-unooria-neutral-950">Minhas turmas</h1>
         <p className="text-[14px] text-unooria-neutral-500">
-          As turmas em que você está matriculado neste ano letivo. Abrir uma turma mostra os alunos
+          As turmas em que você está matriculado neste ano letivo. Abrir uma turma mostra os estudantes
           dela.
         </p>
       </div>
@@ -47,7 +47,7 @@ export default async function MinhasTurmasPage() {
                         {turno ? ` · ${turno}` : ""}
                       </span>
                       <span className="text-[13px] text-unooria-neutral-500">
-                        {turma.alunos} aluno{turma.alunos === 1 ? "" : "s"}
+                        {turma.alunos} estudante{turma.alunos === 1 ? "" : "s"}
                         {turma.periodo ? ` · ${turma.periodo}` : ""}
                       </span>
                     </div>

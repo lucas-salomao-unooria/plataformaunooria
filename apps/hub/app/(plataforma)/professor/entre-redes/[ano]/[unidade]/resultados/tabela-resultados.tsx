@@ -76,18 +76,16 @@ const colunas: TableColumn<Linha>[] = [
 
 export function TabelaResultados({
   estudantes,
-  alunos,
 }: {
   estudantes?: LinhaEstudanteUnootube[];
-  alunos?: LinhaEstudanteUnootube[];
 }) {
-  const lista = estudantes ?? alunos ?? [];
+  const lista = estudantes ?? [];
   const linhas: Linha[] = ordenarEstudantes(lista).map((a) => ({ ...a }));
   return (
     <Table<Linha>
       columns={colunas}
       data={linhas}
-      keyExtractor={(l) => l.estudanteId ?? l.alunoId}
+      keyExtractor={(l) => l.estudanteId}
       emptyText="Ninguém desta turma entrou no UnooTube ainda."
       size="md"
       theme="light"

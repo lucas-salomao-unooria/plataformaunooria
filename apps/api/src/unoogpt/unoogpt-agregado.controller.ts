@@ -13,7 +13,7 @@ import { AgregadoDaEscolaSchema } from "./contrato-de-rotas";
  * Controller separado do professor de propósito. A alternativa — um `@Roles`
  * incluindo gestor com uma exceção dentro do método da criança — é a forma que
  * vaza: basta um método novo esquecer a exceção. Aqui o gestor não tem sequer
- * uma rota que aceite `alunoId`, então nenhum descuido futuro o leva à
+ * uma rota que aceite `estudanteId`, então nenhum descuido futuro o leva à
  * Transcrição de uma criança.
  */
 type Autenticado = { auth: AuthClaims };

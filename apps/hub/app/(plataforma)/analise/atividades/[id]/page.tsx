@@ -128,7 +128,7 @@ export default async function AnaliseDaAtividadePage({
                         : `${linha.delta > 0 ? '+' : ''}${linha.delta.toFixed(2).replace('.', ',')}s`}
                     </td>
                     <td className="px-3 py-2 text-[12px] text-unooria-neutral-500">
-                      {linha.amostra.estudantesDoPerfil ?? linha.amostra.alunosDoPerfil} × {linha.amostra.estudantesDeOutros ?? linha.amostra.alunosDeOutros}
+                      {linha.amostra.estudantesDoPerfil} × {linha.amostra.estudantesDeOutros}
                     </td>
                   </tr>
                 ))}

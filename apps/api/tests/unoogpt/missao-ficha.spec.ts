@@ -1,7 +1,7 @@
 import { MISSAO_TEMPESTADE as M } from '../../src/unoogpt/cenario';
 
 /**
- * A ficha é a verdade escondida do mundo (ADR-0006): o aluno nunca a vê, mas
+ * A ficha é a verdade escondida do mundo (ADR-0006): o estudante nunca a vê, mas
  * ela precisa fechar. Se um bairro mudar e o total não, a cidade passa a mentir
  * — e a mentira é invisível, porque cada tela mostra um pedaço.
  */
@@ -20,7 +20,7 @@ describe('invariante: a ficha canônica fecha', () => {
     expect(M.equipes.length).toBeLessThan(M.bairros.length);
   });
 
-  it('nenhum bairro declara risco: risco é o que o aluno infere', () => {
+  it('nenhum bairro declara risco: risco é o que o estudante infere', () => {
     for (const b of M.bairros) {
       expect(JSON.stringify(b).toLowerCase()).not.toContain('mais perigoso');
       expect(JSON.stringify(b).toLowerCase()).not.toContain('prioridade');

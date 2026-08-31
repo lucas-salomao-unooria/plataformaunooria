@@ -29,7 +29,6 @@ export type ResumoDaAtividade = {
   sessoes: number;
   /** Estudantes com perfil importado do Ato 1 — a "turma" desta atividade. */
   estudantes?: number;
-  alunos?: number;
   /** Quando foi criada, para separar três atividades do mesmo tema. */
   criadoEm: string;
 };
@@ -160,7 +159,7 @@ export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade })
           */}
           <p className="text-[12px] text-unooria-neutral-500">
             {atividade.posts} posts · {atividade.sessoes} sessões
-            {(atividade.estudantes ?? atividade.alunos ?? 0) > 0 ? ` · ${atividade.estudantes ?? atividade.alunos} com perfil do jogo` : null}
+            {(atividade.estudantes ?? 0) > 0 ? ` · ${atividade.estudantes} com perfil do jogo` : null}
           </p>
           <p className="text-[12px] text-unooria-neutral-500">
             criada em {formatarData(atividade.criadoEm)}

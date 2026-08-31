@@ -15,10 +15,8 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
 import { CARTOES, DESCRICAO_BOLHA } from "./catalogo";
 import {
-  AlunosDaTurmaSchema,
-  CartoesDoProfessorSchema,
   EstudantesDaTurmaSchema,
-  RelatorioDoAlunoSchema,
+  CartoesDoProfessorSchema,
   RelatorioDoEstudanteSchema,
   ResumoDaTurmaSchema,
   TurmaZeradaSchema,
@@ -175,7 +173,7 @@ export class VilaProfessorController {
    * que o professor projeta faria a turma discutir uma mensagem que ninguém
    * recebeu.
    *
-   * `@Roles("professor")` da classe: é o oposto da rota do aluno, que serve só a
+   * `@Roles("professor")` da classe: é o oposto da rota do estudante, que serve só a
    * bolha dele e sem `legitima`.
    */
   @Get("cartoes")
@@ -224,12 +222,12 @@ export class VilaProfessorController {
    * "caiu em 2 de 3" sem dizer que era o nível C faz o adulto concluir que a
    * criança é ingênua — o rótulo que este projeto existe para não produzir.
    */
-  @Get("estudantes/:alunoId")
+  @Get("estudantes/:estudanteId")
   @Contrato({
     resumo: "O relatório da última partida concluída de um estudante.",
     descricao:
       "**Professor only** — o gestor tem o agregado, nunca a linha de uma criança. São controllers separados de propósito: um `@Roles` misto com exceção por método é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\nA seção das mensagens abre pelo **NÍVEL** que ela recebeu, antes do que ela fez: \"caiu em 2 de 3\" sem dizer que era o nível C faz o adulto concluir que a criança é ingênua — o rótulo que este projeto existe para não produzir.",
-    params: z.object({ alunoId: z.string().uuid() }),
+    params: z.object({ estudanteId: z.string().uuid() }),
     resposta: RelatorioDoEstudanteSchema,
     notas: [
       "`relatorio: null` é resposta legítima: o estudante existe e não jogou. Um 404 faria a tela dizer \"não encontrado\" para uma criança da turma dele.",
@@ -237,8 +235,8 @@ export class VilaProfessorController {
       "`mensagens: null` = nenhum cartão chegou a aparecer — **não** é \"ela ignorou tudo\".",
     ],
   })
-  async aluno(@Param("alunoId") alunoId: string, @Req() req: Autenticado) {
-    const relatorio = await this.vila.doEstudante(req.auth.escolaId, idOu404(alunoId));
+  async estudante(@Param("estudanteId") estudanteId: string, @Req() req: Autenticado) {
+    const relatorio = await this.vila.doEstudante(req.auth.escolaId, idOu404(estudanteId));
     /* `null` é resposta legítima: o estudante existe e não jogou. 404 aqui faria a
        tela do professor dizer "não encontrado" para uma criança da turma dele. */
     return { relatorio };

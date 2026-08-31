@@ -4,7 +4,7 @@ import { FormularioDeTrocaDeSenha } from "./formulario";
 export const metadata = { title: "Trocar senha — Plataforma Unooria" };
 
 /**
- * Primeiro acesso. Fica FORA das áreas de papel: aluno, professor e gestor
+ * Primeiro acesso. Fica FORA das áreas de papel: estudante, professor e gestor
  * chegam todos aqui, e o middleware não deixa sair enquanto a senha do lote não
  * for trocada.
  */

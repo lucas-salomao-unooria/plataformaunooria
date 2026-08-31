@@ -99,7 +99,7 @@ export const CARTOES: readonly Cartao[] = [
       { name: "BRILHO_MASTER_99", text: "ei psiu 👀 achei um GERADOR DE FAGULHAS INFINITAS" },
       {
         name: "BRILHO_MASTER_99",
-        text: "vila-do-1ume-fagulhas.com — põe teu número de aluno e a senha da sala que DOBRA na hora!!!",
+        text: "vila-do-1ume-fagulhas.com — põe teu número de estudante e a senha da sala que DOBRA na hora!!!",
       },
     ],
     options: [
@@ -183,7 +183,7 @@ export const CARTOES: readonly Cartao[] = [
       { name: "Lume · Suporte da Vila", text: "Oi. Detectamos um acesso estranho na sua sala hoje." },
       {
         name: "Lume · Suporte da Vila",
-        text: "Suas fogueiras estão marcadas pra apagar em 2 minutos. Pra cancelar, confirma que é você: manda teu número de aluno e a senha da sala aqui.",
+        text: "Suas fogueiras estão marcadas pra apagar em 2 minutos. Pra cancelar, confirma que é você: manda teu número de estudante e a senha da sala aqui.",
       },
       { name: "Lume · Suporte da Vila", text: "Se não responder, não tem como recuperar depois." },
     ],
@@ -204,17 +204,17 @@ export const CARTOES: readonly Cartao[] = [
      revelação: o número precisa ser vago na sala, e o professor tem que dizer
      com todas as letras que não foi um colega de verdade. Na plataforma a turma
      é REAL e a criança conhece os nomes dela, então isto pesa mais que no app de
-     origem — por isso "Aluno 14", nunca um nome. */
+     origem — por isso "Estudante 14", nunca um nome. */
   {
     id: "colega-fagulha",
     nivel: "C",
     legitima: false,
     gatilho: "semFagulha",
-    tag: "DM: Aluno 14",
+    tag: "DM: Estudante 14",
     beats: [
-      { name: "Aluno 14 · sua turma", text: "opa, tu tá na Vila agora? sou da tua sala, sentei atrás de ti" },
-      { name: "Aluno 14 · sua turma", text: "tô com fagulha sobrando aqui, te mando" },
-      { name: "Aluno 14 · sua turma", text: "me passa o link da tua sala que eu mando direto pro teu número" },
+      { name: "Estudante 14 · sua turma", text: "opa, tu tá na Vila agora? sou da tua sala, sentei atrás de ti" },
+      { name: "Estudante 14 · sua turma", text: "tô com fagulha sobrando aqui, te mando" },
+      { name: "Estudante 14 · sua turma", text: "me passa o link da tua sala que eu mando direto pro teu número" },
     ],
     options: [
       { text: "Mandar o link", aceita: true, reply: "valeu! te mando já já" },
@@ -236,10 +236,10 @@ export const CARTOES: readonly Cartao[] = [
     nivel: "comum",
     legitima: true,
     gatilho: "aposCartao:3",
-    tag: "DM: Aluno 07",
+    tag: "DM: Estudante 07",
     beats: [
-      { name: "Aluno 07 · sua turma", text: "ei, acho que te mandaram uma mensagem estranha agora há pouco" },
-      { name: "Aluno 07 · sua turma", text: "chegou uma igual aqui pra mim. não clica não" },
+      { name: "Estudante 07 · sua turma", text: "ei, acho que te mandaram uma mensagem estranha agora há pouco" },
+      { name: "Estudante 07 · sua turma", text: "chegou uma igual aqui pra mim. não clica não" },
     ],
     options: [
       {

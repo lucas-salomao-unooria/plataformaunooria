@@ -10,7 +10,7 @@ import {
   montarRanking,
   ordenarPorFontes,
   ordenarPorInscritos,
-  posicaoDoAluno,
+  posicaoDoEstudante,
   resumirTurma,
   type EstadoSessao,
   type LinhaTurma,
@@ -187,7 +187,7 @@ describe("ranking", () => {
     expect(bloco150.some((l) => l.voce)).toBe(true);
     const porFontes = ordenarPorFontes(linhas);
     expect(porFontes[0]!.fontesConfiaveis).toBe(3);
-    const pos = posicaoDoAluno(linhas);
+    const pos = posicaoDoEstudante(linhas);
     expect(pos.porInscritos).toBeGreaterThanOrEqual(30);
     expect(pos.porFontes).toBeLessThanOrEqual(11);
   });
@@ -202,7 +202,7 @@ describe("ranking", () => {
 
 describe("resumirTurma", () => {
   const linha = (extra: Partial<LinhaTurma>): LinhaTurma => ({
-    alunoId: "x",
+    estudanteId: "x",
     nome: "x",
     usuario: "x",
     iniciou: false,

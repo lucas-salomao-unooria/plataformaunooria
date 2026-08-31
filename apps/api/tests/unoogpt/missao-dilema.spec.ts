@@ -64,7 +64,7 @@ describe('invariante: os dados não entregam a estratégia', () => {
   });
 
   it('a régua muda quem é o pior bairro do lado sul', () => {
-    // O aluno que só olha exposição escolhe Ribeirinha; quem olha granizo e
+    // O estudante que só olha exposição escolhe Ribeirinha; quem olha granizo e
     // abrigo escolhe Morro Alto. Nenhum dos dois está errado — e é esse o ponto.
     expect(b('ribeirinha').exp).toBeGreaterThan(b('morroalto').exp);
     expect(b('morroalto').granizo).toBe('Severo');

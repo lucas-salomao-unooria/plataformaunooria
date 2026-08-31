@@ -12,7 +12,7 @@ import {
   alternarCurtida,
   derivados,
   montarRanking,
-  posicaoDoAluno,
+  posicaoDoEstudante,
   resumirTurma,
   type Derivados,
   type EstadoSessao,
@@ -23,7 +23,7 @@ import {
 } from "./regras";
 
 /**
- * Persistência do estado da missão. Assinaturas recebem `escolaId`/`alunoId`
+ * Persistência do estado da missão. Assinaturas recebem `escolaId`/`estudanteId`
  * explícitos (não o request) — os testes de integração chamam direto, e toda
  * query leva `escola_id` no `where` além da RLS que o `comTenancy` arma
  * (regra inviolável nº 1, defesa em profundidade).
@@ -97,8 +97,8 @@ function respostaDe(estado: EstadoSessao): RespostaEstado {
   };
 }
 
-function avatarDe(aluno: { displayName: string; avatar: string | null }): string {
-  const inicial = aluno.displayName.trim().charAt(0);
+function avatarDe(estudante: { displayName: string; avatar: string | null }): string {
+  const inicial = estudante.displayName.trim().charAt(0);
   return (inicial || "?").toUpperCase();
 }
 
@@ -107,61 +107,61 @@ export class UnootubeService {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Boot da experiência — READ-ONLY: sem linha devolve o estado inicial. */
-  async sessao(escolaId: string, alunoId: string): Promise<RespostaSessao> {
+  async sessao(escolaId: string, estudanteId: string): Promise<RespostaSessao> {
     return this.prisma.comTenancy(async (tx) => {
-      const aluno = await this.alunoDaEscola(tx, escolaId, alunoId);
+      const estudante = await this.estudanteDaEscola(tx, escolaId, estudanteId);
       const linha = await tx.unootubeSessao.findUnique({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const estado = paraEstado(linha);
       return {
         ...respostaDe(estado),
         catalogo: { videos: VIDEOS.map(semGabarito) },
-        estudante: { nome: aluno.displayName, avatar: avatarDe(aluno) },
-        aluno: { nome: aluno.displayName, avatar: avatarDe(aluno) },
-        ranking: estado.rankingDesbloqueado ? this.rankingDe(aluno, estado) : null,
+        estudante: { nome: estudante.displayName, avatar: avatarDe(estudante) },
+        aluno: { nome: estudante.displayName, avatar: avatarDe(estudante) },
+        ranking: estado.rankingDesbloqueado ? this.rankingDe(estudante, estado) : null,
       };
     }, escolaId);
   }
 
-  salvar(escolaId: string, alunoId: string, videoId: string) {
-    return this.mutar(escolaId, alunoId, (estado) => aplicarSalvar(estado, videoId));
+  salvar(escolaId: string, estudanteId: string, videoId: string) {
+    return this.mutar(escolaId, estudanteId, (estado) => aplicarSalvar(estado, videoId));
   }
 
-  remover(escolaId: string, alunoId: string, videoId: string) {
-    return this.mutar(escolaId, alunoId, (estado) => aplicarRemover(estado, videoId));
+  remover(escolaId: string, estudanteId: string, videoId: string) {
+    return this.mutar(escolaId, estudanteId, (estado) => aplicarRemover(estado, videoId));
   }
 
-  curtir(escolaId: string, alunoId: string, videoId: string) {
-    return this.mutar(escolaId, alunoId, (estado) => alternarCurtida(estado, videoId));
+  curtir(escolaId: string, estudanteId: string, videoId: string) {
+    return this.mutar(escolaId, estudanteId, (estado) => alternarCurtida(estado, videoId));
   }
 
-  async ranking(escolaId: string, alunoId: string): Promise<RespostaRanking> {
+  async ranking(escolaId: string, estudanteId: string): Promise<RespostaRanking> {
     return this.prisma.comTenancy(async (tx) => {
-      const aluno = await this.alunoDaEscola(tx, escolaId, alunoId);
+      const estudante = await this.estudanteDaEscola(tx, escolaId, estudanteId);
       const linha = await tx.unootubeSessao.findUnique({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const estado = paraEstado(linha);
       if (!estado.rankingDesbloqueado) erroDeJogo("RANKING_BLOQUEADO");
-      return this.rankingDe(aluno, estado);
+      return this.rankingDe(estudante, estado);
     }, escolaId);
   }
 
   async credibilidade(
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
   ): Promise<RespostaEstado & { score: number }> {
-    const resposta = await this.mutar(escolaId, alunoId, (estado, agora) =>
+    const resposta = await this.mutar(escolaId, estudanteId, (estado, agora) =>
       aplicarCredibilidade(estado, agora),
     );
     return { ...resposta, score: resposta.derivados.fontesConfiaveis };
   }
 
-  reiniciar(escolaId: string, alunoId: string) {
+  reiniciar(escolaId: string, estudanteId: string) {
     return this.mutar(
       escolaId,
-      alunoId,
+      estudanteId,
       () => ({ ok: true, estado: { ...ESTADO_INICIAL, salvos: [], curtidos: [] }, mudou: true }),
       { reinicios: { increment: 1 } },
     );
@@ -210,7 +210,7 @@ export class UnootubeService {
         erroDeJogo("TURMA_NAO_ENCONTRADA");
       }
 
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: {
           id: true,
@@ -221,14 +221,13 @@ export class UnootubeService {
         orderBy: { displayName: "asc" },
       });
 
-      const linhas: LinhaTurma[] = alunos.map((a) => {
+      const linhas: LinhaTurma[] = estudantes.map((a) => {
         const sessao = a.unootube[0];
         const estado = paraEstado(sessao);
         const d = derivados(estado.salvos);
         return {
           id: a.id,
           estudanteId: a.id,
-          alunoId: a.id,
           nome: a.displayName,
           usuario: a.username,
           iniciou: Boolean(sessao),
@@ -248,21 +247,21 @@ export class UnootubeService {
   // -------------------------------------------------------------------------
 
   private rankingDe(
-    aluno: { displayName: string; avatar: string | null },
+    estudante: { displayName: string; avatar: string | null },
     estado: EstadoSessao,
   ): RespostaRanking {
-    const linhas = montarRanking({ nome: aluno.displayName, avatar: avatarDe(aluno) }, estado.salvos);
-    return { linhas, posicao: posicaoDoAluno(linhas) };
+    const linhas = montarRanking({ nome: estudante.displayName, avatar: avatarDe(estudante) }, estado.salvos);
+    return { linhas, posicao: posicaoDoEstudante(linhas) };
   }
 
   /** `users` está fora da RLS — a escola do token precisa bater com a do usuário. */
-  private async alunoDaEscola(tx: Prisma.TransactionClient, escolaId: string, alunoId: string) {
-    const aluno = await tx.user.findUnique({
-      where: { id: alunoId },
+  private async estudanteDaEscola(tx: Prisma.TransactionClient, escolaId: string, estudanteId: string) {
+    const estudante = await tx.user.findUnique({
+      where: { id: estudanteId },
       select: { displayName: true, avatar: true, escolaId: true },
     });
-    if (!aluno || aluno.escolaId !== escolaId) erroDeJogo("TURMA_NAO_ENCONTRADA");
-    return aluno;
+    if (!estudante || estudante.escolaId !== escolaId) erroDeJogo("TURMA_NAO_ENCONTRADA");
+    return estudante;
   }
 
   /**
@@ -273,29 +272,29 @@ export class UnootubeService {
    */
   private mutar(
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
     regra: (estado: EstadoSessao, agora: Date) => ResultadoRegra,
     extra: Prisma.UnootubeSessaoUpdateInput = {},
   ): Promise<RespostaEstado> {
     return this.prisma.comTenancy(async (tx) => {
-      // Antes de criar linha: o aluno precisa ser desta escola (users está fora da RLS).
-      await this.alunoDaEscola(tx, escolaId, alunoId);
+      // Antes de criar linha: o estudante precisa ser desta escola (users está fora da RLS).
+      await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`
         INSERT INTO exp_02_sessoes (escola_id, estudante_id)
-        VALUES (${escolaId}, ${alunoId}::uuid)
+        VALUES (${escolaId}, ${estudanteId}::uuid)
         ON CONFLICT DO NOTHING`;
       await tx.$executeRaw`
         SELECT 1 FROM exp_02_sessoes
-        WHERE escola_id = ${escolaId} AND estudante_id = ${alunoId}::uuid
+        WHERE escola_id = ${escolaId} AND estudante_id = ${estudanteId}::uuid
         FOR UPDATE`;
       const atual = await tx.unootubeSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const resultado = regra(paraEstado(atual), new Date());
       if (!resultado.ok) erroDeJogo(resultado.codigo);
       if (resultado.mudou) {
         await tx.unootubeSessao.update({
-          where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+          where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
           data: { ...paraColunas(resultado.estado), ...extra },
         });
       }

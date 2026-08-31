@@ -25,7 +25,7 @@ describe('o prompt do Cientista', () => {
   it('não cresce sem alguém perceber', () => {
     // Trava de inflação: o prompt engordava um bullet por bug corrigido, e as
     // obrigações acabaram mais numerosas e mais enfáticas que o teto de
-    // tamanho — que é como a resposta de 640 caracteres chegou ao aluno.
+    // tamanho — que é como a resposta de 640 caracteres chegou ao estudante.
     //
     // Referência medida com os oito conjuntos carregados, que é o pior caso:
     // ~12.135 caracteres antes desta reestruturação. Se este teste cair, a

@@ -32,7 +32,6 @@ interface LinhaDeTurma extends Record<string, unknown> {
   turno: string | null;
   periodo: string | null;
   estudantes?: number;
-  alunos?: number;
   professores: number;
 }
 
@@ -146,7 +145,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
         key: "estudantes",
         title: "Estudantes",
         align: "right",
-        render: (_, linha) => String(linha.estudantes ?? linha.alunos ?? 0),
+        render: (_, linha) => String(linha.estudantes ?? 0),
       },
       { key: "professores", title: "Professores", align: "right" },
       {

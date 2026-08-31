@@ -67,7 +67,7 @@ export async function analiseDaTurma(
   prisma: Prisma.TransactionClient,
   activityId: string,
 ): Promise<AnaliseDaTurma> {
-  const [atividade, alunos] = await Promise.all([
+  const [atividade, estudantes] = await Promise.all([
     prisma.activity.findUniqueOrThrow({
       where: { id: activityId },
       select: { id: true, titulo: true, perguntaChave: true, antagonismo: true },
@@ -87,25 +87,25 @@ export async function analiseDaTurma(
   let trocaramDeIdeia = 0;
   let terminaramNoutroLado = 0;
 
-  for (const aluno of alunos) {
-    if (!aluno.conclusao) continue;
-    const linha = aluno.bolha.ladoInicial === 'A' ? tabela.semeadoEmA : tabela.semeadoEmB;
-    linha[aluno.conclusao.inclinacao] += 1;
+  for (const estudante of estudantes) {
+    if (!estudante.conclusao) continue;
+    const linha = estudante.bolha.ladoInicial === 'A' ? tabela.semeadoEmA : tabela.semeadoEmB;
+    linha[estudante.conclusao.inclinacao] += 1;
 
-    if (aluno.conclusao.inclinacao === 'duvida') emDuvida += 1;
-    else if (aluno.conclusao.inclinacao === aluno.bolha.ladoInicial) seguiram += 1;
+    if (estudante.conclusao.inclinacao === 'duvida') emDuvida += 1;
+    else if (estudante.conclusao.inclinacao === estudante.bolha.ladoInicial) seguiram += 1;
     else viraram += 1;
 
     /**
      * Quem trocou de ideia enquanto esperava a turma. A tabela acima usa a
-     * ÚLTIMA escolha — é a que o aluno assumiu, e é a que ele vai defender —,
+     * ÚLTIMA escolha — é a que o estudante assumiu, e é a que ele vai defender —,
      * mas a correlação lê diferente se metade da sala mudou de opinião DEPOIS
      * de sair do feed. Sem este número, ninguém tinha como perguntar isso.
      */
-    if (aluno.conclusao.trocas > 0) trocaramDeIdeia += 1;
+    if (estudante.conclusao.trocas > 0) trocaramDeIdeia += 1;
     if (
-      aluno.conclusao.inclinacaoInicial &&
-      aluno.conclusao.inclinacaoInicial !== aluno.conclusao.inclinacao
+      estudante.conclusao.inclinacaoInicial &&
+      estudante.conclusao.inclinacaoInicial !== estudante.conclusao.inclinacao
     ) {
       terminaramNoutroLado += 1;
     }
@@ -118,19 +118,19 @@ export async function analiseDaTurma(
    * `conclusao` conta como na missão de propósito: ele ainda tem trabalho a
    * entregar, e é quem o professor precisa esperar antes do momento-espelho.
    */
-  const naMissao = alunos.filter((aluno) =>
-    ['onboarding', 'feed', 'encerramento', 'conclusao'].includes(aluno.fase),
+  const naMissao = estudantes.filter((estudante) =>
+    ['onboarding', 'feed', 'encerramento', 'conclusao'].includes(estudante.fase),
   ).length;
 
-  const termos = [...new Set(alunos.flatMap((aluno) => aluno.investigacao.termosBuscados))];
-  const usaram = alunos.filter((aluno) => aluno.investigacao.usosDaBusca > 0).length;
+  const termos = [...new Set(estudantes.flatMap((estudante) => estudante.investigacao.termosBuscados))];
+  const usaram = estudantes.filter((estudante) => estudante.investigacao.usosDaBusca > 0).length;
 
   /**
    * Média de imersão só entre quem chegou ao fim do feed. Incluir quem acabou de
    * entrar puxaria a média para baixo e faria a turma parecer desengajada quando
    * o que houve foi atraso no login.
    */
-  const paraImersao = alunos.filter((aluno) => aluno.postsConsumidos >= 8);
+  const paraImersao = estudantes.filter((estudante) => estudante.postsConsumidos >= 8);
   const mediaDe = (valores: number[]) =>
     valores.length > 0 ? Math.round((valores.reduce((s, v) => s + v, 0) / valores.length) * 10) / 10 : null;
 
@@ -154,47 +154,47 @@ export async function analiseDaTurma(
       terminaramNoutroLado,
     },
     turma: {
-      total: alunos.length,
+      total: estudantes.length,
       naMissao,
-      concluiram: alunos.filter((aluno) => aluno.conclusao !== null).length,
-      semConcluir: alunos
-        .filter((aluno) => aluno.conclusao === null)
-        .map((aluno) => ({ ...aluno.aluno, fase: aluno.fase })),
-      inverteram: alunos
-        .filter((aluno) => aluno.bolha.inverteu)
-        .map((aluno) => ({
-          ...aluno.aluno,
-          de: rotulo(aluno.bolha.ladoInicial),
-          para: rotulo(aluno.ladoDominante),
-          bloco: aluno.bolha.blocoDaInversao,
+      concluiram: estudantes.filter((estudante) => estudante.conclusao !== null).length,
+      semConcluir: estudantes
+        .filter((estudante) => estudante.conclusao === null)
+        .map((estudante) => ({ ...estudante.aluno, fase: estudante.fase })),
+      inverteram: estudantes
+        .filter((estudante) => estudante.bolha.inverteu)
+        .map((estudante) => ({
+          ...estudante.aluno,
+          de: rotulo(estudante.bolha.ladoInicial),
+          para: rotulo(estudante.ladoDominante),
+          bloco: estudante.bolha.blocoDaInversao,
         })),
     },
     largada: {
       porLado: {
-        A: alunos.filter((aluno) => aluno.bolha.ladoInicial === 'A').length,
-        B: alunos.filter((aluno) => aluno.bolha.ladoInicial === 'B').length,
+        A: estudantes.filter((estudante) => estudante.bolha.ladoInicial === 'A').length,
+        B: estudantes.filter((estudante) => estudante.bolha.ladoInicial === 'B').length,
       },
-      porOrigem: alunos.reduce<Record<string, number>>((acumulado, aluno) => {
-        acumulado[aluno.bolha.ladoOrigem] = (acumulado[aluno.bolha.ladoOrigem] ?? 0) + 1;
+      porOrigem: estudantes.reduce<Record<string, number>>((acumulado, estudante) => {
+        acumulado[estudante.bolha.ladoOrigem] = (acumulado[estudante.bolha.ladoOrigem] ?? 0) + 1;
         return acumulado;
       }, {}),
     },
-    busca: { usaram, naoUsaram: alunos.length - usaram, termos },
+    busca: { usaram, naoUsaram: estudantes.length - usaram, termos },
     imersao: {
-      media: mediaDe(paraImersao.map((aluno) => aluno.imersao.total)),
+      media: mediaDe(paraImersao.map((estudante) => estudante.imersao.total)),
       porComponente: chaves.map(({ chave, rotulo: rotuloDoComponente }) => ({
         chave,
         rotulo: rotuloDoComponente,
         media:
           mediaDe(
             paraImersao.map(
-              (aluno) => aluno.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0,
+              (estudante) => estudante.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0,
             ),
           ) ?? 0,
       })),
     },
-    estudantes: alunos,
-    alunos,
+    estudantes,
+    alunos: estudantes,
   };
 }
 
@@ -255,48 +255,48 @@ export function turmaEmCsv(analise: AnaliseDaTurma): string {
     'publicou',
   ];
 
-  const linhas = (analise.estudantes ?? analise.alunos).map((aluno) => {
-    const outro = aluno.bolha.ladoInicial === 'A' ? 'B' : 'A';
+  const linhas = (analise.estudantes ?? analise.alunos).map((estudante) => {
+    const outro = estudante.bolha.ladoInicial === 'A' ? 'B' : 'A';
     const ponto = (chave: string) =>
-      num(aluno.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0);
+      num(estudante.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0);
 
     return [
-      texto(aluno.estudante?.displayName ?? aluno.aluno.displayName),
-      aluno.estudante?.username ?? aluno.aluno.username,
-      aluno.fase,
-      aluno.perfilJogo?.dominante ?? 'ausente',
-      aluno.perfilJogo?.origem ?? 'ausente',
-      texto(rotulo(aluno.bolha.ladoInicial)),
-      aluno.bolha.ladoOrigem,
-      texto(rotulo(aluno.ladoDominante)),
-      aluno.bolha.inverteu ? 'sim' : 'nao',
-      aluno.bolha.blocoDaInversao ?? '',
-      aluno.conclusao ? texto(rotulo(aluno.conclusao.inclinacao)) : 'nao concluiu',
-      aluno.conclusao?.inclinacaoInicial
-        ? texto(rotulo(aluno.conclusao.inclinacaoInicial))
+      texto(estudante.estudante?.displayName ?? estudante.aluno.displayName),
+      estudante.estudante?.username ?? estudante.aluno.username,
+      estudante.fase,
+      estudante.perfilJogo?.dominante ?? 'ausente',
+      estudante.perfilJogo?.origem ?? 'ausente',
+      texto(rotulo(estudante.bolha.ladoInicial)),
+      estudante.bolha.ladoOrigem,
+      texto(rotulo(estudante.ladoDominante)),
+      estudante.bolha.inverteu ? 'sim' : 'nao',
+      estudante.bolha.blocoDaInversao ?? '',
+      estudante.conclusao ? texto(rotulo(estudante.conclusao.inclinacao)) : 'nao concluiu',
+      estudante.conclusao?.inclinacaoInicial
+        ? texto(rotulo(estudante.conclusao.inclinacaoInicial))
         : 'nao registrada',
-      String(aluno.conclusao?.trocas ?? 0),
-      aluno.reflexao?.caracteres ?? 0,
-      aluno.reflexao ? texto(aluno.reflexao.texto) : '',
-      aluno.postsConsumidos,
-      num(Math.round((aluno.tempo.feedMs / 60_000) * 10) / 10),
-      num(Math.round((aluno.tempo.ativoMs / 60_000) * 10) / 10),
-      num(Math.round(aluno.tempo.porLadoMs[aluno.bolha.ladoInicial] / 1000)),
-      num(Math.round(aluno.tempo.porLadoMs[outro] / 1000)),
-      aluno.investigacao.usosDaBusca,
-      texto(aluno.investigacao.termosBuscados.join(' | ')),
-      aluno.investigacao.consideracaoDoOposto,
-      num(aluno.imersao.total),
+      String(estudante.conclusao?.trocas ?? 0),
+      estudante.reflexao?.caracteres ?? 0,
+      estudante.reflexao ? texto(estudante.reflexao.texto) : '',
+      estudante.postsConsumidos,
+      num(Math.round((estudante.tempo.feedMs / 60_000) * 10) / 10),
+      num(Math.round((estudante.tempo.ativoMs / 60_000) * 10) / 10),
+      num(Math.round(estudante.tempo.porLadoMs[estudante.bolha.ladoInicial] / 1000)),
+      num(Math.round(estudante.tempo.porLadoMs[outro] / 1000)),
+      estudante.investigacao.usosDaBusca,
+      texto(estudante.investigacao.termosBuscados.join(' | ')),
+      estudante.investigacao.consideracaoDoOposto,
+      num(estudante.imersao.total),
       ponto('continuidade'),
       ponto('atencao'),
       ponto('gestos'),
       ponto('voluntariedade'),
       ponto('exploracao'),
-      aluno.interacoes.curtidas,
-      aluno.interacoes.comentarios,
-      aluno.interacoes.salvos,
-      aluno.interacoes.seguidos,
-      aluno.interacoes.publicou ? 'sim' : 'nao',
+      estudante.interacoes.curtidas,
+      estudante.interacoes.comentarios,
+      estudante.interacoes.salvos,
+      estudante.interacoes.seguidos,
+      estudante.interacoes.publicou ? 'sim' : 'nao',
     ].join(sep);
   });
 

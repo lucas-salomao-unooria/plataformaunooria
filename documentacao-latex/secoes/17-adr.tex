@@ -2650,3 +2650,169 @@ foi apagada mantém o id órfão, e isso é aceito.
 \textbf{Gatilho de reavaliação.} A primeira subida real de
 \cd{VERSAO\_MAPEAMENTO} com dado de contrato em produção: aí se descobre se o
 aviso basta ou se a reimportação precisa virar rotina assistida.
+
+\section{ADR-51 --- O vocabulário do produto é \emph{estudante}: corte no dado,
+tolerância na fronteira}
+\label{adr:vocabulario-estudante}
+
+\begin{especificacao}{Contexto}
+A palavra \enquote{aluno} estava em 4.425 ocorrências e 433 arquivos, e não só em
+texto de tela: era coluna de banco (\cd{aluno\_id}, em 13 tabelas), valor do
+\emph{claim} \cd{perfil} do token, valor em cinco restrições \cd{CHECK}, caminho
+HTTP (\cd{/alunos/:id/historico}), chave do contrato \cd{postMessage}
+(\cd{hub:init.aluno}), campo do evento de telemetria (\cd{alunoId}), variável de
+ambiente (\cd{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ALUNO}), login do \emph{seed}
+(\cd{aluno4a01}) e cerca de 560 ocorrências nesta documentação.
+
+Lexicalmente a troca é limpa: \cd{aluno}+\cd{s} vira \cd{estudante}+\cd{s}, com o
+mesmo gênero gramatical, e \enquote{aluno} não é subcadeia de nenhuma outra
+palavra do repositório. O risco não estava no texto: estava no DADO PERSISTIDO e
+nos CONTRATOS DE FRONTEIRA, onde um lado pode ser mais novo que o outro.
+\end{especificacao}
+
+\textbf{Decisão.} Duas regras diferentes para dois lugares diferentes.
+
+\textbf{Dentro} --- banco, código e interface --- o corte é limpo. As 13 colunas
+viraram \cd{estudante\_id}; os oito \cd{FOREIGN KEY}, os índices, as chaves
+compostas e as cinco \cd{CHECK} foram renomeados junto; o índice único parcial
+\cd{lotacoes\_uma\_escola\_por\_estudante\_ativo} teve também o PREDICADO
+reescrito (\cd{WHERE papel = 'estudante'}), que é a parte que passa
+desapercebida. As migrações foram REESCRITAS como se \enquote{aluno} nunca
+tivesse existido, e o banco de desenvolvimento foi recriado --- não há ambiente
+com dado de contrato real, e uma migração aditiva de \cd{RENAME} deixaria para
+sempre um arquivo falando o vocabulário antigo.
+
+As 30 políticas de \emph{Row-Level Security} NÃO foram tocadas, e isso é o que
+tornou a operação barata: nenhuma delas nomeia ou referencia papel --- a
+expressão é só \cd{escola\_id = current\_setting('app.escola\_id', true)}. A
+regra 1 de \emph{tenancy} atravessou o \emph{rename} sem uma linha de mudança.
+
+\textbf{Na fronteira} --- o que vem de FORA e pode ser mais velho que o código
+--- o vocabulário antigo continua aceito: a planilha da escola com
+\cd{papel=aluno}, o \emph{bundle} publicado no CDN antes do \emph{rename}, o lote
+de telemetria que ainda manda \cd{alunoId}, o caminho \cd{/alunos/...} como
+tentativa de reserva. Aceitar não é gravar: ver a ADR-53.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter o valor \cd{aluno} no papel e renomear só o resto}: o
+    esquema ficaria dizendo duas coisas --- \cd{estudante\_id} na coluna,
+    \cd{'aluno'} no \cd{CHECK} da linha ao lado. É a incoerência que faz alguém
+    concluir, seis meses depois, que uma das duas está errada.
+  \item \emph{Migração aditiva com \cd{ALTER ... RENAME}}: preserva dado que não
+    existe. Em troca, deixa doze arquivos de migração falando \cd{aluno\_id} para
+    sempre, e quem lê o histórico não sabe qual é o nome vigente.
+  \item \emph{Corte total, sem tolerância na fronteira}: quebraria a planilha que
+    a rede já usa e o \emph{bundle} anterior no CDN, por uma troca de palavra.
+  \item \emph{Dupla escrita no banco (as duas colunas por um tempo)}: dobra o
+    esquema e exige uma rotina de convergência --- a armadilha do
+    \cd{expires\_at}, que este projeto já pagou uma vez.
+\end{itemize}
+
+\textbf{Consequências.} Um \emph{bookmark} em \cd{/aluno} passa a devolver 404:
+o \emph{middleware} só casa \cd{/estudante/:path*} e não há redirecionamento. Os
+três roteiros de \emph{smoke} com o nome antigo ficaram como atalhos de duas
+linhas que importam o novo. E a fronteira tolerante é DÍVIDA declarada, não
+arquitetura: cada ponto dela tem gatilho de remoção nas ADRs 52 e 53.
+
+\textbf{Gatilho de reavaliação.} O primeiro contrato em produção. Com dado real,
+a decisão de reescrever migração deixa de estar disponível, e qualquer troca de
+vocabulário passa a exigir \cd{RENAME} aditivo.
+
+\section{ADR-52 --- \cd{protocolVersion} continua 1: o \cd{hub:init} GANHOU uma
+chave, não trocou de chave}
+\label{adr:protocolo-v1-aditivo}
+
+\begin{especificacao}{Contexto}
+O \cd{hub:init} carregava \cd{aluno:\{id,nome,serie,turmaId,escolaId\}}. Os
+\emph{bundles} vivem em \cd{gs://\{contrato\}-exp/\{expId\}/\{versao\}/} e as
+versões anteriores CONTINUAM servíveis --- é assim que o \emph{rollback} funciona
+neste produto: o hub aponta para a versão de antes, sem \emph{deploy}.
+
+Trocar a chave por \cd{estudante} faria um \emph{bundle} anterior falhar na
+validação Zod do \emph{handshake}. O sintoma seria dos piores: a mensagem é
+descartada com um aviso de console, e o que a criança vê é a experiência
+expirando em oito segundos. A regra do projeto manda versionar com
+\cd{protocolVersion}, cujo \emph{major} é conferido nos DOIS lados e falha alto.
+\end{especificacao}
+
+\textbf{Decisão.} O hub emite as DUAS chaves --- \cd{estudante} e \cd{aluno},
+apontando para o mesmo objeto (\arq{apps/hub/lib/embed-experiencia.ts},
+\arq{apps/hub/components/ExpFrame.tsx}) --- e \cd{PROTOCOL\_VERSION} segue 1.
+
+O raciocínio é que a mudança é ADITIVA, e portanto não há compatibilidade
+quebrada para versionar: o \emph{bundle} novo lê \cd{estudante}, o antigo
+continua lendo \cd{aluno}, e o \emph{rollback} do CDN continua funcionando sem
+republicar. Subir para 2 aqui seria anunciar uma quebra que não aconteceu --- e
+teria custo real: todo \emph{bundle} publicado antes passaria a falhar de
+propósito, transformando \emph{rollback} em republicação.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Bump para 2 com corte limpo}: coerente com o vocabulário, mas
+    troca uma falha que não existe por uma que existe. O \emph{rollback} é o
+    procedimento de emergência do produto; encurtá-lo para trocar uma palavra é
+    o negócio errado.
+  \item \emph{Renomear a chave sem \emph{bump} e sem alias}: é o pior dos três.
+    O \emph{bundle} antigo falha, e falha em silêncio --- exatamente o que o
+    \cd{protocolVersion} existe para evitar.
+\end{itemize}
+
+\textbf{Consequências.} O \emph{payload} do \emph{handshake} carrega o mesmo
+objeto duas vezes, com um \cd{@deprecated} ao lado. É dívida visível, de custo
+desprezível em \emph{bytes}, e o teste do \emph{bridge} continua afirmando só a
+chave nova --- o alias não é contrato, é cortesia com o CDN.
+
+\textbf{Gatilho de reavaliação.} Quando nenhuma versão de \emph{bundle}
+publicada antes do \emph{rename} for mais alvo possível de \emph{rollback}, a
+chave \cd{aluno} sai do \cd{hub:init} --- e ESSA remoção é que pede
+\cd{PROTOCOL\_VERSION = 2}.
+
+\section{ADR-53 --- A entrada tolera \cd{aluno}; a escrita NORMALIZA, e sempre
+no mesmo lugar}
+\label{adr:normalizar-papel-na-escrita}
+
+\begin{especificacao}{Contexto}
+A tolerância da ADR-51 tem um preço que não é óbvio. Os \cd{z.enum} de entrada
+passaram a aceitar \cd{["estudante", "aluno", ...]} para que a planilha da escola
+continue entrando --- mas \cd{users.role}, \cd{lotacoes.papel},
+\cd{matriculas.papel} e \cd{experiencias.publico} têm \cd{CHECK} que só admite
+\cd{estudante}.
+
+Quase todos os caminhos de escrita normalizavam antes de gravar
+(\arq{rostering/lotacao.ts}, \arq{rostering/matricula.ts},
+\arq{experiencias/contrato-de-rotas.ts} com \cd{.transform}). UM não:
+\cd{PATCH /usuarios/:id} levava \cd{dados.papel} cru para \cd{role}. Com
+\cd{papel: "aluno"} no corpo, o Zod aprovava, o banco recusava, e o gestor
+recebia 500 --- não o 400 que descreveria o problema. Aceitar na borda sem
+normalizar na escrita não é tolerância: é um erro de contorno mais difícil de
+diagnosticar do que a recusa que ele tentava evitar.
+\end{especificacao}
+
+\textbf{Decisão.} Invariante explícita: \textbf{todo caminho que escreve papel
+normaliza o vocabulário antigo imediatamente antes de tocar a coluna}, e a
+normalização mora JUNTO da escrita --- não no schema da rota. A razão é que
+serviços são chamados de dentro (a importação OneRoster chama
+\cd{matricularEm} sem passar por rota nenhuma), e normalização que vive no Zod
+cobre a porta, não a escrita.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Recusar \cd{aluno} na entrada}: desfaz a ADR-51 e quebra a
+    planilha que a rede já usa.
+  \item \emph{Afrouxar o \cd{CHECK} para aceitar os dois valores}: perde a
+    garantia que torna o \emph{rename} verdadeiro no dado. Passaria a existir
+    coluna com dois vocabulários e nada obrigando a convergir.
+  \item \emph{Normalizar só no \cd{.transform} do Zod}: cobre a rota e deixa
+    descoberto todo chamador interno --- e o sintoma volta a ser um 500 em vez de
+    uma recusa legível.
+\end{itemize}
+
+\textbf{Consequências.} Existe um lugar a mais para esquecer, e é por isso que
+esta ADR existe: a invariante está escrita. O caminho corrigido
+(\arq{apps/api/src/usuarios/usuarios.service.ts}) leva o comentário que diz por
+quê.
+
+\textbf{Gatilho de reavaliação.} Quando os valores \cd{aluno} saírem dos
+\cd{z.enum} de entrada --- junto com a chave do \cd{hub:init}, ADR-52 --- a
+normalização deixa de ter função e sai com eles.

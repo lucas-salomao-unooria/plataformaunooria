@@ -1,5 +1,5 @@
 /**
- * Os sete Passos da Missao. Quem transiciona e o CLIQUE do aluno; o Cientista
+ * Os sete Passos da Missao. Quem transiciona e o CLIQUE do estudante; o Cientista
  * so sugere. Estado em linguagem natural nao e testavel.
  */
 /**

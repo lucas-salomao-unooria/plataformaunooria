@@ -12,10 +12,10 @@
  */
 export interface Conjunto {
   slug: string;
-  /** Nome técnico. Aparece no painel do professor, nunca para o aluno. */
+  /** Nome técnico. Aparece no painel do professor, nunca para o estudante. */
   nome: string;
   /**
-   * Como o Cientista se refere a isto EM VOZ ALTA. O aluno tem 15 anos e não
+   * Como o Cientista se refere a isto EM VOZ ALTA. O estudante tem 15 anos e não
    * sabe o que é conjunto de dados, modelo ou machine learning — e não precisa
    * saber para aprender a lição. Quem traduz é o Cientista.
    */
@@ -214,7 +214,7 @@ export const CONJUNTO_POR_SLUG = new Map(CONJUNTOS.map((c) => [c.slug, c]));
 /**
  * Quantas fontes o Cientista aguenta manter cruzadas.
  *
- * Alto de propósito: o aluno ADICIONA fontes e cruza de novo, em camadas, que é
+ * Alto de propósito: o estudante ADICIONA fontes e cruza de novo, em camadas, que é
  * como se investiga de verdade. O teto de 3 forçava trocas artificiais ("qual
  * você quer deixar de lado?") e virava jogo de encaixe; quem segura o exagero
  * agora é o relógio, o teto de cobertura e a discordância entre fontes

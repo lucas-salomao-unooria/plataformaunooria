@@ -30,7 +30,6 @@ interface Escola extends Record<string, unknown> {
   paiId: string | null;
   pai: string | null;
   estudantes?: number;
-  alunos?: number;
   professores: number;
   turmas: number;
 }
@@ -317,7 +316,7 @@ export function EscolasDaRede() {
         key: "estudantes",
         title: "Estudantes",
         align: "right",
-        render: (_, l) => (l.tipo === "escola" ? String(l.estudantes ?? l.alunos) : "—"),
+        render: (_, l) => (l.tipo === "escola" ? String(l.estudantes) : "—"),
       },
       {
         key: "professores",
@@ -376,12 +375,11 @@ export function EscolasDaRede() {
   const unidades = escolas.filter((e) => e.tipo === "escola");
   const totais = unidades.reduce(
     (soma, e) => ({
-      estudantes: soma.estudantes + (e.estudantes ?? e.alunos ?? 0),
-      alunos: soma.alunos + (e.alunos ?? e.estudantes ?? 0),
+      estudantes: soma.estudantes + (e.estudantes ?? 0),
       professores: soma.professores + e.professores,
       turmas: soma.turmas + e.turmas,
     }),
-    { estudantes: 0, alunos: 0, professores: 0, turmas: 0 },
+    { estudantes: 0, professores: 0, turmas: 0 },
   );
 
   const opcoesDeRegional = [

@@ -2,7 +2,7 @@
  * Sorteio com SEMENTE. Puro e reprodutível.
  *
  * Semente porque uma rodada precisa poder ser reproduzida — o professor abre a
- * mesma rodada de um aluno e vê os mesmos números. O que NÃO é reprodutível é a
+ * mesma rodada de um estudante e vê os mesmos números. O que NÃO é reprodutível é a
  * próxima rodada: cada uma sorteia de novo, e é aí que mora a lição.
  *
  * mulberry32: 32 bits, distribuição uniforme suficiente para simular chuva.

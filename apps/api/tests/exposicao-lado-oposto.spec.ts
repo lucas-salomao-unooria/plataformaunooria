@@ -7,11 +7,11 @@ import { normalizarEstado } from '../src/motor/estado';
 /**
  * A TRAVA DO "32 OU 30" (ADR-42).
  *
- * O produto tinha duas contas para "o que o algoritmo escondeu": a tela do aluno
+ * O produto tinha duas contas para "o que o algoritmo escondeu": a tela do estudante
  * decidia o lado dele pela EXPOSIÇÃO (quantos posts de cada lado o feed serviu)
  * e o relatório do professor decidia pelo DOMÍNIO (`dominioDe`, o score do
  * motor). Enquanto os dois apontam o mesmo lado ninguém percebe. Eles divergem
- * exatamente quando o aluno VIRA O JOGO — e aí as duas telas nomeavam lados
+ * exatamente quando o estudante VIRA O JOGO — e aí as duas telas nomeavam lados
  * opostos para a mesma criança, na mesma conversa.
  *
  * O caso do meio é o que este arquivo existe para não deixar voltar.
@@ -44,11 +44,11 @@ describe('exposição: uma conta só para o lado oposto', () => {
     expect(exposicao.totalNoAcervo).toBe(48);
     expect(exposicao.vistos).toBe(16);
     expect(exposicao.perdidos).toBe(32);
-    // 16 vistos + 32 perdidos = os 48 do lado B: a conta fecha na frente do aluno.
+    // 16 vistos + 32 perdidos = os 48 do lado B: a conta fecha na frente do estudante.
     expect(exposicao.vistos + exposicao.perdidos).toBe(exposicao.totalNoAcervo);
   });
 
-  it('O ALUNO QUE VIROU O JOGO: exposição e domínio discordam, e a exposição manda', () => {
+  it('O ESTUDANTE QUE VIROU O JOGO: exposição e domínio discordam, e a exposição manda', () => {
     /**
      * O feed empurrou A (32 servidos contra 16), mas a atenção dele terminou em
      * B — é a definição de "virou o jogo", e é o caso que o painel do professor
@@ -131,7 +131,7 @@ describe('tempo: a janela termina com o feed', () => {
       { tipo: 'visto', postId: 'p2', payload: { dwellMs: 4000 }, clientTs: T0 + 30_000 },
       { tipo: 'visto', postId: 'p3', payload: { dwellMs: 4000 }, clientTs: T0 + 60_000 },
     ];
-    // 20 minutos depois, no meio do debate, o aluno olha para o professor.
+    // 20 minutos depois, no meio do debate, o estudante olha para o professor.
     const noDebate = [
       { tipo: 'perdeu_foco', postId: null, payload: {}, clientTs: T0 + 1_200_000 },
       { tipo: 'voltou_foco', postId: null, payload: {}, clientTs: T0 + 1_260_000 },

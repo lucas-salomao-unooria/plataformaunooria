@@ -32,7 +32,7 @@ describe('normalizar e reconhecer bairro', () => {
 });
 
 describe('as falas do playtest, uma a uma', () => {
-  // Estas oito frases são o que o aluno de 16 anos escreveu de verdade, na
+  // Estas oito frases são o que o estudante de 16 anos escreveu de verdade, na
   // ordem em que escreveu. Se o classificador errar aqui, ele erra em sala.
   it('"num intindi" é pedido de socorro, não pergunta', () => {
     expect(classificarTurno('num intindi', ctx())).toBe('nao-entendi');
@@ -78,7 +78,7 @@ describe('o mesmo texto muda de sentido com o estado da Missão', () => {
 
   it('PERGUNTAR sobre um bairro não é mandar equipe para lá', () => {
     // Este era o defeito: bastava o nome do bairro aparecer para a fala virar
-    // ordem de alocação. Duas consequências, e a segunda é a grave — o aluno
+    // ordem de alocação. Duas consequências, e a segunda é a grave — o estudante
     // perguntava "quantas pessoas moram na Ribeirinha?" e (1) a pergunta não
     // debitava o orçamento, porque ordem não debita, e (2) o Cientista recebia
     // o protocolo "isso é uma ordem, chame alocar_equipe" e mandava a equipe.
@@ -160,7 +160,7 @@ describe('os protocolos são texto autorado e nenhum deles decide', () => {
     }
   });
 
-  it('nenhum protocolo nomeia um bairro: quem escolhe é o aluno', () => {
+  it('nenhum protocolo nomeia um bairro: quem escolhe é o estudante', () => {
     for (const t of tipos) {
       for (const temDados of [true, false]) {
         expect(bairroCitado(protocoloDoTurno(t, { temDados }))).toBeNull();

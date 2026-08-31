@@ -16,24 +16,20 @@ import { Sheet } from './sheet';
 export function ComentariosSheet({
   post,
   avatarDoEstudante,
-  avatarDoAluno,
   handleDoEstudante,
-  handleDoAluno,
   aoFechar,
   aoComentar,
   aoCurtirComentario,
 }: {
   post: FeedPostCliente | null;
   avatarDoEstudante?: string;
-  avatarDoAluno?: string;
   handleDoEstudante?: string;
-  handleDoAluno?: string;
   aoFechar: () => void;
   aoComentar: (post: FeedPostCliente, texto: string) => void;
   aoCurtirComentario: (post: FeedPostCliente) => void;
 }) {
-  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
-  const handle = handleDoEstudante ?? handleDoAluno ?? '';
+  const avatar = avatarDoEstudante ?? '';
+  const handle = handleDoEstudante ?? '';
   const [comentarios, setComentarios] = useState<ComentarioCliente[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [texto, setTexto] = useState('');
@@ -71,7 +67,6 @@ export function ComentariosSheet({
       likesCount: 0,
       timestampLabel: 'agora',
       doEstudante: true,
-      doAluno: true,
     };
 
     setComentarios((atual) => [meu, ...atual]);
@@ -99,7 +94,7 @@ export function ComentariosSheet({
 
           {comentarios.map((comentario) => {
             const curtido = curtidos.has(comentario.id);
-            const ehDoEstudante = comentario.doEstudante || comentario.doAluno;
+            const ehDoEstudante = comentario.doEstudante || comentario.doEstudante;
             return (
               <li key={comentario.id} className="flex items-start gap-2.5 py-2.5">
                 <AvatarPerfil seed={ehDoEstudante ? avatar : comentario.handle} tamanho={24} />

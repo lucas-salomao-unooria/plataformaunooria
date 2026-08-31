@@ -53,19 +53,19 @@ describe('invariante: o que cruza a fronteira do cliente é allowlist', () => {
       // Tudo isto é do servidor e nada disto pode chegar ao navegador.
       escolaId: 'escola-secreta',
       turmaId: 'turma-secreta',
-      alunoId: 'aluno-secreto',
+      estudanteId: 'estudante-secreto',
       tokensGastos: 4242,
       chamadasIa: 7,
     });
     const cru = JSON.stringify(publica);
-    for (const proibido of ['escola', 'turma', 'alunoId', 'tokens', 'chamadas', '4242']) {
+    for (const proibido of ['escola', 'turma', 'estudanteId', 'tokens', 'chamadas', '4242']) {
       expect(cru).not.toContain(proibido);
     }
   });
 
   it('a ficha pública não leva os números POR BAIRRO da ficha canônica', () => {
     // Eles são a verdade do mundo. Nenhuma fonte os entrega inteiros, e quem os
-    // entrega ao aluno — já distorcidos pelo viés de cada conjunto — é a
+    // entrega ao estudante — já distorcidos pelo viés de cada conjunto — é a
     // estimativa do modelo. A ficha crua seria a resposta de graça.
     const publica = sanitizarFicha(MISSAO_TEMPESTADE);
     expect(Object.keys(publica).sort()).toEqual(

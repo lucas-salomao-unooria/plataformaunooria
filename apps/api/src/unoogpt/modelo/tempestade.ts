@@ -69,7 +69,7 @@ function minutosAte(slug: string, equipe: 'alfa' | 'bravo'): number {
 /**
  * Tempo RELATIVO, nunca hora de relógio.
  *
- * O aluno só vê o cronômetro; falar "chega às 17h48" obriga a converter escala
+ * O estudante só vê o cronômetro; falar "chega às 17h48" obriga a converter escala
  * no meio de uma emergência, e ele nem tem o relógio da cidade na tela.
  */
 const emMinutos = (minutos: number) => `${minutos} min`;
@@ -78,11 +78,11 @@ const emMinutos = (minutos: number) => `${minutos} min`;
  * Quando a equipe chega, e com quanta folga.
  *
  * NADA é impossível e NADA é castigo. A hora de chegada é uma variável do
- * cálculo — ela desloca a distribuição, não corta a operação — e o que o aluno
+ * cálculo — ela desloca a distribuição, não corta a operação — e o que o estudante
  * recebe é a informação: chegou às 17h41, a chuva começou às 18h00.
  *
  * Duas versões anteriores erraram aqui. A primeira barrava a equipe ("não
- * chega"), e metade da cidade virava "via fechada": o aluno passava a caçar um
+ * chega"), e metade da cidade virava "via fechada": o estudante passava a caçar um
  * par de bairros que a mecânica aceitasse, em vez de pensar nos dados. A
  * segunda somava 15 minutos de desvio, que é a mesma punição com outro nome.
  */
@@ -141,11 +141,11 @@ export function alcancaveisAgora(saidaEmMinutos: number) {
  * Uma cidade, uma tempestade.
  *
  * A força do evento em cada bairro é sorteada com a semente da TURMA, não do
- * aluno: todos enfrentam a mesma tempestade. Assim dois alunos que mandarem
+ * aluno: todos enfrentam a mesma tempestade. Assim dois estudantes que mandarem
  * para os mesmos lugares, na mesma hora, terminam com números próximos — e a
  * diferença entre eles vem da decisão, não de dado do sistema.
  *
- * O que continua variando por aluno é a operação: nem toda equipe tira todo
+ * O que continua variando por estudante é a operação: nem toda equipe tira todo
  * mundo, e nem todo bairro sem socorro perde a mesma fração.
  */
 export function simular(
@@ -213,7 +213,7 @@ export function simular(
 /**
  * O que ESTA alocação rende em média, e em que faixa.
  *
- * É o campo que carrega a moral inteira: sem ele o aluno lê "2.100 atendidas" e
+ * É o campo que carrega a moral inteira: sem ele o estudante lê "2.100 atendidas" e
  * conclui que foi mal. Com ele, lê que a alocação rende 2.450 em média e que
  * nesta rodada deu 2.100 — e entende que jogou uma moeda, não resolveu uma
  * conta. A diferença entre errar e ter azar.
@@ -245,7 +245,7 @@ export function esperadoDe(
     /**
      * AMOSTRAS DA MESMA DECISÃO — o que faz "não repete igual" sair do texto.
      *
-     * Uma rodada é anedota: o aluno lê 1.345 e conclui que tirou uma nota. Ver
+     * Uma rodada é anedota: o estudante lê 1.345 e conclui que tirou uma nota. Ver
      * a mesma decisão render outros vinte números, com o dele no meio deles,
      * é a diferença entre ouvir que existe variação e enxergar a variação.
      * São corridas de verdade do mesmo modelo, não ruído decorativo.

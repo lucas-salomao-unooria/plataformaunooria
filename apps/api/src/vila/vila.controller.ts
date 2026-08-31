@@ -9,14 +9,14 @@ import { PayloadVilaV1 } from "./contrato";
 import { VilaService } from "./vila.service";
 
 /**
- * Rotas do ALUNO da exp-70-vila-do-lume.
+ * Rotas do ESTUDANTE da exp-70-vila-do-lume.
  *
  * O gabarito da missão "A Noite Longa" (`legitima` por cartão) fica no servidor:
  * o cliente manda qual opção escolheu, a api corrige (regra inviolável nº 3). E
- * a BOLHA é atribuída aqui, nunca pelo cliente — era `alunoSlot % 3` no
+ * a BOLHA é atribuída aqui, nunca pelo cliente — era `estudanteSlot % 3` no
  * navegador, o que punha nas mãos do bundle a condição do próprio instrumento.
  *
- * Identidade sempre do token, nunca do body: o payload não traz aluno nem turma.
+ * Identidade sempre do token, nunca do body: o payload não traz estudante nem turma.
  */
 
 const UUID = z.string().uuid();
@@ -45,7 +45,7 @@ export class VilaController {
   @Contrato({
     resumo: "Abre a partida e entrega os cartões DESTA criança.",
     descricao:
-      "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `alunoSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.",
+      "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `estudanteSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.",
     corpo: AbrirSchema,
     resposta: SessaoAbertaSchema,
     status: 201,
@@ -53,7 +53,7 @@ export class VilaController {
       "Os cartões vêm **sem gabarito** e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.",
       "Nos anos iniciais (1EF–5EF) a bolha B **não é servida** — \"suporte\" exige entender o que é suporte, e só a api sabe a série.",
       "Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.",
-      "Identidade sempre do token: o payload não traz aluno nem turma.",
+      "Identidade sempre do token: o payload não traz estudante nem turma.",
     ],
   })
   async abrir(@Body() body: unknown, @Req() req: Autenticado) {

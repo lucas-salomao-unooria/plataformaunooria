@@ -3,12 +3,12 @@ import { CAPACIDADE_DA_EQUIPE } from '../modelo/parametros';
 import { chegaATempo, eficienciaDoTempo } from '../modelo/tempestade';
 
 /**
- * O que a decisão do aluno PROJETA — a partir do que ele enxerga, nunca da
+ * O que a decisão do estudante PROJETA — a partir do que ele enxerga, nunca da
  * verdade oculta.
  *
  * Este número sai das estimativas dos Conjuntos carregados, com o viés e a
  * faixa deles junto. Usar aqui a média real da simulação (esperadoDe) daria ao
- * aluno um placar antes da decisão: bastaria varrer as combinações e escolher a
+ * estudante um placar antes da decisão: bastaria varrer as combinações e escolher a
  * maior, e a Missão passaria a ter resposta certa — que é exatamente o que ela
  * nega (ADR-0006).
  *
@@ -63,7 +63,7 @@ export function projetar(
 
     const rota = chegaATempo(slug, equipe, saidaEmMinutos);
     // Os minutos só aparecem com o mapa de estradas carregado: sem ele, o
-    // aluno não sabe quanto leva — e este painel não pode contar por fora.
+    // estudante não sabe quanto leva — e este painel não pode contar por fora.
     const minutos = temTempos ? (bairro.tempos?.[equipe] ?? null) : null;
     // Informação, não alarme: o painel diz a que horas a equipe chega e o que
     // já terá acontecido na cidade quando ela chegar.

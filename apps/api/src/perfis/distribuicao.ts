@@ -34,7 +34,6 @@ export interface EstudanteNaDistribuicao {
   jaComecou: boolean;
 }
 
-export type AlunoNaDistribuicao = EstudanteNaDistribuicao;
 
 /** Lê a afinidade aprovada da atividade. Null quando ainda não há antagonismo. */
 export function afinidadeDaAtividade(antagonismo: unknown): Afinidade | null {

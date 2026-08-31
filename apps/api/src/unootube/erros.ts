@@ -4,7 +4,7 @@ import { HttpException } from "@nestjs/common";
  * Erros do jogo com código legível para a experiência decidir o que mostrar.
  * O corpo `{codigo, mensagem}` é compatível com o `{mensagem}` que o resto da
  * api já usa. As mensagens são linguagem de app real — nada de "atividade",
- * "professor" ou "gabarito" na tela do aluno.
+ * "professor" ou "gabarito" na tela do estudante.
  */
 export type CodigoErro =
   | "VIDEO_DESCONHECIDO"

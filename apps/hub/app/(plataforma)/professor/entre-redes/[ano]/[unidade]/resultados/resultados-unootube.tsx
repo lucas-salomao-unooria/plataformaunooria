@@ -142,7 +142,7 @@ export async function ResultadosUnooTube({
           </div>
 
           <Card variant="elevated" title={`${resultados.turma.nome} · ${resultados.turma.serie}`}>
-            <TabelaResultados estudantes={resultados.estudantes ?? resultados.alunos} />
+            <TabelaResultados estudantes={resultados.estudantes} />
           </Card>
 
           <div>

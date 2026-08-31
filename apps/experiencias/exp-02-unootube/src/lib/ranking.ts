@@ -20,5 +20,3 @@ export function posicaoDoEstudante(linhas: readonly RankingLinha[], modo: ModoRa
   return ordenarRanking(linhas, modo).findIndex((l) => l.voce) + 1;
 }
 
-/** @deprecated Use posicaoDoEstudante */
-export const posicaoDoAluno = posicaoDoEstudante;

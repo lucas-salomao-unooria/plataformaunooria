@@ -12,8 +12,7 @@ export interface TurmaResumo {
 }
 
 export interface LinhaEstudanteUnootube {
-  estudanteId?: string;
-  alunoId: string;
+  estudanteId: string;
   nome: string;
   usuario: string;
   iniciou: boolean;
@@ -25,8 +24,6 @@ export interface LinhaEstudanteUnootube {
   concluidoEm: string | null;
 }
 
-/** @deprecated Alias de compatibilidade. Use `LinhaEstudanteUnootube`. */
-export type LinhaAlunoUnootube = LinhaEstudanteUnootube;
 
 export interface ResumoTurmaUnootube {
   total: number;
@@ -65,8 +62,6 @@ export function situacaoDoEstudante(l: Pick<LinhaEstudanteUnootube, "iniciou" | 
   return "nao-iniciou";
 }
 
-/** @deprecated Alias de compatibilidade. Use `situacaoDoEstudante`. */
-export const situacaoDoAluno = situacaoDoEstudante;
 
 /** Concluídos primeiro, depois em andamento, depois quem não iniciou; nome pt-BR dentro do grupo. */
 export function ordenarEstudantes(estudantes: readonly LinhaEstudanteUnootube[]): LinhaEstudanteUnootube[] {
@@ -78,5 +73,3 @@ export function ordenarEstudantes(estudantes: readonly LinhaEstudanteUnootube[])
   );
 }
 
-/** @deprecated Alias de compatibilidade. Use `ordenarEstudantes`. */
-export const ordenarAlunos = ordenarEstudantes;

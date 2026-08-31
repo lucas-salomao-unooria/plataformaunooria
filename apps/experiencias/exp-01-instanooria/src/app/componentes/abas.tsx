@@ -181,7 +181,6 @@ export function AbaPerfil({
   handle,
   displayName,
   avatarDoEstudante,
-  avatarDoAluno,
   salvos,
   meusPosts,
   aoAbrirMenu,
@@ -189,13 +188,12 @@ export function AbaPerfil({
   handle: string;
   displayName: string;
   avatarDoEstudante?: string;
-  avatarDoAluno?: string;
   salvos: FeedPostCliente[];
   meusPosts: { texto: string; template: string; criadoEm: number }[];
   aoAbrirMenu: () => void;
 }) {
   const publicacoes = meusPosts.length;
-  const avatar = avatarDoEstudante ?? avatarDoAluno ?? "";
+  const avatar = avatarDoEstudante ?? "";
 
   return (
     <div className="flex flex-col">

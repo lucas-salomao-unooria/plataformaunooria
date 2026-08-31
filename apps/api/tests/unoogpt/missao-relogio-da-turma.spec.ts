@@ -18,7 +18,7 @@ const turma = (over: Partial<RelogioDaTurma> = {}): RelogioDaTurma => ({
 });
 
 describe('as quatro fases do relógio da turma', () => {
-  it('aguardando: o aluno vê o cronômetro cheio e parado, e não pode falar', () => {
+  it('aguardando: o estudante vê o cronômetro cheio e parado, e não pode falar', () => {
     const e = estadoDoRelogio(RELOGIO_PADRAO, em(9999));
     expect(e.fase).toBe('aguardando');
     expect(e.minutosGastos).toBe(0);
@@ -67,7 +67,7 @@ describe('as quatro fases do relógio da turma', () => {
 describe('somar tempo estica a hora da cidade sem rebobinar', () => {
   it('+2 min no meio da aula: o minuto da cidade NUNCA anda para trás', () => {
     // Este é o teste que justifica o pivô existir. Sem ele, trocar a duração
-    // aos 4:00 jogava o aluno do minuto 48 de volta para o 34.
+    // aos 4:00 jogava o estudante do minuto 48 de volta para o 34.
     const antes = turma();
     const quando = em(240);
     const noMomento = estadoDoRelogio(antes, quando).minutosGastos;

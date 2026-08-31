@@ -11,7 +11,7 @@ import { UnoogptService } from "./unoogpt.service";
  * (ver o comentário em `bemestar.module.ts`).
  *
  * Três controllers, um por PAPEL, e a separação é de segurança, não de estilo:
- * o gestor não tem rota que aceite `alunoId`, então nenhum método novo o leva à
+ * o gestor não tem rota que aceite `estudanteId`, então nenhum método novo o leva à
  * Transcrição de uma criança por descuido.
  */
 @Module({

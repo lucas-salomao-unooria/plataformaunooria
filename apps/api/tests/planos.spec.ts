@@ -62,7 +62,7 @@ const dirTemporario = mkdtempSync(join(tmpdir(), "planos-teste-"));
 const config = new ConfigService({
   PLANOS_DRIVER: "local",
   PLANOS_LOCAL_DIR: dirTemporario,
-  AI_DAILY_TOKEN_QUOTA_PER_ALUNO: 20000,
+  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
   AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
 });
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
@@ -278,7 +278,7 @@ describe("geração assíncrona", () => {
     const chamadasAntes = provider.chamadas.length;
     expect(await statusDe(servicoApertado.criar(ESCOLA, profA, "professor", { disciplina: DISCIPLINA, serie: "8EF" }))).toBe(429);
     expect(provider.chamadas.length).toBe(chamadasAntes);
-    // O mesmo consumo, medido pela régua do ALUNO, também estaria estourado —
+    // O mesmo consumo, medido pela régua do ESTUDANTE, também estaria estourado —
     // e a régua do professor (2M) não: é isso que `perfil` muda.
     expect(await quota.temSaldo(ESCOLA, profA, "estudante")).toBe(true); // 300k > ~3k gastos
     expect(await new QuotaService(prisma, configApertada).temSaldo(ESCOLA, profA, "professor")).toBe(false);

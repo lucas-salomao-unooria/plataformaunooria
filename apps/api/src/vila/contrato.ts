@@ -290,7 +290,7 @@ export const PayloadVilaV1 = z
        * Herdamos 2000 do app de origem, que tinha o mesmo log fino. Cabe baixar:
        * o cap é a ÚNICA coisa que limita o tamanho da linha se um cliente
        * adulterado mandar lixo, e 2000 × ~80 bytes = 160KB por partida (1,6GB
-       * num contrato de 10 mil alunos) contra ~2KB reais. Com 200 há 9× de folga
+       * num contrato de 10 mil estudantes) contra ~2KB reais. Com 200 há 9× de folga
        * para eventos novos — quem adicionar um ponto de log confere aqui.
        */
       .max(200),

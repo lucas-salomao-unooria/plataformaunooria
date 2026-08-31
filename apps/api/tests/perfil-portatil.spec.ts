@@ -28,14 +28,14 @@ const ESCOLA_DESTINO = "teste-pp-destino";
 
 /* CPFs válidos EXCLUSIVOS desta suíte: o índice único de CPF é do contrato, e
    duas suítes com o mesmo número colidem no banco quando o Jest as roda junto. */
-const CPF_ALUNO = "70010020039";
+const CPF_ESTUDANTE = "70010020039";
 const CPF_FORASTEIRO = "70010020110";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
 const { portabilidade } = servicosDeTeste(prisma);
 
-let alunoId = "";
+let estudanteId = "";
 let gestorId = "";
 
 async function limpar() {
@@ -65,22 +65,22 @@ beforeAll(async () => {
     data: { escolaId: ESCOLA, nome: "7A", serie: "7EF", periodoLetivoId: periodo.id },
   });
 
-  const aluno = await prisma.user.create({
+  const estudante = await prisma.user.create({
     data: {
       escolaId: ESCOLA,
       username: "pp.aluno",
       displayName: "Ana Portátil da Silva",
       passwordHash: "x",
       role: "estudante",
-      cpf: CPF_ALUNO,
+      cpf: CPF_ESTUDANTE,
       turmaId: turma.id,
     },
   });
-  alunoId = aluno.id;
+  estudanteId = estudante.id;
   await prisma.lotacao.create({
     data: {
       escolaId: ESCOLA,
-      usuarioId: aluno.id,
+      usuarioId: estudante.id,
       papel: "estudante",
       principal: true,
       inicio: periodo.inicio,
@@ -92,7 +92,7 @@ beforeAll(async () => {
         data: {
           escolaId: ESCOLA,
           turmaId: turma.id,
-          usuarioId: aluno.id,
+          usuarioId: estudante.id,
           papel: "estudante",
           principal: true,
           inicio: periodo.inicio,
@@ -122,7 +122,7 @@ afterAll(async () => {
 
 describe("montar o documento", () => {
   test("leva trajetória, participações e o CPF — que é quem reconhece a criança lá fora", async () => {
-    const perfil = await portabilidade.montar(alunoId);
+    const perfil = await portabilidade.montar(estudanteId);
     expect(perfil).not.toBeNull();
     expect(perfil!.titular.nome).toBe("Ana Portátil da Silva");
     /* Formatado: quem lê o arquivo é uma pessoa, e a chave de reconciliação são
@@ -161,7 +161,7 @@ describe("montar o documento", () => {
   });
 
   test("o documento montado passa no schema que o destino vai aplicar", async () => {
-    const perfil = await portabilidade.montar(alunoId);
+    const perfil = await portabilidade.montar(estudanteId);
     const completo = {
       ...perfil,
       emitidoEm: new Date().toISOString(),
@@ -425,10 +425,10 @@ describe("importar um documento", () => {
 
   test("o documento fica na tabela dele e NÃO vira lotação, matrícula nem progresso", async () => {
     const lotacoes = await prisma.lotacao.count({
-      where: { usuarioId: alunoId, escolaId: ESCOLA_DESTINO },
+      where: { usuarioId: estudanteId, escolaId: ESCOLA_DESTINO },
     });
-    const matriculas = await prisma.matricula.count({ where: { usuarioId: alunoId } });
-    const progresso = await prisma.progresso.count({ where: { estudanteId: alunoId } });
+    const matriculas = await prisma.matricula.count({ where: { usuarioId: estudanteId } });
+    const progresso = await prisma.progresso.count({ where: { estudanteId: estudanteId } });
     expect(lotacoes).toBe(0);
     expect(matriculas).toBe(1); // só a daqui, criada no beforeAll
     expect(progresso).toBe(0);
@@ -436,7 +436,7 @@ describe("importar um documento", () => {
 
   test("reimportar o mesmo documento não cria uma segunda medida", async () => {
     await portabilidade.importar(ESCOLA_DESTINO, arquivoDe(), gestorId);
-    const recebidos = await portabilidade.recebidos(ESCOLA_DESTINO, alunoId);
+    const recebidos = await portabilidade.recebidos(ESCOLA_DESTINO, estudanteId);
     expect(recebidos).toHaveLength(1);
   });
 
@@ -470,16 +470,16 @@ describe("importar um documento", () => {
   });
 
   test("o perfil recebido é da ESCOLA que recebeu — a outra não o enxerga", async () => {
-    expect(await portabilidade.recebidos(ESCOLA_DESTINO, alunoId)).toHaveLength(1);
-    expect(await portabilidade.recebidos(ESCOLA, alunoId)).toHaveLength(0);
+    expect(await portabilidade.recebidos(ESCOLA_DESTINO, estudanteId)).toHaveLength(1);
+    expect(await portabilidade.recebidos(ESCOLA, estudanteId)).toHaveLength(0);
   });
 
   test("apagar tira o documento de fora e não toca em nada medido aqui", async () => {
-    const [recebido] = await portabilidade.recebidos(ESCOLA_DESTINO, alunoId);
+    const [recebido] = await portabilidade.recebidos(ESCOLA_DESTINO, estudanteId);
     expect(recebido).toBeDefined();
     expect(await portabilidade.remover(ESCOLA_DESTINO, recebido!.id)).toBe(true);
-    expect(await portabilidade.recebidos(ESCOLA_DESTINO, alunoId)).toHaveLength(0);
-    expect(await prisma.user.count({ where: { id: alunoId } })).toBe(1);
+    expect(await portabilidade.recebidos(ESCOLA_DESTINO, estudanteId)).toHaveLength(0);
+    expect(await prisma.user.count({ where: { id: estudanteId } })).toBe(1);
   });
 });
 

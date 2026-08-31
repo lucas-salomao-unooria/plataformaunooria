@@ -37,10 +37,10 @@ describe("importação da planilha de pessoas", () => {
       ESCOLA,
       csv(
         "matricula,nome,usuario,papel,turma,serie,turno",
-        "2026001,Ana Lima,ana.lima,aluno,8A,8EF,manha",
-        "2026002,Bruno Reis,,aluno,8A,8EF,manha",
+        "2026001,Ana Lima,ana.lima,estudante,8A,8EF,manha",
+        "2026002,Bruno Reis,,estudante,8A,8EF,manha",
         "1099,Marta Nunes,marta.nunes,professor,8A,,",
-        "2026003,Sem Turma,,aluno,,,", // aluno sem turma/série
+        "2026003,Sem Turma,,estudante,,,", // estudante sem turma/série
         "9999,Papel Estranho,,responsavel,,,", // papel fora do vocabulário
       ),
       { senhaPadrao: "senha1234" },
@@ -53,7 +53,7 @@ describe("importação da planilha de pessoas", () => {
       "6:papel",
     ]);
     expect(r.turmasCriadas).toEqual(["8A"]);
-    expect(r.matriculados).toBe(3); // 2 alunos + 1 professor
+    expect(r.matriculados).toBe(3); // 2 estudantes + 1 professor
   });
 
   test("o login pode ser gerado, e volta no relatório para o gestor entregar", async () => {
@@ -71,7 +71,7 @@ describe("importação da planilha de pessoas", () => {
       include: { turma: true },
     });
     expect(matricula?.turma.nome).toBe("8A");
-    // Professor não recebe turma no cache: o cache é da matrícula PRINCIPAL do aluno.
+    // Professor não recebe turma no cache: o cache é da matrícula PRINCIPAL do estudante.
     expect(marta.turmaId).toBeNull();
   });
 
@@ -84,7 +84,7 @@ describe("importação da planilha de pessoas", () => {
       ESCOLA,
       csv(
         "matricula,nome,usuario,papel,turma,serie",
-        "2026001,Ana Lima da Silva,ana.silva,aluno,8A,8EF",
+        "2026001,Ana Lima da Silva,ana.silva,estudante,8A,8EF",
       ),
       { senhaPadrao: "senha1234" },
     );
@@ -94,17 +94,17 @@ describe("importação da planilha de pessoas", () => {
     const depois = await prisma.user.findFirstOrThrow({
       where: { escolaId: ESCOLA, matriculaExterna: "2026001" },
     });
-    expect(depois.id).toBe(antes.id); // não nasceu um segundo aluno
+    expect(depois.id).toBe(antes.id); // não nasceu um segundo estudante
     expect(depois.username).toBe("ana.silva");
     expect(depois.displayName).toBe("Ana Lima da Silva");
     // Reimportar NÃO reseta a senha de quem já entrou.
     expect(depois.passwordHash).toBe(antes.passwordHash);
   });
 
-  test("mudar o aluno de turma ENCERRA a matrícula anterior em vez de apagá-la", async () => {
+  test("mudar o estudante de turma ENCERRA a matrícula anterior em vez de apagá-la", async () => {
     await rostering.importarPlanilha(
       ESCOLA,
-      csv("matricula,nome,papel,turma,serie", "2026001,Ana Lima da Silva,aluno,8B,8EF"),
+      csv("matricula,nome,papel,turma,serie", "2026001,Ana Lima da Silva,estudante,8B,8EF"),
       { senhaPadrao: "senha1234" },
     );
 
@@ -146,7 +146,7 @@ describe("importação da planilha de pessoas", () => {
   test("uma senha por pessoa: cada credencial devolvida autentica de fato", async () => {
     const r = await rostering.importarPlanilha(
       ESCOLA,
-      csv("matricula,nome,papel,turma,serie", "2026010,Caio Prado,aluno,8B,8EF"),
+      csv("matricula,nome,papel,turma,serie", "2026010,Caio Prado,estudante,8B,8EF"),
       { gerarSenhas: true },
     );
     expect(r.credenciais).toHaveLength(1);
@@ -176,7 +176,7 @@ describe("importação da planilha de pessoas", () => {
   test("o formato antigo continua importando, com a senha da própria linha", async () => {
     const r = await rostering.importarPlanilha(
       ESCOLA,
-      csv("nome,usuario,senha,papel,turma,serie", "Rita Antiga,rita.antiga,senha1234,aluno,8A,8EF"),
+      csv("nome,usuario,senha,papel,turma,serie", "Rita Antiga,rita.antiga,senha1234,estudante,8A,8EF"),
     );
     expect(r.criados).toBe(1);
     const rita = await prisma.user.findFirstOrThrow({

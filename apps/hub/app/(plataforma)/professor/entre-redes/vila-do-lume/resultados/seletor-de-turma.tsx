@@ -42,7 +42,7 @@ export function SeletorDeTurma({
           >
             <option value="">Escolha a turma…</option>
             {turmas.map((turma) => {
-              const contagem = turma.estudantes ?? turma.alunos ?? 0;
+              const contagem = turma.estudantes ?? 0;
               return (
                 <option key={turma.id} value={turma.id}>
                   {turma.nome} · {turma.serie} · {contagem}{" "}

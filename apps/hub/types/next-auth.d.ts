@@ -15,7 +15,7 @@ export interface UsuarioDaSessao {
   serie?: string;
   /**
    * As escolas da pessoa nesta REDE. Professor de rede estadual tem mais de uma;
-   * aluno tem uma. `escolaId` acima é a ATIVA — a que o token carrega e a que
+   * estudante tem uma. `escolaId` acima é a ATIVA — a que o token carrega e a que
    * define o que ele vê. Trocar de escola troca a sessão, não os dados.
    */
   escolas?: Array<{ id: string; nome: string; papel: string }>;

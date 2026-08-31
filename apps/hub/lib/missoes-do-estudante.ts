@@ -21,7 +21,6 @@ export type MissaoDoEstudante = {
   rota: string;
 };
 
-export type MissaoDoAluno = MissaoDoEstudante;
 
 export const MISSOES_DO_ESTUDANTE: MissaoDoEstudante[] = [
   /* As transversais vêm PRIMEIRO, e isso é sobre ordem pedagógica, não estética.
@@ -40,9 +39,9 @@ export const MISSOES_DO_ESTUDANTE: MissaoDoEstudante[] = [
   ...MISSOES_TRANSVERSAIS,
   ...ANOS.flatMap((ano) => ano.missoes),
 ]
-  .filter((missao) => missao.status === "disponivel" && missao.expId && (missao.estudante || missao.aluno))
+  .filter((missao) => missao.status === "disponivel" && missao.expId && (missao.estudante))
   .map((missao) => {
-    const copy = missao.estudante ?? missao.aluno!;
+    const copy = missao.estudante!;
     return {
       expId: missao.expId!,
       titulo: copy.titulo,
@@ -51,4 +50,3 @@ export const MISSOES_DO_ESTUDANTE: MissaoDoEstudante[] = [
     };
   });
 
-export const MISSOES_DO_ALUNO = MISSOES_DO_ESTUDANTE;

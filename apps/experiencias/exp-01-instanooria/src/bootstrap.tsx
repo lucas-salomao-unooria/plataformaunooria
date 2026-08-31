@@ -5,7 +5,6 @@ import { api, definirExperiencia } from "./lib/api";
 import { marcarVisibilidade } from "./lib/visibilidade";
 import {
   InstanooriaApp,
-  type AlunoCliente,
   type EstudanteCliente,
   type FaseCliente,
   type MissaoCliente,
@@ -28,7 +27,8 @@ interface Boot {
   fase: FaseCliente;
   missao: MissaoCliente;
   estudante?: EstudanteCliente;
-  aluno?: AlunoCliente;
+  /** @deprecated Alias do payload anterior ao rename (ADR-51). */
+  aluno?: EstudanteCliente;
 }
 
 export function Bootstrap() {

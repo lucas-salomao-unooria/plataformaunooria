@@ -1,5 +1,5 @@
 /**
- * Como a partida de um aluno deve ser LIDA pelo professor. PURO: sem Prisma,
+ * Como a partida de um estudante deve ser LIDA pelo professor. PURO: sem Prisma,
  * sem React.
  *
  * Copiado de vila-coleta/lib/perfil/{mapeamento,leitura}.ts, com o mesmo
@@ -18,7 +18,7 @@
  *    não dois.
  *  - zero ≠ none. "Teve a chance e não usou" e "a chance nunca chegou" viram
  *    frases diferentes, e essa é a distinção mais importante deste arquivo: um
- *    aluno cuja tempestade chegou antes de ele conseguir investigar não pode
+ *    estudante cuja tempestade chegou antes de ele conseguir investigar não pode
  *    aparecer como alguém que se recusou a investigar.
  *
  * ISTO NÃO É AVALIAÇÃO. É o que a partida mostrou, para o professor conduzir o
@@ -187,14 +187,14 @@ export function contarPorGrau(linhas: LinhaDeLeitura[]) {
 }
 
 /**
- * Frase única para o topo do relatório. Nunca afirma o que o aluno É.
+ * Frase única para o topo do relatório. Nunca afirma o que o estudante É.
  *
  * Partida curta some com o resto: dois minutos de jogo não sustentam frase
  * nenhuma, e é a frase do topo que o professor vai lembrar depois de fechar a
  * tela.
  */
 export function resumoHonesto(s: SinaisDaPartida, linhas: LinhaDeLeitura[]): string {
-  if (!s.comecou) return 'Este aluno ainda não começou a Missão.';
+  if (!s.comecou) return 'Este estudante ainda não começou a Missão.';
   if (!s.concluiu && s.leituras === 0 && !s.decidiu) {
     return 'A Missão começou e não chegou a virar decisão. Vale como tentativa, não como leitura.';
   }

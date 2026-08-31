@@ -54,7 +54,6 @@ export class TelemetryController {
     const enriched = eventos.map((e) => ({
       ...e,
       estudanteId: req.auth.usuarioId,
-      alunoId: req.auth.usuarioId,
       escolaId: req.auth.escolaId,
     }));
     return { ok: true, recebidos: await this.publicar(enriched) };
@@ -87,7 +86,6 @@ export class TelemetryController {
       const enriched = parsed.data.eventos.map((e) => ({
         ...e,
         estudanteId: auth.usuarioId,
-        alunoId: auth.usuarioId,
         escolaId: auth.escolaId,
       }));
       await this.publicar(enriched);
@@ -168,6 +166,7 @@ export class TelemetryController {
         // processo que morre antes do flush.
         const linhas = doGrupo.map(
           (e) => {
+            /* Bundle publicado antes do rename ainda manda `estudanteId`. */
             const estudanteId = e.estudanteId ?? e.alunoId ?? "";
             return Prisma.sql`(
             ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${estudanteId}, ${e.expId},

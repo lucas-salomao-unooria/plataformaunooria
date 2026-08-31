@@ -57,7 +57,7 @@ function fala(texto: string, extra: Record<string, unknown> = {}) {
 
 /**
  * Corpo de resposta do Vertex com VÁRIAS chamadas na mesma volta — function
- * calling PARALELO, que é o que o modelo real faz quando o aluno pede fonte e
+ * calling PARALELO, que é o que o modelo real faz quando o estudante pede fonte e
  * leitura na mesma frase.
  */
 function pedidosParalelos(nomes: string[]) {
@@ -167,7 +167,7 @@ describe("VertexProvider.conversar", () => {
      *   400 "the number of function response parts is equal to the number of
      *        function call parts of the function call turn."
      * O sintoma no produto seria o turno morrer no meio — a ferramenta roda, o
-     * estado muda, e o aluno recebe "não consegui responder".
+     * estado muda, e o estudante recebe "não consegui responder".
      */
     const { pedidos } = dublarFetch([
       pedidosParalelos(["usar_dados", "rodar_modelo"]),
@@ -208,7 +208,7 @@ describe("VertexProvider.conversar", () => {
             content: {
               role: "model",
               parts: [
-                { thought: true, text: "O aluno não consultou nada ainda; devo sugerir." },
+                { thought: true, text: "O estudante não consultou nada ainda; devo sugerir." },
                 { text: "Quer que eu veja a previsão primeiro?" },
               ],
             },
@@ -265,7 +265,7 @@ describe("VertexProvider.conversar", () => {
 
   it("não excede maxVoltas quando o modelo só pede ferramenta", async () => {
     // Modelo preso pedindo ferramenta para sempre: o laço tem de parar, e a
-    // fala vazia vira recusa em vez de chegar vazia ao aluno.
+    // fala vazia vira recusa em vez de chegar vazia ao estudante.
     const { pedidos } = dublarFetch([pedidoDeFerramenta()]);
     let execucoes = 0;
 
@@ -291,7 +291,7 @@ describe("VertexProvider.conversar", () => {
   it("traduz a declaração da ferramenta, inclusive a descrição de cada argumento", async () => {
     // A descrição por propriedade é como o modelo descobre o que pode mandar.
     // Sem ela ele chuta o valor do argumento — e um bairro inventado chega ao
-    // executor como se o aluno o tivesse escolhido.
+    // executor como se o estudante o tivesse escolhido.
     const { pedidos } = dublarFetch([fala("ok")]);
 
     await provider.conversar({

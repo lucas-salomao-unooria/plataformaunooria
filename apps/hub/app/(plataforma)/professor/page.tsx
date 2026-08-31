@@ -125,7 +125,7 @@ export default async function HubProfessor() {
                         </span>
                         <span className="text-[13px] text-unooria-neutral-500">
                           {rotuloDaSerie(turma.serie as Serie)}
-                          {turno ? ` · ${turno}` : ""} · {turma.alunos} aluno
+                          {turno ? ` · ${turno}` : ""} · {turma.alunos} estudante
                           {turma.alunos === 1 ? "" : "s"}
                         </span>
                       </div>

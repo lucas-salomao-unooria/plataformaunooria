@@ -77,8 +77,7 @@ export interface RelatorioDaPartida {
 }
 
 export interface LinhaDaTurma {
-  estudanteId?: string;
-  alunoId: string;
+  estudanteId: string;
   nome: string;
   partidas: number;
   ultimaEm: string | null;

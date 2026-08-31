@@ -22,9 +22,9 @@ const FAKES = VIDEOS.filter((v) => !v.factual).map((v) => v.id);
 const CONFIAVEIS = VIDEOS.filter((v) => v.factual).map((v) => v.id);
 
 let turmaId = "";
-let alunoA = "";
-let alunoB = "";
-let alunoSemTurma = "";
+let estudanteA = "";
+let estudanteB = "";
+let estudanteSemTurma = "";
 
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
@@ -65,9 +65,9 @@ beforeAll(async () => {
       },
       select: { id: true },
     });
-  alunoA = (await criar("ut.ana", "Ana Teste", true)).id;
-  alunoB = (await criar("ut.bia", "Bia Teste", true)).id;
-  alunoSemTurma = (await criar("ut.sem", "Sem Turma", false)).id;
+  estudanteA = (await criar("ut.ana", "Ana Teste", true)).id;
+  estudanteB = (await criar("ut.bia", "Bia Teste", true)).id;
+  estudanteSemTurma = (await criar("ut.sem", "Sem Turma", false)).id;
 });
 
 afterAll(async () => {
@@ -77,7 +77,7 @@ afterAll(async () => {
 
 describe("sessão", () => {
   test("sem linha devolve estado inicial, catálogo sem gabarito e NÃO cria linha", async () => {
-    const r = await service.sessao(ESCOLA, alunoA);
+    const r = await service.sessao(ESCOLA, estudanteA);
     expect(r.estado).toEqual({
       salvos: [],
       curtidos: [],
@@ -95,19 +95,19 @@ describe("sessão", () => {
 
 describe("fluxo da missão", () => {
   test("3 salvos desbloqueiam o ranking; o 4º é LIMITE_SALVOS", async () => {
-    await service.salvar(ESCOLA, alunoA, CONFIAVEIS[0]!);
-    await service.salvar(ESCOLA, alunoA, CONFIAVEIS[1]!);
-    const r = await service.salvar(ESCOLA, alunoA, FAKES[0]!);
+    await service.salvar(ESCOLA, estudanteA, CONFIAVEIS[0]!);
+    await service.salvar(ESCOLA, estudanteA, CONFIAVEIS[1]!);
+    const r = await service.salvar(ESCOLA, estudanteA, FAKES[0]!);
     expect(r.estado.rankingDesbloqueado).toBe(true);
     expect(r.derivados).toMatchObject({ inscritos: 1100, fontesConfiaveis: 2, salvos: 3, vagas: 0 });
-    expect(await codigoDe(service.salvar(ESCOLA, alunoA, FAKES[1]!))).toBe("LIMITE_SALVOS");
+    expect(await codigoDe(service.salvar(ESCOLA, estudanteA, FAKES[1]!))).toBe("LIMITE_SALVOS");
   });
 
-  test("remover mantém o ranking; ranking tem 40 linhas com o aluno real", async () => {
-    const r = await service.remover(ESCOLA, alunoA, FAKES[0]!);
+  test("remover mantém o ranking; ranking tem 40 linhas com o estudante real", async () => {
+    const r = await service.remover(ESCOLA, estudanteA, FAKES[0]!);
     expect(r.estado.salvos).toEqual([CONFIAVEIS[0], CONFIAVEIS[1]]);
     expect(r.estado.rankingDesbloqueado).toBe(true);
-    const ranking = await service.ranking(ESCOLA, alunoA);
+    const ranking = await service.ranking(ESCOLA, estudanteA);
     expect(ranking.linhas).toHaveLength(40);
     expect(ranking.linhas.filter((l) => l.voce)).toEqual([
       expect.objectContaining({ nome: "Ana Teste", fontesConfiaveis: 2, inscritos: 100 }),
@@ -115,61 +115,59 @@ describe("fluxo da missão", () => {
   });
 
   test("curtir é toggle e não mexe nos salvos", async () => {
-    const ligado = await service.curtir(ESCOLA, alunoA, "v03");
+    const ligado = await service.curtir(ESCOLA, estudanteA, "v03");
     expect(ligado.estado.curtidos).toEqual(["v03"]);
-    const desligado = await service.curtir(ESCOLA, alunoA, "v03");
+    const desligado = await service.curtir(ESCOLA, estudanteA, "v03");
     expect(desligado.estado.curtidos).toEqual([]);
     expect(desligado.estado.salvos).toHaveLength(2);
   });
 
   test("credibilidade devolve score, congela salvos e é idempotente", async () => {
-    await service.salvar(ESCOLA, alunoA, CONFIAVEIS[2]!);
-    const r = await service.credibilidade(ESCOLA, alunoA);
+    await service.salvar(ESCOLA, estudanteA, CONFIAVEIS[2]!);
+    const r = await service.credibilidade(ESCOLA, estudanteA);
     expect(r.score).toBe(3);
     expect(r.estado.credibilidadeAdicionada).toBe(true);
     expect(r.estado.concluidoEm).not.toBeNull();
-    const denovo = await service.credibilidade(ESCOLA, alunoA);
+    const denovo = await service.credibilidade(ESCOLA, estudanteA);
     expect(denovo.estado.concluidoEm).toBe(r.estado.concluidoEm);
-    expect(await codigoDe(service.salvar(ESCOLA, alunoA, FAKES[0]!))).toBe("MISSAO_CONCLUIDA");
-    expect(await codigoDe(service.remover(ESCOLA, alunoA, CONFIAVEIS[0]!))).toBe("MISSAO_CONCLUIDA");
+    expect(await codigoDe(service.salvar(ESCOLA, estudanteA, FAKES[0]!))).toBe("MISSAO_CONCLUIDA");
+    expect(await codigoDe(service.remover(ESCOLA, estudanteA, CONFIAVEIS[0]!))).toBe("MISSAO_CONCLUIDA");
   });
 
   test("ranking bloqueado para quem não chegou a 3", async () => {
-    await service.salvar(ESCOLA, alunoB, FAKES[0]!);
-    expect(await codigoDe(service.ranking(ESCOLA, alunoB))).toBe("RANKING_BLOQUEADO");
-    expect(await codigoDe(service.credibilidade(ESCOLA, alunoB))).toBe("RANKING_BLOQUEADO");
+    await service.salvar(ESCOLA, estudanteB, FAKES[0]!);
+    expect(await codigoDe(service.ranking(ESCOLA, estudanteB))).toBe("RANKING_BLOQUEADO");
+    expect(await codigoDe(service.credibilidade(ESCOLA, estudanteB))).toBe("RANKING_BLOQUEADO");
   });
 });
 
 describe("corrida", () => {
   test("com 1 salvo, três salvamentos simultâneos: exatamente 2 entram", async () => {
-    await service.reiniciar(ESCOLA, alunoB);
-    await service.salvar(ESCOLA, alunoB, FAKES[0]!);
+    await service.reiniciar(ESCOLA, estudanteB);
+    await service.salvar(ESCOLA, estudanteB, FAKES[0]!);
     const resultados = await Promise.allSettled([
-      service.salvar(ESCOLA, alunoB, FAKES[1]!),
-      service.salvar(ESCOLA, alunoB, FAKES[2]!),
-      service.salvar(ESCOLA, alunoB, FAKES[3]!),
+      service.salvar(ESCOLA, estudanteB, FAKES[1]!),
+      service.salvar(ESCOLA, estudanteB, FAKES[2]!),
+      service.salvar(ESCOLA, estudanteB, FAKES[3]!),
     ]);
     const ok = resultados.filter((r) => r.status === "fulfilled");
     const falhas = resultados.filter((r) => r.status === "rejected");
     expect(ok).toHaveLength(2);
     expect(falhas).toHaveLength(1);
     const linha = await prisma.unootubeSessao.findUniqueOrThrow({
-      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: alunoB } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: estudanteB } },
     });
     expect(linha.salvos).toHaveLength(3);
     expect(linha.rankingDesbloqueado).toBe(true);
   });
 
   test("o mesmo vídeo três vezes em paralelo entra uma vez", async () => {
-    await service.reiniciar(ESCOLA, alunoB);
+    await service.reiniciar(ESCOLA, estudanteB);
     await Promise.all([
-      service.salvar(ESCOLA, alunoB, "v02"),
-      service.salvar(ESCOLA, alunoB, "v02"),
-      service.salvar(ESCOLA, alunoB, "v02"),
+      service.salvar(ESCOLA, estudanteB, "v02"),
     ]);
     const linha = await prisma.unootubeSessao.findUniqueOrThrow({
-      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: alunoB } },
+      where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: estudanteB } },
     });
     expect(linha.salvos).toEqual(["v02"]);
     expect(linha.reinicios).toBe(2);
@@ -177,7 +175,7 @@ describe("corrida", () => {
 });
 
 describe("professor", () => {
-  test("resultados da turma: inclui quem não iniciou, exclui aluno sem turma, resume", async () => {
+  test("resultados da turma: inclui quem não iniciou, exclui estudante sem turma, resume", async () => {
     const r = await service.resultadosDaTurma(ESCOLA, turmaId);
     expect(r.turma).toMatchObject({ id: turmaId, nome: "4A", serie: "4EF" });
     expect((r.estudantes ?? r.alunos).map((a) => a.nome)).toEqual(["Ana Teste", "Bia Teste"]);
@@ -193,7 +191,7 @@ describe("professor", () => {
     const bia = (r.estudantes ?? r.alunos).find((a) => a.nome === "Bia Teste")!;
     expect(bia).toMatchObject({ iniciou: true, salvos: 1, credibilidadeAdicionada: false });
     expect(r.resumo).toMatchObject({ total: 2, iniciaram: 2, concluiram: 1, distribuicaoFontes: { "3": 1 } });
-    expect(JSON.stringify(r)).not.toContain(alunoSemTurma);
+    expect(JSON.stringify(r)).not.toContain(estudanteSemTurma);
   });
 
   test("lista de turmas da escola", async () => {
@@ -205,9 +203,9 @@ describe("professor", () => {
 describe("tenancy", () => {
   test("outra escola não vê a turma nem a sessão", async () => {
     expect(await codigoDe(service.resultadosDaTurma(OUTRA_ESCOLA, turmaId))).toBe("TURMA_NAO_ENCONTRADA");
-    // aluno da escola A consultado sob a escola B: o usuário não pertence a ela
-    expect(await codigoDe(service.sessao(OUTRA_ESCOLA, alunoA))).toBe("TURMA_NAO_ENCONTRADA");
-    expect(await codigoDe(service.salvar(OUTRA_ESCOLA, alunoA, "v02"))).not.toBeNull();
+    // estudante da escola A consultado sob a escola B: o usuário não pertence a ela
+    expect(await codigoDe(service.sessao(OUTRA_ESCOLA, estudanteA))).toBe("TURMA_NAO_ENCONTRADA");
+    expect(await codigoDe(service.salvar(OUTRA_ESCOLA, estudanteA, "v02"))).not.toBeNull();
   });
 
   test("a RLS da tabela nova está armada (policy + FORCE)", async () => {

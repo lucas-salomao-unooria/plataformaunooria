@@ -4,7 +4,7 @@ import { MISSAO_TEMPESTADE } from '../cenario';
  * Os parâmetros ocultos do mundo (ADR-0006).
  *
  * NÃO existe "o que vai acontecer": existe uma DISTRIBUIÇÃO. A tempestade é
- * sorteada a cada rodada. Estes números são as chances reais — o aluno nunca os
+ * sorteada a cada rodada. Estes números são as chances reais — o estudante nunca os
  * vê, e nenhum Dataset os entrega inteiros. Cada conjunto mostra um pedaço,
  * distorcido pelo viés dele.
  *
@@ -40,7 +40,7 @@ export const PRAZO_MINUTOS = 60;
  * O quanto a equipe ainda rende quando chega com a chuva caindo.
  *
  * Alto de propósito: a hora de chegada entra na conta, mas não é o que decide a
- * Missão. Com 0,15 aqui, sair tarde virava o assunto e o aluno passava a
+ * Missão. Com 0,15 aqui, sair tarde virava o assunto e o estudante passava a
  * otimizar relógio em vez de ler dados.
  */
 export const EFICIENCIA_MINIMA = 0.7;

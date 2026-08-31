@@ -5,7 +5,7 @@ describe('o tamanho de uma resposta do Cientista', () => {
     expect(contarFrases('Carreguei a previsão. A Ribeirinha é a maior. Qual você quer?')).toBe(3);
   });
 
-  it('conta cada linha de lista como frase: é assim que o aluno lê', () => {
+  it('conta cada linha de lista como frase: é assim que o estudante lê', () => {
     // O Cientista não pode usar markdown, então lista com hífen — e quatro
     // linhas de bairro são quatro coisas para ler, com ponto final ou sem.
     const lista = ['Carreguei a previsão do tempo.', '- Ribeirinha', '- Morro Alto'].join('\n');

@@ -20,7 +20,7 @@ export interface BairroPublico {
    *
    * Vem do SERVIDOR e não do navegador: quem responde isso é `chegaATempo`, que
    * conhece o bloqueio de via e o prazo. O projeto de origem calculava no
-   * cliente — o que punha a matemática de chegada no bundle e deixava o aluno
+   * cliente — o que punha a matemática de chegada no bundle e deixava o estudante
    * antecipar parte do desfecho. `aperto` já vem resolvido pelo mesmo motivo:
    * era a constante `JANELA_CONFORTAVEL` no cliente.
    *
@@ -40,7 +40,7 @@ export interface BairroPublico {
 /**
  * O Relógio da aula, do jeito que o navegador pode ver.
  *
- * Allowlist como todo o resto: `tenantId` e id de turma NÃO entram — o aluno
+ * Allowlist como todo o resto: `tenantId` e id de turma NÃO entram — o estudante
  * não precisa deles e não pode tê-los (regra de ouro 7). `agora` é o instante
  * do SERVIDOR: é dele que o cronômetro parte, senão o relógio da máquina da
  * escola (que atrasa) decide quanto tempo a turma tem.
@@ -80,7 +80,7 @@ export function sanitizarRelogio(
 /**
  * A sessão do jeito que o navegador pode ver.
  *
- * Sem `id`: a identidade da sessão é `(escola, aluno)` e vem do TOKEN — foi o
+ * Sem `id`: a identidade da sessão é `(escola, estudante)` e vem do TOKEN — foi o
  * que dispensou a guarda `donoDaSessao` do projeto de origem, onde a sessão era
  * um uuid na URL. Sem `evidencias` também: era coluna só-escrita lá, e o que
  * ela guardava (`rodada-N`) já está em `rodadas`.
@@ -93,7 +93,7 @@ export interface SessaoPublica {
   rodadas: number;
   /** Perguntas de investigação já gastas (`regras/orcamento.ts`). */
   perguntasGastas: number;
-  /** Qual partida do aluno. Recomeçar abre a seguinte. */
+  /** Qual partida do estudante. Recomeçar abre a seguinte. */
   tentativa: number;
   alocacao: { alfa: string | null; bravo: string | null };
   justificativas: { alfa: string | null; bravo: string | null };
@@ -133,7 +133,7 @@ export function sanitizarSessao(bruta: SessaoBruta): SessaoPublica {
  * números por bairro da ficha canônica (`pop`, `exp`, `vexp`, `alag`, `danos`,
  * `granizo`). Eles são a verdade do mundo, e nenhuma fonte os entrega inteiros
  * — quem os entrega, já distorcidos pelo viés de cada conjunto, é a estimativa
- * do modelo. Mandar a ficha crua daria ao aluno, de graça, a resposta que a
+ * do modelo. Mandar a ficha crua daria ao estudante, de graça, a resposta que a
  * missão existe para ele não ter.
  *
  * `totais` entra porque é o enunciado ("26 mil pessoas, duas equipes, quatro

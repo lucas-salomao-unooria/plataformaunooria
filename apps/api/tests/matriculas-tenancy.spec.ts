@@ -94,7 +94,7 @@ describe("as turmas do professor", () => {
     expect(await rostering.professorLecionaNaTurma(ESCOLA, ids.prof8A, ids.turma9B)).toBe(false);
   });
 
-  test("a lista nominal da turma traz os alunos matriculados", async () => {
+  test("a lista nominal da turma traz os estudantes matriculados", async () => {
     const turma = await rostering.pessoasDaTurma(ESCOLA, ids.turma8A);
     expect((turma?.estudantes ?? turma?.alunos)?.map((a) => a.usuario)).toEqual(["ana-8a"]);
     expect(turma?.professores.map((p) => p.usuario)).toEqual(["prof-8a"]);
@@ -119,7 +119,7 @@ describe("as turmas do professor", () => {
     expect(daOutra).toHaveLength(0);
   });
 
-  test("matricular numa turma de COMPONENTE não tira o aluno da regular", async () => {
+  test("matricular numa turma de COMPONENTE não tira o estudante da regular", async () => {
     const periodo = await periodoDeTeste(admin);
     const eletiva = await admin.turma.create({
       data: {

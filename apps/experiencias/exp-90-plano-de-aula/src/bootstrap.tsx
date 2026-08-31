@@ -33,8 +33,8 @@ export function Bootstrap() {
           api.get<{ planos: PlanoResumo[] }>("/planos"),
           api.get<Disponivel[]>("/planos/referencias/disponiveis"),
         ]);
-        // `estudante` / `aluno` carrega o usuário logado no protocolo v1.
-        if (ativo) setBoot({ professorNome: (exp.estudante ?? (exp as any).aluno)?.nome, planos, disponiveis });
+        // `estudante` / `estudante` carrega o usuário logado no protocolo v1.
+        if (ativo) setBoot({ professorNome: exp.estudante.nome, planos, disponiveis });
       } catch (falha) {
         console.error("[plano-de-aula] boot falhou", falha);
         if (ativo) setErro("Não foi possível abrir o gerador agora. Recarregue a página ou tente mais tarde.");

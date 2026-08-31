@@ -2,7 +2,7 @@ import { passoDerivado } from '../../src/unoogpt/regras/anexos';
 
 /**
  * O Passo deixa de ser clicado da Investigação em diante: quem move é a
- * conversa. Se este teste cair, a trilha volta a mentir sobre onde o aluno está.
+ * conversa. Se este teste cair, a trilha volta a mentir sobre onde o estudante está.
  */
 describe('o Passo é derivado do que aconteceu na conversa', () => {
   const base = { confirmou: false };

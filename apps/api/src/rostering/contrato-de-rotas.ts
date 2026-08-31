@@ -119,7 +119,6 @@ export const PessoasDaTurmaSchema = z.object({
   professores: z.array(PessoaMatriculadaSchema),
 });
 export const EstudantesDaTurmaSchema = PessoasDaTurmaSchema;
-export const AlunosDaTurmaSchema = PessoasDaTurmaSchema;
 
 export const PeriodoLetivoSchema = z.object({
   id: Uuid,
@@ -354,7 +353,6 @@ export const HistoricoDoEstudanteSchema = z.object({
     }),
   ),
 });
-export const HistoricoDoAlunoSchema = HistoricoDoEstudanteSchema;
 
 // ========================================================= importação de pessoas
 

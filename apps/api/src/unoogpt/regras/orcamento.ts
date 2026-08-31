@@ -4,7 +4,7 @@ import type { TipoDeTurno } from '../agente/turno';
  * O orçamento de Perguntas. PURO.
  *
  * Do board: "Investigação livre → até 3 perguntas. O limite obriga a priorizar
- * o que perguntar." Com tudo à mão, o aluno pede uma fonte de cada vez até
+ * o que perguntar." Com tudo à mão, o estudante pede uma fonte de cada vez até
  * acabarem e nunca escolhe nada; com três, ele precisa decidir o que quer
  * saber ANTES de perguntar — que é a competência que a Missão treina.
  *
@@ -14,7 +14,7 @@ import type { TipoDeTurno } from '../agente/turno';
  *    um bairro — nada disso consulta a cidade, e nada disso debita. Conversar
  *    com o Cientista continua de graça; investigar é que custa.
  * 2. PERGUNTA QUE ELE NÃO CONSEGUE RESPONDER NÃO GASTA. Se nenhuma fonte foi
- *    consultada, o aluno não recebeu leitura nenhuma — cobrar por isso ensinaria
+ *    consultada, o estudante não recebeu leitura nenhuma — cobrar por isso ensinaria
  *    a não perguntar, que é o contrário do ponto.
  *
  * O débito é do CÓDIGO, em transação (regra de ouro 3): a LLM recebe o número
@@ -39,7 +39,7 @@ export function perguntasRestantes(gastas: number): number {
 /**
  * Motivo escrito ao lado do campo quando as Perguntas acabam.
  *
- * O campo NÃO fecha: o aluno ainda precisa dizer para onde vai cada equipe, e
+ * O campo NÃO fecha: o estudante ainda precisa dizer para onde vai cada equipe, e
  * fechar a conversa aqui o deixaria com uma decisão para tomar e nenhuma forma
  * de tomá-la. O que acabou é a investigação, não a fala.
  */

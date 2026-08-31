@@ -25,7 +25,7 @@ export const MAX_LINHAS = 50_000;
  * 413 não é nosso, não diz o que fazer e não deixa linha no log. Prometer mais
  * do que o ambiente entrega é o que produz o erro que ninguém consegue
  * diagnosticar. Folga medida: o pior caso realista de UM contrato (~10 mil
- * alunos, cinco componentes cada) dá ~7 MB de `enrollments.csv` (ADR-48).
+ * estudantes, cinco componentes cada) dá ~7 MB de `enrollments.csv` (ADR-48).
  */
 export const TETO_DO_ARQUIVO = 30_000_000;
 export const TETO_EM_MB = TETO_DO_ARQUIVO / 1_000_000;
@@ -56,7 +56,7 @@ export interface RelatorioImportacao {
   erros: ErroDeLinha[];
   avisos: ErroDeLinha[];
   /**
-   * Alunos que já existiam em OUTRA escola da rede e foram TRANSFERIDOS para
+   * Estudantes que já existiam em OUTRA escola da rede e foram TRANSFERIDOS para
    * esta. Reconhecidos pelo CPF — sem ele, cada um deles nasceria de novo, com o
    * histórico partido em duas pessoas.
    */
@@ -73,7 +73,7 @@ export interface RelatorioImportacao {
 export interface OpcoesDeImportacao {
   /** Senha única do lote. Vale só para quem está NASCENDO nesta importação. */
   senhaPadrao?: string;
-  /** Uma senha diferente por pessoa (recomendado para alunos). */
+  /** Uma senha diferente por pessoa (recomendado para estudantes). */
   gerarSenhas?: boolean;
 }
 
@@ -238,7 +238,7 @@ export class RosteringService {
       existenteId: string | null;
       usuario: string;
       senha: string | null;
-      /** Já existe na rede, em OUTRA escola: transferir (aluno) ou lotar. */
+      /** Já existe na rede, em OUTRA escola: transferir (estudante) ou lotar. */
       deOutraEscola: { id: string; escolaId: string | null } | null;
     };
     const preparadas: Preparada[] = [];
@@ -257,7 +257,7 @@ export class RosteringService {
       /* O CPF vem PRIMEIRO: é o único identificador que sobrevive à troca de
          nome, de login, de matrícula e de escola. Achado em outra escola da
          rede, a linha deixa de ser "pessoa nova" e passa a ser transferência
-         (aluno) ou lotação a mais (professor e gestor). */
+         (estudante) ou lotação a mais (professor e gestor). */
       const naOutraEscola = pessoa.cpf ? porCpfNaRede.get(pessoa.cpf) : undefined;
       const veioDeOutraEscola = Boolean(naOutraEscola && naOutraEscola.escolaId !== escolaId);
 
@@ -364,7 +364,7 @@ export class RosteringService {
             periodoLetivoId: periodo.id,
             nome,
             // Turma criada por linha de professor pode não trazer série; a do
-            // aluno traz (é obrigatória para ele) e corrige na mesma passada.
+            // estudante traz (é obrigatória para ele) e corrige na mesma passada.
             serie: dados.serie || "9EF",
             turno: dados.turno,
           },
@@ -376,18 +376,18 @@ export class RosteringService {
 
     /**
      * 3) O que ATRAVESSA escola vem antes do laço de escrita, e cada um na sua
-     * transação: transferir um aluno encerra vínculo numa escola e abre em
+     * transação: transferir um estudante encerra vínculo numa escola e abre em
      * outra, e isso não cabe dentro de uma transação já presa ao `escola_id`
      * desta importação.
      *
-     * Aluno → transferência (a anterior é encerrada, é uma escola só).
+     * Estudante → transferência (a anterior é encerrada, é uma escola só).
      * Professor e gestor → lotação A MAIS (a de lá continua valendo).
      */
     for (const p of preparadas) {
       if (!p.deOutraEscola) continue;
       if (p.pessoa.papel === "estudante") {
-        const feito = await this.escolas.transferirAluno({
-          alunoId: p.deOutraEscola.id,
+        const feito = await this.escolas.transferirEstudante({
+          estudanteId: p.deOutraEscola.id,
           escolaDestinoId: escolaId,
         });
         if (feito && !feito.jaEstava) relatorio.transferidos += 1;
@@ -519,9 +519,9 @@ export class RosteringService {
   }
 
   /**
-   * Troca qual turma é a de REFERÊNCIA do aluno, sem encerrar nada.
+   * Troca qual turma é a de REFERÊNCIA do estudante, sem encerrar nada.
    *
-   * É o caso do aluno que está numa regular e numa eletiva e foi enturmado na
+   * É o caso do estudante que está numa regular e numa eletiva e foi enturmado na
    * ordem errada: a de referência é a que alimenta o cache `users.turma_id` e,
    * por ele, o claim `turma_id` do token.
    */
@@ -554,7 +554,7 @@ export class RosteringService {
    * Move a pessoa de turma: encerra a matrícula na origem e abre na destino.
    *
    * Dois passos numa ação por um motivo: feito à mão, o gestor tira da turma
-   * antiga e esquece de colocar na nova — e o aluno fica sem turma, invisível
+   * antiga e esquece de colocar na nova — e o estudante fica sem turma, invisível
    * para o professor, sem nada na tela dizendo o que faltou.
    */
   async moverDeTurma(escolaId: string, matriculaId: string, turmaDestinoId: string) {
@@ -672,7 +672,7 @@ export class RosteringService {
     escolaId: string,
     turma: { id: string; nome: string; serie: string; turno: string | null; tipo: string; periodoLetivo?: { titulo: string } | null },
   ) {
-    const [alunos, professores] = await Promise.all([
+    const [estudantes, professores] = await Promise.all([
       tx.matricula.count({ where: { escolaId, turmaId: turma.id, papel: { in: ["estudante", "aluno"] }, fim: null } }),
       tx.matricula.count({ where: { escolaId, turmaId: turma.id, papel: "professor", fim: null } }),
     ]);
@@ -683,8 +683,8 @@ export class RosteringService {
       turno: turma.turno,
       tipo: turma.tipo,
       periodo: turma.periodoLetivo?.titulo ?? null,
-      estudantes: alunos,
-      alunos,
+      estudantes,
+      alunos: estudantes,
       professores,
     };
   }

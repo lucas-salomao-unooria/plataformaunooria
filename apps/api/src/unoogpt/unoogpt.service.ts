@@ -57,7 +57,7 @@ import { type Marco, marcoDeAlocacao, marcoDeEnvio, marcoDeFontes, marcoDeLeitur
  * 1. TENANCY. Toda query passa por `comTenancy(fn, escolaId)` E filtra
  *    `escolaId` no `where` — defesa em profundidade: a RLS é rede, não a única
  *    tranca (regra inviolável nº 1).
- * 2. IDENTIDADE. A sessão é `(escolaId, alunoId)` vindos do TOKEN. Lá era um
+ * 2. IDENTIDADE. A sessão é `(escolaId, estudanteId)` vindos do TOKEN. Lá era um
  *    uuid na URL, e existia a guarda `donoDaSessao` para provar a posse; aqui
  *    não há o que provar, porque não há como pedir a sessão de outro.
  * 3. IA. O provider é injetado (`AI_PROVIDER`) e a quota é consultada ANTES e
@@ -90,26 +90,26 @@ export class UnoogptService {
    * O bootstrap da experiência: tudo o que a tela precisa para abrir, num
    * request. Cria a sessão na primeira visita.
    */
-  async sessao(escolaId: string, alunoId: string) {
+  async sessao(escolaId: string, estudanteId: string) {
     const agora = new Date();
     return this.prisma.comTenancy(async (tx) => {
-      const sessao = await this.garantirSessao(tx, escolaId, alunoId);
+      const sessao = await this.garantirSessao(tx, escolaId, estudanteId);
       const relogio = await this.relogioDaTurma(tx, escolaId, sessao.turmaId);
       const estado = estadoDoRelogio(relogio, agora);
 
       const falas = await tx.unoogptMensagem.findMany({
-        where: { escolaId, estudanteId: alunoId, tentativa: sessao.tentativa },
+        where: { escolaId, estudanteId: estudanteId, tentativa: sessao.tentativa },
         orderBy: { id: "asc" },
         select: { papel: true, texto: true, anexo: true, criadoEm: true },
       });
 
-      const { bairros } = montarMapa(this.semente(escolaId, alunoId), sessao.rodadas, sessao.conjuntos, estado.minutosGastos);
+      const { bairros } = montarMapa(this.semente(escolaId, estudanteId), sessao.rodadas, sessao.conjuntos, estado.minutosGastos);
 
       return {
         ficha: sanitizarFicha(MISSAO_TEMPESTADE),
         // A PROJEÇÃO é servida, nunca calculada no navegador: ela usa
         // `chegaATempo` e a capacidade da equipe, e um bundle capaz de computar
-        // isso deixaria o aluno prever o desfecho antes de enviar.
+        // isso deixaria o estudante prever o desfecho antes de enviar.
         projecao: projetar(
           bairros,
           { alfa: sessao.alocacaoAlfa, bravo: sessao.alocacaoBravo },
@@ -138,10 +138,10 @@ export class UnoogptService {
   }
 
   /** Polling do relógio da turma (~5s). Leve de propósito: sem IA, sem mapa. */
-  async relogio(escolaId: string, alunoId: string) {
+  async relogio(escolaId: string, estudanteId: string) {
     const agora = new Date();
     return this.prisma.comTenancy(async (tx) => {
-      const sessao = await this.garantirSessao(tx, escolaId, alunoId);
+      const sessao = await this.garantirSessao(tx, escolaId, estudanteId);
       const relogio = await this.relogioDaTurma(tx, escolaId, sessao.turmaId);
       const estado = estadoDoRelogio(relogio, agora);
       return {
@@ -161,26 +161,26 @@ export class UnoogptService {
   // O turno do Cientista — a rota central
   // =========================================================================
 
-  async pergunta(escolaId: string, alunoId: string, perfil: Perfil, texto: string) {
+  async pergunta(escolaId: string, estudanteId: string, perfil: Perfil, texto: string) {
     const agora = new Date();
 
     // --- 1. lê o estado e os portões, SEM segurar transação ---
     const antes = await this.prisma.comTenancy(async (tx) => {
-      const sessao = await this.garantirSessao(tx, escolaId, alunoId);
+      const sessao = await this.garantirSessao(tx, escolaId, estudanteId);
       const relogio = await this.relogioDaTurma(tx, escolaId, sessao.turmaId);
       const ultima = await tx.unoogptMensagem.findFirst({
-        where: { escolaId, estudanteId: alunoId, tentativa: sessao.tentativa, papel: "agente" },
+        where: { escolaId, estudanteId: estudanteId, tentativa: sessao.tentativa, papel: "agente" },
         orderBy: { id: "desc" },
         select: { texto: true },
       });
       const quantas = await tx.unoogptMensagem.count({
-        where: { escolaId, estudanteId: alunoId, tentativa: sessao.tentativa },
+        where: { escolaId, estudanteId: estudanteId, tentativa: sessao.tentativa },
       });
       return { sessao, relogio, ultimaFalaDoAgente: ultima?.texto ?? null, primeiraFala: quantas === 0 };
     }, escolaId);
 
     const estado = estadoDoRelogio(antes.relogio, agora);
-    // Antes da largada o aluno vê o cronômetro parado e não fala com o
+    // Antes da largada o estudante vê o cronômetro parado e não fala com o
     // Cientista: a sala começa junto (o relógio é da TURMA).
     if (estado.fase === "aguardando") throw erroDeJogo("relogio-nao-comecou");
     if (!podePerguntar(estado)) throw erroDeJogo("relogio-encerrado");
@@ -194,7 +194,7 @@ export class UnoogptService {
     ) {
       throw erroDeJogo("teto-da-sessao");
     }
-    if (!(await this.quota.temSaldo(escolaId, alunoId, perfil))) throw erroDeJogo("teto-da-sessao");
+    if (!(await this.quota.temSaldo(escolaId, estudanteId, perfil))) throw erroDeJogo("teto-da-sessao");
 
     // O SERVIÇO classifica o turno porque é ele que DEBITA: o orçamento é
     // procedural, e deixar a LLM decidir se gastou seria entregar a contagem a
@@ -209,8 +209,8 @@ export class UnoogptService {
     if (tipo === "pergunta" && restantes === 0) throw erroDeJogo("sem-perguntas");
 
     // --- 2. chama o modelo FORA de transação ---
-    const historico = await this.historico(escolaId, alunoId, antes.sessao.tentativa);
-    const semente = this.semente(escolaId, alunoId);
+    const historico = await this.historico(escolaId, estudanteId, antes.sessao.tentativa);
+    const semente = this.semente(escolaId, estudanteId);
     let tokens = 0;
 
     try {
@@ -223,20 +223,20 @@ export class UnoogptService {
         historico,
         texto,
         // As ferramentas escrevem no banco em transações próprias, curtas: o
-        // aluno pode carregar uma fonte e alocar no MESMO turno, e cada ato
+        // estudante pode carregar uma fonte e alocar no MESMO turno, e cada ato
         // precisa estar durável antes de o modelo narrar o seguinte.
-        (dados) => this.aoUsarDados(escolaId, alunoId, dados),
-        (destinos) => this.aoAlocar(escolaId, alunoId, destinos),
-        () => this.aoConfirmar(escolaId, alunoId, perfil),
+        (dados) => this.aoUsarDados(escolaId, estudanteId, dados),
+        (destinos) => this.aoAlocar(escolaId, estudanteId, destinos),
+        () => this.aoConfirmar(escolaId, estudanteId, perfil),
         { temDestino: antes.sessao.alocacaoAlfa !== null || antes.sessao.alocacaoBravo !== null, tipo, perguntasRestantes: restantes },
       );
       tokens = resposta.tokensUsados;
 
       // --- 3. grava a Transcrição e o débito, EM transação ---
       return await this.prisma.comTenancy(async (tx) => {
-        await this.lock(tx, escolaId, alunoId);
+        await this.lock(tx, escolaId, estudanteId);
         const atual = await tx.unoogptSessao.findUniqueOrThrow({
-          where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+          where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         });
         // Reconferido com o relógio de AGORA: a resposta do provedor pode ter
         // demorado e atravessado o fechamento da investigação.
@@ -244,7 +244,7 @@ export class UnoogptService {
         const depois = estadoDoRelogio(relogioAgora, new Date());
 
         // O cartão de leitura precisa dizer de QUANDO ele é: sem a hora, três
-        // relatórios seguidos parecem o mesmo, e o aluno não percebe que cada
+        // relatórios seguidos parecem o mesmo, e o estudante não percebe que cada
         // um custou tempo.
         const tipoDoAnexo = (resposta.anexo as { tipo?: string } | null)?.tipo;
         const anexo =
@@ -254,19 +254,19 @@ export class UnoogptService {
 
         // Consultou alguma coisa para responder? É isto que separa uma pergunta
         // respondida de uma que ele não teve como responder — e a segunda não
-        // pode custar, senão o aluno aprende a não perguntar. Calculado ANTES de
-        // gravar: `debitou` na fala do aluno é a trilha de auditoria de qual
+        // pode custar, senão o estudante aprende a não perguntar. Calculado ANTES de
+        // gravar: `debitou` na fala do estudante é a trilha de auditoria de qual
         // turno custou pergunta, e é por ela que se reconstrói o orçamento.
         // `dadosUsados` VAZIO não é consulta. O Cientista pode ter chamado
         // `usar_dados` e não ter carregado nada (argumento que não casa com
-        // fonte nenhuma) — e cobrar por isso ensinaria o aluno a não perguntar,
+        // fonte nenhuma) — e cobrar por isso ensinaria o estudante a não perguntar,
         // que é o contrário do ponto. Só conta como consulta se o modelo rodou
         // ou se há fonte de fato em uso.
         const consultou =
           resposta.rodada !== null || (resposta.dadosUsados?.length ?? 0) > 0;
         const debita = gastaPergunta(tipo, consultou);
 
-        const comum = { escolaId, estudanteId: alunoId, passo: atual.passo, tentativa: atual.tentativa };
+        const comum = { escolaId, estudanteId: estudanteId, passo: atual.passo, tentativa: atual.tentativa };
         await tx.unoogptMensagem.create({ data: { ...comum, papel: "estudante", texto, debitou: debita } });
 
         await tx.unoogptMensagem.create({
@@ -281,11 +281,11 @@ export class UnoogptService {
           },
         });
         if (resposta.rodada) {
-          await this.gravarMarco(tx, escolaId, alunoId, atual.tentativa, marcoDeLeitura(depois.minutosGastos, resposta.rodada));
+          await this.gravarMarco(tx, escolaId, estudanteId, atual.tentativa, marcoDeLeitura(depois.minutosGastos, resposta.rodada));
         }
 
         const atualizada = await tx.unoogptSessao.update({
-          where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+          where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
           data: {
             minutosGastos: depois.minutosGastos,
             // Débito em TRANSAÇÃO, sob o lock acima: duas abas não gastam a
@@ -312,15 +312,15 @@ export class UnoogptService {
       }, escolaId);
     } catch (erro) {
       /**
-       * Falha do PROVEDOR não pode chegar ao aluno como 500.
+       * Falha do PROVEDOR não pode chegar ao estudante como 500.
        *
        * Sem isto, credencial ausente, cota do vendor ou rede instável viravam
-       * "Internal Server Error" dentro do iframe — e o aluno de 16 anos não tem
+       * "Internal Server Error" dentro do iframe — e o estudante de 16 anos não tem
        * o que fazer com isso. Vira `cientista-indisponivel` (503), que a tela
        * traduz em "O Cientista não conseguiu responder agora. Tente falar de
        * novo." E NÃO debita: o débito acontece só depois de resposta válida.
        *
-       * O log fica com o motivo técnico — sem o texto do aluno, que é caixa
+       * O log fica com o motivo técnico — sem o texto do estudante, que é caixa
        * livre escrita por menor de idade.
        */
       if (erro instanceof ErroDeGeracao) {
@@ -331,7 +331,7 @@ export class UnoogptService {
     } finally {
       // No `finally`: o token foi gasto mesmo quando o turno falhou, e a quota
       // que não conta a falha é quota que não protege nada.
-      if (tokens > 0) await this.quota.consumir(escolaId, alunoId, tokens);
+      if (tokens > 0) await this.quota.consumir(escolaId, estudanteId, tokens);
     }
   }
 
@@ -340,29 +340,29 @@ export class UnoogptService {
   // =========================================================================
 
   /** ADICIONA conjuntos ao que já está carregado. Investigação é em camadas. */
-  private async aoUsarDados(escolaId: string, alunoId: string, pedidos: string[]): Promise<string[]> {
+  private async aoUsarDados(escolaId: string, estudanteId: string, pedidos: string[]): Promise<string[]> {
     const validos = pedidos.filter((p) => CONJUNTO_POR_SLUG.has(p));
     return this.prisma.comTenancy(async (tx) => {
-      await this.lock(tx, escolaId, alunoId);
+      await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const somadas = validos.filter((v) => !atual.conjuntos.includes(v));
       if (somadas.length === 0) return atual.conjuntos;
 
       const conjuntos = [...atual.conjuntos, ...somadas];
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: { conjuntos, rodadas: { increment: 1 } },
       });
-      await this.gravarMarco(tx, escolaId, alunoId, atual.tentativa, marcoDeFontes(atual.minutosGastos, somadas));
+      await this.gravarMarco(tx, escolaId, estudanteId, atual.tentativa, marcoDeFontes(atual.minutosGastos, somadas));
       return atualizada.conjuntos;
     }, escolaId);
   }
 
   private async aoAlocar(
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
     destinos: { alfa?: string; bravo?: string },
   ): Promise<Alocacao | null> {
     const conhecido = (b?: string) => MISSAO_TEMPESTADE.bairros.some((x) => x.slug === b);
@@ -370,47 +370,47 @@ export class UnoogptService {
     if (destinos.bravo && !conhecido(destinos.bravo)) return null;
 
     return this.prisma.comTenancy(async (tx) => {
-      await this.lock(tx, escolaId, alunoId);
+      await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const alocacao: Alocacao = {
         alfa: destinos.alfa ?? atual.alocacaoAlfa,
         bravo: destinos.bravo ?? atual.alocacaoBravo,
       };
       await tx.unoogptSessao.update({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: { alocacaoAlfa: alocacao.alfa, alocacaoBravo: alocacao.bravo },
       });
-      await this.gravarMarco(tx, escolaId, alunoId, atual.tentativa, marcoDeAlocacao(atual.minutosGastos, alocacao));
+      await this.gravarMarco(tx, escolaId, estudanteId, atual.tentativa, marcoDeAlocacao(atual.minutosGastos, alocacao));
       return alocacao;
     }, escolaId);
   }
 
   /** Enfrentar a tempestade. Ponto sem volta, e idempotente por tentativa. */
-  private async aoConfirmar(escolaId: string, alunoId: string, _perfil: Perfil) {
+  private async aoConfirmar(escolaId: string, estudanteId: string, _perfil: Perfil) {
     return this.prisma.comTenancy(async (tx) => {
-      await this.lock(tx, escolaId, alunoId);
+      await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       if (!atual.alocacaoAlfa || !atual.alocacaoBravo) return null;
 
       const ja = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: alunoId, ordem: atual.tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: atual.tentativa } },
       });
       if (ja) return ja.desfecho;
 
       const saida = saidaDasEquipes(atual.minutosGastos);
       const alocacao: Alocacao = { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo };
-      const desfecho = simular(alocacao, sementeDe(`${escolaId}:${alunoId}:${atual.tentativa}`), {
+      const desfecho = simular(alocacao, sementeDe(`${escolaId}:${estudanteId}:${atual.tentativa}`), {
         saidaEmMinutos: saida,
       });
 
       await tx.unoogptSimulacao.create({
         data: {
           escolaId,
-          estudanteId: alunoId,
+          estudanteId: estudanteId,
           ordem: atual.tentativa,
           alocacao: { v: 1, ...alocacao } as Prisma.InputJsonValue,
           desfecho: desfecho as unknown as Prisma.InputJsonValue,
@@ -419,13 +419,13 @@ export class UnoogptService {
         },
       });
       await tx.unoogptSessao.update({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: { passo: "resultado", minutosGastos: saida, concluidoEm: new Date() },
       });
       await this.gravarMarco(
         tx,
         escolaId,
-        alunoId,
+        estudanteId,
         atual.tentativa,
         marcoDeEnvio(saida, desfecho.totais, naoCarregados(atual.conjuntos).map((c) => c.slug)),
       );
@@ -438,29 +438,29 @@ export class UnoogptService {
   // =========================================================================
 
   /** Carregar fontes pelo painel, sem passar pelo Cientista. */
-  async carregarConjuntos(escolaId: string, alunoId: string, conjuntos: string[]) {
-    const emUso = await this.aoUsarDados(escolaId, alunoId, conjuntos);
-    return this.estadoPublico(escolaId, alunoId, emUso);
+  async carregarConjuntos(escolaId: string, estudanteId: string, conjuntos: string[]) {
+    const emUso = await this.aoUsarDados(escolaId, estudanteId, conjuntos);
+    return this.estadoPublico(escolaId, estudanteId, emUso);
   }
 
   /**
    * Alocar pelo mapa ou pelo painel, COM a justificativa.
    *
-   * A justificativa é portão de SERVIDOR: só vale fonte que o aluno carregou,
+   * A justificativa é portão de SERVIDOR: só vale fonte que o estudante carregou,
    * ou "foi intuição" — que está sempre disponível, porque sem essa saída a
-   * pergunta vira pegadinha e o aluno aprende a mentir para o formulário.
+   * pergunta vira pegadinha e o estudante aprende a mentir para o formulário.
    */
   async alocar(
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
     equipe: "alfa" | "bravo",
     bairro: string | null,
     justificativa: string | null,
   ) {
     return this.prisma.comTenancy(async (tx) => {
-      await this.lock(tx, escolaId, alunoId);
+      await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       if (atual.concluidoEm) throw erroDeJogo("sessao-encerrada");
       if (bairro !== null && !MISSAO_TEMPESTADE.bairros.some((b) => b.slug === bairro)) {
@@ -473,7 +473,7 @@ export class UnoogptService {
       const alvo = equipe === "alfa" ? "alocacaoAlfa" : "alocacaoBravo";
       const porque = equipe === "alfa" ? "justificativaAlfa" : "justificativaBravo";
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: {
           [alvo]: bairro,
           // Tirar a equipe do bairro apaga o porquê junto: justificativa sem
@@ -484,12 +484,12 @@ export class UnoogptService {
       await this.gravarMarco(
         tx,
         escolaId,
-        alunoId,
+        estudanteId,
         atual.tentativa,
         marcoDeAlocacao(atual.minutosGastos, { alfa: atualizada.alocacaoAlfa, bravo: atualizada.alocacaoBravo }),
       );
       const { bairros } = montarMapa(
-        this.semente(escolaId, alunoId),
+        this.semente(escolaId, estudanteId),
         atualizada.rodadas,
         atualizada.conjuntos,
         atual.minutosGastos,
@@ -497,7 +497,7 @@ export class UnoogptService {
       return {
         sessao: sanitizarSessao(atualizada),
         // "chega com N de sobra" vem do servidor: sem isto o Cientista registra
-        // um destino inalcançável sem uma palavra, e o aluno só descobre no
+        // um destino inalcançável sem uma palavra, e o estudante só descobre no
         // desfecho — quando não dá mais para escolher diferente.
         projecao: projetar(
           bairros,
@@ -510,10 +510,10 @@ export class UnoogptService {
   }
 
   /** O botão "enfrentar a tempestade". Exige as duas justificativas. */
-  async simular(escolaId: string, alunoId: string) {
+  async simular(escolaId: string, estudanteId: string) {
     const pendentes = await this.prisma.comTenancy(async (tx) => {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       return faltaJustificar(
         { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo },
@@ -523,22 +523,22 @@ export class UnoogptService {
     }, escolaId);
     if (pendentes.length > 0) throw erroDeJogo("falta-justificar");
 
-    const desfecho = await this.aoConfirmar(escolaId, alunoId, "estudante");
+    const desfecho = await this.aoConfirmar(escolaId, estudanteId, "estudante");
     if (!desfecho) throw erroDeJogo("falta-justificar");
-    return this.resultado(escolaId, alunoId);
+    return this.resultado(escolaId, estudanteId);
   }
 
   /**
    * "E se eu tivesse mandado para…" — calculado e DESCARTADO.
    *
-   * Não grava e não debita: é a pergunta que o aluno faz ao ver o resultado, e
+   * Não grava e não debita: é a pergunta que o estudante faz ao ver o resultado, e
    * transformá-la em tentativa nova apagaria a diferença entre a decisão que
    * ele tomou e a que ele imaginou depois.
    */
-  async contrafactual(escolaId: string, alunoId: string, alocacao: Alocacao) {
+  async contrafactual(escolaId: string, estudanteId: string, alocacao: Alocacao) {
     return this.prisma.comTenancy(async (tx) => {
       const real = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: alunoId, ordem: (await tx.unoogptSessao.findUniqueOrThrow({ where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } } })).tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: (await tx.unoogptSessao.findUniqueOrThrow({ where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } } })).tentativa } },
       });
       if (!real) throw erroDeJogo("sessao-encerrada");
       const faixa = esperadoDe(alocacao, { saidaEmMinutos: real.minutoDaSaida }, 200);
@@ -546,11 +546,11 @@ export class UnoogptService {
     }, escolaId);
   }
 
-  async irParaPasso(escolaId: string, alunoId: string, para: Passo) {
+  async irParaPasso(escolaId: string, estudanteId: string, para: Passo) {
     return this.prisma.comTenancy(async (tx) => {
-      await this.lock(tx, escolaId, alunoId);
+      await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       // ENVELOPE `{ sessao }` — o mesmo de `alocar` e `carregarConjuntos`.
       // Devolver a sessão crua daqui fazia o cliente ler `dados.sessao` como
@@ -560,7 +560,7 @@ export class UnoogptService {
       if (atual.passo === para) return { sessao: sanitizarSessao(atual) };
       if (!podeIr(atual.passo as Passo, para)) throw erroDeJogo("passo-invalido");
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: { passo: para },
       });
       return { sessao: sanitizarSessao(atualizada) };
@@ -568,18 +568,18 @@ export class UnoogptService {
   }
 
   /**
-   * Recomeçar ABRE uma tentativa nova em vez de apagar a conversa: para o aluno
+   * Recomeçar ABRE uma tentativa nova em vez de apagar a conversa: para o estudante
    * a tela limpa, para o professor a aula inteira continua legível. Comparar
    * duas tentativas é o que ensina.
    */
-  async reiniciar(escolaId: string, alunoId: string) {
+  async reiniciar(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
-      await this.lock(tx, escolaId, alunoId);
+      await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const atualizada = await tx.unoogptSessao.update({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: {
           tentativa: atual.tentativa + 1,
           passo: "abertura",
@@ -599,13 +599,13 @@ export class UnoogptService {
   }
 
   /** O Resultado: a faixa é a manchete, e o que sobrou é o fato. */
-  async resultado(escolaId: string, alunoId: string) {
+  async resultado(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       const sim = await tx.unoogptSimulacao.findUnique({
-        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: alunoId, ordem: atual.tentativa } },
+        where: { escolaId_estudanteId_ordem: { escolaId, estudanteId: estudanteId, ordem: atual.tentativa } },
       });
       if (!sim) throw erroDeJogo("sessao-encerrada");
 
@@ -614,18 +614,18 @@ export class UnoogptService {
       const faixa = esperadoDe(alocacao, { saidaEmMinutos: sim.minutoDaSaida }, 200);
 
       // `tentativa` e `ordem` vão junto: a tela do resultado agrupa a trilha por
-      // tentativa para o aluno comparar duas rodadas lado a lado.
+      // tentativa para o estudante comparar duas rodadas lado a lado.
       const marcos = await tx.unoogptMarco.findMany({
-        where: { escolaId, estudanteId: alunoId },
+        where: { escolaId, estudanteId: estudanteId },
         orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
         select: { tentativa: true, ordem: true, tipo: true, minuto: true, dados: true },
       });
 
-      // Todas as tentativas, para o aluno COMPARAR. Recomeçar abre tentativa
+      // Todas as tentativas, para o estudante COMPARAR. Recomeçar abre tentativa
       // nova em vez de apagar a anterior justamente por isto: ver que a mesma
       // cidade dá números diferentes é a lição sobre variância.
       const tentativas = await tx.unoogptSimulacao.findMany({
-        where: { escolaId, estudanteId: alunoId },
+        where: { escolaId, estudanteId: estudanteId },
         orderBy: { ordem: "asc" },
         select: { ordem: true, alocacao: true, desfecho: true, minutoDaSaida: true },
       });
@@ -647,7 +647,7 @@ export class UnoogptService {
         sobrou: oQueSobrou(desfecho.porBairro, atual.conjuntos),
         // A lista do que ele NUNCA consultou é a peça mais forte do fechamento.
         // `nome` NÃO vai: é o nome técnico, e o comentário do catálogo é
-        // explícito — "aparece no painel do professor, nunca para o aluno".
+        // explícito — "aparece no painel do professor, nunca para o estudante".
         // `instrucao` (o viés), `vies` e `cobertura` também não: são o
         // instrumento, e são o material do debate.
         naoConsultados: naoCarregados(atual.conjuntos).map((c) => ({
@@ -696,40 +696,40 @@ export class UnoogptService {
   // =========================================================================
 
   /**
-   * Semente do sorteio. Estável por (escola, aluno): o professor abre a mesma
+   * Semente do sorteio. Estável por (escola, estudante): o professor abre a mesma
    * partida e vê os mesmos números. O que NÃO é estável é a tentativa seguinte
    * — cada uma sorteia de novo, e é aí que mora a lição.
    */
-  private semente(escolaId: string, alunoId: string): string {
-    return `${escolaId}:${alunoId}`;
+  private semente(escolaId: string, estudanteId: string): string {
+    return `${escolaId}:${estudanteId}`;
   }
 
   /** Lock consultivo por sessão: duas abas não gravam o mesmo turno duas vezes. */
-  private async lock(tx: Prisma.TransactionClient, escolaId: string, alunoId: string) {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${escolaId}:${alunoId}`}, 0))`;
+  private async lock(tx: Prisma.TransactionClient, escolaId: string, estudanteId: string) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${escolaId}:${estudanteId}`}, 0))`;
   }
 
-  private async garantirSessao(tx: Prisma.TransactionClient, escolaId: string, alunoId: string) {
+  private async garantirSessao(tx: Prisma.TransactionClient, escolaId: string, estudanteId: string) {
     // `users`/`turmas` estão FORA da RLS: a checagem da escola é explícita.
-    const aluno = await tx.user.findUnique({
-      where: { id: alunoId },
+    const estudante = await tx.user.findUnique({
+      where: { id: estudanteId },
       select: { escolaId: true, turmaId: true },
     });
-    if (!aluno || aluno.escolaId !== escolaId) throw erroDeJogo("sessao-encerrada");
+    if (!estudante || estudante.escolaId !== escolaId) throw erroDeJogo("sessao-encerrada");
 
     const existente = await tx.unoogptSessao.findUnique({
-      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
     });
     if (existente) return existente;
-    return tx.unoogptSessao.create({ data: { escolaId, estudanteId: alunoId, turmaId: aluno.turmaId } });
+    return tx.unoogptSessao.create({ data: { escolaId, estudanteId: estudanteId, turmaId: estudante.turmaId } });
   }
 
   /**
    * O relógio que vale para esta sessão: o da TURMA.
    *
-   * Aluno sem turma — dev, seed, aluno solto — cai no relógio padrão PARADO.
+   * Estudante sem turma — dev, seed, estudante solto — cai no relógio padrão PARADO.
    * Isto é deliberado: o fallback do projeto de origem armava um cronômetro
-   * individual, e com ele um aluno sem turma jogava sozinho sem a largada. Aqui
+   * individual, e com ele um estudante sem turma jogava sozinho sem a largada. Aqui
    * ele vê "aguardando", que é a verdade.
    */
   private async relogioDaTurma(
@@ -752,10 +752,10 @@ export class UnoogptService {
     };
   }
 
-  private async historico(escolaId: string, alunoId: string, tentativa: number) {
+  private async historico(escolaId: string, estudanteId: string, tentativa: number) {
     return this.prisma.comTenancy(async (tx) => {
       const falas = await tx.unoogptMensagem.findMany({
-        where: { escolaId, estudanteId: alunoId, tentativa },
+        where: { escolaId, estudanteId: estudanteId, tentativa },
         orderBy: { id: "asc" },
         select: { papel: true, texto: true },
       });
@@ -767,15 +767,15 @@ export class UnoogptService {
   private async gravarMarco(
     tx: Prisma.TransactionClient,
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
     tentativa: number,
     marco: Marco,
   ) {
-    const anteriores = await tx.unoogptMarco.count({ where: { escolaId, estudanteId: alunoId, tentativa } });
+    const anteriores = await tx.unoogptMarco.count({ where: { escolaId, estudanteId: estudanteId, tentativa } });
     await tx.unoogptMarco.create({
       data: {
         escolaId,
-        estudanteId: alunoId,
+        estudanteId: estudanteId,
         tentativa,
         ordem: anteriores + 1,
         tipo: marco.tipo,
@@ -789,7 +789,7 @@ export class UnoogptService {
   // Professor — o relógio da aula e a leitura da turma
   //
   // Nenhuma destas funções fala com a Sessão de ninguém: o Passo continua sendo
-  // do clique do aluno, e o que o professor controla é só QUANDO dá para falar.
+  // do clique do estudante, e o que o professor controla é só QUANDO dá para falar.
   // =========================================================================
 
   /**
@@ -828,7 +828,7 @@ export class UnoogptService {
         dados.encerradoEm = null;
       } else if (acao === "mais-tempo") {
         if (!atual.iniciadoEm) throw erroDeJogo("relogio-nao-comecou");
-        // O PIVÔ: sem ele o minuto da cidade REBOBINA. Aos 4:00 de 5:00 o aluno
+        // O PIVÔ: sem ele o minuto da cidade REBOBINA. Aos 4:00 de 5:00 o estudante
         // está no minuto 48, e recalcular com 7:00 daria 34 — a chuva andaria
         // para trás na cara da turma.
         const pivo = pivoParaEstender(relogio, agora);
@@ -911,19 +911,18 @@ export class UnoogptService {
       const turma = await this.turmaDaEscola(tx, escolaId, turmaId, professorId);
       const relogio = await this.relogioDaTurma(tx, escolaId, turmaId);
 
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         orderBy: { username: "asc" },
         select: { id: true, displayName: true, username: true },
       });
 
       const linhas = await Promise.all(
-        alunos.map(async (a) => {
+        estudantes.map(async (a) => {
           const sinais = await this.sinaisDaPartida(tx, escolaId, a.id);
           return {
             id: a.id,
             estudanteId: a.id,
-            alunoId: a.id,
             nome: a.displayName,
             usuario: a.username,
             comecou: sinais.comecou,
@@ -966,11 +965,11 @@ export class UnoogptService {
    */
   async doEstudante(escolaId: string, estudanteId: string) {
     return this.prisma.comTenancy(async (tx) => {
-      const aluno = await tx.user.findFirst({
+      const estudante = await tx.user.findFirst({
         where: { id: estudanteId, escolaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true, displayName: true, turmaId: true },
       });
-      if (!aluno) throw erroDeJogo("sessao-encerrada");
+      if (!estudante) throw erroDeJogo("sessao-encerrada");
 
       const sinais = await this.sinaisDaPartida(tx, escolaId, estudanteId);
       const linhas = linhasDeLeitura(sinais);
@@ -995,8 +994,8 @@ export class UnoogptService {
       });
 
       return {
-        estudante: { id: aluno.id, nome: aluno.displayName },
-        aluno: { id: aluno.id, nome: aluno.displayName },
+        estudante: { id: estudante.id, nome: estudante.displayName },
+        aluno: { id: estudante.id, nome: estudante.displayName },
         versaoLeitura: VERSAO_LEITURA,
         // O relatório abre pelo que a missão MEDIU, em graus — e `zero` ("teve
         // a chance e não foi") nunca se confunde com `none` ("a oportunidade
@@ -1017,10 +1016,6 @@ export class UnoogptService {
     }, escolaId);
   }
 
-  async alunoDoProfessor(escolaId: string, alunoId: string) {
-    return this.doEstudante(escolaId, alunoId);
-  }
-
   /**
    * Zerar a turma: apaga as partidas E o relógio.
    *
@@ -1034,11 +1029,11 @@ export class UnoogptService {
   async zerarTurma(escolaId: string, turmaId: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaDaEscola(tx, escolaId, turmaId);
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true },
       });
-      const ids = alunos.map((a) => a.id);
+      const ids = estudantes.map((a) => a.id);
       // As tabelas filhas caem por ON DELETE CASCADE da sessão.
       const { count } = await tx.unoogptSessao.deleteMany({
         where: { escolaId, estudanteId: { in: ids } },
@@ -1051,7 +1046,7 @@ export class UnoogptService {
   /**
    * O agregado da escola, para o gestor: SÓ números por turma.
    *
-   * Nenhuma linha de aluno passa por aqui. Quem quiser a criança precisa da
+   * Nenhuma linha de estudante passa por aqui. Quem quiser a criança precisa da
    * rota do professor, que é outro controller com outro `@Roles`.
    */
   async agregadoDaEscola(escolaId: string) {
@@ -1120,21 +1115,21 @@ export class UnoogptService {
   private async sinaisDaPartida(
     tx: Prisma.TransactionClient,
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
   ): Promise<SinaisDaPartida & { justificouPorIntuicao: boolean }> {
     const sessao = await tx.unoogptSessao.findUnique({
-      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
     });
     const marcos = sessao
       ? await tx.unoogptMarco.findMany({
-          where: { escolaId, estudanteId: alunoId },
+          where: { escolaId, estudanteId: estudanteId },
           orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
           select: { tipo: true, ordem: true, tentativa: true, dados: true },
         })
       : [];
     const simulacoes = sessao
       ? await tx.unoogptSimulacao.findMany({
-          where: { escolaId, estudanteId: alunoId },
+          where: { escolaId, estudanteId: estudanteId },
           orderBy: { ordem: "asc" },
           select: { desfecho: true },
         })
@@ -1181,14 +1176,14 @@ export class UnoogptService {
     };
   }
 
-  private async estadoPublico(escolaId: string, alunoId: string, conjuntos: string[]) {
+  private async estadoPublico(escolaId: string, estudanteId: string, conjuntos: string[]) {
     return this.prisma.comTenancy(async (tx) => {
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
-        where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+        where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
       return {
         sessao: sanitizarSessao(atual),
-        mapa: montarMapa(this.semente(escolaId, alunoId), atual.rodadas, conjuntos, atual.minutosGastos).bairros,
+        mapa: montarMapa(this.semente(escolaId, estudanteId), atual.rodadas, conjuntos, atual.minutosGastos).bairros,
         justificativas: opcoesDeJustificativa(conjuntos),
       };
     }, escolaId);

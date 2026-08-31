@@ -49,7 +49,6 @@ export async function runDoEstudante(
   });
 }
 
-export const runDoAluno = runDoEstudante;
 
 /** Atividade do professor logado — evita acesso cruzado entre professores. */
 export async function atividadeDoProfessor(
@@ -92,4 +91,3 @@ export const ORDEM_DA_ATIVIDADE_DO_ESTUDANTE = [
   { createdAt: "desc" },
 ] satisfies Prisma.ActivityOrderByWithRelationInput[];
 
-export const ORDEM_DA_ATIVIDADE_DO_ALUNO = ORDEM_DA_ATIVIDADE_DO_ESTUDANTE;

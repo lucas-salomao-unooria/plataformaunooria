@@ -3,7 +3,7 @@ import { rodarModelo } from '../../src/unoogpt/ferramentas';
 import { sementeDe } from '../../src/unoogpt/modelo/aleatorio';
 
 /**
- * As três regras de explicabilidade. O aluno tem cinco minutos e precisa saber,
+ * As três regras de explicabilidade. O estudante tem cinco minutos e precisa saber,
  * a cada leitura: de onde veio o número, o que a margem impede de afirmar, e o
  * que mudou por causa da fonte que ele acabou de somar.
  */

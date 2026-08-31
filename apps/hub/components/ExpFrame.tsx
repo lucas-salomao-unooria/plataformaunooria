@@ -23,8 +23,6 @@ export function ExpFrame(props: {
   expOrigin: string;
   token: string;
   estudante?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
-  /** @deprecated Use `estudante`. */
-  aluno?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   config?: Record<string, unknown>;
   /**
@@ -63,7 +61,7 @@ export function ExpFrame(props: {
           );
           return; // sem hub:init — a experiência expira e mostra o erro dela
         }
-        const estudantePayload = atual.current.estudante ?? atual.current.aluno;
+        const estudantePayload = atual.current.estudante;
         post({
           type: "hub:init",
           protocolVersion: PROTOCOL_VERSION,

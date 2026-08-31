@@ -58,6 +58,7 @@ export interface RespostaRanking {
 export interface RespostaSessao extends RespostaEstado {
   catalogo: { videos: VideoPublico[] };
   estudante?: { nome: string; avatar: string };
+  /** @deprecated Alias do payload anterior ao rename (ADR-51). */
   aluno?: { nome: string; avatar: string };
   ranking: RespostaRanking | null;
 }

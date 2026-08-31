@@ -148,7 +148,7 @@ describe("lotação em lote", () => {
     expect(depois.find((e) => e.principal)?.id).toBe(antes.find((e) => e.principal)?.id);
   });
 
-  test("lotar numa REGIONAL é ignorado — ela não tem turma nem aluno", async () => {
+  test("lotar numa REGIONAL é ignorado — ela não tem turma nem estudante", async () => {
     const feito = await escolas.lotarEmLote([REGIONAL, ESCOLAS[0]!], supervisorId, "gestor");
     // Sem isso, a regional apareceria no seletor do cabeçalho como uma escola
     // fantasma, sem nada dentro.
@@ -175,7 +175,7 @@ describe("panorama de quem tem muitas escolas", () => {
   test("conta quem ainda não fez o primeiro acesso — é o que falta fazer ali", async () => {
     await rostering.importarPlanilha(
       ESCOLAS[0]!,
-      ["nome,papel,turma,serie", "Aluno Novo da Unidade,aluno,6A,6EF"].join("\n"),
+      ["nome,papel,turma,serie", "Estudante Novo da Unidade,estudante,6A,6EF"].join("\n"),
       { senhaPadrao: "SenhaDoLote1" },
     );
     const resumo = await escolas.resumoDasEscolasDaPessoa(supervisorId);

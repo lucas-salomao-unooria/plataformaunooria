@@ -6,7 +6,7 @@ export const VideoIdSchema = z.enum(VIDEO_IDS);
 export const SalvarSchema = z.object({ videoId: VideoIdSchema });
 
 /**
- * Um vídeo como o ALUNO o recebe — **sem `factual`**.
+ * Um vídeo como o ESTUDANTE o recebe — **sem `factual`**.
  *
  * Não é omissão: o tipo do servidor é `Omit<Video, "factual">`, então o gabarito
  * é impossível de vazar aqui, não só ausente por descuido (regra 3).
@@ -55,7 +55,7 @@ export const EstadoSchema = z.object({
 export const EstadoComScoreSchema = EstadoSchema.extend({ score: z.number().int() });
 
 /** Os colegas são FICTÍCIOS: ranquear colegas reais exporia pontuação de
- *  menores (regra 6). `voce` marca a linha do aluno. */
+ *  menores (regra 6). `voce` marca a linha do estudante. */
 export const RankingSchema = z.object({
   linhas: z.array(
     z.object({
@@ -97,7 +97,6 @@ export const TurmasDoUnootubeSchema = z.object({
 export const EstudanteDoResultadoSchema = z.object({
   id: Uuid.optional(),
   estudanteId: Uuid.optional(),
-  alunoId: Uuid.optional(),
   nome: z.string(),
   usuario: z.string(),
   iniciou: z.boolean(),

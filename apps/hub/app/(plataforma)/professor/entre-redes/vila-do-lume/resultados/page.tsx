@@ -42,14 +42,14 @@ export default async function ResultadosDaVilaPage({
         apiDoServidor<{ resumo: ResumoDaTurma | null }>(
           `/vila/agregado/turmas/${encodeURIComponent(turma)}`,
         ),
-        apiDoServidor<{ estudantes?: LinhaDaTurma[]; alunos?: LinhaDaTurma[] }>(
+        apiDoServidor<{ estudantes?: LinhaDaTurma[]}>(
           `/vila/professor/turmas/${encodeURIComponent(turma)}`,
         ),
       ])
     : [null, null];
 
   const resumo = agregado?.resumo ?? null;
-  const estudantes = listagem?.estudantes ?? listagem?.alunos ?? null;
+  const estudantes = listagem?.estudantes ?? null;
 
   /* A pergunta que decide se o debate funciona. Uma bolha ausente não é detalhe:
      o roteiro conta com a A dizendo que era óbvio, a C não conseguindo explicar
@@ -111,8 +111,8 @@ export default async function ResultadosDaVilaPage({
             repete numa reunião achando que é dado.
           */}
           <div className="grid gap-3 sm:grid-cols-4">
-            <MetricCard title="Estudantes na turma" value={resumo.estudantes ?? resumo.alunos} />
-            <MetricCard title="Jogaram" value={`${resumo.jogaram}/${resumo.estudantes ?? resumo.alunos}`} />
+            <MetricCard title="Estudantes na turma" value={resumo.estudantes ?? 0} />
+            <MetricCard title="Jogaram" value={`${resumo.jogaram}/${resumo.estudantes ?? 0}`} />
             <MetricCard title="Terminaram a vila" value={resumo.concluiram} />
             <MetricCard
               title="Partidas que sustentam leitura"

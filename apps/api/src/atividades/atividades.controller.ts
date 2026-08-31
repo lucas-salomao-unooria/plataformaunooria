@@ -45,7 +45,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { excluirAtividade, limparDadosDosEstudantes } from "./manutencao";
 import { Contrato } from "../openapi/contrato";
 import {
-  AlunoDaAtividadeSchema,
+  EstudanteDaAtividadeSchema,
   AtivadaSchema,
   AtivarSchema,
   AtividadeCriadaSchema,
@@ -54,7 +54,6 @@ import {
   EtapaAtualSchema,
   EtapaMovidaSchema,
   EtapaSchema,
-  EstudanteDaAtividadeSchema,
   ExcluidaSchema,
   IaAlternadaSchema,
   IaSchema,
@@ -116,7 +115,7 @@ export class AtividadesController {
           criadoEm: a.createdAt,
           estudantes: a._count.runs,
           alunos: a._count.runs,
-          /** Sinônimo de `alunos` (1 run = 1 aluno na atividade) — as telas
+          /** Sinônimo de `estudantes` (1 run = 1 estudante na atividade) — as telas
            *  portadas usam os dois nomes; manter ambos evita drift no port. */
           sessoes: a._count.runs,
           posts: a._count.posts,
@@ -130,7 +129,7 @@ export class AtividadesController {
   @Contrato({
     resumo: "O detalhe de uma atividade.",
     descricao:
-      "`_count` espelha o `select` do Prisma da página de origem — o porte dos painéis consome exatamente esse shape —, e os agregados nomeados (`alunos`, `postsAprovados`) ficam junto.",
+      "`_count` espelha o `select` do Prisma da página de origem — o porte dos painéis consome exatamente esse shape —, e os agregados nomeados (`estudantes`, `postsAprovados`) ficam junto.",
     params: z.object({ id: z.string().uuid() }),
     resposta: DetalheDaAtividadeSchema,
   })

@@ -285,7 +285,7 @@ export interface EficaciaDaEscrita {
   /** Segundos por post, entre estudantes de OUTROS perfis. */
   dwellDosOutros: number | null;
   delta: number | null;
-  amostra: { estudantesDoPerfil?: number; alunosDoPerfil: number; estudantesDeOutros?: number; alunosDeOutros: number };
+  amostra: { estudantesDoPerfil: number; estudantesDeOutros: number };
 }
 
 export interface AnaliseDeProduto {

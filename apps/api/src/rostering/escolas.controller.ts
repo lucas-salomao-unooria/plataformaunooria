@@ -24,7 +24,6 @@ import {
   EscolasDaPessoaSchema,
   EscolasDaRedeSchema,
   HistoricoDoEstudanteSchema,
-  HistoricoDoAlunoSchema,
   ListarEscolasSchema,
   LotarEmLoteSchema,
   LotarSchema,
@@ -74,7 +73,7 @@ export class EscolasController {
     resposta: EscolasDaPessoaSchema,
     notas: [
       "Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.",
-      "Professor e gestor ACUMULAM lotação; aluno tem UMA ativa, garantida por índice único parcial no banco.",
+      "Professor e gestor ACUMULAM lotação; estudante tem UMA ativa, garantida por índice único parcial no banco.",
     ],
   })
   minhas(@Req() req: Autenticado) {
@@ -87,7 +86,7 @@ export class EscolasController {
   @Contrato({
     resumo: "O panorama de quem tem muitas escolas.",
     descricao:
-      "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, alunos e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor` lotado nas unidades da diretoria.",
+      "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, estudantes e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor` lotado nas unidades da diretoria.",
     resposta: ResumoDasEscolasSchema,
   })
   resumo(@Req() req: Autenticado) {
@@ -190,7 +189,7 @@ export class EscolasController {
   @Contrato({
     resumo: "Quem está lotado nesta escola.",
     descricao:
-      "Gestor vê a própria; `admin-contrato`, qualquer uma. `papel` diferente de `aluno`/`gestor` cai em `professor`.",
+      "Gestor vê a própria; `admin-contrato`, qualquer uma. `papel` diferente de `estudante`/`gestor` cai em `professor`.",
     params: z.object({ id: z.string() }),
     query: PapelDeLotacaoQuery,
     resposta: PessoasLotadasSchema,
@@ -341,4 +340,3 @@ export class EstudantesController {
   }
 }
 
-export const AlunosController = EstudantesController;

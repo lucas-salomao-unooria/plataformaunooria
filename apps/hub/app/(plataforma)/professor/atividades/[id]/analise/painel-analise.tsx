@@ -285,10 +285,10 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                 </tr>
               </thead>
               <tbody>
-                {(analise.estudantes ?? analise.alunos).map((estudante) => {
+                {(analise.estudantes ?? []).map((estudante) => {
                   const outro = estudante.bolha.ladoInicial === 'A' ? 'B' : 'A';
                   const expandido = aberto === estudante.runId;
-                  const perfilEstudante = estudante.estudante ?? estudante.aluno;
+                  const perfilEstudante = estudante.estudante!;
                   return (
                     <Fragment key={estudante.runId}>
                       <tr

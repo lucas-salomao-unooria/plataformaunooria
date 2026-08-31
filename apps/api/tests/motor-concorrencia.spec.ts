@@ -37,7 +37,7 @@ describe("dois pedidos de bloco ao mesmo tempo", () => {
     const run = await prisma.run.findUniqueOrThrow({ where: { id: runId } });
     const estado = normalizarEstado(run.engineState);
 
-    // Nada entregue ao aluno fica fora do estado…
+    // Nada entregue ao estudante fica fora do estado…
     for (const postId of entregues) {
       expect(estado.servedPostIds).toContain(postId);
     }

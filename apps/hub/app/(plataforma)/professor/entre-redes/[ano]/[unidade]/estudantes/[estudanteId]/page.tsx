@@ -93,7 +93,7 @@ export default async function EstudantePage({
     );
   }
 
-  const nomeEstudante = (relatorio.estudante ?? relatorio.aluno).nome;
+  const nomeEstudante = relatorio.estudante!.nome;
   const ultima = relatorio.tentativas[relatorio.tentativas.length - 1];
   const desfecho = ultima?.desfecho as { totais?: { salvas?: number; emRisco?: number } } | undefined;
 

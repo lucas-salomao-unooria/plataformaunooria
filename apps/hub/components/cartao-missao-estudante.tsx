@@ -44,4 +44,3 @@ export function CartaoMissaoEstudante({ missao }: { missao: MissaoDoEstudante })
   );
 }
 
-export const CartaoMissaoAluno = CartaoMissaoEstudante;

@@ -15,7 +15,7 @@ export const CAMPOS_SENSIVEIS = [
 ] as const;
 
 /**
- * Termos que nao podem aparecer em texto visivel ao aluno. Nomear o mecanismo
+ * Termos que nao podem aparecer em texto visivel ao estudante. Nomear o mecanismo
  * muda o comportamento: quem sabe que esta sendo ensinado sobre vies procura o
  * vies em vez de decidir. A mesma constante alimenta o prompt (doc 04 §3).
  */

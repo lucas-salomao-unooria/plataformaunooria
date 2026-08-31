@@ -61,8 +61,8 @@ export function modeloEmBranco(): string {
 export function exemploPreenchido(): string {
   return [
     COLUNAS_MODELO.join(","),
-    "529.982.247-25,2026001,Ana Paula Ribeiro,,ana.ribeiro@escola.exemplo,aluno,8A,8EF,manha",
-    '045.833.259-32,2026002,"Souza, João Pedro",joao.souza,,aluno,8A,8EF,manha',
+    "529.982.247-25,2026001,Ana Paula Ribeiro,,ana.ribeiro@escola.exemplo,estudante,8A,8EF,manha",
+    '045.833.259-32,2026002,"Souza, João Pedro",joao.souza,,estudante,8A,8EF,manha',
     ",1099,Marta Nunes Alves,,marta.alves@escola.exemplo,professor,8A,8EF,manha",
     ",1100,Carlos Eduardo Dias,,,coordenacao,,,",
     "",
@@ -162,8 +162,8 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
         linha,
         campo: "papel",
         mensagem: papelBruto
-          ? `papel não reconhecido: "${papelBruto}" — use aluno, professor ou coordenação`
-          : "papel: informe aluno, professor ou coordenação",
+          ? `papel não reconhecido: "${papelBruto}" — use estudante, professor ou coordenação`
+          : "papel: informe estudante, professor ou coordenação",
       });
     }
 

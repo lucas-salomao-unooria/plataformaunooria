@@ -29,7 +29,7 @@
  * rejeitado por MAX_TOKENS e só passava na segunda ou terceira tentativa — 15 a
  * 28 segundos por resposta e o dobro do custo. O motivo estava no log: o
  * RACIOCÍNIO do modelo conta dentro deste teto e gastava de 300 a 572 tokens,
- * enquanto a fala que chega ao aluno usa de 17 a 76. Quem estourava era o
+ * enquanto a fala que chega ao estudante usa de 17 a 76. Quem estourava era o
  * pensamento, não a resposta. Com 1600 ainda cortava (raciocínio já observado
  * em 1.275). Apertar isto de novo sem olhar o log é repetir o erro.
  */
@@ -61,7 +61,7 @@ export const TETO_TOKENS_SESSAO = 150_000;
 /**
  * Teto de CHAMADAS por sessão. Existe junto com o de tokens porque os dois
  * pegam falhas diferentes: token pega a conversa longa; chamada pega o laço
- * (aluno — ou script — mandando mensagem sem parar), que estouraria a fila de
+ * (estudante — ou script — mandando mensagem sem parar), que estouraria a fila de
  * requisições muito antes de estourar o token.
  *
  * Ao custo medido (7,7k por turno), o teto de TOKENS morde primeiro, por volta

@@ -16,7 +16,7 @@ describe("papéis", () => {
     }
   });
 
-  test("docente/teacher viram professor; estudante/student/aluno viram estudante", () => {
+  test("docente/teacher viram professor; estudante/student/estudante viram estudante", () => {
     expect(normalizarPapel("Docente")).toBe("professor");
     expect(normalizarPapel("teacher")).toBe("professor");
     expect(normalizarPapel("estudante")).toBe("estudante");
@@ -105,13 +105,13 @@ describe("leitura da planilha", () => {
   });
 
   test("cabeçalho é lido por nome: ordem trocada continua funcionando", () => {
-    const leitura = lerPlanilha(["papel,nome,turma,serie", "aluno,Ana Lima,8A,8EF"].join("\n"));
+    const leitura = lerPlanilha(["papel,nome,turma,serie", "estudante,Ana Lima,8A,8EF"].join("\n"));
     expect(leitura.erros).toEqual([]);
     expect(leitura.pessoas[0]).toMatchObject({ nome: "Ana Lima", papel: "estudante", turma: "8A" });
   });
 
   test("coluna desconhecida é erro de cabeçalho — não coluna ignorada em silêncio", () => {
-    const leitura = lerPlanilha(["nome,papel,telefone", "Ana,aluno,11999999999"].join("\n"));
+    const leitura = lerPlanilha(["nome,papel,telefone", "Ana,estudante,11999999999"].join("\n"));
     expect(leitura.pessoas).toEqual([]);
     expect(leitura.erros[0]).toMatchObject({ campo: "header" });
   });
@@ -125,8 +125,8 @@ describe("leitura da planilha", () => {
     expect(ruim.erros[0]).toMatchObject({ campo: "cpf" });
   });
 
-  test("aluno sem turma ou sem série volta com o campo que faltou", () => {
-    const leitura = lerPlanilha(["nome,papel,turma,serie", "Ana Lima,aluno,,"].join("\n"));
+  test("estudante sem turma ou sem série volta com o campo que faltou", () => {
+    const leitura = lerPlanilha(["nome,papel,turma,serie", "Ana Lima,estudante,,"].join("\n"));
     expect(leitura.erros.map((e) => e.campo).sort()).toEqual(["serie", "turma"]);
   });
 
@@ -139,7 +139,7 @@ describe("leitura da planilha", () => {
 
   test("o formato antigo continua sendo aceito", () => {
     const leitura = lerPlanilha(
-      ["nome,usuario,senha,papel,turma,serie", "Ana Lima,ana.lima,senha1234,aluno,8A,8EF"].join("\n"),
+      ["nome,usuario,senha,papel,turma,serie", "Ana Lima,ana.lima,senha1234,estudante,8A,8EF"].join("\n"),
     );
     expect(leitura.formato).toBe("legado");
     expect(leitura.pessoas[0]).toMatchObject({ usuario: "ana.lima", senha: "senha1234" });

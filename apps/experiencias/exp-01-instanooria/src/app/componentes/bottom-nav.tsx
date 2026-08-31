@@ -14,17 +14,15 @@ export function BottomNav({
   ativa,
   aoTrocar,
   avatarDoEstudante,
-  avatarDoAluno,
   naoLidas,
 }: {
   ativa: Aba;
   aoTrocar: (aba: Aba) => void;
   avatarDoEstudante?: string;
-  avatarDoAluno?: string;
   naoLidas: number;
 }) {
   const cor = (aba: Aba) => (ativa === aba ? '#262626' : '#8E8E93');
-  const avatar = avatarDoEstudante ?? avatarDoAluno ?? '';
+  const avatar = avatarDoEstudante ?? '';
 
   return (
     <nav className="sticky bottom-0 z-30 flex h-bottomnav items-stretch bg-canvas shadow-[0px_-0.33px_0px_0px_theme(colors.hairlineBarra)]">

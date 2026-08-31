@@ -20,7 +20,7 @@ compartilham o banco com isolamento lógico por \`escola_id\` e Row-Level Securi
 \`{sub, escola_id, turma_id?, perfil}\`. Para experimentar aqui, pegue um token
 de uma sessão do hub e cole em **Authorize**.
 
-**Papéis.** \`estudante\`, \`aluno\`, \`professor\`, \`gestor\` e \`admin-contrato\` — este último é a
+**Papéis.** \`estudante\`, \`estudante\`, \`professor\`, \`gestor\` e \`admin-contrato\` — este último é a
 única exceção que atravessa escolas. Cada operação diz quais aceita; sem essa
 linha, qualquer papel autenticado passa.
 

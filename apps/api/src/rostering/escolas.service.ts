@@ -32,7 +32,7 @@ export interface FiltroDeEscolas {
 
 /**
  * A REDE: escolas identificáveis, pessoas lotadas em mais de uma, e a
- * transferência de aluno entre elas.
+ * transferência de estudante entre elas.
  *
  * `escolas` e `lotacoes` ficam FORA da RLS (são identidade, lidas antes de haver
  * escola no contexto), então este service filtra por escola explicitamente,
@@ -215,7 +215,7 @@ export class EscolasService {
     if (!usuario || usuario.role === "admin-contrato") return null;
 
     // Só unidades: lotar alguém numa `regional` daria uma escola que não tem
-    // turma, aluno nem dado — e a pessoa apareceria com uma escola fantasma no
+    // turma, estudante nem dado — e a pessoa apareceria com uma escola fantasma no
     // seletor do cabeçalho.
     const existentes = await this.prisma.escola.findMany({
       where: { id: { in: escolaIds }, tipo: "escola" },
@@ -460,14 +460,6 @@ export class EscolasService {
     });
   }
 
-  async transferirAluno(dados: {
-    alunoId: string;
-    escolaDestinoId: string;
-    turmaDestinoId?: string | null;
-  }) {
-    return this.transferirEstudante(dados);
-  }
-
   /**
    * O histórico do estudante ATRAVESSANDO escolas — a única leitura da plataforma
    * que faz isso fora de `admin-contrato`.
@@ -555,10 +547,6 @@ export class EscolasService {
         em: p.atualizadoEm,
       })),
     };
-  }
-
-  async historicoDoAluno(alunoId: string) {
-    return this.historicoDoEstudante(alunoId);
   }
 
   // ------------------------------------------------------------------ comuns

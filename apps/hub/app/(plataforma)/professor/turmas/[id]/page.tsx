@@ -7,7 +7,7 @@ import { rotuloDoTurno, turmaComPessoas } from "@/lib/turmas";
 export const metadata = { title: "Turma — Plataforma Unooria" };
 
 /**
- * A lista NOMINAL da turma — o lugar onde "trackear por aluno" vira uma coisa
+ * A lista NOMINAL da turma — o lugar onde "trackear por estudante" vira uma coisa
  * que se vê na tela. Cada nome leva ao que a plataforma já sabe sobre aquela
  * criança na Vila do Lume.
  *
@@ -23,7 +23,8 @@ export default async function TurmaDoProfessorPage({
   const dados = await turmaComPessoas(id);
   if (!dados) notFound();
 
-  const { turma, alunos, professores } = dados;
+  const { turma, professores } = dados;
+  const estudantes = dados.estudantes ?? [];
   const turno = rotuloDoTurno(turma.turno);
 
   return (
@@ -38,36 +39,36 @@ export default async function TurmaDoProfessorPage({
         <h1 className="text-[24px] font-bold text-unooria-neutral-950">Turma {turma.nome}</h1>
         <p className="text-[14px] text-unooria-neutral-500">
           {rotuloDaSerie(turma.serie as Serie)}
-          {turno ? ` · ${turno}` : ""} · {turma.periodo} · {alunos.length} estudante
-          {alunos.length === 1 ? "" : "s"}
+          {turno ? ` · ${turno}` : ""} · {turma.periodo} · {estudantes.length} estudante
+          {estudantes.length === 1 ? "" : "s"}
         </p>
       </div>
 
       <Card variant="outlined">
         <ul className="flex flex-col">
-          {alunos.length === 0 ? (
+          {estudantes.length === 0 ? (
             <li className="py-4 text-[14px] text-unooria-neutral-500">
               Nenhum estudante matriculado nesta turma ainda — quem enturma é a coordenação.
             </li>
           ) : (
-            alunos.map((aluno) => (
-              <li key={aluno.id} className="linha-de-lista">
+            estudantes.map((estudante) => (
+              <li key={estudante.id} className="linha-de-lista">
                 <Link
-                  href={`/professor/entre-redes/vila-do-lume/estudantes/${aluno.id}`}
+                  href={`/professor/entre-redes/vila-do-lume/estudantes/${estudante.id}`}
                   className="flex items-center justify-between gap-3 py-3"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-[15px] font-semibold text-unooria-neutral-950">
-                      {aluno.nome}
+                      {estudante.nome}
                     </span>
                     <span className="block truncate text-[13px] text-unooria-neutral-500">
-                      {aluno.usuario}
-                      {aluno.matricula ? ` · matrícula ${aluno.matricula}` : ""}
+                      {estudante.usuario}
+                      {estudante.matricula ? ` · matrícula ${estudante.matricula}` : ""}
                     </span>
                   </span>
-                  {!aluno.ativo ? (
+                  {!estudante.ativo ? (
                     <Tag>inativo</Tag>
-                  ) : aluno.senhaProvisoria ? (
+                  ) : estudante.senhaProvisoria ? (
                     <Tag>sem primeiro acesso</Tag>
                   ) : null}
                 </Link>

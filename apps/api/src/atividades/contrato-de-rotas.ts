@@ -59,7 +59,7 @@ export const AtividadeEmListaSchema = z.object({
   criadoEm: z.string().datetime(),
   estudantes: z.number().int().nonnegative().optional(),
   alunos: z.number().int().nonnegative(),
-  /** Sinônimo de `estudantes`/`alunos` (1 run = 1 estudante). As telas portadas usam os dois
+  /** Sinônimo de `estudantes`/`estudantes` (1 run = 1 estudante). As telas portadas usam os dois
    *  nomes; manter ambos evita drift no porte. */
   sessoes: z.number().int().nonnegative(),
   posts: z.number().int().nonnegative(),
@@ -304,4 +304,3 @@ export const EstudanteDaAtividadeSchema = z.object({
   ),
 });
 
-export const AlunoDaAtividadeSchema = EstudanteDaAtividadeSchema;

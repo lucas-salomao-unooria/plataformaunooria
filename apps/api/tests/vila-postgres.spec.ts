@@ -20,9 +20,9 @@ const service = new VilaService(prisma);
 
 let turma8: string;
 let turma3: string;
-let alunos8: string[] = [];
-let aluno3: string;
-let alunoDaOutraEscola: string;
+let estudantes8: string[] = [];
+let estudante3: string;
+let estudanteDaOutraEscola: string;
 
 function partidaCompleta(): Record<string, unknown> {
   return {
@@ -107,12 +107,12 @@ beforeAll(async () => {
       select: { id: true },
     });
 
-  alunos8 = [];
+  estudantes8 = [];
   for (let i = 1; i <= 9; i += 1) {
-    alunos8.push((await criar(ESCOLA, turma8, `vila.a${i}`, `Aluno ${i}`)).id);
+    estudantes8.push((await criar(ESCOLA, turma8, `vila.a${i}`, `Estudante ${i}`)).id);
   }
-  aluno3 = (await criar(ESCOLA, turma3, "vila.p1", "Pequeno 1")).id;
-  alunoDaOutraEscola = (await criar(OUTRA_ESCOLA, null, "vila.x1", "Fora 1")).id;
+  estudante3 = (await criar(ESCOLA, turma3, "vila.p1", "Pequeno 1")).id;
+  estudanteDaOutraEscola = (await criar(OUTRA_ESCOLA, null, "vila.x1", "Fora 1")).id;
 });
 
 afterAll(async () => {
@@ -122,7 +122,7 @@ afterAll(async () => {
 
 describe("abrir a partida", () => {
   test("crava o início no servidor e entrega só os cartões da bolha, sem gabarito", async () => {
-    const s = await service.abrir(ESCOLA, alunos8[0]!, "1.0.0");
+    const s = await service.abrir(ESCOLA, estudantes8[0]!, "1.0.0");
     expect(s.sessaoId).toMatch(/^[0-9a-f-]{36}$/);
     expect(["A", "B", "C"]).toContain(s.bolha);
     expect(s.cartoes.length).toBe(4);
@@ -151,25 +151,25 @@ describe("abrir a partida", () => {
     expect(colunas).not.toContain("expiresAt");
   });
 
-  test("a bolha é ESTÁVEL entre partidas do mesmo aluno", async () => {
+  test("a bolha é ESTÁVEL entre partidas do mesmo estudante", async () => {
     // Se mudasse, a folha do professor ("esse estava na C") ficaria errada e o
     // relatório misturaria dois níveis na mesma criança.
-    const primeira = await service.abrir(ESCOLA, alunos8[1]!, "1.0.0");
-    const segunda = await service.abrir(ESCOLA, alunos8[1]!, "1.0.0");
-    const terceira = await service.abrir(ESCOLA, alunos8[1]!, "1.0.0");
+    const primeira = await service.abrir(ESCOLA, estudantes8[1]!, "1.0.0");
+    const segunda = await service.abrir(ESCOLA, estudantes8[1]!, "1.0.0");
+    const terceira = await service.abrir(ESCOLA, estudantes8[1]!, "1.0.0");
     expect(segunda.bolha).toBe(primeira.bolha);
     expect(terceira.bolha).toBe(primeira.bolha);
     expect(segunda.sessaoId).not.toBe(primeira.sessaoId);
   });
 
   test("abrir de novo marca a anterior como abandonada — nunca duas abertas", async () => {
-    const aluno = alunos8[2]!;
-    const primeira = await service.abrir(ESCOLA, aluno, "1.0.0");
-    await service.abrir(ESCOLA, aluno, "1.0.0");
+    const estudante = estudantes8[2]!;
+    const primeira = await service.abrir(ESCOLA, estudante, "1.0.0");
+    await service.abrir(ESCOLA, estudante, "1.0.0");
     const antiga = await prisma.vilaSessao.findUniqueOrThrow({ where: { id: primeira.sessaoId } });
     expect(antiga.status).toBe("abandonada");
     expect(antiga.concluidaEm).not.toBeNull();
-    const abertas = await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: aluno, status: "aberta" } });
+    const abertas = await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: estudante, status: "aberta" } });
     expect(abertas).toBe(1);
   });
 
@@ -178,7 +178,7 @@ describe("abrir a partida", () => {
     // 9 leriam a mesma contagem vazia e todos cairiam na A — a falha que estraga
     // o debate. Aqui vão em paralelo de propósito.
     await prisma.vilaBolha.deleteMany({ where: { escolaId: ESCOLA } });
-    await Promise.all(alunos8.map((id) => service.abrir(ESCOLA, id, "1.0.0")));
+    await Promise.all(estudantes8.map((id) => service.abrir(ESCOLA, id, "1.0.0")));
     const porBolha = await prisma.vilaBolha.groupBy({
       by: ["bolha"],
       where: { escolaId: ESCOLA, estudante: { turmaId: turma8 } },
@@ -189,22 +189,22 @@ describe("abrir a partida", () => {
   });
 
   test("nos anos iniciais a bolha B não é atribuída", async () => {
-    const s = await service.abrir(ESCOLA, aluno3, "1.0.0");
+    const s = await service.abrir(ESCOLA, estudante3, "1.0.0");
     expect(s.bolha).not.toBe("B");
     // e o golpe servido não é o de autoridade/urgência
     expect(JSON.stringify(s.cartoes)).not.toMatch(/Suporte da Vila/);
   });
 
-  test("aluno de outra escola não abre partida nesta", async () => {
-    expect(await statusDe(service.abrir(ESCOLA, alunoDaOutraEscola, "1.0.0"))).toBe(404);
+  test("estudante de outra escola não abre partida nesta", async () => {
+    expect(await statusDe(service.abrir(ESCOLA, estudanteDaOutraEscola, "1.0.0"))).toBe(404);
   });
 });
 
 describe("concluir a partida", () => {
   test("grava contadores, perfil e leitura das mensagens numa transação", async () => {
-    const aluno = alunos8[3]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
-    const r = await service.concluir(ESCOLA, aluno, s.sessaoId, comCartoesComuns(partidaCompleta()));
+    const estudante = estudantes8[3]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
+    const r = await service.concluir(ESCOLA, estudante, s.sessaoId, comCartoesComuns(partidaCompleta()));
     expect(r.status).toBe("gravada");
     expect(r.perfilId).not.toBeNull();
 
@@ -224,10 +224,10 @@ describe("concluir a partida", () => {
   });
 
   test("é idempotente: concluir de novo devolve o que já está gravado", async () => {
-    const aluno = alunos8[4]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
-    const primeira = await service.concluir(ESCOLA, aluno, s.sessaoId, comCartoesComuns(partidaCompleta()));
-    const segunda = await service.concluir(ESCOLA, aluno, s.sessaoId, comCartoesComuns(partidaCompleta()));
+    const estudante = estudantes8[4]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
+    const primeira = await service.concluir(ESCOLA, estudante, s.sessaoId, comCartoesComuns(partidaCompleta()));
+    const segunda = await service.concluir(ESCOLA, estudante, s.sessaoId, comCartoesComuns(partidaCompleta()));
     expect(segunda.status).toBe("jaEstava");
     expect(segunda.perfilId).toBe(primeira.perfilId);
     expect(await prisma.vilaPerfil.count({ where: { sessaoId: s.sessaoId } })).toBe(1);
@@ -238,25 +238,25 @@ describe("concluir a partida", () => {
     // `IS NOT NULL` passa a responder TRUE para toda partida — a pergunta
     // "quais têm leitura das mensagens?" devolveria todas. O caminho de leitura
     // funciona nos dois casos, que é o que torna esse erro silencioso.
-    const aluno = alunos8[2]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
-    await service.concluir(ESCOLA, aluno, s.sessaoId, partidaCompleta()); // seguranca.cartoes vazio
+    const estudante = estudantes8[2]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
+    await service.concluir(ESCOLA, estudante, s.sessaoId, partidaCompleta()); // seguranca.cartoes vazio
     const [linha] = await prisma.$queryRaw<Array<{ nulo: boolean }>>`
       SELECT leitura_mensagens IS NULL AS nulo FROM exp_70_sessoes WHERE id = ${s.sessaoId}::uuid`;
     expect(linha!.nulo).toBe(true);
-    const relatorio = await service.doAluno(ESCOLA, aluno);
+    const relatorio = await service.doEstudante(ESCOLA, estudante);
     expect(relatorio!.mensagens).toBeNull();
     // E os cartões foram servidos: a missão estava disponível, só não apareceu.
     expect(relatorio!.cartoesServidos).toBe(4);
   });
 
   test("partida abandonada guarda o bruto e NÃO gera perfil", async () => {
-    const aluno = alunos8[5]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
+    const estudante = estudantes8[5]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
     const p = comCartoesComuns(partidaCompleta());
     p.status = "abandonada";
     (p.resumo as Record<string, unknown>).fogueirasAcesas = 3;
-    const r = await service.concluir(ESCOLA, aluno, s.sessaoId, p);
+    const r = await service.concluir(ESCOLA, estudante, s.sessaoId, p);
     expect(r.perfilId).toBeNull();
     const linha = await prisma.vilaSessao.findUniqueOrThrow({ where: { id: s.sessaoId } });
     expect(linha.status).toBe("abandonada");
@@ -264,19 +264,19 @@ describe("concluir a partida", () => {
   });
 
   test("payload com nome de criança é recusado com 422, e nada é gravado", async () => {
-    const aluno = alunos8[6]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
+    const estudante = estudantes8[6]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
     const p = comCartoesComuns(partidaCompleta());
     p.nome = "Lara";
-    expect(await statusDe(service.concluir(ESCOLA, aluno, s.sessaoId, p))).toBe(422);
+    expect(await statusDe(service.concluir(ESCOLA, estudante, s.sessaoId, p))).toBe(422);
     const linha = await prisma.vilaSessao.findUniqueOrThrow({ where: { id: s.sessaoId } });
     expect(linha.status).toBe("aberta");
     expect(linha.payload).toBeNull();
   });
 
   test("cartão de outra bolha é recusado com 422", async () => {
-    const aluno = alunos8[7]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
+    const estudante = estudantes8[7]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
     const outraBolha = s.bolha === "C" ? "jogador-1000" : "colega-fagulha";
     const p = partidaCompleta();
     p.seguranca = {
@@ -285,27 +285,27 @@ describe("concluir a partida", () => {
       ignoradas: 0,
       cartoes: [{ id: outraBolha, emMs: 1000, viuOpcoes: true, escolha: 1, decisaoMs: 500 }],
     };
-    expect(await statusDe(service.concluir(ESCOLA, aluno, s.sessaoId, p))).toBe(422);
+    expect(await statusDe(service.concluir(ESCOLA, estudante, s.sessaoId, p))).toBe(422);
   });
 });
 
 describe("tenancy (regra inviolável nº 1)", () => {
   test("nenhuma leitura atravessa escola", async () => {
-    const aluno = alunos8[8]!;
-    const s = await service.abrir(ESCOLA, aluno, "1.0.0");
-    await service.concluir(ESCOLA, aluno, s.sessaoId, comCartoesComuns(partidaCompleta()));
+    const estudante = estudantes8[8]!;
+    const s = await service.abrir(ESCOLA, estudante, "1.0.0");
+    await service.concluir(ESCOLA, estudante, s.sessaoId, comCartoesComuns(partidaCompleta()));
 
     // A escola errada não acha a partida, nem para concluir, nem para ler.
-    expect(await statusDe(service.concluir(OUTRA_ESCOLA, aluno, s.sessaoId, comCartoesComuns(partidaCompleta())))).toBe(404);
-    expect(await service.doAluno(OUTRA_ESCOLA, aluno)).toBeNull();
+    expect(await statusDe(service.concluir(OUTRA_ESCOLA, estudante, s.sessaoId, comCartoesComuns(partidaCompleta())))).toBe(404);
+    expect(await service.doEstudante(OUTRA_ESCOLA, estudante)).toBeNull();
     expect(await service.daTurma(OUTRA_ESCOLA, turma8)).toEqual([]);
     // E o dono continua vendo.
-    expect(await service.doAluno(ESCOLA, aluno)).not.toBeNull();
+    expect(await service.doEstudante(ESCOLA, estudante)).not.toBeNull();
   });
 
-  test("concluir a partida de OUTRO aluno da mesma escola é 404", async () => {
-    const dono = alunos8[0]!;
-    const outro = alunos8[1]!;
+  test("concluir a partida de OUTRO estudante da mesma escola é 404", async () => {
+    const dono = estudantes8[0]!;
+    const outro = estudantes8[1]!;
     const s = await service.abrir(ESCOLA, dono, "1.0.0");
     expect(await statusDe(service.concluir(ESCOLA, outro, s.sessaoId, comCartoesComuns(partidaCompleta())))).toBe(404);
   });
@@ -329,9 +329,9 @@ describe("o guia não projeta bolha que a turma não recebeu", () => {
 });
 
 describe("leitura do professor", () => {
-  test("a turma vem com uma linha por aluno, com a bolha e sem número de valor", async () => {
+  test("a turma vem com uma linha por estudante, com a bolha e sem número de valor", async () => {
     const linhas = await service.daTurma(ESCOLA, turma8);
-    expect(linhas.length).toBe(alunos8.length);
+    expect(linhas.length).toBe(estudantes8.length);
     for (const l of linhas) {
       expect(l.nome).toBeTruthy();
       expect(["A", "B", "C"]).toContain(l.bolha);
@@ -341,7 +341,7 @@ describe("leitura do professor", () => {
   });
 
   test("o relatório não traz número para valor não-`scored`", async () => {
-    const relatorio = await service.doAluno(ESCOLA, alunos8[3]!);
+    const relatorio = await service.doEstudante(ESCOLA, estudantes8[3]!);
     expect(relatorio).not.toBeNull();
     for (const linha of relatorio!.perfil!.linhas) {
       if (linha.grau !== "scored") expect(linha.numero).toBeNull();
@@ -351,12 +351,12 @@ describe("leitura do professor", () => {
     expect(relatorio!.mensagens!.bolha).toBe(relatorio!.bolha);
   });
 
-  test("aluno que não jogou devolve null, não erro", async () => {
+  test("estudante que não jogou devolve null, não erro", async () => {
     const novo = await prisma.user.create({
       data: { role: "estudante", escolaId: ESCOLA, turmaId: turma8, username: "vila.novo", displayName: "Novo", passwordHash: "x" },
       select: { id: true },
     });
-    expect(await service.doAluno(ESCOLA, novo.id)).toBeNull();
+    expect(await service.doEstudante(ESCOLA, novo.id)).toBeNull();
   });
 });
 
@@ -375,31 +375,31 @@ describe("zerar os dados da turma", () => {
     expect(r).not.toBeNull();
     expect(r!.partidas).toBeGreaterThan(0);
 
-    const daTurma = alunos8;
+    const daTurma = estudantes8;
     expect(await prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: { in: daTurma } } })).toBe(0);
     expect(await prisma.vilaPerfil.count({ where: { escolaId: ESCOLA, estudanteId: { in: daTurma } } })).toBe(0);
     expect(await prisma.vilaBolha.count({ where: { escolaId: ESCOLA, estudanteId: { in: daTurma } } })).toBe(0);
   });
 
-  /* Contagem RELATIVA, não absoluta: `aluno3` acumulou partidas dos describes
+  /* Contagem RELATIVA, não absoluta: `estudante3` acumulou partidas dos describes
      anteriores, e fixar um número aqui quebra sempre que um teste acima abrir mais
      uma. O que este teste afirma é que zerar a turma 8A não encosta nele. */
-  const partidasDoAluno3 = () =>
-    prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: aluno3 } });
+  const partidasDoEstudante3 = () =>
+    prisma.vilaSessao.count({ where: { escolaId: ESCOLA, estudanteId: estudante3 } });
 
   test("não atravessa turma: quem é de outra turma da mesma escola fica", async () => {
-    await service.abrir(ESCOLA, aluno3, "1.0.0");
-    const antes = await partidasDoAluno3();
+    await service.abrir(ESCOLA, estudante3, "1.0.0");
+    const antes = await partidasDoEstudante3();
     expect(antes).toBeGreaterThan(0);
 
-    await service.zerarTurma(ESCOLA, turma8); // aluno3 é da turma 3A
-    expect(await partidasDoAluno3()).toBe(antes);
+    await service.zerarTurma(ESCOLA, turma8); // estudante3 é da turma 3A
+    expect(await partidasDoEstudante3()).toBe(antes);
   });
 
   test("turma de outra escola é null, e nada é apagado", async () => {
-    const antes = await partidasDoAluno3();
+    const antes = await partidasDoEstudante3();
     expect(await service.zerarTurma(OUTRA_ESCOLA, turma8)).toBeNull();
-    expect(await partidasDoAluno3()).toBe(antes);
+    expect(await partidasDoEstudante3()).toBe(antes);
   });
 
   test("zerar de novo é inofensivo", async () => {

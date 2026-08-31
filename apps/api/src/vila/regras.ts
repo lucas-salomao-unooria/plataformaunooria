@@ -23,7 +23,7 @@ import type { PayloadVilaV1 } from "./contrato";
  * é uma mensagem sem sentido, e o dado sai ruído.
  *
  * No app de origem essa nota era impossível de aplicar: a bolha saía de
- * `nº do aluno mod 3` no navegador, que não sabe a série de ninguém. A api sabe.
+ * `nº do estudante mod 3` no navegador, que não sabe a série de ninguém. A api sabe.
  */
 const SERIES_SEM_BOLHA_B: readonly string[] = ["1EF", "2EF", "3EF", "4EF", "5EF"];
 
@@ -33,7 +33,7 @@ export function bolhasElegiveis(serie: string | null | undefined): readonly Bolh
 }
 
 /**
- * Qual bolha dar ao próximo aluno da turma: a MENOS USADA entre as elegíveis.
+ * Qual bolha dar ao próximo estudante da turma: a MENOS USADA entre as elegíveis.
  *
  * O que precisa ficar equilibrado é a TURMA, porque é ela que faz o debate
  * funcionar — o roteiro conta com a bolha A dizendo que era óbvio, a C não
@@ -44,7 +44,7 @@ export function bolhasElegiveis(serie: string | null | undefined): readonly Bolh
  * bolha (e `Math.random` nem existe neste arquivo). O desempate é a ordem de
  * `bolhasElegiveis`, o que torna o resultado testável.
  *
- * Hash do uuid do aluno daria terços na MÉDIA DA REDE e podia dar 14/6/5 numa
+ * Hash do uuid do estudante daria terços na MÉDIA DA REDE e podia dar 14/6/5 numa
  * sala de 25. Contar a turma custa uma query e acerta a sala.
  */
 export function escolherBolha(

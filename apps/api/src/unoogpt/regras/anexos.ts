@@ -5,7 +5,7 @@ import type { RodadaDoModelo } from '../ferramentas';
  * Anexos de mensagem (ADR-0007). Tudo acontece no chat: o que antes era tela
  * com botão vira cartão dentro da conversa, gravado na Transcrição.
  *
- * Sem isto a Missão teria quatro superfícies e o aluno teria que aprender a
+ * Sem isto a Missão teria quatro superfícies e o estudante teria que aprender a
  * navegar entre elas antes de aprender qualquer coisa sobre dados.
  */
 export type Anexo =
@@ -33,7 +33,7 @@ export type PassoDerivavel =
   'abertura' | 'orientacao' | 'investigacao' | 'decisao' | 'confirmacao' | 'resultado';
 
 /**
- * Abertura e Orientação são telas, e quem as passa é o clique do aluno — ele
+ * Abertura e Orientação são telas, e quem as passa é o clique do estudante — ele
  * está lendo, não conversando. Depois disso só existem dois Passos:
  * Investigação, que dura enquanto a conversa durar, e Resultado, que chega
  * quando a tempestade acontece.

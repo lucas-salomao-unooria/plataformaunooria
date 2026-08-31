@@ -33,7 +33,6 @@ export default async function BemEstarPage({
         expOrigin={embed.expOrigin}
         token={embed.token}
         estudante={embed.estudante}
-        aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_BEM_ESTAR }}
       />

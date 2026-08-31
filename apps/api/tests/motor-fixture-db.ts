@@ -48,12 +48,12 @@ export async function criarAtividadeDeTeste(escolaId: string, opcoes: { posts?: 
     },
   });
 
-  const aluno = await prisma.user.create({
+  const estudante = await prisma.user.create({
     data: {
       escolaId,
       role: "estudante",
-      username: `aluno.${randomUUID().slice(0, 8)}`,
-      displayName: "Aluno Teste",
+      username: `estudante.${randomUUID().slice(0, 8)}`,
+      displayName: "Estudante Teste",
       passwordHash: "x",
     },
   });
@@ -208,7 +208,7 @@ export async function criarAtividadeDeTeste(escolaId: string, opcoes: { posts?: 
     data: {
       escolaId,
       activityId: atividade.id,
-      estudanteId: aluno.id,
+      estudanteId: estudante.id,
       fase: "onboarding",
       // Sorteio simples; o balanceamento na turma é do resolverLargada.
       ladoInicial: Math.random() < 0.5 ? "A" : "B",
@@ -216,7 +216,7 @@ export async function criarAtividadeDeTeste(escolaId: string, opcoes: { posts?: 
     },
   });
 
-  return { professor, aluno, atividade, run, autores };
+  return { professor, estudante, atividade, run, autores };
 }
 
 /** Limpa SÓ a escola de teste — o resto do banco (seed de dev) fica intacto. */

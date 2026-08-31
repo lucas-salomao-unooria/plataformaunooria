@@ -61,7 +61,7 @@ export interface PassoBloco {
 
 export type Comportamento = (meta: PostMeta, indice: number) => Omit<EventoPontuavel, 'id'>[];
 
-/** Roda N blocos aplicando um comportamento sintético do aluno. */
+/** Roda N blocos aplicando um comportamento sintético do estudante. */
 export function simular(
   blocos: number,
   comportamento: Comportamento,

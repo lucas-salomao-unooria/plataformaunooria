@@ -75,8 +75,6 @@ export type Missao = {
    * virada da missão antes da hora.
    */
   estudante?: { titulo: string; chamada: string };
-  /** @deprecated Alias de compatibilidade. Use `estudante`. */
-  aluno?: { titulo: string; chamada: string };
 };
 
 /** As três etapas da Educação Básica atendidas pela plataforma. */
@@ -362,8 +360,6 @@ export type MissaoTransversal = {
   status: StatusMissao;
   ficha?: FichaDaMissao;
   estudante?: { titulo: string; chamada: string };
-  /** @deprecated Alias de compatibilidade. Use `estudante`. */
-  aluno?: { titulo: string; chamada: string };
 };
 
 /**
@@ -421,7 +417,7 @@ export const MISSAO_VILA: MissaoTransversal = {
     preparo: [
       "Não conte nada antes. A instrução é só \u201cvocês vão manter a vila acesa\u201d — nem \u201cprestem atenção nas mensagens\u201d.",
       "Confira nos resultados se as três bolhas estão na sua turma: sem as três, a revelação não tem o que comparar.",
-      "Na revelação, diga com todas as letras que o \u201cAluno 14\u201d não foi um colega de verdade.",
+      "Na revelação, diga com todas as letras que o \u201cEstudante 14\u201d não foi um colega de verdade.",
       "Nunca pergunte quem clicou — nem por levantar a mão. A missão foi desenhada para funcionar sem essa pergunta.",
     ],
   },

@@ -66,7 +66,7 @@ export function montarMapa(
 }
 
 /**
- * Conjuntos que o aluno ainda não carregou. Alimenta o Resultado — a lista do
+ * Conjuntos que o estudante ainda não carregou. Alimenta o Resultado — a lista do
  * que ele nunca consultou é a peça mais forte do fechamento.
  */
 export function naoCarregados(conjuntos: readonly string[]) {
@@ -77,7 +77,7 @@ export function naoCarregados(conjuntos: readonly string[]) {
  * O QUE SOBROU: o maior bolsão de gente que ficou sem equipe, e a fonte que
  * teria mostrado esse bairro melhor.
  *
- * O aluno terminava a Missão sem conseguir responder "eu acertei?" — quatro
+ * O estudante terminava a Missão sem conseguir responder "eu acertei?" — quatro
  * leituras do mesmo julgamento na tela e nenhuma conclusiva. Isto NÃO é um
  * veredito: é um fato, com nome de bairro, número de pessoas e a fonte que ele
  * não abriu. Quem transforma fato em lição é o professor, no debate (regra de

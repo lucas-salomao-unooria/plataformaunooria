@@ -165,7 +165,7 @@ describe("lote completo, na ordem", () => {
     expect(eletiva.tipo).toBe("componente");
   });
 
-  test("users: password do padrão é IGNORADA e o papel ausente cai em aluno", async () => {
+  test("users: password do padrão é IGNORADA e o papel ausente cai em estudante", async () => {
     const r = await oneroster.importar(
       ESCOLA,
       "users",
@@ -210,7 +210,7 @@ describe("lote completo, na ordem", () => {
     expect(ana.role).toBe("estudante"); // o secundário não promoveu ninguém
   });
 
-  test("enrollments matricula aluno e professor, e o aluno em DUAS turmas", async () => {
+  test("enrollments matricula estudante e professor, e o estudante em DUAS turmas", async () => {
     const r = await oneroster.importar(
       ESCOLA,
       "enrollments",

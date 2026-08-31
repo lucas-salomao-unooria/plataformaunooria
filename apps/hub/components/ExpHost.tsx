@@ -29,8 +29,6 @@ export function ExpHost(props: {
   expOrigin: string;
   token: string;
   estudante?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
-  /** @deprecated Use `estudante`. */
-  aluno?: { id: string; nome: string; serie: string; turmaId: string; escolaId: string };
   apiUrl: string;
   config?: Record<string, unknown>;
   /**

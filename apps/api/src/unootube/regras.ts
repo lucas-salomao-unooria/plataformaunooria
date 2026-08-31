@@ -13,7 +13,7 @@ import type { CodigoErro } from "./erros";
  * unitários batem direto aqui.
  *
  * A mecânica (herdada do UnooTube original):
- *  - o aluno salva até 3 vídeos; fake vale 1000 inscritos, confiável vale 50
+ *  - o estudante salva até 3 vídeos; fake vale 1000 inscritos, confiável vale 50
  *    e conta 1 "fonte confiável";
  *  - ao 3º salvo o ranking desbloqueia (latch — remover depois não tranca);
  *  - "adicionar credibilidade" é a conclusão pedagógica: reordena o ranking
@@ -122,14 +122,14 @@ export function inscritosDoColega(fontesConfiaveis: number): number {
 }
 
 export function montarRanking(
-  aluno: { nome: string; avatar?: string | null },
+  estudante: { nome: string; avatar?: string | null },
   salvos: readonly string[],
 ): RankingLinha[] {
   const d = derivados(salvos);
   const voce: RankingLinha = {
     id: "voce",
-    nome: aluno.nome,
-    avatar: (aluno.avatar ?? aluno.nome.trim().charAt(0) ?? "?").toUpperCase(),
+    nome: estudante.nome,
+    avatar: (estudante.avatar ?? estudante.nome.trim().charAt(0) ?? "?").toUpperCase(),
     accent: "blue",
     fontesConfiaveis: d.fontesConfiaveis,
     inscritos: d.inscritos,
@@ -173,7 +173,6 @@ export function posicaoDoEstudante(linhas: readonly RankingLinha[]): {
     porFontes: ordenarPorFontes(linhas).findIndex((l) => l.voce) + 1,
   };
 }
-export const posicaoDoAluno = posicaoDoEstudante;
 
 // ---------------------------------------------------------------------------
 // Visão do professor
@@ -181,8 +180,7 @@ export const posicaoDoAluno = posicaoDoEstudante;
 
 export interface LinhaTurma {
   id?: string;
-  estudanteId?: string;
-  alunoId: string;
+  estudanteId: string;
   nome: string;
   usuario: string;
   iniciou: boolean;

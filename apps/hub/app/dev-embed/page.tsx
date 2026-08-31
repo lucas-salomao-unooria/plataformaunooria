@@ -42,7 +42,6 @@ export default async function DevEmbedPage({
         expOrigin={embed.expOrigin}
         token={embed.token}
         estudante={embed.estudante}
-        aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         viewport={embed.viewport}
         permissoes={embed.permissoes}

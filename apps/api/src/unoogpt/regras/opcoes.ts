@@ -4,9 +4,9 @@ import { MISSAO_TEMPESTADE } from '../cenario';
  * As alternativas de alocação que o Cientista põe na mesa. PURO.
  *
  * O prompt já obriga o Cientista a propor duas opções concretas e perguntar
- * qual o aluno quer — isso não é novo, e não é decidir por ele. O que é novo é
+ * qual o estudante quer — isso não é novo, e não é decidir por ele. O que é novo é
  * a proposta chegar ESTRUTURADA: dois pares de bairro, validados pelo servidor,
- * que viram dois botões. O aluno que escreveu "manda la" e "no melio" e viu o
+ * que viram dois botões. O estudante que escreveu "manda la" e "no melio" e viu o
  * relógio zerar não precisava de mais uma frase para digitar.
  *
  * A ferramenta NÃO aceita texto livre: nenhum número da LLM entra no cartão. O
@@ -29,7 +29,7 @@ const ehBairro = (slug: unknown): slug is string =>
  * Valida o que a ferramenta trouxe.
  *
  * `jaCruzou` é obrigatório: propor alocação antes de olhar dado nenhum é
- * chutar com cara de recomendação, e o aluno clicaria sem ter investigado —
+ * chutar com cara de recomendação, e o estudante clicaria sem ter investigado —
  * que é exatamente a competência que a Missão treina.
  */
 export function validarOpcoes(

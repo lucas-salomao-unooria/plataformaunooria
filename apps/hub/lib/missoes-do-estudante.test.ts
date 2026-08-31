@@ -11,7 +11,7 @@ const publicadas = [
 
 describe("missões do estudante", () => {
   test("toda missão publicada tem copy de estudante — senão some do hub dele", () => {
-    const semCopy = publicadas.filter((missao) => !missao.estudante && !missao.aluno);
+    const semCopy = publicadas.filter((missao) => !missao.estudante);
     /* Identifica pelo `expId` (as duas famílias têm) e cai no título, que
        também têm — `unidadeSlug` só existe nas de ano. */
     expect(semCopy.map((m) => m.expId ?? m.titulo)).toEqual([]);
@@ -63,7 +63,7 @@ describe("missões do estudante", () => {
 
   test("a copy do estudante não repete a do professor (que entrega a virada)", () => {
     for (const missao of publicadas) {
-      const copy = missao.estudante ?? missao.aluno!;
+      const copy = missao.estudante!;
       expect(copy.chamada).not.toBe(missao.resumo);
     }
   });

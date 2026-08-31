@@ -26,8 +26,8 @@ export const metadata = { title: "Vila do Lume · guia do debate — Plataforma 
  * mensagem dela era a mensagem, e a lição não acontece.
  *
  * E há um risco que só esta tela controla: o golpe do nível C se apresenta como
- * "Aluno 14 · sua turma". Na plataforma a turma é REAL e a criança conhece os
- * nomes. Se a sala sair achando que o Aluno 14 fez alguma coisa, a missão causou
+ * "Estudante 14 · sua turma". Na plataforma a turma é REAL e a criança conhece os
+ * nomes. Se a sala sair achando que o Estudante 14 fez alguma coisa, a missão causou
  * dano. A instrução de dizer, com todas as letras, que não foi um colega de
  * verdade está aqui em destaque por isso.
  *
@@ -88,8 +88,8 @@ export default async function GuiaDaVilaPage({
 
       <FeedbackAlert
         type="error"
-        title='Diga com todas as letras: o "Aluno 14" não foi um colega de verdade'
-        description="O golpe do nível C se apresenta como alguém da turma. Sua sala é real e as crianças conhecem os nomes umas das outras — se alguém sair daqui achando que o Aluno 14 fez alguma coisa, a missão causou dano. Esta frase não é opcional."
+        title='Diga com todas as letras: o "Estudante 14" não foi um colega de verdade'
+        description="O golpe do nível C se apresenta como alguém da turma. Sua sala é real e as crianças conhecem os nomes umas das outras — se alguém sair daqui achando que o Estudante 14 fez alguma coisa, a missão causou dano. Esta frase não é opcional."
       />
 
       <FeedbackAlert
@@ -318,8 +318,8 @@ export default async function GuiaDaVilaPage({
             Confere por outro caminho.
           </p>
           <p className="mt-2 text-[14px] leading-relaxed text-unooria-neutral-700">
-            Diz que é o suporte? Sai do chat e procura o suporte. Diz que é o Aluno 14? Vira e
-            pergunta pro Aluno 14. Diz que é sua mãe? Liga pra sua mãe. Golpe nenhum sobrevive
+            Diz que é o suporte? Sai do chat e procura o suporte. Diz que é o Estudante 14? Vira e
+            pergunta pro Estudante 14. Diz que é sua mãe? Liga pra sua mãe. Golpe nenhum sobrevive
             a uma segunda conversa — e é por isso que todo golpe tem pressa.{" "}
             <strong>Pressa é o único sinal que atravessa os três níveis.</strong>
           </p>

@@ -92,7 +92,6 @@ export function Debate({ runId }: { runId: string }) {
             salvo
             seguindo={false}
             comentariosDoEstudante={meus.length}
-            comentariosDoAluno={meus.length}
           />
 
           {meus.length > 0 ? (

@@ -57,7 +57,7 @@ async function iniciar(): Promise<void> {
   let atual = await abrirSessao(exp, EXP_VERSION);
 
   const ponte: PontePlataforma = {
-    identidade: { primeiroNome: primeiroNome((exp.estudante ?? (exp as any).aluno)?.nome) },
+    identidade: { primeiroNome: primeiroNome(exp.estudante.nome) },
     bolha: atual.bolha,
     cartoes: atual.cartoes,
     reabrir: () => {

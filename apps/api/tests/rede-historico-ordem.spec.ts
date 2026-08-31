@@ -1,8 +1,8 @@
 /**
- * A ORDEM do histórico do aluno — que a tela imprime como está, e cuja primeira
+ * A ORDEM do histórico do estudante — que a tela imprime como está, e cuja primeira
  * linha o adulto lê como "a escola dela".
  *
- * Este arquivo existe por causa de uma falha de CI: `historicoDoAluno` ordenava
+ * Este arquivo existe por causa de uma falha de CI: `historicoDoEstudante` ordenava
  * só por `inicio: desc`, e `inicio` é DATE. Numa transferência no MESMO DIA as
  * duas lotações empatam, e a ordem passava a ser a que o Postgres devolvesse —
  * verde na máquina do desenvolvedor por meses, vermelho no primeiro CI. O
@@ -24,7 +24,7 @@ const { escolas } = servicosDeTeste(prisma);
 
 const A = "teste-ordem-a";
 const B = "teste-ordem-b";
-let alunoId = "";
+let estudanteId = "";
 
 async function limpar() {
   const alvo = { in: [A, B] };
@@ -39,32 +39,32 @@ beforeAll(async () => {
   const periodo = await periodoDeTeste(prisma);
   await prisma.escola.create({ data: { id: A, nome: "EE Ordem A", tipo: "escola" } });
   await prisma.escola.create({ data: { id: B, nome: "EE Ordem B", tipo: "escola" } });
-  const aluno = await prisma.user.create({
+  const estudante = await prisma.user.create({
     data: { escolaId: B, username: "ordem.aluno", displayName: "Ordem Teste",
             passwordHash: "x", role: "estudante", cpf: "70010020462" },
   });
-  alunoId = aluno.id;
+  estudanteId = estudante.id;
   // As DUAS com o mesmo `inicio` — é a transferência no mesmo dia, e `inicio` é DATE.
   await prisma.lotacao.create({
-    data: { escolaId: A, usuarioId: aluno.id, papel: "estudante", inicio: periodo.inicio, fim: periodo.inicio },
+    data: { escolaId: A, usuarioId: estudante.id, papel: "estudante", inicio: periodo.inicio, fim: periodo.inicio },
   });
   await prisma.lotacao.create({
-    data: { escolaId: B, usuarioId: aluno.id, papel: "estudante", principal: true, inicio: periodo.inicio },
+    data: { escolaId: B, usuarioId: estudante.id, papel: "estudante", principal: true, inicio: periodo.inicio },
   });
 });
 
 afterAll(async () => { await limpar(); await prisma.$disconnect(); });
 
 test("a escola de HOJE vem primeiro, e isso não depende da ordem física das linhas", async () => {
-  const antes = (await escolas.historicoDoAluno(alunoId))?.escolas.map((e) => e.id);
+  const antes = (await escolas.historicoDoEstudante(estudanteId))?.escolas.map((e) => e.id);
 
   // UPDATE reescreve a tupla no fim do heap: a lotação ATIVA passa a ser a
   // última fisicamente. Sem ORDER BY determinístico, a lista viraria aqui.
   await prisma.$executeRawUnsafe(
     `UPDATE lotacoes SET atualizado_em = now() WHERE usuario_id = $1::uuid AND fim IS NULL`,
-    alunoId,
+    estudanteId,
   );
-  const depois = (await escolas.historicoDoAluno(alunoId))?.escolas.map((e) => e.id);
+  const depois = (await escolas.historicoDoEstudante(estudanteId))?.escolas.map((e) => e.id);
 
   console.log("antes:", antes, "| depois de mover a linha ativa no heap:", depois);
   expect(antes).toEqual([B, A]);

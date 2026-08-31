@@ -30,7 +30,7 @@ export interface EstimativaDoBairro {
 }
 
 function confiancaDe(cobertura: number): EstimativaDoBairro['confianca'] {
-  // "Alta" é rara de propósito: exige quase o teto. O aluno tem que conviver
+  // "Alta" é rara de propósito: exige quase o teto. O estudante tem que conviver
   // com confiança média na maior parte da cidade.
   if (cobertura >= 0.7) return 'alta';
   if (cobertura >= 0.35) return 'média';
@@ -177,7 +177,7 @@ export function conflitos(conjuntos: readonly string[]): Conflito[] {
  *
  * É o que transforma "±524" em consequência. Sozinha, a margem é decoração
  * numérica; dita como empate, ela vira a informação que muda a decisão — e o
- * aluno descobre que a ordem da tabela não é um ranking confiável.
+ * estudante descobre que a ordem da tabela não é um ranking confiável.
  */
 export function empates(estimativas: readonly EstimativaDoBairro[]): string[][] {
   return agruparEmpatados(

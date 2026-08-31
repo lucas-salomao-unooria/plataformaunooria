@@ -2,15 +2,12 @@ import { describe, expect, test } from "vitest";
 import {
   formatarQuando,
   ordenarEstudantes,
-  ordenarAlunos,
   situacaoDoEstudante,
-  situacaoDoAluno,
   type LinhaEstudanteUnootube,
 } from "./unootube-tipos";
 
 const linha = (nome: string, extra: Partial<LinhaEstudanteUnootube> = {}): LinhaEstudanteUnootube => ({
   estudanteId: nome,
-  alunoId: nome,
   nome,
   usuario: nome.toLowerCase(),
   iniciou: false,
@@ -46,10 +43,9 @@ describe("situacaoDoEstudante / ordenarEstudantes", () => {
       linha("Álvaro", { iniciou: true, credibilidadeAdicionada: true }),
     ];
     expect(ordenarEstudantes(estudantes).map((a) => a.nome)).toEqual(["Álvaro", "Bia", "Ana", "Zeca"]);
-    expect(ordenarAlunos(estudantes).map((a) => a.nome)).toEqual(["Álvaro", "Bia", "Ana", "Zeca"]);
     expect(situacaoDoEstudante(estudantes[0]!)).toBe("nao-iniciou");
     expect(situacaoDoEstudante(estudantes[1]!)).toBe("em-andamento");
     expect(situacaoDoEstudante(estudantes[2]!)).toBe("concluiu");
-    expect(situacaoDoAluno(estudantes[0]!)).toBe("nao-iniciou");
+    expect(situacaoDoEstudante(estudantes[0]!)).toBe("nao-iniciou");
   });
 });

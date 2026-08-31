@@ -27,7 +27,7 @@ const OUTRA_ESCOLA = "teste-unoogpt-outra";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const config = new ConfigService({
-  AI_DAILY_TOKEN_QUOTA_PER_ALUNO: 20000,
+  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
   AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
 });
 const quota = new QuotaService(prisma, config);
@@ -88,7 +88,7 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-describe("a largada é da TURMA, não do aluno", () => {
+describe("a largada é da TURMA, não do estudante", () => {
   it("antes da largada o cronômetro está parado e o Cientista não responde", async () => {
     const abertura = await service.sessao(ESCOLA, ana);
     expect(abertura.estado.fase).toBe("aguardando");
@@ -99,13 +99,13 @@ describe("a largada é da TURMA, não do aluno", () => {
     );
   });
 
-  it("a largada do professor vale para TODOS os alunos da turma ao mesmo tempo", async () => {
+  it("a largada do professor vale para TODOS os estudantes da turma ao mesmo tempo", async () => {
     const retrato = await service.mexerNoRelogio(ESCOLA, turmaId, "largada");
     expect(retrato.fase).toBe("correndo");
 
     // Ana e Bia não fizeram nada: quem começou a aula foi o professor.
-    for (const aluno of [ana, bia]) {
-      const s = await service.sessao(ESCOLA, aluno);
+    for (const estudante of [ana, bia]) {
+      const s = await service.sessao(ESCOLA, estudante);
       expect(s.estado.fase).toBe("correndo");
       expect(s.estado.aberta).toBe(true);
     }
@@ -119,9 +119,9 @@ describe("a largada é da TURMA, não do aluno", () => {
     expect(depois.iniciadoEm).toBe(antes.iniciadoEm);
   });
 
-  it("aluno sem turma vê o relógio PARADO — nunca um cronômetro só dele", async () => {
+  it("estudante sem turma vê o relógio PARADO — nunca um cronômetro só dele", async () => {
     // O projeto de origem armava um cronômetro individual aqui, e com ele um
-    // aluno solto jogava sem largada. "Aguardando" é a verdade.
+    // estudante solto jogava sem largada. "Aguardando" é a verdade.
     const s = await service.sessao(ESCOLA, semTurma);
     expect(s.estado.fase).toBe("aguardando");
   });
@@ -166,7 +166,7 @@ describe("o turno do Cientista", () => {
     // O mock chama `usar_dados` com argumentos VAZIOS — ele é genérico e não
     // conhece os slugs do domínio. Isso é justamente o caso que importa: um
     // modelo real também erra o argumento, e o turno tem de sobreviver a isso
-    // em vez de devolver 500 para o aluno. (O laço de ferramenta em si tem
+    // em vez de devolver 500 para o estudante. (O laço de ferramenta em si tem
     // teste próprio em `ai-conversar.spec.ts`.)
     const antes = await service.sessao(ESCOLA, ana);
     expect(antes.sessao.conjuntos).toEqual([]);
@@ -192,7 +192,7 @@ describe("o turno do Cientista", () => {
 
   it("turno em que NADA foi consultado não debita pergunta", async () => {
     // O mock chama `usar_dados` com argumento vazio, então nada é carregado.
-    // Cobrar por isso ensinaria o aluno a não perguntar — que é o contrário do
+    // Cobrar por isso ensinaria o estudante a não perguntar — que é o contrário do
     // ponto da missão. Só conta como consulta se o modelo rodou ou se há fonte
     // de fato em uso.
     await service.mexerNoRelogio(ESCOLA, turmaId, "largada");
@@ -276,7 +276,7 @@ describe("decidir, justificar e enfrentar a tempestade", () => {
     // E as amostras são a variância VISTA, não afirmada.
     expect(r.esperado.amostras.length).toBeGreaterThan(0);
     // A lista do que ele nunca consultou não leva o nome TÉCNICO da fonte: o
-    // catálogo diz que ele "aparece no painel do professor, nunca para o aluno".
+    // catálogo diz que ele "aparece no painel do professor, nunca para o estudante".
     for (const f of r.naoConsultados) {
       expect(f).not.toHaveProperty("nome");
       expect(f).not.toHaveProperty("instrucao");
@@ -304,7 +304,7 @@ describe("decidir, justificar e enfrentar a tempestade", () => {
     expect(sessao.tentativa).toBe(2);
     expect(sessao.conjuntos).toEqual([]);
     expect(sessao.alocacao).toEqual({ alfa: null, bravo: null });
-    // Para o aluno a tela limpa; para o professor a aula inteira continua.
+    // Para o estudante a tela limpa; para o professor a aula inteira continua.
     expect(await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, estudanteId: ana } })).toBe(
       falasAntes,
     );
@@ -332,7 +332,7 @@ describe("o ENVELOPE das rotas de mutação", () => {
 });
 
 describe("a fronteira do cliente e a do gestor", () => {
-  it("nada do gabarito atravessa para o aluno", async () => {
+  it("nada do gabarito atravessa para o estudante", async () => {
     const cru = JSON.stringify(await service.sessao(ESCOLA, ana));
     // `instrucao` é o VIÉS de cada fonte: é o material do debate do professor,
     // e é a única coisa que a missão inteira existe para não entregar.
@@ -353,7 +353,7 @@ describe("a fronteira do cliente e a do gestor", () => {
   });
 
   it("o relatório individual usa GRAUS, e `zero` não se confunde com `none`", async () => {
-    const rel = await service.alunoDoProfessor(ESCOLA, ana);
+    const rel = await service.doEstudante(ESCOLA, ana);
     expect(rel.linhas.length).toBeGreaterThan(0);
     for (const l of rel.linhas) {
       // Número só na variante `scored`; nas outras é null POR TIPO.
@@ -362,7 +362,7 @@ describe("a fronteira do cliente e a do gestor", () => {
     expect(rel.conversa.length).toBeGreaterThan(0);
   });
 
-  it("o agregado do gestor não tem uma única linha de aluno", async () => {
+  it("o agregado do gestor não tem uma única linha de estudante", async () => {
     const ag = await service.agregadoDaEscola(ESCOLA);
     const cru = JSON.stringify(ag);
     for (const proibido of [ana, bia, "ug.ana", "conversa", "texto"]) {
@@ -377,11 +377,11 @@ describe("tenancy: a segunda escola não vê a primeira", () => {
     expect(await codigoDe(service.turmaDoProfessor(ESCOLA, outraTurmaId))).toBe("sessao-encerrada");
   });
 
-  it("o relatório de um aluno de outra escola não abre", async () => {
-    expect(await codigoDe(service.alunoDoProfessor(ESCOLA, deOutraEscola))).toBe("sessao-encerrada");
+  it("o relatório de um estudante de outra escola não abre", async () => {
+    expect(await codigoDe(service.doEstudante(ESCOLA, deOutraEscola))).toBe("sessao-encerrada");
   });
 
-  it("abrir a sessão de um aluno de outra escola não cria linha nenhuma", async () => {
+  it("abrir a sessão de um estudante de outra escola não cria linha nenhuma", async () => {
     expect(await codigoDe(service.sessao(ESCOLA, deOutraEscola))).toBe("sessao-encerrada");
     expect(
       await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: deOutraEscola } }),
@@ -404,19 +404,19 @@ describe("zerar a turma", () => {
     expect(r.partidasApagadas).toBeGreaterThan(0);
 
     // As partidas DA TURMA somem, e os filhos vão por ON DELETE CASCADE.
-    for (const aluno of [ana, bia]) {
+    for (const estudante of [ana, bia]) {
       expect(
-        await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: aluno } }),
+        await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: estudante } }),
       ).toBe(0);
       expect(
-        await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, estudanteId: aluno } }),
+        await prisma.unoogptMensagem.count({ where: { escolaId: ESCOLA, estudanteId: estudante } }),
       ).toBe(0);
-      expect(await prisma.unoogptMarco.count({ where: { escolaId: ESCOLA, estudanteId: aluno } })).toBe(0);
+      expect(await prisma.unoogptMarco.count({ where: { escolaId: ESCOLA, estudanteId: estudante } })).toBe(0);
       expect(
-        await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: aluno } }),
+        await prisma.unoogptSimulacao.count({ where: { escolaId: ESCOLA, estudanteId: estudante } }),
       ).toBe(0);
     }
-    // E o aluno que NÃO é da turma continua intocado: "zerar a turma" é da
+    // E o estudante que NÃO é da turma continua intocado: "zerar a turma" é da
     // turma, não da escola — o professor da 2A não apaga a partida da 2B.
     expect(
       await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: semTurma } }),

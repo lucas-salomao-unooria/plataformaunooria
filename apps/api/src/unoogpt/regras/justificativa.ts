@@ -4,19 +4,19 @@ import { CONJUNTO_POR_SLUG } from '../modelo/conjuntos';
  * Por que cada equipe vai para onde vai. PURO.
  *
  * Vem do board: "justificar cada escolha com uma evidência do caderno — é aqui
- * que o letramento acontece". Hoje o aluno manda a Alfa para a Ribeirinha e
+ * que o letramento acontece". Hoje o estudante manda a Alfa para a Ribeirinha e
  * pronto: ninguém, nem ele nem o professor, sabe se ele olhou algum dado ou
  * chutou. É a pergunta que separa uma decisão de um palpite, e ela é feita uma
  * vez, na hora de enviar.
  *
  * Três coisas que este módulo garante:
  *
- * 1. A lista só oferece o que o aluno JÁ CARREGOU. Mostrar a fonte que ele não
+ * 1. A lista só oferece o que o estudante JÁ CARREGOU. Mostrar a fonte que ele não
  *    consultou seria dizer, pela interface, o que ele deveria ter olhado — o
  *    painel de fontes que o ADR-0009 recusou, entrando pela porta dos fundos.
  * 2. "Foi intuição" está SEMPRE disponível. O board é explícito: erro vira
  *    aprendizado, não punição. Sem essa saída, a pergunta vira pegadinha e o
- *    aluno aprende a mentir para o formulário.
+ *    estudante aprende a mentir para o formulário.
  * 3. O software não julga a resposta. Não existe justificativa certa aqui —
  *    quem lê é o professor, e quem dá a lição é ele (regra de ouro 2).
  */
@@ -29,7 +29,7 @@ export interface OpcaoDeJustificativa {
   rotulo: string;
 }
 
-/** O que o aluno pode escolher: as fontes que ele abriu, mais a intuição. */
+/** O que o estudante pode escolher: as fontes que ele abriu, mais a intuição. */
 export function opcoesDeJustificativa(
   conjuntosCarregados: readonly string[],
 ): OpcaoDeJustificativa[] {

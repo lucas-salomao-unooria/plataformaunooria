@@ -25,8 +25,7 @@ export interface RetratoDoRelogio {
 
 /** Uma criança na folha da turma. Conduta, nunca placar. */
 export interface LinhaDaTurma {
-  estudanteId?: string;
-  alunoId: string;
+  estudanteId: string;
   nome: string;
   usuario: string;
   comecou: boolean;
@@ -109,8 +108,6 @@ export interface RelatorioDoEstudante {
   }[];
 }
 
-/** @deprecated Alias de compatibilidade. Use `RelatorioDoEstudante`. */
-export type RelatorioDoAluno = RelatorioDoEstudante;
 
 /**
  * Uma turma no seletor. A forma tem de casar com a que `SeletorDeTurma` espera

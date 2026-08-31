@@ -95,7 +95,7 @@ export class UsuariosService {
             senhaProvisoria: u.senhaProvisoria,
             turma: principal?.turma.nome ?? null,
             serie: principal?.turma.serie ?? null,
-            /** Todas as turmas ativas — aluno em eletiva tem mais de uma. */
+            /** Todas as turmas ativas — estudante em eletiva tem mais de uma. */
             turmas: u.matriculas.map((m) => ({
               matriculaId: m.id,
               nome: m.turma.nome,
@@ -129,7 +129,12 @@ export class UsuariosService {
       data: {
         ...(dados.nome !== undefined ? { displayName: dados.nome } : {}),
         ...(dados.email !== undefined ? { email: dados.email } : {}),
-        ...(dados.papel !== undefined ? { role: dados.papel } : {}),
+        /* `estudante` ainda entra pelo schema (tolerância do vocabulário antigo),
+           mas `users.role` tem CHECK e só admite `estudante` — sem esta
+           normalização o valor cru virava 500 em vez de gravar. */
+        ...(dados.papel !== undefined
+          ? { role: dados.papel === "aluno" ? "estudante" : dados.papel }
+          : {}),
         ...(dados.ativo !== undefined ? { ativo: dados.ativo } : {}),
         ...(dados.cpf !== undefined ? { cpf: dados.cpf } : {}),
       },

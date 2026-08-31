@@ -8,7 +8,6 @@ import { erroDeJogo } from "./erros";
 import { Contrato } from "../openapi/contrato";
 import {
   AcaoDoRelogioSchema,
-  AlunoDoProfessorSchema,
   EstudanteDoProfessorSchema,
   RelogioDoProfessorSchema,
   TurmaDoProfessorSchema,
@@ -60,10 +59,10 @@ export class UnoogptTurmasController {
     return this.service.turmas(escolaAlvo(req.auth, escolaIdPedida), professorDoToken(req.auth));
   }
 
-  /** A folha da turma: relógio, retrato de conduta e uma linha por aluno. */
+  /** A folha da turma: relógio, retrato de conduta e uma linha por estudante. */
   @Get("turmas/:turmaId")
   @Contrato({
-    resumo: "A folha da turma: relógio, retrato de conduta e uma linha por aluno.",
+    resumo: "A folha da turma: relógio, retrato de conduta e uma linha por estudante.",
     descricao:
       "O retrato fala de **conduta, não de nota** — conta \"decidiram no escuro\" e \"justificaram por intuição\" em vez de somar acertos, porque a Missão não tem resposta certa.",
     params: z.object({ turmaId: z.string().uuid() }),
@@ -83,7 +82,7 @@ export class UnoogptTurmasController {
   /**
    * Dar a largada, somar +2 min, encerrar, trocar o modo ou redefinir.
    *
-   * É o único lugar onde alguém que não é o aluno mexe no que ele vê — e mesmo
+   * É o único lugar onde alguém que não é o estudante mexe no que ele vê — e mesmo
    * aqui não toca o Passo dele: o que o professor controla é QUANDO dá para
    * falar com o Cientista, não o que a criança decide.
    */
@@ -91,7 +90,7 @@ export class UnoogptTurmasController {
   @Contrato({
     resumo: "Dá a largada, soma tempo, encerra, troca o modo ou redefine.",
     descricao:
-      "É o único lugar onde alguém que não é o aluno mexe no que ele vê — e mesmo aqui **não toca o Passo dele**: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.",
+      "É o único lugar onde alguém que não é o estudante mexe no que ele vê — e mesmo aqui **não toca o Passo dele**: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.",
     params: z.object({ turmaId: z.string().uuid() }),
     query: z.object({ escolaId: z.string().optional() }),
     corpo: AcaoDoRelogioSchema,
@@ -137,12 +136,12 @@ export class UnoogptTurmasController {
   }
 
   /** A linha de UMA criança: leitura em graus + a Transcrição. */
-  @Get("estudantes/:alunoId")
+  @Get("estudantes/:estudanteId")
   @Contrato({
     resumo: "A linha de UMA criança: leitura em graus e a Transcrição.",
     descricao:
       "**Professor only.** O relatório abre pelo que a missão MEDIU, em graus.",
-    params: z.object({ alunoId: z.string().uuid() }),
+    params: z.object({ estudanteId: z.string().uuid() }),
     query: z.object({ escolaId: z.string().optional() }),
     resposta: EstudanteDoProfessorSchema,
     notas: [
@@ -150,13 +149,13 @@ export class UnoogptTurmasController {
       "`resumo` nunca afirma o que o estudante É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
     ],
   })
-  aluno(
-    @Param("alunoId") alunoId: string,
+  estudante(
+    @Param("estudanteId") estudanteId: string,
     @Query("escolaId") escolaIdPedida: string | undefined,
     @Req() req: Autenticado,
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
-    if (!ehUuid(alunoId)) throw erroDeJogo("payload-invalido");
-    return this.service.alunoDoProfessor(escolaId, alunoId);
+    if (!ehUuid(estudanteId)) throw erroDeJogo("payload-invalido");
+    return this.service.doEstudante(escolaId, estudanteId);
   }
 }

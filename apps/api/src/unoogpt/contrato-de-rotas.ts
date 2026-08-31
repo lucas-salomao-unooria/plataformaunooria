@@ -10,7 +10,7 @@ const ConfiancaSchema = z.enum(["alta", "média", "baixa"]);
 
 export const PerguntaSchema = z.object({
   /** 600 caracteres: o campo do chat, não um formulário. Acima disso não é fala
-   *  de aluno — é colagem, e ela infla o prompt de todo turno seguinte. */
+   *  de estudante — é colagem, e ela infla o prompt de todo turno seguinte. */
   texto: z.string().trim().min(1).max(600),
 });
 
@@ -70,7 +70,7 @@ export const BairroPublicoSchema = z.object({
   /**
    * Se cada equipe ALCANÇA o bairro antes da chuva, e com quanta folga. Vem do
    * SERVIDOR: o app de origem calculava no cliente, o que punha a matemática de
-   * chegada no bundle e deixava o aluno antecipar parte do desfecho.
+   * chegada no bundle e deixava o estudante antecipar parte do desfecho.
    */
   alcance: z
     .object({
@@ -119,7 +119,7 @@ export const SessaoPublicaSchema = z.object({
   conjuntos: z.array(z.string()),
   rodadas: z.number(),
   perguntasGastas: z.number(),
-  /** Qual partida do aluno. Recomeçar abre a seguinte. */
+  /** Qual partida do estudante. Recomeçar abre a seguinte. */
   tentativa: z.number(),
   alocacao: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
   justificativas: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
@@ -128,7 +128,7 @@ export const SessaoPublicaSchema = z.object({
 /**
  * A ficha do jeito que o navegador pode ver. O que fica FORA é o que mais
  * importa: os números por bairro da ficha canônica. Eles são a verdade do
- * mundo, e mandá-los daria ao aluno, de graça, a resposta que a missão existe
+ * mundo, e mandá-los daria ao estudante, de graça, a resposta que a missão existe
  * para ele não ter. `totais` entra porque é o enunciado.
  */
 export const FichaPublicaSchema = z.object({
@@ -147,7 +147,7 @@ export const FichaPublicaSchema = z.object({
 });
 
 /**
- * O que a decisão PROJETA — a partir do que o aluno enxerga, nunca da verdade
+ * O que a decisão PROJETA — a partir do que o estudante enxerga, nunca da verdade
  * oculta. Usar aqui a média real da simulação daria um placar antes da decisão:
  * bastaria varrer as combinações, e a Missão passaria a ter resposta certa.
  */
@@ -242,13 +242,11 @@ export const SessaoDoEstudanteSchema = z.object({
   orcamento: OrcamentoSchema,
   justificativas: OpcoesDeJustificativaSchema,
 });
-export const SessaoDoAlunoSchema = SessaoDoEstudanteSchema;
 
 export const RelogioDoEstudanteSchema = z.object({
   relogio: RelogioPublicoSchema,
   estado: EstadoDoRelogioSchema,
 });
-export const RelogioDoAlunoSchema = RelogioDoEstudanteSchema;
 
 export const TurnoDoCientistaSchema = z.object({
   texto: z.string(),
@@ -273,7 +271,7 @@ export const EstadoDoJogoSchema = z.object({
  * não muda o que o modelo enxerga — muda o que a decisão projeta.
  *
  * "Chega com N de sobra" vem do servidor: sem isso o Cientista registraria um
- * destino inalcançável sem uma palavra, e o aluno só descobriria no desfecho,
+ * destino inalcançável sem uma palavra, e o estudante só descobriria no desfecho,
  * quando já não dá para escolher diferente.
  */
 export const AlocacaoFeitaSchema = z.object({
@@ -417,7 +415,6 @@ export const TurmaDoProfessorSchema = z.object({
     z.object({
       id: Uuid.optional(),
       estudanteId: Uuid.optional(),
-      alunoId: Uuid.optional(),
       nome: z.string(),
       usuario: z.string(),
       comecou: z.boolean(),
@@ -482,7 +479,6 @@ export const EstudanteDoProfessorSchema = z.object({
   /** A TRANSCRIÇÃO — o que a criança escreveu ao Cientista. Só o professor. */
   conversa: z.array(z.unknown()),
 });
-export const AlunoDoProfessorSchema = EstudanteDoProfessorSchema;
 
 export const TurmaZeradaDoUnoogptSchema = z.object({
   partidasApagadas: z.number().int().nonnegative(),

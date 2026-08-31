@@ -14,11 +14,11 @@ import { normalizarEstado } from '../src/motor/estado';
 import type { EngineState } from '../src/motor/tipos';
 
 /**
- * M8 — o relatório do aluno (doc 02 fase 6, doc 11 §3).
+ * M8 — o relatório do estudante (doc 02 fase 6, doc 11 §3).
  *
  * O teste central aqui é o da **normalização por exposição**. Sem ele, o
  * relatório diria "o feed acertou seu perfil" sempre — porque o feed serve mais
- * posts do perfil do jogo, o aluno naturalmente para mais neles, e a conclusão se
+ * posts do perfil do jogo, o estudante naturalmente para mais neles, e a conclusão se
  * autoconfirma. Uma profecia autorrealizável escrita com dados reais é o pior
  * tipo de mentira que este projeto pode contar.
  */
@@ -80,7 +80,7 @@ describe('perfil observado: a normalização pela exposição', () => {
   /**
    * O cenário que o doc 08 M8 manda provar: **muda a exposição, não muda o
    * veredito**. Aqui o feed serve 20 posts de `abertura` e 4 de `autopromocao`,
-   * mas o aluno para o MESMO tempo médio em cada um — 3s por post.
+   * mas o estudante para o MESMO tempo médio em cada um — 3s por post.
    */
   it('exposição desigual com dwell médio igual NÃO elege um dominante', () => {
     const porId = catalogoPorPerfil({
@@ -295,7 +295,7 @@ describe('tempo e ritmo (doc 11 §3.1 e §3.2)', () => {
     const eventos: EventoDeTelemetria[] = [
       { tipo: 'visto', postId: 'a1', payload: null, clientTs: T0 },
       { tipo: 'visto', postId: 'b1', payload: null, clientTs: T0 + 5_000 },
-      // 40s de vão: o aluno olhou para outro lugar da sala.
+      // 40s de vão: o estudante olhou para outro lugar da sala.
       { tipo: 'visto', postId: 'n1', payload: null, clientTs: T0 + 45_000 },
     ];
 
@@ -530,7 +530,7 @@ describe('imersão (doc 11 §3.3)', () => {
       entrada({ estado: estadoCom({ dwellPorPost, baselineDwellMs: 3_000 }), porId }),
       tempoCheio,
     );
-    // Mesmo comportamento, aluno mais lento (baseline 8s): nenhum post acima.
+    // Mesmo comportamento, estudante mais lento (baseline 8s): nenhum post acima.
     const lento = calcularImersao(
       entrada({ estado: estadoCom({ dwellPorPost, baselineDwellMs: 8_000 }), porId }),
       tempoCheio,

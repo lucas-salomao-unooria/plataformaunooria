@@ -32,7 +32,7 @@ describe('sessão que só engaja o lado A', () => {
      *
      * Antes o teste exigia ZERO posts do lado B no fim — a bolha hermética. Com o
      * viés vindo do perfil, isso tornaria a virada de lado **mecanicamente
-     * impossível**: o aluno não deixaria de mudar de ideia por convicção, mas
+     * impossível**: o estudante não deixaria de mudar de ideia por convicção, mas
      * porque o outro lado pararia de aparecer. E o relatório afirmaria "você podia
      * ter mudado de lado" sendo mentira.
      *
@@ -165,7 +165,7 @@ describe('invariantes de curadoria', () => {
     /**
      * Este é o teste que protege a reversibilidade. Na versão anterior o oposto
      * ia a 0 acima de 0,75 — e aí virar de lado ficava mecanicamente impossível,
-     * não por convicção do aluno, mas porque o outro lado parava de aparecer.
+     * não por convicção do estudante, mas porque o outro lado parava de aparecer.
      */
     for (let dominio = 0; dominio <= 1; dominio += 0.01) {
       expect(mixDoBloco(dominio, CONFIG).oposto).toBeGreaterThan(0);
@@ -296,7 +296,7 @@ describe('teto da escada é inviolável (regressão)', () => {
     }
   });
 
-  it('sem nenhum sinal, o aluno nunca vê intensidade 2 ou 3', () => {
+  it('sem nenhum sinal, o estudante nunca vê intensidade 2 ou 3', () => {
     const catalogo = catalogoEscasso();
     const { passos } = simular(8, (meta) => [visto(meta, 700)], { catalogo });
 

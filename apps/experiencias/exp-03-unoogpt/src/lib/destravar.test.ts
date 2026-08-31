@@ -8,7 +8,9 @@ import {
 
 const agente = (tipo?: string) => ({ papel: 'agente', anexo: tipo ? { tipo } : null });
 const estudante = { papel: 'estudante', anexo: null };
-const aluno = { papel: 'aluno', anexo: null };
+/* Vocabulário ANTIGO, de propósito: `estaTravado` tem de continuar contando
+   a fala da criança num histórico gravado antes do rename (ADR-51). */
+const estudanteLegado = { papel: 'aluno', anexo: null };
 
 describe('as três perguntas prontas', () => {
   it('são de tipos diferentes, não três versões da mesma', () => {
@@ -37,7 +39,7 @@ describe('quando o estudante está travado', () => {
     // A sequência do playtest: "num intindi" e depois "no melio". Dois turnos
     // em que ele não recebeu nada da cidade.
     expect(estaTravado([estudante, agente(), estudante, agente()])).toBe(true);
-    expect(estaTravado([aluno, agente(), aluno, agente()])).toBe(true);
+    expect(estaTravado([estudanteLegado, agente(), estudanteLegado, agente()])).toBe(true);
   });
 
   it('um turno só não basta: perguntar e não achar acontece', () => {

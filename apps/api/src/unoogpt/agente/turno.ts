@@ -1,12 +1,12 @@
 import { MISSAO_TEMPESTADE } from '../cenario';
 
 /**
- * Que tipo de turno o aluno acabou de abrir. PURO — sem provedor, sem Prisma.
+ * Que tipo de turno o estudante acabou de abrir. PURO — sem provedor, sem Prisma.
  *
- * Por que isto existe no CÓDIGO e não só no prompt: no playtest o aluno pediu
+ * Por que isto existe no CÓDIGO e não só no prompt: no playtest o estudante pediu
  * duas vezes que a IA decidisse por ele ("faiz o melior", "manda la"). O
  * Cientista, corretamente, não decide — mas respondeu as duas vezes com outra
- * parede de números e outra pergunta. O aluno respondeu "no melio", o relógio
+ * parede de números e outra pergunta. O estudante respondeu "no melio", o relógio
  * zerou e a Missão terminou sem nenhuma equipe alocada.
  *
  * Confiar só na instrução para reconhecer esses momentos é confiar no modelo
@@ -15,7 +15,7 @@ import { MISSAO_TEMPESTADE } from '../cenario';
  * (regra de ouro 2). O Cientista continua sem decidir nada: o protocolo manda
  * ele ENCURTAR e devolver a escolha, não escolher.
  *
- * A ortografia do aluno de 16 anos sob cronômetro é a do playtest, e é ela que
+ * A ortografia do estudante de 16 anos sob cronômetro é a do playtest, e é ela que
  * os padrões precisam pegar: "num intindi", "ondi chovi mais", "faiz o melior",
  * "qual melior desisto?", "manda la", "no melio".
  */
@@ -43,7 +43,7 @@ export function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-/** O bairro que o aluno nomeou, se nomeou. "vale verde" e "valeverde" valem. */
+/** O bairro que o estudante nomeou, se nomeou. "vale verde" e "valeverde" valem. */
 export function bairroCitado(texto: string): string | null {
   const n = normalizar(texto);
   const semEspaco = n.replace(/ /g, '');
@@ -54,7 +54,7 @@ export function bairroCitado(texto: string): string | null {
 }
 
 /**
- * Pedir que a IA decida. Não é preguiça: é o aluno dizendo que não sabe como
+ * Pedir que a IA decida. Não é preguiça: é o estudante dizendo que não sabe como
  * escolher — e é o momento mais importante da Missão para responder CURTO.
  */
 const DELEGACAO = [
@@ -81,7 +81,7 @@ const MANDA_SOLTO = /\bmanda\s+(la|ai|logo|pra\s+onde)\b/;
  * Mandar a equipe. É o verbo que transforma o nome de um bairro em ORDEM.
  *
  * Sem isto, citar um bairro bastava — e "quantas pessoas moram na Ribeirinha?"
- * era lida como ordem de alocação. O aluno perguntava e a equipe saía.
+ * era lida como ordem de alocação. O estudante perguntava e a equipe saía.
  *
  * Fora da lista de propósito: "leva", "vai", "põe" — aparecem em pergunta
  * ("quanto tempo a equipe LEVA pro Industrial?") tanto quanto em ordem.
@@ -122,7 +122,7 @@ export function classificarTurno(texto: string, ctx: ContextoDoTurno): TipoDeTur
   //
   // Mas nomear um bairro NÃO é, por si, uma ordem: "quantas pessoas moram na
   // Ribeirinha?" é pergunta. Tratar as duas do mesmo jeito mandava a equipe
-  // para o bairro sobre o qual o aluno só queria saber — e ainda deixava a
+  // para o bairro sobre o qual o estudante só queria saber — e ainda deixava a
   // pergunta de graça, porque ordem não debita orçamento.
   if (bairroCitado(texto)) {
     if (ORDEM_DE_ALOCACAO.test(n)) return 'nomeia-bairro';
@@ -136,7 +136,7 @@ export function classificarTurno(texto: string, ctx: ContextoDoTurno): TipoDeTur
   if (!ctx.temDestino && MANDA_SOLTO.test(n)) return 'delegacao';
   if (NAO_ENTENDI.test(n)) return 'nao-entendi';
   // Duas palavras e nenhuma pergunta: "no melio", "sei la", "ta". Responder
-  // isso com tabela é o que fez o aluno parar de ler.
+  // isso com tabela é o que fez o estudante parar de ler.
   if (palavras.length <= 2 && !n.includes('?')) return 'curto';
   return 'pergunta';
 }
@@ -205,7 +205,7 @@ export function protocoloDoTurno(tipo: TipoDeTurno, ctx: { temDados: boolean }):
       cabeca,
       'Ele está confirmando o envio. Se as duas equipes já têm destino, chame confirmar_alocacao',
       'nesta mesma resposta. Se falta destino para alguma, diga em uma frase qual falta e pergunte.',
-      'Não repita aviso que você já deu: repetir prende o aluno na tela.',
+      'Não repita aviso que você já deu: repetir prende o estudante na tela.',
     ].join('\n');
   }
 

@@ -98,15 +98,15 @@ export async function ResultadosUnooGPT({
           <div className="grid gap-3 sm:grid-cols-3">
             <MetricCard
               title="Começaram"
-              value={`${folha.retrato.comecaram}/${folha.retrato.estudantes ?? folha.retrato.alunos}`}
+              value={`${folha.retrato.comecaram}/${folha.retrato.estudantes}`}
             />
             <MetricCard
               title="Enfrentaram a tempestade"
-              value={`${folha.retrato.concluiram}/${folha.retrato.estudantes ?? folha.retrato.alunos}`}
+              value={`${folha.retrato.concluiram}/${folha.retrato.estudantes}`}
             />
             <MetricCard
               title="Viram fontes em conflito"
-              value={`${folha.retrato.viramConflito}/${folha.retrato.estudantes ?? folha.retrato.alunos}`}
+              value={`${folha.retrato.viramConflito}/${folha.retrato.estudantes}`}
             />
           </div>
           <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">
@@ -150,7 +150,7 @@ export async function ResultadosUnooGPT({
                 <tbody>
                   {folha.linhas.map((l) => (
                     <tr
-                      key={l.estudanteId ?? l.alunoId}
+                      key={l.estudanteId}
                       className="border-b border-unooria-neutral-100 text-unooria-neutral-800"
                       data-estudante={l.usuario}
                     >
@@ -168,7 +168,7 @@ export async function ResultadosUnooGPT({
                       <td className="py-2 pr-3 tabular-nums">{l.tentativas}</td>
                       <td className="py-2">
                         <LinkButton
-                          href={`${rotaDaMissao(missao)}/estudantes/${l.estudanteId ?? l.alunoId}`}
+                          href={`${rotaDaMissao(missao)}/estudantes/${l.estudanteId}`}
                           variant="secondary"
                           size="sm"
                         >

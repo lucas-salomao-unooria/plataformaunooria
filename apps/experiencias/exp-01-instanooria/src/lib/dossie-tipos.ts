@@ -115,6 +115,7 @@ export interface DossierData {
   /** Ausente nos dossiês congelados antes do M8. */
   versaoDoRelatorio?: number;
   estudante: { displayName: string; avatar: string };
+  /** @deprecated Alias do payload anterior ao rename (ADR-51). */
   aluno?: { displayName: string; avatar: string };
   atividade: { titulo: string; perguntaChave: string; ladoALabel: string; ladoBLabel: string };
   proporcaoFinal: { A: number; B: number; neutro: number };

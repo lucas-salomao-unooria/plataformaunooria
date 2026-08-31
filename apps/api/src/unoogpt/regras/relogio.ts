@@ -19,15 +19,15 @@ export const RELOGIO = {
 } as const;
 
 /**
- * O relogio da TURMA (nao mais o de cada aluno).
+ * O relogio da TURMA (nao mais o de cada estudante).
  *
- * Antes o cronometro armava sozinho quando o aluno entrava na Investigacao, e
+ * Antes o cronometro armava sozinho quando o estudante entrava na Investigacao, e
  * cada um comecava quando abria o link. Numa sala isso e uma corrida com
  * largadas diferentes: quem chegou primeiro terminava antes de o professor
  * acabar de explicar. Agora quem da a partida e o professor, e ela vale para
  * todo mundo ao mesmo tempo.
  *
- * `iniciadoEm` nulo = ainda nao comecou: o aluno ve o cronometro parado e nao
+ * `iniciadoEm` nulo = ainda nao comecou: o estudante ve o cronometro parado e nao
  * consegue falar com o Cientista.
  */
 export type ModoDoRelogio = 'cronometrado' | 'livre';
@@ -59,7 +59,7 @@ export interface EstadoDoRelogio {
   minutosGastos: number;
   /** Null so no modo livre correndo: nao ha contagem regressiva. */
   segundosAteFechar: number | null;
-  /** O aluno pode falar com o Cientista? */
+  /** O estudante pode falar com o Cientista? */
   aberta: boolean;
   motivoDoFim: 'tempo' | 'professor' | null;
 }
@@ -73,7 +73,7 @@ export interface EstadoDoRelogio {
  * minuto real de decisao, e a licao de chegar a tempo fica intacta.
  *
  * O problema de esticar no MEIO da aula e o relogio voltar atras: aos 4:00 de
- * 5:00 o aluno esta no minuto 48, e recalcular com 7:00 daria 34. Por isso o
+ * 5:00 o estudante esta no minuto 48, e recalcular com 7:00 daria 34. Por isso o
  * PIVO: quando o professor soma tempo, guardamos onde o relogio estava, e ele
  * continua dali, mais devagar, chegando as 18h00 no novo fim. Sem extensao a
  * formula degenera em `60 * decorridos / duracao`, que e o comportamento de
@@ -168,7 +168,7 @@ export function pivoParaEstender(
  * A investigacao vai ate a chuva. Cinco minutos, e pronto.
  *
  * Houve uma versao que guardava 20 minutos de "reserva de deslocamento" e
- * fechava a investigacao as 17h40. Era uma segunda regra para o aluno decorar,
+ * fechava a investigacao as 17h40. Era uma segunda regra para o estudante decorar,
  * e o cronometro dizia 3:20 enquanto a tela dizia 5 minutos. O deslocamento
  * agora e absorvido pela operacao: sair tarde nao tira tempo de ninguem, so
  * faz a equipe render menos quando chega (lib/modelo/tempestade.ts).
@@ -183,7 +183,7 @@ export function podePerguntar(estado: EstadoDoRelogio): boolean {
   return estado.aberta;
 }
 
-/** A que horas as equipes saem: a hora em que o aluno confirmou, nunca depois da chuva. */
+/** A que horas as equipes saem: a hora em que o estudante confirmou, nunca depois da chuva. */
 export function saidaDasEquipes(gastos: number): number {
   return Math.min(gastos, RELOGIO.minutosTotais);
 }
@@ -193,7 +193,7 @@ export function saidaDasEquipes(gastos: number): number {
  *
  * A tela mostra CONTAGEM REGRESSIVA, não a hora corrente: "Tempestade em 17h28"
  * lê como se a tempestade fosse às 17h28, quando 17h28 é o relógio andando. O
- * que aperta o aluno é o quanto falta.
+ * que aperta o estudante é o quanto falta.
  */
 export function faltaTexto(gastos: number): string {
   const faltam = minutosRestantes(gastos);
@@ -218,10 +218,10 @@ export function cronometroDe(segundosQueFaltam: number): string {
 /**
  * Com que relogio datar uma leitura da conversa.
  *
- * Normalmente e a contagem regressiva, que e o unico relogio que o aluno ve.
+ * Normalmente e a contagem regressiva, que e o unico relogio que o estudante ve.
  * Sem cronometro (o professor deixou a aula sem tempo marcado) nao ha contagem
  * para mostrar, e ai vale a hora da cidade — o motivo do ADR-0005 para evitá-la
- * era obrigar o aluno a converter DUAS escalas ao mesmo tempo, e nesse modo so
+ * era obrigar o estudante a converter DUAS escalas ao mesmo tempo, e nesse modo so
  * existe uma.
  */
 export function horaDoCartao(estado: EstadoDoRelogio): string {
@@ -239,7 +239,7 @@ export function horaDaTela(gastos: number): string {
 }
 
 /**
- * Motivo escrito ao lado do campo desabilitado - nunca sumir o campo. O aluno
+ * Motivo escrito ao lado do campo desabilitado - nunca sumir o campo. O estudante
  * precisa entender POR QUE nao da para falar: se acabou o tempo, se a aula
  * ainda nao comecou ou se o professor encerrou. As tres frases sao autoradas.
  */

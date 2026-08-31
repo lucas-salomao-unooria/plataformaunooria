@@ -5,7 +5,7 @@ import { ExpHost } from "@/components/ExpHost";
 import { HeaderPlataforma } from "@/components/header-plataforma";
 
 /**
- * Superfície do ALUNO: embeda a experiência do manifesto (ou, em dev, o dev
+ * Superfície do ESTUDANTE: embeda a experiência do manifesto (ou, em dev, o dev
  * server dela). A montagem vive em `lib/embed-experiencia.ts`, compartilhada
  * com a superfície do professor.
  *
@@ -39,7 +39,6 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
         expOrigin={embed.expOrigin}
         token={embed.token}
         estudante={embed.estudante}
-        aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         viewport={embed.viewport}
         permissoes={embed.permissoes}

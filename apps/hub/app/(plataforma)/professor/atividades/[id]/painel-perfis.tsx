@@ -19,7 +19,6 @@ interface EstudanteNaLista {
   jaComecou: boolean;
 }
 
-export type AlunoNaLista = EstudanteNaLista;
 
 interface Distribuicao {
   temAfinidade: boolean;
@@ -30,7 +29,6 @@ interface Distribuicao {
     por_que_autopromocao: string;
   } | null;
   estudantes?: EstudanteNaLista[];
-  alunos?: EstudanteNaLista[];
   contagem: { A: number; B: number };
   semLado: number;
   desequilibrio: number;
@@ -182,7 +180,7 @@ export function PainelPerfis({
     );
   }
 
-  const listaEstudantes = dados.estudantes ?? dados.alunos ?? [];
+  const listaEstudantes = dados.estudantes ?? [];
   const total = dados.contagem.A + dados.contagem.B;
   const comPerfil = listaEstudantes.filter((a) => a.origemDoPerfil !== "ausente").length;
   const desatualizados = listaEstudantes.filter((a) => a.mapeamentoDesatualizado).length;

@@ -38,7 +38,7 @@ Você responde o que os dados dizem. Você NUNCA decide onde alocar as equipes.
 
 A situação: uma tempestade chega à cidade. Há QUATRO bairros e DUAS equipes de
 resposta — a Alfa, que sai da base norte, e a Bravo, da base sul. Não dá para
-atender todos. As equipes saem quando o aluno manda e chegam quando chegam:
+atender todos. As equipes saem quando o estudante manda e chegam quando chegam:
 nenhum bairro é inalcançável, e quem chega com a chuva caindo trabalha com menos
 margem.
 
@@ -53,7 +53,7 @@ Texto puro: nada de markdown, asteriscos, títulos ou tabelas. A tela mostra
 literalmente o que você escrever. Para listar bairro, use uma linha por bairro
 começando com hífen — e liste no máximo dois.
 
-VOCÊ É OPERADOR, NÃO FORMULÁRIO. Quando o aluno disser o que quer entender,
+VOCÊ É OPERADOR, NÃO FORMULÁRIO. Quando o estudante disser o que quer entender,
 escolha você mesmo as fontes que respondem a isso, carregue com usar_dados na
 mesma resposta e diga em uma frase o que carregou e por quê. Não peça
 autorização a cada passo: o relógio está correndo, e cada "posso carregar?"
@@ -80,7 +80,7 @@ NÚMEROS. usar_dados já cruza o que ficou carregado e põe o quadro na tela —
 números da resposta dele são os que você pode usar. Se quiser reler sem carregar
 nada novo, chame rodar_modelo. NUNCA invente número. Se precisar de número, chame rodar_modelo e
 repita os valores dela sem arredondar. Todo número sai com a unidade junto:
-"entre 75% e 95% de chance", "2.400 pessoas", "9 minutos" — número solto o aluno
+"entre 75% e 95% de chance", "2.400 pessoas", "9 minutos" — número solto o estudante
 não sabe ler. Nunca ponha porcentagem e pessoas no mesmo item: escolha o que
 responde a pergunta dele. Se rodar_modelo rodou nesta resposta, cite no máximo
 DOIS bairros e mande ele olhar o quadro. Bairro sem cobertura: diga que você não
@@ -91,8 +91,8 @@ existir fonte para aquilo, diga que não sabe.
 FERRAMENTAS. Ferramenta se CHAMA, não se escreve: nunca digite o nome de uma
 ferramenta, colchete de protocolo, JSON ou qualquer coisa parecida com código
 dentro da sua fala.
-- Nomear bairro é alocar_equipe. Você OPERA o que o aluno decidir: recusar a
-  ação — e não só a decisão — deixa o aluno preso. São duas equipes; se ele não
+- Nomear bairro é alocar_equipe. Você OPERA o que o estudante decidir: recusar a
+  ação — e não só a decisão — deixa o estudante preso. São duas equipes; se ele não
   disser qual, pergunte antes de registrar.
 - Confirmar é confirmar_alocacao. "Confirmo", "pode mandar", "manda ver", "pode
   enfrentar a tempestade" são confirmação, não alocação: se as duas equipes já
@@ -106,7 +106,7 @@ dentro da sua fala.
 - Avise UMA vez sobre desvio ou chegada em cima da hora e pergunte se ele quer
   trocar. Se ele reafirmar, CHAME confirmar_alocacao na mesma resposta, mesmo
   que uma das equipes não passe — a decisão é dele, inclusive a de mandar assim.
-  Repetir o mesmo aviso duas vezes prende o aluno na tela e a Missão nunca
+  Repetir o mesmo aviso duas vezes prende o estudante na tela e a Missão nunca
   fecha: é o pior defeito possível.
 - Quando ele confirmar, você DEVE chamar confirmar_alocacao. NUNCA narre a
   tempestade, a chegada das equipes ou qualquer desfecho sem ter chamado a
@@ -119,7 +119,7 @@ dentro da sua fala.
 TEMPO. O relógio corre sozinho, não é debitado por pergunta: enquanto vocês
 conversam, a hora anda. Fale sempre do TEMPO QUE FALTA, exatamente como ele
 aparece no fim desta instrução ("restam cerca de 3 minutos"). Nunca dê a hora do
-relógio nem uma contagem em minutos da cidade: o aluno tem um cronômetro na tela
+relógio nem uma contagem em minutos da cidade: o estudante tem um cronômetro na tela
 e é com ele que a sua fala tem de bater. O tempo de viagem conta A PARTIR DE
 AGORA — quanto mais vocês investigarem, menos lugares as equipes ainda alcançam.
 
@@ -141,7 +141,7 @@ function catalogo(): string {
 /** As instruções dos Conjuntos carregados: é aqui que o viés entra na conversa. */
 /**
  * Os tempos de viagem, quando o mapa de estradas está carregado. Sem isto o
- * Cientista carregava a malha viária a pedido do aluno e continuava sem saber
+ * Cientista carregava a malha viária a pedido do estudante e continuava sem saber
  * responder "qual é o mais perto" — que foi exatamente a pergunta que motivou
  * a troca. Os horários de interdição NÃO entram: o viés desse conjunto é
  * justamente não modelar fechamento de via.
@@ -172,7 +172,7 @@ function instrucoesAtivas(conjuntos: readonly string[]): string {
  * exigência salva o turno — mas o socorro genérico ("diga o que você precisaria
  * consultar e pergunte se pode carregar") produz, num turno de delegação,
  * exatamente mais uma pergunta: o loop que travou o playtest. Por isso ele
- * depende do que o aluno pediu.
+ * depende do que o estudante pediu.
  */
 const SOCORRO: Record<TipoDeTurno, string> = {
   delegacao:
@@ -204,7 +204,7 @@ export function montarSystemPrompt(entrada: {
   tempoQueResta: string;
   primeiraFala: boolean;
   protocolo: string;
-  /** Quantas Perguntas de investigação ainda restam ao aluno. */
+  /** Quantas Perguntas de investigação ainda restam ao estudante. */
   perguntasRestantes?: number;
 }): string {
   return [
@@ -216,10 +216,10 @@ export function montarSystemPrompt(entrada: {
     instrucoesAtivas(entrada.conjuntos),
     temposDeViagem(entrada.conjuntos),
     '',
-    // O que aperta o aluno é o quanto FALTA, e é isso que o cronômetro da tela
+    // O que aperta o estudante é o quanto FALTA, e é isso que o cronômetro da tela
     // mostra. Uma versão anterior fazia o Cientista falar em minutos da cidade
     // ("chega em 54 minutos") com o cronômetro marcando 4:59, e outra o fazia
-    // dar a hora — as duas obrigavam o aluno a converter escala no meio de uma
+    // dar a hora — as duas obrigavam o estudante a converter escala no meio de uma
     // emergência.
     `${entrada.tempoQueResta} até a chuva. Não faça disso o assunto, a menos que perguntem — e, quando perguntarem, diga QUANTO FALTA nesses termos, nunca a hora do relógio e nunca uma contagem em minutos da cidade.`,
     // O número vem PRONTO do código e a LLM nunca o contradiz (regra de ouro 3).
@@ -250,7 +250,7 @@ export interface RespostaDoCientista {
   tokensUsados: number;
   /** Presente quando o Cientista cruzou os dados nesta resposta. */
   rodada: ReturnType<typeof rodarModelo> | null;
-  /** Fontes que ele passou a usar nesta resposta, a pedido do aluno. */
+  /** Fontes que ele passou a usar nesta resposta, a pedido do estudante. */
   dadosUsados: string[] | null;
   /** Alocação registrada nesta resposta, quando houve. */
   alocou: { alfa: string | null; bravo: string | null } | null;
@@ -263,12 +263,12 @@ export interface RespostaDoCientista {
 }
 
 /**
- * O tempo que falta, na escala do cronômetro que o aluno vê: minutos de
+ * O tempo que falta, na escala do cronômetro que o estudante vê: minutos de
  * relógio de parede, não minutos da cidade.
  */
 function tempoRestante(segundos: number | null): string {
   // Sem cronômetro (o professor deixou a aula sem tempo marcado): inventar
-  // urgência aqui seria mentir sobre a tela que o aluno está vendo.
+  // urgência aqui seria mentir sobre a tela que o estudante está vendo.
   if (segundos === null) return 'não há cronômetro nesta rodada';
   if (segundos <= 0) return 'a chuva já começou';
   if (segundos < 60) return 'resta menos de um minuto';
@@ -278,7 +278,7 @@ function tempoRestante(segundos: number | null): string {
 
 /**
  * A primeira fala precisa SITUAR antes de oferecer. Sem isto ele abria com
- * "estou no escuro" e despejava três opções: o aluno recebia um menu antes de
+ * "estou no escuro" e despejava três opções: o estudante recebia um menu antes de
  * entender o problema, e escolhia no chute.
  */
 function aberturaDaConversa(tempo: string): string {
@@ -290,7 +290,7 @@ function aberturaDaConversa(tempo: string): string {
     '4. Avise que o relógio corre sozinho enquanto vocês conversam: o tempo passa mesmo parado.',
     '5. Termine perguntando o que ele quer ENTENDER primeiro — as pessoas, o risco, os caminhos.',
     'SE ele já disse na primeira mensagem o que quer saber, PULE o passo 5: responda a pergunta dele e siga a instrução do turno, que vem abaixo.',
-    'NÃO liste as fontes disponíveis nesta primeira fala: listar vira menu, e o aluno escolhe no chute antes de saber o que procura. Se ele pedir a lista, aí sim você dá.',
+    'NÃO liste as fontes disponíveis nesta primeira fala: listar vira menu, e o estudante escolhe no chute antes de saber o que procura. Se ele pedir a lista, aí sim você dá.',
   ].join('\n');
 }
 
@@ -306,7 +306,7 @@ export async function responder(
   conjuntos: readonly string[],
   /**
    * O tempo, nas duas escalas que a Missão usa: os segundos de parede que
-   * faltam (é o que o aluno vê no cronômetro, e é disso que o Cientista fala) e
+   * faltam (é o que o estudante vê no cronômetro, e é disso que o Cientista fala) e
    * os minutos da cidade já decorridos (é o que decide se a equipe chega).
    */
   tempo: { segundosAteFechar: number | null; minutosGastos: number },
@@ -321,7 +321,7 @@ export async function responder(
   /**
    * O que o servidor já sabe sobre o estado da Missão. Sem isto o mesmo texto
    * ("manda ver") é indistinguível entre confirmar um envio e pedir que a IA
-   * decida — e foi pedindo que a IA decidisse que o aluno do playtest gastou o
+   * decida — e foi pedindo que a IA decidisse que o estudante do playtest gastou o
    * relógio inteiro.
    */
   estado: {
@@ -374,7 +374,7 @@ export async function responder(
       //
       // `confirmou` conta: ao narrar o desfecho, os números vêm da tempestade,
       // não do modelo. Sem essa ressalva a guarda derrubava a última fala da
-      // Missão e o aluno via "não consegui responder" no fim de tudo.
+      // Missão e o estudante via "não consegui responder" no fim de tudo.
       if (!executada && !confirmou && /\d+\s?%|\b\d{3,}\b|\d\.\d{3}/.test(saida)) {
         problemas.push(
           'você deu números sem chamar rodar_modelo. Chame a ferramenta e use os números dela, ou responda sem número nenhum',
@@ -393,12 +393,12 @@ export async function responder(
         );
       }
 
-      // Mandar o aluno "olhar o quadro" num turno sem rodada é apontar para
+      // Mandar o estudante "olhar o quadro" num turno sem rodada é apontar para
       // uma tabela que não está na tela. Ele procura, não acha, e passa a
       // desconfiar do que o Cientista diz sobre a própria interface.
       if (!executada && /\bquadro\b/i.test(saida)) {
         problemas.push(
-          'você mandou o aluno olhar o quadro, mas não chamou rodar_modelo neste turno — não existe quadro nenhum na tela. Chame a ferramenta, ou não cite o quadro',
+          'você mandou o estudante olhar o quadro, mas não chamou rodar_modelo neste turno — não existe quadro nenhum na tela. Chame a ferramenta, ou não cite o quadro',
         );
       }
 
@@ -442,7 +442,7 @@ export async function responder(
           // Carregar uma fonte e reler a cidade são UM ato — é o que a fala do
           // Cientista sempre disse ("carreguei a previsão e cruzei com o que já
           // estava"). Deixar os dois como passos separados fazia o modelo
-          // carregar, escrever a resposta e mandar o aluno olhar um quadro que
+          // carregar, escrever a resposta e mandar o estudante olhar um quadro que
           // ninguém tinha produzido; quando a guarda barrava isso, ele gastava
           // duas tentativas e vinte segundos para chegar ao mesmo lugar.
           if (emUso.length > 0) {
@@ -484,7 +484,7 @@ export async function responder(
           if (!estado) return { registrado: false, motivo: 'bairro não reconhecido' };
           alocou = estado;
           // O horário de chegada vai junto: sem isto o Cientista registra um
-          // destino inalcançável sem uma palavra, e o aluno só descobre no
+          // destino inalcançável sem uma palavra, e o estudante só descobre no
           // desfecho — quando não dá mais para escolher diferente.
           const rota = (equipe: 'alfa' | 'bravo', bairro: string | null) => {
             if (!bairro) return null;
@@ -511,7 +511,7 @@ export async function responder(
         if (nome === 'propor_opcoes') {
           // Propor JÁ É pedir uma leitura: se ele ainda não cruzou, cruzamos
           // aqui. Exigir a ordem certa fazia o modelo ser recusado no meio do
-          // turno, chamar rodar_modelo em seguida e então emudecer — o aluno
+          // turno, chamar rodar_modelo em seguida e então emudecer — o estudante
           // esperava meio minuto e recebia "não consegui responder agora".
           if (!executada && emUso.length > 0) {
             executada = rodarModelo(sessaoId, rodada, emUso, ultimaFonte);

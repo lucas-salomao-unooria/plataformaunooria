@@ -57,7 +57,7 @@ export const COLUNAS_POR_ARQUIVO: Readonly<
       "metadata.br.cpf",
       /* `role` saiu de users.csv na 1.2 (foi para roles.csv), mas provedores
          seguem emitindo a coluna da 1.1. Aceitar é mais barato que exigir dois
-         arquivos para saber se alguém é aluno. */
+         arquivos para saber se alguém é estudante. */
       "role",
     ],
   },

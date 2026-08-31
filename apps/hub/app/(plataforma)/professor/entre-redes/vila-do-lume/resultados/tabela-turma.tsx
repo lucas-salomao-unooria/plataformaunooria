@@ -23,14 +23,12 @@ function quando(iso: string | null): string {
  */
 export function TabelaTurma({
   estudantes,
-  alunos,
   rotaBase,
 }: {
   estudantes?: LinhaDaTurma[];
-  alunos?: LinhaDaTurma[];
   rotaBase: string;
 }) {
-  const lista = estudantes ?? alunos ?? [];
+  const lista = estudantes ?? [];
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-[13px]">
@@ -47,7 +45,7 @@ export function TabelaTurma({
         </thead>
         <tbody>
           {lista.map((estudante) => (
-            <tr key={estudante.estudanteId ?? estudante.alunoId} className="border-b border-unooria-neutral-100 align-middle">
+            <tr key={estudante.estudanteId} className="border-b border-unooria-neutral-100 align-middle">
               <td className="py-2.5 pr-3 font-medium text-unooria-neutral-950">{estudante.nome}</td>
               <td className="py-2.5 pr-3">
                 {estudante.bolha ? (
@@ -81,7 +79,7 @@ export function TabelaTurma({
               <td className="py-2.5 text-right">
                 {estudante.ultimaEm ? (
                   <Link
-                    href={`${rotaBase}/estudantes/${encodeURIComponent(estudante.estudanteId ?? estudante.alunoId ?? "")}`}
+                    href={`${rotaBase}/estudantes/${encodeURIComponent(estudante.estudanteId ?? "")}`}
                     className="text-[13px] font-semibold text-unooria-navy-900 underline"
                   >
                     Abrir

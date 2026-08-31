@@ -51,10 +51,8 @@ export interface EficaciaDaEscrita {
   dwellDosOutros: number | null;
   delta: number | null;
   amostra: {
-    estudantesDoPerfil?: number;
-    alunosDoPerfil: number;
-    estudantesDeOutros?: number;
-    alunosDeOutros: number;
+    estudantesDoPerfil: number;
+    estudantesDeOutros: number;
   };
 }
 
@@ -78,7 +76,7 @@ const AMOSTRA_MINIMA = 2;
 async function resumoDe(
   prisma: Prisma.TransactionClient,
   atividade: { id: string; titulo: string; status: string; createdAt: Date },
-  alunos: MetricasDaRun[],
+  estudantes: MetricasDaRun[],
 ): Promise<ResumoDeAtividade> {
   const [posts, servidos] = await Promise.all([
     prisma.post.findMany({
@@ -102,16 +100,16 @@ async function resumoDe(
   const mortos = posts.filter((post) => !jaServidos.has(post.id)).length;
   const comImagem = posts.filter((post) => post.imageStatus === 'ok').length;
 
-  const paraImersao = alunos.filter((aluno) => aluno.postsConsumidos >= 8);
-  const concluidas = alunos.filter((aluno) => aluno.conclusao !== null);
-  const comLado = concluidas.filter((aluno) => aluno.conclusao?.inclinacao !== 'duvida');
-  const seguiram = comLado.filter((aluno) => aluno.conclusao?.inclinacao === aluno.bolha.ladoInicial);
+  const paraImersao = estudantes.filter((estudante) => estudante.postsConsumidos >= 8);
+  const concluidas = estudantes.filter((estudante) => estudante.conclusao !== null);
+  const comLado = concluidas.filter((estudante) => estudante.conclusao?.inclinacao !== 'duvida');
+  const seguiram = comLado.filter((estudante) => estudante.conclusao?.inclinacao === estudante.bolha.ladoInicial);
 
   const porComponente: Record<string, number> = {};
   for (const chave of paraImersao[0]?.imersao.componentes.map((c) => c.chave) ?? []) {
     porComponente[chave] =
       arredondar(
-        media(paraImersao.map((aluno) => aluno.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0)),
+        media(paraImersao.map((estudante) => estudante.imersao.componentes.find((c) => c.chave === chave)?.pontos ?? 0)),
         1,
       ) ?? 0;
   }
@@ -121,7 +119,7 @@ async function resumoDe(
     titulo: atividade.titulo,
     status: atividade.status,
     criadaEm: atividade.createdAt,
-    runs: alunos.length,
+    runs: estudantes.length,
     concluidas: concluidas.length,
     imersao: { media: arredondar(media(paraImersao.map((a) => a.imersao.total)), 1), porComponente },
     tempoMedioDeFeedMs: arredondar(media(paraImersao.map((a) => a.tempo.feedMs)), 0),
@@ -154,12 +152,12 @@ export async function eficaciaDaEscrita(
   prisma: Prisma.TransactionClient,
   activityId: string,
 ): Promise<EficaciaDaEscrita[]> {
-  const alunos = await metricasDaAtividade(prisma, activityId);
-  const comPerfil = alunos.filter(
-    (aluno) =>
-      aluno.perfilJogo !== null &&
-      aluno.perfilJogo.dominante !== 'misto' &&
-      aluno.postsConsumidos >= 8,
+  const estudantes = await metricasDaAtividade(prisma, activityId);
+  const comPerfil = estudantes.filter(
+    (estudante) =>
+      estudante.perfilJogo !== null &&
+      estudante.perfilJogo.dominante !== 'misto' &&
+      estudante.postsConsumidos >= 8,
   );
 
   const runs = await prisma.run.findMany({
@@ -174,23 +172,23 @@ export async function eficaciaDaEscrita(
   );
 
   /** Segundos por post do perfil `alvo`, para um estudante. `null` sem exposição. */
-  const segundosPorPost = (aluno: MetricasDaRun, alvo: Perfil): number | null => {
-    const servidos = exposicaoPorRun.get(aluno.runId)?.[alvo] ?? 0;
+  const segundosPorPost = (estudante: MetricasDaRun, alvo: Perfil): number | null => {
+    const servidos = exposicaoPorRun.get(estudante.runId)?.[alvo] ?? 0;
     if (servidos === 0) return null;
     // `?? 0`: `porPerfilMs` é Record<string, number> e o perfil pode não ter
     // entrada (noUncheckedIndexedAccess). Sem tempo registrado, o dwell é zero.
-    return (aluno.tempo.porPerfilMs[alvo] ?? 0) / servidos / 1000;
+    return (estudante.tempo.porPerfilMs[alvo] ?? 0) / servidos / 1000;
   };
 
   return PERFIS.map((perfil) => {
     const doPerfil = comPerfil
-      .filter((aluno) => aluno.perfilJogo?.dominante === perfil)
-      .map((aluno) => segundosPorPost(aluno, perfil))
+      .filter((estudante) => estudante.perfilJogo?.dominante === perfil)
+      .map((estudante) => segundosPorPost(estudante, perfil))
       .filter((valor): valor is number => valor !== null);
 
     const dosOutros = comPerfil
-      .filter((aluno) => aluno.perfilJogo?.dominante !== perfil)
-      .map((aluno) => segundosPorPost(aluno, perfil))
+      .filter((estudante) => estudante.perfilJogo?.dominante !== perfil)
+      .map((estudante) => segundosPorPost(estudante, perfil))
       .filter((valor): valor is number => valor !== null);
 
     const mediaDoPerfil = doPerfil.length >= AMOSTRA_MINIMA ? media(doPerfil) : null;
@@ -207,9 +205,7 @@ export async function eficaciaDaEscrita(
           : null,
       amostra: {
         estudantesDoPerfil: doPerfil.length,
-        alunosDoPerfil: doPerfil.length,
         estudantesDeOutros: dosOutros.length,
-        alunosDeOutros: dosOutros.length,
       },
     };
   });
@@ -235,7 +231,7 @@ export async function analiseDeProduto(
   prisma: Prisma.TransactionClient,
   activityId: string,
 ): Promise<AnaliseDeProduto> {
-  const [atividade, alunos, eficacia] = await Promise.all([
+  const [atividade, estudantes, eficacia] = await Promise.all([
     prisma.activity.findUniqueOrThrow({
       where: { id: activityId },
       select: { id: true, titulo: true, status: true, createdAt: true },
@@ -248,7 +244,7 @@ export async function analiseDeProduto(
 
   return {
     atividade: { id: atividade.id, titulo: atividade.titulo, status: atividade.status },
-    resumo: await resumoDe(prisma, atividade, alunos),
+    resumo: await resumoDe(prisma, atividade, estudantes),
     eficaciaDaEscrita: eficacia,
     eficaciaMedia: arredondar(media(comDelta)),
   };

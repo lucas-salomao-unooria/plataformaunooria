@@ -130,7 +130,7 @@ export class UnootubeController {
   @Contrato({
     resumo: "O ranking — a virada da missão.",
     descricao:
-      "Os colegas são **fictícios**: ranquear colegas reais exporia pontuação de menores (regra 6). `voce` marca a linha do aluno.\n\nÉ aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.",
+      "Os colegas são **fictícios**: ranquear colegas reais exporia pontuação de menores (regra 6). `voce` marca a linha do estudante.\n\nÉ aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.",
     resposta: RankingSchema,
   })
   ranking(@Req() req: Autenticado) {

@@ -71,7 +71,6 @@ interface Relatorio {
 
 interface Dados {
   estudante?: { username: string; displayName: string; nomeNoApp: string | null; avatar: string | null };
-  aluno?: { username: string; displayName: string; nomeNoApp: string | null; avatar: string | null };
   sessao: {
     fase: string;
     ladoInicialRotulo: string;
@@ -155,7 +154,7 @@ export function ModalEstudante({
 
   if (!runId) return null;
 
-  const infoEstudante = dados?.estudante ?? dados?.aluno;
+  const infoEstudante = dados?.estudante;
 
   return (
     <Modal isOpen size="lg" onClose={aoFechar} closeOnOverlayClick closeOnEsc>
@@ -536,4 +535,3 @@ function PainelDoRelatorio({ relatorio }: { relatorio: Relatorio }) {
   );
 }
 
-export { ModalEstudante as ModalAluno };

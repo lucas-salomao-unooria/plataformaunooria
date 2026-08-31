@@ -8,11 +8,11 @@
  * ## O que está em jogo aqui
  *
  * O resultado vira `perfis_importados.escores`, e é isso que decide de que lado
- * o feed de cada aluno nasce (`largada.ts`). Também vira uma COLUNA no CSV do
+ * o feed de cada estudante nasce (`largada.ts`). Também vira uma COLUNA no CSV do
  * `/analise`, ao lado da identidade da criança — então não é um número interno:
  * é uma afirmação que um adulto lê.
  *
- * ## As duas travas, e por que elas custam alunos
+ * ## As duas travas, e por que elas custam estudantes
  *
  * **1. `null` não vira zero.** Um valor com uma fonte de medida só (`indicative`)
  * ou sem oportunidade (`none`) NÃO entra na média do quadrante. Tratá-lo como

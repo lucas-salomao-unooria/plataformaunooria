@@ -9,7 +9,7 @@ import { EXP_PLANO_DE_AULA } from "@/lib/plano-de-aula";
  * aberto em nova guia; agora é a mesma sessão, o mesmo token e a mesma api.
  *
  * Renderiza o `ExpFrame` direto (sem `ExpHost`): não há viewport de aparelho
- * nem chrome de aluno, e a conclusão não é progresso de aluno. O wrapper
+ * nem chrome de estudante, e a conclusão não é progresso de estudante. O wrapper
  * anula o padding do layout para o editor usar a altura toda.
  *
  * Em dev, sem manifesto: `?src=http://localhost:5175` (ou a porta registrada
@@ -34,7 +34,6 @@ export default async function PlanoDeAulaPage({
         expOrigin={embed.expOrigin}
         token={embed.token}
         estudante={embed.estudante}
-        aluno={embed.aluno}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_PLANO_DE_AULA }}
       />

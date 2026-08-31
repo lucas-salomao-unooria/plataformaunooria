@@ -88,7 +88,7 @@ describe('o modelo enxerga o que os Conjuntos deixam', () => {
   });
 
   it('nem carregar TUDO fecha a conta: o teto de cobertura vale sempre', () => {
-    // Sem teto de inventário, o aluno pode empilhar o catálogo inteiro. Isso
+    // Sem teto de inventário, o estudante pode empilhar o catálogo inteiro. Isso
     // não pode virar onisciência: a cidade continua parcialmente invisível.
     const e = estimar(
       CONJUNTOS.map((c) => c.slug),

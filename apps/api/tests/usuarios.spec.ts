@@ -61,7 +61,7 @@ describe("listagem, edição e senha", () => {
       ESCOLA,
       [
         "cpf,matricula,nome,usuario,papel,turma,serie",
-        `${CPF_DA_ANA},2026001,Ana Lima,ana.lima,aluno,8A,8EF`,
+        `${CPF_DA_ANA},2026001,Ana Lima,ana.lima,estudante,8A,8EF`,
         ",1099,Marta Nunes,marta.nunes,professor,8A,8EF",
       ].join("\n"),
       { senhaPadrao: "senha1234" },

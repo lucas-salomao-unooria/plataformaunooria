@@ -15,7 +15,7 @@ const alocacao = (alfa: string | null, bravo: string | null) => ({ alfa, bravo }
 
 describe('a tempestade é sorteio, não conta', () => {
   it('a mesma alocação, na mesma turma, rende números PRÓXIMOS', () => {
-    // Uma cidade, uma tempestade: dois alunos que mandam para os mesmos lugares
+    // Uma cidade, uma tempestade: dois estudantes que mandam para os mesmos lugares
     // não podem terminar em mundos diferentes. A diferença vem da decisão.
     const tempestadeDaTurma = { sementeDaTempestade: sementeDe('turma:cedro-01') };
     const a = simular(alocacao('valeverde', 'ribeirinha'), 1, tempestadeDaTurma).totais;
@@ -27,7 +27,7 @@ describe('a tempestade é sorteio, não conta', () => {
   it('o horário de chegada informa, não fecha porta', () => {
     // A Ponte do Sauá fecha 20 minutos depois do alerta. Saindo na hora, a
     // Bravo chega em 12 min sem nota nenhuma; saindo 12 minutos depois, ela
-    // passa do fechamento — e isso é dito em tempo relativo, porque o aluno só
+    // passa do fechamento — e isso é dito em tempo relativo, porque o estudante só
     // tem o cronômetro na tela.
     expect(chegaATempo('ribeirinha', 'bravo', 0).motivo).toBeNull();
     const tarde = chegaATempo('ribeirinha', 'bravo', 12);
@@ -206,7 +206,7 @@ describe('o tempo é rampa, não precipício', () => {
   });
 });
 
-describe('a variância que o aluno enxerga', () => {
+describe('a variância que o estudante enxerga', () => {
   const alocacao = { alfa: 'valeverde', bravo: 'industrial' };
 
   it('entrega vinte corridas da mesma decisão', () => {

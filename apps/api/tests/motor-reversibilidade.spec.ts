@@ -6,7 +6,7 @@ import { catalogoDeTeste, simular, sinal, visto } from './motor-simulador';
 /**
  * M5 — reversibilidade do viés semeado (doc 04 §10.3, doc 08 M5).
  *
- * Estes são os testes mais importantes do projeto. O aluno nasce empurrado para um
+ * Estes são os testes mais importantes do projeto. O estudante nasce empurrado para um
  * lado pelo perfil do Ato 1; se ele **não conseguir virar**, o exercício deixa de
  * ensinar "o algoritmo te empurra, mas você pode reagir" e passa a ensinar "seu
  * tipo define o que você pensa" — o oposto exato da mensagem.
@@ -38,16 +38,16 @@ describe('a semente inclina sem travar', () => {
   });
 
   it('a semente sozinha NÃO tira o domínio de 0.5', () => {
-    // É isso que a torna reversível: o comportamento do aluno é que decide.
+    // É isso que a torna reversível: o comportamento do estudante é que decide.
     const { passos } = simular(1, () => [], { ladoInicial: 'A' });
     expect(SEMENTE_INICIAL_PADRAO).toBeLessThan(CONFIG.somaMinimaParaDominio);
     expect(passos[0]!.dominio).toBe(0.5);
   });
 });
 
-describe('o aluno consegue virar de lado — o teste que define o exercício', () => {
+describe('o estudante consegue virar de lado — o teste que define o exercício', () => {
   /**
-   * Aluno semeado em A que só engaja com B: para em cada post do lado B e curte,
+   * Estudante semeado em A que só engaja com B: para em cada post do lado B e curte,
    * e rola reto pelos do lado A. É o comportamento de quem se interessou pelo
    * outro lado.
    */
@@ -93,7 +93,7 @@ describe('o aluno consegue virar de lado — o teste que define o exercício', (
 
 describe('o piso do lado oposto', () => {
   it('nunca zera, em nenhum bloco de uma sessão inteira', () => {
-    // Aluno que só engaja com o lado semeado: o caso em que a bolha mais fecha.
+    // Estudante que só engaja com o lado semeado: o caso em que a bolha mais fecha.
     const soDoLadoA = (meta: { lado: string; id: string }) =>
       meta.lado === 'A'
         ? [visto(meta as never, DWELL_ALTO), sinal(meta as never, 'curtiu')]

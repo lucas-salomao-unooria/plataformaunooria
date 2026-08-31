@@ -93,7 +93,6 @@ const MIRROR = {id:"espelho", label:"Fogo Sagrado", icon:"🔥", color:0xFF8A2E,
 function bolhaDoEstudante(){
   return (window.VILA && window.VILA.bolha) || 'A';
 }
-const bolhaDoAluno = bolhaDoEstudante;
 
 /** Os cartões servidos pela api para esta partida. Vazio = a missão não roda, e é
  *  isso que a api grava como `cartoesServidos: 0` — diferente de "ela ignorou tudo". */

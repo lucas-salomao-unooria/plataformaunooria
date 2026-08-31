@@ -42,7 +42,7 @@ beforeAll(async () => {
     ESCOLA,
     [
       "matricula,nome,usuario,papel,turma,serie",
-      `SP-1,Nina Prado,${login("nina")},aluno,7A,7EF`,
+      `SP-1,Nina Prado,${login("nina")},estudante,7A,7EF`,
       `SP-2,Otto Vidal,${login("otto")},professor,7A,7EF`,
     ].join("\n"),
     { senhaPadrao: SENHA_DO_LOTE },
@@ -132,7 +132,7 @@ describe("primeiro acesso", () => {
     // Resetar a senha de quem já entrou trancaria a escola inteira para fora.
     await rostering.importarPlanilha(
       ESCOLA,
-      ["matricula,nome,papel,turma,serie", "SP-1,Nina Prado Lima,aluno,7A,7EF"].join("\n"),
+      ["matricula,nome,papel,turma,serie", "SP-1,Nina Prado Lima,estudante,7A,7EF"].join("\n"),
       { senhaPadrao: SENHA_DO_LOTE },
     );
     const nina = await prisma.user.findFirstOrThrow({

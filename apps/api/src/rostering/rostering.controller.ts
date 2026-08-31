@@ -146,13 +146,13 @@ export class RosteringController {
   @Contrato({
     resumo: "Importa a planilha de pessoas.",
     descricao:
-      "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.",
+      "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — estudante também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.",
     query: ImportarQuery,
     corpo: CsvSchema,
     tipoDoCorpo: "text/csv",
     resposta: RelatorioDeImportacaoSchema,
     notas: [
-      "**O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).",
+      "**O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (estudante) ou lotação a mais (professor).",
       "Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.",
       "Coluna desconhecida é ERRO, não coluna ignorada.",
       "5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
@@ -202,7 +202,7 @@ export class RosteringController {
     resposta: RelatorioDeImportacaoSchema,
     notas: [
       "`orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `admin-contrato`.",
-      "Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **aluno**, o menor privilégio; o `roles.csv` corrige.",
+      "Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **estudante**, o menor privilégio; o `roles.csv` corrige.",
       "A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.",
       "Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.",
       "`status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.",

@@ -38,7 +38,6 @@ export function PostCard({
   salvo,
   seguindo,
   comentariosDoEstudante,
-  comentariosDoAluno,
 }: {
   post: FeedPostCliente;
   acoes: AcoesDoPost;
@@ -46,7 +45,6 @@ export function PostCard({
   salvo: boolean;
   seguindo: boolean;
   comentariosDoEstudante?: number;
-  comentariosDoAluno?: number;
 }) {
   const [expandido, setExpandido] = useState(false);
   const [mostrarCoracao, setMostrarCoracao] = useState(false);
@@ -95,7 +93,7 @@ export function PostCard({
   const precisaTruncar = caption.length > LIMITE_CAPTION && !expandido;
   const textoCaption = precisaTruncar ? `${caption.slice(0, LIMITE_CAPTION)}…` : caption;
   const totalCurtidas = post.likesCount + (curtido ? 1 : 0);
-  const meusComentarios = comentariosDoEstudante ?? comentariosDoAluno ?? 0;
+  const meusComentarios = comentariosDoEstudante ?? 0;
   const totalComentarios = post.commentsTotal + meusComentarios;
 
   return (

@@ -265,7 +265,7 @@
           "escolas"
         ],
         "summary": "As escolas de QUEM ESTÁ PEDINDO.",
-        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence.\n\nÉ com ela que o hub monta o seletor de escola do professor de duas unidades — e **valida a troca** antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\n\n**Papéis:** estudante, professor, gestor, admin-contrato.\n\n**Restrições:**\n- Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.\n- Professor e gestor ACUMULAM lotação; aluno tem UMA ativa, garantida por índice único parcial no banco.",
+        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence.\n\nÉ com ela que o hub monta o seletor de escola do professor de duas unidades — e **valida a troca** antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\n\n**Papéis:** estudante, professor, gestor, admin-contrato.\n\n**Restrições:**\n- Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.\n- Professor e gestor ACUMULAM lotação; estudante tem UMA ativa, garantida por índice único parcial no banco.",
         "security": [
           {
             "token-da-plataforma": []
@@ -363,7 +363,7 @@
           "escolas"
         ],
         "summary": "O panorama de quem tem muitas escolas.",
-        "description": "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, alunos e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor` lotado nas unidades da diretoria.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, estudantes e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor` lotado nas unidades da diretoria.\n\n**Papéis:** professor, gestor, admin-contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -1000,7 +1000,7 @@
           "escolas"
         ],
         "summary": "Quem está lotado nesta escola.",
-        "description": "Gestor vê a própria; `admin-contrato`, qualquer uma. `papel` diferente de `aluno`/`gestor` cai em `professor`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- O CPF vem FORMATADO e visível: o gestor confere identidade contra o sistema da rede e atende a família no balcão (ADR-33).",
+        "description": "Gestor vê a própria; `admin-contrato`, qualquer uma. `papel` diferente de `estudante`/`gestor` cai em `professor`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- O CPF vem FORMATADO e visível: o gestor confere identidade contra o sistema da rede e atende a família no balcão (ADR-33).",
         "security": [
           {
             "token-da-plataforma": []
@@ -1800,7 +1800,7 @@
           "rostering"
         ],
         "summary": "Importa a planilha de pessoas.",
-        "description": "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — aluno também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (aluno) ou lotação a mais (professor).\n- Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.\n- Coluna desconhecida é ERRO, não coluna ignorada.\n- 5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
+        "description": "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — estudante também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (estudante) ou lotação a mais (professor).\n- Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.\n- Coluna desconhecida é ERRO, não coluna ignorada.\n- 5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
         "security": [
           {
             "token-da-plataforma": []
@@ -2028,7 +2028,7 @@
           "rostering"
         ],
         "summary": "Binding CSV do OneRoster 1.2 — UM arquivo por chamada.",
-        "description": "Ordem: `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`, `roles`. **Fora de ordem não corrompe nada**: a linha que aponta para um `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta.\n\nO padrão vive só nesta fronteira: nada do domínio conhece `sourcedId`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `admin-contrato`.\n- Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **aluno**, o menor privilégio; o `roles.csv` corrige.\n- A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.\n- Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.\n- `status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.",
+        "description": "Ordem: `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`, `roles`. **Fora de ordem não corrompe nada**: a linha que aponta para um `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta.\n\nO padrão vive só nesta fronteira: nada do domínio conhece `sourcedId`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `admin-contrato`.\n- Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **estudante**, o menor privilégio; o `roles.csv` corrige.\n- A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.\n- Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.\n- `status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9234,7 +9234,7 @@
           "atividades"
         ],
         "summary": "O detalhe de uma atividade.",
-        "description": "`_count` espelha o `select` do Prisma da página de origem — o porte dos painéis consome exatamente esse shape —, e os agregados nomeados (`alunos`, `postsAprovados`) ficam junto.\n\n**Papéis:** professor.",
+        "description": "`_count` espelha o `select` do Prisma da página de origem — o porte dos painéis consome exatamente esse shape —, e os agregados nomeados (`estudantes`, `postsAprovados`) ficam junto.\n\n**Papéis:** professor.",
         "security": [
           {
             "token-da-plataforma": []
@@ -12887,7 +12887,7 @@
           "vila"
         ],
         "summary": "Abre a partida e entrega os cartões DESTA criança.",
-        "description": "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `alunoSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Os cartões vêm **sem gabarito** e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.\n- Nos anos iniciais (1EF–5EF) a bolha B **não é servida** — \"suporte\" exige entender o que é suporte, e só a api sabe a série.\n- Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.\n- Identidade sempre do token: o payload não traz aluno nem turma.",
+        "description": "**A bolha é do SERVIDOR.** Atribuída A/B/C de forma balanceada dentro da TURMA e persistida em `vila_bolhas` (estável entre partidas: a folha do professor diz \"esse estava na C\").\n\nEra `estudanteSlot % 3` no navegador, o que punha no bundle a condição do próprio instrumento e deixava as três versões legíveis antes da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Os cartões vêm **sem gabarito** e só os desta bolha: a explicação final da missão depende de ser a primeira vez que a turma vê as outras versões.\n- Nos anos iniciais (1EF–5EF) a bolha B **não é servida** — \"suporte\" exige entender o que é suporte, e só a api sabe a série.\n- Há lock consultivo por turma: a sala clica junto, e sem ele os 25 caíam todos na bolha A.\n- Identidade sempre do token: o payload não traz estudante nem turma.",
         "security": [
           {
             "token-da-plataforma": []
@@ -13678,10 +13678,6 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "alunoId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
                           "id": {
                             "type": "string",
                             "format": "uuid"
@@ -13733,10 +13729,6 @@
                         "type": "object",
                         "properties": {
                           "estudanteId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "alunoId": {
                             "type": "string",
                             "format": "uuid"
                           },
@@ -14024,12 +14016,12 @@
         "x-acesso": "token"
       }
     },
-    "/vila/professor/estudantes/{alunoId}": {
+    "/vila/professor/estudantes/{estudanteId}": {
       "get": {
-        "operationId": "VilaProfessorController_aluno",
+        "operationId": "VilaProfessorController_estudante",
         "parameters": [
           {
-            "name": "alunoId",
+            "name": "estudanteId",
             "in": "path",
             "required": true,
             "schema": {
@@ -16136,19 +16128,13 @@
                               "estudantesDoPerfil": {
                                 "type": "number"
                               },
-                              "alunosDoPerfil": {
-                                "type": "number"
-                              },
                               "estudantesDeOutros": {
-                                "type": "number"
-                              },
-                              "alunosDeOutros": {
                                 "type": "number"
                               }
                             },
                             "required": [
-                              "alunosDoPerfil",
-                              "alunosDeOutros"
+                              "estudantesDoPerfil",
+                              "estudantesDeOutros"
                             ],
                             "additionalProperties": false
                           }
@@ -17036,7 +17022,7 @@
           "unootube"
         ],
         "summary": "O ranking — a virada da missão.",
-        "description": "Os colegas são **fictícios**: ranquear colegas reais exporia pontuação de menores (regra 6). `voce` marca a linha do aluno.\n\nÉ aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.\n\n**Papéis:** estudante.",
+        "description": "Os colegas são **fictícios**: ranquear colegas reais exporia pontuação de menores (regra 6). `voce` marca a linha do estudante.\n\nÉ aqui que a popularidade que o feed exibia se desmancha: o vídeo de números grandes era o falso.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -17413,10 +17399,6 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "alunoId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
                           "nome": {
                             "type": "string"
                           },
@@ -17473,10 +17455,6 @@
                             "format": "uuid"
                           },
                           "estudanteId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
-                          "alunoId": {
                             "type": "string",
                             "format": "uuid"
                           },
@@ -18725,7 +18703,7 @@
           "unoogpt"
         ],
         "summary": "O bootstrap da Missão Tempestade. Cria a sessão na primeira visita.",
-        "description": "Repare no que NÃO existe nestas rotas: **id de sessão**. No app de origem toda rota era `/api/missao/:id/*` com uma guarda `donoDaSessao` para provar a posse; aqui a identidade é `(escola, aluno)` vinda do TOKEN, e não há como pedir a partida de outra pessoa. A guarda desapareceu junto com a classe de bug que ela protegia.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A `projecao` é SERVIDA, nunca calculada no navegador: um bundle capaz de computá-la deixaria o aluno prever o desfecho antes de enviar.\n- O mapa começa vazio: só o que uma Pergunta revelou chega ao navegador — `estimativa: null` é o cartão em branco, e **branco é informação**.\n- A `ficha` sai por allowlist, sem os números por bairro: eles são a verdade do mundo, e mandá-los daria de graça a resposta que a missão existe para o aluno não ter.",
+        "description": "Repare no que NÃO existe nestas rotas: **id de sessão**. No app de origem toda rota era `/api/missao/:id/*` com uma guarda `donoDaSessao` para provar a posse; aqui a identidade é `(escola, estudante)` vinda do TOKEN, e não há como pedir a partida de outra pessoa. A guarda desapareceu junto com a classe de bug que ela protegia.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A `projecao` é SERVIDA, nunca calculada no navegador: um bundle capaz de computá-la deixaria o estudante prever o desfecho antes de enviar.\n- O mapa começa vazio: só o que uma Pergunta revelou chega ao navegador — `estimativa: null` é o cartão em branco, e **branco é informação**.\n- A `ficha` sai por allowlist, sem os números por bairro: eles são a verdade do mundo, e mandá-los daria de graça a resposta que a missão existe para o estudante não ter.",
         "security": [
           {
             "token-da-plataforma": []
@@ -18836,7 +18814,7 @@
           "unoogpt"
         ],
         "summary": "O relógio da turma — polling de ~5s.",
-        "description": "Leve de propósito: sem IA e sem mapa. `agora` é o instante do SERVIDOR, senão o relógio da máquina da escola (que atrasa) decide quanto tempo a turma tem.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- 240 chamadas por minuto por aluno.",
+        "description": "Leve de propósito: sem IA e sem mapa. `agora` é o instante do SERVIDOR, senão o relógio da máquina da escola (que atrasa) decide quanto tempo a turma tem.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- 240 chamadas por minuto por estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -19773,7 +19751,7 @@
           "unoogpt"
         ],
         "summary": "O turno do Cientista — a rota que fala com o modelo.",
-        "description": "Rate limit apertado (**12/min**) porque cada chamada custa tokens de verdade: o teto por sessão é o controle de custo, e este é o freio contra o laço.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Falha do PROVEDOR **não** chega ao aluno como 500: vira `cientista-indisponivel` (**503**), que a tela traduz em \"tente falar de novo\". E **não debita** — o débito acontece só depois de resposta válida.\n- O log fica com o motivo técnico, **sem o texto do aluno**: é caixa livre escrita por menor de idade.\n- O número que um botão de opção mostra sai do MOTOR, nunca da LLM.",
+        "description": "Rate limit apertado (**12/min**) porque cada chamada custa tokens de verdade: o teto por sessão é o controle de custo, e este é o freio contra o laço.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Falha do PROVEDOR **não** chega ao estudante como 500: vira `cientista-indisponivel` (**503**), que a tela traduz em \"tente falar de novo\". E **não debita** — o débito acontece só depois de resposta válida.\n- O log fica com o motivo técnico, **sem o texto do estudante**: é caixa livre escrita por menor de idade.\n- O número que um botão de opção mostra sai do MOTOR, nunca da LLM.",
         "security": [
           {
             "token-da-plataforma": []
@@ -20353,7 +20331,7 @@
           "unoogpt"
         ],
         "summary": "Manda uma equipe para um bairro.",
-        "description": "`bairro: null` tira a equipe do destino. A justificativa é **portão de servidor**: só vale fonte que o aluno carregou, ou \"foi intuição\" — que está sempre disponível, porque sem essa saída a pergunta vira pegadinha e o aluno aprende a mentir para o formulário.\n\n**Papéis:** estudante.",
+        "description": "`bairro: null` tira a equipe do destino. A justificativa é **portão de servidor**: só vale fonte que o estudante carregou, ou \"foi intuição\" — que está sempre disponível, porque sem essa saída a pergunta vira pegadinha e o estudante aprende a mentir para o formulário.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -21324,7 +21302,7 @@
           "unoogpt"
         ],
         "summary": "O resultado da tentativa, com a faixa e o que ele nunca consultou.",
-        "description": "A **faixa é a manchete**: corridas da MESMA decisão, para \"não repete igual\" sair do texto e virar gráfico. Uma rodada é anedota — o aluno lê 1.345 e conclui que tirou uma nota.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `sobrou` é um FATO com nome de bairro e número de pessoas, **não um veredito**: quem transforma fato em lição é o professor, no debate.\n- `naoConsultados` traz só `comoFalar`/`rotuloCurto`/`serve` — o nome técnico, o viés e a cobertura são o instrumento, e ficam com o professor.",
+        "description": "A **faixa é a manchete**: corridas da MESMA decisão, para \"não repete igual\" sair do texto e virar gráfico. Uma rodada é anedota — o estudante lê 1.345 e conclui que tirou uma nota.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `sobrou` é um FATO com nome de bairro e número de pessoas, **não um veredito**: quem transforma fato em lição é o professor, no debate.\n- `naoConsultados` traz só `comoFalar`/`rotuloCurto`/`serve` — o nome técnico, o viés e a cobertura são o instrumento, e ficam com o professor.",
         "security": [
           {
             "token-da-plataforma": []
@@ -21398,7 +21376,7 @@
           "unoogpt"
         ],
         "summary": "\"E se eu tivesse mandado para…\" — calculado e descartado.",
-        "description": "**Não grava e não debita**: é a pergunta que o aluno faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Papéis:** estudante.",
+        "description": "**Não grava e não debita**: é a pergunta que o estudante faz ao VER o resultado, e transformá-la em tentativa nova apagaria a diferença entre a decisão que ele tomou e a que ele imaginou depois.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -21955,10 +21933,6 @@
                             "type": "string",
                             "format": "uuid"
                           },
-                          "alunoId": {
-                            "type": "string",
-                            "format": "uuid"
-                          },
                           "nome": {
                             "type": "string"
                           },
@@ -22024,7 +21998,7 @@
         "tags": [
           "unoogpt"
         ],
-        "summary": "A folha da turma: relógio, retrato de conduta e uma linha por aluno.",
+        "summary": "A folha da turma: relógio, retrato de conduta e uma linha por estudante.",
         "description": "O retrato fala de **conduta, não de nota** — conta \"decidiram no escuro\" e \"justificaram por intuição\" em vez de somar acertos, porque a Missão não tem resposta certa.\n\n**Papéis:** professor, admin-contrato.",
         "security": [
           {
@@ -22203,7 +22177,7 @@
           "unoogpt"
         ],
         "summary": "Dá a largada, soma tempo, encerra, troca o modo ou redefine.",
-        "description": "É o único lugar onde alguém que não é o aluno mexe no que ele vê — e mesmo aqui **não toca o Passo dele**: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.\n\n**Papéis:** professor, admin-contrato.",
+        "description": "É o único lugar onde alguém que não é o estudante mexe no que ele vê — e mesmo aqui **não toca o Passo dele**: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.\n\n**Papéis:** professor, admin-contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -22243,12 +22217,12 @@
         }
       }
     },
-    "/unoogpt/professor/estudantes/{alunoId}": {
+    "/unoogpt/professor/estudantes/{estudanteId}": {
       "get": {
-        "operationId": "UnoogptTurmasController_aluno",
+        "operationId": "UnoogptTurmasController_estudante",
         "parameters": [
           {
-            "name": "alunoId",
+            "name": "estudanteId",
             "in": "path",
             "required": true,
             "schema": {
@@ -24505,7 +24479,7 @@
   },
   "info": {
     "title": "Plataforma Unooria — API",
-    "description": "API da Plataforma Unooria. Um contrato = uma stack; dentro dela, as escolas\ncompartilham o banco com isolamento lógico por `escola_id` e Row-Level Security.\n\n**Autenticação.** Quase toda rota exige o token da plataforma no cabeçalho\n`Authorization: Bearer`. Ele é assinado pelo hub (RS256, 15min) e traz\n`{sub, escola_id, turma_id?, perfil}`. Para experimentar aqui, pegue um token\nde uma sessão do hub e cole em **Authorize**.\n\n**Papéis.** `estudante`, `aluno`, `professor`, `gestor` e `admin-contrato` — este último é a\núnica exceção que atravessa escolas. Cada operação diz quais aceita; sem essa\nlinha, qualquer papel autenticado passa.\n\n**O que este documento não consegue dizer.** Restrições escritas em `.refine()`\nnão têm tradução em JSON Schema e aparecem como texto em _Restrições_, não como\nesquema. A validação continua sendo a do Zod.",
+    "description": "API da Plataforma Unooria. Um contrato = uma stack; dentro dela, as escolas\ncompartilham o banco com isolamento lógico por `escola_id` e Row-Level Security.\n\n**Autenticação.** Quase toda rota exige o token da plataforma no cabeçalho\n`Authorization: Bearer`. Ele é assinado pelo hub (RS256, 15min) e traz\n`{sub, escola_id, turma_id?, perfil}`. Para experimentar aqui, pegue um token\nde uma sessão do hub e cole em **Authorize**.\n\n**Papéis.** `estudante`, `estudante`, `professor`, `gestor` e `admin-contrato` — este último é a\núnica exceção que atravessa escolas. Cada operação diz quais aceita; sem essa\nlinha, qualquer papel autenticado passa.\n\n**O que este documento não consegue dizer.** Restrições escritas em `.refine()`\nnão têm tradução em JSON Schema e aparecem como texto em _Restrições_, não como\nesquema. A validação continua sendo a do Zod.",
     "version": "0.1.0",
     "contact": {}
   },

@@ -22,7 +22,6 @@ interface EscolaDoPanorama extends Record<string, unknown> {
   papel: string;
   principal: boolean;
   estudantes?: number;
-  alunos?: number;
   professores: number;
   turmas: number;
   semPrimeiroAcesso: number;
@@ -105,7 +104,7 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
         key: "estudantes",
         title: "Estudantes",
         align: "right",
-        render: (_, l) => String(l.estudantes ?? l.alunos),
+        render: (_, l) => String(l.estudantes),
       },
       { key: "professores", title: "Professores", align: "right" },
       {
@@ -141,12 +140,11 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
 
   const totais = (escolas ?? []).reduce(
     (soma, e) => ({
-      estudantes: soma.estudantes + (e.estudantes ?? e.alunos ?? 0),
-      alunos: soma.alunos + (e.alunos ?? e.estudantes ?? 0),
+      estudantes: soma.estudantes + (e.estudantes ?? 0),
       turmas: soma.turmas + e.turmas,
       pendentes: soma.pendentes + e.semPrimeiroAcesso,
     }),
-    { estudantes: 0, alunos: 0, turmas: 0, pendentes: 0 },
+    { estudantes: 0, turmas: 0, pendentes: 0 },
   );
 
   return (

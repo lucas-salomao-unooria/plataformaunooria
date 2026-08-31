@@ -3,7 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { PubSubPushGuard } from "../src/telemetry/pubsub-push.guard";
 
 /**
- * Teste de contrato do `POST /telemetry/ingest`: a rota grava evento de aluno,
+ * Teste de contrato do `POST /telemetry/ingest`: a rota grava evento de estudante,
  * não passa pelo OidcGuard e fica exposta na internet atrás do Load Balancer.
  * O que se garante aqui é que ela FALHA FECHADA — uma env faltando desliga a
  * rota, nunca a abre.

@@ -1,7 +1,7 @@
 /**
  * O tamanho de uma resposta do Cientista. PURO — sem provedor, sem Prisma.
  *
- * O playtest mostrou o aluno recebendo, a cada turno, uma parede: a prosa da
+ * O playtest mostrou o estudante recebendo, a cada turno, uma parede: a prosa da
  * LLM listando quatro bairros com faixa e pessoas, MAIS a tabela dos seis, MAIS
  * dois avisos de empate repetidos palavra por palavra. Ele respondeu "num
  * intindi" e depois parou de ler.
@@ -24,7 +24,7 @@ export function contarFrases(texto: string): number {
 /**
  * Teto de tamanho da resposta, em caracteres.
  *
- * Medido na parede do playtest: a fala que fez o aluno parar de ler tinha ~640
+ * Medido na parede do playtest: a fala que fez o estudante parar de ler tinha ~640
  * caracteres de prosa ANTES do cartão com a tabela dos seis bairros. Em 450 cabe
  * uma frase de contexto, dois bairros com número e a pergunta de volta — que é
  * a forma que o protocolo de turno pede.

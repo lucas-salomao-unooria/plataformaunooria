@@ -38,7 +38,7 @@ beforeAll(async () => {
   ] as const) {
     await admin.escola.create({ data: { id, nome } });
     await admin.progresso.create({
-      data: { escolaId: id, estudanteId: `aluno-${id}`, expId: "exp-teste", dados: { origem: id } },
+      data: { escolaId: id, estudanteId: `estudante-${id}`, expId: "exp-teste", dados: { origem: id } },
     });
   }
 
@@ -73,7 +73,7 @@ describe("RLS por escola (role de runtime, sem ownership)", () => {
           where: {
             escolaId_estudanteId_expId: {
               escolaId: ESCOLA_B,
-              estudanteId: `aluno-${ESCOLA_B}`,
+              estudanteId: `estudante-${ESCOLA_B}`,
               expId: "exp-teste",
             },
           },

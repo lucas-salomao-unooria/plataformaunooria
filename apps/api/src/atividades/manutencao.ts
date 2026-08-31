@@ -27,7 +27,6 @@ export async function limparDadosDosEstudantes(
   return { sessoes: count };
 }
 
-export const limparDadosDosAlunos = limparDadosDosEstudantes;
 
 /**
  * Apaga a atividade inteira e tudo que pende dela.

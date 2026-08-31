@@ -19,7 +19,6 @@ import { PainelEtapas } from "./painel-etapas";
 interface LinhaMonitor {
   runId: string;
   estudante?: { username: string; displayName: string; avatar: string | null };
-  aluno?: { username: string; displayName: string; avatar: string | null };
   fase: string;
   postsConsumidos: number;
   blocos: number;
@@ -296,7 +295,7 @@ export function PainelMonitor({
           device="auto"
           title={`${ociosos.length} estudante(s) parado(s) há mais de ${Math.round((dados?.limiteDeOciosidadeMs ?? 120000) / 60000)} min`}
           description={ociosos
-            .map((linha) => `${(linha.estudante ?? linha.aluno)?.displayName} (${Math.round((linha.ociosoHaMs ?? 0) / 60000)} min)`)
+            .map((linha) => `${(linha.estudante)?.displayName} (${Math.round((linha.ociosoHaMs ?? 0) / 60000)} min)`)
             .join(" · ")}
         />
       ) : null}
@@ -334,7 +333,7 @@ export function PainelMonitor({
                 rotulo: linha.fase,
                 variante: "neutral" as const,
               };
-              const infoEstudante = linha.estudante ?? linha.aluno;
+              const infoEstudante = linha.estudante;
               return (
                 <tr
                   key={linha.runId}

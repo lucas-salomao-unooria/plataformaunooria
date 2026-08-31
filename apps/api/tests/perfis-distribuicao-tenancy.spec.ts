@@ -5,7 +5,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * A distribuição da atividade do Instanooria não pode enxergar aluno de outra
+ * A distribuição da atividade do Instanooria não pode enxergar estudante de outra
  * escola.
  *
  * Este teste existe porque `distribuicaoDaTurma` rodava
@@ -13,7 +13,7 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
  * FORA da RLS: a lista de tabelas com policy em `20260824145301_init` não a
  * inclui, e o `comTenancy` só arma `app.escola_id`, sem tocar no `where` do
  * Prisma. O painel do professor listava nome e login de crianças de toda escola
- * do contrato, e `POST :id/redistribuir` decidia quantos alunos mover a partir
+ * do contrato, e `POST :id/redistribuir` decidia quantos estudantes mover a partir
  * dessa contagem.
  *
  * Roda como superusuário (é o Postgres local do README), então a RLS está
@@ -65,14 +65,14 @@ beforeAll(async () => {
     await prisma.user.create({
       data: {
         role: "estudante", escolaId: ESCOLA_A, turmaId: turmaA.id,
-        username: `distrib.a${i}`, displayName: `Aluno A${i}`, passwordHash: "x",
+        username: `distrib.a${i}`, displayName: `Estudante A${i}`, passwordHash: "x",
       },
     });
   }
   await prisma.user.create({
     data: {
       role: "estudante", escolaId: ESCOLA_B, turmaId: turmaB.id,
-      username: "distrib.b0", displayName: "Aluno da outra escola", passwordHash: "x",
+      username: "distrib.b0", displayName: "Estudante da outra escola", passwordHash: "x",
     },
   });
 
@@ -94,7 +94,7 @@ afterAll(async () => {
 });
 
 describe("distribuição da atividade e as fronteiras da escola", () => {
-  test("só lista alunos da escola da atividade", async () => {
+  test("só lista estudantes da escola da atividade", async () => {
     const distribuicao = await distribuicaoDaTurma(prisma, activityId, null, ESCOLA_A);
 
     expect(distribuicao.alunos).toHaveLength(2);
@@ -104,18 +104,18 @@ describe("distribuição da atividade e as fronteiras da escola", () => {
     ]);
   });
 
-  test("o aluno da outra escola não aparece nem pelo nome", async () => {
+  test("o estudante da outra escola não aparece nem pelo nome", async () => {
     const distribuicao = await distribuicaoDaTurma(prisma, activityId, null, ESCOLA_A);
 
     const nomes = distribuicao.alunos.map((a) => a.displayName);
-    expect(nomes).not.toContain("Aluno da outra escola");
+    expect(nomes).not.toContain("Estudante da outra escola");
     expect(distribuicao.alunos.some((a) => a.username.startsWith("distrib.b"))).toBe(false);
   });
 
   /**
    * `semLado` alimenta `desequilibrio` e `precisaRedistribuir`, e é a partir
    * deles que `POST :id/redistribuir` decide QUANTOS mover. Contar a escola
-   * inteira aqui movia aluno a mais na sala certa.
+   * inteira aqui movia estudante a mais na sala certa.
    */
   test("a contagem que decide a redistribuição também é só desta escola", async () => {
     const distribuicao = await distribuicaoDaTurma(prisma, activityId, null, ESCOLA_A);

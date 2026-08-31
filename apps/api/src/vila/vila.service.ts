@@ -17,7 +17,7 @@ import { bolhasElegiveis, corrigirCartoes, escolherBolha } from "./regras";
  * Persistência da exp-70. O I/O e a transação moram aqui; o que decide está em
  * `regras.ts` (puro), `mapeamento.ts` (puro) e `contrato.ts` (validação).
  *
- * Assinaturas recebem `escolaId`/`alunoId` explícitos, nunca o request: os
+ * Assinaturas recebem `escolaId`/`estudanteId` explícitos, nunca o request: os
  * testes de integração chamam direto, e toda query leva `escola_id` no `where`
  * ALÉM da RLS que o `comTenancy` arma (regra inviolável nº 1, defesa em
  * profundidade).
@@ -99,8 +99,7 @@ export interface ResumoDaTurma {
 }
 
 export interface LinhaDaTurma {
-  estudanteId?: string;
-  alunoId: string;
+  estudanteId: string;
   id?: string;
   nome: string;
   partidas: number;
@@ -127,35 +126,35 @@ export class VilaService {
    * Abre a partida: crava o início no SERVIDOR, resolve a bolha e entrega os
    * cartões desta criança sem gabarito.
    *
-   * Um aluno pode abrir várias partidas (ele pode jogar de novo). Partidas
+   * Um estudante pode abrir várias partidas (ele pode jogar de novo). Partidas
    * anteriores que ficaram `aberta` são marcadas `abandonada`: aba fechada no
    * meio é o caso normal, e deixá-las abertas para sempre faria a contagem de
    * partidas do painel crescer sem que ninguém tivesse jogado.
    */
-  async abrir(escolaId: string, alunoId: string, expVersion: string): Promise<SessaoAberta> {
+  async abrir(escolaId: string, estudanteId: string, expVersion: string): Promise<SessaoAberta> {
     return this.prisma.comTenancy(async (tx) => {
-      const aluno = await tx.user.findFirst({
-        where: { id: alunoId, escolaId, role: { in: ["estudante", "aluno"] } },
+      const estudante = await tx.user.findFirst({
+        where: { id: estudanteId, escolaId, role: { in: ["estudante", "aluno"] } },
         select: { turmaId: true, turma: { select: { serie: true } } },
       });
-      if (!aluno) throw new HttpException({ mensagem: "Estudante não encontrado nesta escola." }, 404);
+      if (!estudante) throw new HttpException({ mensagem: "Estudante não encontrado nesta escola." }, 404);
 
-      const bolha = await this.resolverBolha(tx, escolaId, alunoId, aluno.turmaId, aluno.turma?.serie ?? null);
+      const bolha = await this.resolverBolha(tx, escolaId, estudanteId, estudante.turmaId, estudante.turma?.serie ?? null);
       const cartoes = cartoesDaBolha(bolha);
 
       /* Fecha o que ficou aberto ANTES de criar a nova, para nunca haver duas
          abertas do mesmo estudante — o `concluir` procura por id, mas o painel conta
          partidas e duas abertas seriam duas partidas que ninguém jogou. */
       await tx.vilaSessao.updateMany({
-        where: { escolaId, estudanteId: alunoId, status: "aberta" },
+        where: { escolaId, estudanteId: estudanteId, status: "aberta" },
         data: { status: "abandonada", concluidaEm: new Date() },
       });
 
       const sessao = await tx.vilaSessao.create({
         data: {
           escolaId,
-          estudanteId: alunoId,
-          turmaId: aluno.turmaId,
+          estudanteId: estudanteId,
+          turmaId: estudante.turmaId,
           expVersion,
           schemaVersion: 1,
           bolha,
@@ -187,12 +186,12 @@ export class VilaService {
   private async resolverBolha(
     tx: Prisma.TransactionClient,
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
     turmaId: string | null,
     serie: string | null,
   ): Promise<Bolha> {
     const existente = await tx.vilaBolha.findUnique({
-      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       select: { bolha: true },
     });
     if (existente) return existente.bolha as Bolha;
@@ -201,7 +200,7 @@ export class VilaService {
 
     /* Relê depois do lock: quem esperou pode ter sido atendido enquanto esperava. */
     const depoisDoLock = await tx.vilaBolha.findUnique({
-      where: { escolaId_estudanteId: { escolaId, estudanteId: alunoId } },
+      where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       select: { bolha: true },
     });
     if (depoisDoLock) return depoisDoLock.bolha as Bolha;
@@ -217,7 +216,7 @@ export class VilaService {
     for (const linha of naTurma) contagem[linha.bolha as Bolha] = linha._count.bolha;
 
     const bolha = escolherBolha(contagem, serie);
-    await tx.vilaBolha.create({ data: { escolaId, estudanteId: alunoId, bolha } });
+    await tx.vilaBolha.create({ data: { escolaId, estudanteId: estudanteId, bolha } });
     return bolha;
   }
 
@@ -235,7 +234,7 @@ export class VilaService {
    */
   async concluir(
     escolaId: string,
-    alunoId: string,
+    estudanteId: string,
     sessaoId: string,
     bruto: unknown,
   ): Promise<{ status: "gravada" | "jaEstava"; perfilId: string | null }> {
@@ -250,7 +249,7 @@ export class VilaService {
 
     return this.prisma.comTenancy(async (tx) => {
       const sessao = await tx.vilaSessao.findFirst({
-        where: { id: sessaoId, escolaId, estudanteId: alunoId },
+        where: { id: sessaoId, escolaId, estudanteId: estudanteId },
         select: { id: true, bolha: true, status: true },
       });
       if (!sessao) naoEncontrado();
@@ -318,7 +317,7 @@ export class VilaService {
           data: {
             escolaId,
             sessaoId,
-            estudanteId: alunoId,
+            estudanteId: estudanteId,
             versaoMapeamento: VERSAO_MAPEAMENTO,
             valores: { v: 1, ...perfil.valores } as unknown as Prisma.InputJsonObject,
             graus: { v: 1, ...perfil.graus } as unknown as Prisma.InputJsonObject,
@@ -376,14 +375,14 @@ export class VilaService {
       // Professor só lê a turma em que tem matrícula; gestor lê a escola.
       if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return null;
 
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true },
       });
-      const ids = alunos.map((a) => a.id);
+      const ids = estudantes.map((a) => a.id);
       const vazio: ResumoDaTurma = {
-        estudantes: alunos.length,
-        alunos: alunos.length,
+        estudantes: estudantes.length,
+        alunos: estudantes.length,
         jogaram: 0,
         concluiram: 0,
         abandonaram: 0,
@@ -437,18 +436,18 @@ export class VilaService {
     }, escolaId);
   }
 
-  /** Uma linha por aluno da turma. Nunca atravessa escola: `escolaId` no where. */
+  /** Uma linha por estudante da turma. Nunca atravessa escola: `escolaId` no where. */
   async daTurma(escolaId: string, turmaId: string, professorId?: string): Promise<LinhaDaTurma[]> {
     return this.prisma.comTenancy(async (tx) => {
       if (!(await professorLeciona(tx, escolaId, turmaId, professorId))) return [];
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true, displayName: true },
         orderBy: { displayName: "asc" },
       });
-      if (alunos.length === 0) return [];
+      if (estudantes.length === 0) return [];
 
-      const ids = alunos.map((a) => a.id);
+      const ids = estudantes.map((a) => a.id);
       const [sessoes, bolhas, perfis] = await Promise.all([
         tx.vilaSessao.findMany({
           where: { escolaId, estudanteId: { in: ids } },
@@ -465,7 +464,7 @@ export class VilaService {
 
       const bolhaDe = new Map(bolhas.map((b) => [b.estudanteId, b.bolha as Bolha]));
       /* Só partidas CONCLUÍDAS contam como "última": uma aberta agora mesmo não
-         tem números, e mostrá-la faria a linha do aluno piscar zeros no meio da
+         tem números, e mostrá-la faria a linha do estudante piscar zeros no meio da
          aula. */
       const ultimaDe = new Map<string, (typeof sessoes)[number]>();
       const totalDe = new Map<string, number>();
@@ -476,12 +475,11 @@ export class VilaService {
       const perfilDe = new Map<string, (typeof perfis)[number]>();
       for (const perfil of perfis) if (!perfilDe.has(perfil.estudanteId)) perfilDe.set(perfil.estudanteId, perfil);
 
-      return alunos.map((a) => {
+      return estudantes.map((a) => {
         const ultima = ultimaDe.get(a.id);
         const perfil = perfilDe.get(a.id);
         return {
           estudanteId: a.id,
-          alunoId: a.id,
           id: a.id,
           nome: a.displayName,
           partidas: totalDe.get(a.id) ?? 0,
@@ -533,11 +531,11 @@ export class VilaService {
       const turma = await tx.turma.findFirst({ where: { id: turmaId, escolaId }, select: { id: true } });
       if (!turma) return null;
 
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: { in: ["estudante", "aluno"] } },
         select: { id: true },
       });
-      const ids = alunos.map((a) => a.id);
+      const ids = estudantes.map((a) => a.id);
       if (ids.length === 0) return { partidas: 0, perfis: 0, bolhas: 0 };
 
       /* Ordem: perfis antes das partidas. O FK de `vila_perfis.sessao_id` é
@@ -557,7 +555,7 @@ export class VilaService {
      ====================================================================== */
 
   /**
-   * O perfil mais recente de cada aluno, já colapsado nos quatro quadrantes.
+   * O perfil mais recente de cada estudante, já colapsado nos quatro quadrantes.
    *
    * Devolve TAMBÉM quem ficou de fora e por quê: uma importação que diz "23
    * importados" sem dizer que 7 foram descartados deixa o professor achando que
@@ -573,7 +571,6 @@ export class VilaService {
     prontos: Array<{
       id: string;
       estudanteId: string;
-      alunoId: string;
       escores: EscoresPorQuadrante;
       medidoEm: Date;
       /** A partida de onde a medida saiu, e sob que mapeamento — o que permite
@@ -581,23 +578,23 @@ export class VilaService {
       sessaoId: string;
       versaoMapeamento: number;
     }>;
-    descartados: Array<{ id: string; estudanteId: string; alunoId: string; nome: string; motivo: string }>;
+    descartados: Array<{ id: string; estudanteId: string; nome: string; motivo: string }>;
     semPartida: number;
   }> {
     return this.prisma.comTenancy(async (tx) => {
-      const alunos = await tx.user.findMany({
+      const estudantes = await tx.user.findMany({
         where: { escolaId, role: { in: ["estudante", "aluno"] }, ...(turmaId ? { turmaId } : {}) },
         select: { id: true, displayName: true },
       });
-      if (alunos.length === 0) return { prontos: [], descartados: [], semPartida: 0 };
+      if (estudantes.length === 0) return { prontos: [], descartados: [], semPartida: 0 };
 
-      const ids = alunos.map((a) => a.id);
+      const ids = estudantes.map((a) => a.id);
       const perfis = await tx.vilaPerfil.findMany({
         where: { escolaId, estudanteId: { in: ids }, versaoMapeamento: VERSAO_MAPEAMENTO },
         orderBy: { createdAt: "desc" },
       });
 
-      /* O MAIS RECENTE de cada aluno. Quem jogou três vezes tem três perfis, e o
+      /* O MAIS RECENTE de cada estudante. Quem jogou três vezes tem três perfis, e o
          que vale é o último — não a média, que misturaria partidas de dias
          diferentes num número que não descreve nenhuma delas. */
       const ultimoDe = new Map<string, (typeof perfis)[number]>();
@@ -606,17 +603,16 @@ export class VilaService {
       const prontos: Array<{
         id: string;
         estudanteId: string;
-        alunoId: string;
         escores: EscoresPorQuadrante;
         medidoEm: Date;
         sessaoId: string;
         versaoMapeamento: number;
       }> = [];
-      const descartados: Array<{ id: string; estudanteId: string; alunoId: string; nome: string; motivo: string }> = [];
+      const descartados: Array<{ id: string; estudanteId: string; nome: string; motivo: string }> = [];
       let semPartida = 0;
 
-      for (const aluno of alunos) {
-        const perfil = ultimoDe.get(aluno.id);
+      for (const estudante of estudantes) {
+        const perfil = ultimoDe.get(estudante.id);
         if (!perfil) {
           semPartida += 1;
           continue;
@@ -627,13 +623,12 @@ export class VilaService {
           perfil.amostraSuficiente,
         );
         if (!colapso.ok) {
-          descartados.push({ id: aluno.id, estudanteId: aluno.id, alunoId: aluno.id, nome: aluno.displayName, motivo: colapso.detalhe });
+          descartados.push({ id: estudante.id, estudanteId: estudante.id, nome: estudante.displayName, motivo: colapso.detalhe });
           continue;
         }
         prontos.push({
-          id: aluno.id,
-          estudanteId: aluno.id,
-          alunoId: aluno.id,
+          id: estudante.id,
+          estudanteId: estudante.id,
           escores: colapso.escores,
           medidoEm: perfil.createdAt,
           sessaoId: perfil.sessaoId,
@@ -703,10 +698,6 @@ export class VilaService {
         mensagens: leituraGravada(sessao.leituraMensagens),
       };
     }, escolaId);
-  }
-
-  async doAluno(escolaId: string, alunoId: string): Promise<RelatorioDaPartida | null> {
-    return this.doEstudante(escolaId, alunoId);
   }
 }
 

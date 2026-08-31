@@ -496,11 +496,11 @@ export class OneRosterService {
 
   /**
    * `users.csv`. O papel vem da coluna `role` quando ela existe (a 1.1 a tinha e
-   * provedores seguem emitindo); sem ela, a pessoa nasce como **aluno** e o
+   * provedores seguem emitindo); sem ela, a pessoa nasce como **estudante** e o
    * relatório diz quantas linhas dependem do `roles.csv` para o papel certo.
    *
    * Nascer com o menor privilégio é falhar FECHADO: um professor que entra como
-   * aluno perde acesso e reclama; um aluno que entrasse como professor leria a
+   * estudante perde acesso e reclama; um estudante que entrasse como professor leria a
    * turma inteira.
    */
   private async aplicarPessoas(
@@ -568,7 +568,7 @@ export class OneRosterService {
       senha: string | null;
       desativar: boolean;
       cpf: string | null;
-      /** Já existe na rede, em OUTRA escola: transferir (aluno) ou lotar. */
+      /** Já existe na rede, em OUTRA escola: transferir (estudante) ou lotar. */
       deOutraEscola: { id: string; escolaId: string | null } | null;
     };
     const preparadas: Preparada[] = [];
@@ -691,7 +691,7 @@ export class OneRosterService {
       relatorio.avisos.push({
         linha: 1,
         campo: "role",
-        mensagem: `${semPapelDeclarado} pessoa(s) sem coluna role entraram como aluno (o menor privilégio) — aplique roles.csv para corrigir o papel`,
+        mensagem: `${semPapelDeclarado} pessoa(s) sem coluna role entraram como estudante (o menor privilégio) — aplique roles.csv para corrigir o papel`,
       });
     }
 
@@ -701,8 +701,8 @@ export class OneRosterService {
     for (const p of preparadas) {
       if (!p.deOutraEscola) continue;
       if (p.papel === "estudante" || p.papel === "aluno") {
-        const feito = await this.escolasDaRede.transferirAluno({
-          alunoId: p.deOutraEscola.id,
+        const feito = await this.escolasDaRede.transferirEstudante({
+          estudanteId: p.deOutraEscola.id,
           escolaDestinoId: escolaId,
         });
         if (feito && !feito.jaEstava) relatorio.transferidos += 1;
@@ -840,7 +840,7 @@ export class OneRosterService {
           const fim = encerrar ? new Date() : dataDoCampo(linha.campo("endDate"));
           /* `primary` do padrão diz qual é a turma de referência. Ausente, vale
              o tipo da turma: `homeroom` é a de referência, `scheduled` é a de
-             componente — que o mesmo aluno cursa EM PARALELO. */
+             componente — que o mesmo estudante cursa EM PARALELO. */
           const bruto = linha.campo("primary");
           const principal = bruto ? ehVerdadeiro(bruto) : turma.tipo === "regular";
           await matricularEm(tx, {

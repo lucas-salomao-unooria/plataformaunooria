@@ -13,7 +13,7 @@ export const AbrirSchema = z.object({
   expVersion: z.string().min(1).max(32),
 });
 
-/** Um cartão como o ALUNO o recebe: **sem `legitima`** e sem `aceita`. O
+/** Um cartão como o ESTUDANTE o recebe: **sem `legitima`** e sem `aceita`. O
  *  gabarito fica no servidor (regra 3). */
 export const CartaoPublicoSchema = z.object({
   id: z.string(),
@@ -26,7 +26,7 @@ export const CartaoPublicoSchema = z.object({
 });
 
 /**
- * A partida aberta. A BOLHA vem do SERVIDOR — era `alunoSlot % 3` no navegador,
+ * A partida aberta. A BOLHA vem do SERVIDOR — era `estudanteSlot % 3` no navegador,
  * o que punha no bundle a condição do próprio instrumento e deixava as três
  * versões legíveis antes da aula.
  */
@@ -142,7 +142,6 @@ export const RelatorioDoEstudanteSchema = z.object({
   relatorio: RelatorioDaPartidaSchema.nullable(),
 });
 
-export const RelatorioDoAlunoSchema = RelatorioDoEstudanteSchema;
 
 export const TurmasDaVilaSchema = z.object({
   turmas: z.array(
@@ -179,7 +178,6 @@ export const ResumoDaTurmaSchema = z.object({
 
 export const EstudanteDaTurmaSchema = z.object({
   estudanteId: Uuid.optional(),
-  alunoId: Uuid.optional(),
   id: Uuid.optional(),
   nome: z.string(),
   partidas: z.number().int().nonnegative(),
@@ -199,7 +197,6 @@ export const EstudantesDaTurmaSchema = z.object({
   alunos: z.array(EstudanteDaTurmaSchema).optional(),
 });
 
-export const AlunosDaTurmaSchema = EstudantesDaTurmaSchema;
 
 export const TurmaZeradaSchema = z.object({
   partidas: z.number().int().nonnegative(),

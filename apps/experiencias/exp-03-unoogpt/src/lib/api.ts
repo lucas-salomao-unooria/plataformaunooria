@@ -36,10 +36,9 @@ export const api = {
 };
 
 export function estudanteAtual() {
-  return exigir().estudante ?? (exigir() as any).aluno;
+  return exigir().estudante;
 }
 
-export const alunoAtual = estudanteAtual;
 
 export function concluir(dados: Record<string, unknown>) {
   // SEM `score`: a missão não dá nota. "O propósito não é acertar a alocação" —

@@ -614,6 +614,18 @@ testado no container} &
   DELE --- e a turma sai de \cd{users.turma\_id}, o cache da matrícula
   principal. Estudante sem \cd{turma\_id} (importado sem enturmar, ou movido pela
   metade) só alcança atividade sem turma. Conferir em \rota{/admin/turmas}.\\
+\textbf{\rota{PATCH /usuarios/:id} devolve 500 ao trocar o papel} &
+  O corpo trouxe \cd{papel: "aluno"}. O \cd{z.enum} da rota aceita o vocabulário
+  antigo de propósito (\adrr{ADR-51}), mas \cd{users\_role\_check} só admite
+  \cd{estudante} --- o valor cru estourava no banco em vez de virar 400. Corrigido
+  normalizando na escrita (\adrr{ADR-53}); se reaparecer em OUTRA coluna com
+  \cd{CHECK}, é o mesmo caminho que faltou.\\
+\zebra \textbf{A experiência expira em 8s e o console fala de \cd{hub:init}} &
+  \emph{Bundle} publicado antes do \emph{rename} do vocabulário, lendo
+  \cd{aluno} num \cd{hub:init} que já manda \cd{estudante}. NÃO deveria
+  acontecer: o hub emite as DUAS chaves justamente para isso (\adrr{ADR-52}). Se
+  acontecer, o hub em produção é anterior à ADR-52 --- conferir
+  \arq{lib/embed-experiencia.ts}.\\
 \bottomrule
 \end{tabularx}
 

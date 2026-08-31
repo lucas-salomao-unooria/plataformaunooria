@@ -181,7 +181,7 @@ export function exemploOneRoster(arquivo: ArquivoOneRoster, ctx: ContextoDoExemp
           ),
         ];
 
-      /* `primary=true` é a matrícula de REFERÊNCIA do aluno — a que responde
+      /* `primary=true` é a matrícula de REFERÊNCIA do estudante — a que responde
          "de que turma ele é". Sem `endDate`: sair da turma é datar o fim, nunca
          apagar a linha. */
       case "enrollments":
@@ -191,7 +191,7 @@ export function exemploOneRoster(arquivo: ArquivoOneRoster, ctx: ContextoDoExemp
           linha("exemplo.e-3", "active", modificado, turma, escolaId, "exemplo.u-1099", "teacher", "true", inicio, ""),
         ];
 
-      /* Papel no nível da ESCOLA — o que corrige quem entrou como aluno por
+      /* Papel no nível da ESCOLA — o que corrige quem entrou como estudante por
          falta da coluna `role` em `users.csv`. Gestor mora aqui, não em
          `enrollments.csv`: ele vê a escola inteira sem estar em turma nenhuma. */
       case "roles":

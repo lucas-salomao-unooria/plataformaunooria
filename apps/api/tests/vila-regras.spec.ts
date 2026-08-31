@@ -171,7 +171,7 @@ describe("contrato do payload", () => {
 /* ------------------------------------------------------------------- bolhas */
 
 describe("a bolha", () => {
-  test("é balanceada dentro da turma: 30 alunos dão 10/10/10", () => {
+  test("é balanceada dentro da turma: 30 estudantes dão 10/10/10", () => {
     const contagem: Partial<Record<Bolha, number>> = {};
     for (let i = 0; i < 30; i += 1) {
       const b = escolherBolha(contagem, "8EF");
@@ -181,7 +181,7 @@ describe("a bolha", () => {
   });
 
   test("numa sala de 25, nenhuma bolha fica com menos de 8", () => {
-    // O debate depende de as TRÊS estarem na sala. `nº do aluno mod 3` dava isso
+    // O debate depende de as TRÊS estarem na sala. `nº do estudante mod 3` dava isso
     // de graça; hash de uuid poderia dar 14/6/5.
     const contagem: Partial<Record<Bolha, number>> = {};
     for (let i = 0; i < 25; i += 1) {

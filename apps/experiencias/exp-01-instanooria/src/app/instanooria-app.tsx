@@ -83,7 +83,6 @@ export interface EstudanteCliente {
   avatar: string;
 }
 
-export type AlunoCliente = EstudanteCliente;
 
 /**
  * Shell do Instanooria (SPA): onboarding → feed → encerramento. O cliente só
@@ -108,7 +107,8 @@ export function InstanooriaApp({
   faseInicial: FaseCliente;
   missao: MissaoCliente;
   estudante?: EstudanteCliente;
-  aluno?: AlunoCliente;
+  /** @deprecated Alias do payload anterior ao rename (ADR-51). */
+  aluno?: EstudanteCliente;
 }) {
   const dadosEstudante = (estudante ?? aluno)!;
   const [runId, setRunId] = useState(runIdInicial);
@@ -629,7 +629,6 @@ export function InstanooriaApp({
               <Stories
                 posts={posts}
                 avatarDoEstudante={dadosEstudante.avatar}
-                avatarDoAluno={dadosEstudante.avatar}
                 aoGestoDeStory={(tipo, postId) => registrar(tipo, postId)}
                 aoDwellDeStory={(postId, dwellMs) =>
                   registrar("visto", postId, { dwellMs, contexto: "story" })
@@ -658,7 +657,6 @@ export function InstanooriaApp({
                         salvo={salvos.has(item.post.id)}
                         seguindo={seguidosPorPost.has(item.post.id)}
                         comentariosDoEstudante={comentariosMeus[item.post.id] ?? 0}
-                        comentariosDoAluno={comentariosMeus[item.post.id] ?? 0}
                       />
                     ) : item.tipo === "sugestoes" ? (
                       <ModuloSugestoes
@@ -704,7 +702,6 @@ export function InstanooriaApp({
               handle={dadosEstudante.handle}
               displayName={dadosEstudante.displayName}
               avatarDoEstudante={dadosEstudante.avatar}
-              avatarDoAluno={dadosEstudante.avatar}
               salvos={salvosCompletos}
               meusPosts={meusPosts}
               aoAbrirMenu={() => setMenuDaContaAberto(true)}
@@ -728,16 +725,13 @@ export function InstanooriaApp({
             if (proxima === "notificacoes") setNaoLidas(0);
           }}
           avatarDoEstudante={dadosEstudante.avatar}
-          avatarDoAluno={dadosEstudante.avatar}
           naoLidas={naoLidas}
         />
 
         <ComentariosSheet
           post={postDeComentarios}
           avatarDoEstudante={dadosEstudante.avatar}
-          avatarDoAluno={dadosEstudante.avatar}
           handleDoEstudante={dadosEstudante.handle}
-          handleDoAluno={dadosEstudante.handle}
           aoFechar={() => setPostDeComentarios(null)}
           aoComentar={(post, texto) => {
             setComentariosMeus((atual) => ({
@@ -808,7 +802,6 @@ export function InstanooriaApp({
         {compositorAberto ? (
           <Compositor
             avatarDoEstudante={dadosEstudante.avatar}
-            avatarDoAluno={dadosEstudante.avatar}
             aoFechar={() => setCompositorAberto(false)}
             aoPublicar={async (texto, template) => {
               setCompositorAberto(false);

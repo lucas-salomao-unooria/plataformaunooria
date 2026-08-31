@@ -64,13 +64,13 @@ export function rodarModelo(
 export type RodadaDoModelo = ReturnType<typeof rodarModelo>;
 
 /**
- * Ferramenta de carregar dados. O Cientista chama quando o aluno CONCORDA em
+ * Ferramenta de carregar dados. O Cientista chama quando o estudante CONCORDA em
  * usar algo — a escolha acontece na conversa, não num painel de caixas.
  */
 export const FERRAMENTA_USAR_DADOS: AiFerramenta = {
   nome: 'usar_dados',
   descricao:
-    'Passa a usar os dados indicados. Eles SOMAM ao que já está carregado — nada é descartado e não há teto. Chame quando o aluno pedir, concordar, ou quando a pergunta dele exigir uma fonte que ainda não está em uso.',
+    'Passa a usar os dados indicados. Eles SOMAM ao que já está carregado — nada é descartado e não há teto. Chame quando o estudante pedir, concordar, ou quando a pergunta dele exigir uma fonte que ainda não está em uso.',
   parametros: {
     type: 'object',
     properties: {
@@ -86,15 +86,15 @@ export const FERRAMENTA_USAR_DADOS: AiFerramenta = {
 };
 
 /**
- * Registrar a alocação. O Cientista NÃO escolhe o destino — mas quando o aluno
- * escolhe, é ele quem opera o rádio. Sem esta ferramenta, o aluno dizia "então
+ * Registrar a alocação. O Cientista NÃO escolhe o destino — mas quando o estudante
+ * escolhe, é ele quem opera o rádio. Sem esta ferramenta, o estudante dizia "então
  * aloca pra lá" e batia numa parede: o Cientista recusava a ação inteira, e não
  * só a decisão.
  */
 export const FERRAMENTA_ALOCAR: AiFerramenta = {
   nome: 'alocar_equipe',
   descricao:
-    'Registra o BAIRRO DE DESTINO de uma ou das duas equipes. Chame apenas quando o aluno nomear lugares ("manda a Alfa para o Vale Verde"). NÃO use para confirmar: se ele disser "confirmo", "pode mandar" ou "pode enfrentar a tempestade" sem nomear bairro novo, use confirmar_alocacao. Nunca chame por iniciativa própria nem sugira destino.',
+    'Registra o BAIRRO DE DESTINO de uma ou das duas equipes. Chame apenas quando o estudante nomear lugares ("manda a Alfa para o Vale Verde"). NÃO use para confirmar: se ele disser "confirmo", "pode mandar" ou "pode enfrentar a tempestade" sem nomear bairro novo, use confirmar_alocacao. Nunca chame por iniciativa própria nem sugira destino.',
   parametros: {
     type: 'object',
     properties: {
@@ -122,7 +122,7 @@ export const FERRAMENTA_CONFIRMAR: AiFerramenta = {
   parametros: {
     type: 'object',
     properties: {
-      confirmado: { type: 'boolean', description: 'true quando o aluno confirmou em palavras.' },
+      confirmado: { type: 'boolean', description: 'true quando o estudante confirmou em palavras.' },
     },
     required: ['confirmado'],
   },
@@ -131,7 +131,7 @@ export const FERRAMENTA_CONFIRMAR: AiFerramenta = {
 /**
  * Pôr DUAS alternativas de alocação na mesa, estruturadas.
  *
- * O prompt já obriga a propor duas opções e perguntar qual o aluno quer — isto
+ * O prompt já obriga a propor duas opções e perguntar qual o estudante quer — isto
  * não decide nada de novo, só faz a proposta chegar como dois botões em vez de
  * duas linhas para digitar. Sem campo de texto: nenhum número da LLM entra no
  * cartão, e o servidor recusa a proposta feita antes de o modelo ter rodado.
@@ -139,7 +139,7 @@ export const FERRAMENTA_CONFIRMAR: AiFerramenta = {
 export const FERRAMENTA_PROPOR: AiFerramenta = {
   nome: 'propor_opcoes',
   descricao:
-    'Põe na mesa DUAS alternativas de alocação para o aluno escolher, cada uma com um bairro para a Alfa e outro para a Bravo. Chame junto com a sua fala sempre que for oferecer alternativas, e só depois de ter rodado o modelo. NÃO é decidir: ele escolhe uma. Nunca chame com as duas equipes no mesmo bairro.',
+    'Põe na mesa DUAS alternativas de alocação para o estudante escolher, cada uma com um bairro para a Alfa e outro para a Bravo. Chame junto com a sua fala sempre que for oferecer alternativas, e só depois de ter rodado o modelo. NÃO é decidir: ele escolhe uma. Nunca chame com as duas equipes no mesmo bairro.',
   parametros: {
     type: 'object',
     properties: {
@@ -167,7 +167,7 @@ export const FERRAMENTA_PROPOR: AiFerramenta = {
 export const FERRAMENTA_RODAR_MODELO: AiFerramenta = {
   nome: 'rodar_modelo',
   descricao:
-    'Roda o modelo Sauá-1 com os conjuntos de dados carregados e devolve estimativas por bairro, com faixa de incerteza, pontos cegos e tendência. Use sempre que o aluno pedir uma leitura do risco, comparação entre bairros ou o resultado do processamento.',
+    'Roda o modelo Sauá-1 com os conjuntos de dados carregados e devolve estimativas por bairro, com faixa de incerteza, pontos cegos e tendência. Use sempre que o estudante pedir uma leitura do risco, comparação entre bairros ou o resultado do processamento.',
   parametros: {
     type: 'object',
     properties: {

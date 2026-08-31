@@ -297,7 +297,7 @@ export function ImportarPessoas({
         <p className="text-[14px] text-unooria-neutral-700">
           Colunas: <code>cpf, matricula, nome, usuario, email, papel, turma, serie, turno</code>.
           Obrigatórias: <strong>nome</strong> e <strong>papel</strong> (
-          <code>estudante</code> ou <code>aluno</code>, <code>professor</code> ou <code>coordenacao</code>); para estudante,
+          <code>estudante</code> ou <code>estudante</code>, <code>professor</code> ou <code>coordenacao</code>); para estudante,
           também <strong>turma</strong> e <strong>serie</strong>. A ordem das colunas não importa.
         </p>
         <p className="text-[14px] text-unooria-neutral-700">

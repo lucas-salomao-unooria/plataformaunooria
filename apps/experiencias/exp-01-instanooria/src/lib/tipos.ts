@@ -36,7 +36,6 @@ export interface ComentarioCliente {
   likesCount: number;
   timestampLabel: string;
   doEstudante?: boolean;
-  doAluno?: boolean;
 }
 
 /** Item da timeline do feed: post, módulo de sugestões ou o post do estudante. */

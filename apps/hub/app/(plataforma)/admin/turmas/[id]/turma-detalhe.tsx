@@ -65,7 +65,6 @@ interface EscolaDaRede {
 
 interface Historico {
   estudante?: { nome: string; usuario: string; cpf: string | null };
-  aluno?: { nome: string; usuario: string; cpf: string | null };
   escolas: Array<{
     id: string;
     nome: string;
@@ -85,7 +84,6 @@ const dataCurta = (iso: string | null) =>
 interface DadosDaTurma {
   turma: { id: string; nome: string; serie: string; turno: string | null; periodo: string };
   estudantes?: Matriculado[];
-  alunos?: Matriculado[];
   professores: Matriculado[];
 }
 
@@ -455,7 +453,7 @@ export function TurmaDetalhe({
 
   const lista =
     aba === "estudantes"
-      ? (dados?.estudantes ?? dados?.alunos ?? [])
+      ? (dados?.estudantes ?? [])
       : (dados?.professores ?? []);
 
   return (
@@ -481,7 +479,7 @@ export function TurmaDetalhe({
           {
             value: "estudantes",
             label: "Estudantes",
-            badge: (dados?.estudantes ?? dados?.alunos ?? []).length,
+            badge: (dados?.estudantes ?? []).length,
             showIcon: false,
           },
           {
@@ -564,13 +562,13 @@ export function TurmaDetalhe({
 
       <Modal isOpen={Boolean(historico)} onClose={() => setHistorico(null)} size="md" theme="light">
         <ModalHeader>
-          <ModalTitle>Histórico de {historico?.estudante?.nome ?? historico?.aluno?.nome}</ModalTitle>
+          <ModalTitle>Histórico de {historico?.estudante?.nome}</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-5">
             <p className="text-[13px] text-unooria-neutral-500">
-              {historico?.estudante?.usuario ?? historico?.aluno?.usuario}
-              {(historico?.estudante?.cpf ?? historico?.aluno?.cpf) ? ` · CPF ${historico?.estudante?.cpf ?? historico?.aluno?.cpf}` : ""}
+              {historico?.estudante?.usuario}
+              {historico?.estudante?.cpf ? ` · CPF ${historico.estudante.cpf}` : ""}
             </p>
 
             <section className="flex flex-col gap-2">

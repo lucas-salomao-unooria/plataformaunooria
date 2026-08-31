@@ -8,7 +8,7 @@ import {
 } from '../../src/unoogpt/regras/justificativa';
 
 describe('a pergunta que separa decisão de palpite', () => {
-  it('só oferece as fontes que o aluno abriu — mais a intuição', () => {
+  it('só oferece as fontes que o estudante abriu — mais a intuição', () => {
     const opcoes = opcoesDeJustificativa(['previsao', 'viaria']);
     expect(opcoes.map((o) => o.valor)).toEqual(['previsao', 'viaria', INTUICAO]);
     expect(opcoes.at(-1)!.rotulo).toBe(ROTULO_INTUICAO);
@@ -21,7 +21,7 @@ describe('a pergunta que separa decisão de palpite', () => {
   });
 
   it('fonte NÃO carregada não vale: a lista não pode virar gabarito', () => {
-    // Aceitar 'estudo' aqui seria dizer ao aluno, pela interface, qual fonte
+    // Aceitar 'estudo' aqui seria dizer ao estudante, pela interface, qual fonte
     // ele deveria ter olhado — o painel de fontes que o ADR-0009 recusou.
     expect(justificativaValida('estudo', ['previsao'])).toBe(false);
     expect(opcoesDeJustificativa(['previsao']).map((o) => o.valor)).not.toContain('estudo');

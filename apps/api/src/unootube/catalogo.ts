@@ -22,7 +22,7 @@ export interface Video {
   /**
    * Métricas de popularidade, como o app real as escreve. São COSMÉTICAS: o
    * gabarito continua sendo `factual`, e nenhuma delas entra em conta nenhuma.
-   * Existem porque a missão pede que o aluno leia popularidade sem nenhuma
+   * Existem porque a missão pede que o estudante leia popularidade sem nenhuma
    * marcação de verdadeiro ou falso — o vídeo fake é o que tem os números
    * grandes, e é exatamente esse contraste que o ranking depois desmonta.
    */

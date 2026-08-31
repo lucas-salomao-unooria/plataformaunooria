@@ -141,18 +141,18 @@ describe("perfisParaOAto1", () => {
   }
 
   /** Grava uma partida concluída com o perfil pedido, sem passar pelo jogo. */
-  async function semear(alunoId: string, amostraSuficiente: boolean, graus?: Record<string, string>) {
+  async function semear(estudanteId: string, amostraSuficiente: boolean, graus?: Record<string, string>) {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA, estudanteId: alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA, estudanteId: estudanteId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA, sessaoId: sessao.id, estudanteId: alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA, sessaoId: sessao.id, estudanteId: estudanteId, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: graus ?? base.graus, amostraSuficiente,
       },
     });
@@ -184,7 +184,7 @@ describe("perfisParaOAto1", () => {
 
   test("separa pronto, descartado e sem partida — e NOMEIA quem ficou de fora", async () => {
     const r = await service.perfisParaOAto1(ESCOLA, turmaId);
-    expect(r.prontos.map((p) => p.alunoId)).toEqual([comPerfil]);
+    expect(r.prontos.map((p) => p.estudanteId)).toEqual([comPerfil]);
     expect(r.descartados.map((d) => d.nome)).toEqual(["ato1.b"]);
     expect(r.descartados[0]!.motivo).toMatch(/curta demais/);
     expect(r.semPartida).toBe(1);
@@ -233,18 +233,18 @@ describe("importar para a atividade (Ato 1)", () => {
     await prisma.escola.deleteMany({ where: { id: ESCOLA_AT } });
   }
 
-  async function semearPerfil(alunoId: string) {
+  async function semearPerfil(estudanteId: string) {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA_AT, estudanteId: alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA_AT, estudanteId: estudanteId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA_AT, sessaoId: sessao.id, estudanteId: alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA_AT, sessaoId: sessao.id, estudanteId: estudanteId, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: base.graus, amostraSuficiente: true,
       },
     });
@@ -314,7 +314,7 @@ describe("importar para a atividade (Ato 1)", () => {
     // A trava desta rota. `largada.ts` dá precedência a `ladoForcado` justamente
     // porque a redistribuição é decisão pedagógica do professor, tomada antes da
     // aula — e uma importação que a apagasse faria isso em silêncio, com o feed
-    // do aluno nascendo do outro lado sem ninguém entender por quê.
+    // do estudante nascendo do outro lado sem ninguém entender por quê.
     await prisma.perfilImportado.update({
       where: { activityId_estudanteId: { activityId, estudanteId: redistribuido } },
       data: { ladoForcado: "B" },
@@ -370,7 +370,7 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
   let turmaId = "";
   let professorId = "";
   let activityId = "";
-  let aluno = "";
+  let estudante = "";
 
   const ANTAGONISMO = {
     perguntas_candidatas: [
@@ -424,9 +424,9 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
         select: { id: true },
       })
     ).id;
-    aluno = (
+    estudante = (
       await prisma.user.create({
-        data: { role: "estudante", escolaId: ESCOLA_LG, turmaId, username: "lg.a", displayName: "Aluno LG", passwordHash: "x" },
+        data: { role: "estudante", escolaId: ESCOLA_LG, turmaId, username: "lg.a", displayName: "Estudante LG", passwordHash: "x" },
         select: { id: true },
       })
     ).id;
@@ -436,14 +436,14 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA_LG, estudanteId: aluno, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA_LG, estudanteId: estudante, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA_LG, sessaoId: sessao.id, estudanteId: aluno, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA_LG, sessaoId: sessao.id, estudanteId: estudante, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: base.graus, amostraSuficiente: true,
       },
     });
@@ -463,7 +463,7 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
   afterAll(limpar);
 
   test("SEM importar, a largada cai no sorteio", async () => {
-    const antes = await resolverLargada(prisma, activityId, aluno, ANTAGONISMO);
+    const antes = await resolverLargada(prisma, activityId, estudante, ANTAGONISMO);
     expect(antes.ladoOrigem).toBe("sorteio");
     expect(antes.perfilOrigem).toBe("ausente");
   });
@@ -478,7 +478,7 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
       ),
     );
 
-    const depois = await resolverLargada(prisma, activityId, aluno, ANTAGONISMO);
+    const depois = await resolverLargada(prisma, activityId, estudante, ANTAGONISMO);
     expect(depois.perfilOrigem).toBe("jogo");
     expect(depois.perfilDominante).toBe("autotranscendencia");
     expect(depois.ladoOrigem).toBe("perfil");
@@ -490,10 +490,10 @@ describe("o perfil da Vila decide o lado no Instanooria", () => {
 
   test("o professor redistribuir continua vencendo o perfil", async () => {
     await prisma.perfilImportado.update({
-      where: { activityId_estudanteId: { activityId, estudanteId: aluno } },
+      where: { activityId_estudanteId: { activityId, estudanteId: estudante } },
       data: { ladoForcado: "A" },
     });
-    const depois = await resolverLargada(prisma, activityId, aluno, ANTAGONISMO);
+    const depois = await resolverLargada(prisma, activityId, estudante, ANTAGONISMO);
     expect(depois.ladoOrigem).toBe("redistribuido");
     expect(depois.ladoInicial).toBe("A");
   });
@@ -521,8 +521,8 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
   let professorId = "";
   let turmaA = "";
   let turmaB = "";
-  let alunoDaTurmaA = "";
-  let alunoDaTurmaB = "";
+  let estudanteDaTurmaA = "";
+  let estudanteDaTurmaB = "";
   let atividadeDaTurmaA = "";
   let atividadeSemTurma = "";
 
@@ -537,18 +537,18 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
   }
 
   /** Uma partida completa, com perfil medido na versão vigente. */
-  async function semear(alunoId: string, turmaId: string) {
+  async function semear(estudanteId: string, turmaId: string) {
     const base = perfilCheio();
     const sessao = await prisma.vilaSessao.create({
       data: {
-        escolaId: ESCOLA_TT, estudanteId: alunoId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
+        escolaId: ESCOLA_TT, estudanteId: estudanteId, turmaId, expVersion: "1.0.0", schemaVersion: 1,
         bolha: "A", cartoesServidos: 4, status: "completa", concluidaEm: new Date(),
       },
       select: { id: true },
     });
     await prisma.vilaPerfil.create({
       data: {
-        escolaId: ESCOLA_TT, sessaoId: sessao.id, estudanteId: alunoId, versaoMapeamento: VERSAO_MAPEAMENTO,
+        escolaId: ESCOLA_TT, sessaoId: sessao.id, estudanteId: estudanteId, versaoMapeamento: VERSAO_MAPEAMENTO,
         valores: base.valores, graus: base.graus, amostraSuficiente: true,
       },
     });
@@ -579,16 +579,16 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
       })
     ).id;
 
-    const criarAluno = (username: string, turmaId: string) =>
+    const criarEstudante = (username: string, turmaId: string) =>
       prisma.user.create({
         data: { role: "estudante", escolaId: ESCOLA_TT, turmaId, username, displayName: username, passwordHash: "x" },
         select: { id: true },
       });
 
-    alunoDaTurmaA = (await criarAluno("tt.a", turmaA)).id;
-    alunoDaTurmaB = (await criarAluno("tt.b", turmaB)).id;
-    await semear(alunoDaTurmaA, turmaA);
-    await semear(alunoDaTurmaB, turmaB);
+    estudanteDaTurmaA = (await criarEstudante("tt.a", turmaA)).id;
+    estudanteDaTurmaB = (await criarEstudante("tt.b", turmaB)).id;
+    await semear(estudanteDaTurmaA, turmaA);
+    await semear(estudanteDaTurmaB, turmaB);
 
     atividadeDaTurmaA = (await criarAtividade(turmaA)).id;
     atividadeSemTurma = (await criarAtividade(null)).id;
@@ -607,7 +607,7 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
   test("com CORPO VAZIO, a turma sai da atividade — não é a escola inteira", async () => {
     const r = await importar(atividadeDaTurmaA);
 
-    /* A escola tem dois alunos com partida, um em cada turma. Só o da turma da
+    /* A escola tem dois estudantes com partida, um em cada turma. Só o da turma da
        atividade entra — e `semPartida` conta zero, porque a única criança da
        turma A já jogou. Antes, isto importava 2 e dizia "0 ainda não jogaram"
        sobre uma sala que o professor nem tem. */
@@ -618,13 +618,13 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
       where: { activityId: atividadeDaTurmaA },
       select: { estudanteId: true },
     });
-    expect(linhas.map((l) => l.estudanteId)).toEqual([alunoDaTurmaA]);
+    expect(linhas.map((l) => l.estudanteId)).toEqual([estudanteDaTurmaA]);
   });
 
-  test("o aluno de outra turma não entra", async () => {
+  test("o estudante de outra turma não entra", async () => {
     await importar(atividadeDaTurmaA);
     const doOutro = await prisma.perfilImportado.findFirst({
-      where: { activityId: atividadeDaTurmaA, estudanteId: alunoDaTurmaB },
+      where: { activityId: atividadeDaTurmaA, estudanteId: estudanteDaTurmaB },
     });
     expect(doOutro).toBeNull();
   });
@@ -639,7 +639,7 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
     await importar(atividadeDaTurmaA);
 
     const linha = await prisma.perfilImportado.findUniqueOrThrow({
-      where: { activityId_estudanteId: { activityId: atividadeDaTurmaA, estudanteId: alunoDaTurmaA } },
+      where: { activityId_estudanteId: { activityId: atividadeDaTurmaA, estudanteId: estudanteDaTurmaA } },
       select: { vilaSessaoId: true, versaoMapeamento: true, origem: true },
     });
 
@@ -654,12 +654,12 @@ describe("a importação sabe de que turma e de que medida está falando", () =>
       where: { id: linha.vilaSessaoId! },
       select: { estudanteId: true },
     });
-    expect(sessao.estudanteId).toBe(alunoDaTurmaA);
+    expect(sessao.estudanteId).toBe(estudanteDaTurmaA);
   });
 
   test("reimportar ATUALIZA a versão, senão o aviso da tela nunca sumiria", async () => {
     await importar(atividadeDaTurmaA);
-    const chave = { activityId_estudanteId: { activityId: atividadeDaTurmaA, estudanteId: alunoDaTurmaA } };
+    const chave = { activityId_estudanteId: { activityId: atividadeDaTurmaA, estudanteId: estudanteDaTurmaA } };
 
     // Simula uma linha medida sob mapeamento antigo (o estado que a tela avisa).
     await prisma.perfilImportado.update({

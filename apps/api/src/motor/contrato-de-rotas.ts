@@ -216,7 +216,6 @@ export const PostDoEstudanteSchema = z.object({
   post: z.unknown(),
   comentariosDeApoio: z.array(z.unknown()),
 });
-export const PostDoAlunoSchema = PostDoEstudanteSchema;
 
 export const ReacoesGeradasSchema = z.object({
   reacoes: z.array(z.unknown()),

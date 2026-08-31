@@ -5,7 +5,7 @@ import type { Config } from "tailwindcss";
  * validado no projeto origem. NENHUMA cor/fonte institucional entra aqui:
  * cor e tipografia da plataforma vêm dos tokens do DS via
  * `@edu/ui/styles/plataforma.css` (classes `.text-unooria-*` etc.), para a
- * marca nunca vazar por nome de classe para superfícies do aluno.
+ * marca nunca vazar por nome de classe para superfícies do estudante.
  */
 export default {
   content: [

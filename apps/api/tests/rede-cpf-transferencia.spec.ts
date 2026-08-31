@@ -8,7 +8,7 @@ import { servicosDeTeste } from "./servicos-de-teste";
  * A REDE: uma pessoa, várias escolas — e o CPF como identidade imutável.
  *
  * As duas regras que este arquivo protege são assimétricas de propósito:
- * professor ACUMULA escolas, aluno é TRANSFERIDO. E as duas dependem de o CPF
+ * professor ACUMULA escolas, estudante é TRANSFERIDO. E as duas dependem de o CPF
  * ser reconhecido na rede inteira, não na escola.
  */
 
@@ -25,7 +25,7 @@ const { rostering, escolas } = servicosDeTeste(prisma);
  * da REDE inteira, não da escola: número repetido em outra suíte colide em
  * paralelo, com uma mensagem que não fala da suíte vizinha.
  */
-const CPF_ALUNA = "529.982.247-25";
+const CPF_ESTUDANTE = "529.982.247-25";
 const CPF_PROFESSORA = "045.833.259-32";
 
 const csv = (...linhas: string[]) => linhas.join("\n");
@@ -57,14 +57,14 @@ afterAll(async () => {
 
 describe("CPF", () => {
   test("recusa dígito verificador errado — é isso que impede identidade fantasma", () => {
-    expect(cpfEhValido(CPF_ALUNA)).toBe(true);
+    expect(cpfEhValido(CPF_ESTUDANTE)).toBe(true);
     expect(cpfEhValido("529.982.247-26")).toBe(false);
     expect(cpfEhValido("111.111.111-11")).toBe(false); // passa no módulo 11 e não é CPF
     expect(cpfEhValido("123")).toBe(false);
   });
 
   test("guarda só os dígitos: a pontuação é da tela", () => {
-    expect(digitosDoCpf(CPF_ALUNA)).toBe("52998224725");
+    expect(digitosDoCpf(CPF_ESTUDANTE)).toBe("52998224725");
     expect(formatarCpf("52998224725")).toBe("529.982.247-25");
   });
 
@@ -73,7 +73,7 @@ describe("CPF", () => {
       ESCOLA_A,
       csv(
         "cpf,matricula,nome,papel,turma,serie",
-        `${CPF_ALUNA},RA-A1,Helena Braga,aluno,6A,6EF`,
+        `${CPF_ESTUDANTE},RA-A1,Helena Braga,estudante,6A,6EF`,
       ),
       { senhaPadrao: "SenhaDoLote1" },
     );
@@ -89,7 +89,7 @@ describe("CPF", () => {
   test("CPF inválido é erro de linha, e a linha não entra", async () => {
     const r = await rostering.importarPlanilha(
       ESCOLA_A,
-      csv("cpf,nome,papel,turma,serie", "111.222.333-44,Ninguém,aluno,6A,6EF"),
+      csv("cpf,nome,papel,turma,serie", "111.222.333-44,Ninguém,estudante,6A,6EF"),
       { senhaPadrao: "SenhaDoLote1" },
     );
     expect(r.criados).toBe(0);
@@ -101,8 +101,8 @@ describe("CPF", () => {
       ESCOLA_A,
       csv(
         "cpf,nome,papel,turma,serie",
-        `${CPF_ALUNA},Helena Braga,aluno,6A,6EF`,
-        `${CPF_ALUNA},Helena B. Outra,aluno,6A,6EF`,
+        `${CPF_ESTUDANTE},Helena Braga,estudante,6A,6EF`,
+        `${CPF_ESTUDANTE},Helena B. Outra,estudante,6A,6EF`,
       ),
       { senhaPadrao: "SenhaDoLote1" },
     );
@@ -150,14 +150,14 @@ describe("professor ACUMULA escolas", () => {
   });
 });
 
-describe("aluno é TRANSFERIDO, não duplicado", () => {
+describe("estudante é TRANSFERIDO, não duplicado", () => {
   test("importar na escola B o CPF que está na A transfere, sem criar ninguém", async () => {
-    const antes = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
+    const antes = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ESTUDANTE) } });
     expect(antes.escolaId).toBe(ESCOLA_A);
 
     const r = await rostering.importarPlanilha(
       ESCOLA_B,
-      csv("cpf,matricula,nome,papel,turma,serie", `${CPF_ALUNA},RA-A1,Helena Braga,aluno,7B,7EF`),
+      csv("cpf,matricula,nome,papel,turma,serie", `${CPF_ESTUDANTE},RA-A1,Helena Braga,estudante,7B,7EF`),
       { senhaPadrao: "SenhaDoLote1" },
     );
     expect(r.criados).toBe(0);
@@ -171,7 +171,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
   });
 
   test("uma lotação ativa só, e a anterior fica registrada com data de saída", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ESTUDANTE) } });
     const lotacoes = await prisma.lotacao.findMany({
       where: { usuarioId: helena.id, papel: { in: ["estudante", "aluno"] } },
       orderBy: { escolaId: "asc" },
@@ -182,7 +182,7 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
   });
 
   test("a matrícula na turma da escola de origem foi ENCERRADA", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ESTUDANTE) } });
     const naOrigem = await prisma.matricula.findMany({
       where: { usuarioId: helena.id, escolaId: ESCOLA_A },
     });
@@ -196,15 +196,15 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
     expect(noDestino.map((m) => m.turma.nome)).toEqual(["7B"]);
   });
 
-  test("o professor da escola de ORIGEM deixa de ver a aluna", async () => {
+  test("o professor da escola de ORIGEM deixa de ver a estudante", async () => {
     const turma6A = await prisma.turma.findFirstOrThrow({ where: { escolaId: ESCOLA_A, nome: "6A" } });
     const pessoas = await rostering.pessoasDaTurma(ESCOLA_A, turma6A.id);
     expect(pessoas?.alunos.map((a) => a.nome)).not.toContain("Helena Braga");
   });
 
-  test("o histórico ATRAVESSA as escolas — é a identidade que segue o aluno", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
-    const historico = await escolas.historicoDoAluno(helena.id);
+  test("o histórico ATRAVESSA as escolas — é a identidade que segue o estudante", async () => {
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ESTUDANTE) } });
+    const historico = await escolas.historicoDoEstudante(helena.id);
 
     /* A ORDEM importa: a tela imprime esta lista como está, e a primeira linha é
        a que o adulto lê como "a escola dela". Aqui as duas lotações têm o MESMO
@@ -223,12 +223,12 @@ describe("aluno é TRANSFERIDO, não duplicado", () => {
     ]);
     // O gestor VÊ o CPF, formatado como em qualquer documento: é como ele confere
     // que é a criança certa.
-    expect(historico?.aluno.cpf).toBe(CPF_ALUNA);
+    expect(historico?.aluno.cpf).toBe(CPF_ESTUDANTE);
   });
 
   test("transferir para a escola onde já está é no-op, não uma segunda entrada", async () => {
-    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ALUNA) } });
-    const feito = await escolas.transferirAluno({ alunoId: helena.id, escolaDestinoId: ESCOLA_B });
+    const helena = await prisma.user.findFirstOrThrow({ where: { cpf: digitosDoCpf(CPF_ESTUDANTE) } });
+    const feito = await escolas.transferirEstudante({ estudanteId: helena.id, escolaDestinoId: ESCOLA_B });
     expect(feito).toMatchObject({ jaEstava: true });
     const ativas = await prisma.lotacao.count({
       where: { usuarioId: helena.id, papel: { in: ["estudante", "aluno"] }, fim: null },

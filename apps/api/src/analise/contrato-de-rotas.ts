@@ -224,10 +224,8 @@ export const AnaliseDeProdutoSchema = z.object({
       dwellDosOutros: z.number().nullable(),
       delta: z.number().nullable(),
       amostra: z.object({
-        estudantesDoPerfil: z.number().optional(),
-        alunosDoPerfil: z.number(),
-        estudantesDeOutros: z.number().optional(),
-        alunosDeOutros: z.number(),
+        estudantesDoPerfil: z.number(),
+        estudantesDeOutros: z.number(),
       }),
     }),
   ),
