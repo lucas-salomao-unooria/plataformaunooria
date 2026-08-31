@@ -166,7 +166,7 @@ export class TelemetryController {
         // processo que morre antes do flush.
         const linhas = doGrupo.map(
           (e) => {
-            /* Bundle publicado antes do rename ainda manda `estudanteId`. */
+            /* Bundle publicado antes do rename ainda manda `alunoId` (ADR-51). */
             const estudanteId = e.estudanteId ?? e.alunoId ?? "";
             return Prisma.sql`(
             ${e.eventId}::uuid, ${new Date(e.ts)}, ${e.escolaId}, ${estudanteId}, ${e.expId},

@@ -129,9 +129,9 @@ export class UsuariosService {
       data: {
         ...(dados.nome !== undefined ? { displayName: dados.nome } : {}),
         ...(dados.email !== undefined ? { email: dados.email } : {}),
-        /* `estudante` ainda entra pelo schema (tolerância do vocabulário antigo),
-           mas `users.role` tem CHECK e só admite `estudante` — sem esta
-           normalização o valor cru virava 500 em vez de gravar. */
+        /* `aluno` ainda entra pelo schema (tolerância do vocabulário antigo,
+           ADR-51), mas `users.role` tem CHECK e só admite `estudante` — sem esta
+           normalização o valor cru virava 500 em vez de um 400 (ADR-53). */
         ...(dados.papel !== undefined
           ? { role: dados.papel === "aluno" ? "estudante" : dados.papel }
           : {}),
