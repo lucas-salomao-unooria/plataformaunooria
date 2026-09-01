@@ -52,7 +52,7 @@ skills-lock.json
 # Lista de contas de demonstração que o seed escreve (login, nome, CPF e senha
 # na mesma linha). Gente inventada, mas não é coisa que se versiona — e ela se
 # refaz sozinha a cada `pnpm --filter @edu/api seed`.
-credenciais-demo.csv
+credenciais-*.csv
 
 # Arquivos de macOS
 .DS_Store
