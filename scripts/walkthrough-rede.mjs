@@ -1,6 +1,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { conta, escolas } from "./lib/credenciais.mjs";
+
+/* Nomes vêm do arquivo do seed: fixá-los aqui faz o roteiro falhar como
+   "timeout esperando option" quando o seed troca o nome da unidade. */
+const { primeira: ESCOLA_1_NOME, segunda: ESCOLA_2_NOME } = escolas();
+const GESTOR_DA_2 = conta("gestor", { escola: ESCOLA_2_NOME });
 
 /**
  * Smoke VISUAL da REDE: escola identificável, professor lotado em duas, e o
@@ -88,7 +94,7 @@ async function importar(escolaId, arquivo) {
 
 try {
   // ---- admin do contrato: as escolas da rede ------------------------------
-  await entrar("analise.unooria");
+  await entrar(conta("admin-contrato").login);
   await p.goto(`${HUB}/admin/escolas`, { waitUntil: "domcontentloaded" });
   await p.waitForTimeout(1800);
   const linhasDeEscola = await p.locator("table tbody tr").count();
@@ -132,14 +138,14 @@ try {
 
     const dialogo = p.getByTestId("unooria-modal");
     await dialogo.getByRole("combobox", { name: /Onde a pessoa está hoje/ }).click();
-    await p.getByRole("option", { name: "EE Vila Nova" }).first().click();
-    await dialogo.locator("#busca-pessoa-lote").pressSequentially("Gestor Vila Nova", { delay: 20 });
+    await p.getByRole("option", { name: ESCOLA_2_NOME }).first().click();
+    await dialogo.locator("#busca-pessoa-lote").pressSequentially(GESTOR_DA_2.nome, { delay: 20 });
     await p.waitForTimeout(1800);
 
     const seletorDePessoa = dialogo.getByRole("combobox", { name: /^Pessoa/ });
     if ((await seletorDePessoa.count()) > 0) {
       await seletorDePessoa.click();
-      await p.getByRole("option", { name: /Gestor Vila Nova/ }).first().click();
+      await p.getByRole("option", { name: GESTOR_DA_2.nome }).first().click();
       await p.waitForTimeout(400);
       await Promise.all([
         p.waitForResponse(
@@ -196,7 +202,7 @@ try {
     await p.getByText(/Histórico de/).waitFor({ timeout: 15_000 });
     await p.waitForTimeout(800);
     const texto = await p.getByTestId("unooria-modal").innerText();
-    const duasEscolas = /EE Escola Demo/.test(texto) && /EE Vila Nova/.test(texto);
+    const duasEscolas = texto.includes(ESCOLA_1_NOME) && texto.includes(ESCOLA_2_NOME);
     // O gestor VÊ o CPF, formatado: é como ele confere que é a criança certa.
     const cpfNaTela = texto.includes(CPF);
     await registrar(
@@ -213,7 +219,7 @@ try {
   }
 
   // ---- o professor lotado em duas escolas --------------------------------
-  await entrar("prof.demo");
+  await entrar(conta("professor (2 unidades)").login);
   const seletor = p.locator('select[aria-label="Escola ativa"]');
   const temSeletor = (await seletor.count()) > 0;
   const opcoes = temSeletor ? await seletor.locator("option").allInnerTexts() : [];
@@ -238,7 +244,7 @@ try {
         (r) => r.url().includes("/api/escola-ativa") && r.request().method() === "POST",
         { timeout: 20_000 },
       ),
-      p.locator('select[aria-label="Escola ativa"]').selectOption({ label: "EE Vila Nova" }),
+      p.locator('select[aria-label="Escola ativa"]').selectOption({ label: ESCOLA_2_NOME }),
     ]);
     console.log("   POST /api/escola-ativa:", resposta.status());
     await p.waitForTimeout(1500);
@@ -257,7 +263,7 @@ try {
   // ---- o panorama de quem administra muitas escolas ----------------------
   /* A supervisora da diretoria: um `gestor` lotado nas duas unidades. Ela vê uma
      escola POR VEZ — o panorama lista, não soma. */
-  await entrar("supervisor.demo");
+  await entrar(conta("gestor (supervisora").login);
   await p.goto(`${HUB}/admin/minhas-escolas`, { waitUntil: "domcontentloaded" });
   await p.waitForTimeout(2000);
   const linhasDoPanorama = await p.locator("table tbody tr").allInnerTexts();

@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL do ciclo inteiro de pessoas: importar → enturmar → primeiro
@@ -145,7 +146,7 @@ async function iconesViraramTexto() {
 
 try {
   // ---- gestor: o modelo, a importação e a turma que nasce dela -------------
-  await entrar("gestor.demo");
+  await entrar(conta("gestor").login);
   await registrar("admin-usuarios", p.url().replace(HUB, ""));
   console.log("   ícones:", await iconesViraramTexto());
 

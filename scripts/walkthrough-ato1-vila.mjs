@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL do Ato 1 nativo: o professor traz os perfis da Vila do Lume para
@@ -23,7 +24,7 @@ import { chromium } from "playwright";
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-ato1";
 const ATIVIDADE = process.argv[3] ?? "";
-const USER = process.env.LOGIN_PROF ?? "prof.demo";
+const USER = process.env.LOGIN_PROF ?? conta("professor", { turma: "8A" }).login;
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
 mkdirSync(OUT, { recursive: true });

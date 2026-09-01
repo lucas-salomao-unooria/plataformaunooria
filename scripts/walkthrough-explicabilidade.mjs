@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { vigiarFalhasDaApi } from "./lib/smoke.mjs";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL da EXPLICABILIDADE da exp-01 — o fechamento da missão.
@@ -32,7 +33,8 @@ import { vigiarFalhasDaApi } from "./lib/smoke.mjs";
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/wt-explicabilidade";
 const ESTUDANTE = process.argv[3] ?? "estudante03";
-const PROFESSOR = "prof.demo";
+/* 8º ano: é a série da atividade do Instanooria que o `semear-demo` cria. */
+const PROFESSOR = conta("professor", { turma: "8A" }).login;
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
 mkdirSync(OUT, { recursive: true });

@@ -38,6 +38,8 @@ export const UsuarioEmListaSchema = z.object({
   usuario: z.string(),
   nome: z.string(),
   papel: z.string(),
+  /** A unidade da lotação principal. Nulo só no `admin-contrato`, que não tem. */
+  escola: z.string().nullable(),
   /** O RA da rede — a chave da pessoa. Nulo em conta de assento. */
   matricula: z.string().nullable(),
   /** FORMATADO, e visível: o gestor confere identidade contra o sistema da rede

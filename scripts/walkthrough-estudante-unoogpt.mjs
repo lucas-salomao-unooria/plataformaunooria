@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { ehRuidoDeDev, vigiarFalhasDaApi } from "./lib/smoke.mjs";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL da exp-03-unoogpt (a Missão Tempestade), do login ao resultado.
@@ -21,9 +22,9 @@ import { ehRuidoDeDev, vigiarFalhasDaApi } from "./lib/smoke.mjs";
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-unoogpt";
-const USER = process.argv[3] ?? "estudante2a01";
+const USER = process.argv[3] ?? conta("estudante", { serie: "2EM" }).login;
 const TURMA = process.argv[4] ?? "2A";
-const PROF = process.env.PROF_DEMO ?? "prof.demo";
+const PROF = process.env.PROF_DEMO ?? conta("professor", { serie: "2EM" }).login;
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
 mkdirSync(OUT, { recursive: true });

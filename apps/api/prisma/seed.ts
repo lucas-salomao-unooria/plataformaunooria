@@ -1,33 +1,45 @@
 import { PrismaClient } from "@prisma/client";
 import { comEscola } from "./tenancy-do-seed";
+import { criarFabricaDePessoas, type PessoaDemo } from "./pessoas-demo";
 import bcrypt from "bcryptjs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 
 /**
- * Seed de desenvolvimento — evolução multi-tenant do seed do projeto origem:
- * 1 escola demo com 2 turmas de 8º ano (40 estudantes, 20 por turma), 1 turma de
- * 4º ano (10 estudantes, para a exp-02-unootube) e 1 turma de 2ª série do EM
- * (10 estudantes, para a exp-03-unoogpt), 1 professor, 1 gestor e
- * 1 admin-contrato (sem escola — única exceção da regra de tenancy).
- * Idempotente — pode rodar quantas vezes quiser.
+ * Seed de desenvolvimento — uma rede pequena, mas com a FORMA de uma rede real:
+ * duas unidades sob uma diretoria, o ciclo completo do 1º ano EF à 3ª série EM
+ * com duas turmas por série, um docente por turma, e pessoas com nome, login e
+ * CPF de verdade.
+ *
+ * Por que gente de verdade e não `estudante01`: a plataforma valida CPF
+ * (`cpfEhValido`, ADR-33), busca por nome e por documento, e ordena listas
+ * alfabeticamente. Uma base de `Estudante 01..40` não exercita nada disso — e
+ * esconde exatamente os defeitos de tela que aparecem quando o nome é longo,
+ * tem acento, ou dois irmãos dividem o sobrenome.
+ *
+ * DETERMINÍSTICO: a mesma `SEMENTE` produz as mesmas pessoas, na mesma ordem.
+ * Rodar de novo reencontra a criança que estava aberta numa aba.
+ *
+ * Ao final escreve `credenciais-demo.csv` na RAIZ do repositório (fora do git):
+ * é a lista de quem entrar. Os walkthroughs leem esse arquivo em vez de fixar
+ * login no código.
  *
  * Usuários reais NÃO nascem aqui: entram por importação
  * (`POST /rostering/importar`, papel gestor/admin-contrato).
  *
- * `SEED_MINIMO=1` cria só a escola, o gestor e o admin-contrato — nada de
- * turmas, estudantes nem professor. É o ponto de partida para percorrer a plataforma
- * do zero: com o seed completo, as 61 contas de demonstração aparecem no
- * diagnóstico de contas de assento e poluem o caminho que se quer testar.
- * Os walkthroughs visuais exigem o seed COMPLETO — o mínimo não os serve.
+ * `SEED_MINIMO=1` cria só a escola, um gestor e um admin-contrato — o ponto de
+ * partida para percorrer a plataforma do zero, sem as contas de demonstração
+ * poluindo o diagnóstico de contas de assento.
  */
 const prisma = new PrismaClient();
 
 /**
  * A senha das contas de demonstração vem do AMBIENTE, nunca do código.
- * O default de DEV vive nos dois compose (como o `docs`/`unooria-docs-local`
- * do Swagger); no host, `SEED_SENHA=... pnpm --filter @edu/api seed`.
+ * O default de DEV vive nos dois compose; no host,
+ * `SEED_SENHA=... pnpm --filter @edu/api seed`.
  *
  * Sem env o seed FALHA, e falha alto: constante no fonte significa que este
- * script, rodado por engano contra o banco de um contrato, criaria 61 contas
+ * script, rodado por engano contra o banco de um contrato, criaria mil contas
  * com uma senha publicada no README — inclusive o `admin-contrato`, o único
  * papel que atravessa escolas.
  */
@@ -44,66 +56,99 @@ function senhaDoSeed(): string {
   if (senha.length < 8) throw new Error("SEED_SENHA precisa de ao menos 8 caracteres");
   return senha;
 }
+
+/** Trocar isto gera uma rede inteira nova. Não troque sem querer. */
+const SEMENTE = 20260901;
+
 const ANO_LETIVO = 2026;
 const TITULO_PERIODO = `Ano letivo ${ANO_LETIVO}`;
-const TOTAL_ESTUDANTES = 40;
-const TOTAL_ESTUDANTES_4A = 10;
-/** 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). */
-const TOTAL_ESTUDANTES_2A = 10;
+
+/** Do 1º ano EF à 3ª série EM — o ciclo que o produto atende. */
+const SERIES = [
+  "1EF", "2EF", "3EF", "4EF", "5EF", "6EF", "7EF", "8EF", "9EF",
+  "1EM", "2EM", "3EM",
+] as const;
+const TURMAS_POR_SERIE = ["A", "B"] as const;
+const ESTUDANTES_POR_TURMA = 40;
+/** Papéis que não nascem de turma: 5 de cada, como pedido. */
+const GESTORES = 5;
+const ADMINS_CONTRATO = 5;
+
 const ESCOLA_ID = "escola-demo";
-/** Segunda escola: é ela que torna visível o professor lotado em DUAS. */
+const ESCOLA_NOME = "EE Professora Maria Aparecida Nogueira";
+/** Segunda unidade: é ela que torna visível o docente lotado em DUAS. */
 const ESCOLA_2_ID = "escola-demo-2";
-/** A regional que agrupa as duas — o nível entre a escola e o contrato. */
+const ESCOLA_2_NOME = "EE Coronel Firmino Rodrigues";
+/** A diretoria que agrupa as duas — o nível entre a escola e o contrato. */
 const REGIONAL_ID = "de-demo";
-const TOTAL_ESTUDANTES_5A = 10;
+const REGIONAL_NOME = "DE Campinas Leste";
+/** Turma da segunda unidade (ver comentário na seção dela). */
+const TURMA_ESCOLA_2 = { nome: "5A", serie: "5EF", turno: "tarde" };
+
 const MINIMO = process.env.SEED_MINIMO === "1";
+
+const ARQUIVO_CREDENCIAIS = resolve(__dirname, "../../../credenciais-demo.csv");
+
+interface LinhaDeCredencial {
+  login: string;
+  nome: string;
+  papel: string;
+  escola: string;
+  turma: string;
+  serie: string;
+  cpf: string;
+}
+const credenciais: LinhaDeCredencial[] = [];
+
+/**
+ * Executa em lotes com paralelismo limitado. Mil pessoas × (upsert + lotação +
+ * matrícula) em série são ~3 mil idas ao banco: no host isso são segundos, mas
+ * contra o Cloud SQL por túnel IAP (~60ms de ida e volta) vira minutos. O teto
+ * é baixo de propósito — o pool do Prisma é pequeno, e estourá-lo troca a espera
+ * de rede por espera de conexão.
+ */
+async function emLotes<T>(itens: readonly T[], tamanho: number, fn: (item: T) => Promise<unknown>) {
+  for (let i = 0; i < itens.length; i += tamanho) {
+    await Promise.all(itens.slice(i, i + tamanho).map(fn));
+  }
+}
 
 async function main() {
   const passwordHash = await bcrypt.hash(SENHA_PADRAO, 10);
+  const fabrica = criarFabricaDePessoas(SEMENTE);
 
-  /* A regional entra ANTES das unidades: ela é o pai, e o trigger do banco
+  /* A diretoria entra ANTES das unidades: ela é o pai, e o trigger do banco
      recusa `pai_id` apontando para escola. */
   await prisma.escola.upsert({
     where: { id: REGIONAL_ID },
-    update: { nome: "DE Demo", tipo: "regional", uf: "SP" },
-    create: { id: REGIONAL_ID, nome: "DE Demo", tipo: "regional", uf: "SP" },
+    update: { nome: REGIONAL_NOME, tipo: "regional", uf: "SP" },
+    create: { id: REGIONAL_ID, nome: REGIONAL_NOME, tipo: "regional", uf: "SP" },
   });
 
+  const dadosEscola1 = {
+    nome: ESCOLA_NOME,
+    municipio: "Campinas",
+    uf: "SP",
+    codigoInep: "35000101",
+    paiId: REGIONAL_ID,
+  };
   await prisma.escola.upsert({
     where: { id: ESCOLA_ID },
-    update: {
-      nome: "EE Escola Demo",
-      municipio: "São Paulo",
-      uf: "SP",
-      codigoInep: "35000101",
-      paiId: REGIONAL_ID,
-    },
-    create: {
-      id: ESCOLA_ID,
-      nome: "EE Escola Demo",
-      municipio: "São Paulo",
-      uf: "SP",
-      codigoInep: "35000101",
-      paiId: REGIONAL_ID,
-    },
+    update: dadosEscola1,
+    create: { id: ESCOLA_ID, ...dadosEscola1 },
   });
+
+  const dadosEscola2 = {
+    nome: ESCOLA_2_NOME,
+    municipio: "Valinhos",
+    uf: "SP",
+    codigoInep: "35000202",
+    paiId: REGIONAL_ID,
+  };
   await prisma.escola.upsert({
     where: { id: ESCOLA_2_ID },
-    update: {
-      nome: "EE Vila Nova",
-      municipio: "Campinas",
-      uf: "SP",
-      codigoInep: "35000202",
-      paiId: REGIONAL_ID,
-    },
-    create: {
-      id: ESCOLA_2_ID,
-      nome: "EE Vila Nova",
-      municipio: "Campinas",
-      uf: "SP",
-      codigoInep: "35000202",
-      paiId: REGIONAL_ID,
-    },
+    update: dadosEscola2,
+    create: { id: ESCOLA_2_ID, ...dadosEscola2 },
   });
 
   // Toda turma vive dentro de um ano letivo — é o que faz "8A de 2026" e "8A de
@@ -130,13 +175,8 @@ async function main() {
     });
 
   /**
-   * Enturmamento. `users.turma_id` continua preenchido porque é o CACHE da
-   * matrícula principal (o login e o claim `turma_id` do token o leem fora de
-   * contexto de tenancy); a verdade é a linha em `matriculas`.
-   */
-  /**
-   * Lotação: o vínculo com a ESCOLA. Professor acumula; estudante tem uma só.
-   * `users.escola_id` é o cache da principal.
+   * Lotação: o vínculo com a ESCOLA. Professor e gestor acumulam; estudante tem
+   * uma só. `users.escola_id` é o cache da principal.
    */
   const lotar = (escolaId: string, usuarioId: string, papel: string, principal: boolean) =>
     prisma.lotacao.upsert({
@@ -156,179 +196,247 @@ async function main() {
   ) =>
     comEscola(prisma, escolaId, (tx) =>
       tx.matricula.upsert({
-      where: {
-        escolaId_turmaId_usuarioId_papel: { escolaId, turmaId, usuarioId, papel },
-      },
-      update: { fim: null },
-      create: {
-        escolaId,
-        turmaId,
-        usuarioId,
-        papel,
-        principal: papel === "estudante",
-        inicio: periodo.inicio,
-      },
+        where: {
+          escolaId_turmaId_usuarioId_papel: { escolaId, turmaId, usuarioId, papel },
+        },
+        update: { fim: null },
+        create: {
+          escolaId,
+          turmaId,
+          usuarioId,
+          papel,
+          principal: papel === "estudante",
+          inicio: periodo.inicio,
+        },
       }),
     );
 
-  const upsertUsuarioMinimo = (username: string, displayName: string, role: string) =>
-    prisma.user.upsert({
-      where: { escolaId_username: { escolaId: ESCOLA_ID, username } },
-      update: { displayName, role, passwordHash, ativo: true },
-      create: { username, displayName, role, passwordHash, escolaId: ESCOLA_ID, senhaProvisoria: false },
+  /**
+   * Uma pessoa. O CPF entra em TODAS as contas — é a identidade imutável da
+   * rede (ADR-33), e é ele que faz a transferência entre unidades reconhecer a
+   * mesma criança em vez de criar uma segunda.
+   */
+  const upsertPessoa = async (
+    pessoa: PessoaDemo,
+    role: string,
+    extras: { escolaId?: string; turmaId?: string; semCpf?: boolean } = {},
+  ) => {
+    const escolaId = extras.escolaId ?? ESCOLA_ID;
+    const dados = {
+      displayName: pessoa.nome,
+      role,
+      passwordHash,
+      cpf: extras.semCpf ? null : pessoa.cpf,
+      turmaId: extras.turmaId,
+      ativo: true,
+    };
+    return prisma.user.upsert({
+      where: { escolaId_username: { escolaId, username: pessoa.username } },
+      update: dados,
+      create: {
+        username: pessoa.username,
+        ...dados,
+        // Conta de demonstração entra direto: senha provisória é o caminho de
+        // quem NASCE de importação, e prender o seed nela pararia os
+        // walkthroughs na tela de troca de senha.
+        senhaProvisoria: false,
+        escolaId,
+      },
     });
+  };
 
-  const upsertAdminContrato = async () => {
-    // Único papel sem escola — o upsert por (escolaId, username) não o cobre com
-    // escolaId NULL, então procura-se manualmente.
-    const admin = await prisma.user.findFirst({
-      where: { username: "analise.unooria", role: "admin-contrato" },
+  const anotar = (
+    pessoa: PessoaDemo,
+    papel: string,
+    escola: string,
+    turma = "",
+    serie = "",
+    cpf = pessoa.cpf,
+  ) => credenciais.push({ login: pessoa.username, nome: pessoa.nome, papel, escola, turma, serie, cpf });
+
+  /**
+   * `admin-contrato` é o único papel SEM escola — o upsert por
+   * `(escolaId, username)` não o cobre com `escolaId` nulo, então procura-se
+   * pelo login.
+   */
+  const upsertAdminContrato = async (pessoa: PessoaDemo) => {
+    const existente = await prisma.user.findFirst({
+      where: { username: pessoa.username, role: "admin-contrato" },
     });
-    if (admin) {
-      await prisma.user.update({
-        where: { id: admin.id },
-        data: { displayName: "Análise Unooria", passwordHash },
-      });
-    } else {
-      await prisma.user.create({
-        data: {
-          username: "analise.unooria",
-          displayName: "Análise Unooria",
-          role: "admin-contrato",
-          passwordHash,
-          senhaProvisoria: false,
-        },
-      });
-    }
+    const dados = {
+      displayName: pessoa.nome,
+      passwordHash,
+      cpf: pessoa.cpf,
+      role: "admin-contrato",
+      senhaProvisoria: false,
+    };
+    if (existente) await prisma.user.update({ where: { id: existente.id }, data: dados });
+    else await prisma.user.create({ data: { username: pessoa.username, ...dados } });
+    anotar(pessoa, "admin-contrato", "— (atravessa escolas)");
   };
 
   if (MINIMO) {
-    const gestorMinimo = await upsertUsuarioMinimo("gestor.demo", "Gestor Demo", "gestor");
-    await lotar(ESCOLA_ID, gestorMinimo.id, "gestor", true);
-    await upsertAdminContrato();
+    const gestor = fabrica.pessoa("gestor.");
+    const criado = await upsertPessoa(gestor, "gestor");
+    await lotar(ESCOLA_ID, criado.id, "gestor", true);
+    anotar(gestor, "gestor", ESCOLA_NOME);
+    await upsertAdminContrato(fabrica.pessoa("admin."));
+    escreverCredenciais();
     console.log(
-      `Seed MÍNIMO: escola "${ESCOLA_ID}", período "${periodo.titulo}", gestor.demo e ` +
-        `analise.unooria (senha: a de SEED_SENHA). Nenhuma turma, nenhum estudante — ` +
-        `as pessoas entram por /admin/importar.`,
+      `Seed MÍNIMO: "${ESCOLA_NOME}", período "${periodo.titulo}", 1 gestor e ` +
+        `1 admin-contrato. Nenhuma turma, nenhum estudante — as pessoas entram ` +
+        `por /admin/importar. Credenciais em ${ARQUIVO_CREDENCIAIS}`,
     );
     return;
   }
 
-  const turmas = await Promise.all(["8A", "8B"].map((nome) => upsertTurma(nome, "8EF")));
+  // ---------------------------------------------------------------- turmas
+  /**
+   * Nome da turma: `8A` no fundamental, `2EM-A` no médio. O sufixo do médio não
+   * é enfeite — `UNIQUE (escola_id, periodo_letivo_id, nome)` faria a 2ª série
+   * do EM colidir com o 2º ano do EF se as duas se chamassem `2A`.
+   */
+  const nomeDaTurma = (serie: string, letra: string) =>
+    serie.endsWith("EM") ? `${serie[0]}EM-${letra}` : `${serie[0]}${letra}`;
 
-  const upsertUsuario = (
-    username: string,
-    displayName: string,
-    role: string,
-    extras: { escolaId?: string | null; turmaId?: string } = {},
-  ) =>
-    prisma.user.upsert({
-      where: { escolaId_username: { escolaId: extras.escolaId ?? ESCOLA_ID, username } },
-      update: { displayName, role, passwordHash, turmaId: extras.turmaId, ativo: true },
-      create: {
-        username,
-        displayName,
-        role,
-        passwordHash,
-        // Usuário de demonstração entra direto: senha provisória é o caminho de
-        // quem NASCE de uma importação, e prender o seed nela pararia os seis
-        // walkthroughs na tela de troca de senha.
-        senhaProvisoria: false,
-        escolaId: extras.escolaId === null ? undefined : (extras.escolaId ?? ESCOLA_ID),
-        turmaId: extras.turmaId,
-      },
-    });
-
-  const professor = await upsertUsuario("prof.demo", "Prof. Demo", "professor");
-  const gestor = await upsertUsuario("gestor.demo", "Gestor Demo", "gestor");
-
-  for (let i = 1; i <= TOTAL_ESTUDANTES; i += 1) {
-    const numero = String(i).padStart(2, "0");
-    const turma = turmas[i <= TOTAL_ESTUDANTES / 2 ? 0 : 1]!;
-    const estudante = await upsertUsuario(`estudante${numero}`, `Estudante ${numero}`, "estudante", {
-      turmaId: turma.id,
-    });
-    await lotar(ESCOLA_ID, estudante.id, "estudante", true);
-    await matricular(turma.id, estudante.id, "estudante");
+  const turmas: { nome: string; serie: string; id: string }[] = [];
+  for (const serie of SERIES) {
+    for (const letra of TURMAS_POR_SERIE) {
+      const nome = nomeDaTurma(serie, letra);
+      const turma = await upsertTurma(nome, serie);
+      turmas.push({ nome, serie, id: turma.id });
+    }
   }
 
-  // 4º ano: a série roteia o estudante para a exp-02-unootube (apps/hub/lib/experiencia-do-estudante.ts).
-  const turma4A = await upsertTurma("4A", "4EF");
-  for (let i = 1; i <= TOTAL_ESTUDANTES_4A; i += 1) {
-    const numero = String(i).padStart(2, "0");
-    const estudante = await upsertUsuario(`estudante4a${numero}`, `Estudante 4A ${numero}`, "estudante", {
-      turmaId: turma4A.id,
-    });
-    await lotar(ESCOLA_ID, estudante.id, "estudante", true);
-    await matricular(turma4A.id, estudante.id, "estudante");
+  // ------------------------------------------------------------ professores
+  // Um docente por turma — é o que faz "as turmas do professor" (a matrícula,
+  // não a escola) ser um recorte de verdade em vez de "tudo".
+  const professores: { pessoa: PessoaDemo; id: string; turma: (typeof turmas)[number] }[] = [];
+  for (const turma of turmas) {
+    const pessoa = fabrica.pessoa("prof.");
+    const criado = await upsertPessoa(pessoa, "professor");
+    await lotar(ESCOLA_ID, criado.id, "professor", true);
+    await matricular(turma.id, criado.id, "professor");
+    professores.push({ pessoa, id: criado.id, turma });
+    anotar(pessoa, "professor", ESCOLA_NOME, turma.nome, turma.serie);
   }
 
-  // 2ª série do EM: a turma da Missão Tempestade (exp-03-unoogpt). O relógio
-  // dela é por TURMA — quem dá a largada é o professor, em
-  // /professor/entre-redes/2-serie/unidade-1/resultados. Sem a largada o estudante
-  // vê o cronômetro parado, e é o motivo nº 1 de "a missão não abre".
-  const turma2A = await upsertTurma("2A", "2EM");
-  for (let i = 1; i <= TOTAL_ESTUDANTES_2A; i += 1) {
-    const numero = String(i).padStart(2, "0");
-    const estudante = await upsertUsuario(`estudante2a${numero}`, `Estudante 2A ${numero}`, "estudante", {
-      turmaId: turma2A.id,
+  // -------------------------------------------------------------- estudantes
+  for (const turma of turmas) {
+    const alunosDaTurma = Array.from({ length: ESTUDANTES_POR_TURMA }, () => fabrica.pessoa());
+    await emLotes(alunosDaTurma, 20, async (pessoa) => {
+      const criado = await upsertPessoa(pessoa, "estudante", { turmaId: turma.id });
+      await lotar(ESCOLA_ID, criado.id, "estudante", true);
+      await matricular(turma.id, criado.id, "estudante");
     });
-    await lotar(ESCOLA_ID, estudante.id, "estudante", true);
-    await matricular(turma2A.id, estudante.id, "estudante");
+    for (const pessoa of alunosDaTurma) {
+      anotar(pessoa, "estudante", ESCOLA_NOME, turma.nome, turma.serie);
+    }
+    console.log(`  ${turma.nome} (${turma.serie}): ${ESTUDANTES_POR_TURMA} estudantes`);
   }
 
-  // O professor demo é matriculado nas QUATRO turmas. Sem isso as telas dele
-  // ficam vazias — a partir daqui "as turmas do professor" são as turmas em que
-  // ele tem matrícula, e não mais todas as turmas da escola.
-  await lotar(ESCOLA_ID, professor.id, "professor", true);
-  await lotar(ESCOLA_ID, gestor.id, "gestor", true);
-  for (const turma of [...turmas, turma4A, turma2A]) {
-    await matricular(turma.id, professor.id, "professor");
+  // ----------------------------------------------------------------- gestão
+  // O PRIMEIRO gestor é a supervisora de diretoria: lotada nas DUAS unidades.
+  // Não é papel novo — é o que a ADR-34 decidiu, e é o que faz aparecer o
+  // seletor de escola no cabeçalho e o item "Minhas escolas".
+  // São CINCO no total, não cinco mais um: o gestor da segunda unidade sai
+  // desta mesma conta (o índice 1), senão a rede teria seis.
+  for (let i = 0; i < GESTORES; i += 1) {
+    const pessoa = fabrica.pessoa("gestor.");
+    const daSegunda = i === 1;
+    const criado = await upsertPessoa(pessoa, "gestor", {
+      escolaId: daSegunda ? ESCOLA_2_ID : ESCOLA_ID,
+    });
+    if (i === 0) {
+      await lotar(ESCOLA_ID, criado.id, "gestor", true);
+      await lotar(ESCOLA_2_ID, criado.id, "gestor", false);
+      anotar(pessoa, "gestor (supervisora, 2 unidades)", `${ESCOLA_NOME} + ${ESCOLA_2_NOME}`);
+    } else if (daSegunda) {
+      await lotar(ESCOLA_2_ID, criado.id, "gestor", true);
+      anotar(pessoa, "gestor", ESCOLA_2_NOME);
+    } else {
+      await lotar(ESCOLA_ID, criado.id, "gestor", true);
+      anotar(pessoa, "gestor", ESCOLA_NOME);
+    }
   }
 
   /**
-   * SEGUNDA ESCOLA. Existe para o caso da rede estadual ficar visível sem
-   * ninguém precisar montar nada: o `prof.demo` fica lotado nas DUAS, e é isso
-   * que faz aparecer o seletor de escola no cabeçalho dele.
+   * SEGUNDA UNIDADE. Existe para a rede ficar visível sem ninguém montar nada:
+   * o docente da 5A é o MESMO da primeira turma da lista, lotado nas duas — é
+   * disso que sai o seletor de escola no cabeçalho dele e a prova de que a
+   * lista de turmas muda com a escola ativa.
    */
-  /**
-   * A SUPERVISORA da diretoria: um `gestor` lotado nas DUAS unidades. É o nível
-   * entre a escola e o contrato, e ele não precisou de papel novo — o token dela
-   * continua carregando UMA escola, a que ela escolhe no cabeçalho.
-   */
-  const supervisora = await upsertUsuario("supervisor.demo", "Supervisora Demo", "gestor");
-  await lotar(ESCOLA_ID, supervisora.id, "gestor", true);
-  await lotar(ESCOLA_2_ID, supervisora.id, "gestor", false);
+  const turma5A = await upsertTurma(
+    TURMA_ESCOLA_2.nome,
+    TURMA_ESCOLA_2.serie,
+    TURMA_ESCOLA_2.turno,
+    ESCOLA_2_ID,
+  );
+  const docenteDasDuas = professores[0]!;
+  await lotar(ESCOLA_2_ID, docenteDasDuas.id, "professor", false);
+  await matricular(turma5A.id, docenteDasDuas.id, "professor", ESCOLA_2_ID);
+  /* Atualiza a linha que já existe em vez de acrescentar outra: o mesmo login
+     duas vezes no CSV faria quem procura "o professor de 1A" achar duas
+     respostas e escolher pela ordem. */
+  const linhaDoDocente = credenciais.find((c) => c.login === docenteDasDuas.pessoa.username)!;
+  linhaDoDocente.papel = "professor (2 unidades)";
+  linhaDoDocente.escola = `${ESCOLA_NOME} + ${ESCOLA_2_NOME}`;
+  linhaDoDocente.turma = `${docenteDasDuas.turma.nome} + ${TURMA_ESCOLA_2.nome}`;
+  linhaDoDocente.serie = `${docenteDasDuas.turma.serie} + ${TURMA_ESCOLA_2.serie}`;
 
-  const turma5A = await upsertTurma("5A", "5EF", "tarde", ESCOLA_2_ID);
-  const gestor2 = await upsertUsuario("gestor.vilanova", "Gestor Vila Nova", "gestor", {
-    escolaId: ESCOLA_2_ID,
-  });
-  await lotar(ESCOLA_2_ID, gestor2.id, "gestor", true);
-  await lotar(ESCOLA_2_ID, professor.id, "professor", false);
-  await matricular(turma5A.id, professor.id, "professor", ESCOLA_2_ID);
-  for (let i = 1; i <= TOTAL_ESTUDANTES_5A; i += 1) {
-    const numero = String(i).padStart(2, "0");
-    const estudante = await upsertUsuario(`estudante5a${numero}`, `Estudante 5A ${numero}`, "estudante", {
+  const turmaDaSegunda = Array.from({ length: ESTUDANTES_POR_TURMA }, () => fabrica.pessoa());
+  await emLotes(turmaDaSegunda, 20, async (pessoa) => {
+    const criado = await upsertPessoa(pessoa, "estudante", {
       escolaId: ESCOLA_2_ID,
       turmaId: turma5A.id,
     });
-    await lotar(ESCOLA_2_ID, estudante.id, "estudante", true);
-    await matricular(turma5A.id, estudante.id, "estudante", ESCOLA_2_ID);
+    await lotar(ESCOLA_2_ID, criado.id, "estudante", true);
+    await matricular(turma5A.id, criado.id, "estudante", ESCOLA_2_ID);
+  });
+  for (const pessoa of turmaDaSegunda) {
+    anotar(pessoa, "estudante", ESCOLA_2_NOME, TURMA_ESCOLA_2.nome, TURMA_ESCOLA_2.serie);
   }
 
-  // admin-contrato: papel de nível de produto (o "analista" do origem). Vê a
-  // análise entre escolas/turmas; não alcança as telas do professor nem a do estudante.
-  await upsertAdminContrato();
+  // --------------------------------------------------------- admin-contrato
+  // Papel de nível de produto: vê a análise entre escolas e turmas; não alcança
+  // as telas do professor nem a do estudante.
+  for (let i = 0; i < ADMINS_CONTRATO; i += 1) {
+    await upsertAdminContrato(fabrica.pessoa("admin."));
+  }
+
+  escreverCredenciais();
 
   const total = await prisma.user.count();
+  const estudantes = turmas.length * ESTUDANTES_POR_TURMA + ESTUDANTES_POR_TURMA;
   console.log(
-    `Seed ok: regional "${REGIONAL_ID}" com 2 escolas ("${ESCOLA_ID}" com 8A, 8B, 4A, 2A e ` +
-      `"${ESCOLA_2_ID}" com 5A), prof.demo e supervisor.demo lotados nas DUAS, ` +
-      `gestor.demo, gestor.vilanova, ` +
-      `${TOTAL_ESTUDANTES + TOTAL_ESTUDANTES_4A + TOTAL_ESTUDANTES_2A + TOTAL_ESTUDANTES_5A} estudantes e ` +
-      `1 admin-contrato (senha: a de SEED_SENHA). Usuários na base: ${total}.`,
+    `\nSeed ok — ${REGIONAL_NOME} com 2 unidades:\n` +
+      `  ${ESCOLA_NOME}: ${turmas.length} turmas (1EF→3EM, 2 por série), ` +
+      `${turmas.length * ESTUDANTES_POR_TURMA} estudantes, ${professores.length} professores\n` +
+      `  ${ESCOLA_2_NOME}: turma ${TURMA_ESCOLA_2.nome}, ${ESTUDANTES_POR_TURMA} estudantes\n` +
+      `  ${GESTORES} gestores (o 1º nas duas unidades), ${ADMINS_CONTRATO} admin-contrato\n` +
+      `  ${estudantes} estudantes no total · ${total} contas na base (senha: a de SEED_SENHA)\n` +
+      `  credenciais: ${ARQUIVO_CREDENCIAIS}`,
   );
+}
+
+/**
+ * O arquivo de credenciais fica FORA do git (`.gitignore`): é uma lista de
+ * logins com CPF ao lado, e mesmo sendo gente inventada não é coisa que se
+ * versiona. Ele é o índice de quem entrar — e é o que os walkthroughs leem, em
+ * vez de fixar login no código e quebrar a cada mudança do seed.
+ */
+function escreverCredenciais() {
+  const escapar = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const linhas = [
+    "login,nome,papel,escola,turma,serie,cpf,senha",
+    ...credenciais.map((c) =>
+      [c.login, c.nome, c.papel, c.escola, c.turma, c.serie, c.cpf, SENHA_PADRAO]
+        .map(escapar)
+        .join(","),
+    ),
+  ];
+  mkdirSync(dirname(ARQUIVO_CREDENCIAIS), { recursive: true });
+  writeFileSync(ARQUIVO_CREDENCIAIS, `${linhas.join("\n")}\n`, "utf8");
 }
 
 main()

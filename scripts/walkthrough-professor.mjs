@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, vigiarFalhasDaApi } from "./lib/smoke.mjs";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL das telas da plataforma (professor e gestor).
@@ -89,7 +90,10 @@ async function iconesNoFrame() {
 
 try {
   // ---- professor ---------------------------------------------------------
-  await entrar("prof.demo");
+  /* A missão que este roteiro abre é a do 4º ano — o docente tem de LECIONAR
+     nela, senão o seletor de turma vem vazio (as turmas do professor são as
+     em que ele tem matrícula, não as da escola). */
+  await entrar(conta("professor", { serie: "4EF" }).login);
   await registrar("hub-do-professor", p.url().replace(HUB, ""));
   console.log("   ícones:", await iconesViraramTexto());
 
@@ -231,7 +235,7 @@ try {
   // ---- gestor: importação de usuários ------------------------------------
   await p.goto(`${HUB}/api/auth/signout`, { waitUntil: "domcontentloaded" }).catch(() => {});
   await contexto.clearCookies();
-  await entrar("gestor.demo");
+  await entrar(conta("gestor").login);
   await registrar("admin-usuarios", p.url().replace(HUB, ""));
   const linhas = await p.locator("table tbody tr").count().catch(() => 0);
   console.log("   linhas na tabela:", linhas);

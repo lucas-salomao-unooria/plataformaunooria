@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { chromium } from "playwright";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL do PERFIL PORTÁTIL — o que a criança leva ao sair da REDE.
@@ -67,7 +68,7 @@ async function entrar(usuario, senha = SENHA) {
 }
 
 try {
-  await entrar("gestor.demo");
+  await entrar(conta("gestor").login);
 
   // A criança precisa existir com CPF: é o CPF que a reconhece lá fora.
   const importada = await p.request.post(

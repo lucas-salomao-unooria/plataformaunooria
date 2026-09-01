@@ -68,6 +68,10 @@ export class UsuariosService {
               where: { fim: null },
               include: { turma: { select: { nome: true, serie: true } } },
             },
+            /* O gestor de mais de uma unidade e o `admin-contrato` precisam ver
+               DE QUE escola é a linha — sem isso a lista mistura unidades sem
+               dizer. `escola_id` é sempre o da lotação principal. */
+            escola: { select: { nome: true } },
           },
           orderBy: [{ role: "asc" }, { username: "asc" }],
           skip: (filtro.pagina - 1) * filtro.porPagina,
@@ -85,6 +89,7 @@ export class UsuariosService {
             usuario: u.username,
             nome: u.displayName,
             papel: u.role,
+            escola: u.escola?.nome ?? null,
             matricula: u.matriculaExterna,
             /* Formatado como em qualquer documento brasileiro. Só gestor e
                admin-contrato chegam nesta rota. */

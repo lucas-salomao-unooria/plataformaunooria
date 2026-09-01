@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL da experiência do estudante, do login ao feed dentro do aparelho.
@@ -18,7 +19,7 @@ import { chromium } from "playwright";
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-estudante";
-const USER = process.argv[3] ?? "estudante03";
+const USER = process.argv[3] ?? conta("estudante", { serie: "8EF" }).login;
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
 mkdirSync(OUT, { recursive: true });
@@ -65,7 +66,7 @@ try {
    */
   const ctxProf = await browser.newContext();
   const prof = await ctxProf.newPage();
-  await entrar(prof, process.env.PROF_DEMO ?? "prof.demo");
+  await entrar(prof, process.env.PROF_DEMO ?? conta("professor", { turma: "8A" }).login);
   const lista = await prof.request.get(`${HUB}/api/plataforma/atividades`);
   const { atividades } = await lista.json();
   const atividade = (atividades ?? []).find((a) => a.status === "ativa") ?? atividades?.[0];

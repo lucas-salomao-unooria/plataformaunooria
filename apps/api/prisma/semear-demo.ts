@@ -90,11 +90,21 @@ async function apagar() {
 }
 
 async function semear(qtdEstudantes: number) {
+  /* Por MATRÍCULA, não por login: o seed gera docentes com nome de gente, e
+     fixar `prof.demo` aqui voltaria a acoplar este script a um login inventado.
+     Quem interessa é quem leciona no 8º ano — é a turma do Instanooria. */
   const professor = await prisma.user.findFirst({
-    where: { username: "prof.demo", escolaId: ESCOLA_ID },
+    where: {
+      role: "professor",
+      escolaId: ESCOLA_ID,
+      matriculas: { some: { fim: null, turma: { nome: "8A" } } },
+    },
+    orderBy: { username: "asc" },
   });
   if (!professor) {
-    console.error("rode `pnpm --filter @edu/api seed` antes: não há prof.demo.");
+    console.error(
+      "rode `pnpm --filter @edu/api seed` antes: não há professor na turma 8A.",
+    );
     process.exit(1);
   }
 

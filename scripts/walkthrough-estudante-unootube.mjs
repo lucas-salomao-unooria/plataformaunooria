@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { ehRuidoDeDev, vigiarFalhasDaApi } from "./lib/smoke.mjs";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL da exp-02-unootube, do login à virada do ranking.
@@ -17,7 +18,7 @@ import { ehRuidoDeDev, vigiarFalhasDaApi } from "./lib/smoke.mjs";
  */
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-unootube";
-const USER = process.argv[3] ?? "estudante4a01";
+const USER = process.argv[3] ?? conta("estudante", { serie: "4EF" }).login;
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
 mkdirSync(OUT, { recursive: true });
@@ -231,7 +232,11 @@ try {
   // seções do DS: `data-uni-theme` no clone e `.unooria-theme-dark` na
   // plataforma. Sem este passo, o modo escuro nunca entra no smoke visual.
   await tela.locator('button[aria-label="Abrir seu perfil"]').click();
-  await tela.locator("h1", { hasText: /Estudante|Estudante/i }).first().waitFor({ timeout: 15_000 });
+  /* O h1 do perfil é o NOME da criança. Era uma regex por "Estudante" porque
+     o seed antigo chamava todo mundo assim; com gente de verdade, o que
+     identifica a tela é o primeiro nome de quem entrou. */
+  const primeiroNome = conta("estudante", { serie: "4EF" }).nome.split(" ")[0];
+  await tela.locator("h1", { hasText: primeiroNome }).first().waitFor({ timeout: 15_000 });
   await tela.locator("button", { hasText: "Escuro" }).click();
   await p.waitForTimeout(600);
   const temaEscuro = await tela.locator("html").getAttribute("data-uni-theme");

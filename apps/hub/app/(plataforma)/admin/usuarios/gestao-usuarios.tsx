@@ -27,6 +27,8 @@ interface LinhaDeUsuario extends Record<string, unknown> {
   usuario: string;
   nome: string;
   papel: string;
+  /** A unidade da lotação principal. Null só no `admin-contrato`. */
+  escola: string | null;
   matricula: string | null;
   /** Formatado pela api (000.000.000-00). Null quando a pessoa não tem. */
   cpf: string | null;
@@ -207,6 +209,24 @@ export function GestaoUsuarios({
       },
       { key: "matricula", title: "Matrícula", render: (_, linha) => linha.matricula ?? "—" },
       { key: "papel", title: "Papel", render: (_, linha) => <Tag>{String(linha.papel)}</Tag> },
+      /* Quem supervisiona mais de uma unidade troca de escola no cabeçalho, e
+         sem esta coluna a lista não diz de qual delas é a linha.
+         Uma linha só, truncada: nome de unidade da rede pública é longo
+         ("EE Professora Maria Aparecida Nogueira") e, deixado quebrar, empilha
+         cinco linhas em CADA row — a tabela inteira fica ilegível para ganhar
+         um dado que é o mesmo em quase todas. O nome completo fica no `title`. */
+      {
+        key: "escola",
+        title: "Escola",
+        render: (_, linha) =>
+          linha.escola ? (
+            <span className="block max-w-[12ch] truncate" title={linha.escola}>
+              {linha.escola}
+            </span>
+          ) : (
+            <span className="text-unooria-neutral-500">—</span>
+          ),
+      },
       {
         key: "turmas",
         title: "Turmas",

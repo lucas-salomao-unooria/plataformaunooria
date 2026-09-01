@@ -1,5 +1,6 @@
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { conta } from "./lib/credenciais.mjs";
 
 /**
  * Smoke VISUAL das telas do professor da exp-70: trilha → ficha → resultados da
@@ -22,7 +23,9 @@ import { chromium } from "playwright";
 const HUB = process.env.HUB_URL ?? "http://localhost:3000";
 const OUT = process.argv[2] ?? "testes/walkthrough-professor-vila";
 const TURMA = process.argv[3] ?? "8A";
-const USER = process.argv[4] ?? "prof.demo";
+/* O docente precisa lecionar na TURMA pedida — o seletor da Vila lista as
+   turmas dele, não as da escola. */
+const USER = process.argv[4] ?? conta("professor", { turma: TURMA }).login;
 const SENHA = process.env.SENHA_DEMO ?? "unooria123";
 
 /** Os dez valores, em português. Nenhum deles pode vazar para a listagem. */
