@@ -75,7 +75,7 @@ Confira com `git log --oneline origin/dev..HEAD` antes de abrir o PR: só devem
 aparecer os seus.
 
 Daí em diante nada muda — commits Conventional, push, `gh pr create --base dev`.
-O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-60**.
+O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-61**.
 
 **Três coisas que mordem:**
 

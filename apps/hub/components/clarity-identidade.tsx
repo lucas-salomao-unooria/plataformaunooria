@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import type { Papel } from "@/lib/papeis";
 
 /**
- * Quem é a pessoa e onde ela está, para o Clarity (ADR-59).
+ * Quem é a pessoa e onde ela está, para o Clarity (ADR-60).
  *
  * Separado do `ClarityHub` porque a sessão não existe no layout raiz: o hub é
  * 100% server (`await auth()`), não tem `SessionProvider` nem `useSession`, e o

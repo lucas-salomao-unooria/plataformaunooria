@@ -56,7 +56,7 @@ varredura para "conferir"** — ver "Ferramentas externas" no `AGENTS.md` da rai
 ## Clarity: a fonte única, e o custo de mexer aqui
 
 `src/clarity.ts` é o **único** lugar do monorepo onde o snippet do Microsoft
-Clarity existe (ADR-59). O hub o consome por `snippetClarity()` (monta com
+Clarity existe (ADR-60). O hub o consome por `snippetClarity()` (monta com
 `next/script`); as experiências, por `carregarClarity()`, chamado dentro de
 `createExperiencia()` depois do handshake. Colar o `<script>` num `index.html`
 ou num layout cria a segunda cópia que ninguém atualiza junto.

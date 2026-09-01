@@ -8,7 +8,7 @@ export const metadata = { title: "Plataforma Unooria" };
  * cobre TODAS as rotas — a landing pública e o login inclusive, que estão fora
  * do grupo `(plataforma)`. Sem `NEXT_PUBLIC_CLARITY_PROJECT_ID` ele não
  * renderiza nada. Quem é a pessoa vem depois, no `ClarityIdentidade` do layout
- * do grupo, que é onde a sessão existe (ADR-59).
+ * do grupo, que é onde a sessão existe (ADR-60).
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

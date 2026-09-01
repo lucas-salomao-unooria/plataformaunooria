@@ -39,7 +39,7 @@ export async function CascaPlataforma({
    * A identificação do Clarity entra aqui pela MESMA razão que a casca existe:
    * é o único componente por onde `(plataforma)/**` e `/exp/**` passam os dois.
    * No layout raiz não daria — lá não há sessão (e o login também passa por
-   * ele); num layout por papel daria quatro cópias (ADR-59).
+   * ele); num layout por papel daria quatro cópias (ADR-60).
    *
    * O script em si é do layout raiz; sem ele, tudo abaixo é no-op.
    */

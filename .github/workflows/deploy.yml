@@ -186,7 +186,7 @@ jobs:
           file: apps/hub/Dockerfile
           push: true
           tags: ${{ env.IMG }}
-          # Microsoft Clarity (ADR-59). `NEXT_PUBLIC_*` é inlinada no bundle do
+          # Microsoft Clarity (ADR-60). `NEXT_PUBLIC_*` é inlinada no bundle do
           # client durante o `next build`, então o valor tem de entrar na
           # IMAGEM — pôr no Cloud Run depois não altera um bundle compilado.
           # `vars.CLARITY_PROJECT_ID` é do environment (dev/hml/prd) e só

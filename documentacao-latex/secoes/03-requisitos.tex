@@ -262,7 +262,10 @@ Organizados pelas características de qualidade de produto da ISO/IEC
   \env{TELEMETRIA\_TOPIC} vazio). & Implementado\\
 \rf{RNF-15} & Observabilidade &
   \emph{Smoke} visual obrigatório para mudança de tela --- \emph{typecheck} não
-  detecta ícone virando texto nem \cd{iframe} vazio. & Implementado\\
+  detecta ícone virando texto nem \cd{iframe} vazio. Em produção: log
+  estruturado com correlação, alerta por sintoma (SLO) e erro de cliente
+  registrado pela API (Capítulo~\ref{cap:observabilidade}). & Parcial ---
+  só o \emph{smoke}\\
 \zebra \rf{RNF-16} & Custo &
   Custo marginal de experiência publicada $\approx$ armazenamento + tráfego de
   CDN. Nenhum serviço por experiência. & Implementado\\

@@ -74,7 +74,7 @@ export function ExpFrame(props: {
            * é o único ponto por onde todo embed passa — `/exp/[expId]`,
            * `/dev-embed`, `/professor/plano-de-aula` e `/professor/bem-estar`
            * chegam nos quatro por caminhos diferentes, e um deles esquecido
-           * seria uma experiência sem Clarity que ninguém notaria (ADR-59).
+           * seria uma experiência sem Clarity que ninguém notaria (ADR-60).
            *
            * Quem chama pode sobrescrever: o spread de `config` vem depois.
            */

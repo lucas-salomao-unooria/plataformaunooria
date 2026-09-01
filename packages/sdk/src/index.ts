@@ -67,7 +67,7 @@ export async function createExperiencia(meta: {
   });
 
   /*
-   * Clarity DENTRO do iframe (ADR-59). O id chega pelo `config` do `hub:init`,
+   * Clarity DENTRO do iframe (ADR-60). O id chega pelo `config` do `hub:init`,
    * não por `import.meta.env`: o `packages/sdk` é transpilado TAMBÉM pelo Next
    * (o hub o traz em `transpilePackages`), e `import.meta.env` ali quebra o
    * build do hub. Pelo `config`, uma env só do hub liga as duas superfícies e

@@ -4,7 +4,7 @@ import Script from "next/script";
 import { CLARITY_PROJECT_ID } from "@/lib/clarity";
 
 /**
- * O Microsoft Clarity no HUB (ADR-59).
+ * O Microsoft Clarity no HUB (ADR-60).
  *
  * Montado no `app/layout.tsx` RAIZ, que é o único lugar com `<html>`/`<body>` e
  * o único que cobre TODAS as rotas: a landing pública, o login, as quatro áreas

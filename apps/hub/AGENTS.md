@@ -76,7 +76,7 @@ em `components/DispositivoFrame.tsx`, dirigido pelo `viewport` do manifesto — 
 
 ## Clarity: dois pontos de montagem, e nenhum é arbitrário
 
-O Microsoft Clarity (ADR-59) entra em **dois** lugares no hub, por razões
+O Microsoft Clarity (ADR-60) entra em **dois** lugares no hub, por razões
 diferentes — mover qualquer um deles quebra cobertura em silêncio.
 
 | Componente | Onde monta | Por que ali |

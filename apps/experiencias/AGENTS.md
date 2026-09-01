@@ -155,7 +155,7 @@ substitui o `tsc` ali é a suíte de ponta a ponta (`scripts/e2e/estudante/05-vi
 
 ## Clarity dentro do iframe
 
-Toda experiência carrega o Microsoft Clarity (ADR-59), e **nenhuma precisa
+Toda experiência carrega o Microsoft Clarity (ADR-60), e **nenhuma precisa
 fazer nada para isso**: quem carrega é o `createExperiencia()` da `@edu/sdk`,
 com o id que chega no `config` do `hub:init`. Não cole o `<script>` no
 `index.html` — a fonte única é `packages/sdk/src/clarity.ts`.
@@ -172,7 +172,7 @@ Três coisas que valem saber:
 - **O disfarce vaza no DevTools.** `exp-01`, `exp-02` e `exp-03` têm no
   `index.html` o aviso de que nada ali pode denunciar o exercício; requisições
   para `clarity.ms` aparecem na aba de rede. Consequência aceita e registrada na
-  ADR-59 — mas não acrescente nada que piore isso (um nome de tag visível, por
+  ADR-60 — mas não acrescente nada que piore isso (um nome de tag visível, por
   exemplo).
 - **Sem `NEXT_PUBLIC_CLARITY_PROJECT_ID` no hub, nada disso acontece.** Em dev o
   normal é o Clarity desligado; se você está procurando a requisição e ela não

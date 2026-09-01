@@ -21,6 +21,7 @@ import {
   type TableColumn,
 } from "@edu/ui/ds";
 import type { Papel } from "@/lib/papeis";
+import { NovoUsuario, type PessoaCriada } from "./novo-usuario";
 
 interface LinhaDeUsuario extends Record<string, unknown> {
   id: string;
@@ -95,6 +96,10 @@ export function GestaoUsuarios({
   const [senhaTemporaria, setSenhaTemporaria] = useState<{ usuario: string; senha: string } | null>(
     null,
   );
+  const [novoAberto, setNovoAberto] = useState(false);
+  /* O acesso recém-criado. A senha sai UMA vez da api, e some daqui ao fechar —
+     não há segunda chamada que a devolva; o caminho depois é resetar. */
+  const [acessoCriado, setAcessoCriado] = useState<PessoaCriada | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
 
   const sufixo = useMemo(
@@ -338,9 +343,14 @@ export function GestaoUsuarios({
             />
           </div>
         </div>
-        <Button variant="primary" size="md" onClick={() => router.push("/admin/importar")}>
-          Importar pessoas
-        </Button>
+        <div className="flex flex-wrap items-end gap-3">
+          <Button variant="secondary" size="md" onClick={() => router.push("/admin/importar")}>
+            Importar pessoas
+          </Button>
+          <Button variant="primary" size="md" onClick={() => setNovoAberto(true)}>
+            Novo usuário
+          </Button>
+        </div>
       </div>
 
       <p className="text-[14px] text-unooria-neutral-500">
@@ -352,7 +362,7 @@ export function GestaoUsuarios({
         data={linhas}
         keyExtractor={(linha) => linha.id}
         loading={carregando}
-        emptyText="Ninguém por aqui ainda — importe a planilha de pessoas para começar."
+        emptyText="Ninguém por aqui ainda — cadastre uma pessoa ou importe a planilha para começar."
         size="md"
         theme="light"
       />
@@ -441,6 +451,57 @@ export function GestaoUsuarios({
         </ModalBody>
         <ModalFooter>
           <Button variant="primary" size="md" onClick={() => setSenhaTemporaria(null)}>
+            Fechar
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <NovoUsuario
+        aberto={novoAberto}
+        papelDeQuemCria={papel}
+        sufixo={sufixo}
+        onFechar={() => setNovoAberto(false)}
+        onCriado={(pessoa) => {
+          setNovoAberto(false);
+          setAcessoCriado(pessoa);
+          setAviso(`${pessoa.nome} foi cadastrado.`);
+          void carregar();
+        }}
+      />
+
+      <Modal
+        isOpen={Boolean(acessoCriado)}
+        onClose={() => setAcessoCriado(null)}
+        size="sm"
+        theme="light"
+        title="Acesso criado"
+        description="Anote agora — a senha não aparece de novo."
+      >
+        <ModalBody>
+          <div className="flex flex-col gap-2 text-[15px] text-unooria-neutral-950">
+            <p>
+              <strong>{acessoCriado?.nome}</strong>
+            </p>
+            <p>
+              Login: <code>{acessoCriado?.usuario}</code>
+            </p>
+            <p>
+              Senha: <code>{acessoCriado?.senha}</code>
+            </p>
+            {acessoCriado?.turmaCriada ? (
+              <p className="text-unooria-neutral-700">
+                A turma {acessoCriado.turma} não existia e foi criada agora.
+              </p>
+            ) : null}
+            {acessoCriado?.avisos.map((av) => (
+              <p key={av.campo} className="text-unooria-neutral-700">
+                {av.mensagem}
+              </p>
+            ))}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="primary" size="md" onClick={() => setAcessoCriado(null)}>
             Fechar
           </Button>
         </ModalFooter>

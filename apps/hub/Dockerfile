@@ -35,7 +35,7 @@ RUN pnpm fetch
 # Código por cima; o install resolve do store local, sem rede.
 COPY . .
 RUN pnpm install --frozen-lockfile --offline
-# Microsoft Clarity (ADR-59). O `deploy.yml` passa o valor de
+# Microsoft Clarity (ADR-60). O `deploy.yml` passa o valor de
 # `vars.CLARITY_PROJECT_ID` do environment (dev/hml/prd). VAZIO = o hub não
 # renderiza a tag e não manda o id às experiências — é o kill-switch, e é o
 # default de qualquer build feito sem o argumento.

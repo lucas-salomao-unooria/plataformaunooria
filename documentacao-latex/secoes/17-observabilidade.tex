@@ -1,0 +1,961 @@
+% ===========================================================================
+%  17 — Observabilidade
+% ===========================================================================
+\chapter{Observabilidade}
+\label{cap:observabilidade}
+
+Este capítulo é um estudo com recomendação: levanta o que a plataforma revela
+de si mesma hoje, define o que ela precisa revelar para ser operada por uma
+pessoa em novembro de 2026, compara as ferramentas que fazem isso --- com
+preferência declarada por Google Cloud e por software livre --- e fecha num
+roteiro em fases, com custo estimado por contrato. As duas decisões que ele
+recomenda estão registradas como \adrr{ADR-57} e \adrr{ADR-58}, no estado
+\emph{proposta}, e o risco \cd{R-05} passa a apontar para aqui.
+
+\begin{decisao}
+\textbf{Telemetria não é observabilidade.} O Capítulo~\ref{cap:telemetria}
+descreve o instrumento \emph{pedagógico}: eventos xAPI do estudante, gravados
+para análise do que ele fez na experiência. Este capítulo trata do instrumento
+\emph{operacional}: o que a plataforma emite sobre \emph{si mesma} --- latência,
+erro, saturação, custo de IA, fila --- para quem a opera. Os dois usam a palavra
+\enquote{evento} e os dois passam pela API, e é justamente por isso que a
+confusão é frequente~\cite{majors2022observability}. Um mede a criança; o
+outro mede o software. Nenhum substitui o outro, e a regra 6 (nada de PII em log) vale igual para os dois.
+\end{decisao}
+
+\section{O que se vê hoje}
+
+O levantamento foi feito sobre o código em \cd{dev} em 1º de setembro de
+2026, com busca por biblioteca, por padrão de código e por configuração de
+implantação. O resultado é o mesmo em todas as camadas: \textbf{não há
+nenhuma biblioteca de observabilidade instalada em nenhum pacote do
+\emph{monorepo}} --- nem OpenTelemetry, nem \cd{pino}/\cd{winston}, nem
+\cd{prom-client}, nem Sentry, nem \cd{web-vitals}. O que existe é o que a
+infraestrutura dá de graça e o que a suíte de ponta a ponta prova quando
+alguém a roda.
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{58mm}X@{}}
+\toprule
+\headrow \thd{Camada} & \thd{O que existe} & \thd{O que falta, e onde se vê}\\
+\midrule
+\endhead
+API & \cd{ConsoleLogger} padrão do Nest em \textbf{texto}, quatro
+  \cd{Logger} nomeados e 19 \cd{console.*} com prefixo manual. \rota{GET
+  /healthz} (processo) e \rota{GET /readyz} (\cd{SELECT 1}). Disciplina
+  manual da regra 6, com comentário em cada ponto sensível. &
+  Sem JSON \implica{} cada linha vira \cd{textPayload} sem severidade. Sem
+  \emph{request-id} nem \cd{traceparent} (\arq{tenancy-context.ts} carrega
+  só \cd{escolaId}). Sem log de requisição na aplicação. Sem
+  \cd{ExceptionFilter}: erro não previsto vira 500 genérico com \emph{stack}
+  no \emph{stdout}. Sem \env{LOG\_LEVEL}. \cd{new PrismaClient()} sem
+  \cd{log} nem métrica. Um desvio da regra 6: \arq{auth.controller.ts} loga
+  o \cd{username} em claro.\\
+\zebra Cloud Run & Log de requisição e métricas nativas (contagem, latência,
+  instâncias, CPU, memória) chegam ao Cloud Logging e ao Cloud Monitoring
+  sem configuração. &
+  O \cd{gcloud run deploy} do \arq{deploy.yml} não configura sonda: vale a
+  \emph{startup probe} TCP padrão, e \rota{/readyz} \textbf{não é usada por
+  nada}. O \arq{docs/INFRA-IDENTITY.md} manda \enquote{nunca usar probe
+  TCP} para o WSO2; a API não segue o próprio conselho.\\
+Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]}); o único log
+  diagnóstico real é \cd{avisarManifestoIlegivel}, escrito depois de um
+  incidente. Nas telas, falha vira \cd{FeedbackAlert} de erro. &
+  Sem \arq{error.tsx}, \arq{global-error.tsx}, \arq{instrumentation.ts},
+  \cd{reportWebVitals} ou rota de saúde. Sem \cd{HEALTHCHECK} no Dockerfile
+  nem no \emph{compose}. \cd{apiDoServidor} \textbf{engole qualquer falha em
+  \cd{null}}, sem log: \enquote{API caiu} e \enquote{não há dados} são
+  indistinguíveis. Nenhum \cd{fetch} tem \emph{timeout}. Os cinco
+  \emph{route handlers} do BFF não registram nada, inclusive o 404 de rota
+  fora da \emph{allowlist}.\\
+\zebra Experiências e SDK & O protocolo da ponte tem \cd{exp:ready},
+  \cd{exp:concluir}, \cd{exp:estado}, \cd{exp:token-expirando}. O
+  \cd{TelemetryClient} faz lote de 50 a cada 10\,s e \cd{sendBeacon} no
+  \cd{pagehide}. &
+  \textbf{Não existe \cd{exp:erro}}, nem \cd{window.onerror}, nem
+  \cd{unhandledrejection} em lugar nenhum: um \emph{crash} na exp-70 durante
+  a aula não deixa rastro fora do console do estudante. Falha ao renovar
+  \emph{token} ou ao registrar conclusão é \cd{console.error} no navegador.
+  Sem \emph{sourcemap} nos \emph{bundles}. Fila de telemetria só em memória,
+  sem \emph{backoff}, sem teto, sem \cd{visibilitychange} (a exp-01 registra
+  os três eventos e comenta por quê; a SDK não aplicou a lição).\\
+Pipeline de telemetria & Guarda do \emph{push} falha fechada; \cd{INSERT}
+  multi-linha; \emph{dedupe} por \cd{(event\_id, ts)}. &
+  Quatro caminhos de descarte silencioso no \emph{controller}, só com
+  \cd{console.warn}. \cd{recebidos} conta o publicado, não o gravado. Nenhum
+  sinal de atraso da \emph{subscription}, de \emph{dead letter} ou de lote
+  perdido no cliente.\\
+\zebra IA & \cd{ia\_uso\_diario} guarda \emph{tokens} por (escola, usuário,
+  dia) e o \cd{AiResult} já carrega \cd{finishReason}, \cd{voltas} e
+  \cd{tentativas}. &
+  O \cd{VertexProvider} (438 linhas) \textbf{não mede tempo e não loga}.
+  Ninguém consome \cd{voltas}/\cd{tentativas}. Custo não é calculado.
+  Degradação deliberada (503 amigável, texto fixo, arte procedural) é boa para
+  o estudante e \textbf{invisível} para quem opera: a falha \enquote{dá
+  certo} e não conta em lugar nenhum.\\
+Trabalhos em segundo plano & Fila de geração e de planos persistida em
+  tabela, com \cd{status}, \cd{erro} e \cd{tentativas} consultáveis. &
+  A visibilidade é \cd{SELECT} numa tabela: sem alerta, sem taxa de erro,
+  sem \emph{dead letter}. Não há \emph{job} agendado --- por decisão --- e
+  portanto nenhuma verificação recorrente roda sozinha.\\
+\zebra CI/CD & \cd{deploy.yml} separa subir de ativar, roda a migração com
+  \cd{-{}-wait} e reprova o \emph{pipeline} se ela falhar. &
+  \textbf{Sem \emph{smoke} pós-\emph{deploy}} e \textbf{sem notificação em
+  falha}: o único sinal é o \emph{exit code} do \cd{gcloud}, que volta assim
+  que a revisão recebe tráfego, não quando ela responde. Snyk comentado.\\
+Infra (Terraform) & \arq{docs/INFRA-IDENTITY.md} desenha \emph{uptime
+  checks}, métrica de log, dez alertas com severidade e painel --- \textbf{só
+  para o WSO2}. &
+  \arq{docs/INFRA.md} não tem \textbf{uma linha} sobre alerta, sonda, SLO,
+  retenção de log ou painel para hub, API, CDN, Cloud SQL ou Pub/Sub.\\
+Suíte e2e & \arq{scripts/e2e}: 19 suítes por papel, \cd{esperarOuFalharCedo},
+  \cd{vigiarFalhasDaApi}, classificação de ruído/pendência/defeito,
+  relatório estruturado e \emph{exit code} honesto. &
+  Só roda com operador. Não corre depois de um \emph{deploy}, não roda em
+  horário, não emite métrica: o melhor detector de defeito da plataforma
+  depende de alguém lembrar de ligá-lo.\\
+\bottomrule
+\end{tabularx}
+
+\begin{limitacao}
+O resumo honesto é: \textbf{a plataforma é diagnosticável, mas não é
+observável.} Quem sabe onde olhar reconstrói uma falha a partir do log do
+Cloud Run e de um \cd{SELECT}; ninguém é avisado de que ela aconteceu, e uma
+classe inteira de falha --- a que acontece dentro do \cd{iframe}, no
+navegador do estudante --- não deixa rastro em lugar nenhum. Para o piloto
+em \cd{dev}, com uma pessoa olhando, isso bastou. Para cem escolas às oito da
+manhã, não basta.
+\end{limitacao}
+
+A Figura~\ref{fig:cadeia-visibilidade} percorre a cadeia de uma requisição e
+marca, elo por elo, o que se enxerga hoje e o que está cego.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+
+  \node[internet, minimum width=24mm] (nav) at (0,0) {Navegador\\\texttt{iframe} da exp};
+  \node[servicoger, text width=22mm] (lb) at (3.1,0) {\textbf{LB + CDN}};
+  \node[servico, text width=22mm] (hub) at (6.2,0) {\textbf{Cloud Run}\\\texttt{-frontend}};
+  \node[servico, text width=22mm] (api) at (9.3,0) {\textbf{Cloud Run}\\\texttt{-api}};
+  \node[volume, text width=18mm, minimum height=12mm] (sql) at (12.6,0.9) {\textbf{Cloud SQL}};
+  \node[servicobroker, text width=18mm, minimum height=10mm] (ps) at (12.6,-0.5) {\textbf{Pub/Sub}};
+  \node[externo, text width=18mm, minimum height=10mm] (vx) at (12.6,-1.9) {\textbf{Vertex AI}};
+
+  \draw[netpub] (nav) -- (lb);
+  \draw[netpub] (lb) -- (hub);
+  \draw[netpub] (hub) -- (api) node[portlbl, midway, above]{BFF};
+  \draw[netpriv] (api.east) -- (11.3,0) -- (11.3,0.9) -- (sql.west);
+  \draw[netbi] (api.east) -- (11.3,0) -- (11.3,-0.5) -- (ps.west);
+  \draw[netpub] (api.east) -- (11.3,0) -- (11.3,-1.9) -- (vx.west);
+
+  % --- o que se ve (verde)
+  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (0,-1.6)
+    {\textbf{vê-se:} nada};
+  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (3.1,-1.6)
+    {\textbf{vê-se:} contagem e latência por \emph{host}; log amostrável};
+  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (6.2,-1.6)
+    {\textbf{vê-se:} log de requisição, instâncias, CPU/mem};
+  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (9.3,-1.6)
+    {\textbf{vê-se:} idem + \texttt{/readyz} (se alguém abrir)};
+  \node[camada, text width=24mm, fill=unooGreenWash, draw=unooGreen, anchor=north] at (12.6,-3.0)
+    {\textbf{vê-se:} conexões, CPU, disco; \emph{backlog} da \emph{subscription}};
+
+  % --- o que esta cego (laranja)
+  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (0,-3.35)
+    {\textbf{cego:} \emph{crash} do \emph{bundle}, ponte sem \texttt{hub:init}, \emph{token} não renovado, lote de telemetria perdido};
+  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (3.1,-3.35)
+    {\textbf{cego:} quem foi afetado --- sem correlação com o resto};
+  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (6.2,-3.35)
+    {\textbf{cego:} \texttt{null} do \texttt{apiDoServidor}, \emph{redirect} em laço, erro de \emph{render}};
+  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (9.3,-3.35)
+    {\textbf{cego:} causa do 500, latência da IA, descarte de telemetria, fila em erro};
+  \node[camada, text width=24mm, fill=unooOrangeWash, draw=unooOrange, anchor=north] at (12.6,-4.75)
+    {\textbf{cego:} \emph{query} lenta por rota; \emph{dead letter} (não existe)};
+
+  \node[legenda, anchor=north west, text width=60mm] at (-1.2,-6.6)
+    {Nenhum elo propaga identificador de correlação: o mesmo pedido do
+     estudante aparece como quatro registros que não se reconhecem.};
+
+\end{tikzpicture}}
+\caption[Cadeia de uma requisição e o que cada elo revela hoje]{A cadeia de
+  uma requisição e o que cada elo revela hoje. O verde é o que a
+  infraestrutura entrega sem configuração; o laranja é onde a plataforma
+  está cega. O primeiro elo --- o navegador, onde a experiência roda --- é
+  o mais cego e o que mais importa: é lá que a criança está.}
+\label{fig:cadeia-visibilidade}
+\end{figure}
+
+\section{Princípios}
+
+As escolhas deste capítulo derivam de sete princípios, na ordem em que
+decidem um empate.
+
+\begin{enumerate}
+  \item \textbf{Alerta é sintoma, não causa.} Quem é avisado é avisado de
+    que o estudante não consegue abrir a experiência --- não de que a CPU
+    passou de 80\%. Causa vai para painel e para log; sintoma vai para o
+    telefone~\cite{beyer2016sre}. A consequência prática é que a lista de
+    alertas é \textbf{curta}: uma pessoa que recebe vinte alertas por dia
+    para de lê-los na primeira semana, e a suíte e2e já pagou para aprender
+    isso com o ruído de console (Capítulo~\ref{cap:qualidade}).
+  \item \textbf{Uma pessoa opera.} Dois níveis de urgência e só dois:
+    \emph{acorda} (indisponibilidade, erro em massa, dado em risco) e
+    \emph{amanhã} (saturação que cresce, custo, fila parada). Nada de
+    escalonamento, rodízio ou ferramenta de plantão enquanto o time é de um.
+  \item \textbf{Dado de menor não entra em sinal operacional.} Log, métrica,
+    \emph{trace} e relato de erro carregam identificadores opacos
+    (\cd{estudante\_id}, \cd{escola\_id}, \cd{sessao\_id}), nunca nome, CPF,
+    \emph{username}, e-mail ou texto livre. É a regra 6 estendida da
+    telemetria para tudo o que sai do processo --- e ela precisa ser
+    \textbf{mecânica} (\emph{redaction} no \emph{logger}), não convenção.
+  \item \textbf{Nativo do Google Cloud antes de peça nova.} O contrato com o
+    Terraform (Capítulo~\ref{cap:arqnuvem}) já proíbe serviço sem necessidade
+    demonstrada. Cloud Logging, Cloud Monitoring, Cloud Trace e Error
+    Reporting já recebem o que o Cloud Run emite; a franquia gratuita cobre
+    um contrato; e um contrato a mais não é uma instância a mais para
+    operar. Uma \emph{stack} auto-hospedada só entra quando algo que ela faz
+    e o nativo não faz for demonstrado, e isso não aconteceu.
+  \item \textbf{OpenTelemetry é a fronteira.} A instrumentação da API e do
+    hub fala OpenTelemetry~\cite{opentelemetry2026}; o destino é o Cloud
+    Trace/Monitoring \emph{hoje}. Trocar de destino (uma rede que exija
+    ferramenta própria, um SIEM, um Grafana) é trocar o exportador, não a
+    instrumentação --- o mesmo raciocínio do \emph{provider} de IA
+    (\adrr{ADR-07}) e do OIDC genérico (\adrr{ADR-03}).
+  \item \textbf{Por contrato, e visão única para quem opera.} Log e métrica
+    ficam no projeto do contrato (isolamento da rede, mesmo argumento da
+    \emph{stack} por contrato). A pessoa que opera vê todos os contratos por
+    um \emph{metrics scope} do Cloud Monitoring num projeto de observação
+    sem recurso nenhum --- métrica atravessa projeto de graça; log
+    \textbf{não} atravessa, de propósito.
+  \item \textbf{Custo previsível e declarado.} Cada sinal tem volume
+    estimado e franquia ao lado (Seção~\ref{sec:custo-obs}). Sinal cujo
+    custo cresce com o tráfego sem teto (log de requisição a 100\%,
+    \emph{trace} sem amostragem) é amostrado \emph{na origem}, não cortado
+    na fatura.
+\end{enumerate}
+
+\section{Os sinais, e onde cada um nasce}
+
+\subsection{Log estruturado}
+
+O \emph{stdout} do Cloud Run já é o transporte: uma linha que seja JSON
+válido é lida pelo agente de log como \cd{jsonPayload}, e três campos com
+nome especial viram metadado de primeira classe~\cite{gcpobservability2026}:
+\cd{severity} (o nível), \cd{logging.googleapis.com/\B trace} (o
+identificador que junta esta linha ao \emph{trace} e ao log de requisição do
+próprio Cloud Run) e \cd{logging.googleapis.com/\B spanId}. Um erro com
+\emph{stack trace} e \cd{severity: ERROR} é agrupado pelo Error Reporting
+sem mais nada.
+
+\begin{especificacao}{O que muda na API}
+\begin{itemize}
+  \item \cd{nestjs-pino} substitui o \cd{ConsoleLogger}: \cd{pino} em JSON,
+    com \cd{level} mapeado para \cd{severity} (\cd{warn} \seta{}
+    \cd{WARNING}, \cd{error} \seta{} \cd{ERROR}, \cd{fatal} \seta{}
+    \cd{CRITICAL}) e \cd{messageKey: "message"}. Em desenvolvimento,
+    \cd{pino-pretty}; em produção, JSON cru. Uma dependência de produção e
+    uma de desenvolvimento.
+  \item \textbf{Contexto por requisição} no mesmo \cd{AsyncLocalStorage} da
+    \emph{tenancy} (\arq{tenancy-context.ts}): \cd{escolaId}, \cd{perfil},
+    \cd{requestId} e \cd{trace}. O \emph{logger} filho lê dali, e toda
+    linha emitida dentro de um \emph{handler} sai com os quatro campos sem
+    que quem escreve o log precise lembrar deles.
+  \item \textbf{Correlação}: o \cd{trace} vem do cabeçalho
+    \cd{traceparent} (W3C~\cite{w3ctracecontext}) quando existe, e do
+    \cd{X-Cloud-Trace-Context} que o \emph{load balancer} injeta quando não.
+    O valor gravado é \cd{projects/\{id\}/traces/\{traceId\}}, que exige o
+    identificador do projeto: entra como \env{GCP\_PROJECT\_ID}, injetada
+    pelo Terraform (Apêndice~\ref{ap:envs}).
+  \item \textbf{\emph{Redaction} mecânica}: a opção \cd{redact} do \cd{pino}
+    apaga, por caminho, \cd{authorization}, \cd{cookie}, \cd{token},
+    \cd{senha}, \cd{cpf}, \cd{username}, \cd{email}, \cd{nome} e qualquer
+    campo de texto livre (\cd{texto}, \cd{mensagem}, \cd{transcricao},
+    \cd{observacao}) em qualquer profundidade. É a regra 6 saindo da
+    convenção e entrando na ferramenta; o \cd{username} do
+    \arq{auth.controller.ts} deixa de vazar por construção.
+  \item \textbf{Um \cd{ExceptionFilter} global}: \cd{HttpException} mantém
+    o corpo de hoje; erro não previsto (inclusive \cd{ZodError} que escapou)
+    vira 500 com \cd{\{ codigo: "erro-interno", requestId \}} no corpo e
+    \textbf{uma} linha \cd{ERROR} com \emph{stack} e contexto no log. O
+    \cd{requestId} no corpo é o que o professor lê na tela e o que quem
+    opera cola no Logs Explorer --- é a ponte entre o relato e o registro.
+  \item \textbf{Log de requisição da aplicação: não.} O Cloud Run já grava
+    um por requisição, com método, rota, \emph{status}, latência e
+    \cd{trace}. Duplicá-lo dobraria o volume do sinal mais caro da lista
+    para acrescentar zero informação. O que a aplicação loga é o que o
+    Cloud Run não sabe: o \cd{escolaId}, o motivo de um 4xx, a decisão de
+    degradar.
+  \item \textbf{Prisma}: \cd{log: [\{ emit: "event", level: "query" \}]}
+    ligado só quando \env{LOG\_LEVEL=debug}, e um \emph{listener} que emite
+    \cd{WARNING} para \emph{query} acima de 500\,ms em qualquer nível. A
+    \emph{preview feature} \cd{metrics} do Prisma (contadores de pool e
+    histograma de \emph{query}) alimenta a Seção~\ref{sec:metricas-obs}.
+\end{itemize}
+\end{especificacao}
+
+No hub, o mesmo \cd{pino} (sem o módulo do Nest) em \arq{lib/log.ts}, usado
+por \cd{apiDoServidor}, pelos \emph{route handlers} e pelo
+\emph{middleware}. \cd{apiDoServidor} \textbf{continua devolvendo \cd{null}}
+para não quebrar as páginas que dependem disso, mas passa a registrar
+\cd{WARNING} com rota, \emph{status} e \cd{requestId} antes de devolver ---
+e ganha \cd{AbortSignal.timeout(10\,000)}, porque uma API pendurada não pode
+pendurar o hub junto. O 404 silencioso da \emph{allowlist} do BFF vira
+\cd{WARNING} com o prefixo recusado: é o sintoma de uma tela nova que
+esqueceu de pedir passagem.
+
+\begin{regra}
+\textbf{Exclusão na origem, não na fatura.} Dois filtros de exclusão no
+\emph{sink} \cd{\_Default} de cada contrato, criados pelo Terraform:
+(1) o log de requisição do Cloud Run para \rota{/healthz}, \rota{/readyz} e
+os \emph{user agents} dos \emph{uptime checks}; (2) amostragem de 20\%
+(\cd{sample(insertId, 0.2)}) do log de requisição com \emph{status} 2xx e
+latência abaixo de 1\,s. Requisição com erro, ou lenta, fica em 100\%. Log
+excluído não é ingerido e não é cobrado, e é o que mantém o sinal mais
+volumoso dentro da franquia (Seção~\ref{sec:custo-obs}).
+\end{regra}
+
+\subsection{Métricas}
+\label{sec:metricas-obs}
+
+Três origens, do mais barato para o mais informativo:
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X L{34mm}@{}}
+\toprule
+\headrow \thd{Origem} & \thd{O que dá} & \thd{Custo e esforço}\\
+\midrule
+Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
+  \emph{status}, \cd{request\_latencies} (distribuição), \cd{instance\_count},
+  CPU, memória, latência de \emph{startup}. Cloud SQL: conexões, CPU, disco,
+  \emph{replication lag}, \emph{failover}. Pub/Sub:
+  \cd{oldest\_unacked\_message\_age}, \cd{num\_undelivered\_messages},
+  \cd{dead\_letter\_message\_count}. LB: contagem e latência por \emph{host}
+  e classe de \emph{status}; CDN: taxa de acerto. &
+  \textbf{Grátis, zero código.} É a base de todos os alertas da fase 0.\\
+\zebra Métricas de log & Um contador ou distribuição derivado de um filtro
+  do Cloud Logging: \enquote{linhas com \cd{codigo=telemetria-descartada}},
+  \enquote{\cd{severity=ERROR} da revisão X}, \enquote{execução do
+  \emph{job} \cd{-migrate} com falha}. &
+  As \emph{de sistema} são grátis; as \emph{definidas pelo usuário} contam
+  na franquia de métrica. Zero código: é um filtro no Terraform.\\
+Métricas da aplicação (OpenTelemetry) & O que só o processo sabe:
+  \textbf{IA} --- latência por modelo e rota (histograma), \emph{tokens}
+  de entrada/saída, \cd{finishReason}, \cd{voltas}, \cd{tentativas},
+  recusas de quota; \textbf{telemetria} --- lotes recebidos, eventos
+  publicados, gravados e descartados por motivo; \textbf{fila} --- geração e
+  planos por \cd{status}, idade do mais antigo em \cd{gerando}; \textbf{pool
+  do Prisma} --- conexões em uso e espera; \textbf{ponte} --- \emph{handshakes}
+  concluídos e expirados (via hub). &
+  Exportadas ao Cloud Monitoring pelo SDK OpenTelemetry com o exportador do
+  Google, agregadas a cada 60\,s. Cerca de 60 séries por contrato: cabe na
+  franquia de 150\,MiB com folga.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Cardinalidade.} \cd{escola\_id} \textbf{não} é rótulo de métrica:
+cem escolas multiplicam cada série por cem, e a franquia acaba na primeira
+semana. Escola vai para o log (que se filtra) e para a telemetria (que se
+agrega em SQL). Rótulos de métrica são conjuntos \textbf{fechados} e pequenos:
+rota, perfil, modelo, \cd{finishReason}, motivo de descarte, \emph{status}
+de fila. A mesma regra que a telemetria aplica ao vocabulário do
+\emph{payload} (\adrr{ADR-11}).
+\end{atencao}
+
+\subsection{Rastros distribuídos}
+
+Um \emph{trace} responde à pergunta que nem log nem métrica respondem:
+\emph{onde} os 1.800\,ms de uma abertura de missão foram gastos --- no hub,
+no BFF, na API, no \emph{lock} do \emph{feed}, no Vertex. A instrumentação
+automática do OpenTelemetry para Node cobre HTTP de entrada e saída
+(\cd{undici}, portanto o \cd{fetch} do Vertex e o do hub), Express (o Nest),
+\cd{pg} (o Prisma) e Pub/Sub, sem tocar no código dos módulos. No hub, o
+\arq{instrumentation.ts} do Next~\cite{nextjs2026} registra o mesmo SDK, e o
+\cd{traceparent} atravessa do navegador ao Cloud SQL.
+
+\begin{decisao}
+\textbf{Exportador direto, sem \emph{sidecar} de coletor.} O Google
+recomenda um OpenTelemetry Collector como segundo contêiner do serviço Cloud
+Run~\cite{gcpotelcloudrun}. Ele faz sentido quando há vários destinos, ou
+quando se quer \emph{tail sampling} (guardar só os \emph{traces} com erro,
+decidido no fim). Nenhuma das duas condições existe hoje, e o \emph{sidecar}
+é mais um contêiner com CPU, memória, versão e falha própria em cada
+serviço de cada contrato. A API e o hub exportam direto, com ADC (a mesma
+credencial de \emph{service account} que já autentica o Vertex), pelos
+exportadores \cd{@google-cloud/opentelemetry-cloud-trace-exporter} e
+\cd{-cloud-monitoring-exporter}. O \emph{sidecar} é o gatilho de
+reavaliação registrado na \adrr{ADR-57}.
+\end{decisao}
+
+Amostragem: \cd{ParentBased(TraceIdRatioBased(0.02))} --- 2\% das
+requisições, decidido na entrada e respeitado ao longo da cadeia. O
+identificador de \emph{trace} existe em \textbf{100\%} das requisições
+(ele vem do \emph{load balancer}), então todo log de erro carrega um
+\cd{trace} para pesquisar mesmo quando os \emph{spans} não foram guardados;
+o que a amostragem decide é só quanta \emph{linha do tempo} se armazena.
+Rotas de IA e \rota{/runs/:id/feed} têm amostrador próprio a 20\%: são as
+duas em que a latência é o produto.
+
+\subsection{Erros}
+
+Erros de servidor chegam ao Error Reporting pelo log estruturado, sem
+biblioteca: linha com \cd{severity: ERROR} e \emph{stack trace} é agrupada
+por assinatura, com contagem, primeira e última ocorrência e a revisão do
+Cloud Run em que apareceu. \enquote{Erro novo nesta revisão} é o alerta de
+\emph{deploy} mais barato que existe.
+
+Erros de \textbf{cliente} são o problema que a Figura~\ref{fig:cadeia-visibilidade}
+mostra em laranja no primeiro elo, e a escolha aqui é a \adrr{ADR-58}: a
+experiência \textbf{não} carrega SDK de terceiro. Um \emph{bundle} público
+que carrega um \emph{DSN} do Sentry é um \emph{bundle} que manda o
+\emph{user agent}, a URL, a \emph{stack} e o que mais o erro arrastar para um
+processador fora do contrato e do DPA da rede --- para um erro que aconteceu
+na tela de uma criança. O caminho é a API, que já tem o \emph{token}, a
+escola e a regra 6 (Figura~\ref{fig:seq-erro-cliente}).
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm]
+  \raia{0}{-6.2}{Experiência}{\texttt{@edu/sdk}}
+  \raia{3.4}{-6.2}{Hub}{\texttt{ExpFrame}}
+  \raia{6.8}{-6.2}{API}{\texttt{/observabilidade}}
+  \raiaext{10.2}{-6.2}{Cloud Logging}{Error Reporting}
+
+  \msgself{0}{-0.9}{\texttt{window.onerror} / \texttt{unhandledrejection}}
+  \node[seqcond] at (0.7,-1.75) {dedupe por \emph{hash}, máx. 5 por sessão, 8\,KB};
+  \msgs{0}{6.8}{-2.3}{\texttt{POST /observabilidade/erros-cliente} (Bearer)}
+  \node[seqcond] at (7.1,-2.75) {Zod: \texttt{expId}, \texttt{versao}, \texttt{mensagem}, \texttt{stack}, \texttt{url}};
+  \msgself{6.8}{-3.3}{\emph{redaction} + \texttt{escola\_id} do \emph{token}}
+  \msgs{6.8}{10.2}{-4.1}{\emph{stdout} JSON, \texttt{severity: ERROR}, \texttt{@type: ReportedErrorEvent}}
+  \msgself{10.2}{-4.6}{agrupa por assinatura; \enquote{novo na versão X}}
+  \msgr{6.8}{0}{-5.1}{\texttt{204} (ou \texttt{429}: cota da sessão)}
+  \draw[seqret] (0,-5.7) -- (3.4,-5.7) node[seqlbl, midway, above=0.4pt]{\texttt{exp:erro} (opcional, \texttt{targetOrigin} explícito)};
+  \node[seqcond] at (3.7,-6.05) {hub mostra \enquote{algo deu errado} e oferece recarregar};
+\end{tikzpicture}}
+\caption[Erro de cliente entra pela API]{Um erro não capturado dentro do
+  \cd{iframe} chega ao Error Reporting pela API, nunca por um serviço de
+  terceiros: a API já tem o \emph{token}, a escola e a \emph{redaction}. A
+  mensagem \cd{exp:erro} da ponte é opcional e só serve para o hub trocar a
+  tela; o registro não depende dela.}
+\label{fig:seq-erro-cliente}
+\end{figure}
+
+Três detalhes que decidem se isso funciona ou vira ruído. \textbf{Cota por
+sessão}: um laço de erro numa experiência gera milhares de eventos por
+segundo; a SDK manda no máximo cinco por sessão, com \emph{dedupe} por
+\emph{hash} de mensagem e \emph{stack}, e a API responde 429 acima disso,
+por \cd{(escola, usuario)}. \textbf{\emph{Sourcemaps} privados}: o
+\emph{build} das experiências passa a gerar \cd{build.\B sourcemap:\B "hidden"},
+publicado em \cd{gs://\B\{contrato\}-exp/\B\{expId\}/\B\{versao\}/\B mapas/} com ACL
+privada (o \emph{bundle} continua sem o comentário que aponta para eles); a
+\emph{stack} minificada é legível com o mapa da versão exata, e a versão já
+está no caminho. \textbf{Nada de texto do estudante}: o \emph{payload} é um
+\emph{schema} fechado; \cd{mensagem} e \cd{stack} passam pela
+\emph{redaction} da API e têm tamanho máximo.
+
+No hub, \arq{error.tsx} e \arq{global-error.tsx} fazem o equivalente para
+erro de \emph{render}: registram pelo \cd{pino} do servidor (o
+\cd{global-error} do cliente posta na mesma rota) e mostram a tela de erro do
+\emph{design system} com o \cd{requestId}.
+
+\subsection{Experiência do usuário real e sondas sintéticas}
+
+\textbf{Web Vitals.} O \cd{useReportWebVitals} do Next envia LCP, INP e CLS
+das telas do hub --- amostrados a 10\%, sem identificador de pessoa, com
+\cd{perfil} e rota --- para a mesma rota da API, que os emite como
+distribuição OpenTelemetry. Nas experiências, o mesmo pacote
+\cd{web-vitals} (4\,KB) entra pela SDK. É o único sinal de que \enquote{a
+plataforma está lenta na escola X} que não depende de alguém reclamar --- e
+rede pública tem escola com conectividade ruim, o que é exatamente onde o
+problema aparece e o \emph{trace} do servidor não vê.
+
+\textbf{\emph{Uptime checks}} do Cloud Monitoring, de três regiões, a cada
+60\,s, criados pelo Terraform, com validação de \textbf{conteúdo} e não só
+de \emph{status}:
+
+\begin{tabularx}{\linewidth}{@{}L{52mm}X@{}}
+\toprule
+\headrow \thd{Alvo} & \thd{O que um único \emph{probe} prova}\\
+\midrule
+\rota{GET \{hub\}/\B.well-known/\B jwks.json} contém \cd{"keys"} & DNS, TLS,
+  LB, hub de pé, chave de assinatura carregada. É o \emph{probe} de maior
+  valor: sem ele nenhum \emph{token} de experiência é validável.\\
+\zebra \rota{GET \{api\}/readyz} \(=\) \cd{\{"ok":true\}} & API de pé
+  \textbf{e} Cloud SQL respondendo, pela VPC. Hoje ninguém chama esta rota;
+  passa a ser chamada 4.320 vezes por dia.\\
+\rota{GET \{hub\}/api/healthz} & Rota nova do hub, sem dependência: processo
+  vivo. Separa \enquote{hub caiu} de \enquote{API caiu} no alerta.\\
+\zebra \rota{GET \{exp\}/\B exp-01-instanooria/\B\{versao\}/\B index.html} & CDN
+  e \emph{bucket} servindo a versão ativa. A versão vem do manifesto, então
+  o \emph{check} é regerado no passo \emph{ativar} do \emph{deploy}.\\
+\rota{GET \{hub\}/} contém o texto da \emph{landing} & O \emph{render} do
+  Next funciona, não só o processo.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{A suíte e2e vira monitor sintético.} É o ativo mais valioso do
+levantamento e o que menos custa aproveitar: \cd{rodar.mjs publico} já é
+\enquote{o canário mais barato que existe} (nas palavras do próprio
+arquivo), e cada suíte já sai com \emph{exit code} honesto e relatório
+classificado. Faltam três coisas, todas fora do código da suíte: (1) um
+\emph{workflow} do GitHub Actions com \cd{schedule} (a cada 30 minutos em
+horário escolar, a cada 2 horas fora dele) rodando \cd{publico} e
+\cd{estudante} contra \cd{hml} com contas de sonda; (2) o mesmo
+\emph{workflow} chamado como \emph{smoke} ao fim do \cd{deploy.yml}, com
+\cd{if: failure()} notificando; (3) o resultado convertido em métrica:
+\cd{gcloud monitoring} escrevendo uma série \cd{e2e/suite\_ok} por suíte,
+para que um alerta do Cloud Monitoring trate a suíte como qualquer outro
+sinal. O GitHub Actions dá 2.000 minutos por mês no plano \emph{Free}; a
+suíte pública leva menos de dois minutos, o que cabe.
+
+\begin{nota}
+Os \emph{synthetic monitors} do Cloud Monitoring (Playwright rodando numa
+Cloud Function) fariam o mesmo dentro do projeto, mas custam US\$~1,20 por
+mil execuções com só cem grátis --- e a suíte já existe, com a lógica de
+espera que corre contra o erro. Reescrevê-la para outra plataforma seria
+pagar duas vezes pela mesma prova.
+\end{nota}
+
+\subsection{Banco, mensageria e borda}
+
+\textbf{Cloud SQL}: \emph{Query Insights} ligado no Terraform (grátis) dá a
+lista das \emph{queries} mais caras por \emph{hash}, com plano; a extensão
+\cd{pg\_stat\_statements} é o mesmo dado por SQL, para o \emph{checklist}
+do Apêndice~\ref{ap:operacao}. A sonda de \emph{tenancy} entra aqui também:
+uma métrica de log que conta \cd{WARNING} de \emph{query} fora de
+\cd{comTenancy} (a RLS devolve zero linhas em silêncio, e o Apêndice~F já
+registra dois incidentes disso).
+
+\textbf{Pub/Sub}: a \emph{subscription} de telemetria ganha
+\cd{dead\_\B letter\_\B policy} para um tópico \cd{\{contrato\}-\B telemetria-dlq}
+depois de cinco tentativas. Hoje, um lote que a API recusa (401 por
+\emph{env} ausente, 400 por envelope inválido) é reentregue para sempre
+--- e é invisível. Com a \emph{dead letter}, ele vira uma contagem, e a
+contagem vira alerta.
+
+\textbf{Load balancer e CDN}: log do LB ligado com amostragem de 10\%
+(suficiente para taxa de erro por \emph{host}), e uma métrica de acerto de
+CDN por \emph{bucket}. Uma queda na taxa de acerto do \emph{bucket} de
+\emph{bundles} depois de um \emph{deploy} é o sintoma de \emph{index.html}
+sem \cd{Cache-Control} ou de caminho publicado sem subir a versão --- as
+duas armadilhas que o \arq{AGENTS.md} da raiz já descreve.
+
+\subsection{Camada de IA}
+
+A IA é o custo variável da plataforma e o sinal de que menos se sabe hoje.
+O \cd{AiProvider} ganha um invólucro de medida --- \textbf{dentro} de
+\arq{apps/api/src/ai}, o único lugar onde uma chamada de IA acontece --- que
+emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
+de entrada e saída, \cd{finishReason}, \cd{voltas}, \cd{tentativas} e o
+resultado (\cd{ok}, \cd{erro-provider}, \cd{quota}). O \cd{QuotaService}
+emite as recusas por perfil. Custo é métrica \emph{derivada}: uma tabela de
+preço por modelo em \arq{catalogo-modelos.ts}, multiplicada no painel, não
+no processo --- preço muda sem \emph{deploy}, e a métrica de \emph{tokens} é
+a que vale.
+
+Três alertas saem daqui: erro do \emph{provider} acima de 10\% em 5 minutos
+(\emph{acorda}, se em horário escolar: é a exp-03 inteira), latência p95
+acima de 30\,s (\emph{amanhã}: é o \cd{R-13} materializado), e consumo do
+dia acima de duas vezes a média móvel de 7 dias (\emph{amanhã}: é custo ou
+laço). O \cd{R-14} mediu uma partida em 71.397 \emph{tokens} à mão; com isto,
+a medida é contínua.
+
+\subsection{Entrega}
+
+O \cd{deploy.yml} ganha três passos que hoje não existem: um
+\emph{smoke} pós-\emph{deploy} (o \emph{workflow} da suíte, acima),
+notificação de falha (\cd{if: failure()} para o mesmo canal dos alertas) e
+uma \textbf{anotação de \emph{deploy}} --- uma linha de log
+\cd{codigo=deploy}, com SHA, revisão e versão de cada experiência ativada,
+que vira marcador vertical nos painéis. \enquote{O erro começou às 14h07}
+ao lado de \enquote{a revisão 00042 recebeu tráfego às 14h06} é metade de
+um diagnóstico.
+
+\section{Ferramentas: comparação e escolha}
+\label{sec:ferramentas-obs}
+
+A comparação é por função, não por fornecedor. Em cada linha, a escolha
+recomendada vem primeiro; as alternativas trazem a condição em que passariam
+a valer.
+
+\begin{tabularx}{\linewidth}{@{}L{20mm}L{36mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Função} & \thd{Escolha} & \thd{Custo} & \thd{Alternativas e quando}\\
+\midrule
+\endhead
+Log & \textbf{Cloud Logging}, via \emph{stdout} JSON do Cloud Run &
+  50\,GiB/projeto/mês grátis; US\$~0,50/GiB além; 30 dias inclusos &
+  \emph{Grafana Loki} auto-hospedado: uma VM, retenção e \emph{backup} por
+  conta própria, e o log sairia do projeto do contrato. \emph{Grafana Cloud
+  Free} (50\,GB, 14 dias): idem quanto à saída do projeto. \emph{OpenObserve}
+  ou \emph{SigNoz}: só se o nativo faltar em consulta (não falta: Logs
+  Explorer e Log Analytics em SQL).\\
+\zebra Métricas e painéis & \textbf{Cloud Monitoring}; painel por contrato em
+  JSON no Terraform; \emph{metrics scope} central &
+  Métricas do Google grátis; custom: 150\,MiB grátis, US\$~0,258/MiB além &
+  \emph{Prometheus + Grafana} auto-hospedados: um coletor por serviço
+  (\emph{scrape} não atravessa Cloud Run sem \emph{sidecar}) e uma instância
+  central para N contratos. \emph{Grafana Cloud Free} (10\,k séries) como
+  \textbf{painel} sobre a fonte de dados Cloud Monitoring, se a pessoa
+  preferir a ergonomia do Grafana --- é leitura, não muda a coleta. Entra
+  quando houver mais de um operador com opinião sobre painel.\\
+Rastros & \textbf{Cloud Trace} pelo SDK OpenTelemetry + exportador Google &
+  2,5\,M \emph{spans}/mês grátis; US\$~0,20/M além &
+  \emph{Grafana Tempo} ou \emph{Jaeger}: exigem coletor e armazenamento.
+  Entra se uma rede exigir retenção de \emph{trace} acima de 30 dias
+  (Cloud Trace guarda 30).\\
+\zebra Erros & \textbf{Error Reporting} pelo log; erro de cliente
+  \textbf{pela API} (\adrr{ADR-58}) &
+  Grátis &
+  \emph{Sentry SaaS} (Developer: 5\,k erros/mês, 1 usuário; Team: US\$~26/mês):
+  \emph{session replay} e \emph{breadcrumbs} são melhores, mas o dado sai do
+  contrato --- só com DPA que o cubra. \emph{GlitchTip} ou \emph{Sentry}
+  auto-hospedados: fala o protocolo do Sentry dentro do projeto; entra se o
+  agrupamento do Error Reporting se mostrar insuficiente para 48
+  experiências.\\
+\emph{Analytics} de produto & \textbf{Microsoft Clarity}, no hub e dentro do
+  \emph{bundle} (\adrr{ADR-60}) &
+  Grátis (teto de \num{100000} gravações/dia por projeto) &
+  \emph{PostHog} ou \emph{Matomo} auto-hospedados: ficariam dentro do projeto do
+  contrato, e é o caminho se o \emph{replay} em processador de terceiro não
+  passar no DPA de uma rede. \emph{Hotjar}, \emph{FullStory}: pagos, mesmo
+  problema de residência. \textbf{Não substituem} a telemetria própria --- ela
+  é que corrige, pontua e vira relatório de professor; o Clarity só mostra a
+  tela.\\
+\zebra Sondas & \textbf{Uptime checks} do Cloud Monitoring + \textbf{suíte e2e}
+  agendada no GitHub Actions &
+  1\,M execuções/mês grátis; Actions: 2.000\,min/mês grátis &
+  \emph{Uptime Kuma} auto-hospedado: bonito, mas uma VM a mais para fazer o
+  que a franquia já faz. \emph{Synthetic monitors} do Cloud Monitoring:
+  US\$~1,20/mil execuções; reescreveria a suíte. \emph{Checkly},
+  \emph{Grafana Synthetic}: pagos, só com vários operadores.\\
+Roteamento de alerta & \textbf{Canais nativos}: e-mail + \emph{push}
+  do app Cloud Console (acorda) e Google Chat/Slack (amanhã) &
+  Grátis; a cobrança anunciada de política (Seção~\ref{sec:custo-obs}) &
+  \emph{ntfy} auto-hospedado ou o plano grátis do \emph{Pushover}: \emph{push}
+  sem depender do app do Google. \emph{Grafana OnCall} (grátis até 3
+  usuários) ou \emph{PagerDuty}: escalonamento e rodízio --- \textbf{só faz
+  sentido com o segundo operador}.\\
+\zebra Teste de carga & \textbf{k6} (livre), da máquina de quem opera, contra
+  \cd{hml} &
+  Grátis &
+  \emph{Grafana Cloud k6}: 500 VUh/mês grátis, executores distribuídos ---
+  útil se 4.000 usuários virtuais não saírem de um só \emph{laptop}.\\
+APM completo & --- &
+  --- &
+  \emph{Datadog}, \emph{New Relic}, \emph{Dynatrace}: por \emph{host} ou por
+  GB, na casa de centenas de dólares/mês por contrato. Entram quando houver
+  vários contratos em várias nuvens ou um time de operação com SLA formal ---
+  e a instrumentação OpenTelemetry já estará pronta para eles.\\
+\bottomrule
+\end{tabularx}
+
+\begin{destaque}
+\textbf{Onde o pago se justifica hoje}: em nada. \textbf{Onde se justifica
+no primeiro contrato em produção}: num canal de \emph{push} confiável para o
+alerta \emph{acorda} --- o app do Cloud Console serve, e um \emph{Pushover}
+custa US\$~5 uma vez. \textbf{Onde se justificará com o segundo operador}:
+rodízio de plantão (Grafana OnCall grátis; PagerDuty se houver SLA
+contratual). \textbf{Onde nunca, por desenho}: SDK de \textbf{erro} de
+terceiro dentro de um \emph{bundle} de experiência.
+
+\textbf{E onde a regra acima abriu exceção}: \emph{analytics de produto}. A
+\adrr{ADR-60} pôs o Microsoft Clarity no hub \emph{e} dentro do \emph{bundle},
+porque o \cd{iframe} é cross-origin e gravar só o hub deixaria de fora
+exatamente a tela em que o estudante passa a sessão. A distinção que sobra é
+estreita e vale dizê-la: erro de cliente continua entrando pela API, com
+\emph{redaction} e \cd{escola\_id} do \emph{token}; o que sai para terceiro é
+gravação de sessão, com identificador opaco e sem a resposta do estudante.
+\end{destaque}
+
+\section{SLIs, SLOs e a lista de alertas}
+
+Um SLO é uma promessa numérica sobre um sintoma, e o alerta é a taxa com que
+a promessa está sendo consumida~\cite{beyer2018workbook}. Os SLOs abaixo são
+por contrato, com janela de 30 dias, medidos no Cloud Monitoring (que tem
+\emph{service monitoring} nativo para Cloud Run, com alerta de
+\emph{burn rate} pronto). A meta de 99,5\% dá 3\,h\,36\,min de orçamento de
+erro por mês --- honesto para uma pessoa e um Cloud Run com
+\cd{min-instances=1}; 99,9\% (43 minutos) só com o segundo operador.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X L{18mm}@{}}
+\toprule
+\headrow \thd{SLI} & \thd{Definição} & \thd{SLO}\\
+\midrule
+Disponibilidade do hub & Requisições ao \cd{-frontend} sem 5xx, exceto sondas
+  & 99,5\%\\
+\zebra Disponibilidade da API & Requisições ao \cd{-api} sem 5xx, exceto
+  \rota{/ai/*} e \rota{/unoogpt/*} (medidas à parte) & 99,5\%\\
+Latência da API & p95 de \rota{/runs/:id/feed}, \rota{/experiencias/:id},
+  \rota{/auth/*} abaixo de 800\,ms & 99\%\\
+\zebra Turno de IA & Chamadas ao \emph{provider} concluídas (não
+  \cd{erro-provider}) & 98\%\\
+Ingestão de telemetria & \cd{oldest\_unacked\_message\_age} abaixo de 5
+  minutos & 99\%\\
+\zebra Ponte & \emph{Handshakes} \cd{exp:ready} \seta{} \cd{hub:init}
+  concluídos em 8\,s (via métrica do hub) & 99\%\\
+\bottomrule
+\end{tabularx}
+
+A lista de alertas cabe numa página, e isso é deliberado. Cada linha tem
+um dono (a pessoa), uma severidade e uma ação de primeira resposta que
+aponta para o Apêndice~\ref{ap:operacao}.
+
+\begin{tabularx}{\linewidth}{@{}L{8mm}L{44mm}X L{30mm}@{}}
+\toprule
+\headrow \thd{Sev.} & \thd{Condição} & \thd{Por que este e não outro} & \thd{Primeira resposta}\\
+\midrule
+\endhead
+\textbf{A} & \emph{Uptime check} do JWKS ou do \rota{/readyz} falha em 2 de 3
+  regiões por 2 minutos & Ninguém entra, ou nenhuma experiência valida
+  \emph{token}. É \textbf{o} sintoma. & Revisão anterior
+  (\cd{update-\B traffic}); estado do Cloud SQL\\
+\zebra \textbf{A} & \emph{Burn rate} do SLO de disponibilidade (hub ou API)
+  \(>\) 14,4 em 1\,h (consome 2\% do orçamento mensal numa hora) & Erro em
+  massa, independentemente da causa. Substitui \enquote{5xx \(>\) 1\%}: a
+  mesma taxa às 8h e às 23h significa coisas diferentes. & Error Reporting:
+  o erro novo da revisão\\
+\textbf{A} & Erro do \emph{provider} de IA \(>\) 10\% em 5 min, entre 7h e
+  19h & A exp-03 inteira depende disso, e a sala espera. & Quota do Vertex;
+  catálogo do modelo (\cd{R-12}); \cd{error.cause}\\
+\zebra \textbf{A} & \cd{instance\_count} da API \(=\) \cd{max-instances} por
+  5 min & Saturação: a próxima requisição espera na fila do Cloud Run. &
+  Subir \cd{max}; olhar p95 e pool do Prisma\\
+\textbf{A} & Execução do \emph{job} \cd{-migrate} com falha (métrica de log)
+  & O \emph{deploy} parou no meio, com \emph{schema} velho e código novo
+  prontos para divergir. & Não reexecutar às cegas: ler o log do
+  \emph{job}\\
+\zebra \textbf{B} & \emph{Burn rate} \(>\) 6 em 6\,h & Degradação lenta que
+  vai estourar o mês. & Painel; Query Insights\\
+\textbf{B} & Conexões do Cloud SQL \(>\) 80\% do \cd{max\_connections} por 10
+  min & O pool do Prisma é por instância; escala de instância multiplica
+  conexão. & \cd{connection\_\B limit} na \env{DATABASE\_\B URL}; \emph{pooler}\\
+\zebra \textbf{B} & \cd{oldest\_\B unacked\_\B message\_\B age} \(>\) 10 min, ou
+  \cd{dead\_\B letter\_\B message\_\B count} \(>\) 0 & A telemetria está parando ou
+  sendo recusada --- hoje ninguém saberia. & \rota{/telemetry/\B ingest} no
+  log: 401 é \emph{env}, 400 é envelope\\
+\textbf{B} & Latência p95 da IA \(>\) 30\,s por 15 min & É o \cd{R-13}
+  acontecendo. & \cd{stream\B Generate\B Content} é a saída conhecida\\
+\zebra \textbf{B} & Descartes de telemetria \(>\) 1\% dos eventos em 1\,h
+  (métrica da aplicação) & Uma experiência publicou verbo fora do
+  vocabulário, ou \emph{payload} acima do teto. & Motivo do descarte no
+  rótulo\\
+\textbf{B} & Fila de geração ou de planos com item em \cd{gerando} há mais de
+  15 min, ou taxa de \cd{erro} \(>\) 20\% em 1\,h & O \emph{worker} vive na
+  API; se ela reciclou, o \emph{job} ficou órfão. & \cd{SELECT} do
+  \emph{checklist}; reciclagem em 5 min é automática\\
+\zebra \textbf{B} & Erros de cliente de uma \cd{(expId, versao)} acima de 50
+  em 10 min, ou erro \textbf{novo} nas 2\,h após ativação & Uma versão
+  quebrou no navegador da escola. & \cd{publicar-\B manifesto.mjs
+  -{}-versao anterior}: reversão sem \emph{build}\\
+\textbf{B} & Certificado gerenciado a menos de 30 dias; disco do Cloud SQL
+  \(>\) 80\%; consumo de IA do dia \(>\) 2\(\times\) a média de 7 dias &
+  Três \enquote{amanhãs} clássicos. & Terraform; disco; quem consumiu\\
+\zebra \textbf{B} & Suíte e2e agendada em vermelho duas vezes seguidas &
+  Uma única falha é ruído de rede; duas é defeito. & Relatório da suíte diz
+  qual tela\\
+\bottomrule
+\end{tabularx}
+
+Quatorze políticas, seis de severidade A. Os \enquote{A} vão para e-mail e
+\emph{push} (app do Cloud Console); os \enquote{B} vão para e-mail e um
+canal de Google Chat ou Slack, e são lidos de manhã. Nenhum alerta de CPU,
+memória ou latência de \emph{startup}: são causas, e ficam no painel.
+
+\section{Privacidade nos sinais}
+
+Os sinais operacionais carregam dado de menor com mais facilidade que a
+telemetria, porque nascem em pontos que ninguém desenhou para isso: uma
+mensagem de exceção que embute o valor recebido, uma URL com
+\emph{query string}, um \emph{stack trace} de cliente com o estado da tela.
+As regras:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Ponto} & \thd{Regra}\\
+\midrule
+Log & \emph{Redaction} mecânica por caminho no \cd{pino} (lista acima), nos
+  dois processos. Mensagem de \cd{ZodError} nunca vai inteira ao log ---
+  só \cd{path: code}, como o \cd{ContratoInterceptor} já faz. Identificador
+  de pessoa em log é sempre o UUID opaco.\\
+\zebra \emph{Trace} & Atributos automáticos incluem a URL: o \emph{hook}
+  \cd{ignoreIncomingRequestHook} exclui sondas e o \cd{urlFilter} remove
+  \emph{query string}. Nenhum atributo com corpo de requisição.\\
+Erro de cliente & \emph{Schema} fechado, tamanho máximo, \emph{redaction} na
+  API, sem \emph{cookie}, sem \cd{localStorage}, sem \emph{DOM}. O
+  \emph{stack} é o único texto livre, e ele é código, não dado.\\
+\zebra Web Vitals & Sem identificador de pessoa; \cd{perfil} e rota apenas.\\
+\emph{Session replay} & O único sinal que sai do projeto do contrato
+  (\adrr{ADR-60}). \cd{identify} manda o UUID opaco --- nunca nome, nunca
+  e-mail, nunca o \cd{friendlyName} da API do Clarity. Escola e turma vão por
+  \cd{id}. Do \cd{track()} sai só \cd{verbo:objeto}: \cd{resultado} e
+  \cd{contexto} carregam resposta de estudante e ficam na telemetria própria.
+  O mascaramento de campo de entrada, número e e-mail é o \emph{default} do
+  Clarity e não foi afrouxado.\\
+Retenção & Log do \cd{\_Default}: 30 dias (padrão, sem custo). Um
+  \emph{bucket} de auditoria separado, alimentado por \emph{sink} das linhas
+  \cd{codigo=auth.*}, \cd{codigo=importacao.*}, \cd{codigo=deploy} e dos
+  \emph{Admin Activity audit logs}: 400 dias. É o que uma rede pública
+  pergunta num incidente, e é barato porque é pequeno.\\
+\zebra Residência & O \emph{bucket} de log de cada contrato é criado na
+  região do contrato (\cd{us-east1} no piloto), não em \cd{global}. Log não
+  sai do projeto: o \emph{metrics scope} central vê métrica, não log.\\
+Acesso & Quem lê log de produção lê dado operacional de uma rede pública:
+  IAM por pessoa, \cd{roles/logging.viewer} por projeto, e os
+  \emph{Data Access audit logs} do próprio Cloud Logging ligados --- quem
+  leu o log também fica em log.\\
+\bottomrule
+\end{tabularx}
+
+\section{Custo estimado por contrato}
+\label{sec:custo-obs}
+
+Volumes estimados para um contrato em regime: dez mil estudantes, vinte
+dias letivos, cerca de 40 milhões de requisições por mês entre hub e API
+(pico de 4.000 simultâneos às 8h), e os preços de referência do Google Cloud
+Observability em setembro de 2026~\cite{gcpobservabilitypricing}. Os
+preços mudam; as \textbf{proporções} são o que importa.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Sinal} & \thd{Volume/mês} & \thd{Franquia} & \thd{Custo estimado}\\
+\midrule
+Log de requisição do Cloud Run, \textbf{sem} exclusão (\(\approx\)1\,KB por
+  linha) & \(\approx\)40\,GiB & 50\,GiB & US\$~0 --- mas a 80\% da franquia,
+  sem folga para o log da aplicação nem para o do LB\\
+\zebra Idem, \textbf{com} exclusão de sondas e amostragem de 20\% dos 2xx
+  rápidos & \(\approx\)12\,GiB & idem & US\$~0, com 38\,GiB de folga\\
+Log da aplicação (\cd{WARNING}+, eventos de negócio, \(\approx\)0,5\,KB) &
+  \(\approx\)1--2\,GiB & idem & US\$~0\\
+\zebra Log do LB a 10\% & \(\approx\)4\,GiB & idem & US\$~0\\
+\emph{Traces} a 2\% (20\% em IA e \emph{feed}), \(\approx\)8 \emph{spans}
+  cada & \(\approx\)8\,M \emph{spans} & 2,5\,M & \(\approx\)US\$~1,10\\
+\zebra Métricas da aplicação, \(\approx\)60 séries a 1 ponto/min &
+  \(\approx\)20\,MiB & 150\,MiB & US\$~0\\
+Métricas de log definidas pelo usuário (6) & \(\approx\)2\,MiB & idem &
+  US\$~0\\
+\zebra \emph{Uptime checks}: 5 alvos \(\times\) 3 regiões \(\times\) 60\,s &
+  \(\approx\)657\,k execuções & 1\,M & US\$~0\\
+Políticas de alerta: 14, \(\approx\)16 referências de métrica & --- & --- &
+  \(\approx\)US\$~5,60 quando a cobrança anunciada (US\$~0,35 por referência
+  por mês) entrar em vigor; US\$~0 até lá\\
+\zebra Retenção estendida do \emph{bucket} de auditoria (\(\approx\)0,5\,GiB
+  \(\times\) 13 meses) & --- & --- & \(\approx\)US\$~0,07\\
+Error Reporting, Query Insights, painéis, \emph{metrics scope} & --- & --- &
+  US\$~0\\
+\zebra Suíte e2e agendada no GitHub Actions (\(\approx\)1.400 min) & --- &
+  2.000 min & US\$~0 (plano \emph{Free}, repositório privado)\\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{Total por contrato}} & \textbf{\(\approx\)US\$~1
+  hoje; \(\approx\)US\$~7 com a cobrança de alerta}\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+Para comparar: uma VM \cd{e2-small} para um Grafana + Loki + Prometheus
+auto-hospedados custa cerca de US\$~15 por mês antes do disco e do
+\emph{backup} --- \textbf{por instância}, e ela teria de ser central (senão
+é uma por contrato) e receber dados de N projetos por rede e IAM próprios.
+O nativo custa menos que isso \emph{no pior caso}, e a diferença não é o
+dinheiro: é a peça que não existe para ser atualizada às 2h da manhã. Os
+dois riscos de custo do nativo são conhecidos e têm teto: log de requisição
+sem exclusão (por isso a exclusão é do Terraform, não de quem lembra) e
+cardinalidade de métrica (por isso \cd{escola\_id} não é rótulo).
+\end{nota}
+
+\section{Roteiro de implantação}
+
+Quatro fases. A fase 0 é a que fecha o \cd{R-05} antes de novembro de 2026
+e \textbf{não toca em código de aplicação}: é Terraform e um
+\emph{workflow}. As fases seguintes são incrementais e cada uma tem uma
+prova de pronto que a suíte ou o painel exibe.
+
+\begin{tabularx}{\linewidth}{@{}L{16mm}L{48mm}X L{30mm}@{}}
+\toprule
+\headrow \thd{Fase} & \thd{Entrega} & \thd{Onde} & \thd{Prova de pronto}\\
+\midrule
+\endhead
+\textbf{0} \newline antes de nov./2026 & Canais de notificação; 5
+  \emph{uptime checks}; as 14 políticas (as que dependem de métrica da
+  aplicação entram na fase 2); SLOs de disponibilidade; painel por contrato;
+  filtros de exclusão; \emph{bucket} de auditoria e Data Access audit logs
+  do Logging; \emph{dead letter} da telemetria; Query Insights; sondas HTTP
+  (\cd{startup} em \rota{/healthz}, \cd{liveness} em \rota{/healthz}) no
+  recurso Cloud Run; \emph{metrics scope} central. \emph{Smoke}
+  pós-\emph{deploy} e \cd{if: failure()} no \cd{deploy.yml}; suíte
+  \cd{publico}+\cd{estudante} agendada contra \cd{hml}. &
+  Repositório de Terraform (\arq{docs/INFRA.md} ganha a seção);
+  \arq{.github/workflows/} & Derrubar a API em \cd{hml} e receber o
+  \emph{push} em menos de 3 minutos. \emph{Deploy} com migração quebrada
+  notifica.\\
+\zebra \textbf{1} \newline 1--2 semanas & \textbf{API}: \cd{nestjs-pino} com
+  \emph{redaction}, contexto de requisição no ALS, \cd{ExceptionFilter}
+  global, \env{LOG\_LEVEL}, \env{GCP\_PROJECT\_ID}, Prisma com aviso de
+  \emph{query} lenta. \textbf{Hub}: \arq{lib/log.ts}, \cd{apiDoServidor}
+  logando e com \emph{timeout}, \rota{/api/healthz}, \arq{error.tsx} e
+  \arq{global-error.tsx}, \cd{HEALTHCHECK}. \textbf{SDK}:
+  \cd{visibility\B change}, \emph{backoff} e teto de 500 eventos no
+  \emph{buffer}, retorno do \cd{sendBeacon} verificado. &
+  \arq{apps/api}, \arq{apps/hub}, \arq{packages/\B sdk} & Um 500 provocado
+  em \cd{hml} aparece no Error Reporting agrupado, com \cd{requestId} igual
+  ao da tela, em menos de um minuto. Teste unitário prova que
+  \cd{username} e \cd{cpf} saem redigidos.\\
+\textbf{2} \newline 2--3 semanas & OpenTelemetry na API e no hub
+  (\arq{instrumentation.ts}), exportadores Google, amostragem 2\%/20\%,
+  \cd{traceparent} do navegador ao banco. Métricas da aplicação: IA, telemetria,
+  filas, pool, ponte. Rota \rota{POST /observabilidade/\B erros-cliente} e
+  \rota{/observabilidade/\B vitals} com Zod, cota e \emph{redaction};
+  \cd{window.\B onerror}/\B\cd{unhandled\B rejection} e \cd{web-vitals} na SDK;
+  \cd{exp:erro} na ponte (v1 continua compatível: mensagem nova é
+  ignorada por hub antigo); \emph{sourcemaps} ocultos publicados com ACL
+  privada no passo \emph{subir}. Políticas de alerta que faltavam. &
+  \arq{apps/api/src/\B observabilidade/}, \arq{apps/api/src/ai},
+  \arq{packages/sdk}, \arq{deploy.yml} & Um \cd{throw} provocado na exp-02
+  em \cd{hml} vira erro agrupado por \cd{(expId, versao)} com \emph{stack}
+  mapeada. Um \emph{trace} de abertura de missão mostra hub \seta{} API
+  \seta{} Postgres \seta{} Vertex numa só linha do tempo.\\
+\zebra \textbf{3} \newline condicional & Grafana (Cloud Free ou local)
+  como painel de leitura sobre o Cloud Monitoring; coletor \emph{sidecar}
+  com \emph{tail sampling}; Grafana OnCall; Sentry/GlitTip auto-hospedado;
+  k6 distribuído. & --- & Cada item tem gatilho na \adrr{ADR-57}. Nenhum
+  começa por conta própria.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+A fase 0 depende do repositório de Terraform, que é separado e tem seu
+próprio ciclo. O que cabe a este repositório é \textbf{o contrato}: a lista
+de recursos que \arq{docs/INFRA.md} passa a esperar (canais, políticas,
+\emph{checks}, painel, exclusões, \emph{bucket} de auditoria, \emph{dead
+letter}, sondas do serviço, \env{GCP\_PROJECT\_ID}) e o \emph{workflow} da
+suíte. Sem esse contrato escrito, a fase 0 vira \enquote{clicar no console}
+--- que funciona em \cd{dev} e desaparece no segundo contrato.
+\end{atencao}
+
+\section{O que fica de fora}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Fora} & \thd{Condição para reavaliar}\\
+\midrule
+\emph{Stack} de observabilidade auto-hospedada (Grafana LGTM, SigNoz,
+  OpenObserve) & Uma rede exigir que os sinais fiquem fora do Google Cloud,
+  ou o nativo faltar numa consulta demonstrada. Ver \adrr{ADR-57}.\\
+\zebra APM comercial (Datadog, New Relic, Dynatrace) & Vários contratos em
+  várias nuvens, ou time de operação com SLA formal. A instrumentação
+  OpenTelemetry já estará pronta para eles.\\
+SDK de erro de terceiro no \emph{bundle} da experiência & Nunca, por desenho
+  (\adrr{ADR-58}). A versão auto-hospedada dentro do projeto é o caminho, se
+  o Error Reporting não bastar. \textbf{Não confundir} com o \emph{analytics}
+  de produto da \adrr{ADR-60}, que está DENTRO do \emph{bundle}: são
+  ferramentas e decisões diferentes.\\
+\zebra Ferramenta de plantão (PagerDuty, Opsgenie, Grafana OnCall) & O
+  segundo operador.\\
+Log de requisição da aplicação a 100\% & Nunca: o Cloud Run já grava um.\\
+\zebra \cd{escola\_id} como rótulo de métrica & Nunca: cardinalidade.
+  Escola se filtra em log e se agrega em SQL.\\
+BigQuery como destino de log & Um relatório de auditoria que o Log Analytics
+  (SQL sobre o \emph{bucket}, incluso) não consiga responder.\\
+\bottomrule
+\end{tabularx}

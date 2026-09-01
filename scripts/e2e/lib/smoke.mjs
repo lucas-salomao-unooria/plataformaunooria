@@ -25,8 +25,15 @@
  * disfarçadas (exp-01, exp-03) renderizam erro em `<p>` avulso, com classe
  * diferente em cada tela, e por isso ainda não têm gancho estável: nelas o
  * sinal é `vigiarFalhasDaApi`.
+ *
+ * São DOIS componentes, não um: `FeedbackAlert` é a faixa inline das telas de
+ * experiência, e `AlertBox` é o que as 25 telas do hub usam — inclusive toda a
+ * área administrativa. Com só o primeiro na lista, uma espera em `/admin/*`
+ * pagava o timeout inteiro e reportava "o seletor não apareceu" enquanto a
+ * causa estava escrita na tela, em vermelho, desde o segundo 1.
  */
-export const ALERTA_DE_ERRO = ".unooria-feedback-alert--error";
+export const ALERTA_DE_ERRO =
+  ".unooria-feedback-alert--error, .unooria-alertbox--error, .unooria-alertbox--danger";
 
 /**
  * Ruído de dev do PRÓPRIO Next, que não é defeito nosso.

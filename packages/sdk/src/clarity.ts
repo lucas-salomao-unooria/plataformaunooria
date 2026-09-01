@@ -38,7 +38,7 @@ declare global {
   }
 }
 
-/** Onde o Clarity serve a tag. Aparece no DevTools — ver ADR-59. */
+/** Onde o Clarity serve a tag. Aparece no DevTools — ver ADR-60. */
 export const CLARITY_HOST = "https://www.clarity.ms";
 
 /**
