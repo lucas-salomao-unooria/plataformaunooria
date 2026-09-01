@@ -52,3 +52,38 @@ resposta que estava vindo.
 *referência de função*, não string, e `hubOrigin` termina como `targetOrigin` de
 um `postMessage`. Está ignorado com motivo em `.snyk` e tem ADR. **Não refaça a
 varredura para "conferir"** — ver "Ferramentas externas" no `AGENTS.md` da raiz.
+
+## Clarity: a fonte única, e o custo de mexer aqui
+
+`src/clarity.ts` é o **único** lugar do monorepo onde o snippet do Microsoft
+Clarity existe (ADR-60). O hub o consome por `snippetClarity()` (monta com
+`next/script`); as experiências, por `carregarClarity()`, chamado dentro de
+`createExperiencia()` depois do handshake. Colar o `<script>` num `index.html`
+ou num layout cria a segunda cópia que ninguém atualiza junto.
+
+**O id vem pelo `config` do `hub:init`, não por `import.meta.env`.** Dois
+motivos, os dois já custaram tempo em outros pontos deste repo: (1) o hub
+transpila este pacote (`transpilePackages`), e `import.meta.env` aqui quebra o
+build dele; (2) por `config`, uma env só do hub liga as duas superfícies e
+desligar não exige republicar as seis experiências. O `config` é
+`Record<string, unknown>` e aditivo — campo novo ali **não** sobe
+`PROTOCOL_VERSION`.
+
+**`track()` alimenta dois destinos.** A telemetria própria recebe a carga útil
+inteira; o Clarity recebe só `verbo:objeto`. `resultado` e `contexto` carregam
+resposta de estudante, e resposta de estudante não sai do contrato — se você
+acrescentar um destino, mantenha essa separação.
+
+**Não mande nome.** O `identify` leva o UUID opaco. O quarto parâmetro do
+Clarity (`friendlyName`) fica de fora de propósito: é dado de menor indo para
+processador de terceiro.
+
+### Mexeu aqui? Suba a versão das SEIS experiências
+
+O filtro de mudanças do `deploy.yml` inclui `packages/sdk`, então **qualquer**
+alteração neste pacote republica todas as experiências. O `rsync` do deploy roda
+com `--delete-unmatched-destination-objects` sobre um caminho que carrega a
+versão e é tratado como imutável: publicar sem subir a versão apaga os assets
+que uma sessão em andamento vai pedir. Suba o `versao` do
+`public/experiencia.json` **e** o `version` do `package.json` de cada uma — o CI
+lê do manifesto, e a divergência entre os dois já causou bug.

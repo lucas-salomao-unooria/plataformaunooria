@@ -14,8 +14,11 @@
 #     O `pnpm fetch` só depende do lockfile, então a camada pesada sobrevive a
 #     qualquer mudança de código e o install vira resolução offline.
 #
-# Envs de build: nenhuma. As `NEXT_PUBLIC_*` que entram no bundle do client
-# devem ser passadas com `--build-arg` quando forem específicas do contrato.
+# Envs de build: uma. `NEXT_PUBLIC_*` que entra no bundle do CLIENT é
+# substituída pelo literal durante o `next build`, então precisa existir AQUI —
+# defini-la no Cloud Run depois não muda um bundle já compilado. As demais
+# (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_CDN_EXP_URL`) só são lidas em código
+# server-only, e por isso continuam sendo env de runtime.
 
 FROM node:26.7.0-slim AS build
 ENV PNPM_HOME=/pnpm
@@ -32,6 +35,12 @@ RUN pnpm fetch
 # Código por cima; o install resolve do store local, sem rede.
 COPY . .
 RUN pnpm install --frozen-lockfile --offline
+# Microsoft Clarity (ADR-60). O `deploy.yml` passa o valor de
+# `vars.CLARITY_PROJECT_ID` do environment (dev/hml/prd). VAZIO = o hub não
+# renderiza a tag e não manda o id às experiências — é o kill-switch, e é o
+# default de qualquer build feito sem o argumento.
+ARG NEXT_PUBLIC_CLARITY_PROJECT_ID=""
+ENV NEXT_PUBLIC_CLARITY_PROJECT_ID=$NEXT_PUBLIC_CLARITY_PROJECT_ID
 RUN pnpm turbo build --filter=@edu/hub
 
 FROM node:26.7.0-slim

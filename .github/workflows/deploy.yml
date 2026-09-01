@@ -186,6 +186,14 @@ jobs:
           file: apps/hub/Dockerfile
           push: true
           tags: ${{ env.IMG }}
+          # Microsoft Clarity (ADR-60). `NEXT_PUBLIC_*` é inlinada no bundle do
+          # client durante o `next build`, então o valor tem de entrar na
+          # IMAGEM — pôr no Cloud Run depois não altera um bundle compilado.
+          # `vars.CLARITY_PROJECT_ID` é do environment (dev/hml/prd) e só
+          # resolve dentro deste job, que declara `environment:`. Ausente, a
+          # var vem vazia e o hub sobe com o Clarity desligado.
+          build-args: |
+            NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ vars.CLARITY_PROJECT_ID }}
           cache-from: type=gha,scope=hub-${{ github.ref_name }}
           cache-to: type=gha,scope=hub-${{ github.ref_name }},mode=max
 

@@ -614,26 +614,35 @@ Rastros & \textbf{Cloud Trace} pelo SDK OpenTelemetry + exportador Google &
   auto-hospedados: fala o protocolo do Sentry dentro do projeto; entra se o
   agrupamento do Error Reporting se mostrar insuficiente para 48
   experiências.\\
-Sondas & \textbf{Uptime checks} do Cloud Monitoring + \textbf{suíte e2e}
+\emph{Analytics} de produto & \textbf{Microsoft Clarity}, no hub e dentro do
+  \emph{bundle} (\adrr{ADR-60}) &
+  Grátis (teto de \num{100000} gravações/dia por projeto) &
+  \emph{PostHog} ou \emph{Matomo} auto-hospedados: ficariam dentro do projeto do
+  contrato, e é o caminho se o \emph{replay} em processador de terceiro não
+  passar no DPA de uma rede. \emph{Hotjar}, \emph{FullStory}: pagos, mesmo
+  problema de residência. \textbf{Não substituem} a telemetria própria --- ela
+  é que corrige, pontua e vira relatório de professor; o Clarity só mostra a
+  tela.\\
+\zebra Sondas & \textbf{Uptime checks} do Cloud Monitoring + \textbf{suíte e2e}
   agendada no GitHub Actions &
   1\,M execuções/mês grátis; Actions: 2.000\,min/mês grátis &
   \emph{Uptime Kuma} auto-hospedado: bonito, mas uma VM a mais para fazer o
   que a franquia já faz. \emph{Synthetic monitors} do Cloud Monitoring:
   US\$~1,20/mil execuções; reescreveria a suíte. \emph{Checkly},
   \emph{Grafana Synthetic}: pagos, só com vários operadores.\\
-\zebra Roteamento de alerta & \textbf{Canais nativos}: e-mail + \emph{push}
+Roteamento de alerta & \textbf{Canais nativos}: e-mail + \emph{push}
   do app Cloud Console (acorda) e Google Chat/Slack (amanhã) &
   Grátis; a cobrança anunciada de política (Seção~\ref{sec:custo-obs}) &
   \emph{ntfy} auto-hospedado ou o plano grátis do \emph{Pushover}: \emph{push}
   sem depender do app do Google. \emph{Grafana OnCall} (grátis até 3
   usuários) ou \emph{PagerDuty}: escalonamento e rodízio --- \textbf{só faz
   sentido com o segundo operador}.\\
-Teste de carga & \textbf{k6} (livre), da máquina de quem opera, contra
+\zebra Teste de carga & \textbf{k6} (livre), da máquina de quem opera, contra
   \cd{hml} &
   Grátis &
   \emph{Grafana Cloud k6}: 500 VUh/mês grátis, executores distribuídos ---
   útil se 4.000 usuários virtuais não saírem de um só \emph{laptop}.\\
-\zebra APM completo & --- &
+APM completo & --- &
   --- &
   \emph{Datadog}, \emph{New Relic}, \emph{Dynatrace}: por \emph{host} ou por
   GB, na casa de centenas de dólares/mês por contrato. Entram quando houver
@@ -648,8 +657,16 @@ no primeiro contrato em produção}: num canal de \emph{push} confiável para o
 alerta \emph{acorda} --- o app do Cloud Console serve, e um \emph{Pushover}
 custa US\$~5 uma vez. \textbf{Onde se justificará com o segundo operador}:
 rodízio de plantão (Grafana OnCall grátis; PagerDuty se houver SLA
-contratual). \textbf{Onde nunca, por desenho}: SDK de erro de terceiro
-dentro de um \emph{bundle} de experiência.
+contratual). \textbf{Onde nunca, por desenho}: SDK de \textbf{erro} de
+terceiro dentro de um \emph{bundle} de experiência.
+
+\textbf{E onde a regra acima abriu exceção}: \emph{analytics de produto}. A
+\adrr{ADR-60} pôs o Microsoft Clarity no hub \emph{e} dentro do \emph{bundle},
+porque o \cd{iframe} é cross-origin e gravar só o hub deixaria de fora
+exatamente a tela em que o estudante passa a sessão. A distinção que sobra é
+estreita e vale dizê-la: erro de cliente continua entrando pela API, com
+\emph{redaction} e \cd{escola\_id} do \emph{token}; o que sai para terceiro é
+gravação de sessão, com identificador opaco e sem a resposta do estudante.
 \end{destaque}
 
 \section{SLIs, SLOs e a lista de alertas}
@@ -769,6 +786,13 @@ Erro de cliente & \emph{Schema} fechado, tamanho máximo, \emph{redaction} na
   API, sem \emph{cookie}, sem \cd{localStorage}, sem \emph{DOM}. O
   \emph{stack} é o único texto livre, e ele é código, não dado.\\
 \zebra Web Vitals & Sem identificador de pessoa; \cd{perfil} e rota apenas.\\
+\emph{Session replay} & O único sinal que sai do projeto do contrato
+  (\adrr{ADR-60}). \cd{identify} manda o UUID opaco --- nunca nome, nunca
+  e-mail, nunca o \cd{friendlyName} da API do Clarity. Escola e turma vão por
+  \cd{id}. Do \cd{track()} sai só \cd{verbo:objeto}: \cd{resultado} e
+  \cd{contexto} carregam resposta de estudante e ficam na telemetria própria.
+  O mascaramento de campo de entrada, número e e-mail é o \emph{default} do
+  Clarity e não foi afrouxado.\\
 Retenção & Log do \cd{\_Default}: 30 dias (padrão, sem custo). Um
   \emph{bucket} de auditoria separado, alimentado por \emph{sink} das linhas
   \cd{codigo=auth.*}, \cd{codigo=importacao.*}, \cd{codigo=deploy} e dos
@@ -923,7 +947,9 @@ suíte. Sem esse contrato escrito, a fase 0 vira \enquote{clicar no console}
   OpenTelemetry já estará pronta para eles.\\
 SDK de erro de terceiro no \emph{bundle} da experiência & Nunca, por desenho
   (\adrr{ADR-58}). A versão auto-hospedada dentro do projeto é o caminho, se
-  o Error Reporting não bastar.\\
+  o Error Reporting não bastar. \textbf{Não confundir} com o \emph{analytics}
+  de produto da \adrr{ADR-60}, que está DENTRO do \emph{bundle}: são
+  ferramentas e decisões diferentes.\\
 \zebra Ferramenta de plantão (PagerDuty, Opsgenie, Grafana OnCall) & O
   segundo operador.\\
 Log de requisição da aplicação a 100\% & Nunca: o Cloud Run já grava um.\\

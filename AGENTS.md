@@ -212,6 +212,13 @@ usuário; o MCP continua instalado, para uso manual.
   para a experiência), sempre na última versão — ver "Design System" nesta página
   e a mecânica em `packages/ui/AGENTS.md`. O
   `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
+- **Analytics de terceiro passa por `@edu/sdk`, nunca por snippet solto.** O
+  Microsoft Clarity (ADR-60) tem UMA fonte — `packages/sdk/src/clarity.ts` —
+  consumida pelo hub e pelas experiências; colar o `<script>` num `index.html`
+  ou num layout cria a segunda cópia que ninguém atualiza junto. O id vem de
+  `NEXT_PUBLIC_CLARITY_PROJECT_ID` e **ausente = desligado**, nas duas
+  superfícies. O que sai para lá é id opaco e `verbo:objeto`; nome, e-mail e
+  resposta de estudante NÃO — a regra 6 continua valendo dentro do Clarity.
 - **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
   `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
   — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
@@ -263,6 +270,15 @@ abri-lo.
   valida o formato do commit. Instalados pelo `prepare` no `pnpm install`
   (`core.hooksPath`). Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`,
   `PERMITIR_BRANCH_FORA_DO_PADRAO=1`.
+- **Frente paralela = worktree, e a base vai ESCRITA** (ADR-61):
+  `git worktree add -b feat/<slug> .claude/worktrees/<slug> origin/dev`. O
+  `origin/HEAD` deste repo aponta para `origin/main`, então toda ferramenta que
+  "parte da branch padrão" — a criação automática de worktree do Claude Code
+  inclusive — abre a branch sobre PRODUÇÃO, e o erro é silencioso: compila,
+  passa, e o PR vem com commits que já estavam em `dev`. `pnpm install` de novo
+  lá dentro (`node_modules` não é compartilhado) e **nunca** `pnpm docker:dev`
+  de um worktree — ele recria os containers da stack principal. Receita
+  completa em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.

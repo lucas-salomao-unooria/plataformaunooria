@@ -1,7 +1,15 @@
 import { connectToHub, normalizarHubOrigin } from "./bridge";
+import {
+  carregarClarity,
+  clarityEvent,
+  clarityIdentify,
+  claritySet,
+  clarityUpgrade,
+} from "./clarity";
 import { TelemetryClient } from "./telemetry";
 import type { ExperienciaHandle, OpcoesDeChamada } from "./types";
 export * from "./types";
+export * from "./clarity";
 
 type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -57,6 +65,27 @@ export async function createExperiencia(meta: {
     apiUrl: init.apiUrl, getToken: () => token, estudante: init.estudante,
     expId: meta.expId, expVersion: meta.expVersion, sessaoId,
   });
+
+  /*
+   * Clarity DENTRO do iframe (ADR-60). O id chega pelo `config` do `hub:init`,
+   * não por `import.meta.env`: o `packages/sdk` é transpilado TAMBÉM pelo Next
+   * (o hub o traz em `transpilePackages`), e `import.meta.env` ali quebra o
+   * build do hub. Pelo `config`, uma env só do hub liga as duas superfícies e
+   * desligar não exige republicar as seis experiências.
+   *
+   * Só carrega depois do handshake — é quando o id existe. Os primeiros
+   * milissegundos da tela ficam de fora, e isso é aceito: a alternativa é
+   * cravar o id em cada bundle.
+   */
+  carregarClarity(init.config.clarityProjectId);
+  clarityIdentify(init.estudante.id, meta.expId);
+  claritySet("superficie", "exp");
+  claritySet("exp_id", meta.expId);
+  claritySet("exp_versao", meta.expVersion);
+  claritySet("escola_id", init.estudante.escolaId);
+  claritySet("turma_id", init.estudante.turmaId);
+  claritySet("serie", init.estudante.serie);
+  claritySet("sessao_id", sessaoId);
 
   /**
    * Fetch com timeout e retry: GET tenta de novo em falha de rede/5xx
@@ -115,7 +144,18 @@ export async function createExperiencia(meta: {
       delete: (p, o) => call("DELETE", p, undefined, o),
     },
     ai: { gerar: (input) => call("POST", "/ai/gerar", { ...input, expId: meta.expId }) },
-    track: (verbo, objeto, dados) => telemetry.track({ verbo, objeto, ...dados }),
+    /*
+     * O MESMO `track` alimenta os dois destinos: a telemetria própria (que
+     * corrige, pontua e vira relatório de professor) e o Clarity (que só
+     * marca o funil da gravação). É o que dá "track das missões" sem tocar em
+     * nenhuma experiência — os verbos que elas já emitem viram evento lá.
+     * A carga útil NÃO vai junto: `resultado` e `contexto` carregam resposta
+     * de estudante, e resposta de estudante não sai do contrato.
+     */
+    track: (verbo, objeto, dados) => {
+      telemetry.track({ verbo, objeto, ...dados });
+      clarityEvent(`${verbo}:${objeto}`);
+    },
     progresso: {
       salvar: (dados) => call("POST", `/progresso/${meta.expId}`, { dados }),
       carregar: async <T,>() => {
@@ -126,6 +166,10 @@ export async function createExperiencia(meta: {
     concluir: (payload) => {
       telemetry.track({ verbo: "completed", objeto: meta.expId, resultado: payload });
       void telemetry.flush();
+      clarityEvent(`completed:${meta.expId}`);
+      // Sessão que chegou ao fim é a que não se pode perder para a amostragem
+      // do Clarity (teto de 100k gravações/dia por projeto).
+      clarityUpgrade("exp:concluida");
       send({ type: "exp:concluir", payload: payload ?? {} });
     },
     on: (evento, cb) => handlers[evento]?.push(cb),
