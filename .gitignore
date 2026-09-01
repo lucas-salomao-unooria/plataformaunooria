@@ -53,3 +53,6 @@ skills-lock.json
 # na mesma linha). Gente inventada, mas não é coisa que se versiona — e ela se
 # refaz sozinha a cada `pnpm --filter @edu/api seed`.
 credenciais-demo.csv
+
+# Arquivos de macOS
+.DS_Store
