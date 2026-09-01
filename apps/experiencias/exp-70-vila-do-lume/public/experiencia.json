@@ -1,7 +1,7 @@
 {
   "id": "exp-70-vila-do-lume",
   "nome": "Vila do Lume — A Noite Longa",
-  "versao": "1.0.0",
+  "versao": "1.1.0",
   "series": [],
   "capabilities": ["telemetria"],
   "permissoes": ["pointer-lock"],

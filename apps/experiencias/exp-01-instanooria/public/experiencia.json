@@ -1,7 +1,7 @@
 {
   "id": "exp-01-instanooria",
   "nome": "Instanooria — O Conteúdo que não chegou",
-  "versao": "1.0.0",
+  "versao": "1.1.0",
   "series": ["8EF"],
   "capabilities": ["telemetria", "progresso", "ia"],
   "viewport": { "largura": 375, "altura": 812 },

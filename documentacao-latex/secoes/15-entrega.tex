@@ -163,9 +163,9 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
   \node[etapaout, text width=28mm] (deph) at (6.4,-7.4)
     {\texttt{gcloud run deploy}};
 
-  % --- trilha das experiencias (job proprio, depois dos dois)
+  % --- trilha das experiencias (dois jobs: subir e ativar)
   \node[camadalbl, anchor=west] at (0.4,-10.6)
-    {\emph{job} \texttt{publicar-exps} --- DEPOIS do hub e da api, de propósito};
+    {\emph{jobs} \texttt{publicar-exps} (em paralelo) \seta{} \texttt{ativar-exps} (depois dos dois)};
   \node[etapa, text width=24mm] (build) at (1.8,-11.8)
     {\texttt{turbo build}\desc{filtrado, ou tudo se \texttt{forcar}}};
   \node[etapa, text width=30mm] (rsync) at (5.4,-11.8)
@@ -173,8 +173,8 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
   \node[etapa, text width=28mm] (cc) at (9.2,-11.8)
     {\texttt{Cache-Control}\desc{\texttt{max-age=60} só no \texttt{index.html}}};
   \node[etapaout, text width=30mm] (man) at (13.0,-11.8)
-    {\texttt{publicar-manifesto.mjs}\desc{\texttt{PUT /experiencias/:expId},
-     token de 5 min}};
+    {\texttt{publicar-manifesto.mjs}\desc{\emph{job} \texttt{ativar-exps}:
+     \texttt{PUT /experiencias/:expId}, token de 5 min}};
 
   \draw[pipe] (push) -- (ver);
   \draw[pipe] (ver) -- (diff);
@@ -242,9 +242,15 @@ toca código, a camada cara vem do \emph{cache} e sobra o que é daquele
 E como as duas imagens não dependem uma da outra, cada uma virou um \emph{job}
 --- \cd{deploy-api} e \cd{deploy-hub} --- atrás do mesmo portão, com o
 \emph{diff} calculado uma única vez num \emph{job} \cd{mudancas}. A ordem que
-\textbf{importa} continua explícita no grafo: \cd{publicar-exps} depende dos
-dois (o manifesto é validado contra o JWKS que o hub serve), e dentro de
-\cd{deploy-api} a migração continua antes da revisão nova. A única ordem que se
+\textbf{importa} continua explícita no grafo, agora em duas partes: SUBIR o
+\emph{bundle} não depende de nada além do portão, porque o caminho carrega a
+versão (\cd{\{expId\}/\{versao\}/}) e ninguém pede por ele até o manifesto
+mudar --- o \emph{upload} é inerte. ATIVAR depende dos dois \emph{deploys}, e
+isso não é preferência: a api valida o \emph{PUT} contra o JWKS que o hub serve.
+Separar os dois encurta a janela em que o hub novo conviveria com o
+\emph{bundle} antigo: de um \cd{turbo build} inteiro para a duração de um
+\emph{PUT}. E dentro de \cd{deploy-api} a migração continua antes da revisão
+nova. A única ordem que se
 perdeu foi acidental: o hub não espera mais a api --- os dois conversam por
 HTTP e o \emph{rollout} do Cloud Run nunca garantiu revisão casada mesmo.
 

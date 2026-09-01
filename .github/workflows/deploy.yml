@@ -167,18 +167,23 @@ jobs:
             --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
 
   # --- experiências: dist -> bucket versionado + manifesto ------------------
-  # Depois do hub e da api de propósito: o PUT do manifesto é validado pela api
-  # contra o JWKS que o HUB serve. Hub fora do ar = manifesto rejeitado.
-  # `!cancelled()` + `!= 'failure'` porque os deploys podem ter sido PULADOS
-  # (push que só mudou experiência) — pulado não pode bloquear a publicação.
+  # SOBE o bundle; não o ativa. O caminho carrega a versão
+  # (`{expId}/{versao}/`), então subir bundle NOVO não muda nada do que o hub
+  # serve — quem decide isso é `experiencias.versaoAtiva`, escrita no job
+  # `ativar-exps`. Por isso este job NÃO espera o hub: o upload é inerte, e
+  # adiantá-lo encurta a janela em que o hub novo conviveria com o bundle velho.
+  #
+  # A consequência de NÃO subir a versão do `experiencia.json` é este job
+  # sobrescrever um caminho que o comentário do `rsync` abaixo declara imutável:
+  # a borda e o navegador de quem está no meio de uma sessão guardam os assets
+  # daquela versão, e `--delete-unmatched-destination-objects` acabou de apagar
+  # os que eles vão pedir. Versão nova = caminho novo = nada a sobrescrever.
   publicar-exps:
-    needs: [verificar, mudancas, deploy-api, deploy-hub]
+    needs: [verificar, mudancas]
     if: >-
       !cancelled() &&
       needs.verificar.result == 'success' &&
-      needs.mudancas.outputs.exps == 'true' &&
-      needs.deploy-api.result != 'failure' &&
-      needs.deploy-hub.result != 'failure'
+      needs.mudancas.outputs.exps == 'true'
     runs-on: ubuntu-latest
     permissions: { contents: read, id-token: write }
     steps:
@@ -212,9 +217,8 @@ jobs:
             pnpm turbo build --filter='...[HEAD^]'
           fi
 
-      - name: Publicar experiências alteradas
+      - name: Subir bundles das experiências alteradas
         env:
-          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `{prefix}-token-signing-key`
           FORCAR: ${{ inputs.forcar }}
         run: |
           set -euo pipefail
@@ -248,8 +252,56 @@ jobs:
             gcloud storage objects update "gs://$EXP_BUCKET/$exp/$ver/index.html" \
               --cache-control="public, max-age=60" --project "$GCP_PROJECT"
 
-            # Manifesto (tabela `experiencias`): é isto que o hub lê para montar
-            # a URL do iframe. Sem este PUT o hub cai no fallback de dev.
+            echo "bundle no ar, inerte até a ativação: $exp@$ver"
+          done
+
+  # A CHAVE DE VIRADA. O PUT do manifesto (`experiencias.versaoAtiva`) é o que
+  # faz o hub montar a URL da versão nova — antes dele, o bundle novo está no
+  # bucket sem ninguém pedindo por ele.
+  #
+  # Depois do hub e da api de propósito, e isto não é otimização: a api valida
+  # este PUT contra o JWKS que o HUB serve. Hub fora do ar = manifesto
+  # rejeitado. Como o bundle já subiu no job anterior, a janela em que o hub
+  # novo convive com o bundle antigo cai do build inteiro das experiências para
+  # a duração deste PUT.
+  #
+  # `!cancelled()` + `!= 'failure'` porque os deploys podem ter sido PULADOS
+  # (push que só mudou experiência) — pulado não pode bloquear a ativação.
+  ativar-exps:
+    needs: [verificar, mudancas, publicar-exps, deploy-api, deploy-hub]
+    if: >-
+      !cancelled() &&
+      needs.verificar.result == 'success' &&
+      needs.mudancas.outputs.exps == 'true' &&
+      needs.publicar-exps.result == 'success' &&
+      needs.deploy-api.result != 'failure' &&
+      needs.deploy-hub.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions: { contents: read, id-token: write }
+    steps:
+      # Sem build e sem `pnpm install`: o script é Node puro e só lê o
+      # `experiencia.json` da pasta.
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+
+      - name: Ativar as versões novas no manifesto
+        env:
+          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `{prefix}-token-signing-key`
+          FORCAR: ${{ inputs.forcar }}
+        run: |
+          set -euo pipefail
+          for dir in apps/experiencias/*/; do
+            exp=$(basename "$dir")
+            if [ "$exp" = "_template" ]; then continue; fi
+            if [ ! -f "$dir/package.json" ] || [ ! -f "$dir/public/experiencia.json" ]; then
+              echo "· $exp sem package.json/manifesto — pulando"; continue
+            fi
+            # MESMO filtro do job de upload: ativar o que não subiu apontaria a
+            # `versaoAtiva` para um caminho que não existe no bucket.
+            if [ "$FORCAR" != "true" ] && git diff --quiet HEAD^ HEAD -- "$dir" packages/sdk pnpm-lock.yaml; then continue; fi
+            ver=$(node -p "require('./$dir/public/experiencia.json').versao")
             node apps/hub/scripts/publicar-manifesto.mjs "$dir"
-            echo "publicada $exp@$ver"
+            echo "ativada $exp@$ver"
           done

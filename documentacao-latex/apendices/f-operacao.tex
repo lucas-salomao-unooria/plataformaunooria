@@ -166,6 +166,17 @@ gcloud storage ls --all-versions \
   "gs://$PLANOS_BUCKET/planos/$ESCOLA/$PLANO/atual.html"
 \end{lstlisting}
 
+\textbf{Mudou uma experiência? Suba a \cd{versao} do
+\arq{public/experiencia.json}.} O caminho no bucket é
+\cd{\{expId\}/\{versao\}/} e o \cd{rsync} usa
+\cd{-{-}delete-unmatched-destination-objects}: publicar sem subir a versão
+sobrescreve um caminho que o próprio \emph{pipeline} trata como imutável
+(\cd{Cache-Control} longo em tudo menos o \arq{index.html}). Quem está no meio de
+uma sessão tem os \emph{assets} daquela versão em cache e vai pedir arquivos que
+acabaram de ser apagados. Suba a versão e o problema não existe: caminho novo,
+nada a sobrescrever, e a versão anterior continua no bucket --- que é o que faz a
+reversão nº 1 acima ser possível.
+
 \begin{lstlisting}[language=bashunoo, caption={Publicar tudo (primeiro \emph{deploy} de um contrato)}]
 # GitHub Actions -> workflow "deploy" -> Run workflow -> forcar: true
 # Ignora o diff e publica hub, api e TODAS as experiencias.

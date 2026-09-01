@@ -39,7 +39,17 @@ este arquivo vence.
 | Telemetria | SDK → `POST /telemetry/batch` → Pub/Sub → worker | |
 
 Experiências NUNCA viram serviços no Cloud Run. São bundles estáticos:
-`gs://{contrato}-exp/{expId}/{versao}/`. Rollback = hub apontar p/ versão anterior.
+`gs://{contrato}-exp/{expId}/{versao}/`. Rollback = hub apontar p/ versão anterior
+(`publicar-manifesto.mjs <pasta> --versao x.y.z`).
+
+**Mexeu numa experiência? Suba a `versao` do `public/experiencia.json`** — e o
+`version` do `package.json` junto, que o CI lê do manifesto e a divergência já
+causou bug. O caminho no bucket carrega a versão e o `rsync` roda com
+`--delete-unmatched-destination-objects`: publicar sem subir sobrescreve um
+caminho tratado como imutável, e quem está no meio de uma sessão pede assets que
+acabaram de ser apagados. O deploy separa **subir** (inerte, em paralelo) de
+**ativar** (o PUT do manifesto, depois do hub — a api valida contra o JWKS que o
+hub serve).
 
 ## Regras invioláveis (segurança/tenancy)
 
