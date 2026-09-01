@@ -1,7 +1,9 @@
 name: ci
 on:
+  # Todo PR: de branch de trabalho para dev, de dev para hml e, quando
+  # producao existir, de hml para main — o mesmo portao nas tres pontes.
   pull_request:
-  # Chamado pelo deploy.yml no push para main. NAO tem `push: main` proprio:
+  # Chamado pelo deploy.yml no push para dev/hml. NAO tem `push` proprio:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
   # dois workflows em paralelo deixariam um teste vermelho subir para escola.
   workflow_call:

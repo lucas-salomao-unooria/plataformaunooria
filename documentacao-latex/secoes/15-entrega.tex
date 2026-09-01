@@ -49,8 +49,10 @@ arrasta as dependências corretas.
 \begin{lstlisting}[language=yamlunoo, caption={\arq{.github/workflows/ci.yml} (abreviado)}, label={lst:ci}]
 name: ci
 on:
+  # Todo PR: de branch de trabalho para dev, de dev para hml e, quando
+  # producao existir, de hml para main — o mesmo portao nas tres pontes.
   pull_request:
-  # Chamado pelo deploy.yml no push para main. NAO tem `push: main` proprio:
+  # Chamado pelo deploy.yml no push para dev/hml. NAO tem `push` proprio:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
   # dois workflows em paralelo deixariam um teste vermelho subir para escola.
   workflow_call:
@@ -88,10 +90,13 @@ jobs:
 
 \begin{decisao}
 O CI é chamado pelo \emph{deploy} por \cd{workflow\_call}, e \textbf{não} tem
-gatilho próprio em \cd{push: main}. Com gatilho próprio, ele rodaria duas vezes
+gatilho próprio em \cd{push}. Com gatilho próprio, ele rodaria duas vezes
 no mesmo \emph{commit} --- e, pior, em \emph{paralelo} com o \emph{deploy}, o que
 deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
-\textbf{espera} pelo portão.
+\textbf{espera} pelo portão. O gatilho de \cd{pull\_request} não filtra a
+\emph{branch} de destino de propósito: o portão é o mesmo nas três pontes do
+fluxo (\emph{branch} de trabalho \(\to\) \cd{dev}, \cd{dev} \(\to\) \cd{hml},
+\cd{hml} \(\to\) \cd{main}).
 \end{decisao}
 
 \subsection{A trava de vulnerabilidade (Snyk)}
@@ -139,7 +144,7 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   \node[etapaio, text width=26mm] (push) at (1.4,0)
-    {\emph{push} para \texttt{main}};
+    {\emph{push} para \texttt{dev} ou \texttt{hml}\desc{merge de um PR}};
   \node[etapa, text width=26mm, fill=unooGreenWash, draw=unooGreen] (ver) at (5.0,0)
     {\textbf{portão}: \texttt{ci.yml}\desc{typecheck, lint, test, build}};
   \node[etapa, text width=30mm] (diff) at (9.0,0)
@@ -257,14 +262,30 @@ HTTP e o \emph{rollout} do Cloud Run nunca garantiu revisão casada mesmo.
 \subsection{Nada de nome de recurso no \emph{workflow}}
 
 \begin{decisao}
-Tudo que muda de um contrato para outro entra por \cd{vars} do repositório --- o
-\emph{workflow} \textbf{não sabe} o nome de nenhum recurso. Os valores saem de
-\cd{terraform output}, e há um \emph{script} que os configura
-(\arq{scripts/configurar-github-ci.sh}).
+Tudo que muda de um ambiente para outro entra por \cd{vars} de
+\textbf{\emph{environment}} do GitHub (\cd{dev}, \cd{hml} e, no futuro,
+\cd{prd}) --- o \emph{workflow} \textbf{não sabe} o nome de nenhum recurso. Cada
+\emph{job} de \emph{deploy} declara \cd{environment:} com o nome da
+\emph{branch} que disparou o \emph{push} (\cd{main} mapeia para \cd{prd}), e é
+esse vínculo que resolve as \cd{vars} da \emph{stack} certa. Os valores saem de
+\cd{terraform output} do \emph{workspace} correspondente, e há um \emph{script}
+que os grava no \emph{environment} certo
+(\arq{scripts/configurar-github-ci.sh}) --- ver a \adrr{ADR-53}.
 
-É isso que faz o mesmo \emph{workflow} servir a \cd{dev} e a produção, e ao
-próximo contrato, sem \emph{fork}.
+É isso que faz o mesmo \emph{workflow} servir a \cd{dev}, a \cd{hml} e à
+produção, e ao próximo contrato, sem \emph{fork}.
 \end{decisao}
+
+\begin{atencao}
+As \cd{vars} de \emph{environment} \textbf{só resolvem dentro de um \emph{job}
+que declara \cd{environment:}} --- um bloco \cd{env:} no nível do
+\emph{workflow} as receberia vazias, sem erro. Por isso o \arq{deploy.yml} não
+tem \cd{env:} global: cada \emph{job} de \emph{deploy} declara o
+\emph{environment} e as próprias variáveis. E referenciar um \emph{environment}
+que não existe o \textbf{cria em silêncio}, com todas as \cd{vars} vazias ---
+o \emph{job} \cd{mudancas} tem um passo de guarda que derruba um
+\cd{workflow\_dispatch} disparado de \emph{branch} que não é de ambiente.
+\end{atencao}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -372,14 +393,21 @@ reexecuta o \emph{bootstrap} (idempotente); só mudar o \arq{Dockerfile} (o
 \toprule
 \headrow \thd{Convenção} & \thd{Regra}\\
 \midrule
-Tronco & \arq{main}. A migração para o \emph{monorepo} foi mergeada nela em
-  2026-08-25 por \emph{fast-forward}: 26 \emph{commits}, histórico linear, sem
-  \emph{merge commit}.\\
-\zebra \emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
+Fluxo & \emph{Branch} de trabalho \(\to\) PR para \arq{dev} \(\to\) PR de
+  \arq{dev} para \arq{hml} \(\to\) (futuro) PR de \arq{hml} para \arq{main},
+  que será a produção. \textbf{Ninguém commita direto em \emph{branch} de
+  ambiente}: o \emph{merge} do PR é o que dispara o \emph{deploy} da
+  \emph{stack} correspondente.\\
+\zebra \emph{Merge} & \emph{Merge commit} ou \emph{squash}; \textbf{rebase fica
+  desabilitado} nas opções do repositório. O \emph{job} \cd{mudancas} compara
+  \cd{HEAD\^{}} (o primeiro pai), que num \emph{merge commit} é a ponta antiga
+  da \emph{branch} de ambiente --- um \emph{rebase-merge} faria o \emph{diff}
+  enxergar só o último \emph{commit} do PR.\\
+\emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
   (\arq{exp-07-fracoes}). Trabalho que não é experiência usa o prefixo do tipo do
   \emph{commit}: \arq{fix/quota-por-perfil}, \arq{chore/deps},
   \arq{ci/deploy}.\\
-\emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
+\zebra \emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
   \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
   tocado.\\
 \bottomrule

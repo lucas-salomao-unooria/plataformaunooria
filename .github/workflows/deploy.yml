@@ -1,6 +1,9 @@
 name: deploy
+# Fluxo por ambiente: PR de branch de trabalho -> dev, PR de dev -> hml
+# (e, quando produção existir, PR de hml -> main). O push que o merge do PR
+# gera é o que dispara este workflow; a branch diz QUAL stack recebe.
 on:
-  push: { branches: [main] }
+  push: { branches: [dev, hml] }   # main entra aqui quando virar produção
   workflow_dispatch:
     inputs:
       forcar:
@@ -11,25 +14,22 @@ on:
 # Dois deploys ao mesmo tempo brigam pela mesma revisao do Cloud Run e pelo
 # mesmo banco. `cancel-in-progress: false` de proposito: abortar no meio de uma
 # migration deixa schema e imagem fora de sincronia — melhor enfileirar.
+# O grupo carrega a ref: deploy de dev e de hml NAO se enfileiram entre si —
+# são stacks GCP separadas.
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
-# Tudo que muda de um contrato para outro entra por `vars` do repositorio —
+# Tudo que muda de um ambiente para outro entra por `vars` de ENVIRONMENT do
+# GitHub (Settings > Environments > dev|hml), nunca por vars de repositório —
 # o workflow nao sabe o nome de nenhum recurso. Os valores saem de
-# `terraform output`; use scripts/configurar-github-ci.sh.
-env:
-  GCP_PROJECT: ${{ vars.GCP_PROJECT }}
-  REGION: ${{ vars.REGION }}
-  AR_REPO: ${{ vars.AR_REPO }}
-  API_SERVICE: ${{ vars.API_SERVICE }}
-  HUB_SERVICE: ${{ vars.HUB_SERVICE }}
-  MIGRATE_JOB: ${{ vars.MIGRATE_JOB }}
-  EXP_BUCKET: ${{ vars.EXP_BUCKET }}
-  API_URL: ${{ vars.API_URL }}
-  HUB_ORIGIN: ${{ vars.HUB_ORIGIN }}
-  ASSETS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}
-
+# `terraform output` do workspace correspondente; use
+# scripts/configurar-github-ci.sh, que escreve no environment certo.
+#
+# NAO ha bloco `env:` no nivel do workflow de proposito: vars de environment
+# so resolvem DENTRO de um job que declara `environment:` — no nivel do
+# workflow elas chegariam vazias (ou, pior, com o valor de repositório de
+# outro ambiente). Cada job de deploy declara o environment e as suas envs.
 jobs:
   # Portao: typecheck + lint + test. Nada sobe se isto falhar.
   verificar:
@@ -38,7 +38,7 @@ jobs:
     with:
       completo: ${{ inputs.forcar == true }}
     # Workflow chamado NAO herda secrets: sem isto o SNYK_TOKEN chega vazio
-    # so no push para main (no PR o ci.yml roda direto e recebe) — o passo
+    # so no push para dev/hml (no PR o ci.yml roda direto e recebe) — o passo
     # do Snyk falhava com SNYK-0005 exatamente onde o deploy depende dele.
     secrets: inherit
 
@@ -52,8 +52,22 @@ jobs:
       hub: ${{ steps.mudou.outputs.hub }}
       exps: ${{ steps.mudou.outputs.exps }}
     steps:
+      # Guarda do workflow_dispatch: disparado de uma branch que nao e de
+      # ambiente, nada pode subir — e referenciar um environment inexistente
+      # o CRIARIA em silencio, com todas as vars vazias.
+      - name: Guarda de ambiente
+        run: |
+          case "$GITHUB_REF_NAME" in
+            dev|hml) ;;   # main entra aqui quando virar produção
+            *) echo "::error::deploy só roda de dev ou hml (ref atual: $GITHUB_REF_NAME)"; exit 1 ;;
+          esac
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
+      # `HEAD^` e o PRIMEIRO PAI: num merge commit de PR, e a ponta antiga da
+      # branch de ambiente — o diff cobre o PR inteiro. Isso vale para merge
+      # commit e para squash; um REBASE-merge quebraria o criterio (HEAD^
+      # passaria a ser o penultimo commit do PR). Rebase fica desabilitado
+      # nas opcoes de merge do repositorio.
       - name: O que mudou neste push
         id: mudou
         env:
@@ -80,8 +94,16 @@ jobs:
     needs: [verificar, mudancas]
     if: needs.mudancas.outputs.api == 'true'
     runs-on: ubuntu-latest
+    # branch = environment (main -> prd, quando existir). O environment traz
+    # as vars da stack certa e trava por deployment branch policy: o de hml
+    # so aceita deploy vindo da branch hml.
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
     permissions: { contents: read, id-token: write }   # WIF, sem chave JSON
     env:
+      GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+      REGION: ${{ vars.REGION }}
+      API_SERVICE: ${{ vars.API_SERVICE }}
+      MIGRATE_JOB: ${{ vars.MIGRATE_JOB }}
       IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/api:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -99,6 +121,8 @@ jobs:
 
       # A imagem builda do zero la dentro (o Dockerfile tem a camada de deps
       # cacheavel via type=gha) — este job nao precisa de pnpm no runner.
+      # O escopo do cache carrega o ambiente: a imagem e a mesma, mas dev e
+      # hml nao devem invalidar o cache um do outro a cada push alternado.
       - name: Imagem da api
         uses: docker/build-push-action@v6
         with:
@@ -107,8 +131,8 @@ jobs:
           push: true
           tags: ${{ env.IMG }}
           # Sem cache, cada imagem refaz o `pnpm install` inteiro: ~10 min.
-          cache-from: type=gha,scope=api
-          cache-to: type=gha,scope=api,mode=max
+          cache-from: type=gha,scope=api-${{ github.ref_name }}
+          cache-to: type=gha,scope=api-${{ github.ref_name }},mode=max
 
       # O job roda DENTRO da VPC — é o único caminho até o Postgres, que só tem
       # IP privado. `--wait` faz o passo falhar se a migration falhar.
@@ -136,8 +160,12 @@ jobs:
     needs: [verificar, mudancas]
     if: needs.mudancas.outputs.hub == 'true'
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
     permissions: { contents: read, id-token: write }
     env:
+      GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+      REGION: ${{ vars.REGION }}
+      HUB_SERVICE: ${{ vars.HUB_SERVICE }}
       IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/hub:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -158,8 +186,8 @@ jobs:
           file: apps/hub/Dockerfile
           push: true
           tags: ${{ env.IMG }}
-          cache-from: type=gha,scope=hub
-          cache-to: type=gha,scope=hub,mode=max
+          cache-from: type=gha,scope=hub-${{ github.ref_name }}
+          cache-to: type=gha,scope=hub-${{ github.ref_name }},mode=max
 
       - name: Deploy do hub
         run: |
@@ -185,7 +213,11 @@ jobs:
       needs.verificar.result == 'success' &&
       needs.mudancas.outputs.exps == 'true'
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
     permissions: { contents: read, id-token: write }
+    env:
+      GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+      EXP_BUCKET: ${{ vars.EXP_BUCKET }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
@@ -277,6 +309,7 @@ jobs:
       needs.deploy-api.result != 'failure' &&
       needs.deploy-hub.result != 'failure'
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
     permissions: { contents: read, id-token: write }
     steps:
       # Sem build e sem `pnpm install`: o script é Node puro e só lê o
@@ -288,7 +321,9 @@ jobs:
 
       - name: Ativar as versões novas no manifesto
         env:
-          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `{prefix}-token-signing-key`
+          API_URL: ${{ vars.API_URL }}
+          HUB_ORIGIN: ${{ vars.HUB_ORIGIN }}
+          TOKEN_SIGNING_KEY_PEM: ${{ secrets.TOKEN_SIGNING_KEY_PEM }}   # Secret Manager `{prefix}-token-signing-key`, escopado no environment
           FORCAR: ${{ inputs.forcar }}
         run: |
           set -euo pipefail

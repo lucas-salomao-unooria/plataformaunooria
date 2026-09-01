@@ -152,9 +152,13 @@ armadilhas de migração) em `packages/AGENTS.md`.
 
 ## Git e branches
 
-- **`main` é o tronco.** A migração para o monorepo foi mergeada nela em
-  2026-08-25 por fast-forward: 26 commits, histórico linear, sem merge commit.
-  A branch `migracao-monorepo` não existe mais.
+- **Fluxo por ambiente (desde 2026-09):** branch de trabalho → PR para `dev` →
+  PR de `dev` para `hml` → (futuro) PR de `hml` para `main`, que será a
+  produção. **Ninguém commita direto em branch de ambiente** — o merge do PR é
+  o que dispara o deploy da stack correspondente (environments do GitHub
+  carregam as vars; ver ADR-53). Merge por merge commit ou squash; **rebase
+  desabilitado**: o job `mudancas` compara `HEAD^`, e um rebase-merge faria o
+  diff enxergar só o último commit do PR.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.

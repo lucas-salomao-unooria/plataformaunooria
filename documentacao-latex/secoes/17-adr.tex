@@ -2811,3 +2811,82 @@ em 200 caracteres impede que um \emph{stack} inteiro vaze para a tela.
 fallback, ou o dia em que a destilação ganhar um --- por exemplo, um antagonismo
 escrito à mão pelo professor sem passar pela IA, que hoje ainda depende dela para
 avaliar o equilíbrio.
+
+\section{ADR-53 --- Um ambiente por \emph{branch}: \emph{environments} do GitHub
+carregam as \cd{vars}, e a \emph{branch} escolhe a \emph{stack}}
+\label{adr:ambiente-por-branch}
+
+\begin{especificacao}{Contexto}
+Até agosto de 2026 havia uma \emph{stack} GCP só (\cd{dev}) e o \emph{deploy}
+disparava no \emph{push} para \cd{main}, lendo doze \cd{vars} do nível do
+\textbf{repositório}. Com a \emph{stack} de \cd{hml} provisionada (projeto GCP
+próprio, \emph{workspace} Terraform próprio, WIF \emph{pool} e \emph{deployer}
+SA próprios), esse desenho não comporta dois ambientes: \cd{vars} de
+repositório são um conjunto único, e \cd{main} não pode significar
+\enquote{dev} e \enquote{hml} ao mesmo tempo.
+
+O fluxo de trabalho também mudou: ninguém mais commita direto em \cd{main}.
+\emph{Branch} de trabalho entra por PR em \cd{dev}; \cd{dev} promove por PR
+para \cd{hml}; e, quando produção existir, \cd{hml} promoverá por PR para
+\cd{main}.
+\end{especificacao}
+
+\textbf{Decisão.} Um \emph{environment} do GitHub por ambiente (\cd{dev},
+\cd{hml}, futuramente \cd{prd}), cada um com o conjunto completo de \cd{vars}
+e o \emph{secret} \cd{TOKEN\_SIGNING\_KEY\_PEM} escopados nele. O
+\arq{deploy.yml} dispara em \cd{push} para \cd{dev} e \cd{hml}, e cada
+\emph{job} de \emph{deploy} declara
+\cd{environment: \$\{\{ github.ref\_name == 'main' \&\& 'prd' || github.ref\_name \}\}}
+--- a \emph{branch} \textbf{é} o seletor de \emph{stack}, com \cd{main} como a
+única exceção de nome. Cada \emph{environment} tem \emph{deployment branch
+policy} restrita à própria \emph{branch}: o de \cd{hml} só aceita \emph{job}
+vindo de \cd{hml}, então nem um \cd{workflow\_dispatch} de outra \emph{branch}
+consegue assumir a identidade WIF do ambiente errado. O
+\arq{scripts/configurar-github-ci.sh} deriva o \emph{environment} de
+\cd{terraform workspace show} --- a mesma fonte dos valores --- e cria
+\emph{environment}, \emph{policy}, \cd{vars} e \emph{secret} de uma vez.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Prefixar as \cd{vars} de repositório} (\cd{DEV\_API\_SERVICE},
+    \cd{HML\_API\_SERVICE}) e escolher no \emph{shell}: dobra os nomes, espalha
+    \cd{if} por todos os \emph{jobs} e não dá nenhuma trava --- qualquer
+    \emph{branch} leria as \cd{vars} de qualquer ambiente. O \emph{environment}
+    dá o escopo E a \emph{branch policy} de graça.
+  \item \emph{Um \arq{deploy-dev.yml} e um \arq{deploy-hml.yml}}: os dois
+    divergiriam em silêncio --- é a mesma armadilha do roteiro de 66\,KB da
+    suíte de ponta a ponta, mantido à mão até descrever telas que não existiam.
+    Um \emph{workflow} só, parametrizado pelo \emph{environment}, não tem como
+    divergir de si mesmo.
+  \item \emph{Deploy por \emph{tag}} (\cd{v1.2.3-hml}): desacopla o histórico
+    da promoção, mas cria um segundo vocabulário (qual \emph{commit} está em
+    \cd{hml}? o da \emph{tag}, não o da ponta de nenhuma \emph{branch}) e
+    dispensa o PR de promoção --- que é justamente onde o \emph{diff}
+    \cd{dev..hml} fica visível e revisável.
+\end{itemize}
+
+\textbf{Consequências.} O bloco \cd{env:} global do \arq{deploy.yml} desceu
+para dentro dos \emph{jobs}: \cd{vars} de \emph{environment} só resolvem em
+\emph{job} que declara \cd{environment:}, e no nível do \emph{workflow}
+chegariam vazias, sem erro. Referenciar um \emph{environment} inexistente o
+cria em silêncio (com \cd{vars} vazias), então o \emph{job} \cd{mudancas}
+ganhou um passo de guarda que derruba \emph{dispatch} de \emph{branch} que não
+é de ambiente. O \emph{cache} do Docker ganhou o ambiente no escopo
+(\cd{scope=api-dev}, \cd{scope=api-hml}): \cd{dev} e \cd{hml} não invalidam o
+\emph{cache} um do outro a cada \emph{push} alternado. E o critério de
+\emph{diff} por \cd{HEAD\^{}} passou a depender do método de \emph{merge}:
+\emph{merge commit} e \emph{squash} preservam o primeiro pai como a ponta
+antiga da \emph{branch} de ambiente; \emph{rebase} o quebraria, e fica
+desabilitado nas opções do repositório.
+
+\emph{Ruim}: são $12 \times N$ \cd{vars} para manter ($N$ = ambientes), e a UI
+do GitHub não compara \emph{environments} lado a lado --- um valor desatualizado
+só aparece como falha no meio do \emph{deploy}. Mitigado porque nenhum valor é
+digitado: o \emph{script} os copia de \cd{terraform output}, e reexecutá-lo é
+idempotente.
+
+\textbf{Gatilho de reavaliação.} A chegada de \cd{main}/produção (que testará o
+mapeamento \cd{main} \(\to\) \cd{prd} e pedirá \emph{required reviewers} no
+\emph{environment}); ou o segundo contrato --- \emph{environments} escalam por
+ambiente, não por contrato, e aí a conversa vira um repositório de
+\emph{deploy} por contrato ou uma matriz.
