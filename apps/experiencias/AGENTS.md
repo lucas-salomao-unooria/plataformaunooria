@@ -112,6 +112,14 @@ professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo)
    `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso.
 4. `verbo`/`objeto` de telemetria: documentar no README da experiência.
 5. Build gera `dist/` 100% estático. Testar embedado: rota `/dev-embed` do hub.
+6. **Uma suíte de ponta a ponta**, e ela vai pelo PAPEL de quem usa, não pelo
+   número da experiência (ADR-51): missão de estudante entra em
+   `scripts/e2e/estudante/NN-slug.mjs`; ferramenta de professor, em
+   `scripts/e2e/professor/`. Se a experiência é conduzida pelo relógio da turma,
+   a suíte sobe DOIS contextos e mora no papel do protagonista — a da exp-01 é
+   `estudante/02-instanooria.mjs`, ainda que metade dos prints seja do docente.
+   Cada `registrar()` escreve `titulo`/`mostra`/`prova`: é deles que saem o
+   slide do deck e a legenda do vídeo.
 
 
 ## Design System nas experiências
@@ -142,4 +150,4 @@ Detalhes de mecânica (CSS, frames, compensações) em `packages/AGENTS.md`.
 vendorizado. É um instrumento com distâncias e tempos calibrados, e o compilador
 não tem como saber que uma refatoração mudou a medida. Está nos `ignores` do
 ESLint; o shim (`src/`, TS strict) é a única porta: `window.VILA`. A rede que
-substitui o `tsc` ali é o smoke visual.
+substitui o `tsc` ali é a suíte de ponta a ponta (`scripts/e2e/estudante/05-vila-do-lume.mjs`).

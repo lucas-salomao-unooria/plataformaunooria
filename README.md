@@ -102,13 +102,21 @@ Login: `gestor.demo` → `/admin/usuarios` (importação CSV); `prof.demo` →
 `/professor`; `estudante01` → `/estudante` (experiência). Teste de experiência local:
 `/dev-embed`. Sanidade do DS: `/ds-smoke` (dev only).
 
-## Smoke visual
+## Testes de ponta a ponta
 ```bash
-node scripts/walkthrough-estudante.mjs testes/wt-estudante
-node scripts/walkthrough-professor.mjs testes/wt-professor
+node scripts/e2e/rodar.mjs                # tudo: 21 suítes, cinco papéis
+node scripts/e2e/rodar.mjs professor      # só um papel
+node scripts/e2e/rodar.mjs --deck         # tudo + o deck (.pptx) e os vídeos (.webm)
 ```
-Typecheck não pega ícone virando texto, link sublinhado nem iframe vazio —
-estes dois pegam. Precisam da plataforma no ar (containers ou `pnpm dev`).
+Typecheck não pega ícone virando texto, link sublinhado nem iframe vazio — a
+suíte pega, porque abre o produto num navegador de verdade com uma pessoa de
+verdade logada. Precisa da plataforma no ar (containers ou `pnpm dev`) e do
+Chromium do Playwright (`pnpm exec playwright install chromium`).
+
+As evidências ficam em `testes/<papel>/<suíte>/`: os prints, um `passos.json`
+com a descrição de cada tela e um `relatorio.md`. O deck e os vídeos são
+gerados desse manifesto — a descrição mora no teste que tira o print, não num
+roteiro paralelo.
 
 ## Branches
 `main` é o tronco — a migração para o monorepo está mergeada nela (histórico

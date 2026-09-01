@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
  * O arquivo é gerado e está fora do git — se faltar, a mensagem diz o que
  * rodar, em vez de estourar num `ENOENT` cru no meio do Playwright.
  */
-const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const ARQUIVO = resolve(RAIZ, "credenciais-demo.csv");
 
 function linhas() {

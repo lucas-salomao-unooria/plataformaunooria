@@ -13,10 +13,11 @@ revisão em par que uma pessoa não tem.
 \begin{enumerate}
   \item \textbf{\emph{Typecheck} + \emph{lint} + testes passando}
     (\cd{pnpm turbo typecheck lint test}).
-  \item \textbf{Se mexeu em tela: \emph{smoke} VISUAL}
-    (\cd{node scripts/walkthrough-estudante.mjs <pasta>} e
-    \cd{walkthrough-professor.mjs}) --- \emph{typecheck} verde não pega ícone
-    virando texto, \emph{link} sublinhado nem \cd{iframe} vazio.
+  \item \textbf{Se mexeu em tela: a suíte de ponta a ponta do papel afetado}
+    (\cd{node scripts/e2e/rodar.mjs <papel>}) --- \emph{typecheck} verde não pega
+    ícone virando texto, \emph{link} sublinhado nem \cd{iframe} vazio. Tela nova
+    é passo novo na suíte, com \cd{titulo}/\cd{mostra}/\cd{prova} preenchidos:
+    são eles que viram slide e legenda de vídeo.
   \item \textbf{\emph{Input} externo validado com Zod.}
   \item \textbf{\emph{Queries} novas escopadas por \emph{tenancy}} (revisar
     mentalmente a regra 1).
@@ -54,11 +55,9 @@ revisão em par que uma pessoa não tem.
      \arq{vertex-provider} (a cadeia ADC e o formato da requisição)};
 
   \node[camada, text width=140mm, fill=unooOrangeWash, draw=unooOrange] (v) at (7.5,-6.0)
-    {\textbf{\emph{Smoke} visual} --- Playwright com navegador real\\
-     \arq{walkthrough-estudante}, \arq{walkthrough-professor},
-     \arq{walkthrough-estudante-unootube}, \arq{walkthrough-vila-do-lume},
-     \arq{walkthrough-professor-vila}, \arq{walkthrough-ato1-vila},
-     \arq{walkthrough-landing}, \arq{probe-pointerlock}};
+    {\textbf{Ponta a ponta} --- Playwright com navegador real, por PAPEL\\
+     \arq{scripts/e2e/publico} (2), \arq{estudante} (5), \arq{professor} (7),
+     \arq{gestor} (2), \arq{admin-contrato} (5), \arq{probe-pointerlock}};
 
   \node[actnote, text width=64mm, anchor=north west] at (0.4,-7.4)
     {\textbf{A pirâmide é larga na base de propósito.} Cada módulo de domínio
@@ -106,41 +105,78 @@ Contrato externo & Jest com \emph{fake} de rede &
 \bottomrule
 \end{tabularx}
 
-\section{O \emph{smoke} visual, em detalhe}
+\section{A suíte de ponta a ponta, em detalhe}
 
-\begin{lstlisting}[language=bashunoo, caption={Os \emph{walkthroughs} disponíveis}]
+Ela vive em \arq{scripts/e2e/}, organizada por PAPEL --- \cd{publico} (2
+suítes), \cd{estudante} (5), \cd{professor} (7), \cd{gestor} (2) e
+\cd{admin-contrato} (5). Por papel, e não pelo nome da experiência, porque é o
+crachá que decide o que a pessoa alcança, e porque a organização antiga escondia
+as telas da PLATAFORMA, que são a maioria (ADR-51,
+\autoref{adr:e2e-por-papel}).
+
+\begin{lstlisting}[language=bashunoo, caption={A suíte de ponta a ponta}]
 pnpm exec playwright install chromium    # uma vez por maquina. NAO `npx playwright install`:
                                         # o npx baixa a build de navegador de OUTRA versao
-node scripts/walkthrough-estudante.mjs      testes/wt-estudante
-node scripts/walkthrough-professor.mjs  testes/wt-professor   # cobre a exp-90 embedada
-node scripts/walkthrough-estudante-unootube.mjs   testes/walkthrough-unootube   # estudante4a01
-node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila       # usa o CHROME do sistema
-node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
-node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
-node scripts/walkthrough-landing.mjs          testes/wt-landing     # so o hub; a api nao e necessaria
+node scripts/e2e/rodar.mjs               # tudo: publico, estudante, professor, gestor, admin
+node scripts/e2e/rodar.mjs professor     # so um papel
+node scripts/e2e/rodar.mjs estudante/02  # so uma suite
+node scripts/e2e/rodar.mjs --deck        # tudo + deck (.pptx) + videos (.webm)
 node scripts/probe-pointerlock.mjs
 \end{lstlisting}
 
 \begin{atencao}
-Dois \emph{walkthroughs} exigem o \textbf{Chrome do sistema}, não o Chromium do
-Playwright: o da exp-70 e o \emph{probe} de \emph{pointer lock}. O Chromium
+Duas coisas exigem o \textbf{Chrome do sistema}, não o Chromium do
+Playwright: a suíte da exp-70 e o \emph{probe} de \emph{pointer lock}. O Chromium
 empacotado \textbf{não concede \emph{pointer lock} nem no topo da página}, então
 usá-lo produziria um falso negativo --- o teste diria que a permissão de
 \emph{sandbox} não funciona quando o problema é o navegador.
 \end{atencao}
 
 \begin{nota}
-Os \emph{walkthroughs} precisam da plataforma no ar (contêineres ou
+As suítes precisam da plataforma no ar (contêineres ou
 \cd{pnpm dev}) e gravam \emph{prints} na pasta indicada --- que está no
 \arq{.gitignore}. A senha de todos os usuários de demonstração é
 \cd{unooria123}; os \emph{logins} do \emph{seed} são \cd{gestor.demo},
-\cd{prof.demo} e \cd{estudante01}--\cd{estudante40}.
+\cd{prof.demo} e \cd{estudante01}--\cd{estudante40}. Nenhum roteiro fixa
+\emph{login} no código: eles saem de \arq{credenciais-demo.csv}, que o
+\emph{seed} escreve --- fixá-los fazia qualquer mudança no \emph{seed} quebrar
+seis scripts com \enquote{timeout esperando o feed}, que não diz que a conta
+mudou de nome.
 \end{nota}
+
+\subsection{O manifesto: a descrição mora no teste que fotografa}
+
+Cada passo é registrado com \cd{r.registrar(pagina, nome, \{titulo, mostra,
+prova, detalhe\})}, e isso vira um \arq{passos.json} por suíte, ao lado dos
+\emph{prints}. O \emph{deck} de evidências (\arq{.pptx}) e os vídeos
+(\arq{.webm}, um por papel e um por missão do estudante) são gerados DELE ---
+os geradores não conhecem o produto, só desenham.
+
+Antes existia um roteiro de 66\,KB mantido à mão, separado dos scripts, e ele
+divergiu: descrevia telas que já não eram fotografadas e omitia passos novos. É
+a mesma armadilha do \cd{expires\_at} --- o registro fica, a regra sai, e quem lê
+acredita nele.
+
+\subsection{Erro provocado não é erro descoberto}
+
+Quando um roteiro exercita uma trava de propósito --- ativar uma atividade com
+conteúdo de menos (422), subir um perfil portátil adulterado (400), abrir a
+análise de produto com o papel errado (403) --- o erro que aparece na tela é a
+PROVA de que a trava existe. Ele é declarado com \cd{r.provocado(padrão,
+motivo)} e sai numa seção própria do relatório.
+
+Sem isso, o vermelho aparecia justamente na corrida que demonstrava o
+comportamento correto --- e vermelho que não significa nada treina a pessoa a
+ignorar o vermelho, que é o único jeito de um \emph{smoke} deixar de servir.
 
 \subsection{O roteiro tem de PERDER a corrida para o erro}
 
-Peças compartilhadas em \arq{scripts/lib/smoke.mjs} (o primeiro módulo comum
-entre \emph{walkthroughs} --- antes cada um era um arquivo solto).
+Peças compartilhadas em \arq{scripts/e2e/lib/} --- \arq{roteiro.mjs} (a casca:
+navegador, \emph{login} com portão de hidratação, \emph{print} com manifesto,
+asserções e relatório) e \arq{smoke.mjs} (as esperas que correm contra o erro).
+Antes cada roteiro carregava sua própria cópia, e as doze cópias divergiram:
+uma tirava \cd{fullPage} e outra não, três reprovavam por erro de console e nove
+não.
 
 Medido em 2026-08-29: ao gerar um plano de aula, a API falhou em
 \textbf{306\,ms} e o roteiro ficou \textbf{180\,s} esperando uma \cd{<table>}
@@ -149,7 +185,7 @@ escrito em vermelho na tela desde o primeiro segundo, e o que saiu no console
 foi \cd{Timeout waiting for locator('table')}: um sintoma que não aponta para a
 causa, dentro do próprio instrumento que existe para encontrá-la.
 
-Os 3 minutos são o menor dos problemas. \textbf{Nenhum \emph{walkthrough} olhava
+Os 3 minutos são o menor dos problemas. \textbf{Nenhum roteiro olhava
 estado de erro} --- nenhuma ocorrência de \cd{FeedbackAlert} em
 \arq{scripts/}. Uma falha que ainda deixasse uma \cd{<table>} na tela (plano
 cortado por \cd{MAX\_TOKENS} caindo num \emph{fallback}) passaria \textbf{verde}.
@@ -170,7 +206,15 @@ cortado por \cd{MAX\_TOKENS} caindo num \emph{fallback}) passaria \textbf{verde}
   contexto. É o sinal das experiências DISFARÇADAS (exp-01, exp-03), que
   mostram erro em \cd{<p>} avulso, com classe diferente em cada tela, e por isso
   não têm gancho estável. \textbf{Não derruba o roteiro}: um 404 de sondagem é
-  esperado, e derrubar por \emph{status} inventaria falha.\\
+  esperado, e derrubar por \emph{status} inventaria falha. Para 5xx e 422 ele
+  anexa o CORPO --- \enquote{500 POST /destilar} manda procurar no \emph{log} da
+  API; \enquote{422 \dots{} 12 posts aprovados, o recomendado é 300} resolve na
+  hora.\\
+\zebra \cd{esperarOuFalharPorHttp} & O irmão do primeiro para quem não tem
+  alerta no DOM: corre entre o sinal de sucesso e a RESPOSTA de erro da rota, e
+  põe o corpo dela na mensagem. Foi ele que trocou \enquote{180\,s esperando
+  \emph{Perguntas propostas pela IA}} por \enquote{9\,s, HTTP 500 em
+  /destilar}.\\
 \bottomrule
 \end{tabularx}
 
@@ -237,7 +281,7 @@ quantos ignorou}: silenciar por padrão devolveria o problema em outra forma.
 \textbf{Testes de navegador precisam de portão de hidratação.} Em
 desenvolvimento, o SSR chega \emph{antes} do \emph{bundle}, e o \cd{fill} do
 Playwright não move o estado do React --- o campo mostra o texto e o
-\cd{onChange} nunca rodou. Todo \emph{walkthrough} espera um sinal de hidratação
+\cd{onChange} nunca rodou. Toda suíte espera um sinal de hidratação
 antes de interagir.
 \end{atencao}
 
@@ -318,7 +362,7 @@ Concorrência do motor & \yes{} Forte & \emph{Lock} consultivo, reversibilidade,
 \emph{Guard} do Pub/Sub & \yes{} Forte & Inclui o caso \emph{fail closed}.\\
 \zebra Provider de IA & \yes{} Parcial & Cadeia ADC e formato da requisição. Não
   há teste contra o Vertex real --- e não deveria haver.\\
-Telas & \yes{} \emph{Smoke} & Oito \emph{walkthroughs}; não é cobertura de
+Telas & \yes{} Ponta a ponta & Vinte e uma suítes, cinco papéis; não é cobertura de
   interação, é verificação de que apareceu.\\
 \zebra \textbf{Carga} & \no{} \textbf{Ausente} & O teste de \num{4000}
   \emph{logins} em dez minutos é obrigatório antes de novembro de 2026 e não foi

@@ -24,7 +24,7 @@ para a home do papel: o `login-form` e o `trocar-senha` fazem
 shader NÃO pode chamar `loseContext()` (o Strict Mode remonta o efeito no mesmo
 canvas e o contexto volta perdido — fundo em branco), e cor de ícone vai pela
 prop `color` do `Icon`, não por classe (a folha do DS vence e o ícone sai preto).
-Smoke: `node scripts/walkthrough-landing.mjs testes/wt-landing` (só o hub).
+Suíte: `node scripts/e2e/rodar.mjs publico` (a landing e o login; só o hub).
 
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
 (marca → home do papel, nome + série/papel, avatar, Sair) é o header de

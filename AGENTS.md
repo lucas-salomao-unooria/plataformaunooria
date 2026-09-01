@@ -161,8 +161,9 @@ armadilhas de migração) em `packages/AGENTS.md`.
 - Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo é
   o slug da experiência ou o app/pacote tocado.
 - **Nada de build no git.** `.gitignore` cobre `dist/`, `.next/`, `.next-prod/`,
-  `.turbo/`, `*.tsbuildinfo`, `storage/`, `storage-privado/` e os prints dos
-  walkthroughs. Exceção deliberada: `documentacao-latex/main.pdf` É
+  `.turbo/`, `*.tsbuildinfo`, `storage/`, `storage-privado/` e a pasta `testes/`
+  inteira — os prints, o deck e os vídeos da suíte e2e são reproduzíveis
+  rodando-a de novo. Exceção deliberada: `documentacao-latex/main.pdf` É
   versionado — é entregável de projeto, não artefato de build, e quem precisa
   dele (cliente, edital, revisão) não tem TeX instalado. Os auxiliares do LaTeX
   e `documentacao-latex/build/` ficam fora. `apps/hub/.next-prod/` (que o `pnpm build:isolado` escreve) já
@@ -200,34 +201,37 @@ SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: 
 pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
 pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
-pnpm exec playwright install chromium     # PRE-REQUISITO dos walkthroughs, uma vez por maquina.
+pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez por maquina.
                                           # `npx playwright install` NAO serve: o npx resolve o
                                           # playwright mais NOVO do npm e baixa a build de navegador
                                           # DELE, enquanto o repo fixa 1.62.1 (build 1234). O erro sai
                                           # como "Executable doesn't exist at .../chromium_headless_
                                           # shell-1234" com o cache CHEIO de navegador, e o banner
                                           # manda rodar justamente o npx que causou o descasamento.
-node scripts/walkthrough-landing.mjs testes/wt-landing        # smoke da LANDING (/ sem sessão): fontes do DS, shader, revelação, CTA -> /login. Só o hub.
-node scripts/walkthrough-admin-usuarios.mjs testes/wt-admin  # smoke do ciclo de pessoas: importar -> enturmar -> 1o acesso -> turma do professor
-node scripts/walkthrough-rede.mjs testes/wt-rede            # smoke da REDE: 2 escolas, regional, lotação em lote, panorama do supervisor, estudante transferido pelo CPF
-node scripts/walkthrough-perfil-portatil.mjs testes/wt-portatil  # smoke do PERFIL PORTÁTIL: emitir assinado, receber, e o que acontece com um arquivo adulterado
-node scripts/walkthrough-explicabilidade.mjs testes/wt-explicabilidade  # smoke do FECHAMENTO da exp-01: DOIS contextos
-                                          # (o professor conduz o relogio, o estudante joga). Mede a boundingBox do iframe
-                                          # antes/depois do "Ver meu relatorio" (375 -> 1280 -> 349) e prova que ele NAO
-                                          # recarregou. Zera a turma no comeco.
-node scripts/walkthrough-estudante-unootube.mjs testes/walkthrough-unootube   # smoke da exp-02 (estudante4a01)
-node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila       # smoke da exp-70, estudante (usa o CHROME do sistema: pointer lock)
-node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A      # smoke da exp-70, professor (trilha → ficha → turma → estudante)
-node scripts/walkthrough-ato1-vila.mjs testes/wt-ato1                   # smoke do Ato 1 (a tela; a largada tem teste em tests/vila-ato1.spec.ts)
+node scripts/e2e/rodar.mjs                # A SUÍTE INTEIRA de ponta a ponta, na ordem canônica
+                                          # (publico → estudante → professor → gestor → admin-contrato).
+                                          # A ordem não é alfabética: o estudante PRODUZ o estado
+                                          # (runs, partidas, sessões) que as telas do professor leem, e a
+                                          # administração vem por último porque importa gente e troca senha.
+node scripts/e2e/rodar.mjs professor      # só um papel
+node scripts/e2e/rodar.mjs estudante/02   # só uma suíte
+node scripts/e2e/rodar.mjs --deck         # tudo + deck (.pptx) + vídeos (.webm), gerados dos manifestos
+node scripts/e2e/publico/01-landing.mjs   # cada suíte também roda sozinha, direto
+# Evidências em testes/<papel>/<suíte>/: os prints, `passos.json` (o manifesto) e `relatorio.md`.
+# A pasta é APAGADA no começo de cada execução — print de duas corridas na mesma pasta conta
+# uma história que nunca aconteceu. `testes/` inteira está no .gitignore.
+# O deck e os vídeos NASCEM do `passos.json`: a descrição de cada tela é escrita no
+# `registrar()` da suíte, ao lado do passo que a fotografa. Antes havia um roteiro de 66 KB
+# mantido à mão, e ele divergiu — descrevia telas que o script já não tirava.
+node scripts/e2e/ferramentas/gerar-deck.mjs             # só o deck
+node scripts/e2e/ferramentas/gerar-videos.mjs           # só os vídeos (um por papel; o estudante, um por missão)
+node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ conferir o layout sem codificar
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
-node scripts/walkthrough-estudante-unoogpt.mjs testes/walkthrough-unoogpt   # smoke da exp-03: DOIS contextos
-                                          # (o professor dá a largada, o estudante joga). Zera a turma no
-                                          # começo — senão a 2ª execução acha o estudante já na investigação.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~327p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~331p). Atualizar SEMPRE
 ```
 
 
@@ -258,12 +262,12 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~327 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~331 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **50 ADRs**, riscos e
+especificação da API, design system, entrega, qualidade, **51 ADRs**, riscos e
 evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
@@ -303,12 +307,14 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 ## Definition of Done (qualquer tarefa)
 
 - [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
-- [ ] Se mexeu em tela: smoke VISUAL (`node scripts/walkthrough-estudante.mjs <pasta>`
-      e `walkthrough-professor.mjs`, que também cobre a exp-90 embedada) —
-      typecheck verde não pega ícone virando texto, link sublinhado nem iframe vazio
-      Espera nova de IA **corre contra o erro** (`scripts/lib/smoke.mjs`:
+- [ ] Se mexeu em tela: a suíte E2E do papel afetado
+      (`node scripts/e2e/rodar.mjs <papel>`) — typecheck verde não pega ícone
+      virando texto, link sublinhado nem iframe vazio. Tela nova = passo novo na
+      suíte, com `titulo`/`mostra`/`prova` preenchidos: é deles que saem o slide
+      e a legenda do vídeo.
+      Espera nova de IA **corre contra o erro** (`scripts/e2e/lib/smoke.mjs`:
       `esperarOuFalharCedo` + `ALERTA_DE_ERRO` nas telas da plataforma,
-      `vigiarFalhasDaApi` nas experiências disfarçadas). Espera cega paga o
+      `vigiarFalhasDaApi` e `esperarOuFalharPorHttp` nas disfarçadas). Espera cega paga o
       timeout inteiro e reporta o seletor que faltou em vez da causa: a api
       falhou em 306ms e o roteiro esperou 180s pela `<table>`
 - [ ] Input externo validado com Zod

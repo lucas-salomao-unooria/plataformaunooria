@@ -193,7 +193,7 @@ bastaria digitar `/exp/...` para pular. Ao trocar, a sessão é REFEITA com a se
 nova (novo `signIn`), não remendada: o cookie antigo ainda diz "precisa trocar", e
 sem refazê-lo a pessoa volta à mesma tela com a senha anterior já inválida.
 Reimportar NÃO reseta a senha de quem já entrou. Os usuários do seed nascem com
-`senha_provisoria: false` — prendê-los na troca pararia os sete walkthroughs.
+`senha_provisoria: false` — prendê-los na troca pararia as suítes de estudante.
 
 **Área administrativa** (gestor/admin-contrato): `/admin/usuarios` (busca,
 filtros, editar, ativar/desativar, reset), `/admin/turmas` e `/admin/turmas/[id]`

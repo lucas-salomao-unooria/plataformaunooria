@@ -70,23 +70,50 @@ de aplicação. E \arq{apps/hub/next-env.d.ts} alterna entre \arq{./.next} e
 não \emph{commitar}}.
 \end{atencao}
 
-\section{\emph{Smoke} visual}
+\section{Testes de ponta a ponta}
 
 \begin{lstlisting}[language=bashunoo]
-node scripts/walkthrough-estudante.mjs            testes/wt-estudante
-node scripts/walkthrough-professor.mjs        testes/wt-professor
-node scripts/walkthrough-estudante-unootube.mjs   testes/walkthrough-unootube
-node scripts/walkthrough-vila-do-lume.mjs     testes/walkthrough-vila
-node scripts/walkthrough-professor-vila.mjs   testes/wt-prof-vila 8A
-node scripts/walkthrough-ato1-vila.mjs        testes/wt-ato1
-node scripts/walkthrough-admin-usuarios.mjs   testes/wt-admin
-node scripts/walkthrough-rede.mjs             testes/wt-rede
+node scripts/e2e/rodar.mjs                # tudo, na ordem canonica
+node scripts/e2e/rodar.mjs professor      # so um papel
+node scripts/e2e/rodar.mjs estudante/02   # so uma suite
+node scripts/e2e/rodar.mjs --deck         # tudo + deck (.pptx) + videos (.webm)
 node scripts/probe-pointerlock.mjs
 \end{lstlisting}
-\begin{nota}[title={NOTA --- o \emph{smoke} do fechamento da exp-01}]
-\arq{scripts/walkthrough-explicabilidade.mjs} é o único que sobe DOIS contextos:
-nada avança sem o botão do professor, então um contexto só não chega ao fim. Ele
-mede a \cd{boundingBox} do \emph{iframe} antes e depois do
+
+A suíte vive em \arq{scripts/e2e/}, organizada por PAPEL --- \cd{publico},
+\cd{estudante}, \cd{professor}, \cd{gestor} e \cd{admin-contrato} ---, e as
+evidências saem em \arq{testes/<papel>/<suíte>/}: os \emph{prints}, um
+\arq{passos.json} e um \arq{relatorio.md}.
+
+\begin{nota}[title={NOTA --- a ordem dos papéis não é alfabética}]
+O \cd{publico} não depende de nada e falha rápido se o \emph{hub} estiver fora
+--- é o canário mais barato. O \cd{estudante} PRODUZ o estado (\emph{runs},
+partidas, sessões) que as telas do \cd{professor} leem: invertê-los deixaria as
+telas de resultado vazias e as asserções de conteúdo sem objeto. E
+\cd{gestor}/\cd{admin-contrato} vêm por último porque importam pessoas e trocam
+senhas --- efeitos que atrapalhariam as contas usadas pelos roteiros de cima.
+
+Cada suíte roda em processo PRÓPRIO. É mais lento que um processo só, e é
+deliberado: uma suíte que trava o navegador não leva as outras junto.
+\end{nota}
+
+\begin{nota}[title={NOTA --- o manifesto é a fonte do deck e dos vídeos}]
+Cada \cd{registrar()} escreve, junto com o \emph{print}, o que a tela MOSTRA e a
+regra do projeto que ela PROVA. É desse \arq{passos.json} que nascem os slides e
+as legendas dos vídeos.
+
+Antes existia um roteiro de 66\,KB mantido à mão, separado dos scripts, e ele
+divergiu: descrevia telas que já não eram fotografadas e omitia passos novos. A
+descrição passou a morar onde o passo mora.
+\end{nota}
+
+\begin{nota}[title={NOTA --- os roteiros de DOIS contextos}]
+As missões conduzidas pelo professor (\arq{estudante/02-instanooria.mjs} e
+\arq{estudante/04-unoogpt.mjs}) sobem DOIS navegadores: um com o docente no
+relógio da turma, outro com o estudante no aparelho. Nada avança sem o botão do
+professor --- um contexto só não chega ao fim, e passaria com o relógio quebrado.
+
+O da exp-01 mede a \cd{boundingBox} do \emph{iframe} antes e depois do
 \enquote{Ver meu relatório} ($375 \rightarrow 1280 \rightarrow 349$px), escreve
 uma marca dentro do \emph{frame} para provar que ele NÃO foi remontado, e lê o
 \cd{backgroundColor} COMPUTADO --- \cd{toBeVisible()} não pega nenhuma das três.
@@ -101,6 +128,14 @@ precisa esperar um elemento do FIM do relatório: o conteúdo vem de
 fundo transparente e zero gráfico.
 \end{nota}
 
+\begin{nota}[title={NOTA --- erro provocado não é erro descoberto}]
+Quando um roteiro exercita uma trava de propósito --- ativar uma atividade com
+conteúdo de menos (422), subir um perfil portátil adulterado (400), abrir a
+análise de produto com o papel errado (403) --- o erro que aparece é a PROVA de
+que a trava existe. Ele é declarado com \cd{r.provocado(padrão, motivo)} e sai
+numa seção própria do relatório, em vez de pintar de vermelho a corrida que
+estava justamente demonstrando o comportamento.
+\end{nota}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
 \toprule
@@ -115,7 +150,7 @@ fundo transparente e zero gráfico.
 \zebra Plataforma no ar & Contêineres \textbf{ou} \cd{pnpm dev} --- um \emph{ou} outro,
   nunca os dois na mesma porta: o navegador e o servidor passam a ler
   \emph{dev servers} diferentes.\\
-Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
+Chrome do \textbf{sistema} & Obrigatório para a suíte da
   exp-70 e para o \emph{probe} de \emph{pointer lock}: o Chromium do Playwright
   não concede \emph{pointer lock} nem no topo da página.\\
 \zebra Duas escolas no \emph{seed} & \cd{escola-demo} (8A, 8B, 4A, 2A) e
@@ -126,7 +161,7 @@ Chrome do \textbf{sistema} & Obrigatório para o \emph{walkthrough} da
   \cd{prof.demo} \seta{} \rota{/professor}; \cd{estudante01}--\cd{estudante40} \seta{}
   \rota{/estudante}; \cd{estudante4a01} para a exp-02. Senha de todos:
   \cd{unooria123}. Eles nascem com \cd{senha\_provisoria = false} de propósito:
-  prendê-los na troca do primeiro acesso pararia os sete \emph{walkthroughs} na
+  prendê-los na troca do primeiro acesso pararia as suítes de estudante na
   mesma tela. \cd{prof.demo} é matriculado nas quatro turmas --- sem isso, as
   telas dele abrem vazias.\\
 \zebra Bancada de \emph{embed} & \rota{/dev-embed?src=http://localhost:5174}.
@@ -205,7 +240,7 @@ reversão nº 1 acima ser possível.
     \env{PLANOS\_IMPORT\_TOKEN}.
   \item \textbf{Manual, e pendente de automação:} \cd{gsutil rsync} da mídia
     pesada da exp-02 para o \emph{bucket} de \emph{assets} (\cd{R-09}).
-  \item Rodar os \emph{walkthroughs} contra o ambiente novo.
+  \item Rodar \cd{node scripts/e2e/rodar.mjs} contra o ambiente novo.
 \end{enumerate}
 
 \section{Diagnóstico: sintoma \seta{} causa}
@@ -352,7 +387,7 @@ testado no container} &
   (\arq{embed-experiencia.ts}) nomeando URL, causa e consequência --- antes o
   \cd{catch \{\}} engolia, e uma configuração errada virava bug de jogo. O
   \emph{sandbox} do \cd{iframe} é a evidência: sem o \emph{token}, o
-  \emph{walkthrough} da exp-70 falha no primeiro passo.\\
+  suíte da exp-70 falha no primeiro passo.\\
 \textbf{A câmera congela \emph{depois} de já ter andado} --- ao apertar Esc ou
   trocar de aba --- \textbf{e o aviso \enquote{clique pra voltar} não aparece} &
   O \cd{pointerlockchange} não foi registrado. No jogo de origem os
@@ -361,7 +396,7 @@ testado no container} &
   do \emph{handshake} com o hub, quando o \cd{load} já passou. Como o
   \cd{pausedHint} é o \textbf{único} \cd{controls.lock()} fora dos diálogos, a
   partida ficava sem caminho de volta. Corrigido em \arq{16-boot.js}
-  (2026-08-27); coberto pelo passo \emph{pausa-e-volta} do \emph{walkthrough}.\\
+  (2026-08-27); coberto pelo passo \emph{pausa-e-volta} da suíte da exp-70.\\
 \zebra \textbf{Dois \emph{dev servers} da mesma experiência na mesma porta} &
   Um no \emph{host} e um no \emph{compose}. O navegador e o servidor podem
   alcançar \textbf{servidores diferentes} (\cd{localhost} resolve para um,
@@ -373,7 +408,7 @@ testado no container} &
   \cd{autoplay} não delegado no \cd{allow} do \emph{frame}: a
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}.\\
 \zebra \textbf{O vídeo para no primeiro toque \emph{dentro} da experiência e não
-  volta} --- e o \emph{walkthrough} acusa \enquote{autoplay BLOQUEADO} &
+  volta} --- e a suíte acusa \enquote{autoplay BLOQUEADO} &
   \textbf{Não é o \cd{allow} do \emph{frame}}, e é aí que o sintoma engana: o
   \cd{play()} manual funciona e o \cd{readyState} é 4. Clicar dentro do
   \cd{iframe} tira o foco da janela do hub, o \arq{ExpFrame.tsx} traduzia esse
@@ -474,7 +509,7 @@ testado no container} &
   \cd{invalid\_grant} com \cd{error\_subtype: invalid\_rapt} --- \emph{RAPT} é
   \emph{Reauth Proof Token}. \textbf{A janela é de ~1 hora} (MEDIDO: login
   22h20, expirado 23h31), ou seja, ela vence NO MEIO de uma sessão de trabalho e
-  a suíte de \emph{walkthroughs} cai de 12/12 para 10/12 sem que uma linha de
+  a suíte de ponta a ponta perde dois roteiros sem que uma linha de
   código tenha mudado. Antes de investigar \enquote{regressão} nos caminhos de
   IA, peça o token. Resolve com \cd{gcloud auth application-default
   login} no HOST. Não é permissão nem \emph{mount}: confira nessa ordem
@@ -554,7 +589,7 @@ testado no container} &
   mas quem já subiu não relê. \textbf{Reautenticar não basta: reinicie a api.}
   Comparar \cd{docker inspect -f '\{\{.State.StartedAt\}\}'} com o \cd{mtime} do
   ADC responde na hora.\\
-\zebra \textbf{O \emph{walkthrough} acusa \enquote{turma 2A não está no seletor (rode o
+\zebra \textbf{A suíte acusa \enquote{turma não está no seletor (rode o
   seed)}} --- e a turma ESTÁ no banco, com o professor matriculado nela &
   O roteiro pegava \cd{locator("select").first()}, e quem tem mais de uma
   lotação (\cd{prof.demo} tem duas) ganhou um seletor de ESCOLA no cabeçalho,
@@ -563,7 +598,7 @@ testado no container} &
   seed é o primeiro lugar onde ninguém acha nada. Usar \cd{select\#turma}, como
   os outros roteiros já faziam. Corrigido em 2026-08-29; era o único \cd{select}
   cru em \arq{scripts/}.\\
-\textbf{Todo \emph{walkthrough} morre em} \cd{Executable} \cd{doesn't
+\textbf{Toda suíte morre em} \cd{Executable} \cd{doesn't
   exist} --- \textbf{com o cache de navegadores CHEIO} &
   O executável que falta é o \cd{chromium\_headless\_shell-1234}, e alguém rodou
   \cd{npx playwright install} em vez de \cd{pnpm exec playwright install}. O
@@ -658,7 +693,7 @@ Mensal & \textbf{Contagem da partição \cd{DEFAULT} de telemetria} --- encher
   significa que faltou criar partição (\cd{R-08}); volume de
   \cd{telemetria\_eventos} por mês; consumo de quota de IA por professor.\\
 \zebra Trimestral & \cd{pnpm up -r @unooria/design-system --latest} e rodar os
-  \emph{walkthroughs}; revisar as lacunas do \emph{design system} ainda
+  suítes de ponta a ponta; revisar as lacunas do \emph{design system} ainda
   compensadas localmente; conferir se os modelos de IA em uso continuam no
   catálogo (\cd{R-12}).\\
 Anual, ou por \emph{release} & Revisar as ADRs cujo gatilho de reavaliação pode

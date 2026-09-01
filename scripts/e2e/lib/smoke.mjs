@@ -49,6 +49,33 @@ export function ehRuidoDeDev(texto) {
 }
 
 /**
+ * Defeitos REAIS do produto que já estão nomeados e que, se reprovassem cada
+ * suíte, deixariam todas vermelhas por um motivo que ninguém vai olhar duas
+ * vezes — o começo do fim de um smoke, como diz o bloco de cima.
+ *
+ * Diferente do ruído: isto NÃO é silenciado. Cada suíte lista as pendências que
+ * encontrou, no terminal e no relatório, e elas viram um slide próprio no deck.
+ * Sair daqui é consertar, não apagar a linha.
+ *
+ * - `favicon.ico`: o hub não declara ícone nenhum (`app/layout.tsx` só tem
+ *   `title`). Toda navegação de todo papel gera um 404 no console.
+ */
+const PENDENCIAS_CONHECIDAS = [
+  {
+    padrao: /favicon\.ico/,
+    oQue: "o hub não declara favicon — todo carregamento de página gera um 404 no console",
+  },
+];
+
+/**
+ * @param {string} texto
+ * @returns {string | null} a descrição da pendência, ou null se não for uma
+ */
+export function pendenciaConhecida(texto) {
+  return PENDENCIAS_CONHECIDAS.find((p) => p.padrao.test(texto))?.oQue ?? null;
+}
+
+/**
  * Espera `sucesso`, mas PERDE A CORRIDA para um erro na tela.
  *
  * O timeout continua alto porque a geração real leva de 30 a 60 s; o que muda
@@ -74,6 +101,34 @@ export async function esperarOuFalharCedo(sucesso, erro, opcoes = {}) {
 }
 
 /**
+ * Espera `sucesso`, mas PERDE A CORRIDA para uma resposta de erro da api.
+ *
+ * É o irmão de `esperarOuFalharCedo` para as telas que NÃO têm um gancho de
+ * erro estável no DOM — as experiências disfarçadas e os painéis que renderizam
+ * a falha em `<p>` avulso. Aqui o sinal é a resposta HTTP, que é inequívoca, e
+ * o corpo dela vai na mensagem: um `500` sem corpo manda a pessoa procurar no
+ * log da api; com o corpo, a causa aparece no terminal.
+ *
+ * @param {import('playwright').Page} pagina
+ * @param {import('playwright').Locator} sucesso   o que prova que deu certo
+ * @param {RegExp} rota  qual chamada observar
+ * @param {{ timeout?: number, oQue?: string }} [opcoes]
+ */
+export async function esperarOuFalharPorHttp(pagina, sucesso, rota, opcoes = {}) {
+  const { timeout = 120_000, oQue = "a chamada" } = opcoes;
+  const erroDaApi = pagina
+    .waitForResponse((r) => rota.test(r.url()) && r.status() >= 400, { timeout })
+    .then(async (r) => {
+      const corpo = await r.text().catch(() => "(sem corpo)");
+      throw new Error(
+        `${oQue} falhou: HTTP ${r.status()} em ${new URL(r.url()).pathname} — ` +
+          corpo.replace(/\s+/g, " ").slice(0, 300),
+      );
+    });
+  await Promise.race([sucesso.first().waitFor({ timeout }), erroDaApi]);
+}
+
+/**
  * Anota as respostas 4xx/5xx da api para o relatório final.
  *
  * NÃO derruba o roteiro: é o mecanismo para as experiências sem gancho de erro
@@ -90,10 +145,26 @@ export async function esperarOuFalharCedo(sucesso, erro, opcoes = {}) {
  */
 export function vigiarFalhasDaApi(pagina, falhas, rotulo = "") {
   const prefixo = rotulo ? `[${rotulo}] ` : "";
-  pagina.on("response", (r) => {
+  pagina.on("response", async (r) => {
     if (r.status() < 400) return;
     const caminho = new URL(r.url()).pathname;
     if (!/\/(api|planos|bemestar|unoogpt|vila|runs|telemetry|ai)\//.test(caminho)) return;
-    falhas.push(`${prefixo}${r.status()} ${r.request().method()} ${caminho}`);
+    /* O CORPO dos 5xx, e não só o status. "500 POST /destilar" manda a pessoa
+       procurar no log da api; "500 … quota diária excedida" resolve na hora.
+       Só para 5xx: um 404 de sondagem de estado é esperado e o corpo dele é
+       ruído. E entre `catch`: um corpo já consumido por quem chamou faria o
+       vigia derrubar o roteiro por causa do próprio diagnóstico. */
+    let causa = "";
+    /* 422 entra junto com os 5xx: é o status que o produto usa para "dá para
+       fazer, mas falta alguma coisa", e a lista de pendências vive no corpo.
+       401/403/404 ficam de fora — os dois primeiros são a trava funcionando, e
+       o terceiro costuma ser sondagem de estado que ainda não existe. */
+    if (r.status() >= 500 || r.status() === 422) {
+      causa = await r
+        .text()
+        .then((corpo) => ` — ${corpo.replace(/\s+/g, " ").slice(0, 240)}`)
+        .catch(() => " — (corpo indisponível)");
+    }
+    falhas.push(`${prefixo}${r.status()} ${r.request().method()} ${caminho}${causa}`);
   });
 }
