@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Recusa o que o plano do GitHub não consegue recusar.
+#
+# Branch protection e rulesets respondem 403 neste repositório (privado, plano
+# Free), então a única barreira contra um `git push origin dev` é esta. Ela é
+# CONSELHO, não muralha: `--no-verify` fura, e é para furar em emergência — mas
+# aí a decisão é consciente e aparece no reflog de quem furou.
+#
+# Instalado por `git config core.hooksPath .githooks` (o `prepare` do
+# package.json faz isso no `pnpm install`).
+set -u
+
+AMBIENTES="dev hml main"
+TIPOS="feat|fix|chore|docs|ci|refactor|test|perf|build|style|hotfix"
+VAZIO="0000000000000000000000000000000000000000"
+falhou=0
+
+while read -r ref_local sha_local ref_remota _sha_remoto; do
+  [ -z "${ref_remota:-}" ] && continue
+  branch_remota="${ref_remota#refs/heads/}"
+
+  # 1. Branch de ambiente: nunca por push direto. Nem para apagar.
+  for amb in $AMBIENTES; do
+    if [ "$branch_remota" = "$amb" ]; then
+      if [ "${PERMITIR_PUSH_DIRETO:-}" = "1" ]; then
+        echo "aviso: push direto em '$amb' liberado por PERMITIR_PUSH_DIRETO=1." >&2
+      else
+        cat >&2 <<MSG
+
+  ✗ push direto em '$amb' recusado.
+
+    '$amb' é branch de AMBIENTE: o merge do PR é o que dispara o deploy da
+    stack correspondente. Push direto sobe código para a escola sem passar
+    pelo portão (typecheck, lint, testes) e sem deixar o PR como registro.
+
+    O caminho:
+      trabalho  ->  PR para dev
+      dev       ->  PR para hml
+      hml       ->  PR para main   (produção; leva tag semver)
+
+      gh pr create --base dev --fill
+
+    Emergência de verdade: PERMITIR_PUSH_DIRETO=1 git push …
+    (e depois escreva no PR de acompanhamento por que foi preciso)
+
+MSG
+        falhou=1
+      fi
+    fi
+  done
+
+  # 2. Nome da branch de trabalho. Deleção remota (sha zerado) não é avaliada.
+  if [ "$sha_local" != "$VAZIO" ]; then
+    case "$branch_remota" in
+      dev|hml|main) : ;;
+      exp-[0-9][0-9]-*) : ;;
+      *)
+        if ! printf '%s' "$branch_remota" | grep -Eq "^($TIPOS)/[a-z0-9][a-z0-9._-]*$"; then
+          cat >&2 <<MSG
+
+  ✗ nome de branch fora do padrão: '$branch_remota'
+
+    Experiência nova:  exp-NN-slug          (ex.: exp-07-fracoes)
+    Qualquer outra:    tipo/slug            (ex.: fix/quota-por-perfil)
+    Tipos: ${TIPOS//|/, }
+
+      git branch -m <nome-novo>
+
+    Escape: PERMITIR_BRANCH_FORA_DO_PADRAO=1 git push …
+
+MSG
+          [ "${PERMITIR_BRANCH_FORA_DO_PADRAO:-}" = "1" ] || falhou=1
+        fi
+        ;;
+    esac
+  fi
+done
+
+exit $falhou
