@@ -697,19 +697,30 @@ a porta certa na string} &
   ambiente para ambiente porque uma senha sorteada sem esses caracteres funciona
   --- em \cd{dev} funcionou, em \cd{hml} não. O Cloud Run não sofre disso: lá a
   string é montada pelo Terraform, não à mão.\\
-\textbf{\cd{ativar-exps} falha com \cd{fetch failed} \seta{}
-\enquote{\cd{socket disconnected before secure TLS connection was
-established}} numa \emph{stack} nova} &
-  O certificado do \emph{host} da api ainda está \cd{PROVISIONING}. Este
-  trabalho é o único que fala HTTPS com a \emph{api} pelo \textbf{hostname
-  público} (o \emph{PUT} do manifesto), então é o primeiro a sentir --- os
-  outros usam \cd{gcloud}. Confirmar com
-  \cd{gcloud certificate-manager certificates list}; se os CNAMEs
-  \cd{\_acme-challenge} já estiverem publicados e batendo com
-  \cd{dns-authorizations list}, \textbf{não há nada a consertar}: é tempo de
-  emissão. Repetir o \emph{dispatch} com \cd{forcar} quando virar
-  \cd{ACTIVE}. O estado intermediário é seguro por desenho --- os
-  \emph{bundles} já estão no \emph{bucket} e são inertes até a ativação.\\
+\textbf{\cd{ativar-exps} falha numa \emph{stack} nova --- de DUAS formas
+diferentes, e a segunda mente} &
+  Causa única nas duas: \textbf{certificado ainda \cd{PROVISIONING}}. Este é o
+  único trabalho que fala HTTPS por \textbf{hostname público} (o \emph{PUT} do
+  manifesto); os outros usam \cd{gcloud}. Qual cara aparece depende de QUAL
+  certificado falta:
+  \begin{itemize}[leftmargin=*, nosep]
+    \item Falta o da \textbf{api} \seta{} o TLS quebra no \emph{runner}:
+      \cd{fetch failed} \seta{}
+      \enquote{\cd{socket disconnected before secure TLS}}. Aponta para a
+      causa.
+    \item Falta o do \textbf{hub} \seta{}
+      \cd{401 \{"message":"Token inválido"\}}. \textbf{Este engana}: parece
+      chave errada ou \emph{secret} trocado, e não é --- a api valida o
+      \emph{token} contra o JWKS que o HUB serve, e é ELA que toma o
+      \cd{ECONNRESET} ao buscá-lo. A prova está no \emph{log} da api, não no do
+      CI: \cd{[TokenService] Token rejeitado: ECONNRESET ...}.
+  \end{itemize}
+  Confirmar com \cd{gcloud certificate-manager certificates list}; se os CNAMEs
+  \cd{\_acme-challenge} já batem com \cd{dns-authorizations list},
+  \textbf{não há nada a consertar}: é tempo de emissão. Repetir o
+  \emph{dispatch} com \cd{forcar} quando virarem \cd{ACTIVE}. O estado
+  intermediário é seguro por desenho --- os \emph{bundles} já estão no
+  \emph{bucket} e são inertes até a ativação.\\
 \bottomrule
 \end{tabularx}
 
