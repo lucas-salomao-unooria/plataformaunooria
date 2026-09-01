@@ -312,12 +312,18 @@ jobs:
     environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
     permissions: { contents: read, id-token: write }
     steps:
-      # Sem build e sem `pnpm install`: o script é Node puro e só lê o
-      # `experiencia.json` da pasta.
+      # Sem BUILD, mas o `pnpm install` é obrigatório: o script assina o token
+      # de admin-contrato com `jose` (dependência do hub), e sem ele o job morre
+      # em `ERR_MODULE_NOT_FOUND` — depois de os bundles já terem subido, com a
+      # `versaoAtiva` ainda apontando para a versão antiga. O install é FILTRADO
+      # no hub: é a única dependência que o script precisa, e instalar o
+      # workspace inteiro aqui pagaria o `prisma generate` da api sem uso.
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 24 }
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile --filter @edu/hub
 
       - name: Ativar as versões novas no manifesto
         env:
