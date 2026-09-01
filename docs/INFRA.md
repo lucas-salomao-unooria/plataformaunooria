@@ -155,6 +155,30 @@ não passa pelo `OidcGuard` — quem chama é a push subscription. O
 duas envs a rota responde 401 (fechada, não aberta). O Terraform casa os dois
 lados: a subscription é criada com `oidc_token` dessa mesma SA e audience.
 
+**Observabilidade (PENDENTE — fase 0 do cap. 17 da documentação, ADR-57/58 propostas em 2026-09-01).**
+Hoje a stack não tem alerta, sonda HTTP nem painel: só o log e a métrica nativa do
+Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por contrato:
+
+| Recurso | Nome esperado | Observação |
+|---|---|---|
+| Notification channels | `{contrato}-alerta-acorda` (e-mail + push do app Cloud Console), `{contrato}-alerta-amanha` (e-mail + Google Chat/Slack) | duas severidades, só |
+| Uptime checks (3 regiões, 60 s, valida conteúdo) | `{contrato}-jwks` (`{hub}/.well-known/jwks.json` contém `"keys"`), `{contrato}-api-readyz`, `{contrato}-hub-healthz` (rota nova do hub), `{contrato}-landing`, `{contrato}-exp-ativa` (index.html da versão ativa da exp-01) | o `/readyz` passa a ser chamado por alguém |
+| Alert policies | as 14 do cap. 17 (6 "acorda", 8 "amanhã"); as que dependem de métrica da aplicação só valem após a fase 2 | por sintoma; nenhuma de CPU/memória |
+| SLOs (service monitoring) | disponibilidade do `-frontend` e do `-api` a 99,5 %/30 dias, com alerta de burn rate | |
+| Dashboard | `{contrato}-plataforma` (JSON versionado no Terraform) | igual em todo contrato |
+| Log: exclusões no sink `_Default` | request log de `/healthz`, `/readyz` e dos uptime checks; `sample(insertId, 0.2)` dos 2xx com latência < 1 s | é o que mantém o log dentro dos 50 GiB grátis |
+| Log: bucket de auditoria | `{contrato}-auditoria`, 400 dias, regional, alimentado por sink de `codigo=auth.*`, `codigo=importacao.*`, `codigo=deploy` + Admin Activity | Data Access audit logs do próprio Logging ligados |
+| Pub/Sub dead letter | topic `{contrato}-telemetria-dlq`, `dead_letter_policy` na `-telemetria-ingest` após 5 tentativas | hoje um lote recusado é reentregue para sempre, em silêncio |
+| Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub) no recurso do serviço | o `gcloud run deploy` do CI não as remove |
+| Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
+| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` | fase 1/2; ver apêndice B |
+| Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
+| IAM | `{contrato}-api` e `{contrato}-run` com `roles/cloudtrace.agent` e `roles/monitoring.metricWriter` | `logWriter` o Cloud Run já dá |
+
+O CI ganha, no mesmo passo: smoke pós-deploy (a suíte `publico`+`estudante` de
+`scripts/e2e`), `if: failure()` notificando no canal "amanhã", e a suíte agendada
+contra `hml`. Nada disso existe hoje.
+
 Deploy (CI deste repo):
 1. `turbo build --filter='...[HEAD^]'`
 2. schema mudou → executar o job `{contrato}-migrate` (roda ANTES do deploy do
