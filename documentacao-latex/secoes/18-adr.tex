@@ -3520,13 +3520,28 @@ misturado, e é dele que sai o \emph{commit}.
 \arq{.claude/worktrees/<nome>}, criado com a base \textbf{escrita
 explicitamente} --- e a base é \cd{origin/dev}.
 
-O \cd{origin/HEAD} deste repositório aponta para \cd{origin/main}, então
-qualquer ferramenta que \enquote{parta da \emph{branch} padrão} abre a
-\emph{branch} sobre produção, e a \adrr{ADR-53} diz que trabalho nasce de
-\cd{dev}. O erro é silencioso: a \emph{branch} compila, os testes passam, e o
-PR mostra um diff cheio de \emph{commits} que já estavam em \cd{dev}. Escrever
-a base no comando é o que evita depender de um \emph{default} que aponta para
-o lugar errado.
+Um clone antigo deste repositório carrega \cd{origin/HEAD} apontando para
+\cd{origin/main} (a \emph{branch} padrão no GitHub já é \cd{dev}; o ponteiro
+local não acompanha sozinho), então qualquer ferramenta que \enquote{parta da
+\emph{branch} padrão} abre a \emph{branch} sobre produção, e a \adrr{ADR-53}
+diz que trabalho nasce de \cd{dev}. O erro é silencioso: a \emph{branch}
+compila, os testes passam, e o PR mostra um diff cheio de \emph{commits} que já
+estavam em \cd{dev}. A raiz se conserta uma vez por clone
+(\cd{git remote set-head origin -{}-auto}); escrever a base no comando é o que
+evita depender do \emph{default}, consertado ou não.
+
+\textbf{O paralelismo é de edição e teste unitário; o \emph{runtime} é
+\emph{singleton}.} Portas fixas com \cd{strictPort}, \emph{compose} de nome
+fixo e um banco com um \emph{schema}: dois \emph{worktrees} não rodam a
+\emph{stack} ao mesmo tempo, e isso é deliberado --- é o que faz \cd{pnpm dev}
+falhar alto em vez de servir a experiência errada. No \emph{worktree}: editar,
+\cd{typecheck}, \cd{lint}, os testes unitários e de contrato, o \emph{build},
+e o Vite de \textbf{uma} experiência em porta alternativa, embedado pelo hub
+que já está no ar (\rota{/dev-embed?src=}). Na cópia principal, uma frente por
+vez: a \emph{stack} inteira, a suíte de ponta a ponta e as migrações. A
+\emph{Definition of Done} exige a suíte do papel afetado para toda tela ---
+numa frente em \emph{worktree} isso significa trazer a \emph{branch} para a
+cópia principal e rodá-la de lá, um agente por vez.
 
 \arq{.gitignore} já cobre o caminho (\cd{.claude/*}), então o \emph{worktree}
 não aparece no estado da cópia principal. O ciclo de \emph{commit}, PR e
@@ -3554,9 +3569,19 @@ um \cd{prisma generate}) na criação. \emph{Ruim}: \cd{pnpm docker:dev} de
 dentro de um \emph{worktree} recria os contêineres da \emph{stack} principal
 --- o nome do projeto do compose vem do diretório, e os dois disputam as mesmas
 portas. Quem precisa da \emph{stack} inteira usa a cópia principal.
-\emph{Bom}: a árvore principal fica intocada, com o que estiver em andamento
-nela preservado.
+\emph{Ruim}: quatro arquivos que toda frente toca brigam no \emph{merge}
+--- a numeração de ADR (dois agentes já escreveram a mesma \enquote{ADR-N}
+ao mesmo tempo: reserve o número conferindo \cd{origin/dev}), o
+\arq{main.pdf} binário (resolve-se regerando, nunca escolhendo um lado), o
+\arq{AGENTS.md} da raiz e o \arq{pnpm-lock.yaml}. \emph{Ruim}: cada
+\emph{merge} em \cd{dev} dispara um \emph{deploy} que não cancela o anterior;
+PRs em rajada viram \emph{deploys} em fila. \emph{Bom}: a árvore principal
+fica intocada, com o que estiver em andamento nela preservado.
 
 \textbf{Gatilho de reavaliação.} O trabalho paralelo deixar de acontecer, ou o
 repositório ganhar CI que rode as frentes em contêiner --- nos dois casos o
-\emph{worktree} vira conveniência local em vez de regra.
+\emph{worktree} vira conveniência local em vez de regra. E o inverso: a fila
+da suíte de ponta a ponta na cópia principal virar gargalo \textbf{medido} (duas
+frentes esperando uma pela outra, mais de uma vez) é o que justifica
+parametrizar porta e nome do \emph{compose} por \emph{worktree} e um banco por
+\emph{branch} --- não antes.
