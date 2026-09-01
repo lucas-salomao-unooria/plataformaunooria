@@ -108,7 +108,6 @@ await suite(
         "não é a tranca. Quem separa os dois é o guard da api: o gestor que chamar a rota do " +
         "papel da rede recebe 403, e a suíte de gestor prova isso.",
       detalhe: papeisOferecidos.join(" | "),
-      inteira: true,
     });
 
     await modal.getByRole("button", { name: "Criar" }).click();
@@ -165,7 +164,6 @@ await suite(
         "Não é enfeite: esse papel nasce com `escola_id` nulo e sem lotação nenhuma. Manter os " +
         "campos prometeria um vínculo que a api ignora — e vínculo prometido e não gravado é o " +
         "tipo de mentira que só aparece semanas depois, quando alguém procura a pessoa na escola.",
-      inteira: true,
     });
 
     await modalAdmin.getByRole("button", { name: "Criar" }).click();

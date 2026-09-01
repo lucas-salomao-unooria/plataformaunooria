@@ -119,7 +119,6 @@ await suite(
         "existe, o que é virtude num arquivo de mil linhas e armadilha aqui: '8A ' com um espaço " +
         "abriria uma segunda oitava série A, indistinguível da primeira na listagem.",
       detalhe: `papéis oferecidos: ${papeisOferecidos.join(" | ")}`,
-      inteira: true,
     });
 
     await modal.getByRole("button", { name: "Criar" }).click();
@@ -215,6 +214,15 @@ await suite(
       recusa.status === 403,
       `a api recusa o gestor na rota de admin do contrato (HTTP ${recusa.status})`,
     );
+    /* Reabrir o formulário e o dropdown: os dois passos anteriores provaram pela
+       api, e prova de api não tem foto. A ausência precisa ser VISÍVEL — três
+       opções na lista, e nenhuma delas é o papel da rede. */
+    await p.getByRole("button", { name: "Novo usuário" }).click();
+    const modalDeNovo = p.locator(".unooria-modal-overlay").last();
+    await modalDeNovo.locator("#novo-nome").waitFor({ timeout: 15_000 });
+    await combo(modalDeNovo, "Papel").click();
+    await p.waitForTimeout(700);
+
     await r.registrar(p, "gestor-nao-cria-admin", {
       titulo: "O papel que o gestor não pode dar",
       mostra:
