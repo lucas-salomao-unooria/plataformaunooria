@@ -50,6 +50,44 @@ Postgres de verdade (9 das 23 suítes da api são de integração). Tela alterad
 pede também a suíte de ponta a ponta do papel afetado, na sua máquina: o CI não
 abre navegador.
 
+## Worktree: mais de uma frente ao mesmo tempo
+
+O ciclo acima pressupõe uma cópia do repositório e uma tarefa por vez. Quando há
+duas frentes em paralelo — duas pessoas, ou mais de um agente — `git switch` não
+serve: existe **uma** árvore de trabalho, e ela carrega as alterações não
+commitadas de quem estava antes. O `git status` misturado é de onde sai o commit.
+
+Cada frente paralela ganha um worktree:
+
+```bash
+git fetch origin
+git worktree add -b feat/clarity-analytics .claude/worktrees/clarity-analytics origin/dev
+cd .claude/worktrees/clarity-analytics
+pnpm install                                  # node_modules NÃO é compartilhado
+```
+
+**`origin/dev` está escrito no comando de propósito.** O `origin/HEAD` deste
+repositório aponta para `origin/main`, então qualquer ferramenta que "parta da
+branch padrão" — inclusive a criação automática de worktree do Claude Code —
+abre a branch **sobre produção**. O erro é silencioso: compila, os testes
+passam, e o PR aparece com um diff cheio de commits que já estavam em `dev`.
+Confira com `git log --oneline origin/dev..HEAD` antes de abrir o PR: só devem
+aparecer os seus.
+
+Daí em diante nada muda — commits Conventional, push, `gh pr create --base dev`.
+O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-60**.
+
+**Três coisas que mordem:**
+
+| Situação | O que acontece |
+|---|---|
+| `pnpm docker:dev` de dentro do worktree | **Não faça.** O nome do projeto do compose vem do diretório: sobe uma segunda stack que recria os containers da principal e disputa as mesmas portas. Quem precisa da stack inteira usa a cópia principal. |
+| Dependência nova, ou schema do Prisma alterado | `node_modules` e o client do Prisma são por worktree. `pnpm install` + `prisma generate` de novo, no worktree. |
+| Terminar a frente | `git worktree remove .claude/worktrees/<nome>` depois do merge. Worktree órfão fica em `git worktree list` e segura a branch contra `git branch -d`. |
+
+`.gitignore` já cobre `.claude/*`, então o worktree não aparece no `git status`
+da cópia principal — e não precisa de entrada nova.
+
 ## Promoção `dev → hml`
 
 Promoção é um PR como outro qualquer — o que muda é que o diff é um lote de

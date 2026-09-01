@@ -3112,3 +3112,180 @@ enquanto o time é de uma pessoa; deixa de ser no primeiro colaborador externo.
 repositório, ou a conta virar \emph{Pro}\,/\,organização: nos dois casos as
 mesmas regras viram \cd{ruleset} no servidor, e os \emph{hooks} passam a ser
 conveniência local (retorno rápido) em vez de barreira única.
+
+\section{ADR-59 --- Microsoft Clarity carrega no hub \textbf{e} dentro do
+\emph{bundle} da experiência}
+\label{adr:clarity}
+
+\begin{especificacao}{Contexto}
+A plataforma media comportamento por um caminho só: a telemetria própria da
+\arq{@edu/sdk} (\rota{POST /telemetry/batch}), que registra os \emph{verbos}
+que cada experiência declara no manifesto --- \cd{attempted}, \cd{interacted},
+\cd{progressed}, \cd{scored}, \cd{completed}. Ela responde \enquote{o que a
+pessoa fez}, e responde bem, porque é desenhada com o domínio dentro. Ela não
+responde \enquote{o que a pessoa \emph{tentou} fazer e não conseguiu}: o clique
+repetido num elemento que não é botão, o \emph{scroll} que sobe e desce numa
+tela que não explica, a tela abandonada antes do primeiro evento. Nenhum
+\emph{verbo} nasce de uma frustração --- só de uma ação que o código previu.
+
+O pedido foi cobertura total: hub e missões. A restrição técnica que decide o
+desenho é que o \cd{iframe} da experiência é \textbf{cross-origin} (o hub sai
+do Cloud Run, os \emph{bundles} do \emph{bucket}). Um \emph{script} de gravação
+carregado no hub não enxerga nada dentro dele: grava um retângulo vazio
+exatamente onde o estudante passa a maior parte da sessão. Cobrir a missão
+exige carregar o \emph{script} \textbf{dentro} do \emph{bundle}.
+\end{especificacao}
+
+\textbf{Decisão.} O \emph{snippet} oficial do Microsoft Clarity carrega nas duas
+superfícies, a partir de \textbf{uma} fonte:
+\arq{packages/sdk/src/clarity.ts}, que exporta o corpo do \emph{snippet} e as
+chamadas tipadas (\cd{identify}, \cd{set}, \cd{event}, \cd{upgrade}), todas
+\emph{no-op} quando \cd{window.clarity} não existe --- bloqueador de anúncio e
+rede de escola barrando domínio são o caso comum, não a exceção.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X@{}}
+\toprule
+\headrow \thd{Superfície} & \thd{Como carrega}\\
+\midrule
+Hub & \arq{components/clarity-hub.tsx} monta o \emph{snippet} com
+  \cd{next/script} (\cd{afterInteractive}) no \arq{app/layout.tsx}
+  \textbf{raiz} --- o único que cobre a \emph{landing} pública, o login, as
+  quatro áreas de papel, \rota{/exp/**} e \rota{/dev-embed}.\\
+\zebra Identificação & \arq{components/clarity-identidade.tsx}, montado na
+  \arq{casca-plataforma.tsx} --- o único componente por onde
+  \rota{(plataforma)/**} e \rota{/exp/**} passam os dois. Re-dispara a cada
+  mudança de rota: o App Router navega sem recarregar a página, e o Clarity
+  pede \cd{identify} por \textbf{página}.\\
+Experiência & \cd{createExperiencia()} chama \cd{carregarClarity} depois do
+  \emph{handshake}, com o id que chega no \cd{config} do \cd{hub:init} ---
+  campo aditivo, sem mexer no \cd{PROTOCOL\_VERSION}.\\
+\bottomrule
+\end{tabularx}
+
+O id vai por \textbf{uma} variável, \cd{NEXT\_PUBLIC\_CLARITY\_PROJECT\_ID}, e
+\textbf{ausente significa desligado} nas duas superfícies. Ela é inlinada no
+\emph{bundle} do \emph{client} durante o \cd{next build}, então entra por
+\cd{-{}-build-arg} no \arq{apps/hub/Dockerfile}, alimentado por
+\cd{vars.CLARITY\_PROJECT\_ID} do \emph{environment} no \arq{deploy.yml}.
+
+Duas escolhas de conteúdo fecham a decisão. O \cd{identify} manda o
+\textbf{UUID opaco} do estudante e nada mais --- o \cd{friendlyName}, que
+levaria o nome, fica de fora, e escola e turma vão por \cd{id}. E o
+\cd{track()} da \arq{@edu/sdk} passa a alimentar os dois destinos: a telemetria
+própria com a carga útil inteira, o Clarity só com \cd{verbo:objeto}. A
+\emph{resposta} do estudante não sai do contrato.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Só nas superfícies adultas} (professor, gestor,
+    \cd{admin-contrato}): respeita o aviso do próprio Clarity sobre menores e
+    não abre exceção nenhuma. Descartada porque deixa de fora o público
+    principal --- é no estudante que a dúvida de interface custa aprendizagem.
+  \item \emph{Só no hub, missões pela telemetria própria}: manteria terceiro
+    fora do \emph{bundle} público. Descartada pelo motivo técnico do contexto:
+    o \cd{iframe} é cross-origin, e \enquote{cobrir o hub} deixaria a maior
+    parte da sessão do estudante como um retângulo vazio na gravação.
+  \item \emph{Pacote \arq{@microsoft/clarity} (npm)}: 7,6\,KB, zero
+    dependências, com tipos. É CJS puro --- sem campo \cd{module} --- e o Vite
+    das experiências já custou tempo neste repositório com ESM\,/\,CJS.
+    Internamente ele só injeta o mesmo \emph{script} que está no
+    \arq{clarity.ts}; pagar uma dependência por isso não se justifica.
+  \item \emph{\cd{VITE\_CLARITY\_PROJECT\_ID} no \emph{bundle} de cada
+    experiência}: seria o precedente do \cd{VITE\_VIDEOS\_BASE\_URL}.
+    Descartada porque \cd{import.meta.env} dentro da \arq{@edu/sdk} quebra o
+    \emph{build} do hub (que transpila o mesmo arquivo), e porque desligar
+    passaria a exigir republicar as seis experiências.
+  \item \emph{Um projeto Clarity separado para o \cd{iframe}}: dois painéis
+    para uma sessão só. O mesmo id com a \emph{tag} \cd{superficie} separa o
+    que precisa ser separado e mantém a costura pelo \cd{identify}.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e o principal}: a documentação do Clarity
+declara que ele \textbf{não deveria ser usado em sites ou aplicações destinadas
+a menores de 18 anos}, e a plataforma vai do 1º ano do Fundamental ao 3º do
+Médio. Isto é decisão de produto assumida, não descuido, e precisa constar de
+qualquer conversa de DPA com uma rede --- ver \cd{R-16} no
+Capítulo~\ref{cap:riscos}.
+
+\emph{Ruim}: a gravação de sessão sai do contrato e do projeto GCP da rede. Ao
+contrário do log e da métrica, que ficam no projeto do contrato, o
+\emph{replay} vai para um processador de terceiro, sob os termos dele.
+
+\emph{Ruim}: as experiências disfarçadas (\cd{exp-01}, \cd{exp-02},
+\cd{exp-03}) carregam no \arq{index.html} o aviso de que nada ali pode
+denunciar o exercício. Requisições para \cd{clarity.ms} aparecem no DevTools, e
+um estudante que abra o inspetor vê um domínio que o clone imitado não teria.
+
+\emph{Ruim}: mexer na \arq{@edu/sdk} republica as seis experiências (o filtro de
+mudanças do \arq{deploy.yml} inclui o pacote), então toda alteração aqui custa
+um \emph{bump} de versão em seis manifestos.
+
+\emph{Bom}: o \cd{track()} existente virou instrumentação de funil sem tocar em
+nenhuma experiência, e o kill-switch é a ausência de uma variável --- desligar
+não exige alterar código, e a máquina de quem desenvolve e a suíte e2e já
+nascem fora do painel.
+
+\textbf{Gatilho de reavaliação.} Uma rede pública recusar o processamento em
+contrato, um parecer jurídico sobre o aviso de menores, ou a gravação deixar de
+responder pergunta que a telemetria própria não responda --- nos três casos o
+caminho de volta é apagar uma variável de \emph{environment}, e o de frente é
+um \emph{replay} auto-hospedado dentro do projeto do contrato.
+
+\section{ADR-60 --- Trabalho paralelo acontece em \emph{worktree}, com a base
+escrita à mão}
+\label{adr:worktree}
+
+\begin{especificacao}{Contexto}
+O fluxo da \adrr{ADR-53} e da \adrr{ADR-56} descreve \emph{branches}, não
+diretórios: pressupõe uma pessoa, uma cópia do repositório, uma tarefa por vez.
+Passou a haver mais de um agente trabalhando ao mesmo tempo no mesmo
+repositório, e alternar de \emph{branch} na mesma cópia não serve para isso ---
+há uma árvore de trabalho só, e ela carrega as alterações não commitadas de
+quem estava antes. Duas tarefas em paralelo na mesma cópia produzem um estado
+misturado, e é dele que sai o \emph{commit}.
+\end{especificacao}
+
+\textbf{Decisão.} Cada frente de trabalho paralela ganha um \emph{worktree} em
+\arq{.claude/worktrees/<nome>}, criado com a base \textbf{escrita
+explicitamente} --- e a base é \cd{origin/dev}.
+
+O \cd{origin/HEAD} deste repositório aponta para \cd{origin/main}, então
+qualquer ferramenta que \enquote{parta da \emph{branch} padrão} abre a
+\emph{branch} sobre produção, e a \adrr{ADR-53} diz que trabalho nasce de
+\cd{dev}. O erro é silencioso: a \emph{branch} compila, os testes passam, e o
+PR mostra um diff cheio de \emph{commits} que já estavam em \cd{dev}. Escrever
+a base no comando é o que evita depender de um \emph{default} que aponta para
+o lugar errado.
+
+\arq{.gitignore} já cobre o caminho (\cd{.claude/*}), então o \emph{worktree}
+não aparece no estado da cópia principal. O ciclo de \emph{commit}, PR e
+promoção não muda em nada --- o \emph{worktree} é onde o trabalho acontece, não
+um fluxo novo. O passo a passo está em \arq{CONTRIBUTING.md}.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Alternar de \emph{branch} na mesma cópia}: é o estado que
+    produziu o problema. Serializa o trabalho e mistura alteração não
+    commitada de tarefas diferentes.
+  \item \emph{Clones separados do repositório}: funciona, e custa uma cópia
+    inteira do histórico e um \cd{pnpm install} do zero por frente. O
+    \emph{worktree} compartilha o diretório de metadados e só duplica o que
+    precisa ser duplicado.
+  \item \emph{\emph{Worktree} fora de \arq{.claude/}}: exigiria uma entrada
+    nova no \arq{.gitignore}, e um esquecimento ali significa \emph{worktree}
+    inteiro entrando num \cd{add -A} --- o mesmo acidente que já custou 250\,MB
+    de \emph{cache} de \emph{webpack} no histórico.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: \cd{node\_modules} e o \emph{client} do
+Prisma são por \emph{worktree}, então cada frente paga um \cd{pnpm install} (e
+um \cd{prisma generate}) na criação. \emph{Ruim}: \cd{pnpm docker:dev} de
+dentro de um \emph{worktree} recria os contêineres da \emph{stack} principal
+--- o nome do projeto do compose vem do diretório, e os dois disputam as mesmas
+portas. Quem precisa da \emph{stack} inteira usa a cópia principal.
+\emph{Bom}: a árvore principal fica intocada, com o que estiver em andamento
+nela preservado.
+
+\textbf{Gatilho de reavaliação.} O trabalho paralelo deixar de acontecer, ou o
+repositório ganhar CI que rode as frentes em contêiner --- nos dois casos o
+\emph{worktree} vira conveniência local em vez de regra.

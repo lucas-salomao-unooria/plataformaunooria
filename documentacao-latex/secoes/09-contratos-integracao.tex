@@ -32,7 +32,10 @@ exp \seta{} hub & \cd{exp:ready} &
   \textbf{reenviado} a cada \SI{400}{\milli\second} até o hub responder.\\
 \zebra hub \seta{} exp & \cd{hub:init} &
   \cd{\{ protocolVersion, token, estudante\{id,nome,serie,turmaId,escolaId\},
-  apiUrl, config \}}. Resposta ao \cd{exp:ready}; só a primeira conta.\\
+  apiUrl, config \}}. Resposta ao \cd{exp:ready}; só a primeira conta.
+  \cd{config} é o saco aditivo do protocolo: hoje carrega \cd{expId} e
+  \cd{clarityProjectId} (\adrr{ADR-59}) --- campo novo aqui não muda
+  \cd{PROTOCOL\_VERSION}, porque a experiência que não o conhece o ignora.\\
 exp \seta{} hub & \cd{exp:concluir} &
   \cd{\{ payload: \{ score?, dados? \} \}}. Conclusão da missão. O hub registra
   progresso.\\

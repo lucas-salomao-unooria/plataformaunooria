@@ -1,7 +1,7 @@
 {
   "id": "exp-03-unoogpt",
   "nome": "unooGPT — Decidir com o que os dados mostram",
-  "versao": "1.1.0",
+  "versao": "1.1.1",
   "series": ["2EM"],
   "capabilities": ["telemetria", "ia"],
   "permissoes": ["forms"],

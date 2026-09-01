@@ -187,28 +187,36 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \env{NEXT\_PUBLIC\_CDN\_EXP\_URL} & \textbf{cliente} & Base dos \emph{bundles}.
   Em produção, a CDN; em \emph{dev} sem manifesto, cada experiência usa a porta de
   \arq{lib/experiencias-dev.ts}.\\
-\zebra \env{EXP\_INTERNAL\_URL} & servidor & De onde o hub \textbf{lê} o
+\zebra \env{NEXT\_PUBLIC\_CLARITY\_PROJECT\_ID} & \textbf{cliente} &
+  Id do projeto Microsoft Clarity (\adrr{ADR-59}). \textbf{Ausente = Clarity
+  desligado}, no hub \emph{e} dentro das missões --- o hub não renderiza a
+  \emph{tag} e não manda o id no \cd{config} do \cd{hub:init}. É a única
+  \cd{NEXT\_PUBLIC\_*} que chega ao \emph{bundle} do \textbf{cliente}, e por
+  isso é inlinada no \cd{next build}: entra por \cd{-{}-build-arg} no
+  \arq{Dockerfile}, não como env de \emph{runtime} do Cloud Run. Trocar o id
+  exige \emph{rebuild} da imagem.\\
+\env{EXP\_INTERNAL\_URL} & servidor & De onde o hub \textbf{lê} o
   \arq{experiencia.json}. Endereço \textbf{fixo} --- serve quando há \emph{uma}
   origem de \emph{bundles} (a CDN, em produção).\\
-\env{EXP\_INTERNAL\_HOST} & servidor & Troca \textbf{só o host} e
+\zebra \env{EXP\_INTERNAL\_HOST} & servidor & Troca \textbf{só o host} e
   \textbf{preserva a porta}. É o que serve em \emph{dev} e em contêiner, onde cada
   experiência tem um \emph{dev server} numa porta diferente.\\
-\zebra \env{HUB\_ORIGIN} & servidor & \emph{Origin} do hub, passada à experiência
+\env{HUB\_ORIGIN} & servidor & \emph{Origin} do hub, passada à experiência
   por \emph{query string} e usada como \cd{targetOrigin}.\\
-\env{AUTH\_SECRET} & servidor & Segredo de sessão do NextAuth.\\
-\zebra \env{TOKEN\_SIGNING\_KEY\_PEM} & servidor &
+\zebra \env{AUTH\_SECRET} & servidor & Segredo de sessão do NextAuth.\\
+\env{TOKEN\_SIGNING\_KEY\_PEM} & servidor &
   Par RS256 que assina os \emph{tokens} de experiência. Gerar com
   \cd{node apps/hub/scripts/gerar-chave-token.mjs}. \textbf{Obrigatória em
   produção}; vem do Secret Manager.\\
-\env{AUTH\_WSO2\_ISSUER} & servidor & A \textbf{presença} desta variável registra
+\zebra \env{AUTH\_WSO2\_ISSUER} & servidor & A \textbf{presença} desta variável registra
   o \emph{provider} OIDC no NextAuth.\\
-\zebra \env{AUTH\_WSO2\_CLIENT\_ID} & servidor & Cliente OIDC do hub.\\
-\env{AUTH\_WSO2\_CLIENT\_SECRET} & servidor & Segredo do cliente OIDC.\\
-\zebra \env{CONTRATO\_ID} & servidor & Identifica o EMISSOR dentro do perfil
+\env{AUTH\_WSO2\_CLIENT\_ID} & servidor & Cliente OIDC do hub.\\
+\zebra \env{AUTH\_WSO2\_CLIENT\_SECRET} & servidor & Segredo do cliente OIDC.\\
+\env{CONTRATO\_ID} & servidor & Identifica o EMISSOR dentro do perfil
   portátil. Ausente: a emissão responde 503 --- documento cujo emissor não se
   identifica não vale nada na rede de destino, que precisa dele (e do
   \env{HUB\_ORIGIN}) para achar o JWKS.\\
-\env{CONTRATO\_NOME} & servidor & Nome legível da rede, mostrado a quem receber o
+\zebra \env{CONTRATO\_NOME} & servidor & Nome legível da rede, mostrado a quem receber o
   documento. Opcional.\\
 \bottomrule
 \end{tabularx}
@@ -261,9 +269,14 @@ entra por \cd{vars} do repositório, cujos valores saem de
 \zebra \cd{EXP\_BUCKET} & \emph{Bucket} dos \emph{bundles}.\\
 \cd{ASSETS\_BASE\_URL} & Base pública de \emph{assets} (entra no \emph{build} da
   exp-02).\\
-\zebra \cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos, usados pelo
+\zebra \cd{CLARITY\_PROJECT\_ID} & Id do projeto Microsoft Clarity, por
+  \emph{environment} (\cd{dev}, \cd{hml}, \cd{prd}). O \arq{deploy.yml} o passa
+  como \cd{-{}-build-arg} ao construir a imagem do hub. \textbf{Não} sai de
+  \cd{terraform output} --- é criada à mão nas \emph{Variables} do
+  \emph{environment}, e ausente significa hub com o Clarity desligado.\\
+\cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos, usados pelo
   \emph{script} de manifesto.\\
-\cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\zebra \cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
 \bottomrule
 \end{tabularx}
 
@@ -294,6 +307,7 @@ TELEMETRIA_TOPIC=         # vazio: eventos so no console
 NEXT_PUBLIC_API_URL=http://localhost:3001
 API_INTERNAL_URL=http://localhost:3001
 NEXT_PUBLIC_CDN_EXP_URL=http://localhost:5173
+# NEXT_PUBLIC_CLARITY_PROJECT_ID=  # ausente: Clarity desligado (o normal em dev)
 HUB_ORIGIN=http://localhost:3000
 AUTH_SECRET=troque-me
 TOKEN_SIGNING_KEY_PEM=    # node apps/hub/scripts/gerar-chave-token.mjs --env

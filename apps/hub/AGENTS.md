@@ -73,3 +73,34 @@ necessário.
 tiktooria) e `DesktopFrame` (unitube) são cascas de aparelho DO CLONE, para
 Storybook e telas soltas. Dentro da plataforma quem desenha o aparelho é o hub,
 em `components/DispositivoFrame.tsx`, dirigido pelo `viewport` do manifesto — a
+
+## Clarity: dois pontos de montagem, e nenhum é arbitrário
+
+O Microsoft Clarity (ADR-59) entra em **dois** lugares no hub, por razões
+diferentes — mover qualquer um deles quebra cobertura em silêncio.
+
+| Componente | Onde monta | Por que ali |
+|---|---|---|
+| `components/clarity-hub.tsx` (o `<Script>`) | `app/layout.tsx` **raiz** | É o único layout que cobre a landing pública e o `/login`, que estão fora do grupo `(plataforma)`. Na casca, a landing ficaria sem gravação — e é onde a pessoa chega. |
+| `components/clarity-identidade.tsx` (identify + tags) | `components/casca-plataforma.tsx` | É o único componente por onde `(plataforma)/**` e `/exp/**` passam os dois. No layout raiz não daria: lá não há sessão. Num layout por papel dariam quatro cópias. |
+
+A casca virou `async` por causa disso (chama `await auth()`). Ela é usada por
+dois layouts de servidor, então isso é transparente — mas é a razão de ela não
+ser mais uma função síncrona.
+
+**A identificação re-dispara a cada rota**, via `usePathname()`. Não é
+redundância: o App Router navega sem recarregar a página, e a doc do Clarity
+pede `identify` por PÁGINA. Sem isso, tudo depois do primeiro render cai numa
+página só no painel.
+
+**O snippet não é escrito aqui.** Ele vem de `@edu/sdk` (`snippetClarity`), que
+é a mesma fonte que as experiências injetam dentro do iframe. Colar o script no
+layout cria a segunda cópia.
+
+**`NEXT_PUBLIC_CLARITY_PROJECT_ID` é a única `NEXT_PUBLIC_*` do hub que chega ao
+bundle do CLIENT** — as outras duas são lidas só em código server-only, e por
+isso são env de runtime. Esta é inlinada no `next build`, entra por `ARG` no
+`Dockerfile`, e trocá-la exige rebuild. Ela é lida num lugar só,
+`lib/clarity.ts`: a referência a `process.env` precisa ser estática para o Next
+substituir o literal, e `process.env[nome]` calculado chegaria `undefined` sem
+erro nenhum.

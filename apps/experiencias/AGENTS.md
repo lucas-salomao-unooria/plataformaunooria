@@ -152,3 +152,32 @@ vendorizado. É um instrumento com distâncias e tempos calibrados, e o compilad
 não tem como saber que uma refatoração mudou a medida. Está nos `ignores` do
 ESLint; o shim (`src/`, TS strict) é a única porta: `window.VILA`. A rede que
 substitui o `tsc` ali é a suíte de ponta a ponta (`scripts/e2e/estudante/05-vila-do-lume.mjs`).
+
+## Clarity dentro do iframe
+
+Toda experiência carrega o Microsoft Clarity (ADR-59), e **nenhuma precisa
+fazer nada para isso**: quem carrega é o `createExperiencia()` da `@edu/sdk`,
+com o id que chega no `config` do `hub:init`. Não cole o `<script>` no
+`index.html` — a fonte única é `packages/sdk/src/clarity.ts`.
+
+O que a experiência ganha de graça: os `track()` que ela já emite viram também
+evento de funil no Clarity (`verbo:objeto`), e `concluir()` marca a sessão como
+prioritária para gravação.
+
+Três coisas que valem saber:
+
+- **O iframe é cross-origin, então a sessão do iframe é OUTRA sessão** do ponto
+  de vista do navegador (cookie particionado). O que costura as duas é o
+  `identify` com o mesmo UUID do estudante, chamado dos dois lados.
+- **O disfarce vaza no DevTools.** `exp-01`, `exp-02` e `exp-03` têm no
+  `index.html` o aviso de que nada ali pode denunciar o exercício; requisições
+  para `clarity.ms` aparecem na aba de rede. Consequência aceita e registrada na
+  ADR-59 — mas não acrescente nada que piore isso (um nome de tag visível, por
+  exemplo).
+- **Sem `NEXT_PUBLIC_CLARITY_PROJECT_ID` no hub, nada disso acontece.** Em dev o
+  normal é o Clarity desligado; se você está procurando a requisição e ela não
+  vem, é a variável, não o código.
+
+**Mexeu na `@edu/sdk`? Sobe a versão de TODAS as experiências.** O filtro de
+mudanças do `deploy.yml` inclui o pacote, então uma alteração lá republica as
+seis — e publicar sem subir a versão sobrescreve um caminho imutável no bucket.

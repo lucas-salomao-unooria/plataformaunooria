@@ -299,8 +299,25 @@ o \emph{job} \cd{mudancas} tem um passo de guarda que derruba um
   \emph{assets}.\\
 \cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos.\\
 \zebra \cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\cd{CLARITY\_PROJECT\_ID} & Id do projeto Microsoft Clarity
+  (\adrr{ADR-59}). Única \cd{vars} que \textbf{não} sai de
+  \cd{terraform output}: é criada à mão em cada \emph{environment}.\\
 \bottomrule
 \end{tabularx}
+
+\begin{atencao}
+\textbf{\cd{CLARITY\_PROJECT\_ID} entra na \emph{imagem}, não no serviço.} É a
+única variável de todo o \emph{deploy} que chega ao \emph{bundle} do
+\textbf{cliente}, e \cd{NEXT\_PUBLIC\_*} é substituída pelo literal durante o
+\cd{next build} --- defini-la no Cloud Run depois não altera um \emph{bundle}
+já compilado. Por isso o passo \emph{Imagem do hub} a passa como
+\cd{build-arg}, e o \arq{apps/hub/Dockerfile} a recebe num \cd{ARG} antes do
+\cd{turbo build}. As duas consequências: trocar o id exige \emph{rebuild} (não
+basta reiniciar o serviço), e uma imagem passa a ser específica do ambiente que
+a construiu --- promover \cd{hml} para produção reconstrói, não repromove a
+mesma \emph{tag}. Ausente, o \cd{ARG} cai no \emph{default} vazio e o hub sobe
+com o Clarity desligado, sem erro.
+\end{atencao}
 
 \subsection{Concorrência e reexecução}
 

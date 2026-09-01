@@ -237,6 +237,11 @@ services:
       API_INTERNAL_URL: http://api:3001
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_CDN_EXP_URL: http://localhost:5173
+      # Microsoft Clarity: sem valor por default. A stack de dev roda com o
+      # Clarity DESLIGADO de propósito — sessão de quem desenvolve não é sessão
+      # de estudante, e misturar as duas suja o painel. Para provar a
+      # integração localmente, exporte no shell antes do `pnpm docker:dev`.
+      NEXT_PUBLIC_CLARITY_PROJECT_ID: ${NEXT_PUBLIC_CLARITY_PROJECT_ID:-}
       # Fora de produção e sem manifesto, o hub embeda o dev server de cada exp
       # (mapa de portas em lib/experiencias-dev.ts) — endereços do BROWSER. Já a
       # leitura do `experiencia.json` (que decide o aparelho/viewport) é
