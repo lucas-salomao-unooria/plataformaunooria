@@ -2895,6 +2895,13 @@ ambiente, não por contrato, e aí a conversa vira um repositório de
 usuário}
 \label{adr:sem-cadastro-avulso}
 
+\textbf{Estado: vigente, com o gatilho acionado} (2026-09-01). O cadastro
+unitário passou a existir --- e existe do jeito que o gatilho abaixo prescreve:
+um formulário que monta a MESMA linha de CSV e chama o MESMO importador, nunca
+um segundo caminho de escrita em \cd{users}. Ver \adrr{ADR-59}, que também
+abriu a rota separada de \cd{admin-contrato}. Tudo o mais nesta ADR continua
+valendo, inclusive as três alternativas descartadas.
+
 \begin{especificacao}{Contexto}
 Quem pergunta \enquote{como eu crio um usuário?} procura, naturalmente, um botão
 \enquote{Novo} na tela \rota{/admin/usuarios}. Ele não existe, e a ausência
@@ -2912,7 +2919,10 @@ senha provisória, nascidos juntos na mesma transação.
 \textbf{Decisão.} As \textbf{únicas} duas chamadas que criam linha em
 \cd{users} são \rota{POST /rostering/importar} (a planilha simples, uma linha
 por pessoa) e \rota{POST /rostering/oneroster/users} (o \emph{binding} do
-padrão, para a rede que já o exporta). As duas exigem \cd{gestor} --- na própria
+padrão, para a rede que já o exporta). \emph{Desde a \adrr{ADR-59}, some-se a
+elas \rota{POST /usuarios/admin-contrato} --- o único papel que não cabe numa
+planilha da escola; \rota{POST /usuarios} não é uma terceira, porque delega à
+primeira.} As duas exigem \cd{gestor} --- na própria
 escola --- ou \cd{admin-contrato}, com \cd{?escolaId=}. Criar UMA pessoa é
 importar uma planilha de uma linha: a operação é idempotente pela matrícula (e
 pelo CPF), então repetir não duplica nem reseta a senha de quem já entrou.
@@ -3112,3 +3122,257 @@ enquanto o time é de uma pessoa; deixa de ser no primeiro colaborador externo.
 repositório, ou a conta virar \emph{Pro}\,/\,organização: nos dois casos as
 mesmas regras viram \cd{ruleset} no servidor, e os \emph{hooks} passam a ser
 conveniência local (retorno rápido) em vez de barreira única.
+
+% ---------------------------------------------------------------------------
+\section{ADR-57 --- Observabilidade nativa do Google Cloud, com OpenTelemetry
+como fronteira; nenhuma \emph{stack} auto-hospedada}
+\label{adr:observabilidade-nativa}
+
+\textbf{Estado: proposta} (2026-09-01), a partir do estudo do
+Capítulo~\ref{cap:observabilidade}.
+
+\begin{especificacao}{Contexto}
+A plataforma é diagnosticável e não é observável: log em texto sem
+correlação, nenhuma métrica de aplicação, nenhum alerta, nenhuma sonda
+configurada no Cloud Run, erro dentro do \cd{iframe} sem rastro. O risco
+\cd{R-05} exige alerta antes de novembro de 2026. Uma pessoa opera; um
+contrato é um projeto GCP; haverá vários contratos. A regra da raiz proíbe
+serviço novo sem necessidade demonstrada, e a franquia gratuita do Google
+Cloud Observability (50\,GiB de log, 150\,MiB de métrica, 2,5\,M de
+\emph{spans}, 1\,M de \emph{uptime checks} por mês) cobre um contrato em
+regime com folga, desde que o log de requisição seja amostrado na origem.
+\end{especificacao}
+
+\textbf{Decisão.} Os sinais operacionais vão para o Cloud Logging, Cloud
+Monitoring, Cloud Trace e Error Reporting \textbf{do projeto do contrato}.
+A API e o hub emitem log JSON pelo \emph{stdout} (\cd{pino}, com
+\emph{redaction} mecânica e \cd{severity}/\cd{trace} nos campos que o Cloud
+Logging reconhece) e \emph{traces} e métricas pelo SDK OpenTelemetry com os
+exportadores do Google, \textbf{direto do processo, sem \emph{sidecar}}.
+Alertas são poucos e por sintoma (SLO com \emph{burn rate}), em duas
+severidades. Tudo o que é recurso --- canais, políticas, \emph{checks},
+painel, exclusões, \emph{bucket} de auditoria, \emph{dead letter}, sondas do
+serviço --- é Terraform, e passa a constar do contrato em
+\arq{docs/INFRA.md}. A visão entre contratos é um \emph{metrics scope}
+num projeto de observação sem recursos; log não atravessa projeto.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Grafana + Loki + Tempo + Prometheus auto-hospedados}: uma VM
+    central (ou uma por contrato), com retenção, \emph{backup},
+    atualização e autenticação por conta própria, recebendo dado de N
+    projetos por rede e IAM próprios --- e custando, no mínimo, mais que o
+    nativo no pior caso. Para uma pessoa, é a peça que quebra às 2h da
+    manhã. Volta se uma rede exigir que os sinais fiquem fora do Google
+    Cloud, ou se uma consulta demonstrada não couber no Logs Explorer e no
+    Log Analytics.
+  \item \emph{SigNoz / OpenObserve / HyperDX} (tudo-em-um OpenTelemetry):
+    mesma objeção operacional, com a vantagem de um só binário. Gatilho
+    igual ao anterior.
+  \item \emph{Grafana Cloud Free} como destino (10\,k séries, 50\,GB de log,
+    14 dias): o dado sairia do projeto do contrato para uma conta de
+    terceiro sem DPA da rede. Aceitável apenas como \textbf{painel} de leitura
+    sobre a fonte de dados Cloud Monitoring, se a ergonomia do Grafana
+    compensar --- é leitura, não coleta.
+  \item \emph{Datadog / New Relic / Dynatrace}: centenas de dólares por mês
+    por contrato, para um time de operação que não existe. A instrumentação
+    OpenTelemetry deixa a porta aberta sem pagar por ela agora.
+  \item \emph{OpenTelemetry Collector como \emph{sidecar}} (a recomendação do
+    Google): justifica-se com vários destinos ou \emph{tail sampling}; hoje
+    há um destino e amostragem de cabeça basta. É um contêiner a mais em
+    cada serviço de cada contrato, com versão e falha próprias.
+  \item \emph{Log de requisição na aplicação} (\cd{morgan}, interceptor):
+    duplicaria o log que o Cloud Run já grava, dobrando o sinal mais caro
+    para acrescentar nada.
+  \item \emph{Continuar como está, com o \emph{checklist} semanal do
+    Apêndice~F}: é o estado que produziu o \cd{R-05}. Funciona em \cd{dev}
+    com uma pessoa olhando; não funciona com cem escolas às 8h.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Boa}: zero peças novas para operar; custo
+estimado em cerca de US\$~1 por contrato por mês hoje e US\$~7 quando a
+cobrança de política de alerta entrar; um contrato novo herda tudo do
+Terraform. \emph{Ruim}: dependência do fornecedor nos \textbf{destinos}
+(painel, política, consulta são em formato do Google); mitigada porque a
+instrumentação é OpenTelemetry e o log é JSON --- trocar de destino é trocar
+exportador e reescrever painéis, não reinstrumentar. \emph{Ruim também}: dois
+custos crescem com o tráfego e precisam de teto na origem --- log de
+requisição (por isso a exclusão e a amostragem são recursos do Terraform) e
+cardinalidade de métrica (por isso \cd{escola\_id} não é rótulo). E a
+cobrança anunciada de política de alerta muda a economia de \enquote{uma
+política por curiosidade}: a lista fica curta também por dinheiro.
+
+\textbf{Gatilho de reavaliação.} Uma rede exigir sinais fora do Google
+Cloud; um segundo operador (plantão, rodízio); um segundo destino
+(SIEM, Grafana) ou a necessidade de \emph{tail sampling} --- aí o
+\emph{sidecar} entra; ou a franquia estourar em dois meses seguidos apesar da
+exclusão e da amostragem.
+
+% ---------------------------------------------------------------------------
+\section{ADR-58 --- Erro de cliente entra pela API; nenhum SDK de terceiro
+no \emph{bundle} da experiência}
+\label{adr:erro-cliente-pela-api}
+
+\textbf{Estado: proposta} (2026-09-01).
+
+\begin{especificacao}{Contexto}
+A classe de falha mais cega da plataforma é a que acontece no navegador do
+estudante, dentro de um \cd{iframe} de origem diferente: não há
+\cd{window.onerror}, \cd{unhandledrejection} nem mensagem \cd{exp:erro} na
+ponte, e os \emph{bundles} não têm \emph{sourcemap}. O caminho padrão da
+indústria é um SDK de rastreio de erro (Sentry e semelhantes) dentro do
+\emph{bundle}, apontando para um \emph{DSN}. A regra 2 da raiz proíbe segredo
+e URL interna em \emph{bundle}; a regra 6 proíbe PII fora de controle. Um
+\emph{DSN} não é segredo, mas é um destino: o SDK manda \emph{user agent},
+URL, \emph{stack}, \emph{breadcrumbs} e o que mais o erro arrastar para um
+processador fora do contrato --- para um erro que aconteceu na tela de uma
+criança de uma rede pública, coberta por um DPA que não menciona esse
+processador.
+\end{especificacao}
+
+\textbf{Decisão.} A \cd{@edu/sdk} captura \cd{window.onerror} e
+\cd{unhandledrejection} e envia para \rota{POST
+/observabilidade/erros-cliente} da \textbf{própria API}, com o \emph{token}
+que já tem: \emph{schema} Zod fechado (\cd{expId}, \cd{versao},
+\cd{mensagem}, \cd{stack}, \cd{url}, \cd{userAgent}), 8\,KB no máximo,
+\emph{dedupe} por \emph{hash} e no máximo cinco por sessão no cliente, cota
+por \cd{(escola, usuario)} na API. A API redige, acrescenta \cd{escola\_id}
+do \emph{token} e emite \textbf{uma} linha \cd{severity: ERROR} com
+\cd{@type} de \cd{ReportedErrorEvent}; o Error Reporting agrupa por
+\cd{(expId, versao)}. O \emph{build} das experiências gera \emph{sourcemaps}
+ocultos, publicados com ACL privada ao lado do \emph{bundle}, na mesma pasta
+versionada. A ponte ganha \cd{exp:erro}, opcional e compatível com hub
+antigo, só para o hub trocar a tela. O hub faz o equivalente com
+\arq{error.tsx} e \arq{global-error.tsx}. Web Vitals seguem o mesmo caminho,
+amostrados e sem identificador de pessoa.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{SDK do Sentry (SaaS) no \emph{bundle}}: melhor produto da
+    categoria (\emph{session replay}, \emph{breadcrumbs}, \emph{release
+    health}); plano Developer grátis para uma pessoa. Descartado pelo
+    destino, não pela ferramenta: dado de menor saindo do contrato sem DPA.
+  \item \emph{GlitchTip ou Sentry auto-hospedados no projeto do contrato}:
+    resolve o destino, mas é uma peça a mais (Postgres, Redis, workers) por
+    contrato --- ou uma central com o mesmo problema de N projetos. Fica
+    como saída se o agrupamento do Error Reporting se mostrar insuficiente
+    para 48 experiências.
+  \item \emph{Só \cd{exp:erro} na ponte, e o hub registra}: cria dependência
+    do hub para um sinal que a experiência já consegue mandar sozinha (tem
+    \emph{token} e base da API), e perde o erro que acontece antes do
+    \emph{handshake} --- justamente o mais comum. A ponte fica com o papel de
+    interface, não de transporte.
+  \item \emph{\emph{Sourcemaps} públicos no \emph{bundle}}: expõem o fonte
+    da experiência --- e, na exp-01, a lógica da revelação que o estudante
+    não deve ver antes da hora.
+  \item \emph{Não capturar erro de cliente}: é o estado atual, e é a maior
+    cegueira da Figura~\ref{fig:cadeia-visibilidade}.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Boa}: nenhum terceiro no \emph{bundle}; a regra
+6 vale por construção, porque a \emph{redaction} é a da API; a versão da
+experiência já está no caminho, então a \emph{stack} é mapeável sem
+\emph{release} à parte. \emph{Ruim}: sem \emph{session replay} nem
+\emph{breadcrumbs} --- o que se tem é mensagem, \emph{stack} e contexto; um
+laço de erro numa experiência é contido pela cota, mas o que passa da cota se
+perde de propósito. \emph{Ruim também}: mais uma rota pública autenticada na
+API, com Zod e cota, para manter.
+
+\textbf{Gatilho de reavaliação.} O Error Reporting agrupar mal os erros das
+experiências (assinaturas instáveis por minificação), ou o diagnóstico exigir
+\emph{replay}: nos dois casos a saída é um Sentry-compatível
+\textbf{dentro do projeto}, nunca o SaaS.
+
+\section{ADR-59 --- Cadastro unitário existe, e ele DELEGA ao importador;
+\cd{admin-contrato} tem rota própria}
+\label{adr:cadastro-unitario-delega}
+
+\textbf{Estado: aceita} (2026-09-01). Aciona o gatilho de reavaliação da
+\adrr{ADR-54}, que segue válida em tudo o mais.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-54} previu este dia por escrito: \enquote{se a operação pedir
+cadastro unitário com frequência, a saída é um formulário que monta a MESMA
+linha de CSV e chama o MESMO importador}. A operação pediu. O atrito que a
+própria ADR registrou como consequência ruim --- \enquote{o gestor que percebe
+que esqueceu de incluir a Ana precisa montar um arquivo para uma linha} --- é
+diário no balcão da escola, e a tela só aceitava \emph{upload}.
+
+O que NÃO mudou é o motivo da decisão original: uma pessoa não é uma linha em
+\cd{users}. É lotação, matrícula em turma, período letivo aberto e senha
+provisória, nascidos na mesma transação, com o CPF decidindo se aquilo é gente
+nova ou transferência (\adrr{ADR-28}, \adrr{ADR-32}). Duas portas de escrita
+sobre esse conjunto divergem na primeira regra nova.
+\end{especificacao}
+
+\textbf{Decisão.} Existe \rota{POST /usuarios}, e ele \textbf{não escreve em
+\cd{users}}: valida a forma do corpo com Zod, pergunta se a identidade já
+existe e, não existindo, serializa os campos como UMA linha da planilha
+(\cd{planilhaDeUmaPessoa}, na mesma constante \cd{COLUNAS\_MODELO} que o leitor
+consome) e chama \cd{importarPlanilha}. Toda a regra de domínio --- CPF com
+dígito verificador, série e turno normalizados, login gerado do nome, turma
+criada quando falta, lotação, matrícula --- continua existindo em UM lugar só.
+
+Duas diferenças em relação a importar um arquivo de uma linha, e as duas são
+deliberadas:
+
+\begin{itemize}
+  \item \textbf{Criar é criar.} A importação é idempotente de propósito:
+    reimportar a planilha do ano não pode duplicar ninguém. Num formulário
+    chamado \enquote{Novo usuário} a mesma virtude vira armadilha --- o gestor
+    digita a Ana de novo, a linha antiga é atualizada e a tela diz
+    \enquote{criado}. Por isso o cadastro unitário \textbf{pergunta antes}
+    (CPF na rede; matrícula e login na escola) e responde \textbf{409 sem
+    escrever}, apontando o caminho certo: editar, transferir ou importar.
+  \item \textbf{CPF de outra escola não revela nada.} O 409 desse caso sai sem
+    id, sem nome e sem dizer qual unidade --- é dado de outro \emph{tenant}. A
+    transferência continua sendo pela importação, que reconhece o CPF e move a
+    matrícula junto.
+\end{itemize}
+
+\textbf{E \cd{admin-contrato} ganha rota separada}
+(\rota{POST /usuarios/admin-contrato}, \cd{@Roles("admin-contrato")}): ele não
+passa pelo importador porque não cabe numa planilha DA ESCOLA --- \cd{escola\_id}
+nulo, sem lotação, sem turma, e \cd{PAPEIS\_IMPORTAVEIS} sempre o excluiu.
+O login dele é único na REDE inteira, não na escola: o índice
+\cd{(escola\_id, username)} não cobre linha com \cd{escola\_id} nulo, e a
+autenticação procura o \emph{username} na rede toda --- dois donos do mesmo
+login viram recusa no login dos dois.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Escrever direto em \cd{users} a partir do formulário}: é
+    exatamente a segunda porta que a \adrr{ADR-54} recusou. Na primeira regra
+    nova --- um papel que normaliza, um período letivo que precisa estar aberto
+    --- uma das duas aprenderia e a outra não, em silêncio.
+  \item \emph{Extrair do importador um método que receba objetos em vez de
+    CSV}: mais limpo à primeira vista, e pior no que importa. A validação por
+    campo vive no leitor da planilha; um caminho que a contorne precisa
+    reescrevê-la em Zod, e aí são duas validações para manter --- a divergência
+    de novo, um nível abaixo. O custo aceito é a conversão
+    JSON~\seta{}~CSV~\seta{}~pessoa, invisível em latência para uma linha.
+  \item \emph{Montar o CSV no NAVEGADOR e postar em \rota{/rostering/importar}}:
+    põe a regra de escape RFC 4180 no cliente e faz a api receber um arquivo
+    que ela não sabe que veio de um formulário --- sem chance de dar 409 no
+    lugar de atualizar.
+  \item \emph{\cd{admin-contrato} pela MESMA rota, com \cd{papel} no corpo}:
+    metade dos campos ficaria inerte, a autorização viraria um \cd{if} escondido
+    no \emph{service} em vez do \cd{@Roles} do método, e a matriz papel x rota
+    perderia a linha que hoje se lê sozinha.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: são duas rotas para \enquote{criar
+pessoa}, e quem lê o apêndice C precisa entender por que a segunda existe. A
+conversão em três saltos é indireta o bastante para assustar quem depura pela
+primeira vez --- daí o comentário no serializador. E o 409 tem uma janela de
+corrida de milissegundos: se alguém criar a mesma pessoa entre a pergunta e a
+escrita, o importador atualiza (corretamente) e a rota responde 409
+\cd{JA\_EXISTIA} em vez de \enquote{criado}, que é a resposta honesta.
+\emph{Bom}: a regra de domínio segue em um lugar, o formulário ganha de graça
+tudo o que a importação aprendeu, e o gestor deixa de abrir o Excel para
+incluir uma criança.
+
+\textbf{Gatilho de reavaliação.} Se o cadastro unitário precisar de um campo que
+a planilha não tem --- e que portanto não caiba numa coluna de
+\cd{COLUNAS\_MODELO} ---, a delegação deixou de servir: a saída é acrescentar a
+coluna ao modelo (e ao leitor), não abrir o caminho direto de escrita.

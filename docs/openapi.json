@@ -1718,6 +1718,10 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "nome": {
                             "type": "string"
                           },
@@ -1733,6 +1737,7 @@
                           }
                         },
                         "required": [
+                          "id",
                           "nome",
                           "usuario",
                           "senha",
@@ -1946,6 +1951,10 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "nome": {
                             "type": "string"
                           },
@@ -1961,6 +1970,7 @@
                           }
                         },
                         "required": [
+                          "id",
                           "nome",
                           "usuario",
                           "senha",
@@ -3942,6 +3952,10 @@
                           "papel": {
                             "type": "string"
                           },
+                          "escola": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "matricula": {
                             "type": "string",
                             "nullable": true
@@ -4006,6 +4020,7 @@
                           "usuario",
                           "nome",
                           "papel",
+                          "escola",
                           "matricula",
                           "cpf",
                           "email",
@@ -4047,6 +4062,264 @@
           "admin-contrato"
         ],
         "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "UsuariosController_criar",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nome": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "type": "string"
+                    },
+                    "papel": {
+                      "type": "string"
+                    },
+                    "turma": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turmaCriada": {
+                      "type": "boolean"
+                    },
+                    "senha": {
+                      "type": "string"
+                    },
+                    "avisos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "campo": {
+                            "type": "string"
+                          },
+                          "mensagem": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "campo",
+                          "mensagem"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nome",
+                    "usuario",
+                    "papel",
+                    "turma",
+                    "turmaCriada",
+                    "senha",
+                    "avisos"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Cadastra UMA pessoa da escola (estudante, professor ou gestor).",
+        "description": "O formulário de `/admin/usuarios`. Monta a mesma linha da planilha e delega ao importador (ADR-59) — por isso as regras de CPF, série, turno e login são idênticas às da importação.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **Criar é criar**: CPF, matrícula ou login já existentes devolvem 409 e nada é escrito — o caminho de quem já existe é `PATCH /usuarios/:id`.\n- CPF achado em OUTRA escola da rede devolve 409 sem id, sem nome e sem dizer qual escola: transferir é pela importação, que move a matrícula junto.\n- A senha sai UMA vez no corpo da resposta e é sempre provisória. Em branco, é sorteada.\n- `admin-contrato` NÃO entra aqui: ele não tem escola nem lotação, e tem rota própria.\n- Limite de 30 cadastros por minuto por usuário — é balcão, não carga.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "papel": {
+                    "type": "string",
+                    "enum": [
+                      "estudante",
+                      "professor",
+                      "gestor"
+                    ]
+                  },
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "cpf": {
+                    "type": "string",
+                    "maxLength": 14
+                  },
+                  "matricula": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "usuario": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 180
+                  },
+                  "turma": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "serie": {
+                    "type": "string",
+                    "maxLength": 12
+                  },
+                  "turno": {
+                    "type": "string",
+                    "maxLength": 12
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "papel",
+                  "nome"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usuarios/admin-contrato": {
+      "post": {
+        "operationId": "UsuariosController_criarAdminContrato",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nome": {
+                      "type": "string"
+                    },
+                    "usuario": {
+                      "type": "string"
+                    },
+                    "papel": {
+                      "type": "string",
+                      "enum": [
+                        "admin-contrato"
+                      ]
+                    },
+                    "senha": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "nome",
+                    "usuario",
+                    "papel",
+                    "senha"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Cadastra outro admin do contrato (só admin do contrato pode).",
+        "description": "O único papel que NÃO nasce por importação: não pertence a escola nenhuma e enxerga a rede inteira. Conceder esse alcance é decisão do contrato, nunca de uma unidade — por isso gestor recebe 403 aqui.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Nasce com `escola_id` nulo e nenhuma lotação — é o mesmo formato que o seed cria.\n- O login é único na REDE inteira, não na escola: o índice `(escola_id, username)` não cobre linha com `escola_id` nulo, e a autenticação procura o username na rede.\n- A senha sai UMA vez e é provisória: o primeiro acesso cai em `/trocar-senha`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin-contrato"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "cpf": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 180
+                  },
+                  "usuario": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9._-]{3,64}$"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "nome"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/usuarios/importar-csv": {
@@ -4163,6 +4436,10 @@
                       "items": {
                         "type": "object",
                         "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
                           "nome": {
                             "type": "string"
                           },
@@ -4178,6 +4455,7 @@
                           }
                         },
                         "required": [
+                          "id",
                           "nome",
                           "usuario",
                           "senha",
