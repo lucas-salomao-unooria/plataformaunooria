@@ -270,7 +270,7 @@ classDiagram
   }
 
   class SdkTypes {
-    +PROTOCOL_VERSION = 1
+    +PROTOCOL_VERSION = 2
     +HubInitSchema
     +HubParaExpSchema
     +ExpParaHubSchema
@@ -736,7 +736,7 @@ sequenceDiagram
   F->>E: renderiza iframe src = URL versionada
   E->>E: connectToHub({ hubOrigin })
   loop a cada 400ms, ate o hub responder
-    E->>F: exp:ready { protocolVersion: 1 }
+    E->>F: exp:ready { protocolVersion: 2 }
   end
   F->>F: valida ev.origin e a versao MAIOR
   F-->>E: hub:init { token, estudante, apiUrl, config }

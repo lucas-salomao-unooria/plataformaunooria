@@ -1,7 +1,7 @@
 # Plataforma Unooria (monorepo)
 
 Hub educacional + 48 experiências imersivas da **Plataforma Unooria**.
-B2G governo (stack por contrato, isolamento lógico por escola). Veja `CLAUDE.md`
+B2G governo (stack por contrato, isolamento lógico por escola). Veja `AGENTS.md`
 para convenções e `docs/` para arquitetura e decisões.
 
 ## Nomes
@@ -25,7 +25,7 @@ pnpm up -r @unooria/design-system --latest   # ^0.1.x não sobe minor: atualizar
 
 Componente que falta nasce no repo do DS (`storybook-unooria`, Storybook `:6007`)
 e chega aqui por versão nova. Detalhes e as regras de não-misturar-seções em
-`CLAUDE.md`.
+`AGENTS.md`.
 
 ## Subir tudo em containers (o caminho mais curto)
 ```bash
@@ -114,7 +114,7 @@ estes dois pegam. Precisam da plataforma no ar (containers ou `pnpm dev`).
 `main` é o tronco — a migração para o monorepo está mergeada nela (histórico
 linear, 26 commits). Trabalho novo sai da `main` numa branch própria: **uma por
 experiência**, com o nome do slug (`exp-07-fracoes`); o resto usa o prefixo do
-tipo do commit (`fix/…`, `chore/…`, `ci/…`). Convenções de commit em `CLAUDE.md`.
+tipo do commit (`fix/…`, `chore/…`, `ci/…`). Convenções de commit em `AGENTS.md`.
 
 Build não vai para o git: `dist/`, `.next/`, `.next-prod/`, `.turbo/` e
 `*.tsbuildinfo` estão no `.gitignore`. Stage por caminho — um `git add -A`

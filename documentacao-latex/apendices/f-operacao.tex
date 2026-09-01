@@ -614,18 +614,20 @@ testado no container} &
   DELE --- e a turma sai de \cd{users.turma\_id}, o cache da matrícula
   principal. Estudante sem \cd{turma\_id} (importado sem enturmar, ou movido pela
   metade) só alcança atividade sem turma. Conferir em \rota{/admin/turmas}.\\
-\textbf{A planilha da escola volta com \enquote{papel não reconhecido: \cd{aluno}}} &
-  Esperado desde a \adrr{ADR-51}: o vocabulário do produto é \cd{estudante}, e
-  \cd{SINONIMOS\_DE\_PAPEL} deixou de aceitar o termo antigo. A planilha em uso
-  na rede precisa da coluna \cd{papel} atualizada --- o modelo para download
-  (\rota{GET /rostering/modelos/usuarios.csv}) já sai com o vocabulário novo.
-  \cd{student} continua aceito: é valor do OneRoster, não nosso.\\
-\zebra \textbf{\cd{Protocolo incompatível: hub v2, experiência v1} no console} &
-  \emph{Bundle} publicado antes da \adrr{ADR-52}, lendo \cd{aluno} num
-  \cd{hub:init} que agora manda \cd{estudante}. É a falha CORRETA --- alta e
-  legível, em vez do \emph{handshake} expirando em 8s. Republicar a experiência
-  (\arq{deploy.yml}, trabalho \cd{publicar-exps}); apontar o hub para a versão
-  anterior no CDN NÃO resolve, porque o problema é justamente a versão anterior.\\
+\textbf{A planilha volta com \enquote{papel não reconhecido}} &
+  A coluna \cd{papel} aceita \cd{estudante}, \cd{professor} e \cd{gestor}, mais
+  os sinônimos de \cd{SINONIMOS\_DE\_PAPEL} (\cd{discente}, \cd{docente},
+  \cd{coordenacao}, \cd{diretor}\ldots{} e o \cd{student}/\cd{teacher} do
+  OneRoster). Fora disso a linha vira relatório, não erro mudo. O modelo para
+  download (\rota{GET /rostering/modelos/usuarios.csv}) sai da MESMA constante
+  que o parser lê.\\
+\zebra \textbf{\cd{Protocolo incompatível: hub vN, experiência vM} no console} &
+  O \emph{bundle} servido tem \cd{PROTOCOL\_VERSION} de outro \emph{major} que
+  o hub. É a falha correta --- alta e legível, em vez do \emph{handshake}
+  expirando em 8s --- e o conserto é republicar a experiência (\arq{deploy.yml},
+  trabalho \cd{publicar-exps}). Apontar o hub para uma versão anterior no CDN
+  NÃO resolve quando é justamente a versão anterior que está atrás do protocolo:
+  \emph{rollback} só funciona entre versões do mesmo \emph{major}.\\
 \bottomrule
 \end{tabularx}
 
@@ -716,5 +718,5 @@ Diagramas & \cd{tikz} e \cd{pgfplots} --- todos vetoriais, sem renderização
 (Capítulo~\ref{cap:qualidade}). Implementação que mude arquitetura, contrato,
 modelo de dados, decisão ou risco atualiza o capítulo correspondente
 \textbf{e regera o \arq{main.pdf} no mesmo \emph{commit}}. A regra está registrada
-em \arq{CLAUDE.md}, não apenas aqui.
+em \arq{AGENTS.md}, não apenas aqui.
 \end{regra}

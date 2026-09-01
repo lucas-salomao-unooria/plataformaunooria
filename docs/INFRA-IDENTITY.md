@@ -4,7 +4,7 @@ Este documento é irmão do [`INFRA.md`](INFRA.md) e segue a mesma regra: **este
 não cria recursos GCP**. O que está aqui é o contrato para o repo de Terraform.
 
 A diferença em relação ao `INFRA.md` é o escopo. Lá, tudo é `{contrato}-*`: uma stack
-por contrato. Aqui não — o `CLAUDE.md` declara o WSO2 como *"externo, único p/ vários
+por contrato. Aqui não — o `AGENTS.md` declara o WSO2 como *"externo, único p/ vários
 contratos"*. Ele não pertence à stack de nenhum cliente e vive em **projeto próprio**.
 
 > **Por que projeto próprio, e não dentro da stack de um contrato:** se o IdP morar no
@@ -55,7 +55,7 @@ O comparativo, honestamente:
 |---|---|---|
 | **Cloud Run** | **~$440 total** | — (escolhida) |
 | Compute Engine MIG | ~$355 | ~$85/mês mais barato, mas o deploy deixa de ser `gcloud run deploy` e vira troca de instance template. O `deploy.yml` e o WIF deste repo não têm caminho limpo para isso, e o Terraform mora em outro repo. |
-| GKE Autopilot | ~$560-620 | É o **único caminho oficialmente suportado** pela WSO2 para escala horizontal (Helm charts, `membership_scheme = "kubernetes"`). Mas `CLAUDE.md` e `ARQUITETURA.md` descartam GKE explicitamente, e operar um cluster com um dev até novembro/2026 é um segundo produto. |
+| GKE Autopilot | ~$560-620 | É o **único caminho oficialmente suportado** pela WSO2 para escala horizontal (Helm charts, `membership_scheme = "kubernetes"`). Mas `AGENTS.md` e `ARQUITETURA.md` descartam GKE explicitamente, e operar um cluster com um dev até novembro/2026 é um segundo produto. |
 
 A economia do GCE equivale a ~2 horas do seu tempo por mês — não paga manter um caminho
 de deploy paralelo e patching de SO.

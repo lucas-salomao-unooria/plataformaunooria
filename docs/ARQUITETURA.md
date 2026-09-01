@@ -24,7 +24,7 @@ Vertex AI (Gemini) <── api/src/ai (provider plugável, quota por estudante)
 ## Fluxo de uma experiência
 1. Estudante loga no hub (OIDC WSO2) → sessão.
 2. Hub abre `https://cdn.../exp/{expId}/{versao}/index.html` em iframe.
-3. Handshake postMessage (ver CLAUDE.md) entrega token+contexto à experiência.
+3. Handshake postMessage (ver `apps/experiencias/AGENTS.md`) entrega token+contexto à experiência.
 4. Experiência usa SDK: telemetria em lote, saves, chamadas `/ai/*`.
 5. `exp:concluir` → hub registra progresso → boletim/relatórios.
 

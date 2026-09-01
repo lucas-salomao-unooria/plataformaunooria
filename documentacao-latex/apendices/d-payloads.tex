@@ -11,7 +11,7 @@ esquema aqui é decorativo.
 \section{Protocolo \cd{postMessage} (v1)}
 
 \begin{lstlisting}[language=tsunoo, caption={\arq{packages/sdk/src/types.ts} --- os esquemas do protocolo}]
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 export const EstudanteSchema = z.object({
   id: z.string(), nome: z.string(),
@@ -50,7 +50,7 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
 \begin{lstlisting}[language=jsonunoo, caption={\cd{hub:init} --- o que a experiência recebe}]
 {
   "type": "hub:init",
-  "protocolVersion": 1,
+  "protocolVersion": 2,
   "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
   "estudante": {
     "id": "8f2c1a44-...", "nome": "Ana",
