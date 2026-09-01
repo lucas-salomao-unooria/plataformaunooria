@@ -1100,7 +1100,7 @@ sem saída. Reimportar \textbf{não} redefine a senha de quem já entrou.
     modo \enquote{uma por pessoa} existe e é o recomendado para turma grande.
   \item O \emph{seed} de desenvolvimento nasce com \cd{senha\_provisoria = false}:
     prender os usuários de demonstração na troca pararia os seis
-    \emph{walkthroughs} visuais na mesma tela.
+    suítes de ponta a ponta na mesma tela.
 \end{itemize}
 
 \textbf{Gatilho de reavaliação.} Entrada do WSO2 em produção --- a partir daí a
@@ -1931,7 +1931,7 @@ pessoa à área certa sem o \emph{client} conhecer o papel.
   \item Os \emph{links} de Privacidade, Termos e Contato do rodapé apontam para
     \cd{\#}, como no modelo: as páginas não existem. Pendência de produto, não
     de código.
-  \item \emph{Smoke} próprio (\arq{scripts/walkthrough-landing.mjs}): fontes do
+  \item Suíte própria (\arq{scripts/e2e/publico/01-landing.mjs}): fontes do
     DS carregadas (Open Sans e a de LIGADURA dos ícones), canvas com contexto,
     cor de fundo COMPUTADA do card de vidro, todo \cd{.landing-revelar} visível
     ao fim, nada transbordando em celular, e o CTA levando ao \rota{/login}. Só
@@ -2369,7 +2369,7 @@ que é confiança se PROVA em vez de ser dispensada.
     \emph{fix} exige \emph{major} de \emph{framework}, com prazo cobrado pelo
     CI. Aqui o \emph{fix} custa dez linhas.
   \item \emph{Sortear a senha do seed quando a \emph{env} falta}: nada ficaria
-    no fonte, mas os sete \emph{walkthroughs} passariam a depender de ler
+    no fonte, mas as suítes de ponta a ponta passariam a depender de ler
     \cd{stdout}, e o \arq{README} não teria o que documentar.
   \item \emph{Passar a CA do IS por \cd{NODE\_EXTRA\_CA\_CERTS} no
     \emph{bootstrap}}: a variável é lida na SUBIDA do processo, e o certificado
@@ -2650,3 +2650,164 @@ foi apagada mantém o id órfão, e isso é aceito.
 \textbf{Gatilho de reavaliação.} A primeira subida real de
 \cd{VERSAO\_MAPEAMENTO} com dado de contrato em produção: aí se descobre se o
 aviso basta ou se a reimportação precisa virar rotina assistida.
+
+\section{ADR-51 --- A suíte de ponta a ponta é organizada por PAPEL, e a
+descrição de cada tela mora no teste que a fotografa}
+\label{adr:e2e-por-papel}
+
+\begin{especificacao}{Contexto}
+A validação visual eram doze arquivos soltos em \arq{scripts/}, nomeados pela
+EXPERIÊNCIA que cobriam (\arq{walkthrough-estudante}, \arq{walkthrough-rede},
+\arq{walkthrough-ato1-vila}). Três problemas mediram-se sozinhos.
+
+O primeiro é de cobertura: telas inteiras não tinham dono. Criar uma atividade
+do zero, os períodos letivos, a análise de produto, o binding do OneRoster, o
+compositor de post do Instanooria --- nada disso era exercitado, porque nenhum
+arquivo se chamava por elas.
+
+O segundo é de divergência. Cada roteiro carregava sua própria cópia de
+\cd{registrar}, de \cd{entrar}, do vigia de console e do relatório final, e as
+doze cópias divergiram: uma tirava \cd{fullPage} e outra não, três reprovavam
+por erro de console e nove não. Divergência em código de teste é pior que em
+código de produção --- quem lê o resultado não sabe qual regra valeu.
+
+O terceiro é o pior. O deck de evidências nascia de um segundo arquivo
+(\arq{testes/.gerador-ppt/roteiro.mjs}, 66\,KB) mantido À MÃO, com a descrição
+de cada slide escrita longe do teste que tirava o \emph{print}. Ele divergiu do
+que os scripts faziam: descrevia telas que já não eram fotografadas e omitia
+passos novos. É a mesma armadilha do \cd{expires\_at} e do
+\cd{turmas.consentimento\_em} --- o registro fica, a regra sai, e quem lê
+acredita nele.
+\end{especificacao}
+
+\textbf{Decisão.} A suíte passa a viver em \arq{scripts/e2e/<papel>/}, com uma
+casca compartilhada em \arq{scripts/e2e/lib/roteiro.mjs} e um \emph{runner}
+único (\arq{scripts/e2e/rodar.mjs}).
+
+\textbf{Por PAPEL, não por experiência.} Quem usa o produto é uma pessoa com um
+crachá, e é o crachá que decide o que ela alcança. Organizar por papel faz a
+LACUNA aparecer: ``o gestor não tem suíte de períodos letivos'' é uma frase que
+alguém diz em voz alta; ``não existe \arq{walkthrough-periodos}'' não é. A
+contrapartida está registrada abaixo.
+
+\textbf{O manifesto é a fonte.} Cada \cd{registrar()} grava, junto com o
+\emph{print}, o TÍTULO da tela, o que ela MOSTRA e a regra que ela PROVA, num
+\arq{passos.json} por suíte. O deck (\arq{gerar-deck.mjs}) e os vídeos
+(\arq{gerar-videos.mjs}) só desenham --- não conhecem o produto. A descrição
+passou a morar onde o passo mora, e sair de sincronia deixou de ser possível.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter a organização por experiência}: é a que casa com o
+    \arq{apps/experiencias/}, e para a exp-70 e a exp-03 seria mais direta. Mas
+    ela esconde as telas da PLATAFORMA, que são a maioria e não pertencem a
+    experiência nenhuma --- e foram justamente elas que ficaram sem cobertura
+    por dois anos de projeto.
+  \item \emph{Um processo só para todas as suítes}, mais rápido por reaproveitar
+    o navegador: uma suíte que trava levaria as outras vinte junto, e o código
+    de saída deixaria de ser por suíte. O \emph{runner} paga o custo do
+    \cd{spawn} de propósito.
+  \item \emph{Playwright Test} (\cd{@playwright/test}) no lugar da casca própria:
+    traz \emph{runner}, \emph{fixtures}, \emph{retries} e relatório HTML de
+    graça. O que ele NÃO traz é o manifesto descritivo, que é o objetivo aqui ---
+    a saída dele é um relatório de teste, não um documento de evidência com uma
+    frase de produto por tela. Adotá-lo significaria manter o roteiro do deck à
+    mão de novo, que é o problema que esta ADR resolve.
+  \item \emph{Manter o roteiro do deck à mão, só arrumando o que divergiu}:
+    arruma a divergência de hoje e garante a de amanhã.
+  \item \emph{Deck em PDF ou HTML}: o entregável pedido é \cd{.pptx} --- é o que
+    a rede abre, edita e projeta.
+\end{itemize}
+
+\textbf{Consequências.} As suítes de dois contextos (o professor conduz o
+relógio, o estudante joga) ficam no papel do PROTAGONISTA, e não em ambos: a
+missão da exp-01 mora em \arq{estudante/}, ainda que metade dos \emph{prints}
+sejam da tela do docente. O passo carrega de qual contexto veio, e o deck e o
+vídeo dizem isso na tarja.
+
+A ORDEM de execução passa a importar e está fixada no \emph{runner}: o estudante
+produz o estado que o professor lê, e a administração vem por último porque
+importa gente e troca senha. Rodar uma suíte isolada continua possível; rodar o
+professor antes do estudante devolve telas de resultado vazias.
+
+E há um custo aceito: uma experiência nova não tem mais um lugar óbvio. Ela
+entra em \arq{estudante/} se for missão, em \arq{professor/} se for ferramenta
+--- e a \arq{AGENTS.md} da pasta \arq{apps/experiencias/} passa a dizer isso.
+
+\textbf{Gatilho de reavaliação.} Um papel novo no produto (o \emph{responsável},
+por exemplo, se o acesso da família for adiante), ou a suíte passar de
+40\,minutos de execução --- aí a paralelização por papel deixa de ser opcional e
+o \emph{runner} precisa crescer.
+
+\section{ADR-52 --- Falha do provedor de IA na destilação é 503 com a causa, não
+500 mudo}
+\label{adr:destilar-503}
+
+\begin{especificacao}{Contexto}
+Quatro lugares chamam \cd{generateJson}, e três decidem o que fazer quando ele
+falha: as reações ao vivo caem em lista vazia (o feed fica quieto, como um app em
+que ninguém respondeu), e a geração de posts e de personas vira \emph{job} falho
+que o painel de progresso mostra. O quarto, \arq{geracao.controller.ts}
+(\rota{POST /atividades/:id/destilar}), deixava a exceção subir.
+
+O Nest a convertia em \cd{\{"statusCode":500,"message":"Internal server
+error"\}}. E o \emph{log} não salvava: o \cd{ErroDeGeracao} guarda a causa real
+em \cd{detalhe}, e o \cd{ExceptionsHandler} imprime apenas a \cd{message} --- que
+no \cd{VertexProvider} é a genérica \enquote{Falha ao gerar conteúdo
+estruturado.}.
+
+Com \cd{AI\_PROVIDER=mock} isso deixa de ser um caso raro e vira certeza:
+\cd{MockProvider.generateJson} lança SEMPRE, por decisão (o mock não sabe
+satisfazer schema arbitrário). Ou seja, no modo que existe para subir sem GCP ---
+o recomendado em desenvolvimento, e o \emph{default} dos dois \emph{compose} ---
+\textbf{criar atividade era impossível, e nada em lugar nenhum dizia por quê}.
+Custou uma tarde de investigação: a destilação reproduzida fora da api
+funcionava, o \cd{UPDATE} do Prisma funcionava, e a resposta só apareceu num
+\cd{ps eww} do processo, onde se via o \cd{AI\_PROVIDER=mock} que o \arq{.env}
+não declarava.
+\end{especificacao}
+
+\textbf{Decisão.} A chamada entra num \cd{try/catch} e a falha vira
+\textbf{503} com \cd{mensagem} legível, acrescida da causa quando existe. A causa
+é lida como \cd{detalhe ?? message}: o \cd{VertexProvider} enche o
+\cd{detalhe} e deixa a \cd{message} genérica; o \cd{MockProvider} faz o
+contrário. Ler só um dos dois deixaria sem diagnóstico exatamente o modo em que a
+falha é garantida.
+
+\textbf{503 e não 500} porque a requisição está correta e repetir pode funcionar:
+o que falhou é uma dependência. É a mesma distinção que a api já faz em
+\rota{/ativar} com o 422.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um \cd{ExceptionFilter} global para \cd{ErroDeGeracao}}: pareceria
+    mais econômico e seria pior --- transformaria em 503 também os três
+    chamadores que hoje DEGRADAM de propósito, e a lista vazia das reações ao
+    vivo viraria erro na cara da criança no meio da aula. A decisão de degradar é
+    de cada chamador, e por isso o tratamento fica em cada um.
+  \item \emph{Fazer o \cd{MockProvider} devolver um antagonismo plausível}: seria
+    o mock passando a conhecer o domínio, e um dia divergiria dele em silêncio.
+    Pior: esconderia o caminho de falha em vez de torná-lo legível --- em
+    produção o provedor também cai, e é esse caminho que precisa estar exercido.
+  \item \emph{Deixar o 500 e melhorar só o \emph{log}}: resolveria para quem tem
+    acesso ao \emph{log} da api. O professor continuaria vendo
+    \enquote{Internal server error}, e a suíte de ponta a ponta continuaria
+    reportando um sintoma que não aponta para a causa.
+\end{itemize}
+
+\textbf{Consequências.} \arq{tests/destilar-ia-indisponivel.spec.ts} trava o
+comportamento em cinco asserções, incluindo que a atividade NÃO é movida pela
+metade (nem \cd{status}, nem \cd{pergunta\_chave}). O roteiro
+\arq{scripts/e2e/professor/02-atividade-do-zero.mjs} passou a falhar em 9\,s com a
+causa impressa, no lugar dos 180\,s esperando \enquote{Perguntas propostas pela
+IA} --- é a mesma lição do \cd{esperarOuFalharCedo}, agora do lado do servidor.
+
+\emph{Ruim}: a mensagem expõe texto do provedor ao cliente. Aceito porque a rota
+é de professor autenticado e a causa é operacional (\enquote{sem
+implementação}, \enquote{resposta vazia}), nunca dado de estudante --- e o corte
+em 200 caracteres impede que um \emph{stack} inteiro vaze para a tela.
+
+\textbf{Gatilho de reavaliação.} Um quarto consumidor de \cd{generateJson} sem
+fallback, ou o dia em que a destilação ganhar um --- por exemplo, um antagonismo
+escrito à mão pelo professor sem passar pela IA, que hoje ainda depende dela para
+avaliar o equilíbrio.

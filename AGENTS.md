@@ -231,7 +231,7 @@ pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogp
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~331p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~332p). Atualizar SEMPRE
 ```
 
 
@@ -262,12 +262,12 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~331 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~332 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **51 ADRs**, riscos e
+especificação da API, design system, entrega, qualidade, **52 ADRs**, riscos e
 evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 

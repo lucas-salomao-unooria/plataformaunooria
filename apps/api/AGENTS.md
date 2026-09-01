@@ -350,6 +350,14 @@ primeira — a armadilha do `expires_at`.
 Interface única `AiProvider { generate(req): Promise<AiResult> }`. Implementações:
 `vertex.provider.ts` (default), `mock.provider.ts` (testes). Para trocar de
 provedor, cria-se novo arquivo — nada fora de `src/ai` conhece o vendor.
+
+**O mock falha FECHADO em `generateJson` e `generateImage`** (lançam sempre) e
+NÃO falha em `conversar` — conversa não tem fallback autorado, e falhar ali
+deixaria a exp-03 sem abrir em dev. Quem chama `generateJson` precisa decidir o
+que fazer com isso: reações ao vivo caem em lista vazia, geração de posts vira
+job falho que o painel mostra, e **`/destilar` devolve 503 com a causa** (ADR-52)
+— era o único sem tratamento, e em `AI_PROVIDER=mock` fazia criar atividade
+responder 500 opaco. Consumidor novo de `generateJson` decide isso explicitamente.
 `AiRequest.modelo: "padrao" | "longo"` escolhe a família (o `longo` mapeia para
 `VERTEX_MODEL_LONGO`, Gemini 2.5, saída até 65k — planos anuais); quem gera texto
 longo checa `AiResult.finishReason` (`MAX_TOKENS` = conteúdo cortado, é erro).

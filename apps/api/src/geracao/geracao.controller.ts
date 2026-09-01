@@ -21,6 +21,7 @@ import { rateLimit } from "../comum/rate-limit";
 import { DIVISOR_TESE, MINIMOS_ATIVACAO } from "../comum/insta/defaults";
 import { antagonismoSchema } from "../comum/insta/tipos";
 import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
+import { ErroDeGeracao } from "../ai/provider";
 import { PrismaService } from "../prisma/prisma.service";
 import { planejarLotes, type Proporcoes } from "./plano";
 import { GeracaoService } from "./geracao.service";
@@ -106,14 +107,52 @@ export class GeracaoController {
     const perguntaDoProfessor = parsed.success ? parsed.data.perguntaChave : undefined;
 
     // A chamada de IA fica FORA de transação (pode levar dezenas de segundos).
-    const antagonismo = await this.geracao.destilar({
-      // Vazio na primeira análise: é a IA que propõe.
-      perguntaChave: perguntaDoProfessor ?? null,
-      disciplina: atividade.disciplina,
-      recorte: atividade.recorte,
-      temaGeral: atividade.temaGeral,
-      contextoAula: atividade.contextoAula,
-    });
+    /**
+     * O provedor de IA falhando aqui é 503, NÃO 500.
+     *
+     * Diferente dos outros três consumidores de `generateJson`, a destilação
+     * não tem fallback: as reações ao vivo caem em lista vazia (o feed fica
+     * quieto, como um app em que ninguém respondeu) e a geração de posts vira
+     * job falho que o painel de progresso mostra. Aqui não há o que degradar —
+     * sem os dois lados não existe atividade.
+     *
+     * Deixar a exceção subir dava `{"statusCode":500,"message":"Internal
+     * server error"}`, e nem o log salvava: o `ErroDeGeracao` guarda a causa
+     * real em `detalhe`, e o `ExceptionsHandler` do Nest só imprime a
+     * `message`. Em `AI_PROVIDER=mock` — o modo que existe para subir sem GCP —
+     * `generateJson` lança SEMPRE, então criar atividade era impossível e nada
+     * na tela nem no terminal dizia por quê. Custou uma tarde para descobrir
+     * que a resposta estava num `ps eww` do processo da api.
+     *
+     * 503 e não 500 porque o pedido está correto e tentar de novo pode
+     * funcionar — a falha é de uma dependência, não da requisição.
+     */
+    let antagonismo;
+    try {
+      antagonismo = await this.geracao.destilar({
+        // Vazio na primeira análise: é a IA que propõe.
+        perguntaChave: perguntaDoProfessor ?? null,
+        disciplina: atividade.disciplina,
+        recorte: atividade.recorte,
+        temaGeral: atividade.temaGeral,
+        contextoAula: atividade.contextoAula,
+      });
+    } catch (falha) {
+      /* `detalhe` primeiro, `message` como reserva: o VertexProvider põe a causa
+         real no `detalhe` e deixa a `message` genérica, enquanto o MockProvider
+         diz tudo na `message` ("[mock] generateJson sem implementação"). Ler só
+         um dos dois deixaria justamente o caso do mock sem diagnóstico — que é
+         o que esta mudança existe para resolver. */
+      const causa = falha instanceof ErroDeGeracao ? (falha.detalhe ?? falha.message) : undefined;
+      throw new HttpException(
+        {
+          mensagem:
+            "A análise da pergunta não pôde ser gerada agora. Tente de novo em instantes." +
+            (causa ? ` (${causa.slice(0, 200)})` : ""),
+        },
+        503,
+      );
+    }
 
     const perguntaChave = antagonismo.perguntas_candidatas[antagonismo.escolhida]!.pergunta;
 
