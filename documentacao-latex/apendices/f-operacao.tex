@@ -674,6 +674,53 @@ testado no container} &
   trabalho \cd{publicar-exps}). Apontar o hub para uma versão anterior no CDN
   NÃO resolve quando é justamente a versão anterior que está atrás do protocolo:
   \emph{rollback} só funciona entre versões do mesmo \emph{major}.\\
+\textbf{O \emph{deploy} sobe os \emph{bundles}, fica verde em
+\cd{publicar-exps} e a experiência continua na versão antiga} &
+  Olhe o trabalho \cd{ativar-exps}: é ele que escreve \cd{versaoAtiva}, e o
+  \emph{bundle} no \emph{bucket} é inerte até esse \emph{PUT}. A falha que
+  produz exatamente este quadro é
+  \cd{ERR\_MODULE\_NOT\_FOUND: Cannot find package 'jose'} --- o trabalho
+  pulava o \cd{pnpm install} sob a justificativa de que o
+  \arq{publicar-manifesto.mjs} era \enquote{Node puro}, e ele assina o
+  \emph{token} de \cd{admin-contrato} com \cd{SignJWT} do \cd{jose}.
+  Apareceu no primeiro \emph{deploy} completo de uma \emph{stack} nova, porque
+  antes o caminho nunca havia sido exercitado. O sintoma engana duas vezes: o
+  trabalho que \emph{parece} responsável (\cd{publicar-exps}) está verde, e
+  nada no ar explica a versão velha.\\
+\zebra \textbf{\cd{P1013: invalid port number in database URL} no túnel, com
+a porta certa na string} &
+  A porta está certa; o que quebra o \emph{parse} é a SENHA. O
+  \cd{db\_password} do Terraform é aleatório e pode conter \cd{@}, \cd{:} ou
+  \cd{/} --- e aí o \cd{@} da senha vira o separador de \emph{host}, e o
+  resto da senha vira \enquote{porta}. Não é bug do Prisma nem da instância:
+  \textbf{percent-encode a senha} antes de montar a URL. Passa despercebido de
+  ambiente para ambiente porque uma senha sorteada sem esses caracteres funciona
+  --- em \cd{dev} funcionou, em \cd{hml} não. O Cloud Run não sofre disso: lá a
+  string é montada pelo Terraform, não à mão.\\
+\textbf{\cd{ativar-exps} falha numa \emph{stack} nova --- de DUAS formas
+diferentes, e a segunda mente} &
+  Causa única nas duas: \textbf{certificado ainda \cd{PROVISIONING}}. Este é o
+  único trabalho que fala HTTPS por \textbf{hostname público} (o \emph{PUT} do
+  manifesto); os outros usam \cd{gcloud}. Qual cara aparece depende de QUAL
+  certificado falta:
+  \begin{itemize}[leftmargin=*, nosep]
+    \item Falta o da \textbf{api} \seta{} o TLS quebra no \emph{runner}:
+      \cd{fetch failed} \seta{}
+      \enquote{\cd{socket disconnected before secure TLS}}. Aponta para a
+      causa.
+    \item Falta o do \textbf{hub} \seta{}
+      \cd{401 \{"message":"Token inválido"\}}. \textbf{Este engana}: parece
+      chave errada ou \emph{secret} trocado, e não é --- a api valida o
+      \emph{token} contra o JWKS que o HUB serve, e é ELA que toma o
+      \cd{ECONNRESET} ao buscá-lo. A prova está no \emph{log} da api, não no do
+      CI: \cd{[TokenService] Token rejeitado: ECONNRESET ...}.
+  \end{itemize}
+  Confirmar com \cd{gcloud certificate-manager certificates list}; se os CNAMEs
+  \cd{\_acme-challenge} já batem com \cd{dns-authorizations list},
+  \textbf{não há nada a consertar}: é tempo de emissão. Repetir o
+  \emph{dispatch} com \cd{forcar} quando virarem \cd{ACTIVE}. O estado
+  intermediário é seguro por desenho --- os \emph{bundles} já estão no
+  \emph{bucket} e são inertes até a ativação.\\
 \bottomrule
 \end{tabularx}
 
