@@ -6,6 +6,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "dev": "turbo dev",
     "docker:dev": "docker compose -f docker-compose.dev.yml up -d --remove-orphans",
     "docker:dev:logs": "docker compose -f docker-compose.dev.yml logs -f api hub exp-01 exp-02 exp-03 exp-70 exp-90 exp-91",

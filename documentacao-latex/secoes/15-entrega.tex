@@ -409,9 +409,30 @@ Fluxo & \emph{Branch} de trabalho \(\to\) PR para \arq{dev} \(\to\) PR de
   \arq{ci/deploy}.\\
 \zebra \emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
   \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
-  tocado.\\
+  tocado. Validado pelo \emph{hook} \arq{.githooks/commit-msg}.\\
+Promoção & O PR de \cd{hml} para \cd{main} leva \textbf{tag semver}
+  (\cd{v1.4.0}) e \emph{release}, criadas depois do \emph{merge}. MAJOR só em
+  quebra de contrato externo (\cd{PROTOCOL\_VERSION} da ponte, manifesto,
+  telemetria, contrato do Terraform); MINOR é o caso comum. A \emph{tag} é o
+  nome do que está em produção --- sem ela, \enquote{voltar para a anterior}
+  vira caça a \emph{SHA} no meio de um incidente.\\
+\zebra \emph{Hotfix} & Sai de \cd{main}, entra por PR em \cd{main}, leva
+  \emph{tag} de PATCH --- e volta para \cd{hml} e \cd{dev} por
+  \textbf{retro-merge} no mesmo dia. \emph{Hotfix} que não volta renasce como
+  \emph{bug} na promoção seguinte.\\
+Imposição & \cd{branch protection} e \cd{rulesets} respondem \textbf{403}
+  (repositório privado, plano \emph{Free}). As regras vivem em \arq{.githooks/}
+  --- \arq{pre-push} recusa \emph{push} direto em \emph{branch} de ambiente e
+  nome fora do padrão --- instaladas pelo \cd{prepare} do \cd{pnpm install}
+  (\cd{core.hooksPath}). Ver \adrr{ADR-56}.\\
 \bottomrule
 \end{tabularx}
+
+\begin{nota}
+O fluxo completo, com os comandos de cada ponte (promoção, \emph{hotfix},
+\emph{retro-merge}, \emph{tag}, \emph{rollback} por camada), está em
+\arq{CONTRIBUTING.md}, na raiz do repositório.
+\end{nota}
 
 \begin{atencao}
 \textbf{Nada de \emph{build} no \emph{git}.} O \arq{.gitignore} cobre

@@ -19,6 +19,7 @@ este arquivo vence.
 | `docs/AGENTS.md` | o que ali é contrato vivo e o que é resumo (a fonte das decisões é o LaTeX) |
 | `documentacao-latex/AGENTS.md` | as regras de edição que já custaram tempo (o resto está no `README.md` ao lado) |
 | `docs/INFRA.md` | contrato com o repo de Terraform |
+| `CONTRIBUTING.md` | o fluxo de git inteiro: promoção, hotfix, tag/release, rollback, hooks |
 
 ## Contexto de negócio (não violar)
 
@@ -235,13 +236,29 @@ usuário; o MCP continua instalado, para uso manual.
 
 ## Git e branches
 
+**O fluxo inteiro — promoção, hotfix, retro-merge, tag/release, rollback por
+camada — está em `CONTRIBUTING.md`.** Aqui fica só o que decide se você precisa
+abri-lo.
+
 - **Fluxo por ambiente (desde 2026-09):** branch de trabalho → PR para `dev` →
-  PR de `dev` para `hml` → (futuro) PR de `hml` para `main`, que será a
-  produção. **Ninguém commita direto em branch de ambiente** — o merge do PR é
-  o que dispara o deploy da stack correspondente (environments do GitHub
-  carregam as vars; ver ADR-53). Merge por merge commit ou squash; **rebase
-  desabilitado**: o job `mudancas` compara `HEAD^`, e um rebase-merge faria o
-  diff enxergar só o último commit do PR.
+  PR de `dev` para `hml` → PR de `hml` para `main`, que será a produção.
+  **Ninguém commita direto em branch de ambiente** — o merge do PR é o que
+  dispara o deploy da stack correspondente (environments do GitHub carregam as
+  vars; ver ADR-53). `main` ainda NÃO dispara: falta o environment `prd` e
+  acrescentar `main` ao gatilho de push do `deploy.yml`. Merge por merge commit
+  ou squash; **rebase desabilitado**: o job `mudancas` compara `HEAD^`, e um
+  rebase-merge faria o diff enxergar só o último commit do PR.
+- **Promoção para `main` leva tag semver** (`v1.4.0`) e release, criadas depois
+  do merge. A tag é o nome do que está em produção — sem ela, "volta para a
+  anterior" vira caça a SHA no meio de um incidente.
+- **Hotfix sai de `main`, e volta para `hml` e `dev` por retro-merge** no mesmo
+  dia. Hotfix que não volta renasce como bug na próxima promoção.
+- **Os hooks são a única barreira**: `branch protection` e `rulesets` respondem
+  403 (repo privado, plano Free). `.githooks/pre-push` recusa push direto em
+  branch de ambiente e nome de branch fora do padrão; `.githooks/commit-msg`
+  valida o formato do commit. Instalados pelo `prepare` no `pnpm install`
+  (`core.hooksPath`). Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`,
+  `PERMITIR_BRANCH_FORA_DO_PADRAO=1`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
@@ -356,7 +373,7 @@ Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF)
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **55 ADRs**, riscos e
+especificação da API, design system, entrega, qualidade, **56 ADRs**, riscos e
 evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 

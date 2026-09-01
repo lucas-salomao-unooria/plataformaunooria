@@ -3032,3 +3032,83 @@ para todos os projetos da máquina, não só para este.
 mudar a pasta que ele governa --- sinal de que ele descreve o que o código já
 diz, e deve encolher ou desaparecer. Do lado da varredura: a esteira deixar de
 cobrir uma classe de vulnerabilidade que só a análise local pega.
+
+\section{ADR-56 --- O fluxo por ambiente é imposto por \emph{hooks} versionados,
+não por \emph{branch protection}}
+\label{adr:fluxo-por-hooks}
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-53} definiu o fluxo --- \emph{branch} de trabalho \(\to\) \cd{dev}
+\(\to\) \cd{hml} \(\to\) \cd{main} --- e o \emph{deploy} passou a depender dele:
+o \emph{merge} do PR é o que sobe código para a escola. A regra existia em prosa
+no \arq{AGENTS.md} e nada a sustentava: \cd{git push origin dev} funcionava, e
+funcionaria de madrugada, no fim de uma sessão longa, sem portão e sem PR.
+
+A resposta natural seria \cd{branch protection} ou \cd{rulesets}. As duas APIs
+respondem \textbf{403 --- \enquote{Upgrade to GitHub Pro or make this repository
+public}}: o repositório é privado numa conta de plano \emph{Free}. Tornar
+público não é opção (é código de plataforma com dado de menor no desenho), e
+pagar por assento para uma pessoa, hoje, não se justifica --- mas a regra
+precisa valer \textbf{agora}, porque \cd{hml} já é um ambiente real.
+
+Faltavam também as duas pontas que só aparecem quando produção existe: como se
+corrige produção sem furar a fila, e como se diz \emph{qual} versão está lá.
+Não havia uma \emph{tag} no repositório.
+\end{especificacao}
+
+\textbf{Decisão.} A barreira é local e versionada: \arq{.githooks/}, ativado por
+\cd{core.hooksPath} no \cd{prepare} do \arq{package.json} --- ou seja,
+\cd{pnpm install} instala. \arq{pre-push} recusa \emph{push} direto em
+\cd{dev}, \cd{hml} e \cd{main} (inclusive deleção) e nome de \emph{branch} fora
+do padrão; \arq{commit-msg} valida \emph{Conventional Commits} com os escopos
+deste monorepo. Os escapes são \textbf{nomeados}
+(\cd{PERMITIR\_PUSH\_DIRETO=1}, \cd{PERMITIR\_BRANCH\_FORA\_DO\_PADRAO=1}), e
+não a \emph{flag} genérica \cd{-{}-no-verify}: emergência acontece, e é melhor
+que ela deixe rastro numa variável que diz o que se está furando.
+
+Junto com isso, duas regras que o fluxo não tinha. \textbf{Promoção para
+\cd{main} leva \emph{tag} semver e \emph{release}}, criadas depois do
+\emph{merge}: MAJOR só em quebra de contrato com quem está fora do repositório
+(\cd{PROTOCOL\_VERSION} da ponte, manifesto, telemetria, contrato do Terraform),
+MINOR no caso comum, PATCH em correção. \textbf{\emph{Hotfix} sai de \cd{main},
+entra por PR em \cd{main} e volta para \cd{hml} e \cd{dev} por retro-merge} no
+mesmo dia. O fluxo operacional inteiro vive em \arq{CONTRIBUTING.md} --- a raiz
+do repositório, onde o GitHub o exibe ao abrir um PR.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Deixar só a prosa do \arq{AGENTS.md}}: é o estado que produziu o
+    risco. Regra que depende de lembrar dela, às 2h da manhã, não é regra --- e
+    o custo de esquecer aqui é \emph{deploy} para escola sem portão.
+  \item \emph{Tornar o repositório público para liberar \cd{rulesets}}: trocar
+    a superfície de exposição do produto inteiro por um recurso de processo.
+    Desproporcional.
+  \item \emph{\emph{Husky} + \emph{commitlint} + \emph{lint-staged}}: três
+    dependências, uma cadeia de configuração e um \emph{hook} gerado, para o que
+    são dois arquivos de \emph{shell} que o repositório inteiro consegue ler. A
+    regra da raiz vale aqui (\enquote{simplicidade > sofisticação}), e
+    \cd{core.hooksPath} é nativo do git desde a 2.9.
+  \item \emph{Um \emph{workflow} de \emph{release} que cria a \emph{tag}
+    sozinho no \emph{push} para \cd{main}}: automação que decide o número da
+    versão precisa de uma fonte para ele, e a única honesta seria um arquivo que
+    alguém edita --- o mesmo trabalho manual, com uma engrenagem a mais para
+    falhar. Enquanto a promoção for um ato deliberado de uma pessoa, o comando
+    documentado basta.
+  \item \emph{\emph{Trunk-based} puro, com \emph{feature flags} no lugar de
+    \cd{hml}}: exige disciplina de \emph{flag} e um custo de teste que uma
+    pessoa não paga; e \cd{hml} existe porque a rede cliente precisa de um lugar
+    para homologar antes da escola.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: \emph{hook} é conselho, não muralha --- quem
+clonar e não rodar \cd{pnpm install} não tem nenhum, e \cd{-{}-no-verify} fura.
+A barreira protege contra descuido, não contra intenção, e isso é aceitável
+enquanto o time é de uma pessoa; deixa de ser no primeiro colaborador externo.
+\emph{Ruim também}: o \cd{prepare} roda em CI e em contêiner, onde o
+\emph{hook} não serve para nada --- é inofensivo (\cd{git config} num
+\emph{checkout} que existe), mas é ruído.
+
+\textbf{Gatilho de reavaliação.} O primeiro colaborador com \emph{commit} no
+repositório, ou a conta virar \emph{Pro}\,/\,organização: nos dois casos as
+mesmas regras viram \cd{ruleset} no servidor, e os \emph{hooks} passam a ser
+conveniência local (retorno rápido) em vez de barreira única.
