@@ -574,7 +574,10 @@ Recuperação do banco & HA + PITR do Cloud SQL.\\
 \begin{limitacao}
 Não há \emph{alerting} configurado, nem painel. Há log e métrica nativa, e há
 sanidade por \rota{/readyz} --- o que basta para diagnosticar, mas não para ser
-avisado. Configurar alerta de taxa de erro 5xx e de saturação de conexões do
-Cloud SQL é item obrigatório antes de novembro de 2026, e está registrado como
-risco \cd{R-05}.
+avisado; e \rota{/readyz} não é chamada por ninguém, porque o \emph{deploy}
+não configura sonda. O estudo completo --- o que se vê hoje, elo por elo, os
+sinais a acrescentar, a comparação de ferramentas e o roteiro em fases com
+custo por contrato --- é o Capítulo~\ref{cap:observabilidade}. A fase 0 dele
+(canais, \emph{uptime checks}, políticas, SLOs e painel, tudo em Terraform) é
+o que fecha o risco \cd{R-05} antes de novembro de 2026.
 \end{limitacao}

@@ -772,7 +772,13 @@ export class OneRosterService {
             fonteId: p.sourcedId || null,
           });
           if (p.senha) {
-            relatorio.credenciais.push({ nome: p.nome, usuario: p.usuario, senha: p.senha, turma: null });
+            relatorio.credenciais.push({
+              id: criado.id,
+              nome: p.nome,
+              usuario: p.usuario,
+              senha: p.senha,
+              turma: null,
+            });
           }
         }
       },

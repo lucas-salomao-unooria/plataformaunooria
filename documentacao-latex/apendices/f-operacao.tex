@@ -730,9 +730,17 @@ diferentes, e a segunda mente} &
 \toprule
 \headrow \thd{Frequência} & \thd{Item}\\
 \midrule
-Após cada \emph{deploy} & Conferir que a migração rodou (\cd{--wait} no
+Contínuo (fase 0 do Capítulo~\ref{cap:observabilidade}, \textbf{pendente})
+  & Os quatorze alertas por sintoma e os cinco \emph{uptime checks} tornam
+  as linhas \enquote{semanal} e \enquote{mensal} abaixo confirmação, não
+  descoberta. Até lá, elas são o único mecanismo.\\
+\zebra Após cada \emph{deploy} & Conferir que a migração rodou (\cd{--wait} no
   \emph{job}); abrir \rota{/readyz}; abrir uma experiência de estudante e uma
-  ferramenta de professor.\\
+  ferramenta de professor. Com a fase 0: o \emph{smoke} do \cd{deploy.yml}
+  faz os três e notifica se falhar.\\
+\textbf{Semanal, e após \emph{deploy}} & Error Reporting: erro \textbf{novo}
+  na revisão que acabou de receber tráfego, e erro de cliente novo por
+  \cd{(expId, versao)} --- reverter pelo manifesto antes de investigar.\\
 \zebra Semanal & Taxa de 5xx do Cloud Run; conexões ativas do Cloud SQL;
   contagem de \cd{status = 'aberta'} em \cd{exp\_70\_sessoes} (partidas
   perdidas); planos em \cd{status = 'erro'}.\\

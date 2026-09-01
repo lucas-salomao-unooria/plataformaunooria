@@ -174,6 +174,30 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \bottomrule
 \end{tabularx}
 
+\subsection{Observabilidade (planejadas --- Capítulo~\ref{cap:observabilidade})}
+
+Nenhuma destas existe no código em 1º de setembro de 2026. Estão aqui porque
+o Terraform precisa prever a injeção antes da fase 1, e porque variável que
+nasce sem catálogo é a que ninguém encontra.
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{LOG\_LEVEL} & \cd{info} & Nível mínimo do \cd{pino} (\cd{debug} liga o
+  log de \emph{query} do Prisma). Em produção, \cd{info}; nunca \cd{debug}
+  por mais de um incidente.\\
+\zebra \env{GCP\_PROJECT\_ID} & --- (vazio) & Identificador do projeto do
+  contrato, para montar \cd{logging.googleapis.com/trace} como
+  \cd{projects/\{id\}/traces/\{traceId\}}. Vazio = log sem correlação com o
+  \emph{trace} (dev). Injetada pelo Terraform; também lida pelo hub.\\
+\env{OBS\_TRACE\_RATIO} & \cd{0} & Fração de requisições com \emph{spans}
+  exportados ao Cloud Trace (\cd{0.02} em produção; \cd{0} desliga o
+  exportador, que é o \emph{default} de dev). Rotas de IA e o \emph{feed}
+  usam dez vezes este valor, até 1.\\
+\bottomrule
+\end{tabularx}
+
 \section{Hub --- \arq{apps/hub/.env.local}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{22mm}X@{}}

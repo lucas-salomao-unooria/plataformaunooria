@@ -1006,6 +1006,47 @@ flowchart TB
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:cadeia-visibilidade} --- Cadeia de uma requisição e o que cada elo revela}
+
+\begin{lstlisting}[language=mermaid]
+flowchart LR
+  nav[Navegador - iframe da exp] --> lb[LB + CDN] --> hub[Cloud Run -frontend] --> api[Cloud Run -api]
+  api --> sql[(Cloud SQL)]
+  api <--> ps[Pub/Sub]
+  api --> vx[Vertex AI]
+
+  nav -.- v0["ve-se: nada<br/>cego: crash do bundle, ponte sem hub:init, token nao renovado, lote perdido"]
+  lb  -.- v1["ve-se: contagem e latencia por host<br/>cego: quem foi afetado (sem correlacao)"]
+  hub -.- v2["ve-se: log de requisicao, instancias, CPU/mem<br/>cego: null do apiDoServidor, redirect em laco, erro de render"]
+  api -.- v3["ve-se: idem + /readyz (se alguem abrir)<br/>cego: causa do 500, latencia da IA, descarte de telemetria, fila em erro"]
+  sql -.- v4["ve-se: conexoes, CPU, disco, backlog<br/>cego: query lenta por rota; dead letter (nao existe)"]
+
+  %% Nenhum elo propaga identificador de correlacao.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:seq-erro-cliente} --- Erro de cliente entra pela API}
+
+\begin{lstlisting}[language=mermaid]
+sequenceDiagram
+  participant E as Experiencia (@edu/sdk)
+  participant H as Hub (ExpFrame)
+  participant A as API (/observabilidade)
+  participant L as Cloud Logging / Error Reporting
+
+  E->>E: window.onerror / unhandledrejection
+  Note over E: dedupe por hash, max. 5 por sessao, 8 KB
+  E->>A: POST /observabilidade/erros-cliente (Bearer)
+  Note over A: Zod: expId, versao, mensagem, stack, url
+  A->>A: redaction + escola_id do token
+  A->>L: stdout JSON, severity ERROR, @type ReportedErrorEvent
+  L->>L: agrupa por assinatura; "novo na versao X"
+  A-->>E: 204 (ou 429: cota da sessao)
+  E-->>H: exp:erro (opcional, targetOrigin explicito)
+  Note over H: mostra "algo deu errado" e oferece recarregar
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
 \section{Figura~\ref{fig:matriz-riscos} --- Matriz de riscos}
 
 \begin{lstlisting}[language=mermaid]

@@ -88,10 +88,14 @@ cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
 **A matriz completa de quem faz o quê** (papel x rota x tela, e as ausências
 deliberadas) está em `documentacao-latex/secoes/07-tenancy-seguranca.tex`,
 "Nível 3: autorização por papel" — é o lugar de olhar antes de responder "esse
-papel pode?". Duas respostas que a matriz já dá: **criar pessoa é IMPORTAR**
-(não existe `POST /usuarios` — ADR-54), e gestor e `admin-contrato` dividem a
-MESMA área do middleware, então quem separa os dois é o `RolesGuard` da api,
-não o hub.
+papel pode?". Duas respostas que a matriz já dá: **quem ESCREVE pessoa é o
+importador** — `POST /usuarios` existe (o formulário do balcão), mas monta a
+mesma linha de planilha e delega a `POST /rostering/importar`, nunca escreve em
+`users` (ADR-54 + ADR-59; a única exceção é `POST /usuarios/admin-contrato`, o
+papel que não cabe numa planilha da escola) —, e gestor e `admin-contrato`
+dividem a MESMA área do middleware, então quem separa os dois é o `RolesGuard`
+da api, não o hub. **Gestor não cria `admin-contrato`**: a opção não aparece na
+tela e a rota responde 403.
 
 
 ## Design System (`@unooria/design-system`) — a regra de ouro
@@ -373,8 +377,8 @@ Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF)
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **56 ADRs**, riscos e
-evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+especificação da API, design system, entrega, qualidade, **observabilidade**,
+**59 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
@@ -398,8 +402,9 @@ cd documentacao-latex && ./compilar.sh      # tectonic; --rapido p/ iterar, --li
 | Variável de ambiente | `apendices/b-variaveis-ambiente.tex` |
 | Experiência nova | `secoes/12-experiencias.tex` (e o catálogo do cap. 12) |
 | Regra de interface / lacuna do DS | `secoes/14-design-system.tex` |
-| **Qualquer decisão com alternativa descartada** | `secoes/17-adr.tex` — **ADR nova, numerada** (contexto, decisão, alternativas, consequências ruins incluídas, gatilho de reavaliação) |
-| Risco novo, mitigado ou reclassificado | `secoes/18-riscos-evolucao.tex` |
+| **Qualquer decisão com alternativa descartada** | `secoes/18-adr.tex` — **ADR nova, numerada** (contexto, decisão, alternativas, consequências ruins incluídas, gatilho de reavaliação) |
+| Risco novo, mitigado ou reclassificado | `secoes/19-riscos-evolucao.tex` |
+| Sinal operacional novo (log, métrica, alerta, SLO, sonda, erro de cliente) | `secoes/17-observabilidade.tex` — e `docs/INFRA.md` se virar recurso do Terraform |
 | Sintoma de diagnóstico novo (o sintoma que não aponta para a causa) | `apendices/f-operacao.tex` |
 | Diagrama TikZ novo | **também** a fonte Mermaid equivalente em `apendices/a-mermaid.tex` |
 
@@ -429,4 +434,4 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 - [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
 - [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
-      Decisão com alternativa descartada = ADR nova em `secoes/17-adr.tex`
+      Decisão com alternativa descartada = ADR nova em `secoes/18-adr.tex`

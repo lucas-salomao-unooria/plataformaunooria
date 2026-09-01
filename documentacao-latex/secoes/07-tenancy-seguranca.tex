@@ -307,9 +307,13 @@ cada linha existe porque há um \cd{@Roles} que a sustenta. \yes{} é
   \thd{Prof.} & \thd{Gest.} & \thd{Adm.}\\
 \midrule
 \endhead
-\textbf{Criar pessoa} --- e só por IMPORTAÇÃO &
+\textbf{Criar pessoa} --- em lote, por IMPORTAÇÃO &
   \rota{POST /rostering/\B importar}, \rota{/rostering/\B oneroster/:arquivo} &
   \no & \no & \yes & \yes\\
+\zebra \textbf{Criar UMA pessoa} --- o formulário que delega ao importador &
+  \rota{POST /usuarios} & \no & \no & \yes & \yes\\
+\textbf{Criar outro \cd{admin-\B contrato}} & \rota{POST /usuarios/\B admin-contrato} &
+  \no & \no & \no & \yes\\
 \zebra Listar as pessoas da escola & \rota{GET /usuarios} & \no & \no & \yes & \yes\\
 Editar pessoa (nome, CPF, e-mail, papel, \cd{ativo}) &
   \rota{PATCH /usuarios/:id} & \no & \no & \yes & \yes\\
@@ -406,13 +410,24 @@ alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala.
 \end{regra}
 
 \begin{decisao}
-\textbf{Pessoa nasce por importação --- não há cadastro avulso.} Nenhum papel
-tem \rota{POST /usuarios}. As únicas duas chamadas que criam linha em
-\cd{users} são \rota{POST /rostering/importar} (a planilha simples) e
-\rota{POST /rostering/oneroster/users} --- e a segunda existe para a rede que já
-exporta o padrão. Para uma pessoa só, o caminho é uma planilha de UMA linha; a
-importação é idempotente pela matrícula da rede (e pelo CPF), então repetir não
-duplica e não reseta a senha de quem já entrou (\adrr{ADR-54}).
+\textbf{Pessoa nasce por importação --- e o cadastro unitário DELEGA a ela.}
+Existe \rota{POST /usuarios}, e ele não escreve em \cd{users}: monta a MESMA
+linha da planilha e chama o MESMO importador (\adrr{ADR-59}, acionando o
+gatilho da \adrr{ADR-54}). Quem grava continua sendo
+\rota{POST /rostering/importar} --- ou \rota{/rostering/oneroster/users}, para a
+rede que já exporta o padrão --- e por isso as regras de CPF, série, turno,
+login gerado, lotação e matrícula são as mesmas nas duas telas.
+
+A diferença é de SEMÂNTICA: a importação é idempotente pela matrícula da rede (e
+pelo CPF), então reimportar não duplica nem reseta a senha de quem já entrou; o
+formulário, que se chama \enquote{Novo usuário}, \textbf{recusa com 409} quem já
+existe, em vez de atualizar em silêncio --- e o 409 de um CPF achado em outra
+escola sai sem id, sem nome e sem dizer qual unidade.
+
+A exceção é \cd{admin-contrato}: ele não tem \cd{escola\_id}, lotação nem turma,
+não cabe numa planilha DA ESCOLA, e por isso tem rota própria,
+\rota{POST /usuarios/admin-contrato}, restrita a ele mesmo. Gestor recebe 403 ali
+--- conceder o alcance da rede inteira é decisão do contrato, nunca de uma unidade.
 \end{decisao}
 
 \subsection{As portas que não são papel}

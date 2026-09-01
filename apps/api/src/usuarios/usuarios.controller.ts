@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpException,
   NotFoundException,
@@ -21,12 +22,17 @@ import { Contrato } from "../openapi/contrato";
 import { RelatorioDeImportacaoSchema } from "../rostering/contrato-de-rotas";
 import { MAX_LINHAS, RosteringService } from "../rostering/rostering.service";
 import {
+  AdminContratoCriadoSchema,
+  CriarAdminContratoSchema,
+  CriarUsuarioSchema,
   EditarSchema,
   ListarSchema,
   ListaDeUsuariosSchema,
   SenhaResetadaSchema,
+  UsuarioCriadoSchema,
   UsuarioEditadoSchema,
 } from "./contrato-de-rotas";
+import { podeCriarPapel } from "./regras";
 import { UsuariosService } from "./usuarios.service";
 
 /**
@@ -58,6 +64,79 @@ export class UsuariosController {
     const q = ListarSchema.parse(query);
     const escolaId = escolaAlvo(req.auth, q.escolaId);
     return this.usuarios.listar(escolaId, q);
+  }
+
+  /**
+   * Cadastro unitário — o balcão que a ADR-54 previu e a ADR-59 abriu.
+   *
+   * Não é um segundo caminho de escrita: monta a MESMA linha de planilha e
+   * chama o MESMO importador. O que muda em relação a importar um arquivo de
+   * uma linha é a SEMÂNTICA — aqui "criar" significa criar, e quem já existe
+   * recebe 409 em vez de ser atualizado em silêncio.
+   */
+  @Post()
+  @Contrato({
+    resumo: "Cadastra UMA pessoa da escola (estudante, professor ou gestor).",
+    descricao:
+      "O formulário de `/admin/usuarios`. Monta a mesma linha da planilha e delega ao importador (ADR-59) — por isso as regras de CPF, série, turno e login são idênticas às da importação.",
+    query: z.object({ escolaId: z.string().min(1).optional() }),
+    corpo: CriarUsuarioSchema,
+    resposta: UsuarioCriadoSchema,
+    notas: [
+      "**Criar é criar**: CPF, matrícula ou login já existentes devolvem 409 e nada é escrito — o caminho de quem já existe é `PATCH /usuarios/:id`.",
+      "CPF achado em OUTRA escola da rede devolve 409 sem id, sem nome e sem dizer qual escola: transferir é pela importação, que move a matrícula junto.",
+      "A senha sai UMA vez no corpo da resposta e é sempre provisória. Em branco, é sorteada.",
+      "`admin-contrato` NÃO entra aqui: ele não tem escola nem lotação, e tem rota própria.",
+      "Limite de 30 cadastros por minuto por usuário — é balcão, não carga.",
+    ],
+  })
+  async criar(
+    @Body() body: unknown,
+    @Query("escolaId") escolaIdPedida: string | undefined,
+    @Req() req: { auth: AuthClaims },
+  ) {
+    const escolaId = escolaAlvo(req.auth, escolaIdPedida);
+
+    const cota = rateLimit(`criar-usuario:${req.auth.usuarioId}`, 30, 60_000);
+    if (!cota.ok) throw new HttpException("Muitos cadastros seguidos — aguarde um minuto", 429);
+
+    const dados = CriarUsuarioSchema.parse(body);
+    /* Segunda tranca: o `@Roles` protege a ROTA, não o campo `papel` do corpo. */
+    if (!podeCriarPapel(req.auth.perfil, dados.papel)) {
+      throw new ForbiddenException(`${req.auth.perfil} não cria ${dados.papel}`);
+    }
+    return this.usuarios.criarPessoa(escolaId, dados);
+  }
+
+  /**
+   * `admin-contrato` tem rota própria porque não é pessoa da escola: sem
+   * `escola_id`, sem lotação, sem turma. Manter na mesma rota exigiria um
+   * corpo com metade dos campos inertes e uma regra de papel escondida no
+   * service; separado, a matriz papel x rota se lê sozinha.
+   */
+  @Post("admin-contrato")
+  @Roles("admin-contrato")
+  @Contrato({
+    resumo: "Cadastra outro admin do contrato (só admin do contrato pode).",
+    descricao:
+      "O único papel que NÃO nasce por importação: não pertence a escola nenhuma e enxerga a rede inteira. Conceder esse alcance é decisão do contrato, nunca de uma unidade — por isso gestor recebe 403 aqui.",
+    corpo: CriarAdminContratoSchema,
+    resposta: AdminContratoCriadoSchema,
+    notas: [
+      "Nasce com `escola_id` nulo e nenhuma lotação — é o mesmo formato que o seed cria.",
+      "O login é único na REDE inteira, não na escola: o índice `(escola_id, username)` não cobre linha com `escola_id` nulo, e a autenticação procura o username na rede.",
+      "A senha sai UMA vez e é provisória: o primeiro acesso cai em `/trocar-senha`.",
+    ],
+  })
+  async criarAdminContrato(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
+    const cota = rateLimit(`criar-admin:${req.auth.usuarioId}`, 5, 60_000);
+    if (!cota.ok) throw new HttpException("Muitos cadastros seguidos — aguarde um minuto", 429);
+
+    const dados = CriarAdminContratoSchema.parse(body);
+    if (!podeCriarPapel(req.auth.perfil, "admin-contrato")) {
+      throw new ForbiddenException(`${req.auth.perfil} não cria admin-contrato`);
+    }
+    return this.usuarios.criarAdminContrato(dados);
   }
 
   /**

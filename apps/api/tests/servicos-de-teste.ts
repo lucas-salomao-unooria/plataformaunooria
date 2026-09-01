@@ -18,7 +18,7 @@ export function servicosDeTeste(prisma: PrismaService) {
   const escolas = new EscolasService(prisma);
   const rostering = new RosteringService(prisma, escolas, config);
   const oneroster = new OneRosterService(prisma, rostering, config, escolas);
-  const usuarios = new UsuariosService(prisma);
+  const usuarios = new UsuariosService(prisma, rostering);
   const portabilidade = new PortabilidadeService(prisma, config);
   return { escolas, rostering, oneroster, usuarios, portabilidade, config };
 }

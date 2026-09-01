@@ -236,6 +236,38 @@ papel \cd{estudante}, com duas exceções marcadas.
 \bottomrule
 \end{tabularx}
 
+\subsection{Entrada de pessoas: as duas portas, e por que só uma escreve}
+
+Criar pessoa tem duas superfícies e \textbf{um} caminho de escrita. Em lote é
+\rota{POST /rostering/importar} (ou o \emph{binding} OneRoster); uma por vez é
+\rota{POST /usuarios}, o formulário do balcão --- que não escreve em \cd{users}:
+serializa os campos como uma linha da MESMA planilha e chama o MESMO importador
+(\adrr{ADR-59}). É o que mantém CPF com dígito verificador, série, turno, login
+gerado, turma, lotação e matrícula com uma definição só.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{Semântica}\\
+\midrule
+\rota{POST /rostering/\B importar} & gestor, admin & O lote. Idempotente pela
+  matrícula da rede e pelo CPF: reimportar atualiza, não duplica, e não reseta a
+  senha de quem já entrou.\\
+\zebra \rota{POST /usuarios} & gestor, admin & Uma pessoa. \textbf{Criar é criar}:
+  CPF, matrícula ou login já existentes devolvem 409 e nada é escrito. A senha
+  sai uma vez no corpo, sempre provisória.\\
+\rota{POST /usuarios/\B admin-contrato} & \textbf{admin-contrato} & O único papel
+  que não passa pelo importador: sem \cd{escola\_id}, sem lotação, sem turma. O
+  login dele é único na REDE, não na escola.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+O 409 de um CPF encontrado em \textbf{outra escola} da rede não devolve id, nome
+nem o nome da unidade --- é dado de outro \emph{tenant}. A mensagem diz o
+caminho legítimo (transferência é pela importação, que move a matrícula junto) e
+nada além disso.
+\end{atencao}
+
 \subsection{Planos de aula (exp-90)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{16mm}X@{}}

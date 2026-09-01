@@ -69,6 +69,31 @@ export function exemploPreenchido(): string {
   ].join("\n");
 }
 
+/** Uma célula no formato RFC 4180: só ganha aspas quando precisa delas. */
+function celulaCsv(valor: string): string {
+  return /[",\r\n]/.test(valor) ? `"${valor.replace(/"/g, '""')}"` : valor;
+}
+
+/** O que o cadastro unitário preenche — as mesmas colunas do modelo, nada além. */
+export type CamposDaPessoa = Partial<Record<(typeof COLUNAS_MODELO)[number], string>>;
+
+/**
+ * Serializa UMA pessoa como planilha completa (cabeçalho + uma linha).
+ *
+ * Existe para o cadastro unitário da área administrativa: o formulário monta a
+ * MESMA linha que a escola escreveria no Excel e chama o MESMO importador
+ * (ADR-54, gatilho de reavaliação; ADR-59). Um segundo caminho de escrita em
+ * `users` divergiria do importador na primeira regra nova — foi por isso que
+ * `POST /usuarios/importar-csv` sobreviveu apenas como delegação.
+ *
+ * A ordem das células sai de `COLUNAS_MODELO`, a mesma constante que o leitor
+ * consome: coluna nova no modelo aparece aqui sem ninguém lembrar de vir aqui.
+ */
+export function planilhaDeUmaPessoa(campos: CamposDaPessoa): string {
+  const linha = COLUNAS_MODELO.map((coluna) => celulaCsv(campos[coluna] ?? "")).join(",");
+  return `${modeloEmBranco()}${linha}\n`;
+}
+
 /** Os campos que uma linha pode ter — a chave do acesso por NOME de coluna. */
 type CampoDaLinha =
   | "cpf"

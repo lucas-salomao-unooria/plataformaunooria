@@ -8,7 +8,7 @@ requisitos rastreáveis, casos de uso, arquitetura de software nos quatro nívei
 do modelo C4, arquitetura de nuvem e implantação em GCP, multi-tenancy e
 segurança, modelo de dados, contratos de integração, telemetria, camada de IA,
 catálogo de experiências, especificação da API, design system, engenharia de
-entrega, qualidade, 56 ADRs, riscos e evolução.
+entrega, qualidade, observabilidade, 59 ADRs, riscos e evolução.
 
 ## Compilar
 
@@ -52,7 +52,7 @@ documentacao-latex/
 │   ├── estilo.tex           tipografia, cores, tabelas, código, títulos, rodapé
 │   ├── diagramas.tex        biblioteca TikZ (C4, UML, ER, infra, estados)
 │   └── capa.tex             capa, ficha técnica e histórico de revisões
-├── secoes/                  00-siglas … 19-conclusao
+├── secoes/                  00-siglas … 20-conclusao
 ├── apendices/               a-mermaid … f-operacao
 ├── figuras/                 imagens externas (nenhuma hoje)
 └── build/                   pré-visualizações geradas (não versionado)
@@ -104,8 +104,9 @@ atualiza o capítulo correspondente **e regera o `main.pdf` no mesmo commit**.
 | Rota nova ou papel de rota | `secoes/13-api.tex` + `apendices/c-endpoints.tex` |
 | Variável de ambiente | `apendices/b-variaveis-ambiente.tex` |
 | Experiência nova | `secoes/12-experiencias.tex` |
-| Qualquer decisão com alternativa descartada | `secoes/17-adr.tex` (ADR nova, numerada) |
-| Risco novo ou mitigado | `secoes/18-riscos-evolucao.tex` |
+| Qualquer decisão com alternativa descartada | `secoes/18-adr.tex` (ADR nova, numerada) |
+| Risco novo ou mitigado | `secoes/19-riscos-evolucao.tex` |
+| Sinal operacional novo (log, métrica, alerta, SLO, sonda) | `secoes/17-observabilidade.tex` |
 | Sintoma de diagnóstico novo | `apendices/f-operacao.tex` |
 
 ## Notas de compilação
