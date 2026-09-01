@@ -365,6 +365,7 @@ export const ErroDeLinhaSchema = z.object({
 
 /** Devolvidas UMA vez, para o gestor imprimir. Não ficam em coluna nem em log. */
 export const CredencialSchema = z.object({
+  id: Uuid,
   nome: z.string(),
   usuario: z.string(),
   senha: z.string(),

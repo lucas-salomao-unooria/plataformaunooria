@@ -34,6 +34,12 @@ const TIMEOUT_DA_ESCRITA = 30_000;
 const TETO_DE_ASSENTOS = 200;
 
 export interface Credencial {
+  /**
+   * O `users.id` de quem recebeu esta senha. Existe para o cadastro unitário
+   * (ADR-59) responder com o id sem uma segunda consulta por `username` — e
+   * consulta por login é exatamente onde se esquece o par com `escola_id`.
+   */
+  id: string;
   nome: string;
   usuario: string;
   senha: string;
@@ -454,6 +460,7 @@ export class RosteringService {
 
             if (senha) {
               relatorio.credenciais.push({
+                id: usuarioId,
                 nome: pessoa.nome,
                 usuario,
                 senha,
