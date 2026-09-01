@@ -137,6 +137,13 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   na nova, e o estudante fica sem turma — invisível para o professor, sem nada na
   tela dizendo o que faltou.
 
+**Pessoa NASCE por importação — não existe cadastro avulso.** Não há
+`POST /usuarios`: as únicas chamadas que criam linha em `users` são
+`POST /rostering/importar` e `POST /rostering/oneroster/users`. Criar UMA pessoa
+é uma planilha de uma linha (idempotente pela matrícula/CPF). O que é unitário é
+o BALCÃO — `PATCH /usuarios/:id` e `POST /usuarios/:id/reset-senha`. Um segundo
+caminho de escrita divergiria do importador na primeira regra nova (ADR-54).
+
 **Entrada de pessoas**: `POST /rostering/importar` (gestor/admin), corpo
 `text/csv` cru, até 30MB (o teto de BYTES vale para as duas fronteiras e sai de
 `TETO_DO_ARQUIVO`, que o `bodyParser` de `main.ts` também lê) e 50k linhas — o

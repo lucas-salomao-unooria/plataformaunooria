@@ -2890,3 +2890,66 @@ mapeamento \cd{main} \(\to\) \cd{prd} e pedirá \emph{required reviewers} no
 \emph{environment}); ou o segundo contrato --- \emph{environments} escalam por
 ambiente, não por contrato, e aí a conversa vira um repositório de
 \emph{deploy} por contrato ou uma matriz.
+
+\section{ADR-54 --- Pessoa nasce por IMPORTAÇÃO: não existe cadastro avulso de
+usuário}
+\label{adr:sem-cadastro-avulso}
+
+\begin{especificacao}{Contexto}
+Quem pergunta \enquote{como eu crio um usuário?} procura, naturalmente, um botão
+\enquote{Novo} na tela \rota{/admin/usuarios}. Ele não existe, e a ausência
+nunca esteve escrita em lugar nenhum --- estava só implícita no fato de a API
+não ter \rota{POST /usuarios}.
+
+O provisionamento desta plataforma não é auto-serviço: a lista de pessoas vem da
+REDE (a secretaria, o sistema de matrícula), e a identidade que importa é a
+\textbf{matrícula da rede} --- com o CPF como chave que promove uma linha
+repetida a transferência entre unidades (\adrr{ADR-28}, \adrr{ADR-32}). Uma
+pessoa não é só um \cd{users}: é lotação, matrícula em turma, período letivo e
+senha provisória, nascidos juntos na mesma transação.
+\end{especificacao}
+
+\textbf{Decisão.} As \textbf{únicas} duas chamadas que criam linha em
+\cd{users} são \rota{POST /rostering/importar} (a planilha simples, uma linha
+por pessoa) e \rota{POST /rostering/oneroster/users} (o \emph{binding} do
+padrão, para a rede que já o exporta). As duas exigem \cd{gestor} --- na própria
+escola --- ou \cd{admin-contrato}, com \cd{?escolaId=}. Criar UMA pessoa é
+importar uma planilha de uma linha: a operação é idempotente pela matrícula (e
+pelo CPF), então repetir não duplica nem reseta a senha de quem já entrou.
+
+O que existe depois da criação são as operações de \textbf{balcão}, e essas sim
+são unitárias: \rota{PATCH /usuarios/:id} corrige nome, CPF, e-mail, papel e
+\cd{ativo}; \rota{POST /usuarios/:id/reset-senha} devolve uma senha temporária
+uma única vez.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um \rota{POST /usuarios} com formulário na tela}: é uma segunda
+    porta de escrita sobre o mesmo modelo, e portas de escrita divergem. Na
+    primeira regra nova --- o CPF que vira transferência, a matrícula que
+    precisa de período letivo aberto, o papel \cd{coordenacao} que normaliza
+    para \cd{gestor} --- uma das duas a implementaria e a outra não, em
+    silêncio. É exatamente o motivo pelo qual \rota{POST /usuarios/importar-csv}
+    sobreviveu apenas como \emph{delegação} para o importador, e não como um
+    segundo importador.
+  \item \emph{Auto-cadastro pelo próprio usuário}: são menores. Não há prova de
+    vínculo com a escola que uma pessoa possa apresentar sozinha, e a
+    consequência de aceitar uma seria uma criança dentro do \emph{tenant}
+    errado.
+  \item \emph{Provisionamento \emph{just-in-time} no primeiro login} (criar a
+    pessoa a partir do \emph{token} do IdP): tentador quando o WSO2 entrar, e
+    recusado desde já --- o \emph{token} do IdP não carrega turma nem série, e a
+    pessoa nasceria sem enturmamento, invisível para o professor e fora de
+    qualquer conferência da rede. Quando o WSO2 chegar, ele autentica; quem
+    provisiona continua sendo a importação.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o gestor que percebe \enquote{esqueci de
+incluir a Ana} precisa montar um arquivo para uma linha --- atrito real de
+balcão, e a tela hoje só aceita \emph{upload}, sem campo de colar. Mitigado em
+parte porque o balcão de verdade (nome errado, CPF trocado, senha perdida,
+saída da rede) é editar, não criar, e essas rotas existem.
+
+\textbf{Gatilho de reavaliação.} Se a operação pedir cadastro unitário com
+frequência, a saída é um formulário que monta a MESMA linha de CSV e chama o
+MESMO importador --- nunca um segundo caminho de escrita em \cd{users}.

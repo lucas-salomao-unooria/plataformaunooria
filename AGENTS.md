@@ -79,6 +79,14 @@ trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
 cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
 "Identidade e enturmamento").
 
+**A matriz completa de quem faz o quê** (papel x rota x tela, e as ausências
+deliberadas) está em `documentacao-latex/secoes/07-tenancy-seguranca.tex`,
+"Nível 3: autorização por papel" — é o lugar de olhar antes de responder "esse
+papel pode?". Duas respostas que a matriz já dá: **criar pessoa é IMPORTAR**
+(não existe `POST /usuarios` — ADR-54), e gestor e `admin-contrato` dividem a
+MESMA área do middleware, então quem separa os dois é o `RolesGuard` da api,
+não o hub.
+
 
 ## Design System (`@unooria/design-system`) — a regra de ouro
 
@@ -271,7 +279,7 @@ Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF)
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **52 ADRs**, riscos e
+especificação da API, design system, entrega, qualidade, **54 ADRs**, riscos e
 evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 

@@ -16,7 +16,13 @@ export default async function AnalisePage({
 }: {
   searchParams: Promise<{ escolaId?: string }>;
 }) {
-  // O middleware já garante sessão de admin-contrato em /analise/**.
+  /**
+   * O middleware garante SESSÃO, não o papel: `areaDoPathname('/analise')` é a
+   * mesma área do gestor (`/admin/usuarios`), então ele não é redirecionado
+   * daqui. Quem recusa é a api — `AnaliseController` é `@Roles("admin-contrato")`
+   * —, e o `apiDoServidor` converte o 403 em `null`: o gestor que digitar a URL
+   * vê a casca e nenhum dado. A tranca de verdade é a segunda (ADR-54, §7).
+   */
   const session = await auth();
   const usuario = session!.usuario;
 

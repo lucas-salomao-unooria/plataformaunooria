@@ -255,6 +255,197 @@ silenciosamente a permissão do vizinho.
 \bottomrule
 \end{tabularx}
 
+\subsection{Onde cada papel entra}
+
+O \emph{middleware} do hub (\arq{apps/hub/middleware.ts}) não conhece telas: ele
+conhece \textbf{áreas}, e \arq{apps/hub/lib/papeis.ts} é a única fonte do mapa
+papel \seta{} área. Quem digita a URL de outra área não recebe 403 --- é
+redirecionado para a própria casa, porque estudante que tropeça em
+\rota{/professor} não precisa de uma mensagem de erro, precisa voltar.
+
+\begin{tabularx}{\linewidth}{@{}L{27mm}L{27mm}X@{}}
+\toprule
+\headrow \thd{Papel} & \thd{Casa} & \thd{O que existe na área}\\
+\midrule
+\cd{estudante} & \rota{/estudante} &
+  O \emph{hub} de missões e o aparelho da experiência (\rota{/exp/:expId}).
+  São a MESMA área: o hub escolhe, o \cd{iframe} joga.\\
+\zebra \cd{professor} & \rota{/professor} &
+  Atividades (exp-01), turmas, guia, plano de aula (exp-90), bem-estar (exp-91)
+  e \enquote{entre redes} --- os resultados por unidade.\\
+\cd{gestor} & \rota{/admin/usuarios} &
+  Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
+  aparece para quem tem mais de uma lotação.\\
+\zebra \cd{admin-contrato} & \rota{/admin/usuarios} &
+  O mesmo, mais \rota{/admin/escolas} (abrir unidade) e \rota{/analise}
+  (o nível de produto, na rede inteira).\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Gestor e \cd{admin-contrato} moram na mesma área do \emph{middleware}}
+--- \cd{areaDoPapel} devolve \rota{/admin/usuarios} para os dois. A distinção
+entre eles \textbf{não} é feita ali: é feita item a item na navegação
+(\cd{SO\_ADMIN\_DO\_CONTRATO} em \arq{components/nav-admin.tsx}), por
+\cd{redirect} na página que não admite gestor (\rota{/admin/escolas}) e,
+definitivamente, pelo \cd{RolesGuard} da API. Um gestor que digite
+\rota{/analise} vê a tela abrir e ficar \textbf{vazia}: a API responde 403, o
+BFF converte em \cd{null} e não há o que renderizar. Nenhum dado atravessa ---
+mas a tranca que segurou foi a segunda, não a primeira.
+\end{atencao}
+
+\subsection{A matriz de capacidades}
+
+As duas tabelas a seguir são o \textbf{contrato de autorização} lido do código:
+cada linha existe porque há um \cd{@Roles} que a sustenta. \yes{} é
+\enquote{pode}; \no{} é \enquote{não existe rota que faça isso para este papel}
+--- a ausência é estrutural, não disciplinar.
+
+\begin{tabularx}{\linewidth}{@{}X L{34mm} C{8mm} C{9mm} C{9mm} C{9mm}@{}}
+\toprule
+\headrow \thd{Identidade, enturmamento e rede} & \thd{Rota} & \thd{Est.} &
+  \thd{Prof.} & \thd{Gest.} & \thd{Adm.}\\
+\midrule
+\endhead
+\textbf{Criar pessoa} --- e só por IMPORTAÇÃO &
+  \rota{POST /rostering/\B importar}, \rota{/rostering/\B oneroster/:arquivo} &
+  \no & \no & \yes & \yes\\
+\zebra Listar as pessoas da escola & \rota{GET /usuarios} & \no & \no & \yes & \yes\\
+Editar pessoa (nome, CPF, e-mail, papel, \cd{ativo}) &
+  \rota{PATCH /usuarios/:id} & \no & \no & \yes & \yes\\
+\zebra Redefinir senha (temporária, mostrada uma vez) &
+  \rota{POST /usuarios/\B :id/reset-senha} & \no & \no & \yes & \yes\\
+Diagnosticar contas sem matrícula da rede &
+  \rota{GET /rostering/\B contas-de-assento} & \no & \no & \yes & \yes\\
+\zebra Criar e editar turma & \rota{POST}, \rota{PATCH /turmas} & \no & \no & \yes & \yes\\
+Matricular, ajustar e encerrar matrícula &
+  \rota{/turmas/:id/\B matriculas}, \rota{/matriculas/:id} & \no & \no & \yes & \yes\\
+\zebra Ler as turmas em que atua & \rota{GET /turmas/minhas} & \no & \yes & \yes & \yes\\
+Abrir uma turma e ver quem está nela & \rota{GET /turmas/:id} & \no &
+  \yes\footnotesize{*} & \yes & \yes\\
+\zebra Abrir o ano letivo & \rota{POST /periodos-letivos} & \no & \no & \yes & \yes\\
+Ler os períodos letivos & \rota{GET /periodos-letivos} & \no & \yes & \yes & \yes\\
+\zebra \textbf{Abrir ou editar ESCOLA} & \rota{POST}, \rota{PATCH /escolas} &
+  \no & \no & \no & \yes\\
+Conceder lotações em lote (nível da rede) &
+  \rota{POST /escolas/\B lotacoes-em-lote} & \no & \no & \no & \yes\\
+\zebra Lotar alguém numa escola, encerrar lotação &
+  \rota{POST /escolas/\B :id/lotacoes}, \rota{DELETE /lotacoes/:id} & \no & \no & \yes & \yes\\
+Transferir estudante entre escolas do contrato &
+  \rota{POST /estudantes/\B :id/transferir} & \no & \no & \yes & \yes\\
+\zebra Ler o histórico de quem foi transferido &
+  \rota{GET /estudantes/\B :id/historico} & \no & \yes & \yes & \yes\\
+Emitir, importar e remover perfil portátil &
+  \rota{/estudantes/:id/\B perfil-portatil}, \rota{/perfis-recebidos} & \no & \no & \yes & \yes\\
+\zebra Ver as escolas em que tem lotação & \rota{GET /escolas/minhas} &
+  \yes & \yes & \yes & \yes\\
+Publicar ou atualizar experiência no catálogo &
+  \rota{PUT /experiencias/:expId} & \no & \no & \no & \yes\\
+\zebra Ler o catálogo de experiências & \rota{GET /experiencias} &
+  \yes & \yes & \yes & \yes\\
+\bottomrule
+\end{tabularx}
+
+\footnotesize{*} O professor só abre a turma \textbf{em que tem matrícula}
+(\cd{professorLeciona}); gestor e admin enxergam a escola inteira. É a
+diferença entre \enquote{dá aula nesta turma} e \enquote{trabalha nesta escola}
+(\adrr{ADR-28}).
+\normalsize
+
+\begin{tabularx}{\linewidth}{@{}X L{34mm} C{8mm} C{9mm} C{9mm} C{9mm}@{}}
+\toprule
+\headrow \thd{Vida pedagógica e leitura de dados} & \thd{Rota} & \thd{Est.} &
+  \thd{Prof.} & \thd{Gest.} & \thd{Adm.}\\
+\midrule
+\endhead
+Realizar experiência e salvar progresso &
+  \rota{/progresso/:expId}, \rota{/runs/*} & \yes & \no & \no & \no\\
+\zebra Preparar e conduzir atividade (exp-01) & \rota{/atividades/*} &
+  \no & \yes & \no & \no\\
+Destilar, gerar e regenerar o \emph{feed} com IA &
+  \rota{/atividades/:id/\B destilar}, \rota{/gerar}, \rota{/posts/:id/\B regenerar} &
+  \no & \yes & \no & \no\\
+\zebra Monitor da turma e análise da atividade (+CSV) &
+  \rota{GET /atividades/\B :id/monitor}, \rota{/analise} & \no & \yes & \no & \no\\
+Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
+  \no & \yes & \no & \no\\
+\zebra Ler o dossiê de um \emph{run} & \rota{GET /runs/:id/dossie} &
+  \yes\footnotesize{\dag} & \yes & \no & \no\\
+Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
+\zebra \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
+  \no & \yes & \no & \no\\
+unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
+\zebra \textbf{unooGPT: turma e transcrição individual} &
+  \rota{/unoogpt/professor/*} & \no & \yes & \no & \yes\\
+unooGPT: agregado da escola (sem \cd{estudanteId}) &
+  \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
+\zebra unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
+unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
+\zebra \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
+  \rota{/bemestar/*} & \no & \yes & \no & \no\\
+Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
+\zebra \textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
+  \no & \no & \no & \yes\\
+Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
+  \yes & \yes & \yes & \yes\\
+\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\bottomrule
+\end{tabularx}
+
+\footnotesize{\dag} O estudante lê o dossiê do \textbf{próprio} \emph{run}; a
+posse é verificada no \emph{service}, não pelo papel.
+\normalsize
+
+\begin{regra}
+\textbf{As três ausências mais importantes desta tabela.} \emph{Bem-estar} não
+tem uma única rota de gestor nem de agregado --- o instrumento é do professor,
+sobre o professor. No \emph{unooGPT}, o controller do gestor \textbf{não tem
+rota que aceite \cd{estudanteId}}: não é que ele não deva ver a linha de uma
+criança, é que não existe endereço onde ela caiba. E \cd{admin-contrato} não
+alcança a Vila nem o dossiê: ele lê a rede em agregado, nunca a sala.
+\end{regra}
+
+\begin{decisao}
+\textbf{Pessoa nasce por importação --- não há cadastro avulso.} Nenhum papel
+tem \rota{POST /usuarios}. As únicas duas chamadas que criam linha em
+\cd{users} são \rota{POST /rostering/importar} (a planilha simples) e
+\rota{POST /rostering/oneroster/users} --- e a segunda existe para a rede que já
+exporta o padrão. Para uma pessoa só, o caminho é uma planilha de UMA linha; a
+importação é idempotente pela matrícula da rede (e pelo CPF), então repetir não
+duplica e não reseta a senha de quem já entrou (\adrr{ADR-54}).
+\end{decisao}
+
+\subsection{As portas que não são papel}
+
+Cinco grupos de rotas não passam pelo \cd{RolesGuard} porque não há papel
+para checar ---
+e cada uma prova outra coisa no lugar. Elas são a superfície que um leitor da
+matriz acima poderia concluir, erradamente, que não existe.
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}L{30mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Prova} & \thd{Por quê}\\
+\midrule
+\rota{POST /auth/login},\newline\rota{POST /auth/trocar-senha} &
+  A credencial & Quem chega ainda não tem \emph{token}. Trocar a senha
+  provisória exige a ATUAL --- mesmo nível de prova do login. 8 tentativas por
+  minuto por usuário.\\
+\zebra \rota{GET /healthz}, \rota{/readyz} & Nada & \emph{Probe} do Cloud Run.
+  Não tocam dado de ninguém.\\
+\rota{POST /telemetry/beacon} & O \emph{token} no CORPO &
+  \cd{navigator.sendBeacon} não manda cabeçalho. Responde 204 sempre: a página
+  já foi descartada e ninguém leria o erro.\\
+\zebra \rota{POST /telemetry/ingest} & \cd{PubSubPushGuard} & O \emph{push} do
+  Pub/Sub, autenticado pelo OIDC da conta de serviço --- não por pessoa.\\
+\rota{POST /perfis/importar},\newline \rota{/planos/referencias} &
+  Chave de serviço (\cd{x-perfil-token}, \cd{x-import-token}) &
+  Máquina falando com máquina no \emph{provisionamento}. Nenhuma delas é
+  alcançável a partir do navegador de um usuário.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O desenho por trás}
+
 \begin{decisao}
 \textbf{Agregado e linha individual são \emph{controllers} diferentes.} Em
 \arq{src/vila/} há \cd{VilaProfessorController} com dois \cd{@Controller}
