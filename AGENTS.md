@@ -271,14 +271,22 @@ abri-lo.
   (`core.hooksPath`). Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`,
   `PERMITIR_BRANCH_FORA_DO_PADRAO=1`.
 - **Frente paralela = worktree, e a base vai ESCRITA** (ADR-61):
-  `git worktree add -b feat/<slug> .claude/worktrees/<slug> origin/dev`. O
-  `origin/HEAD` deste repo aponta para `origin/main`, então toda ferramenta que
-  "parte da branch padrão" — a criação automática de worktree do Claude Code
-  inclusive — abre a branch sobre PRODUÇÃO, e o erro é silencioso: compila,
-  passa, e o PR vem com commits que já estavam em `dev`. `pnpm install` de novo
-  lá dentro (`node_modules` não é compartilhado) e **nunca** `pnpm docker:dev`
-  de um worktree — ele recria os containers da stack principal. Receita
-  completa em `CONTRIBUTING.md`.
+  `git worktree add -b feat/<slug> .claude/worktrees/<slug> origin/dev`. Clone
+  antigo tem `origin/HEAD` em `main`, e toda ferramenta que "parte da branch
+  padrão" — a criação automática de worktree do Claude Code inclusive — abre a
+  branch sobre PRODUÇÃO em silêncio; `git remote set-head origin --auto` conserta
+  a raiz, e `git log origin/dev..HEAD` antes do PR confere. `pnpm install` de
+  novo lá dentro (`node_modules` não é compartilhado).
+- **O paralelismo é de EDIÇÃO e teste unitário; o runtime é singleton.** Portas
+  fixas com `strictPort`, compose de nome fixo, um banco: dois worktrees não
+  rodam a stack ao mesmo tempo. No worktree: editar, `typecheck lint test`,
+  build, e o Vite de UMA experiência em porta alternativa
+  (`/dev-embed?src=http://localhost:52NN`). Na cópia principal, uma frente por
+  vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
+  `pnpm docker:dev` de um worktree — ele recria os containers da stack
+  principal. Arquivos que toda frente toca e brigam no merge: número da ADR
+  (reserve conferindo `origin/dev`), `main.pdf` (regera, não escolhe lado),
+  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.

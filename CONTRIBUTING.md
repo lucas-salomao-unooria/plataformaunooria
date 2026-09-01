@@ -66,13 +66,19 @@ cd .claude/worktrees/clarity-analytics
 pnpm install                                  # node_modules NÃO é compartilhado
 ```
 
-**`origin/dev` está escrito no comando de propósito.** O `origin/HEAD` deste
-repositório aponta para `origin/main`, então qualquer ferramenta que "parta da
-branch padrão" — inclusive a criação automática de worktree do Claude Code —
-abre a branch **sobre produção**. O erro é silencioso: compila, os testes
-passam, e o PR aparece com um diff cheio de commits que já estavam em `dev`.
-Confira com `git log --oneline origin/dev..HEAD` antes de abrir o PR: só devem
-aparecer os seus.
+**`origin/dev` está escrito no comando de propósito.** Um clone antigo deste
+repositório carrega `origin/HEAD` apontando para `origin/main` (a
+`default_branch` no GitHub já é `dev`, mas o ponteiro local não acompanha
+sozinho), e qualquer ferramenta que "parta da branch padrão" — inclusive a
+criação automática de worktree do Claude Code — abre a branch **sobre
+produção**. O erro é silencioso: compila, os testes passam, e o PR aparece com
+um diff cheio de commits que já estavam em `dev`. Conserte a raiz uma vez por
+clone e confira antes de cada PR:
+
+```bash
+git remote set-head origin --auto            # origin/HEAD passa a seguir o GitHub (dev)
+git log --oneline origin/dev..HEAD           # antes do PR: só os seus commits
+```
 
 Daí em diante nada muda — commits Conventional, push, `gh pr create --base dev`.
 O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-61**.
@@ -87,6 +93,58 @@ O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-61
 
 `.gitignore` já cobre `.claude/*`, então o worktree não aparece no `git status`
 da cópia principal — e não precisa de entrada nova.
+
+### O que roda onde: o paralelismo é de edição e teste unitário
+
+O runtime deste repositório é **singleton**: portas fixas com `strictPort`
+(3000, 3001, 5173–5178), um `docker-compose` com nome fixo e bind mount da
+cópia atual, um Postgres com um schema. Isso não é descuido — é o que faz
+`pnpm dev` falhar alto em vez de servir a experiência errada. Mas significa que
+**dois worktrees não rodam a stack ao mesmo tempo**.
+
+| No worktree, à vontade | Só na cópia principal, uma frente por vez |
+|---|---|
+| editar, `pnpm turbo typecheck lint test` (os unitários e os de contrato) | `pnpm dev` / `pnpm docker:dev` (a stack inteira) |
+| `pnpm turbo build --filter=<pacote>` | a suíte de ponta a ponta (`node scripts/e2e/rodar.mjs …`) |
+| o Vite de **uma** experiência numa porta alternativa (abaixo) | migração de banco (`migrate deploy`, `migrate reset`) |
+
+Para ver uma experiência do worktree sem derrubar nada: suba só o Vite dela
+numa porta livre e embede pelo hub que já está no ar.
+
+```bash
+pnpm --filter @edu/exp-02-unootube dev -- --port 5274     # strictPort continua valendo
+# no navegador, com sessão de estudante:
+#   http://localhost:3000/dev-embed?src=http://localhost:5274
+```
+
+Funciona porque o `/dev-embed` aceita `?src=` e o hub em container troca só o
+host (`host.docker.internal`), preservando a porta. O que **não** viaja com o
+worktree: `apps/api/.env`, `public/videos/` da exp-02 (52 MB, gitignorado) e
+qualquer credencial — copie o que precisar, sem commitar.
+
+A DoD exige a suíte e2e do papel afetado para toda tela. Numa frente em
+worktree isso quer dizer: terminou a edição, **traz para a cópia principal**
+(pelo PR, ou `git switch` para a branch lá) e roda a suíte de lá. Um agente por
+vez nessa etapa — é a fila natural, e é melhor que dois navegadores lendo dois
+servidores na mesma porta.
+
+### Os arquivos-ímã de conflito
+
+Frentes em pastas diferentes quase não conflitam — é o desenho dos `AGENTS.md`
+por fronteira. Quatro arquivos toda frente toca, e é neles que o `git merge`
+para:
+
+| Arquivo | Como não brigar |
+|---|---|
+| `documentacao-latex/secoes/18-adr.tex` | **reserve o número no começo da frente**, conferindo `origin/dev` (não a sua cópia). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo |
+| `documentacao-latex/main.pdf` | binário: sempre conflita. Resolve-se **regerando**, nunca escolhendo um lado — quem mergeia por último recompila |
+| `AGENTS.md` da raiz | edite a seção da sua frente, não a vizinha; conflito aqui é textual e resolve na mão |
+| `pnpm-lock.yaml` | conflitou? `git checkout --theirs pnpm-lock.yaml && pnpm install` e commite o resultado |
+
+E a fila do outro lado: cada merge em `dev` dispara um deploy da stack dev, que
+**não cancela** o anterior (`cancel-in-progress: false`, de propósito — abortar
+no meio de uma migração é pior). Três PRs mergeados em rajada são três deploys
+em sequência. Não é bug; é o custo de ter um ambiente por branch.
 
 ## Promoção `dev → hml`
 
