@@ -142,7 +142,8 @@ criança ainda não viu um Short. O disfarce começa no toque em "Começar miss�
 `theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
 o estudante escolhe escuro no feed e o ranking volta branco.
 
-Detalhes de mecânica (CSS, frames, compensações) em `packages/AGENTS.md`.
+Detalhes de mecânica (CSS, frames, compensações) em `packages/ui/AGENTS.md`.
+O específico de cada experiência está no `AGENTS.md` da pasta dela.
 
 ## exp-70: `public/jogo/` é zona congelada
 

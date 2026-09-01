@@ -2953,3 +2953,82 @@ saída da rede) é editar, não criar, e essas rotas existem.
 \textbf{Gatilho de reavaliação.} Se a operação pedir cadastro unitário com
 frequência, a saída é um formulário que monta a MESMA linha de CSV e chama o
 MESMO importador --- nunca um segundo caminho de escrita em \cd{users}.
+
+\section{ADR-55 --- Instrução de agente: \arq{AGENTS.md} canônico por fronteira,
+\arq{CLAUDE.md} como ponteiro de uma linha}
+\label{adr:instrucao-de-agente}
+
+\begin{especificacao}{Contexto}
+Uma pessoa desenvolve esta plataforma, e boa parte do trabalho passa por agentes
+de codificação. O que eles sabem sobre o projeto vem dos arquivos de instrução
+que a ferramenta carrega sozinha ao tocar uma pasta --- e esses arquivos viraram
+um padrão \emph{de fato}, nunca escrito: \arq{AGENTS.md} por domínio, com um
+\arq{CLAUDE.md} de uma linha ao lado.
+
+Padrão que não está escrito não se verifica, e os desvios apareceram. A doutrina
+da Vila do Lume --- as regras que protegem a Camada~2 do instrumento --- viveu
+meses em \arq{exp-70-vila-do-lume/docs/CLAUDE.md}: o carregamento é por caminho,
+então quem editava o jogo em \arq{public/jogo/} nunca a recebia. Ela ainda
+mandava rodar dois \arq{scripts/walkthrough-*.mjs} que deixaram de existir
+quando a suíte passou a ser organizada por papel (\adrr{ADR-51}) --- instrução
+desatualizada, que é pior que instrução nenhuma, porque o agente obedece.
+\end{especificacao}
+
+\textbf{Decisão.} Três arquivos, três papéis que não se misturam.
+\arq{AGENTS.md} é \textbf{canônico}: o único lugar onde a doutrina de uma pasta é
+escrita, e o nome que a maioria das ferramentas lê. \arq{CLAUDE.md} é
+\textbf{uma linha}, \cd{@AGENTS.md} --- o Claude Code procura esse nome, o
+ponteiro importa o canônico, e a regra existe uma vez só. \arq{README.md}
+continua sendo para pessoas: o que a pasta é e como rodar, e ele \emph{não} entra
+sozinho no contexto do agente.
+
+Um \arq{AGENTS.md} nasce numa pasta onde se trabalha uma tarefa inteira sem sair
+dela --- um app, um pacote, uma experiência, a suíte de ponta a ponta --- e
+sempre na RAIZ dela, nunca numa subpasta. Entra nele o que, se você não souber,
+você quebra: regra já violada e o que custou, contrato com quem consome, zona
+congelada, armadilha que passa no \cd{typecheck}. Não entra o que o código já diz
+nem o que o \arq{README.md} ao lado já explica. Onde o \arq{README.md} já é a
+doutrina --- \arq{scripts/e2e}, \arq{documentacao-latex} --- o \arq{AGENTS.md} é
+curto e serve de \emph{carregador}: as poucas regras invioláveis e a ordem de
+abrir o README. Alterar a regra e o arquivo é o mesmo \emph{commit}, e isso entra
+na \emph{Definition of Done}.
+
+Decisão irmã, do mesmo movimento: \textbf{varredura de vulnerabilidade pertence à
+esteira}, com o segredo e a política de prazos do repositório
+(\adrr{ADR-39}), não à sessão do agente. O agente não dispara \cd{snyk} nem as
+ferramentas do MCP correspondente; as regras estão em \arq{.claude/settings.json}
+(escopo do projeto) e no equivalente do usuário. Varredura na sessão gasta cota
+do plano, produz apontamento sem o portão que o cumpre, responde por uma árvore
+de trabalho local que não é o que vai a produção --- e recicla falsos positivos
+já analisados e registrados, como o \emph{code injection} do \cd{setInterval} da
+\emph{bridge}. Quem precisar de uma varredura avulsa a roda na mão.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um arquivo só, na raiz}: já foi assim, e o arquivo cresceu até o
+    ponto em que a regra da api ocupava contexto de quem mexia numa experiência.
+    A divisão por pasta existe porque o carregamento é por caminho: cada sessão
+    recebe o que é dela.
+  \item \emph{\arq{CLAUDE.md} com conteúdo próprio ao lado do \arq{AGENTS.md}}:
+    duas fontes de verdade sobre a mesma pasta. Elas divergem, sempre na direção
+    de quem parou de ler a outra --- a mesma armadilha do \cd{expires\_at} que
+    saiu do \emph{schema} e ficou no registro.
+  \item \emph{Só \arq{README.md}, sem \arq{AGENTS.md}}: o README não entra no
+    contexto sozinho. Foi o que fez a doutrina da Vila do Lume ficar invisível
+    para quem ela tentava avisar.
+  \item \emph{Gerar os \arq{AGENTS.md} a partir do código}: o que vale ali é
+    justamente o que o código não diz --- por que a medida é 0{,}6 e não 0{,}5,
+    o que custou descobrir. Gerador nenhum sabe disso.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: são dezenove pares de arquivos a manter, e
+cada um pode envelhecer sozinho --- o custo é real e recai sobre a mesma pessoa.
+Mitigado por duas coisas: a proibição explícita de repetir conteúdo entre eles
+(cópia é o que ninguém atualiza junto) e o item novo na \emph{Definition of
+Done}. \emph{Ruim também}: bloquear o MCP de varredura no escopo do usuário vale
+para todos os projetos da máquina, não só para este.
+
+\textbf{Gatilho de reavaliação.} Um \arq{AGENTS.md} que ninguém consultou ao
+mudar a pasta que ele governa --- sinal de que ele descreve o que o código já
+diz, e deve encolher ou desaparecer. Do lado da varredura: a esteira deixar de
+cobrir uma classe de vulnerabilidade que só a análise local pega.
