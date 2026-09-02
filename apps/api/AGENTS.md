@@ -334,6 +334,64 @@ instalar a plataforma, o mesmo arquivo continua legível.
   plataforma, de propósito, e as faixas vão até 2028-12.
 
 
+## Log e contexto de requisição (2026-09-02)
+
+**O log é o pino, em JSON, com os nomes do Cloud Logging.** Nada de `console.*`
+em `src/` — a saída do processo É o sinal operacional (cap. 17), e `console`
+sai sem `severity`, sem `requestId` e sem redaction. Dois jeitos de logar, os
+dois passando pelo mesmo `criarOpcoesDoPino` (`observabilidade/logger.ts`):
+o `Logger` do Nest (`new Logger(X.name)`, que o `app.useLogger` roteia para o
+pino) e o `logger` raiz importado de `observabilidade/logger` — este é o
+único que existe fora do container do Nest (`main.ts`, `worker.ts`, funções
+puras). Os dois carregam o contexto da requisição via `mixin`.
+
+- **Toda linha leva um `codigo` estável** (`telemetria.descartado`,
+  `planos.geracao-com-erro`, `query-lenta`): é por ele que se filtra no Logs
+  Explorer e que se deriva métrica de log. A mensagem é para gente; o `codigo`
+  é para máquina. Não invente `codigo` com valor variável (id, nome).
+- **PII entra por CHAVE e sai redigida.** `redigirObjeto` apaga
+  `authorization`, `cookie`, `token`, `senha`, `cpf`, `username`, `email`,
+  `nome`, `texto`, `mensagem`, `transcricao`, `observacao` em qualquer
+  profundidade; `redigirTexto` apaga e-mail, CPF, `Bearer …` e query string na
+  mensagem e na `stack`. Isso é rede, não licença: o `username` do
+  `auth.controller.ts` foi REMOVIDO do log, não redigido. Um campo novo com
+  dado de pessoa ganha o nome da lista, ou entra na lista — nunca um sinônimo.
+- **Sem log de requisição da aplicação** (`autoLogging: false`). O Cloud Run
+  já grava um por requisição, com trace. O que a api loga é o que ele não
+  sabe: escola, motivo de um 4xx, a decisão de degradar.
+- **O contexto (`tenancy/tenancy-context.ts`) é UM objeto mutável por
+  requisição**, aberto pelo `contextoMiddleware` em `main.ts` — o PRIMEIRO
+  `app.use`, antes dos parsers e dos guards, para o 401 sair com
+  `x-request-id` — e preenchido com `escolaId`/`perfil` pelo
+  `TenancyInterceptor`. O `FiltroDeExcecao` roda FORA da cadeia do interceptor
+  e lê a escola desse mesmo objeto; é por isso que o interceptor MUTA em vez
+  de abrir um store novo. `comEscolaNoContexto` (seed, worker, teste) continua
+  abrindo o próprio. `requestId` = `traceId` do `traceparent` ou do
+  `X-Cloud-Trace-Context` do LB; sem eles, UUID.
+- **`FiltroDeExcecao` (global, `APP_FILTER`)**: `HttpException` mantém o corpo
+  (5xx loga `ERROR`, 4xx `debug`); `ZodError` que escapou de um `parse(body)`
+  vira **400** `{ codigo: "corpo-invalido", problemas: "path: code" }` — era
+  500 mudo; o resto vira 500 `{ codigo: "erro-interno", requestId }` com UMA
+  linha `ERROR` + `stack_trace`, que o Error Reporting agrupa. Não faça
+  `try/catch` que engole erro para "não dar 500": o filtro é quem transforma
+  o erro em sinal.
+- **Rota sem guard não loga por requisição recusada.** O `/telemetry/beacon`
+  é público por natureza; os 5 descartes dele são `logger.debug` (invisível em
+  `info`) — o sinal contável é métrica (PR das métricas). Uma linha `warn` por
+  lote recusado seria um vetor de inundação de log, cobrado por GiB.
+- **Prisma**: `PrismaService` liga o evento `query` sempre; acima de
+  `LIMIAR_DE_QUERY_LENTA_MS` (500) sai `WARNING` com o SQL (com `$1`, sem os
+  parâmetros — é neles que mora o CPF); em `LOG_LEVEL=debug` toda query sai.
+- Envs: `LOG_LEVEL` (default `info`), `GCP_PROJECT_ID` (correlação com o
+  trace; vazio em dev), `OBS_TRACE_RATIO`/`OBS_DEBUG` (reservadas para o
+  OpenTelemetry). Fora de produção o formato é `pino-pretty`; `LOG_FORMATO=json`
+  mostra a linha como o Cloud Logging a verá. Em teste (`NODE_ENV=test`) é
+  JSON sem transporte — o pino-pretty abre um worker que o Jest não fecha.
+- Testes: `tests/observabilidade-*.spec.ts` e `tests/tenancy-contexto.spec.ts`
+  provam redaction, severity, trace, filtro e o store mutável. São puros
+  (sem banco): rodam sozinhos com `pnpm exec jest tests/observabilidade`.
+
+
 ## Documentação da api: OpenAPI derivado do Zod (2026-08-28)
 
 `/docs` (Swagger UI) e `/docs-json` na **api** — `localhost:3001/docs`, não 3000,

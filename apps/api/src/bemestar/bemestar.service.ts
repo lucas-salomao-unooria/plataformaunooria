@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
+import { logger } from "../observabilidade/logger";
 import type { Perfil } from "../auth/claims";
 import { ehUuid } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
@@ -447,11 +448,14 @@ export class BemEstarService {
           motivo = (erro instanceof Error ? erro.message : "resposta inválida").slice(0, 200);
         }
       }
-      console.warn("[bemestar] microtexto barrado pelo guardrail; usando texto fixo:", motivo);
+      logger.warn({ codigo: "bemestar.guardrail", motivo }, "microtexto barrado pelo guardrail; usando texto fixo");
       return null;
     } catch (erro) {
       // Sem detalhes do conteúdo no log (regra 6) — só a natureza da falha.
-      console.warn("[bemestar] IA indisponível; usando texto fixo:", erro instanceof Error ? erro.message.slice(0, 120) : erro);
+      logger.warn(
+        { codigo: "bemestar.ia-indisponivel", motivo: erro instanceof Error ? erro.message.slice(0, 120) : String(erro) },
+        "IA indisponível; usando texto fixo",
+      );
       return null;
     } finally {
       if (tokens > 0) await this.deps.quota.consumir(escolaId, professorId, tokens);

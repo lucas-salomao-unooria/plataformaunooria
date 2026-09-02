@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
+import { logger } from "../observabilidade/logger";
 import { EscolasService } from "../rostering/escolas.service";
 import type { Perfil } from "./claims";
 import {
@@ -162,7 +163,8 @@ export class AuthController {
     }
 
     if (aprovados.length > 1) {
-      console.warn(`[auth] username "${username}" ambíguo entre escolas — negado`);
+      // Sem o username no log (regra 6): o que interessa operar é a FREQUÊNCIA do caso.
+      logger.warn({ codigo: "auth.username-ambiguo", escolas: aprovados.length }, "username ambíguo entre escolas — negado");
       return null;
     }
     return aprovados[0] ?? null;

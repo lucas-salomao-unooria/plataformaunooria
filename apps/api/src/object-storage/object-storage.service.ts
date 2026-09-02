@@ -2,6 +2,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { logger } from "../observabilidade/logger";
 
 /**
  * Object storage PRIVADO — documentos autorais (planos de aula), que nunca
@@ -90,7 +91,7 @@ export class ObjectStorageService {
         await rm(path.join(this.dirLocal(), relativo), { recursive: true, force: true });
       }
     } catch (falha) {
-      console.error("[storage] objetos não removidos — órfãos recuperáveis", prefixo, falha);
+      logger.error({ err: falha, prefixo, codigo: "storage.remocao-falhou" }, "objetos não removidos — órfãos recuperáveis");
     }
   }
 }

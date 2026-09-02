@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from "jose";
 import { hashDoPerfil, type PerfilPortatil } from "./regras";
+import { logger } from "../observabilidade/logger";
 
 /**
  * Conferir a assinatura de um documento emitido por OUTRA instalação.
@@ -103,7 +104,7 @@ export async function verificarAssinatura(
   emissoresPermitidos: string | undefined,
   opcoes: OpcoesDeVerificacao = {},
 ): Promise<Veredito> {
-  const { producao = false, chaves = jwksRemoto, avisar = console.warn } = opcoes;
+  const { producao = false, chaves = jwksRemoto, avisar = (m: string) => logger.warn({ codigo: "portabilidade.aviso" }, m) } = opcoes;
 
   const origem = origemDe(perfil.emissor.hub);
   if (!origem) {
