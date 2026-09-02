@@ -1012,7 +1012,9 @@ prova de pronto que a suíte ou o painel exibe.
   \cd{exp:erro} na ponte, telemetria com teto e \emph{backoff},
   \emph{sourcemaps} \cd{hidden} nas sete experiências; no hub, tela
   \enquote{A missão travou}, \rota{/api/ponte} (métrica de log dos
-  \emph{handshakes}), erros e vitais do próprio hub pelo BFF. Métricas da aplicação: IA, telemetria,
+  \emph{handshakes}), erros, vitais e OpenTelemetry Web do próprio hub pelo
+  BFF (o \emph{ratio} chega por um \cd{<meta>} escrito pelo \emph{layout} a
+  partir de \env{OBS\_TRACE\_RATIO\_CLIENTE}). Métricas da aplicação: IA, telemetria,
   filas, pool, ponte. Rota \rota{POST /observabilidade/\B erros-cliente} e
   \rota{/observabilidade/\B vitals} com Zod, cota e \emph{redaction};
   \cd{window.\B onerror}/\B\cd{unhandled\B rejection} e \cd{web-vitals} na SDK;

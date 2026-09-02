@@ -12,6 +12,12 @@ describe("lerObsConfig", () => {
 });
 
 describe("iniciarTracesWeb", () => {
+  it("aceita apiUrl relativa (o BFF do hub) — resolve contra a origem da página", async () => {
+    const t = await iniciarTracesWeb({ traceRatio: 1, apiUrl: "/api/plataforma", expId: "hub", versao: "dev", getToken: () => "" });
+    expect(t).not.toBeNull();
+    await t?.shutdown();
+  });
+
   it("com ratio 0 não liga nada (nem baixa os pacotes)", async () => {
     await expect(iniciarTracesWeb({ traceRatio: 0, apiUrl: "https://api", expId: "exp-01-instanooria", versao: "1", getToken: () => "t" })).resolves.toBeNull();
   });

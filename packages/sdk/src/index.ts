@@ -16,7 +16,7 @@ export * from "./types";
 export * from "./clarity";
 export { instalarCapturaDeErros, type ErroDeCliente } from "./erros";
 export { instalarVitais, type Vital } from "./vitals";
-export { lerObsConfig, type ObsConfig } from "./otel-web";
+export { iniciarTracesWeb, lerObsConfig, type ObsConfig, type TracesWeb } from "./otel-web";
 
 type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 

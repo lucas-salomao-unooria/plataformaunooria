@@ -202,6 +202,10 @@ render. Instalar o `http` duplicaria o span raiz. Só o `undici` entra, para o
   console. `error.tsx`/`global-error.tsx` reportam pelo mesmo caminho.
 - **Web Vitals do hub**: `components/vitals-hub.tsx` no layout raiz
   (`useReportWebVitals`), 10% por aba, `rota = pathname` (a api normaliza).
-- **OpenTelemetry Web NÃO está no hub** nesta onda: pesa no first load da
-  landing e o alvo do trace de navegador são as experiências. Se entrar, é pelo
-  mesmo `iniciarTracesWeb` da SDK, em `instrumentation-client.ts`.
+- **OpenTelemetry Web no hub**: `instrumentation-client.ts` chama o MESMO
+  `iniciarTracesWeb` da SDK, com `apiUrl: "/api/plataforma"` (exporta pelo
+  BFF, que assina o token) e o ratio lido do `<meta name="unooria-obs-ratio">`
+  que o `generateMetadata` do layout raiz escreve a partir de
+  `OBS_TRACE_RATIO_CLIENTE` — env de runtime, sem rebuild. Com ratio 0 nada é
+  baixado (os pacotes são `import()` dinâmico), então a landing pública não paga
+  o peso. Sem sessão o BFF dá 401 e o lote morre no exportador — aceito.
