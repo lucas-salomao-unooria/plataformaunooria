@@ -26,8 +26,15 @@ type ContextoDoErro = Readonly<{
  * tela exibe como código do incidente: é a ponte entre o relato e o registro,
  * no hub, sem inventar um id.
  *
- * O `register()` (OpenTelemetry) entra na fase 2.
+ * O `register()` liga o OpenTelemetry (`lib/otel.node.ts`) — só no runtime
+ * Node; no edge não há SDK.
  */
+export async function register(): Promise<void> {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  const { iniciarOtelDoHub } = await import("./lib/otel.node");
+  iniciarOtelDoHub();
+}
+
 export async function onRequestError(erro: unknown, requisicao: RequisicaoComErro, contexto: ContextoDoErro): Promise<void> {
   // Import dinâmico: este arquivo também é avaliado no runtime edge, onde o
   // pino não roda. `onRequestError` só executa no Node.

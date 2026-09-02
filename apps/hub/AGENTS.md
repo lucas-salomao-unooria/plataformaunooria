@@ -150,3 +150,27 @@ pacote).
 - Envs: `LOG_LEVEL` (o Terraform já manda: `debug`/`info`/`warn` por ambiente),
   `GCP_PROJECT_ID` (já vem), `LOG_FORMATO=json` para ver a linha como o Cloud
   Logging a verá. Em teste (`NODE_ENV=test`) é JSON sem transporte.
+
+## OpenTelemetry no hub (2026-09-02)
+
+O `register()` de `instrumentation.ts` liga o SDK (`lib/otel.node.ts`) só no
+runtime Node e só com o gate de `lib/otel-config.ts` (`OBS_TRACE_RATIO > 0` E
+`GCP_PROJECT_ID` ou `OBS_DEBUG=1`). **Não há `instrumentation-http` aqui, de
+propósito**: o Next já emite os spans de servidor (`GET /api/healthz`,
+`resolve page components`, `executing api route`) e já extrai o `traceparent`
+de entrada assim que existe um `TracerProvider` global — medido: um
+`traceparent` forjado na requisição vira o `traceId` de todos os spans do
+render. Instalar o `http` duplicaria o span raiz. Só o `undici` entra, para o
+`fetch` de saída levar o cabeçalho.
+
+- `lib/otel-propagacao.ts#traceparentDeSaida`: `propagation.inject` do span
+  ativo; sem SDK (dev, teste) a API do OTel é no-op e o fallback é o
+  `traceparent` que a requisição de origem trouxe. `apiDoServidor` e o BFF
+  usam isso — nunca montam o cabeçalho na mão.
+- `next.config.mjs#serverExternalPackages`: o SDK, a instrumentação do
+  `undici` e o exportador do Google (`@grpc/grpc-js`) ficam fora do bundle do
+  servidor; empacotados, `require-in-the-middle` e o gRPC quebram. `pino` já
+  está na lista padrão do Next.
+- Em dev: `OBS_DEBUG=1 OBS_TRACE_RATIO=1 pnpm dev` imprime os spans no console.
+- **Nunca setar `NEXT_OTEL_VERBOSE=1`** em produção: dobra os spans internos do
+  Next e o custo, sem dizer nada que o trace normal não diga.

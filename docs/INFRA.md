@@ -192,7 +192,7 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 | Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
 | Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
 | Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
-| IAM | `{contrato}-api` e `{contrato}-run` com `roles/cloudtrace.agent` e `roles/monitoring.metricWriter` | `logWriter` o Cloud Run já dá |
+| IAM e APIs | `{contrato}-api` e `{contrato}-run` já têm `roles/cloudtrace.agent`, `roles/monitoring.metricWriter` e `roles/logging.logWriter` (confirmado no Terraform em 2026-09-02). O que faltava e entrou: APIs `cloudtrace`, `clouderrorreporting` e `telemetry` em `gcp_services` (o papel não habilita a API — sem ela o exportador recebe `SERVICE_DISABLED`), e `roles/telemetry.writer` + `roles/serviceusage.serviceUsageConsumer` **só na SA da api** (proxy OTLP dos spans do navegador) | ver `RUNBOOK-API.md` > Observabilidade no repo de infra |
 
 O CI ganha, no mesmo passo: smoke pós-deploy (a suíte `publico`+`estudante` de
 `scripts/e2e`), `if: failure()` notificando no canal "amanhã", e a suíte agendada

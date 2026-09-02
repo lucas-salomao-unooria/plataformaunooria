@@ -240,6 +240,9 @@ services:
     environment:
       <<: *dev-env
       API_INTERNAL_URL: http://api:3001
+      # Observabilidade: mesmo gate da api; OBS_DEBUG=1 imprime os spans do Next no console.
+      OBS_TRACE_RATIO: ${OBS_TRACE_RATIO:-0}
+      OBS_DEBUG: ${OBS_DEBUG:-0}
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_CDN_EXP_URL: http://localhost:5173
       # Microsoft Clarity: sem valor por default. A stack de dev roda com o

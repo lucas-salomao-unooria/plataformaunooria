@@ -442,14 +442,35 @@ exportadores \cd{@google-cloud/opentelemetry-cloud-trace-exporter} e
 reavaliação registrado na \adrr{ADR-57}.
 \end{decisao}
 
-Amostragem: \cd{ParentBased(TraceIdRatioBased(0.02))} --- 2\% das
-requisições, decidido na entrada e respeitado ao longo da cadeia. O
-identificador de \emph{trace} existe em \textbf{100\%} das requisições
-(ele vem do \emph{load balancer}), então todo log de erro carrega um
-\cd{trace} para pesquisar mesmo quando os \emph{spans} não foram guardados;
-o que a amostragem decide é só quanta \emph{linha do tempo} se armazena.
-Rotas de IA e \rota{/runs/:id/feed} têm amostrador próprio a 20\%: são as
-duas em que a latência é o produto.
+Amostragem: \cd{ParentBased} sobre \cd{TraceIdRatioBased(0.02)} --- 2\% das
+requisições, com uma diferença deliberada em relação ao \emph{default} do SDK
+(implementada em 2026-09-02, \arq{observabilidade/sampler.ts}): \textbf{o
+pai remoto não decide}. O \cd{traceparent} chega da internet --- da SDK no
+navegador, do hub, de um \cd{curl} --- e honrar \cd{sampled=01} deixaria
+qualquer cliente forçar 100\% de amostragem, que é custo. Como a decisão por
+razão é determinística no \cd{traceId}, hub e API com o mesmo \emph{ratio}
+tomam a \emph{mesma} decisão sem confiar um no outro; o pai \emph{local}
+(span filho no mesmo processo) segue o pai, como sempre. O identificador de
+\emph{trace} existe em \textbf{100\%} das requisições (ele vem do
+\emph{load balancer}, e com o SDK ligado o span de servidor existe mesmo
+não amostrado), então todo log de erro carrega um \cd{trace} para pesquisar
+mesmo quando os \emph{spans} não foram guardados; o que a amostragem decide
+é só quanta \emph{linha do tempo} se armazena. Rotas de IA
+(\rota{/ai}, \rota{/unoogpt}, \rota{/planos}, \rota{/bemestar}) e
+\rota{/runs/:id/feed} usam dez vezes o \emph{ratio}, até 100\%: são as em
+que a latência é o produto. \rota{/healthz} e \rota{/readyz} não viram
+\emph{span}: o \emph{uptime check} bate 4.320 vezes por dia.
+
+No hub a instrumentação é \textbf{menor de propósito}: o Next já emite os
+\emph{spans} de servidor e já extrai o \cd{traceparent} de entrada assim que
+existe um \cd{TracerProvider} global (medido: um \cd{traceparent} forjado na
+requisição sai como \cd{traceId} de todos os \emph{spans} do \emph{render});
+instalar o \cd{instrumentation-http} ali duplicaria o \emph{span} raiz. Só o
+\cd{undici} entra, para o \cd{fetch} de saída à API levar o cabeçalho. O gate
+é o mesmo nos dois processos: \env{OBS\_TRACE\_RATIO} \(>\) 0 \textbf{e}
+(\env{GCP\_PROJECT\_ID} ou \env{OBS\_DEBUG=1}, que imprime os \emph{spans} no
+console sem GCP). Desligado, nenhum objeto do SDK é criado --- é o que mantém
+o Jest e o \cd{nest start -{}-watch} sem GCP intocados.
 
 \subsection{Erros}
 
@@ -960,8 +981,11 @@ prova de pronto que a suíte ou o painel exibe.
   ao da tela, em menos de um minuto. Teste unitário prova que
   \cd{username} e \cd{cpf} saem redigidos.\\
 \textbf{2} \newline 2--3 semanas & OpenTelemetry na API e no hub
-  (\arq{instrumentation.ts}), exportadores Google, amostragem 2\%/20\%,
-  \cd{traceparent} do navegador ao banco. Métricas da aplicação: IA, telemetria,
+  (\arq{instrumentation.ts}), exportador Google, amostragem 2\%/20\%,
+  \cd{traceparent} do navegador ao banco (\emph{traces entregues em
+  2026-09-02}, \cd{feat/obs-traces}: \arq{otel.ts} como primeira importação
+  do \arq{main.ts}, \cd{@prisma/instrumentation} no lugar do \cd{pg},
+  \emph{sampler} por rota que ignora a \emph{flag} do pai remoto). Métricas da aplicação: IA, telemetria,
   filas, pool, ponte. Rota \rota{POST /observabilidade/\B erros-cliente} e
   \rota{/observabilidade/\B vitals} com Zod, cota e \emph{redaction};
   \cd{window.\B onerror}/\B\cd{unhandled\B rejection} e \cd{web-vitals} na SDK;
