@@ -1,7 +1,7 @@
 {
   "id": "exp-02-unootube",
   "nome": "UnooTube — Em quais fontes você confiaria?",
-  "versao": "1.2.1",
+  "versao": "1.2.2",
   "series": ["4EF"],
   "capabilities": ["telemetria", "progresso"],
   "verbos": {

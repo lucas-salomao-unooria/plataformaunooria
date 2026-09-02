@@ -36,3 +36,21 @@ o teste `ranking.test.ts` é o que segura.
 `src/lib/dicas.ts` — a linha sob o reprodutor é a única voz durante o feed. Fica
 numa função pura, e não em texto espalhado pelos componentes, para o que a
 criança lê ser auditável de um lugar só.
+
+## Vídeo que não chega não pode prender a missão
+
+O `ShortsPlayer` do DS deriva `waiting` só de `waiting`/`playing` — **não escuta
+`error`**. Com o mp4 em 404 (bucket de assets sem a mídia daquele contrato) o
+navegador emite `waiting`, depois `error`, e `playing` nunca chega: o estado de
+carregamento ficava `true` para sempre. E como Salvar e Curtir são
+`disabled={carregandoEste}` pela nota `ETAPA 2` (não salvar sem assistir), a
+missão ficava **impossível de concluir** — não só feia.
+
+Por isso o `Feed.tsx` mantém um conjunto próprio de vídeos falhos: listener de
+`error` no elemento (o `videoRef` do DS entrega o `<video>`), checagem de
+`node.error` para o erro que chegou antes do efeito, e um teto de 15s para a
+rede que engasga sem nunca emitir `error`. Vídeo falho sai de "carregando", as
+ações voltam, e a dica muda (`lib/dicas.ts`, variante `falhou`).
+
+Enquanto a seção `unootube` não publicar um estado de erro no reprodutor, isso é
+compensação local e está marcada como tal em `IndicadorCarregando.tsx`.

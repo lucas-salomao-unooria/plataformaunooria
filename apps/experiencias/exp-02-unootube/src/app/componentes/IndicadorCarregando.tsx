@@ -29,3 +29,27 @@ export function IndicadorCarregando({ detalhado = false }: { detalhado?: boolean
     </span>
   );
 }
+
+/**
+ * O vídeo não vai chegar.
+ *
+ * COMPENSAÇÃO REGISTRADA, irmã da de cima: a seção `unootube` não publica
+ * estado de erro do reprodutor — o `ShortsPlayer` deriva `waiting` só de
+ * `waiting`/`playing` e ignora `error`. Sem este aviso, um mp4 em 404 fica no
+ * girador para sempre e a criança acha que a internet dela está ruim.
+ *
+ * A fala não culpa nem manda tentar de novo: recarregar não traz um arquivo que
+ * não está no bucket. Ela diz o que aconteceu e o que ainda dá para fazer, que é
+ * seguir para o próximo — a missão continua concluível.
+ */
+export function VideoIndisponivel() {
+  return (
+    <span className="video-loading video-loading--detalhado" role="status">
+      <span className="video-loading-centro">
+        <span className="video-loading-rotulo">
+          Este vídeo não carregou. Você pode seguir para o próximo.
+        </span>
+      </span>
+    </span>
+  );
+}
