@@ -174,7 +174,7 @@ justamente para que a RLS não mascare a ausência do \cd{where}.
   \node[etapa, text width=25mm] (roles) at (7.0,0)
     {\texttt{RolesGuard}\desc{lê \texttt{req.auth.perfil}}};
   \node[etapa, text width=27mm] (int) at (10.6,0)
-    {\texttt{TenancyInterceptor}\desc{\texttt{comEscolaNoContexto}}};
+    {\texttt{TenancyInterceptor}\desc{\texttt{definirTenancyNoContexto}}};
   \node[etapa, text width=25mm] (ctrl) at (14.2,0)
     {\emph{controller}};
 
@@ -194,13 +194,15 @@ justamente para que a RLS não mascare a ausência do \cd{where}.
   \draw[pipe, draw=unooRed] (svc) -- (fail);
 
   \node[actnote, text width=54mm, anchor=north west] at (0,-3.6)
-    {\textbf{A ordem não é acidental.} \emph{Guards} do NestJS rodam
-     \emph{antes} de \emph{interceptors}, então \texttt{req.auth} já existe quando o
-     \texttt{TenancyInterceptor} abre o \texttt{AsyncLocalStorage}. Rota \emph{sem}
+    {\textbf{A ordem não é acidental.} O \texttt{AsyncLocalStorage} da
+     requisição é aberto por um \emph{middleware} do Express em
+     \texttt{main.ts}, antes de tudo (é o que dá \texttt{requestId} a um 401).
+     \emph{Guards} rodam \emph{antes} de \emph{interceptors}, então
+     \texttt{req.auth} já existe quando o \texttt{TenancyInterceptor}
+     \emph{preenche} a escola nesse mesmo objeto. Rota \emph{sem}
      \texttt{OidcGuard} --- \texttt{/healthz}, \texttt{/telemetry/beacon},
-     \texttt{/telemetry/ingest} --- simplesmente não abre contexto; e
-     \texttt{comTenancy} sem escola explícita falha alto, o que fecha o
-     círculo.};
+     \texttt{/telemetry/ingest} --- fica sem escola; e \texttt{comTenancy} sem
+     escola explícita falha alto, o que fecha o círculo.};
   \node[actnote, text width=54mm, anchor=north west] at (8.6,-3.6)
     {\textbf{A RLS é rede de segurança, não a única tranca.} Os
      \emph{services} continuam filtrando \texttt{escola\_id} explicitamente em toda

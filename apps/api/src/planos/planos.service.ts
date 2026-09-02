@@ -6,6 +6,7 @@ import type { Perfil } from "../auth/claims";
 import { rotuloDaSerie, type Serie } from "../comum/series";
 import { ehUuid, naoEncontrado } from "../motor/guardas";
 import { PrismaService } from "../prisma/prisma.service";
+import { logger } from "../observabilidade/logger";
 import { ObjectStorageService } from "../object-storage/object-storage.service";
 import { rotuloDaDisciplina, tituloDoPlano, type CriarPlano } from "./catalogo";
 import { PROMPT_PLANO_DE_AULA } from "./prompt-plano-de-aula";
@@ -299,7 +300,7 @@ export class PlanosService {
     if (emExecucao.has(planoId)) return;
     const execucao = this.executarGeracao(escolaId, planoId)
       .catch((erro) => {
-        console.error("[planos] geração falhou fora do fluxo tratado", planoId, erro);
+        logger.error({ err: erro, planoId, codigo: "planos.geracao-fora-do-fluxo" }, "geração de plano falhou fora do fluxo tratado");
       })
       .finally(() => {
         emExecucao.delete(planoId);
@@ -408,7 +409,7 @@ export class PlanosService {
       // incompatibilidade de undici passou dias parecendo falha de credencial.
       // Só o log — a `mensagem` que vai ao banco é a que o professor lê.
       const causa = erro instanceof Error && erro.cause instanceof Error ? ` (causa: ${erro.cause.message})` : "";
-      console.error("[planos] geração com erro", planoId, mensagem.slice(0, 200) + causa);
+      logger.error({ planoId, codigo: "planos.geracao-com-erro", detalhe: mensagem.slice(0, 200) + causa }, "geração de plano com erro");
       await falhar(mensagem);
     }
   }

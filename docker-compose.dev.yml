@@ -194,6 +194,11 @@ services:
       # importar currículo/material didático com scripts/importar-referencias-plano.mjs.
       PLANOS_IMPORT_TOKEN: ${PLANOS_IMPORT_TOKEN:-}
       TELEMETRIA_TOPIC: ""
+      # Observabilidade: log em `pretty` no terminal (NODE_ENV≠production); nada
+      # sai para o GCP sem GCP_PROJECT_ID/OBS_TRACE_RATIO, que ficam vazios aqui.
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      OBS_TRACE_RATIO: ${OBS_TRACE_RATIO:-0}
+      OBS_DEBUG: ${OBS_DEBUG:-0}
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.

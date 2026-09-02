@@ -760,6 +760,14 @@ nenhum} &
   Pub/Sub reentrega para sempre (não há DLQ), então o volume de 403 cresce
   sozinho e não indica ataque nenhum: o agente é \cd{APIs-Google}.\\
 \bottomrule
+\textbf{O professor relata um erro e manda um código} &
+  É o \cd{requestId} do corpo do 500 (\cd{\{codigo: "erro-interno",
+  requestId\}}), igual ao \emph{header} \cd{x-request-id} de toda resposta e ao
+  \cd{traceId} do \emph{load balancer}. No Logs Explorer:
+  \cd{jsonPayload.requestId="<código>"} traz a linha \cd{ERROR} com
+  \cd{stack\_trace}, escola e perfil; o \emph{request log} do Cloud Run com o
+  mesmo \cd{trace} vem agrupado ao lado. Sem código na tela (rota antiga, 4xx),
+  filtre por \cd{jsonPayload.codigo} --- todo \cd{logger.*} da api carrega um.\\
 \end{tabularx}
 
 \section{\emph{Checklist} de operação}

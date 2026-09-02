@@ -7,6 +7,7 @@ import type { AssetsService } from '../assets/assets.service';
 import { CONCORRENCIA, DIVISOR_TESE, PERFIS } from '../comum/insta/defaults';
 import { antagonismoSchema, type Antagonismo, type LoteSpec } from '../comum/insta/tipos';
 import { PrismaService } from '../prisma/prisma.service';
+import { logger } from '../observabilidade/logger';
 
 import {
   likesDoPost,
@@ -88,7 +89,7 @@ export class GeracaoWorker {
 
     const execucao = this.executar(escolaId, activityId)
       .catch((erro) => {
-        console.error('[worker]', activityId, erro);
+        logger.error({ err: erro, activityId, codigo: 'geracao.worker-falhou' }, 'worker de geração falhou');
       })
       .finally(() => {
         emExecucao.delete(activityId);
@@ -290,7 +291,7 @@ export class GeracaoWorker {
         try {
           await aoDesistir();
         } catch (falhaAoDesistir) {
-          console.error('[worker] aoDesistir', job.id, falhaAoDesistir);
+          logger.error({ err: falhaAoDesistir, jobId: job.id, codigo: 'geracao.desistir-falhou' }, 'aoDesistir falhou');
         }
       }
     }
