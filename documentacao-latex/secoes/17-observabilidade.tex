@@ -406,11 +406,18 @@ Métricas da aplicação (OpenTelemetry) & O que só o processo sabe:
   não pelo \cd{@google-cloud/opentelemetry-cloud-monitoring-exporter}: medido
   em 2026-09-02, ele arrasta o pacote \cd{googleapis} inteiro, 202\,MB em
   \cd{node\_modules}, para chamar um método. Cerca de 60 séries por contrato:
-  cabe na franquia de 150\,MiB com folga. \textbf{O \cd{resource} precisa
-  carregar \cd{gcp.project\_id}} (\arq{observabilidade/recurso.ts}): medido em
-  \cd{dev} em 2026-09-02, sem ele a Telemetry API recusa \emph{todo} lote com
-  \cd{HTTP 400 Resource is missing required attribute}, a cada 60\,s, com log e
-  \emph{trace} funcionando --- e o \cd{gcpDetector} não o preenche.\\
+  cabe na franquia de 150\,MiB com folga. Duas coisas medidas em \cd{dev} em
+  2026-09-02: \textbf{o \cd{resource} precisa carregar \cd{gcp.project\_id}}
+  (\arq{observabilidade/recurso.ts}) --- sem ele a Telemetry API recusa
+  \emph{todo} lote com \cd{HTTP 400}, a cada 60\,s, com log e \emph{trace}
+  funcionando, e o \cd{gcpDetector} não o preenche; e \textbf{a ingestão OTLP
+  grava no domínio \cd{prometheus.googleapis.com}}, não em
+  \cd{workload.googleapis.com} (onde o exportador legado gravava). A série sai
+  como \cd{prometheus.googleapis.com/\B unooria.ia.latencia/\B histogram}, no
+  recurso monitorado \cd{prometheus\_target} --- \cd{job} = \cd{service.name},
+  \cd{instance} = a instância do Cloud Run, \cd{location} = a região, tudo
+  preenchido pelo \cd{gcpDetector}. Procurar no domínio antigo faz parecer que
+  nada foi exportado.\\
 \bottomrule
 \end{tabularx}
 
