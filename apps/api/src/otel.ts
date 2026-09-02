@@ -28,10 +28,14 @@ import {
   SimpleSpanProcessor,
   type SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
+import { ConsoleMetricExporter, PeriodicExportingMetricReader, type MetricReader } from "@opentelemetry/sdk-metrics";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import { PrismaInstrumentation } from "@prisma/instrumentation";
+import { ExportadorDeMetricasOtlp } from "./observabilidade/exportador-de-metricas-otlp";
 import { configDoOtel } from "./observabilidade/otel-config";
+import { ClienteOtlpGoogle } from "./observabilidade/otlp-google";
 import { criarSampler } from "./observabilidade/sampler";
+import { VISOES } from "./observabilidade/visoes";
 
 /** Sondas não viram span: o uptime check bate 4.320 vezes por dia. */
 const ROTAS_SEM_SPAN = /^\/(healthz|readyz)(\?|$)/;
@@ -60,11 +64,30 @@ if (config.ligado) {
   }
   if (config.debug) processadores.push(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 
+  // Métricas: OTLP/JSON direto para a Telemetry API (o exportador do Google
+  // arrastaria 202 MB de `googleapis`). A cada 60 s — é a resolução que o
+  // Cloud Monitoring espera, e 60 séries a 1 ponto/min cabem na franquia.
+  const leitores: MetricReader[] = [];
+  if (config.projeto) {
+    leitores.push(
+      new PeriodicExportingMetricReader({
+        exporter: new ExportadorDeMetricasOtlp(new ClienteOtlpGoogle(config.projeto)),
+        exportIntervalMillis: 60_000,
+        exportTimeoutMillis: 10_000,
+      }),
+    );
+  }
+  if (config.debug) {
+    leitores.push(new PeriodicExportingMetricReader({ exporter: new ConsoleMetricExporter(), exportIntervalMillis: 15_000 }));
+  }
+
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: config.servico, [ATTR_SERVICE_VERSION]: config.versao }),
     resourceDetectors: [gcpDetector],
     sampler: criarSampler(config.ratio),
     spanProcessors: processadores,
+    metricReaders: leitores,
+    views: VISOES,
     instrumentations: [
       new HttpInstrumentation({
         ignoreIncomingRequestHook: (req) => ROTAS_SEM_SPAN.test(req.url ?? ""),

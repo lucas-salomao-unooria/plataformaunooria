@@ -135,6 +135,79 @@ const PushSchema = z.object({
 }
 \end{lstlisting}
 
+\section{Sinais de observabilidade do navegador}
+
+Os três corpos que a SDK (ou o hub) manda para \rota{/observabilidade/*}
+(Capítulo~\ref{cap:observabilidade}). Todos \cd{.strict()}: campo a mais é
+recusado, não ignorado --- é a fronteira entre um \emph{bundle} público e um
+projeto do Google.
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /observabilidade/erros-cliente}}]
+{
+  "expId": "exp-02-unootube",
+  "versao": "0.3.1",
+  "mensagem": "Cannot read properties of undefined (reading 'video')",
+  "stack": "TypeError: ...\n    at feed.tsx:42:11",
+  "url": "https://exp-entreredes.unooria.com/exp-02-unootube/0.3.1/index.html",
+  "userAgent": "Mozilla/5.0 ...",
+  "sessaoId": "6f1a1d1e-9c2b-4a4e-8f1e-1234567890ab",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "00f067aa0ba902b7"
+}
+\end{lstlisting}
+
+Tetos: \cd{mensagem} 2\,KB, \cd{stack} 8\,KB, \cd{url} 512 sem \emph{query}
+nem fragmento; \cd{traceId}/\cd{spanId} opcionais (do \emph{span} ativo no
+navegador). O que a API emite é uma linha de log com
+\cd{serviceContext.service = expId}, \cd{version = versao},
+\cd{stack\_trace}, \cd{estudanteId} (opaco, do \emph{token}) e
+\cd{escolaId} (do contexto) --- nunca o \emph{username}.
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /observabilidade/vitals}}]
+{ "nome": "LCP", "valor": 1832, "rota": "/professor/turmas/9f3a", "superficie": "hub" }
+\end{lstlisting}
+
+\cd{nome} \(\in\) \{LCP, INP, CLS, TTFB\}; \cd{valor} em ms (CLS em unidade),
+teto de 600\,000; \cd{rota} é o \cd{pathname} (hub) ou o \cd{expId}
+(experiência), normalizados pela API para um conjunto fechado. O \cd{perfil}
+não vem no corpo: vem do \emph{token}.
+
+\begin{lstlisting}[language=jsonunoo, caption={\rota{POST /observabilidade/v1/traces} --- subconjunto OTLP/JSON}]
+{
+  "resourceSpans": [{
+    "resource": { "attributes": [
+      { "key": "service.name",    "value": { "stringValue": "exp-02-unootube" } },
+      { "key": "service.version", "value": { "stringValue": "0.3.1" } }
+    ]},
+    "scopeSpans": [{
+      "scope": { "name": "@opentelemetry/instrumentation-fetch", "version": "0.222.0" },
+      "spans": [{
+        "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+        "spanId": "00f067aa0ba902b7",
+        "parentSpanId": "0000000000000001",
+        "name": "HTTP GET",
+        "kind": 3,
+        "startTimeUnixNano": "1756771200000000000",
+        "endTimeUnixNano":   "1756771200500000000",
+        "attributes": [
+          { "key": "http.method",      "value": { "stringValue": "GET" } },
+          { "key": "http.url",         "value": { "stringValue": "https://api/unootube/sessao" } },
+          { "key": "http.status_code", "value": { "intValue": 200 } }
+        ],
+        "status": { "code": 1 }
+      }]
+    }]
+  }]
+}
+\end{lstlisting}
+
+Um \cd{resourceSpans}, até 4 \cd{scopeSpans}, até 64 \emph{spans}, até 24
+atributos por \emph{span} (valores de até 256 caracteres); \cd{links},
+\cd{traceState} e chaves desconhecidas são removidos. O \cd{resource} do
+cliente é lido só para \cd{service.name} (\cd{exp-NN-slug} ou \cd{hub}) e
+\cd{service.version}, e SUBSTITUÍDO; atributos passam por \emph{allowlist} e
+\cd{http.url}/\cd{url.full} perdem \emph{query} e fragmento antes de sair.
+
 \section{exp-70 --- o \emph{payload} de uma partida}
 
 Este é o \emph{payload} mais elaborado da plataforma, e o que carrega mais

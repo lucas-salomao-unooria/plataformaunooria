@@ -3212,12 +3212,36 @@ Cloud; um segundo operador (plantão, rodízio); um segundo destino
 \emph{sidecar} entra; ou a franquia estourar em dois meses seguidos apesar da
 exclusão e da amostragem.
 
+\textbf{Adendo (2026-09-02): métricas por OTLP, não pelo exportador do
+Google.} O texto acima diz \enquote{exportadores do Google}. Vale para os
+\emph{traces} (\cd{@google-cloud/opentelemetry-cloud-trace-exporter}, gRPC,
+leve). Para as métricas, o \cd{-cloud-monitoring-exporter} depende de
+\cd{googleapis} --- \textbf{202\,MB} medidos em \cd{node\_modules} --- para
+chamar um método da API de monitoramento; entraria inteiro na imagem da API.
+A decisão é exportar métricas em OTLP/JSON direto para
+\cd{telemetry.googleapis.com/v1/metrics}, com um cliente de 60 linhas que
+pede o \emph{token} ao \cd{google-auth-library} a cada envio
+(\arq{observabilidade/otlp-google.ts}) --- o mesmo cliente por onde a API
+reexporta os \emph{spans} do navegador. Alternativa descartada: o exportador
+OTLP/HTTP do próprio OpenTelemetry, que recebe cabeçalhos estáticos e não
+acompanha a expiração do \emph{token} OAuth. Risco assumido e declarado: a
+ingestão OTLP de métricas exige que o \emph{resource} mapeie para um recurso
+monitorado e o papel \cd{roles/telemetry.writer}; se em \cd{hml} a Telemetry
+API recusar (o \cd{diag} do SDK e o contador \cd{spans\_descartados} mostram),
+o caminho de volta é o exportador do Google, aceitando os 202\,MB.
+
 % ---------------------------------------------------------------------------
 \section{ADR-58 --- Erro de cliente entra pela API; nenhum SDK de terceiro
 no \emph{bundle} da experiência}
 \label{adr:erro-cliente-pela-api}
 
-\textbf{Estado: proposta} (2026-09-01).
+\textbf{Estado: aceita} (2026-09-02; proposta em 2026-09-01). O lado do
+servidor está no código: \rota{POST /observabilidade/erros-cliente},
+\rota{/vitals} e \rota{/v1/traces} (este último não estava no texto original:
+com o OpenTelemetry Web dentro da SDK, os \emph{spans} do navegador também
+entram pela API, que os valida, reescreve o \cd{resource} e reexporta com a
+própria credencial --- o mesmo argumento, estendido). O lado do cliente
+(captura na SDK, \cd{exp:erro}) segue o roteiro do capítulo.
 
 \begin{especificacao}{Contexto}
 A classe de falha mais cega da plataforma é a que acontece no navegador do

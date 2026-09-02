@@ -115,7 +115,12 @@ type RespostaGenerate = {
     content?: ConteudoVertex;
     finishReason?: string;
   }>;
-  usageMetadata?: { totalTokenCount?: number; thoughtsTokenCount?: number };
+  usageMetadata?: {
+    totalTokenCount?: number;
+    thoughtsTokenCount?: number;
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+  };
 };
 
 /** Provider Vertex/Gemini. Único arquivo que conhece o vendor.
@@ -188,6 +193,8 @@ export class VertexProvider implements AiProvider {
     return {
       texto,
       tokensUsados: data.usageMetadata?.totalTokenCount ?? 0,
+      tokensEntrada: data.usageMetadata?.promptTokenCount,
+      tokensSaida: data.usageMetadata?.candidatesTokenCount,
       finishReason: candidato?.finishReason,
     };
   }
@@ -266,6 +273,8 @@ export class VertexProvider implements AiProvider {
         : undefined;
 
     let tokens = 0;
+    let tokensEntrada = 0;
+    let tokensSaida = 0;
 
     const umaTentativa = async (reforco: string): Promise<{ texto: string; voltas: number; finishReason?: string }> => {
       // O histórico é remontado a cada tentativa: a tentativa anterior foi
@@ -300,6 +309,8 @@ export class VertexProvider implements AiProvider {
         }
         const data = (await res.json()) as RespostaGenerate;
         tokens += data.usageMetadata?.totalTokenCount ?? 0;
+        tokensEntrada += data.usageMetadata?.promptTokenCount ?? 0;
+        tokensSaida += data.usageMetadata?.candidatesTokenCount ?? 0;
 
         const candidato = data.candidates?.[0];
         const partes = candidato?.content?.parts ?? [];
@@ -382,7 +393,7 @@ export class VertexProvider implements AiProvider {
       ];
 
       if (motivos.length === 0) {
-        return { texto, tokensUsados: tokens, finishReason, voltas, tentativas: tentativa };
+        return { texto, tokensUsados: tokens, tokensEntrada, tokensSaida, finishReason, voltas, tentativas: tentativa };
       }
       ultimoErro = motivos.join("; ").slice(0, 300);
       if (tentativa < tentativas) await new Promise((r) => setTimeout(r, 400 * tentativa));

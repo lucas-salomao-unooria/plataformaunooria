@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Perfil } from "../auth/claims";
+import { Metricas } from "../observabilidade/metricas";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
@@ -25,6 +26,7 @@ export class QuotaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    @Optional() private readonly metricas?: Metricas,
   ) {}
 
   private limite(perfil: Perfil): number {
@@ -57,7 +59,11 @@ export class QuotaService {
 
   /** `true` quando ainda há saldo — checar antes de chamar o provider. */
   async temSaldo(escolaId: string, usuarioId: string, perfil: Perfil = "estudante"): Promise<boolean> {
-    return (await this.usadoHoje(escolaId, usuarioId)) < this.limite(perfil);
+    const ok = (await this.usadoHoje(escolaId, usuarioId)) < this.limite(perfil);
+    // O único ponto que sabe que uma chamada de IA foi recusada por saldo — e o
+    // perfil é rótulo fechado (4 valores), não a escola.
+    if (!ok) this.metricas?.iaQuotaRecusas.add(1, { perfil });
+    return ok;
   }
 
   /** Incremento atômico; devolve o total do dia depois do consumo. */
