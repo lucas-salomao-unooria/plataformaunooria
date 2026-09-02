@@ -222,3 +222,12 @@ Deploy (CI deste repo):
 
 Nomes e valores concretos saem de `terraform output`; as `vars` que o
 `deploy.yml` consome estão listadas no passo 2 do `RUNBOOK-API.md`.
+
+**O que o CI passou a consumir (2026-09-02, cap. 17):** var de environment
+`EXP_MAPAS_BUCKET` (= `terraform output bucket_exp_mapas`, o bucket PRIVADO dos
+sourcemaps — `scripts/configurar-github-ci.sh` a inclui quando o output
+existe); secrets opcionais `ALERTA_WEBHOOK` (webhook de Google Chat/Slack para
+o job `avisar-falha` e a `sonda.yml`) e `SENHA_DEMO` (contas de demonstração
+para o smoke e a sonda). Sem `EXP_MAPAS_BUCKET` o deploy avisa e segue (o
+`.map` fica só no runner); sem os secrets, o aviso cai no log do job e a
+suíte usa a senha padrão do seed.

@@ -65,6 +65,9 @@ API_URL="$(val api_public_url)"
 ASSETS_BASE_URL="$(val url_assets)"
 WIF_PROVIDER="$(val github_workload_identity_provider)"
 DEPLOY_SA="$(val github_deployer_service_account)"
+# Bucket PRIVADO dos sourcemaps das experiencias (cap. 17). OPCIONAL: o output
+# so existe depois do apply que criou o bucket; sem ele o deploy avisa e segue.
+EXP_MAPAS_BUCKET="$(val bucket_exp_mapas)"
 # `artifact_registry_repo` e a URL completa; o deploy quer so o nome do repo.
 AR_REPO="$(val artifact_registry_repo_id)"
 GCP_PROJECT="$(val gcp_project)"
@@ -94,14 +97,22 @@ ASSETS_BASE_URL=$ASSETS_BASE_URL
 ASSETS_BUCKET=$ASSETS_BUCKET
 WIF_PROVIDER=$WIF_PROVIDER
 DEPLOY_SA=$DEPLOY_SA"
+if [ -n "$EXP_MAPAS_BUCKET" ]; then
+  VARS="$VARS
+EXP_MAPAS_BUCKET=$EXP_MAPAS_BUCKET"
+else
+  echo "aviso: output bucket_exp_mapas vazio — o Terraform ainda nao criou o bucket de sourcemaps; EXP_MAPAS_BUCKET fica de fora" >&2
+fi
 
 if [ "$IMPRIMIR" = true ]; then
   echo
   echo "=== vars do ENVIRONMENT '$AMB' (Settings > Environments > $AMB > Variables) ==="
   echo "$VARS"
   echo
-  echo "=== secret do ENVIRONMENT '$AMB' ==="
+  echo "=== secrets do ENVIRONMENT '$AMB' ==="
   echo "TOKEN_SIGNING_KEY_PEM = (terraform -chdir=\"\$INFRA_DIR\" output -raw token_signing_key_pem)"
+  echo "ALERTA_WEBHOOK        = (opcional) webhook de Google Chat/Slack para o job avisar-falha e a sonda agendada"
+  echo "SENHA_DEMO            = (opcional) senha das contas de demonstracao, para a suite e2e do smoke/sonda"
   echo
   echo "=== deployment branch policy ==="
   echo "environment '$AMB' deve aceitar deploy SO da branch '$BRANCH' (selected branches)"
@@ -133,6 +144,8 @@ done
 # Escopada no environment: a chave de dev nunca assina um manifesto de hml.
 echo "   TOKEN_SIGNING_KEY_PEM = (secret)"
 tf output -raw token_signing_key_pem | gh secret set TOKEN_SIGNING_KEY_PEM --env "$AMB"
+
+echo "   ALERTA_WEBHOOK / SENHA_DEMO = (opcionais, a mao: gh secret set <NOME> --env $AMB)"
 
 echo
 echo ">> pronto. Confira com: gh variable list --env $AMB && gh secret list --env $AMB"

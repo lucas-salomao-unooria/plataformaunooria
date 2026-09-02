@@ -212,6 +212,15 @@ acabaram de ser apagados. Suba a versão e o problema não existe: caminho novo,
 nada a sobrescrever, e a versão anterior continua no bucket --- que é o que faz a
 reversão nº 1 acima ser possível.
 
+\begin{lstlisting}[language=bashunoo, caption={Erro de cliente: da linha de log ao fonte}]
+# 1. A linha ERROR do Error Reporting (servico = expId, versao = a do manifesto):
+gcloud logging read 'jsonPayload.codigo="erro-cliente"' --project "$GCP_PROJECT" \
+  --limit 1 --format='value(jsonPayload.expId,jsonPayload.versao,jsonPayload.stack_trace)'
+# 2. A stack e minificada. O mapa da versao exata esta no bucket PRIVADO:
+EXP_MAPAS_BUCKET=$(terraform -chdir="$INFRA_DIR" output -raw bucket_exp_mapas) \
+  node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt
+\end{lstlisting}
+
 \begin{lstlisting}[language=bashunoo, caption={Publicar tudo (primeiro \emph{deploy} de um contrato)}]
 # GitHub Actions -> workflow "deploy" -> Run workflow -> forcar: true
 # Ignora o diff e publica hub, api e TODAS as experiencias.

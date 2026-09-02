@@ -214,6 +214,44 @@ Pub/Sub: env ausente é porta fechada, não porta aberta.
 \label{fig:pipeline-deploy}
 \end{figure}
 
+\subsection{Sonda, \emph{smoke} e aviso (2026-09-02)}
+
+Três passos que o \emph{pipeline} não tinha, todos da fase 0 do
+Capítulo~\ref{cap:observabilidade} --- a parte dela que é deste repositório:
+
+\begin{itemize}
+  \item \textbf{Sonda pós-\emph{deploy}} nos \emph{jobs} da api e do hub. O
+    \cd{gcloud run deploy} volta quando a revisão \emph{recebe tráfego}, não
+    quando ela responde; o passo pergunta, pelo domínio público, até 12 vezes
+    em 2 minutos: \rota{/readyz} \(=\) \cd{\{"ok":true\}} na api (processo +
+    banco), e \rota{/api/healthz} \textbf{e} \rota{/.well-known/jwks.json}
+    com \cd{"keys"} no hub --- sem a chave carregada nenhum \emph{token} de
+    experiência é validável, e o \cd{ativar-exps} falharia com um 401 que não
+    aponta para a causa. Vermelho = o \cd{ativar-exps} não ativa nada.
+  \item \textbf{\emph{Smoke}}: o \emph{job} \cd{smoke} roda a suíte
+    \cd{publico} de \arq{scripts/e2e} contra o ambiente recém-publicado, depois
+    de tudo (é só leitura); o relatório sobe como artefato em falha. As suítes
+    que \emph{escrevem} rodam agendadas em \arq{sonda.yml} --- a cada 30 min
+    em horário escolar, dias úteis --- \textbf{contra \cd{dev}}, e não contra
+    \cd{hml} como a Seção~\ref{sec:ferramentas-obs} desenhou: um \emph{workflow}
+    agendado executa sempre na \emph{branch} padrão, e o \emph{environment} de
+    \cd{hml} só aceita \emph{job} vindo da \emph{branch} \cd{hml}
+    (\emph{deployment branch policy}, \adrr{ADR-53}). Abrir a política
+    enfraqueceria a trava da identidade WIF; contra \cd{hml} a sonda se dispara
+    à mão, a partir da \emph{branch} \cd{hml}.
+  \item \textbf{Aviso em falha}: o \emph{job} \cd{avisar-falha}
+    (\cd{if: failure()}) posta no \emph{webhook} do \emph{secret}
+    \env{ALERTA\_WEBHOOK} (Google Chat/Slack, o canal \enquote{amanhã}). Sem o
+    \emph{secret}, avisa no log do \emph{job} e conta com o e-mail padrão do
+    GitHub --- nunca falha por não ter para quem avisar.
+\end{itemize}
+
+E um quarto passo, dos \emph{sourcemaps}: o \cd{rsync} das experiências ganhou
+\cd{-{}-exclude='.*\textbackslash.map\$'} (vale para origem e destino), e os
+\cd{.map} sobem para o \emph{bucket} \textbf{privado} \env{EXP\_MAPAS\_BUCKET},
+no mesmo caminho versionado. \arq{scripts/mapear-stack.mjs} traduz a
+\emph{stack} de um erro de cliente com o mapa da versão exata.
+
 \subsection{O que faz o \emph{deploy} caber no café}
 
 \begin{decisao}

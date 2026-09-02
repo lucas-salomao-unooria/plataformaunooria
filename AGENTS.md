@@ -358,6 +358,7 @@ node scripts/e2e/publico/01-landing.mjs   # cada suíte também roda sozinha, di
 node scripts/e2e/ferramentas/gerar-deck.mjs             # só o deck
 node scripts/e2e/ferramentas/gerar-videos.mjs           # só os vídeos (um por papel; o estudante, um por missão)
 node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ conferir o layout sem codificar
+EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)

@@ -525,11 +525,16 @@ sessão}: um laço de erro numa experiência gera milhares de eventos por
 segundo; a SDK manda no máximo cinco por sessão, com \emph{dedupe} por
 \emph{hash} de mensagem e \emph{stack}, e a API responde 429 acima disso,
 por \cd{(escola, usuario)}. \textbf{\emph{Sourcemaps} privados}: o
-\emph{build} das experiências passa a gerar \cd{build.\B sourcemap:\B "hidden"},
-publicado em \cd{gs://\B\{contrato\}-exp/\B\{expId\}/\B\{versao\}/\B mapas/} com ACL
-privada (o \emph{bundle} continua sem o comentário que aponta para eles); a
-\emph{stack} minificada é legível com o mapa da versão exata, e a versão já
-está no caminho. \textbf{Nada de texto do estudante}: o \emph{payload} é um
+\emph{build} das experiências gera \cd{build.\B sourcemap:\B "hidden"} (o
+\emph{bundle} continua sem o comentário que aponta para eles), e o CI sobe os
+\cd{.map} para um \emph{bucket} \textbf{separado e privado},
+\cd{gs://\B\{project\}-exp-mapas/\B\{expId\}/\B\{versao\}/}. Não é a
+\enquote{pasta \cd{mapas/} com ACL privada no mesmo \emph{bucket}} que a
+primeira versão deste texto propôs: o \emph{bucket} dos \emph{bundles} tem
+acesso uniforme (\emph{uniform bucket-level access}, medido no Terraform), e
+nesse modo ACL por objeto não existe --- qualquer objeto ali é público. A
+\emph{stack} minificada é legível com o mapa da versão exata
+(\arq{scripts/mapear-stack.mjs}), e a versão já está no caminho. \textbf{Nada de texto do estudante}: o \emph{payload} é um
 \emph{schema} fechado; \cd{mensagem} e \cd{stack} passam pela
 \emph{redaction} da API e têm tamanho máximo.
 
@@ -967,7 +972,12 @@ prova de pronto que a suíte ou o painel exibe.
   pós-\emph{deploy} e \cd{if: failure()} no \cd{deploy.yml}; suíte
   \cd{publico}+\cd{estudante} agendada contra \cd{hml}. &
   Repositório de Terraform (\arq{docs/INFRA.md} ganha a seção);
-  \arq{.github/workflows/} & Derrubar a API em \cd{hml} e receber o
+  \arq{.github/workflows/} (\emph{a parte deste repositório entregue em
+  2026-09-02}, \cd{ci/obs-sonda-e-mapas}: sonda pós-\emph{deploy}, \emph{job}
+  \cd{smoke}, \cd{avisar-falha}, \arq{sonda.yml} agendada contra \cd{dev},
+  mapas no \emph{bucket} privado; o Terraform da etapa 1 --- APIs, papéis,
+  \emph{envs}, \emph{bucket} de mapas, sondas HTTP no módulo --- está escrito e
+  validado, aguardando \cd{apply}) & Derrubar a API em \cd{hml} e receber o
   \emph{push} em menos de 3 minutos. \emph{Deploy} com migração quebrada
   notifica.\\
 \zebra \textbf{1} \newline 1--2 semanas & \textbf{API} (\emph{entregue em

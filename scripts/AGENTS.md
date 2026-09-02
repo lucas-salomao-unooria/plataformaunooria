@@ -10,7 +10,8 @@ em `e2e/AGENTS.md`.
 | `gerar-chave-token.mjs` | par RS256 com que o hub assina os tokens de experiência | a chave privada nunca entra no repo |
 | `importar-referencias-plano.mjs` | carrega as referências curriculares da exp-90 | exige `PLANOS_IMPORT_TOKEN` |
 | `probe-pointerlock.mjs` | mede pointer lock dentro do iframe com sandbox | sustenta `permissoes` do manifesto e o `allow-pointer-lock` do `ExpFrame` |
-| `configurar-github-ci.sh` | preenche `vars`/secret do environment do GitHub a partir do `terraform output` | escreve em ambiente REAL (dev/hml/prd) — confira o workspace |
+| `configurar-github-ci.sh` | preenche `vars`/secret do environment do GitHub a partir do `terraform output` | escreve em ambiente REAL (dev/hml/prd) — confira o workspace. `EXP_MAPAS_BUCKET` só entra depois do apply que criou o bucket; `ALERTA_WEBHOOK`/`SENHA_DEMO` são secrets a mão |
+| `mapear-stack.mjs` | traduz a stack minificada de um erro de cliente com o sourcemap da versão exata, lido do bucket PRIVADO `EXP_MAPAS_BUCKET` | só lê; sem dependência (`SourceMap` do Node). A stack vem de `jsonPayload.stack_trace` da linha `codigo=erro-cliente` |
 
 **Script que gera arquivo versionado declara isso no topo do arquivo gerado.**
 A regra é a mesma do apêndice C: no minuto em que alguém edita à mão a saída de
