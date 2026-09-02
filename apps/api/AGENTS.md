@@ -408,7 +408,11 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   consumidor; a quota conta recusas em `temSaldo`. Exportação a cada 60 s por
   **OTLP/JSON para `telemetry.googleapis.com`** (`otlp-google.ts`) — NÃO
   instale `@google-cloud/opentelemetry-cloud-monitoring-exporter`: ele
-  arrasta 202 MB de `googleapis` (medido). Nos testes,
+  arrasta 202 MB de `googleapis` (medido). **O `resource` precisa de
+  `gcp.project_id`** (`observabilidade/recurso.ts`): sem ele a Telemetry API
+  recusa todo lote com `HTTP 400 Resource is missing required attribute` a cada
+  60 s, com log e trace funcionando — falha silenciosa para quem olha o painel.
+  O `gcpDetector` não preenche esse atributo. Nos testes,
   `tests/metricas-em-memoria.ts` dá um `Metricas` com MeterProvider em
   memória para ler o que saiu.
 - **`/observabilidade/*`** (erros-cliente, vitals, v1/traces): rotas com
