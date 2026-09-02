@@ -454,6 +454,17 @@ credencial de \emph{service account} que já autentica o Vertex), pelos
 exportadores \cd{@google-cloud/opentelemetry-cloud-trace-exporter} e
 \cd{-cloud-monitoring-exporter}. O \emph{sidecar} é o gatilho de
 reavaliação registrado na \adrr{ADR-57}.
+
+\textbf{Atualização de 2026-09-02:} os dois exportadores citados acima foram
+DEPRECIADOS pelo Google, com arquivamento marcado para 30 de outubro de 2026
+--- antes da entrada em produção. O que a plataforma usa hoje são os
+exportadores \emph{oficiais} do OpenTelemetry sobre OTLP
+(\cd{exporter-trace-otlp-http} e \cd{-metrics-otlp-http}), apontados para a
+Telemetry API (\cd{telemetry.googleapis.com}), com a credencial ADC entregue
+por uma \textbf{função assíncrona} em \cd{headers} --- o \emph{token} expira
+em uma hora, e cabeçalho estático pararia de exportar sozinho. \textbf{O
+destino não mudou}: Cloud Trace e Cloud Monitoring. Mudaram o transporte e o
+domínio em que a métrica aparece.
 \end{decisao}
 
 Amostragem: \cd{ParentBased} sobre \cd{TraceIdRatioBased(0.02)} --- 2\% das

@@ -26,8 +26,8 @@ export default {
     "@opentelemetry/instrumentation",
     "@opentelemetry/instrumentation-undici",
     "@opentelemetry/resource-detector-gcp",
-    "@google-cloud/opentelemetry-cloud-trace-exporter",
-    "@grpc/grpc-js",
+    "@opentelemetry/exporter-trace-otlp-http",
+    "google-auth-library",
   ],
   // Build de produção SEM derrubar o dev server: `pnpm build:isolado` escreve
   // em .next-prod em vez de sobrescrever o .next do `next dev` (sintoma do

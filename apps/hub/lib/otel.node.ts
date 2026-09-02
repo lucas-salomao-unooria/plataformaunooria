@@ -1,6 +1,7 @@
 import "server-only";
 import { diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
-import { TraceExporter } from "@google-cloud/opentelemetry-cloud-trace-exporter";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
+import { GoogleAuth } from "google-auth-library";
 import { UndiciInstrumentation } from "@opentelemetry/instrumentation-undici";
 import { gcpDetector } from "@opentelemetry/resource-detector-gcp";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -30,6 +31,10 @@ import { configDoOtel } from "./otel-config";
  * O pai remoto não decide a amostragem (o cabeçalho vem do navegador); o
  * ratio determinístico no `traceId` faz hub e api concordarem sozinhos — ver
  * `apps/api/src/observabilidade/sampler.ts`.
+ *
+ * O transporte é OTLP pela Telemetry API, com o exportador OFICIAL do
+ * OpenTelemetry — o `@google-cloud/opentelemetry-cloud-trace-exporter` foi
+ * depreciado e será arquivado em 30/10/2026. O destino não muda: Cloud Trace.
  */
 const registro = globalThis as { __otelHub?: NodeSDK };
 
@@ -41,8 +46,19 @@ export function iniciarOtelDoHub(env: Record<string, string | undefined> = proce
 
   const processadores: SpanProcessor[] = [];
   if (config.projeto) {
+    // Token da ADC pedido a CADA envio: ele expira em 1 h, e um cabeçalho
+    // estático pararia de exportar sozinho depois disso. Mesma fábrica da api
+    // (`observabilidade/otlp-google.ts`), copiada pela razão do `lib/log.ts`:
+    // um pacote de workspace só para isto não se paga, e a forma tem de mudar
+    // nos dois juntos.
+    const auth = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
+    const projeto = config.projeto;
+    const cabecalhos = async () => {
+      const token = await auth.getAccessToken();
+      return { ...(token ? { authorization: `Bearer ${token}` } : {}), "x-goog-user-project": projeto };
+    };
     processadores.push(
-      new BatchSpanProcessor(new TraceExporter({ projectId: config.projeto }), {
+      new BatchSpanProcessor(new OTLPTraceExporter({ url: "https://telemetry.googleapis.com/v1/traces", headers: cabecalhos }), {
         exportTimeoutMillis: 5_000,
         scheduledDelayMillis: 5_000,
       }),
@@ -52,7 +68,12 @@ export function iniciarOtelDoHub(env: Record<string, string | undefined> = proce
 
   const porRazao = new TraceIdRatioBasedSampler(config.ratio);
   const sdk = new NodeSDK({
-    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: config.servico, [ATTR_SERVICE_VERSION]: config.versao }),
+    resource: resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: config.servico,
+      [ATTR_SERVICE_VERSION]: config.versao,
+      // Exigido pela ingestão OTLP do Google; o `gcpDetector` não o preenche.
+      ...(config.projeto ? { "gcp.project_id": config.projeto } : {}),
+    }),
     resourceDetectors: [gcpDetector],
     sampler: new ParentBasedSampler({
       root: porRazao,

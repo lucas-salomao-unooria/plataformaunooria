@@ -17,7 +17,33 @@ import { Agent, fetch as fetchDoUndici } from "undici";
  *
  * `undici` importado explicitamente, com `Agent` próprio (ADR-45): misturar o
  * `fetch` global com um `Agent` do undici quebra com `invalid onError method`.
+ *
+ * Os SINAIS do próprio processo (spans e métricas da api) NÃO passam por aqui:
+ * eles usam os exportadores OTLP oficiais do OpenTelemetry, que só precisam da
+ * fábrica de cabeçalhos abaixo. O cliente existe para o que a biblioteca não
+ * sabe fazer: reencaminhar um corpo OTLP JÁ PRONTO, que veio do navegador.
  */
+
+/**
+ * Os cabeçalhos de um POST à Telemetry API, resolvidos a CADA envio — é a
+ * assinatura `HeadersFactory` que os exportadores OTLP oficiais aceitam em
+ * `headers`, e a razão de não passarmos um objeto estático: o token da ADC
+ * expira em uma hora, e um cabeçalho fixo pararia de exportar sozinho depois
+ * disso. O `google-auth-library` cacheia e renova por conta.
+ */
+export function cabecalhosParaTelemetryApi(
+  projeto: string,
+  auth: Pick<GoogleAuth, "getAccessToken"> = new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] }),
+): () => Promise<Record<string, string>> {
+  return async () => {
+    const token = await auth.getAccessToken();
+    return {
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      // O projeto que paga a cota: exige `roles/serviceusage.serviceUsageConsumer`.
+      "x-goog-user-project": projeto,
+    };
+  };
+}
 export type CaminhoOtlp = "v1/traces" | "v1/metrics";
 
 export interface RespostaOtlp {
