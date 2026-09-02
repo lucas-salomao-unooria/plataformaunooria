@@ -3241,7 +3241,11 @@ servidor está no código: \rota{POST /observabilidade/erros-cliente},
 com o OpenTelemetry Web dentro da SDK, os \emph{spans} do navegador também
 entram pela API, que os valida, reescreve o \cd{resource} e reexporta com a
 própria credencial --- o mesmo argumento, estendido). O lado do cliente
-(captura na SDK, \cd{exp:erro}) segue o roteiro do capítulo.
+também está no código (\cd{feat/obs-sdk}, 2026-09-02): captura na SDK com
+dedupe e teto de 5 por sessão, \cd{exp:erro} na ponte, \emph{sourcemaps}
+\cd{hidden} publicados em \emph{bucket} privado à parte --- e não na pasta
+do \emph{bundle} com ACL, como o texto original supunha: o \emph{bucket}
+público tem acesso uniforme, e ACL por objeto não existe lá.
 
 \begin{especificacao}{Contexto}
 A classe de falha mais cega da plataforma é a que acontece no navegador do

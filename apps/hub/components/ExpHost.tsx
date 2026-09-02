@@ -2,6 +2,7 @@
 
 import { Suspense, lazy, useCallback, useState } from "react";
 import { signOut } from "next-auth/react";
+import { AlertBox } from "@edu/ui/ds";
 import { DispositivoFrame } from "./DispositivoFrame";
 import { ExpFrame } from "./ExpFrame";
 
@@ -39,8 +40,24 @@ export function ExpHost(props: {
   viewport?: { largura: number; altura: number } | null;
   /** Do manifesto da experiência; segue no spread para o `ExpFrame`. */
   permissoes?: readonly string[];
+  /** Observabilidade do navegador (ratio de spans); entra em `config.obs` do hub:init. */
+  obs?: { traceRatio: number };
 }) {
-  const { expId, viewport, ...frame } = props;
+  const { expId, viewport, obs, ...frame } = props;
+
+  /**
+   * `exp:erro` (ADR-58): a experiência quebrou de um jeito que ela mesma não
+   * trata. O registro já foi para a api pela SDK; aqui só se troca a tela —
+   * por cima do aparelho, com "recarregar", que remonta o iframe (`chave`).
+   * A mensagem do erro NÃO aparece: é a exceção do bundle, não algo que a
+   * criança leia; o que ela vê é o hash, para relatar.
+   */
+  const [erro, setErro] = useState<{ mensagem: string; hash: string } | null>(null);
+  const [chave, setChave] = useState(0);
+  const recarregar = useCallback(() => {
+    setErro(null);
+    setChave((k) => k + 1);
+  }, []);
 
   /**
    * "Chrome" opcional por estado da experiência (`exp:estado`): o hub não
@@ -86,10 +103,12 @@ export function ExpHost(props: {
 
   const conteudo = (
     <ExpFrame
+      key={chave}
       {...frame}
-      config={{ ...frame.config, expId }}
+      config={{ ...frame.config, expId, obs: obs ?? { traceRatio: 0 } }}
       onConcluir={onConcluir}
       onEstado={setEstado}
+      onErro={setErro}
     />
   );
 
@@ -101,6 +120,26 @@ export function ExpHost(props: {
         </Suspense>
       ) : null}
       <div style={{ flex: 1, minHeight: 0, position: "relative" }}>
+        {erro ? (
+          <div
+            data-testid="erro-da-experiencia"
+            style={{ position: "absolute", inset: 0, zIndex: 2, display: "grid", placeItems: "center", background: "rgba(255,255,255,0.92)", padding: 24 }}
+          >
+            <AlertBox
+              theme="light"
+              variant="error"
+              device="auto"
+              title="A missão travou"
+              description={
+                <>
+                  Algo deu errado dentro da atividade. Recarregue para continuar; se repetir, avise quem
+                  cuida da plataforma e informe o código <code>{erro.hash}</code>.
+                </>
+              }
+              primaryAction={{ label: "Recarregar", onClick: recarregar }}
+            />
+          </div>
+        ) : null}
         {viewport ? (
           <DispositivoFrame
             largura={viewport.largura}

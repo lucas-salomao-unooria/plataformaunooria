@@ -1,4 +1,5 @@
 import { ClarityHub } from "@/components/clarity-hub";
+import { VitalsHub } from "@/components/vitals-hub";
 import "./globals.css";
 
 export const metadata = { title: "Plataforma Unooria" };
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ fontFamily: "system-ui", margin: 0 }}>
         {children}
         <ClarityHub />
+        <VitalsHub />
       </body>
     </html>
   );

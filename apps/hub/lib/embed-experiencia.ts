@@ -44,6 +44,19 @@ export interface Embed {
   viewport: { largura: number; altura: number } | null;
   /** Repassado ao `ExpFrame`: liga `allow-pointer-lock` no sandbox. */
   permissoes: readonly string[];
+  /**
+   * Observabilidade do NAVEGADOR (cap. 17): a fração de sessões da experiência
+   * com spans exportados. Vai no `config.obs` do `hub:init` — env de RUNTIME do
+   * hub (`OBS_TRACE_RATIO_CLIENTE`), não `NEXT_PUBLIC_*`: mudar a amostragem
+   * não pode exigir rebuild do hub nem republicar as seis experiências.
+   */
+  obs: { traceRatio: number };
+}
+
+/** `OBS_TRACE_RATIO_CLIENTE` saturada em [0, 1]; lixo ou ausente = 0 (desligado). */
+export function obsDoAmbiente(env: Record<string, string | undefined> = process.env): { traceRatio: number } {
+  const bruto = Number(env.OBS_TRACE_RATIO_CLIENTE ?? "0");
+  return { traceRatio: Number.isFinite(bruto) ? Math.min(1, Math.max(0, bruto)) : 0 };
 }
 
 /**
@@ -200,5 +213,6 @@ export async function montarEmbed(
     apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
     viewport: manifesto?.viewport ?? viewportDoBundle,
     permissoes: manifesto?.permissoes ?? permissoesDoBundle,
+    obs: obsDoAmbiente(),
   };
 }

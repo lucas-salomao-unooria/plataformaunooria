@@ -44,6 +44,9 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
              payload: ExpConcluirPayloadSchema.default({}) }),
   z.object({ type: z.literal("exp:token-expirando") }),
   z.object({ type: z.literal("exp:estado"), estado: z.record(z.unknown()) }),
+  // a exp quebrou; o hub troca a tela. O registro vai SDK -> api (ADR-58)
+  z.object({ type: z.literal("exp:erro"),
+             mensagem: z.string().max(256), hash: z.string().max(16) }),
 ]);
 \end{lstlisting}
 
@@ -58,9 +61,19 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
     "turmaId": "b17e...", "escolaId": "sp-001"
   },
   "apiUrl": "https://api-entreredes.unooria.com",
-  "config": { "clarityProjectId": "ybo0odt6cn", "expId": "exp-01-instanooria" }
+  "config": {
+    "clarityProjectId": "ybo0odt6cn",
+    "expId": "exp-01-instanooria",
+    "obs": { "traceRatio": 0.02 }
+  }
 }
 \end{lstlisting}
+
+\cd{config.obs.traceRatio} (2026-09-02) é a fração de sessões desta
+experiência com OpenTelemetry Web ligado --- vem de
+\env{OBS\_TRACE\_RATIO\_CLIENTE} do hub, env de \emph{runtime}, então mudar a
+amostragem não republica bundle nenhum; \cd{0} faz a SDK nem baixar os
+pacotes.
 
 \section{\emph{Token} de experiência}
 

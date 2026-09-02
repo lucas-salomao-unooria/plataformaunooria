@@ -1,7 +1,7 @@
 {
   "id": "exp-90-plano-de-aula",
   "nome": "Gerador de Plano de Aula",
-  "versao": "1.1.1",
+  "versao": "1.1.2",
   "series": [],
   "capabilities": ["telemetria", "ia"],
   "publico": "professor",
