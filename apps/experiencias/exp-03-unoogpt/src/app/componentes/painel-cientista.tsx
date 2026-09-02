@@ -29,11 +29,13 @@ function Cartao({
   anterior,
   expandido,
   onEscolherOpcao,
+  ocupado,
 }: {
   anexo: Anexo;
   anterior?: RodadaDoModelo | null;
   expandido: boolean;
   onEscolherOpcao?: (opcao: { alfa: string; bravo: string }) => void;
+  ocupado: boolean;
 }) {
   if (anexo.tipo === 'opcoes') {
     return (
@@ -51,6 +53,7 @@ function Cartao({
           opcoes={anexo.opcoes}
           rodada={anexo.rodada}
           onEscolher={expandido ? onEscolherOpcao : undefined}
+          ocupado={ocupado}
         />
       </>
     );
@@ -287,6 +290,7 @@ export function PainelCientista({
                   anterior={leituraAnteriorA(i)}
                   expandido={i === ultimoCartao}
                   onEscolherOpcao={onEscolherOpcao}
+                  ocupado={ocupado}
                 />
               )}
             </ChatBubble>

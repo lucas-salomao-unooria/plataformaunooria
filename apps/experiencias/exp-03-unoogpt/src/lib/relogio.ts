@@ -57,7 +57,15 @@ export function segundosRestantes(
   if (estado.segundosAteFechar === null) return null;
   if (estado.fase !== "correndo") return estado.segundosAteFechar;
   const desdeAResposta = (agoraLocal - Date.parse(relogio.agora)) / 1000;
-  return Math.max(0, estado.segundosAteFechar - desdeAResposta);
+  // ARREDONDADO PARA CIMA, e isso NAO e cosmetica: `useContagem` guarda este
+  // numero em estado do React, e um float com resolucao de milissegundo nunca e
+  // igual ao anterior — o `useState` nunca fazia bail-out e a missao INTEIRA
+  // re-renderizava duas vezes por segundo. Dentro de um `Modal` do design
+  // system isso devolvia o foco para fora do modal a cada render, fechando o
+  // `<select>` nativo que o estudante tinha acabado de abrir (ver o AGENTS.md
+  // desta pasta). `ceil` e nao `floor` porque o cronometro desce: com `floor` o
+  // "1" apareceria por uma fracao de segundo e o zero chegaria cedo demais.
+  return Math.max(0, Math.ceil(estado.segundosAteFechar - desdeAResposta));
 }
 
 /** Faixa de urgência do cronômetro. Serve para a tela mudar de tom, não de regra. */

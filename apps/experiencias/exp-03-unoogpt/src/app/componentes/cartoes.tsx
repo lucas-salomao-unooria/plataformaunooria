@@ -213,11 +213,20 @@ export function CartaoOpcoes({
   opcoes,
   rodada,
   onEscolher,
+  ocupado = false,
 }: {
   opcoes: { alfa: string; bravo: string }[];
   rodada: RodadaDoModelo;
   /** Ausente no cartão de uma fala antiga: a alocação já mudou desde então. */
   onEscolher?: (opcao: { alfa: string; bravo: string }) => void;
+  /**
+   * Trava enquanto uma chamada está em voo. Escolher uma opção dispara DOIS
+   * `POST /unoogpt/alocacao` (a rota é por equipe), e sem esta trava um duplo
+   * clique manda quatro — o segundo par com o estado que o primeiro ainda não
+   * gravou. Os outros controles da missão já se travam por aqui; este ficou de
+   * fora, e um cartão que não responde ao primeiro clique convida ao segundo.
+   */
+  ocupado?: boolean;
 }) {
   const pessoas = (slug: string) =>
     rodada.estimativas.find((e) => e.bairro === slug)?.pessoasEmRisco.esperado ?? null;
@@ -239,7 +248,7 @@ export function CartaoOpcoes({
             type="button"
             block
             onClick={() => onEscolher?.(o)}
-            disabled={!onEscolher}
+            disabled={!onEscolher || ocupado}
             className="text-left disabled:opacity-50"
             title={
               <span className="text-xs font-bold uppercase tracking-wider text-gpt-suave-40">
