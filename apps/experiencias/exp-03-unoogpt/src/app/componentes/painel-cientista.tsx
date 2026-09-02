@@ -240,17 +240,31 @@ export function PainelCientista({
   const travado = !semPerguntas && !bloqueio && estaTravado(falas);
 
   /**
-   * O rascunho só some quando a pergunta ENTRA.
+   * O rascunho some na hora, e VOLTA se a pergunta não entrou.
    *
-   * Antes o campo era limpo antes da ida ao servidor: falha de rede levava
-   * junto a pergunta que o estudante tinha acabado de escrever, e ele redigitava
-   * com o cronômetro correndo — quando não desistia em silêncio.
+   * As duas metades desta função pagam bugs diferentes, e é por isso que
+   * nenhuma das duas pode sumir:
+   *
+   * - Limpar CEDO: `onPerguntar` põe a fala do estudante na conversa antes de
+   *   ir ao servidor, e o turno leva de 10 a 30 segundos. Enquanto o campo só
+   *   era limpo DEPOIS do `await`, a mesma pergunta ficava visível nos dois
+   *   lugares a consulta inteira — e o estudante lia isso como "não enviou",
+   *   apagava e mandava de novo.
+   * - Restaurar em FALHA: antes de tudo isso o campo era limpo antes da ida ao
+   *   servidor e nada o devolvia; falha de rede levava junto a pergunta que ele
+   *   tinha acabado de escrever, e ele redigitava com o cronômetro correndo —
+   *   quando não desistia em silêncio.
+   *
+   * A restauração respeita quem já está digitando: o campo NÃO é desabilitado
+   * durante a consulta (ver o `Composer` abaixo), então devolver o rascunho por
+   * cima de um texto novo apagaria o que o estudante escreveu enquanto esperava.
    */
   async function enviar(valor: string) {
     const pergunta = valor.trim();
     if (!pergunta || ocupado || bloqueio) return;
+    setTexto('');
     const entrou = await onPerguntar(pergunta);
-    if (entrou !== false) setTexto('');
+    if (entrou === false) setTexto((atual) => (atual === '' ? pergunta : atual));
   }
 
   return (
