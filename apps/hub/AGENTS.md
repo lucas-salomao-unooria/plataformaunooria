@@ -104,3 +104,49 @@ isso são env de runtime. Esta é inlinada no `next build`, entra por `ARG` no
 `lib/clarity.ts`: a referência a `process.env` precisa ser estática para o Next
 substituir o literal, e `process.env[nome]` calculado chegaria `undefined` sem
 erro nenhum.
+
+
+## Log, saúde e erro (2026-09-02)
+
+**O log do servidor do hub é o pino de `lib/log.ts`**, em JSON com os nomes do
+Cloud Logging (`severity`, `message`, `serviceContext`,
+`logging.googleapis.com/trace`). Nada de `console.*` em código de servidor. É
+uma **cópia deliberada** do logger da api (`apps/api/src/observabilidade/`),
+sem o AsyncLocalStorage: o contexto entra por `logDaRequisicao(headers)`, que
+lê `traceparent`/`X-Cloud-Trace-Context` e devolve um `child` com `requestId`.
+Mudou a forma da linha? Muda nos dois (packages/AGENTS.md diz por que não é um
+pacote).
+
+- **`apiDoServidor` continua devolvendo `null`** em falha — as páginas dependem
+  disso —, mas cada falha vira UMA linha `warn` (`codigo: api-recusou |
+  api-indisponivel | api-timeout`) com rota, status e o `requestIdDaApi` que a
+  api devolveu no corpo do 500. Antes, "a api caiu" e "não há dados" eram a
+  mesma coisa. **Toda chamada tem teto**: `TIMEOUT_DA_API_MS` (10 s) no
+  `apiDoServidor`, `TIMEOUT_DO_BFF_MS` (30 s) no BFF, que repassa CSV e
+  planilha. Falha de rede vira `Response` sintética 599 (598 no timeout): quem
+  chama trata status, não exceção.
+- **O `traceparent` da requisição de origem segue para a api** nos dois
+  caminhos (`apiDoServidor` e BFF): é o que põe o render do professor e o span
+  da api no mesmo trace. Sem cabeçalho de origem (build, teste), nada é
+  inventado.
+- **O 404 da allowlist do BFF loga** (`codigo: bff-prefixo-recusado`, só o
+  prefixo). É o sintoma de uma tela nova que esqueceu de pedir passagem — e
+  parecia "a api não tem a rota".
+- **`GET /api/healthz`** responde `{ok:true}` sem tocar em nada: é a sonda de
+  vida do serviço e o que separa "hub caiu" de "api caiu" no alerta. Fora do
+  `matcher` do middleware; `force-dynamic`.
+- **`app/error.tsx` e `app/global-error.tsx`** mostram `components/tela-de-erro.tsx`
+  (o `AlertBox` do DS) com o `digest` do erro como código do incidente. O
+  registro do erro é do `onRequestError` em `instrumentation.ts`: uma linha
+  `ERROR` com o MESMO `digest`, stack, rota e `routeType` — a ponte entre o
+  relato e o Logs Explorer sem inventar id. A `TelaDeErro` importa o CSS do DS
+  por conta própria porque o `error.tsx` da raiz renderiza fora da
+  `CascaPlataforma`. Erro de render no CLIENTE não tem digest e não passa pelo
+  servidor: o registro dele entra com a captura de erros de cliente (fase 2).
+- **`server-only` nos testes**: o pacote real LANÇA fora de um RSC. O
+  `vitest.config.ts` aponta o alias para `lib/stub-server-only.ts`; sem isso
+  qualquer teste que toque `lib/log.ts` ou `lib/api-servidor.ts` morre na
+  importação.
+- Envs: `LOG_LEVEL` (o Terraform já manda: `debug`/`info`/`warn` por ambiente),
+  `GCP_PROJECT_ID` (já vem), `LOG_FORMATO=json` para ver a linha como o Cloud
+  Logging a verá. Em teste (`NODE_ENV=test`) é JSON sem transporte.
