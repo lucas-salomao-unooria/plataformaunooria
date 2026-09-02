@@ -41,6 +41,11 @@ RUN pnpm install --frozen-lockfile --offline
 # default de qualquer build feito sem o argumento.
 ARG NEXT_PUBLIC_CLARITY_PROJECT_ID=""
 ENV NEXT_PUBLIC_CLARITY_PROJECT_ID=$NEXT_PUBLIC_CLARITY_PROJECT_ID
+# A "versão" do hub no Error Reporting dos erros de CLIENTE (o servidor usa
+# K_REVISION). É o SHA do commit, inlinado no bundle do client — por isso ARG
+# de build, como a do Clarity. Ausente (build local) fica "dev".
+ARG NEXT_PUBLIC_HUB_VERSAO="dev"
+ENV NEXT_PUBLIC_HUB_VERSAO=$NEXT_PUBLIC_HUB_VERSAO
 RUN pnpm turbo build --filter=@edu/hub
 
 FROM node:26.7.0-slim

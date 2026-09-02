@@ -35,7 +35,7 @@ export default async function PlanoDeAulaPage({
         token={embed.token}
         estudante={embed.estudante}
         apiUrl={embed.apiUrl}
-        config={{ expId: EXP_PLANO_DE_AULA }}
+        config={{ expId: EXP_PLANO_DE_AULA, obs: embed.obs }}
       />
     </div>
   );

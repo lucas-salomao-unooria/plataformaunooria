@@ -16,3 +16,12 @@ Comum aos três: **TypeScript puro, sem dependência pesada**, consumidos por
 
 Pacote novo aqui exige justificativa: código compartilhado por **dois ou mais**
 consumidores. Um consumidor só = o código mora nele.
+
+**Exceção declarada: o logger.** `apps/api/src/observabilidade/logger.ts` e
+`apps/hub/lib/log.ts` são a MESMA função (`criarOpcoesDoPino`, redaction,
+severity) copiada, não um `@edu/log`. Dois consumidores é o mínimo da regra
+acima, mas o pacote custaria uma dependência de runtime (`pino`) que a SDK — o
+terceiro consumidor natural — não pode carregar para o navegador, e a api
+precisa do logger ANTES do Nest (na importação), o que um pacote de workspace
+transpilado pelo Next complica. Mudou a forma da linha de log? **Muda nos
+dois, no mesmo commit.**

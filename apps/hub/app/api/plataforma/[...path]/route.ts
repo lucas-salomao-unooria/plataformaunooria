@@ -1,6 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { assinarTokenExperiencia } from "@/lib/chave-token";
+import { cabecalhosComoObjeto, logDaRequisicao } from "@/lib/log";
+import { traceparentDeSaida } from "@/lib/otel-propagacao";
+
+/**
+ * Teto maior que o do `apiDoServidor`: por aqui passam exportações (CSV de
+ * análise) e importações (planilha de 30 MB), que legitimamente demoram.
+ */
+export const TIMEOUT_DO_BFF_MS = 30_000;
 
 /**
  * BFF: o client do hub NUNCA segura bearer token (a sessão é cookie
@@ -46,6 +54,10 @@ const PREFIXOS_PERMITIDOS = [
      página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
      As guardas de papel estão na api (`@Roles("professor")`). */
   "unoogpt",
+  /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
+     pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
+     tem bearer — passa por aqui. A api aplica cota e redaction. */
+  "observabilidade",
 ] as const;
 
 async function proxy(request: NextRequest, path: string[]) {
@@ -57,7 +69,12 @@ async function proxy(request: NextRequest, path: string[]) {
     return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
   }
   const prefixo = path[0] ?? "";
+  const cabecalhos = cabecalhosComoObjeto(request.headers);
   if (!PREFIXOS_PERMITIDOS.includes(prefixo as (typeof PREFIXOS_PERMITIDOS)[number])) {
+    // Era um 404 mudo. É o sintoma de uma tela nova que esqueceu de pedir
+    // passagem aqui — e, sem esta linha, ele se parecia com "a api não tem a
+    // rota". Só o prefixo vai ao log: o resto do caminho pode carregar id.
+    logDaRequisicao(cabecalhos).warn({ prefixo, codigo: "bff-prefixo-recusado" }, "prefixo fora da allowlist do BFF");
     return NextResponse.json({ mensagem: "rota não permitida" }, { status: 404 });
   }
 
@@ -74,15 +91,30 @@ async function proxy(request: NextRequest, path: string[]) {
   request.nextUrl.searchParams.forEach((valor, chave) => destino.searchParams.set(chave, valor));
 
   const temCorpo = request.method !== "GET" && request.method !== "HEAD";
-  const resposta = await fetch(destino, {
-    method: request.method,
-    headers: {
-      authorization: `Bearer ${token}`,
-      ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
-    },
-    body: temCorpo ? await request.arrayBuffer() : undefined,
-    cache: "no-store",
-  });
+  // O `traceparent` do navegador (ou do LB) segue para a api: é o que faz a
+  // chamada do painel do professor aparecer no mesmo trace que o span da api.
+  const traceparent = traceparentDeSaida(cabecalhos);
+  let resposta: Response;
+  try {
+    resposta = await fetch(destino, {
+      method: request.method,
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(traceparent ? { traceparent } : {}),
+        ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
+      },
+      body: temCorpo ? await request.arrayBuffer() : undefined,
+      cache: "no-store",
+      signal: AbortSignal.timeout(TIMEOUT_DO_BFF_MS),
+    });
+  } catch (erro) {
+    const timeout = erro instanceof Error && erro.name === "TimeoutError";
+    logDaRequisicao(cabecalhos).warn(
+      { prefixo, metodo: request.method, codigo: timeout ? "api-timeout" : "api-indisponivel", err: erro },
+      timeout ? "a api não respondeu ao BFF no teto" : "a api não respondeu ao BFF",
+    );
+    return NextResponse.json({ mensagem: "a plataforma não respondeu; tente de novo" }, { status: timeout ? 504 : 502 });
+  }
 
   // Repassa corpo e content-type como vieram (JSON, CSV de exportação, etc.).
   return new NextResponse(resposta.body, {

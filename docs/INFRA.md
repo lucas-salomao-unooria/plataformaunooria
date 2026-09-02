@@ -188,11 +188,11 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 | Log: exclusões no sink `_Default` | request log de `/healthz`, `/readyz` e dos uptime checks; `sample(insertId, 0.2)` dos 2xx com latência < 1 s | é o que mantém o log dentro dos 50 GiB grátis |
 | Log: bucket de auditoria | `{contrato}-auditoria`, 400 dias, regional, alimentado por sink de `codigo=auth.*`, `codigo=importacao.*`, `codigo=deploy` + Admin Activity | Data Access audit logs do próprio Logging ligados |
 | Pub/Sub dead letter | topic `{contrato}-telemetria-dlq`, `dead_letter_policy` na `-telemetria-ingest` após 5 tentativas | hoje um lote recusado é reentregue para sempre, em silêncio |
-| Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub) no recurso do serviço | o `gcloud run deploy` do CI não as remove |
+| Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub, **existe desde 2026-09-02**) no recurso do serviço | o `gcloud run deploy` do CI não as remove; trocar a sonda para HTTP só DEPOIS do hub com a rota estar no ar naquele ambiente |
 | Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
-| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` | fase 1/2; ver apêndice B |
+| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` (api e hub), `OBS_TRACE_RATIO_CLIENTE=0.02` (só hub: vai no `config.obs` do `hub:init` e liga o OpenTelemetry Web das experiências) | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
 | Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
-| IAM | `{contrato}-api` e `{contrato}-run` com `roles/cloudtrace.agent` e `roles/monitoring.metricWriter` | `logWriter` o Cloud Run já dá |
+| IAM e APIs | `{contrato}-api` e `{contrato}-run` já têm `roles/cloudtrace.agent`, `roles/monitoring.metricWriter` e `roles/logging.logWriter` (confirmado no Terraform em 2026-09-02). O que faltava e entrou: APIs `cloudtrace`, `clouderrorreporting` e `telemetry` em `gcp_services` (o papel não habilita a API — sem ela o exportador recebe `SERVICE_DISABLED`), e `roles/telemetry.writer` + `roles/serviceusage.serviceUsageConsumer` **só na SA da api** (as MÉTRICAS da api e o proxy OTLP dos spans do navegador saem por `telemetry.googleapis.com`; o exportador de métricas do Google foi descartado por arrastar 202 MB de `googleapis`) | ver `RUNBOOK-API.md` > Observabilidade no repo de infra |
 
 O CI ganha, no mesmo passo: smoke pós-deploy (a suíte `publico`+`estudante` de
 `scripts/e2e`), `if: failure()` notificando no canal "amanhã", e a suíte agendada
@@ -222,3 +222,11 @@ Deploy (CI deste repo):
 
 Nomes e valores concretos saem de `terraform output`; as `vars` que o
 `deploy.yml` consome estão listadas no passo 2 do `RUNBOOK-API.md`.
+
+**O que o CI passou a consumir (2026-09-02, cap. 17):** a var de environment
+`EXP_MAPAS_BUCKET` (= `terraform output bucket_exp_mapas`, o bucket PRIVADO dos
+sourcemaps — `scripts/configurar-github-ci.sh` a inclui quando o output
+existe). Sem ela o deploy avisa e segue (o `.map` fica só no runner). Nenhum
+secret novo: falha de workflow avisa por e-mail quem fez o push (padrão do
+GitHub), e o alerta de disponibilidade é dos **uptime checks** do Cloud
+Monitoring (Terraform, `observabilidade.tf`), por e-mail.

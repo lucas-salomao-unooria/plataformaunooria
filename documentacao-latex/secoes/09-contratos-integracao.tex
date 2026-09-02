@@ -34,7 +34,8 @@ exp \seta{} hub & \cd{exp:ready} &
   \cd{\{ protocolVersion, token, estudante\{id,nome,serie,turmaId,escolaId\},
   apiUrl, config \}}. Resposta ao \cd{exp:ready}; só a primeira conta.
   \cd{config} é o saco aditivo do protocolo: hoje carrega \cd{expId} e
-  \cd{clarityProjectId} (\adrr{ADR-60}) --- campo novo aqui não muda
+  \cd{clarityProjectId} (\adrr{ADR-60}) e \cd{obs.traceRatio} (a fração de
+  sessões com OpenTelemetry Web, Capítulo~\ref{cap:observabilidade}) --- campo novo aqui não muda
   \cd{PROTOCOL\_VERSION}, porque a experiência que não o conhece o ignora.\\
 exp \seta{} hub & \cd{exp:concluir} &
   \cd{\{ payload: \{ score?, dados? \} \}}. Conclusão da missão. O hub registra
@@ -47,6 +48,12 @@ hub \seta{} exp & \cd{hub:token} &
   \cd{\{ estado: \{\ldots\} \}}. Estado de alto nível para o \emph{chrome}
   opcional do hub. \textbf{Aditivo} ao v1; o hub \emph{não} interpreta domínio,
   só repassa a quem plugou um \emph{callback}.\\
+exp \seta{} hub & \cd{exp:erro} & \cd{\{ mensagem, hash \}}: a experiência
+  quebrou de um jeito que ela não trata (\cd{window.onerror},
+  \cd{unhandledrejection}). Só para o hub TROCAR A TELA (\enquote{A missão
+  travou}, recarregar); o registro do erro vai da SDK direto à API
+  (\rota{POST /observabilidade/erros-cliente}, \adrr{ADR-58}). Aditivo, v2
+  continua; hub antigo descarta com o aviso de \emph{schema}.\\
 hub \seta{} exp & \cd{hub:pause} / \cd{hub:resume} &
   Sem carga. Emitidos por visibilidade e foco da página do hub.\\
 \bottomrule

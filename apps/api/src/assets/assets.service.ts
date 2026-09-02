@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { logger } from "../observabilidade/logger";
 import sharp from "sharp";
 
 /**
@@ -89,7 +90,7 @@ export class AssetsService {
         await rm(path.join(this.dirLocal(), prefixo), { recursive: true, force: true });
       }
     } catch (falha) {
-      console.error("[assets] imagens não removidas — órfãos recuperáveis", falha);
+      logger.error({ err: falha, codigo: "assets.remocao-falhou" }, "imagens não removidas — órfãos recuperáveis");
     }
   }
 }

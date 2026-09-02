@@ -174,11 +174,14 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \bottomrule
 \end{tabularx}
 
-\subsection{Observabilidade (planejadas --- Capítulo~\ref{cap:observabilidade})}
+\subsection{Observabilidade (Capítulo~\ref{cap:observabilidade})}
 
-Nenhuma destas existe no código em 1º de setembro de 2026. Estão aqui porque
-o Terraform precisa prever a injeção antes da fase 1, e porque variável que
-nasce sem catálogo é a que ninguém encontra.
+Validadas pelo Zod de \arq{config/env.ts} desde 2 de setembro de 2026 (fase 1
+da API). Nenhuma é segredo: entram como \emph{env} em texto plano no Cloud Run,
+injetadas pelo Terraform. O logger raiz lê \env{LOG\_LEVEL},
+\env{GCP\_PROJECT\_ID} e \env{NODE\_ENV} \textbf{do ambiente cru}, antes do
+Nest --- ele nasce na importação, e é usado pelo \arq{main.ts} e pelo
+\emph{bootstrap} do OpenTelemetry.
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}L{18mm}X@{}}
 \toprule
@@ -195,6 +198,11 @@ nasce sem catálogo é a que ninguém encontra.
   exportados ao Cloud Trace (\cd{0.02} em produção; \cd{0} desliga o
   exportador, que é o \emph{default} de dev). Rotas de IA e o \emph{feed}
   usam dez vezes este valor, até 1.\\
+\zebra \env{OBS\_DEBUG} & \cd{0} & \cd{1} imprime \emph{spans} e métricas no
+  console local, sem GCP. Só para desenvolvimento; nunca no Terraform.\\
+\env{LOG\_FORMATO} & --- (vazio) & Fora de produção o log sai em
+  \cd{pino-pretty}; \cd{json} força o formato de produção no terminal, para
+  conferir uma linha como o Cloud Logging a verá.\\
 \bottomrule
 \end{tabularx}
 
@@ -219,6 +227,17 @@ nasce sem catálogo é a que ninguém encontra.
   isso é inlinada no \cd{next build}: entra por \cd{-{}-build-arg} no
   \arq{Dockerfile}, não como env de \emph{runtime} do Cloud Run. Trocar o id
   exige \emph{rebuild} da imagem.\\
+\env{OBS\_TRACE\_RATIO} & servidor & Fração de requisições do
+  PRÓPRIO hub com \emph{spans} exportados ao Cloud Trace (Capítulo~\ref{cap:observabilidade}).
+  \cd{0} desliga. Mesmo gate da API: exige \env{GCP\_PROJECT\_ID} ou \env{OBS\_DEBUG=1}.\\
+\zebra \env{OBS\_TRACE\_RATIO\_CLIENTE} & servidor & Fração de sessões das
+  EXPERIÊNCIAS com OpenTelemetry Web. Vai no \cd{config.obs.traceRatio} do
+  \cd{hub:init}: env de \emph{runtime}, então mudar a amostragem não
+  republica bundle nenhum. \cd{0} desliga (a SDK nem baixa os pacotes).\\
+\env{NEXT\_PUBLIC\_HUB\_VERSAO} & \textbf{cliente} & O SHA do
+  \emph{build}, inlinado no \emph{bundle} (\cd{ARG} do Dockerfile, como a do
+  Clarity): a \enquote{versão} do hub nos erros de CLIENTE do Error Reporting.
+  Ausente (\emph{build} local) fica \cd{dev}.\\
 \env{EXP\_INTERNAL\_URL} & servidor & De onde o hub \textbf{lê} o
   \arq{experiencia.json}. Endereço \textbf{fixo} --- serve quando há \emph{uma}
   origem de \emph{bundles} (a CDN, em produção).\\

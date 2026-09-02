@@ -6,10 +6,17 @@ import {
   claritySet,
   clarityUpgrade,
 } from "./clarity";
+import { instalarCapturaDeErros } from "./erros";
+import { iniciarTracesWeb, lerObsConfig } from "./otel-web";
 import { TelemetryClient } from "./telemetry";
+import { novoTraceparent } from "./trace";
+import { instalarVitais } from "./vitals";
 import type { ExperienciaHandle, OpcoesDeChamada } from "./types";
 export * from "./types";
 export * from "./clarity";
+export { instalarCapturaDeErros, type ErroDeCliente } from "./erros";
+export { instalarVitais, type Vital } from "./vitals";
+export { iniciarTracesWeb, lerObsConfig, type ObsConfig, type TracesWeb } from "./otel-web";
 
 type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -61,9 +68,30 @@ export async function createExperiencia(meta: {
   });
   setInterval(() => send({ type: "exp:token-expirando" }), 10 * 60 * 1000); // TTL do token é 15min
 
+  /*
+   * OpenTelemetry Web (cap. 17): spans de document-load e de todo fetch,
+   * exportados para a api. O ratio vem de `config.obs.traceRatio` do hub:init
+   * — env de runtime do hub, então mudar a amostragem não republica as seis
+   * experiências. Com 0 (dev), nada é sequer baixado. Enquanto o `import()`
+   * resolve, as primeiras chamadas saem sem span — aceito, pela mesma razão
+   * do Clarity: a alternativa é cravar config no bundle.
+   */
+  const obs = lerObsConfig(init.config);
+  let traces: Awaited<ReturnType<typeof iniciarTracesWeb>> = null;
+  const promessaDosTraces = iniciarTracesWeb({
+    traceRatio: obs.traceRatio,
+    apiUrl: init.apiUrl,
+    expId: meta.expId,
+    versao: meta.expVersion,
+    getToken: () => token,
+  })
+    .then((t) => (traces = t))
+    .catch(() => null);
+
   const telemetry = new TelemetryClient({
     apiUrl: init.apiUrl, getToken: () => token, estudante: init.estudante,
     expId: meta.expId, expVersion: meta.expVersion, sessaoId,
+    traceparentPeloOtel: () => traces !== null,
   });
 
   /*
@@ -111,7 +139,13 @@ export async function createExperiencia(meta: {
       try {
         const res = await fetch(`${init.apiUrl}${path}`, {
           method,
-          headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${token}`,
+            // Sem OTel Web, um traceparent novo dá `traceId` à api em 100% das
+            // chamadas; com ele, quem escreve o cabeçalho é a instrumentação.
+            ...(traces === null ? { traceparent: novoTraceparent() } : {}),
+          },
           body: body === undefined ? undefined : JSON.stringify(body),
           signal: controller.signal,
         });
@@ -132,6 +166,38 @@ export async function createExperiencia(meta: {
     }
     throw ultimoErro;
   }
+
+  /*
+   * Erro não tratado → api (ADR-58) + `exp:erro` para o hub trocar a tela.
+   * Instalado DEPOIS do handshake: antes dele não há token para postar. O
+   * `traceAtivo` liga o erro ao span do navegador quando o OTel está ligado.
+   */
+  const captura = instalarCapturaDeErros({
+    expId: meta.expId,
+    versao: meta.expVersion,
+    sessaoId,
+    enviar: (erro) => call("POST", "/observabilidade/erros-cliente", erro),
+    notificarHub: (resumo) => send({ type: "exp:erro", ...resumo }),
+    traceAtivo: () => {
+      if (traces === null) return undefined;
+      // A API do OpenTelemetry é no-op sem provider registrado; com o Web
+      // ligado, `trace.getActiveSpan()` é o span atual.
+      const span = otelApi?.trace.getActiveSpan()?.spanContext();
+      return span && span.traceId !== "0".repeat(32) ? { traceId: span.traceId, spanId: span.spanId } : undefined;
+    },
+  });
+  // Só carregado se os traces ligaram (mesmo `import()`, já em cache).
+  let otelApi: typeof import("@opentelemetry/api") | undefined;
+  void promessaDosTraces.then(async (t) => {
+    if (t) otelApi = await import("@opentelemetry/api");
+  });
+
+  // Web Vitals, 10% das sessões, sem identificador de pessoa no corpo.
+  void instalarVitais({
+    rota: meta.expId,
+    superficie: "exp",
+    enviar: (vital) => call("POST", "/observabilidade/vitals", vital),
+  }).catch(() => false);
 
   return {
     estudante: init.estudante,
@@ -166,6 +232,7 @@ export async function createExperiencia(meta: {
     concluir: (payload) => {
       telemetry.track({ verbo: "completed", objeto: meta.expId, resultado: payload });
       void telemetry.flush();
+      void traces?.forceFlush();
       clarityEvent(`completed:${meta.expId}`);
       // Sessão que chegou ao fim é a que não se pode perder para a amostragem
       // do Clarity (teto de 100k gravações/dia por projeto).
@@ -174,5 +241,6 @@ export async function createExperiencia(meta: {
     },
     on: (evento, cb) => handlers[evento]?.push(cb),
     enviarEstado: (estado) => send({ type: "exp:estado", estado }),
+    reportarErro: (erro) => captura.reportar(erro),
   };
 }

@@ -150,6 +150,36 @@ Isso reforça a prioridade do log estruturado em JSON
 texto, é o sinal não existir.
 \end{atencao}
 
+\begin{nota}
+\textbf{O que mudou na API em 2 de setembro de 2026 (fase 1).} O
+\cd{ConsoleLogger} saiu: o Nest loga pelo \cd{nestjs-pino}
+(\arq{observabilidade/logger.ts}), em JSON com \cd{severity},
+\cd{message}, \cd{time} RFC 3339, \cd{serviceContext} e os campos
+\cd{logging.googleapis.com/trace}, \cd{spanId} e \cd{trace\_sampled}
+preenchidos a partir do contexto da requisição. Esse contexto
+(\arq{tenancy/tenancy-context.ts}) é aberto por um \textbf{middleware do
+Express} antes dos \emph{guards} --- um 401 sai com \cd{x-request-id} como
+qualquer 200 --- e o \cd{TenancyInterceptor} só o preenche com escola e
+perfil. O \cd{requestId} é o \cd{traceId} que o \emph{load balancer} mandou
+(\cd{traceparent} ou \cd{X-Cloud-Trace-Context}), então o código que o
+professor lê no 500 é o que quem opera cola no Logs Explorer. A
+\emph{redaction} é mecânica (\arq{observabilidade/redaction.ts}): por nome
+de chave em qualquer profundidade e por padrão na mensagem (e-mail, CPF,
+\cd{Bearer}, \emph{query string}); o \cd{username} do
+\arq{auth.controller.ts} deixou de existir no log. O
+\cd{FiltroDeExcecao} global responde 500 \cd{\{codigo, requestId\}} com UMA
+linha \cd{ERROR} e \cd{stack\_trace}, e converteu em 400 um caso que era 500
+mudo: o \cd{ZodError} que escapava de um \cd{parse(body)} no \emph{handler},
+devolvido como \cd{path: code}, sem o valor recebido. Os 19 \cd{console.*}
+viraram \cd{logger.*} com um campo \cd{codigo} estável
+(\cd{telemetria.descartado}, \cd{planos.geracao-com-erro}\ldots) --- é por
+ele que se filtra e que se deriva métrica de log. Os descartes do
+\rota{/telemetry/beacon}, rota sem \emph{guard}, saem em \cd{debug}: uma
+linha por lote recusado seria vetor de inundação; o sinal contável entra
+com as métricas da fase 2. O que ainda não existe: \emph{traces},
+métricas da aplicação, e tudo do hub e da SDK.
+\end{nota}
+
 A Figura~\ref{fig:cadeia-visibilidade} percorre a cadeia de uma requisição e
 marca, elo por elo, o que se enxerga hoje e o que está cego.
 
@@ -371,9 +401,23 @@ Métricas da aplicação (OpenTelemetry) & O que só o processo sabe:
   planos por \cd{status}, idade do mais antigo em \cd{gerando}; \textbf{pool
   do Prisma} --- conexões em uso e espera; \textbf{ponte} --- \emph{handshakes}
   concluídos e expirados (via hub). &
-  Exportadas ao Cloud Monitoring pelo SDK OpenTelemetry com o exportador do
-  Google, agregadas a cada 60\,s. Cerca de 60 séries por contrato: cabe na
-  franquia de 150\,MiB com folga.\\
+  Exportadas a cada 60\,s pelo SDK OpenTelemetry --- \textbf{por OTLP/JSON
+  direto para a Telemetry API do Google} (\arq{exportador-de-metricas-otlp.ts}),
+  não pelo \cd{@google-cloud/opentelemetry-cloud-monitoring-exporter}: medido
+  em 2026-09-02, ele arrasta o pacote \cd{googleapis} inteiro, 202\,MB em
+  \cd{node\_modules}, para chamar um método. Cerca de 60 séries por contrato:
+  cabe na franquia de 150\,MiB com folga. Duas coisas medidas em \cd{dev} em
+  2026-09-02: \textbf{o \cd{resource} precisa carregar \cd{gcp.project\_id}}
+  (\arq{observabilidade/recurso.ts}) --- sem ele a Telemetry API recusa
+  \emph{todo} lote com \cd{HTTP 400}, a cada 60\,s, com log e \emph{trace}
+  funcionando, e o \cd{gcpDetector} não o preenche; e \textbf{a ingestão OTLP
+  grava no domínio \cd{prometheus.googleapis.com}}, não em
+  \cd{workload.googleapis.com} (onde o exportador legado gravava). A série sai
+  como \cd{prometheus.googleapis.com/\B unooria.ia.latencia/\B histogram}, no
+  recurso monitorado \cd{prometheus\_target} --- \cd{job} = \cd{service.name},
+  \cd{instance} = a instância do Cloud Run, \cd{location} = a região, tudo
+  preenchido pelo \cd{gcpDetector}. Procurar no domínio antigo faz parecer que
+  nada foi exportado.\\
 \bottomrule
 \end{tabularx}
 
@@ -410,16 +454,48 @@ credencial de \emph{service account} que já autentica o Vertex), pelos
 exportadores \cd{@google-cloud/opentelemetry-cloud-trace-exporter} e
 \cd{-cloud-monitoring-exporter}. O \emph{sidecar} é o gatilho de
 reavaliação registrado na \adrr{ADR-57}.
+
+\textbf{Atualização de 2026-09-02:} os dois exportadores citados acima foram
+DEPRECIADOS pelo Google, com arquivamento marcado para 30 de outubro de 2026
+--- antes da entrada em produção. O que a plataforma usa hoje são os
+exportadores \emph{oficiais} do OpenTelemetry sobre OTLP
+(\cd{exporter-trace-otlp-http} e \cd{-metrics-otlp-http}), apontados para a
+Telemetry API (\cd{telemetry.googleapis.com}), com a credencial ADC entregue
+por uma \textbf{função assíncrona} em \cd{headers} --- o \emph{token} expira
+em uma hora, e cabeçalho estático pararia de exportar sozinho. \textbf{O
+destino não mudou}: Cloud Trace e Cloud Monitoring. Mudaram o transporte e o
+domínio em que a métrica aparece.
 \end{decisao}
 
-Amostragem: \cd{ParentBased(TraceIdRatioBased(0.02))} --- 2\% das
-requisições, decidido na entrada e respeitado ao longo da cadeia. O
-identificador de \emph{trace} existe em \textbf{100\%} das requisições
-(ele vem do \emph{load balancer}), então todo log de erro carrega um
-\cd{trace} para pesquisar mesmo quando os \emph{spans} não foram guardados;
-o que a amostragem decide é só quanta \emph{linha do tempo} se armazena.
-Rotas de IA e \rota{/runs/:id/feed} têm amostrador próprio a 20\%: são as
-duas em que a latência é o produto.
+Amostragem: \cd{ParentBased} sobre \cd{TraceIdRatioBased(0.02)} --- 2\% das
+requisições, com uma diferença deliberada em relação ao \emph{default} do SDK
+(implementada em 2026-09-02, \arq{observabilidade/sampler.ts}): \textbf{o
+pai remoto não decide}. O \cd{traceparent} chega da internet --- da SDK no
+navegador, do hub, de um \cd{curl} --- e honrar \cd{sampled=01} deixaria
+qualquer cliente forçar 100\% de amostragem, que é custo. Como a decisão por
+razão é determinística no \cd{traceId}, hub e API com o mesmo \emph{ratio}
+tomam a \emph{mesma} decisão sem confiar um no outro; o pai \emph{local}
+(span filho no mesmo processo) segue o pai, como sempre. O identificador de
+\emph{trace} existe em \textbf{100\%} das requisições (ele vem do
+\emph{load balancer}, e com o SDK ligado o span de servidor existe mesmo
+não amostrado), então todo log de erro carrega um \cd{trace} para pesquisar
+mesmo quando os \emph{spans} não foram guardados; o que a amostragem decide
+é só quanta \emph{linha do tempo} se armazena. Rotas de IA
+(\rota{/ai}, \rota{/unoogpt}, \rota{/planos}, \rota{/bemestar}) e
+\rota{/runs/:id/feed} usam dez vezes o \emph{ratio}, até 100\%: são as em
+que a latência é o produto. \rota{/healthz} e \rota{/readyz} não viram
+\emph{span}: o \emph{uptime check} bate 4.320 vezes por dia.
+
+No hub a instrumentação é \textbf{menor de propósito}: o Next já emite os
+\emph{spans} de servidor e já extrai o \cd{traceparent} de entrada assim que
+existe um \cd{TracerProvider} global (medido: um \cd{traceparent} forjado na
+requisição sai como \cd{traceId} de todos os \emph{spans} do \emph{render});
+instalar o \cd{instrumentation-http} ali duplicaria o \emph{span} raiz. Só o
+\cd{undici} entra, para o \cd{fetch} de saída à API levar o cabeçalho. O gate
+é o mesmo nos dois processos: \env{OBS\_TRACE\_RATIO} \(>\) 0 \textbf{e}
+(\env{GCP\_PROJECT\_ID} ou \env{OBS\_DEBUG=1}, que imprime os \emph{spans} no
+console sem GCP). Desligado, nenhum objeto do SDK é criado --- é o que mantém
+o Jest e o \cd{nest start -{}-watch} sem GCP intocados.
 
 \subsection{Erros}
 
@@ -471,11 +547,16 @@ sessão}: um laço de erro numa experiência gera milhares de eventos por
 segundo; a SDK manda no máximo cinco por sessão, com \emph{dedupe} por
 \emph{hash} de mensagem e \emph{stack}, e a API responde 429 acima disso,
 por \cd{(escola, usuario)}. \textbf{\emph{Sourcemaps} privados}: o
-\emph{build} das experiências passa a gerar \cd{build.\B sourcemap:\B "hidden"},
-publicado em \cd{gs://\B\{contrato\}-exp/\B\{expId\}/\B\{versao\}/\B mapas/} com ACL
-privada (o \emph{bundle} continua sem o comentário que aponta para eles); a
-\emph{stack} minificada é legível com o mapa da versão exata, e a versão já
-está no caminho. \textbf{Nada de texto do estudante}: o \emph{payload} é um
+\emph{build} das experiências gera \cd{build.\B sourcemap:\B "hidden"} (o
+\emph{bundle} continua sem o comentário que aponta para eles), e o CI sobe os
+\cd{.map} para um \emph{bucket} \textbf{separado e privado},
+\cd{gs://\B\{project\}-exp-mapas/\B\{expId\}/\B\{versao\}/}. Não é a
+\enquote{pasta \cd{mapas/} com ACL privada no mesmo \emph{bucket}} que a
+primeira versão deste texto propôs: o \emph{bucket} dos \emph{bundles} tem
+acesso uniforme (\emph{uniform bucket-level access}, medido no Terraform), e
+nesse modo ACL por objeto não existe --- qualquer objeto ali é público. A
+\emph{stack} minificada é legível com o mapa da versão exata
+(\arq{scripts/mapear-stack.mjs}), e a versão já está no caminho. \textbf{Nada de texto do estudante}: o \emph{payload} é um
 \emph{schema} fechado; \cd{mensagem} e \cd{stack} passam pela
 \emph{redaction} da API e têm tamanho máximo.
 
@@ -569,9 +650,11 @@ duas armadilhas que o \arq{AGENTS.md} da raiz já descreve.
 \subsection{Camada de IA}
 
 A IA é o custo variável da plataforma e o sinal de que menos se sabe hoje.
-O \cd{AiProvider} ganha um invólucro de medida --- \textbf{dentro} de
-\arq{apps/api/src/ai}, o único lugar onde uma chamada de IA acontece --- que
-emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
+O \cd{AiProvider} ganha um invólucro de medida (\arq{ai/medidor.provider.ts},
+entregue em 2026-09-02) --- \textbf{dentro} de \arq{apps/api/src/ai}, o único
+lugar onde uma chamada de IA acontece, envolvendo o \emph{provider} real na
+\emph{factory} do módulo, de modo que nenhum consumidor sabe que ele existe
+--- que emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
 de entrada e saída, \cd{finishReason}, \cd{voltas}, \cd{tentativas} e o
 resultado (\cd{ok}, \cd{erro-provider}, \cd{quota}). O \cd{QuotaService}
 emite as recusas por perfil. Custo é métrica \emph{derivada}: uma tabela de
@@ -911,15 +994,24 @@ prova de pronto que a suíte ou o painel exibe.
   pós-\emph{deploy} e \cd{if: failure()} no \cd{deploy.yml}; suíte
   \cd{publico}+\cd{estudante} agendada contra \cd{hml}. &
   Repositório de Terraform (\arq{docs/INFRA.md} ganha a seção);
-  \arq{.github/workflows/} & Derrubar a API em \cd{hml} e receber o
+  \arq{.github/workflows/} (\emph{a parte deste repositório entregue em
+  2026-09-02}, \cd{ci/obs-sonda-e-mapas}: sonda pós-\emph{deploy}, \emph{job}
+  \cd{smoke} da \emph{landing}, mapas no \emph{bucket} privado; no Terraform,
+  APIs, papéis, \emph{envs}, \emph{bucket} de mapas, sondas HTTP no módulo e
+  os \emph{uptime checks} com alerta por e-mail --- escritos e validados,
+  aguardando \cd{apply}. A suíte agendada como monitor sintético ficou para
+  uma onda posterior, por decisão de 2026-09-02) & Derrubar a API em \cd{hml} e receber o
   \emph{push} em menos de 3 minutos. \emph{Deploy} com migração quebrada
   notifica.\\
-\zebra \textbf{1} \newline 1--2 semanas & \textbf{API}: \cd{nestjs-pino} com
+\zebra \textbf{1} \newline 1--2 semanas & \textbf{API} (\emph{entregue em
+  2026-09-02}, \cd{feat/obs-api-log}): \cd{nestjs-pino} com
   \emph{redaction}, contexto de requisição no ALS, \cd{ExceptionFilter}
   global, \env{LOG\_LEVEL}, \env{GCP\_PROJECT\_ID}, Prisma com aviso de
-  \emph{query} lenta. \textbf{Hub}: \arq{lib/log.ts}, \cd{apiDoServidor}
-  logando e com \emph{timeout}, \rota{/api/healthz}, \arq{error.tsx} e
-  \arq{global-error.tsx}, \cd{HEALTHCHECK}. \textbf{SDK}:
+  \emph{query} lenta. \textbf{Hub} (\emph{entregue em 2026-09-02},
+  \cd{feat/obs-hub-log}): \arq{lib/log.ts}, \cd{apiDoServidor} logando e
+  com \emph{timeout}, \rota{/api/healthz}, \arq{error.tsx} e
+  \arq{global-error.tsx}, \cd{onRequestError} com o \cd{digest} da tela
+  (o \cd{HEALTHCHECK} do Dockerfile ficou de fora: o Cloud Run o ignora). \textbf{SDK}:
   \cd{visibility\B change}, \emph{backoff} e teto de 500 eventos no
   \emph{buffer}, retorno do \cd{sendBeacon} verificado. &
   \arq{apps/api}, \arq{apps/hub}, \arq{packages/\B sdk} & Um 500 provocado
@@ -927,8 +1019,25 @@ prova de pronto que a suíte ou o painel exibe.
   ao da tela, em menos de um minuto. Teste unitário prova que
   \cd{username} e \cd{cpf} saem redigidos.\\
 \textbf{2} \newline 2--3 semanas & OpenTelemetry na API e no hub
-  (\arq{instrumentation.ts}), exportadores Google, amostragem 2\%/20\%,
-  \cd{traceparent} do navegador ao banco. Métricas da aplicação: IA, telemetria,
+  (\arq{instrumentation.ts}), exportador Google, amostragem 2\%/20\%,
+  \cd{traceparent} do navegador ao banco (\emph{traces entregues em
+  2026-09-02}, \cd{feat/obs-traces}: \arq{otel.ts} como primeira importação
+  do \arq{main.ts}, \cd{@prisma/instrumentation} no lugar do \cd{pg},
+  \emph{sampler} por rota que ignora a \emph{flag} do pai remoto).
+  \emph{Métricas da API e as três rotas de \rota{/observabilidade} entregues
+  em 2026-09-02}, \cd{feat/obs-metricas}: \cd{Metricas} injetável,
+  \cd{MedidorDeProvider}, contadores do pipeline de telemetria, proxy OTLP dos
+  \emph{spans} do navegador. \emph{Lado do cliente entregue em 2026-09-02},
+  \cd{feat/obs-sdk}: OpenTelemetry Web na SDK (\cd{document-load} + \cd{fetch},
+  exportador OTLP/JSON próprio para a API, \emph{ratio} pelo \cd{config.obs} do
+  \cd{hub:init}, \(\approx\)17\,KB gz em \emph{chunks} só carregados com
+  \emph{ratio} \(>\) 0), captura de erros com dedupe e teto, Web Vitals a 10\%,
+  \cd{exp:erro} na ponte, telemetria com teto e \emph{backoff},
+  \emph{sourcemaps} \cd{hidden} nas sete experiências; no hub, tela
+  \enquote{A missão travou}, \rota{/api/ponte} (métrica de log dos
+  \emph{handshakes}), erros, vitais e OpenTelemetry Web do próprio hub pelo
+  BFF (o \emph{ratio} chega por um \cd{<meta>} escrito pelo \emph{layout} a
+  partir de \env{OBS\_TRACE\_RATIO\_CLIENTE}). Métricas da aplicação: IA, telemetria,
   filas, pool, ponte. Rota \rota{POST /observabilidade/\B erros-cliente} e
   \rota{/observabilidade/\B vitals} com Zod, cota e \emph{redaction};
   \cd{window.\B onerror}/\B\cd{unhandled\B rejection} e \cd{web-vitals} na SDK;

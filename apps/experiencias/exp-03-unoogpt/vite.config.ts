@@ -3,6 +3,14 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   base: "./", // base relativa p/ servir de qualquer path do bucket
+  build: {
+    // Sourcemap OCULTO (cap. 17): o `.map` é gerado, mas o bundle não ganha o
+    // comentário `sourceMappingURL` — o navegador nunca o pede. O CI sobe os
+    // mapas num bucket PRIVADO à parte; no público (acesso uniforme) qualquer
+    // objeto é público, e o mapa é o fonte (na exp-01, a revelação). Nunca
+    // `true`; nunca `inline`.
+    sourcemap: "hidden",
+  },
   server: {
     // A porta é contrato com o hub (`apps/hub/lib/experiencias-dev.ts`): sem
     // `strictPort` o Vite pula para a próxima livre e o iframe do hub passa a

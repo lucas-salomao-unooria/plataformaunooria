@@ -3128,8 +3128,12 @@ conveniência local (retorno rápido) em vez de barreira única.
 como fronteira; nenhuma \emph{stack} auto-hospedada}
 \label{adr:observabilidade-nativa}
 
-\textbf{Estado: proposta} (2026-09-01), a partir do estudo do
-Capítulo~\ref{cap:observabilidade}.
+\textbf{Estado: aceita} (2026-09-02; proposta em 2026-09-01 a partir do
+estudo do Capítulo~\ref{cap:observabilidade}). Aceita com a primeira peça
+no código: log JSON com \emph{redaction} na API e no hub (fase 1) e
+\emph{traces} OpenTelemetry com o exportador direto do Cloud Trace nos dois
+processos (fase 2, \emph{traces}); as métricas da aplicação e o erro de
+cliente seguem o roteiro do capítulo.
 
 \begin{especificacao}{Contexto}
 A plataforma é diagnosticável e não é observável: log em texto sem
@@ -3208,12 +3212,103 @@ Cloud; um segundo operador (plantão, rodízio); um segundo destino
 \emph{sidecar} entra; ou a franquia estourar em dois meses seguidos apesar da
 exclusão e da amostragem.
 
+\textbf{Adendo (2026-09-02): métricas por OTLP, não pelo exportador do
+Google.} O texto acima diz \enquote{exportadores do Google}. Vale para os
+\emph{traces} (\cd{@google-cloud/opentelemetry-cloud-trace-exporter}, gRPC,
+leve). Para as métricas, o \cd{-cloud-monitoring-exporter} depende de
+\cd{googleapis} --- \textbf{202\,MB} medidos em \cd{node\_modules} --- para
+chamar um método da API de monitoramento; entraria inteiro na imagem da API.
+A decisão é exportar métricas em OTLP/JSON direto para
+\cd{telemetry.googleapis.com/v1/metrics}, com um cliente de 60 linhas que
+pede o \emph{token} ao \cd{google-auth-library} a cada envio
+(\arq{observabilidade/otlp-google.ts}) --- o mesmo cliente por onde a API
+reexporta os \emph{spans} do navegador. Alternativa descartada: o exportador
+OTLP/HTTP do próprio OpenTelemetry, que recebe cabeçalhos estáticos e não
+acompanha a expiração do \emph{token} OAuth.
+
+\textbf{O risco foi exercido em \cd{dev} no mesmo dia, e a decisão se
+sustentou} --- ao custo de duas descobertas que valem mais que a decisão:
+
+\begin{enumerate}
+  \item \textbf{O \emph{resource} precisa de \cd{gcp.project\_id}}, e o
+    \cd{gcpDetector} \emph{não} o preenche (ele traz \cd{cloud.account.id},
+    que a Telemetry API não aceita no lugar). Sem o atributo, TODA exportação
+    volta \cd{HTTP 400 Resource is missing required attribute}, a cada 60\,s
+    --- com log e \emph{trace} funcionando, o que torna a falha invisível para
+    quem olha o painel e visível só no \cd{diag} do SDK. Corrigido em
+    \arq{observabilidade/recurso.ts}, com teste de regressão.
+  \item \textbf{A ingestão OTLP grava no domínio
+    \cd{prometheus.googleapis.com}}, não em \cd{workload.googleapis.com} ---
+    onde o exportador legado gravava, e onde este documento mandava procurar.
+    A série sai como
+    \cd{prometheus.googleapis.com/\B unooria.telemetria.descartados/\B counter},
+    no recurso monitorado \cd{prometheus\_target} (\cd{job} =
+    \cd{service.name}, \cd{instance} = a instância do Cloud Run,
+    \cd{location} = a região), com \cd{otel\_scope\_name} nos rótulos. Por
+    algumas horas isso fez parecer que \emph{nenhuma} métrica estava sendo
+    exportada, quando estavam todas. É consequência declarada da migração, não
+    defeito: a nota oficial avisa que a mudança de domínio \enquote{quebra
+    painéis existentes}. Aqui saiu de graça, porque painel ainda não existe ---
+    e é o tipo de custo que se paga barato \emph{antes} da produção.
+\end{enumerate}
+
+O caminho de volta (exportador do Google, 202\,MB) segue registrado e não foi
+preciso.
+
+\textbf{Segundo adendo (2026-09-02): os exportadores do Google para Node estão
+DEPRECIADOS --- os PACOTES, não os produtos.} O SDK avisa no \emph{stdout}:
+\cd{DEP\_GCP\_OTEL\_TRACE\_EXPORTER --- deprecated and will be archived after
+October 30th, 2026}. A nota oficial
+(\cd{GoogleCloudPlatform/\B opentelemetry-operations-js}, \arq{MIGRATION.md})
+delimita o escopo: \enquote{\emph{all packages in this repository are
+deprecated}} e \enquote{\emph{the underlying Google Cloud services (Cloud
+Trace, Cloud Monitoring) remain operational}}. \textbf{O Cloud Trace não vai a
+lugar nenhum}: muda o caminhão de entrega (OTLP pela Telemetry API), não o
+destino.
+
+\textbf{A migração foi feita no mesmo dia} (\cd{feat/obs-traces-otlp}), e o
+prazo --- 30 de outubro de 2026, \emph{anterior} à entrada em produção ---
+deixou de ser um risco carregado. Nenhum pacote \cd{@google-cloud/opentelemetry-*}
+sobrou na api nem no hub.
+
+O desenho mudou numa coisa em relação ao primeiro adendo, e para melhor: os
+sinais do PRÓPRIO processo passam pelos exportadores \textbf{oficiais} do
+OpenTelemetry (\cd{@opentelemetry/\B exporter-trace-otlp-http} e
+\cd{-metrics-otlp-http}), não por cliente escrito à mão. O que tornou isso
+possível foi a opção \cd{headers} aceitar uma \emph{função assíncrona} --- é
+ela que resolve o problema que motivou o cliente próprio (o \emph{token} da
+ADC expira em uma hora, e cabeçalho estático pararia de exportar sozinho). A
+fábrica está em \arq{observabilidade/otlp-google.ts}
+(\cd{cabecalhosParaTelemetryApi}); o exportador de métricas escrito à mão foi
+apagado, e com ele um defeito que ele tinha e a biblioteca não tem: ele
+tratava qualquer 2xx como sucesso, ignorando o \cd{partialSuccess} que o OTLP
+devolve quando aceita o lote mas descarta pontos.
+
+O \cd{ClienteOtlpGoogle} continua existindo para o que a biblioteca não sabe
+fazer: reencaminhar um corpo OTLP \emph{já pronto}, vindo do navegador
+(\rota{POST /observabilidade/v1/traces}).
+
+Saldo de dependências: saíram \cd{@google-cloud/opentelemetry-cloud-trace-exporter}
+e o \cd{@grpc/grpc-js} que ela arrastava; entraram os dois exportadores
+oficiais, que compartilham \cd{otlp-transformer} e \cd{otlp-exporter-base} com
+o que já estava instalado.
+
 % ---------------------------------------------------------------------------
 \section{ADR-58 --- Erro de cliente entra pela API; nenhum SDK de terceiro
 no \emph{bundle} da experiência}
 \label{adr:erro-cliente-pela-api}
 
-\textbf{Estado: proposta} (2026-09-01).
+\textbf{Estado: aceita} (2026-09-02; proposta em 2026-09-01). O lado do
+servidor está no código: \rota{POST /observabilidade/erros-cliente},
+\rota{/vitals} e \rota{/v1/traces} (este último não estava no texto original:
+com o OpenTelemetry Web dentro da SDK, os \emph{spans} do navegador também
+entram pela API, que os valida, reescreve o \cd{resource} e reexporta com a
+própria credencial --- o mesmo argumento, estendido). O lado do cliente
+também está no código (\cd{feat/obs-sdk}, 2026-09-02): captura na SDK com
+dedupe e teto de 5 por sessão, \cd{exp:erro} na ponte, \emph{sourcemaps}
+\cd{hidden} publicados em \emph{bucket} privado à parte --- e não na pasta
+do \emph{bundle} com ACL, como o texto original supunha: o \emph{bucket}
+público tem acesso uniforme, e ACL por objeto não existe lá.
 
 \begin{especificacao}{Contexto}
 A classe de falha mais cega da plataforma é a que acontece no navegador do
@@ -3730,3 +3825,109 @@ sem acrescentar a linha faz a conferência passar sem conferir.
 \textbf{Gatilho de reavaliação.} A terceira experiência com mídia externa: com
 uma, a lista à mão é honesta; com três, o \arq{midia-externa.json} deve passar
 a ser gerado do catálogo da api, que já sabe o nome de cada arquivo.
+
+\section{ADR-64 --- O marco da exp-03 carrega o relógio do instante; a faixa
+da decisão é gravada, não recomputada}
+\label{adr:marco-com-relogio}
+
+\begin{especificacao}{Contexto}
+O pedido do produto para o relatório do professor da Missão Tempestade foi
+sobre \emph{tempo}: quanto demorou até a primeira fala, com quanto cronômetro
+cada fonte foi carregada, quantas vezes mudou o destino antes de confirmar, com
+quanto relógio confirmou (ou se estourou), e se apertou Recomeçar --- e se o
+professor \enquote{tinha liberado}. Ao levantar o que já existia, duas
+imprecisões de gravação apareceram. A primeira: \cd{sessoes.minutos\_gastos}
+só era atualizado pelo relógio dentro do turno do assistente; as rotas diretas
+(\cd{alocar}, \cd{carregarConjuntos}, \cd{simular}) e as ferramentas chamadas
+de dentro do turno gravavam o marco com o minuto do \textbf{último turno} ---
+e um turno leva de 10 a 30\,s, dois a seis minutos da cidade. Pior: a hora de
+\emph{saída} das equipes vinha do mesmo retrato, então quem alocava pelo mapa e
+enviava sem falar de novo saía no minuto de um turno atrás, e chegava a bairros
+que já não alcançaria. A segunda: a fala do estudante era gravada depois do
+\cd{await} do provedor, datada pelo fim do turno, não pelo envio.
+
+Havia ainda o que o relatório precisaria e não tinha como reconstruir: o
+cronômetro de parede que a criança via num dado marco. \cd{criado\_em} existe,
+mas \enquote{+2 min} altera \cd{duracao\_seg} sem histórico e \enquote{zerar a
+turma} apaga o relógio --- a conta feita depois mentiria em toda aula que teve
+extensão. E a faixa da decisão (200 corridas de \cd{esperadoDe}) era
+recomputada a cada leitura: determinística hoje, mas uma mudança em
+\cd{PARAMETROS} reescreveria em silêncio o relatório de toda partida antiga.
+\end{especificacao}
+
+\textbf{Decisão.} Cinco movimentos, uma migração só de \cd{ALTER}, sem tocar
+RLS nem \cd{escola\_id}:
+
+\begin{enumerate}
+  \item \cd{gravarMarco} recebe o \cd{EstadoDoRelogio} \textbf{recalculado no
+    instante} (\cd{relogioAgora}), e grava \cd{minuto},
+    \cd{segundos\_restantes} e \cd{motivo\_do\_fim} dele. As rotas diretas
+    passam a atualizar \cd{minutos\_gastos} pelo mesmo estado, e
+    \cd{aoConfirmar} usa esse minuto para a saída das equipes.
+  \item A fala do estudante leva \cd{criadoEm: agora} --- a hora em que apertou
+    enviar.
+  \item Dois tipos de marco: \cd{inicio} (entrou na Investigação, uma vez por
+    tentativa --- é de onde se mede o tempo até a primeira fala) e
+    \cd{recomeco}, gravado na tentativa que \emph{fecha}, com \cd{origem}
+    (qual botão: a lixeira da Investigação ou o \enquote{Tentar de novo} do
+    Resultado --- a única parte que só o cliente sabe, e vai no corpo do
+    \rota{POST /unoogpt/reiniciar}), \cd{fase} e \cd{modo} do relógio da turma.
+  \item \cd{exp\_03\_simulacoes.esperado}: a faixa e o percentil do resgate
+    real, gravados no confirmar. Precedente: \cd{exp\_70\_sessoes.leitura\_mensagens}.
+    O \cd{envio} passa a carregar também as justificativas como o professor lê,
+    porque \cd{reiniciar} zera as da sessão.
+  \item O resto é \textbf{derivado na leitura}, sem coluna: mudanças de destino
+    (pares \cd{(alfa, bravo)} consecutivos distintos antes do envio --- contar
+    linhas mentiria, porque o cartão de duas opções manda um POST por equipe e
+    justificar passa pela mesma rota), tempo até a primeira fala (da largada e
+    do Começar, os dois, porque antes da largada o campo está bloqueado e
+    contar do Começar mediria o professor), \% do risco coberto e posição na
+    faixa. Mesmo princípio de \cd{leitura.ts}: o servidor recalcula do bruto.
+\end{enumerate}
+
+\enquote{Se o professor tinha liberado} recebe a resposta honesta: não existe
+liberação de recomeço --- o que o professor controla é o relógio, e é o
+relógio que fica gravado ao lado do clique. Criar a liberação seria decisão de
+produto contra o desenho registrado (\enquote{o professor controla quando dá
+para falar, não o que a criança decide}) e fica para uma ADR própria, se o dado
+gravado mostrar que faz falta.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Telemetria como fonte}: os eventos já existem
+    (\cd{interacted:alocacao}, \cd{attempted:recomeco}). Mas o canal é
+    preenchido pelo cliente, assíncrono (Pub/Sub, desligado em \cd{dev}),
+    perde lote no fechar da aba, e nenhum código do repositório lê
+    \cd{telemetria\_eventos} --- além da regra escrita de que o que o professor
+    lê nunca vem do canal que o cliente preenche.
+  \item \emph{Reconstruir o cronômetro de \cd{criado\_em} + relógio da turma}:
+    falha em toda aula com \enquote{+2 min} (a duração muda sem histórico) e
+    em toda turma zerada (o relógio some). Gravar no instante custa duas
+    colunas e não mente.
+  \item \emph{Sessão por tentativa} (uma linha de \cd{exp\_03\_sessoes} por
+    rodada, preservando justificativas e conjuntos): resolveria a perda no
+    \cd{reiniciar} de forma geral, mas mudaria a chave primária de quatro
+    tabelas e toda consulta do módulo. A cópia das justificativas no marco de
+    \cd{envio} resolve o que o relatório precisa, por uma fração do custo.
+  \item \emph{Persistir a contagem de mudanças e a cobertura}: contrariaria o
+    princípio do módulo (o servidor recalcula do bruto, e a versão da leitura
+    sobe quando a hipótese muda). Só se grava o que \textbf{não} dá para
+    recalcular --- o cronômetro e a faixa.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a correção do minuto muda o desfecho de
+quem confirma sem turno novo --- é correção, mas partidas antigas e novas não
+são comparáveis nesse detalhe, e o produto foi avisado antes de qualquer teste
+controlado. \emph{Ruim}: marcos e simulações anteriores à migração têm as
+colunas novas nulas; a tela diz \enquote{sem registro} e a leitura recomputa a
+faixa. \emph{Ruim}: o cliente da exp-03 sobe de versão pela \cd{origem} no
+corpo --- cliente antigo continua aceito (corpo vazio é válido). \emph{Bom}:
+nenhum evento de telemetria novo, nenhuma tabela nova, RLS intocada; o
+relatório do professor sai inteiro de \cd{GET /unoogpt/professor/estudantes/:id},
+e o gestor continua sem rota que aceite \cd{estudanteId}.
+
+\textbf{Gatilho de reavaliação.} O produto pedir a comparação de
+\emph{justificativas} ou \emph{conjuntos} entre tentativas além do que o marco
+de envio guarda --- aí a sessão por tentativa volta à mesa. Ou o dado de
+\cd{recomeco} mostrar que crianças recomeçam depois de o professor encerrar,
+em número que justifique a liberação explícita.

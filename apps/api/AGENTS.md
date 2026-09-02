@@ -334,6 +334,111 @@ instalar a plataforma, o mesmo arquivo continua legível.
   plataforma, de propósito, e as faixas vão até 2028-12.
 
 
+## Log e contexto de requisição (2026-09-02)
+
+**O log é o pino, em JSON, com os nomes do Cloud Logging.** Nada de `console.*`
+em `src/` — a saída do processo É o sinal operacional (cap. 17), e `console`
+sai sem `severity`, sem `requestId` e sem redaction. Dois jeitos de logar, os
+dois passando pelo mesmo `criarOpcoesDoPino` (`observabilidade/logger.ts`):
+o `Logger` do Nest (`new Logger(X.name)`, que o `app.useLogger` roteia para o
+pino) e o `logger` raiz importado de `observabilidade/logger` — este é o
+único que existe fora do container do Nest (`main.ts`, `worker.ts`, funções
+puras). Os dois carregam o contexto da requisição via `mixin`.
+
+- **Toda linha leva um `codigo` estável** (`telemetria.descartado`,
+  `planos.geracao-com-erro`, `query-lenta`): é por ele que se filtra no Logs
+  Explorer e que se deriva métrica de log. A mensagem é para gente; o `codigo`
+  é para máquina. Não invente `codigo` com valor variável (id, nome).
+- **PII entra por CHAVE e sai redigida.** `redigirObjeto` apaga
+  `authorization`, `cookie`, `token`, `senha`, `cpf`, `username`, `email`,
+  `nome`, `texto`, `mensagem`, `transcricao`, `observacao` em qualquer
+  profundidade; `redigirTexto` apaga e-mail, CPF, `Bearer …` e query string na
+  mensagem e na `stack`. Isso é rede, não licença: o `username` do
+  `auth.controller.ts` foi REMOVIDO do log, não redigido. Um campo novo com
+  dado de pessoa ganha o nome da lista, ou entra na lista — nunca um sinônimo.
+- **Sem log de requisição da aplicação** (`autoLogging: false`). O Cloud Run
+  já grava um por requisição, com trace. O que a api loga é o que ele não
+  sabe: escola, motivo de um 4xx, a decisão de degradar.
+- **O contexto (`tenancy/tenancy-context.ts`) é UM objeto mutável por
+  requisição**, aberto pelo `contextoMiddleware` em `main.ts` — o PRIMEIRO
+  `app.use`, antes dos parsers e dos guards, para o 401 sair com
+  `x-request-id` — e preenchido com `escolaId`/`perfil` pelo
+  `TenancyInterceptor`. O `FiltroDeExcecao` roda FORA da cadeia do interceptor
+  e lê a escola desse mesmo objeto; é por isso que o interceptor MUTA em vez
+  de abrir um store novo. `comEscolaNoContexto` (seed, worker, teste) continua
+  abrindo o próprio. `requestId` = `traceId` do `traceparent` ou do
+  `X-Cloud-Trace-Context` do LB; sem eles, UUID.
+- **`FiltroDeExcecao` (global, `APP_FILTER`)**: `HttpException` mantém o corpo
+  (5xx loga `ERROR`, 4xx `debug`); `ZodError` que escapou de um `parse(body)`
+  vira **400** `{ codigo: "corpo-invalido", problemas: "path: code" }` — era
+  500 mudo; o resto vira 500 `{ codigo: "erro-interno", requestId }` com UMA
+  linha `ERROR` + `stack_trace`, que o Error Reporting agrupa. Não faça
+  `try/catch` que engole erro para "não dar 500": o filtro é quem transforma
+  o erro em sinal.
+- **Rota sem guard não loga por requisição recusada.** O `/telemetry/beacon`
+  é público por natureza; os 5 descartes dele são `logger.debug` (invisível em
+  `info`) — o sinal contável é métrica (PR das métricas). Uma linha `warn` por
+  lote recusado seria um vetor de inundação de log, cobrado por GiB.
+- **Prisma**: `PrismaService` liga o evento `query` sempre; acima de
+  `LIMIAR_DE_QUERY_LENTA_MS` (500) sai `WARNING` com o SQL (com `$1`, sem os
+  parâmetros — é neles que mora o CPF); em `LOG_LEVEL=debug` toda query sai.
+- **OpenTelemetry: `src/otel.ts` é a PRIMEIRA linha do `main.ts`**, antes
+  de `@nestjs/core`. A instrumentação automática altera `http`, `express`,
+  `undici` e o Prisma no `start()`; importado depois do `AppModule`, o trace
+  teria só o HTTP de entrada — sem banco e sem IA, em silêncio. Nada em
+  `otel.ts` importa código da aplicação (o Zod ainda não rodou). Gate em
+  `observabilidade/otel-config.ts`: `OBS_TRACE_RATIO > 0` E (`GCP_PROJECT_ID`
+  ou `OBS_DEBUG=1`); desligado, nenhum objeto do SDK existe — é o que mantém
+  o Jest e o `nest start --watch` sem GCP intocados. Para ver um trace em dev:
+  `OBS_DEBUG=1 OBS_TRACE_RATIO=1 pnpm dev` (spans no console).
+  **Prisma não é `pg`**: é `@prisma/instrumentation`, que acompanha a versão
+  do `prisma` — subir um é subir o outro. O `sampler.ts` decide por rota
+  (IA e feed a 10x, até 1) e **ignora a flag do pai remoto** (o `traceparent`
+  vem da internet; honrá-la deixaria qualquer cliente forçar 100%). Exportador
+  direto para o Cloud Trace, sem sidecar (ADR-57). O `DesligamentoDoOtel`
+  faz o flush no SIGTERM via `enableShutdownHooks`.
+- **Métricas (`observabilidade/metricas.ts`)**: um provider global com os
+  instrumentos (`unooria.ia.*`, `unooria.telemetria.*`, `unooria.web.*`,
+  `unooria.observabilidade.*`); injete `Metricas` onde a medida acontece.
+  **No Cloud Monitoring elas aparecem como
+  `prometheus.googleapis.com/unooria.ia.latencia/histogram`**, no recurso
+  monitorado `prometheus_target` (`job` = `service.name`, `instance` = a
+  instância do Cloud Run, `location` = a região) — NÃO em
+  `workload.googleapis.com`, que é onde o exportador legado do Google as
+  colocava. Procurar no domínio errado faz parecer que nada foi exportado
+  (aconteceu em 2026-09-02). Os rótulos ganham `otel_scope_name`.
+  **Nenhum rótulo com `escola_id`, `estudante_id`, sessão ou URL crua** —
+  cem escolas multiplicam cada série por cem. Rótulos são conjuntos fechados
+  (`modelo` da env, `operacao`, `resultado`, `perfil`, `motivo`, `finishReason`
+  por allowlist, `rota` normalizada por `normalizar-rota.ts`). **A IA se mede
+  no `MedidorDeProvider`** (decorator na factory do `AiModule`), nunca no
+  consumidor; a quota conta recusas em `temSaldo`. Exportação a cada 60 s por
+  **OTLP/JSON para `telemetry.googleapis.com`** (`otlp-google.ts`) — NÃO
+  instale `@google-cloud/opentelemetry-cloud-monitoring-exporter`: ele
+  arrasta 202 MB de `googleapis` (medido). **O `resource` precisa de
+  `gcp.project_id`** (`observabilidade/recurso.ts`): sem ele a Telemetry API
+  recusa todo lote com `HTTP 400 Resource is missing required attribute` a cada
+  60 s, com log e trace funcionando — falha silenciosa para quem olha o painel.
+  O `gcpDetector` não preenche esse atributo. Nos testes,
+  `tests/metricas-em-memoria.ts` dá um `Metricas` com MeterProvider em
+  memória para ler o que saiu.
+- **`/observabilidade/*`** (erros-cliente, vitals, v1/traces): rotas com
+  `OidcGuard`, Zod `.strict()`, cota em memória por (escola, usuário) via
+  `comum/rate-limit.ts`, e **sem linha de log por requisição recusada** (o
+  sinal é contador). O proxy OTLP (`otlp-proxy.service.ts`) SUBSTITUI o
+  `resource` do cliente e filtra atributos por allowlist antes de reexportar —
+  nada do que o navegador manda vai ao Google como veio.
+- Envs: `LOG_LEVEL` (default `info`), `GCP_PROJECT_ID` (correlação com o
+  trace, cliente OTLP; vazio em dev = métricas e spans do navegador contados
+  e descartados), `OBS_TRACE_RATIO` (fração exportada; 0 desliga),
+  `OBS_DEBUG` (spans e métricas no console). Fora de produção o formato é `pino-pretty`; `LOG_FORMATO=json`
+  mostra a linha como o Cloud Logging a verá. Em teste (`NODE_ENV=test`) é
+  JSON sem transporte — o pino-pretty abre um worker que o Jest não fecha.
+- Testes: `tests/observabilidade-*.spec.ts` e `tests/tenancy-contexto.spec.ts`
+  provam redaction, severity, trace, filtro e o store mutável. São puros
+  (sem banco): rodam sozinhos com `pnpm exec jest tests/observabilidade`.
+
+
 ## Documentação da api: OpenAPI derivado do Zod (2026-08-28)
 
 `/docs` (Swagger UI) e `/docs-json` na **api** — `localhost:3001/docs`, não 3000,
@@ -582,6 +687,35 @@ nunca só a coluna. A mesma pergunta está aberta para `telemetria_eventos`, que
 guarda evento por `estudante_id` de todas as experiências e também não tem prazo: se
 a resposta importar, ela é da plataforma inteira, não de um módulo.
 
+
+## Missão Tempestade (exp-03, `apps/api/src/unoogpt`)
+
+- **Marco novo leva o relógio do INSTANTE, nunca `sessoes.minutos_gastos`.**
+  `gravarMarco(..., estado)` recebe o `EstadoDoRelogio` de `relogioAgora(tx,
+  escolaId, turmaId)` e grava `minuto`, `segundos_restantes` e `motivo_do_fim`
+  dele. `minutos_gastos` é o retrato do último turno do Cientista — um turno
+  leva 10–30 s (2–6 minutos da cidade), e as rotas diretas (`alocar`,
+  `carregarConjuntos`, `simular`) gravavam com ele; a saída das equipes saía
+  no minuto de um turno atrás (ADR-64). O relatório do professor lê o
+  cronômetro gravado; reconstruí-lo depois é inviável ("+2 min" muda a duração
+  sem histórico, "zerar" apaga o relógio).
+- **O que o professor lê de TEMPO é derivado na leitura, não coluna**:
+  `mudancasDeDestino` (pares consecutivos distintos — o cartão de duas opções
+  manda dois POSTs e justificar passa pela mesma rota), `coberturaDoRisco`,
+  `posicaoNaFaixa` (`regras/trilha.ts`, `regras/desfecho.ts`). Só se grava o
+  que não dá para recalcular: o cronômetro do marco e `simulacoes.esperado`.
+- **A fala do estudante é datada por `agora`** (a hora do envio), porque a
+  gravação acontece depois do `await` do provedor. Sem isso a hora é o fim do
+  turno.
+- **`reiniciar` grava `recomeco` na tentativa que FECHA**, com `origem` (vem do
+  corpo, opcional — cliente antigo não manda) e `fase`/`modo` do relógio. Não
+  existe "liberar recomeço" pelo professor; o que ele controla é o relógio.
+- **`GET /resultado` do estudante filtra os tipos** `fontes|leitura|alocacao|envio`:
+  a linha do tempo do cliente cai no ramo de `envio` para tipo desconhecido, e
+  narraria `inicio` como "enviou 0 resgatadas".
+- Número de resgate **só na rota individual** (`doEstudante`); a folha da turma
+  fala de conduta, e `tests/unoogpt-postgres.spec.ts` quebra se `salvas`
+  entrar nela.
 
 ## Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
 Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão

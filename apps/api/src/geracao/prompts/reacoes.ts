@@ -1,5 +1,6 @@
 import type { AiJsonSchema, AiProvider } from "../../ai/provider";
 import { filtrarReacoes, MAX_CARACTERES, type Reacao } from "./reacao-segura";
+import { logger } from "../../observabilidade/logger";
 
 /**
  * Personas reagindo **ao vivo** ao que o estudante publica ou comenta.
@@ -133,16 +134,15 @@ export async function gerarReacoes(
     if (recusadas.length > 0) {
       // Registrado para auditoria: o professor não vê, mas nós precisamos saber
       // com que frequência o modelo tenta sair da linha.
-      console.warn(
-        `[ia] ${recusadas.length} reação(ões) recusada(s): ${recusadas
-          .map((recusada) => recusada.motivo)
-          .join(" · ")}`,
+      logger.warn(
+        { codigo: "ia.reacoes-recusadas", quantas: recusadas.length, motivos: recusadas.map((r) => r.motivo) },
+        "reações recusadas pelo guardrail",
       );
     }
 
     return { reacoes: aprovadas.slice(0, quantas), recusadas: recusadas.length };
   } catch (falha) {
-    console.error("[ia] geração de reação falhou; nada será exibido", falha);
+    logger.error({ err: falha, codigo: "ia.reacoes-falhou" }, "geração de reação falhou; nada será exibido");
     return { reacoes: [], recusadas: 0 };
   }
 }

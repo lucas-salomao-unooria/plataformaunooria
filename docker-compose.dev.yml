@@ -194,6 +194,11 @@ services:
       # importar currículo/material didático com scripts/importar-referencias-plano.mjs.
       PLANOS_IMPORT_TOKEN: ${PLANOS_IMPORT_TOKEN:-}
       TELEMETRIA_TOPIC: ""
+      # Observabilidade: log em `pretty` no terminal (NODE_ENV≠production); nada
+      # sai para o GCP sem GCP_PROJECT_ID/OBS_TRACE_RATIO, que ficam vazios aqui.
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      OBS_TRACE_RATIO: ${OBS_TRACE_RATIO:-0}
+      OBS_DEBUG: ${OBS_DEBUG:-0}
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
@@ -235,6 +240,11 @@ services:
     environment:
       <<: *dev-env
       API_INTERNAL_URL: http://api:3001
+      # Observabilidade: mesmo gate da api; OBS_DEBUG=1 imprime os spans do Next no console.
+      OBS_TRACE_RATIO: ${OBS_TRACE_RATIO:-0}
+      OBS_DEBUG: ${OBS_DEBUG:-0}
+      # Fração de sessões das experiências com OpenTelemetry Web (config.obs do hub:init). 1 = todas, em dev.
+      OBS_TRACE_RATIO_CLIENTE: ${OBS_TRACE_RATIO_CLIENTE:-0}
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_CDN_EXP_URL: http://localhost:5173
       # Microsoft Clarity: sem valor por default. A stack de dev roda com o

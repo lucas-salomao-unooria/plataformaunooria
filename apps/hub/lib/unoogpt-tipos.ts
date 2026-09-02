@@ -71,38 +71,100 @@ export interface LinhaDeLeitura {
   porQue: string[];
 }
 
+export type MotivoDoFim = "tempo" | "professor" | null;
+
+/** Um marco da trilha, com o relógio do INSTANTE em que foi gravado. */
+export interface MarcoDaTrilha {
+  tentativa: number;
+  ordem: number;
+  tipo: "fontes" | "leitura" | "alocacao" | "envio" | "inicio" | "recomeco";
+  minuto: number;
+  /** O cronômetro que o estudante via. Null = modo livre ou marco anterior à coluna. */
+  segundosRestantes: number | null;
+  motivoDoFim: MotivoDoFim;
+  criadoEm: string;
+  dados: unknown;
+}
+
+/**
+ * Como a criança usou o TEMPO de uma tentativa — enfrentada ou não. Quem
+ * recomeçou no meio não tem simulação, mas tem conversa e marcos, e aparece.
+ */
+export interface RodadaDoEstudante {
+  tentativa: number;
+  inicioEm: string | null;
+  primeiraFalaEm: string | null;
+  /** Dois relógios: antes da largada o campo está bloqueado, então "desde o
+   *  Começar" mede o professor, não o estudante. */
+  ateAPrimeiraFala: { desdeOComecar: number | null; desdeALargada: number | null } | null;
+  /** Pares (alfa, bravo) consecutivos DISTINTOS antes do envio — não linhas. */
+  mudancasDeDestino: number;
+  enfrentou: boolean;
+  envio: {
+    em: string;
+    minuto: number;
+    segundosRestantes: number | null;
+    motivoDoFim: MotivoDoFim;
+    estourou: boolean;
+  } | null;
+  recomeco: {
+    em: string;
+    origem: "investigacao" | "resultado" | null;
+    fase: "aguardando" | "correndo" | "encerrado" | null;
+    modo: "cronometrado" | "livre" | null;
+    segundosRestantes: number | null;
+    motivoDoFim: MotivoDoFim;
+  } | null;
+}
+
+/** O desfecho de uma tentativa, como o professor lê. Só na tela individual. */
+export interface TentativaDoEstudante {
+  ordem: number;
+  alocacao: { alfa: string | null; bravo: string | null };
+  minutoDaSaida: number;
+  criadoEm: string;
+  emRisco: number;
+  salvas: number;
+  vitimas: number;
+  semSocorro: number;
+  /** % do risco da cidade que os bairros escolhidos cobriam. Medida da decisão. */
+  coberturaDoRisco: number | null;
+  esperado: {
+    media: number;
+    faixa: [number, number];
+    vitimasMedia: number;
+    vitimasFaixa: [number, number];
+    amostras: number[];
+  };
+  posicao: { percentil: number; dentroDaFaixa: boolean; acimaDaMedia: boolean };
+  justificativas: { alfa: string; bravo: string } | null;
+}
+
 export interface RelatorioDoEstudante {
   estudante: { id: string; nome: string };
   versaoLeitura: number;
   linhas: LinhaDeLeitura[];
   porGrau: Record<string, number>;
   resumo: string;
+  /** As da tentativa CORRENTE. Por tentativa, `tentativas[].justificativas`. */
   justificativas: { alfa: string; bravo: string } | null;
-  tentativas: {
-    ordem: number;
-    alocacao: unknown;
-    desfecho: unknown;
-    minutoDaSaida: number;
-    criadoEm: string;
-  }[];
-  trilha: {
-    tentativa: number;
-    ordem: number;
-    tipo: string;
-    minuto: number;
-    dados: unknown;
-  }[];
+  tentativas: TentativaDoEstudante[];
+  rodadas: RodadaDoEstudante[];
+  trilha: MarcoDaTrilha[];
   /**
    * A TRANSCRIÇÃO. Caixa livre escrita por menor de idade: só o professor da
    * escola chega aqui (não há rota de gestor), e ela nunca vai a log nem à
    * telemetria.
    */
   conversa: {
-    papel: string;
+    papel: "estudante" | "agente";
     texto: string;
     tentativa: number;
     debitou: boolean;
+    /** A hora em que o estudante APERTOU enviar, não o fim do turno. */
     criadoEm: string;
+    /** "Aos 0:42 da aula". Null sem largada. */
+    segundosDesdeALargada: number | null;
   }[];
 }
 

@@ -38,6 +38,7 @@ import { type Passo, podeIr } from "./regras/passos";
 import {
   RELOGIO,
   RELOGIO_PADRAO,
+  type EstadoDoRelogio,
   type RelogioDaTurma,
   estadoDoRelogio,
   horaDoCartao,
@@ -46,7 +47,17 @@ import {
   saidaDasEquipes,
 } from "./regras/relogio";
 import { sanitizarFicha, sanitizarRelogio, sanitizarSessao } from "./regras/sanitizador";
-import { type Marco, marcoDeAlocacao, marcoDeEnvio, marcoDeFontes, marcoDeLeitura } from "./regras/trilha";
+import {
+  type Marco,
+  marcoDeAlocacao,
+  marcoDeEnvio,
+  marcoDeFontes,
+  marcoDeInicio,
+  marcoDeLeitura,
+  marcoDeRecomeco,
+  mudancasDeDestino,
+} from "./regras/trilha";
+import { coberturaDoRisco, percentilEntre, posicaoNaFaixa } from "./regras/desfecho";
 
 /**
  * O serviço da exp-03-unoogpt — a Missão Tempestade.
@@ -267,7 +278,12 @@ export class UnoogptService {
         const debita = gastaPergunta(tipo, consultou);
 
         const comum = { escolaId, estudanteId: estudanteId, passo: atual.passo, tentativa: atual.tentativa };
-        await tx.unoogptMensagem.create({ data: { ...comum, papel: "estudante", texto, debitou: debita } });
+        // `criadoEm: agora` — a hora em que o estudante APERTOU enviar, não a
+        // em que o Cientista terminou de responder (10–30 s depois). Sem isto o
+        // relatório do professor datava a fala pelo fim do turno.
+        await tx.unoogptMensagem.create({
+          data: { ...comum, papel: "estudante", texto, debitou: debita, criadoEm: agora },
+        });
 
         await tx.unoogptMensagem.create({
           data: {
@@ -281,7 +297,14 @@ export class UnoogptService {
           },
         });
         if (resposta.rodada) {
-          await this.gravarMarco(tx, escolaId, estudanteId, atual.tentativa, marcoDeLeitura(depois.minutosGastos, resposta.rodada));
+          await this.gravarMarco(
+            tx,
+            escolaId,
+            estudanteId,
+            atual.tentativa,
+            marcoDeLeitura(depois.minutosGastos, resposta.rodada),
+            depois,
+          );
         }
 
         const atualizada = await tx.unoogptSessao.update({
@@ -350,12 +373,22 @@ export class UnoogptService {
       const somadas = validos.filter((v) => !atual.conjuntos.includes(v));
       if (somadas.length === 0) return atual.conjuntos;
 
+      // O relógio de AGORA, não `atual.minutosGastos`: aquele é o instante do
+      // último turno, e um turno leva de 10 a 30 s (2 a 6 minutos da cidade).
+      const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
       const conjuntos = [...atual.conjuntos, ...somadas];
       const atualizada = await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
-        data: { conjuntos, rodadas: { increment: 1 } },
+        data: { conjuntos, rodadas: { increment: 1 }, minutosGastos: estado.minutosGastos },
       });
-      await this.gravarMarco(tx, escolaId, estudanteId, atual.tentativa, marcoDeFontes(atual.minutosGastos, somadas));
+      await this.gravarMarco(
+        tx,
+        escolaId,
+        estudanteId,
+        atual.tentativa,
+        marcoDeFontes(estado.minutosGastos, somadas),
+        estado,
+      );
       return atualizada.conjuntos;
     }, escolaId);
   }
@@ -378,11 +411,19 @@ export class UnoogptService {
         alfa: destinos.alfa ?? atual.alocacaoAlfa,
         bravo: destinos.bravo ?? atual.alocacaoBravo,
       };
+      const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
       await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
-        data: { alocacaoAlfa: alocacao.alfa, alocacaoBravo: alocacao.bravo },
+        data: { alocacaoAlfa: alocacao.alfa, alocacaoBravo: alocacao.bravo, minutosGastos: estado.minutosGastos },
       });
-      await this.gravarMarco(tx, escolaId, estudanteId, atual.tentativa, marcoDeAlocacao(atual.minutosGastos, alocacao));
+      await this.gravarMarco(
+        tx,
+        escolaId,
+        estudanteId,
+        atual.tentativa,
+        marcoDeAlocacao(estado.minutosGastos, alocacao),
+        estado,
+      );
       return alocacao;
     }, escolaId);
   }
@@ -401,11 +442,29 @@ export class UnoogptService {
       });
       if (ja) return ja.desfecho;
 
-      const saida = saidaDasEquipes(atual.minutosGastos);
+      // A hora da SAÍDA é a hora de agora no relógio da turma. Antes era
+      // `atual.minutosGastos`, que só o turno do Cientista atualizava: quem
+      // alocava pelo mapa e enviava sem falar de novo saía no minuto de um turno
+      // atrás — e chegava a bairros que já não alcançaria (ADR-64).
+      const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
+      const saida = saidaDasEquipes(estado.minutosGastos);
       const alocacao: Alocacao = { alfa: atual.alocacaoAlfa, bravo: atual.alocacaoBravo };
       const desfecho = simular(alocacao, sementeDe(`${escolaId}:${estudanteId}:${atual.tentativa}`), {
         saidaEmMinutos: saida,
       });
+      // A FAIXA da mesma decisão, gravada JUNTO do desfecho: recomputá-la a cada
+      // leitura fazia uma mudança de parâmetro reescrever, em silêncio, o
+      // relatório de partidas antigas.
+      const faixa = esperadoDe(alocacao, { saidaEmMinutos: saida }, 200);
+      const esperado = {
+        v: 1,
+        media: faixa.media,
+        faixa: faixa.faixa,
+        vitimasMedia: faixa.vitimasMedia,
+        vitimasFaixa: faixa.vitimasFaixa,
+        amostras: faixa.amostras,
+        percentil: percentilEntre(desfecho.totais.salvas, faixa.todas),
+      };
 
       await tx.unoogptSimulacao.create({
         data: {
@@ -414,6 +473,7 @@ export class UnoogptService {
           ordem: atual.tentativa,
           alocacao: { v: 1, ...alocacao } as Prisma.InputJsonValue,
           desfecho: desfecho as unknown as Prisma.InputJsonValue,
+          esperado: esperado as unknown as Prisma.InputJsonValue,
           minutoDaSaida: saida,
           versaoPrompt: VERSAO_PROMPT,
         },
@@ -427,7 +487,11 @@ export class UnoogptService {
         escolaId,
         estudanteId,
         atual.tentativa,
-        marcoDeEnvio(saida, desfecho.totais, naoCarregados(atual.conjuntos).map((c) => c.slug)),
+        marcoDeEnvio(saida, desfecho.totais, naoCarregados(atual.conjuntos).map((c) => c.slug), {
+          alfa: comoOProfessorLe(atual.justificativaAlfa),
+          bravo: comoOProfessorLe(atual.justificativaBravo),
+        }),
+        estado,
       );
       return desfecho;
     }, escolaId);
@@ -472,6 +536,7 @@ export class UnoogptService {
 
       const alvo = equipe === "alfa" ? "alocacaoAlfa" : "alocacaoBravo";
       const porque = equipe === "alfa" ? "justificativaAlfa" : "justificativaBravo";
+      const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
       const atualizada = await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: {
@@ -479,6 +544,7 @@ export class UnoogptService {
           // Tirar a equipe do bairro apaga o porquê junto: justificativa sem
           // destino é estado impossível (há CHECK no banco).
           [porque]: bairro === null ? null : justificativa,
+          minutosGastos: estado.minutosGastos,
         },
       });
       await this.gravarMarco(
@@ -486,13 +552,14 @@ export class UnoogptService {
         escolaId,
         estudanteId,
         atual.tentativa,
-        marcoDeAlocacao(atual.minutosGastos, { alfa: atualizada.alocacaoAlfa, bravo: atualizada.alocacaoBravo }),
+        marcoDeAlocacao(estado.minutosGastos, { alfa: atualizada.alocacaoAlfa, bravo: atualizada.alocacaoBravo }),
+        estado,
       );
       const { bairros } = montarMapa(
         this.semente(escolaId, estudanteId),
         atualizada.rodadas,
         atualizada.conjuntos,
-        atual.minutosGastos,
+        estado.minutosGastos,
       );
       return {
         sessao: sanitizarSessao(atualizada),
@@ -502,7 +569,7 @@ export class UnoogptService {
         projecao: projetar(
           bairros,
           { alfa: atualizada.alocacaoAlfa, bravo: atualizada.alocacaoBravo },
-          atual.minutosGastos,
+          estado.minutosGastos,
           atualizada.conjuntos.includes("viaria"),
         ),
       };
@@ -563,6 +630,25 @@ export class UnoogptService {
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: { passo: para },
       });
+      // Entrar na Investigação é o "abriu a missão" do relatório: é de onde se
+      // mede quanto demorou até a primeira fala. Uma vez por tentativa — voltar
+      // à Orientação e retornar não é começar de novo.
+      if (para === "investigacao") {
+        const jaComecou = await tx.unoogptMarco.count({
+          where: { escolaId, estudanteId: estudanteId, tentativa: atual.tentativa, tipo: "inicio" },
+        });
+        if (jaComecou === 0) {
+          const estado = await this.relogioAgora(tx, escolaId, atual.turmaId);
+          await this.gravarMarco(
+            tx,
+            escolaId,
+            estudanteId,
+            atual.tentativa,
+            marcoDeInicio(estado.minutosGastos),
+            estado,
+          );
+        }
+      }
       return { sessao: sanitizarSessao(atualizada) };
     }, escolaId);
   }
@@ -572,12 +658,29 @@ export class UnoogptService {
    * a tela limpa, para o professor a aula inteira continua legível. Comparar
    * duas tentativas é o que ensina.
    */
-  async reiniciar(escolaId: string, estudanteId: string) {
+  async reiniciar(
+    escolaId: string,
+    estudanteId: string,
+    origem: "investigacao" | "resultado" | null = null,
+  ) {
     return this.prisma.comTenancy(async (tx) => {
       await this.lock(tx, escolaId, estudanteId);
       const atual = await tx.unoogptSessao.findUniqueOrThrow({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
       });
+      // O clique fica registrado na tentativa que FECHA, com o relógio que o
+      // estudante via: qual botão (`origem` vem do cliente, é a única coisa que
+      // só ele sabe), e se a aula estava correndo, encerrada ou nem começada.
+      const relogio = await this.relogioDaTurma(tx, escolaId, atual.turmaId);
+      const estado = estadoDoRelogio(relogio, new Date());
+      await this.gravarMarco(
+        tx,
+        escolaId,
+        estudanteId,
+        atual.tentativa,
+        marcoDeRecomeco(estado.minutosGastos, { origem, fase: estado.fase, modo: relogio.modo }),
+        estado,
+      );
       const atualizada = await tx.unoogptSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
         data: {
@@ -615,8 +718,11 @@ export class UnoogptService {
 
       // `tentativa` e `ordem` vão junto: a tela do resultado agrupa a trilha por
       // tentativa para o estudante comparar duas rodadas lado a lado.
+      // Só os quatro tipos que a linha do tempo do estudante sabe descrever:
+      // `inicio` e `recomeco` são do relatório do professor, e o cliente cairia
+      // no ramo de "envio" ao tentar narrá-los.
       const marcos = await tx.unoogptMarco.findMany({
-        where: { escolaId, estudanteId: estudanteId },
+        where: { escolaId, estudanteId: estudanteId, tipo: { in: ["fontes", "leitura", "alocacao", "envio"] } },
         orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
         select: { tentativa: true, ordem: true, tipo: true, minuto: true, dados: true },
       });
@@ -752,6 +858,20 @@ export class UnoogptService {
     };
   }
 
+  /**
+   * O estado do relógio da turma NESTE instante. É o que todo marco e toda
+   * mutação direta precisam — `sessoes.minutos_gastos` é um retrato do último
+   * turno, não a hora.
+   */
+  private async relogioAgora(
+    tx: Prisma.TransactionClient,
+    escolaId: string,
+    turmaId: string | null,
+    agora: Date = new Date(),
+  ): Promise<EstadoDoRelogio> {
+    return estadoDoRelogio(await this.relogioDaTurma(tx, escolaId, turmaId), agora);
+  }
+
   private async historico(escolaId: string, estudanteId: string, tentativa: number) {
     return this.prisma.comTenancy(async (tx) => {
       const falas = await tx.unoogptMensagem.findMany({
@@ -763,13 +883,19 @@ export class UnoogptService {
     }, escolaId);
   }
 
-  /** Grava um marco na trilha, com a ordem seguinte dentro da tentativa. */
+  /**
+   * Grava um marco na trilha, com a ordem seguinte dentro da tentativa — e o
+   * relógio do INSTANTE junto: o cronômetro que o estudante via e, se já tinha
+   * fechado, por quê. Reconstruir isso depois é inviável ("+2 min" muda a
+   * duração sem histórico; "zerar" apaga o relógio), então grava-se agora.
+   */
   private async gravarMarco(
     tx: Prisma.TransactionClient,
     escolaId: string,
     estudanteId: string,
     tentativa: number,
     marco: Marco,
+    estado: EstadoDoRelogio,
   ) {
     const anteriores = await tx.unoogptMarco.count({ where: { escolaId, estudanteId: estudanteId, tentativa } });
     await tx.unoogptMarco.create({
@@ -780,6 +906,8 @@ export class UnoogptService {
         ordem: anteriores + 1,
         tipo: marco.tipo,
         minuto: marco.minuto,
+        segundosRestantes: estado.segundosAteFechar === null ? null : Math.ceil(estado.segundosAteFechar),
+        motivoDoFim: estado.motivoDoFim,
         dados: marco.dados as Prisma.InputJsonValue,
       },
     });
@@ -972,23 +1100,156 @@ export class UnoogptService {
       const sinais = await this.sinaisDaPartida(tx, escolaId, estudanteId);
       const linhas = linhasDeLeitura(sinais);
 
-      const tentativas = await tx.unoogptSimulacao.findMany({
+      const simulacoes = await tx.unoogptSimulacao.findMany({
         where: { escolaId, estudanteId },
         orderBy: { ordem: "asc" },
-        select: { ordem: true, alocacao: true, desfecho: true, minutoDaSaida: true, criadoEm: true },
+        select: { ordem: true, alocacao: true, desfecho: true, esperado: true, minutoDaSaida: true, criadoEm: true },
       });
-      const conversa = await tx.unoogptMensagem.findMany({
+      const falas = await tx.unoogptMensagem.findMany({
         where: { escolaId, estudanteId },
         orderBy: { id: "asc" },
         select: { papel: true, texto: true, tentativa: true, debitou: true, criadoEm: true },
       });
-      const trilha = await tx.unoogptMarco.findMany({
+      const marcos = await tx.unoogptMarco.findMany({
         where: { escolaId, estudanteId },
         orderBy: [{ tentativa: "asc" }, { ordem: "asc" }],
-        select: { tentativa: true, ordem: true, tipo: true, minuto: true, dados: true },
+        select: {
+          tentativa: true,
+          ordem: true,
+          tipo: true,
+          minuto: true,
+          segundosRestantes: true,
+          motivoDoFim: true,
+          criadoEm: true,
+          dados: true,
+        },
       });
       const sessao = await tx.unoogptSessao.findUnique({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
+      });
+      // A largada ATUAL da turma. "Redefinir" apaga a anterior, e aí os tempos
+      // "desde a largada" de uma aula passada deixam de fazer sentido — o marco
+      // `inicio` guarda o cronômetro por isso.
+      const largada = sessao ? (await this.relogioDaTurma(tx, escolaId, sessao.turmaId)).iniciadoEm : null;
+      const segundosEntre = (de: Date | null, ate: Date | null) =>
+        de && ate ? Math.round((ate.getTime() - de.getTime()) / 1000) : null;
+
+      // Toda tentativa que deixou rastro, enfrentada ou não: quem recomeçou no
+      // meio não tem simulação, mas tem conversa e marcos.
+      const numeros = new Set<number>();
+      for (const m of marcos) numeros.add(m.tentativa);
+      for (const f of falas) numeros.add(f.tentativa);
+      for (const s of simulacoes) numeros.add(s.ordem);
+      if (sessao) numeros.add(sessao.tentativa);
+
+      const rodadas = [...numeros]
+        .sort((a, b) => a - b)
+        .map((n) => {
+          const daRodada = marcos.filter((m) => m.tentativa === n);
+          const inicio = daRodada.find((m) => m.tipo === "inicio") ?? null;
+          const envio = daRodada.find((m) => m.tipo === "envio") ?? null;
+          const recomeco = daRodada.find((m) => m.tipo === "recomeco") ?? null;
+          const primeiraFala = falas.find((f) => f.tentativa === n && f.papel === "estudante") ?? null;
+          const dadosRecomeco = (recomeco?.dados ?? null) as {
+            origem?: "investigacao" | "resultado" | null;
+            fase?: "aguardando" | "correndo" | "encerrado";
+            modo?: "cronometrado" | "livre";
+          } | null;
+          return {
+            tentativa: n,
+            inicioEm: inicio?.criadoEm.toISOString() ?? null,
+            primeiraFalaEm: primeiraFala?.criadoEm.toISOString() ?? null,
+            // Dois relógios, de propósito: antes da largada o campo está
+            // bloqueado, então "desde o Começar" mede o professor, não o
+            // estudante. O PO escolhe qual exibe.
+            ateAPrimeiraFala: primeiraFala
+              ? {
+                  desdeOComecar: segundosEntre(inicio?.criadoEm ?? null, primeiraFala.criadoEm),
+                  desdeALargada: segundosEntre(largada, primeiraFala.criadoEm),
+                }
+              : null,
+            mudancasDeDestino: mudancasDeDestino(daRodada),
+            enfrentou: simulacoes.some((s) => s.ordem === n),
+            envio: envio
+              ? {
+                  em: envio.criadoEm.toISOString(),
+                  minuto: envio.minuto,
+                  segundosRestantes: envio.segundosRestantes,
+                  motivoDoFim: envio.motivoDoFim as "tempo" | "professor" | null,
+                  // Estourou = o relógio já tinha fechado quando confirmou.
+                  estourou: envio.motivoDoFim !== null,
+                }
+              : null,
+            recomeco: recomeco
+              ? {
+                  em: recomeco.criadoEm.toISOString(),
+                  origem: dadosRecomeco?.origem ?? null,
+                  fase: dadosRecomeco?.fase ?? null,
+                  modo: dadosRecomeco?.modo ?? null,
+                  segundosRestantes: recomeco.segundosRestantes,
+                  motivoDoFim: recomeco.motivoDoFim as "tempo" | "professor" | null,
+                }
+              : null,
+          };
+        });
+
+      const tentativas = simulacoes.map((t) => {
+        const d = t.desfecho as unknown as ReturnType<typeof simular>;
+        const a = t.alocacao as { alfa?: string | null; bravo?: string | null };
+        const alocacao = { alfa: a.alfa ?? null, bravo: a.bravo ?? null };
+        // Gravado no confirmar; simulação anterior à coluna recomputa (é
+        // determinístico — semente por alocação e índice).
+        const gravado = t.esperado as {
+          media: number;
+          faixa: [number, number];
+          vitimasMedia: number;
+          vitimasFaixa: [number, number];
+          amostras: number[];
+          percentil?: number | null;
+        } | null;
+        const esperado =
+          gravado ??
+          (() => {
+            const e = esperadoDe(alocacao, { saidaEmMinutos: t.minutoDaSaida }, 200);
+            return {
+              media: e.media,
+              faixa: e.faixa as [number, number],
+              vitimasMedia: e.vitimasMedia,
+              vitimasFaixa: e.vitimasFaixa as [number, number],
+              amostras: e.amostras,
+              percentil: percentilEntre(d.totais.salvas, e.todas),
+            };
+          })();
+        const envio = marcos.find((m) => m.tentativa === t.ordem && m.tipo === "envio");
+        const noEnvio = (envio?.dados as { justificativas?: { alfa: string; bravo: string } } | undefined)
+          ?.justificativas;
+        // Envio anterior à cópia no marco: a sessão ainda tem as da tentativa
+        // corrente; das anteriores, `reiniciar` já apagou.
+        const justificativas =
+          noEnvio ??
+          (sessao && sessao.tentativa === t.ordem
+            ? { alfa: comoOProfessorLe(sessao.justificativaAlfa), bravo: comoOProfessorLe(sessao.justificativaBravo) }
+            : null);
+        return {
+          ordem: t.ordem,
+          alocacao,
+          minutoDaSaida: t.minutoDaSaida,
+          criadoEm: t.criadoEm.toISOString(),
+          emRisco: d.totais.emRisco,
+          salvas: d.totais.salvas,
+          vitimas: d.totais.vitimas,
+          semSocorro: d.totais.semSocorro,
+          coberturaDoRisco: coberturaDoRisco(d),
+          esperado: {
+            media: esperado.media,
+            faixa: esperado.faixa,
+            vitimasMedia: esperado.vitimasMedia,
+            vitimasFaixa: esperado.vitimasFaixa,
+            amostras: esperado.amostras,
+          },
+          posicao: posicaoNaFaixa(d.totais.salvas, esperado),
+          justificativas,
+        };
       });
 
       return {
@@ -1007,8 +1268,26 @@ export class UnoogptService {
             }
           : null,
         tentativas,
-        trilha,
-        conversa,
+        rodadas,
+        trilha: marcos.map((m) => ({
+          tentativa: m.tentativa,
+          ordem: m.ordem,
+          tipo: m.tipo,
+          minuto: m.minuto,
+          segundosRestantes: m.segundosRestantes,
+          motivoDoFim: m.motivoDoFim as "tempo" | "professor" | null,
+          criadoEm: m.criadoEm.toISOString(),
+          dados: m.dados,
+        })),
+        conversa: falas.map((f) => ({
+          papel: f.papel as "estudante" | "agente",
+          texto: f.texto,
+          tentativa: f.tentativa,
+          debitou: f.debitou,
+          criadoEm: f.criadoEm.toISOString(),
+          // "Aos 0:42 da aula": o relógio que o professor tem na cabeça.
+          segundosDesdeALargada: segundosEntre(largada, f.criadoEm),
+        })),
       };
     }, escolaId);
   }

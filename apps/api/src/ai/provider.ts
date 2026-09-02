@@ -14,6 +14,10 @@ export interface AiRequest {
 export interface AiResult {
   texto: string;
   tokensUsados: number;
+  /** Tokens do prompt e da resposta, quando o vendor os separa (`usageMetadata`).
+   *  Só a métrica lê; a quota continua em `tokensUsados`. */
+  tokensEntrada?: number;
+  tokensSaida?: number;
   /** Por que o modelo parou: `STOP` (natural) ou outro motivo do vendor
    *  (`MAX_TOKENS`, `SAFETY`...). Aditivo: quem não liga, ignora. */
   finishReason?: string;

@@ -265,6 +265,26 @@ ela vale para a sala ao mesmo tempo. Detalhes e alternativas em \adrr{ADR-25}. O
 que o professor controla é \emph{quando dá para falar} com o assistente --- nunca
 o Passo de ninguém.
 
+\subsection{O que o relatório mede do tempo}
+
+Tudo o que é \emph{quando} entra pela trilha (\cd{exp\_03\_marcos}), nunca
+pela telemetria: o canal analítico é preenchido pelo cliente, assíncrono e sem
+leitor, e o que o professor lê não pode vir dele. Cada marco carrega o relógio
+da turma \textbf{recalculado no instante} da gravação (\cd{segundos\_restantes},
+\cd{motivo\_do\_fim}) --- não o \cd{minutos\_gastos} da sessão, que só o
+turno do assistente atualizava e atrasava até um turno inteiro nas rotas
+diretas. A correção mexeu também no jogo: quem alocava pelo mapa e enviava sem
+falar de novo saía no minuto de um turno atrás (\adrr{ADR-64}). Dois marcos
+novos, \cd{inicio} e \cd{recomeco}, marcam a entrada na Investigação e o clique
+em Recomeçar; a fala do estudante é datada pela hora de \emph{envio}, não pelo
+fim do turno. O que se \textbf{deriva} na leitura, sem coluna: mudanças de
+destino (pares consecutivos distintos, não cliques --- o cartão de duas opções
+manda um POST por equipe, e justificar passa pela mesma rota), tempo até a
+primeira fala (da largada do professor e do clique em Começar, os dois), \% do
+risco coberto e posição na faixa. Não existe \enquote{liberar recomeço}: o
+professor controla o relógio, e é o relógio que fica registrado ao lado do
+clique.
+
 \subsection{Telas do professor}
 
 \begin{itemize}
@@ -276,8 +296,14 @@ o Passo de ninguém.
     turma. Não há coluna de resgatados: listagem é ordenável, e ordenar crianças
     por acerto viraria \emph{ranking} (\adrr{ADR-27}). O \emph{smoke} visual
     falha se uma aparecer.
-  \item \rota{.../unidade-1/estudantes/:estudanteId} --- a linha de uma criança: os graus
-    e a \textbf{transcrição}. Só o professor da escola chega aqui.
+  \item \rota{.../unidade-1/estudantes/:estudanteId} --- a linha de uma criança: os graus,
+    \textbf{como usou o tempo} (até a primeira fala, cada marco datado pelo
+    cronômetro que ela via, mudanças de destino antes de confirmar, com quanto
+    relógio confirmou ou se estourou, e qual botão de recomeço apertou), o
+    desfecho de cada tentativa (resgatados, em risco, \% do risco coberto,
+    posição na faixa da decisão, justificativas) e a \textbf{transcrição} com a
+    hora de cada fala. Só o professor da escola chega aqui, e o número de
+    resgate só aparece aqui --- uma criança por vez (\adrr{ADR-64}).
   \item \enquote{Zerar a turma} fica no fim da página, longe da largada: ação
     destrutiva ao lado do botão mais apertado é acidente esperando acontecer.
 \end{itemize}
@@ -598,6 +624,13 @@ Módulo de domínio na API & Necessário sempre que houver gabarito, estado de
 Porta de \emph{dev} & Registrada em \arq{apps/hub/lib/experiencias-dev.ts}.\\
 \zebra \cd{allowedHosts} do Vite & Deve incluir \cd{host.docker.internal},
   senão o hub em contêiner não lê o manifesto.\\
+\cd{build.sourcemap} do Vite & \cd{"hidden"} em todas (o \cd{\_template}
+  inclusive): o \cd{.map} é gerado sem o comentário \cd{sourceMappingURL}; o CI
+  o exclui do \emph{bucket} público e o sobe num \emph{bucket} PRIVADO
+  (\cd{\{project\}-exp-mapas}). O \emph{bucket} dos \emph{bundles} tem acesso
+  uniforme, então qualquer objeto lá é público, e o mapa é o fonte --- na
+  exp-01, a revelação legível antes da hora. Nunca \cd{true}, nunca
+  \cd{inline}.\\
 \cd{viewport} & Só se a experiência exigir casca de aparelho.\\
 \zebra \cd{permissoes} & Só o que o \cd{iframe} realmente precisa.\\
 Mídia $>$ \SI{2}{\mega\byte} & Vai para o \emph{bucket} de \emph{assets},

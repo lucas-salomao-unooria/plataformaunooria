@@ -42,6 +42,7 @@ import { atividadeDoProfessor, ehUuid, naoEncontrado } from "../motor/guardas";
 import { professorDoToken, professorLeciona } from "../comum/turmas-do-professor";
 import { normalizarEstado } from "../motor/estado";
 import { PrismaService } from "../prisma/prisma.service";
+import { logger } from "../observabilidade/logger";
 import { excluirAtividade, limparDadosDosEstudantes } from "./manutencao";
 import { Contrato } from "../openapi/contrato";
 import {
@@ -455,7 +456,7 @@ export class AtividadesController {
         try {
           await encerrarRun(this.prisma, run.id, escolaId);
         } catch (falha) {
-          console.error(`[etapa] não deu para congelar a run ${run.id}`, falha);
+          logger.error({ err: falha, runId: run.id, codigo: "atividades.congelar-run" }, "não deu para congelar a run");
         }
       }
     }

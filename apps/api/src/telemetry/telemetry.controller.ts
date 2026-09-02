@@ -7,6 +7,8 @@ import { Contrato } from "../openapi/contrato";
 import { PubSubPushGuard } from "./pubsub-push.guard";
 import { TokenService } from "../auth/token.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { logger } from "../observabilidade/logger";
+import { Metricas } from "../observabilidade/metricas";
 import {
   BatchRespostaSchema,
   BatchSchema,
@@ -24,14 +26,16 @@ export class TelemetryController {
   constructor(
     private readonly tokens: TokenService,
     private readonly prisma: PrismaService,
+    private readonly metricas: Metricas,
   ) {}
 
   private async publicar(eventos: unknown[]): Promise<number> {
     if (topic) {
       await pubsub.topic(topic).publishMessage({ json: { eventos } });
     } else {
-      console.info("[telemetria/dev]", eventos.length, "eventos"); // sem Pub/Sub em dev local
+      logger.debug({ codigo: "telemetria.sem-topico", eventos: eventos.length }, "sem Pub/Sub: lote não publicado"); // dev local
     }
+    this.metricas.telemetriaPublicados.add(eventos.length);
     return eventos.length;
   }
 
@@ -50,6 +54,7 @@ export class TelemetryController {
   })
   async batch(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
     const { eventos } = BatchSchema.parse(body);
+    this.metricas.telemetriaRecebidos.add(eventos.length, { canal: "batch" });
     // identidade vem do TOKEN, nunca do payload do client (anti-spoof)
     const enriched = eventos.map((e) => ({
       ...e,
@@ -78,11 +83,13 @@ export class TelemetryController {
   async beacon(@Body() body: unknown) {
     const parsed = BeaconSchema.safeParse(body);
     if (!parsed.success) {
-      console.warn("[telemetria/beacon] corpo inválido — descartado");
+      this.metricas.telemetriaDescartados.add(1, { motivo: "corpo-invalido" });
+      logger.debug({ codigo: "telemetria.descartado", motivo: "corpo-invalido" }, "lote de telemetria descartado");
       return;
     }
     try {
       const auth = await this.tokens.verificar(parsed.data.token);
+      this.metricas.telemetriaRecebidos.add(parsed.data.eventos.length, { canal: "beacon" });
       const enriched = parsed.data.eventos.map((e) => ({
         ...e,
         estudanteId: auth.usuarioId,
@@ -90,7 +97,8 @@ export class TelemetryController {
       }));
       await this.publicar(enriched);
     } catch {
-      console.warn("[telemetria/beacon] token inválido — descartado");
+      this.metricas.telemetriaDescartados.add(1, { motivo: "token-invalido" });
+      logger.debug({ codigo: "telemetria.descartado", motivo: "token-invalido" }, "lote de telemetria descartado");
     }
   }
 
@@ -127,7 +135,8 @@ export class TelemetryController {
   async ingest(@Body() body: unknown) {
     const envelope = PushSchema.safeParse(body);
     if (!envelope.success || !envelope.data.message.data) {
-      console.warn("[telemetria/ingest] envelope inválido — descartado");
+      this.metricas.telemetriaDescartados.add(1, { motivo: "envelope-invalido" });
+      logger.debug({ codigo: "telemetria.descartado", motivo: "envelope-invalido" }, "lote de telemetria descartado");
       return;
     }
 
@@ -136,7 +145,8 @@ export class TelemetryController {
       const cru = Buffer.from(envelope.data.message.data, "base64").toString("utf8");
       eventos = (JSON.parse(cru) as { eventos?: unknown }).eventos;
     } catch {
-      console.warn("[telemetria/ingest] payload ilegível — descartado");
+      this.metricas.telemetriaDescartados.add(1, { motivo: "payload-ilegivel" });
+      logger.debug({ codigo: "telemetria.descartado", motivo: "payload-ilegivel" }, "lote de telemetria descartado");
       return;
     }
 
@@ -144,10 +154,12 @@ export class TelemetryController {
       .array(EventoSchema.extend({ estudanteId: z.string().optional(), escolaId: z.string() }))
       .safeParse(eventos);
     if (!lote.success) {
-      console.warn("[telemetria/ingest] lote inválido — descartado");
+      this.metricas.telemetriaDescartados.add(1, { motivo: "lote-invalido" });
+      logger.debug({ codigo: "telemetria.descartado", motivo: "lote-invalido" }, "lote de telemetria descartado");
       return;
     }
 
+    this.metricas.telemetriaGravados.add(lote.data.length);
     // Agrupa por escola: cada grupo grava na sua própria tenancy (RLS).
     const porEscola = new Map<string, typeof lote.data>();
     for (const evento of lote.data) {

@@ -135,3 +135,12 @@ describe("normalizarHubOrigin", () => {
     }
   });
 });
+
+describe("exp:erro (aditivo)", () => {
+  test("passa no schema do hub com mensagem curta e hash; sem hash não passa", async () => {
+    const { ExpParaHubSchema } = await import("./types");
+    expect(ExpParaHubSchema.safeParse({ type: "exp:erro", mensagem: "boom", hash: "deadbeef" }).success).toBe(true);
+    expect(ExpParaHubSchema.safeParse({ type: "exp:erro", mensagem: "boom" }).success).toBe(false);
+    expect(ExpParaHubSchema.safeParse({ type: "exp:erro", mensagem: "x".repeat(300), hash: "a" }).success).toBe(false);
+  });
+});

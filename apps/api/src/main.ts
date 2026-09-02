@@ -1,14 +1,33 @@
+// PRIMEIRA linha, antes de qualquer outro import: a instrumentação do
+// OpenTelemetry precisa patchear `http`/`express`/`undici`/Prisma ANTES de o
+// Nest os carregar. Ver `otel.ts`.
+import "./otel";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { SwaggerModule } from "@nestjs/swagger";
+import { Logger } from "nestjs-pino";
 import { AppModule } from "./app.module";
+import { contextoMiddleware } from "./observabilidade/contexto.middleware";
+import { logger } from "./observabilidade/logger";
 import { AssetsService } from "./assets/assets.service";
 import { construirDocumento } from "./openapi/documento";
 import { credenciaisDoDocs, portaDoDocs } from "./openapi/porta-do-docs";
 import { TETO_EM_MB } from "./rostering/rostering.service";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+  // `bufferLogs`: o que o Nest loga durante a montagem dos módulos espera o
+  // `useLogger` abaixo, e sai em JSON como todo o resto.
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
+    bufferLogs: true,
+  });
+  app.useLogger(app.get(Logger));
+  // PRIMEIRO middleware: abre o contexto da requisição (requestId/trace) antes
+  // dos parsers e dos guards — um 401 sai com `x-request-id` como qualquer 200.
+  app.use(contextoMiddleware);
+  // SIGTERM do Cloud Run → `app.close()` → hooks de desligamento (o flush do
+  // OpenTelemetry entra por aqui).
+  app.enableShutdownHooks();
   // Parsers explícitos: JSON com teto e text/csv cru para a importação de
   // pessoas (`POST /rostering/importar` lê o corpo como string).
   //
@@ -57,6 +76,11 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(process.env.PORT ?? 3001);
+  const porta = process.env.PORT ?? 3001;
+  await app.listen(porta);
+  // Uma linha por subida, sempre: é a sonda de que o stdout deste contêiner
+  // chega ao Cloud Logging como `jsonPayload` (medição de 2026-09-01: só o
+  // request log aparecia lá, e nenhuma linha da aplicação).
+  logger.info({ codigo: "api-iniciada", porta: Number(porta) }, "api iniciada");
 }
 void bootstrap();

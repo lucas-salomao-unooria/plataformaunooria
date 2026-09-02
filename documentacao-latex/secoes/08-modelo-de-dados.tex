@@ -759,11 +759,18 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   o agente. \cd{texto} é caixa livre escrita por menor de idade --- o dado mais
   sensível da experiência (\adrr{ADR-27}).\\
 \cd{exp\_03\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
-  cidade. \cd{dados} traz \textbf{só dado público} --- nada de viés, Lacuna ou
-  parâmetro oculto, porque este JSON chega ao navegador.\\
+  cidade --- e com \textbf{que cronômetro na tela} (\cd{segundos\_restantes},
+  \cd{motivo\_do\_fim}), recalculado do relógio da turma no instante da
+  gravação (\adrr{ADR-64}). Seis tipos: \cd{fontes}, \cd{leitura},
+  \cd{alocacao}, \cd{envio}, \cd{inicio} (entrou na Investigação) e
+  \cd{recomeco} (o clique em Recomeçar, na tentativa que fecha). \cd{dados}
+  traz \textbf{só dado público} --- nada de viés, Lacuna ou parâmetro oculto,
+  porque este JSON chega ao navegador.\\
 \zebra \cd{exp\_03\_simulacoes} & O desfecho de cada tentativa, com
   \cd{versao\_prompt} gravada junto: sem ela não se sabe qual \emph{prompt}
-  produziu o que está em produção.\\
+  produziu o que está em produção. E a \textbf{faixa da decisão}
+  (\cd{esperado}), gravada no confirmar em vez de recomputada a cada leitura
+  (\adrr{ADR-64}).\\
 \cd{exp\_03\_relogio\_turma} & O Relógio da Aula, por \textbf{turma}
   (\adrr{ADR-25}). Chave \cd{(escola\_id, turma\_id)}.\\
 \bottomrule
@@ -782,7 +789,7 @@ lá, e foram verificadas uma a uma antes do descarte: \cd{simulacoes\_restantes}
 em \cd{rodadas}). Centavo virou \emph{token}: preço depende de tabela do
 \emph{vendor}, que muda sem aviso e não é conhecida pela aplicação.
 
-\textbf{Nenhuma coluna de prazo} (\adrr{ADR-26}). E 18 \emph{CHECKs} de estado
+\textbf{Nenhuma coluna de prazo} (\adrr{ADR-26}). E 20 \emph{CHECKs} de estado
 impossível na migração, entre eles: justificativa sem destino, encerrar relógio
 que nunca começou, duração de relógio igual a zero (dividiria por zero no minuto
 narrativo) e \cd{debitou} numa fala que não é do estudante.

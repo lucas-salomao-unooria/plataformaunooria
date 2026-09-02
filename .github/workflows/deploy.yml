@@ -104,6 +104,7 @@ jobs:
       REGION: ${{ vars.REGION }}
       API_SERVICE: ${{ vars.API_SERVICE }}
       MIGRATE_JOB: ${{ vars.MIGRATE_JOB }}
+      API_URL: ${{ vars.API_URL }}
       IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/api:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -155,6 +156,21 @@ jobs:
           gcloud run deploy "$API_SERVICE" \
             --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
 
+      # O `gcloud run deploy` volta quando a revisão RECEBE tráfego, não quando
+      # ela responde. A sonda pergunta à revisão nova, pelo domínio público, se
+      # o banco está atrás dela (`/readyz` = processo + SELECT 1). Falhou em 2
+      # minutos = job vermelho, e o `ativar-exps` não ativa nada (cap. 17).
+      - name: Sonda pós-deploy
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 10 "$API_URL/readyz" | grep -q '"ok":true'; then
+              echo "api responde em $API_URL/readyz"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::a api não respondeu {\"ok\":true} em $API_URL/readyz em 2 minutos"
+          exit 1
+
   # --- hub ------------------------------------------------------------------
   deploy-hub:
     needs: [verificar, mudancas]
@@ -166,6 +182,7 @@ jobs:
       GCP_PROJECT: ${{ vars.GCP_PROJECT }}
       REGION: ${{ vars.REGION }}
       HUB_SERVICE: ${{ vars.HUB_SERVICE }}
+      HUB_ORIGIN: ${{ vars.HUB_ORIGIN }}
       IMG: ${{ vars.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/${{ vars.AR_REPO }}/hub:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
@@ -194,6 +211,7 @@ jobs:
           # var vem vazia e o hub sobe com o Clarity desligado.
           build-args: |
             NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ vars.CLARITY_PROJECT_ID }}
+            NEXT_PUBLIC_HUB_VERSAO=${{ github.sha }}
           cache-from: type=gha,scope=hub-${{ github.ref_name }}
           cache-to: type=gha,scope=hub-${{ github.ref_name }},mode=max
 
@@ -201,6 +219,22 @@ jobs:
         run: |
           gcloud run deploy "$HUB_SERVICE" \
             --image "$IMG" --region "$REGION" --project "$GCP_PROJECT"
+
+      # Duas provas, pelo domínio público: o processo responde (`/api/healthz`)
+      # e a chave de assinatura está carregada (`/.well-known/jwks.json` com
+      # "keys") — sem a segunda, nenhum token de experiência é validável e o
+      # `ativar-exps` falharia com um 401 que não aponta para a causa.
+      - name: Sonda pós-deploy
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 10 "$HUB_ORIGIN/api/healthz" | grep -q '"ok":true' \
+               && curl -fsS --max-time 10 "$HUB_ORIGIN/.well-known/jwks.json" | grep -q '"keys"'; then
+              echo "hub responde e serve o JWKS em $HUB_ORIGIN"; exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::o hub não respondeu (healthz + jwks) em $HUB_ORIGIN em 2 minutos"
+          exit 1
 
   # --- experiências: dist -> bucket versionado + manifesto ------------------
   # SOBE o bundle; não o ativa. O caminho carrega a versão
@@ -227,6 +261,8 @@ jobs:
       GCP_PROJECT: ${{ vars.GCP_PROJECT }}
       EXP_BUCKET: ${{ vars.EXP_BUCKET }}
       ASSETS_BUCKET: ${{ vars.ASSETS_BUCKET }}
+      # Bucket PRIVADO dos sourcemaps (`terraform output bucket_exp_mapas`).
+      EXP_MAPAS_BUCKET: ${{ vars.EXP_MAPAS_BUCKET }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
@@ -313,8 +349,25 @@ jobs:
               fi
             fi
 
+            # `--exclude` vale para ORIGEM e DESTINO: nenhum `.map` sobe para o
+            # bucket público, e nenhum que exista lá é apagado. O bucket dos
+            # bundles tem acesso uniforme — qualquer objeto nele é público, e o
+            # sourcemap é o fonte (na exp-01, a revelação legível antes da hora).
             gcloud storage rsync -r "$dir/dist" "gs://$EXP_BUCKET/$exp/$ver/" \
-              --delete-unmatched-destination-objects --project "$GCP_PROJECT"
+              --delete-unmatched-destination-objects --exclude='.*\.map$' --project "$GCP_PROJECT"
+
+            # Os mapas vão para o bucket PRIVADO, no mesmo caminho versionado:
+            # quem traduz a stack de um erro de cliente (scripts/mapear-stack.mjs)
+            # acha o mapa da versão exata. Sem a var, aviso — não falha: o
+            # bundle continua íntegro, só a stack fica minificada.
+            if compgen -G "$dir/dist/assets/*.map" > /dev/null; then
+              if [ -z "${EXP_MAPAS_BUCKET:-}" ]; then
+                echo "::warning::$exp gerou sourcemaps, mas a var EXP_MAPAS_BUCKET nao existe neste environment (terraform output bucket_exp_mapas + scripts/configurar-github-ci.sh). Os .map ficaram so no runner."
+              else
+                gcloud storage cp "$dir"/dist/assets/*.map "gs://$EXP_MAPAS_BUCKET/$exp/$ver/assets/" --project "$GCP_PROJECT"
+                echo "· $exp: sourcemaps em gs://$EXP_MAPAS_BUCKET/$exp/$ver/assets/"
+              fi
+            fi
 
             # O caminho carrega a versão, então o bundle é imutável e pode
             # ficar um ano na borda. O index.html é o ponteiro: cache curto,
@@ -384,3 +437,40 @@ jobs:
             node apps/hub/scripts/publicar-manifesto.mjs "$dir"
             echo "ativada $exp@$ver"
           done
+
+  # O canário mais barato que existe (scripts/e2e/AGENTS.md): a suíte da
+  # landing abre o hub de verdade, com a lógica de espera que corre contra o
+  # erro. Roda DEPOIS de tudo estar no ar; só a 01 (landing), que não faz login
+  # — sem senha de demonstração no CI. Falhou = job vermelho, e o GitHub avisa
+  # por e-mail quem fez o push (comportamento padrão de workflow que falha).
+  # As suítes que escrevem (estudante, professor) continuam sendo do operador.
+  smoke:
+    needs: [verificar, mudancas, deploy-api, deploy-hub, publicar-exps, ativar-exps]
+    if: >-
+      !cancelled() &&
+      needs.verificar.result == 'success' &&
+      needs.deploy-api.result != 'failure' &&
+      needs.deploy-hub.result != 'failure' &&
+      needs.publicar-exps.result != 'failure' &&
+      needs.ativar-exps.result != 'failure'
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
+    env:
+      HUB_URL: ${{ vars.HUB_ORIGIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      # `pnpm exec`, nunca `npx`: o npx resolve o playwright mais NOVO do npm e
+      # baixa o navegador dele, não o da versão fixada no repo (AGENTS.md).
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Landing contra o ambiente recém-publicado
+        run: node scripts/e2e/rodar.mjs publico/01
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: smoke-${{ github.ref_name }}-${{ github.run_number }}
+          path: testes/
+          retention-days: 7

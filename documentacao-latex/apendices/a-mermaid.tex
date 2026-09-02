@@ -184,8 +184,9 @@ C4Component
     %% --- transversal: roda em toda rota
     Component(guard,  "OidcGuard", "", "Valida JWT por JWKS")
     Component(roles,  "RolesGuard", "", "Restringe por papel")
-    Component(tenint, "TenancyInterceptor", "", "Escola no AsyncLocalStorage")
+    Component(tenint, "TenancyInterceptor", "", "Preenche escola/perfil no AsyncLocalStorage aberto pelo middleware")
     Component(env,    "validarEnv", "Zod", "Valida env no boot")
+    Component(obs,    "observabilidade/", "pino + OpenTelemetry", "Contexto da requisicao (middleware), logger com redaction, filtro global, sampler por rota; otel.ts e a primeira importacao do main.ts")
 
     %% --- infraestrutura: as portas unicas
     Component(prisma, "PrismaService", "Prisma", "comTenancy: transacao + RLS")
@@ -514,7 +515,7 @@ flowchart TB
 flowchart LR
   req["Requisicao HTTP (Authorization: Bearer)"] --> guard["OidcGuard (JWKS; injeta req.auth)"]
   guard --> roles["RolesGuard (le req.auth.perfil)"]
-  roles --> int["TenancyInterceptor (comEscolaNoContexto)"]
+  roles --> int["TenancyInterceptor (definirTenancyNoContexto)"]
   int --> ctrl["controller"] --> svc["service: comTenancy(fn)"]
   svc --> tx["Transacao: set_config + query"]
   svc -->|sem escola no contexto| fail["LANCA"]
