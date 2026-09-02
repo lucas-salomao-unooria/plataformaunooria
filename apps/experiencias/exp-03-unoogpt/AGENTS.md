@@ -65,3 +65,16 @@ esse contrato, e ele é de RENDER, não de aritmética.
 Ação que chama a api trava por `ocupado` **no controle**, não só no handler:
 `/unoogpt/alocacao` é por equipe, então uma escolha manda dois POSTs, e um duplo
 clique manda quatro — o segundo par com o estado que o primeiro ainda não gravou.
+
+## O campo do Composer limpa na hora, e o rascunho volta em falha
+
+`onPerguntar` põe a fala do estudante na conversa ANTES de ir ao servidor, e o
+turno leva de 10 a 30 segundos. Limpar o campo só depois do `await` deixava a
+mesma pergunta visível nos dois lugares a consulta inteira — o estudante lia
+como "não enviou", apagava e mandava de novo.
+
+Limpar cedo sozinho não serve: uma versão anterior fazia isso e falha de rede
+levava junto a pergunta recém-escrita, com o cronômetro correndo. As duas metades
+precisam existir — limpa na hora, e devolve o rascunho se não entrou, **só se o
+campo continuar vazio** (o `Composer` não é desabilitado durante a consulta, de
+propósito, então pode haver texto novo ali).
