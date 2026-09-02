@@ -222,3 +222,11 @@ Deploy (CI deste repo):
 
 Nomes e valores concretos saem de `terraform output`; as `vars` que o
 `deploy.yml` consome estão listadas no passo 2 do `RUNBOOK-API.md`.
+
+**O que o CI passou a consumir (2026-09-02, cap. 17):** a var de environment
+`EXP_MAPAS_BUCKET` (= `terraform output bucket_exp_mapas`, o bucket PRIVADO dos
+sourcemaps — `scripts/configurar-github-ci.sh` a inclui quando o output
+existe). Sem ela o deploy avisa e segue (o `.map` fica só no runner). Nenhum
+secret novo: falha de workflow avisa por e-mail quem fez o push (padrão do
+GitHub), e o alerta de disponibilidade é dos **uptime checks** do Cloud
+Monitoring (Terraform, `observabilidade.tf`), por e-mail.
