@@ -299,8 +299,25 @@ o \emph{job} \cd{mudancas} tem um passo de guarda que derruba um
   \emph{assets}.\\
 \cd{API\_URL}, \cd{HUB\_ORIGIN} & Endereços públicos.\\
 \zebra \cd{WIF\_PROVIDER}, \cd{DEPLOY\_SA} & Identidade federada do CI.\\
+\cd{CLARITY\_PROJECT\_ID} & Id do projeto Microsoft Clarity
+  (\adrr{ADR-60}). Única \cd{vars} que \textbf{não} sai de
+  \cd{terraform output}: é criada à mão em cada \emph{environment}.\\
 \bottomrule
 \end{tabularx}
+
+\begin{atencao}
+\textbf{\cd{CLARITY\_PROJECT\_ID} entra na \emph{imagem}, não no serviço.} É a
+única variável de todo o \emph{deploy} que chega ao \emph{bundle} do
+\textbf{cliente}, e \cd{NEXT\_PUBLIC\_*} é substituída pelo literal durante o
+\cd{next build} --- defini-la no Cloud Run depois não altera um \emph{bundle}
+já compilado. Por isso o passo \emph{Imagem do hub} a passa como
+\cd{build-arg}, e o \arq{apps/hub/Dockerfile} a recebe num \cd{ARG} antes do
+\cd{turbo build}. As duas consequências: trocar o id exige \emph{rebuild} (não
+basta reiniciar o serviço), e uma imagem passa a ser específica do ambiente que
+a construiu --- promover \cd{hml} para produção reconstrói, não repromove a
+mesma \emph{tag}. Ausente, o \cd{ARG} cai no \emph{default} vazio e o hub sobe
+com o Clarity desligado, sem erro.
+\end{atencao}
 
 \subsection{Concorrência e reexecução}
 
@@ -409,9 +426,30 @@ Fluxo & \emph{Branch} de trabalho \(\to\) PR para \arq{dev} \(\to\) PR de
   \arq{ci/deploy}.\\
 \zebra \emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
   \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
-  tocado.\\
+  tocado. Validado pelo \emph{hook} \arq{.githooks/commit-msg}.\\
+Promoção & O PR de \cd{hml} para \cd{main} leva \textbf{tag semver}
+  (\cd{v1.4.0}) e \emph{release}, criadas depois do \emph{merge}. MAJOR só em
+  quebra de contrato externo (\cd{PROTOCOL\_VERSION} da ponte, manifesto,
+  telemetria, contrato do Terraform); MINOR é o caso comum. A \emph{tag} é o
+  nome do que está em produção --- sem ela, \enquote{voltar para a anterior}
+  vira caça a \emph{SHA} no meio de um incidente.\\
+\zebra \emph{Hotfix} & Sai de \cd{main}, entra por PR em \cd{main}, leva
+  \emph{tag} de PATCH --- e volta para \cd{hml} e \cd{dev} por
+  \textbf{retro-merge} no mesmo dia. \emph{Hotfix} que não volta renasce como
+  \emph{bug} na promoção seguinte.\\
+Imposição & \cd{branch protection} e \cd{rulesets} respondem \textbf{403}
+  (repositório privado, plano \emph{Free}). As regras vivem em \arq{.githooks/}
+  --- \arq{pre-push} recusa \emph{push} direto em \emph{branch} de ambiente e
+  nome fora do padrão --- instaladas pelo \cd{prepare} do \cd{pnpm install}
+  (\cd{core.hooksPath}). Ver \adrr{ADR-56}.\\
 \bottomrule
 \end{tabularx}
+
+\begin{nota}
+O fluxo completo, com os comandos de cada ponte (promoção, \emph{hotfix},
+\emph{retro-merge}, \emph{tag}, \emph{rollback} por camada), está em
+\arq{CONTRIBUTING.md}, na raiz do repositório.
+\end{nota}
 
 \begin{atencao}
 \textbf{Nada de \emph{build} no \emph{git}.} O \arq{.gitignore} cobre

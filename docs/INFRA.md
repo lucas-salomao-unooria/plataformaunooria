@@ -53,11 +53,30 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   serve em `/assets`.
   O mesmo bucket guarda a **mídia pesada das experiências** (>2 MB não entra no
   git nem no bundle): `exp-02-unootube/videos/v01.mp4..v21.mp4` (~52 MB),
-  upload manual por `gsutil` uma vez por contrato — é conteúdo, não recurso
-  Terraform. O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
+  upload manual **uma vez por contrato** — é conteúdo, não recurso Terraform:
+
+  ```bash
+  gcloud storage rsync -r apps/experiencias/exp-02-unootube/public/videos \
+    gs://{contrato}-assets/exp-02-unootube/videos/ --project {projeto}
+  ```
+
+  O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
   (`https://<cdn-assets>/exp-02-unootube/videos`); vazio = `./videos` (dev,
-  `public/videos/` gitignorado). Lacuna conhecida: o CI só publica `dist/`;
-  para 48 experiências o passo `gsutil rsync` de mídia precisa entrar no CI.
+  `public/videos/` gitignorado).
+
+  **O CI não publica essa mídia** — o runner faz checkout do git, e os mp4 não
+  estão lá. O que ele passou a fazer é CONFERIR: toda experiência com um
+  `midia-externa.json` (prefixo + lista de arquivos, versionado) tem a presença
+  checada no bucket de assets antes do bundle subir, e o deploy **falha** se
+  faltar algo. Isso exige a var `ASSETS_BUCKET` no environment do GitHub
+  (escrita por `scripts/configurar-github-ci.sh`); sem ela o passo só avisa.
+
+  Por que a conferência e não a publicação: em 2026-09-01 a exp-02 subiu no
+  contrato `entre-redes-dev` com o bucket de assets vazio. Os 21 mp4 responderam
+  404, o feed ficou em "Carregando o vídeo…" para sempre e — porque Salvar e
+  Curtir são desabilitados enquanto o vídeo carrega — a missão ficou impossível
+  de concluir. Nada falhou: nem o deploy, nem o log da api. Quem descobriu foi
+  um estudante, na frente da tela.
 - **Job de migration**: `prisma migrate deploy` roda como Cloud Run Job na VPC
   (o Cloud SQL só tem IP privado), antes do deploy dos serviços.
 - **Roles do Postgres**: o desenho original previa duas roles (owner p/
@@ -155,6 +174,30 @@ não passa pelo `OidcGuard` — quem chama é a push subscription. O
 duas envs a rota responde 401 (fechada, não aberta). O Terraform casa os dois
 lados: a subscription é criada com `oidc_token` dessa mesma SA e audience.
 
+**Observabilidade (PENDENTE — fase 0 do cap. 17 da documentação, ADR-57/58 propostas em 2026-09-01).**
+Hoje a stack não tem alerta, sonda HTTP nem painel: só o log e a métrica nativa do
+Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por contrato:
+
+| Recurso | Nome esperado | Observação |
+|---|---|---|
+| Notification channels | `{contrato}-alerta-acorda` (e-mail + push do app Cloud Console), `{contrato}-alerta-amanha` (e-mail + Google Chat/Slack) | duas severidades, só |
+| Uptime checks (3 regiões, 60 s, valida conteúdo) | `{contrato}-jwks` (`{hub}/.well-known/jwks.json` contém `"keys"`), `{contrato}-api-readyz`, `{contrato}-hub-healthz` (rota nova do hub), `{contrato}-landing`, `{contrato}-exp-ativa` (index.html da versão ativa da exp-01) | o `/readyz` passa a ser chamado por alguém |
+| Alert policies | as 14 do cap. 17 (6 "acorda", 8 "amanhã"); as que dependem de métrica da aplicação só valem após a fase 2 | por sintoma; nenhuma de CPU/memória |
+| SLOs (service monitoring) | disponibilidade do `-frontend` e do `-api` a 99,5 %/30 dias, com alerta de burn rate | |
+| Dashboard | `{contrato}-plataforma` (JSON versionado no Terraform) | igual em todo contrato |
+| Log: exclusões no sink `_Default` | request log de `/healthz`, `/readyz` e dos uptime checks; `sample(insertId, 0.2)` dos 2xx com latência < 1 s | é o que mantém o log dentro dos 50 GiB grátis |
+| Log: bucket de auditoria | `{contrato}-auditoria`, 400 dias, regional, alimentado por sink de `codigo=auth.*`, `codigo=importacao.*`, `codigo=deploy` + Admin Activity | Data Access audit logs do próprio Logging ligados |
+| Pub/Sub dead letter | topic `{contrato}-telemetria-dlq`, `dead_letter_policy` na `-telemetria-ingest` após 5 tentativas | hoje um lote recusado é reentregue para sempre, em silêncio |
+| Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub) no recurso do serviço | o `gcloud run deploy` do CI não as remove |
+| Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
+| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` | fase 1/2; ver apêndice B |
+| Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
+| IAM | `{contrato}-api` e `{contrato}-run` com `roles/cloudtrace.agent` e `roles/monitoring.metricWriter` | `logWriter` o Cloud Run já dá |
+
+O CI ganha, no mesmo passo: smoke pós-deploy (a suíte `publico`+`estudante` de
+`scripts/e2e`), `if: failure()` notificando no canal "amanhã", e a suíte agendada
+contra `hml`. Nada disso existe hoje.
+
 Deploy (CI deste repo):
 1. `turbo build --filter='...[HEAD^]'`
 2. schema mudou → executar o job `{contrato}-migrate` (roda ANTES do deploy do
@@ -162,7 +205,7 @@ Deploy (CI deste repo):
    tráfego)
 3. hub/api mudou → `docker build` + push direto no Artifact Registry (sem Cloud
    Build) → `gcloud run deploy` (revisions = rollback)
-4. exp mudou → `gsutil -m rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
+4. exp mudou → `gcloud storage rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
    e `PUT {api}/experiencias/{expId}` (admin-contrato) com o conteúdo do
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
    bundle. Feito por `apps/hub/scripts/publicar-manifesto.mjs`, que assina um
@@ -172,9 +215,10 @@ Deploy (CI deste repo):
    CDN de assets do contrato.
    O `deploy.yml` faz o `rsync` **e** o `PUT` do manifesto, e grava
    `Cache-Control: max-age=60` no `index.html` (o resto do caminho carrega a
-   versão e é imutável). **Pendente**: o `rsync` da mídia pesada
-   (`gsutil rsync` dos mp4 para o bucket de assets) continua manual — ver
-   `RUNBOOK-API.md`, passo 4.
+   versão e é imutável). A mídia pesada (os mp4 para o bucket de assets) continua
+   sendo upload deliberado — o runner não tem os arquivos —, mas desde
+   2026-09-01 o CI **confere** a presença dela e recusa publicar sem: ver a seção
+   do bucket de assets acima e `RUNBOOK-API.md`, passo 4.
 
 Nomes e valores concretos saem de `terraform output`; as `vars` que o
 `deploy.yml` consome estão listadas no passo 2 do `RUNBOOK-API.md`.

@@ -60,7 +60,7 @@ handshake, sem handshake não há identidade.
 tudo runtime — a ordem dos 19 scripts, o WebGL dentro do iframe, o pointer lock.
 
 ```bash
-node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila
+node scripts/e2e/rodar.mjs estudante/05
 ```
 
 Ele usa o **Chrome do sistema**, não o Chromium do Playwright: só o Chrome real
@@ -153,12 +153,12 @@ a segunda rodada serviria o mesmo golpe e não mediria nada).
 ## Documentação de design
 
 `docs/` traz o registro do jogo, vindo do repositório de origem e revisado no porte:
-`GAME_DESIGN.md` (o que o jogo é hoje), `CONTEXT.md` (glossário), `CLAUDE.md` (as regras
-para quem mexe), `MISSAO-a-noite-longa.md` (a missão das mensagens), `DEBATE.md` e os dois
+`GAME_DESIGN.md` (o que o jogo é hoje), `CONTEXT.md` (glossário), as regras para quem mexe subiram para o
+`AGENTS.md` na raiz da experiência, `MISSAO-a-noite-longa.md` (a missão das mensagens), `DEBATE.md` e os dois
 `GRILL-*` (registro histórico, com cabeçalho de aviso), e `adr/`.
 
-Três travas de leitura, e cada uma tem asserção no smoke
-(`scripts/walkthrough-professor-vila.mjs`):
+Três travas de leitura, e cada uma tem asserção na suíte do professor
+(`scripts/e2e/professor/05-vila-do-lume.mjs`):
 
 - **nenhum valor de Schwartz na LISTAGEM da turma.** Listagem é ordenável, e uma
   coluna "Poder" viraria um ranking de crianças. Os valores vivem na tela

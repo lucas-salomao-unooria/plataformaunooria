@@ -7,7 +7,7 @@ import type { VideoPublico } from "../../lib/tipos";
 import { urlDoVideo } from "../../lib/videos";
 import { aoMudarVisibilidade, estaVisivel } from "../../lib/visibilidade";
 import { Descricao } from "./Descricao";
-import { IndicadorCarregando } from "./IndicadorCarregando";
+import { IndicadorCarregando, VideoIndisponivel } from "./IndicadorCarregando";
 
 interface Props {
   videos: VideoPublico[];
@@ -51,16 +51,52 @@ export function Feed(props: Props) {
   const feedRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef(new Map<string, HTMLVideoElement>());
   const [carregando, setCarregando] = useState<Set<string>>(() => new Set(videos.map((v) => v.id)));
+  const [falhos, setFalhos] = useState<Set<string>>(() => new Set());
   const [visivel, setVisivel] = useState(estaVisivel());
   const estreita = useTelaEstreita();
   const variante = estreita ? "immersive" : "card";
   const dica = dicaDoFeed({
-    carregando: carregando.has(ativoId),
+    carregando: carregando.has(ativoId) && !falhos.has(ativoId),
+    falhou: falhos.has(ativoId),
     salvos: props.salvos.length,
     limite,
   });
 
   useEffect(() => aoMudarVisibilidade(setVisivel), []);
+
+  /*
+   * O DS não escuta `error` no `<video>` — o motor dele deriva `waiting` só de
+   * `waiting`/`playing`. Quando o mp4 volta 404 (bucket de assets sem a mídia
+   * daquele contrato), o navegador emite `waiting` e depois `error`; `playing`
+   * NUNCA chega, e sem este efeito `carregando` fica `true` para sempre. Isso
+   * não deixava a tela só feia: `disabled={carregandoEste}` travava Salvar e
+   * Curtir, e a missão ficava impossível de concluir. Enquanto a seção do DS
+   * não publicar um estado de erro, ele mora aqui.
+   */
+  useEffect(() => {
+    const desfazer: Array<() => void> = [];
+    videoRefs.current.forEach((node, id) => {
+      // O erro pode ter chegado antes deste efeito rodar: `node.error` é o que
+      // sobra dele, e é a única pista de um 404 que já aconteceu.
+      if (node.error) marcarFalho(id);
+      const aoFalhar = () => marcarFalho(id);
+      node.addEventListener("error", aoFalhar);
+      desfazer.push(() => node.removeEventListener("error", aoFalhar));
+    });
+    return () => desfazer.forEach((f) => f());
+  }, [videos]);
+
+  /*
+   * Rede que engasga sem nunca emitir `error` (o `stalled` que não vira nada):
+   * o vídeo em foco não pode prender a missão para sempre. 15s é generoso de
+   * propósito — laboratório de escola é lento, e marcar falha cedo demais tira
+   * do estudante um vídeo que ia chegar.
+   */
+  useEffect(() => {
+    if (!carregando.has(ativoId) || falhos.has(ativoId)) return;
+    const id = setTimeout(() => marcarFalho(ativoId), 15_000);
+    return () => clearTimeout(id);
+  }, [ativoId, carregando, falhos]);
 
   useEffect(() => {
     const itens = feedRef.current?.querySelectorAll<HTMLElement>(".short-item") ?? [];
@@ -86,6 +122,10 @@ export function Feed(props: Props) {
     });
   }, [ativoId, somLigado, visivel]);
 
+  function marcarFalho(id: string) {
+    setFalhos((atual) => (atual.has(id) ? atual : new Set(atual).add(id)));
+  }
+
   function marcarCarregando(id: string, estado: boolean) {
     setCarregando((atual) => {
       if (atual.has(id) === estado) return atual;
@@ -102,7 +142,10 @@ export function Feed(props: Props) {
         {videos.map((video, indice) => {
           const curtido = props.curtidos.includes(video.id);
           const salvo = props.salvos.includes(video.id);
-          const carregandoEste = carregando.has(video.id);
+          const falhouEste = falhos.has(video.id);
+          // Vídeo que falhou não está "carregando": deixar os dois estados
+          // juntos é o que travava Salvar e Curtir para sempre.
+          const carregandoEste = carregando.has(video.id) && !falhouEste;
           const expandida = props.descricaoExpandida === video.id;
           return (
             <article
@@ -241,7 +284,11 @@ export function Feed(props: Props) {
                     </ShortsActionRail>
                   }
                 />
-                {carregando.has(video.id) && <IndicadorCarregando detalhado />}
+                {falhouEste ? (
+                  <VideoIndisponivel />
+                ) : (
+                  carregandoEste && <IndicadorCarregando detalhado />
+                )}
               </div>
               <p className="dica-do-feed">{dica}</p>
             </article>

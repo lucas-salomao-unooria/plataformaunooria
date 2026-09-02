@@ -59,9 +59,14 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   Mitigado \emph{por arquitetura}: menos peças, reversão por ponteiro, decisões
   registradas em ADR e este documento. Não é mitigável por engenharia sozinha.\\
 \cd{R-05} & \textbf{Sem \emph{alerting}.} Há log e métrica nativa; não há alerta
-  nem painel. & Alta & Médio &
-  Configurar alerta de taxa de 5xx e de saturação de conexões do Cloud SQL.
-  \textbf{Obrigatório antes de novembro de 2026.}\\
+  nem painel, e nenhuma sonda chama \rota{/readyz}. Erro no navegador do
+  estudante não deixa rastro. & Alta & Médio &
+  \textbf{Estudado e planejado} (Capítulo~\ref{cap:observabilidade},
+  \adrr{ADR-57}, \adrr{ADR-58}): a fase 0 --- canais, cinco \emph{uptime
+  checks}, quatorze políticas por sintoma, SLOs, painel, exclusões e
+  \emph{dead letter}, tudo em Terraform --- fecha o risco e
+  \textbf{continua obrigatória antes de novembro de 2026}. Custo estimado por
+  contrato: cerca de US\$~1 por mês. \textbf{Não implementado.}\\
 \zebra \cd{R-06} & \textbf{Sem revisão de segurança externa.} Nenhum teste de
   intrusão. & Alta & \textbf{Alto} &
   Item de contratação, não de engenharia. Para plataforma que trata dado de menor
@@ -117,6 +122,20 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   Aceito e \textbf{dito na própria tela} (\adrr{ADR-29}), com o modo
   \enquote{uma senha por pessoa} ao lado, recomendado para turma grande. Fecha de
   vez quando o WSO2 for o emissor.\\
+\zebra \cd{R-16} & \textbf{\emph{Session replay} de terceiro sobre tela de
+  menor.} O Microsoft Clarity grava a sessão no hub e dentro do \cd{iframe} da
+  missão (\adrr{ADR-60}); a documentação do próprio Clarity diz que ele
+  \textbf{não deveria ser usado em aplicações destinadas a menores de 18
+  anos}, e a plataforma vai do 1º EF ao 3º EM. & Alta & \textbf{Alto} &
+  \textbf{Aceito como decisão de produto}, não mitigado. O que existe hoje:
+  o \cd{identify} manda só o UUID opaco (nunca nome, nunca e-mail), o
+  \cd{track()} manda \cd{verbo:objeto} sem a resposta do estudante, e o
+  Clarity mascara por \emph{default} campo de entrada, número e e-mail. O que
+  \textbf{falta} é a ponta contratual: a gravação sai do projeto GCP do
+  contrato para um processador de terceiro, e isso precisa estar no DPA da
+  rede \textbf{antes} do primeiro contrato em produção. Desligar é apagar
+  \cd{CLARITY\_PROJECT\_ID} do \emph{environment} --- sem \emph{deploy} de
+  código, mas com \emph{rebuild} da imagem.\\
 \bottomrule
 \end{tabularx}
 
@@ -189,7 +208,8 @@ M6 & Hub do estudante, \emph{header} único, casca compartilhada &
 \zebra --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
   CI/CD completo com WIF\\
 --- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
-\zebra --- & \textbf{\emph{Alerting}} & \no{} Pendente & \cd{R-05}\\
+\zebra --- & \textbf{Observabilidade (fases 0--2)} & \no{} Pendente &
+  \cd{R-05}; estudo e roteiro no Capítulo~\ref{cap:observabilidade}\\
 --- & \textbf{WSO2 como emissor} & \no{} Pendente & \adrr{ADR-15}\\
 \zebra --- & 43 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
 \bottomrule
@@ -204,9 +224,14 @@ M6 & Hub do estudante, \emph{header} único, casca compartilhada &
     experiência em dez minutos, contra a \emph{stack} \cd{dev}. Verificar
     saturação de conexões, latência do \rota{/runs/:id/feed} sob \emph{lock}, e o
     caminho de ingestão de telemetria.
-  \item \textbf{\emph{Alerting} mínimo}: taxa de 5xx do Cloud Run, saturação de
-    conexões do Cloud SQL, falha do Cloud Run Job de migração, e crescimento da
-    partição \cd{DEFAULT} de telemetria.
+  \item \textbf{Observabilidade, fase 0} (Capítulo~\ref{cap:observabilidade}):
+    canais de notificação, \emph{uptime checks} do JWKS e de \rota{/readyz},
+    SLO de disponibilidade com \emph{burn rate}, falha do Cloud Run Job de
+    migração, saturação do Cloud SQL, \emph{dead letter} da telemetria e
+    \emph{smoke} pós-\emph{deploy} --- tudo em Terraform e no
+    \arq{deploy.yml}, sem tocar em código de aplicação. A fase 1 (log
+    estruturado com \emph{redaction} e \cd{ExceptionFilter}) entra logo
+    depois, porque é o que torna o alerta diagnosticável.
   \item \textbf{Decisão de retenção}, com a rotina que a cumpre. Se a resposta for
     \enquote{sem prazo}, ela precisa estar no contrato --- não só neste documento.
   \item \textbf{Revisão de segurança externa} e teste de intrusão.

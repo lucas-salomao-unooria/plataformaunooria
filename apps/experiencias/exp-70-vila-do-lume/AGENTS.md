@@ -1,9 +1,10 @@
-# Vila do Lume — regras para quem mexe no jogo
+# apps/experiencias/exp-70-vila-do-lume — doutrina do jogo
 
+Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 Este arquivo é **doutrina do jogo**: as regras que já foram quebradas uma vez e o que cada
 uma custou. O que é verdade sobre a estrutura (onde mora o quê, como rodar, o que a api faz)
-vive em `../README.md`; o que o jogo É vive em `GAME_DESIGN.md`; o vocabulário, em
-`CONTEXT.md`.
+vive em `README.md`; o que o jogo É vive em `docs/GAME_DESIGN.md`; o vocabulário, em
+`docs/CONTEXT.md`.
 
 > **Reescrito em 26/08/2026.** A versão anterior era o guia do app de origem (`vila-coleta`)
 > e descrevia `public/jogo/` dentro de um Next na porta 3100, `localStorage` como rede de
@@ -37,7 +38,7 @@ Sino. `SCORE = { fire:100, flame:50, rock:10, optional:0 }`.
 
 Pontuar escolha livre transforma sinal de valor em perseguição de placar. O que substitui o
 incentivo é o **Chamado** — o Aldeão grita, o vidro do Lampião pulsa. O mundo pede; o placar
-não. Ver `adr/0001`.
+não. Ver `docs/adr/0001`.
 
 ## Teste duplo: cliente e servidor, sempre
 
@@ -104,15 +105,19 @@ quebra nada em tempo de execução: vira **zero silencioso**. Já aconteceu.
 
 ## Como verificar uma mudança
 
-`tsc` não cobre quase nada aqui — o jogo está fora dele por decisão (`../ADR-0001…`). A rede
+`tsc` não cobre quase nada aqui — o jogo está fora dele por decisão (`ADR-0001-jogo-nao-e-typescript.md`). A rede
 é o smoke visual:
 
 ```bash
-node scripts/walkthrough-vila-do-lume.mjs testes/walkthrough-vila     # estudante; usa o CHROME do sistema
-node scripts/walkthrough-professor-vila.mjs testes/wt-prof-vila 8A    # telas do professor
-pnpm --filter @edu/api test                                           # contrato, bolha, correção, tenancy
-node --check public/jogo/src/<arquivo>.js                              # erro de sintaxe antes de recarregar
+node scripts/e2e/rodar.mjs estudante/05    # a partida; usa o CHROME do sistema (pointer lock)
+node scripts/e2e/rodar.mjs professor/05    # as telas do professor e as três travas de leitura
+pnpm --filter @edu/api test                # contrato, bolha, correção, tenancy
+node --check public/jogo/src/<arquivo>.js  # erro de sintaxe antes de recarregar
 ```
 
+Os dois `scripts/walkthrough-*-vila.mjs` que este arquivo mandava rodar até
+2026-09-01 **não existem** desde que a suíte passou a ser organizada por papel
+(ADR-51). Substituídos pelas duas suítes acima.
+
 O jogo é servido de `public/`, sem HMR: editar um `.js` exige **recarregar a página** — e é
-aí que o cache do navegador engana. Ver `../README.md` para as portas e o embed.
+aí que o cache do navegador engana. Ver `README.md` para as portas e o embed.

@@ -57,6 +57,10 @@ API_SERVICE="$(val api_service_name)"
 HUB_SERVICE="$(val frontend_service_name)"
 MIGRATE_JOB="$(val migrate_job_name)"
 EXP_BUCKET="$(val bucket_exp)"
+# Bucket da MIDIA pesada das experiencias (os mp4 da exp-02). O CI nao a
+# publica — o runner nao tem os arquivos —, mas confere que ela esta la
+# antes de publicar o bundle que depende dela (ver `midia-externa.json`).
+ASSETS_BUCKET="$(val bucket_assets)"
 API_URL="$(val api_public_url)"
 ASSETS_BASE_URL="$(val url_assets)"
 WIF_PROVIDER="$(val github_workload_identity_provider)"
@@ -72,7 +76,7 @@ HUB_ORIGIN="$(val hub_public_url)"
 
 faltando=""
 for n in API_SERVICE HUB_SERVICE MIGRATE_JOB EXP_BUCKET API_URL ASSETS_BASE_URL \
-         WIF_PROVIDER DEPLOY_SA AR_REPO GCP_PROJECT REGION HUB_ORIGIN; do
+         ASSETS_BUCKET WIF_PROVIDER DEPLOY_SA AR_REPO GCP_PROJECT REGION HUB_ORIGIN; do
   [ -n "${!n}" ] || faltando="$faltando $n"
 done
 [ -z "$faltando" ] || { echo "erro: output vazio para:$faltando" >&2; exit 1; }
@@ -87,6 +91,7 @@ EXP_BUCKET=$EXP_BUCKET
 API_URL=$API_URL
 HUB_ORIGIN=$HUB_ORIGIN
 ASSETS_BASE_URL=$ASSETS_BASE_URL
+ASSETS_BUCKET=$ASSETS_BUCKET
 WIF_PROVIDER=$WIF_PROVIDER
 DEPLOY_SA=$DEPLOY_SA"
 

@@ -23,7 +23,7 @@ Módulos da API & 22, com um módulo de domínio por experiência\\
 Migrações & 9, todas com RLS preservada\\
 \zebra Arquivos de teste & 34 (regra pura, integração, contrato, \emph{smoke})\\
 \emph{Walkthroughs} visuais & 7\\
-\zebra Decisões registradas & 27 ADRs\\
+\zebra Decisões registradas & 56 ADRs\\
 Milestones concluídos & M0--M6\\
 \bottomrule
 \end{tabularx}
@@ -109,8 +109,8 @@ Entrega e reversão & \yes{} Pronta & \emph{Rsync} de mídia no CI
 \textbf{Desempenho sob pico} & \no{} \textbf{Não verificado} &
   \textbf{Teste de carga} (\cd{R-01}). É o item que separa \enquote{funciona} de
   \enquote{funciona às oito da manhã}.\\
-\zebra \textbf{Operabilidade} & \no{} Parcial & \textbf{\emph{Alerting}}
-  (\cd{R-05}).\\
+\zebra \textbf{Operabilidade} & \no{} Parcial & \textbf{Observabilidade,
+  fase 0} (\cd{R-05}; Capítulo~\ref{cap:observabilidade}).\\
 \textbf{Conformidade} & \no{} Parcial & \textbf{Retenção decidida} (\cd{R-02}) e
   \textbf{DPA com a localidade de IA} (\cd{R-03}).\\
 \zebra Acessibilidade & \no{} Não verificada & Checagem no \emph{design system}

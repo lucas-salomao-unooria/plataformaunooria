@@ -46,13 +46,19 @@ documentacao-latex/*.synctex.gz
 
 # Skills do Claude
 .agents/
-.claude/
 skills-lock.json
+
+# `.claude/` inteira fica fora — EXCETO as regras de permissão do projeto, que
+# são versionadas: elas valem para quem clonar o repo, não só para esta máquina
+# (ADR-55). Note que é `.claude/*`, não `.claude/`: com o diretório excluído o
+# git nem desce nele, e o `!` de dentro nunca chega a ser avaliado.
+.claude/*
+!.claude/settings.json
 
 # Lista de contas de demonstração que o seed escreve (login, nome, CPF e senha
 # na mesma linha). Gente inventada, mas não é coisa que se versiona — e ela se
 # refaz sozinha a cada `pnpm --filter @edu/api seed`.
-credenciais-demo.csv
+credenciais-*.csv
 
 # Arquivos de macOS
 .DS_Store

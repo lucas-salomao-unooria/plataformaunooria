@@ -12,6 +12,8 @@ import "@unooria/design-system/unooria.css";
  */
 import "@unooria/design-system/fonts/unooria.css";
 import "@edu/ui/styles/plataforma.css";
+import { ClarityIdentidade } from "@/components/clarity-identidade";
+import { auth } from "@/lib/auth";
 
 /**
  * Casca visual da plataforma: o CSS institucional do DS, as fontes e as
@@ -24,7 +26,7 @@ import "@edu/ui/styles/plataforma.css";
  * cheia), mas o header padrão do hub vive lá também e sem estas folhas o
  * `Logo`/`Avatar` do DS sairia sem estilo e os ícones viriam como texto.
  */
-export function CascaPlataforma({
+export async function CascaPlataforma({
   children,
   className,
   style,
@@ -33,8 +35,28 @@ export function CascaPlataforma({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  /*
+   * A identificação do Clarity entra aqui pela MESMA razão que a casca existe:
+   * é o único componente por onde `(plataforma)/**` e `/exp/**` passam os dois.
+   * No layout raiz não daria — lá não há sessão (e o login também passa por
+   * ele); num layout por papel daria quatro cópias (ADR-60).
+   *
+   * O script em si é do layout raiz; sem ele, tudo abaixo é no-op.
+   */
+  const session = await auth();
+  const usuario = session?.usuario;
+
   return (
     <div className={`unooria-theme-light unooria-surface ${className ?? ""}`} style={style}>
+      {usuario ? (
+        <ClarityIdentidade
+          id={usuario.id}
+          papel={usuario.papel}
+          escolaId={usuario.escolaId}
+          turmaId={usuario.turmaId}
+          serie={usuario.serie}
+        />
+      ) : null}
       {children}
     </div>
   );

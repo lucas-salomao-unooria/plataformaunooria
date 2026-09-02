@@ -11,9 +11,15 @@ este arquivo vence.
 | `apps/api/AGENTS.md` | rede/escola/CPF, identidade e enturmamento, perfil portátil, telemetria, OpenAPI derivado do Zod, provider de IA, e os módulos de experiência (vila, planos, bem-estar, unoogpt, unootube) |
 | `apps/hub/AGENTS.md` | landing, header, casca, embed de experiência, papéis e middleware, fontes do DS |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, como criar experiência nova, seções de clone do DS, a zona congelada da exp-70 |
-| `packages/AGENTS.md` | SDK (bridge, evento de telemetria) e a ponte do design system |
-| `documentacao-latex/README.md` | convenções de edição do LaTeX |
+| `packages/AGENTS.md` | índice dos pacotes de workspace (o detalhe está no `AGENTS.md` de cada um) |
+| `packages/*/AGENTS.md` | por pacote: o contrato que o `sdk` promete, as 4 pontes do `ui`, o conteúdo da exp-01 |
+| `apps/experiencias/*/AGENTS.md` | por experiência: porta de dev, rota do hub, seção do DS, módulo da api e as regras dela |
+| `scripts/AGENTS.md` | os utilitários de linha de comando, e o que é gerado e não se edita à mão |
+| `scripts/e2e/AGENTS.md` | o que uma suíte precisa provar, e a espera que corre contra o erro |
+| `docs/AGENTS.md` | o que ali é contrato vivo e o que é resumo (a fonte das decisões é o LaTeX) |
+| `documentacao-latex/AGENTS.md` | as regras de edição que já custaram tempo (o resto está no `README.md` ao lado) |
 | `docs/INFRA.md` | contrato com o repo de Terraform |
+| `CONTRIBUTING.md` | o fluxo de git inteiro: promoção, hotfix, tag/release, rollback, hooks |
 
 ## Contexto de negócio (não violar)
 
@@ -79,6 +85,18 @@ trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
 cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
 "Identidade e enturmamento").
 
+**A matriz completa de quem faz o quê** (papel x rota x tela, e as ausências
+deliberadas) está em `documentacao-latex/secoes/07-tenancy-seguranca.tex`,
+"Nível 3: autorização por papel" — é o lugar de olhar antes de responder "esse
+papel pode?". Duas respostas que a matriz já dá: **quem ESCREVE pessoa é o
+importador** — `POST /usuarios` existe (o formulário do balcão), mas monta a
+mesma linha de planilha e delega a `POST /rostering/importar`, nunca escreve em
+`users` (ADR-54 + ADR-59; a única exceção é `POST /usuarios/admin-contrato`, o
+papel que não cabe numa planilha da escola) —, e gestor e `admin-contrato`
+dividem a MESMA área do middleware, então quem separa os dois é o `RolesGuard`
+da api, não o hub. **Gestor não cria `admin-contrato`**: a opção não aparece na
+tela e a rota responde 403.
+
 
 ## Design System (`@unooria/design-system`) — a regra de ouro
 
@@ -102,7 +120,77 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e
 `package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
-armadilhas de migração) em `packages/AGENTS.md`.
+armadilhas de migração) em `packages/ui/AGENTS.md`.
+
+## Arquivos de instrução de agente — o padrão
+
+Três arquivos, três papéis que não se misturam:
+
+| Arquivo | Para quem | Regra |
+|---|---|---|
+| `AGENTS.md` | qualquer agente | **canônico.** O único lugar onde a doutrina daquela pasta é escrita |
+| `CLAUDE.md` | Claude Code | **uma linha, `@AGENTS.md`.** Nunca conteúdo próprio |
+| `README.md` | pessoa | o que a pasta é e como rodar. NÃO entra sozinho no contexto do agente |
+
+Por que dois e não um: `AGENTS.md` é o nome que a maioria das ferramentas lê;
+`CLAUDE.md` é o que o Claude Code procura. O ponteiro `@AGENTS.md` importa o
+canônico, e a regra existe **uma vez**. `CLAUDE.md` com texto próprio é uma
+segunda fonte de verdade sobre a mesma pasta — e duas fontes divergem, sempre na
+direção de quem parou de ler a outra.
+
+**Onde nasce um `AGENTS.md`:** numa pasta onde se trabalha uma tarefa inteira sem
+sair dela — um app, um pacote, uma experiência, a suíte e2e. Ele carrega sozinho
+quando a sessão toca a pasta, e é isso que paga o custo de existir. **Na raiz da
+pasta, nunca numa subpasta.** A doutrina da Vila do Lume viveu meses em
+`exp-70-vila-do-lume/docs/CLAUDE.md`: quem editava o jogo em `public/jogo/` nunca
+a recebia, porque o carregamento é por caminho — o arquivo estava a um nível de
+distância de todo mundo que ele tentava avisar.
+
+**O que entra:** o que, se você não souber, você quebra. Regra já violada e o que
+custou; contrato com quem consome; zona congelada; armadilha que passa no
+typecheck. **O que não entra:** o que o código já diz (estrutura de pastas, lista
+de dependências, assinatura de função), o que o `README.md` ao lado já explica, e
+qualquer repetição da raiz. Um `AGENTS.md` que repete outro não é redundância
+inofensiva: é a cópia que ninguém vai atualizar junto.
+
+**Quando o `README.md` da pasta JÁ é a doutrina** (`scripts/e2e`,
+`documentacao-latex`), o `AGENTS.md` não a copia: ele vira um **carregador** —
+as poucas regras invioláveis, em uma linha cada, e a ordem de abrir o README
+antes de escrever. Copiar o README para o `AGENTS.md` cria as duas cópias que
+esta seção inteira existe para evitar.
+
+**Forma.** Primeira linha `# <caminho da pasta> — <o que é>`; segunda,
+`Complementa o AGENTS.md da raiz.` (a raiz vence em conflito). Seções por assunto,
+com o porquê junto da regra — regra sem custo declarado é a primeira a ser
+"otimizada" por quem chega depois.
+
+**Bloco gerado por ferramenta** (o do Next em `apps/hub/AGENTS.md`) fica entre os
+marcadores dela, intocado, e o conteúdo do projeto vem depois — a ferramenta
+reescreve o bloco, e apagá-lo só recria a alteração não commitada.
+
+**Manutenção.** Mudou a regra, muda o `AGENTS.md` **no mesmo commit** — mesma
+razão do LaTeX: instrução desatualizada é pior que instrução nenhuma, porque o
+agente obedece. Pasta nova que ganha `AGENTS.md` ganha o `CLAUDE.md` de uma linha
+junto; sozinho, o Claude Code não acha o canônico.
+
+## Ferramentas externas que o agente NÃO dispara
+
+**Varredura de vulnerabilidade (Snyk) é da esteira de CI/CD, não da sessão.** Não
+rode `snyk` nem as ferramentas do MCP do Snyk — nem para "conferir", nem depois de
+mexer em dependência. O lugar da varredura é a esteira, com o `SNYK_TOKEN` do
+repositório e a política com prazo dos `.snyk` (ADR-39). Varredura na sessão
+gasta cota do plano, produz apontamento sem o portão que o cumpre, responde por
+uma working tree local que não é o que vai a produção, e recicla falso positivo
+já analisado — o "code injection" do `setInterval` da bridge tem comentário no
+código, entrada no `.snyk` e ADR. Precisou de uma avulsa? Quem roda é a pessoa,
+na mão.
+
+Estado do portão hoje: o passo `Snyk` do `ci.yml` está **comentado** desde
+`07d9ec0`. Reativá-lo é decisão de quem cuida do CI — não é trabalho que você
+começa por conta própria, e não muda nada do parágrafo acima.
+
+As regras estão em `.claude/settings.json` (versionado) e no `settings.json` do
+usuário; o MCP continua instalado, para uso manual.
 
 ## Convenções de código
 
@@ -122,8 +210,15 @@ armadilhas de migração) em `packages/AGENTS.md`.
 - UI: **não inventar componente**. Hub e experiências montam interface com
   `@unooria/design-system` (seção `unooria` para a plataforma, seção do clone
   para a experiência), sempre na última versão — ver "Design System" nesta página
-  e a mecânica em `packages/AGENTS.md`. O
+  e a mecânica em `packages/ui/AGENTS.md`. O
   `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
+- **Analytics de terceiro passa por `@edu/sdk`, nunca por snippet solto.** O
+  Microsoft Clarity (ADR-60) tem UMA fonte — `packages/sdk/src/clarity.ts` —
+  consumida pelo hub e pelas experiências; colar o `<script>` num `index.html`
+  ou num layout cria a segunda cópia que ninguém atualiza junto. O id vem de
+  `NEXT_PUBLIC_CLARITY_PROJECT_ID` e **ausente = desligado**, nas duas
+  superfícies. O que sai para lá é id opaco e `verbo:objeto`; nome, e-mail e
+  resposta de estudante NÃO — a regra 6 continua valendo dentro do Clarity.
 - **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
   `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
   — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
@@ -152,13 +247,46 @@ armadilhas de migração) em `packages/AGENTS.md`.
 
 ## Git e branches
 
+**O fluxo inteiro — promoção, hotfix, retro-merge, tag/release, rollback por
+camada — está em `CONTRIBUTING.md`.** Aqui fica só o que decide se você precisa
+abri-lo.
+
 - **Fluxo por ambiente (desde 2026-09):** branch de trabalho → PR para `dev` →
-  PR de `dev` para `hml` → (futuro) PR de `hml` para `main`, que será a
-  produção. **Ninguém commita direto em branch de ambiente** — o merge do PR é
-  o que dispara o deploy da stack correspondente (environments do GitHub
-  carregam as vars; ver ADR-53). Merge por merge commit ou squash; **rebase
-  desabilitado**: o job `mudancas` compara `HEAD^`, e um rebase-merge faria o
-  diff enxergar só o último commit do PR.
+  PR de `dev` para `hml` → PR de `hml` para `main`, que será a produção.
+  **Ninguém commita direto em branch de ambiente** — o merge do PR é o que
+  dispara o deploy da stack correspondente (environments do GitHub carregam as
+  vars; ver ADR-53). `main` ainda NÃO dispara: falta o environment `prd` e
+  acrescentar `main` ao gatilho de push do `deploy.yml`. Merge por merge commit
+  ou squash; **rebase desabilitado**: o job `mudancas` compara `HEAD^`, e um
+  rebase-merge faria o diff enxergar só o último commit do PR.
+- **Promoção para `main` leva tag semver** (`v1.4.0`) e release, criadas depois
+  do merge. A tag é o nome do que está em produção — sem ela, "volta para a
+  anterior" vira caça a SHA no meio de um incidente.
+- **Hotfix sai de `main`, e volta para `hml` e `dev` por retro-merge** no mesmo
+  dia. Hotfix que não volta renasce como bug na próxima promoção.
+- **Os hooks são a única barreira**: `branch protection` e `rulesets` respondem
+  403 (repo privado, plano Free). `.githooks/pre-push` recusa push direto em
+  branch de ambiente e nome de branch fora do padrão; `.githooks/commit-msg`
+  valida o formato do commit. Instalados pelo `prepare` no `pnpm install`
+  (`core.hooksPath`). Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`,
+  `PERMITIR_BRANCH_FORA_DO_PADRAO=1`.
+- **Frente paralela = worktree, e a base vai ESCRITA** (ADR-61):
+  `git worktree add -b feat/<slug> .claude/worktrees/<slug> origin/dev`. Clone
+  antigo tem `origin/HEAD` em `main`, e toda ferramenta que "parte da branch
+  padrão" — a criação automática de worktree do Claude Code inclusive — abre a
+  branch sobre PRODUÇÃO em silêncio; `git remote set-head origin --auto` conserta
+  a raiz, e `git log origin/dev..HEAD` antes do PR confere. `pnpm install` de
+  novo lá dentro (`node_modules` não é compartilhado).
+- **O paralelismo é de EDIÇÃO e teste unitário; o runtime é singleton.** Portas
+  fixas com `strictPort`, compose de nome fixo, um banco: dois worktrees não
+  rodam a stack ao mesmo tempo. No worktree: editar, `typecheck lint test`,
+  build, e o Vite de UMA experiência em porta alternativa
+  (`/dev-embed?src=http://localhost:52NN`). Na cópia principal, uma frente por
+  vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
+  `pnpm docker:dev` de um worktree — ele recria os containers da stack
+  principal. Arquivos que toda frente toca e brigam no merge: número da ADR
+  (reserve conferindo `origin/dev`), `main.pdf` (regera, não escolhe lado),
+  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
@@ -247,6 +375,8 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
 - Não usar localStorage para token. Não usar `targetOrigin: "*"`.
 - Não escrever migração que remova `escola_id` ou afrouxe RLS.
 - Não chamar provedores de IA fora de `apps/api/src/ai`.
+- Não rodar Snyk (CLI ou MCP): a varredura é do CI. Ver "Ferramentas externas".
+- Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md` de uma linha.
 - Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
   quando a seção do DS já tem: o lugar do componente novo é o `storybook-unooria`.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
@@ -271,8 +401,8 @@ Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF)
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **52 ADRs**, riscos e
-evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+especificação da API, design system, entrega, qualidade, **observabilidade**,
+**59 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
@@ -296,8 +426,9 @@ cd documentacao-latex && ./compilar.sh      # tectonic; --rapido p/ iterar, --li
 | Variável de ambiente | `apendices/b-variaveis-ambiente.tex` |
 | Experiência nova | `secoes/12-experiencias.tex` (e o catálogo do cap. 12) |
 | Regra de interface / lacuna do DS | `secoes/14-design-system.tex` |
-| **Qualquer decisão com alternativa descartada** | `secoes/17-adr.tex` — **ADR nova, numerada** (contexto, decisão, alternativas, consequências ruins incluídas, gatilho de reavaliação) |
-| Risco novo, mitigado ou reclassificado | `secoes/18-riscos-evolucao.tex` |
+| **Qualquer decisão com alternativa descartada** | `secoes/18-adr.tex` — **ADR nova, numerada** (contexto, decisão, alternativas, consequências ruins incluídas, gatilho de reavaliação) |
+| Risco novo, mitigado ou reclassificado | `secoes/19-riscos-evolucao.tex` |
+| Sinal operacional novo (log, métrica, alerta, SLO, sonda, erro de cliente) | `secoes/17-observabilidade.tex` — e `docs/INFRA.md` se virar recurso do Terraform |
 | Sintoma de diagnóstico novo (o sintoma que não aponta para a causa) | `apendices/f-operacao.tex` |
 | Diagrama TikZ novo | **também** a fonte Mermaid equivalente em `apendices/a-mermaid.tex` |
 
@@ -325,5 +456,6 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client
 - [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
+- [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
-      Decisão com alternativa descartada = ADR nova em `secoes/17-adr.tex`
+      Decisão com alternativa descartada = ADR nova em `secoes/18-adr.tex`

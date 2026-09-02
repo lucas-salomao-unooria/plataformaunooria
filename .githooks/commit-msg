@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Conventional Commits, com os escopos deste monorepo.
+#
+# O escopo é o slug da experiência ou o app/pacote tocado — é o que faz
+# `git log --oneline` responder "o que mudou na api?" sem abrir diff nenhum.
+set -u
+
+arquivo="$1"
+assunto=$(grep -v '^#' "$arquivo" | sed '/^[[:space:]]*$/d' | head -1)
+
+# Mensagens que o git gera sozinho passam direto.
+case "$assunto" in
+  "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"Reapply "*) exit 0 ;;
+esac
+
+TIPOS="feat|fix|chore|docs|ci|refactor|test|perf|build|style|revert"
+
+if ! printf '%s' "$assunto" | grep -Eq "^($TIPOS)(\([a-z0-9._/-]+\))?!?: .+"; then
+  cat >&2 <<MSG
+
+  ✗ mensagem de commit fora do padrão:
+
+      $assunto
+
+    Formato:  tipo(escopo): o que mudou
+    Tipos:    ${TIPOS//|/, }
+    Escopo:   o slug da experiência ou o app/pacote — opcional, mas quase sempre existe
+
+      feat(exp-12): o feed guarda a ordem entre sessões
+      fix(api): quota por perfil somava estudante e professor no mesmo balde
+      chore(sdk): sobe o design system para 0.1.18
+
+    Mudança incompatível: ponto de exclamação antes dos dois-pontos —
+      refactor(all)!: remove a camada de compatibilidade
+
+MSG
+  exit 1
+fi
+
+# Assunto longo não reprova: avisa. O git encurta em 72 na maioria das telas.
+n=${#assunto}
+[ "$n" -gt 72 ] && echo "aviso: assunto com $n caracteres (o comum é caber em 72)." >&2
+
+exit 0

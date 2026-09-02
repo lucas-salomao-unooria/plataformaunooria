@@ -19,6 +19,15 @@ describe("dicaDoFeed", () => {
     expect(dicaDoFeed({ ...base, salvos: 2 })).toBe("Vídeo salvo! Você já escolheu 2 de 3 favoritos.");
   });
 
+  test("vídeo que falhou vence o carregando: a espera não vai terminar", () => {
+    // O mp4 em 404 (bucket de assets sem a mídia do contrato) deixava o feed em
+    // "aguarde um instante" para sempre. Mandar esperar uma espera que não
+    // termina é mentira — e a dica também é o que diz que a missão continua.
+    expect(dicaDoFeed({ ...base, carregando: true, falhou: true })).toBe(
+      "Este vídeo não carregou. Siga para o próximo — sua missão continua.",
+    );
+  });
+
   test("no limite, aponta para o botão de concluir", () => {
     expect(dicaDoFeed({ ...base, salvos: 3 })).toBe(
       "Pronto! Seus 3 favoritos estão escolhidos. Toque em Concluir missão.",
@@ -36,7 +45,9 @@ describe("dicaDoFeed", () => {
     const proibidas = /confi|verdad|fals|fake|errad|cert|melhor|pior/i;
     for (const salvos of [0, 1, 2, 3]) {
       for (const carregando of [true, false]) {
-        expect(dicaDoFeed({ carregando, salvos, limite: 3 })).not.toMatch(proibidas);
+        for (const falhou of [true, false]) {
+          expect(dicaDoFeed({ carregando, falhou, salvos, limite: 3 })).not.toMatch(proibidas);
+        }
       }
     }
   });

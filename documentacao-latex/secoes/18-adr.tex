@@ -2890,3 +2890,843 @@ mapeamento \cd{main} \(\to\) \cd{prd} e pedirá \emph{required reviewers} no
 \emph{environment}); ou o segundo contrato --- \emph{environments} escalam por
 ambiente, não por contrato, e aí a conversa vira um repositório de
 \emph{deploy} por contrato ou uma matriz.
+
+\section{ADR-54 --- Pessoa nasce por IMPORTAÇÃO: não existe cadastro avulso de
+usuário}
+\label{adr:sem-cadastro-avulso}
+
+\textbf{Estado: vigente, com o gatilho acionado} (2026-09-01). O cadastro
+unitário passou a existir --- e existe do jeito que o gatilho abaixo prescreve:
+um formulário que monta a MESMA linha de CSV e chama o MESMO importador, nunca
+um segundo caminho de escrita em \cd{users}. Ver \adrr{ADR-59}, que também
+abriu a rota separada de \cd{admin-contrato}. Tudo o mais nesta ADR continua
+valendo, inclusive as três alternativas descartadas.
+
+\begin{especificacao}{Contexto}
+Quem pergunta \enquote{como eu crio um usuário?} procura, naturalmente, um botão
+\enquote{Novo} na tela \rota{/admin/usuarios}. Ele não existe, e a ausência
+nunca esteve escrita em lugar nenhum --- estava só implícita no fato de a API
+não ter \rota{POST /usuarios}.
+
+O provisionamento desta plataforma não é auto-serviço: a lista de pessoas vem da
+REDE (a secretaria, o sistema de matrícula), e a identidade que importa é a
+\textbf{matrícula da rede} --- com o CPF como chave que promove uma linha
+repetida a transferência entre unidades (\adrr{ADR-28}, \adrr{ADR-32}). Uma
+pessoa não é só um \cd{users}: é lotação, matrícula em turma, período letivo e
+senha provisória, nascidos juntos na mesma transação.
+\end{especificacao}
+
+\textbf{Decisão.} As \textbf{únicas} duas chamadas que criam linha em
+\cd{users} são \rota{POST /rostering/importar} (a planilha simples, uma linha
+por pessoa) e \rota{POST /rostering/oneroster/users} (o \emph{binding} do
+padrão, para a rede que já o exporta). \emph{Desde a \adrr{ADR-59}, some-se a
+elas \rota{POST /usuarios/admin-contrato} --- o único papel que não cabe numa
+planilha da escola; \rota{POST /usuarios} não é uma terceira, porque delega à
+primeira.} As duas exigem \cd{gestor} --- na própria
+escola --- ou \cd{admin-contrato}, com \cd{?escolaId=}. Criar UMA pessoa é
+importar uma planilha de uma linha: a operação é idempotente pela matrícula (e
+pelo CPF), então repetir não duplica nem reseta a senha de quem já entrou.
+
+O que existe depois da criação são as operações de \textbf{balcão}, e essas sim
+são unitárias: \rota{PATCH /usuarios/:id} corrige nome, CPF, e-mail, papel e
+\cd{ativo}; \rota{POST /usuarios/:id/reset-senha} devolve uma senha temporária
+uma única vez.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um \rota{POST /usuarios} com formulário na tela}: é uma segunda
+    porta de escrita sobre o mesmo modelo, e portas de escrita divergem. Na
+    primeira regra nova --- o CPF que vira transferência, a matrícula que
+    precisa de período letivo aberto, o papel \cd{coordenacao} que normaliza
+    para \cd{gestor} --- uma das duas a implementaria e a outra não, em
+    silêncio. É exatamente o motivo pelo qual \rota{POST /usuarios/importar-csv}
+    sobreviveu apenas como \emph{delegação} para o importador, e não como um
+    segundo importador.
+  \item \emph{Auto-cadastro pelo próprio usuário}: são menores. Não há prova de
+    vínculo com a escola que uma pessoa possa apresentar sozinha, e a
+    consequência de aceitar uma seria uma criança dentro do \emph{tenant}
+    errado.
+  \item \emph{Provisionamento \emph{just-in-time} no primeiro login} (criar a
+    pessoa a partir do \emph{token} do IdP): tentador quando o WSO2 entrar, e
+    recusado desde já --- o \emph{token} do IdP não carrega turma nem série, e a
+    pessoa nasceria sem enturmamento, invisível para o professor e fora de
+    qualquer conferência da rede. Quando o WSO2 chegar, ele autentica; quem
+    provisiona continua sendo a importação.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o gestor que percebe \enquote{esqueci de
+incluir a Ana} precisa montar um arquivo para uma linha --- atrito real de
+balcão, e a tela hoje só aceita \emph{upload}, sem campo de colar. Mitigado em
+parte porque o balcão de verdade (nome errado, CPF trocado, senha perdida,
+saída da rede) é editar, não criar, e essas rotas existem.
+
+\textbf{Gatilho de reavaliação.} Se a operação pedir cadastro unitário com
+frequência, a saída é um formulário que monta a MESMA linha de CSV e chama o
+MESMO importador --- nunca um segundo caminho de escrita em \cd{users}.
+
+\section{ADR-55 --- Instrução de agente: \arq{AGENTS.md} canônico por fronteira,
+\arq{CLAUDE.md} como ponteiro de uma linha}
+\label{adr:instrucao-de-agente}
+
+\begin{especificacao}{Contexto}
+Uma pessoa desenvolve esta plataforma, e boa parte do trabalho passa por agentes
+de codificação. O que eles sabem sobre o projeto vem dos arquivos de instrução
+que a ferramenta carrega sozinha ao tocar uma pasta --- e esses arquivos viraram
+um padrão \emph{de fato}, nunca escrito: \arq{AGENTS.md} por domínio, com um
+\arq{CLAUDE.md} de uma linha ao lado.
+
+Padrão que não está escrito não se verifica, e os desvios apareceram. A doutrina
+da Vila do Lume --- as regras que protegem a Camada~2 do instrumento --- viveu
+meses em \arq{exp-70-vila-do-lume/docs/CLAUDE.md}: o carregamento é por caminho,
+então quem editava o jogo em \arq{public/jogo/} nunca a recebia. Ela ainda
+mandava rodar dois \arq{scripts/walkthrough-*.mjs} que deixaram de existir
+quando a suíte passou a ser organizada por papel (\adrr{ADR-51}) --- instrução
+desatualizada, que é pior que instrução nenhuma, porque o agente obedece.
+\end{especificacao}
+
+\textbf{Decisão.} Três arquivos, três papéis que não se misturam.
+\arq{AGENTS.md} é \textbf{canônico}: o único lugar onde a doutrina de uma pasta é
+escrita, e o nome que a maioria das ferramentas lê. \arq{CLAUDE.md} é
+\textbf{uma linha}, \cd{@AGENTS.md} --- o Claude Code procura esse nome, o
+ponteiro importa o canônico, e a regra existe uma vez só. \arq{README.md}
+continua sendo para pessoas: o que a pasta é e como rodar, e ele \emph{não} entra
+sozinho no contexto do agente.
+
+Um \arq{AGENTS.md} nasce numa pasta onde se trabalha uma tarefa inteira sem sair
+dela --- um app, um pacote, uma experiência, a suíte de ponta a ponta --- e
+sempre na RAIZ dela, nunca numa subpasta. Entra nele o que, se você não souber,
+você quebra: regra já violada e o que custou, contrato com quem consome, zona
+congelada, armadilha que passa no \cd{typecheck}. Não entra o que o código já diz
+nem o que o \arq{README.md} ao lado já explica. Onde o \arq{README.md} já é a
+doutrina --- \arq{scripts/e2e}, \arq{documentacao-latex} --- o \arq{AGENTS.md} é
+curto e serve de \emph{carregador}: as poucas regras invioláveis e a ordem de
+abrir o README. Alterar a regra e o arquivo é o mesmo \emph{commit}, e isso entra
+na \emph{Definition of Done}.
+
+Decisão irmã, do mesmo movimento: \textbf{varredura de vulnerabilidade pertence à
+esteira}, com o segredo e a política de prazos do repositório
+(\adrr{ADR-39}), não à sessão do agente. O agente não dispara \cd{snyk} nem as
+ferramentas do MCP correspondente; as regras estão em \arq{.claude/settings.json}
+(escopo do projeto) e no equivalente do usuário. Varredura na sessão gasta cota
+do plano, produz apontamento sem o portão que o cumpre, responde por uma árvore
+de trabalho local que não é o que vai a produção --- e recicla falsos positivos
+já analisados e registrados, como o \emph{code injection} do \cd{setInterval} da
+\emph{bridge}. Quem precisar de uma varredura avulsa a roda na mão.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Um arquivo só, na raiz}: já foi assim, e o arquivo cresceu até o
+    ponto em que a regra da api ocupava contexto de quem mexia numa experiência.
+    A divisão por pasta existe porque o carregamento é por caminho: cada sessão
+    recebe o que é dela.
+  \item \emph{\arq{CLAUDE.md} com conteúdo próprio ao lado do \arq{AGENTS.md}}:
+    duas fontes de verdade sobre a mesma pasta. Elas divergem, sempre na direção
+    de quem parou de ler a outra --- a mesma armadilha do \cd{expires\_at} que
+    saiu do \emph{schema} e ficou no registro.
+  \item \emph{Só \arq{README.md}, sem \arq{AGENTS.md}}: o README não entra no
+    contexto sozinho. Foi o que fez a doutrina da Vila do Lume ficar invisível
+    para quem ela tentava avisar.
+  \item \emph{Gerar os \arq{AGENTS.md} a partir do código}: o que vale ali é
+    justamente o que o código não diz --- por que a medida é 0{,}6 e não 0{,}5,
+    o que custou descobrir. Gerador nenhum sabe disso.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: são dezenove pares de arquivos a manter, e
+cada um pode envelhecer sozinho --- o custo é real e recai sobre a mesma pessoa.
+Mitigado por duas coisas: a proibição explícita de repetir conteúdo entre eles
+(cópia é o que ninguém atualiza junto) e o item novo na \emph{Definition of
+Done}. \emph{Ruim também}: bloquear o MCP de varredura no escopo do usuário vale
+para todos os projetos da máquina, não só para este.
+
+\textbf{Gatilho de reavaliação.} Um \arq{AGENTS.md} que ninguém consultou ao
+mudar a pasta que ele governa --- sinal de que ele descreve o que o código já
+diz, e deve encolher ou desaparecer. Do lado da varredura: a esteira deixar de
+cobrir uma classe de vulnerabilidade que só a análise local pega.
+
+\section{ADR-56 --- O fluxo por ambiente é imposto por \emph{hooks} versionados,
+não por \emph{branch protection}}
+\label{adr:fluxo-por-hooks}
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-53} definiu o fluxo --- \emph{branch} de trabalho \(\to\) \cd{dev}
+\(\to\) \cd{hml} \(\to\) \cd{main} --- e o \emph{deploy} passou a depender dele:
+o \emph{merge} do PR é o que sobe código para a escola. A regra existia em prosa
+no \arq{AGENTS.md} e nada a sustentava: \cd{git push origin dev} funcionava, e
+funcionaria de madrugada, no fim de uma sessão longa, sem portão e sem PR.
+
+A resposta natural seria \cd{branch protection} ou \cd{rulesets}. As duas APIs
+respondem \textbf{403 --- \enquote{Upgrade to GitHub Pro or make this repository
+public}}: o repositório é privado numa conta de plano \emph{Free}. Tornar
+público não é opção (é código de plataforma com dado de menor no desenho), e
+pagar por assento para uma pessoa, hoje, não se justifica --- mas a regra
+precisa valer \textbf{agora}, porque \cd{hml} já é um ambiente real.
+
+Faltavam também as duas pontas que só aparecem quando produção existe: como se
+corrige produção sem furar a fila, e como se diz \emph{qual} versão está lá.
+Não havia uma \emph{tag} no repositório.
+\end{especificacao}
+
+\textbf{Decisão.} A barreira é local e versionada: \arq{.githooks/}, ativado por
+\cd{core.hooksPath} no \cd{prepare} do \arq{package.json} --- ou seja,
+\cd{pnpm install} instala. \arq{pre-push} recusa \emph{push} direto em
+\cd{dev}, \cd{hml} e \cd{main} (inclusive deleção) e nome de \emph{branch} fora
+do padrão; \arq{commit-msg} valida \emph{Conventional Commits} com os escopos
+deste monorepo. Os escapes são \textbf{nomeados}
+(\cd{PERMITIR\_PUSH\_DIRETO=1}, \cd{PERMITIR\_BRANCH\_FORA\_DO\_PADRAO=1}), e
+não a \emph{flag} genérica \cd{-{}-no-verify}: emergência acontece, e é melhor
+que ela deixe rastro numa variável que diz o que se está furando.
+
+Junto com isso, duas regras que o fluxo não tinha. \textbf{Promoção para
+\cd{main} leva \emph{tag} semver e \emph{release}}, criadas depois do
+\emph{merge}: MAJOR só em quebra de contrato com quem está fora do repositório
+(\cd{PROTOCOL\_VERSION} da ponte, manifesto, telemetria, contrato do Terraform),
+MINOR no caso comum, PATCH em correção. \textbf{\emph{Hotfix} sai de \cd{main},
+entra por PR em \cd{main} e volta para \cd{hml} e \cd{dev} por retro-merge} no
+mesmo dia. O fluxo operacional inteiro vive em \arq{CONTRIBUTING.md} --- a raiz
+do repositório, onde o GitHub o exibe ao abrir um PR.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Deixar só a prosa do \arq{AGENTS.md}}: é o estado que produziu o
+    risco. Regra que depende de lembrar dela, às 2h da manhã, não é regra --- e
+    o custo de esquecer aqui é \emph{deploy} para escola sem portão.
+  \item \emph{Tornar o repositório público para liberar \cd{rulesets}}: trocar
+    a superfície de exposição do produto inteiro por um recurso de processo.
+    Desproporcional.
+  \item \emph{\emph{Husky} + \emph{commitlint} + \emph{lint-staged}}: três
+    dependências, uma cadeia de configuração e um \emph{hook} gerado, para o que
+    são dois arquivos de \emph{shell} que o repositório inteiro consegue ler. A
+    regra da raiz vale aqui (\enquote{simplicidade > sofisticação}), e
+    \cd{core.hooksPath} é nativo do git desde a 2.9.
+  \item \emph{Um \emph{workflow} de \emph{release} que cria a \emph{tag}
+    sozinho no \emph{push} para \cd{main}}: automação que decide o número da
+    versão precisa de uma fonte para ele, e a única honesta seria um arquivo que
+    alguém edita --- o mesmo trabalho manual, com uma engrenagem a mais para
+    falhar. Enquanto a promoção for um ato deliberado de uma pessoa, o comando
+    documentado basta.
+  \item \emph{\emph{Trunk-based} puro, com \emph{feature flags} no lugar de
+    \cd{hml}}: exige disciplina de \emph{flag} e um custo de teste que uma
+    pessoa não paga; e \cd{hml} existe porque a rede cliente precisa de um lugar
+    para homologar antes da escola.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: \emph{hook} é conselho, não muralha --- quem
+clonar e não rodar \cd{pnpm install} não tem nenhum, e \cd{-{}-no-verify} fura.
+A barreira protege contra descuido, não contra intenção, e isso é aceitável
+enquanto o time é de uma pessoa; deixa de ser no primeiro colaborador externo.
+\emph{Ruim também}: o \cd{prepare} roda em CI e em contêiner, onde o
+\emph{hook} não serve para nada --- é inofensivo (\cd{git config} num
+\emph{checkout} que existe), mas é ruído.
+
+\textbf{Gatilho de reavaliação.} O primeiro colaborador com \emph{commit} no
+repositório, ou a conta virar \emph{Pro}\,/\,organização: nos dois casos as
+mesmas regras viram \cd{ruleset} no servidor, e os \emph{hooks} passam a ser
+conveniência local (retorno rápido) em vez de barreira única.
+
+% ---------------------------------------------------------------------------
+\section{ADR-57 --- Observabilidade nativa do Google Cloud, com OpenTelemetry
+como fronteira; nenhuma \emph{stack} auto-hospedada}
+\label{adr:observabilidade-nativa}
+
+\textbf{Estado: proposta} (2026-09-01), a partir do estudo do
+Capítulo~\ref{cap:observabilidade}.
+
+\begin{especificacao}{Contexto}
+A plataforma é diagnosticável e não é observável: log em texto sem
+correlação, nenhuma métrica de aplicação, nenhum alerta, nenhuma sonda
+configurada no Cloud Run, erro dentro do \cd{iframe} sem rastro. O risco
+\cd{R-05} exige alerta antes de novembro de 2026. Uma pessoa opera; um
+contrato é um projeto GCP; haverá vários contratos. A regra da raiz proíbe
+serviço novo sem necessidade demonstrada, e a franquia gratuita do Google
+Cloud Observability (50\,GiB de log, 150\,MiB de métrica, 2,5\,M de
+\emph{spans}, 1\,M de \emph{uptime checks} por mês) cobre um contrato em
+regime com folga, desde que o log de requisição seja amostrado na origem.
+\end{especificacao}
+
+\textbf{Decisão.} Os sinais operacionais vão para o Cloud Logging, Cloud
+Monitoring, Cloud Trace e Error Reporting \textbf{do projeto do contrato}.
+A API e o hub emitem log JSON pelo \emph{stdout} (\cd{pino}, com
+\emph{redaction} mecânica e \cd{severity}/\cd{trace} nos campos que o Cloud
+Logging reconhece) e \emph{traces} e métricas pelo SDK OpenTelemetry com os
+exportadores do Google, \textbf{direto do processo, sem \emph{sidecar}}.
+Alertas são poucos e por sintoma (SLO com \emph{burn rate}), em duas
+severidades. Tudo o que é recurso --- canais, políticas, \emph{checks},
+painel, exclusões, \emph{bucket} de auditoria, \emph{dead letter}, sondas do
+serviço --- é Terraform, e passa a constar do contrato em
+\arq{docs/INFRA.md}. A visão entre contratos é um \emph{metrics scope}
+num projeto de observação sem recursos; log não atravessa projeto.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Grafana + Loki + Tempo + Prometheus auto-hospedados}: uma VM
+    central (ou uma por contrato), com retenção, \emph{backup},
+    atualização e autenticação por conta própria, recebendo dado de N
+    projetos por rede e IAM próprios --- e custando, no mínimo, mais que o
+    nativo no pior caso. Para uma pessoa, é a peça que quebra às 2h da
+    manhã. Volta se uma rede exigir que os sinais fiquem fora do Google
+    Cloud, ou se uma consulta demonstrada não couber no Logs Explorer e no
+    Log Analytics.
+  \item \emph{SigNoz / OpenObserve / HyperDX} (tudo-em-um OpenTelemetry):
+    mesma objeção operacional, com a vantagem de um só binário. Gatilho
+    igual ao anterior.
+  \item \emph{Grafana Cloud Free} como destino (10\,k séries, 50\,GB de log,
+    14 dias): o dado sairia do projeto do contrato para uma conta de
+    terceiro sem DPA da rede. Aceitável apenas como \textbf{painel} de leitura
+    sobre a fonte de dados Cloud Monitoring, se a ergonomia do Grafana
+    compensar --- é leitura, não coleta.
+  \item \emph{Datadog / New Relic / Dynatrace}: centenas de dólares por mês
+    por contrato, para um time de operação que não existe. A instrumentação
+    OpenTelemetry deixa a porta aberta sem pagar por ela agora.
+  \item \emph{OpenTelemetry Collector como \emph{sidecar}} (a recomendação do
+    Google): justifica-se com vários destinos ou \emph{tail sampling}; hoje
+    há um destino e amostragem de cabeça basta. É um contêiner a mais em
+    cada serviço de cada contrato, com versão e falha próprias.
+  \item \emph{Log de requisição na aplicação} (\cd{morgan}, interceptor):
+    duplicaria o log que o Cloud Run já grava, dobrando o sinal mais caro
+    para acrescentar nada.
+  \item \emph{Continuar como está, com o \emph{checklist} semanal do
+    Apêndice~F}: é o estado que produziu o \cd{R-05}. Funciona em \cd{dev}
+    com uma pessoa olhando; não funciona com cem escolas às 8h.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Boa}: zero peças novas para operar; custo
+estimado em cerca de US\$~1 por contrato por mês hoje e US\$~7 quando a
+cobrança de política de alerta entrar; um contrato novo herda tudo do
+Terraform. \emph{Ruim}: dependência do fornecedor nos \textbf{destinos}
+(painel, política, consulta são em formato do Google); mitigada porque a
+instrumentação é OpenTelemetry e o log é JSON --- trocar de destino é trocar
+exportador e reescrever painéis, não reinstrumentar. \emph{Ruim também}: dois
+custos crescem com o tráfego e precisam de teto na origem --- log de
+requisição (por isso a exclusão e a amostragem são recursos do Terraform) e
+cardinalidade de métrica (por isso \cd{escola\_id} não é rótulo). E a
+cobrança anunciada de política de alerta muda a economia de \enquote{uma
+política por curiosidade}: a lista fica curta também por dinheiro.
+
+\textbf{Gatilho de reavaliação.} Uma rede exigir sinais fora do Google
+Cloud; um segundo operador (plantão, rodízio); um segundo destino
+(SIEM, Grafana) ou a necessidade de \emph{tail sampling} --- aí o
+\emph{sidecar} entra; ou a franquia estourar em dois meses seguidos apesar da
+exclusão e da amostragem.
+
+% ---------------------------------------------------------------------------
+\section{ADR-58 --- Erro de cliente entra pela API; nenhum SDK de terceiro
+no \emph{bundle} da experiência}
+\label{adr:erro-cliente-pela-api}
+
+\textbf{Estado: proposta} (2026-09-01).
+
+\begin{especificacao}{Contexto}
+A classe de falha mais cega da plataforma é a que acontece no navegador do
+estudante, dentro de um \cd{iframe} de origem diferente: não há
+\cd{window.onerror}, \cd{unhandledrejection} nem mensagem \cd{exp:erro} na
+ponte, e os \emph{bundles} não têm \emph{sourcemap}. O caminho padrão da
+indústria é um SDK de rastreio de erro (Sentry e semelhantes) dentro do
+\emph{bundle}, apontando para um \emph{DSN}. A regra 2 da raiz proíbe segredo
+e URL interna em \emph{bundle}; a regra 6 proíbe PII fora de controle. Um
+\emph{DSN} não é segredo, mas é um destino: o SDK manda \emph{user agent},
+URL, \emph{stack}, \emph{breadcrumbs} e o que mais o erro arrastar para um
+processador fora do contrato --- para um erro que aconteceu na tela de uma
+criança de uma rede pública, coberta por um DPA que não menciona esse
+processador.
+\end{especificacao}
+
+\textbf{Decisão.} A \cd{@edu/sdk} captura \cd{window.onerror} e
+\cd{unhandledrejection} e envia para \rota{POST
+/observabilidade/erros-cliente} da \textbf{própria API}, com o \emph{token}
+que já tem: \emph{schema} Zod fechado (\cd{expId}, \cd{versao},
+\cd{mensagem}, \cd{stack}, \cd{url}, \cd{userAgent}), 8\,KB no máximo,
+\emph{dedupe} por \emph{hash} e no máximo cinco por sessão no cliente, cota
+por \cd{(escola, usuario)} na API. A API redige, acrescenta \cd{escola\_id}
+do \emph{token} e emite \textbf{uma} linha \cd{severity: ERROR} com
+\cd{@type} de \cd{ReportedErrorEvent}; o Error Reporting agrupa por
+\cd{(expId, versao)}. O \emph{build} das experiências gera \emph{sourcemaps}
+ocultos, publicados com ACL privada ao lado do \emph{bundle}, na mesma pasta
+versionada. A ponte ganha \cd{exp:erro}, opcional e compatível com hub
+antigo, só para o hub trocar a tela. O hub faz o equivalente com
+\arq{error.tsx} e \arq{global-error.tsx}. Web Vitals seguem o mesmo caminho,
+amostrados e sem identificador de pessoa.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{SDK do Sentry (SaaS) no \emph{bundle}}: melhor produto da
+    categoria (\emph{session replay}, \emph{breadcrumbs}, \emph{release
+    health}); plano Developer grátis para uma pessoa. Descartado pelo
+    destino, não pela ferramenta: dado de menor saindo do contrato sem DPA.
+  \item \emph{GlitchTip ou Sentry auto-hospedados no projeto do contrato}:
+    resolve o destino, mas é uma peça a mais (Postgres, Redis, workers) por
+    contrato --- ou uma central com o mesmo problema de N projetos. Fica
+    como saída se o agrupamento do Error Reporting se mostrar insuficiente
+    para 48 experiências.
+  \item \emph{Só \cd{exp:erro} na ponte, e o hub registra}: cria dependência
+    do hub para um sinal que a experiência já consegue mandar sozinha (tem
+    \emph{token} e base da API), e perde o erro que acontece antes do
+    \emph{handshake} --- justamente o mais comum. A ponte fica com o papel de
+    interface, não de transporte.
+  \item \emph{\emph{Sourcemaps} públicos no \emph{bundle}}: expõem o fonte
+    da experiência --- e, na exp-01, a lógica da revelação que o estudante
+    não deve ver antes da hora.
+  \item \emph{Não capturar erro de cliente}: é o estado atual, e é a maior
+    cegueira da Figura~\ref{fig:cadeia-visibilidade}.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Boa}: nenhum terceiro no \emph{bundle}; a regra
+6 vale por construção, porque a \emph{redaction} é a da API; a versão da
+experiência já está no caminho, então a \emph{stack} é mapeável sem
+\emph{release} à parte. \emph{Ruim}: sem \emph{session replay} nem
+\emph{breadcrumbs} --- o que se tem é mensagem, \emph{stack} e contexto; um
+laço de erro numa experiência é contido pela cota, mas o que passa da cota se
+perde de propósito. \emph{Ruim também}: mais uma rota pública autenticada na
+API, com Zod e cota, para manter.
+
+\textbf{Gatilho de reavaliação.} O Error Reporting agrupar mal os erros das
+experiências (assinaturas instáveis por minificação), ou o diagnóstico exigir
+\emph{replay}: nos dois casos a saída é um Sentry-compatível
+\textbf{dentro do projeto}, nunca o SaaS.
+
+\section{ADR-59 --- Cadastro unitário existe, e ele DELEGA ao importador;
+\cd{admin-contrato} tem rota própria}
+\label{adr:cadastro-unitario-delega}
+
+\textbf{Estado: aceita} (2026-09-01). Aciona o gatilho de reavaliação da
+\adrr{ADR-54}, que segue válida em tudo o mais.
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-54} previu este dia por escrito: \enquote{se a operação pedir
+cadastro unitário com frequência, a saída é um formulário que monta a MESMA
+linha de CSV e chama o MESMO importador}. A operação pediu. O atrito que a
+própria ADR registrou como consequência ruim --- \enquote{o gestor que percebe
+que esqueceu de incluir a Ana precisa montar um arquivo para uma linha} --- é
+diário no balcão da escola, e a tela só aceitava \emph{upload}.
+
+O que NÃO mudou é o motivo da decisão original: uma pessoa não é uma linha em
+\cd{users}. É lotação, matrícula em turma, período letivo aberto e senha
+provisória, nascidos na mesma transação, com o CPF decidindo se aquilo é gente
+nova ou transferência (\adrr{ADR-28}, \adrr{ADR-32}). Duas portas de escrita
+sobre esse conjunto divergem na primeira regra nova.
+\end{especificacao}
+
+\textbf{Decisão.} Existe \rota{POST /usuarios}, e ele \textbf{não escreve em
+\cd{users}}: valida a forma do corpo com Zod, pergunta se a identidade já
+existe e, não existindo, serializa os campos como UMA linha da planilha
+(\cd{planilhaDeUmaPessoa}, na mesma constante \cd{COLUNAS\_MODELO} que o leitor
+consome) e chama \cd{importarPlanilha}. Toda a regra de domínio --- CPF com
+dígito verificador, série e turno normalizados, login gerado do nome, turma
+criada quando falta, lotação, matrícula --- continua existindo em UM lugar só.
+
+Duas diferenças em relação a importar um arquivo de uma linha, e as duas são
+deliberadas:
+
+\begin{itemize}
+  \item \textbf{Criar é criar.} A importação é idempotente de propósito:
+    reimportar a planilha do ano não pode duplicar ninguém. Num formulário
+    chamado \enquote{Novo usuário} a mesma virtude vira armadilha --- o gestor
+    digita a Ana de novo, a linha antiga é atualizada e a tela diz
+    \enquote{criado}. Por isso o cadastro unitário \textbf{pergunta antes}
+    (CPF na rede; matrícula e login na escola) e responde \textbf{409 sem
+    escrever}, apontando o caminho certo: editar, transferir ou importar.
+  \item \textbf{CPF de outra escola não revela nada.} O 409 desse caso sai sem
+    id, sem nome e sem dizer qual unidade --- é dado de outro \emph{tenant}. A
+    transferência continua sendo pela importação, que reconhece o CPF e move a
+    matrícula junto.
+\end{itemize}
+
+\textbf{E \cd{admin-contrato} ganha rota separada}
+(\rota{POST /usuarios/admin-contrato}, \cd{@Roles("admin-contrato")}): ele não
+passa pelo importador porque não cabe numa planilha DA ESCOLA --- \cd{escola\_id}
+nulo, sem lotação, sem turma, e \cd{PAPEIS\_IMPORTAVEIS} sempre o excluiu.
+O login dele é único na REDE inteira, não na escola: o índice
+\cd{(escola\_id, username)} não cobre linha com \cd{escola\_id} nulo, e a
+autenticação procura o \emph{username} na rede toda --- dois donos do mesmo
+login viram recusa no login dos dois.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Escrever direto em \cd{users} a partir do formulário}: é
+    exatamente a segunda porta que a \adrr{ADR-54} recusou. Na primeira regra
+    nova --- um papel que normaliza, um período letivo que precisa estar aberto
+    --- uma das duas aprenderia e a outra não, em silêncio.
+  \item \emph{Extrair do importador um método que receba objetos em vez de
+    CSV}: mais limpo à primeira vista, e pior no que importa. A validação por
+    campo vive no leitor da planilha; um caminho que a contorne precisa
+    reescrevê-la em Zod, e aí são duas validações para manter --- a divergência
+    de novo, um nível abaixo. O custo aceito é a conversão
+    JSON~\seta{}~CSV~\seta{}~pessoa, invisível em latência para uma linha.
+  \item \emph{Montar o CSV no NAVEGADOR e postar em \rota{/rostering/importar}}:
+    põe a regra de escape RFC 4180 no cliente e faz a api receber um arquivo
+    que ela não sabe que veio de um formulário --- sem chance de dar 409 no
+    lugar de atualizar.
+  \item \emph{\cd{admin-contrato} pela MESMA rota, com \cd{papel} no corpo}:
+    metade dos campos ficaria inerte, a autorização viraria um \cd{if} escondido
+    no \emph{service} em vez do \cd{@Roles} do método, e a matriz papel x rota
+    perderia a linha que hoje se lê sozinha.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: são duas rotas para \enquote{criar
+pessoa}, e quem lê o apêndice C precisa entender por que a segunda existe. A
+conversão em três saltos é indireta o bastante para assustar quem depura pela
+primeira vez --- daí o comentário no serializador. E o 409 tem uma janela de
+corrida de milissegundos: se alguém criar a mesma pessoa entre a pergunta e a
+escrita, o importador atualiza (corretamente) e a rota responde 409
+\cd{JA\_EXISTIA} em vez de \enquote{criado}, que é a resposta honesta.
+\emph{Bom}: a regra de domínio segue em um lugar, o formulário ganha de graça
+tudo o que a importação aprendeu, e o gestor deixa de abrir o Excel para
+incluir uma criança.
+
+\textbf{Gatilho de reavaliação.} Se o cadastro unitário precisar de um campo que
+a planilha não tem --- e que portanto não caiba numa coluna de
+\cd{COLUNAS\_MODELO} ---, a delegação deixou de servir: a saída é acrescentar a
+coluna ao modelo (e ao leitor), não abrir o caminho direto de escrita.
+\section{ADR-60 --- Microsoft Clarity carrega no hub \textbf{e} dentro do
+\emph{bundle} da experiência}
+\label{adr:clarity}
+
+\begin{especificacao}{Contexto}
+A plataforma media comportamento por um caminho só: a telemetria própria da
+\arq{@edu/sdk} (\rota{POST /telemetry/batch}), que registra os \emph{verbos}
+que cada experiência declara no manifesto --- \cd{attempted}, \cd{interacted},
+\cd{progressed}, \cd{scored}, \cd{completed}. Ela responde \enquote{o que a
+pessoa fez}, e responde bem, porque é desenhada com o domínio dentro. Ela não
+responde \enquote{o que a pessoa \emph{tentou} fazer e não conseguiu}: o clique
+repetido num elemento que não é botão, o \emph{scroll} que sobe e desce numa
+tela que não explica, a tela abandonada antes do primeiro evento. Nenhum
+\emph{verbo} nasce de uma frustração --- só de uma ação que o código previu.
+
+Há uma decisão anterior em sentido contrário, e ela é explícita: a
+\adrr{ADR-58} tirou o SDK de erro de terceiro do \emph{bundle} da experiência,
+com o argumento de que um \emph{bundle} público manda dado \enquote{para um
+processador fora do contrato e do DPA da rede --- para um erro que aconteceu na
+tela de uma criança}. Esta ADR \textbf{abre exceção} a ela, para analytics de
+produto, e o faz de olhos abertos: o argumento da \adrr{ADR-58} continua
+verdadeiro, e as consequências abaixo o repetem.
+
+O pedido foi cobertura total: hub e missões. A restrição técnica que decide o
+desenho é que o \cd{iframe} da experiência é \textbf{cross-origin} (o hub sai
+do Cloud Run, os \emph{bundles} do \emph{bucket}). Um \emph{script} de gravação
+carregado no hub não enxerga nada dentro dele: grava um retângulo vazio
+exatamente onde o estudante passa a maior parte da sessão. Cobrir a missão
+exige carregar o \emph{script} \textbf{dentro} do \emph{bundle}.
+\end{especificacao}
+
+\textbf{Decisão.} O \emph{snippet} oficial do Microsoft Clarity carrega nas duas
+superfícies, a partir de \textbf{uma} fonte:
+\arq{packages/sdk/src/clarity.ts}, que exporta o corpo do \emph{snippet} e as
+chamadas tipadas (\cd{identify}, \cd{set}, \cd{event}, \cd{upgrade}), todas
+\emph{no-op} quando \cd{window.clarity} não existe --- bloqueador de anúncio e
+rede de escola barrando domínio são o caso comum, não a exceção.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}X@{}}
+\toprule
+\headrow \thd{Superfície} & \thd{Como carrega}\\
+\midrule
+Hub & \arq{components/clarity-hub.tsx} monta o \emph{snippet} com
+  \cd{next/script} (\cd{afterInteractive}) no \arq{app/layout.tsx}
+  \textbf{raiz} --- o único que cobre a \emph{landing} pública, o login, as
+  quatro áreas de papel, \rota{/exp/**} e \rota{/dev-embed}.\\
+\zebra Identificação & \arq{components/clarity-identidade.tsx}, montado na
+  \arq{casca-plataforma.tsx} --- o único componente por onde
+  \rota{(plataforma)/**} e \rota{/exp/**} passam os dois. Re-dispara a cada
+  mudança de rota: o App Router navega sem recarregar a página, e o Clarity
+  pede \cd{identify} por \textbf{página}.\\
+Experiência & \cd{createExperiencia()} chama \cd{carregarClarity} depois do
+  \emph{handshake}, com o id que chega no \cd{config} do \cd{hub:init} ---
+  campo aditivo, sem mexer no \cd{PROTOCOL\_VERSION}.\\
+\bottomrule
+\end{tabularx}
+
+O id vai por \textbf{uma} variável, \cd{NEXT\_PUBLIC\_CLARITY\_PROJECT\_ID}, e
+\textbf{ausente significa desligado} nas duas superfícies. Ela é inlinada no
+\emph{bundle} do \emph{client} durante o \cd{next build}, então entra por
+\cd{-{}-build-arg} no \arq{apps/hub/Dockerfile}, alimentado por
+\cd{vars.CLARITY\_PROJECT\_ID} do \emph{environment} no \arq{deploy.yml}.
+
+Duas escolhas de conteúdo fecham a decisão. O \cd{identify} manda o
+\textbf{UUID opaco} do estudante e nada mais --- o \cd{friendlyName}, que
+levaria o nome, fica de fora, e escola e turma vão por \cd{id}. E o
+\cd{track()} da \arq{@edu/sdk} passa a alimentar os dois destinos: a telemetria
+própria com a carga útil inteira, o Clarity só com \cd{verbo:objeto}. A
+\emph{resposta} do estudante não sai do contrato.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Só nas superfícies adultas} (professor, gestor,
+    \cd{admin-contrato}): respeita o aviso do próprio Clarity sobre menores e
+    não abre exceção nenhuma. Descartada porque deixa de fora o público
+    principal --- é no estudante que a dúvida de interface custa aprendizagem.
+  \item \emph{Só no hub, missões pela telemetria própria}: manteria terceiro
+    fora do \emph{bundle} público. Descartada pelo motivo técnico do contexto:
+    o \cd{iframe} é cross-origin, e \enquote{cobrir o hub} deixaria a maior
+    parte da sessão do estudante como um retângulo vazio na gravação.
+  \item \emph{Pacote \arq{@microsoft/clarity} (npm)}: 7,6\,KB, zero
+    dependências, com tipos. É CJS puro --- sem campo \cd{module} --- e o Vite
+    das experiências já custou tempo neste repositório com ESM\,/\,CJS.
+    Internamente ele só injeta o mesmo \emph{script} que está no
+    \arq{clarity.ts}; pagar uma dependência por isso não se justifica.
+  \item \emph{\cd{VITE\_CLARITY\_PROJECT\_ID} no \emph{bundle} de cada
+    experiência}: seria o precedente do \cd{VITE\_VIDEOS\_BASE\_URL}.
+    Descartada porque \cd{import.meta.env} dentro da \arq{@edu/sdk} quebra o
+    \emph{build} do hub (que transpila o mesmo arquivo), e porque desligar
+    passaria a exigir republicar as seis experiências.
+  \item \emph{Um projeto Clarity separado para o \cd{iframe}}: dois painéis
+    para uma sessão só. O mesmo id com a \emph{tag} \cd{superficie} separa o
+    que precisa ser separado e mantém a costura pelo \cd{identify}.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e o principal}: a documentação do Clarity
+declara que ele \textbf{não deveria ser usado em sites ou aplicações destinadas
+a menores de 18 anos}, e a plataforma vai do 1º ano do Fundamental ao 3º do
+Médio. Isto é decisão de produto assumida, não descuido, e precisa constar de
+qualquer conversa de DPA com uma rede --- ver \cd{R-16} no
+Capítulo~\ref{cap:riscos}.
+
+\emph{Ruim}: a gravação de sessão sai do contrato e do projeto GCP da rede. Ao
+contrário do log e da métrica, que ficam no projeto do contrato, o
+\emph{replay} vai para um processador de terceiro, sob os termos dele.
+
+\emph{Ruim}: as experiências disfarçadas (\cd{exp-01}, \cd{exp-02},
+\cd{exp-03}) carregam no \arq{index.html} o aviso de que nada ali pode
+denunciar o exercício. Requisições para \cd{clarity.ms} aparecem no DevTools, e
+um estudante que abra o inspetor vê um domínio que o clone imitado não teria.
+
+\emph{Ruim}: mexer na \arq{@edu/sdk} republica as seis experiências (o filtro de
+mudanças do \arq{deploy.yml} inclui o pacote), então toda alteração aqui custa
+um \emph{bump} de versão em seis manifestos.
+
+\emph{Bom}: o \cd{track()} existente virou instrumentação de funil sem tocar em
+nenhuma experiência, e o kill-switch é a ausência de uma variável --- desligar
+não exige alterar código, e a máquina de quem desenvolve e a suíte e2e já
+nascem fora do painel.
+
+\textbf{Gatilho de reavaliação.} Uma rede pública recusar o processamento em
+contrato, um parecer jurídico sobre o aviso de menores, ou a gravação deixar de
+responder pergunta que a telemetria própria não responda --- nos três casos o
+caminho de volta é apagar uma variável de \emph{environment}, e o de frente é
+um \emph{replay} auto-hospedado dentro do projeto do contrato.
+
+\section{ADR-61 --- Trabalho paralelo acontece em \emph{worktree}, com a base
+escrita à mão}
+\label{adr:worktree}
+
+\begin{especificacao}{Contexto}
+O fluxo da \adrr{ADR-53} e da \adrr{ADR-56} descreve \emph{branches}, não
+diretórios: pressupõe uma pessoa, uma cópia do repositório, uma tarefa por vez.
+Passou a haver mais de um agente trabalhando ao mesmo tempo no mesmo
+repositório, e alternar de \emph{branch} na mesma cópia não serve para isso ---
+há uma árvore de trabalho só, e ela carrega as alterações não commitadas de
+quem estava antes. Duas tarefas em paralelo na mesma cópia produzem um estado
+misturado, e é dele que sai o \emph{commit}.
+\end{especificacao}
+
+\textbf{Decisão.} Cada frente de trabalho paralela ganha um \emph{worktree} em
+\arq{.claude/worktrees/<nome>}, criado com a base \textbf{escrita
+explicitamente} --- e a base é \cd{origin/dev}.
+
+Um clone antigo deste repositório carrega \cd{origin/HEAD} apontando para
+\cd{origin/main} (a \emph{branch} padrão no GitHub já é \cd{dev}; o ponteiro
+local não acompanha sozinho), então qualquer ferramenta que \enquote{parta da
+\emph{branch} padrão} abre a \emph{branch} sobre produção, e a \adrr{ADR-53}
+diz que trabalho nasce de \cd{dev}. O erro é silencioso: a \emph{branch}
+compila, os testes passam, e o PR mostra um diff cheio de \emph{commits} que já
+estavam em \cd{dev}. A raiz se conserta uma vez por clone
+(\cd{git remote set-head origin -{}-auto}); escrever a base no comando é o que
+evita depender do \emph{default}, consertado ou não.
+
+\textbf{O paralelismo é de edição e teste unitário; o \emph{runtime} é
+\emph{singleton}.} Portas fixas com \cd{strictPort}, \emph{compose} de nome
+fixo e um banco com um \emph{schema}: dois \emph{worktrees} não rodam a
+\emph{stack} ao mesmo tempo, e isso é deliberado --- é o que faz \cd{pnpm dev}
+falhar alto em vez de servir a experiência errada. No \emph{worktree}: editar,
+\cd{typecheck}, \cd{lint}, os testes unitários e de contrato, o \emph{build},
+e o Vite de \textbf{uma} experiência em porta alternativa, embedado pelo hub
+que já está no ar (\rota{/dev-embed?src=}). Na cópia principal, uma frente por
+vez: a \emph{stack} inteira, a suíte de ponta a ponta e as migrações. A
+\emph{Definition of Done} exige a suíte do papel afetado para toda tela ---
+numa frente em \emph{worktree} isso significa trazer a \emph{branch} para a
+cópia principal e rodá-la de lá, um agente por vez.
+
+\arq{.gitignore} já cobre o caminho (\cd{.claude/*}), então o \emph{worktree}
+não aparece no estado da cópia principal. O ciclo de \emph{commit}, PR e
+promoção não muda em nada --- o \emph{worktree} é onde o trabalho acontece, não
+um fluxo novo. O passo a passo está em \arq{CONTRIBUTING.md}.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Alternar de \emph{branch} na mesma cópia}: é o estado que
+    produziu o problema. Serializa o trabalho e mistura alteração não
+    commitada de tarefas diferentes.
+  \item \emph{Clones separados do repositório}: funciona, e custa uma cópia
+    inteira do histórico e um \cd{pnpm install} do zero por frente. O
+    \emph{worktree} compartilha o diretório de metadados e só duplica o que
+    precisa ser duplicado.
+  \item \emph{\emph{Worktree} fora de \arq{.claude/}}: exigiria uma entrada
+    nova no \arq{.gitignore}, e um esquecimento ali significa \emph{worktree}
+    inteiro entrando num \cd{add -A} --- o mesmo acidente que já custou 250\,MB
+    de \emph{cache} de \emph{webpack} no histórico.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: \cd{node\_modules} e o \emph{client} do
+Prisma são por \emph{worktree}, então cada frente paga um \cd{pnpm install} (e
+um \cd{prisma generate}) na criação. \emph{Ruim}: \cd{pnpm docker:dev} de
+dentro de um \emph{worktree} recria os contêineres da \emph{stack} principal
+--- o nome do projeto do compose vem do diretório, e os dois disputam as mesmas
+portas. Quem precisa da \emph{stack} inteira usa a cópia principal.
+\emph{Ruim}: quatro arquivos que toda frente toca brigam no \emph{merge}
+--- a numeração de ADR (dois agentes já escreveram a mesma \enquote{ADR-N}
+ao mesmo tempo: reserve o número conferindo \cd{origin/dev}), o
+\arq{main.pdf} binário (resolve-se regerando, nunca escolhendo um lado), o
+\arq{AGENTS.md} da raiz e o \arq{pnpm-lock.yaml}. \emph{Ruim}: cada
+\emph{merge} em \cd{dev} dispara um \emph{deploy} que não cancela o anterior;
+PRs em rajada viram \emph{deploys} em fila. \emph{Bom}: a árvore principal
+fica intocada, com o que estiver em andamento nela preservado.
+
+\textbf{Gatilho de reavaliação.} O trabalho paralelo deixar de acontecer, ou o
+repositório ganhar CI que rode as frentes em contêiner --- nos dois casos o
+\emph{worktree} vira conveniência local em vez de regra. E o inverso: a fila
+da suíte de ponta a ponta na cópia principal virar gargalo \textbf{medido} (duas
+frentes esperando uma pela outra, mais de uma vez) é o que justifica
+parametrizar porta e nome do \emph{compose} por \emph{worktree} e um banco por
+\emph{branch} --- não antes.
+
+\section{ADR-62 --- O WAF não inspeciona o corpo de rota autenticada nem de
+texto livre de estudante}
+\label{adr:waf-excecoes}
+
+\begin{especificacao}{Contexto}
+O Cloud Armor da \adrr{ADR-57} entrou com sete regras pré-configuradas do
+OWASP CRS 3.3 em \cd{sensitivity 1}, e em \cd{dev} já saiu de \emph{preview}
+--- bloqueando de verdade. Nos primeiros dias, \textbf{242 requisições}
+\rota{POST /telemetry/ingest} responderam 403 com
+\cd{body\_denied\_by\_security\_policy}, todas do agente \cd{APIs-Google}: é o
+\emph{push} do Pub/Sub, negado pela assinatura
+\cd{owasp-crs-v030301-id921150-protocolattack} --- \enquote{HTTP Header
+Injection via payload (CR/LF detectado)}.
+
+O envelope do \emph{push} é um JSON com a mensagem em \emph{base64}, e a 921150
+casa qualquer corpo que carregue \cd{\textbackslash r\textbackslash n}. O
+prejuízo é silencioso duas vezes: a \emph{subscription} reentrega para sempre
+(não há DLQ), e a tela de resultados do professor fica vazia sem erro em lugar
+nenhum --- a requisição morre no \emph{load balancer}, antes da api, então não
+há log de aplicação a consultar.
+
+A mesma assinatura ameaça a exp-03: a pergunta do estudante é texto livre, e
+\emph{Shift+Enter} ou colar de outra aba produzem quebra de linha legítima. O
+403 do WAF não carrega cabeçalho de CORS, então o navegador reporta falha de
+rede: o estudante lê \enquote{A conexão falhou} e não há nada no servidor
+apontando para o WAF.
+\end{especificacao}
+
+\textbf{Decisão.} Duas exceções cirúrgicas na política, e nenhuma regra
+desligada.
+
+\begin{enumerate}
+  \item Uma regra \cd{allow} em \textbf{priority 900} --- antes das WAF, que
+    começam em 1000 --- casando
+    \cd{request.path.startsWith('/telemetry/ingest')}. Abrir o caminho não abre
+    a rota: ela exige o \emph{token} OIDC do Pub/Sub
+    (\env{TELEMETRIA\_PUSH\_SA} e \env{TELEMETRIA\_PUSH\_AUDIENCE}) e responde
+    401 sem ele. O WAF ali era redundância que só custava dado.
+  \item Um \cd{preconfigured\_waf\_config} na regra \cd{protocolattack} (1006)
+    excluindo \textbf{apenas} o \cd{target\_rule\_id 921150} nos prefixos
+    \rota{/unoogpt/} e \rota{/ai/} --- as rotas que recebem texto livre de
+    estudante. As outras seis assinaturas de protocolo continuam valendo
+    nesses caminhos, e a 921150 continua valendo em todo o resto da api.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Desligar a regra \cd{protocolattack} inteira}: resolveria os dois
+    sintomas com uma linha a menos, e removeria \emph{smuggling} e
+    \emph{splitting} da superfície inteira da api por causa de duas rotas.
+  \item \emph{Voltar a política para \emph{preview}}: transforma um bloqueio
+    visível em bloqueio nenhum, e junto some a proteção contra os
+    varredores que já batem no IP do \emph{load balancer} todos os dias.
+  \item \emph{Fazer a api aceitar o \emph{push} por outro caminho} (endpoint
+    interno, fora do LB): exigiria expor a api sem o LB ou montar rede nova
+    para um único endpoint --- muito mais superfície do que a exceção.
+  \item \emph{Sanitizar o CR/LF antes de enviar} (no SDK e no publicador da
+    telemetria): trata o sintoma no emissor errado. A quebra de linha na
+    pergunta do estudante é conteúdo legítimo, e removê-la mudaria o dado que a
+    missão mede.
+\end{itemize}
+
+\textbf{Consequências ruins.} \rota{/telemetry/ingest} passa a não ter WAF
+nenhum --- se o \emph{guard} de autenticação daquela rota regredir, não há
+segunda camada. E as exclusões são por prefixo de caminho: uma rota nova sob
+\rota{/ai/} herda a exclusão sem que ninguém decida isso.
+
+\textbf{Gatilho de reavaliação.} A telemetria deixar de entrar por \emph{push}
+no LB (um \emph{worker} separado, como o desenho original previa) devolve o
+caso 1 ao WAF. E o Cloud Armor publicar exclusão por \emph{método} além de
+caminho permitiria estreitar o caso 2 para os \cd{POST} que de fato carregam
+texto do estudante.
+
+\section{ADR-63 --- O CI não publica a mídia pesada, mas se recusa a publicar
+sem ela}
+\label{adr:midia-externa}
+
+\begin{especificacao}{Contexto}
+Mídia acima de 2\,MB não entra no git nem no \emph{bundle}: os 21 \emph{mp4}
+da exp-02 (52\,MB) vivem no \emph{bucket} de \emph{assets} do contrato, e o
+\emph{build} recebe a base pública em \env{VITE\_VIDEOS\_BASE\_URL}. O
+\emph{upload} sempre foi manual, uma vez por contrato, e isso estava registrado
+como lacuna conhecida em \arq{docs/INFRA.md}.
+
+Em 2026-09-01 a lacuna cobrou. A exp-02 foi publicada no contrato
+\cd{entre-redes-dev} com o \emph{bucket} de \emph{assets} vazio: os 21 arquivos
+responderam 404, e como o \cd{ShortsPlayer} do \emph{design system} deriva
+\cd{waiting} só de \cd{waiting}/\cd{playing} --- sem escutar \cd{error} --- o
+evento \cd{playing} nunca chegou e o feed ficou em \enquote{Carregando o
+vídeo\ldots} para sempre. Salvar e Curtir são desabilitados enquanto o vídeo
+carrega (para não salvar sem assistir), então a missão ficou \textbf{impossível
+de concluir}. Nada falhou: nem o \emph{deploy}, nem o log da api. Quem
+descobriu foi um estudante, na frente da tela.
+\end{especificacao}
+
+\textbf{Decisão.} O CI continua \textbf{não} publicando a mídia --- o
+\emph{runner} faz \emph{checkout} do git, e os arquivos não estão lá --- e
+passa a \textbf{conferi-la}. Uma experiência com mídia externa declara um
+\arq{midia-externa.json} versionado ao lado do \arq{package.json}, com o
+prefixo no \emph{bucket} e a lista de arquivos esperados. Antes de subir o
+\emph{bundle} daquela experiência, o \emph{job} \cd{publicar-exps} lista o
+prefixo no \emph{bucket} de \emph{assets} e \textbf{falha o deploy} se faltar
+algum, imprimindo o que falta e o comando de \emph{upload}.
+
+Isso exige a var \env{ASSETS\_BUCKET} no \emph{environment} do GitHub, escrita
+por \arq{scripts/configurar-github-ci.sh} a partir do \emph{output}
+\cd{bucket\_assets} do Terraform. Sem a var, o passo apenas avisa --- um
+\emph{environment} ainda não reconfigurado não deve travar \emph{deploy} por
+uma verificação que ele não tem como fazer.
+
+Em paralelo, e independente disto, a experiência passou a tratar o \cd{error}
+do \cd{<video>} por conta própria: vídeo que falha sai do estado de
+carregamento, as ações voltam e a missão continua concluível. As duas coisas
+respondem à mesma falha em camadas diferentes --- uma impede publicar quebrado,
+a outra impede que o estudante fique preso quando algo quebrar mesmo assim.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Versionar os \emph{mp4} no git}: 52\,MB por experiência, num
+    repositório que já teve 250\,MB de \emph{cache} de \emph{webpack} entrando
+    por um \cd{add -A} distraído. Para 48 experiências, o histórico ficaria
+    impraticável.
+  \item \emph{Git LFS}: resolveria o peso e acrescentaria um serviço com cota,
+    um passo de \emph{checkout} novo e uma forma nova de o \emph{deploy}
+    falhar --- por mídia que muda uma vez por contrato.
+  \item \emph{O CI baixar a mídia de uma origem canônica e republicar}: exige
+    escolher e operar essa origem (outro \emph{bucket}, \emph{release assets}),
+    e transfere o problema em vez de resolvê-lo --- alguém continua tendo que
+    colocar o arquivo lá na primeira vez.
+  \item \emph{Só documentar melhor o passo manual}: já estava documentado. A
+    lacuna estava escrita em \arq{docs/INFRA.md} e mesmo assim o contrato subiu
+    sem a mídia.
+\end{itemize}
+
+\textbf{Consequências ruins.} O \emph{deploy} de uma experiência com mídia
+passa a depender de um recurso que o \emph{job} não controla: \emph{bucket}
+renomeado ou permissão de leitura retirada da \emph{service account} do CI
+quebra a publicação de um \emph{bundle} que estava correto. E a lista de
+arquivos no \arq{midia-externa.json} é mantida à mão --- acrescentar um vídeo
+sem acrescentar a linha faz a conferência passar sem conferir.
+
+\textbf{Gatilho de reavaliação.} A terceira experiência com mídia externa: com
+uma, a lista à mão é honesta; com três, o \arq{midia-externa.json} deve passar
+a ser gerado do catálogo da api, que já sabe o nome de cada arquivo.

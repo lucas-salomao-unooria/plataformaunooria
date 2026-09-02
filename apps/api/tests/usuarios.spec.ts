@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { parseCsv } from "../src/usuarios/csv";
-import { UsuariosService } from "../src/usuarios/usuarios.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 import { servicosDeTeste } from "./servicos-de-teste";
 
@@ -18,8 +17,7 @@ const CPF_DA_ANA = "111.444.770-69";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService &
   PrismaClient;
-const usuarios = new UsuariosService(prisma);
-const { rostering } = servicosDeTeste(prisma);
+const { rostering, usuarios } = servicosDeTeste(prisma);
 
 async function limpar() {
   await prisma.matricula.deleteMany({ where: { escolaId: ESCOLA } });

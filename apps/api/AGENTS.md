@@ -137,6 +137,39 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   na nova, e o estudante fica sem turma — invisível para o professor, sem nada na
   tela dizendo o que faltou.
 
+**Pessoa NASCE por importação — e o cadastro unitário DELEGA a ela.** As
+chamadas que ESCREVEM em `users` continuam sendo duas:
+`POST /rostering/importar` e `POST /rostering/oneroster/users`.
+`POST /usuarios` (o formulário de `/admin/usuarios`) **não é a terceira**: ele
+valida a forma com Zod, pergunta se a identidade já existe e serializa os campos
+como UMA linha de planilha (`planilhaDeUmaPessoa`, em `rostering/planilha.ts`,
+sobre a mesma `COLUNAS_MODELO` que o leitor consome) antes de chamar
+`importarPlanilha` (ADR-59, acionando o gatilho da ADR-54). Consequência
+prática: **não valide domínio no Zod dessa rota** — CPF com dígito verificador,
+série, turno e formato de login são do leitor da planilha, e repetir a regra ali
+recria a divergência que a ADR-54 recusou.
+
+Duas diferenças em relação a importar um arquivo de uma linha:
+- **Criar é criar.** `conflitoDeIdentidade` pergunta ANTES (CPF na rede;
+  matrícula e login na escola, sempre com `escolaId` no `where` — `users` está
+  fora da RLS) e responde **409 sem escrever**. A importação atualizaria, o que
+  é certo para um lote e errado para um botão chamado "Novo usuário".
+- **409 de CPF em outra escola não revela nada**: sem id, sem nome, sem o nome
+  da unidade. A mensagem aponta a importação, que reconhece o CPF e transfere.
+
+**`admin-contrato` tem rota própria** (`POST /usuarios/admin-contrato`,
+`@Roles("admin-contrato")` no MÉTODO — sobrescreve o da classe e é o que sai em
+`x-papeis`): não passa pelo importador porque não cabe numa planilha da escola
+(`escola_id` nulo, sem lotação, sem turma; `PAPEIS_IMPORTAVEIS` sempre o
+excluiu). O login dele é checado na REDE inteira, não na escola: o índice
+`(escola_id, username)` não cobre linha com `escola_id` nulo, e o login procura
+o username na rede toda — dois donos do mesmo login viram recusa nos dois.
+`podeCriarPapel` (`usuarios/regras.ts`) é a segunda tranca, porque o `@Roles`
+protege a ROTA e não o campo `papel` do corpo.
+
+O resto do balcão segue unitário: `PATCH /usuarios/:id` e
+`POST /usuarios/:id/reset-senha`.
+
 **Entrada de pessoas**: `POST /rostering/importar` (gestor/admin), corpo
 `text/csv` cru, até 30MB (o teto de BYTES vale para as duas fronteiras e sai de
 `TETO_DO_ARQUIVO`, que o `bodyParser` de `main.ts` também lê) e 50k linhas — o
@@ -196,7 +229,10 @@ Reimportar NÃO reseta a senha de quem já entrou. Os usuários do seed nascem c
 `senha_provisoria: false` — prendê-los na troca pararia as suítes de estudante.
 
 **Área administrativa** (gestor/admin-contrato): `/admin/usuarios` (busca,
-filtros, editar, ativar/desativar, reset), `/admin/turmas` e `/admin/turmas/[id]`
+filtros, **cadastrar uma pessoa**, editar, ativar/desativar, reset — o modal fica
+em `usuarios/novo-usuario.tsx`, e a TURMA se escolhe numa lista, nunca se digita:
+o importador cria a turma que falta, e "8A " com espaço abriria uma segunda),
+`/admin/turmas` e `/admin/turmas/[id]`
 (enturmamento, mover, tornar referência), `/admin/importar` e
 `/admin/periodos-letivos` (o calendário do contrato — a tela da virada do ano). O
 professor tem `/professor/turmas` e `/professor/turmas/[id]` — as turmas dele, com
