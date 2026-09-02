@@ -21523,7 +21523,7 @@
           "unoogpt"
         ],
         "summary": "Recomeça — abre uma tentativa NOVA.",
-        "description": "**Não apaga a conversa anterior.** Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.\n\n**Papéis:** estudante.",
+        "description": "**Não apaga a conversa anterior.** Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.\n\nO clique fica gravado na tentativa que fecha (marco `recomeco`), com o relógio da turma naquele instante. `origem` diz qual botão — é a única parte que só o cliente sabe.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -21532,7 +21532,27 @@
         "x-papeis": [
           "estudante"
         ],
-        "x-acesso": "token"
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "origem": {
+                    "type": "string",
+                    "enum": [
+                      "investigacao",
+                      "resultado"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
       }
     },
     "/unoogpt/professor/turmas": {
@@ -22270,15 +22290,397 @@
                     },
                     "tentativas": {
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ordem": {
+                            "type": "integer"
+                          },
+                          "alocacao": {
+                            "type": "object",
+                            "properties": {
+                              "alfa": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "bravo": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "alfa",
+                              "bravo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minutoDaSaida": {
+                            "type": "integer"
+                          },
+                          "criadoEm": {
+                            "type": "string"
+                          },
+                          "emRisco": {
+                            "type": "number"
+                          },
+                          "salvas": {
+                            "type": "number"
+                          },
+                          "vitimas": {
+                            "type": "number"
+                          },
+                          "semSocorro": {
+                            "type": "number"
+                          },
+                          "coberturaDoRisco": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "esperado": {
+                            "type": "object",
+                            "properties": {
+                              "media": {
+                                "type": "number"
+                              },
+                              "faixa": {
+                                "type": "array",
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "vitimasMedia": {
+                                "type": "number"
+                              },
+                              "vitimasFaixa": {
+                                "type": "array",
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ]
+                              },
+                              "amostras": {
+                                "type": "array",
+                                "items": {
+                                  "type": "number"
+                                }
+                              }
+                            },
+                            "required": [
+                              "media",
+                              "faixa",
+                              "vitimasMedia",
+                              "vitimasFaixa",
+                              "amostras"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "posicao": {
+                            "type": "object",
+                            "properties": {
+                              "percentil": {
+                                "type": "integer"
+                              },
+                              "dentroDaFaixa": {
+                                "type": "boolean"
+                              },
+                              "acimaDaMedia": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "percentil",
+                              "dentroDaFaixa",
+                              "acimaDaMedia"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "justificativas": {
+                            "type": "object",
+                            "properties": {
+                              "alfa": {
+                                "type": "string"
+                              },
+                              "bravo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "alfa",
+                              "bravo"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "ordem",
+                          "alocacao",
+                          "minutoDaSaida",
+                          "criadoEm",
+                          "emRisco",
+                          "salvas",
+                          "vitimas",
+                          "semSocorro",
+                          "coberturaDoRisco",
+                          "esperado",
+                          "posicao",
+                          "justificativas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "rodadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tentativa": {
+                            "type": "integer"
+                          },
+                          "inicioEm": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "primeiraFalaEm": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ateAPrimeiraFala": {
+                            "type": "object",
+                            "properties": {
+                              "desdeOComecar": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "desdeALargada": {
+                                "type": "integer",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "desdeOComecar",
+                              "desdeALargada"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "mudancasDeDestino": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "enfrentou": {
+                            "type": "boolean"
+                          },
+                          "envio": {
+                            "type": "object",
+                            "properties": {
+                              "em": {
+                                "type": "string"
+                              },
+                              "minuto": {
+                                "type": "integer"
+                              },
+                              "segundosRestantes": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "motivoDoFim": {
+                                "type": "string",
+                                "enum": [
+                                  "tempo",
+                                  "professor"
+                                ],
+                                "nullable": true
+                              },
+                              "estourou": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "em",
+                              "minuto",
+                              "segundosRestantes",
+                              "motivoDoFim",
+                              "estourou"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "recomeco": {
+                            "type": "object",
+                            "properties": {
+                              "em": {
+                                "type": "string"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "investigacao",
+                                  "resultado"
+                                ],
+                                "nullable": true
+                              },
+                              "fase": {
+                                "type": "string",
+                                "enum": [
+                                  "aguardando",
+                                  "correndo",
+                                  "encerrado"
+                                ],
+                                "nullable": true
+                              },
+                              "modo": {
+                                "type": "string",
+                                "enum": [
+                                  "cronometrado",
+                                  "livre"
+                                ],
+                                "nullable": true
+                              },
+                              "segundosRestantes": {
+                                "type": "integer",
+                                "nullable": true
+                              },
+                              "motivoDoFim": {
+                                "type": "string",
+                                "enum": [
+                                  "tempo",
+                                  "professor"
+                                ],
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "em",
+                              "origem",
+                              "fase",
+                              "modo",
+                              "segundosRestantes",
+                              "motivoDoFim"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "tentativa",
+                          "inicioEm",
+                          "primeiraFalaEm",
+                          "ateAPrimeiraFala",
+                          "mudancasDeDestino",
+                          "enfrentou",
+                          "envio",
+                          "recomeco"
+                        ],
+                        "additionalProperties": false
+                      }
                     },
                     "trilha": {
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "tentativa": {
+                            "type": "integer"
+                          },
+                          "ordem": {
+                            "type": "integer"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "fontes",
+                              "leitura",
+                              "alocacao",
+                              "envio",
+                              "inicio",
+                              "recomeco"
+                            ]
+                          },
+                          "minuto": {
+                            "type": "integer"
+                          },
+                          "segundosRestantes": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "motivoDoFim": {
+                            "type": "string",
+                            "enum": [
+                              "tempo",
+                              "professor"
+                            ],
+                            "nullable": true
+                          },
+                          "criadoEm": {
+                            "type": "string"
+                          },
+                          "dados": {}
+                        },
+                        "required": [
+                          "tentativa",
+                          "ordem",
+                          "tipo",
+                          "minuto",
+                          "segundosRestantes",
+                          "motivoDoFim",
+                          "criadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
                     },
                     "conversa": {
                       "type": "array",
-                      "items": {}
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "estudante",
+                              "agente"
+                            ]
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "tentativa": {
+                            "type": "integer"
+                          },
+                          "debitou": {
+                            "type": "boolean"
+                          },
+                          "criadoEm": {
+                            "type": "string"
+                          },
+                          "segundosDesdeALargada": {
+                            "type": "integer",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "papel",
+                          "texto",
+                          "tentativa",
+                          "debitou",
+                          "criadoEm",
+                          "segundosDesdeALargada"
+                        ],
+                        "additionalProperties": false
+                      }
                     }
                   },
                   "required": [
@@ -22288,6 +22690,7 @@
                     "resumo",
                     "justificativas",
                     "tentativas",
+                    "rodadas",
                     "trilha",
                     "conversa"
                   ],
