@@ -53,11 +53,30 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   serve em `/assets`.
   O mesmo bucket guarda a **mídia pesada das experiências** (>2 MB não entra no
   git nem no bundle): `exp-02-unootube/videos/v01.mp4..v21.mp4` (~52 MB),
-  upload manual por `gsutil` uma vez por contrato — é conteúdo, não recurso
-  Terraform. O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
+  upload manual **uma vez por contrato** — é conteúdo, não recurso Terraform:
+
+  ```bash
+  gcloud storage rsync -r apps/experiencias/exp-02-unootube/public/videos \
+    gs://{contrato}-assets/exp-02-unootube/videos/ --project {projeto}
+  ```
+
+  O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
   (`https://<cdn-assets>/exp-02-unootube/videos`); vazio = `./videos` (dev,
-  `public/videos/` gitignorado). Lacuna conhecida: o CI só publica `dist/`;
-  para 48 experiências o passo `gsutil rsync` de mídia precisa entrar no CI.
+  `public/videos/` gitignorado).
+
+  **O CI não publica essa mídia** — o runner faz checkout do git, e os mp4 não
+  estão lá. O que ele passou a fazer é CONFERIR: toda experiência com um
+  `midia-externa.json` (prefixo + lista de arquivos, versionado) tem a presença
+  checada no bucket de assets antes do bundle subir, e o deploy **falha** se
+  faltar algo. Isso exige a var `ASSETS_BUCKET` no environment do GitHub
+  (escrita por `scripts/configurar-github-ci.sh`); sem ela o passo só avisa.
+
+  Por que a conferência e não a publicação: em 2026-09-01 a exp-02 subiu no
+  contrato `entre-redes-dev` com o bucket de assets vazio. Os 21 mp4 responderam
+  404, o feed ficou em "Carregando o vídeo…" para sempre e — porque Salvar e
+  Curtir são desabilitados enquanto o vídeo carrega — a missão ficou impossível
+  de concluir. Nada falhou: nem o deploy, nem o log da api. Quem descobriu foi
+  um estudante, na frente da tela.
 - **Job de migration**: `prisma migrate deploy` roda como Cloud Run Job na VPC
   (o Cloud SQL só tem IP privado), antes do deploy dos serviços.
 - **Roles do Postgres**: o desenho original previa duas roles (owner p/
@@ -186,7 +205,7 @@ Deploy (CI deste repo):
    tráfego)
 3. hub/api mudou → `docker build` + push direto no Artifact Registry (sem Cloud
    Build) → `gcloud run deploy` (revisions = rollback)
-4. exp mudou → `gsutil -m rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
+4. exp mudou → `gcloud storage rsync -r dist/ gs://{contrato}-exp/{expId}/{versao}/`
    e `PUT {api}/experiencias/{expId}` (admin-contrato) com o conteúdo do
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
    bundle. Feito por `apps/hub/scripts/publicar-manifesto.mjs`, que assina um
@@ -196,9 +215,10 @@ Deploy (CI deste repo):
    CDN de assets do contrato.
    O `deploy.yml` faz o `rsync` **e** o `PUT` do manifesto, e grava
    `Cache-Control: max-age=60` no `index.html` (o resto do caminho carrega a
-   versão e é imutável). **Pendente**: o `rsync` da mídia pesada
-   (`gsutil rsync` dos mp4 para o bucket de assets) continua manual — ver
-   `RUNBOOK-API.md`, passo 4.
+   versão e é imutável). A mídia pesada (os mp4 para o bucket de assets) continua
+   sendo upload deliberado — o runner não tem os arquivos —, mas desde
+   2026-09-01 o CI **confere** a presença dela e recusa publicar sem: ver a seção
+   do bucket de assets acima e `RUNBOOK-API.md`, passo 4.
 
 Nomes e valores concretos saem de `terraform output`; as `vars` que o
 `deploy.yml` consome estão listadas no passo 2 do `RUNBOOK-API.md`.

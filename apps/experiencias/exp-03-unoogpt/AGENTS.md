@@ -34,3 +34,34 @@ nunca as palavras com que o estudante pediu.
 O SDK lança `Error("API POST /x → 409")` sem corpo. A tela escolhe o texto pelo
 STATUS (409 = regra do jogo, 429 = quota/rate limit), sem refazer o pedido e sem
 expor detalhe interno.
+
+## Handler passado a um `Modal` do DS TEM que ser estável
+
+O `Modal` da seção `chatgpt` mantém `onClose` nas dependências do **mesmo**
+`useEffect` que faz o foco inicial e restaura o foco anterior. Toda vez que a
+identidade de `onClose` muda, o React roda cleanup + efeito: o foco sai do
+modal (para quem o abriu) e volta para o **primeiro focável**, que é o botão de
+fechar.
+
+Isso já custou um bug que não parecia de React: com `onFechar={() => setDecidindo(false)}`
+inline e o relógio da turma correndo, o modal de decisão roubava o foco a cada
+tick. O estudante clicava no `<select>` da justificativa e o popup nativo fechava
+sozinho — perder o foco fecha um `<select>` aberto —, e um Enter reflexo nesse
+instante fechava o modal. Nada aparecia no log: os POSTs que saíam voltavam 201.
+
+Por isso os handlers de fechar são `useCallback` em `unoogpt-app.tsx`. Ao passar
+qualquer função para um componente do DS que a use como dependência de efeito,
+estabilize antes. **A correção definitiva é no `storybook-unooria`** — separar o
+efeito de foco do de teclado, como o `Modal` da seção `unooria` já faz.
+
+## Polling não pode renderizar mais que uma vez por segundo
+
+`useContagem` amostra de 500 em 500 ms, mas `segundosRestantes` devolve
+**inteiro** (`Math.ceil`): sem isso o float de milissegundo nunca era igual ao
+anterior, o `useState` nunca fazia bail-out e a missão inteira redesenhava 2×/s
+— o que acionava o defeito do `Modal` acima. `src/lib/relogio.test.ts` guarda
+esse contrato, e ele é de RENDER, não de aritmética.
+
+Ação que chama a api trava por `ocupado` **no controle**, não só no handler:
+`/unoogpt/alocacao` é por equipe, então uma escolha manda dois POSTs, e um duplo
+clique manda quatro — o segundo par com o estado que o primeiro ainda não gravou.

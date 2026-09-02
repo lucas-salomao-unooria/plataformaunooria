@@ -61,6 +61,16 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
   const [operacao, setOperacao] = useState<DadosDoResultado | null>(null);
   const [bairroSelecionado, setSelecionado] = useState<string | null>(null);
 
+  // Fechar um `Modal` do design system TEM que ser a mesma funcao entre renders.
+  // O `Modal` da secao `chatgpt` mantem `onClose` nas dependencias do efeito que
+  // tambem faz o foco: identidade nova = cleanup (devolve o foco para fora do
+  // modal) + efeito (foco no primeiro focavel, que e o botao de fechar). Com uma
+  // arrow inline e o relogio da turma correndo, isso acontecia a cada tick — o
+  // `<select>` da justificativa fechava sozinho no instante em que o estudante
+  // clicava nele, e um Enter reflexo fechava o modal. Ver o AGENTS.md da pasta.
+  const fecharDecisao = useCallback(() => setDecidindo(false), []);
+  const fecharReinicio = useCallback(() => setConfirmandoReinicio(false), []);
+
   const alocacao = sessao.alocacao;
   const justificativas = sessao.justificativas;
 
@@ -516,7 +526,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                   // Justificou? Manda daqui. Mesma função do botão do rodapé:
                   // um portão só, em um lugar só.
                   onEnviar={alocacao.alfa || alocacao.bravo ? enfrentarAgora : null}
-                  onFechar={() => setDecidindo(false)}
+                  onFechar={fecharDecisao}
                 />
               )}
 
@@ -546,13 +556,13 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
           um "Recomecar" ao lado de outro "Recomecar", e o de cima ja tinha sido
           clicado. Aqui a pergunta trava o foco e diz o que se perde. */}
       {confirmandoReinicio && (
-        <Modal onClose={() => setConfirmandoReinicio(false)} title="Recomeçar a Missão?">
+        <Modal onClose={fecharReinicio} title="Recomeçar a Missão?">
           <Modal.Body>
             Isto apaga a conversa inteira com o Cientista e devolve as equipes para a base. O
             relógio da turma continua correndo.
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="outline" onClick={() => setConfirmandoReinicio(false)}>
+            <Button variant="outline" onClick={fecharReinicio}>
               Cancelar
             </Button>
             <Button variant="destructive" onClick={reiniciar} disabled={ocupado}>

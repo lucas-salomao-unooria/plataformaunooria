@@ -226,6 +226,7 @@ jobs:
     env:
       GCP_PROJECT: ${{ vars.GCP_PROJECT }}
       EXP_BUCKET: ${{ vars.EXP_BUCKET }}
+      ASSETS_BUCKET: ${{ vars.ASSETS_BUCKET }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 2 }
@@ -282,6 +283,35 @@ jobs:
             # registrava `1.1.0`, e o hub montaria a URL de uma versão que não
             # existe no bucket.
             ver=$(node -p "require('./$dir/public/experiencia.json').versao")
+
+            # Midia pesada (>2 MB) NAO entra no git nem no bundle: ela mora no
+            # bucket de assets e o upload e deliberado, uma vez por contrato —
+            # o runner nao tem os arquivos para sincronizar. O que o CI pode
+            # fazer, e passou a fazer, e SE RECUSAR a publicar sem eles.
+            #
+            # O custo de nao ter isso ja foi pago: a exp-02 subiu num contrato
+            # novo com o bucket de assets vazio, os 21 mp4 responderam 404, e o
+            # feed ficou em "Carregando o video..." para sempre — com Salvar e
+            # Curtir desabilitados junto, o que tornava a missao impossivel de
+            # concluir. Nada falhou em lugar nenhum: nem o deploy, nem o log da
+            # api. Quem descobriu foi um estudante, na frente da tela.
+            if [ -f "$dir/midia-externa.json" ]; then
+              if [ -z "${ASSETS_BUCKET:-}" ]; then
+                echo "::warning::$exp declara midia externa, mas a var ASSETS_BUCKET nao existe neste environment. Rode scripts/configurar-github-ci.sh para a conferencia voltar a valer."
+              else
+                prefixo=$(node -p "require('./$dir/midia-externa.json').prefixo")
+                esperados=$(node -p "require('./$dir/midia-externa.json').arquivos.join('\n')")
+                presentes=$(gcloud storage ls "gs://$ASSETS_BUCKET/$prefixo/" --project "$GCP_PROJECT" 2>/dev/null | sed 's#.*/##' || true)
+                faltando=$(comm -23 <(echo "$esperados" | sort) <(echo "$presentes" | sort))
+                if [ -n "$faltando" ]; then
+                  echo "::error::$exp: a midia externa nao esta em gs://$ASSETS_BUCKET/$prefixo/ — publicar assim entrega uma missao que o estudante nao consegue terminar."
+                  echo "Faltando:"; echo "$faltando" | sed 's/^/  · /'
+                  echo "Suba com: gcloud storage rsync -r $dir/public/videos gs://$ASSETS_BUCKET/$prefixo/ --project $GCP_PROJECT"
+                  exit 1
+                fi
+                echo "· $exp: midia externa conferida em gs://$ASSETS_BUCKET/$prefixo/"
+              fi
+            fi
 
             gcloud storage rsync -r "$dir/dist" "gs://$EXP_BUCKET/$exp/$ver/" \
               --delete-unmatched-destination-objects --project "$GCP_PROJECT"
