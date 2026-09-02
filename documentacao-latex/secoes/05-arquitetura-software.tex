@@ -309,7 +309,15 @@ prefixo para tabela de plataforma (Capítulo~\ref{cap:dados}).
 
 A API é organizada em módulos NestJS. A Figura~\ref{fig:c4l3api} separa-os em
 quatro faixas, e a faixa a que um módulo pertence determina o que ele pode
-conhecer.
+conhecer. Desde 2026-09-02 a faixa transversal tem um quinto componente que
+a figura não desenha, \cd{observabilidade/} (Capítulo~\ref{cap:observabilidade}):
+o \emph{middleware} que abre o contexto da requisição antes dos \emph{guards}
+(o \cd{TenancyInterceptor} passou a \emph{preencher} a escola nesse mesmo
+objeto, em vez de abri-lo), o \emph{logger} pino com \emph{redaction}, o
+\cd{FiltroDeExcecao} global, o \emph{sampler} por rota e o \arq{otel.ts} ---
+que é a \textbf{primeira importação} do \arq{main.ts}, porque a
+instrumentação automática do OpenTelemetry precisa alterar \cd{http},
+\cd{express}, \cd{undici} e o Prisma antes de o Nest os carregar.
 
 \begin{figure}[H]
 \centering

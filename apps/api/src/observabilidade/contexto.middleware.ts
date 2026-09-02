@@ -1,4 +1,19 @@
 import { randomUUID } from "node:crypto";
+import { context, trace } from "@opentelemetry/api";
+
+/**
+ * Com o OpenTelemetry ligado, o `http` instrumentation já abriu o span de
+ * servidor antes do Express — e mesmo NÃO amostrado ele é um span com
+ * `traceId`/`spanId` válidos (propagados do `traceparent`). O `spanId` daqui é
+ * o do span desta requisição, que é o que `logging.googleapis.com/spanId`
+ * deve carregar. Sem SDK, `getSpan` devolve `undefined` e os cabeçalhos
+ * respondem: `traceId` em 100% das requisições nos dois modos.
+ */
+function traceAtivo(): { traceId: string; spanId: string; amostrado: boolean } | undefined {
+  const span = trace.getSpan(context.active())?.spanContext();
+  if (!span || !trace.isSpanContextValid(span)) return undefined;
+  return { traceId: span.traceId, spanId: span.spanId, amostrado: (span.traceFlags & 1) === 1 };
+}
 
 /** O pedaço do `Request`/`Response` do Express que este middleware lê — sem `@types/express`. */
 type Requisicao = { headers: Record<string, string | string[] | undefined> };
@@ -16,12 +31,12 @@ import { lerTrace } from "./trace-da-requisicao";
  * Explorer e no Cloud Trace. Sem trace nenhum (dev, curl), um UUID.
  */
 export function contextoMiddleware(req: Requisicao, res: Resposta, next: () => void): void {
-  const trace = lerTrace(req.headers);
+  const t = traceAtivo() ?? lerTrace(req.headers);
   const contexto: ContextoDaRequisicao = {
-    requestId: trace?.traceId ?? randomUUID(),
-    traceId: trace?.traceId,
-    spanId: trace?.spanId,
-    amostrado: trace?.amostrado,
+    requestId: t?.traceId ?? randomUUID(),
+    traceId: t?.traceId,
+    spanId: t?.spanId,
+    amostrado: t?.amostrado,
   };
   res.setHeader("x-request-id", contexto.requestId);
   abrirContexto(contexto, () => next());

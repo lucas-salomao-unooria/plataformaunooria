@@ -382,9 +382,24 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
 - **Prisma**: `PrismaService` liga o evento `query` sempre; acima de
   `LIMIAR_DE_QUERY_LENTA_MS` (500) sai `WARNING` com o SQL (com `$1`, sem os
   parâmetros — é neles que mora o CPF); em `LOG_LEVEL=debug` toda query sai.
+- **OpenTelemetry: `src/otel.ts` é a PRIMEIRA linha do `main.ts`**, antes
+  de `@nestjs/core`. A instrumentação automática altera `http`, `express`,
+  `undici` e o Prisma no `start()`; importado depois do `AppModule`, o trace
+  teria só o HTTP de entrada — sem banco e sem IA, em silêncio. Nada em
+  `otel.ts` importa código da aplicação (o Zod ainda não rodou). Gate em
+  `observabilidade/otel-config.ts`: `OBS_TRACE_RATIO > 0` E (`GCP_PROJECT_ID`
+  ou `OBS_DEBUG=1`); desligado, nenhum objeto do SDK existe — é o que mantém
+  o Jest e o `nest start --watch` sem GCP intocados. Para ver um trace em dev:
+  `OBS_DEBUG=1 OBS_TRACE_RATIO=1 pnpm dev` (spans no console).
+  **Prisma não é `pg`**: é `@prisma/instrumentation`, que acompanha a versão
+  do `prisma` — subir um é subir o outro. O `sampler.ts` decide por rota
+  (IA e feed a 10x, até 1) e **ignora a flag do pai remoto** (o `traceparent`
+  vem da internet; honrá-la deixaria qualquer cliente forçar 100%). Exportador
+  direto para o Cloud Trace, sem sidecar (ADR-57). O `DesligamentoDoOtel`
+  faz o flush no SIGTERM via `enableShutdownHooks`.
 - Envs: `LOG_LEVEL` (default `info`), `GCP_PROJECT_ID` (correlação com o
-  trace; vazio em dev), `OBS_TRACE_RATIO`/`OBS_DEBUG` (reservadas para o
-  OpenTelemetry). Fora de produção o formato é `pino-pretty`; `LOG_FORMATO=json`
+  trace; vazio em dev), `OBS_TRACE_RATIO` (fração exportada; 0 desliga),
+  `OBS_DEBUG` (spans no console). Fora de produção o formato é `pino-pretty`; `LOG_FORMATO=json`
   mostra a linha como o Cloud Logging a verá. Em teste (`NODE_ENV=test`) é
   JSON sem transporte — o pino-pretty abre um worker que o Jest não fecha.
 - Testes: `tests/observabilidade-*.spec.ts` e `tests/tenancy-contexto.spec.ts`

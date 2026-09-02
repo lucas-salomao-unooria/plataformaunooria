@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "./auth";
 import { assinarTokenExperiencia } from "./chave-token";
 import { cabecalhosComoObjeto, log, logDaRequisicao } from "./log";
-import { lerTrace, traceparentPara } from "./trace-da-requisicao";
+import { traceparentDeSaida } from "./otel-propagacao";
 
 /**
  * Uma api pendurada não pode pendurar o hub junto: toda chamada server-side
@@ -37,7 +37,7 @@ async function chamarApi(
   token: string,
 ): Promise<{ resposta: Response; cabecalhos: Record<string, string | string[] | undefined> | undefined }> {
   const cabecalhos = await cabecalhosDaRequisicao();
-  const traceparent = traceparentPara(lerTrace(cabecalhos ?? {}));
+  const traceparent = traceparentDeSaida(cabecalhos);
   const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
   try {
     const resposta = await fetch(`${apiUrl}${path}`, {

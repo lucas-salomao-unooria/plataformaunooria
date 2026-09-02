@@ -3128,8 +3128,12 @@ conveniência local (retorno rápido) em vez de barreira única.
 como fronteira; nenhuma \emph{stack} auto-hospedada}
 \label{adr:observabilidade-nativa}
 
-\textbf{Estado: proposta} (2026-09-01), a partir do estudo do
-Capítulo~\ref{cap:observabilidade}.
+\textbf{Estado: aceita} (2026-09-02; proposta em 2026-09-01 a partir do
+estudo do Capítulo~\ref{cap:observabilidade}). Aceita com a primeira peça
+no código: log JSON com \emph{redaction} na API e no hub (fase 1) e
+\emph{traces} OpenTelemetry com o exportador direto do Cloud Trace nos dois
+processos (fase 2, \emph{traces}); as métricas da aplicação e o erro de
+cliente seguem o roteiro do capítulo.
 
 \begin{especificacao}{Contexto}
 A plataforma é diagnosticável e não é observável: log em texto sem

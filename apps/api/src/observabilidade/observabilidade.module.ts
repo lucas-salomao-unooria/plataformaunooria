@@ -1,10 +1,24 @@
 import { randomUUID } from "node:crypto";
-import { Global, Module } from "@nestjs/common";
+import { Global, Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
 import { APP_FILTER } from "@nestjs/core";
 import { LoggerModule } from "nestjs-pino";
 import { contextoAtual } from "../tenancy/tenancy-context";
 import { FiltroDeExcecao } from "./filtro-de-excecao";
 import { logger } from "./logger";
+
+/**
+ * SIGTERM do Cloud Run → `app.close()` (via `enableShutdownHooks`) → aqui →
+ * `sdk.shutdown()`: o último lote de spans sai antes de o processo morrer.
+ * Import dinâmico para o Jest (que sobe o `AppModule` em `openapi-cobertura`)
+ * não carregar o SDK; no `main.ts` o módulo já está em cache.
+ */
+@Injectable()
+export class DesligamentoDoOtel implements OnApplicationShutdown {
+  async onApplicationShutdown(): Promise<void> {
+    const { desligarOtel } = await import("../otel");
+    await desligarOtel();
+  }
+}
 
 /**
  * Liga o pino ao Nest (`Logger` do nestjs-pino substitui o ConsoleLogger em
@@ -28,6 +42,6 @@ import { logger } from "./logger";
       },
     }),
   ],
-  providers: [{ provide: APP_FILTER, useClass: FiltroDeExcecao }],
+  providers: [{ provide: APP_FILTER, useClass: FiltroDeExcecao }, DesligamentoDoOtel],
 })
 export class ObservabilidadeModule {}

@@ -1,3 +1,7 @@
+// PRIMEIRA linha, antes de qualquer outro import: a instrumentação do
+// OpenTelemetry precisa patchear `http`/`express`/`undici`/Prisma ANTES de o
+// Nest os carregar. Ver `otel.ts`.
+import "./otel";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { SwaggerModule } from "@nestjs/swagger";

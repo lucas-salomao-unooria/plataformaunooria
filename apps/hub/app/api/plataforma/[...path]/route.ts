@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { assinarTokenExperiencia } from "@/lib/chave-token";
 import { cabecalhosComoObjeto, logDaRequisicao } from "@/lib/log";
-import { lerTrace, traceparentPara } from "@/lib/trace-da-requisicao";
+import { traceparentDeSaida } from "@/lib/otel-propagacao";
 
 /**
  * Teto maior que o do `apiDoServidor`: por aqui passam exportações (CSV de
@@ -89,7 +89,7 @@ async function proxy(request: NextRequest, path: string[]) {
   const temCorpo = request.method !== "GET" && request.method !== "HEAD";
   // O `traceparent` do navegador (ou do LB) segue para a api: é o que faz a
   // chamada do painel do professor aparecer no mesmo trace que o span da api.
-  const traceparent = traceparentPara(lerTrace(cabecalhos));
+  const traceparent = traceparentDeSaida(cabecalhos);
   let resposta: Response;
   try {
     resposta = await fetch(destino, {
