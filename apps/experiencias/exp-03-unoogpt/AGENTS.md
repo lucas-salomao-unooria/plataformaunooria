@@ -29,6 +29,14 @@ vale nota nunca vem do canal que o cliente preenche.
 E o corte de PII é por design: `fontesCarregadas` registra **quantas** fontes,
 nunca as palavras com que o estudante pediu.
 
+O que o professor pede sobre TEMPO (quando falou, com quanto relógio carregou
+fonte, se estourou ao confirmar, qual botão de recomeço) entra pela trilha, não
+pela telemetria — e o marco leva o relógio **recalculado no instante**
+(`relogioAgora` na api), nunca `sessoes.minutos_gastos`: aquele é o retrato do
+último turno, e um turno leva 10–30 s (ADR-64). O único dado do recomeço que só
+o cliente sabe é a `origem` (lixeira da Investigação ou "Tentar de novo" do
+Resultado), e ela vai no corpo do `POST /unoogpt/reiniciar`.
+
 ## Erro tem status, e cada status tem uma frase
 
 O SDK lança `Error("API POST /x → 409")` sem corpo. A tela escolhe o texto pelo

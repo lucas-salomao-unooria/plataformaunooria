@@ -293,10 +293,15 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
    * Recomeçar abre tentativa NOVA no servidor — não apaga a conversa anterior.
    * Para o estudante a tela limpa; para o professor a aula inteira continua legível.
    */
-  async function reiniciar() {
+  /**
+   * `origem` diz qual botão: a lixeira da Investigação ou o "Tentar de novo" do
+   * Resultado. É a única parte do recomeço que só o cliente sabe — o relógio da
+   * turma e a tentativa o servidor grava sozinho, no marco `recomeco`.
+   */
+  async function reiniciar(origem: "investigacao" | "resultado") {
     setOcupado(true);
     try {
-      const dados = await api.post<RespostaEstado>("/unoogpt/reiniciar");
+      const dados = await api.post<RespostaEstado>("/unoogpt/reiniciar", { origem });
       const nova = await api.get<RespostaSessao>("/unoogpt/sessao");
       setSessao(nova.sessao);
       setMapa(nova.mapa);
@@ -421,7 +426,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                           (b.estimativa!.pessoasEmRisco.max - b.estimativa!.pessoasEmRisco.min) / 2,
                         ),
                       }))}
-                    onRecomecar={reiniciar}
+                    onRecomecar={() => reiniciar("resultado")}
                     ocupado={ocupado}
                   />
                 )}
@@ -565,7 +570,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
             <Button variant="outline" onClick={fecharReinicio}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={reiniciar} disabled={ocupado}>
+            <Button variant="destructive" onClick={() => reiniciar("investigacao")} disabled={ocupado}>
               Recomeçar
             </Button>
           </Modal.Footer>

@@ -14,6 +14,7 @@ import {
   EstadoDoJogoSchema,
   PassoSchema,
   PerguntaSchema,
+  ReinicioSchema,
   RelogioDoEstudanteSchema,
   ResultadoSchema,
   SessaoDoEstudanteSchema,
@@ -219,13 +220,16 @@ export class UnoogptController {
   @Contrato({
     resumo: "Recomeça — abre uma tentativa NOVA.",
     descricao:
-      "**Não apaga a conversa anterior.** Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.",
+      "**Não apaga a conversa anterior.** Cada tentativa fica no resultado com o desfecho e a faixa DELA: é essa comparação que ensina que a mesma cidade dá números diferentes.\n\nO clique fica gravado na tentativa que fecha (marco `recomeco`), com o relógio da turma naquele instante. `origem` diz qual botão — é a única parte que só o cliente sabe.",
+    corpo: ReinicioSchema,
     resposta: SoASessaoSchema,
   })
-  async reiniciar(@Req() req: { auth: AuthClaims }) {
+  async reiniciar(@Req() req: { auth: AuthClaims }, @Body() corpo: unknown) {
     const { escolaId, estudanteId } = this.quem(req);
+    // Corpo vazio é válido: cliente anterior a `origem` não manda nada.
+    const { origem } = this.valida(ReinicioSchema, corpo ?? {});
     rateLimit(`unoogpt:reiniciar:${estudanteId}`, 10, 60_000);
-    return this.service.reiniciar(escolaId, estudanteId);
+    return this.service.reiniciar(escolaId, estudanteId, origem ?? null);
   }
 }
 

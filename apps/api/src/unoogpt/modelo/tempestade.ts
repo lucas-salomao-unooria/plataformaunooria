@@ -251,6 +251,11 @@ export function esperadoDe(
      * São corridas de verdade do mesmo modelo, não ruído decorativo.
      */
     amostras: brutas.slice(0, AMOSTRAS_NA_TELA),
+    /**
+     * TODAS as corridas, ordenadas. Não vai à tela: é de onde o servidor tira
+     * o percentil do resgate real na hora de gravar a simulação (ADR-64).
+     */
+    todas: salvas,
   };
 }
 

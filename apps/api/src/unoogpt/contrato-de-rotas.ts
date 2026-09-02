@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { CONDUTAS } from "./leitura";
 import { PASSOS } from "./regras/passos";
+import { TIPOS_DE_MARCO } from "./regras/trilha";
 import { BAIRROS_VALIDOS, CONJUNTOS_VALIDOS, JUSTIFICATIVAS_VALIDAS } from "./unoogpt.service";
 
 const EquipeSchema = z.enum(["alfa", "bravo"]);
@@ -33,6 +34,13 @@ export const ContrafactualSchema = z.object({
 });
 
 export const PassoSchema = z.object({ para: z.enum(PASSOS) });
+
+/** Qual botão: a lixeira da Investigação ou o "Tentar de novo" do Resultado.
+ *  É a única coisa do recomeço que SÓ o cliente sabe; o resto (relógio,
+ *  tentativa) o servidor grava sozinho. Opcional: cliente antigo não manda. */
+export const ReinicioSchema = z.object({
+  origem: z.enum(["investigacao", "resultado"]).optional(),
+});
 
 // ------------------------------------------------------------------- saída
 
@@ -455,6 +463,96 @@ export const LinhaDeLeituraDoUnoogptSchema = z.union([
   }),
 ]);
 
+const MotivoDoFimSchema = z.enum(["tempo", "professor"]).nullable();
+
+/** Um marco da trilha, com o relógio do INSTANTE em que foi gravado. */
+export const MarcoDoProfessorSchema = z.object({
+  tentativa: z.number().int(),
+  ordem: z.number().int(),
+  tipo: z.enum(TIPOS_DE_MARCO as [string, ...string[]]),
+  minuto: z.number().int(),
+  /** O cronômetro que o estudante via. Null = modo livre ou marco anterior à coluna. */
+  segundosRestantes: z.number().int().nullable(),
+  motivoDoFim: MotivoDoFimSchema,
+  criadoEm: z.string(),
+  dados: z.unknown(),
+});
+
+export const FalaDoProfessorSchema = z.object({
+  papel: z.enum(["estudante", "agente"]),
+  texto: z.string(),
+  tentativa: z.number().int(),
+  debitou: z.boolean(),
+  /** A hora em que o estudante APERTOU enviar — não o fim do turno. */
+  criadoEm: z.string(),
+  /** "Aos 0:42 da aula". Null sem largada. */
+  segundosDesdeALargada: z.number().int().nullable(),
+});
+
+/**
+ * Como a criança usou o TEMPO de cada tentativa — enfrentada ou não. Quem
+ * recomeçou no meio não tem simulação, mas tem conversa e marcos, e aparece.
+ */
+export const RodadaDoProfessorSchema = z.object({
+  tentativa: z.number().int(),
+  inicioEm: z.string().nullable(),
+  primeiraFalaEm: z.string().nullable(),
+  /** Dois relógios de propósito: antes da largada o campo está bloqueado, então
+   *  "desde o Começar" mede o professor, não o estudante. */
+  ateAPrimeiraFala: z
+    .object({
+      desdeOComecar: z.number().int().nullable(),
+      desdeALargada: z.number().int().nullable(),
+    })
+    .nullable(),
+  /** Pares `(alfa, bravo)` consecutivos DISTINTOS antes do envio — não linhas. */
+  mudancasDeDestino: z.number().int().nonnegative(),
+  enfrentou: z.boolean(),
+  envio: z
+    .object({
+      em: z.string(),
+      minuto: z.number().int(),
+      segundosRestantes: z.number().int().nullable(),
+      motivoDoFim: MotivoDoFimSchema,
+      /** O relógio já tinha fechado quando confirmou. */
+      estourou: z.boolean(),
+    })
+    .nullable(),
+  recomeco: z
+    .object({
+      em: z.string(),
+      origem: z.enum(["investigacao", "resultado"]).nullable(),
+      fase: z.enum(["aguardando", "correndo", "encerrado"]).nullable(),
+      modo: z.enum(["cronometrado", "livre"]).nullable(),
+      segundosRestantes: z.number().int().nullable(),
+      motivoDoFim: MotivoDoFimSchema,
+    })
+    .nullable(),
+});
+
+/** O desfecho de uma tentativa, como o professor lê. Só na rota INDIVIDUAL. */
+export const TentativaDoProfessorSchema = z.object({
+  ordem: z.number().int(),
+  alocacao: z.object({ alfa: z.string().nullable(), bravo: z.string().nullable() }),
+  minutoDaSaida: z.number().int(),
+  criadoEm: z.string(),
+  emRisco: z.number(),
+  salvas: z.number(),
+  vitimas: z.number(),
+  semSocorro: z.number(),
+  /** % do risco da cidade que os dois bairros escolhidos cobriam. Medida da
+   *  DECISÃO — a sorte mexe no resgate, não nisto. Null sem risco. */
+  coberturaDoRisco: z.number().int().nullable(),
+  esperado: EsperadoSchema,
+  posicao: z.object({
+    percentil: z.number().int(),
+    dentroDaFaixa: z.boolean(),
+    acimaDaMedia: z.boolean(),
+  }),
+  /** Como o professor lê. Vem do marco de envio: `reiniciar` apaga as da sessão. */
+  justificativas: z.object({ alfa: z.string(), bravo: z.string() }).nullable(),
+});
+
 export const EstudanteDoProfessorSchema = z.object({
   estudante: z.object({ id: Uuid, nome: z.string() }).optional(),
   versaoLeitura: z.number().int(),
@@ -468,13 +566,15 @@ export const EstudanteDoProfessorSchema = z.object({
   /** Frase única para o topo. **Nunca afirma o que o estudante É** — e partida
    *  curta some com o resto: dois minutos de jogo não sustentam frase. */
   resumo: z.string(),
+  /** As da tentativa CORRENTE (a sessão). Por tentativa, ver `tentativas[].justificativas`. */
   justificativas: z
     .object({ alfa: z.string(), bravo: z.string() })
     .nullable(),
-  tentativas: z.array(z.unknown()),
-  trilha: z.array(z.unknown()),
+  tentativas: z.array(TentativaDoProfessorSchema),
+  rodadas: z.array(RodadaDoProfessorSchema),
+  trilha: z.array(MarcoDoProfessorSchema),
   /** A TRANSCRIÇÃO — o que a criança escreveu ao Cientista. Só o professor. */
-  conversa: z.array(z.unknown()),
+  conversa: z.array(FalaDoProfessorSchema),
 });
 
 export const TurmaZeradaDoUnoogptSchema = z.object({

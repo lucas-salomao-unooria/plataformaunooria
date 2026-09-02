@@ -31,6 +31,7 @@ await suite(
       "Todo número vem com um bloco de 'como ler'",
       "A tabela lista TODOS os estudantes, inclusive quem não entrou",
       "O relógio da aula do unooGPT é operável da mesma tela dos resultados",
+      "O relatório de um estudante do unooGPT diz QUANDO: até a primeira fala, com quanto relógio, se estourou",
     ],
     comando: "node scripts/e2e/professor/06-resultados-das-missoes.mjs",
   },
@@ -128,5 +129,51 @@ await suite(
         "não para a sala.",
       inteira: true,
     });
+
+    // ── o relatório de um estudante do unooGPT ───────────────────────────
+    // A suíte do estudante (estudante/04-unoogpt.mjs) corre ANTES e deixa uma
+    // partida: é ela que este passo lê. Sem linha para abrir, a folha está
+    // vazia — e a folha vazia já foi provada acima.
+    // A COLUNA, não o texto da página: o rodapé da folha explica justamente por
+    // que a coluna não existe, e a palavra aparece lá.
+    const colunasDeResgate = await p.locator("table thead th", { hasText: /resgatad/i }).count();
+    r.exigir(colunasDeResgate === 0, "a folha da turma NÃO tem coluna de resgatados (viraria ranking)");
+    // O estudante da suíte estudante/04 é quem tem partida; a primeira linha
+    // da folha pode ser alguém que nunca entrou.
+    const estudanteEM = conta("estudante", { serie: "2EM" });
+    const linhaDele = p.locator(`[data-estudante="${estudanteEM.login}"] a`, { hasText: "Abrir" });
+    const abrir = (await linhaDele.count()) > 0 ? linhaDele.first() : p.locator("table tbody a", { hasText: "Abrir" }).first();
+    if ((await abrir.count()) > 0) {
+      await abrir.click();
+      await p.waitForURL((url) => /unidade-1\/estudantes\//.test(url.pathname), { timeout: 20_000 });
+      await p.locator("text=Como usou o tempo").first().waitFor({ timeout: 20_000 });
+      await p.waitForTimeout(800);
+
+      const relatorio = await p.locator("main").innerText();
+      const posRessalva = relatorio.indexOf("Como ler este relatório");
+      const posTempo = relatorio.indexOf("Como usou o tempo");
+      r.exigir(posRessalva > 0, "o relatório abre com a ressalva de que isto não é nota");
+      r.exigir(posRessalva < posTempo, "e a ressalva vem ANTES de qualquer número");
+      r.exigir(/Até a primeira fala/.test(relatorio), "diz quanto demorou até a primeira fala");
+      r.exigir(/Mudanças de destino/.test(relatorio), "conta as mudanças de destino antes de confirmar");
+      r.exigir(/Ao confirmar/.test(relatorio), "diz com quanto relógio confirmou — ou se estourou");
+      r.exigir(/A conversa/.test(relatorio), "e a transcrição continua na tela, com a hora de cada fala");
+      const rodadas = await p.locator("[data-rodada]").count();
+      r.exigir(rodadas > 0, `há ao menos uma rodada na linha do tempo (${rodadas})`);
+      const comHora = await p.locator("main ol li", { hasText: /aos \d+:\d\d|\d\d:\d\d:\d\d/ }).count();
+      r.exigir(comHora > 0, `as falas têm hora (${comHora} datadas)`);
+      await r.registrar(p, "relatorio-do-estudante-unoogpt", {
+        titulo: "O relatório de um estudante do unooGPT",
+        mostra:
+          "Até a primeira fala, mudanças de destino, com quanto relógio confirmou, cada marco da " +
+          "trilha datado pelo cronômetro que a criança via, o desfecho por tentativa e a conversa com hora.",
+        prova:
+          "Tudo o que é TEMPO vem da trilha que a api grava com o relógio do instante — não da " +
+          "telemetria, que o cliente preenche. O número de resgate aparece aqui, uma criança por vez, " +
+          "e nunca na folha da turma.",
+        detalhe: `${rodadas} rodada(s) · ${comHora} falas datadas`,
+        inteira: true,
+      });
+    }
   },
 );

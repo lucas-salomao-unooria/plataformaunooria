@@ -605,10 +605,25 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \pk{id} & \cd{BIGSERIAL} & \emph{UNIQUE}
   \cd{(escola\_id, estudante\_id, tentativa, ordem)}.\\
 \zebra \cd{tipo} & \cd{TEXT} & \emph{CHECK}
-  \cd{IN ('fontes','leitura','alocacao','envio')}.\\
-\cd{minuto} & \cd{INT} & Minuto do relógio em que aconteceu. \emph{CHECK} 0--60.\\
+  \cd{IN ('fontes','leitura','alocacao','envio','inicio','recomeco')}.
+  \cd{inicio} = entrou na Investigação; \cd{recomeco} = clicou em Recomeçar,
+  gravado na tentativa que fecha, com \cd{dados.origem}
+  (\cd{investigacao} \textbar{} \cd{resultado}), \cd{fase} e \cd{modo} do
+  relógio da turma.\\
+\cd{minuto} & \cd{INT} & Minuto do relógio em que aconteceu, recalculado do
+  relógio da turma no instante --- nunca copiado de
+  \cd{sessoes.minutos\_gastos} (\adrr{ADR-64}). \emph{CHECK} 0--60.\\
+\zebra \cd{segundos\_restantes} & \cd{INT NULL} & O cronômetro de parede que o
+  estudante via. \cd{NULL} = modo livre, sem relógio, ou marco anterior à
+  coluna. Não se reconstrói depois: \enquote{+2 min} muda a duração sem
+  histórico e \enquote{zerar} apaga o relógio. \emph{CHECK} $\geq 0$.\\
+\cd{motivo\_do\_fim} & \cd{TEXT NULL} & \cd{tempo} \textbar{} \cd{professor}
+  quando o relógio já tinha fechado no instante do marco: é o
+  \enquote{estourou} do relatório, sem inferência.\\
 \zebra \cd{dados} & \cd{JSONB} & \emph{Payload} por tipo. \textbf{Só dado
-  público}: este JSON chega ao navegador.\\
+  público}: este JSON chega ao navegador. O \cd{envio} carrega também as
+  \cd{justificativas} como o professor lê --- \cd{reiniciar} zera as da
+  sessão, e sem a cópia a da tentativa 1 sumia quando a 2 começava.\\
 \bottomrule
 \end{tabularx}
 
@@ -625,6 +640,12 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
   autoexplicativa.\\
 \zebra \cd{versao\_prompt} & \cd{INT} & Sem ela não se sabe qual \emph{prompt}
   produziu o que está em produção.\\
+\cd{esperado} & \cd{JSONB NULL} & \cd{\{v, media, faixa, vitimasMedia,
+  vitimasFaixa, amostras, percentil\}}: a faixa da MESMA decisão (200
+  corridas) e o percentil do resgate real, gravados no confirmar. Antes era
+  recomputada a cada leitura, e uma mudança de parâmetro reescrevia em silêncio
+  o relatório de partidas antigas (\adrr{ADR-64}). \cd{NULL} = anterior à
+  coluna; a leitura recomputa.\\
 \bottomrule
 \end{tabularx}
 

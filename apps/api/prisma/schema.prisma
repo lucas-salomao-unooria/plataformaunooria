@@ -1194,10 +1194,20 @@ model UnoogptMarco {
   tentativa   Int      @db.SmallInt
   /// Sequência dentro da tentativa.
   ordem       Int
-  /// fontes | leitura | alocacao | envio (CHECK na migration).
+  /// fontes | leitura | alocacao | envio | inicio | recomeco (CHECK na migration).
   tipo        String
   /// Minuto do relógio em que aconteceu: vira hora da cidade na tela.
+  /// Recalculado do relógio da TURMA no instante da gravação — nunca copiado
+  /// de `sessoes.minutos_gastos`, que só o turno do Cientista atualizava e
+  /// atrasava até um turno inteiro nas rotas diretas (ADR-64).
   minuto      Int
+  /// O cronômetro de parede que o estudante via ("faltavam 1:40"). Null = modo
+  /// livre, sem relógio, ou marco anterior à coluna. Não se reconstrói depois:
+  /// "+2 min" muda a duração sem histórico e "zerar" apaga o relógio.
+  segundosRestantes Int? @map("segundos_restantes")
+  /// `tempo` | `professor` quando o relógio já tinha fechado no instante do
+  /// marco. É o "estourou" do relatório, sem inferência.
+  motivoDoFim String? @map("motivo_do_fim")
   dados       Json
   criadoEm    DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
@@ -1226,6 +1236,12 @@ model UnoogptSimulacao {
   /// Versão do prompt gravada JUNTO da saída: sem isso não se sabe qual prompt
   /// produziu o que está em produção.
   versaoPrompt  Int      @map("versao_prompt")
+  /// { v:1, media, faixa, vitimasMedia, vitimasFaixa, amostras, percentil } —
+  /// a FAIXA da mesma decisão, gravada no confirmar. Antes era recomputada a
+  /// cada leitura (200 corridas), e uma mudança de parâmetro reescrevia em
+  /// silêncio o relatório de partidas antigas (ADR-64). Null = simulação
+  /// anterior à coluna; a leitura recomputa.
+  esperado      Json?
   criadoEm      DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
   sessao UnoogptSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)

@@ -3825,3 +3825,109 @@ sem acrescentar a linha faz a conferência passar sem conferir.
 \textbf{Gatilho de reavaliação.} A terceira experiência com mídia externa: com
 uma, a lista à mão é honesta; com três, o \arq{midia-externa.json} deve passar
 a ser gerado do catálogo da api, que já sabe o nome de cada arquivo.
+
+\section{ADR-64 --- O marco da exp-03 carrega o relógio do instante; a faixa
+da decisão é gravada, não recomputada}
+\label{adr:marco-com-relogio}
+
+\begin{especificacao}{Contexto}
+O pedido do produto para o relatório do professor da Missão Tempestade foi
+sobre \emph{tempo}: quanto demorou até a primeira fala, com quanto cronômetro
+cada fonte foi carregada, quantas vezes mudou o destino antes de confirmar, com
+quanto relógio confirmou (ou se estourou), e se apertou Recomeçar --- e se o
+professor \enquote{tinha liberado}. Ao levantar o que já existia, duas
+imprecisões de gravação apareceram. A primeira: \cd{sessoes.minutos\_gastos}
+só era atualizado pelo relógio dentro do turno do assistente; as rotas diretas
+(\cd{alocar}, \cd{carregarConjuntos}, \cd{simular}) e as ferramentas chamadas
+de dentro do turno gravavam o marco com o minuto do \textbf{último turno} ---
+e um turno leva de 10 a 30\,s, dois a seis minutos da cidade. Pior: a hora de
+\emph{saída} das equipes vinha do mesmo retrato, então quem alocava pelo mapa e
+enviava sem falar de novo saía no minuto de um turno atrás, e chegava a bairros
+que já não alcançaria. A segunda: a fala do estudante era gravada depois do
+\cd{await} do provedor, datada pelo fim do turno, não pelo envio.
+
+Havia ainda o que o relatório precisaria e não tinha como reconstruir: o
+cronômetro de parede que a criança via num dado marco. \cd{criado\_em} existe,
+mas \enquote{+2 min} altera \cd{duracao\_seg} sem histórico e \enquote{zerar a
+turma} apaga o relógio --- a conta feita depois mentiria em toda aula que teve
+extensão. E a faixa da decisão (200 corridas de \cd{esperadoDe}) era
+recomputada a cada leitura: determinística hoje, mas uma mudança em
+\cd{PARAMETROS} reescreveria em silêncio o relatório de toda partida antiga.
+\end{especificacao}
+
+\textbf{Decisão.} Cinco movimentos, uma migração só de \cd{ALTER}, sem tocar
+RLS nem \cd{escola\_id}:
+
+\begin{enumerate}
+  \item \cd{gravarMarco} recebe o \cd{EstadoDoRelogio} \textbf{recalculado no
+    instante} (\cd{relogioAgora}), e grava \cd{minuto},
+    \cd{segundos\_restantes} e \cd{motivo\_do\_fim} dele. As rotas diretas
+    passam a atualizar \cd{minutos\_gastos} pelo mesmo estado, e
+    \cd{aoConfirmar} usa esse minuto para a saída das equipes.
+  \item A fala do estudante leva \cd{criadoEm: agora} --- a hora em que apertou
+    enviar.
+  \item Dois tipos de marco: \cd{inicio} (entrou na Investigação, uma vez por
+    tentativa --- é de onde se mede o tempo até a primeira fala) e
+    \cd{recomeco}, gravado na tentativa que \emph{fecha}, com \cd{origem}
+    (qual botão: a lixeira da Investigação ou o \enquote{Tentar de novo} do
+    Resultado --- a única parte que só o cliente sabe, e vai no corpo do
+    \rota{POST /unoogpt/reiniciar}), \cd{fase} e \cd{modo} do relógio da turma.
+  \item \cd{exp\_03\_simulacoes.esperado}: a faixa e o percentil do resgate
+    real, gravados no confirmar. Precedente: \cd{exp\_70\_sessoes.leitura\_mensagens}.
+    O \cd{envio} passa a carregar também as justificativas como o professor lê,
+    porque \cd{reiniciar} zera as da sessão.
+  \item O resto é \textbf{derivado na leitura}, sem coluna: mudanças de destino
+    (pares \cd{(alfa, bravo)} consecutivos distintos antes do envio --- contar
+    linhas mentiria, porque o cartão de duas opções manda um POST por equipe e
+    justificar passa pela mesma rota), tempo até a primeira fala (da largada e
+    do Começar, os dois, porque antes da largada o campo está bloqueado e
+    contar do Começar mediria o professor), \% do risco coberto e posição na
+    faixa. Mesmo princípio de \cd{leitura.ts}: o servidor recalcula do bruto.
+\end{enumerate}
+
+\enquote{Se o professor tinha liberado} recebe a resposta honesta: não existe
+liberação de recomeço --- o que o professor controla é o relógio, e é o
+relógio que fica gravado ao lado do clique. Criar a liberação seria decisão de
+produto contra o desenho registrado (\enquote{o professor controla quando dá
+para falar, não o que a criança decide}) e fica para uma ADR própria, se o dado
+gravado mostrar que faz falta.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Telemetria como fonte}: os eventos já existem
+    (\cd{interacted:alocacao}, \cd{attempted:recomeco}). Mas o canal é
+    preenchido pelo cliente, assíncrono (Pub/Sub, desligado em \cd{dev}),
+    perde lote no fechar da aba, e nenhum código do repositório lê
+    \cd{telemetria\_eventos} --- além da regra escrita de que o que o professor
+    lê nunca vem do canal que o cliente preenche.
+  \item \emph{Reconstruir o cronômetro de \cd{criado\_em} + relógio da turma}:
+    falha em toda aula com \enquote{+2 min} (a duração muda sem histórico) e
+    em toda turma zerada (o relógio some). Gravar no instante custa duas
+    colunas e não mente.
+  \item \emph{Sessão por tentativa} (uma linha de \cd{exp\_03\_sessoes} por
+    rodada, preservando justificativas e conjuntos): resolveria a perda no
+    \cd{reiniciar} de forma geral, mas mudaria a chave primária de quatro
+    tabelas e toda consulta do módulo. A cópia das justificativas no marco de
+    \cd{envio} resolve o que o relatório precisa, por uma fração do custo.
+  \item \emph{Persistir a contagem de mudanças e a cobertura}: contrariaria o
+    princípio do módulo (o servidor recalcula do bruto, e a versão da leitura
+    sobe quando a hipótese muda). Só se grava o que \textbf{não} dá para
+    recalcular --- o cronômetro e a faixa.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a correção do minuto muda o desfecho de
+quem confirma sem turno novo --- é correção, mas partidas antigas e novas não
+são comparáveis nesse detalhe, e o produto foi avisado antes de qualquer teste
+controlado. \emph{Ruim}: marcos e simulações anteriores à migração têm as
+colunas novas nulas; a tela diz \enquote{sem registro} e a leitura recomputa a
+faixa. \emph{Ruim}: o cliente da exp-03 sobe de versão pela \cd{origem} no
+corpo --- cliente antigo continua aceito (corpo vazio é válido). \emph{Bom}:
+nenhum evento de telemetria novo, nenhuma tabela nova, RLS intocada; o
+relatório do professor sai inteiro de \cd{GET /unoogpt/professor/estudantes/:id},
+e o gestor continua sem rota que aceite \cd{estudanteId}.
+
+\textbf{Gatilho de reavaliação.} O produto pedir a comparação de
+\emph{justificativas} ou \emph{conjuntos} entre tentativas além do que o marco
+de envio guarda --- aí a sessão por tentativa volta à mesa. Ou o dado de
+\cd{recomeco} mostrar que crianças recomeçam depois de o professor encerrar,
+em número que justifique a liberação explícita.

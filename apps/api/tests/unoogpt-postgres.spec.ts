@@ -331,6 +331,93 @@ describe("o ENVELOPE das rotas de mutação", () => {
   });
 });
 
+describe("o marco carrega o relógio do instante, e o professor lê o TEMPO (ADR-64)", () => {
+  it("entrar na Investigação grava `inicio` UMA vez por tentativa, com o cronômetro", async () => {
+    await service.irParaPasso(ESCOLA, ana, "orientacao");
+    await service.irParaPasso(ESCOLA, ana, "investigacao");
+    // Voltar à Orientação e retornar não é começar de novo.
+    await service.irParaPasso(ESCOLA, ana, "orientacao");
+    await service.irParaPasso(ESCOLA, ana, "investigacao");
+    const inicios = await prisma.unoogptMarco.findMany({
+      where: { escolaId: ESCOLA, estudanteId: ana, tipo: "inicio", tentativa: 2 },
+    });
+    expect(inicios).toHaveLength(1);
+    // A aula está correndo (largada dada acima): o cronômetro que a criança via
+    // fica gravado, e não há motivo de fim.
+    expect(inicios[0]!.segundosRestantes).toBeGreaterThan(0);
+    expect(inicios[0]!.motivoDoFim).toBeNull();
+  });
+
+  it("a fala do estudante é datada pela hora de ENVIO, antes da resposta do Cientista", async () => {
+    const antes = new Date();
+    await service.pergunta(ESCOLA, ana, "estudante", "e agora, onde tem mais gente?");
+    const fala = await prisma.unoogptMensagem.findFirst({
+      where: { escolaId: ESCOLA, estudanteId: ana, tentativa: 2, papel: "estudante" },
+      orderBy: { id: "desc" },
+    });
+    const resposta = await prisma.unoogptMensagem.findFirst({
+      where: { escolaId: ESCOLA, estudanteId: ana, tentativa: 2, papel: "agente" },
+      orderBy: { id: "desc" },
+    });
+    expect(fala!.criadoEm.getTime()).toBeGreaterThanOrEqual(antes.getTime() - 5);
+    expect(fala!.criadoEm.getTime()).toBeLessThanOrEqual(resposta!.criadoEm.getTime());
+  });
+
+  it("a simulação guarda a FAIXA da decisão e o percentil do resgate real", async () => {
+    const sim = await prisma.unoogptSimulacao.findFirst({ where: { escolaId: ESCOLA, estudanteId: ana, ordem: 1 } });
+    const esperado = sim!.esperado as { media: number; faixa: [number, number]; percentil: number } | null;
+    expect(esperado).not.toBeNull();
+    expect(esperado!.faixa[0]).toBeLessThanOrEqual(esperado!.media);
+    expect(esperado!.percentil).toBeGreaterThanOrEqual(0);
+    expect(esperado!.percentil).toBeLessThanOrEqual(100);
+  });
+
+  it("recomeçar grava `recomeco` na tentativa que FECHA, com qual botão e o relógio", async () => {
+    const { sessao } = await service.reiniciar(ESCOLA, ana, "resultado");
+    expect(sessao.tentativa).toBe(3);
+    const marco = await prisma.unoogptMarco.findFirst({
+      where: { escolaId: ESCOLA, estudanteId: ana, tipo: "recomeco", tentativa: 2 },
+    });
+    expect(marco).not.toBeNull();
+    expect(marco!.dados).toMatchObject({ origem: "resultado", fase: "correndo", modo: "cronometrado" });
+    expect(marco!.segundosRestantes).toBeGreaterThan(0);
+  });
+
+  it("o relatório do professor deriva tempo, mudanças e desfecho — sem coluna nova de leitura", async () => {
+    const r = await service.doEstudante(ESCOLA, ana);
+
+    // Rodadas: toda tentativa que deixou rastro, enfrentada ou não.
+    expect(r.rodadas.map((x) => x.tentativa)).toEqual([1, 2, 3]);
+    const primeira = r.rodadas[0]!;
+    expect(primeira.enfrentou).toBe(true);
+    expect(primeira.envio).not.toBeNull();
+    expect(primeira.envio!.estourou).toBe(false);
+    // Alfa → Vale Verde; depois Bravo → Ribeirinha; justificar não mudou nada.
+    expect(primeira.mudancasDeDestino).toBeGreaterThanOrEqual(1);
+    expect(primeira.ateAPrimeiraFala).not.toBeNull();
+    expect(typeof primeira.ateAPrimeiraFala!.desdeALargada).toBe("number");
+
+    const segunda = r.rodadas[1]!;
+    expect(segunda.enfrentou).toBe(false);
+    expect(segunda.recomeco).toMatchObject({ origem: "resultado", fase: "correndo" });
+    expect(segunda.inicioEm).not.toBeNull();
+
+    // Desfecho por tentativa: número de resgate SÓ aqui, com a faixa ao lado.
+    expect(r.tentativas).toHaveLength(1);
+    const t = r.tentativas[0]!;
+    expect(t.salvas).toBeGreaterThanOrEqual(0);
+    expect(t.coberturaDoRisco).toBeGreaterThanOrEqual(0);
+    expect(t.coberturaDoRisco).toBeLessThanOrEqual(100);
+    expect(t.posicao.percentil).toBeGreaterThanOrEqual(0);
+    // As justificativas vêm do marco de envio — a sessão já não as tem.
+    expect(t.justificativas).toEqual({ alfa: "intuição, sem dado", bravo: "intuição, sem dado" });
+
+    // Trilha e conversa datadas.
+    for (const m of r.trilha) expect(typeof m.criadoEm).toBe("string");
+    for (const f of r.conversa) expect(typeof f.segundosDesdeALargada).toBe("number");
+  });
+});
+
 describe("a fronteira do cliente e a do gestor", () => {
   it("nada do gabarito atravessa para o estudante", async () => {
     const cru = JSON.stringify(await service.sessao(ESCOLA, ana));

@@ -39,7 +39,7 @@ o prompt de sistema.
 | `POST /unoogpt/simular` | enviar | a tempestade. Idempotente por tentativa |
 | `GET /unoogpt/resultado` | desfecho | faixa, trilha, o que sobrou, o que nunca foi consultado |
 | `POST /unoogpt/contrafactual` | "e se…" | **não grava e não debita** |
-| `POST /unoogpt/reiniciar` | recomeçar | abre tentativa **nova** — não apaga a conversa |
+| `POST /unoogpt/reiniciar` | recomeçar | abre tentativa **nova** — não apaga a conversa. Corpo `{ origem }` (`investigacao` \| `resultado`): qual botão, gravado no marco `recomeco` da tentativa que fecha |
 
 Nenhuma rota leva id de sessão: a identidade é `(escola, estudante)` e vem do token.
 
