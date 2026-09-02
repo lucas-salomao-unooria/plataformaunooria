@@ -917,9 +917,11 @@ prova de pronto que a suíte ou o painel exibe.
 \zebra \textbf{1} \newline 1--2 semanas & \textbf{API}: \cd{nestjs-pino} com
   \emph{redaction}, contexto de requisição no ALS, \cd{ExceptionFilter}
   global, \env{LOG\_LEVEL}, \env{GCP\_PROJECT\_ID}, Prisma com aviso de
-  \emph{query} lenta. \textbf{Hub}: \arq{lib/log.ts}, \cd{apiDoServidor}
-  logando e com \emph{timeout}, \rota{/api/healthz}, \arq{error.tsx} e
-  \arq{global-error.tsx}, \cd{HEALTHCHECK}. \textbf{SDK}:
+  \emph{query} lenta. \textbf{Hub} (\emph{entregue em 2026-09-02},
+  \cd{feat/obs-hub-log}): \arq{lib/log.ts}, \cd{apiDoServidor} logando e
+  com \emph{timeout}, \rota{/api/healthz}, \arq{error.tsx} e
+  \arq{global-error.tsx}, \cd{onRequestError} com o \cd{digest} da tela
+  (o \cd{HEALTHCHECK} do Dockerfile ficou de fora: o Cloud Run o ignora). \textbf{SDK}:
   \cd{visibility\B change}, \emph{backoff} e teto de 500 eventos no
   \emph{buffer}, retorno do \cd{sendBeacon} verificado. &
   \arq{apps/api}, \arq{apps/hub}, \arq{packages/\B sdk} & Um 500 provocado
