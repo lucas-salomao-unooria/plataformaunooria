@@ -62,6 +62,17 @@ export function iniciarOtelDoHub(env: Record<string, string | undefined> = proce
       localParentNotSampled: new AlwaysOffSampler(),
     }),
     spanProcessors: processadores,
+    /**
+     * OBRIGATÓRIO, mesmo vazio. Sem a chave, o `NodeSDK` cai no
+     * `OTEL_METRICS_EXPORTER` do ambiente e, com ele vazio, assume `otlp` —
+     * passando a tentar exportar métricas para `localhost:4318` a cada 60 s.
+     * Medido em dev (2026-09-02): uma linha `ERROR` com stack
+     * `connect ECONNREFUSED 127.0.0.1:4318` por minuto, para sempre, num
+     * projeto que cobra por GiB de log. O hub NÃO tem métrica OpenTelemetry:
+     * os handshakes da ponte são métrica de LOG (`/api/ponte`) e os Web Vitals
+     * vão para a api. Lista vazia = MeterProvider sem leitor, sem exportação.
+     */
+    metricReaders: [],
     instrumentations: [new UndiciInstrumentation()],
   });
   sdk.start();
