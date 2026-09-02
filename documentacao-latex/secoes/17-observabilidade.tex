@@ -406,7 +406,11 @@ Métricas da aplicação (OpenTelemetry) & O que só o processo sabe:
   não pelo \cd{@google-cloud/opentelemetry-cloud-monitoring-exporter}: medido
   em 2026-09-02, ele arrasta o pacote \cd{googleapis} inteiro, 202\,MB em
   \cd{node\_modules}, para chamar um método. Cerca de 60 séries por contrato:
-  cabe na franquia de 150\,MiB com folga.\\
+  cabe na franquia de 150\,MiB com folga. \textbf{O \cd{resource} precisa
+  carregar \cd{gcp.project\_id}} (\arq{observabilidade/recurso.ts}): medido em
+  \cd{dev} em 2026-09-02, sem ele a Telemetry API recusa \emph{todo} lote com
+  \cd{HTTP 400 Resource is missing required attribute}, a cada 60\,s, com log e
+  \emph{trace} funcionando --- e o \cd{gcpDetector} não o preenche.\\
 \bottomrule
 \end{tabularx}
 

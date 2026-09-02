@@ -29,10 +29,10 @@ import {
   type SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import { ConsoleMetricExporter, PeriodicExportingMetricReader, type MetricReader } from "@opentelemetry/sdk-metrics";
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 import { PrismaInstrumentation } from "@prisma/instrumentation";
 import { ExportadorDeMetricasOtlp } from "./observabilidade/exportador-de-metricas-otlp";
 import { configDoOtel } from "./observabilidade/otel-config";
+import { recursoDoOtel } from "./observabilidade/recurso";
 import { ClienteOtlpGoogle } from "./observabilidade/otlp-google";
 import { criarSampler } from "./observabilidade/sampler";
 import { VISOES } from "./observabilidade/visoes";
@@ -82,7 +82,7 @@ if (config.ligado) {
   }
 
   const sdk = new NodeSDK({
-    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: config.servico, [ATTR_SERVICE_VERSION]: config.versao }),
+    resource: resourceFromAttributes(recursoDoOtel(config)),
     resourceDetectors: [gcpDetector],
     sampler: criarSampler(config.ratio),
     spanProcessors: processadores,
