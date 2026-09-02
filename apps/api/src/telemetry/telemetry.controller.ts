@@ -7,6 +7,7 @@ import { Contrato } from "../openapi/contrato";
 import { PubSubPushGuard } from "./pubsub-push.guard";
 import { TokenService } from "../auth/token.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { logger } from "../observabilidade/logger";
 import {
   BatchRespostaSchema,
   BatchSchema,
@@ -30,7 +31,7 @@ export class TelemetryController {
     if (topic) {
       await pubsub.topic(topic).publishMessage({ json: { eventos } });
     } else {
-      console.info("[telemetria/dev]", eventos.length, "eventos"); // sem Pub/Sub em dev local
+      logger.debug({ codigo: "telemetria.sem-topico", eventos: eventos.length }, "sem Pub/Sub: lote não publicado"); // dev local
     }
     return eventos.length;
   }
@@ -78,7 +79,7 @@ export class TelemetryController {
   async beacon(@Body() body: unknown) {
     const parsed = BeaconSchema.safeParse(body);
     if (!parsed.success) {
-      console.warn("[telemetria/beacon] corpo inválido — descartado");
+      logger.debug({ codigo: "telemetria.descartado", motivo: "corpo-invalido" }, "lote de telemetria descartado");
       return;
     }
     try {
@@ -90,7 +91,7 @@ export class TelemetryController {
       }));
       await this.publicar(enriched);
     } catch {
-      console.warn("[telemetria/beacon] token inválido — descartado");
+      logger.debug({ codigo: "telemetria.descartado", motivo: "token-invalido" }, "lote de telemetria descartado");
     }
   }
 
@@ -127,7 +128,7 @@ export class TelemetryController {
   async ingest(@Body() body: unknown) {
     const envelope = PushSchema.safeParse(body);
     if (!envelope.success || !envelope.data.message.data) {
-      console.warn("[telemetria/ingest] envelope inválido — descartado");
+      logger.debug({ codigo: "telemetria.descartado", motivo: "envelope-invalido" }, "lote de telemetria descartado");
       return;
     }
 
@@ -136,7 +137,7 @@ export class TelemetryController {
       const cru = Buffer.from(envelope.data.message.data, "base64").toString("utf8");
       eventos = (JSON.parse(cru) as { eventos?: unknown }).eventos;
     } catch {
-      console.warn("[telemetria/ingest] payload ilegível — descartado");
+      logger.debug({ codigo: "telemetria.descartado", motivo: "payload-ilegivel" }, "lote de telemetria descartado");
       return;
     }
 
@@ -144,7 +145,7 @@ export class TelemetryController {
       .array(EventoSchema.extend({ estudanteId: z.string().optional(), escolaId: z.string() }))
       .safeParse(eventos);
     if (!lote.success) {
-      console.warn("[telemetria/ingest] lote inválido — descartado");
+      logger.debug({ codigo: "telemetria.descartado", motivo: "lote-invalido" }, "lote de telemetria descartado");
       return;
     }
 

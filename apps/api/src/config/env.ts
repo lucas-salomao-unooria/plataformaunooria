@@ -97,6 +97,19 @@ export const EnvSchema = z.object({
   // nunca aberta — ver `pubsub-push.guard.ts`. Em dev não há Pub/Sub.
   TELEMETRIA_PUSH_SA: z.string().optional(),
   TELEMETRIA_PUSH_AUDIENCE: z.string().optional(),
+  /**
+   * Observabilidade (cap. 17 da documentação, ADR-57). Nenhuma é segredo.
+   * `LOG_LEVEL`: nível mínimo do pino; `debug` liga o log de query do Prisma.
+   * `GCP_PROJECT_ID`: monta `logging.googleapis.com/trace` como
+   *   `projects/{id}/traces/{traceId}`. Vazio = log sem correlação (dev).
+   * `OBS_TRACE_RATIO`: fração de requisições com spans exportados ao Cloud
+   *   Trace (0,02 em produção). 0 = exportador desligado, o default de dev.
+   * `OBS_DEBUG=1`: spans e métricas no console local, sem GCP.
+   */
+  LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
+  GCP_PROJECT_ID: z.string().optional(),
+  OBS_TRACE_RATIO: z.coerce.number().min(0).max(1).default(0),
+  OBS_DEBUG: z.enum(["0", "1"]).default("0"),
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176"),
   PORT: z.coerce.number().int().default(3001),
 

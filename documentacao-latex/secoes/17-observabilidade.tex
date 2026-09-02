@@ -150,6 +150,36 @@ Isso reforça a prioridade do log estruturado em JSON
 texto, é o sinal não existir.
 \end{atencao}
 
+\begin{nota}
+\textbf{O que mudou na API em 2 de setembro de 2026 (fase 1).} O
+\cd{ConsoleLogger} saiu: o Nest loga pelo \cd{nestjs-pino}
+(\arq{observabilidade/logger.ts}), em JSON com \cd{severity},
+\cd{message}, \cd{time} RFC 3339, \cd{serviceContext} e os campos
+\cd{logging.googleapis.com/trace}, \cd{spanId} e \cd{trace\_sampled}
+preenchidos a partir do contexto da requisição. Esse contexto
+(\arq{tenancy/tenancy-context.ts}) é aberto por um \textbf{middleware do
+Express} antes dos \emph{guards} --- um 401 sai com \cd{x-request-id} como
+qualquer 200 --- e o \cd{TenancyInterceptor} só o preenche com escola e
+perfil. O \cd{requestId} é o \cd{traceId} que o \emph{load balancer} mandou
+(\cd{traceparent} ou \cd{X-Cloud-Trace-Context}), então o código que o
+professor lê no 500 é o que quem opera cola no Logs Explorer. A
+\emph{redaction} é mecânica (\arq{observabilidade/redaction.ts}): por nome
+de chave em qualquer profundidade e por padrão na mensagem (e-mail, CPF,
+\cd{Bearer}, \emph{query string}); o \cd{username} do
+\arq{auth.controller.ts} deixou de existir no log. O
+\cd{FiltroDeExcecao} global responde 500 \cd{\{codigo, requestId\}} com UMA
+linha \cd{ERROR} e \cd{stack\_trace}, e converteu em 400 um caso que era 500
+mudo: o \cd{ZodError} que escapava de um \cd{parse(body)} no \emph{handler},
+devolvido como \cd{path: code}, sem o valor recebido. Os 19 \cd{console.*}
+viraram \cd{logger.*} com um campo \cd{codigo} estável
+(\cd{telemetria.descartado}, \cd{planos.geracao-com-erro}\ldots) --- é por
+ele que se filtra e que se deriva métrica de log. Os descartes do
+\rota{/telemetry/beacon}, rota sem \emph{guard}, saem em \cd{debug}: uma
+linha por lote recusado seria vetor de inundação; o sinal contável entra
+com as métricas da fase 2. O que ainda não existe: \emph{traces},
+métricas da aplicação, e tudo do hub e da SDK.
+\end{nota}
+
 A Figura~\ref{fig:cadeia-visibilidade} percorre a cadeia de uma requisição e
 marca, elo por elo, o que se enxerga hoje e o que está cego.
 
@@ -914,7 +944,8 @@ prova de pronto que a suíte ou o painel exibe.
   \arq{.github/workflows/} & Derrubar a API em \cd{hml} e receber o
   \emph{push} em menos de 3 minutos. \emph{Deploy} com migração quebrada
   notifica.\\
-\zebra \textbf{1} \newline 1--2 semanas & \textbf{API}: \cd{nestjs-pino} com
+\zebra \textbf{1} \newline 1--2 semanas & \textbf{API} (\emph{entregue em
+  2026-09-02}, \cd{feat/obs-api-log}): \cd{nestjs-pino} com
   \emph{redaction}, contexto de requisição no ALS, \cd{ExceptionFilter}
   global, \env{LOG\_LEVEL}, \env{GCP\_PROJECT\_ID}, Prisma com aviso de
   \emph{query} lenta. \textbf{Hub} (\emph{entregue em 2026-09-02},
