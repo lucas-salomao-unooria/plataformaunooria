@@ -66,11 +66,23 @@ export function ehRuidoDeDev(texto) {
  *
  * - `favicon.ico`: o hub não declara ícone nenhum (`app/layout.tsx` só tem
  *   `title`). Toda navegação de todo papel gera um 404 no console.
+ * - `clarity.ms`: a tag do Microsoft Clarity (ADR-60) é recurso de TERCEIRO, e
+ *   ela responde **400 a partir de IP de datacenter** — medido em 2026-09-02:
+ *   200 da máquina de quem opera, 400 do runner do GitHub Actions, com o mesmo
+ *   id de projeto. Isso reprovava o `smoke` pós-deploy inteiro por um serviço
+ *   que não é nosso e cuja ausência não quebra tela nenhuma (o `clarity.ms`
+ *   ausente é no-op por desenho: `window.clarity?.(...)`). Fica listado, não
+ *   silenciado: se ele passar a falhar TAMBÉM no navegador de uma escola, a
+ *   linha continua aparecendo no relatório de quem rodar a suíte à mão.
  */
 const PENDENCIAS_CONHECIDAS = [
   {
     padrao: /favicon\.ico/,
     oQue: "o hub não declara favicon — todo carregamento de página gera um 404 no console",
+  },
+  {
+    padrao: /clarity\.ms/,
+    oQue: "a tag do Microsoft Clarity (terceiro) recusa IP de datacenter com 400 — no CI é esperado, e o Clarity ausente é no-op",
   },
 ];
 
