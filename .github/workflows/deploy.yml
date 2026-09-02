@@ -194,6 +194,7 @@ jobs:
           # var vem vazia e o hub sobe com o Clarity desligado.
           build-args: |
             NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ vars.CLARITY_PROJECT_ID }}
+            NEXT_PUBLIC_HUB_VERSAO=${{ github.sha }}
           cache-from: type=gha,scope=hub-${{ github.ref_name }}
           cache-to: type=gha,scope=hub-${{ github.ref_name }},mode=max
 

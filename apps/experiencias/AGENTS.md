@@ -11,8 +11,13 @@ hub → exp : { type: "hub:init", token, estudante:{id,nome,serie,turmaId,escola
 exp → hub : { type: "exp:concluir", payload:{ score?, dados? } }
 exp → hub : { type: "exp:token-expirando" }   → hub responde { type:"hub:token", token }
 exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do hub (aditivo)
+exp → hub : { type: "exp:erro", mensagem, hash }    → a exp quebrou; o hub troca a tela (aditivo; o registro vai SDK → api)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
+`config` do `hub:init` carrega hoje `clarityProjectId`, `expId` e
+`obs: { traceRatio }` (a fração de sessões com spans do OpenTelemetry Web —
+env de runtime do hub, `OBS_TRACE_RATIO_CLIENTE`). Campo novo em `config` é
+aditivo e não sobe `PROTOCOL_VERSION`.
 O `?hubOrigin=` que o hub põe na URL do iframe é ENTRADA NÃO CONFIÁVEL: o bundle
 é público, então quem embeda a experiência num iframe próprio escolheria, por
 aquele parâmetro, de quem ela aceita o `hub:init` e para onde vai tudo o que sai
@@ -181,3 +186,15 @@ Três coisas que valem saber:
 **Mexeu na `@edu/sdk`? Sobe a versão de TODAS as experiências.** O filtro de
 mudanças do `deploy.yml` inclui o pacote, então uma alteração lá republica as
 seis — e publicar sem subir a versão sobrescreve um caminho imutável no bucket.
+
+
+## Sourcemaps: `hidden`, e o `.map` NÃO vai para o bucket público
+
+Todo `vite.config.ts` (o `_template` inclusive) tem `build.sourcemap: "hidden"`:
+o `.map` é gerado, mas o bundle não ganha o comentário `sourceMappingURL` — o
+navegador nunca o pede. O CI exclui `*.map` do `rsync` para `gs://{contrato}-exp`
+e os sobe num bucket **privado** à parte (`{project}-exp-mapas`): o bucket dos
+bundles tem acesso uniforme, então qualquer objeto lá é público, e o mapa é o
+fonte — na exp-01, a revelação legível antes da hora. Nunca `sourcemap: true`,
+nunca `inline`. Para traduzir a stack de um erro de cliente: o `.map` da
+versão exata está em `gs://{project}-exp-mapas/{expId}/{versao}/`.

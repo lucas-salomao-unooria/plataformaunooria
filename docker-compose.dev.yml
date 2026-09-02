@@ -243,6 +243,8 @@ services:
       # Observabilidade: mesmo gate da api; OBS_DEBUG=1 imprime os spans do Next no console.
       OBS_TRACE_RATIO: ${OBS_TRACE_RATIO:-0}
       OBS_DEBUG: ${OBS_DEBUG:-0}
+      # Fração de sessões das experiências com OpenTelemetry Web (config.obs do hub:init). 1 = todas, em dev.
+      OBS_TRACE_RATIO_CLIENTE: ${OBS_TRACE_RATIO_CLIENTE:-0}
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_CDN_EXP_URL: http://localhost:5173
       # Microsoft Clarity: sem valor por default. A stack de dev roda com o

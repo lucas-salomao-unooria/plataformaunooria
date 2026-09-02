@@ -48,6 +48,14 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
   /** Estado de alto nível para o "chrome" opcional do hub (ex.: moldura dos
    *  posts perdidos). O hub NÃO interpreta domínio — só repassa a quem plugou. */
   z.object({ type: z.literal("exp:estado"), estado: z.record(z.unknown()) }),
+  /**
+   * Erro não tratado dentro da experiência (ADR-58). Só para o hub TROCAR A
+   * TELA ("algo deu errado", recarregar); o registro do erro não passa por
+   * aqui — a SDK o manda direto à api. `mensagem` curta e sem texto de
+   * estudante (é a mensagem da exceção); `hash` é o dedupe. Aditivo: hub
+   * antigo descarta com o aviso de schema, sem subir PROTOCOL_VERSION.
+   */
+  z.object({ type: z.literal("exp:erro"), mensagem: z.string().max(256), hash: z.string().max(16) }),
 ]);
 export type ExpParaHub = z.infer<typeof ExpParaHubSchema>;
 
@@ -94,4 +102,10 @@ export interface ExperienciaHandle {
   on(evento: "pause" | "resume", cb: () => void): void;
   /** Publica estado de alto nível para o chrome opcional do hub (exp:estado). */
   enviarEstado(estado: Record<string, unknown>): void;
+  /**
+   * Reporta um erro que a experiência TRATOU mas quer registrar (o `catch` que
+   * mostra "não deu para abrir agora"). Mesmo caminho do `window.onerror`:
+   * dedupe, teto por sessão, `POST /observabilidade/erros-cliente`.
+   */
+  reportarErro(erro: unknown): void;
 }

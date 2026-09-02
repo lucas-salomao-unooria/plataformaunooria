@@ -34,6 +34,8 @@ export function ExpFrame(props: {
   permissoes?: readonly string[];
   onConcluir?: (payload: { score?: number; dados?: Record<string, unknown> }) => void;
   onEstado?: (estado: Record<string, unknown>) => void;
+  /** `exp:erro`: a experiência quebrou; o hub troca a tela. O registro é da SDK → api. */
+  onErro?: (erro: { mensagem: string; hash: string }) => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   // Callbacks/props mutáveis via ref: o listener registra UMA vez (o array de
@@ -60,7 +62,13 @@ export function ExpFrame(props: {
           console.error(
             `[hub] protocolo incompatível: experiência v${msg.protocolVersion}, hub v${PROTOCOL_VERSION}`,
           );
+          registrarHandshake("protocolo-incompativel", msg.protocolVersion);
           return; // sem hub:init — a experiência expira e mostra o erro dela
+        }
+        // O exp:ready é reenviado até o hub responder; só o PRIMEIRO conta.
+        if (!handshakeRegistrado) {
+          handshakeRegistrado = true;
+          registrarHandshake("ok", msg.protocolVersion);
         }
         const estudantePayload = atual.current.estudante;
         post({
@@ -95,6 +103,26 @@ export function ExpFrame(props: {
 
       if (msg.type === "exp:concluir") atual.current.onConcluir?.(msg.payload);
       if (msg.type === "exp:estado") atual.current.onEstado?.(msg.estado);
+      if (msg.type === "exp:erro") atual.current.onErro?.({ mensagem: msg.mensagem, hash: msg.hash });
+    }
+
+    /**
+     * Métrica da PONTE (cap. 17): quantos handshakes fecharam e quantos
+     * morreram por protocolo. Vai por `sendBeacon` a uma rota do hub que loga
+     * uma linha com `codigo=ponte.handshake` — é dela que sai a métrica de log
+     * "handshakes por resultado". Falhar aqui não pode afetar a experiência.
+     */
+    let handshakeRegistrado = false;
+    function registrarHandshake(resultado: "ok" | "protocolo-incompativel", protocolo: number) {
+      try {
+        const expId = String(atual.current.config?.expId ?? "");
+        navigator.sendBeacon?.(
+          "/api/ponte",
+          new Blob([JSON.stringify({ resultado, protocolo, expId })], { type: "application/json" }),
+        );
+      } catch {
+        /* diagnóstico, nunca bloqueante */
+      }
     }
 
     // Visibilidade/foco da página do hub → pause/resume na experiência.

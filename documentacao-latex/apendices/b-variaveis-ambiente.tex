@@ -227,6 +227,17 @@ Nest --- ele nasce na importação, e é usado pelo \arq{main.ts} e pelo
   isso é inlinada no \cd{next build}: entra por \cd{-{}-build-arg} no
   \arq{Dockerfile}, não como env de \emph{runtime} do Cloud Run. Trocar o id
   exige \emph{rebuild} da imagem.\\
+\env{OBS\_TRACE\_RATIO} & servidor & Fração de requisições do
+  PRÓPRIO hub com \emph{spans} exportados ao Cloud Trace (Capítulo~\ref{cap:observabilidade}).
+  \cd{0} desliga. Mesmo gate da API: exige \env{GCP\_PROJECT\_ID} ou \env{OBS\_DEBUG=1}.\\
+\zebra \env{OBS\_TRACE\_RATIO\_CLIENTE} & servidor & Fração de sessões das
+  EXPERIÊNCIAS com OpenTelemetry Web. Vai no \cd{config.obs.traceRatio} do
+  \cd{hub:init}: env de \emph{runtime}, então mudar a amostragem não
+  republica bundle nenhum. \cd{0} desliga (a SDK nem baixa os pacotes).\\
+\env{NEXT\_PUBLIC\_HUB\_VERSAO} & \textbf{cliente} & O SHA do
+  \emph{build}, inlinado no \emph{bundle} (\cd{ARG} do Dockerfile, como a do
+  Clarity): a \enquote{versão} do hub nos erros de CLIENTE do Error Reporting.
+  Ausente (\emph{build} local) fica \cd{dev}.\\
 \env{EXP\_INTERNAL\_URL} & servidor & De onde o hub \textbf{lê} o
   \arq{experiencia.json}. Endereço \textbf{fixo} --- serve quando há \emph{uma}
   origem de \emph{bundles} (a CDN, em produção).\\

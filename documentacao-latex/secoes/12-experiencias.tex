@@ -598,6 +598,13 @@ Módulo de domínio na API & Necessário sempre que houver gabarito, estado de
 Porta de \emph{dev} & Registrada em \arq{apps/hub/lib/experiencias-dev.ts}.\\
 \zebra \cd{allowedHosts} do Vite & Deve incluir \cd{host.docker.internal},
   senão o hub em contêiner não lê o manifesto.\\
+\cd{build.sourcemap} do Vite & \cd{"hidden"} em todas (o \cd{\_template}
+  inclusive): o \cd{.map} é gerado sem o comentário \cd{sourceMappingURL}; o CI
+  o exclui do \emph{bucket} público e o sobe num \emph{bucket} PRIVADO
+  (\cd{\{project\}-exp-mapas}). O \emph{bucket} dos \emph{bundles} tem acesso
+  uniforme, então qualquer objeto lá é público, e o mapa é o fonte --- na
+  exp-01, a revelação legível antes da hora. Nunca \cd{true}, nunca
+  \cd{inline}.\\
 \cd{viewport} & Só se a experiência exigir casca de aparelho.\\
 \zebra \cd{permissoes} & Só o que o \cd{iframe} realmente precisa.\\
 Mídia $>$ \SI{2}{\mega\byte} & Vai para o \emph{bucket} de \emph{assets},

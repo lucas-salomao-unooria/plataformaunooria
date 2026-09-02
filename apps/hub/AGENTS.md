@@ -174,3 +174,38 @@ render. Instalar o `http` duplicaria o span raiz. Só o `undici` entra, para o
 - Em dev: `OBS_DEBUG=1 OBS_TRACE_RATIO=1 pnpm dev` imprime os spans no console.
 - **Nunca setar `NEXT_OTEL_VERBOSE=1`** em produção: dobra os spans internos do
   Next e o custo, sem dizer nada que o trace normal não diga.
+
+
+## Sinais do navegador que passam pelo hub (2026-09-02)
+
+- **`config.obs` do `hub:init`**: `montarEmbed` põe `obs: { traceRatio }` (de
+  `OBS_TRACE_RATIO_CLIENTE`, env de runtime) no `Embed`; o `ExpHost` recebe
+  `obs` e o mete em `config`; as páginas do professor que renderizam `ExpFrame`
+  direto (plano de aula, bem-estar) passam `config={{ expId, obs: embed.obs }}`.
+  É assim que a amostragem do OpenTelemetry Web das experiências muda sem
+  rebuild do hub nem republicar bundles. Sem `obs`, o `ExpHost` manda
+  `{ traceRatio: 0 }` — desligado, nunca "sem valor".
+- **`exp:erro`**: o `ExpFrame` repassa a `onErro`; o `ExpHost` cobre o aparelho
+  com o `AlertBox` "A missão travou" (`data-testid="erro-da-experiencia"`) e o
+  botão **Recarregar** remonta o iframe (`key`). A mensagem do erro não aparece;
+  o `hash` aparece, para relatar. O registro já foi SDK → api.
+- **`/api/ponte`**: `sendBeacon` do `ExpFrame` com o resultado do handshake
+  (`ok` | `protocolo-incompativel`); vira UMA linha `INFO`
+  `codigo=ponte.handshake`. A métrica "handshakes por resultado" é de LOG
+  (Terraform), não contador em processo. Sem `auth()` de propósito: o dado é
+  dois enums e um número, e `sendBeacon` não garante cookie.
+- **Erros de cliente do hub**: `instrumentation-client.ts` instala a captura da
+  SDK (`lib/erros-do-hub.ts`) com `expId: "hub"` e `versao =
+  NEXT_PUBLIC_HUB_VERSAO` (o SHA do build, ARG do Dockerfile — a segunda e
+  última `NEXT_PUBLIC_*` que chega ao bundle, junto com a do Clarity). Posta pelo
+  BFF (`observabilidade` entrou na allowlist); sem sessão o BFF dá 401 e fica no
+  console. `error.tsx`/`global-error.tsx` reportam pelo mesmo caminho.
+- **Web Vitals do hub**: `components/vitals-hub.tsx` no layout raiz
+  (`useReportWebVitals`), 10% por aba, `rota = pathname` (a api normaliza).
+- **OpenTelemetry Web no hub**: `instrumentation-client.ts` chama o MESMO
+  `iniciarTracesWeb` da SDK, com `apiUrl: "/api/plataforma"` (exporta pelo
+  BFF, que assina o token) e o ratio lido do `<meta name="unooria-obs-ratio">`
+  que o `generateMetadata` do layout raiz escreve a partir de
+  `OBS_TRACE_RATIO_CLIENTE` — env de runtime, sem rebuild. Com ratio 0 nada é
+  baixado (os pacotes são `import()` dinâmico), então a landing pública não paga
+  o peso. Sem sessão o BFF dá 401 e o lote morre no exportador — aceito.

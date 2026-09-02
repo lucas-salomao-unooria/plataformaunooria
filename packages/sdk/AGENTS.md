@@ -87,3 +87,37 @@ versão e é tratado como imutável: publicar sem subir a versão apaga os asset
 que uma sessão em andamento vai pedir. Suba o `versao` do
 `public/experiencia.json` **e** o `version` do `package.json` de cada uma — o CI
 lê do manifesto, e a divergência entre os dois já causou bug.
+
+
+## Observabilidade do navegador (2026-09-02, cap. 17)
+
+Quatro coisas que a SDK faz depois do handshake, todas com o token do
+`hub:init` e nenhuma com SDK de terceiro no bundle (ADR-58):
+
+- **OpenTelemetry Web** (`src/otel-web.ts`): spans de `document-load` e de
+  todo `fetch`, exportados para `POST /observabilidade/v1/traces` da api pelo
+  `ExportadorOtlpDaApi` (OTLP/JSON escrito à mão, ~60 linhas — o
+  `exporter-trace-otlp-http` recebe cabeçalhos ESTÁTICOS e o token roda a cada
+  15 min). O ratio vem de **`config.obs.traceRatio` do `hub:init`** (env de
+  runtime do hub), nunca de `import.meta.env`; com 0 (dev) os pacotes nem são
+  baixados — entram por `import()` dinâmico, em chunks à parte (~17 KB gz
+  medidos na exp-02). `resourceFetch` (um span por asset) é descartado antes de
+  sair. Sem `context-zone` (zone.js), de propósito. **O `traceparent` só vai
+  para a api** (`propagateTraceHeaderCorsUrls`); o export a cada **30 s**, não
+  10 — uma escola sai por um NAT e o rate limit do WAF é por IP.
+- **Erros não tratados** (`src/erros.ts`): `error` + `unhandledrejection` →
+  `POST /observabilidade/erros-cliente`, com dedupe por hash, **5 por sessão**,
+  stack em 8 KB, `url` sem query; `exp:erro` avisa o hub para trocar a tela
+  (o registro não depende dele). `handle.reportarErro(err)` é o mesmo caminho
+  para o `catch` de domínio. Erro **antes** do handshake não tem token e fica no
+  console — o sinal dele é a métrica de handshake do hub.
+- **Web Vitals** (`src/vitals.ts`): 10% das sessões, decidido uma vez;
+  `web-vitals` por `import()` dinâmico; `rota` = `expId`, perfil vem do token.
+- **Telemetria resiliente** (`src/telemetry.ts`): teto de 500 eventos (o mais
+  antigo sai), backoff 1 s → 60 s zerado no sucesso, uma tentativa em voo,
+  `visibilitychange=hidden` também dispara o beacon, e `sendBeacon === false`
+  devolve o lote ao buffer. Sem OTel, toda chamada leva um `traceparent` novo
+  (`src/trace.ts`) para a api ter `traceId` em 100% dos logs.
+
+Deps novas: `@opentelemetry/*` (só carregadas com ratio > 0) e `web-vitals`.
+`packages/AGENTS.md` continua valendo: nada pesado no caminho síncrono.

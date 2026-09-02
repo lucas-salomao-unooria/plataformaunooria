@@ -994,7 +994,17 @@ prova de pronto que a suíte ou o painel exibe.
   \emph{Métricas da API e as três rotas de \rota{/observabilidade} entregues
   em 2026-09-02}, \cd{feat/obs-metricas}: \cd{Metricas} injetável,
   \cd{MedidorDeProvider}, contadores do pipeline de telemetria, proxy OTLP dos
-  \emph{spans} do navegador; o lado do cliente (SDK) segue. Métricas da aplicação: IA, telemetria,
+  \emph{spans} do navegador. \emph{Lado do cliente entregue em 2026-09-02},
+  \cd{feat/obs-sdk}: OpenTelemetry Web na SDK (\cd{document-load} + \cd{fetch},
+  exportador OTLP/JSON próprio para a API, \emph{ratio} pelo \cd{config.obs} do
+  \cd{hub:init}, \(\approx\)17\,KB gz em \emph{chunks} só carregados com
+  \emph{ratio} \(>\) 0), captura de erros com dedupe e teto, Web Vitals a 10\%,
+  \cd{exp:erro} na ponte, telemetria com teto e \emph{backoff},
+  \emph{sourcemaps} \cd{hidden} nas sete experiências; no hub, tela
+  \enquote{A missão travou}, \rota{/api/ponte} (métrica de log dos
+  \emph{handshakes}), erros, vitais e OpenTelemetry Web do próprio hub pelo
+  BFF (o \emph{ratio} chega por um \cd{<meta>} escrito pelo \emph{layout} a
+  partir de \env{OBS\_TRACE\_RATIO\_CLIENTE}). Métricas da aplicação: IA, telemetria,
   filas, pool, ponte. Rota \rota{POST /observabilidade/\B erros-cliente} e
   \rota{/observabilidade/\B vitals} com Zod, cota e \emph{redaction};
   \cd{window.\B onerror}/\B\cd{unhandled\B rejection} e \cd{web-vitals} na SDK;
