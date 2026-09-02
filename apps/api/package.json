@@ -19,7 +19,6 @@
     "seed": "ts-node --transpile-only prisma/seed.ts"
   },
   "dependencies": {
-    "@google-cloud/opentelemetry-cloud-trace-exporter": "^3.1.0",
     "@google-cloud/pubsub": "^4.7.0",
     "@google-cloud/storage": "^8.0.1",
     "@nestjs/common": "^10.4.0",
@@ -29,6 +28,8 @@
     "@nestjs/swagger": "^8.1.1",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/core": "^2.11.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.222.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
     "@opentelemetry/instrumentation-express": "^0.70.0",
     "@opentelemetry/instrumentation-http": "^0.222.0",
     "@opentelemetry/instrumentation-nestjs-core": "^0.68.0",

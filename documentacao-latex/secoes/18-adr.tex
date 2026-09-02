@@ -3266,14 +3266,32 @@ Trace, Cloud Monitoring) remain operational}}. \textbf{O Cloud Trace não vai a
 lugar nenhum}: muda o caminhão de entrega (OTLP pela Telemetry API), não o
 destino.
 
-A consequência para este repositório é pequena e tem prazo. As métricas já vão
-por OTLP; falta o \emph{trace}, que ainda usa
-\cd{@google-cloud/opentelemetry-cloud-trace-exporter}. Migrá-lo é trocar o
-exportador no \arq{otel.ts} pelo cliente OTLP que já existe, e apaga duas
-dependências (a do exportador e o \cd{@grpc/grpc-js} que ela arrasta). A data
---- 30 de outubro de 2026 --- é \emph{anterior} à entrada em produção
-(novembro), então é trabalho a fazer antes da promoção para \cd{main}, não
-decisão pendente.
+\textbf{A migração foi feita no mesmo dia} (\cd{feat/obs-traces-otlp}), e o
+prazo --- 30 de outubro de 2026, \emph{anterior} à entrada em produção ---
+deixou de ser um risco carregado. Nenhum pacote \cd{@google-cloud/opentelemetry-*}
+sobrou na api nem no hub.
+
+O desenho mudou numa coisa em relação ao primeiro adendo, e para melhor: os
+sinais do PRÓPRIO processo passam pelos exportadores \textbf{oficiais} do
+OpenTelemetry (\cd{@opentelemetry/\B exporter-trace-otlp-http} e
+\cd{-metrics-otlp-http}), não por cliente escrito à mão. O que tornou isso
+possível foi a opção \cd{headers} aceitar uma \emph{função assíncrona} --- é
+ela que resolve o problema que motivou o cliente próprio (o \emph{token} da
+ADC expira em uma hora, e cabeçalho estático pararia de exportar sozinho). A
+fábrica está em \arq{observabilidade/otlp-google.ts}
+(\cd{cabecalhosParaTelemetryApi}); o exportador de métricas escrito à mão foi
+apagado, e com ele um defeito que ele tinha e a biblioteca não tem: ele
+tratava qualquer 2xx como sucesso, ignorando o \cd{partialSuccess} que o OTLP
+devolve quando aceita o lote mas descarta pontos.
+
+O \cd{ClienteOtlpGoogle} continua existindo para o que a biblioteca não sabe
+fazer: reencaminhar um corpo OTLP \emph{já pronto}, vindo do navegador
+(\rota{POST /observabilidade/v1/traces}).
+
+Saldo de dependências: saíram \cd{@google-cloud/opentelemetry-cloud-trace-exporter}
+e o \cd{@grpc/grpc-js} que ela arrastava; entraram os dois exportadores
+oficiais, que compartilham \cd{otlp-transformer} e \cd{otlp-exporter-base} com
+o que já estava instalado.
 
 % ---------------------------------------------------------------------------
 \section{ADR-58 --- Erro de cliente entra pela API; nenhum SDK de terceiro
