@@ -397,9 +397,30 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   vem da internet; honrá-la deixaria qualquer cliente forçar 100%). Exportador
   direto para o Cloud Trace, sem sidecar (ADR-57). O `DesligamentoDoOtel`
   faz o flush no SIGTERM via `enableShutdownHooks`.
+- **Métricas (`observabilidade/metricas.ts`)**: um provider global com os
+  instrumentos (`unooria.ia.*`, `unooria.telemetria.*`, `unooria.web.*`,
+  `unooria.observabilidade.*`); injete `Metricas` onde a medida acontece.
+  **Nenhum rótulo com `escola_id`, `estudante_id`, sessão ou URL crua** —
+  cem escolas multiplicam cada série por cem. Rótulos são conjuntos fechados
+  (`modelo` da env, `operacao`, `resultado`, `perfil`, `motivo`, `finishReason`
+  por allowlist, `rota` normalizada por `normalizar-rota.ts`). **A IA se mede
+  no `MedidorDeProvider`** (decorator na factory do `AiModule`), nunca no
+  consumidor; a quota conta recusas em `temSaldo`. Exportação a cada 60 s por
+  **OTLP/JSON para `telemetry.googleapis.com`** (`otlp-google.ts`) — NÃO
+  instale `@google-cloud/opentelemetry-cloud-monitoring-exporter`: ele
+  arrasta 202 MB de `googleapis` (medido). Nos testes,
+  `tests/metricas-em-memoria.ts` dá um `Metricas` com MeterProvider em
+  memória para ler o que saiu.
+- **`/observabilidade/*`** (erros-cliente, vitals, v1/traces): rotas com
+  `OidcGuard`, Zod `.strict()`, cota em memória por (escola, usuário) via
+  `comum/rate-limit.ts`, e **sem linha de log por requisição recusada** (o
+  sinal é contador). O proxy OTLP (`otlp-proxy.service.ts`) SUBSTITUI o
+  `resource` do cliente e filtra atributos por allowlist antes de reexportar —
+  nada do que o navegador manda vai ao Google como veio.
 - Envs: `LOG_LEVEL` (default `info`), `GCP_PROJECT_ID` (correlação com o
-  trace; vazio em dev), `OBS_TRACE_RATIO` (fração exportada; 0 desliga),
-  `OBS_DEBUG` (spans no console). Fora de produção o formato é `pino-pretty`; `LOG_FORMATO=json`
+  trace, cliente OTLP; vazio em dev = métricas e spans do navegador contados
+  e descartados), `OBS_TRACE_RATIO` (fração exportada; 0 desliga),
+  `OBS_DEBUG` (spans e métricas no console). Fora de produção o formato é `pino-pretty`; `LOG_FORMATO=json`
   mostra a linha como o Cloud Logging a verá. Em teste (`NODE_ENV=test`) é
   JSON sem transporte — o pino-pretty abre um worker que o Jest não fecha.
 - Testes: `tests/observabilidade-*.spec.ts` e `tests/tenancy-contexto.spec.ts`

@@ -401,9 +401,12 @@ Métricas da aplicação (OpenTelemetry) & O que só o processo sabe:
   planos por \cd{status}, idade do mais antigo em \cd{gerando}; \textbf{pool
   do Prisma} --- conexões em uso e espera; \textbf{ponte} --- \emph{handshakes}
   concluídos e expirados (via hub). &
-  Exportadas ao Cloud Monitoring pelo SDK OpenTelemetry com o exportador do
-  Google, agregadas a cada 60\,s. Cerca de 60 séries por contrato: cabe na
-  franquia de 150\,MiB com folga.\\
+  Exportadas a cada 60\,s pelo SDK OpenTelemetry --- \textbf{por OTLP/JSON
+  direto para a Telemetry API do Google} (\arq{exportador-de-metricas-otlp.ts}),
+  não pelo \cd{@google-cloud/opentelemetry-cloud-monitoring-exporter}: medido
+  em 2026-09-02, ele arrasta o pacote \cd{googleapis} inteiro, 202\,MB em
+  \cd{node\_modules}, para chamar um método. Cerca de 60 séries por contrato:
+  cabe na franquia de 150\,MiB com folga.\\
 \bottomrule
 \end{tabularx}
 
@@ -620,9 +623,11 @@ duas armadilhas que o \arq{AGENTS.md} da raiz já descreve.
 \subsection{Camada de IA}
 
 A IA é o custo variável da plataforma e o sinal de que menos se sabe hoje.
-O \cd{AiProvider} ganha um invólucro de medida --- \textbf{dentro} de
-\arq{apps/api/src/ai}, o único lugar onde uma chamada de IA acontece --- que
-emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
+O \cd{AiProvider} ganha um invólucro de medida (\arq{ai/medidor.provider.ts},
+entregue em 2026-09-02) --- \textbf{dentro} de \arq{apps/api/src/ai}, o único
+lugar onde uma chamada de IA acontece, envolvendo o \emph{provider} real na
+\emph{factory} do módulo, de modo que nenhum consumidor sabe que ele existe
+--- que emite, por chamada: latência (histograma por modelo e rota), \emph{tokens}
 de entrada e saída, \cd{finishReason}, \cd{voltas}, \cd{tentativas} e o
 resultado (\cd{ok}, \cd{erro-provider}, \cd{quota}). O \cd{QuotaService}
 emite as recusas por perfil. Custo é métrica \emph{derivada}: uma tabela de
@@ -985,7 +990,11 @@ prova de pronto que a suíte ou o painel exibe.
   \cd{traceparent} do navegador ao banco (\emph{traces entregues em
   2026-09-02}, \cd{feat/obs-traces}: \arq{otel.ts} como primeira importação
   do \arq{main.ts}, \cd{@prisma/instrumentation} no lugar do \cd{pg},
-  \emph{sampler} por rota que ignora a \emph{flag} do pai remoto). Métricas da aplicação: IA, telemetria,
+  \emph{sampler} por rota que ignora a \emph{flag} do pai remoto).
+  \emph{Métricas da API e as três rotas de \rota{/observabilidade} entregues
+  em 2026-09-02}, \cd{feat/obs-metricas}: \cd{Metricas} injetável,
+  \cd{MedidorDeProvider}, contadores do pipeline de telemetria, proxy OTLP dos
+  \emph{spans} do navegador; o lado do cliente (SDK) segue. Métricas da aplicação: IA, telemetria,
   filas, pool, ponte. Rota \rota{POST /observabilidade/\B erros-cliente} e
   \rota{/observabilidade/\B vitals} com Zod, cota e \emph{redaction};
   \cd{window.\B onerror}/\B\cd{unhandled\B rejection} e \cd{web-vitals} na SDK;

@@ -1,6 +1,575 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/observabilidade/erros-cliente": {
+      "post": {
+        "operationId": "ObservabilidadeController_errosCliente",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "observabilidade"
+        ],
+        "summary": "Registra um erro não capturado do navegador (experiência ou hub).",
+        "description": "A SDK captura `window.onerror`/`unhandledrejection` (dedupe por hash, no máximo 5 por sessão) e manda para cá. A api redige `mensagem` e `stack`, acrescenta `escola_id` e o id opaco do estudante a partir do TOKEN e emite UMA linha `ERROR` no formato que o Error Reporting agrupa, com `serviceContext.service = expId` e `version = versao` — é assim que um erro vira \"novo na versão X\". Nenhum SDK de terceiro entra no bundle (ADR-58).\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 5 por minuto por (escola, usuário): acima, **429** `{ codigo: \"cota-excedida\" }` e um contador, sem linha de log — um laço de erro no cliente não pode virar inundação.\n- `url` sem query string nem fragmento (`.refine`): é neles que mora id, token e texto.\n- `traceId`/`spanId` opcionais ligam o erro ao trace do navegador quando o OpenTelemetry Web está ligado.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expId": {
+                    "type": "string",
+                    "pattern": "^(exp-\\d{2}-[a-z0-9-]+|hub)$"
+                  },
+                  "versao": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
+                  },
+                  "mensagem": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  "stack": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "userAgent": {
+                    "type": "string",
+                    "maxLength": 256
+                  },
+                  "sessaoId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "traceId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  "spanId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{16}$"
+                  }
+                },
+                "required": [
+                  "expId",
+                  "versao",
+                  "mensagem",
+                  "url",
+                  "sessaoId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/observabilidade/vitals": {
+      "post": {
+        "operationId": "ObservabilidadeController_vitals",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "observabilidade"
+        ],
+        "summary": "Recebe um Web Vital (LCP, INP, CLS, TTFB) do hub ou de uma experiência.",
+        "description": "Amostrado a 10% no cliente, sem identificador de pessoa no corpo. A api normaliza `rota` para um conjunto fechado (`/professor/:secao`, `exp-02-unootube`…, senão `outra`) e registra num histograma OpenTelemetry por `superficie`, `rota` e `perfil` (do token). É o único sinal de que \"a plataforma está lenta na escola X\" que não depende de alguém reclamar — e nunca vira log.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 60 por minuto por (escola, usuário): acima, **429**.\n- `valor` acima de 10 minutos é recusado (relógio, não lentidão).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "enum": [
+                      "LCP",
+                      "INP",
+                      "CLS",
+                      "TTFB"
+                    ]
+                  },
+                  "valor": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 600000
+                  },
+                  "rota": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "superficie": {
+                    "type": "string",
+                    "enum": [
+                      "hub",
+                      "exp"
+                    ]
+                  }
+                },
+                "required": [
+                  "nome",
+                  "valor",
+                  "rota",
+                  "superficie"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/observabilidade/v1/traces": {
+      "post": {
+        "operationId": "ObservabilidadeController_traces",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "observabilidade"
+        ],
+        "summary": "Ingestão OTLP/JSON dos spans que a SDK exporta do navegador.",
+        "description": "O OpenTelemetry Web da experiência exporta para cá, com o token da plataforma; o navegador nunca fala com o Cloud Trace. A api valida o lote (Zod fechado: ≤ 64 spans, atributos por allowlist, URLs sem query), SUBSTITUI o `resource` pelo `service.name`/`service.version` validados e reexporta para a Telemetry API do Google com a credencial da própria api. Sem `GCP_PROJECT_ID` (dev) o lote é contado e descartado.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 30 lotes por minuto por (escola, usuário) e teto de 256 KB por corpo (**413**); acima da cota, **429**.\n- Lote com 0 ou mais de 64 spans é descartado (contado em `spans_descartados{motivo=tamanho}`).\n- Chaves fora do subconjunto (links, traceState, flags) são removidas, não recusadas.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resourceSpans": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "resource": {
+                          "type": "object",
+                          "properties": {
+                            "attributes": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 64
+                                  },
+                                  "value": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "stringValue": {
+                                            "type": "string",
+                                            "maxLength": 256
+                                          }
+                                        },
+                                        "required": [
+                                          "stringValue"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "intValue": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "pattern": "^-?\\d{1,20}$"
+                                              },
+                                              {
+                                                "type": "integer"
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "intValue"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "doubleValue": {
+                                            "type": "number"
+                                          }
+                                        },
+                                        "required": [
+                                          "doubleValue"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "boolValue": {
+                                            "type": "boolean"
+                                          }
+                                        },
+                                        "required": [
+                                          "boolValue"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "value"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "maxItems": 32
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "scopeSpans": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "scope": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "maxLength": 128
+                                  },
+                                  "version": {
+                                    "type": "string",
+                                    "maxLength": 64
+                                  }
+                                },
+                                "additionalProperties": false
+                              },
+                              "spans": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "traceId": {
+                                      "type": "string",
+                                      "pattern": "^[0-9a-f]{32}$"
+                                    },
+                                    "spanId": {
+                                      "type": "string",
+                                      "pattern": "^[0-9a-f]{16}$"
+                                    },
+                                    "parentSpanId": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{16}$"
+                                        },
+                                        {
+                                          "type": "string",
+                                          "enum": [
+                                            ""
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    "name": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 128
+                                    },
+                                    "kind": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 5
+                                    },
+                                    "startTimeUnixNano": {
+                                      "type": "string",
+                                      "pattern": "^\\d{1,20}$"
+                                    },
+                                    "endTimeUnixNano": {
+                                      "type": "string",
+                                      "pattern": "^\\d{1,20}$"
+                                    },
+                                    "attributes": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "key": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 64
+                                          },
+                                          "value": {
+                                            "anyOf": [
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "stringValue": {
+                                                    "type": "string",
+                                                    "maxLength": 256
+                                                  }
+                                                },
+                                                "required": [
+                                                  "stringValue"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "intValue": {
+                                                    "anyOf": [
+                                                      {
+                                                        "type": "string",
+                                                        "pattern": "^-?\\d{1,20}$"
+                                                      },
+                                                      {
+                                                        "type": "integer"
+                                                      }
+                                                    ]
+                                                  }
+                                                },
+                                                "required": [
+                                                  "intValue"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "doubleValue": {
+                                                    "type": "number"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "doubleValue"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              {
+                                                "type": "object",
+                                                "properties": {
+                                                  "boolValue": {
+                                                    "type": "boolean"
+                                                  }
+                                                },
+                                                "required": [
+                                                  "boolValue"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        "required": [
+                                          "key",
+                                          "value"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maxItems": 24
+                                    },
+                                    "status": {
+                                      "type": "object",
+                                      "properties": {
+                                        "code": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 2
+                                        },
+                                        "message": {
+                                          "type": "string",
+                                          "maxLength": 256
+                                        }
+                                      },
+                                      "additionalProperties": false
+                                    },
+                                    "events": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "object",
+                                        "properties": {
+                                          "timeUnixNano": {
+                                            "type": "string",
+                                            "pattern": "^\\d{1,20}$"
+                                          },
+                                          "name": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 128
+                                          },
+                                          "attributes": {
+                                            "type": "array",
+                                            "items": {
+                                              "type": "object",
+                                              "properties": {
+                                                "key": {
+                                                  "type": "string",
+                                                  "minLength": 1,
+                                                  "maxLength": 64
+                                                },
+                                                "value": {
+                                                  "anyOf": [
+                                                    {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "stringValue": {
+                                                          "type": "string",
+                                                          "maxLength": 256
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "stringValue"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    },
+                                                    {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "intValue": {
+                                                          "anyOf": [
+                                                            {
+                                                              "type": "string",
+                                                              "pattern": "^-?\\d{1,20}$"
+                                                            },
+                                                            {
+                                                              "type": "integer"
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "intValue"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    },
+                                                    {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "doubleValue": {
+                                                          "type": "number"
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "doubleValue"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    },
+                                                    {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "boolValue": {
+                                                          "type": "boolean"
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "boolValue"
+                                                      ],
+                                                      "additionalProperties": false
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "required": [
+                                                "key",
+                                                "value"
+                                              ],
+                                              "additionalProperties": false
+                                            },
+                                            "maxItems": 8
+                                          }
+                                        },
+                                        "required": [
+                                          "timeUnixNano",
+                                          "name"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "maxItems": 8
+                                    }
+                                  },
+                                  "required": [
+                                    "traceId",
+                                    "spanId",
+                                    "name",
+                                    "startTimeUnixNano",
+                                    "endTimeUnixNano"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "maxItems": 64
+                              }
+                            },
+                            "required": [
+                              "spans"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 4
+                        }
+                      },
+                      "required": [
+                        "scopeSpans"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 1
+                  }
+                },
+                "required": [
+                  "resourceSpans"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "operationId": "AuthController_login",

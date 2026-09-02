@@ -5,6 +5,10 @@ import { LoggerModule } from "nestjs-pino";
 import { contextoAtual } from "../tenancy/tenancy-context";
 import { FiltroDeExcecao } from "./filtro-de-excecao";
 import { logger } from "./logger";
+import { Metricas } from "./metricas";
+import { ObservabilidadeController } from "./observabilidade.controller";
+import { ClienteOtlpGoogle } from "./otlp-google";
+import { ProxyOtlpService } from "./otlp-proxy.service";
 
 /**
  * SIGTERM do Cloud Run → `app.close()` (via `enableShutdownHooks`) → aqui →
@@ -42,6 +46,19 @@ export class DesligamentoDoOtel implements OnApplicationShutdown {
       },
     }),
   ],
-  providers: [{ provide: APP_FILTER, useClass: FiltroDeExcecao }, DesligamentoDoOtel],
+  controllers: [ObservabilidadeController],
+  providers: [
+    { provide: APP_FILTER, useClass: FiltroDeExcecao },
+    DesligamentoDoOtel,
+    Metricas,
+    ProxyOtlpService,
+    {
+      // Sem `GCP_PROJECT_ID` (dev) não há cliente: o proxy conta e descarta.
+      // O mesmo cliente que o `otel.ts` usa para as métricas — mesma credencial ADC.
+      provide: ClienteOtlpGoogle,
+      useFactory: () => (process.env.GCP_PROJECT_ID ? new ClienteOtlpGoogle(process.env.GCP_PROJECT_ID) : undefined),
+    },
+  ],
+  exports: [Metricas],
 })
 export class ObservabilidadeModule {}

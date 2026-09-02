@@ -338,6 +338,38 @@ adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \arq{src/vila/}.
 \end{decisao}
 
+\subsection{Observabilidade: os sinais que nascem no navegador}
+
+Três rotas em \rota{/observabilidade}, todas com \cd{OidcGuard}, todas
+\cd{204}, todas com \emph{schema} Zod \cd{.strict()} e cota por (escola,
+usuário) em memória --- porque quem as chama é um \emph{bundle} público, e o
+que passa por elas vira log, métrica ou \emph{span} num projeto do Google
+(\adrr{ADR-58}; Capítulo~\ref{cap:observabilidade}).
+
+\begin{itemize}
+  \item \rota{POST /observabilidade/erros-cliente}: um erro não capturado
+    (\cd{window.onerror}, \cd{unhandledrejection}) da experiência ou do hub.
+    Vira \textbf{uma} linha \cd{ERROR} com \cd{@type ReportedErrorEvent},
+    \cd{serviceContext = \{expId, versao\}} e \cd{stack\_trace} --- o que o
+    Error Reporting agrupa e chama de \enquote{novo na versão X}. A
+    \emph{redaction} da API passa por \cd{mensagem}, \cd{stack} e \cd{url}; o
+    identificador do estudante é o do \emph{token}, opaco. Cota: 5 por minuto;
+    acima, \cd{429} e um contador, sem linha de log.
+  \item \rota{POST /observabilidade/vitals}: um Web Vital (\cd{LCP}, \cd{INP},
+    \cd{CLS}, \cd{TTFB}) amostrado a 10\% no cliente. Vira ponto num
+    histograma OpenTelemetry por \cd{superficie}, \cd{rota} \textbf{normalizada}
+    (\arq{normalizar-rota.ts}: \cd{/professor/:secao}, \cd{exp-02-unootube},
+    senão \cd{outra}) e \cd{perfil} do \emph{token}. Nunca vira log.
+  \item \rota{POST /observabilidade/v1/traces}: o lote OTLP/JSON que o
+    OpenTelemetry Web da experiência exporta. A API valida o subconjunto
+    (\(\leq\) 64 \emph{spans}, atributos por \emph{allowlist}, URL sem
+    \emph{query}), \textbf{substitui} o \cd{resource} pelo
+    \cd{service.name}/\cd{service.version} validados e reexporta para a
+    Telemetry API do Google com a credencial da própria API
+    (\arq{otlp-proxy.service.ts}). O navegador nunca fala com o Cloud Trace.
+    Sem \env{GCP\_PROJECT\_ID} o lote é contado e descartado.
+\end{itemize}
+
 \section{Sanidade e prontidão}
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}L{20mm}X@{}}
