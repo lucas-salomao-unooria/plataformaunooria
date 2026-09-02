@@ -188,9 +188,9 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 | Log: exclusões no sink `_Default` | request log de `/healthz`, `/readyz` e dos uptime checks; `sample(insertId, 0.2)` dos 2xx com latência < 1 s | é o que mantém o log dentro dos 50 GiB grátis |
 | Log: bucket de auditoria | `{contrato}-auditoria`, 400 dias, regional, alimentado por sink de `codigo=auth.*`, `codigo=importacao.*`, `codigo=deploy` + Admin Activity | Data Access audit logs do próprio Logging ligados |
 | Pub/Sub dead letter | topic `{contrato}-telemetria-dlq`, `dead_letter_policy` na `-telemetria-ingest` após 5 tentativas | hoje um lote recusado é reentregue para sempre, em silêncio |
-| Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub) no recurso do serviço | o `gcloud run deploy` do CI não as remove |
+| Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub, **existe desde 2026-09-02**) no recurso do serviço | o `gcloud run deploy` do CI não as remove; trocar a sonda para HTTP só DEPOIS do hub com a rota estar no ar naquele ambiente |
 | Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
-| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` | fase 1/2; ver apêndice B |
+| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
 | Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
 | IAM | `{contrato}-api` e `{contrato}-run` com `roles/cloudtrace.agent` e `roles/monitoring.metricWriter` | `logWriter` o Cloud Run já dá |
 
