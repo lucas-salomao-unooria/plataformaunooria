@@ -40,6 +40,7 @@ export interface TracesWeb {
 
 export interface OpcoesDosTracesWeb {
   traceRatio: number;
+  /** Base da api — absoluta na experiência (`https://api…`) ou relativa no hub (`/api/plataforma`, o BFF). */
   apiUrl: string;
   expId: string;
   versao: string;
@@ -72,7 +73,9 @@ export async function iniciarTracesWeb(o: OpcoesDosTracesWeb): Promise<TracesWeb
   });
   provider.register({ propagator: new W3CTraceContextPropagator() });
 
-  const origemDaApi = new URL(o.apiUrl).origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // `apiUrl` pode ser relativa (`/api/plataforma`, o BFF do hub): resolve
+  // contra a origem da página. Para a experiência é a origem da api (cross-origin).
+  const origemDaApi = new URL(o.apiUrl, window.location.origin).origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   registerInstrumentations({
     tracerProvider: provider,
     instrumentations: [

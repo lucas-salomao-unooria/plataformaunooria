@@ -1,8 +1,21 @@
 import { ClarityHub } from "@/components/clarity-hub";
 import { VitalsHub } from "@/components/vitals-hub";
+import { obsDoAmbiente } from "@/lib/embed-experiencia";
 import "./globals.css";
 
-export const metadata = { title: "Plataforma Unooria" };
+/**
+ * `generateMetadata` em vez de `metadata` estático porque um dos valores é
+ * lido do AMBIENTE a cada requisição: `unooria-obs-ratio` é a fração de
+ * sessões do hub com OpenTelemetry Web (`OBS_TRACE_RATIO_CLIENTE`), que o
+ * `instrumentation-client.ts` lê do `<meta>`. Env de runtime, não
+ * `NEXT_PUBLIC_*`: mudar a amostragem não exige rebuild (cap. 17).
+ */
+export async function generateMetadata() {
+  return {
+    title: "Plataforma Unooria",
+    other: { "unooria-obs-ratio": String(obsDoAmbiente().traceRatio) },
+  };
+}
 
 /**
  * O `ClarityHub` mora aqui, e não na casca, porque este é o único layout que
