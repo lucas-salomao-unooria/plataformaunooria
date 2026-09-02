@@ -3224,11 +3224,56 @@ pede o \emph{token} ao \cd{google-auth-library} a cada envio
 (\arq{observabilidade/otlp-google.ts}) --- o mesmo cliente por onde a API
 reexporta os \emph{spans} do navegador. Alternativa descartada: o exportador
 OTLP/HTTP do próprio OpenTelemetry, que recebe cabeçalhos estáticos e não
-acompanha a expiração do \emph{token} OAuth. Risco assumido e declarado: a
-ingestão OTLP de métricas exige que o \emph{resource} mapeie para um recurso
-monitorado e o papel \cd{roles/telemetry.writer}; se em \cd{hml} a Telemetry
-API recusar (o \cd{diag} do SDK e o contador \cd{spans\_descartados} mostram),
-o caminho de volta é o exportador do Google, aceitando os 202\,MB.
+acompanha a expiração do \emph{token} OAuth.
+
+\textbf{O risco foi exercido em \cd{dev} no mesmo dia, e a decisão se
+sustentou} --- ao custo de duas descobertas que valem mais que a decisão:
+
+\begin{enumerate}
+  \item \textbf{O \emph{resource} precisa de \cd{gcp.project\_id}}, e o
+    \cd{gcpDetector} \emph{não} o preenche (ele traz \cd{cloud.account.id},
+    que a Telemetry API não aceita no lugar). Sem o atributo, TODA exportação
+    volta \cd{HTTP 400 Resource is missing required attribute}, a cada 60\,s
+    --- com log e \emph{trace} funcionando, o que torna a falha invisível para
+    quem olha o painel e visível só no \cd{diag} do SDK. Corrigido em
+    \arq{observabilidade/recurso.ts}, com teste de regressão.
+  \item \textbf{A ingestão OTLP grava no domínio
+    \cd{prometheus.googleapis.com}}, não em \cd{workload.googleapis.com} ---
+    onde o exportador legado gravava, e onde este documento mandava procurar.
+    A série sai como
+    \cd{prometheus.googleapis.com/\B unooria.telemetria.descartados/\B counter},
+    no recurso monitorado \cd{prometheus\_target} (\cd{job} =
+    \cd{service.name}, \cd{instance} = a instância do Cloud Run,
+    \cd{location} = a região), com \cd{otel\_scope\_name} nos rótulos. Por
+    algumas horas isso fez parecer que \emph{nenhuma} métrica estava sendo
+    exportada, quando estavam todas. É consequência declarada da migração, não
+    defeito: a nota oficial avisa que a mudança de domínio \enquote{quebra
+    painéis existentes}. Aqui saiu de graça, porque painel ainda não existe ---
+    e é o tipo de custo que se paga barato \emph{antes} da produção.
+\end{enumerate}
+
+O caminho de volta (exportador do Google, 202\,MB) segue registrado e não foi
+preciso.
+
+\textbf{Segundo adendo (2026-09-02): os exportadores do Google para Node estão
+DEPRECIADOS --- os PACOTES, não os produtos.} O SDK avisa no \emph{stdout}:
+\cd{DEP\_GCP\_OTEL\_TRACE\_EXPORTER --- deprecated and will be archived after
+October 30th, 2026}. A nota oficial
+(\cd{GoogleCloudPlatform/\B opentelemetry-operations-js}, \arq{MIGRATION.md})
+delimita o escopo: \enquote{\emph{all packages in this repository are
+deprecated}} e \enquote{\emph{the underlying Google Cloud services (Cloud
+Trace, Cloud Monitoring) remain operational}}. \textbf{O Cloud Trace não vai a
+lugar nenhum}: muda o caminhão de entrega (OTLP pela Telemetry API), não o
+destino.
+
+A consequência para este repositório é pequena e tem prazo. As métricas já vão
+por OTLP; falta o \emph{trace}, que ainda usa
+\cd{@google-cloud/opentelemetry-cloud-trace-exporter}. Migrá-lo é trocar o
+exportador no \arq{otel.ts} pelo cliente OTLP que já existe, e apaga duas
+dependências (a do exportador e o \cd{@grpc/grpc-js} que ela arrasta). A data
+--- 30 de outubro de 2026 --- é \emph{anterior} à entrada em produção
+(novembro), então é trabalho a fazer antes da promoção para \cd{main}, não
+decisão pendente.
 
 % ---------------------------------------------------------------------------
 \section{ADR-58 --- Erro de cliente entra pela API; nenhum SDK de terceiro

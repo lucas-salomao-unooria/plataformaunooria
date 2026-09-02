@@ -400,6 +400,13 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
 - **Métricas (`observabilidade/metricas.ts`)**: um provider global com os
   instrumentos (`unooria.ia.*`, `unooria.telemetria.*`, `unooria.web.*`,
   `unooria.observabilidade.*`); injete `Metricas` onde a medida acontece.
+  **No Cloud Monitoring elas aparecem como
+  `prometheus.googleapis.com/unooria.ia.latencia/histogram`**, no recurso
+  monitorado `prometheus_target` (`job` = `service.name`, `instance` = a
+  instância do Cloud Run, `location` = a região) — NÃO em
+  `workload.googleapis.com`, que é onde o exportador legado do Google as
+  colocava. Procurar no domínio errado faz parecer que nada foi exportado
+  (aconteceu em 2026-09-02). Os rótulos ganham `otel_scope_name`.
   **Nenhum rótulo com `escola_id`, `estudante_id`, sessão ou URL crua** —
   cem escolas multiplicam cada série por cem. Rótulos são conjuntos fechados
   (`modelo` da env, `operacao`, `resultado`, `perfil`, `motivo`, `finishReason`
