@@ -109,10 +109,8 @@ if [ "$IMPRIMIR" = true ]; then
   echo "=== vars do ENVIRONMENT '$AMB' (Settings > Environments > $AMB > Variables) ==="
   echo "$VARS"
   echo
-  echo "=== secrets do ENVIRONMENT '$AMB' ==="
+  echo "=== secret do ENVIRONMENT '$AMB' ==="
   echo "TOKEN_SIGNING_KEY_PEM = (terraform -chdir=\"\$INFRA_DIR\" output -raw token_signing_key_pem)"
-  echo "ALERTA_WEBHOOK        = (opcional) webhook de Google Chat/Slack para o job avisar-falha e a sonda agendada"
-  echo "SENHA_DEMO            = (opcional) senha das contas de demonstracao, para a suite e2e do smoke/sonda"
   echo
   echo "=== deployment branch policy ==="
   echo "environment '$AMB' deve aceitar deploy SO da branch '$BRANCH' (selected branches)"
@@ -144,8 +142,6 @@ done
 # Escopada no environment: a chave de dev nunca assina um manifesto de hml.
 echo "   TOKEN_SIGNING_KEY_PEM = (secret)"
 tf output -raw token_signing_key_pem | gh secret set TOKEN_SIGNING_KEY_PEM --env "$AMB"
-
-echo "   ALERTA_WEBHOOK / SENHA_DEMO = (opcionais, a mao: gh secret set <NOME> --env $AMB)"
 
 echo
 echo ">> pronto. Confira com: gh variable list --env $AMB && gh secret list --env $AMB"

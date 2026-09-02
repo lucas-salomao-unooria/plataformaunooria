@@ -974,10 +974,11 @@ prova de pronto que a suíte ou o painel exibe.
   Repositório de Terraform (\arq{docs/INFRA.md} ganha a seção);
   \arq{.github/workflows/} (\emph{a parte deste repositório entregue em
   2026-09-02}, \cd{ci/obs-sonda-e-mapas}: sonda pós-\emph{deploy}, \emph{job}
-  \cd{smoke}, \cd{avisar-falha}, \arq{sonda.yml} agendada contra \cd{dev},
-  mapas no \emph{bucket} privado; o Terraform da etapa 1 --- APIs, papéis,
-  \emph{envs}, \emph{bucket} de mapas, sondas HTTP no módulo --- está escrito e
-  validado, aguardando \cd{apply}) & Derrubar a API em \cd{hml} e receber o
+  \cd{smoke} da \emph{landing}, mapas no \emph{bucket} privado; no Terraform,
+  APIs, papéis, \emph{envs}, \emph{bucket} de mapas, sondas HTTP no módulo e
+  os \emph{uptime checks} com alerta por e-mail --- escritos e validados,
+  aguardando \cd{apply}. A suíte agendada como monitor sintético ficou para
+  uma onda posterior, por decisão de 2026-09-02) & Derrubar a API em \cd{hml} e receber o
   \emph{push} em menos de 3 minutos. \emph{Deploy} com migração quebrada
   notifica.\\
 \zebra \textbf{1} \newline 1--2 semanas & \textbf{API} (\emph{entregue em

@@ -438,10 +438,12 @@ jobs:
             echo "ativada $exp@$ver"
           done
 
-  # O canário mais barato que existe (scripts/e2e/AGENTS.md): a suíte pública
-  # abre a landing e o login de verdade, com a lógica de espera que corre contra
-  # o erro. Roda DEPOIS de tudo estar no ar; só leitura — as suítes que escrevem
-  # (estudante, professor) rodam agendadas em `sonda.yml`, não no deploy.
+  # O canário mais barato que existe (scripts/e2e/AGENTS.md): a suíte da
+  # landing abre o hub de verdade, com a lógica de espera que corre contra o
+  # erro. Roda DEPOIS de tudo estar no ar; só a 01 (landing), que não faz login
+  # — sem senha de demonstração no CI. Falhou = job vermelho, e o GitHub avisa
+  # por e-mail quem fez o push (comportamento padrão de workflow que falha).
+  # As suítes que escrevem (estudante, professor) continuam sendo do operador.
   smoke:
     needs: [verificar, mudancas, deploy-api, deploy-hub, publicar-exps, ativar-exps]
     if: >-
@@ -455,7 +457,6 @@ jobs:
     environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
     env:
       HUB_URL: ${{ vars.HUB_ORIGIN }}
-      SENHA_DEMO: ${{ secrets.SENHA_DEMO }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -465,34 +466,11 @@ jobs:
       # `pnpm exec`, nunca `npx`: o npx resolve o playwright mais NOVO do npm e
       # baixa o navegador dele, não o da versão fixada no repo (AGENTS.md).
       - run: pnpm exec playwright install --with-deps chromium
-      - name: Suíte pública contra o ambiente recém-publicado
-        run: node scripts/e2e/rodar.mjs publico
+      - name: Landing contra o ambiente recém-publicado
+        run: node scripts/e2e/rodar.mjs publico/01
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: smoke-${{ github.ref_name }}-${{ github.run_number }}
           path: testes/
           retention-days: 7
-
-  # Um deploy que falha PRECISA avisar alguém — antes, o único sinal era o
-  # exit code do gcloud, lido por quem estivesse olhando a aba. Canal "amanhã"
-  # do cap. 17: um webhook de Google Chat/Slack no secret ALERTA_WEBHOOK do
-  # environment. Sem o secret, avisa no log do job e conta com o e-mail padrão
-  # do GitHub — nunca falha por não ter para quem avisar.
-  avisar-falha:
-    needs: [verificar, mudancas, deploy-api, deploy-hub, publicar-exps, ativar-exps, smoke]
-    if: failure()
-    runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'prd' || github.ref_name }}
-    steps:
-      - name: Avisar no canal
-        env:
-          WEBHOOK: ${{ secrets.ALERTA_WEBHOOK }}
-          MSG: "deploy ${{ github.ref_name }} FALHOU (run #${{ github.run_number }}, ${{ github.actor }}): ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: |
-          if [ -z "$WEBHOOK" ]; then
-            echo "::warning::sem ALERTA_WEBHOOK neste environment — só o e-mail padrão do GitHub avisa. $MSG"
-            exit 0
-          fi
-          curl -fsS -X POST -H 'Content-Type: application/json' \
-            -d "$(jq -cn --arg t "$MSG" '{text:$t}')" "$WEBHOOK"

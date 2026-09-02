@@ -228,22 +228,16 @@ Capítulo~\ref{cap:observabilidade} --- a parte dela que é deste repositório:
     com \cd{"keys"} no hub --- sem a chave carregada nenhum \emph{token} de
     experiência é validável, e o \cd{ativar-exps} falharia com um 401 que não
     aponta para a causa. Vermelho = o \cd{ativar-exps} não ativa nada.
-  \item \textbf{\emph{Smoke}}: o \emph{job} \cd{smoke} roda a suíte
-    \cd{publico} de \arq{scripts/e2e} contra o ambiente recém-publicado, depois
-    de tudo (é só leitura); o relatório sobe como artefato em falha. As suítes
-    que \emph{escrevem} rodam agendadas em \arq{sonda.yml} --- a cada 30 min
-    em horário escolar, dias úteis --- \textbf{contra \cd{dev}}, e não contra
-    \cd{hml} como a Seção~\ref{sec:ferramentas-obs} desenhou: um \emph{workflow}
-    agendado executa sempre na \emph{branch} padrão, e o \emph{environment} de
-    \cd{hml} só aceita \emph{job} vindo da \emph{branch} \cd{hml}
-    (\emph{deployment branch policy}, \adrr{ADR-53}). Abrir a política
-    enfraqueceria a trava da identidade WIF; contra \cd{hml} a sonda se dispara
-    à mão, a partir da \emph{branch} \cd{hml}.
-  \item \textbf{Aviso em falha}: o \emph{job} \cd{avisar-falha}
-    (\cd{if: failure()}) posta no \emph{webhook} do \emph{secret}
-    \env{ALERTA\_WEBHOOK} (Google Chat/Slack, o canal \enquote{amanhã}). Sem o
-    \emph{secret}, avisa no log do \emph{job} e conta com o e-mail padrão do
-    GitHub --- nunca falha por não ter para quem avisar.
+  \item \textbf{\emph{Smoke}}: o \emph{job} \cd{smoke} roda a suíte da
+    \emph{landing} (\cd{publico/01}) de \arq{scripts/e2e} contra o ambiente
+    recém-publicado, depois de tudo --- só leitura e sem \emph{login}, então sem
+    senha de demonstração no CI; o relatório sobe como artefato em falha.
+    Falha de \emph{workflow} avisa por e-mail quem fez o \emph{push}
+    (comportamento padrão do GitHub); o alerta de disponibilidade em regime é
+    dos \emph{uptime checks} do Cloud Monitoring (Terraform), por e-mail. A
+    suíte agendada como monitor sintético (a \enquote{sonda} da
+    Seção~\ref{sec:ferramentas-obs}) foi deixada para uma onda posterior, por
+    decisão de 2026-09-02.
 \end{itemize}
 
 E um quarto passo, dos \emph{sourcemaps}: o \cd{rsync} das experiências ganhou
