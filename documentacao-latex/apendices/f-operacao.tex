@@ -721,6 +721,44 @@ diferentes, e a segunda mente} &
   \emph{dispatch} com \cd{forcar} quando virarem \cd{ACTIVE}. O estado
   intermediário é seguro por desenho --- os \emph{bundles} já estão no
   \emph{bucket} e são inertes até a ativação.\\
+\zebra \textbf{Feed da exp-02 em \enquote{Carregando o vídeo\ldots} para
+sempre, e Salvar/Curtir desabilitados junto} &
+  \textbf{O \emph{bucket} de \emph{assets} do contrato está sem os 21
+  \emph{mp4}} --- o \emph{upload} da mídia pesada é deliberado e não acontece
+  no CI (\adrr{ADR-63}). Confirmar com
+  \cd{gcloud storage ls gs://\{contrato\}-assets/exp-02-unootube/videos/} e no
+  \emph{log} do \emph{load balancer}, onde os \cd{GET} do
+  \rota{/exp-02-unootube/videos/vNN.mp4} aparecem em 404. \textbf{Não é o
+  \emph{bundle} nem a variável}: se a URL pedida traz o domínio de
+  \emph{assets} e o caminho certo, a configuração está correta e o que falta é
+  o arquivo. O sintoma engana porque o \cd{ShortsPlayer} não escuta \cd{error}
+  --- o estado de carregamento nunca é desfeito, e a criança lê como internet
+  lenta. Se a URL pedida NÃO traz o domínio de \emph{assets}, aí sim é a var
+  \env{ASSETS\_BASE\_URL} vazia no \emph{environment}: interpolada vazia ela
+  produz um caminho relativo válido, e o \emph{fallback} de dev nunca
+  dispara.\\
+\textbf{Controle dentro de um \emph{modal} \enquote{sai fora} --- o
+\cd{<select>} fecha sozinho, o clique parece cancelado} &
+  \textbf{Handler instável passado ao \cd{Modal} do \emph{design system}},
+  combinado com algo que renderiza o pai periodicamente. O \cd{Modal} das
+  seções \cd{chatgpt} e \cd{unootube} mantém \cd{onClose} nas dependências do
+  \emph{mesmo} \cd{useEffect} que faz o foco: identidade nova \implica{}
+  \emph{cleanup} devolve o foco para fora do \emph{modal} e o efeito o joga no
+  primeiro focável, que é o botão de fechar. Perder o foco fecha um
+  \cd{<select>} nativo aberto. Não há rastro no servidor --- as requisições que
+  saem voltam 201. Procurar arrow \emph{inline} em \cd{onClose}/\cd{onFechar}
+  e \emph{polling} ou cronômetro que renderize mais de uma vez por segundo. O
+  \cd{Modal} da seção \cd{unooria} já separa os dois efeitos e é o desenho a
+  copiar.\\
+\zebra \textbf{Tela de resultados do professor vazia, sem erro em lugar
+nenhum} &
+  \textbf{\rota{POST /telemetry/ingest} bloqueado pelo Cloud Armor} antes de
+  chegar à api (\adrr{ADR-62}) --- por isso não há \emph{log} de aplicação.
+  Confirmar no \emph{log} do \emph{load balancer}:
+  \cd{jsonPayload.statusDetails="body\_denied\_by\_security\_policy"}, com
+  \cd{enforcedSecurityPolicy.preconfiguredExprIds} nomeando a assinatura. O
+  Pub/Sub reentrega para sempre (não há DLQ), então o volume de 403 cresce
+  sozinho e não indica ataque nenhum: o agente é \cd{APIs-Google}.\\
 \bottomrule
 \end{tabularx}
 

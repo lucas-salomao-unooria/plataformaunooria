@@ -126,6 +126,30 @@ em \cd{dev}, com uma pessoa olhando, isso bastou. Para cem escolas às oito da
 manhã, não basta.
 \end{limitacao}
 
+\begin{atencao}
+\textbf{Medição de 2026-09-01, na \emph{stack} de \cd{dev}:} num dia inteiro
+de operação, o serviço da API produziu \textbf{exclusivamente} entradas no
+\emph{log} \cd{run.googleapis.com/requests}. Nenhuma linha em
+\cd{varlog/stdout} ou \cd{stderr} depois do \emph{banner} de subida do
+contêiner --- ou seja, os quatro \cd{Logger} nomeados e os 19 \cd{console.*}
+da tabela acima \textbf{não aparecem no Cloud Logging} como sinal consultável.
+
+A consequência é concreta e já foi encontrada em diagnóstico: quando o Vertex
+recusa uma geração, o \cd{unoogpt.service} escreve
+\cd{turno sem resposta: <motivo>} com o corpo da resposta do provedor --- a
+única pista de \emph{qual} foi o erro (modelo inexistente, papel de IAM
+faltando, região errada), já que o estudante vê a mesma frase amigável nos três
+casos. Esse texto não está em lugar nenhum que se possa consultar depois. O
+efeito colateral perverso é que a \textbf{ausência} de erro no \emph{log} não
+prova ausência de erro no serviço, e foi preciso recorrer ao \emph{log} do
+\emph{load balancer} --- que enxerga o \emph{status} HTTP e a latência, não a
+razão --- para separar \enquote{não falhou} de \enquote{falhou em silêncio}.
+
+Isso reforça a prioridade do log estruturado em JSON
+(Seção~\ref{sec:log-estruturado} adiante): o problema não é o formato do
+texto, é o sinal não existir.
+\end{atencao}
+
 A Figura~\ref{fig:cadeia-visibilidade} percorre a cadeia de uma requisição e
 marca, elo por elo, o que se enxerga hoje e o que está cego.
 
@@ -238,6 +262,7 @@ decidem um empate.
 \section{Os sinais, e onde cada um nasce}
 
 \subsection{Log estruturado}
+\label{sec:log-estruturado}
 
 O \emph{stdout} do Cloud Run já é o transporte: uma linha que seja JSON
 válido é lida pelo agente de log como \cd{jsonPayload}, e três campos com

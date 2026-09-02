@@ -3585,3 +3585,148 @@ da suíte de ponta a ponta na cópia principal virar gargalo \textbf{medido} (du
 frentes esperando uma pela outra, mais de uma vez) é o que justifica
 parametrizar porta e nome do \emph{compose} por \emph{worktree} e um banco por
 \emph{branch} --- não antes.
+
+\section{ADR-62 --- O WAF não inspeciona o corpo de rota autenticada nem de
+texto livre de estudante}
+\label{adr:waf-excecoes}
+
+\begin{especificacao}{Contexto}
+O Cloud Armor da \adrr{ADR-57} entrou com sete regras pré-configuradas do
+OWASP CRS 3.3 em \cd{sensitivity 1}, e em \cd{dev} já saiu de \emph{preview}
+--- bloqueando de verdade. Nos primeiros dias, \textbf{242 requisições}
+\rota{POST /telemetry/ingest} responderam 403 com
+\cd{body\_denied\_by\_security\_policy}, todas do agente \cd{APIs-Google}: é o
+\emph{push} do Pub/Sub, negado pela assinatura
+\cd{owasp-crs-v030301-id921150-protocolattack} --- \enquote{HTTP Header
+Injection via payload (CR/LF detectado)}.
+
+O envelope do \emph{push} é um JSON com a mensagem em \emph{base64}, e a 921150
+casa qualquer corpo que carregue \cd{\textbackslash r\textbackslash n}. O
+prejuízo é silencioso duas vezes: a \emph{subscription} reentrega para sempre
+(não há DLQ), e a tela de resultados do professor fica vazia sem erro em lugar
+nenhum --- a requisição morre no \emph{load balancer}, antes da api, então não
+há log de aplicação a consultar.
+
+A mesma assinatura ameaça a exp-03: a pergunta do estudante é texto livre, e
+\emph{Shift+Enter} ou colar de outra aba produzem quebra de linha legítima. O
+403 do WAF não carrega cabeçalho de CORS, então o navegador reporta falha de
+rede: o estudante lê \enquote{A conexão falhou} e não há nada no servidor
+apontando para o WAF.
+\end{especificacao}
+
+\textbf{Decisão.} Duas exceções cirúrgicas na política, e nenhuma regra
+desligada.
+
+\begin{enumerate}
+  \item Uma regra \cd{allow} em \textbf{priority 900} --- antes das WAF, que
+    começam em 1000 --- casando
+    \cd{request.path.startsWith('/telemetry/ingest')}. Abrir o caminho não abre
+    a rota: ela exige o \emph{token} OIDC do Pub/Sub
+    (\env{TELEMETRIA\_PUSH\_SA} e \env{TELEMETRIA\_PUSH\_AUDIENCE}) e responde
+    401 sem ele. O WAF ali era redundância que só custava dado.
+  \item Um \cd{preconfigured\_waf\_config} na regra \cd{protocolattack} (1006)
+    excluindo \textbf{apenas} o \cd{target\_rule\_id 921150} nos prefixos
+    \rota{/unoogpt/} e \rota{/ai/} --- as rotas que recebem texto livre de
+    estudante. As outras seis assinaturas de protocolo continuam valendo
+    nesses caminhos, e a 921150 continua valendo em todo o resto da api.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Desligar a regra \cd{protocolattack} inteira}: resolveria os dois
+    sintomas com uma linha a menos, e removeria \emph{smuggling} e
+    \emph{splitting} da superfície inteira da api por causa de duas rotas.
+  \item \emph{Voltar a política para \emph{preview}}: transforma um bloqueio
+    visível em bloqueio nenhum, e junto some a proteção contra os
+    varredores que já batem no IP do \emph{load balancer} todos os dias.
+  \item \emph{Fazer a api aceitar o \emph{push} por outro caminho} (endpoint
+    interno, fora do LB): exigiria expor a api sem o LB ou montar rede nova
+    para um único endpoint --- muito mais superfície do que a exceção.
+  \item \emph{Sanitizar o CR/LF antes de enviar} (no SDK e no publicador da
+    telemetria): trata o sintoma no emissor errado. A quebra de linha na
+    pergunta do estudante é conteúdo legítimo, e removê-la mudaria o dado que a
+    missão mede.
+\end{itemize}
+
+\textbf{Consequências ruins.} \rota{/telemetry/ingest} passa a não ter WAF
+nenhum --- se o \emph{guard} de autenticação daquela rota regredir, não há
+segunda camada. E as exclusões são por prefixo de caminho: uma rota nova sob
+\rota{/ai/} herda a exclusão sem que ninguém decida isso.
+
+\textbf{Gatilho de reavaliação.} A telemetria deixar de entrar por \emph{push}
+no LB (um \emph{worker} separado, como o desenho original previa) devolve o
+caso 1 ao WAF. E o Cloud Armor publicar exclusão por \emph{método} além de
+caminho permitiria estreitar o caso 2 para os \cd{POST} que de fato carregam
+texto do estudante.
+
+\section{ADR-63 --- O CI não publica a mídia pesada, mas se recusa a publicar
+sem ela}
+\label{adr:midia-externa}
+
+\begin{especificacao}{Contexto}
+Mídia acima de 2\,MB não entra no git nem no \emph{bundle}: os 21 \emph{mp4}
+da exp-02 (52\,MB) vivem no \emph{bucket} de \emph{assets} do contrato, e o
+\emph{build} recebe a base pública em \env{VITE\_VIDEOS\_BASE\_URL}. O
+\emph{upload} sempre foi manual, uma vez por contrato, e isso estava registrado
+como lacuna conhecida em \arq{docs/INFRA.md}.
+
+Em 2026-09-01 a lacuna cobrou. A exp-02 foi publicada no contrato
+\cd{entre-redes-dev} com o \emph{bucket} de \emph{assets} vazio: os 21 arquivos
+responderam 404, e como o \cd{ShortsPlayer} do \emph{design system} deriva
+\cd{waiting} só de \cd{waiting}/\cd{playing} --- sem escutar \cd{error} --- o
+evento \cd{playing} nunca chegou e o feed ficou em \enquote{Carregando o
+vídeo\ldots} para sempre. Salvar e Curtir são desabilitados enquanto o vídeo
+carrega (para não salvar sem assistir), então a missão ficou \textbf{impossível
+de concluir}. Nada falhou: nem o \emph{deploy}, nem o log da api. Quem
+descobriu foi um estudante, na frente da tela.
+\end{especificacao}
+
+\textbf{Decisão.} O CI continua \textbf{não} publicando a mídia --- o
+\emph{runner} faz \emph{checkout} do git, e os arquivos não estão lá --- e
+passa a \textbf{conferi-la}. Uma experiência com mídia externa declara um
+\arq{midia-externa.json} versionado ao lado do \arq{package.json}, com o
+prefixo no \emph{bucket} e a lista de arquivos esperados. Antes de subir o
+\emph{bundle} daquela experiência, o \emph{job} \cd{publicar-exps} lista o
+prefixo no \emph{bucket} de \emph{assets} e \textbf{falha o deploy} se faltar
+algum, imprimindo o que falta e o comando de \emph{upload}.
+
+Isso exige a var \env{ASSETS\_BUCKET} no \emph{environment} do GitHub, escrita
+por \arq{scripts/configurar-github-ci.sh} a partir do \emph{output}
+\cd{bucket\_assets} do Terraform. Sem a var, o passo apenas avisa --- um
+\emph{environment} ainda não reconfigurado não deve travar \emph{deploy} por
+uma verificação que ele não tem como fazer.
+
+Em paralelo, e independente disto, a experiência passou a tratar o \cd{error}
+do \cd{<video>} por conta própria: vídeo que falha sai do estado de
+carregamento, as ações voltam e a missão continua concluível. As duas coisas
+respondem à mesma falha em camadas diferentes --- uma impede publicar quebrado,
+a outra impede que o estudante fique preso quando algo quebrar mesmo assim.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Versionar os \emph{mp4} no git}: 52\,MB por experiência, num
+    repositório que já teve 250\,MB de \emph{cache} de \emph{webpack} entrando
+    por um \cd{add -A} distraído. Para 48 experiências, o histórico ficaria
+    impraticável.
+  \item \emph{Git LFS}: resolveria o peso e acrescentaria um serviço com cota,
+    um passo de \emph{checkout} novo e uma forma nova de o \emph{deploy}
+    falhar --- por mídia que muda uma vez por contrato.
+  \item \emph{O CI baixar a mídia de uma origem canônica e republicar}: exige
+    escolher e operar essa origem (outro \emph{bucket}, \emph{release assets}),
+    e transfere o problema em vez de resolvê-lo --- alguém continua tendo que
+    colocar o arquivo lá na primeira vez.
+  \item \emph{Só documentar melhor o passo manual}: já estava documentado. A
+    lacuna estava escrita em \arq{docs/INFRA.md} e mesmo assim o contrato subiu
+    sem a mídia.
+\end{itemize}
+
+\textbf{Consequências ruins.} O \emph{deploy} de uma experiência com mídia
+passa a depender de um recurso que o \emph{job} não controla: \emph{bucket}
+renomeado ou permissão de leitura retirada da \emph{service account} do CI
+quebra a publicação de um \emph{bundle} que estava correto. E a lista de
+arquivos no \arq{midia-externa.json} é mantida à mão --- acrescentar um vídeo
+sem acrescentar a linha faz a conferência passar sem conferir.
+
+\textbf{Gatilho de reavaliação.} A terceira experiência com mídia externa: com
+uma, a lista à mão é honesta; com três, o \arq{midia-externa.json} deve passar
+a ser gerado do catálogo da api, que já sabe o nome de cada arquivo.
