@@ -66,6 +66,12 @@ export function ehRuidoDeDev(texto) {
  *
  * - `favicon.ico`: o hub não declara ícone nenhum (`app/layout.tsx` só tem
  *   `title`). Toda navegação de todo papel gera um 404 no console.
+ * - `observabilidade/vitals`: o `VitalsHub` reporta Web Vitals em 10% das abas,
+ *   e o primeiro deles costuma sair na tela de LOGIN — antes de haver sessão.
+ *   O BFF responde 401, e o próprio componente documenta isso ("sem sessão o
+ *   BFF responde 401 e nada acontece"). Como a amostra é aleatória, ele
+ *   reprovava QUALQUER suíte uma vez a cada dez execuções, sempre por um
+ *   motivo que não tem relação com o roteiro que falhou.
  * - `clarity.ms`: a tag do Microsoft Clarity (ADR-60) é recurso de TERCEIRO, e
  *   ela responde **400 a partir de IP de datacenter** — medido em 2026-09-02:
  *   200 da máquina de quem opera, 400 do runner do GitHub Actions, com o mesmo
@@ -79,6 +85,10 @@ const PENDENCIAS_CONHECIDAS = [
   {
     padrao: /favicon\.ico/,
     oQue: "o hub não declara favicon — todo carregamento de página gera um 404 no console",
+  },
+  {
+    padrao: /observabilidade\/vitals/,
+    oQue: "Web Vitals reportado antes de haver sessão (tela de login) — o BFF responde 401 por desenho, e a métrica é amostrada em 10% das abas",
   },
   {
     padrao: /clarity\.ms/,
@@ -167,7 +177,7 @@ export function vigiarFalhasDaApi(pagina, falhas, rotulo = "") {
   pagina.on("response", async (r) => {
     if (r.status() < 400) return;
     const caminho = new URL(r.url()).pathname;
-    if (!/\/(api|planos|bemestar|unoogpt|vila|runs|telemetry|ai)\//.test(caminho)) return;
+    if (!/\/(api|planos|bemestar|unoogpt|o-eco-no-grupo|vila|runs|telemetry|ai)\//.test(caminho)) return;
     /* O CORPO dos 5xx, e não só o status. "500 POST /destilar" manda a pessoa
        procurar no log da api; "500 … quota diária excedida" resolve na hora.
        Só para 5xx: um 404 de sondagem de estado é esperado e o corpo dele é

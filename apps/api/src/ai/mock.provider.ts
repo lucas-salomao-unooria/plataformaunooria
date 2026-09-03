@@ -1,4 +1,12 @@
-import type { AiConversaRequest, AiJsonRequest, AiProvider, AiRequest, AiResult } from "./provider";
+import type {
+  AiConversaRequest,
+  AiImagemOpcoes,
+  AiJsonRequest,
+  AiProvider,
+  AiRequest,
+  AiResult,
+  AiSpeechRequest,
+} from "./provider";
 import { ErroDeGeracao } from "./provider";
 
 /**
@@ -55,8 +63,18 @@ export class MockProvider implements AiProvider {
   }
 
   /** Falha fechada: em dev todo post nasce com arte procedural (fallback). */
-  async generateImage(_prompt: string): Promise<Buffer> {
+  async generateImage(_prompt: string, _opcoes?: AiImagemOpcoes): Promise<Buffer> {
     throw new ErroDeGeracao("[mock] generateImage sem implementação — use o fallback procedural.");
+  }
+
+  /**
+   * Falha fechada, como as duas acima: não há como sintetizar voz sem vendor, e
+   * um MP3 de silêncio seria pior que a ausência — o estudante apertaria o play
+   * e concluiria que o áudio está quebrado. Quem chama cai na TRANSCRIÇÃO, que
+   * é o canal principal de acessibilidade e está sempre na tela.
+   */
+  async generateSpeech(_req: AiSpeechRequest): Promise<Buffer> {
+    throw new ErroDeGeracao("[mock] generateSpeech sem implementação — use a transcrição.");
   }
 
   /**

@@ -104,6 +104,57 @@ export interface AiConversaRequest {
   tentativas?: number;
 }
 
+/**
+ * Proporção da imagem, neutra de vendor. Opcional porque a exp-01 — a única
+ * consumidora até aqui — depende do 4:5 que o `AssetsService` normaliza; quem
+ * precisa de outro formato pede, e não recorta depois (o recorte joga fora a
+ * composição que o modelo decidiu para o formato errado).
+ */
+export type AiProporcao = "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "4:5" | "5:4" | "9:16" | "16:9";
+
+export interface AiImagemOpcoes {
+  proporcao?: AiProporcao;
+}
+
+/**
+ * Timbre de voz, NEUTRO de vendor — pelo mesmo motivo de `modelo` em
+ * `AiRequest`: quem pede a fala descreve QUEM fala, não o nome de catálogo de
+ * uma voz do Google. Cada provider mapeia para o seu catálogo, e trocar de
+ * vendor não obriga a reescrever o roteiro de nenhuma experiência.
+ */
+export type AiTimbre =
+  | "jovem-feminino"
+  | "jovem-masculino"
+  | "adulto-feminino"
+  | "adulto-masculino"
+  | "idoso-feminino"
+  | "idoso-masculino";
+
+export interface AiFalante {
+  /** Como o roteiro chama esta pessoa. Casa com `turnos[].falante`. */
+  nome: string;
+  timbre: AiTimbre;
+}
+
+/**
+ * Uma fala para sintetizar. `texto` para monólogo; `turnos` para diálogo — e o
+ * diálogo é UMA chamada, não a costura de duas: o modelo multi-falante ajusta
+ * pausa, sobreposição e entonação entre as vozes, e concatenar arquivos
+ * separados devolveria duas leituras em voz alta em vez de uma conversa.
+ *
+ * `direcao` é direção de atuação em linguagem natural ("tom assustado, voz
+ * trêmula, como quem acabou de receber uma notícia ruim"). É o que transforma
+ * um TTS em interpretação — e é onde o brief de assets é cumprido.
+ */
+export interface AiSpeechRequest {
+  texto?: string;
+  turnos?: Array<{ falante: string; texto: string }>;
+  falantes: AiFalante[];
+  direcao?: string;
+  /** BCP-47. Default `pt-BR`. */
+  idioma?: string;
+}
+
 export class ErroDeGeracao extends Error {
   constructor(
     message: string,
@@ -123,7 +174,9 @@ export interface AiProvider {
   generateJson<T>(req: AiJsonRequest<T>): Promise<T>;
   /** Geração de imagem: devolve os bytes originais (jpeg/png) do modelo.
    *  Falha → quem chama cai no fallback procedural (imageStatus "fallback"). */
-  generateImage(prompt: string): Promise<Buffer>;
+  generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer>;
+  /** Fala sintetizada: devolve MP3. Falha → quem chama cai na transcrição. */
+  generateSpeech(req: AiSpeechRequest): Promise<Buffer>;
   /**
    * Conversa multi-turno com ferramentas. `tokensUsados` é a SOMA de todas as
    * voltas e de todas as tentativas, **inclusive as rejeitadas** — é o número

@@ -6,7 +6,7 @@ está o detalhe:
 | Pacote | O que é | Doutrina |
 |---|---|---|
 | `@edu/sdk` | a única porta da experiência para fora: handshake, token, chamada de api, telemetria | `sdk/AGENTS.md` |
-| `@edu/ui` | as quatro pontes para as seções do `@unooria/design-system` | `ui/AGENTS.md` |
+| `@edu/ui` | as cinco pontes para as seções do `@unooria/design-system` | `ui/AGENTS.md` |
 | `@edu/conteudo-exp-01` | a copy da revelação, lida pela exp-01 E pelo guia do professor | `conteudo-exp-01/AGENTS.md` |
 
 Comum aos três: **TypeScript puro, sem dependência pesada**, consumidos por

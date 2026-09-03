@@ -43,7 +43,7 @@ pnpm --filter @edu/exp-90-plano-de-aula  dev   # :5175 -> /professor/plano-de-au
 pnpm --filter @edu/exp-91-bem-estar      dev   # :5176 -> /professor/bem-estar
 pnpm --filter @edu/exp-70-vila-do-lume   dev   # :5177 -> /exp/exp-70-vila-do-lume
 
-pnpm new:exp exp-07-fracoes                    # scaffolda do _template
+pnpm new:exp exp-12-fracoes                    # scaffolda do _template
 \end{lstlisting}
 
 \begin{lstlisting}[language=bashunoo, caption={O IdP sobe à parte}]
@@ -769,6 +769,22 @@ nenhum} &
   Pub/Sub reentrega para sempre (não há DLQ), então o volume de 403 cresce
   sozinho e não indica ataque nenhum: o agente é \cd{APIs-Google}.\\
 \bottomrule
+\textbf{A imagem gerada sai, e a voz responde \cd{403 PERMISSION\_DENIED}} &
+  ADC de \textbf{usuário} sem projeto de cota. A síntese da exp-07 não vai ao
+  \cd{aiplatform}: vai à Cloud Text-to-Speech, que exige o cabeçalho
+  \cd{x-goog-user-project}. O \emph{provider} o manda quando
+  \env{VERTEX\_PROJECT\_ID} está definida --- confira a variável antes de
+  suspeitar de papel IAM. Com \emph{service account} (produção) o sintoma não
+  existe. Se o 403 falar em API desabilitada, é outra coisa:
+  \cd{texttospeech.googleapis.com} precisa estar habilitada no projeto.\\
+\zebra \textbf{O roteiro de ponta a ponta clica no \cd{Radio} e nada é
+marcado} &
+  O \cd{<input>} das seções do \emph{design system} é \cd{sr-only} de
+  1$\times$1\,px: o Playwright acha o elemento, clica na coordenada dele e o
+  navegador entrega o clique a quem está por cima. Clique no \cd{<label>}
+  (\cd{.unooria-radio}, \cd{.unooria-checkbox}), com
+  \cd{scrollIntoViewIfNeeded} antes. O sintoma engana porque não há erro: o
+  passo seguinte é que reprova, \enquote{botão desabilitado}.\\
 \textbf{O professor relata um erro e manda um código} &
   É o \cd{requestId} do corpo do 500 (\cd{\{codigo: "erro-interno",
   requestId\}}), igual ao \emph{header} \cd{x-request-id} de toda resposta e ao
@@ -793,10 +809,15 @@ Contínuo (fase 0 do Capítulo~\ref{cap:observabilidade}, \textbf{pendente})
   \emph{job}); abrir \rota{/readyz}; abrir uma experiência de estudante e uma
   ferramenta de professor. Com a fase 0: o \emph{smoke} do \cd{deploy.yml}
   faz os três e notifica se falhar.\\
-\textbf{Semanal, e após \emph{deploy}} & Error Reporting: erro \textbf{novo}
+Antes da primeira aula de cada contrato & Conferir \env{ASSETS\_BUCKET} e o
+  \env{ASSETS\_DRIVER=gcs} do \emph{environment}, e mandar o professor preparar
+  a mídia da exp-07 no painel da turma. Nada falha se ninguém fizer: a missão
+  cai na transcrição e na ilustração procedural, e o \emph{deploy} fica verde
+  (\cd{R-20}). O precedente é a exp-02, que subiu com o \emph{bucket} vazio.\\
+\zebra \textbf{Semanal, e após \emph{deploy}} & Error Reporting: erro \textbf{novo}
   na revisão que acabou de receber tráfego, e erro de cliente novo por
   \cd{(expId, versao)} --- reverter pelo manifesto antes de investigar.\\
-\zebra Semanal & Taxa de 5xx do Cloud Run; conexões ativas do Cloud SQL;
+Semanal & Taxa de 5xx do Cloud Run; conexões ativas do Cloud SQL;
   contagem de \cd{status = 'aberta'} em \cd{exp\_70\_sessoes} (partidas
   perdidas); planos em \cd{status = 'erro'}.\\
 Mensal & \textbf{Contagem da partição \cd{DEFAULT} de telemetria} --- encher

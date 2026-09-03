@@ -28,6 +28,16 @@ Plano de aula & exp-90, \arq{src/planos/} &
 \zebra Entorno do \emph{check-in} & exp-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
+Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
+  Três superfícies: as reações do grupo à intervenção do estudante, a conversa
+  com Amara depois da decisão, e a devolutiva do \enquote{Meu percurso}. O
+  \textbf{desfecho} (\cd{checada}, \cd{ruido}, \cd{conflito}) e a pontuação saem
+  de \arq{regras/}, não do modelo --- a IA só \emph{redige} o que já foi
+  decidido (\adrr{ADR-66}).\\
+\zebra Mídia da missão & exp-07, \arq{midia.service.ts} &
+  As duas falas de áudio, o episódio de podcast a duas vozes e as fotos do
+  boato. Gerado \textbf{uma vez}, no preparo do professor, e cacheado no bucket;
+  o estudante nunca espera por geração (\adrr{ADR-67}).\\
 \bottomrule
 \end{tabularx}
 
@@ -64,7 +74,7 @@ Plano de aula & exp-90, \arq{src/planos/} &
 
   \node[c4component, text width=32mm, fill=unooGreenWash, draw=unooGreen] (pr) at (8.4,-4.0)
     {\textbf{\cd{AiProvider}}\desc{\cd{generate}, \cd{generateJson},
-     \cd{generateImage}}};
+     \cd{generateImage}, \cd{generateSpeech}}};
 
   \node[c4component, text width=26mm] (pp) at (12.4,-4.0)
     {\arq{prompts.ts}\desc{\emph{prompt} de sistema; nunca sai daqui}};
@@ -211,6 +221,41 @@ A proporção \cd{4:5} é PEDIDA no \cd{imageConfig} & Sem isso, o 3.1 devolve
 \bottomrule
 \end{tabularx}
 
+\subsection{Voz: a única chamada que não é ao \emph{aiplatform}}
+
+\cd{generateSpeech} chegou ao \cd{AiProvider} com a exp-07 (\adrr{ADR-67}) e é a
+exceção do capítulo: as outras três operações batem em
+\cd{\{loc\}-aiplatform.googleapis.com}, e a síntese bate em
+\cd{texttospeech.googleapis.com/v1/text:synthesize} --- mesma credencial ADC,
+mesma família de modelos (\env{VERTEX\_TTS\_MODEL}, \cd{gemini-2.5-flash-tts}),
+outro serviço, que precisa estar \textbf{habilitado} no projeto.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão} & \thd{Por quê}\\
+\midrule
+\cd{audioEncoding: "MP3"} & O sistema não tem \emph{ffmpeg}, e um WAV de três
+  minutos passaria de 10\,MB. O encoding vem pronto do serviço, e o
+  \cd{<audio>} do navegador toca direto.\\
+\zebra \cd{input.prompt} carrega a direção de atuação & \enquote{tom assustado,
+  voz trêmula} é instrução ao modelo, não texto falado. Os dois têm teto de
+  \num{4000}~\emph{bytes}, conferido no domínio antes do pedido --- estourar
+  devolve 400 sem dizer qual dos dois campos.\\
+\cd{multiSpeakerMarkup} para o podcast & Lucas e Bia numa chamada só, cada turno
+  com seu \cd{speakerId}. Monólogo usa \cd{voice.name}; diálogo usa
+  \cd{multiSpeakerVoiceConfig}. \textbf{Mandar os dois} devolve 400.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Com ADC de \emph{usuário}, a síntese exige \cd{x-goog-user-project}.} O
+sintoma engana: a geração de \emph{imagem} funciona e só a voz responde
+\cd{403 PERMISSION\_DENIED}, porque o \cd{aiplatform} aceita o projeto do
+\emph{endpoint} e o Text-to-Speech cobra um projeto de cota explícito. O
+\emph{provider} manda o cabeçalho quando \env{VERTEX\_PROJECT\_ID} está
+definida. Em produção, com \emph{service account}, o cabeçalho é inócuo.
+\end{atencao}
+
 \section{Raciocínio conta como saída}
 
 \begin{atencao}
@@ -354,11 +399,13 @@ localidade de processamento como item de conformidade, não de arquitetura.
   variável separada existe para trocar um sem tocar no outro.\\
 \zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} &
   Quem trocar precisa conferir a proporção devolvida.\\
-\env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
+\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz. Serviço à parte
+  (Text-to-Speech), habilitado no projeto.\\
+\zebra \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & \cd{0} desligado, \cd{-1} dinâmico,
   $>0$ teto.\\
-\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{20000} & Quota diária do
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do
   estudante.\\
-\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
+\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
   professor, gestor e admin.\\
 \bottomrule
 \end{tabularx}

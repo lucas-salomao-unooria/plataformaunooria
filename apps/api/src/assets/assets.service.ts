@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -72,6 +72,106 @@ export class AssetsService {
     }
 
     return this.urlPublica(relativo);
+  }
+
+  /**
+   * Mídia FIXA de uma experiência — as vozes e as fotos que a exp-07 gera uma
+   * vez e serve a todo mundo.
+   *
+   * Três diferenças em relação a `salvarImagemDePost`, e as três são de
+   * natureza do dado:
+   *
+   * - **Não leva `escola_id` no caminho.** Esta mídia é do CONTRATO, não de uma
+   *   escola: a Dona Lúcia do grupo é a MESMA para toda a rede, e uma cópia por
+   *   escola multiplicaria o custo de geração por cem sem nenhum ganho — e faria
+   *   duas turmas ouvirem vozes diferentes no mesmo boato.
+   * - **Aceita qualquer tipo**, porque áudio existe: `image/webp` era o único
+   *   `contentType` que este serviço sabia produzir.
+   * - **A conversão é opcional.** Com `imagem`, converte para webp no tamanho
+   *   pedido; sem, grava os bytes como vieram (é o caminho do MP3).
+   */
+  async salvarMidiaDeExperiencia(opts: {
+    expId: string;
+    /** Nome do arquivo COM extensão (`dona-lucia-boato.mp3`). */
+    nome: string;
+    bytes: Buffer;
+    contentType: string;
+    imagem?: { largura: number; altura: number };
+  }): Promise<string> {
+    const conteudo = opts.imagem
+      ? await sharp(opts.bytes)
+          .resize(opts.imagem.largura, opts.imagem.altura, { fit: "cover", position: "attention" })
+          .webp({ quality: 82 })
+          .toBuffer()
+      : opts.bytes;
+    const relativo = this.caminhoDaMidia(opts.expId, opts.nome);
+
+    if (this.driver() === "gcs") {
+      const { Storage } = await import("@google-cloud/storage");
+      const bucket = new Storage().bucket(this.config.getOrThrow<string>("ASSETS_BUCKET"));
+      await bucket.file(relativo).save(conteudo, { contentType: opts.contentType, resumable: false });
+    } else {
+      const destino = path.join(this.dirLocal(), relativo);
+      await mkdir(path.dirname(destino), { recursive: true });
+      await writeFile(destino, conteudo);
+    }
+
+    return this.urlPublica(relativo);
+  }
+
+  /**
+   * A mídia já está publicada? É o que torna o preparo IDEMPOTENTE: preparar
+   * duas vezes não regera nada, e a segunda chamada é de graça.
+   *
+   * Falha de rede aqui responde `false`, e o pior caso é gerar de novo uma
+   * mídia que já existia — sobrescrever é inofensivo, e o contrário (dizer que
+   * existe o que não existe) deixaria o estudante com um player quebrado.
+   */
+  async midiaDeExperienciaExiste(expId: string, nome: string): Promise<boolean> {
+    const relativo = this.caminhoDaMidia(expId, nome);
+    try {
+      if (this.driver() === "gcs") {
+        const { Storage } = await import("@google-cloud/storage");
+        const bucket = new Storage().bucket(this.config.getOrThrow<string>("ASSETS_BUCKET"));
+        const [existe] = await bucket.file(relativo).exists();
+        return existe;
+      }
+      await access(path.join(this.dirLocal(), relativo));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Lê de volta uma mídia publicada, pelo MESMO driver que a gravou.
+   *
+   * Existe porque a derivada (o print recortado) precisa dos bytes da origem, e
+   * buscá-los pela URL pública não funciona: em dev ela aponta para a api que
+   * está servindo `/assets`, que pode ser outro processo com outro
+   * `ASSETS_LOCAL_DIR` — e o recorte falha com 404 num arquivo que existe no
+   * disco ao lado. Medido.
+   */
+  async lerMidiaDeExperiencia(expId: string, nome: string): Promise<Buffer> {
+    const relativo = this.caminhoDaMidia(expId, nome);
+    if (this.driver() === "gcs") {
+      const { Storage } = await import("@google-cloud/storage");
+      const bucket = new Storage().bucket(this.config.getOrThrow<string>("ASSETS_BUCKET"));
+      const [bytes] = await bucket.file(relativo).download();
+      return bytes;
+    }
+    return readFile(path.join(this.dirLocal(), relativo));
+  }
+
+  /** A URL que o `<audio src>` e o `<img src>` vão usar. Pública de propósito:
+   *  esses elementos não mandam o bearer, então uma rota autenticada aqui daria
+   *  um player mudo e uma imagem quebrada. */
+  urlDaMidiaDeExperiencia(expId: string, nome: string): string {
+    return this.urlPublica(this.caminhoDaMidia(expId, nome));
+  }
+
+  private caminhoDaMidia(expId: string, nome: string): string {
+    return `experiencias/${expId}/${nome}`;
   }
 
   /**

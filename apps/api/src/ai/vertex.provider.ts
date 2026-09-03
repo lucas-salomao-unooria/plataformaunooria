@@ -2,11 +2,14 @@ import { GoogleAuth } from "google-auth-library";
 import { Agent, fetch as fetchDoUndici } from "undici";
 import type {
   AiConversaRequest,
+  AiImagemOpcoes,
   AiJsonRequest,
   AiJsonSchema,
   AiProvider,
   AiRequest,
   AiResult,
+  AiSpeechRequest,
+  AiTimbre,
 } from "./provider";
 import { ErroDeGeracao } from "./provider";
 
@@ -66,6 +69,46 @@ const MODELO_IMAGEM_PADRAO = "gemini-3.1-flash-image";
  */
 export const PROPORCAO_IMAGEM = "4:5";
 const TAMANHO_IMAGEM = "1K";
+
+/**
+ * A síntese de fala NÃO fica no aiplatform: ela é a Cloud Text-to-Speech
+ * (`texttospeech.googleapis.com`), com os mesmos modelos Gemini por trás e o
+ * MESMO ADC. Por isso não passa por `endpointVertex` — o host, o caminho e o
+ * corpo são outros, e forçá-los no mesmo helper misturaria dois contratos.
+ *
+ * A API precisa estar habilitada no projeto (`gcloud services enable
+ * texttospeech.googleapis.com`); sem isso a resposta é 403 e a mídia cai no
+ * fallback de transcrição, que é o comportamento seguro.
+ */
+const TTS_URL = "https://texttospeech.googleapis.com/v1/text:synthesize";
+const MODELO_VOZ_PADRAO = "gemini-2.5-flash-tts";
+const IDIOMA_PADRAO = "pt-BR";
+
+/**
+ * Tetos do `text:synthesize`, em BYTES (não em caracteres — acento conta 2).
+ * O texto e a direção somam 8.000, com 4.000 para cada um. Acima disso a API
+ * responde 400, e o roteiro precisa ser quebrado em faixas pelo domínio.
+ */
+export const TTS_LIMITE_TEXTO = 4_000;
+export const TTS_LIMITE_DIRECAO = 4_000;
+
+/**
+ * O mapa entre o timbre do domínio e o catálogo de vozes do vendor — a ÚNICA
+ * tradução, e a razão de `AiTimbre` existir: uma experiência pede "idosa
+ * assustada", não "Gacrux".
+ *
+ * As vozes do Gemini-TTS não são marcadas por idade; o que as separa é o
+ * caráter do timbre. A escolha abaixo é a que soou mais próxima de cada faixa
+ * em pt-BR, e é ajustável sem tocar em nenhum roteiro.
+ */
+const VOZ_DO_TIMBRE: Record<AiTimbre, string> = {
+  "jovem-feminino": "Leda",
+  "jovem-masculino": "Puck",
+  "adulto-feminino": "Aoede",
+  "adulto-masculino": "Charon",
+  "idoso-feminino": "Gacrux",
+  "idoso-masculino": "Iapetus",
+};
 
 /**
  * `global` não tem host regional (`https://aiplatform.googleapis.com`) — é a
@@ -404,8 +447,9 @@ export class VertexProvider implements AiProvider {
 
   /** Imagem via modelo próprio (VERTEX_IMAGE_MODEL) com responseModalities —
    *  porte do `gerarImagemBytes` do origem para o endpoint Vertex/ADC. */
-  async generateImage(prompt: string): Promise<Buffer> {
+  async generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer> {
     const modelo = process.env.VERTEX_IMAGE_MODEL ?? MODELO_IMAGEM_PADRAO;
+    const proporcao = opcoes?.proporcao ?? PROPORCAO_IMAGEM;
     const res = await fetchDoUndici(this.endpoint(modelo), {
       method: "POST",
       headers: {
@@ -416,7 +460,7 @@ export class VertexProvider implements AiProvider {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           responseModalities: ["IMAGE"],
-          imageConfig: { aspectRatio: PROPORCAO_IMAGEM, imageSize: TAMANHO_IMAGEM },
+          imageConfig: { aspectRatio: proporcao, imageSize: TAMANHO_IMAGEM },
         },
       }),
       dispatcher,
@@ -427,6 +471,102 @@ export class VertexProvider implements AiProvider {
     const inline = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)?.inlineData;
     if (!inline?.data) throw new ErroDeGeracao("O modelo não devolveu imagem.");
     return Buffer.from(inline.data, "base64");
+  }
+
+  /**
+   * Fala sintetizada pela Cloud Text-to-Speech, em MP3.
+   *
+   * **MP3 e não PCM** por uma razão operacional: não há ffmpeg neste
+   * repositório (só o binário mínimo emprestado do Playwright, que não
+   * converte áudio), e um WAV de 3m30 passaria de 10 MB. O `audioEncoding`
+   * resolve na origem o que aqui sairia caro.
+   *
+   * **Um pedido por diálogo.** Quando há `turnos`, o modelo multi-falante
+   * recebe a conversa inteira e ajusta pausa e entonação entre as vozes.
+   * Sintetizar cada fala à parte e concatenar devolveria duas leituras em voz
+   * alta, não um episódio de podcast.
+   */
+  async generateSpeech(req: AiSpeechRequest): Promise<Buffer> {
+    const modelo = process.env.VERTEX_TTS_MODEL ?? MODELO_VOZ_PADRAO;
+    const idioma = req.idioma ?? IDIOMA_PADRAO;
+
+    if (!req.texto && (!req.turnos || req.turnos.length === 0)) {
+      throw new ErroDeGeracao("Nada para falar: pedido sem texto e sem turnos.");
+    }
+    if (req.falantes.length === 0) {
+      throw new ErroDeGeracao("Pedido de fala sem nenhum falante declarado.");
+    }
+
+    // Os tetos são em BYTES: em pt-BR cada acento conta 2, e medir por
+    // `length` deixaria passar um roteiro que a API recusa com 400.
+    const corpo = req.texto ?? req.turnos!.map((t) => t.texto).join(" ");
+    const bytesDoTexto = Buffer.byteLength(corpo, "utf8");
+    if (bytesDoTexto > TTS_LIMITE_TEXTO) {
+      throw new ErroDeGeracao(
+        "O roteiro é longo demais para uma síntese só.",
+        `${bytesDoTexto} bytes, teto de ${TTS_LIMITE_TEXTO}. Quebre em faixas no domínio.`,
+      );
+    }
+    if (req.direcao && Buffer.byteLength(req.direcao, "utf8") > TTS_LIMITE_DIRECAO) {
+      throw new ErroDeGeracao("A direção de atuação é longa demais.");
+    }
+
+    const input: Record<string, unknown> = req.turnos
+      ? { multiSpeakerMarkup: { turns: req.turnos.map((t) => ({ speaker: t.falante, text: t.texto })) } }
+      : { text: req.texto };
+    if (req.direcao) input.prompt = req.direcao;
+
+    // Monólogo usa `voiceConfig`; diálogo usa `multiSpeakerVoiceConfig`. Mandar
+    // o segundo com um falante só faz a API recusar o markup ausente.
+    const voice: Record<string, unknown> = { languageCode: idioma, modelName: modelo };
+    if (req.turnos) {
+      voice.multiSpeakerVoiceConfig = {
+        speakerVoiceConfigs: req.falantes.map((f) => ({
+          speakerAlias: f.nome,
+          speakerId: VOZ_DO_TIMBRE[f.timbre],
+        })),
+      };
+    } else {
+      voice.name = VOZ_DO_TIMBRE[req.falantes[0]!.timbre];
+    }
+
+    const res = await fetchDoUndici(TTS_URL, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${await this.accessToken()}`,
+        "content-type": "application/json",
+        // MEDIDO, e é a diferença entre esta API e o aiplatform: com ADC de
+        // USUÁRIO (o `gcloud auth application-default login` de quem
+        // desenvolve), a Cloud TTS responde 403 PERMISSION_DENIED pedindo um
+        // "quota project" — que a credencial de usuário não carrega. O
+        // aiplatform não exige, então imagem funciona e voz não, e o erro não
+        // diz nada sobre voz. O header resolve sem mexer no ADC da máquina de
+        // ninguém; em Cloud Run a service account já traz o projeto, e mandá-lo
+        // de novo é inofensivo.
+        ...(process.env.VERTEX_PROJECT_ID
+          ? { "x-goog-user-project": process.env.VERTEX_PROJECT_ID }
+          : {}),
+      },
+      body: JSON.stringify({ input, voice, audioConfig: { audioEncoding: "MP3" } }),
+      dispatcher,
+    });
+
+    if (!res.ok) {
+      // O 403 mais comum aqui é a API não estar habilitada no projeto — dizer
+      // isso poupa a caçada por permissão de service account.
+      const detalhe = (await res.text()).slice(0, 400);
+      throw new ErroDeGeracao(
+        "A síntese de voz falhou.",
+        `HTTP ${res.status}. ${detalhe}` +
+          (res.status === 403
+            ? " Confira: gcloud services enable texttospeech.googleapis.com"
+            : ""),
+      );
+    }
+
+    const data = (await res.json()) as { audioContent?: string };
+    if (!data.audioContent) throw new ErroDeGeracao("A síntese de voz não devolveu áudio.");
+    return Buffer.from(data.audioContent, "base64");
   }
 }
 

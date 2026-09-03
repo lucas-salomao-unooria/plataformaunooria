@@ -37,7 +37,8 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
   \textbf{só escuro} & exp-02\\
 \zebra \cd{whatsappmobile} (29) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
-  & ---\\
+  & \textbf{exp-07} --- da tela de bloqueio à validação de Amara, inclusive os
+  erros diegéticos\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
   \cd{data-gpt-theme} & \textbf{exp-03 inteira} --- ela não tem revelação no
   software, então nunca troca para a seção da plataforma\\
@@ -141,6 +142,8 @@ pacote direto num componente:
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
 \cd{@edu/ui/ds-insta} & \cd{instanooria} & exp-01\\
 \cd{@edu/ui/ds-unootube} & \cd{unitube} & exp-02\\
+\cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp-03\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp-07\\
 \end{tabularx}
 \end{regra}
 
@@ -330,6 +333,49 @@ Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
   própria marca.\\
 \bottomrule
 \end{tabularx}
+
+\subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp-07 0.1.0)}
+
+A seção tem 29 componentes e cobre o cromo inteiro do mensageiro --- barra de
+status, cabeçalho de conversa, balão com mídia e documento, campo de escrever,
+diálogo, folha inferior. As quatro peças que a exp-07 pede e ela não publica
+estão abaixo; \textbf{três saem de composição}, e só uma é compensação de
+verdade (\adrr{ADR-68}).
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Como está resolvido}\\
+\midrule
+\cd{ForwardedBadge} --- o selo \enquote{Encaminhada com frequência} & Composição:
+  \cd{Icon name="forward"} (o pacote tem o glifo) com os tokens de texto
+  secundário. Nenhuma cor inventada.\\
+\zebra \cd{PinnedMessageBanner} --- a barra do alfinete & Composição sobre a
+  superfície de \emph{appbar}. O pacote tem o \emph{tone} \cd{pin}, com a cor
+  certa, mas \textbf{nenhum glifo de alfinete} --- ele é desenhado localmente,
+  junto de \cd{play} e \cd{pause}, que também faltam.\\
+\cd{ReplyQuoteSelectionSheet} --- o menu das 3 respostas & Composição com
+  \cd{Radio} e um card de citação. \textbf{Não use \cd{ListItem}}: o título dele
+  tem \cd{white-space: nowrap} --- certo numa lista de conversas, e errado aqui,
+  porque truncar as opções faria a criança escolher sem ler.\\
+\zebra \cd{ChatAudioBubbleWithTranscript} --- o balão de voz &
+  \textbf{A única compensação real.} \cd{MessageBubble} aceita texto,
+  \cd{.Media} (imagem) e \cd{.Document}; não há player de áudio na seção. O
+  balão local traz play, onda em \emph{divs} (sem Canvas, por causa do
+  \emph{framerate} em Chromebook escolar) e a transcrição sempre visível.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{A seção publica só o tema escuro} (\cd{WaTheme = 'dark'}; o CSS traz
+\cd{:root, [data-wa-theme=dark]} e nada mais). Os wireframes da exp-07 descrevem
+telas claras; derivar a paleta é proibido, pela mesma regra do \cd{unitube}. O
+contraste do escuro (\cd{\#D3DAE0} sobre \cd{\#101D25}, cerca de 11:1) passa o
+AA com folga --- ver \adrr{ADR-68}.
+
+E o \cd{PhoneFrame} do pacote \textbf{não entra} na experiência: quem desenha o
+aparelho é o hub, pelo \cd{viewport} do manifesto. Empilhar os dois daria um
+celular dentro de outro.
+\end{atencao}
 
 \subsection{Avisos que ficaram obsoletos}
 

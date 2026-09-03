@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 
-import { MISSAO_UNOOGPT, MISSAO_UNOOTUBE, buscarMissao } from "@/lib/entre-redes/catalogo";
+import {
+  MISSAO_ECO_NO_GRUPO,
+  MISSAO_UNOOGPT,
+  MISSAO_UNOOTUBE,
+  buscarMissao,
+} from "@/lib/entre-redes/catalogo";
 
+import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
 import { ResultadosUnooTube } from "./resultados-unootube";
 
@@ -36,6 +42,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
     return <ResultadosUnooGPT ano={ano} missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
+    return <ResultadosOEcoNoGrupo ano={ano} missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

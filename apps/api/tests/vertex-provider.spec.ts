@@ -1,5 +1,11 @@
 import { ALTURA, LARGURA } from "../src/assets/assets.service";
-import { PROPORCAO_IMAGEM, endpointVertex, thinkingConfig } from "../src/ai/vertex.provider";
+import {
+  PROPORCAO_IMAGEM,
+  TTS_LIMITE_TEXTO,
+  VertexProvider,
+  endpointVertex,
+  thinkingConfig,
+} from "../src/ai/vertex.provider";
 
 /**
  * Contratos do provider Vertex que não dá para verificar com typecheck e que
@@ -55,5 +61,38 @@ describe("proporção da imagem gerada", () => {
   test("é a mesma do card da exp-01 — senão o `cover` come a composição", () => {
     const [largura, altura] = PROPORCAO_IMAGEM.split(":").map(Number);
     expect(largura! / altura!).toBeCloseTo(LARGURA / ALTURA, 3);
+  });
+});
+
+/**
+ * Síntese de voz: os três portões que rodam ANTES de qualquer rede.
+ *
+ * Eles existem porque a Cloud TTS responde 400 seco a roteiro grande, e
+ * descobrir isso em produção significaria a fala de uma personagem sumindo da
+ * aula sem nenhuma pista no log. Aqui a falha é local, imediata e explica o
+ * que fazer — e o teste não toca a rede nem precisa de credencial.
+ */
+describe("portões da síntese de voz", () => {
+  const provider = new VertexProvider();
+
+  test("roteiro acima do teto de BYTES falha antes de chamar a API", async () => {
+    // Bytes, não caracteres: em pt-BR cada acento conta 2, e medir por
+    // `length` deixaria passar um roteiro que a API recusa.
+    const longo = "á".repeat(TTS_LIMITE_TEXTO);
+    await expect(
+      provider.generateSpeech({ texto: longo, falantes: [{ nome: "Amara", timbre: "jovem-feminino" }] }),
+    ).rejects.toThrow(/longo demais/i);
+  });
+
+  test("pedido sem texto e sem turnos falha alto", async () => {
+    await expect(
+      provider.generateSpeech({ falantes: [{ nome: "Amara", timbre: "jovem-feminino" }] }),
+    ).rejects.toThrow(/sem texto e sem turnos/i);
+  });
+
+  test("pedido sem falante falha alto", async () => {
+    await expect(provider.generateSpeech({ texto: "oi", falantes: [] })).rejects.toThrow(
+      /sem nenhum falante/i,
+    );
   });
 });

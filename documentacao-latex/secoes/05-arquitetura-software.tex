@@ -324,7 +324,7 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
 \fitpage{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \draw[c4zone] (0.4,-0.5) rectangle (15.6,-14.2);
+  \draw[c4zone] (0.4,-0.5) rectangle (15.6,-15.1);
   \node[c4boundarylbl, fill=unooSurface] at (0.8,-0.35) {Contêiner: API (NestJS)};
 
   % ---- faixa 1: transversal
@@ -376,10 +376,10 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{portabilidade/}\desc{perfil portátil}};
 
   % ---- faixa 4: dominio por experiencia
-  \node[camadalbl, anchor=west] at (0.7,-11.1)
+  \node[camadalbl, anchor=west] at (0.7,-10.9)
     {Domínio por experiência --- \texttt{catalogo.ts} + \texttt{regras.ts} + \emph{service} + \emph{controllers} por papel};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (motor) at (2.2,-12.4)
-    {\texttt{motor/}, \texttt{geracao/}, \texttt{dossie/}, \texttt{atividades/}, \texttt{perfis/}\desc{exp-01}};
+    {\texttt{motor/} e mais 4\desc{geracao, dossie, atividades, perfis --- exp-01}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (utube) at (5.6,-12.4)
     {\texttt{unootube/}\desc{exp-02}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (vila) at (9.0,-12.4)
@@ -390,6 +390,8 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{bemestar/}\desc{exp-91}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (2.2,-14.2)
     {\texttt{unoogpt/}\desc{exp-03}};
+  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (eco) at (9.0,-14.2)
+    {\texttt{o-eco-no-grupo/}\desc{exp-07 --- texto, imagem e VOZ}};
 
   % ---- relações principais
   \draw[c4rel] (guard.south) -- (2.5,-3.1) -- (6.0,-3.1) -- (roles.south);
@@ -401,10 +403,13 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     node[cxlabel, pos=0.80, right=1pt]{IA + quota};
   \draw[c4rel] (bem.west) -- (13.6,-13.6) -- (13.6,-10.7) -- (6.4,-10.7) -- (6.4,-6.0);
   \draw[c4rel] (ugpt.west) -- (0.4,-14.2) -- (0.4,-10.5) -- (2.5,-10.5) -- (2.5,-6.0);
-  \draw[c4rel] (ugpt.east) -- (4.0,-14.2) -- (6.8,-14.2) -- (6.8,-10.2) -- (6.4,-10.2) -- (6.4,-6.0)
-    node[cxlabel, pos=0.55, above]{IA com ferramentas + quota};
+  \draw[c4rel] (ugpt.east) -- (4.0,-14.2) -- (6.8,-14.2) -- (6.8,-10.2) -- (6.4,-10.2) -- (6.4,-6.0);
+  \node[cxlabel, anchor=west] at (6.95,-11.45) {IA com ferramentas + quota};
   \draw[c4rel] (planos.north east) -- (13.6,-11.6) -- (10.0,-6.0)
     node[cxlabel, pos=0.72, right=1pt]{\emph{bucket} privado};
+  \draw[c4rel] (eco.north) -- (9.0,-13.35) -- (10.5,-13.35) -- (10.5,-10.35) -- (6.4,-10.35) -- (6.4,-6.0);
+  \draw[c4rel] (eco.east) -- (10.9,-14.2) -- (10.9,-11.55) -- (10.0,-6.0)
+    node[cxlabel, pos=0.80, right=1pt]{mídia no \emph{bucket}};
 
 \end{tikzpicture}}
 \caption[C4 nível 3 --- componentes da API]{C4 nível 3: componentes da API. A

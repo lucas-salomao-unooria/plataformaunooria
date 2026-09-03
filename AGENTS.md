@@ -12,7 +12,7 @@ este arquivo vence.
 | `apps/hub/AGENTS.md` | landing, header, casca, embed de experiência, papéis e middleware, fontes do DS |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, como criar experiência nova, seções de clone do DS, a zona congelada da exp-70 |
 | `packages/AGENTS.md` | índice dos pacotes de workspace (o detalhe está no `AGENTS.md` de cada um) |
-| `packages/*/AGENTS.md` | por pacote: o contrato que o `sdk` promete, as 4 pontes do `ui`, o conteúdo da exp-01 |
+| `packages/*/AGENTS.md` | por pacote: o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp-01 |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta de dev, rota do hub, seção do DS, módulo da api e as regras dela |
 | `scripts/AGENTS.md` | os utilitários de linha de comando, e o que é gerado e não se edita à mão |
 | `scripts/e2e/AGENTS.md` | o que uma suíte precisa provar, e a espera que corre contra o erro |
@@ -115,7 +115,8 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
 | `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
 | `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile`, `tiktooria` | — | ainda sem consumidor |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 INTEIRA, menos as telas da escola (breakpoint, cards, "Meu percurso") — **só tema escuro** |
+| `tiktooria` | — | ainda sem consumidor |
 
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e
@@ -288,7 +289,7 @@ abri-lo.
   (reserve conferindo `origin/dev`), `main.pdf` (regera, não escolhe lado),
   `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
-  `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
+  `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
 - Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo é
   o slug da experiência ou o app/pacote tocado.
@@ -317,7 +318,7 @@ pnpm docker:dev                           # a stack INTEIRA em container (pg/api
                                           # é um OU outro. `:logs` `:deps` `:down` completam.
 pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
 pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
-pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
+pnpm new:exp exp-12-fracoes               # scaffolda experiência do _template
 pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
 npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
@@ -361,10 +362,12 @@ node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ 
 EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
+pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
+                                          # o professor prepara a mídia no painel antes da aula)
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~332p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~419p). Atualizar SEMPRE
 ```
 
 
@@ -397,13 +400,13 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~332 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~419 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**64 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**67 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

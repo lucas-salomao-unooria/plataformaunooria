@@ -25,6 +25,16 @@ outro mede o software. Nenhum substitui o outro, e a regra 6 (nada de PII em log
 
 \section{O que se vê hoje}
 
+\begin{nota}
+Este levantamento retrata 1º de setembro de 2026 e \textbf{já não descreve o
+ambiente}: entre 2 e 3 de setembro entraram o log estruturado, os rastros, as
+sondas, doze políticas de alerta, dois SLOs, a fila morta da telemetria e o
+painel de operação. O estado corrente está na
+Seção~\ref{sec:obs-implantado}, ao fim do capítulo. O texto abaixo é mantido
+como registro do ponto de partida --- é o que justifica cada decisão que veio
+depois.
+\end{nota}
+
 O levantamento foi feito sobre o código em \cd{dev} em 1º de setembro de
 2026, com busca por biblioteca, por padrão de código e por configuração de
 implantação. O resultado é o mesmo em todas as camadas: \textbf{não há
@@ -1066,6 +1076,188 @@ letter}, sondas do serviço, \env{GCP\_PROJECT\_ID}) e o \emph{workflow} da
 suíte. Sem esse contrato escrito, a fase 0 vira \enquote{clicar no console}
 --- que funciona em \cd{dev} e desaparece no segundo contrato.
 \end{atencao}
+
+\section{Estado da implantação (3 de setembro de 2026)}
+\label{sec:obs-implantado}
+
+O que segue não é plano: é o que responde hoje no projeto \cd{entre-redes-dev},
+verificado consultando o Cloud Monitoring e o Cloud Logging, e não apenas o
+código que os declara. A fase~0 do roteiro está fechada em \cd{dev}; \cd{hml} e
+\cd{prd} recebem o mesmo código pelo mesmo \emph{tfvars}, e esperam apenas o
+\cd{apply}.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Sinal} & \thd{Estado} & \thd{Onde vive, e como se confere}\\
+\midrule
+\endhead
+Log estruturado da API & \textbf{no ar} & \cd{jsonPayload.codigo} com
+  \cd{requestId}; \env{GCP\_PROJECT\_ID} liga a linha ao rastro. Conferido pela
+  sonda \cd{codigo=api-iniciada}\\
+\zebra Rastros distribuídos & \textbf{no ar} & OpenTelemetry no Express: há
+  \emph{span} por \emph{middleware} e por rota --- \rota{GET
+  /unoogpt/professor/turmas/:turmaId} aparece como \cd{RPC\_SERVER} no Cloud
+  Trace\\
+Sondas sintéticas & \textbf{no ar} & Quatro \emph{uptime checks} a cada 60\,s,
+  de três regiões, validando \textbf{conteúdo}: \rota{/readyz} da API,
+  \rota{/api/healthz} e o JWKS do hub, e o painel do OpenReplay\\
+\zebra Alertas & \textbf{no ar} & Doze políticas, todas habilitadas, num canal
+  de e-mail. Detalhe na tabela seguinte\\
+SLOs & \textbf{no ar} & Dois \emph{custom services} no Cloud Monitoring, API e
+  hub, com \(99{,}5\%\) de requisições sem 5xx em janela rolante de 30 dias\\
+\zebra Fila morta da telemetria & \textbf{no ar} & \cd{dead\_letter\_policy}
+  com cinco tentativas na \emph{subscription} de \emph{push}, mais um tópico e
+  uma \emph{subscription} de retenção por 7 dias para inspeção manual\\
+Painel de operação & \textbf{no ar} & Um \emph{dashboard} com 5xx, erro
+  interno, p95, instâncias, CPU e disco do banco, fila morta e um cartão por
+  sonda --- na ordem em que se investiga\\
+\zebra Higiene do log & \textbf{no ar} & Exclusão no \emph{sink}
+  \cd{\_Default} das sondas e das rotas de saúde, restrita a
+  \cd{severity < WARNING}: erro nessas rotas continua registrado\\
+Error Reporting & \textbf{parcial} & API habilitada, mas \textbf{zero grupos}
+  em uma semana. Ninguém provou ainda que a linha de erro sai no formato que
+  ele agrupa --- as poucas linhas \cd{ERROR} do período foram falha de conexão
+  do próprio Cloud Run, sem \emph{stack}\\
+\zebra Erro de cliente & \textbf{ausente} & Nenhum erro de navegador é
+  capturado. É a maior lacuna: tela branca de professor não gera sinal\\
+\emph{Session replay} & \textbf{parcial} & Instância própria de OpenReplay no
+  ar, sem nenhum \emph{tracker} instrumentado --- nenhuma sessão gravada\\
+\zebra Sondas do Cloud Run & \textbf{ausente} & O módulo já aceita
+  \cd{startup\_probe\_path} e \cd{liveness\_probe\_path}, e as três rotas de
+  saúde respondem; nenhum serviço as usa ainda\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As doze políticas que existem}
+
+A lista prevista na Seção anterior tinha quatorze linhas e nasceu de um
+desenho; estas doze nasceram do que a métrica nativa permite medir \emph{sem
+tocar na aplicação} --- porque o repositório de infraestrutura evolui sozinho,
+enquanto o \emph{monorepo} está em obra.
+
+\begin{tabularx}{\linewidth}{@{}L{8mm}L{46mm}X@{}}
+\toprule
+\headrow \thd{Sev.} & \thd{Política} & \thd{Condição}\\
+\midrule
+\endhead
+\textbf{A} & \cd{api-readyz}, \cd{hub-healthz}, \cd{hub-jwks} e
+  \cd{openreplay} fora do ar & Sonda falha em 2 de 3 regiões por 2\,min\\
+\zebra \textbf{A} & Disco do banco enchendo & Acima de 85\%: é o único item da
+  lista que piora com o tempo e não volta sozinho\\
+\textbf{B} & API e hub respondendo 5xx & Mais de cinco respostas 5xx em
+  5\,min, por serviço\\
+\zebra \textbf{B} & Erro interno na API & Mais de cinco
+  \cd{codigo=erro-interno} em 5\,min --- lê o \emph{log da aplicação}, então
+  aqui existe \emph{stack}\\
+\textbf{B} & Telemetria na fila morta & Qualquer mensagem parada: o limite é
+  zero, e não um percentual, porque cada uma é evento de estudante perdido\\
+\zebra \textbf{B} & API e hub lentos & p95 acima de 10\,s na API e de 2\,s no
+  hub, por 10\,min\\
+\textbf{B} & CPU do banco alta & Acima de 80\% por 10\,min\\
+\bottomrule
+\end{tabularx}
+
+Cada política carrega no campo \cd{documentation} a sua própria primeira
+resposta em \emph{markdown}, com os comandos já preenchidos --- o e-mail do
+alerta chega com o passo a passo dentro, e não com um \emph{link} para o
+Apêndice~\ref{ap:operacao}.
+
+\subsection{Onde a implantação divergiu do desenho, e por quê}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{O desenho pedia} & \thd{O que se fez, e a razão}\\
+\midrule
+Alerta por \emph{burn rate} do SLO & Ficou de fora. \emph{Burn rate} precisa de
+  histórico para calibrar, e não havia nenhum. Os SLOs foram criados e passam a
+  acumular: o alerta entra depois, com número medido em vez de arbitrado\\
+\zebra 5xx como \textbf{taxa} (\(>\) 1\%) & Virou \textbf{contagem absoluta}.
+  Com o tráfego de \cd{dev} --- uma pessoa --- um erro em duas requisições é
+  50\% e alertaria todo dia. A taxa volta a fazer sentido em \cd{prd}\\
+p95 por rota, isentando \rota{/ai/*} e \rota{/unoogpt/*} & Impossível sem tocar
+  a aplicação: \cd{run.googleapis.com/request\_latencies} não tem rótulo de
+  rota. O limite da API ficou folgado (10\,s) justamente porque as rotas de IA
+  moram nesse serviço; o corte fino exige métrica própria da aplicação\\
+\zebra \emph{Push} para severidade A & Só e-mail. O canal ainda não foi
+  verificado --- vale disparar um alerta de teste antes de confiar nele, porque
+  alerta que não chega é pior que alerta que não existe\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\emph{Session replay}: instância própria em \cd{dev}}
+
+A recomendação de instrumentar erro de cliente ganhou uma peça de
+infraestrutura: uma instância \textbf{self-hosted} de OpenReplay, em VM própria
+com \cd{k3s}, fora do \emph{Load Balancer} --- o \emph{chart} traz o próprio
+\cd{ingress-nginx} e emite o próprio certificado, e o Cloud Armor barraria os
+\emph{payloads} binários do \emph{ingest}. As gravações não ficam no disco da
+máquina: o MinIO embutido está desligado e o \emph{storage} aponta para quatro
+\emph{buckets} GCS pela API S3 de interoperabilidade, com chave HMAC.
+
+\begin{decisao}
+\textbf{Por que \emph{self-hosted} e não SaaS.} A gravação mostra a tela de
+estudante menor de idade. \emph{Self-hosted} mantém o dado no mesmo projeto GCP
+do resto da plataforma, sob o mesmo contrato --- e é o que torna a conversa com
+a escola possível. O preço é operar mais uma VM, com \emph{snapshot} diário do
+disco porque o Postgres interno guarda as contas e o índice das sessões.
+\end{decisao}
+
+\begin{atencao}
+\textbf{O \emph{iframe} cross-domain exige \cd{crossdomain.enabled} nos dois
+lados.} A documentação do OpenReplay mostra apenas \cd{parentDomain} no
+\emph{tracker} de dentro do \emph{iframe}; no código-fonte, a decisão é
+\cd{crossdomainMode = inIframe() \&\& options.crossdomain?.enabled}. Sem
+\cd{enabled: true} \emph{dentro} do \emph{iframe} da experiência, ele abre
+sessão própria em vez de entrar na sessão do hub --- e o replay chega partido em
+duas. Com a configuração certa, o \emph{tracker} do \emph{iframe} não fala com o
+\emph{ingest}: ele envia por \cd{postMessage} ao hub, que é o único a exportar.
+Exige \emph{tracker} \(\geq\) 18.
+\end{atencao}
+
+\begin{limitacao}
+Em modo \emph{cross-domain} o \emph{iframe} não coleta \cd{Viewport},
+\cd{Connection}, \cd{Performance} nem \cd{Tabs} --- \emph{web vitals} da
+experiência \textbf{não} entram no replay. DOM, ponteiro, rolagem, console e
+exceção entram. E se a experiência renderizar em \cd{canvas} ou WebGL, o replay
+padrão mostra retângulo vazio: aí é preciso \emph{canvas recording}, que muda a
+ordem de grandeza do consumo de disco.
+\end{limitacao}
+
+\subsection{Custo do que entrou}
+
+\begin{tabularx}{\linewidth}{@{}L{52mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Item} & \thd{Custo/mês} & \thd{Observação}\\
+\midrule
+VM do OpenReplay (\cd{e2-standard-4}) & US\$ 98 & Quatro \emph{vCPU} e 16\,GB:
+  a v1.27 sobe ClickHouse ao lado de Postgres e Redis, e com 8\,GB o nó mata
+  \emph{pod} por memória\\
+\zebra Disco de 100\,GB, IP estático e \emph{snapshots} & US\$ 19 & As
+  gravações ficam no GCS, cobradas por volume, com expiração em 90 dias\\
+Doze políticas de alerta & US\$ 4,20 & Cobrança anunciada de US\$ 0,35 por
+  referência, não antes de setembro de 2026\\
+\zebra Quatro sondas e o painel & US\$ 0 & 4 sondas \(\times\) 3 regiões
+  \(\times\) 60\,s \(\approx\) 520\,mil execuções, dentro da franquia de 1
+  milhão; \emph{dashboard} não tem cobrança\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O que ficou pendente, em ordem de risco}
+
+\begin{enumerate}
+  \item \textbf{Erro de JavaScript no cliente.} Instrumentar o \emph{tracker}
+    do OpenReplay no hub e no \emph{bundle} da experiência. A infraestrutura
+    está paga e de pé; falta código no \emph{monorepo}.
+  \item \textbf{Sondas \cd{startup} e \cd{liveness}} na API e no hub. As rotas
+    respondem e o módulo aceita; aplicar cria revisão nova, então convém fazer
+    junto de um \emph{deploy} --- e conferir no \emph{plan} que a imagem do CI
+    é preservada.
+  \item \textbf{Alerta de \emph{burn rate}}, quando os SLOs tiverem um mês de
+    histórico.
+  \item \textbf{Orçamento de faturamento} (\cd{billing\_budget}): não existe
+    nenhum, e a conta acabou de ganhar uma VM permanente.
+  \item \textbf{Verificar o canal de e-mail} com um alerta de teste.
+\end{enumerate}
 
 \section{O que fica de fora}
 

@@ -211,6 +211,7 @@ C4Component
     Component(planos, "planos/", "", "exp-90")
     Component(bem,    "bemestar/", "", "exp-91")
     Component(ugpt,   "unoogpt/", "", "exp-03 - motor probabilistico, agente com ferramentas, relogio da turma")
+    Component(eco,    "o-eco-no-grupo/", "", "exp-07 - gate de turma, texto, imagem e VOZ")
   }
 
   Rel(guard, roles, "antes de")
@@ -220,6 +221,8 @@ C4Component
   Rel(planos, ai, "IA + quota")
   Rel(bem, ai, "IA + quota")
   Rel(planos, store, "bucket privado")
+  Rel(eco, ai, "IA + quota")
+  Rel(eco, store, "midia no bucket")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -918,6 +921,8 @@ flowchart TB
     ug["/unoogpt/* - estudante"]
     ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
     uga["/unoogpt/agregado/* - gestor, admin - sem estudanteId"]
+    eco["/o-eco-no-grupo/* - estudante"]
+    ecot["/o-eco-no-grupo/turmas/* - prof, gestor, admin - o gate da aula"]
   end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
@@ -1073,4 +1078,13 @@ quadrantChart
   "R-10 orfa sem retomada":    [0.50, 0.20]
   "R-11 dependencia do DS":    [0.50, 0.22]
   "R-13 WSO2 nao e o emissor": [0.50, 0.18]
+  "R-14 virada do ano letivo": [0.85, 0.90]
+  "R-15 senha compartilhada":  [0.52, 0.52]
+  "R-16 replay sobre menor":   [0.88, 0.94]
+  "R-17 latencia de IA":       [0.55, 0.86]
+  "R-18 custo de IA exp-03":   [0.96, 0.60]
+  "R-19 guia da exp-03":       [0.96, 0.84]
+  "R-20 midia nao preparada":  [0.55, 0.48]
+  "R-21 texto livre de menor": [0.96, 0.52]
+  "R-22 guia da exp-07":       [0.96, 0.46]
 \end{lstlisting}

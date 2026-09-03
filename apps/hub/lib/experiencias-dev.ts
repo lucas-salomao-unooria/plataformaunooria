@@ -22,6 +22,7 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp-91-bem-estar": "http://localhost:5176",
   /** A Missão Tempestade — 2ª série do EM, unidade 1. Próxima porta livre. */
   "exp-03-unoogpt": "http://localhost:5178",
+  "exp-07-o-eco-no-grupo": "http://localhost:5179",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

@@ -3931,3 +3931,219 @@ e o gestor continua sem rota que aceite \cd{estudanteId}.
 de envio guarda --- aí a sessão por tentativa volta à mesa. Ou o dado de
 \cd{recomeco} mostrar que crianças recomeçam depois de o professor encerrar,
 em número que justifique a liberação explícita.
+
+\section{ADR-66 --- A exp-07 escreve com IA na tela do estudante, e o gabarito
+continua fora do modelo}
+\label{adr:exp07-ia-em-runtime}
+
+\begin{especificacao}{Contexto}
+A missão \cd{exp-07-o-eco-no-grupo} chegou dos gates de produto com uma decisão
+explícita: \enquote{NÃO HÁ USO DE IA GENERATIVA nesta missão. Todas as
+mensagens de chat, reações da cascata, áudios e falas de personagens são 100\%
+roteirizados e deterministicamente controlados.} As cinco bancas aprovaram
+sobre essa premissa, e a banca de dados chegou a registrar como ponto forte a
+ausência de campo de texto livre de menor (\cd{DAD-08}).
+
+O produto reabriu a decisão: quer interação por IA na missão. Isso não é um
+detalhe de implementação --- muda o que o instrumento mede, o que a criança
+escreve e quanto a aula custa.
+\end{especificacao}
+
+\textbf{Decisão.} A IA entra em \textbf{três superfícies}, e em nenhuma delas
+ela decide resultado.
+
+\begin{enumerate}
+  \item \emph{As reações do bairro} (Etapa 4). O desfecho --- se o grupo se
+    acalma, entra em pânico ou azeda --- sai de \cd{Opcao.desfecho} no catálogo
+    do servidor, antes de qualquer modelo ser chamado. O que a IA escreve é
+    \textbf{como isso soa}, reagindo ao que a criança de fato postou.
+  \item \emph{Amara no privado}, e só DEPOIS da decisão no grupo. O silêncio
+    dela durante a investigação é não-negociável de ofício: se ela apontasse a
+    mensagem falsa, o reconhecimento de padrão que a missão mede deixaria de
+    acontecer. O portão é do servidor (\cd{amara-em-silencio}), não uma condição
+    de tela.
+  \item \emph{A devolutiva do \enquote{Meu percurso}}, um parágrafo sobre as
+    escolhas. Não é nota: o \cd{score} sai de \arq{regras/pontuacao.ts} sobre o
+    que aconteceu no grupo, e o formulário reflexivo não entra nele.
+\end{enumerate}
+
+As três falham para o lado seguro. Sem saldo de IA, sem provider ou com a saída
+reprovada pelo sanitizador, a missão fecha inteira: as reações caem no roteiro
+autoral do catálogo, Amara \enquote{fica sem sinal} e a devolutiva não aparece.
+Nenhuma aula depende de o Vertex estar de pé --- e é isso que
+\arq{tests/o-eco-no-grupo-postgres.spec.ts} exercita, rodando a suíte com o
+\cd{MockProvider}, que falha fechado.
+
+\textbf{O texto livre de menor volta, com cinco travas.} A conversa com Amara é
+o único campo aberto da missão: 600 caracteres, teto de 3 turnos, gravado em
+\cd{exp\_07\_mensagens} sob RLS, fora de log e fora da telemetria (só a
+contagem de turnos sai), e sem nenhuma rota de gestor que o alcance. É a mesma
+postura do \cd{exp\_03\_mensagens}, com um teto menor.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter tudo roteirizado}: é o que as bancas aprovaram, e continua
+    sendo o piso do produto (o roteiro existe e é exercido). O que ele não dá é
+    a reação ao que \emph{aquela} criança escreveu --- e o pedido do produto era
+    exatamente esse.
+  \item \emph{IA decidindo o desfecho}: um modelo com um dia ruim mudaria a
+    lição da aula. O desfecho é gabarito, e gabarito é servidor (regra 3).
+  \item \emph{Amara conversando durante a investigação}: destruiria o
+    não-negociável do silêncio cognitivo. A conversa foi movida para depois da
+    decisão, onde consolida em vez de entregar.
+  \item \emph{Prompts no bundle}: proibido pela regra 2, e pior que publicar o
+    gabarito --- o prompt descreve o mecanismo inteiro da missão em português.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o pacote de insumos aprovado passa a
+divergir do que está em produção em dois pontos (IA em runtime e texto livre),
+e as bancas C e D precisam revisitar \cd{PED-14} e \cd{DAD-08}. \emph{Ruim}: a
+missão passa a consumir quota de IA de estudante --- estimados 30 mil tokens
+por criança contra os 300 mil diários. \emph{Ruim}: um sanitizador a mais para
+manter (\arq{regras/sanitizador.ts}), e ele já barrou uma saída real: o mock
+ecoava o próprio prompt para dentro da tela. \emph{Bom}: o desfecho, a
+pontuação e a fixação pelo administrador continuam determinísticos e testáveis
+sem rede.
+
+\textbf{Gatilho de reavaliação.} Um playtest mostrar que a reação escrita ao
+vivo confunde mais que o roteiro autoral --- ou que crianças usam a conversa com
+Amara para escrever o que não deveriam. Nos dois casos, o roteiro do catálogo
+já está no código e volta a ser o caminho único trocando uma linha.
+
+
+\section{ADR-67 --- A mídia da exp-07 é gerada por IA, preparada pelo professor
+e cacheada por contrato}
+\label{adr:exp07-midia-gerada}
+
+\begin{especificacao}{Contexto}
+O brief de assets da exp-07 pede oito peças de conteúdo autoral: duas gravações
+de voz, um podcast masterizado de 3m30 com dois locutores e três fotografias
+estilizadas de um portal de notícias fictício. Nenhuma delas existe, e nenhuma
+sai de código --- são voz humana e design gráfico.
+
+Sem elas, três telas da missão ficam mudas: o áudio de Amara, o áudio da
+moradora que espalha o boato e o episódio que destrava a Aula 2.
+\end{especificacao}
+
+\textbf{Decisão.} A mídia é \textbf{gerada pelo Vertex}, publicada no bucket de
+assets e servida como arquivo estático. Cinco movimentos:
+
+\begin{enumerate}
+  \item \cd{AiProvider} ganha \cd{generateSpeech} (MP3, via Cloud
+    Text-to-Speech) e \cd{generateImage} ganha proporção opcional. Os dois são
+    aditivos: nada fora de \arq{src/ai} conhece o vendor, e \cd{AiTimbre} é
+    neutro (\cd{jovem-feminino}, \cd{idoso-feminino}) para o roteiro descrever
+    \emph{quem} fala, não o nome de catálogo de uma voz do Google.
+  \item Quem prepara é o \textbf{professor}, no painel da turma. A quota diária
+    dele é 2 milhões de tokens contra 300 mil do estudante, gerar leva dezenas
+    de segundos, e o preparo é o momento em que ele confere se a missão está
+    pronta.
+  \item A mídia é do \textbf{contrato}, não da escola:
+    \cd{experiencias/\{expId\}/\{arquivo\}}, sem \cd{escola\_id} no caminho.
+    Toda a rede ouve a mesma Dona Lúcia --- duas turmas discutindo vozes
+    diferentes do mesmo boato não estariam falando da mesma coisa.
+  \item \textbf{O print viral é um recorte da foto da reportagem}, não uma
+    segunda geração. Mesma cena, mesma luz, mesmo instante: o corte visual
+    espelha o corte do texto que o estudante vai descobrir. Duas gerações
+    independentes dariam duas fotos parecidas, e o par casado que o brief exige
+    seria mentira.
+  \item \textbf{A página do portal é HTML, não imagem.} Modelo de imagem erra
+    texto longo, e o parágrafo suprimido precisa ser legível, selecionável por
+    leitor de tela e com contraste medido. A IA faz a foto; o layout é código.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Gerar sob demanda para cada estudante}: cada criança ouviria uma
+    Dona Lúcia diferente, o \cd{intervention\_latency} mediria a latência do
+    modelo, e o custo se multiplicaria por dez mil.
+  \item \emph{Script one-shot com os arquivos no git}: funciona, mas cada
+    contrato novo dependeria de alguém rodar o script --- e o precedente é caro
+    (a exp-02 subiu com o bucket vazio e a missão ficou impossível de concluir,
+    sem nada falhar no deploy nem no log). O script existe
+    (\arq{scripts/smoke-midia-exp-07.ts}), como ferramenta de conferência.
+  \item \emph{Print inteiro gerado por IA}: manchete e parágrafos distorcidos, o
+    trecho omitido ilegível, e o texto invisível para leitor de tela.
+  \item \emph{WAV ou PCM}: não há ffmpeg neste repositório, e um WAV de 3m30
+    passaria de 10\,MB. O \cd{audioEncoding: MP3} resolve na origem.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a duração do podcast não bate com o brief
+--- o roteiro aprovado rende 1\,min\,58\,s, não 3\,min\,30\,s, e chegar lá
+exigiria uma cadência de 11 caracteres por segundo, que não é ritmo de podcast.
+O cronograma da Aula 2 ganha folga; a copy é que teria de mudar. \emph{Ruim}:
+com ADC de usuário a Cloud TTS exige \cd{x-goog-user-project}, e o
+\cd{aiplatform} não --- no mesmo preparo, imagem funciona e voz responde 403 com
+uma mensagem que não fala de voz. \emph{Ruim}: uma dependência a mais para
+habilitar por projeto (\cd{texttospeech.googleapis.com}). \emph{Bom}: sem mídia
+preparada a missão roda igual --- o áudio cai na transcrição, que já está sempre
+na tela por acessibilidade, e a foto na ilustração procedural.
+
+\textbf{Gatilho de reavaliação.} A rede contratar locução humana para a trilha,
+ou um playtest mostrar que a voz sintética atrapalha a compreensão de quem tem
+12 anos. Nos dois casos, o caminho é substituir os arquivos no bucket --- o
+código da tela não muda.
+
+
+\section{ADR-68 --- O clone de WhatsApp da exp-07 é escuro, e as quatro peças
+que faltam são compensação marcada}
+\label{adr:exp07-clone-escuro}
+
+\begin{especificacao}{Contexto}
+Os wireframes e o sheet de copy da exp-07 descrevem a missão em \textbf{modo
+claro}: balões verdes e brancos sobre fundo bege, o WhatsApp que a maioria das
+pessoas usa. A seção \cd{whatsappmobile} do \cd{@unooria/design-system} 0.1.17
+publica \textbf{exclusivamente o tema escuro} --- \cd{WaTheme = 'dark'}, e o CSS
+traz \cd{:root, [data-wa-theme=dark]} e nada mais.
+
+Além do tema, o pacote não publica quatro componentes que a missão pede, e três
+deles sustentam não-negociáveis de ofício: o selo de encaminhada, o banner do
+alfinete, o balão de voz com transcrição e o menu de resposta citada.
+\end{especificacao}
+
+\textbf{Decisão.} \textbf{O clone é escuro}, fiel ao que o pacote publica.
+Derivar uma paleta clara aqui é proibido pela mesma regra do \cd{unitube}: a
+fidelidade é ao que o design system entrega, e uma paleta inventada seria um
+WhatsApp que não existe em lugar nenhum. O contraste do escuro
+(\cd{\#D3DAE0} sobre \cd{\#101D25}, cerca de 11:1) passa o AA que o
+\cd{RNF-ACES-001} exige com folga.
+
+Das quatro peças, \textbf{três saem de composição} com o que o pacote já tem: o
+selo é \cd{Icon name="forward"} com \cd{Badge}; o banner do alfinete usa a
+superfície de appbar; o menu é \cd{Radio} com o texto no \cd{label}. A quarta
+--- o balão de voz --- é a única compensação de verdade, marcada
+\cd{(b) COMPENSAÇÃO} no CSS, com pedido registrado ao \cd{storybook-unooria}.
+
+Duas notas de mecânica que custaram tempo: o \cd{PhoneFrame} do pacote
+\textbf{não entra} na experiência (quem desenha o aparelho é o hub, pelo
+\cd{viewport} do manifesto --- empilhar os dois daria um celular dentro de
+outro); e o \cd{ListItem} \textbf{não serve} para as três opções de resposta,
+porque o título dele tem \cd{white-space: nowrap} --- truncar o texto faria a
+criança escolher sem ler, que é exatamente o comportamento que a missão existe
+para desfazer.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Esperar o tema claro no \cd{storybook-unooria}}: bloquearia o
+    front inteiro da missão por uma diferença que o RNF de acessibilidade não
+    cobra --- o escuro passa o AA melhor que o claro.
+  \item \emph{Derivar a paleta clara localmente}: proibido, e é a porta para
+    cada experiência ter a sua versão do mesmo clone.
+  \item \emph{Publicar os quatro componentes antes de começar}: bloquearia as
+    etapas 2 a 4 da missão por trabalho em outro repositório, e três deles nem
+    seriam componentes novos --- são composições do que já existe.
+  \item \emph{Desfazer o \cd{nowrap} do \cd{ListItem} com dois seletores}: é o
+    caminho que a doutrina permite, mas usar o componente errado e depois
+    desfazer o CSS dele é pior que usar o certo.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o pacote de design aprovado descreve telas
+claras, e a missão em produção é escura --- os wireframes precisam de uma nota,
+e o QA de design revisitaria \cd{DES-06}. \emph{Ruim}: uma compensação local
+aberta, que sai quando o pacote publicar o balão de voz. \emph{Bom}: a ponte
+\cd{@edu/ui/ds-whatsapp} existe e a seção deixa de ser \enquote{sem consumidor};
+a próxima experiência de mensageria começa do que esta deixou pronto.
+
+\textbf{Gatilho de reavaliação.} O \cd{storybook-unooria} publicar o tema claro
+da seção \cd{whatsappmobile} --- aí a decisão volta à mesa, e a troca é de uma
+folha de estilo, não de código de tela.

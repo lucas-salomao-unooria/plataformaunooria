@@ -490,7 +490,7 @@ distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 \begin{decisao}
 \textbf{Numa REDE, a pessoa atravessa escolas; o \emph{token} não.} O professor
 lotado em duas unidades escolhe em qual está trabalhando, e o \emph{token} leva
-\textbf{essa} --- então a política de RLS e as 31 tabelas com \cd{escola\_id}
+\textbf{essa} --- então a política de RLS e as 37 tabelas com \cd{escola\_id}
 continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
@@ -564,8 +564,9 @@ Verificação de versão maior & Hub e experiência comparam
   \cd{localStorage} nem em \emph{cookie}. TTL de 15 minutos, renovado por
   mensagem.\\
 \emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
-  allow-modals}, mais \cd{allow-pointer-lock} \textbf{apenas} para quem declara
-  \cd{pointer-lock} no manifesto~\cite{mdnsandbox}.\\
+  allow-modals}, mais \cd{allow-pointer-lock} e \cd{allow-forms}
+  \textbf{apenas} para quem declara \cd{pointer-lock} ou \cd{forms} no
+  manifesto~\cite{mdnsandbox}.\\
 \zebra \cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}: sem delegar
   \cd{autoplay}, um \cd{<video muted autoplay>} cross-origin rejeita
@@ -657,8 +658,33 @@ Ranking sem menor real & O ranking da exp-02 usa colegas
 \zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
+Texto de menor com contenção & \cd{exp\_07\_mensagens} guarda a conversa da
+  criança com Amara --- \textbf{o único texto livre de estudante do produto}. Ela
+  fica sob RLS, fora de log e fora da telemetria (que leva só a contagem de
+  turnos), tem teto de 600 caracteres e de 3 turnos, e passa pelo sanitizador
+  nos dois sentidos. Ver a decisão logo abaixo.\\
 \bottomrule
 \end{tabularx}
+
+\begin{decisao}
+\textbf{A exp-07 reabriu o texto livre de menor, e isso é mudança de postura}
+(\adrr{ADR-66}). Até ela, o produto tinha exatamente um campo aberto, e ele era
+de \emph{professor} (o \emph{check-in} de bem-estar); as experiências de
+estudante trabalhavam com vocabulário fechado, e a linha acima sobre
+\cd{exp\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
+
+O que fez valer a pena: a missão mede se a criança consegue \textbf{perguntar
+antes de repassar}, e um menu de perguntas prontas responderia a pergunta no
+lugar dela. O que cerca a abertura: a conversa só existe \emph{depois} da
+decisão (o silêncio de Amara na etapa da decisão é de ofício), o texto nunca sai
+da escola dele, e nenhum caminho o leva a \emph{log}, telemetria, Clarity ou
+painel do professor --- o painel mostra \textbf{quantos} turnos, nunca o quê.
+
+Consequência aceita: existe no banco uma coluna de longa duração com texto
+escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
+de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
+algum painel pedir o texto, a decisão volta à mesa.
+\end{decisao}
 
 \subsection{Retenção: uma decisão explícita de não declarar prazo}
 

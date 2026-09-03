@@ -83,11 +83,17 @@ inválido} --- e a mensagem não diz qual dos dois lados está errado.
   O antigo \cd{gemini-2.0-flash-exp} \textbf{não existe mais} --- e por isso toda
   geração de imagem caía no \emph{fallback} procedural. Quem trocar precisa
   conferir a proporção devolvida.\\
-\env{VERTEX\_THINKING\_BUDGET} & \cd{0} & Tokens de \emph{raciocínio} saem do
+\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz das falas da exp-07
+  (Amara, a moradora, o podcast). \textbf{Não é o \emph{aiplatform}}: a síntese
+  vem da Cloud Text-to-Speech, com os mesmos modelos por trás e o mesmo ADC, e a
+  API precisa estar habilitada no projeto. Com ADC de \emph{usuário} ela exige
+  \cd{x-goog-user-project} --- o \emph{provider} manda; sem isso, imagem
+  funciona e voz responde 403 (\adrr{ADR-67}).\\
+\zebra \env{VERTEX\_THINKING\_BUDGET} & \cd{0} & Tokens de \emph{raciocínio} saem do
   \cd{maxOutputTokens}. \cd{0} desligado (paridade com o aplicativo de origem);
   \cd{-1} dinâmico; $>0$ teto. Com pensamento livre, o plano anual voltava
   \textbf{vazio}.\\
-\zebra \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} & \num{300000} & Quota diária do
   estudante.\\
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR} & \num{2000000} & Quota diária de
   professor, gestor e admin. Um plano anual gasta $\sim$\num{220000} \emph{tokens}
