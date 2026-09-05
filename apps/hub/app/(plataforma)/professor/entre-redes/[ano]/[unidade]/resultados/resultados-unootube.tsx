@@ -36,10 +36,14 @@ export async function ResultadosUnooTube({
   const listaTurmas = await apiDoServidor<{ turmas: TurmaResumo[] }>("/unootube/turmas");
   const todas = listaTurmas?.turmas ?? [];
   const doQuartoAno = todas.filter((t) => normalizarSerie(t.serie) === "4EF");
-  const turmas = doQuartoAno.length > 0 ? doQuartoAno : todas;
+  /* O filtro por série FICA — ele diz quais salas podem rodar esta missão.
+     O que saiu foi o FALLBACK "mostrando todas": sem turma da série ele
+     silenciosamente oferecia as outras, e o professor escolhia uma turma que
+     nunca vai jogar isto. Sem turma da série, o certo é dizer isso. */
+  const turmas = doQuartoAno;
   const aviso =
-    doQuartoAno.length === 0 && todas.length > 0
-      ? "Nenhuma turma de 4º ano nesta escola — mostrando todas."
+    doQuartoAno.length === 0
+      ? "Você não tem turma de 4º ano, e esta missão é dessa série. Para conduzir uma missão, entre pela turma em Minhas turmas."
       : undefined;
 
   const resultados = turma

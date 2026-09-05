@@ -99,6 +99,49 @@ adivinhável: antes disto, qualquer estudante logado abria qualquer missão
 digitando a URL.
 \end{regra}
 
+\section{A sala de aula: o que o professor faz}
+\label{sec:sala-do-professor}
+
+\rota{/professor/turmas/:id} deixou de ser a lista nominal e virou a SALA, com
+duas abas:
+
+\begin{itemize}
+  \item \textbf{Missões} --- a grade daquela sala, com o estado de cada uma, quem
+    a abriu e quando, e o botão \emph{Liberar}/\emph{Encerrar}. Daqui sai também o
+    caminho para conduzir a missão \textbf{com a turma já escolhida}.
+  \item \textbf{Estudantes} --- a lista nominal que já existia, com o caminho para
+    o relatório de cada criança.
+\end{itemize}
+
+A aba vive na URL (\cd{?aba=}), como a turma nos resultados: o \emph{link} fica
+compartilhável e o botão voltar funciona.
+
+\begin{decisao}
+\textbf{O caminho para conduzir a missão sai da SALA.} Antes era: voltar ao hub,
+entrar no Entre Redes, achar o ano, abrir resultados e escolher a turma num
+\cd{<select>} --- e a página do ano era a MESMA para as duas turmas da série. Era
+assim que 2EM-A e 2EM-B viravam uma coisa só na cabeça de quem usava.
+
+A trilha do Entre Redes continua existindo e continua sendo por ano: ela é o
+CATÁLOGO, o lugar de conhecer a missão. Uma faixa no topo dela diz quem abre a
+missão para a turma, porque sem isso o professor lê a grade inteira como se tudo
+estivesse no ar para os estudantes dele.
+\end{decisao}
+
+\begin{nota}
+\textbf{O filtro por série das telas de resultado ficou; o \emph{fallback} saiu.}
+Elas ofereciam \enquote{mostrando todas} quando o professor não tinha turma da
+série da missão --- e aí ele escolhia uma sala que nunca vai jogar aquilo. Sem
+turma da série, agora a tela diz isso e aponta para \emph{Minhas turmas}.
+\end{nota}
+
+\begin{regra}
+\textbf{Professor com uma turma tem o mesmo fluxo de quem tem quatro:} ele entra
+na sala clicando. Redirecionar direto de \rota{/professor} para a única sala foi
+considerado e recusado --- dois fluxos para o mesmo papel é o tipo de atalho que
+faz a tela de lista parecer quebrada para metade da rede.
+\end{regra}
+
 \section{exp-01 --- Instanooria}
 
 Clone de rede social de imagens. O estudante navega um \emph{feed} curado por um

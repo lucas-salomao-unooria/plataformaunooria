@@ -147,6 +147,12 @@ export async function POST(req: NextRequest, ctx: Ctx) {
 export async function PATCH(req: NextRequest, ctx: Ctx) {
   return proxy(req, (await ctx.params).path);
 }
+/* `PUT` entrou com a sala de aula (ADR-69): liberar/encerrar é idempotente, e o
+   verbo diz isso. Um método que falta aqui não vira 404 e sim **405**, sem
+   linha no log do BFF — o sintoma aparece como "o botão não faz nada". */
+export async function PUT(req: NextRequest, ctx: Ctx) {
+  return proxy(req, (await ctx.params).path);
+}
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   return proxy(req, (await ctx.params).path);
 }
