@@ -60,7 +60,7 @@ MSG
 
   ✗ nome de branch fora do padrão: '$branch_remota'
 
-    Experiência nova:  exp-NN-slug          (ex.: exp-07-fracoes)
+    Experiência nova:  exp-NN-slug          (ex.: exp-12-fracoes)
     Qualquer outra:    tipo/slug            (ex.: fix/quota-por-perfil)
     Tipos: ${TIPOS//|/, }
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Balão de conversa genérico. Não é a marca do WhatsApp: a missão é um
+       clone para fins pedagógicos, não uma falsificação de marca. -->
+  <rect width="32" height="32" rx="7" fill="#054640" />
+  <path d="M16 7c-5 0-9 3.4-9 7.6 0 2.4 1.3 4.5 3.4 5.9L9.6 25l4.2-2.2c.7.1 1.4.2 2.2.2 5 0 9-3.4 9-7.6S21 7 16 7z"
+        fill="#D3DAE0" />
+</svg>

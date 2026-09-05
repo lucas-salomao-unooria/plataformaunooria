@@ -1,0 +1,17 @@
+{
+  "id": "exp-07-o-eco-no-grupo",
+  "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
+  "versao": "0.1.0",
+  "series": ["7EF"],
+  "capabilities": ["telemetria", "progresso", "avaliacao", "ia"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
+  "publico": "estudante",
+  "verbos": {
+    "interacted": "abriu conversa, tocou o áudio, inspecionou a matéria completa",
+    "attempted": "marcou uma das três respostas no menu de intervenção",
+    "scored": "enviou a contraprova citando o print",
+    "progressed": "avançou nos cards de sistematização e nos gates da aula",
+    "completed": "entregou o Meu percurso"
+  }
+}

@@ -26,7 +26,7 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   particionada, a rotina de expurgo passou a ser trivial --- o que remove o último
   argumento técnico. \textbf{Pendente de decisão de produto e contrato}, e é da
   plataforma inteira.\\
-\cd{R-13} & \textbf{Latência de IA numa sala inteira.} O turno da exp-03 é
+\cd{R-17} & \textbf{Latência de IA numa sala inteira.} O turno da exp-03 é
   síncrono e leva de 10 a 30 segundos, e a largada é simultânea: 30 estudantes
   perguntam ao mesmo tempo. & Média & \textbf{Alto} &
   O desenho aceita a latência (a tela cobre com indicador de \enquote{consultando},
@@ -35,14 +35,14 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   teste de carga de \cd{R-01}. Saída conhecida se reprovar:
   \cd{streamGenerateContent} no provider --- mudança dentro de \arq{src/ai}, sem
   tocar o módulo da experiência.\\
-\zebra \cd{R-14} & \textbf{Custo de IA da exp-03.} Uma partida custa duas ordens
+\zebra \cd{R-18} & \textbf{Custo de IA da exp-03.} Uma partida custa duas ordens
   de grandeza mais que um turno de tutor. & Certa & Médio &
   \textbf{MEDIDO} em 2026-08-27: \num{71397} tokens numa partida completa de 8
   turnos (\adrr{ADR-24}). Os tetos foram fixados sobre esse número, e a medição
   achou de passagem que a quota diária de \num{20000} recusava o quarto turno ---
   corrigida para \num{300000}. \textbf{Fechado}, com um resíduo: a medição é de
   UMA partida, e o custo varia com o número de voltas que o modelo escolhe dar.\\
-\cd{R-15} & \textbf{Guia de condução do debate da exp-03 não existe.} A missão
+\cd{R-19} & \textbf{Guia de condução do debate da exp-03 não existe.} A missão
   deliberadamente não revela a Lacuna de nenhuma fonte por software: a lição
   acontece no debate. & Certa & \textbf{Alto} &
   O guia do projeto de origem está vazio. A ficha publicada (competência, quatro
@@ -136,6 +136,30 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   rede \textbf{antes} do primeiro contrato em produção. Desligar é apagar
   \cd{CLARITY\_PROJECT\_ID} do \emph{environment} --- sem \emph{deploy} de
   código, mas com \emph{rebuild} da imagem.\\
+\cd{R-20} & \textbf{Mídia da exp-07 não preparada antes da aula.} A voz de
+  Amara, o podcast e as fotos do boato são geradas pelo professor, no painel, e
+  nada falha se ele não clicar. & Média & Médio &
+  Mitigado por desenho: sem mídia, a experiência \textbf{continua jogável} pela
+  transcrição (que está sempre na tela, por acessibilidade) e pela ilustração
+  procedural --- mas a missão perde o pico. A ficha da aula pede o preparo no
+  passo de preparo, e o painel mostra o que já existe. O precedente é caro: a
+  exp-02 subiu com o \emph{bucket} vazio e a missão ficou impossível de
+  concluir, sem nada falhar no \emph{deploy} nem no log. \textbf{Conferir
+  \env{ASSETS\_BUCKET} antes da primeira aula de cada contrato.}\\
+\zebra \cd{R-21} & \textbf{Texto livre de menor persistido.} A conversa com
+  Amara reabriu um canal que o produto tinha fechado por desenho. & Certa &
+  Médio &
+  Aceito com contenção (\adrr{ADR-66}): só depois da decisão, teto de 3 turnos e
+  600 caracteres, sanitizador nos dois sentidos, RLS, e nenhum caminho para
+  \emph{log}, telemetria, Clarity ou painel --- o professor vê \emph{quantos}
+  turnos, nunca o quê. Entra no mesmo regime de retenção de \cd{R-02}, e é mais
+  um argumento para fechá-lo.\\
+\cd{R-22} & \textbf{Guia de condução da exp-07 não existe.} Como na exp-03, a
+  lição fecha no debate da turma, e o roteiro do debate ainda é da professora. &
+  Certa & Médio &
+  A ficha do catálogo traz competência, os três momentos e o preparo; o guia
+  passo a passo, não. \textbf{Pendente} --- e o arquivo dos guias está sendo
+  mexido numa frente paralela, então ele entra por lá, não por aqui.\\
 \bottomrule
 \end{tabularx}
 
@@ -161,14 +185,22 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   \fill[unooOrangeWash, opacity=0.5] (1.4,2.4) rectangle (2.4,3.6);
   \fill[unooOrangeWash, opacity=0.5] (2.4,1.4) rectangle (3.6,2.4);
 
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,2.9) {R-01};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.1,3.2) {R-02  R-04};
-  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.1,2.7) {R-06};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.1,1.9) {R-05  R-07};
-  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.1,1.55) {R-12};
-  \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09  R-11};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.9) {R-03$^{*}$};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-13};
+  % zona vermelha (probabilidade alta/certa x impacto alto)
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,3.30) {R-02  R-04};
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,3.00) {R-06  R-14};
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (3.0,2.70) {R-16  R-19};
+  % impacto alto, probabilidade media
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,3.00) {R-01};
+  \node[font=\scriptsize\bfseries\color{unooRed}] at (1.9,2.70) {R-17};
+  % faixa laranja: impacto medio, probabilidade alta/certa
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,2.10) {R-05  R-07};
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.85) {R-12  R-18};
+  \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21  R-22};
+  % restante
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,2.05) {R-03$^{*}$};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-20};
+  \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-11  R-13};
   \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};
 
   \node[legenda, anchor=north west, text width=44mm] at (3.75,3.5)
@@ -180,9 +212,11 @@ severidade, e a severidade considera o prazo de novembro de 2026.
      segurança contratada.};
 
 \end{tikzpicture}}
-\caption[Matriz de riscos]{Matriz de riscos. Três dos quatro riscos da zona
-  crítica não são resolvidos por código: retenção é decisão de produto,
-  segurança externa é contratação, e o fator humano único é estrutural.}
+\caption[Matriz de riscos]{Matriz de riscos. A maioria dos riscos da zona
+  crítica \textbf{não é resolvida por código}: retenção é decisão de produto,
+  segurança externa é contratação, o \emph{session replay} sobre tela de menor é
+  cláusula de DPA, o guia de condução é revisão pedagógica, e o fator humano
+  único é estrutural.}
 \label{fig:matriz-riscos}
 \end{figure}
 
@@ -205,13 +239,15 @@ M4 & Ferramentas de professor: exp-90, exp-91 & \yes{} Concluído &
   \cd{exp\_01\_exp\_70\_perfis\_importados}\\
 M6 & Hub do estudante, \emph{header} único, casca compartilhada &
   \yes{} Concluído & \rota{/estudante}, \cd{CascaPlataforma}\\
-\zebra --- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
+\zebra M7 & exp-03 e exp-07: IA em \emph{runtime} dentro da missão &
+  \yes{} Concluído & \adrr{ADR-23}, \adrr{ADR-66}, \adrr{ADR-67}\\
+--- & \emph{Stack} \cd{dev} em GCP operacional & \yes{} Concluído &
   CI/CD completo com WIF\\
---- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
-\zebra --- & \textbf{Observabilidade (fases 0--2)} & \no{} Pendente &
+\zebra --- & \textbf{Teste de carga} & \no{} Pendente & \cd{R-01}\\
+--- & \textbf{Observabilidade (fases 0--2)} & \no{} Pendente &
   \cd{R-05}; estudo e roteiro no Capítulo~\ref{cap:observabilidade}\\
---- & \textbf{WSO2 como emissor} & \no{} Pendente & \adrr{ADR-15}\\
-\zebra --- & 43 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
+\zebra --- & \textbf{WSO2 como emissor} & \no{} Pendente & \adrr{ADR-15}\\
+--- & 41 experiências restantes & \no{} Em aberto & Gabarito estabelecido\\
 \bottomrule
 \end{tabularx}
 

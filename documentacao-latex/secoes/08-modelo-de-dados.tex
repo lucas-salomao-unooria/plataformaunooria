@@ -16,7 +16,7 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \begin{regra}
 \textbf{Tabela de experiência leva o número dela: \cd{exp\_NN\_}.} Assim:
 \cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_03\_sessoes},
-\cd{exp\_91\_checkins}.
+\cd{exp\_07\_sessoes}, \cd{exp\_91\_checkins}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias}, \cd{progresso},
@@ -203,7 +203,7 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 Uma rede estadual tem milhares de unidades, professores que dão aula em mais de
 uma e crianças que se transferem entre elas. Três colunas e uma tabela sustentam
 isso, e a decisão que as torna baratas é o que \textbf{não} muda: o \emph{token}
-continua carregando UMA escola, então as 31 tabelas com \cd{escola\_id} e a
+continua carregando UMA escola, então as 37 tabelas com \cd{escola\_id} e a
 política de RLS ficam intocadas (\adrr{ADR-30}).
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
@@ -742,6 +742,51 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
   \textbf{fora} da RLS, como \cd{experiencias}.}
 \label{fig:er-exp90-91}
 \end{figure}
+
+\section{As quatro tabelas da exp-07}
+\label{sec:tabelas-exp07}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_07\_sessoes} & O estado da missão, uma linha por estudante. Chave
+  \cd{(escola\_id, estudante\_id)}, como na exp-03. O \cd{passo} são \textbf{nove}
+  valores, não os dezessete estados de tela do desenho: modal aberto, cutucão de
+  ociosidade e os sete segundos da cascata são do cliente, e gravá-los faria o
+  banco mudar de schema a cada ajuste de layout. Inclui \cd{reacoes} (JSONB), que
+  guarda a cena que o bairro fez --- reger no F5 mostraria o grupo reagindo de
+  outro jeito à mesma mensagem.\\
+\zebra \cd{exp\_07\_mensagens} & A conversa com Amara, \textbf{depois} da decisão.
+  \cd{texto} é caixa livre escrita por menor de idade, com teto de 600
+  caracteres e 3 turnos (\adrr{ADR-66}). Fora de log, fora da telemetria, e sem
+  rota de gestor que a alcance.\\
+\cd{exp\_07\_reflexoes} & O \enquote{Meu percurso}: duas estratégias e uma
+  justificativa, todas de lista fechada --- \textbf{zero texto livre aqui}. Mais
+  a \cd{devolutiva} escrita pelo modelo, que não é nota e não entra no
+  \cd{score}.\\
+\zebra \cd{exp\_07\_gates\_turma} & A etapa da aula, por \textbf{turma}. É o que
+  deixa a professora fechar a Aula 1 em trinta telas ao mesmo tempo e congelar
+  todas no debate. Chave \cd{(escola\_id, turma\_id)}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+O \cd{score} só aceita \textbf{0, 70 ou 100} --- um \emph{CHECK} no banco, e não
+só uma constante no código. São os três valores que \arq{regras/pontuacao.ts}
+produz; qualquer outro número ali seria pontuação vinda do cliente (regra
+inviolável nº 3). Um segundo \emph{CHECK} amarra \cd{passo = 'fim'} a
+\cd{concluido\_em} não nulo: uma tela dizendo \enquote{missão cumprida} sobre uma
+linha sem carimbo é um relatório que mente para o professor.
+\end{regra}
+
+\begin{atencao}
+\cd{exp\_07\_mensagens} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\textbf{sequência}, além do \emph{grant} de tabela --- a mesma armadilha das
+duas tabelas da exp-03. Sem ele o \cd{INSERT} falha para a \emph{role} de
+runtime, e só em produção, que é onde ela existe.
+\end{atencao}
+
 
 \section{As cinco tabelas da exp-03}
 \label{sec:tabelas-exp03}

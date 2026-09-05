@@ -54,6 +54,11 @@ const PREFIXOS_PERMITIDOS = [
      página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
      As guardas de papel estão na api (`@Roles("professor")`). */
   "unoogpt",
+  /* exp-07: os GATES da aula (abrir a Aula 2, congelar o debate, liberar a
+     reflexão) e o preparo da mídia são client-side — a professora aperta
+     durante a aula e as 30 telas precisam andar na hora, sem recarregar
+     página. As guardas de papel estão na api (`@Roles("professor")`). */
+  "o-eco-no-grupo",
   /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
      tem bearer — passa por aqui. A api aplica cota e redaction. */

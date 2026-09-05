@@ -18,6 +18,7 @@
 #   exp-70  Vite da Vila do Lume, transversal (5177 — a 5176 é da exp-91)
 #   exp-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
 #   exp-03  Vite do unooGPT, a Missão Tempestade (5178)
+#   exp-07  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -57,6 +58,7 @@ x-fonte: &fonte
   - nm-exp70:/repo/apps/experiencias/exp-70-vila-do-lume/node_modules
   - nm-exp91:/repo/apps/experiencias/exp-91-bem-estar/node_modules
   - nm-exp03:/repo/apps/experiencias/exp-03-unoogpt/node_modules
+  - nm-exp07:/repo/apps/experiencias/exp-07-o-eco-no-grupo/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -178,6 +180,7 @@ services:
       VERTEX_MODEL: ${VERTEX_MODEL:-gemini-3.6-flash}
       VERTEX_MODEL_LONGO: ${VERTEX_MODEL_LONGO:-gemini-3.6-flash}
       VERTEX_IMAGE_MODEL: ${VERTEX_IMAGE_MODEL:-gemini-3.1-flash-image}
+      VERTEX_TTS_MODEL: ${VERTEX_TTS_MODEL:-gemini-2.5-flash-tts}
       VERTEX_THINKING_BUDGET: ${VERTEX_THINKING_BUDGET:-0}
       GOOGLE_APPLICATION_CREDENTIALS: /adc/application_default_credentials.json
       # 300k por estudante/dia: uma partida completa da exp-03 custa ~77k tokens
@@ -202,7 +205,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179
       # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
       #
       # LIGADA por default em dev, com credencial de dev à vista: sem as duas
@@ -340,6 +343,16 @@ services:
       deps:
         condition: service_completed_successfully
 
+  exp-07:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-07-o-eco-no-grupo
+    command: pnpm exec vite --host 0.0.0.0 --port 5179 --strictPort
+    ports:
+      - "5179:5179"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 volumes:
   pgdata:
   pnpm-store:
@@ -354,6 +367,7 @@ volumes:
   nm-exp70:
   nm-exp91:
   nm-exp03:
+  nm-exp07:
   nm-exp-template:
   hub-next:
   api-dist:

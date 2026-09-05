@@ -31,7 +31,7 @@ para a escola; um push direto pula o portão e não deixa registro. O hook
 
 ```bash
 git switch dev && git pull                    # sempre parta de dev atualizado
-git switch -c fix/quota-por-perfil            # ou exp-07-fracoes, se for experiência nova
+git switch -c fix/quota-por-perfil            # ou exp-12-fracoes, se for experiência nova
 # ... trabalho, com commits Conventional (o hook commit-msg valida) ...
 git push -u origin fix/quota-por-perfil
 gh pr create --base dev --fill                # o template do PR já traz a checklist

@@ -108,8 +108,8 @@ Contrato externo & Jest com \emph{fake} de rede &
 \section{A suíte de ponta a ponta, em detalhe}
 
 Ela vive em \arq{scripts/e2e/}, organizada por PAPEL --- \cd{publico} (2
-suítes), \cd{estudante} (5), \cd{professor} (7), \cd{gestor} (2) e
-\cd{admin-contrato} (5). Por papel, e não pelo nome da experiência, porque é o
+suítes), \cd{estudante} (6), \cd{professor} (7), \cd{gestor} (3) e
+\cd{admin-contrato} (6). Por papel, e não pelo nome da experiência, porque é o
 crachá que decide o que a pessoa alcança, e porque a organização antiga escondia
 as telas da PLATAFORMA, que são a maioria (ADR-51,
 \autoref{adr:e2e-por-papel}).
@@ -203,7 +203,7 @@ cortado por \cd{MAX\_TOKENS} caindo num \emph{fallback}) passaria \textbf{verde}
   \emph{warning} e \emph{success}, e esperar por ele faria um aviso benigno
   derrubar o roteiro. Vale para quem fala pela PLATAFORMA (exp-90, exp-91).\\
 \cd{vigiarFalhasDaApi} & Anota respostas 4xx/5xx para o relatório, com rótulo do
-  contexto. É o sinal das experiências DISFARÇADAS (exp-01, exp-03), que
+  contexto. É o sinal das experiências DISFARÇADAS (exp-01, exp-03, exp-07), que
   mostram erro em \cd{<p>} avulso, com classe diferente em cada tela, e por isso
   não têm gancho estável. \textbf{Não derruba o roteiro}: um 404 de sondagem é
   esperado, e derrubar por \emph{status} inventaria falha. Para 5xx e 422 ele
@@ -362,7 +362,7 @@ Concorrência do motor & \yes{} Forte & \emph{Lock} consultivo, reversibilidade,
 \emph{Guard} do Pub/Sub & \yes{} Forte & Inclui o caso \emph{fail closed}.\\
 \zebra Provider de IA & \yes{} Parcial & Cadeia ADC e formato da requisição. Não
   há teste contra o Vertex real --- e não deveria haver.\\
-Telas & \yes{} Ponta a ponta & Vinte e uma suítes, cinco papéis; não é cobertura de
+Telas & \yes{} Ponta a ponta & Vinte e quatro suítes, cinco papéis; não é cobertura de
   interação, é verificação de que apareceu.\\
 \zebra \textbf{Carga} & \no{} \textbf{Ausente} & O teste de \num{4000}
   \emph{logins} em dez minutos é obrigatório antes de novembro de 2026 e não foi

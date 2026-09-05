@@ -138,6 +138,10 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
   \node[c4component, text width=27mm] (uga) at (9.1,-10.3)
     {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
+  \node[c4component, text width=27mm] (eco) at (12.5,-10.3)
+    {\texttt{/o-eco-no-grupo/*}\desc{estudante}};
+  \node[c4component, text width=27mm] (ecot) at (2.3,-11.8)
+    {\texttt{/o-eco-no-grupo/turmas/*}\desc{prof., gestor, admin --- o gate da aula}};
 
 \end{tikzpicture}}
 \caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
@@ -147,7 +151,10 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   aceite \texttt{estudanteId}}, o que torna estrutural, e não disciplinar, o limite do
   que ele alcança (\adrr{ADR-27}). Em \rota{/turmas/*} a autorização do professor
   é por \textbf{matrícula}, não por escola: é a diferença entre \enquote{dá aula
-  nesta turma} e \enquote{trabalha nesta escola} (\adrr{ADR-28}).}
+  nesta turma} e \enquote{trabalha nesta escola} (\adrr{ADR-28}). Em
+  \texttt{/o-eco-no-grupo/turmas/*} mora o \emph{gate} da aula: é a professora
+  quem move a turma de etapa, e a rota é \textbf{idempotente} de propósito ---
+  é o clique que se dá duas vezes.}
 \label{fig:mapa-rotas}
 \end{figure}
 

@@ -121,7 +121,7 @@ roteiro paralelo.
 ## Branches
 `main` é o tronco — a migração para o monorepo está mergeada nela (histórico
 linear, 26 commits). Trabalho novo sai da `main` numa branch própria: **uma por
-experiência**, com o nome do slug (`exp-07-fracoes`); o resto usa o prefixo do
+experiência**, com o nome do slug (`exp-12-fracoes`); o resto usa o prefixo do
 tipo do commit (`fix/…`, `chore/…`, `ci/…`). Convenções de commit em `AGENTS.md`.
 
 Build não vai para o git: `dist/`, `.next/`, `.next-prod/`, `.turbo/` e

@@ -6,7 +6,7 @@ cruzam). Aqui está a mecânica.
 
 `@edu/ui` **não é onde componente novo nasce** — ele nasce no repo
 `storybook-unooria` e chega por versão publicada. O que existe aqui são as
-quatro pontes de re-export, uma por seção, e nada mais.
+cinco pontes de re-export, uma por seção, e nada mais.
 
 ## Design System: consumo pela ponte
 
@@ -20,6 +20,7 @@ arrasta as seis seções e a tipografia da plataforma para dentro de um clone.
 | `@edu/ui/ds-insta` | `instanooria` | `/instanooria.css` (sem fonte: SF Pro é do sistema) | `--insta-*` | superfície disfarçada da exp-01 |
 | `@edu/ui/ds-unootube` | `unootube` | `/unootube.css` + `/fonts/unootube.css` | `--uni-*`, `[data-uni-theme]` | superfície disfarçada da exp-02 |
 | `@edu/ui/ds-chatgpt` | `chatgpt` (25) | `/chatgpt.css` + `/fonts/chatgpt.css` | `--gpt-*`, `data-gpt-theme` | a exp-03 INTEIRA: ela NÃO tem revelação no software, então nunca troca para a seção da plataforma |
+| `@edu/ui/ds-whatsapp` | `whatsappmobile` (29) | `/whatsappmobile.css` + `/fonts/whatsappmobile.css` | `--wa-*`, `data-wa-theme` (**só `dark`**) | a casca móvel da exp-07, da tela de bloqueio à validação de Amara, inclusive os erros diegéticos |
 
 **A folha de fonte é uma linha SEPARADA e obrigatória** (0.1.17: as folhas de
 componente não declaram mais `@font-face`). Nas marcas de clone, esquecê-la só
@@ -76,6 +77,23 @@ carregado por baixo.
 `VideoCardHorizontal` mudaram o sentido de `src` na 0.1.13 — era o quadro
 estático, agora é o VÍDEO, e o quadro virou `poster`. Passar imagem em `src`
 monta um `<video>` que não carrega. Nenhum dos três é usado neste repo hoje.
+
+**A exp-07 abriu quatro pedidos novos em `whatsappmobile`**, e três deles são
+composição, não compensação: `ForwardedBadge` (o selo "Encaminhada com
+frequência" — sai de `Icon name="forward"` + tokens), `PinnedMessageBanner` (a
+barra do alfinete — o *tone* `pin` existe, o **glifo de alfinete não**, e ele é
+desenhado local junto de `play`/`pause`) e `ReplyQuoteSelectionSheet` (o menu
+das 3 respostas — `Radio` + card de citação). A compensação de verdade é uma só:
+`ChatAudioBubbleWithTranscript`, porque `MessageBubble` aceita texto, `.Media` e
+`.Document`, e a seção não tem player de áudio.
+
+E **a seção publica só o tema escuro** (`WaTheme = 'dark'`; o CSS traz
+`:root, [data-wa-theme=dark]` e nada mais). Derivar a paleta clara que os
+wireframes descrevem é proibido, pela mesma regra do `unitube`. Duas armadilhas
+medidas ali: o `ListItem` tem `white-space: nowrap` no título — errado para as
+opções longas da exp-07, que truncariam —, e o `PhoneFrame` da seção **não entra
+na experiência**, porque quem desenha o aparelho é o hub, pelo `viewport` do
+manifesto.
 
 Sobrescrever classe do DS exige DOIS seletores (`.app-shell > .x`): o CSS do
 pacote é injetado pelo módulo do componente, ou seja, DEPOIS do CSS da

@@ -24704,6 +24704,2032 @@
         ],
         "x-acesso": "token"
       }
+    },
+    "/o-eco-no-grupo/sessao": {
+      "get": {
+        "operationId": "OEcoNoGrupoController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "inspecionouMateria": {
+                      "type": "boolean"
+                    },
+                    "ouviuAudio": {
+                      "type": "boolean"
+                    },
+                    "ouviuPodcast": {
+                      "type": "boolean"
+                    },
+                    "cardsLidos": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "ruido",
+                        "checada",
+                        "conflito"
+                      ],
+                      "nullable": true
+                    },
+                    "desfazerUsado": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "catalogo": {
+                      "type": "object",
+                      "properties": {
+                        "feed": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "autor": {
+                                "type": "string"
+                              },
+                              "hora": {
+                                "type": "string"
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "texto",
+                                  "audio",
+                                  "foto",
+                                  "print"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              },
+                              "midia": {
+                                "type": "string"
+                              },
+                              "transcricao": {
+                                "type": "string"
+                              },
+                              "duracaoSeg": {
+                                "type": "integer",
+                                "exclusiveMinimum": true,
+                                "minimum": 0
+                              },
+                              "encaminhada": {
+                                "type": "boolean"
+                              },
+                              "abreMateria": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "autor",
+                              "hora",
+                              "tipo",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "materia": {
+                          "type": "object",
+                          "properties": {
+                            "fonte": {
+                              "type": "string"
+                            },
+                            "manchetePrint": {
+                              "type": "string"
+                            },
+                            "titulo": {
+                              "type": "string"
+                            },
+                            "paragrafoExibido": {
+                              "type": "string"
+                            },
+                            "paragrafoSuprimido": {
+                              "type": "string"
+                            },
+                            "fotoDoPrint": {
+                              "type": "string"
+                            },
+                            "fotoDaMateria": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "fonte",
+                            "manchetePrint",
+                            "titulo",
+                            "paragrafoExibido",
+                            "paragrafoSuprimido",
+                            "fotoDoPrint",
+                            "fotoDaMateria"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "opcoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "A",
+                                  "B",
+                                  "C"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "cards": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "corpo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "titulo",
+                              "corpo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "estrategias": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "justificativas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "amaraCelebra": {
+                          "type": "string"
+                        },
+                        "amaraCutucao": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "feed",
+                        "materia",
+                        "opcoes",
+                        "cards",
+                        "estrategias",
+                        "justificativas",
+                        "amaraCelebra",
+                        "amaraCutucao"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "midia": {
+                      "type": "object",
+                      "properties": {
+                        "urls": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        }
+                      },
+                      "required": [
+                        "urls"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reacoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "autor": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "atrasoMs": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "autor",
+                          "texto",
+                          "atrasoMs"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nullable": true
+                    },
+                    "amara": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "estudante",
+                              "amara"
+                            ]
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "papel",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "reflexao": {
+                      "type": "object",
+                      "properties": {
+                        "estrategias": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "justificativa": {
+                          "type": "string"
+                        },
+                        "devolutiva": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "estrategias",
+                        "justificativa",
+                        "devolutiva"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        },
+                        "avatar": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nome",
+                        "avatar"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "inspecionouMateria",
+                    "ouviuAudio",
+                    "ouviuPodcast",
+                    "cardsLidos",
+                    "opcao",
+                    "desfecho",
+                    "desfazerUsado",
+                    "concluidoEm",
+                    "turma",
+                    "catalogo",
+                    "midia",
+                    "reacoes",
+                    "amara",
+                    "reflexao",
+                    "estudante"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "O estado da missão, o conteúdo do grupo e a matéria completa.",
+        "description": "As 3 opções de resposta saem **sem `desfecho` e sem `correta`** — o tipo do servidor é `Omit<Opcao, \"desfecho\" | \"correta\">`, então o gabarito é impossível de vazar aqui, não só ausente por descuido.\n\nO conteúdo do feed vem da api, e não do bundle, para que uma correção de texto não exija republicar um caminho imutável no bucket.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Quando os dois divergem e `aguardandoATurma` é `true`, o estudante está preso esperando a aula — e a tela de espera do breakpoint é diferente da tela congelada do debate.\n- `midia.urls` com `null` num id significa que a mídia ainda não foi preparada: o cliente cai na transcrição e na ilustração procedural, em vez de esperar um arquivo que não existe.\n- `reacoes` já gravadas voltam iguais depois de um F5 — regerar mostraria o bairro reagindo de outro jeito à mesma mensagem.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/gate": {
+      "get": {
+        "operationId": "OEcoNoGrupoController_gate",
+        "parameters": [
+          {
+            "name": "passo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "chat_amara",
+                "grupo",
+                "breakpoint",
+                "podcast",
+                "intervencao",
+                "desfecho",
+                "sintese",
+                "reflexao",
+                "fim"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "investigacao",
+                        "aula2",
+                        "debate",
+                        "reflexao"
+                      ]
+                    },
+                    "passoEfetivo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "agora": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "passoEfetivo",
+                    "agora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Em que etapa a turma está (polling de ~5s).",
+        "description": "Leve de propósito: sem catálogo e sem mídia. É o que deixa a professora conduzir 30 telas — a Aula 2 abre para todos ao mesmo tempo, e o debate congela todos na mesma tela.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Estudante sem turma não tem gate: a missão corre no ritmo dele. Prendê-lo no breakpoint seria um beco sem saída, porque não há quem dê a largada.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/acao": {
+      "post": {
+        "operationId": "OEcoNoGrupoController_acao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "inspecionouMateria": {
+                      "type": "boolean"
+                    },
+                    "ouviuAudio": {
+                      "type": "boolean"
+                    },
+                    "ouviuPodcast": {
+                      "type": "boolean"
+                    },
+                    "cardsLidos": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "ruido",
+                        "checada",
+                        "conflito"
+                      ],
+                      "nullable": true
+                    },
+                    "desfazerUsado": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "inspecionouMateria",
+                    "ouviuAudio",
+                    "ouviuPodcast",
+                    "cardsLidos",
+                    "opcao",
+                    "desfecho",
+                    "desfazerUsado",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Registra uma marca da investigação.",
+        "description": "Todas as marcas são idempotentes e só andam para a frente: abrir a matéria três vezes mantém o dado em `true`. O que a missão mede é se ela foi aberta ANTES de responder, não quantas vezes.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `inspecionar-materia` é a evidência da BNCC EF07CO01 e a condição de enviar a intervenção.\n- `ouvir-podcast` só vale na Aula 2: marcá-lo durante a investigação destravaria a decisão antes da largada.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "acao": {
+                    "type": "string",
+                    "enum": [
+                      "inspecionar-materia",
+                      "ouvir-audio",
+                      "ouvir-podcast",
+                      "entrar-no-grupo",
+                      "encerrar-investigacao",
+                      "avancar-card",
+                      "abrir-reflexao"
+                    ]
+                  }
+                },
+                "required": [
+                  "acao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/o-eco-no-grupo/intervencao": {
+      "post": {
+        "operationId": "OEcoNoGrupoController_intervencao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "inspecionouMateria": {
+                      "type": "boolean"
+                    },
+                    "ouviuAudio": {
+                      "type": "boolean"
+                    },
+                    "ouviuPodcast": {
+                      "type": "boolean"
+                    },
+                    "cardsLidos": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "ruido",
+                        "checada",
+                        "conflito"
+                      ]
+                    },
+                    "desfazerUsado": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reacoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "autor": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "atrasoMs": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "autor",
+                          "texto",
+                          "atrasoMs"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "amaraCelebra": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "inspecionouMateria",
+                    "ouviuAudio",
+                    "ouviuPodcast",
+                    "cardsLidos",
+                    "opcao",
+                    "desfecho",
+                    "desfazerUsado",
+                    "concluidoEm",
+                    "turma",
+                    "reacoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Envia a resposta citando o print — o pico da missão.",
+        "description": "A api corrige contra o catálogo e devolve o `desfecho` com as reações do bairro. O cliente manda só qual opção foi escolhida e quanto tempo levou para decidir.\n\nDois portões, e os dois são pedagógicos: a Aula 2 precisa estar aberta, e a matéria íntegra precisa ter sido inspecionada (`sem-inspecao`) — este é o portão que a missão existe para instalar.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `latenciaSeg` é o tempo de DECISÃO do estudante, cronometrado pelo cliente — não a latência da requisição.\n- A resposta checada é LATCH: o Admin fixa a mensagem e o chat não regride. As outras duas abrem o 'Apagar para todos'.\n- 409 `sem-inspecao` quando ele tenta responder sem ter aberto a matéria.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "opcao": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "B",
+                      "C"
+                    ]
+                  },
+                  "latenciaSeg": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 7200
+                  }
+                },
+                "required": [
+                  "opcao",
+                  "latenciaSeg"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/o-eco-no-grupo/desfazer": {
+      "post": {
+        "operationId": "OEcoNoGrupoController_desfazer",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "inspecionouMateria": {
+                      "type": "boolean"
+                    },
+                    "ouviuAudio": {
+                      "type": "boolean"
+                    },
+                    "ouviuPodcast": {
+                      "type": "boolean"
+                    },
+                    "cardsLidos": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "ruido",
+                        "checada",
+                        "conflito"
+                      ],
+                      "nullable": true
+                    },
+                    "desfazerUsado": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "inspecionouMateria",
+                    "ouviuAudio",
+                    "ouviuPodcast",
+                    "cardsLidos",
+                    "opcao",
+                    "desfecho",
+                    "desfazerUsado",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "\"Apagar para todos e tentar outra resposta\".",
+        "description": "A recuperação formativa. Só existe para quem postou no impulso: depois da contraprova a mensagem está fixada pelo Admin, e desfazê-la desmontaria a única cena em que a criança vê a checagem funcionar.\n\nIncrementa `desfazerUsado`, que reduz o `score` de 100 para 70 — a recuperação é o caminho pedagógico, não a punição.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/sintese": {
+      "post": {
+        "operationId": "OEcoNoGrupoController_sintese",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "inspecionouMateria": {
+                      "type": "boolean"
+                    },
+                    "ouviuAudio": {
+                      "type": "boolean"
+                    },
+                    "ouviuPodcast": {
+                      "type": "boolean"
+                    },
+                    "cardsLidos": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "ruido",
+                        "checada",
+                        "conflito"
+                      ],
+                      "nullable": true
+                    },
+                    "desfazerUsado": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "inspecionouMateria",
+                    "ouviuAudio",
+                    "ouviuPodcast",
+                    "cardsLidos",
+                    "opcao",
+                    "desfecho",
+                    "desfazerUsado",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Sai do mensageiro e abre os cards de sistematização.",
+        "description": "Só depois da contraprova aceita pelo grupo. É a fronteira da revelação: daqui em diante quem fala é a escola, não o app.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/reflexao": {
+      "post": {
+        "operationId": "OEcoNoGrupoController_reflexao",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "chat_amara",
+                        "grupo",
+                        "breakpoint",
+                        "podcast",
+                        "intervencao",
+                        "desfecho",
+                        "sintese",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "inspecionouMateria": {
+                      "type": "boolean"
+                    },
+                    "ouviuAudio": {
+                      "type": "boolean"
+                    },
+                    "ouviuPodcast": {
+                      "type": "boolean"
+                    },
+                    "cardsLidos": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "ruido",
+                        "checada",
+                        "conflito"
+                      ],
+                      "nullable": true
+                    },
+                    "desfazerUsado": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "score": {
+                      "type": "integer"
+                    },
+                    "devolutiva": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "inspecionouMateria",
+                    "ouviuAudio",
+                    "ouviuPodcast",
+                    "cardsLidos",
+                    "opcao",
+                    "desfecho",
+                    "desfazerUsado",
+                    "concluidoEm",
+                    "turma",
+                    "score",
+                    "devolutiva"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Entrega o \"Meu percurso\" e fecha a missão (latch).",
+        "description": "Exatamente 2 estratégias distintas e 1 justificativa, todas de lista fechada — zero texto livre aqui, de propósito.\n\nÉ a única rota que devolve `score`, e ele vem de `regras/pontuacao.ts` sobre o que aconteceu NO GRUPO: o formulário reflexivo não entra na nota, porque transformá-lo em prova mudaria o que a criança marca nele. O estudante nunca vê esse número.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- 409 `reflexao-nao-liberada` enquanto a professora não abre a etapa: o registro é depois do debate.\n- 409 `reflexao-ja-enviada` na segunda tentativa — a interface congela em modo leitura.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "estrategias": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "buscar_fonte",
+                        "reparar_selo",
+                        "espalhar_rapido",
+                        "concordar_emocao"
+                      ]
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "justificativa": {
+                    "type": "string",
+                    "enum": [
+                      "evidencia_desarma",
+                      "vencer_grito"
+                    ]
+                  }
+                },
+                "required": [
+                  "estrategias",
+                  "justificativa"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/o-eco-no-grupo/midia": {
+      "get": {
+        "operationId": "OEcoNoGrupoController_midia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "urls": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    }
+                  },
+                  "required": [
+                    "urls"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "As URLs das vozes e das fotos da missão.",
+        "description": "Mapa `id → URL pública`, com `null` no que ainda não foi preparado — e `null` é informação: o cliente cai na transcrição (que já está na tela por acessibilidade) e na ilustração procedural, em vez de esperar um arquivo que não existe.\n\nAs URLs são **públicas** de propósito: `<audio src>` e `<img src>` não mandam o bearer, e uma rota autenticada aqui daria um player mudo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Esta rota NÃO gera nada. Quem gera é o preparo do professor — a quota dele é 2 milhões de tokens contra 300 mil do estudante, e ninguém deve esperar uma síntese de voz no meio da aula.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/amara": {
+      "post": {
+        "operationId": "OEcoNoGrupoController_amara",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "texto": {
+                      "type": "string"
+                    },
+                    "turnosRestantes": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "texto",
+                    "turnosRestantes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Uma fala para Amara, no chat privado.",
+        "description": "Só existe DEPOIS da decisão no grupo. Antes disso ela responde `amara-em-silencio`: o silêncio dela durante a investigação é não-negociável — se ela apontasse qual mensagem é falsa, o reconhecimento de padrão que a missão mede deixaria de acontecer.\n\nÉ o **único texto livre** da experiência. Teto de 600 caracteres e 3 turnos; o texto é gravado sob RLS para a conversa voltar depois de um F5, e nunca entra em log nem em telemetria.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- 409 `sem-turno` no 4º envio — ela é amiga, não assistente.\n- 503 `amara-indisponivel` quando o modelo não responde; 429 `teto-da-sessao` sem saldo de IA. As duas frases ficam dentro da ficção, sem vocabulário de infraestrutura.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 600
+                  }
+                },
+                "required": [
+                  "texto"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/o-eco-no-grupo/turmas": {
+      "get": {
+        "operationId": "OEcoNoGrupoTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string"
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Turmas para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/turmas/{turmaId}/painel": {
+      "get": {
+        "operationId": "OEcoNoGrupoTurmasController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string"
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "investigacao",
+                            "aula2",
+                            "debate",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie",
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "iniciou": {
+                            "type": "boolean"
+                          },
+                          "passo": {
+                            "type": "string",
+                            "enum": [
+                              "chat_amara",
+                              "grupo",
+                              "breakpoint",
+                              "podcast",
+                              "intervencao",
+                              "desfecho",
+                              "sintese",
+                              "reflexao",
+                              "fim"
+                            ]
+                          },
+                          "inspecionouMateria": {
+                            "type": "boolean"
+                          },
+                          "ouviuPodcast": {
+                            "type": "boolean"
+                          },
+                          "opcao": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B",
+                              "C"
+                            ],
+                            "nullable": true
+                          },
+                          "desfazerUsado": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "entregouPercurso": {
+                            "type": "boolean"
+                          },
+                          "ociosoMin": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "usuario",
+                          "iniciou",
+                          "passo",
+                          "inspecionouMateria",
+                          "ouviuPodcast",
+                          "opcao",
+                          "desfazerUsado",
+                          "entregouPercurso",
+                          "ociosoMin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "iniciaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "inspecionaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "responderam": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "entregaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "ociosos": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "distribuicao": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "usaramRecuperacao": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "percursoComAsDuas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "iniciaram",
+                        "inspecionaram",
+                        "responderam",
+                        "entregaram",
+                        "ociosos",
+                        "distribuicao",
+                        "usaramRecuperacao",
+                        "percursoComAsDuas"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "estudantes",
+                    "resumo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "O que a turma está fazendo na missão, ao vivo.",
+        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos**: a leitura é de progresso e de estratégia, não uma ordenação de crianças (PED-07).\n\n`distribuicao` conta A/B/C entre quem respondeu — é o material do debate, e aparece na tela como percentual da turma, nunca como 'quem errou'.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira.\n- `percursoComAsDuas` conta quem marcou as duas estratégias que a missão ensinou. Não é nota, e não aparece por estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/turmas/{turmaId}/gate": {
+      "post": {
+        "operationId": "OEcoNoGrupoTurmasController_gate",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "investigacao",
+                        "aula2",
+                        "debate",
+                        "reflexao"
+                      ]
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "etapa",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Abre a Aula 2, congela o debate ou libera a reflexão.",
+        "description": "O relógio da AULA. É o que permite dizer 'agora é debate' e travar 30 telas de uma vez.\n\n**Idempotente de propósito**: `liberar-aula2` duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada. `redefinir` volta ao pré-aula SEM apagar percurso — é para quem abriu a aula antes da hora, não um 'zerar'.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- A etapa é PISO e TETO ao mesmo tempo: quem está adiantado não é puxado de volta (seria punir quem leu rápido), mas ninguém passa do breakpoint antes da Aula 2 nem da síntese antes do debate.\n- `congelar-debate` é a exceção que trava: no debate a turma tem de estar na mesma tela, porque a conversa é entre pares.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "acao": {
+                    "type": "string",
+                    "enum": [
+                      "liberar-aula2",
+                      "congelar-debate",
+                      "liberar-reflexao",
+                      "redefinir"
+                    ]
+                  }
+                },
+                "required": [
+                  "acao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/o-eco-no-grupo/turmas/{turmaId}/preparar-midia": {
+      "post": {
+        "operationId": "OEcoNoGrupoTurmasController_prepararMidia",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "urls": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "geradas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "falharam": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "urls",
+                    "geradas",
+                    "falharam"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Gera as vozes e as fotos da missão (preparo da aula).",
+        "description": "Idempotente: o que já está no bucket é pulado, e preparar duas vezes é de graça.\n\nÉ o PROFESSOR quem prepara, não o primeiro estudante que abre a missão — a quota diária dele é 2 milhões de tokens contra 300 mil do estudante, e uma síntese de voz leva dezenas de segundos que ninguém deve esperar no meio da aula.\n\nA mídia é do CONTRATO, não da escola: toda a rede ouve a mesma Dona Lúcia. Duas turmas discutindo vozes diferentes do mesmo boato não estariam falando da mesma coisa.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Uma falha não derruba as outras: `falharam` lista o que não saiu, e a missão continua jogável — o áudio cai na transcrição e a foto na ilustração procedural.\n- O print viral NÃO é gerado: ele é um recorte da foto da reportagem, para o par casado ser a mesma cena. Por isso a ordem de preparo importa.\n- 429 `teto-da-sessao` quando a quota diária de IA do professor acabou.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/o-eco-no-grupo/turmas/{turmaId}": {
+      "delete": {
+        "operationId": "OEcoNoGrupoTurmasController_zerar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sucesso": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "registrosApagados": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "sucesso",
+                    "registrosApagados"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "Zerar a turma para uma segunda aplicação.",
+        "description": "Apaga o estado transacional da turma (sessões, conversa com Amara, percursos) e o gate da aula. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável — a aula anterior continua legível para a rede.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
     }
   },
   "info": {

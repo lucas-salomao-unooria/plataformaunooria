@@ -26,12 +26,14 @@ describe("missões do estudante", () => {
     expect(MISSOES_DO_ESTUDANTE.map((m) => m.expId)).toEqual([
       "exp-70-vila-do-lume",
       "exp-02-unootube",
+      "exp-07-o-eco-no-grupo",
       "exp-01-instanooria",
       "exp-03-unoogpt",
     ]);
     expect(MISSOES_DO_ESTUDANTE.map((m) => m.rota)).toEqual([
       "/exp/exp-70-vila-do-lume",
       "/exp/exp-02-unootube",
+      "/exp/exp-07-o-eco-no-grupo",
       "/exp/exp-01-instanooria",
       "/exp/exp-03-unoogpt",
     ]);

@@ -21,13 +21,15 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{unootube}\\
 \cd{exp-03-unoogpt} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
+  telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
+\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -41,6 +43,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \zebra \cd{exp-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{exp-70-vila-do-lume} & \cd{5177} & \rota{/exp/exp-70-vila-do-lume}\\
 \zebra \cd{exp-03-unoogpt} & \cd{5178} & \rota{/exp/exp-03-unoogpt}\\
+\cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
 \bottomrule
 \end{tabularx}
 
@@ -355,6 +358,123 @@ revisão pedagógica, não palavra final.
 \end{limitacao}
 
 % ---------------------------------------------------------------------------
+\section{exp-07 --- O Eco no Grupo}
+\label{sec:exp-07}
+
+\textbf{7º ano · Unidade 1 · clone de WhatsApp móvel · \cd{whatsappmobile}}
+
+Um boato sobre o festival do bairro corre num grupo de mensageria: print
+recortado, áudio alarmado, três moradores indignados e um administrador pedindo
+calma. O estudante audita as mensagens, descobre o parágrafo que o print cortou
+--- o evento tinha alvará regular e a polícia só organizava o desvio dos ônibus
+--- e responde citando a reportagem completa. O grupo se acalma na frente dele,
+e o administrador fixa a mensagem no topo do chat.
+
+É a \textbf{primeira missão da trilha em duas aulas}, e a segunda não começa
+sozinha.
+
+\subsection{As duas aulas, e quem separa uma da outra}
+
+\cd{exp\_07\_gates\_turma} guarda uma etapa por turma
+(\cd{investigacao | aula2 | debate | reflexao}), e a professora a move por três
+botões no painel de resultados. A reconciliação entre a etapa da turma e o passo
+de cada estudante é função pura (\arq{regras/passos.ts}), porque a api e o
+cliente precisam chegar à mesma resposta --- duas implementações divergentes
+seriam a tela discordando do servidor.
+
+A diferença em relação ao relógio da exp-03 é que aqui a etapa é
+\textbf{piso E teto}:
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Etapa da turma} & \thd{Piso} & \thd{Teto --- e por quê}\\
+\midrule
+\cd{investigacao} & \cd{chat\_amara} & \cd{breakpoint}: quem investiga rápido
+  não decide e acaba a missão sozinho antes da segunda aula\\
+\zebra \cd{aula2} & \cd{podcast} & \cd{sintese}: a reflexão é depois do debate\\
+\cd{debate} & \cd{sintese} & \cd{sintese} --- piso e teto no mesmo passo: no
+  debate a turma inteira olha a mesma tela, porque a conversa é entre pares\\
+\zebra \cd{reflexao} & \cd{reflexao} & \cd{fim}\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Estudante sem turma não tem gate.} Não há quem dê a largada para ele, e
+prendê-lo no breakpoint seria um beco sem saída: a missão inteira ficaria
+inalcançável para quem chegou à rede sem enturmação. Ele corre no próprio ritmo,
+e o painel não o vê porque ele não está em turma nenhuma.
+\end{nota}
+
+O estudante consulta \rota{GET /o-eco-no-grupo/gate} a cada 5\,s --- rota leve de
+propósito, sem catálogo e sem mídia --- e o \cd{agora} da resposta é o instante
+do \emph{servidor}: o relógio da máquina da escola atrasa, e não é ele que
+decide o momento da aula.
+
+\subsection{O portão que a missão existe para instalar}
+
+Responder no grupo sem ter aberto a matéria íntegra é \textbf{recusado}
+(\cd{sem-inspecao}, 409). Não é validação de formulário: é o comportamento que a
+experiência inteira está tentando desfazer, e é a única regra aqui que vale a
+aula. O portão vive em \arq{regras/sessao.ts}, no servidor.
+
+\subsection{O par casado: o print é um recorte da reportagem}
+
+O print que circula no grupo e a foto da matéria são \textbf{a mesma imagem},
+cortada. Mesma cena, mesma luz, mesmo instante --- e é isso que faz o recorte
+visual espelhar o recorte do texto que o estudante vai descobrir. A foto é
+gerada por IA; o layout do portal (\enquote{Gazeta Regional}), a manchete, os
+metadados e o box do trecho suprimido são \textbf{HTML}, porque modelo de imagem
+erra texto longo e o parágrafo omitido precisa ser legível, selecionável por
+leitor de tela e com contraste medido (\adrr{ADR-67}).
+
+\subsection{A IA escreve a fala, nunca o resultado}
+
+Três superfícies, todas com \cd{QuotaService} antes e depois, e todas com
+falha para o lado seguro (\adrr{ADR-66}):
+
+\begin{itemize}
+  \item \textbf{As reações do bairro} à intervenção. O desfecho
+    (\cd{checada | ruido | conflito}) sai do gabarito do catálogo antes de
+    qualquer modelo ser chamado; a IA escreve como aquilo soa. Sem ela, o
+    roteiro autoral do catálogo assume --- e é ele que a suíte de testes exercita.
+  \item \textbf{Amara no privado}, e só depois da decisão. O silêncio dela na
+    investigação é não-negociável: se apontasse a mensagem falsa, o
+    reconhecimento de padrão que a missão mede deixaria de acontecer.
+  \item \textbf{A devolutiva do \enquote{Meu percurso}}, um parágrafo sobre as
+    escolhas --- que não é nota e não entra no \cd{score}.
+\end{itemize}
+
+\begin{atencao}
+A conversa com Amara é o \textbf{único texto livre} da missão, e o pacote de
+insumos aprovado o declarava inexistente. Ele voltou com cinco travas: 600
+caracteres, teto de 3 turnos, gravado sob RLS, fora de log e de telemetria, e
+sem nenhuma rota de gestor que o alcance (\adrr{ADR-66}).
+\end{atencao}
+
+\subsection{Sem mídia, a missão roda igual}
+
+\rota{GET /o-eco-no-grupo/midia} devolve \cd{null} no que não foi preparado, e
+\cd{null} é informação: o áudio cai na \textbf{transcrição} --- que está sempre
+na tela, por acessibilidade --- e a foto na ilustração procedural. Quem prepara é
+o professor, no painel, e a mídia vale para o contrato inteiro.
+
+\subsection{O que o professor lê}
+
+Sem coluna de pontos. A folha mostra conduta --- quem abriu a matéria antes de
+responder, quem ouviu o episódio, quem apagou e tentou de novo, quem entregou o
+percurso --- e a distribuição A/B/C aparece como percentual da turma, que é o
+material do debate. Listagem é ordenável, e ordenar crianças por acerto viraria
+ranking.
+
+\subsection{O clone é escuro}
+
+A seção \cd{whatsappmobile} do design system publica exclusivamente o tema
+escuro. Os wireframes descrevem telas claras; o que está em produção é o escuro,
+e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
+\cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
+\enquote{sem consumidor} até aqui.
+
+
 \section{exp-70 --- Vila do Lume}
 
 Jogo 3D em primeira pessoa, \textbf{transversal} (\cd{series: []}): não pertence a
@@ -590,10 +710,10 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 
 \begin{lstlisting}[language=bashunoo, caption={O caminho completo}, label={lst:novaexp}]
 # 0. Uma branch por experiencia, com o nome do slug
-git switch -c exp-07-fracoes
+git switch -c exp-12-fracoes
 
 # 1. Scaffolding do _template (copia e ajusta nomes)
-pnpm new:exp exp-07-fracoes
+pnpm new:exp exp-12-fracoes
 
 # 2. Implementar em src/App.tsx+
 #    - auth, api e telemetria: SOMENTE pela SDK
@@ -607,9 +727,9 @@ pnpm new:exp exp-07-fracoes
 # 4. Documentar verbo/objeto de telemetria no README da experiencia
 
 # 5. Build gera dist/ 100% estatico. Testar embedado:
-pnpm --filter @edu/exp-07-fracoes dev     # porta nova em lib/experiencias-dev.ts
+pnpm --filter @edu/exp-12-fracoes dev     # porta nova em lib/experiencias-dev.ts
 # e abrir a bancada do hub:
-#   http://localhost:3000/dev-embed?src=http://localhost:5178
+#   http://localhost:3000/dev-embed?src=http://localhost:5180
 \end{lstlisting}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}

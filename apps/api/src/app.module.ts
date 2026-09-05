@@ -19,6 +19,7 @@ import { AtividadesModule } from "./atividades/atividades.module";
 import { GeracaoModule } from "./geracao/geracao.module";
 import { AnaliseModule } from "./analise/analise.module";
 import { PerfisModule } from "./perfis/perfis.module";
+import { OEcoNoGrupoModule } from "./o-eco-no-grupo/o-eco-no-grupo.module";
 import { UnootubeModule } from "./unootube/unootube.module";
 import { UnoogptModule } from "./unoogpt/unoogpt.module";
 import { VilaModule } from "./vila/vila.module";
@@ -60,6 +61,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     StorageModule,
     PlanosModule,
     BemEstarModule,
+    OEcoNoGrupoModule,
   ],
   providers: [
     // Depois dos guards em toda rota: preenche a escola do token no

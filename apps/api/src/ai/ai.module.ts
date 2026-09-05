@@ -29,6 +29,7 @@ import { MedidorDeProvider } from "./medidor.provider";
             padrao: config.get<string>("VERTEX_MODEL") ?? "gemini-3.6-flash",
             longo: config.get<string>("VERTEX_MODEL_LONGO") ?? "gemini-3.6-flash",
             imagem: config.get<string>("VERTEX_IMAGE_MODEL") ?? "gemini-3.1-flash-image",
+            voz: config.get<string>("VERTEX_TTS_MODEL") ?? "gemini-2.5-flash-tts",
           },
         ),
     },

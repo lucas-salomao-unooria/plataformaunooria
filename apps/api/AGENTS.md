@@ -476,8 +476,9 @@ primeira — a armadilha do `expires_at`.
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
   (escolas, turmas, matrículas, períodos, lotações, estudantes), `usuarios`,
   `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
-  `perfis`, `analise`, `unoogpt`, `atividades`, `geracao`, `motor` (runs/posts).
-  **As 146 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
+  `perfis`, `analise`, `unoogpt`, `o-eco-no-grupo`, `atividades`, `geracao`,
+  `motor` (runs/posts).
+  **As 167 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
   fica vermelha.
 - **`docs/openapi.json` é versionado** e o **apêndice C do LaTeX é GERADO dele**
   (`scripts/gerar-endpoints-tex.mjs`) — eram 547 linhas de prosa à mão que nada
@@ -533,6 +534,39 @@ experiência com outro formato deve pedir o formato, não recortar depois.
 `finishReason: MAX_TOKENS`. `VERTEX_THINKING_BUDGET` (default `0`, desligado)
 mantém a paridade com o app origem, que usava Claude sem essa etapa; `-1` volta
 ao dinâmico.
+
+**Voz (`generateSpeech`) não é o aiplatform** — é a **Cloud Text-to-Speech**
+(`texttospeech.googleapis.com/v1/text:synthesize`), com os mesmos modelos Gemini
+por trás e o MESMO ADC, mas host, caminho e corpo próprios (por isso não passa
+por `endpointVertex`). `VERTEX_TTS_MODEL`, default `gemini-2.5-flash-tts`. Saída
+em **MP3**, decidida na origem: não há ffmpeg neste repositório, e um WAV de
+3m30 passaria de 10 MB.
+
+Três coisas que custaram tempo e não se descobrem por typecheck:
+- **A API precisa estar habilitada** (`gcloud services enable
+  texttospeech.googleapis.com`), e sem isso a resposta é 403.
+- **Com ADC de USUÁRIO ela exige um "quota project"**, que a credencial de quem
+  fez `gcloud auth application-default login` não carrega — e o aiplatform NÃO
+  exige. O sintoma engana: no mesmo preparo, imagem funciona e voz responde 403
+  `PERMISSION_DENIED`, com uma mensagem que não fala de voz. O provider manda
+  `x-goog-user-project: $VERTEX_PROJECT_ID` para resolver sem mexer no ADC de
+  ninguém; em Cloud Run a SA já traz o projeto.
+- **Os tetos são em BYTES** (4.000 para o texto, 4.000 para a direção de
+  atuação): em pt-BR cada acento conta 2, e medir por `length` deixa passar um
+  roteiro que a API recusa com 400. `generateSpeech` valida antes de chamar.
+
+**Diálogo é UMA chamada**, com `turnos` e `multiSpeakerMarkup`: o modelo ajusta
+pausa e entonação entre as vozes. Sintetizar cada fala à parte e concatenar
+devolveria duas leituras em voz alta, não uma conversa — e a concatenação exigiria
+o ffmpeg que não existe aqui. `AiTimbre` é neutro de vendor (`jovem-feminino`,
+`idoso-feminino`…) pelo mesmo motivo de `AiRequest.modelo`: quem escreve o
+roteiro descreve QUEM fala, não o nome de catálogo de uma voz do Google. O mapa
+timbre → voz é a única tradução, e vive no `vertex.provider.ts`.
+
+**O mock falha fechado em `generateSpeech`**, como em `generateJson` e
+`generateImage`: um MP3 de silêncio seria pior que a ausência (o estudante
+apertaria o play e concluiria que o áudio quebrou). Quem chama cai na
+transcrição, que já está na tela por acessibilidade.
 
 
 ## Plano de aula (exp-90, `apps/api/src/planos`)
@@ -716,6 +750,44 @@ a resposta importar, ela é da plataforma inteira, não de um módulo.
 - Número de resgate **só na rota individual** (`doEstudante`); a folha da turma
   fala de conduta, e `tests/unoogpt-postgres.spec.ts` quebra se `salvas`
   entrar nela.
+
+## O Eco no Grupo (exp-07, `apps/api/src/o-eco-no-grupo`)
+
+Missão de 7º ano conduzida pelo **relógio da turma**, em duas aulas. Quatro
+tabelas (`exp_07_sessoes`, `exp_07_reflexoes`, `exp_07_mensagens`,
+`exp_07_gates_turma`), gabarito só no `catalogo.ts`, e IA em três superfícies.
+
+- **A etapa da turma é PISO e TETO** (`regras/passos.ts`, molde de
+  `comum/insta/etapas.ts`). Piso porque quem chegou atrasado não fica para trás;
+  teto só na etapa `debate`, que é o que "congelar as telas" quer dizer — e ali
+  congela **todos**, não só quem já leu os cards. **Estudante sem turma
+  (`etapa: null`) não tem gate**: uma criança fora de turma não pode ficar presa
+  esperando uma aula que não existe.
+- **O cliente nunca recebe a letra certa; ele recebe `desfecho`**
+  (`checada | ruido | conflito`), calculado no servidor. A primeira versão
+  deixava a tela decidir por `opcao === "B"`, e a resposta certa ia legível para
+  o JS público (regra 3).
+- **`POST /intervencao` recusa com `sem-inspecao` (409) quem não abriu a matéria
+  completa.** É portão pedagógico, não validação: a missão existe para ensinar a
+  conferir antes de repassar.
+- **A cadência da cascata é do servidor** (`atrasoMs`: 2 s → 3 s → 2 s). A espera
+  é o pico da missão; decidi-la no cliente a tornaria alterável pelo DevTools.
+- **A conversa com Amara é o único texto livre de estudante do produto.** Só
+  depois da decisão, teto de 3 turnos e 600 caracteres, sanitizador nos dois
+  sentidos, e **fora de log, telemetria e painel** — o professor vê quantos
+  turnos, nunca o quê (ADR-66).
+- **A mídia é preparada pelo PROFESSOR**, uma vez, e cacheada no bucket
+  (`midia.service.ts`, idempotente, com lock). `GET /midia` devolve `null` no
+  que falta, e `null` é informação: o cliente cai na transcrição e na ilustração
+  procedural em vez de esperar arquivo que não existe (ADR-67).
+- **`praca-cerrada` é RECORTE de `praca-aberta`**, não uma segunda geração: o par
+  print/matéria só funciona se a foto for a mesma. A janela do recorte tem de
+  ter a **proporção do destino** — com proporção diferente, o `cover` recorta de
+  novo e come o que importava. E a origem se lê pelo mesmo driver
+  (`lerMidiaDeExperiencia`), nunca por HTTP: a URL pública aponta para outro
+  processo e dá 404.
+- **`[mock]` está deliberadamente FORA de `MARCAS_DO_PROMPT`** no sanitizador.
+  Se entrasse, Amara ficaria muda em desenvolvimento com `AI_PROVIDER=mock`.
 
 ## Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
 Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão
