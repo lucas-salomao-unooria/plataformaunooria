@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { montarEmbed } from "@/lib/embed-experiencia";
+import { minhasSalas, podeEntrar } from "@/lib/salas";
 import { ExpHost } from "@/components/ExpHost";
 import { HeaderPlataforma } from "@/components/header-plataforma";
 
@@ -17,6 +18,26 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
   const { expId } = await params;
   const session = await auth();
   const usuario = session!.usuario; // middleware garante sessão nesta rota
+
+  /* A PORTA DA SALA (ADR-69), ANTES de montar o embed: sem liberação na turma,
+     a missão não abre. A api recusaria de qualquer jeito (403
+     `missao-nao-liberada` na entrada de cada experiência), mas aí a criança
+     veria o aparelho carregar e quebrar por dentro — e o token já teria sido
+     assinado para uma missão que ela não pode fazer.
+
+     Só para ESTUDANTE: professor e gestor não chegam nesta rota (o middleware
+     manda cada papel para a própria área), e `/dev-embed` continua sem porta,
+     porque é ferramenta de desenvolvimento. */
+  if (usuario.papel === "estudante") {
+    const salas = await minhasSalas();
+    /* `null` é a api fora do ar. Deixar passar aqui não abre nada: a api recusa
+       a entrada logo em seguida, e um 404 por indisponibilidade diria à criança
+       que a missão não existe. */
+    const liberada = (salas ?? []).some((sala) =>
+      sala.missoes.some((missao) => missao.expId === expId && podeEntrar(missao.estado)),
+    );
+    if (salas !== null && !liberada) notFound();
+  }
 
   const embed = await montarEmbed(expId, usuario);
 

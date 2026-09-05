@@ -374,6 +374,8 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{rostering/}\desc{pessoas, escolas, turmas}};
   \node[c4component, text width=22mm] (port) at (14.4,-9.6)
     {\texttt{portabilidade/}\desc{perfil portátil}};
+  \node[c4component, text width=22mm] (salas) at (2.0,-10.4)
+    {\texttt{salas/}\desc{a sala: grade e liberação}};
 
   % ---- faixa 4: dominio por experiencia
   \node[camadalbl, anchor=west] at (0.7,-10.9)
@@ -431,6 +433,13 @@ produziria colisão de nomes e falha mais difícil de localizar. O padrão do
 Capítulo~\ref{cap:experiencias} continua valendo para experiência nova; este é um
 porte.
 \end{nota}
+
+\textbf{A porta da sala é a exceção que confirma a regra.} \arq{salas/} é módulo de
+PLATAFORMA: ele não conhece missão nenhuma pelo nome --- sabe turma, série e
+catálogo. E a guarda que as experiências chamam (\cd{exigirMissaoLiberada}) NÃO
+mora nele, mora em \arq{comum/liberacao.ts}. Fosse um \emph{provider} do
+\arq{salas/}, cada módulo de experiência teria de importá-lo, e uma dependência
+esquecida viraria uma porta aberta em silêncio (\adrr{ADR-69}).
 
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da

@@ -153,7 +153,11 @@ export class VilaProfessorController {
     ],
   })
   async zerar(@Param("turmaId") turmaId: string, @Req() req: Autenticado) {
-    const apagado = await this.vila.zerarTurma(req.auth.escolaId, idOu404(turmaId));
+    const apagado = await this.vila.zerarTurma(
+      req.auth.escolaId,
+      idOu404(turmaId),
+      professorDoToken(req.auth),
+    );
     if (!apagado) throw new HttpException({ mensagem: "Turma não encontrada." }, 404);
     return apagado;
   }
@@ -193,7 +197,7 @@ export class VilaProfessorController {
        a api nunca serviu ali — e mandava o professor esperar a reação de um grupo
        que não existe na sala. A regra é a mesma de `abrir`: `bolhasElegiveis`. */
     const elegiveis = turmaId
-      ? await this.vila.bolhasDaTurma(req.auth.escolaId, idOu404(turmaId))
+      ? await this.vila.bolhasDaTurma(req.auth.escolaId, idOu404(turmaId), professorDoToken(req.auth))
       : null;
     const visiveis = elegiveis
       ? CARTOES.filter((c) => c.nivel === "comum" || elegiveis.includes(c.nivel))
@@ -235,9 +239,15 @@ export class VilaProfessorController {
     ],
   })
   async estudante(@Param("estudanteId") estudanteId: string, @Req() req: Autenticado) {
-    const relatorio = await this.vila.doEstudante(req.auth.escolaId, idOu404(estudanteId));
+    const relatorio = await this.vila.doEstudante(
+      req.auth.escolaId,
+      idOu404(estudanteId),
+      professorDoToken(req.auth),
+    );
     /* `null` é resposta legítima: o estudante existe e não jogou. 404 aqui faria a
-       tela do professor dizer "não encontrado" para uma criança da turma dele. */
+       tela do professor dizer "não encontrado" para uma criança da turma dele.
+       É também o que sai para criança de turma que não é dele — indistinguível
+       de "não jogou", que é o certo: negar sem confirmar que ela existe. */
     return { relatorio };
   }
 }

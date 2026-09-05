@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { VIDEOS } from "../src/unootube/catalogo";
 import { UnootubeService } from "../src/unootube/unootube.service";
+import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
@@ -28,6 +29,7 @@ let estudanteSemTurma = "";
 
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
+  await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.unootubeSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -68,6 +70,11 @@ beforeAll(async () => {
   estudanteA = (await criar("ut.ana", "Ana Teste", true)).id;
   estudanteB = (await criar("ut.bia", "Bia Teste", true)).id;
   estudanteSemTurma = (await criar("ut.sem", "Sem Turma", false)).id;
+
+  /* A PORTA DA SALA (ADR-69): sem esta linha, `service.sessao` recusa com 403
+     `missao-nao-liberada` e a suíte inteira falha. `liberadaPor` é só o nome que
+     a tela mostra — nenhuma regra o lê. */
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-02-unootube", estudanteA);
 });
 
 afterAll(async () => {

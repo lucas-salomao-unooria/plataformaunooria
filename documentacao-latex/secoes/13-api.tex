@@ -104,6 +104,8 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\rota{/periodos-letivos}\desc{GET: prof.; POST: gestor}};
   \node[c4component, text width=27mm] (pp) at (12.5,-3.0)
     {\rota{/perfis-recebidos}\desc{gestor, admin}};
+  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (sal) at (14.4,-3.0)
+    {\rota{/salas/*}\desc{a SALA: grade e liberação}};
 
   \node[camadalbl, anchor=west] at (0.3,-4.0) {exp-01 --- Instanooria};
   \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
@@ -242,6 +244,38 @@ papel \cd{estudante}, com duas exceções marcadas.
   largada pela \emph{mesma} regra do primeiro início.\\
 \bottomrule
 \end{tabularx}
+
+\subsection{A sala de aula: a missão dentro da turma}
+
+Três rotas, e elas são a camada entre \cd{turmas} e \cd{experiencias}
+(\adrr{ADR-69}):
+
+\begin{itemize}
+  \item \rota{GET /salas/minhas} (estudante) --- as turmas dele e, em cada uma, a
+    grade do ano. Devolve a grade INTEIRA, não só o que está aberto: missão
+    bloqueada aparece com \textbf{cadeado}, encerrada aparece com o rótulo.
+  \item \rota{GET /salas/turma/:turmaId} (professor, gestor, admin) --- a mesma
+    grade com quem liberou e quando. \cd{?todas=1} acrescenta as missões de
+    outras séries, marcadas: turma multisseriada e reforço existem, mas trazê-las
+    por padrão afogaria a grade do ano.
+  \item \rota{PUT /salas/turma/:turmaId/missoes/:expId} (\textbf{só professor com
+    matrícula na turma}) --- libera ou encerra. \cd{PUT} porque o efeito é o
+    estado final: é o clique que um professor nervoso dá duas vezes, na frente da
+    sala.
+\end{itemize}
+
+\begin{regra}
+\textbf{Esconder o \emph{card} no hub é UX; a porta é do servidor.} Toda entrada
+de estudante em experiência --- \rota{POST /runs}, \rota{GET /runs/boot} e o funil
+de sessão do UnooTube, do unooGPT, da Vila e do Eco --- chama
+\cd{exigirMissao\-Liberada} e responde \textbf{403} \cd{missao-nao-liberada} sem
+liberação. O \emph{bundle} é público e \rota{/exp/:expId} é endereço adivinhável:
+antes disto, qualquer estudante logado abria qualquer missão digitando a URL.
+
+A guarda é PRÉ-CONDIÇÃO do relógio da exp-03 e dos \emph{gates} da exp-07, não
+substituta --- e fica na CRIAÇÃO da sessão, não em toda rota: quem já entrou
+fica, porque encerrar fecha a entrada e não expulsa a criança no meio da aula.
+\end{regra}
 
 \subsection{Entrada de pessoas: as duas portas, e por que só uma escreve}
 

@@ -13,6 +13,14 @@
  * no bucket de assets, fora do bundle e do git).
  */
 
+/**
+ * O slug desta experiência no catálogo (`experiencias.exp_id`) e no bucket.
+ * É o que a porta da sala (`comum/liberacao.ts`) pergunta. Tem de bater com o
+ * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
+ * liberação gravada e visível na tela do professor.
+ */
+export const EXP_ID = 'exp-02-unootube';
+
 export interface Video {
   id: string;
   arquivo: string;

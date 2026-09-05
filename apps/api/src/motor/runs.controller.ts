@@ -17,11 +17,12 @@ import { z } from "zod";
 import { AI_PROVIDER, type AiProvider } from "../ai/provider";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
+import { exigirMissaoLiberada } from "../comum/liberacao";
 import { rateLimit } from "../comum/rate-limit";
 import { antagonismoSchema } from "../comum/insta/tipos";
 import { ehEtapaDaTurma, faseEfetiva, normalizarFase } from "../comum/insta/etapas";
 import { DossieAindaNaoExiste, encerrarRun, montarRespostaDossie } from "../dossie/computar";
-import { MINIMO_DA_REFLEXAO } from "../comum/insta/defaults";
+import { EXP_ID, MINIMO_DA_REFLEXAO } from "../comum/insta/defaults";
 import { calcularExposicao } from "../dossie/exposicao";
 import { arteFallback } from "../geracao/arte-fallback";
 import { gerarReacoes } from "../geracao/prompts/reacoes";
@@ -102,6 +103,12 @@ export class RunsController {
     const { usuarioId, escolaId } = req.auth;
 
     return this.prisma.comTenancy(async (tx) => {
+      /* A PORTA DA SALA, antes de qualquer coisa (ADR-69): sem liberação nesta
+         turma, a missão não abre. É a checagem que falta ser feita no hub —
+         `/exp/:expId` é endereço adivinhável, e sem isto qualquer estudante
+         logado começava a missão de qualquer ano digitando a URL. */
+      await exigirMissaoLiberada(tx, escolaId, usuarioId, EXP_ID);
+
       /**
        * A atividade DESTA criança.
        *
@@ -191,6 +198,11 @@ export class RunsController {
   async boot(@Req() req: Autenticado) {
     const { usuarioId, escolaId } = req.auth;
     return this.prisma.comTenancy(async (tx) => {
+      // A mesma porta do `POST /runs` (ADR-69): o `boot` é o primeiro fetch do
+      // aparelho, e sem ele aqui a tela de entrada carregaria a missão inteira
+      // antes de descobrir que ela não abre.
+      await exigirMissaoLiberada(tx, escolaId, usuarioId, EXP_ID);
+
       const [estudante, run] = await Promise.all([
         tx.user.findUniqueOrThrow({
           where: { id: usuarioId },

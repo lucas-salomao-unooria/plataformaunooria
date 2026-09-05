@@ -74,6 +74,39 @@ A montagem (token, manifesto, dev server, origin) é uma só:
 `/professor/plano-de-aula` e `/professor/bem-estar`. O contrato `postMessage` e
 o manifesto estão em `apps/experiencias/AGENTS.md`.
 
+**A origem do bundle é do AMBIENTE; o manifesto diz o que a experiência
+declara.** Os dois estavam conflatados em `emDev = !manifesto && !emProducao` —
+"tabela vazia logo é dev" — e isso quebrou quando o seed passou a popular
+`experiencias` (ADR-69): sem `NEXT_PUBLIC_CDN_EXP_URL`, a URL versionada caía no
+default `localhost:5173`, o dev server da exp-01, que responde a qualquer caminho
+com a SPA dele. TODA missão abria o Instanooria, o handshake completava e o boot
+dava 403 — nada dizia "endereço errado".
+
+## A sala de aula no hub (ADR-69)
+
+`/estudante` lê `GET /salas/minhas` (`lib/salas.ts`): a turma e a grade do ano
+dela, com o estado de cada missão. `null` (api fora do ar) e `[]` (sem turma) são
+telas DIFERENTES — mandar a criança falar com a coordenação por causa de um 503 é
+o pior conselho possível.
+
+`/professor/turmas/[id]` é a SALA, com abas em `?aba=` (`missoes` | `estudantes`)
+e o `Tabs` do DS em modo controlado — a URL é o estado, como o `?turmaId=` dos
+resultados. O botão de liberar é client-side porque o professor aperta na FRENTE
+DA SALA, e passa pelo BFF: **`PUT` precisou ser exportado lá** (`app/api/plataforma/[...path]/route.ts`),
+e método que falta no BFF não dá 404 e sim **405**, sem linha no log — o sintoma
+chega como "o botão não faz nada".
+
+O caminho para conduzir a missão sai da sala, com a turma já na URL
+(`lib/rotas-da-missao.ts` traduz `expId` → rota do professor; é o único lugar que
+faz essa tradução). A trilha do Entre Redes continua por ano e virou catálogo,
+com faixa dizendo que quem abre é a turma.
+
+`/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
+ela. Só para estudante: professor e gestor não chegam nesta rota, e `/dev-embed`
+segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
+jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
+assinado.
+
 ## As fontes do DS não vêm de graça
 
 **No hub, o CSS do DS não basta: as fontes também.** O `unooria.css` declara

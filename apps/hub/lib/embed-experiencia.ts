@@ -150,7 +150,22 @@ export async function montarEmbed(
   const manifesto = opts.srcDev && !emProducao ? null : await buscarManifesto(expId, token);
 
   const cdn = process.env.NEXT_PUBLIC_CDN_EXP_URL ?? "http://localhost:5173";
-  const emDev = !manifesto && !emProducao;
+
+  /**
+   * De ONDE vem o bundle é pergunta do AMBIENTE — não do manifesto.
+   *
+   * Isto já foi `!manifesto && !emProducao`, ou seja: "se a tabela
+   * `experiencias` está vazia, então estamos em dev". Era um proxy, não um
+   * fato, e ele quebrou no dia em que o seed passou a popular o catálogo
+   * (ADR-69, que precisa dele para montar a grade da turma). Com manifesto e
+   * sem CDN configurado, `cdn` cai no default `http://localhost:5173` — o dev
+   * server da exp-01 — e a URL versionada vira
+   * `localhost:5173/exp-02-unootube/1.2.3/index.html`. O Vite responde a
+   * QUALQUER caminho com o index da SPA dele, então TODA missão abria o
+   * Instanooria, com o handshake completando e o boot dando 403 na experiência
+   * errada. Nada no console dizia "endereço errado".
+   */
+  const emDev = !emProducao;
   const base = (emDev ? (opts.srcDev ?? baseDevDaExperiencia(expId, cdn)) : cdn).replace(/\/$/, "");
 
   // SEM MANIFESTO o bundle é servido na raiz de `base` — e o `experiencia.json`
@@ -192,9 +207,12 @@ export async function montarEmbed(
   }
 
   const hubOrigin = encodeURIComponent(process.env.HUB_ORIGIN ?? "http://localhost:3000");
-  const src = manifesto
-    ? `${cdn}/${manifesto.expId}/${manifesto.versaoAtiva}/index.html?hubOrigin=${hubOrigin}`
-    : `${base}/?hubOrigin=${hubOrigin}`;
+  /* A URL VERSIONADA é de produção: é ela que o rollback troca (`versaoAtiva`).
+     Em dev o bundle vem do dev server da experiência, que serve na raiz. */
+  const src =
+    !emDev && manifesto
+      ? `${cdn}/${manifesto.expId}/${manifesto.versaoAtiva}/index.html?hubOrigin=${hubOrigin}`
+      : `${base}/?hubOrigin=${hubOrigin}`;
 
   const estudantePayload = {
     id: usuario.id,

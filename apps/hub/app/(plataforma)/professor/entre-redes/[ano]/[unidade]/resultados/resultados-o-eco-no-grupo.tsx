@@ -42,10 +42,14 @@ export async function ResultadosOEcoNoGrupo({
   const lista = await apiDoServidor<{ turmas: TurmaDoEco[] }>("/o-eco-no-grupo/turmas");
   const todas = lista?.turmas ?? [];
   const doSetimo = todas.filter((t) => normalizarSerie(t.serie) === "7EF");
-  const turmas = doSetimo.length > 0 ? doSetimo : todas;
+  /* O filtro por série FICA — ele diz quais salas podem rodar esta missão.
+     O que saiu foi o FALLBACK "mostrando todas": sem turma da série ele
+     silenciosamente oferecia as outras, e o professor escolhia uma turma que
+     nunca vai jogar isto. Sem turma da série, o certo é dizer isso. */
+  const turmas = doSetimo;
   const aviso =
-    doSetimo.length === 0 && todas.length > 0
-      ? "Nenhuma turma de 7º ano nesta escola — mostrando todas."
+    doSetimo.length === 0
+      ? "Você não tem turma de 7º ano, e esta missão é dessa série. Para conduzir uma missão, entre pela turma em Minhas turmas."
       : undefined;
 
   const painel = turma

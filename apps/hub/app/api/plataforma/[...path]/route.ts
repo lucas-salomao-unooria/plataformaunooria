@@ -25,6 +25,10 @@ const PREFIXOS_PERMITIDOS = [
      aqui só decide quais prefixos o BFF repassa. */
   "rostering",
   "turmas",
+  /* A SALA DE AULA (ADR-69): a grade da turma e o liberar/encerrar. É
+     client-side porque o professor aperta na frente da sala e o card precisa
+     responder na hora. As guardas de papel estão na api. */
+  "salas",
   "matriculas",
   "periodos-letivos",
   /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a
@@ -141,6 +145,12 @@ export async function POST(req: NextRequest, ctx: Ctx) {
   return proxy(req, (await ctx.params).path);
 }
 export async function PATCH(req: NextRequest, ctx: Ctx) {
+  return proxy(req, (await ctx.params).path);
+}
+/* `PUT` entrou com a sala de aula (ADR-69): liberar/encerrar é idempotente, e o
+   verbo diz isso. Um método que falta aqui não vira 404 e sim **405**, sem
+   linha no log do BFF — o sintoma aparece como "o botão não faz nada". */
+export async function PUT(req: NextRequest, ctx: Ctx) {
   return proxy(req, (await ctx.params).path);
 }
 export async function DELETE(req: NextRequest, ctx: Ctx) {

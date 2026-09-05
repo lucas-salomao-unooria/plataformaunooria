@@ -106,7 +106,7 @@ export class UnoogptTurmasController {
     if (!ehUuid(turmaId)) throw erroDeJogo("payload-invalido");
     const r = AcaoDoRelogioSchema.safeParse(corpo);
     if (!r.success) throw erroDeJogo("payload-invalido");
-    return this.service.mexerNoRelogio(escolaId, turmaId, r.data.acao);
+    return this.service.mexerNoRelogio(escolaId, turmaId, r.data.acao, professorDoToken(req.auth));
   }
 
   /**
@@ -132,7 +132,7 @@ export class UnoogptTurmasController {
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (!ehUuid(turmaId)) throw erroDeJogo("payload-invalido");
-    return this.service.zerarTurma(escolaId, turmaId);
+    return this.service.zerarTurma(escolaId, turmaId, professorDoToken(req.auth));
   }
 
   /** A linha de UMA criança: leitura em graus + a Transcrição. */
@@ -156,6 +156,6 @@ export class UnoogptTurmasController {
   ) {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (!ehUuid(estudanteId)) throw erroDeJogo("payload-invalido");
-    return this.service.doEstudante(escolaId, estudanteId);
+    return this.service.doEstudante(escolaId, estudanteId, professorDoToken(req.auth));
   }
 }

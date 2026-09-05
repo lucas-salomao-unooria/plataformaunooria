@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import type { Prisma, UnootubeSessao } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
-import { LIMITE_SALVOS, VIDEOS, semGabarito, type VideoPublico } from "./catalogo";
+import { EXP_ID, LIMITE_SALVOS, VIDEOS, semGabarito, type VideoPublico } from "./catalogo";
 import { erroDeJogo } from "./erros";
 import {
   ESTADO_INICIAL,
@@ -250,13 +251,21 @@ export class UnootubeService {
     return { linhas, posicao: posicaoDoEstudante(linhas) };
   }
 
-  /** `users` está fora da RLS — a escola do token precisa bater com a do usuário. */
+  /**
+   * `users` está fora da RLS — a escola do token precisa bater com a do usuário.
+   *
+   * É também O FUNIL desta experiência: `sessao` e `mutar` passam os dois por
+   * aqui, então é o lugar certo para a porta da sala (ADR-69). Pô-la só na
+   * entrada de leitura deixaria `POST /salvos` aberto a quem chamasse a rota
+   * direto, sem nunca abrir a missão.
+   */
   private async estudanteDaEscola(tx: Prisma.TransactionClient, escolaId: string, estudanteId: string) {
     const estudante = await tx.user.findUnique({
       where: { id: estudanteId },
       select: { displayName: true, avatar: true, escolaId: true },
     });
     if (!estudante || estudante.escolaId !== escolaId) erroDeJogo("TURMA_NAO_ENCONTRADA");
+    await exigirMissaoLiberada(tx, escolaId, estudanteId, EXP_ID);
     return estudante;
   }
 

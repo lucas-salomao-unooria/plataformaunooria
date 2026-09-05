@@ -160,6 +160,16 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   A ficha do catálogo traz competência, os três momentos e o preparo; o guia
   passo a passo, não. \textbf{Pendente} --- e o arquivo dos guias está sendo
   mexido numa frente paralela, então ele entra por lá, não por aqui.\\
+\zebra \cd{R-23} & \textbf{Turma sem missão liberada no dia da aula.} Desde a sala
+  de aula (\adrr{ADR-69}) a missão só abre onde o professor liberou --- e um passo
+  novo antes da aula é um passo que se esquece com a sala cheia. & Alta & Médio &
+  \textbf{Mitigado na tela, não no código}: a sala mostra a grade inteira com o
+  estado de cada missão, e a criança vê o \textbf{cadeado} em vez de uma lista
+  vazia --- \enquote{a missão sumiu} e \enquote{ainda não abriu} deixam de ser a
+  mesma coisa. O 403 carrega \cd{codigo: missao-nao-liberada}, então o sintoma
+  aponta para a causa em vez de virar chamado. O que \textbf{falta} é janela de
+  datas (\enquote{abre segunda, fecha sexta}), e ela não nasce sem rotina que a
+  cumpra: é a armadilha do \cd{expires\_at}.\\
 \bottomrule
 \end{tabularx}
 
@@ -198,7 +208,7 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   \node[font=\scriptsize\bfseries\color{unooOrange}] at (3.0,1.60) {R-21  R-22};
   % restante
   \node[font=\scriptsize\color{unooInkSoft}] at (1.9,2.05) {R-03$^{*}$};
-  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-20};
+  \node[font=\scriptsize\color{unooInkSoft}] at (1.9,1.75) {R-15  R-20  R-23};
   \node[font=\scriptsize\color{unooInkSoft}] at (2.9,0.9) {R-09};
   \node[font=\scriptsize\color{unooInkSoft}] at (1.9,0.9) {R-10  R-11  R-13};
   \node[font=\scriptsize\color{unooInkSoft}] at (0.9,1.9) {R-08};

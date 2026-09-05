@@ -35,10 +35,18 @@ import { CascaLegal, type SecaoLegal } from "@/components/legal/casca-legal";
  *    sessão e não há masking no repositório. Por isso a página fala do que a
  *    plataforma ENVIA e da decisão de manter a ferramenta desligada, nunca do
  *    que o script de terceiro captura por conta própria.
- *  - "a missão só abre quando o professor libera" — a liberação por turma
- *    (ADR-69) não está nesta árvore. Não afirmar controle que ainda não existe.
  *  - "registramos os acessos aos dados para auditoria" — não há log de acesso
  *    individual. Ninguém sabe hoje qual gestor abriu o CPF de qual criança.
+ *
+ * UMA LACUNA JÁ FECHOU, e o registro serve de aviso ao próximo. Quando este
+ * texto foi escrito, a liberação por turma (ADR-69) não estava em `dev`, e por
+ * isso a página EVITA afirmar que "a missão só abre quando o professor libera".
+ * A ADR-69 entrou depois (PR #29): `exigirMissaoLiberada` vive em
+ * `apps/api/src/comum/liberacao.ts` e guarda a entrada de estudante em cinco
+ * módulos. A afirmação passou a ser verdadeira e PODE entrar na seção de
+ * segurança — não entrou ainda porque calar um controle que existe é
+ * conservador, enquanto anunciar um que não existe é falso. Quem for escrever:
+ * confirme a guarda no funil das rotas de estudante antes.
  *
  * FORMA. Linguagem acessível a adolescente é exigência legal (LGPD art. 14,
  * §6º; Lei 15.211/2025 art. 18, §1º), não gentileza: frase curta, voz ativa,

@@ -1,4 +1,4 @@
-import { Card, Tag } from "@edu/ui/ds";
+import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { CartaoMissao } from "@/components/cartao-missao";
 import { CartaoTransversal } from "@/components/cartao-transversal";
 import { Trilha } from "@/components/trilha";
@@ -57,6 +57,15 @@ export default async function EntreRedesPage() {
           a turma quantas vezes quiser.
         </p>
       </div>
+
+      {/* A trilha é o CATÁLOGO: o que existe, por ano e unidade. Quem decide o
+          que a turma vê é a SALA (ADR-69) — e sem esta faixa o professor lê a
+          grade inteira como se tudo estivesse no ar para os estudantes dele. */}
+      <FeedbackAlert
+        type="info"
+        title="Aqui você conhece as missões; quem abre para a turma é você, na sala"
+        description="Cada missão só aparece para os estudantes depois de ser liberada na turma. Entre em Minhas turmas, escolha a sala e libere a missão que vai rodar."
+      />
 
       {/*
         As TRANSVERSAIS vêm antes da grade, e fora dela.

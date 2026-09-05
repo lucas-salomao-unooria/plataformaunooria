@@ -1,8 +1,9 @@
 {
   "id": "exp-07-o-eco-no-grupo",
   "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
-  "versao": "0.1.0",
+  "versao": "0.1.1",
   "series": ["7EF"],
+  "unidade": 1,
   "capabilities": ["telemetria", "progresso", "avaliacao", "ia"],
   "viewport": { "largura": 375, "altura": 812 },
   "permissoes": ["forms"],
