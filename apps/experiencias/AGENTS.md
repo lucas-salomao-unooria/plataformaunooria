@@ -91,11 +91,23 @@ teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
 `/professor/plano-de-aula` e `/professor/bem-estar`.
-O estudante tem hub próprio (`/estudante`): ele ESCOLHE a missão, sem filtro por série
-por enquanto (`apps/hub/lib/missoes-do-estudante.ts`, derivado do catálogo do Entre
-Redes; a série volta a filtrar quando o manifesto virar a fonte). Missão só
-aparece lá se tiver copy de estudante (`missao.estudante` no catálogo) — a copy do
-professor entrega a virada. **As TRANSVERSAIS vêm primeiro na lista**: não
+O estudante tem hub próprio (`/estudante`), e desde a sala de aula (ADR-69) ele
+abre pela TURMA: `GET /salas/minhas` devolve a grade da série dela, e o estudante
+só entra no que o professor LIBEROU naquela sala. Missão bloqueada aparece com
+CADEADO — não some —, e a encerrada fica com o rótulo. `apps/hub/lib/missoes-do-estudante.ts`
+deixou de ser a lista e é só a COPY (`copyDaMissao`); missão sem copy de
+estudante não vai à tela, mesmo liberada — a do professor entrega a virada.
+
+**`series` do manifesto agora é LIDO**: é ele que decide se a missão entra na
+grade de uma turma, e `series: []` continua querendo dizer TODAS (a transversal).
+Errar esse campo tira a missão da tela sozinha.
+
+**A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
+"estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em
+que o seed passou a populá-la: com manifesto e sem CDN, a URL versionada caía no
+default `localhost:5173` (o dev server da exp-01), que responde a QUALQUER caminho
+com a SPA dele — toda missão abria o Instanooria, com handshake completo e 403 na
+experiência errada. **As TRANSVERSAIS vêm primeiro na lista**: não
 pertencem a ano nenhum, logo não são "depois" de nada, e a Vila do Lume é o Ato 1
 do Instanooria — com ela no fim, a criança encontrava o Ato 2 antes do Ato 1 e
 nada dizia o que faltou. Não há GATE, e não deve haver: falta de partida na Vila

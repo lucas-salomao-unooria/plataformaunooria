@@ -2,82 +2,135 @@ import { HUB, suite, estadoDosIcones } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O hub do estudante: a lista de missões e a moldura em que cada uma abre.
+ * O hub do estudante: a TURMA dele, as missões dela e a moldura em que cada uma
+ * abre.
  *
- * Existe separado das suítes de cada missão porque o que ele prova é outra
- * coisa: que o CATÁLOGO chega inteiro à criança, que cada cartão leva ao
- * aparelho certo, e que o aparelho é um iframe cross-origin com o sandbox que o
- * manifesto pediu — nem mais permissivo, nem menos.
+ * Esta suíte mudou de assunto com a sala de aula (ADR-69). Ela provava que o
+ * CATÁLOGO INTEIRO chegava à criança — cinco missões, iguais para toda criança
+ * de toda escola. Agora prova o contrário, que é o ponto do produto: chega a
+ * grade da TURMA dela, e só abre o que o professor liberou naquela sala.
  *
- * O `sandbox` do iframe é a única defesa entre um bundle de terceiros e a
- * sessão do hub. Ele é montado a partir do manifesto (`permissoes`), e um token
- * a mais aqui não quebra nada visivelmente — por isso precisa de teste.
+ * O par 8A/8B é o coração do teste. Mesma série, mesmas duas missões na grade,
+ * estados diferentes: na 8A o seed liberou, na 8B não. Era exatamente isto que
+ * não existia — duas turmas do mesmo ano eram indistinguíveis.
+ *
+ * O `sandbox` do iframe continua sendo provado aqui: ele é a única defesa entre
+ * um bundle de terceiros e a sessão do hub, é montado a partir do manifesto
+ * (`permissoes`), e um token a mais não quebra nada visivelmente.
  */
 await suite(
   {
     slug: "estudante/01-hub-de-missoes",
     papel: "estudante",
     titulo: "O hub do estudante",
-    subtitulo: "o catálogo de missões e a moldura do aparelho",
+    subtitulo: "a turma, as missões dela e a moldura do aparelho",
     contexto:
-      "Depois do login, a criança escolhe a missão. Cada cartão abre uma experiência que roda em " +
-      "outra origem, dentro de um iframe com sandbox derivado do manifesto da experiência.",
+      "Depois do login, a criança vê a TURMA dela e as missões daquela sala. Só abre o que o " +
+      "professor liberou; o resto aparece com cadeado. Cada missão aberta roda em outra origem, " +
+      "dentro de um iframe com sandbox derivado do manifesto da experiência.",
     prova: [
-      "Todas as missões publicadas chegam ao hub do estudante, com copy própria dela",
-      "Cada cartão leva ao aparelho certo (/exp/<expId>)",
-      "O aparelho roda em outra origem, e cada token de sandbox só chega a quem o declarou",
-      "A experiência responde ao handshake da SDK (exp:ready → hub:init) e monta",
-      "Os ícones do design system carregam como fonte, e não como texto",
+      "O estudante entra na TURMA dele — a grade é a do ano dela, não o catálogo inteiro",
+      "Missão não liberada aparece com CADEADO, e não some da tela",
+      "Duas turmas do MESMO ano têm estados diferentes: 8A aberta, 8B fechada",
+      "Missão de outra série não entra na grade (o UnooTube é do 4º ano)",
+      "URL direta de missão não liberada responde 404 — o cadeado não é só enfeite",
+      "Cada cartão aberto leva ao aparelho certo, em outra origem, com o sandbox que o manifesto pediu",
     ],
     comando: "node scripts/e2e/estudante/01-hub-de-missoes.mjs",
   },
   async (r) => {
-    const estudante = conta("estudante", { serie: "8EF" });
+    /* A grade do 8º ano: a transversal (Vila, `series: []`) e a missão do ano
+       (Instanooria, `series: ["8EF"]`). O seed libera as DUAS na 8A e NENHUMA na
+       8B — as turmas "B" ficam fechadas de propósito, para o professor
+       exercitar liberar sem interferir em suíte de estudante. */
+    const missoes = [
+      { texto: "Vila do Lume", expId: "exp-70-vila-do-lume", declara: ["allow-pointer-lock"] },
+      { texto: "Instanooria", expId: "exp-01-instanooria", declara: [] },
+    ];
+    const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
+    /* Do 4º ano: não pertence à grade do 8º. Não é "bloqueada" — é de outra
+       série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
+    const DE_OUTRA_SERIE = { texto: "UnooTube", expId: "exp-02-unootube" };
+
+    /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
+       não é desta turma, e é o servidor recusando que ela existe para provar. */
+    r.provocado(
+      /404.*\/exp\/exp-02-unootube/,
+      "a porta da sala recusando a URL adivinhada de uma missão de outra série",
+    );
+
+    // ══ a turma ABERTA (8A) ═════════════════════════════════════════════
+    const daOitoA = conta("estudante", { turma: "8A" });
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
-    await r.entrar(p, estudante.login);
+    await r.entrar(p, daOitoA.login);
 
     await p.waitForURL((url) => url.pathname.includes("/estudante"), { timeout: 30_000 });
     const cartoes = p.locator("main ul > li");
     await cartoes.first().waitFor({ timeout: 15_000 });
-    const quantas = await cartoes.count();
     const titulos = (await cartoes.allInnerTexts()).map((t) => t.split("\n")[0]);
 
-    r.exigir(quantas >= 4, `o catálogo chegou inteiro: ${quantas} missões (${titulos.join(", ")})`);
     r.exigir(
-      (await p.locator("h1").innerText()).includes(estudante.nome.split(" ")[0]),
+      (await p.locator("main h2").first().innerText()).includes(daOitoA.turma),
+      `o hub abre pela TURMA da criança (${daOitoA.turma})`,
+    );
+    r.exigir(
+      (await p.locator("h1").innerText()).includes(daOitoA.nome.split(" ")[0]),
       "o hub cumprimenta a criança pelo primeiro nome dela",
     );
+    for (const missao of missoes) {
+      r.exigir(
+        titulos.some((t) => t.includes(missao.texto)),
+        `${missao.texto} está na grade do 8º ano`,
+      );
+    }
+    r.exigir(
+      !titulos.some((t) => t.includes(DE_OUTRA_SERIE.texto)),
+      `${DE_OUTRA_SERIE.texto} NÃO entra na grade: é do 4º ano, não desta turma`,
+    );
+    const abertos = await p.locator('[data-estado="liberada"]').count();
+    r.exigir(abertos === missoes.length, `as ${missoes.length} missões da 8A estão abertas`);
     console.log("      ícones:", await estadoDosIcones(p));
 
     await r.registrar(p, "hub-do-estudante", {
-      titulo: "As missões disponíveis",
-      mostra: `Um cartão por missão, com a chamada escrita para a criança — ${titulos.join(", ")}.`,
+      titulo: "A turma e as missões dela",
+      mostra: `A turma ${daOitoA.turma} no topo e um cartão por missão da grade do ano — ${titulos.join(", ")}.`,
       prova:
-        "A copy é a do estudante, nunca a do professor: a ficha docente do Instanooria entrega a " +
-        "virada da missão, e lê-la antes destruiria a experiência que ela mede.",
-      detalhe: `${quantas} missões`,
+        "A lista não é mais o catálogo inteiro: é a grade da TURMA. A copy é a do estudante, nunca " +
+        "a do professor — a ficha docente do Instanooria entrega a virada da missão, e lê-la antes " +
+        "destruiria a experiência que ela mede.",
+      detalhe: `${titulos.length} missões, ${abertos} abertas`,
     });
 
-    // ── cada cartão leva ao aparelho, e o aparelho monta ─────────────────
+    // ══ a URL direta de missão que não é desta turma ════════════════════
+    const resposta = await p.goto(`${HUB}/exp/${DE_OUTRA_SERIE.expId}`, {
+      waitUntil: "domcontentloaded",
+    });
+    r.exigir(
+      resposta?.status() === 404,
+      `a URL direta de ${DE_OUTRA_SERIE.texto} responde 404 (veio ${resposta?.status()})`,
+    );
+    await r.registrar(p, "url-direta-recusada", {
+      titulo: "A URL adivinhada não abre",
+      mostra: "O endereço da missão do 4º ano, digitado por um estudante do 8º.",
+      prova:
+        "Esconder o cartão é UX; a porta é do servidor. Antes da sala de aula qualquer estudante " +
+        "logado abria qualquer missão digitando /exp/<expId> — o bundle é público e o endereço é " +
+        "adivinhável. A api recusa com 403 `missao-nao-liberada` e o hub responde 404 antes de " +
+        "assinar token nenhum.",
+    });
+
+    // ══ cada cartão aberto leva ao aparelho, e o aparelho monta ═════════
     /**
      * `declara` é o que o manifesto da experiência pediu — e portanto o que o
      * `ExpFrame` pode conceder. O que interessa provar é a NEGATIVA: quem não
      * declarou não recebe. Um `allow-pointer-lock` universal deixaria qualquer
      * bundle capturar o mouse da criança, e nada na tela denunciaria.
      */
-    const missoes = [
-      { texto: "Vila do Lume", expId: "exp-70-vila-do-lume", declara: ["allow-pointer-lock"] },
-      { texto: "Instanooria", expId: "exp-01-instanooria", declara: [] },
-      { texto: "UnooTube", expId: "exp-02-unootube", declara: [], autoplay: true },
-      { texto: "unooGPT", expId: "exp-03-unoogpt", declara: ["allow-forms"] },
-    ];
-    const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
-
     for (const missao of missoes) {
       await p.goto(`${HUB}/estudante`, { waitUntil: "domcontentloaded" });
       const cartao = p.locator("a", { hasText: missao.texto }).first();
       if (!(await cartao.count())) {
-        r.exigir(false, `o cartão de ${missao.texto} não está no hub`);
+        r.exigir(false, `o cartão de ${missao.texto} não está clicável no hub da 8A`);
         continue;
       }
       await cartao.click();
@@ -103,13 +156,6 @@ await suite(
           `${missao.texto}: ${token} ${declarado ? "concedido a quem declarou" : "NÃO concedido — a experiência não pediu"}`,
         );
       }
-      const allow = (await iframe.getAttribute("allow")) ?? "";
-      if (missao.autoplay) {
-        r.exigir(
-          allow.includes("autoplay"),
-          `${missao.texto}: o iframe delega autoplay — sem isso o play() rejeita em silêncio`,
-        );
-      }
 
       /* Que a experiência MONTOU é o que prova o handshake: sem `exp:ready` →
          `hub:init` ela nunca recebe identidade e fica na tela de carregamento. */
@@ -133,5 +179,40 @@ await suite(
         detalhe: `sandbox="${sandbox}"`,
       });
     }
+
+    // ══ a turma FECHADA (8B) — o mesmo ano, o outro estado ══════════════
+    const daOitoB = conta("estudante", { turma: "8B" });
+    const pb = await r.pagina("estudante-8b", { viewport: { width: 1280, height: 950 } });
+    await r.entrar(pb, daOitoB.login);
+    await pb.waitForURL((url) => url.pathname.includes("/estudante"), { timeout: 30_000 });
+
+    const cartoesB = pb.locator("main ul > li");
+    await cartoesB.first().waitFor({ timeout: 15_000 });
+    const titulosB = (await cartoesB.allInnerTexts()).map((t) => t.split("\n")[0]);
+
+    r.exigir(
+      titulos.length === titulosB.length,
+      `8A e 8B têm a MESMA grade (${titulos.length} missões nas duas) — o que muda é o estado`,
+    );
+    const bloqueados = await pb.locator('[data-estado="bloqueada"]').count();
+    r.exigir(
+      bloqueados === titulosB.length,
+      `na 8B as ${titulosB.length} missões estão com CADEADO (${bloqueados} bloqueadas)`,
+    );
+    r.exigir(
+      (await pb.locator("main ul > li a").count()) === 0,
+      "nenhum cartão da 8B é clicável — link para 404 é pior que link nenhum",
+    );
+
+    await r.registrar(pb, "hub-com-cadeado", {
+      titulo: "A mesma grade, na turma em que ninguém liberou",
+      mostra: `A turma ${daOitoB.turma} — mesmo ano da anterior — com as duas missões em cadeado e "Ainda não abriu".`,
+      prova:
+        "É o problema que a sala de aula existe para resolver: 8A e 8B eram indistinguíveis, e " +
+        "toda criança do 8º ano via as mesmas missões abertas. A missão bloqueada NÃO some da " +
+        "tela — a grade do ano é a promessa do que vem depois, e uma lista que muda de tamanho " +
+        "sozinha não deixa a criança entender que a próxima unidade existe.",
+      detalhe: `${bloqueados} de ${titulosB.length} com cadeado`,
+    });
   },
 );

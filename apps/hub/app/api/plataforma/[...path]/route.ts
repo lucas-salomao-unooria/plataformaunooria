@@ -25,6 +25,10 @@ const PREFIXOS_PERMITIDOS = [
      aqui só decide quais prefixos o BFF repassa. */
   "rostering",
   "turmas",
+  /* A SALA DE AULA (ADR-69): a grade da turma e o liberar/encerrar. É
+     client-side porque o professor aperta na frente da sala e o card precisa
+     responder na hora. As guardas de papel estão na api. */
+  "salas",
   "matriculas",
   "periodos-letivos",
   /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a

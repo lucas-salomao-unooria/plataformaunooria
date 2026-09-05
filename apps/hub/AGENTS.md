@@ -57,6 +57,27 @@ A montagem (token, manifesto, dev server, origin) é uma só:
 `/professor/plano-de-aula` e `/professor/bem-estar`. O contrato `postMessage` e
 o manifesto estão em `apps/experiencias/AGENTS.md`.
 
+**A origem do bundle é do AMBIENTE; o manifesto diz o que a experiência
+declara.** Os dois estavam conflatados em `emDev = !manifesto && !emProducao` —
+"tabela vazia logo é dev" — e isso quebrou quando o seed passou a popular
+`experiencias` (ADR-69): sem `NEXT_PUBLIC_CDN_EXP_URL`, a URL versionada caía no
+default `localhost:5173`, o dev server da exp-01, que responde a qualquer caminho
+com a SPA dele. TODA missão abria o Instanooria, o handshake completava e o boot
+dava 403 — nada dizia "endereço errado".
+
+## A sala de aula no hub (ADR-69)
+
+`/estudante` lê `GET /salas/minhas` (`lib/salas.ts`): a turma e a grade do ano
+dela, com o estado de cada missão. `null` (api fora do ar) e `[]` (sem turma) são
+telas DIFERENTES — mandar a criança falar com a coordenação por causa de um 503 é
+o pior conselho possível.
+
+`/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
+ela. Só para estudante: professor e gestor não chegam nesta rota, e `/dev-embed`
+segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
+jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
+assinado.
+
 ## As fontes do DS não vêm de graça
 
 **No hub, o CSS do DS não basta: as fontes também.** O `unooria.css` declara

@@ -49,10 +49,55 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 
 \begin{nota}
 As portas vivem em \arq{apps/hub/lib/experiencias-dev.ts} --- uma por
-experiência. É esse mapa que o hub usa quando não há manifesto, e é por isso que
+experiência. É esse mapa que o hub usa \textbf{fora de produção}, e é por isso que
 \env{EXP\_INTERNAL\_HOST} tem de \emph{preservar a porta}
 (Seção~\ref{sec:manifesto}).
+
+A escolha era \enquote{sem manifesto na tabela, use o mapa} --- e isso quebrou
+quando o \emph{seed} passou a popular \cd{experiencias} (\adrr{ADR-69}, que precisa
+do catálogo para montar a grade da turma). Sem CDN configurado, a URL versionada
+cai no \emph{default} \cd{localhost:5173}, o \emph{dev server} da exp-01 --- que
+responde a QUALQUER caminho com a própria SPA. Toda missão abria o Instanooria,
+com o \emph{handshake} completando e o \cd{boot} dando 403 na experiência errada.
+\textbf{De onde vem o \emph{bundle} é pergunta do AMBIENTE; o manifesto responde o
+que a experiência declara.}
 \end{nota}
+
+\section{A sala de aula: o que o estudante vê}
+\label{sec:sala-do-estudante}
+
+O hub do estudante (\rota{/estudante}) abre pela \textbf{turma}, não pelo
+catálogo. \rota{GET /salas/minhas} devolve as turmas em que ele tem matrícula e,
+em cada uma, a grade do ano dela: as experiências cuja \cd{series} contém a série
+da turma, mais as transversais (\cd{series: []}).
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X@{}}
+\toprule
+\headrow \thd{Estado} & \thd{O que a criança vê}\\
+\midrule
+\cd{liberada} & O cartão é um \emph{link} e diz \enquote{Começar}.\\
+\zebra \cd{bloqueada} & \textbf{CADEADO} e \enquote{Ainda não abriu}, sem
+  \emph{link}. Não some da tela: a grade do ano é a promessa do que vem depois, e
+  uma lista que muda de tamanho sozinha não deixa ninguém entender que a próxima
+  unidade existe. Não é estado do banco --- é a ausência de linha em
+  \cd{liberacoes}.\\
+\cd{encerrada} & Continua visível, com o rótulo. O que ela fez não pode evaporar
+  da tela quando o professor fecha a aula.\\
+\bottomrule
+\end{tabularx}
+
+Missão de OUTRA SÉRIE não aparece --- e isso é diferente de bloqueada: a do 4º ano
+não pertence à grade do 8º, não está esperando liberação. Missão sem \emph{copy}
+de estudante também não entra, mesmo liberada: sem título e sem chamada o cartão
+seria um retângulo com um \emph{slug} dentro.
+
+\begin{regra}
+\textbf{Esconder o cartão é UX.} \rota{/exp/:expId} confere a liberação antes de
+montar o \emph{embed} e responde \textbf{404} sem ela, e a API recusa a entrada com
+\textbf{403} \cd{missao-nao-liberada}. O \emph{bundle} é público e o endereço é
+adivinhável: antes disto, qualquer estudante logado abria qualquer missão
+digitando a URL.
+\end{regra}
 
 \section{exp-01 --- Instanooria}
 
