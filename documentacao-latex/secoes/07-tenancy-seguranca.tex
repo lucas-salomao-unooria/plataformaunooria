@@ -377,24 +377,30 @@ Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
   \no & \yes & \no & \no\\
 \zebra Ler o dossiê de um \emph{run} & \rota{GET /runs/:id/dossie} &
   \yes\footnotesize{\dag} & \yes & \no & \no\\
-Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
-\zebra \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
+\textbf{A sala: a grade da turma} & \rota{GET /salas/turma/:id} &
+  \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra \textbf{Liberar/encerrar missão na turma} & \rota{PUT /salas/turma/:id/\B missoes/:expId} &
   \no & \yes\footnotesize{\ddag} & \no & \no\\
-unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
-\zebra \textbf{unooGPT: turma e transcrição individual} &
+As salas do estudante (a grade dele) & \rota{GET /salas/minhas} &
+  \yes & \no & \no & \no\\
+\zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
+\textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
+  \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
+\textbf{unooGPT: turma e transcrição individual} &
   \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
-unooGPT: agregado da escola (sem \cd{estudanteId}) &
+\zebra unooGPT: agregado da escola (sem \cd{estudanteId}) &
   \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
-\zebra unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
-unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
-\zebra \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
+unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
+\zebra unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
+\textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
   \rota{/bemestar/*} & \no & \yes & \no & \no\\
-Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
-\zebra \textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
+\zebra Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
+\textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
   \no & \no & \no & \yes\\
-Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
+\zebra Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
-\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 
@@ -491,6 +497,11 @@ listas e \cd{professorLeciona} vira 403 nas telas de uma turma só. Gestor e
 admin-contrato seguem enxergando a escola inteira, de propósito --- é a mesma
 distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 \cd{enrollments}, no nível da turma (\adrr{ADR-28}).
+
+A camada de cima é a \textbf{sala de aula} (\adrr{ADR-69}): quem tem matrícula
+de professor na turma libera a missão nela, e é essa liberação que abre a porta
+para o estudante. Gestor lê a sala e não decide a aula --- a mesma linha que
+separa administrar a escola de dar a aula.
 
 \textbf{Seis rotas ficaram de fora dessa porta}, e foram fechadas depois: o
 \enquote{zerar turma} da Vila e do unooGPT, os cartões da Vila, os dois

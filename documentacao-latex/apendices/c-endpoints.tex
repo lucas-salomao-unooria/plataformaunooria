@@ -364,6 +364,19 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \bottomrule
 \end{tabularx}
 
+\section{salas}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}salas/\allowbreak{}minhas} & \cd{estudante} & As salas do estudante: as turmas dele e a grade de cada uma.\par Devolve a grade INTEIRA da série da turma, não só o que está aberto: missão bloqueada aparece com \textbf{cadeado} e a encerrada aparece com o rótulo. Quem decide o que abre é o \cd{estado}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{bloqueada} \textbf{não é um estado do banco} --- é a ausência de linha em \cd{liberacoes}.\par \hspace*{1em}\textbullet{} Sem turma, \cd{salas} volta VAZIO: sem sala não há missão, e é a tela que explica que falta enturmar.\par \hspace*{1em}\textbullet{} Esconder o card é UX. A porta é \cd{exigirMissaoLiberada}, na entrada de cada experiência --- \cd{/\allowbreak{}exp/\allowbreak{}:expId} é endereço adivinhável.\\
+\zebra \rota{GET /\allowbreak{}salas/\allowbreak{}turma/\allowbreak{}\{turmaId\}} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & A sala: a turma, a grade de missões e quem liberou cada uma.\par A grade é a das experiências da SÉRIE da turma mais as transversais (\cd{series: []}). \cd{?todas=1} acrescenta as de outras séries, marcadas com \cd{deOutraSerie} --- turma multisseriada e reforço existem, mas trazê-las por padrão afogaria a grade do ano.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Turma em que o professor não tem matrícula responde \textbf{404}, não 403: um \enquote{sem permissão} já contaria que a turma existe.\par \hspace*{1em}\textbullet{} Gestor e admin-contrato leem a escola inteira, de propósito.\\
+\rota{PUT /\allowbreak{}salas/\allowbreak{}turma/\allowbreak{}\{turmaId\}/\allowbreak{}missoes/\allowbreak{}\{expId\}} & \cd{professor} & Libera ou encerra uma missão nesta turma.\par \textbf{Só quem tem matrícula de professor na turma.} Gestor não libera: ele vê a sala e não decide a aula --- a opção não aparece na tela dele e a rota responde 404 para turma que não é dele.\par Idempotente: repetir não muda nada além do carimbo.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Não existe estado \cd{bloqueada} no corpo: bloquear é a ausência de linha, e o caminho de volta é \cd{encerrada} --- a criança precisa continuar vendo o que fez.\par \hspace*{1em}\textbullet{} Recusa experiência de \cd{publico: professor} (exp-90, exp-91): liberar uma delas seria um botão que não abre nada, porque \cd{/\allowbreak{}exp/\allowbreak{}*} responde 404 para ferramenta de professor.\\
+\bottomrule
+\end{tabularx}
+
 \section{telemetry}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}

@@ -74,6 +74,13 @@ hub serve).
    `QuotaService` (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `estudante_id` opaco, nunca nome/email.
+7. **A missão só abre na turma em que o professor a liberou** (ADR-69). Toda
+   entrada de estudante em experiência chama `exigirMissaoLiberada`
+   (`apps/api/src/comum/liberacao.ts`) e responde 403 `missao-nao-liberada` sem
+   linha em `liberacoes`. Filtrar o card no hub é UX: o bundle é público e
+   `/exp/:expId` é endereço adivinhável. Experiência nova declara o próprio
+   `EXP_ID` e chama a guarda no FUNIL das rotas de estudante (o `estudanteDaEscola`
+   / `garantirSessao` dela), nunca só na rota de leitura.
 
 
 ### Token e emissor (decisão da migração, 2026-08)
@@ -223,8 +230,8 @@ usuário; o MCP continua instalado, para uso manual.
 - **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
   `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
   — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
-  `periodos_letivos`, `users`, `experiencias`, `progresso`, `telemetria_eventos`,
-  `ia_uso_diario`. O motor (feed adaptativo,
+  `liberacoes`, `periodos_letivos`, `users`, `experiencias`, `progresso`,
+  `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
   geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
   duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
   (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem

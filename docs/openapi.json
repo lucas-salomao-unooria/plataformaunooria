@@ -6868,6 +6868,392 @@
         }
       }
     },
+    "/salas/minhas": {
+      "get": {
+        "operationId": "SalasEstudanteController_minhas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "salas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "turma": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "serie": {
+                                "type": "string"
+                              },
+                              "turno": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "tipo": {
+                                "type": "string"
+                              },
+                              "periodo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome",
+                              "serie",
+                              "turno",
+                              "tipo",
+                              "periodo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "missoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                },
+                                "estado": {
+                                  "type": "string",
+                                  "enum": [
+                                    "liberada",
+                                    "encerrada",
+                                    "bloqueada"
+                                  ]
+                                },
+                                "transversal": {
+                                  "type": "boolean"
+                                },
+                                "deOutraSerie": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "nome",
+                                "estado",
+                                "transversal",
+                                "deOutraSerie"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "turma",
+                          "missoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "salas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "salas"
+        ],
+        "summary": "As salas do estudante: as turmas dele e a grade de cada uma.",
+        "description": "Devolve a grade INTEIRA da série da turma, não só o que está aberto: missão bloqueada aparece com **cadeado** e a encerrada aparece com o rótulo. Quem decide o que abre é o `estado`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `bloqueada` **não é um estado do banco** — é a ausência de linha em `liberacoes`.\n- Sem turma, `salas` volta VAZIO: sem sala não há missão, e é a tela que explica que falta enturmar.\n- Esconder o card é UX. A porta é `exigirMissaoLiberada`, na entrada de cada experiência — `/exp/:expId` é endereço adivinhável.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/salas/turma/{turmaId}": {
+      "get": {
+        "operationId": "SalasProfessorController_turma",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "todas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string"
+                        },
+                        "turno": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "tipo": {
+                          "type": "string"
+                        },
+                        "periodo": {
+                          "type": "string"
+                        },
+                        "estudantes": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie",
+                        "turno",
+                        "tipo",
+                        "periodo",
+                        "estudantes"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "missoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "expId": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "estado": {
+                            "type": "string",
+                            "enum": [
+                              "liberada",
+                              "encerrada",
+                              "bloqueada"
+                            ]
+                          },
+                          "transversal": {
+                            "type": "boolean"
+                          },
+                          "deOutraSerie": {
+                            "type": "boolean"
+                          },
+                          "liberadaPor": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "liberadaEm": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          },
+                          "encerradaEm": {
+                            "type": "string",
+                            "format": "date-time",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "expId",
+                          "nome",
+                          "estado",
+                          "transversal",
+                          "deOutraSerie",
+                          "liberadaPor",
+                          "liberadaEm",
+                          "encerradaEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "missoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "salas"
+        ],
+        "summary": "A sala: a turma, a grade de missões e quem liberou cada uma.",
+        "description": "A grade é a das experiências da SÉRIE da turma mais as transversais (`series: []`). `?todas=1` acrescenta as de outras séries, marcadas com `deOutraSerie` — turma multisseriada e reforço existem, mas trazê-las por padrão afogaria a grade do ano.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin-contrato leem a escola inteira, de propósito.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/salas/turma/{turmaId}/missoes/{expId}": {
+      "put": {
+        "operationId": "SalasProfessorController_definir",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^exp-[a-z0-9-]+$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "estado": {
+                      "type": "string"
+                    },
+                    "liberadaEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "encerradaEm": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "estado",
+                    "liberadaEm",
+                    "encerradaEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "salas"
+        ],
+        "summary": "Libera ou encerra uma missão nesta turma.",
+        "description": "**Só quem tem matrícula de professor na turma.** Gestor não libera: ele vê a sala e não decide a aula — a opção não aparece na tela dele e a rota responde 404 para turma que não é dele.\n\nIdempotente: repetir não muda nada além do carimbo.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Não existe estado `bloqueada` no corpo: bloquear é a ausência de linha, e o caminho de volta é `encerrada` — a criança precisa continuar vendo o que fez.\n- Recusa experiência de `publico: professor` (exp-90, exp-91): liberar uma delas seria um botão que não abre nada, porque `/exp/*` responde 404 para ferramenta de professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "estado": {
+                    "type": "string",
+                    "enum": [
+                      "liberada",
+                      "encerrada"
+                    ]
+                  }
+                },
+                "required": [
+                  "estado"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/runs": {
       "post": {
         "operationId": "RunsController_criar",

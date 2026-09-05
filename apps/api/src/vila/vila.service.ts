@@ -4,12 +4,13 @@ import { HttpException, Injectable } from "@nestjs/common";
    neste campo" e o tipo do Prisma nem aceita. */
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
+import { exigirMissaoLiberada } from "../comum/liberacao";
 import {
   ondeAsTurmasSaoVisiveis,
   professorEnsinaOEstudante,
   professorLeciona,
 } from "../comum/turmas-do-professor";
-import { cartoesDaBolha, semGabarito, type Bolha, type CartaoPublico } from "./catalogo";
+import { cartoesDaBolha, EXP_ID, semGabarito, type Bolha, type CartaoPublico } from "./catalogo";
 import { validarPayload } from "./contrato";
 import { linhasDeLeitura, resumoHonesto, type LinhaDeLeitura } from "./leitura";
 import { lerMensagens, type LeituraMensagens } from "./mensagens";
@@ -140,6 +141,12 @@ export class VilaService {
         select: { turmaId: true, turma: { select: { serie: true } } },
       });
       if (!estudante) throw new HttpException({ mensagem: "Estudante não encontrado nesta escola." }, 404);
+
+      /* A porta da sala (ADR-69). A Vila é TRANSVERSAL (`series: []`), o que
+         quer dizer que ela cabe em qualquer ano — não que ela abre sozinha: o
+         professor decide quando ela entra, porque ela é o Ato 1 do Instanooria e
+         a ordem entre as duas é a aula. */
+      await exigirMissaoLiberada(tx, escolaId, estudanteId, EXP_ID);
 
       const bolha = await this.resolverBolha(tx, escolaId, estudanteId, estudante.turmaId, estudante.turma?.serie ?? null);
       const cartoes = cartoesDaBolha(bolha);

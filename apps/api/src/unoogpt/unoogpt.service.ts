@@ -4,6 +4,7 @@ import { AI_PROVIDER, ErroDeGeracao, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
+import { exigirMissaoLiberada } from "../comum/liberacao";
 import {
   ondeAsTurmasSaoVisiveis,
   professorEnsinaOEstudante,
@@ -22,7 +23,7 @@ import { sementeDe } from "./modelo/aleatorio";
 import { passoDerivado, type PassoDerivavel } from "./regras/anexos";
 import { montarMapa, naoCarregados, oQueSobrou } from "./regras/camadas";
 import { projetar } from "./regras/projecao";
-import { TETO_CHAMADAS_SESSAO, TETO_TOKENS_SESSAO } from "./regras/defaults";
+import { EXP_ID, TETO_CHAMADAS_SESSAO, TETO_TOKENS_SESSAO } from "./regras/defaults";
 import {
   INTUICAO,
   comoOProfessorLe,
@@ -831,6 +832,13 @@ export class UnoogptService {
       where: { escolaId_estudanteId: { escolaId, estudanteId: estudanteId } },
     });
     if (existente) return existente;
+
+    /* A PORTA DA SALA (ADR-69), e ela fica na CRIAÇÃO, não em toda rota.
+       Quem já entrou fica: encerrar a missão fecha a entrada, não expulsa a
+       criança no meio da aula. Aqui é o funil — nenhuma rota desta experiência
+       funciona sem passar por `garantirSessao`, então não há porta lateral. */
+    await exigirMissaoLiberada(tx, escolaId, estudanteId, EXP_ID);
+
     return tx.unoogptSessao.create({ data: { escolaId, estudanteId: estudanteId, turmaId: estudante.turmaId } });
   }
 

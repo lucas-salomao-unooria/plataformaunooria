@@ -8,6 +8,7 @@ import { IaDaExp07Service } from "../src/o-eco-no-grupo/ia.service";
 import { MidiaDaExp07Service } from "../src/o-eco-no-grupo/midia.service";
 import { OEcoNoGrupoService } from "../src/o-eco-no-grupo/o-eco-no-grupo.service";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
@@ -51,6 +52,7 @@ let estudanteSemTurma = "";
 
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
+  await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.ecoSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.ecoGateTurma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -102,6 +104,10 @@ beforeAll(async () => {
   estudanteA = (await criar("eco.ana", "Ana Teste", true)).id;
   estudanteB = (await criar("eco.bia", "Bia Teste", true)).id;
   estudanteSemTurma = (await criar("eco.sem", "Sem Turma", false)).id;
+
+  /* A PORTA DA SALA (ADR-69): sem esta linha `estudanteDaEscola` — o funil de
+     todas as rotas de estudante — recusa com 403 `missao-nao-liberada`. */
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-07-o-eco-no-grupo", estudanteA);
 });
 
 afterAll(async () => {
