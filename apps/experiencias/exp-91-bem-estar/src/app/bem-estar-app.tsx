@@ -223,7 +223,24 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
                 onChange={(ev: React.ChangeEvent<HTMLTextAreaElement>) => setTexto(ev.target.value.slice(0, MAX_TEXTO))}
                 maxLength={MAX_TEXTO}
                 rows={3}
-                helperText="Opcional. Só você lê o que escreve aqui."
+                /*
+                 * A copy diz as DUAS coisas porque as duas são verdade, e a
+                 * segunda estava faltando. Nenhuma pessoa da escola ou da rede
+                 * lê isto: o controller do bem-estar é `@Roles("professor")`,
+                 * o serviço escopa por `professorId` e não existe visão de
+                 * gestor — a garantia é real e é forte. Mas o texto é enviado
+                 * ao Vertex para gerar o acolhimento
+                 * (`bemestar.service.ts#gerarAcolhimento`), e a versão anterior
+                 * — "Só você lê o que escreve aqui" — omitia isso.
+                 *
+                 * Omitir era o erro: a pessoa está decidindo, naquele campo, se
+                 * conta que não está bem. Uma garantia de privacidade que a
+                 * pessoa descobre depois ser parcial não custa só a frase;
+                 * custa o instrumento, porque o próximo check-in ela responde
+                 * com reserva. Quem não escreve nada não envia nada — sem
+                 * texto, `gerarAcolhimento` devolve o texto fixo sem chamar IA.
+                 */
+                helperText="Opcional. Nenhuma pessoa da escola ou da rede lê o que você escreve aqui. Uma IA lê, e é ela que escreve a resposta de acolhimento."
               />
 
               <Button

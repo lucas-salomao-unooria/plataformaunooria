@@ -25,6 +25,16 @@ e não é lacuna a preencher (LGPD art. 11, dado sensível). Quem lê é o próp
 professor, e `DELETE /bemestar/dados` apaga tudo. Texto livre não vai a log nem
 à telemetria: só contagens.
 
+**Mas o texto livre VAI ao Vertex** — é dele que sai o acolhimento
+(`bemestar.service.ts#gerarAcolhimento`; sem texto, nem chama a IA). Por isso a
+copy da caixa não pode prometer sigilo de leitura: ela dizia *"Só você lê o que
+escreve aqui"*, o que era verdade sobre PESSOAS e silêncio sobre a IA. **Toda
+promessa de privacidade nesta tela tem que bater com o que o service faz** — é
+aqui que o professor decide se conta que não está bem, e uma garantia que ele
+descobre depois ser parcial não custa a frase, custa o instrumento: o próximo
+check-in ele responde com reserva. A suíte `professor/04-bem-estar` cobra as
+duas metades da frase; nenhum typecheck protege string de UI.
+
 ## Data é string, e `new Date()` estraga
 
 `formatarDia` (`src/lib/estado.ts`) fatia `2026-08-25` na mão de propósito: o
