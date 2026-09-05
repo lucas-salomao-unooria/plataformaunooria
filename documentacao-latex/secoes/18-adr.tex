@@ -2519,6 +2519,26 @@ limite do ambiente e o pico de \emph{heap} de uma vez.
 para de ler a escola inteira}
 \label{adr:atividade-por-turma}
 
+\begin{atencao}
+\textbf{REVISTA em 2026-09-05 pela \adrr{ADR-69}: a turma virou
+OBRIGATÓRIA.} A alternativa descartada aqui (\emph{uma atividade por turma,
+obrigatória}) foi adotada --- \cd{POST /atividades} exige \cd{turmaId} e o
+\enquote{Todas as turmas da escola} saiu do formulário. O que faltava em
+2026-08-30 apareceu: a plataforma ganhou o modelo de \textbf{sala de aula}, em
+que a turma é o contexto de tudo o que o professor faz, e a atividade sem turma
+era a última peça que ainda falava de um lugar que não é uma sala --- era ela
+que fazia 2EM-A e 2EM-B aparecerem como uma lista só no painel de perfis, no
+monitor e na análise.
+
+\textbf{O custo previsto aqui é real e foi aceito}: quem dá a mesma aula em
+quatro salas cria quatro atividades. A tabela de junção continua sendo a
+resposta certa se isso doer.
+
+O resto desta ADR segue valendo, e a COLUNA continua anulável e sem
+\emph{backfill}: as atividades criadas antes desta data seguem escolares, com a
+faixa que já as explica. Fechou a porta de criar mais uma assim, não o passado.
+\end{atencao}
+
 \begin{especificacao}{Contexto}
 A \cd{exp\_01\_activities} tinha \cd{escola\_id} e \cd{professor\_id}, e nenhum
 vínculo com \cd{turmas} --- embora o próprio esquema já falasse como se tivesse:
@@ -2586,6 +2606,9 @@ erro: é opção, não omissão.
 \textbf{Gatilho de reavaliação.} Uma rede rodar o Instanooria em várias turmas
 simultâneas com a MESMA pergunta: aí a pergunta é se a atividade deve ter várias
 turmas (tabela de junção) em vez de uma, e a resposta muda o painel inteiro.
+
+\textbf{Este gatilho disparou em 2026-09-05}, pelo outro lado: ver a advertência
+no topo desta ADR.
 
 \section{ADR-50 --- O perfil importado guarda a PARTIDA e a VERSÃO do
 mapeamento, e não ganha chave estrangeira}

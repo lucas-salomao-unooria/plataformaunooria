@@ -193,22 +193,20 @@ export class AtividadesController {
        * abriria uma atividade sobre o 8B e o painel dela mostraria os estudantes de
        * uma sala que não é dele.
        */
-      if (dados.turmaId) {
-        const turma = await tx.turma.findFirst({
-          where: { id: dados.turmaId, escolaId: req.auth.escolaId },
-          select: { id: true },
-        });
-        if (!turma) throw new BadRequestException({ mensagem: "Turma não encontrada nesta escola." });
-        if (!(await professorLeciona(tx, req.auth.escolaId, dados.turmaId, professorDoToken(req.auth)))) {
-          throw new BadRequestException({ mensagem: "Você não tem matrícula de professor nessa turma." });
-        }
+      const turma = await tx.turma.findFirst({
+        where: { id: dados.turmaId, escolaId: req.auth.escolaId },
+        select: { id: true },
+      });
+      if (!turma) throw new BadRequestException({ mensagem: "Turma não encontrada nesta escola." });
+      if (!(await professorLeciona(tx, req.auth.escolaId, dados.turmaId, professorDoToken(req.auth)))) {
+        throw new BadRequestException({ mensagem: "Você não tem matrícula de professor nessa turma." });
       }
 
       const atividade = await tx.activity.create({
         data: {
           escolaId: req.auth.escolaId,
           professorId: req.auth.usuarioId,
-          turmaId: dados.turmaId ?? null,
+          turmaId: dados.turmaId,
           titulo: dados.titulo,
           disciplina: dados.disciplina,
           recorte: dados.recorte,

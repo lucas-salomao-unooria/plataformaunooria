@@ -4,7 +4,11 @@ import { AI_PROVIDER, ErroDeGeracao, type AiProvider } from "../ai/provider";
 import { QuotaService } from "../ai/quota.service";
 import type { Perfil } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
-import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
+import {
+  ondeAsTurmasSaoVisiveis,
+  professorEnsinaOEstudante,
+  professorLeciona,
+} from "../comum/turmas-do-professor";
 import { MISSAO_TEMPESTADE } from "./cenario";
 
 /** Quanto cada toque em "+2 min" acrescenta ao relógio da aula. */
@@ -932,10 +936,14 @@ export class UnoogptService {
     escolaId: string,
     turmaId: string,
     acao: "largada" | "mais-tempo" | "encerrar" | "modo-livre" | "modo-cronometrado" | "redefinir",
+    professorId?: string,
   ) {
     const agora = new Date();
     return this.prisma.comTenancy(async (tx) => {
-      await this.turmaDaEscola(tx, escolaId, turmaId);
+      /* O `professorId` não estava aqui, e este é o relógio DA AULA: sem ele,
+         um professor da escola dava a largada — ou encerrava — a aula de uma
+         turma que não é dele, no meio dela. */
+      await this.turmaDaEscola(tx, escolaId, turmaId, professorId);
       const atual =
         (await tx.unoogptRelogioTurma.findUnique({ where: { escolaId_turmaId: { escolaId, turmaId } } })) ??
         (await tx.unoogptRelogioTurma.create({ data: { escolaId, turmaId } }));
@@ -1089,13 +1097,19 @@ export class UnoogptService {
    * função, e isso é controller separado, não `@Roles` misto com exceção por
    * método. A transcrição é caixa livre escrita por menor de idade.
    */
-  async doEstudante(escolaId: string, estudanteId: string) {
+  async doEstudante(escolaId: string, estudanteId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await tx.user.findFirst({
         where: { id: estudanteId, escolaId, role: "estudante" },
         select: { id: true, displayName: true, turmaId: true },
       });
       if (!estudante) throw erroDeJogo("sessao-encerrada");
+      /* A criança tem de ser de uma turma DELE — esta tela carrega a
+         Transcrição, texto livre escrito por menor de idade. O erro é o MESMO
+         de estudante inexistente, de propósito: negar sem confirmar quem existe. */
+      if (!(await professorEnsinaOEstudante(tx, escolaId, estudanteId, professorId))) {
+        throw erroDeJogo("sessao-encerrada");
+      }
 
       const sinais = await this.sinaisDaPartida(tx, escolaId, estudanteId);
       const linhas = linhasDeLeitura(sinais);
@@ -1302,9 +1316,9 @@ export class UnoogptService {
    * O relógio vai junto porque rodar de novo com a aula "já começada" faria a
    * segunda rodada nascer no meio da tempestade.
    */
-  async zerarTurma(escolaId: string, turmaId: string) {
+  async zerarTurma(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
-      await this.turmaDaEscola(tx, escolaId, turmaId);
+      await this.turmaDaEscola(tx, escolaId, turmaId, professorId);
       const estudantes = await tx.user.findMany({
         where: { escolaId, turmaId, role: "estudante" },
         select: { id: true },

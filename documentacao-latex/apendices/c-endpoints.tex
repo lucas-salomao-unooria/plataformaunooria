@@ -32,7 +32,7 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
 \endhead
-\rota{POST /\allowbreak{}ai/\allowbreak{}gerar} & \emph{(qualquer)} & Conversa com o tutor de IA da experiência.\par Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo \cd{expId} e \textbf{nunca sai daqui} --- segredo em bundle de experiência é regra 2.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Quota diária POR PERFIL (\cd{AI\_\allowbreak{}DAILY\_\allowbreak{}TOKEN\_\allowbreak{}QUOTA\_\allowbreak{}PER\_\allowbreak{}ESTUDANTE} / \cd{\_\allowbreak{}PROFESSOR}), persistida em \cd{ia\_\allowbreak{}uso\_\allowbreak{}diario}: \cd{temSaldo} ANTES, \cd{consumir} depois. Sem saldo, \textbf{429}.\par \hspace*{1em}\textbullet{} A série do estudante vai ao prompt a partir do TOKEN, não do corpo.\\
+\rota{POST /\allowbreak{}ai/\allowbreak{}gerar} & \emph{(qualquer)} & Conversa com o tutor de IA da experiência.\par Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo \cd{expId} e \textbf{nunca sai daqui} --- segredo em bundle de experiência é regra 2.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Quota diária POR PERFIL (\cd{AI\_\allowbreak{}DAILY\_\allowbreak{}TOKEN\_\allowbreak{}QUOTA\_\allowbreak{}PER\_\allowbreak{}ESTUDANTE} / \cd{\_\allowbreak{}PROFESSOR}), persistida em \cd{ia\_\allowbreak{}uso\_\allowbreak{}diario}: \cd{temSaldo} ANTES, \cd{consumir} depois. Sem saldo, \textbf{429}.\par \hspace*{1em}\textbullet{} A série do estudante vai ao prompt RESOLVIDA da turma do token (\cd{turmas.serie} \seta{} \enquote{4º ano}), nunca vinda do corpo. Sem turma, a linha some do prompt.\\
 \bottomrule
 \end{tabularx}
 

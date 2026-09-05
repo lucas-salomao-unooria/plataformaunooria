@@ -110,10 +110,26 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
   congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
 - **As turmas do professor são as em que ele tem matrícula.** `comum/turmas-do-professor.ts`
-  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`) é a porta única; os seletores do
+  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`, `professorEnsinaOEstudante`) é a
+  porta única; os seletores do
   UnooTube, da Vila e do unooGPT passam por ela. Antes, qualquer professor abria
   bem-estar e Vila de qualquer turma da escola, porque a única prova exigida era
   "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
+  **Rota de professor que recebe `turmaId` ou `estudanteId` passa pela porta —
+  TODA, inclusive a que só lê e a que APAGA.** Seis ficaram de fora até
+  2026-09-05, e o `@Roles("professor")` não protegia nada nelas: o "zerar turma"
+  da Vila e do unooGPT, os cartões da Vila, os dois relatórios individuais e o
+  **relógio da aula** do unooGPT — este último deixava um professor da escola dar
+  a largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O
+  molde certo é o `o-eco-no-grupo`, que nasceu depois da porta e passa
+  `professorDoToken` em todas.
+  **Tela de UMA criança usa `professorEnsinaOEstudante`, não `professorLeciona`**:
+  a pergunta ali não é "esta turma é minha?", é "esta criança é de alguma turma
+  minha?". Ele aceita a matrícula ativa **ou** o cache `users.turma_id` — as duas
+  fontes de propósito, porque as listagens destes módulos partem do cache, e
+  olhando só a matrícula o nome apareceria na folha e a tela dele responderia
+  "não encontrado". Prova em `tests/professor-por-matricula-tenancy.spec.ts`, que
+  roda como superusuário para a RLS não mascarar a falta do `where`.
 - **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
   silêncio. O sintoma é lista de pessoas "sem turma".
 - **ARMADILHA MAIOR, e do lado oposto**: `users`, `turmas` e `lotacoes` estão
@@ -125,9 +141,14 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   listava crianças de TODAS as escolas do contrato (ADR-49).
   `tests/perfis-distribuicao-tenancy.spec.ts` roda como superusuário de
   propósito, para a RLS não mascarar a falta do `where`.
-- **A atividade do Instanooria declara a turma** (`exp_01_activities.turma_id`,
-  ADR-49). `NULL` = atividade anterior à coluna, que vale para a escola inteira —
-  e o painel DIZ isso numa faixa. Com turma, painel, listagem de perfis,
+- **A atividade do Instanooria declara a turma, e desde 2026-09-05 é
+  OBRIGATÓRIO** (`exp_01_activities.turma_id`, ADR-49 revista pela ADR-69).
+  `POST /atividades` exige `turmaId` e o "Todas as turmas da escola" saiu do
+  formulário: era ele que fazia 2EM-A e 2EM-B virarem uma lista só no painel de
+  perfis, no monitor e na análise. A **coluna** continua anulável e sem backfill
+  — `NULL` = atividade anterior à mudança, que vale para a escola inteira, e o
+  painel DIZ isso numa faixa; `ondeAAtividadeVale` continua lendo as duas formas.
+  Com turma, painel, listagem de perfis,
   importação da Vila e `POST /runs` falam todos da MESMA sala; a turma é
   conferida contra a MATRÍCULA (`professorLeciona`), nunca contra a escola do
   token. Sem o ajuste no `POST /runs`, o estudante do 8B entrava na atividade do 8A.

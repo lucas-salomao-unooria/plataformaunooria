@@ -379,10 +379,10 @@ Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
   \yes\footnotesize{\dag} & \yes & \no & \no\\
 Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
 \zebra \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
-  \no & \yes & \no & \no\\
+  \no & \yes\footnotesize{\ddag} & \no & \no\\
 unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
 \zebra \textbf{unooGPT: turma e transcrição individual} &
-  \rota{/unoogpt/professor/*} & \no & \yes & \no & \yes\\
+  \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
 unooGPT: agregado da escola (sem \cd{estudanteId}) &
   \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
 \zebra unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
@@ -400,6 +400,12 @@ Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
 
 \footnotesize{\dag} O estudante lê o dossiê do \textbf{próprio} \emph{run}; a
 posse é verificada no \emph{service}, não pelo papel.
+
+\footnotesize{\ddag} \enquote{Sim} aqui é do PAPEL; o escopo é a
+\textbf{matrícula}. A turma, por \cd{professorLeciona}; a criança, por
+\cd{professorEnsina\-OEstudante}. Vale também para o que APAGA (\enquote{zerar
+turma}) e para o relógio da aula do unooGPT --- as três coisas que uma prova de
+\enquote{mesma escola} deixava passar.
 \normalsize
 
 \begin{regra}
@@ -485,6 +491,18 @@ listas e \cd{professorLeciona} vira 403 nas telas de uma turma só. Gestor e
 admin-contrato seguem enxergando a escola inteira, de propósito --- é a mesma
 distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 \cd{enrollments}, no nível da turma (\adrr{ADR-28}).
+
+\textbf{Seis rotas ficaram de fora dessa porta}, e foram fechadas depois: o
+\enquote{zerar turma} da Vila e do unooGPT, os cartões da Vila, os dois
+relatórios individuais e --- a mais grave --- o \textbf{relógio da aula} do
+unooGPT, em que um professor da escola dava a largada ou encerrava a aula de uma
+turma que não é dele, no meio dela. As duas telas individuais carregam leitura de
+perfil e transcrição de texto livre de menor de idade; para elas a pergunta não é
+\enquote{esta turma é minha?}, e sim \enquote{esta criança é de alguma turma
+minha?} --- \cd{professorEnsinaOEstudante}, que aceita a matrícula ativa
+\emph{ou} o cache \cd{users.turma\_id}. As duas fontes porque as listagens destes
+módulos partem do cache: olhando só a matrícula, um cache adiantado faria o nome
+aparecer na folha e a tela dele responder \enquote{não encontrado}.
 \end{decisao}
 
 \begin{decisao}

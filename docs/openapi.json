@@ -4363,7 +4363,7 @@
           "ai"
         ],
         "summary": "Conversa com o tutor de IA da experiência.",
-        "description": "Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo `expId` e **nunca sai daqui** — segredo em bundle de experiência é regra 2.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.\n- A série do estudante vai ao prompt a partir do TOKEN, não do corpo.",
+        "description": "Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo `expId` e **nunca sai daqui** — segredo em bundle de experiência é regra 2.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.\n- A série do estudante vai ao prompt RESOLVIDA da turma do token (`turmas.serie` → \"4º ano\"), nunca vinda do corpo. Sem turma, a linha some do prompt.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9761,7 +9761,8 @@
                   "titulo",
                   "disciplina",
                   "recorte",
-                  "estiloVisual"
+                  "estiloVisual",
+                  "turmaId"
                 ],
                 "additionalProperties": false
               }
