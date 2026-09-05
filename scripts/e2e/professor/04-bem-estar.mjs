@@ -97,6 +97,25 @@ await suite(
     const grupos = bem.locator("fieldset");
     const frases = await grupos.count();
     r.exigir(frases === 3, `três frases do dia na tela (${frases})`);
+
+    /*
+     * A promessa de privacidade da caixa de texto livre, cobrada como fato.
+     * A copy dizia "Só você lê o que escreve aqui" enquanto o texto era enviado
+     * ao Vertex para gerar o acolhimento — verdade sobre PESSOAS (o controller
+     * é `@Roles("professor")` e não há visão de gestor), silêncio sobre a IA.
+     * Aqui o professor decide se conta que não está bem: uma garantia que ele
+     * descobre depois ser parcial custa o instrumento, não só a frase. Nenhum
+     * typecheck protege uma string de UI, e a regressão volta em silêncio.
+     */
+    const dica = await bem.locator("textarea").locator("xpath=ancestor::*[1]").innerText();
+    r.exigir(
+      !/só você lê/i.test(dica),
+      "a caixa de texto livre NÃO promete sigilo absoluto de leitura",
+    );
+    r.exigir(
+      /\bIA\b|intelig/i.test(dica),
+      "a caixa de texto livre diz que uma IA lê o texto para escrever o acolhimento",
+    );
     await r.registrar(p, "check-in-do-dia", {
       titulo: "As três frases",
       mostra: "Três itens do DASS-21, com quatro respostas cada, e uma pergunta aberta opcional.",
