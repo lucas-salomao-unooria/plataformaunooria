@@ -185,6 +185,15 @@ await suite(
     });
 
     // ── e um byte trocado ───────────────────────────────────────────────
+    /*
+     * O 400 que vem a seguir é a PROVA, não o defeito: a rota recusa o
+     * documento cuja assinatura não cobre mais o conteúdo. Sem declarar isso, a
+     * suíte reprovava por "erro de console" com as 8 verificações VERDES — o
+     * pior tipo de vermelho, o que acusa a trava de segurança justamente por
+     * ela ter funcionado.
+     */
+    r.provocado(/perfil-recebido/, "a rota recusa o documento adulterado — é o que esta suíte existe para provar");
+
     const adulterado = JSON.parse(JSON.stringify(documento));
     adulterado.perfil.titular.nome = "Outra Criança Qualquer";
     const caminhoRuim = join(r.saida, "adulterado.json");
