@@ -793,6 +793,18 @@ marcado} &
   \cd{stack\_trace}, escola e perfil; o \emph{request log} do Cloud Run com o
   mesmo \cd{trace} vem agrupado ao lado. Sem código na tela (rota antiga, 4xx),
   filtre por \cd{jsonPayload.codigo} --- todo \cd{logger.*} da api carrega um.\\
+\zebra \textbf{500 no \emph{boot} de uma experiência, e o \cd{stack\_trace} diz
+\cd{25P02 current transaction is aborted}} &
+  Alguma coisa tentou se recuperar de um erro \textbf{dentro da transação em
+  que o erro aconteceu}. No Postgres o primeiro erro aborta a transação
+  inteira: todo comando seguinte responde \cd{25P02}, e o que aparece no log é
+  a consulta de recuperação, não a que quebrou. O caso real foi o
+  \cd{bemestar.service.ts}: o \cd{create} do check-in do dia batia no
+  \cd{UNIQUE (escola, professor, dia)} numa corrida de \emph{boot}, e o
+  \cd{catch} relia a linha da outra requisição pela MESMA \cd{comTenancy}. O
+  caminho escrito para salvar a corrida era o que a virava 500. A releitura
+  depois de conflito de chave única vai numa transação NOVA. Procure por
+  \cd{catch} que consulta usando o mesmo \cd{tx}.\\
 \end{tabularx}
 
 \section{\emph{Checklist} de operação}

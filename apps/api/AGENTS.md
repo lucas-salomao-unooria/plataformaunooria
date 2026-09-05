@@ -132,6 +132,15 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   roda como superusuário para a RLS não mascarar a falta do `where`.
 - **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
   silêncio. O sintoma é lista de pessoas "sem turma".
+- **ARMADILHA: `catch` que consulta com o MESMO `tx` nunca funciona.** No
+  Postgres o primeiro erro aborta a transação inteira — todo comando seguinte
+  responde `25P02 current transaction is aborted`, e o que aparece no log é a
+  consulta de RECUPERAÇÃO, não a que quebrou. O padrão "tenta criar, se bater no
+  UNIQUE relê o que a outra requisição criou" precisa da releitura numa
+  `comTenancy` NOVA. Custou um 500 no boot da exp-91: o `catch` estava escrito
+  para salvar a corrida do check-in do dia e era justamente o que a virava erro,
+  derrubando a suíte `professor/04-bem-estar` antes do formulário.
+  Regressão em `tests/bemestar.spec.ts` ("duas chamadas concorrentes").
 - **ARMADILHA MAIOR, e do lado oposto**: `users`, `turmas` e `lotacoes` estão
   FORA da RLS (são lidas no login, antes de haver escola). Nelas o `comTenancy`
   NÃO protege nada — ele arma `app.escola_id`, que só as políticas leem —, e o
