@@ -24,6 +24,7 @@ interface Manifesto {
   nome: string;
   versao: string;
   series?: string[];
+  unidade?: number;
   capabilities?: string[];
   viewport?: { largura: number; altura: number } | null;
   publico?: string;
@@ -66,6 +67,7 @@ export async function semearCatalogo(prisma: PrismaClient): Promise<number> {
       nome: m.nome,
       versaoAtiva: m.versao,
       series: m.series ?? [],
+      unidade: m.unidade ?? null,
       capabilities: m.capabilities ?? [],
       viewport: m.viewport ?? undefined,
       publico: m.publico ?? "estudante",

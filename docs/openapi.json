@@ -6451,6 +6451,10 @@
                               "type": "string"
                             }
                           },
+                          "unidade": {
+                            "type": "integer",
+                            "nullable": true
+                          },
                           "capabilities": {
                             "type": "array",
                             "items": {
@@ -6497,6 +6501,7 @@
                           "nome",
                           "versaoAtiva",
                           "series",
+                          "unidade",
                           "capabilities",
                           "viewport",
                           "publico",
@@ -6569,6 +6574,10 @@
                             "type": "string"
                           }
                         },
+                        "unidade": {
+                          "type": "integer",
+                          "nullable": true
+                        },
                         "capabilities": {
                           "type": "array",
                           "items": {
@@ -6615,6 +6624,7 @@
                         "nome",
                         "versaoAtiva",
                         "series",
+                        "unidade",
                         "capabilities",
                         "viewport",
                         "publico",
@@ -6686,6 +6696,10 @@
                             "type": "string"
                           }
                         },
+                        "unidade": {
+                          "type": "integer",
+                          "nullable": true
+                        },
                         "capabilities": {
                           "type": "array",
                           "items": {
@@ -6732,6 +6746,7 @@
                         "nome",
                         "versaoAtiva",
                         "series",
+                        "unidade",
                         "capabilities",
                         "viewport",
                         "publico",
@@ -6801,6 +6816,12 @@
                       ]
                     },
                     "default": []
+                  },
+                  "unidade": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4,
+                    "nullable": true
                   },
                   "capabilities": {
                     "type": "array",
@@ -6930,6 +6951,10 @@
                                 "nome": {
                                   "type": "string"
                                 },
+                                "unidade": {
+                                  "type": "integer",
+                                  "nullable": true
+                                },
                                 "estado": {
                                   "type": "string",
                                   "enum": [
@@ -6948,6 +6973,7 @@
                               "required": [
                                 "expId",
                                 "nome",
+                                "unidade",
                                 "estado",
                                 "transversal",
                                 "deOutraSerie"
@@ -7077,6 +7103,10 @@
                           "nome": {
                             "type": "string"
                           },
+                          "unidade": {
+                            "type": "integer",
+                            "nullable": true
+                          },
                           "estado": {
                             "type": "string",
                             "enum": [
@@ -7109,6 +7139,7 @@
                         "required": [
                           "expId",
                           "nome",
+                          "unidade",
                           "estado",
                           "transversal",
                           "deOutraSerie",

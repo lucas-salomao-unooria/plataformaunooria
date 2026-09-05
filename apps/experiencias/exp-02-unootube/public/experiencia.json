@@ -1,8 +1,9 @@
 {
   "id": "exp-02-unootube",
   "nome": "UnooTube — Em quais fontes você confiaria?",
-  "versao": "1.2.3",
+  "versao": "1.2.4",
   "series": ["4EF"],
+  "unidade": 1,
   "capabilities": ["telemetria", "progresso"],
   "verbos": {
     "attempted": "abriu o UnooTube",

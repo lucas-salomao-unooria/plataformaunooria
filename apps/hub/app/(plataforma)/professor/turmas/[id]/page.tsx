@@ -137,7 +137,11 @@ function MissoesDaSala({
                       <span className="text-[15px] font-semibold text-unooria-neutral-950">
                         {copy?.titulo ?? missao.nome}
                       </span>
-                      {missao.transversal ? <Tag>para qualquer ano</Tag> : null}
+                      {missao.transversal ? (
+                        <Tag>para qualquer ano</Tag>
+                      ) : missao.unidade ? (
+                        <Tag>Unidade {missao.unidade}</Tag>
+                      ) : null}
                       {missao.deOutraSerie ? <Tag>de outra série</Tag> : null}
                       {missao.estado === "liberada" ? (
                         <Tag variant="success">aberta</Tag>

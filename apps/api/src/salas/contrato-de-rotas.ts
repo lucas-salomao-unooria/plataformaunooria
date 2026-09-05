@@ -27,6 +27,7 @@ const TurmaDaSalaSchema = z.object({
 const MissaoNaGradeSchema = z.object({
   expId: z.string(),
   nome: z.string(),
+  unidade: z.number().int().nullable(),
   estado: EstadoDaMissaoSchema,
   transversal: z.boolean(),
   deOutraSerie: z.boolean(),

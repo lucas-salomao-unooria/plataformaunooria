@@ -318,14 +318,21 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
 \cd{versao\_ativa} & \cd{TEXT} & \textbf{\emph{Rollback} = \cd{UPDATE} deste
   campo.} O hub monta a URL do \cd{iframe} com ele.\\
 \zebra \cd{series} & \cd{TEXT[]} & \textbf{Vazio = TODAS as séries}, não
-  nenhuma. É assim que uma experiência transversal se declara.\\
-\cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
+  nenhuma. É assim que uma experiência transversal se declara. Desde a sala de
+  aula (\adrr{ADR-69}) este campo é LIDO: é ele que decide se a missão entra na
+  grade de uma turma.\\
+\cd{unidade} & \cd{SMALLINT?} & A unidade do ano (1 a 4), com \emph{CHECK}.
+  \cd{NULL} na transversal e na ferramenta de professor --- elas não moram numa
+  unidade. É o que ORDENA a grade da sala; sem ela a ordem cai no \cd{exp\_id},
+  que é numeração de experiência e não do ano letivo (o 7º ano viria depois do
+  8º).\\
+\zebra \cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
   \cd{avaliacao}, \cd{tempo-real}.\\
-\zebra \cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
+\cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
   Presente \implica{} o hub embeda dentro do \cd{DispositivoFrame}.\\
-\cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
+\zebra \cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
   \emph{CHECK}. \cd{professor} \implica{} \rota{/exp/*} responde 404.\\
-\zebra \cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
+\cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
   \cd{pointer-lock}, com \emph{CHECK} do vocabulário.
   \textbf{\cd{fullscreen} NÃO entra aqui}: o \cd{allow} do \emph{frame} já o
   delega a todas, e campo de manifesto que não muda nada é pior que campo

@@ -34,7 +34,7 @@ export class SalasService {
    */
   private async catalogo(tx: Prisma.TransactionClient): Promise<ExperienciaDoCatalogo[]> {
     return tx.experiencia.findMany({
-      select: { expId: true, nome: true, series: true, publico: true },
+      select: { expId: true, nome: true, series: true, unidade: true, publico: true },
       orderBy: { expId: "asc" },
     });
   }

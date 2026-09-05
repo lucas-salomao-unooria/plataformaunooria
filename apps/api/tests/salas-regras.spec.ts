@@ -19,7 +19,8 @@ const exp = (
   expId: string,
   series: string[],
   publico = "estudante",
-): ExperienciaDoCatalogo => ({ expId, nome: expId, series, publico });
+  unidade: number | null = null,
+): ExperienciaDoCatalogo => ({ expId, nome: expId, series, publico, unidade });
 
 const CATALOGO: ExperienciaDoCatalogo[] = [
   exp("exp-01-instanooria", ["8EF"]),
@@ -102,6 +103,38 @@ describe("a grade da turma", () => {
     const grade = gradeDaTurma("3EM", CATALOGO, semLiberacao, true);
     const vila = grade.find((m) => m.expId === "exp-70-vila-do-lume");
     expect(vila?.deOutraSerie).toBe(false);
+  });
+});
+
+describe("a ordem da grade", () => {
+  /* O 8º ano com as 4 unidades publicadas, declaradas FORA DE ORDEM no catálogo
+     e com `exp_id` que contraria a ordem do ano — é o caso que o `localeCompare`
+     sozinho errava. */
+  const ANO_COMPLETO: ExperienciaDoCatalogo[] = [
+    exp("exp-40-quarta", ["8EF"], "estudante", 4),
+    exp("exp-01-instanooria", ["8EF"], "estudante", 1),
+    exp("exp-30-terceira", ["8EF"], "estudante", 3),
+    exp("exp-20-segunda", ["8EF"], "estudante", 2),
+    exp("exp-70-vila-do-lume", []),
+  ];
+
+  test("as unidades saem na ordem do ANO, não na do `exp_id`", () => {
+    const grade = gradeDaTurma("8EF", ANO_COMPLETO, semLiberacao);
+    expect(grade.map((m) => m.unidade)).toEqual([null, 1, 2, 3, 4]);
+  });
+
+  test("a transversal vem primeiro mesmo sem unidade — ela não é a unidade 1", () => {
+    const grade = gradeDaTurma("8EF", ANO_COMPLETO, semLiberacao);
+    expect(grade[0]?.expId).toBe("exp-70-vila-do-lume");
+    expect(grade[0]?.unidade).toBeNull();
+  });
+
+  test("quem não declara unidade vai por ÚLTIMO, nunca no lugar da unidade 1", () => {
+    // Missão publicada antes do campo existir: `null` não pode virar zero.
+    const comLegado = [...ANO_COMPLETO, exp("exp-99-sem-unidade", ["8EF"])];
+    const grade = gradeDaTurma("8EF", comLegado, semLiberacao);
+    const daSerie = grade.filter((m) => !m.transversal);
+    expect(daSerie.at(-1)?.expId).toBe("exp-99-sem-unidade");
   });
 });
 

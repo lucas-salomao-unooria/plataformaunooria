@@ -24,6 +24,8 @@ export interface TurmaDaSala {
 export interface MissaoNaGrade {
   expId: string;
   nome: string;
+  /** A unidade do ano (1 a 4); `null` na transversal — ela não mora em uma. */
+  unidade: number | null;
   estado: EstadoDaMissao;
   transversal: boolean;
   deOutraSerie: boolean;

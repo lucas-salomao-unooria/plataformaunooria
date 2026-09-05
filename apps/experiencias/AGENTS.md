@@ -100,7 +100,17 @@ estudante não vai à tela, mesmo liberada — a do professor entrega a virada.
 
 **`series` do manifesto agora é LIDO**: é ele que decide se a missão entra na
 grade de uma turma, e `series: []` continua querendo dizer TODAS (a transversal).
-Errar esse campo tira a missão da tela sozinha.
+Errar esse campo tira a missão da tela sozinha. **`unidade` (1 a 4) entrou junto**
+e é o que ORDENA a grade: ausente na transversal e na ferramenta de professor, que
+não moram numa unidade. Sem ela a ordem cai no `expId` — numeração de experiência,
+não do ano letivo, e o 7º ano viria depois do 8º.
+
+**Campo novo no `experiencia.json` tem de ser acrescentado ao
+`apps/hub/scripts/publicar-manifesto.mjs` também.** Já valeu para `permissoes` e
+para `unidade`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
+quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
+`public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
+Só a exp-07 tem teste cobrando as três; a exp-02 já vivia divergente.
 
 **A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
 "estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em

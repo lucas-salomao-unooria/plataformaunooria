@@ -815,6 +815,11 @@ model Experiencia {
   nome         String
   versaoAtiva  String   @map("versao_ativa")
   series       String[] @default([])
+  /// A unidade do ano a que a missão pertence (1 a 4). NULL nas transversais e
+  /// nas ferramentas de professor — elas não moram numa unidade. É o que ordena
+  /// a grade da sala; sem ela a ordem caía no `exp_id`, que é ordem de
+  /// numeração da experiência e não do ano letivo (ADR-69).
+  unidade      Int?     @db.SmallInt
   capabilities String[] @default([])
   /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
   viewport     Json?
