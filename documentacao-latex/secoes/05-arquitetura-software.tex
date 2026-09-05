@@ -491,7 +491,8 @@ mentiria sobre quem depende dela.
     {\texttt{ExpFrame}\desc{\emph{sandbox} + protocolo v1}};
 
   \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
-    {Rotas: \texttt{/} (\emph{landing}), \texttt{/estudante}, \texttt{/professor/*},
+    {Rotas: \texttt{/} (\emph{landing}), \texttt{/privacidade}, \texttt{/termos},
+     \texttt{/estudante}, \texttt{/professor/*},
      \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
   \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
     {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
@@ -532,10 +533,28 @@ rolar) e a cor, a tipografia, os ícones, o logo e os botões do DS. Com sessão
 \rota{/} redireciona para a \emph{home} do papel (ou para \rota{/trocar-senha}):
 o \cd{login-form} e a troca de senha fazem \cd{router.replace("/")} e dependem
 desse roteamento para cair na área certa sem o \emph{client} conhecer o papel. A
-\emph{landing} está fora do \cd{matcher} do \emph{middleware}, não lê nada da
-sessão e é, com \rota{/login} e o JWKS, a única superfície pública do hub. Os
-dois pedaços com ciclo de vida (\cd{FundoAnimado}, \cd{RevelarAoRolar}) são
-\emph{client components}; o resto é servidor.
+\emph{landing} está fora do \cd{matcher} do \emph{middleware} e não lê nada da
+sessão. Os dois pedaços com ciclo de vida (\cd{FundoAnimado},
+\cd{RevelarAoRolar}) são \emph{client components}; o resto é servidor.
+\end{nota}
+
+\begin{nota}
+\textbf{As páginas legais são a mesma superfície pública da \emph{landing}}
+(\adrr{ADR-70}). \rota{/privacidade} e \rota{/termos} completam o conjunto
+público do hub --- com \rota{/}, \rota{/login} e o JWKS, é tudo que existe sem
+sessão. Elas são alcançadas pelo rodapé da \emph{landing}, que até então
+oferecia os dois links com \cd{href="\#"}, e por isso reaproveitam a casca dela:
+\cd{components/legal/} importa \cd{landing.css} e monta o mesmo
+\cd{FundoAnimado}, a mesma navegação em vidro e a mesma escala tipográfica.
+Duplicar aquilo criaria a segunda cópia, que diverge na primeira mudança de
+marca.
+
+O conteúdo entra como \emph{dado} (uma lista de seções com \cd{id},
+\cd{titulo} e \cd{conteudo}), não como marcação livre: é o que mantém o sumário
+lateral em sincronia com o texto --- numeração, âncora e ordem saem da mesma
+lista que renderiza as seções, então não existe o estado em que o índice promete
+um item que o corpo não tem. O único \emph{client component} é o
+\cd{SumarioAtivo}, que acende o item em leitura.
 \end{nota}
 
 \section{C4 nível 4 --- Código}

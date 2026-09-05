@@ -4290,3 +4290,102 @@ matriz do capítulo 7), ou pedir \textbf{janela de datas} --- \enquote{abre
 segunda, fecha sexta} ---, que hoje é um clique manual e viraria duas colunas e
 uma rotina que as cumpra. Enquanto não houver quem cumpra, a coluna não nasce:
 é a armadilha do \cd{expires\_at}.
+
+\section{ADR-70 --- As páginas legais descrevem o sistema que existe, e a rede é
+a controladora}
+\label{adr:paginas-legais}
+
+\begin{especificacao}{Contexto}
+O rodapé da landing oferecia \enquote{Privacidade} e \enquote{Termos} com
+\cd{href="\#"} --- dois links que não levavam a lugar nenhum. Escrever as duas
+páginas expôs uma pergunta que não é de redação: \textbf{o que elas podem
+afirmar?}
+
+Uma auditoria do repositório inventariou o tratamento de dados a partir do
+código, não do desejo. Ela encontrou vinte afirmações que uma política de
+privacidade padrão faria e que \textbf{seriam falsas aqui}: não existe entidade,
+coluna ou tela de responsável legal; não existe rota de exclusão de pessoa
+(desligar alguém é \cd{ativo = false}); não existe \textbf{nenhuma} rotina de
+retenção no repositório; a stack está em \cd{us-east1} e a IA no endpoint
+\cd{global} do Vertex; \cd{users.cpf} é \cd{TEXT} em claro (ADR-33); a
+telemetria é pseudonimizada, não anônima; e não há log de acesso individual ---
+ninguém sabe hoje qual gestor abriu o CPF de qual criança.
+
+A pesquisa jurídica acrescentou o ponto que decide a forma do documento: o
+cliente é uma \textbf{rede pública de ensino}, e o Guia do Poder Público da ANPD
+usa como exemplo literal a matrícula de estudante para concluir que o
+consentimento obtido em relação compulsória é \textbf{nulo} (Enunciado CD/ANPD
+nº 1/2023).
+\end{especificacao}
+
+\textbf{Decisão.} \textbf{As páginas descrevem o sistema que existe.} Toda frase
+tem lastro em tabela, rota ou envio verificado, e o que hoje não existe é dito
+como não existindo --- inclusive quando isso é desconfortável. Onde faltava
+número (prazo de retenção), o texto atribui a definição à rede em vez de
+inventar meses; onde faltava processo (revisão humana de decisão automatizada),
+o texto não promete o processo.
+
+\textbf{Não há pedido de consentimento.} A base é o art. 7º, III da LGPD ---
+política pública ---, e a página tem uma seção inteira explicando \emph{por que}
+não existe botão de aceitar, para que a ausência não seja lida como descuido. O
+único consentimento legítimo do produto é o do professor no DASS-21
+(art. 11, I), e ele está isolado ali. \textbf{A rede é a controladora; a Unooria
+é operadora} --- com uma exceção declarada: nos registros de acesso do art. 15
+do Marco Civil, a controladora é a Unooria.
+
+\textbf{Os Termos não elegem foro} (Lei 14.133/2021, art. 92, parágrafo 1º manda o foro
+da sede da Administração no contrato, e cláusula de foro contra titular menor é
+abusiva) \textbf{e não limitam responsabilidade de forma ampla} (art. 51 do CDC).
+
+Duas decisões de forma, que são de conteúdo disfarçado. \textbf{Zero
+\cd{<table>}}: texto jurídico numa tabela de quatro colunas produz uma coluna de
+três palavras e outra de quarenta, célula altíssima e rolagem lateral no
+celular --- que é onde a família abre o link. O mesmo dado vira \cd{legal-card},
+que cresce com o conteúdo e reflui sozinho. E \textbf{nenhum \cd{[A DEFINIR]}
+espalhado pelo texto}: o que depende do contrato mora num bloco
+\cd{IDENTIFICACAO} no topo de cada arquivo, e o que ainda não foi decidido tem
+uma seção final própria. Razão social e CNPJ ficam \textbf{vazios} até virem do
+cadastro --- um CNPJ de exemplo numa página pública é declaração falsa que passa
+na revisão justamente por parecer preenchida.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Adaptar um modelo de política de mercado}: todo modelo pressupõe
+    consentimento do titular e autocadastro. Aqui os dois são falsos, e o
+    consentimento seria nulo --- o modelo erra justamente no que é específico.
+  \item \emph{Prometer o estado desejado e implementar depois}: promessa vincula
+    (LGPD art. 6º, X). Seria a mesma armadilha do \cd{expires\_at} que saiu do
+    schema e ficou no registro: a regra sai do código, o texto fica, e quem lê
+    acredita nele.
+  \item \emph{Publicar só a Política e deixar os Termos para depois}: quem lê uma
+    procura a outra, e metade dos pontos (simulações, IA, conduta) não cabe na
+    Política.
+  \item \emph{Marcar \cd{[A DEFINIR]} em cada lacuna do texto}: foi tentado e
+    rejeitado --- o documento fica ilegível e a lacuna deixa de ser vista de
+    tanto se repetir.
+  \item \emph{Uma casca visual própria para as páginas legais}: elas são a mesma
+    superfície pública da landing, alcançadas pelo rodapé dela. Casca própria
+    faria a página parecer de outro produto na hora em que a confiança está
+    sendo decidida.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: as páginas declaram em público limitações
+reais do produto (sem exclusão por titular, sem retenção, sem log de acesso,
+processamento de IA fora do Brasil) --- é material que uma rede pode usar em
+negociação, e o incentivo a fechar essas lacunas passa a ser externo.
+\emph{Bom, por tabela}: escrever a página encontrou duas contradições que o
+texto não podia encobrir. A do \arq{docs/INFRA.md} \textbf{foi corrigida
+aqui} --- ele afirmava que o Vertex fica em \cd{southamerica-east1} e, mais
+abaixo, que a localização é \cd{global}; o código concorda com a segunda em
+quatro lugares (\arq{config/env.ts}, os dois \emph{compose} e o
+\cd{LOCALIZACAO\_PADRAO} do provider), e o \cd{3.6-flash} responde 404 na
+região brasileira. Era a linha que uma política copiaria para afirmar que os
+dados ficam no Brasil. \emph{Ruim}: a outra é de produto e segue aberta --- a
+exp-91 exibe \enquote{Só você lê o que escreve aqui} sob a caixa cujo conteúdo
+vai ao Vertex para gerar o acolhimento. \emph{Bom}: o inventário existe, e com ele o RIPD que a Resolução
+CD/ANPD nº 2/2022 torna exigível deixa de ser trabalho do zero.
+
+\textbf{Gatilho de reavaliação.} Qualquer uma das lacunas ser fechada no código
+--- rotina de retenção, rota de exclusão por titular, log de acesso individual,
+região brasileira para o Vertex ---, o que muda o que a página pode afirmar; ou
+a primeira rede assinar, quando a controladora passa a ter nome e CNPJ.

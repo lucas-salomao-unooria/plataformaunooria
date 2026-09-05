@@ -26,6 +26,23 @@ canvas e o contexto volta perdido — fundo em branco), e cor de ícone vai pela
 prop `color` do `Icon`, não por classe (a folha do DS vence e o ícone sai preto).
 Suíte: `node scripts/e2e/rodar.mjs publico` (a landing e o login; só o hub).
 
+**`/privacidade` e `/termos` são a MESMA superfície pública da landing**
+(ADR-70), alcançadas pelo rodapé dela. `components/legal/` importa
+`landing.css` e monta o mesmo `FundoAnimado` — não copie a nav, o fundo nem a
+escala tipográfica para cá: a cópia diverge na primeira mudança de marca, e as
+duas páginas passam a parecer de outro produto justo onde a confiança está sendo
+decidida. **O conteúdo entra como DADO** (`SecaoLegal[]` com `id`, `titulo`,
+`conteudo`), nunca como marcação livre: sumário, numeração e âncora saem da
+mesma lista que renderiza as seções, então o índice não pode prometer um item
+que o corpo não tem. Duas proibições que já foram rejeitadas em revisão:
+**nenhuma `<table>`** no texto legal (célula altíssima e rolagem lateral no
+celular, que é onde a família abre o link — use `.legal-card`) e **nenhum
+`[A DEFINIR]` espalhado**; o que depende do contrato mora no bloco
+`IDENTIFICACAO` no topo de cada página, e o que falta decidir tem uma seção
+final própria. **O texto só afirma o que o código faz** — a ADR-70 lista as
+promessas que hoje seriam falsas (retenção, exclusão por titular, log de acesso,
+dados no Brasil, consentimento). Suíte: `publico/03-documentos-legais`.
+
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
 (marca → home do papel, nome + série/papel, avatar, Sair) é o header de
 `/estudante`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
