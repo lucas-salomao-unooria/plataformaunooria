@@ -312,4 +312,44 @@ describe("check-in do dia", () => {
     expect(await prisma.bemEstarCiclo.count({ where: { escolaId: ESCOLA, professorId: profA } })).toBe(0);
     expect(await prisma.bemEstarCiclo.count({ where: { escolaId: ESCOLA, professorId: profB } })).toBe(1);
   });
+
+  /*
+   * Regressão do 500 no boot. Duas chamadas concorrentes a `hoje()` é o que o
+   * boot da experiência produz — não é cenário de laboratório: o advisory lock
+   * da 1ª transação morre com ela, e a criação só acontece na 2ª, depois da
+   * chamada de IA. Nesse intervalo as duas leem "não existe" e as duas decidem
+   * criar.
+   *
+   * O UNIQUE resolve a corrida; o que estava quebrado era a RECUPERAÇÃO. A
+   * releitura da perdedora vivia no `catch` da mesma transação, e no Postgres
+   * um erro aborta a transação inteira — o `findUnique` seguinte devolvia
+   * `25P02 current transaction is aborted`. Ou seja, o caminho escrito para
+   * salvar a corrida era o que a transformava em 500, e a suíte
+   * `professor/04-bem-estar` morria no boot sem nunca chegar ao formulário.
+   */
+  test("duas chamadas concorrentes a hoje() devolvem o MESMO check-in, sem 500", async () => {
+    const profC = (
+      await prisma.user.create({
+        data: {
+          role: "professor",
+          escolaId: ESCOLA,
+          username: "bemestar.prof.c",
+          displayName: "bemestar.prof.c",
+          passwordHash: "x",
+        },
+        select: { id: true },
+      })
+    ).id;
+
+    const [um, dois] = await Promise.all([
+      service.hoje(ESCOLA, profC, "professor"),
+      service.hoje(ESCOLA, profC, "professor"),
+    ]);
+
+    // A perdedora releu em vez de estourar, e as duas veem a mesma linha.
+    expect(um.checkin.id).toBe(dois.checkin.id);
+    expect(
+      await prisma.bemEstarCheckin.count({ where: { escolaId: ESCOLA, professorId: profC } }),
+    ).toBe(1);
+  });
 });

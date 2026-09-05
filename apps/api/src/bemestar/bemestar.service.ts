@@ -166,35 +166,59 @@ export class BemEstarService {
     const itens = itensDoCheckin(ciclo.ordemItens, numero);
     const textos = await this.gerarAbertura(escolaId, professorId, perfil, numero, agora);
 
-    // 2ª transação: cria. O UNIQUE (escola, professor, dia) resolve a corrida
-    // entre duas abas — a perdedora relê o que a outra criou.
-    const criado = await this.deps.prisma.comTenancy(async (tx) => {
-      try {
-        return await tx.bemEstarCheckin.create({
-          data: {
-            escolaId,
-            professorId,
-            cicloId: ciclo.id,
-            numero,
-            dia,
-            status: "pendente",
-            itens: itens.map((i) => i.numero),
-            abertura: textos.abertura,
-            pergunta: textos.pergunta,
-            origemTexto: textos.origem,
-            tokensIa: textos.tokens,
-          },
-        });
-      } catch (erro) {
-        if (ehConflitoUnico(erro)) {
-          const outro = await tx.bemEstarCheckin.findUnique({
+    /*
+     * 2ª transação: cria. O UNIQUE (escola, professor, dia) resolve a corrida —
+     * a perdedora relê o que a outra criou.
+     *
+     * A corrida NÃO é hipótese de aba dupla: ela acontece no boot normal da
+     * experiência. O `pg_advisory_xact_lock` da 1ª transação morre COM ela, e a
+     * criação só vem aqui, depois da chamada de IA que gera a abertura — uma
+     * janela de centenas de milissegundos em que duas requisições concorrentes
+     * decidem "novo" porque nenhuma linha existe ainda.
+     *
+     * A releitura precisa de uma transação NOVA. Ela já esteve aqui dentro do
+     * `catch` da mesma `comTenancy`, e nunca funcionou: no Postgres, um erro
+     * dentro de uma transação a aborta inteira, e o comando seguinte devolve
+     * `25P02 current transaction is aborted`. O efeito era o oposto do
+     * pretendido — o caminho escrito para SALVAR a corrida era o que a
+     * transformava em 500, e a suíte `professor/04-bem-estar` morria no boot
+     * com "GET /bemestar/hoje → 500".
+     */
+    let criado;
+    try {
+      criado = await this.deps.prisma.comTenancy(
+        (tx) =>
+          tx.bemEstarCheckin.create({
+            data: {
+              escolaId,
+              professorId,
+              cicloId: ciclo.id,
+              numero,
+              dia,
+              status: "pendente",
+              itens: itens.map((i) => i.numero),
+              abertura: textos.abertura,
+              pergunta: textos.pergunta,
+              origemTexto: textos.origem,
+              tokensIa: textos.tokens,
+            },
+          }),
+        escolaId,
+      );
+    } catch (erro) {
+      if (!ehConflitoUnico(erro)) throw erro;
+      const outro = await this.deps.prisma.comTenancy(
+        (tx) =>
+          tx.bemEstarCheckin.findUnique({
             where: { escolaId_professorId_dia: { escolaId, professorId, dia } },
-          });
-          if (outro) return outro;
-        }
-        throw erro;
-      }
-    }, escolaId);
+          }),
+        escolaId,
+      );
+      // Sem linha depois de um conflito de chave única, algo mudou embaixo
+      // (outra requisição apagou): o erro original descreve melhor que um nulo.
+      if (!outro) throw erro;
+      criado = outro;
+    }
 
     return this.apresentarHoje(criado, ciclo, false);
   }
