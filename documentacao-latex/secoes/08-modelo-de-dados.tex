@@ -309,15 +309,28 @@ o padrão em si só aparece na fronteira de importação.
      \texttt{ativo}, \texttt{senha\_provisoria}\\
      \fk{turma\_id} \small(CACHE da principal)};
 
+  \node[tabelaplat, text width=54mm] (lib) at (2.6,-4.6)
+    {\etitulo{liberacoes} \small(RLS por escola)
+     \nodepart{two}
+     \pk{id} \texttt{UUID}\\
+     \fk{escola\_id}, \fk{turma\_id}, \fk{liberada\_por}\\
+     \texttt{exp\_id} \small(SEM FK: o catálogo é do CI)\\
+     \texttt{estado} \small(liberada$|$encerrada)\\
+     \texttt{liberada\_em}, \texttt{encerrada\_em}\\
+     \texttt{UNIQUE (escola\_id, turma\_id, exp\_id)}};
+
   \draw[erel] (per.east) -- (tur.west) node[ercard, pos=0.2]{1} node[ercard, pos=0.85]{N};
   \draw[erel] (tur.south) -- (mat.north) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
   \draw[erel] (usr.west) -- (mat.east) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
+  \draw[erel] (tur.west) -- (lib.east) node[ercard, pos=0.15]{1} node[ercard, pos=0.85]{N};
 
 \end{tikzpicture}}
-\caption[Enturmamento]{Enturmamento. A verdade é \cd{matriculas}; \cd{users.turma\_id}
-  permanece como \textbf{cache} da matrícula principal, porque o \emph{login} e o
-  \emph{claim} \cd{turma\_id} do \emph{token} o leem antes de haver escola no
-  contexto de tenancy.}
+\caption[Enturmamento]{Enturmamento e sala de aula. A verdade é \cd{matriculas};
+  \cd{users.turma\_id} permanece como \textbf{cache} da matrícula principal, porque
+  o \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token} o leem antes de
+  haver escola no contexto de tenancy. \cd{liberacoes} é a camada que faltava entre
+  a turma e o catálogo de experiências (\adrr{ADR-69}): sem linha, a missão não abre
+  para aquela sala.}
 \label{fig:er-enturmamento}
 \end{figure}
 
@@ -336,6 +349,15 @@ o padrão em si só aparece na fronteira de importação.
   existe porque o \emph{login} precisa achar a pessoa \textbf{antes} de saber a
   escola --- e a matrícula nunca é lida nesse momento. \emph{Armadilha}: consulta
   fora de \cd{comTenancy} devolve lista \textbf{vazia}, sem erro.\\
+\zebra \cd{liberacoes.exp\_id} \textbf{sem} chave estrangeira & O catálogo
+  \cd{experiencias} é escrito pelo CI ao publicar o \emph{bundle}, e numa stack de
+  desenvolvimento ele está vazio --- com FK, liberar dependeria de um \emph{deploy}
+  que não aconteceu. Mesma escolha de \cd{progresso.exp\_id} (\adrr{ADR-69}).\\
+Não existe estado \cd{bloqueada} & Bloqueio é a \textbf{ausência} de linha.
+  Guardá-lo obrigaria a criar uma linha por turma $\times$ experiência só para o
+  mundo nascer fechado --- e ele nasce fechado de graça. \emph{CHECK} garante o par
+  \cd{estado}/\cd{encerrada\_em}: data sem regra que a cumpra é a armadilha do
+  \cd{expires\_at}.\\
 \zebra Índice único \textbf{parcial} em \cd{matricula\_externa} & Duas pessoas sem
   RA não colidem entre si (\cd{NULL} não é valor), mas o mesmo RA não se repete
   dentro de uma escola. O Prisma não modela índice parcial: ele vive na

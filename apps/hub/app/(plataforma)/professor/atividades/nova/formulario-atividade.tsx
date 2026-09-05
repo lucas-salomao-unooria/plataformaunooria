@@ -46,11 +46,16 @@ export function FormularioAtividade() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [turmas, setTurmas] = useState<TurmaDoProfessor[]>([]);
+  const [turmasCarregando, setTurmasCarregando] = useState(true);
 
   /* As turmas do professor vêm de `GET /turmas/minhas`, que já devolve
-     exatamente aquelas em que ele TEM MATRÍCULA — não as da escola. Falhar aqui
-     não impede criar a atividade: sem turma ela vale para a escola inteira, que
-     é como toda atividade funcionava antes. */
+     exatamente aquelas em que ele TEM MATRÍCULA — não as da escola.
+
+     Falhar aqui IMPEDE criar a atividade, e isso mudou: a turma passou a ser
+     obrigatória. Por isso o `catch` não pode mais ser silencioso — sem
+     `turmasCarregando` o professor via "Você ainda não está em nenhuma turma"
+     enquanto a lista só estava a caminho, e ia procurar a coordenação por um
+     problema que não existia. */
   useEffect(() => {
     let vivo = true;
     void (async () => {
@@ -62,7 +67,10 @@ export function FormularioAtividade() {
         const lista = (await resposta.json()) as TurmaDoProfessor[];
         if (vivo && Array.isArray(lista)) setTurmas(lista);
       } catch {
-        /* silêncio proposital: ver comentário acima */
+        /* A tela abaixo trata a lista vazia; o erro em si não tem o que dizer
+           de útil ao professor além do que ela já diz. */
+      } finally {
+        if (vivo) setTurmasCarregando(false);
       }
     })();
     return () => {
@@ -99,9 +107,9 @@ export function FormularioAtividade() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          /* Vazio = sem turma: a atividade vale para a escola inteira, o
-             comportamento de toda atividade anterior à coluna `turma_id`. */
-          ...(form.turmaId ? { turmaId: form.turmaId } : {}),
+          /* Sempre presente: a api recusa atividade sem turma. O `required` do
+             `<select>` é quem impede o envio vazio. */
+          turmaId: form.turmaId,
           titulo: form.titulo,
           disciplina: form.disciplina,
           recorte: form.recorte,
@@ -187,37 +195,52 @@ export function FormularioAtividade() {
           </div>
 
           {/*
-            A TURMA. Opcional de propósito: sem ela a atividade vale para a
-            escola inteira, que é como toda atividade funcionava antes da coluna
-            `turma_id`. Com ela, o painel de perfis, a importação da Vila e a
-            entrada do estudante passam a falar da MESMA sala — antes o painel
-            listava a escola e o "N ainda não jogaram" contava crianças de
-            outras turmas.
+            A TURMA, e ela é OBRIGATÓRIA.
+
+            Havia aqui um "Todas as turmas da escola", e era a opção que fazia
+            duas salas do mesmo ano virarem uma lista só: o painel de perfis, o
+            monitor e a análise listavam a escola inteira, e o "N ainda não
+            jogaram" contava crianças de outras turmas. A atividade é de UMA
+            sala. As atividades antigas sem turma continuam valendo como antes —
+            o que fecha é a porta de criar mais uma assim.
+
+            O campo aparece SEMPRE: escondê-lo quando a lista está vazia deixava
+            a tela sem explicar por que o botão não leva a lugar nenhum.
           */}
-          {turmas.length > 0 ? (
-            <div>
-              <label className="unooria-rotulo-de-campo" htmlFor="turma">
-                Turma
-              </label>
-              <select
-                id="turma"
-                className="unooria-select"
-                value={form.turmaId}
-                onChange={(e) => atualizar("turmaId", e.target.value)}
-              >
-                <option value="">Todas as turmas da escola</option>
-                {turmas.map((turma) => (
-                  <option key={turma.id} value={turma.id}>
-                    {turma.nome} · {turma.serie}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-[12px] text-unooria-neutral-500">
-                Escolher a turma faz o painel de perfis, a importação da Vila do
-                Lume e a entrada dos estudantes falarem só dessa sala.
+          <div>
+            <label className="unooria-rotulo-de-campo" htmlFor="turma">
+              Turma
+            </label>
+            <select
+              id="turma"
+              className="unooria-select"
+              value={form.turmaId}
+              onChange={(e) => atualizar("turmaId", e.target.value)}
+              disabled={turmas.length === 0}
+              required
+            >
+              <option value="">
+                {turmasCarregando ? "Carregando suas turmas…" : "Escolha a turma…"}
+              </option>
+              {turmas.map((turma) => (
+                <option key={turma.id} value={turma.id}>
+                  {turma.nome} · {turma.serie}
+                </option>
+              ))}
+            </select>
+            {!turmasCarregando && turmas.length === 0 ? (
+              <p className="mt-1 text-[12px] text-unooria-neutral-700">
+                Você ainda não está em nenhuma turma, e a atividade é de uma sala. Quem faz o
+                enturmamento é a coordenação da escola — peça para te matricular e suas turmas
+                aparecem aqui.
               </p>
-            </div>
-          ) : null}
+            ) : (
+              <p className="mt-1 text-[12px] text-unooria-neutral-500">
+                O painel de perfis, a importação da Vila do Lume e a entrada dos estudantes falam
+                só da sala que você escolher aqui.
+              </p>
+            )}
+          </div>
         </div>
       </Card>
 

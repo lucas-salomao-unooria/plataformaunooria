@@ -2519,6 +2519,26 @@ limite do ambiente e o pico de \emph{heap} de uma vez.
 para de ler a escola inteira}
 \label{adr:atividade-por-turma}
 
+\begin{atencao}
+\textbf{REVISTA em 2026-09-05 pela \adrr{ADR-69}: a turma virou
+OBRIGATÓRIA.} A alternativa descartada aqui (\emph{uma atividade por turma,
+obrigatória}) foi adotada --- \cd{POST /atividades} exige \cd{turmaId} e o
+\enquote{Todas as turmas da escola} saiu do formulário. O que faltava em
+2026-08-30 apareceu: a plataforma ganhou o modelo de \textbf{sala de aula}, em
+que a turma é o contexto de tudo o que o professor faz, e a atividade sem turma
+era a última peça que ainda falava de um lugar que não é uma sala --- era ela
+que fazia 2EM-A e 2EM-B aparecerem como uma lista só no painel de perfis, no
+monitor e na análise.
+
+\textbf{O custo previsto aqui é real e foi aceito}: quem dá a mesma aula em
+quatro salas cria quatro atividades. A tabela de junção continua sendo a
+resposta certa se isso doer.
+
+O resto desta ADR segue valendo, e a COLUNA continua anulável e sem
+\emph{backfill}: as atividades criadas antes desta data seguem escolares, com a
+faixa que já as explica. Fechou a porta de criar mais uma assim, não o passado.
+\end{atencao}
+
 \begin{especificacao}{Contexto}
 A \cd{exp\_01\_activities} tinha \cd{escola\_id} e \cd{professor\_id}, e nenhum
 vínculo com \cd{turmas} --- embora o próprio esquema já falasse como se tivesse:
@@ -2586,6 +2606,9 @@ erro: é opção, não omissão.
 \textbf{Gatilho de reavaliação.} Uma rede rodar o Instanooria em várias turmas
 simultâneas com a MESMA pergunta: aí a pergunta é se a atividade deve ter várias
 turmas (tabela de junção) em vez de uma, e a resposta muda o painel inteiro.
+
+\textbf{Este gatilho disparou em 2026-09-05}, pelo outro lado: ver a advertência
+no topo desta ADR.
 
 \section{ADR-50 --- O perfil importado guarda a PARTIDA e a VERSÃO do
 mapeamento, e não ganha chave estrangeira}
@@ -4147,3 +4170,123 @@ a próxima experiência de mensageria começa do que esta deixou pronto.
 \textbf{Gatilho de reavaliação.} O \cd{storybook-unooria} publicar o tema claro
 da seção \cd{whatsappmobile} --- aí a decisão volta à mesa, e a troca é de uma
 folha de estilo, não de código de tela.
+
+\section{ADR-69 --- A missão vive DENTRO da turma: a sala de aula por liberação}
+\label{adr:sala-de-aula}
+
+\begin{especificacao}{Contexto}
+O enturmamento estava modelado desde a \adrr{ADR-28} --- \cd{periodos\_letivos},
+\cd{turmas} com série, \cd{matriculas} datadas com papel --- e o escopo do
+professor já era a matrícula. Faltava a camada de cima: \textbf{nada ligava
+\cd{turmas} a \cd{experiencias}}.
+
+O efeito era visível nas três telas que o produto tem:
+
+\begin{itemize}
+  \item o hub do estudante listava as missões de uma \textbf{constante compilada
+    no \emph{bundle}} (\arq{apps/hub/lib/missoes-do-estudante.ts}), igual para
+    toda criança de toda escola --- sem olhar série, turma nem escola. E
+    \rota{/exp/:expId} não conferia nada: qualquer estudante logado abria
+    qualquer missão digitando a URL;
+  \item o professor navegava por ANO. Existe uma página por
+    \enquote{ano/unidade}, então as duas turmas da 2ª série do EM dividiam a
+    mesma ficha, o mesmo guia e a mesma tela de resultados --- a turma só
+    reaparecia num \cd{<select>} no fim;
+  \item \enquote{liberar} existia só DENTRO de três das cinco experiências, com
+    um mecanismo diferente em cada uma: o \cd{status} da atividade da exp-01, o
+    relógio da turma da exp-03 (\adrr{ADR-25}), os \emph{gates} da exp-07. Todos
+    respondem \enquote{a aula começou}; nenhum responde \enquote{esta missão
+    pertence a esta sala}.
+\end{itemize}
+
+É a camada que todo LMS tem entre a turma e o conteúdo --- \emph{resources}
+ligados a uma \emph{class} no OneRoster, \emph{deep linking} num contexto no
+LTI. A \adrr{ADR-28} descartou o LTI porque esta plataforma não vive dentro de
+um LMS; a consequência que faltava tirar é a inversa: então ela precisa ter a
+própria camada de atribuição, porque é ela quem faz esse papel.
+\end{especificacao}
+
+\begin{decisao}
+\textbf{Uma tabela de plataforma, \cd{liberacoes}: turma $\times$ experiência
+$\times$ estado.} Sem linha, a missão não abre. \cd{liberada} abre;
+\cd{encerrada} fecha a porta e mantém tudo o que a criança fez.
+
+Quem libera é \textbf{quem tem matrícula de professor na turma} --- gestor lê a
+sala e não decide a aula. Não há prefixo \cd{exp\_NN\_} porque a tabela serve a
+todas as experiências: ela é contrato entre a plataforma e cada uma.
+
+\textbf{A porta é do SERVIDOR}, em \arq{comum/liberacao.ts}: \cd{exigirMissao\-Liberada}
+é chamada na entrada de estudante de cada experiência --- \rota{POST /runs} e
+\rota{GET /runs/boot}, e o funil de sessão do UnooTube, do unooGPT, da Vila e do
+Eco. Esconder o \emph{card} no hub é UX; a regra que vale é esta, pela mesma
+razão da regra inviolável nº 3 (correção no servidor).
+
+\textbf{Ela é PRÉ-CONDIÇÃO dos relógios e \emph{gates}, não substituta.} Eles
+continuam dizendo \enquote{a aula começou} e continuam morando na experiência.
+Sem liberação, a pergunta do relógio nem chega a ser feita.
+\end{decisao}
+
+\textbf{Três escolhas de tela, e nenhuma é neutra.}
+
+\begin{itemize}
+  \item \textbf{Missão bloqueada aparece com CADEADO}, não some. Sumir era mais
+    simples e foi recusado: a grade do ano é a promessa do que vem depois, e uma
+    lista que muda de tamanho sozinha não deixa a criança entender que a próxima
+    unidade existe. \cd{bloqueada} não é estado do banco --- é a ausência de
+    linha.
+  \item \textbf{Missão encerrada continua VISÍVEL}, com o rótulo. O que a
+    criança fez não pode evaporar da tela quando o professor fecha a aula.
+  \item \textbf{Professor com uma turma só entra nela clicando}, como quem tem
+    quatro. Havia a opção de redirecionar direto, e ela foi recusada: dois
+    fluxos diferentes para o mesmo papel é o tipo de atalho que faz a tela de
+    lista parecer quebrada para metade da rede.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \emph{Filtrar só por série} (\cd{experiencias.series}, que já existe e
+    ninguém lia): resolve a criança do 4º ano ver a missão do 8º, e não resolve
+    nada do resto --- as duas turmas do mesmo ano continuariam idênticas, e o
+    professor continuaria sem dizer quando a missão entra.
+  \item \emph{Continuar liberando dentro de cada experiência}: é o que existe, e
+    o custo está medido --- três mecanismos, e a criança só descobre que a missão
+    não abriu DEPOIS de entrar nela, num 409 ou numa tela de espera.
+  \item \emph{Esconder no hub e não checar na API}: o \emph{bundle} é público e
+    \rota{/exp/:expId} é endereço adivinhável.
+  \item \emph{Guardar \enquote{bloqueada} como linha}: obrigaria a criar uma por
+    turma $\times$ experiência para o mundo nascer fechado. Ele nasce fechado de
+    graça.
+  \item \emph{FK de \cd{exp\_id} para \cd{experiencias}}: aquele catálogo é
+    escrito pelo CI ao publicar, e em desenvolvimento está vazio --- a FK faria
+    liberar depender de um \emph{deploy} que não aconteceu. É a mesma escolha de
+    \cd{progresso.exp\_id}.
+\end{itemize}
+
+\textbf{Consequências, inclusive as ruins.}
+
+\begin{itemize}
+  \item \textbf{Estudante sem turma não vê missão nenhuma}, e isto é mudança de
+    comportamento. A exp-03 tinha decisão registrada de que a criança solta via o
+    relógio \enquote{aguardando} em vez de um cronômetro só dela; agora ela nem
+    entra. Sem sala não há missão --- e quem explica isso é a tela do hub, porque
+    um erro dentro do aparelho não teria como dizer \enquote{peça para a
+    coordenação te matricular} sem sair do disfarce.
+  \item \textbf{O professor ganhou um passo antes da aula.} Missão que ninguém
+    liberou não abre, e a sala precisa dizer isso com todas as letras --- é o
+    risco novo do capítulo 19.
+  \item \textbf{O \emph{seed} passou a escrever \cd{experiencias}.} Em produção
+    quem escreve é o CI ao publicar; sem catálogo não há grade, e o professor
+    abriria a sala sem nada para liberar.
+  \item A checagem custa três consultas indexadas na entrada de cada
+    experiência. Ficam na CRIAÇÃO da sessão, não em toda rota: quem já entrou
+    fica, e encerrar fecha a entrada em vez de expulsar a criança no meio da
+    aula.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Uma rede querer liberar em lote pela
+coordenação (hoje gestor não libera: é uma linha no \cd{@Roles} e uma frase na
+matriz do capítulo 7), ou pedir \textbf{janela de datas} --- \enquote{abre
+segunda, fecha sexta} ---, que hoje é um clique manual e viraria duas colunas e
+uma rotina que as cumpra. Enquanto não houver quem cumpra, a coluna não nasce:
+é a armadilha do \cd{expires\_at}.

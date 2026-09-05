@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma, type EcoSessao } from "@prisma/client";
+import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import type { Perfil } from "../auth/claims";
 import { PrismaService } from "../prisma/prisma.service";
@@ -20,6 +21,7 @@ import {
 } from "./catalogo";
 import { erroDeJogo } from "./erros";
 import { IaDaExp07Service, TURNOS_COM_AMARA } from "./ia.service";
+import { EXP_ID } from "./midia";
 import { MidiaDaExp07Service } from "./midia.service";
 import { avaliarPercurso } from "./regras/pontuacao";
 import {
@@ -589,6 +591,11 @@ export class OEcoNoGrupoService {
   }
 
   /** `users` está fora da RLS — a escola do token precisa bater com a do usuário. */
+  /**
+   * O FUNIL das rotas de estudante — `sessao` e `mutar` passam os dois por aqui,
+   * então é onde mora a porta da sala (ADR-69). Fora daqui sobraria caminho:
+   * `POST /intervencao` cria a linha da sessão por conta própria.
+   */
   private async estudanteDaEscola(
     tx: Prisma.TransactionClient,
     escolaId: string,
@@ -599,6 +606,7 @@ export class OEcoNoGrupoService {
       select: { displayName: true, escolaId: true, turmaId: true },
     });
     if (!estudante || estudante.escolaId !== escolaId) throw erroDeJogo("turma-nao-encontrada");
+    await exigirMissaoLiberada(tx, escolaId, estudanteId, EXP_ID);
     return estudante;
   }
 

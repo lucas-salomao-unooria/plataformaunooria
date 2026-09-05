@@ -22,6 +22,7 @@ import {
 } from "@edu/ui/ds";
 import type { Papel } from "@/lib/papeis";
 import { rotuloDaSerie, type Serie } from "@/lib/series";
+import type { MissaoDaSalaDoProfessor } from "@/lib/salas";
 
 interface Matriculado extends Record<string, unknown> {
   matriculaId: string;
@@ -117,7 +118,14 @@ export function TurmaDetalhe({
   const escolaDaUrl = useSearchParams().get("escolaId") ?? "";
   const escolaId = escolaDaUrl || escolaIdDaSessao;
   const [dados, setDados] = useState<DadosDaTurma | null>(null);
-  const [aba, setAba] = useState<"estudantes" | "professores">("estudantes");
+  const [aba, setAba] = useState<"estudantes" | "professores" | "missoes">("estudantes");
+  /**
+   * A SALA, em LEITURA (ADR-69). O gestor vê o que está aberto na turma e quem
+   * abriu; quem libera é quem tem matrícula de professor nela — a rota de
+   * escrita recusa o gestor, e a tela não oferece o botão. É a mesma linha que
+   * separa administrar a escola de dar a aula.
+   */
+  const [missoes, setMissoes] = useState<MissaoDaSalaDoProfessor[] | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -167,6 +175,26 @@ export function TurmaDetalhe({
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  /* Carrega a grade UMA vez, junto com a turma. Falha em silêncio: a tela do
+     gestor é de enturmamento, e a sala é informação a mais — derrubá-la inteira
+     porque a grade não veio seria trocar um problema por outro maior. */
+  useEffect(() => {
+    let vivo = true;
+    void (async () => {
+      try {
+        const r = await fetch(`/api/plataforma/salas/turma/${turmaId}${sufixo}`);
+        if (!r.ok) return;
+        const corpo = (await r.json()) as { missoes: MissaoDaSalaDoProfessor[] };
+        if (vivo) setMissoes(corpo.missoes);
+      } catch {
+        /* ver comentário acima */
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [turmaId, sufixo]);
 
   const procurar = useCallback(
     async (termo: string) => {
@@ -474,7 +502,15 @@ export function TurmaDetalhe({
       <Tabs
         theme="light"
         value={aba}
-        onChange={(valor) => setAba(valor === "professores" ? "professores" : "estudantes")}
+        onChange={(valor) =>
+          setAba(
+            valor === "professores"
+              ? "professores"
+              : valor === "missoes"
+                ? "missoes"
+                : "estudantes",
+          )
+        }
         items={[
           {
             value: "estudantes",
@@ -488,6 +524,12 @@ export function TurmaDetalhe({
             badge: dados?.professores.length ?? 0,
             showIcon: false,
           },
+          {
+            value: "missoes",
+            label: "Missões",
+            badge: (missoes ?? []).filter((m) => m.estado === "liberada").length,
+            showIcon: false,
+          },
         ]}
       />
 
@@ -495,24 +537,74 @@ export function TurmaDetalhe({
         <Button variant="ghost" size="sm" onClick={voltarParaTurmas}>
           Voltar para as turmas
         </Button>
-        <Button variant="primary" size="md" onClick={() => setAdicionarAberto(true)}>
-          {aba === "estudantes" ? "Adicionar estudante" : "Adicionar professor"}
-        </Button>
+        {/* Sem botão na aba Missões: liberar é de quem dá aula na turma. */}
+        {aba === "missoes" ? null : (
+          <Button variant="primary" size="md" onClick={() => setAdicionarAberto(true)}>
+            {aba === "estudantes" ? "Adicionar estudante" : "Adicionar professor"}
+          </Button>
+        )}
       </div>
 
-      <Table<Matriculado>
-        columns={colunas}
-        data={lista}
-        keyExtractor={(linha) => linha.matriculaId}
-        loading={carregando}
-        emptyText={
-          aba === "estudantes"
-            ? "Nenhum estudante matriculado nesta turma."
-            : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
-        }
-        size="md"
-        theme="light"
-      />
+      {aba === "missoes" ? (
+        <div className="flex flex-col gap-3">
+          <FeedbackAlert
+            type="info"
+            title="Quem abre a missão para a turma é quem dá aula nela"
+            description="Aqui você vê o que está aberto e quem abriu. Liberar e encerrar são do professor com matrícula na turma."
+          />
+          {missoes === null ? (
+            <p className="text-[14px] text-unooria-neutral-500">Carregando as missões…</p>
+          ) : missoes.length === 0 ? (
+            <p className="text-[14px] text-unooria-neutral-500">
+              Nenhuma missão publicada para esta série ainda.
+            </p>
+          ) : (
+            <ul className="flex flex-col rounded-md border border-unooria-neutral-200 px-4">
+              {missoes.map((missao) => (
+                <li
+                  key={missao.expId}
+                  className="linha-de-lista flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold text-unooria-neutral-950">
+                      {missao.nome}
+                    </span>
+                    <span className="block text-[13px] text-unooria-neutral-500">
+                      {missao.transversal
+                        ? "para qualquer ano"
+                        : missao.unidade
+                          ? `Unidade ${missao.unidade}`
+                          : missao.expId}
+                      {missao.liberadaPor ? ` · aberta por ${missao.liberadaPor}` : ""}
+                    </span>
+                  </span>
+                  {missao.estado === "liberada" ? (
+                    <Tag variant="success">aberta</Tag>
+                  ) : missao.estado === "encerrada" ? (
+                    <Tag>encerrada</Tag>
+                  ) : (
+                    <Tag>fechada</Tag>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : (
+        <Table<Matriculado>
+          columns={colunas}
+          data={lista}
+          keyExtractor={(linha) => linha.matriculaId}
+          loading={carregando}
+          emptyText={
+            aba === "estudantes"
+              ? "Nenhum estudante matriculado nesta turma."
+              : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
+          }
+          size="md"
+          theme="light"
+        />
+      )}
 
       <Modal
         isOpen={adicionarAberto}

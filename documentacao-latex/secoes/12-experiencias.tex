@@ -49,10 +49,98 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 
 \begin{nota}
 As portas vivem em \arq{apps/hub/lib/experiencias-dev.ts} --- uma por
-experiência. É esse mapa que o hub usa quando não há manifesto, e é por isso que
+experiência. É esse mapa que o hub usa \textbf{fora de produção}, e é por isso que
 \env{EXP\_INTERNAL\_HOST} tem de \emph{preservar a porta}
 (Seção~\ref{sec:manifesto}).
+
+A escolha era \enquote{sem manifesto na tabela, use o mapa} --- e isso quebrou
+quando o \emph{seed} passou a popular \cd{experiencias} (\adrr{ADR-69}, que precisa
+do catálogo para montar a grade da turma). Sem CDN configurado, a URL versionada
+cai no \emph{default} \cd{localhost:5173}, o \emph{dev server} da exp-01 --- que
+responde a QUALQUER caminho com a própria SPA. Toda missão abria o Instanooria,
+com o \emph{handshake} completando e o \cd{boot} dando 403 na experiência errada.
+\textbf{De onde vem o \emph{bundle} é pergunta do AMBIENTE; o manifesto responde o
+que a experiência declara.}
 \end{nota}
+
+\section{A sala de aula: o que o estudante vê}
+\label{sec:sala-do-estudante}
+
+O hub do estudante (\rota{/estudante}) abre pela \textbf{turma}, não pelo
+catálogo. \rota{GET /salas/minhas} devolve as turmas em que ele tem matrícula e,
+em cada uma, a grade do ano dela: as experiências cuja \cd{series} contém a série
+da turma, mais as transversais (\cd{series: []}).
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X@{}}
+\toprule
+\headrow \thd{Estado} & \thd{O que a criança vê}\\
+\midrule
+\cd{liberada} & O cartão é um \emph{link} e diz \enquote{Começar}.\\
+\zebra \cd{bloqueada} & \textbf{CADEADO} e \enquote{Ainda não abriu}, sem
+  \emph{link}. Não some da tela: a grade do ano é a promessa do que vem depois, e
+  uma lista que muda de tamanho sozinha não deixa ninguém entender que a próxima
+  unidade existe. Não é estado do banco --- é a ausência de linha em
+  \cd{liberacoes}.\\
+\cd{encerrada} & Continua visível, com o rótulo. O que ela fez não pode evaporar
+  da tela quando o professor fecha a aula.\\
+\bottomrule
+\end{tabularx}
+
+Missão de OUTRA SÉRIE não aparece --- e isso é diferente de bloqueada: a do 4º ano
+não pertence à grade do 8º, não está esperando liberação. Missão sem \emph{copy}
+de estudante também não entra, mesmo liberada: sem título e sem chamada o cartão
+seria um retângulo com um \emph{slug} dentro.
+
+\begin{regra}
+\textbf{Esconder o cartão é UX.} \rota{/exp/:expId} confere a liberação antes de
+montar o \emph{embed} e responde \textbf{404} sem ela, e a API recusa a entrada com
+\textbf{403} \cd{missao-nao-liberada}. O \emph{bundle} é público e o endereço é
+adivinhável: antes disto, qualquer estudante logado abria qualquer missão
+digitando a URL.
+\end{regra}
+
+\section{A sala de aula: o que o professor faz}
+\label{sec:sala-do-professor}
+
+\rota{/professor/turmas/:id} deixou de ser a lista nominal e virou a SALA, com
+duas abas:
+
+\begin{itemize}
+  \item \textbf{Missões} --- a grade daquela sala, com o estado de cada uma, quem
+    a abriu e quando, e o botão \emph{Liberar}/\emph{Encerrar}. Daqui sai também o
+    caminho para conduzir a missão \textbf{com a turma já escolhida}.
+  \item \textbf{Estudantes} --- a lista nominal que já existia, com o caminho para
+    o relatório de cada criança.
+\end{itemize}
+
+A aba vive na URL (\cd{?aba=}), como a turma nos resultados: o \emph{link} fica
+compartilhável e o botão voltar funciona.
+
+\begin{decisao}
+\textbf{O caminho para conduzir a missão sai da SALA.} Antes era: voltar ao hub,
+entrar no Entre Redes, achar o ano, abrir resultados e escolher a turma num
+\cd{<select>} --- e a página do ano era a MESMA para as duas turmas da série. Era
+assim que 2EM-A e 2EM-B viravam uma coisa só na cabeça de quem usava.
+
+A trilha do Entre Redes continua existindo e continua sendo por ano: ela é o
+CATÁLOGO, o lugar de conhecer a missão. Uma faixa no topo dela diz quem abre a
+missão para a turma, porque sem isso o professor lê a grade inteira como se tudo
+estivesse no ar para os estudantes dele.
+\end{decisao}
+
+\begin{nota}
+\textbf{O filtro por série das telas de resultado ficou; o \emph{fallback} saiu.}
+Elas ofereciam \enquote{mostrando todas} quando o professor não tinha turma da
+série da missão --- e aí ele escolhia uma sala que nunca vai jogar aquilo. Sem
+turma da série, agora a tela diz isso e aponta para \emph{Minhas turmas}.
+\end{nota}
+
+\begin{regra}
+\textbf{Professor com uma turma tem o mesmo fluxo de quem tem quatro:} ele entra
+na sala clicando. Redirecionar direto de \rota{/professor} para a única sala foi
+considerado e recusado --- dois fluxos para o mesmo papel é o tipo de atalho que
+faz a tela de lista parecer quebrada para metade da rede.
+\end{regra}
 
 \section{exp-01 --- Instanooria}
 

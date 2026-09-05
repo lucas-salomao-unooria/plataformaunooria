@@ -46,6 +46,61 @@ export async function professorLeciona(
 }
 
 /**
+ * Este estudante é de alguma turma em que o professor leciona? É o que vira 404
+ * nas telas de UMA criança — o relatório individual da Vila e do unooGPT, que
+ * carregam leitura de perfil e transcrição de texto livre de menor de idade.
+ *
+ * Existe separado de `professorLeciona` porque a tela individual não recebe
+ * turma: ela recebe o id da criança, e a pergunta "posso ver ESTA criança?" não
+ * se responde com o `escola_id` do token — era só isso que essas rotas exigiam,
+ * e qualquer professor da escola abria o relatório de qualquer estudante dela.
+ *
+ * **As duas fontes, e por que as duas.** A VERDADE do enturmamento é
+ * `matriculas`; o CACHE é `users.turma_id`. As listagens destes módulos (a folha
+ * da turma, o painel) partem do cache, e o nome que o professor CLICA veio de
+ * lá. Se a guarda olhasse só a matrícula, um cache adiantado em relação a ela
+ * produziria o pior sintoma possível: o nome aparece na lista e a tela dele
+ * responde "não encontrado". Aceitar as duas fecha essa fresta sem abrir outra —
+ * os dois caminhos exigem `escola_id` e uma turma DO PROFESSOR, e nenhum deles
+ * atravessa escola.
+ *
+ * ARMADILHA: `matriculas` tem RLS. Fora de `comTenancy` esta função responde
+ * "não é seu estudante" para todo mundo, em silêncio.
+ */
+export async function professorEnsinaOEstudante(
+  tx: Prisma.TransactionClient,
+  escolaId: string,
+  estudanteId: string,
+  professorId?: string,
+): Promise<boolean> {
+  if (!professorId) return true;
+
+  const daTurmaDoProfessor = {
+    matriculas: { some: { escolaId, usuarioId: professorId, papel: "professor", fim: null } },
+  } satisfies Prisma.TurmaWhereInput;
+
+  const porMatricula = await tx.matricula.findFirst({
+    where: {
+      escolaId,
+      usuarioId: estudanteId,
+      papel: "estudante",
+      fim: null,
+      turma: daTurmaDoProfessor,
+    },
+    select: { id: true },
+  });
+  if (porMatricula) return true;
+
+  /* O cache. `users` está FORA da RLS: o `escola_id` no `where` é a única
+     tranca aqui, não defesa em profundidade (ADR-49). */
+  const porCache = await tx.user.findFirst({
+    where: { id: estudanteId, escolaId, role: "estudante", turma: daTurmaDoProfessor },
+    select: { id: true },
+  });
+  return Boolean(porCache);
+}
+
+/**
  * O id do professor quando é ele quem está pedindo — `undefined` para gestor e
  * admin-contrato, que enxergam a escola inteira. É o que os controllers
  * repassam aos services.

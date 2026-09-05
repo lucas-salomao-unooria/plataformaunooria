@@ -22,6 +22,9 @@ export const UpsertSchema = z.object({
   nome: z.string().min(1).max(120),
   versaoAtiva: z.string().regex(/^\d+\.\d+\.\d+$/, "versão semver x.y.z"),
   series: z.array(z.enum(SERIES)).default([]),
+  /** A unidade do ano (1 a 4). Ausente na transversal e na ferramenta de
+   *  professor — elas não moram numa unidade. Ordena a grade da sala. */
+  unidade: z.number().int().min(1).max(4).nullish(),
   capabilities: z.array(z.enum(CAPABILITIES)).default([]),
   viewport: ViewportSchema.nullish(),
   publico: z
@@ -49,6 +52,7 @@ export const ExperienciaSchema = z.object({
   nome: z.string(),
   versaoAtiva: z.string(),
   series: z.array(z.string()),
+  unidade: z.number().int().nullable(),
   capabilities: z.array(z.string()),
   viewport: ViewportSchema.nullable(),
   publico: z.string(),

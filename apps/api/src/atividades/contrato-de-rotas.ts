@@ -32,12 +32,16 @@ export const CriarSchema = z.object({
     })
     .default({ ativo: true, modo: "ambos", proporcao: 0.4 }),
   estiloVisual: z.enum(ESTILOS_VISUAIS),
-  /** A turma desta atividade. Opcional porque o campo nasceu depois das
-   *  atividades que já existiam: sem ela a atividade vale para a escola
-   *  inteira, que era o comportamento único até
-   *  `20260830090000_atividade_por_turma`. Com ela, o painel de perfis, a
-   *  importação da Vila e a entrada do estudante falam todos da MESMA sala. */
-  turmaId: z.string().uuid().optional(),
+  /** A turma desta atividade — OBRIGATÓRIA para atividade nova.
+   *
+   *  Nasceu opcional em `20260830090000_atividade_por_turma`, porque já havia
+   *  atividades sem turma e um `NOT NULL` com backfill inventaria a sala de
+   *  cada uma delas (ADR-49). A COLUNA continua anulável e as linhas antigas
+   *  continuam valendo para a escola inteira; o que fecha aqui é a porta de
+   *  criar mais uma assim — era ela que fazia o painel de perfis, o monitor e a
+   *  análise listarem 2EM-A e 2EM-B como uma turma só. É o gatilho de
+   *  reavaliação que a própria ADR-49 registrou. */
+  turmaId: z.string().uuid(),
 });
 
 export const EtapaSchema = z.object({ etapa: z.enum(ETAPAS_DA_TURMA) });

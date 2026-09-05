@@ -32,6 +32,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{periodos\_letivos} & \textbf{Catálogo} & Ano letivo e seus recortes\\
 \cd{turmas} & Tenant & Turmas por escola, período e série\\
 \zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (estudante e professor)\\
+\cd{liberacoes} & Tenant & \textbf{A missão dentro da turma} (\adrr{ADR-69})\\
 \cd{users} & Tenant & Pessoas e papéis\\
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{progresso} & Tenant & Progresso genérico da SDK\\
@@ -221,6 +222,39 @@ divergentes.
 \cd{(escola\_id, usuario\_id)} --- \enquote{as turmas do professor} --- e por
 \cd{(escola\_id, turma\_id)} --- \enquote{quem está nesta turma}.
 
+\subsection{\cd{liberacoes}}
+
+A missão DENTRO da turma (\adrr{ADR-69}). Sem linha, a experiência não abre para
+o estudante daquela sala. Não confundir com o relógio da exp-03 nem com os
+\emph{gates} da exp-07, que respondem \enquote{a aula já começou} e são tabelas
+DA experiência: esta é a pré-condição de todos eles.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \fk{escola\_id} & \cd{TEXT} & \textbf{RLS} por esta coluna.\\
+\fk{turma\_id} & \cd{UUID} FK & \cd{ON DELETE CASCADE}.\\
+\zebra \cd{exp\_id} & \cd{TEXT} & O \emph{slug} da experiência, \textbf{sem FK}
+  para \cd{experiencias}: aquele catálogo é escrito pelo CI ao publicar, e em
+  desenvolvimento está vazio. Mesma escolha de \cd{progresso.exp\_id}.\\
+\cd{estado} & \cd{TEXT} & \cd{liberada} $|$ \cd{encerrada} --- \emph{CHECK} na
+  migração. \textbf{Não há \cd{bloqueada}}: bloqueio é a ausência da linha.\\
+\zebra \fk{liberada\_por} & \cd{UUID} FK & Quem apertou. É a pergunta que a sala
+  faz quando a missão aparece sem ninguém saber por quê --- turma com dois
+  professores é comum.\\
+\cd{liberada\_em} & \cd{TIMESTAMPTZ} & \\
+\zebra \cd{encerrada\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}:
+  \cd{(estado = 'encerrada') = (encerrada\_em IS NOT NULL)}. Data sem regra que a
+  cumpra é a armadilha do \cd{expires\_at}; reliberar LIMPA a data.\\
+\bottomrule
+\end{tabularx}
+
+\cd{UNIQUE (escola\_id, turma\_id, exp\_id)} --- uma linha por missão por sala,
+que é o que torna liberar idempotente --- e índice por
+\cd{(escola\_id, turma\_id)}, que é a leitura da grade.
+
 \subsection{\cd{users}}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
@@ -284,14 +318,21 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
 \cd{versao\_ativa} & \cd{TEXT} & \textbf{\emph{Rollback} = \cd{UPDATE} deste
   campo.} O hub monta a URL do \cd{iframe} com ele.\\
 \zebra \cd{series} & \cd{TEXT[]} & \textbf{Vazio = TODAS as séries}, não
-  nenhuma. É assim que uma experiência transversal se declara.\\
-\cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
+  nenhuma. É assim que uma experiência transversal se declara. Desde a sala de
+  aula (\adrr{ADR-69}) este campo é LIDO: é ele que decide se a missão entra na
+  grade de uma turma.\\
+\cd{unidade} & \cd{SMALLINT?} & A unidade do ano (1 a 4), com \emph{CHECK}.
+  \cd{NULL} na transversal e na ferramenta de professor --- elas não moram numa
+  unidade. É o que ORDENA a grade da sala; sem ela a ordem cai no \cd{exp\_id},
+  que é numeração de experiência e não do ano letivo (o 7º ano viria depois do
+  8º).\\
+\zebra \cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
   \cd{avaliacao}, \cd{tempo-real}.\\
-\zebra \cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
+\cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
   Presente \implica{} o hub embeda dentro do \cd{DispositivoFrame}.\\
-\cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
+\zebra \cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
   \emph{CHECK}. \cd{professor} \implica{} \rota{/exp/*} responde 404.\\
-\zebra \cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
+\cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
   \cd{pointer-lock}, com \emph{CHECK} do vocabulário.
   \textbf{\cd{fullscreen} NÃO entra aqui}: o \cd{allow} do \emph{frame} já o
   delega a todas, e campo de manifesto que não muda nada é pior que campo

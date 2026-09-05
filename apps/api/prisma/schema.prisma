@@ -205,6 +205,8 @@ model Turma {
   matriculas    Matricula[]
   /// Atividades do Instanooria desta turma (`exp_01_activities.turma_id`).
   atividades    Activity[]
+  /// As missões liberadas NESTA turma (ADR-69).
+  liberacoes    Liberacao[]
 
   /// O Relógio da AULA da exp-03 mora em tabela DA EXPERIÊNCIA, não em coluna
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
@@ -255,6 +257,50 @@ model Matricula {
   @@index([escolaId, usuarioId])
   @@index([escolaId, turmaId])
   @@map("matriculas")
+}
+
+/// A missão DENTRO da turma — a camada que faltava entre `turmas` e
+/// `experiencias` (ADR-69).
+///
+/// Sem linha aqui, a experiência não abre para o estudante daquela turma: é a
+/// tabela que responde "esta missão está nesta sala?". Não confundir com o
+/// relógio da exp-03 nem com os gates da exp-07, que respondem "a aula já
+/// começou" — aqueles são DA experiência e continuam onde estão. Esta é a
+/// pré-condição de todos eles.
+///
+/// Tabela de PLATAFORMA (sem prefixo `exp_NN_`): serve a todas as experiências,
+/// e é contrato entre a plataforma e cada uma delas.
+model Liberacao {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O slug da experiência. **Sem FK para `experiencias`**, pelo mesmo motivo de
+  /// `progresso.exp_id`: aquele catálogo é escrito pelo CI ao publicar o bundle,
+  /// e em dev (ou num ambiente novo, antes do primeiro publish) ele está VAZIO.
+  /// Uma FK faria a liberação depender de um deploy que não aconteceu.
+  expId String @map("exp_id")
+
+  /// liberada | encerrada — CHECK na migration.
+  /// Não existe estado "bloqueada": a AUSÊNCIA de linha é o bloqueio. Guardar
+  /// bloqueio como linha exigiria criar uma por turma × experiência para o
+  /// mundo nascer fechado, e o mundo nasce fechado de graça.
+  estado String @default("liberada")
+
+  /// Quem liberou. É a pergunta que a sala faz quando a missão aparece sem
+  /// ninguém saber por quê — e some do painel se virar `SET NULL`.
+  liberadaPor String @map("liberada_por") @db.Uuid
+
+  liberadaEm   DateTime  @default(now()) @map("liberada_em") @db.Timestamptz(6)
+  encerradaEm  DateTime? @map("encerrada_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma     Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor User  @relation("LiberacaoProfessor", fields: [liberadaPor], references: [id])
+
+  @@unique([escolaId, turmaId, expId])
+  @@index([escolaId, turmaId])
+  @@map("liberacoes")
 }
 
 /// estudante | professor | gestor | admin-contrato
@@ -315,6 +361,8 @@ model User {
   /// Perfis vindos de outra instalação — nunca misturados ao dado local.
   perfisPortateis   PerfilPortatil[] @relation("PerfilPortatilEstudante")
   perfisQueImportou PerfilPortatil[] @relation("PerfilPortatilImportador")
+  /// As missões que este professor liberou (ADR-69).
+  liberacoesQueFez  Liberacao[]      @relation("LiberacaoProfessor")
 
   activities       Activity[]        @relation("ActivityProfessor")
   runs             Run[]
@@ -767,6 +815,11 @@ model Experiencia {
   nome         String
   versaoAtiva  String   @map("versao_ativa")
   series       String[] @default([])
+  /// A unidade do ano a que a missão pertence (1 a 4). NULL nas transversais e
+  /// nas ferramentas de professor — elas não moram numa unidade. É o que ordena
+  /// a grade da sala; sem ela a ordem caía no `exp_id`, que é ordem de
+  /// numeração da experiência e não do ano letivo (ADR-69).
+  unidade      Int?     @db.SmallInt
   capabilities String[] @default([])
   /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
   viewport     Json?

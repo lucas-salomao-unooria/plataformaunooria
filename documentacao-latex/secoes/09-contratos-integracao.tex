@@ -264,21 +264,24 @@ lendo o arquivo.
 \zebra \cd{series} & \emph{string[]} & Séries em que a experiência se aplica.
   \textbf{Vazio significa TODAS as séries}, não nenhuma --- ver o alerta
   abaixo.\\
-\cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
+\cd{unidade} & \emph{1--4?} & A unidade do ano a que a missão pertence. Ausente
+  na transversal e na ferramenta de professor: elas não moram numa unidade. É o
+  que ORDENA a grade da sala (\adrr{ADR-69}).\\
+\zebra \cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
   \cd{ia}, \cd{avaliacao}, \cd{tempo-real}. Declara o que a experiência usa da
   plataforma.\\
-\zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
+\cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
   exp-01 e a exp-07 são 375$\times$812; a exp-02 \emph{não} tem \cd{viewport},
   porque foi desenhada para \emph{desktop}. Quem desenha o aparelho é o hub ---
   a experiência \textbf{não} empilha uma casca própria.\\
-\cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
+\zebra \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
-\zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
+\cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
   experiência precisa: \cd{pointer-lock} (exp-70) e \cd{forms} (exp-03, exp-07),
   traduzidos pelo \cd{ExpFrame} nos tokens \cd{allow-pointer-lock} e
   \cd{allow-forms}. Vazio (o \emph{default}) = nenhuma.\\
-\cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
+\zebra \cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
   experiência emite. Não é lido por código; é contrato de leitura para quem
   analisa os dados.\\
 \bottomrule
@@ -287,9 +290,16 @@ lendo o arquivo.
 \begin{regra}
 \cd{series: []} significa \textbf{todas as séries}, não nenhuma: é assim que uma
 experiência \emph{transversal} se declara (é o caso da exp-70, que não pertence a
-ano nenhum). Quando o filtro por série voltar a valer no hub do estudante, vazio tem
-de continuar querendo dizer \enquote{todas} --- o contrário faz a experiência
-desaparecer da tela sozinha, sem erro em lugar nenhum.
+ano nenhum). Desde a sala de aula (\adrr{ADR-69}) este campo é \textbf{lido}: é ele
+que decide se a missão entra na grade de uma turma, e vazio continuar querendo
+dizer \enquote{todas} deixou de ser hipótese e virou o que sustenta a transversal
+aparecer em toda sala. O contrário faz a experiência desaparecer da tela sozinha,
+sem erro em lugar nenhum.
+
+\textbf{Campo novo no \arq{experiencia.json} tem de ser acrescentado ao
+\arq{publicar-manifesto.mjs} também} --- foi assim com \cd{permissoes} e com
+\cd{unidade}. Esquecer é INVISÍVEL em desenvolvimento (onde o hub lê o arquivo
+do \emph{bundle}) e quebra em produção, onde ele lê a coluna.
 \end{regra}
 
 \subsection{Como o hub resolve a URL do \cd{iframe}}

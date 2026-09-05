@@ -32,7 +32,7 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
 \endhead
-\rota{POST /\allowbreak{}ai/\allowbreak{}gerar} & \emph{(qualquer)} & Conversa com o tutor de IA da experiência.\par Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo \cd{expId} e \textbf{nunca sai daqui} --- segredo em bundle de experiência é regra 2.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Quota diária POR PERFIL (\cd{AI\_\allowbreak{}DAILY\_\allowbreak{}TOKEN\_\allowbreak{}QUOTA\_\allowbreak{}PER\_\allowbreak{}ESTUDANTE} / \cd{\_\allowbreak{}PROFESSOR}), persistida em \cd{ia\_\allowbreak{}uso\_\allowbreak{}diario}: \cd{temSaldo} ANTES, \cd{consumir} depois. Sem saldo, \textbf{429}.\par \hspace*{1em}\textbullet{} A série do estudante vai ao prompt a partir do TOKEN, não do corpo.\\
+\rota{POST /\allowbreak{}ai/\allowbreak{}gerar} & \emph{(qualquer)} & Conversa com o tutor de IA da experiência.\par Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo \cd{expId} e \textbf{nunca sai daqui} --- segredo em bundle de experiência é regra 2.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Quota diária POR PERFIL (\cd{AI\_\allowbreak{}DAILY\_\allowbreak{}TOKEN\_\allowbreak{}QUOTA\_\allowbreak{}PER\_\allowbreak{}ESTUDANTE} / \cd{\_\allowbreak{}PROFESSOR}), persistida em \cd{ia\_\allowbreak{}uso\_\allowbreak{}diario}: \cd{temSaldo} ANTES, \cd{consumir} depois. Sem saldo, \textbf{429}.\par \hspace*{1em}\textbullet{} A série do estudante vai ao prompt RESOLVIDA da turma do token (\cd{turmas.serie} \seta{} \enquote{4º ano}), nunca vinda do corpo. Sem turma, a linha some do prompt.\\
 \bottomrule
 \end{tabularx}
 
@@ -361,6 +361,19 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \rota{GET /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}salvos} & \cd{estudante} & A coleção do estudante --- o que ele salvou.\par O ÚLTIMO evento por post decide: salvar e dessalvar se anulam. É a coleção que ele vai defender no debate.\\
 \zebra \rota{POST /\allowbreak{}runs/\allowbreak{}\{id\}/\allowbreak{}student-post} & \cd{estudante} & O estudante publica no app, e as personas reagem.\par \textbf{Falha fechada}: IA desligada, erro de rede ou reação recusada \implica{} lista vazia, e o post é publicado do mesmo jeito --- como num app real quando ninguém responde. A chamada de IA fica FORA da transação, de propósito.\\
 \rota{GET /\allowbreak{}runs/\allowbreak{}boot} & \cd{estudante} & O bootstrap do aparelho --- o que a tela de entrada precisa saber.\par Só os RÓTULOS dos lados --- os únicos campos do antagonismo que o cliente pode ver antes da revelação. Zero lado/intensidade dos posts.\\
+\bottomrule
+\end{tabularx}
+
+\section{salas}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}salas/\allowbreak{}minhas} & \cd{estudante} & As salas do estudante: as turmas dele e a grade de cada uma.\par Devolve a grade INTEIRA da série da turma, não só o que está aberto: missão bloqueada aparece com \textbf{cadeado} e a encerrada aparece com o rótulo. Quem decide o que abre é o \cd{estado}.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{bloqueada} \textbf{não é um estado do banco} --- é a ausência de linha em \cd{liberacoes}.\par \hspace*{1em}\textbullet{} Sem turma, \cd{salas} volta VAZIO: sem sala não há missão, e é a tela que explica que falta enturmar.\par \hspace*{1em}\textbullet{} Esconder o card é UX. A porta é \cd{exigirMissaoLiberada}, na entrada de cada experiência --- \cd{/\allowbreak{}exp/\allowbreak{}:expId} é endereço adivinhável.\\
+\zebra \rota{GET /\allowbreak{}salas/\allowbreak{}turma/\allowbreak{}\{turmaId\}} & \cd{professor}, \cd{gestor}, \cd{admin-contrato} & A sala: a turma, a grade de missões e quem liberou cada uma.\par A grade é a das experiências da SÉRIE da turma mais as transversais (\cd{series: []}). \cd{?todas=1} acrescenta as de outras séries, marcadas com \cd{deOutraSerie} --- turma multisseriada e reforço existem, mas trazê-las por padrão afogaria a grade do ano.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Turma em que o professor não tem matrícula responde \textbf{404}, não 403: um \enquote{sem permissão} já contaria que a turma existe.\par \hspace*{1em}\textbullet{} Gestor e admin-contrato leem a escola inteira, de propósito.\\
+\rota{PUT /\allowbreak{}salas/\allowbreak{}turma/\allowbreak{}\{turmaId\}/\allowbreak{}missoes/\allowbreak{}\{expId\}} & \cd{professor} & Libera ou encerra uma missão nesta turma.\par \textbf{Só quem tem matrícula de professor na turma.} Gestor não libera: ele vê a sala e não decide a aula --- a opção não aparece na tela dele e a rota responde 404 para turma que não é dele.\par Idempotente: repetir não muda nada além do carimbo.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Não existe estado \cd{bloqueada} no corpo: bloquear é a ausência de linha, e o caminho de volta é \cd{encerrada} --- a criança precisa continuar vendo o que fez.\par \hspace*{1em}\textbullet{} Recusa experiência de \cd{publico: professor} (exp-90, exp-91): liberar uma delas seria um botão que não abre nada, porque \cd{/\allowbreak{}exp/\allowbreak{}*} responde 404 para ferramenta de professor.\\
 \bottomrule
 \end{tabularx}
 

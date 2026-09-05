@@ -110,10 +110,26 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
   congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
 - **As turmas do professor são as em que ele tem matrícula.** `comum/turmas-do-professor.ts`
-  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`) é a porta única; os seletores do
+  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`, `professorEnsinaOEstudante`) é a
+  porta única; os seletores do
   UnooTube, da Vila e do unooGPT passam por ela. Antes, qualquer professor abria
   bem-estar e Vila de qualquer turma da escola, porque a única prova exigida era
   "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
+  **Rota de professor que recebe `turmaId` ou `estudanteId` passa pela porta —
+  TODA, inclusive a que só lê e a que APAGA.** Seis ficaram de fora até
+  2026-09-05, e o `@Roles("professor")` não protegia nada nelas: o "zerar turma"
+  da Vila e do unooGPT, os cartões da Vila, os dois relatórios individuais e o
+  **relógio da aula** do unooGPT — este último deixava um professor da escola dar
+  a largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O
+  molde certo é o `o-eco-no-grupo`, que nasceu depois da porta e passa
+  `professorDoToken` em todas.
+  **Tela de UMA criança usa `professorEnsinaOEstudante`, não `professorLeciona`**:
+  a pergunta ali não é "esta turma é minha?", é "esta criança é de alguma turma
+  minha?". Ele aceita a matrícula ativa **ou** o cache `users.turma_id` — as duas
+  fontes de propósito, porque as listagens destes módulos partem do cache, e
+  olhando só a matrícula o nome apareceria na folha e a tela dele responderia
+  "não encontrado". Prova em `tests/professor-por-matricula-tenancy.spec.ts`, que
+  roda como superusuário para a RLS não mascarar a falta do `where`.
 - **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
   silêncio. O sintoma é lista de pessoas "sem turma".
 - **ARMADILHA MAIOR, e do lado oposto**: `users`, `turmas` e `lotacoes` estão
@@ -125,9 +141,14 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   listava crianças de TODAS as escolas do contrato (ADR-49).
   `tests/perfis-distribuicao-tenancy.spec.ts` roda como superusuário de
   propósito, para a RLS não mascarar a falta do `where`.
-- **A atividade do Instanooria declara a turma** (`exp_01_activities.turma_id`,
-  ADR-49). `NULL` = atividade anterior à coluna, que vale para a escola inteira —
-  e o painel DIZ isso numa faixa. Com turma, painel, listagem de perfis,
+- **A atividade do Instanooria declara a turma, e desde 2026-09-05 é
+  OBRIGATÓRIO** (`exp_01_activities.turma_id`, ADR-49 revista pela ADR-69).
+  `POST /atividades` exige `turmaId` e o "Todas as turmas da escola" saiu do
+  formulário: era ele que fazia 2EM-A e 2EM-B virarem uma lista só no painel de
+  perfis, no monitor e na análise. A **coluna** continua anulável e sem backfill
+  — `NULL` = atividade anterior à mudança, que vale para a escola inteira, e o
+  painel DIZ isso numa faixa; `ondeAAtividadeVale` continua lendo as duas formas.
+  Com turma, painel, listagem de perfis,
   importação da Vila e `POST /runs` falam todos da MESMA sala; a turma é
   conferida contra a MATRÍCULA (`professorLeciona`), nunca contra a escola do
   token. Sem o ajuste no `POST /runs`, o estudante do 8B entrava na atividade do 8A.
@@ -136,6 +157,39 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   `turmaDestinoId`) é UM passo: à mão, o gestor tira da antiga e esquece de pôr
   na nova, e o estudante fica sem turma — invisível para o professor, sem nada na
   tela dizendo o que faltou.
+
+## A sala de aula: a missão dentro da turma (2026-09-05, ADR-69)
+
+`liberacoes` (turma × experiência × estado) é a camada que faltava entre
+`turmas` e `experiencias`. **Sem linha, a missão não abre para aquela sala.**
+
+- **A porta é `comum/liberacao.ts#exigirMissaoLiberada`**, e ela fica no FUNIL
+  das rotas de estudante de cada experiência — `estudanteDaEscola` no UnooTube e
+  no Eco, `garantirSessao` no unooGPT, `abrir` na Vila, e o controller em
+  `POST /runs` + `GET /runs/boot` (a exp-01 é a única cuja entrada está no
+  controller). Pô-la só na rota de leitura deixa a de escrita aberta a quem
+  chamar direto: no UnooTube, `POST /salvos` cria a sessão sozinho.
+- **Fica na CRIAÇÃO da sessão, não em toda rota.** Quem já entrou fica —
+  encerrar fecha a entrada, não expulsa a criança no meio da aula.
+- **Experiência nova declara o próprio `EXP_ID`** (`comum/insta/defaults.ts`,
+  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`,
+  `o-eco-no-grupo/midia.ts`) e ele tem de bater com o `id` do
+  `public/experiencia.json`. Divergir faz a missão NUNCA abrir, com a liberação
+  gravada e visível na tela do professor — não há erro que aponte para isso.
+- **`bloqueada` não é estado do banco**: é a ausência de linha. E ela aparece na
+  tela COM CADEADO, não some — a grade do ano é a promessa do que vem depois.
+  `encerrada` também continua visível, com o rótulo.
+- **`exp_id` não tem FK** para `experiencias`: aquele catálogo é escrito pelo CI
+  ao publicar, e em dev está vazio. Quem o preenche em dev é o seed
+  (`prisma/catalogo-e-liberacoes.ts`, lendo os mesmos manifestos que o CI envia)
+  — **sem catálogo não há grade**, e o professor abre a sala sem nada para liberar.
+- **Estudante sem turma não vê missão nenhuma**, e isso mudou o comportamento da
+  exp-03 (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
+  missão; quem explica é a tela do hub, porque um erro dentro do aparelho não
+  diria "peça para a coordenação te matricular" sem sair do disfarce.
+- **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
+  Quatro suítes quebraram quando a guarda entrou — quem quebrar com
+  `missao-nao-liberada` não tem bug, tem fixture faltando.
 
 **Pessoa NASCE por importação — e o cadastro unitário DELEGA a ela.** As
 chamadas que ESCREVEM em `users` continuam sendo duas:

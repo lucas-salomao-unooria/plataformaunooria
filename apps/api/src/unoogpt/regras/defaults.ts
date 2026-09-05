@@ -19,6 +19,14 @@
  */
 
 /**
+ * O slug desta experiência no catálogo (`experiencias.exp_id`) e no bucket.
+ * É o que a porta da sala (`comum/liberacao.ts`) pergunta. Tem de bater com o
+ * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
+ * liberação gravada e visível na tela do professor.
+ */
+export const EXP_ID = 'exp-03-unoogpt';
+
+/**
  * Teto de tokens de SAÍDA do Cientista, por chamada.
  *
  * Não é o que dá FORMA à resposta — quem faz isso é a guarda de 450 caracteres
