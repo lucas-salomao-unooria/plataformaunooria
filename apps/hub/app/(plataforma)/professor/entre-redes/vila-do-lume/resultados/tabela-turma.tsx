@@ -30,7 +30,7 @@ export function TabelaTurma({
 }) {
   const lista = estudantes ?? [];
   return (
-    <div className="overflow-x-auto">
+    <div className="tabela-rolavel">
       <table className="w-full min-w-[640px] border-collapse text-[13px]">
         <thead>
           <tr className="border-b border-unooria-neutral-200 text-left text-[12px] uppercase tracking-wider text-unooria-neutral-500">

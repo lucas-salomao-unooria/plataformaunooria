@@ -47,7 +47,11 @@ ela saiu junto com a decisão (\adrr{ADR-33}).
 \zebra \env{OIDC\_AUDIENCE} & \cd{plataforma-api} & Audiência exigida no
   \emph{token}.\\
 \env{CORS\_ORIGINS} & hub + \emph{dev servers} & Lista explícita, separada por
-  vírgula. \textbf{Nunca} \cd{*}.\\
+  vírgula. \textbf{Nunca} \cd{*}. \textbf{Toda porta de experiência nova entra
+  aqui} --- e no \emph{fallback} do \arq{main.ts}, que já ficou duas versões
+  atrás da realidade: a experiência abre e morre em \enquote{\cd{Failed to
+  fetch}}, como se a API estivesse fora do ar, e o erro fala de CORS em vez da
+  porta que faltou.\\
 \zebra \env{PORT} & \cd{3001} & Porta HTTP.\\
 \bottomrule
 \end{tabularx}

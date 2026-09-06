@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
 } from "@/lib/entre-redes/catalogo";
 
 import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
+import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
 import { ResultadosUnooTube } from "./resultados-unootube";
 
@@ -45,6 +47,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
     return <ResultadosOEcoNoGrupo ano={ano} missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
+    return <ResultadosRastroBoato ano={ano} missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

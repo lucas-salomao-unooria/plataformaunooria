@@ -199,6 +199,19 @@ export default async function ResultadosDaVilaPage({
             </Card>
           ) : null}
 
+          {/* Destrutivo, e atrás de confirmação — mas ACIMA da lista, não
+              depois dela: a tabela rola dentro do próprio quadro e a ação ficava
+              escondida atrás da turma inteira. Longe do seletor de turma, que
+              continua no topo: um clique errado lá troca de turma, e o seguinte
+              apagaria a turma errada. */}
+          <div className="flex justify-end">
+            <ZerarTurma
+              turmaId={turma}
+              nomeDaTurma={turmas.find((t) => t.id === turma)?.nome ?? "esta turma"}
+              partidas={resumo.jogaram}
+            />
+          </div>
+
           <Card variant="elevated" title="Estudante por estudante">
             <TabelaTurma estudantes={estudantes} rotaBase={rota} />
           </Card>
@@ -207,14 +220,6 @@ export default async function ResultadosDaVilaPage({
             <LinkButton href={`${rotaBase}?turmaId=${encodeURIComponent(turma)}`} variant="secondary">
               Atualizar
             </LinkButton>
-            {/* Destrutivo, e por isso no fim da página e atrás de confirmação —
-                nunca ao lado do seletor de turma, onde um clique errado troca
-                de turma e o seguinte apaga a turma errada. */}
-            <ZerarTurma
-              turmaId={turma}
-              nomeDaTurma={turmas.find((t) => t.id === turma)?.nome ?? "esta turma"}
-              partidas={resumo.jogaram}
-            />
           </div>
         </>
       )}

@@ -5,6 +5,7 @@ import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
@@ -13,6 +14,7 @@ import {
 
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
+import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
 import { MissaoUnooTube } from "./missao-unootube";
 
@@ -73,6 +75,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
     return <MissaoOEcoNoGrupo ano={ano} missao={comFicha} />;
+  }
+  if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
+    return <MissaoRastroBoato ano={ano} missao={comFicha} />;
   }
   return <MissaoInstanooria ano={ano} missao={comFicha} />;
 }

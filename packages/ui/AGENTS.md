@@ -98,3 +98,36 @@ manifesto.
 Sobrescrever classe do DS exige DOIS seletores (`.app-shell > .x`): o CSS do
 pacote é injetado pelo módulo do componente, ou seja, DEPOIS do CSS da
 experiência no grafo de importação — com peso igual, quem ganha é sempre o DS.
+
+**A seção `unooria` tem DOIS pedidos abertos, os dois do hub (2026-09-05), e as
+compensações estão em `styles/plataforma.css`:**
+
+- **`Table` sem cabeçalho fixo.** `TableProps` não publica `stickyHeader` nem
+  `maxHeight`, e o `.unooria-table-container` só rola na horizontal. Numa turma
+  de 40 estudantes o cabeçalho sai da tela junto com a página. Compensação:
+  **`.tabela-rolavel`** — dá altura máxima ao contêiner (tela útil menos o
+  cromo, piso de 20rem) e gruda o `<th>`. Serve às duas famílias de tabela do
+  hub: a `<table>` crua (onde SUBSTITUI o `overflow-x-auto`, não convive com
+  ele) e a do DS (`className="tabela-rolavel"` — o `Table` repassa `className`
+  ao contêiner). O fundo do cabeçalho é herdado em cadeia e os seletores da
+  cadeia vão em `:where()`: fixar branco apagaria o `bg-unooria-neutral-100` que
+  algumas telas põem no `<thead>`. **A `<table>` é elo obrigatório dessa
+  cadeia** — o pai do `<thead>` é ela, não o contêiner, e sem esse elo o
+  `inherit` pega o transparente da tabela: o cabeçalho gruda mas fica VAZADO, e
+  as linhas passam por baixo dele. Tabela de listagem NOVA no hub nasce com a
+  classe; a exceção é o guia da aula, que é material de projeção e não rola.
+  **Antes de aplicá-la a uma tabela larga, confira a soma das colunas**: a
+  rolagem vertical torna VISÍVEL um transbordo horizontal que já existia e
+  ninguém via (medido em `/admin/usuarios`: 9 colunas somando 1199px num
+  contêiner de 1178). O conserto é dar `width` à coluna de ação — sem ela o
+  algoritmo da tabela reparte a folga entre as colunas de texto e os botões
+  quebram em duas linhas, engordando TODAS as linhas — e ceder os pixels que
+  faltam numa coluna que já trunca.
+- **`Button` sem variante de perigo discreta.** Compensação: **`.acao-destrutiva`**
+  sobre `variant="outline"`.
+
+**Variante que não existe não é erro de compilação — é botão sem cor.** O
+`Button` monta a classe por interpolação (`unooria-button--variant-${variant}`),
+então `variant="tertiary"` vira uma classe que folha nenhuma define e o botão
+perde fundo, cor e borda. O typecheck não pega. `ButtonVariant` é
+`primary | secondary | outline | ghost | danger` — e só.

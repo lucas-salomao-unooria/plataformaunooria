@@ -86,7 +86,7 @@ experiência desaparecer da tela sozinha.
 `/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
 5173 exp-01, 5174 exp-02, 5175 exp-90, 5176 exp-91, 5177 exp-70, 5178 exp-03,
-5179 exp-07);
+5179 exp-07, 5181 exp-06 — a 5180 é da exp-92);
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
@@ -110,7 +110,7 @@ não do ano letivo, e o 7º ano viria depois do 8º.
 para `unidade`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
-Só a exp-07 tem teste cobrando as três; a exp-02 já vivia divergente.
+A exp-07 e a exp-06 têm teste cobrando as três; a exp-02 já vivia divergente.
 
 **A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
 "estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em

@@ -176,8 +176,14 @@ export async function ResultadosOEcoNoGrupo({
             </ul>
           </Card>
 
+          {/* Zerar vem ACIMA da lista, não depois dela: a tabela tem uma linha
+              por estudante e rola dentro do próprio quadro, e a ação ficava atrás
+              de toda a rolagem. A proteção continua sendo o diálogo, não a
+              distância. */}
+          <ZerarTurmaEco turmaId={turma} nomeDaTurma={painel.turma.nome} />
+
           <Card variant="elevated" title={`${painel.turma.nome} · ${painel.turma.serie}`}>
-            <div className="overflow-x-auto">
+            <div className="tabela-rolavel">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
@@ -220,8 +226,6 @@ export async function ResultadosOEcoNoGrupo({
               </table>
             </div>
           </Card>
-
-          <ZerarTurmaEco turmaId={turma} nomeDaTurma={painel.turma.nome} />
         </>
       )}
     </div>

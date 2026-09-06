@@ -151,7 +151,7 @@ export function PainelRevisao({
       */}
       {dados && dados.matriz.length > 0 ? (
         <Card variant="outlined" title="Cobertura por lado e perfil">
-          <div className="overflow-x-auto">
+          <div className="tabela-rolavel">
             <table className="w-full min-w-[520px] border-collapse text-[13px]">
               <thead>
                 <tr>

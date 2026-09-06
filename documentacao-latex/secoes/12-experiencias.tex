@@ -21,15 +21,17 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{unootube}\\
 \cd{exp-03-unoogpt} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
+\zebra \cd{exp-06-rastro-boato} & \cd{6EF} & estudante &
+  telemetria, progresso, avaliacao & \arq{rastro-boato}\\
+\cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
   telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -44,6 +46,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{exp-70-vila-do-lume} & \cd{5177} & \rota{/exp/exp-70-vila-do-lume}\\
 \zebra \cd{exp-03-unoogpt} & \cd{5178} & \rota{/exp/exp-03-unoogpt}\\
 \cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
+\zebra \cd{exp-06-rastro-boato} & \cd{5181} & \rota{/exp/exp-06-rastro-boato}\\
 \bottomrule
 \end{tabularx}
 
@@ -676,6 +679,155 @@ escuro. Os wireframes descrevem telas claras; o que está em produção é o esc
 e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
 \cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
 \enquote{sem consumidor} até aqui.
+
+
+% ---------------------------------------------------------------------------
+\section{exp-06 --- O Rastro do Boato}
+\label{sec:exp-06}
+
+\textbf{6º ano · Unidade 2 · clone de mensageiro móvel · \cd{whatsappmobile}}
+
+Um aviso de que a água da escola está contaminada corre quatro grupos em dez
+minutos --- 480 encaminhamentos --- e a nota da direção com o laudo do
+laboratório sai do lugar 12 vezes. O estudante abre os \textbf{dados de envio}
+de cada mensagem (quantos saltos anônimos, quem assinou, quando ela apareceu
+pela primeira vez), descobre que o alerta veio de seis encaminhamentos sem autor
+--- e decide o que fazer quando chega um áudio convocando um protesto. Depois vê
+a própria decisão desenhada como topologia de rede.
+
+\subsection{Como ela se separa da exp-07}
+
+As duas são clone de mensageiro sobre boato, com duas aulas e breakpoint. O que
+as separa é o \textbf{objeto de análise}, e a distinção é deliberada:
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X X@{}}
+\toprule
+\headrow \thd{} & \thd{exp-06 (6º ano)} & \thd{exp-07 (7º ano)}\\
+\midrule
+O que se audita & dados de ENVIO: saltos, autoria, carimbo &
+  o RECORTE: o parágrafo que o print cortou\\
+\zebra A intervenção & denunciar e fixar o laudo oficial &
+  responder citando a matéria completa\\
+A revelação & a TOPOLOGIA: 1.200 conexões, ou a corrente cortada no nó 3 &
+  a reportagem íntegra, com o trecho suprimido em destaque\\
+\zebra Habilidade & \cd{EF06CO01}, \cd{EF06CO07}, \cd{EF06CO08} &
+  \cd{EF07CO01}\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O portão que a missão existe para instalar}
+
+Decidir sem ter aberto os dados de \textbf{três mensagens distintas} é
+\textbf{recusado} (\cd{auditoria-insuficiente}, 409). Distintas é a palavra que
+faz o trabalho: reabrir o mesmo balão é releitura --- devolve 200 com
+\cd{novo: false} e não conta de novo, porque reler é o comportamento que a
+missão quer. A dedupe é do servidor (\arq{regras/auditoria.ts}) e tem um
+\cd{UNIQUE} no banco como rede: um contador incrementado no cliente seria um
+número que o estudante controla.
+
+As três fontes que sustentam a descoberta ficam em \textbf{conversas
+diferentes} de propósito --- o boato no grêmio, a amplificação anônima na turma
+e o laudo no grupo do bairro. Empilhá-las num chat só faria a auditoria caber
+numa rolagem, e a Etapa~2 perderia a navegação que ela mede.
+
+\subsection{As duas aulas, e quem separa uma da outra}
+
+\cd{exp\_06\_gates\_turma} guarda uma etapa por turma
+(\cd{aula1 | aula2}), e a professora a move por \textbf{um} botão no painel de
+resultados --- e o inverso dele. São duas etapas, não as quatro da exp-07: o
+debate desta missão acontece \emph{depois} do mapa, com a turma toda já na Aula
+2, e não há o que congelar no meio. Gate que ninguém aperta enche o painel de
+controle morto.
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Etapa} & \thd{Piso} & \thd{Teto --- e por quê}\\
+\midrule
+\cd{aula1} & \cd{contexto} & \cd{breakpoint}: quem decide cedo veria o mapa
+  sozinho, e o Aha! foi desenhado para a turma ler os nós junta\\
+\zebra \cd{aula2} & \cd{resultado} & \cd{fim}\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{O latch é do estudante, não da turma.} \enquote{Pausar simulação} volta
+a etapa para \cd{aula1}, mas quem já entregou o percurso continua em \cd{fim}:
+uma volta de etapa não pode desfazer um registro que a criança fechou.
+\end{nota}
+
+\subsection{Encaminhar e calar não dão no mesmo número}
+
+O mapa da Etapa~4 desenha o alcance real de cada caminho: \textbf{1.200}
+conexões para quem encaminhou, \textbf{850} para quem apagou para si, e a
+corrente cortada no nó 3 para quem denunciou e fixou o laudo. A diferença entre
+1.200 e 850 é o ponto da missão --- se os dois empatassem, a tela ensinaria que
+a inação é neutra, e o que a missão descobre é o contrário.
+
+Na interrupção os anéis evitados \textbf{continuam na tela, apagados}: o
+estudante precisa ver o que \emph{não} aconteceu, e um grafo que simplesmente
+acaba no nó 3 não mostra o que foi evitado.
+
+\subsection{1.200 nós, e nenhum deles no DOM}
+
+O cálculo da malha é do servidor (\arq{regras/topologia.ts}), por duas razões, e
+a segunda dita a forma:
+
+\begin{enumerate}
+  \item \textbf{Segredo de servidor.} A matriz de propagação é parte do
+    gabarito: com ela no bundle, o estudante lê no DevTools que a opção B corta
+    a corrente \emph{antes} de escolher, e a decisão que a missão mede deixa de
+    ser uma decisão (regra inviolável nº 3).
+  \item \textbf{Performance no aparelho da escola.} 1.200 elementos SVG numa
+    thread de Chromebook de entrada engasgam. A resposta não é desenhar menos e
+    mentir no número: cada anel traz \cd{nos} (o total REAL, que a legenda
+    escreve por extenso) e \cd{desenhar} (quantos círculos pôr no DOM, teto de
+    36). A mancha comunica a escala; o texto dá o número. A suíte de ponta a
+    ponta conta os círculos --- 133, não 1.200.
+\end{enumerate}
+
+\subsection{Zero IA, e a ausência é o desenho}
+
+Nenhuma chamada a \arq{apps/api/src/ai}, nenhum token de quota
+(\cd{RNF-CUST-001}). Reações do grupo, topologia e validação do ciclo saem do
+catálogo e das regras puras. Uma aula de 35 minutos não pode depender de o
+Vertex estar de pé, e esta missão não precisa de linguagem gerada: o que ela
+mede é leitura de metadados e uma escolha.
+
+\subsection{Onde a fronteira do disfarce cai}
+
+O disfarce vale \textbf{até o fim da Etapa~3}. Do breakpoint em diante quem
+fala é a escola: a espera entre as aulas, o gráfico das curvas, o mapa da rede,
+o construtor do ciclo e o \enquote{Meu percurso}.
+
+Os wireframes põem a Etapa~4 dentro do clone, como \enquote{painel de métricas
+do grupo}. O aplicativo real \textbf{não tem} visualizador de topologia de rede
+--- inventar essa tela dentro do disfarce quebraria o teste de fidelidade que o
+próprio QA de design aplicou, e é o oposto da verossimilhança seletiva, que
+admite ausências e não invenções. É a mesma decisão que o ranking da exp-02 já
+tinha tomado: \emph{a linha é a revelação, não o arquivo} (\adrr{ADR-72}).
+
+\subsection{O clone é escuro, e o tema claro do PRD cedeu}
+
+A seção \cd{whatsappmobile} publica exclusivamente o tema escuro. O PRD desta
+missão crava \enquote{tema claro forçado} e descreve balões verdes sobre fundo
+branco; derivar uma paleta clara aqui é proibido (é a mesma regra do
+\cd{unitube}), e o contraste do escuro passa o \cd{RNF-ACES-001} com folga
+(\adrr{ADR-68}).
+
+\begin{limitacao}
+\textbf{Nenhum áudio foi gravado.} Os três áudios diegéticos e o episódio de
+recapitulação existem apenas como transcrição --- que está \emph{sempre} na
+tela, por acessibilidade (\cd{RNF-ACES-002}), não como substituto. Quando a
+locução chegar, ela entra ao lado do texto, nunca no lugar dele. A missão roda
+inteira assim, e a suíte de ponta a ponta a percorre sem áudio nenhum.
+\end{limitacao}
+
+\begin{limitacao}
+\textbf{Duas pendências de governança pedagógica} seguem abertas no insumo:
+os nomes formais do autor e do revisor da matriz do gabarito, e a confirmação do
+batimento da unidade na grade anual da rede parceira. Nenhuma delas impede a
+codificação; as duas impedem o status \enquote{aprovado} do PRD.
+\end{limitacao}
 
 
 \section{exp-70 --- Vila do Lume}

@@ -122,7 +122,7 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
 | `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
 | `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 INTEIRA, menos as telas da escola (breakpoint, cards, "Meu percurso") — **só tema escuro** |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 e a exp-06, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp-06 o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |
 
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
@@ -308,8 +308,11 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **72**; a 65 era a lacuna e foi ocupada — reserve
-  conferindo `origin/dev`), `main.pdf` (regera, não escolhe lado),
+  (a PRÓXIMA é a **73**: a 65 foi ocupada pelo guia da aula e a 72 pela
+      fronteira do disfarce da exp-06 — três frentes fecharam ADR em
+      2026-09-06 e duas colidiram na 65, então conferir `origin/dev` não
+      basta: confira também as branches de trabalho abertas),
+  `main.pdf` (regera, não escolhe lado),
   `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
@@ -395,6 +398,9 @@ pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-d
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
 pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
                                           # o professor prepara a mídia no painel antes da aula)
+pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
+                                          # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
+                                          # gravado — a transcrição está sempre na tela.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
