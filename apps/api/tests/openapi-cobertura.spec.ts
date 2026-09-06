@@ -44,7 +44,7 @@ const ENV_MINIMA: Record<string, string> = {
  * aquelas exceções são permanentes e estas são dívida, com data para acabar.
  */
 const SEM_CONTRATO_AINDA = new Set<string>([
-  /* VAZIA. As 146 rotas declaram contrato. Acrescentar uma linha aqui é uma
+  /* VAZIA. Todas as rotas declaram contrato. Acrescentar uma linha aqui é uma
      decisão explícita, e o teste abaixo cobra que ela não fique para trás. */
 ]);
 

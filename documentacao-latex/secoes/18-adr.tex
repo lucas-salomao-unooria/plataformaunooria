@@ -9,6 +9,12 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
+São \textbf{70 decisões}, numeradas até ADR-71: \textbf{não existe ADR-65}. O
+número foi perdido numa colisão entre duas frentes paralelas que reservaram o
+mesmo identificador (o risco que a \adrr{ADR-61} registra). O buraco fica ---
+renumerar quebraria as referências cruzadas deste documento e as citações que
+já existem no código.
+
 \section{Índice}
 
 \begin{tabularx}{\linewidth}{@{}L{16mm}X L{18mm} L{20mm}@{}}
@@ -911,7 +917,9 @@ chegaria a um JSONB de 90 dias.
 \textbf{Decisão.} A transcrição vive em coluna dedicada
 (\cd{exp\_03\_mensagens.texto}), com RLS por escola, e é servida
 \textbf{apenas ao professor}: \cd{UnoogptTurmasController} tem
-\cd{@Roles("professor")}, e o agregado do gestor está em
+\cd{@Roles("professor", "admin-contrato")} --- e \cd{admin-contrato} é a
+exceção cross-escola de sempre, não o gestor ---, enquanto o agregado do gestor
+está em
 \cd{UnoogptAgregadoController}, que \textbf{não tem nenhuma rota que aceite
 \cd{estudanteId}}. Ela nunca vai a log nem à telemetria.
 
@@ -1117,12 +1125,15 @@ entre elas. O modelo tinha \cd{users.escola\_id} \textbf{único}, e ele é a cha
 de \emph{tenancy}: circula no \emph{claim} \cd{escola\_id} do JWT e no
 \cd{set\_config} da RLS. Um professor em duas escolas não caberia nele.
 
-O tamanho do problema, medido: \textbf{31 tabelas} carregam \cd{escola\_id} e
-\textbf{19 arquivos} da API derivam a escola do \emph{token}.
+O tamanho do problema, medido: \textbf{38 tabelas} carregam \cd{escola\_id} e
+\textbf{23 arquivos} da API derivam a escola do \emph{token}. (Números de
+2026-09-05; eram 31 e 19 quando a decisão foi tomada. A diferença é o custo que
+a alternativa descartada teria hoje --- ele só cresce, e é por isso que a
+medida é refeita em vez de citada.)
 \end{especificacao}
 
 \textbf{Decisão.} O \emph{token} continua carregando \textbf{UMA} escola. Nenhuma
-das 31 tabelas muda, nenhum dos 19 arquivos muda, a RLS continua sendo
+das 38 tabelas muda, nenhum dos 23 arquivos muda, a RLS continua sendo
 \cd{escola\_id = current\_setting('app.escola\_id')} e a regra inviolável nº 1
 continua literalmente verdadeira. O que entra é a camada \emph{acima}:
 
@@ -1144,7 +1155,7 @@ continua literalmente verdadeira. O que entra é a camada \emph{acima}:
 \textbf{Alternativas descartadas.}
 \begin{itemize}
   \item \emph{\emph{Token} com várias escolas e RLS em \cd{= ANY(...)}}: tocaria
-    as 31 tabelas e trocaria a garantia \enquote{esta conexão vê UMA escola} por
+    as 38 tabelas e trocaria a garantia \enquote{esta conexão vê UMA escola} por
     \enquote{vê um conjunto}. A propriedade que sustenta o isolamento de um
     contrato B2G é justamente a primeira.
   \item \emph{Um usuário por escola (dois cadastros para o mesmo professor)}: é o
@@ -1173,7 +1184,7 @@ continua literalmente verdadeira. O que entra é a camada \emph{acima}:
 
 \textbf{Gatilho de reavaliação.} Um contrato em que a MESMA pessoa precise ver
 duas escolas ao mesmo tempo na mesma tela --- aí a conversa volta para o
-\emph{token} com conjunto de escolas, e com ela o custo nas 31 tabelas.
+\emph{token} com conjunto de escolas, e com ela o custo nas 38 tabelas.
 
 % ---------------------------------------------------------------------------
 \section{ADR-31 --- CPF como identidade, guardado só em \emph{hash}}
@@ -1270,7 +1281,7 @@ quando), nunca o conteúdo dos instrumentos.
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
-  \item \emph{Reescrever \cd{escola\_id} nas 31 tabelas na transferência}: apaga
+  \item \emph{Reescrever \cd{escola\_id} nas 38 tabelas na transferência}: apaga
     de onde o fato veio. \enquote{Esta criança respondeu isso na escola A, em
     2026} deixaria de ser recuperável, e um \emph{UPDATE} em massa por
     transferência é a operação mais fácil de deixar pela metade.
@@ -1426,7 +1437,7 @@ admin do contrato confirma antes de conceder.
     Pior: transformaria uma coluna \emph{organizacional} em coluna de segurança,
     e a RLS deixaria de ser legível numa linha.
   \item \emph{\cd{regional\_id} no \emph{token}, com a api somando as escolas
-    da diretoria}: quebraria a regra 1 em todas as 31 tabelas com \cd{escola\_id}
+    da diretoria}: quebraria a regra 1 em todas as 38 tabelas com \cd{escola\_id}
     e daria ao supervisor uma tela que mistura duas escolas --- que é
     precisamente o que o isolamento lógico existe para impedir.
   \item \emph{Aceitar o critério no lugar da lista} (\enquote{lote todos da
@@ -1438,7 +1449,7 @@ admin do contrato confirma antes de conceder.
 \textbf{Consequências.}
 \begin{itemize}
   \item \textbf{Nada mudou na tenancy.} O \emph{token} continua carregando uma
-    escola, a política de RLS continua sendo a mesma linha, e as 31 tabelas com
+    escola, a política de RLS continua sendo a mesma linha, e as 38 tabelas com
     \cd{escola\_id} não foram tocadas. O nível regional inteiro vive acima delas.
   \item A regional \textbf{não recebe lotação}: \cd{lotarEmLote} ignora o que não
     for \cd{tipo = 'escola'} e devolve a lista de ignoradas. Lotar alguém numa
@@ -1580,7 +1591,9 @@ de ser documento assinado em vez de integração.
 \label{adr:openapi-derivado}
 
 \begin{especificacao}{Contexto}
-A api tem 146 rotas em 27 \emph{controllers} e nenhuma documentação executável:
+A api tinha 146 rotas em 27 \emph{controllers} e nenhuma documentação executável
+(hoje são 170 operações em 32 \emph{controllers} --- o inventário cresce, a
+decisão não muda):
 quem quisesse saber o que \rota{POST /rostering/importar} aceita lia o
 \emph{controller}. A única descrição existente é o Apêndice~\ref{ap:endpoints}
 deste documento --- prosa escrita à mão, que nada obriga a concordar com o
@@ -1661,8 +1674,9 @@ Três decisões dentro dessa:
     roteador e cobra \cd{@Contrato} de toda rota, salvo as nomeadas numa lista
     explícita --- o mesmo molde do \cd{SEM\_CHAVE\_POR\_DECISAO} de
     \cd{identidade-unica.spec.ts}, com a diferença de que aquelas exceções são
-    permanentes e estas eram dívida. \textbf{A lista está vazia}: as 146 rotas
-    declaram contrato, e rota nova sem ele é teste vermelho.
+    permanentes e estas eram dívida. \textbf{A lista está vazia}: todas as rotas
+    declaram contrato (170 operações em 2026-09-05), e rota nova sem ele é teste
+    vermelho.
   \item \textbf{O Apêndice~\ref{ap:endpoints} deixou de ser escrito à mão.} Ele
     é gerado do \arq{docs/openapi.json}, que é gerado do \cd{@Contrato}. Eram
     547 linhas de prosa descrevendo 146 rotas sem que nada obrigasse essa prosa a
@@ -1789,6 +1803,28 @@ imagens passar de \textasciitilde 2\,min com a camada de dependências já em
 
 \section{ADR-39 --- Vulnerabilidade de dependência trava o portão, com prazo para os \emph{majors}}
 \label{adr:snyk-no-portao}
+
+\begin{atencao}
+\textbf{O portão descrito acima NÃO está ativo (situação em 2026-09-05).} O
+passo \cd{Snyk} do \arq{ci.yml} está \textbf{comentado} desde o \emph{commit}
+\cd{07d9ec0} (\enquote{\emph{chore: disable Snyk vulnerability scan in CI
+workflow}}). Enquanto ele estiver assim, \cd{high} e \cd{critical} não deixam o
+CI vermelho, e nada impede que uma dependência vulnerável suba.
+
+A consequência que dói mais é a de segunda ordem: o prazo de 2026-10-31 do
+\arq{apps/api/.snyk} era cobrado \emph{pelo próprio CI} --- vencido sem o
+\emph{upgrade}, o passo voltaria a falhar. Com o passo comentado, o prazo vence
+\textbf{em silêncio}, e o \arq{.snyk} passa a ser exatamente o que a alternativa
+descartada abaixo chama de armadilha: um registro em que todo mundo acredita e
+que nada cumpre --- a mesma forma do \cd{expires\_at} sem rotina.
+
+Isto está registrado aqui porque a ADR descrevia uma proteção que deixou de
+existir, e ADR que descreve o que não está no código é pior que ADR nenhuma.
+Reativar o passo é decisão de quem cuida do CI; o \arq{AGENTS.md} da raiz
+proíbe que um agente o faça por conta própria, e proíbe também rodar a varredura
+na sessão (\adrr{ADR-55}). O que muda com esta nota é que a ausência do portão
+deixou de ser invisível.
+\end{atencao}
 
 \begin{especificacao}{Contexto}
 A plataforma guarda dado de menor e roda em rede pública; dependência com
@@ -1928,9 +1964,11 @@ pessoa à área certa sem o \emph{client} conhecer o papel.
   \item \textbf{Cor de ícone vai pela \emph{prop} \cd{color} do \cd{Icon}}, não
     por classe: a folha do pacote vem depois no grafo de importação e, com peso
     igual, vence --- os ícones saíam pretos.
-  \item Os \emph{links} de Privacidade, Termos e Contato do rodapé apontam para
-    \cd{\#}, como no modelo: as páginas não existem. Pendência de produto, não
-    de código.
+  \item Os \emph{links} de Privacidade, Termos e Contato do rodapé apontavam
+    para \cd{\#}, como no modelo: as páginas não existiam. \textbf{Isso mudou
+    em 2026-09-05} --- Privacidade e Termos apontam para \rota{/privacidade} e
+    \rota{/termos} (\adrr{ADR-70}); só o Contato segue em \cd{\#}, e continua
+    sendo pendência de produto.
   \item Suíte própria (\arq{scripts/e2e/publico/01-landing.mjs}): fontes do
     DS carregadas (Open Sans e a de LIGADURA dos ícones), canvas com contexto,
     cor de fundo COMPUTADA do card de vidro, todo \cd{.landing-revelar} visível
@@ -1941,7 +1979,10 @@ pessoa à área certa sem o \emph{client} conhecer o papel.
 \textbf{Gatilho de reavaliação.} A plataforma ganhar uma área pública maior
 (institucional, ajuda, termos): aí a \emph{landing} vira um grupo de rotas
 \cd{(publico)} com \emph{layout} próprio, e os \emph{links} do rodapé deixam de
-ser \cd{\#}.
+ser \cd{\#}. \textbf{Disparou pela metade em 2026-09-05}: as duas páginas legais
+nasceram (\adrr{ADR-70}) e os \emph{links} delas deixaram de ser \cd{\#}, mas
+como rotas próprias --- o grupo \cd{(publico)} com \emph{layout} compartilhado
+ainda não existe, e nasce quando a terceira página pública aparecer.
 
 \section{ADR-41 --- O relatório do estudante sai do aparelho: o iframe expande, não remonta}
 \label{adr:relatorio-expandido}
@@ -2615,7 +2656,8 @@ mapeamento, e não ganha chave estrangeira}
 \label{adr:perfil-importado-versao}
 
 \begin{especificacao}{Contexto}
-\cd{vila\_sessoes} não tem prazo de retenção por uma decisão registrada em
+\cd{exp\_70\_sessoes} (chamada \cd{vila\_sessoes} até a \adrr{ADR-20}) não tem
+prazo de retenção por uma decisão registrada em
 \arq{20260826170000\_vila\_sem\_prazo}: o bruto do jogo é a ÚNICA fonte para
 recalcular o perfil quando \cd{VERSAO\_MAPEAMENTO} subir, e o mapeamento é
 hipótese de design que vai mudar.
@@ -3054,7 +3096,7 @@ já analisados e registrados, como o \emph{code injection} do \cd{setInterval} d
     o que custou descobrir. Gerador nenhum sabe disso.
 \end{itemize}
 
-\textbf{Consequências.} \emph{Ruim}: são dezenove pares de arquivos a manter, e
+\textbf{Consequências.} \emph{Ruim}: são vinte pares de arquivos a manter, e
 cada um pode envelhecer sozinho --- o custo é real e recai sobre a mesma pessoa.
 Mitigado por duas coisas: a proibição explícita de repetir conteúdo entre eles
 (cópia é o que ninguém atualiza junto) e o item novo na \emph{Definition of
@@ -3624,6 +3666,13 @@ um \emph{replay} auto-hospedado dentro do projeto do contrato.
 escrita à mão}
 \label{adr:worktree}
 
+\textbf{Complementada pela \adrr{ADR-71}} (2026-09-05), que responde o que esta
+não respondeu: \emph{worktree} separa a árvore de trabalho, não o TRABALHO ---
+e \arq{apps/api} e \arq{apps/hub} são comuns a todas as frentes. Lá está a
+regra da fatia vertical, a lista de costuras e o \cd{pnpm worktree criar}, que
+transforma o passo a passo abaixo em um comando (e escreve o \cd{origin/dev}
+que este parágrafo pede que se escreva à mão).
+
 \begin{especificacao}{Contexto}
 O fluxo da \adrr{ADR-53} e da \adrr{ADR-56} descreve \emph{branches}, não
 diretórios: pressupõe uma pessoa, uma cópia do repositório, uma tarefa por vez.
@@ -3664,7 +3713,8 @@ cópia principal e rodá-la de lá, um agente por vez.
 \arq{.gitignore} já cobre o caminho (\cd{.claude/*}), então o \emph{worktree}
 não aparece no estado da cópia principal. O ciclo de \emph{commit}, PR e
 promoção não muda em nada --- o \emph{worktree} é onde o trabalho acontece, não
-um fluxo novo. O passo a passo está em \arq{CONTRIBUTING.md}.
+um fluxo novo. O passo a passo está em \arq{CONTRIBUTING.md}, e desde a
+\adrr{ADR-71} ele é um comando: \cd{pnpm worktree criar}.
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
@@ -4084,7 +4134,8 @@ assets e servida como arquivo estático. Cinco movimentos:
     contrato novo dependeria de alguém rodar o script --- e o precedente é caro
     (a exp-02 subiu com o bucket vazio e a missão ficou impossível de concluir,
     sem nada falhar no deploy nem no log). O script existe
-    (\arq{scripts/smoke-midia-exp-07.ts}), como ferramenta de conferência.
+    (\arq{apps/api/scripts/smoke-midia-exp-07.ts}), como ferramenta de
+    conferência.
   \item \emph{Print inteiro gerado por IA}: manchete e parágrafos distorcidos, o
     trecho omitido ilegível, e o texto invisível para leitor de tela.
   \item \emph{WAV ou PCM}: não há ffmpeg neste repositório, e um WAV de 3m30
