@@ -67,8 +67,11 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por estudante\\
 \cd{exp\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
 \zebra \cd{exp\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
-\cd{exp\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
-\zebra \cd{exp\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+\cd{exp\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
+\zebra \cd{exp\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
+\cd{exp\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
+\zebra \cd{exp\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\cd{exp\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
   (\textbf{sensível})\\
 \bottomrule
 \end{tabularx}
@@ -933,6 +936,148 @@ ele depende de as três bolhas estarem na mesma sala.
 fora da RLS, com \cd{serie NULL} significando \enquote{vale para todas as séries
 da disciplina} (ex.: o currículo da rede). Escrita só pelo \emph{script} de
 importação.
+
+
+\subsection{\cd{exp\_92\_configuracoes}}
+
+A \textbf{regência}: o que o professor leciona, para quem e com quanta aula. É a
+entrada de todo o planejamento --- sem ela o plano anual distribuiria habilidades
+em \enquote{quatro bimestres} sem saber se cabem 200 aulas de Matemática ou 40 de
+Arte, e a diferença entre esses dois números é a diferença entre um plano
+executável e uma lista de intenções.
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{escola\_id} & \cd{TEXT} & RLS forçada\\
+\zebra \cd{professor\_id} & \cd{UUID} & Posse: o plano é autoral\\
+\cd{ano\_letivo} & \cd{SMALLINT} & \cd{CHECK} 2025--2100\\
+\zebra \cd{serie} & \cd{TEXT} & \cd{1EF}--\cd{9EF}, \cd{1EM}--\cd{3EM}\\
+\cd{componente} & \cd{TEXT} & \emph{Slug} do componente \textbf{da rede}
+  (\cd{biologia} é válido; as habilidades dele vêm da área)\\
+\zebra \cd{turma\_id} & \cd{UUID?} & Opcional de propósito: em novembro o
+  professor planeja o ano seguinte e a turma ainda não existe\\
+\cd{divisao\_do\_ano} & \cd{TEXT} & \cd{bimestral} \textbar{}
+  \cd{trimestral} \textbar{} \cd{semestral} (\cd{CHECK})\\
+\zebra \cd{periodicidade} & \cd{TEXT} & \cd{semanal} \textbar{} \cd{quinzenal}
+  (\cd{CHECK}) --- o passo do planejamento granular\\
+\cd{minutos\_por\_aula} & \cd{SMALLINT} & \cd{CHECK} 30--60. \textbf{Não} é
+  hora-relógio: é desta coluna que sai a conversão\\
+\zebra \cd{aulas\_semanais} & \cd{SMALLINT} & \cd{CHECK} 1--20 (o topo real é 10,
+  em Língua Portuguesa dos anos iniciais de São Paulo)\\
+\cd{grade} & \cd{JSONB} & \cd{[\{diaDaSemana, horarios[]\}]}. JSON porque é
+  configuração de UMA linha, lida inteira e nunca consultada por dentro\\
+\zebra \cd{incluir\_computacao} & \cd{BOOLEAN} & Sobrepõe a camada transversal
+  (Res. CNE/CEB nº 1/2022). A articulação é \textbf{inferência do produto}\\
+\cd{inicio\_do\_ano\_letivo} & \cd{DATE?} & A volta às aulas DESTA regência. Ver
+  a nota abaixo\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Restrição} & \thd{Por quê}\\
+\midrule
+\cd{UNIQUE(escola\_id, professor\_id, ano\_letivo, serie, componente)} &
+  Duas turmas do mesmo 7º ano de Matemática \textbf{compartilham} o
+  planejamento --- é o que o professor faz na prática, e forçar uma cópia por
+  turma multiplicaria o trabalho dele sem acrescentar informação.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\cd{inicio\_do\_ano\_letivo} existe por um bug. \cd{periodos\_letivos} é catálogo
+do CONTRATO e o \emph{seed} o preenche como ano \textbf{civil} (01/01--31/12);
+como o calendário do plano alinha cada período na segunda-feira, o professor que
+declarava 02/02/2026 recebia um 1º bimestre começando em \textbf{29/12/2025} ---
+e a tela pedia a data e a descartava em silêncio. \cd{NULL} significa
+\enquote{usa a sugestão do catálogo}, para as regências criadas antes da coluna.
+\end{atencao}
+
+\subsection{\cd{exp\_92\_planos\_anuais}}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{configuracao\_id} & \cd{UUID} & \cd{ON DELETE CASCADE}\\
+\zebra \cd{status} & \cd{TEXT} & \cd{pendente} \textbar{} \cd{gerando}
+  \textbar{} \cd{pronto} \textbar{} \cd{erro} (\cd{CHECK}). Mesma máquina de
+  estados da exp-90; o \emph{claim} atômico impede duas instâncias de gerar o
+  mesmo plano\\
+\cd{distribuicao} & \cd{JSONB} & \cd{\{"1": ["EF67LP08"], ...\}} --- a
+  \textbf{decisão humana} de que habilidade cai em que período de avaliação, e o
+  insumo do gerador\\
+\zebra \cd{distribuicao\_computacao} & \cd{JSONB} & Separada porque é
+  \textbf{sugestão}, não currículo do componente: não existe \emph{crosswalk}
+  normativo\\
+\cd{caminho\_gerado\_md} & \cd{TEXT?} & \emph{Bucket} privado, imutável\\
+\zebra \cd{caminho\_html} & \cd{TEXT?} & \emph{Bucket} privado, sanitizado\\
+\cd{tentativas} & \cd{SMALLINT} & Retomada de geração interrompida por
+  \emph{restart}, não de falha da IA\\
+\bottomrule
+\end{tabularx}
+
+\begin{decisao}{Por que a distribuição fica no banco e o documento no bucket}
+São coisas de naturezas diferentes. A distribuição é \textbf{dado
+estruturado} e é consultada (o plano de período pergunta \enquote{quais
+habilidades do 2º bimestre?}); o documento é \textbf{prosa} de 40--200\,KB que
+só se lê inteira. A separação também protege o professor: ele pode reescrever o
+texto todo sem que o sistema perca a distribuição --- e é ela que o plano de
+período precisa para ser gerado.
+\end{decisao}
+
+\subsection{\cd{exp\_92\_planos\_de\_periodo}}
+
+O plano granular de uma semana ou quinzena. Aqui as aulas são \textbf{dado
+estruturado}, e é essa escolha que faz o produto valer: o professor edita a aula
+de quinta sem tocar na de terça, o sistema sabe quantas aulas foram planejadas
+contra quantas existem, e o documento impresso nasce do dado em vez de pedir à
+IA que formate uma tabela.
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\cd{plano\_anual\_id} & \cd{UUID} & \cd{ON DELETE CASCADE}\\
+\zebra \cd{ordem} & \cd{SMALLINT} & 1 = primeira semana/quinzena do ano letivo\\
+\cd{inicio}, \cd{fim} & \cd{DATE} & \cd{CHECK fim >= inicio} --- a inversão que
+  um fuso mal convertido produz\\
+\zebra \cd{periodo\_de\_avaliacao} & \cd{SMALLINT} & \cd{CHECK} 1--4. Liga o
+  granular ao macro: é por aqui que a janela herda as habilidades do anual\\
+\cd{aulas} & \cd{JSONB} & Ver a estrutura abaixo\\
+\bottomrule
+\end{tabularx}
+
+Cada item de \cd{aulas}:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Campo} & \thd{Origem e nota}\\
+\midrule
+\cd{numero}, \cd{data}, \cd{diaDaSemana}, \cd{horario} &
+  \textbf{Do calendário}, nunca do modelo\\
+\zebra \cd{tema}, \cd{objetivo}, \cd{conteudo} & Da IA, editáveis\\
+\cd{habilidades[]} & Da IA, \textbf{filtradas} contra o recorte e contra o
+  catálogo --- a terceira barreira contra código inventado\\
+\zebra \cd{momentos} & \cd{retomada}, \cd{desenvolvimento},
+  \cd{sistematizacao}, \cd{fechamento}, cada um com \cd{o\_que} e
+  \cd{minutos}. \textbf{Não é enfeite}: é o que separa um plano de aula de uma
+  lista de conteúdos, e o que permite a um substituto assumir a turma\\
+\cd{recursos[]}, \cd{avaliacao}, \cd{tarefaDeCasa}, \cd{adaptacoes} & Da IA,
+  editáveis. \cd{avaliacao} é o que o professor OBSERVA nesta aula\\
+\zebra \cd{cumprida}, \cd{observacaoDoProfessor} & \textbf{Nunca da IA}:
+  preenchidos DEPOIS da aula. É o registro do que aconteceu, e é ele que faz o
+  plano deixar de ser intenção\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\cd{UNIQUE(escola\_id, plano\_anual\_id, ordem)}: uma janela tem um plano. A
+regeração sobrescreve em vez de acumular, porque duas versões da mesma semana
+não têm como conviver no caderno do professor.
+\end{nota}
 
 \subsection{\cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}}
 
