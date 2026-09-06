@@ -1,6 +1,7 @@
 import { GUIA_EXP_01 } from "./exp-01-instanooria";
 import { GUIA_EXP_02 } from "./exp-02-unootube";
 import { GUIA_EXP_03 } from "./exp-03-unoogpt";
+import { GUIA_EXP_06 } from "./exp-06-rastro-boato";
 import { GUIA_EXP_07 } from "./exp-07-o-eco-no-grupo";
 import { GUIA_EXP_70 } from "./exp-70-vila-do-lume";
 import type { GuiaDaAula } from "./tipos";
@@ -18,7 +19,7 @@ import type { GuiaDaAula } from "./tipos";
  * escrito, que aquela missão não terá um.
  */
 const GUIAS: ReadonlyMap<string, GuiaDaAula> = new Map(
-  [GUIA_EXP_01, GUIA_EXP_02, GUIA_EXP_03, GUIA_EXP_07, GUIA_EXP_70].map((guia) => [
+  [GUIA_EXP_01, GUIA_EXP_02, GUIA_EXP_03, GUIA_EXP_06, GUIA_EXP_07, GUIA_EXP_70].map((guia) => [
     guia.expId,
     guia,
   ]),
