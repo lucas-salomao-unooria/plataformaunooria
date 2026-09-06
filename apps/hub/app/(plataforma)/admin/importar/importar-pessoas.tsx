@@ -522,6 +522,7 @@ export function ImportarPessoas({
                 description="Guarde agora: estas senhas não aparecem de novo. Depois desta tela, o caminho é resetar a senha da pessoa em Usuários."
               />
               <Table<Credencial>
+                className="tabela-rolavel"
                 columns={colunasDeSenha}
                 data={relatorio.credenciais}
                 keyExtractor={(linha) => linha.usuario}
@@ -537,6 +538,7 @@ export function ImportarPessoas({
                 Avisos ({relatorio.avisos.length})
               </h2>
               <Table<ErroDeLinha>
+                className="tabela-rolavel"
                 columns={colunasDeErro}
                 data={relatorio.avisos}
                 keyExtractor={(linha) => `${linha.linha}-${linha.campo}`}
@@ -555,6 +557,7 @@ export function ImportarPessoas({
                 Corrija estas linhas no arquivo e importe de novo — as demais já entraram.
               </p>
               <Table<ErroDeLinha>
+                className="tabela-rolavel"
                 columns={colunasDeErro}
                 data={relatorio.erros}
                 keyExtractor={(linha) => `${linha.linha}-${linha.campo}-${linha.mensagem}`}
@@ -589,6 +592,7 @@ export function ImportarPessoas({
         </div>
         {assentos ? (
           <Table<ContaDeAssento>
+            className="tabela-rolavel"
             columns={[
               { key: "nome", title: "Nome" },
               { key: "usuario", title: "Login" },

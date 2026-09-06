@@ -343,7 +343,7 @@ export default async function EstudantePage({
           professor ler "acima da média" como sorte da rodada, não como mérito. */}
       {relatorio.tentativas.length > 0 && (
         <Card variant="elevated" title="O desfecho de cada tentativa">
-          <div className="overflow-x-auto">
+          <div className="tabela-rolavel">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="text-[11px] uppercase tracking-widest text-unooria-neutral-500">

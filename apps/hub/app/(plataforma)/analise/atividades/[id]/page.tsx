@@ -93,7 +93,7 @@ export default async function AnaliseDaAtividadePage({
             </p>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="tabela-rolavel">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">

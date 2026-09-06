@@ -219,13 +219,17 @@ export function GestaoUsuarios({
          Uma linha só, truncada: nome de unidade da rede pública é longo
          ("EE Professora Maria Aparecida Nogueira") e, deixado quebrar, empilha
          cinco linhas em CADA row — a tabela inteira fica ilegível para ganhar
-         um dado que é o mesmo em quase todas. O nome completo fica no `title`. */
+         um dado que é o mesmo em quase todas. O nome completo fica no `title`.
+         O corte é de 8ch (era 12) porque a tabela tem 9 colunas e a soma delas
+         passava a largura do contêiner por ~20px: o excesso virava barra de
+         rolagem horizontal, e ela ficou visível quando a tabela ganhou rolagem
+         vertical. Os caracteres cedidos aqui são os que faltavam. */
       {
         key: "escola",
         title: "Escola",
         render: (_, linha) =>
           linha.escola ? (
-            <span className="block max-w-[12ch] truncate" title={linha.escola}>
+            <span className="block max-w-[8ch] truncate" title={linha.escola}>
               {linha.escola}
             </span>
           ) : (
@@ -253,8 +257,17 @@ export function GestaoUsuarios({
         key: "acoes",
         title: "",
         align: "right",
+        /* Largura RESERVADA para os três botões numa linha só. Sem ela, o
+           algoritmo da tabela reparte a folga entre as colunas de texto, a
+           coluna de ação fica curta e os botões quebram em duas linhas — o que
+           engorda TODAS as linhas da página (medido: 1894px de conteúdo viram
+           2374px, e a linha passa de 57px para 93px). Os três botões somam
+           272px + 8px de gaps; a reserva deixa ~11px de folga. O `flex-wrap` no
+           conteúdo é a rede: faltando espaço, a coluna quebra em vez de
+           empurrar a tabela para fora do contêiner. */
+        width: 324,
         render: (_, linha) => (
-          <div className="flex justify-end gap-1">
+          <div className="flex flex-wrap justify-end gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -358,6 +371,7 @@ export function GestaoUsuarios({
       </p>
 
       <Table<LinhaDeUsuario>
+        className="tabela-rolavel"
         columns={colunas}
         data={linhas}
         keyExtractor={(linha) => linha.id}

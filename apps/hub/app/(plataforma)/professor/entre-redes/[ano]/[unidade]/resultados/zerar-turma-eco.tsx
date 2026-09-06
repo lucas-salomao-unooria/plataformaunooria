@@ -47,7 +47,13 @@ export function ZerarTurmaEco({ turmaId, nomeDaTurma }: { turmaId: string; nomeD
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button variant="tertiary" size="sm" onClick={() => setAberto(true)} data-zerar-turma>
+      <Button
+        variant="outline"
+        size="sm"
+        className="acao-destrutiva"
+        onClick={() => setAberto(true)}
+        data-zerar-turma
+      >
         Zerar a turma
       </Button>
       <p className="text-[12px] leading-snug text-unooria-neutral-600">
@@ -67,7 +73,7 @@ export function ZerarTurmaEco({ turmaId, nomeDaTurma }: { turmaId: string; nomeD
           </p>
           {erro && <FeedbackAlert type="error" description={erro} />}
           <div className="flex gap-2">
-            <Button variant="primary" onClick={() => void zerar()} isDisabled={enviando}>
+            <Button variant="danger" onClick={() => void zerar()} isDisabled={enviando}>
               {enviando ? "Zerando…" : "Zerar a turma"}
             </Button>
             <Button variant="secondary" onClick={() => setAberto(false)} isDisabled={enviando}>

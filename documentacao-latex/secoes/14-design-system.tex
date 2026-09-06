@@ -334,6 +334,44 @@ Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
 \bottomrule
 \end{tabularx}
 
+\subsection{Lacunas abertas em \cd{unooria} na 0.1.17 (hub, 2026-09-05)}
+
+As duas lacunas abaixo apareceram nas telas de turma do professor, onde a
+listagem tem uma linha por estudante --- 40 numa sala cheia. As duas são
+compensadas em \arq{packages/ui/styles/plataforma.css} e viraram pedido no
+\arq{storybook-unooria}.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Consequência}\\
+\midrule
+\cd{Table} não tem cabeçalho fixo & \cd{TableProps} não publica
+  \cd{stickyHeader} nem \cd{maxHeight}, e o \cd{.unooria-table-container} só rola
+  na horizontal. Numa turma de 40 estudantes o cabeçalho sai da tela junto com a
+  página, e o professor lê \enquote{sim $\cdot$ --- $\cdot$ 3} sem saber de qual
+  coluna. Compensado pela classe \cd{.tabela-rolavel}, que dá altura máxima ao
+  contêiner (tela útil menos o cromo, piso de 20\,rem) e prende o \cd{<th>} com
+  \cd{position: sticky}. Vale para as duas famílias de tabela do hub: a
+  \cd{<table>} crua e a do DS (\cd{className="tabela-rolavel"}).\\
+\zebra \cd{Button} não tem variante de perigo discreta & \cd{ButtonVariant} é
+  \cd{primary | secondary | outline | ghost | danger}: as três primeiras saem no
+  navy da marca, que não diz \enquote{isto apaga}, e a \cd{danger} é sólida ---
+  peso de ação primária, errado para \enquote{Zerar a turma} ao lado da leitura
+  da aula. Compensado por \cd{.acao-destrutiva}, que troca o navy do
+  \cd{outline} pelo token de perigo e mantém o fundo transparente.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Variante que não existe não é erro de compilação --- é botão sem cor.} O
+\cd{Button} monta a classe por interpolação (\cd{unooria-button--variant-\$\{variant\}}),
+então um \cd{variant="tertiary"} produz uma classe que nenhuma folha define: o
+botão perde fundo, cor e borda e fica com os estilos de base. Era o que
+acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo, e com o
+\enquote{confirmar} do diálogo (\cd{variant="destructive"}). O \emph{typecheck}
+não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
+\end{atencao}
+
 \subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp-07 0.1.0)}
 
 A seção tem 29 componentes e cobre o cromo inteiro do mensageiro --- barra de

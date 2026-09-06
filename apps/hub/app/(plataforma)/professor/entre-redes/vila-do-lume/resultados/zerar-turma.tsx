@@ -80,6 +80,7 @@ export function ZerarTurma({
     <>
       <Button
         variant="outline"
+        className="acao-destrutiva"
         onClick={() => setAberto(true)}
         disabled={vazia}
         title={vazia ? "Ninguém desta turma jogou ainda — não há o que zerar." : undefined}

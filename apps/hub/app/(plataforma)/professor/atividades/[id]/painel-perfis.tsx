@@ -399,7 +399,7 @@ export function PainelPerfis({
             <AlertBox theme="light" variant="info" device="auto" description={ultimaAcao} />
           ) : null}
 
-          <div className="overflow-x-auto">
+          <div className="tabela-rolavel">
             <table className="w-full min-w-[640px] border-collapse text-[13px]">
               <thead>
                 <tr className="text-left text-unooria-neutral-700">
