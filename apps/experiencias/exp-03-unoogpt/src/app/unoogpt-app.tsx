@@ -405,7 +405,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
               {/* Proporção única na Missão inteira: conversa e Resultado ficam
                   com 2/3, o mapa com 1/3. Trocar no fim reflow a tela toda no
                   momento em que o estudante mais precisa ler com calma. */}
-              <div className={`flex min-h-0 flex-col ${operacao ? 'w-1/3' : 'w-2/3'}`}>
+              <div className={`flex min-h-0 min-w-0 flex-col ${operacao ? 'w-1/3' : 'w-2/3'}`}>
                 {sessao.passo === 'resultado' && resultado && (
                   <Resultado
                     desfecho={resultado.desfecho}
@@ -535,7 +535,7 @@ export function MissaoApp({ inicial }: { inicial: RespostaSessao }) {
                 />
               )}
 
-              <div className={`min-h-0 ${operacao ? 'w-2/3' : 'w-1/3'}`}>
+              <div className={`min-h-0 min-w-0 ${operacao ? 'w-2/3' : 'w-1/3'}`}>
                 <Mapa
                   bairros={mapa}
                   camadas={sessao.conjuntos}
