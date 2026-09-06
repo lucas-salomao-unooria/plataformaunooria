@@ -687,11 +687,14 @@ Ranking sem menor real & O ranking da exp-02 usa colegas
 \zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
-Texto de menor com contenção & \cd{exp\_07\_mensagens} guarda a conversa da
-  criança com Amara --- \textbf{o único texto livre de estudante do produto}. Ela
-  fica sob RLS, fora de log e fora da telemetria (que leva só a contagem de
-  turnos), tem teto de 600 caracteres e de 3 turnos, e passa pelo sanitizador
-  nos dois sentidos. Ver a decisão logo abaixo.\\
+Texto de menor com contenção & \textbf{Dois} campos livres de estudante, e a
+  diferença entre eles é de finalidade. \cd{exp\_07\_mensagens} guarda a
+  conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
+  sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
+  \emph{quantos} turnos, nunca o quê. \cd{exp\_06\_reflexoes} guarda o
+  \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
+  porque ali o texto \emph{é} o instrumento. As duas ficam sob RLS, fora de log
+  e fora da telemetria. Ver a decisão logo abaixo.\\
 \bottomrule
 \end{tabularx}
 
@@ -713,6 +716,31 @@ Consequência aceita: existe no banco uma coluna de longa duração com texto
 escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
 de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
 algum painel pedir o texto, a decisão volta à mesa.
+\end{decisao}
+
+\begin{decisao}
+\textbf{A exp-06 leva o texto da criança ao painel do professor, e a exp-07
+não --- as duas estão certas.} O que separa os dois casos é a
+\textbf{finalidade}, não o grau de cuidado.
+
+Na exp-07 o campo é uma \emph{conversa} com uma personagem: ele existe para a
+criança perguntar antes de repassar, e o que a professora precisa saber é se ela
+perguntou --- daí a contagem de turnos no painel e o texto fora dele. Levá-lo à
+tela do adulto mudaria o que a criança escreve, e a missão mede justamente a
+pergunta espontânea.
+
+Na exp-06 o campo é o \emph{registro do percurso}: 280 caracteres em que a
+criança nomeia o gatilho que reconheceu e o que fará antes de encaminhar da
+próxima vez. Ali o texto \textbf{é} o instrumento formativo --- um painel que
+mostrasse só \enquote{entregou / não entregou} guardaria a redação para ninguém.
+Quem lê é o professor \emph{da turma dela}: nenhuma rota de gestor o alcança, e
+o campo não existe em nenhum \emph{payload} de telemetria.
+
+Consequência aceita: há agora duas colunas de longa duração com texto de menor,
+e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
+painel de gestor, de rede ou de análise pedir \cd{exp\_06\_reflexoes.texto}, a
+decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
+por conveniência de relatório.
 \end{decisao}
 
 \subsection{Retenção: uma decisão explícita de não declarar prazo}

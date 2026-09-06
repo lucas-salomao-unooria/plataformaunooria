@@ -810,6 +810,54 @@ runtime, e só em produção, que é onde ela existe.
 \end{atencao}
 
 
+\section{As quatro tabelas da exp-06}
+\label{sec:tabelas-exp06}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_06\_sessoes} & O estado da missão, uma linha por estudante. Chave
+  \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
+  \emph{coluna} dela: a \cd{opcao} da intervenção, a \cd{latencia\_seg}, a
+  \cd{ordem\_blocos} do ciclo e o \cd{coerente}. As tabelas
+  \cd{exp\_06\_decisoes} e \cd{exp\_06\_modelagens} que o insumo pedia dariam
+  uma linha por estudante com uma \emph{FK} cada, e o \emph{JOIN} existiria
+  para nada.\\
+\zebra \cd{exp\_06\_auditorias} & Cada abertura do painel de dados de envio ---
+  \textbf{1:N} de propósito. A cota é sobre mensagens \emph{distintas}, e um
+  contador perderia \emph{quais} o estudante escolheu auditar, que é o dado
+  pedagógico. Um \cd{UNIQUE (escola\_id, estudante\_id, mensagem\_id)} faz a
+  dedupe valer mesmo se um caminho novo esquecer de checar antes.\\
+\cd{exp\_06\_reflexoes} & O \enquote{Meu percurso}: 280 caracteres de texto
+  livre escrito por menor de idade --- \textbf{diferente da exp-07}, que fechou
+  essa porta. Aqui o insumo pede a redação como instrumento metacognitivo, e ela
+  vem com o mesmo isolamento: fora de log, fora da telemetria analítica, e
+  alcançável só pelo professor da turma dela.\\
+\zebra \cd{exp\_06\_gates\_turma} & A etapa da aula, por \textbf{turma} ---
+  \cd{aula1 | aula2}, duas e não as quatro da exp-07. Chave
+  \cd{(escola\_id, turma\_id)}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+Três \emph{CHECK} que são a rede das regras puras. O \cd{score} só aceita
+\textbf{0, 70 ou 100} --- os três valores que \arq{regras/pontuacao.ts} produz;
+qualquer outro seria pontuação vinda do cliente (regra inviolável nº 3).
+\cd{cardinality(ordem\_blocos) IN (0, 4)} amarra o modelo do ciclo: 1, 2 ou 3
+blocos é slot vazio, e um quarto \emph{CHECK} exige que \cd{coerente} seja nulo
+exatamente quando a ordem está vazia. E \cd{passo = 'fim'} está amarrado a
+\cd{concluido\_em} não nulo, pela mesma razão da exp-07.
+\end{regra}
+
+\begin{atencao}
+\cd{exp\_06\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\textbf{sequência}, além do \emph{grant} de tabela --- a terceira aparição da
+mesma armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só
+em produção, que é onde ela existe.
+\end{atencao}
+
+
 \section{As cinco tabelas da exp-03}
 \label{sec:tabelas-exp03}
 

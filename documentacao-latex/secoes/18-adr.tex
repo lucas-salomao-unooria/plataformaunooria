@@ -9,10 +9,15 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{70 decisões}, numeradas até ADR-71: \textbf{ADR-65 está vaga}. O
+São \textbf{71 decisões}, numeradas até ADR-72: \textbf{ADR-65 está vaga}. O
 número foi perdido numa colisão entre duas frentes paralelas que reservaram o
 mesmo identificador --- o risco que a \adrr{ADR-61} registra --- e
-\textbf{a próxima decisão o ocupa}, em vez de a numeração seguir de 71 para 72.
+\textbf{a próxima decisão o ocupa}.
+
+A ADR-65 foi ocupada pelo planejamento de ensino, na frente da exp-92, e é por
+isso que a numeração aqui segue de 71 para \textbf{72}: quando esta decisão foi
+escrita a lacuna já tinha dono, e pegá-la produziria duas ADR-65 no
+\emph{merge} --- exatamente a colisão que o parágrafo acima registra.
 
 Renumerar as seis ADRs seguintes para fechar a lacuna foi considerado e
 recusado, e a razão não é o trabalho: dentro deste repositório a troca é
@@ -4576,3 +4581,76 @@ trabalho numa branch mal nomeada.
 desenvolvendo ao mesmo tempo (hoje é uma), quando a fila da fase serial deixa de
 ser aceitável; ou a suíte de ponta a ponta virar o gargalo medido --- aí a stack
 por worktree volta à mesa com o custo justificado por número, não por intuição.
+
+% ---------------------------------------------------------------------------
+\section{ADR-72 --- A fronteira do disfarce é a revelação, e a Etapa 4 da
+exp-06 fica fora dele}
+\label{adr:72}
+
+\textbf{Data.} 2026-09-06 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A exp-06 termina com duas telas analíticas: um gráfico
+comparando a velocidade do boato com a da nota oficial, e um mapa da topologia
+de rede que desenha o alcance da decisão do estudante. Os wireframes e o
+\emph{handoff} da missão colocam as duas \textbf{dentro do clone}, descritas
+como \enquote{painel de métricas do grupo} --- diegéticas, faladas pela seção
+\cd{whatsappmobile}.
+
+O problema é que o aplicativo real não tem nada parecido. Ele mostra
+\enquote{Encaminhada com frequência} num balão; não mostra grafo de propagação,
+não conta conexões e não desenha nós. Uma tela dessas dentro do disfarce não é
+verossimilhança seletiva --- que admite \textbf{ausências} (sem teclado, sem
+chamadas, sem Stories) --- é \textbf{invenção}: uma funcionalidade que o app
+imitado não possui, apresentada como se possuísse.
+
+\textbf{Decisão.} O disfarce vale \textbf{até o fim da Etapa~3}. Da pausa entre
+as aulas em diante quem fala é a escola: o card de espera, o gráfico, o mapa, o
+construtor do ciclo e o \enquote{Meu percurso} usam \cd{@edu/ui/ds} e os tokens
+\cd{--unooria-*}.
+
+O critério que decide, e que já valia no repositório, é
+\textbf{\enquote{quem está falando?}} --- não \enquote{é depois no tempo?}. A
+exp-02 já o havia aplicado: feed, cromo e playlists falam de dentro da ficção; o
+ranking e os diálogos da missão falam pela escola, ainda que apareçam no meio
+dela.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Seguir os wireframes e desenhar o painel dentro do clone}: era o
+    caminho especificado, e o QA de design o aprovou. Descartada porque quebra o
+    próprio teste de fidelidade que aquele QA aplicou (\enquote{o frame passaria
+    por uma captura do app real?}): um grafo de topologia não passa, porque o
+    app não tem grafo de topologia. E a fidelidade do clone é o instrumento ---
+    é ela que faz o comportamento medido ser espontâneo.
+  \item \emph{Levar o pedido ao \arq{storybook-unooria}}, publicando um
+    componente de visualização de rede na seção \cd{whatsappmobile}: pioraria o
+    problema em vez de resolvê-lo. O pacote passaria a publicar, como parte do
+    clone, uma tela que o original não tem --- e a próxima missão que usasse a
+    seção herdaria a invenção.
+  \item \emph{Manter as duas telas no clone e apenas trocar os tokens}: é o pior
+    dos dois mundos. A tela continuaria dentro do aparelho, com o cromo do
+    mensageiro em volta, e a marca institucional apareceria no meio do disfarce
+    --- a mistura de seções que a regra de ouro proíbe.
+  \item \emph{Tirar as telas analíticas da missão} e deixar a revelação apenas
+    para o debate mediado: mataria o beat memorável. A descoberta central da
+    missão é a diferença entre 1.200 e 850 conexões, e ela precisa ser
+    \textbf{vista}, não contada --- é isso que a criança leva.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a missão troca de identidade visual no
+meio, e a transição precisa ser justificada ao estudante pelo próprio roteiro
+--- o card de pausa é o que faz esse trabalho (\enquote{sua investigação está
+salva}), e sem ele a troca pareceria um erro de carregamento. \emph{Ruim}: o
+insumo aprovado e o código divergem neste ponto, e a divergência tem de viver
+escrita em três lugares (aqui, no \arq{AGENTS.md} da experiência e no
+\arq{catalogo.ts} do hub) para não ser \enquote{corrigida} de volta por quem
+chegar depois lendo só os wireframes. \emph{Bom}: o teste do app sem legenda
+continua valendo para todas as telas que se apresentam como o mensageiro.
+\emph{Bom}: os tokens da Etapa~4 passam a ser os da plataforma, e isso corrigiu
+um defeito real --- com os tokens do clone, calibrados para fundo escuro, os nós
+do mapa saíam quase invisíveis sobre o branco e o beat memorável não chegava.
+
+\textbf{Gatilho de reavaliação.} O dia em que o aplicativo imitado publicar de
+fato uma visualização de propagação (o \enquote{encaminhada com frequência} já
+foi nessa direção). Aí a tela deixa de ser invenção, e a fronteira pode voltar
+para depois dela.
