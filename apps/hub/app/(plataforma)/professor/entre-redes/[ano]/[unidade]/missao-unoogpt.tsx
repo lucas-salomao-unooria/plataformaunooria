@@ -7,6 +7,7 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 
 /**
  * Corpo da MISSÃO TEMPESTADE (2ª série do EM · Unidade 1).
@@ -28,6 +29,7 @@ export function MissaoUnooGPT({
 }) {
   const { ficha } = missao;
   const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -90,6 +92,13 @@ export function MissaoUnooGPT({
               <li key={passo}>{passo}</li>
             ))}
           </ol>
+          {guia ? (
+            <div className="pt-4">
+              <LinkButton href={guia} variant="secondary">
+                Abrir guia da aula
+              </LinkButton>
+            </div>
+          ) : null}
         </Card>
       </section>
 

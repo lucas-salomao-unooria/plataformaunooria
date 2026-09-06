@@ -107,6 +107,43 @@ segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
 jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
 assinado.
 
+## O guia da aula (ADR-65)
+
+Toda missão publicada tem guia em `/professor/.../guia`, e **missão nova nasce
+com o guia dela** — `lib/entre-redes/guias/index.test.ts` recusa missão
+publicada sem guia, com uma lista de exceções que exige razão escrita.
+
+**O guia é DADO** (`lib/entre-redes/guias/<exp>.ts`, tipo `GuiaDaAula`)
+renderizado por um componente único (`components/guia/`). Não escreva um guia
+como página: a versão antiga era 447 linhas de JSX só do Instanooria, e a quinta
+cópia dela seria o arquivo em que alguém esquece uma seção sem ninguém notar. A
+ordem das seções é do renderizador, não do autor — é isso que faz a segunda
+missão que o professor roda ter a informação no mesmo lugar da primeira.
+
+**O que tem fonte viva NÃO vira texto no guia.** Entra por bloco vivo: um
+`ReactNode` que a página da missão ancora ao fim de uma seção
+(`blocos={{ debate: <... /> }}`). Já são três — os momentos e a revelação do
+Instanooria, os cartões da Vila por turma, a tabela dos vieses do unooGPT (rota
+`GET /unoogpt/professor/fontes`). O custo de copiar qualquer um deles é o
+professor projetar para a turma uma mensagem que ninguém recebeu.
+
+**Os links para o guia saem de `lib/rotas-da-missao.ts`**, nunca de
+`` `${rota}/guia` `` montado na tela: é ele que sabe se a missão tem guia, e a
+sala de aula mostra o link em toda turma × toda missão a partir dele. Uma
+concatenação na mão vira link para 404 na primeira missão publicada sem guia.
+
+**A folha de impressão é parte do guia**, em `components/guia/guia.css` — o
+professor conduz a aula com o papel na mão enquanto o computador projeta a tela
+da turma. Ela mira classes próprias (`.guia-bloco`, `.guia-fora-do-papel`),
+nunca as do `@unooria/design-system`: nome interno de componente muda por versão
+e ninguém imprime para conferir depois de subir o DS. Bloco novo no guia entra
+com `guia-bloco` (e `guia-bloco--longo` se puder quebrar entre folhas).
+
+**BNCC Computação: o texto da habilidade é verbatim do MEC**, e os códigos são
+**por ano** (`EF04CO08`, `EF08CO11`) mais `EF15CO*` (1º–5º), `EF69CO*` (6º–9º) e
+`EM13CO*`. `EF67CO`/`EF89CO` **não existem** — a analogia com as outras áreas já
+produziu códigos inventados uma vez, e um teste guarda a forma.
+
 ## As fontes do DS não vêm de graça
 
 **No hub, o CSS do DS não basta: as fontes também.** O `unooria.css` declara

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Card, EmptyState, FeedbackAlert, MetricCard } from "@edu/ui/ds";
@@ -80,6 +81,16 @@ export default async function ResultadosDaVilaPage({
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
           Quem jogou, qual bolha cada estudante recebeu e o que aconteceu com as mensagens.
           Recalculado a cada visita — atualize a página durante a aula.
+        </p>
+        {/* O guia à mão: esta é a tela em que o professor está DURANTE a aula, e
+            a revelação da Vila é projetada de lá — com a turma já selecionada. */}
+        <p className="text-[13px] font-semibold">
+          <Link
+            href={turma ? `${rota}/guia?turmaId=${encodeURIComponent(turma)}` : `${rota}/guia`}
+            className="text-unooria-navy-900 hover:text-unooria-neutral-950"
+          >
+            Abrir o guia da aula
+          </Link>
         </p>
       </header>
 

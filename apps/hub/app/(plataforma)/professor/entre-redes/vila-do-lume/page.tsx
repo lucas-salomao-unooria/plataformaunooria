@@ -60,7 +60,7 @@ export default async function VilaDoLumePage() {
 
       <div className="flex flex-wrap gap-3">
         <LinkButton href={`${rota}/guia`} variant="primary">
-          Guia do debate
+          Abrir guia da aula
         </LinkButton>
         <LinkButton href={`${rota}/resultados`} variant="secondary">
           Ver resultados da turma

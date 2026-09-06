@@ -379,6 +379,40 @@ adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \arq{src/vila/}.
 \end{decisao}
 
+\subsection{As rotas que alimentam o guia da aula}
+
+Duas rotas existem só para o \textbf{guia da aula} do professor
+(Seção~\ref{sec:guia-da-aula}), e as duas pelo mesmo motivo: o texto que o
+professor projeta ou lê à turma \textbf{é} o instrumento, e uma cópia dele no
+hub divergiria na primeira revisão de \emph{copy}.
+
+\begin{tabularx}{\linewidth}{@{}L{50mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que devolve}\\
+\midrule
+\rota{GET /vila/professor/cartoes} & professor & As mensagens das três bolhas,
+  \textbf{filtradas pela turma} (\cd{?turmaId=}): nos anos iniciais a bolha B
+  não é servida.\\
+\zebra \rota{GET /unoogpt/professor/fontes} & professor & As 8 fontes do
+  cenário com o viés de cada uma, o período e os bairros que cobrem.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\rota{/unoogpt/professor/fontes} é \textbf{catálogo}, não dado de turma: não há
+\cd{escolaId} nem \emph{tenancy} a aplicar --- é igual para todo contrato. O que
+a guarda protege ali é o PAPEL. Esta é a única superfície da Missão Tempestade
+em que o viés é dito com todas as letras, e ele não pode chegar ao estudante: a
+missão não revela nada por \emph{software}, de propósito, e quem sabe de antemão
+qual fonte engana em quê decora um quadro em vez de cruzar dados.
+\end{regra}
+
+\begin{nota}
+O viés não é um campo escrito à mão ao lado da instrução do agente: é
+\textbf{derivado} dela, cortado na marca \cd{VIÉS:}. Dois textos seriam duas
+verdades, e a recalibragem do cenário mexeria num só.
+\end{nota}
+
 \subsection{Observabilidade: os sinais que nascem no navegador}
 
 Três rotas em \rota{/observabilidade}, todas com \cd{OidcGuard}, todas
