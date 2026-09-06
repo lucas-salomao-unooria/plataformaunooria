@@ -17,6 +17,7 @@
     "test": "turbo test",
     "typecheck": "turbo typecheck",
     "new:exp": "node scripts/create-experiencia.mjs",
+  "worktree": "node scripts/worktree.mjs",
     "lint:all": "eslint apps packages scripts"
   },
   "pnpm": {

@@ -5,6 +5,7 @@ em `e2e/AGENTS.md`.
 
 | Script | O que faz | Cuidado |
 |---|---|---|
+| `worktree.mjs` | `pnpm worktree criar/listar/remover` — a frente paralela inteira: worktree sobre `origin/dev`, `.env` copiados, `pnpm install` + `prisma generate`, porta de Vite reservada e o briefing da fatia impresso | o `origin/dev` está ESCRITO: partir da branch padrão de um clone antigo abre a frente sobre PRODUÇÃO em silêncio. Valida o nome da branch com o mesmo padrão do `.githooks/pre-push` |
 | `create-experiencia.mjs` | `pnpm new:exp exp-NN-slug` — copia o `_template` e ajusta nomes | a experiência nasce copiada, não linkada |
 | `gerar-endpoints-tex.mjs` | escreve `apendices/c-endpoints.tex` **a partir** de `docs/openapi.json` | o apêndice é gerado: editar o `.tex` na mão é perder o texto no próximo commit |
 | `gerar-chave-token.mjs` | par RS256 com que o hub assina os tokens de experiência | a chave privada nunca entra no repo |

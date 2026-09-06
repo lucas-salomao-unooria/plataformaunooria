@@ -4389,3 +4389,104 @@ CD/ANPD nº 2/2022 torna exigível deixa de ser trabalho do zero.
 --- rotina de retenção, rota de exclusão por titular, log de acesso individual,
 região brasileira para o Vertex ---, o que muda o que a página pode afirmar; ou
 a primeira rede assinar, quando a controladora passa a ter nome e CNPJ.
+
+\section{ADR-71 --- O trabalho paralelo se reparte por fatia vertical, e o
+runtime continua singleton}
+\label{adr:fatia-vertical}
+
+\begin{especificacao}{Contexto}
+A \adrr{ADR-61} resolveu a \emph{árvore de trabalho}: cada frente paralela ganha
+um \cd{git worktree}, e o \cd{git status} de uma não contamina o commit da
+outra. Ela não resolveu a pergunta seguinte, que aparece no minuto em que existe
+mais de um terminal aberto: \textbf{\arq{apps/api} e \arq{apps/hub} são comuns
+às 48 experiências}. Worktree separa arquivos não commitados; não separa duas
+frentes que precisam editar o mesmo arquivo.
+
+A divisão que o instinto sugere é por camada --- uma frente no \emph{backend},
+outra no \emph{frontend}. Ela é a pior possível aqui: as duas passam a morar nos
+mesmos arquivos por motivos diferentes, e o conflito não é textual (duas linhas
+vizinhas), é semântico (dois desenhos do mesmo \emph{service}). Nenhuma
+ferramenta de merge ajuda com isso.
+
+O segundo eixo é o tempo. O runtime deste repositório é \textbf{singleton} por
+decisão: portas com \cd{strictPort}, um \cd{docker-compose} de nome fixo
+(\cd{unooria-plataforma}), um Postgres com um schema. Isso não é descuido --- é
+o que faz \cd{pnpm dev} falhar alto em vez de servir a experiência errada dentro
+do \emph{iframe}, que é uma falha silenciosa e cara de diagnosticar.
+\end{especificacao}
+
+\textbf{Decisão.} \textbf{Reparta por fatia vertical.} Cada frente leva o módulo
+da api, a rota do hub e a experiência \emph{juntos} --- \arq{apps/api/src/unootube/}
+com a rota do hub e \arq{apps/experiencias/exp-02-unootube/}, e não "a api" de um
+lado e "o hub" do outro. Com isso api e hub deixam de ser recurso disputado: a
+fatia de cada frente dentro deles é uma \textbf{pasta própria}. Não é sorte --- é
+o desenho de um módulo por domínio (\cd{catalogo.ts} + \cd{regras.ts} + service +
+controllers por papel) sendo usado para o que ele serve. \textbf{Duas frentes no
+mesmo módulo não se paralelizam: serializam.}
+
+\textbf{O que sobra compartilhado é linha de REGISTRO, não lógica}, e vai em UM
+commit no fim da frente, depois de \cd{git merge origin/dev}: um \cd{import} e
+uma linha no array de \arq{app.module.ts}; \cd{model} novo \textbf{no fim} do
+\arq{schema.prisma} (duas inserções no fim conflitam limpo, duas no meio não); a
+migração; a entrada em \arq{middleware.ts} / \arq{experiencias-dev.ts}. A porta
+de dev se reserva como o número da ADR: conferindo \cd{origin/dev}.
+
+\textbf{O runtime continua singleton}, e o trabalho se divide em duas fases. A
+\emph{paralela}, N frentes: editar, \cd{typecheck lint test}, \cd{build --filter},
+e o Vite de UMA experiência em porta \cd{52xx} embedada por
+\cd{/dev-embed?src=}. A \emph{serial}, uma por vez na cópia principal:
+\cd{pnpm dev}/\cd{docker:dev}, migração, e a suíte de ponta a ponta.
+
+\textbf{E o primeiro passo vira comando.} \arq{scripts/worktree.mjs}
+(\cd{pnpm worktree criar/listar/remover}) faz o caminho inteiro --- worktree
+sobre \cd{origin/dev}, os seis \cd{.env} copiados (todos ignorados pelo git, nenhum
+viaja), \cd{pnpm install} e \cd{prisma generate} (\arq{node\_modules} e o client
+do Prisma são por worktree), porta derivada de um \emph{hash} do slug --- e
+imprime no fim o \textbf{briefing da fatia}, pronto para colar no agente: o que é
+seu, o que é costura, e o que não se roda dali.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Repartir por camada (uma frente na api, outra no hub)}: é a origem
+    do problema, não a solução. Some com a fronteira que os módulos por domínio
+    construíram e transforma todo merge em releitura de desenho.
+  \item \emph{Stack por worktree --- offset de portas, \cd{name} do compose por
+    slot, um banco por frente}: tornaria a fase serial paralela também, e foi a
+    alternativa mais séria. Descartada por três razões. O \cd{strictPort} existe
+    para \textbf{falhar alto}: com portas móveis, o \emph{iframe} volta a poder
+    apontar para a experiência errada em silêncio, que é exatamente o bug que a
+    porta fixa previne. N bancos divergem --- a suíte e2e é a etapa que mais
+    depende de um estado conhecido, e depurar "passou no meu banco" custa mais
+    que a fila. E o custo de manutenção (compose parametrizado, envs por slot,
+    \arq{experiencias-dev.ts} dinâmico, a suíte e2e ciente do slot) cai sobre
+    \textbf{uma pessoa}, para destravar uma fila que hoje tem dois ou três itens.
+  \item \emph{Banco por frente, mantendo as portas fixas}: metade do custo acima
+    e menos da metade do ganho --- continua sem poder rodar duas stacks, que é o
+    que a fila realmente pede.
+  \item \emph{Deixar a mecânica só como prosa no \arq{CONTRIBUTING.md}}: era o
+    estado anterior. O passo que morde é o \textbf{primeiro}, e é o que a prosa
+    não consegue impor --- \cd{git worktree add} sem \cd{origin/dev} escrito abre
+    a branch sobre produção em silêncio (\adrr{ADR-61}).
+  \item \emph{Registro de portas num arquivo versionado}: estado a mais para
+    manter sincronizado, e conflito num arquivo que TODA frente tocaria. O
+    \emph{hash} do slug dá uma porta estável sem guardar nada --- e estável
+    importa: o \cd{src=} do \cd{/dev-embed} fica na barra do navegador de quem
+    está trabalhando, e não pode mudar porque um vizinho abriu uma frente.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o teto útil é de duas a três frentes ---
+toda frente que mexe em tela precisa da suíte e2e, que é serial, e além disso a
+fila come o ganho. \emph{Ruim}: o briefing é \textbf{conselho, não barreira}.
+Diferente do \arq{.githooks/pre-push}, que recusa, nada impede um agente de
+editar fora da fatia; a fronteira aparece no \cd{git diff} da revisão, não na
+hora do erro. \emph{Ruim}: o \cd{--fatia} é texto livre --- o script o imprime,
+não o valida contra a árvore. \emph{Bom}: a classe de erro da \adrr{ADR-61}
+morre na origem, porque o \cd{origin/dev} passa a estar escrito no script em vez
+de na memória de quem digita. \emph{Bom}: o script recusa nome de branch que o
+\cd{pre-push} recusaria, e a recusa acontece no minuto zero em vez de depois de
+horas de trabalho numa branch mal nomeada.
+
+\textbf{Gatilho de reavaliação.} Passar a existir mais de uma pessoa
+desenvolvendo ao mesmo tempo (hoje é uma), quando a fila da fase serial deixa de
+ser aceitável; ou a suíte de ponta a ponta virar o gargalo medido --- aí a stack
+por worktree volta à mesa com o custo justificado por número, não por intuição.

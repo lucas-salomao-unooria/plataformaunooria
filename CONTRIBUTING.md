@@ -57,13 +57,23 @@ duas frentes em paralelo — duas pessoas, ou mais de um agente — `git switch`
 serve: existe **uma** árvore de trabalho, e ela carrega as alterações não
 commitadas de quem estava antes. O `git status` misturado é de onde sai o commit.
 
-Cada frente paralela ganha um worktree:
+Cada frente paralela ganha um worktree, e um comando faz o caminho inteiro:
+
+```bash
+pnpm worktree criar feat/clarity-analytics --fatia api/telemetry,hub/analise
+pnpm worktree listar                          # as frentes, e a porta de Vite de cada uma
+pnpm worktree remover clarity-analytics       # depois do merge
+```
+
+Ele faz o que a mão faria — e os dois passos que a mão esquece:
 
 ```bash
 git fetch origin
 git worktree add -b feat/clarity-analytics .claude/worktrees/clarity-analytics origin/dev
 cd .claude/worktrees/clarity-analytics
 pnpm install                                  # node_modules NÃO é compartilhado
+pnpm --filter @edu/api exec prisma generate   # o client do Prisma também é por worktree
+cp ../../../apps/api/.env apps/api/.env       # os .env são ignorados: não viajam
 ```
 
 **`origin/dev` está escrito no comando de propósito.** Um clone antigo deste
@@ -93,6 +103,49 @@ O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-61
 
 `.gitignore` já cobre `.claude/*`, então o worktree não aparece no `git status`
 da cópia principal — e não precisa de entrada nova.
+
+### Repartir o trabalho: a fatia é vertical, nunca por camada
+
+O worktree resolve a árvore de trabalho. Ele não resolve a pergunta seguinte:
+**duas frentes editando `apps/api` e `apps/hub`, que são comuns a tudo.**
+
+O instinto errado é repartir por camada — um agente no backend, outro no
+frontend. As duas frentes passam a morar nos mesmos arquivos por motivos
+diferentes, e nenhum worktree salva de um merge onde os dois reescreveram o
+mesmo service. **Reparta por fatia vertical:** cada frente leva o módulo da api,
+a rota do hub e a experiência, juntos.
+
+| Frente | Fatia |
+|---|---|
+| A | `apps/api/src/unootube/` + a rota do hub + `apps/experiencias/exp-02-unootube/` |
+| B | `apps/api/src/bemestar/` + `/professor/bem-estar` + `exp-91-bem-estar/` |
+| C | `apps/api/src/salas/` + `/professor/turmas` |
+
+Assim api e hub deixam de ser recurso disputado: dentro deles, a fatia de cada
+frente é uma **pasta própria**. Não é sorte — é o desenho de um módulo por
+domínio (`catalogo.ts` + `regras.ts` + service + controllers por papel) sendo
+usado para o que ele serve. **Duas frentes no mesmo módulo não se paralelizam:
+serializam.** Custa menos esperar do que resolver o merge.
+
+O que sobra de verdadeiramente compartilhado é curto, e é **linha de registro,
+não lógica**:
+
+| Costura | Como não brigar |
+|---|---|
+| `apps/api/src/app.module.ts` | 1 import + 1 linha no array. A resolução do conflito é sempre "os dois ficam" |
+| `apps/api/prisma/schema.prisma` | `model` novo **no fim do arquivo**, nunca no meio. Duas inserções no fim conflitam limpo; duas no meio, sujo |
+| `apps/api/prisma/migrations/` | pastas com timestamps distintos não conflitam em texto — o risco é de **ordem**: duas migrações escritas contra o mesmo estado do banco. Quem mergeia por segundo roda `migrate reset` local antes de acreditar no verde |
+| `apps/hub/middleware.ts`, `apps/hub/lib/experiencias-dev.ts` | edite só a sua entrada. A porta de dev se reserva como o número da ADR: conferindo `origin/dev` |
+
+**A costura é o último commit da frente, não o primeiro** — separado, e depois
+de `git fetch origin && git merge origin/dev`. Rebase está desabilitado neste
+repositório (o job `mudancas` compara `HEAD^`), então merge de `dev` para dentro
+da frente é o jeito de se atualizar. Faça cedo e várias vezes: deixar para a
+véspera do PR é o que transforma quatro conflitos triviais em um difícil.
+
+**O briefing da frente é escrito, não subentendido.** `pnpm worktree criar
+--fatia …` imprime no fim um texto pronto para colar no agente (ou para você
+mesmo seguir): a fatia, o que é costura, e o que **não** se roda dali.
 
 ### O que roda onde: o paralelismo é de edição e teste unitário
 
