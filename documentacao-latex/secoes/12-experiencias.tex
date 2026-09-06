@@ -21,13 +21,15 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{unootube}\\
 \cd{exp-03-unoogpt} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
+  telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
+\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -41,15 +43,104 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \zebra \cd{exp-91-bem-estar} & \cd{5176} & \rota{/professor/bem-estar}\\
 \cd{exp-70-vila-do-lume} & \cd{5177} & \rota{/exp/exp-70-vila-do-lume}\\
 \zebra \cd{exp-03-unoogpt} & \cd{5178} & \rota{/exp/exp-03-unoogpt}\\
+\cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
 \bottomrule
 \end{tabularx}
 
 \begin{nota}
 As portas vivem em \arq{apps/hub/lib/experiencias-dev.ts} --- uma por
-experiência. É esse mapa que o hub usa quando não há manifesto, e é por isso que
+experiência. É esse mapa que o hub usa \textbf{fora de produção}, e é por isso que
 \env{EXP\_INTERNAL\_HOST} tem de \emph{preservar a porta}
 (Seção~\ref{sec:manifesto}).
+
+A escolha era \enquote{sem manifesto na tabela, use o mapa} --- e isso quebrou
+quando o \emph{seed} passou a popular \cd{experiencias} (\adrr{ADR-69}, que precisa
+do catálogo para montar a grade da turma). Sem CDN configurado, a URL versionada
+cai no \emph{default} \cd{localhost:5173}, o \emph{dev server} da exp-01 --- que
+responde a QUALQUER caminho com a própria SPA. Toda missão abria o Instanooria,
+com o \emph{handshake} completando e o \cd{boot} dando 403 na experiência errada.
+\textbf{De onde vem o \emph{bundle} é pergunta do AMBIENTE; o manifesto responde o
+que a experiência declara.}
 \end{nota}
+
+\section{A sala de aula: o que o estudante vê}
+\label{sec:sala-do-estudante}
+
+O hub do estudante (\rota{/estudante}) abre pela \textbf{turma}, não pelo
+catálogo. \rota{GET /salas/minhas} devolve as turmas em que ele tem matrícula e,
+em cada uma, a grade do ano dela: as experiências cuja \cd{series} contém a série
+da turma, mais as transversais (\cd{series: []}).
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X@{}}
+\toprule
+\headrow \thd{Estado} & \thd{O que a criança vê}\\
+\midrule
+\cd{liberada} & O cartão é um \emph{link} e diz \enquote{Começar}.\\
+\zebra \cd{bloqueada} & \textbf{CADEADO} e \enquote{Ainda não abriu}, sem
+  \emph{link}. Não some da tela: a grade do ano é a promessa do que vem depois, e
+  uma lista que muda de tamanho sozinha não deixa ninguém entender que a próxima
+  unidade existe. Não é estado do banco --- é a ausência de linha em
+  \cd{liberacoes}.\\
+\cd{encerrada} & Continua visível, com o rótulo. O que ela fez não pode evaporar
+  da tela quando o professor fecha a aula.\\
+\bottomrule
+\end{tabularx}
+
+Missão de OUTRA SÉRIE não aparece --- e isso é diferente de bloqueada: a do 4º ano
+não pertence à grade do 8º, não está esperando liberação. Missão sem \emph{copy}
+de estudante também não entra, mesmo liberada: sem título e sem chamada o cartão
+seria um retângulo com um \emph{slug} dentro.
+
+\begin{regra}
+\textbf{Esconder o cartão é UX.} \rota{/exp/:expId} confere a liberação antes de
+montar o \emph{embed} e responde \textbf{404} sem ela, e a API recusa a entrada com
+\textbf{403} \cd{missao-nao-liberada}. O \emph{bundle} é público e o endereço é
+adivinhável: antes disto, qualquer estudante logado abria qualquer missão
+digitando a URL.
+\end{regra}
+
+\section{A sala de aula: o que o professor faz}
+\label{sec:sala-do-professor}
+
+\rota{/professor/turmas/:id} deixou de ser a lista nominal e virou a SALA, com
+duas abas:
+
+\begin{itemize}
+  \item \textbf{Missões} --- a grade daquela sala, com o estado de cada uma, quem
+    a abriu e quando, e o botão \emph{Liberar}/\emph{Encerrar}. Daqui sai também o
+    caminho para conduzir a missão \textbf{com a turma já escolhida}.
+  \item \textbf{Estudantes} --- a lista nominal que já existia, com o caminho para
+    o relatório de cada criança.
+\end{itemize}
+
+A aba vive na URL (\cd{?aba=}), como a turma nos resultados: o \emph{link} fica
+compartilhável e o botão voltar funciona.
+
+\begin{decisao}
+\textbf{O caminho para conduzir a missão sai da SALA.} Antes era: voltar ao hub,
+entrar no Entre Redes, achar o ano, abrir resultados e escolher a turma num
+\cd{<select>} --- e a página do ano era a MESMA para as duas turmas da série. Era
+assim que 2EM-A e 2EM-B viravam uma coisa só na cabeça de quem usava.
+
+A trilha do Entre Redes continua existindo e continua sendo por ano: ela é o
+CATÁLOGO, o lugar de conhecer a missão. Uma faixa no topo dela diz quem abre a
+missão para a turma, porque sem isso o professor lê a grade inteira como se tudo
+estivesse no ar para os estudantes dele.
+\end{decisao}
+
+\begin{nota}
+\textbf{O filtro por série das telas de resultado ficou; o \emph{fallback} saiu.}
+Elas ofereciam \enquote{mostrando todas} quando o professor não tinha turma da
+série da missão --- e aí ele escolhia uma sala que nunca vai jogar aquilo. Sem
+turma da série, agora a tela diz isso e aponta para \emph{Minhas turmas}.
+\end{nota}
+
+\begin{regra}
+\textbf{Professor com uma turma tem o mesmo fluxo de quem tem quatro:} ele entra
+na sala clicando. Redirecionar direto de \rota{/professor} para a única sala foi
+considerado e recusado --- dois fluxos para o mesmo papel é o tipo de atalho que
+faz a tela de lista parecer quebrada para metade da rede.
+\end{regra}
 
 \section{exp-01 --- Instanooria}
 
@@ -355,6 +446,123 @@ revisão pedagógica, não palavra final.
 \end{limitacao}
 
 % ---------------------------------------------------------------------------
+\section{exp-07 --- O Eco no Grupo}
+\label{sec:exp-07}
+
+\textbf{7º ano · Unidade 1 · clone de WhatsApp móvel · \cd{whatsappmobile}}
+
+Um boato sobre o festival do bairro corre num grupo de mensageria: print
+recortado, áudio alarmado, três moradores indignados e um administrador pedindo
+calma. O estudante audita as mensagens, descobre o parágrafo que o print cortou
+--- o evento tinha alvará regular e a polícia só organizava o desvio dos ônibus
+--- e responde citando a reportagem completa. O grupo se acalma na frente dele,
+e o administrador fixa a mensagem no topo do chat.
+
+É a \textbf{primeira missão da trilha em duas aulas}, e a segunda não começa
+sozinha.
+
+\subsection{As duas aulas, e quem separa uma da outra}
+
+\cd{exp\_07\_gates\_turma} guarda uma etapa por turma
+(\cd{investigacao | aula2 | debate | reflexao}), e a professora a move por três
+botões no painel de resultados. A reconciliação entre a etapa da turma e o passo
+de cada estudante é função pura (\arq{regras/passos.ts}), porque a api e o
+cliente precisam chegar à mesma resposta --- duas implementações divergentes
+seriam a tela discordando do servidor.
+
+A diferença em relação ao relógio da exp-03 é que aqui a etapa é
+\textbf{piso E teto}:
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Etapa da turma} & \thd{Piso} & \thd{Teto --- e por quê}\\
+\midrule
+\cd{investigacao} & \cd{chat\_amara} & \cd{breakpoint}: quem investiga rápido
+  não decide e acaba a missão sozinho antes da segunda aula\\
+\zebra \cd{aula2} & \cd{podcast} & \cd{sintese}: a reflexão é depois do debate\\
+\cd{debate} & \cd{sintese} & \cd{sintese} --- piso e teto no mesmo passo: no
+  debate a turma inteira olha a mesma tela, porque a conversa é entre pares\\
+\zebra \cd{reflexao} & \cd{reflexao} & \cd{fim}\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\textbf{Estudante sem turma não tem gate.} Não há quem dê a largada para ele, e
+prendê-lo no breakpoint seria um beco sem saída: a missão inteira ficaria
+inalcançável para quem chegou à rede sem enturmação. Ele corre no próprio ritmo,
+e o painel não o vê porque ele não está em turma nenhuma.
+\end{nota}
+
+O estudante consulta \rota{GET /o-eco-no-grupo/gate} a cada 5\,s --- rota leve de
+propósito, sem catálogo e sem mídia --- e o \cd{agora} da resposta é o instante
+do \emph{servidor}: o relógio da máquina da escola atrasa, e não é ele que
+decide o momento da aula.
+
+\subsection{O portão que a missão existe para instalar}
+
+Responder no grupo sem ter aberto a matéria íntegra é \textbf{recusado}
+(\cd{sem-inspecao}, 409). Não é validação de formulário: é o comportamento que a
+experiência inteira está tentando desfazer, e é a única regra aqui que vale a
+aula. O portão vive em \arq{regras/sessao.ts}, no servidor.
+
+\subsection{O par casado: o print é um recorte da reportagem}
+
+O print que circula no grupo e a foto da matéria são \textbf{a mesma imagem},
+cortada. Mesma cena, mesma luz, mesmo instante --- e é isso que faz o recorte
+visual espelhar o recorte do texto que o estudante vai descobrir. A foto é
+gerada por IA; o layout do portal (\enquote{Gazeta Regional}), a manchete, os
+metadados e o box do trecho suprimido são \textbf{HTML}, porque modelo de imagem
+erra texto longo e o parágrafo omitido precisa ser legível, selecionável por
+leitor de tela e com contraste medido (\adrr{ADR-67}).
+
+\subsection{A IA escreve a fala, nunca o resultado}
+
+Três superfícies, todas com \cd{QuotaService} antes e depois, e todas com
+falha para o lado seguro (\adrr{ADR-66}):
+
+\begin{itemize}
+  \item \textbf{As reações do bairro} à intervenção. O desfecho
+    (\cd{checada | ruido | conflito}) sai do gabarito do catálogo antes de
+    qualquer modelo ser chamado; a IA escreve como aquilo soa. Sem ela, o
+    roteiro autoral do catálogo assume --- e é ele que a suíte de testes exercita.
+  \item \textbf{Amara no privado}, e só depois da decisão. O silêncio dela na
+    investigação é não-negociável: se apontasse a mensagem falsa, o
+    reconhecimento de padrão que a missão mede deixaria de acontecer.
+  \item \textbf{A devolutiva do \enquote{Meu percurso}}, um parágrafo sobre as
+    escolhas --- que não é nota e não entra no \cd{score}.
+\end{itemize}
+
+\begin{atencao}
+A conversa com Amara é o \textbf{único texto livre} da missão, e o pacote de
+insumos aprovado o declarava inexistente. Ele voltou com cinco travas: 600
+caracteres, teto de 3 turnos, gravado sob RLS, fora de log e de telemetria, e
+sem nenhuma rota de gestor que o alcance (\adrr{ADR-66}).
+\end{atencao}
+
+\subsection{Sem mídia, a missão roda igual}
+
+\rota{GET /o-eco-no-grupo/midia} devolve \cd{null} no que não foi preparado, e
+\cd{null} é informação: o áudio cai na \textbf{transcrição} --- que está sempre
+na tela, por acessibilidade --- e a foto na ilustração procedural. Quem prepara é
+o professor, no painel, e a mídia vale para o contrato inteiro.
+
+\subsection{O que o professor lê}
+
+Sem coluna de pontos. A folha mostra conduta --- quem abriu a matéria antes de
+responder, quem ouviu o episódio, quem apagou e tentou de novo, quem entregou o
+percurso --- e a distribuição A/B/C aparece como percentual da turma, que é o
+material do debate. Listagem é ordenável, e ordenar crianças por acerto viraria
+ranking.
+
+\subsection{O clone é escuro}
+
+A seção \cd{whatsappmobile} do design system publica exclusivamente o tema
+escuro. Os wireframes descrevem telas claras; o que está em produção é o escuro,
+e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
+\cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
+\enquote{sem consumidor} até aqui.
+
+
 \section{exp-70 --- Vila do Lume}
 
 Jogo 3D em primeira pessoa, \textbf{transversal} (\cd{series: []}): não pertence a
@@ -590,10 +798,10 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 
 \begin{lstlisting}[language=bashunoo, caption={O caminho completo}, label={lst:novaexp}]
 # 0. Uma branch por experiencia, com o nome do slug
-git switch -c exp-07-fracoes
+git switch -c exp-12-fracoes
 
 # 1. Scaffolding do _template (copia e ajusta nomes)
-pnpm new:exp exp-07-fracoes
+pnpm new:exp exp-12-fracoes
 
 # 2. Implementar em src/App.tsx+
 #    - auth, api e telemetria: SOMENTE pela SDK
@@ -607,9 +815,9 @@ pnpm new:exp exp-07-fracoes
 # 4. Documentar verbo/objeto de telemetria no README da experiencia
 
 # 5. Build gera dist/ 100% estatico. Testar embedado:
-pnpm --filter @edu/exp-07-fracoes dev     # porta nova em lib/experiencias-dev.ts
+pnpm --filter @edu/exp-12-fracoes dev     # porta nova em lib/experiencias-dev.ts
 # e abrir a bancada do hub:
-#   http://localhost:3000/dev-embed?src=http://localhost:5178
+#   http://localhost:3000/dev-embed?src=http://localhost:5180
 \end{lstlisting}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}

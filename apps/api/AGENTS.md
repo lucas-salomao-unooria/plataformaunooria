@@ -110,12 +110,37 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   continua vendo a escola inteira. "Coordenação" é `gestor`: `PAPEIS` é contrato
   congelado, e o CSV aceita sinônimos (`coordenacao`, `diretor`, `principal`).
 - **As turmas do professor são as em que ele tem matrícula.** `comum/turmas-do-professor.ts`
-  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`) é a porta única; os seletores do
+  (`ondeAsTurmasSaoVisiveis`, `professorLeciona`, `professorEnsinaOEstudante`) é a
+  porta única; os seletores do
   UnooTube, da Vila e do unooGPT passam por ela. Antes, qualquer professor abria
   bem-estar e Vila de qualquer turma da escola, porque a única prova exigida era
   "mesma escola", que é a regra de tenancy e não a de quem dá aula ali.
+  **Rota de professor que recebe `turmaId` ou `estudanteId` passa pela porta —
+  TODA, inclusive a que só lê e a que APAGA.** Seis ficaram de fora até
+  2026-09-05, e o `@Roles("professor")` não protegia nada nelas: o "zerar turma"
+  da Vila e do unooGPT, os cartões da Vila, os dois relatórios individuais e o
+  **relógio da aula** do unooGPT — este último deixava um professor da escola dar
+  a largada, ou encerrar, a aula de uma turma que não é dele, no meio dela. O
+  molde certo é o `o-eco-no-grupo`, que nasceu depois da porta e passa
+  `professorDoToken` em todas.
+  **Tela de UMA criança usa `professorEnsinaOEstudante`, não `professorLeciona`**:
+  a pergunta ali não é "esta turma é minha?", é "esta criança é de alguma turma
+  minha?". Ele aceita a matrícula ativa **ou** o cache `users.turma_id` — as duas
+  fontes de propósito, porque as listagens destes módulos partem do cache, e
+  olhando só a matrícula o nome apareceria na folha e a tela dele responderia
+  "não encontrado". Prova em `tests/professor-por-matricula-tenancy.spec.ts`, que
+  roda como superusuário para a RLS não mascarar a falta do `where`.
 - **ARMADILHA**: query que leia `matriculas` fora de `comTenancy` volta VAZIA, em
   silêncio. O sintoma é lista de pessoas "sem turma".
+- **ARMADILHA: `catch` que consulta com o MESMO `tx` nunca funciona.** No
+  Postgres o primeiro erro aborta a transação inteira — todo comando seguinte
+  responde `25P02 current transaction is aborted`, e o que aparece no log é a
+  consulta de RECUPERAÇÃO, não a que quebrou. O padrão "tenta criar, se bater no
+  UNIQUE relê o que a outra requisição criou" precisa da releitura numa
+  `comTenancy` NOVA. Custou um 500 no boot da exp-91: o `catch` estava escrito
+  para salvar a corrida do check-in do dia e era justamente o que a virava erro,
+  derrubando a suíte `professor/04-bem-estar` antes do formulário.
+  Regressão em `tests/bemestar.spec.ts` ("duas chamadas concorrentes").
 - **ARMADILHA MAIOR, e do lado oposto**: `users`, `turmas` e `lotacoes` estão
   FORA da RLS (são lidas no login, antes de haver escola). Nelas o `comTenancy`
   NÃO protege nada — ele arma `app.escola_id`, que só as políticas leem —, e o
@@ -125,9 +150,14 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   listava crianças de TODAS as escolas do contrato (ADR-49).
   `tests/perfis-distribuicao-tenancy.spec.ts` roda como superusuário de
   propósito, para a RLS não mascarar a falta do `where`.
-- **A atividade do Instanooria declara a turma** (`exp_01_activities.turma_id`,
-  ADR-49). `NULL` = atividade anterior à coluna, que vale para a escola inteira —
-  e o painel DIZ isso numa faixa. Com turma, painel, listagem de perfis,
+- **A atividade do Instanooria declara a turma, e desde 2026-09-05 é
+  OBRIGATÓRIO** (`exp_01_activities.turma_id`, ADR-49 revista pela ADR-69).
+  `POST /atividades` exige `turmaId` e o "Todas as turmas da escola" saiu do
+  formulário: era ele que fazia 2EM-A e 2EM-B virarem uma lista só no painel de
+  perfis, no monitor e na análise. A **coluna** continua anulável e sem backfill
+  — `NULL` = atividade anterior à mudança, que vale para a escola inteira, e o
+  painel DIZ isso numa faixa; `ondeAAtividadeVale` continua lendo as duas formas.
+  Com turma, painel, listagem de perfis,
   importação da Vila e `POST /runs` falam todos da MESMA sala; a turma é
   conferida contra a MATRÍCULA (`professorLeciona`), nunca contra a escola do
   token. Sem o ajuste no `POST /runs`, o estudante do 8B entrava na atividade do 8A.
@@ -136,6 +166,39 @@ conhece `sourcedId`, e o `hub:init` não muda (ADR-28).
   `turmaDestinoId`) é UM passo: à mão, o gestor tira da antiga e esquece de pôr
   na nova, e o estudante fica sem turma — invisível para o professor, sem nada na
   tela dizendo o que faltou.
+
+## A sala de aula: a missão dentro da turma (2026-09-05, ADR-69)
+
+`liberacoes` (turma × experiência × estado) é a camada que faltava entre
+`turmas` e `experiencias`. **Sem linha, a missão não abre para aquela sala.**
+
+- **A porta é `comum/liberacao.ts#exigirMissaoLiberada`**, e ela fica no FUNIL
+  das rotas de estudante de cada experiência — `estudanteDaEscola` no UnooTube e
+  no Eco, `garantirSessao` no unooGPT, `abrir` na Vila, e o controller em
+  `POST /runs` + `GET /runs/boot` (a exp-01 é a única cuja entrada está no
+  controller). Pô-la só na rota de leitura deixa a de escrita aberta a quem
+  chamar direto: no UnooTube, `POST /salvos` cria a sessão sozinho.
+- **Fica na CRIAÇÃO da sessão, não em toda rota.** Quem já entrou fica —
+  encerrar fecha a entrada, não expulsa a criança no meio da aula.
+- **Experiência nova declara o próprio `EXP_ID`** (`comum/insta/defaults.ts`,
+  `unootube/catalogo.ts`, `unoogpt/regras/defaults.ts`, `vila/catalogo.ts`,
+  `o-eco-no-grupo/midia.ts`) e ele tem de bater com o `id` do
+  `public/experiencia.json`. Divergir faz a missão NUNCA abrir, com a liberação
+  gravada e visível na tela do professor — não há erro que aponte para isso.
+- **`bloqueada` não é estado do banco**: é a ausência de linha. E ela aparece na
+  tela COM CADEADO, não some — a grade do ano é a promessa do que vem depois.
+  `encerrada` também continua visível, com o rótulo.
+- **`exp_id` não tem FK** para `experiencias`: aquele catálogo é escrito pelo CI
+  ao publicar, e em dev está vazio. Quem o preenche em dev é o seed
+  (`prisma/catalogo-e-liberacoes.ts`, lendo os mesmos manifestos que o CI envia)
+  — **sem catálogo não há grade**, e o professor abre a sala sem nada para liberar.
+- **Estudante sem turma não vê missão nenhuma**, e isso mudou o comportamento da
+  exp-03 (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
+  missão; quem explica é a tela do hub, porque um erro dentro do aparelho não
+  diria "peça para a coordenação te matricular" sem sair do disfarce.
+- **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
+  Quatro suítes quebraram quando a guarda entrou — quem quebrar com
+  `missao-nao-liberada` não tem bug, tem fixture faltando.
 
 **Pessoa NASCE por importação — e o cadastro unitário DELEGA a ela.** As
 chamadas que ESCREVEM em `users` continuam sendo duas:
@@ -476,8 +539,9 @@ primeira — a armadilha do `expires_at`.
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
   (escolas, turmas, matrículas, períodos, lotações, estudantes), `usuarios`,
   `planos` (+referências), `bemestar`, `vila`, `unootube`, `portabilidade`,
-  `perfis`, `analise`, `unoogpt`, `atividades`, `geracao`, `motor` (runs/posts).
-  **As 146 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
+  `perfis`, `analise`, `unoogpt`, `o-eco-no-grupo`, `atividades`, `geracao`,
+  `motor` (runs/posts).
+  **As 167 rotas estão cobertas, e a lista está VAZIA** — rota nova sem contrato
   fica vermelha.
 - **`docs/openapi.json` é versionado** e o **apêndice C do LaTeX é GERADO dele**
   (`scripts/gerar-endpoints-tex.mjs`) — eram 547 linhas de prosa à mão que nada
@@ -533,6 +597,39 @@ experiência com outro formato deve pedir o formato, não recortar depois.
 `finishReason: MAX_TOKENS`. `VERTEX_THINKING_BUDGET` (default `0`, desligado)
 mantém a paridade com o app origem, que usava Claude sem essa etapa; `-1` volta
 ao dinâmico.
+
+**Voz (`generateSpeech`) não é o aiplatform** — é a **Cloud Text-to-Speech**
+(`texttospeech.googleapis.com/v1/text:synthesize`), com os mesmos modelos Gemini
+por trás e o MESMO ADC, mas host, caminho e corpo próprios (por isso não passa
+por `endpointVertex`). `VERTEX_TTS_MODEL`, default `gemini-2.5-flash-tts`. Saída
+em **MP3**, decidida na origem: não há ffmpeg neste repositório, e um WAV de
+3m30 passaria de 10 MB.
+
+Três coisas que custaram tempo e não se descobrem por typecheck:
+- **A API precisa estar habilitada** (`gcloud services enable
+  texttospeech.googleapis.com`), e sem isso a resposta é 403.
+- **Com ADC de USUÁRIO ela exige um "quota project"**, que a credencial de quem
+  fez `gcloud auth application-default login` não carrega — e o aiplatform NÃO
+  exige. O sintoma engana: no mesmo preparo, imagem funciona e voz responde 403
+  `PERMISSION_DENIED`, com uma mensagem que não fala de voz. O provider manda
+  `x-goog-user-project: $VERTEX_PROJECT_ID` para resolver sem mexer no ADC de
+  ninguém; em Cloud Run a SA já traz o projeto.
+- **Os tetos são em BYTES** (4.000 para o texto, 4.000 para a direção de
+  atuação): em pt-BR cada acento conta 2, e medir por `length` deixa passar um
+  roteiro que a API recusa com 400. `generateSpeech` valida antes de chamar.
+
+**Diálogo é UMA chamada**, com `turnos` e `multiSpeakerMarkup`: o modelo ajusta
+pausa e entonação entre as vozes. Sintetizar cada fala à parte e concatenar
+devolveria duas leituras em voz alta, não uma conversa — e a concatenação exigiria
+o ffmpeg que não existe aqui. `AiTimbre` é neutro de vendor (`jovem-feminino`,
+`idoso-feminino`…) pelo mesmo motivo de `AiRequest.modelo`: quem escreve o
+roteiro descreve QUEM fala, não o nome de catálogo de uma voz do Google. O mapa
+timbre → voz é a única tradução, e vive no `vertex.provider.ts`.
+
+**O mock falha fechado em `generateSpeech`**, como em `generateJson` e
+`generateImage`: um MP3 de silêncio seria pior que a ausência (o estudante
+apertaria o play e concluiria que o áudio quebrou). Quem chama cai na
+transcrição, que já está na tela por acessibilidade.
 
 
 ## Plano de aula (exp-90, `apps/api/src/planos`)
@@ -716,6 +813,44 @@ a resposta importar, ela é da plataforma inteira, não de um módulo.
 - Número de resgate **só na rota individual** (`doEstudante`); a folha da turma
   fala de conduta, e `tests/unoogpt-postgres.spec.ts` quebra se `salvas`
   entrar nela.
+
+## O Eco no Grupo (exp-07, `apps/api/src/o-eco-no-grupo`)
+
+Missão de 7º ano conduzida pelo **relógio da turma**, em duas aulas. Quatro
+tabelas (`exp_07_sessoes`, `exp_07_reflexoes`, `exp_07_mensagens`,
+`exp_07_gates_turma`), gabarito só no `catalogo.ts`, e IA em três superfícies.
+
+- **A etapa da turma é PISO e TETO** (`regras/passos.ts`, molde de
+  `comum/insta/etapas.ts`). Piso porque quem chegou atrasado não fica para trás;
+  teto só na etapa `debate`, que é o que "congelar as telas" quer dizer — e ali
+  congela **todos**, não só quem já leu os cards. **Estudante sem turma
+  (`etapa: null`) não tem gate**: uma criança fora de turma não pode ficar presa
+  esperando uma aula que não existe.
+- **O cliente nunca recebe a letra certa; ele recebe `desfecho`**
+  (`checada | ruido | conflito`), calculado no servidor. A primeira versão
+  deixava a tela decidir por `opcao === "B"`, e a resposta certa ia legível para
+  o JS público (regra 3).
+- **`POST /intervencao` recusa com `sem-inspecao` (409) quem não abriu a matéria
+  completa.** É portão pedagógico, não validação: a missão existe para ensinar a
+  conferir antes de repassar.
+- **A cadência da cascata é do servidor** (`atrasoMs`: 2 s → 3 s → 2 s). A espera
+  é o pico da missão; decidi-la no cliente a tornaria alterável pelo DevTools.
+- **A conversa com Amara é o único texto livre de estudante do produto.** Só
+  depois da decisão, teto de 3 turnos e 600 caracteres, sanitizador nos dois
+  sentidos, e **fora de log, telemetria e painel** — o professor vê quantos
+  turnos, nunca o quê (ADR-66).
+- **A mídia é preparada pelo PROFESSOR**, uma vez, e cacheada no bucket
+  (`midia.service.ts`, idempotente, com lock). `GET /midia` devolve `null` no
+  que falta, e `null` é informação: o cliente cai na transcrição e na ilustração
+  procedural em vez de esperar arquivo que não existe (ADR-67).
+- **`praca-cerrada` é RECORTE de `praca-aberta`**, não uma segunda geração: o par
+  print/matéria só funciona se a foto for a mesma. A janela do recorte tem de
+  ter a **proporção do destino** — com proporção diferente, o `cover` recorta de
+  novo e come o que importava. E a origem se lê pelo mesmo driver
+  (`lerMidiaDeExperiencia`), nunca por HTTP: a URL pública aponta para outro
+  processo e dá 404.
+- **`[mock]` está deliberadamente FORA de `MARCAS_DO_PROMPT`** no sanitizador.
+  Se entrasse, Amara ficaria muda em desenvolvimento com `AI_PROVIDER=mock`.
 
 ## Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
 Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão

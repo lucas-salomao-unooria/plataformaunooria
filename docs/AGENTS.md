@@ -7,7 +7,7 @@ Complementa o `AGENTS.md` da raiz.
 | `INFRA.md` | **contrato** com o repo de Terraform: nomes de recursos, envs que a app consome, o que o CI publica | vivo — mudou a expectativa de infra, muda aqui |
 | `INFRA-IDENTITY.md` | o mesmo, para o gerenciador central de identidade (WSO2 IS 7.3.0), que é único para vários contratos | vivo |
 | `ARQUITETURA.md` | desenho de uma página da stack por contrato | **resumo** |
-| `DECISOES.md` | 17 decisões em uma linha cada | **resumo** — o LaTeX tem 59 ADRs completas |
+| `DECISOES.md` | 17 decisões em uma linha cada | **resumo** — o LaTeX tem 70 ADRs completas |
 | `openapi.json` | gerado por `apps/api/scripts/gerar-openapi.ts` | **gerado** — nunca editar à mão |
 
 ## A fonte das decisões é o LaTeX, não esta pasta

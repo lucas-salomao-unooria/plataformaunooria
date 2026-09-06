@@ -56,6 +56,15 @@ export const EnvSchema = z.object({
   // conferir a proporção devolvida — ver PROPORCAO_IMAGEM no vertex.provider.
   VERTEX_IMAGE_MODEL: z.string().default("gemini-3.1-flash-image"),
 
+  // Voz das falas da exp-07 (Amara, a moradora do grupo, o podcast). Não é o
+  // aiplatform: a síntese vem da Cloud Text-to-Speech, com os mesmos modelos
+  // Gemini por trás e o MESMO ADC — e a API precisa estar habilitada no
+  // projeto (`gcloud services enable texttospeech.googleapis.com`), senão a
+  // resposta é 403 e a mídia cai no fallback de transcrição. Respondem hoje:
+  // `gemini-2.5-flash-tts` (default), `gemini-2.5-pro-tts` e
+  // `gemini-3.1-flash-tts-preview`.
+  VERTEX_TTS_MODEL: z.string().default("gemini-2.5-flash-tts"),
+
   // Tokens de RACIOCÍNIO (famílias 2.5 e 3.x), que saem do `maxOutputTokens`.
   // 0 = desligado (paridade com o app origem, que usava Claude sem thinking e
   // é o que garante que o plano anual caiba no teto de saída); -1 = dinâmico.

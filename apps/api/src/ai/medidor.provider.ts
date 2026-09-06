@@ -1,5 +1,14 @@
 import { Metricas, rotuloDeFinishReason } from "../observabilidade/metricas";
-import { ErroDeGeracao, type AiConversaRequest, type AiJsonRequest, type AiProvider, type AiRequest, type AiResult } from "./provider";
+import {
+  ErroDeGeracao,
+  type AiConversaRequest,
+  type AiImagemOpcoes,
+  type AiJsonRequest,
+  type AiProvider,
+  type AiRequest,
+  type AiResult,
+  type AiSpeechRequest,
+} from "./provider";
 
 /**
  * Decorator do `AiProvider` que MEDE cada chamada (cap. 17): latência por
@@ -16,9 +25,15 @@ export interface ModelosDoMedidor {
   padrao: string;
   longo: string;
   imagem: string;
+  voz: string;
 }
 
-export type OperacaoDeIa = "generate" | "generateJson" | "generateImage" | "conversar";
+export type OperacaoDeIa =
+  | "generate"
+  | "generateJson"
+  | "generateImage"
+  | "generateSpeech"
+  | "conversar";
 export type ResultadoDeIa = "ok" | "erro-provider" | "timeout" | "erro";
 
 export function classificarFalha(erro: unknown): ResultadoDeIa {
@@ -48,8 +63,12 @@ export class MedidorDeProvider implements AiProvider {
     return this.medir("generateJson", this.modelos.padrao, () => this.real.generateJson(req), false);
   }
 
-  generateImage(prompt: string): Promise<Buffer> {
-    return this.medir("generateImage", this.modelos.imagem, () => this.real.generateImage(prompt), false);
+  generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer> {
+    return this.medir("generateImage", this.modelos.imagem, () => this.real.generateImage(prompt, opcoes), false);
+  }
+
+  generateSpeech(req: AiSpeechRequest): Promise<Buffer> {
+    return this.medir("generateSpeech", this.modelos.voz, () => this.real.generateSpeech(req), false);
   }
 
   conversar(req: AiConversaRequest): Promise<AiResult> {

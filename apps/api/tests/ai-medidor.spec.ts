@@ -7,7 +7,12 @@ import { metricasEmMemoria } from "./metricas-em-memoria";
  * relançado intacto (o `ErroDeGeracao` que o `/destilar` transforma em 503),
  * e o que fica são histograma de latência e contadores por rótulo fechado.
  */
-const MODELOS = { padrao: "gemini-padrao", longo: "gemini-longo", imagem: "gemini-imagem" };
+const MODELOS = {
+  padrao: "gemini-padrao",
+  longo: "gemini-longo",
+  imagem: "gemini-imagem",
+  voz: "gemini-voz",
+};
 
 function providerFalso(resultado: Partial<AiResult> | Error): AiProvider {
   const devolver = async () => {
@@ -24,6 +29,10 @@ function providerFalso(resultado: Partial<AiResult> | Error): AiProvider {
     generateImage: async () => {
       if (resultado instanceof Error) throw resultado;
       return Buffer.from("png");
+    },
+    generateSpeech: async () => {
+      if (resultado instanceof Error) throw resultado;
+      return Buffer.from("mp3");
     },
   };
 }
@@ -78,6 +87,23 @@ describe("MedidorDeProvider", () => {
     const medidor = new MedidorDeProvider(providerFalso({}), metricas, MODELOS);
     expect((await medidor.generateImage("um gato")).toString()).toBe("png");
     expect((await pontos("unooria.ia.latencia"))[0]?.attributes).toMatchObject({ modelo: "gemini-imagem", operacao: "generateImage" });
+    await encerrar();
+  });
+
+  it("generateSpeech usa o modelo de VOZ e devolve o Buffer intacto", async () => {
+    // Rótulo próprio: voz e imagem têm modelos e custos diferentes, e medi-las
+    // sob o mesmo nome esconderia qual delas ficou lenta.
+    const { metricas, pontos, encerrar } = metricasEmMemoria();
+    const medidor = new MedidorDeProvider(providerFalso({}), metricas, MODELOS);
+    const audio = await medidor.generateSpeech({
+      texto: "oi",
+      falantes: [{ nome: "Amara", timbre: "jovem-feminino" }],
+    });
+    expect(audio.toString()).toBe("mp3");
+    expect((await pontos("unooria.ia.latencia"))[0]?.attributes).toMatchObject({
+      modelo: "gemini-voz",
+      operacao: "generateSpeech",
+    });
     await encerrar();
   });
 });

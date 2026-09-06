@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { comEscola } from "./tenancy-do-seed";
 import { criarFabricaDePessoas, type PessoaDemo } from "./pessoas-demo";
+import { semearCatalogo, semearLiberacoes } from "./catalogo-e-liberacoes";
 import bcrypt from "bcryptjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -281,6 +282,10 @@ async function main() {
     await lotar(ESCOLA_ID, criado.id, "gestor", true);
     anotar(gestor, "gestor", ESCOLA_NOME);
     await upsertAdminContrato(fabrica.pessoa("admin."));
+    /* O catálogo de experiências não depende de turma nem de gente: ele entra
+       até no seed mínimo, senão a primeira turma criada pelo gestor abriria uma
+       sala sem nada para liberar. */
+    await semearCatalogo(prisma);
     escreverCredenciais();
     console.log(
       `Seed MÍNIMO: "${ESCOLA_NOME}", período "${periodo.titulo}", 1 gestor e ` +
@@ -404,6 +409,15 @@ async function main() {
     await upsertAdminContrato(fabrica.pessoa("admin."));
   }
 
+  // ------------------------------------------------- catálogo e liberações
+  const experiencias = await semearCatalogo(prisma);
+  const liberadas = await semearLiberacoes(
+    prisma,
+    ESCOLA_ID,
+    new Map(turmas.map((t) => [t.nome, t.id])),
+    new Map(professores.map((p) => [p.turma.nome, p.id])),
+  );
+
   escreverCredenciais();
 
   const total = await prisma.user.count();
@@ -414,6 +428,8 @@ async function main() {
       `${turmas.length * ESTUDANTES_POR_TURMA} estudantes, ${professores.length} professores\n` +
       `  ${ESCOLA_2_NOME}: turma ${TURMA_ESCOLA_2.nome}, ${ESTUDANTES_POR_TURMA} estudantes\n` +
       `  ${GESTORES} gestores (o 1º nas duas unidades), ${ADMINS_CONTRATO} admin-contrato\n` +
+      `  ${experiencias} experiências no catálogo · ${liberadas} missões liberadas ` +
+      `(só nas turmas "A"; as "B" ficam fechadas para o professor exercitar liberar)\n` +
       `  ${estudantes} estudantes no total · ${total} contas na base (senha: a de SEED_SENHA)\n` +
       `  credenciais: ${ARQUIVO_CREDENCIAIS}`,
   );

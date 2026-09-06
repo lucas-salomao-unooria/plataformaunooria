@@ -101,6 +101,43 @@ await suite(
       inteira: true,
     });
 
+    // ── O Eco no Grupo (7º ano, unidade 1) ──────────────────────────────
+    /* A suíte do estudante (estudante/06-o-eco-no-grupo.mjs) corre ANTES e
+       deixa a turma com percurso entregue: é ele que este passo lê. */
+    const professorSetimo = conta("professor", { serie: "7EF" });
+    await r.entrar(p, professorSetimo.login);
+    await p.goto(`${HUB}/professor/entre-redes/7-ano/unidade-1/resultados`, {
+      waitUntil: "domcontentloaded",
+    });
+    await p.waitForSelector("select#turma", { timeout: 20_000 });
+    await p.waitForTimeout(1500);
+    const opcoesEco = await p
+      .locator("select#turma option")
+      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
+    const alvoEco = opcoesEco.find((o) => o.value);
+    if (alvoEco) {
+      await p.selectOption("select#turma", alvoEco.value);
+      await p.waitForURL("**turmaId=**", { timeout: 20_000 });
+      await p.waitForTimeout(2500);
+    }
+    const temGates = await p.locator("[data-gate]").count();
+    r.exigir(temGates >= 3, "os três momentos da aula ficam na MESMA tela dos resultados");
+    const folhaEco = await p.locator("table").first().innerText().catch(() => "");
+    r.exigir(
+      !/\b(pontos|nota|score)\b/i.test(folhaEco),
+      "a folha do Eco no Grupo não traz coluna de pontos",
+    );
+    await r.registrar(p, "resultados-o-eco-no-grupo", {
+      titulo: "A aula de duas etapas e os resultados",
+      mostra:
+        "Os três botões que conduzem a turma — abrir a Aula 2, congelar o debate, liberar o " +
+        "percurso — e o retrato de quem abriu a matéria antes de responder.",
+      prova:
+        "É a única missão da trilha em duas aulas, e a segunda não começa sozinha. Conduzir e ler " +
+        "ficam juntos porque a condução acontece DURANTE a aula.",
+      inteira: true,
+    });
+
     // ── unooGPT (2ª série EM, unidade 1) ────────────────────────────────
     const professorEM = conta("professor", { serie: "2EM" });
     await r.entrar(p, professorEM.login);

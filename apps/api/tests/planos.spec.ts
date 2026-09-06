@@ -53,6 +53,9 @@ class ProviderFake implements AiProvider {
   generateImage(): Promise<Buffer> {
     throw new Error("não usado");
   }
+  generateSpeech(): Promise<Buffer> {
+    throw new Error("não usado");
+  }
   conversar(): Promise<AiResult> {
     throw new Error("não usado");
   }

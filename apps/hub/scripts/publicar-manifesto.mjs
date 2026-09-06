@@ -57,6 +57,11 @@ const corpo = {
   nome: manifesto.nome,
   versaoAtiva: versao,
   series: manifesto.series ?? [],
+  /* A unidade do ano. `null` na transversal e na ferramenta de professor — elas
+     não moram numa unidade —, e é o que ORDENA a grade da sala (ADR-69). Sem
+     ela a ordem cai no `exp_id`, que é numeração de experiência e não do ano
+     letivo: o 7º ano apareceria depois do 8º. */
+  unidade: manifesto.unidade ?? null,
   capabilities: manifesto.capabilities ?? [],
   viewport: manifesto.viewport ?? null,
   publico: manifesto.publico ?? "estudante",

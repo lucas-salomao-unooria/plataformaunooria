@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { VERSAO_MAPEAMENTO } from "../src/vila/mapeamento";
 import { VilaService } from "../src/vila/vila.service";
+import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
@@ -74,6 +75,7 @@ function comCartoesComuns(p: Record<string, unknown>): Record<string, unknown> {
 
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
+  await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.vilaPerfil.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.vilaSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.vilaBolha.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -113,6 +115,13 @@ beforeAll(async () => {
   }
   estudante3 = (await criar(ESCOLA, turma3, "vila.p1", "Pequeno 1")).id;
   estudanteDaOutraEscola = (await criar(OUTRA_ESCOLA, null, "vila.x1", "Fora 1")).id;
+
+  /* A PORTA DA SALA (ADR-69): a Vila é transversal, o que quer dizer que ela
+     CABE em qualquer ano — não que ela abre sozinha. Sem estas linhas, `abrir`
+     recusa com 403 `missao-nao-liberada`. */
+  for (const turmaId of [turma8, turma3]) {
+    await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-70-vila-do-lume", estudantes8[0]!);
+  }
 });
 
 afterAll(async () => {

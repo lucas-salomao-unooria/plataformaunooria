@@ -324,7 +324,7 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
 \fitpage{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \draw[c4zone] (0.4,-0.5) rectangle (15.6,-14.2);
+  \draw[c4zone] (0.4,-0.5) rectangle (15.6,-15.1);
   \node[c4boundarylbl, fill=unooSurface] at (0.8,-0.35) {Contêiner: API (NestJS)};
 
   % ---- faixa 1: transversal
@@ -374,12 +374,14 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{rostering/}\desc{pessoas, escolas, turmas}};
   \node[c4component, text width=22mm] (port) at (14.4,-9.6)
     {\texttt{portabilidade/}\desc{perfil portátil}};
+  \node[c4component, text width=22mm] (salas) at (2.0,-10.4)
+    {\texttt{salas/}\desc{a sala: grade e liberação}};
 
   % ---- faixa 4: dominio por experiencia
-  \node[camadalbl, anchor=west] at (0.7,-11.1)
+  \node[camadalbl, anchor=west] at (0.7,-10.9)
     {Domínio por experiência --- \texttt{catalogo.ts} + \texttt{regras.ts} + \emph{service} + \emph{controllers} por papel};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (motor) at (2.2,-12.4)
-    {\texttt{motor/}, \texttt{geracao/}, \texttt{dossie/}, \texttt{atividades/}, \texttt{perfis/}\desc{exp-01}};
+    {\texttt{motor/} e mais 4\desc{geracao, dossie, atividades, perfis --- exp-01}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (utube) at (5.6,-12.4)
     {\texttt{unootube/}\desc{exp-02}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (vila) at (9.0,-12.4)
@@ -390,6 +392,8 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{bemestar/}\desc{exp-91}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (2.2,-14.2)
     {\texttt{unoogpt/}\desc{exp-03}};
+  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (eco) at (9.0,-14.2)
+    {\texttt{o-eco-no-grupo/}\desc{exp-07 --- texto, imagem e VOZ}};
 
   % ---- relações principais
   \draw[c4rel] (guard.south) -- (2.5,-3.1) -- (6.0,-3.1) -- (roles.south);
@@ -401,10 +405,13 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     node[cxlabel, pos=0.80, right=1pt]{IA + quota};
   \draw[c4rel] (bem.west) -- (13.6,-13.6) -- (13.6,-10.7) -- (6.4,-10.7) -- (6.4,-6.0);
   \draw[c4rel] (ugpt.west) -- (0.4,-14.2) -- (0.4,-10.5) -- (2.5,-10.5) -- (2.5,-6.0);
-  \draw[c4rel] (ugpt.east) -- (4.0,-14.2) -- (6.8,-14.2) -- (6.8,-10.2) -- (6.4,-10.2) -- (6.4,-6.0)
-    node[cxlabel, pos=0.55, above]{IA com ferramentas + quota};
+  \draw[c4rel] (ugpt.east) -- (4.0,-14.2) -- (6.8,-14.2) -- (6.8,-10.2) -- (6.4,-10.2) -- (6.4,-6.0);
+  \node[cxlabel, anchor=west] at (6.95,-11.45) {IA com ferramentas + quota};
   \draw[c4rel] (planos.north east) -- (13.6,-11.6) -- (10.0,-6.0)
     node[cxlabel, pos=0.72, right=1pt]{\emph{bucket} privado};
+  \draw[c4rel] (eco.north) -- (9.0,-13.35) -- (10.5,-13.35) -- (10.5,-10.35) -- (6.4,-10.35) -- (6.4,-6.0);
+  \draw[c4rel] (eco.east) -- (10.9,-14.2) -- (10.9,-11.55) -- (10.0,-6.0)
+    node[cxlabel, pos=0.80, right=1pt]{mídia no \emph{bucket}};
 
 \end{tikzpicture}}
 \caption[C4 nível 3 --- componentes da API]{C4 nível 3: componentes da API. A
@@ -426,6 +433,13 @@ produziria colisão de nomes e falha mais difícil de localizar. O padrão do
 Capítulo~\ref{cap:experiencias} continua valendo para experiência nova; este é um
 porte.
 \end{nota}
+
+\textbf{A porta da sala é a exceção que confirma a regra.} \arq{salas/} é módulo de
+PLATAFORMA: ele não conhece missão nenhuma pelo nome --- sabe turma, série e
+catálogo. E a guarda que as experiências chamam (\cd{exigirMissaoLiberada}) NÃO
+mora nele, mora em \arq{comum/liberacao.ts}. Fosse um \emph{provider} do
+\arq{salas/}, cada módulo de experiência teria de importá-lo, e uma dependência
+esquecida viraria uma porta aberta em silêncio (\adrr{ADR-69}).
 
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
@@ -477,7 +491,8 @@ mentiria sobre quem depende dela.
     {\texttt{ExpFrame}\desc{\emph{sandbox} + protocolo v1}};
 
   \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
-    {Rotas: \texttt{/} (\emph{landing}), \texttt{/estudante}, \texttt{/professor/*},
+    {Rotas: \texttt{/} (\emph{landing}), \texttt{/privacidade}, \texttt{/termos},
+     \texttt{/estudante}, \texttt{/professor/*},
      \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
   \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
     {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
@@ -518,10 +533,28 @@ rolar) e a cor, a tipografia, os ícones, o logo e os botões do DS. Com sessão
 \rota{/} redireciona para a \emph{home} do papel (ou para \rota{/trocar-senha}):
 o \cd{login-form} e a troca de senha fazem \cd{router.replace("/")} e dependem
 desse roteamento para cair na área certa sem o \emph{client} conhecer o papel. A
-\emph{landing} está fora do \cd{matcher} do \emph{middleware}, não lê nada da
-sessão e é, com \rota{/login} e o JWKS, a única superfície pública do hub. Os
-dois pedaços com ciclo de vida (\cd{FundoAnimado}, \cd{RevelarAoRolar}) são
-\emph{client components}; o resto é servidor.
+\emph{landing} está fora do \cd{matcher} do \emph{middleware} e não lê nada da
+sessão. Os dois pedaços com ciclo de vida (\cd{FundoAnimado},
+\cd{RevelarAoRolar}) são \emph{client components}; o resto é servidor.
+\end{nota}
+
+\begin{nota}
+\textbf{As páginas legais são a mesma superfície pública da \emph{landing}}
+(\adrr{ADR-70}). \rota{/privacidade} e \rota{/termos} completam o conjunto
+público do hub --- com \rota{/}, \rota{/login} e o JWKS, é tudo que existe sem
+sessão. Elas são alcançadas pelo rodapé da \emph{landing}, que até então
+oferecia os dois links com \cd{href="\#"}, e por isso reaproveitam a casca dela:
+\cd{components/legal/} importa \cd{landing.css} e monta o mesmo
+\cd{FundoAnimado}, a mesma navegação em vidro e a mesma escala tipográfica.
+Duplicar aquilo criaria a segunda cópia, que diverge na primeira mudança de
+marca.
+
+O conteúdo entra como \emph{dado} (uma lista de seções com \cd{id},
+\cd{titulo} e \cd{conteudo}), não como marcação livre: é o que mantém o sumário
+lateral em sincronia com o texto --- numeração, âncora e ordem saem da mesma
+lista que renderiza as seções, então não existe o estado em que o índice promete
+um item que o corpo não tem. O único \emph{client component} é o
+\cd{SumarioAtivo}, que acende o item em leitura.
 \end{nota}
 
 \section{C4 nível 4 --- Código}

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Uso: pnpm new:exp exp-07-fracoes
+// Uso: pnpm new:exp exp-12-fracoes
 import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const id = process.argv[2];
 if (!id || !/^exp-\d{2}(-[a-z0-9-]+)?$/.test(id)) {
-  console.error("Uso: pnpm new:exp exp-NN-slug (ex: exp-07-fracoes)");
+  console.error("Uso: pnpm new:exp exp-NN-slug (ex: exp-12-fracoes)");
   process.exit(1);
 }
 

@@ -377,29 +377,41 @@ Reiniciar o \emph{run} de um estudante & \rota{POST /runs/:id/reset} &
   \no & \yes & \no & \no\\
 \zebra Ler o dossiê de um \emph{run} & \rota{GET /runs/:id/dossie} &
   \yes\footnotesize{\dag} & \yes & \no & \no\\
-Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
-\zebra \textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
-  \no & \yes & \no & \no\\
-unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
-\zebra \textbf{unooGPT: turma e transcrição individual} &
-  \rota{/unoogpt/professor/*} & \no & \yes & \no & \yes\\
-unooGPT: agregado da escola (sem \cd{estudanteId}) &
+\textbf{A sala: a grade da turma} & \rota{GET /salas/turma/:id} &
+  \no & \yes\footnotesize{\ddag} & \yes & \yes\\
+\zebra \textbf{Liberar/encerrar missão na turma} & \rota{PUT /salas/turma/:id/\B missoes/:expId} &
+  \no & \yes\footnotesize{\ddag} & \no & \no\\
+As salas do estudante (a grade dele) & \rota{GET /salas/minhas} &
+  \yes & \no & \no & \no\\
+\zebra Vila do Lume: agregado da turma & \rota{/vila/agregado/*} & \no & \yes & \yes & \no\\
+\textbf{Vila do Lume: a linha de uma criança} & \rota{/vila/professor/*} &
+  \no & \yes\footnotesize{\ddag} & \no & \no\\
+\zebra unooGPT: a própria partida & \rota{/unoogpt/*} & \yes & \no & \no & \no\\
+\textbf{unooGPT: turma e transcrição individual} &
+  \rota{/unoogpt/professor/*} & \no & \yes\footnotesize{\ddag} & \no & \yes\\
+\zebra unooGPT: agregado da escola (sem \cd{estudanteId}) &
   \rota{/unoogpt/agregado/\B escola} & \no & \no & \yes & \yes\\
-\zebra unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
-unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
-\zebra \textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
+unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
+\zebra unooTube: resultados por turma & \rota{/unootube/turmas/*} & \no & \yes & \yes & \yes\\
+\textbf{Bem-estar: o próprio \emph{check-in}, histórico, apagar} &
   \rota{/bemestar/*} & \no & \yes & \no & \no\\
-Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
-\zebra \textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
+\zebra Plano de aula: criar, versionar, restaurar & \rota{/planos/*} & \no & \yes & \no & \no\\
+\textbf{Análise de produto, na rede} (+CSV) & \rota{/analise/*} &
   \no & \no & \no & \yes\\
-Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
+\zebra Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
-\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 
 \footnotesize{\dag} O estudante lê o dossiê do \textbf{próprio} \emph{run}; a
 posse é verificada no \emph{service}, não pelo papel.
+
+\footnotesize{\ddag} \enquote{Sim} aqui é do PAPEL; o escopo é a
+\textbf{matrícula}. A turma, por \cd{professorLeciona}; a criança, por
+\cd{professorEnsina\-OEstudante}. Vale também para o que APAGA (\enquote{zerar
+turma}) e para o relógio da aula do unooGPT --- as três coisas que uma prova de
+\enquote{mesma escola} deixava passar.
 \normalsize
 
 \begin{regra}
@@ -485,12 +497,29 @@ listas e \cd{professorLeciona} vira 403 nas telas de uma turma só. Gestor e
 admin-contrato seguem enxergando a escola inteira, de propósito --- é a mesma
 distinção que o OneRoster faz entre \cd{roles}, no nível da organização, e
 \cd{enrollments}, no nível da turma (\adrr{ADR-28}).
+
+A camada de cima é a \textbf{sala de aula} (\adrr{ADR-69}): quem tem matrícula
+de professor na turma libera a missão nela, e é essa liberação que abre a porta
+para o estudante. Gestor lê a sala e não decide a aula --- a mesma linha que
+separa administrar a escola de dar a aula.
+
+\textbf{Seis rotas ficaram de fora dessa porta}, e foram fechadas depois: o
+\enquote{zerar turma} da Vila e do unooGPT, os cartões da Vila, os dois
+relatórios individuais e --- a mais grave --- o \textbf{relógio da aula} do
+unooGPT, em que um professor da escola dava a largada ou encerrava a aula de uma
+turma que não é dele, no meio dela. As duas telas individuais carregam leitura de
+perfil e transcrição de texto livre de menor de idade; para elas a pergunta não é
+\enquote{esta turma é minha?}, e sim \enquote{esta criança é de alguma turma
+minha?} --- \cd{professorEnsinaOEstudante}, que aceita a matrícula ativa
+\emph{ou} o cache \cd{users.turma\_id}. As duas fontes porque as listagens destes
+módulos partem do cache: olhando só a matrícula, um cache adiantado faria o nome
+aparecer na folha e a tela dele responder \enquote{não encontrado}.
 \end{decisao}
 
 \begin{decisao}
 \textbf{Numa REDE, a pessoa atravessa escolas; o \emph{token} não.} O professor
 lotado em duas unidades escolhe em qual está trabalhando, e o \emph{token} leva
-\textbf{essa} --- então a política de RLS e as 31 tabelas com \cd{escola\_id}
+\textbf{essa} --- então a política de RLS e as 37 tabelas com \cd{escola\_id}
 continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
@@ -564,8 +593,9 @@ Verificação de versão maior & Hub e experiência comparam
   \cd{localStorage} nem em \emph{cookie}. TTL de 15 minutos, renovado por
   mensagem.\\
 \emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
-  allow-modals}, mais \cd{allow-pointer-lock} \textbf{apenas} para quem declara
-  \cd{pointer-lock} no manifesto~\cite{mdnsandbox}.\\
+  allow-modals}, mais \cd{allow-pointer-lock} e \cd{allow-forms}
+  \textbf{apenas} para quem declara \cd{pointer-lock} ou \cd{forms} no
+  manifesto~\cite{mdnsandbox}.\\
 \zebra \cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}: sem delegar
   \cd{autoplay}, um \cd{<video muted autoplay>} cross-origin rejeita
@@ -657,8 +687,33 @@ Ranking sem menor real & O ranking da exp-02 usa colegas
 \zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
+Texto de menor com contenção & \cd{exp\_07\_mensagens} guarda a conversa da
+  criança com Amara --- \textbf{o único texto livre de estudante do produto}. Ela
+  fica sob RLS, fora de log e fora da telemetria (que leva só a contagem de
+  turnos), tem teto de 600 caracteres e de 3 turnos, e passa pelo sanitizador
+  nos dois sentidos. Ver a decisão logo abaixo.\\
 \bottomrule
 \end{tabularx}
+
+\begin{decisao}
+\textbf{A exp-07 reabriu o texto livre de menor, e isso é mudança de postura}
+(\adrr{ADR-66}). Até ela, o produto tinha exatamente um campo aberto, e ele era
+de \emph{professor} (o \emph{check-in} de bem-estar); as experiências de
+estudante trabalhavam com vocabulário fechado, e a linha acima sobre
+\cd{exp\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
+
+O que fez valer a pena: a missão mede se a criança consegue \textbf{perguntar
+antes de repassar}, e um menu de perguntas prontas responderia a pergunta no
+lugar dela. O que cerca a abertura: a conversa só existe \emph{depois} da
+decisão (o silêncio de Amara na etapa da decisão é de ofício), o texto nunca sai
+da escola dele, e nenhum caminho o leva a \emph{log}, telemetria, Clarity ou
+painel do professor --- o painel mostra \textbf{quantos} turnos, nunca o quê.
+
+Consequência aceita: existe no banco uma coluna de longa duração com texto
+escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
+de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
+algum painel pedir o texto, a decisão volta à mesa.
+\end{decisao}
 
 \subsection{Retenção: uma decisão explícita de não declarar prazo}
 

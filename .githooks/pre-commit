@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# A fronteira da fatia, na hora do erro em vez de na revisão.
+#
+# `pnpm worktree criar … --fatia …` grava os caminhos da frente em
+# `<git-dir>/fatia` — que num worktree é `.git/worktrees/<slug>/`, privado
+# daquela frente e fora do versionamento. Este hook confere o que está no index
+# contra aquela lista.
+#
+# Sem o arquivo, não faz nada: a cópia principal e qualquer worktree sem fatia
+# declarada seguem livres. É CONSELHO como os outros hooks — `--no-verify` fura,
+# e PERMITIR_FORA_DA_FATIA=1 fura com nome. O ponto não é impedir: é que sair da
+# fatia seja uma decisão, e não um descuido que só aparece no `git diff` de
+# quem revisa (ADR-71).
+set -u
+
+GIT_DIR_REAL="$(git rev-parse --git-dir)"
+FATIA="$GIT_DIR_REAL/fatia"
+[ -f "$FATIA" ] || exit 0
+
+# A costura é legítima e mora FORA da fatia por definição — é o registro que
+# liga o módulo novo ao resto. A lista existe aqui como código; em prosa, no
+# CONTRIBUTING.md.
+COSTURA='^(apps/api/src/app\.module\.ts|apps/api/prisma/schema\.prisma|apps/api/prisma/migrations/|apps/hub/middleware\.ts|apps/hub/lib/experiencias-dev\.ts|documentacao-latex/|docs/|package\.json$|pnpm-lock\.yaml$|(.*/)?(AGENTS|CLAUDE|README)\.md$|CONTRIBUTING\.md$)'
+
+fora=()
+costura=0
+
+while IFS= read -r caminho; do
+  [ -z "$caminho" ] && continue
+
+  dentro=0
+  while IFS= read -r prefixo; do
+    [ -z "$prefixo" ] && continue
+    case "$caminho" in
+      "$prefixo"|"$prefixo"/*) dentro=1; break ;;
+    esac
+  done < "$FATIA"
+  [ "$dentro" = "1" ] && continue
+
+  if printf '%s' "$caminho" | grep -Eq "$COSTURA"; then
+    costura=$((costura + 1))
+    continue
+  fi
+  fora+=("$caminho")
+done < <(git diff --cached --name-only)
+
+if [ "$costura" -gt 0 ]; then
+  echo "aviso: $costura arquivo(s) de costura neste commit — a costura vai num commit" >&2
+  echo "       separado no fim da frente, depois de \`git merge origin/dev\`." >&2
+fi
+
+[ ${#fora[@]} -eq 0 ] && exit 0
+
+if [ "${PERMITIR_FORA_DA_FATIA:-}" = "1" ]; then
+  echo "aviso: ${#fora[@]} arquivo(s) fora da fatia, liberado por PERMITIR_FORA_DA_FATIA=1." >&2
+  exit 0
+fi
+
+cat >&2 <<MSG
+
+  ✗ ${#fora[@]} arquivo(s) fora da fatia desta frente.
+
+    A fatia declarada (${FATIA#"$(git rev-parse --show-toplevel)"/}):
+$(sed 's/^/      /' "$FATIA")
+
+    Fora dela:
+$(printf '      %s\n' "${fora[@]}")
+
+    A fatia é vertical — o módulo da api, a rota do hub e a experiência andam
+    juntos. Editar o módulo do vizinho é o que faz duas frentes brigarem num
+    merge que nenhuma ferramenta resolve, porque o conflito é de desenho.
+
+    Se o arquivo é REGISTRO e não lógica (app.module.ts, fim do schema.prisma,
+    middleware.ts, experiencias-dev.ts, os docs), ele já é costura e passa.
+
+    O caminho:
+      • é da sua fatia?     acrescente a linha em $FATIA
+      • é do vizinho?       abra outra frente: pnpm worktree criar …
+      • é decisão sua?      PERMITIR_FORA_DA_FATIA=1 git commit …
+
+MSG
+exit 1

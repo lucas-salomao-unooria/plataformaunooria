@@ -26,6 +26,23 @@ canvas e o contexto volta perdido — fundo em branco), e cor de ícone vai pela
 prop `color` do `Icon`, não por classe (a folha do DS vence e o ícone sai preto).
 Suíte: `node scripts/e2e/rodar.mjs publico` (a landing e o login; só o hub).
 
+**`/privacidade` e `/termos` são a MESMA superfície pública da landing**
+(ADR-70), alcançadas pelo rodapé dela. `components/legal/` importa
+`landing.css` e monta o mesmo `FundoAnimado` — não copie a nav, o fundo nem a
+escala tipográfica para cá: a cópia diverge na primeira mudança de marca, e as
+duas páginas passam a parecer de outro produto justo onde a confiança está sendo
+decidida. **O conteúdo entra como DADO** (`SecaoLegal[]` com `id`, `titulo`,
+`conteudo`), nunca como marcação livre: sumário, numeração e âncora saem da
+mesma lista que renderiza as seções, então o índice não pode prometer um item
+que o corpo não tem. Duas proibições que já foram rejeitadas em revisão:
+**nenhuma `<table>`** no texto legal (célula altíssima e rolagem lateral no
+celular, que é onde a família abre o link — use `.legal-card`) e **nenhum
+`[A DEFINIR]` espalhado**; o que depende do contrato mora no bloco
+`IDENTIFICACAO` no topo de cada página, e o que falta decidir tem uma seção
+final própria. **O texto só afirma o que o código faz** — a ADR-70 lista as
+promessas que hoje seriam falsas (retenção, exclusão por titular, log de acesso,
+dados no Brasil, consentimento). Suíte: `publico/03-documentos-legais`.
+
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
 (marca → home do papel, nome + série/papel, avatar, Sair) é o header de
 `/estudante`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
@@ -56,6 +73,39 @@ A montagem (token, manifesto, dev server, origin) é uma só:
 `lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
 `/professor/plano-de-aula` e `/professor/bem-estar`. O contrato `postMessage` e
 o manifesto estão em `apps/experiencias/AGENTS.md`.
+
+**A origem do bundle é do AMBIENTE; o manifesto diz o que a experiência
+declara.** Os dois estavam conflatados em `emDev = !manifesto && !emProducao` —
+"tabela vazia logo é dev" — e isso quebrou quando o seed passou a popular
+`experiencias` (ADR-69): sem `NEXT_PUBLIC_CDN_EXP_URL`, a URL versionada caía no
+default `localhost:5173`, o dev server da exp-01, que responde a qualquer caminho
+com a SPA dele. TODA missão abria o Instanooria, o handshake completava e o boot
+dava 403 — nada dizia "endereço errado".
+
+## A sala de aula no hub (ADR-69)
+
+`/estudante` lê `GET /salas/minhas` (`lib/salas.ts`): a turma e a grade do ano
+dela, com o estado de cada missão. `null` (api fora do ar) e `[]` (sem turma) são
+telas DIFERENTES — mandar a criança falar com a coordenação por causa de um 503 é
+o pior conselho possível.
+
+`/professor/turmas/[id]` é a SALA, com abas em `?aba=` (`missoes` | `estudantes`)
+e o `Tabs` do DS em modo controlado — a URL é o estado, como o `?turmaId=` dos
+resultados. O botão de liberar é client-side porque o professor aperta na FRENTE
+DA SALA, e passa pelo BFF: **`PUT` precisou ser exportado lá** (`app/api/plataforma/[...path]/route.ts`),
+e método que falta no BFF não dá 404 e sim **405**, sem linha no log — o sintoma
+chega como "o botão não faz nada".
+
+O caminho para conduzir a missão sai da sala, com a turma já na URL
+(`lib/rotas-da-missao.ts` traduz `expId` → rota do professor; é o único lugar que
+faz essa tradução). A trilha do Entre Redes continua por ano e virou catálogo,
+com faixa dizendo que quem abre é a turma.
+
+`/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
+ela. Só para estudante: professor e gestor não chegam nesta rota, e `/dev-embed`
+segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
+jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
+assinado.
 
 ## As fontes do DS não vêm de graça
 

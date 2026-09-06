@@ -20,6 +20,14 @@
  * Ver `docs/jogo/MISSAO-a-noite-longa.md` no repositório de origem.
  */
 
+/**
+ * O slug desta experiência no catálogo (`experiencias.exp_id`) e no bucket.
+ * É o que a porta da sala (`comum/liberacao.ts`) pergunta. Tem de bater com o
+ * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
+ * liberação gravada e visível na tela do professor.
+ */
+export const EXP_ID = 'exp-70-vila-do-lume';
+
 /** As três bolhas: o nível do golpe da batida 3, e o momento em que ele chega. */
 export const BOLHAS = ["A", "B", "C"] as const;
 export type Bolha = (typeof BOLHAS)[number];

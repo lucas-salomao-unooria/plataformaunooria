@@ -223,12 +223,12 @@ export function Landing() {
                 <h4 className="landing-subtitulo mb-4">Links</h4>
                 <ul className="flex flex-col gap-2">
                   <li>
-                    <a className="landing-rotulo" href="#">
+                    <a className="landing-rotulo" href="/privacidade">
                       Privacidade
                     </a>
                   </li>
                   <li>
-                    <a className="landing-rotulo" href="#">
+                    <a className="landing-rotulo" href="/termos">
                       Termos
                     </a>
                   </li>

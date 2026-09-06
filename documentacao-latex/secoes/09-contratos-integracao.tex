@@ -264,19 +264,24 @@ lendo o arquivo.
 \zebra \cd{series} & \emph{string[]} & Séries em que a experiência se aplica.
   \textbf{Vazio significa TODAS as séries}, não nenhuma --- ver o alerta
   abaixo.\\
-\cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
+\cd{unidade} & \emph{1--4?} & A unidade do ano a que a missão pertence. Ausente
+  na transversal e na ferramenta de professor: elas não moram numa unidade. É o
+  que ORDENA a grade da sala (\adrr{ADR-69}).\\
+\zebra \cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
   \cd{ia}, \cd{avaliacao}, \cd{tempo-real}. Declara o que a experiência usa da
   plataforma.\\
-\zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
+\cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
-  exp-01 é 375$\times$812; a exp-02 \emph{não} tem \cd{viewport}, porque foi
-  desenhada para \emph{desktop}.\\
-\cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
+  exp-01 e a exp-07 são 375$\times$812; a exp-02 \emph{não} tem \cd{viewport},
+  porque foi desenhada para \emph{desktop}. Quem desenha o aparelho é o hub ---
+  a experiência \textbf{não} empilha uma casca própria.\\
+\zebra \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
-\zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
-  experiência precisa. Hoje só \cd{pointer-lock}. Vazio (o \emph{default}) =
-  nenhuma.\\
-\cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
+\cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
+  experiência precisa: \cd{pointer-lock} (exp-70) e \cd{forms} (exp-03, exp-07),
+  traduzidos pelo \cd{ExpFrame} nos tokens \cd{allow-pointer-lock} e
+  \cd{allow-forms}. Vazio (o \emph{default}) = nenhuma.\\
+\zebra \cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
   experiência emite. Não é lido por código; é contrato de leitura para quem
   analisa os dados.\\
 \bottomrule
@@ -285,9 +290,16 @@ lendo o arquivo.
 \begin{regra}
 \cd{series: []} significa \textbf{todas as séries}, não nenhuma: é assim que uma
 experiência \emph{transversal} se declara (é o caso da exp-70, que não pertence a
-ano nenhum). Quando o filtro por série voltar a valer no hub do estudante, vazio tem
-de continuar querendo dizer \enquote{todas} --- o contrário faz a experiência
-desaparecer da tela sozinha, sem erro em lugar nenhum.
+ano nenhum). Desde a sala de aula (\adrr{ADR-69}) este campo é \textbf{lido}: é ele
+que decide se a missão entra na grade de uma turma, e vazio continuar querendo
+dizer \enquote{todas} deixou de ser hipótese e virou o que sustenta a transversal
+aparecer em toda sala. O contrário faz a experiência desaparecer da tela sozinha,
+sem erro em lugar nenhum.
+
+\textbf{Campo novo no \arq{experiencia.json} tem de ser acrescentado ao
+\arq{publicar-manifesto.mjs} também} --- foi assim com \cd{permissoes} e com
+\cd{unidade}. Esquecer é INVISÍVEL em desenvolvimento (onde o hub lê o arquivo
+do \emph{bundle}) e quebra em produção, onde ele lê a coluna.
 \end{regra}
 
 \subsection{Como o hub resolve a URL do \cd{iframe}}
@@ -468,12 +480,25 @@ export interface AiConversaRequest {
   tentativas?: number;           // default 3
 }
 
+export interface AiSpeechRequest {
+  texto?: string;                                    // monologo
+  turnos?: Array<{ falante: string; texto: string }>; // dialogo (podcast)
+  /** Timbre por falante, NEUTRO de vendor: `jovem-feminino`, `idoso-masculino`...
+   *  Quem chama nunca escolhe a voz do catalogo do fornecedor. */
+  falantes: AiFalante[];
+  direcao?: string;              // atuacao: "tom assustado, voz tremula"
+  idioma?: string;               // BCP-47, default pt-BR
+}
+
 export interface AiProvider {
   generate(req: AiRequest): Promise<AiResult>;
   /** Saida JSON estruturada, com retry e reforco do erro anterior no prompt. */
   generateJson<T>(req: AiJsonRequest<T>): Promise<T>;
-  /** Bytes originais (jpeg/png). Falha => quem chama cai no fallback procedural. */
-  generateImage(prompt: string): Promise<Buffer>;
+  /** Bytes originais (jpeg/png). Falha => quem chama cai no fallback procedural.
+   *  A proporcao e PEDIDA ao modelo (`opcoes.proporcao`), nunca recortada depois. */
+  generateImage(prompt: string, opcoes?: AiImagemOpcoes): Promise<Buffer>;
+  /** MP3 pronto para <audio src>. Falha => quem chama cai na transcricao. */
+  generateSpeech(req: AiSpeechRequest): Promise<Buffer>;
   /** Conversa multi-turno com ferramentas (ADR-23). `tokensUsados` soma TODAS
    *  as voltas e TODAS as tentativas, inclusive as rejeitadas: e o que foi pago. */
   conversar(req: AiConversaRequest): Promise<AiResult>;
@@ -488,6 +513,12 @@ provedor é criar um arquivo novo (\arq{src/ai/<vendor>.provider.ts}) e registr�
 no módulo por \env{AI\_PROVIDER}. Implementações atuais:
 \arq{vertex.provider.ts} (\emph{default}) e \arq{mock.provider.ts} (testes e
 desenvolvimento sem GCP).
+
+O corolário aparece em \cd{AiTimbre} e \cd{AiProporcao}: quem chama pede
+\enquote{voz de senhora idosa} e \enquote{retrato 4:5}, e é o \emph{provider}
+que traduz para o nome de voz e o \cd{imageConfig} do fornecedor do dia. Um id
+de voz do catálogo do Google atravessando o domínio seria \emph{vendor} vazando
+para dentro da missão.
 \end{regra}
 
 \begin{nota}

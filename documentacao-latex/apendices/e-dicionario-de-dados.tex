@@ -32,6 +32,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{periodos\_letivos} & \textbf{Catálogo} & Ano letivo e seus recortes\\
 \cd{turmas} & Tenant & Turmas por escola, período e série\\
 \zebra \cd{matriculas} & Tenant & \textbf{O enturmamento} (estudante e professor)\\
+\cd{liberacoes} & Tenant & \textbf{A missão dentro da turma} (\adrr{ADR-69})\\
 \cd{users} & Tenant & Pessoas e papéis\\
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{progresso} & Tenant & Progresso genérico da SDK\\
@@ -57,7 +58,11 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp\_03\_marcos} & Tenant & Trilha da decisão\\
 \cd{exp\_03\_simulacoes} & Tenant & Desfecho por tentativa\\
 \zebra \cd{exp\_03\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
-\zebra \cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\cd{exp\_07\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
+\zebra \cd{exp\_07\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
+\cd{exp\_07\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
+\zebra \cd{exp\_07\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \cd{exp\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
 \zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por estudante\\
 \cd{exp\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
@@ -217,6 +222,39 @@ divergentes.
 \cd{(escola\_id, usuario\_id)} --- \enquote{as turmas do professor} --- e por
 \cd{(escola\_id, turma\_id)} --- \enquote{quem está nesta turma}.
 
+\subsection{\cd{liberacoes}}
+
+A missão DENTRO da turma (\adrr{ADR-69}). Sem linha, a experiência não abre para
+o estudante daquela sala. Não confundir com o relógio da exp-03 nem com os
+\emph{gates} da exp-07, que respondem \enquote{a aula já começou} e são tabelas
+DA experiência: esta é a pré-condição de todos eles.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \fk{escola\_id} & \cd{TEXT} & \textbf{RLS} por esta coluna.\\
+\fk{turma\_id} & \cd{UUID} FK & \cd{ON DELETE CASCADE}.\\
+\zebra \cd{exp\_id} & \cd{TEXT} & O \emph{slug} da experiência, \textbf{sem FK}
+  para \cd{experiencias}: aquele catálogo é escrito pelo CI ao publicar, e em
+  desenvolvimento está vazio. Mesma escolha de \cd{progresso.exp\_id}.\\
+\cd{estado} & \cd{TEXT} & \cd{liberada} $|$ \cd{encerrada} --- \emph{CHECK} na
+  migração. \textbf{Não há \cd{bloqueada}}: bloqueio é a ausência da linha.\\
+\zebra \fk{liberada\_por} & \cd{UUID} FK & Quem apertou. É a pergunta que a sala
+  faz quando a missão aparece sem ninguém saber por quê --- turma com dois
+  professores é comum.\\
+\cd{liberada\_em} & \cd{TIMESTAMPTZ} & \\
+\zebra \cd{encerrada\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}:
+  \cd{(estado = 'encerrada') = (encerrada\_em IS NOT NULL)}. Data sem regra que a
+  cumpra é a armadilha do \cd{expires\_at}; reliberar LIMPA a data.\\
+\bottomrule
+\end{tabularx}
+
+\cd{UNIQUE (escola\_id, turma\_id, exp\_id)} --- uma linha por missão por sala,
+que é o que torna liberar idempotente --- e índice por
+\cd{(escola\_id, turma\_id)}, que é a leitura da grade.
+
 \subsection{\cd{users}}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
@@ -280,14 +318,21 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
 \cd{versao\_ativa} & \cd{TEXT} & \textbf{\emph{Rollback} = \cd{UPDATE} deste
   campo.} O hub monta a URL do \cd{iframe} com ele.\\
 \zebra \cd{series} & \cd{TEXT[]} & \textbf{Vazio = TODAS as séries}, não
-  nenhuma. É assim que uma experiência transversal se declara.\\
-\cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
+  nenhuma. É assim que uma experiência transversal se declara. Desde a sala de
+  aula (\adrr{ADR-69}) este campo é LIDO: é ele que decide se a missão entra na
+  grade de uma turma.\\
+\cd{unidade} & \cd{SMALLINT?} & A unidade do ano (1 a 4), com \emph{CHECK}.
+  \cd{NULL} na transversal e na ferramenta de professor --- elas não moram numa
+  unidade. É o que ORDENA a grade da sala; sem ela a ordem cai no \cd{exp\_id},
+  que é numeração de experiência e não do ano letivo (o 7º ano viria depois do
+  8º).\\
+\zebra \cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
   \cd{avaliacao}, \cd{tempo-real}.\\
-\zebra \cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
+\cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
   Presente \implica{} o hub embeda dentro do \cd{DispositivoFrame}.\\
-\cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
+\zebra \cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
   \emph{CHECK}. \cd{professor} \implica{} \rota{/exp/*} responde 404.\\
-\zebra \cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
+\cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
   \cd{pointer-lock}, com \emph{CHECK} do vocabulário.
   \textbf{\cd{fullscreen} NÃO entra aqui}: o \cd{allow} do \emph{frame} já o
   delega a todas, e campo de manifesto que não muda nada é pior que campo
@@ -542,6 +587,96 @@ públicos \cd{visualizacoesRotulo} e \cd{curtidasRotulo}: rótulos
 para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \emph{ranking} desmonta depois.
 \end{regra}
+
+\section{Tabelas da exp-07}
+
+\subsection{\cd{exp\_07\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id)} & PK composta & Uma linha por estudante, como na
+  exp-03: a identidade vem do \emph{token}.\\
+\zebra \cd{turma\_id} & \cd{UUID?} & Denormalizado. O painel e o gate consultam por
+  turma o tempo todo. Reescrito a cada mutação: transferência no meio do ano
+  faria a linha sumir da tela da professora nova.\\
+\cd{passo} & \cd{TEXT} & \emph{CHECK} nos nove passos. São nove, e não os
+  dezessete estados de tela do desenho: modal, cutucão e cascata são do cliente.\\
+\zebra \cd{inspecionou\_materia} & \cd{BOOLEAN} & A evidência que a missão mede, e
+  a condição de enviar a resposta. É por isso que é coluna, não derivado.\\
+\cd{ouviu\_audio}, \cd{ouviu\_podcast} & \cd{BOOLEAN} & Consumo dos áudios.
+  O segundo destrava a decisão na Aula 2.\\
+\zebra \cd{cards\_lidos} & \cd{SMALLINT} & \emph{CHECK} 0--3.\\
+\cd{opcao} & \cd{TEXT?} & \emph{CHECK} \cd{IN ('A','B','C')}. Qual das três é a
+  checada \textbf{não} está aqui nem em coluna nenhuma: mora no catálogo do
+  servidor.\\
+\zebra \cd{latencia\_seg} & \cd{INT?} & Tempo de \textbf{decisão} do estudante,
+  cronometrado pelo cliente --- não a latência da requisição.\\
+\cd{desfazer\_usado} & \cd{SMALLINT} & Quantas vezes usou \enquote{Apagar para
+  todos}. Reduz o \cd{score} de 100 para 70: a recuperação é o caminho
+  pedagógico, não a punição.\\
+\zebra \cd{score} & \cd{INT?} & \emph{CHECK} \cd{IN (0, 70, 100)} --- os três
+  valores que as regras puras produzem. Qualquer outro seria pontuação vinda do
+  cliente.\\
+\cd{reacoes} & \cd{JSONB?} & A cena que o bairro fez, como saiu do modelo.
+  Gravada para o F5 devolver a MESMA cena. \cd{null} = caiu no roteiro do
+  catálogo.\\
+\zebra \cd{turnos\_amara} & \cd{SMALLINT} & \emph{CHECK} 0--3. O teto da conversa
+  está no banco também: um caminho novo que esqueça a checagem não pode
+  transformá-la no centro da missão.\\
+\cd{tokens\_gastos}, \cd{chamadas\_ia} & \cd{INT} & O que foi \textbf{pago} nas
+  três superfícies de IA, não o aproveitado.\\
+\zebra \cd{concluido\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}: não nulo se e
+  somente se \cd{passo = 'fim'}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_07\_mensagens}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{BIGSERIAL} & Paginação por id é estável; por \emph{timestamp} não.
+  Exige \cd{GRANT USAGE} na sequência.\\
+\zebra \cd{papel} & \cd{TEXT} & \emph{CHECK} \cd{IN ('estudante','amara')}.\\
+\cd{texto} & \cd{TEXT} & \textbf{Caixa livre escrita por menor de idade}, e o
+  único campo aberto da missão. \emph{CHECK} de 1 a 2000 caracteres (600 na
+  tela). Nunca vai a log nem à telemetria (\adrr{ADR-66}).\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_07\_reflexoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id)} & PK composta & Um percurso por estudante.\\
+\zebra \cd{estrategias} & \cd{TEXT[]} & \emph{CHECK}
+  \cd{cardinality = 2}. A pergunta é \enquote{quais 2 ações são prioritárias}, e
+  uma lista de 1 ou de 3 mediria outra coisa.\\
+\cd{justificativa} & \cd{TEXT} & Id de lista fechada.\\
+\zebra \cd{devolutiva} & \cd{TEXT?} & O comentário formativo do modelo. Não é
+  nota e não entra no \cd{score}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{exp\_07\_gates\_turma}}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, turma\_id)} & PK composta & Uma etapa por turma.\\
+\zebra \cd{etapa} & \cd{TEXT} & \emph{CHECK} \cd{IN ('investigacao','aula2',}
+  \cd{'debate','reflexao')}. É \textbf{piso e teto} ao mesmo tempo
+  (Seção~\ref{sec:exp-07}) --- e \cd{debate} é a exceção em que os dois são o
+  mesmo passo.\\
+\bottomrule
+\end{tabularx}
+
 
 \section{Tabelas da exp-03}
 

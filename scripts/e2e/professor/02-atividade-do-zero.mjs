@@ -73,15 +73,24 @@ await suite(
       "A turma já viu as máquinas a vapor e o êxodo rural.",
       { delay: 5 },
     );
-    /* A turma é opcional: sem ela a atividade vale para a escola inteira. Com
-       ela, o painel de perfis e a entrada dos estudantes falam da MESMA sala. */
-    if (await p.locator("#turma").count()) {
-      const opcoes = await p
-        .locator("#turma option")
-        .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
-      const alvo = opcoes.find((o) => o.label.includes(TURMA) && o.value);
-      if (alvo) await p.selectOption("#turma", alvo.value);
+    /* A turma é OBRIGATÓRIA: a atividade é de uma sala. Falhar aqui, e com a
+       causa, é o ponto — sem esta checagem o `<select required>` segurava o
+       envio em silêncio e a suíte morria 60s depois num `waitForURL` que
+       reportava a URL que não mudou, e não a turma que não estava na lista. */
+    await p.waitForSelector("#turma", { timeout: 20_000 });
+    const opcoes = await p
+      .locator("#turma option")
+      .evaluateAll((os) => os.map((o) => ({ value: o.value, label: o.textContent ?? "" })));
+    const alvo = opcoes.find((o) => o.label.includes(TURMA) && o.value);
+    if (!alvo) {
+      throw new Error(
+        `A turma ${TURMA} não está entre as turmas de ${professor.login}: ` +
+          `[${opcoes.map((o) => o.label).join(", ")}]. ` +
+          "A atividade exige turma, e a lista vem de GET /turmas/minhas (matrícula, não escola). " +
+          "Rode o seed, ou aponte a env TURMA para uma turma deste professor.",
+      );
     }
+    await p.selectOption("#turma", alvo.value);
     await p.locator("#qtd").fill(String(POSTS_DE_TESE));
     await p.waitForTimeout(800);
 

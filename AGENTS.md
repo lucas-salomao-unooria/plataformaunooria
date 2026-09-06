@@ -12,7 +12,7 @@ este arquivo vence.
 | `apps/hub/AGENTS.md` | landing, header, casca, embed de experiência, papéis e middleware, fontes do DS |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, como criar experiência nova, seções de clone do DS, a zona congelada da exp-70 |
 | `packages/AGENTS.md` | índice dos pacotes de workspace (o detalhe está no `AGENTS.md` de cada um) |
-| `packages/*/AGENTS.md` | por pacote: o contrato que o `sdk` promete, as 4 pontes do `ui`, o conteúdo da exp-01 |
+| `packages/*/AGENTS.md` | por pacote: o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp-01 |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta de dev, rota do hub, seção do DS, módulo da api e as regras dela |
 | `scripts/AGENTS.md` | os utilitários de linha de comando, e o que é gerado e não se edita à mão |
 | `scripts/e2e/AGENTS.md` | o que uma suíte precisa provar, e a espera que corre contra o erro |
@@ -74,6 +74,13 @@ hub serve).
    `QuotaService` (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `estudante_id` opaco, nunca nome/email.
+7. **A missão só abre na turma em que o professor a liberou** (ADR-69). Toda
+   entrada de estudante em experiência chama `exigirMissaoLiberada`
+   (`apps/api/src/comum/liberacao.ts`) e responde 403 `missao-nao-liberada` sem
+   linha em `liberacoes`. Filtrar o card no hub é UX: o bundle é público e
+   `/exp/:expId` é endereço adivinhável. Experiência nova declara o próprio
+   `EXP_ID` e chama a guarda no FUNIL das rotas de estudante (o `estudanteDaEscola`
+   / `garantirSessao` dela), nunca só na rota de leitura.
 
 
 ### Token e emissor (decisão da migração, 2026-08)
@@ -115,7 +122,8 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
 | `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
 | `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile`, `tiktooria` | — | ainda sem consumidor |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 INTEIRA, menos as telas da escola (breakpoint, cards, "Meu percurso") — **só tema escuro** |
+| `tiktooria` | — | ainda sem consumidor |
 
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e
@@ -222,8 +230,8 @@ usuário; o MCP continua instalado, para uso manual.
 - **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
   `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
   — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
-  `periodos_letivos`, `users`, `experiencias`, `progresso`, `telemetria_eventos`,
-  `ia_uso_diario`. O motor (feed adaptativo,
+  `liberacoes`, `periodos_letivos`, `users`, `experiencias`, `progresso`,
+  `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
   geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
   duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
   (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem
@@ -267,16 +275,31 @@ abri-lo.
 - **Os hooks são a única barreira**: `branch protection` e `rulesets` respondem
   403 (repo privado, plano Free). `.githooks/pre-push` recusa push direto em
   branch de ambiente e nome de branch fora do padrão; `.githooks/commit-msg`
-  valida o formato do commit. Instalados pelo `prepare` no `pnpm install`
-  (`core.hooksPath`). Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`,
-  `PERMITIR_BRANCH_FORA_DO_PADRAO=1`.
-- **Frente paralela = worktree, e a base vai ESCRITA** (ADR-61):
-  `git worktree add -b feat/<slug> .claude/worktrees/<slug> origin/dev`. Clone
-  antigo tem `origin/HEAD` em `main`, e toda ferramenta que "parte da branch
-  padrão" — a criação automática de worktree do Claude Code inclusive — abre a
-  branch sobre PRODUÇÃO em silêncio; `git remote set-head origin --auto` conserta
-  a raiz, e `git log origin/dev..HEAD` antes do PR confere. `pnpm install` de
-  novo lá dentro (`node_modules` não é compartilhado).
+  valida o formato do commit; `.githooks/pre-commit` recusa arquivo fora da
+  fatia da frente — só quando existe `<git-dir>/fatia`, então a cópia principal
+  segue livre. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
+  Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`, `PERMITIR_BRANCH_FORA_DO_PADRAO=1`,
+  `PERMITIR_FORA_DA_FATIA=1`.
+- **Frente paralela = worktree, e a base vai ESCRITA** (ADR-61): `pnpm worktree
+  criar <tipo/slug> --fatia api/<mod>,hub/<rota>,exp/<id>` faz o caminho inteiro
+  (worktree sobre `origin/dev`, `.env` copiados, `install` + `prisma generate`,
+  porta de Vite reservada, briefing impresso). Clone antigo tem `origin/HEAD` em
+  `main`, e toda ferramenta que "parte da branch padrão" — a criação automática
+  de worktree do Claude Code inclusive — abre a branch sobre PRODUÇÃO em
+  silêncio; por isso o `origin/dev` do script está escrito, e `git log
+  origin/dev..HEAD` antes do PR confere.
+- **Reparta por fatia VERTICAL, nunca por camada** (ADR-71). `apps/api` e
+  `apps/hub` são comuns a todas as frentes: um agente "no backend" e outro "no
+  frontend" moram nos mesmos arquivos e brigam no merge. Cada frente leva o
+  módulo da api + a rota do hub + a experiência, juntos — aí a fatia de cada uma
+  dentro de api/hub é uma pasta própria. Duas frentes no mesmo módulo não se
+  paralelizam: serializam. O que resta compartilhado é linha de REGISTRO
+  (`app.module.ts`, fim do `schema.prisma`, `middleware.ts`,
+  `experiencias-dev.ts`) e vai em UM commit no fim, depois de
+  `git merge origin/dev` — rebase está desabilitado. **A fatia é barreira, não
+  conselho**: `criar` grava os caminhos em `<git-dir>/fatia` e o
+  `.githooks/pre-commit` recusa commit fora dela (escape:
+  `PERMITIR_FORA_DA_FATIA=1`). Receita em `CONTRIBUTING.md`.
 - **O paralelismo é de EDIÇÃO e teste unitário; o runtime é singleton.** Portas
   fixas com `strictPort`, compose de nome fixo, um banco: dois worktrees não
   rodam a stack ao mesmo tempo. No worktree: editar, `typecheck lint test`,
@@ -288,7 +311,7 @@ abri-lo.
   (reserve conferindo `origin/dev`), `main.pdf` (regera, não escolhe lado),
   `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
-  `exp-07-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
+  `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
 - Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo é
   o slug da experiência ou o app/pacote tocado.
@@ -317,7 +340,15 @@ pnpm docker:dev                           # a stack INTEIRA em container (pg/api
                                           # é um OU outro. `:logs` `:deps` `:down` completam.
 pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
 pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
-pnpm new:exp exp-07-fracoes               # scaffolda experiência do _template
+pnpm new:exp exp-12-fracoes               # scaffolda experiência do _template
+pnpm worktree criar fix/<slug> --fatia api/<mod>,hub/<rota>,exp/<id>
+                                          # ABRE UMA FRENTE PARALELA (ADR-61/71): worktree sobre
+                                          # origin/dev, .env copiados, install + prisma generate,
+                                          # porta de Vite 52xx reservada e o briefing da fatia
+                                          # impresso para colar no agente. `listar` mostra as
+                                          # frentes e suas portas; `remover <slug>` fecha.
+                                          # A fatia é VERTICAL (módulo da api + rota do hub +
+                                          # experiência): dois agentes na mesma camada brigam.
 pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
 npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
@@ -361,10 +392,12 @@ node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ 
 EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
+pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
+                                          # o professor prepara a mídia no painel antes da aula)
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~332p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~436p). Atualizar SEMPRE
 ```
 
 
@@ -397,13 +430,13 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~332 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~436 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**64 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**70 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

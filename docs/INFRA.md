@@ -5,7 +5,9 @@ Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 > **`{contrato}` = `{app_name}-{env}`** do Terraform (`local.name_prefix`).
 > No piloto: `plataforma-unooria-dev`, projeto `entre-redes`, região
 > **`us-east1`** (a mesma do Cloud SQL que já existe — o Vertex é o único que
-> fica em `southamerica-east1`, por `VERTEX_LOCATION`).
+> foge, e foge para o endpoint **`global`**, não para uma região: ver "IA" mais
+> abaixo. **O processamento de IA não fica no Brasil**, e isso precisa constar
+> do contrato/DPA da rede).
 > O passo a passo de subida está em `RUNBOOK-API.md`, no repo de infra.
 
 > O **gerenciador central de identidade** (WSO2 Identity Server) foge deste padrão: é

@@ -211,6 +211,7 @@ C4Component
     Component(planos, "planos/", "", "exp-90")
     Component(bem,    "bemestar/", "", "exp-91")
     Component(ugpt,   "unoogpt/", "", "exp-03 - motor probabilistico, agente com ferramentas, relogio da turma")
+    Component(eco,    "o-eco-no-grupo/", "", "exp-07 - gate de turma, texto, imagem e VOZ")
   }
 
   Rel(guard, roles, "antes de")
@@ -220,6 +221,8 @@ C4Component
   Rel(planos, ai, "IA + quota")
   Rel(bem, ai, "IA + quota")
   Rel(planos, store, "bucket privado")
+  Rel(eco, ai, "IA + quota")
+  Rel(eco, store, "midia no bucket")
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -595,6 +598,69 @@ erDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:er-enturmamento} --- Enturmamento e sala de aula}
+
+\begin{lstlisting}[language=mermaid]
+erDiagram
+  periodos_letivos ||--o{ turmas     : "a turma vive dentro de um ano letivo"
+  turmas           ||--o{ matriculas : enturma
+  users            ||--o{ matriculas : "pessoa x turma, datada"
+  turmas           ||--o{ liberacoes : "a missao DENTRO da sala"
+  users            ||--o{ liberacoes : "quem liberou"
+
+  periodos_letivos {
+    uuid id PK
+    text tipo "ano_letivo|semestre|bimestre|trimestre"
+    text titulo "UNIQUE (tipo, titulo)"
+    smallint ano
+    date inicio
+    date fim
+    uuid pai_id FK "ano letivo -> bimestre; NULL = raiz"
+  }
+  turmas {
+    uuid id PK
+    text escola_id FK
+    uuid periodo_letivo_id FK "NOT NULL: turma sem periodo e users.turma_id de novo"
+    text nome "UNIQUE (escola_id, periodo_letivo_id, nome)"
+    text serie "1EF..9EF | 1EM..3EM"
+    text tipo "regular|componente (classType do OneRoster)"
+    text turno
+  }
+  matriculas {
+    uuid id PK "RLS por escola_id"
+    text escola_id FK
+    uuid turma_id FK
+    uuid usuario_id FK
+    text papel "estudante|professor — gestor NAO entra"
+    boolean principal "alimenta o cache users.turma_id"
+    date inicio
+    date fim "sair e fim, nunca DELETE"
+  }
+  liberacoes {
+    uuid id PK "RLS por escola_id"
+    text escola_id FK
+    uuid turma_id FK
+    text exp_id "SEM FK: o catalogo experiencias e escrito pelo CI"
+    text estado "liberada|encerrada — nao existe bloqueada"
+    uuid liberada_por FK
+    timestamptz liberada_em
+    timestamptz encerrada_em "CHECK: casa com estado"
+  }
+  users {
+    uuid id PK
+    text matricula_externa "o RA da rede; indice unico parcial por escola"
+    uuid turma_id FK "CACHE da matricula principal — a verdade e matriculas"
+    boolean ativo
+    boolean senha_provisoria
+  }
+
+  %% A ausencia de linha em liberacoes E o bloqueio: guardar bloqueio como linha
+  %% obrigaria a criar uma por turma x experiencia so para o mundo nascer fechado.
+  %% liberacoes e PRE-CONDICAO do relogio da exp-03 e dos gates da exp-07, que
+  %% dizem "a aula comecou" e continuam morando na tabela DA experiencia.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
 \section{Figuras~\ref{fig:er-exp01a} e~\ref{fig:er-exp01b} --- Modelo da exp-01}
 
 \begin{lstlisting}[language=mermaid]
@@ -918,6 +984,8 @@ flowchart TB
     ug["/unoogpt/* - estudante"]
     ugp["/unoogpt/professor/* - SO PROFESSOR, transcricao"]
     uga["/unoogpt/agregado/* - gestor, admin - sem estudanteId"]
+    eco["/o-eco-no-grupo/* - estudante"]
+    ecot["/o-eco-no-grupo/turmas/* - prof, gestor, admin - o gate da aula"]
   end
 
   %% Duas areas por AUSENCIA deliberada: bem-estar nao tem rota de gestor nem
@@ -1073,4 +1141,13 @@ quadrantChart
   "R-10 orfa sem retomada":    [0.50, 0.20]
   "R-11 dependencia do DS":    [0.50, 0.22]
   "R-13 WSO2 nao e o emissor": [0.50, 0.18]
+  "R-14 virada do ano letivo": [0.85, 0.90]
+  "R-15 senha compartilhada":  [0.52, 0.52]
+  "R-16 replay sobre menor":   [0.88, 0.94]
+  "R-17 latencia de IA":       [0.55, 0.86]
+  "R-18 custo de IA exp-03":   [0.96, 0.60]
+  "R-19 guia da exp-03":       [0.96, 0.84]
+  "R-20 midia nao preparada":  [0.55, 0.48]
+  "R-21 texto livre de menor": [0.96, 0.52]
+  "R-22 guia da exp-07":       [0.96, 0.46]
 \end{lstlisting}

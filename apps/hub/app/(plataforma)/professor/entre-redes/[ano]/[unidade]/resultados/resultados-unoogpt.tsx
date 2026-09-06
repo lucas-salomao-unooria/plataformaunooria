@@ -38,10 +38,14 @@ export async function ResultadosUnooGPT({
   const lista = await apiDoServidor<{ turmas: TurmaResumo[] }>("/unoogpt/professor/turmas");
   const todas = lista?.turmas ?? [];
   const daSegundaSerie = todas.filter((t) => normalizarSerie(t.serie) === "2EM");
-  const turmas = daSegundaSerie.length > 0 ? daSegundaSerie : todas;
+  /* O filtro por série FICA — ele diz quais salas podem rodar esta missão.
+     O que saiu foi o FALLBACK "mostrando todas": sem turma da série ele
+     silenciosamente oferecia as outras, e o professor escolhia uma turma que
+     nunca vai jogar isto. Sem turma da série, o certo é dizer isso. */
+  const turmas = daSegundaSerie;
   const aviso =
-    daSegundaSerie.length === 0 && todas.length > 0
-      ? "Nenhuma turma de 2ª série do EM nesta escola — mostrando todas."
+    daSegundaSerie.length === 0
+      ? "Você não tem turma de 2ª série do EM, e esta missão é dessa série. Para conduzir uma missão, entre pela turma em Minhas turmas."
       : undefined;
 
   const folha = turma

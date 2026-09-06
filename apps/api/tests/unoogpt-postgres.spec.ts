@@ -5,6 +5,7 @@ import { MockProvider } from "../src/ai/mock.provider";
 import { QuotaService } from "../src/ai/quota.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { UnoogptService } from "../src/unoogpt/unoogpt.service";
+import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
@@ -38,10 +39,13 @@ let outraTurmaId = "";
 let ana = "";
 let bia = "";
 let semTurma = "";
+let turmaBId = "";
+let daOutraTurma = "";
 let deOutraEscola = "";
 
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
+  await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.unoogptSessao.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.unoogptRelogioTurma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.iaUsoDiario.deleteMany({ where: { escolaId: { in: escolas } } });
@@ -81,6 +85,22 @@ beforeAll(async () => {
   bia = (await criar(ESCOLA, turmaId, "ug.bia")).id;
   semTurma = (await criar(ESCOLA, null, "ug.sem")).id;
   deOutraEscola = (await criar(OUTRA_ESCOLA, outraTurmaId, "ug.outra")).id;
+
+  /* Uma SEGUNDA turma na mesma escola. Antes da sala de aula (ADR-69) o papel
+     de "estudante que não é desta turma" era feito pelo `semTurma`, que agora
+     não entra na missão — sem sala não há missão. A 2B faz o papel melhor: é o
+     caso real que "zerar a turma" tem de respeitar, o professor da 2A que não
+     pode apagar a partida da 2B. */
+  const segunda = await criarTurmaDeTeste(prisma, ESCOLA, "2B", "2EM");
+  turmaBId = segunda.id;
+  daOutraTurma = (await criar(ESCOLA, turmaBId, "ug.2b")).id;
+
+  /* A PORTA DA SALA: sem estas linhas `garantirSessao` recusa com 403
+     `missao-nao-liberada` e a suíte inteira falha. */
+  for (const t of [turmaId, turmaBId]) {
+    await liberarParaTeste(prisma, ESCOLA, t, "exp-03-unoogpt", ana);
+  }
+  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp-03-unoogpt", deOutraEscola);
 });
 
 afterAll(async () => {
@@ -119,11 +139,22 @@ describe("a largada é da TURMA, não do estudante", () => {
     expect(depois.iniciadoEm).toBe(antes.iniciadoEm);
   });
 
-  it("estudante sem turma vê o relógio PARADO — nunca um cronômetro só dele", async () => {
+  it("estudante de turma sem largada vê o relógio PARADO — nunca um cronômetro só dele", async () => {
     // O projeto de origem armava um cronômetro individual aqui, e com ele um
     // estudante solto jogava sem largada. "Aguardando" é a verdade.
-    const s = await service.sessao(ESCOLA, semTurma);
+    //
+    // Esta prova era feita com um estudante SEM TURMA. Desde a sala de aula
+    // (ADR-69) ele nem chega aqui — sem sala não há missão —, então quem a faz é
+    // a criança da 2B, que tem sala e ainda não teve largada. O que se prova é o
+    // mesmo, e agora pelo caminho que existe de verdade.
+    const s = await service.sessao(ESCOLA, daOutraTurma);
     expect(s.estado.fase).toBe("aguardando");
+  });
+
+  it("estudante SEM TURMA não entra: sem sala não há missão (ADR-69)", async () => {
+    await expect(service.sessao(ESCOLA, semTurma)).rejects.toMatchObject({
+      response: { codigo: "missao-nao-liberada" },
+    });
   });
 
   it("+2 min NÃO faz o minuto da cidade rebobinar", async () => {
@@ -506,7 +537,7 @@ describe("zerar a turma", () => {
     // E o estudante que NÃO é da turma continua intocado: "zerar a turma" é da
     // turma, não da escola — o professor da 2A não apaga a partida da 2B.
     expect(
-      await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: semTurma } }),
+      await prisma.unoogptSessao.count({ where: { escolaId: ESCOLA, estudanteId: daOutraTurma } }),
     ).toBe(1);
     // O relógio vai junto: rodar de novo com a aula "já começada" faria a
     // segunda rodada nascer no meio da tempestade.

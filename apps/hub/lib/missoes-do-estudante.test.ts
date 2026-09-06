@@ -1,64 +1,51 @@
 import { describe, expect, test } from "vitest";
 import { ANOS, MISSOES_TRANSVERSAIS } from "./entre-redes/catalogo";
-import { MISSOES_DO_ESTUDANTE } from "./missoes-do-estudante";
+import { COPY_POR_EXP, copyDaMissao } from "./missoes-do-estudante";
 
-/** Missões de ano E transversais: as duas famílias entram no hub do estudante, e a
- *  regra da copy vale para as duas. */
+/**
+ * A COPY do hub do estudante.
+ *
+ * Este teste já cobrou a LISTA e a ORDEM das missões. Não cobra mais: desde a
+ * sala de aula (ADR-69) quem responde o que aparece é a api, pela turma
+ * (`GET /salas/minhas`), e a ordem — transversal primeiro — é decidida em
+ * `salas/regras.ts`, com teste próprio do lado de lá. O que sobrou aqui é a
+ * regra que continua sendo do hub: missão sem copy de estudante não vai à tela.
+ */
+
+/** Missões de ano E transversais: as duas famílias entram no hub do estudante. */
 const publicadas = [
   ...ANOS.flatMap((ano) => ano.missoes),
   ...MISSOES_TRANSVERSAIS,
 ].filter((missao) => missao.status === "disponivel");
 
-describe("missões do estudante", () => {
-  test("toda missão publicada tem copy de estudante — senão some do hub dele", () => {
+describe("copy das missões do estudante", () => {
+  test("toda missão publicada tem copy — senão o card seria um slug num retângulo", () => {
     const semCopy = publicadas.filter((missao) => !missao.estudante);
     /* Identifica pelo `expId` (as duas famílias têm) e cai no título, que
        também têm — `unidadeSlug` só existe nas de ano. */
     expect(semCopy.map((m) => m.expId ?? m.titulo)).toEqual([]);
   });
 
-  test("as missões publicadas hoje aparecem, com rota para o aparelho", () => {
-    // As TRANSVERSAIS vêm primeiro: não pertencem a ano nenhum, e a Vila do Lume
-    // é o Ato 1 do Instanooria — o perfil medido nela decide de que lado o feed
-    // do Instanooria nasce. Depois vem a ordem de `ANOS`: 1º ao 9º ano do
-    // Fundamental e então as 3 séries do Médio, então a 2ª série fica DEPOIS do
-    // 8º ano.
-    expect(MISSOES_DO_ESTUDANTE.map((m) => m.expId)).toEqual([
-      "exp-70-vila-do-lume",
-      "exp-02-unootube",
-      "exp-01-instanooria",
-      "exp-03-unoogpt",
-    ]);
-    expect(MISSOES_DO_ESTUDANTE.map((m) => m.rota)).toEqual([
-      "/exp/exp-70-vila-do-lume",
-      "/exp/exp-02-unootube",
-      "/exp/exp-01-instanooria",
-      "/exp/exp-03-unoogpt",
-    ]);
+  test("toda missão publicada é encontrável por `expId`, com rota do aparelho", () => {
+    for (const missao of publicadas) {
+      const copy = copyDaMissao(missao.expId!);
+      expect(copy).not.toBeNull();
+      expect(copy!.rota).toBe(`/exp/${missao.expId}`);
+      expect(copy!.titulo.length).toBeGreaterThan(0);
+    }
   });
 
-  test("a Vila do Lume vem antes do Instanooria: ela é o Ato 1 dele", () => {
-    const ordem = MISSOES_DO_ESTUDANTE.map((m) => m.expId);
-    const vila = ordem.indexOf("exp-70-vila-do-lume");
-    const insta = ordem.indexOf("exp-01-instanooria");
-
-    expect(vila).toBeGreaterThanOrEqual(0);
-    expect(insta).toBeGreaterThanOrEqual(0);
-    // É o perfil medido na Vila que decide de que lado o feed do Instanooria
-    // nasce (`resolverLargada`). Oferecer o Ato 2 primeiro não bloqueia nada —
-    // o estudante sem partida cai no sorteio balanceado —, mas convida à ordem
-    // errada sem nada na tela dizendo o que faltou.
-    expect(vila).toBeLessThan(insta);
-  });
-
-  test("a transversal aparece para o estudante sem depender de série", () => {
-    // O que "transversal" significa aqui: nenhuma condição de ano. Se um filtro
-    // por série voltar e esta missão sumir, é bug — `series: []` no manifesto
-    // quer dizer TODAS as séries.
+  test("a transversal tem copy como qualquer outra — ela não é caso especial aqui", () => {
     for (const missao of MISSOES_TRANSVERSAIS) {
       if (missao.status !== "disponivel") continue;
-      expect(MISSOES_DO_ESTUDANTE.map((m) => m.expId)).toContain(missao.expId);
+      expect(COPY_POR_EXP.has(missao.expId!)).toBe(true);
     }
+  });
+
+  test("expId desconhecido devolve null em vez de quebrar a tela", () => {
+    // A api pode liberar uma experiência que o catálogo do hub ainda não
+    // conhece (bundle publicado antes de a copy ser escrita). A tela pula.
+    expect(copyDaMissao("exp-99-que-nao-existe")).toBeNull();
   });
 
   test("a copy do estudante não repete a do professor (que entrega a virada)", () => {
