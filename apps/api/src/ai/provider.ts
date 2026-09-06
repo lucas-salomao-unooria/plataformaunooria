@@ -57,6 +57,15 @@ export interface AiJsonRequest<T> {
   validar: (bruto: unknown) => T;
   temperatura?: number;
   tentativas?: number;
+  /**
+   * Teto de saída. Ausente = o teto do modelo. Existe pelo mesmo motivo que em
+   * `AiRequest`, e aqui o sintoma é pior: JSON estruturado longo (uma quinzena
+   * de aulas passa de 9k tokens) trunca no meio, e JSON truncado não chega
+   * como `MAX_TOKENS` legível — chega como `JSON.parse` falhando três vezes.
+   */
+  maxTokens?: number;
+  /** Mesma família neutra de `AiRequest.modelo`. */
+  modelo?: AiRequest["modelo"];
 }
 
 /**

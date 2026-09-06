@@ -490,6 +490,20 @@ export interface AiSpeechRequest {
   idioma?: string;               // BCP-47, default pt-BR
 }
 
+export interface AiJsonRequest<T> {
+  prompt: string;                // NAO `user`: o pedido estruturado tem nomes proprios
+  system?: string;
+  responseSchema: AiJsonSchema;  // NAO `schema`
+  /** Valida e normaliza; lancar faz REGERAR com o motivo no prompt. */
+  validar: (bruto: unknown) => T;
+  temperatura?: number;
+  tentativas?: number;
+  /** Teto de saida. Ausente = o teto do modelo. Uma quinzena de aulas passa
+   *  de 9k tokens, e JSON truncado nao chega como MAX_TOKENS legivel. */
+  maxTokens?: number;
+  modelo?: "padrao" | "longo";   // mesma familia neutra de AiRequest
+}
+
 export interface AiProvider {
   generate(req: AiRequest): Promise<AiResult>;
   /** Saida JSON estruturada, com retry e reforco do erro anterior no prompt. */
@@ -529,6 +543,26 @@ cada \emph{provider} o traduz para o formato do seu modelo. O campo
 não serve --- o que faz a tentativa ser regerada com o erro anterior reforçado no
 \emph{prompt}. Validação como parte do contrato, não como verificação posterior.
 \end{nota}
+
+\begin{regra}
+\textbf{\cd{generate} e \cd{generateJson} não compartilham os nomes dos campos},
+e confundi-los não é erro de digitação: \cd{prompt}/\cd{responseSchema} contra
+\cd{user}/\cd{schema}. Um \cd{as never} sobre o objeto literal cala o
+compilador, e o pedido chega ao \emph{provider} sem \cd{responseSchema} ---
+a montagem do corpo estoura \emph{antes} da requisição, as três tentativas
+queimam em segundos e o professor vê \enquote{Falhou} com zero token gasto.
+Foi o que aconteceu na exp-92 (plano de aulas). \textbf{Nunca use \cd{as never}
+para satisfazer este contrato}: é justamente ele que o typecheck existe para
+conferir.
+
+O segundo ensinamento é do laço de \emph{retry}: falha de \textbf{transporte}
+não é falha de \textbf{conteúdo}. Reescrever o \emph{prompt} não devolve
+permissão nem conserta projeto errado, então \cd{4xx} (menos \cd{429}) falha na
+primeira tentativa e a mensagem preserva o \emph{status}; \cd{429} e \cd{5xx}
+são passageiros e seguem no laço. Sem essa distinção o corpo de erro do
+\emph{vendor} --- que não tem \cd{candidates} --- virava \enquote{resposta
+vazia}, e a causa real morria atrás de uma mensagem genérica.
+\end{regra}
 
 \section{Contrato entre duas experiências}
 

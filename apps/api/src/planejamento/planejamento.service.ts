@@ -76,6 +76,17 @@ const MAX_TOKENS_ANUAL = 64_000;
 /** Uma quinzena tem no máximo ~20 aulas; o JSON de cada uma é generoso. */
 const MAX_TOKENS_PERIODO = 32_000;
 
+/**
+ * A causa técnica para o LOG, nunca para a coluna `erro` — essa o professor lê
+ * na tela, e "Vertex respondeu 403" não é recado para ele. `ErroDeGeracao`
+ * carrega o corpo do vendor em `detalhe`, e descartá-lo era o que fazia o log
+ * dizer só "Falha ao gerar conteúdo estruturado" enquanto a razão real
+ * (schema ausente, 403, JSON truncado) morria no catch.
+ */
+function detalheDe(erro: unknown): { detalhe?: string } {
+  return erro instanceof ErroDeGeracao && erro.detalhe ? { detalhe: erro.detalhe } : {};
+}
+
 export interface DepsDoPlanejamento {
   prisma: PrismaService;
   storage: ObjectStorageService;
@@ -501,7 +512,7 @@ export class PlanejamentoService {
       );
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "falha ao gerar o plano";
-      logger.error({ codigo: "exp-92-plano-anual-falhou", planoId, erro: mensagem });
+      logger.error({ codigo: "exp-92-plano-anual-falhou", planoId, erro: mensagem, ...detalheDe(erro) });
       await this.deps.prisma
         .comTenancy(
           (tx) =>
@@ -656,12 +667,23 @@ export class PlanejamentoService {
       const user = montarBriefingDePeriodo(briefing, horarios);
       const resposta = await this.deps.provider.generateJson<{ aulas: Partial<Aula>[] }>({
         system: PROMPT_PLANO_DE_PERIODO,
-        user,
-        schema: SCHEMA_PLANO_DE_PERIODO,
+        prompt: user,
+        responseSchema: SCHEMA_PLANO_DE_PERIODO,
         maxTokens: MAX_TOKENS_PERIODO,
         modelo: "longo",
         temperatura: 0.5,
-      } as never);
+        // Deliberadamente frouxo: `costurarAulas` já degrada campo ausente para
+        // vazio e sobra para descarte, então rejeitar aqui só gastaria
+        // tentativa à toa. O que a costura NÃO salva é a lista inteira
+        // faltando — isso viraria uma semana em branco sem dizer por quê.
+        validar: (bruto) => {
+          const aulas = (bruto as { aulas?: unknown }).aulas;
+          if (!Array.isArray(aulas) || aulas.length === 0) {
+            throw new Error("esperava a lista `aulas` com ao menos uma aula");
+          }
+          return { aulas: aulas as Partial<Aula>[] };
+        },
+      });
 
       const permitidos = new Set([...briefing.codigos, ...briefing.codigosComputacao]);
       const aulas = costurarAulas(resposta?.aulas ?? [], horarios, permitidos);
@@ -676,7 +698,7 @@ export class PlanejamentoService {
       );
     } catch (erro) {
       const mensagem = erro instanceof Error ? erro.message : "falha ao gerar o plano do período";
-      logger.error({ codigo: "exp-92-plano-periodo-falhou", periodoId, erro: mensagem });
+      logger.error({ codigo: "exp-92-plano-periodo-falhou", periodoId, erro: mensagem, ...detalheDe(erro) });
       await this.deps.prisma
         .comTenancy(
           (tx) =>
