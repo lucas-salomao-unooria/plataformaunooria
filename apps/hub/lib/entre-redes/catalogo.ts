@@ -356,8 +356,79 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
   },
 };
 
+/**
+ * 6º ano · Unidade 2 — O Rastro do Boato (`exp-06-rastro-boato`).
+ *
+ * Clone de mensageiro móvel, em DUAS aulas com breakpoint entre elas, como a do
+ * 7º ano — mas o objeto de análise é outro, e é isso que separa as duas na
+ * trilha: aqui o estudante lê **dados de envio** (quantos saltos anônimos, quem
+ * assinou, quando nasceu) e depois vê a própria decisão desenhada como
+ * TOPOLOGIA. No 7º ano o que se audita é o recorte de um print, e a resposta é
+ * citar a matéria completa.
+ *
+ * A professora tem UM botão durante a aula (abrir a Aula 2) e o inverso dele.
+ * É menos do que os três da exp-07 porque esta missão pede menos: o debate
+ * acontece depois do mapa, não no meio dele.
+ *
+ * A copy sai do sheet congelado da missão (passada 2), com uma exceção
+ * declarada: o episódio de recapitulação é servido em TEXTO — a locução de
+ * 3m20 do brief ainda não foi gravada, e a transcrição já está sempre na tela
+ * por acessibilidade.
+ */
+export const MISSAO_RASTRO_BOATO: Missao = {
+  anoSlug: "6-ano",
+  unidadeSlug: "unidade-2",
+  unidade: 2,
+  expId: "exp-06-rastro-boato",
+  titulo: "O Rastro do Boato — Por que a mentira voa?",
+  resumo:
+    "Um aviso de que a água da escola está contaminada corre quatro grupos em dez minutos, e a nota da direção com o laudo quase não sai do lugar. O estudante abre os dados de envio de cada mensagem, descobre que o alerta veio de seis encaminhamentos anônimos sem autor — e decide o que fazer quando chega o áudio convocando um protesto.",
+  status: "disponivel",
+  estudante: {
+    titulo: "O Rastro do Boato",
+    chamada:
+      "Tomás te chama: um aviso sobre a água da escola está correndo os grupos. Descubra de onde essa mensagem saiu.",
+  },
+  ficha: {
+    competencia:
+      "Letramento midiático — ler os dados de envio de uma mensagem antes de repassá-la, e reconhecer que cada encaminhamento é uma escolha com consequência na rede.",
+    duracao: "2 aulas de 30–35 min, com pausa entre elas",
+    formato:
+      "Clone de mensageiro móvel: quatro conversas com 6 mensagens auditáveis, o modal de dados de envio, e o mapa da rede depois da decisão",
+    atos: [
+      {
+        rotulo: "1 — Auditar as mensagens (Aula 1)",
+        texto:
+          "O estudante percorre o Grêmio, a turma, o grupo do bairro e a conversa com Tomás. Cada balão abre um painel com os dados de envio: quantas vezes foi encaminhado, quem assinou, quando apareceu pela primeira vez. É preciso abrir os dados de TRÊS mensagens diferentes — e elas estão em conversas diferentes de propósito, para a investigação não caber numa rolagem só.",
+      },
+      {
+        rotulo: "2 — Decidir sob pressão (Aula 1)",
+        texto:
+          "Quando a terceira mensagem é auditada, chega um áudio no grupo da turma convocando um protesto. Três respostas possíveis, uma escolha, sem volta. Nesta tela não há dica nenhuma: se o estudante travar por 90 segundos, e só então, uma frase lembra que o silêncio também deixa o boato correr.",
+      },
+      {
+        rotulo: "3 — Pausa entre as aulas",
+        texto:
+          "Depois da decisão a tela trava num card de pausa com o progresso salvo. Ninguém vê o mapa até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à revelação.",
+      },
+      {
+        rotulo: "4 — Ver o rastro e nomear o ciclo (Aula 2)",
+        texto:
+          "O gráfico mostra o aviso correndo 26 vezes mais rápido que a nota da direção. Depois o mapa da rede desenha o que a decisão de cada um produziu: a corrente cortada no terceiro nó, ou 1.200 conexões acesas. Quem não respondeu nada vê 850 — e é essa diferença que sustenta a descoberta. Em seguida o estudante monta os quatro blocos do ciclo do boato e registra no Meu percurso o que fará antes de encaminhar da próxima vez.",
+      },
+    ],
+    preparo: [
+      "Não há mídia para preparar: os áudios trazem a transcrição na tela, e o episódio de recapitulação é lido, não ouvido. Fone é bem-vindo, mas nada depende dele.",
+      "Você conduz a aula por um botão no painel: abrir a Aula 2. Sem ele, ninguém passa da decisão — e a Etapa 4 foi desenhada para a turma ler o mapa junta.",
+      "Reservar as duas aulas seguidas na agenda: o progresso fica salvo, mas a pausa foi desenhada para uma aula e a seguinte.",
+      "Vale olhar a distribuição das respostas antes do debate: ela é o material das três perguntas, e não uma lista de quem acertou.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "4-ano": [MISSAO_UNOOTUBE],
+  "6-ano": [MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_ECO_NO_GRUPO],
   "8-ano": [MISSAO_ATUAL],
   "2-serie": [MISSAO_UNOOGPT],
