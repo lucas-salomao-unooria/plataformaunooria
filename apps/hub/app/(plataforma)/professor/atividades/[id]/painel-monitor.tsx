@@ -307,7 +307,7 @@ export function PainelMonitor({
         aoFechar={() => setEstudanteAberto(null)}
       />
 
-      <div className="overflow-x-auto rounded-xl border border-unooria-neutral-200">
+      <div className="tabela-rolavel rounded-xl border border-unooria-neutral-200">
         <table className="w-full min-w-[980px] border-collapse text-left">
           {/*
             Sete colunas, não dez. Domínio, escalada e contagem de posts saíram

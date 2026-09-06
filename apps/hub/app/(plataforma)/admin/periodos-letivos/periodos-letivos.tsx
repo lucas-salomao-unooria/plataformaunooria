@@ -179,6 +179,7 @@ export function PeriodosLetivos({ papel }: { papel: Papel }) {
       </div>
 
       <Table<Periodo>
+        className="tabela-rolavel"
         columns={colunas}
         data={periodos}
         keyExtractor={(linha) => linha.id}

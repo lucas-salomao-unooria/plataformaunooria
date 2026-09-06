@@ -154,8 +154,10 @@ export async function ResultadosRastroBoato({
             </ul>
           </Card>
 
+          <ZerarTurmaRastro turmaId={turma} nomeDaTurma={painel.turma.nome} />
+
           <Card variant="elevated" title={`${painel.turma.nome} · ${painel.turma.serie}`}>
-            <div className="overflow-x-auto">
+            <div className="tabela-rolavel">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
@@ -211,7 +213,6 @@ export async function ResultadosRastroBoato({
             </div>
           </Card>
 
-          <ZerarTurmaRastro turmaId={turma} nomeDaTurma={painel.turma.nome} />
         </>
       )}
     </div>

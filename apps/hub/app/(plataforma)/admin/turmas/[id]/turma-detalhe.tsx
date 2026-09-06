@@ -592,6 +592,7 @@ export function TurmaDetalhe({
         </div>
       ) : (
         <Table<Matriculado>
+          className="tabela-rolavel"
           columns={colunas}
           data={lista}
           keyExtractor={(linha) => linha.matriculaId}

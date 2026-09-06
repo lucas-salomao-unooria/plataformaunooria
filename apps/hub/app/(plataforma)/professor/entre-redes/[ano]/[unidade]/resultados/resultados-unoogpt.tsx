@@ -136,8 +136,23 @@ export async function ResultadosUnooGPT({
             </ul>
           </Card>
 
+          {/* O caminho de exclusão desta missão, no lugar de um prazo de
+              retenção que nenhuma rotina cumpriria. Fica ACIMA da tabela: a
+              lista tem uma linha por estudante e rola dentro do próprio quadro,
+              então quem procurasse a ação no fim da página precisaria passar por
+              ela inteira. O que continua valendo é a distância da LARGADA: o
+              relógio fica no topo, e entre ele e este botão estão o retrato da
+              turma e o card do debate — além do diálogo de confirmação. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <ZerarTurma turmaId={turma} nomeDaTurma={folha.turma.nome} />
+            <p className="text-[12px] leading-snug text-unooria-neutral-500">
+              Apaga as partidas desta turma e devolve o relógio ao início. Use para rodar a missão
+              de novo com a mesma turma.
+            </p>
+          </div>
+
           <Card variant="elevated" title={`${folha.turma.nome} · ${folha.turma.serie}`}>
-            <div className="overflow-x-auto">
+            <div className="tabela-rolavel">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
@@ -189,18 +204,6 @@ export async function ResultadosUnooGPT({
               crianças por acerto viraria ranking. O número está na tela de cada estudante.
             </p>
           </Card>
-
-          {/* O caminho de exclusão desta missão, no lugar de um prazo de
-              retenção que nenhuma rotina cumpriria. Fica no FIM da página, longe
-              da largada: ação destrutiva ao lado do botão que o professor mais
-              aperta é um acidente esperando acontecer. */}
-          <div className="flex flex-wrap items-center gap-3 border-t border-unooria-neutral-200 pt-4">
-            <ZerarTurma turmaId={turma} nomeDaTurma={folha.turma.nome} />
-            <p className="text-[12px] leading-snug text-unooria-neutral-500">
-              Apaga as partidas desta turma e devolve o relógio ao início. Use para rodar a missão
-              de novo com a mesma turma.
-            </p>
-          </div>
         </>
       )}
     </div>

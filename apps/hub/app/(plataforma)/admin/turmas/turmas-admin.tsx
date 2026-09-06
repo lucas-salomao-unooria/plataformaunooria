@@ -218,6 +218,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
       </div>
 
       <Table<LinhaDeTurma>
+        className="tabela-rolavel"
         columns={colunas}
         data={linhas}
         keyExtractor={(linha) => linha.id}

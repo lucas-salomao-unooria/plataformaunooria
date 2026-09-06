@@ -171,6 +171,7 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
           </p>
 
           <Table<EscolaDoPanorama>
+            className="tabela-rolavel"
             columns={colunas}
             data={escolas}
             keyExtractor={(l) => l.id}

@@ -201,3 +201,87 @@
   color: var(--unooria-color-danger-600, #e31a1a);
   background-color: var(--unooria-color-neutral-100, #f5f5f5);
 }
+
+/*
+ * LACUNA REAL DO DS: a tabela não tem cabeçalho fixo. `TableProps` não publica
+ * `stickyHeader` nem `maxHeight`, e o `.unooria-table-container` só rola na
+ * horizontal — numa turma de 40 estudantes o cabeçalho sai da tela junto com a
+ * página e o professor lê "sim · — · 3" sem saber de qual coluna. Enquanto o
+ * pacote não publica a prop (pedido aberto no `storybook-unooria`), esta classe
+ * compensa nas DUAS famílias de tabela do hub: o `<table>` cru (onde substitui
+ * o `overflow-x-auto`) e o container do DS (`className="tabela-rolavel"`).
+ *
+ * A altura é a da tela útil menos o cromo da página, com piso de 20rem para não
+ * virar uma janelinha em notebook baixo. Tabela que cabe não muda de aparência:
+ * `max-height` só age quando o conteúdo passa dela.
+ */
+.tabela-rolavel {
+  max-height: max(20rem, calc(100dvh - 16rem));
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/*
+ * O fundo do cabeçalho é HERDADO em cadeia (container → thead → tr → th), e não
+ * fixado aqui: célula sticky sem fundo opaco deixa as linhas passarem por baixo,
+ * e fixar o branco apagaria o `bg-unooria-neutral-100` que algumas telas põem no
+ * `<thead>`. Por isso os seletores da cadeia vão em `:where()` — especificidade
+ * zero, qualquer classe de fundo da tela continua vencendo.
+ */
+:where(.tabela-rolavel) {
+  background-color: var(--unooria-color-neutral-50, #ffffff);
+}
+
+/* A `<table>` entra na cadeia: o pai do `<thead>` é ela, não o contêiner —
+   sem este elo o `inherit` herda do fundo transparente da tabela e o cabeçalho
+   fica vazado (medido: `getComputedStyle(th).backgroundColor` volta
+   `rgba(0,0,0,0)` e as linhas passam por baixo ao rolar). */
+:where(.tabela-rolavel) table,
+:where(.tabela-rolavel) thead,
+:where(.tabela-rolavel) thead tr,
+:where(.tabela-rolavel) thead th {
+  background-color: inherit;
+}
+
+/* O DS declara `.unooria-table__header { background: transparent }` (0,1,0), que
+   venceria os `:where()` acima e devolveria o cabeçalho vazado. */
+.tabela-rolavel .unooria-table,
+.tabela-rolavel .unooria-table__header,
+.tabela-rolavel .unooria-table__header .unooria-table__row {
+  background-color: inherit;
+}
+
+.tabela-rolavel thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* As tabelas cruas do hub usam `border-collapse: collapse`, e aí a borda
+     pertence à grade colapsada, não ao `<th>`: ela FICA PARA TRÁS quando a
+     célula gruda, e o cabeçalho flutua sem linha embaixo. O `inset` é desenhado
+     dentro da própria célula e acompanha a rolagem. */
+  box-shadow: inset 0 -1px 0 var(--unooria-color-neutral-200, #cbd4d6);
+}
+
+/*
+ * Ação destrutiva com rótulo (Zerar a turma). Mesma lacuna já anotada no
+ * `.acao-excluir`: o DS não tem variante de perigo discreta — `ghost`/`outline`
+ * saem no navy da marca (que não diz "isto apaga") e `danger` é sólida e
+ * vermelha, peso de ação primária. Aqui o `outline` do DS troca o navy pelo
+ * token de perigo e mantém o fundo transparente: intuitivo sem competir com a
+ * ação que o professor mais aperta na tela.
+ */
+/* TRÊS classes, não duas: a regra do DS é `.unooria-button--light
+   .unooria-button--variant-outline` (0,2,0) e a folha dele é injetada pelo
+   módulo do componente, ou seja, DEPOIS desta — no empate quem ganha é o DS, e
+   o botão volta ao navy. Medido: com dois seletores o vermelho não aparece. */
+.unooria-button.acao-destrutiva.unooria-button--variant-outline {
+  color: var(--unooria-color-danger-600, #e31a1a);
+  border-color: var(--unooria-color-danger-600, #e31a1a);
+}
+
+.unooria-button.acao-destrutiva.unooria-button--variant-outline:hover:not(:disabled),
+.unooria-button.acao-destrutiva.unooria-button--variant-outline:focus-visible {
+  background-color: var(--unooria-color-opacity-danger-100, rgba(227, 26, 26, 0.1));
+  border-color: var(--unooria-color-danger-600, #e31a1a);
+  color: var(--unooria-color-danger-600, #e31a1a);
+}

@@ -170,7 +170,7 @@ export function PainelDaAulaEco({
 
         <div className="flex flex-col gap-1 border-t border-unooria-neutral-200 pt-3">
           <Button
-            variant="tertiary"
+            variant="outline"
             size="sm"
             onClick={() => void agir("redefinir")}
             isDisabled={enviando !== null}

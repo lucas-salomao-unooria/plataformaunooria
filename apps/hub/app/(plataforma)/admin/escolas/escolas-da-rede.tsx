@@ -479,6 +479,7 @@ export function EscolasDaRede() {
       ) : null}
 
       <Table<Escola>
+        className="tabela-rolavel"
         columns={colunas}
         data={escolas}
         keyExtractor={(l) => l.id}

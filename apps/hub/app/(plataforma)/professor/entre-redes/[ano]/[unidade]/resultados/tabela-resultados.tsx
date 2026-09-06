@@ -83,6 +83,7 @@ export function TabelaResultados({
   const linhas: Linha[] = ordenarEstudantes(lista).map((a) => ({ ...a }));
   return (
     <Table<Linha>
+      className="tabela-rolavel"
       columns={colunas}
       data={linhas}
       keyExtractor={(l) => l.estudanteId}

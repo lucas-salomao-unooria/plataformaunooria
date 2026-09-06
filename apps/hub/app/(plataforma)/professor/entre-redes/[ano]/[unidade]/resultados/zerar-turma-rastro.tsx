@@ -54,7 +54,13 @@ export function ZerarTurmaRastro({
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button variant="tertiary" size="sm" onClick={() => setAberto(true)} data-zerar-turma>
+      <Button
+        variant="outline"
+        className="acao-destrutiva"
+        size="sm"
+        onClick={() => setAberto(true)}
+        data-zerar-turma
+      >
         Zerar a turma
       </Button>
       <p className="text-[12px] leading-snug text-unooria-neutral-600">
@@ -74,10 +80,10 @@ export function ZerarTurmaRastro({
           </p>
           {erro && <FeedbackAlert type="error" description={erro} />}
           <div className="flex gap-2">
-            <Button variant="primary" onClick={() => void zerar()} isDisabled={enviando}>
+            <Button variant="danger" onClick={() => void zerar()} isDisabled={enviando}>
               {enviando ? "Zerando…" : "Zerar a turma"}
             </Button>
-            <Button variant="tertiary" onClick={() => setAberto(false)}>
+            <Button variant="secondary" onClick={() => setAberto(false)} isDisabled={enviando}>
               Cancelar
             </Button>
           </div>
