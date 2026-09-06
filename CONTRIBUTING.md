@@ -200,7 +200,7 @@ para:
 
 | Arquivo | Como não brigar |
 |---|---|
-| `documentacao-latex/secoes/18-adr.tex` | **reserve o número no começo da frente**, conferindo `origin/dev` (não a sua cópia). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo |
+| `documentacao-latex/secoes/18-adr.tex` | **reserve o número no começo da frente**, conferindo `origin/dev` (não a sua cópia). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo — e a lacuna que isso abriu é a **ADR-65**, o próximo número a usar |
 | `documentacao-latex/main.pdf` | binário: sempre conflita. Resolve-se **regerando**, nunca escolhendo um lado — quem mergeia por último recompila |
 | `AGENTS.md` da raiz | edite a seção da sua frente, não a vizinha; conflito aqui é textual e resolve na mão |
 | `pnpm-lock.yaml` | conflitou? `git checkout --theirs pnpm-lock.yaml && pnpm install` e commite o resultado |

@@ -8,6 +8,14 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
+- **A PRÓXIMA ADR é a 65, não a 72.** A numeração vai até ADR-71 e a **65 está
+  vaga** — perdida numa colisão entre frentes paralelas. Ela é o próximo número
+  a usar; depois dela, retoma-se em 72. Confira `origin/dev` antes de escrever
+  (a colisão que abriu a lacuna foi exatamente dois agentes reservando o mesmo
+  número ao mesmo tempo). **Número de ADR nunca é reaproveitado nem
+  renumerado**: ele já viaja em mensagem de commit, PR e PDF distribuído, e
+  renumerar não quebra a referência — faz ela apontar para outra decisão, em
+  silêncio.
 - **Dentro de `tikzpicture`, `\texttt{}` cru** — as macros `\cd`/`\arq`/`\rota`
   têm cor pensada para fundo claro e ficam invisíveis em nó escuro.
 - **Setas são `\seta` e `\implica`**, nunca `→`/`⇒` literais: a Roboto não tem o
