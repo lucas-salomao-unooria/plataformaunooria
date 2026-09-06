@@ -70,9 +70,9 @@ export default async function HubProfessor() {
           Olá, {primeiroNome(usuario.nome)}
         </h1>
         <p className="text-[14px] text-unooria-neutral-500">
-          Escolha por onde começar. Três produtos, cada um com o seu tempo: um
-          prepara a aula, um roda com a turma e um cuida de você — em menos de
-          um minuto.
+          Escolha por onde começar. Quatro produtos, cada um com o seu tempo:
+          dois preparam a aula, um roda com a turma e um cuida de você — em
+          menos de um minuto.
         </p>
       </div>
 

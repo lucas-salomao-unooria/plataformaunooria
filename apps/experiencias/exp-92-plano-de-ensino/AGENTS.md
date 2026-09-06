@@ -84,12 +84,21 @@ data civil em `toLocaleDateString`.
 Feriado **remove** a aula, não a desloca. Deslocar empurraria o plano inteiro e
 desalinharia as 40 janelas seguintes; repor é decisão pedagógica do professor.
 
-## Toda porta de exp entra no CORS da api
+## Toda porta de exp entra no CORS da api — e trocar de branch não basta
 
 A 5180 precisa estar em `CORS_ORIGINS` (`apps/api/.env`, o fallback de
 `apps/api/src/main.ts` e o `docker-compose.dev.yml`). Sem ela a experiência
-carrega, o SDK conecta e o boot morre com `Failed to fetch` — foi exatamente o
-que aconteceu na primeira subida, e o sintoma não menciona CORS na tela.
+carrega, o SDK conecta e o boot morre com `Failed to fetch` — e o sintoma não
+menciona CORS na tela.
+
+**A armadilha que pegou duas vezes:** `docker restart` NÃO relê o compose. Um
+container guarda as variáveis de quando foi CRIADO, então voltar para esta
+branch com a api criada em outra frente deixa a api sem a 5180 — e o erro é
+idêntico ao de esquecer a porta no arquivo, embora o arquivo esteja certo.
+Confira com `docker exec unooria-plataforma-api-1 printenv CORS_ORIGINS`; para
+corrigir, `docker compose -f docker-compose.dev.yml up -d --no-deps
+--force-recreate api`. O `docker-compose.dev.yml` lista as portas de todas as
+frentes justamente para reduzir o custo dessa troca.
 
 ## Export: `.doc` e impressão
 
