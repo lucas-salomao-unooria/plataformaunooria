@@ -27148,6 +27148,2378 @@
         ],
         "x-acesso": "token"
       }
+    },
+    "/rastro-boato/sessao": {
+      "get": {
+        "operationId": "RastroBoatoController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "auditadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditar": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "interrompeu",
+                        "amplificou",
+                        "silenciou"
+                      ],
+                      "nullable": true
+                    },
+                    "reacao": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "topologia": {
+                      "type": "object",
+                      "properties": {
+                        "desfecho": {
+                          "type": "string",
+                          "enum": [
+                            "interrompeu",
+                            "amplificou",
+                            "silenciou"
+                          ]
+                        },
+                        "alcance": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "nivelDoEstudante": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "interrompeu": {
+                          "type": "boolean"
+                        },
+                        "aneis": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "nos": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "desenhar": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "aceso": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "nos",
+                              "desenhar",
+                              "aceso"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "legenda": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "desfecho",
+                        "alcance",
+                        "nivelDoEstudante",
+                        "interrompeu",
+                        "aneis",
+                        "legenda"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "ordemBlocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coerente": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "entregouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "catalogo": {
+                      "type": "object",
+                      "properties": {
+                        "conversas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "subtitulo": {
+                                "type": "string"
+                              },
+                              "naoLidas": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "previa": {
+                                "type": "string"
+                              },
+                              "hora": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome",
+                              "subtitulo",
+                              "naoLidas",
+                              "previa",
+                              "hora"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "chat": {
+                                "type": "string"
+                              },
+                              "autor": {
+                                "type": "string"
+                              },
+                              "hora": {
+                                "type": "string"
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "texto",
+                                  "audio",
+                                  "documento"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              },
+                              "transcricao": {
+                                "type": "string"
+                              },
+                              "duracaoSeg": {
+                                "type": "integer",
+                                "exclusiveMinimum": true,
+                                "minimum": 0
+                              },
+                              "encaminhada": {
+                                "type": "boolean"
+                              },
+                              "anexo": {
+                                "type": "string"
+                              },
+                              "metadados": {
+                                "type": "object",
+                                "properties": {
+                                  "saltos": {
+                                    "type": "integer",
+                                    "nullable": true
+                                  },
+                                  "autor": {
+                                    "type": "string"
+                                  },
+                                  "detalhe": {
+                                    "type": "string"
+                                  },
+                                  "carimbo": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "saltos",
+                                  "autor",
+                                  "detalhe",
+                                  "carimbo"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "chat",
+                              "autor",
+                              "hora",
+                              "tipo",
+                              "texto",
+                              "metadados"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "convocacao": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "chat": {
+                              "type": "string"
+                            },
+                            "autor": {
+                              "type": "string"
+                            },
+                            "hora": {
+                              "type": "string"
+                            },
+                            "duracaoSeg": {
+                              "type": "integer",
+                              "exclusiveMinimum": true,
+                              "minimum": 0
+                            },
+                            "texto": {
+                              "type": "string"
+                            },
+                            "transcricao": {
+                              "type": "string"
+                            },
+                            "banner": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "chat",
+                            "autor",
+                            "hora",
+                            "duracaoSeg",
+                            "texto",
+                            "transcricao",
+                            "banner"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "opcoes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "A",
+                                  "B",
+                                  "C"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "blocos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "gatilho",
+                                  "repasse",
+                                  "sem-checagem",
+                                  "desfecho"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "auditoriasExigidas": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "perguntaDoPercurso": {
+                          "type": "string"
+                        },
+                        "tetoDaReflexao": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "podcast": {
+                          "type": "object",
+                          "properties": {
+                            "titulo": {
+                              "type": "string"
+                            },
+                            "blocos": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rotulo": {
+                                    "type": "string"
+                                  },
+                                  "falas": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rotulo",
+                                  "falas"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "titulo",
+                            "blocos"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "curvas": {
+                          "type": "object",
+                          "properties": {
+                            "minutos": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            },
+                            "boato": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            },
+                            "laudo": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer"
+                              }
+                            },
+                            "razao": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "minutos",
+                            "boato",
+                            "laudo",
+                            "razao"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "conversas",
+                        "mensagens",
+                        "convocacao",
+                        "opcoes",
+                        "blocos",
+                        "auditoriasExigidas",
+                        "perguntaDoPercurso",
+                        "tetoDaReflexao",
+                        "podcast",
+                        "curvas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reflexao": {
+                      "type": "object",
+                      "properties": {
+                        "texto": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "texto"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "auditadas",
+                    "totalAuditadas",
+                    "cotaAtingida",
+                    "faltamAuditar",
+                    "opcao",
+                    "desfecho",
+                    "reacao",
+                    "topologia",
+                    "ordemBlocos",
+                    "coerente",
+                    "entregouPercurso",
+                    "concluidoEm",
+                    "turma",
+                    "catalogo",
+                    "reflexao",
+                    "estudante"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "O estado da missão, as 4 conversas e os metadados de cada mensagem.",
+        "description": "As 3 opções de intervenção saem **sem `desfecho` e sem `reacao`**, e os 4 blocos do ciclo saem **sem a ordem certa** — os tipos do servidor são `Omit<...>`, então o gabarito é impossível de vazar aqui, não só ausente por descuido.\n\nO feed vem da api, e não do bundle, para que corrigir uma palavra da copy não exija republicar um caminho imutável no bucket.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Quando os dois divergem e `aguardandoATurma` é `true`, o estudante está preso no breakpoint esperando a Aula 2.\n- `topologia` e `desfecho` são `null` até a intervenção ser enviada. Devolvê-los antes entregaria qual opção quebra a corrente.\n- `metadados.saltos` é `null` numa mensagem escrita ali mesmo — ausência de encaminhamento não é zero encaminhamentos, e a tela mostra as duas coisas de formas diferentes.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rastro-boato/gate": {
+      "get": {
+        "operationId": "RastroBoatoController_gate",
+        "parameters": [
+          {
+            "name": "passo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "contexto",
+                "chats",
+                "decisao",
+                "breakpoint",
+                "resultado",
+                "ciclo",
+                "percurso",
+                "fim"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "aula1",
+                        "aula2"
+                      ]
+                    },
+                    "passoEfetivo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "agora": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "passoEfetivo",
+                    "agora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "Em que etapa a turma está (polling de ~5s).",
+        "description": "Leve de propósito: sem catálogo. É o que deixa a docente conduzir 30 telas — a Aula 2 abre para todos ao mesmo tempo.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Estudante sem turma não tem gate: a missão corre no ritmo dele. Prendê-lo no breakpoint seria um beco sem saída, porque não há quem dê a largada.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rastro-boato/entrar": {
+      "post": {
+        "operationId": "RastroBoatoController_entrar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "auditadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditar": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "interrompeu",
+                        "amplificou",
+                        "silenciou"
+                      ],
+                      "nullable": true
+                    },
+                    "reacao": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "topologia": {
+                      "type": "object",
+                      "properties": {
+                        "desfecho": {
+                          "type": "string",
+                          "enum": [
+                            "interrompeu",
+                            "amplificou",
+                            "silenciou"
+                          ]
+                        },
+                        "alcance": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "nivelDoEstudante": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "interrompeu": {
+                          "type": "boolean"
+                        },
+                        "aneis": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "nos": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "desenhar": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "aceso": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "nos",
+                              "desenhar",
+                              "aceso"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "legenda": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "desfecho",
+                        "alcance",
+                        "nivelDoEstudante",
+                        "interrompeu",
+                        "aneis",
+                        "legenda"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "ordemBlocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coerente": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "entregouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "auditadas",
+                    "totalAuditadas",
+                    "cotaAtingida",
+                    "faltamAuditar",
+                    "opcao",
+                    "desfecho",
+                    "reacao",
+                    "topologia",
+                    "ordemBlocos",
+                    "coerente",
+                    "entregouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "Sai da tela de contexto e abre a lista de conversas.",
+        "description": "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 na Etapa 2 não pode devolver a criança ao briefing de Tomás que ela já leu.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rastro-boato/auditoria": {
+      "post": {
+        "operationId": "RastroBoatoController_auditoria",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "auditadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditar": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "interrompeu",
+                        "amplificou",
+                        "silenciou"
+                      ],
+                      "nullable": true
+                    },
+                    "reacao": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "topologia": {
+                      "type": "object",
+                      "properties": {
+                        "desfecho": {
+                          "type": "string",
+                          "enum": [
+                            "interrompeu",
+                            "amplificou",
+                            "silenciou"
+                          ]
+                        },
+                        "alcance": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "nivelDoEstudante": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "interrompeu": {
+                          "type": "boolean"
+                        },
+                        "aneis": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "nos": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "desenhar": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "aceso": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "nos",
+                              "desenhar",
+                              "aceso"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "legenda": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "desfecho",
+                        "alcance",
+                        "nivelDoEstudante",
+                        "interrompeu",
+                        "aneis",
+                        "legenda"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "ordemBlocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coerente": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "entregouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "novo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "auditadas",
+                    "totalAuditadas",
+                    "cotaAtingida",
+                    "faltamAuditar",
+                    "opcao",
+                    "desfecho",
+                    "reacao",
+                    "topologia",
+                    "ordemBlocos",
+                    "coerente",
+                    "entregouPercurso",
+                    "concluidoEm",
+                    "turma",
+                    "novo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "Registra a abertura do modal \"Dados da mensagem\".",
+        "description": "A cota de 3 é sobre mensagens **DISTINTAS**, e a dedupe é do servidor — um contador incrementado no cliente seria um número que o estudante controla. Reabrir o mesmo balão devolve 200 com `novo: false`: reler é o comportamento que a missão quer, e um 409 ali viraria a releitura em erro na tela.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Quando a terceira mensagem distinta fecha a cota, o `passo` anda para `decisao` AQUI, no servidor. Deixar o cliente pedir a transição seria deixá-lo escolher quando o pico da missão começa.\n- `tempoLeituraS` é calibragem de fluxo, não medida de mérito: ninguém é avaliado por ler rápido.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mensagemId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "tempoLeituraS": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3600,
+                    "default": 0
+                  }
+                },
+                "required": [
+                  "mensagemId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rastro-boato/decisao": {
+      "post": {
+        "operationId": "RastroBoatoController_decisao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "auditadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditar": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "interrompeu",
+                        "amplificou",
+                        "silenciou"
+                      ],
+                      "nullable": true
+                    },
+                    "reacao": {
+                      "type": "string"
+                    },
+                    "topologia": {
+                      "type": "object",
+                      "properties": {
+                        "desfecho": {
+                          "type": "string",
+                          "enum": [
+                            "interrompeu",
+                            "amplificou",
+                            "silenciou"
+                          ]
+                        },
+                        "alcance": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "nivelDoEstudante": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "interrompeu": {
+                          "type": "boolean"
+                        },
+                        "aneis": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "nos": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "desenhar": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "aceso": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "nos",
+                              "desenhar",
+                              "aceso"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "legenda": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "desfecho",
+                        "alcance",
+                        "nivelDoEstudante",
+                        "interrompeu",
+                        "aneis",
+                        "legenda"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "ordemBlocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coerente": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "entregouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "auditadas",
+                    "totalAuditadas",
+                    "cotaAtingida",
+                    "faltamAuditar",
+                    "opcao",
+                    "desfecho",
+                    "reacao",
+                    "topologia",
+                    "ordemBlocos",
+                    "coerente",
+                    "entregouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "A intervenção no grupo — irrevogável (latch).",
+        "description": "O pico da missão. A api confere a cota de auditoria ANTES de aceitar (409 `auditoria-insuficiente`), corrige a escolha contra o catálogo e devolve o desfecho, a reação do grupo e a topologia da rede já calculada.\n\nSegunda chamada responde 409 `decisao-ja-registrada`: a escolha é definitiva, e é isso que faz o estudante assumir o peso dela antes de ver o mapa.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `latenciaSeg` é cronometrado pelo CLIENTE — a latência da api não é o dado. O que se mede é o tempo entre a crise aparecer e o toque.\n- `houveInacao90s` alimenta a hipótese H3 do playtest e o painel; nunca entra no nível de intervenção.\n- A topologia vem AGRUPADA em anéis (`nos` real, `desenhar` quantos círculos): 1.200 elementos SVG travariam o Chromebook da escola.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "opcao": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "B",
+                      "C"
+                    ]
+                  },
+                  "latenciaSeg": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 7200
+                  },
+                  "houveInacao90s": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "opcao",
+                  "latenciaSeg"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rastro-boato/modelagem": {
+      "post": {
+        "operationId": "RastroBoatoController_modelagem",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "auditadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditar": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "interrompeu",
+                        "amplificou",
+                        "silenciou"
+                      ],
+                      "nullable": true
+                    },
+                    "reacao": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "topologia": {
+                      "type": "object",
+                      "properties": {
+                        "desfecho": {
+                          "type": "string",
+                          "enum": [
+                            "interrompeu",
+                            "amplificou",
+                            "silenciou"
+                          ]
+                        },
+                        "alcance": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "nivelDoEstudante": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "interrompeu": {
+                          "type": "boolean"
+                        },
+                        "aneis": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "nos": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "desenhar": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "aceso": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "nos",
+                              "desenhar",
+                              "aceso"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "legenda": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "desfecho",
+                        "alcance",
+                        "nivelDoEstudante",
+                        "interrompeu",
+                        "aneis",
+                        "legenda"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "ordemBlocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coerente": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "entregouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "auditadas",
+                    "totalAuditadas",
+                    "cotaAtingida",
+                    "faltamAuditar",
+                    "opcao",
+                    "desfecho",
+                    "reacao",
+                    "topologia",
+                    "ordemBlocos",
+                    "coerente",
+                    "entregouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "O modelo do ciclo da desinformação — 4 blocos, sem nota.",
+        "description": "A api confere a sequência contra a ordem do catálogo e devolve `coerente`. **Não há penalidade**: sequência incoerente grava igual e a missão segue (RF-007). O que recusa é modelo INCOMPLETO — 400 `blocos-incompletos` para quantidade errada, bloco desconhecido ou repetido (repetir deixa um slot logicamente vazio).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- A ordem correta nunca sai do servidor: o cliente recebe os blocos e devolve a sequência que montou.\n- Exige decisão enviada (409 `sem-decisao`): o construtor sistematiza o que aconteceu no grupo, e sem a cena não há o que sistematizar.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ordemBlocos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "gatilho",
+                        "repasse",
+                        "sem-checagem",
+                        "desfecho"
+                      ]
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "ordemBlocos"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rastro-boato/reflexao": {
+      "post": {
+        "operationId": "RastroBoatoController_reflexao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "chats",
+                        "decisao",
+                        "breakpoint",
+                        "resultado",
+                        "ciclo",
+                        "percurso",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "auditadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditar": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "opcao": {
+                      "type": "string",
+                      "enum": [
+                        "A",
+                        "B",
+                        "C"
+                      ],
+                      "nullable": true
+                    },
+                    "desfecho": {
+                      "type": "string",
+                      "enum": [
+                        "interrompeu",
+                        "amplificou",
+                        "silenciou"
+                      ],
+                      "nullable": true
+                    },
+                    "reacao": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "topologia": {
+                      "type": "object",
+                      "properties": {
+                        "desfecho": {
+                          "type": "string",
+                          "enum": [
+                            "interrompeu",
+                            "amplificou",
+                            "silenciou"
+                          ]
+                        },
+                        "alcance": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "nivelDoEstudante": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "interrompeu": {
+                          "type": "boolean"
+                        },
+                        "aneis": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "nivel": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "nos": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "desenhar": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "aceso": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "nivel",
+                              "nos",
+                              "desenhar",
+                              "aceso"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "legenda": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "desfecho",
+                        "alcance",
+                        "nivelDoEstudante",
+                        "interrompeu",
+                        "aneis",
+                        "legenda"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "ordemBlocos": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "coerente": {
+                      "type": "boolean",
+                      "nullable": true
+                    },
+                    "entregouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "auditadas",
+                    "totalAuditadas",
+                    "cotaAtingida",
+                    "faltamAuditar",
+                    "opcao",
+                    "desfecho",
+                    "reacao",
+                    "topologia",
+                    "ordemBlocos",
+                    "coerente",
+                    "entregouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "O \"Meu percurso\" — encerra a missão (latch).",
+        "description": "Texto livre de até 280 caracteres. É o **único** campo livre da missão e o dado mais sensível dela: caixa escrita por menor de idade. Não vai a log, não vai à telemetria analítica, e a única rota que o devolve é o painel do professor DA TURMA dela (LGPD art. 14).\n\nGrava `concluido_em` e leva o `passo` a `fim`. Segunda chamada responde 409 `reflexao-ja-enviada`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O `trim` é anterior ao `min(1)`: um campo com três espaços é um percurso em branco, e ele contaria como entregue no painel.\n- Exige o modelo do ciclo confirmado (400 `blocos-incompletos`).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 280
+                  }
+                },
+                "required": [
+                  "texto"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rastro-boato/turmas": {
+      "get": {
+        "operationId": "RastroBoatoTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie",
+                          "estudantes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "Turmas para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rastro-boato/turmas/{turmaId}/painel": {
+      "get": {
+        "operationId": "RastroBoatoTurmasController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "aula1",
+                            "aula2"
+                          ],
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie",
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "iniciou": {
+                            "type": "boolean"
+                          },
+                          "passo": {
+                            "type": "string",
+                            "enum": [
+                              "contexto",
+                              "chats",
+                              "decisao",
+                              "breakpoint",
+                              "resultado",
+                              "ciclo",
+                              "percurso",
+                              "fim"
+                            ]
+                          },
+                          "auditadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "auditouTudo": {
+                            "type": "boolean"
+                          },
+                          "opcao": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B",
+                              "C"
+                            ],
+                            "nullable": true
+                          },
+                          "houveInacao90s": {
+                            "type": "boolean"
+                          },
+                          "latenciaSeg": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "modeloCoerente": {
+                            "type": "boolean",
+                            "nullable": true
+                          },
+                          "entregouPercurso": {
+                            "type": "boolean"
+                          },
+                          "reflexaoTexto": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ociosoMin": {
+                            "type": "integer",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "usuario",
+                          "iniciou",
+                          "passo",
+                          "auditadas",
+                          "auditouTudo",
+                          "opcao",
+                          "houveInacao90s",
+                          "latenciaSeg",
+                          "modeloCoerente",
+                          "entregouPercurso",
+                          "reflexaoTexto",
+                          "ociosoMin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "iniciaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "auditaramTudo": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "responderam": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "entregaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "ociosos": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "modelosCoerentes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "estouraramOAlerta": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "distribuicao": {
+                          "type": "object",
+                          "required": [
+                            "A",
+                            "B",
+                            "C"
+                          ],
+                          "properties": {
+                            "A": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "B": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "C": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "iniciaram",
+                        "auditaramTudo",
+                        "responderam",
+                        "entregaram",
+                        "ociosos",
+                        "modelosCoerentes",
+                        "estouraramOAlerta",
+                        "distribuicao"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "estudantes",
+                    "resumo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "O que a turma está fazendo na missão, ao vivo.",
+        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos e sem nível** (PED-07 e `PROIBIDO_NO_PAINEL`): a leitura é de PROGRESSO. Uma coluna de pontos ordenaria crianças na leitura ainda que a tela não ordenasse.\n\n`distribuicao` conta A/B/C entre quem respondeu — é o material do debate, nunca 'quem errou'.\n\n`reflexaoTexto` sai NESTA rota e só nela: é caixa livre de menor de idade, e quem a lê é o professor da turma dela (LGPD art. 14).\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira, não para punir.\n- `estouraramOAlerta` conta quem deixou o timer de 90s aparecer no pico. É o sinal da hipótese H3 do playtest, e um número alto pede intervenção oral — não uma anotação sobre a criança.\n- `auditaramTudo` é o KPI-01 da missão: quantos inspecionaram 3 ou mais metadados antes de intervir.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rastro-boato/turmas/{turmaId}/gate": {
+      "post": {
+        "operationId": "RastroBoatoTurmasController_gate",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "aula1",
+                        "aula2"
+                      ]
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "etapa",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "Abre a Aula 2, ou pausa a simulação de volta na Aula 1.",
+        "description": "O relógio da AULA. É o que permite fechar a Aula 1 em 30 telas ao mesmo tempo e fazer a turma chegar junta ao mapa da rede.\n\n**Idempotente de propósito**: `liberar-aula2` duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada. `pausar-simulacao` volta para `aula1` SEM apagar nada — é para quem abriu a Aula 2 antes da hora.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- A etapa é PISO e TETO ao mesmo tempo: quem está adiantado não é puxado de volta (seria punir quem leu rápido), mas ninguém passa do breakpoint antes da Aula 2.\n- Quem já entregou o percurso fica em `fim`: `pausar-simulacao` não o traz de volta. O latch é do estudante, não da turma.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "acao": {
+                    "type": "string",
+                    "enum": [
+                      "liberar-aula2",
+                      "pausar-simulacao"
+                    ]
+                  }
+                },
+                "required": [
+                  "acao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rastro-boato/turmas/{turmaId}": {
+      "delete": {
+        "operationId": "RastroBoatoTurmasController_zerar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sucesso": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "registrosApagados": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "sucesso",
+                    "registrosApagados"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "Zerar a turma — a segunda aplicação.",
+        "description": "Apaga sessões, auditorias, percursos e o gate desta turma para a missão poder ser refeita no ano seguinte (PED-13). **Preserva `telemetria_eventos`**, que é a trilha analítica imutável.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com a reflexão da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
     }
   },
   "info": {
