@@ -23,9 +23,10 @@
 import { MISSOES_DISPONIVEIS } from "@/lib/entre-redes/catalogo";
 import { ROTA_BEM_ESTAR } from "@/lib/bem-estar";
 import { ROTA_PLANO_DE_AULA } from "@/lib/plano-de-aula";
+import { ROTA_PLANO_DE_ENSINO } from "@/lib/plano-de-ensino";
 
 export type Produto = {
-  slug: "plano-de-aula" | "entre-redes" | "bem-estar";
+  slug: "plano-de-aula" | "plano-de-ensino" | "entre-redes" | "bem-estar";
   nome: string;
   /** Uma linha do que o produto é. */
   chamada: string;
@@ -52,6 +53,17 @@ export const PRODUTOS: Produto[] = [
     externo: false,
     acao: "Abrir gerador",
     situacao: "Ferramenta de autoria",
+  },
+  {
+    slug: "plano-de-ensino",
+    nome: "Planejamento de Ensino",
+    chamada: "Currículo e planejamento",
+    descricao:
+      "Do plano anual ao plano de cada aula, a partir das habilidades da BNCC do seu componente e ano. Você escolhe o que trabalhar em cada bimestre; a ferramenta escreve o plano e organiza a semana.",
+    destino: ROTA_PLANO_DE_ENSINO,
+    externo: false,
+    acao: "Abrir planejamento",
+    situacao: "1º ano do Fundamental à 3ª série do Médio",
   },
   {
     slug: "entre-redes",
