@@ -24221,6 +24221,2611 @@
         "x-acesso": "token"
       }
     },
+    "/planejamento/curriculo/componentes": {
+      "get": {
+        "operationId": "CurriculoController_componentes",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1EF",
+                "2EF",
+                "3EF",
+                "4EF",
+                "5EF",
+                "6EF",
+                "7EF",
+                "8EF",
+                "9EF",
+                "1EM",
+                "2EM",
+                "3EM"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ano": {
+                      "type": "string",
+                      "enum": [
+                        "1EF",
+                        "2EF",
+                        "3EF",
+                        "4EF",
+                        "5EF",
+                        "6EF",
+                        "7EF",
+                        "8EF",
+                        "9EF",
+                        "1EM",
+                        "2EM",
+                        "3EM"
+                      ]
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "EF",
+                        "EM"
+                      ]
+                    },
+                    "componentes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "area": {
+                            "type": "string"
+                          },
+                          "areaRotulo": {
+                            "type": "string"
+                          },
+                          "totalDeHabilidades": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "aulasSemanaisDeReferencia": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "habilidadesPorArea": {
+                            "type": "boolean"
+                          },
+                          "opcional": {
+                            "type": "boolean"
+                          },
+                          "observacao": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "rotulo",
+                          "area",
+                          "areaRotulo",
+                          "totalDeHabilidades",
+                          "aulasSemanaisDeReferencia",
+                          "habilidadesPorArea",
+                          "opcional",
+                          "observacao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "referenciaDaMatriz": {
+                      "type": "object",
+                      "properties": {
+                        "aulasSemanais": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "horasRelogio": {
+                          "type": "number"
+                        },
+                        "minimoLegal": {
+                          "type": "integer"
+                        },
+                        "cumpreMinimo": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "aulasSemanais",
+                        "horasRelogio",
+                        "minimoLegal",
+                        "cumpreMinimo"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "ano",
+                    "etapa",
+                    "componentes",
+                    "referenciaDaMatriz"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Os componentes curriculares que a rede oferta naquele ano.",
+        "description": "Com o total de habilidades da BNCC de cada um e as aulas semanais da matriz mediana de referência. `habilidadesPorArea: true` avisa que as habilidades vêm da ÁREA e não do componente — o caso de Biologia, Física e Química no Ensino Médio, que compartilham as habilidades de Ciências da Natureza. A BNCC não define grade horária: `aulasSemanaisDeReferencia` é a mediana observada em nove redes públicas e serve de ponto de partida editável, nunca de obrigação legal.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/curriculo/habilidades": {
+      "get": {
+        "operationId": "CurriculoController_habilidades",
+        "parameters": [
+          {
+            "name": "ano",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1EF",
+                "2EF",
+                "3EF",
+                "4EF",
+                "5EF",
+                "6EF",
+                "7EF",
+                "8EF",
+                "9EF",
+                "1EM",
+                "2EM",
+                "3EM"
+              ]
+            }
+          },
+          {
+            "name": "componente",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ano": {
+                      "type": "string",
+                      "enum": [
+                        "1EF",
+                        "2EF",
+                        "3EF",
+                        "4EF",
+                        "5EF",
+                        "6EF",
+                        "7EF",
+                        "8EF",
+                        "9EF",
+                        "1EM",
+                        "2EM",
+                        "3EM"
+                      ]
+                    },
+                    "componente": {
+                      "type": "string"
+                    },
+                    "componenteRotulo": {
+                      "type": "string"
+                    },
+                    "rotuloDoOrganizador": {
+                      "type": "string"
+                    },
+                    "habilidadesPorArea": {
+                      "type": "boolean"
+                    },
+                    "grupos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "organizador": {
+                            "type": "string"
+                          },
+                          "habilidades": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "codigo": {
+                                  "type": "string"
+                                },
+                                "descricao": {
+                                  "type": "string"
+                                },
+                                "objetoDeConhecimento": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "organizador": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "competenciaEspecifica": {
+                                  "type": "integer",
+                                  "nullable": true
+                                },
+                                "explicacao": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "exemplos": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "codigo",
+                                "descricao",
+                                "objetoDeConhecimento",
+                                "organizador",
+                                "competenciaEspecifica",
+                                "explicacao",
+                                "exemplos"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "organizador",
+                          "habilidades"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "computacao": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "codigo": {
+                            "type": "string"
+                          },
+                          "descricao": {
+                            "type": "string"
+                          },
+                          "objetoDeConhecimento": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "organizador": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "competenciaEspecifica": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "explicacao": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "exemplos": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "codigo",
+                          "descricao",
+                          "objetoDeConhecimento",
+                          "organizador",
+                          "competenciaEspecifica",
+                          "explicacao",
+                          "exemplos"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "ano",
+                    "componente",
+                    "componenteRotulo",
+                    "rotuloDoOrganizador",
+                    "habilidadesPorArea",
+                    "grupos",
+                    "total",
+                    "computacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "As habilidades da BNCC daquele componente naquele ano, agrupadas.",
+        "description": "Agrupadas pelo organizador que a BNCC usa NAQUELE componente — a Base não é uniforme: sete componentes usam unidade temática, Língua Portuguesa usa prática de linguagem, Língua Inglesa usa eixo, e o Ensino Médio agrupa por competência específica da área. `rotuloDoOrganizador` diz como nomear o agrupador na tela. `computacao` traz a camada transversal do ano (Res. CNE/CEB 1/2022) separada, com a explicação e os exemplos oficiais do anexo — a articulação entre uma habilidade de Computação e uma do componente é PROPOSTA pedagógica, não dado normativo: não existe mapeamento oficial.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/configuracoes": {
+      "get": {
+        "operationId": "PlanejamentoController_configuracoes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "configuracoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "anoLetivo": {
+                            "type": "integer"
+                          },
+                          "serie": {
+                            "type": "string"
+                          },
+                          "serieRotulo": {
+                            "type": "string"
+                          },
+                          "componente": {
+                            "type": "string"
+                          },
+                          "componenteRotulo": {
+                            "type": "string"
+                          },
+                          "turmaId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "turmaNome": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "divisaoDoAno": {
+                            "type": "string",
+                            "enum": [
+                              "bimestral",
+                              "trimestral",
+                              "semestral"
+                            ]
+                          },
+                          "periodicidade": {
+                            "type": "string",
+                            "enum": [
+                              "semanal",
+                              "quinzenal"
+                            ]
+                          },
+                          "minutosPorAula": {
+                            "type": "integer"
+                          },
+                          "aulasSemanais": {
+                            "type": "integer"
+                          },
+                          "grade": {},
+                          "incluirComputacao": {
+                            "type": "boolean"
+                          },
+                          "inicioDoAnoLetivo": {},
+                          "dimensionamento": {
+                            "type": "object",
+                            "properties": {
+                              "aulasNoAno": {
+                                "type": "integer"
+                              },
+                              "horasRelogio": {
+                                "type": "number"
+                              },
+                              "semanasLetivas": {
+                                "type": "integer"
+                              },
+                              "gradeCoerente": {
+                                "type": "boolean"
+                              },
+                              "aulasNaGrade": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "aulasNoAno",
+                              "horasRelogio",
+                              "semanasLetivas",
+                              "gradeCoerente",
+                              "aulasNaGrade"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "criadoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "atualizadoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "anoLetivo",
+                          "serie",
+                          "serieRotulo",
+                          "componente",
+                          "componenteRotulo",
+                          "turmaId",
+                          "turmaNome",
+                          "divisaoDoAno",
+                          "periodicidade",
+                          "minutosPorAula",
+                          "aulasSemanais",
+                          "grade",
+                          "incluirComputacao",
+                          "inicioDoAnoLetivo",
+                          "dimensionamento",
+                          "criadoEm",
+                          "atualizadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "configuracoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "As regências configuradas por ESTE professor.",
+        "description": "Cada uma é um par componente × ano com carga horária e grade de horários. `dimensionamento` traz o total de aulas no ano e a conversão para horas-relógio (hora-aula NÃO é hora-relógio: Parecer CNE/CEB 8/2004), além do aviso `gradeCoerente: false` quando os horários marcados não somam as aulas semanais declaradas.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      },
+      "post": {
+        "operationId": "PlanejamentoController_criarConfiguracao",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "anoLetivo": {
+                      "type": "integer"
+                    },
+                    "serie": {
+                      "type": "string"
+                    },
+                    "serieRotulo": {
+                      "type": "string"
+                    },
+                    "componente": {
+                      "type": "string"
+                    },
+                    "componenteRotulo": {
+                      "type": "string"
+                    },
+                    "turmaId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "nullable": true
+                    },
+                    "turmaNome": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "divisaoDoAno": {
+                      "type": "string",
+                      "enum": [
+                        "bimestral",
+                        "trimestral",
+                        "semestral"
+                      ]
+                    },
+                    "periodicidade": {
+                      "type": "string",
+                      "enum": [
+                        "semanal",
+                        "quinzenal"
+                      ]
+                    },
+                    "minutosPorAula": {
+                      "type": "integer"
+                    },
+                    "aulasSemanais": {
+                      "type": "integer"
+                    },
+                    "grade": {},
+                    "incluirComputacao": {
+                      "type": "boolean"
+                    },
+                    "inicioDoAnoLetivo": {},
+                    "dimensionamento": {
+                      "type": "object",
+                      "properties": {
+                        "aulasNoAno": {
+                          "type": "integer"
+                        },
+                        "horasRelogio": {
+                          "type": "number"
+                        },
+                        "semanasLetivas": {
+                          "type": "integer"
+                        },
+                        "gradeCoerente": {
+                          "type": "boolean"
+                        },
+                        "aulasNaGrade": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "aulasNoAno",
+                        "horasRelogio",
+                        "semanasLetivas",
+                        "gradeCoerente",
+                        "aulasNaGrade"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "criadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "anoLetivo",
+                    "serie",
+                    "serieRotulo",
+                    "componente",
+                    "componenteRotulo",
+                    "turmaId",
+                    "turmaNome",
+                    "divisaoDoAno",
+                    "periodicidade",
+                    "minutosPorAula",
+                    "aulasSemanais",
+                    "grade",
+                    "incluirComputacao",
+                    "inicioDoAnoLetivo",
+                    "dimensionamento",
+                    "criadoEm",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Cria ou atualiza a regência de um componente × ano.",
+        "description": "Idempotente na chave (professor, ano letivo, série, componente): reenviar atualiza. Recusa componente que a rede não oferta naquele ano e componente sem habilidade da BNCC — os dois produziriam um plano vazio de que o professor levaria a culpa. `inicioDoAnoLetivo` alimenta `periodos_letivos`, que é catálogo do CONTRATO (a rede inteira compartilha o calendário).\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "anoLetivo": {
+                    "type": "integer",
+                    "minimum": 2025,
+                    "maximum": 2100
+                  },
+                  "serie": {
+                    "type": "string",
+                    "enum": [
+                      "1EF",
+                      "2EF",
+                      "3EF",
+                      "4EF",
+                      "5EF",
+                      "6EF",
+                      "7EF",
+                      "8EF",
+                      "9EF",
+                      "1EM",
+                      "2EM",
+                      "3EM"
+                    ]
+                  },
+                  "componente": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                    "maxLength": 60
+                  },
+                  "turmaId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "divisaoDoAno": {
+                    "type": "string",
+                    "enum": [
+                      "bimestral",
+                      "trimestral",
+                      "semestral"
+                    ],
+                    "default": "bimestral"
+                  },
+                  "periodicidade": {
+                    "type": "string",
+                    "enum": [
+                      "semanal",
+                      "quinzenal"
+                    ],
+                    "default": "semanal"
+                  },
+                  "minutosPorAula": {
+                    "type": "integer",
+                    "minimum": 30,
+                    "maximum": 60,
+                    "default": 50
+                  },
+                  "aulasSemanais": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20
+                  },
+                  "grade": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "diaDaSemana": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 5
+                        },
+                        "horarios": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          },
+                          "minItems": 1,
+                          "maxItems": 10
+                        }
+                      },
+                      "required": [
+                        "diaDaSemana",
+                        "horarios"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 5,
+                    "default": []
+                  },
+                  "incluirComputacao": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "inicioDoAnoLetivo": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "anoLetivo",
+                  "serie",
+                  "componente",
+                  "aulasSemanais",
+                  "inicioDoAnoLetivo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/planejamento/configuracoes/{id}/calendario": {
+      "get": {
+        "operationId": "PlanejamentoController_calendario",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "periodos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ordem": {
+                            "type": "integer"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "inicio": {},
+                          "fim": {},
+                          "aulasEstimadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "ordem",
+                          "rotulo",
+                          "inicio",
+                          "fim",
+                          "aulasEstimadas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "janelas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ordem": {
+                            "type": "integer"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "inicio": {},
+                          "fim": {},
+                          "periodoDeAvaliacao": {
+                            "type": "integer"
+                          },
+                          "aulasPrevistas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "planoId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pendente",
+                              "gerando",
+                              "pronto",
+                              "erro"
+                            ],
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "ordem",
+                          "rotulo",
+                          "inicio",
+                          "fim",
+                          "periodoDeAvaliacao",
+                          "aulasPrevistas",
+                          "planoId",
+                          "status"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "periodos",
+                    "janelas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Os períodos de avaliação e as janelas de planejamento do ano.",
+        "description": "As janelas são as semanas ou quinzenas que o professor vai planejar, cada uma com quantas aulas ela tem de fato (da grade real) e o plano já gerado, se houver. Uma quinzena que atravessa a virada do bimestre pertence ao período em que COMEÇOU — cortá-la produziria uma janela de uma semana, que não é o que o professor configurou.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/planos-anuais": {
+      "get": {
+        "operationId": "PlanejamentoController_planosAnuais",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "planos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "configuracaoId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "pendente",
+                              "gerando",
+                              "pronto",
+                              "erro"
+                            ]
+                          },
+                          "erro": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "tokensUsados": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "distribuicao": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                              },
+                              "maxItems": 200
+                            }
+                          },
+                          "distribuicaoComputacao": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                              },
+                              "maxItems": 200
+                            }
+                          },
+                          "criadoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "atualizadoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "configuracaoId",
+                          "titulo",
+                          "status",
+                          "erro",
+                          "tokensUsados",
+                          "distribuicao",
+                          "distribuicaoComputacao",
+                          "criadoEm",
+                          "atualizadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "planos"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Os planos anuais DESTE professor.",
+        "description": "**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/configuracoes/{id}/plano-anual": {
+      "post": {
+        "operationId": "PlanejamentoController_criarPlanoAnual",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "configuracaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "titulo": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pendente",
+                        "gerando",
+                        "pronto",
+                        "erro"
+                      ]
+                    },
+                    "erro": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "tokensUsados": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "distribuicao": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                        },
+                        "maxItems": 200
+                      }
+                    },
+                    "distribuicaoComputacao": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                        },
+                        "maxItems": 200
+                      }
+                    },
+                    "criadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "configuracaoId",
+                    "titulo",
+                    "status",
+                    "erro",
+                    "tokensUsados",
+                    "distribuicao",
+                    "distribuicaoComputacao",
+                    "criadoEm",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Cria o plano anual de uma regência.",
+        "description": "Nasce com a distribuição VAZIA: escolher que habilidade cai em que período é decisão pedagógica do professor, não do gerador. A geração só é liberada depois de `PUT /planos-anuais/:id/distribuicao`.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/planos-anuais/{id}/distribuicao": {
+      "put": {
+        "operationId": "PlanejamentoController_salvarDistribuicao",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "configuracaoId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "titulo": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pendente",
+                        "gerando",
+                        "pronto",
+                        "erro"
+                      ]
+                    },
+                    "erro": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "tokensUsados": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "distribuicao": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                        },
+                        "maxItems": 200
+                      }
+                    },
+                    "distribuicaoComputacao": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                        },
+                        "maxItems": 200
+                      }
+                    },
+                    "criadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "configuracaoId",
+                    "titulo",
+                    "status",
+                    "erro",
+                    "tokensUsados",
+                    "distribuicao",
+                    "distribuicaoComputacao",
+                    "criadoEm",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Salva a distribuição de habilidades pelos períodos.",
+        "description": "É a decisão pedagógica central do produto, e o insumo do gerador. Recusa código que não pertence ao recorte (componente × ano): um `EF67LP42` colado à mão chegaria ao prompt e sairia no documento como se fosse currículo, e o professor levaria à coordenação um plano citando habilidade inexistente.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "distribuicao": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                      },
+                      "maxItems": 200
+                    }
+                  },
+                  "distribuicaoComputacao": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                      },
+                      "maxItems": 200
+                    },
+                    "default": {}
+                  }
+                },
+                "required": [
+                  "distribuicao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/planejamento/planos-anuais/{id}/gerar": {
+      "post": {
+        "operationId": "PlanejamentoController_gerarPlanoAnual",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Dispara a geração do plano anual.",
+        "description": "202 porque um plano anual leva minutos. O claim é atômico (`updateMany` condicionado ao status), então duas instâncias não geram o mesmo plano. Quota de IA conferida ANTES (regra 5 do AGENTS.md) e consumida depois — inclusive quando o resultado é rejeitado, porque o token foi gasto.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/planos-anuais/{id}": {
+      "get": {
+        "operationId": "PlanejamentoController_planoAnual",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "plano": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "configuracaoId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "titulo": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pendente",
+                            "gerando",
+                            "pronto",
+                            "erro"
+                          ]
+                        },
+                        "erro": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "tokensUsados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "distribuicao": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                            },
+                            "maxItems": 200
+                          }
+                        },
+                        "distribuicaoComputacao": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                            },
+                            "maxItems": 200
+                          }
+                        },
+                        "criadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "atualizadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "configuracaoId",
+                        "titulo",
+                        "status",
+                        "erro",
+                        "tokensUsados",
+                        "distribuicao",
+                        "distribuicaoComputacao",
+                        "criadoEm",
+                        "atualizadoEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "configuracao": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "anoLetivo": {
+                          "type": "integer"
+                        },
+                        "serie": {
+                          "type": "string"
+                        },
+                        "serieRotulo": {
+                          "type": "string"
+                        },
+                        "componente": {
+                          "type": "string"
+                        },
+                        "componenteRotulo": {
+                          "type": "string"
+                        },
+                        "turmaId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "nullable": true
+                        },
+                        "turmaNome": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "divisaoDoAno": {
+                          "type": "string",
+                          "enum": [
+                            "bimestral",
+                            "trimestral",
+                            "semestral"
+                          ]
+                        },
+                        "periodicidade": {
+                          "type": "string",
+                          "enum": [
+                            "semanal",
+                            "quinzenal"
+                          ]
+                        },
+                        "minutosPorAula": {
+                          "type": "integer"
+                        },
+                        "aulasSemanais": {
+                          "type": "integer"
+                        },
+                        "grade": {},
+                        "incluirComputacao": {
+                          "type": "boolean"
+                        },
+                        "inicioDoAnoLetivo": {},
+                        "dimensionamento": {
+                          "type": "object",
+                          "properties": {
+                            "aulasNoAno": {
+                              "type": "integer"
+                            },
+                            "horasRelogio": {
+                              "type": "number"
+                            },
+                            "semanasLetivas": {
+                              "type": "integer"
+                            },
+                            "gradeCoerente": {
+                              "type": "boolean"
+                            },
+                            "aulasNaGrade": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "aulasNoAno",
+                            "horasRelogio",
+                            "semanasLetivas",
+                            "gradeCoerente",
+                            "aulasNaGrade"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "criadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "atualizadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "anoLetivo",
+                        "serie",
+                        "serieRotulo",
+                        "componente",
+                        "componenteRotulo",
+                        "turmaId",
+                        "turmaNome",
+                        "divisaoDoAno",
+                        "periodicidade",
+                        "minutosPorAula",
+                        "aulasSemanais",
+                        "grade",
+                        "incluirComputacao",
+                        "inicioDoAnoLetivo",
+                        "dimensionamento",
+                        "criadoEm",
+                        "atualizadoEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "periodos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "ordem": {
+                            "type": "integer"
+                          },
+                          "rotulo": {
+                            "type": "string"
+                          },
+                          "inicio": {},
+                          "fim": {},
+                          "aulasEstimadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "ordem",
+                          "rotulo",
+                          "inicio",
+                          "fim",
+                          "aulasEstimadas"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "html": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "plano",
+                    "configuracao",
+                    "periodos",
+                    "html"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "O plano anual com o conteúdo.",
+        "description": "`html` é `null` enquanto o status não for `pronto` — é assim que a tela sabe que deve continuar o polling. Vem com a configuração e os períodos de avaliação, para a tela não precisar de três chamadas.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      },
+      "delete": {
+        "operationId": "PlanejamentoController_apagar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Apaga o plano anual e os planos de período dele.",
+        "description": "O conteúdo no object storage vai junto (`apagarPrefixo`).\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/planos-anuais/{id}/conteudo": {
+      "put": {
+        "operationId": "PlanejamentoController_salvarConteudo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Salva o plano anual editado pelo professor.",
+        "description": "O HTML passa por allowlist antes de ir ao storage: ele volta ao navegador de outro usuário (o próprio professor depois, ou quem herdar a turma), então é XSS armazenado se passar cru. O Markdown original fica intocado em `gerado.md`.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "html": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000000
+                  }
+                },
+                "required": [
+                  "html"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/planejamento/planos-anuais/{id}/periodos/{ordem}/gerar": {
+      "post": {
+        "operationId": "PlanejamentoController_gerarPeriodo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ordem",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": true,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Gera o plano aula a aula de uma semana ou quinzena.",
+        "description": "O esqueleto das aulas (quantas, em que data, em que horário) NÃO vem do modelo: sai do calendário e da grade real do professor. O modelo preenche o conteúdo pedagógico das aulas que existem — deixá-lo decidir quantas caberiam produzia dez, o número redondo, para um professor de Arte que tem duas. `feriados` REMOVE a aula em vez de deslocá-la: repor é decisão pedagógica, não conta do sistema.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "feriados": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    "maxItems": 30,
+                    "default": []
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/planejamento/periodos/{id}": {
+      "get": {
+        "operationId": "PlanejamentoController_periodo",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "planoAnualId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "ordem": {
+                      "type": "integer"
+                    },
+                    "rotulo": {
+                      "type": "string"
+                    },
+                    "inicio": {},
+                    "fim": {},
+                    "periodoDeAvaliacao": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pendente",
+                        "gerando",
+                        "pronto",
+                        "erro"
+                      ]
+                    },
+                    "erro": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "tokensUsados": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "aulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "numero": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "data": {},
+                          "diaDaSemana": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 5
+                          },
+                          "horario": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          },
+                          "tema": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "objetivo": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "habilidades": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                            },
+                            "maxItems": 20
+                          },
+                          "conteudo": {
+                            "type": "string",
+                            "maxLength": 4000
+                          },
+                          "momentos": {
+                            "type": "object",
+                            "properties": {
+                              "retomada": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "desenvolvimento": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "sistematizacao": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "fechamento": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "retomada",
+                              "desenvolvimento",
+                              "sistematizacao",
+                              "fechamento"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "recursos": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "maxItems": 20
+                          },
+                          "avaliacao": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "tarefaDeCasa": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "adaptacoes": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "cumprida": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "observacaoDoProfessor": {
+                            "type": "string",
+                            "maxLength": 4000,
+                            "default": ""
+                          }
+                        },
+                        "required": [
+                          "numero",
+                          "data",
+                          "diaDaSemana",
+                          "horario",
+                          "tema",
+                          "objetivo",
+                          "habilidades",
+                          "conteudo",
+                          "momentos",
+                          "recursos",
+                          "avaliacao",
+                          "tarefaDeCasa",
+                          "adaptacoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "criadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "planoAnualId",
+                    "ordem",
+                    "rotulo",
+                    "inicio",
+                    "fim",
+                    "periodoDeAvaliacao",
+                    "status",
+                    "erro",
+                    "tokensUsados",
+                    "aulas",
+                    "criadoEm",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "O plano de uma semana ou quinzena, aula a aula.",
+        "description": "**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/planejamento/periodos/{id}/aulas": {
+      "put": {
+        "operationId": "PlanejamentoController_salvarAulas",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "planoAnualId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "ordem": {
+                      "type": "integer"
+                    },
+                    "rotulo": {
+                      "type": "string"
+                    },
+                    "inicio": {},
+                    "fim": {},
+                    "periodoDeAvaliacao": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pendente",
+                        "gerando",
+                        "pronto",
+                        "erro"
+                      ]
+                    },
+                    "erro": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "tokensUsados": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "aulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "numero": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "data": {},
+                          "diaDaSemana": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 5
+                          },
+                          "horario": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          },
+                          "tema": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "objetivo": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "habilidades": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                            },
+                            "maxItems": 20
+                          },
+                          "conteudo": {
+                            "type": "string",
+                            "maxLength": 4000
+                          },
+                          "momentos": {
+                            "type": "object",
+                            "properties": {
+                              "retomada": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "desenvolvimento": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "sistematizacao": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "fechamento": {
+                                "type": "object",
+                                "properties": {
+                                  "o_que": {
+                                    "type": "string",
+                                    "maxLength": 4000
+                                  },
+                                  "minutos": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 120
+                                  }
+                                },
+                                "required": [
+                                  "o_que",
+                                  "minutos"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "retomada",
+                              "desenvolvimento",
+                              "sistematizacao",
+                              "fechamento"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "recursos": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "maxItems": 20
+                          },
+                          "avaliacao": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "tarefaDeCasa": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "adaptacoes": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "cumprida": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "observacaoDoProfessor": {
+                            "type": "string",
+                            "maxLength": 4000,
+                            "default": ""
+                          }
+                        },
+                        "required": [
+                          "numero",
+                          "data",
+                          "diaDaSemana",
+                          "horario",
+                          "tema",
+                          "objetivo",
+                          "habilidades",
+                          "conteudo",
+                          "momentos",
+                          "recursos",
+                          "avaliacao",
+                          "tarefaDeCasa",
+                          "adaptacoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "criadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "planoAnualId",
+                    "ordem",
+                    "rotulo",
+                    "inicio",
+                    "fim",
+                    "periodoDeAvaliacao",
+                    "status",
+                    "erro",
+                    "tokensUsados",
+                    "aulas",
+                    "criadoEm",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "planejamento"
+        ],
+        "summary": "Salva as aulas editadas — e o registro do que foi cumprido.",
+        "description": "As aulas são dado estruturado, não prosa: o professor edita a aula de quinta sem tocar na de terça. `cumprida` e `observacaoDoProfessor` são preenchidos DEPOIS da aula e não vêm da IA — é o registro do que aconteceu, e é ele que faz o plano deixar de ser intenção.\n\n**Papéis:** professor.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "aulas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "numero": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "data": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "diaDaSemana": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 5
+                        },
+                        "horario": {
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "tema": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "objetivo": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "habilidades": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^E[FM]\\d{2}[A-Z]{2,3}\\d{2,3}[A-Z]?$"
+                          },
+                          "maxItems": 20
+                        },
+                        "conteudo": {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        "momentos": {
+                          "type": "object",
+                          "properties": {
+                            "retomada": {
+                              "type": "object",
+                              "properties": {
+                                "o_que": {
+                                  "type": "string",
+                                  "maxLength": 4000
+                                },
+                                "minutos": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 120
+                                }
+                              },
+                              "required": [
+                                "o_que",
+                                "minutos"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "desenvolvimento": {
+                              "type": "object",
+                              "properties": {
+                                "o_que": {
+                                  "type": "string",
+                                  "maxLength": 4000
+                                },
+                                "minutos": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 120
+                                }
+                              },
+                              "required": [
+                                "o_que",
+                                "minutos"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "sistematizacao": {
+                              "type": "object",
+                              "properties": {
+                                "o_que": {
+                                  "type": "string",
+                                  "maxLength": 4000
+                                },
+                                "minutos": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 120
+                                }
+                              },
+                              "required": [
+                                "o_que",
+                                "minutos"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "fechamento": {
+                              "type": "object",
+                              "properties": {
+                                "o_que": {
+                                  "type": "string",
+                                  "maxLength": 4000
+                                },
+                                "minutos": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 120
+                                }
+                              },
+                              "required": [
+                                "o_que",
+                                "minutos"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "retomada",
+                            "desenvolvimento",
+                            "sistematizacao",
+                            "fechamento"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "recursos": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "maxItems": 20
+                        },
+                        "avaliacao": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "tarefaDeCasa": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "adaptacoes": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "cumprida": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "observacaoDoProfessor": {
+                          "type": "string",
+                          "maxLength": 4000,
+                          "default": ""
+                        }
+                      },
+                      "required": [
+                        "numero",
+                        "data",
+                        "diaDaSemana",
+                        "horario",
+                        "tema",
+                        "objetivo",
+                        "habilidades",
+                        "conteudo",
+                        "momentos",
+                        "recursos",
+                        "avaliacao",
+                        "tarefaDeCasa",
+                        "adaptacoes"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 60
+                  }
+                },
+                "required": [
+                  "aulas"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/bemestar/resumo": {
       "get": {
         "operationId": "BemEstarController_resumo",

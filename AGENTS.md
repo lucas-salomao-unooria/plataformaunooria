@@ -8,7 +8,7 @@ este arquivo vence.
 
 | Pasta | O que está lá |
 |---|---|
-| `apps/api/AGENTS.md` | rede/escola/CPF, identidade e enturmamento, perfil portátil, telemetria, OpenAPI derivado do Zod, provider de IA, e os módulos de experiência (vila, planos, bem-estar, unoogpt, unootube) |
+| `apps/api/AGENTS.md` | rede/escola/CPF, identidade e enturmamento, perfil portátil, telemetria, OpenAPI derivado do Zod, provider de IA, e os módulos de experiência (vila, planos, planejamento/currículo, bem-estar, unoogpt, unootube) |
 | `apps/hub/AGENTS.md` | landing, header, casca, embed de experiência, papéis e middleware, fontes do DS |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, como criar experiência nova, seções de clone do DS, a zona congelada da exp-70 |
 | `packages/AGENTS.md` | índice dos pacotes de workspace (o detalhe está no `AGENTS.md` de cada um) |
@@ -312,8 +312,7 @@ abri-lo.
       fronteira do disfarce da exp-06 — três frentes fecharam ADR em
       2026-09-06 e duas colidiram na 65, então conferir `origin/dev` não
       basta: confira também as branches de trabalho abertas),
-  `main.pdf` (regera, não escolhe lado),
-  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
+  `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
@@ -396,6 +395,13 @@ node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ 
 EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
+pnpm --filter @edu/exp-92-plano-de-ensino dev # :5180 → hub /professor/plano-de-ensino. Planejamento dirigido
+                                          # pela BNCC: plano anual + plano de aulas, 1ºEF ao 3ºEM, todos os
+                                          # componentes. Toda porta de exp entra no CORS_ORIGINS da api —
+                                          # sem a :5180 o boot morre com "Failed to fetch".
+node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/src/curriculo/dados/*.ts
+                                          # (GERADOS). Exige poppler (pdftotext/pdfinfo) e os PDFs em
+                                          # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).
 pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
                                           # o professor prepara a mídia no painel antes da aula)
 pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).

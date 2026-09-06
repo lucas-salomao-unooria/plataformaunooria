@@ -32,6 +32,8 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * para a experiência errada.
    */
   "exp-06-rastro-boato": "http://localhost:5181",
+  /** Planejamento de ensino do professor — embedado em /professor/plano-de-ensino. */
+  "exp-92-plano-de-ensino": "http://localhost:5180",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

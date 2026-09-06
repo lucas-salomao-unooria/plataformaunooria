@@ -9,17 +9,18 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{72 decisões}, numeradas até ADR-72, \textbf{sem lacunas}. A ADR-65
+São \textbf{73 decisões}, numeradas até ADR-73, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
 em vez de a numeração seguir de 71 para 72.
 
-A colisão voltou a acontecer no mesmo dia: \textbf{três} frentes paralelas
-fecharam decisão em 2026-09-06, e duas escreveram ADR-65 sem se ver. Prevaleceu
-a mais antiga; as outras seguiram para 72 e 73. É a razão de a \adrr{ADR-61}
-mandar conferir \cd{origin/dev} na hora de escrever o número --- e a prova de
-que conferir a branch de trabalho não basta.
+A colisão voltou a acontecer no mesmo dia, e em dobro: \textbf{três} frentes
+paralelas fecharam decisão em 2026-09-06, e duas escreveram ADR-65 sem se ver.
+Prevaleceu a mais antiga; as outras seguiram para \adrr{ADR-72} e
+\adrr{ADR-73}. É a razão de a \adrr{ADR-61} mandar conferir \cd{origin/dev} na
+hora de escrever o número --- e a prova de que conferir só a branch integrada
+não basta: o número precisa ser reservado contra as frentes ABERTAS.
 
 Renumerar as seis ADRs entre 66 e 71 para fechar a lacuna, na época, foi
 considerado e recusado, e a razão não é o trabalho: dentro deste repositório a
@@ -31,7 +32,8 @@ silêncio, em onze mensagens de \emph{commit} imutáveis, nos PRs já mergeados 
 qualquer cópia deste PDF que já tenha circulado. É a forma exata do
 \cd{expires\_at} que cinco ADRs deste capítulo registram como armadilha. Um
 identificador vale por nunca mudar de significado; a ordem cronológica é o que se
-abre mão --- e é por isso que a ADR-65 é, em data, a mais nova do capítulo.
+abre mão --- e é por isso que a \adrr{ADR-65} não é, em data, a mais antiga das
+que a cercam.
 
 \section{Índice}
 
@@ -4742,3 +4744,154 @@ do mapa saíam quase invisíveis sobre o branco e o beat memorável não chegava
 fato uma visualização de propagação (o \enquote{encaminhada com frequência} já
 foi nessa direção). Aí a tela deixa de ser invenção, e a fronteira pode voltar
 para depois dela.
+
+
+% --------------------------------------------------------------------------
+
+\section{ADR-73 --- O planejamento de ensino é dirigido pela BNCC extraída do
+PDF homologado, e o componente da rede não é o componente da Base}
+\label{adr:plano-de-ensino-bncc}
+
+\begin{especificacao}{Contexto}
+A exp-90 gera plano anual a partir do \textbf{currículo da rede importado como
+texto} (\adrr{ADR-47}): um documento em prosa entra no \emph{prompt}, e o modelo
+infere dele a progressão do ano. O arranjo serve a quem tem documento curricular
+próprio e material didático adotado --- e é inútil para quem não tem, que é a
+maioria das redes pequenas. Ele também não desce da intenção anual para a aula
+de quinta-feira, que é onde o trabalho do professor realmente acontece.
+
+Havia um segundo limite, mais estreito: o produto nasceu para a
+\textbf{BNCC Computação}. Mas a Resolução CNE/CEB nº 1/2022 não cria componente
+isolado --- ela \textbf{delega às redes} definir \enquote{parâmetros e abordagens
+pedagógicas} (art. 2º) ---, e a Lei 14.533/2023 fez da educação digital
+componente do Fundamental e do Médio pela LDB (art. 26, parágrafo 11). Computação
+é camada transversal, não disciplina; um planejador que só a atenda serve a uma
+fração da carga horária de um professor.
+
+Três achados do levantamento decidiram a forma da solução, e nenhum deles é
+óbvio:
+
+\textbf{Primeiro: no Ensino Médio, componente da matriz e componente da Base
+NÃO coincidem.} A matriz de qualquer rede tem Biologia, Física e Química; a BNCC
+do Médio desce apenas até a \textbf{área}, e as três compartilham as 26
+habilidades de Ciências da Natureza e suas Tecnologias (\cd{EM13CNT}). O mesmo
+vale para Filosofia, Geografia, História e Sociologia, que dividem as de Ciências
+Humanas. As duas exceções são Língua Portuguesa e Matemática, os únicos
+componentes que a Base do Médio nomeia.
+
+\textbf{Segundo: a Base não é uniforme no organizador acima do objeto de
+conhecimento.} Sete componentes usam unidade temática; Língua Portuguesa usa
+prática de linguagem dentro de campo de atuação; Língua Inglesa usa eixo; o
+Médio agrupa por competência específica de área.
+
+\textbf{Terceiro: o PDF que o MEC serve na página do Ensino Médio é o RASCUNHO}
+de 11/05/2018, com 179 habilidades contra as 183 do homologado e
+\textbf{textos divergentes} --- a \cd{EM13MAT101} do rascunho perdeu
+\enquote{criticamente} e \enquote{fatos relativos}. O documento consolidado de
+dezembro de 2018, distribuído sob o nome \cd{BNCC\_EI\_EF\_110518}, é o que traz
+as três etapas.
+\end{especificacao}
+
+\textbf{Decisão. Nasce a exp-92, ao lado da exp-90 e sem substituí-la}, com o
+currículo como DADO ESTRUTURADO extraído do PDF homologado, cobrindo todos os
+componentes do 1º ano do Fundamental à 3ª série do Médio, em dois níveis: plano
+\textbf{anual} (macro, por período de avaliação) e plano de \textbf{período}
+(granular, aula a aula, semanal ou quinzenal à escolha da rede).
+
+\textbf{A fonte é o PDF homologado, extraído por coordenadas.} As tabelas da
+Base são um \emph{spread} de duas páginas --- unidade temática e objeto de
+conhecimento na par, habilidades na ímpar --- e no texto corrido do
+\cd{pdftotext} as três colunas viram três blocos sequenciais: a ligação
+habilidade\,$\leftrightarrow$\,objeto de conhecimento se perde, e atribuí-la
+seria chute. O que salva é o alinhamento do InDesign: o objeto
+\enquote{Estratégia de leitura} sai em \cd{yMin=260,5} e a \cd{EF15LP02} em
+\cd{yMin=260,4}, na página seguinte. A associação é geométrica e determinística
+(\cd{scripts/extrair-bncc.mjs}), e rende \textbf{1.304} habilidades do
+Fundamental --- o número oficial ---, \textbf{183} do Médio e \textbf{129} de
+Computação, das quais 98\,\% com objeto de conhecimento.
+
+\textbf{O componente da rede é modelado separado do componente da Base}
+(\cd{componenteBncc} em \cd{curriculo/componentes.ts}), e a tela AVISA quando as
+habilidades são da área. Sem isso, o professor de Biologia do 2º ano --- o caso
+mais comum do Médio --- receberia \enquote{nenhuma habilidade encontrada}.
+
+\textbf{A distribuição de habilidades pelos períodos é DECISÃO HUMANA.} Ela
+expressa a leitura que o professor faz da própria turma, e é a única coisa aqui
+que nenhum modelo deveria escolher por ele; a IA entra depois, para desenvolver
+pedagogicamente o que ele decidiu. Pelo mesmo motivo, o \textbf{esqueleto das
+aulas não vem do modelo}: número, data e horário saem do calendário e da grade
+real. Deixar o modelo decidir quantas aulas cabem numa quinzena produzia dez ---
+o número redondo --- para um professor de Arte que tem duas.
+
+\textbf{Há três barreiras contra código de habilidade inventado}, e nenhuma
+sozinha basta: o \emph{prompt} proíbe, a rota de distribuição recusa código fora
+do recorte, e a costura filtra o que o modelo devolveu
+(\cd{planejamento/costura.ts}). Um plano que cite \cd{EF67LP42} chega à
+coordenação como erro do professor, e destrói a confiança no produto inteiro.
+
+\textbf{A articulação com Computação é rotulada como PROPOSTA.} Não existe
+\emph{crosswalk} normativo entre habilidade de Computação e habilidade de
+componente --- a norma delega a abordagem à rede ---, e vender inferência como
+norma é risco de auditoria numa venda a poder público. Em contrapartida, a
+extração aproveita as colunas \enquote{Explicação da habilidade} e
+\enquote{Exemplos} do anexo do Parecer CNE/CEB nº 2/2022: texto pedagógico
+oficial que nenhum \emph{dataset} público da Base empacota.
+
+\textbf{Alternativas descartadas.}
+
+\textbf{Consumir um \emph{dataset} público de terceiro} (o \cd{bncc-dev/bncc-dados},
+CC BY 4.0, com DOI e proveniência auditável) foi seriamente considerado e é
+tecnicamente bom. Recusado por dois motivos: num contrato B2G a pergunta
+\enquote{de onde veio este texto?} precisa terminar no documento oficial, não
+num repositório de terceiro; e o mantenedor é uma \emph{edtech}, o que faz da
+base curricular do produto uma dependência de um concorrente potencial. Ele
+continua útil como conferência de completude no CI.
+
+\textbf{Ingerir o Mapa de Foco do Instituto Reúna} (priorização de habilidades
+por ano, pedagogicamente excelente) foi \textbf{vedado por licença}: os Termos
+de Uso proíbem alteração e comercialização sem autorização expressa. Se
+interessar, entra por contrato, não por clone de repositório.
+
+\textbf{Um sistema de RAG sobre os PDFs} foi descartado por ser a ferramenta
+errada, não por custo. A pergunta que o produto faz é sempre \enquote{quais
+habilidades de \emph{componente} no \emph{ano}} --- consulta exata sobre dois
+campos estruturados. Busca vetorial responderia com aproximação onde existe
+resposta certa, e um plano anual que \enquote{esqueceu} a \cd{EF67LP08} porque
+ela ficou fora do \emph{top-k} é um plano que descumpre o currículo.
+
+\textbf{Substituir a exp-90} foi descartado: são ferramentas para redes
+diferentes, e migrar os planos já salvos custaria mais do que manter as duas.
+
+\textbf{Consequências ruins, declaradas.}
+
+\textbf{Ficam duas telas de planejamento no menu do professor}, e a diferença
+entre elas não é auto-evidente para quem chega. A mitigação é a descrição de
+cada card no hub; se a confusão aparecer em campo, uma delas some.
+
+\textbf{A matriz de carga horária é mediana de dez redes, não norma --- e a
+mediana esconde uma bimodalidade.} A BNCC não define grade horária (LDB art. 23
+e 26; Parecer CNE/CEB nº 8/2004), e o total semanal do Fundamental tem duas
+famílias sem nada no meio: seis redes em 25 aulas (833\,h) e quatro em 28--30
+(890--1.000\,h, entre elas as duas maiores do país). Uma média entre as duas
+descreveria rede nenhuma, então o produto pré-preenche o subtotal da base comum
+e deixa o professor ajustar. Nos anos iniciais há um agravante: em várias redes o
+modelo nem é disciplinar --- São Paulo e o município do Rio agregam cinco
+componentes num bloco de professor polivalente, e para elas a matriz sugerida
+não descreve a realidade.
+
+\textbf{Vinte e seis habilidades do Fundamental (2\,\%) ficaram sem objeto de
+conhecimento} na extração, e aparecem num grupo \enquote{Sem classificação}.
+Preferimos mostrá-las a escondê-las: habilidade escondida é currículo não
+cumprido.
+
+\textbf{A extração depende de \cd{pdftotext} e de um PDF que o MEC pode
+substituir.} Se o layout mudar, o extrator quebra --- e quebra em silêncio, o
+que é pior. Contra isso há testes que travam o DADO, não só o código: os totais
+oficiais de cada documento, e o texto de \cd{EM13MAT101} com as palavras que só
+existem na versão homologada.
+
+\textbf{Gatilho de reavaliação.} Uma revisão da BNCC (há discussão pública sobre
+a do Ensino Médio desde a Lei 14.945/2024); a publicação de uma exportação
+oficial máquina-legível estável pelo MEC; ou o primeiro contrato cujo currículo
+próprio precise ser exibido AO LADO da Base --- caso em que a fronteira entre
+exp-90 e exp-92 deixa de fazer sentido e as duas convergem.

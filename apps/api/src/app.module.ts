@@ -27,6 +27,7 @@ import { UnoogptModule } from "./unoogpt/unoogpt.module";
 import { VilaModule } from "./vila/vila.module";
 import { StorageModule } from "./object-storage/storage.module";
 import { PlanosModule } from "./planos/planos.module";
+import { PlanejamentoModule } from "./planejamento/planejamento.module";
 import { BemEstarModule } from "./bemestar/bemestar.module";
 import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
 import { ContratoInterceptor } from "./openapi/contrato.interceptor";
@@ -63,6 +64,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     VilaModule,
     StorageModule,
     PlanosModule,
+    PlanejamentoModule,
     BemEstarModule,
     OEcoNoGrupoModule,
     RastroBoatoModule,

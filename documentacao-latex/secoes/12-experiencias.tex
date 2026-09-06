@@ -31,7 +31,9 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, ia & \arq{planos}\\
 \zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\cd{exp-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+  telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
+\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -47,6 +49,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \zebra \cd{exp-03-unoogpt} & \cd{5178} & \rota{/exp/exp-03-unoogpt}\\
 \cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
 \zebra \cd{exp-06-rastro-boato} & \cd{5181} & \rota{/exp/exp-06-rastro-boato}\\
+\cd{exp-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
 \bottomrule
 \end{tabularx}
 
@@ -1029,6 +1032,212 @@ Referências curriculares & PostgreSQL (\cd{exp\_90\_referencias}), como
 \env{PLANOS\_IMPORT\_TOKEN} ausente \implica{} a rota de importação responde
 \textbf{503}, não fica aberta. O mesmo vale para \env{PERFIL\_IMPORT\_TOKEN}.
 \end{atencao}
+
+\section{exp-92 --- Planejamento de ensino}
+\label{exp:plano-de-ensino}
+
+Ferramenta do professor, e o primeiro produto da plataforma cujo insumo é o
+\textbf{currículo estruturado} em vez de texto livre. A decisão está na
+\adrr{ADR-73}; o que resta registrar é a arquitetura do dado e a fronteira com a
+exp-90.
+
+\subsection{Ela coexiste com a exp-90}
+
+Não são versões da mesma coisa: são ferramentas para redes diferentes.
+
+\begin{tabularx}{\linewidth}{@{}L{26mm}X X@{}}
+\toprule
+\headrow \thd{} & \thd{exp-90 --- Plano de aula} & \thd{exp-92 --- Plano de ensino}\\
+\midrule
+Insumo & Currículo da rede e material didático, importados como \textbf{texto} &
+  \textbf{BNCC estruturada}, extraída do PDF homologado\\
+\zebra Cobertura & As disciplinas com material importado & \textbf{Todos} os
+  componentes, \cd{1EF} a \cd{3EM}\\
+Granularidade & Plano anual & Plano anual \textbf{e} plano de aulas
+  (semanal ou quinzenal)\\
+\zebra Serve a & Rede com documento curricular próprio & Rede sem currículo
+  próprio, ou que queira o planejamento aula a aula\\
+\bottomrule
+\end{tabularx}
+
+O único código compartilhado é a \emph{allowlist} de HTML do editor
+(\arq{planos/sanitizar.ts}), reusada de propósito: duas \emph{allowlists}
+divergentes seriam duas superfícies de XSS armazenado.
+
+\subsection{O currículo como dado}
+
+\arq{apps/api/src/curriculo} guarda o extrato da Base, gerado por
+\arq{scripts/extrair-bncc.mjs} a partir dos PDFs oficiais. Os arquivos são
+\cd{.ts}, e não \cd{.json}, porque o \cd{nest build} não copia arquivo não-TS
+para o \cd{dist} sem configurar \cd{assets} --- o mesmo motivo pelo qual
+\arq{prompt-plano-de-aula.ts} guarda um \emph{prompt} como \emph{string}.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Documento} & \thd{Habilidades} & \thd{Cobertura da extração}\\
+\midrule
+BNCC Ensino Fundamental & \textbf{1.304} & 99,8\,\% com unidade temática;
+  98\,\% com objeto de conhecimento\\
+\zebra BNCC Ensino Médio & \textbf{183} & agrupadas por competência específica
+  de área (a Base do Médio não tem objeto de conhecimento)\\
+BNCC Computação & \textbf{129} & 80\,\% com objeto; \textbf{78\,\% com a
+  explicação e os exemplos} do anexo oficial\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+As colunas \enquote{Explicação da habilidade} e \enquote{Exemplos} do anexo do
+Parecer CNE/CEB nº 2/2022 são texto pedagógico oficial que \textbf{nenhum
+\emph{dataset} público da Base empacota}. Elas entram no \emph{prompt} do plano,
+e é o que faz a Computação aparecer como prática de sala de aula em vez de
+repetição do texto legal.
+\end{nota}
+
+\subsection{Componente da rede $\neq$ componente da Base}
+
+É a distinção que faz o produto funcionar no Ensino Médio, e a que mais quebra
+implementação ingênua.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{32mm}X@{}}
+\toprule
+\headrow \thd{Componente da matriz} & \thd{Onde a Base guarda} & \thd{Código}\\
+\midrule
+Língua Portuguesa & o próprio componente & \cd{EM13LP\_\_}\\
+\zebra Matemática & o próprio componente & \cd{EM13MAT\_\_\_}\\
+Biologia, Física, Química & \textbf{a área} & \cd{EM13CNT\_\_\_}\\
+\zebra Filosofia, Geografia, História, Sociologia & \textbf{a área} &
+  \cd{EM13CHS\_\_\_}\\
+Arte, Educação Física, Língua Inglesa & \textbf{a área} & \cd{EM13LGG\_\_\_}\\
+\bottomrule
+\end{tabularx}
+
+No Fundamental os dois coincidem. No Médio não: a resposta da API traz
+\cd{habilidadesPorArea: true}, e a tela \textbf{avisa} o professor --- sem isso,
+quem leciona Biologia no 2º ano recebe \enquote{nenhuma habilidade encontrada}.
+
+\subsection{Divisão de responsabilidade}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Artefato} & \thd{Onde vive, e por quê}\\
+\midrule
+A \textbf{distribuição} de habilidades por período & PostgreSQL
+  (\cd{exp\_92\_planos\_anuais.distribuicao}, JSONB). É a decisão HUMANA do
+  professor e o insumo do gerador: ele pode reescrever o documento inteiro sem
+  que o sistema perca qual habilidade cai em que bimestre.\\
+\zebra \arq{gerado.md} & \emph{Bucket} privado, \textbf{imutável} --- o original
+  da IA.\\
+\arq{atual.html} & \emph{Bucket} privado, sanitizado por \emph{allowlist}.\\
+\zebra As \textbf{aulas} do plano de período & PostgreSQL
+  (\cd{exp\_92\_planos\_de\_periodo.aulas}, JSONB) como \textbf{dado
+  estruturado}, não prosa. É o que permite editar a aula de quinta sem tocar na
+  de terça, e o que faz o documento impresso nascer do dado.\\
+Metadados e estado & PostgreSQL (\cd{exp\_92\_configuracoes} e as duas acima).\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O esqueleto das aulas não vem do modelo}
+
+Número, data, dia da semana e horário saem de \arq{planejamento/calendario.ts},
+calculados da grade real do professor; o modelo preenche apenas o conteúdo
+pedagógico das aulas que já existem, e \arq{planejamento/costura.ts} descarta
+sobra e completa falta.
+
+\begin{atencao}
+Deixar o modelo decidir quantas aulas cabem numa quinzena produzia \textbf{dez}
+--- o número redondo --- para um professor de Arte que tem \textbf{duas}. Pelo
+mesmo motivo, \cd{cumprida} e \cd{observacaoDoProfessor} nunca vêm da IA: são o
+registro do que aconteceu na aula, e um plano que nasce \enquote{dado} deixa de
+medir qualquer coisa.
+\end{atencao}
+
+\subsection{Carga horária: hora-aula não é hora-relógio}
+
+As \textbf{800\,h} do Fundamental e as \textbf{1.000\,h} do Médio (LDB art. 24,
+I, redação da Lei 14.945/2024 --- não são mais 800\,h) são horas de
+\textbf{60 minutos}. O Parecer CNE/CEB nº 8/2004 é literal: \enquote{não se pode
+considerar uma aula de 45 minutos igual a uma hora}. Toda conversão passa por
+\arq{curriculo/carga-horaria.ts}.
+
+\begin{tabularx}{\linewidth}{@{}L{30mm}L{28mm}X@{}}
+\toprule
+\headrow \thd{Aulas/semana} & \thd{Horas-relógio/ano} & \thd{}\\
+\midrule
+25 (de 50\,min) & \textbf{833\,h} & logo acima do mínimo do Fundamental\\
+\zebra 30 (de 50\,min) & \textbf{1.000\,h} & \textbf{exatamente} o mínimo do
+  Médio --- é a âncora que explica por que quase toda rede pública converge para
+  30 aulas semanais no Médio\\
+30 (de 45\,min) & 900\,h & \textbf{não} cumpre o mínimo do Médio\\
+\bottomrule
+\end{tabularx}
+
+A matriz de referência do produto é a \textbf{mediana de dez redes} (SEDUC-SP,
+SME-SP, SEE-MG, SEDUC-RS, SEEDUC-RJ, SEED-PR, SEDUC-GO, SEE-PE, SEDUC-CE,
+SME-Rio), e a tela diz que é sugestão: \textbf{a BNCC não define grade horária}
+--- quem define é a rede (LDB art. 23 e 26; Res. CNE/CP nº 2/2017, art. 8º, II).
+
+\begin{decisao}{Não existe \enquote{a} matriz média: a jornada do Fundamental é bimodal}
+O total semanal do Ensino Fundamental \textbf{não se distribui em torno de um
+centro}. Ele tem duas famílias, e nada no meio:
+
+\begin{tabularx}{\linewidth}{@{}L{22mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Total} & \thd{Horas/ano} & \thd{Redes}\\
+\midrule
+25 aulas & \textbf{833\,h} (${\approx}$ o mínimo de 800\,h) & SEE-MG,
+  SEDUC-RS, SME-Rio, SEED-PR, SEDUC-GO, SEE-PE\\
+\zebra 28--30 aulas & \textbf{890--1.000\,h} & SEDUC-SP, SME-SP, SEEDUC-RJ,
+  SEEDF\\
+\bottomrule
+\end{tabularx}
+
+Uma \enquote{média} de 27,5 aulas produziria uma matriz que \textbf{nenhuma
+rede real usa}. A escolha entre 833\,h e 1.000\,h não é variação estatística ---
+é decisão de política de jornada, e as duas maiores redes do país estão na
+família de 1.000\,h.
+
+Por isso o produto pré-preenche o \textbf{subtotal da base comum} (26 aulas, nos
+anos iniciais e nos finais) e não um total de semana: quem fica em 25 trima
+exatamente uma aula do bloco --- na prática Arte (MG, GO) ou o Ensino Religioso
+(SME-Rio, PE) ---, e quem vai a 30 acrescenta parte diversificada. É o professor
+que sabe em qual das duas famílias a rede dele está.
+
+No \textbf{Ensino Médio} a convergência é real: nove das dez redes fazem 24 de
+Formação Geral Básica + 6 de itinerário = 30 aulas = 1.000\,h. A exceção
+(São Paulo) só redistribui entre as séries, mantendo 2.400\,h + 600\,h no
+triênio.
+\end{decisao}
+
+\begin{nota}
+Nos \textbf{anos iniciais} a matriz do produto soma 24, não 26: Língua Inglesa
+fica fora porque a LDB art. 26 §5º só a exige \enquote{a partir do sexto ano} e
+a BNCC não tem habilidade dela antes disso. A mediana observada é de 2 aulas
+(quatro das seis redes que informam), mas são aulas \textbf{sem currículo comum
+a que se ancorar} --- e componente sem habilidade da Base não é planejável num
+produto dirigido pela Base.
+\end{nota}
+
+\subsection{O início do ano letivo é da regência}
+
+\begin{atencao}
+\cd{periodos\_letivos} é catálogo do CONTRATO, e o \emph{seed} o preenche como
+ano \textbf{civil} (01/01--31/12). Como o calendário alinha cada período na
+segunda-feira, o professor que declarava 02/02/2026 recebia um 1º bimestre
+começando em \textbf{29/12/2025}. A coluna
+\cd{exp\_92\_configuracoes.inicio\_do\_ano\_letivo} é o que vale; o catálogo é
+apenas sugestão do primeiro preenchimento, e um \enquote{ano letivo} que abre em
+1º de janeiro é descartado como ano civil.
+\end{atencao}
+
+Datas de calendário escolar trafegam como \textbf{data civil}
+(\cd{YYYY-MM-DD}) e são convertidas ao \textbf{meio-dia UTC}: ao meio-dia nenhum
+fuso do Brasil (UTC$-$2 a UTC$-$5) atravessa a meia-noite, então o dia da semana
+não escorrega --- e uma aula de segunda que vira domingo é bug que passa no
+\emph{typecheck} e sobrevive até a impressão.
+
+Feriado \textbf{remove} a aula, não a desloca: deslocar empurraria o plano
+inteiro e desalinharia as 40 janelas seguintes. Repor é decisão pedagógica do
+professor, não conta do sistema.
 
 \section{exp-91 --- Check-in de bem-estar}
 
