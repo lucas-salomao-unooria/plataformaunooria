@@ -143,9 +143,20 @@ repositório (o job `mudancas` compara `HEAD^`), então merge de `dev` para dent
 da frente é o jeito de se atualizar. Faça cedo e várias vezes: deixar para a
 véspera do PR é o que transforma quatro conflitos triviais em um difícil.
 
-**O briefing da frente é escrito, não subentendido.** `pnpm worktree criar
---fatia …` imprime no fim um texto pronto para colar no agente (ou para você
-mesmo seguir): a fatia, o que é costura, e o que **não** se roda dali.
+**A fatia é barreira, não conselho.** `pnpm worktree criar --fatia …` resolve os
+caminhos contra a árvore (`api/unootube` → `apps/api/src/unootube`,
+`hub/professor` → `apps/hub/app/(plataforma)/professor`) e grava a lista em
+`<git-dir>/fatia` — que num worktree é `.git/worktrees/<slug>/`, privado daquela
+frente e fora do versionamento. O `.githooks/pre-commit` confere o index contra
+ela e **recusa** o que estiver fora, com o escape nomeado
+`PERMITIR_FORA_DA_FATIA=1`, como os outros hooks. A costura passa (é ela que
+liga o módulo novo ao resto), mas passa **avisando** que o lugar dela é um
+commit separado no fim. Sem o arquivo, o hook é inerte: a cópia principal e
+qualquer frente sem fatia declarada seguem livres.
+
+**O briefing da frente é escrito, não subentendido.** `criar` imprime no fim um
+texto pronto para colar no agente (ou para você mesmo seguir): a fatia
+resolvida, o que é costura, e o que **não** se roda dali.
 
 ### O que roda onde: o paralelismo é de edição e teste unitário
 
@@ -303,6 +314,7 @@ pnpm install          # o `prepare` roda: git config core.hooksPath .githooks
 | `pre-push` | push direto em `dev`/`hml`/`main` (inclusive deleção) | `PERMITIR_PUSH_DIRETO=1` |
 | `pre-push` | nome de branch fora do padrão | `PERMITIR_BRANCH_FORA_DO_PADRAO=1` |
 | `commit-msg` | assunto fora de Conventional Commits | `git commit --no-verify` |
+| `pre-commit` | arquivo fora da fatia declarada da frente (só quando existe `<git-dir>/fatia`) | `PERMITIR_FORA_DA_FATIA=1` |
 
 Os escapes existem e são nomeados de propósito: emergência acontece, e é melhor
 que ela deixe rastro numa variável explícita do que numa flag genérica. **Hook é

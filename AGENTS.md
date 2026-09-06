@@ -275,9 +275,11 @@ abri-lo.
 - **Os hooks são a única barreira**: `branch protection` e `rulesets` respondem
   403 (repo privado, plano Free). `.githooks/pre-push` recusa push direto em
   branch de ambiente e nome de branch fora do padrão; `.githooks/commit-msg`
-  valida o formato do commit. Instalados pelo `prepare` no `pnpm install`
-  (`core.hooksPath`). Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`,
-  `PERMITIR_BRANCH_FORA_DO_PADRAO=1`.
+  valida o formato do commit; `.githooks/pre-commit` recusa arquivo fora da
+  fatia da frente — só quando existe `<git-dir>/fatia`, então a cópia principal
+  segue livre. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
+  Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`, `PERMITIR_BRANCH_FORA_DO_PADRAO=1`,
+  `PERMITIR_FORA_DA_FATIA=1`.
 - **Frente paralela = worktree, e a base vai ESCRITA** (ADR-61): `pnpm worktree
   criar <tipo/slug> --fatia api/<mod>,hub/<rota>,exp/<id>` faz o caminho inteiro
   (worktree sobre `origin/dev`, `.env` copiados, `install` + `prisma generate`,
@@ -294,7 +296,10 @@ abri-lo.
   paralelizam: serializam. O que resta compartilhado é linha de REGISTRO
   (`app.module.ts`, fim do `schema.prisma`, `middleware.ts`,
   `experiencias-dev.ts`) e vai em UM commit no fim, depois de
-  `git merge origin/dev` — rebase está desabilitado. Receita em `CONTRIBUTING.md`.
+  `git merge origin/dev` — rebase está desabilitado. **A fatia é barreira, não
+  conselho**: `criar` grava os caminhos em `<git-dir>/fatia` e o
+  `.githooks/pre-commit` recusa commit fora dela (escape:
+  `PERMITIR_FORA_DA_FATIA=1`). Receita em `CONTRIBUTING.md`.
 - **O paralelismo é de EDIÇÃO e teste unitário; o runtime é singleton.** Portas
   fixas com `strictPort`, compose de nome fixo, um banco: dois worktrees não
   rodam a stack ao mesmo tempo. No worktree: editar, `typecheck lint test`,
@@ -392,7 +397,7 @@ pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~435p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~436p). Atualizar SEMPRE
 ```
 
 
@@ -425,7 +430,7 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~435 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~436 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,

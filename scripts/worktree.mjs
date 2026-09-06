@@ -15,7 +15,7 @@
  * com um diff cheio de commit que já estava em `dev` (ADR-61, ADR-71).
  */
 import { execFileSync, execSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -95,6 +95,53 @@ function portasDasFrentes(extra) {
   return mapa;
 }
 
+/**
+ * `api/unootube` vira `apps/api/src/unootube`, e assim por diante. O caminho
+ * que não existe não reprova — a frente pode estar criando o módulo — mas é
+ * DITO, porque o erro de digitação silencioso vira uma fatia que não protege
+ * nada: o hook compara com o que está escrito aqui.
+ */
+function resolverAlvo(alvo) {
+  const t = alvo.trim();
+  if (/^(apps|packages|scripts|docs)\//.test(t)) return [t];
+  const [tipo, ...resto] = t.split("/");
+  const nome = resto.join("/");
+  if (!nome) return [];
+  if (tipo === "api") return [`apps/api/src/${nome}`];
+  if (tipo === "exp") return [`apps/experiencias/${nome}`];
+  if (tipo === "hub") {
+    // O App Router tem grupos de rota — `(plataforma)/professor`, não `professor`.
+    const achados = rotasDoHub(join(RAIZ, "apps", "hub", "app"), "apps/hub/app", nome);
+    return achados.length > 0 ? achados : [`apps/hub/app/${nome}`];
+  }
+  return [t];
+}
+
+function rotasDoHub(absoluto, relativo, nome, profundidade = 0) {
+  if (profundidade > 4 || !existsSync(absoluto)) return [];
+  const achados = [];
+  for (const d of readdirSync(absoluto, { withFileTypes: true })) {
+    if (!d.isDirectory() || d.name === "node_modules") continue;
+    const rel = `${relativo}/${d.name}`;
+    if (d.name === nome) achados.push(rel);
+    else achados.push(...rotasDoHub(join(absoluto, d.name), rel, nome, profundidade + 1));
+  }
+  return achados;
+}
+
+function resolverFatia(fatia) {
+  const alvos = (fatia ?? "")
+    .split(",")
+    .filter(Boolean)
+    .flatMap(resolverAlvo);
+  for (const alvo of alvos) {
+    if (!existsSync(join(RAIZ, alvo))) {
+      console.log(`${cor(33, "!")} ${alvo} ainda não existe — nasce nesta frente?`);
+    }
+  }
+  return [...new Set(alvos)];
+}
+
 function criar(branch, fatia) {
   if (!branch) morre("falta o nome da branch. Uso: pnpm worktree criar fix/quota-por-perfil");
   if (!NOME_DE_BRANCH.test(branch)) {
@@ -111,6 +158,10 @@ function criar(branch, fatia) {
   const slug = branch.includes("/") ? branch.split("/")[1] : branch;
   const destino = join(WORKTREES, slug);
   if (existsSync(destino)) morre(`${destino} já existe — não vou sobrescrever.`);
+
+  // Resolvida ANTES do install: um --fatia errado falha em segundos, não depois
+  // de dois minutos de `pnpm install`.
+  const alvos = resolverFatia(fatia);
 
   passo("git fetch origin");
   git(["fetch", "origin", "--quiet"]);
@@ -141,6 +192,21 @@ function criar(branch, fatia) {
     git(["worktree", "add", "-b", branch, destino, "origin/dev"], { stdio: "inherit" });
   }
 
+  // A fatia mora no git-dir DA FRENTE (.git/worktrees/<slug>/): privado dela,
+  // fora do versionamento, e é onde o .githooks/pre-commit vai procurar.
+  if (alvos.length > 0) {
+    const gitDir = execFileSync("git", ["rev-parse", "--absolute-git-dir"], {
+      cwd: destino,
+      encoding: "utf8",
+    }).trim();
+    writeFileSync(join(gitDir, "fatia"), `${alvos.join("\n")}\n`);
+    ok(`fatia gravada — o pre-commit recusa commit fora dela (escape: PERMITIR_FORA_DA_FATIA=1)`);
+  } else {
+    console.log(
+      `${cor(33, "!")} sem --fatia: o pre-commit não tem o que conferir nesta frente.`,
+    );
+  }
+
   passo("copiando os .env (ignorados pelo git, não viajam com o worktree)");
   let copiados = 0;
   for (const env of ENVS) {
@@ -166,14 +232,13 @@ function criar(branch, fatia) {
   if (!porta) morre(`nenhuma porta livre entre ${PORTA_INICIAL} e ${PORTA_FINAL}.`);
 
   console.log(`\n${cor(1, `Frente '${slug}' pronta.`)} ${destino}\n`);
-  briefing({ slug, branch, destino, porta, fatia });
+  briefing({ slug, branch, destino, porta, alvos });
 }
 
-function briefing({ slug, branch, destino, porta, fatia }) {
-  const alvos = (fatia ?? "").split(",").filter(Boolean);
+function briefing({ slug, branch, destino, porta, alvos }) {
   const declarada =
     alvos.length > 0
-      ? alvos.map((a) => `  ${a.trim()}`).join("\n")
+      ? alvos.map((a) => `  ${a}`).join("\n")
       : "  (declare com --fatia api/<modulo>,hub/<rota>,exp/<exp-id>)";
   const regua = cor(2, "─".repeat(72));
 

@@ -4437,13 +4437,24 @@ e o Vite de UMA experiência em porta \cd{52xx} embedada por
 \cd{/dev-embed?src=}. A \emph{serial}, uma por vez na cópia principal:
 \cd{pnpm dev}/\cd{docker:dev}, migração, e a suíte de ponta a ponta.
 
-\textbf{E o primeiro passo vira comando.} \arq{scripts/worktree.mjs}
+\textbf{E a fatia é BARREIRA, não conselho.} \arq{scripts/worktree.mjs}
 (\cd{pnpm worktree criar/listar/remover}) faz o caminho inteiro --- worktree
 sobre \cd{origin/dev}, os seis \cd{.env} copiados (todos ignorados pelo git, nenhum
 viaja), \cd{pnpm install} e \cd{prisma generate} (\arq{node\_modules} e o client
 do Prisma são por worktree), porta derivada de um \emph{hash} do slug --- e
-imprime no fim o \textbf{briefing da fatia}, pronto para colar no agente: o que é
-seu, o que é costura, e o que não se roda dali.
+\textbf{resolve o \cd{--fatia} contra a árvore} (\cd{api/unootube} vira
+\arq{apps/api/src/unootube}; \cd{hub/professor} acha o grupo de rota do App
+Router) antes de gravar a lista em \cd{<git-dir>/fatia}. Num worktree esse
+caminho é \arq{.git/worktrees/<slug>/}: privado daquela frente, fora do
+versionamento, e portanto sem conflito possível entre frentes.
+
+O \arq{.githooks/pre-commit} lê essa lista e \textbf{recusa} o que estiver fora
+dela, com o escape nomeado \cd{PERMITIR\_FORA\_DA\_FATIA=1} --- o mesmo desenho
+dos outros hooks. Sem o arquivo, o hook é inerte, e a cópia principal segue
+livre. A costura passa, mas passa \emph{avisando}: o lugar dela é um commit
+separado no fim. O efeito colateral que vale mais que o hook: a lista de
+costuras deixa de existir só em prosa e passa a existir como código, num lugar
+onde ficar desatualizada quebra alguém em vez de enganar em silêncio.
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
@@ -4467,6 +4478,16 @@ seu, o que é costura, e o que não se roda dali.
     estado anterior. O passo que morde é o \textbf{primeiro}, e é o que a prosa
     não consegue impor --- \cd{git worktree add} sem \cd{origin/dev} escrito abre
     a branch sobre produção em silêncio (\adrr{ADR-61}).
+  \item \emph{Barrar na ESCRITA, pelas permissões do agente} (um
+    \arq{.claude/settings.local.json} por worktree negando \cd{Edit}/\cd{Write}
+    fora da fatia): pegaria o erro antes do trabalho ser feito, e não no commit.
+    Descartada por cobertura e por forma. Cobre \textbf{um} agente --- outra
+    ferramenta, ou a edição à mão, passa direto ---, enquanto o hook cobre
+    qualquer coisa que produza um commit. E \emph{glob} não expressa "tudo menos
+    X": negar o vizinho exigiria listar os trinta e um módulos da api um a um,
+    regerando a lista toda vez que nasce um módulo. Fica como camada extra
+    possível no dia em que o custo do trabalho jogado fora superar o do commit
+    recusado.
   \item \emph{Registro de portas num arquivo versionado}: estado a mais para
     manter sincronizado, e conflito num arquivo que TODA frente tocaria. O
     \emph{hash} do slug dá uma porta estável sem guardar nada --- e estável
@@ -4476,15 +4497,19 @@ seu, o que é costura, e o que não se roda dali.
 
 \textbf{Consequências.} \emph{Ruim}: o teto útil é de duas a três frentes ---
 toda frente que mexe em tela precisa da suíte e2e, que é serial, e além disso a
-fila come o ganho. \emph{Ruim}: o briefing é \textbf{conselho, não barreira}.
-Diferente do \arq{.githooks/pre-push}, que recusa, nada impede um agente de
-editar fora da fatia; a fronteira aparece no \cd{git diff} da revisão, não na
-hora do erro. \emph{Ruim}: o \cd{--fatia} é texto livre --- o script o imprime,
-não o valida contra a árvore. \emph{Bom}: a classe de erro da \adrr{ADR-61}
-morre na origem, porque o \cd{origin/dev} passa a estar escrito no script em vez
-de na memória de quem digita. \emph{Bom}: o script recusa nome de branch que o
-\cd{pre-push} recusaria, e a recusa acontece no minuto zero em vez de depois de
-horas de trabalho numa branch mal nomeada.
+fila come o ganho. \emph{Ruim}: o \cd{pre-commit} pega no \textbf{commit}, não na
+escrita --- o agente ainda gasta trabalho num arquivo que não devia tocar, e
+descobre ao commitar --- e a alternativa que pegaria antes, descartada acima,
+cobre um agente só. \emph{Ruim}: hook é conselho para quem clona e não roda
+\cd{pnpm install} --- sem \cd{core.hooksPath}, não há barreira nenhuma, e isso
+vale para os três hooks. \emph{Ruim}: a fatia não reprova caminho inexistente,
+porque a frente pode estar criando o módulo; um erro de digitação vira uma fatia
+que protege menos do que parece --- por isso o script \emph{diz} qual caminho
+não existe. \emph{Bom}: a classe de erro da \adrr{ADR-61} morre na origem,
+porque o \cd{origin/dev} passa a estar escrito no script em vez de na memória de
+quem digita. \emph{Bom}: o script recusa nome de branch que o \cd{pre-push}
+recusaria, e a recusa acontece no minuto zero em vez de depois de horas de
+trabalho numa branch mal nomeada.
 
 \textbf{Gatilho de reavaliação.} Passar a existir mais de uma pessoa
 desenvolvendo ao mesmo tempo (hoje é uma), quando a fila da fase serial deixa de
