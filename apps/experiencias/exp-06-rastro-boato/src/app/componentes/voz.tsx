@@ -60,13 +60,16 @@ export function BalaoDeVoz({
       <div className="voz__controles">
         <button
           type="button"
+          className="voz__play"
           onClick={() => setTocando((t) => !t)}
           aria-label={tocando ? "Pausar áudio" : "Tocar áudio"}
         >
           {tocando ? <Pausa /> : <Play />}
         </button>
         <span className="voz__onda" aria-hidden="true" />
-        <span style={{ fontSize: 12 }}>{relogio(decorrido)} / {relogio(duracaoSeg)}</span>
+        <span className="voz__tempo">
+          {relogio(decorrido)} / {relogio(duracaoSeg)}
+        </span>
       </div>
       <p className="voz__transcricao">{transcricao}</p>
     </div>

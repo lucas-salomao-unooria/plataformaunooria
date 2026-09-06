@@ -110,10 +110,27 @@ export function FeedDaConversa({
         <div className="feed">
           {doFeed.map((m) => (
             <div className="feed__linha" key={m.id}>
-              <button
-                type="button"
+              {/*
+                O balão NÃO é um `<button>`, e isso não é estilo: o player de voz
+                tem um botão de play dentro, e `<button>` dentro de `<button>` é
+                HTML inválido — o React derruba a hidratação e o feed inteiro
+                para de responder ao toque. Custou uma execução da suíte para
+                aparecer, porque o typecheck e o lint passam por cima.
+
+                A área de toque é a mesma; o que muda é o elemento. `role` +
+                `tabIndex` + Enter/Espaço dão o teclado que o `<button>` daria.
+              */}
+              <div
+                role="button"
+                tabIndex={0}
                 className="feed__balao"
                 onClick={() => abrir(m)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    abrir(m);
+                  }
+                }}
                 aria-label={`Ver dados da mensagem de ${m.autor}`}
               >
                 {m.encaminhada && (
@@ -139,7 +156,7 @@ export function FeedDaConversa({
                     m.texto
                   )}
                 </MessageBubble>
-              </button>
+              </div>
             </div>
           ))}
         </div>
@@ -248,6 +265,7 @@ export function TelaDaDecisao({
       <ChatWallpaper className="app__corpo">
         <div className="decisao">
           <div className="feed__linha">
+            {/* Aqui já era `div`: o player de voz mora dentro. */}
             <div className="feed__balao" style={{ cursor: "default" }}>
               <span className="feed__autor">{convocacao.autor}</span>
               <MessageBubble direction="in" time={convocacao.hora}>

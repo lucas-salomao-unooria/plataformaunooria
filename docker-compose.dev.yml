@@ -19,6 +19,7 @@
 #   exp-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
 #   exp-03  Vite do unooGPT, a Missão Tempestade (5178)
 #   exp-07  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
+#   exp-06  Vite de O Rastro do Boato, o clone de mensageiro (5181)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -59,6 +60,7 @@ x-fonte: &fonte
   - nm-exp91:/repo/apps/experiencias/exp-91-bem-estar/node_modules
   - nm-exp03:/repo/apps/experiencias/exp-03-unoogpt/node_modules
   - nm-exp07:/repo/apps/experiencias/exp-07-o-eco-no-grupo/node_modules
+  - nm-exp06:/repo/apps/experiencias/exp-06-rastro-boato/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -205,7 +207,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5181
       # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
       #
       # LIGADA por default em dev, com credencial de dev à vista: sem as duas
@@ -353,6 +355,17 @@ services:
       deps:
         condition: service_completed_successfully
 
+  # 5181, e não 5180: a 5180 está reservada para o planejamento de ensino.
+  exp-06:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-06-rastro-boato
+    command: pnpm exec vite --host 0.0.0.0 --port 5181 --strictPort
+    ports:
+      - "5181:5181"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 volumes:
   pgdata:
   pnpm-store:
@@ -368,6 +381,7 @@ volumes:
   nm-exp91:
   nm-exp03:
   nm-exp07:
+  nm-exp06:
   nm-exp-template:
   hub-next:
   api-dist:

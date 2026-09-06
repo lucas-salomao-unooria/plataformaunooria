@@ -159,12 +159,14 @@ export function TelaDoMapa({
             </div>
           </CardContent>
         </Card>
-        {/* Voltar às curvas é intencional: comparar as duas leituras é o que a
-            Etapa 4 pede, e travar o caminho de volta empobreceria a análise. */}
-        <Button variant="secondary" onClick={aoVoltar}>
+        {/* Avançar vem PRIMEIRO e em destaque; voltar é `ghost`. Comparar as
+            duas leituras é o que a Etapa 4 pede, e travar o caminho de volta
+            empobreceria a análise — mas ele não pode competir com a ação
+            principal, senão a criança relê o gráfico achando que é o caminho. */}
+        <Button onClick={aoAvancar}>Construir o ciclo do boato</Button>
+        <Button variant="ghost" onClick={aoVoltar}>
           Ver o gráfico de novo
         </Button>
-        <Button onClick={aoAvancar}>Construir o ciclo do boato</Button>
       </div>
     </div>
   );
