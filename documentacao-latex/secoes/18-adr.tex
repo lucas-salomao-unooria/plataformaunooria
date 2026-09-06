@@ -9,11 +9,21 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{70 decisões}, numeradas até ADR-71: \textbf{não existe ADR-65}. O
+São \textbf{70 decisões}, numeradas até ADR-71: \textbf{ADR-65 está vaga}. O
 número foi perdido numa colisão entre duas frentes paralelas que reservaram o
-mesmo identificador (o risco que a \adrr{ADR-61} registra). O buraco fica ---
-renumerar quebraria as referências cruzadas deste documento e as citações que
-já existem no código.
+mesmo identificador --- o risco que a \adrr{ADR-61} registra --- e
+\textbf{a próxima decisão o ocupa}, em vez de a numeração seguir de 71 para 72.
+
+Renumerar as seis ADRs seguintes para fechar a lacuna foi considerado e
+recusado, e a razão não é o trabalho: dentro deste repositório a troca é
+mecânica, porque os \cd{\textbackslash label} são nominais e o \cd{\textbackslash adrr}
+é formatação, não referência resolvida. O problema é o que sobra depois.
+Renumerar não deixa referência QUEBRADA --- deixa referência \textbf{errada}:
+\enquote{ADR-69} continuaria resolvendo, para outra decisão, em silêncio, em
+onze mensagens de \emph{commit} imutáveis, nos PRs já mergeados e em qualquer
+cópia deste PDF que já tenha circulado. É a forma exata do \cd{expires\_at} que
+cinco ADRs deste capítulo registram como armadilha. Um identificador vale por
+nunca mudar de significado; a ordem cronológica é o que se abre mão.
 
 \section{Índice}
 
