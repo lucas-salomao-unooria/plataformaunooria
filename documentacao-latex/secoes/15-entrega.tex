@@ -80,6 +80,7 @@ jobs:
           else
             pnpm turbo typecheck lint test build --filter='...[HEAD^]'
           fi
+      # COMENTADO no arquivo real desde 07d9ec0 -- ver a advertencia abaixo
       - name: Snyk (trava em high)   # high/critical em dependencia = vermelho
         env: { SNYK_TOKEN: "${{ secrets.SNYK_TOKEN }}" }
         run: |   # o --exclude e obrigatorio: o passo roda DEPOIS do build
@@ -100,6 +101,17 @@ fluxo (\emph{branch} de trabalho \(\to\) \cd{dev}, \cd{dev} \(\to\) \cd{hml},
 \end{decisao}
 
 \subsection{A trava de vulnerabilidade (Snyk)}
+
+\begin{atencao}
+\textbf{O passo está COMENTADO no \arq{ci.yml} desde o \emph{commit}
+\cd{07d9ec0}} (\enquote{\emph{chore: disable Snyk vulnerability scan in CI
+workflow}}), situação de 2026-09-05. O parágrafo abaixo descreve o portão como
+ele foi desenhado e como volta a funcionar quando o passo for reativado ---
+\textbf{hoje ele não trava nada}. O bloco de YAML acima mostra o passo na forma
+ativa, que é a forma comentada no arquivo. Ver a advertência da \adrr{ADR-39},
+inclusive para o efeito colateral: o prazo do \arq{apps/api/.snyk} era cobrado
+por este passo e agora vence em silêncio.
+\end{atencao}
 
 O portão termina com
 \cd{snyk test --all-projects --dev --severity-threshold=high}: vulnerabilidade
