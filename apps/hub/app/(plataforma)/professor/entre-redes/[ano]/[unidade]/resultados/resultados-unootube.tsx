@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BarChart, Card, EmptyState, MetricCard, UNOORIA_DATAVIZ_PALETTE } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
@@ -8,6 +9,7 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { ResultadosDaTurma, TurmaResumo } from "@/lib/unootube-tipos";
 
@@ -32,6 +34,7 @@ export async function ResultadosUnooTube({
   turma: string;
 }) {
   const rotaBase = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   const listaTurmas = await apiDoServidor<{ turmas: TurmaResumo[] }>("/unootube/turmas");
   const todas = listaTurmas?.turmas ?? [];
@@ -81,6 +84,16 @@ export async function ResultadosUnooTube({
           Quem já salvou os 3 vídeos, quantas fontes confiáveis escolheu e quem chegou à virada do
           ranking. Recalculado a cada visita — atualize a página durante a aula.
         </p>
+        {/* O guia da aula, à mão: esta é a tela em que o professor está DURANTE
+            a aula, e é aqui que ele precisa reler o roteiro ou a pergunta do
+            debate sem perder o painel de vista. */}
+        {guia ? (
+          <p className="text-[13px] font-semibold">
+            <Link href={guia} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
+              Abrir o guia da aula
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <SeletorDeTurma turmas={turmas} turmaId={turma} rotaBase={rotaBase} aviso={aviso} />

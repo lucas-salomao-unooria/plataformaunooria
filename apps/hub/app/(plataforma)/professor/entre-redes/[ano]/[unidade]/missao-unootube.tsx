@@ -7,6 +7,7 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 
 /**
  * Corpo da missão do UNOOTUBE (4º ano · Unidade 1). Não há atividade a
@@ -22,6 +23,7 @@ export function MissaoUnooTube({
 }) {
   const { ficha } = missao;
   const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -74,6 +76,13 @@ export function MissaoUnooTube({
           <p className="pt-4 text-[13px] text-unooria-neutral-500">
             O estudante do 4º ano entra no UnooTube ao fazer login — não há nada para ativar.
           </p>
+          {guia ? (
+            <div className="pt-4">
+              <LinkButton href={guia} variant="secondary">
+                Abrir guia da aula
+              </LinkButton>
+            </div>
+          ) : null}
         </Card>
       </section>
 

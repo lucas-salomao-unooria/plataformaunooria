@@ -9,21 +9,23 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{70 decisões}, numeradas até ADR-71: \textbf{ADR-65 está vaga}. O
-número foi perdido numa colisão entre duas frentes paralelas que reservaram o
-mesmo identificador --- o risco que a \adrr{ADR-61} registra --- e
-\textbf{a próxima decisão o ocupa}, em vez de a numeração seguir de 71 para 72.
+São \textbf{71 decisões}, numeradas até ADR-71, \textbf{sem lacunas}. A ADR-65
+ficou vaga por um tempo: o número foi perdido numa colisão entre duas frentes
+paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
+registra --- e a decisão seguinte o ocupou, em vez de a numeração seguir de 71
+para 72.
 
-Renumerar as seis ADRs seguintes para fechar a lacuna foi considerado e
-recusado, e a razão não é o trabalho: dentro deste repositório a troca é
-mecânica, porque os \cd{\textbackslash label} são nominais e o \cd{\textbackslash adrr}
-é formatação, não referência resolvida. O problema é o que sobra depois.
-Renumerar não deixa referência QUEBRADA --- deixa referência \textbf{errada}:
-\enquote{ADR-69} continuaria resolvendo, para outra decisão, em silêncio, em
-onze mensagens de \emph{commit} imutáveis, nos PRs já mergeados e em qualquer
-cópia deste PDF que já tenha circulado. É a forma exata do \cd{expires\_at} que
-cinco ADRs deste capítulo registram como armadilha. Um identificador vale por
-nunca mudar de significado; a ordem cronológica é o que se abre mão.
+Renumerar as seis ADRs entre 66 e 71 para fechar a lacuna, na época, foi
+considerado e recusado, e a razão não é o trabalho: dentro deste repositório a
+troca é mecânica, porque os \cd{\textbackslash label} são nominais e o
+\cd{\textbackslash adrr} é formatação, não referência resolvida. O problema é o
+que sobra depois. Renumerar não deixa referência QUEBRADA --- deixa referência
+\textbf{errada}: \enquote{ADR-69} continuaria resolvendo, para outra decisão, em
+silêncio, em onze mensagens de \emph{commit} imutáveis, nos PRs já mergeados e em
+qualquer cópia deste PDF que já tenha circulado. É a forma exata do
+\cd{expires\_at} que cinco ADRs deste capítulo registram como armadilha. Um
+identificador vale por nunca mudar de significado; a ordem cronológica é o que se
+abre mão --- e é por isso que a ADR-65 é, em data, a mais nova do capítulo.
 
 \section{Índice}
 
@@ -4014,6 +4016,91 @@ e o gestor continua sem rota que aceite \cd{estudanteId}.
 de envio guarda --- aí a sessão por tentativa volta à mesa. Ou o dado de
 \cd{recomeco} mostrar que crianças recomeçam depois de o professor encerrar,
 em número que justifique a liberação explícita.
+
+\section{ADR-65 --- O guia da aula é dado renderizado por um componente único,
+com blocos vivos para o que tem fonte de verdade em outro lugar}
+\label{adr:guia-como-dado}
+
+\begin{especificacao}{Contexto}
+Só o Instanooria tinha guia da aula. Ele era uma página
+(\arq{.../[ano]/[unidade]/guia/page.tsx}), 447 linhas de JSX com \cd{notFound()}
+para qualquer outro \cd{expId}: conteúdo, ordem e marcação na mesma camada. As
+outras quatro missões publicadas --- UnooTube, Missão Tempestade, O Eco no Grupo
+e a Vila do Lume --- chegavam ao professor com a ficha do catálogo (competência,
+atos, preparo) e nada sobre como conduzir a aula: nenhuma pergunta de debate,
+nenhuma mediação, nenhuma rubrica. A Vila tinha um guia \emph{do debate},
+excelente e parcial: cobria o pós-jogo e não o preparo nem o fechamento.
+
+E o problema não era só de cobertura. Duas partes do guia do Instanooria já
+vinham de fonte viva por decisão anterior --- a tabela dos momentos de
+\cd{CONTROLE\_DO\_PROFESSOR} e as telas da revelação de
+\cd{@edu/conteudo-exp-01} --- porque a versão escrita à mão tinha divergido: o
+guia falava em \enquote{os seis botões} e o painel tinha sete. A Vila serve os
+cartões da api por turma pela mesma razão. Qualquer solução para as outras
+missões precisava carregar esses casos junto.
+\end{especificacao}
+
+\textbf{Decisão.} O guia vira \textbf{dado}
+(\arq{apps/hub/lib/entre-redes/guias/<exp>.ts}, tipo \cd{GuiaDaAula}) renderizado
+por um \textbf{componente único} (\arq{apps/hub/components/guia/}), com a mesma
+ordem de seções em toda missão: objetivos e BNCC Computação, antes da aula
+(técnico, pedagógico, o que não dizer), roteiro cronometrado com a coluna
+\enquote{o que você faz e fala}, banco de perguntas em quatro níveis, folha de
+observação, mediação, depois da aula (síntese, registro, rubrica,
+desdobramentos), cuidados, adaptações e dúvidas frequentes.
+
+O que tem fonte de verdade em outro lugar entra por \textbf{bloco vivo}: um
+\cd{ReactNode} que a página da missão ancora ao fim de uma seção. É por aí que
+entram os momentos e a revelação do Instanooria, os cartões da Vila (por turma)
+e a tabela dos oito vieses da Missão Tempestade --- esta última por uma rota
+nova, \rota{GET /unoogpt/professor/fontes}, com o viés \textbf{derivado} da
+instrução do agente em vez de escrito duas vezes.
+
+Uma folha de impressão acompanha o renderizador: o professor conduz a aula com o
+guia na mão enquanto o computador projeta a tela da turma.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Uma página por missão, como a do Instanooria}: cinco arquivos de
+    cerca de 450 linhas, sem nada que os obrigue a ter as mesmas seções. A seção
+    que alguém esquecesse de copiar não existiria para aquela turma, sem sinal
+    nenhum --- e a segunda missão que o professor rodasse teria a informação em
+    outro lugar da página.
+  \item \emph{Guia em Markdown ou MDX}: resolveria a escrita e perderia as duas
+    coisas que importam --- o tipo que cobra seção faltando e os blocos vivos,
+    que precisam de componente.
+  \item \emph{Guia no catálogo} (\arq{lib/entre-redes/catalogo.ts}): o catálogo
+    é a grade, lido por meia dúzia de telas; o guia é material de aula, pesado, e
+    só a rota do guia precisa dele.
+  \item \emph{Copiar a tabela dos vieses para o hub}, evitando a rota nova: era
+    a opção mais barata e é exatamente a que a doutrina do repositório proíbe.
+    Recalibrado o cenário, o professor contaria à turma um viés que o jogo já não
+    produz --- o mesmo erro que os cartões da Vila vindos da api existem para
+    evitar.
+  \item \emph{Guia por turma} (com \cd{?turmaId=}): só a Vila precisa disso, e
+    ela já resolve com seletor próprio dentro da revelação. Genéricos, todos os
+    guias passariam a exigir turma para abrir --- e o professor lê o guia na
+    véspera, quando ainda não escolheu a sala.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: as cinco missões publicadas passam a ter
+guia com a mesma estrutura; \arq{guias/index.test.ts} recusa missão publicada sem
+guia, com uma lista de exceções que exige razão escrita. \emph{Bom}:
+\arq{lib/rotas-da-missao.ts}, que já era o único tradutor \cd{expId} \seta{}
+rota, passa a responder também se a missão tem guia --- então a sala de aula
+mostra o \emph{link} em toda turma × toda missão sem inventar URL.
+\emph{Ruim}: o conteúdo pedagógico das quatro missões novas é \textbf{autoral},
+derivado do código e da \emph{copy} congelada, e não passou por playtest em sala
+--- está escrito para ser corrigido por quem der a primeira aula. \emph{Ruim}: o
+alinhamento com a BNCC Computação é proposta da plataforma, não classificação
+oficial, e a tela precisa dizer isso. \emph{Ruim}: uma rota a mais na api para
+uma tela de leitura, com a documentação e o teste que ela obriga.
+
+\textbf{Gatilho de reavaliação.} Se o guia passar a variar por turma em mais de
+uma missão --- aí o parâmetro deixa de ser exceção da Vila e vira propriedade do
+renderizador. Ou se a rede pedir o guia como PDF/impresso oficial, com marca e
+paginação de documento: aí a folha de impressão deixa de bastar e o caminho é
+gerar o documento, não estilizar a tela.
 
 \section{ADR-66 --- A exp-07 escreve com IA na tela do estudante, e o gabarito
 continua fora do modelo}

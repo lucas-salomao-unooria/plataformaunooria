@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, EmptyState, MetricCard } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
@@ -8,6 +9,7 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { FolhaDaTurma, TurmaResumo } from "@/lib/unoogpt-tipos";
 
@@ -34,6 +36,7 @@ export async function ResultadosUnooGPT({
   turma: string;
 }) {
   const rotaBase = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   const lista = await apiDoServidor<{ turmas: TurmaResumo[] }>("/unoogpt/professor/turmas");
   const todas = lista?.turmas ?? [];
@@ -75,6 +78,16 @@ export async function ResultadosUnooGPT({
           turma: não quem acertou, mas quem <strong>leu antes de decidir</strong>, quem viu fontes
           discordando e quem decidiu no escuro.
         </p>
+        {/* O guia da aula, à mão: esta é a tela em que o professor está DURANTE
+            a aula, e é aqui que ele precisa reler o roteiro ou a pergunta do
+            debate sem perder o painel de vista. */}
+        {guia ? (
+          <p className="text-[13px] font-semibold">
+            <Link href={guia} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
+              Abrir o guia da aula
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <SeletorDeTurma turmas={turmas} turmaId={turma} rotaBase={rotaBase} aviso={aviso} />

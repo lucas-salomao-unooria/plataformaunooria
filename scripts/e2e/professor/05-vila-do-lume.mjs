@@ -33,14 +33,14 @@ await suite(
     slug: "professor/05-vila-do-lume",
     papel: "professor",
     titulo: "A Vila pelo lado do professor",
-    subtitulo: "ficha, guia do debate, resultados da turma e o relatório de uma criança",
+    subtitulo: "ficha, guia da aula, resultados da turma e o relatório de uma criança",
     contexto:
       "Depois da partida, o professor tem três telas: a ficha (o que a missão faz), o guia do " +
       "debate (o que projetar e o que nunca perguntar) e os resultados. O que essas telas " +
       "escondem é tão desenhado quanto o que elas mostram.",
     prova: [
       "A ficha explica as três bolhas e avisa para não contar nada antes",
-      "O guia projeta as três versões do golpe E as duas mensagens legítimas",
+      "O guia cobre a aula inteira — preparo, roteiro, debate, mediação e avaliação",
       "O guia proíbe perguntar quem clicou, e manda dizer que não era um colega de verdade",
       "A listagem da turma não traz nenhum valor de Schwartz",
       "A tela individual traz os dez valores, e explica cada ausência de número",
@@ -72,7 +72,7 @@ await suite(
     });
 
     // ── o guia do debate ────────────────────────────────────────────────
-    await p.locator("a", { hasText: "Guia do debate" }).first().click();
+    await p.locator("a", { hasText: "Abrir guia da aula" }).first().click();
     await p.waitForURL("**/vila-do-lume/guia", { timeout: 20_000 });
     await p.locator("text=Em quem dava pra confiar?").first().waitFor({ timeout: 20_000 });
     await p.waitForTimeout(800);
@@ -96,13 +96,25 @@ await suite(
       /Escolha a turma para ver só as mensagens que ela recebeu/.test(guia),
       "o guia deixa escolher a turma — os anos iniciais não recebem a bolha B",
     );
-    await r.registrar(p, "guia-do-debate", {
-      titulo: "O guia do debate",
-      mostra: "As três versões do golpe, as duas mensagens legítimas, e as travas da condução.",
+
+    /* O guia deixou de ser só o debate (ADR-65): ele é a aula inteira, e as
+       seções abaixo são as que o professor não tinha em lugar nenhum. */
+    r.exigir(/Antes da aula/.test(guia), "o guia cobre o ANTES da aula, não só o debate");
+    r.exigir(/Roteiro/.test(guia), "traz o roteiro cronometrado da aula");
+    r.exigir(/O que NÃO dizer antes da hora/.test(guia), "e diz o que não pode ser dito antes");
+    r.exigir(/EF07CO07/.test(guia), "alinha com a BNCC Computação, com o código da habilidade");
+    r.exigir(/Mediação/.test(guia), "traz mediação — o que fazer quando a aula descarrila");
+    r.exigir(/Avaliação/.test(guia), "e a rubrica: o jogo não pontua, quem avalia é o professor");
+    await r.registrar(p, "guia-da-aula", {
+      titulo: "O guia da aula",
+      mostra:
+        "A aula inteira: objetivos e BNCC, preparo, roteiro, as três versões do golpe, as duas " +
+        "mensagens legítimas, mediação, rubrica — e as travas da condução.",
       prova:
-        "Os textos vêm da api, não de cópia no hub: uma vírgula divergente poria a turma " +
-        "discutindo uma mensagem que ninguém recebeu. E 'nunca pergunte quem clicou' está ali " +
-        "porque a pergunta natural do adulto é exatamente a que expõe a criança.",
+        "Os textos das mensagens vêm da api, não de cópia no hub: uma vírgula divergente poria " +
+        "a turma discutindo uma mensagem que ninguém recebeu. E 'nunca pergunte quem clicou' " +
+        "está ali porque a pergunta natural do adulto é exatamente a que expõe a criança.",
+      inteira: true,
     });
 
     // ── resultados da turma ─────────────────────────────────────────────

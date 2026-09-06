@@ -23135,6 +23135,83 @@
         "x-acesso": "token"
       }
     },
+    "/unoogpt/professor/fontes": {
+      "get": {
+        "operationId": "UnoogptTurmasController_fontes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fontes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "periodo": {
+                            "type": "string"
+                          },
+                          "serve": {
+                            "type": "string"
+                          },
+                          "vies": {
+                            "type": "string"
+                          },
+                          "cobre": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "nome",
+                          "periodo",
+                          "serve",
+                          "vies",
+                          "cobre"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "fontes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unoogpt"
+        ],
+        "summary": "As 8 fontes do cenário com o viés de cada uma, para o guia da aula.",
+        "description": "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/2-serie/unidade-1/guia`. O hub NÃO guarda cópia disto: a missão não revela o viés por software, e uma cópia desatualizada faria o professor contar à turma um viés que o cenário já não produz.\n\n**Papéis:** professor, admin-contrato.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo do cenário, igual para todo contrato.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/unoogpt/agregado/escola": {
       "get": {
         "operationId": "UnoogptAgregadoController_escola",

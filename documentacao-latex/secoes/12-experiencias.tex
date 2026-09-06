@@ -142,6 +142,102 @@ considerado e recusado --- dois fluxos para o mesmo papel é o tipo de atalho qu
 faz a tela de lista parecer quebrada para metade da rede.
 \end{regra}
 
+\section{O guia da aula}
+\label{sec:guia-da-aula}
+
+Toda missão publicada tem um \textbf{guia da aula} em
+\rota{/professor/.../guia} --- e a Vila do Lume, transversal, em
+\rota{/professor/entre-redes/vila-do-lume/guia}. É o material com que o
+professor conduz a missão: objetivos e habilidades da BNCC Computação, preparo
+técnico e pedagógico, roteiro cronometrado, banco de perguntas de debate,
+mediação, folha de observação, avaliação, cuidados, adaptações e dúvidas
+frequentes.
+
+\begin{decisao}
+\textbf{O guia é DADO, não página.} Ele nasceu como uma página só, do
+Instanooria: 447 linhas de JSX em que conteúdo, ordem e marcação eram a mesma
+coisa, com \cd{notFound()} para qualquer outro \cd{expId}. Replicar aquilo por
+missão daria cinco arquivos que ninguém revisa juntos --- e a seção que alguém
+esquecesse de copiar simplesmente não existiria para aquela turma, sem nenhum
+sinal.
+
+Hoje o conteúdo mora em \arq{apps/hub/lib/entre-redes/guias/<exp>.ts} e a ordem
+é de um renderizador único (\arq{apps/hub/components/guia/}). Seção que falta é
+campo que falta: o tipo cobra de quem escreve um guia, e
+\arq{guias/index.test.ts} cobra de quem publica uma missão e não escreve
+nenhum. Ver \adrr{ADR-65}.
+\end{decisao}
+
+\subsection{Blocos vivos: o que não vira texto}
+
+O que tem fonte de verdade em outro lugar \textbf{não} é copiado para o guia. O
+renderizador aceita um \cd{ReactNode} ancorado ao fim de uma seção, e a página
+da missão injeta o que só ela sabe montar:
+
+\begin{itemize}
+  \item \textbf{exp-01} --- a tabela dos momentos do painel vem de
+    \cd{CONTROLE\_DO\_PROFESSOR}, e as onze telas da revelação de
+    \cd{@edu/conteudo-exp-01}, a mesma fonte que a experiência do estudante lê.
+  \item \textbf{exp-03} --- a tabela dos oito vieses vem de
+    \rota{GET /unoogpt/professor/fontes}, derivada da própria \cd{instrucao} que
+    o agente recebe.
+  \item \textbf{exp-70} --- os cartões das três bolhas vêm de
+    \rota{GET /vila/professor/cartoes}, \textbf{por turma}: nos anos iniciais a
+    bolha B não é servida, e projetá-la mandaria o professor esperar a reação de
+    um grupo que não existe na sala dele.
+\end{itemize}
+
+\begin{regra}
+Uma cópia desses textos no hub diverge na primeira revisão de \emph{copy}, e o
+resultado é o professor projetando para a turma uma mensagem que ninguém
+recebeu, ou contando um viés que o cenário já não produz.
+\end{regra}
+
+\subsection{BNCC Computação}
+
+Cada guia lista habilidades do \emph{Complemento de Computação à BNCC} (MEC,
+2022) com o \textbf{texto oficial verbatim} e uma coluna nossa dizendo onde, na
+missão, a habilidade acontece. A tela avisa que o recorte é proposta da
+plataforma e pede conferência com a coordenação.
+
+\begin{atencao}
+A numeração do complemento \textbf{não} é a que se supõe por analogia com as
+outras áreas: as habilidades de Computação são \textbf{por ano}
+(\cd{EF04CO08}, \cd{EF07CO08}, \cd{EF08CO11}), mais dois blocos plurianuais
+(\cd{EF15CO*}, do 1º ao 5º, e \cd{EF69CO*}, do 6º ao 9º) e \cd{EM13CO*} no
+Médio. \cd{EF67CO} e \cd{EF89CO} não existem --- e já foram escritos errados
+uma vez. Um teste guarda a forma do código.
+\end{atencao}
+
+\subsection{Impressão}
+
+O professor conduz a aula com o guia na mão enquanto o computador projeta a tela
+da turma. \arq{components/guia/guia.css} tem a folha de impressão: fora o
+cabeçalho da plataforma, o índice lateral e todo botão; cada linha de tabela e
+cada item de lista inteiros na mesma folha; borda de 1pt onde a sombra do cartão
+não imprime. As regras miram classes próprias (\cd{.guia-bloco}), nunca as do
+\cd{@unooria/design-system} --- nome interno de componente muda por versão, e
+ninguém imprime para conferir depois de subir o DS.
+
+\subsection{Onde se chega ao guia}
+
+\begin{itemize}
+  \item na ficha da missão, botão \enquote{Abrir guia da aula} (as quatro
+    missões de ano e a transversal, com o mesmo rótulo);
+  \item na \textbf{sala de aula} (\rota{/professor/turmas/:id}, aba Missões),
+    um \emph{link} por missão --- é o caminho de toda turma × toda missão, e
+    sai de \arq{lib/rotas-da-missao.ts}, que é quem sabe se a missão tem guia;
+  \item nas telas de \textbf{resultados}, que é onde o professor está durante a
+    aula.
+\end{itemize}
+
+\begin{nota}
+\rota{/professor/guia}, endereço de quando a plataforma tinha uma atividade só,
+continua redirecionando --- agora para o guia da missão atual, com a ficha dela
+como \emph{fallback} se um dia ela perder o guia.
+\end{nota}
+
+% ---------------------------------------------------------------------------
 \section{exp-01 --- Instanooria}
 
 Clone de rede social de imagens. O estudante navega um \emph{feed} curado por um
@@ -434,15 +530,34 @@ A asserção honesta é a conversa \textbf{sobreviver a um F5}, porque aí ela v
 \cd{exp\_03\_mensagens}. Teste que passa com a funcionalidade quebrada é pior que
 teste nenhum.
 
-\subsection{Pendência: o guia do debate}
+\subsection{O guia da aula, e a tabela dos vieses}
+
+O guia do professor do projeto de origem estava \textbf{vazio} --- o material de
+condução do debate nunca havia sido escrito, e é no debate que a lição acontece,
+porque a missão deliberadamente não revela nada por software. Ele existe agora
+em \rota{/professor/entre-redes/2-serie/unidade-1/guia}
+(Seção~\ref{sec:guia-da-aula}), com roteiro, banco de perguntas em quatro níveis,
+mediação e rubrica.
+
+\begin{decisao}
+\textbf{A tabela dos oito vieses vem da api, não de uma cópia no hub.}
+\rota{GET /unoogpt/professor/fontes} (professor-only) devolve, por fonte, o que
+ela mostra, o período, os bairros que cobre e \textbf{em que ela engana} --- e o
+viés é derivado da própria \cd{instrucao} que o agente recebe, cortada na marca
+\cd{VIÉS:}. Se a marca sumir numa recalibragem, a função lança e o \emph{build}
+quebra: melhor isso do que servir ao professor a instrução inteira como se fosse
+o viés, e ele contar aquilo à turma.
+
+O guia diz, em destaque, para não projetar essa tabela nem entregá-la impressa:
+quem sabe de antemão qual fonte engana em quê decora um quadro em vez de
+descobrir a discordância cruzando dados.
+\end{decisao}
 
 \begin{limitacao}
-O guia do professor do projeto de origem está \textbf{vazio} --- o material de
-condução do debate nunca foi escrito. E é no debate que a lição acontece, porque a
-missão deliberadamente não revela nada por software. A ficha publicada no catálogo
-(competência, quatro atos, preparo) foi redigida a partir das ADRs e dos dois
-\emph{playtests} documentados, e está marcada no código como ponto de partida para
-revisão pedagógica, não palavra final.
+A ficha do catálogo e o guia foram redigidos a partir das ADRs, dos dois
+\emph{playtests} documentados e do próprio cenário. \textbf{Nenhum dos dois
+passou por playtest em sala} --- estão marcados no código como ponto de partida
+para revisão pedagógica, não palavra final.
 \end{limitacao}
 
 % ---------------------------------------------------------------------------

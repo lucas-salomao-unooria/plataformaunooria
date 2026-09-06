@@ -181,6 +181,18 @@ function MissoesDaSala({
                           Como funciona
                         </Link>
                       ) : null}
+                      {/* O guia da aula: o professor abre daqui, na véspera e
+                          na hora. Ele existe por missão e não por turma, então
+                          não leva `?turmaId=` — a exceção é a Vila do Lume, cujo
+                          guia tem seletor de turma próprio na revelação. */}
+                      {rotas?.guia ? (
+                        <Link
+                          href={rotas.guia}
+                          className="text-unooria-neutral-700 hover:text-unooria-navy-900"
+                        >
+                          Guia da aula
+                        </Link>
+                      ) : null}
                       {conducao ? (
                         <Link
                           href={conducao}

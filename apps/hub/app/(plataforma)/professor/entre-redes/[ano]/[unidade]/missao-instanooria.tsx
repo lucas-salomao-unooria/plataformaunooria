@@ -6,11 +6,11 @@ import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
-  rotaDoGuia,
   rotuloDaMissao,
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { statusDaAtividade } from "@/lib/status-atividade";
 
 /** O que a api devolve em GET /atividades (escopado ao professor do token). */
@@ -43,6 +43,7 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
   ];
 
   const { ficha } = missao;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   // MISSÃO ÚNICA: com uma só missão publicada, toda atividade do professor é
   // desta missão (nota de modelagem em lib/entre-redes/catalogo.ts).
@@ -112,11 +113,13 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
               <li key={passo}>{passo}</li>
             ))}
           </ol>
-          <div className="pt-4">
-            <LinkButton href={rotaDoGuia(missao)} variant="secondary">
-              Abrir guia da aula
-            </LinkButton>
-          </div>
+          {guia ? (
+            <div className="pt-4">
+              <LinkButton href={guia} variant="secondary">
+                Abrir guia da aula
+              </LinkButton>
+            </div>
+          ) : null}
         </Card>
       </section>
 

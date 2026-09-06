@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, EmptyState, MetricCard } from "@edu/ui/ds";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
@@ -12,6 +13,7 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 
 import { PainelDaAulaEco } from "./painel-da-aula-eco";
@@ -38,6 +40,7 @@ export async function ResultadosOEcoNoGrupo({
   turma: string;
 }) {
   const rotaBase = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   const lista = await apiDoServidor<{ turmas: TurmaDoEco[] }>("/o-eco-no-grupo/turmas");
   const todas = lista?.turmas ?? [];
@@ -87,6 +90,16 @@ export async function ResultadosOEcoNoGrupo({
           debate e libera o registro final. Abaixo, o retrato da turma: não quem acertou, mas
           quem <strong>abriu a matéria antes de responder</strong>.
         </p>
+        {/* O guia da aula, à mão: esta é a tela em que o professor está DURANTE
+            a aula, e é aqui que ele precisa reler o roteiro ou a pergunta do
+            debate sem perder o painel de vista. */}
+        {guia ? (
+          <p className="text-[13px] font-semibold">
+            <Link href={guia} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
+              Abrir o guia da aula
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <SeletorDeTurma turmas={turmas} turmaId={turma} rotaBase={rotaBase} aviso={aviso} />

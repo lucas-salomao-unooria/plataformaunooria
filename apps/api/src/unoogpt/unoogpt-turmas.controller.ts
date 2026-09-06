@@ -13,9 +13,11 @@ import {
   TurmaDoProfessorSchema,
   TurmaZeradaDoUnoogptSchema,
   TurmasDoUnoogptSchema,
+  FontesDoProfessorSchema,
 } from "./contrato-de-rotas";
 import { UnoogptService } from "./unoogpt.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
+import { fontesParaOProfessor } from "./modelo/conjuntos";
 
 /**
  * Visão do PROFESSOR: o relógio da aula, a folha da turma e a linha de uma
@@ -157,5 +159,27 @@ export class UnoogptTurmasController {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (!ehUuid(estudanteId)) throw erroDeJogo("payload-invalido");
     return this.service.doEstudante(escolaId, estudanteId, professorDoToken(req.auth));
+  }
+
+  /**
+   * As 8 fontes do cenário e o VIÉS de cada uma — o material do debate.
+   *
+   * Catálogo, não dado de turma: não há `escolaId` nem tenancy a aplicar aqui.
+   * O que a guarda protege é o PAPEL — esta é a única superfície da missão em
+   * que o viés é dito com todas as letras, e ele não pode chegar ao estudante
+   * (a missão não revela nada por software, de propósito).
+   */
+  @Get("fontes")
+  @Contrato({
+    resumo: "As 8 fontes do cenário com o viés de cada uma, para o guia da aula.",
+    descricao:
+      "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/2-serie/unidade-1/guia`. O hub NÃO guarda cópia disto: a missão não revela o viés por software, e uma cópia desatualizada faria o professor contar à turma um viés que o cenário já não produz.",
+    resposta: FontesDoProfessorSchema,
+    notas: [
+      "Nada aqui é escopado por escola: é o catálogo do cenário, igual para todo contrato.",
+    ],
+  })
+  fontes() {
+    return { fontes: fontesParaOProfessor() };
   }
 }

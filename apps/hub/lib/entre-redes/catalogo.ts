@@ -534,10 +534,6 @@ export function rotaDaMissao(missao: Missao): string {
   return `/professor/entre-redes/${missao.anoSlug}/${missao.unidadeSlug}`;
 }
 
-export function rotaDoGuia(missao: Missao): string {
-  return `${rotaDaMissao(missao)}/guia`;
-}
-
 /** Rótulo curto usado em breadcrumb e cabeçalhos: "8º ano · Unidade 1". */
 export function rotuloDaMissao(ano: Ano, missao: Missao): string {
   return `${ano.rotulo} · Unidade ${missao.unidade}`;
