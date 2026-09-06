@@ -200,6 +200,7 @@ model Turma {
 
   escola        Escola        @relation(fields: [escolaId], references: [id])
   periodoLetivo PeriodoLetivo @relation(fields: [periodoLetivoId], references: [id])
+  planoEnsinoConfigs PlanoDeEnsinoConfiguracao[] @relation("PlanoEnsinoTurma")
   /// Cache da matrícula principal (`users.turma_id`). A VERDADE é `matriculas`.
   estudantes    User[]
   matriculas    Matricula[]
@@ -369,6 +370,9 @@ model User {
   perfis           PerfilImportado[]
   unootube         UnootubeSessao[]
   planos           PlanoDeAula[]     @relation("PlanoProfessor")
+  planoEnsinoConfigs PlanoDeEnsinoConfiguracao[] @relation("PlanoEnsinoProfessor")
+  planosDeEnsino     PlanoDeEnsinoAnual[]        @relation("PlanoEnsinoAnualProfessor")
+  planosDePeriodo    PlanoDeEnsinoPeriodo[]      @relation("PlanoEnsinoPeriodoProfessor")
   vilaSessoes      VilaSessao[]      @relation("VilaEstudante")
   vilaPerfis       VilaPerfil[]      @relation("VilaPerfilEstudante")
   /// Lista, não `VilaBolha?`: a PK é composta (`escola_id, estudante_id`), então
@@ -1488,4 +1492,185 @@ model EcoGateTurma {
   @@id([escolaId, turmaId])
   @@index([escolaId])
   @@map("exp_07_gates_turma")
+}
+
+// ═══════════════════════════════════════════════ exp-92 — plano de ensino
+//
+// O planejamento dirigido pela BNCC, em dois níveis: um plano ANUAL (macro,
+// prosa pedagógica por período de avaliação) e planos de PERÍODO (granular,
+// aula a aula, semanal ou quinzenal). Um alimenta o outro.
+//
+// Por que não reaproveitou `exp_90_planos`: a exp-90 gera um documento a partir
+// de TEXTO de currículo importado, e o que ela sabe do plano é "de que
+// disciplina e série ele é". Aqui o plano precisa saber quantas aulas o
+// professor tem, em que dias, em quantos períodos, e QUAIS habilidades caem em
+// cada um — nada disso cabe nas colunas de lá, e alargá-las quebraria a exp-90
+// que está em uso.
+
+/// A REGÊNCIA: o que este professor leciona, para quem, quantas aulas e quando.
+///
+/// É a entrada de tudo. Sem ela o plano anual distribui habilidades em "quatro
+/// bimestres" sem saber se cabem 200 aulas de Matemática ou 40 de Arte — e a
+/// diferença entre esses dois números é a diferença entre um plano executável e
+/// uma lista de intenções. É também aqui que o professor escolhe se o
+/// planejamento granular é semanal ou quinzenal.
+model PlanoDeEnsinoConfiguracao {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  professorId String @map("professor_id") @db.Uuid
+
+  anoLetivo Int    @map("ano_letivo") @db.SmallInt
+  /// 1EF..9EF | 1EM..3EM — validado com zod na aplicação.
+  serie     String
+  /// Slug de `curriculo/componentes.ts` — o componente DA REDE, não o da BNCC:
+  /// `biologia` é escolha válida, e as habilidades dela vêm da área.
+  componente String
+
+  /// Opcional de propósito: em novembro o professor planeja o ano seguinte, e a
+  /// turma ainda não existe. Preenchida, amarra o plano à sala real.
+  turmaId String? @map("turma_id") @db.Uuid
+
+  /// A volta às aulas DESTA regência. Vive aqui, e não só em `periodos_letivos`,
+  /// porque aquela tabela é catálogo do CONTRATO e o seed a preenche como ano
+  /// CIVIL (01/01–31/12): o calendário do plano alinha os períodos na segunda, e
+  /// a semana de 1º de janeiro de 2026 começa em 29/12/2025 — o professor que
+  /// declarava 02/02 recebia um 1º bimestre em dezembro do ano anterior.
+  /// `null` = usa a sugestão do catálogo (regências criadas antes da coluna).
+  inicioDoAnoLetivo DateTime? @map("inicio_do_ano_letivo") @db.Date
+
+  /// bimestral | trimestral | semestral — CHECK na migration. Nenhuma norma
+  /// nacional fixa isso: o calendário é aprovado escola a escola.
+  divisaoDoAno String @default("bimestral") @map("divisao_do_ano")
+  /// semanal | quinzenal — CHECK na migration. É o pedido de origem: a rede
+  /// escolhe o passo do planejamento granular.
+  periodicidade String @default("semanal")
+
+  /// 50 na maioria das redes; 45 aparece no noturno. NÃO é hora-relógio — o
+  /// Parecer CNE/CEB 8/2004 proíbe tratar aula de 45min como uma hora, e é
+  /// desta coluna que sai a conversão.
+  minutosPorAula Int @default(50) @map("minutos_por_aula") @db.SmallInt
+  aulasSemanais  Int @map("aulas_semanais") @db.SmallInt
+
+  /// A grade do professor: `[{ diaDaSemana: 1..5, horarios: ["07:00","07:50"] }]`.
+  /// Guardado como JSON porque é configuração de UMA linha, lida inteira e
+  /// nunca consultada por dentro — normalizar em duas tabelas daria join sem
+  /// nenhuma query que o justifique.
+  grade Json @default("[]")
+
+  /// Sobrepõe a camada transversal de Computação (Res. CNE/CEB 1/2022) ao
+  /// componente. A articulação entre uma habilidade `CO` e uma do componente é
+  /// INFERÊNCIA do produto: não existe crosswalk normativo, e a norma delega a
+  /// abordagem à rede (art. 2º). A tela precisa rotular isso como sugestão.
+  incluirComputacao Boolean @default(false) @map("incluir_computacao")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  professor    User                  @relation("PlanoEnsinoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+  turma        Turma?                @relation("PlanoEnsinoTurma", fields: [turmaId], references: [id], onDelete: SetNull)
+  planosAnuais PlanoDeEnsinoAnual[]
+
+  /// Um professor tem UMA configuração por ano letivo, série e componente. Duas
+  /// turmas do mesmo 7º ano de Matemática compartilham o planejamento — é o que
+  /// o professor faz na prática, e forçar uma cópia por turma multiplicaria o
+  /// trabalho dele sem acrescentar informação.
+  @@unique([escolaId, professorId, anoLetivo, serie, componente], map: "exp_92_configuracao_unica")
+  @@index([escolaId, professorId])
+  @@map("exp_92_configuracoes")
+}
+
+/// O PLANO ANUAL — o macro. Prosa pedagógica gerada pela IA sobre a distribuição
+/// de habilidades que o professor decidiu, período por período.
+///
+/// `distribuicao` é a decisão HUMANA e fica no banco, estruturada; o documento
+/// gerado é prosa e vai para o object storage, no mesmo arranjo da exp-90
+/// (metadado aqui, conteúdo lá). A separação importa: o professor pode reescrever
+/// o texto inteiro sem que o sistema perca qual habilidade cai em que bimestre —
+/// e é isso que o plano de período precisa saber para ser gerado.
+model PlanoDeEnsinoAnual {
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId       String @map("escola_id")
+  professorId    String @map("professor_id") @db.Uuid
+  configuracaoId String @map("configuracao_id") @db.Uuid
+
+  titulo String
+  /// pendente | gerando | pronto | erro — CHECK na migration. Mesma máquina de
+  /// estados da exp-90: a geração corre em background e a tela faz polling.
+  status       String    @default("pendente")
+  tentativas   Int       @default(0) @db.SmallInt
+  iniciadoEm   DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  erro         String?
+  tokensUsados Int       @default(0) @map("tokens_usados")
+
+  /// `{ "1": ["EF67LP08", "EF67LP09"], "2": [...] }` — habilidades por período
+  /// de avaliação. A chave é a ordem do período (1 = 1º bimestre).
+  distribuicao Json @default("{}")
+  /// `{ "1": ["EF07CO03"] }` — a camada transversal de Computação, separada
+  /// porque é sugestão do produto e não currículo do componente.
+  distribuicaoComputacao Json @default("{}") @map("distribuicao_computacao")
+
+  /// `planos-de-ensino/{escolaId}/{id}/gerado.md` — o que a IA escreveu, imutável.
+  caminhoGeradoMd String? @map("caminho_gerado_md")
+  /// `planos-de-ensino/{escolaId}/{id}/atual.html` — o que o professor salvou.
+  caminhoHtml     String? @map("caminho_html")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  configuracao PlanoDeEnsinoConfiguracao @relation(fields: [configuracaoId], references: [id], onDelete: Cascade)
+  professor    User                      @relation("PlanoEnsinoAnualProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+  periodos     PlanoDeEnsinoPeriodo[]
+
+  @@index([escolaId, professorId])
+  @@index([escolaId, configuracaoId])
+  @@map("exp_92_planos_anuais")
+}
+
+/// O PLANO DE PERÍODO — o granular, aula a aula, de uma semana ou quinzena.
+///
+/// Aqui as aulas são DADO ESTRUTURADO (`aulas`), não prosa, e essa é a diferença
+/// que faz o produto valer: o professor edita a aula de quinta-feira sem mexer
+/// no resto, o sistema sabe quantas aulas já foram planejadas contra quantas
+/// existem no período, e o export monta a grade a partir do dado em vez de
+/// pedir à IA que formate uma tabela.
+///
+/// Cada item de `aulas`:
+/// `{ numero, data, horario, tema, objetivo, habilidades: [codigo],
+///    conteudo, momentos: { retomada, desenvolvimento, sistematizacao, fechamento },
+///    recursos: [], avaliacao, tarefaDeCasa, adaptacoes }`
+///
+/// Os quatro `momentos` não são enfeite: é o que separa um plano de aula de uma
+/// lista de conteúdos. Um plano sem retomada e sem fechamento não diz ao
+/// professor substituto o que fazer com os 50 minutos.
+model PlanoDeEnsinoPeriodo {
+  id           String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId     String @map("escola_id")
+  professorId  String @map("professor_id") @db.Uuid
+  planoAnualId String @map("plano_anual_id") @db.Uuid
+
+  /// 1 = primeira semana/quinzena do ano letivo. Ordena o caderno do professor.
+  ordem  Int      @db.SmallInt
+  inicio DateTime @db.Date
+  fim    DateTime @db.Date
+  /// A qual período de avaliação esta semana pertence (1 = 1º bimestre) — é o
+  /// que liga o granular ao macro e permite herdar as habilidades do anual.
+  periodoDeAvaliacao Int @map("periodo_de_avaliacao") @db.SmallInt
+
+  status       String    @default("pendente")
+  tentativas   Int       @default(0) @db.SmallInt
+  iniciadoEm   DateTime? @map("iniciado_em") @db.Timestamptz(6)
+  erro         String?
+  tokensUsados Int       @default(0) @map("tokens_usados")
+
+  aulas Json @default("[]")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  planoAnual PlanoDeEnsinoAnual @relation(fields: [planoAnualId], references: [id], onDelete: Cascade)
+  professor  User               @relation("PlanoEnsinoPeriodoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@unique([escolaId, planoAnualId, ordem], map: "exp_92_periodo_unico")
+  @@index([escolaId, professorId])
+  @@map("exp_92_planos_de_periodo")
 }
