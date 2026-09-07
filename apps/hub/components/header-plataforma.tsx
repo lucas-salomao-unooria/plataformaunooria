@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { Avatar, Icon, Logo } from "@edu/ui/ds";
-import { LogoutButton } from "@/components/logout-button";
+import { Icon, Logo } from "@edu/ui/ds";
+import { MenuDaConta } from "@/components/menu-da-conta";
 import { SeletorDeEscola } from "@/components/seletor-de-escola";
 import { auth } from "@/lib/auth";
 import { homeDoPapel, rotuloDoPapel } from "@/lib/papeis";
@@ -14,7 +14,8 @@ const LARGURAS = {
 } as const;
 
 /**
- * Header padrão da plataforma: marca à esquerda, identidade + "Sair" à direita.
+ * Header padrão da plataforma: marca à esquerda, identidade + menu da conta à
+ * direita — e é no menu do avatar que o "Sair" mora (`MenuDaConta`).
  *
  * É UM só para TODOS os papéis (estudante, professor, gestor, admin-contrato) e
  * para todas as superfícies — inclusive `/exp/**`, o aparelho do estudante. Antes
@@ -83,12 +84,13 @@ export async function HeaderPlataforma({
           {/* Quem está lotado em mais de uma escola escolhe onde está agora.
               A escola ativa é o que o token de dados carrega. */}
           <SeletorDeEscola escolas={usuario.escolas ?? []} ativa={usuario.escolaId} />
-          <div className="hidden text-right sm:block">
-            <p className="text-[13px] font-semibold text-unooria-neutral-950">{usuario.nome}</p>
-            <p className="text-[12px] text-unooria-neutral-500">{apoio}</p>
-          </div>
-          <Avatar name={usuario.nome} size="xs" />
-          <LogoutButton />
+          {/* Identidade + menu do avatar, e é no menu que o "Sair" mora. Antes
+              eram três peças soltas — nome, avatar decorativo e um botão "Sair"
+              com o mesmo peso visual da marca, para a ação mais destrutiva da
+              barra. O nome e o papel foram para dentro do `MenuDaConta` porque
+              a tira do `HeaderMenu` abre POR CIMA do que está à esquerda do
+              gatilho; o porquê inteiro está lá. */}
+          <MenuDaConta nome={usuario.nome} apoio={apoio} />
         </div>
       </div>
     </header>
