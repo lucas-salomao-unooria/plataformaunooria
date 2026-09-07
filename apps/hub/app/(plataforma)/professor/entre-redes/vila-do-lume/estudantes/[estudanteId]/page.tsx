@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { Badge, Card, EmptyState, FeedbackAlert } from "@edu/ui/ds";
+import { Badge, Card, EmptyState, FeedbackAlert, ScrollBar } from "@edu/ui/ds";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { buscarMissaoTransversal, rotaDaTransversal } from "@/lib/entre-redes/catalogo";
@@ -279,7 +279,7 @@ export default async function EstudanteDaVilaPage({
             </Card>
 
             <Card variant="elevated" title="Mensagem por mensagem">
-              <div className="tabela-rolavel">
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
                 <table className="w-full min-w-[520px] border-collapse text-[13px]">
                   <thead>
                     <tr className="border-b border-unooria-neutral-200 text-left text-[12px] uppercase tracking-wider text-unooria-neutral-500">
@@ -313,7 +313,7 @@ export default async function EstudanteDaVilaPage({
                     })}
                   </tbody>
                 </table>
-              </div>
+              </ScrollBar>
               <p className="mt-3 text-[12px] leading-relaxed text-unooria-neutral-600">
                 <strong>O tempo de decisão é a coluna mais informativa.</strong> Cair em dois
                 segundos e cair depois de dez são duas crianças diferentes: a primeira não

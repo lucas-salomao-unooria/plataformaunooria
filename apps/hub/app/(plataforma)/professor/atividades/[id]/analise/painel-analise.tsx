@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react';
 
-import { AlertBox, Badge, Card } from '@edu/ui/ds';
+import { AlertBox, Badge, Card, ScrollBar } from '@edu/ui/ds';
 import type { AnaliseDaTurma } from '@/lib/analise-tipos';
 
 /**
@@ -48,7 +48,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
             </p>
           </div>
 
-          <div className="tabela-rolavel">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[520px] border-collapse text-left">
               <thead>
                 <tr className="text-[12px] text-unooria-neutral-600">
@@ -93,7 +93,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
 
           <div className="grid gap-3 sm:grid-cols-3">
             {[
@@ -270,7 +270,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
       <Card variant="elevated">
         <div className="flex flex-col gap-3">
           <h2 className="text-[16px] font-semibold text-unooria-neutral-950">Estudante por estudante</h2>
-          <div className="tabela-rolavel">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[860px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
@@ -414,7 +414,7 @@ export function PainelAnalise({ analise }: { analise: AnaliseDaTurma }) {
                 })}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
           <p className="text-[12px] text-unooria-neutral-500">
             Clique numa linha para ver a conclusão escrita e os cinco componentes de imersão.
           </p>

@@ -130,6 +130,40 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 `package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
 armadilhas de migração) em `packages/ui/AGENTS.md`.
 
+### O procedimento, antes de escrever QUALQUER interface
+
+A regra não é "prefira o DS": é **procure primeiro, e só depois escreva**. Três
+passos, nesta ordem, e nenhum é opcional:
+
+1. **Procure no pacote.** A lista de tudo que existe são as pontes de
+   `packages/ui/src/ds*.ts` (um `export {}` por seção) e o catálogo em
+   `cd ../storybook-unooria && npm run storybook` (:6007). Procure pelo QUE a
+   coisa faz, não pelo nome que você daria a ela.
+2. **Achou? Use, mesmo que dê mais trabalho** do que escrever a sua. Um
+   componente do DS traz estado, acessibilidade, tema claro/escuro e as duas
+   famílias já resolvidos — e é atualizado por versão, sem ninguém aqui tocar.
+3. **Não achou? Não escreva um.** Abra pedido no `storybook-unooria`, registre-o
+   no `AGENTS.md` do pacote ou da experiência, e faça a **compensação local
+   MARCADA** — que existe para morrer quando o pacote publicar.
+
+**O que é compensação legítima:** medida, espaçamento, altura, posicionamento,
+grade, comportamento de página. **O que não é:** botão, campo, diálogo, aba,
+etiqueta, avatar, ícone, tabela, barra de rolagem — se tem estado ou aparência
+de controle, é componente, e componente nasce no `storybook-unooria`.
+
+**Componente que existe e não é usado custa igual a componente que falta.** Em
+2026-09-07 descobriu-se que o DS publica `ScrollBar` (vertical, horizontal, com
+`autoHide`) desde a 0.1.x e o hub tinha **24 tabelas** rolando em `<div>` com
+`overflow` na mão, além de mais 6 áreas roláveis soltas — barra de sistema em
+cada tela, sem auto-hide e diferente por sistema operacional. Ninguém "decidiu"
+não usar: o passo 1 não foi dado. Por isso ele está escrito aqui.
+
+**Compensação viva é dívida com nome e dono.** Toda compensação em
+`packages/ui/styles/plataforma.css` diz, no comentário, QUAL é a lacuna do DS,
+o que ela faz **e o que ela deixou de fazer** quando o pacote passou a cobrir a
+parte dele. A `.tabela-rolavel` é o exemplo: ela já foi a rolagem inteira, hoje
+é só a altura e o cabeçalho preso, porque a rolagem virou `ScrollBar`.
+
 ## Arquivos de instrução de agente — o padrão
 
 Três arquivos, três papéis que não se misturam:
@@ -308,12 +342,13 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **75**: a 65 foi ocupada pelo guia da aula, a 72 pela
+  (a PRÓXIMA é a **76**: a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
-      BNCC e a 74 pela contabilidade de tokens do `generateJson` — três
-      frentes fecharam ADR em 2026-09-06 e duas colidiram na 65, então
-      conferir `origin/dev` não basta: confira também as branches de trabalho
-      abertas E a de integração, que pode estar à frente da `dev`),
+      BNCC, a 74 pela contabilidade de tokens do `generateJson` e a 75 pela
+      rolagem com o `ScrollBar` do DS — três frentes fecharam ADR em
+      2026-09-06 e duas colidiram na 65, então conferir `origin/dev` não
+      basta: confira também as branches de trabalho abertas E a de
+      integração, que pode estar à frente da `dev`),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
@@ -428,6 +463,11 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
 - Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md` de uma linha.
 - Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
   quando a seção do DS já tem: o lugar do componente novo é o `storybook-unooria`.
+- **Não escrever interface sem antes procurar no DS** (o procedimento de três
+  passos está em "Design System"). Não achou? Pedido no `storybook-unooria` +
+  compensação local marcada — nunca um componente local silencioso.
+- Não resolver na mão o que o DS já resolve: rolagem é `ScrollBar`, não
+  `overflow` num `<div>`; diálogo é `Modal`; aba é `Tabs`.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
@@ -451,7 +491,7 @@ casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**70 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**75 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

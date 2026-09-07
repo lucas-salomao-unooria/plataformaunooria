@@ -296,3 +296,58 @@ render. Instalar o `http` duplicaria o span raiz. Só o `undici` entra, para o
   `OBS_TRACE_RATIO_CLIENTE` — env de runtime, sem rebuild. Com ratio 0 nada é
   baixado (os pacotes são `import()` dinâmico), então a landing pública não paga
   o peso. Sem sessão o BFF dá 401 e o lote morre no exportador — aceito.
+
+## Rolagem: sempre o `ScrollBar` do DS (2026-09-07)
+
+**Nenhuma tela do hub declara `overflow` para rolar.** Área que rola é um
+`<ScrollBar>` do `@edu/ui/ds` — as 24 tabelas (de `/admin`, `/analise` e
+`/professor`), o sumário de `/privacidade` e `/termos`, e as 5 tabelas largas do
+guia da aula. Dele vêm a barra, o `autoHide` e o fade; a mecânica e as
+armadilhas estão em `packages/ui/AGENTS.md`.
+
+Tabela nova nasce assim, e não com um `<div>` em volta:
+
+```tsx
+<ScrollBar orientation="both" autoHide className="tabela-rolavel">
+  <Table … />        {/* ou a <table> crua */}
+</ScrollBar>
+```
+
+`orientation="both"` não é enfeite: o default (`vertical`) traz
+`overflow-x: hidden` e cortaria a coluna da direita das tabelas largas — que é a
+maioria delas aqui. E a `tabela-rolavel` continua obrigatória, com o papel
+reduzido: a altura que provoca a rolagem e o cabeçalho preso, que o DS ainda não
+publica.
+
+**No papel, o `ScrollBar` sai da frente.** `components/guia/guia.css` devolve
+`overflow: visible` e `max-height: none` a ele em `@media print`: o guia é feito
+para ser impresso e levado para a sala, e `overflow` recortaria a tabela na
+largura da coluna.
+
+## Altura de tela cheia: `.tela-cheia`, nunca subtração do header
+
+A página do professor que embeda experiência e **não** rola
+(`/professor/plano-de-aula`, `/plano-de-ensino`, `/bem-estar`) usa a classe
+`.tela-cheia`. Ela substituiu `height: calc(100dvh - 64px)`, escrito à mão nas
+três: o `HeaderPlataforma` mede **65px** (o `h-16` são 64 e a `border-b` põe 1),
+então a página transbordava 1px e ganhava uma barra de rolagem vertical PARADA
+na tela — visível o tempo todo, sem ter o que rolar. Agora a casca do professor
+é coluna (`flex min-h-dvh flex-col`) com o `main` em `flex-1`, e a classe (em
+`@edu/ui/styles/plataforma.css`) distribui o resto por flex.
+
+Isto é o oposto do `ScrollBar`: lá o objetivo é rolar bem, aqui é **não existir
+área rolável**. Uma barra que não rola nada não é detalhe estético — é a tela
+dizendo que há conteúdo escondido quando não há.
+
+Duas armadilhas medidas:
+
+- **`h-full` no lugar do flex NÃO funciona.** A altura de um item que cresceu por
+  `flex-grow` dentro de um contêiner de `min-height` não é *definite*: o
+  percentual cai para `auto` e o `<iframe>` volta aos 150px de altura padrão dele.
+  `display: grid` com `grid-template-rows: auto 1fr` tem o mesmo problema.
+- **O `main` só vira contêiner flex via `:has(> .tela-cheia)`.** Sem isso, as
+  outras 16 páginas do professor passariam a ter os filhos como itens de flex
+  (margem que não colapsa mais, altura que muda) por causa de três telas.
+
+`app/exp/layout.tsx` já fazia certo (`height: 100dvh` + `flex flex-col`) e não
+precisou mudar — é a referência do arranjo.

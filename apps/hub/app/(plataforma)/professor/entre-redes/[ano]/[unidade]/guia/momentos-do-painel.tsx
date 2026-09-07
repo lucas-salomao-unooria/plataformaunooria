@@ -1,4 +1,4 @@
-import { Card } from "@edu/ui/ds";
+import { Card, ScrollBar } from "@edu/ui/ds";
 import { CONTROLE_DO_PROFESSOR, type EtapaDaTurma } from "@/lib/insta-tipos";
 
 /**
@@ -38,34 +38,36 @@ export function MomentosDoPainel() {
           dizendo o que vai mudar na tela dos estudantes. Em cada momento há também{" "}
           <strong>voltar um momento</strong>, se você adiantou sem querer.
         </p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[560px] border-collapse text-left text-[14px]">
-            <thead>
-              <tr className="text-[12px] text-unooria-neutral-500">
-                <th className="w-52 py-2 font-semibold">Botão</th>
-                <th className="py-2 font-semibold">O que acontece na tela do estudante</th>
-              </tr>
-            </thead>
-            <tbody className="align-top">
-              {CONTROLE_DO_PROFESSOR.map((momento) => (
-                <tr key={momento.etapa} className="border-t border-unooria-neutral-200">
-                  <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
-                    {momento.rotulo}
-                  </td>
-                  <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
-                    {momento.descricao}
-                    {DETALHE_DO_GUIA[momento.etapa] ? (
-                      <span className="text-unooria-neutral-700">
-                        {" "}
-                        {DETALHE_DO_GUIA[momento.etapa]}
-                      </span>
-                    ) : null}
-                  </td>
+        <ScrollBar orientation="horizontal" autoHide className="mt-4">
+          {/* Rolagem lateral da tabela larga pelo `ScrollBar` do DS: em tela estreita a
+              tabela do guia passa da coluna, e a barra some quando ninguém a usa. */}
+            <table className="w-full min-w-[560px] border-collapse text-left text-[14px]">
+              <thead>
+                <tr className="text-[12px] text-unooria-neutral-500">
+                  <th className="w-52 py-2 font-semibold">Botão</th>
+                  <th className="py-2 font-semibold">O que acontece na tela do estudante</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="align-top">
+                {CONTROLE_DO_PROFESSOR.map((momento) => (
+                  <tr key={momento.etapa} className="border-t border-unooria-neutral-200">
+                    <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
+                      {momento.rotulo}
+                    </td>
+                    <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
+                      {momento.descricao}
+                      {DETALHE_DO_GUIA[momento.etapa] ? (
+                        <span className="text-unooria-neutral-700">
+                          {" "}
+                          {DETALHE_DO_GUIA[momento.etapa]}
+                        </span>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        </ScrollBar>
         <p className="mt-3 text-[12px] leading-relaxed text-unooria-neutral-500">
           A etapa da turma é <strong>piso, não teto</strong>: quem terminou de ler o relatório
           antes dos colegas não fica preso, mas ninguém passa do que você liberou. A única

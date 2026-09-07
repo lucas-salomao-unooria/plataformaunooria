@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 
-import { Card } from '@edu/ui/ds';
+import { Card, ScrollBar } from '@edu/ui/ds';
 import { LinkButton } from '@/components/link-button';
 import type { AnaliseDeProduto } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
@@ -93,7 +93,7 @@ export default async function AnaliseDaAtividadePage({
             </p>
           </div>
 
-          <div className="tabela-rolavel">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
@@ -134,7 +134,7 @@ export default async function AnaliseDaAtividadePage({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
 
           <div className="rounded-lg border border-unooria-neutral-200 bg-unooria-neutral-50 p-3">
             <p className="text-[13px] leading-relaxed text-unooria-neutral-800">

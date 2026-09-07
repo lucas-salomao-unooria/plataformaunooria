@@ -10,6 +10,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SectionHeader,
   Selection,
   Table,
@@ -178,16 +179,17 @@ export function PeriodosLetivos({ papel }: { papel: Papel }) {
         ) : null}
       </div>
 
-      <Table<Periodo>
-        className="tabela-rolavel"
-        columns={colunas}
-        data={periodos}
-        keyExtractor={(linha) => linha.id}
-        loading={carregando}
-        emptyText="Nenhum período letivo ainda."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<Periodo>
+          columns={colunas}
+          data={periodos}
+          keyExtractor={(linha) => linha.id}
+          loading={carregando}
+          emptyText="Nenhum período letivo ainda."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
       <FeedbackAlert
         type="info"

@@ -11,6 +11,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SearchInput,
   SectionHeader,
   Selection,
@@ -478,19 +479,20 @@ export function EscolasDaRede() {
         </div>
       ) : null}
 
-      <Table<Escola>
-        className="tabela-rolavel"
-        columns={colunas}
-        data={escolas}
-        keyExtractor={(l) => l.id}
-        selectable
-        selectedKeys={selecionadas}
-        onSelectionChange={(chaves) => setSelecionadas(chaves.map(String))}
-        loading={carregando}
-        emptyText="Nenhuma escola encontrada."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<Escola>
+          columns={colunas}
+          data={escolas}
+          keyExtractor={(l) => l.id}
+          selectable
+          selectedKeys={selecionadas}
+          onSelectionChange={(chaves) => setSelecionadas(chaves.map(String))}
+          loading={carregando}
+          emptyText="Nenhuma escola encontrada."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
       <FeedbackAlert
         type="info"

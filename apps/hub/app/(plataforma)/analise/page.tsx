@@ -1,4 +1,4 @@
-import { Card } from '@edu/ui/ds';
+import { Card, ScrollBar } from '@edu/ui/ds';
 import { LinkButton } from '@/components/link-button';
 import type { ResumoDeAtividade } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
@@ -86,7 +86,7 @@ export default async function AnalisePage({
         </Card>
       ) : (
         <Card variant="elevated">
-          <div className="tabela-rolavel">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[1000px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
@@ -163,7 +163,7 @@ export default async function AnalisePage({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
         </Card>
       )}
 

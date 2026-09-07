@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Table, Tag, type TableColumn } from "@edu/ui/ds";
+import { Badge, ScrollBar, Table, Tag, type TableColumn } from "@edu/ui/ds";
 import {
   formatarQuando,
   ordenarEstudantes,
@@ -82,14 +82,15 @@ export function TabelaResultados({
   const lista = estudantes ?? [];
   const linhas: Linha[] = ordenarEstudantes(lista).map((a) => ({ ...a }));
   return (
-    <Table<Linha>
-      className="tabela-rolavel"
-      columns={colunas}
-      data={linhas}
-      keyExtractor={(l) => l.estudanteId}
-      emptyText="Ninguém desta turma entrou no UnooTube ainda."
-      size="md"
-      theme="light"
-    />
+    <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+      <Table<Linha>
+        columns={colunas}
+        data={linhas}
+        keyExtractor={(l) => l.estudanteId}
+        emptyText="Ninguém desta turma entrou no UnooTube ainda."
+        size="md"
+        theme="light"
+      />
+    </ScrollBar>
   );
 }

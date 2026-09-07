@@ -10,6 +10,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SectionHeader,
   Selection,
   Table,
@@ -217,16 +218,17 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
         </Button>
       </div>
 
-      <Table<LinhaDeTurma>
-        className="tabela-rolavel"
-        columns={colunas}
-        data={linhas}
-        keyExtractor={(linha) => linha.id}
-        loading={carregando}
-        emptyText="Nenhuma turma ainda — importe a planilha de pessoas e as turmas nascem com ela."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<LinhaDeTurma>
+          columns={colunas}
+          data={linhas}
+          keyExtractor={(linha) => linha.id}
+          loading={carregando}
+          emptyText="Nenhuma turma ainda — importe a planilha de pessoas e as turmas nascem com ela."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
       <Modal isOpen={novaAberta} onClose={() => setNovaAberta(false)} size="sm" theme="light">
         <ModalHeader>

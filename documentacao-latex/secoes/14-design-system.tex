@@ -472,6 +472,73 @@ não elementos: sem o \emph{reset}, todo \cd{<a>} volta a ser sublinhado e todo
 \emph{cards} de produto.
 \end{nota}
 
+\section{Rolagem: o \cd{ScrollBar} do DS, em toda área rolável do hub}
+\label{ds:rolagem}
+
+\textbf{Nenhuma tela do hub declara \cd{overflow} para rolar.} Área que rola é um
+\cd{<ScrollBar>} do \cd{@edu/ui/ds}: as 24 tabelas de \rota{/admin},
+\rota{/analise} e \rota{/professor}, o sumário de \rota{/privacidade} e
+\rota{/termos}, e as 5 tabelas largas do guia da aula. Dele vêm o \cd{overflow},
+a barra, o \cd{autoHide} e o \emph{fade} (\adrr{ADR-75}).
+
+Até 2026-09-07 nada disso usava o componente: as tabelas rolavam em \cd{<div>}
+com \cd{overflow} escrito à mão, e o \cd{ScrollBar} --- publicado pelo pacote
+desde a 0.1.x, com \cd{orientation}, \cd{thickness}, \cd{theme} e \cd{autoHide}
+--- não era referenciado em lugar nenhum do repositório. O componente existia e
+ninguém o procurou; é o caso que motivou o procedimento de três passos da regra
+de ouro (procurar, usar, e só então pedir ao \cd{storybook-unooria}).
+
+Tabela nova nasce assim:
+
+\begin{lstlisting}[language=tsunoo, caption={A forma canônica de uma tabela que rola}]
+<ScrollBar orientation="both" autoHide className="tabela-rolavel">
+  <Table … />        {/* ou a <table> crua */}
+</ScrollBar>
+\end{lstlisting}
+
+\begin{atencao}
+\textbf{\cd{orientation="both"} não é enfeite.} O \emph{default} é
+\cd{vertical}, que traz \cd{overflow-x: hidden} --- e cortaria a coluna da
+direita das tabelas largas, que são a maioria aqui. No guia, onde a rolagem é só
+lateral, vale \cd{orientation="horizontal"}.
+\end{atencao}
+
+\subsection{O que sobrou para a compensação local}
+
+A \cd{.tabela-rolavel} não desapareceu: ela \textbf{encolheu} para o que o pacote
+ainda não publica --- a \cd{max-height} que provoca a rolagem e o \cd{<th>}
+preso (a lacuna de \cd{stickyHeader}, já registrada). O \cd{overflow} saiu dela;
+devolvê-lo criaria dois contêineres de rolagem, um dentro do outro.
+
+Duas armadilhas medidas ao fazer a migração:
+
+\begin{itemize}
+  \item \textbf{o cabeçalho preso para de grudar dentro do \cd{ScrollBar}.} A
+    \cd{Table} do DS traz o próprio \cd{.unooria-table-container} com
+    \cd{overflow-x: auto}, e é NELE que o \cd{<th>} \emph{sticky} se prende ---
+    um contêiner que não rola na vertical. A regra
+    \cd{.tabela-rolavel .unooria-table-container \{ overflow: visible \}} devolve
+    o papel ao \cd{ScrollBar}, que cuida dos dois eixos;
+  \item \textbf{no papel, o \cd{ScrollBar} recorta.} O guia é impresso e levado
+    para a sala; \arq{components/guia/guia.css} devolve \cd{overflow: visible} e
+    \cd{max-height: none} em \cd{@media print}, senão a tabela sai cortada na
+    largura da coluna.
+\end{itemize}
+
+\subsection{O \cd{autoHide} do pacote é \emph{hover}, não rolagem}
+
+O \arq{ScrollBar.types.ts} documenta \enquote{oculta a barra quando ocioso e a
+exibe suavemente com \emph{fade-in} durante o \emph{hover} ou rolagem}, mas o
+CSS publicado só tem regras \cd{:hover}. Na prática: a barra aparece ao passar o
+mouse por cima da área e continua invisível quando a rolagem vem da roda do mouse
+ou do teclado. É menos do que se queria, e é o preço aceito de manter a fonte no
+pacote --- com pedido aberto no \cd{storybook-unooria} e a prop já no lugar para
+o dia em que ele publicar o gatilho por rolagem.
+
+\textbf{Fora do hub nada mudou.} As nove experiências seguem com a barra do
+sistema operacional: o \cd{ScrollBar} é da seção \cd{unooria}, e a regra das duas
+famílias proíbe que ele entre num clone.
+
 \section{Exceção registrada}
 
 \begin{decisao}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, EmptyState, MetricCard } from "@edu/ui/ds";
+import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
@@ -165,7 +165,7 @@ export async function ResultadosUnooGPT({
           </div>
 
           <Card variant="elevated" title={`${folha.turma.nome} · ${folha.turma.serie}`}>
-            <div className="tabela-rolavel">
+            <ScrollBar orientation="both" autoHide className="tabela-rolavel">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
@@ -211,7 +211,7 @@ export async function ResultadosUnooGPT({
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollBar>
             <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
               Não há coluna de resgatados aqui, de propósito: listagem é ordenável, e ordenar
               crianças por acerto viraria ranking. O número está na tela de cada estudante.
