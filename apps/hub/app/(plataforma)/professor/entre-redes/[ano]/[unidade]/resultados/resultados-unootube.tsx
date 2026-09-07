@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { BarChart, Card, EmptyState, MetricCard, UNOORIA_DATAVIZ_PALETTE } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   rotaDaMissao,
-  rotuloDaMissao,
-  type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
 import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
@@ -25,11 +22,9 @@ import { TabelaResultados } from "./tabela-resultados";
  * ganhou tela de resultados.
  */
 export async function ResultadosUnooTube({
-  ano,
   missao,
   turma,
 }: {
-  ano: Ano;
   missao: Missao;
   turma: string;
 }) {
@@ -68,15 +63,6 @@ export async function ResultadosUnooTube({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: "Resultados da turma" },
-        ]}
-      />
-
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">{missao.titulo}</p>
         <h1 className="text-[24px] font-bold leading-tight text-unooria-neutral-950">Resultados da turma</h1>

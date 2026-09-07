@@ -47,8 +47,9 @@ export default async function AnalisePage({
     ms === null ? '—' : `${Math.floor(ms / 60_000)}min${String(Math.round((ms % 60_000) / 1000)).padStart(2, '0')}s`;
 
   return (
-    // Fontes, superfície e header vêm da casca da área (`layout.tsx`).
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    // Fontes, superfície, header, largura da coluna e trilha vêm da casca da
+    // área (`layout.tsx`).
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
           análise de produto

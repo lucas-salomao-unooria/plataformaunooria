@@ -389,7 +389,7 @@ export function EscolasDaRede() {
   ];
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1180px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Escolas da rede"
         description="Cada escola é um espaço isolado: os dados de uma nunca aparecem na outra. O que atravessa é a pessoa — professor lotado em várias, estudante transferido. A regional agrupa unidades para você trabalhar em lote; ela não dá acesso a nada."

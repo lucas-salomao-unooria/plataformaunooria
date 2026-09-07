@@ -172,7 +172,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
   );
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Turmas"
         description="Enturmamento da escola no ano letivo corrente. Abrir uma turma mostra quem está nela."

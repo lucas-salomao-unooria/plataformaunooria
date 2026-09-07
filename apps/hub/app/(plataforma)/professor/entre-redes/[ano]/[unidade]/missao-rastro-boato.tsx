@@ -1,6 +1,5 @@
 import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import { rotaDaMissao, rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
 
 /**
@@ -30,14 +29,6 @@ export function MissaoRastroBoato({
 
   return (
     <div className="flex flex-col gap-8">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao) },
-        ]}
-      />
-
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="success">Disponível</Badge>

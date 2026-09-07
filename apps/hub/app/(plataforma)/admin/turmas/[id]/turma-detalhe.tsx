@@ -21,6 +21,7 @@ import {
   Tag,
   type TableColumn,
 } from "@edu/ui/ds";
+import { RotuloDaTrilha } from "@/components/trilha";
 import type { Papel } from "@/lib/papeis";
 import { rotuloDaSerie, type Serie } from "@/lib/series";
 import type { MissaoDaSalaDoProfessor } from "@/lib/salas";
@@ -486,7 +487,12 @@ export function TurmaDetalhe({
       : (dados?.professores ?? []);
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
+      {/* Quem sabe o nome da turma é esta leitura (a página é uma casca de
+          servidor). Enquanto ela não chega, a trilha mostra "Turma" — nunca o
+          id do endereço. */}
+      <RotuloDaTrilha valor={dados ? `Turma ${dados.turma.nome}` : undefined} />
+
       <SectionHeader
         title={dados ? `Turma ${dados.turma.nome}` : "Turma"}
         description={

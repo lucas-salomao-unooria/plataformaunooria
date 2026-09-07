@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 
 import { EmptyState } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import {
   MISSAO_ECO_NO_GRUPO,
   MISSAO_RASTRO_BOATO,
@@ -42,13 +41,6 @@ export default async function MissaoPage({
   if (missao.status === "em-breve" || !missao.ficha) {
     return (
       <div className="flex flex-col gap-6">
-        <Trilha
-          itens={[
-            { label: "Início", href: "/professor" },
-            { label: "Entre Redes", href: "/professor/entre-redes" },
-            { label: rotuloDaMissao(ano, missao) },
-          ]}
-        />
         <EmptyState
           variant="no-data"
           size="lg"

@@ -34,22 +34,22 @@ export default async function ResultadosPage({
   const { ano: anoSlug, unidade: unidadeSlug } = await params;
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   if (!encontrado) notFound();
-  const { ano, missao } = encontrado;
+  const { missao } = encontrado;
 
   const { turmaId } = await searchParams;
   const turma = turmaId?.trim() ?? "";
 
   if (missao.expId === MISSAO_UNOOTUBE.expId) {
-    return <ResultadosUnooTube ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosUnooTube missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
-    return <ResultadosUnooGPT ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosUnooGPT missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
-    return <ResultadosOEcoNoGrupo ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosOEcoNoGrupo missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
-    return <ResultadosRastroBoato ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosRastroBoato missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

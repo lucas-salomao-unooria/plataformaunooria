@@ -27,11 +27,14 @@ export default async function BemEstarPage({
   const embed = await montarEmbed(EXP_BEM_ESTAR, usuario, { srcDev });
 
   return (
-    <div className="-mx-5 -my-8 tela-cheia">
+    <div className="-mx-5 -mb-8 tela-cheia">
       {/* `tela-cheia` (em `@edu/ui/styles/plataforma.css`) faz o `main` distribuir
           a altura por flex; as margens negativas devolvem o padding que ele
           reserva. NÃO volte a `calc(100dvh - 64px)`: o header mede 65px com a
-          borda, e o 1px que sobrava punha uma barra de rolagem parada na tela. */}
+          borda, e o 1px que sobrava punha uma barra de rolagem parada na tela.
+          `-mb-8` e não `-my-8`: o padding de CIMA ficou, porque agora é onde a
+          trilha do layout desenha. Quem distribui o resto continua sendo o flex
+          — não subtraia a altura da trilha na mão. */}
       <ExpFrame
         src={embed.src}
         expOrigin={embed.expOrigin}

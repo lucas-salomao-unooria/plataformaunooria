@@ -149,7 +149,7 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
   );
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Minhas escolas"
         description="As unidades em que você está lotado. Cada uma é um espaço separado: você abre uma por vez, e o que vê é sempre daquela escola."

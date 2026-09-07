@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { Badge, Card, EmptyState, FeedbackAlert, ScrollBar } from "@edu/ui/ds";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
-import { buscarMissaoTransversal, rotaDaTransversal } from "@/lib/entre-redes/catalogo";
+import { buscarMissaoTransversal } from "@/lib/entre-redes/catalogo";
 import {
   DESCRICAO_BOLHA,
   rotuloDoCartao,
@@ -57,7 +56,6 @@ export default async function EstudanteDaVilaPage({
   const { estudanteId } = await params;
   const missao = buscarMissaoTransversal("vila-do-lume");
   if (!missao) notFound();
-  const rota = rotaDaTransversal(missao);
 
   const resposta = await apiDoServidor<{ relatorio: RelatorioDaPartida | null }>(
     `/vila/professor/estudantes/${encodeURIComponent(estudanteId)}`,
@@ -68,18 +66,9 @@ export default async function EstudanteDaVilaPage({
   });
   const relatorio = resposta?.relatorio ?? null;
 
-  const trilha = [
-    { label: "Início", href: "/professor" },
-    { label: "Entre Redes", href: "/professor/entre-redes" },
-    { label: missao.titulo, href: rota },
-    { label: "Resultados da turma", href: `${rota}/resultados` },
-    { label: "Estudante" },
-  ];
-
   if (!relatorio) {
     return (
       <div className="flex flex-col gap-6">
-        <Trilha itens={trilha} />
         <EmptyState
           variant="no-data"
           size="lg"
@@ -107,8 +96,6 @@ export default async function EstudanteDaVilaPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha itens={trilha} />
-
       <header className="flex flex-col gap-2">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
           {missao.titulo}

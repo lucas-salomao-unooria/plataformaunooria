@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
+import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   rotaDaMissao,
-  rotuloDaMissao,
-  type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
 import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
@@ -27,11 +25,9 @@ import { ZerarTurma } from "./zerar-turma";
  * justificou por intuição?) em vez de desempenho.
  */
 export async function ResultadosUnooGPT({
-  ano,
   missao,
   turma,
 }: {
-  ano: Ano;
   missao: Missao;
   turma: string;
 }) {
@@ -57,14 +53,10 @@ export async function ResultadosUnooGPT({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: "A aula e os resultados" },
-        ]}
-      />
+      {/* Esta missão chama a tela de "A aula e os resultados" (ela abre a Aula 2,
+          não só relata): o rótulo do registro de rotas é o genérico e quem o
+          corrige é a página. */}
+      <RotuloDaTrilha valor="A aula e os resultados" />
 
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">

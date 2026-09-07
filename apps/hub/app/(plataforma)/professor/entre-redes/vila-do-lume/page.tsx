@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import {
   buscarMissaoTransversal,
   MISSAO_ATUAL,
@@ -32,14 +31,6 @@ export default async function VilaDoLumePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: missao.titulo },
-        ]}
-      />
-
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <Tag variant="brand" size="sm" pill>

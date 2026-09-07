@@ -260,7 +260,7 @@ export function ImportarPessoas({
   ];
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Importar pessoas"
         description="Uma linha por pessoa. As turmas informadas na planilha são criadas e o enturmamento é feito junto."

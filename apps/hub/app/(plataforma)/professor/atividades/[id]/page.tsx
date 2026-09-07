@@ -2,13 +2,12 @@ import { notFound } from "next/navigation";
 
 import { Badge, Card } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
+import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   MISSAO_ATUAL,
   buscarMissao,
   rotaDaMissao,
-  rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
 import { antagonismoSchema, type Antagonismo } from "@/lib/insta-tipos";
 import { statusDaAtividade } from "@/lib/status-atividade";
@@ -91,24 +90,9 @@ export default async function AtividadePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          ...(missaoDaAtividade
-            ? [
-                {
-                  label: rotuloDaMissao(
-                    missaoDaAtividade.ano,
-                    missaoDaAtividade.missao,
-                  ),
-                  href: rotaDaMissao(missaoDaAtividade.missao),
-                },
-              ]
-            : []),
-          { label: atividade.titulo },
-        ]}
-      />
+      {/* A trilha é do layout da área; o que só esta página sabe é o NOME da
+          atividade — sem isto o item fica "Atividade", nunca o id. */}
+      <RotuloDaTrilha valor={atividade.titulo} />
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 
 import { Card, EmptyState, FeedbackAlert, MetricCard } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { buscarMissaoTransversal, rotaDaTransversal } from "@/lib/entre-redes/catalogo";
 import type { LinhaDaTurma, ResumoDaTurma, TurmaResumida } from "@/lib/vila-tipos";
@@ -62,15 +61,6 @@ export default async function ResultadosDaVilaPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: missao.titulo, href: rota },
-          { label: "Resultados da turma" },
-        ]}
-      />
-
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
           {missao.titulo}

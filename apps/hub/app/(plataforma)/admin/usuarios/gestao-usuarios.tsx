@@ -298,7 +298,7 @@ export function GestaoUsuarios({
   );
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1180px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Usuários"
         description="Uma conta por pessoa — a mesma no hub e em todas as experiências."

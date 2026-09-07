@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { Card, ScrollBar } from '@edu/ui/ds';
 import { LinkButton } from '@/components/link-button';
+import { RotuloDaTrilha } from '@/components/trilha';
 import type { AnaliseDeProduto } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
 
@@ -55,8 +56,17 @@ export default async function AnaliseDaAtividadePage({
   const positivos = comDelta.filter((linha) => (linha.delta ?? 0) > 0).length;
 
   return (
-    // Fontes, superfície e header vêm da casca da área (`../../layout.tsx`).
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    // Fontes, superfície, header, largura da coluna e trilha vêm da casca da
+    // área (`../../layout.tsx`).
+    <div className="flex flex-col gap-6">
+      {/* O título da atividade, que a rota não tem. E o endereço do item
+          anterior: `/analise` sem `?escolaId=` volta para o seletor vazio —
+          `admin-contrato` viaja com escola vazia no token. */}
+      <RotuloDaTrilha valor={analise.atividade.titulo} />
+      <RotuloDaTrilha
+        para="/analise"
+        href={`/analise?escolaId=${encodeURIComponent(escola)}`}
+      />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">

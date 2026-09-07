@@ -1,7 +1,6 @@
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { CartaoMissao } from "@/components/cartao-missao";
 import { CartaoTransversal } from "@/components/cartao-transversal";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   ETAPAS,
@@ -35,10 +34,6 @@ export default async function EntreRedesPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <Trilha
-        itens={[{ label: "Início", href: "/professor" }, { label: "Entre Redes" }]}
-      />
-
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-[24px] font-bold text-unooria-neutral-950">
