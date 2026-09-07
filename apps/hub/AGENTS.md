@@ -44,7 +44,7 @@ promessas que hoje seriam falsas (retenção, exclusão por titular, log de aces
 dados no Brasil, consentimento). Suíte: `publico/03-documentos-legais`.
 
 **Header: um só para todos os papéis.** `components/header-plataforma.tsx`
-(marca → home do papel, nome + série/papel, avatar, Sair) é o header de
+(marca → home do papel, e o `MenuDaConta` com nome, série/papel e avatar) é o header de
 `/estudante`, `/professor`, `/admin`, `/analise` E de `/exp/*` — antes cada área
 copiava o seu e a experiência não tinha nenhum. A casca visual (CSS do DS,
 compensações, fontes) saiu do layout do grupo `(plataforma)` para
@@ -52,6 +52,85 @@ compensações, fontes) saiu do layout do grupo `(plataforma)` para
 grupo e também precisam dela. A regra de ouro passou a valer um nível abaixo: o
 header é chrome do HUB, desenhado ACIMA do aparelho — dentro do iframe nada da
 marca institucional entra.
+
+**O "Sair" mora no menu do avatar, não na barra** (`components/menu-da-conta.tsx`,
+`HeaderMenu` do DS 0.1.19). Era um `Button variant="ghost"` solto: a ação mais
+destrutiva do header com o mesmo peso visual da marca, a um clique de distância.
+Duas coisas para saber antes de mexer nele:
+
+- **O nome e o papel moram DENTRO do `MenuDaConta`, e é obrigatório.** A tira do
+  `HeaderMenu` é um overlay ancorado à esquerda do gatilho e o componente assume
+  espaço vazio ali. No nosso header ali fica a identidade: devolver o bloco para
+  o `header-plataforma.tsx` faz o item "Sair" abrir DESENHADO EM CIMA do nome.
+  Passa no typecheck, passa no build, e só aparece abrindo o menu.
+- **Item de menu novo precisa de tela que exista.** "Trocar senha" parece o
+  próximo item óbvio e é um link morto: `middleware.ts` devolve quem já trocou
+  para a home do papel. Menu curto é melhor que menu com item que não leva a
+  lugar nenhum.
+
+
+## A trilha é do LAYOUT da área, nunca da página (2026-09-07)
+
+**Nenhuma página do hub desenha o próprio breadcrumb.** Quem desenha é o layout
+da área, com `<TrilhaDaRota papel={...} />` (`components/trilha.tsx`), e os itens
+saem de um registro de rotas — `NOS`, em `lib/trilha.ts`, com o padrão da rota
+como chave (`/professor/entre-redes/[ano]/[unidade]`, igual à pasta em `app/`).
+
+Era por página, e o resultado foi o que o dono do produto viu: 22 telas com
+trilha e 15 sem — cinco na própria área do professor, as 7 de `/admin`, as 2 de
+`/analise` e o hub do estudante. Ninguém decidiu isso. A trilha era
+responsabilidade da página, e responsabilidade de página se esquece; a barra
+lateral de `/admin` era a razão de ninguém notar, porque ela cobre a navegação
+de primeiro nível e esconde a falta do segundo.
+
+**Rota nova = uma linha em `NOS`, e nada na página.** Esquecer a linha não apaga
+a trilha: a rota não registrada cai num rótulo humanizado do segmento
+(`plano-de-ensino` → "Plano de ensino"), que é um defeito visível e barato de
+corrigir. O que não pode acontecer nunca é a trilha desaparecer, e o desenho
+tira essa possibilidade da mesa.
+
+**A página só PUBLICA nome próprio, com `RotuloDaTrilha`** — o título da
+atividade, o nome da turma, o nome do estudante: o que uma tabela de rotas não
+tem como saber. Sem publicação o item fica no rótulo de domínio do registro
+("Atividade", "Turma", "Estudante"), **nunca no id do endereço**. `para=` ajusta
+um ANTEPASSADO (é como `/professor/atividades/:id/analise` nomeia a atividade
+acima dela) e `href=` corrige o endereço quando ele carrega query
+(`/analise?escolaId=`). O custo é um quadro: o HTML do servidor traz o rótulo
+genérico e a hidratação troca pelo nome — inevitável, porque o layout renderiza
+ANTES da página e não tem como perguntar nada a ela.
+
+**O `ProvedorDaTrilha` não pode renderizar DOM.** Em `/professor/**` a altura das
+três telas de embed vem de `main:has(> .tela-cheia)`: um elemento a mais ali
+quebra o seletor de filho direto e devolve a barra de rolagem parada que a seção
+`.tela-cheia` deste arquivo existe para explicar.
+
+**A largura da coluna é do layout, não da página.** Em `/admin` eram 1080px em
+quatro telas e 1180px em duas, em `/analise` 5xl e 6xl — sem razão registrada em
+nenhum dos casos. Com a trilha no layout, largura por página faz o breadcrumb
+nascer 50–64px à esquerda do texto.
+
+**Duas exceções declaradas, e só elas.** `aPaginaDesenha: true` nas rotas de guia
+da aula, porque `components/guia/guia-da-aula.tsx` renderiza a trilha por dentro
+— some quando ele deixar de receber a prop `trilha`. E a home de cada papel
+(`homeDoPapel`) não leva trilha: um item só, que é a própria página, é ruído.
+Tela sem sessão (`/login`, `/trocar-senha`), aparelho em tela cheia com `voltar`
+no header (`/exp/:expId`), superfície pública (`/`, `/privacidade`, `/termos`) e
+ferramenta de dev ficam fora porque não estão dentro de layout de área nenhum —
+**área nova precisa de layout novo, e layout novo desenha `TrilhaDaRota`**; sem
+isso a área nasce como `/admin` nasceu.
+
+**Rótulo é português com acento e vocabulário de domínio** (`estudante`, `turma`,
+`missão`), o nome do produto quando a rota é um produto ("Gerador de Plano de
+Aula"), e o último item nunca é link. Colapso, separador, tamanho e tema são
+props do `Breadcrumb` do DS — não se resolve nada disso na mão.
+
+**A lógica mora em `lib/trilha.ts`, e o motivo é o teste.** O `vitest.config.ts`
+do hub só varre `lib/**/*.test.ts`; enquanto o registro vivia no componente ele
+não tinha rede nenhuma. E o modo de falha dele é silencioso: `rotuloDaUnidade`
+ESPELHA `rotuloDaMissao` de `lib/entre-redes/catalogo.ts` de propósito (o
+catálogo é pesado e este módulo é client), então mudar o formato do slug do ano
+faz a trilha cair em "Missão" sem erro nenhum. Mexeu no slug, mexa nos dois — e
+`lib/trilha.test.ts` prende os dois formatos.
 
 
 ## Papéis e roteamento

@@ -99,8 +99,8 @@ Sobrescrever classe do DS exige DOIS seletores (`.app-shell > .x`): o CSS do
 pacote é injetado pelo módulo do componente, ou seja, DEPOIS do CSS da
 experiência no grafo de importação — com peso igual, quem ganha é sempre o DS.
 
-**A seção `unooria` tem DOIS pedidos abertos, os dois do hub (2026-09-05), e as
-compensações estão em `styles/plataforma.css`:**
+**A seção `unooria` tem TRÊS pedidos abertos, os três do hub, e as
+compensações estão em `styles/plataforma.css` — menos a terceira, que não é CSS:**
 
 - **`Table` sem cabeçalho fixo.** `TableProps` não publica `stickyHeader` nem
   `maxHeight`, e o `.unooria-table-container` só rola na horizontal. Numa turma
@@ -125,6 +125,35 @@ compensações estão em `styles/plataforma.css`:**
   faltam numa coluna que já trunca.
 - **`Button` sem variante de perigo discreta.** Compensação: **`.acao-destrutiva`**
   sobre `variant="outline"`.
+- **`HeaderMenu` cobre o que está à esquerda do gatilho, em vez de empurrar**
+  (2026-09-07, com a 0.1.19). A tira é um overlay ancorado à esquerda do avatar,
+  e o componente assume que ali há espaço vazio — verdade num header que só tem
+  o avatar à direita, falsa no nosso, onde ali ficam o nome e a linha de apoio.
+  Integrado ingenuamente, o item "Sair" abre DESENHADO EM CIMA das letras.
+  Compensação: NÃO é CSS — é `apps/hub/components/menu-da-conta.tsx`, que junta
+  identidade e menu na mesma peça e esconde o bloco (`invisible`, não
+  desmontado, senão o gatilho escorrega embaixo do cursor) enquanto a tira está
+  aberta. Morre no dia em que o `HeaderMenu` publicar reflow ou âncora à direita.
+  Não tem entrada em `plataforma.css` de propósito: a compensação é
+  comportamento de página, e escondê-la numa classe faria o próximo a integrar
+  o componente achar que era decoração.
+
+**E dois pedidos que nasceram junto e não têm compensação nenhuma**, porque
+compensar sairia pior que esperar:
+
+- **`Selection` não aceita rótulo acessível sem rótulo visível.** O `...rest`
+  dele aterra no `<div>` de fora, e o `aria-labelledby` do `combobox` só existe
+  se você passar `label` — que renderiza uma linha acima do controle. Num header
+  de 64px isso não cabe. É o que impede o `<select>` cru de
+  `components/seletor-de-escola.tsx` de migrar: trocar um controle com
+  `aria-label` por um sem nome acessível é regressão, não modernização. O resto
+  da API casa 1:1 (`options`, `value`, `onChange`, `size="sm"` = 40px, `error`),
+  então a migração é de minutos no dia em que o `ariaLabel` existir — o
+  `Breadcrumb` e o `Avatar` já publicam essa prop, é inconsistência do pacote.
+- **`Breadcrumb`: `isCurrent` + `as` se contradizem.** Com `as`, o DS renderiza o
+  componente polimórfico mesmo no item marcado `isCurrent`, e a página vira link
+  para si mesma. `apps/hub/components/trilha.tsx` compensa omitindo `href`/`as`
+  no último item, com o comentário no lugar. É bug do pacote, não escolha nossa.
 
 E uma classe que NÃO é compensação de componente, e mora aqui porque
 `plataforma.css` é a folha por onde toda a casca da plataforma passa:

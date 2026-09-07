@@ -442,6 +442,67 @@ ou seja, \emph{depois} do CSS da experiência no grafo de importação. Com peso
 igual, quem ganha é sempre o pacote.
 \end{atencao}
 
+\section{O menu da conta: o componente que faltava, e a lacuna que ele trouxe}
+
+O \cd{HeaderMenu} chegou na \textbf{0.1.19} para tirar o \enquote{Sair} da barra
+e pô-lo dentro do avatar (\adrr{ADR-78}). Ele é o caso de manual do procedimento
+de três passos: a busca no pacote foi feita ANTES de escrever qualquer coisa e
+mostrou que o DS 0.1.17 não tinha nada equivalente --- sem \cd{Dropdown},
+\cd{Menu} ou \cd{Popover} na seção, o \cd{Avatar} com \cd{onClick} mas sem prop
+de menu, e o único menu suspenso do pacote (\cd{TableDropdownMenu}) com gatilho
+fixo em três pontos e sem aceitar \emph{children}. Não achou \implica{} pedido no
+\cd{storybook-unooria}, e o componente nasceu LÁ.
+
+\begin{atencao}
+\textbf{A tira do \cd{HeaderMenu} COBRE o que está à esquerda do gatilho, em vez
+de empurrar.} Ela é um \emph{overlay} ancorado à esquerda do avatar, e o
+componente assume que ali há espaço vazio --- verdade num \emph{header} que
+termina no avatar, FALSA no da plataforma, onde ali ficam o nome e a linha de
+apoio. Integrado ingenuamente, o item \enquote{Sair} abre desenhado EM CIMA das
+letras. Passa no \emph{typecheck}, passa no \emph{build}, e só aparece abrindo o
+menu na tela.
+
+A compensação vive em \arq{apps/hub/components/menu-da-conta.tsx}, que junta
+identidade e menu na mesma peça e esconde o bloco enquanto a tira está aberta
+--- com \cd{invisible}, não desmontado, senão o gatilho escorrega embaixo do
+cursor. Ela \textbf{não} tem entrada em \arq{plataforma.css} de propósito: é
+comportamento de página, e uma classe faria o próximo a integrar o componente
+achar que era decoração.
+\end{atencao}
+
+\subsection{Duas lacunas que ficaram sem compensação, por escolha}
+
+Compensar sairia pior que esperar o pacote, nos dois casos:
+
+\begin{itemize}
+  \item \textbf{\cd{Selection} não aceita rótulo acessível sem rótulo visível.}
+    O \cd{...rest} dele aterra no \cd{<div>} de fora, e o \cd{aria-labelledby} do
+    \cd{combobox} só existe se a prop \cd{label} for passada --- e ela renderiza
+    uma linha acima do controle, que não cabe num \emph{header} de 64px. É o que
+    impede o \cd{<select>} cru do seletor de escola de migrar: trocar um controle
+    que tem \cd{aria-label} por um sem nome acessível é regressão, não
+    modernização. O resto da API casa 1:1 (\cd{options}, \cd{value},
+    \cd{onChange}, \cd{size="sm"} = 40px, \cd{error}), então a migração é de
+    minutos no dia em que a prop existir. O \cd{Breadcrumb} e o \cd{Avatar} já
+    publicam \cd{ariaLabel}: é inconsistência do pacote, não desenho.
+  \item \textbf{No \cd{Breadcrumb}, \cd{isCurrent} e \cd{as} se contradizem.}
+    Com \cd{as}, o DS renderiza o componente polimórfico mesmo no item marcado
+    como atual, e a página vira link para si mesma. A ponte da trilha compensa
+    omitindo \cd{href} e \cd{as} no último item.
+\end{itemize}
+
+\begin{nota}
+\textbf{O aviso do \cd{<select>} sem componente no DS estava OBSOLETO e ninguém
+tinha percebido.} O comentário de \arq{plataforma.css} afirmava que o pacote não
+publica componente de seleção. Foi verdade e deixou de ser: o \cd{Selection}
+existe, a ponte o exporta, e a área \rota{/admin} já havia migrado. O comentário
+sobreviveu à lacuna e virou a desculpa que manteve \textbf{24} \cd{<select>}
+crus no hub depois de o pacote já resolver o problema --- a mesma armadilha do
+\cd{expires\_at} que este documento registra em cinco ADRs: a regra sai do
+código, o registro fica, e quem lê acredita nele. Ele agora nomeia os cinco
+arquivos que faltam migrar e diz que o último apaga o bloco.
+\end{nota}
+
 \section{Cor da plataforma: classe escrita à mão}
 
 \begin{atencao}

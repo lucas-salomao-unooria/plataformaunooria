@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{75 decisões}, numeradas até ADR-75, \textbf{sem lacunas}. A ADR-65
+São \textbf{78 decisões}, numeradas até ADR-78, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -5069,3 +5069,156 @@ professor não mudarem de contexto de \emph{layout} por causa de três telas.
 código nosso. Ou a decisão de dar \emph{auto-hide} às nove experiências, que
 exigiria o componente nas seções de clone ou uma camada neutra, e traria de
 volta a alternativa descartada aqui.
+
+% ---------------------------------------------------------------------------
+\section{ADR-77 --- A trilha é do \emph{layout} da área, nunca da página}
+\label{adr:77}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O \emph{breadcrumb} do hub estava em 22 telas e faltava em 15.
+Não houve decisão por trás disso: a trilha era responsabilidade da PÁGINA, cada
+uma declarava a sua, e nada obrigava. As ausências não eram aleatórias --- eram as
+7 telas de \rota{/admin}, as 2 de \rota{/analise}, o \emph{hub} do estudante e
+cinco da própria área do professor. A barra lateral de \rota{/admin} é a razão de
+ninguém notar por tanto tempo: ela cobre a navegação de primeiro nível e esconde
+a falta do segundo.
+
+\textbf{Decisão.} Quem desenha a trilha é o \emph{layout} da área
+(\cd{TrilhaDaRota}, em \arq{components/trilha.tsx}), e os itens saem de um
+REGISTRO DE ROTAS --- \cd{NOS}, em \arq{lib/trilha.ts}, com o padrão da rota como
+chave. Rota nova é uma linha no registro e nada na página. A página só pode
+PUBLICAR nome próprio (\cd{RotuloDaTrilha}): o título da atividade, o nome da
+turma, o nome do estudante --- o que uma tabela de rotas não tem como saber.
+
+A assimetria é a decisão, não um detalhe dela: \textbf{a página consegue melhorar
+a trilha e não consegue apagá-la}. É isso que tira a ausência por esquecimento da
+mesa. Sem publicação, o item de um segmento dinâmico fica no rótulo de domínio do
+registro (\enquote{Atividade}, \enquote{Turma}, \enquote{Estudante}), nunca no id
+do endereço; rota que ninguém registrou cai num rótulo humanizado do segmento.
+Trilha aproximada é defeito que se vê e se corrige; trilha ausente é o defeito
+que ninguém nota até o dono do produto notar.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Por página, como estava}: é o desenho que produziu o defeito. O
+    custo já foi pago e medido --- 15 telas sem trilha, nenhuma por decisão.
+  \item \emph{Só do \emph{layout}, derivada da URL, sem contribuição da página}:
+    o \emph{layout} conhece o segmento, não o nome do que vive atrás dele. A
+    trilha diria \enquote{Turmas / clx8f9a2b0001}. Pior que trilha nenhuma.
+  \item \emph{A página publica a trilha INTEIRA, e o \emph{layout} desenha o que
+    receber}: devolve à página a autoridade sobre a ESTRUTURA --- e era a
+    estrutura que estava divergindo, não os rótulos. Volta ao primeiro caso por
+    outro caminho.
+\end{itemize}
+
+\textbf{Consequências.} Página nova nasce com trilha sem escrever uma linha, e a
+largura da coluna subiu para o \emph{layout} nas duas áreas onde cada página
+trazia a sua (1080 e 1180px numa, 5xl e 6xl na outra, sem razão registrada em
+nenhum dos casos) --- com a trilha no \emph{layout}, largura por página faria o
+\emph{breadcrumb} nascer 50--64px à esquerda do texto.
+
+\emph{Ruim}: um quadro de rótulo genérico em cinco rotas. \cd{RotuloDaTrilha}
+publica num \emph{effect}, então o HTML do servidor traz \enquote{Atividade} e a
+hidratação troca por \enquote{Debate sobre X}. É inevitável na direção do dado
+--- o \emph{layout} renderiza ANTES da página e não tem como perguntar nada a ela
+--- e é o preço de a trilha ter UM autor.
+
+\emph{Ruim}: \cd{rotuloDaUnidade} ESPELHA \cd{rotuloDaMissao} de
+\arq{lib/entre-redes/catalogo.ts} em vez de importá-lo, porque o módulo da trilha
+é \emph{client} e o catálogo carrega as fichas e os guias das missões inteiras.
+Mudar o formato do \emph{slug} do ano faz a trilha cair no genérico
+(\enquote{Missão}) \textbf{em silêncio}, em doze telas. É por isso que a lógica
+foi para \cd{lib/}: o \emph{vitest} do hub só varre os testes de lá, e
+\arq{lib/trilha.test.ts} prende os dois formatos (\cd{8-ano} e \cd{2-serie}).
+
+\emph{Ruim}: o \cd{ProvedorDaTrilha} não pode renderizar DOM nenhum. Em
+\rota{/professor/**} a altura das três telas de \emph{embed} vem de
+\cd{main:has(> .tela-cheia)}, e um elemento a mais quebra o seletor de filho
+direto --- de volta à barra de rolagem parada que a \adrr{ADR-75} registra.
+
+\textbf{Duas exceções declaradas.} \cd{aPaginaDesenha: true} nas rotas de guia da
+aula, porque quem renderiza a trilha delas é o componente do guia, por dentro, e
+duas trilhas na mesma tela é pior que nenhuma; e a home de cada papel, onde uma
+trilha de um item só, que é a própria página, é ruído. Tela sem sessão, aparelho
+em tela cheia com \cd{voltar} no \emph{header} e superfície pública ficam fora
+porque não estão dentro de \emph{layout} de área nenhum --- o que significa que
+\textbf{área nova precisa de \emph{layout} novo, e \emph{layout} novo desenha a
+trilha}. Sem isso, a área nasce como \rota{/admin} nasceu.
+
+\textbf{Gatilho de reavaliação.} O App Router publicar um caminho de a página
+contribuir dado ao \emph{layout} no servidor --- aí o quadro de hidratação
+desaparece sem mudar o desenho. Ou a terceira área que precise de trilha fora de
+\emph{layout} de área, que obrigaria a rever a fronteira.
+
+% ---------------------------------------------------------------------------
+\section{ADR-78 --- O \emph{logoff} mora no menu do avatar, não na barra}
+\label{adr:78}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O \cd{HeaderPlataforma} terminava em duas peças soltas: um
+\cd{Avatar} decorativo e um \cd{Button variant="ghost"} escrito
+\enquote{Sair}. A ação mais destrutiva do \emph{chrome} ficava a um clique de
+distância, ao lado do nome da pessoa, com o mesmo peso visual da marca --- e o
+avatar não fazia nada.
+
+\textbf{Decisão.} O avatar passa a ser o GATILHO de um menu, e o \enquote{Sair}
+mora dentro dele. O componente é o \cd{HeaderMenu} da seção \cd{unooria} do
+\emph{design system}, publicado na 0.1.19 a partir do conjunto \cd{Menu Desk} do
+Figma: uma tira que expande da direita para a esquerda, com o item de saída
+colado no gatilho.
+
+\textbf{O componente foi escrito no \cd{storybook-unooria}, não aqui.} É a
+aplicação direta da \adrr{ADR-19}: um menu tem estado e aparência de controle,
+então é componente, e componente nasce no pacote. A verificação que precede a
+decisão também está registrada --- o DS 0.1.17 não publicava nada equivalente:
+não há \cd{Dropdown}, \cd{Menu} nem \cd{Popover} na seção, o \cd{Avatar} aceita
+\cd{onClick} mas não tem prop de menu, e o único menu suspenso do pacote é o
+\cd{TableDropdownMenu}, com gatilho fixo em três pontos e sem aceitar
+\emph{children}. Publicado como PATCH de propósito: \cd{\^{}0.1.x} não sobe
+\emph{minor}, e uma 0.2.0 exigiria editar o \emph{range} à mão em dez
+\arq{package.json}.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Compensação local no hub}: destravava no mesmo dia sem tocar outro
+    repositório, e é exatamente o que a \adrr{ADR-19} proíbe --- o componente
+    serviria uma superfície e as outras seguiriam com o botão solto.
+  \item \emph{Manter o botão e só tornar o avatar clicável}: duas affordances
+    para a mesma ação, e nenhuma resolve o peso visual.
+  \item \emph{Trazer o \emph{header} inteiro do Figma}: o nó publicado é um
+    \emph{header} completo, e adotá-lo exigiria migrar marca, seletor de escola e
+    identidade de uma vez. O menor componente que resolve o pedido é o menu com
+    gatilho plugável.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é a consequência que custou trabalho}: o
+nome e a linha de apoio tiveram de sair do \cd{HeaderPlataforma} e entrar no
+mesmo componente do menu. A tira do \cd{HeaderMenu} é um \emph{overlay} ancorado
+à esquerda do gatilho, e o componente assume que ali há espaço vazio --- verdade
+num \emph{header} que só tem o avatar à direita, falsa neste, onde ali fica a
+identidade. Integrado ingenuamente, o item \enquote{Sair} abre DESENHADO EM CIMA
+das letras. Isso passa no \emph{typecheck} e no \emph{build}, e só aparece
+abrindo o menu na tela: foi assim que apareceu. A compensação é a identidade
+ceder o espaço enquanto a tira está aberta --- \cd{invisible}, não desmontada,
+senão o gatilho escorrega embaixo do cursor --- e ela é comportamento de página,
+não CSS, então NÃO tem entrada em \arq{plataforma.css}: uma classe faria o
+próximo a integrar o componente achar que era decoração.
+
+\emph{Ruim}: o menu nasce com UM item. O componente aceita vários e a tentação é
+preencher com \enquote{Meu perfil} e \enquote{Configurações}, telas que não
+existem. O candidato real, \enquote{Trocar senha}, também ficou fora por um
+motivo verificado no \arq{middleware.ts}: quem já trocou a senha é devolvido para
+a home do papel, então o item seria um link morto. Item de menu que não leva a
+lugar nenhum é pior que menu curto.
+
+\textbf{Uma ausência de produto que a decisão expôs.} Não existe caminho
+voluntário para trocar a senha depois do primeiro acesso: a rota é forçada pelo
+\emph{middleware} na largada e fechada em seguida. O menu da conta é o lugar
+óbvio desse item no dia em que ele existir.
+
+\textbf{Gatilho de reavaliação.} O \cd{HeaderMenu} publicar \emph{reflow} ou
+âncora à direita --- aí a compensação da identidade morre e o nome pode voltar
+para o \cd{HeaderPlataforma}. Ou o produto ganhar duas telas de conta, que é
+quando o menu de um item passa a ser um menu de verdade.
