@@ -342,13 +342,17 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **76**: a 65 foi ocupada pelo guia da aula, a 72 pela
+  (a PRÓXIMA é a **79**: a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
-      BNCC, a 74 pela contabilidade de tokens do `generateJson` e a 75 pela
-      rolagem com o `ScrollBar` do DS — três frentes fecharam ADR em
-      2026-09-06 e duas colidiram na 65, então conferir `origin/dev` não
-      basta: confira também as branches de trabalho abertas E a de
-      integração, que pode estar à frente da `dev`),
+      BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
+      rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
+      planejamento, a 77 pela trilha que virou do layout e a 78 pelo logoff
+      no menu do avatar — três frentes fecharam ADR em 2026-09-06 e duas
+      colidiram na 65, e **em 2026-09-07 aconteceu de novo**: duas frentes
+      simultâneas reservaram a 76, uma cedeu e foi para a 77/78. Conferir
+      `origin/dev` NÃO basta, e conferir uma vez no começo também não:
+      confira as branches de trabalho abertas E a de integração, na HORA de
+      escrever o número),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
@@ -467,7 +471,15 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
   passos está em "Design System"). Não achou? Pedido no `storybook-unooria` +
   compensação local marcada — nunca um componente local silencioso.
 - Não resolver na mão o que o DS já resolve: rolagem é `ScrollBar`, não
-  `overflow` num `<div>`; diálogo é `Modal`; aba é `Tabs`.
+  `overflow` num `<div>`; diálogo é `Modal`; aba é `Tabs`; seleção é
+  `Selection`, não `<select>`; menu do avatar é `HeaderMenu`.
+- **Não escrever breadcrumb numa página do hub, e não deixar página sem ele.**
+  A trilha é do LAYOUT da área, montada de um registro de rotas — rota nova é
+  uma linha no registro (`apps/hub/lib/trilha.ts`) e nada na página. Era por
+  página, e o resultado foi 22 telas com trilha e 15 sem, nenhuma por decisão
+  (ADR-77). A regra inteira, com as duas exceções declaradas, está em
+  `apps/hub/AGENTS.md`; **área nova precisa de layout novo, e layout novo
+  desenha a trilha** — sem isso a área nasce sem trilha, como `/admin` nasceu.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
