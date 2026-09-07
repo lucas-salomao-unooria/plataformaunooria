@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Badge } from "@edu/ui/ds";
+import { Badge, ScrollBar } from "@edu/ui/ds";
 import type { LinhaDaTurma } from "@/lib/vila-tipos";
 
 function quando(iso: string | null): string {
@@ -30,7 +30,7 @@ export function TabelaTurma({
 }) {
   const lista = estudantes ?? [];
   return (
-    <div className="tabela-rolavel">
+    <ScrollBar orientation="both" autoHide className="tabela-rolavel">
       <table className="w-full min-w-[640px] border-collapse text-[13px]">
         <thead>
           <tr className="border-b border-unooria-neutral-200 text-left text-[12px] uppercase tracking-wider text-unooria-neutral-500">
@@ -90,6 +90,6 @@ export function TabelaTurma({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollBar>
   );
 }

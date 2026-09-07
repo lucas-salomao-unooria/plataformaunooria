@@ -8,6 +8,7 @@ import {
   FeedbackAlert,
   Icon,
   RadioButton,
+  ScrollBar,
   SectionHeader,
   Table,
   Tabs,
@@ -521,14 +522,15 @@ export function ImportarPessoas({
                 type="warning"
                 description="Guarde agora: estas senhas não aparecem de novo. Depois desta tela, o caminho é resetar a senha da pessoa em Usuários."
               />
-              <Table<Credencial>
-                className="tabela-rolavel"
-                columns={colunasDeSenha}
-                data={relatorio.credenciais}
-                keyExtractor={(linha) => linha.usuario}
-                size="sm"
-                theme="light"
-              />
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <Table<Credencial>
+                  columns={colunasDeSenha}
+                  data={relatorio.credenciais}
+                  keyExtractor={(linha) => linha.usuario}
+                  size="sm"
+                  theme="light"
+                />
+              </ScrollBar>
             </div>
           ) : null}
 
@@ -537,14 +539,15 @@ export function ImportarPessoas({
               <h2 className="text-[16px] font-bold text-unooria-neutral-950">
                 Avisos ({relatorio.avisos.length})
               </h2>
-              <Table<ErroDeLinha>
-                className="tabela-rolavel"
-                columns={colunasDeErro}
-                data={relatorio.avisos}
-                keyExtractor={(linha) => `${linha.linha}-${linha.campo}`}
-                size="sm"
-                theme="light"
-              />
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <Table<ErroDeLinha>
+                  columns={colunasDeErro}
+                  data={relatorio.avisos}
+                  keyExtractor={(linha) => `${linha.linha}-${linha.campo}`}
+                  size="sm"
+                  theme="light"
+                />
+              </ScrollBar>
             </div>
           ) : null}
 
@@ -556,14 +559,15 @@ export function ImportarPessoas({
               <p className="text-[14px] text-unooria-neutral-500">
                 Corrija estas linhas no arquivo e importe de novo — as demais já entraram.
               </p>
-              <Table<ErroDeLinha>
-                className="tabela-rolavel"
-                columns={colunasDeErro}
-                data={relatorio.erros}
-                keyExtractor={(linha) => `${linha.linha}-${linha.campo}-${linha.mensagem}`}
-                size="sm"
-                theme="light"
-              />
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <Table<ErroDeLinha>
+                  columns={colunasDeErro}
+                  data={relatorio.erros}
+                  keyExtractor={(linha) => `${linha.linha}-${linha.campo}-${linha.mensagem}`}
+                  size="sm"
+                  theme="light"
+                />
+              </ScrollBar>
             </div>
           ) : null}
         </section>
@@ -591,33 +595,34 @@ export function ImportarPessoas({
           </Button>
         </div>
         {assentos ? (
-          <Table<ContaDeAssento>
-            className="tabela-rolavel"
-            columns={[
-              { key: "nome", title: "Nome" },
-              { key: "usuario", title: "Login" },
-              { key: "papel", title: "Papel" },
-              { key: "dados", title: "Dados", align: "right" },
-              {
-                key: "acoes",
-                title: "",
-                align: "right",
-                render: (_, linha) =>
-                  linha.ativo ? (
-                    <Button variant="ghost" size="sm" onClick={() => void desativar(linha)}>
-                      Desativar
-                    </Button>
-                  ) : (
-                    <Tag>inativa</Tag>
-                  ),
-              },
-            ]}
-            data={assentos.contas}
-            keyExtractor={(linha) => linha.id}
-            emptyText="Nenhuma conta sem matrícula — todo mundo aqui veio de uma importação com RA."
-            size="sm"
-            theme="light"
-          />
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+            <Table<ContaDeAssento>
+              columns={[
+                { key: "nome", title: "Nome" },
+                { key: "usuario", title: "Login" },
+                { key: "papel", title: "Papel" },
+                { key: "dados", title: "Dados", align: "right" },
+                {
+                  key: "acoes",
+                  title: "",
+                  align: "right",
+                  render: (_, linha) =>
+                    linha.ativo ? (
+                      <Button variant="ghost" size="sm" onClick={() => void desativar(linha)}>
+                        Desativar
+                      </Button>
+                    ) : (
+                      <Tag>inativa</Tag>
+                    ),
+                },
+              ]}
+              data={assentos.contas}
+              keyExtractor={(linha) => linha.id}
+              emptyText="Nenhuma conta sem matrícula — todo mundo aqui veio de uma importação com RA."
+              size="sm"
+              theme="light"
+            />
+          </ScrollBar>
         ) : null}
         {assentos?.truncado ? (
           <p className="text-[13px] text-unooria-neutral-500">

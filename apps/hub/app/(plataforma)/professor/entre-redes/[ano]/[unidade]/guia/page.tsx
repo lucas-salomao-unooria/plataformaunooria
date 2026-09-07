@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { Card } from "@edu/ui/ds";
+import { Card, ScrollBar } from "@edu/ui/ds";
 import { GuiaDaAula } from "@/components/guia/guia-da-aula";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
@@ -128,45 +128,47 @@ async function tabelaDeVieses() {
           isso? quando? o que esse instrumento consegue ver?” — e deixe a turma deduzir o resto.
           Deduzido vale muito mais que contado.
         </p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[680px] border-collapse text-left text-[13px]">
-            <thead>
-              <tr className="text-[12px] text-unooria-neutral-500">
-                <th className="w-44 py-2 font-semibold">Fonte</th>
-                <th className="py-2 font-semibold">O que ela mostra</th>
-                <th className="py-2 font-semibold">Em que ela engana</th>
-              </tr>
-            </thead>
-            <tbody className="align-top">
-              {fontes.map((fonte) => (
-                <tr key={fonte.slug} className="border-t border-unooria-neutral-200">
-                  <td className="py-2.5 pr-3">
-                    <span className="block font-semibold text-unooria-neutral-950">
-                      {fonte.nome}
-                    </span>
-                    <span className="mt-1 block text-[11px] text-unooria-neutral-500">
-                      {fonte.periodo}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
-                    {fonte.serve}
-                    <span className="mt-1 block text-[11px] text-unooria-neutral-500">
-                      cobre:{" "}
-                      {fonte.cobre.length === 0
-                        ? "nenhum bairro"
-                        : fonte.cobre
-                            .map((bairro) => NOME_DO_BAIRRO[bairro] ?? bairro)
-                            .join(", ")}
-                    </span>
-                  </td>
-                  <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
-                    {fonte.vies}
-                  </td>
+        <ScrollBar orientation="horizontal" autoHide className="mt-4">
+          {/* Rolagem lateral da tabela larga pelo `ScrollBar` do DS: em tela estreita a
+              tabela do guia passa da coluna, e a barra some quando ninguém a usa. */}
+            <table className="w-full min-w-[680px] border-collapse text-left text-[13px]">
+              <thead>
+                <tr className="text-[12px] text-unooria-neutral-500">
+                  <th className="w-44 py-2 font-semibold">Fonte</th>
+                  <th className="py-2 font-semibold">O que ela mostra</th>
+                  <th className="py-2 font-semibold">Em que ela engana</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="align-top">
+                {fontes.map((fonte) => (
+                  <tr key={fonte.slug} className="border-t border-unooria-neutral-200">
+                    <td className="py-2.5 pr-3">
+                      <span className="block font-semibold text-unooria-neutral-950">
+                        {fonte.nome}
+                      </span>
+                      <span className="mt-1 block text-[11px] text-unooria-neutral-500">
+                        {fonte.periodo}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
+                      {fonte.serve}
+                      <span className="mt-1 block text-[11px] text-unooria-neutral-500">
+                        cobre:{" "}
+                        {fonte.cobre.length === 0
+                          ? "nenhum bairro"
+                          : fonte.cobre
+                              .map((bairro) => NOME_DO_BAIRRO[bairro] ?? bairro)
+                              .join(", ")}
+                      </span>
+                    </td>
+                    <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
+                      {fonte.vies}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        </ScrollBar>
       </Card>
     </div>
   );

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { Badge, Card, EmptyState, FeedbackAlert, MetricCard } from "@edu/ui/ds";
+import { Badge, Card, EmptyState, FeedbackAlert, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
@@ -343,7 +343,7 @@ export default async function EstudantePage({
           professor ler "acima da média" como sorte da rodada, não como mérito. */}
       {relatorio.tentativas.length > 0 && (
         <Card variant="elevated" title="O desfecho de cada tentativa">
-          <div className="tabela-rolavel">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="text-[11px] uppercase tracking-widest text-unooria-neutral-500">
@@ -380,7 +380,7 @@ export default async function EstudantePage({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
           <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
             “Risco coberto” é a medida da decisão: quanto do risco da cidade os dois bairros escolhidos
             cobriam — a sorte da rodada mexe no resgate, não nisto. “Na faixa” compara com corridas

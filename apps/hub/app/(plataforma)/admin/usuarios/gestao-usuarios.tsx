@@ -11,6 +11,7 @@ import {
   ModalHeader,
   ModalTitle,
   Pagination,
+  ScrollBar,
   SearchInput,
   SectionHeader,
   Selection,
@@ -370,16 +371,17 @@ export function GestaoUsuarios({
         {total} pessoa{total === 1 ? "" : "s"}
       </p>
 
-      <Table<LinhaDeUsuario>
-        className="tabela-rolavel"
-        columns={colunas}
-        data={linhas}
-        keyExtractor={(linha) => linha.id}
-        loading={carregando}
-        emptyText="Ninguém por aqui ainda — cadastre uma pessoa ou importe a planilha para começar."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<LinhaDeUsuario>
+          columns={colunas}
+          data={linhas}
+          keyExtractor={(linha) => linha.id}
+          loading={carregando}
+          emptyText="Ninguém por aqui ainda — cadastre uma pessoa ou importe a planilha para começar."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
       {total > POR_PAGINA ? (
         <Pagination

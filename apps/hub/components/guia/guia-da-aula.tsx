@@ -1,6 +1,6 @@
 import "./guia.css";
 
-import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
+import { Badge, Card, FeedbackAlert, ScrollBar, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { Trilha, type ItemDaTrilha } from "@/components/trilha";
 import {
@@ -151,47 +151,49 @@ export function GuiaDaAula({
                   <strong>Confira com a coordenação antes de colar no plano de curso</strong> —
                   o recorte é uma proposta nossa, não uma classificação oficial da missão.
                 </p>
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[560px] border-collapse text-left text-[13px]">
-                    <thead>
-                      <tr className="text-[12px] text-unooria-neutral-500">
-                        <th className="w-28 py-2 font-semibold">Habilidade</th>
-                        <th className="py-2 font-semibold">Texto da BNCC</th>
-                        <th className="w-56 py-2 font-semibold">Onde acontece</th>
-                      </tr>
-                    </thead>
-                    <tbody className="align-top">
-                      {guia.bncc.map((habilidade) => (
-                        <tr
-                          key={habilidade.codigo}
-                          className="border-t border-unooria-neutral-200"
-                        >
-                          <td className="py-2.5 pr-3">
-                            <span className="block font-semibold text-unooria-neutral-950">
-                              {habilidade.codigo}
-                            </span>
-                            <span className="mt-1 block text-[11px] text-unooria-neutral-500">
-                              {habilidade.eixo}
-                            </span>
-                            {habilidade.principal ? (
-                              <span className="mt-1 inline-block">
-                                <Tag variant="success" size="sm" pill>
-                                  principal
-                                </Tag>
-                              </span>
-                            ) : null}
-                          </td>
-                          <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
-                            {habilidade.texto}
-                          </td>
-                          <td className="py-2.5 leading-relaxed text-unooria-neutral-700">
-                            {habilidade.ondeAcontece}
-                          </td>
+                <ScrollBar orientation="horizontal" autoHide className="mt-4">
+                  {/* Rolagem lateral da tabela larga pelo `ScrollBar` do DS: em tela estreita a
+                      tabela do guia passa da coluna, e a barra some quando ninguém a usa. */}
+                    <table className="w-full min-w-[560px] border-collapse text-left text-[13px]">
+                      <thead>
+                        <tr className="text-[12px] text-unooria-neutral-500">
+                          <th className="w-28 py-2 font-semibold">Habilidade</th>
+                          <th className="py-2 font-semibold">Texto da BNCC</th>
+                          <th className="w-56 py-2 font-semibold">Onde acontece</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="align-top">
+                        {guia.bncc.map((habilidade) => (
+                          <tr
+                            key={habilidade.codigo}
+                            className="border-t border-unooria-neutral-200"
+                          >
+                            <td className="py-2.5 pr-3">
+                              <span className="block font-semibold text-unooria-neutral-950">
+                                {habilidade.codigo}
+                              </span>
+                              <span className="mt-1 block text-[11px] text-unooria-neutral-500">
+                                {habilidade.eixo}
+                              </span>
+                              {habilidade.principal ? (
+                                <span className="mt-1 inline-block">
+                                  <Tag variant="success" size="sm" pill>
+                                    principal
+                                  </Tag>
+                                </span>
+                              ) : null}
+                            </td>
+                            <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
+                              {habilidade.texto}
+                            </td>
+                            <td className="py-2.5 leading-relaxed text-unooria-neutral-700">
+                              {habilidade.ondeAcontece}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                </ScrollBar>
               </Card>
             </div>
           </Secao>
@@ -242,36 +244,38 @@ export function GuiaDaAula({
           <Secao id="roteiro" blocos={blocos}>
             <div className="guia-bloco guia-bloco--longo">
               <Card variant="outlined" title={`Roteiro — ${guia.roteiro.total}`}>
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[680px] border-collapse text-left text-[14px]">
-                    <thead>
-                      <tr className="text-[12px] text-unooria-neutral-500">
-                        <th className="w-24 py-2 font-semibold">Tempo</th>
-                        <th className="py-2 font-semibold">O que acontece</th>
-                        <th className="py-2 font-semibold">O que você faz e fala</th>
-                        <th className="w-40 py-2 font-semibold">Seu botão</th>
-                      </tr>
-                    </thead>
-                    <tbody className="align-top">
-                      {guia.roteiro.linhas.map((linha) => (
-                        <tr key={linha.tempo} className="border-t border-unooria-neutral-200">
-                          <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
-                            {linha.tempo}
-                          </td>
-                          <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
-                            {linha.momento}
-                          </td>
-                          <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-700">
-                            {linha.professor}
-                          </td>
-                          <td className="py-2.5 text-[13px] font-semibold text-unooria-navy-900">
-                            {linha.botao ?? "—"}
-                          </td>
+                <ScrollBar orientation="horizontal" autoHide>
+                  {/* Rolagem lateral da tabela larga pelo `ScrollBar` do DS: em tela estreita a
+                      tabela do guia passa da coluna, e a barra some quando ninguém a usa. */}
+                    <table className="w-full min-w-[680px] border-collapse text-left text-[14px]">
+                      <thead>
+                        <tr className="text-[12px] text-unooria-neutral-500">
+                          <th className="w-24 py-2 font-semibold">Tempo</th>
+                          <th className="py-2 font-semibold">O que acontece</th>
+                          <th className="py-2 font-semibold">O que você faz e fala</th>
+                          <th className="w-40 py-2 font-semibold">Seu botão</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="align-top">
+                        {guia.roteiro.linhas.map((linha) => (
+                          <tr key={linha.tempo} className="border-t border-unooria-neutral-200">
+                            <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
+                              {linha.tempo}
+                            </td>
+                            <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
+                              {linha.momento}
+                            </td>
+                            <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-700">
+                              {linha.professor}
+                            </td>
+                            <td className="py-2.5 text-[13px] font-semibold text-unooria-navy-900">
+                              {linha.botao ?? "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                </ScrollBar>
                 {guia.roteiro.nota ? (
                   <p className="mt-3 text-[12px] leading-relaxed text-unooria-neutral-500">
                     {guia.roteiro.nota}
@@ -424,39 +428,41 @@ export function GuiaDaAula({
                 <p className="text-[13px] leading-relaxed text-unooria-neutral-700">
                   {guia.depois.rubrica.nota}
                 </p>
-                <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[720px] border-collapse text-left text-[13px]">
-                    <thead>
-                      <tr className="text-[12px] text-unooria-neutral-500">
-                        <th className="w-44 py-2 font-semibold">Critério</th>
-                        <th className="py-2 font-semibold">Em desenvolvimento</th>
-                        <th className="py-2 font-semibold">Adequado</th>
-                        <th className="py-2 font-semibold">Avançado</th>
-                      </tr>
-                    </thead>
-                    <tbody className="align-top">
-                      {guia.depois.rubrica.criterios.map((criterio) => (
-                        <tr
-                          key={criterio.criterio}
-                          className="border-t border-unooria-neutral-200"
-                        >
-                          <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
-                            {criterio.criterio}
-                          </td>
-                          <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-700">
-                            {criterio.emDesenvolvimento}
-                          </td>
-                          <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
-                            {criterio.adequado}
-                          </td>
-                          <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
-                            {criterio.avancado}
-                          </td>
+                <ScrollBar orientation="horizontal" autoHide className="mt-4">
+                  {/* Rolagem lateral da tabela larga pelo `ScrollBar` do DS: em tela estreita a
+                      tabela do guia passa da coluna, e a barra some quando ninguém a usa. */}
+                    <table className="w-full min-w-[720px] border-collapse text-left text-[13px]">
+                      <thead>
+                        <tr className="text-[12px] text-unooria-neutral-500">
+                          <th className="w-44 py-2 font-semibold">Critério</th>
+                          <th className="py-2 font-semibold">Em desenvolvimento</th>
+                          <th className="py-2 font-semibold">Adequado</th>
+                          <th className="py-2 font-semibold">Avançado</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="align-top">
+                        {guia.depois.rubrica.criterios.map((criterio) => (
+                          <tr
+                            key={criterio.criterio}
+                            className="border-t border-unooria-neutral-200"
+                          >
+                            <td className="py-2.5 pr-3 font-semibold text-unooria-neutral-950">
+                              {criterio.criterio}
+                            </td>
+                            <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-700">
+                              {criterio.emDesenvolvimento}
+                            </td>
+                            <td className="py-2.5 pr-3 leading-relaxed text-unooria-neutral-800">
+                              {criterio.adequado}
+                            </td>
+                            <td className="py-2.5 leading-relaxed text-unooria-neutral-800">
+                              {criterio.avancado}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                </ScrollBar>
               </Card>
             </div>
 

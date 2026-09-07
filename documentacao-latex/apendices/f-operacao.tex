@@ -262,6 +262,26 @@ causa.
 \headrow \thd{Sintoma} & \thd{Causa provável}\\
 \midrule
 \endhead
+\textbf{Barra de rolagem parada na tela, sem ter o que rolar} &
+  A página transborda por 1--2px. Quase sempre é uma altura calculada a partir da
+  altura de um irmão: a tela cheia do professor subtraía \cd{64px} do
+  \cd{100dvh}, e o \cd{HeaderPlataforma} mede \textbf{65} --- o \cd{h-16} são 64
+  e a \cd{border-b} põe 1. Medir com
+  \cd{documentElement.scrollHeight - clientHeight}: 1px é subtração errada, não
+  conteúdo. A saída é a classe \cd{.tela-cheia}, que deixa o \emph{flex}
+  distribuir em vez de estimar (\adrr{ADR-75}). E \textbf{não conclua pelo seu
+  Mac}: com a preferência do sistema em automático e \emph{trackpad}, a barra
+  \emph{overlay} nativa desaparece sozinha em qualquer contêiner não estilizado
+  --- e esconde o que Windows e Chromebook mostram.\\
+\zebra \textbf{O cabeçalho da tabela deixou de grudar ao rolar} &
+  A \cd{Table} do DS traz o próprio \cd{.unooria-table-container} com
+  \cd{overflow-x: auto}. Dentro do \cd{ScrollBar} ele vira um SEGUNDO contêiner
+  de rolagem, e é nele que o \cd{<th>} \emph{sticky} se prende --- um contêiner
+  que não rola na vertical. A regra
+  \cd{.tabela-rolavel .unooria-table-container \{ overflow: visible \}} devolve o
+  papel ao \cd{ScrollBar} (\adrr{ADR-75}). Conferir com
+  \cd{getComputedStyle(th).position}: ele responde \cd{sticky} nos dois casos ---
+  o que muda é QUEM é o contêiner.\\
 \textbf{Ícone virando texto} (\enquote{addInvestigação}) &
   O Next removeu o \cd{@import} externo do CSS do \emph{design system}, e
   \cd{Material Symbols Rounded} é fonte de ligadura. Verificar

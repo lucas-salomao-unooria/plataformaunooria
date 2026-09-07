@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{74 decisões}, numeradas até ADR-74, \textbf{sem lacunas}. A ADR-65
+São \textbf{75 decisões}, numeradas até ADR-75, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -4970,3 +4970,102 @@ esquecer o \cd{aoUsarTokens} tendo \cd{temSaldo} --- aí o custo do retorno
 explícito passa a valer o risco de mexer no motor. Ou a decisão de dar quota ao
 módulo \arq{geracao}, que traria três dos seis pontos de chamada para o lado de
 quem precisa do número.
+
+\section{ADR-75 --- A rolagem do hub é o \cd{ScrollBar} do \emph{design system}}
+\label{adr:75}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A barra de rolagem vertical devia aparecer enquanto a pessoa
+rola e sumir quando ela para. Na lista de estudantes de uma missão isso já
+acontecia, e a leitura natural foi \enquote{o resto do produto está errado}. A
+medição mostrou outra coisa: ali ninguém implementou nada --- a
+\cd{.tabela-rolavel} não estilizava a barra, então ela caía na barra
+\emph{overlay} NATIVA do macOS, que faz esse desaparecimento sozinha. Essa barra
+depende de três coisas fora do produto: a preferência \cd{AppleShowScrollBars} em
+automático, o apontador ser \emph{trackpad} (com mouse conectado o próprio macOS
+volta à barra permanente --- medido, 15px ocupando \emph{layout}) e o sistema ser
+macOS. No Windows e no ChromeOS --- o laboratório da escola --- ela é permanente
+sempre.
+
+A varredura que respondeu a isso encontrou o problema de verdade, e ele não era
+a barra: \textbf{o \emph{design system} publica um \cd{ScrollBar}} (vertical,
+horizontal ou ambos, com \cd{thickness}, \cd{theme} e \cd{autoHide}) desde a
+0.1.x, e o hub \textbf{não o usava em lugar nenhum}. As 24 tabelas rolavam em
+\cd{<div>} com \cd{overflow} escrito à mão, mais o sumário das páginas legais e
+5 tabelas largas do guia. Não houve decisão de não usar: o componente nunca foi
+procurado. É a regra de ouro do projeto --- todo elemento de interface vem do
+pacote --- falhando por ausência de PROCEDIMENTO, não por desacordo.
+
+A mesma varredura (38 telas, os quatro papéis) encontrou um defeito à parte:
+três rotas do professor --- plano de aula, plano de ensino e bem-estar ---
+mostravam uma barra PARADA na tela, visível sem ter o que rolar. Elas subtraíam a
+altura do cabeçalho à mão (\cd{calc(100dvh - 64px)}), e o cabeçalho mede 65px: o
+\cd{h-16} são 64 e a \cd{border-b} põe 1. A página transbordava 1px.
+
+\textbf{Decisão.} Toda área rolável do hub passa a ser um \cd{<ScrollBar>} do DS,
+com \cd{autoHide}. Nenhuma tela do hub declara \cd{overflow} para rolar. E a
+página que NÃO rola deixa de estimar altura de irmão: a casca do professor virou
+coluna \emph{flex} com o \cd{main} em \cd{flex-1}, e a tela cheia usa a classe
+\cd{.tela-cheia}. São os dois lados da mesma régua --- área que rola tem barra
+do DS, área que não rola não tem barra nenhuma.
+
+A \cd{.tabela-rolavel} não morre: ela \textbf{encolhe} para o que o pacote ainda não
+publica --- a \cd{max-height} que provoca a rolagem e o \cd{<th>} preso (a
+lacuna de \cd{stickyHeader} já registrada). O \cd{overflow} sai dela, senão
+haveria dois contêineres de rolagem, um dentro do outro.
+
+E a regra de ouro ganha o procedimento que faltava, no \arq{AGENTS.md} da raiz:
+procurar no pacote ANTES de escrever interface; usar o que existe mesmo que dê
+mais trabalho; e, se não existe, abrir pedido no \cd{storybook-unooria} com
+compensação local MARCADA --- nunca um componente local silencioso.
+
+\textbf{Alternativas descartadas.}
+
+\textbf{Uma camada própria de \emph{auto-hide}, global, dirigida por rolagem.}
+Foi implementada e medida antes desta decisão (\emph{branch}
+\cd{feat/auto-hide-da-rolagem}): um módulo na \cd{@edu/sdk} marcava
+\cd{data-rolando} no elemento que rolava e o CSS reagia. Entregava o
+comportamento literal pedido --- aparecer ao rolar, em qualquer sistema
+operacional --- e cobria o que o componente não alcança: a barra da própria
+página, as que nascem dentro de \cd{Modal} e \cd{Selection}, e as nove
+experiências. Foi descartada por uma razão de doutrina que vale mais que o
+ganho: era uma barra ESCRITA AQUI, com \cd{!important} sobre as regras do
+pacote, para um componente que o pacote já publica. O projeto tem 48
+experiências pela frente e uma pessoa desenvolvendo; a única forma de isso
+escalar é o pacote ser a fonte, mesmo quando ele entrega menos.
+
+\textbf{Trocar só a aparência, mantendo o \cd{<div>}} --- aplicar as classes
+utilitárias \cd{.unooria-scrollbar} sem o componente. Menor diff e nenhuma
+mudança de marcação. Descartada porque a utilitária declara
+\cd{overflow-x: hidden}, que cortaria a coluna da direita das tabelas largas, e
+porque \enquote{usar as classes de um componente sem usar o componente} é o
+atalho que faz a próxima migração de versão do pacote quebrar em silêncio.
+
+\textbf{Consequências ruins, aceitas.} \textbf{O \cd{autoHide} do DS é
+\emph{hover}, não rolagem.} O \arq{ScrollBar.types.ts} documenta \enquote{hover
+ou rolagem}, mas o CSS só tem regras \cd{:hover}: a barra aparece ao passar o
+mouse por cima e continua invisível quando a rolagem vem da roda ou do teclado.
+É menos do que o pedido original, e é o preço de manter a fonte no pacote ---
+com pedido aberto no \cd{storybook-unooria} e a prop já no lugar para o dia em
+que ele publicar. \textbf{Fora do hub nada mudou}: as nove experiências seguem
+com a barra do sistema, porque o \cd{ScrollBar} é da seção \cd{unooria} e não
+pode entrar num clone. \textbf{Uma compensação a mais}, medida:
+\cd{.tabela-rolavel .unooria-table-container \{ overflow: visible \}} --- a
+\cd{Table} do DS traz o próprio contêiner com \cd{overflow-x: auto}, e é nele
+que o \cd{<th>} sticky se prende, um contêiner que não rola na vertical; sem
+essa regra o cabeçalho deixa de grudar. E \textbf{no papel o \cd{ScrollBar} sai
+da frente} (\cd{@media print} devolve \cd{overflow: visible}), senão a tabela do
+guia sairia recortada na largura da coluna. \textbf{Uma segunda classe local}, a
+\cd{.tela-cheia}: \cd{height: 100\%} não resolveria no lugar do \emph{flex} ---
+a altura de um item que cresceu por \cd{flex-grow} dentro de um contêiner de
+\cd{min-height} não é \emph{definite}, o percentual cai para \cd{auto} e o
+\cd{<iframe>} volta aos 150px de altura padrão dele --- e o \cd{main} só vira
+contêiner \emph{flex} por \cd{:has(> .tela-cheia)}, para as outras 16 páginas do
+professor não mudarem de contexto de \emph{layout} por causa de três telas.
+
+\textbf{Gatilho de reavaliação.} O \cd{storybook-unooria} publicar
+\cd{autoHide} dirigido por rolagem --- aí o comportamento pedido chega sem
+código nosso. Ou a decisão de dar \emph{auto-hide} às nove experiências, que
+exigiria o componente nas seções de clone ou uma camada neutra, e traria de
+volta a alternativa descartada aqui.

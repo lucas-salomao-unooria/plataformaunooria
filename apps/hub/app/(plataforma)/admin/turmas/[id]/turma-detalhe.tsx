@@ -12,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SearchInput,
   SectionHeader,
   Selection,
@@ -591,20 +592,21 @@ export function TurmaDetalhe({
           )}
         </div>
       ) : (
-        <Table<Matriculado>
-          className="tabela-rolavel"
-          columns={colunas}
-          data={lista}
-          keyExtractor={(linha) => linha.matriculaId}
-          loading={carregando}
-          emptyText={
-            aba === "estudantes"
-              ? "Nenhum estudante matriculado nesta turma."
-              : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
-          }
-          size="md"
-          theme="light"
-        />
+        <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+          <Table<Matriculado>
+            columns={colunas}
+            data={lista}
+            keyExtractor={(linha) => linha.matriculaId}
+            loading={carregando}
+            emptyText={
+              aba === "estudantes"
+                ? "Nenhum estudante matriculado nesta turma."
+                : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
+            }
+            size="md"
+            theme="light"
+          />
+        </ScrollBar>
       )}
 
       <Modal

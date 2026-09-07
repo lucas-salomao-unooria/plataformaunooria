@@ -7,6 +7,7 @@ import {
   Button,
   EmptyState,
   FeedbackAlert,
+  ScrollBar,
   SectionHeader,
   Table,
   Tag,
@@ -170,14 +171,15 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
             {totais.pendentes > 0 ? ` · ${totais.pendentes} sem primeiro acesso` : ""}
           </p>
 
-          <Table<EscolaDoPanorama>
-            className="tabela-rolavel"
-            columns={colunas}
-            data={escolas}
-            keyExtractor={(l) => l.id}
-            size="md"
-            theme="light"
-          />
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+            <Table<EscolaDoPanorama>
+              columns={colunas}
+              data={escolas}
+              keyExtractor={(l) => l.id}
+              size="md"
+              theme="light"
+            />
+          </ScrollBar>
 
           {totais.pendentes > 0 ? (
             <FeedbackAlert

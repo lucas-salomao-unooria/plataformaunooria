@@ -208,17 +208,36 @@
  * horizontal — numa turma de 40 estudantes o cabeçalho sai da tela junto com a
  * página e o professor lê "sim · — · 3" sem saber de qual coluna. Enquanto o
  * pacote não publica a prop (pedido aberto no `storybook-unooria`), esta classe
- * compensa nas DUAS famílias de tabela do hub: o `<table>` cru (onde substitui
- * o `overflow-x-auto`) e o container do DS (`className="tabela-rolavel"`).
+ * compensa nas DUAS famílias de tabela do hub: o `<table>` cru e a `Table` do
+ * DS, as duas envolvidas pelo `ScrollBar` do próprio DS.
+ *
+ * QUEM ROLA É O `ScrollBar` (`<ScrollBar orientation="both" autoHide>`):
+ * dele vêm o `overflow`, a barra e o auto-hide com fade. Esta classe ficou só
+ * com o que o DS não faz — a ALTURA que provoca a rolagem e o cabeçalho preso.
+ * Por isso não há `overflow` aqui: declará-lo de novo criaria um segundo
+ * contêiner de rolagem em cima do do componente.
  *
  * A altura é a da tela útil menos o cromo da página, com piso de 20rem para não
  * virar uma janelinha em notebook baixo. Tabela que cabe não muda de aparência:
- * `max-height` só age quando o conteúdo passa dela.
+ * `max-height` só age quando o conteúdo passa dela. Ela fica na classe, e não na
+ * prop `maxHeight` do `ScrollBar`, para a medida existir UMA vez — na prop, as
+ * 24 tabelas do hub carregariam 24 cópias do mesmo `calc()`.
  */
 .tabela-rolavel {
   max-height: max(20rem, calc(100dvh - 16rem));
-  overflow: auto;
   overscroll-behavior: contain;
+}
+
+/*
+ * A `Table` do DS traz o próprio `.unooria-table-container` com
+ * `overflow-x: auto`. Dentro do `ScrollBar` ele vira um SEGUNDO contêiner de
+ * rolagem, e é nele que o `<th>` sticky se prende — um contêiner que não rola
+ * na vertical, então o cabeçalho deixa de grudar. Devolvendo-o a `visible`, o
+ * `ScrollBar` volta a ser o contêiner mais próximo e cuida dos dois eixos (é
+ * `orientation="both"` por isso).
+ */
+.tabela-rolavel .unooria-table-container {
+  overflow: visible;
 }
 
 /*
@@ -284,4 +303,49 @@
   background-color: var(--unooria-color-opacity-danger-100, rgba(227, 26, 26, 0.1));
   border-color: var(--unooria-color-danger-600, #e31a1a);
   color: var(--unooria-color-danger-600, #e31a1a);
+}
+
+/*
+ * TELA CHEIA dentro da casca do professor — a página que embeda uma experiência
+ * (plano de aula, plano de ensino, bem-estar) e NÃO rola.
+ *
+ * Antes cada uma dessas páginas subtraía a altura do header à mão
+ * (`height: calc(100dvh - 64px)`). O header mede 65px — `h-16` são 64 e a
+ * `border-b` põe 1 —, então a página transbordava 1px e ganhava uma barra de
+ * rolagem vertical PARADA na tela: visível o tempo todo, sem ter o que rolar.
+ * Barra de rolagem só se justifica quando há rolagem.
+ *
+ * A altura vem do FLEX, não de uma constante: a casca do professor é coluna
+ * (`min-h-dvh flex flex-col`) e o `main` tem `flex-1`, logo sobra para ele o
+ * resto exato — qualquer que seja a altura do header amanhã.
+ *
+ * `:has()` é o que mantém isto CIRÚRGICO: o `main` só vira contêiner flex nas
+ * páginas que pedem tela cheia. Sem ele, as outras 16 páginas do professor
+ * passariam a ter os filhos como itens de flex (margem que não colapsa mais,
+ * altura que muda) por causa de três telas. E `height: 100%` no lugar do flex
+ * NÃO resolve: a altura de um item que cresceu por `flex-grow` dentro de um
+ * contêiner de `min-height` não é definida, o percentual cai para `auto` e o
+ * `<iframe>` volta aos 150px de altura padrão dele (medido).
+ *
+ * Nada disto é trabalho do `ScrollBar`: aqui o objetivo é o oposto — que NÃO
+ * exista área rolável nenhuma.
+ */
+main:has(> .tela-cheia) {
+  display: flex;
+  flex-direction: column;
+}
+
+.tela-cheia {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+}
+
+/* O que a página põe dentro (o `ExpFrame`) recebe a altura toda. Direto no
+   filho, e não numa classe própria: quem escreve a página não deveria ter de
+   marcar dois níveis para uma tela que é um retângulo só. */
+.tela-cheia > * {
+  min-height: 0;
+  flex: 1 1 0%;
 }

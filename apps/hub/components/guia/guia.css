@@ -136,3 +136,17 @@
     margin: 14mm 12mm;
   }
 }
+
+/*
+ * O `ScrollBar` do DS envolve as tabelas largas do guia (rolagem lateral em tela
+ * estreita) e traz `overflow-x: auto; overflow-y: hidden`. NO PAPEL isso cortaria
+ * a tabela na largura da coluna, e o guia é feito para ser impresso e levado para
+ * a sala — o professor conduz a aula com a folha na mão. `visible` devolve a
+ * tabela inteira à impressão; a barra não existe no papel de qualquer forma.
+ */
+@media print {
+  .unooria-scrollbar-container {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}

@@ -221,3 +221,24 @@ bundles tem acesso uniforme, então qualquer objeto lá é público, e o mapa é
 fonte — na exp-01, a revelação legível antes da hora. Nunca `sourcemap: true`,
 nunca `inline`. Para traduzir a stack de um erro de cliente: o `.map` da
 versão exata está em `gs://{project}-exp-mapas/{expId}/{versao}/`.
+
+## Barra de rolagem: as experiências NÃO usam o `ScrollBar` do DS
+
+O hub passou a rolar com o `<ScrollBar>` do design system (ADR-75). **Aqui não**,
+e isso é decisão, não pendência: o `ScrollBar` é da seção `unooria`, e a regra
+das duas famílias proíbe que ele entre num clone — uma barra com o token da
+plataforma dentro do Instanooria é do mesmo tipo de vazamento que um `Button`
+institucional no feed.
+
+Então, dentro do iframe, a barra continua sendo a do SISTEMA OPERACIONAL, com
+`overflow-y: auto` no contêiner que rola. O que muda por sistema fica como está:
+no macOS com trackpad ela some sozinha, no Windows e no ChromeOS é permanente.
+
+**Esconder a barra continua permitido, e é decisão de FIDELIDADE.** As faixas que
+imitam um app sem barra (`.sem-scrollbar` da exp-01, `.feed-scroll` da exp-02)
+usam `scrollbar-width: none` + `::-webkit-scrollbar { display: none }`. Se você
+esconder uma barra, diga no CSS QUAL app imitado não a tem — sem essa linha, a
+próxima pessoa lê como defeito e "conserta".
+
+Se um dia a seção do clone publicar a própria barra, ela entra por aqui como
+qualquer outro componente: pela ponte, na seção certa.

@@ -120,16 +120,28 @@
 .legal-sumario {
   position: sticky;
   top: 104px;
-  max-height: calc(100dvh - 128px);
-  overflow-y: auto;
   border-radius: 12px;
   padding: 20px;
+}
+
+/* Quem ROLA é o `ScrollBar` do DS, dentro do `<aside>` — dele vêm a barra, o
+   auto-hide e o fade. Aqui fica só a altura que provoca a rolagem: o `<aside>`
+   gruda a 104px (80 da nav + 24 de folga), e a área rolável recebe o que sobra
+   da tela. `overscroll-behavior` continua nosso: sem ele, chegar ao fim do
+   índice rola a página atrás dele. */
+.legal-sumario__rolagem {
+  max-height: calc(100dvh - 168px);
   overscroll-behavior: contain;
 }
 
 @media (max-width: 1023px) {
   .legal-sumario {
     position: static;
+  }
+
+  /* Em tela estreita o índice é um bloco normal no topo do texto: sem altura
+     máxima, ele não vira uma janelinha rolável dentro da página. */
+  .legal-sumario__rolagem {
     max-height: none;
   }
 }

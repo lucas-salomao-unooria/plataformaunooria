@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, EmptyState, MetricCard } from "@edu/ui/ds";
+import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
@@ -183,7 +183,7 @@ export async function ResultadosOEcoNoGrupo({
           <ZerarTurmaEco turmaId={turma} nomeDaTurma={painel.turma.nome} />
 
           <Card variant="elevated" title={`${painel.turma.nome} · ${painel.turma.serie}`}>
-            <div className="tabela-rolavel">
+            <ScrollBar orientation="both" autoHide className="tabela-rolavel">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
@@ -224,7 +224,7 @@ export async function ResultadosOEcoNoGrupo({
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollBar>
           </Card>
         </>
       )}
