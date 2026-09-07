@@ -50,6 +50,20 @@ barreiras, e todas devem continuar existindo: o prompt proíbe (R1/R2), o
 `PUT .../distribuicao` recusa código fora do recorte, e `costurarAulas()` filtra
 o que o modelo devolveu. Nenhuma sozinha basta.
 
+## `pendente` é "ninguém disparou", não "está em andamento"
+
+O enum é `pendente | gerando | pronto | erro`, e só `gerando` significa trabalho
+correndo no servidor: quem dispara recebe `gerando` do claim na mesma
+requisição. Tratar `pendente` como "gerando" prendeu um professor numa tela que
+mostrava barra de progresso e "pode fechar: a geração continua no servidor" com
+NADA acontecendo — e o polling relia `pendente` a cada 3s, para sempre. O botão
+de gerar estava logo acima, mas a promessa venceu o botão.
+
+A causa estrutural eram três condições independentes no JSX para três blocos
+que precisam ser exclusivos: nada impede a segunda de esquecer o que a primeira
+cobriu. Quem decide agora é `lib/estado-do-plano.ts`, num valor só. **Bloco novo
+nessa tela entra por lá**, não como mais um `&&` no meio do `return`.
+
 ## Carga horária: hora-aula não é hora-relógio
 
 As 800h do EF e as **1.000h** do EM (LDB art. 24, I, redação da Lei

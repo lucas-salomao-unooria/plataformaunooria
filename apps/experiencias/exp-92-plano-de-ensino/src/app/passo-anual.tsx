@@ -8,6 +8,7 @@ import {
 } from "@edu/ui/ds";
 
 import { api, statusDoErro } from "../lib/api";
+import { estadoDaTelaDoPlano } from "../lib/estado-do-plano";
 import { baixarDoc, documentoAnual, imprimir } from "../lib/exportar";
 import type { Configuracao, PlanoAnual, PlanoAnualComConteudo } from "../lib/tipos";
 
@@ -78,8 +79,13 @@ export function PassoAnual({
   }, [carregar]);
 
   // Polling enquanto gera. Para no primeiro estado terminal.
+  //
+  // Só `gerando`. `pendente` significa "ninguém disparou" — quem dispara já
+  // recebe `gerando` do claim, na mesma requisição —, e incluí-lo aqui punha a
+  // tela para reler `pendente` a cada segundo, para sempre, enquanto no
+  // servidor não havia trabalho nenhum.
   useEffect(() => {
-    if (status !== "gerando" && status !== "pendente") return;
+    if (status !== "gerando") return;
     const t = window.setInterval(() => void carregar(), INTERVALO_POLLING_MS);
     const e = window.setInterval(() => setEtapa((n) => (n + 1) % ETAPAS.length), 9_000);
     return () => {
@@ -133,6 +139,10 @@ export function PassoAnual({
 
   const documento = () => documentoAnual(editado.current || html || "", configuracao, professorNome);
 
+  // UM estado, três blocos exclusivos. Ver `estado-do-plano.ts`: quando as três
+  // condições eram independentes, duas podiam valer ao mesmo tempo.
+  const estadoDaTela = estadoDaTelaDoPlano(status, html);
+
   return (
     <section className="passo">
       <SectionHeader
@@ -142,7 +152,7 @@ export function PassoAnual({
 
       {erro && <FeedbackAlert type="error" description={erro} />}
 
-      {(status === "pendente" || status === "erro") && !html && (
+      {estadoDaTela === "convite" && (
         <div className="estado-vazio">
           <p>
             As habilidades estão distribuídas. Agora o gerador escreve o plano anual a partir delas
@@ -154,7 +164,7 @@ export function PassoAnual({
         </div>
       )}
 
-      {(status === "gerando" || (status === "pendente" && html === null && erro === null)) && (
+      {estadoDaTela === "gerando" && (
         <div className="estado-gerando" aria-live="polite">
           <ProgressBar indeterminate />
           <p>{ETAPAS[etapa]}</p>
@@ -165,7 +175,7 @@ export function PassoAnual({
         </div>
       )}
 
-      {status === "pronto" && html !== null && (
+      {estadoDaTela === "documento" && html !== null && (
         <>
           <div className="acoes acoes--topo">
             <Button variant="tertiary" size="sm" onClick={() => imprimir(documento(), plano.titulo)}>
