@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { Avatar, Logo } from "@edu/ui/ds";
+import { Avatar, Icon, Logo } from "@edu/ui/ds";
 import { LogoutButton } from "@/components/logout-button";
 import { SeletorDeEscola } from "@/components/seletor-de-escola";
 import { auth } from "@/lib/auth";
@@ -66,9 +66,14 @@ export async function HeaderPlataforma({
               <span aria-hidden className="h-6 w-px bg-unooria-neutral-200" />
               <Link
                 href={voltar.href}
-                className="text-[13px] font-semibold text-unooria-neutral-600 hover:text-unooria-neutral-950"
+                className="flex items-center gap-1 text-[13px] font-semibold text-unooria-neutral-600 hover:text-unooria-neutral-950"
               >
-                ← {voltar.rotulo}
+                {/* Era um `←` literal. Ícone é componente, e o DS publica `Icon`
+                    — o mesmo `arrow_back` que a casca legal já usa. O glifo em
+                    texto não escalava com a tipografia e o leitor de tela
+                    anunciava "seta para a esquerda" no meio do rótulo. */}
+                <Icon name="arrow_back" size="s" color="currentColor" aria-hidden />
+                {voltar.rotulo}
               </Link>
             </>
           ) : null}

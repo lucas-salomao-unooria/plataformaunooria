@@ -15,10 +15,24 @@
 }
 
 /*
- * LACUNA REAL DO DS: não existe componente de seleção (só TextField, TextArea,
- * PasswordInput e SearchInput). Enquanto não existir, `<select>` usa os tokens
- * do DS para não sair da linguagem da plataforma — mesma altura, raio e cores
- * do TextField. Os campos de texto, esses, já são componentes do DS.
+ * NÃO É MAIS LACUNA — E ESTA CLASSE ESTÁ MORRENDO.
+ *
+ * O texto que ficava aqui dizia "não existe componente de seleção no DS". Isso
+ * foi verdade e deixou de ser: o DS publica `Selection` (gatilho + painel,
+ * teclado, clique externo, tema, `error`), a ponte o exporta em
+ * `packages/ui/src/ds.ts`, e a área admin JÁ migrou
+ * (`admin/escolas/escolas-da-rede.tsx`, `admin/turmas/turmas-admin.tsx`).
+ *
+ * O comentário, porém, sobreviveu à lacuna — e virou a desculpa que manteve 24
+ * `<select>` crus no hub depois que o pacote já resolvia o problema. É a mesma
+ * armadilha do `expires_at` que saiu do schema: a regra sai do código, o
+ * registro fica, e quem lê acredita nele.
+ *
+ * Esta classe existe SÓ para os `<select>` que ainda não migraram:
+ * `professor/atividades/nova/formulario-atividade.tsx`,
+ * `professor/atividades/[id]/painel-revisao.tsx` e os três `seletor-de-turma*`
+ * de `entre-redes`. Cada migração apaga um consumidor; o último apaga o bloco.
+ * Não acrescente consumidor novo: `<select>` novo no hub é `Selection` do DS.
  */
 .unooria-select {
   width: 100%;
