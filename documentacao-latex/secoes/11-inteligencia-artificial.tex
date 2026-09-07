@@ -113,6 +113,13 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 \begin{regra}
 \textbf{Nunca exponha chamada de IA sem passar pelo \cd{QuotaService}:}
 \cd{temSaldo(escola, usuario, perfil)} \textbf{antes}, \cd{consumir} \textbf{depois}.
+
+\textbf{Em \cd{generateJson}, o \enquote{depois} exige \cd{aoUsarTokens}}
+(\adrr{ADR-74}): ele devolve \cd{T}, não \cd{AiResult}, e sem o \emph{callback}
+não há número para debitar. Um \cd{temSaldo} sem \cd{aoUsarTokens} é meia
+regra --- barra quem já estourou o teto e faz o teto nunca ser alcançado. Foi
+o que aconteceu no plano de aulas da exp-92, a operação mais repetida da
+ferramenta.
 \end{regra}
 
 \begin{lstlisting}[language=tsunoo, caption={Incremento atômico da quota (\arq{src/ai/quota.service.ts})}, label={lst:quota}]

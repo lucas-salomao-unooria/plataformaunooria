@@ -66,6 +66,18 @@ export interface AiJsonRequest<T> {
   maxTokens?: number;
   /** Mesma família neutra de `AiRequest.modelo`. */
   modelo?: AiRequest["modelo"];
+  /**
+   * Quanto o vendor cobrou, chamado UMA VEZ POR TENTATIVA — inclusive pelas que
+   * `validar` rejeitou: elas foram pagas igual, e quem tem teto diário precisa
+   * contar o que foi pago (mesma regra do `tokensUsados` de `conversar`).
+   *
+   * É opcional porque `generateJson` devolve `T` e nem todo consumidor tem
+   * quota. **Mas quem chama `QuotaService.temSaldo` TEM de passar isto** — sem
+   * ele não há de onde tirar o número, e a alternativa é o que o repo fazia:
+   * a exp-92 não debitava nada e a exp-07 debitava 1.500 fixo, chute que não
+   * acompanha prompt nem modelo. Ver ADR-74.
+   */
+  aoUsarTokens?: (tokens: number) => void;
 }
 
 /**

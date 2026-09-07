@@ -663,6 +663,9 @@ export class PlanejamentoService {
       codigosComputacao: string[];
     },
   ) {
+    // Fora do try: o `finally` debita o que o vendor cobrou mesmo quando a
+    // geração falha no meio. Token gasto em tentativa perdida foi gasto.
+    let tokens = 0;
     try {
       const user = montarBriefingDePeriodo(briefing, horarios);
       const resposta = await this.deps.provider.generateJson<{ aulas: Partial<Aula>[] }>({
@@ -672,6 +675,9 @@ export class PlanejamentoService {
         maxTokens: MAX_TOKENS_PERIODO,
         modelo: "longo",
         temperatura: 0.5,
+        aoUsarTokens: (n) => {
+          tokens += n;
+        },
         // Deliberadamente frouxo: `costurarAulas` já degrada campo ausente para
         // vazio e sobra para descarte, então rejeitar aqui só gastaria
         // tentativa à toa. O que a costura NÃO salva é a lista inteira
@@ -692,7 +698,7 @@ export class PlanejamentoService {
         (tx) =>
           tx.planoDeEnsinoPeriodo.update({
             where: { id: periodoId },
-            data: { status: "pronto", erro: null, aulas },
+            data: { status: "pronto", erro: null, aulas, tokensUsados: tokens },
           }),
         escolaId,
       );
@@ -704,11 +710,28 @@ export class PlanejamentoService {
           (tx) =>
             tx.planoDeEnsinoPeriodo.update({
               where: { id: periodoId },
-              data: { status: "erro", erro: mensagem.slice(0, 500) },
+              data: { status: "erro", erro: mensagem.slice(0, 500), tokensUsados: tokens },
             }),
           escolaId,
         )
         .catch(() => undefined);
+    } finally {
+      // Regra 5 do AGENTS.md: `temSaldo` já correu em `gerarPlanoDePeriodo`;
+      // aqui fecha o par. `catch` engolido de propósito — o plano ficou pronto,
+      // e derrubar a geração por falha de contabilidade puniria o professor
+      // pelo nosso registro. A falha vai no log.
+      if (tokens > 0) {
+        await this.deps.quota
+          .consumir(escolaId, professorId, tokens)
+          .catch((falha: unknown) =>
+            logger.error({
+              codigo: "exp-92-quota-nao-debitada",
+              periodoId,
+              tokens,
+              erro: falha instanceof Error ? falha.message : "desconhecido",
+            }),
+          );
+      }
     }
   }
 

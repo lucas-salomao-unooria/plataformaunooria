@@ -177,6 +177,68 @@ describe("generateJson", () => {
     ).rejects.toMatchObject({ detalhe: expect.stringContaining("teto de saída") });
   });
 
+  it("informa o que o vendor cobrou, para quem tem quota debitar", async () => {
+    (global.fetch as unknown as jest.Mock).mockResolvedValue(
+      respostaOk({
+        candidates: [{ content: { role: "model", parts: [{ text: '{"aulas":[]}' }] } }],
+        usageMetadata: { totalTokenCount: 4_242 },
+      }),
+    );
+    const cobrado: number[] = [];
+
+    await new VertexProvider().generateJson({
+      ...PEDIDO_BASE,
+      aoUsarTokens: (n) => cobrado.push(n),
+    });
+
+    expect(cobrado).toEqual([4_242]);
+  });
+
+  it("tentativa REJEITADA também foi paga: soma as duas", async () => {
+    // O caso que torna o callback melhor que um número no retorno: a primeira
+    // resposta foi cobrada e jogada fora. Debitar só a que serviu esconderia o
+    // custo real de um schema que o modelo custa a acertar.
+    (global.fetch as unknown as jest.Mock)
+      .mockResolvedValueOnce(
+        respostaOk({
+          candidates: [{ content: { role: "model", parts: [{ text: '{"aulas":[]}' }] } }],
+          usageMetadata: { totalTokenCount: 900 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        respostaOk({
+          candidates: [{ content: { role: "model", parts: [{ text: '{"aulas":["a"]}' }] } }],
+          usageMetadata: { totalTokenCount: 1_100 },
+        }),
+      );
+    let total = 0;
+
+    await new VertexProvider().generateJson({
+      ...PEDIDO_BASE,
+      aoUsarTokens: (n) => {
+        total += n;
+      },
+      validar: (bruto) => {
+        const { aulas } = bruto as { aulas: string[] };
+        if (aulas.length === 0) throw new Error("esperava ao menos uma aula");
+        return { aulas };
+      },
+    });
+
+    expect(total).toBe(2_000);
+  });
+
+  it("erro HTTP não cobra nada: não houve resposta do modelo", async () => {
+    (global.fetch as unknown as jest.Mock).mockResolvedValue(respostaDeErro(403, "negado"));
+    const cobrado: number[] = [];
+
+    await new VertexProvider()
+      .generateJson({ ...PEDIDO_BASE, aoUsarTokens: (n) => cobrado.push(n) })
+      .catch(() => undefined);
+
+    expect(cobrado).toEqual([]);
+  });
+
   it("validação que lança faz regerar com o motivo no prompt", async () => {
     (global.fetch as unknown as jest.Mock)
       .mockResolvedValueOnce(respostaOk(json({ aulas: [] })))

@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{73 decisões}, numeradas até ADR-73, \textbf{sem lacunas}. A ADR-65
+São \textbf{74 decisões}, numeradas até ADR-74, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -4895,3 +4895,78 @@ a do Ensino Médio desde a Lei 14.945/2024); a publicação de uma exportação
 oficial máquina-legível estável pelo MEC; ou o primeiro contrato cujo currículo
 próprio precise ser exibido AO LADO da Base --- caso em que a fronteira entre
 exp-90 e exp-92 deixa de fazer sentido e as duas convergem.
+\section{ADR-74 --- \cd{generateJson} informa o que o vendor cobrou por um
+\emph{callback}, e não pelo retorno}
+\label{adr:74}
+
+\textbf{Data.} 2026-09-06 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A regra 5 do projeto é literal: nenhuma chamada de IA sem
+\cd{QuotaService} --- \cd{temSaldo} antes, \cd{consumir} depois. Mas dos três
+métodos de texto do \cd{AiProvider}, dois devolvem o que foi gasto
+(\cd{generate} e \cd{conversar}, por \cd{AiResult.tokensUsados}) e
+\cd{generateJson} devolvia só \cd{T}. Sem número, não há o que debitar --- e
+cada consumidor inventou a própria saída:
+
+\begin{itemize}
+  \item a \textbf{exp-92} (plano de aulas) chamava \cd{temSaldo} e nunca
+    \cd{consumir}: o professor gerava as aulas de todos os bimestres e o
+    contador não se movia. É a operação mais repetida da ferramenta --- 4
+    bimestres $\times$ ${\sim}10$ semanas ---, então o teto diário perdia
+    sentido justamente onde mais importa;
+  \item a \textbf{exp-07} debitava \cd{1\_500} fixo, chute que não acompanha
+    tamanho de \emph{prompt} nem troca de modelo;
+  \item o \textbf{bem-estar} desviou do problema: usa \cd{generate} em vez de
+    \cd{generateJson} \enquote{porque só ele devolve \cd{tokensUsados} para a
+    quota} --- o comentário está no código desde então;
+  \item o módulo \arq{geracao} (motor da exp-01) não contabiliza nada.
+\end{itemize}
+
+Quatro consumidores, quatro respostas diferentes para o mesmo buraco. Não é
+descuido de quem escreveu cada um: é o contrato que não oferecia o número.
+
+\textbf{Decisão.} \cd{AiJsonRequest} ganha
+\cd{aoUsarTokens?: (tokens: number) => void}, chamado \textbf{uma vez por
+tentativa} --- inclusive pelas que \cd{validar} rejeitou, porque foram cobradas
+igual. Quem chama \cd{temSaldo} passa a ser obrigado a passá-lo. A exp-92 debita
+no \cd{finally} (token gasto em geração que falhou no meio também foi gasto) e
+grava o total em \cd{exp\_92\_planos\_de\_periodo.tokens\_usados}; a exp-07
+troca o chute pelo número real.
+
+\textbf{Alternativas descartadas.}
+
+\textbf{Mudar o retorno para \cd{\{ dados, tokensUsados \}}}, que era a forma
+mais explícita e a primeira escolha. Foi descartada ao olhar os pontos de
+chamada: três dos seis fazem \cd{return provider.generateJson(...)}
+\emph{direto} --- em \arq{geracao/prompts/}\{\cd{destilacao},
+\cd{personas}, \cd{posts}\} ---, então a mudança não pararia neles: subiria pelo
+tipo de retorno dessas funções e por quem as chama, atravessando o motor da
+exp-01, que é a zona mais delicada do repositório. Tudo isso para entregar um
+número a quatro consumidores que hoje não têm quota. O custo caía sobre o código
+mais arriscado e o benefício, sobre nenhum deles.
+
+\textbf{Um método irmão \cd{generateJsonComUso()}}. Aditivo e explícito, mas
+seriam dois métodos fazendo a mesma coisa --- e o segundo, o que ninguém lembra
+de procurar.
+
+\textbf{O \emph{provider} consumir a quota sozinho.} Resolveria de vez o
+esquecimento, e foi descartada por quebrar a fronteira que a \adrr{ADR-23}
+sustenta: \arq{src/ai} não conhece escola nem usuário, e passar a conhecer o faria
+depender do domínio para debitar.
+
+\textbf{Consequências ruins, aceitas.} \textbf{Continua sendo possível
+esquecer}: o campo é opcional, e um consumidor novo que chame \cd{temSaldo} sem
+\cd{aoUsarTokens} volta a não debitar --- exatamente o defeito que esta ADR
+corrige, agora com ferramenta disponível em vez de ausente. O compilador não
+pega; o que pega é a revisão e o texto do contrato, que diz a obrigação onde ela
+é lida. \textbf{O número é do vendor}: \cd{usageMetadata.totalTokenCount} é o que
+o Google reporta, e uma mudança no que ele conta muda o que debitamos sem aviso.
+E \textbf{a exp-07 passa a debitar mais do que antes} nas respostas longas --- o
+chute de 1.500 era otimista ---, o que aproxima a quota da realidade mas encurta
+o dia de quem usava muito.
+
+\textbf{Gatilho de reavaliação.} O primeiro consumidor de \cd{generateJson} que
+esquecer o \cd{aoUsarTokens} tendo \cd{temSaldo} --- aí o custo do retorno
+explícito passa a valer o risco de mexer no motor. Ou a decisão de dar quota ao
+módulo \arq{geracao}, que traria três dos seis pontos de chamada para o lado de
+quem precisa do número.

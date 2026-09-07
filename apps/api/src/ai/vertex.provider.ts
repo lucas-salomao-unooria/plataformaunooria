@@ -281,6 +281,9 @@ export class VertexProvider implements AiProvider {
           throw new ErroHttpDoVertex(res.status, (await res.text()).slice(0, 300));
         }
         const data = (await res.json()) as RespostaGenerate;
+        // ANTES de validar: uma tentativa rejeitada por `validar` foi cobrada
+        // igual, e a quota conta o que foi pago, não o que serviu.
+        req.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0);
         const candidato = data.candidates?.[0];
         const texto = candidato?.content?.parts?.map((p) => p.text ?? "").join("").trim();
         // JSON truncado falha no `JSON.parse` com "Unexpected end of JSON

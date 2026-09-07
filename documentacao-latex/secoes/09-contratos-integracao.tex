@@ -502,6 +502,10 @@ export interface AiJsonRequest<T> {
    *  de 9k tokens, e JSON truncado nao chega como MAX_TOKENS legivel. */
   maxTokens?: number;
   modelo?: "padrao" | "longo";   // mesma familia neutra de AiRequest
+  /** Quanto o vendor cobrou, UMA VEZ POR TENTATIVA -- inclusive as que
+   *  `validar` rejeitou: foram pagas igual. Quem chama `temSaldo` TEM de
+   *  passar isto; sem ele nao ha de onde tirar o numero (ADR-74). */
+  aoUsarTokens?: (tokens: number) => void;
 }
 
 export interface AiProvider {

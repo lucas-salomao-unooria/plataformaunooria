@@ -308,10 +308,12 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **73**: a 65 foi ocupada pelo guia da aula e a 72 pela
-      fronteira do disfarce da exp-06 — três frentes fecharam ADR em
-      2026-09-06 e duas colidiram na 65, então conferir `origin/dev` não
-      basta: confira também as branches de trabalho abertas),
+  (a PRÓXIMA é a **75**: a 65 foi ocupada pelo guia da aula, a 72 pela
+      fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
+      BNCC e a 74 pela contabilidade de tokens do `generateJson` — três
+      frentes fecharam ADR em 2026-09-06 e duas colidiram na 65, então
+      conferir `origin/dev` não basta: confira também as branches de trabalho
+      abertas E a de integração, que pode estar à frente da `dev`),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
