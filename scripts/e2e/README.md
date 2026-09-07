@@ -24,7 +24,7 @@ que a checagem de pointer lock não valeu.
 |---|---|---|
 | `publico/` | ninguém logado | landing, login, roteamento por papel |
 | `estudante/` | a criança | hub de missões e as quatro missões, ponta a ponta |
-| `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados |
+| `professor/` | o docente | turmas, trilha, criar atividade, conduzir, plano de aula, bem-estar, resultados, guias de aula, planejamento de ensino |
 | `gestor/` | a secretaria da escola | importar, enturmar, senhas, quem trabalha em duas escolas |
 | `admin-contrato/` | a rede | escolas, regionais, OneRoster, períodos, transferência, análise de produto |
 

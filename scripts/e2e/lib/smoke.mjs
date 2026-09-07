@@ -94,6 +94,16 @@ const PENDENCIAS_CONHECIDAS = [
     padrao: /clarity\.ms/,
     oQue: "a tag do Microsoft Clarity (terceiro) recusa IP de datacenter com 400 — no CI é esperado, e o Clarity ausente é no-op",
   },
+  {
+    padrao: /for a non-boolean attribute/,
+    oQue:
+      "algum componente do design system repassa uma prop booleana ao DOM (aviso do React; o " +
+      "console do Playwright entrega a mensagem sem interpolar os argumentos, então ela não " +
+      "diz qual atributo é) — aparece no fluxo da exp-92, e a origem exata segue por isolar: " +
+      "NÃO é o `ProgressBar` nem o `Selection`, que tratam as suas, e não era o " +
+      "`fillCompletedConnectors` que a exp-92 passava ao `Stepper` (prop inexistente no DS, já " +
+      "removida). Fica listado porque é defeito de biblioteca, não da tela que a suíte mede",
+  },
 ];
 
 /**

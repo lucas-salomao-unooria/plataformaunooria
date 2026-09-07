@@ -108,8 +108,13 @@ export function PlanoDeEnsinoApp({ professorNome, configuracoesIniciais }: Props
           )}
         </header>
 
+        {/* Sem `fillCompletedConnectors`: a prop NÃO existe no DS, e o React a
+            repassava ao DOM — "Received `true` for a non-boolean attribute" em
+            toda tela do fluxo. O typecheck não pega (o tipo do `Stepper` aceita
+            atributos de elemento), e foi a suíte de ponta a ponta que a achou,
+            pelo erro de console. */}
         {tela !== "lista" && (
-          <Stepper steps={PASSOS} currentStep={INDICE[tela]} size="sm" fillCompletedConnectors />
+          <Stepper steps={PASSOS} currentStep={INDICE[tela]} size="sm" />
         )}
 
         {/* ----------------------------------------------- 0. os planejamentos -- */}
