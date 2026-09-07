@@ -214,15 +214,16 @@ await suite(
     await exp.getByText(/Suas aulas/).waitFor({ timeout: 60_000 });
 
     const semanas = await exp.locator("button").filter({ hasText: /ª Semana/ }).count();
-    r.exigir(semanas > 0, `o ano abriu em semanas planejáveis (${semanas} na primeira janela)`);
+    r.exigir(semanas > 0, `o ano abriu em semanas planejáveis (${semanas} no 1º bimestre)`);
 
     await r.registrar(p, "semanas-do-ano", {
       titulo: "As semanas do ano, uma a uma",
       mostra: "Os bimestres abertos em semanas, cada uma com quantas aulas tem e o que falta.",
       prova:
         "O esqueleto é do CALENDÁRIO, não do modelo: quantas aulas, em que data, em que " +
-        "horário. Deixar o modelo decidir quantas aulas cabem numa semana produzia dez — o " +
-        "número redondo — para quem tem duas.",
+        "horário. Deixar o modelo decidir quantas aulas cabem na semana produzia cinco — o " +
+        "número redondo — para quem tem uma. O passo é SEMPRE semanal (ADR-76): entregar de " +
+        "quinze em quinze dias é recorte de exportação, não de planejamento.",
     });
 
     /* A semana ativa pode já estar planejada de uma corrida anterior: pega a
@@ -268,6 +269,90 @@ await suite(
         "geração falha no meio (ADR-74).",
       inteira: true,
     });
+
+    // ── 4. a ENTREGA: exportar por recorte ──────────────────────────────
+    /* O planejamento é semanal, mas a escola recolhe por quinzena ou por
+       bimestre. Os botões de recorte são o que resolve isso — e cada um só
+       aparece quando TEM conteúdo: o da quinzena exige a semana seguinte já
+       planejada, senão o documento sairia com uma semana e o nome mentiria. */
+    const exportarSemana = exp.getByRole("button", { name: /Baixar esta semana/ });
+    r.exigir(
+      await exportarSemana.isVisible(),
+      "a semana pronta oferece o download do documento dela",
+    );
+
+    /* O download só acontece com `allow-downloads` no sandbox do iframe, que
+       vem da permissão `downloads` do manifesto E do repasse de `permissoes`
+       pela rota do hub. Sem um dos dois o navegador bloqueia em SILÊNCIO — sem
+       erro na tela, sem linha no console —, e é exatamente o defeito que a
+       ADR-76 corrigiu. Por isso o teste é o ARQUIVO, não o clique. */
+    const [arquivo] = await Promise.all([
+      p.waitForEvent("download", { timeout: 30_000 }).catch(() => null),
+      exportarSemana.click(),
+    ]);
+    r.exigir(
+      Boolean(arquivo) && /\.doc$/.test(arquivo.suggestedFilename()),
+      arquivo
+        ? `o .doc da semana chegou ao disco (${arquivo.suggestedFilename()})`
+        : "NADA baixou em 30s — confira o allow-downloads do sandbox do iframe (ADR-76)",
+    );
+
+    const sandbox = await p.locator("iframe").first().getAttribute("sandbox");
+    r.exigir(
+      /allow-downloads/.test(sandbox ?? ""),
+      `o sandbox do iframe tem allow-downloads (${sandbox})`,
+    );
+
+    await r.registrar(p, "entrega-por-recorte", {
+      titulo: "A entrega: uma semana, a quinzena ou o bimestre",
+      mostra:
+        "Os botões de exportação da semana aberta: baixar só ela, ela com a próxima (a " +
+        "quinzena) ou o período de avaliação inteiro.",
+      prova:
+        "O professor PLANEJA semana a semana e ENTREGA no recorte que a escola pede — são " +
+        "decisões diferentes, e é por isso que não existe mais um passo configurável de " +
+        "planejamento (ADR-76). O documento sai do dado estruturado, com uma semana por " +
+        "página, e só entram as semanas prontas: nenhuma folha em branco chega à coordenação.",
+    });
+
+    // ── 5. apagar o planejamento ────────────────────────────────────────
+    /* Este passo existe porque a funcionalidade NÃO existia: o professor criava
+       um planejamento e ficava com ele. A suíte para no diálogo, sem confirmar
+       — o estado que ela acabou de produzir é o que os passos anteriores
+       fotografam, e apagá-lo aqui deixaria a próxima corrida sem nada. */
+    await exp.getByRole("button", { name: /Meus planejamentos/ }).click();
+    await p.waitForTimeout(1500);
+
+    const excluir = exp.getByRole("button", { name: /^Excluir o planejamento de/ }).first();
+    r.exigir(await excluir.isVisible(), "cada planejamento da lista tem como ser excluído");
+    await excluir.click();
+    await exp.getByText(/Isso apaga, e não tem volta/).waitFor({ timeout: 15_000 });
+
+    const dialogo = await exp.locator('[role="alertdialog"]').innerText();
+    r.exigir(
+      /semanas já detalhadas/.test(dialogo) && /Gerar de novo/.test(dialogo),
+      "o diálogo diz o que se perde E oferece a alternativa não destrutiva",
+    );
+
+    await r.registrar(p, "excluir-planejamento", {
+      titulo: "Excluir um planejamento",
+      mostra:
+        "O diálogo de confirmação: a lista do que será apagado — regência, distribuição, " +
+        "plano anual e todas as semanas — e o caminho alternativo para quem só quer " +
+        "reescrever o documento.",
+      prova:
+        "Apagar leva a regência, o plano anual e as semanas pela cascata do banco, e varre o " +
+        "conteúdo no object storage ANTES do delete (depois dele não haveria como saber quais " +
+        "prefixos eram). É irreversível, então quem confirma precisa saber o que perde — e " +
+        "quem só quer o texto de novo tem o \"Gerar de novo\", dito no próprio diálogo.",
+    });
+
+    await exp.getByRole("button", { name: "Cancelar" }).click();
+    await p.waitForTimeout(800);
+    r.exigir(
+      await exp.getByRole("button", { name: /^Excluir o planejamento de/ }).first().isVisible(),
+      "cancelar mantém o planejamento na lista",
+    );
   },
 );
 

@@ -4796,7 +4796,10 @@ as três etapas.
 currículo como DADO ESTRUTURADO extraído do PDF homologado, cobrindo todos os
 componentes do 1º ano do Fundamental à 3ª série do Médio, em dois níveis: plano
 \textbf{anual} (macro, por período de avaliação) e plano de \textbf{período}
-(granular, aula a aula, semanal ou quinzenal à escolha da rede).
+(granular, aula a aula, semanal ou quinzenal à escolha da rede)%
+\footnote{A escolha entre semanal e quinzenal foi retirada na
+\hyperref[adr:76]{ADR-76}: o passo é sempre semanal, e entregar de quinze em
+quinze dias virou recorte de exportação.}.
 
 \textbf{A fonte é o PDF homologado, extraído por coordenadas.} As tabelas da
 Base são um \emph{spread} de duas páginas --- unidade temática e objeto de
@@ -4820,8 +4823,8 @@ expressa a leitura que o professor faz da própria turma, e é a única coisa aq
 que nenhum modelo deveria escolher por ele; a IA entra depois, para desenvolver
 pedagogicamente o que ele decidiu. Pelo mesmo motivo, o \textbf{esqueleto das
 aulas não vem do modelo}: número, data e horário saem do calendário e da grade
-real. Deixar o modelo decidir quantas aulas cabem numa quinzena produzia dez ---
-o número redondo --- para um professor de Arte que tem duas.
+real. Deixar o modelo decidir quantas aulas cabem na semana produzia cinco ---
+o número redondo --- para um professor de Arte que tem uma.
 
 \textbf{Há três barreiras contra código de habilidade inventado}, e nenhuma
 sozinha basta: o \emph{prompt} proíbe, a rota de distribuição recusa código fora
@@ -5069,3 +5072,91 @@ professor não mudarem de contexto de \emph{layout} por causa de três telas.
 código nosso. Ou a decisão de dar \emph{auto-hide} às nove experiências, que
 exigiria o componente nas seções de clone ou uma camada neutra, e traria de
 volta a alternativa descartada aqui.
+
+\section{ADR-76 --- O planejamento é semanal, e a quinzena é recorte de
+exportação; o \cd{iframe} ganha \cd{allow-downloads} por declaração}
+\label{adr:76}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} Três defeitos relatados no mesmo dia sobre a exp-92, e os
+três tinham a mesma raiz: uma pergunta de \emph{entrega} tratada como
+configuração de \emph{produto}.
+
+\begin{enumerate}
+  \item \textbf{Não havia como apagar um planejamento.} A regência nascia e
+    ficava. \cd{DELETE /planejamento/planos-anuais/:id} existia desde a
+    \hyperref[adr:73]{ADR-73}, mas o que a lista do professor mostra é a
+    \textbf{regência} (componente $\times$ ano), e para ela não havia rota nem
+    botão.
+  \item \textbf{\enquote{Baixar .doc} não baixava nada}, sem erro na tela e sem
+    linha no \emph{console}. Duas causas somadas, e a principal não estava na
+    experiência: num \cd{iframe} com \cd{sandbox}, o navegador
+    \textbf{bloqueia todo \emph{download}} sem o token \cd{allow-downloads}, e
+    o bloqueio é MUDO --- o Chrome o registra no painel \emph{Issues}, que
+    ninguém abre, e o \cd{a.click()} do \emph{bundle} volta como se tivesse
+    funcionado. MEDIDO: dois \cd{iframe} com o mesmo \emph{blob} e o mesmo
+    código, um com o token e outro sem; só o primeiro escreveu arquivo.
+    Somava-se a isso o \cd{<a>} não anexado ao DOM (Chrome tolera, Firefox e
+    Safari ignoram) e o \cd{revokeObjectURL} na linha seguinte ao clique.
+  \item \textbf{\enquote{Existe semanal e quinzenal e eu não entendi como
+    usar.}} A regência pedia o \enquote{passo do planejamento}, e ao fim o
+    produto só oferecia detalhar aula a aula --- a escolha não mudava a tela,
+    mudava a aritmética interna do calendário.
+\end{enumerate}
+
+\textbf{Decisão.}
+
+\textbf{(a) O passo do planejamento é SEMPRE semanal.} A coluna
+\cd{exp\_92\_configuracoes.periodicidade} sai (migration
+\cd{20260907120000\_exp\_92\_planejamento\_sempre\_semanal}), com ela o campo do
+formulário e o parâmetro de \cd{janelasDePlanejamento}, que passa a se chamar
+\cd{semanasDoAnoLetivo}. \textbf{A quinzena vira recorte de exportação}: o
+professor planeja semana a semana e o botão de baixar junta duas semanas, ou o
+período de avaliação inteiro, num só documento --- uma semana por página.
+
+\textbf{(b) \cd{allow-downloads} entra no \cd{sandbox}, por declaração.}
+\cd{downloads} passa a valer no \cd{permissoes} do manifesto (Zod da api,
+CHECK de \cd{experiencias.permissoes} e \cd{ExpFrame}), e só a exp-90 e a exp-92
+o declaram. \textbf{E as três rotas de professor passaram a repassar
+\cd{permissoes} ao \cd{ExpFrame}} --- elas nunca repassaram, então a permissão
+sozinha não teria efeito nenhum ali.
+
+\textbf{(c) \cd{DELETE /planejamento/configuracoes/:id}} apaga a regência, o
+plano anual e todas as semanas. A cascata é do banco; o \emph{object storage}
+não tem cascata, então os prefixos de cada plano anual são varridos ANTES do
+\cd{delete} --- depois dele não haveria mais como saber quais eram.
+
+\textbf{Alternativas descartadas.}
+
+\emph{Manter a periodicidade e corrigir só as datas.} A \cd{ordem} de
+\cd{exp\_92\_planos\_de\_periodo} muda de significado com o passo --- a 3ª
+quinzena não é a 3ª semana ---, então um plano gravado em modo quinzenal e lido
+em modo semanal casa pela ordem e devolve as datas de um recorte com as aulas de
+outro. Corrigir início e fim no \cd{upsert} (o que foi feito, e era um defeito
+real: o \cd{update} não os recalculava) resolve a troca de \emph{calendário},
+não a troca de \emph{significado}.
+
+\emph{\cd{allow-downloads} para todas as experiências.} Entregar arquivo ao
+computador de quem está usando é capacidade de quem declarou, como
+\cd{pointer-lock} e \cd{forms}. Nenhuma experiência de estudante exporta nada, e
+o \emph{bundle} é público.
+
+\emph{DOCX de verdade.} Continua fora: o \cd{.doc} é HTML com os \emph{namespaces}
+do Office, zero dependência no \emph{bundle}, e o Word, o Google Docs e o
+LibreOffice abrem como documento. Trocar somaria dependência para resolver
+problema que ninguém tem --- o problema era o \cd{sandbox}.
+
+\textbf{Consequências ruins.} A migration \textbf{apaga} os planos de período
+das regências que estavam em quinzenal --- é a única parte destrutiva, e a
+alternativa era mantê-los mentindo sobre as próprias datas. Regência, plano
+anual e distribuição de habilidades ficam; o que se perde é o detalhamento aula
+a aula, que o professor regera pelo botão da semana (gastando quota de IA de
+novo). O \enquote{Baixar o bimestre} faz uma chamada que traz as aulas de até
+dez semanas --- aceito: são 40 linhas no ano inteiro e o filtro é no banco.
+
+\textbf{Gatilho de reavaliação.} Uma rede pedir planejamento cuja unidade
+\emph{pedagógica} não seja a semana (aula avulsa, ou projeto de duração
+variável) --- aí volta a pergunta de qual é o passo, e a resposta não é
+reintroduzir uma coluna de enum. Ou o \cd{storybook-unooria} publicar um
+componente de exportação com recortes, que substituiria os três botões.

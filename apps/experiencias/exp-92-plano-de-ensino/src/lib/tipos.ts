@@ -10,7 +10,6 @@
  */
 
 export type Status = "pendente" | "gerando" | "pronto" | "erro";
-export type Periodicidade = "semanal" | "quinzenal";
 export type Divisao = "bimestral" | "trimestral" | "semestral";
 
 export interface ComponenteDoCatalogo {
@@ -76,7 +75,6 @@ export interface Configuracao {
   turmaId: string | null;
   turmaNome: string | null;
   divisaoDoAno: Divisao;
-  periodicidade: Periodicidade;
   minutosPorAula: number;
   aulasSemanais: number;
   grade: FaixaDeHorario[];
@@ -123,8 +121,10 @@ export interface PlanoAnualComConteudo {
   html: string | null;
 }
 
-export interface Janela {
+/** Uma das 40 semanas do ano letivo. O passo é sempre semanal (ADR-76). */
+export interface Semana {
   ordem: number;
+  /** `"3ª Semana"` — vem do servidor, e é o que sai no cabeçalho do documento. */
   rotulo: string;
   inicio: string;
   fim: string;
@@ -136,7 +136,7 @@ export interface Janela {
 
 export interface CalendarioDoAno {
   periodos: PeriodoDeAvaliacao[];
-  janelas: Janela[];
+  semanas: Semana[];
 }
 
 export interface Momento {

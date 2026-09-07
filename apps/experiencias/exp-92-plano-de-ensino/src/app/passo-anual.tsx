@@ -178,16 +178,16 @@ export function PassoAnual({
       {estadoDaTela === "documento" && html !== null && (
         <>
           <div className="acoes acoes--topo">
-            <Button variant="tertiary" size="sm" onClick={() => imprimir(documento(), plano.titulo)}>
+            <Button variant="ghost" size="sm" onClick={() => imprimir(documento(), plano.titulo)}>
               Imprimir
             </Button>
-            <Button variant="tertiary" size="sm" onClick={() => baixarDoc(documento(), plano.titulo)}>
+            <Button variant="ghost" size="sm" onClick={() => baixarDoc(documento(), plano.titulo)}>
               Baixar .doc
             </Button>
             <Button variant="secondary" size="sm" onClick={() => void gerar()}>
               Gerar de novo
             </Button>
-            <Button variant="primary" size="sm" onClick={() => void salvar()} loading={salvando} disabled={!sujo}>
+            <Button variant="primary" size="sm" onClick={() => void salvar()} isLoading={salvando} disabled={!sujo}>
               {sujo ? "Salvar alterações" : "Salvo"}
             </Button>
           </div>

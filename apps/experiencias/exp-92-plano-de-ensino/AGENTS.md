@@ -40,9 +40,9 @@ professor de Português não reconhecer o próprio currículo.
 **3. O esqueleto das aulas NÃO vem do modelo.** Quantas aulas, em que data, em
 que horário: sai de `calendario.ts`, da grade real do professor. O modelo só
 preenche o conteúdo pedagógico das aulas que já existem, e `costurarAulas()`
-descarta sobra e completa falta. Deixar o modelo decidir quantas aulas cabem
-numa quinzena produzia dez — o número redondo — para um professor de Arte que
-tem duas.
+descarta sobra e completa falta. Deixar o modelo decidir quantas aulas cabem na
+semana produzia cinco — o número redondo — para um professor de Arte que tem
+uma.
 
 **4. Código de habilidade inventado é o pior defeito possível aqui.** Um plano
 que cita `EF67LP42` chega à coordenação como erro do professor. Há três
@@ -96,7 +96,7 @@ até a impressão. Na tela, `dataCurta`/`dataLonga` fatiam a string; não jogue
 data civil em `toLocaleDateString`.
 
 Feriado **remove** a aula, não a desloca. Deslocar empurraria o plano inteiro e
-desalinharia as 40 janelas seguintes; repor é decisão pedagógica do professor.
+desalinharia as 40 semanas seguintes; repor é decisão pedagógica do professor.
 
 ## Toda porta de exp entra no CORS da api — e trocar de branch não basta
 
@@ -114,16 +114,80 @@ corrigir, `docker compose -f docker-compose.dev.yml up -d --no-deps
 --force-recreate api`. O `docker-compose.dev.yml` lista as portas de todas as
 frentes justamente para reduzir o custo dessa troca.
 
-## Export: `.doc` e impressão
+## O passo é SEMANAL. A quinzena é recorte de exportação (ADR-76)
+
+Havia uma `periodicidade` (semanal | quinzenal) na regência, e ela saiu em
+2026-09-07: coluna dropada, campo do formulário removido,
+`janelasDePlanejamento` virou `semanasDoAnoLetivo`. **Não reintroduza um enum de
+passo.** A pergunta que a quinzena respondia é de ENTREGA — a escola que recolhe
+planejamento de quinze em quinze dias — e isso hoje é um botão de exportação:
+"Esta e a próxima (quinzena)" e "Baixar o Nº Bimestre inteiro", que juntam
+semanas `pronto` num documento, uma por página.
+
+**Por que não podia ser configurável:** `exp_92_planos_de_periodo` é endereçada
+por (escola, plano anual, `ordem`), e a `ordem` MUDA DE SIGNIFICADO com o passo —
+a 3ª quinzena não é a 3ª semana. Um plano gravado num modo e lido no outro casa
+pela ordem e devolve as datas de um recorte com as aulas de outro. A migration
+`20260907120000_...` apaga os planos de período das regências quinzenais por
+causa disso.
+
+**"Janela" era o nome de quando o passo variava.** Hoje é SEMANA, em toda
+superfície: `rotuloDaSemana()` (api) é a fonte única do `"3ª Semana"` que vai
+para a tela e para o cabeçalho do `.doc`. Os dois já divergiram — o calendário
+dizia "3ª Semana" e o mapeador do plano gravado dizia "3ª janela", que é jargão
+interno, e era essa a palavra que chegava à coordenação.
+
+**As aulas das OUTRAS semanas não estão em memória.** A tela carrega uma por
+vez, então o export de várias busca `GET /planos-anuais/:id/periodos`, que
+devolve só as `pronto`. Semana que falhou na geração não entra no documento.
+
+## Export: `.doc`, impressão — e o `allow-downloads` do sandbox
 
 O `.doc` é HTML com os namespaces do MS Office (Word, Google Docs e LibreOffice
 abrem como documento). Não é DOCX — mesma escolha da exp-90, e por isso as cores
 vão como literais de token: o Word não resolve CSS variable.
 
+**O download precisa de TRÊS coisas, e a que falta não diz nada.** O botão
+existiu por uma versão inteira sem nunca ter baixado um arquivo:
+
+1. **`permissoes: ["downloads"]` no `public/experiencia.json`** — e na LINHA de
+   `experiencias` (em dev o hub lê a tabela quando ela existe, não o manifesto
+   do bundle). Sem isso o sandbox do iframe não tem `allow-downloads`, e o
+   navegador BLOQUEIA o download em silêncio: nada na tela, nada no console (o
+   Chrome registra no painel Issues), e o `a.click()` volta como se tivesse
+   funcionado;
+2. **a rota do hub repassando `permissoes` ao `ExpFrame`** —
+   `/professor/plano-de-ensino` não repassava, e a permissão sozinha não teria
+   efeito nenhum;
+3. **o `<a>` anexado ao DOM** antes do `click()`, e o `revokeObjectURL` com
+   atraso. Elemento desanexado funciona no Chrome e é ignorado no Firefox e no
+   Safari; revogar na linha seguinte corre contra o início da transferência.
+
 A **impressão** escreve num iframe, não em `window.open`: a experiência já roda
 dentro do iframe do hub, e um pop-up daqui é bloqueado — o professor clicaria em
-"Imprimir" e nada aconteceria.
+"Imprimir" e nada aconteceria. Ela NÃO depende do `allow-downloads`.
 
-O documento do plano de período nasce das **aulas estruturadas**, não de prosa
-formatada pelo modelo. É isso que garante que a aula editada na tela é a aula que
-sai no papel, com o "AULA CUMPRIDA" que o professor marcou.
+O documento da semana nasce das **aulas estruturadas**, não de prosa formatada
+pelo modelo. É isso que garante que a aula editada na tela é a aula que sai no
+papel, com o "AULA CUMPRIDA" que o professor marcou.
+
+## Excluir é da REGÊNCIA, e o storage não tem cascata
+
+`DELETE /planejamento/configuracoes/:id` apaga o planejamento inteiro daquele
+componente × ano — é o que "excluir" quer dizer na lista do professor. O banco
+cuida da cascata (`onDelete: Cascade` até os planos de período), mas o object
+storage **não**: os prefixos `planos-de-ensino/{escola}/{planoAnualId}/` são
+varridos ANTES do delete, porque depois dele não há mais como saber quais eram.
+Falha no bucket não trava a exclusão — arquivo órfão é lixo, e lixo não pode
+impedir o professor de apagar o próprio planejamento. Rede em
+`tests/planejamento-exclusao.spec.ts`.
+
+## O `Button` do DS não tem `variant="tertiary"` nem a prop `loading`
+
+As variantes são `primary | secondary | outline | ghost | danger`, e a prop é
+`isLoading`. **`ButtonProps` tem `[key: string]: unknown`**, então o typecheck
+aceita qualquer prop inventada em silêncio: `tertiary` gerava a classe
+`unooria-button--variant-tertiary`, que o `styles.css` não define, e o botão
+ficava sem cor de variante nenhuma; `loading` não mostrava spinner. Eram 12 + 8
+ocorrências nesta experiência, corrigidas em 2026-09-07. Prop nova de componente
+do DS se confere no `.d.ts` do pacote, não no typecheck.

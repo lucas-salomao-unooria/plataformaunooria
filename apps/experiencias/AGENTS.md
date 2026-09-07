@@ -63,9 +63,21 @@ Os dev servers das exps declaram `allowedHosts: ["host.docker.internal"]`: o
 Vite 5.4+ recusa `Host` que não conheça, e sem isso o hub em container não lê o
 manifesto e a experiência aparece esticada na janela.
 `permissoes` (aditivo) lista o que o IFRAME daquela experiência precisa — hoje
-`pointer-lock` e `forms`, que o `ExpFrame` traduz nos tokens
-`allow-pointer-lock` e `allow-forms`. **`forms` custou um bug inteiro para ser
-descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
+`pointer-lock`, `forms` e `downloads`, que o `ExpFrame` traduz nos tokens
+`allow-pointer-lock`, `allow-forms` e `allow-downloads`.
+
+**`downloads` (exp-90 e exp-92) tem uma armadilha A MAIS: a rota do hub precisa
+REPASSAR `permissoes` ao `ExpFrame`.** `/exp/[expId]` e `/dev-embed` sempre
+repassaram; as três rotas de professor (`plano-de-aula`, `plano-de-ensino`,
+`bem-estar`) renderizam o `ExpFrame` direto e **não passavam** — então declarar
+a permissão no manifesto não tinha efeito nenhum ali. Sem o token, o navegador
+bloqueia o download em silêncio (o Chrome registra no painel Issues, não no
+console) e o `a.click()` volta como se tivesse funcionado: o professor clicava em
+"Baixar .doc" e nada acontecia. Confira com
+`document.querySelector('iframe').getAttribute('sandbox')` no console do hub
+(ADR-76).
+
+**`forms` custou um bug inteiro para ser descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
 o submit — o estudante da exp-03 digitava a pergunta, apertava Enter e nada
 acontecia. O sintoma engana porque a conversa parece viva (a fala de abertura do
 agente já está na tela) e o único rastro é um aviso de console sobre "form's

@@ -1,7 +1,7 @@
 import {
   periodosDoAnoLetivo,
-  janelasDePlanejamento,
-  aulasDaJanela,
+  semanasDoAnoLetivo,
+  aulasDaSemana,
   conferirGrade,
   segundaDaSemana,
   diaDaSemanaDe,
@@ -68,38 +68,47 @@ describe("períodos de avaliação", () => {
   });
 });
 
-describe("janelas de planejamento", () => {
+describe("semanas de planejamento", () => {
   const periodos = periodosDoAnoLetivo("2026-02-02", "bimestral");
 
   it("gera 40 semanas no ano letivo", () => {
-    const j = janelasDePlanejamento(periodos, "semanal");
-    expect(j).toHaveLength(40);
-    expect(j[0]!).toMatchObject({ ordem: 1, inicio: "2026-02-02", periodoDeAvaliacao: 1 });
-    expect(j[39]!.periodoDeAvaliacao).toBe(4);
+    const s = semanasDoAnoLetivo(periodos);
+    expect(s).toHaveLength(40);
+    expect(s[0]!).toMatchObject({ ordem: 1, inicio: "2026-02-02", periodoDeAvaliacao: 1 });
+    expect(s[39]!.periodoDeAvaliacao).toBe(4);
   });
 
-  it("gera 20 quinzenas, e a que atravessa o bimestre fica no que ela começou", () => {
-    const j = janelasDePlanejamento(periodos, "quinzenal");
-    expect(j).toHaveLength(20);
-    // 10 semanas por bimestre = 5 quinzenas exatas, então a 6ª abre o 2º
-    // bimestre. Com trimestre de 13 semanas a conta não fecha, e é aí que a
-    // regra "pertence ao período em que começou" importa.
-    expect(j[4]!.periodoDeAvaliacao).toBe(1);
-    expect(j[5]!.periodoDeAvaliacao).toBe(2);
+  it("chama a semana de semana, com a ordem que o professor lê na lista", () => {
+    // O rótulo vai para o cabeçalho do .doc que a coordenação recebe, e ele já
+    // divergiu: a lista dizia "3ª Semana" e o documento, "3ª janela".
+    const s = semanasDoAnoLetivo(periodos);
+    expect(s[0]!.rotulo).toBe("1ª Semana");
+    expect(s[2]!.rotulo).toBe("3ª Semana");
   });
 
-  it("classifica a quinzena que cruza a virada do trimestre pelo início", () => {
-    const tri = periodosDoAnoLetivo("2026-02-02", "trimestral");
-    const j = janelasDePlanejamento(tri, "quinzenal");
-    // 13 semanas = 6 quinzenas e meia: a 7ª quinzena começa no 1º trimestre e
-    // termina no 2º. Ela é do primeiro.
-    const cruzando = j.find((x) => x.inicio <= tri[0]!.fim && x.fim > tri[0]!.fim);
-    expect(cruzando?.periodoDeAvaliacao).toBe(1);
+  it("nenhuma semana atravessa a virada do período de avaliação", () => {
+    // Os períodos são divididos em semanas fechadas, então cada semana pertence
+    // a um período só — e é isso que faz a `ordem` da semana ser estável.
+    for (const divisao of ["bimestral", "trimestral", "semestral"] as const) {
+      const p = periodosDoAnoLetivo("2026-02-02", divisao);
+      for (const s of semanasDoAnoLetivo(p)) {
+        const dono = p.find((x) => s.inicio >= x.inicio && s.inicio <= x.fim);
+        expect(s.fim <= dono!.fim).toBe(true);
+        expect(s.periodoDeAvaliacao).toBe(dono!.ordem);
+      }
+    }
+  });
+
+  it("não deixa buraco entre semanas consecutivas", () => {
+    const s = semanasDoAnoLetivo(periodos);
+    for (let i = 1; i < s.length; i++) {
+      expect(s[i]!.inicio).toBe(somarDias(s[i - 1]!.fim, 1));
+    }
   });
 
   it("não passa do fim do ano letivo", () => {
-    const j = janelasDePlanejamento(periodos, "quinzenal");
-    expect(j[j.length - 1]!.fim).toBe(periodos[periodos.length - 1]!.fim);
+    const s = semanasDoAnoLetivo(periodos);
+    expect(s[s.length - 1]!.fim).toBe(periodos[periodos.length - 1]!.fim);
   });
 });
 
@@ -108,38 +117,33 @@ describe("aulas datadas a partir da grade", () => {
     { diaDaSemana: 2, horarios: ["07:00", "07:50"] },
     { diaDaSemana: 4, horarios: ["09:40"] },
   ];
-  const [semana1] = janelasDePlanejamento(periodosDoAnoLetivo("2026-02-02", "bimestral"), "semanal");
+  const [semana1] = semanasDoAnoLetivo(periodosDoAnoLetivo("2026-02-02", "bimestral"));
 
   it("data cada aula no dia certo, na ordem cronológica", () => {
-    const aulas = aulasDaJanela(semana1!, grade);
+    const aulas = aulasDaSemana(semana1!, grade);
     expect(aulas).toHaveLength(3);
     expect(aulas[0]!).toMatchObject({ numero: 1, data: "2026-02-03", diaDaSemana: 2, horario: "07:00" });
     expect(aulas[1]!).toMatchObject({ numero: 2, data: "2026-02-03", horario: "07:50" });
     expect(aulas[2]!).toMatchObject({ numero: 3, data: "2026-02-05", diaDaSemana: 4 });
   });
 
-  it("dá o dobro de aulas na quinzena", () => {
-    const [q1] = janelasDePlanejamento(periodosDoAnoLetivo("2026-02-02", "bimestral"), "quinzenal");
-    expect(aulasDaJanela(q1!, grade)).toHaveLength(6);
-  });
-
   it("nunca põe aula em sábado ou domingo", () => {
     const comFimDeSemana = [...grade, { diaDaSemana: 6 as never, horarios: ["08:00"] }];
-    const aulas = aulasDaJanela(semana1!, comFimDeSemana);
+    const aulas = aulasDaSemana(semana1!, comFimDeSemana);
     expect(aulas.every((a) => a.diaDaSemana >= 1 && a.diaDaSemana <= 5)).toBe(true);
   });
 
   it("remove o feriado em vez de empurrar a aula para outro dia", () => {
-    // Empurrar deslocaria o plano inteiro e desalinharia todas as janelas
+    // Empurrar deslocaria o plano inteiro e desalinharia todas as semanas
     // seguintes. Repor é decisão do professor, não conta do sistema.
-    const aulas = aulasDaJanela(semana1!, grade, ["2026-02-03"]);
+    const aulas = aulasDaSemana(semana1!, grade, ["2026-02-03"]);
     expect(aulas).toHaveLength(1);
     expect(aulas[0]!.data).toBe("2026-02-05");
     expect(aulas[0]!.numero).toBe(1);
   });
 
-  it("devolve vazio quando a grade está em dias que a janela não cobre", () => {
-    expect(aulasDaJanela(semana1!, [{ diaDaSemana: 1, horarios: [] }])).toEqual([]);
+  it("devolve vazio quando a grade está em dias que a semana não cobre", () => {
+    expect(aulasDaSemana(semana1!, [{ diaDaSemana: 1, horarios: [] }])).toEqual([]);
   });
 });
 

@@ -40,6 +40,7 @@ export default async function PlanoDeEnsinoPage({
         estudante={embed.estudante}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_PLANO_DE_ENSINO, obs: embed.obs }}
+        permissoes={embed.permissoes}
       />
     </div>
   );

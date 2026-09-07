@@ -1,7 +1,7 @@
 {
   "id": "exp-92-plano-de-ensino",
   "nome": "Planejamento de ensino",
-  "versao": "1.0.2",
+  "versao": "1.1.0",
   "series": [
     "1EF",
     "2EF",
@@ -19,6 +19,10 @@
   "capabilities": [
     "telemetria"
   ],
+  "permissoes": [
+    "downloads"
+  ],
+  "publico": "professor",
   "verbos": {
     "interacted": "editou o planejamento",
     "completed": "concluiu o plano"
