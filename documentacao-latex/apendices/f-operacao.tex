@@ -799,6 +799,41 @@ nenhum} &
   \cd{enforcedSecurityPolicy.preconfiguredExprIds} nomeando a assinatura. O
   Pub/Sub reentrega para sempre (não há DLQ), então o volume de 403 cresce
   sozinho e não indica ataque nenhum: o agente é \cd{APIs-Google}.\\
+\textbf{A coluna diz \enquote{1 professor} e a lista da mesma escola diz
+\enquote{Ninguém por aqui ainda}} &
+  Dois lados perguntando coisas diferentes com o mesmo rótulo. A coluna conta
+  LOTAÇÕES naquela escola; a lista filtrava \cd{users.escola\_id}, que é o CACHE
+  da lotação PRINCIPAL. Quem trabalha em duas escolas é contado nas duas e
+  aparecia só na principal. \textbf{\enquote{Quem trabalha nesta escola} é
+  sempre \cd{lotacoes}} --- e a regressão a proteger é a IGUALDADE entre
+  contagem e lista, não a \emph{query} de um dos lados. Corrigido em
+  \arq{usuarios.service.ts}; o mesmo cache já havia produzido o defeito da busca
+  de profissionais (\adrr{ADR-80}).\\
+\zebra \textbf{O item de menu aparece e a tela abre VAZIA, sem erro e sem linha
+de log} &
+  A tela e o menu leem fontes diferentes. Aconteceu com o panorama do
+  \cd{gestor\_regional}: o menu conta as escolas da SESSÃO (que vêm da regional)
+  e o painel lia \cd{lotacoes} direto --- e ele não tem lotação nenhuma. Quando
+  uma tela é habilitada por uma fonte e alimentada por outra, o estado
+  impossível é \enquote{habilitada e vazia}. As duas passam por
+  \cd{escolasDaPessoa} (\adrr{ADR-81}).\\
+\textbf{A suíte de ponta a ponta roda \enquote{tudo} e o número de roteiros
+caiu} &
+  O \arq{rodar.mjs} monta o caminho a partir do array \cd{PAPEIS} e usa
+  \cd{existsSync}: pasta que não existe devolve lista VAZIA, e ele PULA aquele
+  papel em silêncio. Renomear o vocabulário sem renomear as pastas derrubou a
+  suíte de 29 para 19 roteiros sem um aviso (\adrr{ADR-80}). \textbf{Confira
+  sempre a contagem do cabeçalho} (\cd{== suíte … · N roteiro(s) ==}): é o único
+  lugar onde a ausência aparece.\\
+\zebra \textbf{Toda tela do hub responde 401 no BFF, mas o login funciona} &
+  O login é chamada direta à API (usuário e senha); as telas passam pelo BFF, que
+  assina um \emph{token} com a chave do HUB e a API o valida contra
+  \env{OIDC\_ISSUER}. Se o hub subiu numa porta diferente da que o
+  \env{OIDC\_ISSUER} aponta, a API busca o JWKS de OUTRO hub e recusa tudo. E o
+  sintoma engana duas vezes: o login passa (não usa \emph{token}), e um processo
+  antigo que sobreviveu ao \cd{pkill} continua servindo a porta com a
+  configuração velha --- \cd{lsof -nP -iTCP:<porta> -sTCP:LISTEN} diz QUEM está
+  lá, e o \cd{EADDRINUSE} no \emph{log} do processo novo é a confirmação.\\
 \bottomrule
 \textbf{A imagem gerada sai, e a voz responde \cd{403 PERMISSION\_DENIED}} &
   ADC de \textbf{usuário} sem projeto de cota. A síntese da exp-07 não vai ao

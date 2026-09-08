@@ -600,6 +600,54 @@ o dia em que ele publicar o gatilho por rolagem.
 sistema operacional: o \cd{ScrollBar} é da seção \cd{unooria}, e a regra das duas
 famílias proíbe que ele entre num clone.
 
+\section{O vocabulário das telas administrativas}
+
+O \emph{design system} resolve o componente; ele não resolve a PALAVRA. E a
+palavra divergiu: o mesmo perfil se chamava \enquote{gestor} num diálogo e
+\enquote{Coordenação} no filtro ao lado; a mesma coisa era \enquote{unidade} numa
+tela e \enquote{escola} na outra; \enquote{regional} e \enquote{diretoria}
+alternavam na mesma frase. Nada disso quebra teste, e tudo isso faz quem chega
+concluir que são coisas diferentes.
+
+A regra vale para TEXTO DE TELA --- rótulo, título, descrição, \emph{placeholder},
+mensagem --- e não para nome de campo de API:
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Use} & \thd{Nunca}\\
+\midrule
+\textbf{escola} & \enquote{unidade}\\
+\zebra \textbf{regional} & \enquote{diretoria} (nem alternando com ela)\\
+\textbf{vínculo}, \textbf{vincular} & \enquote{lotação}, \enquote{lotar} ---
+  \cd{lotacoes} segue sendo o nome da TABELA, porque é o termo que a rede pública
+  usa para o registro\\
+\zebra \textbf{Coordenação} (da escola, regional) & \enquote{Gestor} na
+  interface. O identificador continua \cd{gestor\_escola}: é contrato replicado
+  em quatro fontes\\
+\textbf{Código interno} nos FORMULÁRIOS & \enquote{Id da escola}. Na LISTAGEM o
+  id aparece sem rótulo, de propósito: é a chave que a secretaria usa nas
+  planilhas de importação, e um \enquote{Código interno:} por linha dobraria a
+  altura da célula\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Pessoa e vínculo não são a mesma contagem, e a tela tem de dizer qual é
+qual.} A coluna \enquote{Professores} conta PESSOAS naquela escola (índice único
+por escola $\times$ pessoa $\times$ papel); o total do resumo conta VÍNCULOS na
+rede, porque quem dá aula em duas escolas entra duas vezes. Por isso o resumo diz
+\enquote{vínculos de professores} e leva a frase \enquote{Um professor pode ter
+vínculo com mais de uma escola}. Essa confusão já produziu um \emph{bug} de
+divergência entre indicador e listagem (apêndice~\ref{ap:operacao}) e duas
+conversas de esclarecimento.
+\end{atencao}
+
+Uma divergência fica REGISTRADA em vez de corrigida: o campo \cd{unidades} da
+resposta de \rota{GET /escolas} conta as escolas de uma regional, e o produto
+chama isso de \enquote{escolas}. Ele não foi renomeado porque é contrato
+publicado (OpenAPI e apêndice~\ref{ap:endpoints}), e trocá-lo por pureza de
+vocabulário é \emph{churn} sem ganho para quem usa a tela.
+
 \section{Exceção registrada}
 
 \begin{decisao}
