@@ -245,11 +245,20 @@ describe("panorama da regional", () => {
   });
 
   test("o gestor_regional vê as escolas da regional, sem lotação em nenhuma", async () => {
-    const regional = await prisma.escola.findFirstOrThrow({ where: { tipo: "regional" } });
+    /* A regional DESTA suíte (`DESTINO`), nunca "a primeira que aparecer".
+       Escrito com `findFirst({ tipo: 'regional' })`, este teste passava aqui e
+       FALHAVA no CI: em banco de desenvolvimento a primeira era a `de-demo` do
+       seed, com duas escolas; num banco recém-migrado é a regional PADRÃO, que
+       não tem nenhuma — e o teste seguinte procurava uma escola que não existe.
+       É a mesma armadilha de estado global que a ADR-79 já registrou noutro
+       arquivo, e ela reapareceu aqui. `DESTINO` porque o bloco de exclusão roda
+       ANTES neste arquivo e move as escolas para cá. */
+    const regional = await prisma.escola.findUniqueOrThrow({ where: { id: DESTINO } });
     const escolasDaRegional = await prisma.escola.findMany({
       where: { tipo: "escola", paiId: regional.id },
       select: { id: true },
     });
+    expect(escolasDaRegional.length).toBeGreaterThan(0);
 
     const supervisor = await prisma.user.create({
       data: {
@@ -278,6 +287,7 @@ describe("panorama da regional", () => {
     const supervisor = await prisma.user.findFirstOrThrow({ where: { username: SUPERVISOR } });
     const daRegional = await prisma.escola.findFirstOrThrow({
       where: { tipo: "escola", paiId: supervisor.regionalId! },
+      orderBy: { id: "asc" },
     });
     /* Sem este ramo em `temLotacao`, o histórico do estudante transferido —
        a única leitura que atravessa escolas fora dos perfis de contrato —
