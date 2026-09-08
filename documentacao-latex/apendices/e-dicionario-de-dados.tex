@@ -94,14 +94,22 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{tipo} & \cd{TEXT} & \cd{escola} $|$ \cd{regional} $|$ \cd{rede}
   --- \emph{CHECK} na migração. Só a \cd{escola} é \emph{tenant}: regional e rede
   não têm turma, estudante nem lotação. \textbf{Agrupa, não autoriza} (\adrr{ADR-34}).\\
-\fk{pai\_id} & \cd{TEXT?} FK & Auto-relacionamento. Um \emph{trigger}
-  (\cd{escolas\_pai\_agrupa}) recusa pai que seja \cd{tipo = 'escola'} ou a
-  própria linha --- é o que impede uma unidade de virar pai de outra e a
-  hierarquia de perder o sentido em silêncio.\\
-\zebra \cd{fonte\_id} & \cd{TEXT?} & \cd{sourcedId} desta organização no
+\fk{pai\_id} & \cd{TEXT?} FK & Auto-relacionamento. \textbf{Obrigatório
+  quando \cd{tipo = 'escola'}} (\emph{CHECK}
+  \cd{escolas\_escola\_tem\_regional\_check}) e o pai tem de ser \cd{regional}
+  --- nunca \cd{rede}. Nulo só na própria regional. O \emph{trigger}
+  \cd{escolas\_pai\_agrupa} recusa pai que seja \cd{tipo = 'escola'} ou a própria
+  linha, e ADOTA pela regional padrão a escola que chegue sem regional
+  --- \adrr{ADR-79}.\\
+\zebra \cd{regional\_padrao} & \cd{BOOLEAN} & A regional que a plataforma cria
+  sozinha, para a rede sem divisão administrativa. \textbf{No máximo uma} ---
+  índice único PARCIAL \cd{escolas\_regional\_padrao\_unica}. Nasce chamada
+  \cd{Rede} e o nome é EDITÁVEL: o nome real do contrato não existe no banco,
+  porque o contrato é a stack e não uma linha --- \adrr{ADR-79}.\\
+\cd{fonte\_id} & \cd{TEXT?} & \cd{sourcedId} desta organização no
   sistema de origem. Chave de reconciliação da importação --- nunca é o id daqui.\\
-\cd{created\_at} & \cd{TIMESTAMPTZ(6)} & \\
-\zebra \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\zebra \cd{created\_at} & \cd{TIMESTAMPTZ(6)} & \\
+\cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
 \bottomrule
 \end{tabularx}
 

@@ -1037,6 +1037,13 @@
                       "turmas": {
                         "type": "integer",
                         "minimum": 0
+                      },
+                      "unidades": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "regionalPadrao": {
+                        "type": "boolean"
                       }
                     },
                     "required": [
@@ -1050,7 +1057,9 @@
                       "pai",
                       "estudantes",
                       "professores",
-                      "turmas"
+                      "turmas",
+                      "unidades",
+                      "regionalPadrao"
                     ],
                     "additionalProperties": false
                   }
@@ -1102,6 +1111,9 @@
                       "type": "string",
                       "nullable": true
                     },
+                    "regionalPadrao": {
+                      "type": "boolean"
+                    },
                     "municipio": {
                       "type": "string",
                       "nullable": true
@@ -1125,6 +1137,7 @@
                     "codigoInep",
                     "tipo",
                     "paiId",
+                    "regionalPadrao",
                     "municipio",
                     "uf",
                     "fonteId",
@@ -1140,7 +1153,7 @@
           "escolas"
         ],
         "summary": "Cria uma escola.",
-        "description": "**`admin-contrato` e ninguém mais**, inclusive no `orgs.csv`: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Id já existente é **400**.\n- `pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja `escola` ou a própria linha.",
+        "description": "**`admin-contrato` e ninguém mais**, inclusive no `orgs.csv`: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Id já existente é **400**.\n- **`tipo: escola` exige `paiId`** de uma regional existente (ADR-79): sem ele o 400 traz o texto do produto. `regional` entra sem pai.\n- `pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja `escola`, `rede` ou a própria linha.",
         "security": [
           {
             "token-da-plataforma": []
@@ -1359,6 +1372,9 @@
                       "type": "string",
                       "nullable": true
                     },
+                    "regionalPadrao": {
+                      "type": "boolean"
+                    },
                     "municipio": {
                       "type": "string",
                       "nullable": true
@@ -1382,6 +1398,7 @@
                     "codigoInep",
                     "tipo",
                     "paiId",
+                    "regionalPadrao",
                     "municipio",
                     "uf",
                     "fonteId",
@@ -1397,7 +1414,7 @@
           "escolas"
         ],
         "summary": "Edita os dados da escola.",
-        "description": "`id` e `tipo` não se editam: os dois circulam em token e em RLS.\n\n**Papéis:** admin-contrato.",
+        "description": "`id` e `tipo` não se editam: os dois circulam em token e em RLS.\n\nÉ por aqui que a regional padrão ganha o nome da rede — ela nasce `Rede` porque o nome real do contrato não existe no banco, e quem sabe qual é é quem administra.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- **Escola não volta a ficar sem regional**: `paiId` vazio numa `escola` é 400. Mudar de regional é permitido — é assim que uma unidade troca de diretoria.",
         "security": [
           {
             "token-da-plataforma": []
@@ -1472,6 +1489,71 @@
             }
           }
         }
+      },
+      "delete": {
+        "operationId": "EscolasController_excluir",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "transferirPara",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "transferidas": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "transferidas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "escolas"
+        ],
+        "summary": "Exclui uma regional.",
+        "description": "**Só regional.** Escola é *tenant* e não se exclui por rota nenhuma — a saída de uma unidade é assunto de contrato, não de um botão numa tabela.\n\nDuas recusas, as duas de produto (ADR-79): a rede **nunca fica sem regional** (409 `regional-unica`), e regional com escolas só sai dizendo para onde elas vão (409 `regional-com-escolas`, com `escolas` e `destinos` no corpo — é o que a tela usa para abrir o diálogo de transferência ou para explicar que não há destino).\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- A regional PADRÃO não tem proteção própria: depois que a rede se organizou em diretorias de verdade, ela é a sobra que se quer remover. O que a segura é a mesma regra da última regional.\n- A transferência e a exclusão são UMA transação: falhar no meio não deixa escola apontando para regional apagada.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin-contrato"
+        ],
+        "x-acesso": "token"
       }
     },
     "/escolas/{id}/pessoas": {

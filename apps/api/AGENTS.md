@@ -39,9 +39,45 @@ literalmente verdadeira (ADR-30).
   `escolaIds`, nunca o critério). Autorizar por hierarquia seria uma segunda fonte
   de verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse
   um pai. Regional e rede **não recebem lotação** — não têm turma nem dado, e
-  virariam escola fantasma no seletor do cabeçalho.
+  virariam escola fantasma no seletor do cabeçalho — e essa regra vale nas DUAS
+  portas desde a ADR-79: `lotarEmLote` filtrava por tipo desde o início, `lotar`
+  (a rota individual `POST /escolas/:id/lotacoes`) não filtrava nada.
   Estas colunas existiram por um tempo sem NENHUMA query que as lesse: era a
   mesma armadilha do `expires_at` sem rotina. Coluna nasce com o consumidor.
+- **TODA escola tem regional, e a rede nunca fica sem nenhuma** (ADR-79).
+  `pai_id` é obrigatório em `tipo='escola'` (CHECK `escolas_escola_tem_regional_check`)
+  e o pai tem de ser `regional` — **não mais `rede`**. Três camadas sustentam
+  isso, e cada uma serve a um chamador diferente: o Zod (`NovaEscolaSchema`) devolve
+  à tela o texto do produto (`SEM_REGIONAL`), o service confere que a regional
+  EXISTE e é regional (senão o 500 do trigger chegaria cru na tela), e o banco
+  não deixa a linha existir órfã. A camada do banco **ADOTA pela regional padrão**
+  em vez de recusar: sem isso, as ~30 suítes que criam uma escola de mentira para
+  testar outra coisa (vila, unoogpt, bem-estar, salas) quebrariam todas, e
+  emendá-las seria editar o módulo do vizinho — o que a ADR-71 identifica como a
+  causa de conflito de merge insolúvel. Sem padrão na rede o trigger não inventa
+  destino: `pai_id` fica nulo e o CHECK recusa.
+- **`escolas.regional_padrao`**: a regional que a plataforma cria sozinha, para a
+  rede sem divisão administrativa. **No máximo uma** (índice único PARCIAL), e é
+  ele que dá idempotência de graça a quem tenta criar a segunda. Nasce chamada
+  `Rede` e o nome é **editável** — o nome real do contrato NÃO existe no banco (o
+  contrato é a stack, não uma linha; `CONTRATO_NOME` é env do hub e uma migração
+  não a lê). Ela nasce em dois casos e em nenhum outro: rede sem regional nenhuma
+  (contrato recém-provisionado) ou rede com escola órfã para adotar — criá-la
+  sempre daria uma regional vazia numa rede já organizada em diretorias.
+- **Exclusão: só REGIONAL, nunca escola.** `DELETE /escolas/:id` recusa
+  `tipo='escola'` — escola é tenant, com turma, dado de menor e histórico atrás.
+  Duas recusas, as duas de produto: `regional-unica` (409) e
+  `regional-com-escolas` (409, com `escolas` e `destinos` no corpo — é com esses
+  números que a tela decide entre abrir o diálogo de transferência e explicar que
+  não há destino). `?transferirPara=` move as escolas e exclui na MESMA transação:
+  em duas chamadas existiria a janela em que as escolas já mudaram de regional e a
+  antiga continua na lista. A regional PADRÃO não tem proteção própria — depois
+  que a rede se organizou, ela é a sobra que se quer remover.
+- **A importação `orgs.csv` mudou de política** (ADR-79). Antes a escola entrava
+  com `pai_id` nulo e um aviso quando o `parentSourcedId` era desconhecido. Agora:
+  com UMA regional na rede, vínculo automático + aviso; com VÁRIAS, a linha é
+  **erro** com o número dela. É mudança observável para quem já usa — `orgs.csv`
+  que hoje importa passa a falhar.
 - **O supervisor de diretoria não é papel novo**: é um `gestor` lotado nas
   unidades dela. O panorama (`/admin/minhas-escolas`, `GET /escolas/minhas/resumo`)
   **lista, não soma** — uma linha por unidade, com turmas, estudantes e quantos ainda

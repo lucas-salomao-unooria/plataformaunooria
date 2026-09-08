@@ -5314,3 +5314,124 @@ voluntário para trocar a senha depois do primeiro acesso: a rota é forçada pe
 âncora à direita --- aí a compensação da identidade morre e o nome pode voltar
 para o \cd{HeaderPlataforma}. Ou o produto ganhar duas telas de conta, que é
 quando o menu de um item passa a ser um menu de verdade.
+
+\section{ADR-79 --- Toda escola pertence a uma regional, e a rede nunca fica sem
+nenhuma}
+\label{adr:vinculo-obrigatorio-regional}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-34} fez o nível REGIONAL existir de verdade, mas
+deixou \cd{pai\_id} opcional --- a unidade podia ficar órfã. O custo apareceu na
+tela: o filtro \enquote{Regional} não PARTICIONAVA a lista, porque havia escolas
+fora de toda regional, e a importação \arq{orgs.csv} entrava com \cd{pai\_id}
+nulo de propósito quando o \cd{parentSourcedId} era desconhecido
+(\enquote{melhor unidade sem regional que unidade pendurada em nada}). Somando os
+dois, \enquote{as escolas desta diretoria} nunca respondia pela rede inteira, e a
+lotação em lote --- o único consumidor do agrupamento --- cobria menos do que
+parecia cobrir.
+
+O relato que originou a decisão é de usabilidade, e é o mesmo problema visto de
+fora: \cd{/admin/escolas} listava os TRÊS níveis na mesma tabela, com o tipo numa
+etiqueta, travessões nas colunas de turma e estudante das linhas de regional, um
+resumo que somava níveis diferentes (\enquote{3 registros $\cdot$ 2 unidades}) e
+um filtro de \enquote{Tipo} cuja única função era desfazer a mistura. O rótulo
+\enquote{Sem regional} do filtro de regional MENTIA: o valor vazio nunca filtrou
+órfãs --- ele limpava o filtro e mostrava a rede toda.
+
+\textbf{Decisão.} Três coisas, juntas porque uma sem a outra não fecha:
+
+\begin{enumerate}
+  \item \emph{Vínculo obrigatório}. \cd{tipo = 'escola'} exige \cd{pai\_id}
+    (CHECK \cd{escolas\_escola\_tem\_regional\_check}), e o pai tem de ser
+    \cd{regional} --- não mais \cd{rede}. Escola pendurada na raiz era um segundo
+    desenho de hierarquia que nenhuma consulta usava.
+  \item \emph{Regional padrão}. A coluna \cd{regional\_padrao} marca a regional
+    que a plataforma cria sozinha, para a rede sem divisão administrativa. Índice
+    único PARCIAL garante no máximo uma. Ela nasce chamada \cd{Rede} e o nome é
+    EDITÁVEL.
+  \item \emph{Telas separadas}. \cd{/admin/regionais} e \cd{/admin/escolas}, nessa
+    ordem no menu, cada uma listando um nível só. O filtro de \enquote{Tipo}
+    deixou de existir --- separar as telas REMOVEU um controle.
+\end{enumerate}
+
+\textbf{Por que o nome nasce \cd{Rede} e não o nome da rede.} O nome real do
+contrato NÃO existe no banco: o contrato é a stack inteira, não uma linha, e não
+há entidade \cd{rede} --- o \cd{tipo = 'rede'} é aceito pelo CHECK e nada no
+código o cria. A única fonte do nome hoje é \cd{CONTRATO\_NOME}, uma variável de
+ambiente DO HUB, opcional, usada apenas na emissão do perfil portátil, e uma
+migração não tem como lê-la. Quem sabe o nome é quem administra: a tela de
+Regionais tem \enquote{Editar}.
+
+\textbf{Por que a exclusão de regional entrou.} A recomendação técnica era NÃO
+criar exclusão: o produto não apaga nada (desativa, encerra vínculo, preserva
+histórico) e não havia \cd{DELETE} de escola em rota nenhuma. A decisão de
+produto foi outra, e é razoável --- a rede que se reorganiza em diretorias novas
+precisa apagar as antigas, e a regional é o único nível que não guarda dado
+próprio. \cd{DELETE /escolas/:id} aceita só \cd{tipo = 'regional'}; ESCOLA
+continua sem exclusão em lugar nenhum, porque ela é \emph{tenant}, com turma,
+dado de menor e histórico atrás. Duas recusas, as duas de produto: a rede nunca
+fica sem regional (409 \cd{regional-unica}) e regional com escolas só sai dizendo
+para onde elas vão (409 \cd{regional-com-escolas}, com \cd{escolas} e
+\cd{destinos} no corpo --- é o que a tela usa para decidir entre abrir o diálogo
+de transferência e explicar que não há destino). A transferência e a exclusão são
+UMA transação: em duas chamadas existiria a janela em que as escolas já mudaram
+de regional e a antiga continua na lista.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter \cd{pai\_id} nulável e só não oferecer \enquote{sem
+    regional} na tela}: dava 90\% do benefício sem migração. Não elimina o
+    estado, esconde --- e é exatamente a armadilha que este projeto já registrou
+    três vezes (o \cd{expires\_at} sem rotina, o \cd{turmas.consentimento\_em} do
+    aplicativo de origem, as próprias colunas \cd{tipo}/\cd{pai\_id} da
+    \adrr{ADR-34}): a regra sai do código, o registro fica, e quem lê acredita
+    nele.
+  \item \emph{Reconhecer a padrão por convenção de id} (\cd{id = 'rede'}) em vez
+    de coluna: morreria no primeiro \cd{PATCH} de nome, e renomear é justamente o
+    que a decisão de produto permite. Três coisas dependem de reconhecê-la: o
+    rótulo na tela, a não-duplicação numa reexecução e o texto de apoio.
+  \item \emph{Criar a padrão SEMPRE na migração}: numa rede já organizada em
+    diretorias, com todas as escolas vinculadas, ela seria uma regional vazia que
+    não agrupa ninguém --- ruído numa tela cujo propósito é parar de misturar
+    níveis. Ela nasce em dois casos: rede sem regional nenhuma (contrato
+    recém-provisionado) ou rede com escola órfã para adotar.
+  \item \emph{Fazer o CHECK recusar todo \cd{INSERT} sem regional}: era a leitura
+    literal da regra, e quebraria TRINTA suítes que criam uma escola de mentira
+    para testar outra coisa --- em módulos que nada têm a ver com esta frente
+    (Vila, unooGPT, bem-estar, salas). Emendá-las seria editar o módulo do
+    vizinho, que é o que a \adrr{ADR-71} identifica como a causa de conflito de
+    merge insolúvel. O trigger ADOTA pela padrão em vez de recusar.
+  \item \emph{Somar turmas e estudantes por regional na tela nova}: seria útil e é
+    tecnicamente permitido (\cd{admin-contrato} é a exceção cross-escola), mas
+    aproxima a tela da visão somada de diretoria que a \adrr{ADR-34} recusa, e
+    custaria uma agregação sobre cinco mil escolas. A regional mostra um número
+    só: quantas escolas agrupa.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é a que muda comportamento observável}: a
+importação \arq{orgs.csv} de quem JÁ USA passa a falhar em linhas que antes
+entravam. Com uma regional na rede, o vínculo é automático e sai um aviso; com
+várias, a linha sem \cd{parentSourcedId} válido é ERRO, com o número dela no
+relatório. É o que o card de produto pede, e é a única saída coerente: uma órfã
+ali reprovaria no CHECK como exceção crua de Postgres no meio de um arquivo de
+mil linhas.
+
+\emph{Ruim}: o trigger que adota pela padrão é comportamento silencioso, e este
+projeto desconfia de silêncio. A mitigação é que ele NÃO é o caminho do produto
+--- o formulário e a importação exigem a escolha explícita quando há mais de uma
+regional --- e que sem padrão na rede ele não inventa destino: \cd{pai\_id}
+continua nulo e o CHECK recusa.
+
+\emph{Bom, e não estava no pedido}: a separação expôs um buraco de tenancy.
+\cd{lotarEmLote} filtrava \cd{tipo: 'escola'} desde o início, mas
+\cd{POST /escolas/:id/lotacoes} não filtrava nada --- por ela dava para lotar
+alguém numa REGIONAL, produzindo no seletor do cabeçalho a \enquote{escola
+fantasma} (sem turma, sem estudante, sem dado) que o lote existia para evitar.
+Corrigido junto, com teste.
+
+\textbf{Gatilho de reavaliação.} O produto ganhar uma entidade \cd{rede} de
+verdade --- aí a regional padrão passa a poder herdar o nome dela e a variável
+\cd{CONTRATO\_NOME} sai do hub para o banco. Ou a rede que administra mais de um
+contrato numa stack, que é quando \enquote{a rede tem ao menos uma regional}
+deixa de ser um invariante global e passa a ser por contrato.

@@ -146,6 +146,49 @@ importa), o `CHECK` no Postgres e o atributo `perfil` do WSO2. `/estudante` e
 que valida contra `GET /escolas/minhas` **da api** — nunca contra a lista que o
 cookie carrega.
 
+## Regionais e Escolas são DUAS telas (ADR-79)
+
+`/admin/regionais` antes de `/admin/escolas` no menu — a ordem da hierarquia, e a
+ordem em que quem chega lê a lateral. As duas são `admin-contrato` (o id novo
+entrou em `SO_ADMIN_DO_CONTRATO` de `components/nav-admin.tsx`, e a página faz
+`redirect` como a de escolas já fazia).
+
+**Era uma tela só, e a mistura era o problema**: os três níveis na mesma `Table`
+com o tipo numa `Tag`, `"—"` nas colunas de turma e estudante das linhas de
+regional, um resumo que somava níveis diferentes ("3 registros · 2 unidades") e
+um filtro de **Tipo** cuja única função era desfazer a mistura. Separar as telas
+REMOVEU um controle — se o filtro de Tipo voltar a `/admin/escolas`, é porque a
+tabela voltou a misturar. A suíte e2e cobra isso.
+
+**Três armadilhas de rótulo que a separação corrigiu, e que valem para qualquer
+tela de lista:**
+
+- **"Sem regional" MENTIA.** A opção tinha `value: ""`, e o `carregar()` só manda
+  `paiId` quando ele é truthy: escolher "Sem regional" limpava o filtro e
+  mostrava a rede inteira. Hoje é "Todas as regionais", que é o que ela sempre
+  fez. Opção de filtro cujo valor é o vazio do "sem filtro" nunca pode se chamar
+  pelo nome de um subconjunto.
+- **"Professores" no resumo era vínculo, não pessoa.** Por escola o número é de
+  pessoas (índice único por escola+pessoa+papel); o total SOMADO conta duas vezes
+  o professor lotado em duas escolas. A coluna diz "Professores", o resumo diz
+  "vínculos de professores".
+- **A regional é informação DA ESCOLA**, na segunda linha da célula junto do id.
+  Sem isso, o filtro seria o único lugar do produto que diz a que diretoria a
+  unidade pertence.
+
+**A tela de Regionais não soma turma nem estudante das unidades.** É permitido
+(`admin-contrato` é a exceção cross-escola) e seria útil, mas aproxima a tela da
+visão somada de diretoria que a ADR-34 recusa, e custaria uma agregação sobre
+cinco mil escolas. O único número dela é `unidades` — quantas escolas agrupa —, e
+ele vem de um `groupBy` FORA do filtro da consulta: com `tipo=regional` as filhas
+não estão no resultado, e contá-las ali daria zero em toda linha.
+
+**O botão Excluir abre SEMPRE o diálogo**, mesmo quando a exclusão é impossível.
+Decidir na hora do clique e não fazer nada é indistinguível de botão quebrado: o
+diálogo é onde a última regional da rede e a regional com escolas explicam o
+impedimento (e, no segundo caso, oferecem a transferência). Os textos e os
+códigos de conflito estão em `apps/api/AGENTS.md`.
+
 ## Embed de experiência
 
 A montagem (token, manifesto, dev server, origin) é uma só:

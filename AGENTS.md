@@ -342,7 +342,7 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **79**: a 65 foi ocupada pelo guia da aula, a 72 pela
+  (a PRÓXIMA é a **80**: a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -350,9 +350,10 @@ abri-lo.
       e a 78 pelo logoff no menu do avatar — três frentes fecharam ADR em
       2026-09-06 e duas colidiram na 65, e **em 2026-09-07 aconteceu de
       novo**: duas frentes simultâneas reservaram a 76, uma cedeu e foi para
-      a 77/78. Conferir `origin/dev` NÃO basta, e conferir uma vez no começo
-      da frente também não: confira as branches de trabalho abertas E a de
-      integração, na HORA de escrever o número),
+      a 77/78 — e a 79 é o vínculo obrigatório escola/regional. Conferir
+      `origin/dev` NÃO basta, e conferir uma vez no começo da frente também
+      não: confira as branches de trabalho abertas E a de integração, na HORA
+      de escrever o número),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
@@ -503,7 +504,7 @@ casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**75 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**79 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
