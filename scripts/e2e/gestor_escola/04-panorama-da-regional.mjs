@@ -52,5 +52,48 @@ await suite(
       detalhe: resumo,
       inteira: true,
     });
+
+    // ── o relatório: consolidado E por escola ────────────────────────────
+    await p.goto(`${HUB}/admin/relatorios`, { waitUntil: "domcontentloaded" });
+    await p.waitForTimeout(3000);
+
+    const tituloDoRelatorio = await p.locator("h1, h2").first().innerText();
+    r.exigir(
+      /Relatório/.test(tituloDoRelatorio),
+      `o relatório abre pela diretoria (viu: "${tituloDoRelatorio}")`,
+    );
+    /* Sem seletor de regional: ele lê a PRÓPRIA. Se o seletor aparecer aqui, é
+       porque a tela passou a oferecer a diretoria do vizinho. */
+    r.exigir(
+      (await p.getByRole("combobox", { name: /^Regional/ }).count()) === 0,
+      "o supervisor não escolhe a regional: lê a dele, e a api ignora o parâmetro",
+    );
+
+    const tabelas = await p.locator("table").count();
+    r.exigir(tabelas === 2, `duas tabelas: o consolidado por missão e a quebra por escola (${tabelas})`);
+
+    const cabecalhos = (await p.locator("table thead th").allInnerTexts()).join(" | ");
+    r.exigir(
+      /Turmas encerradas/.test(cabecalhos) && /Estudantes com registro/.test(cabecalhos),
+      `as DUAS medidas aparecem lado a lado: ${cabecalhos}`,
+    );
+    /* Nome de criança não entra: o relatório é contagem. */
+    const corpo = await p.locator("main, body").first().innerText();
+    r.exigir(
+      !/CPF|cpf/.test(corpo),
+      "nenhum dado de pessoa no relatório da diretoria — é contagem",
+    );
+
+    await r.registrar(p, "relatorio-da-diretoria", {
+      titulo: "O relatório da diretoria",
+      mostra: `${tituloDoRelatorio} — consolidado por missão e quebra por escola.`,
+      prova:
+        "As DUAS medidas lado a lado, porque medem coisas diferentes: 'Turmas encerradas' é a " +
+        "AULA que o professor fechou; 'Estudantes com registro' é a CRIANÇA que entrou. Turma " +
+        "encerrada com poucos registros é aula que passou sem a sala entrar. " +
+        "E ele atravessa escolas SEM afrouxar a tranca do banco: o serviço abre a tranca uma " +
+        "escola por vez e soma na aplicação.",
+      inteira: true,
+    });
   },
 );

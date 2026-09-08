@@ -257,6 +257,45 @@ export const ProfissionalDaRedeSchema = z.object({
 
 export const ProfissionaisDaRedeSchema = z.array(ProfissionalDaRedeSchema);
 
+/** `?regionalId=` — obrigatório para os perfis de CONTRATO (o token deles não
+ *  tem regional); ignorado para o `gestor_regional`, que só lê a própria. */
+export const RelatorioDaRegionalQuery = z.object({
+  regionalId: IdDeEscola.optional(),
+});
+
+/** Uma missão no relatório da diretoria. As DUAS medidas lado a lado de
+ *  propósito: `estudantes` é a criança, `turmas*` é a aula. */
+export const MissaoNoRelatorioSchema = z.object({
+  expId: z.string(),
+  /** Turmas em que a missão está aberta agora. */
+  turmasLiberadas: z.number().int().nonnegative(),
+  /** Turmas em que o professor já encerrou. Turma encerrada com poucos
+   *  registros é aula que passou sem a sala entrar. */
+  turmasEncerradas: z.number().int().nonnegative(),
+  /** Crianças DISTINTAS com registro na missão — a PK de `progresso` é
+   *  (escola, estudante, exp), então contar linha já é contar criança. */
+  estudantes: z.number().int().nonnegative(),
+});
+
+export const EscolaNoRelatorioSchema = z.object({
+  id: z.string(),
+  nome: z.string(),
+  municipio: z.string().nullable(),
+  uf: z.string().nullable(),
+  turmasComMissaoLiberada: z.number().int().nonnegative(),
+  turmasComMissaoEncerrada: z.number().int().nonnegative(),
+  estudantesComRegistro: z.number().int().nonnegative(),
+});
+
+export const RelatorioDaRegionalSchema = z.object({
+  regional: z.object({ id: z.string(), nome: z.string() }),
+  /** A quebra POR ESCOLA. Nome de criança nunca aparece aqui: o relatório da
+   *  diretoria é contagem, e para ver uma criança se abre a escola dela. */
+  escolas: z.array(EscolaNoRelatorioSchema),
+  /** O CONSOLIDADO, por missão — a soma das escolas acima. */
+  experiencias: z.array(MissaoNoRelatorioSchema),
+});
+
 export const TransferirSchema = z.object({
   escolaDestinoId: IdDeEscola,
   turmaDestinoId: Uuid.optional(),

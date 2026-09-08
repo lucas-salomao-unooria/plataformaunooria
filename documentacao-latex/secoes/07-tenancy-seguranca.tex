@@ -372,6 +372,8 @@ Ler os períodos letivos & \rota{GET /periodos-letivos} & \no & \yes & \yes & \y
   \rota{GET /escolas/\B profissionais} & \no & \no & \no & \yes\\
 \textbf{Atribuir papel SEM escola} (\cd{gestor\_contrato}, \cd{gestor\_regional})
   & \rota{POST /usuarios/\B sem-escola} & \no & \no & \no & \yes\footnotesize{**}\\
+\zebra \textbf{Relatório da DIRETORIA} (consolidado e por escola) &
+  \rota{GET /escolas/\B minhas/relatorio} & \no & \no & \yes\footnotesize{***} & \yes\\
 \zebra Conceder lotações em lote (nível da rede) &
   \rota{POST /escolas/\B lotacoes-em-lote} & \no & \no & \no & \yes\\
 Lotar alguém numa escola, encerrar lotação &
@@ -395,6 +397,11 @@ Publicar ou atualizar experiência no catálogo &
 (\cd{professorLeciona}); gestor e admin enxergam a escola inteira. É a
 diferença entre \enquote{dá aula nesta turma} e \enquote{trabalha nesta escola}
 (\adrr{ADR-28}).
+
+\footnotesize{***} Só o \cd{gestor\_regional}, e só a PRÓPRIA regional: o
+\cd{?regionalId=} dele é ignorado. O \cd{gestor\_escola} não alcança --- para
+quem tem uma escola o relatório seria a própria escola com um título errado
+(\adrr{ADR-82}).
 
 \footnotesize{**} A rota aceita os dois perfis de contrato, mas QUAL papel cada
 um pode atribuir sai da cadeia, não do \cd{@Roles}: \cd{gestor\_contrato}

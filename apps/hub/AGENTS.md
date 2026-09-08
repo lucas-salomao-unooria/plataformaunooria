@@ -229,6 +229,24 @@ vazia. Agora é `GET /escolas/profissionais`, sem escola de origem.
   registro, não autorização. Um seletor de perfil por escola prometeria o que o
   guard não cumpre — é a mesma armadilha que a ADR-79 fechou em outro lugar.
 
+## `/admin/relatorios` — o relatório da diretoria (ADR-82)
+
+Duas tabelas: o consolidado por missão e a quebra por escola. Só
+`gestor_regional` (a própria regional) e os perfis de contrato (com seletor).
+
+- **O seletor de regional NÃO existe para o `gestor_regional`.** Ele lê a dele, e
+  a api ignora o parâmetro. Se o seletor aparecer para ele, a tela passou a
+  oferecer a diretoria do vizinho — a suíte e2e cobra a ausência.
+- **As duas medidas ficam lado a lado, sempre.** "Turmas encerradas" é a AULA;
+  "Estudantes com registro" é a CRIANÇA. Juntar numa coluna apaga os dois casos
+  que interessam (aula fechada sem a sala entrar; sala no meio do caminho).
+- **Nome de criança não entra**, e o CSV também não o leva: o relatório é
+  contagem. Para ver uma criança, abre-se a escola dela.
+- **O CSV é montado no CLIENTE**, com os números que a tela já tem. Uma rota de
+  exportação seria a segunda fonte da mesma conta, e as duas divergiriam na
+  primeira coluna nova. (O `﻿` no começo do arquivo é o que faz o Excel abrir
+  acento certo.)
+
 ## Embed de experiência
 
 A montagem (token, manifesto, dev server, origin) é uma só:

@@ -31,6 +31,13 @@ const SO_ADMIN_DO_CONTRATO = new Set(["regionais", "escolas"]);
  */
 const SO_COM_VARIAS_ESCOLAS = new Set(["minhas-escolas"]);
 
+/**
+ * O relatório é DA DIRETORIA: quem cobre uma regional e quem enxerga o
+ * contrato. Professor e gestor de uma escola não entram — para eles a tela
+ * seria a própria escola com um título errado.
+ */
+const SO_DA_DIRETORIA = new Set(["relatorios"]);
+
 const ITENS: Array<SideBarItemData & { href: string }> = [
   /* Regionais ANTES de Escolas: é a ordem da hierarquia (rede → regional →
      escola), e quem chega pela primeira vez lê a lateral de cima para baixo.
@@ -47,6 +54,12 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
     label: "Minhas escolas",
     icon: <Icon name="account_tree" />,
     href: "/admin/minhas-escolas",
+  },
+  {
+    id: "relatorios",
+    label: "Relatório",
+    icon: <Icon name="insights" />,
+    href: "/admin/relatorios",
   },
   { id: "usuarios", label: "Usuários", icon: <Icon name="group" />, href: "/admin/usuarios" },
   { id: "turmas", label: "Turmas", icon: <Icon name="school" />, href: "/admin/turmas" },
@@ -72,7 +85,10 @@ export function NavAdmin({ papel, escolas }: { papel: Papel; escolas: number }) 
          item nenhum. */
       (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) ||
         escolas > 1 ||
-        papel === "gestor_regional"),
+        papel === "gestor_regional") &&
+      (!SO_DA_DIRETORIA.has(String(i.id)) ||
+        papel === "gestor_regional" ||
+        ehDoContrato(papel)),
   );
   const ativo = itens.find((item) => pathname.startsWith(item.href))?.id ?? "usuarios";
 

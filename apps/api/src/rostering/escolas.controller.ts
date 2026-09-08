@@ -34,6 +34,8 @@ import {
   NovaEscolaSchema,
   OkSchema,
   PapelDeLotacaoQuery,
+  RelatorioDaRegionalQuery,
+  RelatorioDaRegionalSchema,
   ProfissionaisDaRedeSchema,
   PessoasLotadasSchema,
   RegionalExcluidaSchema,
@@ -130,6 +132,42 @@ export class EscolasController {
   profissionais(@Query() query: Record<string, string>) {
     const { busca, limite } = BuscaDeProfissionaisSchema.parse(query);
     return this.escolas.profissionaisDaRede(busca, limite);
+  }
+
+  /**
+   * O RELATÓRIO DA DIRETORIA — consolidado e por escola.
+   *
+   * `gestor_regional` lê a PRÓPRIA regional, e o `?regionalId=` dele é
+   * ignorado: aceitar o parâmetro seria dar a ele a diretoria do vizinho por
+   * querystring. Os perfis de contrato precisam informá-la, porque o token
+   * deles não tem regional nenhuma.
+   */
+  @Get("minhas/relatorio")
+  @Roles("gestor_regional", ...GESTORES_DO_CONTRATO)
+  @Contrato({
+    resumo: "Relatório da diretoria: consolidado e por escola.",
+    descricao:
+      "As DUAS medidas lado a lado, porque medem coisas diferentes: `estudantes` é a CRIANÇA com registro na missão; `turmasLiberadas`/`turmasEncerradas` é a AULA. Turma encerrada com poucos registros é aula que passou sem a sala entrar; muitos registros com turma aberta é sala no meio do caminho.\n\n**Atravessa escolas SEM afrouxar a RLS**: `liberacoes` e `progresso` estão sob a política por escola, e o serviço abre a tranca uma escola por vez, somando na aplicação — o mesmo padrão de `lotacoes-em-lote` e da transferência.",
+    query: RelatorioDaRegionalQuery,
+    resposta: RelatorioDaRegionalSchema,
+    notas: [
+      "`gestor_regional` lê só a própria regional: o `?regionalId=` dele é IGNORADO, não validado — aceitar o parâmetro seria dar a diretoria do vizinho por querystring.",
+      "**Nome de criança nunca aparece**: o relatório é contagem. Para ver uma criança, abre-se a escola dela.",
+      "**Bem-estar não entra**, e não é omissão: é dado de saúde, sem rota de gestor nenhum (nem do contrato) por decisão registrada.",
+      "O teto é uma transação por escola, em lotes de 8. Diretoria muito grande ficar lenta é gatilho para agregado materializado — não para afrouxar a política.",
+    ],
+  })
+  async relatorio(@Query() query: Record<string, string>, @Req() req: Autenticado) {
+    const { regionalId } = RelatorioDaRegionalQuery.parse(query);
+    const alvo = await this.escolas.regionalDoRelatorio(req.auth, regionalId);
+    if (!alvo) {
+      throw new BadRequestException(
+        "informe ?regionalId= — o perfil de contrato não tem regional própria",
+      );
+    }
+    const relatorio = await this.escolas.relatorioDaRegional(alvo);
+    if (!relatorio) throw new NotFoundException("regional não encontrada");
+    return relatorio;
   }
 
   @Get()

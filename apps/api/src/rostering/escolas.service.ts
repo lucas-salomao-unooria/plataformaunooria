@@ -40,6 +40,17 @@ export type ExclusaoDeRegional =
   | { erro: "tem-escolas"; escolas: number; destinos: number }
   | { erro: "destino-invalido" };
 
+/**
+ * Fatia em lotes de `tamanho`. Existe para o relatório da diretoria: cinquenta
+ * escolas em paralelo estourariam o pool do Prisma, e em série seriam cinquenta
+ * idas de rede em fila. O 8 é o mesmo número que o seed usa contra Cloud SQL
+ * por túnel — baixo de propósito, porque estourar o pool troca espera de rede
+ * por espera de conexão.
+ */
+function* aosPares<T>(itens: readonly T[], tamanho: number): Generator<T[]> {
+  for (let i = 0; i < itens.length; i += tamanho) yield itens.slice(i, i + tamanho);
+}
+
 /** Recusa de REGRA na escrita de escola — distinta de `null`, que é ausência. */
 export type RecusaDeEscola = { erro: "regional-invalida" | "sem-regional" };
 
@@ -554,6 +565,167 @@ export class EscolasService {
           semPrimeiroAcesso.find((u) => u.escolaId === l.escola.id)?._count._all ?? 0,
       }))
       .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }
+
+  /**
+   * O RELATÓRIO DA DIRETORIA — consolidado E por escola (ADR-82).
+   *
+   * A pergunta que ele responde é pedagógica, não operacional: das crianças
+   * desta regional, quantas têm registro em cada missão, e em quantas turmas a
+   * missão foi liberada e encerrada. As duas colunas lado a lado de propósito —
+   * a primeira é a CRIANÇA, a segunda é a AULA, e elas medem coisas diferentes:
+   * turma encerrada com poucos registros é aula que passou sem a sala entrar;
+   * muitos registros e turma aberta é sala que ainda está no meio.
+   *
+   * COMO ELE ATRAVESSA ESCOLAS SEM MEXER NA RLS, e por que isso importa:
+   * `liberacoes` e `progresso` estão SOB a política por escola — cada consulta
+   * vê uma escola. Em vez de afrouxar a política (uma linha em laço sobre ~29
+   * tabelas, mas é a peça que garante que a escola A nunca veja a criança da
+   * escola B), este método abre a tranca UMA ESCOLA POR VEZ e soma na
+   * aplicação. É o mesmo padrão de `lotarEmLote` e da transferência, que já
+   * fazem uma transação por escola.
+   *
+   * A AUTORIZAÇÃO fica em um lugar só: a lista de escolas sai de `pai_id` da
+   * regional pedida, e o controller confere que a regional é a de quem pergunta.
+   * Nenhuma escola entra no laço sem ter passado por essa porta.
+   *
+   * O TETO é real e declarado: uma diretoria de 200 escolas são 200 transações.
+   * `emLotes` de 8 mantém o pool do Prisma inteiro (o mesmo número que o seed
+   * usa contra Cloud SQL por túnel). Ficar lento é o gatilho para um agregado
+   * materializado — não para afrouxar a política.
+   */
+  /**
+   * QUAL regional este pedido pode ler.
+   *
+   * A guarda mora aqui, e não na rota, pelo mesmo motivo de `escolaAlvo`: é uma
+   * decisão de tenancy, e decisão de tenancy espalhada por controller é a que
+   * fica de fora numa rota nova. Para o `gestor_regional` a resposta vem de
+   * `users.regional_id` e o parâmetro é IGNORADO — validá-lo contra o dele
+   * daria a mesma coisa, mas por um caminho onde esquecer a comparação vira
+   * "leia a diretoria do vizinho por querystring".
+   */
+  async regionalDoRelatorio(
+    auth: { usuarioId: string; perfil: string },
+    regionalPedida?: string,
+  ): Promise<string | null> {
+    if (auth.perfil === "gestor_regional") {
+      const pessoa = await this.prisma.user.findUnique({
+        where: { id: auth.usuarioId },
+        select: { regionalId: true },
+      });
+      return pessoa?.regionalId ?? null;
+    }
+    return regionalPedida ?? null;
+  }
+
+  async relatorioDaRegional(regionalId: string) {
+    const regional = await this.prisma.escola.findUnique({
+      where: { id: regionalId },
+      select: { id: true, nome: true, tipo: true },
+    });
+    if (regional?.tipo !== "regional") return null;
+
+    const escolas = await this.prisma.escola.findMany({
+      where: { tipo: "escola", paiId: regionalId },
+      select: { id: true, nome: true, municipio: true, uf: true },
+      orderBy: [{ nome: "asc" }],
+    });
+    if (escolas.length === 0) {
+      return { regional: { id: regional.id, nome: regional.nome }, escolas: [], experiencias: [] };
+    }
+
+    /* Uma leitura por escola, com a tranca armada naquela escola. O `Map` por
+       experiência acumula o consolidado enquanto a lista por escola é montada —
+       somar depois exigiria percorrer tudo de novo. */
+    const porEscola: Array<{
+      id: string;
+      nome: string;
+      municipio: string | null;
+      uf: string | null;
+      turmasComMissaoLiberada: number;
+      turmasComMissaoEncerrada: number;
+      estudantesComRegistro: number;
+    }> = [];
+    const consolidado = new Map<
+      string,
+      { expId: string; turmasLiberadas: number; turmasEncerradas: number; estudantes: number }
+    >();
+
+    for (const lote of aosPares(escolas, 8)) {
+      const lidas = await Promise.all(
+        lote.map((escola) =>
+          this.prisma.comTenancy(async (tx) => {
+            const [liberacoes, registros] = await Promise.all([
+              tx.liberacao.groupBy({
+                by: ["expId", "estado"],
+                where: { escolaId: escola.id },
+                _count: { _all: true },
+              }),
+              /* `progresso` tem PK (escola, estudante, exp): uma linha por
+                 criança por missão, então contar linhas JÁ é contar crianças
+                 distintas — não precisa de `distinct`. */
+              tx.progresso.groupBy({
+                by: ["expId"],
+                where: { escolaId: escola.id },
+                _count: { _all: true },
+              }),
+            ]);
+            return { escola, liberacoes, registros };
+          }, escola.id),
+        ),
+      );
+
+      for (const { escola, liberacoes, registros } of lidas) {
+        let liberadas = 0;
+        let encerradas = 0;
+        for (const l of liberacoes) {
+          const linha = consolidado.get(l.expId) ?? {
+            expId: l.expId,
+            turmasLiberadas: 0,
+            turmasEncerradas: 0,
+            estudantes: 0,
+          };
+          if (l.estado === "encerrada") {
+            encerradas += l._count._all;
+            linha.turmasEncerradas += l._count._all;
+          } else {
+            liberadas += l._count._all;
+            linha.turmasLiberadas += l._count._all;
+          }
+          consolidado.set(l.expId, linha);
+        }
+        let comRegistro = 0;
+        for (const r of registros) {
+          const linha = consolidado.get(r.expId) ?? {
+            expId: r.expId,
+            turmasLiberadas: 0,
+            turmasEncerradas: 0,
+            estudantes: 0,
+          };
+          comRegistro += r._count._all;
+          linha.estudantes += r._count._all;
+          consolidado.set(r.expId, linha);
+        }
+        porEscola.push({
+          id: escola.id,
+          nome: escola.nome,
+          municipio: escola.municipio,
+          uf: escola.uf,
+          turmasComMissaoLiberada: liberadas,
+          turmasComMissaoEncerrada: encerradas,
+          estudantesComRegistro: comRegistro,
+        });
+      }
+    }
+
+    return {
+      regional: { id: regional.id, nome: regional.nome },
+      /* Reordenado por nome: `Promise.all` em lotes devolve na ordem do lote,
+         mas os lotes chegam intercalados e a tabela da tela precisa ser
+         estável entre recargas. */
+      escolas: porEscola.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+      experiencias: [...consolidado.values()].sort((a, b) => a.expId.localeCompare(b.expId)),
+    };
   }
 
   /**

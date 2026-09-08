@@ -5648,3 +5648,100 @@ sem nenhum aviso. As pastas foram renomeadas junto. Runner que pula suíte calad
 (missões concluídas, perfis, bem-estar) --- aí a RLS por conjunto volta à mesa, e
 com ela a pergunta que a \adrr{ADR-34} fez primeiro: a diretoria é unidade de
 análise de dado de criança, ou só de operação?
+
+\section{ADR-82 --- O relatório da diretoria atravessa escolas com um LAÇO, não
+afrouxando a RLS}
+\label{adr:relatorio-da-regional}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-81} deu ao \cd{gestor\_regional} a soma
+OPERACIONAL da diretoria (turmas, estudantes, primeiro acesso), e ela saiu de
+graça porque essas contagens vêm de \cd{lotacoes}, \cd{turmas} e \cd{users} ---
+tabelas que estão fora da RLS por desenho. O pedido seguinte foi o número
+PEDAGÓGICO: quantas crianças da diretoria têm registro em cada missão, e em
+quantas turmas a missão foi liberada e encerrada.
+
+Esses dados vivem em \cd{liberacoes} e \cd{progresso}, que estão SOB a política
+por escola. Cada consulta vê uma escola.
+
+\textbf{Decisão.} O serviço abre a tranca \textbf{uma escola por vez} e soma na
+aplicação, em lotes de 8 (\cd{aosPares}). A política de RLS não é tocada.
+
+Não é padrão novo: é o mesmo que \cd{lotarEmLote} faz (uma transação por escola,
+porque cinquenta numa só seguraria conexão por segundos) e o que
+\cd{transferirEstudante} faz com \cd{comEscolaNaTransacao}. A diferença é o
+propósito --- ali é escrita, aqui é leitura agregada.
+
+\textbf{A autorização fica em UM lugar, e ele é um método.}
+\cd{regionalDoRelatorio} responde \enquote{qual regional este pedido pode ler}:
+para \cd{gestor\_regional} vem de \cd{users.regional\_id} e o parâmetro
+\cd{?regionalId=} é \textbf{IGNORADO}. Ignorado, e não validado contra o dele ---
+o efeito é o mesmo, mas por um caminho em que esquecer a comparação não vira
+\enquote{leia a diretoria do vizinho por \emph{querystring}}. Nenhuma escola
+entra no laço sem ter saído do \cd{pai\_id} da regional autorizada.
+
+\textbf{As DUAS medidas, lado a lado.} \cd{estudantes} é a CRIANÇA com registro
+na missão; \cd{turmasLiberadas}/\cd{turmasEncerradas} é a AULA. Foi pedido
+explicitamente que as duas aparecessem, e a razão é que a diferença entre elas é
+a informação: turma encerrada com poucos registros é aula que passou sem a sala
+entrar; muitos registros com turma aberta é sala no meio do caminho. Uma coluna
+só apagaria os dois casos.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Estender a política para aceitar um conjunto}
+    (\cd{escola\_id = ANY(...)}): é UMA linha, em laço sobre as $\sim$29 tabelas
+    --- mecanicamente barato, e foi por isso que a estimativa anterior deste
+    projeto errou nas duas direções (disse \enquote{31 tabelas} como se fosse
+    trabalho manual, e tratou o custo como se fosse de digitação). O custo real
+    não é escrever: é que a política É a garantia de que a escola A nunca vê a
+    criança da escola B, e passar a aceitar lista significa que todo dado de
+    estudante depende de o \emph{caller} montar a lista certa. O laço mantém a
+    garantia literal.
+  \item \emph{Agregado materializado} (tabela ou \emph{view} escrita por rotina):
+    resolve o teto de escala, e é o caminho para quando o laço ficar lento. Não
+    entrou agora porque agregado tem que ser invalidado, e rotina de
+    invalidação é a peça que este projeto já viu ficar sem dono
+    (\cd{expires\_at}).
+  \item \emph{Somar na API o que a tela já tem}: a soma OPERACIONAL fica na tela
+    (\adrr{ADR-81}) porque os números por escola já estavam lá. A pedagógica não
+    estava, então ela nasce somada no servidor --- somar nos dois lugares seria
+    duas fontes da mesma conta.
+\end{itemize}
+
+\textbf{O que ficou de fora, e não é omissão.}
+\begin{itemize}
+  \item \emph{Bem-estar}: dado de saúde, sem rota de gestor nenhum (nem do
+    contrato) por decisão registrada. Não é \enquote{falta esforço}, é uma linha
+    que o produto não atravessa.
+  \item \emph{O retrato de valores da Vila agregado por diretoria}: recomendado
+    NÃO, e a recomendação foi aceita. A listagem de turma da Vila já não mostra
+    valor de Schwartz nenhum, porque listagem ordenável vira ranking de
+    crianças; o agregado por diretoria é o mesmo risco com outro nome.
+  \item \emph{Nome de criança}: o relatório é CONTAGEM. Para ver uma criança, o
+    supervisor abre a escola dela. Uma coluna de nome aqui seria a lista
+    ordenável de crianças de várias escolas que a \adrr{ADR-49} e a \adrr{ADR-34}
+    recusam.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é o teto}: uma diretoria de 200 escolas são
+200 transações. Em lotes de 8, contra Cloud SQL, isso é ordem de segundos --- e o
+número 8 é o mesmo que o \emph{seed} usa por túnel IAP, baixo de propósito para
+não trocar espera de rede por espera de conexão. Ficar lento é o gatilho do
+agregado materializado, NÃO de afrouxar a política.
+
+\emph{Ruim}: o relatório só sabe o que \cd{liberacoes} e \cd{progresso} sabem ---
+que a criança TEM registro na missão, não o que ela fez nela. Profundidade por
+experiência (o retrato da Vila, a transcrição do unooGPT) não agrega para a
+diretoria sem uma decisão por experiência, e cada uma tem regra própria.
+
+\emph{Bom}: como as duas tabelas são da PLATAFORMA, o relatório cobre as nove
+experiências sem uma linha de código por experiência --- e a décima entra de
+graça.
+
+\textbf{Gatilho de reavaliação.} O laço passar de poucos segundos numa diretoria
+real (aí: agregado materializado), ou o produto pedir profundidade por
+experiência no nível da diretoria (aí: uma decisão por experiência, começando
+pela pergunta que a \adrr{ADR-34} fez primeiro --- a diretoria é unidade de
+análise de dado de criança, ou só de operação?).

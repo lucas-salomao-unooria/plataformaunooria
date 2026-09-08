@@ -30,6 +30,17 @@ async function limpar() {
   const unidades = [...ESCOLAS, DO_CSV, "teste-pad-orfa", "teste-pad-neta"];
   const agrupadores = [REGIONAL, DESTINO, VAZIA];
   const alvo = { in: [...unidades, ...agrupadores] };
+  /* `liberacoes` e `progresso` estão sob RLS: apagadas SEM contexto de escola,
+     a política as esconde e o `deleteMany` remove ZERO linhas em silêncio — e a
+     próxima corrida quebra no `user.deleteMany`, com a FK `liberada_por`
+     apontando para um professor de teste que não sai. É a armadilha que o
+     `AGENTS.md` da api registra, e ela custou uma corrida vermelha aqui. */
+  for (const escolaId of unidades) {
+    await prisma.comTenancy(async (tx) => {
+      await tx.liberacao.deleteMany({ where: { escolaId } });
+      await tx.progresso.deleteMany({ where: { escolaId } });
+    }, escolaId);
+  }
   await prisma.lotacao.deleteMany({ where: { escolaId: alvo } });
   await prisma.user.deleteMany({ where: { escolaId: alvo } });
   await prisma.turma.deleteMany({ where: { escolaId: alvo } });
@@ -274,5 +285,136 @@ describe("panorama da regional", () => {
        está. */
     expect(await escolas.temLotacao(supervisor.id, daRegional.id)).toBe(true);
     expect(await escolas.temLotacao(supervisor.id, "teste-pad-nao-existe")).toBe(false);
+  });
+});
+
+/**
+ * O RELATÓRIO DA DIRETORIA (ADR-82) — consolidado e por escola.
+ *
+ * Duas coisas para proteger, e a segunda é a que importa: que as DUAS medidas
+ * não se confundam (criança com registro ≠ turma encerrada), e que o supervisor
+ * não alcance a diretoria do vizinho por querystring.
+ */
+describe("relatório da diretoria", () => {
+  const SUP = "teste-pad-relatorio";
+  let supervisorId = "";
+
+  beforeAll(async () => {
+    await prisma.user.deleteMany({ where: { username: SUP } });
+    const sup = await prisma.user.create({
+      data: {
+        username: SUP,
+        displayName: "Supervisora do Relatório",
+        role: "gestor_regional",
+        regionalId: DESTINO,
+        passwordHash: "x",
+      },
+    });
+    supervisorId = sup.id;
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { username: SUP } });
+  });
+
+  test("o gestor_regional lê a PRÓPRIA regional, e o parâmetro é ignorado", async () => {
+    const auth = { usuarioId: supervisorId, perfil: "gestor_regional" };
+    expect(await escolas.regionalDoRelatorio(auth)).toBe(DESTINO);
+    /* Pedindo a do vizinho: a resposta continua sendo a dele. Não é validação
+       que compara e recusa — é o parâmetro não ter efeito, que é a única forma
+       de esquecer a comparação não virar um buraco. */
+    expect(await escolas.regionalDoRelatorio(auth, REGIONAL)).toBe(DESTINO);
+  });
+
+  test("o perfil de contrato PRECISA informar a regional", async () => {
+    const auth = { usuarioId: supervisorId, perfil: "gestor_contrato" };
+    expect(await escolas.regionalDoRelatorio(auth)).toBeNull();
+    expect(await escolas.regionalDoRelatorio(auth, REGIONAL)).toBe(REGIONAL);
+  });
+
+  test("uma escola não é regional: o relatório recusa", async () => {
+    expect(await escolas.relatorioDaRegional(ESCOLAS[0]!)).toBeNull();
+  });
+
+  test("consolidado e por escola, com as duas medidas separadas", async () => {
+    /* Uma liberação ENCERRADA e uma criança com registro, em escolas
+       diferentes da mesma regional: se as duas medidas fossem a mesma coluna,
+       este cenário sairia como um número só e ninguém veria a diferença. */
+    const periodo = await prisma.periodoLetivo.findFirstOrThrow({ orderBy: { inicio: "desc" } });
+    const turma = await prisma.turma.create({
+      data: { escolaId: ESCOLAS[0]!, periodoLetivoId: periodo.id, nome: "9R", serie: "9EF" },
+    });
+    const professor = await prisma.user.create({
+      data: {
+        escolaId: ESCOLAS[0]!,
+        username: "teste-pad-prof-rel",
+        displayName: "Professor do Relatório",
+        role: "professor",
+        passwordHash: "x",
+      },
+    });
+    const estudante = await prisma.user.create({
+      data: {
+        escolaId: ESCOLAS[1]!,
+        username: "teste-pad-est-rel",
+        displayName: "Estudante do Relatório",
+        role: "estudante",
+        passwordHash: "x",
+      },
+    });
+    await prisma.comTenancy(
+      (tx) =>
+        tx.liberacao.create({
+          data: {
+            escolaId: ESCOLAS[0]!,
+            turmaId: turma.id,
+            expId: "exp-70-vila-do-lume",
+            estado: "encerrada",
+            /* O banco exige a data junto do estado (CHECK
+               `liberacoes_encerrada_em_check`): "encerrada" sem quando é um
+               estado que não diz nada ao painel do professor. */
+            encerradaEm: new Date(),
+            liberadaPor: professor.id,
+          },
+        }),
+      ESCOLAS[0]!,
+    );
+    await prisma.comTenancy(
+      (tx) =>
+        tx.progresso.create({
+          data: { escolaId: ESCOLAS[1]!, estudanteId: estudante.id, expId: "exp-70-vila-do-lume" },
+        }),
+      ESCOLAS[1]!,
+    );
+
+    /* DESTINO, e não REGIONAL: o bloco de exclusão acima roda ANTES neste
+       arquivo e move as duas escolas para cá antes de apagar a origem. Olhar a
+       regional errada aqui daria `null` — e a mensagem seria "regional.id é
+       undefined", que não aponta para a ordem dos blocos. */
+    const relatorio = await escolas.relatorioDaRegional(DESTINO);
+    expect(relatorio?.regional.id).toBe(DESTINO);
+    // A quebra por escola tem as duas unidades da regional, ordenada por nome.
+    expect(relatorio?.escolas.map((e) => e.nome)).toEqual(
+      [...(relatorio?.escolas ?? [])].map((e) => e.nome).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    );
+    const vila = relatorio?.experiencias.find((e) => e.expId === "exp-70-vila-do-lume");
+    expect(vila).toMatchObject({ turmasEncerradas: 1, turmasLiberadas: 0, estudantes: 1 });
+    // E cada medida aparece na ESCOLA onde aconteceu, não somada na primeira.
+    const daTurma = relatorio?.escolas.find((e) => e.id === ESCOLAS[0]);
+    const daCrianca = relatorio?.escolas.find((e) => e.id === ESCOLAS[1]);
+    expect(daTurma).toMatchObject({ turmasComMissaoEncerrada: 1, estudantesComRegistro: 0 });
+    expect(daCrianca).toMatchObject({ turmasComMissaoEncerrada: 0, estudantesComRegistro: 1 });
+
+    await prisma.progresso.deleteMany({ where: { estudanteId: estudante.id } });
+    await prisma.liberacao.deleteMany({ where: { turmaId: turma.id } });
+    await prisma.user.deleteMany({ where: { id: { in: [professor.id, estudante.id] } } });
+    await prisma.turma.delete({ where: { id: turma.id } });
+  });
+
+  test("regional sem escola devolve estrutura vazia, não erro", async () => {
+    await prisma.escola.create({ data: { id: VAZIA, nome: "DE Vazia", tipo: "regional" } });
+    const r = await escolas.relatorioDaRegional(VAZIA);
+    expect(r).toMatchObject({ escolas: [], experiencias: [] });
+    await prisma.escola.delete({ where: { id: VAZIA } });
   });
 });
