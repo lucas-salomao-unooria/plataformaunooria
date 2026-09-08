@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { ehDoContrato, GESTORES_DO_CONTRATO, type Papel } from "@/lib/papeis";
 import { RelatorioDaRegional } from "./relatorio-da-regional";
 
-export const metadata = { title: "Relatório da diretoria — Plataforma Unooria" };
+export const metadata = { title: "Relatório da regional — Plataforma Unooria" };
 
 /**
  * `/admin/relatorios` — o supervisor da regional e os perfis de contrato.

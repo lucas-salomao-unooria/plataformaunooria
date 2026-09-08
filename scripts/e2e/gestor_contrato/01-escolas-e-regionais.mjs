@@ -162,6 +162,19 @@ await suite(
       "antes da busca a tela orienta, em vez de dizer que não há ninguém",
     );
     r.exigir(
+      /Busque um professor ou gestor na rede/.test(antesDeBuscar),
+      "o diálogo diz, em uma frase, o que fazer nele",
+    );
+    /* A contagem do título é DINÂMICA: com as 6 escolas marcadas na tabela e a
+       pessoa ainda não escolhida, ela é 0 — e passa a contar os destinos NOVOS
+       quando o profissional entra. Capturada na abertura, ficaria velha no
+       primeiro clique numa caixa. */
+    r.exigir(
+      /Vincular professor ou gestor a \d+ escolas?$/m.test(antesDeBuscar) ||
+        /Vincular professor ou gestor a 0 escolas/.test(antesDeBuscar),
+      "o título traz a contagem dos destinos",
+    );
+    r.exigir(
       !/Onde a pessoa está hoje/.test(antesDeBuscar),
       "não há campo de escola de origem: a busca é na rede",
     );
@@ -193,6 +206,10 @@ await suite(
       r.exigir(
         /Já vinculado a esta escola/.test(comEscolhido),
         "o destino já vinculado é marcado, e sai da criação",
+      );
+      r.exigir(
+        !/Escolas que receberão vínculo novo:\s*$/m.test(comEscolhido),
+        "quando há destino novo, ele é NOMEADO — não só contado",
       );
       await r.registrar(p, "vinculo-ja-existente", {
         titulo: "Achada na rede, com os vínculos que já tem",
@@ -243,8 +260,14 @@ await suite(
     await p.getByRole("button", { name: "Cadastrar escola" }).click();
     await p.locator("#escola-id").waitFor({ timeout: 15_000 });
     await p.waitForTimeout(600);
-    const campoDeRegional = await p.getByTestId("unooria-modal").getByText("Regional").count();
+    const formulario = p.getByTestId("unooria-modal");
+    const campoDeRegional = await formulario.getByText("Regional").count();
     r.exigir(campoDeRegional > 0, "o formulário pede a regional da escola");
+    const textoDoFormulario = await formulario.innerText();
+    r.exigir(
+      /Código interno/.test(textoDoFormulario) && !/Id da escola/.test(textoDoFormulario),
+      "o id se chama 'Código interno' nos detalhes — é o nome que quem chega entende",
+    );
     await r.registrar(p, "nova-escola", {
       titulo: "Uma escola nova, com regional",
       mostra:

@@ -479,6 +479,20 @@ export function ImportarPessoas({
           ignorada. Sem a coluna <code>role</code>, a pessoa entra como <strong>estudante</strong> (o
           menor privilégio) e o <code>roles.csv</code> corrige.
         </p>
+
+        {/* A REGRA DA REGIONAL, dita ANTES do envio.
+            Toda escola pertence a uma regional (ADR-79), e por isso o
+            comportamento de `orgs.csv` mudou: com várias regionais, a linha sem
+            `parentSourcedId` válido é ERRO, não aviso. Antes ela entrava sem
+            regional. Sem este aviso, quem importa descobre a mudança pelo
+            relatório de falha no meio de um arquivo de mil linhas — e a
+            mensagem de lá diz o que fazer, mas depois de o trabalho ter sido
+            feito errado. */}
+        <FeedbackAlert
+          type="info"
+          title="Toda escola entra vinculada a uma regional"
+          description="Com UMA regional na rede, o vínculo é automático e você não precisa da coluna. Com VÁRIAS, identifique a regional de cada escola em parentSourcedId — e envie as linhas de district antes das de school, senão a regional ainda não existe quando a escola chega. Linha sem regional válida é recusada e volta no relatório com o número dela."
+        />
       </section>
       )}
 

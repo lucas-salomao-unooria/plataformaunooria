@@ -84,7 +84,7 @@ export function RelatorioDaRegional({
       if (!resposta.ok) throw new Error(String(resposta.status));
       setRelatorio((await resposta.json()) as Relatorio);
     } catch {
-      setErro("Não foi possível carregar o relatório da diretoria.");
+      setErro("Não foi possível carregar o relatório da regional.");
     } finally {
       setCarregando(false);
     }
@@ -208,7 +208,7 @@ export function RelatorioDaRegional({
   return (
     <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
-        title={relatorio ? `Relatório — ${relatorio.regional.nome}` : "Relatório da diretoria"}
+        title={relatorio ? `Relatório — ${relatorio.regional.nome}` : "Relatório da regional"}
         description="O consolidado da regional e a quebra por escola. Duas medidas lado a lado: a turma diz o que a aula fez; o estudante, quem entrou na missão."
       />
 
@@ -229,7 +229,7 @@ export function RelatorioDaRegional({
       {!carregando && relatorio && relatorio.escolas.length === 0 ? (
         <EmptyState
           title="Nenhuma escola nesta regional"
-          description="A diretoria existe, mas nenhuma escola foi vinculada a ela. Quem vincula é o administrador do contrato, em Escolas."
+          description="A regional existe, mas nenhuma escola foi vinculada a ela. Quem vincula é o administrador do contrato, em Escolas."
         />
       ) : null}
 

@@ -317,7 +317,7 @@ export function NovoUsuario({
             <Selection
               id="novo-regional"
               label="Regional"
-              helperText="É o escopo dele: as escolas desta regional passam a ser as que ele pode abrir. Ele não recebe lotação em nenhuma."
+              helperText="É o escopo dele: as escolas desta regional passam a ser as que ele pode abrir. Ele não recebe vínculo com nenhuma."
               value={regionalId}
               options={regionais.map((r) => ({ value: r.id, label: r.nome }))}
               onChange={(v) => setRegionalId(String(v))}

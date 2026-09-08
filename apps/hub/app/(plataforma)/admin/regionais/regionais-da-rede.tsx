@@ -297,7 +297,10 @@ export function RegionaisDaRede() {
           <div className="flex flex-col gap-4">
             <TextField
               id="regional-id"
-              label="Id da regional"
+              /* "Código interno" nas DUAS telas: o formulário de escola diz o
+                 mesmo, e um rótulo por tela para o mesmo campo é a divergência
+                 que ninguém percebe até alguém comparar as duas. */
+              label="Código interno"
               helperText="Não muda depois: use letras minúsculas, números, ponto, hífen (ex.: de-campinas-leste)."
               value={id}
               disabled={aberta !== "nova"}

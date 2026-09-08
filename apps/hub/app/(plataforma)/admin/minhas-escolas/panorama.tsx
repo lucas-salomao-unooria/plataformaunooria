@@ -187,7 +187,7 @@ export function PanoramaDasEscolas({ ativa, papel }: { ativa: string; papel: Pap
           description={
             ehRegional
               ? "A regional existe e você a cobre, mas nenhuma escola foi vinculada a ela. Quem vincula é o administrador do contrato, em Escolas."
-              : "Este painel existe para quem administra várias unidades — supervisão de diretoria, polo, secretaria municipal. Com uma escola, o caminho é direto: Usuários e Turmas."
+              : "Este painel existe para quem administra várias escolas — coordenação regional, polo, secretaria municipal. Com uma escola, o caminho é direto: Usuários e Turmas."
           }
         />
       ) : null}

@@ -420,9 +420,15 @@ export function EscolasDaRede() {
     { value: "", label: "Todas as regionais" },
     ...regionais.map((r) => ({ value: r.id, label: r.nome })),
   ];
-  /* No FORMULÁRIO a lista não tem opção vazia: escolher é obrigatório. Com uma
-     regional só, `abrirNova` já a deixou selecionada. */
-  const opcoesDoCadastro = regionais.map((r) => ({ value: r.id, label: r.nome }));
+  /* No FORMULÁRIO, "Selecione uma regional" aparece só quando há ESCOLHA a
+     fazer. Com uma regional na rede, `abrirNova` já a deixou marcada e a opção
+     vazia seria um convite a desfazer o único caminho possível. Com várias, ela
+     é o estado inicial honesto — sem ela o campo abriria mostrando a primeira
+     regional como se alguém a tivesse escolhido. */
+  const opcoesDoCadastro = [
+    ...(regionais.length > 1 ? [{ value: "", label: "Selecione uma regional" }] : []),
+    ...regionais.map((r) => ({ value: r.id, label: r.nome })),
+  ];
 
   return (
     <div className="plataforma-largura-cheia flex flex-col gap-6">
@@ -478,6 +484,12 @@ export function EscolasDaRede() {
         {escolas.length} escola{escolas.length === 1 ? "" : "s"} · {totais.turmas} turmas ·{" "}
         {totais.estudantes.toLocaleString("pt-BR")} estudantes · {totais.professores} vínculos de
         professores
+        {/* A explicação que o card oferece como opcional, e que entrou porque a
+            confusão pessoa/vínculo já custou duas conversas: a coluna conta
+            pessoas na escola, o total conta vínculos na rede. */}
+        <span className="block text-[13px]">
+          Um professor pode ter vínculo com mais de uma escola.
+        </span>
       </p>
 
       {unidadesSelecionadas.length > 0 ? (
@@ -530,7 +542,11 @@ export function EscolasDaRede() {
           <div className="flex flex-col gap-4">
             <TextField
               id="escola-id"
-              label="Id da escola"
+              /* "Código interno" e não "Id da escola": é o nome que o card pede
+                 nos DETALHES, e é o que quem chega entende. Ele CONTINUA na
+                 listagem, sem rótulo, porque é a chave que a secretaria usa nas
+                 planilhas de importação — a suíte e2e registra isso como prova. */
+              label="Código interno"
               helperText="Não muda depois. Circula no token e na segurança do banco: use letras minúsculas, números, ponto, hífen (ex.: sp-035001)."
               value={id}
               disabled={aberta !== "nova"}
@@ -597,10 +613,23 @@ export function EscolasDaRede() {
 
       <Modal isOpen={loteAberto !== null} onClose={fecharLote} size="md" theme="light">
         <ModalHeader>
-          <ModalTitle>Vincular professor ou gestor a escolas</ModalTitle>
+          {/* A contagem é DINÂMICA, dos destinos marcados agora — não da seleção
+              da tabela no momento em que o diálogo abriu. O card pede o número
+              no título; capturá-lo na abertura o deixaria velho no primeiro
+              clique numa caixa, porque os destinos são editáveis aqui dentro. */}
+          <ModalTitle>
+            {destinosNovos.length === 1
+              ? "Vincular professor ou gestor a 1 escola"
+              : `Vincular professor ou gestor a ${destinosNovos.length} escolas`}
+          </ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-4">
+            <p className="text-[14px] text-unooria-neutral-700">
+              Busque um professor ou gestor na rede. Depois, escolha as escolas às quais deseja
+              vinculá-lo.
+            </p>
+
             {/* 1. A PESSOA, buscada na rede — sem escola de origem. */}
             <SearchInput
               id="busca-pessoa-lote"
@@ -734,6 +763,16 @@ export function EscolasDaRede() {
                   <span className="font-semibold">Perfil nas escolas de destino:</span>{" "}
                   {rotuloDoPapel(escolhido.papel as Papel)} — o mesmo em todas, hoje o perfil é da pessoa e
                   não da escola.
+                </p>
+                {/* As escolas do vínculo NOVO, pelo NOME. Numa seleção mista —
+                    algumas já vinculadas, outras não — dizer só "3 escolas"
+                    deixa quem confirma sem saber quais das marcadas vão receber
+                    o vínculo. O card pede que isso seja explícito. */}
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Escolas que receberão vínculo novo:</span>{" "}
+                  {destinosNovos
+                    .map((id) => escolas.find((e) => e.id === id)?.nome ?? id)
+                    .join(", ")}
                 </p>
                 <p className="text-[13px] text-unooria-neutral-700">
                   <span className="font-semibold">Acesso concedido:</span> passa a abrir{" "}
