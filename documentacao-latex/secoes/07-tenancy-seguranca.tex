@@ -593,9 +593,9 @@ Verificação de versão maior & Hub e experiência comparam
   \cd{localStorage} nem em \emph{cookie}. TTL de 15 minutos, renovado por
   mensagem.\\
 \emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
-  allow-modals}, mais \cd{allow-pointer-lock} e \cd{allow-forms}
-  \textbf{apenas} para quem declara \cd{pointer-lock} ou \cd{forms} no
-  manifesto~\cite{mdnsandbox}.\\
+  allow-modals}, mais \cd{allow-pointer-lock}, \cd{allow-forms} e
+  \cd{allow-downloads} \textbf{apenas} para quem declara \cd{pointer-lock},
+  \cd{forms} ou \cd{downloads} no manifesto~\cite{mdnsandbox}.\\
 \zebra \cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}: sem delegar
   \cd{autoplay}, um \cd{<video muted autoplay>} cross-origin rejeita
@@ -613,14 +613,33 @@ confirma exclusão assim; \cd{allow-pointer-lock} porque, num \cd{iframe} com
 \emph{sandbox}, \cd{requestPointerLock()} morre com \cd{SecurityError} sem ele
 --- verificado em \arq{scripts/probe-pointerlock.mjs}, que precisa do Chrome do
 sistema porque o Chromium do Playwright não concede \emph{pointer lock} nem no
-topo da página.
+topo da página. E \cd{allow-downloads} porque, sem ele, o navegador
+\textbf{bloqueia todo \emph{download}} iniciado de dentro do \cd{iframe}: o
+professor clicava em \enquote{Baixar .doc} nas ferramentas de planejamento e
+\textbf{nada acontecia}, sem erro na tela e sem linha no \emph{console} --- o
+Chrome registra esse bloqueio no painel \emph{Issues}, e o \cd{a.click()} do
+\emph{bundle} volta como se tivesse funcionado (\hyperref[adr:76]{ADR-76};
+MEDIDO com dois \cd{iframe} iguais, um com o token e outro sem).
 \end{nota}
+
+\begin{atencao}
+\textbf{A permissão do manifesto só vale se a rota do hub a repassar.} As três
+páginas que embedam ferramenta de professor
+(\rota{/professor/plano-de-aula}, \rota{/plano-de-ensino}, \rota{/bem-estar})
+renderizam o \cd{ExpFrame} direto e \textbf{não passavam \cd{permissoes}} ---
+só \rota{/exp/[expId]} e \rota{/dev-embed} passavam. O efeito é silencioso: o
+\emph{frame} monta o \emph{sandbox} sem o token e a capacidade declarada
+simplesmente não existe naquela tela.
+\end{atencao}
 
 \begin{decisao}
 \textbf{Permissão de \cd{iframe} é por experiência, não \emph{default} do
 \emph{frame}.} Prender o ponteiro do mouse de um estudante é capacidade de quem a
 declarou --- e concedê-la a todas as experiências significaria que qualquer
-\emph{bundle} publicado pode capturar o mouse. Já \cd{fullscreen}
+\emph{bundle} publicado pode capturar o mouse. O mesmo vale para
+\cd{allow-downloads}: entregar arquivo ao computador de quem está usando é
+capacidade de quem declarou, e só as duas ferramentas de professor exportam
+documento. Já \cd{fullscreen}
 \emph{não} entra no manifesto: o \cd{allow} do \emph{frame} já o delega a todas,
 e campo de manifesto que não muda nada é pior que campo nenhum, porque quem lê
 acredita ter declarado algo.

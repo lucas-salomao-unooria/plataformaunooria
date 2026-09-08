@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   Req,
   UseGuards,
 } from "@nestjs/common";
@@ -17,15 +18,17 @@ import { Contrato } from "../openapi/contrato";
 import { rotuloDaSerie, type Serie } from "../comum/series";
 import { componentePorSlug } from "../curriculo/componentes";
 import { DIVISOES_DO_ANO, type DivisaoDoAno } from "../curriculo/carga-horaria";
-import { paraDataCivil } from "./calendario";
+import { paraDataCivil, rotuloDaSemana } from "./calendario";
 import { PlanejamentoService } from "./planejamento.service";
 import {
   CalendarioDoAnoSchema,
   ConfiguracaoSchema,
   CriarConfiguracaoSchema,
   GerarPeriodoSchema,
+  FiltroDePeriodosSchema,
   ListaDeConfiguracoesSchema,
   ListaDePlanosAnuaisSchema,
+  ListaDePlanosDePeriodoSchema,
   OkSchema,
   PlanoAnualComConteudoSchema,
   PlanoAnualCriadoSchema,
@@ -95,14 +98,30 @@ export class PlanejamentoController {
 
   @Get("configuracoes/:id/calendario")
   @Contrato({
-    resumo: "Os períodos de avaliação e as janelas de planejamento do ano.",
+    resumo: "Os períodos de avaliação e as semanas de planejamento do ano.",
     descricao:
-      "As janelas são as semanas ou quinzenas que o professor vai planejar, cada uma com quantas aulas ela tem de fato (da grade real) e o plano já gerado, se houver. Uma quinzena que atravessa a virada do bimestre pertence ao período em que COMEÇOU — cortá-la produziria uma janela de uma semana, que não é o que o professor configurou.",
+      "As 40 semanas que o professor vai planejar, cada uma com quantas aulas ela tem de fato (da grade real) e o plano já gerado, se houver. O passo é sempre semanal (ADR-76): entregar de duas em duas semanas, ou o período inteiro, é recorte de EXPORTAÇÃO e não de planejamento. Como os períodos são divididos em semanas fechadas, nenhuma semana atravessa a virada do bimestre.",
     params: IdParam,
     resposta: CalendarioDoAnoSchema,
   })
   calendario(@Req() req: Autenticado, @Param("id") id: string) {
     return this.planejamento.calendario(req.auth.escolaId, req.auth.usuarioId, IdParam.parse({ id }).id);
+  }
+
+  @Delete("configuracoes/:id")
+  @Contrato({
+    resumo: "Apaga o planejamento inteiro daquele componente × ano.",
+    descricao:
+      "A regência, o plano anual dela e todas as semanas planejadas. O banco faz a cascata; o object storage não tem cascata, então os prefixos de cada plano anual são varridos ANTES do delete — depois dele não haveria mais como saber quais eram. Irreversível, e é a tela que confirma.",
+    params: IdParam,
+    resposta: OkSchema,
+  })
+  apagarConfiguracao(@Req() req: Autenticado, @Param("id") id: string) {
+    return this.planejamento.apagarConfiguracao(
+      req.auth.escolaId,
+      req.auth.usuarioId,
+      IdParam.parse({ id }).id,
+    );
   }
 
   // --------------------------------------------------------- plano anual
@@ -249,9 +268,9 @@ export class PlanejamentoController {
   @Post("planos-anuais/:id/periodos/:ordem/gerar")
   @HttpCode(202)
   @Contrato({
-    resumo: "Gera o plano aula a aula de uma semana ou quinzena.",
+    resumo: "Gera o plano aula a aula de uma semana.",
     descricao:
-      "O esqueleto das aulas (quantas, em que data, em que horário) NÃO vem do modelo: sai do calendário e da grade real do professor. O modelo preenche o conteúdo pedagógico das aulas que existem — deixá-lo decidir quantas caberiam produzia dez, o número redondo, para um professor de Arte que tem duas. `feriados` REMOVE a aula em vez de deslocá-la: repor é decisão pedagógica, não conta do sistema.",
+      "O esqueleto das aulas (quantas, em que data, em que horário) NÃO vem do modelo: sai do calendário e da grade real do professor. O modelo preenche o conteúdo pedagógico das aulas que existem — deixá-lo decidir quantas caberiam produzia cinco, o número redondo, para um professor de Arte que tem uma. `feriados` REMOVE a aula em vez de deslocá-la: repor é decisão pedagógica, não conta do sistema. Reenviar REGERA a semana, e o `update` recalcula início, fim e período de avaliação: a `ordem` é a única chave, e o que ela endereça muda se a regência corrigir o início do ano letivo.",
     params: OrdemParam,
     corpo: GerarPeriodoSchema,
     resposta: PlanoDePeriodoCriadoSchema,
@@ -274,9 +293,33 @@ export class PlanejamentoController {
     );
   }
 
+  @Get("planos-anuais/:id/periodos")
+  @Contrato({
+    resumo: "As semanas JÁ PLANEJADAS, com as aulas — para exportar várias juntas.",
+    descricao:
+      "Só as `pronto`, em ordem: é a fonte do documento de mais de uma semana (duas, para a escola que recolhe de quinze em quinze dias, ou o período de avaliação inteiro). Um documento que a coordenação recebe não leva semana que falhou na geração nem semana que ninguém planejou. Com `periodoDeAvaliacao` o filtro é no BANCO — baixar o 1º bimestre não tem por que carregar as aulas dos outros três.",
+    params: IdParam,
+    query: FiltroDePeriodosSchema,
+    resposta: ListaDePlanosDePeriodoSchema,
+  })
+  async periodos(
+    @Req() req: Autenticado,
+    @Param("id") id: string,
+    @Query() query: unknown,
+  ) {
+    const { periodoDeAvaliacao } = FiltroDePeriodosSchema.parse(query ?? {});
+    const lista = await this.planejamento.listarPlanosDePeriodo(
+      req.auth.escolaId,
+      req.auth.usuarioId,
+      IdParam.parse({ id }).id,
+      periodoDeAvaliacao,
+    );
+    return { periodos: lista.map(periodoParaResposta) };
+  }
+
   @Get("periodos/:id")
   @Contrato({
-    resumo: "O plano de uma semana ou quinzena, aula a aula.",
+    resumo: "O plano de uma semana, aula a aula.",
     params: IdParam,
     resposta: PlanoDePeriodoSchema,
   })
@@ -319,7 +362,6 @@ export class PlanejamentoController {
     turmaId: string | null;
     turma?: { nome: string } | null;
     divisaoDoAno: string;
-    periodicidade: string;
     minutosPorAula: number;
     aulasSemanais: number;
     grade: unknown;
@@ -338,7 +380,6 @@ export class PlanejamentoController {
       turmaId: c.turmaId,
       turmaNome: c.turma?.nome ?? null,
       divisaoDoAno: c.divisaoDoAno as never,
-      periodicidade: c.periodicidade as never,
       minutosPorAula: c.minutosPorAula,
       aulasSemanais: c.aulasSemanais,
       grade: (Array.isArray(c.grade) ? c.grade : []) as never,
@@ -395,7 +436,7 @@ function periodoParaResposta(p: {
     id: p.id,
     planoAnualId: p.planoAnualId,
     ordem: p.ordem,
-    rotulo: `${p.ordem}ª janela`,
+    rotulo: rotuloDaSemana(p.ordem),
     inicio: paraDataCivil(p.inicio),
     fim: paraDataCivil(p.fim),
     periodoDeAvaliacao: p.periodoDeAvaliacao,

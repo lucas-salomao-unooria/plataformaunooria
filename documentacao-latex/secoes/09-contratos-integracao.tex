@@ -278,9 +278,14 @@ lendo o arquivo.
 \zebra \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
 \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
-  experiência precisa: \cd{pointer-lock} (exp-70) e \cd{forms} (exp-03, exp-07),
-  traduzidos pelo \cd{ExpFrame} nos tokens \cd{allow-pointer-lock} e
-  \cd{allow-forms}. Vazio (o \emph{default}) = nenhuma.\\
+  experiência precisa: \cd{pointer-lock} (exp-70), \cd{forms} (exp-03, exp-07) e
+  \cd{downloads} (exp-90, exp-92), traduzidos pelo \cd{ExpFrame} nos tokens
+  \cd{allow-pointer-lock}, \cd{allow-forms} e \cd{allow-downloads}. Vazio (o
+  \emph{default}) = nenhuma. \textbf{O vocabulário é fechado em três lugares}
+  --- o Zod da api, o CHECK de \cd{experiencias.permissoes} e o \cd{ExpFrame}
+  ---, e \arq{tests/permissoes-de-iframe.spec.ts} falha se os dois primeiros
+  divergirem: a divergência só aparece em produção, como 500 no
+  \rota{PUT /experiencias/:expId}.\\
 \zebra \cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
   experiência emite. Não é lido por código; é contrato de leitura para quem
   analisa os dados.\\
@@ -498,8 +503,8 @@ export interface AiJsonRequest<T> {
   validar: (bruto: unknown) => T;
   temperatura?: number;
   tentativas?: number;
-  /** Teto de saida. Ausente = o teto do modelo. Uma quinzena de aulas passa
-   *  de 9k tokens, e JSON truncado nao chega como MAX_TOKENS legivel. */
+  /** Teto de saida. Ausente = o teto do modelo. Uma semana de aulas passa
+   *  de 5k tokens, e JSON truncado nao chega como MAX_TOKENS legivel. */
   maxTokens?: number;
   modelo?: "padrao" | "longo";   // mesma familia neutra de AiRequest
   /** Quanto o vendor cobrou, UMA VEZ POR TENTATIVA -- inclusive as que

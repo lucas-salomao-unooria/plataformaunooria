@@ -14,14 +14,19 @@ import {
 } from "@edu/ui/ds";
 
 import { api, statusDoErro } from "../lib/api";
-import { baixarDoc, documentoDoPeriodo, imprimir } from "../lib/exportar";
+import {
+  baixarDoc,
+  documentoDaSemana,
+  documentoDeSemanas,
+  imprimir,
+} from "../lib/exportar";
 import type {
   Aula,
   CalendarioDoAno,
   Configuracao,
-  Janela,
   PlanoAnual,
   PlanoDePeriodo,
+  Semana,
 } from "../lib/tipos";
 import { DIAS, dataCurta, dataLonga } from "../lib/tipos";
 
@@ -49,7 +54,8 @@ interface Props {
 
 export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Props) {
   const [calendario, setCalendario] = useState<CalendarioDoAno | null>(null);
-  const [janelaAtiva, setJanelaAtiva] = useState<Janela | null>(null);
+  const [semanaAtiva, setSemanaAtiva] = useState<Semana | null>(null);
+  const [exportando, setExportando] = useState(false);
   const [periodo, setPeriodo] = useState<PlanoDePeriodo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -73,7 +79,7 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
     return p.status;
   }, []);
 
-  // Polling enquanto a janela gera.
+  // Polling enquanto a semana gera.
   useEffect(() => {
     if (periodo?.status !== "gerando") return;
     const t = window.setInterval(() => {
@@ -84,19 +90,19 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
     return () => window.clearInterval(t);
   }, [periodo?.status, periodo?.id, carregarPeriodo, carregarCalendario]);
 
-  async function abrir(janela: Janela) {
-    setJanelaAtiva(janela);
+  async function abrir(semana: Semana) {
+    setSemanaAtiva(semana);
     setPeriodo(null);
     setErro(null);
     setSujo(false);
-    if (janela.planoId) await carregarPeriodo(janela.planoId).catch(() => setErro("Falha ao abrir."));
+    if (semana.planoId) await carregarPeriodo(semana.planoId).catch(() => setErro("Falha ao abrir."));
   }
 
-  async function gerar(janela: Janela) {
+  async function gerar(semana: Semana) {
     setErro(null);
     try {
       const { id } = await api.post<{ id: string }>(
-        `/planejamento/planos-anuais/${plano.id}/periodos/${janela.ordem}/gerar`,
+        `/planejamento/planos-anuais/${plano.id}/periodos/${semana.ordem}/gerar`,
         { feriados: [] },
       );
       await carregarPeriodo(id);
@@ -106,9 +112,43 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
         codigo === 403
           ? "A cota diária de IA acabou. Tente novamente amanhã."
           : codigo === 400
-            ? "Esta janela não tem aula — confira a grade de horários na regência."
-            : "Não foi possível gerar o plano desta janela.",
+            ? "Esta semana não tem aula — confira a grade de horários na regência."
+            : "Não foi possível gerar o plano desta semana.",
       );
+    }
+  }
+
+  /**
+   * Baixa MAIS DE UMA semana num só documento — a entrega.
+   *
+   * O planejamento é semanal (ADR-76) e o recorte da entrega mora aqui: duas
+   * semanas para a escola que recolhe de quinze em quinze dias, ou o período de
+   * avaliação inteiro. As aulas das outras semanas NÃO estão em memória (a tela
+   * carrega uma por vez), então vêm do servidor já filtradas pelo status: se
+   * uma semana do meio não foi planejada, ela simplesmente não entra, e o
+   * documento diz quantas entraram.
+   */
+  async function baixarConjunto(ordens: number[], nomeDoRecorte: string) {
+    if (!ordens.length) return;
+    setErro(null);
+    setExportando(true);
+    try {
+      const { periodos } = await api.get<{ periodos: PlanoDePeriodo[] }>(
+        `/planejamento/planos-anuais/${plano.id}/periodos`,
+      );
+      const escolhidas = periodos.filter((p) => ordens.includes(p.ordem));
+      if (!escolhidas.length) {
+        setErro("Nenhuma dessas semanas foi planejada ainda.");
+        return;
+      }
+      baixarDoc(
+        documentoDeSemanas(escolhidas, configuracao, professorNome, nomeDoRecorte),
+        `${configuracao.componenteRotulo} — ${nomeDoRecorte}`,
+      );
+    } catch {
+      setErro("Não foi possível montar o documento. Tente de novo.");
+    } finally {
+      setExportando(false);
     }
   }
 
@@ -139,21 +179,33 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
 
   if (!calendario) return <p aria-live="polite">Carregando o calendário…</p>;
 
-  const rotuloDaJanela = configuracao.periodicidade === "quinzenal" ? "quinzena" : "semana";
-  const documento = () =>
-    periodo ? documentoDoPeriodo(periodo, configuracao, professorNome) : "";
-  const titulo = `${configuracao.componenteRotulo} — ${janelaAtiva?.rotulo ?? ""}`;
+  const documento = () => (periodo ? documentoDaSemana(periodo, configuracao, professorNome) : "");
+  const titulo = `${configuracao.componenteRotulo} — ${semanaAtiva?.rotulo ?? ""}`;
+
+  /** A semana seguinte à aberta, quando ela existe e já está planejada. */
+  const proximaSemana = semanaAtiva
+    ? (calendario.semanas.find((s) => s.ordem === semanaAtiva.ordem + 1) ?? null)
+    : null;
+  /** Quantas semanas do período da aberta já foram planejadas. */
+  const planejadasDoPeriodo = semanaAtiva
+    ? calendario.semanas.filter(
+        (s) => s.periodoDeAvaliacao === semanaAtiva.periodoDeAvaliacao && s.status === "pronto",
+      )
+    : [];
+  const periodoDaSemanaAtiva = semanaAtiva
+    ? (calendario.periodos.find((p) => p.ordem === semanaAtiva.periodoDeAvaliacao) ?? null)
+    : null;
 
   return (
     <section className="passo">
       <SectionHeader
         title="Suas aulas"
-        description={`Cada ${rotuloDaJanela} do ano letivo, aula a aula, a partir do que você distribuiu no plano anual.`}
+        description="Você planeja uma semana por vez, a partir do que distribuiu no plano anual. Na hora de entregar, o documento pode juntar duas semanas ou o período de avaliação inteiro."
       />
 
       {erro && <FeedbackAlert type="error" description={erro} />}
 
-      {!janelaAtiva && (
+      {!semanaAtiva && (
         <>
           {calendario.periodos.map((p) => (
             <Collapse
@@ -163,65 +215,105 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
               subtitle={`${dataCurta(p.inicio)} a ${dataCurta(p.fim)} · ${p.aulasEstimadas} aulas`}
               defaultOpen={p.ordem === 1}
             >
-              <ul className="lista-de-janelas">
-                {calendario.janelas
-                  .filter((j) => j.periodoDeAvaliacao === p.ordem)
-                  .map((j) => (
-                    <li key={j.ordem}>
-                      <button type="button" className="janela" onClick={() => void abrir(j)}>
-                        <span className="janela__rotulo">
-                          <strong>{j.rotulo}</strong>
+              <ul className="lista-de-semanas">
+                {calendario.semanas
+                  .filter((s) => s.periodoDeAvaliacao === p.ordem)
+                  .map((s) => (
+                    <li key={s.ordem}>
+                      <button type="button" className="semana" onClick={() => void abrir(s)}>
+                        <span className="semana__rotulo">
+                          <strong>{s.rotulo}</strong>
                           <span>
-                            {dataCurta(j.inicio)} – {dataCurta(j.fim)}
+                            {dataCurta(s.inicio)} – {dataCurta(s.fim)}
                           </span>
                         </span>
-                        <span className="janela__estado">
-                          <span>{j.aulasPrevistas} aula(s)</span>
-                          {j.status === "pronto" && <Badge variant="success">Planejada</Badge>}
-                          {j.status === "gerando" && <Badge variant="info">Gerando…</Badge>}
-                          {j.status === "erro" && <Badge variant="error">Falhou</Badge>}
-                          {!j.status && <Tag variant="neutral">A planejar</Tag>}
+                        <span className="semana__estado">
+                          <span>{s.aulasPrevistas} aula(s)</span>
+                          {s.status === "pronto" && <Badge variant="success">Planejada</Badge>}
+                          {s.status === "gerando" && <Badge variant="info">Gerando…</Badge>}
+                          {s.status === "erro" && <Badge variant="error">Falhou</Badge>}
+                          {!s.status && <Tag variant="neutral">A planejar</Tag>}
                           <Icon name="chevron_right" size="s" />
                         </span>
                       </button>
                     </li>
                   ))}
               </ul>
+
+              {/* O recorte da ENTREGA, no cabeçalho do período: quem recolhe
+                  planejamento por bimestre baixa tudo de uma vez, sem abrir as
+                  dez semanas. Só aparece com semana planejada — um botão que
+                  produz documento vazio é pior que botão nenhum. */}
+              {calendario.semanas.some(
+                (s) => s.periodoDeAvaliacao === p.ordem && s.status === "pronto",
+              ) && (
+                <div className="exportar-conjunto">
+                  <p className="exportar-conjunto__rotulo">
+                    {
+                      calendario.semanas.filter(
+                        (s) => s.periodoDeAvaliacao === p.ordem && s.status === "pronto",
+                      ).length
+                    }{" "}
+                    semana(s) planejada(s) neste período:
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    isLoading={exportando}
+                    leftIcon={<Icon name="download" size="xs" />}
+                    onClick={() =>
+                      void baixarConjunto(
+                        calendario.semanas
+                          .filter((s) => s.periodoDeAvaliacao === p.ordem && s.status === "pronto")
+                          .map((s) => s.ordem),
+                        p.rotulo,
+                      )
+                    }
+                  >
+                    Baixar o {p.rotulo} inteiro
+                  </Button>
+                </div>
+              )}
             </Collapse>
           ))}
         </>
       )}
 
-      {janelaAtiva && (
+      {semanaAtiva && (
         <>
           <div className="acoes acoes--topo">
             <Button
-              variant="tertiary"
+              variant="ghost"
               size="sm"
               onClick={() => {
-                setJanelaAtiva(null);
+                setSemanaAtiva(null);
                 setPeriodo(null);
                 void carregarCalendario();
               }}
             >
-              ← Todas as {rotuloDaJanela}s
+              ← Todas as semanas
             </Button>
             {periodo?.status === "pronto" && (
               <>
-                <Button variant="tertiary" size="sm" onClick={() => imprimir(documento(), titulo)}>
+                <Button variant="ghost" size="sm" onClick={() => imprimir(documento(), titulo)}>
                   Imprimir
                 </Button>
-                <Button variant="tertiary" size="sm" onClick={() => baixarDoc(documento(), titulo)}>
-                  Baixar .doc
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Icon name="download" size="xs" />}
+                  onClick={() => baixarDoc(documento(), titulo)}
+                >
+                  Baixar esta semana
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => void gerar(janelaAtiva)}>
+                <Button variant="secondary" size="sm" onClick={() => void gerar(semanaAtiva)}>
                   Gerar de novo
                 </Button>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={() => void salvar()}
-                  loading={salvando}
+                  isLoading={salvando}
                   disabled={!sujo}
                 >
                   {sujo ? "Salvar" : "Salvo"}
@@ -230,26 +322,71 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
             )}
           </div>
 
-          <h3 className="titulo-da-janela">
-            {janelaAtiva.rotulo} · {dataLonga(janelaAtiva.inicio)} a {dataLonga(janelaAtiva.fim)} ·{" "}
-            {janelaAtiva.aulasPrevistas} aula(s)
+          {/* A ENTREGA de mais de uma semana. Fica aqui, e não junto do
+              "Baixar esta semana", porque é outra decisão: uma é o que o
+              professor está editando agora, a outra é o que ele vai levar à
+              coordenação. Cada botão só existe quando tem conteúdo — o da
+              quinzena exige a semana seguinte PLANEJADA, senão o documento
+              sairia com uma semana só e o nome mentiria. */}
+          {periodo?.status === "pronto" &&
+            (proximaSemana?.status === "pronto" || planejadasDoPeriodo.length > 1) && (
+              <div className="exportar-conjunto">
+                <p className="exportar-conjunto__rotulo">Entregar mais de uma semana:</p>
+                {proximaSemana?.status === "pronto" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    isLoading={exportando}
+                    leftIcon={<Icon name="download" size="xs" />}
+                    onClick={() =>
+                      void baixarConjunto(
+                        [semanaAtiva.ordem, proximaSemana.ordem],
+                        `${semanaAtiva.rotulo} e ${proximaSemana.rotulo}`,
+                      )
+                    }
+                  >
+                    Esta e a próxima (quinzena)
+                  </Button>
+                )}
+                {planejadasDoPeriodo.length > 1 && periodoDaSemanaAtiva && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    isLoading={exportando}
+                    leftIcon={<Icon name="download" size="xs" />}
+                    onClick={() =>
+                      void baixarConjunto(
+                        planejadasDoPeriodo.map((s) => s.ordem),
+                        periodoDaSemanaAtiva.rotulo,
+                      )
+                    }
+                  >
+                    O {periodoDaSemanaAtiva.rotulo} ({planejadasDoPeriodo.length} semanas)
+                  </Button>
+                )}
+              </div>
+            )}
+
+          <h3 className="titulo-da-semana">
+            {semanaAtiva.rotulo} · {dataLonga(semanaAtiva.inicio)} a {dataLonga(semanaAtiva.fim)} ·{" "}
+            {semanaAtiva.aulasPrevistas} aula(s)
           </h3>
 
-          {!periodo && janelaAtiva.aulasPrevistas === 0 && (
+          {!periodo && semanaAtiva.aulasPrevistas === 0 && (
             <FeedbackAlert
               type="warning"
-              description="Esta janela não tem aula na sua grade de horários. Confira a regência se isso não estiver certo."
+              description="Esta semana não tem aula na sua grade de horários. Confira a regência se isso não estiver certo."
             />
           )}
 
-          {!periodo && janelaAtiva.aulasPrevistas > 0 && (
+          {!periodo && semanaAtiva.aulasPrevistas > 0 && (
             <div className="estado-vazio">
               <p>
-                Esta {rotuloDaJanela} ainda não foi planejada. O gerador detalha as{" "}
-                {janelaAtiva.aulasPrevistas} aulas a partir das habilidades do{" "}
-                {janelaAtiva.periodoDeAvaliacao}º período.
+                Esta semana ainda não foi planejada. O gerador detalha as{" "}
+                {semanaAtiva.aulasPrevistas} aulas a partir das habilidades do{" "}
+                {semanaAtiva.periodoDeAvaliacao}º período.
               </p>
-              <Button variant="primary" onClick={() => void gerar(janelaAtiva)}>
+              <Button variant="primary" onClick={() => void gerar(semanaAtiva)}>
                 Planejar estas aulas
               </Button>
             </div>
@@ -266,7 +403,7 @@ export function PassoAulas({ configuracao, plano, professorNome, onVoltar }: Pro
             <FeedbackAlert
               type="error"
               description={periodo.erro ?? "A geração falhou."}
-              action={<Button size="sm" onClick={() => void gerar(janelaAtiva)}>Tentar de novo</Button>}
+              action={<Button size="sm" onClick={() => void gerar(semanaAtiva)}>Tentar de novo</Button>}
             />
           )}
 

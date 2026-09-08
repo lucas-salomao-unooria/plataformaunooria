@@ -2,8 +2,8 @@ import { DIVISOES_DO_ANO, SEMANAS_LETIVAS, type DivisaoDoAno } from "../curricul
 
 /**
  * O calendário do planejamento: transformar "leciono terça e quinta, 5 aulas
- * por semana" em aulas com data e hora, agrupadas em semanas ou quinzenas
- * dentro de bimestres.
+ * por semana" em aulas com data e hora, agrupadas em semanas dentro de
+ * bimestres.
  *
  * Tudo aqui é PURO — nenhuma consulta, nenhuma data "de hoje". Datas de
  * calendário escolar são o terreno clássico de bug silencioso: um fuso mal
@@ -98,34 +98,39 @@ export function periodosDoAnoLetivo(
   return lista;
 }
 
-// --------------------------------------------------- janelas de planejamento
+// ---------------------------------------------------- semanas de planejamento
 
-export interface JanelaDePlanejamento {
-  /** 1 = primeira semana/quinzena do ano letivo. */
+export interface SemanaDePlanejamento {
+  /** 1 = primeira semana do ano letivo. */
   readonly ordem: number;
   readonly inicio: DataCivil;
   readonly fim: DataCivil;
-  /** A qual período de avaliação a janela pertence. */
+  /** A qual período de avaliação a semana pertence. */
   readonly periodoDeAvaliacao: number;
   readonly rotulo: string;
 }
 
 /**
- * As janelas que o professor vai planejar: uma por semana, ou uma por quinzena.
+ * As semanas que o professor vai planejar. O passo é SEMPRE de sete dias.
  *
- * A janela é classificada no período de avaliação em que seu INÍCIO cai. Uma
- * quinzena pode atravessar a virada do bimestre — dez semanas não é par de
- * quinzenas — e nesse caso ela pertence ao bimestre em que começou. A
- * alternativa (cortar a quinzena na virada) produziria uma janela de uma semana
- * só, que não é o que o professor configurou.
+ * Houve uma periodicidade configurável (semanal ou quinzenal) e ela saiu em
+ * 2026-09-07 (ADR-76). O que a quinzena resolvia era a ENTREGA — a escola que
+ * recolhe planejamento de duas em duas semanas —, e isso hoje é um recorte de
+ * EXPORTAÇÃO: o professor planeja semana a semana e baixa duas juntas. Como
+ * passo de planejamento ela custava caro, porque a `ordem` mudava de
+ * significado: a 3ª quinzena não é a 3ª semana, e trocar o passo depois de
+ * planejar deixava planos gravados cujas datas mentiam sobre as aulas que
+ * continham.
+ *
+ * A semana é classificada no período de avaliação em que seu INÍCIO cai — e
+ * como `periodosDoAnoLetivo` divide o ano em semanas fechadas (segunda a
+ * domingo), nenhuma semana atravessa a virada do bimestre.
  */
-export function janelasDePlanejamento(
+export function semanasDoAnoLetivo(
   periodos: readonly PeriodoDeAvaliacao[],
-  periodicidade: "semanal" | "quinzenal",
-): readonly JanelaDePlanejamento[] {
+): readonly SemanaDePlanejamento[] {
   if (!periodos.length) return [];
-  const passo = periodicidade === "quinzenal" ? 14 : 7;
-  const rotulo = periodicidade === "quinzenal" ? "Quinzena" : "Semana";
+  const passo = 7;
 
   const primeiroPeriodo = periodos[0];
   const ultimoPeriodo = periodos[periodos.length - 1];
@@ -133,28 +138,42 @@ export function janelasDePlanejamento(
   const primeiro = primeiroPeriodo.inicio;
   const ultimo = ultimoPeriodo.fim;
 
-  const janelas: JanelaDePlanejamento[] = [];
+  const semanas: SemanaDePlanejamento[] = [];
   let cursor = primeiro;
   let ordem = 1;
 
   while (cursor <= ultimo) {
     const fim = somarDias(cursor, passo - 1);
     const periodo = periodos.find((p) => cursor >= p.inicio && cursor <= p.fim);
-    janelas.push({
+    semanas.push({
       ordem,
       inicio: cursor,
-      // A última janela não passa do fim do ano letivo.
+      // A última semana não passa do fim do ano letivo.
       fim: fim > ultimo ? ultimo : fim,
       periodoDeAvaliacao: periodo?.ordem ?? ultimoPeriodo.ordem,
-      rotulo: `${ordem}ª ${rotulo}`,
+      rotulo: rotuloDaSemana(ordem),
     });
     cursor = somarDias(cursor, passo);
     ordem++;
   }
-  return janelas;
+  return semanas;
 }
 
-// ------------------------------------------------------------ aulas da janela
+/**
+ * Como a semana se chama em toda superfície: tela, documento exportado e
+ * resposta da api.
+ *
+ * Existe como função porque o rótulo era montado em DOIS lugares e eles
+ * divergiram: o calendário dizia "3ª Semana" e o mapeador do plano gravado
+ * dizia "3ª janela" — que é jargão interno. O professor então lia "3ª Semana"
+ * na lista, abria, e o cabeçalho do .doc que ele entrega à coordenação saía
+ * com a outra palavra.
+ */
+export function rotuloDaSemana(ordem: number): string {
+  return `${ordem}ª Semana`;
+}
+
+// ------------------------------------------------------------ aulas da semana
 
 export interface HorarioDeAula {
   readonly numero: number;
@@ -170,19 +189,19 @@ export function nomeDoDia(dia: DiaDaSemana): string {
 }
 
 /**
- * As aulas que existem dentro de uma janela, datadas e na ordem cronológica.
+ * As aulas que existem dentro de uma semana, datadas e na ordem cronológica.
  *
  * É a função que dá ao plano granular o seu esqueleto: sem ela a IA teria de
- * inventar quantas aulas cabem numa quinzena, e inventaria — normalmente dez,
- * porque é o número redondo, quando o professor de Arte do 7º ano tem duas.
+ * inventar quantas aulas cabem na semana, e inventaria — normalmente cinco,
+ * porque é o número redondo, quando o professor de Arte do 7º ano tem uma.
  *
  * `feriados` remove a data do resultado em vez de deslocar a aula. Deslocar
- * seria pior: empurraria o plano inteiro e desalinharia todas as janelas
+ * seria pior: empurraria o plano inteiro e desalinharia todas as semanas
  * seguintes. A aula perdida no feriado é uma decisão pedagógica do professor
  * (repor, condensar, seguir), não uma conta que o sistema deva fazer por ele.
  */
-export function aulasDaJanela(
-  janela: JanelaDePlanejamento,
+export function aulasDaSemana(
+  semana: SemanaDePlanejamento,
   grade: readonly FaixaDeHorario[],
   feriados: readonly DataCivil[] = [],
 ): readonly HorarioDeAula[] {
@@ -193,7 +212,7 @@ export function aulasDaJanela(
   const aulas: HorarioDeAula[] = [];
   let numero = 1;
 
-  for (let data = janela.inicio; data <= janela.fim; data = somarDias(data, 1)) {
+  for (let data = semana.inicio; data <= semana.fim; data = somarDias(data, 1)) {
     const dow = diaDaSemanaDe(data);
     if (dow < 1 || dow > 5) continue;
     if (semAula.has(data)) continue;

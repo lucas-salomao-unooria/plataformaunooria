@@ -1,5 +1,18 @@
 import { useState } from "react";
-import { Button, EmptyState, Icon, SectionHeader, Stepper, Tag } from "@edu/ui/ds";
+import {
+  Button,
+  EmptyState,
+  FeedbackAlert,
+  Icon,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  SectionHeader,
+  Stepper,
+  Tag,
+} from "@edu/ui/ds";
 
 import { api } from "../lib/api";
 import type { Configuracao, PlanoAnual } from "../lib/tipos";
@@ -52,6 +65,10 @@ export function PlanoDeEnsinoApp({ professorNome, configuracoesIniciais }: Props
   const [plano, setPlano] = useState<PlanoAnual | null>(null);
   const [tela, setTela] = useState<Tela>(configuracoesIniciais.length ? "lista" : "regencia");
   const [abrindo, setAbrindo] = useState(false);
+  /** A regência que o professor pediu para excluir — `null` = diálogo fechado. */
+  const [aExcluir, setAExcluir] = useState<Configuracao | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroDaExclusao, setErroDaExclusao] = useState<string | null>(null);
 
   /**
    * Abrir uma regência busca o plano anual dela, ou cria um. O plano anual é o
@@ -82,6 +99,37 @@ export function PlanoDeEnsinoApp({ professorNome, configuracoesIniciais }: Props
     }
   }
 
+  /**
+   * Exclui o planejamento inteiro daquele componente × ano.
+   *
+   * A confirmação é um `Modal` do DS e não um `confirm()`: o diálogo nativo não
+   * cabe dizer O QUE se perde, e aqui a lista é longa (a regência, o plano anual
+   * e todas as semanas detalhadas). A tela só some da lista depois do 200 — o
+   * otimismo aqui deixaria o professor achando que apagou algo que ficou.
+   */
+  async function excluir() {
+    if (!aExcluir) return;
+    setExcluindo(true);
+    setErroDaExclusao(null);
+    try {
+      await api.delete(`/planejamento/configuracoes/${aExcluir.id}`);
+      setConfiguracoes((atual) => atual.filter((c) => c.id !== aExcluir.id));
+      // Se o que estava aberto era justamente o excluído, volta para a lista:
+      // continuar nos passos de um planejamento que já não existe daria 404 na
+      // primeira ação do professor.
+      if (configuracao?.id === aExcluir.id) {
+        setConfiguracao(null);
+        setPlano(null);
+        setTela("lista");
+      }
+      setAExcluir(null);
+    } catch {
+      setErroDaExclusao("Não foi possível excluir agora. Tente de novo.");
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
   function aoSalvarRegencia(c: Configuracao) {
     setConfiguracoes((atual) => {
       const outras = atual.filter((x) => x.id !== c.id);
@@ -102,7 +150,7 @@ export function PlanoDeEnsinoApp({ professorNome, configuracoesIniciais }: Props
             </p>
           </div>
           {tela !== "lista" && configuracao && (
-            <Button variant="tertiary" size="sm" onClick={() => setTela("lista")}>
+            <Button variant="ghost" size="sm" onClick={() => setTela("lista")}>
               Meus planejamentos
             </Button>
           )}
@@ -151,32 +199,47 @@ export function PlanoDeEnsinoApp({ professorNome, configuracoesIniciais }: Props
               <ul className="lista-de-planejamentos">
                 {configuracoes.map((c) => (
                   <li key={c.id}>
-                    <button
-                      type="button"
-                      className="planejamento"
-                      onClick={() => void abrir(c)}
-                      disabled={abrindo}
-                    >
-                      <span className="planejamento__titulo">
-                        <strong>{c.componenteRotulo}</strong>
-                        <span>
-                          {c.serieRotulo}
-                          {c.turmaNome ? ` · ${c.turmaNome}` : ""} · {c.anoLetivo}
+                    {/* O cartão é um `<button>` que abre o planejamento, então o
+                        de excluir fica FORA dele: botão dentro de botão é HTML
+                        inválido, e o navegador desmonta o aninhamento de um jeito
+                        que o clique em "excluir" chega no cartão. */}
+                    <div className="planejamento-linha">
+                      <button
+                        type="button"
+                        className="planejamento"
+                        onClick={() => void abrir(c)}
+                        disabled={abrindo}
+                      >
+                        <span className="planejamento__titulo">
+                          <strong>{c.componenteRotulo}</strong>
+                          <span>
+                            {c.serieRotulo}
+                            {c.turmaNome ? ` · ${c.turmaNome}` : ""} · {c.anoLetivo}
+                          </span>
                         </span>
-                      </span>
-                      <span className="planejamento__meta">
-                        <Tag variant="neutral">
-                          {c.aulasSemanais} aula(s)/semana · {c.dimensionamento.aulasNoAno} no ano
-                        </Tag>
-                        <Tag variant="neutral">
-                          {c.periodicidade === "quinzenal" ? "Quinzenal" : "Semanal"}
-                        </Tag>
-                        {!c.dimensionamento.gradeCoerente && (
-                          <Tag variant="warning">Grade incompleta</Tag>
-                        )}
-                        <Icon name="chevron_right" size="s" />
-                      </span>
-                    </button>
+                        <span className="planejamento__meta">
+                          <Tag variant="neutral">
+                            {c.aulasSemanais} aula(s)/semana · {c.dimensionamento.aulasNoAno} no ano
+                          </Tag>
+                          {!c.dimensionamento.gradeCoerente && (
+                            <Tag variant="warning">Grade incompleta</Tag>
+                          )}
+                          <Icon name="chevron_right" size="s" />
+                        </span>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Excluir o planejamento de ${c.componenteRotulo}, ${c.serieRotulo}`}
+                        onClick={() => {
+                          setErroDaExclusao(null);
+                          setAExcluir(c);
+                        }}
+                        leftIcon={<Icon name="delete" size="xs" />}
+                      >
+                        Excluir
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -226,6 +289,44 @@ export function PlanoDeEnsinoApp({ professorNome, configuracoesIniciais }: Props
           />
         )}
       </div>
+
+      {/* A confirmação da exclusão. `role="alertdialog"` porque é destrutiva e
+          irreversível: o leitor de tela anuncia a caixa inteira em vez de só
+          mover o foco. */}
+      <Modal
+        isOpen={aExcluir !== null}
+        onClose={() => (excluindo ? undefined : setAExcluir(null))}
+        size="sm"
+        role="alertdialog"
+      >
+        <ModalHeader>
+          <ModalTitle>
+            Excluir o planejamento de {aExcluir?.componenteRotulo} — {aExcluir?.serieRotulo}?
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <p>Isso apaga, e não tem volta:</p>
+          <ul className="lista-do-que-se-perde">
+            <li>a regência (componente, ano, carga horária e grade de horários);</li>
+            <li>a distribuição de habilidades da BNCC pelos períodos;</li>
+            <li>o plano anual, com o texto que você editou;</li>
+            <li>todas as semanas já detalhadas, com as aulas e o que você registrou depois delas.</li>
+          </ul>
+          <p className="nota">
+            Se você só quer reescrever o documento do ano, não precisa excluir: use “Gerar de novo”
+            no plano anual. O mesmo vale para uma semana.
+          </p>
+          {erroDaExclusao && <FeedbackAlert type="error" description={erroDaExclusao} />}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setAExcluir(null)} disabled={excluindo}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => void excluir()} isLoading={excluindo}>
+            Excluir o planejamento
+          </Button>
+        </ModalFooter>
+      </Modal>
     </main>
   );
 }

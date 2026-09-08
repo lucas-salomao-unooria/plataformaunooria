@@ -40,6 +40,15 @@ export default async function PlanoDeAulaPage({
         estudante={embed.estudante}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_PLANO_DE_AULA, obs: embed.obs }}
+        /**
+         * As permissões de iframe do manifesto (`allow-downloads` aqui). Esta
+         * linha faltava, e a consequência não aparecia em lugar nenhum: o
+         * `ExpFrame` recebia `permissoes` undefined, montava o sandbox sem
+         * `allow-downloads`, e o "Baixar .doc" do professor não fazia nada —
+         * sem erro na tela e sem linha no console. `/exp/[expId]` e
+         * `/dev-embed` sempre repassaram; as três rotas de professor, não.
+         */
+        permissoes={embed.permissoes}
       />
     </div>
   );

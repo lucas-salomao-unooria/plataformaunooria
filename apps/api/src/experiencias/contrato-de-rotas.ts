@@ -10,8 +10,10 @@ export const CAPABILITIES = [
 ] as const;
 
 /** Lista FECHADA e curta do que o `ExpFrame` traduz em token de sandbox.
- *  `fullscreen` não entra: o `allow` do frame já o delega a todas. */
-export const PERMISSOES_DE_IFRAME = ["pointer-lock", "forms"] as const;
+ *  `fullscreen` não entra: o `allow` do frame já o delega a todas.
+ *  Mexeu aqui? Migration do CHECK também — `tests/permissoes-de-iframe.spec.ts`
+ *  cobra as duas, porque a divergência só aparece como 500 no CI. */
+export const PERMISSOES_DE_IFRAME = ["pointer-lock", "forms", "downloads"] as const;
 
 export const ViewportSchema = z.object({
   largura: z.number().int().positive(),
