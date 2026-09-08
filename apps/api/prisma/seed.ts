@@ -83,6 +83,16 @@ const ESCOLA_2_NOME = "EE Coronel Firmino Rodrigues";
 /** A diretoria que agrupa as duas — o nível entre a escola e o contrato. */
 const REGIONAL_ID = "de-demo";
 const REGIONAL_NOME = "DE Campinas Leste";
+/**
+ * A regional PADRÃO (ADR-79): a linha que a rede sem divisão administrativa usa,
+ * e o destino de quem chega sem regional declarada.
+ *
+ * A migração já a cria — mas só quando a rede está vazia ou tem escola órfã.
+ * Garantida aqui também, o banco de desenvolvimento converge para o mesmo
+ * estado tenha a migração rodado antes ou depois de já existir a `de-demo`.
+ */
+const REGIONAL_PADRAO_ID = "rede";
+const REGIONAL_PADRAO_NOME = "Rede";
 /** Turma da segunda unidade (ver comentário na seção dela). */
 const TURMA_ESCOLA_2 = { nome: "5A", serie: "5EF", turno: "tarde" };
 
@@ -117,6 +127,23 @@ async function emLotes<T>(itens: readonly T[], tamanho: number, fn: (item: T) =>
 async function main() {
   const passwordHash = await bcrypt.hash(SENHA_PADRAO, 10);
   const fabrica = criarFabricaDePessoas(SEMENTE);
+
+  /* A padrão entra primeiro de todas: é ela que o trigger usa para adotar
+     qualquer escola que chegue sem regional, e o `SEED_MINIMO` também depende
+     de haver uma regional na rede. Só se não houver outra marcada — a marca é
+     única no banco, e insistir daria erro de índice num seed reexecutado. */
+  if ((await prisma.escola.count({ where: { regionalPadrao: true } })) === 0) {
+    await prisma.escola.upsert({
+      where: { id: REGIONAL_PADRAO_ID },
+      update: { tipo: "regional", regionalPadrao: true },
+      create: {
+        id: REGIONAL_PADRAO_ID,
+        nome: REGIONAL_PADRAO_NOME,
+        tipo: "regional",
+        regionalPadrao: true,
+      },
+    });
+  }
 
   /* A diretoria entra ANTES das unidades: ela é o pai, e o trigger do banco
      recusa `pai_id` apontando para escola. */
