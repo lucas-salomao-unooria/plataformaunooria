@@ -1,0 +1,14 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { RegionaisDaRede } from "./regionais-da-rede";
+
+export const metadata = { title: "Regionais — Plataforma Unooria" };
+
+export default async function RegionaisPage() {
+  const session = await auth();
+  // Mesma porta de Escolas: quem organiza a rede em regionais é o admin do
+  // contrato. O gestor que digitar a rota volta para o lugar dele em vez de ver
+  // uma tela sem dados.
+  if (session!.usuario.papel !== "admin-contrato") redirect("/admin/usuarios");
+  return <RegionaisDaRede />;
+}
