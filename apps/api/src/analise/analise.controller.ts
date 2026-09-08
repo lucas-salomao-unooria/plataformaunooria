@@ -16,6 +16,7 @@ import {
   NivelQuery,
   ResumoDeProdutoSchema,
 } from "./contrato-de-rotas";
+import { GESTORES_DO_CONTRATO } from "../auth/claims";
 
 /**
  * As duas superfícies de ANÁLISE — porte fiel de `app/api/activities/[id]/analise/**`
@@ -141,7 +142,7 @@ const LIMITE_DE_EVENTOS = 200_000;
 
 @Controller("analise")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor_contrato")
+@Roles(...GESTORES_DO_CONTRATO)
 export class AnaliseDeProdutoController {
   constructor(private readonly prisma: PrismaService) {}
 

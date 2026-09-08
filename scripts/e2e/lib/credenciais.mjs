@@ -77,7 +77,7 @@ export function conta(papel, { turma, serie, escola } = {}) {
  * duas separadas por " + " — é a fonte mais barata dessa informação.
  */
 export function escolas() {
-  const dasDuas = contasDe("gestor (supervisora")[0];
+  const dasDuas = contasDe("gestor_escola (supervisora")[0];
   if (!dasDuas) throw new Error("sem gestor supervisora em credenciais-demo.csv");
   const [primeira, segunda] = dasDuas.escola.split(" + ");
   return { primeira, segunda };

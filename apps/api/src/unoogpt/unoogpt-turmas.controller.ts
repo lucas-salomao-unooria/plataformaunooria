@@ -18,6 +18,7 @@ import {
 import { UnoogptService } from "./unoogpt.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
 import { fontesParaOProfessor } from "./modelo/conjuntos";
+import { GESTORES_DO_CONTRATO, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR: o relógio da aula, a folha da turma e a linha de uma
@@ -33,7 +34,7 @@ import { fontesParaOProfessor } from "./modelo/conjuntos";
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "gestor_contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) throw erroDeJogo("payload-invalido");
     return escolaIdPedida;
   }
@@ -45,7 +46,7 @@ function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
 
 @Controller("unoogpt/professor")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor_contrato")
+@Roles("professor", ...GESTORES_DO_CONTRATO)
 export class UnoogptTurmasController {
   constructor(private readonly service: UnoogptService) {}
 

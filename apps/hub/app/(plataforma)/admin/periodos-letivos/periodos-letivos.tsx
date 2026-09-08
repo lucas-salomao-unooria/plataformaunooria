@@ -18,6 +18,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { ehGestor } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
 interface Periodo extends Record<string, unknown> {
@@ -172,7 +173,7 @@ export function PeriodosLetivos({ papel }: { papel: Papel }) {
         <p className="text-[14px] text-unooria-neutral-500">
           {periodos.length} período{periodos.length === 1 ? "" : "s"}
         </p>
-        {papel === "gestor_escola" || papel === "gestor_contrato" ? (
+        {ehGestor(papel) ? (
           <Button variant="primary" size="md" onClick={abrir}>
             Novo período
           </Button>

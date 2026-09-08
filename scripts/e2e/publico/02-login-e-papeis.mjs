@@ -129,14 +129,24 @@ await suite(
       detalhe: `/estudante → ${ondeParou}`,
     });
 
-    // ── sair encerra a sessão de verdade ─────────────────────────────────
-    const sair = p.getByRole("button", { name: /Sair|Encerrar sessão/i }).first();
-    if (await sair.count()) {
-      await sair.click();
-      await p.waitForURL((url) => url.pathname === "/login" || url.pathname === "/", { timeout: 20_000 });
-    } else {
-      await p.goto(`${HUB}/api/auth/signout`, { waitUntil: "domcontentloaded" });
-    }
+    /* ── sair encerra a sessão de verdade ─────────────────────────────────
+       O "Sair" mora DENTRO do menu do avatar (ADR-78), então há dois cliques:
+       abrir a tira e escolher o item. Este roteiro procurava um botão solto,
+       não achava, e caía num fallback `GET /api/auth/signout` — que serve a
+       página de confirmação do NextAuth e NÃO encerra sessão (o signout exige
+       POST com CSRF). O teste passava a afirmar que a sessão morreu quando ela
+       estava viva: falso NEGATIVO invertido, o pior tipo. */
+    const gatilhoDaConta = p.getByRole("button", { name: /^Conta de / }).first();
+    await gatilhoDaConta.waitFor({ timeout: 15_000 });
+    await gatilhoDaConta.click();
+    /* `menuitem`, não `button`: é o papel que o `HeaderMenu` do DS dá ao item
+       (com `aria-label`), e procurar por `button` acha o GATILHO de novo. */
+    const sair = p.getByRole("menuitem", { name: "Sair" }).first();
+    await sair.waitFor({ timeout: 10_000 });
+    await sair.click();
+    await p.waitForURL((url) => url.pathname === "/login" || url.pathname === "/", {
+      timeout: 20_000,
+    });
     await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(1500);
     const depoisDeSair = new URL(p.url()).pathname;

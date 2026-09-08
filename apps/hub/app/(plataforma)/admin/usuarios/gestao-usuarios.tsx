@@ -21,6 +21,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { NovoUsuario, type PessoaCriada } from "./novo-usuario";
 
@@ -104,12 +105,12 @@ export function GestaoUsuarios({
   const [aviso, setAviso] = useState<string | null>(null);
 
   const sufixo = useMemo(
-    () => (papel === "gestor_contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
   const carregar = useCallback(async () => {
-    if (papel === "gestor_contrato" && !escolaId) return;
+    if (ehDoContrato(papel) && !escolaId) return;
     setCarregando(true);
     setErro(null);
     try {
@@ -117,7 +118,7 @@ export function GestaoUsuarios({
       if (busca.trim()) params.set("busca", busca.trim());
       if (filtroPapel) params.set("papel", filtroPapel);
       if (situacao) params.set("situacao", situacao);
-      if (papel === "gestor_contrato" && escolaId) params.set("escolaId", escolaId);
+      if (ehDoContrato(papel) && escolaId) params.set("escolaId", escolaId);
 
       const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
@@ -304,7 +305,7 @@ export function GestaoUsuarios({
         description="Uma conta por pessoa — a mesma no hub e em todas as experiências."
       />
 
-      {papel === "gestor_contrato" ? (
+      {ehDoContrato(papel) ? (
         <div className="max-w-[320px]">
           <TextField
             id="escola"

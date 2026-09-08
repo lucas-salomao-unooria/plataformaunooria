@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { Icon, SideBar, type SideBarItemData } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
 /**
@@ -63,7 +64,7 @@ export function NavAdmin({ papel, escolas }: { papel: Papel; escolas: number }) 
   const router = useRouter();
   const itens = ITENS.filter(
     (i) =>
-      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || papel === "gestor_contrato") &&
+      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || ehDoContrato(papel)) &&
       (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) || escolas > 1),
   );
   const ativo = itens.find((item) => pathname.startsWith(item.href))?.id ?? "usuarios";

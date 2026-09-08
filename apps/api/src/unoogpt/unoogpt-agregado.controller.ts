@@ -6,6 +6,7 @@ import { UnoogptService } from "./unoogpt.service";
 import { z } from "zod";
 import { Contrato } from "../openapi/contrato";
 import { AgregadoDaEscolaSchema } from "./contrato-de-rotas";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do GESTOR: SÓ números por turma.
@@ -20,7 +21,7 @@ type Autenticado = { auth: AuthClaims };
 
 @Controller("unoogpt/agregado")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor_escola", "gestor_contrato")
+@Roles(...GESTORES)
 export class UnoogptAgregadoController {
   constructor(private readonly service: UnoogptService) {}
 
@@ -35,7 +36,7 @@ export class UnoogptAgregadoController {
   })
   escola(@Query("escolaId") escolaIdPedida: string | undefined, @Req() req: Autenticado) {
     const auth = req.auth;
-    if (auth.perfil === "gestor_contrato") {
+    if (ehDoContrato(auth.perfil)) {
       if (!escolaIdPedida) throw erroDeJogo("payload-invalido");
       return this.service.agregadoDaEscola(escolaIdPedida);
     }

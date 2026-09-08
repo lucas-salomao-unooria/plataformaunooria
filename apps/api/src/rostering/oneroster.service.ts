@@ -26,6 +26,7 @@ import {
   type OpcoesDeImportacao,
   type RelatorioImportacao,
 } from "./rostering.service";
+import { ehDoContrato } from "../auth/claims";
 
 const TIMEOUT_DA_ESCRITA = 30_000;
 
@@ -626,7 +627,7 @@ export class OneRosterService {
           porUsuario.get(linha.campo("username")) ??
           null);
 
-      if (existente?.role === "gestor_contrato" || naOutra?.role === "gestor_contrato") {
+      if (ehDoContrato(existente?.role ?? "") || ehDoContrato(naOutra?.role ?? "")) {
         relatorio.erros.push({ linha: linha.linha, campo: "username", mensagem: "usuario reservado" });
         continue;
       }
@@ -819,7 +820,7 @@ export class OneRosterService {
     if (relatorio.modo === "bulk") {
       const vindos = new Set(preparadas.map((p) => p.sourcedId).filter(Boolean));
       relatorio.candidatosAInativacao = existentes.filter(
-        (u) => u.fonteId && !vindos.has(u.fonteId) && u.role !== "gestor_contrato",
+        (u) => u.fonteId && !vindos.has(u.fonteId) && !ehDoContrato(u.role),
       ).length;
       if (relatorio.candidatosAInativacao > 0) {
         relatorio.avisos.push({
@@ -941,7 +942,7 @@ export class OneRosterService {
             });
             continue;
           }
-          if (pessoa.role === "gestor_contrato") {
+          if (ehDoContrato(pessoa.role)) {
             relatorio.erros.push({ linha: linha.linha, campo: "userSourcedId", mensagem: "usuario reservado" });
             continue;
           }

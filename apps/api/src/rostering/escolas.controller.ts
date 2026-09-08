@@ -41,6 +41,7 @@ import {
   TransferirSchema,
 } from "./contrato-de-rotas";
 import { EscolasService } from "./escolas.service";
+import { GESTORES, GESTORES_DO_CONTRATO, ehDoContrato} from "../auth/claims";
 
 type Autenticado = { auth: AuthClaims };
 
@@ -75,7 +76,7 @@ export class EscolasController {
    * escola nova. Sem ela, bastaria pedir uma escola qualquer.
    */
   @Get("minhas")
-  @Roles("estudante", "professor", "gestor_escola", "gestor_contrato")
+  @Roles("estudante", "professor", ...GESTORES)
   @Contrato({
     resumo: "As escolas de QUEM ESTÁ PEDINDO.",
     descricao:
@@ -92,7 +93,7 @@ export class EscolasController {
 
   /** O panorama de quem tem muitas escolas — a tela do supervisor de diretoria. */
   @Get("minhas/resumo")
-  @Roles("professor", "gestor_escola", "gestor_contrato")
+  @Roles("professor", ...GESTORES)
   @Contrato({
     resumo: "O panorama de quem tem muitas escolas.",
     descricao:
@@ -104,7 +105,7 @@ export class EscolasController {
   }
 
   @Get()
-  @Roles("gestor_contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Todas as escolas do contrato, com contagem.",
     descricao:
@@ -125,7 +126,7 @@ export class EscolasController {
    * de quem administra uma unidade.
    */
   @Post("lotacoes-em-lote")
-  @Roles("gestor_contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Lota uma pessoa em MUITAS escolas de uma vez.",
     descricao:
@@ -146,7 +147,7 @@ export class EscolasController {
   }
 
   @Post()
-  @Roles("gestor_contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Cria uma escola.",
     descricao:
@@ -176,7 +177,7 @@ export class EscolasController {
   }
 
   @Patch(":id")
-  @Roles("gestor_contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Edita os dados da escola.",
     descricao:
@@ -210,7 +211,7 @@ export class EscolasController {
    * regional e a antiga continua na lista.
    */
   @Delete(":id")
-  @Roles("gestor_contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Exclui uma regional.",
     descricao:
@@ -253,7 +254,7 @@ export class EscolasController {
 
   /** Quem está lotado nesta escola. Gestor vê a própria; admin, qualquer uma. */
   @Get(":id/pessoas")
-  @Roles("gestor_escola", "gestor_contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Quem está lotado nesta escola.",
     descricao:
@@ -277,7 +278,7 @@ export class EscolasController {
    * rede estadual tem aos milhares, e a razão de `lotacoes` existir.
    */
   @Post(":id/lotacoes")
-  @Roles("gestor_escola", "gestor_contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Lota alguém nesta escola.",
     descricao:
@@ -298,7 +299,7 @@ export class EscolasController {
 
 @Controller("lotacoes")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor_escola", "gestor_contrato")
+@Roles(...GESTORES)
 export class LotacoesController {
   constructor(private readonly escolas: EscolasService) {}
 
@@ -320,7 +321,7 @@ export class LotacoesController {
     if (!feito) throw new NotFoundException("lotação não encontrada");
     // A checagem de escola vem DEPOIS porque é a lotação que diz de qual escola
     // ela é — e um gestor não encerra vínculo de outra unidade.
-    if (req.auth.perfil !== "gestor_contrato" && feito.escolaId !== req.auth.escolaId) {
+    if (!ehDoContrato(req.auth.perfil) && feito.escolaId !== req.auth.escolaId) {
       throw new ForbiddenException("lotação de outra escola");
     }
     return { ok: true };
@@ -344,7 +345,7 @@ export class EstudantesController {
    * identidade, e é o `historico` abaixo que a lê atravessada.
    */
   @Post(":id/transferir")
-  @Roles("gestor_escola", "gestor_contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Transfere o estudante entre escolas da rede.",
     descricao:
@@ -381,7 +382,7 @@ export class EstudantesController {
    * tem a posse pedagógica na escola onde aquilo aconteceu.
    */
   @Get(":id/historico")
-  @Roles("professor", "gestor_escola", "gestor_contrato")
+  @Roles("professor", ...GESTORES)
   @Contrato({
     resumo: "O histórico do estudante ATRAVESSANDO escolas.",
     descricao:
@@ -398,7 +399,7 @@ export class EstudantesController {
     const historico = await this.escolas.historicoDoEstudante(id);
     if (!historico) throw new NotFoundException("estudante não encontrado");
 
-    if (req.auth.perfil !== "gestor_contrato") {
+    if (!ehDoContrato(req.auth.perfil)) {
       const escolaAtual = historico.escolas.find((e) => e.atual)?.id;
       const podeVer =
         escolaAtual !== undefined && (await this.escolas.temLotacao(req.auth.usuarioId, escolaAtual));

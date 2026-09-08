@@ -29,6 +29,7 @@ import { OneRosterService } from "./oneroster.service";
 import { exemploOneRoster, modeloOneRoster } from "./modelos-oneroster";
 import { exemploPreenchido, modeloEmBranco } from "./planilha";
 import { MAX_LINHAS, TETO_DO_ARQUIVO, TETO_EM_MB, RosteringService } from "./rostering.service";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 interface RespostaHttp {
   setHeader(nome: string, valor: string): void;
@@ -40,7 +41,7 @@ interface RespostaHttp {
  */
 @Controller("rostering")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor_escola", "gestor_contrato")
+@Roles(...GESTORES)
 export class RosteringController {
   constructor(
     private readonly rostering: RosteringService,
@@ -233,7 +234,7 @@ export class RosteringController {
       senhaPadrao: q.senhaPadrao,
       gerarSenhas: q.gerarSenhas === "1",
       // Escola é tenant: só o admin do contrato abre inquilino novo por CSV.
-      podeCriarEscola: req.auth.perfil === "gestor_contrato",
+      podeCriarEscola: ehDoContrato(req.auth.perfil),
     });
   }
 

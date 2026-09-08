@@ -18,6 +18,7 @@ import {
   type TableColumn,
   type UploadFileItem,
 } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
 interface ErroDeLinha extends Record<string, unknown> {
@@ -119,7 +120,7 @@ export function ImportarPessoas({
   const [carregandoAssentos, setCarregandoAssentos] = useState(false);
 
   const sufixoEscola = useMemo(
-    () => (papel === "gestor_contrato" && escolaId ? `escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
@@ -266,7 +267,7 @@ export function ImportarPessoas({
         description="Uma linha por pessoa. As turmas informadas na planilha são criadas e o enturmamento é feito junto."
       />
 
-      {papel === "gestor_contrato" ? (
+      {ehDoContrato(papel) ? (
         <div className="max-w-[320px]">
           <TextField
             id="escola"

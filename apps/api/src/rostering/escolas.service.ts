@@ -4,6 +4,7 @@ import { formatarCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
 import { escolaAtualDoEstudante, garantirLotacao, type PapelDeLotacao } from "./lotacao";
 import { periodoVigente } from "./regras";
+import { ehDoContrato } from "../auth/claims";
 
 export interface EscolaDaRede {
   id: string;
@@ -264,6 +265,37 @@ export class EscolasService {
    * Sem tenancy de propósito: é justamente a pergunta que atravessa escolas.
    */
   async escolasDaPessoa(usuarioId: string) {
+    /* O GESTOR REGIONAL não tem lotação: o escopo dele vem da regional
+       (`users.regional_id`), e é aqui que essa diferença mora — uma vez, no
+       lugar por onde o login, o seletor do cabeçalho e a validação da troca de
+       escola já passam. Espalhada, seria a checagem esquecida em um dos três, e
+       o sintoma seria um supervisor sem escola nenhuma para escolher (ADR-80).
+
+       Ele continua trabalhando UMA escola por vez: esta lista é o que ele pode
+       ATIVAR, e cada leitura depois roda sob um `escola_id` só, com a RLS
+       inalterada. */
+    const pessoa = await this.prisma.user.findUnique({
+      where: { id: usuarioId },
+      select: { role: true, regionalId: true },
+    });
+    if (pessoa?.role === "gestor_regional" && pessoa.regionalId) {
+      const daRegional = await this.prisma.escola.findMany({
+        where: { tipo: "escola", paiId: pessoa.regionalId },
+        select: { id: true, nome: true, municipio: true, uf: true },
+        orderBy: [{ nome: "asc" }],
+      });
+      return daRegional.map((e, i) => ({
+        id: e.id,
+        nome: e.nome,
+        municipio: e.municipio,
+        uf: e.uf,
+        papel: "gestor_regional" as const,
+        /* A primeira é a "principal" só para o login ter uma escola inicial
+           quando a pessoa entra sem escolher. Não há linha em `lotacoes` para
+           marcar, e a ordem é por NOME para ser estável entre sessões. */
+        principal: i === 0,
+      }));
+    }
     const lotacoes = await this.prisma.lotacao.findMany({
       where: { usuarioId, fim: null },
       include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
@@ -279,13 +311,31 @@ export class EscolasService {
     }));
   }
 
-  /** `true` quando a pessoa tem lotação ativa nesta escola. */
+  /**
+   * `true` quando a pessoa ALCANÇA esta escola.
+   *
+   * Para quem tem lotação, é a lotação ativa. Para o `gestor_regional`, é a
+   * escola pertencer à regional dele — ele não tem lotação em nenhuma, e sem
+   * este ramo o histórico do estudante transferido (a única leitura que
+   * atravessa escolas fora dos perfis de contrato) responderia 403 para o
+   * supervisor da própria diretoria onde a criança está.
+   */
   async temLotacao(usuarioId: string, escolaId: string) {
     const lotacao = await this.prisma.lotacao.findFirst({
       where: { usuarioId, escolaId, fim: null },
       select: { id: true },
     });
-    return Boolean(lotacao);
+    if (lotacao) return true;
+    const pessoa = await this.prisma.user.findUnique({
+      where: { id: usuarioId },
+      select: { role: true, regionalId: true },
+    });
+    if (pessoa?.role !== "gestor_regional" || !pessoa.regionalId) return false;
+    const naRegional = await this.prisma.escola.findFirst({
+      where: { id: escolaId, tipo: "escola", paiId: pessoa.regionalId },
+      select: { id: true },
+    });
+    return Boolean(naRegional);
   }
 
   /** Quem está lotado nesta escola, por papel. */
@@ -330,7 +380,7 @@ export class EscolasService {
     const inicio = periodo?.inicio ?? new Date();
 
     const usuario = await this.prisma.user.findUnique({ where: { id: usuarioId } });
-    if (!usuario || usuario.role === "gestor_contrato") return null;
+    if (!usuario || ehDoContrato(usuario.role)) return null;
 
     // Só unidades: lotar alguém numa `regional` daria uma escola que não tem
     // turma, estudante nem dado — e a pessoa apareceria com uma escola fantasma no
@@ -429,7 +479,7 @@ export class EscolasService {
     const periodo = await this.periodoDeHoje();
     return this.prisma.$transaction(async (tx) => {
       const usuario = await tx.user.findUnique({ where: { id: usuarioId } });
-      if (!usuario || usuario.role === "gestor_contrato") return null;
+      if (!usuario || ehDoContrato(usuario.role)) return null;
       const escola = await tx.escola.findUnique({ where: { id: escolaId } });
       if (!escola) return null;
       /* Só UNIDADE recebe lotação — a mesma regra que `lotarEmLote` aplica ao

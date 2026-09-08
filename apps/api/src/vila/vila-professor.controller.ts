@@ -24,6 +24,7 @@ import {
 } from "./contrato-de-rotas";
 import { VilaService } from "./vila.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
+import { GESTORES_DA_ESCOLA } from "../auth/claims";
 
 /**
  * Rotas do PROFESSOR. Superfície separada da do estudante, e não é organização: é a
@@ -63,7 +64,7 @@ function idOu404(bruto: string): string {
  */
 @Controller("vila/agregado")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor_escola")
+@Roles("professor", ...GESTORES_DA_ESCOLA)
 export class VilaAgregadoController {
   constructor(private readonly vila: VilaService) {}
 

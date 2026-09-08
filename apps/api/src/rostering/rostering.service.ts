@@ -10,6 +10,7 @@ import { matricularEm } from "./matricula";
 import type { ContextoDoExemplo } from "./modelos-oneroster";
 import { lerPlanilha, type ErroDeLinha, type PessoaDaPlanilha } from "./planilha";
 import { gerarSenha, gerarUsuario, periodoVigente, senhaAceitavel } from "./regras";
+import { ehDoContrato } from "../auth/claims";
 
 export const MAX_LINHAS = 50_000;
 
@@ -284,7 +285,7 @@ export class RosteringService {
         if (compativel) existente = candidato;
       }
 
-      if (existente?.role === "gestor_contrato" || naOutraEscola?.role === "gestor_contrato") {
+      if (ehDoContrato(existente?.role ?? "") || ehDoContrato(naOutraEscola?.role ?? "")) {
         relatorio.erros.push({ linha: pessoa.linha, campo: "usuario", mensagem: "usuario reservado" });
         continue;
       }

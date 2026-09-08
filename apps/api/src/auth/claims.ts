@@ -82,11 +82,11 @@ export const GESTORES = [...GESTORES_DA_ESCOLA, ...GESTORES_DO_CONTRATO] as cons
  * esquecido — e esquecer ali não dá erro de tipo nem quebra teste: dá uma conta
  * que recebe 400 pedindo `?escolaId=` numa tela que não tem escola a informar.
  */
-export function ehDoContrato(perfil: Perfil): boolean {
+export function ehDoContrato(perfil: Perfil | string): boolean {
   return (GESTORES_DO_CONTRATO as readonly string[]).includes(perfil);
 }
 
 /** `true` para quem administra uma escola por vez (não inclui os de contrato). */
-export function ehGestorDaEscola(perfil: Perfil): boolean {
+export function ehGestorDaEscola(perfil: Perfil | string): boolean {
   return (GESTORES_DA_ESCOLA as readonly string[]).includes(perfil);
 }

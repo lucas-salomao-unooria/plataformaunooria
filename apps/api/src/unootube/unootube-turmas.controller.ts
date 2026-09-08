@@ -17,6 +17,7 @@ import { ResultadosDaTurmaSchema, TurmasDoUnootubeSchema } from "./contrato-de-r
 import { erroDeJogo } from "./erros";
 import { UnootubeService } from "./unootube.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR (e gestor) sobre a missão do UnooTube — classe separada
@@ -30,7 +31,7 @@ import { professorDoToken } from "../comum/turmas-do-professor";
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "gestor_contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) erroDeJogo("ESCOLA_OBRIGATORIA");
     return escolaIdPedida;
   }
@@ -42,7 +43,7 @@ function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
 
 @Controller("unootube/turmas")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor_escola", "gestor_contrato")
+@Roles("professor", ...GESTORES)
 export class UnootubeTurmasController {
   constructor(private readonly unootube: UnootubeService) {}
 

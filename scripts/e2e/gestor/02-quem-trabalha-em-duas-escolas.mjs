@@ -95,7 +95,7 @@ await suite(
     }
 
     // ── a supervisora de diretoria ──────────────────────────────────────
-    const supervisora = conta("gestor (supervisora");
+    const supervisora = conta("gestor_escola (supervisora");
     const s = await r.pagina("supervisora");
     await r.entrar(s, supervisora.login);
 

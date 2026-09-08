@@ -34,6 +34,7 @@ import {
 } from "./contrato-de-rotas";
 import { podeCriarPapel } from "./regras";
 import { UsuariosService } from "./usuarios.service";
+import { GESTORES, GESTORES_DO_CONTRATO } from "../auth/claims";
 
 /**
  * Gestão de usuários — só gestor (própria escola) e admin-contrato (qualquer
@@ -41,7 +42,7 @@ import { UsuariosService } from "./usuarios.service";
  */
 @Controller("usuarios")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor_escola", "gestor_contrato")
+@Roles(...GESTORES)
 export class UsuariosController {
   constructor(
     private readonly usuarios: UsuariosService,
@@ -115,7 +116,7 @@ export class UsuariosController {
    * service; separado, a matriz papel x rota se lê sozinha.
    */
   @Post("gestor_contrato")
-  @Roles("gestor_contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Cadastra outro admin do contrato (só admin do contrato pode).",
     descricao:

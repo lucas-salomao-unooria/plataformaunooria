@@ -28,6 +28,7 @@ import {
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR (e gestor) sobre a exp-07 — classe separada para o
@@ -43,7 +44,7 @@ import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "gestor_contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) throw erroDeJogo("escola-obrigatoria");
     return escolaIdPedida;
   }
@@ -65,7 +66,7 @@ function turmaOu400(turmaId: string): string {
 
 @Controller("o-eco-no-grupo/turmas")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor_escola", "gestor_contrato")
+@Roles("professor", ...GESTORES)
 export class OEcoNoGrupoTurmasController {
   constructor(private readonly eco: OEcoNoGrupoService) {}
 

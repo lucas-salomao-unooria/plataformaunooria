@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { apiDoServidorBruto } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
+import { ehGestor } from "@/lib/papeis";
 
 /**
  * RECEBE um perfil portátil emitido por outra instalação.
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
   if (!session?.usuario) {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
   }
-  if (session.usuario.papel !== "gestor_escola" && session.usuario.papel !== "gestor_contrato") {
+  if (!ehGestor(session.usuario.papel)) {
     return NextResponse.json({ mensagem: "sem permissão" }, { status: 403 });
   }
 
