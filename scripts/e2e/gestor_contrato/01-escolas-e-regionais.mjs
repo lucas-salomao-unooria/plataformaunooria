@@ -125,6 +125,44 @@ await suite(
       inteira: true,
     });
 
+    /* ── o indicador BATE com a lista ─────────────────────────────────────
+       O bug relatado: a coluna Professores contava LOTAÇÕES naquela escola e a
+       lista de pessoas filtrava `users.escola_id` — o cache da lotação
+       PRINCIPAL. O professor das duas escolas era contado nas duas e listado só
+       na principal, e a secundária mostrava "1 professor" com uma lista vazia
+       dizendo "Ninguém por aqui ainda". Este passo abre os dois lados na mesma
+       escola e compara os números. */
+    const linhaDaSegunda = p.locator("table tbody tr").filter({ hasText: ESCOLA_2 }).first();
+    const celulas = await linhaDaSegunda.locator("td").allInnerTexts();
+    const professoresNaTabela = Number((celulas[celulas.length - 2] ?? "").trim());
+    await linhaDaSegunda.getByRole("button", { name: "Ver pessoas" }).click();
+    await p.waitForURL(/\/admin\/usuarios\?escolaId=/, { timeout: 20_000 });
+    await p.waitForTimeout(2500);
+
+    await p.getByRole("combobox", { name: /^Papel/ }).click();
+    await p.getByRole("option", { name: "Professor" }).first().click();
+    await p.waitForTimeout(2500);
+    const naLista = await p.locator("table tbody tr").count();
+    const vazia = await p.getByText(/Ninguém por aqui ainda/).count();
+
+    r.exigir(
+      Number.isFinite(professoresNaTabela) && professoresNaTabela === naLista && vazia === 0,
+      `o indicador (${professoresNaTabela}) bate com a lista (${naLista}) — era ${professoresNaTabela} contra 0`,
+    );
+    await r.registrar(p, "indicador-bate-com-a-lista", {
+      titulo: "O indicador e a lista contam a mesma coisa",
+      mostra: `${ESCOLA_2}: a coluna Professores dizia ${professoresNaTabela}, e a lista filtrada mostra ${naLista} pessoa(s).`,
+      prova:
+        "Os dois lados fazem a MESMA pergunta agora — lotação ativa nesta escola, com este " +
+        "papel. Antes a coluna contava lotações e a lista filtrava `users.escola_id`, que é o " +
+        "cache da lotação PRINCIPAL: quem trabalha em duas escolas era contado nas duas e " +
+        "listado só numa, e a outra dizia 'Ninguém por aqui ainda'.",
+      inteira: true,
+    });
+
+    await p.goto(`${HUB}/admin/escolas`, { waitUntil: "domcontentloaded" });
+    await p.waitForTimeout(2200);
+
     // ── lotação em lote: é assim que nasce um supervisor ────────────────
     /* O `<input>` do Checkbox do DS é sr-only e o `<label>` cobre o clique:
        `force` mira o input em vez de esperar que ele receba o ponteiro. */

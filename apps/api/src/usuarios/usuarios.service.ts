@@ -45,11 +45,38 @@ export class UsuariosService {
 
   async listar(escolaId: string, filtro: FiltroDeUsuarios) {
     const busca = filtro.busca?.trim();
+    /**
+     * QUEM TRABALHA NESTA ESCOLA é `lotacoes`, não `users.escola_id`.
+     *
+     * O bug que isto corrige: a coluna "Professores" da tela de Escolas conta
+     * LOTAÇÕES naquela escola, e esta lista filtrava `users.escola_id` — que é o
+     * CACHE da lotação PRINCIPAL. O professor lotado em duas escolas era contado
+     * nas duas e listado só na principal: a escola secundária mostrava
+     * "1 professor" e uma lista vazia, com a mensagem "Ninguém por aqui ainda".
+     *
+     * Os dois lados passam a fazer a MESMA pergunta — lotação ativa nesta
+     * escola, com este papel —, então a contagem e a lista não podem divergir
+     * por construção, e não por coincidência. `tests/usuarios.spec.ts` cobra a
+     * igualdade.
+     *
+     * O papel também sai da LOTAÇÃO, não de `users.role`: é o papel com que a
+     * pessoa trabalha NESTA escola, e é o mesmo critério que a contagem usa.
+     * Hoje os dois concordam sempre (o `lotarEmLote` recusa divergência desde a
+     * ADR-80, e não há uma única linha divergente na base), mas fazer a lista
+     * perguntar uma coisa e a contagem outra é exatamente como o defeito nasceu.
+     *
+     * `lotacoes` está FORA da RLS, então este `some` funciona dentro do
+     * `comTenancy` — e ele É o filtro de escola desta query, o que a regra
+     * inviolável nº 1 exige.
+     */
     const where = {
-      escolaId,
-      ...(filtro.papel
-        ? { role: filtro.papel === "estudante" ? { in: ["estudante"] } : filtro.papel }
-        : {}),
+      lotacoes: {
+        some: {
+          escolaId,
+          fim: null,
+          ...(filtro.papel ? { papel: filtro.papel } : {}),
+        },
+      },
       ...(filtro.situacao === "ativos" ? { ativo: true } : {}),
       ...(filtro.situacao === "inativos" ? { ativo: false } : {}),
       ...(filtro.situacao === "sem-primeiro-acesso" ? { senhaProvisoria: true } : {}),
@@ -84,10 +111,16 @@ export class UsuariosService {
               where: { fim: null },
               include: { turma: { select: { nome: true, serie: true } } },
             },
-            /* O gestor de mais de uma unidade e o `gestor_contrato` precisam ver
-               DE QUE escola é a linha — sem isso a lista mistura unidades sem
-               dizer. `escola_id` é sempre o da lotação principal. */
-            escola: { select: { nome: true } },
+            /* A LOTAÇÃO nesta escola — é dela que sai o papel com que a pessoa
+               trabalha AQUI, e o nome da escola da linha. `u.escola` não serve
+               para nenhum dos dois: ela é a lotação PRINCIPAL, e para quem
+               trabalha em duas a linha diria a escola errada justamente na
+               listagem da outra. */
+            lotacoes: {
+              where: { escolaId, fim: null },
+              select: { papel: true, escola: { select: { nome: true } } },
+              take: 1,
+            },
           },
           orderBy: [{ role: "asc" }, { username: "asc" }],
           skip: (filtro.pagina - 1) * filtro.porPagina,
@@ -104,8 +137,12 @@ export class UsuariosService {
             id: u.id,
             usuario: u.username,
             nome: u.displayName,
-            papel: u.role,
-            escola: u.escola?.nome ?? null,
+            /* O papel DESTA escola, não o global. Hoje os dois concordam
+               sempre — o `lotarEmLote` recusa divergência (ADR-80) —, e mostrar
+               o da lotação é o que faz a linha combinar com o filtro que a
+               trouxe. */
+            papel: u.lotacoes[0]?.papel ?? u.role,
+            escola: u.lotacoes[0]?.escola.nome ?? null,
             matricula: u.matriculaExterna,
             /* Formatado como em qualquer documento brasileiro. Só gestor e
                admin-contrato chegam nesta rota. */

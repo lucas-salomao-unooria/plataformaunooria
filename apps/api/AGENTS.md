@@ -234,6 +234,30 @@ para `gestor_regional` (a própria regional) e os perfis de contrato
 - **O teto**: uma transação por escola. Diretoria muito grande ficar lenta é
   gatilho para agregado materializado, **não** para afrouxar a política.
 
+## "Quem trabalha nesta escola" é LOTAÇÃO, nunca `users.escola_id`
+
+Isto já estava escrito acima como desenho, e **foi violado na prática** — o
+defeito da contagem de professores nasceu daí. Fica como regra operacional:
+
+- **`users.escola_id` é CACHE da lotação principal.** Perguntar "quem está nesta
+  escola" a ele responde "quem tem esta escola como principal" — e para quem
+  trabalha em duas, a segunda escola volta VAZIA.
+- **Toda listagem e toda contagem por escola sai de `lotacoes`** (`escola_id` +
+  `papel` + `fim IS NULL`). `usuarios.listar` filtrava pelo cache enquanto
+  `escolas.listar` contava lotações: a coluna "Professores" dizia 1 e a lista da
+  mesma escola dizia 0, com "Ninguém por aqui ainda". Dois lados perguntando
+  coisas diferentes com o mesmo rótulo.
+- **O papel e o nome da escola da LINHA também saem da lotação daquela escola**,
+  não de `users.role`/`users.escola`: senão a listagem da escola secundária
+  mostra a escola principal da pessoa na coluna Escola — a escola errada,
+  justamente na linha que o defeito escondia.
+- `escolas.pessoasDaEscola` (a outra listagem, `GET /escolas/:id/pessoas`) já
+  fazia certo desde o começo. Duas listas de pessoas com critérios diferentes é
+  o que permitiu a divergência passar.
+- **A regressão é a IGUALDADE, não a query**: `tests/usuarios.spec.ts` compara
+  contagem e lista na mesma escola, com o professor de duas escolas montado de
+  propósito. Verificado que ela REPROVA sem a correção.
+
 ## Identidade e enturmamento (2026-08-28)
 
 **Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As
