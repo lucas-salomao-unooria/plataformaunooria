@@ -25,7 +25,7 @@ const { segunda: ESCOLA_2 } = escolas();
 
 await suite(
   {
-    slug: "admin-contrato/01-escolas-e-regionais",
+    slug: "gestor_contrato/01-escolas-e-regionais",
     papel: "gestor_contrato",
     titulo: "A rede inteira",
     subtitulo: "regionais, escolas e a lotação em lote que cria um supervisor",
@@ -40,7 +40,7 @@ await suite(
       "Selecionar escolas e vincular alguém a elas cria um supervisor em um passo",
       "Excluir uma regional com escolas exige dizer para onde elas vão",
     ],
-    comando: "node scripts/e2e/admin-contrato/01-escolas-e-regionais.mjs",
+    comando: "node scripts/e2e/gestor_contrato/01-escolas-e-regionais.mjs",
   },
   async (r) => {
     const p = await r.pagina("gestor_contrato");

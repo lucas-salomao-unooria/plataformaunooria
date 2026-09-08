@@ -65,7 +65,14 @@ export function NavAdmin({ papel, escolas }: { papel: Papel; escolas: number }) 
   const itens = ITENS.filter(
     (i) =>
       (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || ehDoContrato(papel)) &&
-      (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) || escolas > 1),
+      /* O `gestor_regional` vê o panorama SEMPRE, mesmo com uma escola só: para
+         ele a tela não é "minhas lotações", é a DIRETORIA — o escopo do papel
+         dele. Para quem chega por lotação a regra segue valendo: com uma escola
+         a tela é de uma linha, e item de menu que não leva a nada é pior que
+         item nenhum. */
+      (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) ||
+        escolas > 1 ||
+        papel === "gestor_regional"),
   );
   const ativo = itens.find((item) => pathname.startsWith(item.href))?.id ?? "usuarios";
 

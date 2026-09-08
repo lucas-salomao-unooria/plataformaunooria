@@ -22,7 +22,7 @@ const ESCOLA = process.env.ESCOLA ?? "escola-demo";
 
 await suite(
   {
-    slug: "admin-contrato/03-turmas-e-periodos",
+    slug: "gestor_contrato/03-turmas-e-periodos",
     papel: "gestor_contrato",
     titulo: "Calendário e turmas",
     subtitulo: "períodos letivos, criar turma, e o que se faz com uma matrícula",
@@ -37,7 +37,7 @@ await suite(
       "A turma abre com as pessoas dela e as ações de matrícula",
       "Mover de turma e encerrar matrícula são operações separadas",
     ],
-    comando: "node scripts/e2e/admin-contrato/03-turmas-e-periodos.mjs",
+    comando: "node scripts/e2e/gestor_contrato/03-turmas-e-periodos.mjs",
   },
   async (r) => {
     const p = await r.pagina("gestor_contrato");

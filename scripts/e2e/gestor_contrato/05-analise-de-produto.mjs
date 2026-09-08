@@ -26,7 +26,7 @@ const ESCOLA = process.env.ESCOLA ?? "escola-demo";
 
 await suite(
   {
-    slug: "admin-contrato/05-analise-de-produto",
+    slug: "gestor_contrato/05-analise-de-produto",
     papel: "gestor_contrato",
     titulo: "A análise de produto",
     subtitulo: "envolvimento e eficácia entre turmas, e a planilha da rede",
@@ -42,7 +42,7 @@ await suite(
       "Nenhum nome de estudante nesta tela: ela é agregada por atividade",
       "O gestor de escola NÃO alcança estas rotas — a trava está na api, não no menu",
     ],
-    comando: "node scripts/e2e/admin-contrato/05-analise-de-produto.mjs",
+    comando: "node scripts/e2e/gestor_contrato/05-analise-de-produto.mjs",
   },
   async (r) => {
     const p = await r.pagina("gestor_contrato");

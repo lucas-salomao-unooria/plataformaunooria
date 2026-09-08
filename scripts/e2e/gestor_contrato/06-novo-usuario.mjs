@@ -33,7 +33,7 @@ function combo(modal, rotulo) {
 
 await suite(
   {
-    slug: "admin-contrato/06-novo-usuario",
+    slug: "gestor_contrato/06-novo-usuario",
     papel: "gestor_contrato",
     titulo: "Cadastrar pessoa em qualquer escola, e o papel da rede",
     subtitulo: "o admin escolhe a unidade, e é o único que pode criar outro admin",
@@ -47,7 +47,7 @@ await suite(
       "A lista de papéis dele é a cadeia: atribui o regional, nunca o próprio nível",
       "O admin recém-criado nasce com senha provisória e é preso na troca",
     ],
-    comando: "node scripts/e2e/admin-contrato/06-novo-usuario.mjs",
+    comando: "node scripts/e2e/gestor_contrato/06-novo-usuario.mjs",
   },
   async (r) => {
     const admin = conta("gestor_contrato");

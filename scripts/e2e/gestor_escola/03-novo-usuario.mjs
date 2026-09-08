@@ -45,7 +45,7 @@ function combo(modal, rotulo) {
 
 await suite(
   {
-    slug: "gestor/03-novo-usuario",
+    slug: "gestor_escola/03-novo-usuario",
     papel: "gestor_escola",
     titulo: "Cadastrar uma pessoa no balcão",
     subtitulo: "o formulário que monta a linha da planilha, e o papel que o gestor não pode dar",
@@ -59,7 +59,7 @@ await suite(
       "A senha aparece UMA vez, e a pessoa já consta na lista da escola",
       "O gestor não pode criar admin do contrato: a opção não existe, e a api recusa",
     ],
-    comando: "node scripts/e2e/gestor/03-novo-usuario.mjs",
+    comando: "node scripts/e2e/gestor_escola/03-novo-usuario.mjs",
   },
   async (r) => {
     const gestor = conta("gestor_escola");

@@ -42,7 +42,7 @@ const NO_DESTINO = [
 
 await suite(
   {
-    slug: "admin-contrato/04-transferencia-e-perfil-portatil",
+    slug: "gestor_contrato/04-transferencia-e-perfil-portatil",
     papel: "gestor_contrato",
     titulo: "A criança que muda de escola",
     subtitulo: "transferência pelo CPF dentro da rede, e o documento assinado que sai dela",
@@ -57,7 +57,7 @@ await suite(
       "Ele é recebido de volta e a assinatura é conferida",
       "Um documento adulterado é RECUSADO",
     ],
-    comando: "node scripts/e2e/admin-contrato/04-transferencia-e-perfil-portatil.mjs",
+    comando: "node scripts/e2e/gestor_contrato/04-transferencia-e-perfil-portatil.mjs",
   },
   async (r) => {
     const p = await r.pagina("gestor_contrato");

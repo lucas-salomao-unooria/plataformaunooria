@@ -18,7 +18,7 @@ const { primeira: ESCOLA_1, segunda: ESCOLA_2 } = escolas();
 
 await suite(
   {
-    slug: "gestor/02-quem-trabalha-em-duas-escolas",
+    slug: "gestor_escola/02-quem-trabalha-em-duas-escolas",
     papel: "gestor_escola",
     titulo: "Quem trabalha em duas escolas",
     subtitulo: "escola ativa, o panorama que lista em vez de somar, e o que muda ao trocar",
@@ -32,7 +32,7 @@ await suite(
       "O panorama de quem administra várias escolas LISTA, nunca soma",
       "Abrir uma escola pelo panorama troca a escola ativa e leva às pessoas dela",
     ],
-    comando: "node scripts/e2e/gestor/02-quem-trabalha-em-duas-escolas.mjs",
+    comando: "node scripts/e2e/gestor_escola/02-quem-trabalha-em-duas-escolas.mjs",
   },
   async (r) => {
     // ── o professor com duas cadeiras ───────────────────────────────────

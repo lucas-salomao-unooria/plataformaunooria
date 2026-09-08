@@ -217,3 +217,62 @@ describe("exclusão de regional", () => {
     }
   });
 });
+
+/**
+ * O PANORAMA DA DIRETORIA (ADR-81).
+ *
+ * O `gestor_regional` não tem lotação, e o panorama lia `lotacoes` direto — o
+ * dele voltava VAZIO, com o item de menu aparecendo (o menu conta as escolas da
+ * sessão, que vêm da regional). Tela em branco sem erro nenhum: o sintoma que
+ * ninguém sabe diagnosticar.
+ */
+describe("panorama da regional", () => {
+  const SUPERVISOR = "teste-pad-supervisor";
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { username: SUPERVISOR } });
+  });
+
+  test("o gestor_regional vê as escolas da regional, sem lotação em nenhuma", async () => {
+    const regional = await prisma.escola.findFirstOrThrow({ where: { tipo: "regional" } });
+    const escolasDaRegional = await prisma.escola.findMany({
+      where: { tipo: "escola", paiId: regional.id },
+      select: { id: true },
+    });
+
+    const supervisor = await prisma.user.create({
+      data: {
+        username: SUPERVISOR,
+        displayName: "Supervisor da Diretoria",
+        role: "gestor_regional",
+        regionalId: regional.id,
+        passwordHash: "x",
+      },
+    });
+
+    // Nenhuma lotação — é o ponto.
+    expect(await prisma.lotacao.count({ where: { usuarioId: supervisor.id } })).toBe(0);
+
+    const alcance = await escolas.escolasDaPessoa(supervisor.id);
+    expect(alcance.map((e) => e.id).sort()).toEqual(escolasDaRegional.map((e) => e.id).sort());
+    expect(alcance.every((e) => e.papel === "gestor_regional")).toBe(true);
+
+    const panorama = await escolas.resumoDasEscolasDaPessoa(supervisor.id);
+    expect(panorama.map((e) => e.id).sort()).toEqual(escolasDaRegional.map((e) => e.id).sort());
+    // E cada linha diz a diretoria, que é como a tela se intitula.
+    expect(panorama.every((e) => e.regional === regional.nome)).toBe(true);
+  });
+
+  test("e alcança o histórico do estudante das escolas dela", async () => {
+    const supervisor = await prisma.user.findFirstOrThrow({ where: { username: SUPERVISOR } });
+    const daRegional = await prisma.escola.findFirstOrThrow({
+      where: { tipo: "escola", paiId: supervisor.regionalId! },
+    });
+    /* Sem este ramo em `temLotacao`, o histórico do estudante transferido —
+       a única leitura que atravessa escolas fora dos perfis de contrato —
+       responderia 403 justamente ao supervisor da diretoria onde a criança
+       está. */
+    expect(await escolas.temLotacao(supervisor.id, daRegional.id)).toBe(true);
+    expect(await escolas.temLotacao(supervisor.id, "teste-pad-nao-existe")).toBe(false);
+  });
+});

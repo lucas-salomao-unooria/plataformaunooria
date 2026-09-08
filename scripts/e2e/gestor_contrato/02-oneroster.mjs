@@ -75,7 +75,7 @@ const LOTE = {
 
 await suite(
   {
-    slug: "admin-contrato/02-oneroster",
+    slug: "gestor_contrato/02-oneroster",
     papel: "gestor_contrato",
     titulo: "OneRoster 1.2",
     subtitulo: "os sete arquivos do padrão, o manifesto e as contas de assento",
@@ -90,7 +90,7 @@ await suite(
       "O lote cria pessoas, turma e matrículas",
       "As contas sem matrícula são listáveis — é o diagnóstico da virada de ano",
     ],
-    comando: "node scripts/e2e/admin-contrato/02-oneroster.mjs",
+    comando: "node scripts/e2e/gestor_contrato/02-oneroster.mjs",
   },
   async (r) => {
     const p = await r.pagina("gestor_contrato");

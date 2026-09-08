@@ -5563,3 +5563,88 @@ em separado.
 uma regional --- aí a alternativa da RLS por conjunto volta à mesa, com ADR
 própria. Ou a Unooria precisar de capacidade que \cd{gestor\_contrato} não tem,
 que é quando \cd{admin} deixa de ser um rótulo e passa a ser um papel.
+
+\section{ADR-81 --- O panorama da diretoria SOMA, e isso não custou RLS}
+\label{adr:panorama-da-regional}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-34} decidiu que o panorama de quem administra
+muitas escolas \enquote{LISTA, não soma --- uma linha por unidade}, porque somar
+escolas numa métrica só apresentaria a diretoria como unidade de análise, e
+naquele momento a hierarquia não autorizava nada.
+
+Duas coisas mudaram. A \adrr{ADR-80} fez a hierarquia SER o escopo de um papel
+(\cd{gestor\_regional}), então a premissa da recusa deixou de valer para ele. E
+uma inspeção mostrou que a decisão já estava parcialmente vencida na prática: a
+TELA \cd{/admin/minhas-escolas} sempre imprimiu uma linha de resumo somando
+turmas, estudantes e pendências --- a rota devolve lista, mas a tela soma.
+
+\textbf{Uma avaliação de custo estava ERRADA, e vale registrar.} Ao levantar a
+possibilidade, este projeto estimou que a visão somada exigiria estender a
+política de RLS \enquote{em 31 tabelas}. Falso, e a verificação é simples: os
+números do panorama saem de \cd{lotacoes}, \cd{turmas} e \cd{users} --- as três
+tabelas que estão FORA da RLS por desenho (são lidas no login, antes de haver
+escola), consultadas com \cd{escola\_id IN (...)} explícito. Somar o que a API já
+computou é aritmética, não caminho de acesso novo. O custo de RLS existiria
+apenas para dado PEDAGÓGICO (\cd{progresso}, \cd{runs}, tabelas \cd{exp\_*}), que
+está sob RLS e é território do \cd{/analise}.
+
+\textbf{Decisão.} O panorama soma, e se intitula pela diretoria quando quem olha
+é um \cd{gestor\_regional}. O que ele soma:
+
+\begin{itemize}
+  \item \emph{turmas}, \emph{estudantes} e \emph{sem primeiro acesso} --- somam
+    LIMPO: o estudante tem UMA lotação ativa (índice único parcial), e o primeiro
+    acesso é contado por \cd{users.escola\_id}, que é uma escola por pessoa.
+  \item \emph{vínculos de professores}, e não \enquote{professores}: por escola o
+    número é de PESSOAS, mas o total conta duas vezes quem dá aula em duas. É a
+    mesma distinção que a tela de Escolas faz desde a \adrr{ADR-79}.
+\end{itemize}
+
+Para quem chega por LOTAÇÃO (um \cd{gestor\_escola} em várias escolas) a tela
+segue como era: o escopo dele é um conjunto de escolas que por acaso é plural,
+não uma diretoria, e ali a distinção da \adrr{ADR-34} continua fazendo sentido.
+
+\textbf{Um defeito que a decisão expôs.} \cd{resumoDasEscolasDaPessoa} lia
+\cd{lotacoes} DIRETO, então o panorama de um \cd{gestor\_regional} --- que não tem
+lotação nenhuma --- voltava VAZIO, com o item de menu aparecendo, porque o menu
+conta as escolas da sessão (que vêm da regional). Tela em branco, sem erro
+nenhum, sem linha de log: o sintoma que ninguém sabe diagnosticar. As escolas
+passam a sair de \cd{escolasDaPessoa}, que é onde a diferença entre lotação e
+regional já mora.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Estender a RLS para um CONJUNTO de escolas}: era o que a avaliação
+    errada supunha necessário. Continua sendo o caminho para a visão somada de
+    dado PEDAGÓGICO, e continua sendo uma ADR própria --- ela faz toda tabela de
+    dado de estudante depender de um segundo caminho de autorização.
+  \item \emph{Somar na API, em vez de na tela}: a tela já tem os números por
+    escola; somá-los de novo no servidor seria uma segunda fonte da mesma conta,
+    e a divergência apareceria como dois totais diferentes na mesma página.
+  \item \emph{Mostrar a soma também para o \cd{gestor\_escola} de várias
+    escolas}: a tela já fazia isso, e foi mantido --- mas sem o título de
+    diretoria, que ali seria falso.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o papel criado pela \adrr{ADR-80} passou a ter
+uma tela que justifica a existência dele, e ela custou um \cd{escolasDaPessoa} em
+vez de uma migração.
+
+\emph{Ruim}: o panorama agora tem dois modos --- por diretoria e por lotação ---
+e a diferença entre eles é um \cd{papel === "gestor\_regional"} na tela. É pouco
+código e é a única forma honesta: a mesma tela descrevendo dois escopos
+diferentes precisaria mentir em um dos dois.
+
+\emph{Ruim, e não tem a ver com esta decisão}: ao renomear o vocabulário, o
+array de papéis do \arq{scripts/e2e/rodar.mjs} passou a apontar para pastas que
+não existiam (\arq{gestor/} e \arq{admin-contrato/}), e o \cd{existsSync} do
+runner devolve lista vazia em silêncio --- a suíte caiu de 29 roteiros para 19
+sem nenhum aviso. As pastas foram renomeadas junto. Runner que pula suíte calado
+é pior que runner que quebra.
+
+\textbf{Gatilho de reavaliação.} O produto pedir número PEDAGÓGICO por diretoria
+(missões concluídas, perfis, bem-estar) --- aí a RLS por conjunto volta à mesa, e
+com ela a pergunta que a \adrr{ADR-34} fez primeiro: a diretoria é unidade de
+análise de dado de criança, ou só de operação?

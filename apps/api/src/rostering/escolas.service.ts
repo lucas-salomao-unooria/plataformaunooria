@@ -499,17 +499,24 @@ export class EscolasService {
    * precisa continuar barato.
    */
   async resumoDasEscolasDaPessoa(usuarioId: string) {
-    const lotacoes = await this.prisma.lotacao.findMany({
-      where: { usuarioId, fim: null },
-      include: {
-        escola: {
-          select: { id: true, nome: true, municipio: true, uf: true, pai: { select: { nome: true } } },
-        },
-      },
+    /* As escolas saem de `escolasDaPessoa`, e não de `lotacoes` direto: é ela
+       que sabe que o `gestor_regional` alcança as escolas da REGIONAL sem ter
+       lotação em nenhuma. Lendo `lotacoes` aqui, o panorama dele voltava VAZIO
+       — com o item de menu aparecendo, porque o menu conta as escolas da
+       sessão. Tela em branco sem erro nenhum: o pior sintoma possível. */
+    const alcance = await this.escolasDaPessoa(usuarioId);
+    if (alcance.length === 0) return [];
+    const ids = alcance.map((e) => e.id);
+    const papelPorEscola = new Map(alcance.map((e) => [e.id, e.papel]));
+    const principalPorEscola = new Map(alcance.map((e) => [e.id, e.principal]));
+    /* A regional de cada escola, para a tela poder se intitular pela diretoria.
+       `escolasDaPessoa` é barata de propósito (está no caminho do login) e não
+       traz o pai — aqui pode. */
+    const comRegional = await this.prisma.escola.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, nome: true, municipio: true, uf: true, pai: { select: { nome: true } } },
     });
-    if (lotacoes.length === 0) return [];
-
-    const ids = lotacoes.map((l) => l.escola.id);
+    const lotacoes = comRegional.map((escola) => ({ escola }));
     const [pessoas, turmas, semPrimeiroAcesso] = await Promise.all([
       this.prisma.lotacao.groupBy({
         by: ["escolaId", "papel"],
@@ -537,8 +544,8 @@ export class EscolasService {
         municipio: l.escola.municipio,
         uf: l.escola.uf,
         regional: l.escola.pai?.nome ?? null,
-        papel: l.papel,
-        principal: l.principal,
+        papel: papelPorEscola.get(l.escola.id) ?? "",
+        principal: principalPorEscola.get(l.escola.id) ?? false,
         estudantes: conta(l.escola.id, "estudante"),
         professores: conta(l.escola.id, "professor"),
         turmas: turmas.find((t) => t.escolaId === l.escola.id)?._count._all ?? 0,

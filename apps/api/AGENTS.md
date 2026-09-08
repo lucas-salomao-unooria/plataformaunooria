@@ -78,12 +78,23 @@ literalmente verdadeira (ADR-30).
   com UMA regional na rede, vínculo automático + aviso; com VÁRIAS, a linha é
   **erro** com o número dela. É mudança observável para quem já usa — `orgs.csv`
   que hoje importa passa a falhar.
-- **O supervisor de diretoria não é papel novo**: é um `gestor` lotado nas
-  unidades dela. O panorama (`/admin/minhas-escolas`, `GET /escolas/minhas/resumo`)
-  **lista, não soma** — uma linha por unidade, com turmas, estudantes e quantos ainda
-  não fizeram o primeiro acesso. Somar escolas numa métrica só seria exatamente a
-  tela que a decisão acima recusa. O item de menu só aparece com mais de uma
-  lotação.
+- **O panorama da diretoria SOMA** (ADR-81, revendo a ADR-34).
+  `GET /escolas/minhas/resumo` devolve **uma linha por escola**; quem soma é a
+  TELA (`/admin/minhas-escolas`) — ela já somava turmas e estudantes antes desta
+  ADR, e agora se intitula pela diretoria quando quem olha é `gestor_regional`.
+  **A soma não custou RLS**, e uma avaliação anterior deste projeto errou ao
+  dizer que custaria: os números saem de `lotacoes`, `turmas` e `users`, as três
+  tabelas que já estão FORA da RLS, com `escola_id IN (...)` explícito. O custo de
+  RLS existiria só para dado PEDAGÓGICO (`progresso`, `runs`, `exp_*`), que é
+  território do `/analise`.
+  **Turmas, estudantes e primeiro acesso somam limpo** (o estudante tem UMA
+  lotação ativa; o primeiro acesso é por `users.escola_id`); **professor é
+  VÍNCULO**, porque quem dá aula em duas conta duas vezes.
+  As escolas do panorama saem de `escolasDaPessoa`, **nunca de `lotacoes`
+  direto**: lendo lotação, o panorama do `gestor_regional` voltava vazio com o
+  item de menu aparecendo — tela em branco sem erro nenhum. O item de menu
+  aparece com mais de uma lotação **ou** para `gestor_regional` (para ele a tela
+  é a diretoria, não "minhas lotações").
 - **`users.cpf` é a identidade IMUTÁVEL do estudante** — e o que torna a
   transferência possível: nome, login e matrícula mudam, o CPF não. Guardado como
   **11 dígitos, sem pontuação** (a formatação é da tela; CHECK no banco), **único

@@ -34,7 +34,7 @@ const PLANILHA = [
 
 await suite(
   {
-    slug: "gestor/01-pessoas-e-turmas",
+    slug: "gestor_escola/01-pessoas-e-turmas",
     papel: "gestor_escola",
     titulo: "O ciclo de uma pessoa na escola",
     subtitulo: "importar, enturmar, resetar senha, primeiro acesso e a turma que nasce disso",
@@ -50,7 +50,7 @@ await suite(
       "Quem recebe senha temporária fica preso na troca até trocar",
       "Depois de trocar, o professor vê a turma dele — e só a dele",
     ],
-    comando: "node scripts/e2e/gestor/01-pessoas-e-turmas.mjs",
+    comando: "node scripts/e2e/gestor_escola/01-pessoas-e-turmas.mjs",
   },
   async (r) => {
     const p = await r.pagina("gestor_escola");
