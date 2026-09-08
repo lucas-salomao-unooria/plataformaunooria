@@ -169,7 +169,7 @@ describe("importação da planilha de pessoas", () => {
     const carlos = await prisma.user.findFirstOrThrow({
       where: { escolaId: ESCOLA, matriculaExterna: "1001" },
     });
-    expect(carlos.role).toBe("gestor");
+    expect(carlos.role).toBe("gestor_escola");
     expect(await prisma.matricula.count({ where: { usuarioId: carlos.id } })).toBe(0);
   });
 

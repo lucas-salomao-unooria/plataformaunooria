@@ -43,7 +43,7 @@ export const NovoPeriodoSchema = z.object({
   fim: z.coerce.date(),
 });
 
-/** `?escolaId=` — só `admin-contrato` pode apontar para outra escola; para os
+/** `?escolaId=` — só `gestor_contrato` pode apontar para outra escola; para os
  *  demais o valor é ignorado em favor da escola do token (`escolaAlvo`). */
 export const EscolaAlvoQuery = z.object({ escolaId: z.string().optional() });
 
@@ -206,12 +206,12 @@ export const RegionalExcluidaSchema = z.object({
 
 export const LotarSchema = z.object({
   usuarioId: Uuid,
-  papel: z.enum(["professor", "gestor"]),
+  papel: z.enum(["professor", "gestor_escola"]),
 });
 
 export const LotarEmLoteSchema = z.object({
   usuarioId: Uuid,
-  papel: z.enum(["professor", "gestor"]),
+  papel: z.enum(["professor", "gestor_escola"]),
   /** A LISTA, não o critério: quem confirma precisa ver quantas e quais escolas
    *  antes de dar acesso a cinquenta unidades de uma vez. */
   escolaIds: z.array(IdDeEscola).min(1).max(1000),
@@ -231,7 +231,7 @@ export const TransferirSchema = z.object({
 });
 
 export const PapelDeLotacaoQuery = z.object({
-  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor_escola"]).optional(),
 });
 
 // -------------------------------------------------------------------- saída

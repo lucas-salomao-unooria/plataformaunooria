@@ -60,7 +60,7 @@ export class PortabilidadeController {
    * é leitura atravessada, e ela tem uma porta só, com dono.
    */
   @Get("estudantes/:id/perfil-portatil")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Monta o documento SEM assinatura, para o hub assinar.",
     descricao:
@@ -82,7 +82,7 @@ export class PortabilidadeController {
        ela está hoje. */
     const historico = await this.escolas.historicoDoEstudante(id);
     if (!historico) throw new NotFoundException("estudante não encontrado");
-    if (req.auth.perfil !== "admin-contrato") {
+    if (req.auth.perfil !== "gestor_contrato") {
       const escolaAtual = historico.escolas.find((e) => e.atual)?.id;
       const podeVer =
         escolaAtual !== undefined &&
@@ -101,7 +101,7 @@ export class PortabilidadeController {
 
   /** O que esta escola já recebeu sobre esta criança. */
   @Get("estudantes/:id/perfis-recebidos")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Os documentos que esta escola já recebeu sobre esta criança.",
     descricao:
@@ -124,7 +124,7 @@ export class PortabilidadeController {
 
   /** O documento inteiro, como veio — para o gestor conferir e para reemitir. */
   @Get("perfis-recebidos/:id")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "O documento recebido inteiro, como veio.",
     descricao:
@@ -160,7 +160,7 @@ export class PortabilidadeController {
    * a tela diz isso em vez de fingir que conferiu.
    */
   @Post("perfis-recebidos")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Recebe um documento de outra rede.",
     descricao:
@@ -197,7 +197,7 @@ export class PortabilidadeController {
    * apaga nada que esta rede tenha medido.
    */
   @Delete("perfis-recebidos/:id")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Apaga um perfil recebido.",
     descricao:

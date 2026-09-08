@@ -20,15 +20,15 @@ describe("o primeiro item é sempre a home do papel", () => {
   });
 
   test("gestor e admin-contrato compartilham a mesma área", () => {
-    expect(itensDaRota("/admin/turmas", "gestor")[0]?.href).toBe("/admin/usuarios");
-    expect(itensDaRota("/analise", "admin-contrato")[0]?.href).toBe("/admin/usuarios");
+    expect(itensDaRota("/admin/turmas", "gestor_escola")[0]?.href).toBe("/admin/usuarios");
+    expect(itensDaRota("/analise", "gestor_contrato")[0]?.href).toBe("/admin/usuarios");
   });
 });
 
 describe("a home do papel não leva trilha", () => {
   test("um item só, que é a própria página, é ruído", () => {
     expect(itensDaRota("/professor", "professor")).toEqual([]);
-    expect(itensDaRota("/admin/usuarios", "gestor")).toEqual([]);
+    expect(itensDaRota("/admin/usuarios", "gestor_escola")).toEqual([]);
     expect(itensDaRota("/estudante", "estudante")).toEqual([]);
   });
 
@@ -87,7 +87,7 @@ describe("segmento oculto não entra na trilha", () => {
   });
 
   test("/analise/atividades sairia duplicado, porque /analise já é prefixo", () => {
-    expect(rotulos("/analise/atividades/abc123def456ghij", "admin-contrato")).toEqual([
+    expect(rotulos("/analise/atividades/abc123def456ghij", "gestor_contrato")).toEqual([
       "Início",
       "Análise de produto",
       "Atividade",

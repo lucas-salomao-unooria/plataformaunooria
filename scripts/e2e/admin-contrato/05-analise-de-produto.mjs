@@ -17,8 +17,8 @@ import { conta } from "../lib/credenciais.mjs";
  * As métricas são RECALCULADAS dos eventos a cada visita. Nada aqui é número
  * gravado que ninguém sabe mais como foi computado.
  *
- * O PAPEL é `admin-contrato`, e só ele: o controller inteiro carrega
- * `@Roles("admin-contrato")`. Nem professor nem gestor alcançam estas rotas —
+ * O PAPEL é `gestor_contrato`, e só ele: o controller inteiro carrega
+ * `@Roles("gestor_contrato")`. Nem professor nem gestor alcançam estas rotas —
  * e esta suíte prova a negativa entrando com o gestor e recebendo 403.
  */
 /** A escola da demonstração — o id vem da rede, não é uuid gerado. */
@@ -27,7 +27,7 @@ const ESCOLA = process.env.ESCOLA ?? "escola-demo";
 await suite(
   {
     slug: "admin-contrato/05-analise-de-produto",
-    papel: "admin-contrato",
+    papel: "gestor_contrato",
     titulo: "A análise de produto",
     subtitulo: "envolvimento e eficácia entre turmas, e a planilha da rede",
     contexto:
@@ -45,8 +45,8 @@ await suite(
     comando: "node scripts/e2e/admin-contrato/05-analise-de-produto.mjs",
   },
   async (r) => {
-    const p = await r.pagina("admin-contrato");
-    await r.entrar(p, conta("admin-contrato").login);
+    const p = await r.pagina("gestor_contrato");
+    await r.entrar(p, conta("gestor_contrato").login);
 
     await p.goto(`${HUB}/analise`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(2500);
@@ -64,7 +64,7 @@ await suite(
     });
 
     /* A escola é DIGITADA, não escolhida numa lista — e isso é uma decisão, não
-       um atalho. O `admin-contrato` é a única exceção cross-escola da regra de
+       um atalho. O `gestor_contrato` é a única exceção cross-escola da regra de
        tenancy, e viaja com `escolaId` VAZIO no token: não existe "a escola
        dele". O id vai para a URL, o que de quebra torna a comparação entre
        turmas um link compartilhável. */
@@ -160,7 +160,7 @@ await suite(
        pelo menu provaria só que o link não aparece — e link escondido com rota
        aberta é porta destrancada com a placa retirada. */
     const gestor = await r.pagina("gestor-de-escola");
-    await r.entrar(gestor, conta("gestor").login);
+    await r.entrar(gestor, conta("gestor_escola").login);
     const recusa = await gestor.request.get(`${BFF}/analise/resumo?escolaId=${encodeURIComponent(escolaId)}`);
     r.exigir(
       recusa.status() === 403,

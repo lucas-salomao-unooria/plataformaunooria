@@ -77,6 +77,8 @@ model Escola {
   usuarios        User[]
   lotacoes        Lotacao[]
   perfisPortateis PerfilPortatil[]
+  /// Os `gestor_regional` que cobrem esta regional (vazio numa `escola`).
+  gestoresRegionais User[]         @relation("RegionalDoGestor")
 
   @@map("escolas")
 }
@@ -315,11 +317,23 @@ model Liberacao {
 }
 
 /// estudante | professor | gestor | admin-contrato
-/// CHECK na migration: escola_id NOT NULL exceto quando role = 'admin-contrato'.
+/// CHECK na migration: escola_id NOT NULL exceto para `gestor_contrato`, `admin`
+/// (que enxergam a rede inteira) e `gestor_regional` (cuja escola ativa é
+/// escolhida por sessão entre as da regional dele — não há lotação a cachear).
 model User {
   id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  /// estudante | professor | gestor_escola | gestor_regional | gestor_contrato
+  /// | admin — CHECK na migration, e o MESMO vocabulário de `PERFIS`
+  /// (`auth/claims.ts`) e do claim `perfil` do token. Foram quatro até a ADR-80.
   role             String
   escolaId         String?   @map("escola_id")
+  /// A REGIONAL que um `gestor_regional` cobre — e SÓ ele (CHECK bicondicional
+  /// na migration). É daqui que sai a lista de escolas que ele pode ativar, no
+  /// lugar da lotação; ele continua trabalhando UMA escola por vez, e a RLS não
+  /// muda. Coluna, e não lotação apontando para a linha da regional, porque a
+  /// ADR-79 proibiu isso: a regional apareceria no seletor do cabeçalho como
+  /// uma escola sem turma, sem estudante e sem dado (ADR-80).
+  regionalId       String?   @map("regional_id")
   turmaId          String?   @map("turma_id") @db.Uuid
   username         String
   displayName      String    @map("display_name")
@@ -383,6 +397,7 @@ model User {
   planoEnsinoConfigs PlanoDeEnsinoConfiguracao[] @relation("PlanoEnsinoProfessor")
   planosDeEnsino     PlanoDeEnsinoAnual[]        @relation("PlanoEnsinoAnualProfessor")
   planosDePeriodo    PlanoDeEnsinoPeriodo[]      @relation("PlanoEnsinoPeriodoProfessor")
+  regional         Escola?           @relation("RegionalDoGestor", fields: [regionalId], references: [id])
   vilaSessoes      VilaSessao[]      @relation("VilaEstudante")
   vilaPerfis       VilaPerfil[]      @relation("VilaPerfilEstudante")
   /// Lista, não `VilaBolha?`: a PK é composta (`escola_id, estudante_id`), então

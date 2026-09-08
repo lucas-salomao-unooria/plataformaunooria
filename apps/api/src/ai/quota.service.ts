@@ -30,7 +30,7 @@ export class QuotaService {
   ) {}
 
   private limite(perfil: Perfil): number {
-    if (perfil === "professor" || perfil === "gestor" || perfil === "admin-contrato") {
+    if (perfil === "professor" || perfil === "gestor_escola" || perfil === "gestor_contrato") {
       return Number(this.config.get("AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR") ?? 2_000_000);
     }
     return Number(

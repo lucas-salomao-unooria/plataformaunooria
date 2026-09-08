@@ -9,7 +9,7 @@ export default async function TurmasPage() {
   return (
     <TurmasAdmin
       papel={usuario.papel}
-      escolaIdInicial={usuario.papel === "admin-contrato" ? "" : usuario.escolaId}
+      escolaIdInicial={usuario.papel === "gestor_contrato" ? "" : usuario.escolaId}
     />
   );
 }

@@ -53,7 +53,7 @@ export class ExperienciasController {
 
   /** Upsert do CI (ou rollback manual) — só admin-contrato. */
   @Put(":expId")
-  @Roles("admin-contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Publica ou faz rollback de uma versão.",
     descricao:

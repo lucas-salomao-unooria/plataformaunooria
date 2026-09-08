@@ -8,6 +8,6 @@ export default async function EscolasPage() {
   const session = await auth();
   // Escola é *tenant*: só o admin do contrato abre inquilino novo. O gestor que
   // digitar a rota volta para o lugar dele em vez de ver uma tela sem dados.
-  if (session!.usuario.papel !== "admin-contrato") redirect("/admin/usuarios");
+  if (session!.usuario.papel !== "gestor_contrato") redirect("/admin/usuarios");
   return <EscolasDaRede />;
 }

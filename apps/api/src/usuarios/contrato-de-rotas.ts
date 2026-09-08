@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cpfEhValido } from "../comum/cpf";
 
 export const ListarSchema = z.object({
-  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor_escola"]).optional(),
   turmaId: z.string().uuid().optional(),
   situacao: z.enum(["ativos", "inativos", "sem-primeiro-acesso"]).optional(),
   /** Nome, login, matrícula — e CPF, com ou sem pontuação. */
@@ -21,7 +21,7 @@ export const EditarSchema = z.object({
     .union([z.literal(""), z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos")])
     .optional(),
   email: z.union([z.literal(""), z.string().email().max(180)]).optional(),
-  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor_escola"]).optional(),
   ativo: z.boolean().optional(),
 });
 
@@ -38,7 +38,7 @@ export const UsuarioEmListaSchema = z.object({
   usuario: z.string(),
   nome: z.string(),
   papel: z.string(),
-  /** A unidade da lotação principal. Nulo só no `admin-contrato`, que não tem. */
+  /** A unidade da lotação principal. Nulo só no `gestor_contrato`, que não tem. */
   escola: z.string().nullable(),
   /** O RA da rede — a chave da pessoa. Nulo em conta de assento. */
   matricula: z.string().nullable(),
@@ -98,8 +98,8 @@ export const SenhaResetadaSchema = z.object({
  */
 export const CriarUsuarioSchema = z
   .object({
-    /** `admin-contrato` tem rota própria: não tem escola, turma nem lotação. */
-    papel: z.enum(["estudante", "professor", "gestor"]),
+    /** `gestor_contrato` tem rota própria: não tem escola, turma nem lotação. */
+    papel: z.enum(["estudante", "professor", "gestor_escola"]),
     nome: z.string().trim().min(1).max(120),
     cpf: z.string().trim().max(14).optional(),
     /** A matrícula da REDE (o RA) — a chave que reconhece a pessoa depois. */
@@ -131,7 +131,7 @@ export const UsuarioCriadoSchema = z.object({
 });
 
 /**
- * `admin-contrato` é operação do PRODUTO, não da escola: sem `escola_id`, sem
+ * `gestor_contrato` é operação do PRODUTO, não da escola: sem `escola_id`, sem
  * lotação, sem turma. Por isso o corpo é outro, e a rota também — a matriz
  * papel x rota fica legível sem nota de rodapé.
  *
@@ -155,6 +155,6 @@ export const AdminContratoCriadoSchema = z.object({
   id: z.string().uuid(),
   nome: z.string(),
   usuario: z.string(),
-  papel: z.literal("admin-contrato"),
+  papel: z.literal("gestor_contrato"),
   senha: z.string(),
 });

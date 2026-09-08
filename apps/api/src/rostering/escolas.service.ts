@@ -65,7 +65,7 @@ export class EscolasService {
 
   // ------------------------------------------------------------------ escolas
 
-  /** Todas as escolas do contrato, com contagem. Só `admin-contrato` chega aqui. */
+  /** Todas as escolas do contrato, com contagem. Só `gestor_contrato` chega aqui. */
   async listar(filtro: FiltroDeEscolas | string = {}): Promise<EscolaDaRede[]> {
     // A assinatura antiga aceitava só a busca; manter as duas evita mexer em
     // todos os call sites por causa de um filtro novo.
@@ -313,7 +313,7 @@ export class EscolasService {
 
   /**
    * Lota uma pessoa em MUITAS escolas de uma vez — o supervisor de uma Diretoria
-   * de Ensino é um `gestor` lotado nas 50 unidades dela.
+   * de Ensino é um `gestor_escola` lotado nas 50 unidades dela.
    *
    * Recebe a LISTA de escolas, não o critério ("todas da regional X"), de
    * propósito: quem confirma precisa ver quantas e quais são antes de dar acesso
@@ -324,13 +324,13 @@ export class EscolasService {
   async lotarEmLote(
     escolaIds: string[],
     usuarioId: string,
-    papel: "professor" | "gestor",
+    papel: "professor" | "gestor_escola",
   ): Promise<{ lotadas: number; ignoradas: string[] } | null> {
     const periodo = await this.periodoDeHoje();
     const inicio = periodo?.inicio ?? new Date();
 
     const usuario = await this.prisma.user.findUnique({ where: { id: usuarioId } });
-    if (!usuario || usuario.role === "admin-contrato") return null;
+    if (!usuario || usuario.role === "gestor_contrato") return null;
 
     // Só unidades: lotar alguém numa `regional` daria uma escola que não tem
     // turma, estudante nem dado — e a pessoa apareceria com uma escola fantasma no
@@ -425,11 +425,11 @@ export class EscolasService {
    * Lota uma pessoa numa escola. Para professor e gestor, ACRESCENTA — não
    * encerra a lotação que ela já tem em outra escola da rede.
    */
-  async lotar(escolaId: string, usuarioId: string, papel: "professor" | "gestor") {
+  async lotar(escolaId: string, usuarioId: string, papel: "professor" | "gestor_escola") {
     const periodo = await this.periodoDeHoje();
     return this.prisma.$transaction(async (tx) => {
       const usuario = await tx.user.findUnique({ where: { id: usuarioId } });
-      if (!usuario || usuario.role === "admin-contrato") return null;
+      if (!usuario || usuario.role === "gestor_contrato") return null;
       const escola = await tx.escola.findUnique({ where: { id: escolaId } });
       if (!escola) return null;
       /* Só UNIDADE recebe lotação — a mesma regra que `lotarEmLote` aplica ao
@@ -584,7 +584,7 @@ export class EscolasService {
 
   /**
    * O histórico do estudante ATRAVESSANDO escolas — a única leitura da plataforma
-   * que faz isso fora de `admin-contrato`.
+   * que faz isso fora de `gestor_contrato`.
    *
    * Devolve PARTICIPAÇÕES, não o conteúdo dos instrumentos: em que experiência
    * ele esteve, em que turma, em que escola, quando. O detalhe de cada

@@ -13,7 +13,7 @@ import type { Papel } from "@/lib/papeis";
  * de quando a fonte de ligadura não carrega, com a mesma cara de bug de CSS.
  */
 /**
- * `admin-contrato` tem um item a mais: as escolas da rede. Escola é *tenant*, e
+ * `gestor_contrato` tem um item a mais: as escolas da rede. Escola é *tenant*, e
  * criar um inquilino novo não é operação de quem administra uma unidade.
  *
  * A restrição vive FORA do item, num conjunto de ids. `SideBarItemData` tem
@@ -63,7 +63,7 @@ export function NavAdmin({ papel, escolas }: { papel: Papel; escolas: number }) 
   const router = useRouter();
   const itens = ITENS.filter(
     (i) =>
-      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || papel === "admin-contrato") &&
+      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || papel === "gestor_contrato") &&
       (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) || escolas > 1),
   );
   const ativo = itens.find((item) => pathname.startsWith(item.href))?.id ?? "usuarios";

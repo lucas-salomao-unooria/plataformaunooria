@@ -52,7 +52,7 @@ const etapaDoAno = (ano: string): "EF" | "EM" => (ano.endsWith("EM") ? "EM" : "E
 
 @Controller("planejamento/curriculo")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor", "admin-contrato")
+@Roles("professor", "gestor_escola", "gestor_contrato")
 export class CurriculoController {
   @Get("componentes")
   @Contrato({

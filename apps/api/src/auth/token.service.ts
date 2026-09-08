@@ -59,7 +59,7 @@ export class TokenService {
       };
       if (!claims.usuarioId) throw new Error("claim sub ausente");
       // admin-contrato é a única exceção cross-escola (regra inviolável nº 1)
-      if (!claims.escolaId && claims.perfil !== "admin-contrato") {
+      if (!claims.escolaId && claims.perfil !== "gestor_contrato") {
         throw new Error("claim escola_id ausente");
       }
       return claims;

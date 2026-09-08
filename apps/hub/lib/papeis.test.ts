@@ -8,8 +8,8 @@ describe("homeDoPapel", () => {
 
   test("os outros papéis vão para a área deles", () => {
     expect(homeDoPapel("professor")).toBe("/professor");
-    expect(homeDoPapel("gestor")).toBe("/admin/usuarios");
-    expect(homeDoPapel("admin-contrato")).toBe("/admin/usuarios");
+    expect(homeDoPapel("gestor_escola")).toBe("/admin/usuarios");
+    expect(homeDoPapel("gestor_contrato")).toBe("/admin/usuarios");
   });
 });
 
@@ -22,7 +22,7 @@ describe("areaDoPathname", () => {
 
   test("áreas dos outros papéis continuam separadas", () => {
     expect(areaDoPathname("/professor/entre-redes")).toBe(areaDoPapel("professor"));
-    expect(areaDoPathname("/admin/usuarios")).toBe(areaDoPapel("gestor"));
-    expect(areaDoPathname("/analise")).toBe(areaDoPapel("admin-contrato"));
+    expect(areaDoPathname("/admin/usuarios")).toBe(areaDoPapel("gestor_escola"));
+    expect(areaDoPathname("/analise")).toBe(areaDoPapel("gestor_contrato"));
   });
 });

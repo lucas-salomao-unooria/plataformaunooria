@@ -5,9 +5,9 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 /**
  * O cadastro unitário visto de cima — e o único papel que não nasce de planilha.
  *
- * O `admin-contrato` cadastra na escola que ELE escolher (`?escolaId=`, a
+ * O `gestor_contrato` cadastra na escola que ELE escolher (`?escolaId=`, a
  * exceção cross-escola do sistema) e é o único que pode criar outro
- * `admin-contrato`. Esse papel não passa pelo importador porque não cabe numa
+ * `gestor_contrato`. Esse papel não passa pelo importador porque não cabe numa
  * planilha da escola: não tem `escola_id`, não tem lotação e não tem turma.
  * Conceder o alcance da rede inteira é decisão do contrato, nunca de uma
  * unidade — e a suíte do gestor prova o outro lado da mesma regra, com o 403.
@@ -34,7 +34,7 @@ function combo(modal, rotulo) {
 await suite(
   {
     slug: "admin-contrato/06-novo-usuario",
-    papel: "admin-contrato",
+    papel: "gestor_contrato",
     titulo: "Cadastrar pessoa em qualquer escola, e o papel da rede",
     subtitulo: "o admin escolhe a unidade, e é o único que pode criar outro admin",
     contexto:
@@ -50,8 +50,8 @@ await suite(
     comando: "node scripts/e2e/admin-contrato/06-novo-usuario.mjs",
   },
   async (r) => {
-    const admin = conta("admin-contrato");
-    const p = await r.pagina("admin-contrato");
+    const admin = conta("gestor_contrato");
+    const p = await r.pagina("gestor_contrato");
     await r.entrar(p, admin.login, admin.senha ?? senhaDemo());
 
     /* O id da escola vem da api, não fixado aqui: o seed pode renomear as

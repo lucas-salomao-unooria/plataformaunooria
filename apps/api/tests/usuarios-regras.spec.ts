@@ -16,24 +16,24 @@ import { podeCriarPapel } from "../src/usuarios/regras";
 
 describe("podeCriarPapel", () => {
   it("gestor cria estudante, professor e gestor", () => {
-    expect(podeCriarPapel("gestor", "estudante")).toBe(true);
-    expect(podeCriarPapel("gestor", "professor")).toBe(true);
-    expect(podeCriarPapel("gestor", "gestor")).toBe(true);
+    expect(podeCriarPapel("gestor_escola", "estudante")).toBe(true);
+    expect(podeCriarPapel("gestor_escola", "professor")).toBe(true);
+    expect(podeCriarPapel("gestor_escola", "gestor_escola")).toBe(true);
   });
 
   it("gestor NÃO cria admin-contrato — o alcance da rede é decisão do contrato", () => {
-    expect(podeCriarPapel("gestor", "admin-contrato")).toBe(false);
+    expect(podeCriarPapel("gestor_escola", "gestor_contrato")).toBe(false);
   });
 
   it("admin-contrato cria os quatro, inclusive outro admin-contrato", () => {
-    for (const papel of ["estudante", "professor", "gestor", "admin-contrato"] as const) {
-      expect(podeCriarPapel("admin-contrato", papel)).toBe(true);
+    for (const papel of ["estudante", "professor", "gestor_escola", "gestor_contrato"] as const) {
+      expect(podeCriarPapel("gestor_contrato", papel)).toBe(true);
     }
   });
 
   it("estudante e professor não criam ninguém", () => {
     for (const autor of ["estudante", "professor"] as const) {
-      for (const papel of ["estudante", "professor", "gestor", "admin-contrato"] as const) {
+      for (const papel of ["estudante", "professor", "gestor_escola", "gestor_contrato"] as const) {
         expect(podeCriarPapel(autor, papel)).toBe(false);
       }
     }
@@ -42,12 +42,12 @@ describe("podeCriarPapel", () => {
 
 describe("planilhaDeUmaPessoa", () => {
   it("escreve o cabeçalho do modelo, na ordem da constante que o leitor consome", () => {
-    const [cabecalho] = planilhaDeUmaPessoa({ nome: "Ana", papel: "gestor" }).split("\n");
+    const [cabecalho] = planilhaDeUmaPessoa({ nome: "Ana", papel: "gestor_escola" }).split("\n");
     expect(cabecalho).toBe(COLUNAS_MODELO.join(","));
   });
 
   it("campo ausente vira célula vazia, não coluna a menos", () => {
-    const linhas = parseCsv(planilhaDeUmaPessoa({ nome: "Ana Lima", papel: "gestor" }));
+    const linhas = parseCsv(planilhaDeUmaPessoa({ nome: "Ana Lima", papel: "gestor_escola" }));
     expect(linhas[1]).toHaveLength(COLUNAS_MODELO.length);
     expect(linhas[1]![COLUNAS_MODELO.indexOf("nome")]).toBe("Ana Lima");
     expect(linhas[1]![COLUNAS_MODELO.indexOf("turma")]).toBe("");
@@ -88,12 +88,12 @@ describe("planilhaDeUmaPessoa", () => {
   it("normaliza o papel pelos sinônimos da rede — coordenação é gestor", () => {
     const leitura = lerPlanilha(planilhaDeUmaPessoa({ nome: "Carlos Dias", papel: "coordenacao" }));
     expect(leitura.erros).toHaveLength(0);
-    expect(leitura.pessoas[0]!.papel).toBe("gestor");
+    expect(leitura.pessoas[0]!.papel).toBe("gestor_escola");
   });
 
   it("devolve o erro NO CAMPO quando o CPF tem dígito trocado", () => {
     const leitura = lerPlanilha(
-      planilhaDeUmaPessoa({ nome: "Ana Lima", papel: "gestor", cpf: "111.111.111-11" }),
+      planilhaDeUmaPessoa({ nome: "Ana Lima", papel: "gestor_escola", cpf: "111.111.111-11" }),
     );
     expect(leitura.erros.map((e) => e.campo)).toContain("cpf");
   });

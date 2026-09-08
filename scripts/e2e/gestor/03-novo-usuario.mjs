@@ -46,7 +46,7 @@ function combo(modal, rotulo) {
 await suite(
   {
     slug: "gestor/03-novo-usuario",
-    papel: "gestor",
+    papel: "gestor_escola",
     titulo: "Cadastrar uma pessoa no balcão",
     subtitulo: "o formulário que monta a linha da planilha, e o papel que o gestor não pode dar",
     contexto:
@@ -62,8 +62,8 @@ await suite(
     comando: "node scripts/e2e/gestor/03-novo-usuario.mjs",
   },
   async (r) => {
-    const gestor = conta("gestor");
-    const p = await r.pagina("gestor");
+    const gestor = conta("gestor_escola");
+    const p = await r.pagina("gestor_escola");
     await r.entrar(p, gestor.login, gestor.senha ?? senhaDemo());
 
     await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });

@@ -9,6 +9,6 @@ export default async function RegionaisPage() {
   // Mesma porta de Escolas: quem organiza a rede em regionais é o admin do
   // contrato. O gestor que digitar a rota volta para o lugar dele em vez de ver
   // uma tela sem dados.
-  if (session!.usuario.papel !== "admin-contrato") redirect("/admin/usuarios");
+  if (session!.usuario.papel !== "gestor_contrato") redirect("/admin/usuarios");
   return <RegionaisDaRede />;
 }

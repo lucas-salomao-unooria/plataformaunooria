@@ -44,7 +44,7 @@ interface Pessoa extends Record<string, unknown> {
 /**
  * As escolas do contrato — a tela que faltava para vender a uma rede.
  *
- * Só `admin-contrato` chega aqui, e a razão é a mesma que impede `orgs.csv` de
+ * Só `gestor_contrato` chega aqui, e a razão é a mesma que impede `orgs.csv` de
  * criar escola para gestor: escola é *tenant*, com RLS, dados de menores e stack
  * por trás. Abrir um inquilino novo não é operação de quem administra uma
  * unidade.
@@ -219,7 +219,7 @@ export function EscolasDaRede() {
       if (!resposta.ok) throw new Error(String(resposta.status));
       const dados = (await resposta.json()) as { usuarios?: Pessoa[] };
       setPessoas(
-        (dados.usuarios ?? []).filter((p) => p.papel === "professor" || p.papel === "gestor"),
+        (dados.usuarios ?? []).filter((p) => p.papel === "professor" || p.papel === "gestor_escola"),
       );
     } catch {
       setPessoas([]);
@@ -257,7 +257,7 @@ export function EscolasDaRede() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           usuarioId: pessoa.id,
-          papel: pessoa.papel === "gestor" ? "gestor" : "professor",
+          papel: pessoa.papel === "gestor_escola" ? "gestor_escola" : "professor",
           escolaIds: unidadesDoLote.map((e) => e.id),
         }),
       });

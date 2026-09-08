@@ -21,8 +21,8 @@ describe("contexto da requisição", () => {
 
   it("o interceptor preenche o MESMO store que o middleware abriu", () => {
     abrirContexto({ requestId: "r1" }, () => {
-      expect(definirTenancyNoContexto({ escolaId: "e1", perfil: "gestor" })).toBe(true);
-      expect(contextoAtual()).toEqual({ requestId: "r1", escolaId: "e1", perfil: "gestor" });
+      expect(definirTenancyNoContexto({ escolaId: "e1", perfil: "gestor_escola" })).toBe(true);
+      expect(contextoAtual()).toEqual({ requestId: "r1", escolaId: "e1", perfil: "gestor_escola" });
       expect(escolaDoContexto()).toBe("e1");
     });
   });

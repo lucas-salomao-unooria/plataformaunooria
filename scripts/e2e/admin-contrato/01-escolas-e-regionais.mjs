@@ -17,7 +17,7 @@ import { conta, escolas } from "../lib/credenciais.mjs";
  * de Tipo que existia apenas para desfazer a mistura. Este roteiro percorre as
  * duas na ordem do menu, que é a ordem da hierarquia.
  *
- * O `admin-contrato` é a ÚNICA exceção cross-escola do sistema. Ele viaja com
+ * O `gestor_contrato` é a ÚNICA exceção cross-escola do sistema. Ele viaja com
  * `escolaId` vazio no token, e por isso toda tela dele precisa dizer de qual
  * escola está falando.
  */
@@ -26,7 +26,7 @@ const { segunda: ESCOLA_2 } = escolas();
 await suite(
   {
     slug: "admin-contrato/01-escolas-e-regionais",
-    papel: "admin-contrato",
+    papel: "gestor_contrato",
     titulo: "A rede inteira",
     subtitulo: "regionais, escolas e a lotação em lote que cria um supervisor",
     contexto:
@@ -43,8 +43,8 @@ await suite(
     comando: "node scripts/e2e/admin-contrato/01-escolas-e-regionais.mjs",
   },
   async (r) => {
-    const p = await r.pagina("admin-contrato");
-    await r.entrar(p, conta("admin-contrato").login);
+    const p = await r.pagina("gestor_contrato");
+    await r.entrar(p, conta("gestor_contrato").login);
 
     // ── Regionais: o nível que agrupa ───────────────────────────────────
     await p.goto(`${HUB}/admin/regionais`, { waitUntil: "domcontentloaded" });
@@ -142,7 +142,7 @@ await suite(
     /* Um gestor que hoje está em UMA escola — é ele que a lotação em lote vai
        transformar em supervisor. A supervisora do seed já está nas duas, e o
        modal não a oferece: lotar quem já está lotado não é caminho. */
-    const supervisora = conta("gestor", { escola: ESCOLA_2 });
+    const supervisora = conta("gestor_escola", { escola: ESCOLA_2 });
     await p
       .getByRole("button", { name: "Vincular professor ou gestor às escolas selecionadas" })
       .click();

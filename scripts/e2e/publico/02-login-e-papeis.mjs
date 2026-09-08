@@ -26,12 +26,12 @@ const DESTINOS = [
     oQueE: "o hub do professor: trilha, turmas, plano de aula e bem-estar",
   },
   {
-    papel: "gestor",
+    papel: "gestor_escola",
     caminho: "/admin",
     oQueE: "a gestão da escola — pessoas, turmas e importação",
   },
   {
-    papel: "admin-contrato",
+    papel: "gestor_contrato",
     caminho: "/admin",
     oQueE: "a rede inteira: escolas, regionais e períodos letivos",
   },

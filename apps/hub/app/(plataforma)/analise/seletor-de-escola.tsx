@@ -8,7 +8,7 @@ import { Button, Card, TextField } from '@edu/ui/ds';
 /**
  * Escolha da escola — peça NOVA no porte, não existia no origem.
  *
- * Lá o `analista` lia o banco inteiro. Aqui quem entra é `admin-contrato`, a
+ * Lá o `analista` lia o banco inteiro. Aqui quem entra é `gestor_contrato`, a
  * única exceção cross-escola da regra 1, e ele viaja com `escolaId` VAZIO no
  * token: a api exige `?escolaId=` nas rotas de análise de produto
  * (`apps/api/src/analise/analise.controller.ts`). Mesma solução da gestão de

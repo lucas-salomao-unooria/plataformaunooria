@@ -18,7 +18,7 @@ import { spawn } from "node:child_process";
  *   2. `estudante` PRODUZ o estado (runs, sessões, partidas) que...
  *   3. ...`professor` lê. Rodar o professor antes deixaria as telas de
  *      resultado vazias e as asserções de conteúdo sem objeto;
- *   4. `gestor` e `admin-contrato` mexem em gente e escola, e vêm por último
+ *   4. `gestor_escola` e `gestor_contrato` mexem em gente e escola, e vêm por último
  *      porque importam pessoas e trocam senhas — efeitos que atrapalhariam as
  *      contas usadas pelos roteiros de cima.
  *
@@ -30,7 +30,7 @@ const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const E2E = join(RAIZ, "scripts", "e2e");
 
 /** A ordem canônica. Ver o bloco acima para o porquê. */
-const PAPEIS = ["publico", "estudante", "professor", "gestor", "admin-contrato"];
+const PAPEIS = ["publico", "estudante", "professor", "gestor_escola", "gestor_contrato"];
 
 const argumentos = process.argv.slice(2);
 const comDeck = argumentos.includes("--deck");

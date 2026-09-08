@@ -19,7 +19,7 @@ export default async function AnalisePage({
   /**
    * O middleware garante SESSÃO, não o papel: `areaDoPathname('/analise')` é a
    * mesma área do gestor (`/admin/usuarios`), então ele não é redirecionado
-   * daqui. Quem recusa é a api — `AnaliseController` é `@Roles("admin-contrato")`
+   * daqui. Quem recusa é a api — `AnaliseController` é `@Roles("gestor_contrato")`
    * —, e o `apiDoServidor` converte o 403 em `null`: o gestor que digitar a URL
    * vê a casca e nenhum dado. A tranca de verdade é a segunda (ADR-54, §7).
    */
@@ -27,7 +27,7 @@ export default async function AnalisePage({
   const usuario = session!.usuario;
 
   /**
-   * A escola vem da URL. `admin-contrato` é a única exceção cross-escola da
+   * A escola vem da URL. `gestor_contrato` é a única exceção cross-escola da
    * regra 1 e carrega `escolaId` VAZIO no token, então a api exige `?escolaId=`
    * (ver `SeletorDeEscola`). Sem escola escolhida a tela mostra só o seletor —
    * nada de "sem escola = todas".

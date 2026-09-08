@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
  * Casca da ANÁLISE DE PRODUTO (doc 11 §5) — a área do time da Unooria.
  *
  * Espelha a casca do professor de propósito: é o mesmo `HeaderPlataforma`. O
- * que muda é o público — aqui quem entra é `admin-contrato`, o único perfil
+ * que muda é o público — aqui quem entra é `gestor_contrato`, o único perfil
  * que enxerga mais de uma escola — e por isso a legenda é a área, não o papel.
  */
 export default async function AnaliseLayout({ children }: { children: React.ReactNode }) {

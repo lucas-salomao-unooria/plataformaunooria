@@ -63,7 +63,7 @@ function idOu404(bruto: string): string {
  */
 @Controller("vila/agregado")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor")
+@Roles("professor", "gestor_escola")
 export class VilaAgregadoController {
   constructor(private readonly vila: VilaService) {}
 

@@ -41,7 +41,7 @@ import { UsuariosService } from "./usuarios.service";
  */
 @Controller("usuarios")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor", "admin-contrato")
+@Roles("gestor_escola", "gestor_contrato")
 export class UsuariosController {
   constructor(
     private readonly usuarios: UsuariosService,
@@ -86,7 +86,7 @@ export class UsuariosController {
       "**Criar é criar**: CPF, matrícula ou login já existentes devolvem 409 e nada é escrito — o caminho de quem já existe é `PATCH /usuarios/:id`.",
       "CPF achado em OUTRA escola da rede devolve 409 sem id, sem nome e sem dizer qual escola: transferir é pela importação, que move a matrícula junto.",
       "A senha sai UMA vez no corpo da resposta e é sempre provisória. Em branco, é sorteada.",
-      "`admin-contrato` NÃO entra aqui: ele não tem escola nem lotação, e tem rota própria.",
+      "`gestor_contrato` NÃO entra aqui: ele não tem escola nem lotação, e tem rota própria.",
       "Limite de 30 cadastros por minuto por usuário — é balcão, não carga.",
     ],
   })
@@ -109,13 +109,13 @@ export class UsuariosController {
   }
 
   /**
-   * `admin-contrato` tem rota própria porque não é pessoa da escola: sem
+   * `gestor_contrato` tem rota própria porque não é pessoa da escola: sem
    * `escola_id`, sem lotação, sem turma. Manter na mesma rota exigiria um
    * corpo com metade dos campos inertes e uma regra de papel escondida no
    * service; separado, a matriz papel x rota se lê sozinha.
    */
-  @Post("admin-contrato")
-  @Roles("admin-contrato")
+  @Post("gestor_contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Cadastra outro admin do contrato (só admin do contrato pode).",
     descricao:
@@ -133,7 +133,7 @@ export class UsuariosController {
     if (!cota.ok) throw new HttpException("Muitos cadastros seguidos — aguarde um minuto", 429);
 
     const dados = CriarAdminContratoSchema.parse(body);
-    if (!podeCriarPapel(req.auth.perfil, "admin-contrato")) {
+    if (!podeCriarPapel(req.auth.perfil, "gestor_contrato")) {
       throw new ForbiddenException(`${req.auth.perfil} não cria admin-contrato`);
     }
     return this.usuarios.criarAdminContrato(dados);

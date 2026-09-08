@@ -68,10 +68,10 @@ async function limpar() {
     await prisma.turma.deleteMany({ where: { escolaId } });
     await prisma.escola.deleteMany({ where: { id: escolaId } });
   }
-  /* `admin-contrato` não tem `escola_id`: o laço acima não o alcança, e deixá-lo
+  /* `gestor_contrato` não tem `escola_id`: o laço acima não o alcança, e deixá-lo
      para trás faria a segunda corrida colidir no login. */
   await prisma.user.deleteMany({
-    where: { role: "admin-contrato", username: { in: ["e2e.admin.teste", "outro.admin.teste"] } },
+    where: { role: "gestor_contrato", username: { in: ["e2e.admin.teste", "outro.admin.teste"] } },
   });
 }
 
@@ -157,7 +157,7 @@ describe("criar pessoa da escola", () => {
 
   it("gestor com turma: aceita, avisa e NÃO matricula — gestor é papel da escola", async () => {
     const criado = await usuarios.criarPessoa(ESCOLA, {
-      papel: "gestor",
+      papel: "gestor_escola",
       nome: "Carlos Eduardo Dias",
       matricula: "CRIAR-G1",
       turma: "7A",
@@ -171,7 +171,7 @@ describe("criar pessoa da escola", () => {
     const lotacao = await prisma.lotacao.findFirst({
       where: { escolaId: ESCOLA, usuarioId: criado.id, fim: null },
     });
-    expect(lotacao?.papel).toBe("gestor");
+    expect(lotacao?.papel).toBe("gestor_escola");
   });
 
   it("senha escolhida na tela é a que vale", async () => {
@@ -201,7 +201,7 @@ describe("o que o formulário precisa recusar", () => {
   it("CPF com dígito trocado é 400 NO CAMPO, e nada é escrito", async () => {
     const antes = await contarPessoas();
     const { status, corpo } = await recusa(
-      usuarios.criarPessoa(ESCOLA, { papel: "gestor", nome: "Dígito Errado", cpf: "111.111.111-11" }),
+      usuarios.criarPessoa(ESCOLA, { papel: "gestor_escola", nome: "Dígito Errado", cpf: "111.111.111-11" }),
     );
     expect(status).toBe(400);
     expect(camposDe(corpo)).toContain("cpf");
@@ -296,7 +296,7 @@ describe("criar admin do contrato", () => {
       cpf: CPF_DO_ADMIN,
       usuario: "e2e.admin.teste",
     });
-    expect(criado.papel).toBe("admin-contrato");
+    expect(criado.papel).toBe("gestor_contrato");
 
     const pessoa = await prisma.user.findUniqueOrThrow({ where: { id: criado.id } });
     expect(pessoa.escolaId).toBeNull();

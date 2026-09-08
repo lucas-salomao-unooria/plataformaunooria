@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   if (!session?.usuario) {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
   }
-  if (session.usuario.papel !== "gestor" && session.usuario.papel !== "admin-contrato") {
+  if (session.usuario.papel !== "gestor_escola" && session.usuario.papel !== "gestor_contrato") {
     return NextResponse.json({ mensagem: "sem permissão" }, { status: 403 });
   }
 

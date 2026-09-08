@@ -11,7 +11,7 @@ export default async function TurmaPage({ params }: { params: Promise<{ id: stri
     <TurmaDetalhe
       turmaId={id}
       papel={usuario.papel}
-      escolaId={usuario.papel === "admin-contrato" ? "" : usuario.escolaId}
+      escolaId={usuario.papel === "gestor_contrato" ? "" : usuario.escolaId}
     />
   );
 }

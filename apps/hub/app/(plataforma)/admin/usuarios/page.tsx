@@ -9,7 +9,7 @@ export default async function UsuariosPage() {
   return (
     <GestaoUsuarios
       papel={usuario.papel}
-      escolaIdInicial={usuario.papel === "admin-contrato" ? "" : usuario.escolaId}
+      escolaIdInicial={usuario.papel === "gestor_contrato" ? "" : usuario.escolaId}
     />
   );
 }

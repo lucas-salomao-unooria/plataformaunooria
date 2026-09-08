@@ -26,9 +26,9 @@ import { SalasService } from "./salas.service";
 
 type Autenticado = { auth: AuthClaims };
 
-/** `admin-contrato` tem escola vazia (regra 1) e precisa dizer `?escolaId=`. */
+/** `gestor_contrato` tem escola vazia (regra 1) e precisa dizer `?escolaId=`. */
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "admin-contrato") {
+  if (auth.perfil === "gestor_contrato") {
     if (!escolaIdPedida) throw new BadRequestException({ mensagem: "escolaId é obrigatório" });
     return escolaIdPedida;
   }
@@ -57,7 +57,7 @@ export class SalasProfessorController {
   constructor(private readonly salas: SalasService) {}
 
   @Get("turma/:turmaId")
-  @Roles("professor", "gestor", "admin-contrato")
+  @Roles("professor", "gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "A sala: a turma, a grade de missões e quem liberou cada uma.",
     descricao:

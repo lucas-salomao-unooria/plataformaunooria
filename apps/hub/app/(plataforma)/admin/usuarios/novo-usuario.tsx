@@ -61,7 +61,7 @@ type ErroDeCampo = Record<string, string>;
 const PAPEIS_DO_GESTOR = [
   { value: "estudante", label: "Estudante" },
   { value: "professor", label: "Professor" },
-  { value: "gestor", label: "Gestor" },
+  { value: "gestor_escola", label: "Gestor" },
 ];
 
 const TURNOS = [
@@ -102,14 +102,14 @@ export function NovoUsuario({
   const [erroDeCampo, setErroDeCampo] = useState<ErroDeCampo>({});
   const [salvando, setSalvando] = useState(false);
 
-  const podeCriarAdmin = papelDeQuemCria === "admin-contrato";
+  const podeCriarAdmin = papelDeQuemCria === "gestor_contrato";
   const papeis = podeCriarAdmin
-    ? [...PAPEIS_DO_GESTOR, { value: "admin-contrato", label: "Admin do contrato" }]
+    ? [...PAPEIS_DO_GESTOR, { value: "gestor_contrato", label: "Admin do contrato" }]
     : PAPEIS_DO_GESTOR;
 
-  /* `admin-contrato` não pertence a escola nenhuma: turma, matrícula e turno
+  /* `gestor_contrato` não pertence a escola nenhuma: turma, matrícula e turno
      não têm onde ser gravados, e mostrá-los prometeria o que a api ignora. */
-  const ehAdmin = papelNovo === "admin-contrato";
+  const ehAdmin = papelNovo === "gestor_contrato";
   const pedeTurma = papelNovo === "estudante" || papelNovo === "professor";
 
   function limpar() {
@@ -233,7 +233,7 @@ export function NovoUsuario({
         return;
       }
 
-      /* `admin-contrato` não tem turma nem avisos: a resposta dele é mais curta,
+      /* `gestor_contrato` não tem turma nem avisos: a resposta dele é mais curta,
          e o modal de acesso lê os mesmos campos dos dois. */
       const criada = (await resposta.json()) as Partial<PessoaCriada> &
         Pick<PessoaCriada, "id" | "nome" | "usuario" | "papel" | "senha">;

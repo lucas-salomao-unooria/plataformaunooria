@@ -16,7 +16,7 @@ import type { Prisma } from "@prisma/client";
  * funções servem tanto dentro quanto fora de contexto de tenancy.
  */
 
-export type PapelDeLotacao = "estudante" | "professor" | "gestor" | "estudante";
+export type PapelDeLotacao = "estudante" | "professor" | "gestor_escola" | "estudante";
 
 /**
  * Abre (ou reabre) a lotação, sem tocar nas outras. É o caminho de professor e

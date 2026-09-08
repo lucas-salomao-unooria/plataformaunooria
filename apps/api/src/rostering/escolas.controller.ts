@@ -57,7 +57,7 @@ const mensagemDaRecusa = (erro: "sem-regional" | "regional-invalida") =>
 /**
  * A REDE: escolas do contrato e o vínculo das pessoas com elas.
  *
- * Criar escola é `admin-contrato` e ninguém mais: escola é *tenant*, e abrir um
+ * Criar escola é `gestor_contrato` e ninguém mais: escola é *tenant*, e abrir um
  * inquilino novo — com RLS, dados de menores e stack por trás — não é operação
  * de quem administra uma unidade.
  */
@@ -75,7 +75,7 @@ export class EscolasController {
    * escola nova. Sem ela, bastaria pedir uma escola qualquer.
    */
   @Get("minhas")
-  @Roles("estudante", "professor", "gestor", "admin-contrato")
+  @Roles("estudante", "professor", "gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "As escolas de QUEM ESTÁ PEDINDO.",
     descricao:
@@ -92,11 +92,11 @@ export class EscolasController {
 
   /** O panorama de quem tem muitas escolas — a tela do supervisor de diretoria. */
   @Get("minhas/resumo")
-  @Roles("professor", "gestor", "admin-contrato")
+  @Roles("professor", "gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "O panorama de quem tem muitas escolas.",
     descricao:
-      "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, estudantes e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor` lotado nas unidades da diretoria.",
+      "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, estudantes e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor_escola` lotado nas unidades da diretoria.",
     resposta: ResumoDasEscolasSchema,
   })
   resumo(@Req() req: Autenticado) {
@@ -104,11 +104,11 @@ export class EscolasController {
   }
 
   @Get()
-  @Roles("admin-contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Todas as escolas do contrato, com contagem.",
     descricao:
-      "Só `admin-contrato` chega aqui. O filtro `paiId` é o insumo da lotação em lote: ele resolve \"as unidades desta diretoria\" em LISTA, que é o que a tela mostra para o admin confirmar.",
+      "Só `gestor_contrato` chega aqui. O filtro `paiId` é o insumo da lotação em lote: ele resolve \"as unidades desta diretoria\" em LISTA, que é o que a tela mostra para o admin confirmar.",
     query: ListarEscolasSchema,
     resposta: EscolasDaRedeSchema,
   })
@@ -118,18 +118,18 @@ export class EscolasController {
 
   /**
    * Lota uma pessoa em MUITAS escolas de uma vez: é assim que o supervisor de uma
-   * Diretoria de Ensino nasce — um `gestor` lotado nas unidades dela, sem papel
+   * Diretoria de Ensino nasce — um `gestor_escola` lotado nas unidades dela, sem papel
    * novo e sem tocar na RLS (o token continua carregando UMA escola).
    *
-   * Só `admin-contrato`: dar acesso a cinquenta escolas de uma vez não é operação
+   * Só `gestor_contrato`: dar acesso a cinquenta escolas de uma vez não é operação
    * de quem administra uma unidade.
    */
   @Post("lotacoes-em-lote")
-  @Roles("admin-contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Lota uma pessoa em MUITAS escolas de uma vez.",
     descricao:
-      "É assim que o supervisor de uma Diretoria de Ensino nasce: um `gestor` lotado nas unidades dela, **sem papel novo e sem tocar na RLS** — o token continua carregando UMA escola.\n\nIdempotente: reaplicar reabre o que estava encerrado e não duplica.",
+      "É assim que o supervisor de uma Diretoria de Ensino nasce: um `gestor_escola` lotado nas unidades dela, **sem papel novo e sem tocar na RLS** — o token continua carregando UMA escola.\n\nIdempotente: reaplicar reabre o que estava encerrado e não duplica.",
     corpo: LotarEmLoteSchema,
     resposta: LoteDeLotacoesSchema,
     notas: [
@@ -146,11 +146,11 @@ export class EscolasController {
   }
 
   @Post()
-  @Roles("admin-contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Cria uma escola.",
     descricao:
-      "**`admin-contrato` e ninguém mais**, inclusive no `orgs.csv`: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.",
+      "**`gestor_contrato` e ninguém mais**, inclusive no `orgs.csv`: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.",
     corpo: NovaEscolaSchema,
     resposta: EscolaCruaSchema,
     notas: [
@@ -176,7 +176,7 @@ export class EscolasController {
   }
 
   @Patch(":id")
-  @Roles("admin-contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Edita os dados da escola.",
     descricao:
@@ -210,7 +210,7 @@ export class EscolasController {
    * regional e a antiga continua na lista.
    */
   @Delete(":id")
-  @Roles("admin-contrato")
+  @Roles("gestor_contrato")
   @Contrato({
     resumo: "Exclui uma regional.",
     descricao:
@@ -253,11 +253,11 @@ export class EscolasController {
 
   /** Quem está lotado nesta escola. Gestor vê a própria; admin, qualquer uma. */
   @Get(":id/pessoas")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Quem está lotado nesta escola.",
     descricao:
-      "Gestor vê a própria; `admin-contrato`, qualquer uma. `papel` diferente de `estudante`/`gestor` cai em `professor`.",
+      "Gestor vê a própria; `gestor_contrato`, qualquer uma. `papel` diferente de `estudante`/`gestor_escola` cai em `professor`.",
     params: z.object({ id: z.string() }),
     query: PapelDeLotacaoQuery,
     resposta: PessoasLotadasSchema,
@@ -267,7 +267,7 @@ export class EscolasController {
   })
   pessoas(@Param("id") id: string, @Query("papel") papel: string, @Req() req: Autenticado) {
     const escolaId = escolaAlvo(req.auth, id);
-    const alvo = papel === "estudante" || papel === "gestor" ? (papel) : "professor";
+    const alvo = papel === "estudante" || papel === "gestor_escola" ? (papel) : "professor";
     return this.escolas.pessoasDaEscola(escolaId, alvo);
   }
 
@@ -277,7 +277,7 @@ export class EscolasController {
    * rede estadual tem aos milhares, e a razão de `lotacoes` existir.
    */
   @Post(":id/lotacoes")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Lota alguém nesta escola.",
     descricao:
@@ -285,7 +285,7 @@ export class EscolasController {
     params: z.object({ id: z.string() }),
     corpo: LotarSchema,
     resposta: OkSchema,
-    notas: ["`admin-contrato` não recebe lotação: ele é a exceção cross-escola."],
+    notas: ["`gestor_contrato` não recebe lotação: ele é a exceção cross-escola."],
   })
   async lotar(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const escolaId = escolaAlvo(req.auth, id);
@@ -298,7 +298,7 @@ export class EscolasController {
 
 @Controller("lotacoes")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor", "admin-contrato")
+@Roles("gestor_escola", "gestor_contrato")
 export class LotacoesController {
   constructor(private readonly escolas: EscolasService) {}
 
@@ -320,7 +320,7 @@ export class LotacoesController {
     if (!feito) throw new NotFoundException("lotação não encontrada");
     // A checagem de escola vem DEPOIS porque é a lotação que diz de qual escola
     // ela é — e um gestor não encerra vínculo de outra unidade.
-    if (req.auth.perfil !== "admin-contrato" && feito.escolaId !== req.auth.escolaId) {
+    if (req.auth.perfil !== "gestor_contrato" && feito.escolaId !== req.auth.escolaId) {
       throw new ForbiddenException("lotação de outra escola");
     }
     return { ok: true };
@@ -336,7 +336,7 @@ export class EstudantesController {
    * Transferência entre escolas da rede.
    *
    * A escola de DESTINO é a de quem pede (o `escolaAlvo` cuida disso): é a
-   * unidade que recebe a criança que a família matriculou nela. `admin-contrato`
+   * unidade que recebe a criança que a família matriculou nela. `gestor_contrato`
    * pode mover para qualquer uma.
    *
    * O dado que o estudante produziu NÃO se move — continua com o `escola_id` da
@@ -344,11 +344,11 @@ export class EstudantesController {
    * identidade, e é o `historico` abaixo que a lê atravessada.
    */
   @Post(":id/transferir")
-  @Roles("gestor", "admin-contrato")
+  @Roles("gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "Transfere o estudante entre escolas da rede.",
     descricao:
-      "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `admin-contrato` pode mover para qualquer uma.\n\n**O dado que o estudante produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o estudante é a identidade (ADR-32).",
+      "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `gestor_contrato` pode mover para qualquer uma.\n\n**O dado que o estudante produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o estudante é a identidade (ADR-32).",
     params: z.object({ id: z.string().uuid() }),
     corpo: TransferirSchema,
     resposta: TransferenciaSchema,
@@ -372,7 +372,7 @@ export class EstudantesController {
 
   /**
    * O histórico do estudante ATRAVESSANDO escolas — a única leitura fora de
-   * `admin-contrato` que faz isso.
+   * `gestor_contrato` que faz isso.
    *
    * Só alcança quem tem lotação na escola ONDE O ESTUDANTE ESTÁ HOJE: é a unidade
    * responsável por ele. Devolve participações (em que experiência, em que turma,
@@ -381,11 +381,11 @@ export class EstudantesController {
    * tem a posse pedagógica na escola onde aquilo aconteceu.
    */
   @Get(":id/historico")
-  @Roles("professor", "gestor", "admin-contrato")
+  @Roles("professor", "gestor_escola", "gestor_contrato")
   @Contrato({
     resumo: "O histórico do estudante ATRAVESSANDO escolas.",
     descricao:
-      "A única leitura fora de `admin-contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o estudante está HOJE**: é a unidade responsável por ele.",
+      "A única leitura fora de `gestor_contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o estudante está HOJE**: é a unidade responsável por ele.",
     params: z.object({ id: z.string().uuid() }),
     resposta: HistoricoDoEstudanteSchema,
     notas: [
@@ -398,7 +398,7 @@ export class EstudantesController {
     const historico = await this.escolas.historicoDoEstudante(id);
     if (!historico) throw new NotFoundException("estudante não encontrado");
 
-    if (req.auth.perfil !== "admin-contrato") {
+    if (req.auth.perfil !== "gestor_contrato") {
       const escolaAtual = historico.escolas.find((e) => e.atual)?.id;
       const podeVer =
         escolaAtual !== undefined && (await this.escolas.temLotacao(req.auth.usuarioId, escolaAtual));

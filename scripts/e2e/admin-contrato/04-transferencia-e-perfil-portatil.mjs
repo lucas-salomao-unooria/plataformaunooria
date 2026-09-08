@@ -43,7 +43,7 @@ const NO_DESTINO = [
 await suite(
   {
     slug: "admin-contrato/04-transferencia-e-perfil-portatil",
-    papel: "admin-contrato",
+    papel: "gestor_contrato",
     titulo: "A criança que muda de escola",
     subtitulo: "transferência pelo CPF dentro da rede, e o documento assinado que sai dela",
     contexto:
@@ -60,8 +60,8 @@ await suite(
     comando: "node scripts/e2e/admin-contrato/04-transferencia-e-perfil-portatil.mjs",
   },
   async (r) => {
-    const p = await r.pagina("admin-contrato");
-    await r.entrar(p, conta("admin-contrato").login);
+    const p = await r.pagina("gestor_contrato");
+    await r.entrar(p, conta("gestor_contrato").login);
 
     /** Importa pela api, via BFF — o valor visual está na TELA depois. */
     const importar = async (escolaId, arquivo) => {

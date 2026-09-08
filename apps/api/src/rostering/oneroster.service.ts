@@ -33,7 +33,7 @@ export interface OpcoesOneRoster extends OpcoesDeImportacao {
   /** `bulk` = lote completo; `delta` = só o que mudou. Default: `delta`. */
   modo?: "bulk" | "delta";
   /**
-   * `orgs.csv` pode CRIAR escola. Só `admin-contrato`: escola é tenant, e abrir
+   * `orgs.csv` pode CRIAR escola. Só `gestor_contrato`: escola é tenant, e abrir
    * inquilino novo não é operação de quem administra uma unidade.
    */
   podeCriarEscola?: boolean;
@@ -226,7 +226,7 @@ export class OneRosterService {
       if (!ehEsta) {
         /* REVISÃO da decisão original ("escola nova não nasce de CSV"): numa
            rede estadual são milhares de escolas, e cadastrar à mão é inviável.
-           O que se mantém é QUEM pode: só `admin-contrato` abre inquilino novo.
+           O que se mantém é QUEM pode: só `gestor_contrato` abre inquilino novo.
            Para gestor, a linha continua sendo aviso. */
         if (!podeCriar) {
           relatorio.avisos.push({
@@ -626,7 +626,7 @@ export class OneRosterService {
           porUsuario.get(linha.campo("username")) ??
           null);
 
-      if (existente?.role === "admin-contrato" || naOutra?.role === "admin-contrato") {
+      if (existente?.role === "gestor_contrato" || naOutra?.role === "gestor_contrato") {
         relatorio.erros.push({ linha: linha.linha, campo: "username", mensagem: "usuario reservado" });
         continue;
       }
@@ -740,7 +740,7 @@ export class OneRosterService {
         const feito = await this.escolasDaRede.lotar(
           escolaId,
           p.deOutraEscola.id,
-          p.papel as "professor" | "gestor",
+          p.papel as "professor" | "gestor_escola",
         );
         if (feito) relatorio.lotacoesNovas += 1;
       }
@@ -774,7 +774,7 @@ export class OneRosterService {
               await garantirLotacao(tx, {
                 escolaId,
                 usuarioId: p.existenteId,
-                papel: p.papel as "estudante" | "professor" | "gestor",
+                papel: p.papel as "estudante" | "professor" | "gestor_escola",
                 inicio: inicioDaLotacao,
                 fonteId: p.sourcedId || null,
               });
@@ -796,7 +796,7 @@ export class OneRosterService {
           await garantirLotacao(tx, {
             escolaId,
             usuarioId: criado.id,
-            papel: p.papel as "estudante" | "professor" | "gestor",
+            papel: p.papel as "estudante" | "professor" | "gestor_escola",
             inicio: inicioDaLotacao,
             principal: true,
             fonteId: p.sourcedId || null,
@@ -819,7 +819,7 @@ export class OneRosterService {
     if (relatorio.modo === "bulk") {
       const vindos = new Set(preparadas.map((p) => p.sourcedId).filter(Boolean));
       relatorio.candidatosAInativacao = existentes.filter(
-        (u) => u.fonteId && !vindos.has(u.fonteId) && u.role !== "admin-contrato",
+        (u) => u.fonteId && !vindos.has(u.fonteId) && u.role !== "gestor_contrato",
       ).length;
       if (relatorio.candidatosAInativacao > 0) {
         relatorio.avisos.push({
@@ -941,7 +941,7 @@ export class OneRosterService {
             });
             continue;
           }
-          if (pessoa.role === "admin-contrato") {
+          if (pessoa.role === "gestor_contrato") {
             relatorio.erros.push({ linha: linha.linha, campo: "userSourcedId", mensagem: "usuario reservado" });
             continue;
           }
