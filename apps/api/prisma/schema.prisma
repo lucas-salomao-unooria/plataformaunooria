@@ -1647,8 +1647,13 @@ model RastroGateTurma {
 /// É a entrada de tudo. Sem ela o plano anual distribui habilidades em "quatro
 /// bimestres" sem saber se cabem 200 aulas de Matemática ou 40 de Arte — e a
 /// diferença entre esses dois números é a diferença entre um plano executável e
-/// uma lista de intenções. É também aqui que o professor escolhe se o
-/// planejamento granular é semanal ou quinzenal.
+/// uma lista de intenções.
+///
+/// O passo do planejamento granular é SEMPRE semanal. Houve uma coluna
+/// `periodicidade` (semanal | quinzenal) e ela saiu na
+/// `20260907120000_exp_92_planejamento_sempre_semanal` (ADR-76): a `ordem` de
+/// `exp_92_planos_de_periodo` mudava de significado com ela, e entregar de
+/// quinze em quinze dias é recorte de exportação, não de planejamento.
 model PlanoDeEnsinoConfiguracao {
   id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   escolaId    String @map("escola_id")
@@ -1676,10 +1681,6 @@ model PlanoDeEnsinoConfiguracao {
   /// bimestral | trimestral | semestral — CHECK na migration. Nenhuma norma
   /// nacional fixa isso: o calendário é aprovado escola a escola.
   divisaoDoAno String @default("bimestral") @map("divisao_do_ano")
-  /// semanal | quinzenal — CHECK na migration. É o pedido de origem: a rede
-  /// escolhe o passo do planejamento granular.
-  periodicidade String @default("semanal")
-
   /// 50 na maioria das redes; 45 aparece no noturno. NÃO é hora-relógio — o
   /// Parecer CNE/CEB 8/2004 proíbe tratar aula de 45min como uma hora, e é
   /// desta coluna que sai a conversão.

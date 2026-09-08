@@ -92,6 +92,17 @@ body {
   margin: var(--unooria-spacing-xxs) 0 0;
 }
 
+/* Compensação de LAYOUT (medida e posição), não componente: a nota ocupa a
+   coluna que o "Passo do planejamento" deixou vaga no grid da regência quando
+   o quinzenal saiu (ADR-76). O `align-self` a alinha com o rótulo do campo ao
+   lado em vez de centralizá-la na altura da linha. */
+.nota--no-formulario {
+  align-self: center;
+  margin: 0;
+  padding: var(--unooria-spacing-s) 0 0;
+  line-height: 1.5;
+}
+
 /* Dois campos por linha no desktop, empilhados no telefone — o professor
    configura isso no celular, entre uma aula e outra. */
 .grade-de-campos {
@@ -300,10 +311,10 @@ body {
   font-size: var(--unooria-font-size-xs);
 }
 
-/* ------------------------------------------- planejamentos e janelas ------ */
+/* ------------------------------------------- planejamentos e semanas ------ */
 
 .lista-de-planejamentos,
-.lista-de-janelas {
+.lista-de-semanas {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -313,7 +324,7 @@ body {
 }
 
 .planejamento,
-.janela {
+.semana {
   width: 100%;
   display: flex;
   align-items: center;
@@ -329,7 +340,7 @@ body {
   text-align: left;
 }
 .planejamento:hover,
-.janela:hover {
+.semana:hover {
   border-color: var(--unooria-color-neutral-400);
   background: var(--unooria-color-neutral-150);
 }
@@ -338,18 +349,18 @@ body {
   cursor: progress;
 }
 .planejamento__titulo,
-.janela__rotulo {
+.semana__rotulo {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 .planejamento__titulo span,
-.janela__rotulo span {
+.semana__rotulo span {
   color: var(--unooria-color-neutral-600);
   font-size: var(--unooria-font-size-s);
 }
 .planejamento__meta,
-.janela__estado {
+.semana__estado {
   display: flex;
   align-items: center;
   gap: var(--unooria-spacing-xs);
@@ -378,7 +389,7 @@ body {
   max-width: 520px;
 }
 
-.titulo-da-janela {
+.titulo-da-semana {
   margin: 0;
   font-size: var(--unooria-font-size-m);
   color: var(--unooria-color-neutral-800);
@@ -479,11 +490,71 @@ body {
    está com a turma, e o DS só cobre os próprios componentes. */
 .aba-de-periodo:focus-visible,
 .planejamento:focus-visible,
-.janela:focus-visible,
+.semana:focus-visible,
 .habilidade__botao:focus-visible,
 .grade-de-horarios__aula button:focus-visible,
 .grade-de-horarios__aula input:focus-visible,
 .momento__rotulo input:focus-visible {
   outline: 2px solid var(--unooria-color-brandnavy-500, #1c4e9c);
   outline-offset: 2px;
+}
+
+/* ------------------------------------------- exportar mais de uma semana --- */
+
+/* O planejamento é semanal e a ENTREGA é por recorte (ADR-76): a escola que
+   recolhe de quinze em quinze dias baixa duas semanas, a que pede o bimestre
+   baixa as dez. A barra separa visualmente "esta semana" de "o conjunto"
+   porque são decisões diferentes — uma é o que o professor está editando
+   agora, a outra é o que ele vai entregar. */
+.exportar-conjunto {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xs);
+  flex-wrap: wrap;
+  padding: var(--unooria-spacing-s) 0 0;
+  border-top: 1px solid var(--unooria-color-neutral-200);
+  margin-top: var(--unooria-spacing-s);
+}
+.exportar-conjunto__rotulo {
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-xs);
+  margin: 0 var(--unooria-spacing-xxs) 0 0;
+}
+
+/* ------------------------------------- a linha do planejamento na lista ---- */
+
+/* O cartão é um `<button>` (abre o planejamento) e o "Excluir" é outro botão:
+   um dentro do outro é HTML inválido, então eles são IRMÃOS e a linha os
+   distribui. O cartão cresce e o excluir fica no tamanho dele — a ação
+   destrutiva não disputa a largura com o alvo principal. */
+.planejamento-linha {
+  display: flex;
+  align-items: stretch;
+  gap: var(--unooria-spacing-xs);
+}
+.planejamento-linha .planejamento {
+  flex: 1;
+  min-width: 0;
+}
+
+/* No telefone a linha empilha: com 360px de largura, o cartão e o botão lado a
+   lado deixam o nome do componente em duas linhas e a etiqueta quebra. */
+@media (max-width: 640px) {
+  .planejamento-linha {
+    flex-direction: column;
+  }
+}
+
+/* O que a exclusão apaga, dentro do diálogo. Lista de verdade (`<ul>`), não
+   parágrafo com bullets escritos à mão: quem usa leitor de tela precisa ouvir
+   "lista de 4 itens" antes de decidir. */
+.lista-do-que-se-perde {
+  margin: var(--unooria-spacing-xs) 0;
+  padding-left: var(--unooria-spacing-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xxs);
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-font-size-s);
+  line-height: 1.5;
 }

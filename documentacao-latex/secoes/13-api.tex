@@ -335,6 +335,60 @@ nada além disso.
 \bottomrule
 \end{tabularx}
 
+\subsection{Planejamento de ensino (exp-92)}
+
+Duas famílias: a \textbf{regência} (o que o professor leciona) e o que pende
+dela --- o plano anual e as 40 semanas. Identidade sempre do \emph{token}: um
+\cd{professorId} vindo do corpo deixaria qualquer professor escrever no caderno
+de outro, e a posse é conferida em toda rota com id.
+
+\begin{tabularx}{\linewidth}{@{}L{52mm}L{14mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Código} & \thd{Semântica}\\
+\midrule
+\rota{GET /planejamento/configuracoes} & 200 & As regências DESTE professor,
+  com o dimensionamento (aulas no ano, horas-relógio) e o aviso
+  \cd{gradeCoerente: false}.\\
+\zebra \rota{POST /planejamento/configuracoes} & 200 & Cria ou atualiza.
+  Idempotente na chave (professor, ano, série, componente).\\
+\rota{GET .../configuracoes/:id/calendario} & 200 & Os períodos de avaliação e
+  as \textbf{40 semanas}, cada uma com quantas aulas tem de fato e o plano já
+  gerado, se houver.\\
+\zebra \rota{DELETE /planejamento/configuracoes/:id} & 200 & Apaga o
+  planejamento \textbf{inteiro}: a regência, o plano anual e todas as semanas.
+  O banco faz a cascata; os prefixos do \emph{object storage} são varridos
+  ANTES do \cd{delete}.\\
+\rota{POST .../configuracoes/:id/plano-anual} & 200 & Cria o plano anual, com a
+  distribuição \textbf{vazia} --- que habilidade cai em que período é decisão
+  do professor.\\
+\zebra \rota{PUT .../planos-anuais/:id/distribuicao} & 200 & A decisão
+  pedagógica central. Recusa código fora do recorte componente $\times$ ano.\\
+\rota{POST .../planos-anuais/:id/gerar} & \textbf{202} & Um plano anual leva
+  minutos. \emph{Claim} atômico; quota conferida antes e consumida depois.\\
+\zebra \rota{GET /planejamento/planos-anuais/:id} & 200 & O plano com o
+  conteúdo. \cd{html} é \cd{null} enquanto o status não é \cd{pronto} --- é
+  assim que a tela sabe continuar o \emph{polling}.\\
+\rota{POST .../periodos/:ordem/gerar} & \textbf{202} & Gera as aulas de UMA
+  semana. O esqueleto (quantas, quando) vem do calendário, não do modelo.\\
+\zebra \rota{GET .../planos-anuais/:id/periodos} & 200 & As semanas
+  \textbf{já planejadas}, para exportar várias juntas. Filtro opcional por
+  \cd{periodoDeAvaliacao}.\\
+\rota{GET /planejamento/periodos/:id} & 200 & Uma semana, aula a aula.\\
+\zebra \rota{PUT .../periodos/:id/aulas} & 200 & As aulas editadas --- e
+  \cd{cumprida}/\cd{observacaoDoProfessor}, que são preenchidos DEPOIS da aula e
+  não vêm da IA.\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+\rota{GET .../planos-anuais/:id/periodos} devolve \textbf{só as \cd{pronto}}, em
+ordem: é a fonte do documento de mais de uma semana (a entrega quinzenal e a do
+período de avaliação inteiro --- ver a Seção~\ref{sec:exp92-semanal}), e um
+documento entregue à coordenação não leva semana que falhou na geração. O filtro
+é no \textbf{banco}: baixar o 1º bimestre não tem por que carregar as aulas dos
+outros três.
+\end{nota}
+
 \subsection{Bem-estar (exp-91)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}

@@ -42,6 +42,7 @@ export default async function BemEstarPage({
         estudante={embed.estudante}
         apiUrl={embed.apiUrl}
         config={{ expId: EXP_BEM_ESTAR, obs: embed.obs }}
+        permissoes={embed.permissoes}
       />
     </div>
   );

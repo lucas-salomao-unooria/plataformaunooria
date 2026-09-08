@@ -37,7 +37,6 @@ export const CodigoDeHabilidadeSchema = z
   .regex(/^E[FM]\d{2}[A-Z]{2,3}\d{2,3}[A-Z]?$/, "código de habilidade da BNCC (ex.: EF67LP08)");
 
 export const DIVISOES = ["bimestral", "trimestral", "semestral"] as const;
-export const PERIODICIDADES = ["semanal", "quinzenal"] as const;
 export const STATUS = ["pendente", "gerando", "pronto", "erro"] as const;
 
 // ------------------------------------------------------- catálogo curricular
@@ -127,12 +126,11 @@ export const CriarConfiguracaoSchema = z.object({
     .max(60),
   turmaId: Uuid.nullable().optional(),
   divisaoDoAno: z.enum(DIVISOES).default("bimestral"),
-  periodicidade: z.enum(PERIODICIDADES).default("semanal"),
   minutosPorAula: z.number().int().min(30).max(60).default(50),
   aulasSemanais: z.number().int().min(1).max(20),
   grade: GradeSchema.default([]),
   incluirComputacao: z.boolean().default(false),
-  /** Início do ano letivo. Dele saem os períodos e todas as janelas. */
+  /** Início do ano letivo. Dele saem os períodos e todas as semanas. */
   inicioDoAnoLetivo: DataCivilSchema,
 });
 export type CriarConfiguracao = z.infer<typeof CriarConfiguracaoSchema>;
@@ -153,7 +151,6 @@ export const ConfiguracaoSchema = z.object({
   turmaId: Uuid.nullable(),
   turmaNome: z.string().nullable(),
   divisaoDoAno: z.enum(DIVISOES),
-  periodicidade: z.enum(PERIODICIDADES),
   minutosPorAula: z.number().int(),
   aulasSemanais: z.number().int(),
   grade: GradeSchema,
@@ -266,21 +263,22 @@ export const AulaSchema = z.object({
 });
 export type Aula = z.infer<typeof AulaSchema>;
 
-export const JanelaSchema = z.object({
+export const SemanaSchema = z.object({
   ordem: z.number().int(),
+  /** `"3ª Semana"` — o mesmo rótulo que sai no cabeçalho do documento. */
   rotulo: z.string(),
   inicio: DataCivilSchema,
   fim: DataCivilSchema,
   periodoDeAvaliacao: z.number().int(),
   aulasPrevistas: z.number().int().nonnegative(),
-  /** O plano daquela janela, se já existe. */
+  /** O plano daquela semana, se já existe. */
   planoId: Uuid.nullable(),
   status: z.enum(STATUS).nullable(),
 });
 
 export const CalendarioDoAnoSchema = z.object({
   periodos: z.array(PeriodoDeAvaliacaoSchema),
-  janelas: z.array(JanelaSchema),
+  semanas: z.array(SemanaSchema),
 });
 
 export const PlanoDePeriodoSchema = z.object({
@@ -300,6 +298,14 @@ export const PlanoDePeriodoSchema = z.object({
 });
 
 export const PlanoDePeriodoCriadoSchema = z.object({ id: Uuid });
+export const ListaDePlanosDePeriodoSchema = z.object({
+  periodos: z.array(PlanoDePeriodoSchema),
+});
+
+/** Filtro de `GET /planos-anuais/:id/periodos`: um período de avaliação. */
+export const FiltroDePeriodosSchema = z.object({
+  periodoDeAvaliacao: z.coerce.number().int().min(1).max(4).optional(),
+});
 export const SalvarAulasSchema = z.object({ aulas: z.array(AulaSchema).max(60) });
 
 /** Feriados e dias sem aula, na geração de uma janela. Removem a aula da grade

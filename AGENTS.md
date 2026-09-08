@@ -346,13 +346,13 @@ abri-lo.
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
-      planejamento, a 77 pela trilha que virou do layout e a 78 pelo logoff
-      no menu do avatar — três frentes fecharam ADR em 2026-09-06 e duas
-      colidiram na 65, e **em 2026-09-07 aconteceu de novo**: duas frentes
-      simultâneas reservaram a 76, uma cedeu e foi para a 77/78. Conferir
-      `origin/dev` NÃO basta, e conferir uma vez no começo também não:
-      confira as branches de trabalho abertas E a de integração, na HORA de
-      escrever o número),
+      planejamento + `allow-downloads`, a 77 pela trilha que virou do layout
+      e a 78 pelo logoff no menu do avatar — três frentes fecharam ADR em
+      2026-09-06 e duas colidiram na 65, e **em 2026-09-07 aconteceu de
+      novo**: duas frentes simultâneas reservaram a 76, uma cedeu e foi para
+      a 77/78. Conferir `origin/dev` NÃO basta, e conferir uma vez no começo
+      da frente também não: confira as branches de trabalho abertas E a de
+      integração, na HORA de escrever o número),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do

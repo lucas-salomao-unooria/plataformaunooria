@@ -19,9 +19,9 @@ import {
   type DivisaoDoAno,
 } from "../curriculo/carga-horaria";
 import {
-  aulasDaJanela,
+  aulasDaSemana,
   conferirGrade,
-  janelasDePlanejamento,
+  semanasDoAnoLetivo,
   nomeDoDia,
   periodosDoAnoLetivo,
   paraDataCivil,
@@ -73,7 +73,7 @@ const MINUTOS_PARA_ORFAO = 12;
  * entregar nada. A família 2.5 do Gemini entrega até 65k de saída.
  */
 const MAX_TOKENS_ANUAL = 64_000;
-/** Uma quinzena tem no máximo ~20 aulas; o JSON de cada uma é generoso. */
+/** Uma semana tem no máximo ~10 aulas; o JSON de cada uma é generoso. */
 const MAX_TOKENS_PERIODO = 32_000;
 
 /**
@@ -147,7 +147,6 @@ export class PlanejamentoService {
           componente: dados.componente,
           turmaId: dados.turmaId ?? null,
           divisaoDoAno: dados.divisaoDoAno,
-          periodicidade: dados.periodicidade,
           minutosPorAula: dados.minutosPorAula,
           aulasSemanais: dados.aulasSemanais,
           grade: dados.grade,
@@ -157,7 +156,6 @@ export class PlanejamentoService {
         update: {
           turmaId: dados.turmaId ?? null,
           divisaoDoAno: dados.divisaoDoAno,
-          periodicidade: dados.periodicidade,
           minutosPorAula: dados.minutosPorAula,
           aulasSemanais: dados.aulasSemanais,
           grade: dados.grade,
@@ -252,16 +250,13 @@ export class PlanejamentoService {
     return paraDataCivil(periodo.inicio);
   }
 
-  /** O calendário inteiro daquela configuração: períodos e janelas. */
+  /** O calendário inteiro daquela configuração: períodos e semanas. */
   async calendario(escolaId: string, professorId: string, configuracaoId: string) {
     const config = await this.configuracaoDoProfessor(escolaId, professorId, configuracaoId);
     const inicio = await this.inicioDoAnoLetivo(config.anoLetivo, config.inicioDoAnoLetivo);
     const periodos = periodosDoAnoLetivo(inicio, config.divisaoDoAno as DivisaoDoAno);
     const grade = (config.grade ?? []) as unknown as FaixaDeHorario[];
-    const janelas = janelasDePlanejamento(
-      periodos,
-      config.periodicidade as "semanal" | "quinzenal",
-    );
+    const semanas = semanasDoAnoLetivo(periodos);
 
     const planos = await this.deps.prisma.comTenancy(
       (tx) =>
@@ -276,15 +271,15 @@ export class PlanejamentoService {
     return {
       periodos: periodos.map((p) => ({
         ...p,
-        aulasEstimadas: janelas
-          .filter((j) => j.periodoDeAvaliacao === p.ordem)
-          .reduce((t, j) => t + aulasDaJanela(j, grade).length, 0),
+        aulasEstimadas: semanas
+          .filter((s) => s.periodoDeAvaliacao === p.ordem)
+          .reduce((t, s) => t + aulasDaSemana(s, grade).length, 0),
       })),
-      janelas: janelas.map((j) => ({
-        ...j,
-        aulasPrevistas: aulasDaJanela(j, grade).length,
-        planoId: porOrdem.get(j.ordem)?.id ?? null,
-        status: (porOrdem.get(j.ordem)?.status ?? null) as never,
+      semanas: semanas.map((s) => ({
+        ...s,
+        aulasPrevistas: aulasDaSemana(s, grade).length,
+        planoId: porOrdem.get(s.ordem)?.id ?? null,
+        status: (porOrdem.get(s.ordem)?.status ?? null) as never,
       })),
     };
   }
@@ -450,10 +445,7 @@ export class PlanejamentoService {
       const inicio = await this.inicioDoAnoLetivo(config.anoLetivo, config.inicioDoAnoLetivo);
       const periodos = periodosDoAnoLetivo(inicio, config.divisaoDoAno as DivisaoDoAno);
       const grade = (config.grade ?? []) as unknown as FaixaDeHorario[];
-      const janelas = janelasDePlanejamento(
-        periodos,
-        config.periodicidade as "semanal" | "quinzenal",
-      );
+      const semanas = semanasDoAnoLetivo(periodos);
 
       const user = montarBriefingAnual({
         componente: componentePorSlug(config.componente)?.rotulo ?? config.componente,
@@ -465,9 +457,9 @@ export class PlanejamentoService {
         divisao: config.divisaoDoAno as DivisaoDoAno,
         periodos: periodos.map((p) => ({
           ...p,
-          aulasEstimadas: janelas
-            .filter((j) => j.periodoDeAvaliacao === p.ordem)
-            .reduce((t, j) => t + aulasDaJanela(j, grade).length, 0),
+          aulasEstimadas: semanas
+            .filter((s) => s.periodoDeAvaliacao === p.ordem)
+            .reduce((t, s) => t + aulasDaSemana(s, grade).length, 0),
         })),
         distribuicao: (plano.distribuicao ?? {}) as Record<string, string[]>,
         distribuicaoComputacao: (plano.distribuicaoComputacao ?? {}) as Record<string, string[]>,
@@ -558,9 +550,9 @@ export class PlanejamentoService {
   // ═══════════════════════════════════════════════════ plano de período
 
   /**
-   * Gera (ou regenera) o plano de UMA janela — a semana ou quinzena.
+   * Gera (ou regenera) o plano de UMA semana.
    *
-   * O esqueleto das aulas NÃO vem do modelo: sai de `aulasDaJanela()`, da grade
+   * O esqueleto das aulas NÃO vem do modelo: sai de `aulasDaSemana()`, da grade
    * real. O modelo preenche o conteúdo pedagógico das aulas que existem. Foi
    * decisão deliberada: pedir ao modelo que decidisse quantas aulas caberiam
    * produzia dez — o número redondo — para um professor de Arte que tem duas.
@@ -577,18 +569,15 @@ export class PlanejamentoService {
     const config = plano.configuracao;
     const inicio = await this.inicioDoAnoLetivo(config.anoLetivo, config.inicioDoAnoLetivo);
     const periodos = periodosDoAnoLetivo(inicio, config.divisaoDoAno as DivisaoDoAno);
-    const janelas = janelasDePlanejamento(
-      periodos,
-      config.periodicidade as "semanal" | "quinzenal",
-    );
-    const janela = janelas.find((j) => j.ordem === ordem);
-    if (!janela) throw new BadRequestException(`o ano letivo não tem a janela ${ordem}`);
+    const semanas = semanasDoAnoLetivo(periodos);
+    const semana = semanas.find((s) => s.ordem === ordem);
+    if (!semana) throw new BadRequestException(`o ano letivo não tem a ${ordem}ª semana`);
 
     const grade = (config.grade ?? []) as unknown as FaixaDeHorario[];
-    const horarios = aulasDaJanela(janela, grade, feriados);
+    const horarios = aulasDaSemana(semana, grade, feriados);
     if (!horarios.length) {
       throw new BadRequestException(
-        "esta janela não tem aula — confira a grade de horários e os feriados",
+        "esta semana não tem aula — confira a grade de horários e os feriados",
       );
     }
 
@@ -605,14 +594,25 @@ export class PlanejamentoService {
             professorId,
             planoAnualId,
             ordem,
-            inicio: new Date(`${janela.inicio}T12:00:00Z`),
-            fim: new Date(`${janela.fim}T12:00:00Z`),
-            periodoDeAvaliacao: janela.periodoDeAvaliacao,
+            inicio: new Date(`${semana.inicio}T12:00:00Z`),
+            fim: new Date(`${semana.fim}T12:00:00Z`),
+            periodoDeAvaliacao: semana.periodoDeAvaliacao,
             status: "gerando",
             iniciadoEm: new Date(),
             tentativas: 1,
           },
           update: {
+            /**
+             * As datas VÃO no update, e não é redundância: `ordem` é a única
+             * chave, e o que ela endereça no calendário muda quando o professor
+             * corrige o início do ano letivo ou a divisão do ano na regência.
+             * Sem estas três linhas, a 3ª semana regerada ficava com as datas
+             * do calendário ANTIGO e as aulas do novo — o cabeçalho do .doc
+             * dizia uma semana e os dias das aulas, outra.
+             */
+            inicio: new Date(`${semana.inicio}T12:00:00Z`),
+            fim: new Date(`${semana.fim}T12:00:00Z`),
+            periodoDeAvaliacao: semana.periodoDeAvaliacao,
             status: "gerando",
             iniciadoEm: new Date(),
             erro: null,
@@ -630,16 +630,16 @@ export class PlanejamentoService {
           componente: componentePorSlug(config.componente)?.rotulo ?? config.componente,
           serie: rotuloDaSerie(config.serie as Serie),
           minutosPorAula: config.minutosPorAula,
-          periodoDeAvaliacao: janela.periodoDeAvaliacao,
-          rotuloDaJanela: janela.rotulo,
+          periodoDeAvaliacao: semana.periodoDeAvaliacao,
+          rotuloDaSemana: semana.rotulo,
           codigos: [
             ...(((plano.distribuicao ?? {}) as Record<string, string[]>)[
-              String(janela.periodoDeAvaliacao)
+              String(semana.periodoDeAvaliacao)
             ] ?? []),
           ],
           codigosComputacao: [
             ...(((plano.distribuicaoComputacao ?? {}) as Record<string, string[]>)[
-              String(janela.periodoDeAvaliacao)
+              String(semana.periodoDeAvaliacao)
             ] ?? []),
           ],
         }).finally(() => emExecucao.delete(chave)),
@@ -658,7 +658,7 @@ export class PlanejamentoService {
       serie: string;
       minutosPorAula: number;
       periodoDeAvaliacao: number;
-      rotuloDaJanela: string;
+      rotuloDaSemana: string;
       codigos: string[];
       codigosComputacao: string[];
     },
@@ -764,6 +764,39 @@ export class PlanejamentoService {
     );
   }
 
+  /**
+   * As semanas JÁ PLANEJADAS de um plano anual, com as aulas — a fonte do
+   * documento de várias semanas (a entrega quinzenal e a do bimestre).
+   *
+   * Só as `pronto`: um documento entregue à coordenação não leva semana que
+   * falhou na geração nem semana que ninguém planejou. Filtra por período de
+   * avaliação no BANCO, não na tela, porque o ano inteiro são 40 linhas com as
+   * aulas dentro — o payload de "baixar o 1º bimestre" não tem por que
+   * carregar os outros três.
+   */
+  async listarPlanosDePeriodo(
+    escolaId: string,
+    professorId: string,
+    planoAnualId: string,
+    periodoDeAvaliacao?: number,
+  ) {
+    await this.planoAnualDoProfessor(escolaId, professorId, planoAnualId);
+    return this.deps.prisma.comTenancy(
+      (tx) =>
+        tx.planoDeEnsinoPeriodo.findMany({
+          where: {
+            escolaId,
+            professorId,
+            planoAnualId,
+            status: "pronto",
+            ...(periodoDeAvaliacao ? { periodoDeAvaliacao } : {}),
+          },
+          orderBy: { ordem: "asc" },
+        }),
+      escolaId,
+    );
+  }
+
   async apagarPlanoAnual(escolaId: string, professorId: string, planoId: string) {
     await this.planoAnualDoProfessor(escolaId, professorId, planoId);
     await this.deps.storage
@@ -771,6 +804,42 @@ export class PlanejamentoService {
       .catch(() => undefined);
     await this.deps.prisma.comTenancy(
       (tx) => tx.planoDeEnsinoAnual.delete({ where: { id: planoId } }),
+      escolaId,
+    );
+    return { ok: true as const };
+  }
+
+  /**
+   * Apaga a REGÊNCIA inteira — o planejamento daquele componente × ano.
+   *
+   * É o que "excluir o planejamento" quer dizer na lista do professor: a
+   * configuração, o plano anual dela e todas as semanas planejadas. O banco
+   * cuida da cascata (`onDelete: Cascade` em `planosAnuais` e `periodos`), mas
+   * o object storage NÃO tem cascata: o `atual.html` e o `gerado.md` de cada
+   * plano anual moram sob `planos-de-ensino/{escola}/{planoAnualId}/`, e é por
+   * isso que os prefixos são varridos ANTES do delete — depois dele não haveria
+   * mais como saber quais eram.
+   *
+   * O `catch` de cada prefixo é deliberado: arquivo órfão no bucket é lixo, e
+   * lixo não pode impedir o professor de apagar o próprio planejamento.
+   */
+  async apagarConfiguracao(escolaId: string, professorId: string, configuracaoId: string) {
+    await this.configuracaoDoProfessor(escolaId, professorId, configuracaoId);
+    const planos = await this.deps.prisma.comTenancy(
+      (tx) =>
+        tx.planoDeEnsinoAnual.findMany({
+          where: { escolaId, professorId, configuracaoId },
+          select: { id: true },
+        }),
+      escolaId,
+    );
+    for (const p of planos) {
+      await this.deps.storage
+        .apagarPrefixo(`planos-de-ensino/${escolaId}/${p.id}/`)
+        .catch(() => undefined);
+    }
+    await this.deps.prisma.comTenancy(
+      (tx) => tx.planoDeEnsinoConfiguracao.delete({ where: { id: configuracaoId } }),
       escolaId,
     );
     return { ok: true as const };
@@ -864,7 +933,7 @@ function montarBriefingDePeriodo(
     serie: string;
     minutosPorAula: number;
     periodoDeAvaliacao: number;
-    rotuloDaJanela: string;
+    rotuloDaSemana: string;
     codigos: string[];
     codigosComputacao: string[];
   },
@@ -875,7 +944,7 @@ function montarBriefingDePeriodo(
     "",
     `- Componente curricular: ${d.componente}`,
     `- Ano/série: ${d.serie}`,
-    `- Janela: ${d.rotuloDaJanela} (período de avaliação ${d.periodoDeAvaliacao})`,
+    `- Semana: ${d.rotuloDaSemana} (período de avaliação ${d.periodoDeAvaliacao})`,
     `- Duração de cada aula: ${d.minutosPorAula} minutos`,
     "",
     `# AS ${horarios.length} AULAS QUE EXISTEM`,

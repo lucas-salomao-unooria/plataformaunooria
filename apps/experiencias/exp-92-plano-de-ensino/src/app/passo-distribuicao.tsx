@@ -230,7 +230,7 @@ export function PassoDistribuicao({ configuracao, plano, onSalvo, onAvancar, onV
           <Badge variant="success">Currículo do ano coberto</Badge>
         )}
         {pendentes > 0 && (
-          <Button variant="tertiary" size="sm" onClick={sugerirDistribuicao}>
+          <Button variant="ghost" size="sm" onClick={sugerirDistribuicao}>
             Distribuir as pendentes pelos períodos
           </Button>
         )}
@@ -296,13 +296,13 @@ export function PassoDistribuicao({ configuracao, plano, onSalvo, onAvancar, onV
         <Button variant="secondary" onClick={onVoltar} disabled={salvando}>
           Voltar
         </Button>
-        <Button variant="tertiary" onClick={() => void salvar(false)} loading={salvando} disabled={!sujo}>
+        <Button variant="ghost" onClick={() => void salvar(false)} isLoading={salvando} disabled={!sujo}>
           Salvar
         </Button>
         <Button
           variant="primary"
           onClick={() => void salvar(true)}
-          loading={salvando}
+          isLoading={salvando}
           disabled={distribuidas === 0}
         >
           Escrever o plano anual

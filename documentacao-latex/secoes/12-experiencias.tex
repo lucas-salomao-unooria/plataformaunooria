@@ -1053,8 +1053,8 @@ Insumo & Currículo da rede e material didático, importados como \textbf{texto}
   \textbf{BNCC estruturada}, extraída do PDF homologado\\
 \zebra Cobertura & As disciplinas com material importado & \textbf{Todos} os
   componentes, \cd{1EF} a \cd{3EM}\\
-Granularidade & Plano anual & Plano anual \textbf{e} plano de aulas
-  (semanal ou quinzenal)\\
+Granularidade & Plano anual & Plano anual \textbf{e} plano de aulas,
+  \textbf{semana a semana}\\
 \zebra Serve a & Rede com documento curricular próprio & Rede sem currículo
   próprio, ou que queira o planejamento aula a aula\\
 \bottomrule
@@ -1144,8 +1144,8 @@ pedagógico das aulas que já existem, e \arq{planejamento/costura.ts} descarta
 sobra e completa falta.
 
 \begin{atencao}
-Deixar o modelo decidir quantas aulas cabem numa quinzena produzia \textbf{dez}
---- o número redondo --- para um professor de Arte que tem \textbf{duas}. Pelo
+Deixar o modelo decidir quantas aulas cabem na semana produzia \textbf{cinco}
+--- o número redondo --- para um professor de Arte que tem \textbf{uma}. Pelo
 mesmo motivo, \cd{cumprida} e \cd{observacaoDoProfessor} nunca vêm da IA: são o
 registro do que aconteceu na aula, e um plano que nasce \enquote{dado} deixa de
 medir qualquer coisa.
@@ -1236,8 +1236,47 @@ não escorrega --- e uma aula de segunda que vira domingo é bug que passa no
 \emph{typecheck} e sobrevive até a impressão.
 
 Feriado \textbf{remove} a aula, não a desloca: deslocar empurraria o plano
-inteiro e desalinharia as 40 janelas seguintes. Repor é decisão pedagógica do
+inteiro e desalinharia as 40 semanas seguintes. Repor é decisão pedagógica do
 professor, não conta do sistema.
+
+\subsection{O passo é semanal; o recorte é da entrega}
+\label{sec:exp92-semanal}
+
+O planejamento granular tem \textbf{uma} unidade: a \textbf{semana} letiva.
+São 40 no ano, e o professor detalha uma por vez --- planeja a 1ª, depois a 2ª,
+e assim por diante. Não existe \enquote{plano quinzenal} como objeto do
+produto.
+
+Houve uma \cd{periodicidade} configurável (semanal ou quinzenal) e ela foi
+retirada na \hyperref[adr:76]{ADR-76}. O que a quinzena resolvia era a
+\textbf{entrega} --- a escola que recolhe planejamento de quinze em quinze dias
+---, e isso é recorte de \textbf{exportação}: o mesmo plano semanal sai em três
+formatos, sem nada mudar no que foi planejado.
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Botão} & \thd{O que sai no documento}\\
+\midrule
+\cd{Baixar esta semana} & a semana aberta, com as aulas datadas\\
+\zebra \cd{Esta e a próxima} & duas semanas, uma por página --- a entrega
+  quinzenal. Só aparece com a semana seguinte \textbf{já planejada}\\
+\cd{Baixar o Nº Bimestre} & todas as semanas \cd{pronto} daquele período de
+  avaliação, com a contagem no cabeçalho\\
+\bottomrule
+\end{tabularx}
+
+As semanas vêm de \cd{GET /planejamento/planos-anuais/:id/periodos}, que
+devolve \textbf{só as \cd{pronto}}: um documento entregue à coordenação não
+leva semana que falhou na geração nem semana que ninguém planejou.
+
+\begin{atencao}
+Como passo de planejamento, a quinzena custava caro:
+\cd{exp\_92\_planos\_de\_periodo} é endereçada por
+\cd{(escola, plano anual, ordem)}, e a \textbf{ordem muda de significado} com
+a periodicidade --- a 3ª quinzena não é a 3ª semana. Um plano gravado em modo
+quinzenal e lido em modo semanal casa pela ordem e devolve as datas de um
+recorte com as aulas de outro.
+\end{atencao}
 
 \section{exp-91 --- Check-in de bem-estar}
 

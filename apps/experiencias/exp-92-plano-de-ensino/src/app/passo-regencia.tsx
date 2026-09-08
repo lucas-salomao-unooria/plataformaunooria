@@ -19,7 +19,6 @@ import {
   type Configuracao,
   type Divisao,
   type FaixaDeHorario,
-  type Periodicidade,
 } from "../lib/tipos";
 
 /**
@@ -53,11 +52,6 @@ const DIVISOES: { value: Divisao; label: string }[] = [
   { value: "semestral", label: "Semestral — 2 períodos de 20 semanas" },
 ];
 
-const PERIODICIDADES: { value: Periodicidade; label: string }[] = [
-  { value: "semanal", label: "Semanal — planejo uma semana por vez" },
-  { value: "quinzenal", label: "Quinzenal — planejo duas semanas por vez" },
-];
-
 interface Props {
   configuracao: Configuracao | null;
   onSalvo: (c: Configuracao) => void;
@@ -73,9 +67,6 @@ export function PassoRegencia({ configuracao, onSalvo, onCancelar }: Props) {
   const [anoLetivo, setAnoLetivo] = useState(configuracao?.anoLetivo ?? new Date().getFullYear());
   const [inicio, setInicio] = useState(configuracao?.inicioDoAnoLetivo ?? "");
   const [divisao, setDivisao] = useState<Divisao>(configuracao?.divisaoDoAno ?? "bimestral");
-  const [periodicidade, setPeriodicidade] = useState<Periodicidade>(
-    configuracao?.periodicidade ?? "semanal",
-  );
   const [minutos, setMinutos] = useState(configuracao?.minutosPorAula ?? 50);
   const [aulasSemanais, setAulasSemanais] = useState(configuracao?.aulasSemanais ?? 0);
   const [grade, setGrade] = useState<FaixaDeHorario[]>(configuracao?.grade ?? []);
@@ -155,7 +146,6 @@ export function PassoRegencia({ configuracao, onSalvo, onCancelar }: Props) {
         serie: ano,
         componente,
         divisaoDoAno: divisao,
-        periodicidade,
         minutosPorAula: minutos,
         aulasSemanais,
         grade: [...grade].sort((a, b) => a.diaDaSemana - b.diaDaSemana),
@@ -271,15 +261,16 @@ export function PassoRegencia({ configuracao, onSalvo, onCancelar }: Props) {
           showOptionCheckbox={false}
           helperText="Como a escola fecha as notas. Nenhuma norma nacional fixa isso — o calendário é aprovado escola a escola."
         />
-        <Selection
-          name="periodicidade"
-          label="Passo do planejamento"
-          options={PERIODICIDADES}
-          value={periodicidade}
-          onChange={(v) => setPeriodicidade(valorSimples(v) as Periodicidade)}
-          showOptionCheckbox={false}
-          helperText="De quanto em quanto tempo você detalha as aulas."
-        />
+        {/* Havia aqui um "Passo do planejamento" (semanal ou quinzenal), e ele
+            saiu na ADR-76 — a pergunta era sobre a ENTREGA e chegava disfarçada
+            de configuração do produto. Esta nota fica no lugar dele porque a
+            dúvida que ele criava era legítima: o professor precisa saber que
+            detalha semana a semana, e que juntar duas é coisa da exportação. */}
+        <p className="nota nota--no-formulario">
+          <strong>O detalhamento das aulas é semana a semana.</strong> Você planeja a 1ª semana,
+          depois a 2ª, e assim por diante. Na hora de entregar, o botão de baixar junta duas
+          semanas (a quinzena) ou o período de avaliação inteiro num só documento.
+        </p>
       </div>
 
       <div className="grade-de-campos">
@@ -351,7 +342,7 @@ export function PassoRegencia({ configuracao, onSalvo, onCancelar }: Props) {
                 </div>
               ))}
               <Button
-                variant="tertiary"
+                variant="ghost"
                 size="sm"
                 onClick={() => alternarAula(dia.valor, horarios.length)}
               >
@@ -383,7 +374,7 @@ export function PassoRegencia({ configuracao, onSalvo, onCancelar }: Props) {
         <Button variant="secondary" onClick={onCancelar} disabled={salvando}>
           Cancelar
         </Button>
-        <Button variant="primary" onClick={() => void salvar()} loading={salvando}>
+        <Button variant="primary" onClick={() => void salvar()} isLoading={salvando}>
           {configuracao ? "Salvar alterações" : "Criar planejamento"}
         </Button>
       </div>

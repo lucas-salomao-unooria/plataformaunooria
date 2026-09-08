@@ -409,6 +409,17 @@ testado no container} &
 \textbf{\cd{iframe} vazio} &
   \emph{Handshake} expirado, \emph{dev server} fora do ar, ou
   \emph{origin} divergente. Ver o console: a SDK avisa o descarte por esquema.\\
+\zebra \textbf{\enquote{Baixar .doc} não baixa nada}, sem erro na tela e sem
+  linha no \emph{console} &
+  \cd{allow-downloads} ausente no \emph{sandbox} do \cd{iframe}. Confira em
+  ORDEM: (1) o \cd{permissoes} do \arq{public/experiencia.json} tem
+  \cd{downloads}; (2) a \textbf{linha} de \cd{experiencias} tem também --- em
+  \emph{dev} o hub lê a tabela quando ela existe, não o manifesto do
+  \emph{bundle}; (3) a rota do hub passa \cd{permissoes} ao \cd{ExpFrame} (as
+  três de professor não passavam). O bloqueio é do navegador e é MUDO: o Chrome
+  o registra no painel \emph{Issues}, não no \emph{console}. Verificação de um
+  comando, no console do hub:
+  \cd{document.querySelector('iframe').getAttribute('sandbox')}.\\
 \zebra \textbf{Câmera do jogo não anda \emph{desde o começo}} &
   \cd{allow-pointer-lock} ausente: \cd{permissoes} não chegou (manifesto vazio
   \emph{e} \arq{experiencia.json} não lido). \cd{requestPointerLock()} morre com

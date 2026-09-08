@@ -14,7 +14,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 /** Espelha o `z.enum` de `experiencias.controller.ts`. */
-const PERMISSOES_NO_CODIGO = ["pointer-lock", "forms"];
+const PERMISSOES_NO_CODIGO = ["pointer-lock", "forms", "downloads"];
 
 afterAll(async () => {
   await prisma.$disconnect();
