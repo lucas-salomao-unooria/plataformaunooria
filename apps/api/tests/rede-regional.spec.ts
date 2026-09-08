@@ -159,7 +159,9 @@ describe("hierarquia: agrupa, não autoriza", () => {
 describe("lotação em lote", () => {
   test("lota a supervisora nas três unidades de uma vez", async () => {
     const feito = await escolas.lotarEmLote(ESCOLAS, supervisorId, "gestor_escola");
-    expect(feito).toMatchObject({ lotadas: 3, ignoradas: [] });
+    // O lote diz o que FEZ, por escola: três vínculos nasceram agora.
+    expect(feito?.criadas.sort()).toEqual([...ESCOLAS].sort());
+    expect(feito).toMatchObject({ reabertas: [], jaVinculadas: [], ignoradas: [] });
 
     const dela = await escolas.escolasDaPessoa(supervisorId);
     expect(dela.map((e) => e.id).sort()).toEqual([...ESCOLAS].sort());
@@ -175,7 +177,11 @@ describe("lotação em lote", () => {
   test("reaplicar é no-op: não duplica nem troca a principal", async () => {
     const antes = await escolas.escolasDaPessoa(supervisorId);
     const feito = await escolas.lotarEmLote(ESCOLAS, supervisorId, "gestor_escola");
-    expect(feito?.lotadas).toBe(3);
+    /* Reaplicar não escreve NADA: as três voltam em `jaVinculadas`. Antes o
+       retorno dizia `lotadas: 3` nas duas vezes, e a tela anunciava três
+       vínculos novos tendo criado zero. */
+    expect(feito?.criadas).toEqual([]);
+    expect(feito?.jaVinculadas.sort()).toEqual([...ESCOLAS].sort());
     const depois = await escolas.escolasDaPessoa(supervisorId);
     expect(depois).toHaveLength(antes.length);
     expect(depois.find((e) => e.principal)?.id).toBe(antes.find((e) => e.principal)?.id);
@@ -186,7 +192,7 @@ describe("lotação em lote", () => {
     // Sem isso, a regional apareceria no seletor do cabeçalho como uma escola
     // fantasma, sem nada dentro.
     expect(feito?.ignoradas).toEqual([REGIONAL]);
-    expect(feito?.lotadas).toBe(1);
+    expect(feito?.jaVinculadas).toEqual([ESCOLAS[0]]);
   });
 
   test("e a rota INDIVIDUAL recusa a regional pelo mesmo motivo", async () => {

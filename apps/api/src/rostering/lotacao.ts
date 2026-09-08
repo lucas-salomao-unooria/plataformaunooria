@@ -23,6 +23,16 @@ export type PapelDeLotacao = "estudante" | "professor" | "gestor_escola" | "estu
  * gestor — e do estudante **na escola de destino**, depois de a transferência ter
  * encerrado a de origem.
  */
+/**
+ * O que a escrita FEZ, por escola.
+ *
+ * Devolvido em vez de `void` porque a tela precisa distinguir os três casos: o
+ * card pede "criar somente os novos vínculos e apresentar o resultado por
+ * escola", e um contador único não separa "criei" de "já estava". A pessoa lia
+ * "agora está em 3 escolas" tendo o sistema escrito três vínculos ou nenhum.
+ */
+export type EfeitoDaLotacao = "criada" | "reaberta" | "mantida";
+
 export async function garantirLotacao(
   tx: Prisma.TransactionClient,
   dados: {
@@ -33,8 +43,17 @@ export async function garantirLotacao(
     principal?: boolean;
     fonteId?: string | null;
   },
-): Promise<void> {
+): Promise<EfeitoDaLotacao> {
   const { escolaId, usuarioId, papel, inicio, principal = false, fonteId = null } = dados;
+  /* Lido ANTES do upsert: depois dele `fim` já é null e as três situações ficam
+     indistinguíveis. É uma consulta a mais por escola, e ela paga o que a tela
+     precisa dizer. */
+  const anterior = await tx.lotacao.findUnique({
+    where: { escolaId_usuarioId_papel: { escolaId, usuarioId, papel } },
+    select: { fim: true },
+  });
+  const efeito: EfeitoDaLotacao =
+    anterior === null ? "criada" : anterior.fim === null ? "mantida" : "reaberta";
   await tx.lotacao.upsert({
     where: { escolaId_usuarioId_papel: { escolaId, usuarioId, papel } },
     update: { fim: null, ...(principal ? { principal: true } : {}), ...(fonteId ? { fonteId } : {}) },
@@ -47,6 +66,7 @@ export async function garantirLotacao(
     });
     await tx.user.update({ where: { id: usuarioId }, data: { escolaId } });
   }
+  return efeito;
 }
 
 /** A escola em que o estudante está agora, se houver. Lê sem tenancy, de propósito. */

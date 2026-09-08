@@ -189,6 +189,46 @@ diálogo é onde a última regional da rede e a regional com escolas explicam o
 impedimento (e, no segundo caso, oferecem a transferência). Os textos e os
 códigos de conflito estão em `apps/api/AGENTS.md`.
 
+## Papéis: seis, e o formulário sai da cadeia (ADR-80)
+
+`lib/papeis.ts` é a cópia edge-safe do vocabulário da api, e agora carrega
+também a **cadeia de atribuição** (`papeisQueCria`). Duas coisas a respeitar:
+
+- **`rotuloDoPapel` é um `Record` EXAUSTIVO, não uma escada de `if`.** Papel novo
+  sem rótulo passa a ser erro de compilação; com a escada, ele caía no `return`
+  final e aparecia no cabeçalho como "Estudante".
+- **A lista de papéis do formulário de novo usuário sai de `papeisQueCria`**, não
+  de um array fixo com um `if` para o papel de rede. Com a lista à mão, o papel
+  novo aparecia para quem não podia criá-lo e a pessoa preenchia a tela inteira
+  para receber 403 no fim. **Quem decide continua sendo a api** — isto só evita
+  oferecer o que ela recusa.
+- Os quatro papéis de gestão dividem a MESMA área do middleware. Quem separa o
+  que cada um pode é o `RolesGuard` da api, item a item — nunca o middleware.
+- **"Coordenação", não "Gestor"**, na interface: é a palavra que a rede usa, e era
+  a que já estava no filtro de Usuários enquanto o modal dizia "gestor" para a
+  MESMA coisa.
+
+## O modal de vínculo busca na REDE (ADR-80)
+
+O campo "Onde a pessoa está hoje" **saiu**, e não por gosto: ele filtrava por
+`users.escola_id`, que é o cache da lotação PRINCIPAL — quem trabalha em duas
+escolas só era achado pela principal, e procurando pela outra a lista voltava
+vazia. Agora é `GET /escolas/profissionais`, sem escola de origem.
+
+- **Quatro estados de busca distintos**: inicial (orienta), buscando, vazia
+  (só DEPOIS de uma busca concluída) e erro. A tela dizia "nenhum professor
+  encontrado nesta escola" **antes** de qualquer busca — afirmação sobre uma
+  consulta que nunca aconteceu.
+- **O botão fica sempre visível**, e a seleção da tabela é SUGESTÃO de destino,
+  editável. Antes ele só aparecia com linha marcada, e duplicava o botão da barra
+  de seleção — dois botões idênticos lado a lado.
+- **Destino já vinculado é marcado e sai da criação**; se todos estiverem, a tela
+  diz que não há o que criar e o botão não habilita.
+- **UM perfil no resumo, com a frase dizendo que vale em todas as escolas.**
+  `users.role` é global e é ele que o `RolesGuard` lê; o papel da lotação é
+  registro, não autorização. Um seletor de perfil por escola prometeria o que o
+  guard não cumpre — é a mesma armadilha que a ADR-79 fechou em outro lugar.
+
 ## Embed de experiência
 
 A montagem (token, manifesto, dev server, origin) é uma só:

@@ -278,14 +278,22 @@ redirecionado para a própria casa, porque estudante que tropeça em
 \cd{gestor} & \rota{/admin/usuarios} &
   Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
   aparece para quem tem mais de uma lotação.\\
-\zebra \cd{admin-contrato} & \rota{/admin/usuarios} &
+\zebra \cd{gestor\_regional} & \rota{/admin/usuarios} &
+  O mesmo do \cd{gestor\_escola}, e uma escola por vez --- o que muda é de onde
+  sai a LISTA de escolas que ele pode ativar: da regional dele
+  (\cd{users.regional\_id}), não da lotação (\adrr{ADR-80}).\\
+\cd{gestor\_contrato} & \rota{/admin/usuarios} &
   O mesmo, mais \rota{/admin/regionais} e \rota{/admin/escolas} (organizar a rede
   e abrir unidade) e \rota{/analise} (o nível de produto, na rede inteira).\\
+\zebra \cd{admin} (Unooria) & \rota{/admin/usuarios} &
+  As MESMAS capacidades de \cd{gestor\_contrato}. O que distingue é de quem é a
+  conta, não o que ela pode --- e o único acréscimo real é a ponta da cadeia: é
+  ele que atribui \cd{gestor\_contrato}.\\
 \bottomrule
 \end{tabularx}
 
 \begin{atencao}
-\textbf{Gestor e \cd{admin-contrato} moram na mesma área do \emph{middleware}}
+\textbf{Os QUATRO papéis de gestão moram na mesma área do \emph{middleware}}
 --- \cd{areaDoPapel} devolve \rota{/admin/usuarios} para os dois. A distinção
 entre eles \textbf{não} é feita ali: é feita item a item na navegação
 (\cd{SO\_ADMIN\_DO\_CONTRATO} em \arq{components/nav-admin.tsx}), por
@@ -296,6 +304,30 @@ definitivamente, pelo \cd{RolesGuard} da API. Um gestor que digite
 BFF converte em \cd{null} e não há o que renderizar. Nenhum dado atravessa ---
 mas a tranca que segurou foi a segunda, não a primeira.
 \end{atencao}
+
+\subsection{A cadeia de atribuição de papéis}
+
+Quem CONCEDE cada nível de acesso é uma pergunta diferente de quem pode chamar
+cada rota, e ela tem resposta própria desde a \adrr{ADR-80}:
+
+\begin{center}
+\cd{admin} \seta{} \cd{gestor\_contrato} \seta{} \cd{gestor\_regional} \seta{}
+\cd{gestor\_escola} \seta{} \cd{professor}, \cd{estudante}
+\end{center}
+
+Cada nível atribui o de baixo, e o alcance real é o \textbf{fechamento
+transitivo} dessa tabela (\cd{papeisQueCria}, em \arq{usuarios/regras.ts}) --- não
+uma lista escrita à mão por papel, que teria quatro cópias da mesma regra.
+\textbf{Para cima, nunca}: nem o próprio nível. Um papel que se autoatribui não
+tem quem o conceda, e é por isso que \cd{gestor\_contrato} deixou de criar outro
+\cd{gestor\_contrato} e \cd{gestor\_escola} deixou de criar outra coordenação de
+escola --- as duas coisas valiam antes desta ADR.
+
+A tranca é \cd{podeCriarPapel}, e não o \cd{@Roles}: o \emph{guard} protege a
+ROTA, não o campo \cd{papel} do corpo. A lista que a tela oferece sai da mesma
+cadeia (espelhada em \arq{hub/lib/papeis.ts}) apenas para não oferecer o que a
+API recusaria --- seletor que promete o que dá 403 faz a pessoa preencher o
+formulário inteiro para receber o erro no fim.
 
 \subsection{A matriz de capacidades}
 
@@ -336,6 +368,10 @@ Ler os períodos letivos & \rota{GET /periodos-letivos} & \no & \yes & \yes & \y
   \rota{PATCH /escolas} & \no & \no & \no & \yes\\
 \textbf{Excluir uma REGIONAL} (escola não se exclui) &
   \rota{DELETE /escolas/:id} & \no & \no & \no & \yes\\
+\zebra \textbf{Buscar professor/coordenação na REDE} (sem escola de origem) &
+  \rota{GET /escolas/\B profissionais} & \no & \no & \no & \yes\\
+\textbf{Atribuir papel SEM escola} (\cd{gestor\_contrato}, \cd{gestor\_regional})
+  & \rota{POST /usuarios/\B sem-escola} & \no & \no & \no & \yes\footnotesize{**}\\
 \zebra Conceder lotações em lote (nível da rede) &
   \rota{POST /escolas/\B lotacoes-em-lote} & \no & \no & \no & \yes\\
 Lotar alguém numa escola, encerrar lotação &
@@ -359,6 +395,12 @@ Publicar ou atualizar experiência no catálogo &
 (\cd{professorLeciona}); gestor e admin enxergam a escola inteira. É a
 diferença entre \enquote{dá aula nesta turma} e \enquote{trabalha nesta escola}
 (\adrr{ADR-28}).
+
+\footnotesize{**} A rota aceita os dois perfis de contrato, mas QUAL papel cada
+um pode atribuir sai da cadeia, não do \cd{@Roles}: \cd{gestor\_contrato}
+atribui \cd{gestor\_regional}; \cd{gestor\_contrato} pedindo outro
+\cd{gestor\_contrato} recebe 403, porque esse é atribuído pela Unooria
+(\adrr{ADR-80}).
 \normalsize
 
 \begin{tabularx}{\linewidth}{@{}X L{34mm} C{8mm} C{9mm} C{9mm} C{9mm}@{}}

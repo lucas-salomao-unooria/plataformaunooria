@@ -620,8 +620,10 @@
                       "enum": [
                         "estudante",
                         "professor",
-                        "gestor",
-                        "admin-contrato"
+                        "gestor_escola",
+                        "gestor_regional",
+                        "gestor_contrato",
+                        "admin"
                       ]
                     },
                     "escolaId": {
@@ -834,7 +836,7 @@
           "escolas"
         ],
         "summary": "As escolas de QUEM ESTÁ PEDINDO.",
-        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence.\n\nÉ com ela que o hub monta o seletor de escola do professor de duas unidades — e **valida a troca** antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\n\n**Papéis:** estudante, professor, gestor, admin-contrato.\n\n**Restrições:**\n- Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.\n- Professor e gestor ACUMULAM lotação; estudante tem UMA ativa, garantida por índice único parcial no banco.",
+        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence.\n\nÉ com ela que o hub monta o seletor de escola do professor de duas unidades — e **valida a troca** antes de assinar um token com a escola nova. A validação é sempre contra esta rota, nunca contra a lista que o cookie carrega: senão bastaria pedir uma escola qualquer.\n\n**Papéis:** estudante, professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Barata de propósito: está no caminho do LOGIN. Contagens ficam em `/escolas/minhas/resumo`.\n- Professor e gestor ACUMULAM lotação; estudante tem UMA ativa, garantida por índice único parcial no banco.",
         "security": [
           {
             "token-da-plataforma": []
@@ -843,8 +845,10 @@
         "x-papeis": [
           "estudante",
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -928,7 +932,7 @@
           "escolas"
         ],
         "summary": "O panorama de quem tem muitas escolas.",
-        "description": "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, estudantes e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor` lotado nas unidades da diretoria.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "A tela do supervisor de diretoria. **LISTA, não soma**: uma linha por unidade, com turmas, estudantes e quantos ainda não fizeram o primeiro acesso.\n\nSomar escolas numa métrica só seria autorizar por hierarquia — exatamente o que a ADR-34 recusa. O supervisor não é papel novo: é um `gestor_escola` lotado nas unidades da diretoria.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -936,8 +940,114 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/escolas/profissionais": {
+      "get": {
+        "operationId": "EscolasController_profissionais",
+        "parameters": [
+          {
+            "name": "busca",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 80
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "nome": {
+                        "type": "string"
+                      },
+                      "usuario": {
+                        "type": "string"
+                      },
+                      "papel": {
+                        "type": "string"
+                      },
+                      "escolas": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "nome": {
+                              "type": "string"
+                            },
+                            "papel": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "nome",
+                            "papel"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "nome",
+                      "usuario",
+                      "papel",
+                      "escolas"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "escolas"
+        ],
+        "summary": "Busca professor e coordenação na REDE inteira.",
+        "description": "Por nome, login, matrícula ou CPF (com ou sem pontuação), **sem exigir a escola de origem**.\n\nExiste por um DEFEITO, não por conforto: a busca anterior era `GET /usuarios?escolaId=`, que filtra `users.escola_id` — o *cache* da lotação PRINCIPAL. Quem trabalha em duas escolas só era encontrado pela principal; procurando pela outra, a lista voltava vazia e quem administra concluía que a pessoa não existe. Era justamente a população que a lotação em lote existe para administrar.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Devolve as escolas em que a pessoa JÁ está — é com elas que a tela marca \"já vinculado a esta escola\" e deixa esse destino fora da criação.\n- **Não devolve CPF.** A busca o aceita, mas o número numa lista que varre a rede inteira é superfície nova — login e escolas já distinguem homônimos (ADR-33 restringe o CPF visível ao balcão da escola).\n- Mínimo de 2 caracteres na busca, e 5 dígitos para casar CPF: sem piso, o primeiro clique no campo viraria varredura de `users`.\n- Sem `comTenancy`, e não é exceção nova: `users` e `lotacoes` já estão fora da RLS, e quem pergunta é o único papel que atravessa escolas.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -1072,14 +1182,15 @@
           "escolas"
         ],
         "summary": "Todas as escolas do contrato, com contagem.",
-        "description": "Só `admin-contrato` chega aqui. O filtro `paiId` é o insumo da lotação em lote: ele resolve \"as unidades desta diretoria\" em LISTA, que é o que a tela mostra para o admin confirmar.\n\n**Papéis:** admin-contrato.",
+        "description": "Só `gestor_contrato` chega aqui. O filtro `paiId` é o insumo da lotação em lote: ele resolve \"as unidades desta diretoria\" em LISTA, que é o que a tela mostra para o admin confirmar.\n\n**Papéis:** gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       },
@@ -1153,14 +1264,15 @@
           "escolas"
         ],
         "summary": "Cria uma escola.",
-        "description": "**`admin-contrato` e ninguém mais**, inclusive no `orgs.csv`: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Id já existente é **400**.\n- **`tipo: escola` exige `paiId`** de uma regional existente (ADR-79): sem ele o 400 traz o texto do produto. `regional` entra sem pai.\n- `pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja `escola`, `rede` ou a própria linha.",
+        "description": "**`gestor_contrato` e ninguém mais**, inclusive no `orgs.csv`: escola é *tenant*, e abrir um inquilino com RLS e dados de menores por trás não é operação de quem administra uma unidade.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Id já existente é **400**.\n- **`tipo: escola` exige `paiId`** de uma regional existente (ADR-79): sem ele o 400 traz o texto do produto. `regional` entra sem pai.\n- `pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja `escola`, `rede` ou a própria linha.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -1259,9 +1371,23 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "lotadas": {
-                      "type": "integer",
-                      "minimum": 0
+                    "criadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "reabertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "jaVinculadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
                     },
                     "ignoradas": {
                       "type": "array",
@@ -1271,7 +1397,9 @@
                     }
                   },
                   "required": [
-                    "lotadas",
+                    "criadas",
+                    "reabertas",
+                    "jaVinculadas",
                     "ignoradas"
                   ],
                   "additionalProperties": false
@@ -1284,14 +1412,15 @@
           "escolas"
         ],
         "summary": "Lota uma pessoa em MUITAS escolas de uma vez.",
-        "description": "É assim que o supervisor de uma Diretoria de Ensino nasce: um `gestor` lotado nas unidades dela, **sem papel novo e sem tocar na RLS** — o token continua carregando UMA escola.\n\nIdempotente: reaplicar reabre o que estava encerrado e não duplica.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Recebe a LISTA de escolas, nunca o critério (\"todas da regional X\"): autorizar por hierarquia seria uma segunda fonte de verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse um pai.\n- `regional` e `rede` entram em `ignoradas`: não têm turma nem dado, e virariam escola fantasma no seletor do cabeçalho.\n- Uma transação POR escola — cinquenta numa só seguraria conexão por segundos, e falhar na décima não é motivo para desfazer as nove.",
+        "description": "É assim que o supervisor de uma Diretoria de Ensino nasce: um `gestor_escola` lotado nas unidades dela, **sem papel novo e sem tocar na RLS** — o token continua carregando UMA escola.\n\nIdempotente: reaplicar reabre o que estava encerrado e não duplica.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Recebe a LISTA de escolas, nunca o critério (\"todas da regional X\"): autorizar por hierarquia seria uma segunda fonte de verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse um pai.\n- `regional` e `rede` entram em `ignoradas`: não têm turma nem dado, e virariam escola fantasma no seletor do cabeçalho.\n- Uma transação POR escola — cinquenta numa só seguraria conexão por segundos, e falhar na décima não é motivo para desfazer as nove.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -1309,7 +1438,7 @@
                     "type": "string",
                     "enum": [
                       "professor",
-                      "gestor"
+                      "gestor_escola"
                     ]
                   },
                   "escolaIds": {
@@ -1414,14 +1543,15 @@
           "escolas"
         ],
         "summary": "Edita os dados da escola.",
-        "description": "`id` e `tipo` não se editam: os dois circulam em token e em RLS.\n\nÉ por aqui que a regional padrão ganha o nome da rede — ela nasce `Rede` porque o nome real do contrato não existe no banco, e quem sabe qual é é quem administra.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- **Escola não volta a ficar sem regional**: `paiId` vazio numa `escola` é 400. Mudar de regional é permitido — é assim que uma unidade troca de diretoria.",
+        "description": "`id` e `tipo` não se editam: os dois circulam em token e em RLS.\n\nÉ por aqui que a regional padrão ganha o nome da rede — ela nasce `Rede` porque o nome real do contrato não existe no banco, e quem sabe qual é é quem administra.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- **Escola não volta a ficar sem regional**: `paiId` vazio numa `escola` é 400. Mudar de regional é permitido — é assim que uma unidade troca de diretoria.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -1544,14 +1674,15 @@
           "escolas"
         ],
         "summary": "Exclui uma regional.",
-        "description": "**Só regional.** Escola é *tenant* e não se exclui por rota nenhuma — a saída de uma unidade é assunto de contrato, não de um botão numa tabela.\n\nDuas recusas, as duas de produto (ADR-79): a rede **nunca fica sem regional** (409 `regional-unica`), e regional com escolas só sai dizendo para onde elas vão (409 `regional-com-escolas`, com `escolas` e `destinos` no corpo — é o que a tela usa para abrir o diálogo de transferência ou para explicar que não há destino).\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- A regional PADRÃO não tem proteção própria: depois que a rede se organizou em diretorias de verdade, ela é a sobra que se quer remover. O que a segura é a mesma regra da última regional.\n- A transferência e a exclusão são UMA transação: falhar no meio não deixa escola apontando para regional apagada.",
+        "description": "**Só regional.** Escola é *tenant* e não se exclui por rota nenhuma — a saída de uma unidade é assunto de contrato, não de um botão numa tabela.\n\nDuas recusas, as duas de produto (ADR-79): a rede **nunca fica sem regional** (409 `regional-unica`), e regional com escolas só sai dizendo para onde elas vão (409 `regional-com-escolas`, com `escolas` e `destinos` no corpo — é o que a tela usa para abrir o diálogo de transferência ou para explicar que não há destino).\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- A regional PADRÃO não tem proteção própria: depois que a rede se organizou em diretorias de verdade, ela é a sobra que se quer remover. O que a segura é a mesma regra da última regional.\n- A transferência e a exclusão são UMA transação: falhar no meio não deixa escola apontando para regional apagada.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -1577,7 +1708,7 @@
               "enum": [
                 "estudante",
                 "professor",
-                "gestor"
+                "gestor_escola"
               ]
             }
           }
@@ -1642,15 +1773,17 @@
           "escolas"
         ],
         "summary": "Quem está lotado nesta escola.",
-        "description": "Gestor vê a própria; `admin-contrato`, qualquer uma. `papel` diferente de `estudante`/`gestor` cai em `professor`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- O CPF vem FORMATADO e visível: o gestor confere identidade contra o sistema da rede e atende a família no balcão (ADR-33).",
+        "description": "Gestor vê a própria; `gestor_contrato`, qualquer uma. `papel` diferente de `estudante`/`gestor_escola` cai em `professor`.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O CPF vem FORMATADO e visível: o gestor confere identidade contra o sistema da rede e atende a família no balcão (ADR-33).",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -1696,15 +1829,17 @@
           "escolas"
         ],
         "summary": "Lota alguém nesta escola.",
-        "description": "Para professor e gestor é **ACRÉSCIMO**: a lotação que a pessoa tem em outra escola da rede continua valendo — é o caso que a rede estadual tem aos milhares, e a razão de `lotacoes` existir.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `admin-contrato` não recebe lotação: ele é a exceção cross-escola.",
+        "description": "Para professor e gestor é **ACRÉSCIMO**: a lotação que a pessoa tem em outra escola da rede continua valendo — é o caso que a rede estadual tem aos milhares, e a razão de `lotacoes` existir.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `gestor_contrato` não recebe lotação: ele é a exceção cross-escola.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -1722,7 +1857,7 @@
                     "type": "string",
                     "enum": [
                       "professor",
-                      "gestor"
+                      "gestor_escola"
                     ]
                   }
                 },
@@ -1779,15 +1914,17 @@
           "lotacoes"
         ],
         "summary": "Encerra o vínculo da pessoa com a escola.",
-        "description": "**Não apaga**: grava `fim`. É a lotação que diz que a pessoa esteve ali.\n\nFecha junto as matrículas de turma daquela escola (sem escola, não há turma), e se era a principal, a próxima lotação ativa assume — senão `users.escola_id` apontaria para onde a pessoa não está mais.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- A checagem de escola vem DEPOIS de achar a lotação, porque é ela que diz de qual escola é — e um gestor não encerra vínculo de outra unidade (403).",
+        "description": "**Não apaga**: grava `fim`. É a lotação que diz que a pessoa esteve ali.\n\nFecha junto as matrículas de turma daquela escola (sem escola, não há turma), e se era a principal, a próxima lotação ativa assume — senão `users.escola_id` apontaria para onde a pessoa não está mais.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A checagem de escola vem DEPOIS de achar a lotação, porque é ela que diz de qual escola é — e um gestor não encerra vínculo de outra unidade (403).",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -1843,15 +1980,17 @@
           "estudantes"
         ],
         "summary": "Transfere o estudante entre escolas da rede.",
-        "description": "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `admin-contrato` pode mover para qualquer uma.\n\n**O dado que o estudante produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o estudante é a identidade (ADR-32).\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- É a única operação que troca o `app.escola_id` no MEIO de uma transação: sem isso o update na origem não veria linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.\n- `jaEstava: true` quando o destino já era a escola atual — nada foi movido.",
+        "description": "A escola de DESTINO é a de quem pede: a unidade que recebe a criança que a família matriculou nela. `gestor_contrato` pode mover para qualquer uma.\n\n**O dado que o estudante produziu NÃO se move** — continua com o `escola_id` de onde aconteceu, que é verdade histórica. O que segue o estudante é a identidade (ADR-32).\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- É a única operação que troca o `app.escola_id` no MEIO de uma transação: sem isso o update na origem não veria linha nenhuma (a RLS o esconderia, sem erro) e a criança ficaria nas duas.\n- `jaEstava: true` quando o destino já era a escola atual — nada foi movido.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -2050,7 +2189,7 @@
           "estudantes"
         ],
         "summary": "O histórico do estudante ATRAVESSANDO escolas.",
-        "description": "A única leitura fora de `admin-contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o estudante está HOJE**: é a unidade responsável por ele.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Devolve PARTICIPAÇÕES, **nunca o conteúdo dos instrumentos**: o retrato de valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem tem a posse pedagógica na escola onde aquilo aconteceu.\n- A escola de HOJE é a PRIMEIRA da lista `escolas` — a tela imprime nessa ordem, e a primeira linha é a que o adulto lê como \"a escola dela\".",
+        "description": "A única leitura fora de `gestor_contrato` que atravessa escolas — e por isso é uma porta só. Alcança apenas quem tem lotação na escola **onde o estudante está HOJE**: é a unidade responsável por ele.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Devolve PARTICIPAÇÕES, **nunca o conteúdo dos instrumentos**: o retrato de valores da Vila e a transcrição do unooGPT continuam atrás das telas de quem tem a posse pedagógica na escola onde aquilo aconteceu.\n- A escola de HOJE é a PRIMEIRA da lista `escolas` — a tela imprime nessa ordem, e a primeira linha é a que o adulto lê como \"a escola dela\".",
         "security": [
           {
             "token-da-plataforma": []
@@ -2058,8 +2197,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2084,15 +2225,17 @@
           "rostering"
         ],
         "summary": "O modelo em branco da planilha de pessoas.",
-        "description": "Gerado da MESMA constante que o leitor consome — um modelo escrito à mão divergiria do parser no primeiro campo novo, e o sintoma seria \"importei o modelo de vocês e deu erro de cabeçalho\".\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Sai com BOM e `charset=utf-8`: um sem o outro ainda quebra acento em alguma planilha.",
+        "description": "Gerado da MESMA constante que o leitor consome — um modelo escrito à mão divergiria do parser no primeiro campo novo, e o sintoma seria \"importei o modelo de vocês e deu erro de cabeçalho\".\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Sai com BOM e `charset=utf-8`: um sem o outro ainda quebra acento em alguma planilha.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2117,15 +2260,17 @@
           "rostering"
         ],
         "summary": "O mesmo modelo, preenchido com um exemplo.",
-        "description": "**Papéis:** gestor, admin-contrato.",
+        "description": "**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2168,15 +2313,17 @@
           "rostering"
         ],
         "summary": "O modelo em branco de um arquivo do OneRoster 1.2.",
-        "description": "Só o cabeçalho, na grafia do padrão. É um SUBCONJUNTO das colunas que a api sabe ler — as que ela ignora ficam de fora, porque modelo com 24 colunas não é modelo, é a especificação.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Modelo e exemplo são arquivos SEPARADOS: linha de exemplo dentro do modelo vira pessoa fantasma importada no primeiro uso.",
+        "description": "Só o cabeçalho, na grafia do padrão. É um SUBCONJUNTO das colunas que a api sabe ler — as que ela ignora ficam de fora, porque modelo com 24 colunas não é modelo, é a especificação.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Modelo e exemplo são arquivos SEPARADOS: linha de exemplo dentro do modelo vira pessoa fantasma importada no primeiro uso.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2227,15 +2374,17 @@
           "rostering"
         ],
         "summary": "O mesmo arquivo do OneRoster, preenchido com um exemplo.",
-        "description": "Gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das turmas: um id fictício faria o lote voltar como \"escola não é a desta importação\" para o gestor e, para o `admin-contrato` (que PODE criar escola por CSV), abriria um tenant de mentira.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "Gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das turmas: um id fictício faria o lote voltar como \"escola não é a desta importação\" para o gestor e, para o `gestor_contrato` (que PODE criar escola por CSV), abriria um tenant de mentira.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2421,15 +2570,17 @@
           "rostering"
         ],
         "summary": "Importa a planilha de pessoas.",
-        "description": "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — estudante também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (estudante) ou lotação a mais (professor).\n- Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.\n- Coluna desconhecida é ERRO, não coluna ignorada.\n- 5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
+        "description": "Corpo é o **CSV cru** (`Content-Type: text/csv`), até 30MB. Uma linha por pessoa, cabeçalho lido por NOME (ordem livre): `matricula,nome,usuario,email,papel,turma,serie,turno`. Só `nome` e `papel` são obrigatórios — estudante também exige `turma` e `serie`.\n\nIdempotente: a chave é a MATRÍCULA da pessoa na rede e, na falta dela, o login.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **O CPF é a primeira chave**: achado em outra escola da rede, a linha vira transferência (estudante) ou lotação a mais (professor).\n- Reimportar NÃO reseta a senha de quem já entrou — seria trancar a escola inteira para fora.\n- Coluna desconhecida é ERRO, não coluna ignorada.\n- 5 importações por minuto por usuário (429); acima de 30MB ou 50k linhas, 400 — o teto cabe debaixo dos 32 MiB do Cloud Run, para o 413 do ambiente nunca ser o que o gestor vê.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -2654,15 +2805,17 @@
           "rostering"
         ],
         "summary": "Binding CSV do OneRoster 1.2 — UM arquivo por chamada.",
-        "description": "Ordem: `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`, `roles`. **Fora de ordem não corrompe nada**: a linha que aponta para um `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta.\n\nO padrão vive só nesta fronteira: nada do domínio conhece `sourcedId`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `admin-contrato`.\n- Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **estudante**, o menor privilégio; o `roles.csv` corrige.\n- A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.\n- Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.\n- `status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.",
+        "description": "Ordem: `manifest`, `orgs`, `academicSessions`, `classes`, `users`, `enrollments`, `roles`. **Fora de ordem não corrompe nada**: a linha que aponta para um `sourcedId` inexistente volta no relatório dizendo QUAL arquivo falta.\n\nO padrão vive só nesta fronteira: nada do domínio conhece `sourcedId`.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `gestor_contrato`.\n- Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **estudante**, o menor privilégio; o `roles.csv` corrige.\n- A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.\n- Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.\n- `status = tobedeleted` desativa (pessoa) ou encerra (matrícula), nunca apaga.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -2758,15 +2911,17 @@
           "rostering"
         ],
         "summary": "As contas sem matrícula da rede — as que podem ser de assento.",
-        "description": "As experiências vieram de projetos onde a conta era do APARELHO: outra turma reusava o mesmo login. Esta lista mostra quanto cada conta acumulou de dado, para o gestor decidir o que desativar.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **Não existe fundir contas**: juntar duas move o que uma criança fez para outra pessoa, e depois ninguém audita de quem era.\n- Teto de 200 linhas, dito na resposta em `truncado` em vez de cortado em silêncio.",
+        "description": "As experiências vieram de projetos onde a conta era do APARELHO: outra turma reusava o mesmo login. Esta lista mostra quanto cada conta acumulou de dado, para o gestor decidir o que desativar.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Não existe fundir contas**: juntar duas move o que uma criança fez para outra pessoa, e depois ninguém audita de quem era.\n- Teto de 200 linhas, dito na resposta em `truncado` em vez de cortado em silêncio.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2845,7 +3000,7 @@
           "turmas"
         ],
         "summary": "As turmas DO PROFESSOR — as que ele tem matrícula, e só elas.",
-        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence, e `/turmas/minhas` bateria em `/turmas/:id` com o id \"minhas\".\n\nGestor e admin-contrato caem nas turmas da escola inteira — é a diferença entre administrar a escola e dar aula numa turma.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Declarada antes de `:id` de propósito: no Nest a primeira rota que casa vence, e `/turmas/minhas` bateria em `/turmas/:id` com o id \"minhas\".\n\nGestor e admin-contrato caem nas turmas da escola inteira — é a diferença entre administrar a escola e dar aula numa turma.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -2853,8 +3008,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -2942,15 +3099,17 @@
           "turmas"
         ],
         "summary": "As turmas da escola.",
-        "description": "Filtra por período letivo quando `periodoLetivoId` vem. Sem ele, TODAS as turmas de todos os anos — é isso que preserva o histórico depois da virada.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "Filtra por período letivo quando `periodoLetivoId` vem. Sem ele, TODAS as turmas de todos os anos — é isso que preserva o histórico depois da virada.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       },
@@ -3033,15 +3192,17 @@
           "turmas"
         ],
         "summary": "Cria uma turma.",
-        "description": "Sem `periodoLetivoId`, nasce no período VIGENTE — derivado das datas. Sem nenhum período cadastrado, **400**: turma sem período é a coluna `users.turma_id` de novo, com outro nome.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `UNIQUE (escola_id, periodo_letivo_id, nome)`: o \"8A de 2026\" e o \"8A de 2027\" são turmas DIFERENTES.",
+        "description": "Sem `periodoLetivoId`, nasce no período VIGENTE — derivado das datas. Sem nenhum período cadastrado, **400**: turma sem período é a coluna `users.turma_id` de novo, com outro nome.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `UNIQUE (escola_id, periodo_letivo_id, nome)`: o \"8A de 2026\" e o \"8A de 2027\" são turmas DIFERENTES.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -3187,15 +3348,17 @@
           "turmas"
         ],
         "summary": "Edita nome, série ou turno da turma.",
-        "description": "Não move de período: isso seria reescrever o histórico do ano.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "Não move de período: isso seria reescrever o histórico do ano.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -3421,7 +3584,7 @@
           "turmas"
         ],
         "summary": "Os matriculados da turma — a lista nominal.",
-        "description": "Para o PROFESSOR a checagem é de MATRÍCULA, não de escola: o professor do 8A pedindo o 9B leva **403**. Antes disto, qualquer professor da escola lia qualquer turma dela — a única prova exigida era \"mesma escola\", que é a regra de tenancy e não a de quem dá aula ali.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- `matriculaId` é da MATRÍCULA e `id` é da PESSOA — mover e encerrar operam sobre o primeiro.\n- `senhaProvisoria: true` = ainda não fez o primeiro acesso.",
+        "description": "Para o PROFESSOR a checagem é de MATRÍCULA, não de escola: o professor do 8A pedindo o 9B leva **403**. Antes disto, qualquer professor da escola lia qualquer turma dela — a única prova exigida era \"mesma escola\", que é a regra de tenancy e não a de quem dá aula ali.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `matriculaId` é da MATRÍCULA e `id` é da PESSOA — mover e encerrar operam sobre o primeiro.\n- `senhaProvisoria: true` = ainda não fez o primeiro acesso.",
         "security": [
           {
             "token-da-plataforma": []
@@ -3429,8 +3592,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -3485,15 +3650,17 @@
           "turmas"
         ],
         "summary": "Matricula uma pessoa na turma.",
-        "description": "`papel` só admite `estudante` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "`papel` só admite `estudante` e `professor`. Gestor é papel da ESCOLA, não matrícula de turma — e é por isso que ele continua vendo a escola inteira.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -3576,15 +3743,17 @@
           "matriculas"
         ],
         "summary": "Move de turma, ou torna esta a turma de referência.",
-        "description": "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o estudante fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Informe `turmaDestinoId` OU `principal`, nunca os dois nem nenhum — é um `.refine()`, que o JSON Schema não sabe expressar.",
+        "description": "Mover é UM passo de propósito: à mão, o gestor tira da antiga e esquece de pôr na nova, e o estudante fica sem turma — invisível para o professor, sem nada na tela dizendo o que faltou.\n\nNenhuma das duas operações apaga linha.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Informe `turmaDestinoId` OU `principal`, nunca os dois nem nenhum — é um `.refine()`, que o JSON Schema não sabe expressar.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -3660,15 +3829,17 @@
           "matriculas"
         ],
         "summary": "Encerra a matrícula.",
-        "description": "**Não apaga linha**: grava `fim`. O dado da Vila, do UnooTube e do unooGPT continua pendurado nela, e apagar deixaria esse dado órfão de turma. Sair da REDE é outra coisa — `ativo = false` na pessoa.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "**Não apaga linha**: grava `fim`. O dado da Vila, do UnooTube e do unooGPT continua pendurado nela, e apagar deixaria esse dado órfão de turma. Sair da REDE é outra coisa — `ativo = false` na pessoa.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -3753,7 +3924,7 @@
           "periodos-letivos"
         ],
         "summary": "O calendário do contrato, com quantas turmas cada período tem.",
-        "description": "Catálogo do CONTRATO: sem `escola_id` e sem RLS, por isso controller separado. A contagem de turmas é o que impede apagar um período por engano.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- `vigente` é DERIVADO das datas, nunca coluna — estado que ninguém atualiza mente mais do que ajuda.",
+        "description": "Catálogo do CONTRATO: sem `escola_id` e sem RLS, por isso controller separado. A contagem de turmas é o que impede apagar um período por engano.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `vigente` é DERIVADO das datas, nunca coluna — estado que ninguém atualiza mente mais do que ajuda.",
         "security": [
           {
             "token-da-plataforma": []
@@ -3761,8 +3932,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       },
@@ -3833,15 +4006,17 @@
           "periodos-letivos"
         ],
         "summary": "Cria um período letivo — a primeira etapa da virada do ano.",
-        "description": "A partir da data de início ele passa a ser o vigente, e toda turma nova nasce nele. **A segunda etapa é importar o enturmamento**, e nenhuma das duas é automática: as turmas do ano anterior ficam onde estão, e é isso que preserva o histórico.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `fim` antes de `inicio` é **400**.",
+        "description": "A partir da data de início ele passa a ser o vigente, e toda turma nova nasce nele. **A segunda etapa é importar o enturmamento**, e nenhuma das duas é automática: as turmas do ano anterior ficam onde estão, e é isso que preserva o histórico.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `fim` antes de `inicio` é **400**.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -4497,7 +4672,7 @@
               "enum": [
                 "estudante",
                 "professor",
-                "gestor"
+                "gestor_escola"
               ]
             }
           },
@@ -4702,15 +4877,17 @@
           "usuarios"
         ],
         "summary": "As pessoas da escola, paginadas.",
-        "description": "A tela `/admin/usuarios`. Busca por nome, login, matrícula **e CPF — com ou sem pontuação**.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `situacao: sem-primeiro-acesso` lista quem ainda não trocou a senha da importação.\n- A consulta roda dentro de `comTenancy` porque inclui MATRÍCULAS, que têm RLS: fora do contexto a lista voltaria com todo mundo \"sem turma\", em silêncio.",
+        "description": "A tela `/admin/usuarios`. Busca por nome, login, matrícula **e CPF — com ou sem pontuação**.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `situacao: sem-primeiro-acesso` lista quem ainda não trocou a senha da importação.\n- A consulta roda dentro de `comTenancy` porque inclui MATRÍCULAS, que têm RLS: fora do contexto a lista voltaria com todo mundo \"sem turma\", em silêncio.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       },
@@ -4798,15 +4975,17 @@
           "usuarios"
         ],
         "summary": "Cadastra UMA pessoa da escola (estudante, professor ou gestor).",
-        "description": "O formulário de `/admin/usuarios`. Monta a mesma linha da planilha e delega ao importador (ADR-59) — por isso as regras de CPF, série, turno e login são idênticas às da importação.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **Criar é criar**: CPF, matrícula ou login já existentes devolvem 409 e nada é escrito — o caminho de quem já existe é `PATCH /usuarios/:id`.\n- CPF achado em OUTRA escola da rede devolve 409 sem id, sem nome e sem dizer qual escola: transferir é pela importação, que move a matrícula junto.\n- A senha sai UMA vez no corpo da resposta e é sempre provisória. Em branco, é sorteada.\n- `admin-contrato` NÃO entra aqui: ele não tem escola nem lotação, e tem rota própria.\n- Limite de 30 cadastros por minuto por usuário — é balcão, não carga.",
+        "description": "O formulário de `/admin/usuarios`. Monta a mesma linha da planilha e delega ao importador (ADR-59) — por isso as regras de CPF, série, turno e login são idênticas às da importação.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Criar é criar**: CPF, matrícula ou login já existentes devolvem 409 e nada é escrito — o caminho de quem já existe é `PATCH /usuarios/:id`.\n- CPF achado em OUTRA escola da rede devolve 409 sem id, sem nome e sem dizer qual escola: transferir é pela importação, que move a matrícula junto.\n- A senha sai UMA vez no corpo da resposta e é sempre provisória. Em branco, é sorteada.\n- `gestor_contrato` NÃO entra aqui: ele não tem escola nem lotação, e tem rota própria.\n- Limite de 30 cadastros por minuto por usuário — é balcão, não carga.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -4821,7 +5000,7 @@
                     "enum": [
                       "estudante",
                       "professor",
-                      "gestor"
+                      "gestor_escola"
                     ]
                   },
                   "nome": {
@@ -4874,9 +5053,9 @@
         }
       }
     },
-    "/usuarios/admin-contrato": {
+    "/usuarios/sem-escola": {
       "post": {
-        "operationId": "UsuariosController_criarAdminContrato",
+        "operationId": "UsuariosController_criarSemEscola",
         "parameters": [],
         "responses": {
           "201": {
@@ -4899,7 +5078,8 @@
                     "papel": {
                       "type": "string",
                       "enum": [
-                        "admin-contrato"
+                        "gestor_contrato",
+                        "gestor_regional"
                       ]
                     },
                     "senha": {
@@ -4922,15 +5102,16 @@
         "tags": [
           "usuarios"
         ],
-        "summary": "Cadastra outro admin do contrato (só admin do contrato pode).",
-        "description": "O único papel que NÃO nasce por importação: não pertence a escola nenhuma e enxerga a rede inteira. Conceder esse alcance é decisão do contrato, nunca de uma unidade — por isso gestor recebe 403 aqui.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Nasce com `escola_id` nulo e nenhuma lotação — é o mesmo formato que o seed cria.\n- O login é único na REDE inteira, não na escola: o índice `(escola_id, username)` não cobre linha com `escola_id` nulo, e a autenticação procura o username na rede.\n- A senha sai UMA vez e é provisória: o primeiro acesso cai em `/trocar-senha`.",
+        "summary": "Cadastra um papel SEM escola (`gestor_contrato` ou `gestor_regional`).",
+        "description": "Os papéis que não nascem por importação: não pertencem a escola nenhuma, e por isso não cabem numa linha de planilha da escola.\n\nQuem pode pedir qual sai da **cadeia de atribuição** (ADR-80): `admin` atribui `gestor_contrato`; `gestor_contrato` atribui `gestor_regional`. Pedir acima do próprio alcance é 403 — e a checagem é `podeCriarPapel`, não o `@Roles`, porque o guard protege a ROTA e não o campo `papel` do corpo.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Nasce com `escola_id` nulo e nenhuma lotação — é o mesmo formato que o seed cria.\n- `gestor_regional` EXIGE `regionalId`, e `gestor_contrato` o recusa: é o escopo de um e não do outro, com CHECK bicondicional no banco.\n- O login é único na REDE inteira, não na escola: o índice `(escola_id, username)` não cobre linha com `escola_id` nulo, e a autenticação procura o username na rede.\n- A senha sai UMA vez e é provisória: o primeiro acesso cai em `/trocar-senha`.\n- A rota se chamava `/usuarios/admin-contrato` e servia um papel só. O caminho mudou com o vocabulário (ADR-80).",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -4940,6 +5121,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "papel": {
+                    "type": "string",
+                    "enum": [
+                      "gestor_contrato",
+                      "gestor_regional"
+                    ]
+                  },
+                  "regionalId": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9][a-z0-9._-]{2,63}$"
+                  },
                   "nome": {
                     "type": "string",
                     "minLength": 1,
@@ -4964,6 +5156,7 @@
                   }
                 },
                 "required": [
+                  "papel",
                   "nome"
                 ],
                 "additionalProperties": false
@@ -5139,15 +5332,17 @@
           "usuarios"
         ],
         "summary": "Compatibilidade: delega para `POST /rostering/importar`.",
-        "description": "Continua respondendo porque scripts e documentação a citam. **Delega** — dois importadores lado a lado divergiriam na primeira regra nova.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "Continua respondendo porque scripts e documentação a citam. **Delega** — dois importadores lado a lado divergiriam na primeira regra nova.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -5236,15 +5431,17 @@
           "usuarios"
         ],
         "summary": "Edita nome, CPF, e-mail, papel ou situação da pessoa.",
-        "description": "Caminho de balcão: a planilha veio com o dígito trocado e a família traz o documento.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `cpf: \"\"` **APAGA** o campo — é o que se faz quando o número era de outra pessoa.\n- Sair da REDE é `ativo: false`, não DELETE: há dado de estudante pendurado em oito tabelas.",
+        "description": "Caminho de balcão: a planilha veio com o dígito trocado e a família traz o documento.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `cpf: \"\"` **APAGA** o campo — é o que se faz quando o número era de outra pessoa.\n- Sair da REDE é `ativo: false`, não DELETE: há dado de estudante pendurado em oito tabelas.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -5292,7 +5489,7 @@
                     "enum": [
                       "estudante",
                       "professor",
-                      "gestor"
+                      "gestor_escola"
                     ]
                   },
                   "ativo": {
@@ -5357,15 +5554,17 @@
           "usuarios"
         ],
         "summary": "Gera uma senha temporária e a devolve UMA vez.",
-        "description": "Marca a conta como provisória: quem entrar com ela cai em `/trocar-senha` sem saída — trava tripla, no middleware, no BFF e no `/api/exp-token`.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- A senha **não fica em coluna nem em log**: se a tela perder, gera-se outra.",
+        "description": "Marca a conta como provisória: quem entrar com ela cai em `/trocar-senha` sem saída — trava tripla, no middleware, no BFF e no `/api/exp-token`.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A senha **não fica em coluna nem em log**: se a tela perder, gera-se outra.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -5727,15 +5926,17 @@
           "estudantes"
         ],
         "summary": "Monta o documento SEM assinatura, para o hub assinar.",
-        "description": "A api monta; **o hub assina**, porque é ele que tem a chave e publica o JWKS. Os campos `emissor` e `emitidoEm` são preenchidos na assinatura, e por isso não vêm daqui.\n\nTransferir é dentro do contrato; o perfil portátil é para FORA dele — a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto (ADR-35).\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.\n- **Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\n- Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.\n- Sem `CONTRATO_ID` no hub, a emissão é **503**.",
+        "description": "A api monta; **o hub assina**, porque é ele que tem a chave e publica o JWKS. Os campos `emissor` e `emitidoEm` são preenchidos na assinatura, e por isso não vêm daqui.\n\nTransferir é dentro do contrato; o perfil portátil é para FORA dele — a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto (ADR-35).\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.\n- **Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\n- Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.\n- Sem `CONTRATO_ID` no hub, a emissão é **503**.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -5842,15 +6043,17 @@
           "estudantes"
         ],
         "summary": "Os documentos que esta escola já recebeu sobre esta criança.",
-        "description": "Contagens, não conteúdo: a tela diz o que veio sem despejar o documento inteiro.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- O que vem de fora vive SÓ em `perfis_portateis`: não vira matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de outra instalação.",
+        "description": "Contagens, não conteúdo: a tela diz o que veio sem despejar o documento inteiro.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- O que vem de fora vive SÓ em `perfis_portateis`: não vira matrícula, progresso nem perfil da Vila, e não entra em média. É a afirmação de outra instalação.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -5939,15 +6142,17 @@
           "perfis-recebidos"
         ],
         "summary": "O documento recebido inteiro, como veio.",
-        "description": "Guardado *verbatim*: alterar qualquer byte destruiria a assinatura. É a **única exceção** à contenção do CPF em `users.cpf` — o número é o conteúdo do documento (ADR-33).\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "Guardado *verbatim*: alterar qualquer byte destruiria a assinatura. É a **única exceção** à contenção do CPF em `users.cpf` — o número é o conteúdo do documento (ADR-33).\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       },
@@ -6000,15 +6205,17 @@
           "perfis-recebidos"
         ],
         "summary": "Apaga um perfil recebido.",
-        "description": "Existe porque o documento é de FORA: importado na criança errada, ou emitido por engano, ele tem de sair — e apagá-lo não apaga nada que esta rede tenha medido.\n\n**Papéis:** gestor, admin-contrato.",
+        "description": "Existe porque o documento é de FORA: importado na criança errada, ou emitido por engano, ele tem de sair — e apagá-lo não apaga nada que esta rede tenha medido.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -6094,15 +6301,17 @@
           "perfis-recebidos"
         ],
         "summary": "Recebe um documento de outra rede.",
-        "description": "Receber é **ato da escola de destino** — ninguém empurra perfil para dentro de uma rede; alguém de lá importa o arquivo, olhando para ele.\n\nA api verifica porque verificar é o passo que **não pode confiar em quem chama**.\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- **Assinatura inválida é RECUSA (400)** — isso é adulteração. Emissor inalcançável **não** é: entra marcado `nao-verificada`, e a tela sai em âmbar em vez de fingir que conferiu.\n- A classificação é pelo `code` da jose, NUNCA pelo texto: \"signature verification failed\" contém \"failed\", e uma versão anterior classificava documento FORJADO como \"não deu para conferir\".\n- `PORTABILIDADE_EMISSORES` é a decisão de confiança: o `emissor.hub` vem de dentro do arquivo, então o documento SELECIONA entre origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia = tudo entra `nao-verificada`.\n- **Importar não cria estudante**: liga pelo CPF a quem já está aqui. Matricular é ato da escola.",
+        "description": "Receber é **ato da escola de destino** — ninguém empurra perfil para dentro de uma rede; alguém de lá importa o arquivo, olhando para ele.\n\nA api verifica porque verificar é o passo que **não pode confiar em quem chama**.\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- **Assinatura inválida é RECUSA (400)** — isso é adulteração. Emissor inalcançável **não** é: entra marcado `nao-verificada`, e a tela sai em âmbar em vez de fingir que conferiu.\n- A classificação é pelo `code` da jose, NUNCA pelo texto: \"signature verification failed\" contém \"failed\", e uma versão anterior classificava documento FORJADO como \"não deu para conferir\".\n- `PORTABILIDADE_EMISSORES` é a decisão de confiança: o `emissor.hub` vem de dentro do arquivo, então o documento SELECIONA entre origens que o operador escreveu e nunca introduz uma (sem isso, SSRF). Vazia = tudo entra `nao-verificada`.\n- **Importar não cria estudante**: liga pelo CPF a quem já está aqui. Matricular é ato da escola.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -6852,14 +7061,15 @@
           "experiencias"
         ],
         "summary": "Publica ou faz rollback de uma versão.",
-        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
+        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -7248,7 +7458,7 @@
           "salas"
         ],
         "summary": "A sala: a turma, a grade de missões e quem liberou cada uma.",
-        "description": "A grade é a das experiências da SÉRIE da turma mais as transversais (`series: []`). `?todas=1` acrescenta as de outras séries, marcadas com `deOutraSerie` — turma multisseriada e reforço existem, mas trazê-las por padrão afogaria a grade do ano.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin-contrato leem a escola inteira, de propósito.",
+        "description": "A grade é a das experiências da SÉRIE da turma mais as transversais (`series: []`). `?todas=1` acrescenta as de outras séries, marcadas com `deOutraSerie` — turma multisseriada e reforço existem, mas trazê-las por padrão afogaria a grade do ano.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin-contrato leem a escola inteira, de propósito.",
         "security": [
           {
             "token-da-plataforma": []
@@ -7256,8 +7466,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -14520,7 +14732,7 @@
           "vila"
         ],
         "summary": "Turmas para o seletor da Vila.",
-        "description": "Sem filtro por série — a Vila é transversal —, mas **com** filtro por matrícula: o professor vê as turmas dele, o gestor vê a escola.\n\n**Papéis:** professor, gestor.",
+        "description": "Sem filtro por série — a Vila é transversal —, mas **com** filtro por matrícula: o professor vê as turmas dele, o gestor vê a escola.\n\n**Papéis:** professor, gestor_escola, gestor_regional.",
         "security": [
           {
             "token-da-plataforma": []
@@ -14528,7 +14740,8 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor"
+          "gestor_escola",
+          "gestor_regional"
         ],
         "x-acesso": "token"
       }
@@ -14643,7 +14856,7 @@
           "vila"
         ],
         "summary": "O agregado da turma — contagens, nunca por criança.",
-        "description": "Abre para GESTOR também, e nenhum campo aqui identifica uma criança: porta a regra do app de origem (\"pesquisador nunca vê a linha de uma criança; só agregados\").\n\nA distribuição de bolhas é o número que o professor precisa **antes** do debate: sem as três bolhas na sala, o momento em que a turma descobre que recebeu mensagens diferentes não acontece.\n\n**Papéis:** professor, gestor.",
+        "description": "Abre para GESTOR também, e nenhum campo aqui identifica uma criança: porta a regra do app de origem (\"pesquisador nunca vê a linha de uma criança; só agregados\").\n\nA distribuição de bolhas é o número que o professor precisa **antes** do debate: sem as três bolhas na sala, o momento em que a turma descobre que recebeu mensagens diferentes não acontece.\n\n**Papéis:** professor, gestor_escola, gestor_regional.",
         "security": [
           {
             "token-da-plataforma": []
@@ -14651,7 +14864,8 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor"
+          "gestor_escola",
+          "gestor_regional"
         ],
         "x-acesso": "token"
       }
@@ -16363,14 +16577,15 @@
           "analise"
         ],
         "summary": "Uma linha por atividade — o nível de produto.",
-        "description": "Guarda de papel própria: `admin-contrato` não é professor nem estudante, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**\n\n**Papéis:** admin-contrato.",
+        "description": "Guarda de papel própria: `gestor_contrato` não é professor nem estudante, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**\n\n**Papéis:** gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -16602,14 +16817,15 @@
           "analise"
         ],
         "summary": "O detalhe de uma atividade, com a eficácia da escrita por perfil.",
-        "description": "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre estudantes daquele perfil, menos o dwell dos MESMOS posts entre estudantes de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do estudante) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.\n\n**Papéis:** admin-contrato.",
+        "description": "`eficaciaDaEscrita` é **a única métrica do sistema capaz de refutar a premissa do produto**: o dwell dos posts de um perfil entre estudantes daquele perfil, menos o dwell dos MESMOS posts entre estudantes de outro — sempre com a exposição no denominador.\n\nSem o denominador, mediria o próprio viés do feed (que serve mais posts do perfil do estudante) e \"confirmaria\" a premissa por construção. Se o delta for zero, as fichas de linguagem não funcionam — e a gente descobre com número em vez de achismo.\n\n**Papéis:** gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -16657,14 +16873,15 @@
           "analise"
         ],
         "summary": "Export do nível de produto — por run ou por evento.",
-        "description": "Dois níveis porque as perguntas são diferentes: **por run** responde \"como as turmas se comparam\"; **por evento** é a matéria-prima para quem quer recalcular tudo fora daqui, inclusive contestando as definições. Um sistema de análise que não deixa auditar o próprio cálculo não deveria ser levado a sério.\n\n**Papéis:** admin-contrato.\n\n**Restrições:**\n- Teto de 200.000 eventos no nível `evento`.",
+        "description": "Dois níveis porque as perguntas são diferentes: **por run** responde \"como as turmas se comparam\"; **por evento** é a matéria-prima para quem quer recalcular tudo fora daqui, inclusive contestando as definições. Um sistema de análise que não deixa auditar o próprio cálculo não deveria ser levado a sério.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Teto de 200.000 eventos no nível `evento`.",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -17732,7 +17949,7 @@
           "unootube"
         ],
         "summary": "Turmas para o seletor de resultados.",
-        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=` — o token dele tem escola vazia e o TenancyInterceptor não abre contexto.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=` — o token dele tem escola vazia e o TenancyInterceptor não abre contexto.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -17740,8 +17957,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -17912,7 +18131,7 @@
           "unootube"
         ],
         "summary": "O que a turma fez na missão do UnooTube.",
-        "description": "Uma linha por estudante mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Uma linha por estudante mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -17920,8 +18139,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -22119,7 +22340,7 @@
           "unoogpt"
         ],
         "summary": "Turmas para o seletor de resultados do unooGPT.",
-        "description": "Filtradas por MATRÍCULA para o professor. **Gestor não entra aqui** — ele tem `/unoogpt/agregado/escola`.\n\n**Papéis:** professor, admin-contrato.",
+        "description": "Filtradas por MATRÍCULA para o professor. **Gestor não entra aqui** — ele tem `/unoogpt/agregado/escola`.\n\n**Papéis:** professor, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -22127,7 +22348,8 @@
         ],
         "x-papeis": [
           "professor",
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -22363,7 +22585,7 @@
           "unoogpt"
         ],
         "summary": "A folha da turma: relógio, retrato de conduta e uma linha por estudante.",
-        "description": "O retrato fala de **conduta, não de nota** — conta \"decidiram no escuro\" e \"justificaram por intuição\" em vez de somar acertos, porque a Missão não tem resposta certa.\n\n**Papéis:** professor, admin-contrato.",
+        "description": "O retrato fala de **conduta, não de nota** — conta \"decidiram no escuro\" e \"justificaram por intuição\" em vez de somar acertos, porque a Missão não tem resposta certa.\n\n**Papéis:** professor, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -22371,7 +22593,8 @@
         ],
         "x-papeis": [
           "professor",
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       },
@@ -22429,7 +22652,7 @@
           "unoogpt"
         ],
         "summary": "Zera a turma: apaga as partidas E o relógio.",
-        "description": "É o caminho de exclusão que substitui o `expires_at` do app de origem — prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\n\nO relógio vai junto porque rodar de novo com a aula \"já começada\" faria a segunda rodada nascer no meio da tempestade.\n\n**Papéis:** professor, admin-contrato.",
+        "description": "É o caminho de exclusão que substitui o `expires_at` do app de origem — prazo real, apertado por quem tem a posse pedagógica, em vez de coluna que nenhuma rotina cumpre.\n\nO relógio vai junto porque rodar de novo com a aula \"já começada\" faria a segunda rodada nascer no meio da tempestade.\n\n**Papéis:** professor, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -22437,7 +22660,8 @@
         ],
         "x-papeis": [
           "professor",
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -22541,7 +22765,7 @@
           "unoogpt"
         ],
         "summary": "Dá a largada, soma tempo, encerra, troca o modo ou redefine.",
-        "description": "É o único lugar onde alguém que não é o estudante mexe no que ele vê — e mesmo aqui **não toca o Passo dele**: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.\n\n**Papéis:** professor, admin-contrato.",
+        "description": "É o único lugar onde alguém que não é o estudante mexe no que ele vê — e mesmo aqui **não toca o Passo dele**: o que o professor controla é QUANDO dá para falar com o Cientista, não o que a criança decide.\n\n**Papéis:** professor, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -22549,7 +22773,8 @@
         ],
         "x-papeis": [
           "professor",
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -23205,7 +23430,7 @@
           "unoogpt"
         ],
         "summary": "A linha de UMA criança: leitura em graus e a Transcrição.",
-        "description": "**Professor only.** O relatório abre pelo que a missão MEDIU, em graus.\n\n**Papéis:** professor, admin-contrato.\n\n**Restrições:**\n- Número só com `grau: \"scored\"`. E `zero` (\"teve a chance e não foi\") nunca se confunde com `none` (\"a oportunidade não chegou\") — é a distinção mais importante do modelo, e ela está no TIPO.\n- `resumo` nunca afirma o que o estudante É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
+        "description": "**Professor only.** O relatório abre pelo que a missão MEDIU, em graus.\n\n**Papéis:** professor, gestor_contrato, admin.\n\n**Restrições:**\n- Número só com `grau: \"scored\"`. E `zero` (\"teve a chance e não foi\") nunca se confunde com `none` (\"a oportunidade não chegou\") — é a distinção mais importante do modelo, e ela está no TIPO.\n- `resumo` nunca afirma o que o estudante É, e partida curta some com o resto: dois minutos de jogo não sustentam frase.",
         "security": [
           {
             "token-da-plataforma": []
@@ -23213,7 +23438,8 @@
         ],
         "x-papeis": [
           "professor",
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -23282,7 +23508,7 @@
           "unoogpt"
         ],
         "summary": "As 8 fontes do cenário com o viés de cada uma, para o guia da aula.",
-        "description": "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/2-serie/unidade-1/guia`. O hub NÃO guarda cópia disto: a missão não revela o viés por software, e uma cópia desatualizada faria o professor contar à turma um viés que o cenário já não produz.\n\n**Papéis:** professor, admin-contrato.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo do cenário, igual para todo contrato.",
+        "description": "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/2-serie/unidade-1/guia`. O hub NÃO guarda cópia disto: a missão não revela o viés por software, e uma cópia desatualizada faria o professor contar à turma um viés que o cenário já não produz.\n\n**Papéis:** professor, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo do cenário, igual para todo contrato.",
         "security": [
           {
             "token-da-plataforma": []
@@ -23290,7 +23516,8 @@
         ],
         "x-papeis": [
           "professor",
-          "admin-contrato"
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -23363,15 +23590,17 @@
           "unoogpt"
         ],
         "summary": "O agregado da escola — uma linha por turma.",
-        "description": "Controller separado do professor de propósito. A alternativa — um `@Roles` misto com exceção por método — é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\n**Nada aqui identifica uma criança.**\n\n**Papéis:** gestor, admin-contrato.\n\n**Restrições:**\n- `admin-contrato` precisa dizer `?escolaId=`; gestor só vê a própria escola (403).",
+        "description": "Controller separado do professor de propósito. A alternativa — um `@Roles` misto com exceção por método — é como uma rota individual acaba aberta para gestor sem ninguém notar.\n\n**Nada aqui identifica uma criança.**\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `gestor_contrato` precisa dizer `?escolaId=`; gestor só vê a própria escola (403).",
         "security": [
           {
             "token-da-plataforma": []
           }
         ],
         "x-papeis": [
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -24457,7 +24686,7 @@
           "planejamento"
         ],
         "summary": "Os componentes curriculares que a rede oferta naquele ano.",
-        "description": "Com o total de habilidades da BNCC de cada um e as aulas semanais da matriz mediana de referência. `habilidadesPorArea: true` avisa que as habilidades vêm da ÁREA e não do componente — o caso de Biologia, Física e Química no Ensino Médio, que compartilham as habilidades de Ciências da Natureza. A BNCC não define grade horária: `aulasSemanaisDeReferencia` é a mediana observada em nove redes públicas e serve de ponto de partida editável, nunca de obrigação legal.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Com o total de habilidades da BNCC de cada um e as aulas semanais da matriz mediana de referência. `habilidadesPorArea: true` avisa que as habilidades vêm da ÁREA e não do componente — o caso de Biologia, Física e Química no Ensino Médio, que compartilham as habilidades de Ciências da Natureza. A BNCC não define grade horária: `aulasSemanaisDeReferencia` é a mediana observada em nove redes públicas e serve de ponto de partida editável, nunca de obrigação legal.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -24465,8 +24694,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -24672,7 +24903,7 @@
           "planejamento"
         ],
         "summary": "As habilidades da BNCC daquele componente naquele ano, agrupadas.",
-        "description": "Agrupadas pelo organizador que a BNCC usa NAQUELE componente — a Base não é uniforme: sete componentes usam unidade temática, Língua Portuguesa usa prática de linguagem, Língua Inglesa usa eixo, e o Ensino Médio agrupa por competência específica da área. `rotuloDoOrganizador` diz como nomear o agrupador na tela. `computacao` traz a camada transversal do ano (Res. CNE/CEB 1/2022) separada, com a explicação e os exemplos oficiais do anexo — a articulação entre uma habilidade de Computação e uma do componente é PROPOSTA pedagógica, não dado normativo: não existe mapeamento oficial.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Agrupadas pelo organizador que a BNCC usa NAQUELE componente — a Base não é uniforme: sete componentes usam unidade temática, Língua Portuguesa usa prática de linguagem, Língua Inglesa usa eixo, e o Ensino Médio agrupa por competência específica da área. `rotuloDoOrganizador` diz como nomear o agrupador na tela. `computacao` traz a camada transversal do ano (Res. CNE/CEB 1/2022) separada, com a explicação e os exemplos oficiais do anexo — a articulação entre uma habilidade de Computação e uma do componente é PROPOSTA pedagógica, não dado normativo: não existe mapeamento oficial.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -24680,8 +24911,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -29735,7 +29968,7 @@
           "o-eco-no-grupo"
         ],
         "summary": "Turmas para o seletor do painel.",
-        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -29743,8 +29976,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -29958,7 +30193,7 @@
           "o-eco-no-grupo"
         ],
         "summary": "O que a turma está fazendo na missão, ao vivo.",
-        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos**: a leitura é de progresso e de estratégia, não uma ordenação de crianças (PED-07).\n\n`distribuicao` conta A/B/C entre quem respondeu — é o material do debate, e aparece na tela como percentual da turma, nunca como 'quem errou'.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira.\n- `percursoComAsDuas` conta quem marcou as duas estratégias que a missão ensinou. Não é nota, e não aparece por estudante.",
+        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos**: a leitura é de progresso e de estratégia, não uma ordenação de crianças (PED-07).\n\n`distribuicao` conta A/B/C entre quem respondeu — é o material do debate, e aparece na tela como percentual da turma, nunca como 'quem errou'.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira.\n- `percursoComAsDuas` conta quem marcou as duas estratégias que a missão ensinou. Não é nota, e não aparece por estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -29966,8 +30201,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -30051,7 +30288,7 @@
           "o-eco-no-grupo"
         ],
         "summary": "Abre a Aula 2, congela o debate ou libera a reflexão.",
-        "description": "O relógio da AULA. É o que permite dizer 'agora é debate' e travar 30 telas de uma vez.\n\n**Idempotente de propósito**: `liberar-aula2` duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada. `redefinir` volta ao pré-aula SEM apagar percurso — é para quem abriu a aula antes da hora, não um 'zerar'.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- A etapa é PISO e TETO ao mesmo tempo: quem está adiantado não é puxado de volta (seria punir quem leu rápido), mas ninguém passa do breakpoint antes da Aula 2 nem da síntese antes do debate.\n- `congelar-debate` é a exceção que trava: no debate a turma tem de estar na mesma tela, porque a conversa é entre pares.",
+        "description": "O relógio da AULA. É o que permite dizer 'agora é debate' e travar 30 telas de uma vez.\n\n**Idempotente de propósito**: `liberar-aula2` duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada. `redefinir` volta ao pré-aula SEM apagar percurso — é para quem abriu a aula antes da hora, não um 'zerar'.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A etapa é PISO e TETO ao mesmo tempo: quem está adiantado não é puxado de volta (seria punir quem leu rápido), mas ninguém passa do breakpoint antes da Aula 2 nem da síntese antes do debate.\n- `congelar-debate` é a exceção que trava: no debate a turma tem de estar na mesma tela, porque a conversa é entre pares.",
         "security": [
           {
             "token-da-plataforma": []
@@ -30059,8 +30296,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -30155,7 +30394,7 @@
           "o-eco-no-grupo"
         ],
         "summary": "Gera as vozes e as fotos da missão (preparo da aula).",
-        "description": "Idempotente: o que já está no bucket é pulado, e preparar duas vezes é de graça.\n\nÉ o PROFESSOR quem prepara, não o primeiro estudante que abre a missão — a quota diária dele é 2 milhões de tokens contra 300 mil do estudante, e uma síntese de voz leva dezenas de segundos que ninguém deve esperar no meio da aula.\n\nA mídia é do CONTRATO, não da escola: toda a rede ouve a mesma Dona Lúcia. Duas turmas discutindo vozes diferentes do mesmo boato não estariam falando da mesma coisa.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- Uma falha não derruba as outras: `falharam` lista o que não saiu, e a missão continua jogável — o áudio cai na transcrição e a foto na ilustração procedural.\n- O print viral NÃO é gerado: ele é um recorte da foto da reportagem, para o par casado ser a mesma cena. Por isso a ordem de preparo importa.\n- 429 `teto-da-sessao` quando a quota diária de IA do professor acabou.",
+        "description": "Idempotente: o que já está no bucket é pulado, e preparar duas vezes é de graça.\n\nÉ o PROFESSOR quem prepara, não o primeiro estudante que abre a missão — a quota diária dele é 2 milhões de tokens contra 300 mil do estudante, e uma síntese de voz leva dezenas de segundos que ninguém deve esperar no meio da aula.\n\nA mídia é do CONTRATO, não da escola: toda a rede ouve a mesma Dona Lúcia. Duas turmas discutindo vozes diferentes do mesmo boato não estariam falando da mesma coisa.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Uma falha não derruba as outras: `falharam` lista o que não saiu, e a missão continua jogável — o áudio cai na transcrição e a foto na ilustração procedural.\n- O print viral NÃO é gerado: ele é um recorte da foto da reportagem, para o par casado ser a mesma cena. Por isso a ordem de preparo importa.\n- 429 `teto-da-sessao` quando a quota diária de IA do professor acabou.",
         "security": [
           {
             "token-da-plataforma": []
@@ -30163,8 +30402,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -30224,7 +30465,7 @@
           "o-eco-no-grupo"
         ],
         "summary": "Zerar a turma para uma segunda aplicação.",
-        "description": "Apaga o estado transacional da turma (sessões, conversa com Amara, percursos) e o gate da aula. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável — a aula anterior continua legível para a rede.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Apaga o estado transacional da turma (sessões, conversa com Amara, percursos) e o gate da aula. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável — a aula anterior continua legível para a rede.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -30232,8 +30473,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -32160,7 +32403,7 @@
           "rastro-boato"
         ],
         "summary": "Turmas para o seletor do painel.",
-        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -32168,8 +32411,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -32412,7 +32657,7 @@
           "rastro-boato"
         ],
         "summary": "O que a turma está fazendo na missão, ao vivo.",
-        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos e sem nível** (PED-07 e `PROIBIDO_NO_PAINEL`): a leitura é de PROGRESSO. Uma coluna de pontos ordenaria crianças na leitura ainda que a tela não ordenasse.\n\n`distribuicao` conta A/B/C entre quem respondeu — é o material do debate, nunca 'quem errou'.\n\n`reflexaoTexto` sai NESTA rota e só nela: é caixa livre de menor de idade, e quem a lê é o professor da turma dela (LGPD art. 14).\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira, não para punir.\n- `estouraramOAlerta` conta quem deixou o timer de 90s aparecer no pico. É o sinal da hipótese H3 do playtest, e um número alto pede intervenção oral — não uma anotação sobre a criança.\n- `auditaramTudo` é o KPI-01 da missão: quantos inspecionaram 3 ou mais metadados antes de intervir.",
+        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos e sem nível** (PED-07 e `PROIBIDO_NO_PAINEL`): a leitura é de PROGRESSO. Uma coluna de pontos ordenaria crianças na leitura ainda que a tela não ordenasse.\n\n`distribuicao` conta A/B/C entre quem respondeu — é o material do debate, nunca 'quem errou'.\n\n`reflexaoTexto` sai NESTA rota e só nela: é caixa livre de menor de idade, e quem a lê é o professor da turma dela (LGPD art. 14).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira, não para punir.\n- `estouraramOAlerta` conta quem deixou o timer de 90s aparecer no pico. É o sinal da hipótese H3 do playtest, e um número alto pede intervenção oral — não uma anotação sobre a criança.\n- `auditaramTudo` é o KPI-01 da missão: quantos inspecionaram 3 ou mais metadados antes de intervir.",
         "security": [
           {
             "token-da-plataforma": []
@@ -32420,8 +32665,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }
@@ -32504,7 +32751,7 @@
           "rastro-boato"
         ],
         "summary": "Abre a Aula 2, ou pausa a simulação de volta na Aula 1.",
-        "description": "O relógio da AULA. É o que permite fechar a Aula 1 em 30 telas ao mesmo tempo e fazer a turma chegar junta ao mapa da rede.\n\n**Idempotente de propósito**: `liberar-aula2` duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada. `pausar-simulacao` volta para `aula1` SEM apagar nada — é para quem abriu a Aula 2 antes da hora.\n\n**Papéis:** professor, gestor, admin-contrato.\n\n**Restrições:**\n- A etapa é PISO e TETO ao mesmo tempo: quem está adiantado não é puxado de volta (seria punir quem leu rápido), mas ninguém passa do breakpoint antes da Aula 2.\n- Quem já entregou o percurso fica em `fim`: `pausar-simulacao` não o traz de volta. O latch é do estudante, não da turma.",
+        "description": "O relógio da AULA. É o que permite fechar a Aula 1 em 30 telas ao mesmo tempo e fazer a turma chegar junta ao mapa da rede.\n\n**Idempotente de propósito**: `liberar-aula2` duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada. `pausar-simulacao` volta para `aula1` SEM apagar nada — é para quem abriu a Aula 2 antes da hora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A etapa é PISO e TETO ao mesmo tempo: quem está adiantado não é puxado de volta (seria punir quem leu rápido), mas ninguém passa do breakpoint antes da Aula 2.\n- Quem já entregou o percurso fica em `fim`: `pausar-simulacao` não o traz de volta. O latch é do estudante, não da turma.",
         "security": [
           {
             "token-da-plataforma": []
@@ -32512,8 +32759,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token",
         "requestBody": {
@@ -32596,7 +32845,7 @@
           "rastro-boato"
         ],
         "summary": "Zerar a turma — a segunda aplicação.",
-        "description": "Apaga sessões, auditorias, percursos e o gate desta turma para a missão poder ser refeita no ano seguinte (PED-13). **Preserva `telemetria_eventos`**, que é a trilha analítica imutável.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com a reflexão da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor, admin-contrato.",
+        "description": "Apaga sessões, auditorias, percursos e o gate desta turma para a missão poder ser refeita no ano seguinte (PED-13). **Preserva `telemetria_eventos`**, que é a trilha analítica imutável.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com a reflexão da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -32604,8 +32853,10 @@
         ],
         "x-papeis": [
           "professor",
-          "gestor",
-          "admin-contrato"
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
         ],
         "x-acesso": "token"
       }

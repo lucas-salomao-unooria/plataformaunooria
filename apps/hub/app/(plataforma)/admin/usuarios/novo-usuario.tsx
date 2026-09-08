@@ -14,6 +14,7 @@ import {
   Selection,
   TextField,
 } from "@edu/ui/ds";
+import { ehPapelSemEscola, papeisQueCria, rotuloDoPapel } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { normalizarSerie, rotuloDaSerie } from "@/lib/series";
 
@@ -58,11 +59,6 @@ export interface PessoaCriada {
 
 type ErroDeCampo = Record<string, string>;
 
-const PAPEIS_DO_GESTOR = [
-  { value: "estudante", label: "Estudante" },
-  { value: "professor", label: "Professor" },
-  { value: "gestor_escola", label: "Gestor" },
-];
 
 const TURNOS = [
   { value: "", label: "Sem turno" },
@@ -94,6 +90,8 @@ export function NovoUsuario({
   const [email, setEmail] = useState("");
   const [turmaId, setTurmaId] = useState("");
   const [turno, setTurno] = useState("");
+  const [regionalId, setRegionalId] = useState("");
+  const [regionais, setRegionais] = useState<Array<{ id: string; nome: string }>>([]);
   const [modoDaSenha, setModoDaSenha] = useState<"gerar" | "definir">("gerar");
   const [senha, setSenha] = useState("");
 
@@ -102,14 +100,21 @@ export function NovoUsuario({
   const [erroDeCampo, setErroDeCampo] = useState<ErroDeCampo>({});
   const [salvando, setSalvando] = useState(false);
 
-  const podeCriarAdmin = papelDeQuemCria === "gestor_contrato";
-  const papeis = podeCriarAdmin
-    ? [...PAPEIS_DO_GESTOR, { value: "gestor_contrato", label: "Admin do contrato" }]
-    : PAPEIS_DO_GESTOR;
+  /* Os papéis que ESTE autor pode atribuir saem da cadeia (ADR-80), não de uma
+     lista fixa: com a lista escrita à mão, o papel novo aparecia para quem não
+     podia criá-lo e a pessoa preenchia a tela inteira para receber 403 no fim.
+     Quem decide continua sendo a api — isto só evita oferecer o que ela recusa. */
+  const papeis = papeisQueCria(papelDeQuemCria).map((p) => ({
+    value: p,
+    label: rotuloDoPapel(p),
+  }));
 
-  /* `gestor_contrato` não pertence a escola nenhuma: turma, matrícula e turno
-     não têm onde ser gravados, e mostrá-los prometeria o que a api ignora. */
-  const ehAdmin = papelNovo === "gestor_contrato";
+  /* Papel SEM escola: turma, matrícula e turno não têm onde ser gravados, e
+     mostrá-los prometeria o que a api ignora. O `gestor_regional` está aqui
+     junto do `gestor_contrato` — ele também não pertence a unidade nenhuma; o
+     que ele tem é uma regional. */
+  const semEscola = ehPapelSemEscola(papelNovo as Papel);
+  const ehRegional = papelNovo === "gestor_regional";
   const pedeTurma = papelNovo === "estudante" || papelNovo === "professor";
 
   function limpar() {
@@ -121,6 +126,7 @@ export function NovoUsuario({
     setEmail("");
     setTurmaId("");
     setTurno("");
+    setRegionalId("");
     setModoDaSenha("gerar");
     setSenha("");
     setErro(null);
@@ -141,6 +147,21 @@ export function NovoUsuario({
   useEffect(() => {
     if (aberto) void carregarTurmas();
   }, [aberto, carregarTurmas]);
+
+  /* As regionais só são buscadas quando o papel escolhido precisa de uma: é
+     uma consulta a menos em 99% das aberturas do formulário, e a lista aparece
+     no mesmo instante em que o campo dela aparece. */
+  useEffect(() => {
+    if (!aberto || !ehRegional) return;
+    void (async () => {
+      try {
+        const r = await fetch("/api/plataforma/escolas?tipo=regional");
+        if (r.ok) setRegionais((await r.json()) as Array<{ id: string; nome: string }>);
+      } catch {
+        /* o seletor fica vazio e o botão não habilita — melhor que travar a tela */
+      }
+    })();
+  }, [aberto, ehRegional]);
 
   const opcoesDeTurma = useMemo(
     () => [
@@ -173,8 +194,10 @@ export function NovoUsuario({
     setErroDeCampo({});
     try {
       const turmaEscolhida = turmas.find((t) => t.id === turmaId);
-      const corpo = ehAdmin
+      const corpo = semEscola
         ? {
+            papel: papelNovo,
+            ...(ehRegional ? { regionalId } : {}),
             nome: nome.trim(),
             ...(cpf.trim() ? { cpf: cpf.trim() } : {}),
             ...(email.trim() ? { email: email.trim() } : {}),
@@ -195,7 +218,9 @@ export function NovoUsuario({
             ...(modoDaSenha === "definir" ? { senha } : {}),
           };
 
-      const rota = ehAdmin ? "/api/plataforma/usuarios/admin-contrato" : `/api/plataforma/usuarios${sufixo}`;
+      const rota = semEscola
+        ? "/api/plataforma/usuarios/sem-escola"
+        : `/api/plataforma/usuarios${sufixo}`;
       const resposta = await fetch(rota, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -288,6 +313,17 @@ export function NovoUsuario({
             onChange={(e) => setNome(e.target.value)}
           />
 
+          {ehRegional ? (
+            <Selection
+              id="novo-regional"
+              label="Regional"
+              helperText="É o escopo dele: as escolas desta regional passam a ser as que ele pode abrir. Ele não recebe lotação em nenhuma."
+              value={regionalId}
+              options={regionais.map((r) => ({ value: r.id, label: r.nome }))}
+              onChange={(v) => setRegionalId(String(v))}
+            />
+          ) : null}
+
           <div className="grid grid-cols-2 gap-4">
             <TextField
               id="novo-cpf"
@@ -298,7 +334,7 @@ export function NovoUsuario({
               error={erroDeCampo.cpf}
               onChange={(e) => setCpf(e.target.value)}
             />
-            {ehAdmin ? null : (
+            {semEscola ? null : (
               <TextField
                 id="novo-matricula"
                 label="Matrícula da rede"
@@ -384,7 +420,10 @@ export function NovoUsuario({
           variant="primary"
           size="md"
           isLoading={salvando}
-          disabled={!nome.trim()}
+          /* Sem regional não salva: a api reprova com 400 (o Zod tem `refine`
+             bicondicional), e descobrir isso depois de preencher tudo é pior
+             que o botão dizer que ainda falta algo. */
+          disabled={!nome.trim() || (ehRegional && !regionalId)}
           onClick={() => void criar()}
         >
           Criar

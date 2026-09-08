@@ -137,8 +137,18 @@ export const UsuarioCriadoSchema = z.object({
  *
  * Aqui o CPF é validado no Zod porque não há importador atrás para validá-lo.
  */
-export const CriarAdminContratoSchema = z
+export const CriarSemEscolaSchema = z
   .object({
+    /** `gestor_contrato` ou `gestor_regional` — a cadeia de atribuição
+     *  (`podeCriarPapel`) é quem decide se QUEM pede pode pedir este. */
+    papel: z.enum(["gestor_contrato", "gestor_regional"]),
+    /** Obrigatório para `gestor_regional`, e proibido para o outro: é o escopo
+     *  dele, e o banco tem CHECK bicondicional sobre isso. */
+    regionalId: z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9][a-z0-9._-]{2,63}$/)
+      .optional(),
     nome: z.string().trim().min(1).max(120),
     cpf: z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos").optional(),
     email: z.string().email().max(180).optional(),
@@ -149,12 +159,16 @@ export const CriarAdminContratoSchema = z
       .optional(),
     senha: z.string().min(8).max(200).optional(),
   })
-  .strict();
+  .strict()
+  .refine((v) => (v.papel === "gestor_regional") === Boolean(v.regionalId), {
+    path: ["regionalId"],
+    message: "Informe a regional do gestor regional — e só dele.",
+  });
 
-export const AdminContratoCriadoSchema = z.object({
+export const PessoaSemEscolaCriadaSchema = z.object({
   id: z.string().uuid(),
   nome: z.string(),
   usuario: z.string(),
-  papel: z.literal("gestor_contrato"),
+  papel: z.enum(["gestor_contrato", "gestor_regional"]),
   senha: z.string(),
 });

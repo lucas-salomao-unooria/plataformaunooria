@@ -22,8 +22,8 @@ import { Contrato } from "../openapi/contrato";
 import { RelatorioDeImportacaoSchema } from "../rostering/contrato-de-rotas";
 import { MAX_LINHAS, RosteringService } from "../rostering/rostering.service";
 import {
-  AdminContratoCriadoSchema,
-  CriarAdminContratoSchema,
+  PessoaSemEscolaCriadaSchema,
+  CriarSemEscolaSchema,
   CriarUsuarioSchema,
   EditarSchema,
   ListarSchema,
@@ -115,29 +115,31 @@ export class UsuariosController {
    * corpo com metade dos campos inertes e uma regra de papel escondida no
    * service; separado, a matriz papel x rota se lê sozinha.
    */
-  @Post("gestor_contrato")
+  @Post("sem-escola")
   @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
-    resumo: "Cadastra outro admin do contrato (só admin do contrato pode).",
+    resumo: "Cadastra um papel SEM escola (`gestor_contrato` ou `gestor_regional`).",
     descricao:
-      "O único papel que NÃO nasce por importação: não pertence a escola nenhuma e enxerga a rede inteira. Conceder esse alcance é decisão do contrato, nunca de uma unidade — por isso gestor recebe 403 aqui.",
-    corpo: CriarAdminContratoSchema,
-    resposta: AdminContratoCriadoSchema,
+      "Os papéis que não nascem por importação: não pertencem a escola nenhuma, e por isso não cabem numa linha de planilha da escola.\n\nQuem pode pedir qual sai da **cadeia de atribuição** (ADR-80): `admin` atribui `gestor_contrato`; `gestor_contrato` atribui `gestor_regional`. Pedir acima do próprio alcance é 403 — e a checagem é `podeCriarPapel`, não o `@Roles`, porque o guard protege a ROTA e não o campo `papel` do corpo.",
+    corpo: CriarSemEscolaSchema,
+    resposta: PessoaSemEscolaCriadaSchema,
     notas: [
       "Nasce com `escola_id` nulo e nenhuma lotação — é o mesmo formato que o seed cria.",
+      "`gestor_regional` EXIGE `regionalId`, e `gestor_contrato` o recusa: é o escopo de um e não do outro, com CHECK bicondicional no banco.",
       "O login é único na REDE inteira, não na escola: o índice `(escola_id, username)` não cobre linha com `escola_id` nulo, e a autenticação procura o username na rede.",
       "A senha sai UMA vez e é provisória: o primeiro acesso cai em `/trocar-senha`.",
+      "A rota se chamava `/usuarios/admin-contrato` e servia um papel só. O caminho mudou com o vocabulário (ADR-80).",
     ],
   })
-  async criarAdminContrato(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
-    const cota = rateLimit(`criar-admin:${req.auth.usuarioId}`, 5, 60_000);
+  async criarSemEscola(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
+    const cota = rateLimit(`criar-sem-escola:${req.auth.usuarioId}`, 5, 60_000);
     if (!cota.ok) throw new HttpException("Muitos cadastros seguidos — aguarde um minuto", 429);
 
-    const dados = CriarAdminContratoSchema.parse(body);
-    if (!podeCriarPapel(req.auth.perfil, "gestor_contrato")) {
-      throw new ForbiddenException(`${req.auth.perfil} não cria admin-contrato`);
+    const dados = CriarSemEscolaSchema.parse(body);
+    if (!podeCriarPapel(req.auth.perfil, dados.papel)) {
+      throw new ForbiddenException(`${req.auth.perfil} não atribui ${dados.papel}`);
     }
-    return this.usuarios.criarAdminContrato(dados);
+    return this.usuarios.criarSemEscola(dados);
   }
 
   /**

@@ -8,7 +8,7 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 80.** A numeração vai até ADR-79, sem lacuna: a 65 (que
+- **A PRÓXIMA ADR é a 81.** A numeração vai até ADR-80, sem lacuna: a 65 (que
   ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
   aula. **Confira na HORA de escrever o número, e não só `origin/dev`**: confira
   as branches de trabalho abertas E a de integração. Conferir `origin/dev` não

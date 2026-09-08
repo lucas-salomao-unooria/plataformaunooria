@@ -20,6 +20,7 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { escolaAlvo } from "../comum/escola-alvo";
 import { Contrato } from "../openapi/contrato";
 import {
+  BuscaDeProfissionaisSchema,
   EditarEscolaSchema,
   EscolaCruaSchema,
   EscolasDaPessoaSchema,
@@ -33,6 +34,7 @@ import {
   NovaEscolaSchema,
   OkSchema,
   PapelDeLotacaoQuery,
+  ProfissionaisDaRedeSchema,
   PessoasLotadasSchema,
   RegionalExcluidaSchema,
   ResumoDasEscolasSchema,
@@ -102,6 +104,32 @@ export class EscolasController {
   })
   resumo(@Req() req: Autenticado) {
     return this.escolas.resumoDasEscolasDaPessoa(req.auth.usuarioId);
+  }
+
+  /**
+   * PROFISSIONAIS DA REDE — professor e coordenação, sem dizer a escola.
+   *
+   * Declarada antes de `:id` pelo mesmo motivo de `minhas`: no Nest a primeira
+   * rota que casa vence.
+   */
+  @Get("profissionais")
+  @Roles(...GESTORES_DO_CONTRATO)
+  @Contrato({
+    resumo: "Busca professor e coordenação na REDE inteira.",
+    descricao:
+      "Por nome, login, matrícula ou CPF (com ou sem pontuação), **sem exigir a escola de origem**.\n\nExiste por um DEFEITO, não por conforto: a busca anterior era `GET /usuarios?escolaId=`, que filtra `users.escola_id` — o *cache* da lotação PRINCIPAL. Quem trabalha em duas escolas só era encontrado pela principal; procurando pela outra, a lista voltava vazia e quem administra concluía que a pessoa não existe. Era justamente a população que a lotação em lote existe para administrar.",
+    query: BuscaDeProfissionaisSchema,
+    resposta: ProfissionaisDaRedeSchema,
+    notas: [
+      "Devolve as escolas em que a pessoa JÁ está — é com elas que a tela marca \"já vinculado a esta escola\" e deixa esse destino fora da criação.",
+      "**Não devolve CPF.** A busca o aceita, mas o número numa lista que varre a rede inteira é superfície nova — login e escolas já distinguem homônimos (ADR-33 restringe o CPF visível ao balcão da escola).",
+      "Mínimo de 2 caracteres na busca, e 5 dígitos para casar CPF: sem piso, o primeiro clique no campo viraria varredura de `users`.",
+      "Sem `comTenancy`, e não é exceção nova: `users` e `lotacoes` já estão fora da RLS, e quem pergunta é o único papel que atravessa escolas.",
+    ],
+  })
+  profissionais(@Query() query: Record<string, string>) {
+    const { busca, limite } = BuscaDeProfissionaisSchema.parse(query);
+    return this.escolas.profissionaisDaRede(busca, limite);
   }
 
   @Get()

@@ -90,3 +90,40 @@ const ROTULOS: Record<Papel, string> = {
 export function rotuloDoPapel(papel: Papel): string {
   return ROTULOS[papel];
 }
+
+/**
+ * A CADEIA DE ATRIBUIÇÃO, espelhada da api (`usuarios/regras.ts`) — cada nível
+ * atribui o de baixo, e o alcance real é o fechamento transitivo:
+ *
+ *   admin → gestor_contrato → gestor_regional → gestor_escola → professor/estudante
+ *
+ * Aqui ela serve só para MONTAR o formulário: quem decide de verdade é a api,
+ * que reprova com 403 (`podeCriarPapel`) mesmo se esta lista mentir. Existe
+ * porque um seletor que oferece o que a api recusa é pior que um seletor curto
+ * — a pessoa preenche a tela inteira para receber um erro no fim.
+ */
+const ATRIBUI_DIRETAMENTE: Record<Papel, readonly Papel[]> = {
+  admin: ["gestor_contrato"],
+  gestor_contrato: ["gestor_regional"],
+  gestor_regional: ["gestor_escola"],
+  gestor_escola: ["professor", "estudante"],
+  professor: [],
+  estudante: [],
+};
+
+export function papeisQueCria(autor: Papel): readonly Papel[] {
+  const vistos = new Set<Papel>();
+  const fila = [...ATRIBUI_DIRETAMENTE[autor]];
+  while (fila.length > 0) {
+    const papel = fila.shift()!;
+    if (vistos.has(papel)) continue;
+    vistos.add(papel);
+    fila.push(...ATRIBUI_DIRETAMENTE[papel]);
+  }
+  return [...vistos];
+}
+
+/** Os papéis que não pertencem a escola nenhuma — vão pela rota
+ *  `POST /usuarios/sem-escola`, não pelo importador. */
+export const PAPEIS_SEM_ESCOLA: readonly Papel[] = ["gestor_contrato", "gestor_regional"];
+export const ehPapelSemEscola = (papel: Papel) => PAPEIS_SEM_ESCOLA.includes(papel);

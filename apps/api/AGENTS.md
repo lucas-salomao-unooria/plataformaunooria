@@ -113,6 +113,85 @@ literalmente verdadeira (ADR-30).
   troca a senha de quem já entrou.
 
 
+## Papéis: seis nomes e uma cadeia (ADR-80, 2026-09-08)
+
+`estudante | professor | gestor_escola | gestor_regional | gestor_contrato | admin`
+
+- **`gestor_escola`** era `gestor`; **`gestor_contrato`** era `admin-contrato` (o
+  hífen saiu: era o único do vocabulário, e separador diferente dos outros é a
+  diferença que ninguém lembra na hora de escrever a comparação).
+- **O vocabulário vive em `auth/claims.ts`**, e nada de comparar papel na mão:
+  use os grupos (`GESTORES_DA_ESCOLA`, `GESTORES_DO_CONTRATO`, `GESTORES`) nos
+  `@Roles` e `ehDoContrato(...)` no lugar de `perfil === "gestor_contrato"`. São
+  quarenta decoradores e ~20 comparações: com os nomes espalhados, o papel novo
+  que falta em UM deles continua compilando e continua respondendo 403 — não há
+  teste que aponte para isso, só uma tela que não abre.
+- **A CADEIA DE ATRIBUIÇÃO** (`usuarios/regras.ts`): cada nível atribui o de
+  baixo, e o alcance real é o **fechamento transitivo** —
+  `admin → gestor_contrato → gestor_regional → gestor_escola → professor/estudante`.
+  **Para cima, nunca, nem o próprio nível**: `gestor_contrato` deixou de criar
+  outro `gestor_contrato` e `gestor_escola` deixou de criar outra coordenação de
+  escola. As duas coisas valiam antes, e o aperto é a decisão de produto.
+  A tranca é `podeCriarPapel`, **não** o `@Roles`: o guard protege a ROTA, não o
+  campo `papel` do corpo.
+- **`gestor_regional` NÃO toca a RLS, e é isso que o tornou viável.** Ele
+  trabalha UMA escola por vez, como o `gestor_escola`; o token continua
+  carregando um `escola_id` e a política de RLS fica intocada. O que a regional
+  dele determina é a **lista de escolas que ele pode ativar**, e isso mora em UM
+  lugar — `escolasDaPessoa` —, por onde login, seletor do cabeçalho e validação
+  da troca de escola já passam. Espalhada, faltaria em um dos três, e o sintoma
+  é um supervisor sem escola nenhuma para escolher.
+  `temLotacao` também aceita "a escola é da minha regional": sem isso o histórico
+  do estudante transferido daria 403 ao supervisor da diretoria onde a criança
+  está.
+- **`users.regional_id`** é o escopo dele, e SÓ dele (CHECK bicondicional +
+  trigger exigindo que a linha apontada seja `tipo='regional'` — CHECK não aceita
+  subconsulta no Postgres). Coluna, e não lotação na regional: a ADR-79 proibiu
+  isso, e a razão continua valendo (escola fantasma no seletor).
+- **`admin` é a conta da Unooria**, com as MESMAS capacidades de
+  `gestor_contrato`. Inventar capacidade para justificar o nome seria criar
+  acesso sem ninguém pedir. O que ele tem de próprio é a ponta da cadeia.
+- **`POST /usuarios/admin-contrato` virou `POST /usuarios/sem-escola`**, com
+  `papel` no corpo: a rota serve os dois papéis sem escola, e um caminho com o
+  nome de um deles mentiria sobre o outro. `gestor_regional` exige `regionalId`
+  e `gestor_contrato` o recusa (Zod com `refine` bicondicional).
+- **O nome canônico é sinônimo de si mesmo em `SINONIMOS_DE_PAPEL`.** A chave da
+  busca passa por `replace(/[\s._-]/g, "")`, então `gestor_escola` chega como
+  `gestorescola` — e o cadastro unitário, que serializa o papel numa linha de
+  planilha antes de chamar o importador (ADR-59), reprovava o próprio valor que
+  acabara de escrever. Passou no typecheck e caiu no teste.
+- **O hub tem uma SEGUNDA cópia da cadeia** (`hub/lib/papeis.ts`), porque o
+  middleware roda no edge. Ela serve só para montar o formulário; quem decide é
+  a api. O que segura a divergência é o `Record` exaustivo de rótulos — papel
+  novo sem rótulo não compila.
+
+## Buscar profissional na REDE (ADR-80)
+
+`GET /escolas/profissionais?busca=` — professor e coordenação, por nome, login,
+matrícula ou CPF, **sem escola de origem**. Só os perfis de contrato.
+
+**Existe por um DEFEITO, não por conforto.** A busca anterior era
+`GET /usuarios?escolaId=`, que filtra `users.escola_id` — o *cache* da lotação
+PRINCIPAL. Quem trabalha em duas escolas só era encontrado pela principal;
+procurando pela outra — uma escola onde a pessoa realmente está — a lista voltava
+vazia e quem administra concluía que ela não existe. Era exatamente a população
+que a lotação em lote existe para administrar.
+
+- **Não devolve CPF.** A busca o ACEITA (com ou sem pontuação, piso de 5
+  dígitos), mas o número numa lista que varre a rede é superfície nova — a ADR-33
+  restringe o CPF visível ao balcão da escola. Login e as escolas em que a pessoa
+  está já distinguem homônimos, que é o que a tela precisa.
+- **Sem `comTenancy`, e não é exceção nova**: `users` e `lotacoes` já estão fora
+  da RLS, e quem pergunta é o único papel que atravessa escolas.
+- **`lotarEmLote` diz o que FEZ**, por escola: `criadas`, `reabertas`,
+  `jaVinculadas`, `ignoradas`. Era `lotadas: number`, que contava também as
+  escolas onde a pessoa já estava — "agora está em 3 escolas" saía igual tendo
+  criado três vínculos ou nenhum.
+- **Papel divergente de `users.role` é RECUSA.** A chave única de `lotacoes` é
+  (escola, pessoa, PAPEL): com papel diferente, a mesma pessoa ganharia uma
+  SEGUNDA linha na mesma escola, e a contagem da tela a somaria nas duas colunas.
+  Era o caminho por onde "não alterar o perfil silenciosamente" se quebrava.
+
 ## Identidade e enturmamento (2026-08-28)
 
 **Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As

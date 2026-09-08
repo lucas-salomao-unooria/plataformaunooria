@@ -291,7 +291,8 @@ describe("o que o formulário precisa recusar", () => {
 
 describe("criar admin do contrato", () => {
   it("nasce sem escola e sem lotação — não é pessoa de unidade nenhuma", async () => {
-    const criado = await usuarios.criarAdminContrato({
+    const criado = await usuarios.criarSemEscola({
+      papel: "gestor_contrato",
       nome: "Helena Teixeira Barros",
       cpf: CPF_DO_ADMIN,
       usuario: "e2e.admin.teste",
@@ -308,14 +309,14 @@ describe("criar admin do contrato", () => {
 
   it("login que já pertence a alguém de uma escola é 409 — o login procura na REDE", async () => {
     const { corpo } = await recusa(
-      usuarios.criarAdminContrato({ nome: "Colide Com Professor", usuario: "rafa.pinto" }),
+      usuarios.criarSemEscola({ papel: "gestor_contrato", nome: "Colide Com Professor", usuario: "rafa.pinto" }),
     );
     expect(corpo.codigo).toBe("LOGIN_JA_EXISTE");
   });
 
   it("CPF que já existe na rede é 409", async () => {
     const { corpo } = await recusa(
-      usuarios.criarAdminContrato({ nome: "Mesmo CPF", cpf: CPF_NOVO, usuario: "outro.admin.teste" }),
+      usuarios.criarSemEscola({ papel: "gestor_contrato", nome: "Mesmo CPF", cpf: CPF_NOVO, usuario: "outro.admin.teste" }),
     );
     expect(corpo.codigo).toBe("CPF_JA_EXISTE");
   });

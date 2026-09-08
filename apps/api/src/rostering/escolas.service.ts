@@ -43,6 +43,14 @@ export type ExclusaoDeRegional =
 /** Recusa de REGRA na escrita de escola — distinta de `null`, que é ausência. */
 export type RecusaDeEscola = { erro: "regional-invalida" | "sem-regional" };
 
+/** O resultado de `lotarEmLote`, por escola — ver `LoteDeLotacoesSchema`. */
+export interface LoteDeVinculos {
+  criadas: string[];
+  reabertas: string[];
+  jaVinculadas: string[];
+  ignoradas: string[];
+}
+
 export interface FiltroDeEscolas {
   busca?: string;
   /** `escola` | `regional` | `rede` */
@@ -375,12 +383,19 @@ export class EscolasService {
     escolaIds: string[],
     usuarioId: string,
     papel: "professor" | "gestor_escola",
-  ): Promise<{ lotadas: number; ignoradas: string[] } | null> {
+  ): Promise<LoteDeVinculos | null> {
     const periodo = await this.periodoDeHoje();
     const inicio = periodo?.inicio ?? new Date();
 
     const usuario = await this.prisma.user.findUnique({ where: { id: usuarioId } });
     if (!usuario || ehDoContrato(usuario.role)) return null;
+    /* O PAPEL do vínculo é o da PESSOA, e divergir é recusa — não escolha.
+       A chave única de `lotacoes` é (escola, pessoa, PAPEL): com um papel
+       diferente do de `users.role`, a mesma pessoa ganharia uma SEGUNDA linha na
+       mesma escola, e a contagem da tela a somaria nas duas colunas. Era o
+       caminho por onde o "não alterar o perfil silenciosamente" do card se
+       quebrava — e um candidato à divergência de contagem de professores. */
+    if (usuario.role !== papel) return null;
 
     // Só unidades: lotar alguém numa `regional` daria uma escola que não tem
     // turma, estudante nem dado — e a pessoa apareceria com uma escola fantasma no
@@ -392,14 +407,16 @@ export class EscolasService {
     const validas = new Set(existentes.map((e) => e.id));
     const ignoradas = escolaIds.filter((id) => !validas.has(id));
 
-    let lotadas = 0;
+    const criadas: string[] = [];
+    const reabertas: string[] = [];
+    const jaVinculadas: string[] = [];
     // Uma transação por escola: cinquenta lotações numa transação só seguraria
     // conexão por segundos, e cada uma é independente — falhar na décima não é
     // motivo para desfazer as nove.
     for (const escolaId of validas) {
-      await this.prisma.$transaction(async (tx) => {
+      const efeito = await this.prisma.$transaction(async (tx) => {
         const primeira = (await tx.lotacao.count({ where: { usuarioId, fim: null } })) === 0;
-        await garantirLotacao(tx, {
+        return garantirLotacao(tx, {
           escolaId,
           usuarioId,
           papel,
@@ -407,9 +424,70 @@ export class EscolasService {
           principal: primeira,
         });
       });
-      lotadas += 1;
+      if (efeito === "criada") criadas.push(escolaId);
+      else if (efeito === "reaberta") reabertas.push(escolaId);
+      else jaVinculadas.push(escolaId);
     }
-    return { lotadas, ignoradas };
+    return { criadas, reabertas, jaVinculadas, ignoradas };
+  }
+
+  /**
+   * PROFISSIONAIS DA REDE — professor e coordenação, buscados por nome, login,
+   * matrícula ou CPF, SEM dizer em que escola a pessoa está.
+   *
+   * É a rota que o card pediu, e ela existe por um defeito, não por conforto: a
+   * busca anterior era `GET /usuarios?escolaId=`, que filtra por
+   * `users.escola_id` — o CACHE da lotação PRINCIPAL. Quem trabalha em duas
+   * escolas só era encontrado pela principal; procurando pela outra — uma escola
+   * onde ela realmente está — a lista voltava vazia, e o administrador concluía
+   * que a pessoa não existia. Justamente a população que esta tela administra.
+   *
+   * Sem `comTenancy`, e isso não é exceção nova: `users` e `lotacoes` já estão
+   * fora da RLS (são lidas no login, antes de haver escola), e quem pergunta é o
+   * único papel autorizado a atravessar escolas. A tranca é o `@Roles` da rota,
+   * a mesma de `GET /escolas`.
+   */
+  async profissionaisDaRede(busca: string, limite: number) {
+    const termo = busca.trim();
+    const digitos = termo.replace(/\D/g, "");
+    const pessoas = await this.prisma.user.findMany({
+      where: {
+        role: { in: ["professor", "gestor_escola"] },
+        ativo: true,
+        OR: [
+          { displayName: { contains: termo, mode: "insensitive" } },
+          { username: { contains: termo, mode: "insensitive" } },
+          { matriculaExterna: { contains: termo, mode: "insensitive" } },
+          /* CPF entra na busca com ou sem pontuação, como em `/usuarios`. O
+             piso de 5 dígitos evita que "12" varra a rede por um pedaço de
+             documento que casa com qualquer coisa. */
+          ...(digitos.length >= 5 ? [{ cpf: { contains: digitos } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+        role: true,
+        lotacoes: {
+          where: { fim: null },
+          select: { papel: true, escola: { select: { id: true, nome: true } } },
+        },
+      },
+      orderBy: [{ displayName: "asc" }],
+      take: limite,
+    });
+    return pessoas.map((p) => ({
+      id: p.id,
+      nome: p.displayName,
+      usuario: p.username,
+      papel: p.role,
+      escolas: p.lotacoes.map((l) => ({
+        id: l.escola.id,
+        nome: l.escola.nome,
+        papel: l.papel,
+      })),
+    }));
   }
 
   /**

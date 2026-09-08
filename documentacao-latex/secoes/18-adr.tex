@@ -5435,3 +5435,131 @@ verdade --- aí a regional padrão passa a poder herdar o nome dela e a variáve
 \cd{CONTRATO\_NOME} sai do hub para o banco. Ou a rede que administra mais de um
 contrato numa stack, que é quando \enquote{a rede tem ao menos uma regional}
 deixa de ser um invariante global e passa a ser por contrato.
+
+\section{ADR-80 --- Seis papéis, com cadeia de atribuição, e o regional que não
+mexe na RLS}
+\label{adr:modelo-de-papeis}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O vocabulário de papéis eram quatro nomes ---
+\cd{estudante}, \cd{professor}, \cd{gestor}, \cd{admin-contrato} --- e a
+\adrr{ADR-34} havia decidido, com razão escrita, que o supervisor de uma
+diretoria \textbf{não} seria papel novo: ele é um \cd{gestor} lotado nas escolas
+dela, porque \enquote{autorizar por hierarquia seria uma segunda fonte de
+verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse um
+pai}.
+
+A operação pediu outra coisa. Uma rede estadual tem gente que trabalha no nível
+da diretoria e não tem lotação em unidade nenhuma, e o vocabulário não dizia de
+quem era a decisão de conceder cada nível de acesso.
+
+\textbf{Decisão (de produto, contra a recomendação técnica registrada).} Seis
+papéis:
+
+\begin{center}
+\cd{estudante} $\cdot$ \cd{professor} $\cdot$ \cd{gestor\_escola} $\cdot$
+\cd{gestor\_regional} $\cdot$ \cd{gestor\_contrato} $\cdot$ \cd{admin}
+\end{center}
+
+Dois são renome sem mudança de semântica (\cd{gestor} \seta{}
+\cd{gestor\_escola}; \cd{admin-contrato} \seta{} \cd{gestor\_contrato} --- o
+hífen sai porque era o único do vocabulário, e um separador diferente dos
+outros é a diferença que ninguém lembra na hora de escrever a comparação). Dois
+são novos: \cd{gestor\_regional} cobre as escolas de uma regional sem lotação em
+nenhuma, e \cd{admin} é a conta da Unooria.
+
+\textbf{A CADEIA DE ATRIBUIÇÃO.} Cada nível atribui o de baixo:
+
+\begin{center}
+\cd{admin} \seta{} \cd{gestor\_contrato} \seta{} \cd{gestor\_regional} \seta{}
+\cd{gestor\_escola} \seta{} \cd{professor}, \cd{estudante}
+\end{center}
+
+Escrita como uma tabela de \enquote{o que EU atribuo diretamente}, com o alcance
+real saindo do \textbf{fechamento transitivo} (\cd{papeisQueCria}). As duas
+coisas separadas de propósito: a cadeia é a regra de negócio, que se lê numa
+olhada; o fechamento é a consequência. Escrever a lista já expandida em cada
+papel daria quatro cópias da mesma regra, e a divergência que ninguém percebe é
+a que dá acesso a mais.
+
+O fechamento e não a cadeia estrita porque quem atribui um \cd{gestor\_regional}
+atribui, por definição, alguém que atribui \cd{gestor\_escola}: recusar o atalho
+não protege nada --- ele criaria o regional e pediria a ele --- e transformaria
+toda operação de balcão numa corrente de três telefonemas.
+
+\textbf{O que a decisão APERTOU, e não é regressão.} Antes, um \cd{gestor} criava
+outro \cd{gestor} e um \cd{admin-contrato} criava outro \cd{admin-contrato}. Os
+dois deixaram de valer: um papel que se autoatribui não tem quem o conceda, e o
+alcance do segundo é a rede inteira de um contrato. Duas suítes e dois testes
+afirmavam o comportamento antigo e foram reescritos para afirmar a cadeia.
+
+\textbf{O \cd{gestor\_regional} NÃO toca a RLS, e é isso que o torna viável.} Ele
+trabalha \textbf{uma escola por vez}, como o \cd{gestor\_escola}: o \emph{token}
+continua carregando um \cd{escola\_id}, as 31 tabelas com \cd{escola\_id} e a
+política de RLS ficam intocadas, e a regra inviolável nº 1 continua literalmente
+verdadeira. O que a regional dele determina é a \textbf{lista de escolas que ele
+pode ativar} --- e essa diferença mora em UM lugar, \cd{escolasDaPessoa}, por
+onde o login, o seletor do cabeçalho e a validação da troca de escola já passam.
+Espalhada, faltaria em um dos três, e o sintoma seria um supervisor sem escola
+nenhuma para escolher.
+
+A regional dele é \cd{users.regional\_id} --- coluna, e não uma lotação
+apontando para a linha da regional. A \adrr{ADR-79} proibiu lotação em regional,
+e a razão continua valendo: ela apareceria no seletor do cabeçalho como uma
+escola sem turma, sem estudante e sem dado.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Estender a política de RLS para aceitar um CONJUNTO de escolas}
+    (\cd{escola\_id = ANY(...)} com as escolas da regional na sessão): é a
+    leitura literal de \enquote{gestor regional}, e faria toda tabela de dado de
+    estudante depender de um segundo caminho de autorização --- exatamente a
+    superfície que a regra nº 1 existe para não ter. Se um dia o produto quiser
+    a visão SOMADA da diretoria, é esta a alternativa, e ela é uma ADR própria.
+  \item \emph{Manter a \adrr{ADR-34} e resolver por lotação em lote}: era a
+    recomendação técnica, e ela continua funcionando --- o que ela não resolve é
+    quem responde pela concessão. Decisão de produto foi ter o papel.
+  \item \emph{Dar ao \cd{admin} capacidades próprias}: ele tem as mesmas de
+    \cd{gestor\_contrato}. O que o distingue é de QUEM é a conta, não o que ela
+    pode --- e inventar capacidade para justificar o nome seria criar acesso sem
+    ninguém pedir.
+  \item \emph{Escrever os cinco nomes em cada \cd{@Roles}}: são quarenta
+    decoradores. A rota esquecida continua compilando e continua respondendo
+    403, e não existe teste que aponte para isso --- só uma tela que não abre.
+    Daí os grupos \cd{GESTORES\_DA\_ESCOLA} e \cd{GESTORES\_DO\_CONTRATO} e o
+    \cd{ehDoContrato}, que substituiu as $\sim$20 comparações
+    \cd{perfil === "admin-contrato"} espalhadas pela API.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é a maior}: o renome atravessa TODO módulo
+que tem \cd{@Roles} --- 101 arquivos, e o \emph{hook} de fatia acusou 31 deles em
+módulos que nada têm a ver com a frente (Vila, unooGPT, unooTube, Eco, Rastro,
+análise, salas, portabilidade). Vocabulário de papel não É fatia vertical, e é o
+tipo de mudança que a \adrr{ADR-71} diz para não paralelizar: com quatro
+\emph{branches} abertas, esta conflita com todas.
+
+\emph{Ruim}: a rota \cd{POST /usuarios/admin-contrato} virou
+\cd{POST /usuarios/sem-escola}, e o corpo passou a levar \cd{papel}. É mudança
+observável, e o motivo é a cadeia: a rota serve agora dois papéis
+(\cd{gestor\_contrato} e \cd{gestor\_regional}), e um caminho com o nome de um
+deles mentiria sobre o outro.
+
+\emph{Ruim, e admitido}: \cd{apps/hub/lib/papeis.ts} passou a ter uma segunda
+cópia da cadeia, porque o \emph{middleware} roda no \emph{edge} e não importa da
+API. O que segura a divergência é o \cd{Record} exaustivo de rótulos --- papel
+novo sem rótulo não compila --- e o fato de quem decide ser sempre a API, que
+responde 403 mesmo se a lista da tela mentir.
+
+\emph{Bom, e não estava no pedido}: a cadeia fechou um caminho real de
+\enquote{alterar o perfil silenciosamente}. A chave única de \cd{lotacoes} é
+(escola, pessoa, PAPEL), e \cd{lotarEmLote} aceitava um \cd{papel} divergente de
+\cd{users.role} --- criando uma SEGUNDA linha para a mesma pessoa na mesma
+escola, que a contagem da tela somaria nas duas colunas. Agora divergência é
+recusa. É também um candidato à divergência de contagem de professores relatada
+em separado.
+
+\textbf{Gatilho de reavaliação.} O produto pedir a visão SOMADA das escolas de
+uma regional --- aí a alternativa da RLS por conjunto volta à mesa, com ADR
+própria. Ou a Unooria precisar de capacidade que \cd{gestor\_contrato} não tem,
+que é quando \cd{admin} deixa de ser um rótulo e passa a ser um papel.

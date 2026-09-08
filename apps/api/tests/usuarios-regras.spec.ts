@@ -12,23 +12,34 @@
 import { COLUNAS_MODELO } from "../src/rostering/catalogo";
 import { lerPlanilha, planilhaDeUmaPessoa } from "../src/rostering/planilha";
 import { parseCsv } from "../src/usuarios/csv";
-import { podeCriarPapel } from "../src/usuarios/regras";
+import { podeCriarPapel, papeisQueCria} from "../src/usuarios/regras";
 
 describe("podeCriarPapel", () => {
-  it("gestor cria estudante, professor e gestor", () => {
+  it("gestor da escola cria as pessoas DA ESCOLA — e não outra coordenação", () => {
     expect(podeCriarPapel("gestor_escola", "estudante")).toBe(true);
     expect(podeCriarPapel("gestor_escola", "professor")).toBe(true);
-    expect(podeCriarPapel("gestor_escola", "gestor_escola")).toBe(true);
+    /* Isto MUDOU com a ADR-80, e é aperto, não regressão: quem atribui a
+       coordenação de uma escola é o `gestor_regional`. Antes um gestor criava
+       outro gestor, e o alcance da unidade se propagava sem ninguém acima
+       decidir. */
+    expect(podeCriarPapel("gestor_escola", "gestor_escola")).toBe(false);
   });
 
-  it("gestor NÃO cria admin-contrato — o alcance da rede é decisão do contrato", () => {
+  it("gestor da escola NÃO cria papel de rede — o alcance é decisão de quem está acima", () => {
+    expect(podeCriarPapel("gestor_escola", "gestor_regional")).toBe(false);
     expect(podeCriarPapel("gestor_escola", "gestor_contrato")).toBe(false);
+    expect(podeCriarPapel("gestor_escola", "admin")).toBe(false);
   });
 
-  it("admin-contrato cria os quatro, inclusive outro admin-contrato", () => {
-    for (const papel of ["estudante", "professor", "gestor_escola", "gestor_contrato"] as const) {
+  it("gestor do contrato alcança tudo abaixo dele, e nada no nível dele", () => {
+    for (const papel of ["estudante", "professor", "gestor_escola", "gestor_regional"] as const) {
       expect(podeCriarPapel("gestor_contrato", papel)).toBe(true);
     }
+    /* Também MUDOU: quem atribui `gestor_contrato` é a Unooria (`admin`). Um
+       papel que se autoatribui não tem quem o conceda — e o alcance dele é a
+       rede inteira de um contrato. */
+    expect(podeCriarPapel("gestor_contrato", "gestor_contrato")).toBe(false);
+    expect(podeCriarPapel("gestor_contrato", "admin")).toBe(false);
   });
 
   it("estudante e professor não criam ninguém", () => {
@@ -96,5 +107,52 @@ describe("planilhaDeUmaPessoa", () => {
       planilhaDeUmaPessoa({ nome: "Ana Lima", papel: "gestor_escola", cpf: "111.111.111-11" }),
     );
     expect(leitura.erros.map((e) => e.campo)).toContain("cpf");
+  });
+});
+
+/**
+ * A CADEIA DE ATRIBUIÇÃO (ADR-80): cada nível atribui o de baixo.
+ *
+ *   admin → gestor_contrato → gestor_regional → gestor_escola → professor/estudante
+ *
+ * O que estes casos protegem é a direção. A regra é uma tabela pequena e o
+ * alcance sai do fechamento transitivo dela — o risco não é a tabela estar
+ * errada, é alguém "otimizar" o fechamento para uma lista escrita à mão e a
+ * lista divergir para o lado que dá acesso a mais.
+ */
+describe("cadeia de atribuição de papéis", () => {
+  test("cada nível atribui o de baixo, e não o de cima", () => {
+    expect(podeCriarPapel("admin", "gestor_contrato")).toBe(true);
+    expect(podeCriarPapel("gestor_contrato", "gestor_regional")).toBe(true);
+    expect(podeCriarPapel("gestor_regional", "gestor_escola")).toBe(true);
+    expect(podeCriarPapel("gestor_escola", "professor")).toBe(true);
+    expect(podeCriarPapel("gestor_escola", "estudante")).toBe(true);
+
+    // Para cima, nunca.
+    expect(podeCriarPapel("gestor_contrato", "gestor_contrato")).toBe(false);
+    expect(podeCriarPapel("gestor_contrato", "admin")).toBe(false);
+    expect(podeCriarPapel("gestor_regional", "gestor_regional")).toBe(false);
+    expect(podeCriarPapel("gestor_regional", "gestor_contrato")).toBe(false);
+    expect(podeCriarPapel("gestor_escola", "gestor_escola")).toBe(false);
+    expect(podeCriarPapel("gestor_escola", "gestor_regional")).toBe(false);
+  });
+
+  test("o alcance é TRANSITIVO: quem atribui o regional atribui o que ele atribui", () => {
+    /* Não é frouxidão: quem cria um `gestor_regional` cria, por definição,
+       alguém que cria `gestor_escola`. Recusar o atalho não protegeria nada e
+       transformaria toda operação de balcão numa corrente de telefonemas. */
+    expect(podeCriarPapel("gestor_contrato", "gestor_escola")).toBe(true);
+    expect(podeCriarPapel("gestor_contrato", "professor")).toBe(true);
+    expect(podeCriarPapel("gestor_regional", "estudante")).toBe(true);
+    expect(podeCriarPapel("admin", "estudante")).toBe(true);
+  });
+
+  test("estudante e professor não atribuem ninguém", () => {
+    expect(papeisQueCria("estudante")).toEqual([]);
+    expect(papeisQueCria("professor")).toEqual([]);
+  });
+
+  test("`gestor_escola` alcança só os papéis de dentro da escola", () => {
+    expect([...papeisQueCria("gestor_escola")].sort()).toEqual(["estudante", "professor"]);
   });
 });

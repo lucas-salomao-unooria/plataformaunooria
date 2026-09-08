@@ -6,7 +6,7 @@ import { digitosDoCpf, formatarCpf } from "../comum/cpf";
 import { gerarSenha, gerarUsuario } from "../rostering/regras";
 import { planilhaDeUmaPessoa } from "../rostering/planilha";
 import { RosteringService } from "../rostering/rostering.service";
-import type { CriarAdminContratoSchema, CriarUsuarioSchema } from "./contrato-de-rotas";
+import type { CriarSemEscolaSchema, CriarUsuarioSchema } from "./contrato-de-rotas";
 
 /**
  * Gestão das contas que já existem: listar, editar, desativar e resetar senha.
@@ -378,7 +378,7 @@ export class UsuariosService {
    * na rede inteira — dois donos do mesmo login viram recusa no login de
    * ambos, que é o pior lugar para descobrir a colisão.
    */
-  async criarAdminContrato(dados: z.infer<typeof CriarAdminContratoSchema>) {
+  async criarSemEscola(dados: z.infer<typeof CriarSemEscolaSchema>) {
     const cpf = dados.cpf ? digitosDoCpf(dados.cpf) : null;
     if (cpf) {
       const dono = await this.prisma.user.findFirst({ where: { cpf }, select: { id: true } });
@@ -418,8 +418,11 @@ export class UsuariosService {
     const senha = dados.senha ?? gerarSenha();
     const criado = await this.prisma.user.create({
       data: {
-        role: "gestor_contrato",
+        role: dados.papel,
         escolaId: null,
+        /* A regional é o ESCOPO do `gestor_regional` — sem ela o CHECK
+           bicondicional do banco recusa a linha, e o Zod já reprovou antes. */
+        regionalId: dados.regionalId ?? null,
         username: usuario,
         displayName: dados.nome,
         passwordHash: await bcrypt.hash(senha, 10),
@@ -434,7 +437,7 @@ export class UsuariosService {
       id: criado.id,
       nome: criado.displayName,
       usuario: criado.username,
-      papel: "gestor_contrato" as const,
+      papel: dados.papel,
       senha,
     };
   }
