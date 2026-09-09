@@ -6,9 +6,9 @@ import { servicosDeTeste } from "./servicos-de-teste";
 /**
  * O NÍVEL REGIONAL — Diretoria de Ensino, polo, secretaria municipal.
  *
- * Uma rede estadual tem ~5.000 escolas em ~90 diretorias, e entre `gestor` (uma
- * escola) e `admin-contrato` (todas) não havia nada. A decisão foi resolver isso
- * SEM papel novo: o supervisor de uma diretoria é um `gestor` LOTADO nas escolas
+ * Uma rede estadual tem ~5.000 escolas em ~90 diretorias, e entre `gestor_escola` (uma
+ * escola) e `gestor_contrato` (todas) não havia nada. A decisão foi resolver isso
+ * SEM papel novo: o supervisor de uma diretoria é um `gestor_escola` LOTADO nas escolas
  * dela. O que este arquivo protege é que a hierarquia sirva para AGRUPAR (montar
  * a lista da diretoria) e nunca para AUTORIZAR — quem autoriza é a lotação.
  */
@@ -72,7 +72,7 @@ beforeAll(async () => {
       escolaId: ESCOLAS[0]!,
       username: "sup-teste-regional",
       displayName: "Supervisora de Teste",
-      role: "gestor",
+      role: "gestor_escola",
       passwordHash: "x",
     },
   });
@@ -158,8 +158,10 @@ describe("hierarquia: agrupa, não autoriza", () => {
 
 describe("lotação em lote", () => {
   test("lota a supervisora nas três unidades de uma vez", async () => {
-    const feito = await escolas.lotarEmLote(ESCOLAS, supervisorId, "gestor");
-    expect(feito).toMatchObject({ lotadas: 3, ignoradas: [] });
+    const feito = await escolas.lotarEmLote(ESCOLAS, supervisorId, "gestor_escola");
+    // O lote diz o que FEZ, por escola: três vínculos nasceram agora.
+    expect(feito?.criadas.sort()).toEqual([...ESCOLAS].sort());
+    expect(feito).toMatchObject({ reabertas: [], jaVinculadas: [], ignoradas: [] });
 
     const dela = await escolas.escolasDaPessoa(supervisorId);
     expect(dela.map((e) => e.id).sort()).toEqual([...ESCOLAS].sort());
@@ -174,33 +176,37 @@ describe("lotação em lote", () => {
 
   test("reaplicar é no-op: não duplica nem troca a principal", async () => {
     const antes = await escolas.escolasDaPessoa(supervisorId);
-    const feito = await escolas.lotarEmLote(ESCOLAS, supervisorId, "gestor");
-    expect(feito?.lotadas).toBe(3);
+    const feito = await escolas.lotarEmLote(ESCOLAS, supervisorId, "gestor_escola");
+    /* Reaplicar não escreve NADA: as três voltam em `jaVinculadas`. Antes o
+       retorno dizia `lotadas: 3` nas duas vezes, e a tela anunciava três
+       vínculos novos tendo criado zero. */
+    expect(feito?.criadas).toEqual([]);
+    expect(feito?.jaVinculadas.sort()).toEqual([...ESCOLAS].sort());
     const depois = await escolas.escolasDaPessoa(supervisorId);
     expect(depois).toHaveLength(antes.length);
     expect(depois.find((e) => e.principal)?.id).toBe(antes.find((e) => e.principal)?.id);
   });
 
   test("lotar numa REGIONAL é ignorado — ela não tem turma nem estudante", async () => {
-    const feito = await escolas.lotarEmLote([REGIONAL, ESCOLAS[0]!], supervisorId, "gestor");
+    const feito = await escolas.lotarEmLote([REGIONAL, ESCOLAS[0]!], supervisorId, "gestor_escola");
     // Sem isso, a regional apareceria no seletor do cabeçalho como uma escola
     // fantasma, sem nada dentro.
     expect(feito?.ignoradas).toEqual([REGIONAL]);
-    expect(feito?.lotadas).toBe(1);
+    expect(feito?.jaVinculadas).toEqual([ESCOLAS[0]]);
   });
 
   test("e a rota INDIVIDUAL recusa a regional pelo mesmo motivo", async () => {
     /* O lote filtrava por tipo desde o início; `lotar` não filtrava nada, e por
        `POST /escolas/:id/lotacoes` dava para produzir a escola fantasma que o
        lote existe para evitar. */
-    expect(await escolas.lotar(REGIONAL, supervisorId, "gestor")).toBeNull();
+    expect(await escolas.lotar(REGIONAL, supervisorId, "gestor_escola")).toBeNull();
     expect(await escolas.temLotacao(supervisorId, REGIONAL)).toBe(false);
   });
 
   test("admin-contrato não pode ser lotado", async () => {
-    const admin = await prisma.user.findFirst({ where: { role: "admin-contrato" } });
+    const admin = await prisma.user.findFirst({ where: { role: "gestor_contrato" } });
     if (!admin) return; // seed não rodou neste banco
-    expect(await escolas.lotarEmLote(ESCOLAS, admin.id, "gestor")).toBeNull();
+    expect(await escolas.lotarEmLote(ESCOLAS, admin.id, "gestor_escola")).toBeNull();
   });
 });
 
@@ -208,7 +214,7 @@ describe("panorama de quem tem muitas escolas", () => {
   test("uma linha por unidade, com o que há dentro dela", async () => {
     const resumo = await escolas.resumoDasEscolasDaPessoa(supervisorId);
     expect(resumo).toHaveLength(3);
-    expect(resumo[0]).toMatchObject({ regional: "DE Teste Norte", turmas: 1, papel: "gestor" });
+    expect(resumo[0]).toMatchObject({ regional: "DE Teste Norte", turmas: 1, papel: "gestor_escola" });
     // Ordenado por nome, para a lista de cinquenta escolas ser navegável.
     expect(resumo.map((e) => e.nome)).toEqual([...resumo.map((e) => e.nome)].sort());
   });

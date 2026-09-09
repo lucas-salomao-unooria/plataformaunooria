@@ -23,7 +23,7 @@ export default async function AnaliseDaAtividadePage({
   const escola = escolaId?.trim() ?? '';
 
   /**
-   * A escola vem na URL porque `admin-contrato` viaja com `escolaId` vazio no
+   * A escola vem na URL porque `gestor_contrato` viaja com `escolaId` vazio no
    * token (ver `../../seletor-de-escola.tsx`). Uma chamada só: a api valida o
    * id e devolve a análise; `null` cobre id inválido, atividade de outra escola
    * e atividade inexistente — os três casos que o origem tratava separado.
@@ -61,7 +61,7 @@ export default async function AnaliseDaAtividadePage({
     <div className="flex flex-col gap-6">
       {/* O título da atividade, que a rota não tem. E o endereço do item
           anterior: `/analise` sem `?escolaId=` volta para o seletor vazio —
-          `admin-contrato` viaja com escola vazia no token. */}
+          `gestor_contrato` viaja com escola vazia no token. */}
       <RotuloDaTrilha valor={analise.atividade.titulo} />
       <RotuloDaTrilha
         para="/analise"

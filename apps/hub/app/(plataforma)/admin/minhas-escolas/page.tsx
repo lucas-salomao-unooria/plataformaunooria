@@ -5,5 +5,10 @@ export const metadata = { title: "Minhas escolas — Plataforma Unooria" };
 
 export default async function MinhasEscolasPage() {
   const session = await auth();
-  return <PanoramaDasEscolas ativa={session!.usuario.escolaId} />;
+  return (
+    <PanoramaDasEscolas
+      ativa={session!.usuario.escolaId}
+      papel={session!.usuario.papel}
+    />
+  );
 }

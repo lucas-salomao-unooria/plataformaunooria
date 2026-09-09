@@ -1040,6 +1040,15 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \emph{backfill} das órfãs --- \adrr{ADR-79}. A ORDEM do arquivo é a regra:
   criar a padrão e adotar as órfãs vem ANTES do \emph{CHECK}, senão a
   \emph{constraint} é validada contra as linhas que ela existe para eliminar.\\
+\zebra \arq{20260908150000\_modelo\_de\_papeis} & O vocabulário de papéis de
+  quatro nomes para seis (\cd{gestor} \seta{} \cd{gestor\_escola},
+  \cd{admin-contrato} \seta{} \cd{gestor\_contrato}, mais
+  \cd{gestor\_regional} e \cd{admin}), \cd{users.regional\_id} com FK,
+  \emph{CHECK} bicondicional e \emph{trigger}, e o \cd{lotacoes\_papel\_check}
+  acompanhando --- \adrr{ADR-80}. \textbf{Nenhuma política de RLS é tocada}, e é
+  o ponto mais importante do arquivo: o \cd{gestor\_regional} trabalha uma
+  escola por vez, e o que a regional dele determina é a LISTA de escolas que ele
+  pode ativar.\\
 \bottomrule
 \end{tabularx}
 

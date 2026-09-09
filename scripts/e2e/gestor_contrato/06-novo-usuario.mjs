@@ -5,9 +5,9 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 /**
  * O cadastro unitário visto de cima — e o único papel que não nasce de planilha.
  *
- * O `admin-contrato` cadastra na escola que ELE escolher (`?escolaId=`, a
+ * O `gestor_contrato` cadastra na escola que ELE escolher (`?escolaId=`, a
  * exceção cross-escola do sistema) e é o único que pode criar outro
- * `admin-contrato`. Esse papel não passa pelo importador porque não cabe numa
+ * `gestor_contrato`. Esse papel não passa pelo importador porque não cabe numa
  * planilha da escola: não tem `escola_id`, não tem lotação e não tem turma.
  * Conceder o alcance da rede inteira é decisão do contrato, nunca de uma
  * unidade — e a suíte do gestor prova o outro lado da mesma regra, com o 403.
@@ -33,8 +33,8 @@ function combo(modal, rotulo) {
 
 await suite(
   {
-    slug: "admin-contrato/06-novo-usuario",
-    papel: "admin-contrato",
+    slug: "gestor_contrato/06-novo-usuario",
+    papel: "gestor_contrato",
     titulo: "Cadastrar pessoa em qualquer escola, e o papel da rede",
     subtitulo: "o admin escolhe a unidade, e é o único que pode criar outro admin",
     contexto:
@@ -44,14 +44,14 @@ await suite(
     prova: [
       "O admin do contrato precisa dizer em QUAL escola está cadastrando",
       "Ele cadastra professor na unidade escolhida, como o gestor faria",
-      "Só ele vê a opção 'Admin do contrato' na lista de papéis",
+      "A lista de papéis dele é a cadeia: atribui o regional, nunca o próprio nível",
       "O admin recém-criado nasce com senha provisória e é preso na troca",
     ],
-    comando: "node scripts/e2e/admin-contrato/06-novo-usuario.mjs",
+    comando: "node scripts/e2e/gestor_contrato/06-novo-usuario.mjs",
   },
   async (r) => {
-    const admin = conta("admin-contrato");
-    const p = await r.pagina("admin-contrato");
+    const admin = conta("gestor_contrato");
+    const p = await r.pagina("gestor_contrato");
     await r.entrar(p, admin.login, admin.senha ?? senhaDemo());
 
     /* O id da escola vem da api, não fixado aqui: o seed pode renomear as
@@ -90,9 +90,17 @@ await suite(
     await combo(modal, "Papel").click();
     await p.waitForTimeout(600);
     const papeisOferecidos = await p.locator("[role=option]").allInnerTexts();
+    /* A CADEIA DE ATRIBUIÇÃO (ADR-80): o gestor do contrato atribui o gestor
+       REGIONAL — e não outro gestor de contrato, que é papel da Unooria. A
+       lista sai da cadeia, não de um `if` na tela. */
+    const oferecidos = papeisOferecidos.join(" ");
     r.exigir(
-      papeisOferecidos.join(" ").includes("Admin do contrato"),
-      `só o admin do contrato vê o papel da rede na lista (viu: ${papeisOferecidos.join(", ")})`,
+      /Coordenação regional/.test(oferecidos),
+      `o gestor do contrato atribui o papel REGIONAL (viu: ${papeisOferecidos.join(", ")})`,
+    );
+    r.exigir(
+      !/Administrador do contrato|Administrador Unooria/.test(oferecidos),
+      "e NÃO atribui o próprio papel nem o da Unooria — para cima, nunca",
     );
     await p.locator("[role=option]", { hasText: "Professor" }).first().click();
     await p.waitForTimeout(500);
@@ -101,12 +109,12 @@ await suite(
     await modal.locator("#novo-matricula").fill(MATRICULA);
 
     await r.registrar(p, "papeis-do-admin", {
-      titulo: "Quatro papéis, não três",
+      titulo: "A cadeia de atribuição, na lista de papéis",
       mostra: `A lista de papéis deste formulário: ${papeisOferecidos.join(" | ")}.`,
       prova:
-        "É a única diferença de tela entre gestor e admin do contrato neste formulário — e ela " +
-        "não é a tranca. Quem separa os dois é o guard da api: o gestor que chamar a rota do " +
-        "papel da rede recebe 403, e a suíte de gestor prova isso.",
+        "A lista sai da CADEIA (`papeisQueCria`), não de um `if` na tela: cada nível atribui o de " +
+        "baixo, e o próprio nível nunca aparece. E ela não é a tranca — quem separa é o guard da " +
+        "api, que responde 403 a quem pedir acima do próprio alcance; a suíte de gestor prova isso.",
       detalhe: papeisOferecidos.join(" | "),
     });
 
@@ -139,8 +147,16 @@ await suite(
 
     await combo(modalAdmin, "Papel").click();
     await p.waitForTimeout(600);
-    await p.locator("[role=option]", { hasText: "Admin do contrato" }).first().click();
+    await p.locator("[role=option]", { hasText: "Coordenação regional" }).first().click();
     await p.waitForTimeout(600);
+
+    /* A REGIONAL é o escopo dele, e o botão não habilita sem ela — o Zod da api
+       tem `refine` bicondicional, e descobrir isso depois de preencher tudo é
+       pior que o botão dizer que ainda falta. */
+    await combo(modalAdmin, "Regional").click();
+    await p.waitForTimeout(600);
+    await p.locator("[role=option]").first().click();
+    await p.waitForTimeout(400);
 
     await modalAdmin.locator("#novo-nome").fill(NOME_DO_ADMIN);
     await modalAdmin.locator("#novo-usuario").fill(LOGIN_DO_ADMIN);
@@ -152,14 +168,16 @@ await suite(
     await p.waitForTimeout(400);
     await modalAdmin.locator("#nova-senha").fill(SENHA_DO_ADMIN);
 
-    const semTurma = (await modalAdmin.locator("div.unooria-selection").count()) === 1;
-    r.exigir(semTurma, "o formulário do admin do contrato não pede turma nem turno");
+    /* Dois seletores: o de Papel e o de REGIONAL — que é o escopo dele. Turma e
+       turno não aparecem: ele não pertence a unidade nenhuma. */
+    const seletores = await modalAdmin.locator("div.unooria-selection").count();
+    r.exigir(seletores === 2, `o formulário pede Papel e Regional, e não turma nem turno (${seletores} seletores)`);
 
     await r.registrar(p, "formulario-do-admin-da-rede", {
       titulo: "O papel que não tem escola",
       mostra:
-        "Ao escolher 'Admin do contrato', os campos de turma, turno e matrícula da rede somem do " +
-        "formulário.",
+        "Ao escolher 'Coordenação regional', turma, turno e matrícula somem, e entra o campo da " +
+        "REGIONAL que ele vai cobrir.",
       prova:
         "Não é enfeite: esse papel nasce com `escola_id` nulo e sem lotação nenhuma. Manter os " +
         "campos prometeria um vínculo que a api ignora — e vínculo prometido e não gravado é o " +

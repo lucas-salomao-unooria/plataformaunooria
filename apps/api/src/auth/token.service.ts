@@ -2,6 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { AuthClaims, PERFIS, Perfil } from "./claims";
+import { ehDoContrato } from "../auth/claims";
 
 /**
  * Descreve por que um token foi rejeitado, sem nunca tocar no conteúdo dele.
@@ -59,7 +60,7 @@ export class TokenService {
       };
       if (!claims.usuarioId) throw new Error("claim sub ausente");
       // admin-contrato é a única exceção cross-escola (regra inviolável nº 1)
-      if (!claims.escolaId && claims.perfil !== "admin-contrato") {
+      if (!claims.escolaId && !ehDoContrato(claims.perfil)) {
         throw new Error("claim escola_id ausente");
       }
       return claims;

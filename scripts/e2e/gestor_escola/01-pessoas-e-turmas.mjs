@@ -34,8 +34,8 @@ const PLANILHA = [
 
 await suite(
   {
-    slug: "gestor/01-pessoas-e-turmas",
-    papel: "gestor",
+    slug: "gestor_escola/01-pessoas-e-turmas",
+    papel: "gestor_escola",
     titulo: "O ciclo de uma pessoa na escola",
     subtitulo: "importar, enturmar, resetar senha, primeiro acesso e a turma que nasce disso",
     contexto:
@@ -50,11 +50,11 @@ await suite(
       "Quem recebe senha temporária fica preso na troca até trocar",
       "Depois de trocar, o professor vê a turma dele — e só a dele",
     ],
-    comando: "node scripts/e2e/gestor/01-pessoas-e-turmas.mjs",
+    comando: "node scripts/e2e/gestor_escola/01-pessoas-e-turmas.mjs",
   },
   async (r) => {
-    const p = await r.pagina("gestor");
-    await r.entrar(p, conta("gestor").login);
+    const p = await r.pagina("gestor_escola");
+    await r.entrar(p, conta("gestor_escola").login);
 
     const icones = await estadoDosIcones(p);
     r.exigir(!icones.startsWith("FONTE NÃO CARREGOU"), `ícones do DS na área administrativa: ${icones}`);

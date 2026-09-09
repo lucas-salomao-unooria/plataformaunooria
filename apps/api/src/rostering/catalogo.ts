@@ -14,8 +14,8 @@ export { SERIES, type Serie };
 export const TURNOS = ["manha", "tarde", "noite", "integral"] as const;
 export type Turno = (typeof TURNOS)[number];
 
-/** `admin-contrato` NUNCA nasce de importação — é papel de operação do produto. */
-export const PAPEIS_IMPORTAVEIS = ["estudante", "professor", "gestor"] as const;
+/** `gestor_contrato` NUNCA nasce de importação — é papel de operação do produto. */
+export const PAPEIS_IMPORTAVEIS = ["estudante", "professor", "gestor_escola"] as const;
 export type PapelImportavel = (typeof PAPEIS_IMPORTAVEIS)[number];
 
 /**
@@ -23,7 +23,7 @@ export type PapelImportavel = (typeof PAPEIS_IMPORTAVEIS)[number];
  *
  * "Coordenação" não é papel novo: `PAPEIS` é contrato congelado entre a api e o
  * hub, e um quinto papel atravessaria middleware, guards e RLS. Coordenador,
- * diretor e o `principal`/`siteAdministrator` do OneRoster são todos `gestor` —
+ * diretor e o `principal`/`siteAdministrator` do OneRoster são todos `gestor_escola` —
  * quem enxerga a escola inteira sem estar matriculado em turma nenhuma.
  *
  * Papel que não está aqui não é descartado em silêncio: vira linha de relatório.
@@ -39,15 +39,22 @@ export const SINONIMOS_DE_PAPEL: Readonly<Record<string, PapelImportavel>> = {
   professora: "professor",
   docente: "professor",
   teacher: "professor",
-  gestor: "gestor",
-  gestora: "gestor",
-  coordenacao: "gestor",
-  coordenador: "gestor",
-  coordenadora: "gestor",
-  diretor: "gestor",
-  diretora: "gestor",
-  principal: "gestor",
-  siteadministrator: "gestor",
+  gestor: "gestor_escola",
+  gestora: "gestor_escola",
+  /* O nome CANÔNICO também é sinônimo de si mesmo, e isso não é redundância: a
+     chave da busca passa por `.replace(/[\s._-]/g, "")`, então `gestor_escola`
+     chega aqui como `gestorescola`. Sem esta linha, o cadastro unitário — que
+     serializa o papel numa linha de planilha antes de chamar o importador
+     (ADR-59) — reprovava o próprio valor que ele acabara de escrever. Passou no
+     typecheck e caiu no teste. */
+  gestorescola: "gestor_escola",
+  coordenacao: "gestor_escola",
+  coordenador: "gestor_escola",
+  coordenadora: "gestor_escola",
+  diretor: "gestor_escola",
+  diretora: "gestor_escola",
+  principal: "gestor_escola",
+  siteadministrator: "gestor_escola",
 };
 
 /**

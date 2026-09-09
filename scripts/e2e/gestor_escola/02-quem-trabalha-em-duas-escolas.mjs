@@ -12,14 +12,14 @@ import { conta, escolas } from "../lib/credenciais.mjs";
  * A regra que esta suíte prova é a mais importante e a menos óbvia: o panorama
  * LISTA as escolas, não SOMA. Nenhuma tela do produto agrega dados de duas
  * escolas — a única exceção cross-escola do sistema inteiro é o
- * `admin-contrato`, e mesmo ele precisa dizer de qual escola está falando.
+ * `gestor_contrato`, e mesmo ele precisa dizer de qual escola está falando.
  */
 const { primeira: ESCOLA_1, segunda: ESCOLA_2 } = escolas();
 
 await suite(
   {
-    slug: "gestor/02-quem-trabalha-em-duas-escolas",
-    papel: "gestor",
+    slug: "gestor_escola/02-quem-trabalha-em-duas-escolas",
+    papel: "gestor_escola",
     titulo: "Quem trabalha em duas escolas",
     subtitulo: "escola ativa, o panorama que lista em vez de somar, e o que muda ao trocar",
     contexto:
@@ -32,7 +32,7 @@ await suite(
       "O panorama de quem administra várias escolas LISTA, nunca soma",
       "Abrir uma escola pelo panorama troca a escola ativa e leva às pessoas dela",
     ],
-    comando: "node scripts/e2e/gestor/02-quem-trabalha-em-duas-escolas.mjs",
+    comando: "node scripts/e2e/gestor_escola/02-quem-trabalha-em-duas-escolas.mjs",
   },
   async (r) => {
     // ── o professor com duas cadeiras ───────────────────────────────────
@@ -95,7 +95,7 @@ await suite(
     }
 
     // ── a supervisora de diretoria ──────────────────────────────────────
-    const supervisora = conta("gestor (supervisora");
+    const supervisora = conta("gestor_escola (supervisora");
     const s = await r.pagina("supervisora");
     await r.entrar(s, supervisora.login);
 

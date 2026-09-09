@@ -17,7 +17,7 @@ import { conta, escolas } from "../lib/credenciais.mjs";
  * de Tipo que existia apenas para desfazer a mistura. Este roteiro percorre as
  * duas na ordem do menu, que é a ordem da hierarquia.
  *
- * O `admin-contrato` é a ÚNICA exceção cross-escola do sistema. Ele viaja com
+ * O `gestor_contrato` é a ÚNICA exceção cross-escola do sistema. Ele viaja com
  * `escolaId` vazio no token, e por isso toda tela dele precisa dizer de qual
  * escola está falando.
  */
@@ -25,8 +25,8 @@ const { segunda: ESCOLA_2 } = escolas();
 
 await suite(
   {
-    slug: "admin-contrato/01-escolas-e-regionais",
-    papel: "admin-contrato",
+    slug: "gestor_contrato/01-escolas-e-regionais",
+    papel: "gestor_contrato",
     titulo: "A rede inteira",
     subtitulo: "regionais, escolas e a lotação em lote que cria um supervisor",
     contexto:
@@ -40,11 +40,11 @@ await suite(
       "Selecionar escolas e vincular alguém a elas cria um supervisor em um passo",
       "Excluir uma regional com escolas exige dizer para onde elas vão",
     ],
-    comando: "node scripts/e2e/admin-contrato/01-escolas-e-regionais.mjs",
+    comando: "node scripts/e2e/gestor_contrato/01-escolas-e-regionais.mjs",
   },
   async (r) => {
-    const p = await r.pagina("admin-contrato");
-    await r.entrar(p, conta("admin-contrato").login);
+    const p = await r.pagina("gestor_contrato");
+    await r.entrar(p, conta("gestor_contrato").login);
 
     // ── Regionais: o nível que agrupa ───────────────────────────────────
     await p.goto(`${HUB}/admin/regionais`, { waitUntil: "domcontentloaded" });
@@ -139,54 +139,92 @@ await suite(
       detalhe: `${unidades} marcadas`,
     });
 
-    /* Um gestor que hoje está em UMA escola — é ele que a lotação em lote vai
-       transformar em supervisor. A supervisora do seed já está nas duas, e o
-       modal não a oferece: lotar quem já está lotado não é caminho. */
-    const supervisora = conta("gestor", { escola: ESCOLA_2 });
+    /* A SUPERVISORA DAS DUAS ESCOLAS é a prova do defeito que este passo
+       conserta. Ela existe em `escola-demo` e em `escola-demo-2`, e a
+       PRINCIPAL dela é a primeira. A busca antiga filtrava por
+       `users.escola_id` — o cache da lotação principal —, então procurá-la
+       pela segunda escola devolvia VAZIO e quem administra concluía que ela
+       não existe. Aqui ela é achada sem dizer escola nenhuma. */
+    const supervisora = conta("gestor_escola (supervisora");
     await p
-      .getByRole("button", { name: "Vincular professor ou gestor às escolas selecionadas" })
+      .getByRole("button", { name: "Vincular professor ou gestor", exact: true })
       .click();
-    await p.getByText("Onde a pessoa está hoje").waitFor({ timeout: 20_000 });
-    await p.waitForTimeout(900);
-
     const dialogo = p.getByTestId("unooria-modal");
-    await dialogo.getByRole("combobox", { name: /Onde a pessoa está hoje/ }).click();
-    await p.getByRole("option", { name: ESCOLA_2 }).first().click();
-    await dialogo.locator("#busca-pessoa-lote").pressSequentially(supervisora.nome, { delay: 20 });
-    await p.waitForTimeout(2200);
-
-    const seletorDePessoa = dialogo.getByRole("combobox", {
-      name: /Professor ou gestor encontrado/,
+    /* Pelo id, não por `getByLabel`: o `SearchInput` do DS não amarra o
+       `<label>` ao input de um jeito que o papel acessível alcance. */
+    await dialogo.locator("#busca-pessoa-lote").waitFor({ timeout: 20_000 });
+    /* Antes de digitar, a tela ORIENTA — não afirma ausência. A mensagem
+       "nenhum encontrado" antes de qualquer busca era o bug de estado que o
+       card de textos registrou. */
+    const antesDeBuscar = await dialogo.innerText();
+    r.exigir(
+      /Digite o nome, login ou CPF/.test(antesDeBuscar) && !/Nenhum professor/.test(antesDeBuscar),
+      "antes da busca a tela orienta, em vez de dizer que não há ninguém",
+    );
+    r.exigir(
+      !/Onde a pessoa está hoje/.test(antesDeBuscar),
+      "não há campo de escola de origem: a busca é na rede",
+    );
+    await r.registrar(p, "vinculo-estado-inicial", {
+      titulo: "Buscar na rede, sem escola de origem",
+      mostra: "O diálogo aberto, com o campo de busca e a orientação inicial.",
+      prova:
+        "O campo 'Onde a pessoa está hoje' saiu, e não por gosto: ele filtrava pelo CACHE da " +
+        "lotação principal, e quem trabalha em duas escolas só era achado por uma delas. " +
+        "O estado inicial ORIENTA — dizer 'nenhum encontrado' antes de procurar afirma sobre uma " +
+        "consulta que nunca aconteceu.",
     });
-    if ((await seletorDePessoa.count()) > 0) {
-      await seletorDePessoa.click();
-      await p.getByRole("option", { name: supervisora.nome }).first().click();
-      await p.waitForTimeout(500);
-      const [resposta] = await Promise.all([
-        p.waitForResponse(
-          (resp) =>
-            resp.url().includes("/escolas/lotacoes-em-lote") && resp.request().method() === "POST",
-          { timeout: 25_000 },
-        ),
-        dialogo.getByRole("button", { name: /^Vincular às? escolas?$/ }).click(),
-      ]);
-      r.exigir(resposta.ok(), `a lotação em lote gravou (HTTP ${resposta.status()})`);
-      await p.waitForTimeout(1500);
-      const texto = await dialogo.innerText();
+
+    const primeiroNome = supervisora.nome.split(" ")[0];
+    await dialogo.locator("#busca-pessoa-lote").pressSequentially(primeiroNome, { delay: 20 });
+    await p.waitForTimeout(2500);
+
+    const seletor = dialogo.getByRole("combobox", { name: /Professor ou gestor encontrado/ });
+    if ((await seletor.count()) > 0) {
+      await seletor.click();
+      await p.getByRole("option", { name: new RegExp(supervisora.nome) }).first().click();
+      await p.waitForTimeout(1200);
+
+      const comEscolhido = await dialogo.innerText();
       r.exigir(
-        /agora está em/.test(texto),
-        "a tela confirma em quantas escolas a pessoa passou a estar",
+        /Escolas com vínculo/.test(comEscolhido),
+        "os vínculos que ela JÁ tem aparecem antes dos destinos",
       );
-      await r.registrar(p, "lotacao-em-lote", {
-        titulo: "Um supervisor nasce de um formulário",
-        mostra: texto.split("\n").find((l) => /agora está em/.test(l)) ?? "a confirmação do vínculo",
+      r.exigir(
+        /Já vinculado a esta escola/.test(comEscolhido),
+        "o destino já vinculado é marcado, e sai da criação",
+      );
+      await r.registrar(p, "vinculo-ja-existente", {
+        titulo: "Achada na rede, com os vínculos que já tem",
+        mostra:
+          `${supervisora.nome} encontrada digitando só "${primeiroNome}" — sem dizer escola — com ` +
+          "as escolas em que já está e a marca 'Já vinculado a esta escola' nos destinos.",
         prova:
-          "É a LOTAÇÃO que dá acesso — não a regional. A pessoa passou a enxergar aquelas escolas " +
-          "porque agora tem vínculo com cada uma delas, uma por uma, no banco.",
+          "É a prova dupla: a pessoa em DUAS escolas é achada por uma busca de rede, e o vínculo " +
+          "que existe não é oferecido de novo. O card pede as duas coisas, e a segunda é o que " +
+          "impede uma segunda linha de lotação na mesma escola.",
+        inteira: true,
       });
+
+      /* Ela já está nas duas escolas da rede de demonstração, então não há
+         destino novo — e a tela diz isso em vez de oferecer um botão que não
+         faria nada. */
+      const semNovos = await dialogo.innerText();
+      if (/já está vinculado a todas as escolas/.test(semNovos)) {
+        r.exigir(true, "com todos os destinos já vinculados, a tela diz que não há o que criar");
+        await r.registrar(p, "vinculo-nada-a-criar", {
+          titulo: "Nada a criar",
+          mostra: "O aviso de que o profissional já está vinculado a todas as escolas selecionadas.",
+          prova:
+            "Confirmar não é oferecido quando não há vínculo novo: o card pede exatamente esta " +
+            "mensagem, e o botão fica desabilitado em vez de escrever nada e dizer 'pronto'.",
+        });
+      } else {
+        r.ressalva("havia destino novo nesta base — o caminho de 'nada a criar' não foi exercido");
+      }
       await dialogo.getByRole("button", { name: "Cancelar", exact: true }).click();
     } else {
-      r.ressalva(`a busca não encontrou "${supervisora.nome}" na escola de origem escolhida`);
+      r.ressalva(`a busca na rede não encontrou "${primeiroNome}"`);
     }
 
     // ── cadastrar escola: a regional é obrigatória ──────────────────────

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
+  Checkbox,
   FeedbackAlert,
   Modal,
   ModalBody,
@@ -19,6 +20,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { rotuloDoPapel, type Papel } from "@/lib/papeis";
 
 interface Escola extends Record<string, unknown> {
   id: string;
@@ -34,17 +36,23 @@ interface Escola extends Record<string, unknown> {
   turmas: number;
 }
 
-interface Pessoa extends Record<string, unknown> {
+/** Um profissional achado na REDE, com as escolas em que ele já está. */
+interface Profissional {
   id: string;
   nome: string;
   usuario: string;
   papel: string;
+  escolas: Array<{ id: string; nome: string; papel: string }>;
 }
+
+/** Os quatro estados da busca, distinguidos porque o card cobra isso: a tela
+ *  dizia "nenhum professor encontrado nesta escola" ANTES de qualquer busca. */
+type EstadoDaBusca = "inicial" | "buscando" | "vazia" | "erro" | "achou";
 
 /**
  * As escolas do contrato — a tela que faltava para vender a uma rede.
  *
- * Só `admin-contrato` chega aqui, e a razão é a mesma que impede `orgs.csv` de
+ * Só `gestor_contrato` chega aqui, e a razão é a mesma que impede `orgs.csv` de
  * criar escola para gestor: escola é *tenant*, com RLS, dados de menores e stack
  * por trás. Abrir um inquilino novo não é operação de quem administra uma
  * unidade.
@@ -85,10 +93,12 @@ export function EscolasDaRede() {
      ao terminar eu desmarco as linhas da tabela, e um diálogo que lesse a
      seleção passaria a dizer "em 0 unidades" logo depois de ter lotado em duas. */
   const [loteAberto, setLoteAberto] = useState<Escola[] | null>(null);
-  const [escolaDeOrigem, setEscolaDeOrigem] = useState("");
   const [buscaPessoa, setBuscaPessoa] = useState("");
-  const [pessoas, setPessoas] = useState<Pessoa[]>([]);
+  const [achados, setAchados] = useState<Profissional[]>([]);
+  const [estadoDaBusca, setEstadoDaBusca] = useState<EstadoDaBusca>("inicial");
   const [pessoaId, setPessoaId] = useState("");
+  /** Os destinos, editáveis: a seleção da tabela entra como SUGESTÃO. */
+  const [destinos, setDestinos] = useState<string[]>([]);
   const [lotando, setLotando] = useState(false);
   const [feito, setFeito] = useState<string | null>(null);
 
@@ -205,38 +215,63 @@ export function EscolasDaRede() {
     () => escolas.filter((e) => selecionadas.includes(e.id)),
     [escolas, selecionadas],
   );
-  const unidadesDoLote = loteAberto ?? [];
 
-  const buscarPessoas = useCallback(async () => {
-    if (!escolaDeOrigem) {
-      setPessoas([]);
+  /**
+   * A busca é na REDE inteira, sem escola de origem.
+   *
+   * O campo "Onde a pessoa está hoje" saiu, e não por gosto: ele filtrava por
+   * `users.escola_id`, que é o CACHE da lotação principal — quem trabalha em
+   * duas escolas só era encontrado pela principal, e procurando pela outra a
+   * lista voltava VAZIA. O administrador concluía que a pessoa não existe,
+   * exatamente na população que esta tela existe para administrar.
+   */
+  const buscarProfissionais = useCallback(async () => {
+    const termo = buscaPessoa.trim();
+    if (termo.length < 2) {
+      setAchados([]);
+      setEstadoDaBusca("inicial");
       return;
     }
-    const params = new URLSearchParams({ escolaId: escolaDeOrigem, porPagina: "25" });
-    if (buscaPessoa.trim()) params.set("busca", buscaPessoa.trim());
+    setEstadoDaBusca("buscando");
     try {
-      const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
+      const params = new URLSearchParams({ busca: termo, limite: "25" });
+      const resposta = await fetch(`/api/plataforma/escolas/profissionais?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
-      const dados = (await resposta.json()) as { usuarios?: Pessoa[] };
-      setPessoas(
-        (dados.usuarios ?? []).filter((p) => p.papel === "professor" || p.papel === "gestor"),
-      );
+      const dados = (await resposta.json()) as Profissional[];
+      setAchados(dados);
+      /* "vazia" só DEPOIS de uma busca concluída. O estado inicial orienta a
+         pesquisa; dizer "nenhum encontrado" antes de procurar é afirmar sobre
+         uma consulta que nunca aconteceu. */
+      setEstadoDaBusca(dados.length === 0 ? "vazia" : "achou");
     } catch {
-      setPessoas([]);
+      setAchados([]);
+      setEstadoDaBusca("erro");
     }
-  }, [escolaDeOrigem, buscaPessoa]);
+  }, [buscaPessoa]);
 
   useEffect(() => {
     if (loteAberto === null) return;
-    const t = setTimeout(() => void buscarPessoas(), buscaPessoa ? 300 : 0);
+    const t = setTimeout(() => void buscarProfissionais(), 300);
     return () => clearTimeout(t);
-  }, [loteAberto, buscarPessoas, buscaPessoa]);
+  }, [loteAberto, buscarProfissionais]);
+
+  const escolhido = achados.find((p) => p.id === pessoaId) ?? null;
+  /** As escolas em que ele JÁ está — o vínculo não se oferece duas vezes. */
+  const jaVinculado = useMemo(
+    () => new Set(escolhido?.escolas.map((e) => e.id) ?? []),
+    [escolhido],
+  );
+  const destinosNovos = destinos.filter((id) => !jaVinculado.has(id));
+  const todosJaVinculados = destinos.length > 0 && destinosNovos.length === 0;
 
   function abrirLote() {
-    setEscolaDeOrigem(unidadesSelecionadas[0]?.id ?? "");
     setBuscaPessoa("");
-    setPessoas([]);
+    setAchados([]);
+    setEstadoDaBusca("inicial");
     setPessoaId("");
+    /* A seleção da tabela é SUGESTÃO de destino, não restrição: a busca da
+       pessoa é independente dela, e os destinos são editáveis no diálogo. */
+    setDestinos(unidadesSelecionadas.map((e) => e.id));
     setFeito(null);
     setLoteAberto(unidadesSelecionadas);
   }
@@ -247,8 +282,7 @@ export function EscolasDaRede() {
   }
 
   async function lotarEmLote() {
-    const pessoa = pessoas.find((p) => p.id === pessoaId);
-    if (!pessoa) return;
+    if (!escolhido || destinosNovos.length === 0) return;
     setLotando(true);
     setErro(null);
     try {
@@ -256,26 +290,45 @@ export function EscolasDaRede() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          usuarioId: pessoa.id,
-          papel: pessoa.papel === "gestor" ? "gestor" : "professor",
-          escolaIds: unidadesDoLote.map((e) => e.id),
+          usuarioId: escolhido.id,
+          /* O papel é o DA PESSOA, não uma escolha: a api recusa divergência,
+             porque a chave de `lotacoes` inclui o papel e um papel diferente
+             criaria uma SEGUNDA linha na mesma escola. */
+          papel: escolhido.papel,
+          /* Só os destinos NOVOS: o card pede "criar somente os novos
+             vínculos", e mandar os já vinculados faria a api devolvê-los em
+             `jaVinculadas` — correto, mas é trabalho que não precisava sair. */
+          escolaIds: destinosNovos,
         }),
       });
       const dados = (await resposta.json().catch(() => null)) as
-        | { lotadas?: number; message?: string }
+        | { criadas?: string[]; reabertas?: string[]; message?: string }
         | null;
       if (!resposta.ok) {
-        setErro(typeof dados?.message === "string" ? dados.message : "Não foi possível lotar.");
+        setErro(
+          typeof dados?.message === "string" ? dados.message : "Não foi possível vincular.",
+        );
         return;
       }
+      const nomeDaEscola = (id: string) => escolas.find((e) => e.id === id)?.nome ?? id;
+      const criadas = dados?.criadas ?? [];
+      const reabertas = dados?.reabertas ?? [];
       setFeito(
-        `${pessoa.nome} agora está em ${dados?.lotadas ?? 0} escola${
-          dados?.lotadas === 1 ? "" : "s"
-        }. A troca de escola é no seletor do cabeçalho, uma por vez.`,
+        [
+          criadas.length > 0
+            ? `Vínculo criado em: ${criadas.map(nomeDaEscola).join(", ")}.`
+            : null,
+          reabertas.length > 0
+            ? `Vínculo reaberto em: ${reabertas.map(nomeDaEscola).join(", ")}.`
+            : null,
+          "A troca de escola é no seletor do cabeçalho, uma por vez.",
+        ]
+          .filter(Boolean)
+          .join(" "),
       );
       await carregar();
     } catch {
-      setErro("Não foi possível lotar.");
+      setErro("Não foi possível vincular.");
     } finally {
       setLotando(false);
     }
@@ -403,12 +456,14 @@ export function EscolasDaRede() {
         </div>
 
         <div className="flex gap-2">
-          {unidadesSelecionadas.length > 0 ? (
-            <Button variant="primary" size="md" onClick={abrirLote}>
-              Vincular professor ou gestor a {unidadesSelecionadas.length} escola
-              {unidadesSelecionadas.length === 1 ? "" : "s"}
-            </Button>
-          ) : null}
+          {/* SEMPRE visível: a operação deixou de exigir seleção prévia. A busca
+              da pessoa é independente das escolas marcadas, e as marcadas entram
+              como sugestão de destino — o que o card pede. Antes o botão só
+              aparecia com linha marcada, e ele duplicava o da barra de seleção:
+              dois botões idênticos lado a lado. */}
+          <Button variant="secondary" size="md" onClick={abrirLote}>
+            Vincular professor ou gestor
+          </Button>
           <Button variant="primary" size="md" onClick={abrirNova}>
             Cadastrar escola
           </Button>
@@ -542,65 +597,152 @@ export function EscolasDaRede() {
 
       <Modal isOpen={loteAberto !== null} onClose={fecharLote} size="md" theme="light">
         <ModalHeader>
-          <ModalTitle>
-            Vincular professor ou gestor a {unidadesDoLote.length} escola
-            {unidadesDoLote.length === 1 ? "" : "s"}
-          </ModalTitle>
+          <ModalTitle>Vincular professor ou gestor a escolas</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-4">
-            {/* A pessoa já existe em ALGUMA escola: a lista de pessoas é por
-                escola porque a leitura é escopada por tenant. Escolher onde ela
-                está hoje é o passo que substitui uma busca cross-escola.
-                O card de textos pede que esta busca passe a ser na REDE inteira,
-                sem escola de origem — mas isso depende de uma leitura
-                cross-escola de pessoas que a api ainda não tem, e é o escopo de
-                outro card. Os RÓTULOS já vieram; o fluxo, não. */}
-            <Selection
-              label="Onde a pessoa está hoje"
-              value={escolaDeOrigem}
-              onChange={(valor) => {
-                setEscolaDeOrigem(String(valor));
-                setPessoaId("");
-              }}
-              options={[
-                { value: "", label: "Escolha a escola" },
-                ...unidadesDoLote.map((e) => ({ value: e.id, label: e.nome })),
-                ...escolas
-                  .filter((e) => !unidadesDoLote.some((u) => u.id === e.id))
-                  .map((e) => ({ value: e.id, label: e.nome })),
-              ]}
-            />
-
+            {/* 1. A PESSOA, buscada na rede — sem escola de origem. */}
             <SearchInput
               id="busca-pessoa-lote"
               label="Buscar professor ou gestor"
-              placeholder="Nome, login ou CPF"
+              placeholder="Nome, login, matrícula ou CPF"
               value={buscaPessoa}
-              onChange={(e) => setBuscaPessoa(e.target.value)}
+              onChange={(e) => {
+                setBuscaPessoa(e.target.value);
+                setPessoaId("");
+              }}
             />
 
-            {pessoas.length === 0 ? (
+            {estadoDaBusca === "inicial" ? (
               <p className="text-[14px] text-unooria-neutral-500">
-                {escolaDeOrigem
-                  ? "Nenhum professor ou gestor encontrado nesta escola."
-                  : "Escolha a escola em que a pessoa já está cadastrada."}
+                Digite o nome, login ou CPF de um professor ou gestor da rede.
               </p>
-            ) : (
+            ) : null}
+            {estadoDaBusca === "buscando" ? (
+              <p className="text-[14px] text-unooria-neutral-500">Buscando na rede…</p>
+            ) : null}
+            {estadoDaBusca === "vazia" ? (
+              <p className="text-[14px] text-unooria-neutral-500">
+                Nenhum professor ou gestor encontrado para esta busca na rede. Confira os dados
+                informados.
+              </p>
+            ) : null}
+            {estadoDaBusca === "erro" ? (
+              <AlertBox
+                theme="light"
+                variant="error"
+                device="auto"
+                description="Não foi possível consultar a rede. Tente de novo."
+              />
+            ) : null}
+
+            {estadoDaBusca === "achou" ? (
               <Selection
+                id="profissional-encontrado"
                 label="Professor ou gestor encontrado"
                 value={pessoaId}
                 onChange={(valor) => setPessoaId(String(valor))}
-                options={pessoas.map((p) => ({
-                  value: p.id,
-                  label: `${p.nome} · ${p.usuario} · ${p.papel}`,
-                }))}
+                options={[
+                  { value: "", label: "Selecione o professor ou gestor" },
+                  ...achados.map((p) => ({
+                    value: p.id,
+                    label: `${p.nome} · ${p.usuario} · ${rotuloDoPapel(p.papel as Papel)}`,
+                  })),
+                ]}
               />
-            )}
+            ) : null}
 
-            <p className="text-[13px] text-unooria-neutral-500">
-              Escolas que receberão o vínculo: {unidadesDoLote.map((e) => e.nome).join(", ")}
-            </p>
+            {/* 2. OS VÍNCULOS QUE ELE JÁ TEM. Mostrados antes dos destinos: é o
+                   que evita o administrador pedir o que já existe. */}
+            {escolhido ? (
+              <div className="rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 px-4 py-3">
+                <p className="text-[13px] font-semibold text-unooria-neutral-700">
+                  Escolas com vínculo
+                </p>
+                {escolhido.escolas.length === 0 ? (
+                  <p className="text-[13px] text-unooria-neutral-500">
+                    Nenhuma ainda — este será o primeiro vínculo dele.
+                  </p>
+                ) : (
+                  <p className="text-[13px] text-unooria-neutral-700">
+                    {escolhido.escolas.map((e) => e.nome).join(", ")}
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            {/* 3. OS DESTINOS, editáveis. A seleção da tabela entrou marcada. */}
+            {escolhido ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[13px] font-semibold text-unooria-neutral-700">
+                  Escolas que receberão o vínculo:
+                </p>
+                <ScrollBar orientation="vertical" autoHide className="max-h-[220px]">
+                  <div className="flex flex-col gap-2 pr-2">
+                    {escolas.map((e) => {
+                      const vinculado = jaVinculado.has(e.id);
+                      return (
+                        <label key={e.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`destino-${e.id}`}
+                            checked={destinos.includes(e.id)}
+                            disabled={vinculado}
+                            onChange={() =>
+                              setDestinos((atual) =>
+                                atual.includes(e.id)
+                                  ? atual.filter((x) => x !== e.id)
+                                  : [...atual, e.id],
+                              )
+                            }
+                          />
+                          <span className="text-[14px] text-unooria-neutral-700">
+                            {e.nome}
+                            {vinculado ? (
+                              <span className="text-unooria-neutral-500">
+                                {" "}
+                                — Já vinculado a esta escola
+                              </span>
+                            ) : null}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </ScrollBar>
+              </div>
+            ) : null}
+
+            {todosJaVinculados ? (
+              <FeedbackAlert
+                type="info"
+                title="Nada a criar"
+                description="O profissional já está vinculado a todas as escolas selecionadas."
+              />
+            ) : null}
+
+            {/* 4. PERFIL E ACESSO, antes de confirmar. UM perfil, e a frase diz
+                   que ele vale em todas: `users.role` é global, e o papel da
+                   lotação não autoriza. Um seletor por escola prometeria o que
+                   o `RolesGuard` não cumpre. */}
+            {escolhido && destinosNovos.length > 0 ? (
+              <div className="rounded-xl border border-unooria-neutral-200 px-4 py-3">
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Professor ou gestor selecionado:</span>{" "}
+                  {escolhido.nome} ({escolhido.usuario})
+                </p>
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Perfil nas escolas de destino:</span>{" "}
+                  {rotuloDoPapel(escolhido.papel as Papel)} — o mesmo em todas, hoje o perfil é da pessoa e
+                  não da escola.
+                </p>
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Acesso concedido:</span> passa a abrir{" "}
+                  {destinosNovos.length === 1 ? "esta escola" : `estas ${destinosNovos.length} escolas`}{" "}
+                  no seletor do cabeçalho, uma por vez. Os vínculos que ele já tem continuam
+                  valendo.
+                </p>
+              </div>
+            ) : null}
 
             {feito ? <FeedbackAlert type="success" title="Pronto" description={feito} /> : null}
           </div>
@@ -613,10 +755,10 @@ export function EscolasDaRede() {
             variant="primary"
             size="md"
             isLoading={lotando}
-            disabled={!pessoaId || unidadesDoLote.length === 0}
+            disabled={!escolhido || destinosNovos.length === 0}
             onClick={() => void lotarEmLote()}
           >
-            {unidadesDoLote.length === 1 ? "Vincular à escola" : "Vincular às escolas"}
+            {destinosNovos.length === 1 ? "Vincular à escola" : "Vincular às escolas"}
           </Button>
         </ModalFooter>
       </Modal>

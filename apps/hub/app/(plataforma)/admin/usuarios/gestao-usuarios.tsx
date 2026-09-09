@@ -21,6 +21,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { NovoUsuario, type PessoaCriada } from "./novo-usuario";
 
@@ -29,7 +30,7 @@ interface LinhaDeUsuario extends Record<string, unknown> {
   usuario: string;
   nome: string;
   papel: string;
-  /** A unidade da lotação principal. Null só no `admin-contrato`. */
+  /** A unidade da lotação principal. Null só no `gestor_contrato`. */
   escola: string | null;
   matricula: string | null;
   /** Formatado pela api (000.000.000-00). Null quando a pessoa não tem. */
@@ -48,7 +49,7 @@ const PAPEIS = [
   { value: "", label: "Todos os papéis" },
   { value: "estudante", label: "Estudantes" },
   { value: "professor", label: "Professores" },
-  { value: "gestor", label: "Coordenação" },
+  { value: "gestor_escola", label: "Coordenação" },
 ];
 
 const SITUACOES = [
@@ -73,7 +74,7 @@ export function GestaoUsuarios({
   escolaIdInicial: string;
 }) {
   const router = useRouter();
-  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+  /* `gestor_contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
      Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
   const daUrl = useSearchParams().get("escolaId") ?? "";
   const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
@@ -104,12 +105,12 @@ export function GestaoUsuarios({
   const [aviso, setAviso] = useState<string | null>(null);
 
   const sufixo = useMemo(
-    () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
   const carregar = useCallback(async () => {
-    if (papel === "admin-contrato" && !escolaId) return;
+    if (ehDoContrato(papel) && !escolaId) return;
     setCarregando(true);
     setErro(null);
     try {
@@ -117,7 +118,7 @@ export function GestaoUsuarios({
       if (busca.trim()) params.set("busca", busca.trim());
       if (filtroPapel) params.set("papel", filtroPapel);
       if (situacao) params.set("situacao", situacao);
-      if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
+      if (ehDoContrato(papel) && escolaId) params.set("escolaId", escolaId);
 
       const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
@@ -304,7 +305,7 @@ export function GestaoUsuarios({
         description="Uma conta por pessoa — a mesma no hub e em todas as experiências."
       />
 
-      {papel === "admin-contrato" ? (
+      {ehDoContrato(papel) ? (
         <div className="max-w-[320px]">
           <TextField
             id="escola"

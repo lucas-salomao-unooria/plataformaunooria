@@ -4,6 +4,7 @@ import { formatarCpf } from "../comum/cpf";
 import { PrismaService } from "../prisma/prisma.service";
 import { escolaAtualDoEstudante, garantirLotacao, type PapelDeLotacao } from "./lotacao";
 import { periodoVigente } from "./regras";
+import { ehDoContrato } from "../auth/claims";
 
 export interface EscolaDaRede {
   id: string;
@@ -39,8 +40,27 @@ export type ExclusaoDeRegional =
   | { erro: "tem-escolas"; escolas: number; destinos: number }
   | { erro: "destino-invalido" };
 
+/**
+ * Fatia em lotes de `tamanho`. Existe para o relatório da diretoria: cinquenta
+ * escolas em paralelo estourariam o pool do Prisma, e em série seriam cinquenta
+ * idas de rede em fila. O 8 é o mesmo número que o seed usa contra Cloud SQL
+ * por túnel — baixo de propósito, porque estourar o pool troca espera de rede
+ * por espera de conexão.
+ */
+function* aosPares<T>(itens: readonly T[], tamanho: number): Generator<T[]> {
+  for (let i = 0; i < itens.length; i += tamanho) yield itens.slice(i, i + tamanho);
+}
+
 /** Recusa de REGRA na escrita de escola — distinta de `null`, que é ausência. */
 export type RecusaDeEscola = { erro: "regional-invalida" | "sem-regional" };
+
+/** O resultado de `lotarEmLote`, por escola — ver `LoteDeLotacoesSchema`. */
+export interface LoteDeVinculos {
+  criadas: string[];
+  reabertas: string[];
+  jaVinculadas: string[];
+  ignoradas: string[];
+}
 
 export interface FiltroDeEscolas {
   busca?: string;
@@ -65,7 +85,7 @@ export class EscolasService {
 
   // ------------------------------------------------------------------ escolas
 
-  /** Todas as escolas do contrato, com contagem. Só `admin-contrato` chega aqui. */
+  /** Todas as escolas do contrato, com contagem. Só `gestor_contrato` chega aqui. */
   async listar(filtro: FiltroDeEscolas | string = {}): Promise<EscolaDaRede[]> {
     // A assinatura antiga aceitava só a busca; manter as duas evita mexer em
     // todos os call sites por causa de um filtro novo.
@@ -264,6 +284,37 @@ export class EscolasService {
    * Sem tenancy de propósito: é justamente a pergunta que atravessa escolas.
    */
   async escolasDaPessoa(usuarioId: string) {
+    /* O GESTOR REGIONAL não tem lotação: o escopo dele vem da regional
+       (`users.regional_id`), e é aqui que essa diferença mora — uma vez, no
+       lugar por onde o login, o seletor do cabeçalho e a validação da troca de
+       escola já passam. Espalhada, seria a checagem esquecida em um dos três, e
+       o sintoma seria um supervisor sem escola nenhuma para escolher (ADR-80).
+
+       Ele continua trabalhando UMA escola por vez: esta lista é o que ele pode
+       ATIVAR, e cada leitura depois roda sob um `escola_id` só, com a RLS
+       inalterada. */
+    const pessoa = await this.prisma.user.findUnique({
+      where: { id: usuarioId },
+      select: { role: true, regionalId: true },
+    });
+    if (pessoa?.role === "gestor_regional" && pessoa.regionalId) {
+      const daRegional = await this.prisma.escola.findMany({
+        where: { tipo: "escola", paiId: pessoa.regionalId },
+        select: { id: true, nome: true, municipio: true, uf: true },
+        orderBy: [{ nome: "asc" }],
+      });
+      return daRegional.map((e, i) => ({
+        id: e.id,
+        nome: e.nome,
+        municipio: e.municipio,
+        uf: e.uf,
+        papel: "gestor_regional" as const,
+        /* A primeira é a "principal" só para o login ter uma escola inicial
+           quando a pessoa entra sem escolher. Não há linha em `lotacoes` para
+           marcar, e a ordem é por NOME para ser estável entre sessões. */
+        principal: i === 0,
+      }));
+    }
     const lotacoes = await this.prisma.lotacao.findMany({
       where: { usuarioId, fim: null },
       include: { escola: { select: { id: true, nome: true, municipio: true, uf: true } } },
@@ -279,13 +330,31 @@ export class EscolasService {
     }));
   }
 
-  /** `true` quando a pessoa tem lotação ativa nesta escola. */
+  /**
+   * `true` quando a pessoa ALCANÇA esta escola.
+   *
+   * Para quem tem lotação, é a lotação ativa. Para o `gestor_regional`, é a
+   * escola pertencer à regional dele — ele não tem lotação em nenhuma, e sem
+   * este ramo o histórico do estudante transferido (a única leitura que
+   * atravessa escolas fora dos perfis de contrato) responderia 403 para o
+   * supervisor da própria diretoria onde a criança está.
+   */
   async temLotacao(usuarioId: string, escolaId: string) {
     const lotacao = await this.prisma.lotacao.findFirst({
       where: { usuarioId, escolaId, fim: null },
       select: { id: true },
     });
-    return Boolean(lotacao);
+    if (lotacao) return true;
+    const pessoa = await this.prisma.user.findUnique({
+      where: { id: usuarioId },
+      select: { role: true, regionalId: true },
+    });
+    if (pessoa?.role !== "gestor_regional" || !pessoa.regionalId) return false;
+    const naRegional = await this.prisma.escola.findFirst({
+      where: { id: escolaId, tipo: "escola", paiId: pessoa.regionalId },
+      select: { id: true },
+    });
+    return Boolean(naRegional);
   }
 
   /** Quem está lotado nesta escola, por papel. */
@@ -313,7 +382,7 @@ export class EscolasService {
 
   /**
    * Lota uma pessoa em MUITAS escolas de uma vez — o supervisor de uma Diretoria
-   * de Ensino é um `gestor` lotado nas 50 unidades dela.
+   * de Ensino é um `gestor_escola` lotado nas 50 unidades dela.
    *
    * Recebe a LISTA de escolas, não o critério ("todas da regional X"), de
    * propósito: quem confirma precisa ver quantas e quais são antes de dar acesso
@@ -324,13 +393,20 @@ export class EscolasService {
   async lotarEmLote(
     escolaIds: string[],
     usuarioId: string,
-    papel: "professor" | "gestor",
-  ): Promise<{ lotadas: number; ignoradas: string[] } | null> {
+    papel: "professor" | "gestor_escola",
+  ): Promise<LoteDeVinculos | null> {
     const periodo = await this.periodoDeHoje();
     const inicio = periodo?.inicio ?? new Date();
 
     const usuario = await this.prisma.user.findUnique({ where: { id: usuarioId } });
-    if (!usuario || usuario.role === "admin-contrato") return null;
+    if (!usuario || ehDoContrato(usuario.role)) return null;
+    /* O PAPEL do vínculo é o da PESSOA, e divergir é recusa — não escolha.
+       A chave única de `lotacoes` é (escola, pessoa, PAPEL): com um papel
+       diferente do de `users.role`, a mesma pessoa ganharia uma SEGUNDA linha na
+       mesma escola, e a contagem da tela a somaria nas duas colunas. Era o
+       caminho por onde o "não alterar o perfil silenciosamente" do card se
+       quebrava — e um candidato à divergência de contagem de professores. */
+    if (usuario.role !== papel) return null;
 
     // Só unidades: lotar alguém numa `regional` daria uma escola que não tem
     // turma, estudante nem dado — e a pessoa apareceria com uma escola fantasma no
@@ -342,14 +418,16 @@ export class EscolasService {
     const validas = new Set(existentes.map((e) => e.id));
     const ignoradas = escolaIds.filter((id) => !validas.has(id));
 
-    let lotadas = 0;
+    const criadas: string[] = [];
+    const reabertas: string[] = [];
+    const jaVinculadas: string[] = [];
     // Uma transação por escola: cinquenta lotações numa transação só seguraria
     // conexão por segundos, e cada uma é independente — falhar na décima não é
     // motivo para desfazer as nove.
     for (const escolaId of validas) {
-      await this.prisma.$transaction(async (tx) => {
+      const efeito = await this.prisma.$transaction(async (tx) => {
         const primeira = (await tx.lotacao.count({ where: { usuarioId, fim: null } })) === 0;
-        await garantirLotacao(tx, {
+        return garantirLotacao(tx, {
           escolaId,
           usuarioId,
           papel,
@@ -357,9 +435,70 @@ export class EscolasService {
           principal: primeira,
         });
       });
-      lotadas += 1;
+      if (efeito === "criada") criadas.push(escolaId);
+      else if (efeito === "reaberta") reabertas.push(escolaId);
+      else jaVinculadas.push(escolaId);
     }
-    return { lotadas, ignoradas };
+    return { criadas, reabertas, jaVinculadas, ignoradas };
+  }
+
+  /**
+   * PROFISSIONAIS DA REDE — professor e coordenação, buscados por nome, login,
+   * matrícula ou CPF, SEM dizer em que escola a pessoa está.
+   *
+   * É a rota que o card pediu, e ela existe por um defeito, não por conforto: a
+   * busca anterior era `GET /usuarios?escolaId=`, que filtra por
+   * `users.escola_id` — o CACHE da lotação PRINCIPAL. Quem trabalha em duas
+   * escolas só era encontrado pela principal; procurando pela outra — uma escola
+   * onde ela realmente está — a lista voltava vazia, e o administrador concluía
+   * que a pessoa não existia. Justamente a população que esta tela administra.
+   *
+   * Sem `comTenancy`, e isso não é exceção nova: `users` e `lotacoes` já estão
+   * fora da RLS (são lidas no login, antes de haver escola), e quem pergunta é o
+   * único papel autorizado a atravessar escolas. A tranca é o `@Roles` da rota,
+   * a mesma de `GET /escolas`.
+   */
+  async profissionaisDaRede(busca: string, limite: number) {
+    const termo = busca.trim();
+    const digitos = termo.replace(/\D/g, "");
+    const pessoas = await this.prisma.user.findMany({
+      where: {
+        role: { in: ["professor", "gestor_escola"] },
+        ativo: true,
+        OR: [
+          { displayName: { contains: termo, mode: "insensitive" } },
+          { username: { contains: termo, mode: "insensitive" } },
+          { matriculaExterna: { contains: termo, mode: "insensitive" } },
+          /* CPF entra na busca com ou sem pontuação, como em `/usuarios`. O
+             piso de 5 dígitos evita que "12" varra a rede por um pedaço de
+             documento que casa com qualquer coisa. */
+          ...(digitos.length >= 5 ? [{ cpf: { contains: digitos } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        displayName: true,
+        username: true,
+        role: true,
+        lotacoes: {
+          where: { fim: null },
+          select: { papel: true, escola: { select: { id: true, nome: true } } },
+        },
+      },
+      orderBy: [{ displayName: "asc" }],
+      take: limite,
+    });
+    return pessoas.map((p) => ({
+      id: p.id,
+      nome: p.displayName,
+      usuario: p.username,
+      papel: p.role,
+      escolas: p.lotacoes.map((l) => ({
+        id: l.escola.id,
+        nome: l.escola.nome,
+        papel: l.papel,
+      })),
+    }));
   }
 
   /**
@@ -371,17 +510,24 @@ export class EscolasService {
    * precisa continuar barato.
    */
   async resumoDasEscolasDaPessoa(usuarioId: string) {
-    const lotacoes = await this.prisma.lotacao.findMany({
-      where: { usuarioId, fim: null },
-      include: {
-        escola: {
-          select: { id: true, nome: true, municipio: true, uf: true, pai: { select: { nome: true } } },
-        },
-      },
+    /* As escolas saem de `escolasDaPessoa`, e não de `lotacoes` direto: é ela
+       que sabe que o `gestor_regional` alcança as escolas da REGIONAL sem ter
+       lotação em nenhuma. Lendo `lotacoes` aqui, o panorama dele voltava VAZIO
+       — com o item de menu aparecendo, porque o menu conta as escolas da
+       sessão. Tela em branco sem erro nenhum: o pior sintoma possível. */
+    const alcance = await this.escolasDaPessoa(usuarioId);
+    if (alcance.length === 0) return [];
+    const ids = alcance.map((e) => e.id);
+    const papelPorEscola = new Map(alcance.map((e) => [e.id, e.papel]));
+    const principalPorEscola = new Map(alcance.map((e) => [e.id, e.principal]));
+    /* A regional de cada escola, para a tela poder se intitular pela diretoria.
+       `escolasDaPessoa` é barata de propósito (está no caminho do login) e não
+       traz o pai — aqui pode. */
+    const comRegional = await this.prisma.escola.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, nome: true, municipio: true, uf: true, pai: { select: { nome: true } } },
     });
-    if (lotacoes.length === 0) return [];
-
-    const ids = lotacoes.map((l) => l.escola.id);
+    const lotacoes = comRegional.map((escola) => ({ escola }));
     const [pessoas, turmas, semPrimeiroAcesso] = await Promise.all([
       this.prisma.lotacao.groupBy({
         by: ["escolaId", "papel"],
@@ -409,8 +555,8 @@ export class EscolasService {
         municipio: l.escola.municipio,
         uf: l.escola.uf,
         regional: l.escola.pai?.nome ?? null,
-        papel: l.papel,
-        principal: l.principal,
+        papel: papelPorEscola.get(l.escola.id) ?? "",
+        principal: principalPorEscola.get(l.escola.id) ?? false,
         estudantes: conta(l.escola.id, "estudante"),
         professores: conta(l.escola.id, "professor"),
         turmas: turmas.find((t) => t.escolaId === l.escola.id)?._count._all ?? 0,
@@ -422,14 +568,175 @@ export class EscolasService {
   }
 
   /**
+   * O RELATÓRIO DA DIRETORIA — consolidado E por escola (ADR-82).
+   *
+   * A pergunta que ele responde é pedagógica, não operacional: das crianças
+   * desta regional, quantas têm registro em cada missão, e em quantas turmas a
+   * missão foi liberada e encerrada. As duas colunas lado a lado de propósito —
+   * a primeira é a CRIANÇA, a segunda é a AULA, e elas medem coisas diferentes:
+   * turma encerrada com poucos registros é aula que passou sem a sala entrar;
+   * muitos registros e turma aberta é sala que ainda está no meio.
+   *
+   * COMO ELE ATRAVESSA ESCOLAS SEM MEXER NA RLS, e por que isso importa:
+   * `liberacoes` e `progresso` estão SOB a política por escola — cada consulta
+   * vê uma escola. Em vez de afrouxar a política (uma linha em laço sobre ~29
+   * tabelas, mas é a peça que garante que a escola A nunca veja a criança da
+   * escola B), este método abre a tranca UMA ESCOLA POR VEZ e soma na
+   * aplicação. É o mesmo padrão de `lotarEmLote` e da transferência, que já
+   * fazem uma transação por escola.
+   *
+   * A AUTORIZAÇÃO fica em um lugar só: a lista de escolas sai de `pai_id` da
+   * regional pedida, e o controller confere que a regional é a de quem pergunta.
+   * Nenhuma escola entra no laço sem ter passado por essa porta.
+   *
+   * O TETO é real e declarado: uma diretoria de 200 escolas são 200 transações.
+   * `emLotes` de 8 mantém o pool do Prisma inteiro (o mesmo número que o seed
+   * usa contra Cloud SQL por túnel). Ficar lento é o gatilho para um agregado
+   * materializado — não para afrouxar a política.
+   */
+  /**
+   * QUAL regional este pedido pode ler.
+   *
+   * A guarda mora aqui, e não na rota, pelo mesmo motivo de `escolaAlvo`: é uma
+   * decisão de tenancy, e decisão de tenancy espalhada por controller é a que
+   * fica de fora numa rota nova. Para o `gestor_regional` a resposta vem de
+   * `users.regional_id` e o parâmetro é IGNORADO — validá-lo contra o dele
+   * daria a mesma coisa, mas por um caminho onde esquecer a comparação vira
+   * "leia a diretoria do vizinho por querystring".
+   */
+  async regionalDoRelatorio(
+    auth: { usuarioId: string; perfil: string },
+    regionalPedida?: string,
+  ): Promise<string | null> {
+    if (auth.perfil === "gestor_regional") {
+      const pessoa = await this.prisma.user.findUnique({
+        where: { id: auth.usuarioId },
+        select: { regionalId: true },
+      });
+      return pessoa?.regionalId ?? null;
+    }
+    return regionalPedida ?? null;
+  }
+
+  async relatorioDaRegional(regionalId: string) {
+    const regional = await this.prisma.escola.findUnique({
+      where: { id: regionalId },
+      select: { id: true, nome: true, tipo: true },
+    });
+    if (regional?.tipo !== "regional") return null;
+
+    const escolas = await this.prisma.escola.findMany({
+      where: { tipo: "escola", paiId: regionalId },
+      select: { id: true, nome: true, municipio: true, uf: true },
+      orderBy: [{ nome: "asc" }],
+    });
+    if (escolas.length === 0) {
+      return { regional: { id: regional.id, nome: regional.nome }, escolas: [], experiencias: [] };
+    }
+
+    /* Uma leitura por escola, com a tranca armada naquela escola. O `Map` por
+       experiência acumula o consolidado enquanto a lista por escola é montada —
+       somar depois exigiria percorrer tudo de novo. */
+    const porEscola: Array<{
+      id: string;
+      nome: string;
+      municipio: string | null;
+      uf: string | null;
+      turmasComMissaoLiberada: number;
+      turmasComMissaoEncerrada: number;
+      estudantesComRegistro: number;
+    }> = [];
+    const consolidado = new Map<
+      string,
+      { expId: string; turmasLiberadas: number; turmasEncerradas: number; estudantes: number }
+    >();
+
+    for (const lote of aosPares(escolas, 8)) {
+      const lidas = await Promise.all(
+        lote.map((escola) =>
+          this.prisma.comTenancy(async (tx) => {
+            const [liberacoes, registros] = await Promise.all([
+              tx.liberacao.groupBy({
+                by: ["expId", "estado"],
+                where: { escolaId: escola.id },
+                _count: { _all: true },
+              }),
+              /* `progresso` tem PK (escola, estudante, exp): uma linha por
+                 criança por missão, então contar linhas JÁ é contar crianças
+                 distintas — não precisa de `distinct`. */
+              tx.progresso.groupBy({
+                by: ["expId"],
+                where: { escolaId: escola.id },
+                _count: { _all: true },
+              }),
+            ]);
+            return { escola, liberacoes, registros };
+          }, escola.id),
+        ),
+      );
+
+      for (const { escola, liberacoes, registros } of lidas) {
+        let liberadas = 0;
+        let encerradas = 0;
+        for (const l of liberacoes) {
+          const linha = consolidado.get(l.expId) ?? {
+            expId: l.expId,
+            turmasLiberadas: 0,
+            turmasEncerradas: 0,
+            estudantes: 0,
+          };
+          if (l.estado === "encerrada") {
+            encerradas += l._count._all;
+            linha.turmasEncerradas += l._count._all;
+          } else {
+            liberadas += l._count._all;
+            linha.turmasLiberadas += l._count._all;
+          }
+          consolidado.set(l.expId, linha);
+        }
+        let comRegistro = 0;
+        for (const r of registros) {
+          const linha = consolidado.get(r.expId) ?? {
+            expId: r.expId,
+            turmasLiberadas: 0,
+            turmasEncerradas: 0,
+            estudantes: 0,
+          };
+          comRegistro += r._count._all;
+          linha.estudantes += r._count._all;
+          consolidado.set(r.expId, linha);
+        }
+        porEscola.push({
+          id: escola.id,
+          nome: escola.nome,
+          municipio: escola.municipio,
+          uf: escola.uf,
+          turmasComMissaoLiberada: liberadas,
+          turmasComMissaoEncerrada: encerradas,
+          estudantesComRegistro: comRegistro,
+        });
+      }
+    }
+
+    return {
+      regional: { id: regional.id, nome: regional.nome },
+      /* Reordenado por nome: `Promise.all` em lotes devolve na ordem do lote,
+         mas os lotes chegam intercalados e a tabela da tela precisa ser
+         estável entre recargas. */
+      escolas: porEscola.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+      experiencias: [...consolidado.values()].sort((a, b) => a.expId.localeCompare(b.expId)),
+    };
+  }
+
+  /**
    * Lota uma pessoa numa escola. Para professor e gestor, ACRESCENTA — não
    * encerra a lotação que ela já tem em outra escola da rede.
    */
-  async lotar(escolaId: string, usuarioId: string, papel: "professor" | "gestor") {
+  async lotar(escolaId: string, usuarioId: string, papel: "professor" | "gestor_escola") {
     const periodo = await this.periodoDeHoje();
     return this.prisma.$transaction(async (tx) => {
       const usuario = await tx.user.findUnique({ where: { id: usuarioId } });
-      if (!usuario || usuario.role === "admin-contrato") return null;
+      if (!usuario || ehDoContrato(usuario.role)) return null;
       const escola = await tx.escola.findUnique({ where: { id: escolaId } });
       if (!escola) return null;
       /* Só UNIDADE recebe lotação — a mesma regra que `lotarEmLote` aplica ao
@@ -584,7 +891,7 @@ export class EscolasService {
 
   /**
    * O histórico do estudante ATRAVESSANDO escolas — a única leitura da plataforma
-   * que faz isso fora de `admin-contrato`.
+   * que faz isso fora de `gestor_contrato`.
    *
    * Devolve PARTICIPAÇÕES, não o conteúdo dos instrumentos: em que experiência
    * ele esteve, em que turma, em que escola, quando. O detalhe de cada

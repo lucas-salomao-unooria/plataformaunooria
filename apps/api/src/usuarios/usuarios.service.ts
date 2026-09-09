@@ -6,7 +6,7 @@ import { digitosDoCpf, formatarCpf } from "../comum/cpf";
 import { gerarSenha, gerarUsuario } from "../rostering/regras";
 import { planilhaDeUmaPessoa } from "../rostering/planilha";
 import { RosteringService } from "../rostering/rostering.service";
-import type { CriarAdminContratoSchema, CriarUsuarioSchema } from "./contrato-de-rotas";
+import type { CriarSemEscolaSchema, CriarUsuarioSchema } from "./contrato-de-rotas";
 
 /**
  * Gestão das contas que já existem: listar, editar, desativar e resetar senha.
@@ -84,7 +84,7 @@ export class UsuariosService {
               where: { fim: null },
               include: { turma: { select: { nome: true, serie: true } } },
             },
-            /* O gestor de mais de uma unidade e o `admin-contrato` precisam ver
+            /* O gestor de mais de uma unidade e o `gestor_contrato` precisam ver
                DE QUE escola é a linha — sem isso a lista mistura unidades sem
                dizer. `escola_id` é sempre o da lotação principal. */
             escola: { select: { nome: true } },
@@ -142,7 +142,7 @@ export class UsuariosService {
     },
   ) {
     const usuario = await this.prisma.user.findFirst({
-      where: { id: usuarioId, escolaId, NOT: { role: "admin-contrato" } },
+      where: { id: usuarioId, escolaId, NOT: { role: "gestor_contrato" } },
     });
     if (!usuario) return null;
     const atualizado = await this.prisma.user.update({
@@ -177,7 +177,7 @@ export class UsuariosService {
    */
   async resetarSenha(escolaId: string, usuarioId: string) {
     const usuario = await this.prisma.user.findFirst({
-      where: { id: usuarioId, escolaId, NOT: { role: "admin-contrato" } },
+      where: { id: usuarioId, escolaId, NOT: { role: "gestor_contrato" } },
     });
     if (!usuario) return null;
     const senhaTemporaria = gerarSenha();
@@ -270,10 +270,10 @@ export class UsuariosService {
           usuarioId: naEscola.id,
         };
       }
-      /* Login de `admin-contrato` é reservado em toda a rede: o login procura o
+      /* Login de `gestor_contrato` é reservado em toda a rede: o login procura o
          username na rede inteira e recusa quando duas contas respondem. */
       const reservado = await this.prisma.user.findFirst({
-        where: { username: dados.usuario, role: "admin-contrato" },
+        where: { username: dados.usuario, role: "gestor_contrato" },
         select: { id: true },
       });
       if (reservado) {
@@ -367,7 +367,7 @@ export class UsuariosService {
   }
 
   /**
-   * Cadastro de `admin-contrato` — o único papel que NÃO passa pelo importador.
+   * Cadastro de `gestor_contrato` — o único papel que NÃO passa pelo importador.
    *
    * Ele não pertence a escola nenhuma (`escola_id` nulo, sem lotação e sem
    * matrícula), e a planilha é um documento DA escola: não há coluna onde ele
@@ -378,7 +378,7 @@ export class UsuariosService {
    * na rede inteira — dois donos do mesmo login viram recusa no login de
    * ambos, que é o pior lugar para descobrir a colisão.
    */
-  async criarAdminContrato(dados: z.infer<typeof CriarAdminContratoSchema>) {
+  async criarSemEscola(dados: z.infer<typeof CriarSemEscolaSchema>) {
     const cpf = dados.cpf ? digitosDoCpf(dados.cpf) : null;
     if (cpf) {
       const dono = await this.prisma.user.findFirst({ where: { cpf }, select: { id: true } });
@@ -418,8 +418,11 @@ export class UsuariosService {
     const senha = dados.senha ?? gerarSenha();
     const criado = await this.prisma.user.create({
       data: {
-        role: "admin-contrato",
+        role: dados.papel,
         escolaId: null,
+        /* A regional é o ESCOPO do `gestor_regional` — sem ela o CHECK
+           bicondicional do banco recusa a linha, e o Zod já reprovou antes. */
+        regionalId: dados.regionalId ?? null,
         username: usuario,
         displayName: dados.nome,
         passwordHash: await bcrypt.hash(senha, 10),
@@ -434,7 +437,7 @@ export class UsuariosService {
       id: criado.id,
       nome: criado.displayName,
       usuario: criado.username,
-      papel: "admin-contrato" as const,
+      papel: dados.papel,
       senha,
     };
   }

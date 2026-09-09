@@ -15,15 +15,15 @@ import { conta } from "../lib/credenciais.mjs";
  * de sala.
  */
 const TURMA_NOVA = `E2E-${new Date().toISOString().slice(11, 16).replace(":", "")}`;
-/* O `admin-contrato` viaja com `escolaId` VAZIO no token: ele é a única exceção
+/* O `gestor_contrato` viaja com `escolaId` VAZIO no token: ele é a única exceção
    cross-escola do sistema, e por isso toda tela dele precisa dizer de qual
    escola está falando. O id vai na URL. */
 const ESCOLA = process.env.ESCOLA ?? "escola-demo";
 
 await suite(
   {
-    slug: "admin-contrato/03-turmas-e-periodos",
-    papel: "admin-contrato",
+    slug: "gestor_contrato/03-turmas-e-periodos",
+    papel: "gestor_contrato",
     titulo: "Calendário e turmas",
     subtitulo: "períodos letivos, criar turma, e o que se faz com uma matrícula",
     contexto:
@@ -37,11 +37,11 @@ await suite(
       "A turma abre com as pessoas dela e as ações de matrícula",
       "Mover de turma e encerrar matrícula são operações separadas",
     ],
-    comando: "node scripts/e2e/admin-contrato/03-turmas-e-periodos.mjs",
+    comando: "node scripts/e2e/gestor_contrato/03-turmas-e-periodos.mjs",
   },
   async (r) => {
-    const p = await r.pagina("admin-contrato");
-    await r.entrar(p, conta("admin-contrato").login);
+    const p = await r.pagina("gestor_contrato");
+    await r.entrar(p, conta("gestor_contrato").login);
 
     // ── o calendário ────────────────────────────────────────────────────
     await p.goto(`${HUB}/admin/periodos-letivos`, { waitUntil: "domcontentloaded" });
@@ -148,7 +148,7 @@ await suite(
        único papel que atravessa a fronteira. */
     const urlDaTurma = p.url();
     const gestor = await r.pagina("gestor-de-escola");
-    await r.entrar(gestor, conta("gestor").login);
+    await r.entrar(gestor, conta("gestor_escola").login);
     await gestor.goto(urlDaTurma, { waitUntil: "domcontentloaded" });
     await gestor.waitForTimeout(2500);
     const temTransferir = await gestor.getByRole("button", { name: "Transferir" }).first().count();

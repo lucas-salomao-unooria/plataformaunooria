@@ -273,15 +273,28 @@ que é o que torna liberar idempotente --- e índice por
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
 \pk{id} & \cd{UUID} PK & \\
-\zebra \cd{role} & \cd{TEXT} & \cd{estudante} $|$ \cd{professor} $|$ \cd{gestor} $|$
-  \cd{admin-contrato}.\\
+\zebra \cd{role} & \cd{TEXT} & \cd{estudante} $|$ \cd{professor} $|$
+  \cd{gestor\_escola} $|$ \cd{gestor\_regional} $|$ \cd{gestor\_contrato} $|$
+  \cd{admin} --- \emph{CHECK} na migração, e o MESMO vocabulário de \cd{PERFIS}
+  (\arq{auth/claims.ts}) e do \emph{claim} \cd{perfil} do \emph{token}. Foram
+  quatro até a \adrr{ADR-80}. Quem atribui qual sai da \textbf{cadeia}
+  (\cd{podeCriarPapel}), não do \cd{@Roles}.\\
 \fk{escola\_id} & \cd{TEXT?} FK & \textbf{\emph{CHECK} na migração:}
-  \cd{NOT NULL} \emph{exceto} quando \cd{role = 'admin-contrato'}. Nenhuma outra
-  combinação é aceita pelo banco.\\
-\zebra \fk{turma\_id} & \cd{UUID?} FK & \\
-\cd{username} & \cd{TEXT} & \cd{UNIQUE (escola\_id, username)} --- único
+  \cd{NOT NULL} \emph{exceto} para \cd{gestor\_contrato} e \cd{admin} (que
+  enxergam a rede inteira) e \cd{gestor\_regional} (cuja escola ativa é escolhida
+  por sessão, entre as da regional dele --- não há lotação a cachear). Nenhuma
+  outra combinação é aceita pelo banco.\\
+\zebra \fk{regional\_id} & \cd{TEXT?} FK & A regional que um
+  \cd{gestor\_regional} cobre, e SÓ ele: \emph{CHECK} \textbf{bicondicional}
+  (\cd{(role = 'gestor\_regional') = (regional\_id IS NOT NULL)}), mais
+  \emph{trigger} \cd{users\_regional\_agrupa} exigindo que a linha apontada seja
+  \cd{tipo = 'regional'} --- \emph{CHECK} não aceita subconsulta no Postgres. É
+  daqui que sai a lista de escolas que ele pode ativar, no lugar da lotação; ele
+  continua trabalhando UMA escola por vez, e a RLS não muda (\adrr{ADR-80}).\\
+\fk{turma\_id} & \cd{UUID?} FK & \\
+\zebra \cd{username} & \cd{TEXT} & \cd{UNIQUE (escola\_id, username)} --- único
   \textbf{por escola}, não globalmente: uma rede tem muitos \cd{joao.silva}.\\
-\zebra \cd{display\_name} & \cd{TEXT} & \\
+\cd{display\_name} & \cd{TEXT} & \\
 \cd{password\_hash} & \cd{TEXT} & \\
 \zebra \cd{avatar} & \cd{TEXT?} & \\
 \cd{matricula\_externa} & \cd{TEXT?} & O RA da pessoa na rede. É a chave de

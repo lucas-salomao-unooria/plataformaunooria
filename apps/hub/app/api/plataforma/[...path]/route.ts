@@ -66,7 +66,7 @@ const PREFIXOS_PERMITIDOS = [
   /* exp-06: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
      turma" são client-side pela mesma razão da exp-07 — a professora aperta no
      meio da aula e as 30 telas andam na hora. As guardas de papel estão na api
-     (`@Roles("professor", "gestor", "admin-contrato")`). */
+     (`@Roles("professor", "gestor_escola", "gestor_contrato")`). */
   "rastro-boato",
   /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não

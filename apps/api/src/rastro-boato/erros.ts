@@ -59,7 +59,7 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "passo-invalido": "Não é possível ir para essa etapa agora.",
   "payload-invalido": "Não entendi o que veio da tela.",
   "turma-nao-encontrada": "Turma não encontrada nesta escola.",
-  "escola-obrigatoria": "admin-contrato: informe ?escolaId=",
+  "escola-obrigatoria": "gestor_contrato: informe ?escolaId=",
 };
 
 export class ErroDeJogo extends HttpException {

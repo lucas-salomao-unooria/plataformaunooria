@@ -74,7 +74,7 @@ export const MENSAGENS: Record<CodigoErro, string> = {
   "passo-invalido": "Não é possível ir para essa etapa agora.",
   "payload-invalido": "Não entendi o que veio da tela.",
   "turma-nao-encontrada": "Turma não encontrada nesta escola.",
-  "escola-obrigatoria": "admin-contrato: informe ?escolaId=",
+  "escola-obrigatoria": "gestor_contrato: informe ?escolaId=",
   // Sem vocabulário de infraestrutura: a criança não sabe o que é token nem
   // quota, e a frase não pode soar como castigo por ter conversado muito.
   "teto-da-sessao": "Amara ficou sem sinal por hoje. Seu percurso está registrado.",

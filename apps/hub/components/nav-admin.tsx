@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { Icon, SideBar, type SideBarItemData } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
 /**
@@ -13,7 +14,7 @@ import type { Papel } from "@/lib/papeis";
  * de quando a fonte de ligadura não carrega, com a mesma cara de bug de CSS.
  */
 /**
- * `admin-contrato` tem um item a mais: as escolas da rede. Escola é *tenant*, e
+ * `gestor_contrato` tem um item a mais: as escolas da rede. Escola é *tenant*, e
  * criar um inquilino novo não é operação de quem administra uma unidade.
  *
  * A restrição vive FORA do item, num conjunto de ids. `SideBarItemData` tem
@@ -29,6 +30,13 @@ const SO_ADMIN_DO_CONTRATO = new Set(["regionais", "escolas"]);
  * que não leva a nada é pior que item nenhum.
  */
 const SO_COM_VARIAS_ESCOLAS = new Set(["minhas-escolas"]);
+
+/**
+ * O relatório é DA DIRETORIA: quem cobre uma regional e quem enxerga o
+ * contrato. Professor e gestor de uma escola não entram — para eles a tela
+ * seria a própria escola com um título errado.
+ */
+const SO_DA_DIRETORIA = new Set(["relatorios"]);
 
 const ITENS: Array<SideBarItemData & { href: string }> = [
   /* Regionais ANTES de Escolas: é a ordem da hierarquia (rede → regional →
@@ -47,6 +55,12 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
     icon: <Icon name="account_tree" />,
     href: "/admin/minhas-escolas",
   },
+  {
+    id: "relatorios",
+    label: "Relatório",
+    icon: <Icon name="insights" />,
+    href: "/admin/relatorios",
+  },
   { id: "usuarios", label: "Usuários", icon: <Icon name="group" />, href: "/admin/usuarios" },
   { id: "turmas", label: "Turmas", icon: <Icon name="school" />, href: "/admin/turmas" },
   { id: "importar", label: "Importar", icon: <Icon name="upload_file" />, href: "/admin/importar" },
@@ -63,8 +77,18 @@ export function NavAdmin({ papel, escolas }: { papel: Papel; escolas: number }) 
   const router = useRouter();
   const itens = ITENS.filter(
     (i) =>
-      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || papel === "admin-contrato") &&
-      (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) || escolas > 1),
+      (!SO_ADMIN_DO_CONTRATO.has(String(i.id)) || ehDoContrato(papel)) &&
+      /* O `gestor_regional` vê o panorama SEMPRE, mesmo com uma escola só: para
+         ele a tela não é "minhas lotações", é a DIRETORIA — o escopo do papel
+         dele. Para quem chega por lotação a regra segue valendo: com uma escola
+         a tela é de uma linha, e item de menu que não leva a nada é pior que
+         item nenhum. */
+      (!SO_COM_VARIAS_ESCOLAS.has(String(i.id)) ||
+        escolas > 1 ||
+        papel === "gestor_regional") &&
+      (!SO_DA_DIRETORIA.has(String(i.id)) ||
+        papel === "gestor_regional" ||
+        ehDoContrato(papel)),
   );
   const ativo = itens.find((item) => pathname.startsWith(item.href))?.id ?? "usuarios";
 

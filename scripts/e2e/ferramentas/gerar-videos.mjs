@@ -32,7 +32,7 @@ const PAPEIS = {
   estudante: "Estudante",
   professor: "Professor",
   gestor: "Gestor",
-  "admin-contrato": "Admin de contrato",
+  "gestor_contrato": "Admin de contrato",
 };
 
 const NAVY = "#2F4F7F";

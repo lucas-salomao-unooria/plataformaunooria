@@ -88,8 +88,12 @@ O HUB assina os tokens de experiência (RS256, TTL 15min, claims
 `{sub, escola_id, turma_id?, perfil}`, aud `plataforma-api`) e serve o JWKS em
 `/.well-known/jwks.json`. A api valida via `OIDC_ISSUER`/`OIDC_JWKS_URI` —
 trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
-`estudante | professor | gestor | admin-contrato` (admin-contrato é a única exceção
-cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
+`estudante | professor | gestor_escola | gestor_regional | gestor_contrato | admin`
+(os dois últimos são a exceção cross-escola). **Quem atribui quem sai da CADEIA**
+— `admin → gestor_contrato → gestor_regional → gestor_escola → professor/estudante`,
+com alcance transitivo e nunca para cima (ADR-80). O `gestor_regional` trabalha
+UMA escola por vez: o que a regional dele determina é a lista de escolas que ele
+pode ativar, e a RLS não muda. O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
 "Identidade e enturmamento").
 
 **A matriz completa de quem faz o quê** (papel x rota x tela, e as ausências
@@ -342,7 +346,7 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **80**: a 65 foi ocupada pelo guia da aula, a 72 pela
+  (a PRÓXIMA é a **83**: a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -350,7 +354,9 @@ abri-lo.
       e a 78 pelo logoff no menu do avatar — três frentes fecharam ADR em
       2026-09-06 e duas colidiram na 65, e **em 2026-09-07 aconteceu de
       novo**: duas frentes simultâneas reservaram a 76, uma cedeu e foi para
-      a 77/78 — e a 79 é o vínculo obrigatório escola/regional. Conferir
+      a 77/78, a 79 é o vínculo obrigatório escola/regional e a 80 o modelo
+      de seis papéis, a 81 o panorama da diretoria e a 82 o
+      relatório dela. Conferir
       `origin/dev` NÃO basta, e conferir uma vez no começo da frente também
       não: confira as branches de trabalho abertas E a de integração, na HORA
       de escrever o número),
@@ -504,7 +510,7 @@ casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**79 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**82 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

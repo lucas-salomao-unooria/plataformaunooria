@@ -13,6 +13,7 @@ import {
   Tag,
   type TableColumn,
 } from "@edu/ui/ds";
+import type { Papel } from "@/lib/papeis";
 
 interface EscolaDoPanorama extends Record<string, unknown> {
   id: string;
@@ -39,7 +40,12 @@ interface EscolaDoPanorama extends Record<string, unknown> {
  * "Abrir" troca a ESCOLA ATIVA e vai para as pessoas dela — é o mesmo caminho do
  * seletor no cabeçalho, porque o token carrega uma escola por vez.
  */
-export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
+export function PanoramaDasEscolas({ ativa, papel }: { ativa: string; papel: Papel }) {
+  /* O `gestor_regional` chega aqui por um caminho diferente: o escopo dele é a
+     REGIONAL, não a lotação. A tela precisa saber disso para se intitular pela
+     diretoria — dizer "as unidades em que você está lotado" a quem não tem
+     lotação nenhuma é descrever o produto errado. */
+  const ehRegional = papel === "gestor_regional";
   const router = useRouter();
   const [escolas, setEscolas] = useState<EscolaDoPanorama[] | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -144,30 +150,54 @@ export function PanoramaDasEscolas({ ativa }: { ativa: string }) {
       estudantes: soma.estudantes + (e.estudantes ?? 0),
       turmas: soma.turmas + e.turmas,
       pendentes: soma.pendentes + e.semPrimeiroAcesso,
+      /* "vínculos" e não "professores": por escola o número é de PESSOAS, mas o
+         total somado conta duas vezes quem dá aula em duas. É a mesma distinção
+         que a tela de Escolas faz (ADR-79) — estudante e primeiro acesso somam
+         limpo (um estudante tem UMA lotação ativa, garantida por índice único
+         parcial; o primeiro acesso é contado por `users.escola_id`, que é uma
+         escola por pessoa), professor não. */
+      vinculosDeProfessor: soma.vinculosDeProfessor + e.professores,
     }),
-    { estudantes: 0, turmas: 0, pendentes: 0 },
+    { estudantes: 0, turmas: 0, pendentes: 0, vinculosDeProfessor: 0 },
   );
+
+  /** Todas as linhas de um regional pertencem à MESMA diretoria. */
+  const nomeDaRegional = escolas?.[0]?.regional ?? null;
 
   return (
     <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
-        title="Minhas escolas"
-        description="As unidades em que você está lotado. Cada uma é um espaço separado: você abre uma por vez, e o que vê é sempre daquela escola."
+        title={ehRegional && nomeDaRegional ? nomeDaRegional : "Minhas escolas"}
+        description={
+          ehRegional
+            ? "As escolas da sua regional. Cada uma é um espaço separado: você abre uma por vez, e o que vê é sempre daquela escola — os números abaixo são a soma delas."
+            : "As unidades em que você está lotado. Cada uma é um espaço separado: você abre uma por vez, e o que vê é sempre daquela escola."
+        }
       />
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
 
       {escolas && escolas.length === 0 ? (
         <EmptyState
-          title="Você está lotado em uma escola só"
-          description="Este painel existe para quem administra várias unidades — supervisão de diretoria, polo, secretaria municipal. Com uma escola, o caminho é direto: Usuários e Turmas."
+          title={
+            ehRegional
+              ? "Nenhuma escola nesta regional ainda"
+              : "Você está lotado em uma escola só"
+          }
+          description={
+            ehRegional
+              ? "A regional existe e você a cobre, mas nenhuma escola foi vinculada a ela. Quem vincula é o administrador do contrato, em Escolas."
+              : "Este painel existe para quem administra várias unidades — supervisão de diretoria, polo, secretaria municipal. Com uma escola, o caminho é direto: Usuários e Turmas."
+          }
         />
       ) : null}
 
       {escolas && escolas.length > 0 ? (
         <>
           <p className="text-[14px] text-unooria-neutral-500">
-            {escolas.length} escolas · {totais.turmas} turmas · {totais.estudantes} estudantes
+            {escolas.length} escola{escolas.length === 1 ? "" : "s"} · {totais.turmas} turmas ·{" "}
+            {totais.estudantes.toLocaleString("pt-BR")} estudantes ·{" "}
+            {totais.vinculosDeProfessor} vínculos de professores
             {totais.pendentes > 0 ? ` · ${totais.pendentes} sem primeiro acesso` : ""}
           </p>
 

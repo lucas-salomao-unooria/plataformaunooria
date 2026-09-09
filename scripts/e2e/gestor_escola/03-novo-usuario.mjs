@@ -45,8 +45,8 @@ function combo(modal, rotulo) {
 
 await suite(
   {
-    slug: "gestor/03-novo-usuario",
-    papel: "gestor",
+    slug: "gestor_escola/03-novo-usuario",
+    papel: "gestor_escola",
     titulo: "Cadastrar uma pessoa no balcão",
     subtitulo: "o formulário que monta a linha da planilha, e o papel que o gestor não pode dar",
     contexto:
@@ -59,11 +59,11 @@ await suite(
       "A senha aparece UMA vez, e a pessoa já consta na lista da escola",
       "O gestor não pode criar admin do contrato: a opção não existe, e a api recusa",
     ],
-    comando: "node scripts/e2e/gestor/03-novo-usuario.mjs",
+    comando: "node scripts/e2e/gestor_escola/03-novo-usuario.mjs",
   },
   async (r) => {
-    const gestor = conta("gestor");
-    const p = await r.pagina("gestor");
+    const gestor = conta("gestor_escola");
+    const p = await r.pagina("gestor_escola");
     await r.entrar(p, gestor.login, gestor.senha ?? senhaDemo());
 
     await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });
@@ -195,24 +195,33 @@ await suite(
       detalhe: `HTTP ${repetida.status} · ${repetida.corpo.replace(/\s+/g, " ")}`,
     });
 
-    // ── a ausência: gestor não cria admin do contrato ────────────────────
+    /* ── a ausência: a coordenação da escola só atribui para DENTRO dela ──
+       A cadeia de atribuição (ADR-80) é: admin → gestor_contrato →
+       gestor_regional → gestor_escola → professor/estudante. Cada nível atribui
+       o de baixo, então a coordenação da escola não dá papel de rede — e nem
+       outra coordenação de escola, que é do regional. */
+    const semPapelDeRede = papeisOferecidos.join(" ");
     r.exigir(
-      !papeisOferecidos.join(" ").includes("Admin do contrato"),
-      `o gestor NÃO recebe a opção de criar admin do contrato (viu: ${papeisOferecidos.join(", ")})`,
+      !/Administrador|Coordenação regional/.test(semPapelDeRede),
+      `a coordenação da escola NÃO recebe a opção de dar papel de rede (viu: ${papeisOferecidos.join(", ")})`,
+    );
+    r.exigir(
+      !/Coordenação da escola/.test(semPapelDeRede),
+      "nem de dar outra coordenação de escola — isso é do gestor regional",
     );
 
-    r.provocado(/403/, "o gestor chama de propósito a rota de admin do contrato, para provar o 403");
+    r.provocado(/403/, "a coordenação chama de propósito a rota de papel sem escola, para provar o 403");
     const recusa = await p.evaluate(async () => {
-      const resposta = await fetch("/api/plataforma/usuarios/admin-contrato", {
+      const resposta = await fetch("/api/plataforma/usuarios/sem-escola", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ nome: "Tentativa Pelo Gestor" }),
+        body: JSON.stringify({ papel: "gestor_contrato", nome: "Tentativa Pela Coordenacao" }),
       });
       return { status: resposta.status, corpo: (await resposta.text()).slice(0, 160) };
     });
     r.exigir(
       recusa.status === 403,
-      `a api recusa o gestor na rota de admin do contrato (HTTP ${recusa.status})`,
+      `a api recusa a coordenação na rota de papel sem escola (HTTP ${recusa.status})`,
     );
     /* Reabrir o formulário e o dropdown: os dois passos anteriores provaram pela
        api, e prova de api não tem foto. A ausência precisa ser VISÍVEL — três

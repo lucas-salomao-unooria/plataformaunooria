@@ -17,6 +17,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { SERIES, rotuloDaSerie, type Serie } from "@/lib/series";
 
@@ -52,7 +53,7 @@ const TURNOS = [
  */
 export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaIdInicial: string }) {
   const router = useRouter();
-  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+  /* `gestor_contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
      Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
   const daUrl = useSearchParams().get("escolaId") ?? "";
   const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
@@ -70,17 +71,17 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
   const [salvando, setSalvando] = useState(false);
 
   const sufixo = useMemo(
-    () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
   const carregar = useCallback(async () => {
-    if (papel === "admin-contrato" && !escolaId) return;
+    if (ehDoContrato(papel) && !escolaId) return;
     setCarregando(true);
     setErro(null);
     try {
       const params = new URLSearchParams();
-      if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
+      if (ehDoContrato(papel) && escolaId) params.set("escolaId", escolaId);
       if (periodoFiltro) params.set("periodoLetivoId", periodoFiltro);
       const resposta = await fetch(`/api/plataforma/turmas?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
@@ -178,7 +179,7 @@ export function TurmasAdmin({ papel, escolaIdInicial }: { papel: Papel; escolaId
         description="Enturmamento da escola no ano letivo corrente. Abrir uma turma mostra quem está nela."
       />
 
-      {papel === "admin-contrato" ? (
+      {ehDoContrato(papel) ? (
         <div className="max-w-[320px]">
           <TextField
             id="escola"

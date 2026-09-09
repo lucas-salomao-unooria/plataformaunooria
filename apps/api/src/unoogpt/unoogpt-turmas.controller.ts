@@ -18,6 +18,7 @@ import {
 import { UnoogptService } from "./unoogpt.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
 import { fontesParaOProfessor } from "./modelo/conjuntos";
+import { GESTORES_DO_CONTRATO, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR: o relógio da aula, a folha da turma e a linha de uma
@@ -27,13 +28,13 @@ import { fontesParaOProfessor } from "./modelo/conjuntos";
  * com exceção por método (mesma regra da exp-70). O agregado por turma abre
  * para o gestor em `UnoogptAgregadoController`; a conversa de uma criança, não.
  *
- * `admin-contrato` é a única exceção cross-escola (regra 1): o token dele tem
+ * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem
  * escola vazia, então precisa dizer `?escolaId=`.
  */
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "admin-contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) throw erroDeJogo("payload-invalido");
     return escolaIdPedida;
   }
@@ -45,7 +46,7 @@ function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
 
 @Controller("unoogpt/professor")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "admin-contrato")
+@Roles("professor", ...GESTORES_DO_CONTRATO)
 export class UnoogptTurmasController {
   constructor(private readonly service: UnoogptService) {}
 

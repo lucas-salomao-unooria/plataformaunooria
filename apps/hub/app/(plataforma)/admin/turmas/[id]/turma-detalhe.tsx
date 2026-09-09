@@ -22,6 +22,7 @@ import {
   type TableColumn,
 } from "@edu/ui/ds";
 import { RotuloDaTrilha } from "@/components/trilha";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { rotuloDaSerie, type Serie } from "@/lib/series";
 import type { MissaoDaSalaDoProfessor } from "@/lib/salas";
@@ -114,7 +115,7 @@ export function TurmaDetalhe({
   escolaId: string;
 }) {
   const router = useRouter();
-  /* `admin-contrato` chega com `?escolaId=` (a escola vem da lista de escolas,
+  /* `gestor_contrato` chega com `?escolaId=` (a escola vem da lista de escolas,
      não do token dele, que não tem escola). Sem ler a URL, a api recusa com
      "informe ?escolaId=" e a tela abre vazia. */
   const escolaDaUrl = useSearchParams().get("escolaId") ?? "";
@@ -153,7 +154,7 @@ export function TurmaDetalhe({
   const [escolaDestino, setEscolaDestino] = useState("");
 
   const sufixo = useMemo(
-    () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
@@ -210,7 +211,7 @@ export function TurmaDetalhe({
         papel: aba === "estudantes" ? "estudante" : "professor",
         porPagina: "10",
       });
-      if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
+      if (ehDoContrato(papel) && escolaId) params.set("escolaId", escolaId);
       const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
       if (!resposta.ok) return;
       const corpo = (await resposta.json()) as { usuarios: Candidato[] };
@@ -455,7 +456,7 @@ export function TurmaDetalhe({
                 Histórico
               </Button>
             ) : null}
-            {aba === "estudantes" && papel === "admin-contrato" ? (
+            {aba === "estudantes" && ehDoContrato(papel) ? (
               <Button variant="ghost" size="sm" onClick={() => void abrirTransferencia(linha)}>
                 Transferir
               </Button>

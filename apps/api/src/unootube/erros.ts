@@ -29,7 +29,7 @@ const MENSAGENS: Record<CodigoErro, string> = {
   RANKING_BLOQUEADO: "O ranking abre quando você salvar 3 vídeos.",
   MISSAO_CONCLUIDA: "Você já fechou sua playlist. Reinicie a missão para trocar.",
   TURMA_NAO_ENCONTRADA: "Turma não encontrada nesta escola.",
-  ESCOLA_OBRIGATORIA: "admin-contrato: informe ?escolaId=",
+  ESCOLA_OBRIGATORIA: "gestor_contrato: informe ?escolaId=",
 };
 
 export function erroDeJogo(codigo: CodigoErro): never {

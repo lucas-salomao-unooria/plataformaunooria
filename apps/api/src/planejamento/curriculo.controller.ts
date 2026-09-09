@@ -25,6 +25,7 @@ import {
   CatalogoDeComponentesSchema,
   HabilidadesDoComponenteSchema,
 } from "./contrato-de-rotas";
+import { GESTORES } from "../auth/claims";
 
 /**
  * O CATÁLOGO CURRICULAR — leitura pura da BNCC extraída, sem banco.
@@ -52,7 +53,7 @@ const etapaDoAno = (ano: string): "EF" | "EM" => (ano.endsWith("EM") ? "EM" : "E
 
 @Controller("planejamento/curriculo")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor", "admin-contrato")
+@Roles("professor", ...GESTORES)
 export class CurriculoController {
   @Get("componentes")
   @Contrato({

@@ -76,7 +76,12 @@ export class AuthController {
       usuario: user.username,
       nome: user.displayName,
       papel: user.role as Perfil,
-      escolaId: user.escolaId,
+      /* O `gestor_regional` não tem `users.escola_id` (não há lotação principal
+         a cachear): a escola inicial dele é a primeira da regional, que
+         `escolasDaPessoa` já devolveu ordenada por nome. Sem este `??`, o token
+         sairia sem escola e o `escolaAlvo` — que só isenta os perfis de
+         contrato — recusaria toda rota dele com 403. */
+      escolaId: user.escolaId ?? escolas[0]?.id ?? null,
       turmaId: user.turmaId,
       serie: user.turma?.serie ?? null,
       /**

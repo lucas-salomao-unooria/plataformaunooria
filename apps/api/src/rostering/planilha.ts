@@ -246,7 +246,7 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
     // Gestor não é matrícula de turma (é papel no nível da escola). A turma na
     // linha não é ignorada em silêncio: vira aviso, para o gestor saber que
     // aquela coluna não teve efeito.
-    if (papel === "gestor" && turma) {
+    if (papel === "gestor_escola" && turma) {
       avisos.push({
         linha,
         campo: "turma",
@@ -287,7 +287,7 @@ export function lerPlanilha(csv: string): LeituraDaPlanilha {
       usuario,
       email,
       papel: papel!,
-      turma: papel === "gestor" ? "" : turma,
+      turma: papel === "gestor_escola" ? "" : turma,
       serie: serie ?? "",
       turno,
       senha,

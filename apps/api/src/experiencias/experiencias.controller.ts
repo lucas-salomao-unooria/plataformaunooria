@@ -5,6 +5,7 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { CatalogoSchema, UmaExperienciaSchema, UpsertSchema } from "./contrato-de-rotas";
+import { GESTORES_DO_CONTRATO } from "../auth/claims";
 
 /**
  * Manifesto de versões das experiências — o `experiencia.json` finalmente é
@@ -53,7 +54,7 @@ export class ExperienciasController {
 
   /** Upsert do CI (ou rollback manual) — só admin-contrato. */
   @Put(":expId")
-  @Roles("admin-contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Publica ou faz rollback de uma versão.",
     descricao:

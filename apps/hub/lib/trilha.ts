@@ -168,6 +168,7 @@ const NOS: Record<string, NoDaTrilha> = {
   '/admin/regionais': { rotulo: 'Regionais' },
   '/admin/escolas': { rotulo: 'Escolas' },
   '/admin/minhas-escolas': { rotulo: 'Minhas escolas' },
+  '/admin/relatorios': { rotulo: 'Relatório' },
   '/admin/periodos-letivos': { rotulo: 'Ano letivo' },
 
   /* ---- análise de produto (admin-contrato) ----------------------------- */
