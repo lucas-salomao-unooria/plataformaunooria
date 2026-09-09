@@ -503,6 +503,34 @@ código, o registro fica, e quem lê acredita nele. Ele agora nomeia os cinco
 arquivos que faltam migrar e diz que o último apaga o bloco.
 \end{nota}
 
+\section{A barra de aplicação ancora na janela (\adrr{ADR-83})}
+
+O \cd{HeaderPlataforma} é o único \emph{chrome} do hub: mesma altura, mesmos
+elementos, da tela do estudante à área do contrato. Ele nasceu, porém, com um
+parâmetro \cd{largura} que casava o miolo com o \cd{max-width} do \cd{<main>} de
+cada área --- e como o miolo é centralizado, a coluna da área passou a decidir a
+POSIÇÃO da marca. Medido, a marca ocupava quatro X diferentes: 20px em
+\cd{/admin} e \cd{/exp}, 164px em \cd{/analise}, 228px em \cd{/professor} e
+\cd{/estudante} num viewport de 1440px --- 448px de salto em 1920px.
+
+\begin{atencao}
+\textbf{Barra de aplicação não se alinha ao conteúdo: ela se alinha à janela.} O
+miolo do header é \emph{full-bleed} (\cd{px-6}, sem \cd{max-width} e sem
+\cd{mx-auto}), e o mesmo \cd{px-6} é o gutter da coluna de cada área. Escrever os
+dois valores separados é o que produziu, em \cd{/analise}, uma marca 4px à
+esquerda do título da própria página --- e quatro pixels ninguém nomeia olhando.
+\end{atencao}
+
+Isto \textbf{não} é compensação de lacuna do DS: é decisão de layout do hub, e
+por isso mora no código do header (a constante \cd{GUTTER}) e não em
+\arq{plataforma.css}. Vira lacuna no dia em que o pacote publicar um componente
+de barra de aplicação --- é lá que o gutter deveria morar, e é o gatilho de
+reavaliação da \adrr{ADR-83}.
+
+A superfície PÚBLICA (\cd{/}, \cd{/privacidade}, \cd{/termos}) ficou fora por
+decisão: \cd{.landing-nav\_\_miolo} mantém 1440px centralizado e \cd{Logo
+size="md"}, porque é outra superfície com outro público.
+
 \section{Cor da plataforma: classe escrita à mão}
 
 \begin{atencao}

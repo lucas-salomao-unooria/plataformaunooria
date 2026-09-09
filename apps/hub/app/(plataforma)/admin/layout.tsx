@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await auth();
   return (
     <div className="flex min-h-dvh flex-col unooria-surface">
-      <HeaderPlataforma largura="cheia" />
+      <HeaderPlataforma />
       <div className="flex flex-1">
         <NavAdmin
           papel={session!.usuario.papel}

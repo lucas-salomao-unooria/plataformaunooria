@@ -6,12 +6,15 @@ import { SeletorDeEscola } from "@/components/seletor-de-escola";
 import { auth } from "@/lib/auth";
 import { homeDoPapel, rotuloDoPapel } from "@/lib/papeis";
 
-/** Larguras do miolo do header — casam com o `max-width` do `<main>` de cada área. */
-const LARGURAS = {
-  "5xl": "max-w-5xl",
-  "6xl": "max-w-6xl",
-  cheia: "max-w-none",
-} as const;
+/**
+ * O gutter do chrome — e o MESMO da coluna de conteúdo de cada área.
+ *
+ * Vale 24px (`px-6`) em todo lugar. Quando o header andava em `px-5` e o
+ * `<main>` de `/analise` em `px-6`, a marca ficava 4px à esquerda do título da
+ * própria página: um desalinhamento que ninguém consegue nomear olhando, e que
+ * volta sozinho se os dois valores forem escritos separados de novo.
+ */
+const GUTTER = "px-6";
 
 /**
  * Header padrão da plataforma: marca à esquerda, identidade + menu da conta à
@@ -25,12 +28,23 @@ const LARGURAS = {
  *
  * A regra de ouro continua valendo um nível abaixo: nada da marca entra DENTRO
  * do iframe. O header é chrome do hub, desenhado acima do aparelho.
+ *
+ * **A marca ancora na JANELA, não na coluna de conteúdo.** O miolo é
+ * full-bleed: nada de `max-width` com `mx-auto` aqui. Ele já teve um parâmetro
+ * `largura` (`5xl` | `6xl` | `cheia`) que "casava com o `max-width` do `<main>`
+ * de cada área — e o efeito medido foi a marca ocupar QUATRO posições
+ * diferentes conforme a página: 20px em `/admin` e `/exp`, 164px em `/analise`,
+ * 228px em `/professor` e `/estudante` (num viewport de 1440px; em 1920px o
+ * salto entre a primeira e a última é de 448px). O header é o mesmo em todas as
+ * telas — mesma altura, mesmos elementos —, então ele não pode se mover ao
+ * navegar. E o acoplamento nunca teve como convergir: `/admin` tem navegação
+ * lateral e `/exp` é aparelho em tela cheia, logo essas áreas jamais teriam a
+ * coluna de `/professor`.
  */
 export async function HeaderPlataforma({
   href,
   legenda,
   voltar,
-  largura = "5xl",
 }: {
   /** Onde a marca leva. Default: a home do papel de quem está logado. */
   href?: string;
@@ -38,7 +52,6 @@ export async function HeaderPlataforma({
   legenda?: string;
   /** Caminho de volta, desenhado ao lado da marca (usado dentro da missão). */
   voltar?: { href: string; rotulo: string };
-  largura?: keyof typeof LARGURAS;
 }) {
   // Toda rota que usa este header passa pelo middleware, que garante sessão.
   const session = await auth();
@@ -50,9 +63,7 @@ export async function HeaderPlataforma({
 
   return (
     <header className="border-b border-unooria-neutral-200 bg-unooria-neutral-50">
-      <div
-        className={`mx-auto flex h-16 items-center justify-between gap-4 px-5 ${LARGURAS[largura]}`}
-      >
+      <div className={`flex h-16 w-full items-center justify-between gap-4 ${GUTTER}`}>
         <div className="flex items-center gap-4">
           <Link
             href={href ?? homeDoPapel(usuario.papel)}

@@ -43,7 +43,7 @@ export default async function ProfessorLayout({ children }: { children: React.Re
 
       {/* `plataforma-largura-cheia` libera o max-width de 398px dos Cards do DS:
           aqui há grades de 2–3 colunas e tabelas largas. */}
-      <main className="plataforma-largura-cheia mx-auto w-full max-w-5xl flex-1 px-5 py-8">
+      <main className="plataforma-largura-cheia mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <ProvedorDaTrilha>
           <TrilhaDaRota papel={session!.usuario.papel} />
           {children}

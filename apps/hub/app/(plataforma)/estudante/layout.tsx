@@ -24,7 +24,7 @@ export default async function EstudanteLayout({ children }: { children: React.Re
       <HeaderPlataforma />
 
       {/* Libera o max-width de 398px dos Cards do DS: aqui há grade de 2 colunas. */}
-      <main className="plataforma-largura-cheia mx-auto max-w-5xl px-5 py-8">
+      <main className="plataforma-largura-cheia mx-auto max-w-5xl px-6 py-8">
         <ProvedorDaTrilha>
           <TrilhaDaRota papel={session!.usuario.papel} />
           {children}

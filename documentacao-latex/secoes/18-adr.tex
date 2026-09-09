@@ -5745,3 +5745,88 @@ real (aí: agregado materializado), ou o produto pedir profundidade por
 experiência no nível da diretoria (aí: uma decisão por experiência, começando
 pela pergunta que a \adrr{ADR-34} fez primeiro --- a diretoria é unidade de
 análise de dado de criança, ou só de operação?).
+
+\section{ADR-83 --- O header ancora na JANELA, não na coluna de conteúdo}
+\label{adr:header-ancora-na-janela}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O \cd{HeaderPlataforma} é um só para todos os papéis
+(\adrr{ADR-78}) --- mesma altura, mesmos elementos, da tela do estudante à área
+do contrato. Mas ele nascera com um parâmetro \cd{largura}
+(\cd{5xl} \textbar{} \cd{6xl} \textbar{} \cd{cheia}) cujo comentário dizia, com
+todas as letras, que os valores \enquote{casavam com o \cd{max-width} do
+\cd{<main>} de cada área}. Como o miolo é centralizado (\cd{mx-auto}), a coluna
+da área virava a POSIÇÃO da marca.
+
+O dono do produto relatou o sintoma sem a causa à vista: \enquote{a marca desliza
+para a direita em algumas páginas}. A medição, feita com Playwright e logada em
+cada papel, mostrou \textbf{quatro} posições diferentes:
+
+\begin{center}
+\begin{tabular}{lll}
+\textbf{superfície} & \textbf{@1440px} & \textbf{@1920px} \\
+\hline
+\cd{/admin/**}, \cd{/exp/:expId}, \cd{/dev-embed} & 20px & 20px \\
+\cd{/analise} & 164px & 404px \\
+\cd{/professor/**}, \cd{/estudante} & 228px & 468px \\
+\end{tabular}
+\end{center}
+
+208px de salto num monitor de 1440px; \textbf{448px} em 1920px. E um segundo
+defeito, embutido: em \cd{/analise} o header usava \cd{px-5} e o \cd{<main>}
+\cd{px-6}, então a marca ficava 4px à esquerda do título da própria página ---
+na única área onde a largura supostamente casava.
+
+\textbf{Decisão.} O miolo do header é \textbf{full-bleed}: sem \cd{max-width},
+sem \cd{mx-auto}. O parâmetro \cd{largura} deixou de existir. O gutter é
+\textbf{24px} (\cd{px-6}) no chrome E na coluna de conteúdo de todas as áreas ---
+uma constante \cd{GUTTER} no header, e o mesmo \cd{px-6} nos layouts.
+
+O princípio: \textbf{o header pertence à janela, não à página}. Ele é chrome do
+hub, e chrome que se move ao navegar é ruído que o usuário sente antes de
+conseguir nomear.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Unificar a coluna de todas as áreas e manter o header casado com
+    ela}: não converge, e não é questão de esforço. \cd{/admin} tem navegação
+    lateral e \cd{/exp} é aparelho em tela cheia --- essas áreas jamais terão a
+    coluna de \cd{/professor}. O resultado seria trocar quatro posições por
+    duas, mexendo na largura de $\sim$30 telas para não resolver o problema.
+  \item \emph{Manter o parâmetro e só corrigir os 4px de \cd{/analise}}: apaga o
+    sintoma menor e deixa o salto de 448px, que é o que foi relatado.
+  \item \emph{Gutter de 20px (\cd{px-5}, o do header antigo)}: 24px já era o de
+    \cd{/admin}, de \cd{/analise} e da nav pública --- escolher o valor da
+    minoria obrigaria a mexer em mais lugares para o mesmo efeito.
+\end{itemize}
+
+\textbf{O que ficou de fora, e é decisão, não omissão.} A nav da superfície
+PÚBLICA (\cd{/}, \cd{/privacidade}, \cd{/termos}) mantém miolo de 1440px
+centralizado e \cd{Logo size="md"}: em 1920px a marca dela fica em 264px, contra
+os 24px do app. É outra superfície, com outro público e outra linguagem, e mexer
+nela é decisão de marketing. Quem reabrir: a mudança é trocar o \cd{max-width} do
+\cd{.landing-nav\_\_miolo} por \cd{none}.
+
+\textbf{Consequências.} \emph{Ruim, e é o preço declarado}: em telas largas a
+marca não alinha mais com o título da página nas áreas de coluna estreita ---
+24px contra 472px em \cd{/professor} num monitor de 1920px. É o arranjo de
+\emph{app shell} que \cd{/admin} e \cd{/exp} já usavam; a alternativa era o
+salto.
+
+\emph{Ruim}: a marca ainda muda de posição na transição público \seta{} logado,
+enquanto a nav pública ficar como está.
+
+\emph{Bom}: a marca e o menu da conta ficam no MESMO X em todas as superfícies
+logadas --- medido em 1920px, 1440px e 900px, nas cinco áreas mais o
+\cd{/dev-embed}. Em telas estreitas header e conteúdo passam a começar no mesmo
+X (24/24 em 900px), que antes só acontecia por coincidência em duas áreas.
+
+\emph{Bom}: área nova nasce alinhada sem decidir nada. Não há mais parâmetro para
+escolher errado --- e o parâmetro era a única peça que exigia que quem cria um
+layout soubesse desta regra.
+
+\textbf{Gatilho de reavaliação.} A superfície pública ser alinhada ao app (aí o
+gutter passa a ser um só do primeiro clique ao logout), ou o design system
+publicar um componente de barra de aplicação --- que é onde o \cd{GUTTER} deveria
+morar, em vez de numa constante do hub.

@@ -69,6 +69,57 @@ Duas coisas para saber antes de mexer nele:
   lugar nenhum.
 
 
+## A marca ancora na JANELA, e o gutter é um só (ADR-83, 2026-09-08)
+
+**O miolo do header é full-bleed: `px-6` e mais nada.** Sem `max-width`, sem
+`mx-auto`. O `HeaderPlataforma` teve um parâmetro `largura` (`5xl` | `6xl` |
+`cheia`) cujo comentário dizia, com todas as letras, que ele "casava com o
+`max-width` do `<main>` de cada área" — e é exatamente esse acoplamento que era
+o defeito: o miolo é centralizado, então a coluna da área virava a posição da
+marca.
+
+Medido com Playwright, logado em cada papel, a marca ocupava **quatro** X
+diferentes (viewport de 1440px):
+
+| superfície | `largura` | marca X @1440 | @1920 |
+|---|---|---|---|
+| `/admin/**`, `/exp/:expId`, `/dev-embed` | `cheia` | 20px | 20px |
+| `/analise` | `6xl` | 164px | 404px |
+| `/professor/**`, `/estudante` | `5xl` (default) | 228px | 468px |
+
+208px de salto em 1440, **448px em 1920** — num header que é o mesmo em todas as
+telas, com a mesma altura e os mesmos elementos. O dono do produto viu isso como
+"a marca desliza para a direita em algumas páginas", que é a descrição exata do
+sintoma sem a causa à vista.
+
+**E o acoplamento nunca teve como convergir.** `/admin` tem navegação lateral e
+`/exp` é aparelho em tela cheia: essas áreas jamais terão a coluna de
+`/professor`. Unificar as colunas não resolveria — só reduziria de quatro
+posições para duas.
+
+**O gutter é 24px (`px-6`) no chrome E na coluna.** O header andava em `px-5` e
+o `<main>` de `/analise` em `px-6`: a marca ficava 4px à esquerda do título da
+própria página. Quatro pixels ninguém nomeia olhando, e voltam sozinhos se os
+dois valores forem escritos separados de novo — por isso o header carrega a
+constante `GUTTER` e os layouts usam o mesmo `px-6`. Em telas estreitas (abaixo
+do `max-width` da coluna) header e conteúdo passam a começar no MESMO X; medido
+em 900px: 24/24 nas cinco áreas.
+
+**O que isto custa, declarado:** em telas largas a marca não alinha mais com o
+título da página nas áreas de coluna estreita (472px de distância em 1920, em
+`/professor`). É deliberado. O header é chrome do hub — pertence à janela, não à
+página —, e um chrome que se move ao navegar é o defeito que esta seção existe
+para não deixar voltar.
+
+**A superfície pública ficou de fora, por decisão.** A nav de `/`,
+`/privacidade` e `/termos` (`.landing-nav__miolo`, em `components/landing/landing.css`)
+mantém miolo de 1440px centralizado e `Logo size="md"` — em 1920px a marca dela
+cai em 264px, contra os 24px do app. É outra superfície, com outro público e
+outra linguagem; mexer nela é decisão de marketing, não de chrome. Quem for
+reabrir isso um dia: a mudança é trocar o `max-width` do `.landing-nav__miolo`
+por `none`.
+
+
 ## A trilha é do LAYOUT da área, nunca da página (2026-09-07)
 
 **Nenhuma página do hub desenha o próprio breadcrumb.** Quem desenha é o layout
@@ -107,7 +158,8 @@ quebra o seletor de filho direto e devolve a barra de rolagem parada que a seç�
 **A largura da coluna é do layout, não da página.** Em `/admin` eram 1080px em
 quatro telas e 1180px em duas, em `/analise` 5xl e 6xl — sem razão registrada em
 nenhum dos casos. Com a trilha no layout, largura por página faz o breadcrumb
-nascer 50–64px à esquerda do texto.
+nascer 50–64px à esquerda do texto. **Mas a largura da coluna não é do HEADER**:
+ele ancora na janela, e o porquê está em "A marca ancora na JANELA".
 
 **Duas exceções declaradas, e só elas.** `aPaginaDesenha: true` nas rotas de guia
 da aula, porque `components/guia/guia-da-aula.tsx` renderiza a trilha por dentro
