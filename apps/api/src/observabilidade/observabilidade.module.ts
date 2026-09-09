@@ -6,6 +6,7 @@ import { contextoAtual } from "../tenancy/tenancy-context";
 import { FiltroDeExcecao } from "./filtro-de-excecao";
 import { logger } from "./logger";
 import { Metricas } from "./metricas";
+import { ObservabilidadePublicoController } from "./observabilidade-publico.controller";
 import { ObservabilidadeController } from "./observabilidade.controller";
 import { ClienteOtlpGoogle } from "./otlp-google";
 import { ProxyOtlpService } from "./otlp-proxy.service";
@@ -46,7 +47,9 @@ export class DesligamentoDoOtel implements OnApplicationShutdown {
       },
     }),
   ],
-  controllers: [ObservabilidadeController],
+  // O público vem PRIMEIRO: `observabilidade/publico/*` é prefixo mais específico
+  // que `observabilidade/*`, e o Nest casa na ordem de registro.
+  controllers: [ObservabilidadePublicoController, ObservabilidadeController],
   providers: [
     { provide: APP_FILTER, useClass: FiltroDeExcecao },
     DesligamentoDoOtel,

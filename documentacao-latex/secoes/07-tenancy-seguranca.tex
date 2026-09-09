@@ -518,6 +518,14 @@ matriz acima poderia concluir, erradamente, que não existe.
   já foi descartada e ninguém leria o erro.\\
 \zebra \rota{POST /telemetry/ingest} & \cd{PubSubPushGuard} & O \emph{push} do
   Pub/Sub, autenticado pelo OIDC da conta de serviço --- não por pessoa.\\
+\rota{POST /observabilidade/publico/*} & \textbf{Nenhuma} &
+  A única rota sem guard nenhum (\adrr{ADR-84}). Existe porque a tela de
+  \emph{login} não tem sessão, e o 401 do BFF descartava justamente o sinal de
+  que ninguém estava conseguindo entrar. A contenção é estrutural, não de
+  identidade: Zod \cd{.strict()} com corpo pequeno, \cd{expId} forçado a
+  \cd{hub}, \emph{redaction}, cota por IP mais teto global de instância, e
+  nenhuma linha de log por requisição recusada. Não lê nem escreve dado de
+  ninguém --- só emite log e conta métrica.\\
 \rota{POST /perfis/importar},\newline \rota{/planos/referencias} &
   Chave de serviço (\cd{x-perfil-token}, \cd{x-import-token}) &
   Máquina falando com máquina no \emph{provisionamento}. Nenhuma delas é

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { createExperiencia } from "@edu/sdk";
+import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
+
+import { EXP_VERSION } from "./lib/versao";
 
 import { api, definirExperiencia } from "./lib/api";
 import { marcarVisibilidade } from "./lib/visibilidade";
@@ -36,8 +38,9 @@ export function Bootstrap() {
   useEffect(() => {
     let ativo = true;
     void (async () => {
+      let exp: ExperienciaHandle | null = null;
       try {
-        const exp = await createExperiencia({ expId: "exp-01-instanooria", expVersion: "1.0.0" });
+        exp = await createExperiencia({ expId: "exp-01-instanooria", expVersion: EXP_VERSION });
         definirExperiencia(exp);
         // hub:pause/resume → cronômetro de dwell e flush do buffer.
         exp.on("pause", () => marcarVisibilidade(false));
@@ -47,6 +50,12 @@ export function Bootstrap() {
         if (ativo) setBoot(dados);
       } catch (falha) {
         console.error("[instanooria] boot falhou", falha);
+        // O boot que falha DEPOIS do handshake tem token, e por isso pode
+        // reportar: era esta a falha que o estudante via como "não deu para
+        // abrir agora" e que não deixava rastro nenhum no servidor (ADR-84).
+        // Antes do handshake `exp` é null — ali não há token, e o sinal é a
+        // ausência de `exp:ready`, que o hub observa.
+        exp?.reportarErro(falha);
         if (ativo) setErro("Não deu para abrir agora. Fecha e tenta de novo.");
       }
     })();

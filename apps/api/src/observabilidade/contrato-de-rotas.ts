@@ -13,15 +13,48 @@ const HEX32 = /^[0-9a-f]{32}$/i;
 const HEX16 = /^[0-9a-f]{16}$/i;
 const NANOS = /^\d{1,20}$/;
 
+/**
+ * O que o NAVEGADOR sabe do aparelho (ADR-84) — o mínimo que responde "trava
+ * no Chromebook?" e "está lento no 4G da escola?", e nada além disso.
+ *
+ * Campo nenhum aqui identifica uma pessoa, mas a COMBINAÇÃO de memória,
+ * núcleos e tela é impressão digital de aparelho. Duas consequências, que a
+ * ADR registra: ela entra na conversa de DPA com a rede, e o que vira RÓTULO
+ * de métrica é só a classificação fechada do `dispositivo.ts` — nunca estes
+ * números, que ficam no log do erro, onde já há contexto para investigar um.
+ */
+export const DispositivoSchema = z
+  .object({
+    /** Viewport em CSS px. O teto é folgado de propósito: acima dele é lixo, não tela grande. */
+    largura: z.number().int().min(0).max(20_000),
+    altura: z.number().int().min(0).max(20_000),
+    dpr: z.number().min(0).max(8).optional(),
+    /** `navigator.connection.effectiveType` — só o Chromium implementa; ausente no Safari e no Firefox. */
+    conexao: z.enum(["slow-2g", "2g", "3g", "4g"]).optional(),
+    /** `navigator.deviceMemory`, que o próprio navegador já arredonda para 0.25–8 — o teto aqui é só sanidade. */
+    memoriaGb: z.number().min(0).max(1_024).optional(),
+    nucleos: z.number().int().min(0).max(512).optional(),
+  })
+  .strict();
+export type DispositivoDoCliente = z.infer<typeof DispositivoSchema>;
+
 export const ErroClienteSchema = z
   .object({
     expId: z.string().regex(EXP_ID_OU_HUB),
-    versao: z.string().min(1).max(32),
+    /**
+     * 64, não 32: a versão do HUB é o SHA do build, e o `max(32)` recusava o
+     * SHA de 40 do `github.sha` — todo erro de cliente do hub voltou 400 de
+     * 2026-09-02 a 2026-09-08, sem um único registro no Cloud Logging. O CI
+     * passou a mandar o SHA curto (12), e o teto aqui deixou de ser o que
+     * decide se um erro existe. Semver de experiência não chega perto disto.
+     */
+    versao: z.string().min(1).max(64),
     mensagem: z.string().min(1).max(2_048),
     stack: z.string().max(8_192).optional(),
     /** Origem + caminho, sem query string: a query carrega id e às vezes texto. */
     url: z.string().max(512).refine((u) => !u.includes("?") && !u.includes("#"), "sem query string nem fragmento"),
     userAgent: z.string().max(256).optional(),
+    dispositivo: DispositivoSchema.optional(),
     sessaoId: z.string().uuid(),
     /** Do span ativo no navegador quando o OTel Web está ligado: liga o erro à linha do tempo. */
     traceId: z.string().regex(HEX32).optional(),
@@ -38,6 +71,7 @@ export const VitalSchema = z
     /** `pathname` do hub ou `expId` da experiência; normalizado na api. */
     rota: z.string().max(128),
     superficie: z.enum(["hub", "exp"]),
+    dispositivo: DispositivoSchema.optional(),
   })
   .strict();
 export type Vital = z.infer<typeof VitalSchema>;

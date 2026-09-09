@@ -196,6 +196,18 @@ jobs:
       - name: Autenticar o Docker no Artifact Registry
         run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
 
+      # O SHA CURTO, e nao o `github.sha` inteiro: `NEXT_PUBLIC_HUB_VERSAO` vira
+      # o campo `versao` de todo erro de cliente do hub, e o schema da api o
+      # limita (o SHA de 40 caracteres estourava `max(32)` e TODO erro voltava
+      # 400 — a captura ficou morta de 2026-09-02 a 2026-09-08 sem ninguem ver,
+      # porque local o default do Dockerfile e "dev", com tres). O mesmo valor
+      # e o `service.version` do lote OTLP do hub, que o proxy valida com
+      # `{1,32}`: com o SHA inteiro o lote era descartado e a rota respondia
+      # 204. Expressao do GitHub nao tem substring, entao o corte vem daqui.
+      - name: Versao do hub (SHA curto)
+        id: versao
+        run: echo "curto=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
       - name: Imagem do hub
         uses: docker/build-push-action@v6
         with:
@@ -211,7 +223,7 @@ jobs:
           # var vem vazia e o hub sobe com o Clarity desligado.
           build-args: |
             NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ vars.CLARITY_PROJECT_ID }}
-            NEXT_PUBLIC_HUB_VERSAO=${{ github.sha }}
+            NEXT_PUBLIC_HUB_VERSAO=${{ steps.versao.outputs.curto }}
           cache-from: type=gha,scope=hub-${{ github.ref_name }}
           cache-to: type=gha,scope=hub-${{ github.ref_name }},mode=max
 

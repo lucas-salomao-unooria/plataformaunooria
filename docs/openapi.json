@@ -1,6 +1,242 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/observabilidade/publico/erros-cliente": {
+      "post": {
+        "operationId": "ObservabilidadePublicoController_errosCliente",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "observabilidade"
+        ],
+        "summary": "Registra um erro de navegador ocorrido ANTES do login (landing, tela de login, troca de senha).",
+        "description": "Mesma captura da SDK, sem token: é a única rota de observabilidade sem `OidcGuard` (ADR-84). A api força `expId = hub`, redige `mensagem`/`stack`, classifica o user-agent em rótulos fechados e emite UMA linha `ERROR` no formato do Error Reporting, com `autenticado: false` e SEM id de pessoa — quem ainda não entrou não tem identidade a registrar. O que correlaciona os eventos de uma mesma aba é o `sessaoId`.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 5 por minuto por IP e 300 por minuto no total da instância: acima, **429**, contado e sem linha de log.\n- `expId` do corpo é IGNORADO (sempre `hub`): antes do `hub:init` nenhuma experiência conhece a api.\n- O IP serve de chave de cota e não é registrado em lugar nenhum.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expId": {
+                    "type": "string",
+                    "pattern": "^(exp-\\d{2}-[a-z0-9-]+|hub)$"
+                  },
+                  "versao": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "mensagem": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  "stack": {
+                    "type": "string",
+                    "maxLength": 8192
+                  },
+                  "url": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "userAgent": {
+                    "type": "string",
+                    "maxLength": 256
+                  },
+                  "dispositivo": {
+                    "type": "object",
+                    "properties": {
+                      "largura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "altura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "dpr": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 8
+                      },
+                      "conexao": {
+                        "type": "string",
+                        "enum": [
+                          "slow-2g",
+                          "2g",
+                          "3g",
+                          "4g"
+                        ]
+                      },
+                      "memoriaGb": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1024
+                      },
+                      "nucleos": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 512
+                      }
+                    },
+                    "required": [
+                      "largura",
+                      "altura"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sessaoId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "traceId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{32}$"
+                  },
+                  "spanId": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{16}$"
+                  }
+                },
+                "required": [
+                  "expId",
+                  "versao",
+                  "mensagem",
+                  "url",
+                  "sessaoId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/observabilidade/publico/vitals": {
+      "post": {
+        "operationId": "ObservabilidadePublicoController_vitals",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sucesso, sem corpo."
+          }
+        },
+        "tags": [
+          "observabilidade"
+        ],
+        "summary": "Recebe um Web Vital medido antes do login.",
+        "description": "A tela de login é a primeira de toda sessão, e o vital dela é o único que mede a primeira impressão de desempenho da plataforma. Registrado no mesmo histograma das telas autenticadas, com `perfil: anonimo` — sem token não há perfil a declarar.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 20 por minuto por IP, mais o teto global da instância.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "enum": [
+                      "LCP",
+                      "INP",
+                      "CLS",
+                      "TTFB"
+                    ]
+                  },
+                  "valor": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 600000
+                  },
+                  "rota": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "superficie": {
+                    "type": "string",
+                    "enum": [
+                      "hub",
+                      "exp"
+                    ]
+                  },
+                  "dispositivo": {
+                    "type": "object",
+                    "properties": {
+                      "largura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "altura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "dpr": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 8
+                      },
+                      "conexao": {
+                        "type": "string",
+                        "enum": [
+                          "slow-2g",
+                          "2g",
+                          "3g",
+                          "4g"
+                        ]
+                      },
+                      "memoriaGb": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1024
+                      },
+                      "nucleos": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 512
+                      }
+                    },
+                    "required": [
+                      "largura",
+                      "altura"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "nome",
+                  "valor",
+                  "rota",
+                  "superficie"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/observabilidade/erros-cliente": {
       "post": {
         "operationId": "ObservabilidadeController_errosCliente",
@@ -36,7 +272,7 @@
                   "versao": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 32
+                    "maxLength": 64
                   },
                   "mensagem": {
                     "type": "string",
@@ -54,6 +290,50 @@
                   "userAgent": {
                     "type": "string",
                     "maxLength": 256
+                  },
+                  "dispositivo": {
+                    "type": "object",
+                    "properties": {
+                      "largura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "altura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "dpr": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 8
+                      },
+                      "conexao": {
+                        "type": "string",
+                        "enum": [
+                          "slow-2g",
+                          "2g",
+                          "3g",
+                          "4g"
+                        ]
+                      },
+                      "memoriaGb": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1024
+                      },
+                      "nucleos": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 512
+                      }
+                    },
+                    "required": [
+                      "largura",
+                      "altura"
+                    ],
+                    "additionalProperties": false
                   },
                   "sessaoId": {
                     "type": "string",
@@ -134,6 +414,50 @@
                       "hub",
                       "exp"
                     ]
+                  },
+                  "dispositivo": {
+                    "type": "object",
+                    "properties": {
+                      "largura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "altura": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20000
+                      },
+                      "dpr": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 8
+                      },
+                      "conexao": {
+                        "type": "string",
+                        "enum": [
+                          "slow-2g",
+                          "2g",
+                          "3g",
+                          "4g"
+                        ]
+                      },
+                      "memoriaGb": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1024
+                      },
+                      "nucleos": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 512
+                      }
+                    },
+                    "required": [
+                      "largura",
+                      "altura"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [

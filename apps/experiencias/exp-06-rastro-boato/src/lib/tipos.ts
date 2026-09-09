@@ -14,7 +14,7 @@ export const EXP_ID = "exp-06-rastro-boato";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o teste `versao.test.ts` compara os três.
  */
-export const EXP_VERSION = "0.1.0";
+export const EXP_VERSION = "0.1.1";
 
 export type Passo =
   | "contexto"

@@ -9,6 +9,8 @@
  * Nenhum identificador de pessoa no corpo: `rota` é o `expId`, o perfil vem do
  * token na api.
  */
+import { lerDispositivo, type DispositivoDoNavegador } from "./dispositivo";
+
 export const AMOSTRA_DE_VITAIS = 0.1;
 
 export interface Vital {
@@ -16,6 +18,7 @@ export interface Vital {
   valor: number;
   rota: string;
   superficie: "hub" | "exp";
+  dispositivo?: DispositivoDoNavegador;
 }
 
 export interface OpcoesDosVitais {
@@ -31,8 +34,14 @@ export async function instalarVitais(o: OpcoesDosVitais): Promise<boolean> {
   const amostra = o.amostra ?? AMOSTRA_DE_VITAIS;
   if ((o.sorteio ?? Math.random)() >= amostra || typeof window === "undefined") return false;
   const { onCLS, onINP, onLCP, onTTFB } = await import("web-vitals");
+  // Lido UMA vez, na instalação: `innerWidth` durante um LCP forçaria layout,
+  // e o aparelho não muda no meio da sessão (girar a tela, sim — e o que se
+  // mede aqui é a população de aparelhos, não a orientação).
+  const dispositivo = lerDispositivo();
   const mandar = (nome: Vital["nome"]) => (m: { value: number }) => {
-    void o.enviar({ nome, valor: Math.round(m.value * 1000) / 1000, rota: o.rota, superficie: o.superficie }).catch(() => undefined);
+    void o
+      .enviar({ nome, valor: Math.round(m.value * 1000) / 1000, rota: o.rota, superficie: o.superficie, ...(dispositivo ? { dispositivo } : {}) })
+      .catch(() => undefined);
   };
   onLCP(mandar("LCP"));
   onINP(mandar("INP"));
