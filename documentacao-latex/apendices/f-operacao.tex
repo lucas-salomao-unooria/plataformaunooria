@@ -834,7 +834,6 @@ caiu} &
   antigo que sobreviveu ao \cd{pkill} continua servindo a porta com a
   configuração velha --- \cd{lsof -nP -iTCP:<porta> -sTCP:LISTEN} diz QUEM está
   lá, e o \cd{EADDRINUSE} no \emph{log} do processo novo é a confirmação.\\
-\bottomrule
 \textbf{A imagem gerada sai, e a voz responde \cd{403 PERMISSION\_DENIED}} &
   ADC de \textbf{usuário} sem projeto de cota. A síntese da exp-07 não vai ao
   \cd{aiplatform}: vai à Cloud Text-to-Speech, que exige o cabeçalho
@@ -871,6 +870,21 @@ marcado} &
   caminho escrito para salvar a corrida era o que a virava 500. A releitura
   depois de conflito de chave única vai numa transação NOVA. Procure por
   \cd{catch} que consulta usando o mesmo \cd{tx}.\\
+\textbf{Uma suíte do Jest reprova com \enquote{Test suite failed to run} e
+\cd{TypeError: Cannot read properties of undefined (reading '\$disconnect')}} &
+  \textbf{O erro reportado não é a causa}: é o \emph{teardown} substituindo o
+  erro do \cd{beforeAll} no relatório. O cliente do Prisma era criado no FIM do
+  \cd{beforeAll} e desconectado no \cd{afterAll}; falhando o \emph{setup}
+  antes daquela linha, a variável fica \cd{undefined} e o \cd{afterAll}
+  estoura --- e é o \cd{TypeError} dele que o Jest imprime, no lugar do que
+  quebrou de verdade. O sintoma é intermitente (só aparece quando o
+  \emph{setup} falha) e aponta para o arquivo certo pela razão errada.
+  \textbf{Cliente de banco nasce no MÓDULO, com \cd{const}}, e a limpeza do
+  \cd{afterAll} vai \emph{best-effort} (\cd{.catch(() => undefined)}): falha
+  de limpeza também substitui o erro do teste. Para conferir que o mascaramento
+  saiu, sem esperar a intermitência: ponha um \cd{throw} na primeira linha do
+  \cd{beforeAll} e veja se o relatório mostra a SUA mensagem.\\
+\bottomrule
 \end{tabularx}
 
 \section{\emph{Checklist} de operação}

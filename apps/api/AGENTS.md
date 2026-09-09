@@ -258,6 +258,26 @@ defeito da contagem de professores nasceu daí. Fica como regra operacional:
   contagem e lista na mesma escola, com o professor de duas escolas montado de
   propósito. Verificado que ela REPROVA sem a correção.
 
+## O teardown de uma suíte não pode falar pelo setup (2026-09-08)
+
+**Cliente de banco de suíte nasce no MÓDULO, com `const` — nunca dentro do
+`beforeAll`.** Quatro suítes o criavam no FIM do `beforeAll` e o desconectavam no
+`afterAll`; qualquer falha do setup ANTES daquela linha deixava a variável
+`undefined`, o `afterAll` estourava com `TypeError: Cannot read properties of
+undefined (reading '$disconnect')` — e **é o erro do teardown que o Jest
+imprime**, no lugar do erro que quebrou de verdade. A suíte reprovava dizendo a
+coisa errada, de forma intermitente, e a causa real nunca aparecia no relatório.
+
+**A limpeza do `afterAll` vai `best-effort`** (`await limpar().catch(() =>
+undefined)`), pelo mesmo motivo: falha de limpeza também substitui o erro do
+teste. As conexões fecham depois dela de qualquer jeito — sem `$disconnect` o
+Jest não sai.
+
+A URL do banco é constante de módulo nas quatro: **nunca houve motivo para o
+cliente esperar o hook**. E a prova de que o mascaramento saiu não é a suíte
+passar: é pôr um `throw` na primeira linha do `beforeAll` e conferir que o
+relatório mostra AQUELA mensagem.
+
 ## Identidade e enturmamento (2026-08-28)
 
 **Uma conta por PESSOA, a mesma no hub e em todas as experiências.** As

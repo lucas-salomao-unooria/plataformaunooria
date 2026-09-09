@@ -31,7 +31,20 @@ const ADMIN_URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localh
 const ESCOLA = "teste-exp92-exclusao";
 const admin = new PrismaClient({ datasources: { db: { url: ADMIN_URL } } });
 
-let prisma: PrismaService;
+/**
+ * O cliente nasce no MÓDULO, não dentro do `beforeAll`.
+ *
+ * Estava no fim do `beforeAll`, e o `afterAll` fazia `prisma.$disconnect()`:
+ * qualquer falha do `beforeAll` ANTES daquela linha deixava `prisma` undefined,
+ * e o teardown estourava com `TypeError: Cannot read properties of undefined
+ * (reading '$disconnect')` — que o Jest reporta como "Test suite failed to
+ * run" e que SUBSTITUI o erro real no relatório. A suíte falhava dizendo a
+ * coisa errada, de forma intermitente, e a causa verdadeira nunca aparecia.
+ *
+ * `ADMIN_URL` é constante de módulo, então nunca houve motivo para o cliente
+ * esperar o hook.
+ */
+const prisma = new PrismaService({ datasources: { db: { url: ADMIN_URL } } });
 let servico: PlanejamentoService;
 /** Os prefixos que o service pediu para apagar. */
 let prefixosApagados: string[];
@@ -135,7 +148,6 @@ beforeAll(async () => {
   idDoProfessor = dono.id;
   idDeOutroProfessor = outro.id;
 
-  prisma = new PrismaService({ datasources: { db: { url: ADMIN_URL } } });
   servico = new PlanejamentoService(prisma, storage, new QuotaService(prisma, config), provider);
 });
 
@@ -144,7 +156,10 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-  await limpar();
+  /* A limpeza NÃO pode derrubar o teardown: se ela falhar, o erro dela
+     substituiria o do teste que realmente quebrou. Ela é best-effort; as
+     conexões fecham de qualquer jeito, senão o Jest não sai. */
+  await limpar().catch(() => undefined);
   await prisma.$disconnect();
   await admin.$disconnect();
 });
