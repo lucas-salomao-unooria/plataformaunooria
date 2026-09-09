@@ -16,7 +16,13 @@ const ESCOLA_B = "teste-planos-rls-b";
 const DISCIPLINA = "teste-planos-rls";
 
 const admin = new PrismaClient({ datasources: { db: { url: ADMIN_URL } } });
-let runtime: PrismaService;
+/* O cliente de runtime nasce no MÓDULO, não no `beforeAll`. Criado dentro do
+   hook, qualquer falha ANTES da atribuição deixava a variável undefined e o
+   `afterAll` estourava com `TypeError: ... reading '$disconnect'` — que o Jest
+   reporta como "Test suite failed to run" e que SUBSTITUI o erro real. A suíte
+   falhava dizendo a coisa errada. A URL é constante de módulo: nunca houve
+   motivo para esperar o hook. */
+const runtime = new PrismaService({ datasources: { db: { url: RUNTIME_URL } } });
 
 async function limpar() {
   await admin.planoDeAula.deleteMany({ where: { escolaId: { in: [ESCOLA_A, ESCOLA_B] } } });
@@ -42,11 +48,11 @@ beforeAll(async () => {
   await admin.planoReferencia.create({
     data: { disciplina: DISCIPLINA, serie: "8EF", nome: "Ref", texto: "texto do contrato" },
   });
-  runtime = new PrismaService({ datasources: { db: { url: RUNTIME_URL } } });
 });
 
 afterAll(async () => {
-  await limpar();
+  /* best-effort: falha na limpeza não pode virar o erro reportado. */
+  await limpar().catch(() => undefined);
   await runtime.$disconnect();
   await admin.$disconnect();
 });
