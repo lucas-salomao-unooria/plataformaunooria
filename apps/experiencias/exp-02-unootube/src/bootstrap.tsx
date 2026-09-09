@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createExperiencia } from "@edu/sdk";
+import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
 import { Logo } from "@edu/ui/ds-unootube";
 
 import { api, definirExperiencia } from "./lib/api";
@@ -23,8 +23,9 @@ export function Bootstrap() {
   useEffect(() => {
     let ativo = true;
     void (async () => {
+      let exp: ExperienciaHandle | null = null;
       try {
-        const exp = await createExperiencia({ expId: EXP_ID, expVersion: EXP_VERSION });
+        exp = await createExperiencia({ expId: EXP_ID, expVersion: EXP_VERSION });
         definirExperiencia(exp);
         // hub:pause/resume → pausa/retoma o vídeo ativo (iframe escondido não recebe visibilitychange).
         exp.on("pause", () => marcarVisibilidade(false));
@@ -34,6 +35,12 @@ export function Bootstrap() {
         if (ativo) setSessao(dados);
       } catch (falha) {
         console.error("[unootube] boot falhou", falha);
+        // O boot que falha DEPOIS do handshake tem token, e por isso pode
+        // reportar: era esta a falha que o estudante via como "não deu para
+        // abrir agora" e que não deixava rastro nenhum no servidor (ADR-84).
+        // Antes do handshake `exp` é null — ali não há token, e o sinal é a
+        // ausência de `exp:ready`, que o hub observa.
+        exp?.reportarErro(falha);
         if (ativo) setErro("Não deu para abrir agora. Fecha e tenta de novo.");
       }
     })();
