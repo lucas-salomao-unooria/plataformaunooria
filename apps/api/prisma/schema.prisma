@@ -45,11 +45,20 @@ model Escola {
   /// municipal: é o nível que agrupa unidades dentro de uma rede. O `district`
   /// do OneRoster é mapeado para cá na importação.
   tipo         String   @default("escola")
-  /// A regional (ou a rede) a que esta unidade pertence. Serve para MONTAR a
-  /// lista de escolas de uma diretoria — o insumo da lotação em lote —, nunca
-  /// para autorizar: quem autoriza é a lotação. Trigger na migration recusa
-  /// escola como pai.
+  /// A REGIONAL a que esta unidade pertence. Serve para MONTAR a lista de
+  /// escolas de uma diretoria — o insumo da lotação em lote —, nunca para
+  /// autorizar: quem autoriza é a lotação.
+  ///
+  /// OBRIGATÓRIO quando `tipo = 'escola'` (CHECK na migration), e o pai tem de
+  /// ser `regional` — nunca `rede` (trigger). Nulo aqui é só para a própria
+  /// regional. Escola órfã fazia o filtro da tela não particionar a lista e a
+  /// lotação em lote cobrir menos do que parecia cobrir (ADR-79).
   paiId        String?  @map("pai_id")
+  /// A regional que a plataforma criou sozinha, para a rede sem divisão
+  /// administrativa. No máximo uma (índice único PARCIAL na migration); o nome
+  /// nasce `Rede` e é EDITÁVEL — o nome real da rede não existe no banco,
+  /// porque o contrato é a stack e não uma linha.
+  regionalPadrao Boolean @default(false) @map("regional_padrao")
   /// `sourcedId` desta org no sistema de origem (SIS da rede). Chave de
   /// reconciliação da importação — nunca é o id daqui.
   fonteId      String?  @map("fonte_id")

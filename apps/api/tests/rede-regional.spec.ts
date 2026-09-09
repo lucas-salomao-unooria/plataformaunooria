@@ -98,6 +98,18 @@ describe("hierarquia: agrupa, não autoriza", () => {
     expect(regionais.every((e) => e.turmas === 0 && e.estudantes === 0)).toBe(true);
   });
 
+  test("a regional conta as escolas que agrupa, mesmo filtrando só regionais", async () => {
+    /* `unidades` é o número da tela de Regionais, e ele NÃO pode sair da lista
+       da consulta: com `tipo=regional` as filhas não estão no resultado, e
+       contá-las ali daria zero em toda linha. */
+    const regionais = await escolas.listar({ tipo: "regional", busca: "DE Teste" });
+    expect(regionais.find((e) => e.id === REGIONAL)?.unidades).toBe(ESCOLAS.length);
+    expect(regionais.find((e) => e.id === OUTRA_REGIONAL)?.unidades).toBe(1);
+    // Escola nenhuma agrupa nada: unidade dentro de unidade não existe na rede.
+    const unidades = await escolas.listar({ paiId: REGIONAL });
+    expect(unidades.every((e) => e.unidades === 0)).toBe(true);
+  });
+
   test("filtrar por município é o outro caminho de montar o lote", async () => {
     const emSantos = await escolas.listar({ municipio: "santos" });
     expect(emSantos.map((e) => e.id)).toEqual([ESCOLAS[2]]);
@@ -106,7 +118,28 @@ describe("hierarquia: agrupa, não autoriza", () => {
   test("ESCOLA não pode ser pai de escola — o banco recusa", async () => {
     await expect(
       prisma.escola.update({ where: { id: ESCOLAS[1]! }, data: { paiId: ESCOLAS[0]! } }),
-    ).rejects.toThrow(/regional ou rede/);
+    ).rejects.toThrow(/tem de ser regional/);
+  });
+
+  test("e ESCOLA NENHUMA fica sem regional — nem por SQL", async () => {
+    /* Três camadas sustentam o vínculo obrigatório (ADR-79): o Zod reprova o
+       formulário, o service reprova a chamada, e o banco não deixa a linha
+       existir órfã. A camada do banco ADOTA em vez de recusar — quem escreve
+       SQL direto (as suítes que criam escola de mentira para testar outra
+       coisa) não declarou preferência de regional, e a padrão é a linha que
+       existe justamente para esse caso. Sem padrão na rede, o CHECK recusa. */
+    const padrao = await prisma.escola.findFirst({ where: { regionalPadrao: true } });
+    const tentativa = prisma.escola.update({
+      where: { id: ESCOLAS[0]! },
+      data: { paiId: null },
+    });
+    if (padrao) {
+      expect(await tentativa).toMatchObject({ paiId: padrao.id });
+      // e volta para a diretoria dela, que é o estado que o resto da suíte lê
+      await prisma.escola.update({ where: { id: ESCOLAS[0]! }, data: { paiId: REGIONAL } });
+    } else {
+      await expect(tentativa).rejects.toThrow(/escola_tem_regional/);
+    }
   });
 
   test("nem pai de si mesma", async () => {
@@ -154,6 +187,14 @@ describe("lotação em lote", () => {
     // fantasma, sem nada dentro.
     expect(feito?.ignoradas).toEqual([REGIONAL]);
     expect(feito?.lotadas).toBe(1);
+  });
+
+  test("e a rota INDIVIDUAL recusa a regional pelo mesmo motivo", async () => {
+    /* O lote filtrava por tipo desde o início; `lotar` não filtrava nada, e por
+       `POST /escolas/:id/lotacoes` dava para produzir a escola fantasma que o
+       lote existe para evitar. */
+    expect(await escolas.lotar(REGIONAL, supervisorId, "gestor")).toBeNull();
+    expect(await escolas.temLotacao(supervisorId, REGIONAL)).toBe(false);
   });
 
   test("admin-contrato não pode ser lotado", async () => {

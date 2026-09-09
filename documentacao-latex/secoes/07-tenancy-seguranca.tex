@@ -279,8 +279,8 @@ redirecionado para a própria casa, porque estudante que tropeça em
   Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
   aparece para quem tem mais de uma lotação.\\
 \zebra \cd{admin-contrato} & \rota{/admin/usuarios} &
-  O mesmo, mais \rota{/admin/escolas} (abrir unidade) e \rota{/analise}
-  (o nível de produto, na rede inteira).\\
+  O mesmo, mais \rota{/admin/regionais} e \rota{/admin/escolas} (organizar a rede
+  e abrir unidade) e \rota{/analise} (o nível de produto, na rede inteira).\\
 \bottomrule
 \end{tabularx}
 
@@ -289,7 +289,8 @@ redirecionado para a própria casa, porque estudante que tropeça em
 --- \cd{areaDoPapel} devolve \rota{/admin/usuarios} para os dois. A distinção
 entre eles \textbf{não} é feita ali: é feita item a item na navegação
 (\cd{SO\_ADMIN\_DO\_CONTRATO} em \arq{components/nav-admin.tsx}), por
-\cd{redirect} na página que não admite gestor (\rota{/admin/escolas}) e,
+\cd{redirect} nas páginas que não admitem gestor (\rota{/admin/escolas} e
+\rota{/admin/regionais}) e,
 definitivamente, pelo \cd{RolesGuard} da API. Um gestor que digite
 \rota{/analise} vê a tela abrir e ficar \textbf{vazia}: a API responde 403, o
 BFF converte em \cd{null} e não há o que renderizar. Nenhum dado atravessa ---
@@ -331,15 +332,17 @@ Abrir uma turma e ver quem está nela & \rota{GET /turmas/:id} & \no &
   \yes\footnotesize{*} & \yes & \yes\\
 \zebra Abrir o ano letivo & \rota{POST /periodos-letivos} & \no & \no & \yes & \yes\\
 Ler os períodos letivos & \rota{GET /periodos-letivos} & \no & \yes & \yes & \yes\\
-\zebra \textbf{Abrir ou editar ESCOLA} & \rota{POST}, \rota{PATCH /escolas} &
-  \no & \no & \no & \yes\\
-Conceder lotações em lote (nível da rede) &
+\zebra \textbf{Abrir ou editar ESCOLA ou REGIONAL} & \rota{POST},
+  \rota{PATCH /escolas} & \no & \no & \no & \yes\\
+\textbf{Excluir uma REGIONAL} (escola não se exclui) &
+  \rota{DELETE /escolas/:id} & \no & \no & \no & \yes\\
+\zebra Conceder lotações em lote (nível da rede) &
   \rota{POST /escolas/\B lotacoes-em-lote} & \no & \no & \no & \yes\\
-\zebra Lotar alguém numa escola, encerrar lotação &
+Lotar alguém numa escola, encerrar lotação &
   \rota{POST /escolas/\B :id/lotacoes}, \rota{DELETE /lotacoes/:id} & \no & \no & \yes & \yes\\
-Transferir estudante entre escolas do contrato &
+\zebra Transferir estudante entre escolas do contrato &
   \rota{POST /estudantes/\B :id/transferir} & \no & \no & \yes & \yes\\
-\zebra Ler o histórico de quem foi transferido &
+Ler o histórico de quem foi transferido &
   \rota{GET /estudantes/\B :id/historico} & \no & \yes & \yes & \yes\\
 Emitir, importar e remover perfil portátil &
   \rota{/estudantes/:id/\B perfil-portatil}, \rota{/perfis-recebidos} & \no & \no & \yes & \yes\\

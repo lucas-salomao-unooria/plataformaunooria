@@ -18,7 +18,29 @@ export interface EscolaDaRede {
   estudantes: number;
   professores: number;
   turmas: number;
+  /** Quantas escolas esta REGIONAL agrupa; 0 numa `escola`. */
+  unidades: number;
+  /** A regional que a plataforma criou para a rede sem divisão administrativa. */
+  regionalPadrao: boolean;
 }
+
+/**
+ * Por que a exclusão de regional não é `boolean` nem exceção: cada recusa manda
+ * a TELA fazer uma coisa diferente — a última regional é um beco (não há o que
+ * oferecer), e regional com escolas é um diálogo de transferência. Um `false`
+ * comum aos dois obrigaria a tela a redescobrir qual era, reconsultando o que a
+ * api acabou de olhar.
+ */
+export type ExclusaoDeRegional =
+  | { ok: true; transferidas: number }
+  | { erro: "nao-encontrada" }
+  | { erro: "nao-e-regional" }
+  | { erro: "ultima-regional" }
+  | { erro: "tem-escolas"; escolas: number; destinos: number }
+  | { erro: "destino-invalido" };
+
+/** Recusa de REGRA na escrita de escola — distinta de `null`, que é ausência. */
+export type RecusaDeEscola = { erro: "regional-invalida" | "sem-regional" };
 
 export interface FiltroDeEscolas {
   busca?: string;
@@ -72,13 +94,21 @@ export class EscolasService {
     if (escolas.length === 0) return [];
 
     const ids = escolas.map((e) => e.id);
-    const [lotacoes, turmas] = await Promise.all([
+    const [lotacoes, turmas, filhas] = await Promise.all([
       this.prisma.lotacao.groupBy({
         by: ["escolaId", "papel"],
         where: { escolaId: { in: ids }, fim: null },
         _count: { _all: true },
       }),
       this.prisma.turma.groupBy({ by: ["escolaId"], where: { escolaId: { in: ids } }, _count: { _all: true } }),
+      /* As escolas de cada regional, contadas FORA do filtro da consulta: a tela
+         de Regionais pede `tipo=regional`, e as filhas dela não estão no
+         resultado. Contá-las a partir de `escolas` daria zero em toda linha. */
+      this.prisma.escola.groupBy({
+        by: ["paiId"],
+        where: { tipo: "escola", paiId: { in: ids } },
+        _count: { _all: true },
+      }),
     ]);
     const conta = (escolaId: string, papel: string) =>
       lotacoes.find((l) => l.escolaId === escolaId && l.papel === papel)?._count._all ?? 0;
@@ -95,7 +125,28 @@ export class EscolasService {
       estudantes: conta(e.id, "estudante"),
       professores: conta(e.id, "professor"),
       turmas: turmas.find((t) => t.escolaId === e.id)?._count._all ?? 0,
+      unidades: filhas.find((f) => f.paiId === e.id)?._count._all ?? 0,
+      regionalPadrao: e.regionalPadrao,
     }));
+  }
+
+  /** As regionais da rede — o que alimenta o seletor do cadastro de escola, a
+   *  tela de Regionais e a lista de destinos de uma transferência. */
+  async regionais(busca?: string) {
+    return this.listar({ tipo: "regional", busca });
+  }
+
+  /**
+   * A regional existe e É regional? É a checagem que impede o 500: sem ela, um
+   * `pai_id` inventado só é recusado pelo trigger, e o que chega na tela é a
+   * exceção crua do Postgres em vez do texto do produto.
+   */
+  private async regionalValida(paiId: string) {
+    const pai = await this.prisma.escola.findUnique({
+      where: { id: paiId },
+      select: { id: true, tipo: true },
+    });
+    return pai?.tipo === "regional";
   }
 
   async criar(dados: {
@@ -107,11 +158,18 @@ export class EscolasService {
     uf?: string | null;
     paiId?: string | null;
   }) {
+    const tipo = dados.tipo ?? "escola";
+    // A regional é do Zod (`NovaEscolaSchema`); aqui se confere que ela EXISTE
+    // e que é regional — o que o schema não tem como saber.
+    if (tipo === "escola") {
+      if (!dados.paiId) return { erro: "sem-regional" as const };
+      if (!(await this.regionalValida(dados.paiId))) return { erro: "regional-invalida" as const };
+    }
     return this.prisma.escola.create({
       data: {
         id: dados.id,
         nome: dados.nome,
-        tipo: dados.tipo ?? "escola",
+        tipo,
         codigoInep: dados.codigoInep ?? null,
         municipio: dados.municipio ?? null,
         uf: dados.uf ?? null,
@@ -132,7 +190,69 @@ export class EscolasService {
   ) {
     const escola = await this.prisma.escola.findUnique({ where: { id } });
     if (!escola) return null;
+    /* Editar é o outro caminho pelo qual uma escola ficaria órfã: o formulário
+       manda `paiId: ""`, o controller o traduz para null, e sem esta guarda o
+       CHECK do banco reprovaria com exceção crua em vez do texto do produto.
+       `undefined` (o campo não veio) segue passando: é edição de nome ou INEP. */
+    if (escola.tipo === "escola" && dados.paiId === null) {
+      return { erro: "sem-regional" as const };
+    }
+    if (dados.paiId && !(await this.regionalValida(dados.paiId))) {
+      return { erro: "regional-invalida" as const };
+    }
     return this.prisma.escola.update({ where: { id }, data: dados });
+  }
+
+  /**
+   * Exclui uma REGIONAL, transferindo as escolas dela quando houver destino.
+   *
+   * Escola NÃO se exclui por aqui e nem por lugar nenhum: ela é tenant, com
+   * turma, dado de menor e histórico atrás — a saída de uma unidade é assunto de
+   * contrato, não de um botão numa tabela. A regional é o oposto: ela não guarda
+   * dado nenhum, e uma rede que se reorganiza em diretorias novas precisa poder
+   * apagar as antigas.
+   *
+   * Duas recusas, e as duas são de PRODUTO (ADR-79): a rede nunca fica sem
+   * regional, e uma regional com escolas só sai depois de dizer para onde elas
+   * vão. A padrão não tem proteção especial — depois que a rede se organizou de
+   * verdade, ela é exatamente a sobra que se quer remover; o que a segura é a
+   * mesma regra da última.
+   *
+   * Transferir e excluir na MESMA transação: em duas chamadas existe a janela em
+   * que as escolas já mudaram de regional e a antiga continua na lista, e é
+   * nessa janela que quem estiver com a tela aberta recarrega.
+   */
+  async excluirRegional(id: string, transferirPara?: string): Promise<ExclusaoDeRegional> {
+    return this.prisma.$transaction(async (tx) => {
+      const regional = await tx.escola.findUnique({ where: { id }, select: { id: true, tipo: true } });
+      if (!regional) return { erro: "nao-encontrada" as const };
+      if (regional.tipo !== "regional") return { erro: "nao-e-regional" as const };
+
+      const quantasRegionais = await tx.escola.count({ where: { tipo: "regional" } });
+      if (quantasRegionais <= 1) return { erro: "ultima-regional" as const };
+
+      const escolas = await tx.escola.count({ where: { tipo: "escola", paiId: id } });
+      let transferidas = 0;
+      if (escolas > 0) {
+        if (!transferirPara) {
+          return { erro: "tem-escolas" as const, escolas, destinos: quantasRegionais - 1 };
+        }
+        if (transferirPara === id) return { erro: "destino-invalido" as const };
+        const destino = await tx.escola.findUnique({
+          where: { id: transferirPara },
+          select: { tipo: true },
+        });
+        if (destino?.tipo !== "regional") return { erro: "destino-invalido" as const };
+        const movidas = await tx.escola.updateMany({
+          where: { tipo: "escola", paiId: id },
+          data: { paiId: transferirPara },
+        });
+        transferidas = movidas.count;
+      }
+
+      await tx.escola.delete({ where: { id } });
+      return { ok: true as const, transferidas };
+    });
   }
 
   // ----------------------------------------------------------------- lotações
@@ -312,6 +432,12 @@ export class EscolasService {
       if (!usuario || usuario.role === "admin-contrato") return null;
       const escola = await tx.escola.findUnique({ where: { id: escolaId } });
       if (!escola) return null;
+      /* Só UNIDADE recebe lotação — a mesma regra que `lotarEmLote` aplica ao
+         filtrar `tipo: "escola"`. Esta rota individual não a tinha, e por ela
+         dava para lotar alguém numa regional: uma escola sem turma, sem
+         estudante e sem dado, que apareceria no seletor do cabeçalho como
+         destino válido. É a "escola fantasma" que o lote existe para evitar. */
+      if (escola.tipo !== "escola") return null;
       const primeira = (await tx.lotacao.count({ where: { usuarioId, fim: null } })) === 0;
       await garantirLotacao(tx, {
         escolaId,

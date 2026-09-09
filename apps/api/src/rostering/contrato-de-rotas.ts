@@ -157,7 +157,7 @@ export const IdDeEscola = z
  *  municipal) e `rede` é a raiz — nenhuma das duas recebe lotação. */
 export const TIPOS_DE_ESCOLA = ["escola", "regional", "rede"] as const;
 
-export const NovaEscolaSchema = z.object({
+const CamposDeEscola = z.object({
   id: IdDeEscola,
   nome: z.string().trim().min(1).max(160),
   tipo: z.enum(TIPOS_DE_ESCOLA).default("escola"),
@@ -169,7 +169,40 @@ export const NovaEscolaSchema = z.object({
   paiId: z.union([z.literal(""), IdDeEscola]).optional(),
 });
 
-export const EditarEscolaSchema = NovaEscolaSchema.partial().omit({ id: true, tipo: true });
+/** A mensagem é a do produto e sai daqui: é o Zod que reprova antes do banco, e
+ *  o texto do 400 é o que a tela mostra sem traduzir nada. */
+export const SEM_REGIONAL = "Selecione uma regional para cadastrar a escola.";
+
+/**
+ * Escola exige regional (ADR-79); regional não tem pai obrigatório.
+ *
+ * O refine mora no schema de ENTRADA e não no service porque é a fronteira que
+ * o OpenAPI publica — e porque `paiId: ""`, que a tela manda quando o seletor
+ * fica vazio, precisa reprovar igual a `paiId` ausente.
+ */
+export const NovaEscolaSchema = CamposDeEscola.superRefine((v, ctx) => {
+  if (v.tipo === "escola" && !v.paiId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paiId"], message: SEM_REGIONAL });
+  }
+});
+
+/** `tipo` fica fora: ele circula em token e em RLS, e trocar o tipo de uma linha
+ *  existente reescreveria a hierarquia por baixo de quem já depende dela.
+ *  `paiId` pode vir, mas o service recusa ESVAZIÁ-LO numa escola. */
+export const EditarEscolaSchema = CamposDeEscola.partial().omit({ id: true, tipo: true });
+
+/** A exclusão de regional aceita o DESTINO das escolas no mesmo passo:
+ *  transferir e excluir em duas chamadas deixaria a janela em que as escolas já
+ *  mudaram de regional e a antiga continua na lista. */
+export const ExcluirRegionalQuery = z.object({
+  transferirPara: IdDeEscola.optional(),
+});
+
+export const RegionalExcluidaSchema = z.object({
+  ok: z.literal(true),
+  /** Quantas escolas mudaram de regional antes da exclusão. */
+  transferidas: z.number().int().nonnegative(),
+});
 
 export const LotarSchema = z.object({
   usuarioId: Uuid,
@@ -204,7 +237,6 @@ export const PapelDeLotacaoQuery = z.object({
 // -------------------------------------------------------------------- saída
 
 /** Uma escola do contrato, com contagem. `pai` é o NOME da regional. */
-/** Uma escola do contrato, com contagem. `pai` é o NOME da regional. */
 export const EscolaDaRedeSchema = z.object({
   id: z.string(),
   nome: z.string(),
@@ -217,6 +249,12 @@ export const EscolaDaRedeSchema = z.object({
   estudantes: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
   turmas: z.number().int().nonnegative(),
+  /** Quantas escolas esta REGIONAL agrupa. Sempre 0 numa `escola` — é o número
+   *  que a tela de Regionais mostra por linha, e o que diz se a exclusão dela
+   *  precisa de transferência antes. */
+  unidades: z.number().int().nonnegative(),
+  /** A regional criada pela plataforma para a rede sem divisão administrativa. */
+  regionalPadrao: z.boolean(),
 });
 
 export const EscolasDaRedeSchema = z.array(EscolaDaRedeSchema);
@@ -228,6 +266,7 @@ export const EscolaCruaSchema = z.object({
   codigoInep: z.string().nullable(),
   tipo: z.string(),
   paiId: z.string().nullable(),
+  regionalPadrao: z.boolean(),
   municipio: z.string().nullable(),
   uf: z.string().nullable(),
   fonteId: z.string().nullable(),

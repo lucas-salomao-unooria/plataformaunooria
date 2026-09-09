@@ -21,7 +21,7 @@ import type { Papel } from "@/lib/papeis";
  * elemento — um campo meu ali dentro virava atributo camelCase no DOM, com o
  * React reclamando em toda tela da área.
  */
-const SO_ADMIN_DO_CONTRATO = new Set(["escolas"]);
+const SO_ADMIN_DO_CONTRATO = new Set(["regionais", "escolas"]);
 
 /**
  * O panorama só aparece para quem tem MAIS DE UMA lotação — o supervisor de uma
@@ -31,6 +31,15 @@ const SO_ADMIN_DO_CONTRATO = new Set(["escolas"]);
 const SO_COM_VARIAS_ESCOLAS = new Set(["minhas-escolas"]);
 
 const ITENS: Array<SideBarItemData & { href: string }> = [
+  /* Regionais ANTES de Escolas: é a ordem da hierarquia (rede → regional →
+     escola), e quem chega pela primeira vez lê a lateral de cima para baixo.
+     As duas eram uma tela só até 2026-09-08 (ADR-79). */
+  {
+    id: "regionais",
+    label: "Regionais",
+    icon: <Icon name="account_balance" />,
+    href: "/admin/regionais",
+  },
   { id: "escolas", label: "Escolas", icon: <Icon name="apartment" />, href: "/admin/escolas" },
   {
     id: "minhas-escolas",

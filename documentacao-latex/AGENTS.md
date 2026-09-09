@@ -8,14 +8,16 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 65, não a 72.** A numeração vai até ADR-71 e a **65 está
-  vaga** — perdida numa colisão entre frentes paralelas. Ela é o próximo número
-  a usar; depois dela, retoma-se em 72. Confira `origin/dev` antes de escrever
-  (a colisão que abriu a lacuna foi exatamente dois agentes reservando o mesmo
-  número ao mesmo tempo). **Número de ADR nunca é reaproveitado nem
-  renumerado**: ele já viaja em mensagem de commit, PR e PDF distribuído, e
-  renumerar não quebra a referência — faz ela apontar para outra decisão, em
-  silêncio.
+- **A PRÓXIMA ADR é a 80.** A numeração vai até ADR-79, sem lacuna: a 65 (que
+  ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
+  aula. **Confira na HORA de escrever o número, e não só `origin/dev`**: confira
+  as branches de trabalho abertas E a de integração. Conferir `origin/dev` não
+  basta — em 2026-09-07 duas frentes simultâneas reservaram a 76 e uma teve de
+  ceder, e a base de trabalho pode estar à frente de `dev` (a 79 nasceu sobre
+  `dev-local`, que já tinha 78 e `dev` tinha 71). **Número de ADR nunca é
+  reaproveitado nem renumerado**: ele já viaja em mensagem de commit, PR e PDF
+  distribuído, e renumerar não quebra a referência — faz ela apontar para outra
+  decisão, em silêncio.
 - **Dentro de `tikzpicture`, `\texttt{}` cru** — as macros `\cd`/`\arq`/`\rota`
   têm cor pensada para fundo claro e ficam invisíveis em nó escuro.
 - **Setas são `\seta` e `\implica`**, nunca `→`/`⇒` literais: a Roboto não tem o

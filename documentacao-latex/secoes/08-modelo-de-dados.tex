@@ -227,13 +227,18 @@ política de RLS ficam intocadas (\adrr{ADR-30}).
 \zebra \cd{escolas.codigo\_inep} \newline \cd{municipio}, \cd{uf} & Identificar a
   unidade numa rede de milhares. Sem município, a lista de escolas é impossível de
   navegar.\\
-\cd{escolas.tipo} \newline \cd{escolas.pai\_id} & O nível REGIONAL --- Diretoria
-  de Ensino, polo, secretaria municipal. \cd{tipo} tem vocabulário fechado
-  (\cd{escola}, \cd{regional}, \cd{rede}) e um \emph{trigger} recusa \cd{pai\_id}
-  que aponte para uma \cd{escola} ou para a própria linha. \textbf{Agrupa, não
-  autoriza}: serve para MONTAR a lista de unidades de uma diretoria --- o insumo
-  da lotação em lote --- e nenhuma consulta de autorização a lê
-  (\adrr{ADR-34}).\\
+\cd{escolas.tipo} \newline \cd{escolas.pai\_id} \newline
+  \cd{escolas.regional\_padrao} & O nível REGIONAL --- Diretoria de Ensino, polo,
+  secretaria municipal. \cd{tipo} tem vocabulário fechado (\cd{escola},
+  \cd{regional}, \cd{rede}) e um \emph{trigger} recusa \cd{pai\_id} que aponte
+  para uma \cd{escola} ou para a própria linha. \textbf{Agrupa, não autoriza}:
+  serve para MONTAR a lista de unidades de uma diretoria --- o insumo da lotação
+  em lote --- e nenhuma consulta de autorização a lê (\adrr{ADR-34}).
+  \newline \textbf{Desde a \adrr{ADR-79} o vínculo é OBRIGATÓRIO}: \cd{pai\_id}
+  não é nulo em \cd{tipo = 'escola'} (\emph{CHECK}) e o pai tem de ser
+  \cd{regional}. \cd{regional\_padrao} marca a regional que a plataforma cria
+  para a rede sem divisão administrativa --- no máximo uma, por índice único
+  parcial.\\
 \bottomrule
 \end{tabularx}
 
@@ -243,6 +248,14 @@ política de RLS ficam intocadas (\adrr{ADR-30}).
 a mesma armadilha do \cd{expires\_at} sem rotina e do
 \cd{turmas.consentimento\_em} do aplicativo de origem. Ou a coluna nasce com o
 consumidor, ou não nasce.
+
+\medskip
+\textbf{E coluna OPCIONAL que devia ser obrigatória é a mesma dívida, mais
+discreta.} \cd{pai\_id} nulável deixava a unidade órfã, e o custo só ficou
+visível na tela: o filtro \enquote{Regional} não PARTICIONAVA a lista, porque
+havia escolas fora de toda regional, e a lotação em lote --- o consumidor do
+agrupamento --- cobria menos do que parecia. A \adrr{ADR-79} fechou isso com
+\emph{CHECK}, \emph{trigger} e a regional padrão.
 \end{atencao}
 
 \begin{decisao}
@@ -1020,6 +1033,13 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \zebra \arq{20260828230000\_perfil\_portatil} & \cd{perfis\_portateis}, com RLS,
   \emph{CHECK} do vocabulário de \cd{verificacao} e único por
   (escola, estudante, emissor, emissão) --- \adrr{ADR-35}.\\
+\arq{20260908120000\_regional\_padrao\_e\_vinculo\_obrigatorio} &
+  \cd{escolas.regional\_padrao} com índice único parcial, o \emph{CHECK} que
+  exige \cd{pai\_id} em \cd{tipo = 'escola'}, o \emph{trigger} que passa a exigir
+  pai \cd{regional} e a adotar pela padrão, a criação da regional padrão e o
+  \emph{backfill} das órfãs --- \adrr{ADR-79}. A ORDEM do arquivo é a regra:
+  criar a padrão e adotar as órfãs vem ANTES do \emph{CHECK}, senão a
+  \emph{constraint} é validada contra as linhas que ela existe para eliminar.\\
 \bottomrule
 \end{tabularx}
 

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   ForbiddenException,
@@ -23,6 +24,7 @@ import {
   EscolaCruaSchema,
   EscolasDaPessoaSchema,
   EscolasDaRedeSchema,
+  ExcluirRegionalQuery,
   HistoricoDoEstudanteSchema,
   ListarEscolasSchema,
   LotarEmLoteSchema,
@@ -32,7 +34,9 @@ import {
   OkSchema,
   PapelDeLotacaoQuery,
   PessoasLotadasSchema,
+  RegionalExcluidaSchema,
   ResumoDasEscolasSchema,
+  SEM_REGIONAL,
   TransferenciaSchema,
   TransferirSchema,
 } from "./contrato-de-rotas";
@@ -43,6 +47,12 @@ type Autenticado = { auth: AuthClaims };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const vazioParaNulo = (v: string | undefined) => (v === undefined ? undefined : v === "" ? null : v);
+
+/** O texto que a tela mostra sem traduzir. `SEM_REGIONAL` é o do card de
+ *  produto; a regional inexistente é erro de quem chamou a api, não do humano
+ *  no formulário — lá o seletor só oferece regionais que existem. */
+const mensagemDaRecusa = (erro: "sem-regional" | "regional-invalida") =>
+  erro === "sem-regional" ? SEM_REGIONAL : "a regional informada não existe nesta rede";
 
 /**
  * A REDE: escolas do contrato e o vínculo das pessoas com elas.
@@ -145,7 +155,8 @@ export class EscolasController {
     resposta: EscolaCruaSchema,
     notas: [
       "Id já existente é **400**.",
-      "`pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja `escola` ou a própria linha.",
+      "**`tipo: escola` exige `paiId`** de uma regional existente (ADR-79): sem ele o 400 traz o texto do produto. `regional` entra sem pai.",
+      "`pai_id` liga unidade a regional, e um trigger no banco recusa pai que seja `escola`, `rede` ou a própria linha.",
     ],
   })
   async criar(@Body() body: unknown) {
@@ -154,22 +165,28 @@ export class EscolasController {
     if (jaExiste.some((e) => e.id === dados.id)) {
       throw new BadRequestException(`já existe uma escola com o id "${dados.id}"`);
     }
-    return this.escolas.criar({
+    const criada = await this.escolas.criar({
       ...dados,
       codigoInep: vazioParaNulo(dados.codigoInep),
       uf: vazioParaNulo(dados.uf),
       paiId: vazioParaNulo(dados.paiId),
     });
+    if ("erro" in criada) throw new BadRequestException(mensagemDaRecusa(criada.erro));
+    return criada;
   }
 
   @Patch(":id")
   @Roles("admin-contrato")
   @Contrato({
     resumo: "Edita os dados da escola.",
-    descricao: "`id` e `tipo` não se editam: os dois circulam em token e em RLS.",
+    descricao:
+      "`id` e `tipo` não se editam: os dois circulam em token e em RLS.\n\nÉ por aqui que a regional padrão ganha o nome da rede — ela nasce `Rede` porque o nome real do contrato não existe no banco, e quem sabe qual é é quem administra.",
     params: z.object({ id: z.string() }),
     corpo: EditarEscolaSchema,
     resposta: EscolaCruaSchema,
+    notas: [
+      "**Escola não volta a ficar sem regional**: `paiId` vazio numa `escola` é 400. Mudar de regional é permitido — é assim que uma unidade troca de diretoria.",
+    ],
   })
   async editar(@Param("id") id: string, @Body() body: unknown) {
     const dados = EditarEscolaSchema.parse(body);
@@ -180,7 +197,58 @@ export class EscolasController {
       paiId: vazioParaNulo(dados.paiId),
     });
     if (!atualizada) throw new NotFoundException("escola não encontrada");
+    if ("erro" in atualizada) throw new BadRequestException(mensagemDaRecusa(atualizada.erro));
     return atualizada;
+  }
+
+  /**
+   * Exclui uma REGIONAL. Escola não se exclui em lugar nenhum: ela é tenant,
+   * com turma, dado de menor e histórico atrás.
+   *
+   * `transferirPara` é o destino das escolas dela, e vem na MESMA chamada de
+   * propósito — em duas, existiria a janela em que as escolas já mudaram de
+   * regional e a antiga continua na lista.
+   */
+  @Delete(":id")
+  @Roles("admin-contrato")
+  @Contrato({
+    resumo: "Exclui uma regional.",
+    descricao:
+      "**Só regional.** Escola é *tenant* e não se exclui por rota nenhuma — a saída de uma unidade é assunto de contrato, não de um botão numa tabela.\n\nDuas recusas, as duas de produto (ADR-79): a rede **nunca fica sem regional** (409 `regional-unica`), e regional com escolas só sai dizendo para onde elas vão (409 `regional-com-escolas`, com `escolas` e `destinos` no corpo — é o que a tela usa para abrir o diálogo de transferência ou para explicar que não há destino).",
+    params: z.object({ id: z.string() }),
+    query: ExcluirRegionalQuery,
+    resposta: RegionalExcluidaSchema,
+    notas: [
+      "A regional PADRÃO não tem proteção própria: depois que a rede se organizou em diretorias de verdade, ela é a sobra que se quer remover. O que a segura é a mesma regra da última regional.",
+      "A transferência e a exclusão são UMA transação: falhar no meio não deixa escola apontando para regional apagada.",
+    ],
+  })
+  async excluir(@Param("id") id: string, @Query() query: Record<string, string>) {
+    const { transferirPara } = ExcluirRegionalQuery.parse(query);
+    const feito = await this.escolas.excluirRegional(id, transferirPara);
+    if ("ok" in feito) return feito;
+    switch (feito.erro) {
+      case "nao-encontrada":
+        throw new NotFoundException("regional não encontrada");
+      case "nao-e-regional":
+        throw new BadRequestException(
+          "só regional se exclui: escola é tenant, com turmas e dados de estudante",
+        );
+      case "ultima-regional":
+        throw new ConflictException({
+          codigo: "regional-unica",
+          message: "A rede precisa ter pelo menos uma regional.",
+        });
+      case "tem-escolas":
+        throw new ConflictException({
+          codigo: "regional-com-escolas",
+          message: "Transfira as escolas para outra regional antes de excluir esta regional.",
+          escolas: feito.escolas,
+          destinos: feito.destinos,
+        });
+      case "destino-invalido":
+        throw new BadRequestException("a regional de destino não existe nesta rede");
+    }
   }
 
   /** Quem está lotado nesta escola. Gestor vê a própria; admin, qualquer uma. */
