@@ -61,9 +61,16 @@ export function criarOpcoesDoPino(o: OpcoesDoLogger): LoggerOptions {
     // RFC 3339 em `time`, que o Cloud Logging lê como timestamp da entrada; o
     // epoch em ms do default não é reconhecido e a linha ganha a hora de ingestão.
     timestamp: pino.stdTimeFunctions.isoTime,
-    // Sem pid/hostname (o Cloud Run já sabe a instância). `serviceContext` é o
-    // que o Error Reporting usa para separar api de hub e revisão de revisão.
-    base: { serviceContext: { service: o.servico, version: o.versao } },
+    // Sem pid/hostname: o Cloud Run já sabe a instância.
+    //
+    // `serviceContext` NÃO entra aqui, e a razão é sutil: o pino serializa o
+    // `base` e o objeto da linha como dois pedaços de texto JSON, sem fundir
+    // chaves iguais. Com ele no `base`, toda linha de erro de cliente saía com
+    // `serviceContext` DUAS vezes — a do processo e a da experiência —, e qual
+    // delas o Error Reporting usaria para agrupar dependia de o parser ficar
+    // com a primeira ou com a última. Agora ele é preenchido por linha, no
+    // `formatters.log`, e só quando quem loga não trouxe o seu.
+    base: undefined,
     formatters: {
       // Roda ANTES dos serializers do pino (medido): `err` ainda é o Error.
       // Não se serializa aqui — o serializer padrão faria de novo e o `type`
@@ -71,6 +78,9 @@ export function criarOpcoesDoPino(o: OpcoesDoLogger): LoggerOptions {
       // `stack_trace`, o nome que o Error Reporting agrupa por assinatura.
       log: (obj) => {
         const redigido = redigirObjeto(obj) as Record<string, unknown>;
+        // O do processo, a menos que a linha traga o seu (erro de cliente traz
+        // o da EXPERIÊNCIA, e é por ele que o Error Reporting separa os grupos).
+        redigido.serviceContext ??= { service: o.servico, version: o.versao };
         if (redigido.err instanceof Error) {
           const err = redigirErro(redigido.err);
           redigido.err = err;
