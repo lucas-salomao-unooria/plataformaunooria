@@ -11,8 +11,14 @@ import { metricasEmMemoria } from "./metricas-em-memoria";
  * experiência e a versão, redigida, com o id opaco do token — e a cota fecha o
  * laço de erro antes de virar inundação.
  */
-function req(usuarioId = "u1", perfil: AuthClaims["perfil"] = "estudante"): { auth: AuthClaims } {
-  return { auth: { usuarioId, escolaId: "e1", perfil } };
+const UA_CHROMEBOOK = "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+function req(
+  usuarioId = "u1",
+  perfil: AuthClaims["perfil"] = "estudante",
+  userAgent: string = UA_CHROMEBOOK,
+): { auth: AuthClaims; headers: Record<string, unknown> } {
+  return { auth: { usuarioId, escolaId: "e1", perfil }, headers: { "user-agent": userAgent } };
 }
 const CORPO = {
   expId: "exp-02-unootube",
@@ -40,7 +46,7 @@ describe("POST /observabilidade/erros-cliente", () => {
       "@type": TIPO_ERRO_REPORTADO,
       serviceContext: { service: "exp-02-unootube", version: "0.3.1" },
       codigo: "erro-cliente",
-      estudanteId: "u-erro-1",
+      usuarioId: "u-erro-1",
       sessaoId: CORPO.sessaoId,
     });
     expect(JSON.stringify(obj)).not.toContain("maria@");
@@ -74,7 +80,7 @@ describe("POST /observabilidade/erros-cliente", () => {
     expect(capturado).toBeInstanceOf(HttpException);
     expect((capturado as HttpException).getStatus()).toBe(429);
     expect(erro).toHaveBeenCalledTimes(ERROS_DE_CLIENTE_POR_MINUTO);
-    expect((await pontos("unooria.observabilidade.erros_recusados"))[0]?.attributes).toEqual({ motivo: "cota" });
+    expect((await pontos("unooria.observabilidade.erros_recusados"))[0]?.attributes).toEqual({ motivo: "cota", superficie: "autenticado" });
     // outro usuário não é afetado
     expect(() => ctrl.errosCliente(CORPO, req("u-erro-4"))).not.toThrow();
     await encerrar();
@@ -88,8 +94,8 @@ describe("POST /observabilidade/vitals", () => {
     ctrl.vitals({ nome: "LCP", valor: 1832, rota: "/professor/turmas/abc", superficie: "hub" }, req("u-vital", "professor"));
     ctrl.vitals({ nome: "CLS", valor: 0.04, rota: "exp-02-unootube", superficie: "exp" }, req("u-vital"));
     const lcp = await pontos("unooria.web.lcp");
-    expect(lcp[0]?.attributes).toEqual({ superficie: "hub", rota: "/professor/:secao", perfil: "professor" });
-    expect((await pontos("unooria.web.cls"))[0]?.attributes).toEqual({ superficie: "exp", rota: "exp-02-unootube", perfil: "estudante" });
+    expect(lcp[0]?.attributes).toEqual({ superficie: "hub", rota: "/professor/:secao", perfil: "professor", tipo_dispositivo: "desktop" });
+    expect((await pontos("unooria.web.cls"))[0]?.attributes).toEqual({ superficie: "exp", rota: "exp-02-unootube", perfil: "estudante", tipo_dispositivo: "desktop" });
     expect(erro).not.toHaveBeenCalled();
     expect(() => ctrl.vitals({ nome: "FID", valor: 1, rota: "/", superficie: "hub" }, req("u-vital"))).toThrow();
     await encerrar();

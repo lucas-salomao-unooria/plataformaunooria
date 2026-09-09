@@ -46,6 +46,7 @@ export class Metricas {
   // --- sinais do navegador que entram pela api ---
   readonly errosDeClienteRecebidos: Counter;
   readonly errosDeClienteRecusados: Counter;
+  readonly vitaisRecusados: Counter;
   readonly spansRecebidos: Counter;
   readonly spansDescartados: Counter;
   private readonly vitais: Record<NomeDeVital, Histogram>;
@@ -71,7 +72,10 @@ export class Metricas {
     });
 
     this.errosDeClienteRecebidos = meter.createCounter("unooria.observabilidade.erros_cliente", { description: "Erros de cliente registrados, por superfície (hub|exp)" });
-    this.errosDeClienteRecusados = meter.createCounter("unooria.observabilidade.erros_recusados", { description: "Erros de cliente recusados, por motivo (cota)" });
+    this.errosDeClienteRecusados = meter.createCounter("unooria.observabilidade.erros_recusados", {
+      description: "Erros de cliente recusados, por motivo (cota|invalido) e superfície — `invalido` é o corpo que o Zod barrou, e existir foi o que faltou em 2026-09: um `versao` grande demais recusou TODO erro do hub por seis dias, com o único vestígio numa linha de log que ninguém tinha motivo para procurar",
+    });
+    this.vitaisRecusados = meter.createCounter("unooria.observabilidade.vitais_recusados", { description: "Web Vitals recusados, por motivo (cota|invalido)" });
     this.spansRecebidos = meter.createCounter("unooria.observabilidade.spans_recebidos", { description: "Spans OTLP recebidos do navegador, por superfície" });
     this.spansDescartados = meter.createCounter("unooria.observabilidade.spans_descartados", {
       description: "Spans OTLP descartados, por motivo (cota|sem-identidade|tamanho|sem-projeto|upstream)",

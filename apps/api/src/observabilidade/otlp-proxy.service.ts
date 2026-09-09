@@ -43,7 +43,8 @@ const ATRIBUTOS_PERMITIDOS: ReadonlySet<string> = new Set([
   "document.load.type",
 ]);
 const ATRIBUTOS_DE_URL: ReadonlySet<string> = new Set(["http.url", "url.full"]);
-const VERSAO = /^[0-9A-Za-z._-]{1,32}$/;
+/** 64 pela mesma razão do `versao` do `ErroClienteSchema`: o SHA do hub não cabia em 32, o lote inteiro virava `sem-identidade` — e a rota respondia 204. */
+const VERSAO = /^[0-9A-Za-z._-]{1,64}$/;
 
 function valorTexto(a: AtributoOtlp): string | undefined {
   return "stringValue" in a.value ? a.value.stringValue : undefined;

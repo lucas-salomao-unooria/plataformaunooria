@@ -74,12 +74,34 @@ const PREFIXOS_PERMITIDOS = [
   "observabilidade",
 ] as const;
 
+/**
+ * Sinal do navegador que TAMBÉM vale sem sessão (ADR-84): erro de cliente e
+ * Web Vital na landing, no login e na troca de senha.
+ *
+ * Estas duas rotas são as únicas em que "não há sessão" não pode virar 401. A
+ * tela de login é por onde todo mundo passa, e o erro dela era o único que não
+ * deixava rastro em lugar nenhum — o 401 daqui descartava exatamente o sinal de
+ * que ninguém estava conseguindo entrar.
+ *
+ * Quem escolhe o destino é o BFF, não o client: com sessão vai para a rota
+ * autenticada (e o log ganha o id do usuário), sem sessão vai para a pública
+ * (sem identidade, com cota por IP). O client posta sempre no mesmo lugar e
+ * nunca vê um 401 — que, além de descartar o sinal, sujava o console de toda
+ * suíte e2e como "pendência conhecida".
+ */
+function ehSinalDoNavegador(request: NextRequest, path: string[]): boolean {
+  return request.method === "POST" && path.length === 2 && path[0] === "observabilidade" && (path[1] === "erros-cliente" || path[1] === "vitals");
+}
+
 async function proxy(request: NextRequest, path: string[]) {
   const session = await auth();
-  if (!session?.usuario) {
+  const sinalDoNavegador = ehSinalDoNavegador(request, path);
+  const semSessao = !session?.usuario;
+  if (semSessao && !sinalDoNavegador) {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
   }
-  if (session.usuario.precisaTrocarSenha) {
+  // Preso na troca de senha ainda é gente usando uma tela: o erro dela conta.
+  if (session?.usuario?.precisaTrocarSenha && !sinalDoNavegador) {
     return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
   }
   const prefixo = path[0] ?? "";
@@ -92,16 +114,20 @@ async function proxy(request: NextRequest, path: string[]) {
     return NextResponse.json({ mensagem: "rota não permitida" }, { status: 404 });
   }
 
-  const u = session.usuario;
-  const token = await assinarTokenExperiencia({
-    sub: u.id,
-    escola_id: u.escolaId,
-    turma_id: u.turmaId,
-    perfil: u.papel,
-  });
+  const u = session?.usuario;
+  const token = u
+    ? await assinarTokenExperiencia({
+        sub: u.id,
+        escola_id: u.escolaId,
+        turma_id: u.turmaId,
+        perfil: u.papel,
+      })
+    : null;
 
   const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
-  const destino = new URL(`${apiUrl}/${path.join("/")}`);
+  // Sem sessão, o mesmo sinal vai para o par público da rota.
+  const caminho = token ? path.join("/") : `observabilidade/publico/${path[1]}`;
+  const destino = new URL(`${apiUrl}/${caminho}`);
   request.nextUrl.searchParams.forEach((valor, chave) => destino.searchParams.set(chave, valor));
 
   const temCorpo = request.method !== "GET" && request.method !== "HEAD";
@@ -113,7 +139,7 @@ async function proxy(request: NextRequest, path: string[]) {
     resposta = await fetch(destino, {
       method: request.method,
       headers: {
-        authorization: `Bearer ${token}`,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         ...(traceparent ? { traceparent } : {}),
         ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
       },
