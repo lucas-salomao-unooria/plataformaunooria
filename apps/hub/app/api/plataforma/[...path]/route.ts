@@ -140,6 +140,18 @@ async function proxy(request: NextRequest, path: string[]) {
       method: request.method,
       headers: {
         ...(token ? { authorization: `Bearer ${token}` } : {}),
+        /*
+         * O `user-agent` do NAVEGADOR só é repassado para os sinais de
+         * observabilidade, e é o que os torna úteis: é dele que a api deriva
+         * `navegador`/`so`/`tipo`. Sem esta linha o BFF mandava o user-agent do
+         * runtime do Next, e todo erro do hub era classificado como
+         * `outro/outro/desktop` — medido antes de existir (ADR-84). Não vale
+         * para as demais rotas: elas não leem o cabeçalho, e repassá-lo seria
+         * ampliar o que atravessa o BFF sem consumidor.
+         */
+        ...(sinalDoNavegador && request.headers.get("user-agent")
+          ? { "user-agent": request.headers.get("user-agent") as string }
+          : {}),
         ...(traceparent ? { traceparent } : {}),
         ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
       },
