@@ -1,22 +1,28 @@
 /**
  * A COPY DA REVELAÇÃO — as sete telas que derrubam o disfarce do Instanooria.
  *
- * Por que ela mora num pacote e não dentro da experiência:
+ * ╔══════════════════════════════════════════════════════════════════════════╗
+ * ║  ESTE ARQUIVO EXISTE DUAS VEZES, E AS DUAS CÓPIAS TÊM DE SER IDÊNTICAS.  ║
+ * ║                                                                          ║
+ * ║    apps/hub/lib/insta/copy-da-revelacao.ts  ← você está aqui                                                                             ║
+ * ║    apps/experiencias/exp-01-instanooria/src/lib/copy-da-revelacao.ts                                                                       ║
+ * ║                                                                          ║
+ * ║  Mexeu na copy? Mexa NAS DUAS, no mesmo commit. Nada no build cobra       ║
+ * ║  isso — nem o typecheck, nem o lint, nem teste nenhum.                    ║
+ * ╚══════════════════════════════════════════════════════════════════════════╝
  *
- * É a peça que carrega o argumento inteiro do produto, e por muito tempo o
- * professor era a única pessoa que NÃO a lia antes de entrar em sala. O guia da
- * aula resumia o momento em uma linha ("libera a explicação de como o feed dele
- * foi montado") e mandava conduzir a conversa mais importante das duas aulas
- * sem saber o que a turma tinha acabado de ver, palavra por palavra.
- *
- * Copiar o texto para dentro do guia resolveria a leitura e criaria a armadilha
- * de sempre: duas cópias, nada obrigando as duas a concordarem, e a primeira
- * revisão de copy fazendo o guia mentir em silêncio. Então há UMA fonte, e os
- * dois lados a importam — a experiência para exibir, o guia para o professor ler.
+ * Por que há duas cópias: o mesmo texto precisa aparecer em dois BUNDLES
+ * diferentes — o da experiência (Vite, estático, no bucket) e o do hub (Next,
+ * Cloud Run). Esta cópia é a que o PROFESSOR lê no guia da aula, antes dela.
  *
  * Não passa pela api de propósito. A revelação abre no meio da aula, e rede
  * instável na escola é regra, não exceção: texto que depende de fetch é texto
  * que pode não aparecer. Ele viaja no bundle, como sempre viajou.
+ *
+ * Isto já foi um pacote de workspace (`@edu/conteudo-exp-01`), que garantia a
+ * igualdade por construção. Foi desfeito por decisão de 2026-09-09: a copy está
+ * fechada e não haverá revisão dela. Se essa premissa mudar, a duplicação volta
+ * a ser o risco que o pacote existia para eliminar.
  */
 
 export interface TelaDaRevelacao {

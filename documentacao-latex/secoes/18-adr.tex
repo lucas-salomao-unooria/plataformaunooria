@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{85 decisões}, numeradas até ADR-85, \textbf{sem lacunas}. A ADR-65
+São \textbf{86 decisões}, numeradas até ADR-86, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -126,6 +126,7 @@ que a cercam.
 \zebra \adrr{ADR-83} & Header institucional ancorado na janela (full-bleed) & 2026-09-08 & Aceita\\
 \adrr{ADR-84} & Observabilidade de cliente sem sessão com sanitização & 2026-09-08 & Aceita\\
 \zebra \adrr{ADR-85} & Trocar de escola remonta o miolo da área (\cd{<EscopoDaEscola>}) & 2026-09-09 & Aceita\\
+\adrr{ADR-86} & O guia da aula mostra o conteúdo da missão, não o descreve & 2026-09-09 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -4099,8 +4100,9 @@ excelente e parcial: cobria o pós-jogo e não o preparo nem o fechamento.
 
 E o problema não era só de cobertura. Duas partes do guia do Instanooria já
 vinham de fonte viva por decisão anterior --- a tabela dos momentos de
-\cd{CONTROLE\_DO\_PROFESSOR} e as telas da revelação de
-\cd{@edu/conteudo-exp-01} --- porque a versão escrita à mão tinha divergido: o
+\cd{CONTROLE\_DO\_PROFESSOR} e as telas da revelação, então servidas por um
+pacote de \emph{workspace} (desfeito em 2026-09-09; hoje são duas cópias
+gêmeas) --- porque a versão escrita à mão tinha divergido: o
 guia falava em \enquote{os seis botões} e o painel tinha sete. A Vila serve os
 cartões da api por turma pela mesma razão. Qualquer solução para as outras
 missões precisava carregar esses casos junto.
@@ -6090,3 +6092,138 @@ caso em que a fronteira desce daquele layout para dentro dele e a exceção se
 escreve aqui. E o surgimento de uma tela que precise comparar duas escolas lado
 a lado: ela não caberia neste desenho e exigiria a discussão que a \adrr{ADR-34}
 recusou.
+
+% ---------------------------------------------------------------------------
+
+\section{ADR-86 --- O guia da aula \textbf{mostra} o conteúdo da missão, não o descreve}
+
+\textbf{Data:} 2026-09-09 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} O guia da aula (\adrr{ADR-65}) é o material com que o
+professor conduz uma missão do Entre Redes. Três das seis missões publicadas já
+injetavam \textbf{blocos vivos} --- conteúdo que o guia não guarda como texto,
+porque tem fonte de verdade em outro lugar: os momentos e as telas da revelação
+do Instanooria, os cartões da Vila do Lume por turma, a tabela dos vieses do
+unooGPT. As outras três --- UnooTube, O Rastro do Boato e O Eco no Grupo ---
+\textbf{descreviam} em prosa o que a turma lê na tela.
+
+Descrever parecia inofensivo, e não é. Uma varredura pelo texto exato do
+catálogo de cada missão dentro do guia correspondente devolveu \textbf{zero}
+ocorrências nas três: nenhuma das opções que o estudante escolhe, nenhum título
+de vídeo, nenhuma reação do grupo aparecia com as palavras que a criança lê. O
+que havia era paráfrase --- \emph{``a opção que respondeu no grupo em vez de
+sair dele''}, \emph{``a opção que funciona cita a matéria sem atacar
+ninguém''} --- e ela falha de dois modos distintos.
+
+\emph{Primeiro, a paráfrase diverge.} O guia do UnooTube dizia \emph{``dos 21
+vídeos, metade cita fonte verificável \dots\ a outra metade é
+sensacionalista''}. A divisão real do catálogo é \textbf{11 e 10}, porque 21 é
+ímpar. Ninguém escreveu isso errado de propósito: a frase foi escrita quando era
+verdadeira o bastante, o catálogo mudou, e nada obrigava as duas coisas a
+concordarem. É a mesma armadilha do \cd{expires\_at} sem rotina que a
+\adrr{ADR-13} registra --- a regra sai do código, o registro fica, e quem lê
+acredita nele. Os números da pontuação (\cd{+1000}, \cd{+50}, \cd{3} salvos)
+estavam copiados à mão pelo mesmo caminho.
+
+\emph{Segundo, e mais grave, a paráfrase apaga o que sustenta a lição.} No
+Rastro do Boato as opções A e C produzem a \textbf{mesma} reação do grupo ---
+encaminhar amplifica ativamente, apagar para si mesmo deixa a corrente correr
+sem você, e as duas terminam com o Pedro anunciando que já recebeu em mais três
+grupos. É a peça central da missão: a inação alimenta a mesma curva. Lado a
+lado, a coincidência salta aos olhos; descrita, simplesmente não existe. No
+UnooTube, o professor não tinha como reconhecer o vídeo que a criança de nove
+anos citava --- e ela cita pelo apelido do canal, não pelo tema.
+
+\textbf{Decisão.} Toda missão publicada tem bloco vivo, e o conteúdo que a turma
+lê na tela chega ao guia \textbf{como é}, de uma fonte só.
+
+Onde essa fonte mora depende de onde o conteúdo já vive, e as duas formas
+coexistem sem conflito:
+
+\begin{itemize}
+  \item \emph{Copy que roda dentro do bundle da experiência} --- as telas da
+    revelação do Instanooria --- vive em \textbf{duas cópias gêmeas} de um
+    arquivo de TypeScript puro, uma na experiência e outra no hub, cada uma
+    compilada para o seu bundle. Existe assim porque a revelação abre no meio da
+    aula: texto que depende de rede é texto que pode não aparecer. Foi um pacote
+    de \emph{workspace} (\cd{@edu/conteudo-exp-01}) até 2026-09-09, e a
+    duplicação é decisão do dono do produto --- a copy está fechada, e o pacote
+    cobrava o custo de existir sem ter o que proteger. \textbf{O que segura a
+    igualdade hoje é o cabeçalho dos dois arquivos, e nada mais.}
+  \item \emph{Conteúdo com gabarito, que já vive na api} --- e é o caso das três
+    missões desta decisão, porque a regra inviolável nº 3 mantém resposta certa,
+    correção e pontuação no servidor --- vem de uma rota \textbf{professor-only}
+    do módulo da missão: \rota{GET /unootube/professor/videos},
+    \rota{GET /rastro-boato/professor/material} e
+    \rota{GET /o-eco-no-grupo/professor/material}, no molde de
+    \rota{GET /unoogpt/professor/fontes}, que já era assim.
+\end{itemize}
+
+As três rotas são catálogo, não dado de turma: sem \cd{escola\_id}, sem
+\emph{tenancy} a aplicar e sem \cd{?escolaId=} para o \cd{gestor\_contrato}
+informar. O que a guarda protege é o \textbf{papel} --- por isso vivem em
+\emph{controller} separado do de turmas, com \cd{@Roles("professor",
+...GESTORES)}. E devolvem justamente os campos que \cd{semGabarito} retira antes
+de a opção chegar ao estudante: o que muda entre as duas superfícies é o leitor.
+
+Duas escolhas dentro da decisão. \emph{Número que o guia mostra é calculado do
+catálogo}: a rota do UnooTube devolve \cd{resumo} (total, factuais,
+sensacionalistas) e \cd{pontuacao} contados na origem, e a faixa de alerta no
+topo do guia perdeu os dígitos que repetia. \emph{O guia abre inteiro com a api
+fora do ar}: cada bloco tem o próprio cartão de ``não carregou'', porque as
+outras nove seções continuam servindo --- é o mesmo tratamento que o bloco do
+unooGPT já tinha.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Copiar o conteúdo para dentro do guia, como texto}. Resolve a
+    leitura e é o caminho mais curto. Descartada por ser exatamente o defeito
+    que se está corrigindo, com um passo a mais: duas cópias literais divergem
+    mais depressa que uma paráfrase, porque quem revisa a copy da experiência
+    não tem motivo nenhum para abrir o guia.
+  \item \emph{Um pacote de workspace por missão, como o que a revelação do
+    Instanooria usou até 2026-09-09}. Uniformizaria o desenho. Descartada porque o
+    conteúdo destas três \textbf{não pode} ir para um pacote: ele carrega
+    gabarito, e pacote de workspace é lido em tempo de \emph{build} pelos dois
+    consumidores --- o bundle da experiência entre eles. A resposta certa
+    chegaria ao JavaScript público, violando a regra inviolável nº 3. O pacote
+    servia à revelação do Instanooria justamente porque ali não há gabarito
+    nenhum: é copy que a criança vai ler de qualquer jeito.
+  \item \emph{Reaproveitar as rotas de estudante que a experiência já consome}.
+    Nenhuma rota nova. Descartada porque elas passam por \cd{semGabarito} por
+    construção --- é o desenho que impede o vazamento --- e devolveriam ao
+    professor exatamente a tela que a criança vê, sem a única informação que ele
+    precisa ter e ela não.
+  \item \emph{Manter a prosa e prendê-la ao catálogo com um teste}. Barato, e
+    pegaria a divergência dos números. Descartada porque não pega a segunda
+    falha, que é a que importa: nenhum teste teria detectado que a paráfrase
+    apagava a coincidência entre A e C. Ela não estava errada --- estava
+    incompleta.
+  \item \emph{Servir o conteúdo pelo bundle da experiência, deixando o hub
+    buscá-lo do CDN}. Descartada de saída: o bundle publicado é JavaScript
+    minificado num caminho versionado do \emph{bucket}, e extrair texto de
+    dentro dele seria criar uma dependência entre o hub e a saída de um
+    compilador.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o guia da aula passou a depender da api em
+cinco das seis missões --- com ela fora, o professor lê nove seções e um cartão
+de erro no lugar da décima. Aceito: ele lê o guia no preparo, sentado, e não no
+meio da aula com a turma esperando; a única superfície que não pode depender de
+rede é a revelação, e é por isso que ela continua num pacote. \emph{Ruim}: três
+rotas novas para manter, documentar e cobrir --- o custo de qualquer superfície
+nova. \emph{Ruim}: o professor agora tem o gabarito à mão numa tela que ele pode
+projetar por engano, e o texto de cada bloco precisa dizer ``não projete'' com
+todas as letras, como o do unooGPT já dizia. \emph{Bom}: a divergência que
+existia foi corrigida e não pode voltar por esquecimento --- os números são
+contados na origem. \emph{Bom}: o professor do UnooTube reconhece o vídeo que a
+criança cita, e o do Rastro do Boato vê que A e C terminam iguais antes de
+entrar na sala.
+
+\textbf{Gatilho de reavaliação.} Uma missão cujo conteúdo de preparo seja grande
+demais para uma requisição de página --- caso em que ele desce para o
+\emph{bundle} do hub por geração estática, e não para prosa escrita à mão. E a
+primeira experiência que precise mostrar ao professor conteúdo \textbf{gerado
+por IA} para aquela turma: ali o bloco vivo deixa de ser catálogo e vira dado de
+turma, com \emph{tenancy}, e a decisão de onde ele é gerado e por quanto tempo
+vale precisa ser tomada à parte.

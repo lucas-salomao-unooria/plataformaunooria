@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { api } from '../../lib/api';
-import { telasDaRevelacao, type TelaDaRevelacao } from '@edu/conteudo-exp-01';
+import { telasDaRevelacao, type TelaDaRevelacao } from '../../lib/copy-da-revelacao';
 
 import type { RespostaDossie } from '../../lib/dossie-tipos';
 
@@ -10,7 +10,7 @@ import type { RespostaDossie } from '../../lib/dossie-tipos';
  *
  * A COPY não mora aqui — ela é a peça que carrega o argumento do produto, e o
  * professor precisa lê-la no guia antes de conduzir a aula. Fonte única em
- * `@edu/conteudo-exp-01`; aqui fica só o comportamento (ritmo, progresso, fade).
+ * `lib/copy-da-revelacao.ts`; aqui fica só o comportamento (ritmo, progresso, fade).
  */
 export function Revelacao({ runId, aoTerminar }: { runId: string; aoTerminar: () => void }) {
   const [indice, setIndice] = useState(0);

@@ -7,12 +7,20 @@ import {
   buscarMissao,
   rotaDaMissao,
   rotuloDaMissao,
+  MISSAO_ATUAL,
+  MISSAO_ECO_NO_GRUPO,
+  MISSAO_RASTRO_BOATO,
+  MISSAO_UNOOGPT,
+  MISSAO_UNOOTUBE,
 } from "@/lib/entre-redes/catalogo";
 import { buscarGuia } from "@/lib/entre-redes/guias";
-import { MISSAO_ATUAL, MISSAO_UNOOGPT } from "@/lib/entre-redes/catalogo";
+import type { BlocosVivos } from "@/lib/entre-redes/guias/tipos";
 
+import { IntervencoesDoEco, type MaterialDoEco } from "./intervencoes-do-eco";
+import { IntervencoesDoRastro, type MaterialDoRastro } from "./intervencoes-do-rastro";
 import { MomentosDoPainel } from "./momentos-do-painel";
 import { TelasDaRevelacao } from "./telas-da-revelacao";
+import { VideosDoUnootube, type VideosDoProfessor } from "./videos-do-unootube";
 
 /**
  * O guia da aula de uma missão do Entre Redes — DESPACHANTE, como `page.tsx`
@@ -24,9 +32,16 @@ import { TelasDaRevelacao } from "./telas-da-revelacao";
  * (`components/guia/`); o que sobra aqui é o que só esta rota sabe: quais
  * BLOCOS VIVOS cada missão injeta.
  *
- * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto
- * — a tabela dos momentos e as telas da revelação do Instanooria, a tabela dos
- * vieses do unooGPT (que vem da api). Ver a nota em `guias/tipos.ts`.
+ * Bloco vivo é o que tem fonte de verdade em outro lugar e não pode virar texto.
+ * Cinco missões têm um: os momentos e as telas da revelação do Instanooria, a
+ * tabela dos vieses do unooGPT, os 21 vídeos do UnooTube, as intervenções do
+ * Rastro do Boato e as do Eco no Grupo — as quatro últimas vindas da api. Ver a
+ * nota em `guias/tipos.ts`.
+ *
+ * **Missão com conteúdo que a turma LÊ na tela não descreve esse conteúdo no
+ * guia: injeta um bloco vivo.** A prosa diverge — a do UnooTube dizia "metade…
+ * a outra metade" quando a divisão real do catálogo é 11 e 10 —, e o professor
+ * conduz o debate com palavras que ninguém viu.
  */
 
 /** O que a api devolve em GET /unoogpt/professor/fontes. */
@@ -65,12 +80,7 @@ export default async function GuiaPage({
   const guia = missao.expId ? buscarGuia(missao.expId) : null;
   if (!guia || !missao.ficha) notFound();
 
-  const blocos =
-    missao.expId === MISSAO_ATUAL.expId
-      ? { antes: <MomentosDoPainel />, mediacao: <TelasDaRevelacao /> }
-      : missao.expId === MISSAO_UNOOGPT.expId
-        ? { debate: await tabelaDeVieses() }
-        : undefined;
+  const blocos = await blocosDaMissao(missao.expId);
 
   return (
     <GuiaDaAula
@@ -90,6 +100,58 @@ export default async function GuiaPage({
       blocos={blocos}
     />
   );
+}
+
+/**
+ * Quais BLOCOS VIVOS cada missão injeta, e em que seção.
+ *
+ * Era um ternário aninhado com duas missões. Com cinco ele deixaria de ser
+ * legível — e a sexta seria a que alguém acrescenta no ramo errado.
+ *
+ * As quatro chamadas de api são SEQUENCIAIS de propósito: cada render atende a
+ * uma missão só, então nunca há duas para paralelizar. `apiDoServidor` devolve
+ * `null` em falha (com a linha de log), e cada bloco tem o próprio cartão de
+ * "não carregou" — o guia abre inteiro mesmo com a api fora, porque as outras
+ * nove seções dele continuam servindo.
+ */
+async function blocosDaMissao(expId: string | undefined): Promise<BlocosVivos | undefined> {
+  switch (expId) {
+    case MISSAO_ATUAL.expId:
+      return { antes: <MomentosDoPainel />, mediacao: <TelasDaRevelacao /> };
+
+    case MISSAO_UNOOGPT.expId:
+      return { debate: await tabelaDeVieses() };
+
+    case MISSAO_UNOOTUBE.expId:
+      return {
+        debate: (
+          <VideosDoUnootube
+            dados={await apiDoServidor<VideosDoProfessor>("/unootube/professor/videos")}
+          />
+        ),
+      };
+
+    case MISSAO_RASTRO_BOATO.expId:
+      return {
+        debate: (
+          <IntervencoesDoRastro
+            dados={await apiDoServidor<MaterialDoRastro>("/rastro-boato/professor/material")}
+          />
+        ),
+      };
+
+    case MISSAO_ECO_NO_GRUPO.expId:
+      return {
+        debate: (
+          <IntervencoesDoEco
+            dados={await apiDoServidor<MaterialDoEco>("/o-eco-no-grupo/professor/material")}
+          />
+        ),
+      };
+
+    default:
+      return undefined;
+  }
 }
 
 /**

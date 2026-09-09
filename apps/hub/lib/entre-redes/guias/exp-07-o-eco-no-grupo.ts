@@ -12,6 +12,11 @@ import type { GuiaDaAula } from "./tipos";
  * entender e sair caçando culpado em casa. A tia que encaminha áudio no grupo
  * da família é a primeira pessoa em quem um estudante de 12 anos pensa, e a
  * missão não é sobre ela. Os cuidados desta página existem por causa disso.
+ *
+ * **O que ele NÃO guarda são as três respostas.** Elas vêm de
+ * `GET /o-eco-no-grupo/professor/material` como BLOCO VIVO, ancorado ao Debate,
+ * com o desfecho e as falas que o bairro devolve. É da reação que a turma fala
+ * depois, e reação não cabe em paráfrase.
  */
 export const GUIA_EXP_07: GuiaDaAula = {
   expId: "exp-07-o-eco-no-grupo",

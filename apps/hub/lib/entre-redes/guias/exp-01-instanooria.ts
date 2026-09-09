@@ -6,7 +6,7 @@ import type { GuiaDaAula } from "./tipos";
  * É o guia mais antigo da trilha e continua sendo a referência dos outros: foi
  * nele que a ordem das seções foi decidida. O que ele NÃO guarda é o que tem
  * fonte viva — a tabela dos momentos vem de `CONTROLE_DO_PROFESSOR` e as telas
- * da revelação de `@edu/conteudo-exp-01`, os dois injetados como bloco vivo pela
+ * da revelação de `lib/insta/copy-da-revelacao.ts`, os dois injetados como bloco vivo pela
  * página do guia. Copiá-los para cá criaria a segunda cópia que diverge na
  * primeira revisão de copy.
  *

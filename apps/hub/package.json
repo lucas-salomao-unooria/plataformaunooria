@@ -12,7 +12,6 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@edu/conteudo-exp-01": "workspace:*",
     "@edu/sdk": "workspace:*",
     "@edu/ui": "workspace:*",
     "@opentelemetry/api": "^1.9.1",

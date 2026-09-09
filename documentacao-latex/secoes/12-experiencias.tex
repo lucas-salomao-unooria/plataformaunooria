@@ -182,16 +182,35 @@ da missão injeta o que só ela sabe montar:
 
 \begin{itemize}
   \item \textbf{exp-01} --- a tabela dos momentos do painel vem de
-    \cd{CONTROLE\_DO\_PROFESSOR}, e as onze telas da revelação de
-    \cd{@edu/conteudo-exp-01}, a mesma fonte que a experiência do estudante lê.
+    \cd{CONTROLE\_DO\_PROFESSOR}, e as sete telas da revelação de
+    \arq{lib/insta/copy-da-revelacao.ts} --- \textbf{cópia gêmea} do arquivo
+    homônimo da exp-01, não a mesma fonte: as duas mudam juntas, e nada no
+    \emph{build} cobra isso.
+  \item \textbf{exp-02} --- a tabela dos 21 vídeos, com o \cd{factual} de cada
+    um, vem de \rota{GET /unootube/professor/videos}. A criança de nove anos
+    cita o vídeo pelo apelido do canal, e sem a lista o professor não sabe de
+    qual ela está falando.
   \item \textbf{exp-03} --- a tabela dos oito vieses vem de
     \rota{GET /unoogpt/professor/fontes}, derivada da própria \cd{instrucao} que
     o agente recebe.
+  \item \textbf{exp-06} --- as três intervenções, com desfecho e reação, e o
+    ciclo na ordem certa vêm de \rota{GET /rastro-boato/professor/material}.
+    Lado a lado aparece o que sustenta a missão: A e C produzem a
+    \textbf{mesma} reação do grupo.
+  \item \textbf{exp-07} --- as três respostas e as falas que o bairro devolve
+    em cada desfecho vêm de \rota{GET /o-eco-no-grupo/professor/material}.
   \item \textbf{exp-70} --- os cartões das três bolhas vêm de
     \rota{GET /vila/professor/cartoes}, \textbf{por turma}: nos anos iniciais a
     bolha B não é servida, e projetá-la mandaria o professor esperar a reação de
     um grupo que não existe na sala dele.
 \end{itemize}
+
+\textbf{Descrever também é copiar} (\adrr{ADR-86}). As missões da exp-02, da
+exp-06 e da exp-07 não guardavam o conteúdo: guardavam a paráfrase dele --- e
+uma varredura pelo texto exato do catálogo dentro de cada guia devolveu
+\textbf{zero} ocorrências nas três. A do UnooTube dizia \emph{``metade cita
+fonte verificável \dots\ a outra metade é sensacionalista''} quando a divisão
+real é \textbf{11 e 10}, porque 21 é ímpar.
 
 \begin{regra}
 Uma cópia desses textos no hub diverge na primeira revisão de \emph{copy}, e o

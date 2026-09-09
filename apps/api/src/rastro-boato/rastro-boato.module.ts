@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { RastroBoatoProfessorController } from "./rastro-boato-professor.controller";
 import { RastroBoatoTurmasController } from "./rastro-boato-turmas.controller";
 import { RastroBoatoController } from "./rastro-boato.controller";
 import { RastroBoatoService } from "./rastro-boato.service";
@@ -12,7 +13,7 @@ import { RastroBoatoService } from "./rastro-boato.service";
  * seria custo e um ponto de falha estocástico dentro de uma aula de 35 minutos.
  */
 @Module({
-  controllers: [RastroBoatoController, RastroBoatoTurmasController],
+  controllers: [RastroBoatoController, RastroBoatoTurmasController, RastroBoatoProfessorController],
   providers: [RastroBoatoService],
   exports: [RastroBoatoService],
 })

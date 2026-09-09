@@ -9,7 +9,7 @@ Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 | DS | `@edu/ui/ds-insta` no disfarce, `@edu/ui/ds` depois da revelação |
 | api | `motor`, `geracao`, `dossie`, `atividades` — tabelas `exp_01_*` |
 | e2e | `scripts/e2e/estudante/02-instanooria.mjs` (sobe DOIS contextos: o docente conduz) |
-| Copy da revelação | `@edu/conteudo-exp-01` — fonte única, lida também pelo guia do professor |
+| Copy da revelação | `src/lib/copy-da-revelacao.ts` — **cópia gêmea** de `apps/hub/lib/insta/copy-da-revelacao.ts`, que o guia do professor lê. Mexeu numa, mexa na outra: nada no build cobra isso |
 
 ## O cliente MEDE; quem decide é o servidor
 

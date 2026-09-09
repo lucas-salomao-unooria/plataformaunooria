@@ -20,11 +20,20 @@
  * ## O que NÃO vira dado
  *
  * O que tem fonte viva em outro lugar. A tabela dos momentos do Instanooria sai
- * de `CONTROLE_DO_PROFESSOR`, a revelação sai de `@edu/conteudo-exp-01`, e os
- * cartões da Vila do Lume vêm da api por turma. Copiar qualquer um deles para
+ * de `CONTROLE_DO_PROFESSOR`, a revelação sai de `lib/insta/copy-da-revelacao.ts`
+ * (cópia gêmea da que a exp-01 carrega — as duas mudam juntas), os
+ * cartões da Vila do Lume vêm da api por turma, e o CONTEÚDO que a turma lê na
+ * tela — os vieses do unooGPT, os vídeos do UnooTube, as intervenções do Rastro
+ * do Boato e as respostas do Eco no Grupo — vem de uma rota `professor-only` de
+ * cada módulo. Copiar qualquer um deles para
  * cá criaria a segunda cópia que diverge na primeira revisão de copy — e um
  * guia que projeta uma mensagem que ninguém recebeu põe a turma discutindo uma
- * aula que não aconteceu. Para isso existem os BLOCOS VIVOS: o renderizador
+ * aula que não aconteceu.
+ *
+ * **Descrever também é copiar.** O guia do UnooTube não guardava os vídeos:
+ * guardava "metade cita fonte verificável, a outra metade é sensacionalista".
+ * Nada obrigava a frase a concordar com o catálogo, e ela já não concordava —
+ * são 11 e 10. Para isso existem os BLOCOS VIVOS: o renderizador
  * aceita `ReactNode` ancorado a uma seção, e a página da missão injeta o que só
  * ela sabe montar.
  */

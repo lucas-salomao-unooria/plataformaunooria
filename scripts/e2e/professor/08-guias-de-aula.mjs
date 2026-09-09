@@ -7,9 +7,15 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  *
  * Antes só o Instanooria tinha guia, e ele era uma página escrita à mão. Hoje o
  * conteúdo é dado e a ordem é de um renderizador único — o que esta suíte
- * comprova é justamente o que o typecheck não pega: que as cinco missões TÊM
+ * comprova é justamente o que o typecheck não pega: que as seis missões TÊM
  * guia, que as seções aparecem na mesma ordem em todas, e que o caminho até lá
  * existe a partir da SALA DE AULA, onde o professor está.
+ *
+ * **Todo guia tem bloco vivo, e todo bloco vivo é cobrado aqui** (ADR-86). Duas
+ * missões tinham `vivo: []` e a do Rastro do Boato não estava nesta lista: era
+ * a suíte concordando com o defeito que o produto tinha, porque o guia
+ * DESCREVIA o conteúdo em vez de mostrá-lo — e descrição não quebra, só
+ * envelhece.
  *
  * O caminho pela sala é o que mais importa: o guia por si já era alcançável
  * pela ficha da missão. O que faltava era abri-lo com a turma na frente,
@@ -30,7 +36,16 @@ const GUIAS = [
   {
     rota: "/professor/entre-redes/4-ano/unidade-1/guia",
     missao: "UnooTube · 4º ano",
-    vivo: [],
+    /* A tabela dos 21 vídeos vem de `GET /unootube/professor/videos`. Antes o
+       guia DESCREVIA o catálogo — "metade cita fonte verificável" — e a
+       descrição tinha derivado: são 11 e 10 (ADR-86). A contagem entra aqui
+       como número EXATO de propósito: é ela que denuncia a próxima deriva. */
+    vivo: [
+      /Os vídeos e o gabarito — só para você/i,
+      /11 citam fonte verificável/i,
+      /papagaio tradutor/i,
+      /sensacionalista/i,
+    ],
     bncc: "EF04CO08",
   },
   {
@@ -44,8 +59,31 @@ const GUIAS = [
   {
     rota: "/professor/entre-redes/7-ano/unidade-1/guia",
     missao: "O Eco no Grupo · 7º ano",
-    vivo: [],
+    /* As três respostas e as falas do bairro vêm de
+       `GET /o-eco-no-grupo/professor/material`. O texto exato da opção certa
+       está aqui porque é ele que o professor lê antes da aula — paráfrase no
+       guia deixava a turma comentando uma frase que ninguém viu. */
+    vivo: [
+      /As três respostas e o que o bairro devolve — só para você/i,
+      /Responder citando o print/i,
+      /Dona Lúcia/i,
+    ],
     bncc: "EF07CO08",
+  },
+  {
+    rota: "/professor/entre-redes/6-ano/unidade-2/guia",
+    missao: "O Rastro do Boato · 6º ano",
+    /* A missão que faltava nesta suíte inteira. As três intervenções vêm de
+       `GET /rastro-boato/professor/material`; a reação repetida é a prova de
+       que A e C terminam IGUAIS — a peça central da missão, que a paráfrase
+       do guia apagava. */
+    vivo: [
+      /As três intervenções e o que cada uma faz — só para você/i,
+      /Denunciar conteúdo e responder fixando o laudo oficial/i,
+      /recebi em mais três grupos agora/i,
+      /O ciclo, na ordem certa/i,
+    ],
+    bncc: "EF06CO08",
   },
   {
     rota: "/professor/entre-redes/vila-do-lume/guia",
@@ -78,10 +116,12 @@ await suite(
       "O professor abre o guia na véspera para preparar e na hora para conduzir. Ele é o mesmo " +
       "documento em toda missão — mudam o conteúdo e os blocos que vêm de fonte viva.",
     prova: [
-      "As cinco missões publicadas têm guia, e nenhuma cai em 404",
+      "As seis missões publicadas têm guia, e nenhuma cai em 404",
       "As nove seções aparecem na mesma ordem em todas",
       "Cada guia traz a habilidade da BNCC Computação com o código",
-      "Os blocos vivos (painel, revelação, vieses, cartões) chegam preenchidos",
+      "Todo guia tem bloco vivo, e todos chegam preenchidos da fonte de verdade",
+      "O conteúdo que a turma lê aparece com as PALAVRAS dela, não descrito",
+      "Os números do guia são contados no catálogo — 11 e 10 vídeos, não 'metade'",
       "Da sala de aula sai um link de guia por missão, com a turma na frente",
     ],
     comando: "node scripts/e2e/professor/08-guias-de-aula.mjs",
