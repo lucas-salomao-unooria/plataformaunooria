@@ -15,7 +15,7 @@ export default async function AnaliseLayout({ children }: { children: React.Reac
 
   return (
     <div className="min-h-dvh unooria-surface">
-      <HeaderPlataforma href="/analise" legenda="Análise de produto" largura="6xl" />
+      <HeaderPlataforma href="/analise" legenda="Análise de produto" />
 
       {/* O max-width passou do conteúdo de cada página para CÁ. Antes eram dois
           (6xl na comparação entre turmas, 5xl no detalhe, "como no origem") e a
