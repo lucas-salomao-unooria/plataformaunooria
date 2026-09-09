@@ -7,69 +7,55 @@
 \singlespacing
 \setlength{\parskip}{0pt}
 \begin{tikzpicture}[remember picture, overlay]
-  % Faixa superior
+  % Faixa superior canônica — Trindade BLUNOORIA (Estrutura, Inteligência, Interface)
   \fill[unooNavy] (current page.north west) rectangle
-        ([yshift=-11mm]current page.north east);
-  \fill[unooBlue] ([yshift=-11mm]current page.north west) rectangle
-        ([yshift=-13.4mm]current page.north east);
-  \fill[unooGreen] ([yshift=-13.4mm]current page.north west) rectangle
-        ([yshift=-14.4mm]current page.north east);
+        ([yshift=-12mm]current page.north east);
+  \fill[unooLavender] ([yshift=-12mm]current page.north west) rectangle
+        ([yshift=-13.8mm]current page.north east);
+  \fill[unooBlue] ([yshift=-13.8mm]current page.north west) rectangle
+        ([yshift=-15.0mm]current page.north east);
 
-  % Marca d'agua geometrica — 48 experiencias em torno de um hub
-  \begin{scope}[opacity=0.10]
-    \foreach \x/\y in {0/0, 2.4/1.1, 4.8/0.2, 7.2/1.5, 9.6/0.6,
-                       1.2/3.0, 3.6/3.9, 6.0/3.1, 8.4/4.2,
-                       0.6/6.2, 3.0/6.9, 5.4/6.1, 7.8/7.0} {
-      \fill[unooBlue] ([xshift=\x cm + 20mm, yshift=\y cm + 24mm]current page.south west)
-            circle (1.7pt);
-    }
-    \draw[unooBlue, line width=0.5pt]
-      ([xshift=20mm, yshift=24mm]current page.south west) --
-      ([xshift=44mm, yshift=35mm]current page.south west) --
-      ([xshift=68mm, yshift=26mm]current page.south west) --
-      ([xshift=92mm, yshift=39mm]current page.south west) --
-      ([xshift=116mm, yshift=30mm]current page.south west);
-    \draw[unooBlue, line width=0.5pt]
-      ([xshift=32mm, yshift=54mm]current page.south west) --
-      ([xshift=56mm, yshift=63mm]current page.south west) --
-      ([xshift=80mm, yshift=55mm]current page.south west) --
-      ([xshift=104mm, yshift=66mm]current page.south west);
-  \end{scope}
+  % Marca d'água institucional — Símbolo Infinito Orgânico da Unooria no canto inferior
+  \node[anchor=south east, inner sep=0, opacity=0.06] at ([xshift=-10mm, yshift=15mm]current page.south east) {
+    \includegraphics[width=90mm]{figuras/marca/simbolo_azul_profundo.png}
+  };
 
-  % Barra lateral de identidade
-  \fill[unooBlue] ([xshift=0mm, yshift=42mm]current page.south west) rectangle
-        ([xshift=3.2mm, yshift=150mm]current page.south west);
+  % Barra lateral de estrutura e inteligência
+  \fill[unooNavy] ([xshift=0mm, yshift=45mm]current page.south west) rectangle
+        ([xshift=3.5mm, yshift=160mm]current page.south west);
+  \fill[unooLavender] ([xshift=3.5mm, yshift=55mm]current page.south west) rectangle
+        ([xshift=4.5mm, yshift=150mm]current page.south west);
 \end{tikzpicture}
 
-\vspace*{10mm}
+\vspace*{12mm}
 
-% Assinatura tipografica (o logotipo institucional nao entra no repositorio:
-% asset de marca vive no bucket, nao no git — ver `figuras/README.md`).
-{\fontsize{27}{27}\selectfont\bfseries\color{unooNavy}unooria\par}
-{\footnotesize\color{unooMuted}plataforma educacional B2G\par}
+% Logotipo oficial Unooria (Manual de Marca — Safespace e proporções originais)
+\noindent\includegraphics[width=60mm]{figuras/marca/logo_azul_profundo.png}\par
+\vspace{2mm}
+{\footnotesize\color{unooLavenderSoft}\textbf{TECNOLOGIA EDUCACIONAL B2G}\quad\textperiodcentered\quad{\color{unooMuted}PLATAFORMA PÚBLICA INTEGRADA}\par}
 
-\vspace{15mm}
+\vspace{14mm}
 
-{\footnotesize\bfseries\color{unooGreen}%
+{\footnotesize\bfseries\color{unooLavenderSoft}%
  DOCUMENTAÇÃO TÉCNICA DE ARQUITETURA DE SOFTWARE, ARQUITETURA DE NUVEM E CÓDIGO}
 
-\vspace{3mm}
+\vspace{3.5mm}
 
-{\color{unooBlue}\rule{28mm}{2.6pt}}
+{\color{unooBlue}\rule{32mm}{2.6pt}}\hspace{2mm}{\color{unooLavender}\rule{12mm}{2.6pt}}
 
 \vspace{8mm}
 
-{\fontsize{31}{37}\selectfont\bfseries\color{unooNavy}%
+{\fontsize{32}{38}\selectfont\bfseries\color{unooNavy}%
  Plataforma Unooria\par}
 
 \vspace{4mm}
 
-{\fontsize{15}{20}\selectfont\bfseries\color{unooBlue}%
- Hub multi-tenant e 48 experiências imersivas\par}
+{\fontsize{15}{21}\selectfont\bfseries\color{unooLavenderSoft}%
+ Hub multi-tenant, 48 experiências imersivas e governança por escola\par}
 
 \vspace{6mm}
 
-{\fontsize{13.5}{19}\selectfont\color{unooInkSoft}%
+{\fontsize{13.5}{19.5}\selectfont\color{unooInkSoft}%
  \textit{Monorepo} de uma plataforma de educação básica para redes públicas de
  ensino: um \emph{hub} em Next.js que embeda experiências estáticas versionadas
  em CDN, uma API NestJS com isolamento lógico por escola em \textit{Row-Level
@@ -85,8 +71,8 @@
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}@{\hspace{4mm}}X@{}}
   {\footnotesize\color{unooMuted}DOCUMENTO}      & {\footnotesize\bfseries\color{unooInk}\docid{} --- Documentação Técnica Consolidada}\\[3pt]
-  {\footnotesize\color{unooMuted}VERSÃO}         & {\footnotesize\bfseries\color{unooInk}\docversao}\\[3pt]
-  {\footnotesize\color{unooMuted}DATA}           & {\footnotesize\bfseries\color{unooInk}27 de agosto de 2026}\\[3pt]
+  {\footnotesize\color{unooMuted}VERSÃO}         & {\footnotesize\bfseries\color{unooInk}\docversao{} (Revisão Técnica Integral e Alinhamento de Marca)}\\[3pt]
+  {\footnotesize\color{unooMuted}DATA}           & {\footnotesize\bfseries\color{unooInk}09 de setembro de 2026}\\[3pt]
   {\footnotesize\color{unooMuted}AUTOR}          & {\footnotesize\bfseries\color{unooInk}Lucas Salomão}\\[3pt]
   {\footnotesize\color{unooMuted}REPOSITÓRIO}    & {\footnotesize\bfseries\color{unooInk}\texttt{plataforma-unooria} (\textit{monorepo}, tronco \texttt{main})}\\[3pt]
   {\footnotesize\color{unooMuted}CLASSIFICAÇÃO}  & {\footnotesize\bfseries\color{unooInk}Documento técnico de projeto --- uso interno}\\
@@ -184,6 +170,11 @@ qualquer tarefa (Capítulo~\ref{cap:qualidade}).
        atual por camada, sinais, comparação de ferramentas, SLOs e alertas,
        privacidade nos sinais, custo por contrato e roteiro em fases;
        \adrr{ADR-57} e \adrr{ADR-58} (propostas); \cd{R-05} reclassificado.\\
+  \textbf{1.2} & 09/09/2026 & L. Salomão & Revisão técnica integral e consolidação
+       multi-agente: atualização do modelo de 6 papéis (\adrr{ADR-80}), catálogo de 49 tabelas
+       e 30 migrações Prisma, 85 ADRs consolidadas, novo Capítulo~\ref{cap:pendencias} de
+       pendências rastreadas, adequação integral da identidade visual e layout ao
+       Manual de Marca oficial (\textit{Brandbook Unooria}).\\
   \bottomrule
 \end{tabularx}
 
@@ -198,18 +189,21 @@ qualquer tarefa (Capítulo~\ref{cap:qualidade}).
        documento de governança do repositório.\\
   \zebra \arq{README.md} & Instalação, os três modos de execução local e
        \textit{smoke} visual.\\
-  \arq{docs/ARQUITETURA.md} & Visão arquitetural resumida por contrato.\\
-  \zebra \arq{docs/DECISOES.md} & Registro resumido de decisões (base do
+  \arq{Manual de Marca} & Manual oficial de identidade visual (\textit{Brandbook Unooria}):
+       paleta canônica BLUNOORIA (Azul Profundo, Lavanda, Azul Claro), proporções e safespace
+       do logotipo e do símbolo infinito orgânico.\\
+  \zebra \arq{docs/ARQUITETURA.md} & Visão arquitetural resumida por contrato.\\
+  \arq{docs/DECISOES.md} & Registro resumido de decisões (base do
        Capítulo~\ref{cap:adr}).\\
-  \arq{docs/INFRA.md} & Contrato entre este repositório e o de Terraform:
+  \zebra \arq{docs/INFRA.md} & Contrato entre este repositório e o de Terraform:
        nomes de recursos, variáveis e o que o CI publica.\\
-  \zebra \arq{docs/INFRA-IDENTITY.md} & Contrato do gerenciador central de
+  \arq{docs/INFRA-IDENTITY.md} & Contrato do gerenciador central de
        identidade (WSO2 IS), que é único para vários contratos.\\
-  \arq{apps/api/prisma/schema.prisma} & Modelo de dados anotado, com o porquê
+  \zebra \arq{apps/api/prisma/schema.prisma} & Modelo de dados anotado, com o porquê
        de cada decisão de esquema.\\
-  \zebra \arq{packages/sdk/src/} & Contrato \textit{postMessage} e cliente de
+  \arq{packages/sdk/src/} & Contrato \textit{postMessage} e cliente de
        telemetria --- a fronteira entre hub e experiência.\\
-  \arq{.env.example} & Catálogo completo de variáveis de ambiente
+  \zebra \arq{.env.example} & Catálogo completo de variáveis de ambiente
        (Apêndice~\ref{ap:envs}).\\
   \bottomrule
 \end{tabularx}

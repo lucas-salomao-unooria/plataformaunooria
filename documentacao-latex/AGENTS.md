@@ -8,9 +8,11 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 83.** A numeração vai até ADR-82, sem lacuna: a 65 (que
+- **A PRÓXIMA ADR é a 86.** A numeração vai até ADR-85, sem lacuna: a 65 (que
   ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
-  aula. **Confira na HORA de escrever o número, e não só `origin/dev`**: confira
+  aula; a 80 é o modelo de seis papéis, 81 o panorama da diretoria, 82 o
+  relatório dela, 83 o header full-bleed, 84 a observabilidade sem sessão e
+  85 a remontagem do miolo ao trocar de escola. **Confira na HORA de escrever o número, e não só `origin/dev`**: confira
   as branches de trabalho abertas E a de integração. Conferir `origin/dev` não
   basta — em 2026-09-07 duas frentes simultâneas reservaram a 76 e uma teve de
   ceder, e a base de trabalho pode estar à frente de `dev` (a 79 nasceu sobre

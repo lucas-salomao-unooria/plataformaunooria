@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{78 decisões}, numeradas até ADR-78, \textbf{sem lacunas}. A ADR-65
+São \textbf{85 decisões}, numeradas até ADR-85, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -68,6 +68,64 @@ que a cercam.
 \adrr{ADR-25} & O Relógio da Aula é tabela da experiência, não coluna em \cd{turmas} & 2026-08-27 & Aceita\\
 \zebra \adrr{ADR-26} & Sem prazo de retenção na exp-03; exclusão por \enquote{zerar a turma} & 2026-08-27 & Aceita\\
 \adrr{ADR-27} & Transcrição do estudante é dado do instrumento: professor lê, gestor não & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-28} & O \emph{feed} do professor consome a API do estudante & 2026-08-27 & Aceita\\
+\adrr{ADR-29} & A exp-70 não emite nota, emite perfil & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-30} & Vínculo pessoa $\times$ escola datado (\cd{lotacoes}) & 2026-08-28 & Aceita\\
+\adrr{ADR-31} & CPF como identificador civil, sem senha no CSV & 2026-08-28 & Aceita\\
+\zebra \adrr{ADR-32} & Sessão por \emph{cookie} HttpOnly com rotação & 2026-08-28 & Aceita\\
+\adrr{ADR-33} & Rotação de chave a frio por variável de ambiente dupla & 2026-08-28 & Aceita\\
+\zebra \adrr{ADR-34} & Uma escola ativa por sessão; sem agregação de rede & 2026-08-28 & Aceita\\
+\adrr{ADR-35} & Portabilidade de dados por JWS assinado & 2026-08-28 & Aceita\\
+\zebra \adrr{ADR-36} & Perfil portátil é chave/valor com esquema fechado & 2026-08-28 & Aceita\\
+\adrr{ADR-37} & Validação de entrada exclusivamente via Zod & 2026-08-29 & Aceita\\
+\zebra \adrr{ADR-38} & Documentação viva em LaTeX compilada no CI & 2026-08-29 & Aceita\\
+\adrr{ADR-39} & Dependências sob varredura de vulnerabilidade (Snyk) & 2026-08-29 & Aceita\\
+\zebra \adrr{ADR-40} & Landing institucional: estática, sem sessão, 1440\,px & 2026-08-30 & Aceita\\
+\adrr{ADR-41} & Dispositivo expansível na pós-revelação da exp-01 & 2026-08-30 & Aceita\\
+\zebra \adrr{ADR-42} & Exposição no dossiê mede o \emph{feed}, não o domínio & 2026-08-30 & Aceita\\
+\adrr{ADR-43} & Conclusão do estudante: guarda primeira e última inclinação & 2026-08-30 & Aceita\\
+\zebra \adrr{ADR-44} & Janela de envolvimento fecha no último post visto & 2026-08-30 & Aceita\\
+\adrr{ADR-45} & Geração de planos com \emph{streaming} SSE e retenção de 30 dias & 2026-08-31 & Aceita\\
+\zebra \adrr{ADR-46} & Embed via iframe restrito: sandbox, allow e canal postMessage & 2026-08-31 & Aceita\\
+\adrr{ADR-47} & Rate limit por IP em rotas públicas, por usuário em autenticadas & 2026-08-31 & Aceita\\
+\zebra \adrr{ADR-48} & Importação de CSV síncrona com limite de 30\,MB & 2026-08-31 & Aceita\\
+\adrr{ADR-49} & Atividade vinculada à turma; clone para cada turma nova & 2026-09-01 & Aceita\\
+\zebra \adrr{ADR-50} & Perfil da Vila importado na exp-01 sem FK rígida & 2026-09-01 & Aceita\\
+\adrr{ADR-51} & Testes E2E com Playwright contra ambiente real & 2026-09-01 & Aceita\\
+\zebra \adrr{ADR-52} & Mock de IA determinístico para testes e homologação & 2026-09-01 & Aceita\\
+\adrr{ADR-53} & GitHub Actions com três ambientes (\cd{dev}, \cd{hml}, \cd{main}) & 2026-09-02 & Aceita\\
+\zebra \adrr{ADR-54} & Balcão de atendimento: cadastro individual delega ao importador & 2026-09-02 & Aceita\\
+\adrr{ADR-55} & Reset de senha pelo professor gera credencial temporária & 2026-09-02 & Aceita\\
+\zebra \adrr{ADR-56} & Soft delete com \cd{desativado\_em} em usuários & 2026-09-02 & Aceita\\
+\adrr{ADR-57} & Observabilidade: traces OpenTelemetry com proporção configurável & 2026-09-02 & Aceita\\
+\zebra \adrr{ADR-58} & Sourcemaps enviados a bucket privado, nunca na CDN & 2026-09-02 & Aceita\\
+\adrr{ADR-59} & Quem escreve usuário é o importador; balcão gera linha CSV & 2026-09-03 & Aceita\\
+\zebra \adrr{ADR-60} & Microsoft Clarity via \cd{@edu/sdk}, desligado se sem ID & 2026-09-03 & Aceita\\
+\adrr{ADR-61} & Frentes paralelas com git worktree sobre \cd{origin/dev} & 2026-09-03 & Aceita\\
+\adrr{ADR-62} & DLQ no Pub/Sub para telemetria rejeitada & 2026-09-04 & Aceita\\
+\zebra \adrr{ADR-63} & Ingestão de telemetria desacoplada do processamento analítico & 2026-09-04 & Aceita\\
+\adrr{ADR-64} & Relógio da Tempestade: tempo no marco, não em background & 2026-09-05 & Aceita\\
+\zebra \adrr{ADR-65} & Guia da aula é gerado do catálogo, sem tela dedicada & 2026-09-06 & Aceita\\
+\adrr{ADR-66} & exp-07: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-67} & Mídias da exp-07: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita\\
+\adrr{ADR-68} & exp-07 e exp-06: clone de mensageria só no tema escuro & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-69} & Missão só abre na turma se o professor liberou (\cd{liberacoes}) & 2026-09-06 & Aceita\\
+\adrr{ADR-70} & Página de transparência algorítmica aberta ao público & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-71} & Fatias verticais por módulo em frentes paralelas & 2026-09-06 & Aceita\\
+\adrr{ADR-72} & Fronteira do disfarce da exp-06: mapa da rede fala pela escola & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-73} & Planejamento curricular dirigido pela BNCC (exp-92) & 2026-09-06 & Aceita\\
+\adrr{ADR-74} & Contabilidade de tokens de IA com callback \cd{aoUsarTokens} & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-75} & Rolagem unificada via \cd{ScrollBar} do Design System & 2026-09-07 & Aceita\\
+\adrr{ADR-76} & Planejamento semanal estruturado com suporte a downloads & 2026-09-07 & Aceita\\
+\zebra \adrr{ADR-77} & Trilha de navegação (\emph{breadcrumb}) no layout, não na página & 2026-09-07 & Aceita\\
+\adrr{ADR-78} & Logoff no menu da conta com limpeza completa de cookies & 2026-09-07 & Aceita\\
+\zebra \adrr{ADR-79} & Vínculo obrigatório escola $\times$ regional na governança da rede & 2026-09-07 & Aceita\\
+\adrr{ADR-80} & Modelo de seis papéis e cadeia de atribuição transitiva & 2026-09-08 & Aceita\\
+\zebra \adrr{ADR-81} & Panorama da diretoria de ensino consolidado por regional & 2026-09-08 & Aceita\\
+\adrr{ADR-82} & Relatório pedagógico da regional com varredura em lote & 2026-09-08 & Aceita\\
+\zebra \adrr{ADR-83} & Header institucional ancorado na janela (full-bleed) & 2026-09-08 & Aceita\\
+\adrr{ADR-84} & Observabilidade de cliente sem sessão com sanitização & 2026-09-08 & Aceita\\
+\zebra \adrr{ADR-85} & Trocar de escola remonta o miolo da área (\cd{<EscopoDaEscola>}) & 2026-09-09 & Aceita\\
 \bottomrule
 \end{tabularx}
 

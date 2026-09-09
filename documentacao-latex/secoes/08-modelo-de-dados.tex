@@ -4,7 +4,7 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 27 tabelas em \cd{public} e um \emph{schema}
+Um banco, um \emph{schema} lógico, 49 tabelas em \cd{public} e um \emph{schema}
 auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
 óbvias --- que, neste projeto, são a maioria.
@@ -85,14 +85,16 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
      \texttt{nome}, \texttt{serie}\\
      \texttt{UNIQUE (escola\_id, nome)}};
 
-  \node[tabelaplat, text width=46mm] (usr) at (13.6,-0.2)
+  \node[tabelaplat, text width=48mm] (usr) at (13.6,-0.2)
     {\etitulo{users}
      \nodepart{two}
      \pk{id} \texttt{UUID}\\
-     \texttt{role} \small(estudante$|$professor$|$gestor$|$admin-contrato)\\
-     \fk{escola\_id} \small(NULL só p/ admin-contrato)\\
-     \fk{turma\_id}, \texttt{username}, \texttt{display\_name}\\
-     \texttt{password\_hash}, \texttt{avatar}\\
+     \texttt{role} \small(estudante$|$professor$|$gestor\_escola$|$\\
+     \quad gestor\_regional$|$gestor\_contrato$|$admin)\\
+     \fk{escola\_id} \small(NULL p/ gestor\_contrato/admin/regional)\\
+     \fk{regional\_id} \seta{} \texttt{escolas} \small(p/ regional)\\
+     \fk{turma\_id}, \texttt{username}, \texttt{cpf}\\
+     \texttt{display\_name}, \texttt{password\_hash}\\
      \texttt{UNIQUE (escola\_id, username)}};
 
   \node[tabelacat, text width=44mm] (exp) at (2.6,-4.4)
@@ -167,9 +169,10 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   preserva o histórico na virada do ano.\\
 \cd{users} & \emph{Tenant} & \cd{username} é único \textbf{por escola}, não
   globalmente --- uma rede tem muitos \cd{joao.silva}. \emph{CHECK}:
-  \cd{escola\_id NOT NULL} exceto quando \cd{role = 'admin-contrato'}. A
-  identidade da PESSOA é \cd{matricula\_externa} (o RA da rede), com índice único
-  \textbf{parcial} por escola.\\
+  \cd{escola\_id NOT NULL} exceto quando \cd{role} é \cd{'gestor\_contrato'},
+  \cd{'admin'} ou \cd{'gestor\_regional'} (\adrr{ADR-80}). O vínculo funcional
+  de quem atua na escola vive em \cd{lotacoes}; \cd{users.escola\_id} é apenas
+  o \emph{cache} da escola de primeiro acesso e nunca o critério de listagem.\\
 \zebra \cd{periodos\_letivos} & Catálogo & Ano letivo e seus recortes. Sem
   \cd{escola\_id} e sem RLS: o calendário é do contrato, e duplicá-lo por escola
   só criaria cem linhas divergentes.\\
@@ -203,8 +206,8 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 Uma rede estadual tem milhares de unidades, professores que dão aula em mais de
 uma e crianças que se transferem entre elas. Três colunas e uma tabela sustentam
 isso, e a decisão que as torna baratas é o que \textbf{não} muda: o \emph{token}
-continua carregando UMA escola, então as 37 tabelas com \cd{escola\_id} e a
-política de RLS ficam intocadas (\adrr{ADR-30}).
+continua carregando UMA escola, então as 45 tabelas com \cd{escola\_id} e a
+política de RLS forçada nas 42 tabelas de tenant ficam intocadas (\adrr{ADR-30}).
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
 \toprule
@@ -929,6 +932,29 @@ As duas tabelas com \cd{BIGSERIAL} (\cd{exp\_03\_mensagens} e
 \emph{runtime} mesmo com todos os privilégios de tabela concedidos.
 \end{atencao}
 
+\section{As três tabelas da exp-92}
+\label{sec:tabelas-exp92}
+
+A exp-92 (Planejamento de Ensino dirigido pela BNCC, \adrr{ADR-73}, \adrr{ADR-76})
+persiste o plano curricular do docente em três tabelas:
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_92\_configuracoes} & Regência anual do professor (ano letivo, série,
+  componente, divisão do ano, aulas semanais e grade de horários em JSON). Chave
+  única em \cd{(escola\_id, professor\_id, ano\_letivo, serie, componente)}.\\
+\zebra \cd{exp\_92\_planos\_anuais} & Plano consolidado gerado com IA
+  (objetivos gerais, cronograma de unidades temáticas e competências BNCC),
+  com controle de versão, \emph{prompt} imutável e \cd{tokens\_gastos}.\\
+\cd{exp\_92\_planos\_de\_periodo} & O detalhamento do plano em granularidade
+  \textbf{estritamente semanal} (\adrr{ADR-76}), amarrado à configuração e ao
+  plano anual, contendo semanas letivas, habilidades BNCC trabalhadas, estratégias
+  didáticas e instrumentos de avaliação.\\
+\bottomrule
+\end{tabularx}
+
 % ---------------------------------------------------------------------------
 \section{Decisões de esquema por experiência}
 
@@ -1019,36 +1045,60 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \arq{20260827100000\_telemetria\_particionada} & Particionamento mensal de
   \cd{telemetria\_eventos} no \emph{schema} \cd{particoes}, com partição
   \cd{DEFAULT} e faixas até 2028-12.\\
-\zebra \arq{20260828093000\_enturmamento\_e\_identidade} & \cd{periodos\_letivos},
+\zebra \arq{20260827184956\_exp\_03\_unoogpt} & Sessões e marcos de conversa da
+  exp-03 (UnooGPT), com isolamento por escola e RLS.\\
+\arq{20260828093000\_enturmamento\_e\_identidade} & \cd{periodos\_letivos},
   \cd{matriculas} (com RLS), colunas de identidade em \cd{users} e o
   \emph{backfill} de \cd{users.turma\_id} para matrícula principal.\\
-\arq{20260828140000\_rede\_lotacoes\_e\_cpf} & \cd{lotacoes} e o índice único
+\zebra \arq{20260828140000\_rede\_lotacoes\_e\_cpf} & \cd{lotacoes} e o índice único
   parcial que impede estudante ativo em duas escolas.\\
-\zebra \arq{20260828170000\_cpf\_em\_claro} & Troca de \cd{cpf\_hash} por
+\arq{20260828170000\_cpf\_em\_claro} & Troca de \cd{cpf\_hash} por
   \cd{users.cpf} (11 dígitos, \emph{CHECK} e único parcial) --- \adrr{ADR-33}.\\
-\arq{20260828200000\_nivel\_regional} & Vocabulário \cd{escola} $|$
+\zebra \arq{20260828200000\_nivel\_regional} & Vocabulário \cd{escola} $|$
   \cd{regional} $|$ \cd{rede} em \cd{escolas.tipo} (\cd{distrito} renomeado), o
   \emph{trigger} que exige que o pai AGRUPE, e índices em \cd{pai\_id}/\cd{tipo}
   --- \adrr{ADR-34}.\\
+\arq{20260828210000\_permissao\_forms} & Adição do token \cd{forms} ao vocabulário
+  de permissões do iframe (\adrr{ADR-26}).\\
 \zebra \arq{20260828230000\_perfil\_portatil} & \cd{perfis\_portateis}, com RLS,
   \emph{CHECK} do vocabulário de \cd{verificacao} e único por
   (escola, estudante, emissor, emissão) --- \adrr{ADR-35}.\\
+\arq{20260829120000\_conclusao\_primeira\_e\_ultima} & Registro de inclinação inicial,
+  trocas de rota e convergência no término da exp-01.\\
+\zebra \arq{20260830090000\_atividade\_por\_turma} & Adição da coluna \cd{turma\_id}
+  nas atividades da exp-01 para agregação analítica docente.\\
+\arq{20260830100000\_perfil\_importado\_sabe\_a\_partida} & Vínculo de proveniência entre
+  \cd{exp\_01\_exp\_70\_perfis\_importados} e a sessão da Vila do Lume.\\
+\zebra \arq{20260902120000\_exp\_03\_trilha\_com\_relogio} & Rastreamento temporal nos
+  marcos do diálogo com o bot (segundos restantes e causa de encerramento).\\
+\arq{20260903120000\_exp\_07\_o\_eco\_no\_grupo} & Estado \emph{server-side} da exp-07
+  (WhatsApp / Desinformação), com RLS e validações de progresso.\\
+\zebra \arq{20260905120000\_liberacoes\_por\_turma} & Tabela de controle de abertura de missões
+  por turma (\cd{liberacoes}), governança docente com RLS (\adrr{ADR-69}).\\
+\arq{20260905160000\_experiencia\_declara\_unidade} & Adição da coluna \cd{unidade} (1 a 4)
+  ao catálogo curricular de experiências.\\
+\zebra \arq{20260906120000\_exp\_92\_plano\_de\_ensino} & Tabelas da exp-92:
+  \cd{exp\_92\_configuracoes}, \cd{exp\_92\_planos\_anuais} e \cd{exp\_92\_planos\_de\_periodo}
+  (\adrr{ADR-73}).\\
+\arq{20260906140000\_exp\_92\_inicio\_do\_ano\_por\_regencia} & Início do ano letivo
+  parametrizado na configuração curricular por escola/ano (\adrr{ADR-73}).\\
+\zebra \arq{20260906170000\_exp\_06\_rastro\_boato} & Tabelas de sessão e simulação de rede da
+  exp-06 (Rastro do Boato) com tema escuro e topologia restrita (\adrr{ADR-72}).\\
+\arq{20260907120000\_exp\_92\_planejamento\_sempre\_semanal} & Reestruturação do período de
+  planejamento com cardinalidade estritamente semanal de 40 semanas (\adrr{ADR-76}).\\
+\zebra \arq{20260907130000\_permissao\_downloads} & Liberação do token \cd{allow-downloads}
+  no sandbox de iframes de experiências para exportação de planos (\adrr{ADR-76}).\\
 \arq{20260908120000\_regional\_padrao\_e\_vinculo\_obrigatorio} &
   \cd{escolas.regional\_padrao} com índice único parcial, o \emph{CHECK} que
   exige \cd{pai\_id} em \cd{tipo = 'escola'}, o \emph{trigger} que passa a exigir
   pai \cd{regional} e a adotar pela padrão, a criação da regional padrão e o
-  \emph{backfill} das órfãs --- \adrr{ADR-79}. A ORDEM do arquivo é a regra:
-  criar a padrão e adotar as órfãs vem ANTES do \emph{CHECK}, senão a
-  \emph{constraint} é validada contra as linhas que ela existe para eliminar.\\
+  \emph{backfill} das órfãs --- \adrr{ADR-79}.\\
 \zebra \arq{20260908150000\_modelo\_de\_papeis} & O vocabulário de papéis de
   quatro nomes para seis (\cd{gestor} \seta{} \cd{gestor\_escola},
   \cd{admin-contrato} \seta{} \cd{gestor\_contrato}, mais
   \cd{gestor\_regional} e \cd{admin}), \cd{users.regional\_id} com FK,
   \emph{CHECK} bicondicional e \emph{trigger}, e o \cd{lotacoes\_papel\_check}
-  acompanhando --- \adrr{ADR-80}. \textbf{Nenhuma política de RLS é tocada}, e é
-  o ponto mais importante do arquivo: o \cd{gestor\_regional} trabalha uma
-  escola por vez, e o que a regional dele determina é a LISTA de escolas que ele
-  pode ativar.\\
+  acompanhando --- \adrr{ADR-80}.\\
 \bottomrule
 \end{tabularx}
 

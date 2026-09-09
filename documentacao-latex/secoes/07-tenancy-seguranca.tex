@@ -217,14 +217,16 @@ justamente para que a RLS não mascare a ausência do \cd{where}.
 \label{fig:tenancy-fluxo}
 \end{figure}
 
-\subsection{A exceção: \cd{admin-contrato}}
+\subsection{Os papéis sem escola fixa: \cd{gestor\_contrato}, \cd{admin} e \cd{gestor\_regional}}
 
 \begin{regra}
-\cd{admin-contrato} é o \textbf{único} papel autorizado a atravessar escolas, e
-só em rotas explicitamente marcadas com \cd{@Roles("admin-contrato")}. Para esse
-papel, \cd{escolaId} nas \emph{claims} pode ser vazio --- e o \emph{CHECK} da
-migração permite \cd{escola\_id NULL} em \cd{users} apenas quando
-\cd{role = 'admin-contrato'}. Nenhuma outra combinação é aceita pelo banco.
+\cd{gestor\_contrato} e \cd{admin} (\adrr{ADR-80}) são os papéis autorizados a
+atravessar escolas na gestão da rede. Para ambos, \cd{escolaId} nas \emph{claims}
+é vazio. O \cd{gestor\_regional} tampouco tem escola fixa: cobre a sua regional
+e seleciona uma escola ativa por sessão. O \emph{CHECK} da migração
+(\arq{20260908150000\_modelo\_de\_papeis}) restringe \cd{escola\_id NULL} em
+\cd{users} estritamente a \cd{'gestor\_contrato'}, \cd{'admin'} e
+\cd{'gestor\_regional'}. Nenhuma outra combinação é aceita pelo banco.
 \end{regra}
 
 As rotas cross-escola vivem em \emph{controllers} separados
@@ -235,25 +237,25 @@ silenciosamente a permissão do vizinho.
 
 \section{Nível 3: autorização por papel}
 
-\begin{tabularx}{\linewidth}{@{}L{26mm}L{26mm}X@{}}
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
 \toprule
 \headrow \thd{Papel} & \thd{Escopo de dados} & \thd{Pode}\\
 \midrule
-\cd{estudante} & Os próprios dados, na própria escola &
-  Realizar experiência, salvar progresso, ver o próprio resultado.
+\cd{estudante} & Própria matrícula e progresso &
+  Entrar nas missões liberadas para as suas turmas, salvar progresso e interagir no \emph{feed}.
   \textbf{Nunca} vê gabarito, nem dado de colega.\\
-\zebra \cd{professor} & A própria escola; \textbf{as turmas em que tem
-  matrícula} &
-  Preparar e conduzir atividade, ler turma e estudante individual, gerar plano de
-  aula, fazer o próprio \emph{check-in}. \textbf{Não} vê bem-estar de outro
-  professor, nem turma em que não leciona.\\
-\cd{gestor} & A própria escola &
-  Importar pessoas, enturmar, redefinir senha, ler agregado da escola.
-  \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem
-  qualquer dado de bem-estar.\\
-\zebra \cd{admin-contrato} & Toda a rede &
-  Ler agregado da rede, publicar manifesto. \textbf{Não} tem rota para a linha
-  individual de uma criança.\\
+\zebra \cd{professor} & A própria escola; as turmas em que leciona &
+  Liberar missões, controlar relógio de aula, emitir pareceres e gerar planos de aula e ensino.
+  \textbf{Não} vê bem-estar de outro professor, nem turma em que não leciona.\\
+\cd{gestor\_escola} & A própria escola (\emph{tenant}) &
+  Matricular estudantes, enturmar, gerir professores da unidade e consultar relatórios locais.
+  \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem bem-estar docente.\\
+\zebra \cd{gestor\_regional} & As escolas da regional vinculada &
+  Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}) e relatório pedagógico por laço de oito escolas (\adrr{ADR-82}).\\
+\cd{gestor\_contrato} & Toda a rede (cross-escola) &
+  Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados.\\
+\zebra \cd{admin} & Toda a rede (conta Unooria) &
+  Mesmas capacidades operacionais de \cd{gestor\_contrato}, preservando a autoria na cadeia de atribuição transitiva descendente (\adrr{ADR-80}).\\
 \bottomrule
 \end{tabularx}
 
@@ -347,9 +349,7 @@ cada linha existe porque há um \cd{@Roles} que a sustenta. \yes{} é
   \no & \no & \yes & \yes\\
 \zebra \textbf{Criar UMA pessoa} --- o formulário que delega ao importador &
   \rota{POST /usuarios} & \no & \no & \yes & \yes\\
-\textbf{Criar outro \cd{admin-\B contrato}} & \rota{POST /usuarios/\B admin-contrato} &
-  \no & \no & \no & \yes\\
-\zebra Listar as pessoas da escola & \rota{GET /usuarios} & \no & \no & \yes & \yes\\
+Listar as pessoas da escola & \rota{GET /usuarios} & \no & \no & \yes & \yes\\
 Editar pessoa (nome, CPF, e-mail, papel, \cd{ativo}) &
   \rota{PATCH /usuarios/:id} & \no & \no & \yes & \yes\\
 \zebra Redefinir senha (temporária, mostrada uma vez) &
@@ -490,10 +490,14 @@ formulário, que se chama \enquote{Novo usuário}, \textbf{recusa com 409} quem 
 existe, em vez de atualizar em silêncio --- e o 409 de um CPF achado em outra
 escola sai sem id, sem nome e sem dizer qual unidade.
 
-A exceção é \cd{admin-contrato}: ele não tem \cd{escola\_id}, lotação nem turma,
-não cabe numa planilha DA ESCOLA, e por isso tem rota própria,
-\rota{POST /usuarios/admin-contrato}, restrita a ele mesmo. Gestor recebe 403 ali
---- conceder o alcance da rede inteira é decisão do contrato, nunca de uma unidade.
+A exceção são as contas sem escola (\cd{gestor\_contrato} e
+\cd{gestor\_regional}, \adrr{ADR-80}): elas não têm \cd{escola\_id}, lotação nem
+turma, não cabem numa planilha DA ESCOLA, e por isso têm rota própria,
+\rota{POST /usuarios/sem-escola}. A cadeia de atribuição transitiva impede
+escalada de privilégio: \cd{admin} cria \cd{gestor\_contrato}, e este cria
+\cd{gestor\_regional}. Gestor escolar recebe 403 ali --- conceder o alcance da
+rede inteira ou de uma diretoria é decisão de governança do contrato, nunca de
+uma unidade isolada.
 \end{decisao}
 
 \subsection{As portas que não são papel}
@@ -594,13 +598,14 @@ reclamar. Por isso o layout de cada área do hub remonta o miolo quando a escola
 ativa muda.
 
 Acima da escola existe um nível --- a \textbf{regional} (Diretoria de Ensino,
-polo, secretaria municipal) ---, e ele \textbf{agrupa sem autorizar}. Estar numa
-diretoria não dá acesso a nada: quem dá acesso é a lotação, uma por unidade. A
-hierarquia serve para MONTAR a lista de escolas que o admin do contrato confirma
-antes de conceder (\rota{POST /escolas/lotacoes-em-lote}), e nenhuma consulta de
-autorização lê \cd{escolas.pai\_id}. Autorizar por hierarquia seria uma segunda
-fonte de verdade sobre acesso, divergente da lotação no dia em que alguém
-corrigisse um pai (\adrr{ADR-34}).
+polo, secretaria municipal) ---, que \textbf{agrupa unidades sem criar um tenant
+unificado}. Nenhuma política de RLS foi flexibilizada para acomodar regionais
+(\adrr{ADR-79}, \adrr{ADR-80}, \adrr{ADR-81}): o \cd{gestor\_regional} opera
+uma escola ativa por vez, selecionada entre as escolas cujo
+\cd{escolas.pai\_id} coincide com seu \cd{users.regional\_id}. Quando a
+diretoria precisa de relatório consolidado (\adrr{ADR-82}), a API itera sobre
+as escolas autorizadas em lotes de oito, armando o \cd{set\_config} isolado
+para cada unidade, sem quebrar o isolamento de dados no banco.
 
 E na transferência de um estudante, o dado \textbf{fica onde foi produzido}. O que
 atravessa é uma leitura única e estreita (\rota{GET /estudantes/:id/historico}),
@@ -687,7 +692,7 @@ topo da página. E \cd{allow-downloads} porque, sem ele, o navegador
 professor clicava em \enquote{Baixar .doc} nas ferramentas de planejamento e
 \textbf{nada acontecia}, sem erro na tela e sem linha no \emph{console} --- o
 Chrome registra esse bloqueio no painel \emph{Issues}, e o \cd{a.click()} do
-\emph{bundle} volta como se tivesse funcionado (\hyperref[adr:76]{ADR-76};
+\emph{bundle} volta como se tivesse funcionado (\adrr{ADR-76};
 MEDIDO com dois \cd{iframe} iguais, um com o token e outro sem).
 \end{nota}
 
