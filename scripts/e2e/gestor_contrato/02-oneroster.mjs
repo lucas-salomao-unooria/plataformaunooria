@@ -102,6 +102,21 @@ await suite(
       await p.locator("text=OneRoster 1.2").first().click();
     });
     await p.waitForTimeout(800);
+    /* A REGRA DA REGIONAL, dita ANTES do envio. O comportamento de `orgs.csv`
+       mudou com a ADR-79 — com várias regionais, a linha sem `parentSourcedId`
+       válido é ERRO e não aviso —, e sem este aviso na tela quem importa
+       descobre a mudança pelo relatório de falha, no meio de um arquivo de mil
+       linhas. */
+    const instrucoes = await p.locator("main, body").first().innerText();
+    r.exigir(
+      /Toda escola entra vinculada a uma regional/.test(instrucoes),
+      "a tela avisa a regra da regional antes do envio",
+    );
+    r.exigir(
+      /UMA regional/.test(instrucoes) && /VÁRIAS/.test(instrucoes),
+      "e distingue os dois casos: vínculo automático com uma, coluna obrigatória com várias",
+    );
+
     await r.registrar(p, "os-sete-arquivos", {
       titulo: "Os sete arquivos, na ordem",
       mostra: "manifest, orgs, academicSessions, classes, users, enrollments e roles — numerados.",

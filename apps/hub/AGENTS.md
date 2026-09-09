@@ -247,6 +247,29 @@ Duas tabelas: o consolidado por missão e a quebra por escola. Só
   primeira coluna nova. (O `﻿` no começo do arquivo é o que faz o Excel abrir
   acento certo.)
 
+## O vocabulário das telas administrativas
+
+Decidido no card de textos, e vale para texto de TELA (rótulo, título,
+descrição, placeholder, mensagem) — não para nome de campo da api:
+
+- **escola**, nunca "unidade". **regional**, nunca "diretoria" (nem alternando
+  com ela). **vínculo/vincular**, nunca "lotação/lotar" — `lotacoes` segue sendo
+  o nome da tabela, porque é o termo que a rede pública usa para o registro.
+- **"Coordenação"** para `gestor_escola` na interface; o identificador continua
+  `gestor_escola` (contrato replicado em quatro fontes).
+- **"Código interno"** para o id de escola e de regional NOS FORMULÁRIOS. Na
+  LISTAGEM ele aparece sem rótulo, e de propósito: é a chave que a secretaria
+  usa nas planilhas de importação — a e2e registra isso como prova. Um
+  "Código interno:" em cada linha dobraria a altura da célula.
+- **Pessoa ≠ vínculo, e a tela diz qual é qual.** A coluna "Professores" conta
+  pessoas naquela escola; o total do resumo conta vínculos na rede, e leva a
+  frase "Um professor pode ter vínculo com mais de uma escola." Essa confusão já
+  custou duas conversas.
+
+O `unidades` da resposta de `GET /escolas` **não** foi renomeado: é campo de
+contrato publicado (OpenAPI + apêndice C), e trocá-lo por pureza de vocabulário
+é churn sem ganho para quem usa a tela. Fica registrado que ele diverge.
+
 ## Embed de experiência
 
 A montagem (token, manifesto, dev server, origin) é uma só:
