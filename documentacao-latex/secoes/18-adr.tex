@@ -5830,3 +5830,104 @@ layout soubesse desta regra.
 gutter passa a ser um só do primeiro clique ao logout), ou o design system
 publicar um componente de barra de aplicação --- que é onde o \cd{GUTTER} deveria
 morar, em vez de numa constante do hub.
+\section{ADR-84 --- Sinal do navegador \textbf{sem sessão}, e o aparelho como
+rótulo fechado}
+\label{adr:erro-de-cliente-publico}
+
+\textbf{Contexto.} A \adrr{ADR-58} pôs o erro de cliente entrando pela própria
+API, com \cd{OidcGuard}, e isso resolveu a experiência dentro do \emph{iframe}.
+Ficaram de fora as telas por onde \textbf{todo mundo passa}: a \emph{landing}, o
+\emph{login} e a troca de senha. Sem sessão, o BFF do hub responde 401, e o erro
+morria no console de quem não tinha conseguido entrar --- \enquote{ninguém está
+conseguindo entrar} era, literalmente, o defeito mais invisível da plataforma. A
+suíte de ponta a ponta chegou a declarar o 401 do Web Vital dessa tela como
+\emph{pendência conhecida}, o que é a forma educada de conviver com um sinal
+descartado.
+
+Em 8 de setembro de 2026 a investigação de \enquote{por que não vejo nenhum erro
+no Cloud Logging} mediu o resto do estrago, e ele era maior: \textbf{nenhum erro
+de cliente jamais foi registrado}, em nenhum ambiente. O
+\env{NEXT\_PUBLIC\_HUB\_VERSAO} é o \cd{github.sha} --- 40 caracteres --- e o
+campo \cd{versao} do schema aceitava 32, então \emph{todo} erro do hub voltava
+400. O mesmo valor é o \cd{service.version} do lote OTLP, que o \emph{proxy}
+valida com \cd{\{1,32\}}: 425 \emph{spans} do hub foram descartados em
+\cd{hml} entre 5 e 7 de setembro \textbf{com a rota respondendo 204}. Nada disso
+tinha contador: o único vestígio era uma linha \cd{corpo-invalido} que ninguém
+tinha motivo para procurar. Local, o \emph{default} do \emph{Dockerfile} é
+\cd{dev}, com três caracteres --- e é por isso que \emph{typecheck}, teste e
+suíte e2e passavam.
+
+\textbf{Decisão.} Três partes.
+
+\emph{Primeira}: existe um par \textbf{público} das rotas de sinal ---
+\rota{POST /observabilidade/publico/erros-cliente} e
+\rota{POST /observabilidade/publico/vitals} ---, sem \cd{OidcGuard}. Quem
+escolhe o destino é o \textbf{BFF}, não o cliente: com sessão vai para a rota
+autenticada, e o log ganha o id do usuário; sem sessão vai para a pública, sem
+identidade. O cliente posta sempre no mesmo endereço e nunca vê um 401. A rota
+pública força \cd{expId = hub} (antes do \cd{hub:init} nenhuma experiência
+conhece a API), não aceita id de pessoa, e é limitada por \textbf{IP} --- cinco
+erros por minuto --- \textbf{e} por um teto global de instância.
+
+\emph{Segunda}: o campo \cd{versao} passa a aceitar 64 caracteres nos dois
+pontos, e o CI manda o \textbf{SHA curto} (12). São as duas metades do mesmo
+conserto: o SHA curto arruma hoje, o teto maior impede que o tamanho de uma
+versão volte a decidir se um erro existe.
+
+\emph{Terceira}: erro e vital passam a carregar o que o navegador sabe do
+aparelho --- viewport, \emph{device pixel ratio}, \cd{effectiveType} da conexão,
+memória e núcleos ---, e a API deriva do \emph{user-agent} três rótulos
+\textbf{fechados} (\cd{navegador}, \cd{so}, \cd{tipo}). Só \cd{tipo} vira rótulo
+de métrica; \cd{navegador} e \cd{so} ficam no log.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Só corrigir o SHA e parar por aí}. É uma linha e resolve o erro
+    autenticado. Descartada porque deixa a \emph{landing} e o \emph{login} tão
+    cegos quanto antes --- e é lá que um erro impede o uso do produto inteiro.
+  \item \emph{O cliente tentar a rota autenticada e, no 401, repetir na
+    pública}. Não exige o BFF decidir nada. Descartada porque o 401 continua
+    acontecendo: continuaria sujando o console, e a \emph{pendência conhecida}
+    da suíte teria de continuar existindo para tolerá-lo.
+  \item \emph{Cota por IP em tudo}. O \arq{comum/rate-limit.ts} tem a lição
+    oposta escrita nele: a chave certa é o usuário, porque uma turma inteira sai
+    pelo mesmo NAT da escola. Aqui ela não se aplica --- não há usuário, é o que
+    define a rota, e estourar a cota não derruba ninguém: descarta amostra de
+    telemetria. Cinco erros por minuto de uma escola bastam para saber que a tela
+    quebrou.
+  \item \emph{\cd{navegador} e \cd{so} como rótulo de métrica também}. Seria a
+    resposta mais direta a \enquote{trava no Chromebook?}. Descartada por
+    cardinalidade: 2 superfícies \(\times\) \(\sim\)20 rotas \(\times\) 5 perfis
+    \(\times\) 6 navegadores \(\times\) 3 tipos são 3.600 combinações por
+    histograma, e histograma multiplica por \emph{bucket}. Com só o tipo são
+    600, e o navegador continua no log, onde não custa série.
+  \item \emph{Uma biblioteca de \emph{user-agent} (\cd{ua-parser-js})}.
+    Descartada porque a saída dela é aberta --- voltaríamos ao problema da
+    cardinalidade --- e porque distingue aparelhos que não existem numa escola
+    pública brasileira.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é o principal}: existe agora uma rota da
+API \textbf{sem autenticação} que escreve no log. A contenção é toda estrutural
+--- Zod \cd{.strict()}, corpo pequeno, \cd{expId} forçado, \emph{redaction},
+cota por IP e teto global, e nenhuma linha de log por requisição recusada --- mas
+a superfície de abuso deixou de ser zero, e isso precisa constar de qualquer
+revisão de segurança. \emph{Ruim}: a combinação de memória, núcleos e tela
+aproxima-se de impressão digital de aparelho; a plataforma atende menores, então
+a coleta entra na conversa de DPA com a rede, e a lista é fechada de propósito
+--- ela não cresce sem uma ADR nova. \emph{Ruim}: o erro anterior ao
+\emph{handshake} continua sem rastro, porque ali não há token nem \cd{apiUrl}
+--- o que existe é a ausência de \cd{exp:ready}, e o hub ainda não a observa.
+\emph{Bom}: a falha de \emph{boot} de uma experiência passou a reportar
+(\cd{exp?.reportarErro} no \cd{catch} dos seis \arq{bootstrap.tsx}), e era ela
+que o estudante via como \enquote{não deu para abrir agora} sem deixar sinal.
+\emph{Bom}: todo caminho de recusa agora \textbf{conta} --- inclusive o corpo
+inválido, cuja ausência de contador é a razão pela qual seis dias se passaram
+sem ninguém notar.
+
+\textbf{Gatilho de reavaliação.} A rota pública aparecer em varredura de abuso,
+ou o teto global passar a ser atingido em operação normal --- nos dois casos a
+saída é exigir um token de baixa confiança emitido pela própria \emph{landing},
+que hoje não existe e não se justifica. E, do lado da coleta, qualquer rede pedir
+para restringir o que se mede do aparelho: a lista encolhe sem quebrar nada,
+porque todo campo é opcional.

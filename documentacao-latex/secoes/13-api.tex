@@ -510,11 +510,19 @@ verdades, e a recalibragem do cenário mexeria num só.
 
 \subsection{Observabilidade: os sinais que nascem no navegador}
 
-Três rotas em \rota{/observabilidade}, todas com \cd{OidcGuard}, todas
-\cd{204}, todas com \emph{schema} Zod \cd{.strict()} e cota por (escola,
-usuário) em memória --- porque quem as chama é um \emph{bundle} público, e o
-que passa por elas vira log, métrica ou \emph{span} num projeto do Google
-(\adrr{ADR-58}; Capítulo~\ref{cap:observabilidade}).
+Três rotas em \rota{/observabilidade}, com \cd{OidcGuard}, todas \cd{204},
+todas com \emph{schema} Zod \cd{.strict()} e cota por (escola, usuário) em
+memória --- porque quem as chama é um \emph{bundle} público, e o que passa por
+elas vira log, métrica ou \emph{span} num projeto do Google (\adrr{ADR-58};
+Capítulo~\ref{cap:observabilidade}).
+
+Duas delas têm um par \textbf{público} em \rota{/observabilidade/publico/*}
+--- \cd{erros-cliente} e \cd{vitals} ---, sem \cd{OidcGuard}, para a
+\emph{landing}, o \emph{login} e a troca de senha, onde ainda não há sessão
+(\adrr{ADR-84}). Quem escolhe entre o par autenticado e o público é o
+\textbf{BFF do hub}, não o cliente: com sessão o log ganha o \cd{usuarioId};
+sem sessão, a linha sai marcada \cd{autenticado: false} e sem identidade
+nenhuma. A cota do par público é por IP, somada a um teto global de instância.
 
 \begin{itemize}
   \item \rota{POST /observabilidade/erros-cliente}: um erro não capturado

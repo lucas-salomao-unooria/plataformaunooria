@@ -66,12 +66,13 @@ export function ehRuidoDeDev(texto) {
  *
  * - `favicon.ico`: o hub não declara ícone nenhum (`app/layout.tsx` só tem
  *   `title`). Toda navegação de todo papel gera um 404 no console.
- * - `observabilidade/vitals`: o `VitalsHub` reporta Web Vitals em 10% das abas,
- *   e o primeiro deles costuma sair na tela de LOGIN — antes de haver sessão.
- *   O BFF responde 401, e o próprio componente documenta isso ("sem sessão o
- *   BFF responde 401 e nada acontece"). Como a amostra é aleatória, ele
- *   reprovava QUALQUER suíte uma vez a cada dez execuções, sempre por um
- *   motivo que não tem relação com o roteiro que falhou.
+ * - (SAIU em 2026-09-08) `observabilidade/vitals`: o vital da tela de login
+ *   batia 401 no BFF, porque ainda não há sessão. Deixou de acontecer — o BFF
+ *   passou a encaminhar erro e vital sem sessão para a rota PÚBLICA da api
+ *   (ADR-84), em vez de recusá-los. A linha saiu junto com a correção: uma
+ *   pendência conhecida que sobrevive ao conserto faz a suíte esperar um
+ *   vermelho que não existe mais, e a próxima pessoa a ler a lista acredita
+ *   nela.
  * - `clarity.ms`: a tag do Microsoft Clarity (ADR-60) é recurso de TERCEIRO, e
  *   ela responde **400 a partir de IP de datacenter** — medido em 2026-09-02:
  *   200 da máquina de quem opera, 400 do runner do GitHub Actions, com o mesmo
@@ -85,10 +86,6 @@ const PENDENCIAS_CONHECIDAS = [
   {
     padrao: /favicon\.ico/,
     oQue: "o hub não declara favicon — todo carregamento de página gera um 404 no console",
-  },
-  {
-    padrao: /observabilidade\/vitals/,
-    oQue: "Web Vitals reportado antes de haver sessão (tela de login) — o BFF responde 401 por desenho, e a métrica é amostrada em 10% das abas",
   },
   {
     padrao: /clarity\.ms/,

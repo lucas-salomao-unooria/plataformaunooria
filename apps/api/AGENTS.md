@@ -692,6 +692,28 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   sinal é contador). O proxy OTLP (`otlp-proxy.service.ts`) SUBSTITUI o
   `resource` do cliente e filtra atributos por allowlist antes de reexportar —
   nada do que o navegador manda vai ao Google como veio.
+- **`/observabilidade/publico/*` é a ÚNICA rota sem `OidcGuard`** além do
+  `/telemetry/ingest` (que tem o `PubSubPushGuard`) — ADR-84. Existe porque a
+  tela de LOGIN não tem sessão, e o 401 do BFF descartava exatamente o sinal de
+  que ninguém estava conseguindo entrar. Quem escolhe o destino é o **BFF do
+  hub**, não o cliente: com sessão, a rota autenticada (o log leva `usuarioId`);
+  sem sessão, a pública (sem identidade, `expId` forçado a `hub`, cota por IP
+  mais teto global de instância). O IP é chave de cota e **não vai para log nem
+  para rótulo** — a lição do `rate-limit.ts` contra chave por IP vale para rota
+  de produto, onde estourar a cota derruba a turma pelo NAT da escola; aqui
+  estourar só descarta amostra de telemetria.
+- **Todo caminho de recusa CONTA** (`erros_recusados`, `vitais_recusados`, com
+  `motivo` e `superficie`), e é por isso que o corpo inválido passa por
+  `safeParse` em vez de `parse`: em 2026-09 um `versao` de 40 caracteres (o
+  `github.sha`) estourou o `max(32)` do schema e recusou **todo** erro de
+  cliente do hub por seis dias — o único vestígio era uma linha
+  `corpo-invalido`, e o contador que teria gritado não existia. O mesmo SHA
+  derrubava o lote OTLP do hub em `identidadeDoLote`, **com a rota respondendo
+  204**. Os dois tetos hoje são 64, e o CI manda o SHA curto.
+- **O user-agent vira rótulo por `observabilidade/dispositivo.ts`**, nunca cru:
+  `navegador`/`so`/`tipo` de conjunto FECHADO. Só `tipo` entra em métrica (os
+  outros dois multiplicariam a série do histograma por 18); `navegador` e `so`
+  ficam no log do erro, que não custa série.
 - Envs: `LOG_LEVEL` (default `info`), `GCP_PROJECT_ID` (correlação com o
   trace, cliente OTLP; vazio em dev = métricas e spans do navegador contados
   e descartados), `OBS_TRACE_RATIO` (fração exportada; 0 desliga),

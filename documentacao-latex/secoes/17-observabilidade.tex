@@ -1118,8 +1118,16 @@ Error Reporting & \textbf{parcial} & API habilitada, mas \textbf{zero grupos}
   em uma semana. Ninguém provou ainda que a linha de erro sai no formato que
   ele agrupa --- as poucas linhas \cd{ERROR} do período foram falha de conexão
   do próprio Cloud Run, sem \emph{stack}\\
-\zebra Erro de cliente & \textbf{ausente} & Nenhum erro de navegador é
-  capturado. É a maior lacuna: tela branca de professor não gera sinal\\
+\zebra Erro de cliente & \textbf{corrigido em 08/09} & O código existia desde
+  02/09 e \textbf{nunca registrou nada}: o \cd{github.sha} de 40 caracteres
+  estourava o \cd{max(32)} do campo \cd{versao} e a API devolvia 400 a todo
+  erro do hub. O mesmo valor descartava o lote OTLP do hub em
+  \cd{identidadeDoLote} --- 425 \emph{spans} em \cd{hml} entre 5 e 7/09, com a
+  rota respondendo \textbf{204}. Corrigido pela \adrr{ADR-84}, que também abriu
+  o par \textbf{público} das rotas (a tela de login não tinha sessão, e o 401 do
+  BFF descartava o sinal de que ninguém conseguia entrar) e passou a CONTAR todo
+  caminho de recusa --- a ausência desse contador é a razão de seis dias sem
+  ninguém notar\\
 \emph{Session replay} & \textbf{parcial} & Instância própria de OpenReplay no
   ar, sem nenhum \emph{tracker} instrumentado --- nenhuma sessão gravada\\
 \zebra Sondas do Cloud Run & \textbf{ausente} & O módulo já aceita
