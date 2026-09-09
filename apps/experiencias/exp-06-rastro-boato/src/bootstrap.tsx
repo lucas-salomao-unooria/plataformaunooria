@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createExperiencia } from "@edu/sdk";
+import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
 import { api, codigoDoErro, definirExperiencia } from "./lib/api";
 import { ligarTelemetria } from "./lib/telemetria";
 import { EXP_ID, EXP_VERSION, type RespostaSessao } from "./lib/tipos";
@@ -24,13 +24,20 @@ export function Bootstrap() {
   useEffect(() => {
     let vivo = true;
     void (async () => {
+      let exp: ExperienciaHandle | null = null;
       try {
-        const exp = await createExperiencia({ expId: EXP_ID, expVersion: EXP_VERSION });
+        exp = await createExperiencia({ expId: EXP_ID, expVersion: EXP_VERSION });
         definirExperiencia(exp);
         ligarTelemetria(exp);
         const sessao = await api.get<RespostaSessao>("/rastro-boato/sessao");
         if (vivo) setInicial(sessao);
       } catch (erro) {
+        // O boot que falha DEPOIS do handshake tem token, e por isso pode
+        // reportar: era esta a falha que o estudante via como "não deu para
+        // abrir agora" e que não deixava rastro nenhum no servidor (ADR-84).
+        // Antes do handshake `exp` é null — ali não há token, e o sinal é a
+        // ausência de `exp:ready`, que o hub observa.
+        exp?.reportarErro(erro);
         if (!vivo) return;
         setFalhou(
           codigoDoErro(erro) === "rede"
