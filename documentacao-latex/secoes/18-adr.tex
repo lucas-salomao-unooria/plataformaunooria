@@ -5931,3 +5931,104 @@ saída é exigir um token de baixa confiança emitido pela própria \emph{landin
 que hoje não existe e não se justifica. E, do lado da coleta, qualquer rede pedir
 para restringir o que se mede do aparelho: a lista encolhe sem quebrar nada,
 porque todo campo é opcional.
+
+\section{ADR-85 --- Trocar de escola \textbf{remonta} o miolo da área}
+\label{adr:escopo-da-escola}
+
+\textbf{Contexto.} Quem trabalha em mais de uma unidade --- professor com duas
+cadeiras, coordenação de duas escolas, supervisor de uma diretoria inteira ---
+escolhe a \textbf{escola ativa} no cabeçalho. A troca grava no servidor
+(\rota{POST /api/escola-ativa}), que valida contra a API e reemite o cookie de
+sessão; a tela então chamava \cd{router.refresh()}, e o comentário do seletor
+explicava por quê: \enquote{as telas são Server Components e leem a escola da
+sessão}.
+
+Essa frase era verdadeira quando foi escrita, e deixou de ser sem que ninguém
+percebesse. O \cd{router.refresh()} re-renderiza \textbf{apenas} os Server
+Components. Ele não remonta um Client Component que já está montado, não
+re-executa os \cd{useEffect} dele (as dependências não mudaram), não
+reinicializa um \cd{useState} alimentado por \emph{prop} do servidor e não
+recarrega um \cd{<iframe>}. Toda a área administrativa é client, e as telas de
+produto do professor são \emph{embed}.
+
+Medido em 9 de setembro de 2026, com uma conta lotada em duas unidades: em
+\rota{/admin/usuarios} o cabeçalho passava a dizer o nome da escola nova
+enquanto a tabela seguia com as 49 pessoas da anterior --- as 1004 da nova só
+apareciam com F5; \rota{/admin/turmas} ficava nas 27 turmas da outra unidade; e
+em \rota{/professor/plano-de-aula} o hub já emitia \emph{token} de
+\cd{escola-demo-2} com o \emph{iframe} ainda segurando o de \cd{escola-demo}.
+
+Os dois primeiros são tela desatualizada, e a RLS contém o estrago: a ação
+disparada de uma linha velha viaja com o \emph{token} novo, a API não encontra a
+linha e a pessoa recebe um erro genérico. O terceiro é de outra natureza. Numa
+tela de \emph{embed} o \emph{token} viaja \textbf{uma} vez, no \cd{hub:init} que
+responde ao \cd{exp:ready}: sem remontar o aparelho, a experiência continua
+gravando na escola de onde a pessoa acabou de sair, com um \emph{token}
+legítimo, que a RLS aceita sem reclamar. Não é leitura errada --- é
+\textbf{escrita} na escola errada.
+
+O defeito sobreviveu porque o teste tinha a mesma cegueira do produto: a suíte
+\arq{gestor\_escola/02-quem-trabalha-em-duas-escolas} trocava a escola e
+navegava em seguida, e navegar é o próprio F5 que mascara o sintoma. Ela provava
+que o \emph{token} mudava, e nunca olhava a tela onde a troca acontecera.
+
+\textbf{Decisão.} O layout de cada área envolve o miolo em
+\cd{<EscopoDaEscola>} (\arq{apps/hub/components/escopo-da-escola.tsx}): um
+\cd{Fragment} cuja \cd{key} é a escola ativa da sessão. Quando a escola muda, o
+React desmonta a subárvore inteira e monta outra --- estado zerado, efeitos
+refeitos, \emph{iframe} recarregado, \emph{handshake} refeito com o
+\emph{token} certo.
+
+Duas escolhas dentro da decisão. \emph{É do layout, nunca da página}: mesma
+razão da trilha da \adrr{ADR-77} --- página nova nasce escopada sem escrever uma
+linha, e as quatro telas quebradas eram quatro esquecimentos independentes do
+mesmo detalhe. \emph{Envolve o miolo, não o cabeçalho}: o cabeçalho hospeda o
+próprio seletor, e remontá-lo tiraria o foco do teclado de quem acabou de trocar
+de escola pelo campo.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{\cd{key} por página, nas quatro telas quebradas}. É o conserto
+    mínimo e resolve o que foi medido. Descartada porque devolve a
+    responsabilidade a quem escreve a próxima página --- exatamente o desenho
+    que produziu as quatro. A \adrr{ADR-77} já pagou esse preço com o
+    \emph{breadcrumb}: 22 telas com trilha e 15 sem, nenhuma por decisão.
+  \item \emph{Trocar o \cd{router.refresh()} por \cd{location.reload()}}. Uma
+    linha, cobre tudo, inclusive as telas que ainda não existem. Descartada por
+    ser um recarregamento completo a cada troca --- perde a navegação sem
+    recarga em toda a plataforma para resolver um problema de quatro telas ---,
+    e por apagar o rastro do que a pessoa estava fazendo. Fica registrada como
+    plano B se a fronteira por \cd{key} se mostrar insuficiente em alguma área.
+  \item \emph{Reenviar \cd{hub:token} ao \emph{iframe} quando a escola muda, sem
+    remontá-lo}. Trata o caso grave sem recarregar a experiência. Descartada
+    porque o estado \textbf{dentro} da experiência continua sendo o da escola
+    anterior --- a lista de planos, o rascunho aberto, o que estiver em memória
+    --- e o resultado seria uma tela mostrando dados de uma escola com um
+    \emph{token} de outra: uma inconsistência mais difícil de perceber do que a
+    que se estava corrigindo.
+  \item \emph{Escopar a escola pela URL, como faz \rota{/analise}}. Torna o
+    estado visível e compartilhável. Descartada porque a escola ativa é
+    \textbf{do token}, não da tela: pô-la na URL criaria uma segunda fonte de
+    verdade sobre a fronteira de \emph{tenancy}, e as duas divergiriam no
+    primeiro \emph{link} colado de uma sessão para outra.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: trocar de escola agora descarta o estado de
+tela --- filtro digitado, página da paginação, formulário pela metade. É
+deliberado, e é o comportamento correto: um filtro de nome continua fazendo
+sentido, mas uma página 7 de uma lista de outra escola não. \emph{Ruim}: numa
+tela de \emph{embed} a troca custa o recarregamento da experiência, com o tempo
+de \emph{boot} dela. \emph{Ruim}: a fronteira é invisível no código da página
+--- quem lê uma tela de \rota{/admin} não vê nada que explique por que ela
+recarrega sozinha; o que amarra isso é este registro e a seção correspondente do
+\arq{apps/hub/AGENTS.md}. \emph{Bom}: área nova nasce correta, e a suíte de
+ponta a ponta passou a provar as duas metades na \textbf{mesma} tela --- a lista
+rebuscada sem F5, e o aparelho da experiência remontado (marca-se o
+\cd{<iframe>} e confere-se se a marca sobreviveu à troca).
+
+\textbf{Gatilho de reavaliação.} Uma área precisar preservar estado de tela
+através da troca de escola --- um formulário longo, um rascunho não salvo ---,
+caso em que a fronteira desce daquele layout para dentro dele e a exceção se
+escreve aqui. E o surgimento de uma tela que precise comparar duas escolas lado
+a lado: ela não caberia neste desenho e exigiria a discussão que a \adrr{ADR-34}
+recusou.

@@ -1,4 +1,5 @@
 import { HeaderPlataforma } from "@/components/header-plataforma";
+import { EscopoDaEscola } from "@/components/escopo-da-escola";
 import { ProvedorDaTrilha, TrilhaDaRota } from "@/components/trilha";
 import { auth } from "@/lib/auth";
 
@@ -27,7 +28,7 @@ export default async function AnaliseLayout({ children }: { children: React.Reac
       <main className="plataforma-largura-cheia mx-auto w-full max-w-6xl px-6 py-10">
         <ProvedorDaTrilha>
           <TrilhaDaRota papel={session!.usuario.papel} />
-          {children}
+          <EscopoDaEscola>{children}</EscopoDaEscola>
         </ProvedorDaTrilha>
       </main>
     </div>

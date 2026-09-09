@@ -198,6 +198,52 @@ importa), o `CHECK` no Postgres e o atributo `perfil` do WSO2. `/estudante` e
 que valida contra `GET /escolas/minhas` **da api** — nunca contra a lista que o
 cookie carrega.
 
+## Trocar de escola REMONTA o miolo da área (ADR-85, 2026-09-09)
+
+**O layout de cada área envolve `{children}` em `<EscopoDaEscola>`**
+(`components/escopo-da-escola.tsx`) — um `Fragment` com `key` na escola ativa.
+Quando a escola muda, o React desmonta a subárvore e monta outra: estado zerado,
+efeitos refeitos, iframe recarregado.
+
+`router.refresh()` sozinho **não** faz isso. Ele re-renderiza só os Server
+Components; um Client Component já montado não remonta, os `useEffect` dele não
+re-disparam (as dependências não mudaram), um `useState(propDoServidor)` não
+reinicializa e um `<iframe>` não recarrega. O comentário do seletor dizia "as
+telas são Server Components e leem a escola da sessão" — verdade em
+`/professor/**`, falso em `/admin/**` e nas três telas de embed. Medido em
+2026-09-09 com um gestor lotado em duas unidades:
+
+| tela | antes da correção |
+|---|---|
+| `/admin/usuarios` | cabeçalho na escola nova, tabela com as 49 pessoas da antiga (as 1004 da nova só com F5) |
+| `/admin/turmas` | 27 turmas da outra unidade |
+| `/admin/turmas/[id]`, `/admin/importar` | idem, presas em `useState`/deps que não mudam |
+| `/professor/plano-de-aula`, `/plano-de-ensino`, `/bem-estar`, `/exp/:expId` | hub já emitia token de `escola-demo-2`, iframe seguia com o de `escola-demo` |
+
+O último é o grave: numa tela de embed o token viaja UMA vez, no `hub:init` que
+responde ao `exp:ready`. Sem remontar o aparelho não é tela velha — é **escrita
+na escola errada**, e a RLS não barra porque o token é legítimo, só é o da
+escola de antes. Nas telas de admin a RLS salva: a ação vai com o token novo, a
+api não acha a linha e a pessoa vê um erro genérico.
+
+**É do LAYOUT da área, nunca da página** — a mesma razão da trilha, logo acima:
+página nova nasce escopada sem escrever uma linha. As quatro telas quebradas
+eram quatro esquecimentos independentes do mesmo detalhe. **Área nova precisa de
+layout novo, e layout novo envolve o miolo em `EscopoDaEscola`**; sem isso a área
+nasce com o defeito que esta seção existe para não deixar voltar.
+
+**Envolve o miolo, não o cabeçalho**: o `HeaderPlataforma` hospeda o próprio
+seletor, e remontá-lo tiraria o foco do teclado de quem acabou de trocar. E é
+`Fragment`, não `<div>`: um elemento a mais quebraria o `main:has(> .tela-cheia)`
+e devolveria a barra de rolagem parada das telas de embed.
+
+**O F5 mascarava tudo, inclusive no teste.** A suíte
+`gestor_escola/02-quem-trabalha-em-duas-escolas` trocava a escola e fazia `goto`
+em seguida — provava que o *token* mudava e nunca olhava a tela onde a troca
+aconteceu. Ela agora tem os dois passos que faltavam: rebuscar a lista **na
+mesma tela** e remontar o aparelho da experiência (marca-se o `<iframe>` e
+confere-se se a marca sobreviveu).
+
 ## Regionais e Escolas são DUAS telas (ADR-79)
 
 `/admin/regionais` antes de `/admin/escolas` no menu — a ordem da hierarquia, e a

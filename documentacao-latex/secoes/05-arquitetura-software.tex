@@ -524,6 +524,19 @@ passou a valer um nível abaixo: o \emph{header} é \emph{chrome} do hub, desenh
 entra.
 \end{decisao}
 
+\begin{decisao}
+\textbf{O \emph{layout} de cada área é onde moram as regras que valem para a área
+inteira.} São três hoje, e nenhuma pertence à página: a \textbf{trilha}
+(\adrr{ADR-77}), a \textbf{largura da coluna} (\adrr{ADR-83}) e a
+\textbf{fronteira de remontagem por escola ativa} (\adrr{ADR-85}, o
+\cd{EscopoDaEscola} que envolve o miolo). As três chegaram ali pelo mesmo
+caminho: eram responsabilidade de cada página, e responsabilidade de página se
+esquece --- 15 telas sem \emph{breadcrumb}, quatro larguras de coluna sem razão
+registrada e quatro telas que não reagiam à troca de escola. \textbf{Área nova
+precisa de \emph{layout} novo}, e é o \emph{layout} que faz as três coisas; sem
+ele a área nasce com os três defeitos, como \rota{/admin} nasceu.
+\end{decisao}
+
 \begin{nota}
 \textbf{A raiz é a \emph{landing} pública, e continua roteando quem tem sessão}
 (\adrr{ADR-40}). \rota{/} sem sessão renderiza \cd{components/landing/} ---

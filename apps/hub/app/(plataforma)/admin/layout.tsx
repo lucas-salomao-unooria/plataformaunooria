@@ -1,5 +1,6 @@
 import { HeaderPlataforma } from "@/components/header-plataforma";
 import { NavAdmin } from "@/components/nav-admin";
+import { EscopoDaEscola } from "@/components/escopo-da-escola";
 import { ProvedorDaTrilha, TrilhaDaRota } from "@/components/trilha";
 import { auth } from "@/lib/auth";
 
@@ -31,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto w-full max-w-[1180px] flex-1 px-6 py-6">
           <ProvedorDaTrilha>
             <TrilhaDaRota papel={session!.usuario.papel} />
-            {children}
+            <EscopoDaEscola>{children}</EscopoDaEscola>
           </ProvedorDaTrilha>
         </div>
       </div>

@@ -584,6 +584,15 @@ continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
 
+\textbf{E a fronteira precisa se mover na TELA junto com o \emph{token}}
+(\adrr{ADR-85}). Trocar de escola reemite o \emph{cookie}, mas uma tela já
+aberta continua com o que buscou antes --- e uma experiência embutida continua
+com o \emph{token} anterior em memória, porque ele viaja uma vez só, no
+\emph{handshake}. Aí não é leitura desatualizada: é escrita na escola de onde a
+pessoa acabou de sair, com um \emph{token} legítimo que a RLS aceita sem
+reclamar. Por isso o layout de cada área do hub remonta o miolo quando a escola
+ativa muda.
+
 Acima da escola existe um nível --- a \textbf{regional} (Diretoria de Ensino,
 polo, secretaria municipal) ---, e ele \textbf{agrupa sem autorizar}. Estar numa
 diretoria não dá acesso a nada: quem dá acesso é a lotação, uma por unidade. A

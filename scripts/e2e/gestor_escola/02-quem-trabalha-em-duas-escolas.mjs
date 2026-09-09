@@ -92,6 +92,55 @@ await suite(
           "tenancy inteira que se move junto, incluindo as queries e a RLS.",
         detalhe: `${naSegunda.length} turma(s) · a lista ${mudou ? "mudou" : "NÃO mudou"}`,
       });
+
+      // ── a experiência embutida também troca de escola ─────────────────
+      /* O caso mais grave do mesmo defeito, e o menos visível: numa tela de
+         embed o token viaja UMA vez, no `hub:init` que responde ao `exp:ready`.
+         Se o iframe não for remontado, a experiência segue com o token da
+         escola ANTERIOR em memória até ele expirar — e aí não é tela velha, é
+         escrita na escola errada, que a RLS não tem como barrar porque o token
+         é legítimo.
+
+         A prova é de identidade do elemento: marca-se o iframe, troca-se a
+         escola e confere-se se a marca sobreviveu. Marca ausente = elemento
+         novo = handshake refeito com o token da escola nova. Não depende da
+         origem do bundle (dev server ou CDN), que muda por ambiente. */
+      await p.goto(`${HUB}/professor/plano-de-aula`, { waitUntil: "domcontentloaded" });
+      const aparelho = p.locator('iframe[title="experiencia"]');
+      await aparelho.waitFor({ state: "attached", timeout: 30_000 });
+      await aparelho.evaluate((el) => {
+        el.dataset.marcaDoTeste = "antes-da-troca";
+      });
+
+      await Promise.all([
+        p.waitForResponse(
+          (resp) => resp.url().includes("/api/escola-ativa") && resp.request().method() === "POST",
+          { timeout: 20_000 },
+        ),
+        p.locator('select[aria-label="Escola ativa"]').selectOption({ label: ESCOLA_1 }),
+      ]);
+      await p.waitForTimeout(3000);
+
+      const marcaSobreviveu = await p
+        .locator('iframe[title="experiencia"]')
+        .getAttribute("data-marca-do-teste");
+      r.exigir(
+        marcaSobreviveu === null,
+        "trocar de escola REMONTA o aparelho da experiência — o token da escola anterior não fica",
+      );
+      const travou = await p.locator('[data-testid="erro-da-experiencia"]').count();
+      r.exigir(travou === 0, "e a experiência volta funcionando depois de remontar");
+
+      await r.registrar(p, "aparelho-remontado-na-troca", {
+        titulo: "A experiência embutida acompanha a troca",
+        mostra: `O Gerador de Plano de Aula recarregado já na ${ESCOLA_1}, sem F5.`,
+        prova:
+          "Numa tela de embed o token só viaja no handshake. Sem remontar o aparelho, o professor " +
+          "continuaria escrevendo na escola de onde acabou de sair — com um token válido, que a " +
+          "RLS aceita sem reclamar.",
+        detalhe: marcaSobreviveu === null ? "iframe remontado" : "iframe NÃO remontado",
+        inteira: true,
+      });
     }
 
     // ── a supervisora de diretoria ──────────────────────────────────────
@@ -138,6 +187,83 @@ await suite(
         detalhe: `escola ativa: ${escolaNoCabecalho}`,
         inteira: true,
       });
+
+      // ── trocar SEM sair da tela ───────────────────────────────────────
+      /* O passo que faltava, e que deixou um defeito passar despercebido: até
+         aqui toda troca desta suíte era seguida de um `goto`, que é um F5 — e o
+         F5 mascara exatamente o que quebrava. O produto trocava a escola no
+         token, o cabeçalho passava a dizer o nome novo, e a TELA continuava com
+         os dados da escola anterior, porque `router.refresh()` re-renderiza só
+         os Server Components e não remonta o Client Component que já tinha
+         buscado a lista. Quem usava só descobria dando F5.
+
+         Por isso a prova aqui é conferir a MESMA tela, sem navegar: o que
+         sustenta a correção é a fronteira de remontagem por escola ativa
+         (`components/escopo-da-escola.tsx`, ADR-85), e é ela que este passo
+         guarda. */
+      const seletorDaSupervisora = s.locator('select[aria-label="Escola ativa"]');
+      const opcoesDela = await seletorDaSupervisora.locator("option").all();
+      const valorAtual = await seletorDaSupervisora.inputValue();
+      let outraEscola = null;
+      for (const opcao of opcoesDela) {
+        const valor = await opcao.getAttribute("value");
+        if (valor && valor !== valorAtual) {
+          outraEscola = { valor, rotulo: (await opcao.innerText()).trim() };
+          break;
+        }
+      }
+
+      if (outraEscola) {
+        const antesDaTroca = await s.locator("table tbody tr").allInnerTexts();
+
+        /* A prova é a lista ser BUSCADA de novo. Sem a fronteira, este `fetch`
+           simplesmente não acontece — então a espera é pela requisição, e não
+           por um seletor que continuaria ali com o conteúdo velho. O `catch`
+           existe para o vermelho dizer a verdade: um timeout cru reportaria
+           "esperei 20s por uma resposta" no lugar do que de fato falhou. */
+        const listaRecarregada = s
+          .waitForResponse(
+            (resp) =>
+              resp.url().includes("/api/plataforma/usuarios") && resp.request().method() === "GET",
+            { timeout: 20_000 },
+          )
+          .then(() => true)
+          .catch(() => false);
+
+        await Promise.all([
+          s.waitForResponse(
+            (resp) => resp.url().includes("/api/escola-ativa") && resp.request().method() === "POST",
+            { timeout: 20_000 },
+          ),
+          seletorDaSupervisora.selectOption(outraEscola.valor),
+        ]);
+
+        const buscouDeNovo = await listaRecarregada;
+        r.exigir(
+          buscouDeNovo,
+          "trocar a escola no cabeçalho REBUSCA a lista da tela aberta, sem recarregar a página",
+        );
+
+        await s.waitForTimeout(2000);
+        const depoisDaTroca = await s.locator("table tbody tr").allInnerTexts();
+        const mudouSemF5 = JSON.stringify(depoisDaTroca) !== JSON.stringify(antesDaTroca);
+        r.exigir(mudouSemF5, "a lista de pessoas na tela MUDOU sem F5");
+        r.exigir(
+          s.url().includes("/admin/usuarios"),
+          "e nada disso navegou: a prova é a mesma tela, não uma tela nova",
+        );
+
+        await r.registrar(s, "troca-sem-recarregar-a-pagina", {
+          titulo: "Trocar de escola sem sair da tela",
+          mostra: `A mesma tela de Usuários, agora com as pessoas da ${outraEscola.rotulo} — sem F5.`,
+          prova:
+            "Trocar de escola é mover a fronteira de tenancy inteira, e a tela aberta precisa " +
+            "acompanhar. Quando não acompanhava, o cabeçalho dizia uma escola e a tabela mostrava " +
+            "outra — e a pessoa agia sobre a lista errada acreditando no cabeçalho.",
+          detalhe: `${antesDaTroca.length} → ${depoisDaTroca.length} linha(s) · escola ativa: ${outraEscola.rotulo}`,
+          inteira: true,
+        });
+      }
     }
   },
 );
