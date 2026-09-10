@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{92 decisões}, numeradas até ADR-92, \textbf{sem lacunas}. A ADR-65
+São \textbf{95 decisões}, numeradas até ADR-95, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -133,6 +133,7 @@ que a cercam.
 \adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
 \adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-95} & A sessão do hub dura 2h de inatividade, igual para todo papel & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6876,3 +6877,118 @@ o dossiê deixa de ser sobrescrito e passa a ser versionado por passagem. (2) O
 caminho passo a passo até a investigação aparecer em uso real com turma que já
 viu a revelação; aí o marco vira coluna e a proteção passa a valer pelos dois
 caminhos.
+
+% ---------------------------------------------------------------------------
+\section{ADR-95 --- A sessão do hub dura 2h de INATIVIDADE, e vale igual para
+todo papel}
+\label{adr:sessao-duas-horas}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A sessão do hub durava 12h
+(\arq{apps/hub/lib/auth.ts}), com o comentário \enquote{cobre um dia de aula}.
+O combinado original era \textbf{2h para o estudante e 4h para o professor},
+com o racional escrito: 2h porque é o tempo de duas aulas seguidas, e 4h para
+o professor não deslogar várias vezes ao longo do turno. O próprio registro da
+combinação já previa o plano B --- \enquote{na impossibilidade ajustamos para
+\emph{logout} geral após 2h} --- e é ele que o dono do produto pediu.
+
+\textbf{Um número de TTL não é uma decisão}, e é por isso que esta ADR existe:
+\enquote{2 horas} pode querer dizer duas coisas incompatíveis --- 2h
+\textbf{absolutas} desde o \emph{login}, ou 2h de \textbf{inatividade} --- e a
+diferença numa aula é enorme. Absoluta desloga a criança no meio da segunda
+aula; por inatividade, não.
+
+\textbf{O que o código já entregava, e ninguém tinha declarado.} Lido no
+\cd{@auth/core} 0.41.3 instalado: com \cd{strategy: "jwt"}, o ramo \cd{jwt} de
+\arq{lib/actions/session.js} \textbf{re-assina} o token a cada leitura de
+sessão (o \cd{jwt.encode} grava \cd{exp = agora + maxAge}) e o \cd{handleAuth}
+do \cd{next-auth} devolve o \cd{Set-Cookie} ao navegador. O \cd{updateAge}
+(\emph{default} de 24h) \textbf{não é consultado nesse ramo} --- ele só existe
+na estratégia de banco. Ou seja: as 12h \textbf{nunca foram absolutas}; eram
+12h de inatividade, e quem faz a janela deslizar é o \emph{middleware}, porque
+é ele que roda em toda navegação e devolve o cabeçalho.
+
+\textbf{Decisão.} Três partes:
+
+\begin{enumerate}
+  \item \textbf{2h para TODOS os papéis} --- o plano B, sem distinção por
+    perfil.
+  \item \textbf{De INATIVIDADE}, preservando a semântica que o código já tinha.
+    O comentário da linha passa a dizer isso, com o mecanismo, porque o antigo
+    (\enquote{cobre um dia de aula}) descrevia um número que deixou de existir.
+  \item \textbf{O valor fica FIXO no código}, não em variável de ambiente.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{2h para estudante e 4h para professor} (o plano A). Não é
+    impossível --- e o registro da combinação supôs que fosse ---, mas também
+    não é limpo. \cd{session.maxAge} é um número global, e o \cd{encode} do
+    \cd{@auth/core} faz \cd{.setExpirationTime(now() + maxAge)}
+    \textbf{sobrescrevendo} qualquer \cd{exp} que o \emph{callback} \cd{jwt}
+    tenha posto no token: não sai de dez linhas no \emph{callback}. Sobram dois
+    caminhos, e os dois cobram o mesmo preço. (a) Config como FUNÇÃO
+    (\cd{NextAuth((req) => …)}, que o v5 aceita) exigiria decifrar o
+    \emph{cookie} de sessão à mão, no \emph{edge}, a cada requisição, para saber
+    o papel antes de montar a config que fornece a chave de decifração. (b)
+    \cd{maxAge} no maior valor (4h) mais uma segunda expiração nossa, com
+    \emph{claim} próprio de último uso conferido no \emph{middleware}. As duas
+    criam uma \textbf{segunda fonte de verdade} sobre quando a sessão morre, ao
+    lado da da biblioteca --- e sessão que expira por dois mecanismos diferentes
+    é a divergência que só aparece em campo. Fica registrado que o plano A custa
+    isto, e não a linha que se imaginou.
+  \item \emph{Sessão absoluta de 2h.} Desloga o estudante no meio da segunda
+    aula --- justamente o intervalo que as 2h existem para cobrir.
+  \item \emph{TTL em variável de ambiente.} Descartada por uma razão específica
+    desta plataforma: a página \rota{/privacidade} afirma o prazo \textbf{em
+    texto, para a família}, e a regra do hub é que o texto legal só afirme o que
+    o código faz (\adrr{ADR-70}). Com o número em \emph{env}, ou ele sai da
+    página legal --- piorando o que a família lê --- ou passa a poder divergir
+    por rede sem ninguém perceber. Número fixo com comentário é auditável dos
+    dois lados, e ajustar por rede não era pedido de ninguém.
+\end{itemize}
+
+\textbf{Consequências, inclusive as ruins.}
+
+\begin{enumerate}
+  \item \textbf{O professor volta a logar no meio do turno.} É o custo aceito do
+    plano B: ele perde as 4h combinadas, e duas horas sem abrir tela é plausível
+    entre uma janela de aulas e o intervalo.
+  \item \textbf{Missão longa pode perder a sessão com a criança trabalhando.}
+    \cd{auth()} sem argumentos --- o caminho de \emph{React Server Component} e
+    de \emph{route handler} --- LÊ a sessão e \textbf{descarta} o
+    \cd{Set-Cookie}, porque nesses contextos não se escreve \emph{cookie}. Só o
+    \emph{middleware} renova. Quem entra numa missão não navega mais no hub, e o
+    \cd{exp:token-expirando} de 10 em 10 minutos cai em
+    \rota{GET /api/exp-token}, que está FORA do \cd{matcher} e portanto não
+    conta como atividade. Com 12h isso era inalcançável; com 2h passa a ser
+    alcançável por uma missão que comece meia hora depois do \emph{login}.
+  \item \textbf{E quando morre, morre em SILÊNCIO.}
+    \arq{apps/hub/components/ExpFrame.tsx} trata a falha de renovação com um
+    \cd{console.error} e nada mais: a experiência segue com o token velho até
+    ele vencer (TTL de 15 min) e, daí em diante, toda chamada à API responde
+    401. O que a criança já enviou está salvo --- as experiências gravam
+    incrementalmente no servidor ---, mas o que ela fizer depois \textbf{não é
+    gravado}, e nada na tela pede para entrar de novo. Este defeito não nasce
+    aqui: esta decisão apenas o torna alcançável, e é o principal motivo de o
+    gatilho abaixo existir.
+  \item A página \rota{/privacidade} mudou no mesmo \emph{commit}, porque a
+    frase dela afirmava as 12 horas.
+\end{enumerate}
+
+\textbf{Gatilho de reavaliação.} Qualquer um dos três:
+\begin{itemize}
+  \item \textbf{Um relato de criança deslogada no meio de missão.} A correção
+    tem duas metades que só valem juntas: fazer a renovação do token CONTAR como
+    atividade (o caminho é o \emph{route handler} re-emitir o \emph{cookie} ---
+    o \cd{unstable\_update} do \cd{next-auth} escreve \emph{cookie}, ao
+    contrário de \cd{auth()}) e dar ao \cd{ExpFrame} uma tela que peça
+    \emph{login} em vez do \cd{console.error}. É também quando a variável de
+    ambiente descartada acima passa a ter razão de existir: sem TTL injetável, a
+    suíte de ponta a ponta só prova isso esperando 2h de relógio.
+  \item \textbf{Reclamação de professor sobre relogar.} Aí o plano A volta à
+    mesa, com o custo acima já medido.
+  \item \textbf{O WSO2 assumindo a autenticação.} O TTL passa a ser dele, e este
+    número deixa de valer.
+\end{itemize}

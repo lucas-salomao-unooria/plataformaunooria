@@ -954,9 +954,9 @@ const SECOES: SecaoLegal[] = [
         </div>
         <h3>O que fica guardado no seu navegador</h3>
         <p>
-          Um cookie de sessão, cifrado, que dura 12 horas — o suficiente para um
-          dia de aula — e que contém o seu nome e o seu login para as telas
-          funcionarem. Além dele, apenas três registros técnicos: um
+          Um cookie de sessão, cifrado, que expira depois de 2 horas sem uso — se
+          você ficar esse tempo sem abrir nenhuma tela, precisa entrar de novo —
+          e que contém o seu nome e o seu login para as telas funcionarem. Além dele, apenas três registros técnicos: um
           identificador de sessão para diagnóstico de erro, um marcador de
           amostragem de desempenho e a sua preferência de tema claro ou escuro
           numa das experiências. Nenhum deles é usado para publicidade, e{" "}
