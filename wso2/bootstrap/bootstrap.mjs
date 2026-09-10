@@ -63,7 +63,8 @@ const SCOPE = "escola";
 const CLAIMS = [
   { nome: "escola_id", rotulo: "Escola", descricao: "Identificador da escola (tenancy)" },
   { nome: "turma_id", rotulo: "Turma", descricao: "Identificador da turma" },
-  { nome: "perfil", rotulo: "Perfil", descricao: "estudante | professor | gestor | admin-contrato" },
+  // Os SEIS papéis da ADR-80, na ordem de `PERFIS` (apps/api/src/auth/claims.ts).
+  { nome: "perfil", rotulo: "Perfil", descricao: "estudante | professor | gestor_escola | gestor_regional | gestor_contrato | admin" },
 ];
 
 const LOCAL_DIALECT_ID = "local";
@@ -411,9 +412,9 @@ async function credenciaisDaApp(idApp) {
 const SEEDS = [
   { usuario: "estudante.teste", nome: "Estudante", displayName: "Estudante Teste", perfil: "estudante", escola: ESCOLA_DEMO, turma: "8A" },
   { usuario: "professor.teste", nome: "Professor", displayName: "Professor Teste", perfil: "professor", escola: ESCOLA_DEMO },
-  { usuario: "gestor.teste", nome: "Gestor", displayName: "Gestor Teste", perfil: "gestor", escola: ESCOLA_DEMO },
+  { usuario: "gestor.teste", nome: "Gestor", displayName: "Gestor Teste", perfil: "gestor_escola", escola: ESCOLA_DEMO },
   // Sem escola_id de propósito: exercita a única exceção cross-escola da regra 1.
-  { usuario: "admin.contrato", nome: "Admin Contrato", displayName: "Admin Contrato", perfil: "admin-contrato", escola: "" },
+  { usuario: "admin.contrato", nome: "Admin Contrato", displayName: "Admin Contrato", perfil: "gestor_contrato", escola: "" },
 ];
 
 async function criarUsuarios() {

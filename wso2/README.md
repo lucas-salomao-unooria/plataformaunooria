@@ -139,11 +139,11 @@ escola que `apps/api/prisma/seed.ts` cria):
 |---|---|---|
 | `estudante.teste` | `estudante` | `escola-demo` |
 | `professor.teste` | `professor` | `escola-demo` |
-| `gestor.teste` | `gestor` | `escola-demo` |
-| `admin.contrato` | `admin-contrato` | *(vazio)* |
+| `gestor.teste` | `gestor_escola` | `escola-demo` |
+| `admin.contrato` | `gestor_contrato` | *(vazio)* |
 
-`admin-contrato` vai sem `escola_id` de propósito: exercita a única exceção cross-escola da
-regra inviolável nº 1.
+`gestor_contrato` vai sem `escola_id` de propósito: exercita a única exceção cross-escola da
+regra inviolável nº 1. (Os LOGINS não mudaram com a ADR-80 — só os valores de `perfil`.)
 
 ## Validar
 
@@ -213,6 +213,6 @@ no README de lá. O desenho completo: [docs/INFRA-IDENTITY.md](../docs/INFRA-IDE
 ⚠️ **Este ambiente usa o keystore de demonstração da distribuição** (`wso2carbon.p12`, senha
 `wso2carbon`). Essa chave privada acompanha toda cópia do produto baixada no mundo. Em
 localhost é irrelevante; em qualquer ambiente alcançável pela internet significa que
-qualquer pessoa pode forjar um token `admin-contrato` e ler dados de menores de todas as
+qualquer pessoa pode forjar um token `gestor_contrato` e ler dados de menores de todas as
 escolas. O procedimento de geração e injeção do keystore próprio está em
 [`docs/INFRA-IDENTITY.md`](../docs/INFRA-IDENTITY.md), seção "Keystore primário".
