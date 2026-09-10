@@ -490,6 +490,25 @@ O controle da experiência sob um produto desligado fica **desabilitado com o
 motivo ao lado**, não escondido: mostrá-lo ativo prometeria uma mudança que o
 resolvedor ignoraria, e escondê-lo pareceria defeito.
 
+### A janela de versão: uma alavanca por escopo
+
+`modal-de-versao.tsx`. No escopo-CONTRATO só existe **Ativar para a rede**
+(troca a `versao_ativa` e restaura o manifesto daquela versão); fora dele, só
+**Fixar neste escopo** / **Soltar a fixação**. As duas nunca aparecem juntas, e a
+razão está na ADR-87: fixar no contrato trocaria a versão do bundle SEM
+restaurar o manifesto, reabrindo o defeito do `allow-pointer-lock` que o
+histórico existe para consertar.
+
+**A janela FICA ABERTA depois de gravar**, e relê o próprio histórico. Os dois
+por medida: quem ativa uma versão precisa ver o aviso de que a conferência no
+CDN não foi possível (é ele que decide se o trabalho acabou), e sem reler o
+histórico a faixa "está em rollback" continuava na tela DEPOIS de a ativação
+resolver o rollback — a tela mentindo sobre o que ela mesma acabou de fazer.
+Visto no navegador.
+
+**A etiqueta da versão É o botão** da janela: um botão "Versão" separado
+repetiria a informação que a etiqueta já dá.
+
 ### O `SideBar` do DS traz um item que não é seu
 
 Ele renderiza sempre um primeiro item **"Iniciativas"**, fixo no componente, que

@@ -68,6 +68,7 @@ await suite(
       "Desligar exige MOTIVO, e o diálogo avisa quando o alcance é a rede inteira",
       "Desligado na escola, o professor daquela escola deixa de ver o produto",
       "Voltar a herdar devolve tudo — a liberação por turma do professor nunca foi tocada",
+      "A janela de versão mostra o histórico publicado e diz quando a experiência está em rollback",
     ],
     comando: "node scripts/e2e/admin/01-recursos.mjs",
   },
@@ -227,5 +228,40 @@ await suite(
         "interruptor pode ser usado num incidente sem custo pedagógico.",
       inteira: true,
     });
+
+    // ── a versão ────────────────────────────────────────────────────────
+    /* De volta ao escopo da REDE: é ali que "ativar" existe. Fixar versão é a
+       alavanca do escopo menor, e as duas nunca aparecem juntas — fixar no
+       contrato seria um segundo jeito, mais fraco, de fazer o que ativar faz
+       (ele não restaura o manifesto da versão). */
+    await p.goto(`${HUB}/unooria/recursos`, { waitUntil: "domcontentloaded" });
+    await cartao(p, PRODUTO).waitFor({ timeout: 30_000 });
+    await p.waitForTimeout(800);
+
+    const etiquetaDeVersao = p.locator("button[aria-label^='Versão de']").first();
+    await etiquetaDeVersao.click();
+    const janela = p.locator(".unooria-modal-overlay").last();
+    await janela.locator("button[role=combobox]").waitFor({ timeout: 15_000 });
+    await p.waitForTimeout(900);
+
+    const acoesOferecidas = await janela.getByRole("button").allInnerTexts();
+
+    await r.registrar(p, "janela-de-versao", {
+      titulo: "Que versão está no ar, e quais existem",
+      mostra:
+        "O histórico publicado da experiência, com a que está no ar marcada, e a única alavanca " +
+        "que o escopo da rede oferece: ativar.",
+      prova:
+        "Ativar troca a versão E RESTAURA o manifesto daquela versão — viewport, permissões de " +
+        "iframe, séries. É o defeito que o histórico existe para consertar: " +
+        "'publicar-manifesto.mjs --versao' mandava o número antigo com o manifesto ATUAL, e a " +
+        "exp-70 reabria sem 'allow-pointer-lock' — a criança entrava na Vila e a câmera não " +
+        "girava, sem erro em lugar nenhum.",
+      detalhe: `ações oferecidas no escopo da rede: ${acoesOferecidas.filter(Boolean).join(" | ")}`,
+      inteira: true,
+    });
+
+    await janela.getByRole("button", { name: "Fechar", exact: true }).click();
+    await p.waitForTimeout(400);
   },
 );

@@ -35,6 +35,9 @@ type Usuario = Session["usuario"];
 
 export interface Embed {
   manifesto: ManifestoDeExperiencia | null;
+  /** A versão de que o bundle foi montado: a fixada no escopo (ADR-87) ou a
+   *  `versaoAtiva` do catálogo. `null` em dev, onde não há caminho versionado. */
+  versao: string | null;
   src: string;
   expOrigin: string;
   token: string;
@@ -132,6 +135,36 @@ function avisarManifestoIlegivel(expId: string, url: string, causa: string): voi
   );
 }
 
+/**
+ * A VERSÃO QUE VALE PARA ESTA ESCOLA (ADR-87), quando ela é diferente da
+ * `versaoAtiva` do catálogo.
+ *
+ * Sem esta leitura, fixar versão por escopo no painel da Unooria não faria nada:
+ * a coluna seria gravada, o painel a mostraria, e o hub continuaria montando a
+ * URL com a `versaoAtiva` do contrato. Campo que não muda nada é pior que campo
+ * nenhum — quem lê acredita que declarou algo.
+ *
+ * `null` = nada fixado, ou a api não respondeu. Nos dois casos vale a
+ * `versaoAtiva`, e é o certo: a alternativa seria não montar a experiência
+ * porque uma leitura acessória falhou.
+ */
+async function versaoFixadaParaAEscola(expId: string, token: string): Promise<string | null> {
+  try {
+    const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
+    const r = await fetch(`${apiUrl}/recursos/efetivos`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!r.ok) return null;
+    const { experiencias } = (await r.json()) as {
+      experiencias?: Record<string, { versao: string | null }>;
+    };
+    return experiencias?.[expId]?.versao ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function montarEmbed(
   expId: string,
   usuario: Usuario,
@@ -147,7 +180,12 @@ export async function montarEmbed(
   const emProducao = process.env.NODE_ENV === "production";
   // `srcDev` (bancada /dev-embed) dispensa o manifesto; fora de produção e sem
   // manifesto, cai no dev server registrado da experiência.
-  const manifesto = opts.srcDev && !emProducao ? null : await buscarManifesto(expId, token);
+  /* As duas leituras em PARALELO: a segunda é acessória e não deve somar
+     latência ao render de uma página que já espera a api. */
+  const [manifesto, versaoFixada] = await Promise.all([
+    opts.srcDev && !emProducao ? Promise.resolve(null) : buscarManifesto(expId, token),
+    opts.srcDev && !emProducao ? Promise.resolve(null) : versaoFixadaParaAEscola(expId, token),
+  ]);
 
   const cdn = process.env.NEXT_PUBLIC_CDN_EXP_URL ?? "http://localhost:5173";
 
@@ -209,9 +247,13 @@ export async function montarEmbed(
   const hubOrigin = encodeURIComponent(process.env.HUB_ORIGIN ?? "http://localhost:3000");
   /* A URL VERSIONADA é de produção: é ela que o rollback troca (`versaoAtiva`).
      Em dev o bundle vem do dev server da experiência, que serve na raiz. */
+  /* A VERSÃO FIXADA no escopo desta escola GANHA da `versaoAtiva` do contrato
+     (ADR-87). É o canário: uma escola roda a versão nova enquanto a rede segue
+     na anterior. Sem fixação, `versaoFixada` é nulo e nada muda. */
+  const versao = versaoFixada ?? manifesto?.versaoAtiva;
   const src =
     !emDev && manifesto
-      ? `${cdn}/${manifesto.expId}/${manifesto.versaoAtiva}/index.html?hubOrigin=${hubOrigin}`
+      ? `${cdn}/${manifesto.expId}/${versao}/index.html?hubOrigin=${hubOrigin}`
       : `${base}/?hubOrigin=${hubOrigin}`;
 
   const estudantePayload = {
@@ -224,6 +266,8 @@ export async function montarEmbed(
 
   return {
     manifesto,
+    /** A versão que ESTA montagem usou: a fixada no escopo, ou a ativa. */
+    versao: versao ?? null,
     src,
     expOrigin: new URL(base).origin,
     token,

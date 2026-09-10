@@ -523,11 +523,48 @@ Disponibilidade é **pré-condição** de liberação. Produto desligado tem o s
 de um bug de enturmamento — a missão sumiu da grade e ninguém liberou nada —, e é
 por isso que o eixo tem nome próprio.
 
-**Estado em 2026-09-10.** Porta E painel prontos. `GET /recursos/efetivos`
-(leitura, qualquer autenticado), `GET /recursos/painel`, `PUT /recursos/:recursoId`
-e `DELETE /recursos/:recursoId` — os três últimos só `admin` (ADR-88). Falta a
-FIXAÇÃO DE VERSÃO por escopo: a coluna `versao_fixa` existe, o resolvedor a
-devolve e o painel a mostra, mas nada a ESCREVE ainda.
+**Estado em 2026-09-10.** Completo: porta, painel e versão. Leitura
+(`GET /recursos/efetivos`, qualquer autenticado) e, só para `admin` (ADR-88),
+`GET /recursos/painel`, `PUT|DELETE /recursos/:recursoId`,
+`GET|POST|PUT /recursos/experiencias/:expId/{versoes,ativar,versao}`.
+
+### Versão: duas alavancas, e elas não se misturam
+
+- **`POST .../ativar`** troca `experiencias.versao_ativa` do CONTRATO e
+  **RESTAURA o manifesto daquela versão** (`viewport`, `permissoes`, `series`,
+  `unidade`, `produto`), lendo `experiencias_versoes.manifesto`. É o conserto
+  do defeito que a fase 0 descobriu: `publicar-manifesto.mjs --versao x.y.z`
+  manda o número antigo com o `experiencia.json` ATUAL, então voltar a versão
+  nunca voltou as permissões de iframe — a exp-70 reabria sem
+  `allow-pointer-lock` e a câmera do jogo não girava, sem erro em lugar nenhum.
+  Versão fora do histórico é RECUSADA: não se aponta a rede para o desconhecido.
+- **`PUT .../versao`** grava `disponibilidades.versao_fixa` num escopo — o
+  canário. `versao: null` solta a fixação e **preserva o `ligado`** da linha,
+  que é decisão à parte; e `ligado`/`desligado` **não apagam** a versão fixada
+  (o `versaoFixa` ausente no payload do `gravar` quer dizer "não mexe", e é o
+  `CASE WHEN` do `ON CONFLICT`). Sem essas duas assimetrias, desligar e
+  religar apagaria em silêncio a versão que alguém fixou.
+- **A tela oferece UMA por escopo**: ativar só no contrato, fixar só fora dele.
+  Fixar no contrato seria um segundo jeito, mais fraco, de fazer o que ativar faz
+  — trocaria a versão sem restaurar o manifesto, reabrindo o defeito acima.
+- **`experiencias_versoes.manifesto` tem DUAS formas** em circulação: o corpo do
+  PUT do CI (`versaoAtiva`) e o `experiencia.json` cru do backfill e do seed
+  (`versao`). `manifesto-guardado.ts` lê só os campos que precisam voltar, e
+  nenhum deles é a versão — que vem do parâmetro da rota. Manifesto ILEGÍVEL
+  troca só o número em vez de recusar o rollback: rollback é operação de
+  incidente.
+- **A conferência no CDN** é um HEAD no `index.html` da versão (`CDN_EXP_URL`),
+  e a resposta carrega `conferida`. Sem a env (dev) ela é pulada e a tela diz
+  isso: "ativei" e "ativei e conferi que o bundle está lá" são garantias
+  diferentes. Apontar a rede para versão que não subiu é tela branca para todos,
+  e o erro só apareceria quando a primeira criança abrisse a missão.
+- **O HUB honra a fixação**: `montarEmbed` lê `GET /recursos/efetivos` em
+  paralelo com o manifesto. Sem essa leitura, a coluna seria gravada, o painel a
+  mostraria e nada mudaria.
+
+**O que ainda não existe**: tabela de auditoria append-only (hoje o histórico de
+quem mexeu vive no log `recurso-alterado`) e segmentação por turma ou janela de
+validade — os dois são gatilho de reavaliação declarado na ADR-87.
 
 **O upsert do painel é SQL cru, e não por preferência.** O `upsert` do Prisma
 não consegue endereçar a linha de escopo-CONTRATO: o único composto

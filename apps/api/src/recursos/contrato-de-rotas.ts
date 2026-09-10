@@ -117,3 +117,64 @@ export const ExcecaoRemovidaSchema = z.object({
   escolaId: z.string().nullable(),
   removida: z.boolean(),
 });
+
+/* ==========================================================================
+   VERSÃO: o histórico, a ativação e a fixação por escopo
+   ========================================================================== */
+
+/** Uma linha de `experiencias_versoes`. `manifesto` fica FORA da resposta: ele
+ *  é insumo da ativação, não informação de tela — e carrega dez campos que a
+ *  lista não usa. */
+export const VersaoPublicadaSchema = z.object({
+  versao: z.string(),
+  publicadaEm: z.string().datetime(),
+  publicadaPor: z.string(),
+  /** `true` na que o hub monta hoje (`experiencias.versao_ativa`). */
+  ativa: z.boolean(),
+});
+
+export const VersoesDaExperienciaSchema = z.object({
+  expId: z.string(),
+  versaoAtiva: z.string(),
+  /**
+   * `true` quando a ativa NÃO é a última publicada — a experiência está em
+   * rollback. É o estado que a tela precisa dizer com todas as letras: sem
+   * isso, um deploy futuro "conserta" o rollback sem ninguém perceber.
+   */
+  emRollback: z.boolean(),
+  versoes: z.array(VersaoPublicadaSchema),
+});
+
+export const AtivarVersaoSchema = z.object({
+  versao: z.string().regex(/^\d+\.\d+\.\d+$/, "versão semver x.y.z"),
+  motivo: z.string().trim().min(3).max(400).optional(),
+});
+
+export const VersaoAtivadaSchema = z.object({
+  expId: z.string(),
+  versaoAtiva: z.string(),
+  /**
+   * A conferência no CDN aconteceu? `false` = `CDN_EXP_URL` ausente (dev), e a
+   * tela precisa dizer isso: "ativei sem conferir" e "ativei e conferi" são
+   * garantias diferentes.
+   */
+  conferida: z.boolean(),
+  /** O manifesto daquela versão foi restaurado junto (viewport, permissões…). */
+  manifestoRestaurado: z.boolean(),
+});
+
+/** `versao: null` solta a fixação e volta a seguir a `versao_ativa`. */
+export const FixarVersaoSchema = z.object({
+  escolaId: z.string().min(1).nullable(),
+  versao: z
+    .string()
+    .regex(/^\d+\.\d+\.\d+$/, "versão semver x.y.z")
+    .nullable(),
+});
+
+export const VersaoFixadaSchema = z.object({
+  expId: z.string(),
+  escolaId: z.string().nullable(),
+  versaoFixa: z.string().nullable(),
+  conferida: z.boolean(),
+});

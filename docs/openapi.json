@@ -8040,6 +8040,271 @@
         "x-acesso": "token"
       }
     },
+    "/recursos/experiencias/{expId}/versoes": {
+      "get": {
+        "operationId": "RecursosAdminController_versoes",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "versaoAtiva": {
+                      "type": "string"
+                    },
+                    "emRollback": {
+                      "type": "boolean"
+                    },
+                    "versoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "versao": {
+                            "type": "string"
+                          },
+                          "publicadaEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "publicadaPor": {
+                            "type": "string"
+                          },
+                          "ativa": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "versao",
+                          "publicadaEm",
+                          "publicadaPor",
+                          "ativa"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "versaoAtiva",
+                    "emRollback",
+                    "versoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "As versões publicadas de uma experiência.",
+        "description": "Sai de `experiencias_versoes`, que o `PUT /experiencias/:expId` do CI escreve a cada publish (e o seed em desenvolvimento). É a lista do **rollback pela tela** — antes dela, voltar uma versão exigia saber o número anterior de cabeça.\n\n**Papéis:** admin.\n\n**Restrições:**\n- `emRollback` é `true` quando a ativa não é a última publicada. É o estado que a tela tem de dizer: sem ele, o próximo deploy 'conserta' o rollback sem ninguém perceber.\n- O `manifesto` de cada versão NÃO vem na resposta: ele é insumo da ativação, não informação de tela.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/experiencias/{expId}/ativar": {
+      "post": {
+        "operationId": "RecursosAdminController_ativar",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "versaoAtiva": {
+                      "type": "string"
+                    },
+                    "conferida": {
+                      "type": "boolean"
+                    },
+                    "manifestoRestaurado": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "versaoAtiva",
+                    "conferida",
+                    "manifestoRestaurado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Ativa uma versão para o CONTRATO (o rollback).",
+        "description": "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.\n\n**Papéis:** admin.\n\n**Restrições:**\n- **Confere no CDN antes de gravar** (um HEAD no `index.html` da versão). Apontar a rede para uma versão que não subiu é tela branca para todo mundo, e o erro só apareceria quando a primeira criança abrisse a missão.\n- `conferida: false` = `CDN_EXP_URL` ausente (desenvolvimento). A tela precisa dizer isso: 'ativei sem conferir' e 'ativei e conferi' são garantias diferentes.\n- Vale para o CONTRATO inteiro. Fixar versão numa escola é `PUT /recursos/experiencias/:expId/versao`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "versao": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "versao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recursos/experiencias/{expId}/versao": {
+      "put": {
+        "operationId": "RecursosAdminController_fixarVersao",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "escolaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "versaoFixa": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "conferida": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "escolaId",
+                    "versaoFixa",
+                    "conferida"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Fixa (ou solta) a versão de uma experiência num escopo.",
+        "description": "Grava `disponibilidades.versao_fixa`. É o canário: uma escola roda a versão nova enquanto a rede segue na anterior. `versao: null` solta a fixação e volta a seguir a `versao_ativa`.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Fixar num escopo que não tinha linha CRIA a linha como `ligado`. É decisão explícita: quem fixa versão para uma escola está dizendo que a experiência vale ali.\n- Confere no CDN, como a ativação — e pelo mesmo motivo.\n- O CHECK do banco recusa `versao_fixa` em linha de `produto:*`: produto não tem bundle, logo não tem versão.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "escolaId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "nullable": true
+                  },
+                  "versao": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "escolaId",
+                  "versao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/recursos/efetivos": {
       "get": {
         "operationId": "RecursosController_efetivos",

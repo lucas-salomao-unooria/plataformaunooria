@@ -262,6 +262,25 @@ causa.
 \headrow \thd{Sintoma} & \thd{Causa provável}\\
 \midrule
 \endhead
+\textbf{Um \emph{rollback} de versão \enquote{desfez-se} sozinho depois de um
+  \emph{deploy}} &
+  Ele é temporário por natureza: o \emph{job} \cd{ativar-exps} faz
+  \rota{PUT /experiencias/\{expId\}} a cada publicação, e aquele PUT grava a
+  versão do repositório. O painel avisa (\cd{emRollback}) justamente porque esse
+  estado tem prazo. Se o \emph{rollback} precisa sobreviver ao \emph{deploy}, a
+  resposta não é reativá-lo depois: é a experiência não entrar no filtro do
+  \cd{ativar-exps} (não mexer na pasta dela) ou fixar a versão POR ESCOPO, que
+  vive em \cd{disponibilidades} e o CI não toca (\adrr{ADR-87}).\\
+\zebra \textbf{Fixei a versão de uma escola e ela continua abrindo a versão da
+  rede} &
+  Confira em ordem: a linha (\cd{SELECT recurso\_id, escola\_id, versao\_fixa FROM
+  disponibilidades}), o escopo (a fixação vale para a escola e o que está
+  ABAIXO dela, não para a irmã), e \env{CDN\_EXP\_URL} --- em desenvolvimento o
+  hub serve do \emph{dev server} do Vite e NÃO existe caminho versionado, então
+  a fixação não tem efeito visível ali por desenho. Em produção, o
+  \cd{montarEmbed} lê \rota{GET /recursos/efetivos} para montar a URL: se aquela
+  leitura falhar, ele cai na \cd{versao\_ativa} de propósito --- deixar de montar
+  a experiência porque uma leitura acessória caiu seria pior.\\
 \textbf{A missão desapareceu da grade da turma, e ninguém liberou nem
   encerrou nada} &
   O RECURSO foi desligado para esta rede (\adrr{ADR-87}). O sintoma é

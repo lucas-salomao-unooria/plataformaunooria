@@ -632,6 +632,44 @@ porque são dois índices distintos.
 escopo, estado e motivo --- a linha é sobrescrita a cada mudança, então o
 registro é a única resposta a \enquote{quem desligou isto, e quando?}.
 
+\textbf{A VERSÃO tem três rotas, e duas alavancas que nunca aparecem juntas:}
+
+\begin{itemize}
+  \item \rota{GET /recursos/experiencias/\{expId\}/versoes} --- o histórico de
+    \cd{experiencias\_versoes}, com \cd{emRollback}: \cd{true} quando a ativa
+    não é a última publicada. É o estado que a tela tem de dizer com todas as
+    letras, porque o próximo \emph{deploy} que tocar a experiência sobrescreve o
+    \emph{rollback}.
+  \item \rota{POST /recursos/experiencias/\{expId\}/ativar} --- troca a
+    \cd{versao\_ativa} do CONTRATO e \textbf{restaura o manifesto daquela
+    versão}. É o conserto de um defeito que ninguém havia notado:
+    \cd{publicar-manifesto.mjs --versao x.y.z} manda o número antigo com o
+    \arq{experiencia.json} ATUAL do repositório, então voltar a versão nunca
+    voltava \cd{viewport} nem \cd{permissoes} --- a exp-70 reabria sem
+    \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava,
+    sem erro em lugar nenhum.
+  \item \rota{PUT /recursos/experiencias/\{expId\}/versao} --- fixa (ou solta)
+    \cd{versao\_fixa} num escopo. É o canário: uma escola roda a versão nova
+    enquanto a rede segue na anterior. \cd{versao: null} solta a fixação e
+    \textbf{preserva} o \cd{ligado} da linha, que é decisão à parte.
+\end{itemize}
+
+\textbf{Ativar só no escopo-contrato; fixar só fora dele}, e a tela oferece uma
+alavanca por escopo. Fixar no contrato seria um segundo jeito, mais fraco, de
+fazer o que ativar faz --- trocaria a versão do \emph{bundle} sem restaurar o
+manifesto, reabrindo exatamente o defeito acima.
+
+\textbf{As duas escritas conferem no CDN} com um HEAD no \cd{index.html} da
+versão (\env{CDN\_EXP\_URL}), e a resposta carrega \cd{conferida}: sem a env
+(\emph{dev}) a conferência é pulada, e a tela DIZ isso --- \enquote{ativei} e
+\enquote{ativei e conferi que o \emph{bundle} está lá} são garantias diferentes.
+
+\textbf{E o hub HONRA a versão fixada}: \cd{montarEmbed} lê
+\rota{GET /recursos/efetivos} em paralelo com o manifesto e monta a URL do
+\cd{iframe} com a versão do escopo. Sem essa leitura, a coluna seria gravada, o
+painel a mostraria e nada mudaria --- campo que não muda nada é pior que campo
+nenhum.
+
 \section{Sanidade e prontidão}
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}L{20mm}X@{}}

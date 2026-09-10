@@ -122,6 +122,15 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \zebra \env{ASSETS\_BUCKET} & --- & \cd{\{contrato\}-assets}.\\
 \env{ASSETS\_PUBLIC\_URL} & --- & Base pública da CDN de \emph{assets}.\\
 \zebra \env{ASSETS\_LOCAL\_DIR} & --- & Diretório local em \emph{dev}.\\
+\env{CDN\_EXP\_URL} & --- & De onde os \emph{bundles} das experiências são
+  servidos, visto pela API --- o mesmo valor do \env{NEXT\_PUBLIC\_CDN\_EXP\_URL}
+  do hub. Serve a UMA coisa: conferir com um HEAD se a versão que o painel está
+  ativando existe no \emph{bucket} antes de gravá-la (\adrr{ADR-87}). Apontar a
+  rede para uma versão que não subiu é tela branca para todo mundo, e o erro só
+  apareceria quando a primeira criança abrisse a missão. \textbf{Ausente = a
+  conferência é PULADA e a resposta diz isso} (\cd{conferida: false}) --- é o
+  caso de \emph{dev}, onde o hub serve do \emph{dev server} do Vite e não há
+  caminho versionado a conferir.\\
 \env{PLANOS\_DRIVER} & \cd{local} & \cd{local} grava em
   \arq{storage-privado/}; \cd{gcs} usa o \emph{bucket} \textbf{privado}.\\
 \zebra \env{PLANOS\_BUCKET} & --- & \cd{\{contrato\}-planos}. \textbf{Privado},

@@ -19,6 +19,7 @@ import {
   TextArea,
 } from "@edu/ui/ds";
 import { buscarProduto, type Produto } from "@/lib/produtos";
+import { ModalDeVersao } from "./modal-de-versao";
 import type {
   EscolaDoEscopo,
   EstadoAqui,
@@ -100,6 +101,8 @@ export function PainelDeRecursos({
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
+  /** A experiência cuja janela de versão está aberta. */
+  const [versaoDe, setVersaoDe] = useState<ExperienciaNoPainel | null>(null);
   const [navegando] = useTransition();
 
   const escolaId = painel.escopo.escolaId;
@@ -280,14 +283,20 @@ export function PainelDeRecursos({
                           <span className="text-[14px] font-medium text-unooria-neutral-800">
                             {exp.nome}
                           </span>
-                          <Tag variant="neutral" size="sm">
-                            v{exp.versaoFixa ?? exp.versaoAtiva}
-                          </Tag>
-                          {exp.versaoFixa ? (
-                            <Tag variant="info" size="sm">
-                              versão fixada
+                          {/* A etiqueta da versão é o BOTÃO da janela de versão:
+                              é onde a mão vai, e um botão "Versão" separado
+                              repetiria a informação que a etiqueta já dá. */}
+                          <button
+                            type="button"
+                            className="cursor-pointer"
+                            onClick={() => setVersaoDe(exp)}
+                            aria-label={`Versão de ${exp.nome}`}
+                          >
+                            <Tag variant={exp.versaoFixa ? "info" : "neutral"} size="sm" clickable>
+                              v{exp.versaoFixa ?? exp.versaoAtiva}
+                              {exp.versaoFixa ? " · fixada" : ""}
                             </Tag>
-                          ) : null}
+                          </button>
                         </div>
                         <span className="text-[12px] text-unooria-neutral-500">
                           {exp.expId} · {explicacaoDoEfetivo(exp)}
@@ -370,6 +379,20 @@ export function PainelDeRecursos({
           </Button>
         </ModalFooter>
       </Modal>
+
+      <ModalDeVersao
+        experiencia={versaoDe}
+        escolaId={escolaId}
+        nomeDoEscopo={painel.escopo.nome}
+        onFechar={() => setVersaoDe(null)}
+        onMudou={async () => {
+          await reler();
+          /* A janela fica ABERTA depois de gravar: quem ativa uma versão quer
+             ver o aviso da conferência no CDN, e fechar por cima dele
+             esconderia justamente a informação que decide se o trabalho
+             acabou. Quem fecha é a pessoa. */
+        }}
+      />
 
       {aviso ? (
         <Snackbar severity="success" title={aviso} onClose={() => setAviso(null)} />

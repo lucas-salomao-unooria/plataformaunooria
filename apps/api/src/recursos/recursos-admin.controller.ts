@@ -6,6 +6,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Post,
   Put,
   Query,
   Req,
@@ -20,11 +21,17 @@ import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { PRODUTOS, ProdutoSchema, RecursoIdSchema, partesDoRecurso } from "./catalogo";
 import {
+  AtivarVersaoSchema,
   DefinirDisponibilidadeSchema,
   ExcecaoRemovidaSchema,
+  FixarVersaoSchema,
   PainelSchema,
   RecursoAlteradoSchema,
+  VersaoAtivadaSchema,
+  VersaoFixadaSchema,
+  VersoesDaExperienciaSchema,
 } from "./contrato-de-rotas";
+import { ManifestoGuardadoSchema } from "./manifesto-guardado";
 import {
   linhasLegiveis,
   resolverExperiencia,
@@ -45,6 +52,9 @@ import {
  * método: é a mesma razão do unooGPT e da Vila — `@Roles` misto é como uma rota
  * acaba aberta para quem não devia sem ninguém notar.
  */
+/** O mesmo formato que o controller de experiências valida. */
+const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
+
 @Controller("recursos")
 @UseGuards(OidcGuard, RolesGuard)
 @Roles("admin")
@@ -272,6 +282,232 @@ export class RecursosAdminController {
     return { recursoId, escolaId, removida: count > 0 };
   }
 
+
+  /* ======================================================================
+     VERSÃO — o histórico, a ativação (rollback) e a fixação por escopo
+     ====================================================================== */
+
+  @Get("experiencias/:expId/versoes")
+  @Contrato({
+    resumo: "As versões publicadas de uma experiência.",
+    descricao:
+      "Sai de `experiencias_versoes`, que o `PUT /experiencias/:expId` do CI escreve a cada publish (e o seed em desenvolvimento). É a lista do **rollback pela tela** — antes dela, voltar uma versão exigia saber o número anterior de cabeça.",
+    params: z.object({ expId: z.string() }),
+    resposta: VersoesDaExperienciaSchema,
+    notas: [
+      "`emRollback` é `true` quando a ativa não é a última publicada. É o estado que a tela tem de dizer: sem ele, o próximo deploy 'conserta' o rollback sem ninguém perceber.",
+      "O `manifesto` de cada versão NÃO vem na resposta: ele é insumo da ativação, não informação de tela.",
+    ],
+  })
+  async versoes(@Param("expId") expIdBruto: string) {
+    const expId = z.string().regex(EXP_ID_RE).parse(expIdBruto);
+    const experiencia = await this.prisma.experiencia.findUnique({
+      where: { expId },
+      select: { versaoAtiva: true },
+    });
+    if (!experiencia) throw new NotFoundException({ mensagem: "Experiência não está no catálogo." });
+
+    const linhas = await this.prisma.experienciaVersao.findMany({
+      where: { expId },
+      select: { versao: true, publicadaEm: true, publicadaPor: true },
+      orderBy: { publicadaEm: "desc" },
+    });
+
+    return {
+      expId,
+      versaoAtiva: experiencia.versaoAtiva,
+      /* A mais RECENTE por data de publicação, não a maior por semver: o que
+         importa é o que o CI publicou por último, e uma correção de 1.1.x
+         publicada depois de uma 1.2.0 é o caso real de hotfix. */
+      emRollback: linhas.length > 0 && linhas[0]!.versao !== experiencia.versaoAtiva,
+      versoes: linhas.map((l) => ({
+        versao: l.versao,
+        publicadaEm: l.publicadaEm.toISOString(),
+        publicadaPor: l.publicadaPor,
+        ativa: l.versao === experiencia.versaoAtiva,
+      })),
+    };
+  }
+
+  @Post("experiencias/:expId/ativar")
+  @Contrato({
+    resumo: "Ativa uma versão para o CONTRATO (o rollback).",
+    descricao:
+      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
+    params: z.object({ expId: z.string() }),
+    corpo: AtivarVersaoSchema,
+    resposta: VersaoAtivadaSchema,
+    notas: [
+      "**Confere no CDN antes de gravar** (um HEAD no `index.html` da versão). Apontar a rede para uma versão que não subiu é tela branca para todo mundo, e o erro só apareceria quando a primeira criança abrisse a missão.",
+      "`conferida: false` = `CDN_EXP_URL` ausente (desenvolvimento). A tela precisa dizer isso: 'ativei sem conferir' e 'ativei e conferi' são garantias diferentes.",
+      "Vale para o CONTRATO inteiro. Fixar versão numa escola é `PUT /recursos/experiencias/:expId/versao`.",
+    ],
+  })
+  async ativar(
+    @Param("expId") expIdBruto: string,
+    @Body() body: unknown,
+    @Req() req: { auth: AuthClaims },
+  ) {
+    const expId = z.string().regex(EXP_ID_RE).parse(expIdBruto);
+    const { versao, motivo } = AtivarVersaoSchema.parse(body);
+
+    const guardada = await this.prisma.experienciaVersao.findUnique({
+      where: { expId_versao: { expId, versao } },
+      select: { manifesto: true },
+    });
+    /* Versão que a api nunca viu publicar NÃO se ativa. Sem esta recusa, um
+       número digitado errado apontaria a rede para um caminho que não existe no
+       bucket — e o painel não teria como restaurar o manifesto dela. */
+    if (!guardada) {
+      throw new BadRequestException({
+        mensagem:
+          `A versão ${versao} não consta no histórico de ${expId}. ` +
+          "Só se ativa o que a api viu ser publicado.",
+      });
+    }
+
+    const conferida = await this.conferirNoCdn(expId, versao);
+
+    const lido = ManifestoGuardadoSchema.safeParse(guardada.manifesto);
+    const experiencia = await this.prisma.experiencia.update({
+      where: { expId },
+      data: {
+        versaoAtiva: versao,
+        /* O manifesto daquela versão volta JUNTO. Ilegível (linha antiga, JSON
+           de outra época) troca só a versão — degradar assim é melhor que
+           recusar o rollback, que é operação de incidente. */
+        ...(lido.success
+          ? {
+              nome: lido.data.nome,
+              series: lido.data.series,
+              unidade: lido.data.unidade ?? null,
+              produto: lido.data.produto ?? null,
+              capabilities: lido.data.capabilities,
+              viewport: lido.data.viewport ?? undefined,
+              publico: lido.data.publico,
+              permissoes: lido.data.permissoes,
+            }
+          : {}),
+      },
+      select: { versaoAtiva: true },
+    });
+
+    logger.info(
+      {
+        codigo: "recurso-alterado",
+        recursoId: `experiencia:${expId}`,
+        escopo: "contrato",
+        versaoAtiva: versao,
+        conferida,
+        manifestoRestaurado: lido.success,
+        motivo: motivo ?? null,
+      },
+      "versão ativada",
+    );
+    void req;
+
+    return {
+      expId,
+      versaoAtiva: experiencia.versaoAtiva,
+      conferida,
+      manifestoRestaurado: lido.success,
+    };
+  }
+
+  @Put("experiencias/:expId/versao")
+  @Contrato({
+    resumo: "Fixa (ou solta) a versão de uma experiência num escopo.",
+    descricao:
+      "Grava `disponibilidades.versao_fixa`. É o canário: uma escola roda a versão nova enquanto a rede segue na anterior. `versao: null` solta a fixação e volta a seguir a `versao_ativa`.",
+    params: z.object({ expId: z.string() }),
+    corpo: FixarVersaoSchema,
+    resposta: VersaoFixadaSchema,
+    notas: [
+      "Fixar num escopo que não tinha linha CRIA a linha como `ligado`. É decisão explícita: quem fixa versão para uma escola está dizendo que a experiência vale ali.",
+      "Confere no CDN, como a ativação — e pelo mesmo motivo.",
+      "O CHECK do banco recusa `versao_fixa` em linha de `produto:*`: produto não tem bundle, logo não tem versão.",
+    ],
+  })
+  async fixarVersao(
+    @Param("expId") expIdBruto: string,
+    @Body() body: unknown,
+    @Req() req: { auth: AuthClaims },
+  ) {
+    const expId = z.string().regex(EXP_ID_RE).parse(expIdBruto);
+    const { escolaId, versao } = FixarVersaoSchema.parse(body);
+    await this.exigirRecursoConhecido(`experiencia:${expId}`);
+    await this.exigirEscopoExistente(escolaId);
+
+    const conferida = versao ? await this.conferirNoCdn(expId, versao) : true;
+    const recursoId = `experiencia:${expId}`;
+
+    if (versao === null) {
+      /* Soltar a fixação NÃO apaga a linha: ela pode carregar um
+         `ligado: false` que é decisão à parte. Só o campo da versão sai. */
+      await this.prisma.disponibilidade.updateMany({
+        where: { recursoId, escolaId },
+        data: { versaoFixa: null, definidoPor: req.auth.usuarioId, definidoEm: new Date() },
+      });
+    } else {
+      await this.gravar(
+        recursoId,
+        { escolaId, ligado: true, versaoFixa: versao },
+        req.auth.usuarioId,
+      );
+    }
+
+    logger.info(
+      {
+        codigo: "recurso-alterado",
+        recursoId,
+        escopo: escolaId ?? "contrato",
+        versaoFixa: versao,
+        conferida,
+      },
+      versao ? "versão fixada no escopo" : "fixação de versão removida",
+    );
+
+    return { expId, escolaId, versaoFixa: versao, conferida };
+  }
+
+  /**
+   * O HEAD no `index.html` da versão — a rede contra o pior erro deste painel.
+   *
+   * Apontar a rede inteira para uma versão que não subiu ao bucket é tela branca
+   * para todo mundo, e o sintoma aparece quando a primeira criança abre a
+   * missão, não quando o operador clica. Uma requisição resolve.
+   *
+   * SEM `CDN_EXP_URL` a conferência é PULADA e a resposta diz isso: em
+   * desenvolvimento o hub serve do dev server do Vite e não existe caminho
+   * versionado para conferir. Recusar por falta de env deixaria o painel
+   * inutilizável em dev.
+   *
+   * Falha de REDE também devolve `false` — "não deu para conferir" e "conferi e
+   * não existe" são a mesma informação para quem decide: o operador vê que
+   * ativou sem garantia.
+   */
+  private async conferirNoCdn(expId: string, versao: string): Promise<boolean> {
+    const cdn = process.env.CDN_EXP_URL?.replace(/\/$/, "");
+    if (!cdn) return false;
+    const url = `${cdn}/${expId}/${versao}/index.html`;
+    try {
+      const r = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5_000) });
+      if (!r.ok) {
+        logger.warn(
+          { codigo: "recurso-versao-inexistente", expId, versao, status: r.status },
+          "a versão não foi encontrada no CDN",
+        );
+      }
+      return r.ok;
+    } catch (erro) {
+      logger.warn(
+        { codigo: "recurso-versao-nao-conferida", expId, versao, err: erro },
+        "não foi possível conferir a versão no CDN",
+      );
+      return false;
+    }
+  }
+
   /**
    * O UPSERT É SQL CRU, e não por preferência: **o `upsert` do Prisma não
    * consegue endereçar a linha de escopo-CONTRATO.**
@@ -293,18 +529,32 @@ export class RecursosAdminController {
    */
   private async gravar(
     recursoId: string,
-    dados: { escolaId: string | null; ligado: boolean; motivo?: string },
+    dados: {
+      escolaId: string | null;
+      ligado: boolean;
+      motivo?: string;
+      /* Ausente = NÃO MEXE na fixação de versão da linha. `null` explícito é
+         que a solta. Sem essa distinção, ligar/desligar um recurso apagaria
+         em silêncio a versão que alguém fixou naquele escopo. */
+      versaoFixa?: string | null;
+    },
     autor: string,
   ): Promise<void> {
     const motivo = dados.motivo ?? null;
+    const mexeNaVersao = dados.versaoFixa !== undefined;
+    const versaoFixa = dados.versaoFixa ?? null;
 
     if (dados.escolaId === null) {
       await this.prisma.$executeRaw`
-        INSERT INTO disponibilidades (recurso_id, escola_id, ligado, motivo, definido_por)
-        VALUES (${recursoId}, NULL, ${dados.ligado}, ${motivo}, ${autor}::uuid)
+        INSERT INTO disponibilidades
+          (recurso_id, escola_id, ligado, motivo, versao_fixa, definido_por)
+        VALUES (${recursoId}, NULL, ${dados.ligado}, ${motivo}, ${versaoFixa}, ${autor}::uuid)
         ON CONFLICT (recurso_id) WHERE escola_id IS NULL
         DO UPDATE SET ligado = EXCLUDED.ligado,
                       motivo = EXCLUDED.motivo,
+                      versao_fixa = CASE WHEN ${mexeNaVersao}::boolean
+                                         THEN EXCLUDED.versao_fixa
+                                         ELSE disponibilidades.versao_fixa END,
                       definido_por = EXCLUDED.definido_por,
                       definido_em = now(),
                       atualizado_em = now()`;
@@ -312,11 +562,15 @@ export class RecursosAdminController {
     }
 
     await this.prisma.$executeRaw`
-      INSERT INTO disponibilidades (recurso_id, escola_id, ligado, motivo, definido_por)
-      VALUES (${recursoId}, ${dados.escolaId}, ${dados.ligado}, ${motivo}, ${autor}::uuid)
+      INSERT INTO disponibilidades
+        (recurso_id, escola_id, ligado, motivo, versao_fixa, definido_por)
+      VALUES (${recursoId}, ${dados.escolaId}, ${dados.ligado}, ${motivo}, ${versaoFixa}, ${autor}::uuid)
       ON CONFLICT (recurso_id, escola_id)
       DO UPDATE SET ligado = EXCLUDED.ligado,
                     motivo = EXCLUDED.motivo,
+                    versao_fixa = CASE WHEN ${mexeNaVersao}::boolean
+                                       THEN EXCLUDED.versao_fixa
+                                       ELSE disponibilidades.versao_fixa END,
                     definido_por = EXCLUDED.definido_por,
                     definido_em = now(),
                     atualizado_em = now()`;
