@@ -90,7 +90,7 @@ commitOnReturn = true
 # `wso2carbon.p12` (alias `wso2carbon`, senha `wso2carbon`) acompanha toda cópia
 # do produto baixada no mundo — a chave privada é pública. É aceitável em
 # localhost e INACEITÁVEL em qualquer ambiente alcançável pela internet: com ela,
-# qualquer pessoa forja um token `{"perfil":"admin-contrato"}`, que é a única
+# qualquer pessoa forja um token `{"perfil":"gestor_contrato"}`, que é a única
 # exceção cross-escola da regra inviolável nº 1, e lê dados de menores de todas
 # as escolas de todos os contratos.
 #

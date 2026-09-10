@@ -26,10 +26,11 @@ import { dirname, resolve } from "node:path";
  * login no código.
  *
  * Usuários reais NÃO nascem aqui: entram por importação
- * (`POST /rostering/importar`, papel gestor/admin-contrato).
+ * (`POST /rostering/importar`, papel `gestor_escola`/`gestor_contrato`).
  *
- * `SEED_MINIMO=1` cria só a escola, um gestor e um admin-contrato — o ponto de
- * partida para percorrer a plataforma do zero, sem as contas de demonstração
+ * `SEED_MINIMO=1` cria só a escola, um `gestor_escola` e um `gestor_contrato`
+ * — o ponto de partida para percorrer a plataforma do zero, sem as contas de
+ * demonstração
  * poluindo o diagnóstico de contas de assento.
  */
 const prisma = new PrismaClient();
@@ -41,7 +42,7 @@ const prisma = new PrismaClient();
  *
  * Sem env o seed FALHA, e falha alto: constante no fonte significa que este
  * script, rodado por engano contra o banco de um contrato, criaria mil contas
- * com uma senha publicada no README — inclusive o `admin-contrato`, o único
+ * com uma senha publicada no README — inclusive o `gestor_contrato`, o único
  * papel que atravessa escolas.
  */
 const SENHA_PADRAO = senhaDoSeed();
@@ -288,7 +289,8 @@ async function main() {
   ) => credenciais.push({ login: pessoa.username, nome: pessoa.nome, papel, escola, turma, serie, cpf });
 
   /**
-   * `admin-contrato` é o único papel SEM escola — o upsert por
+   * Os perfis de CONTRATO (`gestor_contrato`, `admin`) são os únicos SEM
+   * escola — o upsert por
    * `(escolaId, username)` não o cobre com `escolaId` nulo, então procura-se
    * pelo login.
    */
@@ -332,8 +334,8 @@ async function main() {
     await semearCatalogo(prisma);
     escreverCredenciais();
     console.log(
-      `Seed MÍNIMO: "${ESCOLA_NOME}", período "${periodo.titulo}", 1 gestor e ` +
-        `1 admin-contrato. Nenhuma turma, nenhum estudante — as pessoas entram ` +
+      `Seed MÍNIMO: "${ESCOLA_NOME}", período "${periodo.titulo}", 1 gestor_escola ` +
+        `e 1 gestor_contrato. Nenhuma turma, nenhum estudante — as pessoas entram ` +
         `por /admin/importar. Credenciais em ${ARQUIVO_CREDENCIAIS}`,
     );
     return;
@@ -492,7 +494,7 @@ async function main() {
       `  ${ESCOLA_NOME}: ${turmas.length} turmas (1EF→3EM, 2 por série), ` +
       `${turmas.length * ESTUDANTES_POR_TURMA} estudantes, ${professores.length} professores\n` +
       `  ${ESCOLA_2_NOME}: turma ${TURMA_ESCOLA_2.nome}, ${ESTUDANTES_POR_TURMA} estudantes\n` +
-      `  ${GESTORES} gestores (o 1º nas duas unidades), ${ADMINS_CONTRATO} admin-contrato\n` +
+      `  ${GESTORES} gestores (o 1º nas duas unidades), ${ADMINS_CONTRATO} gestor_contrato\n` +
       `  ${experiencias} experiências no catálogo · ${liberadas} missões liberadas ` +
       `(só nas turmas "A"; as "B" ficam fechadas para o professor exercitar liberar)\n` +
       `  ${estudantes} estudantes no total · ${total} contas na base (senha: a de SEED_SENHA)\n` +
