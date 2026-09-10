@@ -157,7 +157,7 @@ export function PainelDoRelogio({
             {relogio.modo === "livre" ? "Voltar a cronometrar" : "Aula sem tempo marcado"}
           </Button>
           <Button
-            variant="tertiary"
+            variant="outline"
             onClick={() => void agir("redefinir")}
             disabled={enviando !== null}
           >

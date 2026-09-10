@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 
-import { Badge, Card, EmptyState, FeedbackAlert } from "@edu/ui/ds";
-import { Trilha } from "@/components/trilha";
+import { Badge, Card, EmptyState, FeedbackAlert, ScrollBar } from "@edu/ui/ds";
 import { apiDoServidor } from "@/lib/api-servidor";
-import { buscarMissaoTransversal, rotaDaTransversal } from "@/lib/entre-redes/catalogo";
+import { buscarMissaoTransversal } from "@/lib/entre-redes/catalogo";
 import {
   DESCRICAO_BOLHA,
   rotuloDoCartao,
@@ -57,7 +56,6 @@ export default async function EstudanteDaVilaPage({
   const { estudanteId } = await params;
   const missao = buscarMissaoTransversal("vila-do-lume");
   if (!missao) notFound();
-  const rota = rotaDaTransversal(missao);
 
   const resposta = await apiDoServidor<{ relatorio: RelatorioDaPartida | null }>(
     `/vila/professor/estudantes/${encodeURIComponent(estudanteId)}`,
@@ -68,18 +66,9 @@ export default async function EstudanteDaVilaPage({
   });
   const relatorio = resposta?.relatorio ?? null;
 
-  const trilha = [
-    { label: "Início", href: "/professor" },
-    { label: "Entre Redes", href: "/professor/entre-redes" },
-    { label: missao.titulo, href: rota },
-    { label: "Resultados da turma", href: `${rota}/resultados` },
-    { label: "Estudante" },
-  ];
-
   if (!relatorio) {
     return (
       <div className="flex flex-col gap-6">
-        <Trilha itens={trilha} />
         <EmptyState
           variant="no-data"
           size="lg"
@@ -107,8 +96,6 @@ export default async function EstudanteDaVilaPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha itens={trilha} />
-
       <header className="flex flex-col gap-2">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
           {missao.titulo}
@@ -279,7 +266,7 @@ export default async function EstudanteDaVilaPage({
             </Card>
 
             <Card variant="elevated" title="Mensagem por mensagem">
-              <div className="overflow-x-auto">
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
                 <table className="w-full min-w-[520px] border-collapse text-[13px]">
                   <thead>
                     <tr className="border-b border-unooria-neutral-200 text-left text-[12px] uppercase tracking-wider text-unooria-neutral-500">
@@ -313,7 +300,7 @@ export default async function EstudanteDaVilaPage({
                     })}
                   </tbody>
                 </table>
-              </div>
+              </ScrollBar>
               <p className="mt-3 text-[12px] leading-relaxed text-unooria-neutral-600">
                 <strong>O tempo de decisão é a coluna mais informativa.</strong> Cair em dois
                 segundos e cair depois de dez são duas crianças diferentes: a primeira não

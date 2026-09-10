@@ -3,6 +3,7 @@ import { apiDoServidor } from "@/lib/api-servidor";
 import { auth } from "@/lib/auth";
 import { assinarPerfilPortatil } from "@/lib/chave-token";
 import { hashDoPerfil, nomeDoArquivo } from "@/lib/perfil-portatil";
+import { ehGestor } from "@/lib/papeis";
 
 /**
  * EMITE o perfil portátil: um arquivo assinado que a criança leva ao sair da
@@ -25,7 +26,7 @@ export async function GET(
   if (!session?.usuario) {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
   }
-  if (session.usuario.papel !== "gestor" && session.usuario.papel !== "admin-contrato") {
+  if (!ehGestor(session.usuario.papel)) {
     return NextResponse.json({ mensagem: "sem permissão" }, { status: 403 });
   }
 

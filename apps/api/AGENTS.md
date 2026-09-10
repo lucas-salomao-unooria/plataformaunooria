@@ -39,15 +39,62 @@ literalmente verdadeira (ADR-30).
   `escolaIds`, nunca o critério). Autorizar por hierarquia seria uma segunda fonte
   de verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse
   um pai. Regional e rede **não recebem lotação** — não têm turma nem dado, e
-  virariam escola fantasma no seletor do cabeçalho.
+  virariam escola fantasma no seletor do cabeçalho — e essa regra vale nas DUAS
+  portas desde a ADR-79: `lotarEmLote` filtrava por tipo desde o início, `lotar`
+  (a rota individual `POST /escolas/:id/lotacoes`) não filtrava nada.
   Estas colunas existiram por um tempo sem NENHUMA query que as lesse: era a
   mesma armadilha do `expires_at` sem rotina. Coluna nasce com o consumidor.
-- **O supervisor de diretoria não é papel novo**: é um `gestor` lotado nas
-  unidades dela. O panorama (`/admin/minhas-escolas`, `GET /escolas/minhas/resumo`)
-  **lista, não soma** — uma linha por unidade, com turmas, estudantes e quantos ainda
-  não fizeram o primeiro acesso. Somar escolas numa métrica só seria exatamente a
-  tela que a decisão acima recusa. O item de menu só aparece com mais de uma
-  lotação.
+- **TODA escola tem regional, e a rede nunca fica sem nenhuma** (ADR-79).
+  `pai_id` é obrigatório em `tipo='escola'` (CHECK `escolas_escola_tem_regional_check`)
+  e o pai tem de ser `regional` — **não mais `rede`**. Três camadas sustentam
+  isso, e cada uma serve a um chamador diferente: o Zod (`NovaEscolaSchema`) devolve
+  à tela o texto do produto (`SEM_REGIONAL`), o service confere que a regional
+  EXISTE e é regional (senão o 500 do trigger chegaria cru na tela), e o banco
+  não deixa a linha existir órfã. A camada do banco **ADOTA pela regional padrão**
+  em vez de recusar: sem isso, as ~30 suítes que criam uma escola de mentira para
+  testar outra coisa (vila, unoogpt, bem-estar, salas) quebrariam todas, e
+  emendá-las seria editar o módulo do vizinho — o que a ADR-71 identifica como a
+  causa de conflito de merge insolúvel. Sem padrão na rede o trigger não inventa
+  destino: `pai_id` fica nulo e o CHECK recusa.
+- **`escolas.regional_padrao`**: a regional que a plataforma cria sozinha, para a
+  rede sem divisão administrativa. **No máximo uma** (índice único PARCIAL), e é
+  ele que dá idempotência de graça a quem tenta criar a segunda. Nasce chamada
+  `Rede` e o nome é **editável** — o nome real do contrato NÃO existe no banco (o
+  contrato é a stack, não uma linha; `CONTRATO_NOME` é env do hub e uma migração
+  não a lê). Ela nasce em dois casos e em nenhum outro: rede sem regional nenhuma
+  (contrato recém-provisionado) ou rede com escola órfã para adotar — criá-la
+  sempre daria uma regional vazia numa rede já organizada em diretorias.
+- **Exclusão: só REGIONAL, nunca escola.** `DELETE /escolas/:id` recusa
+  `tipo='escola'` — escola é tenant, com turma, dado de menor e histórico atrás.
+  Duas recusas, as duas de produto: `regional-unica` (409) e
+  `regional-com-escolas` (409, com `escolas` e `destinos` no corpo — é com esses
+  números que a tela decide entre abrir o diálogo de transferência e explicar que
+  não há destino). `?transferirPara=` move as escolas e exclui na MESMA transação:
+  em duas chamadas existiria a janela em que as escolas já mudaram de regional e a
+  antiga continua na lista. A regional PADRÃO não tem proteção própria — depois
+  que a rede se organizou, ela é a sobra que se quer remover.
+- **A importação `orgs.csv` mudou de política** (ADR-79). Antes a escola entrava
+  com `pai_id` nulo e um aviso quando o `parentSourcedId` era desconhecido. Agora:
+  com UMA regional na rede, vínculo automático + aviso; com VÁRIAS, a linha é
+  **erro** com o número dela. É mudança observável para quem já usa — `orgs.csv`
+  que hoje importa passa a falhar.
+- **O panorama da diretoria SOMA** (ADR-81, revendo a ADR-34).
+  `GET /escolas/minhas/resumo` devolve **uma linha por escola**; quem soma é a
+  TELA (`/admin/minhas-escolas`) — ela já somava turmas e estudantes antes desta
+  ADR, e agora se intitula pela diretoria quando quem olha é `gestor_regional`.
+  **A soma não custou RLS**, e uma avaliação anterior deste projeto errou ao
+  dizer que custaria: os números saem de `lotacoes`, `turmas` e `users`, as três
+  tabelas que já estão FORA da RLS, com `escola_id IN (...)` explícito. O custo de
+  RLS existiria só para dado PEDAGÓGICO (`progresso`, `runs`, `exp_*`), que é
+  território do `/analise`.
+  **Turmas, estudantes e primeiro acesso somam limpo** (o estudante tem UMA
+  lotação ativa; o primeiro acesso é por `users.escola_id`); **professor é
+  VÍNCULO**, porque quem dá aula em duas conta duas vezes.
+  As escolas do panorama saem de `escolasDaPessoa`, **nunca de `lotacoes`
+  direto**: lendo lotação, o panorama do `gestor_regional` voltava vazio com o
+  item de menu aparecendo — tela em branco sem erro nenhum. O item de menu
+  aparece com mais de uma lotação **ou** para `gestor_regional` (para ele a tela
+  é a diretoria, não "minhas lotações").
 - **`users.cpf` é a identidade IMUTÁVEL do estudante** — e o que torna a
   transferência possível: nome, login e matrícula mudam, o CPF não. Guardado como
   **11 dígitos, sem pontuação** (a formatação é da tela; CHECK no banco), **único
@@ -76,6 +123,160 @@ literalmente verdadeira (ADR-30).
   linha vira transferência (estudante) ou lotação a mais (professor). Reimportar não
   troca a senha de quem já entrou.
 
+
+## Papéis: seis nomes e uma cadeia (ADR-80, 2026-09-08)
+
+`estudante | professor | gestor_escola | gestor_regional | gestor_contrato | admin`
+
+- **`gestor_escola`** era `gestor`; **`gestor_contrato`** era `admin-contrato` (o
+  hífen saiu: era o único do vocabulário, e separador diferente dos outros é a
+  diferença que ninguém lembra na hora de escrever a comparação).
+- **O vocabulário vive em `auth/claims.ts`**, e nada de comparar papel na mão:
+  use os grupos (`GESTORES_DA_ESCOLA`, `GESTORES_DO_CONTRATO`, `GESTORES`) nos
+  `@Roles` e `ehDoContrato(...)` no lugar de `perfil === "gestor_contrato"`. São
+  quarenta decoradores e ~20 comparações: com os nomes espalhados, o papel novo
+  que falta em UM deles continua compilando e continua respondendo 403 — não há
+  teste que aponte para isso, só uma tela que não abre.
+- **A CADEIA DE ATRIBUIÇÃO** (`usuarios/regras.ts`): cada nível atribui o de
+  baixo, e o alcance real é o **fechamento transitivo** —
+  `admin → gestor_contrato → gestor_regional → gestor_escola → professor/estudante`.
+  **Para cima, nunca, nem o próprio nível**: `gestor_contrato` deixou de criar
+  outro `gestor_contrato` e `gestor_escola` deixou de criar outra coordenação de
+  escola. As duas coisas valiam antes, e o aperto é a decisão de produto.
+  A tranca é `podeCriarPapel`, **não** o `@Roles`: o guard protege a ROTA, não o
+  campo `papel` do corpo.
+- **`gestor_regional` NÃO toca a RLS, e é isso que o tornou viável.** Ele
+  trabalha UMA escola por vez, como o `gestor_escola`; o token continua
+  carregando um `escola_id` e a política de RLS fica intocada. O que a regional
+  dele determina é a **lista de escolas que ele pode ativar**, e isso mora em UM
+  lugar — `escolasDaPessoa` —, por onde login, seletor do cabeçalho e validação
+  da troca de escola já passam. Espalhada, faltaria em um dos três, e o sintoma
+  é um supervisor sem escola nenhuma para escolher.
+  `temLotacao` também aceita "a escola é da minha regional": sem isso o histórico
+  do estudante transferido daria 403 ao supervisor da diretoria onde a criança
+  está.
+- **`users.regional_id`** é o escopo dele, e SÓ dele (CHECK bicondicional +
+  trigger exigindo que a linha apontada seja `tipo='regional'` — CHECK não aceita
+  subconsulta no Postgres). Coluna, e não lotação na regional: a ADR-79 proibiu
+  isso, e a razão continua valendo (escola fantasma no seletor).
+- **`admin` é a conta da Unooria**, com as MESMAS capacidades de
+  `gestor_contrato`. Inventar capacidade para justificar o nome seria criar
+  acesso sem ninguém pedir. O que ele tem de próprio é a ponta da cadeia.
+- **`POST /usuarios/admin-contrato` virou `POST /usuarios/sem-escola`**, com
+  `papel` no corpo: a rota serve os dois papéis sem escola, e um caminho com o
+  nome de um deles mentiria sobre o outro. `gestor_regional` exige `regionalId`
+  e `gestor_contrato` o recusa (Zod com `refine` bicondicional).
+- **O nome canônico é sinônimo de si mesmo em `SINONIMOS_DE_PAPEL`.** A chave da
+  busca passa por `replace(/[\s._-]/g, "")`, então `gestor_escola` chega como
+  `gestorescola` — e o cadastro unitário, que serializa o papel numa linha de
+  planilha antes de chamar o importador (ADR-59), reprovava o próprio valor que
+  acabara de escrever. Passou no typecheck e caiu no teste.
+- **O hub tem uma SEGUNDA cópia da cadeia** (`hub/lib/papeis.ts`), porque o
+  middleware roda no edge. Ela serve só para montar o formulário; quem decide é
+  a api. O que segura a divergência é o `Record` exaustivo de rótulos — papel
+  novo sem rótulo não compila.
+
+## Buscar profissional na REDE (ADR-80)
+
+`GET /escolas/profissionais?busca=` — professor e coordenação, por nome, login,
+matrícula ou CPF, **sem escola de origem**. Só os perfis de contrato.
+
+**Existe por um DEFEITO, não por conforto.** A busca anterior era
+`GET /usuarios?escolaId=`, que filtra `users.escola_id` — o *cache* da lotação
+PRINCIPAL. Quem trabalha em duas escolas só era encontrado pela principal;
+procurando pela outra — uma escola onde a pessoa realmente está — a lista voltava
+vazia e quem administra concluía que ela não existe. Era exatamente a população
+que a lotação em lote existe para administrar.
+
+- **Não devolve CPF.** A busca o ACEITA (com ou sem pontuação, piso de 5
+  dígitos), mas o número numa lista que varre a rede é superfície nova — a ADR-33
+  restringe o CPF visível ao balcão da escola. Login e as escolas em que a pessoa
+  está já distinguem homônimos, que é o que a tela precisa.
+- **Sem `comTenancy`, e não é exceção nova**: `users` e `lotacoes` já estão fora
+  da RLS, e quem pergunta é o único papel que atravessa escolas.
+- **`lotarEmLote` diz o que FEZ**, por escola: `criadas`, `reabertas`,
+  `jaVinculadas`, `ignoradas`. Era `lotadas: number`, que contava também as
+  escolas onde a pessoa já estava — "agora está em 3 escolas" saía igual tendo
+  criado três vínculos ou nenhum.
+- **Papel divergente de `users.role` é RECUSA.** A chave única de `lotacoes` é
+  (escola, pessoa, PAPEL): com papel diferente, a mesma pessoa ganharia uma
+  SEGUNDA linha na mesma escola, e a contagem da tela a somaria nas duas colunas.
+  Era o caminho por onde "não alterar o perfil silenciosamente" se quebrava.
+
+## Relatório da diretoria: laço, não política de RLS (ADR-82)
+
+`GET /escolas/minhas/relatorio` — consolidado por missão + quebra por escola,
+para `gestor_regional` (a própria regional) e os perfis de contrato
+(`?regionalId=`).
+
+- **`liberacoes` e `progresso` estão SOB a RLS**, e o relatório atravessa escolas
+  abrindo a tranca **uma escola por vez** (`comTenancy` por escola, em lotes de
+  8 com `aosPares`), somando na aplicação. A política **não** é tocada. É o mesmo
+  padrão de `lotarEmLote` e da transferência.
+  **Afrouxar a política seria UMA linha** (ela é gerada por laço sobre ~29
+  tabelas) — o custo não é escrever, é que ela É a garantia de que a escola A
+  nunca vê a criança da escola B. O laço mantém a garantia literal.
+- **A autorização mora em `regionalDoRelatorio`**, um método, não no controller.
+  Para `gestor_regional` a regional vem de `users.regional_id` e o
+  `?regionalId=` é **IGNORADO** — ignorado, e não validado contra o dele: o
+  efeito é o mesmo, mas por um caminho em que esquecer a comparação não vira "leia
+  a diretoria do vizinho por querystring".
+- **As DUAS medidas, lado a lado**: `estudantes` é a CRIANÇA com registro (a PK
+  de `progresso` é (escola, estudante, exp), então contar linha já é contar
+  criança distinta); `turmasLiberadas`/`turmasEncerradas` é a AULA. A diferença
+  entre elas é a informação — turma encerrada com poucos registros é aula que
+  passou sem a sala entrar.
+- **Cobre as nove experiências sem código por experiência**, porque as duas
+  tabelas são da PLATAFORMA. A décima entra de graça.
+- **Fora, e não por esquecimento**: bem-estar (dado de saúde, sem rota de gestor
+  nenhum), o retrato de valores da Vila agregado (listagem ordenável vira ranking
+  de criança) e **nome de criança** — o relatório é contagem.
+- **O teto**: uma transação por escola. Diretoria muito grande ficar lenta é
+  gatilho para agregado materializado, **não** para afrouxar a política.
+
+## "Quem trabalha nesta escola" é LOTAÇÃO, nunca `users.escola_id`
+
+Isto já estava escrito acima como desenho, e **foi violado na prática** — o
+defeito da contagem de professores nasceu daí. Fica como regra operacional:
+
+- **`users.escola_id` é CACHE da lotação principal.** Perguntar "quem está nesta
+  escola" a ele responde "quem tem esta escola como principal" — e para quem
+  trabalha em duas, a segunda escola volta VAZIA.
+- **Toda listagem e toda contagem por escola sai de `lotacoes`** (`escola_id` +
+  `papel` + `fim IS NULL`). `usuarios.listar` filtrava pelo cache enquanto
+  `escolas.listar` contava lotações: a coluna "Professores" dizia 1 e a lista da
+  mesma escola dizia 0, com "Ninguém por aqui ainda". Dois lados perguntando
+  coisas diferentes com o mesmo rótulo.
+- **O papel e o nome da escola da LINHA também saem da lotação daquela escola**,
+  não de `users.role`/`users.escola`: senão a listagem da escola secundária
+  mostra a escola principal da pessoa na coluna Escola — a escola errada,
+  justamente na linha que o defeito escondia.
+- `escolas.pessoasDaEscola` (a outra listagem, `GET /escolas/:id/pessoas`) já
+  fazia certo desde o começo. Duas listas de pessoas com critérios diferentes é
+  o que permitiu a divergência passar.
+- **A regressão é a IGUALDADE, não a query**: `tests/usuarios.spec.ts` compara
+  contagem e lista na mesma escola, com o professor de duas escolas montado de
+  propósito. Verificado que ela REPROVA sem a correção.
+
+## O teardown de uma suíte não pode falar pelo setup (2026-09-08)
+
+**Cliente de banco de suíte nasce no MÓDULO, com `const` — nunca dentro do
+`beforeAll`.** Quatro suítes o criavam no FIM do `beforeAll` e o desconectavam no
+`afterAll`; qualquer falha do setup ANTES daquela linha deixava a variável
+`undefined`, o `afterAll` estourava com `TypeError: Cannot read properties of
+undefined (reading '$disconnect')` — e **é o erro do teardown que o Jest
+imprime**, no lugar do erro que quebrou de verdade. A suíte reprovava dizendo a
+coisa errada, de forma intermitente, e a causa real nunca aparecia no relatório.
+
+**A limpeza do `afterAll` vai `best-effort`** (`await limpar().catch(() =>
+undefined)`), pelo mesmo motivo: falha de limpeza também substitui o erro do
+teste. As conexões fecham depois dela de qualquer jeito — sem `$disconnect` o
+Jest não sai.
+
+A URL do banco é constante de módulo nas quatro: **nunca houve motivo para o
+cliente esperar o hook**. E a prova de que o mascaramento saiu não é a suíte
+passar: é pôr um `throw` na primeira linha do `beforeAll` e conferir que o
+relatório mostra AQUELA mensagem.
 
 ## Identidade e enturmamento (2026-08-28)
 
@@ -308,6 +509,245 @@ As turmas e matrículas do ano anterior ficam onde estão — é isso que preser
 histórico. `vigente` é DERIVADO das datas, nunca coluna.
 
 
+## Disponibilidade: o interruptor da rede (ADR-87, 2026-09-09)
+
+**Três eixos decidem se algo abre, e confundi-los é o defeito caro.**
+
+| Eixo | Pergunta | Quem decide | Onde |
+|---|---|---|---|
+| catálogo | que forma a experiência tem? | o manifesto / o CI | `experiencias` |
+| liberação (ADR-69) | está aberta NESTA TURMA? | professor | `liberacoes` → `exigirMissaoLiberada` |
+| **disponibilidade** | existe NESTA REDE? | Unooria (`admin`) | `disponibilidades` → `exigirRecursoDisponivel` |
+
+Disponibilidade é **pré-condição** de liberação. Produto desligado tem o sintoma
+de um bug de enturmamento — a missão sumiu da grade e ninguém liberou nada —, e é
+por isso que o eixo tem nome próprio.
+
+**Estado em 2026-09-10.** Completo: porta, painel e versão. Leitura
+(`GET /recursos/efetivos`, qualquer autenticado) e, só para `admin` (ADR-88),
+`GET /recursos/painel`, `PUT|DELETE /recursos/:recursoId`,
+`GET|POST|PUT /recursos/experiencias/:expId/{versoes,ativar,versao}`. O
+histórico (`GET /recursos/auditoria`) é a ÚNICA de `/recursos/*` que a REDE
+alcança — ver "O histórico" abaixo.
+
+### Versão: duas alavancas, e elas não se misturam
+
+- **`POST .../ativar`** troca `experiencias.versao_ativa` do CONTRATO e
+  **RESTAURA o manifesto daquela versão** (`viewport`, `permissoes`, `series`,
+  `unidade`, `produto`), lendo `experiencias_versoes.manifesto`. É o conserto
+  do defeito que a fase 0 descobriu: `publicar-manifesto.mjs --versao x.y.z`
+  manda o número antigo com o `experiencia.json` ATUAL, então voltar a versão
+  nunca voltou as permissões de iframe — a exp-70 reabria sem
+  `allow-pointer-lock` e a câmera do jogo não girava, sem erro em lugar nenhum.
+  Versão fora do histórico é RECUSADA: não se aponta a rede para o desconhecido.
+- **`PUT .../versao`** grava `disponibilidades.versao_fixa` num escopo — o
+  canário. `versao: null` solta a fixação e **preserva o `ligado`** da linha,
+  que é decisão à parte; e `ligado`/`desligado` **não apagam** a versão fixada
+  (o `versaoFixa` ausente no payload do `gravar` quer dizer "não mexe", e é o
+  `CASE WHEN` do `ON CONFLICT`). Sem essas duas assimetrias, desligar e
+  religar apagaria em silêncio a versão que alguém fixou.
+- **A tela oferece UMA por escopo**: ativar só no contrato, fixar só fora dele.
+  Fixar no contrato seria um segundo jeito, mais fraco, de fazer o que ativar faz
+  — trocaria a versão sem restaurar o manifesto, reabrindo o defeito acima.
+- **`experiencias_versoes.manifesto` tem DUAS formas** em circulação: o corpo do
+  PUT do CI (`versaoAtiva`) e o `experiencia.json` cru do backfill e do seed
+  (`versao`). `manifesto-guardado.ts` lê só os campos que precisam voltar, e
+  nenhum deles é a versão — que vem do parâmetro da rota. Manifesto ILEGÍVEL
+  troca só o número em vez de recusar o rollback: rollback é operação de
+  incidente.
+- **A conferência no CDN** é um HEAD no `index.html` da versão (`CDN_EXP_URL`),
+  e a resposta carrega `conferida`. Sem a env (dev) ela é pulada e a tela diz
+  isso: "ativei" e "ativei e conferi que o bundle está lá" são garantias
+  diferentes. Apontar a rede para versão que não subiu é tela branca para todos,
+  e o erro só apareceria quando a primeira criança abrisse a missão.
+- **O HUB honra a fixação**: `montarEmbed` lê `GET /recursos/efetivos` em
+  paralelo com o manifesto. Sem essa leitura, a coluna seria gravada, o painel a
+  mostraria e nada mudaria.
+
+### O histórico é tabela, e a REDE lê o dela (ADR-89, 2026-09-10)
+
+`recursos_auditoria`, append-only, escrita por toda mudança do painel e lida por
+DOIS painéis: `/unooria/recursos` (quem opera) e `/admin/recursos` (quem sofre).
+A rede continua sem escrever nada — ADR-88 intacta —, mas `GET
+/recursos/auditoria` aceita `GESTORES_DO_CONTRATO`, e é a única rota de
+`/recursos/*` que volta atrás da linha do `admin`: ler por que o produto da
+própria rede mudou de estado é informação do cliente; decidir o estado não é.
+
+- **O registro NUNCA derruba a operação que o chamou.** `registrarAuditoria`
+  (`src/recursos/auditoria.ts`) engole o próprio erro e o entrega ao `aoFalhar`
+  do chamador, que loga `codigo: "recurso-auditoria-nao-gravada"`. O contrário
+  seria pior de todos os jeitos: o interruptor da rede falhando porque o
+  histórico dele falhou. O contador desse código no Cloud Logging é o que avisa
+  que o histórico está incompleto (cap. 17).
+- **`autor_nome` é CONGELADO na linha**, sem FK para `users` — nem em
+  `autor_id`. Um JOIN mostraria o nome de HOJE, ou nada se a conta saiu da rede,
+  e o histórico deixaria de dizer quem era aquela pessoa naquele dia; uma FK com
+  `RESTRICT` travaria para sempre a exclusão de quem já mexeu no painel.
+- **`UPDATE` é recusado pelo BANCO**, por trigger, e o `GRANT` da role de runtime
+  é `SELECT, INSERT, DELETE`. "Append-only" que só o código promete é o que a
+  próxima rotina de correção quebra. `DELETE` fica de propósito: retenção futura
+  e isolamento de teste.
+- **A ação tem vocabulário FECHADO** (`ACOES_DE_AUDITORIA` ↔ CHECK da migração),
+  e `versao` tem CHECK BICONDICIONAL — preenchida exatamente nas duas ações de
+  versão. Linha `desligado` com versão ao lado faria quem lê concluir que a
+  versão foi parte da decisão.
+- **O filtro por escola INCLUI as decisões de escopo-contrato** (`escolaId = X`
+  OR `escolaId IS NULL`): foram elas que decidiram o que vale ali, e um
+  histórico de escola que as omite mostra uma escola onde nada aconteceu no dia
+  em que tudo mudou. Teto de 200 linhas, com `truncado` na resposta.
+- **`remover` (herdar) só historia quando `count > 0`.** Apagar linha que não
+  existia não é evento, e registrar isso encheria o histórico de "herdado" que
+  não mudou nada.
+
+**O que ainda não existe**: segmentação por turma ou janela de validade — gatilho
+de reavaliação declarado na ADR-87.
+
+**Suíte que LÊ tabela de contrato declara a pré-condição — não conte com o
+seed.** `experiencias`, `periodos_letivos` e `disponibilidades` não têm
+`escola_id`: quem só as lê depende de quem as escreveu. No banco de dev o
+`seed` já preencheu o catálogo, e três suítes passavam por isso; no Postgres
+descartável do CI a tabela nasce VAZIA e o vermelho mente — "o produto desligado
+não fechou a porta" é falta de dado, não guarda quebrada, e não reproduz na
+máquina. Hoje o `globalSetup` (`tests/catalogo-real.ts`) semeia o catálogo
+real dos MANIFESTOS antes de qualquer suíte, com `update` mínimo para não
+desfazer um rollback deliberado em dev. **Antes de empurrar mudança em suíte de
+Postgres, rode contra um banco NOVO** — `docker run ... postgres:16` numa porta
+livre, `migrate:deploy`, suíte inteira. É o que o CI faz.
+
+**O upsert do painel é SQL cru, e não por preferência.** O `upsert` do Prisma
+não consegue endereçar a linha de escopo-CONTRATO: o único composto
+`(recurso_id, escola_id)` tipa `escolaId` como `string` no `where`, porque um
+único composto do Postgres não casa `NULL` — a MESMA limitação que obrigou o
+índice parcial a existir. Com `upsert` o typecheck reprova; forçando o tipo, o
+Postgres nunca acha a linha e cada clique em "desligar para a rede" tentaria um
+INSERT novo. `ON CONFLICT (recurso_id) WHERE escola_id IS NULL` infere o índice
+parcial, e são dois `ON CONFLICT` distintos porque são dois índices distintos.
+`atualizado_em` vai na mão: `@updatedAt` é do Prisma, e SQL cru passa por baixo.
+
+**Toda escrita loga `codigo: "recurso-alterado"`** com recurso, escopo, estado e
+motivo, E grava a linha de `recursos_auditoria` (ADR-89). Os dois, não um: o log
+é do turno de plantão, a tabela é da tela. A LINHA de `disponibilidades` é
+sobrescrita a cada mudança — sem os dois, "quem desligou o jogo da rede, e
+quando?" não tem resposta em lugar nenhum.
+
+**`origem` do painel: a ordem das comparações é regra.** No escopo-contrato
+`escopo` e `decididoEm` são os dois nulos, e testar `=== null` antes de
+`=== escopo` faz uma decisão tomada ALI ser lida como "vem da rede" — soa
+herdada de um nível que não existe. Visto na tela antes de virar teste
+(`recursos-painel-postgres.spec.ts`).
+
+**Onde a guarda entra, e por que num ponto só:**
+
+- **Missões de estudante**: dentro de `exigirMissaoLiberada`
+  (`comum/liberacao.ts`), ANTES da checagem de liberação. As seis experiências já
+  passam por aquele funil, então um ponto cobre todas — e isso torna
+  IMPOSSÍVEL existir liberação valendo num recurso que a rede não tem. Se cada
+  experiência tivesse de chamar as duas guardas, a próxima nasceria chamando uma.
+  A ordem importa para o DIAGNÓSTICO: produto desligado responde
+  `recurso-indisponivel`, não `missao-nao-liberada` — invertido, o log mandaria
+  quem investiga procurar na sala de aula um problema que está no painel.
+- **Ferramentas de professor** (exp-90, exp-91, exp-92): não têm liberação por
+  turma e têm **28 rotas** entre as três. Anotar rota por rota é o desenho em que
+  a 29ª nasce sem guarda, sem erro e sem sintoma — o produto simplesmente não
+  desliga. Por isso é um GUARD DE CLASSE: `DisponibilidadeGuard` +
+  `@Recurso("exp-NN-slug")` no `@Controller`, e a exceção é declarada com
+  `@SemDisponibilidade()`.
+- **`@SemDisponibilidade()` só para APAGAR os próprios dados.** Desligar um
+  produto fecha tudo — é isso que o interruptor significa, e é o que um incidente
+  exige. A única exceção é apagar o que já existe: "não consigo apagar meus dados
+  porque o produto foi desligado" é indefensável, e mais ainda no check-in de
+  bem-estar, que é DASS-21. Interruptor nunca pode prender dado de ninguém.
+  Não use o escape para leitura, edição ou exportação.
+- **Guard montado sem `@Recurso` LANÇA**, em vez de liberar. Liberar em silêncio
+  é exatamente a falha que o guard existe para impedir.
+- **A grade da sala filtra, e a missão SAI** (`salas.service.ts#catalogo`) —
+  não fica com cadeado. Cadeado quer dizer "o professor ainda não abriu", e é um
+  convite: existe alguém que pode abri-lo. Recurso que a rede não tem não abre
+  para ninguém. `definirEstado` (liberar) também recusa: esconder o card é UX.
+- **Sem linha em `experiencias` não tranca nada.** Stack de dev ou nova, antes do
+  primeiro publish do CI, tem aquela tabela VAZIA — recusar ali faria toda missão
+  morrer num ambiente recém-provisionado, com um 403 que não explica nada.
+- **A mensagem do estudante é a MESMA de `missao-nao-liberada`.** Quem lê é uma
+  criança dentro de um app disfarçado, e "este produto foi desativado para a sua
+  rede" quebra a ficção que a experiência está medindo. Quem distingue é o
+  `codigo`. Na ferramenta de professor não há disfarce, e a mensagem diz o que
+  aconteceu.
+
+**SEM CACHE, e é decisão.** São duas idas ao banco (a escola e as linhas que
+valem), as duas por índice, numa tabela de dezenas de linhas — e a regra da casa é
+não acrescentar estado sem gargalo medido. Gatilho para reavaliar: latência medida
+em `GET /salas/minhas` ou na home do professor, as duas superfícies que resolvem
+isto a cada render.
+
+### A armadilha de TESTE que esta tabela criou (2026-09-10)
+
+**Suíte NUNCA escreve linha de escopo-CONTRATO (`escola_id IS NULL`).**
+
+`disponibilidades` está fora da RLS por desenho, então a linha de contrato vale
+para a stack INTEIRA — e o Jest paraleliza. Enquanto ela existe, toda suíte
+concorrente vê o produto desligado. Custou duas suítes vermelhas
+(`vila-postgres` e `o-eco-no-grupo-postgres`) que **passam sozinhas e falham
+juntas**, com o sintoma apontando para a Vila e a causa em
+`disponibilidade-porta-postgres`. Pior: a corrida abortada deixa fixture para
+trás, e a corrida SEGUINTE falha em outra suíte ainda — a cascata esconde a
+origem.
+
+Exercite o escopo-contrato com um `expId` que não existe no catálogo e que
+ninguém mais usa; a cadeia inteira já se prova sem banco em
+`recursos-regras.spec.ts`. A mesma regra vale para a suíte e2e.
+
+**As duas regras do resolvedor** (`src/recursos/regras.ts`, puro e testado):
+
+1. **O escopo mais específico ganha**: escola → regional → contrato → padrão.
+   Escola e regional são a MESMA tabela `escolas`, distinguidas por `tipo`, então
+   uma coluna `escola_id` nulável cobre os três níveis.
+2. **O produto é um TETO**: produto desligado no escopo que vale ⇒ nada dentro
+   dele liga, mesmo com linha própria dizendo `ligado`. Religar o produto no
+   escopo menor é o caminho — e é explicável na tela; exceção por experiência
+   sobrepondo o produto foi descartada na ADR-87.
+
+**Ausência de linha = LIGADO**, o contrário de `liberacoes`. Lá a ausência é o
+bloqueio; aqui é o mundo normal, porque este interruptor é mecanismo de EXCEÇÃO.
+Nascer desligado exigiria uma linha por recurso a cada contrato provisionado, e
+toda experiência nova ficaria invisível até alguém lembrar de ligá-la.
+
+**A linha inteira é a decisão**: `ligado` e `versao_fixa` não se resolvem em
+cadeias separadas. Campo a campo daria mais flexibilidade e produziria estados
+que ninguém explica olhando a tela.
+
+### Três armadilhas de banco, todas invisíveis no typecheck
+
+- **`@@unique([recursoId, escolaId])` não impede duas linhas de contrato**: no
+  Postgres `NULL` ≠ `NULL` num índice único. Quem fecha é o índice único
+  **parcial** `WHERE escola_id IS NULL` (mesmo desenho de
+  `escolas_regional_padrao_unica`). Sem ele, dois cliques em "desligar para a
+  rede" criam duas linhas e o resolvedor passa a depender da ordem do `findMany`.
+- **`disponibilidades` e `experiencias_versoes` ficam FORA da RLS**, contra o
+  hábito da regra 1. São configuração da rede, e a linha de escopo-contrato tem
+  `escola_id` nulo por desenho: a política por `escola_id` esconderia justamente
+  a resposta. `tests/disponibilidades-postgres.spec.ts` prova a ausência, para que
+  a próxima migração não a "conserte" — ligar RLS ali faz TODO produto parecer
+  ligado.
+- **Vocabulário em dois lugares**: `PRODUTOS` e `RECURSO_ID_RE` do código, e os
+  CHECKs da migration. O mesmo par que já custou um deploy inteiro em
+  `permissoes` — o Zod aceitou, o banco recusou, e o 500 só aparecia no log da
+  api. O teste de Postgres compara os dois textos.
+
+### `experiencias_versoes` conserta um bug que ninguém tinha notado
+
+`publicar-manifesto.mjs --versao x.y.z` manda o número **antigo** com o
+`experiencia.json` **atual** do repositório. Voltar a versão nunca voltou
+`viewport`, `permissoes`, `series` nem `unidade` — a exp-70 reabria sem
+`allow-pointer-lock`, a criança entrava na Vila e a câmera não girava, sem erro em
+lugar nenhum. Por isso a tabela guarda o **manifesto inteiro** por versão: o
+rollback pela tela reescreve as colunas com o que aquela versão tinha de fato.
+
+Quem escreve a linha é o próprio `PUT /experiencias/:expId`, na mesma transação
+do upsert do catálogo — e o `semearCatalogo` do seed faz igual, senão uma stack de
+dev abre o painel dizendo que não conhece versão nenhuma do que está no ar.
+`publicada_por` é TEXTO sem FK: quem publica quase sempre é o CI, cujo token tem
+`sub = 'ci-deploy'` — não é uuid e não existe em `users`.
+
 ## Perfil portátil: sair da REDE (2026-08-28)
 
 **Transferir é dentro do contrato; o perfil portátil é para FORA dele.** A
@@ -491,6 +931,28 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   sinal é contador). O proxy OTLP (`otlp-proxy.service.ts`) SUBSTITUI o
   `resource` do cliente e filtra atributos por allowlist antes de reexportar —
   nada do que o navegador manda vai ao Google como veio.
+- **`/observabilidade/publico/*` é a ÚNICA rota sem `OidcGuard`** além do
+  `/telemetry/ingest` (que tem o `PubSubPushGuard`) — ADR-84. Existe porque a
+  tela de LOGIN não tem sessão, e o 401 do BFF descartava exatamente o sinal de
+  que ninguém estava conseguindo entrar. Quem escolhe o destino é o **BFF do
+  hub**, não o cliente: com sessão, a rota autenticada (o log leva `usuarioId`);
+  sem sessão, a pública (sem identidade, `expId` forçado a `hub`, cota por IP
+  mais teto global de instância). O IP é chave de cota e **não vai para log nem
+  para rótulo** — a lição do `rate-limit.ts` contra chave por IP vale para rota
+  de produto, onde estourar a cota derruba a turma pelo NAT da escola; aqui
+  estourar só descarta amostra de telemetria.
+- **Todo caminho de recusa CONTA** (`erros_recusados`, `vitais_recusados`, com
+  `motivo` e `superficie`), e é por isso que o corpo inválido passa por
+  `safeParse` em vez de `parse`: em 2026-09 um `versao` de 40 caracteres (o
+  `github.sha`) estourou o `max(32)` do schema e recusou **todo** erro de
+  cliente do hub por seis dias — o único vestígio era uma linha
+  `corpo-invalido`, e o contador que teria gritado não existia. O mesmo SHA
+  derrubava o lote OTLP do hub em `identidadeDoLote`, **com a rota respondendo
+  204**. Os dois tetos hoje são 64, e o CI manda o SHA curto.
+- **O user-agent vira rótulo por `observabilidade/dispositivo.ts`**, nunca cru:
+  `navegador`/`so`/`tipo` de conjunto FECHADO. Só `tipo` entra em métrica (os
+  outros dois multiplicariam a série do histograma por 18); `navegador` e `so`
+  ficam no log do erro, que não custa série.
 - Envs: `LOG_LEVEL` (default `info`), `GCP_PROJECT_ID` (correlação com o
   trace, cliente OTLP; vazio em dev = métricas e spans do navegador contados
   e descartados), `OBS_TRACE_RATIO` (fração exportada; 0 desliga),
@@ -784,6 +1246,46 @@ nunca só a coluna. A mesma pergunta está aberta para `telemetria_eventos`, que
 guarda evento por `estudante_id` de todas as experiências e também não tem prazo: se
 a resposta importar, ela é da plataforma inteira, não de um módulo.
 
+
+## Instanooria: o relógio da aula tem DOIS ponteiros (exp-01, ADR-92)
+
+`comum/insta/etapas.ts` reconcilia `activities.etapa` (a TURMA, que o professor
+move) com `runs.fase` (a tela daquela criança). É puro e testado
+(`tests/insta-etapas.spec.ts`), e nada dele aparece no typecheck: trocar piso
+por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
+
+- **Indo para frente a etapa é PISO; voltando, é TETO.** O piso existe para não
+  punir quem leu mais rápido DENTRO do momento liberado; voltar é outra
+  intenção, e com a regra do piso o retorno mudaria o rótulo no painel e nada
+  na tela dos estudantes. `debate` é a exceção nas duas direções: trava.
+- **Sair da investigação CONGELA; voltar para ela REABRE. Os dois, sempre.**
+  `moverEtapa` chama `encerrarRun` em toda run que entrou no aparelho ao sair
+  (sem isso o relatório abre vazio) e, ao voltar, apaga o dossiê e zera
+  `finished_at` de quem volta ao `feed`. **Mexeu num, mexa no outro**: com o
+  congelamento sem o par, o retorno é `voltou: true, movidos: 0` — a turma
+  inteira presa na tela da resposta com o painel dizendo "Investigação". Foi
+  assim por meses, porque o ramo do `feed` em `faseAoVoltar` era INALCANÇÁVEL:
+  a condição que o guardava (`sessaoCongelada`) era sempre verdadeira.
+- **Apagar o dossiê é o que o torna recomputável.** `encerrarRun` é idempotente
+  PELO DOSSIÊ: existindo a linha, devolve a de antes sem recomputar. Zerar só o
+  `finished_at` deixaria o relatório seguinte sem nada do que a criança fizer
+  daí em diante.
+- **A trava do retorno é a REVELAÇÃO, não o congelamento** (`jaViuARevelacao`,
+  `explicabilidade` em diante). Quem já sabe que o feed era enviesado não pode
+  ser medido por ele de novo — o motivo é o instrumento. Quem não viu volta ao
+  feed. **Ela lê a fase ATUAL, e a fase é regressiva**: voltando passo a passo,
+  a run desce até `conclusao` antes de a turma chegar à investigação, e daquele
+  degrau a proteção não se aplica — o pulo direto para na resposta, os cinco
+  cliques terminam no feed. Limitação deliberada (fechar exige persistir o
+  marco, que a fase não guarda), fixada nos dois sentidos em
+  `tests/insta-etapas.spec.ts`. Não "conserte" um dos dois sem ler a ADR-92.
+- **Voltar não é `reset`.** `POST /runs/:id/reset` apaga eventos, posts salvos,
+  comentários, conclusão e reflexão; `moverEtapa` não apaga nada disso. Corrigir
+  um clique do adulto destruindo a produção de trinta crianças é desproporcional
+  — e era a única saída que o produto oferecia.
+- **Fase legada NUNCA vira `onboarding` por fallback** (`normalizarFase`): uma
+  run em `dossie` era EXPULSA para o seletor de avatar no meio da
+  explicabilidade.
 
 ## Missão Tempestade (exp-03, `apps/api/src/unoogpt`)
 

@@ -39,6 +39,6 @@ Nunca vai à telemetria: respostas, pontuação, faixa, texto livre.
 
 ```bash
 pnpm --filter @edu/exp-91-bem-estar dev     # :5176
-# hub: http://localhost:3000/professor/bem-estar  (login prof.demo)
+# hub: http://localhost:3000/professor/bem-estar  (login: uma linha prof.* de credenciais-demo.csv)
 # sem GCP: AI_PROVIDER=mock na api → textos fixos (o fluxo inteiro funciona)
 ```

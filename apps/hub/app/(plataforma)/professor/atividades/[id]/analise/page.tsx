@@ -1,15 +1,9 @@
 import { notFound } from 'next/navigation';
 
 import { LinkButton } from '@/components/link-button';
-import { Trilha } from '@/components/trilha';
+import { RotuloDaTrilha } from '@/components/trilha';
 import type { AnaliseDaTurma } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
-import {
-  MISSAO_ATUAL,
-  buscarMissao,
-  rotaDaMissao,
-  rotuloDaMissao,
-} from '@/lib/entre-redes/catalogo';
 
 import { PainelAnalise } from './painel-analise';
 
@@ -35,29 +29,13 @@ export default async function AnalisePedagogicaPage({
 
   const atividade = analise.atividade;
 
-  // MISSÃO ÚNICA: ver nota de modelagem em lib/entre-redes/catalogo.ts.
-  const missao = buscarMissao(MISSAO_ATUAL.anoSlug, MISSAO_ATUAL.unidadeSlug);
-
   return (
     // A casca do professor (`(plataforma)/professor/layout.tsx`) já dá o
     // `<main>`, a superfície e o max-width que o origem abria aqui.
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: 'Início', href: '/professor' },
-          { label: 'Entre Redes', href: '/professor/entre-redes' },
-          ...(missao
-            ? [
-                {
-                  label: rotuloDaMissao(missao.ano, missao.missao),
-                  href: rotaDaMissao(missao.missao),
-                },
-              ]
-            : []),
-          { label: atividade.titulo, href: `/professor/atividades/${id}` },
-          { label: 'Análise da turma' },
-        ]}
-      />
+      {/* O item ANTERIOR da trilha é a atividade, e o nome dela só existe nesta
+          leitura: `para` ajusta o antepassado, não a página atual. */}
+      <RotuloDaTrilha para={`/professor/atividades/${id}`} valor={atividade.titulo} />
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">

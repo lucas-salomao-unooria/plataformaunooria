@@ -430,9 +430,9 @@ describe("mídia", () => {
   test("sem provider de verdade, tudo falha e o mapa vem com null", async () => {
     // `null` é informação, não erro: é o sinal para o cliente cair na
     // transcrição (que já está na tela) em vez de esperar um arquivo.
-    // Perfil `gestor` para o teste não precisar de matrícula: o filtro por
+    // Perfil `gestor_escola` para o teste não precisar de matrícula: o filtro por
     // MATRÍCULA do professor já é exercido no painel.
-    const r = await service.prepararMidia(ESCOLA, turmaId, estudanteA, "gestor");
+    const r = await service.prepararMidia(ESCOLA, turmaId, estudanteA, "gestor_escola");
     expect(r.geradas).toEqual([]);
     expect(r.falharam.length).toBeGreaterThan(0);
     expect(Object.values(r.urls).every((u) => u === null)).toBe(true);

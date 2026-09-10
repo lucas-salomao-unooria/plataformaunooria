@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 
 import { EmptyState } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
@@ -13,6 +13,7 @@ import {
 
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
+import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
 import { MissaoUnooTube } from "./missao-unootube";
 
@@ -40,13 +41,6 @@ export default async function MissaoPage({
   if (missao.status === "em-breve" || !missao.ficha) {
     return (
       <div className="flex flex-col gap-6">
-        <Trilha
-          itens={[
-            { label: "Início", href: "/professor" },
-            { label: "Entre Redes", href: "/professor/entre-redes" },
-            { label: rotuloDaMissao(ano, missao) },
-          ]}
-        />
         <EmptyState
           variant="no-data"
           size="lg"
@@ -73,6 +67,9 @@ export default async function MissaoPage({
   }
   if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
     return <MissaoOEcoNoGrupo ano={ano} missao={comFicha} />;
+  }
+  if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
+    return <MissaoRastroBoato ano={ano} missao={comFicha} />;
   }
   return <MissaoInstanooria ano={ano} missao={comFicha} />;
 }

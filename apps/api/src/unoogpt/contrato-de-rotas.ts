@@ -597,3 +597,34 @@ export const AgregadoDaEscolaSchema = z.object({
     }),
   ),
 });
+
+/**
+ * As 8 fontes do cenário como o PROFESSOR precisa vê-las: o que cada uma
+ * mostra e **em que ela engana**.
+ *
+ * Existe porque o guia da aula desta missão é o instrumento — a missão não
+ * revela nada por software de propósito, e o viés de cada fonte é o material do
+ * debate. Sem esta rota, o hub teria de guardar uma cópia de
+ * `modelo/conjuntos.ts`, e a primeira recalibragem do cenário deixaria o
+ * professor contando à turma um viés que o jogo já não produz.
+ *
+ * É PROFESSOR-ONLY, pelo mesmo motivo que o `lacuna` não cruza a fronteira do
+ * estudante: quem sabe qual fonte engana em quê decora uma tabela em vez de
+ * descobrir a discordância cruzando dados.
+ */
+export const FontesDoProfessorSchema = z.object({
+  fontes: z.array(
+    z.object({
+      slug: z.string(),
+      nome: z.string(),
+      /** O período a que o dado se refere — metade dos vieses mora aqui. */
+      periodo: z.string(),
+      /** Para que ela serve, na frase que o Cientista usaria. */
+      serve: z.string(),
+      /** Em que ela engana. É o que o professor leva para o debate. */
+      vies: z.string(),
+      /** Os bairros que ela cobre, do mais coberto ao menos. Vazio = nenhum. */
+      cobre: z.array(z.string()),
+    }),
+  ),
+});

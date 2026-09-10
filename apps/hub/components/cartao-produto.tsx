@@ -26,6 +26,24 @@ const ICONES: Record<Produto["slug"], React.ReactNode> = {
       <path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h4.5a1.5 1.5 0 0 0 1.5-1.5Z" />
     </svg>
   ),
+  "plano-de-ensino": (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3.5" y="4.5" width="17" height="16" rx="2" />
+      <path d="M3.5 9.5h17" />
+      <path d="M8 3v3M16 3v3" />
+      <path d="M7.5 13h3M7.5 16.5h3M13.5 13h3M13.5 16.5h3" />
+    </svg>
+  ),
   "entre-redes": (
     <svg
       width="22"

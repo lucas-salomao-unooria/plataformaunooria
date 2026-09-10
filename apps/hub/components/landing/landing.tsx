@@ -212,38 +212,32 @@ export function Landing() {
 
           {/* ---- rodapé --------------------------------------------------- */}
           <footer className="landing-rodape">
-            <div className="landing-rodape__miolo grid grid-cols-1 gap-6 md:grid-cols-4">
-              <div className="md:col-span-2">
-                <Logo size="md" color="navy" ariaLabel="Unooria" className="mb-4" />
-                <p className="landing-corpo landing-cor-apoio max-w-sm">
-                  Transforme a forma como seus estudantes interagem com o mundo digital.
-                </p>
+            <div className="landing-rodape__miolo">
+              <div className="flex flex-col items-center gap-8 md:flex-row md:justify-between">
+                <Logo size="md" color="navy" ariaLabel="Unooria" />
+                <nav aria-label="Links do rodapé">
+                  <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
+                    <li>
+                      <a className="landing-rotulo" href="/privacidade">
+                        Privacidade
+                      </a>
+                    </li>
+                    <li>
+                      <a className="landing-rotulo" href="/termos">
+                        Termos
+                      </a>
+                    </li>
+                    <li>
+                      <a className="landing-rotulo" href="#">
+                        Contato
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
               </div>
-              <div>
-                <h4 className="landing-subtitulo mb-4">Links</h4>
-                <ul className="flex flex-col gap-2">
-                  <li>
-                    <a className="landing-rotulo" href="/privacidade">
-                      Privacidade
-                    </a>
-                  </li>
-                  <li>
-                    <a className="landing-rotulo" href="/termos">
-                      Termos
-                    </a>
-                  </li>
-                  <li>
-                    <a className="landing-rotulo" href="#">
-                      Contato
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <p className="landing-corpo landing-cor-apoio md:mt-0">
-                  © {ano} Unooria. Educação para o Futuro Digital.
-                </p>
-              </div>
+              <p className="landing-rotulo landing-cor-apoio landing-rodape__assinatura">
+                © {ano} Unooria.
+              </p>
             </div>
           </footer>
         </div>

@@ -1,12 +1,12 @@
 import { Badge, Card, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import {
   rotaDaMissao,
   rotuloDaMissao,
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 
 /**
  * Corpo da missão do UNOOTUBE (4º ano · Unidade 1). Não há atividade a
@@ -22,17 +22,10 @@ export function MissaoUnooTube({
 }) {
   const { ficha } = missao;
   const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
     <div className="flex flex-col gap-8">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao) },
-        ]}
-      />
-
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="success">Disponível</Badge>
@@ -74,6 +67,13 @@ export function MissaoUnooTube({
           <p className="pt-4 text-[13px] text-unooria-neutral-500">
             O estudante do 4º ano entra no UnooTube ao fazer login — não há nada para ativar.
           </p>
+          {guia ? (
+            <div className="pt-4">
+              <LinkButton href={guia} variant="secondary">
+                Abrir guia da aula
+              </LinkButton>
+            </div>
+          ) : null}
         </Card>
       </section>
 

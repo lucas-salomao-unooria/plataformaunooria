@@ -511,13 +511,13 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
                     }
                   />
                   <div className="app-insight__nav">
-                    <Button variant="ghost" size="sm" aria-label="Insight anterior" onClick={() => passarInsight(-1)}>
+                    <Button variant="ghost" size="sm" aria-label="Dica anterior" onClick={() => passarInsight(-1)}>
                       <Icon name="chevron_left" size="xs" />
                     </Button>
                     <span className="app-insight__counter" aria-live="polite">
                       {indiceInsight + 1} de {INSIGHTS_SEMENTE.length}
                     </span>
-                    <Button variant="ghost" size="sm" aria-label="Próximo insight" onClick={() => passarInsight(1)}>
+                    <Button variant="ghost" size="sm" aria-label="Próxima dica" onClick={() => passarInsight(1)}>
                       <Icon name="chevron_right" size="xs" />
                     </Button>
                   </div>

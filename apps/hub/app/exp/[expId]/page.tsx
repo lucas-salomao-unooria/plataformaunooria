@@ -53,7 +53,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
 
   return (
     <>
-      <HeaderPlataforma largura="cheia" voltar={{ href: "/estudante", rotulo: "Missões" }} />
+      <HeaderPlataforma voltar={{ href: "/estudante", rotulo: "Missões" }} />
       <ExpHost
         expId={expId}
         src={embed.src}

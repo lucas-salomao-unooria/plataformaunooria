@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { AlertBox, Button, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
+import { AlertBox, Button, Card, FeedbackAlert, ScrollBar, Tag } from "@edu/ui/ds";
 
 interface EstudanteNaLista {
   username: string;
@@ -399,7 +399,7 @@ export function PainelPerfis({
             <AlertBox theme="light" variant="info" device="auto" description={ultimaAcao} />
           ) : null}
 
-          <div className="overflow-x-auto">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[640px] border-collapse text-[13px]">
               <thead>
                 <tr className="text-left text-unooria-neutral-700">
@@ -450,7 +450,7 @@ export function PainelPerfis({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
 
           {/*
             Era um parágrafo de quatro linhas. Virou uma linha e um `title`: quem

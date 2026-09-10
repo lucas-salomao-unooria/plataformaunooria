@@ -63,7 +63,11 @@ export function Operacao({
         {etapa < 3 ? 'Operação em curso' : 'A tempestade passou'}
       </p>
 
-      <ul className="grid gap-2">
+      {/* `grid-cols-1` = `minmax(0, 1fr)`: sem isso a coluna do grid herda a
+          largura mínima do motivo (nowrap) e a lista fica mais larga que o
+          painel — o texto saía cortado na fronteira com o mapa, com barra de
+          rolagem horizontal, como se o mapa tivesse avançado sobre a coluna. */}
+      <ul className="grid grid-cols-1 gap-2">
         {comDestino.map((e, i) => {
           const bairro = desfecho.porBairro.find((b) => b.equipe === e.equipe);
           const visivel = etapa > i;
@@ -81,7 +85,9 @@ export function Operacao({
               </span>
               <span className="min-w-0 flex-1 text-sm leading-tight">
                 <strong className="block truncate text-gpt-tinta">{e.nome}</strong>
-                <span className="block truncate text-xs text-gpt-suave-60">
+                {/* O motivo quebra linha em vez de truncar: "a via principal já
+                    terá fechado" é a lição da rodada, não cabe atrás de "…". */}
+                <span className="block text-xs leading-snug text-gpt-suave-60">
                   {!visivel ? 'a caminho…' : (bairro?.motivo ?? 'chegou com margem')}
                 </span>
               </span>
@@ -107,7 +113,7 @@ export function Operacao({
               <p className="text-3xl font-bold tracking-tight text-gpt-erro">
                 {pct(desfecho.totais.vitimas)}%
               </p>
-              <p className="text-sm font-semibold text-gpt-tinta">afetadas</p>
+              <p className="text-sm font-semibold text-gpt-tinta">atingidas</p>
               <p className="text-xs text-gpt-suave-60">{milhar(desfecho.totais.vitimas)} pessoas</p>
             </div>
           </div>

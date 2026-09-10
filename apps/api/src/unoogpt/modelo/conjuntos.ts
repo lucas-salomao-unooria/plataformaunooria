@@ -221,3 +221,54 @@ export const CONJUNTO_POR_SLUG = new Map(CONJUNTOS.map((c) => [c.slug, c]));
  * (lib/modelo/estimativa.ts).
  */
 export const LIMITE_DE_CONJUNTOS = CONJUNTOS.length;
+
+/**
+ * As 8 fontes como o GUIA DA AULA precisa delas: o que cada uma mostra e em
+ * que ela engana.
+ *
+ * O viés sai da própria `instrucao` — a mesma string que o agente recebe —, e
+ * não de um campo paralelo escrito à mão. Se fossem dois textos, o dia em que
+ * alguém recalibrasse o cenário mexeria num só, e o professor passaria a contar
+ * à turma um viés que o jogo já não produz. A extração é frágil de propósito:
+ * `instrucaoSemVies` lança se a marca sumir, e o teste do módulo é o que pega
+ * isso antes do deploy — melhor quebrar o build que servir meia verdade.
+ *
+ * NUNCA sirva isto a estudante. O `lacuna` está em `CAMPOS_SENSIVEIS` pela
+ * mesma razão: quem sabe de antemão qual fonte engana em quê decora uma tabela
+ * em vez de descobrir a discordância cruzando dados.
+ */
+const MARCA_DO_VIES = 'VIÉS:';
+
+export interface FonteParaOProfessor {
+  slug: string;
+  nome: string;
+  periodo: string;
+  serve: string;
+  vies: string;
+  /** Slugs dos bairros que a fonte cobre, do mais coberto ao menos. */
+  cobre: string[];
+}
+
+export function fontesParaOProfessor(): FonteParaOProfessor[] {
+  return CONJUNTOS.map((conjunto) => {
+    const corte = conjunto.instrucao.indexOf(MARCA_DO_VIES);
+    if (corte < 0) {
+      throw new Error(
+        `conjunto "${conjunto.slug}" perdeu a marca ${MARCA_DO_VIES} da instrução: ` +
+          'o guia da aula deriva o viés dela, e sem a marca serviria a instrução inteira ' +
+          'ao professor como se fosse o viés',
+      );
+    }
+    return {
+      slug: conjunto.slug,
+      nome: conjunto.nome,
+      periodo: conjunto.periodo,
+      serve: conjunto.serve,
+      vies: conjunto.instrucao.slice(corte + MARCA_DO_VIES.length).trim(),
+      cobre: Object.entries(conjunto.cobertura)
+        .filter(([, fracao]) => fracao > 0)
+        .sort(([, a], [, b]) => b - a)
+        .map(([bairro]) => bairro),
+    };
+  });
+}

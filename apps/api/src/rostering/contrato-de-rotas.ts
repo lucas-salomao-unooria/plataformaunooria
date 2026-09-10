@@ -43,7 +43,7 @@ export const NovoPeriodoSchema = z.object({
   fim: z.coerce.date(),
 });
 
-/** `?escolaId=` — só `admin-contrato` pode apontar para outra escola; para os
+/** `?escolaId=` — só `gestor_contrato` pode apontar para outra escola; para os
  *  demais o valor é ignorado em favor da escola do token (`escolaAlvo`). */
 export const EscolaAlvoQuery = z.object({ escolaId: z.string().optional() });
 
@@ -157,7 +157,7 @@ export const IdDeEscola = z
  *  municipal) e `rede` é a raiz — nenhuma das duas recebe lotação. */
 export const TIPOS_DE_ESCOLA = ["escola", "regional", "rede"] as const;
 
-export const NovaEscolaSchema = z.object({
+const CamposDeEscola = z.object({
   id: IdDeEscola,
   nome: z.string().trim().min(1).max(160),
   tipo: z.enum(TIPOS_DE_ESCOLA).default("escola"),
@@ -169,16 +169,49 @@ export const NovaEscolaSchema = z.object({
   paiId: z.union([z.literal(""), IdDeEscola]).optional(),
 });
 
-export const EditarEscolaSchema = NovaEscolaSchema.partial().omit({ id: true, tipo: true });
+/** A mensagem é a do produto e sai daqui: é o Zod que reprova antes do banco, e
+ *  o texto do 400 é o que a tela mostra sem traduzir nada. */
+export const SEM_REGIONAL = "Selecione uma regional para cadastrar a escola.";
+
+/**
+ * Escola exige regional (ADR-79); regional não tem pai obrigatório.
+ *
+ * O refine mora no schema de ENTRADA e não no service porque é a fronteira que
+ * o OpenAPI publica — e porque `paiId: ""`, que a tela manda quando o seletor
+ * fica vazio, precisa reprovar igual a `paiId` ausente.
+ */
+export const NovaEscolaSchema = CamposDeEscola.superRefine((v, ctx) => {
+  if (v.tipo === "escola" && !v.paiId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["paiId"], message: SEM_REGIONAL });
+  }
+});
+
+/** `tipo` fica fora: ele circula em token e em RLS, e trocar o tipo de uma linha
+ *  existente reescreveria a hierarquia por baixo de quem já depende dela.
+ *  `paiId` pode vir, mas o service recusa ESVAZIÁ-LO numa escola. */
+export const EditarEscolaSchema = CamposDeEscola.partial().omit({ id: true, tipo: true });
+
+/** A exclusão de regional aceita o DESTINO das escolas no mesmo passo:
+ *  transferir e excluir em duas chamadas deixaria a janela em que as escolas já
+ *  mudaram de regional e a antiga continua na lista. */
+export const ExcluirRegionalQuery = z.object({
+  transferirPara: IdDeEscola.optional(),
+});
+
+export const RegionalExcluidaSchema = z.object({
+  ok: z.literal(true),
+  /** Quantas escolas mudaram de regional antes da exclusão. */
+  transferidas: z.number().int().nonnegative(),
+});
 
 export const LotarSchema = z.object({
   usuarioId: Uuid,
-  papel: z.enum(["professor", "gestor"]),
+  papel: z.enum(["professor", "gestor_escola"]),
 });
 
 export const LotarEmLoteSchema = z.object({
   usuarioId: Uuid,
-  papel: z.enum(["professor", "gestor"]),
+  papel: z.enum(["professor", "gestor_escola"]),
   /** A LISTA, não o critério: quem confirma precisa ver quantas e quais escolas
    *  antes de dar acesso a cinquenta unidades de uma vez. */
   escolaIds: z.array(IdDeEscola).min(1).max(1000),
@@ -192,18 +225,88 @@ export const ListarEscolasSchema = z.object({
   municipio: z.string().trim().max(120).optional(),
 });
 
+/**
+ * A busca de PROFISSIONAIS na rede inteira.
+ *
+ * Mínimo de 2 caracteres: sem piso, a rota devolveria a rede inteira paginada
+ * em 25 — e o primeiro clique no campo vazio viraria uma varredura de `users`.
+ */
+export const BuscaDeProfissionaisSchema = z.object({
+  busca: z.string().trim().min(2, "digite ao menos 2 caracteres").max(80),
+  limite: z.coerce.number().int().min(1).max(50).default(25),
+});
+
+/** Uma escola em que o profissional JÁ está — o que a tela precisa para não
+ *  oferecer vínculo onde ele já existe. */
+export const EscolaDoProfissionalSchema = z.object({
+  id: z.string(),
+  nome: z.string(),
+  papel: z.string(),
+});
+
+export const ProfissionalDaRedeSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string(),
+  usuario: z.string(),
+  papel: z.string(),
+  /** Sem CPF, de propósito: a busca ACEITA CPF, mas devolver o número numa
+   *  lista que varre a rede inteira é superfície nova. Login e as escolas já
+   *  distinguem homônimos, que é o que a tela precisa. */
+  escolas: z.array(EscolaDoProfissionalSchema),
+});
+
+export const ProfissionaisDaRedeSchema = z.array(ProfissionalDaRedeSchema);
+
+/** `?regionalId=` — obrigatório para os perfis de CONTRATO (o token deles não
+ *  tem regional); ignorado para o `gestor_regional`, que só lê a própria. */
+export const RelatorioDaRegionalQuery = z.object({
+  regionalId: IdDeEscola.optional(),
+});
+
+/** Uma missão no relatório da diretoria. As DUAS medidas lado a lado de
+ *  propósito: `estudantes` é a criança, `turmas*` é a aula. */
+export const MissaoNoRelatorioSchema = z.object({
+  expId: z.string(),
+  /** Turmas em que a missão está aberta agora. */
+  turmasLiberadas: z.number().int().nonnegative(),
+  /** Turmas em que o professor já encerrou. Turma encerrada com poucos
+   *  registros é aula que passou sem a sala entrar. */
+  turmasEncerradas: z.number().int().nonnegative(),
+  /** Crianças DISTINTAS com registro na missão — a PK de `progresso` é
+   *  (escola, estudante, exp), então contar linha já é contar criança. */
+  estudantes: z.number().int().nonnegative(),
+});
+
+export const EscolaNoRelatorioSchema = z.object({
+  id: z.string(),
+  nome: z.string(),
+  municipio: z.string().nullable(),
+  uf: z.string().nullable(),
+  turmasComMissaoLiberada: z.number().int().nonnegative(),
+  turmasComMissaoEncerrada: z.number().int().nonnegative(),
+  estudantesComRegistro: z.number().int().nonnegative(),
+});
+
+export const RelatorioDaRegionalSchema = z.object({
+  regional: z.object({ id: z.string(), nome: z.string() }),
+  /** A quebra POR ESCOLA. Nome de criança nunca aparece aqui: o relatório da
+   *  diretoria é contagem, e para ver uma criança se abre a escola dela. */
+  escolas: z.array(EscolaNoRelatorioSchema),
+  /** O CONSOLIDADO, por missão — a soma das escolas acima. */
+  experiencias: z.array(MissaoNoRelatorioSchema),
+});
+
 export const TransferirSchema = z.object({
   escolaDestinoId: IdDeEscola,
   turmaDestinoId: Uuid.optional(),
 });
 
 export const PapelDeLotacaoQuery = z.object({
-  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor_escola"]).optional(),
 });
 
 // -------------------------------------------------------------------- saída
 
-/** Uma escola do contrato, com contagem. `pai` é o NOME da regional. */
 /** Uma escola do contrato, com contagem. `pai` é o NOME da regional. */
 export const EscolaDaRedeSchema = z.object({
   id: z.string(),
@@ -217,6 +320,12 @@ export const EscolaDaRedeSchema = z.object({
   estudantes: z.number().int().nonnegative(),
   professores: z.number().int().nonnegative(),
   turmas: z.number().int().nonnegative(),
+  /** Quantas escolas esta REGIONAL agrupa. Sempre 0 numa `escola` — é o número
+   *  que a tela de Regionais mostra por linha, e o que diz se a exclusão dela
+   *  precisa de transferência antes. */
+  unidades: z.number().int().nonnegative(),
+  /** A regional criada pela plataforma para a rede sem divisão administrativa. */
+  regionalPadrao: z.boolean(),
 });
 
 export const EscolasDaRedeSchema = z.array(EscolaDaRedeSchema);
@@ -228,6 +337,7 @@ export const EscolaCruaSchema = z.object({
   codigoInep: z.string().nullable(),
   tipo: z.string(),
   paiId: z.string().nullable(),
+  regionalPadrao: z.boolean(),
   municipio: z.string().nullable(),
   uf: z.string().nullable(),
   fonteId: z.string().nullable(),
@@ -279,9 +389,21 @@ export const PessoaLotadaSchema = z.object({
 export const PessoasLotadasSchema = z.array(PessoaLotadaSchema);
 
 export const LoteDeLotacoesSchema = z.object({
-  lotadas: z.number().int().nonnegative(),
+  /** As escolas em que o vínculo NASCEU agora. É este número que a tela
+   *  anuncia — antes ela dizia `lotadas`, que contava também as escolas onde a
+   *  pessoa já estava, e "agora está em 3 escolas" saía igual tendo criado três
+   *  vínculos ou nenhum. */
+  criadas: z.array(z.string()),
+  /** Vínculo que existia e estava ENCERRADO, e voltou. Separado de `criadas`
+   *  porque a operação é diferente na vida real: é alguém retornando à unidade,
+   *  não chegando nela. */
+  reabertas: z.array(z.string()),
+  /** Já havia vínculo ativo: nada foi escrito. O card pede que a tela diga
+   *  quais são, em vez de somá-las ao total e prometer o que não fez. */
+  jaVinculadas: z.array(z.string()),
   /** Ids que não viraram lotação: não existem, ou são `regional`/`rede` — que
-   *  não recebem lotação porque virariam escola fantasma no seletor. */
+   *  não recebem lotação porque virariam escola fantasma no seletor do
+   *  cabeçalho. */
   ignoradas: z.array(z.string()),
 });
 

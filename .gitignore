@@ -62,3 +62,9 @@ credenciais-*.csv
 
 # Arquivos de macOS
 .DS_Store
+
+# Os PDFs oficiais da BNCC: fonte do extrator, não do produto.
+# Passam de 2 MB cada (regra do AGENTS.md), e o que o código consome é o extrato
+# versionado em apps/api/src/curriculo/dados/*.ts. Como rebaixá-los está no
+# README da pasta, junto da armadilha do rascunho do Ensino Médio.
+documentos-fonte/**/*.pdf

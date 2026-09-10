@@ -33,6 +33,7 @@ import {
   TurmasSchema,
 } from "./contrato-de-rotas";
 import { RosteringService } from "./rostering.service";
+import { GESTORES } from "../auth/claims";
 
 type Autenticado = { auth: AuthClaims };
 
@@ -58,7 +59,7 @@ export class TurmasController {
    * vence, e `/turmas/minhas` bateria em `/turmas/:id` com id "minhas".
    */
   @Get("minhas")
-  @Roles("professor", "gestor", "admin-contrato")
+  @Roles("professor", ...GESTORES)
   @Contrato({
     resumo: "As turmas DO PROFESSOR — as que ele tem matrícula, e só elas.",
     descricao:
@@ -75,7 +76,7 @@ export class TurmasController {
   }
 
   @Get()
-  @Roles("gestor", "admin-contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "As turmas da escola.",
     descricao:
@@ -92,7 +93,7 @@ export class TurmasController {
   }
 
   @Post()
-  @Roles("gestor", "admin-contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Cria uma turma.",
     descricao:
@@ -116,7 +117,7 @@ export class TurmasController {
   }
 
   @Patch(":id")
-  @Roles("gestor", "admin-contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Edita nome, série ou turno da turma.",
     descricao: "Não move de período: isso seria reescrever o histórico do ano.",
@@ -149,7 +150,7 @@ export class TurmasController {
    * qualquer turma dela.
    */
   @Get(":id")
-  @Roles("professor", "gestor", "admin-contrato")
+  @Roles("professor", ...GESTORES)
   @Contrato({
     resumo: "Os matriculados da turma — a lista nominal.",
     descricao:
@@ -179,7 +180,7 @@ export class TurmasController {
   }
 
   @Post(":id/matriculas")
-  @Roles("gestor", "admin-contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Matricula uma pessoa na turma.",
     descricao:
@@ -215,7 +216,7 @@ export class TurmasController {
  */
 @Controller("matriculas")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor", "admin-contrato")
+@Roles(...GESTORES)
 export class MatriculasController {
   constructor(private readonly rostering: RosteringService) {}
 
@@ -281,7 +282,7 @@ export class PeriodosLetivosController {
   constructor(private readonly rostering: RosteringService) {}
 
   @Get()
-  @Roles("professor", "gestor", "admin-contrato")
+  @Roles("professor", ...GESTORES)
   @Contrato({
     resumo: "O calendário do contrato, com quantas turmas cada período tem.",
     descricao:
@@ -296,7 +297,7 @@ export class PeriodosLetivosController {
   }
 
   @Post()
-  @Roles("gestor", "admin-contrato")
+  @Roles(...GESTORES)
   @Contrato({
     resumo: "Cria um período letivo — a primeira etapa da virada do ano.",
     descricao:

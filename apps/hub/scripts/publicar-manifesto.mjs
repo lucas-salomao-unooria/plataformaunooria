@@ -62,6 +62,12 @@ const corpo = {
      ela a ordem cai no `exp_id`, que é numeração de experiência e não do ano
      letivo: o 7º ano apareceria depois do 8º. */
   unidade: manifesto.unidade ?? null,
+  /* A QUE PRODUTO a experiência pertence (ADR-87). É o que a põe no painel da
+     Unooria e o que lhe dá o teto do produto. Esquecer aqui não dá erro: a
+     coluna nasce NULA, a experiência some do painel e ninguém é avisado — ela
+     continua abrindo normalmente, então nem o smoke acusa. Quem cobra o campo
+     é `apps/api/tests/manifestos-declaram-produto.spec.ts`, no CI. */
+  produto: manifesto.produto ?? null,
   capabilities: manifesto.capabilities ?? [],
   viewport: manifesto.viewport ?? null,
   publico: manifesto.publico ?? "estudante",

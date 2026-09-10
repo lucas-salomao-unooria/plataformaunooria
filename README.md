@@ -71,7 +71,7 @@ pnpm install
 docker compose up -d pg                # só o banco
 cp .env.example apps/api/.env && cp .env.example apps/hub/.env.local   # e edite
 pnpm --filter @edu/api migrate:dev     # migrations (Prisma + RLS)
-pnpm --filter @edu/api seed            # escola-demo: prof.demo/gestor.demo/estudante01–40
+pnpm --filter @edu/api seed            # a rede de demonstração — e ESCREVE credenciais-demo.csv
 pnpm --filter @edu/api seed:demo       # atividade DEMO com 92 posts, sem Gemini
 pnpm dev                               # hub :3000, api :3001, exp :5173
 ```
@@ -98,9 +98,13 @@ compose ela já vem (`unooria123`); no host, ponha-a no `apps/api/.env` ou
 prefixe o comando. O seed NÃO tem senha padrão no fonte: ele roda contra o
 `DATABASE_URL` que estiver no ambiente, e uma constante ali criaria contas com
 senha conhecida se ele fosse apontado por engano ao banco de um contrato.
-Login: `gestor.demo` → `/admin/usuarios` (importação CSV); `prof.demo` →
-`/professor`; `estudante01` → `/estudante` (experiência). Teste de experiência local:
-`/dev-embed`. Sanidade do DS: `/ds-smoke` (dev only).
+**Os logins ficam em `credenciais-demo.csv`, na raiz — escrito pelo próprio seed.**
+Ele é gitignorado: nasce ao semear, e num clone novo só existe depois disso.
+São nomes de gente (`prof.marcelo.lopes` é o do 8º A), todos com a senha do
+`SEED_SENHA`. Não há `prof.demo` nem `gestor.demo`: o seed procura por matrícula,
+não por login fixo. Escolha uma linha do CSV pelo papel — `prof.*` → `/professor`,
+`gestor.*` → `/admin/usuarios` (importação CSV), qualquer estudante → `/estudante`.
+Teste de experiência local: `/dev-embed`. Sanidade do DS: `/ds-smoke` (dev only).
 
 ## Testes de ponta a ponta
 ```bash

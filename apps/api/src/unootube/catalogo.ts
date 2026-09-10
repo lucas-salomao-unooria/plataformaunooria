@@ -142,3 +142,56 @@ export function ehFactual(videoId: string): boolean {
   if (!video) throw new Error(`vídeo desconhecido no catálogo: ${videoId}`);
   return video.factual;
 }
+
+// ───────────────────────────────────────────── o catálogo para o guia da aula
+
+/**
+ * Uma linha da tabela que o PROFESSOR lê no guia da aula — com o gabarito.
+ *
+ * `descricao` fica de fora de propósito: são 21 vídeos e o texto de cada um
+ * ocupa um parágrafo. O professor precisa RECONHECER o vídeo que a criança
+ * citou e saber a resposta; ler as 21 descrições ele faz na própria missão.
+ */
+export interface VideoParaOProfessor {
+  id: string;
+  titulo: string;
+  handle: string;
+  /** O contraste que sustenta a lição: o sensacionalista é o de "1 mil". */
+  inscritosRotulo: string;
+  /** O GABARITO. Sai daqui e de nenhum outro lugar — nunca para o estudante. */
+  factual: boolean;
+}
+
+/**
+ * O que o guia da aula mostra ao professor: os 21 vídeos com o gabarito, a
+ * contagem real e os números da pontuação.
+ *
+ * `resumo` e `pontuacao` existem porque o guia os repetia à mão, e já tinham
+ * derivado: o texto dizia "metade… a outra metade" quando a divisão real é
+ * 11 factuais contra 10 sensacionalistas (21 é ímpar). Número que o professor
+ * lê antes da aula sai daqui, calculado, ou volta a divergir na próxima
+ * revisão do catálogo.
+ */
+export function videosParaOProfessor(): {
+  videos: VideoParaOProfessor[];
+  resumo: { total: number; factuais: number; sensacionalistas: number };
+  pontuacao: { limiteSalvos: number; inscritosPorFake: number; inscritosPorConfiavel: number };
+} {
+  const videos = VIDEOS.map(({ id, titulo, handle, inscritosRotulo, factual }) => ({
+    id,
+    titulo,
+    handle,
+    inscritosRotulo,
+    factual,
+  }));
+  const factuais = videos.filter((v) => v.factual).length;
+  return {
+    videos,
+    resumo: { total: videos.length, factuais, sensacionalistas: videos.length - factuais },
+    pontuacao: {
+      limiteSalvos: LIMITE_SALVOS,
+      inscritosPorFake: INSCRITOS_POR_FAKE,
+      inscritosPorConfiavel: INSCRITOS_POR_CONFIAVEL,
+    },
+  };
+}

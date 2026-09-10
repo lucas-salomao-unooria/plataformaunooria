@@ -398,7 +398,12 @@ Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
   e classe de \emph{status}; CDN: taxa de acerto. &
   \textbf{Grátis, zero código.} É a base de todos os alertas da fase 0.\\
 \zebra Métricas de log & Um contador ou distribuição derivado de um filtro
-  do Cloud Logging: \enquote{linhas com \cd{codigo=telemetria-descartada}},
+  do Cloud Logging: \enquote{linhas com \cd{codigo=recurso-auditoria-nao-gravada}}
+  --- a mudança do painel valeu mas o histórico dela não foi escrito
+  (\adrr{ADR-89}: o registro nunca derruba a operação que o chamou, e é por isso
+  que este contador existe); \enquote{linhas com \cd{codigo=recurso-alterado}} --- toda
+  vez que a Unooria liga ou desliga um produto numa rede (\adrr{ADR-87}), com
+  recurso, escopo, estado e motivo; \enquote{linhas com \cd{codigo=telemetria-descartada}},
   \enquote{\cd{severity=ERROR} da revisão X}, \enquote{execução do
   \emph{job} \cd{-migrate} com falha}. &
   As \emph{de sistema} são grátis; as \emph{definidas pelo usuário} contam
@@ -1118,8 +1123,16 @@ Error Reporting & \textbf{parcial} & API habilitada, mas \textbf{zero grupos}
   em uma semana. Ninguém provou ainda que a linha de erro sai no formato que
   ele agrupa --- as poucas linhas \cd{ERROR} do período foram falha de conexão
   do próprio Cloud Run, sem \emph{stack}\\
-\zebra Erro de cliente & \textbf{ausente} & Nenhum erro de navegador é
-  capturado. É a maior lacuna: tela branca de professor não gera sinal\\
+\zebra Erro de cliente & \textbf{corrigido em 08/09} & O código existia desde
+  02/09 e \textbf{nunca registrou nada}: o \cd{github.sha} de 40 caracteres
+  estourava o \cd{max(32)} do campo \cd{versao} e a API devolvia 400 a todo
+  erro do hub. O mesmo valor descartava o lote OTLP do hub em
+  \cd{identidadeDoLote} --- 425 \emph{spans} em \cd{hml} entre 5 e 7/09, com a
+  rota respondendo \textbf{204}. Corrigido pela \adrr{ADR-84}, que também abriu
+  o par \textbf{público} das rotas (a tela de login não tinha sessão, e o 401 do
+  BFF descartava o sinal de que ninguém conseguia entrar) e passou a CONTAR todo
+  caminho de recusa --- a ausência desse contador é a razão de seis dias sem
+  ninguém notar\\
 \emph{Session replay} & \textbf{parcial} & Instância própria de OpenReplay no
   ar, sem nenhum \emph{tracker} instrumentado --- nenhuma sessão gravada\\
 \zebra Sondas do Cloud Run & \textbf{ausente} & O módulo já aceita
@@ -1128,12 +1141,14 @@ Error Reporting & \textbf{parcial} & API habilitada, mas \textbf{zero grupos}
 \bottomrule
 \end{tabularx}
 
-\subsection{As doze políticas que existem}
+\subsection{As treze políticas que existem}
 
 A lista prevista na Seção anterior tinha quatorze linhas e nasceu de um
-desenho; estas doze nasceram do que a métrica nativa permite medir \emph{sem
-tocar na aplicação} --- porque o repositório de infraestrutura evolui sozinho,
-enquanto o \emph{monorepo} está em obra.
+desenho; doze nasceram do que a métrica nativa permite medir \emph{sem tocar
+na aplicação} --- porque o repositório de infraestrutura evolui sozinho,
+enquanto o \emph{monorepo} está em obra. A décima terceira, aplicada em 9 de
+setembro de 2026, é a primeira que lê uma métrica DA APLICAÇÃO, e nasceu de um
+caso concreto: ver a \adrr{ADR-84}.
 
 \begin{tabularx}{\linewidth}{@{}L{8mm}L{46mm}X@{}}
 \toprule
@@ -1154,6 +1169,12 @@ enquanto o \emph{monorepo} está em obra.
 \zebra \textbf{B} & API e hub lentos & p95 acima de 10\,s na API e de 2\,s no
   hub, por 10\,min\\
 \textbf{B} & CPU do banco alta & Acima de 80\% por 10\,min\\
+\zebra \textbf{B} & \emph{Spans} do navegador descartados & Qualquer um em
+  15\,min com \cd{motivo} em \cd{sem-identidade}, \cd{sem-projeto} ou
+  \cd{upstream}. O limite é ZERO: os três são falha de configuração ou de
+  contrato, e a rota responde \textbf{204} mesmo descartando --- o cliente nunca
+  sabe. \cd{cota} fica de fora de propósito: cota estourada é o sistema
+  funcionando\\
 \bottomrule
 \end{tabularx}
 
@@ -1161,6 +1182,29 @@ Cada política carrega no campo \cd{documentation} a sua própria primeira
 resposta em \emph{markdown}, com os comandos já preenchidos --- o e-mail do
 alerta chega com o passo a passo dentro, e não com um \emph{link} para o
 Apêndice~\ref{ap:operacao}.
+
+\begin{atencao}
+\textbf{Duas políticas ficaram escritas e DESLIGADAS, e a razão é uma ordem que
+não se pode inverter.} \cd{sinal do navegador recusado}
+(\cd{erros\_recusados} com \cd{motivo=invalido}) e \cd{erro de cliente em massa}
+(\cd{erros\_cliente}) leem métricas que a aplicação precisa ter emitido ao menos
+uma vez: o Cloud Monitoring \textbf{recusa} criar política sobre métrica
+inexistente, com \cd{404 Cannot find metric(s) that match type}, e um contador
+OpenTelemetry só cria a série quando incrementa pela primeira vez. Medido
+aplicando em \cd{dev} em 9 de setembro de 2026. A sequência obrigatória é:
+\emph{deploy} da plataforma \seta{} a primeira recusa (ou o primeiro erro)
+acontecer \seta{} ligar \env{obs\_alerta\_erro\_de\_cliente}. A variável existe
+para que essa dependência esteja escrita, em vez de ser descoberta num
+\cd{apply} vermelho.
+\end{atencao}
+
+\begin{nota}
+Em \cd{hml} a política de \emph{spans} descartados deve disparar no primeiro
+tráfego, e o alerta estará \textbf{correto}: a api de lá não recebeu
+\env{GCP\_PROJECT\_ID}, e por isso 292 \emph{spans} saíram como
+\cd{motivo=sem-projeto} entre 5 e 7 de setembro. O conserto é do Terraform, não
+da aplicação.
+\end{nota}
 
 \subsection{Onde a implantação divergiu do desenho, e por quê}
 

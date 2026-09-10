@@ -10,6 +10,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SectionHeader,
   Selection,
   Table,
@@ -17,6 +18,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { ehGestor } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
 interface Periodo extends Record<string, unknown> {
@@ -171,22 +173,24 @@ export function PeriodosLetivos({ papel }: { papel: Papel }) {
         <p className="text-[14px] text-unooria-neutral-500">
           {periodos.length} período{periodos.length === 1 ? "" : "s"}
         </p>
-        {papel === "gestor" || papel === "admin-contrato" ? (
+        {ehGestor(papel) ? (
           <Button variant="primary" size="md" onClick={abrir}>
             Novo período
           </Button>
         ) : null}
       </div>
 
-      <Table<Periodo>
-        columns={colunas}
-        data={periodos}
-        keyExtractor={(linha) => linha.id}
-        loading={carregando}
-        emptyText="Nenhum período letivo ainda."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<Periodo>
+          columns={colunas}
+          data={periodos}
+          keyExtractor={(linha) => linha.id}
+          loading={carregando}
+          emptyText="Nenhum período letivo ainda."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
       <FeedbackAlert
         type="info"

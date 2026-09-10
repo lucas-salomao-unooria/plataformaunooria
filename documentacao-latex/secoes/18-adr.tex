@@ -9,21 +9,31 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{70 decisões}, numeradas até ADR-71: \textbf{ADR-65 está vaga}. O
-número foi perdido numa colisão entre duas frentes paralelas que reservaram o
-mesmo identificador --- o risco que a \adrr{ADR-61} registra --- e
-\textbf{a próxima decisão o ocupa}, em vez de a numeração seguir de 71 para 72.
+São \textbf{92 decisões}, numeradas até ADR-92, \textbf{sem lacunas}. A ADR-65
+ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
+paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
+registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
+em vez de a numeração seguir de 71 para 72.
 
-Renumerar as seis ADRs seguintes para fechar a lacuna foi considerado e
-recusado, e a razão não é o trabalho: dentro deste repositório a troca é
-mecânica, porque os \cd{\textbackslash label} são nominais e o \cd{\textbackslash adrr}
-é formatação, não referência resolvida. O problema é o que sobra depois.
-Renumerar não deixa referência QUEBRADA --- deixa referência \textbf{errada}:
-\enquote{ADR-69} continuaria resolvendo, para outra decisão, em silêncio, em
-onze mensagens de \emph{commit} imutáveis, nos PRs já mergeados e em qualquer
-cópia deste PDF que já tenha circulado. É a forma exata do \cd{expires\_at} que
-cinco ADRs deste capítulo registram como armadilha. Um identificador vale por
-nunca mudar de significado; a ordem cronológica é o que se abre mão.
+A colisão voltou a acontecer no mesmo dia, e em dobro: \textbf{três} frentes
+paralelas fecharam decisão em 2026-09-06, e duas escreveram ADR-65 sem se ver.
+Prevaleceu a mais antiga; as outras seguiram para \adrr{ADR-72} e
+\adrr{ADR-73}. É a razão de a \adrr{ADR-61} mandar conferir \cd{origin/dev} na
+hora de escrever o número --- e a prova de que conferir só a branch integrada
+não basta: o número precisa ser reservado contra as frentes ABERTAS.
+
+Renumerar as seis ADRs entre 66 e 71 para fechar a lacuna, na época, foi
+considerado e recusado, e a razão não é o trabalho: dentro deste repositório a
+troca é mecânica, porque os \cd{\textbackslash label} são nominais e o
+\cd{\textbackslash adrr} é formatação, não referência resolvida. O problema é o
+que sobra depois. Renumerar não deixa referência QUEBRADA --- deixa referência
+\textbf{errada}: \enquote{ADR-69} continuaria resolvendo, para outra decisão, em
+silêncio, em onze mensagens de \emph{commit} imutáveis, nos PRs já mergeados e em
+qualquer cópia deste PDF que já tenha circulado. É a forma exata do
+\cd{expires\_at} que cinco ADRs deste capítulo registram como armadilha. Um
+identificador vale por nunca mudar de significado; a ordem cronológica é o que se
+abre mão --- e é por isso que a \adrr{ADR-65} não é, em data, a mais antiga das
+que a cercam.
 
 \section{Índice}
 
@@ -58,6 +68,71 @@ nunca mudar de significado; a ordem cronológica é o que se abre mão.
 \adrr{ADR-25} & O Relógio da Aula é tabela da experiência, não coluna em \cd{turmas} & 2026-08-27 & Aceita\\
 \zebra \adrr{ADR-26} & Sem prazo de retenção na exp-03; exclusão por \enquote{zerar a turma} & 2026-08-27 & Aceita\\
 \adrr{ADR-27} & Transcrição do estudante é dado do instrumento: professor lê, gestor não & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-28} & O \emph{feed} do professor consome a API do estudante & 2026-08-27 & Aceita\\
+\adrr{ADR-29} & A exp-70 não emite nota, emite perfil & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-30} & Vínculo pessoa $\times$ escola datado (\cd{lotacoes}) & 2026-08-28 & Aceita\\
+\adrr{ADR-31} & CPF como identificador civil, sem senha no CSV & 2026-08-28 & Aceita\\
+\zebra \adrr{ADR-32} & Sessão por \emph{cookie} HttpOnly com rotação & 2026-08-28 & Aceita\\
+\adrr{ADR-33} & Rotação de chave a frio por variável de ambiente dupla & 2026-08-28 & Aceita\\
+\zebra \adrr{ADR-34} & Uma escola ativa por sessão; sem agregação de rede & 2026-08-28 & Aceita\\
+\adrr{ADR-35} & Portabilidade de dados por JWS assinado & 2026-08-28 & Aceita\\
+\zebra \adrr{ADR-36} & Perfil portátil é chave/valor com esquema fechado & 2026-08-28 & Aceita\\
+\adrr{ADR-37} & Validação de entrada exclusivamente via Zod & 2026-08-29 & Aceita\\
+\zebra \adrr{ADR-38} & Documentação viva em LaTeX compilada no CI & 2026-08-29 & Aceita\\
+\adrr{ADR-39} & Dependências sob varredura de vulnerabilidade (Snyk) & 2026-08-29 & Aceita\\
+\zebra \adrr{ADR-40} & Landing institucional: estática, sem sessão, 1440\,px & 2026-08-30 & Aceita\\
+\adrr{ADR-41} & Dispositivo expansível na pós-revelação da exp-01 & 2026-08-30 & Aceita\\
+\zebra \adrr{ADR-42} & Exposição no dossiê mede o \emph{feed}, não o domínio & 2026-08-30 & Aceita\\
+\adrr{ADR-43} & Conclusão do estudante: guarda primeira e última inclinação & 2026-08-30 & Aceita\\
+\zebra \adrr{ADR-44} & Janela de envolvimento fecha no último post visto & 2026-08-30 & Aceita\\
+\adrr{ADR-45} & Geração de planos com \emph{streaming} SSE e retenção de 30 dias & 2026-08-31 & Aceita\\
+\zebra \adrr{ADR-46} & Embed via iframe restrito: sandbox, allow e canal postMessage & 2026-08-31 & Aceita\\
+\adrr{ADR-47} & Rate limit por IP em rotas públicas, por usuário em autenticadas & 2026-08-31 & Aceita\\
+\zebra \adrr{ADR-48} & Importação de CSV síncrona com limite de 30\,MB & 2026-08-31 & Aceita\\
+\adrr{ADR-49} & Atividade vinculada à turma; clone para cada turma nova & 2026-09-01 & Aceita\\
+\zebra \adrr{ADR-50} & Perfil da Vila importado na exp-01 sem FK rígida & 2026-09-01 & Aceita\\
+\adrr{ADR-51} & Testes E2E com Playwright contra ambiente real & 2026-09-01 & Aceita\\
+\zebra \adrr{ADR-52} & Mock de IA determinístico para testes e homologação & 2026-09-01 & Aceita\\
+\adrr{ADR-53} & GitHub Actions com três ambientes (\cd{dev}, \cd{hml}, \cd{main}) & 2026-09-02 & Aceita\\
+\zebra \adrr{ADR-54} & Balcão de atendimento: cadastro individual delega ao importador & 2026-09-02 & Aceita\\
+\adrr{ADR-55} & Reset de senha pelo professor gera credencial temporária & 2026-09-02 & Aceita\\
+\zebra \adrr{ADR-56} & Soft delete com \cd{desativado\_em} em usuários & 2026-09-02 & Aceita\\
+\adrr{ADR-57} & Observabilidade: traces OpenTelemetry com proporção configurável & 2026-09-02 & Aceita\\
+\zebra \adrr{ADR-58} & Sourcemaps enviados a bucket privado, nunca na CDN & 2026-09-02 & Aceita\\
+\adrr{ADR-59} & Quem escreve usuário é o importador; balcão gera linha CSV & 2026-09-03 & Aceita\\
+\zebra \adrr{ADR-60} & Microsoft Clarity via \cd{@edu/sdk}, desligado se sem ID & 2026-09-03 & Aceita\\
+\adrr{ADR-61} & Frentes paralelas com git worktree sobre \cd{origin/dev} & 2026-09-03 & Aceita\\
+\adrr{ADR-62} & DLQ no Pub/Sub para telemetria rejeitada & 2026-09-04 & Aceita\\
+\zebra \adrr{ADR-63} & Ingestão de telemetria desacoplada do processamento analítico & 2026-09-04 & Aceita\\
+\adrr{ADR-64} & Relógio da Tempestade: tempo no marco, não em background & 2026-09-05 & Aceita\\
+\zebra \adrr{ADR-65} & Guia da aula é gerado do catálogo, sem tela dedicada & 2026-09-06 & Aceita\\
+\adrr{ADR-66} & exp-07: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-67} & Mídias da exp-07: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita\\
+\adrr{ADR-68} & exp-07 e exp-06: clone de mensageria só no tema escuro & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-69} & Missão só abre na turma se o professor liberou (\cd{liberacoes}) & 2026-09-06 & Aceita\\
+\adrr{ADR-70} & Página de transparência algorítmica aberta ao público & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-71} & Fatias verticais por módulo em frentes paralelas & 2026-09-06 & Aceita\\
+\adrr{ADR-72} & Fronteira do disfarce da exp-06: mapa da rede fala pela escola & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-73} & Planejamento curricular dirigido pela BNCC (exp-92) & 2026-09-06 & Aceita\\
+\adrr{ADR-74} & Contabilidade de tokens de IA com callback \cd{aoUsarTokens} & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-75} & Rolagem unificada via \cd{ScrollBar} do Design System & 2026-09-07 & Aceita\\
+\adrr{ADR-76} & Planejamento semanal estruturado com suporte a downloads & 2026-09-07 & Aceita\\
+\zebra \adrr{ADR-77} & Trilha de navegação (\emph{breadcrumb}) no layout, não na página & 2026-09-07 & Aceita\\
+\adrr{ADR-78} & Logoff no menu da conta com limpeza completa de cookies & 2026-09-07 & Aceita\\
+\zebra \adrr{ADR-79} & Vínculo obrigatório escola $\times$ regional na governança da rede & 2026-09-07 & Aceita\\
+\adrr{ADR-80} & Modelo de seis papéis e cadeia de atribuição transitiva & 2026-09-08 & Aceita\\
+\zebra \adrr{ADR-81} & Panorama da diretoria de ensino consolidado por regional & 2026-09-08 & Aceita\\
+\adrr{ADR-82} & Relatório pedagógico da regional com varredura em lote & 2026-09-08 & Aceita\\
+\zebra \adrr{ADR-83} & Header institucional ancorado na janela (full-bleed) & 2026-09-08 & Aceita\\
+\adrr{ADR-84} & Observabilidade de cliente sem sessão com sanitização & 2026-09-08 & Aceita\\
+\zebra \adrr{ADR-85} & Trocar de escola remonta o miolo da área (\cd{<EscopoDaEscola>}) & 2026-09-09 & Aceita\\
+\adrr{ADR-86} & O guia da aula mostra o conteúdo da missão, não o descreve & 2026-09-09 & Aceita\\
+\zebra \adrr{ADR-87} & Disponibilidade: terceiro eixo, e o produto como teto & 2026-09-09 & Aceita\\
+\adrr{ADR-88} & O painel da Unooria é só do \cd{admin} & 2026-09-09 & Aceita\\
+\zebra \adrr{ADR-89} & Histórico do painel é tabela append-only, e a rede lê o dela & 2026-09-10 & Aceita\\
+\adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
+\adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -2043,7 +2118,7 @@ a fronteira, e não estava comprimida.
     \emph{iframe}: um FEED numa área larga inflaria o sinal central do motor.
   \item \textbf{O layout largo é \cd{md:}, o estreito é o \emph{default}.} Se a
     expansão não acontecer, o estudante vê exatamente o que via.
-  \item \textbf{Nenhuma mensagem hub$\rightarrow$exp para o layout}: o
+  \item \textbf{Nenhuma mensagem hub\seta{}exp para o layout}: o
     \emph{iframe} muda de largura de verdade, e as \emph{media queries} de
     dentro respondem sozinhas. Os dois gráficos a mais são renderizados e
     escondidos por CSS --- perguntar a largura em JS custaria um
@@ -4015,6 +4090,92 @@ de envio guarda --- aí a sessão por tentativa volta à mesa. Ou o dado de
 \cd{recomeco} mostrar que crianças recomeçam depois de o professor encerrar,
 em número que justifique a liberação explícita.
 
+\section{ADR-65 --- O guia da aula é dado renderizado por um componente único,
+com blocos vivos para o que tem fonte de verdade em outro lugar}
+\label{adr:guia-como-dado}
+
+\begin{especificacao}{Contexto}
+Só o Instanooria tinha guia da aula. Ele era uma página
+(\arq{.../[ano]/[unidade]/guia/page.tsx}), 447 linhas de JSX com \cd{notFound()}
+para qualquer outro \cd{expId}: conteúdo, ordem e marcação na mesma camada. As
+outras quatro missões publicadas --- UnooTube, Missão Tempestade, O Eco no Grupo
+e a Vila do Lume --- chegavam ao professor com a ficha do catálogo (competência,
+atos, preparo) e nada sobre como conduzir a aula: nenhuma pergunta de debate,
+nenhuma mediação, nenhuma rubrica. A Vila tinha um guia \emph{do debate},
+excelente e parcial: cobria o pós-jogo e não o preparo nem o fechamento.
+
+E o problema não era só de cobertura. Duas partes do guia do Instanooria já
+vinham de fonte viva por decisão anterior --- a tabela dos momentos de
+\cd{CONTROLE\_DO\_PROFESSOR} e as telas da revelação, então servidas por um
+pacote de \emph{workspace} (desfeito em 2026-09-09; hoje são duas cópias
+gêmeas) --- porque a versão escrita à mão tinha divergido: o
+guia falava em \enquote{os seis botões} e o painel tinha sete. A Vila serve os
+cartões da api por turma pela mesma razão. Qualquer solução para as outras
+missões precisava carregar esses casos junto.
+\end{especificacao}
+
+\textbf{Decisão.} O guia vira \textbf{dado}
+(\arq{apps/hub/lib/entre-redes/guias/<exp>.ts}, tipo \cd{GuiaDaAula}) renderizado
+por um \textbf{componente único} (\arq{apps/hub/components/guia/}), com a mesma
+ordem de seções em toda missão: objetivos e BNCC Computação, antes da aula
+(técnico, pedagógico, o que não dizer), roteiro cronometrado com a coluna
+\enquote{o que você faz e fala}, banco de perguntas em quatro níveis, folha de
+observação, mediação, depois da aula (síntese, registro, rubrica,
+desdobramentos), cuidados, adaptações e dúvidas frequentes.
+
+O que tem fonte de verdade em outro lugar entra por \textbf{bloco vivo}: um
+\cd{ReactNode} que a página da missão ancora ao fim de uma seção. É por aí que
+entram os momentos e a revelação do Instanooria, os cartões da Vila (por turma)
+e a tabela dos oito vieses da Missão Tempestade --- esta última por uma rota
+nova, \rota{GET /unoogpt/professor/fontes}, com o viés \textbf{derivado} da
+instrução do agente em vez de escrito duas vezes.
+
+Uma folha de impressão acompanha o renderizador: o professor conduz a aula com o
+guia na mão enquanto o computador projeta a tela da turma.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Uma página por missão, como a do Instanooria}: cinco arquivos de
+    cerca de 450 linhas, sem nada que os obrigue a ter as mesmas seções. A seção
+    que alguém esquecesse de copiar não existiria para aquela turma, sem sinal
+    nenhum --- e a segunda missão que o professor rodasse teria a informação em
+    outro lugar da página.
+  \item \emph{Guia em Markdown ou MDX}: resolveria a escrita e perderia as duas
+    coisas que importam --- o tipo que cobra seção faltando e os blocos vivos,
+    que precisam de componente.
+  \item \emph{Guia no catálogo} (\arq{lib/entre-redes/catalogo.ts}): o catálogo
+    é a grade, lido por meia dúzia de telas; o guia é material de aula, pesado, e
+    só a rota do guia precisa dele.
+  \item \emph{Copiar a tabela dos vieses para o hub}, evitando a rota nova: era
+    a opção mais barata e é exatamente a que a doutrina do repositório proíbe.
+    Recalibrado o cenário, o professor contaria à turma um viés que o jogo já não
+    produz --- o mesmo erro que os cartões da Vila vindos da api existem para
+    evitar.
+  \item \emph{Guia por turma} (com \cd{?turmaId=}): só a Vila precisa disso, e
+    ela já resolve com seletor próprio dentro da revelação. Genéricos, todos os
+    guias passariam a exigir turma para abrir --- e o professor lê o guia na
+    véspera, quando ainda não escolheu a sala.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: as cinco missões publicadas passam a ter
+guia com a mesma estrutura; \arq{guias/index.test.ts} recusa missão publicada sem
+guia, com uma lista de exceções que exige razão escrita. \emph{Bom}:
+\arq{lib/rotas-da-missao.ts}, que já era o único tradutor \cd{expId} \seta{}
+rota, passa a responder também se a missão tem guia --- então a sala de aula
+mostra o \emph{link} em toda turma × toda missão sem inventar URL.
+\emph{Ruim}: o conteúdo pedagógico das quatro missões novas é \textbf{autoral},
+derivado do código e da \emph{copy} congelada, e não passou por playtest em sala
+--- está escrito para ser corrigido por quem der a primeira aula. \emph{Ruim}: o
+alinhamento com a BNCC Computação é proposta da plataforma, não classificação
+oficial, e a tela precisa dizer isso. \emph{Ruim}: uma rota a mais na api para
+uma tela de leitura, com a documentação e o teste que ela obriga.
+
+\textbf{Gatilho de reavaliação.} Se o guia passar a variar por turma em mais de
+uma missão --- aí o parâmetro deixa de ser exceção da Vila e vira propriedade do
+renderizador. Ou se a rede pedir o guia como PDF/impresso oficial, com marca e
+paginação de documento: aí a folha de impressão deixa de bastar e o caminho é
+gerar o documento, não estilizar a tela.
+
 \section{ADR-66 --- A exp-07 escreve com IA na tela do estudante, e o gabarito
 continua fora do modelo}
 \label{adr:exp07-ia-em-runtime}
@@ -4576,3 +4737,2142 @@ trabalho numa branch mal nomeada.
 desenvolvendo ao mesmo tempo (hoje é uma), quando a fila da fase serial deixa de
 ser aceitável; ou a suíte de ponta a ponta virar o gargalo medido --- aí a stack
 por worktree volta à mesa com o custo justificado por número, não por intuição.
+
+% ---------------------------------------------------------------------------
+\section{ADR-72 --- A fronteira do disfarce é a revelação, e a Etapa 4 da
+exp-06 fica fora dele}
+\label{adr:72}
+
+\textbf{Data.} 2026-09-06 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A exp-06 termina com duas telas analíticas: um gráfico
+comparando a velocidade do boato com a da nota oficial, e um mapa da topologia
+de rede que desenha o alcance da decisão do estudante. Os wireframes e o
+\emph{handoff} da missão colocam as duas \textbf{dentro do clone}, descritas
+como \enquote{painel de métricas do grupo} --- diegéticas, faladas pela seção
+\cd{whatsappmobile}.
+
+O problema é que o aplicativo real não tem nada parecido. Ele mostra
+\enquote{Encaminhada com frequência} num balão; não mostra grafo de propagação,
+não conta conexões e não desenha nós. Uma tela dessas dentro do disfarce não é
+verossimilhança seletiva --- que admite \textbf{ausências} (sem teclado, sem
+chamadas, sem Stories) --- é \textbf{invenção}: uma funcionalidade que o app
+imitado não possui, apresentada como se possuísse.
+
+\textbf{Decisão.} O disfarce vale \textbf{até o fim da Etapa~3}. Da pausa entre
+as aulas em diante quem fala é a escola: o card de espera, o gráfico, o mapa, o
+construtor do ciclo e o \enquote{Meu percurso} usam \cd{@edu/ui/ds} e os tokens
+\cd{--unooria-*}.
+
+O critério que decide, e que já valia no repositório, é
+\textbf{\enquote{quem está falando?}} --- não \enquote{é depois no tempo?}. A
+exp-02 já o havia aplicado: feed, cromo e playlists falam de dentro da ficção; o
+ranking e os diálogos da missão falam pela escola, ainda que apareçam no meio
+dela.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Seguir os wireframes e desenhar o painel dentro do clone}: era o
+    caminho especificado, e o QA de design o aprovou. Descartada porque quebra o
+    próprio teste de fidelidade que aquele QA aplicou (\enquote{o frame passaria
+    por uma captura do app real?}): um grafo de topologia não passa, porque o
+    app não tem grafo de topologia. E a fidelidade do clone é o instrumento ---
+    é ela que faz o comportamento medido ser espontâneo.
+  \item \emph{Levar o pedido ao \arq{storybook-unooria}}, publicando um
+    componente de visualização de rede na seção \cd{whatsappmobile}: pioraria o
+    problema em vez de resolvê-lo. O pacote passaria a publicar, como parte do
+    clone, uma tela que o original não tem --- e a próxima missão que usasse a
+    seção herdaria a invenção.
+  \item \emph{Manter as duas telas no clone e apenas trocar os tokens}: é o pior
+    dos dois mundos. A tela continuaria dentro do aparelho, com o cromo do
+    mensageiro em volta, e a marca institucional apareceria no meio do disfarce
+    --- a mistura de seções que a regra de ouro proíbe.
+  \item \emph{Tirar as telas analíticas da missão} e deixar a revelação apenas
+    para o debate mediado: mataria o beat memorável. A descoberta central da
+    missão é a diferença entre 1.200 e 850 conexões, e ela precisa ser
+    \textbf{vista}, não contada --- é isso que a criança leva.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a missão troca de identidade visual no
+meio, e a transição precisa ser justificada ao estudante pelo próprio roteiro
+--- o card de pausa é o que faz esse trabalho (\enquote{sua investigação está
+salva}), e sem ele a troca pareceria um erro de carregamento. \emph{Ruim}: o
+insumo aprovado e o código divergem neste ponto, e a divergência tem de viver
+escrita em três lugares (aqui, no \arq{AGENTS.md} da experiência e no
+\arq{catalogo.ts} do hub) para não ser \enquote{corrigida} de volta por quem
+chegar depois lendo só os wireframes. \emph{Bom}: o teste do app sem legenda
+continua valendo para todas as telas que se apresentam como o mensageiro.
+\emph{Bom}: os tokens da Etapa~4 passam a ser os da plataforma, e isso corrigiu
+um defeito real --- com os tokens do clone, calibrados para fundo escuro, os nós
+do mapa saíam quase invisíveis sobre o branco e o beat memorável não chegava.
+
+\textbf{Gatilho de reavaliação.} O dia em que o aplicativo imitado publicar de
+fato uma visualização de propagação (o \enquote{encaminhada com frequência} já
+foi nessa direção). Aí a tela deixa de ser invenção, e a fronteira pode voltar
+para depois dela.
+
+
+% --------------------------------------------------------------------------
+
+\section{ADR-73 --- O planejamento de ensino é dirigido pela BNCC extraída do
+PDF homologado, e o componente da rede não é o componente da Base}
+\label{adr:plano-de-ensino-bncc}
+
+\begin{especificacao}{Contexto}
+A exp-90 gera plano anual a partir do \textbf{currículo da rede importado como
+texto} (\adrr{ADR-47}): um documento em prosa entra no \emph{prompt}, e o modelo
+infere dele a progressão do ano. O arranjo serve a quem tem documento curricular
+próprio e material didático adotado --- e é inútil para quem não tem, que é a
+maioria das redes pequenas. Ele também não desce da intenção anual para a aula
+de quinta-feira, que é onde o trabalho do professor realmente acontece.
+
+Havia um segundo limite, mais estreito: o produto nasceu para a
+\textbf{BNCC Computação}. Mas a Resolução CNE/CEB nº 1/2022 não cria componente
+isolado --- ela \textbf{delega às redes} definir \enquote{parâmetros e abordagens
+pedagógicas} (art. 2º) ---, e a Lei 14.533/2023 fez da educação digital
+componente do Fundamental e do Médio pela LDB (art. 26, parágrafo 11). Computação
+é camada transversal, não disciplina; um planejador que só a atenda serve a uma
+fração da carga horária de um professor.
+
+Três achados do levantamento decidiram a forma da solução, e nenhum deles é
+óbvio:
+
+\textbf{Primeiro: no Ensino Médio, componente da matriz e componente da Base
+NÃO coincidem.} A matriz de qualquer rede tem Biologia, Física e Química; a BNCC
+do Médio desce apenas até a \textbf{área}, e as três compartilham as 26
+habilidades de Ciências da Natureza e suas Tecnologias (\cd{EM13CNT}). O mesmo
+vale para Filosofia, Geografia, História e Sociologia, que dividem as de Ciências
+Humanas. As duas exceções são Língua Portuguesa e Matemática, os únicos
+componentes que a Base do Médio nomeia.
+
+\textbf{Segundo: a Base não é uniforme no organizador acima do objeto de
+conhecimento.} Sete componentes usam unidade temática; Língua Portuguesa usa
+prática de linguagem dentro de campo de atuação; Língua Inglesa usa eixo; o
+Médio agrupa por competência específica de área.
+
+\textbf{Terceiro: o PDF que o MEC serve na página do Ensino Médio é o RASCUNHO}
+de 11/05/2018, com 179 habilidades contra as 183 do homologado e
+\textbf{textos divergentes} --- a \cd{EM13MAT101} do rascunho perdeu
+\enquote{criticamente} e \enquote{fatos relativos}. O documento consolidado de
+dezembro de 2018, distribuído sob o nome \cd{BNCC\_EI\_EF\_110518}, é o que traz
+as três etapas.
+\end{especificacao}
+
+\textbf{Decisão. Nasce a exp-92, ao lado da exp-90 e sem substituí-la}, com o
+currículo como DADO ESTRUTURADO extraído do PDF homologado, cobrindo todos os
+componentes do 1º ano do Fundamental à 3ª série do Médio, em dois níveis: plano
+\textbf{anual} (macro, por período de avaliação) e plano de \textbf{período}
+(granular, aula a aula, semanal ou quinzenal à escolha da rede)%
+\footnote{A escolha entre semanal e quinzenal foi retirada na
+\hyperref[adr:76]{ADR-76}: o passo é sempre semanal, e entregar de quinze em
+quinze dias virou recorte de exportação.}.
+
+\textbf{A fonte é o PDF homologado, extraído por coordenadas.} As tabelas da
+Base são um \emph{spread} de duas páginas --- unidade temática e objeto de
+conhecimento na par, habilidades na ímpar --- e no texto corrido do
+\cd{pdftotext} as três colunas viram três blocos sequenciais: a ligação
+habilidade\,$\leftrightarrow$\,objeto de conhecimento se perde, e atribuí-la
+seria chute. O que salva é o alinhamento do InDesign: o objeto
+\enquote{Estratégia de leitura} sai em \cd{yMin=260,5} e a \cd{EF15LP02} em
+\cd{yMin=260,4}, na página seguinte. A associação é geométrica e determinística
+(\cd{scripts/extrair-bncc.mjs}), e rende \textbf{1.304} habilidades do
+Fundamental --- o número oficial ---, \textbf{183} do Médio e \textbf{129} de
+Computação, das quais 98\,\% com objeto de conhecimento.
+
+\textbf{O componente da rede é modelado separado do componente da Base}
+(\cd{componenteBncc} em \cd{curriculo/componentes.ts}), e a tela AVISA quando as
+habilidades são da área. Sem isso, o professor de Biologia do 2º ano --- o caso
+mais comum do Médio --- receberia \enquote{nenhuma habilidade encontrada}.
+
+\textbf{A distribuição de habilidades pelos períodos é DECISÃO HUMANA.} Ela
+expressa a leitura que o professor faz da própria turma, e é a única coisa aqui
+que nenhum modelo deveria escolher por ele; a IA entra depois, para desenvolver
+pedagogicamente o que ele decidiu. Pelo mesmo motivo, o \textbf{esqueleto das
+aulas não vem do modelo}: número, data e horário saem do calendário e da grade
+real. Deixar o modelo decidir quantas aulas cabem na semana produzia cinco ---
+o número redondo --- para um professor de Arte que tem uma.
+
+\textbf{Há três barreiras contra código de habilidade inventado}, e nenhuma
+sozinha basta: o \emph{prompt} proíbe, a rota de distribuição recusa código fora
+do recorte, e a costura filtra o que o modelo devolveu
+(\cd{planejamento/costura.ts}). Um plano que cite \cd{EF67LP42} chega à
+coordenação como erro do professor, e destrói a confiança no produto inteiro.
+
+\textbf{A articulação com Computação é rotulada como PROPOSTA.} Não existe
+\emph{crosswalk} normativo entre habilidade de Computação e habilidade de
+componente --- a norma delega a abordagem à rede ---, e vender inferência como
+norma é risco de auditoria numa venda a poder público. Em contrapartida, a
+extração aproveita as colunas \enquote{Explicação da habilidade} e
+\enquote{Exemplos} do anexo do Parecer CNE/CEB nº 2/2022: texto pedagógico
+oficial que nenhum \emph{dataset} público da Base empacota.
+
+\textbf{Alternativas descartadas.}
+
+\textbf{Consumir um \emph{dataset} público de terceiro} (o \cd{bncc-dev/bncc-dados},
+CC BY 4.0, com DOI e proveniência auditável) foi seriamente considerado e é
+tecnicamente bom. Recusado por dois motivos: num contrato B2G a pergunta
+\enquote{de onde veio este texto?} precisa terminar no documento oficial, não
+num repositório de terceiro; e o mantenedor é uma \emph{edtech}, o que faz da
+base curricular do produto uma dependência de um concorrente potencial. Ele
+continua útil como conferência de completude no CI.
+
+\textbf{Ingerir o Mapa de Foco do Instituto Reúna} (priorização de habilidades
+por ano, pedagogicamente excelente) foi \textbf{vedado por licença}: os Termos
+de Uso proíbem alteração e comercialização sem autorização expressa. Se
+interessar, entra por contrato, não por clone de repositório.
+
+\textbf{Um sistema de RAG sobre os PDFs} foi descartado por ser a ferramenta
+errada, não por custo. A pergunta que o produto faz é sempre \enquote{quais
+habilidades de \emph{componente} no \emph{ano}} --- consulta exata sobre dois
+campos estruturados. Busca vetorial responderia com aproximação onde existe
+resposta certa, e um plano anual que \enquote{esqueceu} a \cd{EF67LP08} porque
+ela ficou fora do \emph{top-k} é um plano que descumpre o currículo.
+
+\textbf{Substituir a exp-90} foi descartado: são ferramentas para redes
+diferentes, e migrar os planos já salvos custaria mais do que manter as duas.
+
+\textbf{Consequências ruins, declaradas.}
+
+\textbf{Ficam duas telas de planejamento no menu do professor}, e a diferença
+entre elas não é auto-evidente para quem chega. A mitigação é a descrição de
+cada card no hub; se a confusão aparecer em campo, uma delas some.
+
+\textbf{A matriz de carga horária é mediana de dez redes, não norma --- e a
+mediana esconde uma bimodalidade.} A BNCC não define grade horária (LDB art. 23
+e 26; Parecer CNE/CEB nº 8/2004), e o total semanal do Fundamental tem duas
+famílias sem nada no meio: seis redes em 25 aulas (833\,h) e quatro em 28--30
+(890--1.000\,h, entre elas as duas maiores do país). Uma média entre as duas
+descreveria rede nenhuma, então o produto pré-preenche o subtotal da base comum
+e deixa o professor ajustar. Nos anos iniciais há um agravante: em várias redes o
+modelo nem é disciplinar --- São Paulo e o município do Rio agregam cinco
+componentes num bloco de professor polivalente, e para elas a matriz sugerida
+não descreve a realidade.
+
+\textbf{Vinte e seis habilidades do Fundamental (2\,\%) ficaram sem objeto de
+conhecimento} na extração, e aparecem num grupo \enquote{Sem classificação}.
+Preferimos mostrá-las a escondê-las: habilidade escondida é currículo não
+cumprido.
+
+\textbf{A extração depende de \cd{pdftotext} e de um PDF que o MEC pode
+substituir.} Se o layout mudar, o extrator quebra --- e quebra em silêncio, o
+que é pior. Contra isso há testes que travam o DADO, não só o código: os totais
+oficiais de cada documento, e o texto de \cd{EM13MAT101} com as palavras que só
+existem na versão homologada.
+
+\textbf{Gatilho de reavaliação.} Uma revisão da BNCC (há discussão pública sobre
+a do Ensino Médio desde a Lei 14.945/2024); a publicação de uma exportação
+oficial máquina-legível estável pelo MEC; ou o primeiro contrato cujo currículo
+próprio precise ser exibido AO LADO da Base --- caso em que a fronteira entre
+exp-90 e exp-92 deixa de fazer sentido e as duas convergem.
+\section{ADR-74 --- \cd{generateJson} informa o que o vendor cobrou por um
+\emph{callback}, e não pelo retorno}
+\label{adr:74}
+
+\textbf{Data.} 2026-09-06 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A regra 5 do projeto é literal: nenhuma chamada de IA sem
+\cd{QuotaService} --- \cd{temSaldo} antes, \cd{consumir} depois. Mas dos três
+métodos de texto do \cd{AiProvider}, dois devolvem o que foi gasto
+(\cd{generate} e \cd{conversar}, por \cd{AiResult.tokensUsados}) e
+\cd{generateJson} devolvia só \cd{T}. Sem número, não há o que debitar --- e
+cada consumidor inventou a própria saída:
+
+\begin{itemize}
+  \item a \textbf{exp-92} (plano de aulas) chamava \cd{temSaldo} e nunca
+    \cd{consumir}: o professor gerava as aulas de todos os bimestres e o
+    contador não se movia. É a operação mais repetida da ferramenta --- 4
+    bimestres $\times$ ${\sim}10$ semanas ---, então o teto diário perdia
+    sentido justamente onde mais importa;
+  \item a \textbf{exp-07} debitava \cd{1\_500} fixo, chute que não acompanha
+    tamanho de \emph{prompt} nem troca de modelo;
+  \item o \textbf{bem-estar} desviou do problema: usa \cd{generate} em vez de
+    \cd{generateJson} \enquote{porque só ele devolve \cd{tokensUsados} para a
+    quota} --- o comentário está no código desde então;
+  \item o módulo \arq{geracao} (motor da exp-01) não contabiliza nada.
+\end{itemize}
+
+Quatro consumidores, quatro respostas diferentes para o mesmo buraco. Não é
+descuido de quem escreveu cada um: é o contrato que não oferecia o número.
+
+\textbf{Decisão.} \cd{AiJsonRequest} ganha
+\cd{aoUsarTokens?: (tokens: number) => void}, chamado \textbf{uma vez por
+tentativa} --- inclusive pelas que \cd{validar} rejeitou, porque foram cobradas
+igual. Quem chama \cd{temSaldo} passa a ser obrigado a passá-lo. A exp-92 debita
+no \cd{finally} (token gasto em geração que falhou no meio também foi gasto) e
+grava o total em \cd{exp\_92\_planos\_de\_periodo.tokens\_usados}; a exp-07
+troca o chute pelo número real.
+
+\textbf{Alternativas descartadas.}
+
+\textbf{Mudar o retorno para \cd{\{ dados, tokensUsados \}}}, que era a forma
+mais explícita e a primeira escolha. Foi descartada ao olhar os pontos de
+chamada: três dos seis fazem \cd{return provider.generateJson(...)}
+\emph{direto} --- em \arq{geracao/prompts/}\{\cd{destilacao},
+\cd{personas}, \cd{posts}\} ---, então a mudança não pararia neles: subiria pelo
+tipo de retorno dessas funções e por quem as chama, atravessando o motor da
+exp-01, que é a zona mais delicada do repositório. Tudo isso para entregar um
+número a quatro consumidores que hoje não têm quota. O custo caía sobre o código
+mais arriscado e o benefício, sobre nenhum deles.
+
+\textbf{Um método irmão \cd{generateJsonComUso()}}. Aditivo e explícito, mas
+seriam dois métodos fazendo a mesma coisa --- e o segundo, o que ninguém lembra
+de procurar.
+
+\textbf{O \emph{provider} consumir a quota sozinho.} Resolveria de vez o
+esquecimento, e foi descartada por quebrar a fronteira que a \adrr{ADR-23}
+sustenta: \arq{src/ai} não conhece escola nem usuário, e passar a conhecer o faria
+depender do domínio para debitar.
+
+\textbf{Consequências ruins, aceitas.} \textbf{Continua sendo possível
+esquecer}: o campo é opcional, e um consumidor novo que chame \cd{temSaldo} sem
+\cd{aoUsarTokens} volta a não debitar --- exatamente o defeito que esta ADR
+corrige, agora com ferramenta disponível em vez de ausente. O compilador não
+pega; o que pega é a revisão e o texto do contrato, que diz a obrigação onde ela
+é lida. \textbf{O número é do vendor}: \cd{usageMetadata.totalTokenCount} é o que
+o Google reporta, e uma mudança no que ele conta muda o que debitamos sem aviso.
+E \textbf{a exp-07 passa a debitar mais do que antes} nas respostas longas --- o
+chute de 1.500 era otimista ---, o que aproxima a quota da realidade mas encurta
+o dia de quem usava muito.
+
+\textbf{Gatilho de reavaliação.} O primeiro consumidor de \cd{generateJson} que
+esquecer o \cd{aoUsarTokens} tendo \cd{temSaldo} --- aí o custo do retorno
+explícito passa a valer o risco de mexer no motor. Ou a decisão de dar quota ao
+módulo \arq{geracao}, que traria três dos seis pontos de chamada para o lado de
+quem precisa do número.
+
+\section{ADR-75 --- A rolagem do hub é o \cd{ScrollBar} do \emph{design system}}
+\label{adr:75}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A barra de rolagem vertical devia aparecer enquanto a pessoa
+rola e sumir quando ela para. Na lista de estudantes de uma missão isso já
+acontecia, e a leitura natural foi \enquote{o resto do produto está errado}. A
+medição mostrou outra coisa: ali ninguém implementou nada --- a
+\cd{.tabela-rolavel} não estilizava a barra, então ela caía na barra
+\emph{overlay} NATIVA do macOS, que faz esse desaparecimento sozinha. Essa barra
+depende de três coisas fora do produto: a preferência \cd{AppleShowScrollBars} em
+automático, o apontador ser \emph{trackpad} (com mouse conectado o próprio macOS
+volta à barra permanente --- medido, 15px ocupando \emph{layout}) e o sistema ser
+macOS. No Windows e no ChromeOS --- o laboratório da escola --- ela é permanente
+sempre.
+
+A varredura que respondeu a isso encontrou o problema de verdade, e ele não era
+a barra: \textbf{o \emph{design system} publica um \cd{ScrollBar}} (vertical,
+horizontal ou ambos, com \cd{thickness}, \cd{theme} e \cd{autoHide}) desde a
+0.1.x, e o hub \textbf{não o usava em lugar nenhum}. As 24 tabelas rolavam em
+\cd{<div>} com \cd{overflow} escrito à mão, mais o sumário das páginas legais e
+5 tabelas largas do guia. Não houve decisão de não usar: o componente nunca foi
+procurado. É a regra de ouro do projeto --- todo elemento de interface vem do
+pacote --- falhando por ausência de PROCEDIMENTO, não por desacordo.
+
+A mesma varredura (38 telas, os quatro papéis) encontrou um defeito à parte:
+três rotas do professor --- plano de aula, plano de ensino e bem-estar ---
+mostravam uma barra PARADA na tela, visível sem ter o que rolar. Elas subtraíam a
+altura do cabeçalho à mão (\cd{calc(100dvh - 64px)}), e o cabeçalho mede 65px: o
+\cd{h-16} são 64 e a \cd{border-b} põe 1. A página transbordava 1px.
+
+\textbf{Decisão.} Toda área rolável do hub passa a ser um \cd{<ScrollBar>} do DS,
+com \cd{autoHide}. Nenhuma tela do hub declara \cd{overflow} para rolar. E a
+página que NÃO rola deixa de estimar altura de irmão: a casca do professor virou
+coluna \emph{flex} com o \cd{main} em \cd{flex-1}, e a tela cheia usa a classe
+\cd{.tela-cheia}. São os dois lados da mesma régua --- área que rola tem barra
+do DS, área que não rola não tem barra nenhuma.
+
+A \cd{.tabela-rolavel} não morre: ela \textbf{encolhe} para o que o pacote ainda não
+publica --- a \cd{max-height} que provoca a rolagem e o \cd{<th>} preso (a
+lacuna de \cd{stickyHeader} já registrada). O \cd{overflow} sai dela, senão
+haveria dois contêineres de rolagem, um dentro do outro.
+
+E a regra de ouro ganha o procedimento que faltava, no \arq{AGENTS.md} da raiz:
+procurar no pacote ANTES de escrever interface; usar o que existe mesmo que dê
+mais trabalho; e, se não existe, abrir pedido no \cd{storybook-unooria} com
+compensação local MARCADA --- nunca um componente local silencioso.
+
+\textbf{Alternativas descartadas.}
+
+\textbf{Uma camada própria de \emph{auto-hide}, global, dirigida por rolagem.}
+Foi implementada e medida antes desta decisão (\emph{branch}
+\cd{feat/auto-hide-da-rolagem}): um módulo na \cd{@edu/sdk} marcava
+\cd{data-rolando} no elemento que rolava e o CSS reagia. Entregava o
+comportamento literal pedido --- aparecer ao rolar, em qualquer sistema
+operacional --- e cobria o que o componente não alcança: a barra da própria
+página, as que nascem dentro de \cd{Modal} e \cd{Selection}, e as nove
+experiências. Foi descartada por uma razão de doutrina que vale mais que o
+ganho: era uma barra ESCRITA AQUI, com \cd{!important} sobre as regras do
+pacote, para um componente que o pacote já publica. O projeto tem 48
+experiências pela frente e uma pessoa desenvolvendo; a única forma de isso
+escalar é o pacote ser a fonte, mesmo quando ele entrega menos.
+
+\textbf{Trocar só a aparência, mantendo o \cd{<div>}} --- aplicar as classes
+utilitárias \cd{.unooria-scrollbar} sem o componente. Menor diff e nenhuma
+mudança de marcação. Descartada porque a utilitária declara
+\cd{overflow-x: hidden}, que cortaria a coluna da direita das tabelas largas, e
+porque \enquote{usar as classes de um componente sem usar o componente} é o
+atalho que faz a próxima migração de versão do pacote quebrar em silêncio.
+
+\textbf{Consequências ruins, aceitas.} \textbf{O \cd{autoHide} do DS é
+\emph{hover}, não rolagem.} O \arq{ScrollBar.types.ts} documenta \enquote{hover
+ou rolagem}, mas o CSS só tem regras \cd{:hover}: a barra aparece ao passar o
+mouse por cima e continua invisível quando a rolagem vem da roda ou do teclado.
+É menos do que o pedido original, e é o preço de manter a fonte no pacote ---
+com pedido aberto no \cd{storybook-unooria} e a prop já no lugar para o dia em
+que ele publicar. \textbf{Fora do hub nada mudou}: as nove experiências seguem
+com a barra do sistema, porque o \cd{ScrollBar} é da seção \cd{unooria} e não
+pode entrar num clone. \textbf{Uma compensação a mais}, medida:
+\cd{.tabela-rolavel .unooria-table-container \{ overflow: visible \}} --- a
+\cd{Table} do DS traz o próprio contêiner com \cd{overflow-x: auto}, e é nele
+que o \cd{<th>} sticky se prende, um contêiner que não rola na vertical; sem
+essa regra o cabeçalho deixa de grudar. E \textbf{no papel o \cd{ScrollBar} sai
+da frente} (\cd{@media print} devolve \cd{overflow: visible}), senão a tabela do
+guia sairia recortada na largura da coluna. \textbf{Uma segunda classe local}, a
+\cd{.tela-cheia}: \cd{height: 100\%} não resolveria no lugar do \emph{flex} ---
+a altura de um item que cresceu por \cd{flex-grow} dentro de um contêiner de
+\cd{min-height} não é \emph{definite}, o percentual cai para \cd{auto} e o
+\cd{<iframe>} volta aos 150px de altura padrão dele --- e o \cd{main} só vira
+contêiner \emph{flex} por \cd{:has(> .tela-cheia)}, para as outras 16 páginas do
+professor não mudarem de contexto de \emph{layout} por causa de três telas.
+
+\textbf{Gatilho de reavaliação.} O \cd{storybook-unooria} publicar
+\cd{autoHide} dirigido por rolagem --- aí o comportamento pedido chega sem
+código nosso. Ou a decisão de dar \emph{auto-hide} às nove experiências, que
+exigiria o componente nas seções de clone ou uma camada neutra, e traria de
+volta a alternativa descartada aqui.
+
+% ---------------------------------------------------------------------------
+\section{ADR-76 --- O planejamento é semanal, e a quinzena é recorte de
+exportação; o \cd{iframe} ganha \cd{allow-downloads} por declaração}
+\label{adr:76}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} Três defeitos relatados no mesmo dia sobre a exp-92, e os
+três tinham a mesma raiz: uma pergunta de \emph{entrega} tratada como
+configuração de \emph{produto}.
+
+\begin{enumerate}
+  \item \textbf{Não havia como apagar um planejamento.} A regência nascia e
+    ficava. \cd{DELETE /planejamento/planos-anuais/:id} existia desde a
+    \hyperref[adr:73]{ADR-73}, mas o que a lista do professor mostra é a
+    \textbf{regência} (componente $\times$ ano), e para ela não havia rota nem
+    botão.
+  \item \textbf{\enquote{Baixar .doc} não baixava nada}, sem erro na tela e sem
+    linha no \emph{console}. Duas causas somadas, e a principal não estava na
+    experiência: num \cd{iframe} com \cd{sandbox}, o navegador
+    \textbf{bloqueia todo \emph{download}} sem o token \cd{allow-downloads}, e
+    o bloqueio é MUDO --- o Chrome o registra no painel \emph{Issues}, que
+    ninguém abre, e o \cd{a.click()} do \emph{bundle} volta como se tivesse
+    funcionado. MEDIDO: dois \cd{iframe} com o mesmo \emph{blob} e o mesmo
+    código, um com o token e outro sem; só o primeiro escreveu arquivo.
+    Somava-se a isso o \cd{<a>} não anexado ao DOM (Chrome tolera, Firefox e
+    Safari ignoram) e o \cd{revokeObjectURL} na linha seguinte ao clique.
+  \item \textbf{\enquote{Existe semanal e quinzenal e eu não entendi como
+    usar.}} A regência pedia o \enquote{passo do planejamento}, e ao fim o
+    produto só oferecia detalhar aula a aula --- a escolha não mudava a tela,
+    mudava a aritmética interna do calendário.
+\end{enumerate}
+
+\textbf{Decisão.}
+
+\textbf{(a) O passo do planejamento é SEMPRE semanal.} A coluna
+\cd{exp\_92\_configuracoes.periodicidade} sai (migration
+\cd{20260907120000\_exp\_92\_planejamento\_sempre\_semanal}), com ela o campo do
+formulário e o parâmetro de \cd{janelasDePlanejamento}, que passa a se chamar
+\cd{semanasDoAnoLetivo}. \textbf{A quinzena vira recorte de exportação}: o
+professor planeja semana a semana e o botão de baixar junta duas semanas, ou o
+período de avaliação inteiro, num só documento --- uma semana por página.
+
+\textbf{(b) \cd{allow-downloads} entra no \cd{sandbox}, por declaração.}
+\cd{downloads} passa a valer no \cd{permissoes} do manifesto (Zod da api,
+CHECK de \cd{experiencias.permissoes} e \cd{ExpFrame}), e só a exp-90 e a exp-92
+o declaram. \textbf{E as três rotas de professor passaram a repassar
+\cd{permissoes} ao \cd{ExpFrame}} --- elas nunca repassaram, então a permissão
+sozinha não teria efeito nenhum ali.
+
+\textbf{(c) \cd{DELETE /planejamento/configuracoes/:id}} apaga a regência, o
+plano anual e todas as semanas. A cascata é do banco; o \emph{object storage}
+não tem cascata, então os prefixos de cada plano anual são varridos ANTES do
+\cd{delete} --- depois dele não haveria mais como saber quais eram.
+
+\textbf{Alternativas descartadas.}
+
+\emph{Manter a periodicidade e corrigir só as datas.} A \cd{ordem} de
+\cd{exp\_92\_planos\_de\_periodo} muda de significado com o passo --- a 3ª
+quinzena não é a 3ª semana ---, então um plano gravado em modo quinzenal e lido
+em modo semanal casa pela ordem e devolve as datas de um recorte com as aulas de
+outro. Corrigir início e fim no \cd{upsert} (o que foi feito, e era um defeito
+real: o \cd{update} não os recalculava) resolve a troca de \emph{calendário},
+não a troca de \emph{significado}.
+
+\emph{\cd{allow-downloads} para todas as experiências.} Entregar arquivo ao
+computador de quem está usando é capacidade de quem declarou, como
+\cd{pointer-lock} e \cd{forms}. Nenhuma experiência de estudante exporta nada, e
+o \emph{bundle} é público.
+
+\emph{DOCX de verdade.} Continua fora: o \cd{.doc} é HTML com os \emph{namespaces}
+do Office, zero dependência no \emph{bundle}, e o Word, o Google Docs e o
+LibreOffice abrem como documento. Trocar somaria dependência para resolver
+problema que ninguém tem --- o problema era o \cd{sandbox}.
+
+\textbf{Consequências ruins.} A migration \textbf{apaga} os planos de período
+das regências que estavam em quinzenal --- é a única parte destrutiva, e a
+alternativa era mantê-los mentindo sobre as próprias datas. Regência, plano
+anual e distribuição de habilidades ficam; o que se perde é o detalhamento aula
+a aula, que o professor regera pelo botão da semana (gastando quota de IA de
+novo). O \enquote{Baixar o bimestre} faz uma chamada que traz as aulas de até
+dez semanas --- aceito: são 40 linhas no ano inteiro e o filtro é no banco.
+
+\textbf{Gatilho de reavaliação.} Uma rede pedir planejamento cuja unidade
+\emph{pedagógica} não seja a semana (aula avulsa, ou projeto de duração
+variável) --- aí volta a pergunta de qual é o passo, e a resposta não é
+reintroduzir uma coluna de enum. Ou o \cd{storybook-unooria} publicar um
+componente de exportação com recortes, que substituiria os três botões.
+
+% ---------------------------------------------------------------------------
+\section{ADR-77 --- A trilha é do \emph{layout} da área, nunca da página}
+\label{adr:77}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O \emph{breadcrumb} do hub estava em 22 telas e faltava em 15.
+Não houve decisão por trás disso: a trilha era responsabilidade da PÁGINA, cada
+uma declarava a sua, e nada obrigava. As ausências não eram aleatórias --- eram as
+7 telas de \rota{/admin}, as 2 de \rota{/analise}, o \emph{hub} do estudante e
+cinco da própria área do professor. A barra lateral de \rota{/admin} é a razão de
+ninguém notar por tanto tempo: ela cobre a navegação de primeiro nível e esconde
+a falta do segundo.
+
+\textbf{Decisão.} Quem desenha a trilha é o \emph{layout} da área
+(\cd{TrilhaDaRota}, em \arq{components/trilha.tsx}), e os itens saem de um
+REGISTRO DE ROTAS --- \cd{NOS}, em \arq{lib/trilha.ts}, com o padrão da rota como
+chave. Rota nova é uma linha no registro e nada na página. A página só pode
+PUBLICAR nome próprio (\cd{RotuloDaTrilha}): o título da atividade, o nome da
+turma, o nome do estudante --- o que uma tabela de rotas não tem como saber.
+
+A assimetria é a decisão, não um detalhe dela: \textbf{a página consegue melhorar
+a trilha e não consegue apagá-la}. É isso que tira a ausência por esquecimento da
+mesa. Sem publicação, o item de um segmento dinâmico fica no rótulo de domínio do
+registro (\enquote{Atividade}, \enquote{Turma}, \enquote{Estudante}), nunca no id
+do endereço; rota que ninguém registrou cai num rótulo humanizado do segmento.
+Trilha aproximada é defeito que se vê e se corrige; trilha ausente é o defeito
+que ninguém nota até o dono do produto notar.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Por página, como estava}: é o desenho que produziu o defeito. O
+    custo já foi pago e medido --- 15 telas sem trilha, nenhuma por decisão.
+  \item \emph{Só do \emph{layout}, derivada da URL, sem contribuição da página}:
+    o \emph{layout} conhece o segmento, não o nome do que vive atrás dele. A
+    trilha diria \enquote{Turmas / clx8f9a2b0001}. Pior que trilha nenhuma.
+  \item \emph{A página publica a trilha INTEIRA, e o \emph{layout} desenha o que
+    receber}: devolve à página a autoridade sobre a ESTRUTURA --- e era a
+    estrutura que estava divergindo, não os rótulos. Volta ao primeiro caso por
+    outro caminho.
+\end{itemize}
+
+\textbf{Consequências.} Página nova nasce com trilha sem escrever uma linha, e a
+largura da coluna subiu para o \emph{layout} nas duas áreas onde cada página
+trazia a sua (1080 e 1180px numa, 5xl e 6xl na outra, sem razão registrada em
+nenhum dos casos) --- com a trilha no \emph{layout}, largura por página faria o
+\emph{breadcrumb} nascer 50--64px à esquerda do texto.
+
+\emph{Ruim}: um quadro de rótulo genérico em cinco rotas. \cd{RotuloDaTrilha}
+publica num \emph{effect}, então o HTML do servidor traz \enquote{Atividade} e a
+hidratação troca por \enquote{Debate sobre X}. É inevitável na direção do dado
+--- o \emph{layout} renderiza ANTES da página e não tem como perguntar nada a ela
+--- e é o preço de a trilha ter UM autor.
+
+\emph{Ruim}: \cd{rotuloDaUnidade} ESPELHA \cd{rotuloDaMissao} de
+\arq{lib/entre-redes/catalogo.ts} em vez de importá-lo, porque o módulo da trilha
+é \emph{client} e o catálogo carrega as fichas e os guias das missões inteiras.
+Mudar o formato do \emph{slug} do ano faz a trilha cair no genérico
+(\enquote{Missão}) \textbf{em silêncio}, em doze telas. É por isso que a lógica
+foi para \cd{lib/}: o \emph{vitest} do hub só varre os testes de lá, e
+\arq{lib/trilha.test.ts} prende os dois formatos (\cd{8-ano} e \cd{2-serie}).
+
+\emph{Ruim}: o \cd{ProvedorDaTrilha} não pode renderizar DOM nenhum. Em
+\rota{/professor/**} a altura das três telas de \emph{embed} vem de
+\cd{main:has(> .tela-cheia)}, e um elemento a mais quebra o seletor de filho
+direto --- de volta à barra de rolagem parada que a \adrr{ADR-75} registra.
+
+\textbf{Duas exceções declaradas.} \cd{aPaginaDesenha: true} nas rotas de guia da
+aula, porque quem renderiza a trilha delas é o componente do guia, por dentro, e
+duas trilhas na mesma tela é pior que nenhuma; e a home de cada papel, onde uma
+trilha de um item só, que é a própria página, é ruído. Tela sem sessão, aparelho
+em tela cheia com \cd{voltar} no \emph{header} e superfície pública ficam fora
+porque não estão dentro de \emph{layout} de área nenhum --- o que significa que
+\textbf{área nova precisa de \emph{layout} novo, e \emph{layout} novo desenha a
+trilha}. Sem isso, a área nasce como \rota{/admin} nasceu.
+
+\textbf{Gatilho de reavaliação.} O App Router publicar um caminho de a página
+contribuir dado ao \emph{layout} no servidor --- aí o quadro de hidratação
+desaparece sem mudar o desenho. Ou a terceira área que precise de trilha fora de
+\emph{layout} de área, que obrigaria a rever a fronteira.
+
+% ---------------------------------------------------------------------------
+\section{ADR-78 --- O \emph{logoff} mora no menu do avatar, não na barra}
+\label{adr:78}
+
+\textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O \cd{HeaderPlataforma} terminava em duas peças soltas: um
+\cd{Avatar} decorativo e um \cd{Button variant="ghost"} escrito
+\enquote{Sair}. A ação mais destrutiva do \emph{chrome} ficava a um clique de
+distância, ao lado do nome da pessoa, com o mesmo peso visual da marca --- e o
+avatar não fazia nada.
+
+\textbf{Decisão.} O avatar passa a ser o GATILHO de um menu, e o \enquote{Sair}
+mora dentro dele. O componente é o \cd{HeaderMenu} da seção \cd{unooria} do
+\emph{design system}, publicado na 0.1.19 a partir do conjunto \cd{Menu Desk} do
+Figma: uma tira que expande da direita para a esquerda, com o item de saída
+colado no gatilho.
+
+\textbf{O componente foi escrito no \cd{storybook-unooria}, não aqui.} É a
+aplicação direta da \adrr{ADR-19}: um menu tem estado e aparência de controle,
+então é componente, e componente nasce no pacote. A verificação que precede a
+decisão também está registrada --- o DS 0.1.17 não publicava nada equivalente:
+não há \cd{Dropdown}, \cd{Menu} nem \cd{Popover} na seção, o \cd{Avatar} aceita
+\cd{onClick} mas não tem prop de menu, e o único menu suspenso do pacote é o
+\cd{TableDropdownMenu}, com gatilho fixo em três pontos e sem aceitar
+\emph{children}. Publicado como PATCH de propósito: \cd{\^{}0.1.x} não sobe
+\emph{minor}, e uma 0.2.0 exigiria editar o \emph{range} à mão em dez
+\arq{package.json}.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Compensação local no hub}: destravava no mesmo dia sem tocar outro
+    repositório, e é exatamente o que a \adrr{ADR-19} proíbe --- o componente
+    serviria uma superfície e as outras seguiriam com o botão solto.
+  \item \emph{Manter o botão e só tornar o avatar clicável}: duas affordances
+    para a mesma ação, e nenhuma resolve o peso visual.
+  \item \emph{Trazer o \emph{header} inteiro do Figma}: o nó publicado é um
+    \emph{header} completo, e adotá-lo exigiria migrar marca, seletor de escola e
+    identidade de uma vez. O menor componente que resolve o pedido é o menu com
+    gatilho plugável.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é a consequência que custou trabalho}: o
+nome e a linha de apoio tiveram de sair do \cd{HeaderPlataforma} e entrar no
+mesmo componente do menu. A tira do \cd{HeaderMenu} é um \emph{overlay} ancorado
+à esquerda do gatilho, e o componente assume que ali há espaço vazio --- verdade
+num \emph{header} que só tem o avatar à direita, falsa neste, onde ali fica a
+identidade. Integrado ingenuamente, o item \enquote{Sair} abre DESENHADO EM CIMA
+das letras. Isso passa no \emph{typecheck} e no \emph{build}, e só aparece
+abrindo o menu na tela: foi assim que apareceu. A compensação é a identidade
+ceder o espaço enquanto a tira está aberta --- \cd{invisible}, não desmontada,
+senão o gatilho escorrega embaixo do cursor --- e ela é comportamento de página,
+não CSS, então NÃO tem entrada em \arq{plataforma.css}: uma classe faria o
+próximo a integrar o componente achar que era decoração.
+
+\emph{Ruim}: o menu nasce com UM item. O componente aceita vários e a tentação é
+preencher com \enquote{Meu perfil} e \enquote{Configurações}, telas que não
+existem. O candidato real, \enquote{Trocar senha}, também ficou fora por um
+motivo verificado no \arq{middleware.ts}: quem já trocou a senha é devolvido para
+a home do papel, então o item seria um link morto. Item de menu que não leva a
+lugar nenhum é pior que menu curto.
+
+\textbf{Uma ausência de produto que a decisão expôs.} Não existe caminho
+voluntário para trocar a senha depois do primeiro acesso: a rota é forçada pelo
+\emph{middleware} na largada e fechada em seguida. O menu da conta é o lugar
+óbvio desse item no dia em que ele existir.
+
+\textbf{Gatilho de reavaliação.} O \cd{HeaderMenu} publicar \emph{reflow} ou
+âncora à direita --- aí a compensação da identidade morre e o nome pode voltar
+para o \cd{HeaderPlataforma}. Ou o produto ganhar duas telas de conta, que é
+quando o menu de um item passa a ser um menu de verdade.
+
+\section{ADR-79 --- Toda escola pertence a uma regional, e a rede nunca fica sem
+nenhuma}
+\label{adr:vinculo-obrigatorio-regional}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-34} fez o nível REGIONAL existir de verdade, mas
+deixou \cd{pai\_id} opcional --- a unidade podia ficar órfã. O custo apareceu na
+tela: o filtro \enquote{Regional} não PARTICIONAVA a lista, porque havia escolas
+fora de toda regional, e a importação \arq{orgs.csv} entrava com \cd{pai\_id}
+nulo de propósito quando o \cd{parentSourcedId} era desconhecido
+(\enquote{melhor unidade sem regional que unidade pendurada em nada}). Somando os
+dois, \enquote{as escolas desta diretoria} nunca respondia pela rede inteira, e a
+lotação em lote --- o único consumidor do agrupamento --- cobria menos do que
+parecia cobrir.
+
+O relato que originou a decisão é de usabilidade, e é o mesmo problema visto de
+fora: \cd{/admin/escolas} listava os TRÊS níveis na mesma tabela, com o tipo numa
+etiqueta, travessões nas colunas de turma e estudante das linhas de regional, um
+resumo que somava níveis diferentes (\enquote{3 registros $\cdot$ 2 unidades}) e
+um filtro de \enquote{Tipo} cuja única função era desfazer a mistura. O rótulo
+\enquote{Sem regional} do filtro de regional MENTIA: o valor vazio nunca filtrou
+órfãs --- ele limpava o filtro e mostrava a rede toda.
+
+\textbf{Decisão.} Três coisas, juntas porque uma sem a outra não fecha:
+
+\begin{enumerate}
+  \item \emph{Vínculo obrigatório}. \cd{tipo = 'escola'} exige \cd{pai\_id}
+    (CHECK \cd{escolas\_escola\_tem\_regional\_check}), e o pai tem de ser
+    \cd{regional} --- não mais \cd{rede}. Escola pendurada na raiz era um segundo
+    desenho de hierarquia que nenhuma consulta usava.
+  \item \emph{Regional padrão}. A coluna \cd{regional\_padrao} marca a regional
+    que a plataforma cria sozinha, para a rede sem divisão administrativa. Índice
+    único PARCIAL garante no máximo uma. Ela nasce chamada \cd{Rede} e o nome é
+    EDITÁVEL.
+  \item \emph{Telas separadas}. \cd{/admin/regionais} e \cd{/admin/escolas}, nessa
+    ordem no menu, cada uma listando um nível só. O filtro de \enquote{Tipo}
+    deixou de existir --- separar as telas REMOVEU um controle.
+\end{enumerate}
+
+\textbf{Por que o nome nasce \cd{Rede} e não o nome da rede.} O nome real do
+contrato NÃO existe no banco: o contrato é a stack inteira, não uma linha, e não
+há entidade \cd{rede} --- o \cd{tipo = 'rede'} é aceito pelo CHECK e nada no
+código o cria. A única fonte do nome hoje é \cd{CONTRATO\_NOME}, uma variável de
+ambiente DO HUB, opcional, usada apenas na emissão do perfil portátil, e uma
+migração não tem como lê-la. Quem sabe o nome é quem administra: a tela de
+Regionais tem \enquote{Editar}.
+
+\textbf{Por que a exclusão de regional entrou.} A recomendação técnica era NÃO
+criar exclusão: o produto não apaga nada (desativa, encerra vínculo, preserva
+histórico) e não havia \cd{DELETE} de escola em rota nenhuma. A decisão de
+produto foi outra, e é razoável --- a rede que se reorganiza em diretorias novas
+precisa apagar as antigas, e a regional é o único nível que não guarda dado
+próprio. \cd{DELETE /escolas/:id} aceita só \cd{tipo = 'regional'}; ESCOLA
+continua sem exclusão em lugar nenhum, porque ela é \emph{tenant}, com turma,
+dado de menor e histórico atrás. Duas recusas, as duas de produto: a rede nunca
+fica sem regional (409 \cd{regional-unica}) e regional com escolas só sai dizendo
+para onde elas vão (409 \cd{regional-com-escolas}, com \cd{escolas} e
+\cd{destinos} no corpo --- é o que a tela usa para decidir entre abrir o diálogo
+de transferência e explicar que não há destino). A transferência e a exclusão são
+UMA transação: em duas chamadas existiria a janela em que as escolas já mudaram
+de regional e a antiga continua na lista.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter \cd{pai\_id} nulável e só não oferecer \enquote{sem
+    regional} na tela}: dava 90\% do benefício sem migração. Não elimina o
+    estado, esconde --- e é exatamente a armadilha que este projeto já registrou
+    três vezes (o \cd{expires\_at} sem rotina, o \cd{turmas.consentimento\_em} do
+    aplicativo de origem, as próprias colunas \cd{tipo}/\cd{pai\_id} da
+    \adrr{ADR-34}): a regra sai do código, o registro fica, e quem lê acredita
+    nele.
+  \item \emph{Reconhecer a padrão por convenção de id} (\cd{id = 'rede'}) em vez
+    de coluna: morreria no primeiro \cd{PATCH} de nome, e renomear é justamente o
+    que a decisão de produto permite. Três coisas dependem de reconhecê-la: o
+    rótulo na tela, a não-duplicação numa reexecução e o texto de apoio.
+  \item \emph{Criar a padrão SEMPRE na migração}: numa rede já organizada em
+    diretorias, com todas as escolas vinculadas, ela seria uma regional vazia que
+    não agrupa ninguém --- ruído numa tela cujo propósito é parar de misturar
+    níveis. Ela nasce em dois casos: rede sem regional nenhuma (contrato
+    recém-provisionado) ou rede com escola órfã para adotar.
+  \item \emph{Fazer o CHECK recusar todo \cd{INSERT} sem regional}: era a leitura
+    literal da regra, e quebraria TRINTA suítes que criam uma escola de mentira
+    para testar outra coisa --- em módulos que nada têm a ver com esta frente
+    (Vila, unooGPT, bem-estar, salas). Emendá-las seria editar o módulo do
+    vizinho, que é o que a \adrr{ADR-71} identifica como a causa de conflito de
+    merge insolúvel. O trigger ADOTA pela padrão em vez de recusar.
+  \item \emph{Somar turmas e estudantes por regional na tela nova}: seria útil e é
+    tecnicamente permitido (\cd{admin-contrato} é a exceção cross-escola), mas
+    aproxima a tela da visão somada de diretoria que a \adrr{ADR-34} recusa, e
+    custaria uma agregação sobre cinco mil escolas. A regional mostra um número
+    só: quantas escolas agrupa.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é a que muda comportamento observável}: a
+importação \arq{orgs.csv} de quem JÁ USA passa a falhar em linhas que antes
+entravam. Com uma regional na rede, o vínculo é automático e sai um aviso; com
+várias, a linha sem \cd{parentSourcedId} válido é ERRO, com o número dela no
+relatório. É o que o card de produto pede, e é a única saída coerente: uma órfã
+ali reprovaria no CHECK como exceção crua de Postgres no meio de um arquivo de
+mil linhas.
+
+\emph{Ruim}: o trigger que adota pela padrão é comportamento silencioso, e este
+projeto desconfia de silêncio. A mitigação é que ele NÃO é o caminho do produto
+--- o formulário e a importação exigem a escolha explícita quando há mais de uma
+regional --- e que sem padrão na rede ele não inventa destino: \cd{pai\_id}
+continua nulo e o CHECK recusa.
+
+\emph{Bom, e não estava no pedido}: a separação expôs um buraco de tenancy.
+\cd{lotarEmLote} filtrava \cd{tipo: 'escola'} desde o início, mas
+\cd{POST /escolas/:id/lotacoes} não filtrava nada --- por ela dava para lotar
+alguém numa REGIONAL, produzindo no seletor do cabeçalho a \enquote{escola
+fantasma} (sem turma, sem estudante, sem dado) que o lote existia para evitar.
+Corrigido junto, com teste.
+
+\textbf{Gatilho de reavaliação.} O produto ganhar uma entidade \cd{rede} de
+verdade --- aí a regional padrão passa a poder herdar o nome dela e a variável
+\cd{CONTRATO\_NOME} sai do hub para o banco. Ou a rede que administra mais de um
+contrato numa stack, que é quando \enquote{a rede tem ao menos uma regional}
+deixa de ser um invariante global e passa a ser por contrato.
+
+\section{ADR-80 --- Seis papéis, com cadeia de atribuição, e o regional que não
+mexe na RLS}
+\label{adr:modelo-de-papeis}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O vocabulário de papéis eram quatro nomes ---
+\cd{estudante}, \cd{professor}, \cd{gestor}, \cd{admin-contrato} --- e a
+\adrr{ADR-34} havia decidido, com razão escrita, que o supervisor de uma
+diretoria \textbf{não} seria papel novo: ele é um \cd{gestor} lotado nas escolas
+dela, porque \enquote{autorizar por hierarquia seria uma segunda fonte de
+verdade sobre acesso, divergente da lotação no dia em que alguém corrigisse um
+pai}.
+
+A operação pediu outra coisa. Uma rede estadual tem gente que trabalha no nível
+da diretoria e não tem lotação em unidade nenhuma, e o vocabulário não dizia de
+quem era a decisão de conceder cada nível de acesso.
+
+\textbf{Decisão (de produto, contra a recomendação técnica registrada).} Seis
+papéis:
+
+\begin{center}
+\cd{estudante} $\cdot$ \cd{professor} $\cdot$ \cd{gestor\_escola} $\cdot$
+\cd{gestor\_regional} $\cdot$ \cd{gestor\_contrato} $\cdot$ \cd{admin}
+\end{center}
+
+Dois são renome sem mudança de semântica (\cd{gestor} \seta{}
+\cd{gestor\_escola}; \cd{admin-contrato} \seta{} \cd{gestor\_contrato} --- o
+hífen sai porque era o único do vocabulário, e um separador diferente dos
+outros é a diferença que ninguém lembra na hora de escrever a comparação). Dois
+são novos: \cd{gestor\_regional} cobre as escolas de uma regional sem lotação em
+nenhuma, e \cd{admin} é a conta da Unooria.
+
+\textbf{A CADEIA DE ATRIBUIÇÃO.} Cada nível atribui o de baixo:
+
+\begin{center}
+\cd{admin} \seta{} \cd{gestor\_contrato} \seta{} \cd{gestor\_regional} \seta{}
+\cd{gestor\_escola} \seta{} \cd{professor}, \cd{estudante}
+\end{center}
+
+Escrita como uma tabela de \enquote{o que EU atribuo diretamente}, com o alcance
+real saindo do \textbf{fechamento transitivo} (\cd{papeisQueCria}). As duas
+coisas separadas de propósito: a cadeia é a regra de negócio, que se lê numa
+olhada; o fechamento é a consequência. Escrever a lista já expandida em cada
+papel daria quatro cópias da mesma regra, e a divergência que ninguém percebe é
+a que dá acesso a mais.
+
+O fechamento e não a cadeia estrita porque quem atribui um \cd{gestor\_regional}
+atribui, por definição, alguém que atribui \cd{gestor\_escola}: recusar o atalho
+não protege nada --- ele criaria o regional e pediria a ele --- e transformaria
+toda operação de balcão numa corrente de três telefonemas.
+
+\textbf{O que a decisão APERTOU, e não é regressão.} Antes, um \cd{gestor} criava
+outro \cd{gestor} e um \cd{admin-contrato} criava outro \cd{admin-contrato}. Os
+dois deixaram de valer: um papel que se autoatribui não tem quem o conceda, e o
+alcance do segundo é a rede inteira de um contrato. Duas suítes e dois testes
+afirmavam o comportamento antigo e foram reescritos para afirmar a cadeia.
+
+\textbf{O \cd{gestor\_regional} NÃO toca a RLS, e é isso que o torna viável.} Ele
+trabalha \textbf{uma escola por vez}, como o \cd{gestor\_escola}: o \emph{token}
+continua carregando um \cd{escola\_id}, as 31 tabelas com \cd{escola\_id} e a
+política de RLS ficam intocadas, e a regra inviolável nº 1 continua literalmente
+verdadeira. O que a regional dele determina é a \textbf{lista de escolas que ele
+pode ativar} --- e essa diferença mora em UM lugar, \cd{escolasDaPessoa}, por
+onde o login, o seletor do cabeçalho e a validação da troca de escola já passam.
+Espalhada, faltaria em um dos três, e o sintoma seria um supervisor sem escola
+nenhuma para escolher.
+
+A regional dele é \cd{users.regional\_id} --- coluna, e não uma lotação
+apontando para a linha da regional. A \adrr{ADR-79} proibiu lotação em regional,
+e a razão continua valendo: ela apareceria no seletor do cabeçalho como uma
+escola sem turma, sem estudante e sem dado.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Estender a política de RLS para aceitar um CONJUNTO de escolas}
+    (\cd{escola\_id = ANY(...)} com as escolas da regional na sessão): é a
+    leitura literal de \enquote{gestor regional}, e faria toda tabela de dado de
+    estudante depender de um segundo caminho de autorização --- exatamente a
+    superfície que a regra nº 1 existe para não ter. Se um dia o produto quiser
+    a visão SOMADA da diretoria, é esta a alternativa, e ela é uma ADR própria.
+  \item \emph{Manter a \adrr{ADR-34} e resolver por lotação em lote}: era a
+    recomendação técnica, e ela continua funcionando --- o que ela não resolve é
+    quem responde pela concessão. Decisão de produto foi ter o papel.
+  \item \emph{Dar ao \cd{admin} capacidades próprias}: ele tem as mesmas de
+    \cd{gestor\_contrato}. O que o distingue é de QUEM é a conta, não o que ela
+    pode --- e inventar capacidade para justificar o nome seria criar acesso sem
+    ninguém pedir.
+  \item \emph{Escrever os cinco nomes em cada \cd{@Roles}}: são quarenta
+    decoradores. A rota esquecida continua compilando e continua respondendo
+    403, e não existe teste que aponte para isso --- só uma tela que não abre.
+    Daí os grupos \cd{GESTORES\_DA\_ESCOLA} e \cd{GESTORES\_DO\_CONTRATO} e o
+    \cd{ehDoContrato}, que substituiu as $\sim$20 comparações
+    \cd{perfil === "admin-contrato"} espalhadas pela API.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é a maior}: o renome atravessa TODO módulo
+que tem \cd{@Roles} --- 101 arquivos, e o \emph{hook} de fatia acusou 31 deles em
+módulos que nada têm a ver com a frente (Vila, unooGPT, unooTube, Eco, Rastro,
+análise, salas, portabilidade). Vocabulário de papel não É fatia vertical, e é o
+tipo de mudança que a \adrr{ADR-71} diz para não paralelizar: com quatro
+\emph{branches} abertas, esta conflita com todas.
+
+\emph{Ruim}: a rota \cd{POST /usuarios/admin-contrato} virou
+\cd{POST /usuarios/sem-escola}, e o corpo passou a levar \cd{papel}. É mudança
+observável, e o motivo é a cadeia: a rota serve agora dois papéis
+(\cd{gestor\_contrato} e \cd{gestor\_regional}), e um caminho com o nome de um
+deles mentiria sobre o outro.
+
+\emph{Ruim, e admitido}: \cd{apps/hub/lib/papeis.ts} passou a ter uma segunda
+cópia da cadeia, porque o \emph{middleware} roda no \emph{edge} e não importa da
+API. O que segura a divergência é o \cd{Record} exaustivo de rótulos --- papel
+novo sem rótulo não compila --- e o fato de quem decide ser sempre a API, que
+responde 403 mesmo se a lista da tela mentir.
+
+\emph{Bom, e não estava no pedido}: a cadeia fechou um caminho real de
+\enquote{alterar o perfil silenciosamente}. A chave única de \cd{lotacoes} é
+(escola, pessoa, PAPEL), e \cd{lotarEmLote} aceitava um \cd{papel} divergente de
+\cd{users.role} --- criando uma SEGUNDA linha para a mesma pessoa na mesma
+escola, que a contagem da tela somaria nas duas colunas. Agora divergência é
+recusa. É também um candidato à divergência de contagem de professores relatada
+em separado.
+
+\textbf{Gatilho de reavaliação.} O produto pedir a visão SOMADA das escolas de
+uma regional --- aí a alternativa da RLS por conjunto volta à mesa, com ADR
+própria. Ou a Unooria precisar de capacidade que \cd{gestor\_contrato} não tem,
+que é quando \cd{admin} deixa de ser um rótulo e passa a ser um papel.
+
+\section{ADR-81 --- O panorama da diretoria SOMA, e isso não custou RLS}
+\label{adr:panorama-da-regional}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-34} decidiu que o panorama de quem administra
+muitas escolas \enquote{LISTA, não soma --- uma linha por unidade}, porque somar
+escolas numa métrica só apresentaria a diretoria como unidade de análise, e
+naquele momento a hierarquia não autorizava nada.
+
+Duas coisas mudaram. A \adrr{ADR-80} fez a hierarquia SER o escopo de um papel
+(\cd{gestor\_regional}), então a premissa da recusa deixou de valer para ele. E
+uma inspeção mostrou que a decisão já estava parcialmente vencida na prática: a
+TELA \cd{/admin/minhas-escolas} sempre imprimiu uma linha de resumo somando
+turmas, estudantes e pendências --- a rota devolve lista, mas a tela soma.
+
+\textbf{Uma avaliação de custo estava ERRADA, e vale registrar.} Ao levantar a
+possibilidade, este projeto estimou que a visão somada exigiria estender a
+política de RLS \enquote{em 31 tabelas}. Falso, e a verificação é simples: os
+números do panorama saem de \cd{lotacoes}, \cd{turmas} e \cd{users} --- as três
+tabelas que estão FORA da RLS por desenho (são lidas no login, antes de haver
+escola), consultadas com \cd{escola\_id IN (...)} explícito. Somar o que a API já
+computou é aritmética, não caminho de acesso novo. O custo de RLS existiria
+apenas para dado PEDAGÓGICO (\cd{progresso}, \cd{runs}, tabelas \cd{exp\_*}), que
+está sob RLS e é território do \cd{/analise}.
+
+\textbf{Decisão.} O panorama soma, e se intitula pela diretoria quando quem olha
+é um \cd{gestor\_regional}. O que ele soma:
+
+\begin{itemize}
+  \item \emph{turmas}, \emph{estudantes} e \emph{sem primeiro acesso} --- somam
+    LIMPO: o estudante tem UMA lotação ativa (índice único parcial), e o primeiro
+    acesso é contado por \cd{users.escola\_id}, que é uma escola por pessoa.
+  \item \emph{vínculos de professores}, e não \enquote{professores}: por escola o
+    número é de PESSOAS, mas o total conta duas vezes quem dá aula em duas. É a
+    mesma distinção que a tela de Escolas faz desde a \adrr{ADR-79}.
+\end{itemize}
+
+Para quem chega por LOTAÇÃO (um \cd{gestor\_escola} em várias escolas) a tela
+segue como era: o escopo dele é um conjunto de escolas que por acaso é plural,
+não uma diretoria, e ali a distinção da \adrr{ADR-34} continua fazendo sentido.
+
+\textbf{Um defeito que a decisão expôs.} \cd{resumoDasEscolasDaPessoa} lia
+\cd{lotacoes} DIRETO, então o panorama de um \cd{gestor\_regional} --- que não tem
+lotação nenhuma --- voltava VAZIO, com o item de menu aparecendo, porque o menu
+conta as escolas da sessão (que vêm da regional). Tela em branco, sem erro
+nenhum, sem linha de log: o sintoma que ninguém sabe diagnosticar. As escolas
+passam a sair de \cd{escolasDaPessoa}, que é onde a diferença entre lotação e
+regional já mora.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Estender a RLS para um CONJUNTO de escolas}: era o que a avaliação
+    errada supunha necessário. Continua sendo o caminho para a visão somada de
+    dado PEDAGÓGICO, e continua sendo uma ADR própria --- ela faz toda tabela de
+    dado de estudante depender de um segundo caminho de autorização.
+  \item \emph{Somar na API, em vez de na tela}: a tela já tem os números por
+    escola; somá-los de novo no servidor seria uma segunda fonte da mesma conta,
+    e a divergência apareceria como dois totais diferentes na mesma página.
+  \item \emph{Mostrar a soma também para o \cd{gestor\_escola} de várias
+    escolas}: a tela já fazia isso, e foi mantido --- mas sem o título de
+    diretoria, que ali seria falso.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o papel criado pela \adrr{ADR-80} passou a ter
+uma tela que justifica a existência dele, e ela custou um \cd{escolasDaPessoa} em
+vez de uma migração.
+
+\emph{Ruim}: o panorama agora tem dois modos --- por diretoria e por lotação ---
+e a diferença entre eles é um \cd{papel === "gestor\_regional"} na tela. É pouco
+código e é a única forma honesta: a mesma tela descrevendo dois escopos
+diferentes precisaria mentir em um dos dois.
+
+\emph{Ruim, e não tem a ver com esta decisão}: ao renomear o vocabulário, o
+array de papéis do \arq{scripts/e2e/rodar.mjs} passou a apontar para pastas que
+não existiam (\arq{gestor/} e \arq{admin-contrato/}), e o \cd{existsSync} do
+runner devolve lista vazia em silêncio --- a suíte caiu de 29 roteiros para 19
+sem nenhum aviso. As pastas foram renomeadas junto. Runner que pula suíte calado
+é pior que runner que quebra.
+
+\textbf{Gatilho de reavaliação.} O produto pedir número PEDAGÓGICO por diretoria
+(missões concluídas, perfis, bem-estar) --- aí a RLS por conjunto volta à mesa, e
+com ela a pergunta que a \adrr{ADR-34} fez primeiro: a diretoria é unidade de
+análise de dado de criança, ou só de operação?
+
+\section{ADR-82 --- O relatório da diretoria atravessa escolas com um LAÇO, não
+afrouxando a RLS}
+\label{adr:relatorio-da-regional}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-81} deu ao \cd{gestor\_regional} a soma
+OPERACIONAL da diretoria (turmas, estudantes, primeiro acesso), e ela saiu de
+graça porque essas contagens vêm de \cd{lotacoes}, \cd{turmas} e \cd{users} ---
+tabelas que estão fora da RLS por desenho. O pedido seguinte foi o número
+PEDAGÓGICO: quantas crianças da diretoria têm registro em cada missão, e em
+quantas turmas a missão foi liberada e encerrada.
+
+Esses dados vivem em \cd{liberacoes} e \cd{progresso}, que estão SOB a política
+por escola. Cada consulta vê uma escola.
+
+\textbf{Decisão.} O serviço abre a tranca \textbf{uma escola por vez} e soma na
+aplicação, em lotes de 8 (\cd{aosPares}). A política de RLS não é tocada.
+
+Não é padrão novo: é o mesmo que \cd{lotarEmLote} faz (uma transação por escola,
+porque cinquenta numa só seguraria conexão por segundos) e o que
+\cd{transferirEstudante} faz com \cd{comEscolaNaTransacao}. A diferença é o
+propósito --- ali é escrita, aqui é leitura agregada.
+
+\textbf{A autorização fica em UM lugar, e ele é um método.}
+\cd{regionalDoRelatorio} responde \enquote{qual regional este pedido pode ler}:
+para \cd{gestor\_regional} vem de \cd{users.regional\_id} e o parâmetro
+\cd{?regionalId=} é \textbf{IGNORADO}. Ignorado, e não validado contra o dele ---
+o efeito é o mesmo, mas por um caminho em que esquecer a comparação não vira
+\enquote{leia a diretoria do vizinho por \emph{querystring}}. Nenhuma escola
+entra no laço sem ter saído do \cd{pai\_id} da regional autorizada.
+
+\textbf{As DUAS medidas, lado a lado.} \cd{estudantes} é a CRIANÇA com registro
+na missão; \cd{turmasLiberadas}/\cd{turmasEncerradas} é a AULA. Foi pedido
+explicitamente que as duas aparecessem, e a razão é que a diferença entre elas é
+a informação: turma encerrada com poucos registros é aula que passou sem a sala
+entrar; muitos registros com turma aberta é sala no meio do caminho. Uma coluna
+só apagaria os dois casos.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Estender a política para aceitar um conjunto}
+    (\cd{escola\_id = ANY(...)}): é UMA linha, em laço sobre as $\sim$29 tabelas
+    --- mecanicamente barato, e foi por isso que a estimativa anterior deste
+    projeto errou nas duas direções (disse \enquote{31 tabelas} como se fosse
+    trabalho manual, e tratou o custo como se fosse de digitação). O custo real
+    não é escrever: é que a política É a garantia de que a escola A nunca vê a
+    criança da escola B, e passar a aceitar lista significa que todo dado de
+    estudante depende de o \emph{caller} montar a lista certa. O laço mantém a
+    garantia literal.
+  \item \emph{Agregado materializado} (tabela ou \emph{view} escrita por rotina):
+    resolve o teto de escala, e é o caminho para quando o laço ficar lento. Não
+    entrou agora porque agregado tem que ser invalidado, e rotina de
+    invalidação é a peça que este projeto já viu ficar sem dono
+    (\cd{expires\_at}).
+  \item \emph{Somar na API o que a tela já tem}: a soma OPERACIONAL fica na tela
+    (\adrr{ADR-81}) porque os números por escola já estavam lá. A pedagógica não
+    estava, então ela nasce somada no servidor --- somar nos dois lugares seria
+    duas fontes da mesma conta.
+\end{itemize}
+
+\textbf{O que ficou de fora, e não é omissão.}
+\begin{itemize}
+  \item \emph{Bem-estar}: dado de saúde, sem rota de gestor nenhum (nem do
+    contrato) por decisão registrada. Não é \enquote{falta esforço}, é uma linha
+    que o produto não atravessa.
+  \item \emph{O retrato de valores da Vila agregado por diretoria}: recomendado
+    NÃO, e a recomendação foi aceita. A listagem de turma da Vila já não mostra
+    valor de Schwartz nenhum, porque listagem ordenável vira ranking de
+    crianças; o agregado por diretoria é o mesmo risco com outro nome.
+  \item \emph{Nome de criança}: o relatório é CONTAGEM. Para ver uma criança, o
+    supervisor abre a escola dela. Uma coluna de nome aqui seria a lista
+    ordenável de crianças de várias escolas que a \adrr{ADR-49} e a \adrr{ADR-34}
+    recusam.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é o teto}: uma diretoria de 200 escolas são
+200 transações. Em lotes de 8, contra Cloud SQL, isso é ordem de segundos --- e o
+número 8 é o mesmo que o \emph{seed} usa por túnel IAP, baixo de propósito para
+não trocar espera de rede por espera de conexão. Ficar lento é o gatilho do
+agregado materializado, NÃO de afrouxar a política.
+
+\emph{Ruim}: o relatório só sabe o que \cd{liberacoes} e \cd{progresso} sabem ---
+que a criança TEM registro na missão, não o que ela fez nela. Profundidade por
+experiência (o retrato da Vila, a transcrição do unooGPT) não agrega para a
+diretoria sem uma decisão por experiência, e cada uma tem regra própria.
+
+\emph{Bom}: como as duas tabelas são da PLATAFORMA, o relatório cobre as nove
+experiências sem uma linha de código por experiência --- e a décima entra de
+graça.
+
+\textbf{Gatilho de reavaliação.} O laço passar de poucos segundos numa diretoria
+real (aí: agregado materializado), ou o produto pedir profundidade por
+experiência no nível da diretoria (aí: uma decisão por experiência, começando
+pela pergunta que a \adrr{ADR-34} fez primeiro --- a diretoria é unidade de
+análise de dado de criança, ou só de operação?).
+
+\section{ADR-83 --- O header ancora na JANELA, não na coluna de conteúdo}
+\label{adr:header-ancora-na-janela}
+
+\textbf{Data.} 2026-09-08 \quad \textbf{Status.} Aceita
+
+\textbf{Contexto.} O \cd{HeaderPlataforma} é um só para todos os papéis
+(\adrr{ADR-78}) --- mesma altura, mesmos elementos, da tela do estudante à área
+do contrato. Mas ele nascera com um parâmetro \cd{largura}
+(\cd{5xl} \textbar{} \cd{6xl} \textbar{} \cd{cheia}) cujo comentário dizia, com
+todas as letras, que os valores \enquote{casavam com o \cd{max-width} do
+\cd{<main>} de cada área}. Como o miolo é centralizado (\cd{mx-auto}), a coluna
+da área virava a POSIÇÃO da marca.
+
+O dono do produto relatou o sintoma sem a causa à vista: \enquote{a marca desliza
+para a direita em algumas páginas}. A medição, feita com Playwright e logada em
+cada papel, mostrou \textbf{quatro} posições diferentes:
+
+\begin{center}
+\begin{tabular}{lll}
+\textbf{superfície} & \textbf{@1440px} & \textbf{@1920px} \\
+\hline
+\cd{/admin/**}, \cd{/exp/:expId}, \cd{/dev-embed} & 20px & 20px \\
+\cd{/analise} & 164px & 404px \\
+\cd{/professor/**}, \cd{/estudante} & 228px & 468px \\
+\end{tabular}
+\end{center}
+
+208px de salto num monitor de 1440px; \textbf{448px} em 1920px. E um segundo
+defeito, embutido: em \cd{/analise} o header usava \cd{px-5} e o \cd{<main>}
+\cd{px-6}, então a marca ficava 4px à esquerda do título da própria página ---
+na única área onde a largura supostamente casava.
+
+\textbf{Decisão.} O miolo do header é \textbf{full-bleed}: sem \cd{max-width},
+sem \cd{mx-auto}. O parâmetro \cd{largura} deixou de existir. O gutter é
+\textbf{24px} (\cd{px-6}) no chrome E na coluna de conteúdo de todas as áreas ---
+uma constante \cd{GUTTER} no header, e o mesmo \cd{px-6} nos layouts.
+
+O princípio: \textbf{o header pertence à janela, não à página}. Ele é chrome do
+hub, e chrome que se move ao navegar é ruído que o usuário sente antes de
+conseguir nomear.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Unificar a coluna de todas as áreas e manter o header casado com
+    ela}: não converge, e não é questão de esforço. \cd{/admin} tem navegação
+    lateral e \cd{/exp} é aparelho em tela cheia --- essas áreas jamais terão a
+    coluna de \cd{/professor}. O resultado seria trocar quatro posições por
+    duas, mexendo na largura de $\sim$30 telas para não resolver o problema.
+  \item \emph{Manter o parâmetro e só corrigir os 4px de \cd{/analise}}: apaga o
+    sintoma menor e deixa o salto de 448px, que é o que foi relatado.
+  \item \emph{Gutter de 20px (\cd{px-5}, o do header antigo)}: 24px já era o de
+    \cd{/admin}, de \cd{/analise} e da nav pública --- escolher o valor da
+    minoria obrigaria a mexer em mais lugares para o mesmo efeito.
+\end{itemize}
+
+\textbf{O que ficou de fora, e é decisão, não omissão.} A nav da superfície
+PÚBLICA (\cd{/}, \cd{/privacidade}, \cd{/termos}) mantém miolo de 1440px
+centralizado e \cd{Logo size="md"}: em 1920px a marca dela fica em 264px, contra
+os 24px do app. É outra superfície, com outro público e outra linguagem, e mexer
+nela é decisão de marketing. Quem reabrir: a mudança é trocar o \cd{max-width} do
+\cd{.landing-nav\_\_miolo} por \cd{none}.
+
+\textbf{Consequências.} \emph{Ruim, e é o preço declarado}: em telas largas a
+marca não alinha mais com o título da página nas áreas de coluna estreita ---
+24px contra 472px em \cd{/professor} num monitor de 1920px. É o arranjo de
+\emph{app shell} que \cd{/admin} e \cd{/exp} já usavam; a alternativa era o
+salto.
+
+\emph{Ruim}: a marca ainda muda de posição na transição público \seta{} logado,
+enquanto a nav pública ficar como está.
+
+\emph{Bom}: a marca e o menu da conta ficam no MESMO X em todas as superfícies
+logadas --- medido em 1920px, 1440px e 900px, nas cinco áreas mais o
+\cd{/dev-embed}. Em telas estreitas header e conteúdo passam a começar no mesmo
+X (24/24 em 900px), que antes só acontecia por coincidência em duas áreas.
+
+\emph{Bom}: área nova nasce alinhada sem decidir nada. Não há mais parâmetro para
+escolher errado --- e o parâmetro era a única peça que exigia que quem cria um
+layout soubesse desta regra.
+
+\textbf{Gatilho de reavaliação.} A superfície pública ser alinhada ao app (aí o
+gutter passa a ser um só do primeiro clique ao logout), ou o design system
+publicar um componente de barra de aplicação --- que é onde o \cd{GUTTER} deveria
+morar, em vez de numa constante do hub.
+\section{ADR-84 --- Sinal do navegador \textbf{sem sessão}, e o aparelho como
+rótulo fechado}
+\label{adr:erro-de-cliente-publico}
+
+\textbf{Contexto.} A \adrr{ADR-58} pôs o erro de cliente entrando pela própria
+API, com \cd{OidcGuard}, e isso resolveu a experiência dentro do \emph{iframe}.
+Ficaram de fora as telas por onde \textbf{todo mundo passa}: a \emph{landing}, o
+\emph{login} e a troca de senha. Sem sessão, o BFF do hub responde 401, e o erro
+morria no console de quem não tinha conseguido entrar --- \enquote{ninguém está
+conseguindo entrar} era, literalmente, o defeito mais invisível da plataforma. A
+suíte de ponta a ponta chegou a declarar o 401 do Web Vital dessa tela como
+\emph{pendência conhecida}, o que é a forma educada de conviver com um sinal
+descartado.
+
+Em 8 de setembro de 2026 a investigação de \enquote{por que não vejo nenhum erro
+no Cloud Logging} mediu o resto do estrago, e ele era maior: \textbf{nenhum erro
+de cliente jamais foi registrado}, em nenhum ambiente. O
+\env{NEXT\_PUBLIC\_HUB\_VERSAO} é o \cd{github.sha} --- 40 caracteres --- e o
+campo \cd{versao} do schema aceitava 32, então \emph{todo} erro do hub voltava
+400. O mesmo valor é o \cd{service.version} do lote OTLP, que o \emph{proxy}
+valida com \cd{\{1,32\}}: 425 \emph{spans} do hub foram descartados em
+\cd{hml} entre 5 e 7 de setembro \textbf{com a rota respondendo 204}. Nada disso
+tinha contador: o único vestígio era uma linha \cd{corpo-invalido} que ninguém
+tinha motivo para procurar. Local, o \emph{default} do \emph{Dockerfile} é
+\cd{dev}, com três caracteres --- e é por isso que \emph{typecheck}, teste e
+suíte e2e passavam.
+
+\textbf{Decisão.} Três partes.
+
+\emph{Primeira}: existe um par \textbf{público} das rotas de sinal ---
+\rota{POST /observabilidade/publico/erros-cliente} e
+\rota{POST /observabilidade/publico/vitals} ---, sem \cd{OidcGuard}. Quem
+escolhe o destino é o \textbf{BFF}, não o cliente: com sessão vai para a rota
+autenticada, e o log ganha o id do usuário; sem sessão vai para a pública, sem
+identidade. O cliente posta sempre no mesmo endereço e nunca vê um 401. A rota
+pública força \cd{expId = hub} (antes do \cd{hub:init} nenhuma experiência
+conhece a API), não aceita id de pessoa, e é limitada por \textbf{IP} --- cinco
+erros por minuto --- \textbf{e} por um teto global de instância.
+
+\emph{Segunda}: o campo \cd{versao} passa a aceitar 64 caracteres nos dois
+pontos, e o CI manda o \textbf{SHA curto} (12). São as duas metades do mesmo
+conserto: o SHA curto arruma hoje, o teto maior impede que o tamanho de uma
+versão volte a decidir se um erro existe.
+
+\emph{Terceira}: erro e vital passam a carregar o que o navegador sabe do
+aparelho --- viewport, \emph{device pixel ratio}, \cd{effectiveType} da conexão,
+memória e núcleos ---, e a API deriva do \emph{user-agent} três rótulos
+\textbf{fechados} (\cd{navegador}, \cd{so}, \cd{tipo}). Só \cd{tipo} vira rótulo
+de métrica; \cd{navegador} e \cd{so} ficam no log.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Só corrigir o SHA e parar por aí}. É uma linha e resolve o erro
+    autenticado. Descartada porque deixa a \emph{landing} e o \emph{login} tão
+    cegos quanto antes --- e é lá que um erro impede o uso do produto inteiro.
+  \item \emph{O cliente tentar a rota autenticada e, no 401, repetir na
+    pública}. Não exige o BFF decidir nada. Descartada porque o 401 continua
+    acontecendo: continuaria sujando o console, e a \emph{pendência conhecida}
+    da suíte teria de continuar existindo para tolerá-lo.
+  \item \emph{Cota por IP em tudo}. O \arq{comum/rate-limit.ts} tem a lição
+    oposta escrita nele: a chave certa é o usuário, porque uma turma inteira sai
+    pelo mesmo NAT da escola. Aqui ela não se aplica --- não há usuário, é o que
+    define a rota, e estourar a cota não derruba ninguém: descarta amostra de
+    telemetria. Cinco erros por minuto de uma escola bastam para saber que a tela
+    quebrou.
+  \item \emph{\cd{navegador} e \cd{so} como rótulo de métrica também}. Seria a
+    resposta mais direta a \enquote{trava no Chromebook?}. Descartada por
+    cardinalidade: 2 superfícies \(\times\) \(\sim\)20 rotas \(\times\) 5 perfis
+    \(\times\) 6 navegadores \(\times\) 3 tipos são 3.600 combinações por
+    histograma, e histograma multiplica por \emph{bucket}. Com só o tipo são
+    600, e o navegador continua no log, onde não custa série.
+  \item \emph{Uma biblioteca de \emph{user-agent} (\cd{ua-parser-js})}.
+    Descartada porque a saída dela é aberta --- voltaríamos ao problema da
+    cardinalidade --- e porque distingue aparelhos que não existem numa escola
+    pública brasileira.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim, e é o principal}: existe agora uma rota da
+API \textbf{sem autenticação} que escreve no log. A contenção é toda estrutural
+--- Zod \cd{.strict()}, corpo pequeno, \cd{expId} forçado, \emph{redaction},
+cota por IP e teto global, e nenhuma linha de log por requisição recusada --- mas
+a superfície de abuso deixou de ser zero, e isso precisa constar de qualquer
+revisão de segurança. \emph{Ruim}: a combinação de memória, núcleos e tela
+aproxima-se de impressão digital de aparelho; a plataforma atende menores, então
+a coleta entra na conversa de DPA com a rede, e a lista é fechada de propósito
+--- ela não cresce sem uma ADR nova. \emph{Ruim}: o erro anterior ao
+\emph{handshake} continua sem rastro, porque ali não há token nem \cd{apiUrl}
+--- o que existe é a ausência de \cd{exp:ready}, e o hub ainda não a observa.
+\emph{Bom}: a falha de \emph{boot} de uma experiência passou a reportar
+(\cd{exp?.reportarErro} no \cd{catch} dos seis \arq{bootstrap.tsx}), e era ela
+que o estudante via como \enquote{não deu para abrir agora} sem deixar sinal.
+\emph{Bom}: todo caminho de recusa agora \textbf{conta} --- inclusive o corpo
+inválido, cuja ausência de contador é a razão pela qual seis dias se passaram
+sem ninguém notar.
+
+\textbf{Gatilho de reavaliação.} A rota pública aparecer em varredura de abuso,
+ou o teto global passar a ser atingido em operação normal --- nos dois casos a
+saída é exigir um token de baixa confiança emitido pela própria \emph{landing},
+que hoje não existe e não se justifica. E, do lado da coleta, qualquer rede pedir
+para restringir o que se mede do aparelho: a lista encolhe sem quebrar nada,
+porque todo campo é opcional.
+
+\section{ADR-85 --- Trocar de escola \textbf{remonta} o miolo da área}
+\label{adr:escopo-da-escola}
+
+\textbf{Contexto.} Quem trabalha em mais de uma unidade --- professor com duas
+cadeiras, coordenação de duas escolas, supervisor de uma diretoria inteira ---
+escolhe a \textbf{escola ativa} no cabeçalho. A troca grava no servidor
+(\rota{POST /api/escola-ativa}), que valida contra a API e reemite o cookie de
+sessão; a tela então chamava \cd{router.refresh()}, e o comentário do seletor
+explicava por quê: \enquote{as telas são Server Components e leem a escola da
+sessão}.
+
+Essa frase era verdadeira quando foi escrita, e deixou de ser sem que ninguém
+percebesse. O \cd{router.refresh()} re-renderiza \textbf{apenas} os Server
+Components. Ele não remonta um Client Component que já está montado, não
+re-executa os \cd{useEffect} dele (as dependências não mudaram), não
+reinicializa um \cd{useState} alimentado por \emph{prop} do servidor e não
+recarrega um \cd{<iframe>}. Toda a área administrativa é client, e as telas de
+produto do professor são \emph{embed}.
+
+Medido em 9 de setembro de 2026, com uma conta lotada em duas unidades: em
+\rota{/admin/usuarios} o cabeçalho passava a dizer o nome da escola nova
+enquanto a tabela seguia com as 49 pessoas da anterior --- as 1004 da nova só
+apareciam com F5; \rota{/admin/turmas} ficava nas 27 turmas da outra unidade; e
+em \rota{/professor/plano-de-aula} o hub já emitia \emph{token} de
+\cd{escola-demo-2} com o \emph{iframe} ainda segurando o de \cd{escola-demo}.
+
+Os dois primeiros são tela desatualizada, e a RLS contém o estrago: a ação
+disparada de uma linha velha viaja com o \emph{token} novo, a API não encontra a
+linha e a pessoa recebe um erro genérico. O terceiro é de outra natureza. Numa
+tela de \emph{embed} o \emph{token} viaja \textbf{uma} vez, no \cd{hub:init} que
+responde ao \cd{exp:ready}: sem remontar o aparelho, a experiência continua
+gravando na escola de onde a pessoa acabou de sair, com um \emph{token}
+legítimo, que a RLS aceita sem reclamar. Não é leitura errada --- é
+\textbf{escrita} na escola errada.
+
+O defeito sobreviveu porque o teste tinha a mesma cegueira do produto: a suíte
+\arq{gestor\_escola/02-quem-trabalha-em-duas-escolas} trocava a escola e
+navegava em seguida, e navegar é o próprio F5 que mascara o sintoma. Ela provava
+que o \emph{token} mudava, e nunca olhava a tela onde a troca acontecera.
+
+\textbf{Decisão.} O layout de cada área envolve o miolo em
+\cd{<EscopoDaEscola>} (\arq{apps/hub/components/escopo-da-escola.tsx}): um
+\cd{Fragment} cuja \cd{key} é a escola ativa da sessão. Quando a escola muda, o
+React desmonta a subárvore inteira e monta outra --- estado zerado, efeitos
+refeitos, \emph{iframe} recarregado, \emph{handshake} refeito com o
+\emph{token} certo.
+
+Duas escolhas dentro da decisão. \emph{É do layout, nunca da página}: mesma
+razão da trilha da \adrr{ADR-77} --- página nova nasce escopada sem escrever uma
+linha, e as quatro telas quebradas eram quatro esquecimentos independentes do
+mesmo detalhe. \emph{Envolve o miolo, não o cabeçalho}: o cabeçalho hospeda o
+próprio seletor, e remontá-lo tiraria o foco do teclado de quem acabou de trocar
+de escola pelo campo.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{\cd{key} por página, nas quatro telas quebradas}. É o conserto
+    mínimo e resolve o que foi medido. Descartada porque devolve a
+    responsabilidade a quem escreve a próxima página --- exatamente o desenho
+    que produziu as quatro. A \adrr{ADR-77} já pagou esse preço com o
+    \emph{breadcrumb}: 22 telas com trilha e 15 sem, nenhuma por decisão.
+  \item \emph{Trocar o \cd{router.refresh()} por \cd{location.reload()}}. Uma
+    linha, cobre tudo, inclusive as telas que ainda não existem. Descartada por
+    ser um recarregamento completo a cada troca --- perde a navegação sem
+    recarga em toda a plataforma para resolver um problema de quatro telas ---,
+    e por apagar o rastro do que a pessoa estava fazendo. Fica registrada como
+    plano B se a fronteira por \cd{key} se mostrar insuficiente em alguma área.
+  \item \emph{Reenviar \cd{hub:token} ao \emph{iframe} quando a escola muda, sem
+    remontá-lo}. Trata o caso grave sem recarregar a experiência. Descartada
+    porque o estado \textbf{dentro} da experiência continua sendo o da escola
+    anterior --- a lista de planos, o rascunho aberto, o que estiver em memória
+    --- e o resultado seria uma tela mostrando dados de uma escola com um
+    \emph{token} de outra: uma inconsistência mais difícil de perceber do que a
+    que se estava corrigindo.
+  \item \emph{Escopar a escola pela URL, como faz \rota{/analise}}. Torna o
+    estado visível e compartilhável. Descartada porque a escola ativa é
+    \textbf{do token}, não da tela: pô-la na URL criaria uma segunda fonte de
+    verdade sobre a fronteira de \emph{tenancy}, e as duas divergiriam no
+    primeiro \emph{link} colado de uma sessão para outra.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: trocar de escola agora descarta o estado de
+tela --- filtro digitado, página da paginação, formulário pela metade. É
+deliberado, e é o comportamento correto: um filtro de nome continua fazendo
+sentido, mas uma página 7 de uma lista de outra escola não. \emph{Ruim}: numa
+tela de \emph{embed} a troca custa o recarregamento da experiência, com o tempo
+de \emph{boot} dela. \emph{Ruim}: a fronteira é invisível no código da página
+--- quem lê uma tela de \rota{/admin} não vê nada que explique por que ela
+recarrega sozinha; o que amarra isso é este registro e a seção correspondente do
+\arq{apps/hub/AGENTS.md}. \emph{Bom}: área nova nasce correta, e a suíte de
+ponta a ponta passou a provar as duas metades na \textbf{mesma} tela --- a lista
+rebuscada sem F5, e o aparelho da experiência remontado (marca-se o
+\cd{<iframe>} e confere-se se a marca sobreviveu à troca).
+
+\textbf{Gatilho de reavaliação.} Uma área precisar preservar estado de tela
+através da troca de escola --- um formulário longo, um rascunho não salvo ---,
+caso em que a fronteira desce daquele layout para dentro dele e a exceção se
+escreve aqui. E o surgimento de uma tela que precise comparar duas escolas lado
+a lado: ela não caberia neste desenho e exigiria a discussão que a \adrr{ADR-34}
+recusou.
+
+% ---------------------------------------------------------------------------
+
+\section{ADR-86 --- O guia da aula \textbf{mostra} o conteúdo da missão, não o descreve}
+
+\textbf{Data:} 2026-09-09 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} O guia da aula (\adrr{ADR-65}) é o material com que o
+professor conduz uma missão do Entre Redes. Três das seis missões publicadas já
+injetavam \textbf{blocos vivos} --- conteúdo que o guia não guarda como texto,
+porque tem fonte de verdade em outro lugar: os momentos e as telas da revelação
+do Instanooria, os cartões da Vila do Lume por turma, a tabela dos vieses do
+unooGPT. As outras três --- UnooTube, O Rastro do Boato e O Eco no Grupo ---
+\textbf{descreviam} em prosa o que a turma lê na tela.
+
+Descrever parecia inofensivo, e não é. Uma varredura pelo texto exato do
+catálogo de cada missão dentro do guia correspondente devolveu \textbf{zero}
+ocorrências nas três: nenhuma das opções que o estudante escolhe, nenhum título
+de vídeo, nenhuma reação do grupo aparecia com as palavras que a criança lê. O
+que havia era paráfrase --- \emph{``a opção que respondeu no grupo em vez de
+sair dele''}, \emph{``a opção que funciona cita a matéria sem atacar
+ninguém''} --- e ela falha de dois modos distintos.
+
+\emph{Primeiro, a paráfrase diverge.} O guia do UnooTube dizia \emph{``dos 21
+vídeos, metade cita fonte verificável \dots\ a outra metade é
+sensacionalista''}. A divisão real do catálogo é \textbf{11 e 10}, porque 21 é
+ímpar. Ninguém escreveu isso errado de propósito: a frase foi escrita quando era
+verdadeira o bastante, o catálogo mudou, e nada obrigava as duas coisas a
+concordarem. É a mesma armadilha do \cd{expires\_at} sem rotina que a
+\adrr{ADR-13} registra --- a regra sai do código, o registro fica, e quem lê
+acredita nele. Os números da pontuação (\cd{+1000}, \cd{+50}, \cd{3} salvos)
+estavam copiados à mão pelo mesmo caminho.
+
+\emph{Segundo, e mais grave, a paráfrase apaga o que sustenta a lição.} No
+Rastro do Boato as opções A e C produzem a \textbf{mesma} reação do grupo ---
+encaminhar amplifica ativamente, apagar para si mesmo deixa a corrente correr
+sem você, e as duas terminam com o Pedro anunciando que já recebeu em mais três
+grupos. É a peça central da missão: a inação alimenta a mesma curva. Lado a
+lado, a coincidência salta aos olhos; descrita, simplesmente não existe. No
+UnooTube, o professor não tinha como reconhecer o vídeo que a criança de nove
+anos citava --- e ela cita pelo apelido do canal, não pelo tema.
+
+\textbf{Decisão.} Toda missão publicada tem bloco vivo, e o conteúdo que a turma
+lê na tela chega ao guia \textbf{como é}, de uma fonte só.
+
+Onde essa fonte mora depende de onde o conteúdo já vive, e as duas formas
+coexistem sem conflito:
+
+\begin{itemize}
+  \item \emph{Copy que roda dentro do bundle da experiência} --- as telas da
+    revelação do Instanooria --- vive em \textbf{duas cópias gêmeas} de um
+    arquivo de TypeScript puro, uma na experiência e outra no hub, cada uma
+    compilada para o seu bundle. Existe assim porque a revelação abre no meio da
+    aula: texto que depende de rede é texto que pode não aparecer. Foi um pacote
+    de \emph{workspace} (\cd{@edu/conteudo-exp-01}) até 2026-09-09, e a
+    duplicação é decisão do dono do produto --- a copy está fechada, e o pacote
+    cobrava o custo de existir sem ter o que proteger. \textbf{O que segura a
+    igualdade hoje é o cabeçalho dos dois arquivos, e nada mais.}
+  \item \emph{Conteúdo com gabarito, que já vive na api} --- e é o caso das três
+    missões desta decisão, porque a regra inviolável nº 3 mantém resposta certa,
+    correção e pontuação no servidor --- vem de uma rota \textbf{professor-only}
+    do módulo da missão: \rota{GET /unootube/professor/videos},
+    \rota{GET /rastro-boato/professor/material} e
+    \rota{GET /o-eco-no-grupo/professor/material}, no molde de
+    \rota{GET /unoogpt/professor/fontes}, que já era assim.
+\end{itemize}
+
+As três rotas são catálogo, não dado de turma: sem \cd{escola\_id}, sem
+\emph{tenancy} a aplicar e sem \cd{?escolaId=} para o \cd{gestor\_contrato}
+informar. O que a guarda protege é o \textbf{papel} --- por isso vivem em
+\emph{controller} separado do de turmas, com \cd{@Roles("professor",
+...GESTORES)}. E devolvem justamente os campos que \cd{semGabarito} retira antes
+de a opção chegar ao estudante: o que muda entre as duas superfícies é o leitor.
+
+Duas escolhas dentro da decisão. \emph{Número que o guia mostra é calculado do
+catálogo}: a rota do UnooTube devolve \cd{resumo} (total, factuais,
+sensacionalistas) e \cd{pontuacao} contados na origem, e a faixa de alerta no
+topo do guia perdeu os dígitos que repetia. \emph{O guia abre inteiro com a api
+fora do ar}: cada bloco tem o próprio cartão de ``não carregou'', porque as
+outras nove seções continuam servindo --- é o mesmo tratamento que o bloco do
+unooGPT já tinha.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Copiar o conteúdo para dentro do guia, como texto}. Resolve a
+    leitura e é o caminho mais curto. Descartada por ser exatamente o defeito
+    que se está corrigindo, com um passo a mais: duas cópias literais divergem
+    mais depressa que uma paráfrase, porque quem revisa a copy da experiência
+    não tem motivo nenhum para abrir o guia.
+  \item \emph{Um pacote de workspace por missão, como o que a revelação do
+    Instanooria usou até 2026-09-09}. Uniformizaria o desenho. Descartada porque o
+    conteúdo destas três \textbf{não pode} ir para um pacote: ele carrega
+    gabarito, e pacote de workspace é lido em tempo de \emph{build} pelos dois
+    consumidores --- o bundle da experiência entre eles. A resposta certa
+    chegaria ao JavaScript público, violando a regra inviolável nº 3. O pacote
+    servia à revelação do Instanooria justamente porque ali não há gabarito
+    nenhum: é copy que a criança vai ler de qualquer jeito.
+  \item \emph{Reaproveitar as rotas de estudante que a experiência já consome}.
+    Nenhuma rota nova. Descartada porque elas passam por \cd{semGabarito} por
+    construção --- é o desenho que impede o vazamento --- e devolveriam ao
+    professor exatamente a tela que a criança vê, sem a única informação que ele
+    precisa ter e ela não.
+  \item \emph{Manter a prosa e prendê-la ao catálogo com um teste}. Barato, e
+    pegaria a divergência dos números. Descartada porque não pega a segunda
+    falha, que é a que importa: nenhum teste teria detectado que a paráfrase
+    apagava a coincidência entre A e C. Ela não estava errada --- estava
+    incompleta.
+  \item \emph{Servir o conteúdo pelo bundle da experiência, deixando o hub
+    buscá-lo do CDN}. Descartada de saída: o bundle publicado é JavaScript
+    minificado num caminho versionado do \emph{bucket}, e extrair texto de
+    dentro dele seria criar uma dependência entre o hub e a saída de um
+    compilador.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: o guia da aula passou a depender da api em
+cinco das seis missões --- com ela fora, o professor lê nove seções e um cartão
+de erro no lugar da décima. Aceito: ele lê o guia no preparo, sentado, e não no
+meio da aula com a turma esperando; a única superfície que não pode depender de
+rede é a revelação, e é por isso que ela continua num pacote. \emph{Ruim}: três
+rotas novas para manter, documentar e cobrir --- o custo de qualquer superfície
+nova. \emph{Ruim}: o professor agora tem o gabarito à mão numa tela que ele pode
+projetar por engano, e o texto de cada bloco precisa dizer ``não projete'' com
+todas as letras, como o do unooGPT já dizia. \emph{Bom}: a divergência que
+existia foi corrigida e não pode voltar por esquecimento --- os números são
+contados na origem. \emph{Bom}: o professor do UnooTube reconhece o vídeo que a
+criança cita, e o do Rastro do Boato vê que A e C terminam iguais antes de
+entrar na sala.
+
+\textbf{Gatilho de reavaliação.} Uma missão cujo conteúdo de preparo seja grande
+demais para uma requisição de página --- caso em que ele desce para o
+\emph{bundle} do hub por geração estática, e não para prosa escrita à mão. E a
+primeira experiência que precise mostrar ao professor conteúdo \textbf{gerado
+por IA} para aquela turma: ali o bloco vivo deixa de ser catálogo e vira dado de
+turma, com \emph{tenancy}, e a decisão de onde ele é gerado e por quanto tempo
+vale precisa ser tomada à parte.
+
+\section{ADR-87 --- Disponibilidade: um terceiro eixo, com nome próprio, e o
+produto como teto}
+
+\textbf{Data:} 2026-09-09 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} Duas coisas decidiam se uma missão abria para uma criança: o
+\textbf{catálogo} (\cd{experiencias}: série, unidade, público --- que forma a
+experiência tem) e a \textbf{liberação por turma} (\cd{liberacoes},
+\adrr{ADR-69} --- se o professor a abriu naquela sala). Nenhuma das duas responde
+à pergunta que um contrato B2G faz: \emph{este produto existe nesta rede?}
+
+A resposta vivia em duas constantes compiladas no \emph{bundle} do hub: o
+\emph{array} \cd{PRODUTOS} de \cd{apps/hub/lib/produtos.ts} e o campo
+\cd{status: 'disponivel' | 'em-breve'} do catálogo do Entre Redes. Ou seja:
+desligar o jogo numa rede era editar TypeScript e fazer \emph{deploy} --- e
+fazê-lo para UMA rede era impossível, porque a constante é a mesma para todas as
+\emph{stacks} que rodam a mesma imagem. Duas necessidades concretas não tinham
+como ser atendidas: a rede que não contratou um produto o vê no cartão do
+professor, e a experiência que quebra num \emph{deploy} só sai do ar com outro
+\emph{deploy}.
+
+\textbf{Decisão.} Existe um TERCEIRO eixo, chamado \textbf{disponibilidade},
+gravado em \cd{disponibilidades} e operado pela Unooria:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Eixo} & \textbf{Pergunta} & \textbf{Quem decide}\\
+\midrule
+catálogo & que forma a experiência tem? & o manifesto / o CI\\
+\zebra liberação (\adrr{ADR-69}) & está aberta NESTA TURMA? & o professor\\
+disponibilidade & existe NESTA REDE? & a Unooria (\cd{admin})\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Disponibilidade é \textbf{pré-condição} de liberação, nunca o contrário. O nome
+é próprio de propósito: os três eixos respondem \enquote{a missão abre?} e
+confundi-los é o defeito caro --- um produto desligado tem o sintoma de um bug
+de enturmamento.
+
+Uma linha responde por um \textbf{recurso} num \textbf{escopo}. O recurso é
+\cd{produto:<slug>} ou \cd{experiencia:<expId>}; o escopo é a escola, a regional
+ou o contrato inteiro (\cd{escola\_id} nulo). Escola e regional são a mesma
+tabela \cd{escolas} distinguida por \cd{tipo}, então uma coluna nulável cobre os
+três níveis sem hierarquia nova.
+
+Duas regras de resolução, e as duas são decisão de produto:
+
+\begin{enumerate}
+  \item \textbf{O escopo mais específico ganha}: escola \seta{} regional
+    \seta{} contrato \seta{} padrão do código.
+  \item \textbf{O produto é um TETO}: produto desligado no escopo que vale
+    \implica{} nada dentro dele liga, mesmo com linha própria dizendo
+    \cd{ligado}.
+\end{enumerate}
+
+E três escolhas menores que o desenho depende de fixar:
+
+\emph{O padrão é LIGADO}, o contrário de \cd{liberacoes}. Lá a ausência de linha
+é o bloqueio (\enquote{o mundo nasce fechado de graça}); aqui a ausência é o
+mundo normal, porque este interruptor é mecanismo de \textbf{exceção} --- não foi
+contratado, ou quebrou --- e não de liberação. Nascer desligado exigiria uma
+linha por recurso a cada contrato provisionado, e toda experiência nova ficaria
+invisível até alguém lembrar de ligá-la.
+
+\emph{A linha inteira é a decisão}: \cd{ligado} e \cd{versao\_fixa} não se
+resolvem em cadeias separadas. Resolver campo a campo daria mais flexibilidade e
+produziria estados que ninguém explica olhando a tela --- a linha que o operador
+gravou deixaria de ser o que está valendo.
+
+\emph{A composição produto \seta{} experiências é DERIVADA do manifesto},
+por uma coluna \cd{experiencias.produto} que o \cd{public/experiencia.json}
+declara. É isto que faz o painel se auto-estender: experiência nova aparece nele
+sem ninguém editar lista nenhuma. Quem cobra o campo é um teste que varre todos
+os manifestos do monorepo, e não o Zod da rota --- um 400 no
+\rota{PUT /experiencias/\{expId\}} mataria o \emph{job} \cd{ativar-exps} DEPOIS
+de os \emph{bundles} já terem subido, com a \cd{versao\_ativa} na versão antiga.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Reusar \cd{liberacoes} com um estado novo} (\cd{indisponivel}).
+    Seria uma tabela a menos. Descartada porque \cd{liberacoes} é por TURMA e o
+    dono dela é o professor: desligar um produto na rede exigiria escrever uma
+    linha por turma de cada escola, e a tela do professor passaria a mostrar,
+    no mesmo lugar, uma decisão que não é dele e que ele não pode desfazer.
+  \item \emph{Deixar a experiência sobrepor o produto} (exceção por experiência
+    vencendo o teto). Mais expressivo. Descartada porque faz \enquote{desliguei o
+    Entre Redes para a rede} não significar o que diz: o operador teria de caçar
+    exceções antes de confiar na tela. Religar o produto no escopo menor
+    continua sendo o caminho, e é explicável.
+  \item \emph{Um campo booleano em \cd{experiencias}} (\cd{ativo}). O mais
+    simples de todos. Descartada porque \cd{experiencias} é escrita pelo CI a
+    cada \emph{publish}: o \emph{deploy} seguinte sobrescreveria o desligamento
+    feito à mão --- e o pior momento para isso é justamente o \emph{deploy} de
+    correção. Além de não ter onde pôr o escopo nem o produto.
+  \item \emph{Flags num serviço de terceiro} (LaunchDarkly e similares).
+    Descartada pela mesma razão que Redis está fora sem gargalo medido: um
+    contrato é uma \emph{stack} isolada, o dado cabe em dezenas de linhas, e um
+    provedor externo põe uma dependência de rede no caminho de toda página.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: desligar um produto numa rede deixou de ser
+\emph{deploy}, e \emph{rollback} de experiência deixou de ser CLI. \emph{Bom}: a
+tabela \cd{experiencias\_versoes} que nasceu com esta decisão conserta um defeito
+que ninguém havia notado --- \cd{publicar-manifesto.mjs --versao x.y.z} manda o
+número antigo com o manifesto ATUAL do repositório, então voltar a versão não
+voltava \cd{viewport} nem \cd{permissoes}: a exp-70 reabria sem
+\cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava, sem
+erro em lugar nenhum. Guardando o manifesto inteiro por versão, o
+\emph{rollback} passa a ser fiel.
+
+\emph{Ruim}: nasceu uma alavanca de incidente. Um clique no escopo-contrato
+desliga um produto para os \textasciitilde10 mil estudantes de uma rede, e o
+sintoma que ele produz --- a missão desapareceu da grade --- é
+\textbf{indistinguível} de um defeito. As mitigações são modal de confirmação,
+\cd{motivo} obrigatório ao desligar (CHECK no banco, não só Zod) e o registro
+estruturado \cd{recurso-alterado}; o sintoma entra no apêndice de operação.
+\emph{Ruim}: um terceiro eixo é um terceiro lugar onde procurar quando algo não
+abre. \emph{Ruim}: \cd{disponibilidades} fica FORA da RLS, contra o hábito da
+regra inviolável nº 1 --- é configuração da rede, não dado de estudante, e a
+linha de escopo-contrato tem \cd{escola\_id} nulo por desenho, de modo que uma
+política por \cd{escola\_id} esconderia justamente a resposta. A exceção é
+provada por teste, para que a próxima migração não a \enquote{conserte}: ligar
+RLS ali faz TODO produto parecer ligado.
+
+\emph{Aceito com nome}: desligar não interrompe quem já está dentro. O
+\emph{bundle} carregou, a api começa a recusar, e a experiência cai no estado de
+erro dela --- a mesma degradação que a liberação \cd{encerrada} já tem. E a
+telemetria de sessão em voo continua sendo ACEITA: recusá-la perderia o registro
+do que já aconteceu.
+
+\textbf{Gatilho de reavaliação.} O primeiro pedido de \enquote{ligar para 10\%
+das turmas} ou de janela de validade (\enquote{desligado até sexta}): ali
+disponibilidade deixa de ser um interruptor por escopo e vira segmentação, e
+segmentação com data é outro desenho. E o dia em que a pergunta \enquote{quem
+desligou isto, e quando?} precisar de TELA --- hoje ela tem resposta no registro
+e nas colunas da linha, que é sobrescrita a cada mudança, e a resposta em tela
+pede uma tabela de auditoria \emph{append-only}.
+
+\section{ADR-88 --- O painel da Unooria é só do \cd{admin}: a primeira
+assimetria com o \cd{gestor\_contrato}}
+
+\textbf{Data:} 2026-09-09 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-80} criou seis papéis e disse, com todas as
+letras, que \cd{admin} e \cd{gestor\_contrato} têm \textbf{as mesmas
+capacidades} --- \enquote{o que os distingue é de quem é a conta, não o que ela
+pode fazer}. Os dois dividem a área \cd{/admin} do hub, e quem os separa item a
+item é o \cd{RolesGuard} da api.
+
+O painel de disponibilidade (\adrr{ADR-87}) rompe isso pela primeira vez. Ligar
+e desligar produto não é operação de quem administra o contrato \textbf{do lado
+do cliente}: é decisão comercial e operacional da fornecedora. Um
+\cd{gestor\_contrato} que pode desligar o Entre Redes pode derrubar a rede
+inteira por engano; e um que pode LIGAR passa a ter acesso a produto que a rede
+não contratou.
+
+\textbf{Decisão.} O painel vive numa área própria, \cd{/unooria/*}, restrita ao
+papel \cd{admin} --- e esta é a primeira capacidade que \cd{admin} tem e
+\cd{gestor\_contrato} não. A afirmação de igualdade da \adrr{ADR-80} passa a
+valer para \textbf{tudo menos} a disponibilidade de recursos.
+
+Área própria, e não um item escondido dentro de \cd{/admin}, por três razões.
+\emph{Honestidade}: o painel da fornecedora ao lado das telas da escola convida
+ao clique errado. \emph{Trilha}: pela regra do hub, área nova exige
+\emph{layout} novo, e é o \emph{layout} que desenha a trilha --- foi por não ter
+\emph{layout} próprio que \cd{/admin} nasceu sem trilha nenhuma (\adrr{ADR-77}).
+\emph{Crescimento}: o que a Unooria opera sobre uma rede não termina no
+interruptor, e um item solto viraria a segunda área por acidente.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter a igualdade e dar o painel aos dois papéis}. Preserva a
+    \adrr{ADR-80} intacta e é o caminho mais curto. Descartada porque entrega ao
+    cliente o interruptor do que ele compra --- inclusive o de ligar o que não
+    comprou.
+  \item \emph{Item escondido dentro de \cd{/admin}, visível só para
+    \cd{admin}}. Reaproveita casca, \emph{nav} e trilha. Descartada pelas três
+    razões acima; a economia é de umas poucas dezenas de linhas.
+  \item \emph{Um sétimo papel} (\cd{operador\_unooria}), deixando \cd{admin}
+    como era. Descartada por multiplicar a matriz de papéis para descrever a
+    conta que já existe: \cd{admin} JÁ é a conta da Unooria, e o problema não é
+    falta de papel, é a afirmação de igualdade ter sido escrita antes de existir
+    a primeira exceção.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a matriz de papéis do capítulo de
+\emph{tenancy} deixa de poder dizer \enquote{\cd{admin} $\equiv$
+\cd{gestor\_contrato}} e passa a carregar uma exceção --- exatamente o tipo de
+detalhe que a próxima sessão \enquote{conserta} sem saber, e é por isso que esta
+ADR existe. \emph{Ruim}: uma área a mais no \cd{middleware}, e com ela uma
+armadilha que passa no \emph{typecheck} --- o \emph{redirect} entre áreas compara
+UMA \emph{string} (\cd{areaDoPathname} contra \cd{areaDoPapel}), então o
+\cd{admin} precisa poder entrar em DUAS áreas ou ele é expulso de uma delas, com
+o sintoma \enquote{clico em Recursos e caio em Usuários}. \emph{Bom}: existe um
+lugar que é da fornecedora, e ele pode crescer sem se misturar com o da escola.
+
+\textbf{Gatilho de reavaliação.} Um cliente que contratualmente exija operar o
+próprio catálogo --- caso em que a resposta provável não é abrir o painel ao
+\cd{gestor\_contrato}, e sim recortar dele o que é seguro delegar (desligar sim,
+ligar não), o que já é uma decisão diferente desta.
+
+\section{ADR-89 --- O histórico é tabela, não log --- e a REDE lê o dela}
+
+\textbf{Data:} 2026-09-10 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-87} registrou, como consequência ruim aceita, que
+o histórico de quem mexeu no painel vivia só no registro estruturado
+(\cd{codigo: recurso-alterado}): a linha de \cd{disponibilidades} é
+SOBRESCRITA a cada mudança, então ela responde \enquote{o que vale agora} e não
+\enquote{quem desligou isto, e quando}. O gatilho declarado ali era o dia em que
+a pergunta precisasse de TELA.
+
+Ele chegou por dois caminhos ao mesmo tempo. Primeiro, a pergunta é feita às 8h
+da manhã por quem está com a escola ao telefone --- não por quem tem acesso ao
+Cloud Logging e sabe escrever um filtro. Segundo, e mais importante: quem sofre
+a mudança é a REDE, e ela não tinha como saber que a perdeu. O produto
+desaparecia do painel do professor e o sintoma é indistinguível de um defeito
+(está no Apêndice~\ref{ap:operacao} por isso) --- o gestor do contrato
+descobriria ligando para perguntar.
+
+\textbf{Decisão.} O histórico é uma tabela \textbf{append-only}
+(\cd{recursos\_auditoria}), escrita por toda mudança do painel, e é lida por
+\textbf{DOIS} painéis: o da Unooria (\rota{/unooria/recursos}, quem faz) e o da
+rede (\rota{/admin/recursos}, quem sofre).
+
+\textbf{A assimetria da \adrr{ADR-88} fica intacta.}
+\rota{GET /recursos/auditoria} é a única rota de \rota{/recursos/*} que
+\cd{gestor\_contrato} alcança; \rota{GET /recursos/painel} e as escritas
+continuam respondendo 403 para ele. Ler por que o produto mudou de estado é
+informação do cliente; decidir o estado não é. Verificado no navegador: a leitura
+responde 200 e o \cd{PUT} responde 403 na mesma sessão.
+
+\textbf{Quatro escolhas dentro da decisão.}
+
+\emph{\cd{autor\_nome} é CONGELADO na linha}, e não um \emph{JOIN} com
+\cd{users}. Um \emph{JOIN} mostraria o nome de HOJE --- ou nada, se a conta saiu
+da rede --- e o registro deixaria de dizer quem era aquela pessoa NAQUELE dia.
+É a mesma razão de \cd{exp\_01\_runs.nome\_no\_app} guardar o apelido em vez de
+o resolver. Por isso também \textbf{não há FK} em \cd{autor\_id}: com
+\cd{RESTRICT}, excluir qualquer conta que já tenha mexido no painel ficaria
+impossível para sempre, porque histórico não se apaga.
+
+\emph{\cd{UPDATE} é recusado por TRIGGER; \cd{DELETE} continua permitido.}
+Reescrever uma linha é o único jeito de esta tabela mentir, e é o que o
+\emph{trigger} fecha --- \enquote{append-only} garantido pelo código seria a
+promessa que a próxima rotina de correção quebra. O \cd{DELETE} fica por duas
+razões concretas: retenção (nenhuma tabela deste produto tem prazo hoje, e quem
+cumprir o prazo precisará apagar) e ISOLAMENTO DE TESTE --- tabela que não se
+limpa faz cada suíte deixar linha para trás, e esta mesma sessão gastou três
+diagnósticos nesse tipo de vazamento.
+
+\emph{O registro NUNCA derruba a operação que o chamou.} Desligar um produto num
+incidente não pode falhar porque o histórico não pôde ser escrito. Mas o erro
+não some: vai ao log com \cd{codigo: recurso-auditoria-nao-gravada}, que é o que
+uma métrica de log alcança.
+
+\emph{O histórico de uma ESCOLA inclui as decisões de CONTRATO.} Sem elas, a
+tela da escola diria \enquote{nada aconteceu aqui} sobre um produto que a rede
+desligou --- exatamente a pergunta do gestor.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Ficar só no log e construir uma métrica ou painel no Cloud
+    Logging.} Custo zero de código. Descartada porque a pergunta é de PRODUTO e
+    quem a faz não tem console de nuvem --- e porque o cliente nunca veria.
+  \item \emph{Versionar \cd{disponibilidades} em vez de tabela nova} (uma linha
+    por estado, a mais recente valendo). Uniformizaria as duas coisas.
+    Descartada por transformar toda leitura do resolvedor --- que roda no caminho
+    de TODA entrada em experiência --- numa consulta com \cd{ORDER BY} e
+    \cd{DISTINCT ON}. O estado atual é lido milhares de vezes por manhã; o
+    histórico, algumas por semana.
+  \item \emph{Dar a escrita ao \cd{gestor\_contrato}}, já que ele passa a ver o
+    histórico. Descartada: é a decisão da \adrr{ADR-88}, e o recorte
+    \enquote{desligar sim, ligar não} continua sendo o gatilho de reavaliação
+    dela, não desta.
+  \item \emph{Abrir o histórico a \cd{gestor\_escola} e \cd{gestor\_regional}.}
+    Descartada porque o histórico é do CONTRATO (a linha de escopo-contrato não
+    tem escola), e recortá-lo por unidade daria a uma escola a notícia de que a
+    rede perdeu um produto antes de a coordenação da rede saber.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: a pergunta operacional passou a ter resposta
+em tela, para os dois lados, e o cliente deixou de depender de um telefonema.
+\emph{Bom}: o \emph{trigger} torna a palavra \enquote{append-only} verdadeira em
+vez de aspiracional. \emph{Ruim}: uma tabela que só cresce e não tem prazo ---
+o mesmo risco \cd{R-02} que \cd{telemetria\_eventos} e \cd{vila\_sessoes} já
+carregam, e pela mesma razão (prazo sem rotina que o cumpra é pior que prazo
+nenhum). \emph{Ruim}: o \emph{motivo} escrito pela Unooria passa a ser lido pelo
+cliente --- o que é a intenção, e ao mesmo tempo significa que ele é texto de
+CONTRATO, não recado interno. Está dito no rótulo do campo, no diálogo.
+
+\textbf{Gatilho de reavaliação.} O primeiro pedido de exportação (CSV do
+histórico para anexar a um relatório contratual) ou de retenção com prazo --- o
+segundo é o que faz a tabela precisar de rotina, e aí ela entra na mesma
+conversa de \cd{telemetria\_eventos}.
+
+\section{ADR-90 --- A suíte da API roda em UM \emph{worker}}
+
+\textbf{Data:} 2026-09-10 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A suíte de testes da API reprovava de forma intermitente ---
+uma falha a cada ~60 execuções completas, sempre em suítes que passavam
+sozinhas. A caça encontrou e consertou QUATRO defeitos reais de isolamento, e
+todos tinham a mesma raiz: \textbf{as tabelas de catálogo e de contrato estão
+fora da RLS por desenho} (\cd{experiencias}, \cd{experiencias\_versoes},
+\cd{disponibilidades}, \cd{periodos\_letivos}, \cd{recursos\_auditoria}), então
+uma \emph{fixture} escrita ali é ESTADO GLOBAL, não estado da suíte. Os quatro:
+uma linha de disponibilidade em escopo-contrato desligando um produto para as
+outras suítes; uma experiência de teste com \cd{publico: "estudante"} entrando na
+grade de toda turma; o \cd{GRANT} de preparação da \emph{role} de \emph{runtime}
+rodando em paralelo consigo mesmo (\cd{XX000 tuple concurrently updated} --- e o
+comentário do arquivo AFIRMAVA ser seguro em paralelo); e uma suíte apagando o
+período letivo compartilhado.
+
+Consertados os quatro, a cauda continuou: ~1 falha em 60 corridas paralelas
+contra 0 em 25 seriais. A conclusão é que o que resta não é um defeito
+localizável, é a CLASSE do problema --- um banco, um \emph{schema}, tabelas
+compartilhadas sem RLS e 40+ arquivos de teste escrevendo nelas ao mesmo tempo.
+
+\textbf{Decisão.} \cd{maxWorkers: 1} no \arq{apps/api/jest.config.cjs}, com o
+número medido e o gatilho de reavaliação no comentário ao lado. \textbf{A troca
+é explícita}: 5,4\,s $\to$ 17,6\,s na suíte inteira, em troca de zero
+intermitência. Trinta corridas completas depois da mudança (55 contando as
+seriais da medição) fecharam sem uma falha.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Continuar caçando teste por teste.} Descartada porque o custo não
+    converge: cada arquivo novo pode reintroduzir o problema, e a falha aparece
+    uma vez em sessenta --- o pior regime possível para quem lê um CI vermelho e
+    tem de decidir se aquilo é a mudança dele.
+  \item \emph{Um banco por \emph{worker}.} É o conserto de verdade, e continua
+    sendo o caminho quando o tempo doer: ela custa \emph{template} de banco,
+    \cd{DATABASE\_URL} por \emph{worker} e migração aplicada N vezes no
+    \emph{setup}. Cara demais para 17\,s.
+  \item \emph{Ligar RLS nas tabelas de catálogo}, para que o isolamento viesse do
+    banco. Descartada com força: a linha de escopo-contrato de
+    \cd{disponibilidades} tem \cd{escola\_id} nulo POR DESENHO, e a política a
+    esconderia --- todo produto passaria a parecer ligado, que é o sintoma oposto
+    a um erro de permissão. Está escrito no dicionário de dados e provado por
+    teste, para que a próxima migração não \enquote{conserte} isso.
+  \item \emph{Marcar as suítes de Postgres como serial e deixar o resto em
+    paralelo.} Descartada por não pagar: as suítes de Postgres são a maioria do
+    tempo da suíte, então o ganho seria de segundos, ao custo de uma regra que
+    cada arquivo novo precisa saber e obedecer.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o CI vermelho voltou a significar
+\enquote{a sua mudança quebrou algo}. \emph{Bom}: a caça deixou quatro
+\emph{fixtures} realmente isoladas, e o comentário de cada uma diz por quê.
+\emph{Ruim}: 12 segundos a mais em cada execução local e de CI. \emph{Ruim}:
+serializar ESCONDE o problema de classe --- um teste novo que dependa de ordem
+agora passa, e só vai doer no dia em que alguém reativar o paralelismo.
+
+\textbf{A face de LEITURA do mesmo problema, descoberta horas depois e
+registrada aqui porque é a mesma decisão}: se \emph{fixture} escrita em tabela
+de contrato é estado global, \textbf{leitura} dela é dependência invisível. Três
+suítes LIAM \cd{experiencias} sem nunca a escrever --- o teto do produto, a
+composição do painel, a grade da sala --- e passavam porque o banco de
+desenvolvimento está SEMEADO. No Postgres descartável do CI a tabela nasce
+vazia, e o vermelho saía como \cd{expect(codigo).toBe(\textquotesingle{}recurso-indisponivel\textquotesingle{})}
+recebendo \cd{null}: lê-se \enquote{a guarda não funciona} quando o que faltava
+era o dado, e não reproduz na máquina de ninguém. O conserto é declarar a
+pré-condição: \cd{globalSetup} semeia o catálogo REAL a partir dos manifestos,
+uma vez, antes de qualquer suíte --- a mesma fonte que o CI publica e que o
+\emph{seed} lê, nunca uma lista de teste à mão. \cd{update} mínimo, para que
+rodar os testes não desfaça um \emph{rollback} deliberado em \emph{dev}; e
+Postgres inalcançável avisa e segue, porque 75 das 95 suítes não precisam de
+banco.
+
+\textbf{Gatilho de reavaliação.} A suíte passar de ~60\,s. Aí o banco por
+\emph{worker} passa a valer o preço, e o comentário do \arq{jest.config.cjs}
+está escrito para ser lido nesse dia.
+
+\section{ADR-91 --- O idioma da interface tem TRÊS zonas, e o clone não se traduz}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A plataforma atende redes públicas, e o texto dela é lido por
+professor, gestor e criança do 1º ano EF ao 3º EM. Anglicismo em rótulo não é
+questão de gosto: é pressuposto de repertório que numa rede pública não se pode
+fazer. A varredura de 2026-09-10 achou \textbf{427 trechos de texto realmente
+visível} com termo em inglês, em 112 arquivos --- e o achado que motivou a
+tarefa foi o mais claro de todos: a trilha da exp-03 dizia
+\cd{Briefing} ao lado de \cd{Orientação}, \cd{Investigação} e \cd{Resultado}, ou
+seja, a palavra estava fora do padrão dos próprios vizinhos.
+
+\textbf{Mas uma regra única --- \enquote{traduzir tudo} --- faz a plataforma
+melhorar e as experiências piorarem.} Dentro do clone, a fidelidade ao aplicativo
+real é o INSTRUMENTO de medida: é ela que faz a criança agir como age fora da
+aula, e é isso que a missão afere. \cd{Shorts}, \cd{Stories}, \cd{Feed} e
+\cd{Playlists} são os nomes que o YouTube e o Instagram usam nas versões
+brasileiras deles; traduzi-los quebraria o disfarce que a experiência existe para
+manter.
+
+\textbf{Decisão.} Três zonas, com regras distintas:
+
+\begin{enumerate}
+  \item \textbf{Plataforma} (hub, experiências do professor): pt-BR sem exceção.
+  \item \textbf{Superfície disfarçada} (dentro do clone): o nome que o aplicativo
+    real usa em português. Não se traduz.
+  \item \textbf{O professor falando SOBRE o clone} (guia da aula, catálogo,
+    painéis): o critério é se o termo \textbf{nomeia um objeto que está na tela}
+    --- \cd{feed}, \cd{Shorts}, \cd{ranking} ficam, porque traduzir faria o guia
+    dizer uma palavra e a tela mostrar outra, e o professor perderia o referente
+    no meio da aula --- ou se é \textbf{jargão de implementação vazado} ---
+    \cd{card de pausa}, \cd{o modal}, \cd{num popup} saem, porque não nomeiam
+    nada que a criança veja e existe palavra portuguesa exata.
+\end{enumerate}
+
+As trocas aplicadas: \cd{Briefing} \seta{} \cd{A missão}; \cd{card de pausa}
+\seta{} \cd{tela de pausa}; \cd{cards de sistematização} \seta{} \cd{quadros de
+sistematização}; \cd{modal} e \cd{popup} \seta{} \cd{janela}; \cd{Login}
+\seta{} \cd{Usuário} (o campo interno já se chamava \cd{usuario} --- o rótulo
+divergia do próprio dado); \cd{Insight} \seta{} \cd{Dica}; \cd{Prompt}
+\seta{} \cd{Como pedir}; \cd{check-in} \seta{} \cd{acompanhamento} para o produto
+e \cd{Responder hoje} / \cd{Você já respondeu hoje} para o ato.
+
+\textbf{Identificador não é texto}, e mudá-lo é outra tarefa com outro custo:
+chave de objeto, rota, coluna, verbo/objeto de telemetria, nome de glifo do
+Material Symbols (\cd{checklist}, \cd{psychology}, \cd{schedule}), variante de
+componente (\cd{warning}, \cd{success}), severidade de log e método HTTP ficam.
+O rótulo \cd{abertura: \textquotesingle{}A missão\textquotesingle{}} mudou; o
+\cd{\textquotesingle{}abertura\textquotesingle{}} do banco não.
+
+\textbf{Uma reformulação além da troca de termo}, no produto de bem-estar:
+\enquote{Faltam 3 check-ins para o retrato da semana} virou \enquote{Faltam 3
+dias}. Não é sinônimo --- troca contagem de eventos técnicos por contagem de
+dias, que é como a pessoa efetivamente pensa, e é mais exato, porque é um por
+dia.
+
+\textbf{Anglicismos que FICAM, por decisão e não por esquecimento.} Esta lista é
+curta de propósito, e está registrada para que ninguém a \enquote{corrija}:
+
+\begin{itemize}
+  \item \cd{fake news} --- consagrado no Brasil, inclusive em política pública e
+    imprensa. E nos guias da exp-06 e da exp-07 a frase é \enquote{não anuncie
+    que é uma aula sobre fake news}: o que o professor NÃO deve dizer é
+    exatamente a expressão que a criança reconhece, então traduzir mudaria o
+    sentido da instrução.
+  \item \cd{cyberbullying} --- é o termo da BNCC (EF07CO09) e da Lei
+    13.185/2015. Alterar desalinha do documento oficial que o próprio guia cita.
+  \item \cd{print} --- é a palavra que a criança brasileira usa, e a missão da
+    exp-06 e da exp-07 gira em torno desse objeto. \enquote{Captura de tela}
+    tornaria o guia irreconhecível diante da fala da sala.
+  \item \cd{chat} e \cd{on-line} --- o primeiro incorporado ao português e nome
+    da coisa no WhatsApp; o segundo é citação verbatim de habilidade da BNCC.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Traduzir tudo, clone incluído.} Descartada porque destrói o
+    instrumento: um \enquote{Vídeos curtos} onde o aplicativo real diz
+    \enquote{Shorts} avisa a criança de que aquilo é software de escola, e a
+    missão passa a medir a reação dela à escola em vez do comportamento que
+    interessa.
+  \item \emph{Não mexer em nada, tratando anglicismo como português técnico
+    consagrado.} Descartada porque a maior parte dos achados não era jargão
+    consagrado --- era jargão NOSSO, de implementação, vazado para o texto do
+    professor. \enquote{Modal} não é palavra que professor de rede pública use.
+  \item \emph{Traduzir também \cd{post} \seta{} \cd{publicação}} (72
+    ocorrências). É o único caso em que traduzir AUMENTARIA a fidelidade --- o
+    Instagram em português diz \enquote{Publicações}, não \enquote{posts} ---, e
+    ficou de fora desta ADR por volume, não por mérito: são 72 trechos, a maioria
+    em texto denso de guia. Fica registrado como próximo passo.
+  \item \emph{Um arquivo de i18n com chaves.} Descartada: a plataforma é
+    monolíngue por contrato (rede pública brasileira), e uma camada de
+    internacionalização para um idioma só custa indireção em toda tela sem
+    resolver nada do problema real, que era terminologia, não tradução.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o rótulo passou a concordar com o dado em
+\cd{Login} \seta{} \cd{Usuário} --- a coluna dizia uma coisa e a chave
+\cd{usuario} outra. \emph{Bom}: a doutrina das três zonas está no
+\arq{AGENTS.md} da raiz e no de \arq{apps/experiencias}, com a lista de exceções,
+o que impede a próxima \enquote{correção} de reintroduzir jargão ou apagar
+\cd{Shorts}. \emph{Ruim}: \textbf{a suíte e2e casa por texto exato}
+(\cd{getByText}, \cd{getByRole(\{name\})}) --- trocar copy sem atualizar a suíte
+a derruba com \emph{timeout}, e o \emph{timeout} reporta o seletor que faltou,
+nunca a causa; foram 36 linhas mexidas em \arq{professor/04-bem-estar.mjs} só por
+isso. \emph{Ruim}: \cd{ROTULO\_PASSO} da exp-03 é espelho declarado de
+\arq{apps/api/src/unoogpt/regras/passos.ts}, e mudar um lado só faria a trilha do
+estudante divergir do que a api devolve, sem o \emph{typecheck} ver nada.
+
+\textbf{O que a execução pegou e o levantamento não previra}: a versão da
+experiência vive em TRÊS lugares, não dois --- manifesto, \arq{package.json} e o
+\cd{EXP\_VERSION} do código. O \arq{versao.test.ts} de cada experiência cobra os
+três, e foi ele que pegou o esquecimento; a ADR-84 conta o que o terceiro lugar
+esquecido custou (erro de cliente agrupado numa versão que nunca existiu, e
+\arq{mapear-stack.mjs} procurando \emph{sourcemap} em caminho vazio).
+
+\subsection{Emenda de 2026-09-10: acessível não é só \emph{traduzido}}
+
+Um pedido de professores mostrou que a regra das três zonas resolve o inglês e
+NÃO resolve o outro caso de linguagem inacessível: a palavra em português que a
+criança lê sem saber o que significa. Na tela de resultado da exp-03, o número
+em vermelho era rotulado \enquote{afetadas} --- e os estudantes não sabiam se
+aquilo contava morte, desabrigamento ou outro dano. O termo virou
+\enquote{atingidas pela enchente} (\enquote{Atingidas} no cabeçalho da tabela,
+onde a coluna precisa ser curta).
+
+\begin{regra}
+\textbf{O termo novo não pode mudar o que o número CONTA.} O pedido original
+propunha \enquote{moradores que precisam de ajuda}, e essa troca foi
+\textbf{recusada}: as três categorias da tela somam as pessoas em risco
+(resgatadas $+$ atingidas $+$ sobreviveram sem ajuda), e o campo interno se
+chama \cd{vitimas} --- é dano JÁ ocorrido, não necessidade futura. Com o rótulo
+proposto, aquele número passaria a descrever a mesma coisa que
+\enquote{sobreviveram sem ajuda} ao lado dele, e a gravidade que a tela existe
+para o estudante encarar desapareceria. Trocar palavra de interface exige ler o
+que ela nomeia; aceitar a sugestão à letra teria corrigido o vocabulário e
+quebrado o sentido.
+\end{regra}
+
+\textbf{E a causa não era só a palavra.} A simulação não distingue o TIPO de
+dano, e era essa indefinição que produzia o mau sentimento relatado. Por isso a
+tela ganhou a frase que fecha a lacuna: \enquote{a simulação conta quantas
+pessoas a enchente atingiu, sem dizer que tipo de perda cada uma teve}. Trocar
+o rótulo sem dizer isso deixaria o estudante com uma palavra mais clara sobre
+uma quantidade que continuava indefinida.
+
+\textbf{Gatilho de reavaliação.} A plataforma precisar de um segundo idioma
+(rede indígena com material bilíngue, ou contrato fora do Brasil). Aí a decisão
+de não ter camada de i18n volta à mesa, e o custo dela deixa de ser indireção
+gratuita.
+
+\section{ADR-92 --- Voltar um momento REABRE a sessão; a trava é a revelação, não o relatório}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} O relógio da aula do Instanooria tem dois ponteiros: a
+\cd{etapa} da TURMA, que o professor move, e a \cd{fase} da RUN, que é a tela
+daquela criança. \cd{faseAoVoltar} (\arq{apps/api/src/comum/insta/etapas.ts})
+reconcilia os dois quando a turma anda para TRÁS, e o comentário dela declara,
+desde a origem, o motivo de existir: sem ela, \enquote{voltar um momento}
+mudaria o rótulo no painel e \textbf{nada} na tela dos estudantes.
+
+Era exatamente o que acontecia. Um chamado de campo relatou que, encerrada a
+investigação, voltar para ela deixava a turma inteira congelada na tela da
+resposta. Reproduzido de ponta a ponta com as duas pontas vivas (professor no
+relógio, estudante no aparelho): a API responde
+\cd{\{etapa: "investigacao", voltou: true, movidos: 0\}} --- voltou a etapa e
+moveu ZERO telas ---, e o painel fica autocontraditório no mesmo cartão,
+dizendo \enquote{agora Investigação --- a turma explora o feed} acima de
+\enquote{1 respondendo}.
+
+\textbf{A causa são duas peças corretas isoladamente.} \cd{moverEtapa} congela
+toda \emph{run} que entrou no aparelho ao SAIR da investigação
+(\cd{encerrarRun} grava o dossiê e \cd{finished\_at}) --- sem isso o relatório
+abria vazio. E \cd{faseAoVoltar} tinha o teto
+\cd{sessaoCongelada ? conclusao : feed}. Como a primeira torna a condição da
+segunda sempre verdadeira, \textbf{o ramo do \cd{feed} era inalcançável pelo
+caminho do painel}: código morto que o \emph{typecheck} não vê, e um comentário
+descrevendo uma intenção que nunca valeu.
+
+A justificativa registrada para a trava era \enquote{sessão congelada não
+reabre, senão o relatório mentiria}. Ela não se sustenta: o dossiê é
+\textbf{recomputável} a partir dos eventos, que continuam todos gravados.
+
+\textbf{Decisão.} Duas mudanças, que só funcionam em par:
+
+\begin{enumerate}
+  \item \textbf{A trava passa a ser a REVELAÇÃO}, não o congelamento.
+    \cd{jaViuARevelacao(fase)} --- verdadeira de \cd{explicabilidade} em diante,
+    incluindo as fases legadas via \cd{normalizarFase}. Quem ainda não viu volta
+    ao \cd{feed}; quem já viu para na resposta, que dá para refazer. O motivo é
+    o INSTRUMENTO: quem já sabe que o feed era enviesado não pode ser medido por
+    ele de novo. O parâmetro \cd{sessaoCongelada} SAIU da assinatura --- ele era
+    derivável do estado errado.
+  \item \textbf{Voltar para a investigação REABRE a sessão}: \cd{moverEtapa}
+    apaga o dossiê e zera \cd{finished\_at} de quem volta ao \cd{feed}. Apagar o
+    dossiê é o que o torna recomputável --- \cd{encerrarRun} é idempotente pelo
+    dossiê, então zerar só o \cd{finished\_at} deixaria o relatório do próximo
+    encerramento sem nada do que a criança fizesse dali em diante, que é
+    precisamente o \enquote{relatório mentindo} de que a regra antiga tinha
+    medo. A resposta ganha \cd{reabertas}, e o painel diz ao professor que o
+    relatório daquelas sessões será refeito.
+\end{enumerate}
+
+\textbf{O que o estudante PRODUZIU não é tocado}: eventos, posts salvos,
+comentários, a resposta e a reflexão continuam. Quem apaga isso é
+\cd{POST /runs/:id/reset}, e ele é outra intenção --- \enquote{esta sessão não
+presta, comece do zero}, não \enquote{a aula voltou um momento}.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Não congelar ao sair da investigação.} Resolveria o sintoma e
+    reabriria o defeito que o congelamento existe para fechar: o relatório da
+    turma abrindo vazio porque ninguém chamou \cd{finish}.
+  \item \emph{Deixar como estava e documentar que voltar não devolve o feed.}
+    Descartada porque o produto oferece o botão \enquote{voltar um momento}, e
+    um botão que muda só o rótulo é pior que botão nenhum --- o professor
+    conclui que o sistema travou no meio da aula.
+  \item \emph{Mandar o professor usar \enquote{Zerar} para reabrir.} É o que
+    sobrava na prática, e custa o trabalho inteiro da criança: o \cd{reset}
+    apaga eventos, posts salvos, comentários, conclusão e reflexão. Corrigir um
+    clique errado do adulto destruindo a produção de trinta estudantes é
+    desproporcional.
+  \item \emph{Preservar o dossiê e recomputá-lo por versão.} Descartada por
+    complexidade sem demanda: exigiria versionar dossiê por passagem, e ninguém
+    pediu o relatório de \enquote{como estava antes de o professor voltar}.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o retorno funciona nas duas pontas, e a
+regra que o código já declarava passou a valer. \emph{Bom}: o botão
+\enquote{voltar um momento} saiu de dentro do bloco do botão principal no painel
+--- ele só era renderizado quando havia PRÓXIMA etapa, então na etapa \cd{fim}
+não havia como voltar pela interface, e a aula que terminou cedo demais é
+justamente quando voltar importa. \emph{Ruim}: o relatório daquela passagem é
+DESCARTADO ao voltar, e isso é irreversível --- o painel avisa, mas quem voltar
+por engano perde o dossiê computado até ali (os eventos ficam, então o próximo
+encerramento reconstrói). \emph{Ruim}: \cd{POST /atividades/:id/etapa} ganhou um
+campo na resposta, e todo consumidor do contrato precisa regerar o OpenAPI.
+
+\textbf{O que a execução expôs}: \arq{comum/insta/etapas.ts} não tinha
+\textbf{nenhum teste} --- o módulo que reconcilia dois relógios e decide o que
+30 telas mostram ao mesmo tempo. Foi por isso que o ramo morto passou. Entraram
+duas suítes: \arq{tests/insta-etapas.spec.ts} (as regras puras, 19 casos) e
+\arq{tests/insta-voltar-etapa-postgres.spec.ts} (o ciclo congelar \seta{} voltar
+\seta{} reabrir \seta{} recomputar contra o Postgres). A segunda existe porque o
+defeito vivia no PAR: cada metade, lida sozinha, estava certa.
+
+\textbf{Limitação conhecida, e deliberada}: \cd{jaViuARevelacao} lê a fase
+ATUAL da \emph{run}, não o histórico dela --- e a fase é regressiva. Voltando um
+momento de cada vez, a \emph{run} desce até \cd{conclusao} antes de a turma
+chegar à investigação, e daquele degrau a proteção já não se aplica. O resultado
+depende do CAMINHO: o pulo direto de \cd{explicabilidade} para
+\cd{investigacao} para na resposta; os cinco cliques passo a passo, cada um com
+aviso na tela, terminam no \emph{feed}. Fechar isso exigiria PERSISTIR o marco
+(\enquote{esta criança já viu a revelação}), porque a fase não o guarda ---
+coluna nova, migração e retrocompatibilidade para um caminho de cinco cliques
+deliberados. Ficou de fora por proporção, não por descuido, e os dois casos
+estão fixados em teste para que a escolha seja vista e não descoberta.
+
+\textbf{Gatilho de reavaliação.} Dois. (1) Alguém pedir o histórico das
+passagens --- o relatório de como a turma estava antes de o professor voltar; aí
+o dossiê deixa de ser sobrescrito e passa a ser versionado por passagem. (2) O
+caminho passo a passo até a investigação aparecer em uso real com turma que já
+viu a revelação; aí o marco vira coluna e a proteção passa a valer pelos dois
+caminhos.

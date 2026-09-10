@@ -15,10 +15,24 @@
 }
 
 /*
- * LACUNA REAL DO DS: não existe componente de seleção (só TextField, TextArea,
- * PasswordInput e SearchInput). Enquanto não existir, `<select>` usa os tokens
- * do DS para não sair da linguagem da plataforma — mesma altura, raio e cores
- * do TextField. Os campos de texto, esses, já são componentes do DS.
+ * NÃO É MAIS LACUNA — E ESTA CLASSE ESTÁ MORRENDO.
+ *
+ * O texto que ficava aqui dizia "não existe componente de seleção no DS". Isso
+ * foi verdade e deixou de ser: o DS publica `Selection` (gatilho + painel,
+ * teclado, clique externo, tema, `error`), a ponte o exporta em
+ * `packages/ui/src/ds.ts`, e a área admin JÁ migrou
+ * (`admin/escolas/escolas-da-rede.tsx`, `admin/turmas/turmas-admin.tsx`).
+ *
+ * O comentário, porém, sobreviveu à lacuna — e virou a desculpa que manteve 24
+ * `<select>` crus no hub depois que o pacote já resolvia o problema. É a mesma
+ * armadilha do `expires_at` que saiu do schema: a regra sai do código, o
+ * registro fica, e quem lê acredita nele.
+ *
+ * Esta classe existe SÓ para os `<select>` que ainda não migraram:
+ * `professor/atividades/nova/formulario-atividade.tsx`,
+ * `professor/atividades/[id]/painel-revisao.tsx` e os três `seletor-de-turma*`
+ * de `entre-redes`. Cada migração apaga um consumidor; o último apaga o bloco.
+ * Não acrescente consumidor novo: `<select>` novo no hub é `Selection` do DS.
  */
 .unooria-select {
   width: 100%;
@@ -200,4 +214,152 @@
 .acao-excluir:focus-visible {
   color: var(--unooria-color-danger-600, #e31a1a);
   background-color: var(--unooria-color-neutral-100, #f5f5f5);
+}
+
+/*
+ * LACUNA REAL DO DS: a tabela não tem cabeçalho fixo. `TableProps` não publica
+ * `stickyHeader` nem `maxHeight`, e o `.unooria-table-container` só rola na
+ * horizontal — numa turma de 40 estudantes o cabeçalho sai da tela junto com a
+ * página e o professor lê "sim · — · 3" sem saber de qual coluna. Enquanto o
+ * pacote não publica a prop (pedido aberto no `storybook-unooria`), esta classe
+ * compensa nas DUAS famílias de tabela do hub: o `<table>` cru e a `Table` do
+ * DS, as duas envolvidas pelo `ScrollBar` do próprio DS.
+ *
+ * QUEM ROLA É O `ScrollBar` (`<ScrollBar orientation="both" autoHide>`):
+ * dele vêm o `overflow`, a barra e o auto-hide com fade. Esta classe ficou só
+ * com o que o DS não faz — a ALTURA que provoca a rolagem e o cabeçalho preso.
+ * Por isso não há `overflow` aqui: declará-lo de novo criaria um segundo
+ * contêiner de rolagem em cima do do componente.
+ *
+ * A altura é a da tela útil menos o cromo da página, com piso de 20rem para não
+ * virar uma janelinha em notebook baixo. Tabela que cabe não muda de aparência:
+ * `max-height` só age quando o conteúdo passa dela. Ela fica na classe, e não na
+ * prop `maxHeight` do `ScrollBar`, para a medida existir UMA vez — na prop, as
+ * 24 tabelas do hub carregariam 24 cópias do mesmo `calc()`.
+ */
+.tabela-rolavel {
+  max-height: max(20rem, calc(100dvh - 16rem));
+  overscroll-behavior: contain;
+}
+
+/*
+ * A `Table` do DS traz o próprio `.unooria-table-container` com
+ * `overflow-x: auto`. Dentro do `ScrollBar` ele vira um SEGUNDO contêiner de
+ * rolagem, e é nele que o `<th>` sticky se prende — um contêiner que não rola
+ * na vertical, então o cabeçalho deixa de grudar. Devolvendo-o a `visible`, o
+ * `ScrollBar` volta a ser o contêiner mais próximo e cuida dos dois eixos (é
+ * `orientation="both"` por isso).
+ */
+.tabela-rolavel .unooria-table-container {
+  overflow: visible;
+}
+
+/*
+ * O fundo do cabeçalho é HERDADO em cadeia (container → thead → tr → th), e não
+ * fixado aqui: célula sticky sem fundo opaco deixa as linhas passarem por baixo,
+ * e fixar o branco apagaria o `bg-unooria-neutral-100` que algumas telas põem no
+ * `<thead>`. Por isso os seletores da cadeia vão em `:where()` — especificidade
+ * zero, qualquer classe de fundo da tela continua vencendo.
+ */
+:where(.tabela-rolavel) {
+  background-color: var(--unooria-color-neutral-50, #ffffff);
+}
+
+/* A `<table>` entra na cadeia: o pai do `<thead>` é ela, não o contêiner —
+   sem este elo o `inherit` herda do fundo transparente da tabela e o cabeçalho
+   fica vazado (medido: `getComputedStyle(th).backgroundColor` volta
+   `rgba(0,0,0,0)` e as linhas passam por baixo ao rolar). */
+:where(.tabela-rolavel) table,
+:where(.tabela-rolavel) thead,
+:where(.tabela-rolavel) thead tr,
+:where(.tabela-rolavel) thead th {
+  background-color: inherit;
+}
+
+/* O DS declara `.unooria-table__header { background: transparent }` (0,1,0), que
+   venceria os `:where()` acima e devolveria o cabeçalho vazado. */
+.tabela-rolavel .unooria-table,
+.tabela-rolavel .unooria-table__header,
+.tabela-rolavel .unooria-table__header .unooria-table__row {
+  background-color: inherit;
+}
+
+.tabela-rolavel thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  /* As tabelas cruas do hub usam `border-collapse: collapse`, e aí a borda
+     pertence à grade colapsada, não ao `<th>`: ela FICA PARA TRÁS quando a
+     célula gruda, e o cabeçalho flutua sem linha embaixo. O `inset` é desenhado
+     dentro da própria célula e acompanha a rolagem. */
+  box-shadow: inset 0 -1px 0 var(--unooria-color-neutral-200, #cbd4d6);
+}
+
+/*
+ * Ação destrutiva com rótulo (Zerar a turma). Mesma lacuna já anotada no
+ * `.acao-excluir`: o DS não tem variante de perigo discreta — `ghost`/`outline`
+ * saem no navy da marca (que não diz "isto apaga") e `danger` é sólida e
+ * vermelha, peso de ação primária. Aqui o `outline` do DS troca o navy pelo
+ * token de perigo e mantém o fundo transparente: intuitivo sem competir com a
+ * ação que o professor mais aperta na tela.
+ */
+/* TRÊS classes, não duas: a regra do DS é `.unooria-button--light
+   .unooria-button--variant-outline` (0,2,0) e a folha dele é injetada pelo
+   módulo do componente, ou seja, DEPOIS desta — no empate quem ganha é o DS, e
+   o botão volta ao navy. Medido: com dois seletores o vermelho não aparece. */
+.unooria-button.acao-destrutiva.unooria-button--variant-outline {
+  color: var(--unooria-color-danger-600, #e31a1a);
+  border-color: var(--unooria-color-danger-600, #e31a1a);
+}
+
+.unooria-button.acao-destrutiva.unooria-button--variant-outline:hover:not(:disabled),
+.unooria-button.acao-destrutiva.unooria-button--variant-outline:focus-visible {
+  background-color: var(--unooria-color-opacity-danger-100, rgba(227, 26, 26, 0.1));
+  border-color: var(--unooria-color-danger-600, #e31a1a);
+  color: var(--unooria-color-danger-600, #e31a1a);
+}
+
+/*
+ * TELA CHEIA dentro da casca do professor — a página que embeda uma experiência
+ * (plano de aula, plano de ensino, bem-estar) e NÃO rola.
+ *
+ * Antes cada uma dessas páginas subtraía a altura do header à mão
+ * (`height: calc(100dvh - 64px)`). O header mede 65px — `h-16` são 64 e a
+ * `border-b` põe 1 —, então a página transbordava 1px e ganhava uma barra de
+ * rolagem vertical PARADA na tela: visível o tempo todo, sem ter o que rolar.
+ * Barra de rolagem só se justifica quando há rolagem.
+ *
+ * A altura vem do FLEX, não de uma constante: a casca do professor é coluna
+ * (`min-h-dvh flex flex-col`) e o `main` tem `flex-1`, logo sobra para ele o
+ * resto exato — qualquer que seja a altura do header amanhã.
+ *
+ * `:has()` é o que mantém isto CIRÚRGICO: o `main` só vira contêiner flex nas
+ * páginas que pedem tela cheia. Sem ele, as outras 16 páginas do professor
+ * passariam a ter os filhos como itens de flex (margem que não colapsa mais,
+ * altura que muda) por causa de três telas. E `height: 100%` no lugar do flex
+ * NÃO resolve: a altura de um item que cresceu por `flex-grow` dentro de um
+ * contêiner de `min-height` não é definida, o percentual cai para `auto` e o
+ * `<iframe>` volta aos 150px de altura padrão dele (medido).
+ *
+ * Nada disto é trabalho do `ScrollBar`: aqui o objetivo é o oposto — que NÃO
+ * exista área rolável nenhuma.
+ */
+main:has(> .tela-cheia) {
+  display: flex;
+  flex-direction: column;
+}
+
+.tela-cheia {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+}
+
+/* O que a página põe dentro (o `ExpFrame`) recebe a altura toda. Direto no
+   filho, e não numa classe própria: quem escreve a página não deveria ter de
+   marcar dois níveis para uma tela que é um retângulo só. */
+.tela-cheia > * {
+  min-height: 0;
+  flex: 1 1 0%;
 }

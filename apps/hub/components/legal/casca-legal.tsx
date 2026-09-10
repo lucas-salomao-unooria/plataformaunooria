@@ -1,6 +1,6 @@
 import "./legal.css";
 
-import { Button, Icon, Logo } from "@edu/ui/ds";
+import { Button, Icon, Logo, ScrollBar } from "@edu/ui/ds";
 import { CascaPlataforma } from "@/components/casca-plataforma";
 import { FundoAnimado } from "@/components/landing/fundo-animado";
 import { SumarioAtivo } from "./sumario-ativo";
@@ -108,8 +108,13 @@ export function CascaLegal({
           {/* ---- sumário + artigo ----------------------------------------- */}
           <div className="legal-miolo">
             <aside className="landing-vidro legal-sumario" aria-label="Sumário">
-              <p className="legal-sumario__titulo">Nesta página</p>
-              <SumarioAtivo itens={itens} />
+              {/* Quem GRUDA é o `<aside>` (`position: sticky`), quem ROLA é o
+                  `ScrollBar` do DS. Separado assim de propósito: o elemento
+                  semântico do índice continua sendo o `<aside>`. */}
+              <ScrollBar autoHide className="legal-sumario__rolagem">
+                <p className="legal-sumario__titulo">Nesta página</p>
+                <SumarioAtivo itens={itens} />
+              </ScrollBar>
             </aside>
 
             <article className="landing-vidro legal-artigo">

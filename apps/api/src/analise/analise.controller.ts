@@ -16,6 +16,7 @@ import {
   NivelQuery,
   ResumoDeProdutoSchema,
 } from "./contrato-de-rotas";
+import { GESTORES_DO_CONTRATO } from "../auth/claims";
 
 /**
  * As duas superfícies de ANÁLISE — porte fiel de `app/api/activities/[id]/analise/**`
@@ -25,7 +26,7 @@ import {
  * PEDAGÓGICO (doc 11 §4) é do professor e é identificado — é a turma dele; o
  * nível de PRODUTO (doc 11 §5) é da Unooria e olha se a ATIVIDADE funciona, não
  * se a turma aprendeu. No origem o segundo era do perfil `analista`, que aqui
- * não existe: virou `admin-contrato` (auth/claims.ts).
+ * não existe: virou `gestor_contrato` (auth/claims.ts).
  */
 
 type Autenticado = { auth: AuthClaims };
@@ -39,7 +40,7 @@ type RespostaHttp = { setHeader(nome: string, valor: string): void };
 /**
  * TENANCY DA ANÁLISE DE PRODUTO — a única exceção cross-escola do sistema.
  *
- * `admin-contrato` tem `escolaId` VAZIO no token (auth/claims.ts): ele enxerga o
+ * `gestor_contrato` tem `escolaId` VAZIO no token (auth/claims.ts): ele enxerga o
  * contrato inteiro, não uma escola. Como `comTenancy` sem escola falha alto de
  * propósito, estas rotas exigem `?escolaId=` e o repassam explicitamente. Assim
  * escolher a escola é ato deliberado de quem chama — visível na URL e no log —
@@ -141,7 +142,7 @@ const LIMITE_DE_EVENTOS = 200_000;
 
 @Controller("analise")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("admin-contrato")
+@Roles(...GESTORES_DO_CONTRATO)
 export class AnaliseDeProdutoController {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -149,14 +150,14 @@ export class AnaliseDeProdutoController {
    * GET /analise/resumo — uma linha por atividade, para o time da Unooria
    * (doc 11 §5.1 e §5.3).
    *
-   * Guarda de papel própria: `admin-contrato` não é professor nem estudante, e as
+   * Guarda de papel própria: `gestor_contrato` não é professor nem estudante, e as
    * guardas existentes recusariam os dois. O professor NÃO alcança esta rota.
    */
   @Get("resumo")
   @Contrato({
     resumo: "Uma linha por atividade — o nível de produto.",
     descricao:
-      "Guarda de papel própria: `admin-contrato` não é professor nem estudante, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**",
+      "Guarda de papel própria: `gestor_contrato` não é professor nem estudante, e as guardas existentes recusariam os dois. **O professor NÃO alcança esta rota.**",
     query: EscolaQuery,
     resposta: ResumoDeProdutoSchema,
   })

@@ -79,7 +79,7 @@ export interface TurmaResumida {
  *
  * Nenhum campo aqui identifica uma criança, e isso é o desenho: porta a regra do
  * app de origem ("pesquisador nunca vê a linha de uma criança; só agregados")
- * para o papel `gestor`. A distribuição de bolhas existe porque o professor
+ * para o papel `gestor_escola`. A distribuição de bolhas existe porque o professor
  * precisa saber, ANTES do debate, se as três estão na sala — sem as três, o
  * momento em que a turma descobre que recebeu mensagens diferentes não acontece.
  */

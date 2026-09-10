@@ -19,7 +19,7 @@ Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 | Cloud Run service | `{contrato}-frontend` (hub), `{contrato}-api` | deploy.yml |
 | Cloud Run **job** | `{contrato}-migrate` (VPC, roda `prisma migrate deploy`) | deploy.yml |
 | Artifact Registry | `{contrato}` (mesma região do Cloud Run) | deploy.yml |
-| Bucket experiências | `{contrato}-exp` (+ Cloud CDN) | deploy.yml |
+| Bucket experiências | `{contrato}-exp` (+ Cloud CDN) | deploy.yml, api (`CDN_EXP_URL`, só leitura por HTTP) |
 | Bucket **assets** | `{contrato}-assets` (+ Cloud CDN, leitura pública) | api (`ASSETS_BUCKET`) |
 | Bucket **planos** | `{contrato}-planos` (**privado**, sem CDN, versionamento de objetos ligado) | api (`PLANOS_BUCKET`) |
 | Cloud SQL | `{contrato}-pg` (HA, PITR, pooler ativo) | api DATABASE_URL |
@@ -184,7 +184,7 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 |---|---|---|
 | Notification channels | `{contrato}-alerta-acorda` (e-mail + push do app Cloud Console), `{contrato}-alerta-amanha` (e-mail + Google Chat/Slack) | duas severidades, só |
 | Uptime checks (3 regiões, 60 s, valida conteúdo) | `{contrato}-jwks` (`{hub}/.well-known/jwks.json` contém `"keys"`), `{contrato}-api-readyz`, `{contrato}-hub-healthz` (rota nova do hub), `{contrato}-landing`, `{contrato}-exp-ativa` (index.html da versão ativa da exp-01) | o `/readyz` passa a ser chamado por alguém |
-| Alert policies | as 14 do cap. 17 (6 "acorda", 8 "amanhã"); as que dependem de métrica da aplicação só valem após a fase 2 | por sintoma; nenhuma de CPU/memória |
+| Alert policies | 13 aplicadas (ver cap. 17). A 13ª, `spans do navegador descartados`, é a primeira sobre métrica DA APLICAÇÃO — `prometheus.googleapis.com/unooria.observabilidade.spans_descartados/counter`, recurso `prometheus_target` | por sintoma; nenhuma de CPU/memória. **Alerta sobre métrica da aplicação só pode ser criado depois que a série existe**: o Cloud Monitoring responde 404 `Cannot find metric(s) that match type`, e o contador só cria a série ao incrementar. Por isso `obs_alerta_erro_de_cliente` nasce `false` — ligar depois do deploy da ADR-84 |
 | SLOs (service monitoring) | disponibilidade do `-frontend` e do `-api` a 99,5 %/30 dias, com alerta de burn rate | |
 | Dashboard | `{contrato}-plataforma` (JSON versionado no Terraform) | igual em todo contrato |
 | Log: exclusões no sink `_Default` | request log de `/healthz`, `/readyz` e dos uptime checks; `sample(insertId, 0.2)` dos 2xx com latência < 1 s | é o que mantém o log dentro dos 50 GiB grátis |
@@ -212,7 +212,21 @@ Deploy (CI deste repo):
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
    bundle. Feito por `apps/hub/scripts/publicar-manifesto.mjs`, que assina um
    token de 5 min com `token-signing-key` (vars `API_URL`, `HUB_ORIGIN`).
-   Rollback = `node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao <anterior>`. Experiência com
+   **Rollback: prefira o painel da Unooria** (`/unooria/recursos`, papel
+   `admin` — ADR-87). Ele troca a `versao_ativa` E RESTAURA o manifesto daquela
+   versão (`viewport`, `permissoes`, `series`), lido de `experiencias_versoes`.
+   O `publicar-manifesto.mjs <exp> --versao <anterior>` continua funcionando e
+   é o caminho de quem não tem a tela à mão, mas ele manda o número antigo com o
+   `experiencia.json` **atual do repositório**: voltar a versão por ele NÃO volta
+   as permissões de iframe, e a exp-70 reabre sem `allow-pointer-lock` — o jogo
+   sobe e a câmera não gira, sem erro em lugar nenhum.
+
+   **A api precisa de `CDN_EXP_URL`** (a mesma base do
+   `NEXT_PUBLIC_CDN_EXP_URL` do hub) para conferir, com um HEAD no
+   `index.html`, se a versão que o painel está ativando existe no bucket.
+   Ausente, a ativação acontece e a tela DIZ que não deu para conferir — o que
+   é aceitável em dev e não em produção: apontar a rede para uma versão que não
+   subiu é tela branca para todo mundo. Experiência com
    mídia externa (exp-02) builda com `VITE_VIDEOS_BASE_URL` apontando para a
    CDN de assets do contrato.
    O `deploy.yml` faz o `rsync` **e** o `PUT` do manifesto, e grava

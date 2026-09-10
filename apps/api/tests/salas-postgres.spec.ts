@@ -75,19 +75,35 @@ beforeAll(async () => {
   await matricular(ids.turma8A, ids.ana, "estudante");
   await matricular(ids.turma8B, ids.bruno, "estudante");
 
-  /* O catálogo é global (sem `escola_id`): o `upsert` não colide com outra suíte
-     porque escreve exatamente o mesmo conteúdo. */
+  /**
+   * O catálogo é GLOBAL (sem `escola_id`), e é por isso que o que esta suíte
+   * escreve nele precisa ser o mínimo.
+   *
+   * O raciocínio anterior era "o `upsert` não colide porque escreve o mesmo
+   * conteúdo" — e ele valia entre SUÍTES, mas não contra o catálogo de verdade:
+   * `nome: expId` e `versaoAtiva: "1.0.0"` são valores inventados, e o
+   * `update` os gravava nas quatro experiências REAIS. Em desenvolvimento, cada
+   * `pnpm test` deixava o catálogo com o slug no lugar do nome de exibição e a
+   * versão travada em 1.0.0 — o painel da Unooria (ADR-87) abria mostrando
+   * ruído de teste como se fosse estado do produto, inclusive marcando
+   * `emRollback` em experiências que não estavam em rollback.
+   *
+   * O `update` agora escreve SÓ o que esta suíte exige (série e público, que
+   * decidem quem entra na grade) e NÃO toca em `nome` nem `versaoAtiva`. No
+   * `create` eles continuam, porque são NOT NULL e num banco novo (CI) a linha
+   * não existe — ali qualquer valor serve, e nenhum teste afirma o nome.
+   */
   for (const [expId, series, publico] of [
     [INSTA, ["8EF"], "estudante"],
     [VILA, [], "estudante"],
     [TUBE, ["4EF"], "estudante"],
     [PLANO, [], "professor"],
   ] as const) {
-    const dados = { nome: expId, versaoAtiva: "1.0.0", series: [...series], publico };
+    const oQueASuiteExige = { series: [...series], publico };
     await prisma.experiencia.upsert({
       where: { expId },
-      update: dados,
-      create: { expId, ...dados },
+      update: oQueASuiteExige,
+      create: { expId, nome: expId, versaoAtiva: "1.0.0", ...oQueASuiteExige },
     });
   }
 });

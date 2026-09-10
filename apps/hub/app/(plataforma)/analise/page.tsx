@@ -1,4 +1,4 @@
-import { Card } from '@edu/ui/ds';
+import { Card, ScrollBar } from '@edu/ui/ds';
 import { LinkButton } from '@/components/link-button';
 import type { ResumoDeAtividade } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
@@ -19,7 +19,7 @@ export default async function AnalisePage({
   /**
    * O middleware garante SESSÃO, não o papel: `areaDoPathname('/analise')` é a
    * mesma área do gestor (`/admin/usuarios`), então ele não é redirecionado
-   * daqui. Quem recusa é a api — `AnaliseController` é `@Roles("admin-contrato")`
+   * daqui. Quem recusa é a api — `AnaliseController` é `@Roles("gestor_contrato")`
    * —, e o `apiDoServidor` converte o 403 em `null`: o gestor que digitar a URL
    * vê a casca e nenhum dado. A tranca de verdade é a segunda (ADR-54, §7).
    */
@@ -27,7 +27,7 @@ export default async function AnalisePage({
   const usuario = session!.usuario;
 
   /**
-   * A escola vem da URL. `admin-contrato` é a única exceção cross-escola da
+   * A escola vem da URL. `gestor_contrato` é a única exceção cross-escola da
    * regra 1 e carrega `escolaId` VAZIO no token, então a api exige `?escolaId=`
    * (ver `SeletorDeEscola`). Sem escola escolhida a tela mostra só o seletor —
    * nada de "sem escola = todas".
@@ -47,8 +47,9 @@ export default async function AnalisePage({
     ms === null ? '—' : `${Math.floor(ms / 60_000)}min${String(Math.round((ms % 60_000) / 1000)).padStart(2, '0')}s`;
 
   return (
-    // Fontes, superfície e header vêm da casca da área (`layout.tsx`).
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    // Fontes, superfície, header, largura da coluna e trilha vêm da casca da
+    // área (`layout.tsx`).
+    <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
           análise de produto
@@ -86,7 +87,7 @@ export default async function AnalisePage({
         </Card>
       ) : (
         <Card variant="elevated">
-          <div className="overflow-x-auto">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[1000px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
@@ -163,7 +164,7 @@ export default async function AnalisePage({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
         </Card>
       )}
 

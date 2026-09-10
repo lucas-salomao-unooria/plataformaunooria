@@ -29,6 +29,7 @@ import { OneRosterService } from "./oneroster.service";
 import { exemploOneRoster, modeloOneRoster } from "./modelos-oneroster";
 import { exemploPreenchido, modeloEmBranco } from "./planilha";
 import { MAX_LINHAS, TETO_DO_ARQUIVO, TETO_EM_MB, RosteringService } from "./rostering.service";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 interface RespostaHttp {
   setHeader(nome: string, valor: string): void;
@@ -40,7 +41,7 @@ interface RespostaHttp {
  */
 @Controller("rostering")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("gestor", "admin-contrato")
+@Roles(...GESTORES)
 export class RosteringController {
   constructor(
     private readonly rostering: RosteringService,
@@ -105,7 +106,7 @@ export class RosteringController {
   @Contrato({
     resumo: "O mesmo arquivo do OneRoster, preenchido com um exemplo.",
     descricao:
-      "Gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das turmas: um id fictício faria o lote voltar como \"escola não é a desta importação\" para o gestor e, para o `admin-contrato` (que PODE criar escola por CSV), abriria um tenant de mentira.",
+      "Gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das turmas: um id fictício faria o lote voltar como \"escola não é a desta importação\" para o gestor e, para o `gestor_contrato` (que PODE criar escola por CSV), abriria um tenant de mentira.",
     params: ArquivoOneRosterParam,
     query: EscolaAlvoQuery,
     resposta: CsvSchema,
@@ -201,7 +202,7 @@ export class RosteringController {
     tipoDoCorpo: "text/csv",
     resposta: RelatorioDeImportacaoSchema,
     notas: [
-      "`orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `admin-contrato`.",
+      "`orgs.csv` só APRENDE o código INEP desta escola: escola é *tenant*, não nasce de upload. Criar escola por CSV é só `gestor_contrato`.",
       "Sem a coluna `role` (que saiu de `users.csv` na 1.2) a pessoa entra como **estudante**, o menor privilégio; o `roles.csv` corrige.",
       "A coluna `password` do padrão é IGNORADA, e a contagem vai ao relatório.",
       "Em `bulk`, ausência de linha **não desativa ninguém** — é contada em `candidatosAInativacao`: lote que chegou pela metade não pode apagar uma rede por omissão.",
@@ -233,7 +234,7 @@ export class RosteringController {
       senhaPadrao: q.senhaPadrao,
       gerarSenhas: q.gerarSenhas === "1",
       // Escola é tenant: só o admin do contrato abre inquilino novo por CSV.
-      podeCriarEscola: req.auth.perfil === "admin-contrato",
+      podeCriarEscola: ehDoContrato(req.auth.perfil),
     });
   }
 

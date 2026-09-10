@@ -10,6 +10,7 @@ import { matricularEm } from "./matricula";
 import type { ContextoDoExemplo } from "./modelos-oneroster";
 import { lerPlanilha, type ErroDeLinha, type PessoaDaPlanilha } from "./planilha";
 import { gerarSenha, gerarUsuario, periodoVigente, senhaAceitavel } from "./regras";
+import { ehDoContrato } from "../auth/claims";
 
 export const MAX_LINHAS = 50_000;
 
@@ -147,7 +148,7 @@ export class RosteringService {
    * O que o exemplo do OneRoster precisa saber do mundo real. A escola de
    * VERDADE entra no `sourcedId` do `orgs.csv` e no `schoolSourcedId` das
    * turmas: um id fictício faria o lote inteiro voltar como "escola não é a
-   * desta importação" para o gestor e, para o `admin-contrato`, abriria um
+   * desta importação" para o gestor e, para o `gestor_contrato`, abriria um
    * tenant de mentira.
    */
   async contextoDeExemplo(escolaId: string): Promise<ContextoDoExemplo> {
@@ -284,7 +285,7 @@ export class RosteringService {
         if (compativel) existente = candidato;
       }
 
-      if (existente?.role === "admin-contrato" || naOutraEscola?.role === "admin-contrato") {
+      if (ehDoContrato(existente?.role ?? "") || ehDoContrato(naOutraEscola?.role ?? "")) {
         relatorio.erros.push({ linha: pessoa.linha, campo: "usuario", mensagem: "usuario reservado" });
         continue;
       }

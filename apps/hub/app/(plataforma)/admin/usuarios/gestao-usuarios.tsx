@@ -11,6 +11,7 @@ import {
   ModalHeader,
   ModalTitle,
   Pagination,
+  ScrollBar,
   SearchInput,
   SectionHeader,
   Selection,
@@ -20,6 +21,7 @@ import {
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { NovoUsuario, type PessoaCriada } from "./novo-usuario";
 
@@ -28,7 +30,7 @@ interface LinhaDeUsuario extends Record<string, unknown> {
   usuario: string;
   nome: string;
   papel: string;
-  /** A unidade da lotação principal. Null só no `admin-contrato`. */
+  /** A unidade da lotação principal. Null só no `gestor_contrato`. */
   escola: string | null;
   matricula: string | null;
   /** Formatado pela api (000.000.000-00). Null quando a pessoa não tem. */
@@ -47,7 +49,7 @@ const PAPEIS = [
   { value: "", label: "Todos os papéis" },
   { value: "estudante", label: "Estudantes" },
   { value: "professor", label: "Professores" },
-  { value: "gestor", label: "Coordenação" },
+  { value: "gestor_escola", label: "Coordenação" },
 ];
 
 const SITUACOES = [
@@ -72,7 +74,7 @@ export function GestaoUsuarios({
   escolaIdInicial: string;
 }) {
   const router = useRouter();
-  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+  /* `gestor_contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
      Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
   const daUrl = useSearchParams().get("escolaId") ?? "";
   const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
@@ -103,12 +105,12 @@ export function GestaoUsuarios({
   const [aviso, setAviso] = useState<string | null>(null);
 
   const sufixo = useMemo(
-    () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
   const carregar = useCallback(async () => {
-    if (papel === "admin-contrato" && !escolaId) return;
+    if (ehDoContrato(papel) && !escolaId) return;
     setCarregando(true);
     setErro(null);
     try {
@@ -116,7 +118,7 @@ export function GestaoUsuarios({
       if (busca.trim()) params.set("busca", busca.trim());
       if (filtroPapel) params.set("papel", filtroPapel);
       if (situacao) params.set("situacao", situacao);
-      if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
+      if (ehDoContrato(papel) && escolaId) params.set("escolaId", escolaId);
 
       const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
@@ -201,7 +203,7 @@ export function GestaoUsuarios({
   const colunas = useMemo<TableColumn<LinhaDeUsuario>[]>(
     () => [
       { key: "nome", title: "Nome" },
-      { key: "usuario", title: "Login" },
+      { key: "usuario", title: "Usuário" },
       {
         key: "cpf",
         title: "CPF",
@@ -219,13 +221,17 @@ export function GestaoUsuarios({
          Uma linha só, truncada: nome de unidade da rede pública é longo
          ("EE Professora Maria Aparecida Nogueira") e, deixado quebrar, empilha
          cinco linhas em CADA row — a tabela inteira fica ilegível para ganhar
-         um dado que é o mesmo em quase todas. O nome completo fica no `title`. */
+         um dado que é o mesmo em quase todas. O nome completo fica no `title`.
+         O corte é de 8ch (era 12) porque a tabela tem 9 colunas e a soma delas
+         passava a largura do contêiner por ~20px: o excesso virava barra de
+         rolagem horizontal, e ela ficou visível quando a tabela ganhou rolagem
+         vertical. Os caracteres cedidos aqui são os que faltavam. */
       {
         key: "escola",
         title: "Escola",
         render: (_, linha) =>
           linha.escola ? (
-            <span className="block max-w-[12ch] truncate" title={linha.escola}>
+            <span className="block max-w-[8ch] truncate" title={linha.escola}>
               {linha.escola}
             </span>
           ) : (
@@ -253,8 +259,17 @@ export function GestaoUsuarios({
         key: "acoes",
         title: "",
         align: "right",
+        /* Largura RESERVADA para os três botões numa linha só. Sem ela, o
+           algoritmo da tabela reparte a folga entre as colunas de texto, a
+           coluna de ação fica curta e os botões quebram em duas linhas — o que
+           engorda TODAS as linhas da página (medido: 1894px de conteúdo viram
+           2374px, e a linha passa de 57px para 93px). Os três botões somam
+           272px + 8px de gaps; a reserva deixa ~11px de folga. O `flex-wrap` no
+           conteúdo é a rede: faltando espaço, a coluna quebra em vez de
+           empurrar a tabela para fora do contêiner. */
+        width: 324,
         render: (_, linha) => (
-          <div className="flex justify-end gap-1">
+          <div className="flex flex-wrap justify-end gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -284,13 +299,13 @@ export function GestaoUsuarios({
   );
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1180px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Usuários"
         description="Uma conta por pessoa — a mesma no hub e em todas as experiências."
       />
 
-      {papel === "admin-contrato" ? (
+      {ehDoContrato(papel) ? (
         <div className="max-w-[320px]">
           <TextField
             id="escola"
@@ -312,7 +327,7 @@ export function GestaoUsuarios({
             <SearchInput
               id="busca"
               label="Buscar"
-              placeholder="Nome, CPF, login ou matrícula"
+              placeholder="Nome, CPF, usuário ou matrícula"
               value={busca}
               onChange={(e) => {
                 setPagina(1);
@@ -357,15 +372,17 @@ export function GestaoUsuarios({
         {total} pessoa{total === 1 ? "" : "s"}
       </p>
 
-      <Table<LinhaDeUsuario>
-        columns={colunas}
-        data={linhas}
-        keyExtractor={(linha) => linha.id}
-        loading={carregando}
-        emptyText="Ninguém por aqui ainda — cadastre uma pessoa ou importe a planilha para começar."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<LinhaDeUsuario>
+          columns={colunas}
+          data={linhas}
+          keyExtractor={(linha) => linha.id}
+          loading={carregando}
+          emptyText="Ninguém por aqui ainda — cadastre uma pessoa ou importe a planilha para começar."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
       {total > POR_PAGINA ? (
         <Pagination

@@ -1,14 +1,13 @@
 import { notFound } from "next/navigation";
 
-import { Badge, Card, EmptyState, FeedbackAlert, MetricCard } from "@edu/ui/ds";
+import { Badge, Card, EmptyState, FeedbackAlert, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
+import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   MISSAO_UNOOGPT,
   buscarMissao,
   rotaDaMissao,
-  rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
 import {
   cronometro,
@@ -67,7 +66,7 @@ export default async function EstudantePage({
   const { ano: anoSlug, unidade: unidadeSlug, estudanteId } = await params;
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   if (!encontrado || encontrado.missao.expId !== MISSAO_UNOOGPT.expId) notFound();
-  const { ano, missao } = encontrado;
+  const { missao } = encontrado;
 
   const relatorio = await apiDoServidor<RelatorioDoEstudante>(
     `/unoogpt/professor/estudantes/${encodeURIComponent(estudanteId)}`,
@@ -82,14 +81,6 @@ export default async function EstudantePage({
   if (!relatorio) {
     return (
       <div className="flex flex-col gap-6">
-        <Trilha
-          itens={[
-            { label: "Início", href: "/professor" },
-            { label: "Entre Redes", href: "/professor/entre-redes" },
-            { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-            { label: "Estudante" },
-          ]}
-        />
         <EmptyState
           variant="no-data"
           size="lg"
@@ -121,14 +112,9 @@ export default async function EstudantePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: nomeEstudante },
-        ]}
-      />
+      {/* A trilha vem do layout; o nome do estudante só existe nesta leitura.
+          Na saída sem relatório ele não existe, e o item fica "Estudante". */}
+      <RotuloDaTrilha valor={nomeEstudante} />
 
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
@@ -343,7 +329,7 @@ export default async function EstudantePage({
           professor ler "acima da média" como sorte da rodada, não como mérito. */}
       {relatorio.tentativas.length > 0 && (
         <Card variant="elevated" title="O desfecho de cada tentativa">
-          <div className="overflow-x-auto">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="text-[11px] uppercase tracking-widest text-unooria-neutral-500">
@@ -380,7 +366,7 @@ export default async function EstudantePage({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
           <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
             “Risco coberto” é a medida da decisão: quanto do risco da cidade os dois bairros escolhidos
             cobriam — a sorte da rodada mexe no resgate, não nisto. “Na faixa” compara com corridas

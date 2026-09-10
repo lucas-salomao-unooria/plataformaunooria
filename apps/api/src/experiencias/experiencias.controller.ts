@@ -5,6 +5,7 @@ import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { CatalogoSchema, UmaExperienciaSchema, UpsertSchema } from "./contrato-de-rotas";
+import { GESTORES_DO_CONTRATO } from "../auth/claims";
 
 /**
  * Manifesto de versões das experiências — o `experiencia.json` finalmente é
@@ -53,7 +54,7 @@ export class ExperienciasController {
 
   /** Upsert do CI (ou rollback manual) — só admin-contrato. */
   @Put(":expId")
-  @Roles("admin-contrato")
+  @Roles(...GESTORES_DO_CONTRATO)
   @Contrato({
     resumo: "Publica ou faz rollback de uma versão.",
     descricao:
@@ -63,36 +64,61 @@ export class ExperienciasController {
     resposta: UmaExperienciaSchema,
     notas: [
       "`permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.",
+      "`produto` é o que põe a experiência no painel da Unooria (ADR-87) e o que lhe dá o TETO do produto. Ausente = ela responde só pelo próprio interruptor; quem cobra o campo é o teste dos manifestos, no CI, e não esta rota — 400 aqui mataria a ativação DEPOIS de os bundles subirem.",
+      "Cada PUT grava também uma linha em `experiencias_versoes` com o MANIFESTO INTEIRO. É o que faz o rollback pela tela devolver `viewport` e `permissoes` daquela versão, e não os de hoje.",
       "`viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
     ],
   })
-  async upsert(@Param("expId") expId: string, @Body() body: unknown, @Req() _req: { auth: AuthClaims }) {
+  async upsert(@Param("expId") expId: string, @Body() body: unknown, @Req() req: { auth: AuthClaims }) {
     const dados = UpsertSchema.parse(body);
     const id = z.string().regex(EXP_ID_RE, "expId no formato exp-<slug>").parse(expId);
-    const experiencia = await this.prisma.experiencia.upsert({
-      where: { expId: id },
-      update: {
-        nome: dados.nome,
-        versaoAtiva: dados.versaoAtiva,
-        series: dados.series,
-        unidade: dados.unidade ?? null,
-        capabilities: dados.capabilities,
-        viewport: dados.viewport ?? undefined,
-        publico: dados.publico,
-        permissoes: dados.permissoes,
-      },
-      create: {
-        expId: id,
-        nome: dados.nome,
-        versaoAtiva: dados.versaoAtiva,
-        series: dados.series,
-        unidade: dados.unidade ?? null,
-        capabilities: dados.capabilities,
-        viewport: dados.viewport ?? undefined,
-        publico: dados.publico,
-        permissoes: dados.permissoes,
-      },
-    });
+
+    const colunas = {
+      nome: dados.nome,
+      versaoAtiva: dados.versaoAtiva,
+      series: dados.series,
+      unidade: dados.unidade ?? null,
+      produto: dados.produto ?? null,
+      capabilities: dados.capabilities,
+      viewport: dados.viewport ?? undefined,
+      publico: dados.publico,
+      permissoes: dados.permissoes,
+    };
+
+    /**
+     * DUAS ESCRITAS, UMA TRANSAÇÃO. `versaoAtiva` sem a linha de histórico
+     * correspondente faz o painel abrir mostrando uma versão que ele não sabe
+     * de onde veio — e é do histórico que sai a lista de rollback.
+     *
+     * `$transaction` cru, e não `comTenancy`: as duas tabelas estão FORA da RLS
+     * (não são dado de estudante) e este PUT é do CI/`admin`, cujo token não
+     * tem escola — não há valor a pôr no contexto de tenancy.
+     */
+    const [experiencia] = await this.prisma.$transaction([
+      this.prisma.experiencia.upsert({
+        where: { expId: id },
+        update: colunas,
+        create: { expId: id, ...colunas },
+      }),
+      /* O MANIFESTO INTEIRO, não só o número — é o que torna o rollback fiel.
+         Hoje `publicar-manifesto.mjs --versao x.y.z` manda o número ANTIGO com
+         o `experiencia.json` ATUAL, então voltar a versão não volta `viewport`
+         nem `permissoes`: a exp-70 reabria sem `allow-pointer-lock`, a criança
+         entrava na Vila e a câmera não girava, sem erro em lugar nenhum.
+         `upsert` e não `create` porque republicar a mesma versão (`--forcar`)
+         é caso real. */
+      this.prisma.experienciaVersao.upsert({
+        where: { expId_versao: { expId: id, versao: dados.versaoAtiva } },
+        update: { manifesto: { id, ...dados }, publicadaPor: req.auth.usuarioId },
+        create: {
+          expId: id,
+          versao: dados.versaoAtiva,
+          manifesto: { id, ...dados },
+          publicadaPor: req.auth.usuarioId,
+        },
+      }),
+    ]);
+
     return { experiencia };
   }
 }

@@ -12,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SearchInput,
   SectionHeader,
   Selection,
@@ -20,6 +21,8 @@ import {
   Tag,
   type TableColumn,
 } from "@edu/ui/ds";
+import { RotuloDaTrilha } from "@/components/trilha";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 import { rotuloDaSerie, type Serie } from "@/lib/series";
 import type { MissaoDaSalaDoProfessor } from "@/lib/salas";
@@ -112,7 +115,7 @@ export function TurmaDetalhe({
   escolaId: string;
 }) {
   const router = useRouter();
-  /* `admin-contrato` chega com `?escolaId=` (a escola vem da lista de escolas,
+  /* `gestor_contrato` chega com `?escolaId=` (a escola vem da lista de escolas,
      não do token dele, que não tem escola). Sem ler a URL, a api recusa com
      "informe ?escolaId=" e a tela abre vazia. */
   const escolaDaUrl = useSearchParams().get("escolaId") ?? "";
@@ -151,7 +154,7 @@ export function TurmaDetalhe({
   const [escolaDestino, setEscolaDestino] = useState("");
 
   const sufixo = useMemo(
-    () => (papel === "admin-contrato" && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `?escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
@@ -208,7 +211,7 @@ export function TurmaDetalhe({
         papel: aba === "estudantes" ? "estudante" : "professor",
         porPagina: "10",
       });
-      if (papel === "admin-contrato" && escolaId) params.set("escolaId", escolaId);
+      if (ehDoContrato(papel) && escolaId) params.set("escolaId", escolaId);
       const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
       if (!resposta.ok) return;
       const corpo = (await resposta.json()) as { usuarios: Candidato[] };
@@ -421,7 +424,7 @@ export function TurmaDetalhe({
   const colunas = useMemo<TableColumn<Matriculado>[]>(
     () => [
       { key: "nome", title: "Nome" },
-      { key: "usuario", title: "Login" },
+      { key: "usuario", title: "Usuário" },
       { key: "matricula", title: "Matrícula", render: (_, linha) => linha.matricula ?? "—" },
       {
         key: "situacao",
@@ -453,7 +456,7 @@ export function TurmaDetalhe({
                 Histórico
               </Button>
             ) : null}
-            {aba === "estudantes" && papel === "admin-contrato" ? (
+            {aba === "estudantes" && ehDoContrato(papel) ? (
               <Button variant="ghost" size="sm" onClick={() => void abrirTransferencia(linha)}>
                 Transferir
               </Button>
@@ -485,7 +488,12 @@ export function TurmaDetalhe({
       : (dados?.professores ?? []);
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
+      {/* Quem sabe o nome da turma é esta leitura (a página é uma casca de
+          servidor). Enquanto ela não chega, a trilha mostra "Turma" — nunca o
+          id do endereço. */}
+      <RotuloDaTrilha valor={dados ? `Turma ${dados.turma.nome}` : undefined} />
+
       <SectionHeader
         title={dados ? `Turma ${dados.turma.nome}` : "Turma"}
         description={
@@ -591,19 +599,21 @@ export function TurmaDetalhe({
           )}
         </div>
       ) : (
-        <Table<Matriculado>
-          columns={colunas}
-          data={lista}
-          keyExtractor={(linha) => linha.matriculaId}
-          loading={carregando}
-          emptyText={
-            aba === "estudantes"
-              ? "Nenhum estudante matriculado nesta turma."
-              : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
-          }
-          size="md"
-          theme="light"
-        />
+        <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+          <Table<Matriculado>
+            columns={colunas}
+            data={lista}
+            keyExtractor={(linha) => linha.matriculaId}
+            loading={carregando}
+            emptyText={
+              aba === "estudantes"
+                ? "Nenhum estudante matriculado nesta turma."
+                : "Nenhum professor nesta turma — sem isso ele não vê a turma na área dele."
+            }
+            size="md"
+            theme="light"
+          />
+        </ScrollBar>
       )}
 
       <Modal
@@ -619,7 +629,7 @@ export function TurmaDetalhe({
           <div className="flex flex-col gap-3">
             <SearchInput
               id="buscar-pessoa"
-              label="Buscar por nome, login ou matrícula"
+              label="Buscar por nome, usuário ou matrícula"
               value={busca}
               onChange={(e) => void procurar(e.target.value)}
             />
@@ -751,7 +761,7 @@ export function TurmaDetalhe({
                 Baixa um arquivo assinado com a trajetória, as participações e os resultados desta
                 criança. É um direito do titular (LGPD art. 18, V) — a escola emite a pedido da
                 família, e o arquivo é legível por quem receber, mesmo numa rede que não use esta
-                plataforma. O check-in de bem-estar nunca entra: é dado de saúde, e a posse é do
+                plataforma. O acompanhamento de bem-estar nunca entra: é dado de saúde, e a posse é do
                 professor.
               </p>
               <div className="mt-3">

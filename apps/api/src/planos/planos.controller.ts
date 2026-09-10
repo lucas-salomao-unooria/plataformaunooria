@@ -16,6 +16,11 @@ import {
 } from "@nestjs/common";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
+import {
+  DisponibilidadeGuard,
+  Recurso,
+  SemDisponibilidade,
+} from "../comum/disponibilidade.guard";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import { CriarPlanoSchema, RenomearSchema, SalvarConteudoSchema } from "./catalogo";
@@ -39,8 +44,12 @@ import { PlanosService } from "./planos.service";
 type Autenticado = { auth: AuthClaims };
 
 @Controller("planos")
-@UseGuards(OidcGuard, RolesGuard)
+@UseGuards(OidcGuard, RolesGuard, DisponibilidadeGuard)
 @Roles("professor")
+/* O interruptor da rede (ADR-87), por CLASSE: rota nova desta ferramenta nasce
+   coberta. A exceção é declarada com `@SemDisponibilidade()`, e só vale para
+   apagar os próprios dados. */
+@Recurso("exp-90-plano-de-aula")
 export class PlanosController {
   constructor(private readonly planos: PlanosService) {}
 
@@ -165,6 +174,9 @@ export class PlanosController {
     return this.planos.restaurar(req.auth.escolaId, req.auth.usuarioId, id);
   }
 
+  /* Fora do interruptor: apagar o próprio plano. Um produto desligado fecha tudo, menos
+     isto — interruptor que prende dado é indefensável (ADR-87). */
+  @SemDisponibilidade()
   @Delete(":id")
   @Contrato({
     resumo: "Exclui o plano.",

@@ -31,7 +31,7 @@ const MOMENTOS: Array<{ acao: Acao; etapa: EtapaDaAula; rotulo: string; explica:
     etapa: "aula2",
     rotulo: "Abrir a Aula 2",
     explica:
-      "Solta quem está esperando no card de pausa e libera o episódio e a decisão no grupo. Sem isto, ninguém passa da investigação.",
+      "Solta quem está esperando na tela de pausa e libera o episódio e a decisão no grupo. Sem isto, ninguém passa da investigação.",
   },
   {
     acao: "congelar-debate",
@@ -170,7 +170,7 @@ export function PainelDaAulaEco({
 
         <div className="flex flex-col gap-1 border-t border-unooria-neutral-200 pt-3">
           <Button
-            variant="tertiary"
+            variant="outline"
             size="sm"
             onClick={() => void agir("redefinir")}
             isDisabled={enviando !== null}

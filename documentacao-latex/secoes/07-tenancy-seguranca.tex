@@ -217,14 +217,16 @@ justamente para que a RLS não mascare a ausência do \cd{where}.
 \label{fig:tenancy-fluxo}
 \end{figure}
 
-\subsection{A exceção: \cd{admin-contrato}}
+\subsection{Os papéis sem escola fixa: \cd{gestor\_contrato}, \cd{admin} e \cd{gestor\_regional}}
 
 \begin{regra}
-\cd{admin-contrato} é o \textbf{único} papel autorizado a atravessar escolas, e
-só em rotas explicitamente marcadas com \cd{@Roles("admin-contrato")}. Para esse
-papel, \cd{escolaId} nas \emph{claims} pode ser vazio --- e o \emph{CHECK} da
-migração permite \cd{escola\_id NULL} em \cd{users} apenas quando
-\cd{role = 'admin-contrato'}. Nenhuma outra combinação é aceita pelo banco.
+\cd{gestor\_contrato} e \cd{admin} (\adrr{ADR-80}) são os papéis autorizados a
+atravessar escolas na gestão da rede. Para ambos, \cd{escolaId} nas \emph{claims}
+é vazio. O \cd{gestor\_regional} tampouco tem escola fixa: cobre a sua regional
+e seleciona uma escola ativa por sessão. O \emph{CHECK} da migração
+(\arq{20260908150000\_modelo\_de\_papeis}) restringe \cd{escola\_id NULL} em
+\cd{users} estritamente a \cd{'gestor\_contrato'}, \cd{'admin'} e
+\cd{'gestor\_regional'}. Nenhuma outra combinação é aceita pelo banco.
 \end{regra}
 
 As rotas cross-escola vivem em \emph{controllers} separados
@@ -233,27 +235,100 @@ As rotas cross-escola vivem em \emph{controllers} separados
 um \cd{@Roles} misto é o caminho mais curto para um \cd{GET} novo herdar
 silenciosamente a permissão do vizinho.
 
+\section{O interruptor da rede: um nível que não é de tenancy}
+
+A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é
+autorização}: a \emph{disponibilidade}. Ele responde \enquote{este recurso existe
+nesta rede?}, e é PRÉ-CONDIÇÃO da liberação por turma (\adrr{ADR-69}), que por sua
+vez é pré-condição dos relógios e \emph{gates} das experiências.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Eixo} & \textbf{Pergunta} & \textbf{Quem decide}\\
+\midrule
+catálogo & que forma a experiência tem? & o manifesto / o CI\\
+\zebra disponibilidade (\adrr{ADR-87}) & existe NESTA REDE? & a Unooria (\cd{admin})\\
+liberação (\adrr{ADR-69}) & está aberta NESTA TURMA? & o professor\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{A tabela \cd{disponibilidades} fica FORA da RLS}, contra o hábito da regra
+inviolável nº 1, e a exceção é declarada: é configuração comercial e operacional
+da rede, não dado de estudante, e a linha de escopo-contrato tem \cd{escola\_id}
+NULO por desenho --- uma política por \cd{escola\_id} esconderia justamente a
+resposta que a tabela existe para dar. É o mesmo motivo de \cd{users},
+\cd{turmas} e \cd{lotacoes}. A ausência é provada por teste, para que a próxima
+migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer ligado.
+
+\textbf{Onde a guarda mora}, e por que num ponto só em cada caso:
+
+\begin{itemize}
+  \item \emph{Missões de estudante} --- dentro de
+    \cd{exigirMissaoLiberada}, ANTES da checagem de liberação. As seis
+    experiências já passam por aquele funil, e um ponto único torna impossível
+    existir liberação valendo num recurso que a rede não tem. A ordem importa
+    para o diagnóstico: o \cd{codigo} do 403 diz em qual dos dois eixos procurar.
+  \item \emph{Ferramentas de professor} (exp-90, exp-91, exp-92) --- não têm
+    liberação por turma e somam \textbf{28 rotas}. A guarda é um
+    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("exp-NN-slug")} no
+    \cd{@Controller}: rota nova nasce coberta. Anotar rota por rota é o desenho
+    em que a 29ª nasce sem guarda, sem erro e sem sintoma --- o produto
+    simplesmente deixa de poder ser desligado.
+  \item \emph{O escape é declarado} (\cd{@SemDisponibilidade()}) e vale
+    \textbf{só para apagar os próprios dados}. Desligar um produto fecha tudo; a
+    exceção existe porque \enquote{não consigo apagar meus dados porque o produto
+    foi desligado} é indefensável, e mais ainda no \emph{check-in} de bem-estar,
+    que é DASS-21.
+  \item \emph{Guard montado sem \cd{@Recurso} LANÇA}, em vez de liberar ---
+    liberar em silêncio é exatamente a falha que ele existe para impedir.
+\end{itemize}
+
+\textbf{A mensagem que chega ao estudante é a MESMA} de \cd{missao-nao-liberada}:
+quem lê é uma criança dentro de um app disfarçado, e \enquote{este produto foi
+desativado para a sua rede} quebra a ficção que a experiência está medindo. Quem
+distingue os dois casos é o \cd{codigo} (\cd{recurso-indisponivel}), que é o que
+o log e a tela leem. Na ferramenta de professor não há disfarce a proteger, e ali
+a mensagem diz o que aconteceu.
+
 \section{Nível 3: autorização por papel}
 
-\begin{tabularx}{\linewidth}{@{}L{26mm}L{26mm}X@{}}
+\begin{regra}
+\textbf{\cd{admin} e \cd{gestor\_contrato} deixaram de ter as MESMAS
+capacidades} (\adrr{ADR-88}, revendo a afirmação da \adrr{ADR-80}). A primeira e
+única exceção é a \emph{disponibilidade} de recursos: o painel vive em
+\cd{/unooria/*} e é restrito ao \cd{admin}, porque ligar e desligar produto é
+decisão da fornecedora, não de quem administra o contrato do lado do cliente ---
+um \cd{gestor\_contrato} que pode LIGAR passa a ter acesso a produto que a rede
+não contratou. Para todo o resto a igualdade continua valendo.
+
+\textbf{Uma rota volta atrás dessa linha, e só uma}:
+\rota{GET /recursos/auditoria} (\adrr{ADR-89}), o histórico do painel. Ler por
+que o produto da própria rede mudou de estado é informação do cliente; decidir o
+estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
+\cd{gestor\_contrato}.
+\end{regra}
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
 \toprule
 \headrow \thd{Papel} & \thd{Escopo de dados} & \thd{Pode}\\
 \midrule
-\cd{estudante} & Os próprios dados, na própria escola &
-  Realizar experiência, salvar progresso, ver o próprio resultado.
+\cd{estudante} & Própria matrícula e progresso &
+  Entrar nas missões liberadas para as suas turmas, salvar progresso e interagir no \emph{feed}.
   \textbf{Nunca} vê gabarito, nem dado de colega.\\
-\zebra \cd{professor} & A própria escola; \textbf{as turmas em que tem
-  matrícula} &
-  Preparar e conduzir atividade, ler turma e estudante individual, gerar plano de
-  aula, fazer o próprio \emph{check-in}. \textbf{Não} vê bem-estar de outro
-  professor, nem turma em que não leciona.\\
-\cd{gestor} & A própria escola &
-  Importar pessoas, enturmar, redefinir senha, ler agregado da escola.
-  \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem
-  qualquer dado de bem-estar.\\
-\zebra \cd{admin-contrato} & Toda a rede &
-  Ler agregado da rede, publicar manifesto. \textbf{Não} tem rota para a linha
-  individual de uma criança.\\
+\zebra \cd{professor} & A própria escola; as turmas em que leciona &
+  Liberar missões, controlar relógio de aula, emitir pareceres e gerar planos de aula e ensino.
+  \textbf{Não} vê bem-estar de outro professor, nem turma em que não leciona.\\
+\cd{gestor\_escola} & A própria escola (\emph{tenant}) &
+  Matricular estudantes, enturmar, gerir professores da unidade e consultar relatórios locais.
+  \textbf{Não} vê a linha de uma criança nos instrumentos de valores, nem bem-estar docente.\\
+\zebra \cd{gestor\_regional} & As escolas da regional vinculada &
+  Alternar entre escolas da regional, visualizar panorama unificado (\adrr{ADR-81}) e relatório pedagógico por laço de oito escolas (\adrr{ADR-82}).\\
+\cd{gestor\_contrato} & Toda a rede (cross-escola) &
+  Criar escolas, importar CSVs de enturmamento, provisionar supervisores regionais e emitir consolidados.\\
+\zebra \cd{admin} & Toda a rede (conta Unooria) &
+  Mesmas capacidades operacionais de \cd{gestor\_contrato}, preservando a autoria na cadeia de atribuição transitiva descendente (\adrr{ADR-80}).\\
 \bottomrule
 \end{tabularx}
 
@@ -278,23 +353,56 @@ redirecionado para a própria casa, porque estudante que tropeça em
 \cd{gestor} & \rota{/admin/usuarios} &
   Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
   aparece para quem tem mais de uma lotação.\\
-\zebra \cd{admin-contrato} & \rota{/admin/usuarios} &
-  O mesmo, mais \rota{/admin/escolas} (abrir unidade) e \rota{/analise}
-  (o nível de produto, na rede inteira).\\
+\zebra \cd{gestor\_regional} & \rota{/admin/usuarios} &
+  O mesmo do \cd{gestor\_escola}, e uma escola por vez --- o que muda é de onde
+  sai a LISTA de escolas que ele pode ativar: da regional dele
+  (\cd{users.regional\_id}), não da lotação (\adrr{ADR-80}).\\
+\cd{gestor\_contrato} & \rota{/admin/usuarios} &
+  O mesmo, mais \rota{/admin/regionais} e \rota{/admin/escolas} (organizar a rede
+  e abrir unidade) e \rota{/analise} (o nível de produto, na rede inteira).\\
+\zebra \cd{admin} (Unooria) & \rota{/admin/usuarios} &
+  As MESMAS capacidades de \cd{gestor\_contrato}. O que distingue é de quem é a
+  conta, não o que ela pode --- e o único acréscimo real é a ponta da cadeia: é
+  ele que atribui \cd{gestor\_contrato}.\\
 \bottomrule
 \end{tabularx}
 
 \begin{atencao}
-\textbf{Gestor e \cd{admin-contrato} moram na mesma área do \emph{middleware}}
+\textbf{Os QUATRO papéis de gestão moram na mesma área do \emph{middleware}}
 --- \cd{areaDoPapel} devolve \rota{/admin/usuarios} para os dois. A distinção
 entre eles \textbf{não} é feita ali: é feita item a item na navegação
 (\cd{SO\_ADMIN\_DO\_CONTRATO} em \arq{components/nav-admin.tsx}), por
-\cd{redirect} na página que não admite gestor (\rota{/admin/escolas}) e,
+\cd{redirect} nas páginas que não admitem gestor (\rota{/admin/escolas} e
+\rota{/admin/regionais}) e,
 definitivamente, pelo \cd{RolesGuard} da API. Um gestor que digite
 \rota{/analise} vê a tela abrir e ficar \textbf{vazia}: a API responde 403, o
 BFF converte em \cd{null} e não há o que renderizar. Nenhum dado atravessa ---
 mas a tranca que segurou foi a segunda, não a primeira.
 \end{atencao}
+
+\subsection{A cadeia de atribuição de papéis}
+
+Quem CONCEDE cada nível de acesso é uma pergunta diferente de quem pode chamar
+cada rota, e ela tem resposta própria desde a \adrr{ADR-80}:
+
+\begin{center}
+\cd{admin} \seta{} \cd{gestor\_contrato} \seta{} \cd{gestor\_regional} \seta{}
+\cd{gestor\_escola} \seta{} \cd{professor}, \cd{estudante}
+\end{center}
+
+Cada nível atribui o de baixo, e o alcance real é o \textbf{fechamento
+transitivo} dessa tabela (\cd{papeisQueCria}, em \arq{usuarios/regras.ts}) --- não
+uma lista escrita à mão por papel, que teria quatro cópias da mesma regra.
+\textbf{Para cima, nunca}: nem o próprio nível. Um papel que se autoatribui não
+tem quem o conceda, e é por isso que \cd{gestor\_contrato} deixou de criar outro
+\cd{gestor\_contrato} e \cd{gestor\_escola} deixou de criar outra coordenação de
+escola --- as duas coisas valiam antes desta ADR.
+
+A tranca é \cd{podeCriarPapel}, e não o \cd{@Roles}: o \emph{guard} protege a
+ROTA, não o campo \cd{papel} do corpo. A lista que a tela oferece sai da mesma
+cadeia (espelhada em \arq{hub/lib/papeis.ts}) apenas para não oferecer o que a
+API recusaria --- seletor que promete o que dá 403 faz a pessoa preencher o
+formulário inteiro para receber o erro no fim.
 
 \subsection{A matriz de capacidades}
 
@@ -314,9 +422,7 @@ cada linha existe porque há um \cd{@Roles} que a sustenta. \yes{} é
   \no & \no & \yes & \yes\\
 \zebra \textbf{Criar UMA pessoa} --- o formulário que delega ao importador &
   \rota{POST /usuarios} & \no & \no & \yes & \yes\\
-\textbf{Criar outro \cd{admin-\B contrato}} & \rota{POST /usuarios/\B admin-contrato} &
-  \no & \no & \no & \yes\\
-\zebra Listar as pessoas da escola & \rota{GET /usuarios} & \no & \no & \yes & \yes\\
+Listar as pessoas da escola & \rota{GET /usuarios} & \no & \no & \yes & \yes\\
 Editar pessoa (nome, CPF, e-mail, papel, \cd{ativo}) &
   \rota{PATCH /usuarios/:id} & \no & \no & \yes & \yes\\
 \zebra Redefinir senha (temporária, mostrada uma vez) &
@@ -331,15 +437,23 @@ Abrir uma turma e ver quem está nela & \rota{GET /turmas/:id} & \no &
   \yes\footnotesize{*} & \yes & \yes\\
 \zebra Abrir o ano letivo & \rota{POST /periodos-letivos} & \no & \no & \yes & \yes\\
 Ler os períodos letivos & \rota{GET /periodos-letivos} & \no & \yes & \yes & \yes\\
-\zebra \textbf{Abrir ou editar ESCOLA} & \rota{POST}, \rota{PATCH /escolas} &
-  \no & \no & \no & \yes\\
-Conceder lotações em lote (nível da rede) &
+\zebra \textbf{Abrir ou editar ESCOLA ou REGIONAL} & \rota{POST},
+  \rota{PATCH /escolas} & \no & \no & \no & \yes\\
+\textbf{Excluir uma REGIONAL} (escola não se exclui) &
+  \rota{DELETE /escolas/:id} & \no & \no & \no & \yes\\
+\zebra \textbf{Buscar professor/coordenação na REDE} (sem escola de origem) &
+  \rota{GET /escolas/\B profissionais} & \no & \no & \no & \yes\\
+\textbf{Atribuir papel SEM escola} (\cd{gestor\_contrato}, \cd{gestor\_regional})
+  & \rota{POST /usuarios/\B sem-escola} & \no & \no & \no & \yes\footnotesize{**}\\
+\zebra \textbf{Relatório da DIRETORIA} (consolidado e por escola) &
+  \rota{GET /escolas/\B minhas/relatorio} & \no & \no & \yes\footnotesize{***} & \yes\\
+\zebra Conceder lotações em lote (nível da rede) &
   \rota{POST /escolas/\B lotacoes-em-lote} & \no & \no & \no & \yes\\
-\zebra Lotar alguém numa escola, encerrar lotação &
+Lotar alguém numa escola, encerrar lotação &
   \rota{POST /escolas/\B :id/lotacoes}, \rota{DELETE /lotacoes/:id} & \no & \no & \yes & \yes\\
-Transferir estudante entre escolas do contrato &
+\zebra Transferir estudante entre escolas do contrato &
   \rota{POST /estudantes/\B :id/transferir} & \no & \no & \yes & \yes\\
-\zebra Ler o histórico de quem foi transferido &
+Ler o histórico de quem foi transferido &
   \rota{GET /estudantes/\B :id/historico} & \no & \yes & \yes & \yes\\
 Emitir, importar e remover perfil portátil &
   \rota{/estudantes/:id/\B perfil-portatil}, \rota{/perfis-recebidos} & \no & \no & \yes & \yes\\
@@ -356,6 +470,17 @@ Publicar ou atualizar experiência no catálogo &
 (\cd{professorLeciona}); gestor e admin enxergam a escola inteira. É a
 diferença entre \enquote{dá aula nesta turma} e \enquote{trabalha nesta escola}
 (\adrr{ADR-28}).
+
+\footnotesize{***} Só o \cd{gestor\_regional}, e só a PRÓPRIA regional: o
+\cd{?regionalId=} dele é ignorado. O \cd{gestor\_escola} não alcança --- para
+quem tem uma escola o relatório seria a própria escola com um título errado
+(\adrr{ADR-82}).
+
+\footnotesize{**} A rota aceita os dois perfis de contrato, mas QUAL papel cada
+um pode atribuir sai da cadeia, não do \cd{@Roles}: \cd{gestor\_contrato}
+atribui \cd{gestor\_regional}; \cd{gestor\_contrato} pedindo outro
+\cd{gestor\_contrato} recebe 403, porque esse é atribuído pela Unooria
+(\adrr{ADR-80}).
 \normalsize
 
 \begin{tabularx}{\linewidth}{@{}X L{34mm} C{8mm} C{9mm} C{9mm} C{9mm}@{}}
@@ -438,10 +563,14 @@ formulário, que se chama \enquote{Novo usuário}, \textbf{recusa com 409} quem 
 existe, em vez de atualizar em silêncio --- e o 409 de um CPF achado em outra
 escola sai sem id, sem nome e sem dizer qual unidade.
 
-A exceção é \cd{admin-contrato}: ele não tem \cd{escola\_id}, lotação nem turma,
-não cabe numa planilha DA ESCOLA, e por isso tem rota própria,
-\rota{POST /usuarios/admin-contrato}, restrita a ele mesmo. Gestor recebe 403 ali
---- conceder o alcance da rede inteira é decisão do contrato, nunca de uma unidade.
+A exceção são as contas sem escola (\cd{gestor\_contrato} e
+\cd{gestor\_regional}, \adrr{ADR-80}): elas não têm \cd{escola\_id}, lotação nem
+turma, não cabem numa planilha DA ESCOLA, e por isso têm rota própria,
+\rota{POST /usuarios/sem-escola}. A cadeia de atribuição transitiva impede
+escalada de privilégio: \cd{admin} cria \cd{gestor\_contrato}, e este cria
+\cd{gestor\_regional}. Gestor escolar recebe 403 ali --- conceder o alcance da
+rede inteira ou de uma diretoria é decisão de governança do contrato, nunca de
+uma unidade isolada.
 \end{decisao}
 
 \subsection{As portas que não são papel}
@@ -466,6 +595,14 @@ matriz acima poderia concluir, erradamente, que não existe.
   já foi descartada e ninguém leria o erro.\\
 \zebra \rota{POST /telemetry/ingest} & \cd{PubSubPushGuard} & O \emph{push} do
   Pub/Sub, autenticado pelo OIDC da conta de serviço --- não por pessoa.\\
+\rota{POST /observabilidade/publico/*} & \textbf{Nenhuma} &
+  A única rota sem guard nenhum (\adrr{ADR-84}). Existe porque a tela de
+  \emph{login} não tem sessão, e o 401 do BFF descartava justamente o sinal de
+  que ninguém estava conseguindo entrar. A contenção é estrutural, não de
+  identidade: Zod \cd{.strict()} com corpo pequeno, \cd{expId} forçado a
+  \cd{hub}, \emph{redaction}, cota por IP mais teto global de instância, e
+  nenhuma linha de log por requisição recusada. Não lê nem escreve dado de
+  ninguém --- só emite log e conta métrica.\\
 \rota{POST /perfis/importar},\newline \rota{/planos/referencias} &
   Chave de serviço (\cd{x-perfil-token}, \cd{x-import-token}) &
   Máquina falando com máquina no \emph{provisionamento}. Nenhuma delas é
@@ -524,14 +661,24 @@ continuam exatamente como estavam (\adrr{ADR-30}). A troca de escola ativa é
 validada contra as lotações \emph{pela API}, nunca contra a lista que o
 \emph{cookie} carrega: \emph{cookie} é dado do cliente.
 
+\textbf{E a fronteira precisa se mover na TELA junto com o \emph{token}}
+(\adrr{ADR-85}). Trocar de escola reemite o \emph{cookie}, mas uma tela já
+aberta continua com o que buscou antes --- e uma experiência embutida continua
+com o \emph{token} anterior em memória, porque ele viaja uma vez só, no
+\emph{handshake}. Aí não é leitura desatualizada: é escrita na escola de onde a
+pessoa acabou de sair, com um \emph{token} legítimo que a RLS aceita sem
+reclamar. Por isso o layout de cada área do hub remonta o miolo quando a escola
+ativa muda.
+
 Acima da escola existe um nível --- a \textbf{regional} (Diretoria de Ensino,
-polo, secretaria municipal) ---, e ele \textbf{agrupa sem autorizar}. Estar numa
-diretoria não dá acesso a nada: quem dá acesso é a lotação, uma por unidade. A
-hierarquia serve para MONTAR a lista de escolas que o admin do contrato confirma
-antes de conceder (\rota{POST /escolas/lotacoes-em-lote}), e nenhuma consulta de
-autorização lê \cd{escolas.pai\_id}. Autorizar por hierarquia seria uma segunda
-fonte de verdade sobre acesso, divergente da lotação no dia em que alguém
-corrigisse um pai (\adrr{ADR-34}).
+polo, secretaria municipal) ---, que \textbf{agrupa unidades sem criar um tenant
+unificado}. Nenhuma política de RLS foi flexibilizada para acomodar regionais
+(\adrr{ADR-79}, \adrr{ADR-80}, \adrr{ADR-81}): o \cd{gestor\_regional} opera
+uma escola ativa por vez, selecionada entre as escolas cujo
+\cd{escolas.pai\_id} coincide com seu \cd{users.regional\_id}. Quando a
+diretoria precisa de relatório consolidado (\adrr{ADR-82}), a API itera sobre
+as escolas autorizadas em lotes de oito, armando o \cd{set\_config} isolado
+para cada unidade, sem quebrar o isolamento de dados no banco.
 
 E na transferência de um estudante, o dado \textbf{fica onde foi produzido}. O que
 atravessa é uma leitura única e estreita (\rota{GET /estudantes/:id/historico}),
@@ -593,9 +740,9 @@ Verificação de versão maior & Hub e experiência comparam
   \cd{localStorage} nem em \emph{cookie}. TTL de 15 minutos, renovado por
   mensagem.\\
 \emph{Sandbox} mínimo & \cd{allow-scripts allow-same-origin
-  allow-modals}, mais \cd{allow-pointer-lock} e \cd{allow-forms}
-  \textbf{apenas} para quem declara \cd{pointer-lock} ou \cd{forms} no
-  manifesto~\cite{mdnsandbox}.\\
+  allow-modals}, mais \cd{allow-pointer-lock}, \cd{allow-forms} e
+  \cd{allow-downloads} \textbf{apenas} para quem declara \cd{pointer-lock},
+  \cd{forms} ou \cd{downloads} no manifesto~\cite{mdnsandbox}.\\
 \zebra \cd{allow} do \emph{frame} & \cd{autoplay; fullscreen; clipboard-write}. A
   \emph{Permissions-Policy} tem \emph{default} \cd{'self'}: sem delegar
   \cd{autoplay}, um \cd{<video muted autoplay>} cross-origin rejeita
@@ -613,14 +760,33 @@ confirma exclusão assim; \cd{allow-pointer-lock} porque, num \cd{iframe} com
 \emph{sandbox}, \cd{requestPointerLock()} morre com \cd{SecurityError} sem ele
 --- verificado em \arq{scripts/probe-pointerlock.mjs}, que precisa do Chrome do
 sistema porque o Chromium do Playwright não concede \emph{pointer lock} nem no
-topo da página.
+topo da página. E \cd{allow-downloads} porque, sem ele, o navegador
+\textbf{bloqueia todo \emph{download}} iniciado de dentro do \cd{iframe}: o
+professor clicava em \enquote{Baixar .doc} nas ferramentas de planejamento e
+\textbf{nada acontecia}, sem erro na tela e sem linha no \emph{console} --- o
+Chrome registra esse bloqueio no painel \emph{Issues}, e o \cd{a.click()} do
+\emph{bundle} volta como se tivesse funcionado (\adrr{ADR-76};
+MEDIDO com dois \cd{iframe} iguais, um com o token e outro sem).
 \end{nota}
+
+\begin{atencao}
+\textbf{A permissão do manifesto só vale se a rota do hub a repassar.} As três
+páginas que embedam ferramenta de professor
+(\rota{/professor/plano-de-aula}, \rota{/plano-de-ensino}, \rota{/bem-estar})
+renderizam o \cd{ExpFrame} direto e \textbf{não passavam \cd{permissoes}} ---
+só \rota{/exp/[expId]} e \rota{/dev-embed} passavam. O efeito é silencioso: o
+\emph{frame} monta o \emph{sandbox} sem o token e a capacidade declarada
+simplesmente não existe naquela tela.
+\end{atencao}
 
 \begin{decisao}
 \textbf{Permissão de \cd{iframe} é por experiência, não \emph{default} do
 \emph{frame}.} Prender o ponteiro do mouse de um estudante é capacidade de quem a
 declarou --- e concedê-la a todas as experiências significaria que qualquer
-\emph{bundle} publicado pode capturar o mouse. Já \cd{fullscreen}
+\emph{bundle} publicado pode capturar o mouse. O mesmo vale para
+\cd{allow-downloads}: entregar arquivo ao computador de quem está usando é
+capacidade de quem declarou, e só as duas ferramentas de professor exportam
+documento. Já \cd{fullscreen}
 \emph{não} entra no manifesto: o \cd{allow} do \emph{frame} já o delega a todas,
 e campo de manifesto que não muda nada é pior que campo nenhum, porque quem lê
 acredita ter declarado algo.
@@ -687,11 +853,14 @@ Ranking sem menor real & O ranking da exp-02 usa colegas
 \zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
-Texto de menor com contenção & \cd{exp\_07\_mensagens} guarda a conversa da
-  criança com Amara --- \textbf{o único texto livre de estudante do produto}. Ela
-  fica sob RLS, fora de log e fora da telemetria (que leva só a contagem de
-  turnos), tem teto de 600 caracteres e de 3 turnos, e passa pelo sanitizador
-  nos dois sentidos. Ver a decisão logo abaixo.\\
+Texto de menor com contenção & \textbf{Dois} campos livres de estudante, e a
+  diferença entre eles é de finalidade. \cd{exp\_07\_mensagens} guarda a
+  conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
+  sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
+  \emph{quantos} turnos, nunca o quê. \cd{exp\_06\_reflexoes} guarda o
+  \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
+  porque ali o texto \emph{é} o instrumento. As duas ficam sob RLS, fora de log
+  e fora da telemetria. Ver a decisão logo abaixo.\\
 \bottomrule
 \end{tabularx}
 
@@ -713,6 +882,31 @@ Consequência aceita: existe no banco uma coluna de longa duração com texto
 escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
 de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
 algum painel pedir o texto, a decisão volta à mesa.
+\end{decisao}
+
+\begin{decisao}
+\textbf{A exp-06 leva o texto da criança ao painel do professor, e a exp-07
+não --- as duas estão certas.} O que separa os dois casos é a
+\textbf{finalidade}, não o grau de cuidado.
+
+Na exp-07 o campo é uma \emph{conversa} com uma personagem: ele existe para a
+criança perguntar antes de repassar, e o que a professora precisa saber é se ela
+perguntou --- daí a contagem de turnos no painel e o texto fora dele. Levá-lo à
+tela do adulto mudaria o que a criança escreve, e a missão mede justamente a
+pergunta espontânea.
+
+Na exp-06 o campo é o \emph{registro do percurso}: 280 caracteres em que a
+criança nomeia o gatilho que reconheceu e o que fará antes de encaminhar da
+próxima vez. Ali o texto \textbf{é} o instrumento formativo --- um painel que
+mostrasse só \enquote{entregou / não entregou} guardaria a redação para ninguém.
+Quem lê é o professor \emph{da turma dela}: nenhuma rota de gestor o alcança, e
+o campo não existe em nenhum \emph{payload} de telemetria.
+
+Consequência aceita: há agora duas colunas de longa duração com texto de menor,
+e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
+painel de gestor, de rede ou de análise pedir \cd{exp\_06\_reflexoes.texto}, a
+decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
+por conveniência de relatório.
 \end{decisao}
 
 \subsection{Retenção: uma decisão explícita de não declarar prazo}

@@ -66,12 +66,13 @@ export function ehRuidoDeDev(texto) {
  *
  * - `favicon.ico`: o hub não declara ícone nenhum (`app/layout.tsx` só tem
  *   `title`). Toda navegação de todo papel gera um 404 no console.
- * - `observabilidade/vitals`: o `VitalsHub` reporta Web Vitals em 10% das abas,
- *   e o primeiro deles costuma sair na tela de LOGIN — antes de haver sessão.
- *   O BFF responde 401, e o próprio componente documenta isso ("sem sessão o
- *   BFF responde 401 e nada acontece"). Como a amostra é aleatória, ele
- *   reprovava QUALQUER suíte uma vez a cada dez execuções, sempre por um
- *   motivo que não tem relação com o roteiro que falhou.
+ * - (SAIU em 2026-09-08) `observabilidade/vitals`: o vital da tela de login
+ *   batia 401 no BFF, porque ainda não há sessão. Deixou de acontecer — o BFF
+ *   passou a encaminhar erro e vital sem sessão para a rota PÚBLICA da api
+ *   (ADR-84), em vez de recusá-los. A linha saiu junto com a correção: uma
+ *   pendência conhecida que sobrevive ao conserto faz a suíte esperar um
+ *   vermelho que não existe mais, e a próxima pessoa a ler a lista acredita
+ *   nela.
  * - `clarity.ms`: a tag do Microsoft Clarity (ADR-60) é recurso de TERCEIRO, e
  *   ela responde **400 a partir de IP de datacenter** — medido em 2026-09-02:
  *   200 da máquina de quem opera, 400 do runner do GitHub Actions, com o mesmo
@@ -87,12 +88,18 @@ const PENDENCIAS_CONHECIDAS = [
     oQue: "o hub não declara favicon — todo carregamento de página gera um 404 no console",
   },
   {
-    padrao: /observabilidade\/vitals/,
-    oQue: "Web Vitals reportado antes de haver sessão (tela de login) — o BFF responde 401 por desenho, e a métrica é amostrada em 10% das abas",
-  },
-  {
     padrao: /clarity\.ms/,
     oQue: "a tag do Microsoft Clarity (terceiro) recusa IP de datacenter com 400 — no CI é esperado, e o Clarity ausente é no-op",
+  },
+  {
+    padrao: /for a non-boolean attribute/,
+    oQue:
+      "algum componente do design system repassa uma prop booleana ao DOM (aviso do React; o " +
+      "console do Playwright entrega a mensagem sem interpolar os argumentos, então ela não " +
+      "diz qual atributo é) — aparece no fluxo da exp-92, e a origem exata segue por isolar: " +
+      "NÃO é o `ProgressBar` nem o `Selection`, que tratam as suas, e não era o " +
+      "`fillCompletedConnectors` que a exp-92 passava ao `Stepper` (prop inexistente no DS, já " +
+      "removida). Fica listado porque é defeito de biblioteca, não da tela que a suíte mede",
   },
 ];
 
@@ -145,16 +152,50 @@ export async function esperarOuFalharCedo(sucesso, erro, opcoes = {}) {
  */
 export async function esperarOuFalharPorHttp(pagina, sucesso, rota, opcoes = {}) {
   const { timeout = 120_000, oQue = "a chamada" } = opcoes;
-  const erroDaApi = pagina
-    .waitForResponse((r) => rota.test(r.url()) && r.status() >= 400, { timeout })
-    .then(async (r) => {
-      const corpo = await r.text().catch(() => "(sem corpo)");
-      throw new Error(
-        `${oQue} falhou: HTTP ${r.status()} em ${new URL(r.url()).pathname} — ` +
-          corpo.replace(/\s+/g, " ").slice(0, 300),
-      );
-    });
-  await Promise.race([sucesso.first().waitFor({ timeout }), erroDaApi]);
+
+  /* Sentinela que EXPIROU fica pendente, nunca rejeita. Uma `Promise.race` em
+     que a sentinela rejeita por timeout reporta "timeout esperando resposta" no
+     lugar do seletor que faltou — e como as duas esperas têm o mesmo teto, quem
+     rejeita primeiro é sorte. Pendente, ela simplesmente sai da corrida. */
+  const pendenteParaSempre = () => new Promise(() => {});
+
+  const erroDaApi = (async () => {
+    let r;
+    try {
+      r = await pagina.waitForResponse((x) => rota.test(x.url()) && x.status() >= 400, { timeout });
+    } catch {
+      return pendenteParaSempre();
+    }
+    const corpo = await r.text().catch(() => "(sem corpo)");
+    throw new Error(
+      `${oQue} falhou: HTTP ${r.status()} em ${new URL(r.url()).pathname} — ` +
+        corpo.replace(/\s+/g, " ").slice(0, 300),
+    );
+  })();
+
+  /* Requisição que NÃO chega a ter status — abortada, recusada, DNS — não era
+     coberta, e é a que mais engana: o `fetch` do cliente morre sem resposta, o
+     estado da tela nunca avança e a suíte paga o timeout inteiro para reportar
+     o seletor. Em 2026-09-10 a `estudante/06` gastou 25s assim, com o
+     `POST /o-eco-no-grupo/intervencao` em `net::ERR_ABORTED` no relatório e
+     nada apontando para ele. */
+  const falhaDeRede = (async () => {
+    let req;
+    try {
+      req = await pagina.waitForEvent("requestfailed", {
+        predicate: (x) => rota.test(x.url()),
+        timeout,
+      });
+    } catch {
+      return pendenteParaSempre();
+    }
+    throw new Error(
+      `${oQue} não completou: ${req.method()} ${new URL(req.url()).pathname} — ` +
+        `${req.failure()?.errorText ?? "falha de rede"}`,
+    );
+  })();
+
+  await Promise.race([sucesso.first().waitFor({ timeout }), erroDaApi, falhaDeRede]);
 }
 
 /**

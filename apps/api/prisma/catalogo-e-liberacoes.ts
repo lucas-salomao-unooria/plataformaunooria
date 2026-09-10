@@ -25,6 +25,7 @@ interface Manifesto {
   versao: string;
   series?: string[];
   unidade?: number;
+  produto?: string;
   capabilities?: string[];
   viewport?: { largura: number; altura: number } | null;
   publico?: string;
@@ -68,6 +69,10 @@ export async function semearCatalogo(prisma: PrismaClient): Promise<number> {
       versaoAtiva: m.versao,
       series: m.series ?? [],
       unidade: m.unidade ?? null,
+      /* O produto (ADR-87). Sem ele o seed popularia o catálogo com a coluna
+         NULA, e o painel da Unooria abriria numa stack de dev sem nenhuma
+         experiência dentro dos produtos — a tela vazia que parece bug de tela. */
+      produto: m.produto ?? null,
       capabilities: m.capabilities ?? [],
       viewport: m.viewport ?? undefined,
       publico: m.publico ?? "estudante",
@@ -77,6 +82,18 @@ export async function semearCatalogo(prisma: PrismaClient): Promise<number> {
       where: { expId: m.id },
       update: dados,
       create: { expId: m.id, ...dados },
+    });
+
+    /* O HISTÓRICO junto, como o `PUT /experiencias/:expId` faz (ADR-87). Sem
+       isto, uma stack semeada tem `versao_ativa` sem linha correspondente em
+       `experiencias_versoes`, e o painel da Unooria abre dizendo que não conhece
+       versão nenhuma da experiência que está no ar — a tela vazia que faz a
+       pessoa duvidar da tela em vez do dado. `publicadaPor` é texto justamente
+       para caber `seed`, que não é uma linha de `users`. */
+    await prisma.experienciaVersao.upsert({
+      where: { expId_versao: { expId: m.id, versao: m.versao } },
+      update: { manifesto: m as object, publicadaPor: "seed" },
+      create: { expId: m.id, versao: m.versao, manifesto: m as object, publicadaPor: "seed" },
     });
   }
   return manifestos.length;
@@ -104,6 +121,7 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // suíte `estudante/05-vila-do-lume` + `estudante/02-instanooria` percorre.
   { turma: "8A", expIds: ["exp-70-vila-do-lume", "exp-01-instanooria"] },
   { turma: "4A", expIds: ["exp-02-unootube"] },
+  { turma: "6A", expIds: ["exp-06-rastro-boato"] },
   { turma: "7A", expIds: ["exp-07-o-eco-no-grupo"] },
   { turma: "2EM-A", expIds: ["exp-03-unoogpt"] },
 ];

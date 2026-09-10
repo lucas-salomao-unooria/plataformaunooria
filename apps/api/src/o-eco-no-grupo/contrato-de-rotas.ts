@@ -253,3 +253,25 @@ export const PreparoDaMidiaSchema = z.object({
    *  é o canal principal, e a ilustração cai no procedural. */
   falharam: z.array(z.string()),
 });
+
+/**
+ * O material do guia da aula: as três respostas COM gabarito e as reações do
+ * bairro em cada desfecho.
+ *
+ * Professor-only. `desfecho` e `correta` são exatamente os dois campos que
+ * `semGabarito` remove antes de a opção chegar ao estudante (regra 3); o que
+ * muda aqui é o leitor. As reações vêm do roteiro canônico — o que roda sem IA.
+ */
+export const MaterialDoProfessorSchema = z.object({
+  intervencoes: z.array(
+    z.object({
+      id: z.string(),
+      texto: z.string(),
+      /** GABARITO. */
+      desfecho: z.enum(["ruido", "checada", "conflito"]),
+      /** GABARITO. */
+      correta: z.boolean(),
+      reacoes: z.array(z.object({ autor: z.string(), texto: z.string() })),
+    }),
+  ),
+});

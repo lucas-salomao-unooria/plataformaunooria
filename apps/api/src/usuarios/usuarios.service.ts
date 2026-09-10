@@ -6,7 +6,7 @@ import { digitosDoCpf, formatarCpf } from "../comum/cpf";
 import { gerarSenha, gerarUsuario } from "../rostering/regras";
 import { planilhaDeUmaPessoa } from "../rostering/planilha";
 import { RosteringService } from "../rostering/rostering.service";
-import type { CriarAdminContratoSchema, CriarUsuarioSchema } from "./contrato-de-rotas";
+import type { CriarSemEscolaSchema, CriarUsuarioSchema } from "./contrato-de-rotas";
 
 /**
  * Gestão das contas que já existem: listar, editar, desativar e resetar senha.
@@ -45,11 +45,38 @@ export class UsuariosService {
 
   async listar(escolaId: string, filtro: FiltroDeUsuarios) {
     const busca = filtro.busca?.trim();
+    /**
+     * QUEM TRABALHA NESTA ESCOLA é `lotacoes`, não `users.escola_id`.
+     *
+     * O bug que isto corrige: a coluna "Professores" da tela de Escolas conta
+     * LOTAÇÕES naquela escola, e esta lista filtrava `users.escola_id` — que é o
+     * CACHE da lotação PRINCIPAL. O professor lotado em duas escolas era contado
+     * nas duas e listado só na principal: a escola secundária mostrava
+     * "1 professor" e uma lista vazia, com a mensagem "Ninguém por aqui ainda".
+     *
+     * Os dois lados passam a fazer a MESMA pergunta — lotação ativa nesta
+     * escola, com este papel —, então a contagem e a lista não podem divergir
+     * por construção, e não por coincidência. `tests/usuarios.spec.ts` cobra a
+     * igualdade.
+     *
+     * O papel também sai da LOTAÇÃO, não de `users.role`: é o papel com que a
+     * pessoa trabalha NESTA escola, e é o mesmo critério que a contagem usa.
+     * Hoje os dois concordam sempre (o `lotarEmLote` recusa divergência desde a
+     * ADR-80, e não há uma única linha divergente na base), mas fazer a lista
+     * perguntar uma coisa e a contagem outra é exatamente como o defeito nasceu.
+     *
+     * `lotacoes` está FORA da RLS, então este `some` funciona dentro do
+     * `comTenancy` — e ele É o filtro de escola desta query, o que a regra
+     * inviolável nº 1 exige.
+     */
     const where = {
-      escolaId,
-      ...(filtro.papel
-        ? { role: filtro.papel === "estudante" ? { in: ["estudante"] } : filtro.papel }
-        : {}),
+      lotacoes: {
+        some: {
+          escolaId,
+          fim: null,
+          ...(filtro.papel ? { papel: filtro.papel } : {}),
+        },
+      },
       ...(filtro.situacao === "ativos" ? { ativo: true } : {}),
       ...(filtro.situacao === "inativos" ? { ativo: false } : {}),
       ...(filtro.situacao === "sem-primeiro-acesso" ? { senhaProvisoria: true } : {}),
@@ -84,10 +111,16 @@ export class UsuariosService {
               where: { fim: null },
               include: { turma: { select: { nome: true, serie: true } } },
             },
-            /* O gestor de mais de uma unidade e o `admin-contrato` precisam ver
-               DE QUE escola é a linha — sem isso a lista mistura unidades sem
-               dizer. `escola_id` é sempre o da lotação principal. */
-            escola: { select: { nome: true } },
+            /* A LOTAÇÃO nesta escola — é dela que sai o papel com que a pessoa
+               trabalha AQUI, e o nome da escola da linha. `u.escola` não serve
+               para nenhum dos dois: ela é a lotação PRINCIPAL, e para quem
+               trabalha em duas a linha diria a escola errada justamente na
+               listagem da outra. */
+            lotacoes: {
+              where: { escolaId, fim: null },
+              select: { papel: true, escola: { select: { nome: true } } },
+              take: 1,
+            },
           },
           orderBy: [{ role: "asc" }, { username: "asc" }],
           skip: (filtro.pagina - 1) * filtro.porPagina,
@@ -104,8 +137,12 @@ export class UsuariosService {
             id: u.id,
             usuario: u.username,
             nome: u.displayName,
-            papel: u.role,
-            escola: u.escola?.nome ?? null,
+            /* O papel DESTA escola, não o global. Hoje os dois concordam
+               sempre — o `lotarEmLote` recusa divergência (ADR-80) —, e mostrar
+               o da lotação é o que faz a linha combinar com o filtro que a
+               trouxe. */
+            papel: u.lotacoes[0]?.papel ?? u.role,
+            escola: u.lotacoes[0]?.escola.nome ?? null,
             matricula: u.matriculaExterna,
             /* Formatado como em qualquer documento brasileiro. Só gestor e
                admin-contrato chegam nesta rota. */
@@ -142,7 +179,7 @@ export class UsuariosService {
     },
   ) {
     const usuario = await this.prisma.user.findFirst({
-      where: { id: usuarioId, escolaId, NOT: { role: "admin-contrato" } },
+      where: { id: usuarioId, escolaId, NOT: { role: "gestor_contrato" } },
     });
     if (!usuario) return null;
     const atualizado = await this.prisma.user.update({
@@ -177,7 +214,7 @@ export class UsuariosService {
    */
   async resetarSenha(escolaId: string, usuarioId: string) {
     const usuario = await this.prisma.user.findFirst({
-      where: { id: usuarioId, escolaId, NOT: { role: "admin-contrato" } },
+      where: { id: usuarioId, escolaId, NOT: { role: "gestor_contrato" } },
     });
     if (!usuario) return null;
     const senhaTemporaria = gerarSenha();
@@ -270,10 +307,10 @@ export class UsuariosService {
           usuarioId: naEscola.id,
         };
       }
-      /* Login de `admin-contrato` é reservado em toda a rede: o login procura o
+      /* Login de `gestor_contrato` é reservado em toda a rede: o login procura o
          username na rede inteira e recusa quando duas contas respondem. */
       const reservado = await this.prisma.user.findFirst({
-        where: { username: dados.usuario, role: "admin-contrato" },
+        where: { username: dados.usuario, role: "gestor_contrato" },
         select: { id: true },
       });
       if (reservado) {
@@ -367,7 +404,7 @@ export class UsuariosService {
   }
 
   /**
-   * Cadastro de `admin-contrato` — o único papel que NÃO passa pelo importador.
+   * Cadastro de `gestor_contrato` — o único papel que NÃO passa pelo importador.
    *
    * Ele não pertence a escola nenhuma (`escola_id` nulo, sem lotação e sem
    * matrícula), e a planilha é um documento DA escola: não há coluna onde ele
@@ -378,7 +415,7 @@ export class UsuariosService {
    * na rede inteira — dois donos do mesmo login viram recusa no login de
    * ambos, que é o pior lugar para descobrir a colisão.
    */
-  async criarAdminContrato(dados: z.infer<typeof CriarAdminContratoSchema>) {
+  async criarSemEscola(dados: z.infer<typeof CriarSemEscolaSchema>) {
     const cpf = dados.cpf ? digitosDoCpf(dados.cpf) : null;
     if (cpf) {
       const dono = await this.prisma.user.findFirst({ where: { cpf }, select: { id: true } });
@@ -418,8 +455,11 @@ export class UsuariosService {
     const senha = dados.senha ?? gerarSenha();
     const criado = await this.prisma.user.create({
       data: {
-        role: "admin-contrato",
+        role: dados.papel,
         escolaId: null,
+        /* A regional é o ESCOPO do `gestor_regional` — sem ela o CHECK
+           bicondicional do banco recusa a linha, e o Zod já reprovou antes. */
+        regionalId: dados.regionalId ?? null,
         username: usuario,
         displayName: dados.nome,
         passwordHash: await bcrypt.hash(senha, 10),
@@ -434,7 +474,7 @@ export class UsuariosService {
       id: criado.id,
       nome: criado.displayName,
       usuario: criado.username,
-      papel: "admin-contrato" as const,
+      papel: dados.papel,
       senha,
     };
   }

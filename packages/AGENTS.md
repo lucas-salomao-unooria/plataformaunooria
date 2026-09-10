@@ -7,15 +7,24 @@ está o detalhe:
 |---|---|---|
 | `@edu/sdk` | a única porta da experiência para fora: handshake, token, chamada de api, telemetria | `sdk/AGENTS.md` |
 | `@edu/ui` | as cinco pontes para as seções do `@unooria/design-system` | `ui/AGENTS.md` |
-| `@edu/conteudo-exp-01` | a copy da revelação, lida pela exp-01 E pelo guia do professor | `conteudo-exp-01/AGENTS.md` |
 
-Comum aos três: **TypeScript puro, sem dependência pesada**, consumidos por
+Comum aos dois: **TypeScript puro, sem dependência pesada**, consumidos por
 `workspace:*` e nunca publicados no npm. O que é publicado e vem de fora é o
 `@unooria/design-system` — e a única forma de consumi-lo é pela ponte do
 `@edu/ui`, na seção certa (ver a regra de ouro na raiz).
 
 Pacote novo aqui exige justificativa: código compartilhado por **dois ou mais**
 consumidores. Um consumidor só = o código mora nele.
+
+**Exceção declarada: a copy da revelação da exp-01.** Ela é lida pela
+experiência E pelo guia do professor — dois consumidores, o mínimo da regra
+acima —, e por isso FOI um pacote (`@edu/conteudo-exp-01`) até 2026-09-09.
+Hoje são duas cópias gêmeas: `apps/experiencias/exp-01-instanooria/src/lib/copy-da-revelacao.ts`
+e `apps/hub/lib/insta/copy-da-revelacao.ts`. A decisão é do dono do produto: a
+copy está fechada e não haverá revisão dela, então o pacote cobrava o custo de
+existir sem ter o que proteger. **O que segura a igualdade agora é o cabeçalho
+dos dois arquivos, e nada mais** — nem typecheck, nem lint, nem teste. Mexeu numa,
+mexa na outra, no mesmo commit. Se a copy voltar a ser editada, o pacote volta.
 
 **Exceção declarada: o logger.** `apps/api/src/observabilidade/logger.ts` e
 `apps/hub/lib/log.ts` são a MESMA função (`criarOpcoesDoPino`, redaction,

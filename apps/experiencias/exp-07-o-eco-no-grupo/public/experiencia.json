@@ -1,7 +1,8 @@
 {
   "id": "exp-07-o-eco-no-grupo",
   "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
-  "versao": "0.1.1",
+  "versao": "0.1.2",
+  "produto": "entre-redes",
   "series": ["7EF"],
   "unidade": 1,
   "capabilities": ["telemetria", "progresso", "avaliacao", "ia"],

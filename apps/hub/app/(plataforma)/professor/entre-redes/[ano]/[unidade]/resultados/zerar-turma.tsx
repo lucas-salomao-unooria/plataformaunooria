@@ -49,7 +49,12 @@ export function ZerarTurma({ turmaId, nomeDaTurma }: { turmaId: string; nomeDaTu
 
   return (
     <>
-      <Button variant="tertiary" onClick={() => setAberto(true)} data-zerar-turma>
+      <Button
+        variant="outline"
+        className="acao-destrutiva"
+        onClick={() => setAberto(true)}
+        data-zerar-turma
+      >
         Zerar a turma
       </Button>
 
@@ -78,7 +83,7 @@ export function ZerarTurma({ turmaId, nomeDaTurma }: { turmaId: string; nomeDaTu
             <Button variant="secondary" onClick={() => setAberto(false)} disabled={enviando}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={() => void zerar()} disabled={enviando}>
+            <Button variant="danger" onClick={() => void zerar()} disabled={enviando}>
               Zerar a turma
             </Button>
           </Modal.Footer>

@@ -195,6 +195,24 @@ export function ExpFrame(props: {
      * experiência que não tem formulário não tem por que poder enviar um.
      */
     ...(props.permissoes?.includes("forms") ? ["allow-forms"] : []),
+    /**
+     * `allow-downloads` para quem declarou (exp-90 e exp-92, as ferramentas do
+     * professor que exportam `.doc`).
+     *
+     * Sem este token o navegador BLOQUEIA todo download iniciado de dentro do
+     * iframe — e o bloqueio é MUDO: nada acontece na tela, nada aparece no
+     * `console` (o Chrome o registra no painel Issues, que ninguém abre), e o
+     * `a.click()` do código volta como se tivesse funcionado. O professor
+     * clicava em "Baixar .doc" e concluía que o produto estava quebrado.
+     * MEDIDO em 2026-09-07: dois iframes com o mesmo blob, um com o token e
+     * outro sem — só o primeiro escreveu arquivo na pasta de downloads.
+     *
+     * Por experiência, e não default, pelo mesmo motivo do `forms` e do
+     * `pointer-lock`: entregar arquivo ao computador de quem está usando é
+     * capacidade de quem declarou. Nenhuma experiência de ESTUDANTE a declara,
+     * e a lista de permissões do manifesto é a única porta.
+     */
+    ...(props.permissoes?.includes("downloads") ? ["allow-downloads"] : []),
   ].join(" ");
 
   return (

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { AlertBox, Badge, Button, Card, Tag } from "@edu/ui/ds";
+import { AlertBox, Badge, Button, Card, ScrollBar, Tag } from "@edu/ui/ds";
 
 import { CartaoPost } from "./cartao-post";
 import { FICHAS, PERFIS } from "@/lib/insta-tipos";
@@ -151,7 +151,7 @@ export function PainelRevisao({
       */}
       {dados && dados.matriz.length > 0 ? (
         <Card variant="outlined" title="Cobertura por lado e perfil">
-          <div className="overflow-x-auto">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[520px] border-collapse text-[13px]">
               <thead>
                 <tr>
@@ -218,7 +218,7 @@ export function PainelRevisao({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
           <p className="mt-2 text-[12px] text-unooria-neutral-500">
             Esperado ~{dados.esperadoPorCelula} por célula. Vermelho bloqueia a
             ativação: célula vazia, ou com menos de{" "}

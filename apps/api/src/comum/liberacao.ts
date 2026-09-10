@@ -1,5 +1,6 @@
 import { ForbiddenException } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
+import { exigirRecursoDisponivel } from "./disponibilidade";
 
 /**
  * A PORTA DA SALA: a missão só abre para o estudante da turma em que ela foi
@@ -16,6 +17,14 @@ import type { Prisma } from "@prisma/client";
  * dizem "a aula começou" e continuam morando na experiência (ADR-25). Este diz
  * "esta missão está nesta sala", e é PRÉ-CONDIÇÃO deles: sem liberação a
  * pergunta do relógio nem chega a ser feita.
+ *
+ * E, desde a ADR-87, esta porta tem DUAS trancas em série: antes de perguntar
+ * se o professor liberou, ela pergunta se o recurso EXISTE nesta rede
+ * (`exigirRecursoDisponivel`, em `comum/disponibilidade.ts`). Os três eixos:
+ *
+ *   catálogo         que forma a experiência tem?   o manifesto / o CI
+ *   disponibilidade  existe NESTA REDE?             a Unooria (`admin`)
+ *   liberação        está aberta NESTA TURMA?       o professor
  */
 
 /** O código que o cliente vê. Estável: é por ele que a tela decide o que dizer. */
@@ -98,6 +107,25 @@ export async function exigirMissaoLiberada(
   estudanteId: string,
   expId: string,
 ): Promise<void> {
+  /**
+   * A DISPONIBILIDADE VEM PRIMEIRO (ADR-87), e mora AQUI e não em cada rota.
+   *
+   * As seis experiências de estudante já passam por este funil, então um ponto
+   * só cobre todas — e, mais que economia, isto torna IMPOSSÍVEL existir
+   * liberação valendo num recurso que a rede não tem. Se cada experiência
+   * tivesse de chamar as duas guardas, a próxima nasceria chamando uma.
+   *
+   * A ordem importa para o DIAGNÓSTICO: produto desligado responde
+   * `recurso-indisponivel`, não `missao-nao-liberada`. Invertido, um produto
+   * desligado apareceria no log como turma sem liberação, e quem fosse
+   * investigar iria procurar na sala de aula um problema que está no painel.
+   *
+   * As três ferramentas de PROFESSOR (exp-90, exp-91, exp-92) não têm liberação
+   * por turma e por isso não passam por aqui: elas chamam
+   * `exigirRecursoDisponivel` no funil delas.
+   */
+  await exigirRecursoDisponivel(tx, escolaId, expId);
+
   const liberadas = await missoesLiberadasPara(tx, escolaId, estudanteId);
   if (liberadas.has(expId)) return;
 

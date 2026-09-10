@@ -12,9 +12,30 @@ o que decide se você precisa abri-lo.
 - **A suíte vai pelo PAPEL de quem usa, não pela experiência** (ADR-51), e a
   ordem do runner não é alfabética: `estudante` PRODUZ o estado que `professor`
   lê, e a administração vem por último porque importa gente e troca senha.
+- **A PASTA tem o nome do papel, e o runner monta o caminho a partir do array
+  `PAPEIS` de `rodar.mjs`.** Renomear um sem o outro faz o `existsSync` devolver
+  lista VAZIA — e o runner pula as suítes daquele papel em silêncio. Aconteceu
+  na ADR-80: a suíte caiu de 29 roteiros para 19 sem um aviso, porque o array
+  dizia `gestor_escola` e a pasta ainda se chamava `gestor`. Mexeu num, mexa no
+  outro, e confira a contagem no cabeçalho (`══ suíte … · N roteiro(s) ══`).
 - **Espera nova corre contra o erro** (`lib/smoke.mjs`: `esperarOuFalharCedo`,
   `esperarOuFalharPorHttp`). Espera cega paga o timeout inteiro e reporta o
   seletor que faltou em vez da causa.
+- **Vigie o alerta só DEPOIS de o estado novo começar.** Quando o botão que
+  dispara a ação fica dentro do alerta de erro anterior (o "Tentar de novo" da
+  exp-92), a vigilância vê o alerta ANTIGO e aborta antes de a ação começar —
+  espere primeiro o estado `gerando` com `waitFor` puro. Em 2026-09-10 isso fez
+  a `professor/09` reportar vermelho enquanto o banco gravava `pronto` na mesma
+  corrida: falso negativo que manda investigar um produto que funcionou.
+- **Estado de ONTEM não pode reprovar hoje.** A `professor/09` só conhecia "A
+  planejar" e "Planejada"; uma semana que falhou na geração na véspera deixava a
+  suíte sem candidata e o vermelho não era de quem estava rodando. Roteiro que
+  procura item para agir aceita também o estado de FALHA — e ali é o caminho
+  "Tentar de novo", que é o que mais precisa ser exercitado.
+- **Conteúdo de `Collapse` fechado FICA no DOM.** `filter(...)` acha item de
+  seção fechada, o Playwright o considera visível e o clique morre interceptado
+  pelo contêiner. Abra os collapses antes de procurar (`role="button"` +
+  `aria-expanded` no cabeçalho).
 - **Erro provocado de propósito se declara** (`r.provocado(...)`), senão a
   corrida que prova que a trava funciona é a que pinta de vermelho.
 - **`testes/` é descartável e está no `.gitignore`** — prints, deck e vídeos se

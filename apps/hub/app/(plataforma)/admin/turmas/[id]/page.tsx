@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { TurmaDetalhe } from "./turma-detalhe";
+import { ehDoContrato } from "@/lib/papeis";
 
 export const metadata = { title: "Turma — Plataforma Unooria" };
 
@@ -11,7 +12,7 @@ export default async function TurmaPage({ params }: { params: Promise<{ id: stri
     <TurmaDetalhe
       turmaId={id}
       papel={usuario.papel}
-      escolaId={usuario.papel === "admin-contrato" ? "" : usuario.escolaId}
+      escolaId={ehDoContrato(usuario.papel) ? "" : usuario.escolaId}
     />
   );
 }

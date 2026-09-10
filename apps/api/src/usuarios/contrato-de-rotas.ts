@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cpfEhValido } from "../comum/cpf";
 
 export const ListarSchema = z.object({
-  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor_escola"]).optional(),
   turmaId: z.string().uuid().optional(),
   situacao: z.enum(["ativos", "inativos", "sem-primeiro-acesso"]).optional(),
   /** Nome, login, matrícula — e CPF, com ou sem pontuação. */
@@ -21,7 +21,7 @@ export const EditarSchema = z.object({
     .union([z.literal(""), z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos")])
     .optional(),
   email: z.union([z.literal(""), z.string().email().max(180)]).optional(),
-  papel: z.enum(["estudante", "professor", "gestor"]).optional(),
+  papel: z.enum(["estudante", "professor", "gestor_escola"]).optional(),
   ativo: z.boolean().optional(),
 });
 
@@ -38,7 +38,7 @@ export const UsuarioEmListaSchema = z.object({
   usuario: z.string(),
   nome: z.string(),
   papel: z.string(),
-  /** A unidade da lotação principal. Nulo só no `admin-contrato`, que não tem. */
+  /** A unidade da lotação principal. Nulo só no `gestor_contrato`, que não tem. */
   escola: z.string().nullable(),
   /** O RA da rede — a chave da pessoa. Nulo em conta de assento. */
   matricula: z.string().nullable(),
@@ -98,8 +98,8 @@ export const SenhaResetadaSchema = z.object({
  */
 export const CriarUsuarioSchema = z
   .object({
-    /** `admin-contrato` tem rota própria: não tem escola, turma nem lotação. */
-    papel: z.enum(["estudante", "professor", "gestor"]),
+    /** `gestor_contrato` tem rota própria: não tem escola, turma nem lotação. */
+    papel: z.enum(["estudante", "professor", "gestor_escola"]),
     nome: z.string().trim().min(1).max(120),
     cpf: z.string().trim().max(14).optional(),
     /** A matrícula da REDE (o RA) — a chave que reconhece a pessoa depois. */
@@ -131,14 +131,24 @@ export const UsuarioCriadoSchema = z.object({
 });
 
 /**
- * `admin-contrato` é operação do PRODUTO, não da escola: sem `escola_id`, sem
+ * `gestor_contrato` é operação do PRODUTO, não da escola: sem `escola_id`, sem
  * lotação, sem turma. Por isso o corpo é outro, e a rota também — a matriz
  * papel x rota fica legível sem nota de rodapé.
  *
  * Aqui o CPF é validado no Zod porque não há importador atrás para validá-lo.
  */
-export const CriarAdminContratoSchema = z
+export const CriarSemEscolaSchema = z
   .object({
+    /** `gestor_contrato` ou `gestor_regional` — a cadeia de atribuição
+     *  (`podeCriarPapel`) é quem decide se QUEM pede pode pedir este. */
+    papel: z.enum(["gestor_contrato", "gestor_regional"]),
+    /** Obrigatório para `gestor_regional`, e proibido para o outro: é o escopo
+     *  dele, e o banco tem CHECK bicondicional sobre isso. */
+    regionalId: z
+      .string()
+      .trim()
+      .regex(/^[a-z0-9][a-z0-9._-]{2,63}$/)
+      .optional(),
     nome: z.string().trim().min(1).max(120),
     cpf: z.string().refine(cpfEhValido, "CPF inválido — confira os dígitos").optional(),
     email: z.string().email().max(180).optional(),
@@ -149,12 +159,16 @@ export const CriarAdminContratoSchema = z
       .optional(),
     senha: z.string().min(8).max(200).optional(),
   })
-  .strict();
+  .strict()
+  .refine((v) => (v.papel === "gestor_regional") === Boolean(v.regionalId), {
+    path: ["regionalId"],
+    message: "Informe a regional do gestor regional — e só dele.",
+  });
 
-export const AdminContratoCriadoSchema = z.object({
+export const PessoaSemEscolaCriadaSchema = z.object({
   id: z.string().uuid(),
   nome: z.string(),
   usuario: z.string(),
-  papel: z.literal("admin-contrato"),
+  papel: z.enum(["gestor_contrato", "gestor_regional"]),
   senha: z.string(),
 });

@@ -57,6 +57,27 @@ export interface AiJsonRequest<T> {
   validar: (bruto: unknown) => T;
   temperatura?: number;
   tentativas?: number;
+  /**
+   * Teto de saída. Ausente = o teto do modelo. Existe pelo mesmo motivo que em
+   * `AiRequest`, e aqui o sintoma é pior: JSON estruturado longo (uma quinzena
+   * de aulas passa de 9k tokens) trunca no meio, e JSON truncado não chega
+   * como `MAX_TOKENS` legível — chega como `JSON.parse` falhando três vezes.
+   */
+  maxTokens?: number;
+  /** Mesma família neutra de `AiRequest.modelo`. */
+  modelo?: AiRequest["modelo"];
+  /**
+   * Quanto o vendor cobrou, chamado UMA VEZ POR TENTATIVA — inclusive pelas que
+   * `validar` rejeitou: elas foram pagas igual, e quem tem teto diário precisa
+   * contar o que foi pago (mesma regra do `tokensUsados` de `conversar`).
+   *
+   * É opcional porque `generateJson` devolve `T` e nem todo consumidor tem
+   * quota. **Mas quem chama `QuotaService.temSaldo` TEM de passar isto** — sem
+   * ele não há de onde tirar o número, e a alternativa é o que o repo fazia:
+   * a exp-92 não debitava nada e a exp-07 debitava 1.500 fixo, chute que não
+   * acompanha prompt nem modelo. Ver ADR-74.
+   */
+  aoUsarTokens?: (tokens: number) => void;
 }
 
 /**

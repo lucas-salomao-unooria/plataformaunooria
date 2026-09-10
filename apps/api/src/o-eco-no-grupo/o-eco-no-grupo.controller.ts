@@ -160,7 +160,7 @@ export class OEcoNoGrupoController {
   @Post("sintese")
   @HttpCode(200)
   @Contrato({
-    resumo: "Sai do mensageiro e abre os cards de sistematização.",
+    resumo: "Sai do mensageiro e abre os quadros de sistematização.",
     descricao:
       "Só depois da contraprova aceita pelo grupo. É a fronteira da revelação: daqui em diante quem fala é a escola, não o app.",
     resposta: EstadoSchema,

@@ -1,0 +1,152 @@
+/*
+ * O GUIA DA AULA na tela e no PAPEL.
+ *
+ * O professor imprime este documento. Não é suposição: ele conduz a aula com o
+ * guia na mão enquanto o computador projeta a tela da turma, e a plataforma não
+ * tem como estar nos dois lugares. Sem folha de impressão, o que sai é o header
+ * da plataforma, o índice lateral, o botão de imprimir e uma tabela cortada ao
+ * meio na virada da página — e o professor volta a manter o próprio Word.
+ *
+ * Cor vem de token `--unooria-*` (ADR-40). No papel nada depende de FUNDO
+ * colorido: `print-color-adjust` não é garantido em navegador nenhum, e o que a
+ * folha precisa comunicar está em borda e peso.
+ *
+ * As regras de impressão miram classes DESTA folha, nunca as do
+ * `@unooria/design-system`: o nome interno de um componente do pacote pode
+ * mudar por versão, e a impressão quebraria em silêncio — ninguém imprime para
+ * conferir depois de subir o DS.
+ */
+
+/* ---- tela ---------------------------------------------------------------- */
+
+/*
+ * O índice acompanha a rolagem porque o guia é longo e o professor volta a ele
+ * no meio da aula.
+ */
+.guia-indice {
+  position: sticky;
+  top: 1.5rem;
+}
+
+.guia-indice__link {
+  display: block;
+  padding: 0.3rem 0 0.3rem 0.75rem;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--unooria-color-neutral-700, #45525f);
+  text-decoration: none;
+  border-left: 2px solid var(--unooria-color-neutral-200, #d9dee3);
+}
+
+.guia-indice__link:hover {
+  color: var(--unooria-color-brandnavy-900, #2f4470);
+  border-left-color: var(--unooria-color-brandnavy-800, #49699f);
+}
+
+/* A âncora não pode parar colada no topo da janela. */
+.guia-secao {
+  scroll-margin-top: 1.5rem;
+}
+
+/* ---- papel --------------------------------------------------------------- */
+
+@media print {
+  /*
+   * Fora: o cromo da plataforma (o header é o único `header` da página — o
+   * cabeçalho do guia é um `div`, de propósito) e tudo o que é botão ou
+   * navegação.
+   */
+  header,
+  .guia-fora-do-papel {
+    display: none !important;
+  }
+
+  /* O `main` limita a 1024px e centraliza — no papel isso vira margem morta. */
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .guia {
+    font-size: 10.5pt;
+    color: #000;
+  }
+
+  /* Sombra não imprime; sem removê-la o navegador ainda reserva o espaço dela. */
+  .guia * {
+    box-shadow: none !important;
+  }
+
+  /* O grid de duas colunas (índice + conteúdo) vira uma coluna só. */
+  .guia__corpo {
+    display: block !important;
+  }
+
+  /*
+   * O título de uma seção não pode ser a última coisa da folha. O resto quebra
+   * à vontade: forçar seção inteira empurraria páginas quase vazias.
+   */
+  .guia-secao > h2 {
+    break-after: avoid;
+  }
+
+  .guia-secao {
+    margin-bottom: 1rem;
+  }
+
+  /*
+   * A unidade que não se parte: uma linha de tabela, um item de lista, um
+   * cartão curto. É onde o corte estraga a leitura — meia pergunta de debate
+   * numa folha e metade na outra.
+   */
+  .guia tr,
+  .guia li,
+  .guia .guia-bloco {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /*
+   * No papel o cartão do DS perde a sombra e some a fronteira. A borda é o que
+   * mantém "onde começa e onde termina" legível em preto e branco.
+   */
+  .guia .guia-bloco {
+    border: 1pt solid #999;
+    border-radius: 3pt;
+    padding: 6pt 8pt;
+    margin-bottom: 8pt;
+  }
+
+  /* Cartão longo precisa poder quebrar, ou não cabe em folha nenhuma. */
+  .guia .guia-bloco--longo {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  .guia__rodape-do-papel {
+    display: block !important;
+    margin-top: 1.5rem;
+    padding-top: 0.5rem;
+    border-top: 0.5pt solid #999;
+    font-size: 8pt;
+    color: #333;
+  }
+
+  @page {
+    margin: 14mm 12mm;
+  }
+}
+
+/*
+ * O `ScrollBar` do DS envolve as tabelas largas do guia (rolagem lateral em tela
+ * estreita) e traz `overflow-x: auto; overflow-y: hidden`. NO PAPEL isso cortaria
+ * a tabela na largura da coluna, e o guia é feito para ser impresso e levado para
+ * a sala — o professor conduz a aula com a folha na mão. `visible` devolve a
+ * tabela inteira à impressão; a barra não existe no papel de qualquer forma.
+ */
+@media print {
+  .unooria-scrollbar-container {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}

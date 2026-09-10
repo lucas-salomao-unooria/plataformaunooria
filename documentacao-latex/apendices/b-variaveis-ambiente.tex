@@ -47,7 +47,11 @@ ela saiu junto com a decisão (\adrr{ADR-33}).
 \zebra \env{OIDC\_AUDIENCE} & \cd{plataforma-api} & Audiência exigida no
   \emph{token}.\\
 \env{CORS\_ORIGINS} & hub + \emph{dev servers} & Lista explícita, separada por
-  vírgula. \textbf{Nunca} \cd{*}.\\
+  vírgula. \textbf{Nunca} \cd{*}. \textbf{Toda porta de experiência nova entra
+  aqui} --- e no \emph{fallback} do \arq{main.ts}, que já ficou duas versões
+  atrás da realidade: a experiência abre e morre em \enquote{\cd{Failed to
+  fetch}}, como se a API estivesse fora do ar, e o erro fala de CORS em vez da
+  porta que faltou.\\
 \zebra \env{PORT} & \cd{3001} & Porta HTTP.\\
 \bottomrule
 \end{tabularx}
@@ -118,6 +122,15 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \zebra \env{ASSETS\_BUCKET} & --- & \cd{\{contrato\}-assets}.\\
 \env{ASSETS\_PUBLIC\_URL} & --- & Base pública da CDN de \emph{assets}.\\
 \zebra \env{ASSETS\_LOCAL\_DIR} & --- & Diretório local em \emph{dev}.\\
+\env{CDN\_EXP\_URL} & --- & De onde os \emph{bundles} das experiências são
+  servidos, visto pela API --- o mesmo valor do \env{NEXT\_PUBLIC\_CDN\_EXP\_URL}
+  do hub. Serve a UMA coisa: conferir com um HEAD se a versão que o painel está
+  ativando existe no \emph{bucket} antes de gravá-la (\adrr{ADR-87}). Apontar a
+  rede para uma versão que não subiu é tela branca para todo mundo, e o erro só
+  apareceria quando a primeira criança abrisse a missão. \textbf{Ausente = a
+  conferência é PULADA e a resposta diz isso} (\cd{conferida: false}) --- é o
+  caso de \emph{dev}, onde o hub serve do \emph{dev server} do Vite e não há
+  caminho versionado a conferir.\\
 \env{PLANOS\_DRIVER} & \cd{local} & \cd{local} grava em
   \arq{storage-privado/}; \cd{gcs} usa o \emph{bucket} \textbf{privado}.\\
 \zebra \env{PLANOS\_BUCKET} & --- & \cd{\{contrato\}-planos}. \textbf{Privado},
