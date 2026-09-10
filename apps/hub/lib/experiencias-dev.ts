@@ -34,6 +34,15 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp-06-rastro-boato": "http://localhost:5181",
   /** Planejamento de ensino do professor — embedado em /professor/plano-de-ensino. */
   "exp-92-plano-de-ensino": "http://localhost:5180",
+  /**
+   * O Manifesto da IA — 8º ano, unidade 4.
+   *
+   * 5182, e não 5180 nem 5183: a 5180 é da exp-92, a 5181 é da exp-06 e a 5183
+   * está reservada para outra frente em andamento. Com `strictPort` a colisão
+   * falharia alto em vez de o Vite pular de porta e o iframe do hub passar a
+   * apontar para a experiência errada.
+   */
+  "exp-08-manifesto-ia": "http://localhost:5182",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

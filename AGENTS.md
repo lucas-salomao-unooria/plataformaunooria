@@ -409,11 +409,16 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **93**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
+  (a PRÓXIMA é a **95**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
       histórico append-only que a rede também lê, a 90 pela suíte da api em um
-      worker, a 91 pelas três zonas do idioma da interface e a **92 pelo
-      retorno de etapa que reabre a sessão do Instanooria**; a 65 foi ocupada pelo guia da aula, a 72 pela
+      worker, a 91 pelas três zonas do idioma da interface, a 92 pelo
+      retorno de etapa que reabre a sessão do Instanooria, a **93 pela
+      sincronização de sala por polling HTTP em vez de WebSocket** e a **94
+      reservada para a frente paralela que corria no mesmo dia** — as duas
+      foram alocadas por quem repartia o trabalho, ANTES de qualquer uma
+      escrever, e é assim que a colisão de 2026-09-06 e 2026-09-07 deixa de
+      acontecer; a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -535,6 +540,12 @@ pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco
 pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
                                           # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
                                           # gravado — a transcrição está sempre na tela.
+pnpm --filter @edu/exp-08-manifesto-ia dev    # :5182 → hub /exp/exp-08-manifesto-ia (8º ano, unidade 4).
+                                          # Clone do ChatGPT. IA SÓ no preparo do professor, antes da
+                                          # aula: o motor de sala é determinístico e gasta zero token.
+                                          # NÃO existe cláusula certa — as 4 são válidas, e o painel
+                                          # mostra contagem, nunca acerto. O congelamento da turma para
+                                          # o debate é POLLING de 5s (ADR-93), não WebSocket.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)

@@ -426,11 +426,115 @@ export const MISSAO_RASTRO_BOATO: Missao = {
   },
 };
 
+/**
+ * 8º ano · Unidade 4 — O Manifesto da IA (`exp-08-manifesto-ia`).
+ *
+ * A SEGUNDA missão do 8º ano, e a que fecha o ano letivo dele. Clone do
+ * ChatGPT, como a exp-03 — mas o que se audita aqui é outra coisa, e é isso que
+ * separa as duas na trilha: na Missão Tempestade o estudante confere as FONTES
+ * que o agente cita; aqui ele confronta a PREMISSA do sistema (a de que
+ * algoritmo é neutro) e fixa uma regra que o código passa a obedecer.
+ *
+ * É a única missão do produto em que o estudante ESCREVE uma regra em vez de
+ * escolher uma resposta — as quatro cláusulas são todas válidas, e o dado
+ * pedagógico é qual delas ele defende e por quê.
+ *
+ * A professora tem UM botão durante a aula ("Pausar para Debate") e o inverso
+ * dele, e ele é OPCIONAL: a missão corre inteira sem ninguém apertar nada,
+ * porque a spec admite a sessão individual assíncrona. O congelamento é para a
+ * turma confrontar os argumentos antes de cada um assinar por escrito.
+ *
+ * A copy sai do sheet congelado da missão (passada 2), com uma exceção
+ * declarada: o episódio de recapitulação é servido em TEXTO — a locução de 4
+ * minutos do brief ainda não foi gravada, e a transcrição já está sempre na
+ * tela por acessibilidade.
+ */
+export const MISSAO_MANIFESTO_IA: Missao = {
+  anoSlug: "8-ano",
+  unidadeSlug: "unidade-4",
+  unidade: 4,
+  expId: "exp-08-manifesto-ia",
+  titulo: "O Manifesto da IA — Nossos direitos em código",
+  resumo:
+    "A direção quer instalar uma inteligência artificial para prever notas e monitorar presença, " +
+    "e o sistema afirma que decide de forma neutra. O estudante audita a origem dos dados, " +
+    "derruba a tese da neutralidade e fixa uma cláusula de governança que o código passa a obedecer.",
+  status: "disponivel",
+  estudante: {
+    titulo: "O Manifesto da IA",
+    chamada:
+      "Amara descobriu que a escola vai instalar uma inteligência artificial para te avaliar. " +
+      "Entre na conversa e veja o que ela responde.",
+  },
+  ficha: {
+    competencia:
+      "Identificar as questões éticas de um sistema de inteligência artificial escolar e propor " +
+      "parâmetros de governança algorítmica que garantam direitos (EF08CO05, EF08CO07, EF08CO08).",
+    duracao: "1 aula de 50 min, com pausa de 10 min para debate — ou 2 sessões de 25 min",
+    formato:
+      "Conversa com um assistente de inteligência artificial simulado, sem digitação livre: os " +
+      "questionamentos são cartões prontos, e as respostas da máquina são autorais e fixas.",
+    atos: [
+      {
+        rotulo: "1 — Ouvir Amara e abrir a conversa",
+        texto:
+          "Amara conta que o conselho escolar está homologando a compra do EduPredict IA e que o " +
+          "sistema já está online. O estudante abre a conversa e lê a primeira fala da máquina: " +
+          "que estudantes não precisam auditar os dados, porque algoritmos são neutros.",
+      },
+      {
+        rotulo: "2 — Auditar a máquina (o que a aula mede)",
+        texto:
+          "Três questionamentos prontos, e ele precisa disparar ao menos dois para seguir. O " +
+          "primeiro a máquina responde com estatística; o segundo — sobre os preconceitos do " +
+          "passado — a obriga a admitir que assume as punições antigas como probabilidade válida. " +
+          "É essa contradição que a missão inteira existe para tornar visível. Amara fica em " +
+          "silêncio nesta etapa, de propósito.",
+      },
+      {
+        rotulo: "3 — Fixar a cláusula inegociável",
+        texto:
+          "A máquina cede e pede uma regra prioritária. São quatro salvaguardas concorrentes — " +
+          "transparência dos dados, auditoria de viés, veto humano e anonimização — e ele escolhe " +
+          "UMA, em decisão irreversível. Nenhuma é a certa: o que se lê depois é qual a turma " +
+          "escolheu e com que argumento.",
+      },
+      {
+        rotulo: "4 — O manifesto, e a pausa para o debate",
+        texto:
+          "O sistema processa por dois segundos e compila o Manifesto de Direitos Digitais dos " +
+          "Estudantes com a cláusula dele em destaque. É aqui que você congela as telas pelo " +
+          "painel: a turma discute os quatro caminhos antes de cada um assinar o seu.",
+      },
+      {
+        rotulo: "5 — Assinar e fechar",
+        texto:
+          "No Meu Percurso ele marca 2 palavras-chave e escreve por que aquela cláusula é " +
+          "inegociável para ele. Depois vem o episódio de fechamento e o selo Guardião de " +
+          "Direitos Digitais.",
+      },
+    ],
+    preparo: [
+      "Você pode personalizar o caso com um dilema real da escola no painel de resultados — ou " +
+        "usar o pacote curado da Unooria, que é homologado e roda a aula inteira. Nada gerado por " +
+        "inteligência artificial chega aos estudantes sem o seu clique em Aprovar.",
+      "Leia as réplicas da máquina antes da aula: elas estão no painel, e é sobre elas que o " +
+        "debate acontece. A segunda é a que faz a turma virar os votos.",
+      "Não há mídia para preparar: os áudios não foram gravados ainda, e o episódio de " +
+        "fechamento é lido, não ouvido. Fone é bem-vindo, mas nada depende dele.",
+      "Reserve os 10 minutos do debate. O botão Pausar para Debate congela as telas; sem ele a " +
+        "missão corre até o fim no ritmo de cada um, e a discussão coletiva não acontece.",
+      "Vale olhar a distribuição das cláusulas antes de falar: ela é o material das três " +
+        "perguntas, e não uma lista de quem acertou — as quatro são válidas.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
   "4-ano": [MISSAO_UNOOTUBE],
   "6-ano": [MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_ECO_NO_GRUPO],
-  "8-ano": [MISSAO_ATUAL],
+  "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],
 };
 
