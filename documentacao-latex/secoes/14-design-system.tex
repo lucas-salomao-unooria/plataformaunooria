@@ -272,6 +272,44 @@ pnpm up -r @unooria/design-system --latest  # sobe em ui/hub/exps de uma vez
 \end{lstlisting}
 \end{atencao}
 
+\section{O painel de recursos: três estados, e o rótulo que muda}
+
+Duas regras de interface nasceram com o painel da Unooria (\adrr{ADR-87}), e as
+duas são de SIGNIFICADO, não de estilo:
+
+\textbf{Interruptor de TRÊS estados, nunca dois.} \cd{ligado | desligado |
+herda}. Sem o terceiro, \enquote{ligado nesta escola} fica idêntico a
+\enquote{herdado ligado}, e desfazer uma exceção criada por engano é impossível
+--- um controle de dois estados não tem como expressar \enquote{apague a minha
+linha e volte a seguir o escopo de cima}. Por isso o controle é um
+\cd{Selection} de três opções e não um \cd{Toggle}.
+
+\textbf{O rótulo de \emph{herda} depende do escopo.} No contrato não existe
+\enquote{de cima}: ali é \enquote{Padrão (ligado)}. Numa escola é \enquote{Herda
+de cima}. Chamar as duas coisas de \enquote{Herda} faria o operador do
+escopo-contrato procurar um nível que não existe.
+
+E uma terceira, que vale para todo controle desta plataforma: \textbf{controle
+sem efeito fica DESABILITADO com o motivo ao lado, nunca escondido.} A
+experiência sob um produto desligado mostra o interruptor inerte e a frase
+\enquote{o produto está desligado neste escopo}; ativo, ele prometeria uma
+mudança que o resolvedor ignora, e escondido pareceria defeito.
+
+\section{Lacuna aberta: o \cd{SideBar} traz um item que não é seu}
+
+O \cd{SideBar} da seção \cd{unooria} renderiza SEMPRE, como primeiro item, um
+botão \enquote{Iniciativas} fixo no componente, que alterna um painel de
+\cd{appsItems}. \textbf{Nenhuma área deste hub passa \cd{appsItems}}, então o
+clique não faz nada --- e isso vale para \rota{/admin} desde que a barra existe,
+e agora para \rota{/unooria}.
+
+Item de menu que não leva a nada é pior que item nenhum: ele consome a primeira
+posição da barra, que é onde a mão vai. É \textbf{lacuna do pacote}, com pedido
+no \arq{storybook-unooria} --- o que falta é o item ser condicional a haver
+\cd{appsItems}. Não há compensação local aqui de propósito: esconder o botão
+por CSS seria reimplementar decisão de componente do lado de fora, e a regra de
+ouro é o contrário disso.
+
 \section{Compensações locais}
 
 \begin{regra}
