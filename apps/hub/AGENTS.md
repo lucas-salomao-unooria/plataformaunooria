@@ -509,6 +509,29 @@ Visto no navegador.
 **A etiqueta da versão É o botão** da janela: um botão "Versão" separado
 repetiria a informação que a etiqueta já dá.
 
+### O histórico: UM componente, DOIS painéis (ADR-89)
+
+`components/historico-de-recursos.tsx` é usado pelo painel da Unooria
+(`/unooria/recursos`) e pela tela da REDE (`/admin/recursos`), que é
+**somente-leitura** e existe só por causa dele: a rede não liga nem desliga nada
+(ADR-88), mas ver por que o produto dela mudou de estado é informação do cliente.
+A copy diz isso na cara — "Quem opera estes interruptores é a Unooria; esta tela
+é o registro" —, porque tela administrativa sem controle nenhum lê como tela
+quebrada.
+
+- **Um componente, não dois.** As duas telas mostram as MESMAS colunas da MESMA
+  rota; duplicá-las garantiria que a próxima ação nova ("versão soltada", por
+  exemplo) aparecesse com rótulo em uma e sem rótulo na outra.
+- **O `ACOES` é um `Record` exaustivo** de rótulo + cor. Um `Record` tipado pela
+  união faz o typecheck cobrar o rótulo da ação nova; um `switch` com
+  `default` mostraria o slug cru na tela e ninguém veria.
+- **`/admin/recursos` é `notFound()` para quem não é do contrato** — não 403,
+  não redirect: gestor de escola não deve nem saber que a tela existe.
+- **A tela da rede NÃO passa `escolaId`**: ela mostra o contrato inteiro, que é o
+  escopo do papel. O painel da Unooria passa o escopo em que está, e a api
+  inclui as decisões de escopo-contrato junto (senão o histórico de uma escola
+  ficaria vazio no dia em que a rede inteira mudou).
+
 ### O `SideBar` do DS traz um item que não é seu
 
 Ele renderiza sempre um primeiro item **"Iniciativas"**, fixo no componente, que

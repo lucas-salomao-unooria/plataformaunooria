@@ -17,6 +17,14 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
  * numa ESCOLA e devolve o estado no fim — a mesma razão pela qual
  * `disponibilidade-porta-postgres.spec.ts` também não escreve lá.
  *
+ * O QUE ELA DEIXA NO BANCO, de propósito: as linhas de `recursos_auditoria`
+ * (ADR-89) das duas mudanças que ela faz. Elas NÃO são limpas — o histórico é
+ * append-only, e apagar o registro do que aconteceu de verdade seria mentir na
+ * própria tela que esta suíte prova. É o contrário das `disponibilidades`, que
+ * ela devolve ao estado anterior porque ali a linha MUDA o produto. Em dev isso
+ * dá conteúdo real à tela da rede; se um dia incomodar, o lugar de apagar é o
+ * `conferir-catalogo-remoto.mjs`, que sabe o que é fixture.
+ *
  * ARMADILHA de seletor, a mesma de `gestor_escola/03`: o `Selection` do DS é um
  * `button[role=combobox]` dentro de `div.unooria-selection`, e o `<label>` não
  * está ligado ao controle — `getByLabel` não acha nada. E as opções abrem num
@@ -69,6 +77,8 @@ await suite(
       "Desligado na escola, o professor daquela escola deixa de ver o produto",
       "Voltar a herdar devolve tudo — a liberação por turma do professor nunca foi tocada",
       "A janela de versão mostra o histórico publicado e diz quando a experiência está em rollback",
+      "O histórico registra cada mudança com o motivo e o nome de quem a fez — e sem UPDATE possível",
+      "A REDE lê o histórico dela em /admin/recursos, e não alcança nenhuma escrita (403)",
     ],
     comando: "node scripts/e2e/admin/01-recursos.mjs",
   },
@@ -116,6 +126,13 @@ await suite(
           `"${rotuloDoInterruptor.trim()}") — desligar aqui atingiria a rede inteira`,
       );
     }
+
+    /* Quantas linhas o histórico JÁ tem neste escopo, medido ANTES de mexer em
+       nada. Corridas anteriores deixam registro (é append-only de propósito),
+       então o número absoluto não diz nada — a DIFERENÇA diz: as duas mudanças
+       deste roteiro têm de aparecer sem recarregar a página, e é isso que o
+       `key` que remonta a lista garante. Sem ele, esta conta fecha em 0. */
+    const historicoAntes = await p.locator("table").last().locator("tbody tr").count();
 
     await r.registrar(p, "escopo-na-escola", {
       titulo: "O mesmo painel, uma escola",
@@ -228,6 +245,94 @@ await suite(
         "interruptor pode ser usado num incidente sem custo pedagógico.",
       inteira: true,
     });
+
+    // ── o histórico (ADR-89) ────────────────────────────────────────────
+    /* A tabela vive na MESMA página, abaixo dos produtos, e ela precisa ter as
+       DUAS linhas que este roteiro acabou de gravar — sem recarregar nada. Se
+       aparecer só a primeira, o `key` que remonta a lista voltou a faltar: a
+       lista busca na montagem, e sem a chave a tela mente sobre o que ela mesma
+       fez (foi assim que o defeito apareceu). */
+    const historico = p.locator("table").last();
+    await historico.waitFor({ timeout: 30_000 });
+    await historico.getByText("Voltou a herdar").first().waitFor({ timeout: 20_000 });
+    await historico.getByText("Desligado", { exact: false }).first().waitFor({ timeout: 20_000 });
+    await historico.scrollIntoViewIfNeeded();
+    await p.waitForTimeout(600);
+
+    const linhasDoHistorico = await historico.locator("tbody tr").count();
+    r.exigir(
+      linhasDoHistorico === historicoAntes + 2,
+      `o histórico releu sozinho: ${historicoAntes} linhas antes, ${linhasDoHistorico} depois ` +
+        "(o desligamento e o retorno a herdar) — sem recarregar a página",
+    );
+    const motivoNaTabela = (await historico.innerText()).includes(MOTIVO);
+    r.exigir(
+      motivoNaTabela,
+      "o motivo escrito no diálogo aparece no histórico — é o que a rede vai ler",
+    );
+
+    await r.registrar(p, "historico-do-painel", {
+      titulo: "Quem mudou, quando e por quê",
+      mostra:
+        "As duas mudanças que este roteiro acabou de fazer, na ordem inversa: o desligamento " +
+        "com o motivo escrito no diálogo, e o retorno a herdar. A lista se atualizou sozinha, " +
+        "sem recarregar a página.",
+      prova:
+        "A linha de disponibilidade é SOBRESCRITA a cada mudança — ela responde o estado de " +
+        "agora, não a história. Este registro é append-only de verdade: UPDATE é recusado por " +
+        "trigger no banco, e a role da aplicação só tem SELECT, INSERT e DELETE. O nome de quem " +
+        "operou fica CONGELADO na linha, porque o histórico tem de dizer quem era aquela pessoa " +
+        "naquele dia, e não o nome de hoje.",
+      detalhe:
+        `linhas no histórico: ${historicoAntes} antes, ${linhasDoHistorico} depois ` +
+        `· motivo presente: ${motivoNaTabela}`,
+      inteira: true,
+    });
+
+    // ── o mesmo histórico, do lado da REDE ──────────────────────────────
+    /* A assimetria da ADR-88 medida nas duas direções, com a conta do
+       CONTRATO: ela LÊ o histórico e não alcança escrita nenhuma. As sondas vão
+       por `page.request` (fora da página) porque o vigia de console trata 4xx
+       como erro — uma sonda que ESPERA 403 pintaria a suíte de vermelho pelo
+       próprio sucesso. */
+    const gestor = conta("gestor_contrato");
+    const pr = await r.pagina("rede");
+    await r.entrar(pr, gestor.login, gestor.senha ?? senhaDemo());
+    await pr.goto(`${HUB}/admin/recursos`, { waitUntil: "domcontentloaded" });
+    const tabelaDaRede = pr.locator("table").last();
+    await tabelaDaRede.waitFor({ timeout: 30_000 });
+    await pr.waitForTimeout(800);
+
+    const escritaNegada = await pr.request.put(`${HUB}/api/plataforma/recursos/produto:bem-estar`, {
+      data: { ligado: false, motivo: "sonda da suite: isto tem de ser recusado" },
+      failOnStatusCode: false,
+    });
+    const painelNegado = await pr.request.get(`${HUB}/api/plataforma/recursos/painel`, {
+      failOnStatusCode: false,
+    });
+    r.exigir(
+      escritaNegada.status() === 403 && painelNegado.status() === 403,
+      `a rede não escreve nem abre o painel (PUT ${escritaNegada.status()}, painel ${painelNegado.status()})`,
+    );
+
+    await r.registrar(pr, "a-rede-le-o-historico-dela", {
+      titulo: "Do lado da rede: o registro, sem os interruptores",
+      mostra:
+        "A mesma tabela em /admin/recursos, na área administrativa da rede — e nenhum controle. " +
+        "A copy diz quem opera: 'Quem opera estes interruptores é a Unooria; esta tela é o registro.'",
+      prova:
+        "É a ÚNICA rota de /recursos/* que a rede alcança, e a exceção é declarada: ler por que o " +
+        `produto da própria rede mudou de estado é informação do cliente; decidir o estado não é. ` +
+        `Medido nesta corrida: PUT /recursos/:id responde ${escritaNegada.status()} e ` +
+        `GET /recursos/painel responde ${painelNegado.status()} para o gestor do contrato. ` +
+        "Gestor de escola e de regional não entram nem na tela (404): o histórico é do CONTRATO, e " +
+        "recortá-lo por unidade daria a uma escola a notícia de que a rede perdeu um produto antes " +
+        "de a coordenação da rede saber.",
+      inteira: true,
+    });
+
+    await p.bringToFront();
+    await p.waitForTimeout(400);
 
     // ── a versão ────────────────────────────────────────────────────────
     /* De volta ao escopo da REDE: é ali que "ativar" existe. Fixar versão é a

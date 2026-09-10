@@ -19,6 +19,7 @@ import {
   TextArea,
 } from "@edu/ui/ds";
 import { buscarProduto, type Produto } from "@/lib/produtos";
+import { HistoricoDeRecursos } from "@/components/historico-de-recursos";
 import { ModalDeVersao } from "./modal-de-versao";
 import type {
   EscolaDoEscopo,
@@ -103,6 +104,9 @@ export function PainelDeRecursos({
   const [salvando, setSalvando] = useState(false);
   /** A experiência cuja janela de versão está aberta. */
   const [versaoDe, setVersaoDe] = useState<ExperienciaNoPainel | null>(null);
+  /** Quantas mudanças esta montagem já gravou — a chave que remonta o
+   *  histórico. Ver o bloco do Histórico, no fim do arquivo. */
+  const [mudancas, setMudancas] = useState(0);
   const [navegando] = useTransition();
 
   const escolaId = painel.escopo.escolaId;
@@ -143,6 +147,10 @@ export function PainelDeRecursos({
       return;
     }
     setPainel((await r.json()) as Painel);
+    /* Toda releitura do painel acontece DEPOIS de uma escrita — é o único
+       momento em que o histórico mudou. Contar aqui cobre as duas alavancas
+       (o interruptor e a janela de versão) sem cada uma ter de lembrar. */
+    setMudancas((n) => n + 1);
   }, [escolaId]);
 
   /** `herda` some a linha; `ligado`/`desligado` a gravam. */
@@ -379,6 +387,25 @@ export function PainelDeRecursos({
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* O HISTÓRICO (ADR-89) fecha a tela, e a chave é o ESCOPO: trocar de
+          escopo remonta o painel inteiro, e com ele esta lista — que passa a
+          mostrar o que aconteceu naquele escopo mais o que a rede decidiu. */}
+      <div className="flex flex-col gap-3">
+        <SectionHeader
+          title="Histórico"
+          description="Quem mudou o quê, quando e por quê. A linha de disponibilidade é sobrescrita a cada mudança; este registro não — nem por UPDATE, que o banco recusa."
+        />
+        {/* `key` REMONTA a lista depois de cada mudança, e sem isso a tela
+            MENTE sobre o que ela mesma acabou de fazer: o histórico busca na
+            montagem, então desligar um produto deixava a lista sem a linha que
+            o desligamento acabou de gravar — quem operasse duas vezes veria a
+            primeira mudança e não a segunda. É o mesmo defeito que a janela de
+            versão teve com a faixa de rollback, e a mesma doutrina do
+            `key={escopo}` da página (ADR-85): escopo e nonce são INSUMO da
+            lista, e insumo novo remonta em vez de sincronizar estado. */}
+        <HistoricoDeRecursos key={mudancas} escolaId={escolaId} />
+      </div>
 
       <ModalDeVersao
         experiencia={versaoDe}
