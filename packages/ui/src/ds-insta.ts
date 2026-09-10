@@ -12,9 +12,18 @@
  *    da plataforma. Sem destruturar aqui, cada arquivo do feed teria que
  *    escrever `InstanooriaUI.Icon` e o bundler perderia o tree-shaking.
  *
- * ONDE USAR: apenas a superfície do estudante (experiência exp-01-instanooria).
- * É o inverso de `ds.ts`, que vale só para as superfícies da plataforma.
- * Os dois nunca se cruzam.
+ * ONDE USAR: a superfície do estudante das experiências que imitam o
+ * Instagram — a exp-01-instanooria e as telas do CLONE da exp-04 (E2–E4; a
+ * casca dela fala pela escola e usa `ds.ts`). É o inverso de `ds.ts`, que vale
+ * só para as superfícies da plataforma. Os dois nunca se cruzam.
+ *
+ * DUAS FORMAS DE IMPORTAÇÃO COEXISTEM AQUI, e a diferença é histórica, não
+ * intencional: o `Glifo` abaixo veio do namespace `InstanooriaUI` (a forma da
+ * época) e FICA assim — ele é consumido pela exp-01 inteira, e migrá-lo é uma
+ * mudança com risco próprio. Tudo que entrar DAQUI EM DIANTE importa do
+ * SUBCAMINHO `@unooria/design-system/instanooria`, como `ds-chatgpt.ts`
+ * documenta: o subcaminho preserva o tree-shaking (o namespace arrasta a seção
+ * inteira, com os 560 KB de base64 do `Logo`) e devolve os nomes já prontos.
  */
 import { InstanooriaUI } from '@unooria/design-system';
 
@@ -28,16 +37,15 @@ export const Glifo: IconeInstanooria = InstanooriaUI.Icon;
 export type NomeDeGlifo = Parameters<typeof Glifo>[0]['name'];
 
 /**
- * Componentes do clone destruturados para a exp-04 (e as próximas do
- * Instanooria). Os nomes que NÃO colidem com a plataforma saem como estão;
- * os que colidem (Button, Avatar, Badge — o motivo de a seção viver num
- * namespace) ganham o sufixo `Insta`, nunca um alias criativo: quem procura
- * no Storybook precisa achar pelo nome do catálogo.
+ * Componentes do clone para a exp-04 (e as próximas do Instanooria), pelo
+ * SUBCAMINHO (ver o cabeçalho). Os nomes que NÃO colidem com a plataforma
+ * saem como estão; os que colidem (Button, Avatar, Badge) ganham o sufixo
+ * `Insta`, nunca um alias criativo: quem procura no Storybook precisa achar
+ * pelo nome do catálogo.
  */
-/* Anotações explícitas pelo mesmo motivo do Glifo: sem elas o tsc infere um
- * tipo que referencia o @types/react interno do pacote e falha com TS2742. */
-export const PostCard: typeof InstanooriaUI.PostCard = InstanooriaUI.PostCard;
-export const TopBar: typeof InstanooriaUI.TopBar = InstanooriaUI.TopBar;
-export const ButtonInsta: typeof InstanooriaUI.Button = InstanooriaUI.Button;
-export const AvatarInsta: typeof InstanooriaUI.Avatar = InstanooriaUI.Avatar;
-export const BadgeInsta: typeof InstanooriaUI.Badge = InstanooriaUI.Badge;
+export { PostCard, TopBar } from '@unooria/design-system/instanooria';
+export {
+  Button as ButtonInsta,
+  Avatar as AvatarInsta,
+  Badge as BadgeInsta,
+} from '@unooria/design-system/instanooria';
