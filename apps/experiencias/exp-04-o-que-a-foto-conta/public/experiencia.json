@@ -1,0 +1,18 @@
+{
+  "id": "exp-04-o-que-a-foto-conta",
+  "nome": "O Que a Foto Conta",
+  "versao": "1.0.0",
+  "produto": "entre-redes",
+  "series": ["1EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso"],
+  "viewport": "mobile",
+  "publico": "estudante",
+  "permissoes": ["autoplay"],
+  "verbos": {
+    "interacted": "Toques em marca, curtida, foto, legenda e comentários",
+    "completed": "Publicação do post e conclusão da missão",
+    "progressed": "Chegada ao latch síncrono da Roda de Conversa",
+    "attempted": "Retry formativo na reflexão final (Globo)"
+  }
+}

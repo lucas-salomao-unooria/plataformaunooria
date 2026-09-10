@@ -26,3 +26,18 @@ type IconeInstanooria = typeof InstanooriaUI.Icon;
 export const Glifo: IconeInstanooria = InstanooriaUI.Icon;
 
 export type NomeDeGlifo = Parameters<typeof Glifo>[0]['name'];
+
+/**
+ * Componentes do clone destruturados para a exp-04 (e as próximas do
+ * Instanooria). Os nomes que NÃO colidem com a plataforma saem como estão;
+ * os que colidem (Button, Avatar, Badge — o motivo de a seção viver num
+ * namespace) ganham o sufixo `Insta`, nunca um alias criativo: quem procura
+ * no Storybook precisa achar pelo nome do catálogo.
+ */
+/* Anotações explícitas pelo mesmo motivo do Glifo: sem elas o tsc infere um
+ * tipo que referencia o @types/react interno do pacote e falha com TS2742. */
+export const PostCard: typeof InstanooriaUI.PostCard = InstanooriaUI.PostCard;
+export const TopBar: typeof InstanooriaUI.TopBar = InstanooriaUI.TopBar;
+export const ButtonInsta: typeof InstanooriaUI.Button = InstanooriaUI.Button;
+export const AvatarInsta: typeof InstanooriaUI.Avatar = InstanooriaUI.Avatar;
+export const BadgeInsta: typeof InstanooriaUI.Badge = InstanooriaUI.Badge;
