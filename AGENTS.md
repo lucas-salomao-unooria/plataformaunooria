@@ -415,9 +415,16 @@ SEED_SENHA=<senha> pnpm --filter @edu/api seed  # a senha das contas de demo vem
                                           # Nos dois compose ela já vem (unooria123); no host, no
                                           # apps/api/.env (o Prisma carrega) ou na linha de comando.
                                           # Ausente, o seed FALHA — não inventa senha.
-SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
-pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
-pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
+SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + um gestor + um admin: o "zero absoluto"
+# OS LOGINS SAEM DO SEED, que os ESCREVE em credenciais-demo.csv na raiz — arquivo
+# GITIGNORADO: ele nasce ao semear, e sem semear não existe. É a
+# fonte, e é de lá que a suíte e2e lê (`scripts/e2e/lib/credenciais.mjs`). Nomes de
+# gente, não `prof.demo`: o seed procura por MATRÍCULA (quem leciona no 8A), e
+# `semear-demo.ts` diz por quê — login fixo reacopla o script a um nome inventado.
+# Não escreva conta de demo em documentação: ela envelhece e manda a pessoa tentar
+# um login que não existe. Aponte para o CSV.
+pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (qualquer prof.* do CSV; seed:demo importa referências demo)
+pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (qualquer prof.* do CSV; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez por maquina.
                                           # `npx playwright install` NAO serve: o npx resolve o

@@ -26,7 +26,7 @@ Cloud Run separado) para experiência Vite + `@edu/sdk`.
 
 ```bash
 pnpm --filter @edu/exp-90-plano-de-aula dev     # :5175
-# hub: http://localhost:3000/professor/plano-de-aula  (login prof.demo)
+# hub: http://localhost:3000/professor/plano-de-aula  (login: uma linha prof.* de credenciais-demo.csv)
 # referências de demonstração: pnpm --filter @edu/api seed:demo
 # referências reais: PLANOS_IMPORT_TOKEN=... node scripts/importar-referencias-plano.mjs <docs-referencia>
 ```
