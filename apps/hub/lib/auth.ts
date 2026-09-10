@@ -84,7 +84,28 @@ if (process.env.AUTH_WSO2_ISSUER) {
 
 export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   providers,
-  session: { strategy: "jwt", maxAge: 60 * 60 * 12 }, // 12h — cobre um dia de aula
+  /**
+   * 2h de INATIVIDADE, não 2h absolutas (ADR-95).
+   *
+   * Com `strategy: "jwt"` o `@auth/core` RE-ASSINA o cookie a cada leitura de
+   * sessão (`lib/actions/session.js`, ramo `jwt`: o `jwt.encode` grava
+   * `exp = agora + maxAge` e o `handleAuth` do next-auth devolve o
+   * `Set-Cookie`), e o `updateAge` **não é consultado nesse ramo** — ele só
+   * existe na estratégia de banco. Quem faz a janela deslizar é o MIDDLEWARE:
+   * toda navegação casada pelo `matcher` renova. Sessão absoluta deslogaria o
+   * estudante no meio da segunda aula, que é exatamente o tempo que estas 2h
+   * existem para cobrir.
+   *
+   * ARMADILHA MEDIDA, e é a consequência ruim declarada na ADR-95: `auth()`
+   * SEM argumentos (o caminho de RSC e de route handler) lê a sessão e
+   * DESCARTA o `Set-Cookie` — só o middleware renova. Quem fica dentro do
+   * iframe de uma missão não navega mais no hub, e o `exp:token-expirando` de
+   * 10 em 10 minutos cai em `GET /api/exp-token`, que está fora do `matcher` e
+   * portanto NÃO conta como atividade. Missão que passe de 2h desde a última
+   * navegação no hub perde a sessão com a criança trabalhando, e hoje o
+   * `ExpFrame` só registra isso num `console.error`.
+   */
+  session: { strategy: "jwt", maxAge: 60 * 60 * 2 },
   pages: { signIn: "/login" },
   callbacks: {
     // O beta do next-auth re-exporta o tipo JWT de @auth/core e a module
