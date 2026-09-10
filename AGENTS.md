@@ -455,7 +455,9 @@ pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez
                                           # shell-1234" com o cache CHEIO de navegador, e o banner
                                           # manda rodar justamente o npx que causou o descasamento.
 node scripts/e2e/rodar.mjs                # A SUÍTE INTEIRA de ponta a ponta, na ordem canônica
-                                          # (publico → estudante → professor → gestor → admin-contrato).
+                                          # (publico → estudante → professor → gestor_escola →
+                                          # gestor_contrato → admin). O `admin` vem por ÚLTIMO porque o
+                                          # painel dele mexe no interruptor que TODAS as outras leem.
                                           # A ordem não é alfabética: o estudante PRODUZ o estado
                                           # (runs, partidas, sessões) que as telas do professor leem, e a
                                           # administração vem por último porque importa gente e troca senha.
@@ -490,7 +492,7 @@ pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~527p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~529p). Atualizar SEMPRE
 ```
 
 
@@ -536,7 +538,7 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~527 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~529 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,

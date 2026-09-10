@@ -440,6 +440,64 @@ na página** — foi o layout.
 - **Não conte produtos na copy.** O texto da home dizia "Quatro produtos"; com um
   deles desligado a frase mente sobre a própria tela.
 
+## A área `/unooria` — o painel da fornecedora (ADR-88, 2026-09-10)
+
+Área própria, papel `admin`, layout próprio (e portanto trilha própria).
+`NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/`.
+
+**A armadilha do middleware, que passa no typecheck.** O redirect cross-área
+comparava UMA string (`areaDoPathname` contra `areaDoPapel`). O `admin` tem
+DUAS casas — o painel da Unooria e a área administrativa, que ele divide com os
+gestores — então com uma string só ele era EXPULSO de uma delas, com o sintoma
+"clico em Recursos e caio em Usuários" e nada no console. Hoje a checagem é de
+MEMBRESIA (`areasDoPapel` / `podeEntrarNaArea`), e `lib/papeis.test.ts` cobra
+que todo papel entra na própria casa e que ninguém além do `admin` entra em
+`/unooria`.
+
+**`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
+painel dela, não a área da escola.
+
+### Trocar de escopo REMONTA o painel — e sem isso a tela MENTE
+
+`PainelDeRecursos` guarda o painel em `useState(inicial)` para poder reler
+sozinho depois de cada mudança. `useState` só usa o valor inicial na MONTAGEM:
+trocar de escopo faz `router.push`, o servidor devolve o painel da escola nova,
+e o componente não remontado continua exibindo o do escopo anterior.
+
+**O custo não é cosmético.** O `escolaId` que as escritas usam sai do painel em
+estado. Com o estado velho, escolher uma ESCOLA e desligar um produto gravava a
+linha no **CONTRATO** — a rede inteira — com a tela afirmando que era a escola.
+Foi medido: a suíte e2e do `admin` derrubou o produto para todas as escolas
+enquanto o roteiro dizia operar numa só, e o print mostrou o painel inteiro com
+os rótulos do escopo-contrato.
+
+O conserto é o `key={escopo}` na página, e é a mesma doutrina do
+`<EscopoDaEscola>` (ADR-85): **quando o escopo é insumo de tudo o que a tela
+mostra, trocar de escopo remonta o miolo em vez de tentar sincronizar estado.**
+
+E a suíte e2e não confia na URL: ela exige o RÓTULO do interruptor
+("Herda de cima" só existe fora do contrato) antes de desligar qualquer coisa.
+
+### Três estados, nunca dois
+
+`ligado | desligado | herda`. Sem o terceiro, "ligado nesta escola" fica
+idêntico a "herdado ligado" e desfazer uma exceção é impossível. O rótulo de
+`herda` MUDA com o escopo — "Padrão (ligado)" no contrato, onde não existe
+"de cima"; "Herda de cima" numa escola. Chamar as duas coisas de "Herda" faria o
+operador do escopo-contrato procurar um nível que não existe.
+
+O controle da experiência sob um produto desligado fica **desabilitado com o
+motivo ao lado**, não escondido: mostrá-lo ativo prometeria uma mudança que o
+resolvedor ignoraria, e escondê-lo pareceria defeito.
+
+### O `SideBar` do DS traz um item que não é seu
+
+Ele renderiza sempre um primeiro item **"Iniciativas"**, fixo no componente, que
+abre um painel de `appsItems`. Sem `appsItems` o clique não faz nada — e nenhuma
+área deste hub passa `appsItems`. Vale para `/admin` desde sempre e agora para
+`/unooria`. É lacuna do pacote (pedido no `storybook-unooria`), não coisa a
+contornar aqui: item de menu que não leva a nada é pior que item nenhum.
+
 ## O guia da aula (ADR-65)
 
 Toda missão publicada tem guia em `/professor/.../guia`, e **missão nova nasce

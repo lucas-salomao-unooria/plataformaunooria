@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { areaDoPapel, areaDoPathname, homeDoPapel } from "@/lib/papeis";
+import { homeDoPapel, podeEntrarNaArea } from "@/lib/papeis";
 
 /** Fora das áreas de papel: vale para estudante, professor, gestor e admin. */
 const TROCAR_SENHA = "/trocar-senha";
@@ -40,7 +40,10 @@ export default auth((request) => {
   }
   if (pathname === TROCAR_SENHA) return NextResponse.next();
 
-  if (areaDoPathname(pathname) !== areaDoPapel(usuario.papel)) {
+  /* MEMBRESIA, não igualdade: o `admin` entra em DUAS áreas (o painel da
+     Unooria e a administrativa, que ele divide com os gestores — ADR-88).
+     Comparando uma string só, ele era expulso de uma delas em silêncio. */
+  if (!podeEntrarNaArea(usuario.papel, pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = homeDoPapel(usuario.papel);
     url.search = "";
@@ -56,6 +59,7 @@ export const config = {
     "/professor/:path*",
     "/exp/:path*",
     "/admin/:path*",
+    "/unooria/:path*",
     "/analise/:path*",
     "/dev-embed",
     "/trocar-senha",

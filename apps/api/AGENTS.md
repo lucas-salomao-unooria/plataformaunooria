@@ -523,9 +523,31 @@ Disponibilidade é **pré-condição** de liberação. Produto desligado tem o s
 de um bug de enturmamento — a missão sumiu da grade e ninguém liberou nada —, e é
 por isso que o eixo tem nome próprio.
 
-**Estado em 2026-09-10.** A PORTA existe e vale. O que ainda NÃO existe é a TELA:
-a área `/unooria` e as rotas de escrita do painel (ADR-88). Hoje só o
-`GET /recursos/efetivos` (leitura, qualquer autenticado) e o SQL ligam e desligam.
+**Estado em 2026-09-10.** Porta E painel prontos. `GET /recursos/efetivos`
+(leitura, qualquer autenticado), `GET /recursos/painel`, `PUT /recursos/:recursoId`
+e `DELETE /recursos/:recursoId` — os três últimos só `admin` (ADR-88). Falta a
+FIXAÇÃO DE VERSÃO por escopo: a coluna `versao_fixa` existe, o resolvedor a
+devolve e o painel a mostra, mas nada a ESCREVE ainda.
+
+**O upsert do painel é SQL cru, e não por preferência.** O `upsert` do Prisma
+não consegue endereçar a linha de escopo-CONTRATO: o único composto
+`(recurso_id, escola_id)` tipa `escolaId` como `string` no `where`, porque um
+único composto do Postgres não casa `NULL` — a MESMA limitação que obrigou o
+índice parcial a existir. Com `upsert` o typecheck reprova; forçando o tipo, o
+Postgres nunca acha a linha e cada clique em "desligar para a rede" tentaria um
+INSERT novo. `ON CONFLICT (recurso_id) WHERE escola_id IS NULL` infere o índice
+parcial, e são dois `ON CONFLICT` distintos porque são dois índices distintos.
+`atualizado_em` vai na mão: `@updatedAt` é do Prisma, e SQL cru passa por baixo.
+
+**Toda escrita loga `codigo: "recurso-alterado"`** com recurso, escopo, estado e
+motivo. A LINHA é sobrescrita a cada mudança, então o log é a única resposta a
+"quem desligou o jogo da rede, e quando?" — é o gatilho de reavaliação da ADR-87.
+
+**`origem` do painel: a ordem das comparações é regra.** No escopo-contrato
+`escopo` e `decididoEm` são os dois nulos, e testar `=== null` antes de
+`=== escopo` faz uma decisão tomada ALI ser lida como "vem da rede" — soa
+herdada de um nível que não existe. Visto na tela antes de virar teste
+(`recursos-painel-postgres.spec.ts`).
 
 **Onde a guarda entra, e por que num ponto só:**
 

@@ -7673,6 +7673,373 @@
         }
       }
     },
+    "/recursos/painel": {
+      "get": {
+        "operationId": "RecursosAdminController_painel",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "escopo": {
+                      "type": "object",
+                      "properties": {
+                        "escolaId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "tipo": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "escolaId",
+                        "nome",
+                        "tipo"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "produtos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string",
+                            "enum": [
+                              "entre-redes",
+                              "plano-de-aula",
+                              "plano-de-ensino",
+                              "bem-estar"
+                            ]
+                          },
+                          "estadoAqui": {
+                            "type": "string",
+                            "enum": [
+                              "ligado",
+                              "desligado",
+                              "herda"
+                            ]
+                          },
+                          "efetivo": {
+                            "type": "object",
+                            "properties": {
+                              "ligado": {
+                                "type": "boolean"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "padrao",
+                                  "contrato",
+                                  "herdado",
+                                  "aqui"
+                                ]
+                              },
+                              "decididoEm": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "motivo": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "ligado",
+                              "origem",
+                              "decididoEm",
+                              "motivo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "experiencias": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                },
+                                "estadoAqui": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ligado",
+                                    "desligado",
+                                    "herda"
+                                  ]
+                                },
+                                "efetivo": {
+                                  "type": "object",
+                                  "properties": {
+                                    "ligado": {
+                                      "type": "boolean"
+                                    },
+                                    "origem": {
+                                      "type": "string",
+                                      "enum": [
+                                        "padrao",
+                                        "contrato",
+                                        "herdado",
+                                        "aqui"
+                                      ]
+                                    },
+                                    "decididoEm": {
+                                      "type": "string",
+                                      "nullable": true
+                                    },
+                                    "motivo": {
+                                      "type": "string",
+                                      "nullable": true
+                                    }
+                                  },
+                                  "required": [
+                                    "ligado",
+                                    "origem",
+                                    "decididoEm",
+                                    "motivo"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "tetoDoProduto": {
+                                  "type": "boolean"
+                                },
+                                "versaoAtiva": {
+                                  "type": "string"
+                                },
+                                "versaoFixa": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "nome",
+                                "estadoAqui",
+                                "efetivo",
+                                "tetoDoProduto",
+                                "versaoAtiva",
+                                "versaoFixa"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "estadoAqui",
+                          "efetivo",
+                          "experiencias"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "escopo",
+                    "produtos"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "O painel: produtos, experiências e o que vale em cada escopo.",
+        "description": "Resolve a cadeia escola → regional → contrato e devolve, por recurso, **o que o interruptor daquele escopo mostra** (`estadoAqui`, três estados) e **o que efetivamente vale** (`efetivo`, com a origem). Sem `?escolaId=`, o escopo é o CONTRATO inteiro.\n\n**Papéis:** admin.\n\n**Restrições:**\n- `estadoAqui: herda` é a AUSÊNCIA de linha neste escopo — é o terceiro estado, e sem ele desfazer uma exceção seria impossível.\n- `tetoDoProduto` marca a experiência que está desligada pelo PRODUTO, não por linha própria: a tela desabilita o interruptor dela e escreve o motivo ao lado, em vez de mostrá-lo ligado.\n- `versaoAtiva` é a que o hub monta hoje; `versaoFixa` é a fixada NESTE escopo (`null` = segue a ativa).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/{recursoId}": {
+      "put": {
+        "operationId": "RecursosAdminController_definir",
+        "parameters": [
+          {
+            "name": "recursoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recursoId": {
+                      "type": "string"
+                    },
+                    "escolaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "ligado": {
+                      "type": "boolean"
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "recursoId",
+                    "escolaId",
+                    "ligado",
+                    "motivo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Liga ou desliga um recurso num escopo.",
+        "description": "Grava a linha de `disponibilidades` daquele (recurso, escopo). Idempotente por `upsert` — o índice único PARCIAL `WHERE escola_id IS NULL` é o que dá idempotência ao escopo-contrato, onde o único composto não bastaria.\n\n**Papéis:** admin.\n\n**Restrições:**\n- **Desligar exige `motivo`** (Zod aqui, CHECK no banco). `Desligado sem motivo` é o estado que ninguém sabe desfazer meses depois.\n- `escolaId: null` no corpo é o CONTRATO inteiro — a rede toda. Ele é explícito de propósito: numa querystring, ausente e vazio são indistinguíveis, e desligar a rede não pode acontecer por URL mal montada.\n- `versao_fixa` não se escreve por aqui: produto não tem versão, e a fixação por escopo é outra rota (fase 3).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "escolaId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "nullable": true
+                  },
+                  "ligado": {
+                    "type": "boolean"
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "escolaId",
+                  "ligado"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "RecursosAdminController_remover",
+        "parameters": [
+          {
+            "name": "recursoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recursoId": {
+                      "type": "string"
+                    },
+                    "escolaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "removida": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "recursoId",
+                    "escolaId",
+                    "removida"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Remove a exceção de um escopo (volta a herdar).",
+        "description": "Apaga a linha daquele (recurso, escopo). É o terceiro estado do interruptor: **herda** não é `ligado` — é a ausência de decisão neste nível, e sem esta rota uma exceção criada por engano seria permanente.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Sem `?escolaId=`, remove a linha do CONTRATO.\n- Remover o que não existe devolve `removida: false` e **não é erro**: o estado final pedido — não haver linha aqui — é o que já valia.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/recursos/efetivos": {
       "get": {
         "operationId": "RecursosController_efetivos",

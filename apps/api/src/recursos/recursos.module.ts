@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { RecursosAdminController } from "./recursos-admin.controller";
 import { RecursosController } from "./recursos.controller";
 
 /**
@@ -10,5 +11,9 @@ import { RecursosController } from "./recursos.controller";
  * dentro de transações de outros, e um serviço injetado obrigaria a passar o
  * `tx` por construtor.
  */
-@Module({ controllers: [RecursosController] })
+/* Ordem: o de ADMIN primeiro. Ele tem `@Get("painel")` e `@Put(":recursoId")`,
+   e o outro tem `@Get("efetivos")` — os três caminhos são distintos, mas
+   registrar o de rota literal antes do de parâmetro é o hábito que evita a
+   armadilha de `/planos/referencias` contra `/planos/:id`. */
+@Module({ controllers: [RecursosAdminController, RecursosController] })
 export class RecursosModule {}

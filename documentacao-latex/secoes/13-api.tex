@@ -601,9 +601,36 @@ escopo-contrato valem. E ela \textbf{não devolve \cd{motivo} nem quem
 desligou}: isso é conversa entre a Unooria e a rede, e num \emph{payload} que
 qualquer autenticado lê viraria a explicação errada na tela errada.
 
-\textbf{A ESCRITA não está aqui.} Ela é o painel da Unooria, restrito ao
-\cd{admin} (\adrr{ADR-88}), e chega com a área \cd{/unooria/*}. Hoje quem liga e
-desliga é SQL.
+\textbf{A ESCRITA é do painel}, restrita ao \cd{admin} (\adrr{ADR-88}) — a
+primeira capacidade que ele tem e o \cd{gestor\_contrato} não:
+
+\begin{itemize}
+  \item \rota{GET /recursos/painel} --- por recurso, o que o interruptor
+    DAQUELE escopo mostra (\cd{estadoAqui}, três estados) e o que efetivamente
+    vale (\cd{efetivo}, com a origem). Sem \cd{?escolaId=}, o escopo é o
+    contrato.
+  \item \rota{PUT /recursos/\{recursoId\}} --- liga ou desliga. \cd{escolaId}
+    vem no CORPO e \cd{null} explícito é o contrato: numa \emph{querystring},
+    ausente e vazio são indistinguíveis, e desligar a rede inteira não pode
+    acontecer porque alguém montou a URL sem o parâmetro. \textbf{Desligar exige
+    \cd{motivo}} --- Zod aqui, CHECK no banco.
+  \item \rota{DELETE /recursos/\{recursoId\}} --- remove a exceção do escopo. É
+    o terceiro estado (\emph{herda}); sem esta rota, exceção criada por engano
+    seria permanente. Remover o que não existe devolve \cd{removida: false} e
+    não é erro.
+\end{itemize}
+
+\textbf{O \emph{upsert} é SQL cru}, e a razão é estrutural: o \cd{upsert} do
+Prisma não consegue endereçar a linha de escopo-contrato, porque o único
+composto \cd{(recurso\_id, escola\_id)} tipa \cd{escolaId} como não-nulo --- um
+único composto do PostgreSQL não casa \cd{NULL}, que é a mesma limitação que
+obrigou o índice PARCIAL a existir. \cd{ON CONFLICT (recurso\_id) WHERE
+escola\_id IS NULL} infere aquele índice, e são dois \cd{ON CONFLICT} distintos
+porque são dois índices distintos.
+
+\textbf{Toda escrita registra \cd{codigo: recurso-alterado}} com recurso,
+escopo, estado e motivo --- a linha é sobrescrita a cada mudança, então o
+registro é a única resposta a \enquote{quem desligou isto, e quando?}.
 
 \section{Sanidade e prontidão}
 

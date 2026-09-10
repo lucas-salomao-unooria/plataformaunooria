@@ -171,6 +171,12 @@ const NOS: Record<string, NoDaTrilha> = {
   '/admin/relatorios': { rotulo: 'Relatório' },
   '/admin/periodos-letivos': { rotulo: 'Ano letivo' },
 
+  /* ---- painel da Unooria (só `admin` — ADR-88) ------------------------- */
+  // `/unooria` não tem página: a área começa em `/unooria/recursos`. Mesmo
+  // desenho de `/admin`.
+  "/unooria": { rotulo: "Unooria", oculto: true },
+  "/unooria/recursos": { rotulo: "Recursos" },
+
   /* ---- análise de produto (admin-contrato) ----------------------------- */
   '/analise': { rotulo: 'Análise de produto' },
   // `oculto`, e não emprestando `/analise`: `/analise` já é prefixo desta rota

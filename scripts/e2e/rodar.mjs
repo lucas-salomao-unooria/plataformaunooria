@@ -30,7 +30,19 @@ const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const E2E = join(RAIZ, "scripts", "e2e");
 
 /** A ordem canônica. Ver o bloco acima para o porquê. */
-const PAPEIS = ["publico", "estudante", "professor", "gestor_escola", "gestor_contrato"];
+const PAPEIS = [
+  "publico",
+  "estudante",
+  "professor",
+  "gestor_escola",
+  "gestor_contrato",
+  /* `admin` por ÚLTIMO, e não é ordem alfabética nem hierárquica: é o único
+     papel cujo painel mexe no que TODAS as outras suítes leem (o interruptor
+     de disponibilidade, ADR-87). Rodando antes, uma corrida abortada deixaria
+     um produto desligado e as suítes seguintes falhariam como se ele tivesse
+     quebrado — com o sintoma apontando para a experiência, não para cá. */
+  "admin",
+];
 
 const argumentos = process.argv.slice(2);
 const comDeck = argumentos.includes("--deck");
