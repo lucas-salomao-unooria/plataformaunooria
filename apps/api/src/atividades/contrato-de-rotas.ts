@@ -155,6 +155,11 @@ export const EtapaMovidaSchema = z.object({
   total: z.number().int().nonnegative(),
   /** Quem ficou no onboarding: não entrou no aparelho e não pode ser movido. */
   foraDoAparelho: z.number().int().nonnegative(),
+  /**
+   * Sessões que voltaram ao feed com o relatório descartado para recomputo
+   * (ADR-92). Só passa de zero ao voltar para a investigação.
+   */
+  reabertas: z.number().int().nonnegative(),
 });
 
 export const EtapaAtualSchema = z.object({

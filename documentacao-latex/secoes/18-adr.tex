@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{91 decisões}, numeradas até ADR-91, \textbf{sem lacunas}. A ADR-65
+São \textbf{92 decisões}, numeradas até ADR-92, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -132,6 +132,7 @@ que a cercam.
 \zebra \adrr{ADR-89} & Histórico do painel é tabela append-only, e a rede lê o dela & 2026-09-10 & Aceita\\
 \adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
+\adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6730,3 +6731,104 @@ esquecido custou (erro de cliente agrupado numa versão que nunca existiu, e
 (rede indígena com material bilíngue, ou contrato fora do Brasil). Aí a decisão
 de não ter camada de i18n volta à mesa, e o custo dela deixa de ser indireção
 gratuita.
+
+\section{ADR-92 --- Voltar um momento REABRE a sessão; a trava é a revelação, não o relatório}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} O relógio da aula do Instanooria tem dois ponteiros: a
+\cd{etapa} da TURMA, que o professor move, e a \cd{fase} da RUN, que é a tela
+daquela criança. \cd{faseAoVoltar} (\arq{apps/api/src/comum/insta/etapas.ts})
+reconcilia os dois quando a turma anda para TRÁS, e o comentário dela declara,
+desde a origem, o motivo de existir: sem ela, \enquote{voltar um momento}
+mudaria o rótulo no painel e \textbf{nada} na tela dos estudantes.
+
+Era exatamente o que acontecia. Um chamado de campo relatou que, encerrada a
+investigação, voltar para ela deixava a turma inteira congelada na tela da
+resposta. Reproduzido de ponta a ponta com as duas pontas vivas (professor no
+relógio, estudante no aparelho): a API responde
+\cd{\{etapa: "investigacao", voltou: true, movidos: 0\}} --- voltou a etapa e
+moveu ZERO telas ---, e o painel fica autocontraditório no mesmo cartão,
+dizendo \enquote{agora Investigação --- a turma explora o feed} acima de
+\enquote{1 respondendo}.
+
+\textbf{A causa são duas peças corretas isoladamente.} \cd{moverEtapa} congela
+toda \emph{run} que entrou no aparelho ao SAIR da investigação
+(\cd{encerrarRun} grava o dossiê e \cd{finished\_at}) --- sem isso o relatório
+abria vazio. E \cd{faseAoVoltar} tinha o teto
+\cd{sessaoCongelada ? conclusao : feed}. Como a primeira torna a condição da
+segunda sempre verdadeira, \textbf{o ramo do \cd{feed} era inalcançável pelo
+caminho do painel}: código morto que o \emph{typecheck} não vê, e um comentário
+descrevendo uma intenção que nunca valeu.
+
+A justificativa registrada para a trava era \enquote{sessão congelada não
+reabre, senão o relatório mentiria}. Ela não se sustenta: o dossiê é
+\textbf{recomputável} a partir dos eventos, que continuam todos gravados.
+
+\textbf{Decisão.} Duas mudanças, que só funcionam em par:
+
+\begin{enumerate}
+  \item \textbf{A trava passa a ser a REVELAÇÃO}, não o congelamento.
+    \cd{jaViuARevelacao(fase)} --- verdadeira de \cd{explicabilidade} em diante,
+    incluindo as fases legadas via \cd{normalizarFase}. Quem ainda não viu volta
+    ao \cd{feed}; quem já viu para na resposta, que dá para refazer. O motivo é
+    o INSTRUMENTO: quem já sabe que o feed era enviesado não pode ser medido por
+    ele de novo. O parâmetro \cd{sessaoCongelada} SAIU da assinatura --- ele era
+    derivável do estado errado.
+  \item \textbf{Voltar para a investigação REABRE a sessão}: \cd{moverEtapa}
+    apaga o dossiê e zera \cd{finished\_at} de quem volta ao \cd{feed}. Apagar o
+    dossiê é o que o torna recomputável --- \cd{encerrarRun} é idempotente pelo
+    dossiê, então zerar só o \cd{finished\_at} deixaria o relatório do próximo
+    encerramento sem nada do que a criança fizesse dali em diante, que é
+    precisamente o \enquote{relatório mentindo} de que a regra antiga tinha
+    medo. A resposta ganha \cd{reabertas}, e o painel diz ao professor que o
+    relatório daquelas sessões será refeito.
+\end{enumerate}
+
+\textbf{O que o estudante PRODUZIU não é tocado}: eventos, posts salvos,
+comentários, a resposta e a reflexão continuam. Quem apaga isso é
+\cd{POST /runs/:id/reset}, e ele é outra intenção --- \enquote{esta sessão não
+presta, comece do zero}, não \enquote{a aula voltou um momento}.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Não congelar ao sair da investigação.} Resolveria o sintoma e
+    reabriria o defeito que o congelamento existe para fechar: o relatório da
+    turma abrindo vazio porque ninguém chamou \cd{finish}.
+  \item \emph{Deixar como estava e documentar que voltar não devolve o feed.}
+    Descartada porque o produto oferece o botão \enquote{voltar um momento}, e
+    um botão que muda só o rótulo é pior que botão nenhum --- o professor
+    conclui que o sistema travou no meio da aula.
+  \item \emph{Mandar o professor usar \enquote{Zerar} para reabrir.} É o que
+    sobrava na prática, e custa o trabalho inteiro da criança: o \cd{reset}
+    apaga eventos, posts salvos, comentários, conclusão e reflexão. Corrigir um
+    clique errado do adulto destruindo a produção de trinta estudantes é
+    desproporcional.
+  \item \emph{Preservar o dossiê e recomputá-lo por versão.} Descartada por
+    complexidade sem demanda: exigiria versionar dossiê por passagem, e ninguém
+    pediu o relatório de \enquote{como estava antes de o professor voltar}.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o retorno funciona nas duas pontas, e a
+regra que o código já declarava passou a valer. \emph{Bom}: o botão
+\enquote{voltar um momento} saiu de dentro do bloco do botão principal no painel
+--- ele só era renderizado quando havia PRÓXIMA etapa, então na etapa \cd{fim}
+não havia como voltar pela interface, e a aula que terminou cedo demais é
+justamente quando voltar importa. \emph{Ruim}: o relatório daquela passagem é
+DESCARTADO ao voltar, e isso é irreversível --- o painel avisa, mas quem voltar
+por engano perde o dossiê computado até ali (os eventos ficam, então o próximo
+encerramento reconstrói). \emph{Ruim}: \cd{POST /atividades/:id/etapa} ganhou um
+campo na resposta, e todo consumidor do contrato precisa regerar o OpenAPI.
+
+\textbf{O que a execução expôs}: \arq{comum/insta/etapas.ts} não tinha
+\textbf{nenhum teste} --- o módulo que reconcilia dois relógios e decide o que
+30 telas mostram ao mesmo tempo. Foi por isso que o ramo morto passou. Entraram
+duas suítes: \arq{tests/insta-etapas.spec.ts} (as regras puras, 19 casos) e
+\arq{tests/insta-voltar-etapa-postgres.spec.ts} (o ciclo congelar \seta{} voltar
+\seta{} reabrir \seta{} recomputar contra o Postgres). A segunda existe porque o
+defeito vivia no PAR: cada metade, lida sozinha, estava certa.
+
+\textbf{Gatilho de reavaliação.} Alguém pedir o histórico das passagens --- o
+relatório de como a turma estava antes de o professor voltar. Aí o dossiê deixa
+de ser sobrescrito e passa a ser versionado por passagem, e a decisão de
+descartar volta à mesa.

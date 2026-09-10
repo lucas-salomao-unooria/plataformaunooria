@@ -972,6 +972,22 @@ escola} &
   ali. Sem isso, o histórico de uma escola apareceria VAZIO no dia em que a rede
   inteira mudou --- e é justamente o dia em que alguém vai olhar. A coluna
   \enquote{escopo} diz \enquote{a rede inteira} nessas linhas.\\
+\zebra \textbf{Voltei a turma do Instanooria para a investigação e a tela dos
+estudantes não mudou} &
+  Confira primeiro o \cd{movidos} da resposta de
+  \rota{POST /atividades/\{id\}/etapa}: \cd{voltou: true} com \cd{movidos: 0} é
+  o retrato exato deste problema, e o painel fica autocontraditório no mesmo
+  cartão --- \enquote{agora Investigação} acima de \enquote{N respondendo}.
+  \textbf{Duas causas, e só uma é defeito.} Se as \emph{runs} estão em
+  \cd{explicabilidade} ou adiante, é POR DESENHO: quem já viu a revelação não
+  volta ao \emph{feed}, para na resposta, porque quem sabe que o \emph{feed} era
+  enviesado não pode ser medido por ele de novo (\adrr{ADR-92}). Fora disso, a
+  versão da API é anterior à \adrr{ADR-92}: até 2026-09-10 sair da investigação
+  congelava a sessão e voltar NUNCA reabria, o que tornava o retorno um
+  \emph{no-op} para a turma inteira. Confirme com
+  \cd{SELECT fase, finished\_at FROM exp\_01\_runs WHERE activity\_id = ...}: fase
+  \cd{conclusao} com \cd{finished\_at} preenchido e a atividade em
+  \cd{investigacao} é a assinatura do defeito.\\
 \bottomrule
 \end{tabularx}
 
