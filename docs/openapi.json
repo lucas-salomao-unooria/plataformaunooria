@@ -34554,6 +34554,2296 @@
         ],
         "x-acesso": "token"
       }
+    },
+    "/manifesto-ia/sessao": {
+      "get": {
+        "operationId": "ManifestoIaController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "promptsEnviados": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "clausulaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "manifestoMarkdown": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "registrouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "catalogo": {
+                      "type": "object",
+                      "properties": {
+                        "contexto": {
+                          "type": "object",
+                          "properties": {
+                            "escola": {
+                              "type": "string"
+                            },
+                            "casoUsoTitulo": {
+                              "type": "string"
+                            },
+                            "premissaIaAutoritaria": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "escola",
+                            "casoUsoTitulo",
+                            "premissaIaAutoritaria"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "origemDoConteudo": {
+                          "type": "string",
+                          "enum": [
+                            "turma",
+                            "default"
+                          ]
+                        },
+                        "prompts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "rotuloBotao": {
+                                "type": "string"
+                              },
+                              "textoPrompt": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "rotuloBotao",
+                              "textoPrompt"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "clausulas": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "tituloClausula": {
+                                "type": "string"
+                              },
+                              "artigoTexto": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "tituloClausula",
+                              "artigoTexto"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "promptsExigidos": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "concessaoDoBot": {
+                          "type": "string"
+                        },
+                        "principiosEmDisputa": {
+                          "type": "string"
+                        },
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "rotulo": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "rotulo"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "tagsExigidas": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "pisoDaJustificativa": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "tetoDaJustificativa": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "perguntaDaReflexao": {
+                          "type": "string"
+                        },
+                        "insignia": {
+                          "type": "string"
+                        },
+                        "podcast": {
+                          "type": "object",
+                          "properties": {
+                            "titulo": {
+                              "type": "string"
+                            },
+                            "blocos": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rotulo": {
+                                    "type": "string"
+                                  },
+                                  "falas": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rotulo",
+                                  "falas"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "titulo",
+                            "blocos"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "delayDaGovernancaMs": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "contexto",
+                        "origemDoConteudo",
+                        "prompts",
+                        "clausulas",
+                        "promptsExigidos",
+                        "concessaoDoBot",
+                        "principiosEmDisputa",
+                        "tags",
+                        "tagsExigidas",
+                        "pisoDaJustificativa",
+                        "tetoDaJustificativa",
+                        "perguntaDaReflexao",
+                        "insignia",
+                        "podcast",
+                        "delayDaGovernancaMs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "falas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "papel": {
+                            "type": "string",
+                            "enum": [
+                              "user",
+                              "assistant"
+                            ]
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "promptId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "papel",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "percurso": {
+                      "type": "object",
+                      "properties": {
+                        "tags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "justificativa": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "tags",
+                        "justificativa"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "promptsEnviados",
+                    "totalAuditorias",
+                    "cotaAtingida",
+                    "faltamAuditorias",
+                    "clausulaId",
+                    "manifestoMarkdown",
+                    "registrouPercurso",
+                    "concluidoEm",
+                    "turma",
+                    "catalogo",
+                    "falas",
+                    "percurso",
+                    "estudante"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "O estado da missão, o pacote da turma e a conversa reconstituída.",
+        "description": "Os 3 questionamentos saem **sem `replicaIa`** e as 4 cláusulas **sem `justificativaSugerida`** — os tipos do servidor são `Omit<...>`, então nem a defesa da máquina antes da pergunta nem o material de mediação do professor podem vazar aqui.\n\n`falas` é a conversa até agora, e é o que faz o F5 devolver a tela exata em vez de um chat vazio: a réplica de uma pergunta JÁ FEITA entra, porque a criança já a leu.\n\nO conteúdo vem do pacote HOMOLOGADO da turma; sem homologação, do banco curado da Unooria (`origemDoConteudo` diz qual).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Divergentes com `aguardandoATurma: true` = o Checkpoint A está ativo e a tela mostra o overlay de pausa.\n- `manifestoMarkdown` é `null` até a cláusula ser fixada. Devolver um esqueleto com o lugar da cláusula em branco entregaria a cena da Etapa 4.\n- Rascunho de IA NÃO conta como pacote da turma: sem `aprovado_por_professor`, a missão lê o curado (exigência 8.2).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/gate": {
+      "get": {
+        "operationId": "ManifestoIaController_gate",
+        "parameters": [
+          {
+            "name": "passo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "briefing",
+                "chat",
+                "decisao",
+                "manifesto",
+                "percurso",
+                "podcast",
+                "fim"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "missao",
+                        "debate"
+                      ]
+                    },
+                    "passoEfetivo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "agora": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "passoEfetivo",
+                    "agora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Em que etapa a turma está — o polling de 5s do Checkpoint A.",
+        "description": "Leve de propósito: sem catálogo e sem conversa. **É a alternativa ao WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e o congelamento da turma para o debate oral é uma linha em `exp_08_gates_turma` que a tela do estudante lê a cada 5 segundos durante a Etapa 4.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Estudante sem turma não tem gate: a missão corre no ritmo dele. Prendê-lo num congelamento seria um beco sem saída, porque não há quem o solte.\n- O limite é mais alto que o das outras rotas justamente porque este é o polling — 240/min por usuário cobre 5s com folga para retry.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/abrir-conversa": {
+      "post": {
+        "operationId": "ManifestoIaController_abrirConversa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "promptsEnviados": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "clausulaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "manifestoMarkdown": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "registrouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "promptsEnviados",
+                    "totalAuditorias",
+                    "cotaAtingida",
+                    "faltamAuditorias",
+                    "clausulaId",
+                    "manifestoMarkdown",
+                    "registrouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Sai do briefing de Amara e abre o chat do EduPredict IA.",
+        "description": "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 na Etapa 2 não pode devolver a criança ao alerta de Amara que ela já ouviu.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/disparar": {
+      "post": {
+        "operationId": "ManifestoIaController_disparar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "promptsEnviados": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "clausulaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "manifestoMarkdown": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "registrouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "replica": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "promptsEnviados",
+                    "totalAuditorias",
+                    "cotaAtingida",
+                    "faltamAuditorias",
+                    "clausulaId",
+                    "manifestoMarkdown",
+                    "registrouPercurso",
+                    "concluidoEm",
+                    "turma",
+                    "replica"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Envia um questionamento e recebe a defesa da máquina.",
+        "description": "**A `replica` só existe nesta resposta.** Ela não está no bundle nem em `GET /sessao` antes do disparo: ver a defesa antes de fazer a pergunta desmontaria a cena da auditoria.\n\nQuando o SEGUNDO questionamento distinto entra, o `passo` anda para `decisao` aqui, no servidor. Deixar o cliente pedir a transição seria deixá-lo escolher quando o pico da missão começa — e uma tela que decide isso é uma tela que pode pular o pico.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Reenviar o mesmo id responde 409 `prompt-ja-enviado`: o card já disparado fica desabilitado no seletor, então um segundo disparo só chega por clique duplo ou aba repetida — e a conversa não pode ganhar a mesma pergunta duas vezes.\n- `latenciaSeg` é calibragem de fluxo, NUNCA medida de mérito: ninguém é avaliado por ler rápido.\n- O terceiro questionamento é opcional e permitido: dois é o mínimo que abre a Etapa 3, não um teto.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "promptId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "latenciaSeg": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3600,
+                    "default": 0
+                  }
+                },
+                "required": [
+                  "promptId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manifesto-ia/clausula": {
+      "post": {
+        "operationId": "ManifestoIaController_clausula",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "promptsEnviados": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "clausulaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "manifestoMarkdown": {
+                      "type": "string"
+                    },
+                    "registrouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "delayMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "promptsEnviados",
+                    "totalAuditorias",
+                    "cotaAtingida",
+                    "faltamAuditorias",
+                    "clausulaId",
+                    "manifestoMarkdown",
+                    "registrouPercurso",
+                    "concluidoEm",
+                    "turma",
+                    "delayMs"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Fixa a salvaguarda prioritária — irrevogável (latch).",
+        "description": "O PICO da missão. A api confere a cota de auditoria ANTES de aceitar (409 `auditoria-insuficiente`) e **compila o manifesto no servidor**, porque o documento é a evidência do percurso: o que a professora lê no painel e o que o estudante copiou têm de ser o mesmo texto.\n\nSegunda chamada responde 409 `clausula-ja-submetida`: a escolha é definitiva, e é isso que faz o estudante assumir o peso dela.\n\n**Nada é corrigido aqui.** As quatro cláusulas são salvaguardas válidas, e calcular acerto entre elas está na lista de métricas proibidas do handoff.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `delayMs` é o delay diegético de 2000ms (não-negociável 2). O timer roda no CLIENTE porque é ritmo de cena, e o número vem do servidor para a documentação e a tela lerem o mesmo valor.\n- `confirmouProvocacao` registra que a criança clicou em menos de 5s e passou pela réplica provocativa do bot. É `indicative` e alimenta a hipótese de exploração mínima — nunca avalia ninguém.\n- A guarda da cota vale no servidor mesmo com o botão desabilitado na tela: `/manifesto-ia/clausula` é endereço alcançável.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "clausulaId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "latenciaSeg": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 7200
+                  },
+                  "confirmouProvocacao": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "clausulaId",
+                  "latenciaSeg"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manifesto-ia/percurso": {
+      "post": {
+        "operationId": "ManifestoIaController_percurso",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "promptsEnviados": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "clausulaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "manifestoMarkdown": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "registrouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "promptsEnviados",
+                    "totalAuditorias",
+                    "cotaAtingida",
+                    "faltamAuditorias",
+                    "clausulaId",
+                    "manifestoMarkdown",
+                    "registrouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "O \"Meu Percurso\" — 2 palavras-chave e o parágrafo autoral (latch).",
+        "description": "Texto livre de 20 a 800 caracteres. É o **único** campo livre da missão e o dado mais sensível dela: caixa escrita por menor de idade. Não vai a log, não vai à telemetria analítica, e a única rota que o devolve é o painel do professor DA TURMA dela (LGPD art. 14).\n\n**Dado pessoal é RECUSADO com 422 `dado-pessoal-no-texto` e NÃO gravado.** As alternativas (gravar com flag, ou ofuscar e salvar) foram descartadas: a primeira deixaria o telefone da criança na coluna à espera de alguém, a segunda devolveria à professora um parágrafo mutilado. Recusar também ensina — a dica diz o que tirar, no momento em que ela ia entregar o dado.\n\nDurante o Checkpoint A responde 409 `debate-em-andamento`: a assinatura individual abre depois da discussão coletiva.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O `trim` é anterior ao `min`: vinte espaços passariam o piso de 20 caracteres e contariam como entregue no painel.\n- As duas palavras-chave têm de ser DIFERENTES: repetir deixa um slot logicamente vazio dentro de um array cheio.\n- O filtro NÃO tenta adivinhar nome próprio, de propósito: recusar 'meu tio Silva foi reprovado' cortaria justamente o argumento situado que esta etapa mede. O que ele pega é padrão estruturado — telefone, CPF, e-mail, CEP, cartão, @perfil.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "autonomia",
+                        "transparencia",
+                        "justica",
+                        "privacidade"
+                      ]
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  },
+                  "justificativa": {
+                    "type": "string",
+                    "minLength": 20,
+                    "maxLength": 800
+                  }
+                },
+                "required": [
+                  "tags",
+                  "justificativa"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manifesto-ia/concluir": {
+      "post": {
+        "operationId": "ManifestoIaController_concluir",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "briefing",
+                        "chat",
+                        "decisao",
+                        "manifesto",
+                        "percurso",
+                        "podcast",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "promptsEnviados": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "totalAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "cotaAtingida": {
+                      "type": "boolean"
+                    },
+                    "faltamAuditorias": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "clausulaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "manifestoMarkdown": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "registrouPercurso": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "promptsEnviados",
+                    "totalAuditorias",
+                    "cotaAtingida",
+                    "faltamAuditorias",
+                    "clausulaId",
+                    "manifestoMarkdown",
+                    "registrouPercurso",
+                    "concluidoEm",
+                    "turma"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Finaliza o percurso e concede o selo — latch definitivo.",
+        "description": "**Não recebe `score`**, e a ausência é a regra 3 aplicada a uma missão sem nota: o `exp:concluir` da bridge tem o campo, e aceitar um número dali deixaria a tela pontuar uma atividade cuja premissa é que as quatro escolhas valem igual. O progresso da plataforma lê `concluido_em`.\n\nExige o percurso registrado (409 `sem-clausula`). Segunda chamada responde 409 `missao-concluida`.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/turmas": {
+      "get": {
+        "operationId": "ManifestoIaTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie",
+                          "estudantes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Turmas para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/turmas/{turmaId}/painel": {
+      "get": {
+        "operationId": "ManifestoIaTurmasController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "missao",
+                            "debate"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie",
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "iniciou": {
+                            "type": "boolean"
+                          },
+                          "passo": {
+                            "type": "string",
+                            "enum": [
+                              "briefing",
+                              "chat",
+                              "decisao",
+                              "manifesto",
+                              "percurso",
+                              "podcast",
+                              "fim"
+                            ]
+                          },
+                          "auditorias": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "auditouOMinimo": {
+                            "type": "boolean"
+                          },
+                          "clausulaId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "registrouPercurso": {
+                            "type": "boolean"
+                          },
+                          "justificativaTexto": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ociosoMin": {
+                            "type": "integer",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "usuario",
+                          "iniciou",
+                          "passo",
+                          "auditorias",
+                          "auditouOMinimo",
+                          "clausulaId",
+                          "tags",
+                          "registrouPercurso",
+                          "justificativaTexto",
+                          "ociosoMin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "iniciaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "auditaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "fixaramClausula": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "assinaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "concluiram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "ociosos": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "distribuicao": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "tags": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "iniciaram",
+                        "auditaram",
+                        "fixaramClausula",
+                        "assinaram",
+                        "concluiram",
+                        "ociosos",
+                        "distribuicao",
+                        "tags"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "estudantes",
+                    "resumo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "O painel de mediação ao vivo (Checkpoint A).",
+        "description": "Uma linha por estudante mais o resumo agregado. **Sem coluna de pontos, sem nível e sem taxa de acerto** (PED-07 / D6b e `PROIBIDO_NO_PAINEL`): nesta missão a tentação é específica — com quatro cláusulas e uma 'mais votada', calcular percentual de acerto é o erro natural de quem chegar depois, e as quatro são salvaguardas válidas.\n\n`distribuicao` conta os votos por cláusula: é o material das três perguntas do debate.\n\n`justificativaTexto` sai NESTA rota e só nela: é caixa livre de menor de idade, e quem a lê é o professor da turma dela (LGPD art. 14).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira, não para punir.\n- `auditouOMinimo` é o indicador central da missão: quantos contraditaram a máquina ao menos duas vezes antes de fixar a regra.\n- `tags` no resumo é a nuvem agregada da sala. No nível do estudante ela é nominal, porque a professora precisa saber com quem conversar.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/turmas/{turmaId}/conteudo": {
+      "get": {
+        "operationId": "ManifestoIaTurmasController_conteudo",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contexto": {
+                      "type": "object",
+                      "properties": {
+                        "escola": {
+                          "type": "string"
+                        },
+                        "casoUsoTitulo": {
+                          "type": "string"
+                        },
+                        "premissaIaAutoritaria": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "escola",
+                        "casoUsoTitulo",
+                        "premissaIaAutoritaria"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "prompts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rotuloBotao": {
+                            "type": "string"
+                          },
+                          "textoPrompt": {
+                            "type": "string"
+                          },
+                          "replicaIa": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rotuloBotao",
+                          "textoPrompt",
+                          "replicaIa"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "clausulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "tituloClausula": {
+                            "type": "string"
+                          },
+                          "artigoTexto": {
+                            "type": "string"
+                          },
+                          "justificativaSugerida": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tituloClausula",
+                          "artigoTexto",
+                          "justificativaSugerida"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoPorProfessor": {
+                      "type": "boolean"
+                    },
+                    "usouBancoDefault": {
+                      "type": "boolean"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "contexto",
+                    "prompts",
+                    "clausulas",
+                    "aprovadoPorProfessor",
+                    "usouBancoDefault",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "O pacote da turma, com o material de mediação.",
+        "description": "**Professor only**, e é aqui que a `replicaIa` de cada questionamento e a `justificativaSugerida` de cada cláusula aparecem — as duas coisas que a rota do estudante recorta. A professora as lê ANTES da aula, de propósito: são o roteiro dela.\n\nSem pacote homologado devolve o curado da Unooria com `aprovadoPorProfessor: false`. Não é erro: o banco default é homologado pela Unooria, e a missão roda inteira com ele.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/manifesto-ia/turmas/{turmaId}/gerar-conteudo": {
+      "post": {
+        "operationId": "ManifestoIaTurmasController_gerarConteudo",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contexto": {
+                      "type": "object",
+                      "properties": {
+                        "escola": {
+                          "type": "string"
+                        },
+                        "casoUsoTitulo": {
+                          "type": "string"
+                        },
+                        "premissaIaAutoritaria": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "escola",
+                        "casoUsoTitulo",
+                        "premissaIaAutoritaria"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "prompts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rotuloBotao": {
+                            "type": "string"
+                          },
+                          "textoPrompt": {
+                            "type": "string"
+                          },
+                          "replicaIa": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rotuloBotao",
+                          "textoPrompt",
+                          "replicaIa"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "clausulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "tituloClausula": {
+                            "type": "string"
+                          },
+                          "artigoTexto": {
+                            "type": "string"
+                          },
+                          "justificativaSugerida": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tituloClausula",
+                          "artigoTexto",
+                          "justificativaSugerida"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoPorProfessor": {
+                      "type": "boolean"
+                    },
+                    "usouBancoDefault": {
+                      "type": "boolean"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "usouIa": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "contexto",
+                    "prompts",
+                    "clausulas",
+                    "aprovadoPorProfessor",
+                    "usouBancoDefault",
+                    "atualizadoEm",
+                    "usouIa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Gera um RASCUNHO do pacote da turma com IA (pré-aula).",
+        "description": "A única chamada de IA desta experiência, e ela roda **antes** da aula, com o professor olhando. Em sala o motor é 100% determinístico: nenhum token de estudante é gasto e nenhuma aula depende de o Vertex estar de pé.\n\n**Não persiste nada.** O que volta é rascunho para a tela editar; publicar é o `POST /homologar` (exigência 8.2 / PED-04).\n\nFalha de vendor, quota esgotada ou saída fora do formato devolvem o pacote CURADO com `usouIa: false` — e a tela diz 'Utilizando pacote curado padrão da Unooria' em vez de fingir que a IA respondeu. O único jeito de esta rota estragar a aula seria bloquear a professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A quota é a do PERFIL (ADR-74): `temSaldo` antes, e o que o vendor cobrou é debitado por TENTATIVA — inclusive as que a validação rejeitou, porque foram pagas igual.\n- A validação rejeita balão acima de 60 palavras e termo proibido na tela, e rejeitar faz o modelo REGERAR: vale mais que aceitar e contar com a revisão humana de um texto que a professora talvez só passe o olho.\n- Os ids das cláusulas e dos questionamentos são fixados pela ordem do catálogo, nunca pelo que o modelo devolveu: id inventado produziria uma cláusula que a tela mostra e o servidor não reconhece.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nomeEscola": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  },
+                  "casoContextual": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 120
+                  },
+                  "focoPrioritario": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "nomeEscola",
+                  "casoContextual",
+                  "focoPrioritario"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manifesto-ia/turmas/{turmaId}/homologar": {
+      "post": {
+        "operationId": "ManifestoIaTurmasController_homologar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contexto": {
+                      "type": "object",
+                      "properties": {
+                        "escola": {
+                          "type": "string"
+                        },
+                        "casoUsoTitulo": {
+                          "type": "string"
+                        },
+                        "premissaIaAutoritaria": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "escola",
+                        "casoUsoTitulo",
+                        "premissaIaAutoritaria"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "prompts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "rotuloBotao": {
+                            "type": "string"
+                          },
+                          "textoPrompt": {
+                            "type": "string"
+                          },
+                          "replicaIa": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "rotuloBotao",
+                          "textoPrompt",
+                          "replicaIa"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "clausulas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "tituloClausula": {
+                            "type": "string"
+                          },
+                          "artigoTexto": {
+                            "type": "string"
+                          },
+                          "justificativaSugerida": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "tituloClausula",
+                          "artigoTexto",
+                          "justificativaSugerida"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoPorProfessor": {
+                      "type": "boolean"
+                    },
+                    "usouBancoDefault": {
+                      "type": "boolean"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "contexto",
+                    "prompts",
+                    "clausulas",
+                    "aprovadoPorProfessor",
+                    "usouBancoDefault",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "O clique em \"Aprovar Conteúdo da Turma\" — o portão da exigência 8.2.",
+        "description": "Grava o pacote como a professora o deixou e marca `aprovado_por_professor: true`. **É o único lugar que liga esse booleano**, e é ele que a rota do estudante consulta: sem homologação, a missão lê o banco curado da Unooria.\n\nO corpo carrega o pacote INTEIRO em vez de um `{ aprovado: true }` porque a curadoria é editar: a professora pode reescrever qualquer réplica ou cláusula antes de aprovar. Aprovar sem editar manda de volta o que a tela recebeu — o que também é curadoria, porque passou pelos olhos dela.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Idempotente: homologar duas vezes é exatamente o clique que se dá duas vezes.\n- Sobrevive ao 'Zerar turma'. O preparo custou tempo da professora, e apagá-lo junto obrigaria a refazer a curadoria para aplicar a missão na turma seguinte no mesmo dia.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contexto": {
+                    "type": "object",
+                    "properties": {
+                      "escola": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 80
+                      },
+                      "casoUsoTitulo": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 200
+                      },
+                      "premissaIaAutoritaria": {
+                        "type": "string",
+                        "minLength": 10,
+                        "maxLength": 600
+                      }
+                    },
+                    "required": [
+                      "escola",
+                      "casoUsoTitulo",
+                      "premissaIaAutoritaria"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "prompts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "rotuloBotao": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 60
+                        },
+                        "textoPrompt": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 300
+                        },
+                        "replicaIa": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 600
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "rotuloBotao",
+                        "textoPrompt",
+                        "replicaIa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "clausulas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64
+                        },
+                        "tituloClausula": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 80
+                        },
+                        "artigoTexto": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 600
+                        },
+                        "justificativaSugerida": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 400
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "tituloClausula",
+                        "artigoTexto",
+                        "justificativaSugerida"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  },
+                  "casoContextual": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 120
+                  },
+                  "focoPrioritario": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 120
+                  },
+                  "usouBancoDefault": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "contexto",
+                  "prompts",
+                  "clausulas",
+                  "casoContextual",
+                  "focoPrioritario",
+                  "usouBancoDefault"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manifesto-ia/turmas/{turmaId}/gate": {
+      "post": {
+        "operationId": "ManifestoIaTurmasController_gate",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "missao",
+                        "debate"
+                      ]
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "etapa",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "O botão mestre: Pausar para Debate / Retomar Missão.",
+        "description": "O Checkpoint A. É o que congela 30 telas ao mesmo tempo para o debate oral de 10 minutos — e é a rota que o polling de 5s do estudante lê (`GET /manifesto-ia/gate`), porque **não há WebSocket de aplicação no Cloud Run** (ADR-93).\n\n**Idempotente de propósito**: apertar duas vezes é exatamente o clique que se dá duas vezes, e a segunda não pode derrubar nada.\n\nO gate mexe só no TETO do passo, nunca no piso: pausar não empurra para a frente quem ainda estava auditando a máquina — e são justamente essas crianças que o debate tenta alcançar.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Quem já assinou o percurso fica onde está: `pausar-para-debate` não o traz de volta. O latch é do estudante, não da turma.\n- A missão corre inteira sem ninguém apertar nada: o congelamento é opcional, porque a spec admite a sessão assíncrona individual.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "acao": {
+                    "type": "string",
+                    "enum": [
+                      "pausar-para-debate",
+                      "retomar-missao"
+                    ]
+                  }
+                },
+                "required": [
+                  "acao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/manifesto-ia/turmas/{turmaId}": {
+      "delete": {
+        "operationId": "ManifestoIaTurmasController_zerar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sucesso": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "registrosApagados": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "sucesso",
+                    "registrosApagados"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "manifesto-ia"
+        ],
+        "summary": "Zerar a turma — a segunda aplicação.",
+        "description": "Apaga sessões, auditorias e percursos desta turma (CASCADE da sessão) e devolve o gate a `missao`, senão a turma nova nasceria congelada num debate que já aconteceu. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp_08_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com o parágrafo da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
     }
   },
   "info": {

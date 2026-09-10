@@ -853,14 +853,18 @@ Ranking sem menor real & O ranking da exp-02 usa colegas
 \zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
-Texto de menor com contenção & \textbf{Dois} campos livres de estudante, e a
+Texto de menor com contenção & \textbf{Três} campos livres de estudante, e a
   diferença entre eles é de finalidade. \cd{exp\_07\_mensagens} guarda a
   conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
   sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
   \emph{quantos} turnos, nunca o quê. \cd{exp\_06\_reflexoes} guarda o
   \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
-  porque ali o texto \emph{é} o instrumento. As duas ficam sob RLS, fora de log
-  e fora da telemetria. Ver a decisão logo abaixo.\\
+  porque ali o texto \emph{é} o instrumento.
+  \cd{exp\_08\_respostas\_percurso} guarda a justificativa da cláusula: 800
+  caracteres, mesma finalidade e mesma fronteira --- e com uma trava que os
+  outros dois não têm, o \textbf{filtro de dado pessoal que recusa antes de
+  gravar}. As três ficam sob RLS, fora de log e fora da telemetria. Ver as
+  decisões logo abaixo.\\
 \bottomrule
 \end{tabularx}
 
@@ -907,6 +911,49 @@ e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
 painel de gestor, de rede ou de análise pedir \cd{exp\_06\_reflexoes.texto}, a
 decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
 por conveniência de relatório.
+\end{decisao}
+
+\begin{decisao}
+\textbf{A exp-08 RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
+essa é a primeira vez que o produto trata a caixa livre de menor de forma ativa,
+não só contida.
+
+A questão estava aberta no insumo: quando a criança escreve um telefone ou um
+CPF na justificativa da cláusula, o servidor deve responder \textbf{422 com dica
+corretiva} e não gravar, ou \textbf{ofuscar os termos e salvar} com marca de
+moderação para o professor? As duas alternativas foram consideradas e
+descartadas. Gravar com \emph{flag} deixaria o telefone da criança dentro da
+coluna, à espera de alguém que decidisse o que fazer com ele --- e a regra de
+dados de menores prefere não guardar: o que não foi gravado não vaza em
+\emph{backup}, em \emph{dump} de diagnóstico nem em \emph{log}. Ofuscar-e-salvar
+devolveria ao professor um parágrafo mutilado, com a argumentação cortada no
+meio, sem que ninguém soubesse o que estava ali.
+
+\textbf{Recusar também ensina}, e é o que fecha a escolha: a dica diz o que
+tirar no exato momento em que a criança ia entregar o dado, dentro de uma missão
+cujo tema é privacidade. É a única superfície do produto em que a regra vira
+experiência vivida.
+
+\textbf{O filtro é conservador de propósito, e não adivinha nome próprio.} Ele
+casa padrões estruturados --- telefone, CPF, e-mail, CEP, cartão, \cd{@perfil}
+--- e nada mais. Um filtro de sobrenome recusaria \enquote{meu tio Silva foi
+reprovado por um sistema desses}, que é exatamente o tipo de argumento situado
+que a etapa mede, e a criança não teria como saber o que fazer com a mensagem de
+erro. Nome próprio é risco \textbf{aceito e registrado}: o texto é lido só pelo
+professor da turma dela, nunca vai a \emph{log} e nunca ao canal analítico. E
+nenhum padrão casa número de quatro dígitos solto --- o falso positivo mais
+provável é o ANO (\enquote{desde 2019 a escola usa esse sistema}).
+
+O que vai ao \emph{log} quando a recusa acontece: o \textbf{nome} do padrão que
+casou (\cd{padroes: ["telefone"]}) e o \textbf{tamanho} do texto, nunca o
+trecho. Procurar o conteúdo no log seria procurar o que a regra existe para não
+guardar.
+
+Consequência aceita: a criança pode receber a recusa sem entender de imediato
+qual parte do texto a causou, porque a mensagem não repete o trecho. Gatilho de
+reavaliação: se o filtro produzir falso positivo em uso real com frequência que
+atrapalhe a aula, o caminho é estreitar o padrão específico --- não passar a
+gravar.
 \end{decisao}
 
 \subsection{Retenção: uma decisão explícita de não declarar prazo}

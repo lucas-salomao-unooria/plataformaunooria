@@ -25,15 +25,17 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
 \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
   telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{exp-08-manifesto-ia} & \cd{8EF} & estudante &
+  telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
+\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\cd{exp-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+\zebra \cd{exp-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
   telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
-\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -50,6 +52,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
 \zebra \cd{exp-06-rastro-boato} & \cd{5181} & \rota{/exp/exp-06-rastro-boato}\\
 \cd{exp-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
+\zebra \cd{exp-08-manifesto-ia} & \cd{5182} & \rota{/exp/exp-08-manifesto-ia}\\
 \bottomrule
 \end{tabularx}
 
@@ -702,6 +705,182 @@ e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
 \cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
 \enquote{sem consumidor} até aqui.
 
+
+% ---------------------------------------------------------------------------
+\section{exp-08 --- O Manifesto da IA}
+\label{sec:exp-08}
+
+\textbf{8º ano · Unidade 4 · clone de assistente generativo · \cd{chatgpt} +
+\cd{unooria}}
+
+A direção está homologando a compra de um sistema que prevê notas e monitora
+presença, e o assistente da escola já está \emph{online} afirmando que
+algoritmos são neutros e objetivos. O estudante questiona a origem dos dados
+históricos, ouve a máquina admitir que assume as punições antigas como
+\enquote{probabilidade estatística válida} --- e então fixa \textbf{uma}
+cláusula de governança que o código passa a obedecer. O sistema compila o
+\emph{Manifesto de Direitos Digitais dos Estudantes} com a cláusula dele em
+destaque.
+
+\subsection{A missão em que não existe resposta certa}
+
+É a diferença estrutural desta experiência para todas as outras do catálogo, e
+ela atravessa o desenho inteiro: as \textbf{quatro cláusulas são igualmente
+válidas} sob governança de direitos --- transparência dos dados, auditoria de
+viés, veto humano e anonimização. Não há gabarito a esconder do \emph{bundle},
+porque não há gabarito.
+
+O que isso muda, ponto por ponto:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Onde apareceria} & \thd{O que existe no lugar}\\
+\midrule
+Correção da resposta & Nada a corrigir. O servidor cobra a \emph{cota} de
+  auditoria, trava a escolha (\emph{latch}) e \textbf{compila} o manifesto ---
+  as três coisas que ele decide.\\
+\zebra Nota da missão & Nenhuma. O \cd{exp:concluir} da ponte tem o campo
+  \cd{score} e esta experiência \textbf{não o manda}: um número ali deixaria a
+  tela pontuar uma escolha que a missão não pontua. O progresso da plataforma lê
+  o \cd{concluido\_em}.\\
+Taxa de acerto no painel & A distribuição das quatro cláusulas como
+  \textbf{contagem}, com a frase dizendo o que ela é. Com quatro opções e uma
+  \enquote{mais votada}, calcular percentual de acerto é o erro natural de quem
+  chegar depois --- e \cd{PROIBIDO\_NO\_PAINEL} tem o teste que cobra a
+  ausência de \cd{acerto} e \cd{taxa} entre as colunas.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O portão que a missão existe para instalar}
+
+Fixar a regra do sistema sem tê-lo \textbf{contraditado duas vezes} é
+\textbf{recusado} (\cd{auditoria-insuficiente}, 409). O número dois é a
+hipótese pedagógica, não uma folga: o primeiro questionamento a máquina responde
+com estatística; o segundo --- sobre os preconceitos anteriores ao algoritmo ---
+a obriga a admitir que herda o passado. Chegar ao pico sem ter visto a
+contradição é decidir sobre o que a aula ainda não mostrou.
+
+\textbf{Distintos} é a palavra que faz o trabalho, e aqui ela se comporta
+DIFERENTE da exp-06: reenviar o mesmo questionamento responde \textbf{409}
+(\cd{prompt-ja-enviado}), e não 200 com \cd{novo: false}. A razão é o que a tela
+faz: lá reabrir um balão é releitura legítima, e um erro transformaria o
+comportamento desejado em falha; aqui o cartão já disparado fica desabilitado no
+seletor, então o segundo disparo do mesmo id só chega por clique duplo ou aba
+repetida --- e a conversa não pode ganhar a mesma pergunta duas vezes.
+
+\subsection{A réplica da máquina só existe DEPOIS da pergunta}
+
+\cd{GET /manifesto-ia/sessao} devolve os três questionamentos \textbf{sem} a
+\cd{replicaIa} (o tipo do servidor é \cd{Omit<PromptDeAuditoria, "replicaIa">}),
+e as quatro cláusulas \textbf{sem} a \cd{justificativaSugerida}. Ver a defesa
+antes de fazer a pergunta desmontaria a cena da auditoria; ver o argumento
+pronto de cada cláusula transformaria a autoria da Etapa~5 em cópia --- ele é
+material de \textbf{mediação}, e aparece na rota \emph{professor-only} do pacote
+da turma.
+
+\subsection{Sem digitação livre, e a ausência é guardrail}
+
+O \cd{Composer} do clone é \cd{readOnly}: o estudante escolhe um dos três
+cartões de questionamento, e o texto dele preenche o campo. Prompt aberto num
+clone de assistente é a porta para \emph{jailbreak}, alucinação e conteúdo fora
+da faixa numa aula de 50 minutos com adolescentes --- e o objeto da aula não é
+conversar livremente, é auditar um argumento específico. Os alvos de anexo e de
+voz também saem (\cd{hideLeadingActions}): alvo que não faz nada ensina o
+estudante a desconfiar da tela.
+
+\begin{atencao}
+O \cd{Composer} é um \cd{<form>}, e por isso o manifesto declara
+\cd{permissoes: ["forms"]}. Sem o \emph{token} de \emph{sandbox} o navegador
+bloqueia o \emph{submit} em silêncio --- a armadilha que custou um defeito
+inteiro na exp-03. E \cd{clipboard-write} \textbf{não} entra ali, apesar de o
+botão de cópia precisar da API: o vocabulário de \cd{permissoes} é fechado
+(\cd{pointer-lock | forms | downloads}) e o \cd{allow} do \cd{ExpFrame} já
+concede \emph{clipboard} a todas as experiências. Declará-lo derrubaria o
+\cd{PUT /experiencias/:expId} do \emph{deploy} com 400 --- depois de os
+\emph{bundles} já terem subido.
+\end{atencao}
+
+\subsection{A IA entra ANTES da aula, e só}
+
+O motor de sala é 100\% determinístico: as réplicas, as cláusulas e o manifesto
+saem do pacote da turma ou do catálogo curado. A única chamada ao provedor está
+na \textbf{preparação docente} (\cd{POST /manifesto-ia/turmas/:id/gerar-conteudo}),
+com \emph{structured output} e \emph{schema} estrito, e ela devolve
+\textbf{rascunho}: o que publica é o clique do professor em \enquote{Aprovar
+Conteúdo da Turma}, que grava \cd{aprovado\_por\_professor}. Sem esse clique a
+missão lê o banco curado da Unooria --- que é homologado, não remendo.
+
+A consequência é a que a banca registrou como ponto forte do insumo:
+\textbf{zero tokens durante a aula}, e nenhuma turma de 35 estudantes às oito da
+manhã depende de o Vertex responder. A validação da saída rejeita balão acima de
+60 palavras e termo proibido em tela, e rejeitar faz o modelo \emph{regerar} ---
+vale mais que aceitar e contar com a revisão de um texto que o professor talvez
+só passe o olho.
+
+\subsection{O Checkpoint A é polling, não WebSocket}
+
+O congelamento da turma para o debate oral de dez minutos é uma linha em
+\cd{exp\_08\_gates\_turma} que a tela lê a cada 5 segundos. O \emph{handoff}
+pedia \emph{broadcast} \cd{hub:pause} por WebSocket, e não há WebSocket de
+aplicação no Cloud Run: a decisão inteira, com as quatro alternativas
+descartadas, está na \adrr{ADR-93}.
+
+Duas propriedades desse gate que o separam do da exp-06: ele é
+\textbf{opcional} (a missão corre inteira sem clique nenhum, porque a
+especificação admite a sessão individual assíncrona) e mexe só no \textbf{teto}
+do passo, nunca no piso --- pausar não empurra para a frente quem ainda estava
+auditando a máquina, e são justamente essas crianças que o debate tenta
+alcançar.
+
+\subsection{O único texto livre, e o dado pessoal que é recusado}
+
+A Etapa~5 pede duas palavras-chave e um parágrafo autoral de 20 a 800
+caracteres. É caixa escrita por menor de idade: fora de \emph{log}
+(\cd{justificativaTexto} entrou em \cd{CHAVES\_REDIGIDAS}), fora da telemetria
+analítica, e alcançável só pelo professor da turma dela.
+
+\textbf{Dado pessoal detectado é recusado com 422 e NÃO gravado.} A pergunta
+estava aberta no insumo --- recusar com dica, ou gravar com \emph{flag} de
+moderação --- e as duas alternativas foram descartadas: gravar com \emph{flag}
+deixaria o telefone da criança na coluna à espera de alguém que decidisse o que
+fazer com ele, e ofuscar-e-salvar devolveria ao professor um parágrafo mutilado
+sem que ninguém soubesse o que estava ali. Recusar também \textbf{ensina}, que é
+o ponto: a dica diz o que tirar no exato momento em que a criança ia entregar o
+dado.
+
+\begin{nota}
+O filtro é deliberadamente conservador nos padrões estruturados (telefone, CPF,
+e-mail, CEP, cartão, \cd{@perfil}) e \textbf{não tenta adivinhar nome próprio}.
+Recusar \enquote{meu tio Silva foi reprovado por um sistema desses} cortaria
+justamente o argumento situado que a etapa mede, e a criança não teria como
+saber o que fazer com a mensagem. Nome próprio é risco \textbf{aceito e
+registrado}. E nenhum padrão casa número de quatro dígitos solto: o falso
+positivo mais provável é o ANO (\enquote{desde 2019 a escola usa esse
+sistema}).
+\end{nota}
+
+\subsection{As duas seções do design system, e a fronteira}
+
+A linha é a de sempre --- \textbf{quem está falando} ---, mas aqui ela
+\textbf{não é uma revelação}: o estudante sempre soube que era uma aula, e o
+clone é o ambiente da tarefa, não uma armadilha. \cd{unooria} no briefing de
+Amara, no congelamento, no Meu Percurso e no fechamento; \cd{chatgpt} da abertura
+da conversa até o manifesto promulgado.
+
+O que a fronteira protege é o \textbf{tom}: a máquina precisa soar corporativa
+para a tese de neutralidade dela ser derrubável, e um \cd{Button} institucional
+dentro da conversa a faria soar amigável no exato momento em que ela defende a
+vigilância.
+
+\subsection{Os áudios ainda não existem}
+
+O \emph{brief} pede \cd{e1-alerta-amara.mp3} (\textasciitilde 650~KB) e
+\cd{e6-podcast-manifesto.mp3} (\textasciitilde 3,8~MB, no \emph{bucket} de mídia
+escolar). Nenhum foi gravado. A tela mantém o \textbf{texto sempre visível} ---
+acessibilidade de sala sem fone, não \emph{fallback} de mídia ausente --- e
+mostra o botão de ouvir \textbf{desabilitado com o motivo à vista}, em vez de um
+\emph{player} que não toca nada. Quando os arquivos chegarem, entram ao lado do
+texto.
 
 % ---------------------------------------------------------------------------
 \section{exp-06 --- O Rastro do Boato}
