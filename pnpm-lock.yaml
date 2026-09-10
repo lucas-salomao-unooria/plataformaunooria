@@ -242,9 +242,6 @@ importers:
 
   apps/experiencias/exp-01-instanooria:
     dependencies:
-      '@edu/conteudo-exp-01':
-        specifier: workspace:*
-        version: link:../../../packages/conteudo-exp-01
       '@edu/sdk':
         specifier: workspace:*
         version: link:../../../packages/sdk
@@ -305,7 +302,7 @@ importers:
         version: link:../../../packages/ui
       '@unooria/design-system':
         specifier: ^0.1.19
-        version: 0.1.19(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.1.19(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
         version: 19.2.8
@@ -581,9 +578,6 @@ importers:
 
   apps/hub:
     dependencies:
-      '@edu/conteudo-exp-01':
-        specifier: workspace:*
-        version: link:../../packages/conteudo-exp-01
       '@edu/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -684,15 +678,6 @@ importers:
       vitest:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  packages/conteudo-exp-01:
-    devDependencies:
-      typescript:
-        specifier: ^5.6.0
-        version: 5.9.3
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
 
   packages/sdk:
     dependencies:
@@ -7530,7 +7515,7 @@ snapshots:
       detect-libc: 2.1.2
       is-glob: 4.0.3
       node-addon-api: 7.1.1
-      picomatch: 4.0.4
+      picomatch: 4.0.7
     optionalDependencies:
       '@parcel/watcher-android-arm64': 2.6.0
       '@parcel/watcher-darwin-arm64': 2.6.0
@@ -7968,20 +7953,6 @@ snapshots:
   '@unooria/design-system@0.1.19(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@opentelemetry/api'
-      - '@playwright/test'
-      - '@types/node'
-      - babel-plugin-macros
-      - babel-plugin-react-compiler
-      - sass
-
-  '@unooria/design-system@0.1.19(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
     transitivePeerDependencies:
@@ -10412,32 +10383,6 @@ snapshots:
       '@next/swc-win32-x64-msvc': 16.3.3
       '@opentelemetry/api': 1.9.1
       sharp: 0.35.3(@types/node@22.20.1)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - babel-plugin-macros
-
-  next@16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
-    dependencies:
-      '@next/env': 16.3.3
-      '@swc/helpers': 0.5.23
-      baseline-browser-mapping: 2.11.19
-      caniuse-lite: 1.0.30001810
-      postcss: 8.5.23
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.2.8)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.3.3
-      '@next/swc-darwin-x64': 16.3.3
-      '@next/swc-linux-arm64-gnu': 16.3.3
-      '@next/swc-linux-arm64-musl': 16.3.3
-      '@next/swc-linux-x64-gnu': 16.3.3
-      '@next/swc-linux-x64-musl': 16.3.3
-      '@next/swc-win32-arm64-msvc': 16.3.3
-      '@next/swc-win32-x64-msvc': 16.3.3
-      '@opentelemetry/api': 1.9.1
-      sharp: 0.35.3(@types/node@26.5.0)
     transitivePeerDependencies:
       - '@babel/core'
       - '@types/node'

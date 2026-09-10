@@ -270,3 +270,27 @@ export const ZerarTurmaSchema = z.object({
   sucesso: z.literal(true),
   registrosApagados: z.number().int().min(0),
 });
+
+/**
+ * O material do guia da aula: as três intervenções COM gabarito e o ciclo na
+ * ordem certa.
+ *
+ * Professor-only, e por dois motivos que não são o mesmo: `desfecho` é o
+ * gabarito da decisão (a tela do estudante recebe o desfecho DELE, depois de
+ * escolher, nunca a tabela inteira), e `ciclo` aqui vai ordenado — para a
+ * criança ele chega embaralhado, porque montar a ordem É a tarefa.
+ */
+export const MaterialDoProfessorSchema = z.object({
+  intervencoes: z.array(
+    z.object({
+      id: z.string(),
+      texto: z.string(),
+      /** GABARITO. */
+      desfecho: z.enum(["interrompeu", "amplificou", "silenciou"]),
+      reacao: z.string(),
+      interrompe: z.boolean(),
+    }),
+  ),
+  /** Na ORDEM CORRETA — o contrário de `blocosPublicos()`. */
+  ciclo: z.array(z.object({ id: z.string(), texto: z.string() })),
+});

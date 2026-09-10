@@ -423,10 +423,19 @@ missão que o professor roda ter a informação no mesmo lugar da primeira.
 
 **O que tem fonte viva NÃO vira texto no guia.** Entra por bloco vivo: um
 `ReactNode` que a página da missão ancora ao fim de uma seção
-(`blocos={{ debate: <... /> }}`). Já são três — os momentos e a revelação do
-Instanooria, os cartões da Vila por turma, a tabela dos vieses do unooGPT (rota
-`GET /unoogpt/professor/fontes`). O custo de copiar qualquer um deles é o
-professor projetar para a turma uma mensagem que ninguém recebeu.
+(`blocos={{ debate: <... /> }}`). **Toda missão publicada tem o seu**: os
+momentos e a revelação do Instanooria, os cartões da Vila por turma, a tabela
+dos vieses do unooGPT, os vídeos do UnooTube com o gabarito, as intervenções do
+Rastro do Boato e as respostas do Eco no Grupo — as quatro últimas por rota
+`professor-only` da api (`/<slug>/professor/...`). O custo de copiar qualquer um
+deles é o professor projetar para a turma uma mensagem que ninguém recebeu.
+
+**Missão nova cujo conteúdo a turma LÊ na tela nasce com bloco vivo, não com a
+descrição dele.** A prosa diverge e ninguém percebe: a do UnooTube dizia
+"metade… a outra metade" quando a divisão real do catálogo é 11 e 10, e nenhum
+título de vídeo aparecia — o professor não tinha como reconhecer o vídeo que a
+criança de 9 anos citava pelo apelido do canal. Número que o guia mostra é
+CALCULADO do catálogo (`resumo`, `pontuacao`), nunca digitado.
 
 **Os links para o guia saem de `lib/rotas-da-missao.ts`**, nunca de
 `` `${rota}/guia` `` montado na tela: é ele que sabe se a missão tem guia, e a

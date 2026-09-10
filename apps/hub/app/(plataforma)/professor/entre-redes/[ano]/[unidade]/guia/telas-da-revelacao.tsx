@@ -4,15 +4,15 @@ import {
   TELA_DA_LINGUAGEM,
   TELA_FINAL,
   telaDoLadoSemeado,
-} from "@edu/conteudo-exp-01";
+} from "@/lib/insta/copy-da-revelacao";
 
 /**
  * As telas da revelação do Instanooria — BLOCO VIVO do guia.
  *
- * Renderizadas direto de `@edu/conteudo-exp-01`, a fonte única que a
- * experiência do estudante também lê. Se fosse texto solto no guia, divergiria
- * na primeira revisão de copy e o professor leria antes da aula um argumento
- * que a turma não vai ver.
+ * Renderizadas de `lib/insta/copy-da-revelacao.ts` — que é uma CÓPIA do
+ * arquivo homônimo da exp-01, não a mesma fonte. As duas têm de ser
+ * idênticas, e nada no build cobra isso: o cabeçalho dos dois arquivos é o
+ * único aviso. Mexeu na copy, mexa nas duas.
  */
 
 /** Como o guia nomeia cada origem de lado ao mostrar a tela do lado semeado. */

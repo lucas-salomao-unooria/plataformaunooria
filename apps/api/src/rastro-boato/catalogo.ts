@@ -383,3 +383,48 @@ export const PODCAST = {
     },
   ],
 } as const;
+
+// ───────────────────────────────────────────── o catálogo para o guia da aula
+
+/** Uma das três intervenções, como o PROFESSOR a lê — com o gabarito. */
+export interface IntervencaoParaOProfessor {
+  id: IdDeOpcao;
+  /** O texto exato que a criança lê no cartão. */
+  texto: string;
+  /** GABARITO: o que a rede faz com essa escolha. */
+  desfecho: Desfecho;
+  /** A fala do grupo logo depois do envio — é ela que a turma comenta. */
+  reacao: string;
+  /** `true` na única que quebra a corrente. */
+  interrompe: boolean;
+}
+
+/**
+ * O material do guia da aula: as três intervenções COM desfecho e reação, e o
+ * ciclo na ordem certa.
+ *
+ * O guia escrevia isto em prosa — "a opção que respondeu no grupo em vez de
+ * sair dele" — e o professor conduzia o debate sem nunca ter lido as três
+ * frases. Descrever a opção em vez de mostrá-la também esconde o que mais
+ * importa na missão: **A e C têm a MESMA reação**, e é isso que sustenta a
+ * lição de que a inação alimenta a mesma curva. Em paráfrase, essa coincidência
+ * simplesmente não aparece.
+ *
+ * `ciclo` vai na ORDEM CORRETA, ao contrário de `blocosPublicos()`: quem monta
+ * a sequência é a turma, e quem confere se ela acertou é o professor.
+ */
+export function materialDoProfessor(): {
+  intervencoes: IntervencaoParaOProfessor[];
+  ciclo: Bloco[];
+} {
+  return {
+    intervencoes: OPCOES.map(({ id, texto, desfecho, reacao }) => ({
+      id,
+      texto,
+      desfecho,
+      reacao,
+      interrompe: id === OPCAO_QUE_INTERROMPE,
+    })),
+    ciclo: BLOCOS.map(({ id, texto }) => ({ id, texto })),
+  };
+}

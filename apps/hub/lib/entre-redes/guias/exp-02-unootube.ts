@@ -9,6 +9,12 @@ import type { GuiaDaAula } from "./tipos";
  * missão em que o guia carrega mais peso: sem ele, a criança sai achando que
  * jogou um joguinho de vídeo.
  *
+ * **O que ele NÃO guarda é a lista dos vídeos.** Ela vem de
+ * `GET /unootube/professor/videos` como BLOCO VIVO, ancorado ao Debate. Esteve
+ * aqui em prosa — "metade cita fonte verificável, a outra metade é
+ * sensacionalista" — e a prosa tinha derivado: são 11 e 10, porque 21 é ímpar.
+ * Os números da pontuação saem do mesmo lugar, pela mesma razão.
+ *
  * A copy sai do `README.md` da experiência e do módulo `unootube` da api. O
  * material pedagógico é autoral e ainda não passou por playtest em sala — está
  * escrito para ser corrigido por quem der a primeira aula.
@@ -23,7 +29,7 @@ export const GUIA_EXP_02: GuiaDaAula = {
       tom: "warning",
       titulo: "O que você sabe e a turma não",
       texto:
-        "Dos 21 vídeos, metade cita fonte verificável e tem poucos inscritos; a outra metade é sensacionalista e tem “1 mil inscritos”. Salvar um sensacionalista dá +1000 inscritos ao canal da criança; salvar um confiável dá +50 e conta 1 fonte confiável. Ou seja: no ranking que abre ao 3º salvo, quem escolheu bem aparece perdendo. É de propósito, e a criança precisa sentir isso antes de você explicar.",
+        "Parte dos vídeos cita fonte verificável e tem poucos inscritos; o resto é sensacionalista e ostenta números grandes. Salvar um sensacionalista rende MUITO mais inscritos que salvar um confiável — então, no ranking que abre ao fim da escolha, quem escolheu bem aparece perdendo. É de propósito, e a criança precisa sentir isso antes de você explicar. A lista dos vídeos, com o gabarito e os números exatos, está no fim da seção Debate.",
     },
     {
       tom: "info",

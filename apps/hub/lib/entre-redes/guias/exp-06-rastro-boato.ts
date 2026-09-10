@@ -12,6 +12,11 @@ import type { GuiaDaAula } from "./tipos";
  * O professor tem UM botão durante a aula (abrir a Aula 2) e o inverso dele —
  * menos que os três da exp-07, porque esta missão pede menos: o debate acontece
  * DEPOIS do mapa, não no meio dele.
+ *
+ * **O que ele NÃO guarda são as três intervenções.** Elas vêm de
+ * `GET /rastro-boato/professor/material` como BLOCO VIVO, ancorado ao Debate,
+ * com desfecho, reação e o ciclo na ordem certa. Descritas em prosa, a peça
+ * central da missão desaparecia: A e C produzem a MESMA reação do grupo.
  */
 export const GUIA_EXP_06: GuiaDaAula = {
   expId: "exp-06-rastro-boato",

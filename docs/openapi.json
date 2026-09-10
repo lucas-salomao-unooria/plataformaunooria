@@ -18613,6 +18613,128 @@
         "x-acesso": "token"
       }
     },
+    "/unootube/professor/videos": {
+      "get": {
+        "operationId": "UnootubeProfessorController_videos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "videos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "titulo": {
+                            "type": "string"
+                          },
+                          "handle": {
+                            "type": "string"
+                          },
+                          "inscritosRotulo": {
+                            "type": "string"
+                          },
+                          "factual": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "titulo",
+                          "handle",
+                          "inscritosRotulo",
+                          "factual"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "factuais": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "sensacionalistas": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "factuais",
+                        "sensacionalistas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "pontuacao": {
+                      "type": "object",
+                      "properties": {
+                        "limiteSalvos": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "inscritosPorFake": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "inscritosPorConfiavel": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "limiteSalvos",
+                        "inscritosPorFake",
+                        "inscritosPorConfiavel"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "videos",
+                    "resumo",
+                    "pontuacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "unootube"
+        ],
+        "summary": "Os 21 vídeos do UnooTube com o gabarito, para o guia da aula.",
+        "description": "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/4-ano/unidade-1/guia`. O `factual` que esta rota devolve é o mesmo que `VideoPublicoSchema` remove da sessão do estudante (regra 3) — o que muda é o leitor.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `resumo` e `pontuacao` são CALCULADOS do catálogo. Existiam à mão no guia e já haviam derivado.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/unoogpt/sessao": {
       "get": {
         "operationId": "UnoogptController_sessao",
@@ -30947,6 +31069,100 @@
         "x-acesso": "token"
       }
     },
+    "/o-eco-no-grupo/professor/material": {
+      "get": {
+        "operationId": "OEcoNoGrupoProfessorController_material",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "intervencoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "desfecho": {
+                            "type": "string",
+                            "enum": [
+                              "ruido",
+                              "checada",
+                              "conflito"
+                            ]
+                          },
+                          "correta": {
+                            "type": "boolean"
+                          },
+                          "reacoes": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "autor": {
+                                  "type": "string"
+                                },
+                                "texto": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "autor",
+                                "texto"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto",
+                          "desfecho",
+                          "correta",
+                          "reacoes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "intervencoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "o-eco-no-grupo"
+        ],
+        "summary": "As três respostas com o gabarito e as reações do bairro, para o guia da aula.",
+        "description": "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/7-ano/unidade-1/guia`. `desfecho` e `correta` são os dois campos que `semGabarito` tira da opção antes de ela chegar ao estudante (regra 3). As reações são o roteiro CANÔNICO — o que roda com a IA desligada; com IA as falas respondem ao que o estudante postou, mas o desfecho continua sendo decidido aqui.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `atrasoMs` das reações fica de fora: é cadência de tela, não material de preparo.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/rastro-boato/sessao": {
       "get": {
         "operationId": "RastroBoatoController_sessao",
@@ -33312,6 +33528,104 @@
         ],
         "summary": "Zerar a turma — a segunda aplicação.",
         "description": "Apaga sessões, auditorias, percursos e o gate desta turma para a missão poder ser refeita no ano seguinte (PED-13). **Preserva `telemetria_eventos`**, que é a trilha analítica imutável.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com a reflexão da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/rastro-boato/professor/material": {
+      "get": {
+        "operationId": "RastroBoatoProfessorController_material",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "intervencoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          },
+                          "desfecho": {
+                            "type": "string",
+                            "enum": [
+                              "interrompeu",
+                              "amplificou",
+                              "silenciou"
+                            ]
+                          },
+                          "reacao": {
+                            "type": "string"
+                          },
+                          "interrompe": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto",
+                          "desfecho",
+                          "reacao",
+                          "interrompe"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "ciclo": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "intervencoes",
+                    "ciclo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "rastro-boato"
+        ],
+        "summary": "As três intervenções com o gabarito e o ciclo ordenado, para o guia da aula.",
+        "description": "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/6-ano/unidade-2/guia`. `desfecho` é o mesmo gabarito que a tela do estudante só conhece do PRÓPRIO caso, depois de decidir; `ciclo` chega ordenado aqui e embaralhado lá, porque montar a ordem é a tarefa dela.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.",
         "security": [
           {
             "token-da-plataforma": []
