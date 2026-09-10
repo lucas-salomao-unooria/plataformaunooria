@@ -36,7 +36,7 @@ export const INSIGHTS_SEMENTE: Insight[] = [
     icone: "psychology",
   },
   {
-    categoria: "Prompt",
+    categoria: "Como pedir",
     titulo: "Contexto vale mais que capricho na redação",
     texto:
       "Informar ano, tempo de aula, recursos disponíveis e o que a turma já viu muda mais o resultado do que floreios no pedido. Seja específico sobre as restrições reais da sua escola.",
@@ -46,12 +46,12 @@ export const INSIGHTS_SEMENTE: Insight[] = [
     categoria: "Equidade",
     titulo: "Nem todo estudante chega com o mesmo acesso",
     texto:
-      "Antes de propor uma atividade que dependa de IA em casa, verifique quem tem dispositivo e internet. Prever uma alternativa offline evita transformar a proposta em mais um filtro de desigualdade.",
+      "Antes de propor uma atividade que dependa de IA em casa, verifique quem tem dispositivo e internet. Prever uma alternativa sem internet evita transformar a proposta em mais um filtro de desigualdade.",
     icone: "diversity_3",
   },
   {
     categoria: "Dados",
-    titulo: "Dado de estudante não entra no prompt",
+    titulo: "Dado de estudante não entra no pedido à IA",
     texto:
       "Nome, matrícula, laudo, endereço e foto de estudante não devem ser colados em ferramentas de IA. Descreva a situação de forma anônima — “estudante do 6º ano com dificuldade em interpretação” já basta para obter uma boa sugestão.",
     icone: "shield_lock",

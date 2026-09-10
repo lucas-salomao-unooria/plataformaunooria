@@ -5,7 +5,7 @@ import type { GuiaDaAula } from "./tipos";
  *
  * A única missão da trilha em DUAS aulas, e a única em que a professora aperta
  * botões durante a aula: abrir a Aula 2, congelar para o debate e liberar o
- * "Meu percurso". Sem o primeiro, a turma inteira fica no card de pausa — é o
+ * "Meu percurso". Sem o primeiro, a turma inteira fica na tela de pausa — é o
  * suporte nº 1 desta missão.
  *
  * O risco pedagógico específico daqui não é a criança não entender: é ela
@@ -28,7 +28,7 @@ export const GUIA_EXP_07: GuiaDaAula = {
       tom: "warning",
       titulo: "Esta missão tem duas aulas, e é você que abre a segunda",
       texto:
-        "No fim da Aula 1 a turma trava num card de pausa com o progresso salvo. Os três momentos — abrir a Aula 2, congelar para o debate e liberar o Meu percurso — ficam em Resultados da turma. Sem o primeiro, ninguém avança.",
+        "No fim da Aula 1 a turma trava numa tela de pausa com o progresso salvo. Os três momentos — abrir a Aula 2, congelar para o debate e liberar o Meu percurso — ficam em Resultados da turma. Sem o primeiro, ninguém avança.",
     },
     {
       tom: "info",
@@ -118,7 +118,7 @@ export const GUIA_EXP_07: GuiaDaAula = {
       {
         titulo: "Guarde 13 minutos da Aula 2 para o debate.",
         texto:
-          "Os três cards de sistematização explicam os conceitos, mas nomear não é entender. É no debate que a turma liga o enquadramento parcial ao print que ela mesma quase repassou.",
+          "Os três quadros de sistematização explicam os conceitos, mas nomear não é entender. É no debate que a turma liga o enquadramento parcial ao print que ela mesma quase repassou.",
       },
     ],
     naoDiga: [
@@ -154,7 +154,7 @@ export const GUIA_EXP_07: GuiaDaAula = {
       {
         tempo: "Aula 1 · 25–30",
         momento:
-          "A tela trava no card de pausa, com o progresso salvo. A Aula 1 acaba aqui, de propósito.",
+          "A missão para na tela de pausa, com o progresso salvo. A Aula 1 acaba aqui, de propósito.",
         professor:
           "Não abra a Aula 2 hoje, mesmo que sobre tempo. A pausa é o que faz a turma chegar junta à decisão — e a noite entre as aulas é onde a criança pensa no assunto sozinha.",
       },
@@ -180,7 +180,7 @@ export const GUIA_EXP_07: GuiaDaAula = {
       {
         tempo: "Aula 2 · 12–15",
         momento:
-          "Os três cards de sistematização: enquadramento parcial, contexto omitido e rótulo de encaminhamento.",
+          "Os três quadros de sistematização: enquadramento parcial, contexto omitido e rótulo de encaminhamento.",
         professor:
           "Congele as telas quando a maioria tiver respondido. A partir daqui a conversa é da sala, não do aparelho.",
         botao: "Congelar para o debate",
@@ -419,7 +419,7 @@ export const GUIA_EXP_07: GuiaDaAula = {
 
   duvidas: [
     {
-      pergunta: "A turma travou num card de pausa e não avança.",
+      pergunta: "A turma travou numa tela de pausa e não avança.",
       resposta:
         "É o fim da Aula 1, e o desbloqueio é seu: “Abrir a Aula 2”, em Resultados da turma. É o suporte nº 1 desta missão.",
     },

@@ -424,7 +424,7 @@ export function TurmaDetalhe({
   const colunas = useMemo<TableColumn<Matriculado>[]>(
     () => [
       { key: "nome", title: "Nome" },
-      { key: "usuario", title: "Login" },
+      { key: "usuario", title: "Usuário" },
       { key: "matricula", title: "Matrícula", render: (_, linha) => linha.matricula ?? "—" },
       {
         key: "situacao",
@@ -629,7 +629,7 @@ export function TurmaDetalhe({
           <div className="flex flex-col gap-3">
             <SearchInput
               id="buscar-pessoa"
-              label="Buscar por nome, login ou matrícula"
+              label="Buscar por nome, usuário ou matrícula"
               value={busca}
               onChange={(e) => void procurar(e.target.value)}
             />
@@ -761,7 +761,7 @@ export function TurmaDetalhe({
                 Baixa um arquivo assinado com a trajetória, as participações e os resultados desta
                 criança. É um direito do titular (LGPD art. 18, V) — a escola emite a pedido da
                 família, e o arquivo é legível por quem receber, mesmo numa rede que não use esta
-                plataforma. O check-in de bem-estar nunca entra: é dado de saúde, e a posse é do
+                plataforma. O acompanhamento de bem-estar nunca entra: é dado de saúde, e a posse é do
                 professor.
               </p>
               <div className="mt-3">

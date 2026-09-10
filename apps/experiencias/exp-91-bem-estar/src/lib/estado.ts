@@ -48,11 +48,11 @@ export function mensagemDoStatus(status: number | null, padrao = "Não deu para 
     case 400:
       return "Responda às três frases antes de enviar.";
     case 409:
-      return "O check-in de hoje já foi registrado. Atualizamos a tela.";
+      return "A resposta de hoje já foi registrada. Atualizamos a tela.";
     case 429:
       return "Muitas tentativas seguidas. Espere um instante e tente de novo.";
     case 404:
-      return "Esse check-in não está mais disponível. Recarregue a página.";
+      return "Essa resposta não está mais disponível. Recarregue a página.";
     default:
       return padrao;
   }

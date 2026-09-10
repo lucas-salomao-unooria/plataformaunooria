@@ -203,7 +203,7 @@ export function GestaoUsuarios({
   const colunas = useMemo<TableColumn<LinhaDeUsuario>[]>(
     () => [
       { key: "nome", title: "Nome" },
-      { key: "usuario", title: "Login" },
+      { key: "usuario", title: "Usuário" },
       {
         key: "cpf",
         title: "CPF",
@@ -327,7 +327,7 @@ export function GestaoUsuarios({
             <SearchInput
               id="busca"
               label="Buscar"
-              placeholder="Nome, CPF, login ou matrícula"
+              placeholder="Nome, CPF, usuário ou matrícula"
               value={busca}
               onChange={(e) => {
                 setPagina(1);

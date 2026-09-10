@@ -188,6 +188,49 @@ o que ela faz **e o que ela deixou de fazer** quando o pacote passou a cobrir a
 parte dele. A `.tabela-rolavel` é o exemplo: ela já foi a rolagem inteira, hoje
 é só a altura e o cabeçalho preso, porque a rolagem virou `ScrollBar`.
 
+## O idioma da interface — três zonas, e a fronteira é o que erra (ADR-91)
+
+**Todo texto que uma pessoa lê é pt-BR** — rótulo, botão, título, `aria-label`,
+`placeholder`, mensagem de erro, guia do professor, página legal. Mas "traduzir
+tudo" faz a plataforma melhorar e as experiências piorarem, porque há três zonas
+com regras opostas:
+
+| Zona | Regra |
+|---|---|
+| **Plataforma** — hub, exp-9x do professor | pt-BR, sem exceção. É a Unooria falando com professor, gestor e estudante, e numa rede pública não se pode pressupor repertório de inglês |
+| **Superfície disfarçada** — dentro do clone | o nome que o app REAL usa em português. `Shorts`, `Stories`, `Feed`, `Playlists`, `Ranking` FICAM: traduzi-los quebra o disfarce que a experiência está medindo |
+| **O professor falando SOBRE o clone** — guia da aula, catálogo, painéis | depende de o termo nomear um objeto na tela ou ser jargão vazado — abaixo |
+
+**A fronteira, que é onde se erra:** o termo **nomeia um objeto que está na
+tela** (`feed`, `Shorts`, `ranking`)? Fica — traduzir faria o guia dizer uma
+palavra e a tela mostrar outra, e o professor perde o referente no meio da aula.
+É **jargão de implementação que vazou** (`card de pausa`, `o modal`, `num
+popup`)? Traduz: não nomeia nada que a criança veja, descreve a mecânica da
+interface, e o professor não tem por que saber o que é um "modal". As traduções
+já feitas: **tela** de pausa, **quadro** de sistematização, **janela** (para
+`modal` e `popup`), **usuário** (para `login`), **dica** (para `insight`).
+
+**Identificador NÃO é texto.** Ficam como estão, e mudá-los é outra tarefa com
+outro custo: chave de objeto, rota, nome de coluna, verbo/objeto de telemetria,
+nome de glifo do Material Symbols (`checklist`, `psychology`, `schedule`),
+variante de componente (`warning`, `success`, `danger`), severidade de log,
+método HTTP. O rótulo `abertura: 'A missão'` mudou; o `'abertura'` do banco não.
+
+**Anglicismo que FICA por decisão pedagógica, não por esquecimento** — a lista é
+curta e cada item tem razão registrada na ADR-91: `fake news` (consagrado no
+Brasil, e a instrução "não anuncie que é uma aula sobre fake news" perde o
+sentido traduzida — o que o professor não deve dizer é a expressão que a criança
+reconhece), `cyberbullying` (BNCC EF07CO09 e Lei 13.185/2015), `print` (é a
+palavra da criança, e a exp-06/07 gira em torno desse objeto), `chat`, `on-line`
+(citação verbatim da BNCC). **Não "corrija" nenhum deles.**
+
+**Rótulo visível em dois lugares muda nos DOIS.** `ROTULO_PASSO` da exp-03 é
+espelho declarado de `apps/api/src/unoogpt/regras/passos.ts`; mudar um só faz a
+trilha do estudante divergir do que a api devolve. E **a suíte e2e casa por
+texto exato** (`getByText`, `getByRole({name})`): trocar copy sem atualizar a
+suíte a derruba com timeout, e o timeout reporta o seletor que faltou, nunca a
+causa.
+
 ## Arquivos de instrução de agente — o padrão
 
 Três arquivos, três papéis que não se misturam:
@@ -366,10 +409,10 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **91**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
+  (a PRÓXIMA é a **92**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
-      histórico append-only que a rede também lê e a 90 pela suíte da api em um
-      worker; a 65 foi ocupada pelo guia da aula, a 72 pela
+      histórico append-only que a rede também lê, a 90 pela suíte da api em um
+      worker e a **91 pelas três zonas do idioma da interface**; a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -523,6 +566,12 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
   (ADR-77). A regra inteira, com as duas exceções declaradas, está em
   `apps/hub/AGENTS.md`; **área nova precisa de layout novo, e layout novo
   desenha a trilha** — sem isso a área nasce sem trilha, como `/admin` nasceu.
+- **Não escrever texto de interface em inglês, e não traduzir o nome do clone.**
+  A regra das três zonas está em "O idioma da interface" (ADR-91): `Shorts` e
+  `feed` ficam porque é assim que o app real se chama em português; `card de
+  pausa`, `modal` e `popup` saem porque são jargão nosso vazado para o guia do
+  professor. `fake news`, `cyberbullying` e `print` ficam por decisão registrada
+  — não "corrija" nenhum deles.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
@@ -546,7 +595,7 @@ casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**90 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**91 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

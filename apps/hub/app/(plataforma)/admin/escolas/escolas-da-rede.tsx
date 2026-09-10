@@ -634,7 +634,7 @@ export function EscolasDaRede() {
             <SearchInput
               id="busca-pessoa-lote"
               label="Buscar professor ou gestor"
-              placeholder="Nome, login, matrícula ou CPF"
+              placeholder="Nome, usuário, matrícula ou CPF"
               value={buscaPessoa}
               onChange={(e) => {
                 setBuscaPessoa(e.target.value);

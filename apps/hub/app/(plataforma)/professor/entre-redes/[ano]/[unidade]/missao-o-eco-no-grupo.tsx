@@ -13,7 +13,7 @@ import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
  *
  * A única missão da trilha em DUAS aulas, e por isso a ficha abre com o aviso
  * em vez de deixá-lo no fim de uma lista de preparo: sem a professora abrir a
- * Aula 2, a turma inteira fica num card de pausa. "Não avança" é o suporte que
+ * Aula 2, a turma inteira fica numa tela de pausa. "Não avança" é o suporte que
  * esta faixa existe para evitar.
  *
  * Molde: `missao-unoogpt.tsx`. `FeedbackAlert` e não `AlertBox`: o segundo é
@@ -59,7 +59,7 @@ export function MissaoOEcoNoGrupo({
       <FeedbackAlert
         type="warning"
         title="Esta missão tem duas aulas, e é você que abre a segunda"
-        description="No fim da Aula 1 a turma trava num card de pausa com o progresso salvo. Os três momentos — abrir a Aula 2, congelar para o debate e liberar o Meu percurso — ficam em Resultados da turma."
+        description="No fim da Aula 1 a turma trava numa tela de pausa com o progresso salvo. Os três momentos — abrir a Aula 2, congelar para o debate e liberar o Meu percurso — ficam em Resultados da turma."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">

@@ -58,7 +58,7 @@ await suite(
       mostra: "A missão explicada para quem vai conduzir: dois atos, a pausa entre as aulas e o preparo.",
       prova:
         "A professora precisa saber ANTES que a Aula 2 é ela quem abre. Uma turma inteira parada " +
-        "num card de pausa é o pior jeito de descobrir isso.",
+        "numa tela de pausa é o pior jeito de descobrir isso.",
     });
 
     await prof.click("text=Abrir a aula e os resultados");

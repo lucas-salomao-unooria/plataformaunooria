@@ -196,12 +196,31 @@ no fallback — feio, mas não quebra.
 playlists, canal, o toast e o diálogo de limite falam de dentro da ficção
 (`ds-unootube`); ranking, os dois diálogos da missão, "Concluir missão" e a TELA
 DE ENTRADA falam pela escola (`ds`). A entrada é a única ANTES do feed e não é
-exceção: no briefing quem fala é a escola, e não há disfarce a proteger porque a
-criança ainda não viu um Short. O disfarce começa no toque em "Começar missão".
+exceção: na tela de entrada quem fala é a escola, e não há disfarce a proteger
+porque a criança ainda não viu um Short. O disfarce começa no toque em "Começar missão".
 
 **Tema**: a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
 `theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
 o estudante escolhe escuro no feed e o ranking volta branco.
+
+**O idioma do disfarce: o nome do app real, em português.** `Shorts`, `Stories`,
+`Feed`, `Playlists`, `Ranking` FICAM dentro do clone — são os nomes que o
+YouTube e o Instagram usam nas versões brasileiras deles, e traduzi-los quebra a
+fidelidade que a experiência está medindo. **Fora do clone, tudo é pt-BR** (a
+regra completa, com as três zonas e a lista de anglicismos que ficam por
+decisão, está em "O idioma da interface" no `AGENTS.md` da raiz — ADR-91).
+
+Duas armadilhas de experiência, das quais uma já cobrou:
+
+- **Rótulo visível que tem espelho na api muda nos DOIS.** `ROTULO_PASSO` de
+  `exp-03/src/lib/textos.ts` espelha `apps/api/src/unoogpt/regras/passos.ts`.
+  Quando o `Briefing` virou `A missão`, mudar só a experiência faria a trilha do
+  estudante divergir do que a api devolve — e o typecheck não vê.
+- **A versão vive em TRÊS lugares, não dois.** Mudou texto visível? Sobe
+  `public/experiencia.json`, `package.json` **e** o `EXP_VERSION` do código
+  (`src/lib/versao.ts`, ou `src/lib/tipos.ts` na exp-03). O `versao.test.ts` de
+  cada experiência cobra os três — foi ele que pegou o esquecimento na troca de
+  terminologia, e a ADR-84 conta o que o terceiro lugar esquecido custou.
 
 Detalhes de mecânica (CSS, frames, compensações) em `packages/ui/AGENTS.md`.
 O específico de cada experiência está no `AGENTS.md` da pasta dela.

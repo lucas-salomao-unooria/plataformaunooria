@@ -467,7 +467,7 @@ const SECOES: SecaoLegal[] = [
           <li>no feed do Instanooria, criando os perfis, as publicações e as reações dos personagens;</li>
           <li>no UnooGPT, na conversa com o personagem que responde às suas perguntas;</li>
           <li>em O Eco no Grupo, na conversa com a personagem e na devolutiva sobre suas escolhas;</li>
-          <li>nas ferramentas do professor: no rascunho do plano de aula e no texto do check-in de bem-estar.</li>
+          <li>nas ferramentas do professor: no rascunho do plano de aula e no texto do acompanhamento de bem-estar.</li>
         </ul>
         <h3>O que você precisa saber sobre ela</h3>
         <p>
@@ -497,7 +497,7 @@ const SECOES: SecaoLegal[] = [
           qualquer finalidade fora do contrato com a rede de ensino.
         </p>
         <p>
-          Onde a IA passa perto de saúde ou de sentimento — como no check-in de bem-estar do professor —
+          Onde a IA passa perto de saúde ou de sentimento — como no acompanhamento de bem-estar do professor —
           o uso é voluntário, o resultado não vai para a gestão e o titular pode apagar tudo o que
           respondeu. Detalhes na <a href="/privacidade">Política de Privacidade</a>.
         </p>

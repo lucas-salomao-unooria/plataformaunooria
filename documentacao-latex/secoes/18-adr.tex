@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{90 decisões}, numeradas até ADR-90, \textbf{sem lacunas}. A ADR-65
+São \textbf{91 decisões}, numeradas até ADR-91, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -131,6 +131,7 @@ que a cercam.
 \adrr{ADR-88} & O painel da Unooria é só do \cd{admin} & 2026-09-09 & Aceita\\
 \zebra \adrr{ADR-89} & Histórico do painel é tabela append-only, e a rede lê o dela & 2026-09-10 & Aceita\\
 \adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6607,3 +6608,125 @@ banco.
 \textbf{Gatilho de reavaliação.} A suíte passar de ~60\,s. Aí o banco por
 \emph{worker} passa a valer o preço, e o comentário do \arq{jest.config.cjs}
 está escrito para ser lido nesse dia.
+
+\section{ADR-91 --- O idioma da interface tem TRÊS zonas, e o clone não se traduz}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A plataforma atende redes públicas, e o texto dela é lido por
+professor, gestor e criança do 1º ano EF ao 3º EM. Anglicismo em rótulo não é
+questão de gosto: é pressuposto de repertório que numa rede pública não se pode
+fazer. A varredura de 2026-09-10 achou \textbf{427 trechos de texto realmente
+visível} com termo em inglês, em 112 arquivos --- e o achado que motivou a
+tarefa foi o mais claro de todos: a trilha da exp-03 dizia
+\cd{Briefing} ao lado de \cd{Orientação}, \cd{Investigação} e \cd{Resultado}, ou
+seja, a palavra estava fora do padrão dos próprios vizinhos.
+
+\textbf{Mas uma regra única --- \enquote{traduzir tudo} --- faz a plataforma
+melhorar e as experiências piorarem.} Dentro do clone, a fidelidade ao aplicativo
+real é o INSTRUMENTO de medida: é ela que faz a criança agir como age fora da
+aula, e é isso que a missão afere. \cd{Shorts}, \cd{Stories}, \cd{Feed} e
+\cd{Playlists} são os nomes que o YouTube e o Instagram usam nas versões
+brasileiras deles; traduzi-los quebraria o disfarce que a experiência existe para
+manter.
+
+\textbf{Decisão.} Três zonas, com regras distintas:
+
+\begin{enumerate}
+  \item \textbf{Plataforma} (hub, experiências do professor): pt-BR sem exceção.
+  \item \textbf{Superfície disfarçada} (dentro do clone): o nome que o aplicativo
+    real usa em português. Não se traduz.
+  \item \textbf{O professor falando SOBRE o clone} (guia da aula, catálogo,
+    painéis): o critério é se o termo \textbf{nomeia um objeto que está na tela}
+    --- \cd{feed}, \cd{Shorts}, \cd{ranking} ficam, porque traduzir faria o guia
+    dizer uma palavra e a tela mostrar outra, e o professor perderia o referente
+    no meio da aula --- ou se é \textbf{jargão de implementação vazado} ---
+    \cd{card de pausa}, \cd{o modal}, \cd{num popup} saem, porque não nomeiam
+    nada que a criança veja e existe palavra portuguesa exata.
+\end{enumerate}
+
+As trocas aplicadas: \cd{Briefing} \seta{} \cd{A missão}; \cd{card de pausa}
+\seta{} \cd{tela de pausa}; \cd{cards de sistematização} \seta{} \cd{quadros de
+sistematização}; \cd{modal} e \cd{popup} \seta{} \cd{janela}; \cd{Login}
+\seta{} \cd{Usuário} (o campo interno já se chamava \cd{usuario} --- o rótulo
+divergia do próprio dado); \cd{Insight} \seta{} \cd{Dica}; \cd{Prompt}
+\seta{} \cd{Como pedir}; \cd{check-in} \seta{} \cd{acompanhamento} para o produto
+e \cd{Responder hoje} / \cd{Você já respondeu hoje} para o ato.
+
+\textbf{Identificador não é texto}, e mudá-lo é outra tarefa com outro custo:
+chave de objeto, rota, coluna, verbo/objeto de telemetria, nome de glifo do
+Material Symbols (\cd{checklist}, \cd{psychology}, \cd{schedule}), variante de
+componente (\cd{warning}, \cd{success}), severidade de log e método HTTP ficam.
+O rótulo \cd{abertura: \textquotesingle{}A missão\textquotesingle{}} mudou; o
+\cd{\textquotesingle{}abertura\textquotesingle{}} do banco não.
+
+\textbf{Uma reformulação além da troca de termo}, no produto de bem-estar:
+\enquote{Faltam 3 check-ins para o retrato da semana} virou \enquote{Faltam 3
+dias}. Não é sinônimo --- troca contagem de eventos técnicos por contagem de
+dias, que é como a pessoa efetivamente pensa, e é mais exato, porque é um por
+dia.
+
+\textbf{Anglicismos que FICAM, por decisão e não por esquecimento.} Esta lista é
+curta de propósito, e está registrada para que ninguém a \enquote{corrija}:
+
+\begin{itemize}
+  \item \cd{fake news} --- consagrado no Brasil, inclusive em política pública e
+    imprensa. E nos guias da exp-06 e da exp-07 a frase é \enquote{não anuncie
+    que é uma aula sobre fake news}: o que o professor NÃO deve dizer é
+    exatamente a expressão que a criança reconhece, então traduzir mudaria o
+    sentido da instrução.
+  \item \cd{cyberbullying} --- é o termo da BNCC (EF07CO09) e da Lei
+    13.185/2015. Alterar desalinha do documento oficial que o próprio guia cita.
+  \item \cd{print} --- é a palavra que a criança brasileira usa, e a missão da
+    exp-06 e da exp-07 gira em torno desse objeto. \enquote{Captura de tela}
+    tornaria o guia irreconhecível diante da fala da sala.
+  \item \cd{chat} e \cd{on-line} --- o primeiro incorporado ao português e nome
+    da coisa no WhatsApp; o segundo é citação verbatim de habilidade da BNCC.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Traduzir tudo, clone incluído.} Descartada porque destrói o
+    instrumento: um \enquote{Vídeos curtos} onde o aplicativo real diz
+    \enquote{Shorts} avisa a criança de que aquilo é software de escola, e a
+    missão passa a medir a reação dela à escola em vez do comportamento que
+    interessa.
+  \item \emph{Não mexer em nada, tratando anglicismo como português técnico
+    consagrado.} Descartada porque a maior parte dos achados não era jargão
+    consagrado --- era jargão NOSSO, de implementação, vazado para o texto do
+    professor. \enquote{Modal} não é palavra que professor de rede pública use.
+  \item \emph{Traduzir também \cd{post} \seta{} \cd{publicação}} (72
+    ocorrências). É o único caso em que traduzir AUMENTARIA a fidelidade --- o
+    Instagram em português diz \enquote{Publicações}, não \enquote{posts} ---, e
+    ficou de fora desta ADR por volume, não por mérito: são 72 trechos, a maioria
+    em texto denso de guia. Fica registrado como próximo passo.
+  \item \emph{Um arquivo de i18n com chaves.} Descartada: a plataforma é
+    monolíngue por contrato (rede pública brasileira), e uma camada de
+    internacionalização para um idioma só custa indireção em toda tela sem
+    resolver nada do problema real, que era terminologia, não tradução.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o rótulo passou a concordar com o dado em
+\cd{Login} \seta{} \cd{Usuário} --- a coluna dizia uma coisa e a chave
+\cd{usuario} outra. \emph{Bom}: a doutrina das três zonas está no
+\arq{AGENTS.md} da raiz e no de \arq{apps/experiencias}, com a lista de exceções,
+o que impede a próxima \enquote{correção} de reintroduzir jargão ou apagar
+\cd{Shorts}. \emph{Ruim}: \textbf{a suíte e2e casa por texto exato}
+(\cd{getByText}, \cd{getByRole(\{name\})}) --- trocar copy sem atualizar a suíte
+a derruba com \emph{timeout}, e o \emph{timeout} reporta o seletor que faltou,
+nunca a causa; foram 36 linhas mexidas em \arq{professor/04-bem-estar.mjs} só por
+isso. \emph{Ruim}: \cd{ROTULO\_PASSO} da exp-03 é espelho declarado de
+\arq{apps/api/src/unoogpt/regras/passos.ts}, e mudar um lado só faria a trilha do
+estudante divergir do que a api devolve, sem o \emph{typecheck} ver nada.
+
+\textbf{O que a execução pegou e o levantamento não previra}: a versão da
+experiência vive em TRÊS lugares, não dois --- manifesto, \arq{package.json} e o
+\cd{EXP\_VERSION} do código. O \arq{versao.test.ts} de cada experiência cobra os
+três, e foi ele que pegou o esquecimento; a ADR-84 conta o que o terceiro lugar
+esquecido custou (erro de cliente agrupado numa versão que nunca existiu, e
+\arq{mapear-stack.mjs} procurando \emph{sourcemap} em caminho vazio).
+
+\textbf{Gatilho de reavaliação.} A plataforma precisar de um segundo idioma
+(rede indígena com material bilíngue, ou contrato fora do Brasil). Aí a decisão
+de não ter camada de i18n volta à mesa, e o custo dela deixa de ser indireção
+gratuita.
