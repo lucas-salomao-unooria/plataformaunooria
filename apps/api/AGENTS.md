@@ -1273,7 +1273,12 @@ por teto compila e sai errado em 30 telas ao mesmo tempo, no meio de uma aula.
 - **A trava do retorno é a REVELAÇÃO, não o congelamento** (`jaViuARevelacao`,
   `explicabilidade` em diante). Quem já sabe que o feed era enviesado não pode
   ser medido por ele de novo — o motivo é o instrumento. Quem não viu volta ao
-  feed.
+  feed. **Ela lê a fase ATUAL, e a fase é regressiva**: voltando passo a passo,
+  a run desce até `conclusao` antes de a turma chegar à investigação, e daquele
+  degrau a proteção não se aplica — o pulo direto para na resposta, os cinco
+  cliques terminam no feed. Limitação deliberada (fechar exige persistir o
+  marco, que a fase não guarda), fixada nos dois sentidos em
+  `tests/insta-etapas.spec.ts`. Não "conserte" um dos dois sem ler a ADR-92.
 - **Voltar não é `reset`.** `POST /runs/:id/reset` apaga eventos, posts salvos,
   comentários, conclusão e reflexão; `moverEtapa` não apaga nada disso. Corrigir
   um clique do adulto destruindo a produção de trinta crianças é desproporcional

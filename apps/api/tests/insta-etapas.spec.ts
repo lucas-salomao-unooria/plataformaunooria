@@ -111,6 +111,42 @@ describe("faseAoVoltar — a etapa é TETO", () => {
   });
 });
 
+describe("a proteção da revelação lê a FASE ATUAL, não o histórico", () => {
+  /**
+   * LIMITAÇÃO CONHECIDA E DELIBERADA (ADR-92).
+   *
+   * `jaViuARevelacao` olha onde a run ESTÁ, e a fase é regressiva: voltando um
+   * momento de cada vez, a run desce até `conclusao` antes de a turma chegar à
+   * investigação — e daquele degrau a proteção já não se aplica. O resultado
+   * depende do CAMINHO:
+   *
+   * - pulo direto (`explicabilidade` → `investigacao`): para na resposta;
+   * - passo a passo (5 cliques, cada um com aviso na tela): volta ao feed.
+   *
+   * Fechar isso exige PERSISTIR o marco ("esta criança já viu a revelação"),
+   * porque a fase não o guarda. É coluna nova para um caminho de cinco cliques
+   * deliberados — sofisticação sem demanda medida. Este teste existe para que a
+   * escolha seja vista, e não descoberta por acidente.
+   */
+  it("pulo direto de explicabilidade para investigação: para na resposta", () => {
+    expect(faseAoVoltar("explicabilidade", "investigacao")).toBe("conclusao");
+  });
+
+  it("passo a passo do fim até a investigação: termina no feed", () => {
+    const caminho: EtapaDaTurma[] = [
+      "reflexao",
+      "perdidos",
+      "explicabilidade",
+      "debate",
+      "conclusao",
+      "investigacao",
+    ];
+    let fase: FaseDaRun = "fim";
+    for (const etapa of caminho) fase = faseAoVoltar(fase, etapa);
+    expect(fase).toBe("feed");
+  });
+});
+
 describe("jaViuARevelacao", () => {
   it("é verdade da explicabilidade em diante", () => {
     expect(jaViuARevelacao("debate")).toBe(false);

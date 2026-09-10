@@ -6828,7 +6828,21 @@ duas suítes: \arq{tests/insta-etapas.spec.ts} (as regras puras, 19 casos) e
 \seta{} reabrir \seta{} recomputar contra o Postgres). A segunda existe porque o
 defeito vivia no PAR: cada metade, lida sozinha, estava certa.
 
-\textbf{Gatilho de reavaliação.} Alguém pedir o histórico das passagens --- o
-relatório de como a turma estava antes de o professor voltar. Aí o dossiê deixa
-de ser sobrescrito e passa a ser versionado por passagem, e a decisão de
-descartar volta à mesa.
+\textbf{Limitação conhecida, e deliberada}: \cd{jaViuARevelacao} lê a fase
+ATUAL da \emph{run}, não o histórico dela --- e a fase é regressiva. Voltando um
+momento de cada vez, a \emph{run} desce até \cd{conclusao} antes de a turma
+chegar à investigação, e daquele degrau a proteção já não se aplica. O resultado
+depende do CAMINHO: o pulo direto de \cd{explicabilidade} para
+\cd{investigacao} para na resposta; os cinco cliques passo a passo, cada um com
+aviso na tela, terminam no \emph{feed}. Fechar isso exigiria PERSISTIR o marco
+(\enquote{esta criança já viu a revelação}), porque a fase não o guarda ---
+coluna nova, migração e retrocompatibilidade para um caminho de cinco cliques
+deliberados. Ficou de fora por proporção, não por descuido, e os dois casos
+estão fixados em teste para que a escolha seja vista e não descoberta.
+
+\textbf{Gatilho de reavaliação.} Dois. (1) Alguém pedir o histórico das
+passagens --- o relatório de como a turma estava antes de o professor voltar; aí
+o dossiê deixa de ser sobrescrito e passa a ser versionado por passagem. (2) O
+caminho passo a passo até a investigação aparecer em uso real com turma que já
+viu a revelação; aí o marco vira coluna e a proteção passa a valer pelos dois
+caminhos.
