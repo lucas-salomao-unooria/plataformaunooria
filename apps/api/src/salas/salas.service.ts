@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Prisma } from "@prisma/client";
+import { disponibilidadeDoCatalogo, exigirRecursoDisponivel } from "../comum/disponibilidade";
 import { turmasDoEstudante } from "../comum/liberacao";
 import { professorLeciona } from "../comum/turmas-do-professor";
 import { PrismaService } from "../prisma/prisma.service";
@@ -32,11 +33,36 @@ export class SalasService {
    * a partir dos `public/experiencia.json`. Um catálogo embutido aqui seria a
    * segunda fonte de verdade sobre o que existe, divergindo no primeiro publish.
    */
-  private async catalogo(tx: Prisma.TransactionClient): Promise<ExperienciaDoCatalogo[]> {
-    return tx.experiencia.findMany({
-      select: { expId: true, nome: true, series: true, unidade: true, publico: true },
+  private async catalogo(
+    tx: Prisma.TransactionClient,
+    escolaId: string,
+  ): Promise<ExperienciaDoCatalogo[]> {
+    const todas = await tx.experiencia.findMany({
+      select: {
+        expId: true,
+        nome: true,
+        series: true,
+        unidade: true,
+        publico: true,
+        produto: true,
+      },
       orderBy: { expId: "asc" },
     });
+
+    /**
+     * A INDISPONÍVEL SAI DA GRADE — não fica com cadeado (ADR-87).
+     *
+     * Cadeado quer dizer "o professor ainda não abriu", e é um convite: existe
+     * alguém que pode abri-lo. Recurso que a rede não tem não abre para
+     * ninguém, e um cadeado que ninguém consegue destrancar é pior que ausência
+     * — ele produz o pedido de suporte que a tela deveria ter evitado.
+     *
+     * Isto é UX. A porta é `exigirMissaoLiberada`, no servidor, que desde a
+     * ADR-87 checa as duas coisas: o bundle é público e `/exp/:expId` é
+     * endereço adivinhável.
+     */
+    const efetivo = await disponibilidadeDoCatalogo(tx, escolaId, todas);
+    return todas.filter((e) => efetivo.get(e.expId)?.ligado !== false);
   }
 
   private async estadosDaTurma(
@@ -80,7 +106,7 @@ export class SalasService {
           },
           orderBy: [{ tipo: "asc" }, { nome: "asc" }],
         }),
-        this.catalogo(tx),
+        this.catalogo(tx, escolaId),
       ]);
 
       const salas = await Promise.all(
@@ -138,7 +164,7 @@ export class SalasService {
       }
 
       const [catalogo, estados, liberacoes] = await Promise.all([
-        this.catalogo(tx),
+        this.catalogo(tx, escolaId),
         this.estadosDaTurma(tx, escolaId, turmaId),
         tx.liberacao.findMany({
           where: { escolaId, turmaId },
@@ -230,6 +256,13 @@ export class SalasService {
           mensagem: "Esta é uma ferramenta do professor, não uma missão de turma.",
         });
       }
+
+      /* E o recurso tem de existir NESTA REDE (ADR-87). Sem isto, a missão sai
+         da grade mas o `POST` continua aceitando: a tela é filtro, e o
+         endereço da rota não é segredo. O 403 sai com
+         `codigo: recurso-indisponivel`, distinto do de liberação, porque é o
+         código que diz em qual dos dois eixos procurar. */
+      await exigirRecursoDisponivel(tx, escolaId, expId);
 
       const campos = camposDaTransicao(estado, agora);
       const liberacao = await tx.liberacao.upsert({

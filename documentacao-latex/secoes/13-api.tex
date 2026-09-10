@@ -106,6 +106,8 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\rota{/perfis-recebidos}\desc{gestor, admin}};
   \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (sal) at (14.4,-3.0)
     {\rota{/salas/*}\desc{a SALA: grade e liberação}};
+  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (rec) at (16.3,-3.0)
+    {\rota{/recursos/*}\desc{o interruptor da REDE}};
 
   \node[camadalbl, anchor=west] at (0.3,-4.0) {exp-01 --- Instanooria};
   \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
@@ -278,7 +280,9 @@ Três rotas, e elas são a camada entre \cd{turmas} e \cd{experiencias}
 \end{itemize}
 
 \begin{regra}
-\textbf{Esconder o \emph{card} no hub é UX; a porta é do servidor.} Toda entrada
+\textbf{Esconder o \emph{card} no hub é UX; a porta é do servidor.} E desde a
+\adrr{ADR-87} essa porta tem DUAS trancas em série: antes de perguntar se o
+professor liberou, ela pergunta se o recurso EXISTE nesta rede. Toda entrada
 de estudante em experiência --- \rota{POST /runs}, \rota{GET /runs/boot} e o funil
 de sessão do UnooTube, do unooGPT, da Vila e do Eco --- chama
 \cd{exigirMissao\-Liberada} e responde \textbf{403} \cd{missao-nao-liberada} sem
@@ -575,6 +579,31 @@ nenhuma. A cota do par público é por IP, somada a um teto global de instância
     (\arq{otlp-proxy.service.ts}). O navegador nunca fala com o Cloud Trace.
     Sem \env{GCP\_PROJECT\_ID} o lote é contado e descartado.
 \end{itemize}
+
+\subsection{\rota{/recursos/*} --- o interruptor da rede}
+
+UMA rota de leitura, e ela é a base dos \emph{cards} do hub e do 404 das rotas de
+produto:
+
+\begin{itemize}
+  \item \rota{GET /recursos/efetivos} (\textbf{qualquer autenticado}) --- resolve
+    a cadeia escola \seta{} regional \seta{} contrato, aplica o TETO do produto e
+    devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE os quatro,
+    ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista
+    completa de cor --- e o hub passaria a ter a segunda fonte do vocabulário.
+\end{itemize}
+
+Três decisões dentro dessa rota. O escopo sai do \textbf{token} (o claim
+\cd{escola\_id}) e nunca de \emph{query}, para não haver \enquote{me diga o que
+está ligado na escola do vizinho}. Perfil de contrato não tem escola no token,
+então a resposta é a do CONTRATO --- a cadeia fica vazia e só as linhas de
+escopo-contrato valem. E ela \textbf{não devolve \cd{motivo} nem quem
+desligou}: isso é conversa entre a Unooria e a rede, e num \emph{payload} que
+qualquer autenticado lê viraria a explicação errada na tela errada.
+
+\textbf{A ESCRITA não está aqui.} Ela é o painel da Unooria, restrito ao
+\cd{admin} (\adrr{ADR-88}), e chega com a área \cd{/unooria/*}. Hoje quem liga e
+desliga é SQL.
 
 \section{Sanidade e prontidão}
 

@@ -81,6 +81,26 @@ hub serve).
    `/exp/:expId` é endereço adivinhável. Experiência nova declara o próprio
    `EXP_ID` e chama a guarda no FUNIL das rotas de estudante (o `estudanteDaEscola`
    / `garantirSessao` dela), nunca só na rota de leitura.
+8. **Todo produto e toda experiência nascem com interruptor no painel da
+   Unooria** (ADR-87). O eixo se chama **disponibilidade** e responde "este
+   recurso existe NESTA REDE?" — não confunda com a regra 7, que responde "está
+   aberta NESTA TURMA?". Disponibilidade é PRÉ-CONDIÇÃO da liberação, nunca o
+   contrário, e confundir as duas é caro: produto desligado tem o sintoma de um
+   bug de enturmamento.
+   - Tabela `disponibilidades`: uma linha por (recurso, escopo). Recurso é
+     `produto:<slug>` ou `experiencia:<expId>`; escopo é escola, regional ou o
+     contrato inteiro (`escola_id` NULO). **Ausência de linha = LIGADO** — o
+     contrário de `liberacoes`, porque este interruptor é mecanismo de EXCEÇÃO
+     (não contratado, ou quebrado no deploy) e não de liberação.
+   - **O escopo mais específico ganha** (escola → regional → contrato) e **o
+     produto é um TETO**: desligado no escopo que vale, nada dentro dele liga.
+   - **Experiência nova entra no painel declarando `produto` no
+     `public/experiencia.json`** — a composição produto → experiências é
+     DERIVADA do manifesto, e `apps/api/tests/manifestos-declaram-produto.spec.ts`
+     cobra o campo. Nunca uma lista mantida à mão: é a que ninguém atualiza.
+   - Quem opera é SÓ o `admin`, na área `/unooria` (ADR-88) — a primeira
+     capacidade que `admin` tem e `gestor_contrato` não, e a exceção à igualdade
+     que a ADR-80 afirma.
 
 
 ### Token e emissor (decisão da migração, 2026-08)
@@ -346,7 +366,8 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **86**: a 65 foi ocupada pelo guia da aula, a 72 pela
+  (a PRÓXIMA é a **89**: a 86 foi ocupada pelo guia da aula, e a 87 e a 88
+      pelo eixo da disponibilidade e pelo painel da Unooria; a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -469,7 +490,7 @@ pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~437p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~527p). Atualizar SEMPRE
 ```
 
 
@@ -515,13 +536,13 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~437 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~527 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**82 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**88 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
@@ -574,6 +595,12 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 - [ ] Input externo validado com Zod
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client
+- [ ] **Produto ou experiência nova: aparece no painel da Unooria e DESLIGA**
+      (regra 8). Experiência declara `produto` no `public/experiencia.json`;
+      superfície nova de produto entra debaixo do layout que chama
+      `exigirProdutoLigado`, e rota de api nova da ferramenta herda o
+      `DisponibilidadeGuard` da classe. O modo de falhar é MUDO: tudo funciona
+      e o produto deixa de poder ser desligado
 - [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
 - [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).

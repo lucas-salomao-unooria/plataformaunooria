@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 27 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 45 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
@@ -35,6 +35,8 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{liberacoes} & Tenant & \textbf{A missão dentro da turma} (\adrr{ADR-69})\\
 \cd{users} & Tenant & Pessoas e papéis\\
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
+\cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
+\zebra \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
 \cd{progresso} & Tenant & Progresso genérico da SDK\\
 \zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
@@ -350,19 +352,135 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
   unidade. É o que ORDENA a grade da sala; sem ela a ordem cai no \cd{exp\_id},
   que é numeração de experiência e não do ano letivo (o 7º ano viria depois do
   8º).\\
-\zebra \cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
+\zebra \cd{produto} & \cd{TEXT?} & \cd{entre-redes} $|$ \cd{plano-de-aula} $|$
+  \cd{plano-de-ensino} $|$ \cd{bem-estar}, com \emph{CHECK} espelhando
+  \cd{PRODUTOS} do código. Declarado no \cd{public/\allowbreak{}experiencia.json}.
+  É o que põe a experiência no painel da Unooria e o que lhe dá o TETO do
+  produto (\adrr{ADR-87}); \cd{NULL} \implica{} ela responde só pelo próprio
+  interruptor. Quem cobra o campo é um teste que varre os manifestos, não o Zod
+  da rota.\\
+\cd{capabilities} & \cd{TEXT[]} & \cd{telemetria}, \cd{progresso}, \cd{ia},
   \cd{avaliacao}, \cd{tempo-real}.\\
-\cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
+\zebra \cd{viewport} & \cd{JSONB?} & \cd{\{largura, altura\}} em pixels lógicos.
   Presente \implica{} o hub embeda dentro do \cd{DispositivoFrame}.\\
-\zebra \cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
+\cd{publico} & \cd{TEXT} & \cd{estudante} (default) $|$ \cd{professor}, com
   \emph{CHECK}. \cd{professor} \implica{} \rota{/exp/*} responde 404.\\
-\cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
+\zebra \cd{permissoes} & \cd{TEXT[]} & Permissões de \cd{iframe}; hoje só
   \cd{pointer-lock}, com \emph{CHECK} do vocabulário.
   \textbf{\cd{fullscreen} NÃO entra aqui}: o \cd{allow} do \emph{frame} já o
   delega a todas, e campo de manifesto que não muda nada é pior que campo
   nenhum.\\
 \bottomrule
 \end{tabularx}
+
+\subsection{\cd{experiencias\_versoes} (catálogo)}
+
+Uma linha por VERSÃO publicada de cada experiência --- a lista que o painel da
+Unooria oferece no \emph{rollback} (\adrr{ADR-87}). PK composta
+\cd{(exp\_id, versao)}; índice \cd{(exp\_id, publicada\_em DESC)}.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{exp\_id} & \cd{TEXT} PK$_1$ & \textbf{Sem FK} para \cd{experiencias}, pela
+  razão de \cd{liberacoes} e \cd{progresso}: aquele catálogo é escrito pelo CI no
+  \emph{publish}, e numa \emph{stack} nova ele está vazio.\\
+\zebra \pk{versao} & \cd{TEXT} PK$_2$ & \emph{Semver} \cd{x.y.z}.\\
+\cd{manifesto} & \cd{JSONB} & \textbf{O manifesto INTEIRO daquela versão}, e não
+  só o número. É o que torna o \emph{rollback} fiel: hoje
+  \cd{publicar-manifesto.mjs --versao x.y.z} manda o número antigo com o
+  \cd{experiencia.json} ATUAL do repositório, então voltar a versão não voltava
+  \cd{viewport} nem \cd{permissoes} --- a exp-70 reabria sem
+  \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava, sem
+  erro em lugar nenhum.\\
+\zebra \cd{publicada\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\cd{publicada\_por} & \cd{TEXT} & \textbf{Texto, sem FK} --- ao contrário de
+  \cd{disponibilidades.definido\_por}. Quem publica quase sempre é o CI, cujo
+  \emph{token} tem \cd{sub = 'ci-deploy'}: não é UUID e não existe em \cd{users}.
+  Uma FK aqui mataria o \emph{job} \cd{ativar-exps} DEPOIS de os \emph{bundles}
+  já terem subido.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{disponibilidades} (catálogo)}
+
+\textbf{O interruptor da rede} (\adrr{ADR-87}): uma linha responde \enquote{este
+recurso existe neste escopo?}. Terceiro eixo, ao lado do catálogo (que forma a
+experiência tem) e da liberação por turma (\adrr{ADR-69}, se o professor a
+abriu) --- e \textbf{pré-condição} dos dois outros, nunca o contrário.
+
+\textbf{Ausência de linha = LIGADO}, o contrário de \cd{liberacoes}. Lá a
+ausência é o bloqueio; aqui é o mundo normal, porque este interruptor é mecanismo
+de EXCEÇÃO --- não contratado, ou quebrado no \emph{deploy}. Nascer desligado
+exigiria uma linha por recurso a cada contrato provisionado, e toda experiência
+nova ficaria invisível até alguém ligá-la.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \cd{recurso\_id} & \cd{TEXT} & \cd{produto:<slug>} ou
+  \cd{experiencia:<expId>}, com \emph{CHECK} do padrão espelhando
+  \cd{RECURSO\_ID\_RE} do código. Texto com prefixo, e \textbf{não} duas colunas
+  (\cd{tipo} + \cd{alvo}): a chave da decisão é o par (recurso, escopo), e com
+  duas o único abaixo teria três campos com um deles nulável --- de novo o
+  desenho em que o PostgreSQL não garante unicidade.\\
+\cd{escola\_id} & \cd{TEXT?} & \textbf{\cd{NULL} = o CONTRATO inteiro.}
+  Preenchido, é uma linha de \cd{escolas} --- que pode ser \cd{tipo=escola} OU
+  \cd{tipo=regional}, porque a hierarquia já vive em \cd{escolas.pai\_id}. FK
+  com \cd{ON DELETE CASCADE}: escola apagada leva as exceções dela.\\
+\zebra \cd{ligado} & \cd{BOOLEAN} & \\
+\cd{versao\_fixa} & \cd{TEXT?} & Fixa a versão NESTE escopo; \cd{NULL} = segue
+  \cd{experiencias.versao\_ativa}. \emph{CHECK} exige \cd{recurso\_id LIKE
+  'experiencia:\%'} --- produto não tem \emph{bundle}, logo não tem versão, e
+  campo que não muda nada é pior que campo nenhum (a razão de \cd{fullscreen}
+  ter ficado fora de \cd{permissoes}).\\
+\zebra \cd{motivo} & \cd{TEXT?} & \textbf{Obrigatório ao desligar} (\emph{CHECK}
+  \cd{ligado OR motivo IS NOT NULL}). \enquote{Desligado sem motivo} é o estado
+  que ninguém sabe desfazer: meses depois não há como saber se é decisão
+  comercial ou incidente não revertido. No banco e não só no Zod porque um
+  acerto em SQL no meio de um incidente é o caso real.\\
+\cd{definido\_por} & \cd{UUID} & FK para \cd{users}, \cd{ON DELETE RESTRICT},
+  pela razão de \cd{liberacoes.liberada\_por}: \enquote{quem desligou o jogo da
+  rede?} é a pergunta que se faz às 8h da manhã, e ela some do painel se o
+  vínculo virar texto solto.\\
+\zebra \cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & A linha é
+  SOBRESCRITA a cada mudança: o histórico de quem mexeu vive no registro
+  estruturado, e a resposta em TELA é o gatilho de reavaliação da \adrr{ADR-87}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Objeto} & \thd{Nota}\\
+\midrule
+\cd{disponibilidades\_}\B{}\cd{recurso\_id\_escola\_id\_key} & Único
+  \cd{(recurso\_id, escola\_id)}. \textbf{Não basta}, e é a armadilha central
+  desta tabela: no PostgreSQL \cd{NULL} é distinto de \cd{NULL} num índice
+  único, então \cd{('produto:bem-estar', NULL)} cabe quantas vezes se quiser.\\
+\zebra \cd{disponibilidades\_}\B{}\cd{recurso\_no\_contrato\_unica} &
+  \textbf{Único PARCIAL} \cd{(recurso\_id) WHERE escola\_id IS NULL} --- é ele
+  que fecha o furo acima. Sem ele, dois cliques em \enquote{desligar para a
+  rede} criam duas linhas e o resolvedor passa a depender da ordem do
+  \cd{findMany}: sem erro, sem sintoma, até as duas discordarem. Mesmo desenho
+  de \cd{escolas\_regional\_padrao\_unica}, e é ele que dá idempotência de graça
+  ao \cd{upsert} do painel.\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Sem RLS}, nas duas tabelas, e a exceção é declarada --- toda tabela nova
+deste repositório entra na política da regra inviolável nº 1. Duas razões: não
+são dado de estudante (é configuração comercial e operacional da rede, do mesmo
+naipe de \cd{experiencias}, que também está fora); e a linha de escopo-contrato
+tem \cd{escola\_id} nulo POR DESENHO, de modo que
+\cd{escola\_id = current\_setting('app.escola\_id')} esconderia justamente a
+resposta que a tabela existe para dar. É o motivo de \cd{users}, \cd{turmas} e
+\cd{lotacoes} ficarem fora: são lidas ANTES de haver escola no contexto. A
+ausência é provada por teste, para que a próxima migração não a
+\enquote{conserte}: ligar RLS ali faz TODO produto parecer ligado, porque a
+linha que o desligava fica invisível --- o sintoma oposto a um erro de permissão.
 
 \subsection{\cd{progresso}}
 

@@ -2,6 +2,7 @@
   "id": "exp-06-rastro-boato",
   "nome": "O Rastro do Boato: Por que a Mentira Voa?",
   "versao": "0.1.1",
+  "produto": "entre-redes",
   "series": ["6EF"],
   "unidade": 2,
   "capabilities": ["telemetria", "progresso", "avaliacao"],

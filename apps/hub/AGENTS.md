@@ -408,6 +408,38 @@ segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
 jeito, mas aí o aparelho carregaria e quebraria por dentro, com o token já
 assinado.
 
+## O interruptor da rede na porta do produto (ADR-87, 2026-09-10)
+
+**A guarda de produto é do LAYOUT da área, nunca da página** — mesma doutrina da
+trilha (ADR-77) e pelo mesmo motivo: o layout cobre a subárvore inteira, então
+rota nova nasce coberta. `professor/entre-redes/layout.tsx` protege as missões, os
+guias e os resultados de todas elas; `plano-de-aula`, `plano-de-ensino` e
+`bem-estar` têm o próprio. Cada um é uma linha: `await exigirProdutoLigado(slug)`.
+
+Verificado: com o Entre Redes desligado,
+`/professor/entre-redes/8-ano/unidade-1/guia` responde 404 **sem nenhuma mudança
+na página** — foi o layout.
+
+- **Fragmento, não elemento.** Um `<div>` no layout mudaria o fluxo de altura que
+  a página de dentro monta com margens negativas (`tela-cheia`).
+- **404, e não uma tela de "produto desativado".** Para o professor daquela rede
+  o produto não existe; uma tela explicando que existe mas foi desligado é a
+  Unooria contando ao cliente o que ela vendeu a quem.
+- **`lib/produtos.ts` deixou de ser a LISTA e é só a COPY.** A lista efetiva vem
+  de `GET /recursos/efetivos` (`lib/recursos.ts`). É o mesmo movimento que
+  `lib/missoes-do-estudante.ts` fez na ADR-69, e pelo mesmo motivo: constante
+  compilada no bundle é igual para toda rede, e o que existe numa rede é DADO.
+- **FALHA ABERTA quando a api não responde**, como `/exp/[expId]` já fazia com
+  `minhasSalas()`: a porta de verdade é do servidor, então deixar passar aqui não
+  abre nada — a api recusa na primeira chamada. Falhar FECHADA faria uma api
+  pendurada esvaziar a home do professor, com a tela dizendo "você não tem
+  produto" em vez de "não carregou".
+- **`/exp/[expId]` ficou coberta de graça**: ela já consulta a grade
+  (`minhasSalas`), e a grade passou a filtrar o indisponível na api. Não houve
+  linha nova nessa rota.
+- **Não conte produtos na copy.** O texto da home dizia "Quatro produtos"; com um
+  deles desligado a frase mente sobre a própria tela.
+
 ## O guia da aula (ADR-65)
 
 Toda missão publicada tem guia em `/professor/.../guia`, e **missão nova nasce

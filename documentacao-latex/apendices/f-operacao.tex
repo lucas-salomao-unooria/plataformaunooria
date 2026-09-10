@@ -262,6 +262,26 @@ causa.
 \headrow \thd{Sintoma} & \thd{Causa provável}\\
 \midrule
 \endhead
+\textbf{A missão desapareceu da grade da turma, e ninguém liberou nem
+  encerrou nada} &
+  O RECURSO foi desligado para esta rede (\adrr{ADR-87}). O sintoma é
+  \textbf{indistinguível} de um defeito de enturmamento ou de catálogo, e é por
+  isso que ele está nesta tabela. A missão indisponível SAI da grade (não fica
+  com cadeado), e a linha em \cd{liberacoes} continua intacta --- religar
+  devolve tudo. Confira em ordem: \cd{SELECT * FROM disponibilidades} (linha com
+  \cd{escola\_id} nulo vale para a rede INTEIRA), depois
+  \cd{experiencias.produto} da missão (nulo = ela responde só pelo próprio
+  interruptor, sem teto de produto). No log, o 403 sai com
+  \cd{codigo: recurso-indisponivel} --- se o código for
+  \cd{missao-nao-liberada}, o problema é da SALA e não do painel.\\
+\zebra \textbf{Card de produto sumiu da home do professor, ou a rota dele dá 404} &
+  Mesmo eixo do item acima, um nível acima: o PRODUTO está desligado no escopo
+  que vale (escola, regional ou contrato). A tela some por decisão --- ela não
+  explica que o produto existe e foi desligado, porque isso contaria ao cliente
+  o que a Unooria vendeu a quem. Confira
+  \cd{disponibilidades} com \cd{recurso\_id = 'produto:<slug>'}. Se a linha NÃO
+  existir, é a api que não respondeu: a leitura falha ABERTA, e nesse caso a
+  home mostra tudo --- card faltando com a tabela vazia é outra coisa.\\
 \textbf{Barra de rolagem parada na tela, sem ter o que rolar} &
   A página transborda por 1--2px. Quase sempre é uma altura calculada a partir da
   altura de um irmão: a tela cheia do professor subtraía \cd{64px} do

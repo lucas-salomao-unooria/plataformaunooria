@@ -2,6 +2,7 @@
   "id": "exp-01-instanooria",
   "nome": "Instanooria — O Conteúdo que não chegou",
   "versao": "1.1.4",
+  "produto": "entre-redes",
   "series": ["8EF"],
   "unidade": 1,
   "capabilities": ["telemetria", "progresso", "ia"],

@@ -2,6 +2,7 @@
   "id": "exp-90-plano-de-aula",
   "nome": "Gerador de Plano de Aula",
   "versao": "1.2.1",
+  "produto": "plano-de-aula",
   "series": [],
   "capabilities": [
     "telemetria",

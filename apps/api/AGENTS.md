@@ -509,6 +509,136 @@ As turmas e matrículas do ano anterior ficam onde estão — é isso que preser
 histórico. `vigente` é DERIVADO das datas, nunca coluna.
 
 
+## Disponibilidade: o interruptor da rede (ADR-87, 2026-09-09)
+
+**Três eixos decidem se algo abre, e confundi-los é o defeito caro.**
+
+| Eixo | Pergunta | Quem decide | Onde |
+|---|---|---|---|
+| catálogo | que forma a experiência tem? | o manifesto / o CI | `experiencias` |
+| liberação (ADR-69) | está aberta NESTA TURMA? | professor | `liberacoes` → `exigirMissaoLiberada` |
+| **disponibilidade** | existe NESTA REDE? | Unooria (`admin`) | `disponibilidades` → `exigirRecursoDisponivel` |
+
+Disponibilidade é **pré-condição** de liberação. Produto desligado tem o sintoma
+de um bug de enturmamento — a missão sumiu da grade e ninguém liberou nada —, e é
+por isso que o eixo tem nome próprio.
+
+**Estado em 2026-09-10.** A PORTA existe e vale. O que ainda NÃO existe é a TELA:
+a área `/unooria` e as rotas de escrita do painel (ADR-88). Hoje só o
+`GET /recursos/efetivos` (leitura, qualquer autenticado) e o SQL ligam e desligam.
+
+**Onde a guarda entra, e por que num ponto só:**
+
+- **Missões de estudante**: dentro de `exigirMissaoLiberada`
+  (`comum/liberacao.ts`), ANTES da checagem de liberação. As seis experiências já
+  passam por aquele funil, então um ponto cobre todas — e isso torna
+  IMPOSSÍVEL existir liberação valendo num recurso que a rede não tem. Se cada
+  experiência tivesse de chamar as duas guardas, a próxima nasceria chamando uma.
+  A ordem importa para o DIAGNÓSTICO: produto desligado responde
+  `recurso-indisponivel`, não `missao-nao-liberada` — invertido, o log mandaria
+  quem investiga procurar na sala de aula um problema que está no painel.
+- **Ferramentas de professor** (exp-90, exp-91, exp-92): não têm liberação por
+  turma e têm **28 rotas** entre as três. Anotar rota por rota é o desenho em que
+  a 29ª nasce sem guarda, sem erro e sem sintoma — o produto simplesmente não
+  desliga. Por isso é um GUARD DE CLASSE: `DisponibilidadeGuard` +
+  `@Recurso("exp-NN-slug")` no `@Controller`, e a exceção é declarada com
+  `@SemDisponibilidade()`.
+- **`@SemDisponibilidade()` só para APAGAR os próprios dados.** Desligar um
+  produto fecha tudo — é isso que o interruptor significa, e é o que um incidente
+  exige. A única exceção é apagar o que já existe: "não consigo apagar meus dados
+  porque o produto foi desligado" é indefensável, e mais ainda no check-in de
+  bem-estar, que é DASS-21. Interruptor nunca pode prender dado de ninguém.
+  Não use o escape para leitura, edição ou exportação.
+- **Guard montado sem `@Recurso` LANÇA**, em vez de liberar. Liberar em silêncio
+  é exatamente a falha que o guard existe para impedir.
+- **A grade da sala filtra, e a missão SAI** (`salas.service.ts#catalogo`) —
+  não fica com cadeado. Cadeado quer dizer "o professor ainda não abriu", e é um
+  convite: existe alguém que pode abri-lo. Recurso que a rede não tem não abre
+  para ninguém. `definirEstado` (liberar) também recusa: esconder o card é UX.
+- **Sem linha em `experiencias` não tranca nada.** Stack de dev ou nova, antes do
+  primeiro publish do CI, tem aquela tabela VAZIA — recusar ali faria toda missão
+  morrer num ambiente recém-provisionado, com um 403 que não explica nada.
+- **A mensagem do estudante é a MESMA de `missao-nao-liberada`.** Quem lê é uma
+  criança dentro de um app disfarçado, e "este produto foi desativado para a sua
+  rede" quebra a ficção que a experiência está medindo. Quem distingue é o
+  `codigo`. Na ferramenta de professor não há disfarce, e a mensagem diz o que
+  aconteceu.
+
+**SEM CACHE, e é decisão.** São duas idas ao banco (a escola e as linhas que
+valem), as duas por índice, numa tabela de dezenas de linhas — e a regra da casa é
+não acrescentar estado sem gargalo medido. Gatilho para reavaliar: latência medida
+em `GET /salas/minhas` ou na home do professor, as duas superfícies que resolvem
+isto a cada render.
+
+### A armadilha de TESTE que esta tabela criou (2026-09-10)
+
+**Suíte NUNCA escreve linha de escopo-CONTRATO (`escola_id IS NULL`).**
+
+`disponibilidades` está fora da RLS por desenho, então a linha de contrato vale
+para a stack INTEIRA — e o Jest paraleliza. Enquanto ela existe, toda suíte
+concorrente vê o produto desligado. Custou duas suítes vermelhas
+(`vila-postgres` e `o-eco-no-grupo-postgres`) que **passam sozinhas e falham
+juntas**, com o sintoma apontando para a Vila e a causa em
+`disponibilidade-porta-postgres`. Pior: a corrida abortada deixa fixture para
+trás, e a corrida SEGUINTE falha em outra suíte ainda — a cascata esconde a
+origem.
+
+Exercite o escopo-contrato com um `expId` que não existe no catálogo e que
+ninguém mais usa; a cadeia inteira já se prova sem banco em
+`recursos-regras.spec.ts`. A mesma regra vale para a suíte e2e.
+
+**As duas regras do resolvedor** (`src/recursos/regras.ts`, puro e testado):
+
+1. **O escopo mais específico ganha**: escola → regional → contrato → padrão.
+   Escola e regional são a MESMA tabela `escolas`, distinguidas por `tipo`, então
+   uma coluna `escola_id` nulável cobre os três níveis.
+2. **O produto é um TETO**: produto desligado no escopo que vale ⇒ nada dentro
+   dele liga, mesmo com linha própria dizendo `ligado`. Religar o produto no
+   escopo menor é o caminho — e é explicável na tela; exceção por experiência
+   sobrepondo o produto foi descartada na ADR-87.
+
+**Ausência de linha = LIGADO**, o contrário de `liberacoes`. Lá a ausência é o
+bloqueio; aqui é o mundo normal, porque este interruptor é mecanismo de EXCEÇÃO.
+Nascer desligado exigiria uma linha por recurso a cada contrato provisionado, e
+toda experiência nova ficaria invisível até alguém lembrar de ligá-la.
+
+**A linha inteira é a decisão**: `ligado` e `versao_fixa` não se resolvem em
+cadeias separadas. Campo a campo daria mais flexibilidade e produziria estados
+que ninguém explica olhando a tela.
+
+### Três armadilhas de banco, todas invisíveis no typecheck
+
+- **`@@unique([recursoId, escolaId])` não impede duas linhas de contrato**: no
+  Postgres `NULL` ≠ `NULL` num índice único. Quem fecha é o índice único
+  **parcial** `WHERE escola_id IS NULL` (mesmo desenho de
+  `escolas_regional_padrao_unica`). Sem ele, dois cliques em "desligar para a
+  rede" criam duas linhas e o resolvedor passa a depender da ordem do `findMany`.
+- **`disponibilidades` e `experiencias_versoes` ficam FORA da RLS**, contra o
+  hábito da regra 1. São configuração da rede, e a linha de escopo-contrato tem
+  `escola_id` nulo por desenho: a política por `escola_id` esconderia justamente
+  a resposta. `tests/disponibilidades-postgres.spec.ts` prova a ausência, para que
+  a próxima migração não a "conserte" — ligar RLS ali faz TODO produto parecer
+  ligado.
+- **Vocabulário em dois lugares**: `PRODUTOS` e `RECURSO_ID_RE` do código, e os
+  CHECKs da migration. O mesmo par que já custou um deploy inteiro em
+  `permissoes` — o Zod aceitou, o banco recusou, e o 500 só aparecia no log da
+  api. O teste de Postgres compara os dois textos.
+
+### `experiencias_versoes` conserta um bug que ninguém tinha notado
+
+`publicar-manifesto.mjs --versao x.y.z` manda o número **antigo** com o
+`experiencia.json` **atual** do repositório. Voltar a versão nunca voltou
+`viewport`, `permissoes`, `series` nem `unidade` — a exp-70 reabria sem
+`allow-pointer-lock`, a criança entrava na Vila e a câmera não girava, sem erro em
+lugar nenhum. Por isso a tabela guarda o **manifesto inteiro** por versão: o
+rollback pela tela reescreve as colunas com o que aquela versão tinha de fato.
+
+Quem escreve a linha é o próprio `PUT /experiencias/:expId`, na mesma transação
+do upsert do catálogo — e o `semearCatalogo` do seed faz igual, senão uma stack de
+dev abre o painel dizendo que não conhece versão nenhuma do que está no ar.
+`publicada_por` é TEXTO sem FK: quem publica quase sempre é o CI, cujo token tem
+`sub = 'ci-deploy'` — não é uuid e não existe em `users`.
+
 ## Perfil portátil: sair da REDE (2026-08-28)
 
 **Transferir é dentro do contrato; o perfil portátil é para FORA dele.** A

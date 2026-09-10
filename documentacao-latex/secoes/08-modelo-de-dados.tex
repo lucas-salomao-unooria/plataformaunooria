@@ -4,7 +4,7 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 49 tabelas em \cd{public} e um \emph{schema}
+Um banco, um \emph{schema} lógico, 51 tabelas em \cd{public} e um \emph{schema}
 auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
 óbvias --- que, neste projeto, são a maioria.
@@ -19,7 +19,8 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \cd{exp\_07\_sessoes}, \cd{exp\_91\_checkins}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
-\cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias}, \cd{progresso},
+\cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
+\cd{experiencias\_versoes}, \cd{disponibilidades}, \cd{progresso},
 \cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
 
 \textbf{Tabela que é contrato entre duas experiências carrega os dois números}:
@@ -184,6 +185,15 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   Seção~\ref{sec:enturmamento}.\\
 \zebra \cd{experiencias} & Catálogo & Sem \cd{escola\_id}: o manifesto é do
   contrato, não da escola. Escrita só por \cd{admin-contrato}.\\
+\cd{experiencias\_versoes} & Catálogo & Uma linha por versão publicada, com o
+  MANIFESTO INTEIRO --- é a lista do \emph{rollback} pela tela, e é o que faz
+  voltar a versão voltar também \cd{viewport} e \cd{permissoes} (\adrr{ADR-87}).\\
+\zebra \cd{disponibilidades} & Catálogo & \textbf{O interruptor da rede}
+  (\adrr{ADR-87}): uma linha responde \enquote{este recurso existe neste
+  escopo?}. \cd{escola\_id} NULO = o contrato inteiro, e preenchido pode ser uma
+  escola OU uma regional. Fora da RLS pela mesma razão de \cd{experiencias}, mais
+  uma própria: a política por \cd{escola\_id} esconderia justamente a linha de
+  escopo-contrato.\\
 \cd{progresso} & \emph{Tenant} & PK composta
   \cd{(escola\_id, estudante\_id, exp\_id)}. É o progresso \emph{genérico} da SDK;
   estado rico de experiência vai para a tabela da experiência.\\

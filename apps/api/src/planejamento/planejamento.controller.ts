@@ -14,6 +14,11 @@ import {
 } from "@nestjs/common";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
+import {
+  DisponibilidadeGuard,
+  Recurso,
+  SemDisponibilidade,
+} from "../comum/disponibilidade.guard";
 import { Contrato } from "../openapi/contrato";
 import { rotuloDaSerie, type Serie } from "../comum/series";
 import { componentePorSlug } from "../curriculo/componentes";
@@ -54,8 +59,12 @@ const IdParam = z.object({ id: z.string().uuid() });
 const OrdemParam = z.object({ id: z.string().uuid(), ordem: z.coerce.number().int().positive() });
 
 @Controller("planejamento")
-@UseGuards(OidcGuard, RolesGuard)
+@UseGuards(OidcGuard, RolesGuard, DisponibilidadeGuard)
 @Roles("professor")
+/* O interruptor da rede (ADR-87), por CLASSE: rota nova desta ferramenta nasce
+   coberta. A exceção é declarada com `@SemDisponibilidade()`, e só vale para
+   apagar os próprios dados. */
+@Recurso("exp-92-plano-de-ensino")
 export class PlanejamentoController {
   constructor(private readonly planejamento: PlanejamentoService) {}
 
@@ -108,6 +117,9 @@ export class PlanejamentoController {
     return this.planejamento.calendario(req.auth.escolaId, req.auth.usuarioId, IdParam.parse({ id }).id);
   }
 
+  /* Fora do interruptor: apagar a própria regência. Um produto desligado fecha tudo, menos
+     isto — interruptor que prende dado é indefensável (ADR-87). */
+  @SemDisponibilidade()
   @Delete("configuracoes/:id")
   @Contrato({
     resumo: "Apaga o planejamento inteiro daquele componente × ano.",
@@ -247,6 +259,9 @@ export class PlanejamentoController {
     return { ok: true as const };
   }
 
+  /* Fora do interruptor: apagar o próprio plano anual. Um produto desligado fecha tudo, menos
+     isto — interruptor que prende dado é indefensável (ADR-87). */
+  @SemDisponibilidade()
   @Delete("planos-anuais/:id")
   @Contrato({
     resumo: "Apaga o plano anual e os planos de período dele.",

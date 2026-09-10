@@ -153,7 +153,7 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \endhead
 \rota{GET /\allowbreak{}experiencias} & \emph{(qualquer)} & O catálogo de experiências do contrato.\par Tabela GLOBAL, sem RLS: manifesto de versões não é dado de estudante. O hub monta a URL do iframe com \cd{versaoAtiva}, e filtra por série na interface.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{series: []} quer dizer TODAS as séries, não nenhuma --- é como uma experiência transversal se declara (exp-70).\\
 \zebra \rota{GET /\allowbreak{}experiencias/\allowbreak{}\{expId\}} & \emph{(qualquer)} & Uma linha do manifesto.\par Devolve \cd{experiencia: null} quando não há linha --- e isso não é erro: o hub cai no \cd{experiencia.json} servido ao lado do bundle. É o caso de dev e o de uma stack nova, antes do primeiro publish do CI.\\
-\rota{PUT /\allowbreak{}experiencias/\allowbreak{}\{expId\}} & \cd{gestor\_contrato}, \cd{admin} & Publica ou faz rollback de uma versão.\par Chamada pelo CI ao publicar \cd{gs:/\allowbreak{}/\allowbreak{}\{contrato\}-exp/\allowbreak{}\{expId\}/\allowbreak{}\{versao\}/\allowbreak{}}, com o conteúdo do \cd{public/\allowbreak{}experiencia.json} da experiência. \textbf{Rollback é trocar `versaoAtiva` para a anterior} --- não há deploy a desfazer, porque o bundle antigo continua no bucket.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{permissoes} é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\par \hspace*{1em}\textbullet{} \cd{viewport} ausente \implica{} o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).\\
+\rota{PUT /\allowbreak{}experiencias/\allowbreak{}\{expId\}} & \cd{gestor\_contrato}, \cd{admin} & Publica ou faz rollback de uma versão.\par Chamada pelo CI ao publicar \cd{gs:/\allowbreak{}/\allowbreak{}\{contrato\}-exp/\allowbreak{}\{expId\}/\allowbreak{}\{versao\}/\allowbreak{}}, com o conteúdo do \cd{public/\allowbreak{}experiencia.json} da experiência. \textbf{Rollback é trocar `versaoAtiva` para a anterior} --- não há deploy a desfazer, porque o bundle antigo continua no bucket.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{permissoes} é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\par \hspace*{1em}\textbullet{} \cd{produto} é o que põe a experiência no painel da Unooria \adrr{ADR-87} e o que lhe dá o TETO do produto. Ausente = ela responde só pelo próprio interruptor; quem cobra o campo é o teste dos manifestos, no CI, e não esta rota --- 400 aqui mataria a ativação DEPOIS de os bundles subirem.\par \hspace*{1em}\textbullet{} Cada PUT grava também uma linha em \cd{experiencias\_\allowbreak{}versoes} com o MANIFESTO INTEIRO. É o que faz o rollback pela tela devolver \cd{viewport} e \cd{permissoes} daquela versão, e não os de hoje.\par \hspace*{1em}\textbullet{} \cd{viewport} ausente \implica{} o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).\\
 \bottomrule
 \end{tabularx}
 
@@ -372,6 +372,17 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \midrule
 \endhead
 \rota{GET /\allowbreak{}readyz} & \textbf{público} & As dependências estão prontas (banco).\par Banco fora do ar responde \textbf{503}, não \cd{ok: false} --- o balanceador tira a instância do rodízio pelo código, não pelo corpo.\\
+\bottomrule
+\end{tabularx}
+
+\section{recursos}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}recursos/\allowbreak{}efetivos} & \emph{(qualquer)} & O que está disponível para a escola do token.\par Resolve a cadeia escola \seta{} regional \seta{} contrato e aplica o TETO do produto. É daqui que o hub monta os cards do professor e decide o 404 das rotas de produto --- \textbf{esconder o card é UX}; a porta é \cd{exigirMissaoLiberada} / \cd{DisponibilidadeGuard}, no servidor.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{produtos} traz SEMPRE os quatro, ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista completa de cor.\par \hspace*{1em}\textbullet{} Perfil de contrato (\cd{gestor\_\allowbreak{}contrato}, \cd{admin}) não tem escola no token, então a resposta é a do CONTRATO --- a cadeia fica vazia e só as linhas de escopo-contrato valem.\par \hspace*{1em}\textbullet{} Não devolve \cd{motivo} nem quem desligou: isso é conversa entre a Unooria e a rede, e vive no painel.\\
 \bottomrule
 \end{tabularx}
 
