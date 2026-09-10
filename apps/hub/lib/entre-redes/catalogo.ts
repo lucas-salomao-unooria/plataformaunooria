@@ -426,7 +426,84 @@ export const MISSAO_RASTRO_BOATO: Missao = {
   },
 };
 
+/**
+ * 1º ano · Unidade 1 — O Que a Foto Conta (`exp-04-o-que-a-foto-conta`).
+ *
+ * A porta de entrada do Entre Redes: leitura de imagem no mural da turma
+ * (clone do Instagram), para crianças em alfabetização inicial. A missão é
+ * SÍNCRONA por desenho — os tablets congelam na Etapa 5 (a Roda de Conversa) e
+ * só o professor libera a reflexão final; e é 100% formativa: não existe nota,
+ * não existe "foto errada", e a resposta ingênua na síntese vira retry gentil.
+ *
+ * O professor tem DOIS controles ao vivo (liberar a reflexão e zerar a turma)
+ * e UMA preparação opcional (gerar o pacote de legendas com IA e aprovar).
+ * Sem preparação, o banco curado padrão — "O Mistério das Peças no Pátio" —
+ * assume sozinho: a aula nunca fica sem material.
+ */
+export const MISSAO_FOTO_CONTA: Missao = {
+  anoSlug: "1-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp-04-o-que-a-foto-conta",
+  titulo: "O Que a Foto Conta — toda foto mostra uma escolha",
+  resumo:
+    "No mural da turma, duas fotos do mesmo pátio contam histórias opostas: uma celebra o brinquedo que a turma montou, a outra mostra o chão cheio de peças. O estudante escolhe UMA foto e UMA legenda, publica — e descobre, pelos comentários dos colegas simulados, que o pedaço que ele escolheu mostrar mudou o que os outros viram.",
+  status: "disponivel",
+  estudante: {
+    titulo: "O Que a Foto Conta",
+    chamada:
+      "Nina te espera no mural da turma: escolha a sua marca, olhe as fotos da escola e conte a sua história com uma foto e uma legenda.",
+  },
+  ficha: {
+    competencia:
+      "Letramento visual inicial — perceber que a imagem fotográfica é fruto de uma escolha de enquadramento e legenda, e que o que fica de fora da foto também faz parte da história.",
+    duracao: "1 aula de 50 min (ou 2 sessões de ~25 min)",
+    formato:
+      "Mural da turma simulado (clone do Instagram) em tablet: feed com 3 fotos, escolha binária de foto e legenda, eco dos colegas e roda de conversa presencial",
+    atos: [
+      {
+        rotulo: "1 — A marca do fotógrafo (Etapa 1)",
+        texto:
+          "Nina dá as boas-vindas em áudio e a criança escolhe uma das três marcas (Coruja Azul, Estrela Amarela, Sol Laranja) — a identidade dela dentro do mural. Tudo em CAIXA ALTA, com pictograma e locução: nenhuma instrução depende de leitura fluente.",
+      },
+      {
+        rotulo: "2 — Explorar o mural (Etapa 2)",
+        texto:
+          "O feed da @turma_mural tem exatamente 3 fotos do cotidiano escolar. A criança rola e dá o toque duplo de curtir — familiarização com o gesto, sem nada valendo registro. Se ficar 30 segundos sem rolar, uma seta discreta aponta o caminho.",
+      },
+      {
+        rotulo: "3 — O dilema da lente (Etapa 3)",
+        texto:
+          "Duas fotos do MESMO lugar, tiradas no mesmo minuto: o plano geral com as peças espalhadas e o plano detalhe do brinquedo montado. Duas legendas prontas, cada uma com pictograma e áudio. A criança escolhe uma foto E uma legenda e toca em COMPARTILHAR — a tela de confirmação tem só três elementos, de propósito.",
+      },
+      {
+        rotulo: "4 — O eco dos colegas (Etapa 4)",
+        texto:
+          "O post sobe para o topo do mural e, em cadência fixa, Leo e Sofia comentam exatamente o que a foto deixou ver — e o que ela escondeu. A combinação cruzada (foto de uma coisa, legenda de outra) produz o estranhamento que vira material do debate.",
+      },
+      {
+        rotulo: "5 — A Roda de Conversa (Etapa 5)",
+        texto:
+          "Todos os tablets congelam numa tela sem nenhum botão: HORA DA RODA DE CONVERSA! Você projeta as duas fotos lado a lado no painel de resultados, conduz o debate com as três perguntas do guia e, quando a conversa fechar, toca em LIBERAR REFLEXÃO FINAL.",
+      },
+      {
+        rotulo: "6 — O olhar de detetive (Etapa 6)",
+        texto:
+          "Nina pergunta O QUE A FOTO MOSTRA? com duas respostas ilustradas. A Lupa (alguém escolheu o que mostrar) conclui com confete e a insígnia Olhar de Detetive; o Globo (a foto mostra tudo) recebe um lembrete gentil e a criança escolhe de novo — sem nota, sem penalidade, sem teto de tentativas.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Opcional: no painel da missão, gere com IA o pacote de legendas para o tema da semana (Pátio do Recreio, Horta, Sala de Aula ou Parquinho), confira o preview e aprove. Sem aprovação, o banco curado padrão assume sozinho até 10 minutos antes da aula.",
+      "Fones de ouvido fazem diferença: toda instrução tem locução, e trinta tablets em autoplay ao mesmo tempo viram cacofonia sem eles.",
+      "Rode a missão você mesmo uma vez, com calma — são ~12 minutos de tela. O que a criança NÃO pode saber de antemão: que os comentários de Leo e Sofia mudam conforme a foto escolhida.",
+      "Na segunda aplicação no mesmo ano, TROQUE o tema do pacote (Recreio → Horta, por exemplo): repetir o cenário mede memória, não leitura de imagem.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
+  "1-ano": [MISSAO_FOTO_CONTA],
   "4-ano": [MISSAO_UNOOTUBE],
   "6-ano": [MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_ECO_NO_GRUPO],

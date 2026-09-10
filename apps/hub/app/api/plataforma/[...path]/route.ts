@@ -71,6 +71,11 @@ const PREFIXOS_PERMITIDOS = [
      meio da aula e as 30 telas andam na hora. As guardas de papel estão na api
      (`@Roles("professor", "gestor_escola", "gestor_contrato")`). */
   "rastro-boato",
+  /* exp-04: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
+     (gerar/aprovar) e o "zerar turma" são client-side — o professor aperta no
+     meio da aula e os tablets do 1º ano andam pelo polling deles. As guardas
+     de papel estão na api (`@Roles("professor", ...GESTORES)`). */
+  "foto-conta",
   /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
      tem bearer — passa por aqui. A api aplica cota e redaction. */

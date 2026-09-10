@@ -2,12 +2,14 @@ import { notFound } from "next/navigation";
 
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_FOTO_CONTA,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
 } from "@/lib/entre-redes/catalogo";
 
+import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
@@ -39,6 +41,9 @@ export default async function ResultadosPage({
   const { turmaId } = await searchParams;
   const turma = turmaId?.trim() ?? "";
 
+  if (missao.expId === MISSAO_FOTO_CONTA.expId) {
+    return <ResultadosFotoConta missao={missao} turma={turma} />;
+  }
   if (missao.expId === MISSAO_UNOOTUBE.expId) {
     return <ResultadosUnooTube missao={missao} turma={turma} />;
   }
