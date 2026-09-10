@@ -409,10 +409,11 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **92**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
+  (a PRÓXIMA é a **93**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
       histórico append-only que a rede também lê, a 90 pela suíte da api em um
-      worker e a **91 pelas três zonas do idioma da interface**; a 65 foi ocupada pelo guia da aula, a 72 pela
+      worker, a 91 pelas três zonas do idioma da interface e a **92 pelo
+      retorno de etapa que reabre a sessão do Instanooria**; a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -595,7 +596,7 @@ casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**91 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**92 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

@@ -12423,6 +12423,10 @@
                     "foraDoAparelho": {
                       "type": "integer",
                       "minimum": 0
+                    },
+                    "reabertas": {
+                      "type": "integer",
+                      "minimum": 0
                     }
                   },
                   "required": [
@@ -12431,7 +12435,8 @@
                     "movidos",
                     "voltou",
                     "total",
-                    "foraDoAparelho"
+                    "foraDoAparelho",
+                    "reabertas"
                   ],
                   "additionalProperties": false
                 }
@@ -12443,7 +12448,7 @@
           "atividades"
         ],
         "summary": "O RELÓGIO DA AULA: move a turma inteira de momento.",
-        "description": "Escreve a etapa na atividade e leva as runs junto. `voltou: true` quando a turma RETROCEDE de etapa.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `foraDoAparelho` conta quem ficou no onboarding: não entrou e não pode ser movido.",
+        "description": "Escreve a etapa na atividade e leva as runs junto. `voltou: true` quando a turma RETROCEDE de etapa.\n\n**A etapa é PISO indo para frente e TETO voltando** — o oposto de propósito: o piso existe para não punir quem leu mais rápido dentro do momento liberado; voltar é outra intenção, e com a regra do piso o retorno mudaria o rótulo do painel e nada na tela dos estudantes.\n\n**Papéis:** professor.\n\n**Restrições:**\n- `foraDoAparelho` conta quem ficou no onboarding: não entrou e não pode ser movido.\n- Sair da investigação CONGELA quem entrou no aparelho (computa o dossiê e grava `finished_at`) — sem isso o relatório abre vazio.\n- **Voltar para a investigação REABRE** quem volta ao feed: apaga o dossiê e zera `finished_at`, e `reabertas` diz quantos. O relatório é recomputado no encerramento seguinte, a partir dos eventos, que não são tocados. Ver ADR-92.\n- Quem JÁ VIU a revelação (`explicabilidade` em diante) não volta ao feed: para na resposta, que dá para refazer. O motivo é o instrumento — quem sabe do viés não pode ser medido por ele de novo.\n- O que o estudante produziu (eventos, posts salvos, comentários, conclusão, reflexão) NUNCA é apagado aqui. Quem apaga é `POST /runs/:id/reset`.",
         "security": [
           {
             "token-da-plataforma": []
