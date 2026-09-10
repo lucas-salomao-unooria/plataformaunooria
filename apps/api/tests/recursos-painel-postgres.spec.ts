@@ -34,6 +34,20 @@ const comoAdmin = () => ({ auth: { usuarioId: admin, escolaId: "", perfil: "admi
 const NO_CONTRATO = "produto:bem-estar";
 
 async function limpar() {
+  /* A AUDITORIA TAMBÉM É LIXO DE TESTE (ADR-89). Ela é append-only e ninguém
+     mais a limpa, então cada escrita destes testes fica no banco de dev para
+     sempre — foi visto no print da suíte e2e: o histórico da REDE aberto em
+     `/admin/recursos` com dezenas de linhas de `exp-99-...` e "Admin da
+     versão". Mesma família do `salas-postgres` reescrevendo o catálogo: linha
+     em tabela sem RLS é estado global, e a tela do cliente é onde ela aparece. */
+  await prisma.recursoAuditoria.deleteMany({
+    where: {
+      OR: [
+        { escolaId: { in: [ESCOLA, REGIONAL] } },
+        { escolaId: null, recursoId: NO_CONTRATO },
+      ],
+    },
+  });
   await prisma.disponibilidade.deleteMany({
     where: {
       OR: [
@@ -64,6 +78,14 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
+  await prisma.recursoAuditoria.deleteMany({
+    where: {
+      OR: [
+        { escolaId: { in: [ESCOLA, REGIONAL] } },
+        { escolaId: null, recursoId: NO_CONTRATO },
+      ],
+    },
+  });
   await prisma.disponibilidade.deleteMany({
     where: {
       OR: [
@@ -98,7 +120,13 @@ describe("GET /recursos/painel", () => {
     // A composição é derivada de `experiencias.produto` — nenhuma lista à mão.
     expect(entreRedes?.experiencias.map((e) => e.expId)).toContain(VILA);
     const bemEstar = r.produtos.find((p) => p.slug === "bem-estar");
-    expect(bemEstar?.experiencias.map((e) => e.expId)).toEqual(["exp-91-bem-estar"]);
+    /* `toContain` + `not.toContain`, e NÃO uma lista exata: `experiencias` é
+       tabela global, e uma lista fechada aqui quebraria no dia em que qualquer
+       suíte concorrente criasse uma linha com este produto. O que se prova é a
+       DERIVAÇÃO — cada experiência aparece sob o produto que ela declara, e não
+       sob outro. */
+    expect(bemEstar?.experiencias.map((e) => e.expId)).toContain("exp-91-bem-estar");
+    expect(bemEstar?.experiencias.map((e) => e.expId)).not.toContain(VILA);
     // E cada uma traz a versão que o hub monta hoje.
     expect(entreRedes?.experiencias[0]?.versaoAtiva).toMatch(/^\d+\.\d+\.\d+$/);
   });

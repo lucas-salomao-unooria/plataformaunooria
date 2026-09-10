@@ -976,6 +976,54 @@ model Disponibilidade {
   @@map("disponibilidades")
 }
 
+/// QUEM DESLIGOU ISTO, E QUANDO? (ADR-89) — o registro APPEND-ONLY das mudanças
+/// de disponibilidade e de versão.
+///
+/// Existe porque a linha de `disponibilidades` é SOBRESCRITA a cada mudança: o
+/// estado atual ela responde, o histórico não. A ADR-87 deixou este gatilho
+/// declarado, e o que o disparou foi a pergunta ser feita na TELA — por quem
+/// está com a escola ao telefone, não por quem tem acesso ao Cloud Logging.
+///
+/// Lida por DOIS painéis: o da Unooria (quem faz) e o da rede (quem sofre). A
+/// rede não escreve — ligar e desligar continua só do `admin` (ADR-88).
+///
+/// `UPDATE` é recusado por TRIGGER; `DELETE` continua permitido (retenção
+/// futura e limpeza de suíte). Sem RLS, como `disponibilidades`.
+model RecursoAuditoria {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  recursoId String  @map("recurso_id")
+  /// NULO = a mudança foi no escopo do CONTRATO (a rede inteira).
+  escolaId  String? @map("escola_id")
+
+  /// `ligado` | `desligado` | `herdado` | `versao-ativada` | `versao-fixada`
+  /// | `versao-soltada` — CHECK na migration, espelhando o código.
+  acao String
+
+  /// A versão, e SÓ nas duas ações que a carregam (CHECK bicondicional). Campo
+  /// preenchido onde não significa nada faz quem lê a linha `desligado`
+  /// concluir que a versão foi parte da decisão.
+  versao String?
+
+  motivo String?
+
+  /// SEM FK para `users`: uma FK com `RESTRICT` travaria para sempre a exclusão
+  /// de quem já mexeu no painel, porque histórico não se apaga.
+  autorId String @map("autor_id") @db.Uuid
+
+  /// O nome de quem fez, CONGELADO na linha. Um JOIN mostraria o nome de hoje
+  /// — ou nada, se a conta saiu da rede —, e o registro deixaria de dizer quem
+  /// era aquela pessoa NAQUELE dia. Mesma razão de `exp_01_runs.nome_no_app`.
+  autorNome String @map("autor_nome")
+
+  quando DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([quando(sort: Desc)])
+  @@index([recursoId, quando(sort: Desc)])
+  @@index([escolaId, quando(sort: Desc)])
+  @@map("recursos_auditoria")
+}
+
 /// Quota diária de IA por estudante — persistida (o Map em memória zera a cada
 /// restart e é contornável com múltiplas instâncias).
 model IaUsoDiario {

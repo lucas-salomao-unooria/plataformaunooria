@@ -48,6 +48,20 @@ const ids = { turma: "", estudante: "", professor: "", admin: "" };
 const SO_MEU = "exp-99-porta-de-teste";
 
 async function limparDisponibilidades() {
+  /* A AUDITORIA TAMBÉM É LIXO DE TESTE (ADR-89). Ela é append-only e ninguém
+     mais a limpa, então cada escrita destes testes fica no banco de dev para
+     sempre — foi visto no print da suíte e2e: o histórico da REDE aberto em
+     `/admin/recursos` com dezenas de linhas de `exp-99-...` e "Admin da
+     versão". Mesma família do `salas-postgres` reescrevendo o catálogo: linha
+     em tabela sem RLS é estado global, e a tela do cliente é onde ela aparece. */
+  await prisma.recursoAuditoria.deleteMany({
+    where: {
+      OR: [
+        { escolaId: { in: [ESCOLA, REGIONAL] } },
+        { escolaId: null, recursoId: `experiencia:${SO_MEU}` },
+      ],
+    },
+  });
   await prisma.disponibilidade.deleteMany({
     where: {
       OR: [

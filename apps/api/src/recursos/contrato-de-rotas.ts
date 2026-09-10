@@ -178,3 +178,27 @@ export const VersaoFixadaSchema = z.object({
   versaoFixa: z.string().nullable(),
   conferida: z.boolean(),
 });
+
+/* ==========================================================================
+   HISTÓRICO (ADR-89) — lido pelo painel da Unooria e pelo da rede
+   ========================================================================== */
+
+export const LinhaDoHistoricoSchema = z.object({
+  id: z.string(),
+  recursoId: z.string(),
+  /** `null` = a mudança foi no escopo do CONTRATO. */
+  escolaId: z.string().nullable(),
+  acao: z.string(),
+  /** Só nas ações de versão (CHECK bicondicional no banco). */
+  versao: z.string().nullable(),
+  motivo: z.string().nullable(),
+  /** CONGELADO na linha — nunca um JOIN. Ver a nota da rota. */
+  autorNome: z.string(),
+  quando: z.string().datetime(),
+});
+
+export const HistoricoDeRecursosSchema = z.object({
+  /** `true` quando bateu no teto de 200 — a tela precisa dizer que há mais. */
+  truncado: z.boolean(),
+  linhas: z.array(LinhaDoHistoricoSchema),
+});

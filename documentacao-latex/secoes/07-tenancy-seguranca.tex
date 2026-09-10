@@ -302,6 +302,12 @@ capacidades} (\adrr{ADR-88}, revendo a afirmação da \adrr{ADR-80}). A primeira
 decisão da fornecedora, não de quem administra o contrato do lado do cliente ---
 um \cd{gestor\_contrato} que pode LIGAR passa a ter acesso a produto que a rede
 não contratou. Para todo o resto a igualdade continua valendo.
+
+\textbf{Uma rota volta atrás dessa linha, e só uma}:
+\rota{GET /recursos/auditoria} (\adrr{ADR-89}), o histórico do painel. Ler por
+que o produto da própria rede mudou de estado é informação do cliente; decidir o
+estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
+\cd{gestor\_contrato}.
 \end{regra}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}

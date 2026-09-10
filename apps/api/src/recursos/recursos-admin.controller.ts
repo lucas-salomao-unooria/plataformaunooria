@@ -32,6 +32,7 @@ import {
   VersoesDaExperienciaSchema,
 } from "./contrato-de-rotas";
 import { ManifestoGuardadoSchema } from "./manifesto-guardado";
+import { registrarAuditoria, type AcaoDeAuditoria } from "./auditoria";
 import {
   linhasLegiveis,
   resolverExperiencia,
@@ -60,6 +61,29 @@ const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
 @Roles("admin")
 export class RecursosAdminController {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Registra no histórico (ADR-89) SEM poder derrubar a operação.
+   *
+   * O ato do operador — desligar um produto num incidente — não pode falhar
+   * porque o registro não pôde ser escrito. Mas o erro não some: vai ao log com
+   * código próprio, que é o que uma métrica de log alcança.
+   */
+  private async historiar(dados: {
+    recursoId: string;
+    escolaId: string | null;
+    acao: AcaoDeAuditoria;
+    versao?: string | null;
+    motivo?: string | null;
+    autorId: string;
+  }): Promise<void> {
+    await registrarAuditoria(this.prisma, dados, (erro) => {
+      logger.error(
+        { codigo: "recurso-auditoria-nao-gravada", recursoId: dados.recursoId, err: erro },
+        "a mudança valeu, mas o histórico dela não foi gravado",
+      );
+    });
+  }
 
   /** As linhas que valem numa cadeia, já filtradas do que é ilegível. */
   private async linhas(cadeia: readonly string[]): Promise<LinhaDeDisponibilidade[]> {
@@ -234,6 +258,13 @@ export class RecursosAdminController {
       },
       dados.ligado ? "recurso ligado" : "recurso DESLIGADO",
     );
+    await this.historiar({
+      recursoId,
+      escolaId: dados.escolaId,
+      acao: dados.ligado ? "ligado" : "desligado",
+      motivo: dados.motivo ?? null,
+      autorId: req.auth.usuarioId,
+    });
 
     return linha;
   }
@@ -274,10 +305,16 @@ export class RecursosAdminController {
         },
         "exceção de disponibilidade removida",
       );
+      /* Só historia se APAGOU algo: remover o que não existe é no-op, e uma
+         linha de histórico dizendo "voltou a herdar" quando nada mudou faria o
+         painel contar uma decisão que ninguém tomou. */
+      await this.historiar({
+        recursoId,
+        escolaId,
+        acao: "herdado",
+        autorId: req.auth.usuarioId,
+      });
     }
-    /* `usuarioId` fica de fora do log da remoção porque a linha some: não há
-       coluna onde gravá-lo, e o log já carrega o contexto da requisição. */
-    void req;
 
     return { recursoId, escolaId, removida: count > 0 };
   }
@@ -404,7 +441,14 @@ export class RecursosAdminController {
       },
       "versão ativada",
     );
-    void req;
+    await this.historiar({
+      recursoId: `experiencia:${expId}`,
+      escolaId: null,
+      acao: "versao-ativada",
+      versao,
+      motivo: motivo ?? null,
+      autorId: req.auth.usuarioId,
+    });
 
     return {
       expId,
@@ -466,6 +510,13 @@ export class RecursosAdminController {
       },
       versao ? "versão fixada no escopo" : "fixação de versão removida",
     );
+    await this.historiar({
+      recursoId,
+      escolaId,
+      acao: versao ? "versao-fixada" : "versao-soltada",
+      versao,
+      autorId: req.auth.usuarioId,
+    });
 
     return { expId, escolaId, versaoFixa: versao, conferida };
   }

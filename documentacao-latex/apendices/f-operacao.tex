@@ -923,6 +923,40 @@ marcado} &
   de limpeza também substitui o erro do teste. Para conferir que o mascaramento
   saiu, sem esperar a intermitência: ponha um \cd{throw} na primeira linha do
   \cd{beforeAll} e veja se o relatório mostra a SUA mensagem.\\
+\zebra \textbf{Uma suíte do Jest passa sozinha e reprova junto com as outras} &
+  \textbf{Procure primeiro a \emph{fixture} que escreve em tabela SEM RLS} ---
+  \cd{experiencias}, \cd{experiencias\_versoes}, \cd{disponibilidades},
+  \cd{periodos\_letivos}, \cd{recursos\_auditoria}. Ali a linha não é estado da
+  suíte, é estado GLOBAL, e o efeito atravessa arquivos: uma disponibilidade em
+  escopo-contrato desliga o produto para todo mundo; uma experiência de teste com
+  \cd{publico: "estudante"} entra na grade de toda turma; \cd{upsert} com
+  \cd{update} completo REESCREVE o catálogo que outra suíte esperava. Regra que
+  sai disso: \emph{fixture} de catálogo escreve o MÍNIMO no \cd{update}, usa id
+  próprio (\cd{exp-99-...}) e nunca deleta linha compartilhada. Depois de
+  consertados os casos localizáveis, a cauda que sobra é a CLASSE do problema
+  (um banco, tabelas compartilhadas, 40+ arquivos escrevendo juntos): a suíte da
+  API roda com \cd{maxWorkers: 1} por decisão medida (\adrr{ADR-90}), e
+  \textbf{reprovação intermitente que volte com o serial ligado é defeito NOVO},
+  não a cauda antiga. Para medir em vez de adivinhar: rode a suíte 30 vezes num
+  laço, redirecionando com \cd{> arquivo 2>\&1} --- o Jest escreve em
+  \cd{stderr}, e \cd{2>\&1 > arquivo} manda o relatório para o terminal e grava
+  um arquivo vazio (esta captura errada já fez uma caça parecer limpa).\\
+\textbf{O painel de recursos mudou o estado e o histórico não mostra a linha} &
+  \textbf{Isto é por desenho, e o log diz}: procure
+  \cd{codigo=recurso-auditoria-nao-gravada} no Cloud Logging. O registro do
+  histórico NUNCA derruba a operação que o chamou (\adrr{ADR-89}) --- o
+  interruptor da rede falhando porque o histórico dele falhou seria pior de todos
+  os jeitos ---, então a mudança vale e o histórico fica incompleto, em silêncio
+  na tela. Aquele contador é o alarme. Se o log não tem a linha, a mudança que
+  você procura foi em OUTRO escopo: o histórico de uma escola inclui as decisões
+  de escopo-contrato, mas o do contrato não desce até as das escolas.\\
+\zebra \textbf{O histórico da escola mostra uma mudança que ninguém fez naquela
+escola} &
+  \textbf{Também por desenho.} Filtrar por escola inclui as linhas de
+  escopo-contrato (\cd{escola\_id IS NULL}): foram elas que decidiram o que vale
+  ali. Sem isso, o histórico de uma escola apareceria VAZIO no dia em que a rede
+  inteira mudou --- e é justamente o dia em que alguém vai olhar. A coluna
+  \enquote{escopo} diz \enquote{a rede inteira} nessas linhas.\\
 \bottomrule
 \end{tabularx}
 
@@ -960,6 +994,18 @@ Mensal & \textbf{Contagem da partição \cd{DEFAULT} de telemetria} --- encher
   catálogo (\cd{R-12}).\\
 Anual, ou por \emph{release} & Revisar as ADRs cujo gatilho de reavaliação pode
   ter sido acionado (Capítulo~\ref{cap:adr}).\\
+\zebra \textbf{Sob suspeita} de que o catálogo de uma \emph{stack} tenha sido
+  escrito por engano & \arq{apps/api/scripts/conferir-catalogo-remoto.mjs} ---
+  \textbf{só leitura}, com a receita do \emph{job} efêmero no próprio cabeçalho
+  (o Cloud SQL só tem IP privado). Ele procura as impressões digitais concretas
+  de \emph{fixture} de teste (\cd{nome = exp\_id}, \cd{exp-99-\%},
+  \cd{escola LIKE 'teste-\%'}) e imprime o catálogo, as disponibilidades e o
+  histórico do painel. \textbf{Não existe migração de conserto aqui, de
+  propósito}: o valor certo mora no \arq{public/experiencia.json}, e o
+  \emph{deploy} já o reaplica --- uma migração que \enquote{restaurasse} o
+  catálogo gravaria valores inventados por quem a escreveu, e o sintoma disso é
+  pior que o do problema (uma experiência sai da grade de uma série sem ninguém
+  ter mudado nada).\\
 \bottomrule
 \end{tabularx}
 

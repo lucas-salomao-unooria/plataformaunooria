@@ -526,7 +526,9 @@ por isso que o eixo tem nome próprio.
 **Estado em 2026-09-10.** Completo: porta, painel e versão. Leitura
 (`GET /recursos/efetivos`, qualquer autenticado) e, só para `admin` (ADR-88),
 `GET /recursos/painel`, `PUT|DELETE /recursos/:recursoId`,
-`GET|POST|PUT /recursos/experiencias/:expId/{versoes,ativar,versao}`.
+`GET|POST|PUT /recursos/experiencias/:expId/{versoes,ativar,versao}`. O
+histórico (`GET /recursos/auditoria`) é a ÚNICA de `/recursos/*` que a REDE
+alcança — ver "O histórico" abaixo.
 
 ### Versão: duas alavancas, e elas não se misturam
 
@@ -562,9 +564,43 @@ por isso que o eixo tem nome próprio.
   paralelo com o manifesto. Sem essa leitura, a coluna seria gravada, o painel a
   mostraria e nada mudaria.
 
-**O que ainda não existe**: tabela de auditoria append-only (hoje o histórico de
-quem mexeu vive no log `recurso-alterado`) e segmentação por turma ou janela de
-validade — os dois são gatilho de reavaliação declarado na ADR-87.
+### O histórico é tabela, e a REDE lê o dela (ADR-89, 2026-09-10)
+
+`recursos_auditoria`, append-only, escrita por toda mudança do painel e lida por
+DOIS painéis: `/unooria/recursos` (quem opera) e `/admin/recursos` (quem sofre).
+A rede continua sem escrever nada — ADR-88 intacta —, mas `GET
+/recursos/auditoria` aceita `GESTORES_DO_CONTRATO`, e é a única rota de
+`/recursos/*` que volta atrás da linha do `admin`: ler por que o produto da
+própria rede mudou de estado é informação do cliente; decidir o estado não é.
+
+- **O registro NUNCA derruba a operação que o chamou.** `registrarAuditoria`
+  (`src/recursos/auditoria.ts`) engole o próprio erro e o entrega ao `aoFalhar`
+  do chamador, que loga `codigo: "recurso-auditoria-nao-gravada"`. O contrário
+  seria pior de todos os jeitos: o interruptor da rede falhando porque o
+  histórico dele falhou. O contador desse código no Cloud Logging é o que avisa
+  que o histórico está incompleto (cap. 17).
+- **`autor_nome` é CONGELADO na linha**, sem FK para `users` — nem em
+  `autor_id`. Um JOIN mostraria o nome de HOJE, ou nada se a conta saiu da rede,
+  e o histórico deixaria de dizer quem era aquela pessoa naquele dia; uma FK com
+  `RESTRICT` travaria para sempre a exclusão de quem já mexeu no painel.
+- **`UPDATE` é recusado pelo BANCO**, por trigger, e o `GRANT` da role de runtime
+  é `SELECT, INSERT, DELETE`. "Append-only" que só o código promete é o que a
+  próxima rotina de correção quebra. `DELETE` fica de propósito: retenção futura
+  e isolamento de teste.
+- **A ação tem vocabulário FECHADO** (`ACOES_DE_AUDITORIA` ↔ CHECK da migração),
+  e `versao` tem CHECK BICONDICIONAL — preenchida exatamente nas duas ações de
+  versão. Linha `desligado` com versão ao lado faria quem lê concluir que a
+  versão foi parte da decisão.
+- **O filtro por escola INCLUI as decisões de escopo-contrato** (`escolaId = X`
+  OR `escolaId IS NULL`): foram elas que decidiram o que vale ali, e um
+  histórico de escola que as omite mostra uma escola onde nada aconteceu no dia
+  em que tudo mudou. Teto de 200 linhas, com `truncado` na resposta.
+- **`remover` (herdar) só historia quando `count > 0`.** Apagar linha que não
+  existia não é evento, e registrar isso encheria o histórico de "herdado" que
+  não mudou nada.
+
+**O que ainda não existe**: segmentação por turma ou janela de validade — gatilho
+de reavaliação declarado na ADR-87.
 
 **O upsert do painel é SQL cru, e não por preferência.** O `upsert` do Prisma
 não consegue endereçar a linha de escopo-CONTRATO: o único composto
@@ -577,8 +613,10 @@ parcial, e são dois `ON CONFLICT` distintos porque são dois índices distintos
 `atualizado_em` vai na mão: `@updatedAt` é do Prisma, e SQL cru passa por baixo.
 
 **Toda escrita loga `codigo: "recurso-alterado"`** com recurso, escopo, estado e
-motivo. A LINHA é sobrescrita a cada mudança, então o log é a única resposta a
-"quem desligou o jogo da rede, e quando?" — é o gatilho de reavaliação da ADR-87.
+motivo, E grava a linha de `recursos_auditoria` (ADR-89). Os dois, não um: o log
+é do turno de plantão, a tabela é da tela. A LINHA de `disponibilidades` é
+sobrescrita a cada mudança — sem os dois, "quem desligou o jogo da rede, e
+quando?" não tem resposta em lugar nenhum.
 
 **`origem` do painel: a ordem das comparações é regra.** No escopo-contrato
 `escopo` e `decididoEm` são os dois nulos, e testar `=== null` antes de

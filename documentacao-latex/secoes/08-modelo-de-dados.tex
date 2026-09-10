@@ -4,7 +4,7 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 51 tabelas em \cd{public} e um \emph{schema}
+Um banco, um \emph{schema} lógico, 52 tabelas em \cd{public} e um \emph{schema}
 auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
 óbvias --- que, neste projeto, são a maioria.
@@ -20,7 +20,8 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
-\cd{experiencias\_versoes}, \cd{disponibilidades}, \cd{progresso},
+\cd{experiencias\_versoes}, \cd{disponibilidades},
+\cd{recursos\_auditoria}, \cd{progresso},
 \cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
 
 \textbf{Tabela que é contrato entre duas experiências carrega os dois números}:
@@ -188,6 +189,11 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \cd{experiencias\_versoes} & Catálogo & Uma linha por versão publicada, com o
   MANIFESTO INTEIRO --- é a lista do \emph{rollback} pela tela, e é o que faz
   voltar a versão voltar também \cd{viewport} e \cd{permissoes} (\adrr{ADR-87}).\\
+\cd{recursos\_auditoria} & Catálogo & \textbf{Append-only} (\adrr{ADR-89}):
+  quem ligou, desligou ou trocou versão, quando e por quê. Existe porque a linha
+  de \cd{disponibilidades} é SOBRESCRITA. \cd{UPDATE} recusado por
+  \emph{trigger}; \cd{autor\_nome} congelado na linha, sem FK para
+  \cd{users}.\\
 \zebra \cd{disponibilidades} & Catálogo & \textbf{O interruptor da rede}
   (\adrr{ADR-87}): uma linha responde \enquote{este recurso existe neste
   escopo?}. \cd{escola\_id} NULO = o contrato inteiro, e preenchido pode ser uma

@@ -366,8 +366,10 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **89**: a 86 foi ocupada pelo guia da aula, e a 87 e a 88
-      pelo eixo da disponibilidade e pelo painel da Unooria; a 65 foi ocupada pelo guia da aula, a 72 pela
+  (a PRÓXIMA é a **91**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
+      pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
+      histórico append-only que a rede também lê e a 90 pela suíte da api em um
+      worker; a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -492,7 +494,7 @@ pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~533p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~541p). Atualizar SEMPRE
 ```
 
 
@@ -538,13 +540,13 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~533 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~541 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**88 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**90 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e

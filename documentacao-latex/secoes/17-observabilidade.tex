@@ -398,7 +398,10 @@ Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
   e classe de \emph{status}; CDN: taxa de acerto. &
   \textbf{Grátis, zero código.} É a base de todos os alertas da fase 0.\\
 \zebra Métricas de log & Um contador ou distribuição derivado de um filtro
-  do Cloud Logging: \enquote{linhas com \cd{codigo=recurso-alterado}} --- toda
+  do Cloud Logging: \enquote{linhas com \cd{codigo=recurso-auditoria-nao-gravada}}
+  --- a mudança do painel valeu mas o histórico dela não foi escrito
+  (\adrr{ADR-89}: o registro nunca derruba a operação que o chamou, e é por isso
+  que este contador existe); \enquote{linhas com \cd{codigo=recurso-alterado}} --- toda
   vez que a Unooria liga ou desliga um produto numa rede (\adrr{ADR-87}), com
   recurso, escopo, estado e motivo; \enquote{linhas com \cd{codigo=telemetria-descartada}},
   \enquote{\cd{severity=ERROR} da revisão X}, \enquote{execução do

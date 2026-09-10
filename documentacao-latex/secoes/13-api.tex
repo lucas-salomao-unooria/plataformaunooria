@@ -664,6 +664,16 @@ versão (\env{CDN\_EXP\_URL}), e a resposta carrega \cd{conferida}: sem a env
 (\emph{dev}) a conferência é pulada, e a tela DIZ isso --- \enquote{ativei} e
 \enquote{ativei e conferi que o \emph{bundle} está lá} são garantias diferentes.
 
+\textbf{O HISTÓRICO é a única rota de \rota{/recursos/*} que a REDE alcança}
+(\adrr{ADR-89}): \rota{GET /recursos/auditoria}, aberta a \cd{admin} \emph{e}
+\cd{gestor\_contrato}. Ela lê \cd{recursos\_auditoria}, escrita por toda mudança
+do painel --- e o \cd{autor\_nome} vem CONGELADO da linha, nunca de um
+\emph{JOIN}: o histórico tem de dizer quem era aquela pessoa naquele dia, e não
+o nome de hoje. Sem \cd{?escolaId=} traz o contrato inteiro; com ele, traz as
+mudanças daquela escola \textbf{e} as de escopo-contrato, porque foram elas que
+decidiram o que vale ali. As escritas e o \rota{GET /recursos/painel} continuam
+respondendo 403 ao \cd{gestor\_contrato}.
+
 \textbf{E o hub HONRA a versão fixada}: \cd{montarEmbed} lê
 \rota{GET /recursos/efetivos} em paralelo com o manifesto e monta a URL do
 \cd{iframe} com a versão do escopo. Sem essa leitura, a coluna seria gravada, o

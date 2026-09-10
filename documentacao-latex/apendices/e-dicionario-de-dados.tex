@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 45 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 46 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
@@ -37,8 +37,9 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
 \zebra \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
-\cd{progresso} & Tenant & Progresso genérico da SDK\\
-\zebra \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
+\cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
+\zebra \cd{progresso} & Tenant & Progresso genérico da SDK\\
+\cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \zebra \cd{exp\_01\_activities} & Tenant & Atividade preparada pelo professor\\
 \cd{exp\_01\_authors} & Tenant & Personas fictícias\\
@@ -481,6 +482,70 @@ resposta que a tabela existe para dar. É o motivo de \cd{users}, \cd{turmas} e
 ausência é provada por teste, para que a próxima migração não a
 \enquote{conserte}: ligar RLS ali faz TODO produto parecer ligado, porque a
 linha que o desligava fica invisível --- o sintoma oposto a um erro de permissão.
+
+\subsection{\cd{recursos\_auditoria} (catálogo)}
+
+\textbf{Quem desligou isto, e quando?} (\adrr{ADR-89}). A \adrr{ADR-87} deixou
+esse gatilho aberto de propósito: a linha de \cd{disponibilidades} é
+SOBRESCRITA, então o histórico vivia só no registro estruturado
+(\cd{codigo=recurso-alterado}). Registro responde a pergunta para quem tem
+acesso ao Cloud Logging; não responde na TELA --- e é na tela que ela é feita,
+às 8h da manhã, por quem está com a escola ao telefone.
+
+\textbf{Dois painéis leem esta tabela}: o da Unooria (\rota{/unooria/recursos},
+quem opera) e o da REDE (\rota{/admin/recursos}, quem sofre). A rede não escreve
+nada --- ligar e desligar continua só do \cd{admin} (\adrr{ADR-88}) ---, mas ver
+por que o produto dela mudou de estado é informação do cliente.
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \\
+\zebra \cd{recurso\_id} & \cd{TEXT} & Mesmo formato de
+  \cd{disponibilidades.recurso\_id}, e \textbf{sem FK para ela}: a decisão
+  registrada sobrevive à linha que a aplicava --- \enquote{herdado} apaga a linha
+  de \cd{disponibilidades} e é justamente o evento que precisa constar.\\
+\cd{escola\_id} & \cd{TEXT?} & \cd{NULL} = decisão de escopo-contrato. Também
+  sem FK, pela razão acima.\\
+\zebra \cd{acao} & \cd{TEXT} & Vocabulário FECHADO por \emph{CHECK}
+  (\cd{ck\_recursos\_auditoria\_acao}), espelhando \cd{ACOES\_DE\_AUDITORIA} do
+  código: \cd{ligado}, \cd{desligado}, \cd{herdado}, \cd{versao-ativada},
+  \cd{versao-fixada}, \cd{versao-soltada}. O teste prende os dois lados, porque
+  a divergência só apareceria como 500 no log.\\
+\cd{versao} & \cd{TEXT?} & \emph{CHECK} BICONDICIONAL: preenchida exatamente nas
+  duas ações de versão, nula em todas as outras. Campo cheio onde não significa
+  nada é pior que campo vazio --- quem lê \cd{desligado} com uma versão ao lado
+  conclui que a versão foi parte da decisão.\\
+\zebra \cd{motivo} & \cd{TEXT?} & O texto que o painel exige ao desligar,
+  copiado para cá.\\
+\cd{autor\_id} & \cd{UUID} & \textbf{Sem FK}, ao contrário de
+  \cd{disponibilidades.definido\_por}: uma FK com \cd{RESTRICT} travaria para
+  sempre a exclusão de qualquer conta que já tenha mexido no painel, porque
+  histórico não se apaga.\\
+\zebra \cd{autor\_nome} & \cd{TEXT} & \textbf{CONGELADO na linha.} Um \emph{JOIN}
+  mostraria o nome de hoje --- ou nada, se a conta saiu da rede ---, e o registro
+  deixaria de dizer quem era aquela pessoa NAQUELE dia. Mesma razão de
+  \cd{exp\_01\_runs.nome\_no\_app} guardar o apelido em vez de o resolver.\\
+\cd{quando} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{\cd{UPDATE} é recusado pelo BANCO}, por \emph{trigger}
+(\cd{recursos\_auditoria\_sem\_update}). Sem ele, \enquote{append-only} seria
+promessa do código --- e a promessa que o banco não cobra é a que a próxima
+rotina de correção quebra; reescrever uma linha é o único jeito de esta tabela
+mentir. \textbf{\cd{DELETE} continua permitido, e isso é decisão}: retenção
+(nenhuma tabela deste produto tem prazo hoje, e quem cumprir o prazo precisará
+apagar) e isolamento de teste --- tabela que não se limpa faz cada suíte deixar
+linha para trás.
+
+\textbf{Sem RLS}, pelo mesmo par de razões de \cd{disponibilidades} (não é dado
+de estudante; a linha de escopo-contrato tem \cd{escola\_id} nulo por desenho, e
+a política a esconderia). Quem protege a leitura é o \cd{RolesGuard}
+(\cd{GESTORES\_DO\_CONTRATO}) --- e o \emph{grant} é
+\cd{SELECT, INSERT, DELETE}: sem \cd{UPDATE}, a role de runtime não alcança nem
+o \emph{trigger}.
 
 \subsection{\cd{progresso}}
 

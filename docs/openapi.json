@@ -7673,6 +7673,121 @@
         }
       }
     },
+    "/recursos/auditoria": {
+      "get": {
+        "operationId": "RecursosAuditoriaController_auditoria",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recursoId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "truncado": {
+                      "type": "boolean"
+                    },
+                    "linhas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "recursoId": {
+                            "type": "string"
+                          },
+                          "escolaId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "acao": {
+                            "type": "string"
+                          },
+                          "versao": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "autorNome": {
+                            "type": "string"
+                          },
+                          "quando": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "recursoId",
+                          "escolaId",
+                          "acao",
+                          "versao",
+                          "motivo",
+                          "autorNome",
+                          "quando"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "truncado",
+                    "linhas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Quem ligou ou desligou o quê, e quando.",
+        "description": "O registro **append-only** das mudanças de disponibilidade e de versão. Existe porque a linha de `disponibilidades` é SOBRESCRITA a cada mudança: ela responde o estado atual, não o histórico. `UPDATE` é recusado por trigger no banco.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Aberta a `admin` E `gestor_contrato` — a única de `/recursos/*` que a rede alcança. Escrever continua sendo só do `admin` (ADR-88).\n- `autorNome` vem CONGELADO da linha, não de um JOIN: o histórico tem de dizer quem era aquela pessoa NAQUELE dia, e não o nome de hoje (ou nada, se a conta saiu).\n- Sem `?escolaId=` traz o contrato inteiro, incluindo as mudanças de escopo-contrato (`escolaId: null`). COM ele, traz as daquela escola **e** as do contrato, porque foram elas que decidiram o que vale ali.\n- Teto de 200 linhas, dito na resposta (`truncado`) — mesmo desenho de `GET /rostering/contas-de-assento`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/recursos/painel": {
       "get": {
         "operationId": "RecursosAdminController_painel",

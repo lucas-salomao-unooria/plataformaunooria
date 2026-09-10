@@ -12,9 +12,20 @@ import { RecursosAdminController } from "../src/recursos/recursos-admin.controll
  * girava, sem erro em lugar nenhum. A ativação pela tela restaura o manifesto
  * guardado, e é isso que os testes de fidelidade cobram.
  *
- * UMA EXPERIÊNCIA DE MENTIRA, só desta suíte. O catálogo é global (sem RLS) e o
- * Jest paraleliza: mexer na `versao_ativa` de uma experiência real derrubaria a
- * grade e o embed das outras suítes. `exp-99-*` não está em nenhuma delas.
+ * UMA EXPERIÊNCIA DE MENTIRA, só desta suíte — e ela é `publico: "professor"`
+ * DE PROPÓSITO, o que a mantém fora de TODA grade de turma.
+ *
+ * `experiencias` é tabela GLOBAL (sem `escola_id`, sem RLS) e o Jest paraleliza.
+ * Uma linha `publico: "estudante"` com `series: ["8EF"]` entra na grade do 8º
+ * ano de TODA escola enquanto existir — e `salas-postgres` afirma que a grade do
+ * 8A é exatamente `[VILA, INSTA]`. Foi medido: a suíte vizinha ficou vermelha
+ * dizendo que a grade tinha uma missão a mais, com o sintoma apontando para a
+ * sala de aula e a causa aqui. `gradeDaTurma` filtra `publico === "estudante"`,
+ * então "professor" é o que garante o isolamento — não o prefixo do id.
+ *
+ * A fidelidade do rollback se prova igualmente bem: o par de manifestos varia
+ * `permissoes`, `viewport`, `series`, `unidade` e `nome`, que é o que o
+ * defeito do `--versao` deixava para trás.
  */
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
@@ -38,7 +49,7 @@ const MANIFESTO_ANTIGO = {
   unidade: 1,
   capabilities: ["telemetria"],
   viewport: { largura: 375, altura: 812 },
-  publico: "estudante",
+  publico: "professor",
   permissoes: ["pointer-lock"],
 };
 
@@ -51,11 +62,20 @@ const MANIFESTO_NOVO = {
   unidade: 2,
   capabilities: ["telemetria", "ia"],
   viewport: null,
-  publico: "estudante",
+  publico: "professor",
   permissoes: [],
 };
 
 async function limpar() {
+  /* A AUDITORIA TAMBÉM É LIXO DE TESTE (ADR-89). Ela é append-only e ninguém
+     mais a limpa, então cada escrita destes testes fica no banco de dev para
+     sempre — foi visto no print da suíte e2e: o histórico da REDE aberto em
+     `/admin/recursos` com dezenas de linhas de `exp-99-...` e "Admin da
+     versão". Mesma família do `salas-postgres` reescrevendo o catálogo: linha
+     em tabela sem RLS é estado global, e a tela do cliente é onde ela aparece. */
+  await prisma.recursoAuditoria.deleteMany({
+    where: { OR: [{ escolaId: ESCOLA }, { recursoId: `experiencia:${EXP}` }] },
+  });
   await prisma.disponibilidade.deleteMany({
     where: { OR: [{ escolaId: ESCOLA }, { recursoId: `experiencia:${EXP}` }] },
   });
@@ -82,6 +102,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  await prisma.recursoAuditoria.deleteMany({ where: { recursoId: `experiencia:${EXP}` } });
   await prisma.disponibilidade.deleteMany({ where: { recursoId: `experiencia:${EXP}` } });
   await prisma.experienciaVersao.deleteMany({ where: { expId: EXP } });
   await prisma.experiencia.deleteMany({ where: { expId: EXP } });
@@ -98,7 +119,7 @@ beforeEach(async () => {
       series: MANIFESTO_NOVO.series,
       unidade: 2,
       capabilities: MANIFESTO_NOVO.capabilities,
-      publico: "estudante",
+      publico: "professor",
       permissoes: [],
     },
   });

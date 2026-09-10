@@ -66,7 +66,16 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   liberação por turma do professor não é tocada, e religar devolve a sala como
   ela estava. O que NÃO está mitigado é a auditoria em tela --- a linha é
   sobrescrita a cada mudança, e o histórico de quem mexeu vive só no registro.\\
-\zebra \cd{R-25} & \textbf{Versão fixada por escopo divergindo em silêncio.} Uma
+\zebra \cd{R-26} & \textbf{Histórico do painel sem prazo.}
+  \cd{recursos\_auditoria} só cresce, e nenhuma tabela deste produto tem prazo
+  declarado hoje (\adrr{ADR-89}). & Certa & Baixo &
+  Mesma decisão consciente de \cd{R-02}: prazo sem rotina que o cumpra é pior
+  que prazo nenhum. O volume aqui é ordens de grandeza menor que
+  \cd{telemetria\_eventos} --- são algumas mudanças por semana, não evento por
+  criança —, e nenhuma linha carrega dado de pessoa além do NOME de quem operou
+  o painel (conta da Unooria ou da coordenação, nunca de estudante). Quando o
+  prazo vier, ele vem para as duas tabelas na mesma conversa.\\
+\cd{R-25} & \textbf{Versão fixada por escopo divergindo em silêncio.} Uma
   escola pode ficar meses numa versão antiga porque alguém a fixou como canário
   e não a soltou --- e nada avisa. & Possível & Médio &
   O painel mostra a fixação por escopo, e o \emph{rollback} do contrato tem

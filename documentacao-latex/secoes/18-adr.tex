@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{88 decisões}, numeradas até ADR-88, \textbf{sem lacunas}. A ADR-65
+São \textbf{90 decisões}, numeradas até ADR-90, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -129,6 +129,8 @@ que a cercam.
 \adrr{ADR-86} & O guia da aula mostra o conteúdo da missão, não o descreve & 2026-09-09 & Aceita\\
 \zebra \adrr{ADR-87} & Disponibilidade: terceiro eixo, e o produto como teto & 2026-09-09 & Aceita\\
 \adrr{ADR-88} & O painel da Unooria é só do \cd{admin} & 2026-09-09 & Aceita\\
+\zebra \adrr{ADR-89} & Histórico do painel é tabela append-only, e a rede lê o dela & 2026-09-10 & Aceita\\
+\adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6432,3 +6434,160 @@ lugar que é da fornecedora, e ele pode crescer sem se misturar com o da escola.
 próprio catálogo --- caso em que a resposta provável não é abrir o painel ao
 \cd{gestor\_contrato}, e sim recortar dele o que é seguro delegar (desligar sim,
 ligar não), o que já é uma decisão diferente desta.
+
+\section{ADR-89 --- O histórico é tabela, não log --- e a REDE lê o dela}
+
+\textbf{Data:} 2026-09-10 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-87} registrou, como consequência ruim aceita, que
+o histórico de quem mexeu no painel vivia só no registro estruturado
+(\cd{codigo: recurso-alterado}): a linha de \cd{disponibilidades} é
+SOBRESCRITA a cada mudança, então ela responde \enquote{o que vale agora} e não
+\enquote{quem desligou isto, e quando}. O gatilho declarado ali era o dia em que
+a pergunta precisasse de TELA.
+
+Ele chegou por dois caminhos ao mesmo tempo. Primeiro, a pergunta é feita às 8h
+da manhã por quem está com a escola ao telefone --- não por quem tem acesso ao
+Cloud Logging e sabe escrever um filtro. Segundo, e mais importante: quem sofre
+a mudança é a REDE, e ela não tinha como saber que a perdeu. O produto
+desaparecia do painel do professor e o sintoma é indistinguível de um defeito
+(está no Apêndice~\ref{ap:operacao} por isso) --- o gestor do contrato
+descobriria ligando para perguntar.
+
+\textbf{Decisão.} O histórico é uma tabela \textbf{append-only}
+(\cd{recursos\_auditoria}), escrita por toda mudança do painel, e é lida por
+\textbf{DOIS} painéis: o da Unooria (\rota{/unooria/recursos}, quem faz) e o da
+rede (\rota{/admin/recursos}, quem sofre).
+
+\textbf{A assimetria da \adrr{ADR-88} fica intacta.}
+\rota{GET /recursos/auditoria} é a única rota de \rota{/recursos/*} que
+\cd{gestor\_contrato} alcança; \rota{GET /recursos/painel} e as escritas
+continuam respondendo 403 para ele. Ler por que o produto mudou de estado é
+informação do cliente; decidir o estado não é. Verificado no navegador: a leitura
+responde 200 e o \cd{PUT} responde 403 na mesma sessão.
+
+\textbf{Quatro escolhas dentro da decisão.}
+
+\emph{\cd{autor\_nome} é CONGELADO na linha}, e não um \emph{JOIN} com
+\cd{users}. Um \emph{JOIN} mostraria o nome de HOJE --- ou nada, se a conta saiu
+da rede --- e o registro deixaria de dizer quem era aquela pessoa NAQUELE dia.
+É a mesma razão de \cd{exp\_01\_runs.nome\_no\_app} guardar o apelido em vez de
+o resolver. Por isso também \textbf{não há FK} em \cd{autor\_id}: com
+\cd{RESTRICT}, excluir qualquer conta que já tenha mexido no painel ficaria
+impossível para sempre, porque histórico não se apaga.
+
+\emph{\cd{UPDATE} é recusado por TRIGGER; \cd{DELETE} continua permitido.}
+Reescrever uma linha é o único jeito de esta tabela mentir, e é o que o
+\emph{trigger} fecha --- \enquote{append-only} garantido pelo código seria a
+promessa que a próxima rotina de correção quebra. O \cd{DELETE} fica por duas
+razões concretas: retenção (nenhuma tabela deste produto tem prazo hoje, e quem
+cumprir o prazo precisará apagar) e ISOLAMENTO DE TESTE --- tabela que não se
+limpa faz cada suíte deixar linha para trás, e esta mesma sessão gastou três
+diagnósticos nesse tipo de vazamento.
+
+\emph{O registro NUNCA derruba a operação que o chamou.} Desligar um produto num
+incidente não pode falhar porque o histórico não pôde ser escrito. Mas o erro
+não some: vai ao log com \cd{codigo: recurso-auditoria-nao-gravada}, que é o que
+uma métrica de log alcança.
+
+\emph{O histórico de uma ESCOLA inclui as decisões de CONTRATO.} Sem elas, a
+tela da escola diria \enquote{nada aconteceu aqui} sobre um produto que a rede
+desligou --- exatamente a pergunta do gestor.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Ficar só no log e construir uma métrica ou painel no Cloud
+    Logging.} Custo zero de código. Descartada porque a pergunta é de PRODUTO e
+    quem a faz não tem console de nuvem --- e porque o cliente nunca veria.
+  \item \emph{Versionar \cd{disponibilidades} em vez de tabela nova} (uma linha
+    por estado, a mais recente valendo). Uniformizaria as duas coisas.
+    Descartada por transformar toda leitura do resolvedor --- que roda no caminho
+    de TODA entrada em experiência --- numa consulta com \cd{ORDER BY} e
+    \cd{DISTINCT ON}. O estado atual é lido milhares de vezes por manhã; o
+    histórico, algumas por semana.
+  \item \emph{Dar a escrita ao \cd{gestor\_contrato}}, já que ele passa a ver o
+    histórico. Descartada: é a decisão da \adrr{ADR-88}, e o recorte
+    \enquote{desligar sim, ligar não} continua sendo o gatilho de reavaliação
+    dela, não desta.
+  \item \emph{Abrir o histórico a \cd{gestor\_escola} e \cd{gestor\_regional}.}
+    Descartada porque o histórico é do CONTRATO (a linha de escopo-contrato não
+    tem escola), e recortá-lo por unidade daria a uma escola a notícia de que a
+    rede perdeu um produto antes de a coordenação da rede saber.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: a pergunta operacional passou a ter resposta
+em tela, para os dois lados, e o cliente deixou de depender de um telefonema.
+\emph{Bom}: o \emph{trigger} torna a palavra \enquote{append-only} verdadeira em
+vez de aspiracional. \emph{Ruim}: uma tabela que só cresce e não tem prazo ---
+o mesmo risco \cd{R-02} que \cd{telemetria\_eventos} e \cd{vila\_sessoes} já
+carregam, e pela mesma razão (prazo sem rotina que o cumpra é pior que prazo
+nenhum). \emph{Ruim}: o \emph{motivo} escrito pela Unooria passa a ser lido pelo
+cliente --- o que é a intenção, e ao mesmo tempo significa que ele é texto de
+CONTRATO, não recado interno. Está dito no rótulo do campo, no diálogo.
+
+\textbf{Gatilho de reavaliação.} O primeiro pedido de exportação (CSV do
+histórico para anexar a um relatório contratual) ou de retenção com prazo --- o
+segundo é o que faz a tabela precisar de rotina, e aí ela entra na mesma
+conversa de \cd{telemetria\_eventos}.
+
+\section{ADR-90 --- A suíte da API roda em UM \emph{worker}}
+
+\textbf{Data:} 2026-09-10 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A suíte de testes da API reprovava de forma intermitente ---
+uma falha a cada ~60 execuções completas, sempre em suítes que passavam
+sozinhas. A caça encontrou e consertou QUATRO defeitos reais de isolamento, e
+todos tinham a mesma raiz: \textbf{as tabelas de catálogo e de contrato estão
+fora da RLS por desenho} (\cd{experiencias}, \cd{experiencias\_versoes},
+\cd{disponibilidades}, \cd{periodos\_letivos}, \cd{recursos\_auditoria}), então
+uma \emph{fixture} escrita ali é ESTADO GLOBAL, não estado da suíte. Os quatro:
+uma linha de disponibilidade em escopo-contrato desligando um produto para as
+outras suítes; uma experiência de teste com \cd{publico: "estudante"} entrando na
+grade de toda turma; o \cd{GRANT} de preparação da \emph{role} de \emph{runtime}
+rodando em paralelo consigo mesmo (\cd{XX000 tuple concurrently updated} --- e o
+comentário do arquivo AFIRMAVA ser seguro em paralelo); e uma suíte apagando o
+período letivo compartilhado.
+
+Consertados os quatro, a cauda continuou: ~1 falha em 60 corridas paralelas
+contra 0 em 25 seriais. A conclusão é que o que resta não é um defeito
+localizável, é a CLASSE do problema --- um banco, um \emph{schema}, tabelas
+compartilhadas sem RLS e 40+ arquivos de teste escrevendo nelas ao mesmo tempo.
+
+\textbf{Decisão.} \cd{maxWorkers: 1} no \arq{apps/api/jest.config.cjs}, com o
+número medido e o gatilho de reavaliação no comentário ao lado. \textbf{A troca
+é explícita}: 5,4\,s $\to$ 17,6\,s na suíte inteira, em troca de zero
+intermitência. Trinta corridas completas depois da mudança (55 contando as
+seriais da medição) fecharam sem uma falha.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Continuar caçando teste por teste.} Descartada porque o custo não
+    converge: cada arquivo novo pode reintroduzir o problema, e a falha aparece
+    uma vez em sessenta --- o pior regime possível para quem lê um CI vermelho e
+    tem de decidir se aquilo é a mudança dele.
+  \item \emph{Um banco por \emph{worker}.} É o conserto de verdade, e continua
+    sendo o caminho quando o tempo doer: ela custa \emph{template} de banco,
+    \cd{DATABASE\_URL} por \emph{worker} e migração aplicada N vezes no
+    \emph{setup}. Cara demais para 17\,s.
+  \item \emph{Ligar RLS nas tabelas de catálogo}, para que o isolamento viesse do
+    banco. Descartada com força: a linha de escopo-contrato de
+    \cd{disponibilidades} tem \cd{escola\_id} nulo POR DESENHO, e a política a
+    esconderia --- todo produto passaria a parecer ligado, que é o sintoma oposto
+    a um erro de permissão. Está escrito no dicionário de dados e provado por
+    teste, para que a próxima migração não \enquote{conserte} isso.
+  \item \emph{Marcar as suítes de Postgres como serial e deixar o resto em
+    paralelo.} Descartada por não pagar: as suítes de Postgres são a maioria do
+    tempo da suíte, então o ganho seria de segundos, ao custo de uma regra que
+    cada arquivo novo precisa saber e obedecer.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o CI vermelho voltou a significar
+\enquote{a sua mudança quebrou algo}. \emph{Bom}: a caça deixou quatro
+\emph{fixtures} realmente isoladas, e o comentário de cada uma diz por quê.
+\emph{Ruim}: 12 segundos a mais em cada execução local e de CI. \emph{Ruim}:
+serializar ESCONDE o problema de classe --- um teste novo que dependa de ordem
+agora passa, e só vai doer no dia em que alguém reativar o paralelismo.
+
+\textbf{Gatilho de reavaliação.} A suíte passar de ~60\,s. Aí o banco por
+\emph{worker} passa a valer o preço, e o comentário do \arq{jest.config.cjs}
+está escrito para ser lido nesse dia.

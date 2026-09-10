@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { RecursosAdminController } from "./recursos-admin.controller";
+import { RecursosAuditoriaController } from "./recursos-auditoria.controller";
 import { RecursosController } from "./recursos.controller";
 
 /**
@@ -15,5 +16,7 @@ import { RecursosController } from "./recursos.controller";
    e o outro tem `@Get("efetivos")` — os três caminhos são distintos, mas
    registrar o de rota literal antes do de parâmetro é o hábito que evita a
    armadilha de `/planos/referencias` contra `/planos/:id`. */
-@Module({ controllers: [RecursosAdminController, RecursosController] })
+@Module({
+  controllers: [RecursosAuditoriaController, RecursosAdminController, RecursosController],
+})
 export class RecursosModule {}
