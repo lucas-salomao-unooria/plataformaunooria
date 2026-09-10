@@ -16,7 +16,7 @@ import {
   telaDo,
 } from "../lib/maquina-estados";
 import { telemetria } from "../lib/telemetria";
-import { CLONE, ERROS, PLATAFORMA } from "../lib/textos";
+import { CLONE, ERROS } from "../lib/textos";
 import type {
   Estado,
   Fala,
