@@ -50,6 +50,29 @@ barreiras, e todas devem continuar existindo: o prompt proíbe (R1/R2), o
 `PUT .../distribuicao` recusa código fora do recorte, e `costurarAulas()` filtra
 o que o modelo devolveu. Nenhuma sozinha basta.
 
+## O `Collapse` do DS sequestra o teclado, e a compensação é obrigatória
+
+**LACUNA REAL DO DS (0.1.19).** O `Collapse` esconde o corpo com
+`grid-template-rows: 0fr` + `opacity: 0` + `aria-hidden="true"`, e nada disso
+remove do FOCO — nem `inert`, nem `visibility`, nem `display: none`. Descendente
+focável dentro de `aria-hidden="true"` é foco fantasma: o Tab entra e o leitor
+de tela não anuncia nada, porque para ele aquilo não existe.
+
+Medido nesta tela em 2026-09-10: os três bimestres fechados deixavam **30 botões
+de semana** recebendo foco. A compensação está em `src/estilos/globals.css`
+(`visibility: hidden` no corpo com `aria-hidden="true"`, com o delay que preserva
+a animação), marcada, e **morre quando o pacote publicar `inert`** — pedido
+aberto no `storybook-unooria`.
+
+**A suíte `professor/09` conta os focáveis e reprova se voltarem.** Não remova a
+compensação sem o pacote: passa no typecheck, passa no build, e o defeito só
+aparece navegando por teclado.
+
+E ela é a razão de um segundo cuidado: o corpo fechado FICA no DOM, então
+`locator(...).filter(...)` acha conteúdo de bimestre fechado, o Playwright o
+considera visível e o clique morre interceptado. Quem automatiza esta tela abre
+os bimestres antes de procurar.
+
 ## `pendente` é "ninguém disparou", não "está em andamento"
 
 O enum é `pendente | gerando | pronto | erro`, e só `gerando` significa trabalho

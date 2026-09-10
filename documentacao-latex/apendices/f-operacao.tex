@@ -972,6 +972,27 @@ escola} &
   ali. Sem isso, o histórico de uma escola apareceria VAZIO no dia em que a rede
   inteira mudou --- e é justamente o dia em que alguém vai olhar. A coluna
   \enquote{escopo} diz \enquote{a rede inteira} nessas linhas.\\
+\zebra \textbf{A suíte e2e reprova a geração, e o BANCO diz que ela ficou
+\cd{pronto} --- na mesma corrida} &
+  A espera estava vigiando o alerta ANTIGO. Quando o botão que dispara a ação
+  fica DENTRO do alerta de erro anterior (o \enquote{Tentar de novo} da exp-92 é
+  o caso), o \cd{esperarOuFalharCedo} seguinte vê aquele alerta e aborta antes de
+  a ação começar. Confirme pelo banco:
+  \cd{SELECT ordem, status, tentativas, atualizado\_em FROM
+  exp\_92\_planos\_de\_periodo ORDER BY atualizado\_em DESC} --- \cd{tentativas}
+  incrementado e \cd{status = pronto} com carimbo DA corrida significa que o
+  produto funcionou e o roteiro mentiu. É o pior falso negativo que existe,
+  porque manda investigar o que está certo. O conserto é esperar o estado
+  \cd{gerando} com \cd{waitFor} puro antes de armar a vigilância.\\
+\textbf{A suíte falha ao clicar num item de lista, e o \emph{call log} termina
+em \cd{<div id="unooria-collapse-\ldots">}} &
+  O item está dentro de um \cd{Collapse} FECHADO. O corpo fechado fica no DOM
+  (o pacote esconde por altura e \cd{opacity}, não por \cd{display}), então o
+  \emph{locator} acha o elemento, o Playwright o considera visível e o clique
+  morre interceptado pelo contêiner. Abra os \emph{collapses} antes de procurar
+  --- o cabeçalho tem \cd{role="button"} e \cd{aria-expanded}. O mesmo desenho é a
+  lacuna de acessibilidade da Seção~\ref{cap:ds}: aqueles controles também
+  recebem foco do teclado.\\
 \bottomrule
 \end{tabularx}
 

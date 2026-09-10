@@ -410,6 +410,47 @@ acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo, e com o
 não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
 \end{atencao}
 
+\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (exp-92, 2026-09-10)}
+
+O \cd{Collapse} esconde o corpo fechado com \cd{grid-template-rows: 0fr},
+\cd{opacity: 0} e \cd{aria-hidden="true"}, e o \cd{\_\_body-inner} com
+\cd{overflow: hidden}. \textbf{Nenhuma dessas propriedades remove do FOCO} ---
+nem \cd{inert}, nem \cd{visibility}, nem \cd{display: none}. A árvore de
+acessibilidade está correta (o \cd{aria-hidden} é do pacote), e é justamente
+isso que torna o defeito pior: \textbf{descendente focável dentro de
+\cd{aria-hidden="true"} é foco fantasma} --- o \cd{Tab} entra no controle e o
+leitor de tela não anuncia nada, porque para ele aquele elemento não existe.
+
+Medido na tela de aulas da exp-92, que abre o ano em quatro bimestres e só deixa
+o primeiro aberto (\cd{defaultOpen}): os três fechados deixavam \textbf{30
+botões de semana} recebendo foco do teclado. Um professor que navega por
+\cd{Tab} atravessava trinta controles invisíveis antes do próximo elemento
+visível.
+
+\textbf{Compensação}, em \arq{apps/experiencias/exp-92-plano-de-ensino/src/estilos/globals.css}:
+\cd{visibility: hidden} no corpo com \cd{aria-hidden="true"} --- é a única
+propriedade CSS que tira do foco sem tirar do fluxo --- com \cd{transition} de
+\cd{visibility} atrasada pela duração do collapse, para que o fechamento
+continue animado. Ela não muda aparência nenhuma. \textbf{Morre quando o pacote
+publicar \cd{inert} no corpo fechado}, e o pedido está aberto no
+\arq{storybook-unooria}.
+
+\begin{regra}
+\textbf{A compensação é guardada por teste.} A suíte
+\cd{professor/09-plano-de-ensino} conta quantos controles de bimestre fechado
+recebem foco e reprova se voltarem a ser mais de zero. Sem essa rede, remover a
+compensação passa no \emph{typecheck}, passa no \emph{build} e o defeito só
+reaparece para quem navega por teclado --- que é exatamente quem não vai abrir
+uma \emph{issue}.
+\end{regra}
+
+\textbf{O segundo custo do corpo fechado no DOM é de automação}: um
+\cd{locator(...).filter(...)} acha conteúdo de bimestre fechado, o Playwright o
+considera visível e o clique morre interceptado pelo contêiner colapsado. Foi o
+que quebrou aquela suíte no dia em que as dez semanas do primeiro bimestre
+ficaram todas planejadas. Quem automatiza a tela abre os bimestres antes de
+procurar.
+
 \subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp-07 0.1.0)}
 
 A seção tem 29 componentes e cobre o cromo inteiro do mensageiro --- barra de

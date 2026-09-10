@@ -558,3 +558,40 @@ body {
   font-size: var(--unooria-font-size-s);
   line-height: 1.5;
 }
+
+/* ---------------------------------------------------------------------------
+ * COMPENSAÇÃO — o corpo FECHADO do `Collapse` sequestra o teclado
+ *
+ * LACUNA REAL DO DS (0.1.19): o `Collapse` esconde o corpo com
+ * `grid-template-rows: 0fr` + `opacity: 0` + `aria-hidden="true"`, e o
+ * `__body-inner` com `overflow: hidden`. Nada disso remove do FOCO: nem
+ * `inert`, nem `visibility`, nem `display: none`. Um descendente focável
+ * dentro de `aria-hidden="true"` é foco fantasma — o Tab entra, e o leitor de
+ * tela não anuncia nada, porque para ele aquilo não existe.
+ *
+ * Medido nesta tela em 2026-09-10: os três bimestres fechados deixavam
+ * **30 botões de semana** recebendo foco do teclado. Um professor que navega
+ * por Tab atravessava trinta controles invisíveis antes de chegar ao próximo
+ * elemento visível da página.
+ *
+ * O que ela faz: `visibility: hidden` é a única propriedade CSS que tira do
+ * foco sem tirar do fluxo, e a que preserva a animação de altura do pacote. O
+ * `transition` com delay igual à duração do collapse mantém o fechamento
+ * animado — sem ele o conteúdo sumiria de golpe antes de a altura chegar a
+ * zero. Na abertura, `visibility: visible` volta imediatamente.
+ *
+ * O que ela NÃO faz: nada além do foco. A árvore de acessibilidade já estava
+ * correta (o pacote põe `aria-hidden`), e a aparência não muda.
+ *
+ * MORRE quando o `Collapse` publicar `inert` no corpo fechado — pedido aberto
+ * no `storybook-unooria`. Registrada em `AGENTS.md` desta pasta.
+ * A suíte `professor/09-plano-de-ensino` conta os focáveis e reprova se
+ * voltarem, para que remover isto não passe em silêncio.
+ * ------------------------------------------------------------------------- */
+.unooria-collapse__body[aria-hidden="true"] {
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease,
+    visibility 0s linear 0.3s;
+}

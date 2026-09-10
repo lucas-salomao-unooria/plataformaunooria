@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 
 /**
  * O Eco no Grupo (exp-07), nas duas pontas da sala.
@@ -247,7 +248,19 @@ await suite(
         "aqui que a criança sente o risco social de ter falado em público.",
     });
 
-    await q.locator("text=/fixou uma mensagem/i").waitFor({ timeout: 25_000 });
+    /* O alfinete é EFEITO do `POST /intervencao`: sem ele o `setReacoes` da
+       resposta nunca roda e a cascata não acontece. Espera cega aqui reportava
+       "timeout esperando /fixou uma mensagem/" — o seletor que faltou, não a
+       causa. Em 2026-09-10 a chamada saiu em `net::ERR_ABORTED` sob a carga da
+       corrida completa, e os 25s foram pagos para dizer a coisa errada; o
+       roteiro passava isolado, o que fazia o vermelho parecer regressão de quem
+       estava rodando. */
+    await esperarOuFalharPorHttp(
+      p,
+      q.locator("text=/fixou uma mensagem/i"),
+      /\/o-eco-no-grupo\/intervencao$/,
+      { timeout: 25_000, oQue: "a intervenção no grupo (exp-07)" },
+    );
     await r.registrar(p, "alfinete-do-admin", {
       titulo: "O administrador fixa a contraprova",
       mostra: "O banner com o alfinete no topo do chat e as três reações do bairro.",

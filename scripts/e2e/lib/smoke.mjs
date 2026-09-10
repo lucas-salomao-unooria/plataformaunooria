@@ -152,16 +152,50 @@ export async function esperarOuFalharCedo(sucesso, erro, opcoes = {}) {
  */
 export async function esperarOuFalharPorHttp(pagina, sucesso, rota, opcoes = {}) {
   const { timeout = 120_000, oQue = "a chamada" } = opcoes;
-  const erroDaApi = pagina
-    .waitForResponse((r) => rota.test(r.url()) && r.status() >= 400, { timeout })
-    .then(async (r) => {
-      const corpo = await r.text().catch(() => "(sem corpo)");
-      throw new Error(
-        `${oQue} falhou: HTTP ${r.status()} em ${new URL(r.url()).pathname} — ` +
-          corpo.replace(/\s+/g, " ").slice(0, 300),
-      );
-    });
-  await Promise.race([sucesso.first().waitFor({ timeout }), erroDaApi]);
+
+  /* Sentinela que EXPIROU fica pendente, nunca rejeita. Uma `Promise.race` em
+     que a sentinela rejeita por timeout reporta "timeout esperando resposta" no
+     lugar do seletor que faltou — e como as duas esperas têm o mesmo teto, quem
+     rejeita primeiro é sorte. Pendente, ela simplesmente sai da corrida. */
+  const pendenteParaSempre = () => new Promise(() => {});
+
+  const erroDaApi = (async () => {
+    let r;
+    try {
+      r = await pagina.waitForResponse((x) => rota.test(x.url()) && x.status() >= 400, { timeout });
+    } catch {
+      return pendenteParaSempre();
+    }
+    const corpo = await r.text().catch(() => "(sem corpo)");
+    throw new Error(
+      `${oQue} falhou: HTTP ${r.status()} em ${new URL(r.url()).pathname} — ` +
+        corpo.replace(/\s+/g, " ").slice(0, 300),
+    );
+  })();
+
+  /* Requisição que NÃO chega a ter status — abortada, recusada, DNS — não era
+     coberta, e é a que mais engana: o `fetch` do cliente morre sem resposta, o
+     estado da tela nunca avança e a suíte paga o timeout inteiro para reportar
+     o seletor. Em 2026-09-10 a `estudante/06` gastou 25s assim, com o
+     `POST /o-eco-no-grupo/intervencao` em `net::ERR_ABORTED` no relatório e
+     nada apontando para ele. */
+  const falhaDeRede = (async () => {
+    let req;
+    try {
+      req = await pagina.waitForEvent("requestfailed", {
+        predicate: (x) => rota.test(x.url()),
+        timeout,
+      });
+    } catch {
+      return pendenteParaSempre();
+    }
+    throw new Error(
+      `${oQue} não completou: ${req.method()} ${new URL(req.url()).pathname} — ` +
+        `${req.failure()?.errorText ?? "falha de rede"}`,
+    );
+  })();
+
+  await Promise.race([sucesso.first().waitFor({ timeout }), erroDaApi, falhaDeRede]);
 }
 
 /**

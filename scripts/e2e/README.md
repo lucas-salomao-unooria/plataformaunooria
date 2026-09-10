@@ -82,7 +82,18 @@ Uma geração de IA que falha em 306 ms deixava o roteiro esperando 180 s por um
   telas da plataforma, `.unooria-feedback-alert--error`);
 - `esperarOuFalharPorHttp(pagina, sucesso, /rota/, …)` — onde não há: as
   experiências disfarçadas renderizam erro em `<p>` avulso, com classe diferente
-  em cada tela. O corpo da resposta vai na mensagem.
+  em cada tela. O corpo da resposta vai na mensagem. Cobre também a requisição
+  que **não chega a ter status** (abortada, recusada): é a que mais engana,
+  porque o `fetch` do cliente morre sem resposta, a tela nunca avança e a
+  espera cega paga o timeout inteiro para reportar o seletor.
+
+**Vigiar alerta só depois de o estado novo COMEÇAR.** Quando o botão que dispara
+a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da exp-92 é o
+caso), o `esperarOuFalharCedo` seguinte vê o alerta ANTIGO e aborta antes de a
+ação começar. Espere primeiro o estado `gerando` com `waitFor` puro — vigiar o
+alerta ali é vigiar o passado. Em 2026-09-10 isso fez a `professor/09` reportar
+vermelho enquanto o banco gravava a semana como `pronto` na mesma corrida: o
+pior falso negativo, porque manda investigar um produto que funcionou.
 
 ## Evidências
 

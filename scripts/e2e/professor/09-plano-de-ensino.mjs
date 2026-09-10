@@ -214,7 +214,11 @@ await suite(
     await exp.getByText(/Suas aulas/).waitFor({ timeout: 60_000 });
 
     const semanas = await exp.locator("button").filter({ hasText: /ª Semana/ }).count();
-    r.exigir(semanas > 0, `o ano abriu em semanas planejáveis (${semanas} no 1º bimestre)`);
+    /* O count pega o ANO, não o 1º bimestre: o corpo fechado do `Collapse` fica
+       no DOM, então as semanas dos quatro bimestres estão todas aqui. A frase
+       dizia "no 1º bimestre" e reportava ~40 — prova que mede uma coisa e
+       afirma outra é pior que prova nenhuma. */
+    r.exigir(semanas > 0, `o ano abriu em semanas planejáveis (${semanas} no ano)`);
 
     await r.registrar(p, "semanas-do-ano", {
       titulo: "As semanas do ano, uma a uma",
@@ -226,14 +230,68 @@ await suite(
         "quinze em quinze dias é recorte de exportação, não de planejamento.",
     });
 
-    /* A semana ativa pode já estar planejada de uma corrida anterior: pega a
-       primeira que ainda está "A planejar". */
-    const aberta = exp.locator("button").filter({ hasText: /A planejar/ }).first();
-    if (await aberta.isVisible().catch(() => false)) {
-      await aberta.click();
-      await p.waitForTimeout(1200);
+    /* O corpo FECHADO do `Collapse` do DS não pode sequestrar o teclado. Ele
+       recebe `aria-hidden="true"` e altura 0, mas o pacote não põe `inert` nem
+       `visibility: hidden` — e descendente FOCÁVEL dentro de `aria-hidden` é
+       foco fantasma: o Tab entra, o leitor de tela não anuncia nada. Aqui são
+       as ~30 semanas dos três bimestres fechados. A compensação está em
+       `src/estilos/globals.css` da exp-92, e esta verificação é o que impede
+       que ela seja removida sem ninguém notar. */
+    const focaveisEscondidas = await exp
+      .locator('[role="region"][aria-hidden="true"] button.semana')
+      .evaluateAll((bs) =>
+        bs.filter((b) => {
+          b.focus();
+          return document.activeElement === b;
+        }).length,
+      );
+    r.exigir(
+      focaveisEscondidas === 0,
+      `nenhuma semana de bimestre fechado recebe foco do teclado (${focaveisEscondidas} focáveis)`,
+    );
+
+    /* Todos os bimestres ABERTOS antes de escolher a semana. Só o 1º vem aberto
+       (`defaultOpen`), e o corpo fechado fica no DOM: o filtro achava uma semana
+       de bimestre fechado, o Playwright a considerava visível e o clique morria
+       interceptado pelo corpo colapsado. Foi assim que esta suíte quebrou em
+       2026-09-10 — no dia em que as dez semanas do 1º bimestre ficaram todas
+       planejadas por corridas anteriores. */
+    const bimestres = exp.getByRole("button", { name: /º Bimestre/ });
+    for (let i = 0; i < (await bimestres.count()); i++) {
+      const cabecalho = bimestres.nth(i);
+      if ((await cabecalho.getAttribute("aria-expanded")) === "false") await cabecalho.click();
     }
-    await exp.getByRole("button", { name: "Planejar estas aulas" }).click();
+    await p.waitForTimeout(600);
+
+    /* "Falhou" conta como candidata, de propósito: é o caminho "Tentar de novo",
+       e a semana que falhou na geração é a que mais precisa ser exercitada. Sem
+       isso, uma falha de IA de ONTEM deixava a suíte sem candidata hoje, e o
+       vermelho não era de quem estava rodando. */
+    const candidata = exp
+      .locator("button.semana")
+      .filter({ hasText: /A planejar|Falhou/ })
+      .first();
+    r.exigir(
+      await candidata.isVisible().catch(() => false),
+      "há semana a planejar (ou a retomar depois de falha) no ano",
+    );
+    await candidata.click();
+    await p.waitForTimeout(1200);
+    await exp
+      .getByRole("button", { name: /Planejar estas aulas|Tentar de novo/ })
+      .first()
+      .click();
+
+    /* Primeiro provar que a geração COMEÇOU — e aqui isto NÃO é a mesma
+       precaução do plano anual. Quando a semana vem de `erro`, o botão "Tentar
+       de novo" fica DENTRO do `FeedbackAlert`, e o alerta continua na tela até
+       o POST voltar: o `esperarOuFalharCedo` seguinte via o alerta ANTIGO e
+       abortava com "a geração falhou" antes de a geração começar. Em 2026-09-10
+       isso fez a suíte reportar vermelho enquanto o banco gravava a semana como
+       `pronto` NA MESMA corrida — o pior tipo de falso negativo, porque manda
+       investigar um produto que funcionou. Por isso esta espera é `waitFor`
+       puro: vigiar o alerta aqui é vigiar o passado. */
+    await exp.getByText(/Detalhando as aulas/).waitFor({ timeout: 60_000 });
 
     /* Pronta, a semana abre na visão DETALHADA e a lista com o badge
        "Planejada" sai da tela: esperar pelo badge era esperar por um elemento
