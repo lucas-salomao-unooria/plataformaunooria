@@ -45,6 +45,9 @@ const PREFIXOS_PERMITIDOS = [
   "runs",
   "posts",
   "experiencias",
+  /* O interruptor da rede (ADR-87). Só a LEITURA passa por aqui: a escrita é do
+     painel da Unooria, e o `@Roles("admin")` da api é quem a protege. */
+  "recursos",
   "perfis",
   "analise",
   "progresso",

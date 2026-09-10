@@ -13,6 +13,11 @@ import {
 import { z } from "zod";
 import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
+import {
+  DisponibilidadeGuard,
+  Recurso,
+  SemDisponibilidade,
+} from "../comum/disponibilidade.guard";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import { BemEstarService } from "./bemestar.service";
@@ -45,8 +50,12 @@ function limitar(chave: string, limite: number, janelaMs: number) {
 }
 
 @Controller("bemestar")
-@UseGuards(OidcGuard, RolesGuard)
+@UseGuards(OidcGuard, RolesGuard, DisponibilidadeGuard)
 @Roles("professor")
+/* O interruptor da rede (ADR-87), por CLASSE: rota nova desta ferramenta nasce
+   coberta. A exceção é declarada com `@SemDisponibilidade()`, e só vale para
+   apagar os próprios dados. */
+@Recurso("exp-91-bem-estar")
 export class BemEstarController {
   constructor(private readonly bemEstar: BemEstarService) {}
 
@@ -117,6 +126,9 @@ export class BemEstarController {
   }
 
   /** LGPD (direito de eliminação): apaga tudo do professor logado. */
+  /* Fora do interruptor: apagar os próprios dados (DASS-21, sensível). Um produto desligado fecha tudo, menos
+     isto — interruptor que prende dado é indefensável (ADR-87). */
+  @SemDisponibilidade()
   @Delete("dados")
   @Contrato({
     resumo: "Apaga TUDO do bem-estar do professor logado.",

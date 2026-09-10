@@ -235,7 +235,80 @@ As rotas cross-escola vivem em \emph{controllers} separados
 um \cd{@Roles} misto é o caminho mais curto para um \cd{GET} novo herdar
 silenciosamente a permissão do vizinho.
 
+\section{O interruptor da rede: um nível que não é de tenancy}
+
+A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é
+autorização}: a \emph{disponibilidade}. Ele responde \enquote{este recurso existe
+nesta rede?}, e é PRÉ-CONDIÇÃO da liberação por turma (\adrr{ADR-69}), que por sua
+vez é pré-condição dos relógios e \emph{gates} das experiências.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Eixo} & \textbf{Pergunta} & \textbf{Quem decide}\\
+\midrule
+catálogo & que forma a experiência tem? & o manifesto / o CI\\
+\zebra disponibilidade (\adrr{ADR-87}) & existe NESTA REDE? & a Unooria (\cd{admin})\\
+liberação (\adrr{ADR-69}) & está aberta NESTA TURMA? & o professor\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{A tabela \cd{disponibilidades} fica FORA da RLS}, contra o hábito da regra
+inviolável nº 1, e a exceção é declarada: é configuração comercial e operacional
+da rede, não dado de estudante, e a linha de escopo-contrato tem \cd{escola\_id}
+NULO por desenho --- uma política por \cd{escola\_id} esconderia justamente a
+resposta que a tabela existe para dar. É o mesmo motivo de \cd{users},
+\cd{turmas} e \cd{lotacoes}. A ausência é provada por teste, para que a próxima
+migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer ligado.
+
+\textbf{Onde a guarda mora}, e por que num ponto só em cada caso:
+
+\begin{itemize}
+  \item \emph{Missões de estudante} --- dentro de
+    \cd{exigirMissaoLiberada}, ANTES da checagem de liberação. As seis
+    experiências já passam por aquele funil, e um ponto único torna impossível
+    existir liberação valendo num recurso que a rede não tem. A ordem importa
+    para o diagnóstico: o \cd{codigo} do 403 diz em qual dos dois eixos procurar.
+  \item \emph{Ferramentas de professor} (exp-90, exp-91, exp-92) --- não têm
+    liberação por turma e somam \textbf{28 rotas}. A guarda é um
+    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("exp-NN-slug")} no
+    \cd{@Controller}: rota nova nasce coberta. Anotar rota por rota é o desenho
+    em que a 29ª nasce sem guarda, sem erro e sem sintoma --- o produto
+    simplesmente deixa de poder ser desligado.
+  \item \emph{O escape é declarado} (\cd{@SemDisponibilidade()}) e vale
+    \textbf{só para apagar os próprios dados}. Desligar um produto fecha tudo; a
+    exceção existe porque \enquote{não consigo apagar meus dados porque o produto
+    foi desligado} é indefensável, e mais ainda no \emph{check-in} de bem-estar,
+    que é DASS-21.
+  \item \emph{Guard montado sem \cd{@Recurso} LANÇA}, em vez de liberar ---
+    liberar em silêncio é exatamente a falha que ele existe para impedir.
+\end{itemize}
+
+\textbf{A mensagem que chega ao estudante é a MESMA} de \cd{missao-nao-liberada}:
+quem lê é uma criança dentro de um app disfarçado, e \enquote{este produto foi
+desativado para a sua rede} quebra a ficção que a experiência está medindo. Quem
+distingue os dois casos é o \cd{codigo} (\cd{recurso-indisponivel}), que é o que
+o log e a tela leem. Na ferramenta de professor não há disfarce a proteger, e ali
+a mensagem diz o que aconteceu.
+
 \section{Nível 3: autorização por papel}
+
+\begin{regra}
+\textbf{\cd{admin} e \cd{gestor\_contrato} deixaram de ter as MESMAS
+capacidades} (\adrr{ADR-88}, revendo a afirmação da \adrr{ADR-80}). A primeira e
+única exceção é a \emph{disponibilidade} de recursos: o painel vive em
+\cd{/unooria/*} e é restrito ao \cd{admin}, porque ligar e desligar produto é
+decisão da fornecedora, não de quem administra o contrato do lado do cliente ---
+um \cd{gestor\_contrato} que pode LIGAR passa a ter acesso a produto que a rede
+não contratou. Para todo o resto a igualdade continua valendo.
+
+\textbf{Uma rota volta atrás dessa linha, e só uma}:
+\rota{GET /recursos/auditoria} (\adrr{ADR-89}), o histórico do painel. Ler por
+que o produto da própria rede mudou de estado é informação do cliente; decidir o
+estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
+\cd{gestor\_contrato}.
+\end{regra}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
 \toprule

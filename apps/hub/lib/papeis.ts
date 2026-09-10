@@ -37,6 +37,12 @@ export const ehDoContrato = (papel: Papel) => GESTORES_DO_CONTRATO.includes(pape
 export const ehGestor = (papel: Papel) =>
   GESTORES_DA_ESCOLA.includes(papel) || GESTORES_DO_CONTRATO.includes(papel);
 
+/** A área da Unooria (ADR-88) — o painel de disponibilidade de recursos. */
+export const AREA_UNOORIA = "/unooria/recursos";
+
+/** A área administrativa, dividida pelos quatro papéis de gestão. */
+export const AREA_ADMIN = "/admin/usuarios";
+
 /** Área inicial de cada papel. Papéis são mutuamente exclusivos. */
 export function homeDoPapel(papel: Papel): string {
   if (papel === "professor") return "/professor";
@@ -45,9 +51,12 @@ export function homeDoPapel(papel: Papel): string {
     // aparelho (`/exp/:expId`). Antes caía direto na experiência da série dele.
     return "/estudante";
   }
-  // Os quatro papéis de gestão dividem a MESMA área. Quem separa o que cada um
+  // O `admin` é a conta da UNOORIA, e a casa dele é o painel dela (ADR-88).
+  // Ele continua ENTRANDO em /admin — ver `areasDoPapel`.
+  if (papel === "admin") return AREA_UNOORIA;
+  // Os três papéis de gestão dividem a MESMA área. Quem separa o que cada um
   // pode é o `RolesGuard` da api, item a item — nunca o middleware.
-  return "/admin/usuarios";
+  return AREA_ADMIN;
 }
 
 /**
@@ -56,13 +65,33 @@ export function homeDoPapel(papel: Papel): string {
  */
 export function areaDoPathname(pathname: string): string {
   if (pathname.startsWith("/professor")) return "/professor";
-  if (pathname.startsWith("/admin")) return "/admin/usuarios";
-  if (pathname.startsWith("/analise")) return "/admin/usuarios";
+  if (pathname.startsWith("/unooria")) return AREA_UNOORIA;
+  if (pathname.startsWith("/admin")) return AREA_ADMIN;
+  if (pathname.startsWith("/analise")) return AREA_ADMIN;
   return "/estudante";
 }
 
-export function areaDoPapel(papel: Papel): string {
-  return homeDoPapel(papel);
+/**
+ * AS ÁREAS QUE O PAPEL PODE ENTRAR — plural, e é isso que importa.
+ *
+ * Isto era `areaDoPapel`, devolvendo UMA string que o middleware comparava com
+ * `areaDoPathname`. Com a área `/unooria` (ADR-88) essa comparação passou a ser
+ * uma armadilha que o typecheck não pega: o `admin` tem DUAS casas — o painel
+ * da Unooria e a área administrativa, que ele divide com os gestores. Com uma
+ * string só, ele seria EXPULSO de uma das duas, e o sintoma é
+ * `clico em Recursos e caio em Usuários` (ou o contrário), sem erro nenhum.
+ *
+ * Os outros papéis continuam com uma área — a lista de um item deixa isso
+ * explícito em vez de deixá-lo implícito no tipo de retorno.
+ */
+export function areasDoPapel(papel: Papel): readonly string[] {
+  if (papel === "admin") return [AREA_UNOORIA, AREA_ADMIN];
+  return [homeDoPapel(papel)];
+}
+
+/** `true` quando este papel pode entrar neste endereço. */
+export function podeEntrarNaArea(papel: Papel, pathname: string): boolean {
+  return areasDoPapel(papel).includes(areaDoPathname(pathname));
 }
 
 /**

@@ -8,7 +8,10 @@ lá, e a Definition of Done exige esta pasta atualizada e o `main.pdf` regerado
 entra sozinho no seu contexto: abra-o antes de escrever `.tex`.** Aqui ficam as
 armadilhas que já custaram tempo e não avisam quando você cai nelas:
 
-- **A PRÓXIMA ADR é a 86.** A numeração vai até ADR-85, sem lacuna: a 65 (que
+- **A PRÓXIMA ADR é a 91.** A numeração vai até ADR-90, sem lacuna: a 86 é o
+  guia da aula, 87 o eixo da disponibilidade, 88 o painel da Unooria só do
+  `admin`, 89 o histórico append-only que a rede também lê e 90 a suíte da API
+  em um worker. Antes dela: a 65 (que
   ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
   aula; a 80 é o modelo de seis papéis, 81 o panorama da diretoria, 82 o
   relatório dela, 83 o header full-bleed, 84 a observabilidade sem sessão e

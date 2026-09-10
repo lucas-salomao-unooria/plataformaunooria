@@ -170,6 +170,13 @@ const NOS: Record<string, NoDaTrilha> = {
   '/admin/minhas-escolas': { rotulo: 'Minhas escolas' },
   '/admin/relatorios': { rotulo: 'Relatório' },
   '/admin/periodos-letivos': { rotulo: 'Ano letivo' },
+  '/admin/recursos': { rotulo: 'Recursos' },
+
+  /* ---- painel da Unooria (só `admin` — ADR-88) ------------------------- */
+  // `/unooria` não tem página: a área começa em `/unooria/recursos`. Mesmo
+  // desenho de `/admin`.
+  "/unooria": { rotulo: "Unooria", oculto: true },
+  "/unooria/recursos": { rotulo: "Recursos" },
 
   /* ---- análise de produto (admin-contrato) ----------------------------- */
   '/analise': { rotulo: 'Análise de produto' },

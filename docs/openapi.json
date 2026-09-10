@@ -7212,6 +7212,10 @@
                             "type": "integer",
                             "nullable": true
                           },
+                          "produto": {
+                            "type": "string",
+                            "nullable": true
+                          },
                           "capabilities": {
                             "type": "array",
                             "items": {
@@ -7259,6 +7263,7 @@
                           "versaoAtiva",
                           "series",
                           "unidade",
+                          "produto",
                           "capabilities",
                           "viewport",
                           "publico",
@@ -7335,6 +7340,10 @@
                           "type": "integer",
                           "nullable": true
                         },
+                        "produto": {
+                          "type": "string",
+                          "nullable": true
+                        },
                         "capabilities": {
                           "type": "array",
                           "items": {
@@ -7382,6 +7391,7 @@
                         "versaoAtiva",
                         "series",
                         "unidade",
+                        "produto",
                         "capabilities",
                         "viewport",
                         "publico",
@@ -7457,6 +7467,10 @@
                           "type": "integer",
                           "nullable": true
                         },
+                        "produto": {
+                          "type": "string",
+                          "nullable": true
+                        },
                         "capabilities": {
                           "type": "array",
                           "items": {
@@ -7504,6 +7518,7 @@
                         "versaoAtiva",
                         "series",
                         "unidade",
+                        "produto",
                         "capabilities",
                         "viewport",
                         "publico",
@@ -7527,7 +7542,7 @@
           "experiencias"
         ],
         "summary": "Publica ou faz rollback de uma versão.",
-        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
+        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `produto` é o que põe a experiência no painel da Unooria (ADR-87) e o que lhe dá o TETO do produto. Ausente = ela responde só pelo próprio interruptor; quem cobra o campo é o teste dos manifestos, no CI, e não esta rota — 400 aqui mataria a ativação DEPOIS de os bundles subirem.\n- Cada PUT grava também uma linha em `experiencias_versoes` com o MANIFESTO INTEIRO. É o que faz o rollback pela tela devolver `viewport` e `permissoes` daquela versão, e não os de hoje.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
         "security": [
           {
             "token-da-plataforma": []
@@ -7579,6 +7594,16 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 4,
+                    "nullable": true
+                  },
+                  "produto": {
+                    "type": "string",
+                    "enum": [
+                      "entre-redes",
+                      "plano-de-aula",
+                      "plano-de-ensino",
+                      "bem-estar"
+                    ],
                     "nullable": true
                   },
                   "capabilities": {
@@ -7646,6 +7671,890 @@
             }
           }
         }
+      }
+    },
+    "/recursos/auditoria": {
+      "get": {
+        "operationId": "RecursosAuditoriaController_auditoria",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recursoId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "truncado": {
+                      "type": "boolean"
+                    },
+                    "linhas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "recursoId": {
+                            "type": "string"
+                          },
+                          "escolaId": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "acao": {
+                            "type": "string"
+                          },
+                          "versao": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "autorNome": {
+                            "type": "string"
+                          },
+                          "quando": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "recursoId",
+                          "escolaId",
+                          "acao",
+                          "versao",
+                          "motivo",
+                          "autorNome",
+                          "quando"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "truncado",
+                    "linhas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Quem ligou ou desligou o quê, e quando.",
+        "description": "O registro **append-only** das mudanças de disponibilidade e de versão. Existe porque a linha de `disponibilidades` é SOBRESCRITA a cada mudança: ela responde o estado atual, não o histórico. `UPDATE` é recusado por trigger no banco.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Aberta a `admin` E `gestor_contrato` — a única de `/recursos/*` que a rede alcança. Escrever continua sendo só do `admin` (ADR-88).\n- `autorNome` vem CONGELADO da linha, não de um JOIN: o histórico tem de dizer quem era aquela pessoa NAQUELE dia, e não o nome de hoje (ou nada, se a conta saiu).\n- Sem `?escolaId=` traz o contrato inteiro, incluindo as mudanças de escopo-contrato (`escolaId: null`). COM ele, traz as daquela escola **e** as do contrato, porque foram elas que decidiram o que vale ali.\n- Teto de 200 linhas, dito na resposta (`truncado`) — mesmo desenho de `GET /rostering/contas-de-assento`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/painel": {
+      "get": {
+        "operationId": "RecursosAdminController_painel",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "escopo": {
+                      "type": "object",
+                      "properties": {
+                        "escolaId": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "tipo": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "escolaId",
+                        "nome",
+                        "tipo"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "produtos": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string",
+                            "enum": [
+                              "entre-redes",
+                              "plano-de-aula",
+                              "plano-de-ensino",
+                              "bem-estar"
+                            ]
+                          },
+                          "estadoAqui": {
+                            "type": "string",
+                            "enum": [
+                              "ligado",
+                              "desligado",
+                              "herda"
+                            ]
+                          },
+                          "efetivo": {
+                            "type": "object",
+                            "properties": {
+                              "ligado": {
+                                "type": "boolean"
+                              },
+                              "origem": {
+                                "type": "string",
+                                "enum": [
+                                  "padrao",
+                                  "contrato",
+                                  "herdado",
+                                  "aqui"
+                                ]
+                              },
+                              "decididoEm": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "motivo": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "ligado",
+                              "origem",
+                              "decididoEm",
+                              "motivo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "experiencias": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "expId": {
+                                  "type": "string"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                },
+                                "estadoAqui": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ligado",
+                                    "desligado",
+                                    "herda"
+                                  ]
+                                },
+                                "efetivo": {
+                                  "type": "object",
+                                  "properties": {
+                                    "ligado": {
+                                      "type": "boolean"
+                                    },
+                                    "origem": {
+                                      "type": "string",
+                                      "enum": [
+                                        "padrao",
+                                        "contrato",
+                                        "herdado",
+                                        "aqui"
+                                      ]
+                                    },
+                                    "decididoEm": {
+                                      "type": "string",
+                                      "nullable": true
+                                    },
+                                    "motivo": {
+                                      "type": "string",
+                                      "nullable": true
+                                    }
+                                  },
+                                  "required": [
+                                    "ligado",
+                                    "origem",
+                                    "decididoEm",
+                                    "motivo"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "tetoDoProduto": {
+                                  "type": "boolean"
+                                },
+                                "versaoAtiva": {
+                                  "type": "string"
+                                },
+                                "versaoFixa": {
+                                  "type": "string",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "expId",
+                                "nome",
+                                "estadoAqui",
+                                "efetivo",
+                                "tetoDoProduto",
+                                "versaoAtiva",
+                                "versaoFixa"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "slug",
+                          "estadoAqui",
+                          "efetivo",
+                          "experiencias"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "escopo",
+                    "produtos"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "O painel: produtos, experiências e o que vale em cada escopo.",
+        "description": "Resolve a cadeia escola → regional → contrato e devolve, por recurso, **o que o interruptor daquele escopo mostra** (`estadoAqui`, três estados) e **o que efetivamente vale** (`efetivo`, com a origem). Sem `?escolaId=`, o escopo é o CONTRATO inteiro.\n\n**Papéis:** admin.\n\n**Restrições:**\n- `estadoAqui: herda` é a AUSÊNCIA de linha neste escopo — é o terceiro estado, e sem ele desfazer uma exceção seria impossível.\n- `tetoDoProduto` marca a experiência que está desligada pelo PRODUTO, não por linha própria: a tela desabilita o interruptor dela e escreve o motivo ao lado, em vez de mostrá-lo ligado.\n- `versaoAtiva` é a que o hub monta hoje; `versaoFixa` é a fixada NESTE escopo (`null` = segue a ativa).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/{recursoId}": {
+      "put": {
+        "operationId": "RecursosAdminController_definir",
+        "parameters": [
+          {
+            "name": "recursoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recursoId": {
+                      "type": "string"
+                    },
+                    "escolaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "ligado": {
+                      "type": "boolean"
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "recursoId",
+                    "escolaId",
+                    "ligado",
+                    "motivo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Liga ou desliga um recurso num escopo.",
+        "description": "Grava a linha de `disponibilidades` daquele (recurso, escopo). Idempotente por `upsert` — o índice único PARCIAL `WHERE escola_id IS NULL` é o que dá idempotência ao escopo-contrato, onde o único composto não bastaria.\n\n**Papéis:** admin.\n\n**Restrições:**\n- **Desligar exige `motivo`** (Zod aqui, CHECK no banco). `Desligado sem motivo` é o estado que ninguém sabe desfazer meses depois.\n- `escolaId: null` no corpo é o CONTRATO inteiro — a rede toda. Ele é explícito de propósito: numa querystring, ausente e vazio são indistinguíveis, e desligar a rede não pode acontecer por URL mal montada.\n- `versao_fixa` não se escreve por aqui: produto não tem versão, e a fixação por escopo é outra rota (fase 3).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "escolaId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "nullable": true
+                  },
+                  "ligado": {
+                    "type": "boolean"
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "escolaId",
+                  "ligado"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "RecursosAdminController_remover",
+        "parameters": [
+          {
+            "name": "recursoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recursoId": {
+                      "type": "string"
+                    },
+                    "escolaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "removida": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "recursoId",
+                    "escolaId",
+                    "removida"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Remove a exceção de um escopo (volta a herdar).",
+        "description": "Apaga a linha daquele (recurso, escopo). É o terceiro estado do interruptor: **herda** não é `ligado` — é a ausência de decisão neste nível, e sem esta rota uma exceção criada por engano seria permanente.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Sem `?escolaId=`, remove a linha do CONTRATO.\n- Remover o que não existe devolve `removida: false` e **não é erro**: o estado final pedido — não haver linha aqui — é o que já valia.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/experiencias/{expId}/versoes": {
+      "get": {
+        "operationId": "RecursosAdminController_versoes",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "versaoAtiva": {
+                      "type": "string"
+                    },
+                    "emRollback": {
+                      "type": "boolean"
+                    },
+                    "versoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "versao": {
+                            "type": "string"
+                          },
+                          "publicadaEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "publicadaPor": {
+                            "type": "string"
+                          },
+                          "ativa": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "versao",
+                          "publicadaEm",
+                          "publicadaPor",
+                          "ativa"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "versaoAtiva",
+                    "emRollback",
+                    "versoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "As versões publicadas de uma experiência.",
+        "description": "Sai de `experiencias_versoes`, que o `PUT /experiencias/:expId` do CI escreve a cada publish (e o seed em desenvolvimento). É a lista do **rollback pela tela** — antes dela, voltar uma versão exigia saber o número anterior de cabeça.\n\n**Papéis:** admin.\n\n**Restrições:**\n- `emRollback` é `true` quando a ativa não é a última publicada. É o estado que a tela tem de dizer: sem ele, o próximo deploy 'conserta' o rollback sem ninguém perceber.\n- O `manifesto` de cada versão NÃO vem na resposta: ele é insumo da ativação, não informação de tela.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/experiencias/{expId}/ativar": {
+      "post": {
+        "operationId": "RecursosAdminController_ativar",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "versaoAtiva": {
+                      "type": "string"
+                    },
+                    "conferida": {
+                      "type": "boolean"
+                    },
+                    "manifestoRestaurado": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "versaoAtiva",
+                    "conferida",
+                    "manifestoRestaurado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Ativa uma versão para o CONTRATO (o rollback).",
+        "description": "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.\n\n**Papéis:** admin.\n\n**Restrições:**\n- **Confere no CDN antes de gravar** (um HEAD no `index.html` da versão). Apontar a rede para uma versão que não subiu é tela branca para todo mundo, e o erro só apareceria quando a primeira criança abrisse a missão.\n- `conferida: false` = `CDN_EXP_URL` ausente (desenvolvimento). A tela precisa dizer isso: 'ativei sem conferir' e 'ativei e conferi' são garantias diferentes.\n- Vale para o CONTRATO inteiro. Fixar versão numa escola é `PUT /recursos/experiencias/:expId/versao`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "versao": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$"
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 400
+                  }
+                },
+                "required": [
+                  "versao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recursos/experiencias/{expId}/versao": {
+      "put": {
+        "operationId": "RecursosAdminController_fixarVersao",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "expId": {
+                      "type": "string"
+                    },
+                    "escolaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "versaoFixa": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "conferida": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "expId",
+                    "escolaId",
+                    "versaoFixa",
+                    "conferida"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Fixa (ou solta) a versão de uma experiência num escopo.",
+        "description": "Grava `disponibilidades.versao_fixa`. É o canário: uma escola roda a versão nova enquanto a rede segue na anterior. `versao: null` solta a fixação e volta a seguir a `versao_ativa`.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Fixar num escopo que não tinha linha CRIA a linha como `ligado`. É decisão explícita: quem fixa versão para uma escola está dizendo que a experiência vale ali.\n- Confere no CDN, como a ativação — e pelo mesmo motivo.\n- O CHECK do banco recusa `versao_fixa` em linha de `produto:*`: produto não tem bundle, logo não tem versão.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "escolaId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "nullable": true
+                  },
+                  "versao": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "escolaId",
+                  "versao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recursos/efetivos": {
+      "get": {
+        "operationId": "RecursosController_efetivos",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "produtos": {
+                      "type": "object",
+                      "required": [
+                        "entre-redes",
+                        "plano-de-aula",
+                        "plano-de-ensino",
+                        "bem-estar"
+                      ],
+                      "properties": {
+                        "entre-redes": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "plano-de-aula": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "plano-de-ensino": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "bem-estar": {
+                          "type": "object",
+                          "properties": {
+                            "ligado": {
+                              "type": "boolean"
+                            },
+                            "versao": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "ligado",
+                            "versao"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "experiencias": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                          "ligado": {
+                            "type": "boolean"
+                          },
+                          "versao": {
+                            "type": "string",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "ligado",
+                          "versao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "produtos",
+                    "experiencias"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "O que está disponível para a escola do token.",
+        "description": "Resolve a cadeia escola → regional → contrato e aplica o TETO do produto. É daqui que o hub monta os cards do professor e decide o 404 das rotas de produto — **esconder o card é UX**; a porta é `exigirMissaoLiberada` / `DisponibilidadeGuard`, no servidor.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `produtos` traz SEMPRE os quatro, ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista completa de cor.\n- Perfil de contrato (`gestor_contrato`, `admin`) não tem escola no token, então a resposta é a do CONTRATO — a cadeia fica vazia e só as linhas de escopo-contrato valem.\n- Não devolve `motivo` nem quem desligou: isso é conversa entre a Unooria e a rede, e vive no painel.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [],
+        "x-acesso": "token"
       }
     },
     "/salas/minhas": {

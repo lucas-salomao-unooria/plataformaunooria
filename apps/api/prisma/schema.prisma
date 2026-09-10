@@ -79,6 +79,10 @@ model Escola {
   perfisPortateis PerfilPortatil[]
   /// Os `gestor_regional` que cobrem esta regional (vazio numa `escola`).
   gestoresRegionais User[]         @relation("RegionalDoGestor")
+  /// As exceções de disponibilidade DESTE escopo — vale tanto para uma unidade
+  /// (`tipo='escola'`) quanto para uma regional, que é o nível de cima na mesma
+  /// tabela. As do CONTRATO não aparecem aqui: elas têm `escola_id` nulo.
+  disponibilidades  Disponibilidade[]
 
   @@map("escolas")
 }
@@ -412,6 +416,11 @@ model User {
   ecoSessoes       EcoSessao[]       @relation("EcoEstudante")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
   rastroSessoes    RastroSessao[]    @relation("RastroEstudante")
+  /// O que esta conta ligou ou desligou no painel da Unooria (ADR-87). FK de
+  /// verdade, pela mesma razão de `liberacoes.liberada_por`: "quem desligou o
+  /// jogo da rede?" é a pergunta que se faz às 8h da manhã, e ela some do
+  /// painel se o vínculo virar texto solto.
+  disponibilidadesQueDefiniu Disponibilidade[] @relation("DisponibilidadeAutor")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -851,6 +860,18 @@ model Experiencia {
   /// a grade da sala; sem ela a ordem caía no `exp_id`, que é ordem de
   /// numeração da experiência e não do ano letivo (ADR-69).
   unidade      Int?     @db.SmallInt
+  /// A QUE PRODUTO esta experiência pertence — `entre-redes`, `plano-de-aula`,
+  /// `plano-de-ensino`, `bem-estar` (CHECK na migration, espelhando `PRODUTOS`
+  /// de `src/recursos/catalogo.ts`). Declarado no `public/experiencia.json`.
+  ///
+  /// É esta coluna que faz o painel da Unooria se auto-estender: a composição
+  /// produto → experiências é DERIVADA do manifesto, não uma lista mantida à
+  /// mão — e lista à mão é a que ninguém atualiza quando a exp-08 nascer.
+  ///
+  /// NULO é dado real (linha de antes da coluna): a experiência responde só
+  /// pelo próprio interruptor, sem teto de produto. Quem impede uma experiência
+  /// NOVA de nascer assim é `tests/manifestos-declaram-produto.spec.ts`.
+  produto      String?
   capabilities String[] @default([])
   /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
   viewport     Json?
@@ -869,6 +890,138 @@ model Experiencia {
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   @@map("experiencias")
+}
+
+/// UMA VERSÃO PUBLICADA de uma experiência — o histórico que o painel oferece
+/// no rollback (ADR-87).
+///
+/// Guarda o `manifesto` INTEIRO, e não só o número, porque rollback de versão
+/// hoje NÃO é rollback de manifesto: `publicar-manifesto.mjs --versao x.y.z`
+/// manda o número antigo com o `experiencia.json` ATUAL do repositório, então
+/// `viewport`, `permissoes`, `series` e `unidade` continuam os de agora. É a
+/// classe de bug do iframe sem `allow-pointer-lock`: a criança entra na Vila, a
+/// câmera não gira, e não há erro em lugar nenhum.
+///
+/// `publicadaPor` é TEXTO SEM FK (ao contrário de `Disponibilidade.definidoPor`):
+/// quem publica quase sempre é o CI, cujo token tem `sub = 'ci-deploy'` — não é
+/// uuid e não existe em `users`. Uma FK aqui mataria o job de ativação do
+/// deploy DEPOIS de os bundles já terem subido.
+///
+/// Sem RLS e sem FK para `experiencias`, pelos mesmos motivos daquela tabela.
+model ExperienciaVersao {
+  expId        String   @map("exp_id")
+  versao       String
+  manifesto    Json
+  publicadaEm  DateTime @default(now()) @map("publicada_em") @db.Timestamptz(6)
+  publicadaPor String   @map("publicada_por")
+
+  @@id([expId, versao])
+  @@index([expId, publicadaEm(sort: Desc)])
+  @@map("experiencias_versoes")
+}
+
+/// O INTERRUPTOR DA REDE (ADR-87): este recurso existe neste escopo?
+///
+/// TERCEIRO eixo, e o nome é próprio para não se confundir com os outros dois:
+/// o catálogo (`experiencias`) diz que FORMA a experiência tem; a liberação
+/// (`liberacoes`, ADR-69) diz se ela está aberta NAQUELA TURMA; esta diz se ela
+/// EXISTE NESTA REDE. Disponibilidade é pré-condição de liberação.
+///
+/// AUSÊNCIA DE LINHA = LIGADO, o contrário de `liberacoes` e de propósito: lá a
+/// ausência é o bloqueio, aqui é o mundo normal. Este interruptor é mecanismo de
+/// EXCEÇÃO (não foi contratado, ou quebrou no deploy), não de liberação — nascer
+/// desligado exigiria uma linha por recurso a cada contrato provisionado, e toda
+/// experiência nova ficaria invisível até alguém lembrar de ligá-la.
+///
+/// SEM RLS, e a exceção está justificada na migration: é configuração da rede
+/// (não dado de estudante), e a linha de escopo-contrato tem `escolaId` NULO por
+/// desenho — uma política por `escola_id` esconderia justamente a resposta.
+model Disponibilidade {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  /// `produto:<slug>` ou `experiencia:<expId>` — CHECK na migration espelhando
+  /// `RECURSO_ID_RE` de `src/recursos/catalogo.ts`. Texto com prefixo, e não
+  /// duas colunas: a chave da decisão é o par (recurso, escopo), e com duas o
+  /// único abaixo teria três campos com um nulável.
+  recursoId String @map("recurso_id")
+
+  /// NULO = o CONTRATO inteiro (a stack). Preenchido = uma linha de `escolas`,
+  /// que pode ser `tipo='escola'` OU `tipo='regional'` — a hierarquia já existe
+  /// em `escolas.pai_id`, e o resolvedor sobe escola → regional → contrato.
+  escolaId String? @map("escola_id")
+
+  ligado Boolean
+
+  /// Fixa a versão NESTE escopo; NULO = segue `experiencias.versao_ativa`. Só
+  /// em `experiencia:*` (CHECK) — produto não tem bundle, logo não tem versão.
+  versaoFixa String? @map("versao_fixa")
+
+  /// OBRIGATÓRIO ao desligar (CHECK). "Desligado sem motivo" é o estado que
+  /// ninguém sabe desfazer: meses depois não há como saber se é decisão
+  /// comercial ou incidente que ninguém reverteu.
+  motivo String?
+
+  definidoPor  String   @map("definido_por") @db.Uuid
+  definidoEm   DateTime @default(now()) @map("definido_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  escola Escola? @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+  autor  User    @relation("DisponibilidadeAutor", fields: [definidoPor], references: [id])
+
+  /// NÃO basta: no Postgres `NULL` é distinto de `NULL` num índice único, então
+  /// isto deixa passar duas linhas de escopo-contrato. Quem fecha é o índice
+  /// único PARCIAL da migration (`WHERE escola_id IS NULL`).
+  @@unique([recursoId, escolaId])
+  @@index([recursoId])
+  @@map("disponibilidades")
+}
+
+/// QUEM DESLIGOU ISTO, E QUANDO? (ADR-89) — o registro APPEND-ONLY das mudanças
+/// de disponibilidade e de versão.
+///
+/// Existe porque a linha de `disponibilidades` é SOBRESCRITA a cada mudança: o
+/// estado atual ela responde, o histórico não. A ADR-87 deixou este gatilho
+/// declarado, e o que o disparou foi a pergunta ser feita na TELA — por quem
+/// está com a escola ao telefone, não por quem tem acesso ao Cloud Logging.
+///
+/// Lida por DOIS painéis: o da Unooria (quem faz) e o da rede (quem sofre). A
+/// rede não escreve — ligar e desligar continua só do `admin` (ADR-88).
+///
+/// `UPDATE` é recusado por TRIGGER; `DELETE` continua permitido (retenção
+/// futura e limpeza de suíte). Sem RLS, como `disponibilidades`.
+model RecursoAuditoria {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  recursoId String  @map("recurso_id")
+  /// NULO = a mudança foi no escopo do CONTRATO (a rede inteira).
+  escolaId  String? @map("escola_id")
+
+  /// `ligado` | `desligado` | `herdado` | `versao-ativada` | `versao-fixada`
+  /// | `versao-soltada` — CHECK na migration, espelhando o código.
+  acao String
+
+  /// A versão, e SÓ nas duas ações que a carregam (CHECK bicondicional). Campo
+  /// preenchido onde não significa nada faz quem lê a linha `desligado`
+  /// concluir que a versão foi parte da decisão.
+  versao String?
+
+  motivo String?
+
+  /// SEM FK para `users`: uma FK com `RESTRICT` travaria para sempre a exclusão
+  /// de quem já mexeu no painel, porque histórico não se apaga.
+  autorId String @map("autor_id") @db.Uuid
+
+  /// O nome de quem fez, CONGELADO na linha. Um JOIN mostraria o nome de hoje
+  /// — ou nada, se a conta saiu da rede —, e o registro deixaria de dizer quem
+  /// era aquela pessoa NAQUELE dia. Mesma razão de `exp_01_runs.nome_no_app`.
+  autorNome String @map("autor_nome")
+
+  quando DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([quando(sort: Desc)])
+  @@index([recursoId, quando(sort: Desc)])
+  @@index([escolaId, quando(sort: Desc)])
+  @@map("recursos_auditoria")
 }
 
 /// Quota diária de IA por estudante — persistida (o Map em memória zera a cada

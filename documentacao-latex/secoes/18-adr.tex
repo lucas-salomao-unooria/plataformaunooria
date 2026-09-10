@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{86 decisões}, numeradas até ADR-86, \textbf{sem lacunas}. A ADR-65
+São \textbf{90 decisões}, numeradas até ADR-90, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -127,6 +127,10 @@ que a cercam.
 \adrr{ADR-84} & Observabilidade de cliente sem sessão com sanitização & 2026-09-08 & Aceita\\
 \zebra \adrr{ADR-85} & Trocar de escola remonta o miolo da área (\cd{<EscopoDaEscola>}) & 2026-09-09 & Aceita\\
 \adrr{ADR-86} & O guia da aula mostra o conteúdo da missão, não o descreve & 2026-09-09 & Aceita\\
+\zebra \adrr{ADR-87} & Disponibilidade: terceiro eixo, e o produto como teto & 2026-09-09 & Aceita\\
+\adrr{ADR-88} & O painel da Unooria é só do \cd{admin} & 2026-09-09 & Aceita\\
+\zebra \adrr{ADR-89} & Histórico do painel é tabela append-only, e a rede lê o dela & 2026-09-10 & Aceita\\
+\adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -2112,7 +2116,7 @@ a fronteira, e não estava comprimida.
     \emph{iframe}: um FEED numa área larga inflaria o sinal central do motor.
   \item \textbf{O layout largo é \cd{md:}, o estreito é o \emph{default}.} Se a
     expansão não acontecer, o estudante vê exatamente o que via.
-  \item \textbf{Nenhuma mensagem hub$\rightarrow$exp para o layout}: o
+  \item \textbf{Nenhuma mensagem hub\seta{}exp para o layout}: o
     \emph{iframe} muda de largura de verdade, e as \emph{media queries} de
     dentro respondem sozinhas. Os dois gráficos a mais são renderizados e
     escondidos por CSS --- perguntar a largura em JS custaria um
@@ -6227,3 +6231,379 @@ primeira experiência que precise mostrar ao professor conteúdo \textbf{gerado
 por IA} para aquela turma: ali o bloco vivo deixa de ser catálogo e vira dado de
 turma, com \emph{tenancy}, e a decisão de onde ele é gerado e por quanto tempo
 vale precisa ser tomada à parte.
+
+\section{ADR-87 --- Disponibilidade: um terceiro eixo, com nome próprio, e o
+produto como teto}
+
+\textbf{Data:} 2026-09-09 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} Duas coisas decidiam se uma missão abria para uma criança: o
+\textbf{catálogo} (\cd{experiencias}: série, unidade, público --- que forma a
+experiência tem) e a \textbf{liberação por turma} (\cd{liberacoes},
+\adrr{ADR-69} --- se o professor a abriu naquela sala). Nenhuma das duas responde
+à pergunta que um contrato B2G faz: \emph{este produto existe nesta rede?}
+
+A resposta vivia em duas constantes compiladas no \emph{bundle} do hub: o
+\emph{array} \cd{PRODUTOS} de \cd{apps/hub/lib/produtos.ts} e o campo
+\cd{status: 'disponivel' | 'em-breve'} do catálogo do Entre Redes. Ou seja:
+desligar o jogo numa rede era editar TypeScript e fazer \emph{deploy} --- e
+fazê-lo para UMA rede era impossível, porque a constante é a mesma para todas as
+\emph{stacks} que rodam a mesma imagem. Duas necessidades concretas não tinham
+como ser atendidas: a rede que não contratou um produto o vê no cartão do
+professor, e a experiência que quebra num \emph{deploy} só sai do ar com outro
+\emph{deploy}.
+
+\textbf{Decisão.} Existe um TERCEIRO eixo, chamado \textbf{disponibilidade},
+gravado em \cd{disponibilidades} e operado pela Unooria:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Eixo} & \textbf{Pergunta} & \textbf{Quem decide}\\
+\midrule
+catálogo & que forma a experiência tem? & o manifesto / o CI\\
+\zebra liberação (\adrr{ADR-69}) & está aberta NESTA TURMA? & o professor\\
+disponibilidade & existe NESTA REDE? & a Unooria (\cd{admin})\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Disponibilidade é \textbf{pré-condição} de liberação, nunca o contrário. O nome
+é próprio de propósito: os três eixos respondem \enquote{a missão abre?} e
+confundi-los é o defeito caro --- um produto desligado tem o sintoma de um bug
+de enturmamento.
+
+Uma linha responde por um \textbf{recurso} num \textbf{escopo}. O recurso é
+\cd{produto:<slug>} ou \cd{experiencia:<expId>}; o escopo é a escola, a regional
+ou o contrato inteiro (\cd{escola\_id} nulo). Escola e regional são a mesma
+tabela \cd{escolas} distinguida por \cd{tipo}, então uma coluna nulável cobre os
+três níveis sem hierarquia nova.
+
+Duas regras de resolução, e as duas são decisão de produto:
+
+\begin{enumerate}
+  \item \textbf{O escopo mais específico ganha}: escola \seta{} regional
+    \seta{} contrato \seta{} padrão do código.
+  \item \textbf{O produto é um TETO}: produto desligado no escopo que vale
+    \implica{} nada dentro dele liga, mesmo com linha própria dizendo
+    \cd{ligado}.
+\end{enumerate}
+
+E três escolhas menores que o desenho depende de fixar:
+
+\emph{O padrão é LIGADO}, o contrário de \cd{liberacoes}. Lá a ausência de linha
+é o bloqueio (\enquote{o mundo nasce fechado de graça}); aqui a ausência é o
+mundo normal, porque este interruptor é mecanismo de \textbf{exceção} --- não foi
+contratado, ou quebrou --- e não de liberação. Nascer desligado exigiria uma
+linha por recurso a cada contrato provisionado, e toda experiência nova ficaria
+invisível até alguém lembrar de ligá-la.
+
+\emph{A linha inteira é a decisão}: \cd{ligado} e \cd{versao\_fixa} não se
+resolvem em cadeias separadas. Resolver campo a campo daria mais flexibilidade e
+produziria estados que ninguém explica olhando a tela --- a linha que o operador
+gravou deixaria de ser o que está valendo.
+
+\emph{A composição produto \seta{} experiências é DERIVADA do manifesto},
+por uma coluna \cd{experiencias.produto} que o \cd{public/experiencia.json}
+declara. É isto que faz o painel se auto-estender: experiência nova aparece nele
+sem ninguém editar lista nenhuma. Quem cobra o campo é um teste que varre todos
+os manifestos do monorepo, e não o Zod da rota --- um 400 no
+\rota{PUT /experiencias/\{expId\}} mataria o \emph{job} \cd{ativar-exps} DEPOIS
+de os \emph{bundles} já terem subido, com a \cd{versao\_ativa} na versão antiga.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Reusar \cd{liberacoes} com um estado novo} (\cd{indisponivel}).
+    Seria uma tabela a menos. Descartada porque \cd{liberacoes} é por TURMA e o
+    dono dela é o professor: desligar um produto na rede exigiria escrever uma
+    linha por turma de cada escola, e a tela do professor passaria a mostrar,
+    no mesmo lugar, uma decisão que não é dele e que ele não pode desfazer.
+  \item \emph{Deixar a experiência sobrepor o produto} (exceção por experiência
+    vencendo o teto). Mais expressivo. Descartada porque faz \enquote{desliguei o
+    Entre Redes para a rede} não significar o que diz: o operador teria de caçar
+    exceções antes de confiar na tela. Religar o produto no escopo menor
+    continua sendo o caminho, e é explicável.
+  \item \emph{Um campo booleano em \cd{experiencias}} (\cd{ativo}). O mais
+    simples de todos. Descartada porque \cd{experiencias} é escrita pelo CI a
+    cada \emph{publish}: o \emph{deploy} seguinte sobrescreveria o desligamento
+    feito à mão --- e o pior momento para isso é justamente o \emph{deploy} de
+    correção. Além de não ter onde pôr o escopo nem o produto.
+  \item \emph{Flags num serviço de terceiro} (LaunchDarkly e similares).
+    Descartada pela mesma razão que Redis está fora sem gargalo medido: um
+    contrato é uma \emph{stack} isolada, o dado cabe em dezenas de linhas, e um
+    provedor externo põe uma dependência de rede no caminho de toda página.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: desligar um produto numa rede deixou de ser
+\emph{deploy}, e \emph{rollback} de experiência deixou de ser CLI. \emph{Bom}: a
+tabela \cd{experiencias\_versoes} que nasceu com esta decisão conserta um defeito
+que ninguém havia notado --- \cd{publicar-manifesto.mjs --versao x.y.z} manda o
+número antigo com o manifesto ATUAL do repositório, então voltar a versão não
+voltava \cd{viewport} nem \cd{permissoes}: a exp-70 reabria sem
+\cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava, sem
+erro em lugar nenhum. Guardando o manifesto inteiro por versão, o
+\emph{rollback} passa a ser fiel.
+
+\emph{Ruim}: nasceu uma alavanca de incidente. Um clique no escopo-contrato
+desliga um produto para os \textasciitilde10 mil estudantes de uma rede, e o
+sintoma que ele produz --- a missão desapareceu da grade --- é
+\textbf{indistinguível} de um defeito. As mitigações são modal de confirmação,
+\cd{motivo} obrigatório ao desligar (CHECK no banco, não só Zod) e o registro
+estruturado \cd{recurso-alterado}; o sintoma entra no apêndice de operação.
+\emph{Ruim}: um terceiro eixo é um terceiro lugar onde procurar quando algo não
+abre. \emph{Ruim}: \cd{disponibilidades} fica FORA da RLS, contra o hábito da
+regra inviolável nº 1 --- é configuração da rede, não dado de estudante, e a
+linha de escopo-contrato tem \cd{escola\_id} nulo por desenho, de modo que uma
+política por \cd{escola\_id} esconderia justamente a resposta. A exceção é
+provada por teste, para que a próxima migração não a \enquote{conserte}: ligar
+RLS ali faz TODO produto parecer ligado.
+
+\emph{Aceito com nome}: desligar não interrompe quem já está dentro. O
+\emph{bundle} carregou, a api começa a recusar, e a experiência cai no estado de
+erro dela --- a mesma degradação que a liberação \cd{encerrada} já tem. E a
+telemetria de sessão em voo continua sendo ACEITA: recusá-la perderia o registro
+do que já aconteceu.
+
+\textbf{Gatilho de reavaliação.} O primeiro pedido de \enquote{ligar para 10\%
+das turmas} ou de janela de validade (\enquote{desligado até sexta}): ali
+disponibilidade deixa de ser um interruptor por escopo e vira segmentação, e
+segmentação com data é outro desenho. E o dia em que a pergunta \enquote{quem
+desligou isto, e quando?} precisar de TELA --- hoje ela tem resposta no registro
+e nas colunas da linha, que é sobrescrita a cada mudança, e a resposta em tela
+pede uma tabela de auditoria \emph{append-only}.
+
+\section{ADR-88 --- O painel da Unooria é só do \cd{admin}: a primeira
+assimetria com o \cd{gestor\_contrato}}
+
+\textbf{Data:} 2026-09-09 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-80} criou seis papéis e disse, com todas as
+letras, que \cd{admin} e \cd{gestor\_contrato} têm \textbf{as mesmas
+capacidades} --- \enquote{o que os distingue é de quem é a conta, não o que ela
+pode fazer}. Os dois dividem a área \cd{/admin} do hub, e quem os separa item a
+item é o \cd{RolesGuard} da api.
+
+O painel de disponibilidade (\adrr{ADR-87}) rompe isso pela primeira vez. Ligar
+e desligar produto não é operação de quem administra o contrato \textbf{do lado
+do cliente}: é decisão comercial e operacional da fornecedora. Um
+\cd{gestor\_contrato} que pode desligar o Entre Redes pode derrubar a rede
+inteira por engano; e um que pode LIGAR passa a ter acesso a produto que a rede
+não contratou.
+
+\textbf{Decisão.} O painel vive numa área própria, \cd{/unooria/*}, restrita ao
+papel \cd{admin} --- e esta é a primeira capacidade que \cd{admin} tem e
+\cd{gestor\_contrato} não. A afirmação de igualdade da \adrr{ADR-80} passa a
+valer para \textbf{tudo menos} a disponibilidade de recursos.
+
+Área própria, e não um item escondido dentro de \cd{/admin}, por três razões.
+\emph{Honestidade}: o painel da fornecedora ao lado das telas da escola convida
+ao clique errado. \emph{Trilha}: pela regra do hub, área nova exige
+\emph{layout} novo, e é o \emph{layout} que desenha a trilha --- foi por não ter
+\emph{layout} próprio que \cd{/admin} nasceu sem trilha nenhuma (\adrr{ADR-77}).
+\emph{Crescimento}: o que a Unooria opera sobre uma rede não termina no
+interruptor, e um item solto viraria a segunda área por acidente.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Manter a igualdade e dar o painel aos dois papéis}. Preserva a
+    \adrr{ADR-80} intacta e é o caminho mais curto. Descartada porque entrega ao
+    cliente o interruptor do que ele compra --- inclusive o de ligar o que não
+    comprou.
+  \item \emph{Item escondido dentro de \cd{/admin}, visível só para
+    \cd{admin}}. Reaproveita casca, \emph{nav} e trilha. Descartada pelas três
+    razões acima; a economia é de umas poucas dezenas de linhas.
+  \item \emph{Um sétimo papel} (\cd{operador\_unooria}), deixando \cd{admin}
+    como era. Descartada por multiplicar a matriz de papéis para descrever a
+    conta que já existe: \cd{admin} JÁ é a conta da Unooria, e o problema não é
+    falta de papel, é a afirmação de igualdade ter sido escrita antes de existir
+    a primeira exceção.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Ruim}: a matriz de papéis do capítulo de
+\emph{tenancy} deixa de poder dizer \enquote{\cd{admin} $\equiv$
+\cd{gestor\_contrato}} e passa a carregar uma exceção --- exatamente o tipo de
+detalhe que a próxima sessão \enquote{conserta} sem saber, e é por isso que esta
+ADR existe. \emph{Ruim}: uma área a mais no \cd{middleware}, e com ela uma
+armadilha que passa no \emph{typecheck} --- o \emph{redirect} entre áreas compara
+UMA \emph{string} (\cd{areaDoPathname} contra \cd{areaDoPapel}), então o
+\cd{admin} precisa poder entrar em DUAS áreas ou ele é expulso de uma delas, com
+o sintoma \enquote{clico em Recursos e caio em Usuários}. \emph{Bom}: existe um
+lugar que é da fornecedora, e ele pode crescer sem se misturar com o da escola.
+
+\textbf{Gatilho de reavaliação.} Um cliente que contratualmente exija operar o
+próprio catálogo --- caso em que a resposta provável não é abrir o painel ao
+\cd{gestor\_contrato}, e sim recortar dele o que é seguro delegar (desligar sim,
+ligar não), o que já é uma decisão diferente desta.
+
+\section{ADR-89 --- O histórico é tabela, não log --- e a REDE lê o dela}
+
+\textbf{Data:} 2026-09-10 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A \adrr{ADR-87} registrou, como consequência ruim aceita, que
+o histórico de quem mexeu no painel vivia só no registro estruturado
+(\cd{codigo: recurso-alterado}): a linha de \cd{disponibilidades} é
+SOBRESCRITA a cada mudança, então ela responde \enquote{o que vale agora} e não
+\enquote{quem desligou isto, e quando}. O gatilho declarado ali era o dia em que
+a pergunta precisasse de TELA.
+
+Ele chegou por dois caminhos ao mesmo tempo. Primeiro, a pergunta é feita às 8h
+da manhã por quem está com a escola ao telefone --- não por quem tem acesso ao
+Cloud Logging e sabe escrever um filtro. Segundo, e mais importante: quem sofre
+a mudança é a REDE, e ela não tinha como saber que a perdeu. O produto
+desaparecia do painel do professor e o sintoma é indistinguível de um defeito
+(está no Apêndice~\ref{ap:operacao} por isso) --- o gestor do contrato
+descobriria ligando para perguntar.
+
+\textbf{Decisão.} O histórico é uma tabela \textbf{append-only}
+(\cd{recursos\_auditoria}), escrita por toda mudança do painel, e é lida por
+\textbf{DOIS} painéis: o da Unooria (\rota{/unooria/recursos}, quem faz) e o da
+rede (\rota{/admin/recursos}, quem sofre).
+
+\textbf{A assimetria da \adrr{ADR-88} fica intacta.}
+\rota{GET /recursos/auditoria} é a única rota de \rota{/recursos/*} que
+\cd{gestor\_contrato} alcança; \rota{GET /recursos/painel} e as escritas
+continuam respondendo 403 para ele. Ler por que o produto mudou de estado é
+informação do cliente; decidir o estado não é. Verificado no navegador: a leitura
+responde 200 e o \cd{PUT} responde 403 na mesma sessão.
+
+\textbf{Quatro escolhas dentro da decisão.}
+
+\emph{\cd{autor\_nome} é CONGELADO na linha}, e não um \emph{JOIN} com
+\cd{users}. Um \emph{JOIN} mostraria o nome de HOJE --- ou nada, se a conta saiu
+da rede --- e o registro deixaria de dizer quem era aquela pessoa NAQUELE dia.
+É a mesma razão de \cd{exp\_01\_runs.nome\_no\_app} guardar o apelido em vez de
+o resolver. Por isso também \textbf{não há FK} em \cd{autor\_id}: com
+\cd{RESTRICT}, excluir qualquer conta que já tenha mexido no painel ficaria
+impossível para sempre, porque histórico não se apaga.
+
+\emph{\cd{UPDATE} é recusado por TRIGGER; \cd{DELETE} continua permitido.}
+Reescrever uma linha é o único jeito de esta tabela mentir, e é o que o
+\emph{trigger} fecha --- \enquote{append-only} garantido pelo código seria a
+promessa que a próxima rotina de correção quebra. O \cd{DELETE} fica por duas
+razões concretas: retenção (nenhuma tabela deste produto tem prazo hoje, e quem
+cumprir o prazo precisará apagar) e ISOLAMENTO DE TESTE --- tabela que não se
+limpa faz cada suíte deixar linha para trás, e esta mesma sessão gastou três
+diagnósticos nesse tipo de vazamento.
+
+\emph{O registro NUNCA derruba a operação que o chamou.} Desligar um produto num
+incidente não pode falhar porque o histórico não pôde ser escrito. Mas o erro
+não some: vai ao log com \cd{codigo: recurso-auditoria-nao-gravada}, que é o que
+uma métrica de log alcança.
+
+\emph{O histórico de uma ESCOLA inclui as decisões de CONTRATO.} Sem elas, a
+tela da escola diria \enquote{nada aconteceu aqui} sobre um produto que a rede
+desligou --- exatamente a pergunta do gestor.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Ficar só no log e construir uma métrica ou painel no Cloud
+    Logging.} Custo zero de código. Descartada porque a pergunta é de PRODUTO e
+    quem a faz não tem console de nuvem --- e porque o cliente nunca veria.
+  \item \emph{Versionar \cd{disponibilidades} em vez de tabela nova} (uma linha
+    por estado, a mais recente valendo). Uniformizaria as duas coisas.
+    Descartada por transformar toda leitura do resolvedor --- que roda no caminho
+    de TODA entrada em experiência --- numa consulta com \cd{ORDER BY} e
+    \cd{DISTINCT ON}. O estado atual é lido milhares de vezes por manhã; o
+    histórico, algumas por semana.
+  \item \emph{Dar a escrita ao \cd{gestor\_contrato}}, já que ele passa a ver o
+    histórico. Descartada: é a decisão da \adrr{ADR-88}, e o recorte
+    \enquote{desligar sim, ligar não} continua sendo o gatilho de reavaliação
+    dela, não desta.
+  \item \emph{Abrir o histórico a \cd{gestor\_escola} e \cd{gestor\_regional}.}
+    Descartada porque o histórico é do CONTRATO (a linha de escopo-contrato não
+    tem escola), e recortá-lo por unidade daria a uma escola a notícia de que a
+    rede perdeu um produto antes de a coordenação da rede saber.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: a pergunta operacional passou a ter resposta
+em tela, para os dois lados, e o cliente deixou de depender de um telefonema.
+\emph{Bom}: o \emph{trigger} torna a palavra \enquote{append-only} verdadeira em
+vez de aspiracional. \emph{Ruim}: uma tabela que só cresce e não tem prazo ---
+o mesmo risco \cd{R-02} que \cd{telemetria\_eventos} e \cd{vila\_sessoes} já
+carregam, e pela mesma razão (prazo sem rotina que o cumpra é pior que prazo
+nenhum). \emph{Ruim}: o \emph{motivo} escrito pela Unooria passa a ser lido pelo
+cliente --- o que é a intenção, e ao mesmo tempo significa que ele é texto de
+CONTRATO, não recado interno. Está dito no rótulo do campo, no diálogo.
+
+\textbf{Gatilho de reavaliação.} O primeiro pedido de exportação (CSV do
+histórico para anexar a um relatório contratual) ou de retenção com prazo --- o
+segundo é o que faz a tabela precisar de rotina, e aí ela entra na mesma
+conversa de \cd{telemetria\_eventos}.
+
+\section{ADR-90 --- A suíte da API roda em UM \emph{worker}}
+
+\textbf{Data:} 2026-09-10 \quad \textbf{Estado:} Aceita
+
+\textbf{Contexto.} A suíte de testes da API reprovava de forma intermitente ---
+uma falha a cada ~60 execuções completas, sempre em suítes que passavam
+sozinhas. A caça encontrou e consertou QUATRO defeitos reais de isolamento, e
+todos tinham a mesma raiz: \textbf{as tabelas de catálogo e de contrato estão
+fora da RLS por desenho} (\cd{experiencias}, \cd{experiencias\_versoes},
+\cd{disponibilidades}, \cd{periodos\_letivos}, \cd{recursos\_auditoria}), então
+uma \emph{fixture} escrita ali é ESTADO GLOBAL, não estado da suíte. Os quatro:
+uma linha de disponibilidade em escopo-contrato desligando um produto para as
+outras suítes; uma experiência de teste com \cd{publico: "estudante"} entrando na
+grade de toda turma; o \cd{GRANT} de preparação da \emph{role} de \emph{runtime}
+rodando em paralelo consigo mesmo (\cd{XX000 tuple concurrently updated} --- e o
+comentário do arquivo AFIRMAVA ser seguro em paralelo); e uma suíte apagando o
+período letivo compartilhado.
+
+Consertados os quatro, a cauda continuou: ~1 falha em 60 corridas paralelas
+contra 0 em 25 seriais. A conclusão é que o que resta não é um defeito
+localizável, é a CLASSE do problema --- um banco, um \emph{schema}, tabelas
+compartilhadas sem RLS e 40+ arquivos de teste escrevendo nelas ao mesmo tempo.
+
+\textbf{Decisão.} \cd{maxWorkers: 1} no \arq{apps/api/jest.config.cjs}, com o
+número medido e o gatilho de reavaliação no comentário ao lado. \textbf{A troca
+é explícita}: 5,4\,s $\to$ 17,6\,s na suíte inteira, em troca de zero
+intermitência. Trinta corridas completas depois da mudança (55 contando as
+seriais da medição) fecharam sem uma falha.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{Continuar caçando teste por teste.} Descartada porque o custo não
+    converge: cada arquivo novo pode reintroduzir o problema, e a falha aparece
+    uma vez em sessenta --- o pior regime possível para quem lê um CI vermelho e
+    tem de decidir se aquilo é a mudança dele.
+  \item \emph{Um banco por \emph{worker}.} É o conserto de verdade, e continua
+    sendo o caminho quando o tempo doer: ela custa \emph{template} de banco,
+    \cd{DATABASE\_URL} por \emph{worker} e migração aplicada N vezes no
+    \emph{setup}. Cara demais para 17\,s.
+  \item \emph{Ligar RLS nas tabelas de catálogo}, para que o isolamento viesse do
+    banco. Descartada com força: a linha de escopo-contrato de
+    \cd{disponibilidades} tem \cd{escola\_id} nulo POR DESENHO, e a política a
+    esconderia --- todo produto passaria a parecer ligado, que é o sintoma oposto
+    a um erro de permissão. Está escrito no dicionário de dados e provado por
+    teste, para que a próxima migração não \enquote{conserte} isso.
+  \item \emph{Marcar as suítes de Postgres como serial e deixar o resto em
+    paralelo.} Descartada por não pagar: as suítes de Postgres são a maioria do
+    tempo da suíte, então o ganho seria de segundos, ao custo de uma regra que
+    cada arquivo novo precisa saber e obedecer.
+\end{itemize}
+
+\textbf{Consequências.} \emph{Bom}: o CI vermelho voltou a significar
+\enquote{a sua mudança quebrou algo}. \emph{Bom}: a caça deixou quatro
+\emph{fixtures} realmente isoladas, e o comentário de cada uma diz por quê.
+\emph{Ruim}: 12 segundos a mais em cada execução local e de CI. \emph{Ruim}:
+serializar ESCONDE o problema de classe --- um teste novo que dependa de ordem
+agora passa, e só vai doer no dia em que alguém reativar o paralelismo.
+
+\textbf{A face de LEITURA do mesmo problema, descoberta horas depois e
+registrada aqui porque é a mesma decisão}: se \emph{fixture} escrita em tabela
+de contrato é estado global, \textbf{leitura} dela é dependência invisível. Três
+suítes LIAM \cd{experiencias} sem nunca a escrever --- o teto do produto, a
+composição do painel, a grade da sala --- e passavam porque o banco de
+desenvolvimento está SEMEADO. No Postgres descartável do CI a tabela nasce
+vazia, e o vermelho saía como \cd{expect(codigo).toBe(\textquotesingle{}recurso-indisponivel\textquotesingle{})}
+recebendo \cd{null}: lê-se \enquote{a guarda não funciona} quando o que faltava
+era o dado, e não reproduz na máquina de ninguém. O conserto é declarar a
+pré-condição: \cd{globalSetup} semeia o catálogo REAL a partir dos manifestos,
+uma vez, antes de qualquer suíte --- a mesma fonte que o CI publica e que o
+\emph{seed} lê, nunca uma lista de teste à mão. \cd{update} mínimo, para que
+rodar os testes não desfaça um \emph{rollback} deliberado em \emph{dev}; e
+Postgres inalcançável avisa e segue, porque 75 das 95 suítes não precisam de
+banco.
+
+\textbf{Gatilho de reavaliação.} A suíte passar de ~60\,s. Aí o banco por
+\emph{worker} passa a valer o preço, e o comentário do \arq{jest.config.cjs}
+está escrito para ser lido nesse dia.

@@ -238,7 +238,8 @@ lendo o arquivo.
 {
   "id": "exp-70-vila-do-lume",
   "nome": "Vila do Lume — A Noite Longa",
-  "versao": "1.0.0",
+  "versao": "1.1.3",
+  "produto": "entre-redes",
   "series": [],
   "capabilities": ["telemetria"],
   "permissoes": ["pointer-lock"],
@@ -267,17 +268,26 @@ lendo o arquivo.
 \cd{unidade} & \emph{1--4?} & A unidade do ano a que a missão pertence. Ausente
   na transversal e na ferramenta de professor: elas não moram numa unidade. É o
   que ORDENA a grade da sala (\adrr{ADR-69}).\\
-\zebra \cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
+\zebra \cd{produto} & \emph{slug} & A que PRODUTO a experiência pertence:
+  \cd{entre-redes}, \cd{plano-de-aula}, \cd{plano-de-ensino} ou
+  \cd{bem-estar}. É o que a põe no painel da Unooria e o que lhe dá o TETO do
+  produto (\adrr{ADR-87}) --- e é por ele que a composição produto \seta{}
+  experiências é DERIVADA do manifesto, em vez de ser uma lista mantida à mão
+  que ninguém atualiza quando a experiência seguinte nascer. Cobrado por
+  \arq{tests/manifestos-declaram-produto.spec.ts}, e \textbf{não} pelo Zod da
+  rota: um 400 no \rota{PUT /experiencias/:expId} mataria a ativação DEPOIS de
+  os \emph{bundles} já terem subido.\\
+\cd{capabilities} & \emph{string[]} & \cd{telemetria}, \cd{progresso},
   \cd{ia}, \cd{avaliacao}, \cd{tempo-real}. Declara o que a experiência usa da
   plataforma.\\
-\cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
+\zebra \cd{viewport} & \cd{\{largura, altura\}?} & Presente \implica{} o hub
   embeda dentro do \cd{DispositivoFrame} (casca de aparelho com escala). A
   exp-01 e a exp-07 são 375$\times$812; a exp-02 \emph{não} tem \cd{viewport},
   porque foi desenhada para \emph{desktop}. Quem desenha o aparelho é o hub ---
   a experiência \textbf{não} empilha uma casca própria.\\
-\zebra \cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
+\cd{publico} & \cd{estudante|professor} & \cd{professor} \implica{} ferramenta do
   professor, e \rota{/exp/*} responde \textbf{404} para ela.\\
-\cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
+\zebra \cd{permissoes} & \emph{string[]} & Permissões que o \emph{iframe} daquela
   experiência precisa: \cd{pointer-lock} (exp-70), \cd{forms} (exp-03, exp-07) e
   \cd{downloads} (exp-90, exp-92), traduzidos pelo \cd{ExpFrame} nos tokens
   \cd{allow-pointer-lock}, \cd{allow-forms} e \cd{allow-downloads}. Vazio (o
@@ -286,7 +296,7 @@ lendo o arquivo.
   ---, e \arq{tests/permissoes-de-iframe.spec.ts} falha se os dois primeiros
   divergirem: a divergência só aparece em produção, como 500 no
   \rota{PUT /experiencias/:expId}.\\
-\zebra \cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
+\cd{verbos} & \emph{objeto} & Documentação dos verbos de telemetria que a
   experiência emite. Não é lido por código; é contrato de leitura para quem
   analisa os dados.\\
 \bottomrule
@@ -302,9 +312,14 @@ aparecer em toda sala. O contrário faz a experiência desaparecer da tela sozin
 sem erro em lugar nenhum.
 
 \textbf{Campo novo no \arq{experiencia.json} tem de ser acrescentado ao
-\arq{publicar-manifesto.mjs} também} --- foi assim com \cd{permissoes} e com
-\cd{unidade}. Esquecer é INVISÍVEL em desenvolvimento (onde o hub lê o arquivo
-do \emph{bundle}) e quebra em produção, onde ele lê a coluna.
+\arq{publicar-manifesto.mjs} também} --- foi assim com \cd{permissoes}, com
+\cd{unidade} e com \cd{produto}. Esquecer é INVISÍVEL em desenvolvimento (onde o
+hub lê o arquivo do \emph{bundle}) e quebra em produção, onde ele lê a coluna. E
+a cadeia tem CINCO pontos, não dois: o Zod da rota, a coluna, o
+\arq{publicar-manifesto.mjs}, a \emph{interface} \cd{Manifesto} do \emph{seed}
+(\arq{prisma/catalogo-e-liberacoes.ts}) e o \arq{\_template} --- este último
+porque \cd{pnpm new:exp} copia o arquivo dele, e um \emph{template} incompleto
+faz TODA experiência nova nascer errada.
 \end{regra}
 
 \subsection{Como o hub resolve a URL do \cd{iframe}}

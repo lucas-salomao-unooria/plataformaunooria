@@ -118,8 +118,8 @@ não moram numa unidade. Sem ela a ordem cai no `expId` — numeração de exper
 não do ano letivo, e o 7º ano viria depois do 8º.
 
 **Campo novo no `experiencia.json` tem de ser acrescentado ao
-`apps/hub/scripts/publicar-manifesto.mjs` também.** Já valeu para `permissoes` e
-para `unidade`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
+`apps/hub/scripts/publicar-manifesto.mjs` também.** Já valeu para `permissoes`,
+para `unidade` e para `produto`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
 A exp-07 e a exp-06 têm teste cobrando as três; a exp-02 já vivia divergente.
@@ -139,6 +139,24 @@ professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo)
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
+**`produto` (ADR-87) é o que põe a experiência no PAINEL da Unooria** —
+`entre-redes`, `plano-de-aula`, `plano-de-ensino` ou `bem-estar` —, e é o que lhe
+dá o TETO do produto: produto desligado numa rede desliga tudo dentro dele. A
+composição produto → experiências é DERIVADA deste campo, e é por isso que ele
+existe em vez de uma lista no hub: lista à mão é a que ninguém atualiza quando a
+experiência seguinte nasce. **Esquecer o campo é MUDO** — a coluna nasce nula, a
+experiência não aparece dentro de nenhum produto no painel, e continua abrindo
+normalmente para estudante e professor: nada quebra e nada avisa. Quem cobra é
+`apps/api/tests/manifestos-declaram-produto.spec.ts`, no CI, e NÃO o Zod da rota
+(um 400 no `PUT` mataria a ativação depois de os bundles já terem subido).
+
+**A cadeia de um campo de manifesto tem CINCO pontos, não dois:** o Zod
+(`apps/api/src/experiencias/contrato-de-rotas.ts`), a coluna, o
+`apps/hub/scripts/publicar-manifesto.mjs`, a interface `Manifesto` do seed
+(`apps/api/prisma/catalogo-e-liberacoes.ts`) e o **`_template`** — este porque
+`pnpm new:exp` copia o `experiencia.json` dele, e um template incompleto faz TODA
+experiência nova nascer errada.
+
 ## Como criar uma experiência nova
 
 0. `git switch -c exp-NN-slug` a partir da `main` — uma branch por experiência.
@@ -149,7 +167,10 @@ professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo)
    `tiktooria`) pela ponte em `packages/ui`. Falta componente? Ele nasce no repo
    `storybook-unooria` e chega por versão nova, não como arquivo local.
 3. Declarar capabilities no `experiencia.json` (`telemetria`, `progresso`,
-   `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso.
+   `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso. **E `produto`**
+   (ADR-87), que é o que a põe no painel da Unooria: depois de semear, confirme
+   que ela aparece em `/unooria/recursos/<produto>`. Sem o campo ela funciona e
+   fica invisível para quem liga e desliga a rede — falha muda.
 4. `verbo`/`objeto` de telemetria: documentar no README da experiência.
 5. Build gera `dist/` 100% estático. Testar embedado: rota `/dev-embed` do hub.
 6. **Uma suíte de ponta a ponta**, e ela vai pelo PAPEL de quem usa, não pelo

@@ -13,6 +13,7 @@ import { UsuariosModule } from "./usuarios/usuarios.module";
 import { PortabilidadeModule } from "./portabilidade/portabilidade.module";
 import { RosteringModule } from "./rostering/rostering.module";
 import { ExperienciasModule } from "./experiencias/experiencias.module";
+import { RecursosModule } from "./recursos/recursos.module";
 import { MotorModule } from "./motor/motor.module";
 import { AssetsModule } from "./assets/assets.module";
 import { AtividadesModule } from "./atividades/atividades.module";
@@ -52,6 +53,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     RosteringModule,
     PortabilidadeModule,
     ExperienciasModule,
+    RecursosModule,
     SalasModule,
     MotorModule,
     AssetsModule,

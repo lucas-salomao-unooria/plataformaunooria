@@ -22,7 +22,7 @@ import type { Papel } from "@/lib/papeis";
  * elemento — um campo meu ali dentro virava atributo camelCase no DOM, com o
  * React reclamando em toda tela da área.
  */
-const SO_ADMIN_DO_CONTRATO = new Set(["regionais", "escolas"]);
+const SO_ADMIN_DO_CONTRATO = new Set(["regionais", "escolas", "recursos"]);
 
 /**
  * O panorama só aparece para quem tem MAIS DE UMA lotação — o supervisor de uma
@@ -60,6 +60,14 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
     label: "Relatório",
     icon: <Icon name="insights" />,
     href: "/admin/relatorios",
+  },
+  /* O HISTÓRICO do painel da Unooria (ADR-89), em leitura. A rede não liga nem
+     desliga nada — o que ela vê aqui é por que o produto dela mudou de estado. */
+  {
+    id: "recursos",
+    label: "Recursos",
+    icon: <Icon name="toggle_on" />,
+    href: "/admin/recursos",
   },
   { id: "usuarios", label: "Usuários", icon: <Icon name="group" />, href: "/admin/usuarios" },
   { id: "turmas", label: "Turmas", icon: <Icon name="school" />, href: "/admin/turmas" },

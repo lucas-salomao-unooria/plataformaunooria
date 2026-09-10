@@ -106,6 +106,8 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\rota{/perfis-recebidos}\desc{gestor, admin}};
   \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (sal) at (14.4,-3.0)
     {\rota{/salas/*}\desc{a SALA: grade e liberação}};
+  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (rec) at (16.3,-3.0)
+    {\rota{/recursos/*}\desc{o interruptor da REDE}};
 
   \node[camadalbl, anchor=west] at (0.3,-4.0) {exp-01 --- Instanooria};
   \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
@@ -278,7 +280,9 @@ Três rotas, e elas são a camada entre \cd{turmas} e \cd{experiencias}
 \end{itemize}
 
 \begin{regra}
-\textbf{Esconder o \emph{card} no hub é UX; a porta é do servidor.} Toda entrada
+\textbf{Esconder o \emph{card} no hub é UX; a porta é do servidor.} E desde a
+\adrr{ADR-87} essa porta tem DUAS trancas em série: antes de perguntar se o
+professor liberou, ela pergunta se o recurso EXISTE nesta rede. Toda entrada
 de estudante em experiência --- \rota{POST /runs}, \rota{GET /runs/boot} e o funil
 de sessão do UnooTube, do unooGPT, da Vila e do Eco --- chama
 \cd{exigirMissao\-Liberada} e responde \textbf{403} \cd{missao-nao-liberada} sem
@@ -575,6 +579,106 @@ nenhuma. A cota do par público é por IP, somada a um teto global de instância
     (\arq{otlp-proxy.service.ts}). O navegador nunca fala com o Cloud Trace.
     Sem \env{GCP\_PROJECT\_ID} o lote é contado e descartado.
 \end{itemize}
+
+\subsection{\rota{/recursos/*} --- o interruptor da rede}
+
+UMA rota de leitura, e ela é a base dos \emph{cards} do hub e do 404 das rotas de
+produto:
+
+\begin{itemize}
+  \item \rota{GET /recursos/efetivos} (\textbf{qualquer autenticado}) --- resolve
+    a cadeia escola \seta{} regional \seta{} contrato, aplica o TETO do produto e
+    devolve \cd{\{produtos, experiencias\}}. \cd{produtos} traz SEMPRE os quatro,
+    ligados ou não: um mapa que só lista o ligado obriga quem lê a saber a lista
+    completa de cor --- e o hub passaria a ter a segunda fonte do vocabulário.
+\end{itemize}
+
+Três decisões dentro dessa rota. O escopo sai do \textbf{token} (o claim
+\cd{escola\_id}) e nunca de \emph{query}, para não haver \enquote{me diga o que
+está ligado na escola do vizinho}. Perfil de contrato não tem escola no token,
+então a resposta é a do CONTRATO --- a cadeia fica vazia e só as linhas de
+escopo-contrato valem. E ela \textbf{não devolve \cd{motivo} nem quem
+desligou}: isso é conversa entre a Unooria e a rede, e num \emph{payload} que
+qualquer autenticado lê viraria a explicação errada na tela errada.
+
+\textbf{A ESCRITA é do painel}, restrita ao \cd{admin} (\adrr{ADR-88}) — a
+primeira capacidade que ele tem e o \cd{gestor\_contrato} não:
+
+\begin{itemize}
+  \item \rota{GET /recursos/painel} --- por recurso, o que o interruptor
+    DAQUELE escopo mostra (\cd{estadoAqui}, três estados) e o que efetivamente
+    vale (\cd{efetivo}, com a origem). Sem \cd{?escolaId=}, o escopo é o
+    contrato.
+  \item \rota{PUT /recursos/\{recursoId\}} --- liga ou desliga. \cd{escolaId}
+    vem no CORPO e \cd{null} explícito é o contrato: numa \emph{querystring},
+    ausente e vazio são indistinguíveis, e desligar a rede inteira não pode
+    acontecer porque alguém montou a URL sem o parâmetro. \textbf{Desligar exige
+    \cd{motivo}} --- Zod aqui, CHECK no banco.
+  \item \rota{DELETE /recursos/\{recursoId\}} --- remove a exceção do escopo. É
+    o terceiro estado (\emph{herda}); sem esta rota, exceção criada por engano
+    seria permanente. Remover o que não existe devolve \cd{removida: false} e
+    não é erro.
+\end{itemize}
+
+\textbf{O \emph{upsert} é SQL cru}, e a razão é estrutural: o \cd{upsert} do
+Prisma não consegue endereçar a linha de escopo-contrato, porque o único
+composto \cd{(recurso\_id, escola\_id)} tipa \cd{escolaId} como não-nulo --- um
+único composto do PostgreSQL não casa \cd{NULL}, que é a mesma limitação que
+obrigou o índice PARCIAL a existir. \cd{ON CONFLICT (recurso\_id) WHERE
+escola\_id IS NULL} infere aquele índice, e são dois \cd{ON CONFLICT} distintos
+porque são dois índices distintos.
+
+\textbf{Toda escrita registra \cd{codigo: recurso-alterado}} com recurso,
+escopo, estado e motivo --- a linha é sobrescrita a cada mudança, então o
+registro é a única resposta a \enquote{quem desligou isto, e quando?}.
+
+\textbf{A VERSÃO tem três rotas, e duas alavancas que nunca aparecem juntas:}
+
+\begin{itemize}
+  \item \rota{GET /recursos/experiencias/\{expId\}/versoes} --- o histórico de
+    \cd{experiencias\_versoes}, com \cd{emRollback}: \cd{true} quando a ativa
+    não é a última publicada. É o estado que a tela tem de dizer com todas as
+    letras, porque o próximo \emph{deploy} que tocar a experiência sobrescreve o
+    \emph{rollback}.
+  \item \rota{POST /recursos/experiencias/\{expId\}/ativar} --- troca a
+    \cd{versao\_ativa} do CONTRATO e \textbf{restaura o manifesto daquela
+    versão}. É o conserto de um defeito que ninguém havia notado:
+    \cd{publicar-manifesto.mjs --versao x.y.z} manda o número antigo com o
+    \arq{experiencia.json} ATUAL do repositório, então voltar a versão nunca
+    voltava \cd{viewport} nem \cd{permissoes} --- a exp-70 reabria sem
+    \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava,
+    sem erro em lugar nenhum.
+  \item \rota{PUT /recursos/experiencias/\{expId\}/versao} --- fixa (ou solta)
+    \cd{versao\_fixa} num escopo. É o canário: uma escola roda a versão nova
+    enquanto a rede segue na anterior. \cd{versao: null} solta a fixação e
+    \textbf{preserva} o \cd{ligado} da linha, que é decisão à parte.
+\end{itemize}
+
+\textbf{Ativar só no escopo-contrato; fixar só fora dele}, e a tela oferece uma
+alavanca por escopo. Fixar no contrato seria um segundo jeito, mais fraco, de
+fazer o que ativar faz --- trocaria a versão do \emph{bundle} sem restaurar o
+manifesto, reabrindo exatamente o defeito acima.
+
+\textbf{As duas escritas conferem no CDN} com um HEAD no \cd{index.html} da
+versão (\env{CDN\_EXP\_URL}), e a resposta carrega \cd{conferida}: sem a env
+(\emph{dev}) a conferência é pulada, e a tela DIZ isso --- \enquote{ativei} e
+\enquote{ativei e conferi que o \emph{bundle} está lá} são garantias diferentes.
+
+\textbf{O HISTÓRICO é a única rota de \rota{/recursos/*} que a REDE alcança}
+(\adrr{ADR-89}): \rota{GET /recursos/auditoria}, aberta a \cd{admin} \emph{e}
+\cd{gestor\_contrato}. Ela lê \cd{recursos\_auditoria}, escrita por toda mudança
+do painel --- e o \cd{autor\_nome} vem CONGELADO da linha, nunca de um
+\emph{JOIN}: o histórico tem de dizer quem era aquela pessoa naquele dia, e não
+o nome de hoje. Sem \cd{?escolaId=} traz o contrato inteiro; com ele, traz as
+mudanças daquela escola \textbf{e} as de escopo-contrato, porque foram elas que
+decidiram o que vale ali. As escritas e o \rota{GET /recursos/painel} continuam
+respondendo 403 ao \cd{gestor\_contrato}.
+
+\textbf{E o hub HONRA a versão fixada}: \cd{montarEmbed} lê
+\rota{GET /recursos/efetivos} em paralelo com o manifesto e monta a URL do
+\cd{iframe} com a versão do escopo. Sem essa leitura, a coluna seria gravada, o
+painel a mostraria e nada mudaria --- campo que não muda nada é pior que campo
+nenhum.
 
 \section{Sanidade e prontidão}
 

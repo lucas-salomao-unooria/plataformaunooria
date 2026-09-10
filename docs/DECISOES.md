@@ -8,18 +8,25 @@
    se houver estúdio externo produzindo experiência.
 3. **Auth via OIDC genérico (WSO2 IS)** — WSO2 é exigência do cliente/estratégia
    multi-contrato. App não conhece WSO2: conhece OIDC. Troca de IdP = config.
-4. **1 stack por contrato; escolas por RLS** — isolamento contratual forte sem
+4. **Três eixos decidem se algo abre, não dois** (ADR-87/88) — o catálogo diz
+   que forma a experiência tem; a *liberação* por turma diz se o professor a
+   abriu; a *disponibilidade* diz se ela existe naquela rede, e é pré-condição
+   das outras duas. A terceira é operada só pela Unooria (papel `admin`, área
+   `/unooria`) e é a primeira capacidade que ela tem e o `gestor_contrato` não.
+   Ausência de linha = LIGADO, ao contrário da liberação: é mecanismo de
+   exceção (não contratado, ou quebrado no deploy), não de liberação.
+5. **1 stack por contrato; escolas por RLS** — isolamento contratual forte sem
    virar operador de 100 infra-escolas. Terraform module `contrato` replica.
-5. **Cloud SQL HA (não AlloyDB)** — robustez vem de HA+PITR+pooler, não do
+6. **Cloud SQL HA (não AlloyDB)** — robustez vem de HA+PITR+pooler, não do
    AlloyDB; ambos Postgres, migração futura trivial se precisar.
-6. **Pub/Sub para telemetria desde o início** — 4k simultâneos × evento/10s
+7. **Pub/Sub para telemetria desde o início** — 4k simultâneos × evento/10s
    sufocaria o transacional. Resto da app fala Postgres direto.
-7. **IA atrás de gateway na própria api** — chave e prompt de sistema no server,
+8. **IA atrás de gateway na própria api** — chave e prompt de sistema no server,
    quota/dia por estudante, cache, provider plugável (Vertex default). Pré-gerar em
    lote sempre que a pedagogia permitir.
-8. **JWT curto + memória no iframe** — roubo mitigado por HTTPS, expiração 1h,
+9. **JWT curto + memória no iframe** — roubo mitigado por HTTPS, expiração 1h,
    escopo mínimo, rate limit; validação de nota é server-side de qualquer forma.
-9. **Gabarito e estado de missão server-side, por experiência** (exp-02
+10. **Gabarito e estado de missão server-side, por experiência** (exp-02
    UnooTube, 2026-08-24) — `factual` (a resposta) nunca vai ao bundle; a api
    corrige e devolve inscritos/fontes (regra 3). Não há módulo genérico de
    avaliação: cada experiência com lógica de domínio ganha um módulo próprio
@@ -30,7 +37,7 @@
    "adicionar credibilidade" (o score já foi reportado — nota e estado não
    divergem; reiniciar descongela), estudante roteado pela SÉRIE
    (`4EF → exp-02-unootube`, mapa estático até o manifesto ser a fonte).
-10. **Check-in de bem-estar do professor: DASS-21 fixo, IA só no entorno,
+11. **Check-in de bem-estar do professor: DASS-21 fixo, IA só no entorno,
    dado que só o professor lê** (exp-91, 2026-08-25). O instrumento entra
    verbatim (versão brasileira de Vignola & Tucci 2014) em microdoses de 3
    itens/dia — engajamento vem de custar < 1 min, não de reescrever perguntas.
@@ -42,7 +49,7 @@
    RLS + posse por professor, e o próprio professor apaga tudo
    (`DELETE /bemestar/dados`). Uma visão agregada/anonimizada para a rede é
    decisão futura, com DPA e k-anonimato — não sai de um `GROUP BY`.
-11. **Uma conta por PESSOA; enturmamento em `matriculas`; OneRoster só na
+12. **Uma conta por PESSOA; enturmamento em `matriculas`; OneRoster só na
    fronteira** (2026-08-28). As experiências vieram de projetos com cadastro
    próprio por atividade. A unificação técnica já existia (todas recebem
    `estudante.id` pelo `hub:init`), mas a conta era de **assento** — está escrito no
@@ -66,7 +73,7 @@
    manter o *formato* atrás de adaptadores serve aos dois futuros), e o
    `demographics` do OneRoster (raça/etnia do censo dos EUA — dado sensível que a
    plataforma não usa).
-12. **Senha provisória com troca obrigatória** (2026-08-28). A planilha não tem
+13. **Senha provisória com troca obrigatória** (2026-08-28). A planilha não tem
    coluna de senha: arquivo com senha em texto claro circula por e-mail e pen
    drive. A senha inicial é escolhida na tela de importação (uma para o lote, ou
    uma por pessoa — recomendada para estudantes), marca `senha_provisoria` e o
@@ -77,7 +84,7 @@
    a pessoa voltaria à mesma tela com a senha anterior já inválida.
    Consequência ruim, aceita e dita na própria tela: com uma senha só para o
    lote, qualquer estudante entra na conta de outro até o primeiro acesso dele.
-13. **A rede: lotação por escola, escola ativa no token, e o dado que fica**
+14. **A rede: lotação por escola, escola ativa no token, e o dado que fica**
    (2026-08-28). Vender a uma rede estadual exigia três coisas que
    `users.escola_id` único não dava: identificar milhares de escolas, professor em
    mais de uma, e criança transferida sem perder o histórico. A decisão que torna
@@ -96,7 +103,7 @@
    restrita a quem tem lotação na escola onde ele está hoje, devolvendo
    participações e nunca o conteúdo dos instrumentos. Reescrever `escola_id` nas 31
    tabelas foi descartado: apaga de onde o fato veio.
-14. **CPF como identidade, guardado só em hash** (2026-08-28). Nome, login e
+15. **CPF como identidade, guardado só em hash** (2026-08-28). Nome, login e
    matrícula mudam; o CPF não — e é o que o padrão nacional do MEC adota. É também
    o dado mais sensível que a plataforma tocaria, de menores, num banco que já
    guarda perfil de valores e check-in de saúde. Então: `users.cpf_hash =
@@ -111,7 +118,7 @@
    plataforma não usa para nada), sal por linha (mata a identidade), e cifrar (
    exigiria guardar a chave capaz de devolver o número, que é o que não se quer
    poder devolver).
-15. **O CPF é guardado, e o gestor o vê** (2026-08-28, revisa a 14). A decisão 14
+16. **O CPF é guardado, e o gestor o vê** (2026-08-28, revisa a 14). A decisão 14
    guardava só `HMAC-SHA256(cpf, pimenta)` e três dígitos: dava as duas coisas que
    a PLATAFORMA precisa do CPF — unicidade na rede e reconhecer a mesma criança
    numa transferência — e ignorava a que o GESTOR precisa: **ver o número**. Ele
@@ -129,7 +136,7 @@
    Lição de processo: eu decidi por segurança sem perguntar quem usa o dado. O
    requisito de exibição não estava escrito, e uma escolha irreversível não devia
    ter sido tomada sem ele.
-16. **A regional agrupa; quem autoriza é a lotação** (2026-08-28). Uma rede
+17. **A regional agrupa; quem autoriza é a lotação** (2026-08-28). Uma rede
    estadual não chega em escolas soltas: em SP são Diretorias de Ensino, em outras
    redes polos ou secretarias municipais, e existe gente que trabalha nesse nível —
    o supervisor que acompanha cinquenta unidades. A lotação já resolvia a pessoa em
@@ -153,7 +160,7 @@
    Lição de processo: `tipo` e `pai_id` tinham sido acrescentadas antes "porque
    custam zero" e nenhuma query as lia — a mesma armadilha do `expires_at` sem
    rotina. Coluna nasce com o consumidor, ou não nasce.
-17. **Perfil portátil: um documento assinado, não uma integração** (2026-08-28).
+18. **Perfil portátil: um documento assinado, não uma integração** (2026-08-28).
    A decisão 12 resolveu a criança que troca de escola DENTRO da rede. Faltava a
    que sai da rede: outro contrato, outra stack, outro banco — e **sem garantia de
    que o destino comprou o produto**, o que elimina qualquer desenho em que duas

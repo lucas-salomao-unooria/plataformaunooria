@@ -370,6 +370,8 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{portabilidade/}\desc{perfil portátil}};
   \node[c4component, text width=22mm] (salas) at (2.0,-10.4)
     {\texttt{salas/}\desc{a sala: grade e liberação}};
+  \node[c4component, text width=22mm] (recs) at (5.1,-10.4)
+    {\texttt{recursos/}\desc{o interruptor da rede e a versão}};
 
   % ---- faixa 4: dominio por experiencia
   \node[camadalbl, anchor=west] at (0.7,-10.9)
@@ -427,6 +429,16 @@ produziria colisão de nomes e falha mais difícil de localizar. O padrão do
 Capítulo~\ref{cap:experiencias} continua valendo para experiência nova; este é um
 porte.
 \end{nota}
+
+\textbf{\arq{recursos/} é o terceiro eixo, e ele não é de \emph{tenancy}}
+(\adrr{ADR-87}). O catálogo (\arq{experiencias/}) diz que forma a experiência
+tem; \arq{salas/} diz se ela está aberta naquela turma; \arq{recursos/} diz se
+ela EXISTE naquela rede --- e é pré-condição dos outros dois. Ele expõe a
+leitura para qualquer autenticado e a ESCRITA só ao \cd{admin} (\adrr{ADR-88}),
+em \emph{controllers} separados; a guarda vive em \arq{comum/}, ao lado da de
+liberação, porque é de dentro de transações de outros módulos que ela é chamada.
+A superfície dele no hub é a área \rota{/unooria/*}, a única restrita a um papel
+que o \cd{gestor\_contrato} não tem.
 
 \textbf{A porta da sala é a exceção que confirma a regra.} \arq{salas/} é módulo de
 PLATAFORMA: ele não conhece missão nenhuma pelo nome --- sabe turma, série e
@@ -487,7 +499,8 @@ mentiria sobre quem depende dela.
   \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
     {Rotas: \texttt{/} (\emph{landing}), \texttt{/privacidade}, \texttt{/termos},
      \texttt{/estudante}, \texttt{/professor/*},
-     \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
+     \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/unooria/*},
+     \texttt{/exp/:expId}, \texttt{/dev-embed}};
   \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
     {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
 

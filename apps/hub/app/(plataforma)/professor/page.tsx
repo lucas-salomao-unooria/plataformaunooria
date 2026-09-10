@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { MISSAO_ATUAL, rotaDaMissao } from "@/lib/entre-redes/catalogo";
 import { situacaoDoBemEstar, type ResumoBemEstar } from "@/lib/bem-estar";
 import { PRODUTOS } from "@/lib/produtos";
+import { recursosEfetivos } from "@/lib/recursos";
 import { minhasTurmas, rotuloDoTurno } from "@/lib/turmas";
 import { rotuloDaSerie, type Serie } from "@/lib/series";
 import { STATUS_DA_ATIVIDADE } from "@/lib/status-atividade";
@@ -52,12 +53,29 @@ export default async function HubProfessor() {
   // lista já ordenada por criação (desc) e escopada ao professor do token.
   // O resumo do bem-estar é leve (não abre ciclo nem chama IA) e falha em
   // silêncio: sem api, o card mostra o convite neutro.
-  const [resposta, resumoBemEstar, turmas] = await Promise.all([
+  const [resposta, resumoBemEstar, turmas, efetivos] = await Promise.all([
     apiDoServidor<RespostaAtividades>("/atividades"),
     apiDoServidor<ResumoBemEstar>("/bemestar/resumo"),
     minhasTurmas(),
+    recursosEfetivos(),
   ]);
   const recentes = (resposta?.atividades ?? []).slice(0, 4);
+
+  /**
+   * O CARD SÓ APARECE SE O PRODUTO ESTÁ LIGADO NESTA REDE (ADR-87).
+   *
+   * `PRODUTOS` deixou de ser a lista e passou a ser a COPY — o mesmo movimento
+   * que `lib/missoes-do-estudante.ts` fez na ADR-69, e pelo mesmo motivo: uma
+   * constante compilada no bundle é igual para toda rede, e o que existe numa
+   * rede é dado.
+   *
+   * `efetivos` nulo é a api fora do ar, e aí mostra TUDO: falhar fechado faria
+   * uma leitura pendurada esvaziar a home do professor, com a tela dizendo
+   * "você não tem produto" em vez de "não carregou".
+   */
+  const disponiveis = PRODUTOS.filter(
+    (produto) => efetivos?.produtos[produto.slug]?.ligado !== false,
+  );
   const situacaoPorSlug: Partial<Record<(typeof PRODUTOS)[number]["slug"], string>> = {
     "bem-estar": situacaoDoBemEstar(resumoBemEstar),
   };
@@ -70,9 +88,11 @@ export default async function HubProfessor() {
           Olá, {primeiroNome(usuario.nome)}
         </h1>
         <p className="text-[14px] text-unooria-neutral-500">
-          Escolha por onde começar. Quatro produtos, cada um com o seu tempo:
-          dois preparam a aula, um roda com a turma e um cuida de você — em
-          menos de um minuto.
+          {/* Sem contar os produtos: o número fica falso no dia em que a rede
+              desligar um deles, e copy que mente sobre a própria tela é pior
+              que copy vaga (ADR-87). */}
+          Escolha por onde começar. Cada um tem o seu tempo: uns preparam a
+          aula, um roda com a turma e um cuida de você — em menos de um minuto.
         </p>
       </div>
 
@@ -81,7 +101,7 @@ export default async function HubProfessor() {
           Produtos
         </h2>
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {PRODUTOS.map((produto) => (
+          {disponiveis.map((produto) => (
             <li key={produto.slug} className="h-full">
               <CartaoProduto
                 produto={{ ...produto, situacao: situacaoPorSlug[produto.slug] ?? produto.situacao }}
