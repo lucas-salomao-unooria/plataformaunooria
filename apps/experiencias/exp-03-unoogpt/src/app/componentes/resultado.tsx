@@ -55,7 +55,7 @@ function descreverMarco(m: MarcoDaTrilha): string {
   }
   const naoConsultados = ((d.naoConsultados ?? []) as string[]);
   return (
-    `Enviou as equipes: ${milhar((d.salvas ?? 0) as number)} resgatadas, ${milhar((d.vitimas ?? 0) as number)} afetadas.` +
+    `Enviou as equipes: ${milhar((d.salvas ?? 0) as number)} resgatadas, ${milhar((d.vitimas ?? 0) as number)} atingidas pela enchente.` +
     (naoConsultados.length > 0 ? ` Nunca consultou: ${naoConsultados.join(', ')}.` : '')
   );
 }
@@ -478,7 +478,7 @@ export function Resultado({
           <p className="text-3xl font-bold tracking-tight text-gpt-erro">
             {milhar(totais.vitimas)}
           </p>
-          <p className="mt-1 text-sm text-gpt-suave-60">afetadas</p>
+          <p className="mt-1 text-sm text-gpt-suave-60">atingidas pela enchente</p>
           {anterior && (
             <p
               className={`mt-0.5 text-sm font-semibold ${
@@ -504,8 +504,9 @@ export function Resultado({
       {/* A conta precisa fechar na tela: tabela que não fecha parece defeito, e
           o estudante para de confiar no resto dos números. */}
       <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gpt-suave-60">
-        {milhar(totais.emRisco)} pessoas estavam em risco. Estar em risco não é ser afetado: a
-        maioria conseguiu se proteger sem que uma equipe chegasse até ela.
+        {milhar(totais.emRisco)} pessoas estavam em risco. Estar em risco não é ser atingido: a
+        maioria conseguiu se proteger sem que uma equipe chegasse até ela. A simulação conta
+        quantas pessoas a enchente atingiu, sem dizer que tipo de perda cada uma teve.
       </p>
 
       {/* COMO ele chegou aqui. O resto da tela responde "o que aconteceu"; sem
@@ -540,7 +541,7 @@ export function Resultado({
             <th className="px-3 pb-3 text-right">Em risco</th>
             <th className="px-3 pb-3 text-right">Tiradas</th>
             <th className="px-3 pb-3 text-right">Sem ajuda</th>
-            <th className="px-3 pb-3 text-right">Afetadas</th>
+            <th className="px-3 pb-3 text-right">Atingidas</th>
             <th className="pb-3 pl-8">Equipe</th>
           </tr>
         </thead>

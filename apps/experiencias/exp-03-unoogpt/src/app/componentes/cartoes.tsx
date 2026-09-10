@@ -308,7 +308,7 @@ export function CartaoDesfecho({
       </p>
       <p className="mt-2 text-gpt-tinta">
         <strong className="text-gpt-ok">{milhar(totais.salvas)}</strong> pessoas tiradas de risco ·{' '}
-        <strong className="text-gpt-erro">{milhar(totais.vitimas)}</strong> afetadas.
+        <strong className="text-gpt-erro">{milhar(totais.vitimas)}</strong> atingidas pela enchente.
       </p>
       <p className="mt-2 text-xs text-gpt-suave-60">O resultado completo está na tela ao lado.</p>
     </div>

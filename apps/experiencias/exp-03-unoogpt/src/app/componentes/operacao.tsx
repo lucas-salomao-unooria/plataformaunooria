@@ -113,7 +113,7 @@ export function Operacao({
               <p className="text-3xl font-bold tracking-tight text-gpt-erro">
                 {pct(desfecho.totais.vitimas)}%
               </p>
-              <p className="text-sm font-semibold text-gpt-tinta">afetadas</p>
+              <p className="text-sm font-semibold text-gpt-tinta">atingidas</p>
               <p className="text-xs text-gpt-suave-60">{milhar(desfecho.totais.vitimas)} pessoas</p>
             </div>
           </div>
