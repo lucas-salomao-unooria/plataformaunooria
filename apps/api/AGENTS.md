@@ -602,6 +602,18 @@ própria rede mudou de estado é informação do cliente; decidir o estado não 
 **O que ainda não existe**: segmentação por turma ou janela de validade — gatilho
 de reavaliação declarado na ADR-87.
 
+**Suíte que LÊ tabela de contrato declara a pré-condição — não conte com o
+seed.** `experiencias`, `periodos_letivos` e `disponibilidades` não têm
+`escola_id`: quem só as lê depende de quem as escreveu. No banco de dev o
+`seed` já preencheu o catálogo, e três suítes passavam por isso; no Postgres
+descartável do CI a tabela nasce VAZIA e o vermelho mente — "o produto desligado
+não fechou a porta" é falta de dado, não guarda quebrada, e não reproduz na
+máquina. Hoje o `globalSetup` (`tests/catalogo-real.ts`) semeia o catálogo
+real dos MANIFESTOS antes de qualquer suíte, com `update` mínimo para não
+desfazer um rollback deliberado em dev. **Antes de empurrar mudança em suíte de
+Postgres, rode contra um banco NOVO** — `docker run ... postgres:16` numa porta
+livre, `migrate:deploy`, suíte inteira. É o que o CI faz.
+
 **O upsert do painel é SQL cru, e não por preferência.** O `upsert` do Prisma
 não consegue endereçar a linha de escopo-CONTRATO: o único composto
 `(recurso_id, escola_id)` tipa `escolaId` como `string` no `where`, porque um

@@ -6588,6 +6588,22 @@ seriais da medição) fecharam sem uma falha.
 serializar ESCONDE o problema de classe --- um teste novo que dependa de ordem
 agora passa, e só vai doer no dia em que alguém reativar o paralelismo.
 
+\textbf{A face de LEITURA do mesmo problema, descoberta horas depois e
+registrada aqui porque é a mesma decisão}: se \emph{fixture} escrita em tabela
+de contrato é estado global, \textbf{leitura} dela é dependência invisível. Três
+suítes LIAM \cd{experiencias} sem nunca a escrever --- o teto do produto, a
+composição do painel, a grade da sala --- e passavam porque o banco de
+desenvolvimento está SEMEADO. No Postgres descartável do CI a tabela nasce
+vazia, e o vermelho saía como \cd{expect(codigo).toBe(\textquotesingle{}recurso-indisponivel\textquotesingle{})}
+recebendo \cd{null}: lê-se \enquote{a guarda não funciona} quando o que faltava
+era o dado, e não reproduz na máquina de ninguém. O conserto é declarar a
+pré-condição: \cd{globalSetup} semeia o catálogo REAL a partir dos manifestos,
+uma vez, antes de qualquer suíte --- a mesma fonte que o CI publica e que o
+\emph{seed} lê, nunca uma lista de teste à mão. \cd{update} mínimo, para que
+rodar os testes não desfaça um \emph{rollback} deliberado em \emph{dev}; e
+Postgres inalcançável avisa e segue, porque 75 das 95 suítes não precisam de
+banco.
+
 \textbf{Gatilho de reavaliação.} A suíte passar de ~60\,s. Aí o banco por
 \emph{worker} passa a valer o preço, e o comentário do \arq{jest.config.cjs}
 está escrito para ser lido nesse dia.

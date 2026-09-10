@@ -941,7 +941,22 @@ marcado} &
   laço, redirecionando com \cd{> arquivo 2>\&1} --- o Jest escreve em
   \cd{stderr}, e \cd{2>\&1 > arquivo} manda o relatório para o terminal e grava
   um arquivo vazio (esta captura errada já fez uma caça parecer limpa).\\
-\textbf{O painel de recursos mudou o estado e o histórico não mostra a linha} &
+\textbf{A suíte passa na MÁQUINA e reprova no CI} &
+  \textbf{Procure a tabela de contrato que a suíte LÊ e não escreve} ---
+  \cd{experiencias} antes de todas. O banco de desenvolvimento está semeado; o
+  do CI é descartável e nasce só com o schema, então \enquote{o produto
+  desligado fecha a porta} reprova por não haver experiência declarando
+  pertencer ao produto. O sintoma MENTE: \cd{expect(codigo)} recebendo
+  \cd{null} lê-se como guarda quebrada, e a guarda está certa. É o espelho do
+  sintoma acima --- lá a \emph{fixture} escrita vaza, aqui a leitura depende de
+  quem semeou --- e as duas raízes são a mesma: tabela de contrato não isola por
+  suíte (\adrr{ADR-90}). O catálogo real virou pré-condição declarada
+  (\cd{globalSetup} em \arq{apps/api/jest.config.cjs}); \textbf{para reproduzir
+  antes de empurrar}, suba um Postgres descartável
+  (\cd{docker run -e POSTGRES\_PASSWORD=pass -e POSTGRES\_DB=unooria -p 55433:5432 postgres:16}),
+  rode \cd{migrate:deploy} contra ele e a suíte inteira --- é exatamente o que o
+  CI faz, e é o único jeito de ver este vermelho sem esperar o \emph{push}.\\
+\zebra \textbf{O painel de recursos mudou o estado e o histórico não mostra a linha} &
   \textbf{Isto é por desenho, e o log diz}: procure
   \cd{codigo=recurso-auditoria-nao-gravada} no Cloud Logging. O registro do
   histórico NUNCA derruba a operação que o chamou (\adrr{ADR-89}) --- o
@@ -950,7 +965,7 @@ marcado} &
   na tela. Aquele contador é o alarme. Se o log não tem a linha, a mudança que
   você procura foi em OUTRO escopo: o histórico de uma escola inclui as decisões
   de escopo-contrato, mas o do contrato não desce até as das escolas.\\
-\zebra \textbf{O histórico da escola mostra uma mudança que ninguém fez naquela
+\textbf{O histórico da escola mostra uma mudança que ninguém fez naquela
 escola} &
   \textbf{Também por desenho.} Filtrar por escola inclui as linhas de
   escopo-contrato (\cd{escola\_id IS NULL}): foram elas que decidiram o que vale

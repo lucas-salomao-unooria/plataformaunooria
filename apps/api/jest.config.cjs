@@ -29,6 +29,14 @@ module.exports = {
    * com o problema no lugar.
    */
   maxWorkers: 1,
+  /**
+   * O CATÁLOGO REAL, uma vez, antes de qualquer suíte — a razão inteira está em
+   * `tests/catalogo-real.ts`. Resumo: `experiencias` é tabela de contrato e
+   * várias suítes só a LEEM; no banco de dev o seed a preencheu, no Postgres
+   * descartável do CI ela nasce vazia, e o vermelho aparecia como "a guarda de
+   * disponibilidade não funciona" em vez de "faltou o dado".
+   */
+  globalSetup: "<rootDir>/tests/catalogo-real.ts",
   preset: "ts-jest",
   testEnvironment: "node",
   roots: ["<rootDir>/src", "<rootDir>/tests"],
