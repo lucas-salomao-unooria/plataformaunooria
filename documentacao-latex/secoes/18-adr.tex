@@ -6727,6 +6727,36 @@ três, e foi ele que pegou o esquecimento; a ADR-84 conta o que o terceiro lugar
 esquecido custou (erro de cliente agrupado numa versão que nunca existiu, e
 \arq{mapear-stack.mjs} procurando \emph{sourcemap} em caminho vazio).
 
+\subsection{Emenda de 2026-09-10: acessível não é só \emph{traduzido}}
+
+Um pedido de professores mostrou que a regra das três zonas resolve o inglês e
+NÃO resolve o outro caso de linguagem inacessível: a palavra em português que a
+criança lê sem saber o que significa. Na tela de resultado da exp-03, o número
+em vermelho era rotulado \enquote{afetadas} --- e os estudantes não sabiam se
+aquilo contava morte, desabrigamento ou outro dano. O termo virou
+\enquote{atingidas pela enchente} (\enquote{Atingidas} no cabeçalho da tabela,
+onde a coluna precisa ser curta).
+
+\begin{regra}
+\textbf{O termo novo não pode mudar o que o número CONTA.} O pedido original
+propunha \enquote{moradores que precisam de ajuda}, e essa troca foi
+\textbf{recusada}: as três categorias da tela somam as pessoas em risco
+(resgatadas $+$ atingidas $+$ sobreviveram sem ajuda), e o campo interno se
+chama \cd{vitimas} --- é dano JÁ ocorrido, não necessidade futura. Com o rótulo
+proposto, aquele número passaria a descrever a mesma coisa que
+\enquote{sobreviveram sem ajuda} ao lado dele, e a gravidade que a tela existe
+para o estudante encarar desapareceria. Trocar palavra de interface exige ler o
+que ela nomeia; aceitar a sugestão à letra teria corrigido o vocabulário e
+quebrado o sentido.
+\end{regra}
+
+\textbf{E a causa não era só a palavra.} A simulação não distingue o TIPO de
+dano, e era essa indefinição que produzia o mau sentimento relatado. Por isso a
+tela ganhou a frase que fecha a lacuna: \enquote{a simulação conta quantas
+pessoas a enchente atingiu, sem dizer que tipo de perda cada uma teve}. Trocar
+o rótulo sem dizer isso deixaria o estudante com uma palavra mais clara sobre
+uma quantidade que continuava indefinida.
+
 \textbf{Gatilho de reavaliação.} A plataforma precisar de um segundo idioma
 (rede indígena com material bilíngue, ou contrato fora do Brasil). Aí a decisão
 de não ter camada de i18n volta à mesa, e o custo dela deixa de ser indireção

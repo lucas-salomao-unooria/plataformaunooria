@@ -268,7 +268,7 @@ await suite(
     await r.registrar(p, "tempestade-passou", {
       titulo: "A tempestade passou",
       mostra:
-        "À esquerda, onde cada equipe chegou e por quê, o percentual de resgatadas e afetadas e o " +
+        "À esquerda, onde cada equipe chegou e por quê, o percentual de resgatadas e atingidas e o " +
         "risco coberto; à direita, o mapa com as rotas percorridas.",
       prova:
         "O painel cabe inteiro ao lado do mapa: o motivo da chegada quebra linha em vez de ser " +
