@@ -257,7 +257,7 @@ export const MISSAO_UNOOGPT: Missao = {
       "Clone de assistente de IA. O estudante conversa com um 'Cientista de Dados' que consulta 8 fontes sobre a cidade — cada uma com um viés que ele não vê",
     atos: [
       {
-        rotulo: "1 — Briefing, e a espera",
+        rotulo: "1 — A missão, e a espera",
         texto:
           "A manchete, o mapa apagado e a frase que organiza tudo: não dá para atender todos. O cronômetro aparece PARADO — quem dá a largada é você, no painel, e ela vale para a turma inteira ao mesmo tempo. Enquanto não largar, ninguém fala com o assistente.",
       },
@@ -334,7 +334,7 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
       {
         rotulo: "2 — Pausa entre as aulas",
         texto:
-          "No fim da Aula 1 a tela trava num card de pausa com o progresso salvo. Ninguém avança até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à decisão.",
+          "No fim da Aula 1 a missão para numa tela de pausa, com o progresso salvo. Ninguém avança até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à decisão.",
       },
       {
         rotulo: "3 — Responder no grupo (Aula 2)",
@@ -344,7 +344,7 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
       {
         rotulo: "4 — Sistematizar e registrar",
         texto:
-          "Três cards explicam o enquadramento parcial, o contexto omitido e o rótulo de encaminhamento. Você congela as telas para o debate e depois libera o 'Meu percurso', em que cada estudante marca 2 critérios de checagem e uma justificativa.",
+          "Três quadros explicam o enquadramento parcial, o contexto omitido e o rótulo de encaminhamento. Você congela as telas para o debate e depois libera o 'Meu percurso', em que cada estudante marca 2 critérios de checagem e uma justificativa.",
       },
     ],
     preparo: [
@@ -394,7 +394,7 @@ export const MISSAO_RASTRO_BOATO: Missao = {
       "Letramento midiático — ler os dados de envio de uma mensagem antes de repassá-la, e reconhecer que cada encaminhamento é uma escolha com consequência na rede.",
     duracao: "2 aulas de 30–35 min, com pausa entre elas",
     formato:
-      "Clone de mensageiro móvel: quatro conversas com 6 mensagens auditáveis, o modal de dados de envio, e o mapa da rede depois da decisão",
+      "Clone de mensageiro móvel: quatro conversas com 6 mensagens auditáveis, a janela de dados de envio, e o mapa da rede depois da decisão",
     atos: [
       {
         rotulo: "1 — Auditar as mensagens (Aula 1)",
@@ -409,7 +409,7 @@ export const MISSAO_RASTRO_BOATO: Missao = {
       {
         rotulo: "3 — Pausa entre as aulas",
         texto:
-          "Depois da decisão a tela trava num card de pausa com o progresso salvo. Ninguém vê o mapa até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à revelação.",
+          "Depois da decisão a missão para numa tela de pausa, com o progresso salvo. Ninguém vê o mapa até você abrir a Aula 2 no painel de resultados — é isso que faz a turma chegar junta à revelação.",
       },
       {
         rotulo: "4 — Ver o rastro e nomear o ciclo (Aula 2)",

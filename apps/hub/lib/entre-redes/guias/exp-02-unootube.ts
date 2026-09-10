@@ -89,7 +89,7 @@ export const GUIA_EXP_02: GuiaDaAula = {
       {
         titulo: "Abra a missão você mesmo, uma vez.",
         texto:
-          "Entre com um login de estudante e salve 3 vídeos até ver o ranking virar. São cinco minutos, e é o que te permite reconhecer a cara de uma criança que acabou de chegar naquela tela.",
+          "Entre com um usuário de estudante e salve 3 vídeos até ver o ranking virar. São cinco minutos, e é o que te permite reconhecer a cara de uma criança que acabou de chegar naquela tela.",
       },
       {
         titulo: "Deixe a tela de resultados aberta em outra aba.",
@@ -138,7 +138,7 @@ export const GUIA_EXP_02: GuiaDaAula = {
       },
       {
         tempo: "5–8",
-        momento: "Login e tela de entrada da missão.",
+        momento: "Entrada dos estudantes e tela inicial da missão.",
         professor:
           "Lembre do som (os vídeos começam mudos) e avise que a lupa não funciona nesta missão.",
       },
@@ -383,7 +383,7 @@ export const GUIA_EXP_02: GuiaDaAula = {
     {
       pergunta: "Um estudante quer fazer de novo.",
       resposta:
-        "Dá: “Reiniciar missão”, no perfil dele dentro da experiência. Volta ao briefing e zera as escolhas. Depois da virada, salvar e remover ficam bloqueados até reiniciar.",
+        "Dá: “Reiniciar missão”, no perfil dele dentro da experiência. Volta à tela de entrada e zera as escolhas. Depois da virada, salvar e remover ficam bloqueados até reiniciar.",
     },
     {
       pergunta: "Salvou só 2 vídeos e o ranking não abriu.",

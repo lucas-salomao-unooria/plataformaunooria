@@ -41,7 +41,7 @@ export function Bootstrap() {
         // Antes do handshake `exp` é null — ali não há token, e o sinal é a
         // ausência de `exp:ready`, que o hub observa.
         exp?.reportarErro(falha);
-        if (ativo) setErro("Não foi possível abrir o check-in agora. Recarregue a página ou tente mais tarde.");
+        if (ativo) setErro("Não foi possível abrir o acompanhamento agora. Recarregue a página ou tente mais tarde.");
       }
     })();
     return () => {
@@ -59,7 +59,7 @@ export function Bootstrap() {
   if (!boot) {
     return (
       <main className="app-shell app-main app-centro">
-        <p aria-live="polite">Abrindo o check-in…</p>
+        <p aria-live="polite">Abrindo…</p>
       </main>
     );
   }

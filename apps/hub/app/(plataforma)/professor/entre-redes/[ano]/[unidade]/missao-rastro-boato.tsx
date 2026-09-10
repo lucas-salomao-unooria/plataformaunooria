@@ -56,7 +56,7 @@ export function MissaoRastroBoato({
       <FeedbackAlert
         type="warning"
         title="Esta missão tem duas aulas, e é você que abre a segunda"
-        description="No fim da Aula 1 a turma trava num card de pausa com o progresso salvo. O botão que abre a Aula 2 fica em Resultados da turma — e é ele que faz todos chegarem juntos ao mapa da rede."
+        description="No fim da Aula 1 a turma trava numa tela de pausa com o progresso salvo. O botão que abre a Aula 2 fica em Resultados da turma — e é ele que faz todos chegarem juntos ao mapa da rede."
       />
 
       <section className="grid gap-4 lg:grid-cols-2">

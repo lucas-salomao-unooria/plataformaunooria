@@ -109,7 +109,7 @@ export function faltaJustificar(
 
 /** Espelho de `regras/passos.ts`. */
 export const ROTULO_PASSO: Record<string, string> = {
-  abertura: "Briefing",
+  abertura: "A missão",
   orientacao: "Orientação",
   investigacao: "Investigação",
   resultado: "Resultado",

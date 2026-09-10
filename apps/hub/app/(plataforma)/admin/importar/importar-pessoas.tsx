@@ -255,7 +255,7 @@ export function ImportarPessoas({
 
   const colunasDeSenha: TableColumn<Credencial>[] = [
     { key: "nome", title: "Nome" },
-    { key: "usuario", title: "Login" },
+    { key: "usuario", title: "Usuário" },
     { key: "senha", title: "Senha do primeiro acesso" },
     { key: "turma", title: "Turma", render: (_, linha) => linha.turma ?? "—" },
   ];
@@ -614,7 +614,7 @@ export function ImportarPessoas({
             <Table<ContaDeAssento>
               columns={[
                 { key: "nome", title: "Nome" },
-                { key: "usuario", title: "Login" },
+                { key: "usuario", title: "Usuário" },
                 { key: "papel", title: "Papel" },
                 { key: "dados", title: "Dados", align: "right" },
                 {

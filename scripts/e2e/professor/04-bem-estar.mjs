@@ -3,7 +3,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O check-in de bem-estar (exp-91): o único produto da plataforma cujo sujeito
+ * O acompanhamento de bem-estar (exp-91): o único produto da plataforma cujo sujeito
  * é o PROFESSOR.
  *
  * As três frases do dia são verbatim do DASS-21 — instrumento validado, e por
@@ -16,7 +16,7 @@ import { conta } from "../lib/credenciais.mjs";
  * docente" transformaria a ferramenta em vigilância — e ninguém responderia
  * com honestidade a um instrumento que o chefe lê.
  *
- * O check-in é UM POR DIA. O roteiro apaga os dados no começo para exercitar o
+ * A resposta é UMA POR DIA. O roteiro apaga os dados no começo para exercitar o
  * formulário inteiro — e, de graça, isso cobre o caminho destrutivo, que é uma
  * garantia do produto.
  */
@@ -33,7 +33,7 @@ await suite(
       "As três frases do dia vêm do DASS-21 sem reescrita",
       "Uma resposta por frase, e a pergunta aberta é opcional",
       "O envio devolve acolhimento e o progresso do ciclo",
-      "O check-in é um por dia: reabrir mostra o de hoje já feito",
+      "A resposta é uma por dia: reabrir mostra a de hoje já feita",
       "O histórico é só do próprio professor",
       "Apagar os dados apaga de verdade — e é o professor quem decide",
     ],
@@ -48,7 +48,7 @@ await suite(
     r.exigir((await cartao.count()) === 1, "o bem-estar é um dos três produtos do hub");
     const situacao = await cartao
       .locator("span")
-      .filter({ hasText: /Check-in|minuto/ })
+      .filter({ hasText: /respond|minuto|segundos/ })
       .first()
       .innerText()
       .catch(() => "(sem situação no cartão)");
@@ -64,15 +64,15 @@ await suite(
     await cartao.first().click();
     await p.waitForURL((url) => url.pathname === "/professor/bem-estar", { timeout: 30_000 });
     let bem = p.frameLocator('iframe[title="experiencia"]');
-    await bem.getByText(/Como você está|Check-in de hoje feito/).first().waitFor({ timeout: 60_000 });
+    await bem.getByText(/Como você está|Você já respondeu hoje/).first().waitFor({ timeout: 60_000 });
 
-    /* APAGAR ANTES, e pela TELA. O check-in é um por dia: sem limpar, a segunda
+    /* APAGAR ANTES, e pela TELA. A resposta é uma por dia: sem limpar, a segunda
        execução do dia encontra "já feito" e não exercita o formulário.
        Pela tela, e não pelo BFF do hub, porque `bemestar` NÃO está na allowlist
        dele — e não deve estar: nenhuma tela do hub lê bem-estar, só a
        experiência, com o token dela. Exercitar o caminho destrutivo aqui é de
        graça, e ele é uma garantia do produto. */
-    if (await bem.getByText("Check-in de hoje feito").isVisible().catch(() => false)) {
+    if (await bem.getByText("Você já respondeu hoje").isVisible().catch(() => false)) {
       await bem.getByRole("button", { name: "Histórico" }).click();
       await bem.getByText("Seu histórico").waitFor({ timeout: 20_000 });
       const apagar = bem.getByRole("button", { name: "Apagar meus dados" });
@@ -81,18 +81,18 @@ await suite(
       await p.waitForTimeout(3000);
       await p.reload({ waitUntil: "domcontentloaded" });
       bem = p.frameLocator('iframe[title="experiencia"]');
-      await bem.getByText(/Como você está|Check-in de hoje feito/).first().waitFor({ timeout: 60_000 });
+      await bem.getByText(/Como você está|Você já respondeu hoje/).first().waitFor({ timeout: 60_000 });
       await r.registrar(p, "dados-apagados", {
         titulo: "O professor apaga os próprios dados",
-        mostra: "Depois de apagar, o check-in do dia volta a estar em branco.",
+        mostra: "Depois de apagar, a resposta do dia volta a estar em branco.",
         prova:
           "O botão é dele e apaga TUDO, de todos os ciclos, sem pedir motivo a ninguém. É a " +
           "contrapartida de pedir que ele responda com honestidade a um instrumento clínico.",
       });
     }
 
-    const jaFeito = await bem.getByText("Check-in de hoje feito").isVisible().catch(() => false);
-    r.exigir(!jaFeito, "com os dados apagados, o check-in do dia abre em branco");
+    const jaFeito = await bem.getByText("Você já respondeu hoje").isVisible().catch(() => false);
+    r.exigir(!jaFeito, "com os dados apagados, a resposta do dia abre em branco");
 
     const grupos = bem.locator("fieldset");
     const frases = await grupos.count();
@@ -116,7 +116,7 @@ await suite(
       /\bIA\b|intelig/i.test(dica),
       "a caixa de texto livre diz que uma IA lê o texto para escrever o acolhimento",
     );
-    await r.registrar(p, "check-in-do-dia", {
+    await r.registrar(p, "resposta-do-dia", {
       titulo: "As três frases",
       mostra: "Três itens do DASS-21, com quatro respostas cada, e uma pergunta aberta opcional.",
       prova:
@@ -140,11 +140,11 @@ await suite(
         "minuto é o jeito mais rápido de fazer o professor abandonar no meio.",
     });
 
-    await bem.getByRole("button", { name: "Enviar check-in" }).click();
+    await bem.getByRole("button", { name: "Enviar respostas" }).click();
     await esperarOuFalharCedo(
-      bem.getByText("Check-in de hoje feito"),
+      bem.getByText("Você já respondeu hoje"),
       bem.locator(ALERTA_DE_ERRO),
-      { timeout: 90_000, oQue: "o envio do check-in (exp-91)" },
+      { timeout: 90_000, oQue: "o envio das respostas (exp-91)" },
     );
     await p.waitForTimeout(1500);
     await r.registrar(p, "acolhimento", {
@@ -158,9 +158,9 @@ await suite(
     // ── um por dia ──────────────────────────────────────────────────────
     await p.reload({ waitUntil: "domcontentloaded" });
     const bem2 = p.frameLocator('iframe[title="experiencia"]');
-    await bem2.getByText(/Como você está|Check-in de hoje feito/).first().waitFor({ timeout: 60_000 });
-    const agoraJaFeito = await bem2.getByText("Check-in de hoje feito").isVisible().catch(() => false);
-    r.exigir(agoraJaFeito, "reabrir no mesmo dia mostra o check-in de hoje já feito — é um por dia");
+    await bem2.getByText(/Como você está|Você já respondeu hoje/).first().waitFor({ timeout: 60_000 });
+    const agoraJaFeito = await bem2.getByText("Você já respondeu hoje").isVisible().catch(() => false);
+    r.exigir(agoraJaFeito, "reabrir no mesmo dia mostra a resposta de hoje já feita — é uma por dia");
 
     await bem2.getByRole("button", { name: "Histórico" }).click();
     await bem2.getByText("Seu histórico").waitFor({ timeout: 20_000 });

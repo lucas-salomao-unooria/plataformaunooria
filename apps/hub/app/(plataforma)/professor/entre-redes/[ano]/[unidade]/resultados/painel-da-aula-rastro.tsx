@@ -30,14 +30,14 @@ const MOMENTOS: Array<{ acao: Acao; etapa: EtapaDaAula; rotulo: string; explica:
     etapa: "aula2",
     rotulo: "Abrir a Aula 2",
     explica:
-      "Solta quem está esperando no card de pausa e libera o gráfico, o mapa da rede, o ciclo e o Meu percurso. Sem isto, ninguém passa da decisão no grupo.",
+      "Solta quem está esperando na tela de pausa e libera o gráfico, o mapa da rede, o ciclo e o Meu percurso. Sem isto, ninguém passa da decisão no grupo.",
   },
   {
     acao: "pausar-simulacao",
     etapa: "aula1",
     rotulo: "Pausar a simulação",
     explica:
-      "Volta a turma para o card de pausa. É para quem abriu a Aula 2 antes da hora — nada é apagado, e quem já entregou o percurso continua concluído.",
+      "Volta a turma para a tela de pausa. É para quem abriu a Aula 2 antes da hora — nada é apagado, e quem já entregou o percurso continua concluído.",
   },
 ];
 

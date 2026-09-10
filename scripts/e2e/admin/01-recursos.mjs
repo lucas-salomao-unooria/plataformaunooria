@@ -65,7 +65,7 @@ await suite(
     titulo: "O painel de recursos da Unooria",
     subtitulo: "o que cada rede tem no ar, e o interruptor que fecha o produto sem deploy",
     contexto:
-      "Uma rede não contratou o check-in de bem-estar; outra teve uma missão quebrar no meio da " +
+      "Uma rede não contratou o acompanhamento de bem-estar; outra teve uma missão quebrar no meio da " +
       "manhã. Até aqui, as duas coisas se resolviam editando código e fazendo deploy — e para UMA " +
       "rede era impossível, porque a lista de produtos era a mesma para todas as instalações. " +
       "Este painel é o terceiro eixo de acesso da plataforma: não é 'o professor liberou?', é " +
@@ -206,7 +206,7 @@ await suite(
     await r.registrar(pp, "professor-nao-ve-o-produto", {
       titulo: "Do outro lado, o produto não existe",
       mostra:
-        "A home do professor daquela escola, sem o card do check-in de bem-estar. Os outros " +
+        "A home do professor daquela escola, sem o cartão do acompanhamento de bem-estar. Os outros " +
         "produtos continuam ali.",
       prova:
         `Esconder o card é UX; a porta é do servidor. O endereço direto responde ${statusDaRota} — ` +

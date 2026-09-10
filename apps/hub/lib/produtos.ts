@@ -87,7 +87,7 @@ export const PRODUTOS: Produto[] = [
       "Três frases e um espaço para contar como foi a semana — menos de um minuto por dia. Em sete dias, um retrato só seu, que ninguém mais vê.",
     destino: ROTA_BEM_ESTAR,
     externo: false,
-    acao: "Fazer o check-in",
+    acao: "Responder hoje",
     // Substituída na página do hub pelo estado real (`GET /bemestar/resumo`).
     situacao: "Menos de 1 minuto por dia",
   },

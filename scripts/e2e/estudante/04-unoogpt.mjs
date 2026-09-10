@@ -106,8 +106,8 @@ await suite(
     await p.goto(`${HUB}/exp/exp-03-unoogpt`, { waitUntil: "domcontentloaded" });
     const quadro = p.frameLocator('iframe[title="experiencia"]');
     await quadro.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
-    await r.registrar(p, "briefing", {
-      titulo: "O briefing da emergência",
+    await r.registrar(p, "a-missao", {
+      titulo: "A missão: a emergência",
       mostra: "A situação: uma tempestade chegando, equipes de menos, bairros demais.",
       prova:
         "O dilema é declarado sem moralizar. A missão não tem resposta certa — tem escolhas com " +
@@ -143,7 +143,7 @@ await suite(
 
     // ═══ ESTUDANTE: a missão abre ═════════════════════════════════════════
     /* O polling do relógio é de 5s; recarregar é mais rápido e igualmente
-       válido. O estudante NÃO volta ao briefing — o passo é server-side. */
+       válido. O estudante NÃO volta à abertura — o passo é server-side. */
     await p.reload({ waitUntil: "domcontentloaded" });
     const q2 = p.frameLocator('iframe[title="experiencia"]');
     const campo = q2.locator("form input").first();

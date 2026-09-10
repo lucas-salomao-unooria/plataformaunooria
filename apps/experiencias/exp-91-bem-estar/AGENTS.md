@@ -1,4 +1,10 @@
-# apps/experiencias/exp-91-bem-estar — check-in do professor (DASS-21)
+# apps/experiencias/exp-91-bem-estar — acompanhamento de bem-estar do professor (DASS-21)
+
+**O termo de INTERFACE é "acompanhamento" (produto) e "responder hoje" (o ato)**
+— ADR-91. O IDENTIFICADOR continua `checkin` em tudo: estado, rota
+`/bemestar/checkins`, tabela `exp_91_checkins`, objeto do verbo de telemetria e
+este arquivo daqui para baixo. Não renomeie o identificador junto: a doutrina do
+`AGENTS.md` da raiz separa as duas coisas de propósito.
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 

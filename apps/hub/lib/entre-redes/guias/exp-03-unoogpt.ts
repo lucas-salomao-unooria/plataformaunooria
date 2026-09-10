@@ -148,7 +148,7 @@ export const GUIA_EXP_03: GuiaDaAula = {
       {
         tempo: "5–8",
         momento:
-          "A turma entra: briefing, mapa apagado e o cronômetro PARADO. Ninguém fala com o assistente ainda.",
+          "A turma entra: a tela da missão, mapa apagado e o cronômetro PARADO. Ninguém fala com o assistente ainda.",
         professor:
           "Confirme na sua tela que todos entraram. Quem chegou antes espera — e a espera é combinada, não travamento.",
       },

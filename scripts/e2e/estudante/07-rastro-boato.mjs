@@ -100,7 +100,7 @@ await suite(
         "que o software não conta ao estudante.",
       prova:
         "A professora precisa saber ANTES que a Aula 2 é ela quem abre. Uma turma inteira parada " +
-        "num card de pausa é o pior jeito de descobrir isso.",
+        "numa tela de pausa é o pior jeito de descobrir isso.",
     });
 
     await prof.click("text=Abrir a aula e os resultados");
@@ -268,7 +268,7 @@ await suite(
     await q.locator("text=/Debate em andamento/i").waitFor({ timeout: 30_000 });
     await r.registrar(p, "fim-da-aula-1", {
       titulo: "Fim da Aula 1",
-      mostra: "O card de pausa: a investigação e a resposta estão salvas, e a conversa continua depois.",
+      mostra: "A tela de pausa: a investigação e a resposta estão salvas, e a conversa continua depois.",
       prova:
         "A criança não fez nada errado — ela chegou ao fim da aula. Uma tela de bloqueio genérica " +
         "aqui faria parecer que ela perdeu a missão.",

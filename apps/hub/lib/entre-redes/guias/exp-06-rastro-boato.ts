@@ -21,14 +21,14 @@ import type { GuiaDaAula } from "./tipos";
 export const GUIA_EXP_06: GuiaDaAula = {
   expId: "exp-06-rastro-boato",
   chamada:
-    "Duas aulas de 30 a 35 min, com uma pausa entre elas. Você abre a segunda por um botão no painel — e sem ele a turma para no card de pausa.",
+    "Duas aulas de 30 a 35 min, com uma pausa entre elas. Você abre a segunda por um botão no painel — e sem ele a turma para na tela de pausa.",
 
   avisos: [
     {
       tom: "warning",
       titulo: "Esta missão tem duas aulas, e é você que abre a segunda",
       texto:
-        "No fim da Aula 1 a turma trava num card de pausa com o progresso salvo. O botão “Abrir a Aula 2” fica em Resultados da turma, e o inverso dele devolve a turma à investigação. Sem o primeiro, ninguém vê o mapa da rede.",
+        "No fim da Aula 1 a turma trava numa tela de pausa com o progresso salvo. O botão “Abrir a Aula 2” fica em Resultados da turma, e o inverso dele devolve a turma à investigação. Sem o primeiro, ninguém vê o mapa da rede.",
     },
     {
       tom: "info",
@@ -54,7 +54,7 @@ export const GUIA_EXP_06: GuiaDaAula = {
       eixo: "Mundo Digital",
       principal: true,
       ondeAcontece:
-        "A auditoria: o modal “Dados da mensagem” traz saltos, autor, detalhe e carimbo — e nenhum campo diz qual é a falsa. Reconhecer o padrão a partir dos números É a tarefa.",
+        "A auditoria: a janela “Dados da mensagem” traz saltos, autor, detalhe e carimbo — e nenhum campo diz qual é a falsa. Reconhecer o padrão a partir dos números É a tarefa.",
     },
     {
       codigo: "EF06CO01",
@@ -160,7 +160,7 @@ export const GUIA_EXP_06: GuiaDaAula = {
       {
         tempo: "Aula 1 · 8–24",
         momento:
-          "Auditoria dos quatro grupos. Tocando numa mensagem, o modal “Dados da mensagem” abre: saltos anônimos, quem assina, o carimbo de origem.",
+          "Auditoria dos quatro grupos. Tocando numa mensagem, a janela “Dados da mensagem” abre: saltos anônimos, quem assina, o carimbo de origem.",
         professor:
           "Circule em silêncio. A quem perguntar “qual é a falsa?”, devolva: “o que os dados de envio já te contam?”. Se alguém achar e comemorar alto, peça segredo — com cumplicidade, não com bronca.",
       },
@@ -169,11 +169,11 @@ export const GUIA_EXP_06: GuiaDaAula = {
         momento:
           "A crise chega e o relógio começa. Três opções: encaminhar para avisar, denunciar e fixar o laudo, ou apagar só para si.",
         professor:
-          "Não ajude a escolher. O tempo que cada um leva é dado da missão, e a hesitação é a parte que interessa. A aula termina no card de pausa.",
+          "Não ajude a escolher. O tempo que cada um leva é dado da missão, e a hesitação é a parte que interessa. A aula termina na tela de pausa.",
       },
       {
         tempo: "entre as aulas",
-        momento: "A turma fica no card de pausa, com o progresso salvo.",
+        momento: "A turma fica na tela de pausa, com o progresso salvo.",
         professor:
           "Abra a Aula 2 em Resultados da turma quando a turma estiver reunida de novo. Antes disso, ninguém passa.",
         botao: "Abrir a Aula 2",
@@ -385,7 +385,7 @@ export const GUIA_EXP_06: GuiaDaAula = {
     {
       contexto: "Turma com leitores em desenvolvimento.",
       comoAdaptar:
-        "Faça a auditoria do primeiro grupo coletivamente, projetando: você abre o modal e a turma lê os números em voz alta. Os outros três ficam individuais.",
+        "Faça a auditoria do primeiro grupo coletivamente, projetando: você abre a janela e a turma lê os números em voz alta. Os outros três ficam individuais.",
     },
     {
       contexto: "Uma aula de 50 minutos em vez de duas de 30.",

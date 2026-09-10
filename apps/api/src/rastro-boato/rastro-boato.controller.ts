@@ -113,7 +113,7 @@ export class RastroBoatoController {
   @Contrato({
     resumo: 'Sai da tela de contexto e abre a lista de conversas.',
     descricao:
-      "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 na Etapa 2 não pode devolver a criança ao briefing de Tomás que ela já leu.",
+      "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 na Etapa 2 não pode devolver a criança à abertura de Tomás que ela já leu.",
     resposta: EstadoSchema,
   })
   entrar(@Req() req: Autenticado) {
@@ -124,7 +124,7 @@ export class RastroBoatoController {
   @Post("auditoria")
   @HttpCode(200)
   @Contrato({
-    resumo: 'Registra a abertura do modal "Dados da mensagem".',
+    resumo: 'Registra a abertura da janela "Dados da mensagem".',
     descricao:
       "A cota de 3 é sobre mensagens **DISTINTAS**, e a dedupe é do servidor — um contador incrementado no cliente seria um número que o estudante controla. Reabrir o mesmo balão devolve 200 com `novo: false`: reler é o comportamento que a missão quer, e um 409 ali viraria a releitura em erro na tela.",
     corpo: AuditoriaSchema,

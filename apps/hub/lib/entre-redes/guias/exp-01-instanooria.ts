@@ -88,7 +88,7 @@ export const GUIA_EXP_01: GuiaDaAula = {
       },
       {
         titulo: "Ative a atividade e teste você mesmo",
-        texto: "com um login de estudante, antes de a turma entrar.",
+        texto: "com um usuário de estudante, antes de a turma entrar.",
       },
       {
         titulo: "Libere a missão para a turma.",
@@ -147,7 +147,7 @@ export const GUIA_EXP_01: GuiaDaAula = {
     linhas: [
       {
         tempo: "0–5",
-        momento: "Enquadramento da missão e login dos estudantes.",
+        momento: "Enquadramento da missão e entrada dos estudantes.",
         professor:
           "“Vocês vão investigar uma pergunta num app e, no fim, me dizer o que acham.” Nada além disso.",
         botao: "Começar investigação",
@@ -155,7 +155,7 @@ export const GUIA_EXP_01: GuiaDaAula = {
       {
         tempo: "5–25",
         momento:
-          "Investigação individual no feed. O monitor mostra em tempo real quem salvou o quê — clique em qualquer estudante e abre o aparelho dele num popup.",
+          "Investigação individual no feed. O monitor mostra em tempo real quem salvou o quê — clique em qualquer estudante e abre o aparelho dele numa janela.",
         professor:
           "Diga em voz alta a única instrução que importa: “salvem os posts que vão ajudar vocês a responder”. Circule pela sala sem comentar conteúdo nenhum. Fique de olho no alerta de ocioso: é o único que pede ação sua na hora.",
       },
@@ -471,7 +471,7 @@ export const GUIA_EXP_01: GuiaDaAula = {
     {
       pergunta: "Apareceu um alerta de estudante ocioso. O que faço?",
       resposta:
-        "É o único alerta do monitor que pede ação na hora. Clique no nome: o aparelho dele abre num popup e você vê em que tela ele parou. Normalmente é aba trocada ou vídeo pausado, não falha da missão.",
+        "É o único alerta do monitor que pede ação na hora. Clique no nome: o aparelho dele abre numa janela e você vê em que tela ele parou. Normalmente é aba trocada ou vídeo pausado, não falha da missão.",
     },
     {
       pergunta: "Liguei a interação ao vivo e um comentário não apareceu.",

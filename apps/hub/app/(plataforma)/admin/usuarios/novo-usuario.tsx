@@ -348,7 +348,7 @@ export function NovoUsuario({
           <div className="grid grid-cols-2 gap-4">
             <TextField
               id="novo-usuario"
-              label="Login"
+              label="Usuário"
               helperText="Em branco: gerado a partir do nome."
               value={usuario}
               error={erroDeCampo.usuario}

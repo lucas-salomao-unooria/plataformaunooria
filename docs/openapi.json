@@ -31093,7 +31093,7 @@
         "tags": [
           "o-eco-no-grupo"
         ],
-        "summary": "Sai do mensageiro e abre os cards de sistematização.",
+        "summary": "Sai do mensageiro e abre os quadros de sistematização.",
         "description": "Só depois da contraprova aceita pelo grupo. É a fronteira da revelação: daqui em diante quem fala é a escola, não o app.\n\n**Papéis:** estudante.",
         "security": [
           {
@@ -32918,7 +32918,7 @@
           "rastro-boato"
         ],
         "summary": "Sai da tela de contexto e abre a lista de conversas.",
-        "description": "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 na Etapa 2 não pode devolver a criança ao briefing de Tomás que ela já leu.\n\n**Papéis:** estudante.",
+        "description": "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 na Etapa 2 não pode devolver a criança à abertura de Tomás que ela já leu.\n\n**Papéis:** estudante.",
         "security": [
           {
             "token-da-plataforma": []
@@ -33142,7 +33142,7 @@
         "tags": [
           "rastro-boato"
         ],
-        "summary": "Registra a abertura do modal \"Dados da mensagem\".",
+        "summary": "Registra a abertura da janela \"Dados da mensagem\".",
         "description": "A cota de 3 é sobre mensagens **DISTINTAS**, e a dedupe é do servidor — um contador incrementado no cliente seria um número que o estudante controla. Reabrir o mesmo balão devolve 200 com `novo: false`: reler é o comportamento que a missão quer, e um 409 ali viraria a releitura em erro na tela.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Quando a terceira mensagem distinta fecha a cota, o `passo` anda para `decisao` AQUI, no servidor. Deixar o cliente pedir a transição seria deixá-lo escolher quando o pico da missão começa.\n- `tempoLeituraS` é calibragem de fluxo, não medida de mérito: ninguém é avaliado por ler rápido.",
         "security": [
           {
