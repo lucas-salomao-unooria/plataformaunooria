@@ -1009,6 +1009,21 @@ estudantes não mudou} &
   \cd{SELECT fase, finished\_at FROM exp\_01\_runs WHERE activity\_id = ...}: fase
   \cd{conclusao} com \cd{finished\_at} preenchido e a atividade em
   \cd{investigacao} é a assinatura do defeito.\\
+\textbf{A suíte diz que a recusa de \emph{login} não aparece na tela --- e ela
+aparece} &
+  A espera era CEGA. O passo esperava 3s fixos depois do clique e então lia a
+  tela; em 2026-09-10 o \rota{POST /api/auth/callback/credentials} levou
+  \textbf{4,5s}, porque era a primeira vez que o \cd{next dev} compilava
+  \rota{/api/auth/[...nextauth]}, e a foto pegou o botão ainda em
+  \enquote{Entrando\ldots}. O relatório então acusou o PRODUTO --- \enquote{a
+  recusa não aparece, e não só no console} --- quando o defeito era da espera.
+  Confirme no log do hub:
+  \cd{POST /api/auth/callback/credentials? 200 in 4.5s}; com a rota quente a
+  recusa aparece em 333ms (medido no mesmo dia). O conserto é o da espera que
+  corre contra o erro: espere o DESFECHO --- o \cd{AlertBox} de erro OU a saída
+  do \rota{/login} --- e nunca o relógio. Note que aqui a espera cega era curta
+  DEMAIS, o inverso do caso comum em que ela paga o prazo inteiro: os dois
+  reportam a causa errada, e este reporta uma causa que culpa o produto.\\
 \bottomrule
 \end{tabularx}
 

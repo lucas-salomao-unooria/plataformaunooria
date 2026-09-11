@@ -9,11 +9,12 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{94 decisões escritas}, numeradas até ADR-96: a \adrr{ADR-93} e a
+São \textbf{95 decisões escritas}, numeradas até ADR-97: a \adrr{ADR-93} e a
 \adrr{ADR-94} estão \textbf{reservadas} por frentes em curso e entram no dia em
 que elas fecharem. A lacuna é deliberada, e é a regra deste capítulo em uso ---
 o número se reserva contra as frentes ABERTAS, não contra a branch integrada ---,
-que é o motivo de a \adrr{ADR-95} e a \adrr{ADR-96} terem saído antes das duas. A ADR-65
+que é o motivo de a \adrr{ADR-95}, a \adrr{ADR-96} e a \adrr{ADR-97}
+terem saído antes das duas. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -139,6 +140,7 @@ que a cercam.
 \adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-95} & A sessão do hub dura 2h de inatividade, igual para todo papel & 2026-09-10 & Aceita\\
 \adrr{ADR-96} & Ficar na missão conta como uso, e a sessão que morre tem tela & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-97} & A tela diz POR QUE não entrou, e a suíte espera o desfecho & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7130,3 +7132,121 @@ página mentindo em silêncio. Nada no \emph{typecheck} liga os dois.
     \cd{exp:token-expirando} sob comando): aí a tela passa a ser exercitável, e
     o passo que falta entra.
 \end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-97 --- A tela diz POR QUE não entrou, e a suíte espera o desfecho}
+\label{adr:recusa-de-login-na-tela}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A verificação \enquote{a recusa aparece na tela, e não só no
+console}, de \arq{scripts/e2e/publico/02-login-e-papeis.mjs}, reprovou. Atrás de
+um vermelho estavam DOIS defeitos diferentes, e o primeiro escondia o segundo.
+
+O vermelho em si era da SUÍTE. O passo esperava 3s fixos depois do clique e então
+lia a tela; naquela corrida o \rota{POST /api/auth/callback/credentials} levou
+\textbf{4,5s}, porque era a primeira vez que o \cd{next dev} compilava
+\rota{/api/auth/[...nextauth]}, e a foto pegou o botão ainda em
+\enquote{Entrando\ldots}. A recusa aparece --- 333ms depois do clique, com a rota
+quente, medido no navegador. O relatório acusou o produto de um modo de falhar
+MUDO que ele não tinha, e a mensagem do relatório é o pior tipo de erro de
+diagnóstico: ela não diz \enquote{não sei}, ela aponta um culpado errado.
+
+Mas procurar o defeito acusado encontrou um de verdade, na vizinhança exata que
+a verificação nomeia. O \cd{authorize} de \arq{apps/hub/lib/auth.ts} chamava
+\rota{POST /auth/login} da API \textbf{sem prazo}, e só sabe recusar devolvendo
+\cd{null} --- e todo \cd{null} chega ao cliente como a MESMA
+\cd{CredentialsSignin} da senha errada. Daí dois comportamentos:
+
+\begin{itemize}
+  \item \textbf{API pendurada} (não fora do ar --- pendurada, que é como
+    aparecem um Cloud Run em partida a frio e um \emph{pool} de conexões
+    esgotado): o \cd{fetch} nunca volta, o \cd{signIn} nunca resolve, e a pessoa
+    fica em \enquote{Entrando\ldots} para sempre, sem mensagem nenhuma. Este É o
+    modo de falhar mudo, e ele estava lá.
+  \item \textbf{429 da API} (8 tentativas por minuto com o mesmo \emph{login}):
+    a tela dizia \enquote{Usuário ou senha incorretos}, culpando a pessoa por um
+    bloqueio nosso e mandando-a insistir justamente quando insistir estende o
+    bloqueio.
+\end{itemize}
+
+\textbf{Decisão.} Três partes.
+
+\begin{enumerate}
+  \item \textbf{A espera pela API tem prazo.}
+    \cd{AbortSignal.timeout(8\_000)} no \cd{fetch} do \cd{authorize}. 8s é
+    folgado para o \emph{bcrypt} do \rota{/auth/login} (~100ms medidos em
+    \emph{dev}) mais uma partida a frio.
+  \item \textbf{O MOTIVO viaja até a tela, e nenhuma mensagem diz qual metade
+    errou.} O \cd{code} de uma subclasse de \cd{CredentialsSignin} é o único
+    campo que o \cd{@auth/core} carrega até o cliente: ele o escreve no
+    \cd{?code=} da URL de erro e o \cd{signIn} o devolve em
+    \cd{SignInResponse.code} (verificado em execução, não só no código:
+    \cd{code=api-indisponivel} e \cd{code=muitas-tentativas} chegam, e
+    \cd{authorize} devolvendo \cd{null} continua chegando como
+    \cd{code=credentials}). As três mensagens --- credencial, indisponibilidade
+    e limite --- e os dois códigos vivem num lugar SÓ,
+    \arq{apps/hub/lib/motivos-de-login.ts}, porque quem escreve o motivo
+    (servidor) e quem o lê (cliente) estão em arquivos diferentes: uma cópia da
+    string em cada ponta faria um erro de digitação cair calado na recusa de
+    credencial --- de novo a tela culpando a pessoa. Como o \cd{code} vai para a
+    URL, ele só pode dizer de que LADO foi a falha, nunca qual metade da
+    credencial errou (\adrr{ADR-70} aplicada a interface: o texto não mente, e
+    também não entrega a lista de \emph{logins} da rede).
+  \item \textbf{A suíte espera o DESFECHO, não o relógio.} O passo corre o
+    \cd{AlertBox} de erro contra a saída do \rota{/login} e deixa cada
+    verificação com o seu nome --- credencial inválida que ENTRA falha na hora,
+    em vez de pagar o prazo inteiro e reportar o seletor que faltou.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Reaproveitar \enquote{Usuário ou senha incorretos} para todo
+    motivo} --- era o que existia. É a tela mentindo em dois casos, e mentindo
+    contra a pessoa: ela conferiria a senha que estava certa.
+  \item \textbf{Dizer qual metade errou.} Nunca: transforma a tela de
+    \emph{login} num verificador de \emph{logins} válidos da rede. A
+    verificação que cobra isso é a mais antiga deste passo e continua verde.
+  \item \textbf{Pôr o prazo no CLIENTE} (um \cd{Promise.race} em volta do
+    \cd{signIn}). Cobriria também \enquote{o hub não respondeu}, que o prazo do
+    servidor não cobre, mas cria uma mentira NOVA: se a resposta chegar depois
+    de desistirmos, a pessoa está dentro e a tela diz que falhou. A lacuna fica
+    declarada abaixo em vez de trocada por uma afirmação errada.
+  \item \textbf{O prazo como variável de ambiente.} Mais um botão para algo que
+    ninguém vai ajustar por rede, e um valor por ambiente que só some da
+    memória de quem opera.
+  \item \textbf{Aumentar a espera cega da suíte para 10s.} Mantém a espera
+    cega e só troca o número --- e nenhum número que a gente escolha limita uma
+    compilação a frio.
+\end{itemize}
+
+\textbf{Consequências ruins, aceitas.}
+\begin{itemize}
+  \item \textbf{A distinção é visível a qualquer pessoa.} Quem tenta entrar
+    passa a conseguir separar \enquote{o sistema está fora} de
+    \enquote{credencial errada}. Não revela se um usuário existe --- que é o
+    que a regra protege --- mas revela disponibilidade. Aceito: o custo de
+    esconder isso é a tela mentindo para a professora que digitou tudo certo.
+  \item \textbf{O cliente continua sem prazo.} Se o HUB não responder, o botão
+    fica em \enquote{Entrando\ldots} indefinidamente. O prazo de 8s cobre a
+    API, que é o salto que se mede; o outro não tem tela.
+  \item \textbf{8s é um número sem medição de produção.} Em produção, uma
+    partida a frio da API mais lenta que isso vai mostrar \enquote{não foi
+    possível entrar agora} a quem tinha a senha certa --- honesto, e resolvido
+    por tentar de novo, mas é uma recusa que não precisava existir.
+  \item \textbf{Os dois caminhos novos não têm passo de e2e.} A suíte não sabe
+    pendurar a API nem esgotar o limite por minuto; a tela não mudou de FORMA
+    (mesmo \cd{AlertBox}, texto diferente), então não há passo novo.
+    \arq{apps/hub/lib/motivos-de-login.test.ts} cobre a propriedade que
+    importa --- nenhuma das três mensagens diz qual metade errou, e motivo
+    desconhecido cai na recusa de credencial --- e amarra o \cd{auth.ts} aos
+    códigos desta tabela, mas a ligação ponta a ponta foi provada por sonda, não
+    por teste do repositório.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Um \emph{login} legítimo recusado com
+\cd{api-indisponivel} em produção (o \emph{log} do hub registra
+\cd{[login] a api não respondeu: TimeoutError}) --- aí o número de 8s está
+apertado, ou a partida a frio da API é o problema a resolver. E se o hub passar
+a responder o \emph{callback} em mais de alguns segundos com a rota QUENTE, a
+espera de 20s da suíte deixa de ser folga e volta a ser um prazo a discutir.

@@ -198,6 +198,18 @@ importa), o `CHECK` no Postgres e o atributo `perfil` do WSO2. `/estudante` e
 que valida contra `GET /escolas/minhas` **da api** — nunca contra a lista que o
 cookie carrega.
 
+**A recusa de login vem de `lib/motivos-de-login.ts`, não escrita na tela**
+(ADR-97). São três mensagens — credencial, api indisponível, limite por minuto —
+e **nenhuma diz qual metade errou**: "este usuário não existe" transforma o
+login num verificador de logins válidos da rede. O `authorize` só sabe recusar
+devolvendo `null`, e todo `null` chega ao cliente como a MESMA
+`CredentialsSignin`; o que distingue os motivos é o `code` de uma subclasse
+dela, que é o único campo que o `@auth/core` carrega até o `signIn`. Motivo
+novo entra nesse arquivo, nas duas pontas de uma vez — literal repetido no
+formulário cai calado na recusa de credencial, e aí a tela culpa a pessoa por
+uma falha nossa. O `fetch` do login tem prazo (8s): sem ele, api pendurada
+deixa a pessoa em "Entrando…" para sempre, sem mensagem.
+
 ## Trocar de escola REMONTA o miolo da área (ADR-85, 2026-09-09)
 
 **O layout de cada área envolve `{children}` em `<EscopoDaEscola>`**
