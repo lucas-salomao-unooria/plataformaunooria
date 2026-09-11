@@ -38,6 +38,16 @@ o que decide se você precisa abri-lo.
   suíte sem candidata e o vermelho não era de quem estava rodando. Roteiro que
   procura item para agir aceita também o estado de FALHA — e ali é o caminho
   "Tentar de novo", que é o que mais precisa ser exercitado.
+- **Tela com mais de um estado terminal LEGÍTIMO: espere a união e ramifique.**
+  O relatório individual da Vila é o da ÚLTIMA partida fechada — que pode ter
+  sido abandonada, e aí não há retrato POR DESENHO (a tela explica a ausência).
+  A `professor/05` abria "o primeiro da lista" e esperava o conteúdo do caminho
+  feliz: reprovava por timeout sempre que a última partida de quem calhava no
+  topo tinha sido largada no meio (2026-09-11). O molde certo: esperar o
+  locator-união dos estados possíveis (correndo contra o `ALERTA_DE_ERRO`),
+  decidir pelo que a tela diz e provar CADA ramo; se o dado que o caminho feliz
+  exige não existir em ninguém, reprovar com a frase da pré-condição — nunca
+  com o seletor que faltou.
 - **Conteúdo de `Collapse` fechado FICA no DOM.** `filter(...)` acha item de
   seção fechada, o Playwright o considera visível e o clique morre interceptado
   pelo contêiner. Abra os collapses antes de procurar (`role="button"` +
