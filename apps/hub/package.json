@@ -25,7 +25,7 @@
     "@opentelemetry/sdk-trace-base": "^2.11.0",
     "@opentelemetry/sdk-trace-node": "^2.11.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
-    "@unooria/design-system": "^0.1.19",
+    "@unooria/design-system": "^0.2.0",
     "google-auth-library": "^11.0.2",
     "jose": "^5.9.0",
     "next": "^16.3.3",
