@@ -34977,6 +34977,9 @@
                         "fim"
                       ]
                     },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
                     "agora": {
                       "type": "string"
                     }
@@ -34984,6 +34987,7 @@
                   "required": [
                     "etapa",
                     "passoEfetivo",
+                    "aguardandoATurma",
                     "agora"
                   ],
                   "additionalProperties": false

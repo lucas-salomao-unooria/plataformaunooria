@@ -218,6 +218,10 @@ export class ManifestoIaService {
       return {
         etapa: etapa ?? ETAPA_INICIAL,
         passoEfetivo: passoEfetivo(passo, etapa),
+        // O congelamento é AFIRMADO aqui, nunca deduzido pelo cliente: parado
+        // no primeiro passo congelado, `passoEfetivo` é igual ao passo e a
+        // dedução dá `false` para exatamente quem precisa parar.
+        aguardandoATurma: aguardandoATurma(passo, etapa),
         // O instante é do SERVIDOR: o relógio da máquina da escola atrasa, e
         // não é ele que decide o momento da aula.
         agora: new Date().toISOString(),

@@ -471,6 +471,33 @@ describe("o Checkpoint A (ADR-93)", () => {
     expect(gate.passoEfetivo).toBe("manifesto");
     expect(Number.isNaN(Date.parse(gate.agora))).toBe(false);
   });
+
+  test("o polling AFIRMA o congelamento — deduzi-lo do passo perde quem mais importa", async () => {
+    /**
+     * O defeito de 2026-09-11, achado pela suíte e2e: a tela recalculava
+     * `aguardandoATurma` como `passoEfetivo !== passo`. Parada EM `manifesto`,
+     * que é o primeiro passo congelado, os dois são iguais — e a criança que
+     * acabou de ler o documento, justamente quem o debate existe para reunir,
+     * não congelava. Por isso o gate afirma, e o cliente obedece.
+     */
+    const lendoOManifesto = await service.gate(ESCOLA, turmaId, "manifesto");
+    expect(lendoOManifesto.aguardandoATurma).toBe(true);
+
+    const assinando = await service.gate(ESCOLA, turmaId, "percurso");
+    expect(assinando.aguardandoATurma).toBe(true);
+
+    // Quem ainda audita e quem já assinou seguem andando: o latch é do
+    // estudante, não da turma.
+    for (const passo of ["chat", "podcast", "fim"] as const) {
+      const fora = await service.gate(ESCOLA, turmaId, passo);
+      // O `passo` entra no objeto para o Jest nomear qual deles falhou.
+      expect({ passo, aguardando: fora.aguardandoATurma, efetivo: fora.passoEfetivo }).toEqual({
+        passo,
+        aguardando: false,
+        efetivo: passo,
+      });
+    }
+  });
 });
 
 describe("o filtro de dado pessoal: 422, e NADA gravado", () => {

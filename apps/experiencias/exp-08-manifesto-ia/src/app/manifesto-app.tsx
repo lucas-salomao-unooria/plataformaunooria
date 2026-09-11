@@ -129,7 +129,10 @@ export function ManifestoApp({ inicial }: { inicial: RespostaSessao }) {
             return {
               ...atual,
               passo: gate.passoEfetivo,
-              aguardandoATurma: gate.passoEfetivo !== atual.passoDoEstudante,
+              /* O que o SERVIDOR afirma, nunca o que a tela deduz: com
+                 `passoEfetivo !== passo` quem estava parado em `manifesto`
+                 nunca congelava. */
+              aguardandoATurma: gate.aguardandoATurma,
               turma: { etapa: gate.etapa },
             };
           });
@@ -348,8 +351,22 @@ export function ManifestoApp({ inicial }: { inicial: RespostaSessao }) {
         tags: marcadas,
         justificativa: texto,
       });
-      aplicar(novo);
       setPercurso({ tags: marcadas, justificativa: texto });
+      /**
+       * A TELA fica no percurso; o ESTUDANTE já está no podcast.
+       *
+       * A api avança o passo ao gravar (`avancarAte(..., "podcast")`) — esse é
+       * o estado real dela e o polling do gate o usa, para que quem já assinou
+       * não seja mais alcançado pela pausa. Mas aplicar esse passo à tela pula
+       * a `Confirmacao`, que é a devolutiva do gesto mais importante da missão:
+       * a cláusula, as palavras-chave e o parágrafo dela, como ficaram
+       * registrados. Ela estava escrita e era INALCANÇÁVEL — a suíte e2e achou
+       * em 2026-09-11, esperando um selo que nunca aparecia.
+       *
+       * Quem avança daqui é o botão dela. Um F5 nesta tela vai para o podcast,
+       * e está certo: o registro já aconteceu, e o servidor é quem manda.
+       */
+      aplicar({ ...novo, passo: "percurso" });
       // Só as tags e o TAMANHO. O texto nunca vai à telemetria (regra 6).
       telemetria.assinouOPercurso(marcadas, texto.length);
     } catch (e) {

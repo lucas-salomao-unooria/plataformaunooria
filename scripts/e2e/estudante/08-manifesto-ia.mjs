@@ -214,8 +214,30 @@ await suite(
       "o argumento pronto de cada cláusula não vem ao estudante: é material do professor",
     );
 
-    // ═══ A AUDITORIA, e a repetição que NÃO conta ════════════════════════
-    for (const [i, promptId] of AUDITAR.entries()) {
+    /**
+     * Dispara um questionamento RESPEITANDO o ritmo que a máquina impõe.
+     *
+     * A experiência exige 10s entre disparos (`INTERVALO_MINIMO_MS`, em
+     * `apps/experiencias/exp-08-manifesto-ia/src/lib/maquina-estados.ts`), e o
+     * caminho degenerado é DELIBERADO: dois cliques rápidos põem o sistema em
+     * latência forçada de 15s e o segundo clique é **descartado**. O objetivo é
+     * a criança LER a réplica antes de perguntar de novo.
+     *
+     * Sem esta espera o roteiro clica, nada acontece, e ele morre 25s depois em
+     * "não achei a réplica" — o sintoma clássico que não aponta para a causa.
+     * É espera de RITMO, não de carregamento: do outro lado há um relógio, não
+     * uma requisição, então ela não tem contra o que correr. A rede que a
+     * protege é a conferência do aviso, logo abaixo: se o roteiro clicar cedo
+     * demais, ele diz isso em vez de contar o timeout inteiro.
+     */
+    const RITMO_DA_MAQUINA_MS = 10_500;
+    let ultimoDisparoMs = null;
+
+    const disparar = async (promptId) => {
+      if (ultimoDisparoMs !== null) {
+        const falta = RITMO_DA_MAQUINA_MS - (Date.now() - ultimoDisparoMs);
+        if (falta > 0) await p.waitForTimeout(falta);
+      }
       await q.locator(`[data-prompt="${promptId}"]`).click();
       await q.locator('button[aria-label="Enviar mensagem"], [aria-label="Enviar mensagem"]')
         .first()
@@ -226,6 +248,19 @@ await suite(
              declarado, não gambiarra — e por isso o `forms` está no manifesto. */
           await q.locator("textarea, input[type=text]").first().press("Enter");
         });
+      ultimoDisparoMs = Date.now();
+      await p.waitForTimeout(400);
+      if (await q.locator(".aviso-do-sistema").count()) {
+        throw new Error(
+          `o roteiro disparou ${promptId} antes dos 10s que a máquina exige: o clique foi ` +
+            "DESCARTADO pela latência forçada, e a réplica nunca viria",
+        );
+      }
+    };
+
+    // ═══ A AUDITORIA, e a repetição que NÃO conta ════════════════════════
+    for (const [i, promptId] of AUDITAR.entries()) {
+      await disparar(promptId);
 
       if (i === 0) {
         await q.locator("text=/cinco anos de arquivos da secretaria/i").waitFor({ timeout: 25_000 });
@@ -360,8 +395,15 @@ await suite(
     await apertar(prof, "retomar-missao", "missao");
 
     // ═══ A ASSINATURA, e o dado pessoal recusado ════════════════════════
+    /* O F5 no meio da missão: o estado é do SERVIDOR, e a tela tem de voltar
+       exatamente onde estava — no manifesto, que é onde a pausa a prendeu. */
     await p.reload({ waitUntil: "domcontentloaded" });
     q = p.frameLocator('iframe[title="experiencia"]');
+    /* Retomar a missão NÃO empurra ninguém para a frente: devolve a criança ao
+       passo dela, e quem avança é ela. Sem este clique o roteiro esperava o
+       campo do Meu Percurso numa tela que ainda mostra o documento — e reporta
+       "não achei o textarea", que não diz nada sobre a causa. */
+    await q.locator('[data-acao="avancar-percurso"]').click({ timeout: 30_000 });
     await q.locator('[data-campo="justificativa"], textarea').first().waitFor({ timeout: 30_000 });
     await r.registrar(p, "meu-percurso", {
       titulo: "Por que essa cláusula é inegociável para você",
@@ -402,8 +444,27 @@ await suite(
       "o texto com telefone NÃO foi gravado — a recusa é anterior ao banco",
     );
 
-    await q.locator('[data-tag="autonomia"] input, [data-tag="autonomia"]').first().click();
-    await q.locator('[data-tag="justica"] input, [data-tag="justica"]').first().click();
+    /**
+     * Marca uma palavra-chave pelo RÓTULO, nunca pelo input.
+     *
+     * O `Checkbox` do design system repassa os atributos extras para o
+     * `<input>`, e esse input é `sr-only` — invisível por desenho, para que o
+     * leitor de tela o anuncie e o olho veja a caixa desenhada. O `data-tag`
+     * vai junto, então um `click` no seletor resolve para um elemento que nunca
+     * fica visível e o Playwright espera os 30s inteiros. Quem a criança toca é
+     * o rótulo; é nele que o roteiro toca também.
+     */
+    const marcarTag = async (id) => {
+      const rotulo = q.locator(`label:has([data-tag="${id}"])`);
+      if (await rotulo.count()) {
+        await rotulo.first().click();
+        return;
+      }
+      await q.locator(`[data-tag="${id}"]`).first().check({ force: true });
+    };
+
+    await marcarTag("autonomia");
+    await marcarTag("justica");
     await q.locator("textarea").first().fill(
       "Uma pessoa tem de olhar antes de uma máquina decidir que alguém vai mal na escola.",
     );

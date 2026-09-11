@@ -39,13 +39,22 @@ await suite(
     comando: "node scripts/e2e/estudante/01-hub-de-missoes.mjs",
   },
   async (r) => {
-    /* A grade do 8º ano: a transversal (Vila, `series: []`) e a missão do ano
-       (Instanooria, `series: ["8EF"]`). O seed libera as DUAS na 8A e NENHUMA na
-       8B — as turmas "B" ficam fechadas de propósito, para o professor
-       exercitar liberar sem interferir em suíte de estudante. */
+    /* A grade do 8º ano: a transversal (Vila, `series: []`) e as missões do ano
+       (Instanooria na unidade 1, Manifesto da IA na 4 — as duas com
+       `series: ["8EF"]`). O seed libera TODAS na 8A e NENHUMA na 8B — as turmas
+       "B" ficam fechadas de propósito, para o professor exercitar liberar sem
+       interferir em suíte de estudante.
+
+       **Missão nova do 8º ano entra NESTA lista.** A contagem abaixo é
+       `abertos === missoes.length`: publicar uma missão para o 8º e não a
+       acrescentar aqui derruba esta suíte com "as N missões da 8A estão
+       abertas" — que culpa a liberação por uma lista desatualizada. Aconteceu
+       com a exp-08 em 2026-09-11, e o mesmo efeito colateral já tinha quebrado
+       `apps/api/tests/salas-postgres.spec.ts`. */
     const missoes = [
       { texto: "Vila do Lume", expId: "exp-70-vila-do-lume", declara: ["allow-pointer-lock"] },
       { texto: "Instanooria", expId: "exp-01-instanooria", declara: [] },
+      { texto: "Manifesto da IA", expId: "exp-08-manifesto-ia", declara: ["allow-forms"] },
     ];
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
     /* Do 4º ano: não pertence à grade do 8º. Não é "bloqueada" — é de outra

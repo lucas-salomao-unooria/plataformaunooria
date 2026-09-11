@@ -143,3 +143,40 @@ Tab passar: botões focáveis atrás de um véu é a mesma classe de defeito que
 - **Tema escuro.** Fixado em claro institucional (campo 3 dos nove do handoff):
   a missão roda em uma aula, e trocar de tema no meio não é caminho que alguém
   percorra — um controle a mais no cromo é um alvo que distrai.
+
+## O que a suíte e2e achou na primeira corrida (2026-09-11)
+
+A suíte só rodou de verdade quando a stack ficou de pé, e ela achou **cinco**
+coisas que o typecheck, os testes de regra pura e a spec de Postgres não
+alcançavam. Três eram de produto, e as três tinham a mesma forma: **cada metade
+estava certa lida sozinha** (ADR-92).
+
+- **A ficha da professora era a do Instanooria.** Faltava o ramo no despachante
+  de `page.tsx` do hub, e o `return` final é o corpo da exp-01. A tela ABRIA —
+  com "Nova atividade" e sem o caminho para o painel. Hoje há
+  `apps/hub/lib/entre-redes/despachante-da-ficha.test.ts` cobrando o ramo.
+- **Todo botão da professora respondia 404.** `manifesto-ia` não estava em
+  `PREFIXOS_PERMITIDOS` do BFF. A tela de resultados carregava (Server
+  Component, vai direto na api) e só as ações morriam: o preparo, os dois
+  botões do debate e o "zerar turma".
+- **O congelamento não acendia para quem estava em `manifesto`.** O polling
+  recalculava `aguardandoATurma` como `passoEfetivo !== passo`, e parado no
+  primeiro passo congelado os dois são iguais. **A api agora AFIRMA
+  `aguardandoATurma` no `GET /manifesto-ia/gate`, e a tela obedece** — não
+  deduza esse booleano de novo, em lugar nenhum.
+- **A tela de confirmação do percurso era inalcançável.** A api avança o passo
+  para `podcast` ao gravar (é o estado real da criança, e é o que o polling do
+  gate lê), e `aplicar(novo)` levava a tela junto — pulando a devolutiva do
+  gesto mais importante da missão. Hoje `registrarPercurso` aplica
+  `{ ...novo, passo: "percurso" }`: a TELA fica, o ESTUDANTE avança.
+
+E duas do roteiro, que valem para qualquer suíte desta experiência:
+
+- **O disparo respeita os 10s de `INTERVALO_MINIMO_MS`.** Dois cliques rápidos
+  põem a máquina em latência forçada de 15s e o segundo clique é **descartado** —
+  comportamento deliberado, para a criança ler a réplica. Um roteiro apressado
+  morre em "não achei a réplica", que não diz nada sobre a causa.
+- **Palavra-chave se marca pelo RÓTULO, nunca pelo `[data-tag]`.** O `Checkbox`
+  do design system repassa os atributos extras para o `<input>`, e esse input é
+  `sr-only`: o seletor resolve para um elemento que nunca fica visível, e o
+  Playwright espera o timeout inteiro.

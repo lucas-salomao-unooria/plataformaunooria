@@ -4,6 +4,7 @@ import { EmptyState } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_MANIFESTO_IA,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/entre-redes/catalogo";
 
 import { MissaoInstanooria } from "./missao-instanooria";
+import { MissaoManifestoIa } from "./missao-manifesto-ia";
 import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
@@ -71,5 +73,12 @@ export default async function MissaoPage({
   if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
     return <MissaoRastroBoato ano={ano} missao={comFicha} />;
   }
+  if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
+    return <MissaoManifestoIa ano={ano} missao={comFicha} />;
+  }
+  /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
+     publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,
+     com "Nova atividade" e sem o caminho para os resultados. Foi o que
+     aconteceu com a exp-08 até 2026-09-11, e só a suíte e2e pegou. */
   return <MissaoInstanooria ano={ano} missao={comFicha} />;
 }
