@@ -180,6 +180,49 @@ await suite(
       });
     }
 
+    // ══ ficar na missão CONTA como uso (ADR-96) ═════════════════════════
+    /**
+     * A criança está DENTRO de uma missão, e é exatamente aqui que o defeito
+     * morava. A sessão do hub é uma janela de INATIVIDADE, mas só o middleware
+     * devolve o `Set-Cookie` que a desliza — e `GET /api/exp-token`, que a
+     * experiência pede de 10 em 10 minutos, está fora do `matcher` dele. Quem
+     * ficava no aparelho via o prazo envelhecer como se estivesse parado, e a
+     * sessão morria com a criança trabalhando.
+     *
+     * O que se prova aqui NÃO depende do TTL: o prazo do cookie é reescrito
+     * para `agora + maxAge` a cada renovação, então basta vê-lo ANDAR.
+     */
+    const prazoDaSessao = async () => {
+      const cookies = await p.context().cookies();
+      return cookies.find((c) => c.name.includes("session-token"))?.expires ?? 0;
+    };
+    const prazoAntes = await prazoDaSessao();
+    r.exigir(prazoAntes > 0, "a sessão do estudante tem cookie com prazo");
+    /* Não é espera por estado — é RELÓGIO. O prazo do cookie tem resolução de
+       segundo: sem deixar o tempo andar, o prazo novo sairia idêntico ao velho
+       e a asserção passaria sem provar nada. */
+    await p.waitForTimeout(2_000);
+    const statusDoPasse = await p.evaluate(() =>
+      fetch("/api/exp-token", { cache: "no-store" }).then((resp) => resp.status),
+    );
+    r.exigir(statusDoPasse === 200, `o pedido de passe respondeu 200 (veio ${statusDoPasse})`);
+    const prazoDepois = await prazoDaSessao();
+    r.exigir(
+      prazoDepois > prazoAntes,
+      `o prazo da sessão ANDOU com o pedido de passe (${prazoAntes} \u2192 ${prazoDepois})`,
+    );
+
+    await r.registrar(p, "passe-conta-como-atividade", {
+      titulo: "Ficar na missão conta como uso",
+      mostra: "A última missão aberta, com o aparelho montado, logo depois de um pedido de passe.",
+      prova:
+        "A sessão do hub expira por INATIVIDADE, e até a ADR-96 só navegar no hub contava como uso. " +
+        "Quem ficava dentro do aparelho perdia a sessão no meio da aula, sem nada na tela — e do " +
+        "401 em diante nada do que a criança fizesse era gravado. Agora o pedido de passe renova o " +
+        `cookie: o prazo andou de ${prazoAntes} para ${prazoDepois}.`,
+      detalhe: `prazo +${Math.round(prazoDepois - prazoAntes)}s`,
+    });
+
     // ══ a turma FECHADA (8B) — o mesmo ano, o outro estado ══════════════
     const daOitoB = conta("estudante", { turma: "8B" });
     const pb = await r.pagina("estudante-8b", { viewport: { width: 1280, height: 950 } });

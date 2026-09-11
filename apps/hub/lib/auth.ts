@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { PAPEIS, type Papel } from "./papeis";
+import { SESSAO_TTL_SEGUNDOS } from "./sessao";
 import type { UsuarioDaSessao } from "@/types/next-auth";
 
 /**
@@ -85,27 +86,25 @@ if (process.env.AUTH_WSO2_ISSUER) {
 export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   providers,
   /**
-   * 2h de INATIVIDADE, não 2h absolutas (ADR-95).
+   * 2h de INATIVIDADE, não 2h absolutas, e igual para todo papel (ADR-95).
    *
    * Com `strategy: "jwt"` o `@auth/core` RE-ASSINA o cookie a cada leitura de
    * sessão (`lib/actions/session.js`, ramo `jwt`: o `jwt.encode` grava
-   * `exp = agora + maxAge` e o `handleAuth` do next-auth devolve o
-   * `Set-Cookie`), e o `updateAge` **não é consultado nesse ramo** — ele só
-   * existe na estratégia de banco. Quem faz a janela deslizar é o MIDDLEWARE:
-   * toda navegação casada pelo `matcher` renova. Sessão absoluta deslogaria o
-   * estudante no meio da segunda aula, que é exatamente o tempo que estas 2h
-   * existem para cobrir.
+   * `exp = agora + maxAge`) e o `handleAuth` do next-auth devolve o
+   * `Set-Cookie`. O `updateAge` **não é consultado nesse ramo** — ele só existe
+   * na estratégia de banco, então não há o que ajustar nele aqui.
    *
-   * ARMADILHA MEDIDA, e é a consequência ruim declarada na ADR-95: `auth()`
-   * SEM argumentos (o caminho de RSC e de route handler) lê a sessão e
-   * DESCARTA o `Set-Cookie` — só o middleware renova. Quem fica dentro do
-   * iframe de uma missão não navega mais no hub, e o `exp:token-expirando` de
-   * 10 em 10 minutos cai em `GET /api/exp-token`, que está fora do `matcher` e
-   * portanto NÃO conta como atividade. Missão que passe de 2h desde a última
-   * navegação no hub perde a sessão com a criança trabalhando, e hoje o
-   * `ExpFrame` só registra isso num `console.error`.
+   * **O QUE CONTA COMO USO (ADR-96):** toda navegação casada pelo `matcher` do
+   * middleware e o pedido de passe da experiência (`GET /api/exp-token`, que
+   * chama `unstable_update` para ESCREVER o cookie — `auth()` sozinho lê e
+   * descarta o `Set-Cookie`, porque em RSC e route handler não se escreve
+   * cookie). Antes da ADR-96 o pedido de passe não contava, e quem ficava
+   * dentro de uma missão via a sessão envelhecer como se estivesse parado.
+   *
+   * O número vem de `lib/sessao.ts`, que o pina em produção: a `/privacidade`
+   * afirma o prazo à família e não pode divergir dele.
    */
-  session: { strategy: "jwt", maxAge: 60 * 60 * 2 },
+  session: { strategy: "jwt", maxAge: SESSAO_TTL_SEGUNDOS },
   pages: { signIn: "/login" },
   callbacks: {
     // O beta do next-auth re-exporta o tipo JWT de @auth/core e a module

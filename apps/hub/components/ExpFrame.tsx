@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertBox } from "@edu/ui/ds";
 import { ExpParaHubSchema, PROTOCOL_VERSION } from "@edu/sdk";
 import { CLARITY_PROJECT_ID } from "@/lib/clarity";
 
@@ -8,7 +9,9 @@ import { CLARITY_PROJECT_ID } from "@/lib/clarity";
  *  - responde ao handshake da SDK (exp:ready → hub:init), rejeitando major
  *    de protocolo diferente com erro visível;
  *  - renova token de verdade (exp:token-expirando → GET /api/exp-token →
- *    hub:token);
+ *    hub:token) e, quando aquela rota responde 401/403, PARA a missão com uma
+ *    tela que pede login — antes isso era um `console.error` e a criança
+ *    seguia trabalhando no vazio até o token vencer (ADR-96);
  *  - emite hub:pause/hub:resume quando a PÁGINA DO HUB perde visibilidade ou
  *    foco — esconder um iframe não dispara visibilitychange nele, e sem isso
  *    o cronômetro de dwell da experiência correria com o estudante de costas
@@ -42,6 +45,18 @@ export function ExpFrame(props: {
   // deps com `props` re-registrava a cada render no scaffold original).
   const atual = useRef(props);
   atual.current = props;
+
+  /**
+   * A sessão do HUB morreu (ADR-96). Não é a experiência que quebrou, então
+   * não é `exp:erro`: o aparelho está inteiro e o que falta é a pessoa entrar
+   * de novo. Enquanto isso, a missão PARA — é o contrário do que acontecia
+   * antes, quando a criança continuava respondendo e nada era gravado.
+   */
+  const [sessaoExpirada, setSessaoExpirada] = useState(false);
+  /* `reload` e não um link para `/login`: quem decide para onde vai quem está
+     sem sessão é o middleware, e o `?next=` que ele monta é dele. Um caminho
+     escrito aqui seria a segunda regra de roteamento de login. */
+  const entrarDeNovo = useCallback(() => window.location.reload(), []);
 
   useEffect(() => {
     function post(msg: Record<string, unknown>) {
@@ -93,10 +108,27 @@ export function ExpFrame(props: {
       if (msg.type === "exp:token-expirando") {
         try {
           const r = await fetch("/api/exp-token");
+          /*
+           * 401/403 é a SESSÃO, não a rede: o cookie do hub venceu (401) ou a
+           * senha provisória prendeu a pessoa (403). Nenhuma tentativa futura
+           * vai passar, então avisar é a única coisa útil — e `hub:pause` para
+           * os cronômetros da experiência antes de a tela trocar, para o dwell
+           * não continuar contando uma atenção que ninguém está dando.
+           */
+          if (r.status === 401 || r.status === 403) {
+            post({ type: "hub:pause" });
+            setSessaoExpirada(true);
+            return;
+          }
           if (!r.ok) throw new Error(String(r.status));
           const { token } = (await r.json()) as { token: string };
           post({ type: "hub:token", token });
         } catch {
+          /*
+           * Falha TRANSITÓRIA (rede, 5xx): o token atual ainda vale alguns
+           * minutos e a SDK pede de novo em 10. Alarmar aqui trocaria um
+           * engasgo de rede por uma missão interrompida.
+           */
           console.error("[hub] falha ao renovar token da experiência");
         }
       }
@@ -161,6 +193,43 @@ export function ExpFrame(props: {
       window.removeEventListener("focus", aoGanharFoco);
     };
   }, []);
+
+  /*
+   * SUBSTITUI o iframe em vez de cobri-lo, e isso é medida de risco: o iframe
+   * ocupa `height: 100%` em quatro layouts diferentes (`/exp/:expId`,
+   * `/dev-embed` e as três telas de professor com `.tela-cheia`), e uma
+   * sobreposição exigiria um contêiner posicionado novo em cada um. Um `<div>`
+   * a mais na cadeia do flex é justamente onde o percentual deixa de ser
+   * *definite* e o iframe volta aos 150px padrão (packages/ui/AGENTS.md).
+   * Trocando o elemento no MESMO lugar da árvore, o layout não muda.
+   *
+   * E fica no `ExpFrame`, não no `ExpHost`, pelo mesmo motivo do
+   * `clarityProjectId`: é o único ponto por onde TODO embed passa. No `ExpHost`
+   * as três telas de professor ficariam de fora, e um professor dentro do
+   * gerador de plano por duas horas cai no mesmo buraco.
+   */
+  if (sessaoExpirada) {
+    return (
+      <div
+        data-testid="sessao-expirada"
+        style={{ width: "100%", height: "100%", display: "grid", placeItems: "center", padding: 24 }}
+      >
+        <AlertBox
+          theme="light"
+          variant="warning"
+          device="auto"
+          title="Sua sessão expirou"
+          description={
+            <>
+              Você ficou um tempo sem usar a plataforma, e saímos da sua conta por segurança. O que
+              você já enviou está salvo. Entre de novo para continuar.
+            </>
+          }
+          primaryAction={{ label: "Entrar de novo", onClick: entrarDeNovo }}
+        />
+      </div>
+    );
+  }
 
   /**
    * O sandbox é o MESMO para todas as experiências, exceto o que o manifesto
