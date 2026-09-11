@@ -21,19 +21,23 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{unootube}\\
 \cd{exp-03-unoogpt} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-06-rastro-boato} & \cd{6EF} & estudante &
+\zebra \cd{exp-04-o-que-a-foto-conta} & \cd{1EF} & estudante &
+  telemetria, progresso & \arq{foto-conta}\\
+\cd{exp-06-rastro-boato} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
+\zebra \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
   telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\zebra \cd{exp-08-manifesto-ia} & \cd{8EF} & estudante &
+  telemetria, progresso, avaliacao & \arq{manifesto-ia}\\
+\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
-\zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
+\cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
-\cd{exp-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
+\zebra \cd{exp-92-plano-de-ensino} & \textbf{1EF--3EM} & \textbf{professor} &
   telemetria, ia & \arq{planejamento}, \arq{curriculo}\\
-\zebra \arq{\_template} & --- & --- & telemetria, progresso & ---\\
+\arq{\_template} & --- & --- & telemetria, progresso & ---\\
 \bottomrule
 \end{tabularx}
 
@@ -50,6 +54,8 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
 \zebra \cd{exp-06-rastro-boato} & \cd{5181} & \rota{/exp/exp-06-rastro-boato}\\
 \cd{exp-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
+\zebra \cd{exp-08-manifesto-ia} & \cd{5182} & \rota{/exp/exp-08-manifesto-ia}\\
+\zebra \cd{exp-04-o-que-a-foto-conta} & \cd{5183} & \rota{/exp/exp-04-o-que-a-foto-conta}\\
 \bottomrule
 \end{tabularx}
 
@@ -703,6 +709,231 @@ e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
 \enquote{sem consumidor} até aqui.
 
 
+
+% ---------------------------------------------------------------------------
+\section{exp-04 --- O Que a Foto Conta}
+\label{sec:exp-04}
+
+\textbf{1º ano · Unidade 1 · clone do Instagram · \cd{instanooria}}
+
+A porta de entrada do Entre Redes, para crianças em alfabetização inicial. No
+mural da turma (\cd{@turma\_mural}), duas fotos do MESMO pátio contam histórias
+opostas: o plano geral com as peças espalhadas e o plano detalhe do brinquedo
+montado. O estudante escolhe a \emph{marca} (Coruja, Estrela ou Sol), explora
+um \emph{feed} fechado de 3 posts, publica UMA foto com UMA legenda --- e Leo e
+Sofia, colegas simulados, comentam em cadência fixa (1,5s e 3,0s) exatamente o
+que a escolha deixou ver e o que escondeu. Depois do eco, \textbf{todos os
+tablets congelam} numa tela sem nenhum botão (a Roda de Conversa) e só o
+professor os solta, pelo \cd{LIBERAR REFLEXÃO FINAL} da tela de resultados. A
+síntese final é formativa: o Globo (\enquote{a foto mostra tudo}) vira retry
+gentil de Nina, e a Lupa conclui com a insígnia \enquote{Olhar de Detetive}.
+
+O que define a missão, tecnicamente:
+
+\begin{itemize}
+  \item \textbf{O latch é do servidor e o canal é polling de 3s} na rota
+    \rota{GET /foto-conta/latch} (\adrr{ADR-94}) --- sem WebSocket e sem SSE,
+    como as demais superfícies síncronas da plataforma.
+  \item \textbf{A matriz causal do Aha nunca entra no bundle}: o boot serve o
+    pacote SEM \cd{comentarios} (\cd{Omit} estrutural no contrato), e o par
+    escolhido volta na resposta de \rota{POST /foto-conta/publicar}, uma linha
+    por vez --- o \cd{factual} do UnooTube desta missão.
+  \item \textbf{Acessibilidade de 1º EF é requisito}: CAIXA ALTA, máx.\ 8
+    palavras por texto, pictograma e locução em toda instrução (redundância
+    tripla). O áudio TOLERA ausência: as locuções profissionais são pendência
+    de produção e a tela degrada para texto+ícone.
+  \item \textbf{As duas famílias do DS convivem no mesmo bundle}: E1/E5/E6 são
+    casca Unooria (\cd{@edu/ui/ds}); E2--E4 são o clone
+    (\cd{@edu/ui/ds-insta}, importando do subcaminho do pacote).
+  \item \textbf{O pacote da aula é curado pelo professor}: a IA (Vertex, com
+    quota) escreve legendas e comentários adaptados ao tema; a aprovação
+    revalida com o MESMO \emph{schema}; sem aprovação, o banco curado padrão
+    (\enquote{O Mistério das Peças no Pátio}) assume sozinho.
+  \item \textbf{Zerar a turma ARQUIVA por tentativa} (\cd{tentativa} na config
+    e nas \emph{runs}): nada é apagado, e a reaplicação recomenda trocar o
+    tema (PED-13).
+  \item \textbf{100\% formativa}: sem \emph{score}, sem \emph{ranking}; a
+    lista de \emph{hesitação de leitura} (>60s na decisão) nomeia crianças SÓ
+    na rota autenticada do professor, para mediação --- o modelo e a
+    telemetria só conhecem o id opaco (DAD-07).
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{exp-08 --- O Manifesto da IA}
+\label{sec:exp-08}
+
+\textbf{8º ano · Unidade 4 · clone de assistente generativo · \cd{chatgpt} +
+\cd{unooria}}
+
+A direção está homologando a compra de um sistema que prevê notas e monitora
+presença, e o assistente da escola já está \emph{online} afirmando que
+algoritmos são neutros e objetivos. O estudante questiona a origem dos dados
+históricos, ouve a máquina admitir que assume as punições antigas como
+\enquote{probabilidade estatística válida} --- e então fixa \textbf{uma}
+cláusula de governança que o código passa a obedecer. O sistema compila o
+\emph{Manifesto de Direitos Digitais dos Estudantes} com a cláusula dele em
+destaque.
+
+\subsection{A missão em que não existe resposta certa}
+
+É a diferença estrutural desta experiência para todas as outras do catálogo, e
+ela atravessa o desenho inteiro: as \textbf{quatro cláusulas são igualmente
+válidas} sob governança de direitos --- transparência dos dados, auditoria de
+viés, veto humano e anonimização. Não há gabarito a esconder do \emph{bundle},
+porque não há gabarito.
+
+O que isso muda, ponto por ponto:
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}X@{}}
+\toprule
+\headrow \thd{Onde apareceria} & \thd{O que existe no lugar}\\
+\midrule
+Correção da resposta & Nada a corrigir. O servidor cobra a \emph{cota} de
+  auditoria, trava a escolha (\emph{latch}) e \textbf{compila} o manifesto ---
+  as três coisas que ele decide.\\
+\zebra Nota da missão & Nenhuma. O \cd{exp:concluir} da ponte tem o campo
+  \cd{score} e esta experiência \textbf{não o manda}: um número ali deixaria a
+  tela pontuar uma escolha que a missão não pontua. O progresso da plataforma lê
+  o \cd{concluido\_em}.\\
+Taxa de acerto no painel & A distribuição das quatro cláusulas como
+  \textbf{contagem}, com a frase dizendo o que ela é. Com quatro opções e uma
+  \enquote{mais votada}, calcular percentual de acerto é o erro natural de quem
+  chegar depois --- e \cd{PROIBIDO\_NO\_PAINEL} tem o teste que cobra a
+  ausência de \cd{acerto} e \cd{taxa} entre as colunas.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{O portão que a missão existe para instalar}
+
+Fixar a regra do sistema sem tê-lo \textbf{contraditado duas vezes} é
+\textbf{recusado} (\cd{auditoria-insuficiente}, 409). O número dois é a
+hipótese pedagógica, não uma folga: o primeiro questionamento a máquina responde
+com estatística; o segundo --- sobre os preconceitos anteriores ao algoritmo ---
+a obriga a admitir que herda o passado. Chegar ao pico sem ter visto a
+contradição é decidir sobre o que a aula ainda não mostrou.
+
+\textbf{Distintos} é a palavra que faz o trabalho, e aqui ela se comporta
+DIFERENTE da exp-06: reenviar o mesmo questionamento responde \textbf{409}
+(\cd{prompt-ja-enviado}), e não 200 com \cd{novo: false}. A razão é o que a tela
+faz: lá reabrir um balão é releitura legítima, e um erro transformaria o
+comportamento desejado em falha; aqui o cartão já disparado fica desabilitado no
+seletor, então o segundo disparo do mesmo id só chega por clique duplo ou aba
+repetida --- e a conversa não pode ganhar a mesma pergunta duas vezes.
+
+\subsection{A réplica da máquina só existe DEPOIS da pergunta}
+
+\cd{GET /manifesto-ia/sessao} devolve os três questionamentos \textbf{sem} a
+\cd{replicaIa} (o tipo do servidor é \cd{Omit<PromptDeAuditoria, "replicaIa">}),
+e as quatro cláusulas \textbf{sem} a \cd{justificativaSugerida}. Ver a defesa
+antes de fazer a pergunta desmontaria a cena da auditoria; ver o argumento
+pronto de cada cláusula transformaria a autoria da Etapa~5 em cópia --- ele é
+material de \textbf{mediação}, e aparece na rota \emph{professor-only} do pacote
+da turma.
+
+\subsection{Sem digitação livre, e a ausência é guardrail}
+
+O \cd{Composer} do clone é \cd{readOnly}: o estudante escolhe um dos três
+cartões de questionamento, e o texto dele preenche o campo. Prompt aberto num
+clone de assistente é a porta para \emph{jailbreak}, alucinação e conteúdo fora
+da faixa numa aula de 50 minutos com adolescentes --- e o objeto da aula não é
+conversar livremente, é auditar um argumento específico. Os alvos de anexo e de
+voz também saem (\cd{hideLeadingActions}): alvo que não faz nada ensina o
+estudante a desconfiar da tela.
+
+\begin{atencao}
+O \cd{Composer} é um \cd{<form>}, e por isso o manifesto declara
+\cd{permissoes: ["forms"]}. Sem o \emph{token} de \emph{sandbox} o navegador
+bloqueia o \emph{submit} em silêncio --- a armadilha que custou um defeito
+inteiro na exp-03. E \cd{clipboard-write} \textbf{não} entra ali, apesar de o
+botão de cópia precisar da API: o vocabulário de \cd{permissoes} é fechado
+(\cd{pointer-lock | forms | downloads}) e o \cd{allow} do \cd{ExpFrame} já
+concede \emph{clipboard} a todas as experiências. Declará-lo derrubaria o
+\cd{PUT /experiencias/:expId} do \emph{deploy} com 400 --- depois de os
+\emph{bundles} já terem subido.
+\end{atencao}
+
+\subsection{A IA entra ANTES da aula, e só}
+
+O motor de sala é 100\% determinístico: as réplicas, as cláusulas e o manifesto
+saem do pacote da turma ou do catálogo curado. A única chamada ao provedor está
+na \textbf{preparação docente} (\cd{POST /manifesto-ia/turmas/:id/gerar-conteudo}),
+com \emph{structured output} e \emph{schema} estrito, e ela devolve
+\textbf{rascunho}: o que publica é o clique do professor em \enquote{Aprovar
+Conteúdo da Turma}, que grava \cd{aprovado\_por\_professor}. Sem esse clique a
+missão lê o banco curado da Unooria --- que é homologado, não remendo.
+
+A consequência é a que a banca registrou como ponto forte do insumo:
+\textbf{zero tokens durante a aula}, e nenhuma turma de 35 estudantes às oito da
+manhã depende de o Vertex responder. A validação da saída rejeita balão acima de
+60 palavras e termo proibido em tela, e rejeitar faz o modelo \emph{regerar} ---
+vale mais que aceitar e contar com a revisão de um texto que o professor talvez
+só passe o olho.
+
+\subsection{O Checkpoint A é polling, não WebSocket}
+
+O congelamento da turma para o debate oral de dez minutos é uma linha em
+\cd{exp\_08\_gates\_turma} que a tela lê a cada 5 segundos. O \emph{handoff}
+pedia \emph{broadcast} \cd{hub:pause} por WebSocket, e não há WebSocket de
+aplicação no Cloud Run: a decisão inteira, com as quatro alternativas
+descartadas, está na \adrr{ADR-93}.
+
+Duas propriedades desse gate que o separam do da exp-06: ele é
+\textbf{opcional} (a missão corre inteira sem clique nenhum, porque a
+especificação admite a sessão individual assíncrona) e mexe só no \textbf{teto}
+do passo, nunca no piso --- pausar não empurra para a frente quem ainda estava
+auditando a máquina, e são justamente essas crianças que o debate tenta
+alcançar.
+
+\subsection{O único texto livre, e o dado pessoal que é recusado}
+
+A Etapa~5 pede duas palavras-chave e um parágrafo autoral de 20 a 800
+caracteres. É caixa escrita por menor de idade: fora de \emph{log}
+(\cd{justificativaTexto} entrou em \cd{CHAVES\_REDIGIDAS}), fora da telemetria
+analítica, e alcançável só pelo professor da turma dela.
+
+\textbf{Dado pessoal detectado é recusado com 422 e NÃO gravado.} A pergunta
+estava aberta no insumo --- recusar com dica, ou gravar com \emph{flag} de
+moderação --- e as duas alternativas foram descartadas: gravar com \emph{flag}
+deixaria o telefone da criança na coluna à espera de alguém que decidisse o que
+fazer com ele, e ofuscar-e-salvar devolveria ao professor um parágrafo mutilado
+sem que ninguém soubesse o que estava ali. Recusar também \textbf{ensina}, que é
+o ponto: a dica diz o que tirar no exato momento em que a criança ia entregar o
+dado.
+
+\begin{nota}
+O filtro é deliberadamente conservador nos padrões estruturados (telefone, CPF,
+e-mail, CEP, cartão, \cd{@perfil}) e \textbf{não tenta adivinhar nome próprio}.
+Recusar \enquote{meu tio Silva foi reprovado por um sistema desses} cortaria
+justamente o argumento situado que a etapa mede, e a criança não teria como
+saber o que fazer com a mensagem. Nome próprio é risco \textbf{aceito e
+registrado}. E nenhum padrão casa número de quatro dígitos solto: o falso
+positivo mais provável é o ANO (\enquote{desde 2019 a escola usa esse
+sistema}).
+\end{nota}
+
+\subsection{As duas seções do design system, e a fronteira}
+
+A linha é a de sempre --- \textbf{quem está falando} ---, mas aqui ela
+\textbf{não é uma revelação}: o estudante sempre soube que era uma aula, e o
+clone é o ambiente da tarefa, não uma armadilha. \cd{unooria} no briefing de
+Amara, no congelamento, no Meu Percurso e no fechamento; \cd{chatgpt} da abertura
+da conversa até o manifesto promulgado.
+
+O que a fronteira protege é o \textbf{tom}: a máquina precisa soar corporativa
+para a tese de neutralidade dela ser derrubável, e um \cd{Button} institucional
+dentro da conversa a faria soar amigável no exato momento em que ela defende a
+vigilância.
+
+\subsection{Os áudios ainda não existem}
+
+O \emph{brief} pede \cd{e1-alerta-amara.mp3} (\textasciitilde 650~KB) e
+\cd{e6-podcast-manifesto.mp3} (\textasciitilde 3,8~MB, no \emph{bucket} de mídia
+escolar). Nenhum foi gravado. A tela mantém o \textbf{texto sempre visível} ---
+acessibilidade de sala sem fone, não \emph{fallback} de mídia ausente --- e
+mostra o botão de ouvir \textbf{desabilitado com o motivo à vista}, em vez de um
+\emph{player} que não toca nada. Quando os arquivos chegarem, entram ao lado do
+texto.
+
 % ---------------------------------------------------------------------------
 \section{exp-06 --- O Rastro do Boato}
 \label{sec:exp-06}
@@ -1060,6 +1291,120 @@ Ferramenta do professor, e o primeiro produto da plataforma cujo insumo é o
 \adrr{ADR-73}; o que resta registrar é a arquitetura do dado e a fronteira com a
 exp-90.
 
+\subsection{O caminho completo}
+
+Quatro passos, na ordem em que um plano de ensino se constrói numa escola.
+Nenhum pode ser pulado, e todos podem ser revisitados: em agosto o professor
+volta à distribuição, remaneja o que não coube e regera o plano do 3º bimestre
+--- um planejador que só anda para a frente não sobrevive ao primeiro mês de
+aula real.
+
+A \textbf{IA entra em exatamente dois pontos}, os dois marcados na
+Figura~\ref{fig:exp92-caminho}. Todo
+o resto --- a Base como dado, a distribuição, o calendário, a costura e a
+exportação --- é decisão humana ou conta determinística, e é o que faz o
+documento ser auditável.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+  ia/.style={draw=unooOrange, fill=unooOrangeWash, line width=0.7pt,
+             rounded corners=2pt, inner sep=2.5pt, font=\scriptsize\bfseries,
+             text=unooInk}]
+
+  % ---- a Base, preparada fora do produto --------------------------------
+  \node[actionsys, text width=40mm, anchor=north] (pdfs) at (-5.9,0.7)
+    {\textbf{Fora do produto, uma vez}\\[2pt]
+     PDFs homologados do MEC \seta{} \texttt{scripts/extrair-bncc.mjs}};
+  \node[objflow, text width=40mm, anchor=north] (dados) at (-5.9,-1.8)
+    {\texttt{api/src/curriculo/dados/*.ts}\\[2pt]
+     1.304 EF · 183 EM · 129 Computação};
+  \draw[flow] (pdfs.south) -- (dados.north);
+
+  % ---- a coluna do professor --------------------------------------------
+  \node[actstart] (ini) at (0,0) {};
+  \node[action, text width=42mm] (reg) at (0,-1.9)
+    {\textbf{1. Regência}\\[2pt]
+     componente, série, ano letivo, grade de horários, minutos por aula,
+     divisão do ano\\[2pt]
+     \texttt{POST /planejamento/}\\\texttt{configuracoes}};
+  \node[action, text width=42mm] (dist) at (0,-4.9)
+    {\textbf{2. Distribuição}\\[2pt]
+     o professor põe cada habilidade num período. \textbf{Decisão humana}\\[2pt]
+     \texttt{PUT .../planos-anuais/}\\\texttt{:id/distribuicao}};
+  \node[action, text width=42mm] (anual) at (0,-8.0)
+    {\textbf{3. Plano anual}\\[2pt]
+     a prosa pedagógica do ano, gerada e depois \textbf{reescrita} pelo
+     professor\\[2pt]
+     \texttt{POST .../planos-anuais/}\\\texttt{:id/gerar}};
+  \node[action, text width=42mm] (aulas) at (0,-11.3)
+    {\textbf{4. Aulas, semana a semana}\\[2pt]
+     40 semanas, uma por vez. O esqueleto é do calendário\\[2pt]
+     \texttt{POST .../periodos/}\\\texttt{:ordem/gerar}};
+  \node[actionsys, text width=42mm] (export) at (0,-14.3)
+    {\textbf{Exportação}\\[2pt]
+     montada no NAVEGADOR, sem rota e sem modelo: \texttt{.doc} (HTML com os
+     \emph{namespaces} do Office) e impressão};
+  \node[actend] (fim) at (0,-15.8) {};
+
+  \node[ia, anchor=west] (iaA) at (2.4,-8.0) {IA};
+  \node[ia, anchor=west] (iaB) at (2.4,-11.3) {IA};
+
+  \draw[flow] (ini) -- (reg);
+  \draw[flow] (reg) -- (dist);
+  \draw[flow] (dist) -- (anual);
+  \draw[flow] (anual) -- (aulas);
+  \draw[flow] (aulas) -- (export);
+  \draw[flow] (export) -- (fim);
+  \draw[flow] (dados.south) |- (dist.west);
+
+  % ---- o que cada passo deixa gravado ------------------------------------
+  \node[objflow, text width=42mm] (cfg) at (6.6,-1.9)
+    {\texttt{exp\_92\_configuracoes}\\[2pt]
+     e, se a rede ainda não tinha, \texttt{periodos\_letivos} --- catálogo do
+     CONTRATO};
+  \node[objflow, text width=42mm] (jdist) at (6.6,-4.9)
+    {\texttt{exp\_92\_planos\_anuais.}\\\texttt{distribuicao} (JSONB)\\[2pt]
+     o insumo do gerador, e o que sobrevive a reescrever o documento inteiro};
+  \node[objflow, text width=42mm] (docs) at (6.6,-8.0)
+    {\emph{bucket} privado:\\
+     \texttt{gerado.md} (imutável, o original da IA)\\
+     \texttt{atual.html} (sanitizado por \emph{allowlist})};
+  \node[objflow, text width=42mm] (jaulas) at (6.6,-11.3)
+    {\texttt{exp\_92\_planos\_de\_}\\\texttt{periodo.aulas} (JSONB)\\[2pt]
+     dado estruturado, não prosa: dá para editar quinta sem tocar em terça};
+  \node[objflow, text width=42mm] (recortes) at (6.6,-14.3)
+    {três recortes, só das semanas \texttt{pronto}: esta semana · esta e a
+     próxima (a entrega quinzenal) · o período de avaliação inteiro --- cujo
+     rótulo segue a divisão do ano: bimestre, trimestre ou semestre};
+
+  \draw[flow] (reg) -- (cfg);
+  \draw[flow] (dist) -- (jdist);
+  \draw[flow] (anual) -- (docs);
+  \draw[flow] (aulas) -- (jaulas);
+  \draw[flow] (export) -- (recortes);
+
+  % ---- o que a IA nao toca ------------------------------------------------
+  \node[actnote, text width=46mm, anchor=north west] (naoia) at (-8.2,-6.6)
+    {\textbf{Onde a IA NÃO entra}\\[2pt]
+     a extração da Base; a consulta de habilidades (exata por componente e ano,
+     \textbf{sem busca vetorial}); a distribuição; o esqueleto das aulas; a
+     costura; \texttt{cumprida} e \texttt{observacaoDoProfessor}; e a
+     exportação.\\[2pt]
+     Os dois pontos de IA passam por \texttt{temSaldo} ANTES e
+     \texttt{consumir} depois --- e o consumo conta mesmo quando a geração é
+     rejeitada: o \emph{token} foi gasto.};
+
+\end{tikzpicture}}
+\caption[exp-92: o caminho do planejamento de ensino]{O planejamento de ensino
+  de ponta a ponta, e os dois únicos pontos em que um modelo é chamado. A Base
+  chega como dado extraído fora do produto; a distribuição das habilidades pelos
+  períodos é decisão do professor e é o insumo das duas gerações; a exportação
+  não passa pelo servidor.}
+\label{fig:exp92-caminho}
+\end{figure}
+
 \subsection{Ela coexiste com a exp-90}
 
 Não são versões da mesma coisa: são ferramentas para redes diferentes.
@@ -1160,7 +1505,88 @@ Metadados e estado & PostgreSQL (\cd{exp\_92\_configuracoes} e as duas acima).\\
 Número, data, dia da semana e horário saem de \arq{planejamento/calendario.ts},
 calculados da grade real do professor; o modelo preenche apenas o conteúdo
 pedagógico das aulas que já existem, e \arq{planejamento/costura.ts} descarta
-sobra e completa falta.
+sobra e completa falta. A Figura~\ref{fig:exp92-semana} mostra a conciliação
+inteira, com as três regras da costura e as três barreiras contra um código de
+habilidade inventado.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+  ia/.style={draw=unooOrange, fill=unooOrangeWash, line width=0.7pt,
+             rounded corners=2pt, inner sep=2.5pt, font=\scriptsize\bfseries,
+             text=unooInk}]
+
+  % ---- os tres insumos ---------------------------------------------------
+  \node[actionsys, text width=42mm] (cal) at (-5.3,0)
+    {\textbf{Calendário} (\texttt{calendario.ts})\\[2pt]
+     número, data, dia da semana e horário das aulas DESTA semana, da grade
+     real do professor. Feriado \textbf{remove} a aula, não a desloca};
+  \node[objflow, text width=42mm] (rec) at (0,0)
+    {\textbf{O recorte da distribuição}\\[2pt]
+     só os códigos do período de avaliação em que esta semana cai};
+  \node[objflow, text width=42mm] (reg2) at (5.3,0)
+    {\textbf{A regência}\\[2pt]
+     componente, série e minutos por aula};
+
+  % ---- a coluna do meio --------------------------------------------------
+  \node[action, text width=52mm] (brief) at (0,-3.0)
+    {\texttt{montarBriefingDePeriodo}\\[2pt]
+     um \emph{briefing} com as aulas que EXISTEM e as habilidades que PODEM
+     entrar};
+  \node[action, text width=52mm] (gen) at (0,-5.8)
+    {\texttt{provider.generateJson}\\[2pt]
+     \emph{schema} de resposta, modelo longo, temperatura 0,5.\\
+     Devolve \textbf{só o conteúdo pedagógico} das aulas};
+  \node[ia, anchor=west] at (2.9,-5.8) {IA};
+  \node[actionsys, text width=52mm] (cost) at (0,-8.8)
+    {\texttt{costurarAulas} --- a conciliação entre o que o modelo devolveu e
+     as aulas que existem de verdade};
+  \node[objflow, text width=52mm] (out) at (0,-11.4)
+    {\texttt{exp\_92\_planos\_de\_periodo.aulas}\\[2pt]
+     JSONB estruturado, \texttt{status = pronto}};
+  \node[action, text width=52mm] (edita) at (0,-13.8)
+    {O professor edita\\[2pt]
+     \texttt{PUT /planejamento/periodos/:id/aulas}\\[2pt]
+     \texttt{cumprida} e a observação da aula são registro DELE, nunca do
+     modelo};
+
+  \draw[flow] (cal.south) |- (-3.1,-2.2) -- (brief.north west);
+  \draw[flow] (rec) -- (brief);
+  \draw[flow] (reg2.south) |- (3.1,-2.2) -- (brief.north east);
+  \draw[flow] (brief) -- (gen);
+  \draw[flow] (gen) -- (cost);
+  \draw[flow] (cost) -- (out);
+  \draw[flow] (out) -- (edita);
+
+  % ---- as tres regras da costura -----------------------------------------
+  \node[actnote, text width=46mm, anchor=north west] (regras) at (3.1,-7.6)
+    {\textbf{As três regras da costura}\\[2pt]
+     1. O esqueleto é do CALENDÁRIO. Oito aulas para uma semana de três: a
+     sobra é descartada. Uma para três: as outras duas nascem em branco.\\[2pt]
+     2. Código fora do recorte é \textbf{removido}, não corrigido.\\[2pt]
+     3. Campo ausente vira \emph{string} VAZIA, nunca \texttt{undefined} ---
+     ausente na tela é indistinguível de \enquote{ainda não preenchi}.};
+
+  % ---- as tres barreiras --------------------------------------------------
+  \node[actnote, text width=46mm, anchor=north east] (barreiras) at (-3.1,-7.6)
+    {\textbf{Três barreiras contra um código inventado}\\[2pt]
+     o \emph{prompt} (instrução, não garantia), o
+     \texttt{PUT .../distribuicao} (valida o que o PROFESSOR escolheu) e a
+     costura (remove o que o MODELO escreveu depois). Nenhuma sozinha
+     basta.};
+
+  \draw[actnoteline] (regras.west) -- (cost.east);
+  \draw[actnoteline] (barreiras.east) -- (cost.west);
+
+\end{tikzpicture}}
+\caption[exp-92: como uma semana nasce]{Como uma semana de aulas nasce. O modelo
+  recebe as aulas que existem e as habilidades que podem entrar, e devolve
+  apenas conteúdo pedagógico; a costura concilia. Uma resposta malformada
+  degrada para \enquote{planejar à mão}, nunca para aulas em dias que não
+  existem.}
+\label{fig:exp92-semana}
+\end{figure}
 
 \begin{atencao}
 Deixar o modelo decidir quantas aulas cabem na semana produzia \textbf{cinco}
@@ -1277,12 +1703,20 @@ formatos, sem nada mudar no que foi planejado.
 \headrow \thd{Botão} & \thd{O que sai no documento}\\
 \midrule
 \cd{Baixar esta semana} & a semana aberta, com as aulas datadas\\
-\zebra \cd{Esta e a próxima} & duas semanas, uma por página --- a entrega
-  quinzenal. Só aparece com a semana seguinte \textbf{já planejada}\\
-\cd{Baixar o Nº Bimestre} & todas as semanas \cd{pronto} daquele período de
-  avaliação, com a contagem no cabeçalho\\
+\zebra \cd{Esta e a próxima (quinzena)} & duas semanas, uma por página --- a
+  entrega quinzenal. Só aparece com a semana seguinte \textbf{já planejada}:
+  sem ela o documento sairia com uma semana só, e o nome mentiria\\
+\cd{Baixar o <período> inteiro} & todas as semanas \cd{pronto} daquele período
+  de avaliação. \textbf{O rótulo não é fixo}: ele é o do período, e segue a
+  divisão do ano escolhida na regência --- \enquote{3º Bimestre},
+  \enquote{2º Trimestre} ou \enquote{1º Semestre}, conforme
+  \cd{DIVISOES\_DO\_ANO}. Só aparece com \textbf{mais de uma} semana planejada
+  no período\\
 \bottomrule
 \end{tabularx}
+
+Os dois documentos de conjunto saem do mesmo \arq{documentoDeSemanas}: uma
+semana por página, e o cabeçalho conta as semanas e as aulas.
 
 As semanas vêm de \cd{GET /planejamento/planos-anuais/:id/periodos}, que
 devolve \textbf{só as \cd{pronto}}: um documento entregue à coordenação não

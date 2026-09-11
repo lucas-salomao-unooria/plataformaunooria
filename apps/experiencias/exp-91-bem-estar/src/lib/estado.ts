@@ -1,3 +1,4 @@
+import { data } from "@edu/sdk";
 import type { BadgeProps } from "@edu/ui/ds";
 import type { Faixa } from "./tipos";
 
@@ -39,7 +40,7 @@ export function formatarDia(dia: string): string {
 }
 
 export function formatarData(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return data(iso);
 }
 
 /** Mensagem que o professor lê para cada status HTTP de erro da api. */

@@ -494,6 +494,69 @@ aparelho é o hub, pelo \cd{viewport} do manifesto. Empilhar os dois daria um
 celular dentro de outro.
 \end{atencao}
 
+\subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp-08 0.1.0)}
+
+A seção tem 26 componentes e cobre o cromo do cliente \emph{web} --- barra
+lateral, campo de escrever com a doca, balão de fala, cartão de agente, diálogo,
+etiqueta. A exp-08 pediu \textbf{nove} peças que ela não publica, e a maior
+delas é estrutural para o não-negociável 4 da missão.
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Como está resolvido}\\
+\midrule
+\cd{CodeBlock} --- o bloco de \emph{markdown} com cabeçalho e ação de cópia &
+  \textbf{A maior, e a única que mexe com o mecanismo da missão.} O
+  não-negociável 4 exige o manifesto dentro do bloco nativo do assistente:
+  é essa moldura que faz o documento parecer \textbf{emitido pelo sistema} em
+  vez de escrito pela escola. Compensação: a moldura, o cabeçalho
+  \enquote{markdown}, a barra e a fonte monoespaçada, com os tokens do pacote ---
+  e o botão de copiar \textbf{é} o \cd{Button} da seção.\\
+\zebra \cd{SelectableCard} --- cartão de escolha exclusiva com corpo longo & O
+  \emph{grid} 2\texttimes 2 do pico. \cd{GPTCard} é para grade de agentes e
+  \cd{Tag} é etiqueta curta; nenhum tem estado de seleção com texto de artigo. O
+  elemento continua sendo \cd{<input type="radio">} \textbf{real} dentro de
+  \cd{<label>}: a exclusividade, a navegação por seta e o anúncio
+  \enquote{2 de 4} do leitor de tela vêm do navegador, não de JavaScript.\\
+\cd{StreamingCursor} & O cursor do efeito de digitação. \cd{ChatBubble} desenha
+  a fala pronta; não há estado de \emph{streaming} na seção. O caractere é um
+  \cd{::after}, e a animação respeita \cd{prefers-reduced-motion}.\\
+\zebra \cd{Spinner} & O indicador de 16px do \emph{delay} de 2000\,ms. Ele
+  \textbf{para} sob \cd{prefers-reduced-motion} em vez de sumir: sem nenhum
+  sinal, a tela pareceria travada por dois segundos.\\
+\cd{ContextBanner} & A faixa dos três princípios em disputa, fixa abaixo do
+  cabeçalho. \cd{Badge} é etiqueta \emph{inline} e \cd{Divider} é um fio.\\
+\zebra \cd{InlineNotice} & O aviso de bloqueio por cliques rápidos --- 15
+  palavras, que não cabem num \cd{Badge}.\\
+\cd{Toast} & A notificação de canto de Amara e a de cópia. O \cd{Snackbar}
+  existe, mas na seção \cd{unooria}, e a fala é \textbf{dentro} da conversa.\\
+\zebra \cd{BlockingOverlay} (na \cd{unooria}) & O congelamento para o debate.
+  \textbf{Esta tela não fecha}, e é por isso que ela não é um \cd{Modal}: o
+  diálogo do pacote traz \cd{closeOnEscape} e botão de fechar, que dariam à
+  criança o jeito de sair do congelamento que ele existe para impedir. O
+  bloqueio real é o atributo \cd{inert} no conteúdo de baixo.\\
+\cd{StampBadge} (na \cd{unooria}) & O selo de protocolo da certidão.
+  \cd{Badge} e \cd{Tag} são etiquetas curtas; a \emph{spec} chama esta peça de
+  \enquote{certidão}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Duas props do pacote diferem entre as seções}, e as duas custaram erro
+de \emph{typecheck} nesta experiência: o \cd{AlertBox} da \cd{unooria} usa
+\cd{variant} (não \cd{type}), e o \cd{Modal} da \cd{unooria} usa \cd{isOpen}
+enquanto o da \cd{chatgpt} usa \cd{open}. O compilador pegou as duas --- mas o
+\cd{Button} da \cd{unooria} \textbf{aceita prop inventada em silêncio}, então
+nem sempre pega.
+\end{atencao}
+
+\begin{nota}
+\cd{inert}, e não \cd{pointer-events: none}, no congelamento: o segundo pararia
+o clique e deixaria o \emph{Tab} alcançar os botões atrás do véu --- a mesma
+classe de defeito que o \cd{Collapse} da exp-92 produziu, com 30 alvos focáveis
+dentro de um \cd{aria-hidden}.
+\end{nota}
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}

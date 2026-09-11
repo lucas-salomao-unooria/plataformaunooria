@@ -120,8 +120,16 @@ export const CHECKINS_POR_CICLO = 7;
  * mais de 3 semanas mistura semanas demais — expira e recomeça do zero.
  */
 export const DIAS_VALIDADE_CICLO = 21;
-/** Fuso do "dia" do check-in. Um contrato é uma rede brasileira. */
-export const FUSO = "America/Sao_Paulo";
+/**
+ * Fuso do "dia" do check-in.
+ *
+ * Reexportado de `comum/fuso.ts`, e não declarado aqui: era daqui que ele saía,
+ * e ninguém fora do bem-estar o encontrava — o hub passou meses formatando data
+ * sem fuso nenhum a três pastas de distância (ADR-98). Virou FUNÇÃO na ADR-99,
+ * quando o valor passou a vir da env `FUSO_DA_PLATAFORMA`: constante seria lida
+ * uma vez na importação do módulo, e o fuso é do deploy.
+ */
+export { fusoDaPlataforma } from "../comum/fuso";
 
 export const MAX_TEXTO_LIVRE = 600;
 

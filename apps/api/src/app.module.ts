@@ -20,8 +20,10 @@ import { AtividadesModule } from "./atividades/atividades.module";
 import { GeracaoModule } from "./geracao/geracao.module";
 import { AnaliseModule } from "./analise/analise.module";
 import { PerfisModule } from "./perfis/perfis.module";
+import { FotoContaModule } from "./foto-conta/foto-conta.module";
 import { OEcoNoGrupoModule } from "./o-eco-no-grupo/o-eco-no-grupo.module";
 import { RastroBoatoModule } from "./rastro-boato/rastro-boato.module";
+import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
 import { SalasModule } from "./salas/salas.module";
 import { UnootubeModule } from "./unootube/unootube.module";
 import { UnoogptModule } from "./unoogpt/unoogpt.module";
@@ -70,6 +72,8 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     BemEstarModule,
     OEcoNoGrupoModule,
     RastroBoatoModule,
+    ManifestoIaModule,
+    FotoContaModule,
   ],
   providers: [
     // Depois dos guards em toda rota: preenche a escola do token no

@@ -16,7 +16,7 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \begin{regra}
 \textbf{Tabela de experiência leva o número dela: \cd{exp\_NN\_}.} Assim:
 \cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_03\_sessoes},
-\cd{exp\_07\_sessoes}, \cd{exp\_91\_checkins}.
+\cd{exp\_07\_sessoes}, \cd{exp\_08\_sessoes}, \cd{exp\_91\_checkins}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
@@ -842,6 +842,69 @@ runtime, e só em produção, que é onde ela existe.
 \end{atencao}
 
 
+\section{As cinco tabelas da exp-08}
+\label{sec:tabelas-exp08}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_08\_conteudo\_turma} & O \textbf{pacote curado} que o professor
+  homologa antes da aula --- é a tabela que não existe nas outras experiências.
+  Uma linha por turma, com o contexto, os 3 questionamentos (com as réplicas) e
+  as 4 cláusulas (com os argumentos de mediação) em \cd{JSONB}. O booleano
+  \cd{aprovado\_por\_professor} é o portão da exigência 8.2: sem ele
+  verdadeiro, a experiência do estudante lê o banco curado da Unooria, e
+  rascunho de IA \textbf{não conta}. \textbf{Sobrevive ao \enquote{Zerar
+  turma}}: a curadoria custou tempo do professor.\\
+\zebra \cd{exp\_08\_sessoes} & O estado da missão, uma linha por estudante.
+  Chave \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
+  \emph{coluna} dela: a \cd{clausula\_id} fixada, a
+  \cd{latencia\_clausula\_seg}, o \cd{confirmou\_provocacao} e o
+  \cd{manifesto\_markdown} compilado. \textbf{Não há coluna \cd{score}}, e a
+  ausência é o desenho: a missão não pontua.\\
+\cd{exp\_08\_auditorias} & Cada questionamento disparado contra a máquina ---
+  \textbf{1:N} de propósito. A cota é sobre questionamentos \emph{distintos}, e
+  um contador perderia \emph{quais} a criança escolheu fazer, que é o dado da
+  hipótese pedagógica (a contradição só aparece no do preconceito histórico). Um
+  \cd{UNIQUE (escola\_id, estudante\_id, prompt\_id)} faz a dedupe valer mesmo
+  se um caminho novo esquecer de checar.\\
+\zebra \cd{exp\_08\_respostas\_percurso} & O \enquote{Meu Percurso}: duas
+  palavras-chave e um parágrafo de 20 a 800 caracteres escrito por menor de
+  idade. Fora de \emph{log}, fora da telemetria analítica, alcançável só pelo
+  professor da turma dela. \textbf{Sem \emph{flag} de moderação}: o texto com
+  dado pessoal é recusado com \textbf{422} e não chega a esta tabela --- não há
+  registro moderado a marcar.\\
+\cd{exp\_08\_gates\_turma} & O \textbf{Checkpoint~A}, por turma ---
+  \cd{missao | debate}. Chave \cd{(escola\_id, turma\_id)}. É esta linha que o
+  \emph{polling} de 5 segundos lê, porque não há WebSocket de aplicação no
+  Cloud Run (\adrr{ADR-93}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+Os \emph{CHECK} desta migração amarram três invariantes que as regras puras já
+aplicam. \cd{(clausula\_id IS NULL) = (manifesto\_markdown IS NULL)}: o
+documento existe se e somente se a cláusula foi fixada --- um manifesto sem
+cláusula teria o artigo em branco, e uma cláusula sem documento seria a Etapa~4
+sem o artefato que ela promulga. No percurso,
+\cd{cardinality(palavras\_chave\_tags) = 2} \textbf{e}
+\cd{tags[1] <> tags[2]}: marcar a mesma palavra duas vezes deixaria um
+\emph{slot} logicamente vazio dentro de um \emph{array} cheio, e a nuvem
+agregada da turma contaria a mesma criança duas vezes na mesma palavra. E o
+pacote da turma tem \cd{jsonb\_array\_length} fixo em 3 e 4: um pacote com duas
+cláusulas faria a tela do pico renderizar meio \emph{grid}, e o sintoma
+apareceria na aula, não no \emph{deploy}.
+\end{regra}
+
+\begin{atencao}
+\cd{exp\_08\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\textbf{sequência}, além do \emph{grant} de tabela --- a quarta aparição da
+mesma armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só
+em produção, que é onde ela existe.
+\end{atencao}
+
+
 \section{As quatro tabelas da exp-06}
 \label{sec:tabelas-exp06}
 
@@ -1133,3 +1196,38 @@ apenas \arq{schema.prisma} dá uma visão incompleta do banco --- é por isso qu
 campos correspondentes são \cd{TEXT}/\cd{SMALLINT} no \emph{schema} e a validação
 de aplicação é feita com Zod.
 \end{atencao}
+
+\section{As três tabelas da exp-04}
+\label{sec:tabelas-exp04}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_04\_turma\_config} & A aula, por \textbf{turma}: tema, nível de
+  leitura, o pacote APROVADO (JSONB validado pelo mesmo \emph{schema} da
+  geração; nulo = banco curado padrão), o \cd{latch\_liberado} da Roda e a
+  \cd{tentativa} corrente. Chave \cd{(escola\_id, turma\_id)}.\\
+\zebra \cd{exp\_04\_runs} & A execução de um estudante numa
+  \textbf{tentativa}: etapa (\emph{CHECK} de vocabulário fechado), marca, o
+  par foto+legenda escolhido, a latência de decisão (teto de 2h no
+  \emph{CHECK}: acima é aba esquecida) e a reflexão --- que só aceita
+  \cd{'lupa'}, porque o Globo é \emph{retry} e vive no contador. O reset da
+  turma INCREMENTA a tentativa em vez de apagar: as \emph{runs} antigas ficam
+  imutáveis na tentativa anterior (DAD-06). Única por
+  \cd{(escola\_id, turma\_id, estudante\_id, tentativa)}.\\
+\cd{exp\_04\_posts\_turma} & A publicação no mural coletivo, assinada pela
+  \textbf{marca} (coruja/estrela/sol) --- nome de criança não existe aqui.
+  1:1 com a \emph{run} (\cd{UNIQUE run\_id}): toque duplo e \emph{retry} de
+  rede não criam segundo post.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+O congelamento da Etapa 5 NÃO é tabela própria: é o par
+\cd{latch\_liberado} (config da turma) × etapa \cd{roda} (da \emph{run}).
+A liberação é um \cd{UPDATE} simples e idempotente por erro
+(\cd{409 latch-ja-liberado}), sem \emph{lock} de linha --- quem
+\enquote{recebe o \emph{broadcast}} é o \emph{polling} dos tablets
+(\adrr{ADR-94}).
+\end{regra}

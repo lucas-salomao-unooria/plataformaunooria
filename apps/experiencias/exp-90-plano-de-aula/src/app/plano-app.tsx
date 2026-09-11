@@ -1,3 +1,4 @@
+import { dataHora, hora } from "@edu/sdk";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Badge,
@@ -45,8 +46,7 @@ const INTERVALO_POLLING_MS = 3_000;
 /** O DS expõe `SelectionValue` como `string | string[]`; aqui o modo é simples. */
 const valorSimples = (v: unknown): string => (Array.isArray(v) ? String(v[0] ?? "") : String(v ?? ""));
 
-const formatarData = (iso: string) =>
-  new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const formatarData = dataHora;
 
 interface Props {
   professorNome: string;
@@ -598,7 +598,7 @@ export function PlanoApp({ professorNome, planosIniciais, disponiveis }: Props) 
                   {sujo
                     ? "Alterações não salvas · Ctrl/Cmd+S"
                     : salvoEm
-                      ? `Salvo às ${new Date(salvoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+                      ? `Salvo às ${hora(salvoEm)}`
                       : "Tudo salvo"}
                 </span>
               </div>

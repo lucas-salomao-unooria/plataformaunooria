@@ -16,6 +16,7 @@ import {
   ModalTitle,
   TextField,
 } from '@edu/ui/ds';
+import { data as formatarData } from '@edu/sdk';
 import type { VarianteDeStatus } from '@/lib/status-atividade';
 
 export type ResumoDaAtividade = {
@@ -66,14 +67,6 @@ function IconeLixeira() {
  * leva junto posts, imagens no disco e as sessões já rodadas da turma, e não tem
  * volta.
  */
-/** "12/03/2026" — a data curta basta para distinguir duas do mesmo tema. */
-function formatarData(iso: string): string {
-  const data = new Date(iso);
-  return Number.isNaN(data.getTime())
-    ? '—'
-    : data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
 export function CartaoAtividade({ atividade }: { atividade: ResumoDaAtividade }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);

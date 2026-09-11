@@ -409,11 +409,22 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **93**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
+  (a PRÓXIMA é a **100**: a 93 é a sincronização de sala por polling da
+      exp-08, a 94 o latch por polling da exp-04, a 95 a sessão de 2h de
+      inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
+      de login na tela, a **98 o fuso único da plataforma** e a **99 esse fuso
+      vindo de uma variável de ambiente** — as quatro foram alocadas por quem repartia o trabalho ANTES de
+      qualquer frente escrever, e é assim que a colisão de 2026-09-06 e
+      2026-09-07 deixa de acontecer; a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
       histórico append-only que a rede também lê, a 90 pela suíte da api em um
-      worker, a 91 pelas três zonas do idioma da interface e a **92 pelo
-      retorno de etapa que reabre a sessão do Instanooria**; a 65 foi ocupada pelo guia da aula, a 72 pela
+      worker, a 91 pelas três zonas do idioma da interface, a 92 pelo
+      retorno de etapa que reabre a sessão do Instanooria, a **93 pela
+      sincronização de sala por polling HTTP em vez de WebSocket** e a **94
+      reservada para a frente paralela que corria no mesmo dia** — as duas
+      foram alocadas por quem repartia o trabalho, ANTES de qualquer uma
+      escrever, e é assim que a colisão de 2026-09-06 e 2026-09-07 deixa de
+      acontecer; a 65 foi ocupada pelo guia da aula, a 72 pela
       fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
@@ -532,9 +543,19 @@ node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/
                                           # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).
 pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
                                           # o professor prepara a mídia no painel antes da aula)
+pnpm --filter @edu/exp-04-o-que-a-foto-conta dev  # :5183 → hub /exp/exp-04-o-que-a-foto-conta (1º ano,
+                                          # unidade 1). 5183 e não 5182: a 5182 é da exp-08. A missão é
+                                          # SÍNCRONA: a Roda congela os tablets e o professor libera pelo
+                                          # painel (polling 3s, ADR-94).
 pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
                                           # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
                                           # gravado — a transcrição está sempre na tela.
+pnpm --filter @edu/exp-08-manifesto-ia dev    # :5182 → hub /exp/exp-08-manifesto-ia (8º ano, unidade 4).
+                                          # Clone do ChatGPT. IA SÓ no preparo do professor, antes da
+                                          # aula: o motor de sala é determinístico e gasta zero token.
+                                          # NÃO existe cláusula certa — as 4 são válidas, e o painel
+                                          # mostra contagem, nunca acerto. O congelamento da turma para
+                                          # o debate é POLLING de 5s (ADR-93), não WebSocket.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
@@ -573,6 +594,26 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
   pausa`, `modal` e `popup` saem porque são jargão nosso vazado para o guia do
   professor. `fake news`, `cyberbullying` e `print` ficam por decisão registrada
   — não "corrija" nenhum deles.
+- **Não formatar data na mão** (ADR-98). `toLocaleDateString`,
+  `toLocaleTimeString`, `toLocaleString` sobre uma data e `Intl.DateTimeFormat`
+  sem `timeZone` usam o fuso de QUEM EXECUTA — e no hub o contêiner está em UTC
+  e a professora em `America/Sao_Paulo`. Entre 21h e a meia-noite os dois lados
+  renderizam DIAS diferentes, o React chama isso de "hydration failed",
+  regenera a árvore e engole o clique. Use `data`, `dataCurta`, `dataHora`,
+  `dataCurtaHora`, `hora`, `horaComSegundos` e `diaDaPlataforma`, do `@edu/sdk`
+  (na api, `src/comum/fuso.ts`). Número não tem fuso:
+  `n.toLocaleString("pt-BR")` para milhar continua livre.
+- **Não cravar o fuso em lugar nenhum, nem ler `FUSO_DA_PLATAFORMA` na mão**
+  (ADR-99). O valor é do DEPLOY: uma env só, com o mesmo nome na api e no hub,
+  ausente = `America/Sao_Paulo`. Quem responde qual é ele são
+  `fusoDaPlataforma()` do `@edu/sdk` e o de `apps/api/src/comum/fuso.ts` — eles
+  resolvem a cascata (runtime → env → `<meta name="unooria-fuso">` → padrão) que
+  faz o valor chegar ao servidor, ao navegador e ao bundle da experiência.
+  `process.env.FUSO_DA_PLATAFORMA` lido direto numa tela funciona no servidor e
+  volta `undefined` no navegador, que é o defeito da ADR-98 de volta pela porta
+  dos fundos. **Fuso novo para a experiência entra pelo `config` do `hub:init`**
+  (chave `CHAVE_DO_FUSO`), nunca por campo de topo: campo de topo muda a FORMA
+  do handshake e obriga a subir `PROTOCOL_VERSION`.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.

@@ -426,11 +426,192 @@ export const MISSAO_RASTRO_BOATO: Missao = {
   },
 };
 
+/**
+ * 8º ano · Unidade 4 — O Manifesto da IA (`exp-08-manifesto-ia`).
+ *
+ * A SEGUNDA missão do 8º ano, e a que fecha o ano letivo dele. Clone do
+ * ChatGPT, como a exp-03 — mas o que se audita aqui é outra coisa, e é isso que
+ * separa as duas na trilha: na Missão Tempestade o estudante confere as FONTES
+ * que o agente cita; aqui ele confronta a PREMISSA do sistema (a de que
+ * algoritmo é neutro) e fixa uma regra que o código passa a obedecer.
+ *
+ * É a única missão do produto em que o estudante ESCREVE uma regra em vez de
+ * escolher uma resposta — as quatro cláusulas são todas válidas, e o dado
+ * pedagógico é qual delas ele defende e por quê.
+ *
+ * A professora tem UM botão durante a aula ("Pausar para Debate") e o inverso
+ * dele, e ele é OPCIONAL: a missão corre inteira sem ninguém apertar nada,
+ * porque a spec admite a sessão individual assíncrona. O congelamento é para a
+ * turma confrontar os argumentos antes de cada um assinar por escrito.
+ *
+ * A copy sai do sheet congelado da missão (passada 2), com uma exceção
+ * declarada: o episódio de recapitulação é servido em TEXTO — a locução de 4
+ * minutos do brief ainda não foi gravada, e a transcrição já está sempre na
+ * tela por acessibilidade.
+ */
+export const MISSAO_MANIFESTO_IA: Missao = {
+  anoSlug: "8-ano",
+  unidadeSlug: "unidade-4",
+  unidade: 4,
+  expId: "exp-08-manifesto-ia",
+  titulo: "O Manifesto da IA — Nossos direitos em código",
+  resumo:
+    "A direção quer instalar uma inteligência artificial para prever notas e monitorar presença, " +
+    "e o sistema afirma que decide de forma neutra. O estudante audita a origem dos dados, " +
+    "derruba a tese da neutralidade e fixa uma cláusula de governança que o código passa a obedecer.",
+  status: "disponivel",
+  estudante: {
+    titulo: "O Manifesto da IA",
+    chamada:
+      "Amara descobriu que a escola vai instalar uma inteligência artificial para te avaliar. " +
+      "Entre na conversa e veja o que ela responde.",
+  },
+  ficha: {
+    competencia:
+      "Identificar as questões éticas de um sistema de inteligência artificial escolar e propor " +
+      "parâmetros de governança algorítmica que garantam direitos (EF08CO05, EF08CO07, EF08CO08).",
+    duracao: "1 aula de 50 min, com pausa de 10 min para debate — ou 2 sessões de 25 min",
+    formato:
+      "Conversa com um assistente de inteligência artificial simulado, sem digitação livre: os " +
+      "questionamentos são cartões prontos, e as respostas da máquina são autorais e fixas.",
+    atos: [
+      {
+        rotulo: "1 — Ouvir Amara e abrir a conversa",
+        texto:
+          "Amara conta que o conselho escolar está homologando a compra do EduPredict IA e que o " +
+          "sistema já está online. O estudante abre a conversa e lê a primeira fala da máquina: " +
+          "que estudantes não precisam auditar os dados, porque algoritmos são neutros.",
+      },
+      {
+        rotulo: "2 — Auditar a máquina (o que a aula mede)",
+        texto:
+          "Três questionamentos prontos, e ele precisa disparar ao menos dois para seguir. O " +
+          "primeiro a máquina responde com estatística; o segundo — sobre os preconceitos do " +
+          "passado — a obriga a admitir que assume as punições antigas como probabilidade válida. " +
+          "É essa contradição que a missão inteira existe para tornar visível. Amara fica em " +
+          "silêncio nesta etapa, de propósito.",
+      },
+      {
+        rotulo: "3 — Fixar a cláusula inegociável",
+        texto:
+          "A máquina cede e pede uma regra prioritária. São quatro salvaguardas concorrentes — " +
+          "transparência dos dados, auditoria de viés, veto humano e anonimização — e ele escolhe " +
+          "UMA, em decisão irreversível. Nenhuma é a certa: o que se lê depois é qual a turma " +
+          "escolheu e com que argumento.",
+      },
+      {
+        rotulo: "4 — O manifesto, e a pausa para o debate",
+        texto:
+          "O sistema processa por dois segundos e compila o Manifesto de Direitos Digitais dos " +
+          "Estudantes com a cláusula dele em destaque. É aqui que você congela as telas pelo " +
+          "painel: a turma discute os quatro caminhos antes de cada um assinar o seu.",
+      },
+      {
+        rotulo: "5 — Assinar e fechar",
+        texto:
+          "No Meu Percurso ele marca 2 palavras-chave e escreve por que aquela cláusula é " +
+          "inegociável para ele. Depois vem o episódio de fechamento e o selo Guardião de " +
+          "Direitos Digitais.",
+      },
+    ],
+    preparo: [
+      "Você pode personalizar o caso com um dilema real da escola no painel de resultados — ou " +
+        "usar o pacote curado da Unooria, que é homologado e roda a aula inteira. Nada gerado por " +
+        "inteligência artificial chega aos estudantes sem o seu clique em Aprovar.",
+      "Leia as réplicas da máquina antes da aula: elas estão no painel, e é sobre elas que o " +
+        "debate acontece. A segunda é a que faz a turma virar os votos.",
+      "Não há mídia para preparar: os áudios não foram gravados ainda, e o episódio de " +
+        "fechamento é lido, não ouvido. Fone é bem-vindo, mas nada depende dele.",
+      "Reserve os 10 minutos do debate. O botão Pausar para Debate congela as telas; sem ele a " +
+        "missão corre até o fim no ritmo de cada um, e a discussão coletiva não acontece.",
+      "Vale olhar a distribuição das cláusulas antes de falar: ela é o material das três " +
+        "perguntas, e não uma lista de quem acertou — as quatro são válidas.",
+    ],
+  },
+};
+
+/**
+ * 1º ano · Unidade 1 — O Que a Foto Conta (`exp-04-o-que-a-foto-conta`).
+ *
+ * A porta de entrada do Entre Redes: leitura de imagem no mural da turma
+ * (clone do Instagram), para crianças em alfabetização inicial. A missão é
+ * SÍNCRONA por desenho — os tablets congelam na Etapa 5 (a Roda de Conversa) e
+ * só o professor libera a reflexão final; e é 100% formativa: não existe nota,
+ * não existe "foto errada", e a resposta ingênua na síntese vira retry gentil.
+ *
+ * O professor tem DOIS controles ao vivo (liberar a reflexão e zerar a turma)
+ * e UMA preparação opcional (gerar o pacote de legendas com IA e aprovar).
+ * Sem preparação, o banco curado padrão — "O Mistério das Peças no Pátio" —
+ * assume sozinho: a aula nunca fica sem material.
+ */
+export const MISSAO_FOTO_CONTA: Missao = {
+  anoSlug: "1-ano",
+  unidadeSlug: "unidade-1",
+  unidade: 1,
+  expId: "exp-04-o-que-a-foto-conta",
+  titulo: "O Que a Foto Conta — toda foto mostra uma escolha",
+  resumo:
+    "No mural da turma, duas fotos do mesmo pátio contam histórias opostas: uma celebra o brinquedo que a turma montou, a outra mostra o chão cheio de peças. O estudante escolhe UMA foto e UMA legenda, publica — e descobre, pelos comentários dos colegas simulados, que o pedaço que ele escolheu mostrar mudou o que os outros viram.",
+  status: "disponivel",
+  estudante: {
+    titulo: "O Que a Foto Conta",
+    chamada:
+      "Nina te espera no mural da turma: escolha a sua marca, olhe as fotos da escola e conte a sua história com uma foto e uma legenda.",
+  },
+  ficha: {
+    competencia:
+      "Letramento visual inicial — perceber que a imagem fotográfica é fruto de uma escolha de enquadramento e legenda, e que o que fica de fora da foto também faz parte da história.",
+    duracao: "1 aula de 50 min (ou 2 sessões de ~25 min)",
+    formato:
+      "Mural da turma simulado (clone do Instagram) em tablet: feed com 3 fotos, escolha binária de foto e legenda, eco dos colegas e roda de conversa presencial",
+    atos: [
+      {
+        rotulo: "1 — A marca do fotógrafo (Etapa 1)",
+        texto:
+          "Nina dá as boas-vindas em áudio e a criança escolhe uma das três marcas (Coruja Azul, Estrela Amarela, Sol Laranja) — a identidade dela dentro do mural. Tudo em CAIXA ALTA, com pictograma e locução: nenhuma instrução depende de leitura fluente.",
+      },
+      {
+        rotulo: "2 — Explorar o mural (Etapa 2)",
+        texto:
+          "O feed da @turma_mural tem exatamente 3 fotos do cotidiano escolar. A criança rola e dá o toque duplo de curtir — familiarização com o gesto, sem nada valendo registro. Se ficar 30 segundos sem rolar, uma seta discreta aponta o caminho.",
+      },
+      {
+        rotulo: "3 — O dilema da lente (Etapa 3)",
+        texto:
+          "Duas fotos do MESMO lugar, tiradas no mesmo minuto: o plano geral com as peças espalhadas e o plano detalhe do brinquedo montado. Duas legendas prontas, cada uma com pictograma e áudio. A criança escolhe uma foto E uma legenda e toca em COMPARTILHAR — a tela de confirmação tem só três elementos, de propósito.",
+      },
+      {
+        rotulo: "4 — O eco dos colegas (Etapa 4)",
+        texto:
+          "O post sobe para o topo do mural e, em cadência fixa, Leo e Sofia comentam exatamente o que a foto deixou ver — e o que ela escondeu. A combinação cruzada (foto de uma coisa, legenda de outra) produz o estranhamento que vira material do debate.",
+      },
+      {
+        rotulo: "5 — A Roda de Conversa (Etapa 5)",
+        texto:
+          "Todos os tablets congelam numa tela sem nenhum botão: HORA DA RODA DE CONVERSA! Você projeta as duas fotos lado a lado no painel de resultados, conduz o debate com as três perguntas do guia e, quando a conversa fechar, toca em LIBERAR REFLEXÃO FINAL.",
+      },
+      {
+        rotulo: "6 — O olhar de detetive (Etapa 6)",
+        texto:
+          "Nina pergunta O QUE A FOTO MOSTRA? com duas respostas ilustradas. A Lupa (alguém escolheu o que mostrar) conclui com confete e a insígnia Olhar de Detetive; o Globo (a foto mostra tudo) recebe um lembrete gentil e a criança escolhe de novo — sem nota, sem penalidade, sem teto de tentativas.",
+      },
+    ],
+    preparo: [
+      "Libere a missão para a turma na sala de aula — sem a liberação, o card fica com cadeado para as crianças.",
+      "Opcional: no painel da missão, gere com IA o pacote de legendas para o tema da semana (Pátio do Recreio, Horta, Sala de Aula ou Parquinho), confira o preview e aprove. Sem aprovação, o banco curado padrão assume sozinho até 10 minutos antes da aula.",
+      "Fones de ouvido fazem diferença: toda instrução tem locução, e trinta tablets em autoplay ao mesmo tempo viram cacofonia sem eles.",
+      "Rode a missão você mesmo uma vez, com calma — são ~12 minutos de tela. O que a criança NÃO pode saber de antemão: que os comentários de Leo e Sofia mudam conforme a foto escolhida.",
+      "Na segunda aplicação no mesmo ano, TROQUE o tema do pacote (Recreio → Horta, por exemplo): repetir o cenário mede memória, não leitura de imagem.",
+    ],
+  },
+};
+
 const MISSOES_PUBLICADAS: Record<string, Missao[]> = {
+  "1-ano": [MISSAO_FOTO_CONTA],
   "4-ano": [MISSAO_UNOOTUBE],
   "6-ano": [MISSAO_RASTRO_BOATO],
   "7-ano": [MISSAO_ECO_NO_GRUPO],
-  "8-ano": [MISSAO_ATUAL],
+  "8-ano": [MISSAO_ATUAL, MISSAO_MANIFESTO_IA],
   "2-serie": [MISSAO_UNOOGPT],
 };
 

@@ -1,3 +1,4 @@
+import { dataCurta } from "@edu/sdk";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
@@ -19,7 +20,7 @@ function abaDaUrl(bruta: string | undefined): AbaDaSala {
 }
 
 function DataCurta({ iso }: { iso: string }) {
-  return <>{new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</>;
+  return <>{dataCurta(iso)}</>;
 }
 
 /**

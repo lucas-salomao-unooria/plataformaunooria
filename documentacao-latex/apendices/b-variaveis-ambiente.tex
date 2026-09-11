@@ -193,6 +193,37 @@ nem aqui, nem em \arq{.env.example}. A credencial é sempre ADC
 \bottomrule
 \end{tabularx}
 
+\subsection{Fuso da plataforma (\adrr{ADR-99})}
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Variável} & \thd{Default} & \thd{Papel}\\
+\midrule
+\env{FUSO\_DA\_PLATAFORMA} & \cd{America/Sao\_Paulo} & O fuso em que a
+  plataforma inteira mostra data e hora, e em que decide o \enquote{dia} que
+  grava. Nome \textbf{IANA}; validada no \emph{boot} construindo um
+  \cd{Intl.DateTimeFormat} --- valor que o \cd{Intl} recuse \textbf{derruba a
+  subida}. A \textbf{mesma} variável, com o \textbf{mesmo valor}, vai para o hub
+  (\S\ref{ap:envs}, seção do Hub): é ele que a repassa ao navegador e às
+  experiências.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+Um \emph{offset} fixo (\cd{-04:00}) \textbf{passa} na validação, porque o
+\cd{Intl} o aceita --- e é a única forma de configurar errado sem nada acusar:
+ele congela o deslocamento, e se a rede voltar a ter horário de verão a
+plataforma fica uma hora atrasada. Use \cd{America/Manaus},
+\cd{America/Rio\_Branco}, \cd{America/Belem}, \cd{America/Noronha} --- o nome,
+nunca o deslocamento.
+
+A outra forma de errar é \textbf{configurar a API e esquecer o hub}. O sintoma é
+o defeito da \adrr{ADR-98} de volta: entre as 21h e a meia-noite os dois falam de
+dias diferentes, o React acusa \cd{hydration failed} e o clique da professora cai
+no vazio. \arq{docs/INFRA.md} pede um \cd{variable} ÚNICO no Terraform,
+consumido pelos dois serviços --- não duas entradas.
+\end{atencao}
+
 \subsection{Observabilidade (Capítulo~\ref{cap:observabilidade})}
 
 Validadas pelo Zod de \arq{config/env.ts} desde 2 de setembro de 2026 (fase 1
@@ -253,6 +284,13 @@ Nest --- ele nasce na importação, e é usado pelo \arq{main.ts} e pelo
   EXPERIÊNCIAS com OpenTelemetry Web. Vai no \cd{config.obs.traceRatio} do
   \cd{hub:init}: env de \emph{runtime}, então mudar a amostragem não
   republica bundle nenhum. \cd{0} desliga (a SDK nem baixa os pacotes).\\
+\env{SESSAO\_TTL\_SEGUNDOS} & servidor & Prazo de
+  INATIVIDADE da sessão, em segundos --- \textbf{só fora de produção}
+  (\adrr{ADR-96}). Existe para a suíte não esperar duas horas de relógio;
+  piso de 60s, teto de 12h, validada com Zod. Em produção ela é IGNORADA com
+  aviso no \emph{log} e o prazo é a constante de \arq{lib/sessao.ts}: a
+  \rota{/privacidade} afirma esse número em texto para a família, e
+  \arq{lib/sessao.test.ts} prende os dois lados.\\
 \env{NEXT\_PUBLIC\_HUB\_VERSAO} & \textbf{cliente} & O SHA do
   \emph{build}, inlinado no \emph{bundle} (\cd{ARG} do Dockerfile, como a do
   Clarity): a \enquote{versão} do hub nos erros de CLIENTE do Error Reporting.
@@ -280,6 +318,15 @@ Nest --- ele nasce na importação, e é usado pelo \arq{main.ts} e pelo
   \env{HUB\_ORIGIN}) para achar o JWKS.\\
 \zebra \env{CONTRATO\_NOME} & servidor & Nome legível da rede, mostrado a quem receber o
   documento. Opcional.\\
+\env{FUSO\_DA\_PLATAFORMA} & servidor \implica{} \textbf{cliente} & O
+  \textbf{mesmo} valor da API (\adrr{ADR-99}). Lido no servidor e escrito pelo
+  \cd{generateMetadata} do \emph{layout} raiz num
+  \cd{<meta name="unooria-fuso">} --- é assim que chega ao navegador, que não lê
+  \cd{process.env}, e de lá ao \cd{config} do \cd{hub:init} de toda
+  experiência. \textbf{Não} é \cd{NEXT\_PUBLIC\_}: aquilo é assado no
+  \emph{build}, e a mesma imagem pode servir mais de um contrato. Valor inválido
+  \textbf{não} derruba o hub --- cai no \emph{default} com \cd{console.error},
+  ao contrário da API.\\
 \bottomrule
 \end{tabularx}
 

@@ -33,18 +33,18 @@ datasource db {
 /// Tenant nível 2 (nível 1 é o contrato = stack inteira). O id é texto e é o
 /// MESMO valor que circula no claim `escola_id` do JWT e no `set_config` da RLS.
 model Escola {
-  id           String   @id
-  nome         String
+  id             String   @id
+  nome           String
   /// Código INEP — o `orgs.identifier` do OneRoster. É por onde a escola daqui
   /// se reconhece na base da rede (e, quando o padrão nacional do MEC cobrar,
   /// no EducaDados). Opcional: contrato pode começar sem ele.
-  codigoInep   String?  @map("codigo_inep")
+  codigoInep     String?  @map("codigo_inep")
   /// escola | regional | rede — CHECK na migration.
   ///
   /// `regional` cobre Diretoria de Ensino (SP), polo, regional e secretaria
   /// municipal: é o nível que agrupa unidades dentro de uma rede. O `district`
   /// do OneRoster é mapeado para cá na importação.
-  tipo         String   @default("escola")
+  tipo           String   @default("escola")
   /// A REGIONAL a que esta unidade pertence. Serve para MONTAR a lista de
   /// escolas de uma diretoria — o insumo da lotação em lote —, nunca para
   /// autorizar: quem autoriza é a lotação.
@@ -53,17 +53,17 @@ model Escola {
   /// ser `regional` — nunca `rede` (trigger). Nulo aqui é só para a própria
   /// regional. Escola órfã fazia o filtro da tela não particionar a lista e a
   /// lotação em lote cobrir menos do que parecia cobrir (ADR-79).
-  paiId        String?  @map("pai_id")
+  paiId          String?  @map("pai_id")
   /// A regional que a plataforma criou sozinha, para a rede sem divisão
   /// administrativa. No máximo uma (índice único PARCIAL na migration); o nome
   /// nasce `Rede` e é EDITÁVEL — o nome real da rede não existe no banco,
   /// porque o contrato é a stack e não uma linha.
-  regionalPadrao Boolean @default(false) @map("regional_padrao")
+  regionalPadrao Boolean  @default(false) @map("regional_padrao")
   /// `sourcedId` desta org no sistema de origem (SIS da rede). Chave de
   /// reconciliação da importação — nunca é o id daqui.
-  fonteId      String?  @map("fonte_id")
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  fonteId        String?  @map("fonte_id")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  atualizadoEm   DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
   /// Município e UF: numa rede estadual são 5 mil escolas em centenas de
   /// municípios, e sem eles a lista de escolas é impossível de navegar.
@@ -71,14 +71,14 @@ model Escola {
   /// Sigla de 2 letras — CHECK na migration.
   uf        String?
 
-  pai             Escola?          @relation("EscolaPai", fields: [paiId], references: [id])
-  filhas          Escola[]         @relation("EscolaPai")
-  turmas          Turma[]
-  usuarios        User[]
-  lotacoes        Lotacao[]
-  perfisPortateis PerfilPortatil[]
+  pai               Escola?           @relation("EscolaPai", fields: [paiId], references: [id])
+  filhas            Escola[]          @relation("EscolaPai")
+  turmas            Turma[]
+  usuarios          User[]
+  lotacoes          Lotacao[]
+  perfisPortateis   PerfilPortatil[]
   /// Os `gestor_regional` que cobrem esta regional (vazio numa `escola`).
-  gestoresRegionais User[]         @relation("RegionalDoGestor")
+  gestoresRegionais User[]            @relation("RegionalDoGestor")
   /// As exceções de disponibilidade DESTE escopo — vale tanto para uma unidade
   /// (`tipo='escola'`) quanto para uma regional, que é o nível de cima na mesma
   /// tabela. As do CONTRATO não aparecem aqui: elas têm `escola_id` nulo.
@@ -213,25 +213,31 @@ model Turma {
   fonteId         String?  @map("fonte_id")
   atualizadoEm    DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  escola        Escola        @relation(fields: [escolaId], references: [id])
-  periodoLetivo PeriodoLetivo @relation(fields: [periodoLetivoId], references: [id])
+  escola             Escola                      @relation(fields: [escolaId], references: [id])
+  periodoLetivo      PeriodoLetivo               @relation(fields: [periodoLetivoId], references: [id])
   planoEnsinoConfigs PlanoDeEnsinoConfiguracao[] @relation("PlanoEnsinoTurma")
   /// Cache da matrícula principal (`users.turma_id`). A VERDADE é `matriculas`.
-  estudantes    User[]
-  matriculas    Matricula[]
+  estudantes         User[]
+  matriculas         Matricula[]
   /// Atividades do Instanooria desta turma (`exp_01_activities.turma_id`).
-  atividades    Activity[]
+  atividades         Activity[]
   /// As missões liberadas NESTA turma (ADR-69).
-  liberacoes    Liberacao[]
+  liberacoes         Liberacao[]
 
   /// O Relógio da AULA da exp-03 mora em tabela DA EXPERIÊNCIA, não em coluna
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
   /// uma missão só faria toda experiência futura herdar o vocabulário dela.
-  unoogptRelogio UnoogptRelogioTurma[]
+  unoogptRelogio    UnoogptRelogioTurma[]
   /// O gate da aula da exp-07 mora em tabela DA EXPERIÊNCIA, pelo mesmo
   /// motivo do relógio acima.
-  ecoGates       EcoGateTurma[]
-  rastroGates    RastroGateTurma[]
+  ecoGates          EcoGateTurma[]
+  rastroGates       RastroGateTurma[]
+  manifestoGates    Exp08GateTurma[]
+  /// O pacote curado da exp-08 é POR TURMA: cada professora contextualiza os
+  /// dilemas com o caso da escola dela (exigência 8.1).
+  manifestoConteudo Exp08ConteudoTurma[]
+  /// A configuração da aula da exp-04 (pacote de fotos + o latch da roda).
+  fotoContaConfigs FotoContaTurmaConfig[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -393,34 +399,39 @@ model User {
   /// As missões que este professor liberou (ADR-69).
   liberacoesQueFez  Liberacao[]      @relation("LiberacaoProfessor")
 
-  activities       Activity[]        @relation("ActivityProfessor")
-  runs             Run[]
-  perfis           PerfilImportado[]
-  unootube         UnootubeSessao[]
-  planos           PlanoDeAula[]     @relation("PlanoProfessor")
-  planoEnsinoConfigs PlanoDeEnsinoConfiguracao[] @relation("PlanoEnsinoProfessor")
-  planosDeEnsino     PlanoDeEnsinoAnual[]        @relation("PlanoEnsinoAnualProfessor")
-  planosDePeriodo    PlanoDeEnsinoPeriodo[]      @relation("PlanoEnsinoPeriodoProfessor")
-  regional         Escola?           @relation("RegionalDoGestor", fields: [regionalId], references: [id])
-  vilaSessoes      VilaSessao[]      @relation("VilaEstudante")
-  vilaPerfis       VilaPerfil[]      @relation("VilaPerfilEstudante")
+  activities                 Activity[]                  @relation("ActivityProfessor")
+  runs                       Run[]
+  perfis                     PerfilImportado[]
+  unootube                   UnootubeSessao[]
+  planos                     PlanoDeAula[]               @relation("PlanoProfessor")
+  planoEnsinoConfigs         PlanoDeEnsinoConfiguracao[] @relation("PlanoEnsinoProfessor")
+  planosDeEnsino             PlanoDeEnsinoAnual[]        @relation("PlanoEnsinoAnualProfessor")
+  planosDePeriodo            PlanoDeEnsinoPeriodo[]      @relation("PlanoEnsinoPeriodoProfessor")
+  regional                   Escola?                     @relation("RegionalDoGestor", fields: [regionalId], references: [id])
+  vilaSessoes                VilaSessao[]                @relation("VilaEstudante")
+  vilaPerfis                 VilaPerfil[]                @relation("VilaPerfilEstudante")
   /// Lista, não `VilaBolha?`: a PK é composta (`escola_id, estudante_id`), então
   /// `estudante_id` sozinho não é único e o Prisma recusa um-para-um. É a mesma
   /// forma de `unootube` acima, que também é uma linha por estudante.
-  vilaBolhas       VilaBolha[]       @relation("VilaBolhaEstudante")
-  bemEstarCiclos   BemEstarCiclo[]   @relation("BemEstarCicloProfessor")
-  bemEstarCheckins BemEstarCheckin[] @relation("BemEstarCheckinProfessor")
+  vilaBolhas                 VilaBolha[]                 @relation("VilaBolhaEstudante")
+  bemEstarCiclos             BemEstarCiclo[]             @relation("BemEstarCicloProfessor")
+  bemEstarCheckins           BemEstarCheckin[]           @relation("BemEstarCheckinProfessor")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
-  unoogptSessoes   UnoogptSessao[]   @relation("UnoogptEstudante")
+  unoogptSessoes             UnoogptSessao[]             @relation("UnoogptEstudante")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
-  ecoSessoes       EcoSessao[]       @relation("EcoEstudante")
+  ecoSessoes                 EcoSessao[]                 @relation("EcoEstudante")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
-  rastroSessoes    RastroSessao[]    @relation("RastroEstudante")
+  rastroSessoes              RastroSessao[]              @relation("RastroEstudante")
+  /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
+  manifestoSessoes           Exp08Sessao[]               @relation("Exp08Estudante")
+  /// Lista porque a run da exp-04 é por TENTATIVA (o reset arquiva e abre
+  /// outra), então não há unicidade por estudante.
+  fotoContaRuns    FotoContaRun[]    @relation("FotoContaEstudante")
   /// O que esta conta ligou ou desligou no painel da Unooria (ADR-87). FK de
   /// verdade, pela mesma razão de `liberacoes.liberada_por`: "quem desligou o
   /// jogo da rede?" é a pergunta que se faz às 8h da manhã, e ela some do
   /// painel se o vínculo virar texto solto.
-  disponibilidadesQueDefiniu Disponibilidade[] @relation("DisponibilidadeAutor")
+  disponibilidadesQueDefiniu Disponibilidade[]           @relation("DisponibilidadeAutor")
 
   @@unique([escolaId, username])
   @@index([escolaId, role])
@@ -1836,9 +1847,9 @@ model PlanoDeEnsinoConfiguracao {
   escolaId    String @map("escola_id")
   professorId String @map("professor_id") @db.Uuid
 
-  anoLetivo Int    @map("ano_letivo") @db.SmallInt
+  anoLetivo  Int    @map("ano_letivo") @db.SmallInt
   /// 1EF..9EF | 1EM..3EM — validado com zod na aplicação.
-  serie     String
+  serie      String
   /// Slug de `curriculo/componentes.ts` — o componente DA REDE, não o da BNCC:
   /// `biologia` é escolha válida, e as habilidades dela vêm da área.
   componente String
@@ -1857,12 +1868,12 @@ model PlanoDeEnsinoConfiguracao {
 
   /// bimestral | trimestral | semestral — CHECK na migration. Nenhuma norma
   /// nacional fixa isso: o calendário é aprovado escola a escola.
-  divisaoDoAno String @default("bimestral") @map("divisao_do_ano")
+  divisaoDoAno   String @default("bimestral") @map("divisao_do_ano")
   /// 50 na maioria das redes; 45 aparece no noturno. NÃO é hora-relógio — o
   /// Parecer CNE/CEB 8/2004 proíbe tratar aula de 45min como uma hora, e é
   /// desta coluna que sai a conversão.
-  minutosPorAula Int @default(50) @map("minutos_por_aula") @db.SmallInt
-  aulasSemanais  Int @map("aulas_semanais") @db.SmallInt
+  minutosPorAula Int    @default(50) @map("minutos_por_aula") @db.SmallInt
+  aulasSemanais  Int    @map("aulas_semanais") @db.SmallInt
 
   /// A grade do professor: `[{ diaDaSemana: 1..5, horarios: ["07:00","07:50"] }]`.
   /// Guardado como JSON porque é configuração de UMA linha, lida inteira e
@@ -1879,8 +1890,8 @@ model PlanoDeEnsinoConfiguracao {
   criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
   atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
 
-  professor    User                  @relation("PlanoEnsinoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
-  turma        Turma?                @relation("PlanoEnsinoTurma", fields: [turmaId], references: [id], onDelete: SetNull)
+  professor    User                 @relation("PlanoEnsinoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+  turma        Turma?               @relation("PlanoEnsinoTurma", fields: [turmaId], references: [id], onDelete: SetNull)
   planosAnuais PlanoDeEnsinoAnual[]
 
   /// Um professor tem UMA configuração por ano letivo, série e componente. Duas
@@ -1906,7 +1917,7 @@ model PlanoDeEnsinoAnual {
   professorId    String @map("professor_id") @db.Uuid
   configuracaoId String @map("configuracao_id") @db.Uuid
 
-  titulo String
+  titulo       String
   /// pendente | gerando | pronto | erro — CHECK na migration. Mesma máquina de
   /// estados da exp-90: a geração corre em background e a tela faz polling.
   status       String    @default("pendente")
@@ -1917,7 +1928,7 @@ model PlanoDeEnsinoAnual {
 
   /// `{ "1": ["EF67LP08", "EF67LP09"], "2": [...] }` — habilidades por período
   /// de avaliação. A chave é a ordem do período (1 = 1º bimestre).
-  distribuicao Json @default("{}")
+  distribuicao           Json @default("{}")
   /// `{ "1": ["EF07CO03"] }` — a camada transversal de Computação, separada
   /// porque é sugestão do produto e não currículo do componente.
   distribuicaoComputacao Json @default("{}") @map("distribuicao_computacao")
@@ -1962,12 +1973,12 @@ model PlanoDeEnsinoPeriodo {
   planoAnualId String @map("plano_anual_id") @db.Uuid
 
   /// 1 = primeira semana/quinzena do ano letivo. Ordena o caderno do professor.
-  ordem  Int      @db.SmallInt
-  inicio DateTime @db.Date
-  fim    DateTime @db.Date
+  ordem              Int      @db.SmallInt
+  inicio             DateTime @db.Date
+  fim                DateTime @db.Date
   /// A qual período de avaliação esta semana pertence (1 = 1º bimestre) — é o
   /// que liga o granular ao macro e permite herdar as habilidades do anual.
-  periodoDeAvaliacao Int @map("periodo_de_avaliacao") @db.SmallInt
+  periodoDeAvaliacao Int      @map("periodo_de_avaliacao") @db.SmallInt
 
   status       String    @default("pendente")
   tentativas   Int       @default(0) @db.SmallInt
@@ -1986,4 +1997,342 @@ model PlanoDeEnsinoPeriodo {
   @@unique([escolaId, planoAnualId, ordem], map: "exp_92_periodo_unico")
   @@index([escolaId, professorId])
   @@map("exp_92_planos_de_periodo")
+}
+
+// ═══════════════════════════════════════════ exp-08 — o manifesto da IA
+//
+// "O Manifesto da IA: Nossos Direitos em Código" — 8º ano, 4º bimestre. O
+// estudante audita um sistema de predição escolar dentro de um clone do
+// ChatGPT, derruba a tese de neutralidade da máquina e fixa uma cláusula de
+// governança que ela passa a obedecer.
+//
+// CINCO tabelas, e o desenho segue a exp-06: o que é 1:1 com a sessão é COLUNA
+// da sessão, não tabela. A exceção é `exp_08_auditorias`, que é 1:N de
+// propósito — a cota de 2 é sobre prompts DISTINTOS, e guardar só um contador
+// perderia QUAIS questionamentos a criança escolheu fazer, que é o dado
+// pedagógico da Etapa 2.
+//
+// A tabela a mais em relação à exp-06 é `exp_08_conteudo_turma`: o pacote
+// curado que a professora homologa antes da aula (exigência 8.2 — nenhum texto
+// gerado por IA chega ao estudante sem clique formal dela).
+//
+// GABARITO nenhum aqui, e nesta missão a ausência é mais forte que nas outras:
+// **não existe resposta certa.** As quatro cláusulas são igualmente válidas sob
+// governança de direitos, e a lista de métricas proibidas do handoff veda
+// calcular taxa de acerto entre elas. O que o servidor guarda para si é o
+// material de MEDIAÇÃO (a `justificativa_sugerida` de cada cláusula) e a
+// réplica da máquina antes de a pergunta ser feita.
+//
+// CHECKs e RLS vivem na migration.
+
+/// O PACOTE CURADO DA TURMA — o que a professora homologa antes da aula.
+///
+/// Uma linha por turma. `aprovado_por_professor` é o portão da exigência 8.2:
+/// sem ele `true`, a missão do estudante lê o banco curado default da Unooria
+/// (`src/manifesto-ia/catalogo.ts`) e a aula corre igual. **Nunca** o conteúdo
+/// gerado por IA em rascunho — é essa a diferença entre curadoria e
+/// publicação automática.
+///
+/// Sobrevive ao "Zerar turma": o preparo custou tempo da professora, e apagá-lo
+/// junto com as respostas obrigaria a refazer a curadoria para reaplicar a
+/// missão numa segunda turma no mesmo dia.
+model Exp08ConteudoTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// O caso da escola, como a professora o descreveu no formulário.
+  casoContextual  String @map("caso_contextual")
+  focoPrioritario String @map("foco_prioritario")
+
+  /// Os 3 prompts de auditoria COM as réplicas da máquina, e as 4 cláusulas COM
+  /// as justificativas de mediação. `Json` e não tabelas-filhas porque o pacote
+  /// é lido e escrito SEMPRE inteiro — a professora aprova o conjunto, não um
+  /// prompt de cada vez —, e normalizá-lo produziria sete linhas com uma FK
+  /// cada para nada. O Zod de `contrato-de-rotas.ts` é o schema real (o Prisma
+  /// não valida forma de Json), e o CHECK da migration cobra a cardinalidade.
+  contexto      Json @map("contexto")
+  promptsJson   Json @map("prompts_json")
+  clausulasJson Json @map("clausulas_json")
+
+  /// O clique formal em "Aprovar Conteúdo da Turma". Falso = rascunho.
+  aprovadoPorProfessor Boolean @default(false) @map("aprovado_por_professor")
+  /// A professora manteve o pacote da Unooria em vez de gerar com IA? É o dado
+  /// que diz se a curadoria assistida está sendo usada — e a resposta "não"
+  /// não é problema: o banco default é homologado, não é fallback de erro.
+  usouBancoDefault     Boolean @default(false) @map("usou_banco_default")
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([escolaId])
+  @@map("exp_08_conteudo_turma")
+}
+
+/// A sessão do estudante na missão. Uma por estudante e por escola.
+model Exp08Sessao {
+  escolaId    String  @map("escola_id")
+  estudanteId String  @map("estudante_id") @db.Uuid
+  /// Denormalizado da identidade, como na exp-06: o painel e o gate da turma
+  /// consultam por turma o tempo todo.
+  turmaId     String? @map("turma_id") @db.Uuid
+
+  /// briefing | chat | decisao | manifesto | percurso | podcast | fim
+  /// (CHECK na migration; a ordem é `regras/passos.ts`).
+  passo String @default("briefing")
+
+  /// A cláusula fixada na Etapa 3 — LATCH. Null = ainda não decidiu.
+  clausulaId          String? @map("clausula_id")
+  /// Segundos entre a concessão da máquina e a submissão. Distingue impulso de
+  /// deliberação, e é cronometrado pelo CLIENTE: a latência da api não é o dado.
+  latenciaClausulaSeg Int?    @map("latencia_clausula_seg")
+  /// A criança clicou em menos de 5s e passou pela réplica provocativa do bot?
+  /// É `indicative` e alimenta a hipótese de exploração mínima do playtest —
+  /// nunca entra em avaliação de ninguém.
+  confirmouProvocacao Boolean @default(false) @map("confirmou_provocacao")
+
+  /// O documento promulgado, compilado no SERVIDOR (`regras/manifesto.ts`).
+  /// Gravado porque é a EVIDÊNCIA do percurso: o que a professora lê no painel
+  /// e o que o estudante copiou têm de ser o mesmo texto, e uma recompilação
+  /// futura com a copy revisada mudaria o documento que já foi assinado.
+  manifestoMarkdown String? @map("manifesto_markdown")
+
+  /// A versão do instrumento, na linha, para permitir reprocessamento histórico
+  /// quando o catálogo mudar (DAD-06).
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  estudante  User             @relation("Exp08Estudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  auditorias Exp08Auditoria[]
+  percursos  Exp08Percurso[]
+
+  @@id([escolaId, estudanteId])
+  @@index([escolaId])
+  @@index([escolaId, turmaId])
+  @@map("exp_08_sessoes")
+}
+
+/// Cada questionamento disparado contra a máquina na Etapa 2.
+///
+/// 1:N de propósito: a cota de 2 é sobre prompts DISTINTOS, e guardar só o
+/// contador perderia QUAIS a criança escolheu — que é o dado da hipótese
+/// pedagógica (a contradição só aparece no prompt do preconceito histórico).
+model Exp08Auditoria {
+  id          BigInt @id @default(autoincrement())
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+  /// Id do catálogo (`prompt_origem_dados`…), validado contra o pacote da
+  /// turma antes de gravar.
+  promptId    String @map("prompt_id")
+  /// Ordem do disparo na conversa: 1 e 2 são os obrigatórios, 3 é o extra de
+  /// quem quis ouvir a terceira defesa.
+  iteracao    Int
+  /// Segundos entre o seletor abrir e o envio. Calibragem de fluxo, não mérito.
+  latenciaSeg Int    @default(0) @map("latencia_seg")
+
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  sessao Exp08Sessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+
+  /// Reenviar o mesmo questionamento não é auditoria nova: o UNIQUE faz a
+  /// dedupe valer mesmo se um caminho novo esquecer de checar antes.
+  @@unique([escolaId, estudanteId, promptId])
+  @@index([escolaId, estudanteId])
+  @@map("exp_08_auditorias")
+}
+
+/// O "MEU PERCURSO" — as 2 palavras-chave e o parágrafo autoral da Etapa 5.
+///
+/// **Texto livre escrito por menor de idade**, e o dado mais sensível daqui.
+/// Nunca vai a log (`justificativaTexto` está em `CHAVES_REDIGIDAS`), nunca à
+/// telemetria analítica (o Pub/Sub leva números e enums), e nenhuma rota de
+/// gestor o alcança: quem lê é o professor da turma dela. LGPD art. 14 +
+/// `invariantes.ts`.
+///
+/// RETENÇÃO: vinculada à vigência contratual escolar, **sem rotina ativa de
+/// expurgo programado** (DAD-10). A frase é literal e a escolha é deliberada:
+/// não existe scheduler de expurgo na plataforma, e declarar "um ano letivo"
+/// aqui seria escrever um prazo que ninguém cumpre — a armadilha do
+/// `expires_at` que o `AGENTS.md` da raiz cita.
+model Exp08Percurso {
+  escolaId    String @map("escola_id")
+  estudanteId String @map("estudante_id") @db.Uuid
+
+  /// Exatamente 2, distintas (CHECK na migration). São ids minúsculos sem
+  /// acento — identificador, não texto de tela (ADR-91).
+  tags String[] @map("palavras_chave_tags")
+
+  /// O parágrafo. Passou pelo filtro de dado pessoal ANTES de chegar aqui: o
+  /// que casa o regex é RECUSADO com 422 e não gravado, então esta coluna não
+  /// tem flag de moderação — não há registro moderado a marcar.
+  justificativaTexto String @map("justificativa_texto") @db.Text
+  charsCount         Int    @map("chars_count")
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  sessao Exp08Sessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+
+  @@id([escolaId, estudanteId])
+  @@index([escolaId])
+  @@map("exp_08_respostas_percurso")
+}
+
+/// O CHECKPOINT A — por TURMA. É o que congela 30 telas para o debate oral.
+///
+/// **Tabela, e não WebSocket** (ADR-93). A infraestrutura Cloud Run da
+/// plataforma não tem WebSocket de aplicação: o handoff original previa um
+/// broadcast `hub:pause`, e ele não existe. O congelamento é uma LINHA aqui que
+/// a tela do estudante lê por polling HTTP de 5s (`GET /manifesto-ia/gate`).
+///
+/// Duas etapas só (`regras/passos.ts`): `missao` e `debate`. E, diferente da
+/// exp-06, o gate é OPCIONAL — a missão corre inteira sem ninguém apertar nada,
+/// porque a spec admite a sessão assíncrona individual. Por isso `debate` mexe
+/// só no TETO do passo, nunca no piso: subir o piso empurraria para a frente
+/// quem ainda estava auditando a máquina, e são justamente essas crianças que o
+/// debate tenta alcançar.
+model Exp08GateTurma {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// missao | debate (CHECK na migration).
+  etapa String @default("missao")
+
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([escolaId])
+  @@map("exp_08_gates_turma")
+}
+
+// ═══════════════════════════════════════════ exp-04 — o que a foto conta
+//
+// A missão do 1º ano EF: escolher enquadramento e legenda no mural da turma
+// (clone do Instagram) e descobrir que toda foto mostra uma escolha. 100%
+// formativa (sem score somativo, por diretriz de 1EF), conduzida em aula pelo
+// professor: a Etapa 5 congela os tablets num LATCH que só ele libera.
+
+/// A configuração da aula, POR TURMA: o pacote de fotos/legendas (gerado por IA
+/// e aprovado pelo professor, ou o banco curado padrão quando `pacote` é null)
+/// e o interruptor do latch da Roda de Conversa.
+///
+/// `tentativa` é a rotação de sessão do "Zerar e Reiniciar Turma": o reset
+/// incrementa o número em vez de apagar runs — as antigas ficam arquivadas na
+/// tentativa anterior (DAD-06: dado legado imutável), e a run ativa é sempre a
+/// da tentativa corrente.
+model FotoContaTurmaConfig {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// recreio | nossa_horta | sala_de_aula | parquinho (CHECK na migration).
+  tema String @default("recreio")
+  /// nivel_1 (palavras curtas) | nivel_2 (frases simples) (CHECK na migration).
+  complexidade String @default("nivel_1")
+  /// pendente | pronto (CHECK). `pronto` = o professor aprovou (o
+  /// `cfg_turma_ready` da spec); sem aprovação até a aula, o banco padrão vale.
+  statusPacote String @default("pendente") @map("status_pacote")
+  /// O pacote APROVADO (validado por `PacoteDaTurmaSchema`). Null = banco
+  /// curado padrão do `catalogo.ts` — o fallback que nunca deixa a aula sem
+  /// material.
+  pacote Json?
+  /// Se o pacote aprovado veio da IA (auditoria do painel; o professor pode
+  /// ter editado os textos antes de aprovar).
+  pacoteDaIa Boolean @default(false) @map("pacote_da_ia")
+
+  /// O latch da Etapa 5 (Roda de Conversa). `false` congela os tablets da
+  /// turma; o professor libera UMA vez por aula (o reset o rearma).
+  latchLiberado Boolean @default(false) @map("latch_liberado")
+
+  tentativa Int @default(1) @db.SmallInt
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([escolaId])
+  @@map("exp_04_turma_config")
+}
+
+/// A execução de UM estudante em UMA tentativa da turma.
+///
+/// Payloads de tempo real e telemetria carregam SÓ `estudante_id` (regra 6 /
+/// DAD-07): o nome entra na resposta do painel do professor, hidratado na rota
+/// autenticada pela matrícula da turma — nunca gravado aqui.
+model FotoContaRun {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  estudanteId String @map("estudante_id") @db.Uuid
+  tentativa   Int    @default(1) @db.SmallInt
+
+  /// desafiar | feed | decidir | aha | roda | refletir | concluida (CHECK).
+  /// `roda` é o latch: a run só sai dele quando o professor libera a turma.
+  etapa String @default("desafiar")
+
+  /// coruja | estrela | sol (CHECK) — a "marca" da Etapa 1 (cosmético).
+  marcaId String? @map("marca_id")
+  /// Id da foto escolhida no pacote (ex.: `par_a`, `par_b`).
+  fotoEscolhidaId String? @map("foto_escolhida_id") @db.VarChar(30)
+  /// Id da legenda escolhida no pacote (`legenda_1`, `legenda_2`).
+  legendaEscolhidaId String? @map("legenda_escolhida_id") @db.VarChar(30)
+  /// Milissegundos entre entrar na tela de decisão e publicar. Teto de 2h no
+  /// CHECK: acima disso é aba esquecida, não tempo de decisão.
+  latenciaDecisaoMs Int? @map("latencia_decisao_ms")
+
+  /// Exploração do feed (grau `none`: cosmético/motor, sem peso avaliativo).
+  curtidasFeed     Int @default(0) @map("curtidas_feed") @db.SmallInt
+  permanenciaFeedMs Int @default(0) @map("permanencia_feed_ms")
+
+  /// `lupa` (CHECK) — só a resposta que CONCLUI é gravada; o Globo é retry
+  /// formativo e vive em `tentativas_reflexao`, nunca como resposta final.
+  reflexaoFinal      String? @map("reflexao_final")
+  tentativasReflexao Int     @default(0) @map("tentativas_reflexao") @db.SmallInt
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  estudante User               @relation("FotoContaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  post      FotoContaPostTurma?
+
+  @@unique([escolaId, turmaId, estudanteId, tentativa], map: "exp_04_run_unica_por_tentativa")
+  @@index([escolaId, turmaId, tentativa])
+  @@map("exp_04_runs")
+}
+
+/// A publicação no mural coletivo — o que a Galeria da Turma mostra.
+///
+/// Carrega o CONTEÚDO renderizável (ids do pacote + texto da legenda) e nunca
+/// o nome da criança: quem assina o post na tela é a MARCA (coruja/estrela/
+/// sol), que é a identidade da ficção.
+model FotoContaPostTurma {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  runId    String @unique @map("run_id") @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  tentativa Int   @default(1) @db.SmallInt
+
+  marcaId        String @map("marca_id")
+  fotoId         String @map("foto_id") @db.VarChar(30)
+  legendaTexto   String @map("legenda_texto") @db.VarChar(100)
+  curtidasSimuladas Int @default(0) @map("curtidas_simuladas")
+
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  run FotoContaRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId, turmaId, tentativa])
+  @@map("exp_04_posts_turma")
 }

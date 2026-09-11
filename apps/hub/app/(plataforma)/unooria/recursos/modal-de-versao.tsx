@@ -1,5 +1,6 @@
 "use client";
 
+import { data } from "@edu/sdk";
 import { useCallback, useEffect, useState } from "react";
 import {
   Button,
@@ -45,9 +46,7 @@ interface Historico {
   versoes: VersaoPublicada[];
 }
 
-function dia(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
+const dia = data;
 
 export function ModalDeVersao({
   experiencia,

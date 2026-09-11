@@ -34,6 +34,32 @@ Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run 
 como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
 `iss` do token e o esperado pela api não podem divergir.
 
+**Fuso da plataforma (`FUSO_DA_PLATAFORMA`, ADR-99)**: env em texto plano, **na
+api E no hub, com o MESMO valor**. Não é segredo, não é por escola, não tem
+coluna no banco: 1 contrato = 1 stack, então a granularidade da configuração é a
+do deploy. Ausente = `America/Sao_Paulo`, e nada quebra por falta dela.
+
+- Valor: nome **IANA** (`America/Sao_Paulo`, `America/Manaus`,
+  `America/Rio_Branco`, `America/Belem`, `America/Noronha`). Offset fixo
+  (`-04:00`) é aceito pelo `Intl` e **não deveria ser usado**: ele congela o
+  deslocamento, e uma rede que volte a ter horário de verão fica uma hora
+  atrasada sem nada acusar.
+- **Os dois serviços recebem a mesma variável, e isso não é redundância.** A api
+  decide o "dia" que grava (o check-in de bem-estar recusa o segundo do dia); o
+  hub decide o texto que a professora lê, **e é ele que repassa o valor às
+  experiências** — escreve num `<meta>` do layout raiz, o navegador lê dali e o
+  `config` do `hub:init` leva ao bundle. Divergir entre os dois devolve o
+  defeito da ADR-98: entre as 21h e a meia-noite api e hub falam de DIAS
+  diferentes. Um `variable "fuso_da_plataforma"` único no Terraform, consumido
+  pelos dois serviços, é o que impede isso — **não** duas entradas separadas.
+- **Falha diferente por serviço, de propósito**: na api um valor inválido
+  derruba o boot (Zod, `config/env.ts`) — a revisão nova não pega tráfego e o
+  Cloud Run mantém a anterior; no hub ele cai no padrão com um `console.error`.
+  Derrubar a subida de um processo é barato; deixar a rede sem tela não é.
+- **Nada de `NEXT_PUBLIC_FUSO_DA_PLATAFORMA`**: `NEXT_PUBLIC_*` é assado no
+  build da imagem, e a mesma imagem pode servir mais de um contrato.
+
+
 **Documentação da api (`/docs`)**: `SWAGGER_USUARIO` vai como env em texto plano;
 `SWAGGER_SENHA` vem de `{contrato}-swagger-senha` (mínimo 16 caracteres). **As
 duas ausentes = as rotas `/docs` e `/docs-json` não são montadas**, e o 404 é do
@@ -192,7 +218,7 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 | Pub/Sub dead letter | topic `{contrato}-telemetria-dlq`, `dead_letter_policy` na `-telemetria-ingest` após 5 tentativas | hoje um lote recusado é reentregue para sempre, em silêncio |
 | Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub, **existe desde 2026-09-02**) no recurso do serviço | o `gcloud run deploy` do CI não as remove; trocar a sonda para HTTP só DEPOIS do hub com a rota estar no ar naquele ambiente |
 | Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
-| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` (api e hub), `OBS_TRACE_RATIO_CLIENTE=0.02` (só hub: vai no `config.obs` do `hub:init` e liga o OpenTelemetry Web das experiências) | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
+| Env | `FUSO_DA_PLATAFORMA` (api E hub, MESMO valor — ADR-99; ausente = `America/Sao_Paulo`), `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` (api e hub), `OBS_TRACE_RATIO_CLIENTE=0.02` (só hub: vai no `config.obs` do `hub:init` e liga o OpenTelemetry Web das experiências) | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
 | Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
 | IAM e APIs | `{contrato}-api` e `{contrato}-run` já têm `roles/cloudtrace.agent`, `roles/monitoring.metricWriter` e `roles/logging.logWriter` (confirmado no Terraform em 2026-09-02). O que faltava e entrou: APIs `cloudtrace`, `clouderrorreporting` e `telemetry` em `gcp_services` (o papel não habilita a API — sem ela o exportador recebe `SERVICE_DISABLED`), e `roles/telemetry.writer` + `roles/serviceusage.serviceUsageConsumer` **só na SA da api** (as MÉTRICAS da api e o proxy OTLP dos spans do navegador saem por `telemetry.googleapis.com`; o exportador de métricas do Google foi descartado por arrastar 202 MB de `googleapis`) | ver `RUNBOOK-API.md` > Observabilidade no repo de infra |
 

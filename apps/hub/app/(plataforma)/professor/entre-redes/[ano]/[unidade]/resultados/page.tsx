@@ -2,12 +2,16 @@ import { notFound } from "next/navigation";
 
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_MANIFESTO_IA,
+  MISSAO_FOTO_CONTA,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
 } from "@/lib/entre-redes/catalogo";
 
+import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
+import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
@@ -39,6 +43,9 @@ export default async function ResultadosPage({
   const { turmaId } = await searchParams;
   const turma = turmaId?.trim() ?? "";
 
+  if (missao.expId === MISSAO_FOTO_CONTA.expId) {
+    return <ResultadosFotoConta missao={missao} turma={turma} />;
+  }
   if (missao.expId === MISSAO_UNOOTUBE.expId) {
     return <ResultadosUnooTube missao={missao} turma={turma} />;
   }
@@ -50,6 +57,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
     return <ResultadosRastroBoato missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
+    return <ResultadosManifestoIa missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

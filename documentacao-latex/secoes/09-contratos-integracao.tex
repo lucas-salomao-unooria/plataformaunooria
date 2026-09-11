@@ -33,10 +33,13 @@ exp \seta{} hub & \cd{exp:ready} &
 \zebra hub \seta{} exp & \cd{hub:init} &
   \cd{\{ protocolVersion, token, estudante\{id,nome,serie,turmaId,escolaId\},
   apiUrl, config \}}. Resposta ao \cd{exp:ready}; só a primeira conta.
-  \cd{config} é o saco aditivo do protocolo: hoje carrega \cd{expId} e
-  \cd{clarityProjectId} (\adrr{ADR-60}) e \cd{obs.traceRatio} (a fração de
-  sessões com OpenTelemetry Web, Capítulo~\ref{cap:observabilidade}) --- campo novo aqui não muda
-  \cd{PROTOCOL\_VERSION}, porque a experiência que não o conhece o ignora.\\
+  \cd{config} é o saco aditivo do protocolo: hoje carrega \cd{expId},
+  \cd{clarityProjectId} (\adrr{ADR-60}), \cd{obs.traceRatio} (a fração de
+  sessões com OpenTelemetry Web, Capítulo~\ref{cap:observabilidade}) e
+  \cd{fuso} (o fuso da plataforma, \adrr{ADR-99}) --- campo novo aqui não muda
+  \cd{PROTOCOL\_VERSION}, porque a experiência que não o conhece o ignora.
+  Os três são valores de \emph{runtime} do hub, e nenhum poderia ser assado no
+  \emph{bundle}: ele é construído uma vez e não conhece contrato.\\
 exp \seta{} hub & \cd{exp:concluir} &
   \cd{\{ payload: \{ score?, dados? \} \}}. Conclusão da missão. O hub registra
   progresso.\\

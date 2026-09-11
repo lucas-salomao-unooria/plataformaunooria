@@ -6,7 +6,7 @@ export const EXP_ID = "exp-02-unootube";
 // Sobe JUNTO com o `versao` do `public/experiencia.json`: e este valor que vai
 // no handshake e em toda linha de telemetria. Defasado, o dado de uso fica
 // atribuido a uma versao que nao esta no ar.
-export const EXP_VERSION = "1.2.5";
+export const EXP_VERSION = "1.2.6";
 
 export interface VideoPublico {
   id: string;

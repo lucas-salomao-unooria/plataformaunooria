@@ -98,7 +98,13 @@ services:
       ASSETS_LOCAL_DIR: /app/storage
       ASSETS_PUBLIC_URL: http://localhost:3001/assets
       TELEMETRIA_TOPIC: ""
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5182
+      # O FUSO da plataforma inteira (ADR-99). Ausente = America/Sao_Paulo.
+      # O MESMO valor vai para o hub abaixo: 1 contrato = 1 stack, e api e hub
+      # que discordem do fuso devolvem o defeito da ADR-98 — entre as 21h e a
+      # meia-noite os dois renderizam DIAS diferentes. Aqui um valor inválido
+      # derruba o boot (Zod, `config/env.ts`); no hub ele cai no padrão.
+      FUSO_DA_PLATAFORMA: ${FUSO_DA_PLATAFORMA:-America/Sao_Paulo}
       # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
       #
       # LIGADA por default em dev, com credencial de dev à vista: sem as duas
@@ -144,6 +150,10 @@ services:
       # browser — dentro do container `localhost` é o container.
       EXP_INTERNAL_URL: ${EXP_INTERNAL_URL:-http://host.docker.internal:5173}
       HUB_ORIGIN: http://localhost:3000
+      # O mesmo fuso da api (ADR-99). O hub o escreve num <meta> do layout raiz
+      # e de lá ele chega ao navegador e, pelo config do hub:init, a toda
+      # experiência. NÃO é NEXT_PUBLIC_: aquilo é assado no build.
+      FUSO_DA_PLATAFORMA: ${FUSO_DA_PLATAFORMA:-America/Sao_Paulo}
       # Emissor do PERFIL PORTÁTIL — sem ele a emissão responde 503.
       CONTRATO_ID: ${CONTRATO_ID:-contrato-dev}
       CONTRATO_NOME: ${CONTRATO_NOME:-Rede de Demonstração}

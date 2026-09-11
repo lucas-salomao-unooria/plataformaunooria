@@ -21,6 +21,7 @@
 #   exp-03  Vite do unooGPT, a Missão Tempestade (5178)
 #   exp-07  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
 #   exp-06  Vite de O Rastro do Boato, o clone de mensageiro (5181)
+#   exp-08  Vite de O Manifesto da IA, o clone do assistente (5182)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -208,7 +209,13 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183
+      # O FUSO da plataforma inteira (ADR-99). Ausente = America/Sao_Paulo.
+      # O MESMO valor vai para o hub abaixo: 1 contrato = 1 stack, e api e hub
+      # que discordem do fuso devolvem o defeito da ADR-98 — entre as 21h e a
+      # meia-noite os dois renderizam DIAS diferentes. Aqui um valor inválido
+      # derruba o boot (Zod, `config/env.ts`); no hub ele cai no padrão.
+      FUSO_DA_PLATAFORMA: ${FUSO_DA_PLATAFORMA:-America/Sao_Paulo}
       # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
       #
       # LIGADA por default em dev, com credencial de dev à vista: sem as duas
@@ -251,6 +258,10 @@ services:
       OBS_DEBUG: ${OBS_DEBUG:-0}
       # Fração de sessões das experiências com OpenTelemetry Web (config.obs do hub:init). 1 = todas, em dev.
       OBS_TRACE_RATIO_CLIENTE: ${OBS_TRACE_RATIO_CLIENTE:-0}
+      # O mesmo fuso da api (ADR-99). O hub o escreve num <meta> do layout raiz
+      # e de lá ele chega ao navegador e, pelo config do hub:init, a toda
+      # experiência. NÃO é NEXT_PUBLIC_: aquilo é assado no build.
+      FUSO_DA_PLATAFORMA: ${FUSO_DA_PLATAFORMA:-America/Sao_Paulo}
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_CDN_EXP_URL: http://localhost:5173
       # Microsoft Clarity: sem valor por default. A stack de dev roda com o
@@ -376,6 +387,27 @@ services:
     depends_on:
       deps:
         condition: service_completed_successfully
+
+  exp-08:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-08-manifesto-ia
+    command: pnpm exec vite --host 0.0.0.0 --port 5182 --strictPort
+    ports:
+      - "5182:5182"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+  exp-04:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-04-o-que-a-foto-conta
+    command: pnpm exec vite --host 0.0.0.0 --port 5183 --strictPort
+    ports:
+      - "5183:5183"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 
 volumes:
   pgdata:

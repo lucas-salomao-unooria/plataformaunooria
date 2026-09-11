@@ -67,16 +67,22 @@ API & \cd{ConsoleLogger} padrão do Nest em \textbf{texto}, quatro
   \emph{startup probe} TCP padrão, e \rota{/readyz} \textbf{não é usada por
   nada}. O \arq{docs/INFRA-IDENTITY.md} manda \enquote{nunca usar probe
   TCP} para o WSO2; a API não segue o próprio conselho.\\
-Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]}); o único log
+Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]},
+  \cd{[sessao]}, \cd{[login]} --- \cd{console} e não o \cd{pino} de
+  \arq{lib/log.ts} nos dois últimos, porque os módulos que os emitem são
+  importados pelo \emph{middleware}, que roda no EDGE); o único log
   diagnóstico real é \cd{avisarManifestoIlegivel}, escrito depois de um
   incidente. Nas telas, falha vira \cd{FeedbackAlert} de erro. &
   Sem \arq{error.tsx}, \arq{global-error.tsx}, \arq{instrumentation.ts},
   \cd{reportWebVitals} ou rota de saúde. Sem \cd{HEALTHCHECK} no Dockerfile
   nem no \emph{compose}. \cd{apiDoServidor} \textbf{engole qualquer falha em
   \cd{null}}, sem log: \enquote{API caiu} e \enquote{não há dados} são
-  indistinguíveis. Nenhum \cd{fetch} tem \emph{timeout}. Os cinco
+  indistinguíveis. Os cinco
   \emph{route handlers} do BFF não registram nada, inclusive o 404 de rota
-  fora da \emph{allowlist}.\\
+  fora da \emph{allowlist}.
+  \textbf{Dos \cd{fetch} do hub, só o do \emph{login} tem \emph{timeout}} ---
+  8s, e o prazo estourado chega à tela como \enquote{não foi possível entrar
+  agora} (\adrr{ADR-97}); todos os outros esperam indefinidamente.\\
 \zebra Experiências e SDK & O protocolo da ponte tem \cd{exp:ready},
   \cd{exp:concluir}, \cd{exp:estado}, \cd{exp:token-expirando}. O
   \cd{TelemetryClient} faz lote de 50 a cada 10\,s e \cd{sendBeacon} no
