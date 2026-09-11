@@ -1374,6 +1374,7 @@ por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:
   com RLS + posse por `professor_id` em toda query; **nenhuma rota de gestor
   ou agregado** — só o professor lê, e `DELETE /bemestar/dados` apaga tudo.
   Texto livre nunca vai a log nem à telemetria (só contagens).
-- 1 check-in por dia (`dia` em `America/Sao_Paulo`); ciclo expira em 21 dias
+- 1 check-in por dia (`dia` no fuso da plataforma — `fusoDaPlataforma()` de
+  `comum/fuso.ts`, env `FUSO_DA_PLATAFORMA`, ADR-99); ciclo expira em 21 dias
   sem fechar. `GET /bemestar/resumo` é leve (sem IA) — é o que o card do hub lê.
 

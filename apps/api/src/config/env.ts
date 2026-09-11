@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENV_DO_FUSO, FUSO_PADRAO, fusoEhValido } from "../comum/fuso";
 
 /**
  * Validação de env com Zod no BOOT (regra do CLAUDE.md: Zod em todo input
@@ -134,6 +135,27 @@ export const EnvSchema = z.object({
   GCP_PROJECT_ID: z.string().optional(),
   OBS_TRACE_RATIO: z.coerce.number().min(0).max(1).default(0),
   OBS_DEBUG: z.enum(["0", "1"]).default("0"),
+  /**
+   * O FUSO da plataforma inteira (ADR-99). Ausente = `America/Sao_Paulo` —
+   * nada quebra por falta da variável.
+   *
+   * **Validado no BOOT, e é o ponto da validação estar aqui.** Um typo
+   * (`America/SaoPaulo`) não tem sintoma nenhum até alguém renderizar uma data,
+   * dias depois do deploy, e aí o que aparece é uma exceção do `Intl` no meio de
+   * uma requisição. Aqui ele derruba a subida, que é onde é barato consertar.
+   *
+   * A MESMA variável vai para o hub (que a escreve num `<meta>` para o
+   * navegador) e, de lá, para as experiências pelo `hub:init`. O hub e o bundle
+   * NÃO derrubam a tela por causa dela: caem no padrão com aviso no console.
+   */
+  [ENV_DO_FUSO]: z
+    .string()
+    .default(FUSO_PADRAO)
+    .refine(fusoEhValido, {
+      message:
+        "não é um fuso IANA que o Intl aceite (ex.: America/Sao_Paulo, America/Manaus, America/Rio_Branco)",
+    }),
+
   CORS_ORIGINS: z.string().default("http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176"),
   PORT: z.coerce.number().int().default(3001),
 

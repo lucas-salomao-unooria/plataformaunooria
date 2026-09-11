@@ -14,10 +14,21 @@ exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do
 exp → hub : { type: "exp:erro", mensagem, hash }    → a exp quebrou; o hub troca a tela (aditivo; o registro vai SDK → api)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
-`config` do `hub:init` carrega hoje `clarityProjectId`, `expId` e
+`config` do `hub:init` carrega hoje `clarityProjectId`, `expId`,
 `obs: { traceRatio }` (a fração de sessões com spans do OpenTelemetry Web —
-env de runtime do hub, `OBS_TRACE_RATIO_CLIENTE`). Campo novo em `config` é
+env de runtime do hub, `OBS_TRACE_RATIO_CLIENTE`) e **`fuso`** (o fuso da
+plataforma, `FUSO_DA_PLATAFORMA` — ADR-99). Campo novo em `config` é
 aditivo e não sobe `PROTOCOL_VERSION`.
+
+**O `fuso` é o terceiro do mesmo tipo, e a razão de ele estar em `config` e não
+como campo de topo é esta regra, não conveniência**: o bundle é estático, foi
+construído uma vez e não conhece contrato, então o valor tem de chegar em
+runtime — e campo de topo mudaria a FORMA do `hub:init`, obrigando a subir o
+major. Bundle já publicado passaria a recusar o handshake com "protocolo
+incompatível", que é tela de erro para a criança. Quem o aplica é o
+`createExperiencia`, ANTES da primeira tela: `data(iso)` e as outras cinco
+funções do `@edu/sdk` continuam com a assinatura de sempre, e a experiência não
+precisa saber que existe fuso. Até o `hub:init` chegar vale o padrão.
 O `?hubOrigin=` que o hub põe na URL do iframe é ENTRADA NÃO CONFIÁVEL: o bundle
 é público, então quem embeda a experiência num iframe próprio escolheria, por
 aquele parâmetro, de quem ela aceita o `hub:init` e para onde vai tudo o que sai

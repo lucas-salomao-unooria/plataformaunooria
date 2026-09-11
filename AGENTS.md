@@ -409,10 +409,11 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **99**: a 93 é a sincronização de sala por polling da
+  (a PRÓXIMA é a **100**: a 93 é a sincronização de sala por polling da
       exp-08, a 94 o latch por polling da exp-04, a 95 a sessão de 2h de
       inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
-      de login na tela e a **98 o fuso único da plataforma** — as quatro foram alocadas por quem repartia o trabalho ANTES de
+      de login na tela, a **98 o fuso único da plataforma** e a **99 esse fuso
+      vindo de uma variável de ambiente** — as quatro foram alocadas por quem repartia o trabalho ANTES de
       qualquer frente escrever, e é assim que a colisão de 2026-09-06 e
       2026-09-07 deixa de acontecer; a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
@@ -602,6 +603,17 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
   `dataCurtaHora`, `hora`, `horaComSegundos` e `diaDaPlataforma`, do `@edu/sdk`
   (na api, `src/comum/fuso.ts`). Número não tem fuso:
   `n.toLocaleString("pt-BR")` para milhar continua livre.
+- **Não cravar o fuso em lugar nenhum, nem ler `FUSO_DA_PLATAFORMA` na mão**
+  (ADR-99). O valor é do DEPLOY: uma env só, com o mesmo nome na api e no hub,
+  ausente = `America/Sao_Paulo`. Quem responde qual é ele são
+  `fusoDaPlataforma()` do `@edu/sdk` e o de `apps/api/src/comum/fuso.ts` — eles
+  resolvem a cascata (runtime → env → `<meta name="unooria-fuso">` → padrão) que
+  faz o valor chegar ao servidor, ao navegador e ao bundle da experiência.
+  `process.env.FUSO_DA_PLATAFORMA` lido direto numa tela funciona no servidor e
+  volta `undefined` no navegador, que é o defeito da ADR-98 de volta pela porta
+  dos fundos. **Fuso novo para a experiência entra pelo `config` do `hub:init`**
+  (chave `CHAVE_DO_FUSO`), nunca por campo de topo: campo de topo muda a FORMA
+  do handshake e obriga a subir `PROTOCOL_VERSION`.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.

@@ -2,7 +2,6 @@ import {
   CHECKINS_POR_CICLO,
   CORTES,
   FAIXAS,
-  FUSO,
   ITENS,
   ITENS_POR_CHECKIN,
   ITENS_SENTINELA,
@@ -13,6 +12,7 @@ import {
   type Resposta,
   type Subescala,
 } from "./catalogo";
+import { fusoDaPlataforma } from "../comum/fuso";
 
 /**
  * Regras do check-in — funções PURAS, sem Prisma nem HTTP (padrão de
@@ -250,7 +250,7 @@ export function validarTextoDaIa(tipo: TipoDeTexto, bruto: unknown): Veredito {
 // ------------------------------------------------------------- tempo
 
 /** YYYY-MM-DD do instante no fuso do contrato — o "dia" do check-in. */
-export function diaDe(instante: Date, fuso: string = FUSO): string {
+export function diaDe(instante: Date, fuso: string = fusoDaPlataforma()): string {
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone: fuso,
     year: "numeric",
@@ -262,11 +262,11 @@ export function diaDe(instante: Date, fuso: string = FUSO): string {
 }
 
 /** Dia da semana por extenso no fuso — contexto para a IA (não é PII). */
-export function diaDaSemana(instante: Date, fuso: string = FUSO): string {
+export function diaDaSemana(instante: Date, fuso: string = fusoDaPlataforma()): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, weekday: "long" }).format(instante);
 }
 
-export function mesDoAno(instante: Date, fuso: string = FUSO): string {
+export function mesDoAno(instante: Date, fuso: string = fusoDaPlataforma()): string {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: fuso, month: "long" }).format(instante);
 }
 
