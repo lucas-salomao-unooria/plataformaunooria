@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { ALERTA_DE_ERRO } from "../lib/smoke.mjs";
 
 /**
  * A porta única: quatro papéis, um formulário, quatro destinos.
@@ -70,12 +71,39 @@ await suite(
       { timeout: 10_000 },
     );
     await p.click("button[type=submit]");
-    await p.waitForTimeout(3000);
 
-    const recusa = (await p.locator("main").innerText()).replace(/\s+/g, " ");
+    /* Espera o DESFECHO, não o relógio — e corre contra o erro.
+       O `waitForTimeout(3000)` que estava aqui fotografava o meio do caminho:
+       em 10/09 o POST do callback levou 4,5s (era a primeira vez que o
+       `next dev` compilava `/api/auth/[...nextauth]`), a tela ainda dizia
+       "Entrando…", e a verificação reprovou afirmando que a recusa não
+       aparecia — acusando o produto quando o defeito era desta espera.
+       Os dois lados resolvem em vez de lançar, para que o desfecho seja lido
+       pelas verificações abaixo (cada uma com o seu nome) e não por um timeout
+       de seletor, que reporta o seletor que faltou e nunca a causa. */
+    const desfecho = await Promise.race([
+      p
+        .locator(ALERTA_DE_ERRO)
+        .first()
+        .waitFor({ state: "visible", timeout: 20_000 })
+        .then(() => "recusou")
+        .catch(() => "sem-resposta"),
+      p
+        .waitForURL((u) => new URL(u).pathname !== "/login", { timeout: 20_000 })
+        .then(() => "entrou")
+        .catch(() => "sem-resposta"),
+    ]);
+
+    const recusa =
+      desfecho === "entrou" ? "" : (await p.locator("main").innerText()).replace(/\s+/g, " ");
     r.exigir(new URL(p.url()).pathname === "/login", "credencial inválida não sai do /login");
     r.exigir(
-      /incorret|inválid|não foi possível/i.test(recusa),
+      /* Três recusas honestas: credencial errada, api indisponível e o 429 do
+         limite por usuário — a api permite 8 tentativas por minuto com o MESMO
+         login, e rodar a suíte muitas vezes no mesmo minuto esgota a cota
+         deste `nao.existe.mesmo`. Nenhuma das três diz qual metade errou, que
+         é o que a verificação seguinte cobra. */
+      /incorret|inválid|não foi possível|tentativas/i.test(recusa),
       "a recusa aparece na tela, e não só no console",
     );
     r.exigir(
