@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{97 decisões}, numeradas até ADR-97, \textbf{sem lacunas}. As
+São \textbf{98 decisões}, numeradas até ADR-98, \textbf{sem lacunas}. As
 cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -142,6 +142,7 @@ que a cercam.
 \zebra \adrr{ADR-95} & A sessão do hub dura 2h de inatividade, igual para todo papel & 2026-09-10 & Aceita\\
 \adrr{ADR-96} & Ficar na missão conta como uso, e a sessão que morre tem tela & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-97} & A tela diz POR QUE não entrou, e a suíte espera o desfecho & 2026-09-10 & Aceita\\
+\adrr{ADR-98} & A plataforma assume UM fuso, numa constante só & 2026-09-11 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7419,3 +7420,125 @@ a verificação nomeia. O \cd{authorize} de \arq{apps/hub/lib/auth.ts} chamava
 apertado, ou a partida a frio da API é o problema a resolver. E se o hub passar
 a responder o \emph{callback} em mais de alguns segundos com a rota QUENTE, a
 espera de 20s da suíte deixa de ser folga e volta a ser um prazo a discutir.
+
+\section{ADR-98 --- A plataforma assume UM fuso, numa constante só}
+\label{adr:fuso-da-plataforma}
+
+\textbf{Data.} 2026-09-11. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A suíte \emph{e2e} da exp-08 morreu com
+\cd{page.click: Timeout 30000ms exceeded} na tela da professora, e o console
+trazia \cd{Hydration failed because the server rendered text didn't match the
+client}. O texto que divergia era uma \textbf{data}: o HTML do servidor dizia
+\cd{11/09/2026} e a tela do navegador, \cd{10/09/2026} --- medido com a página
+aberta, logado, nos dois lados.
+
+A causa é uma linha que existia em \textbf{onze} lugares, escrita do mesmo jeito
+em cada um:
+
+\begin{lstlisting}[language=tsunoo]
+new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+\end{lstlisting}
+
+Sem \cd{timeZone}, \cd{Intl} usa o fuso de \textbf{quem executa}. No hub a mesma
+linha roda nos dois lados: o contêiner do Cloud Run está em \textbf{UTC} e o
+navegador da professora em \cd{America/Sao\_Paulo} (UTC-3). Um registro criado
+às 22h de Brasília é dia 10 para ela e dia 11 para o servidor. O React acusa,
+\textbf{regenera a árvore}, e o clique dela cai no vazio enquanto isso acontece.
+
+Três coisas tornam esse defeito caro além do normal:
+
+\begin{itemize}
+  \item \textbf{É intermitente por desenho.} Só diverge entre 21h e a
+    meia-noite de Brasília --- três horas em vinte e quatro. Toda revisão feita
+    de manhã passa.
+  \item \textbf{O sintoma fica a três saltos da causa.} Quem lê o relatório da
+    suíte vê \enquote{o clique não funcionou}, não \enquote{a data mudou de
+    dia}.
+  \item \textbf{Não é só tela.} O \enquote{dia} do \emph{check-in} do bem-estar
+    é chave: \cd{toISOString().slice(0, 10)} às 22h grava o dia seguinte, e o
+    de amanhã seria recusado com \enquote{você já respondeu hoje}. A API já
+    fazia isso certo --- e é justamente o ponto: a constante existia, em
+    \arq{src/bemestar/catalogo.ts}, onde ninguém fora do bem-estar a acharia.
+
+\end{itemize}
+
+\textbf{Decisão.} \textbf{A plataforma assume UM fuso, declarado em uma
+constante única, e nenhuma tela formata data na mão.}
+
+\begin{itemize}
+  \item \cd{FUSO\_DA\_PLATAFORMA} vive em \arq{packages/sdk/src/fuso.ts}, com
+    as seis funções que formatam data para gente ler --- \cd{data},
+    \cd{dataCurta}, \cd{dataHora}, \cd{dataCurtaHora}, \cd{hora},
+    \cd{horaComSegundos} --- mais \cd{diaDaPlataforma}, que devolve
+    \cd{YYYY-MM-DD} para comparar e agrupar. Hub e experiências importam de lá.
+  \item A API carrega a \textbf{mesma} constante em
+    \arq{apps/api/src/comum/fuso.ts}, porque ela não consome pacote de
+    \emph{workspace} (a regra e a exceção do \emph{logger} estão em
+    \arq{packages/AGENTS.md}). \arq{src/bemestar/catalogo.ts} passou a
+    \textbf{reexportar} dela em vez de declarar a sua.
+  \item \textbf{O valor inicial é \cd{America/Sao\_Paulo}}, e o que importa não
+    é o valor: é existir UM lugar que o define.
+  \item Número não tem fuso. \cd{n.toLocaleString("pt-BR")} para separar milhar
+    continua livre, e é por isso que \cd{toLocaleString} sozinho não serve de
+    sinal --- só conta sobre uma data.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Fixar \env{TZ=America/Sao\_Paulo} no contêiner.} Resolveria a
+    hidratação com uma linha de \emph{Terraform} e nada de código. Descartada
+    por duas razões: ela conserta o \textbf{servidor} e deixa o navegador
+    decidir --- um tablet da escola com o relógio errado, ou uma criança em
+    viagem, continuam vendo outro dia ---, e ela é invisível no repositório. O
+    dia em que alguém mexer no \emph{Terraform} sem saber disso, o defeito
+    volta sem uma linha de código mudar.
+  \item \textbf{Formatar tudo no servidor e mandar a \emph{string} pronta.}
+    Mata a divergência na origem, porque o navegador deixa de formatar. Custa
+    caro: toda rota da API e todo \emph{Server Component} passariam a carregar
+    texto de apresentação, o formato deixaria de ser decisão da tela, e as
+    experiências --- que são bundles estáticos e às vezes não falam com a API
+    naquele passo --- ficariam sem resposta.
+  \item \textbf{Um fuso POR ESCOLA, vindo do banco.} É o que o produto vai
+    querer um dia, e é a razão de a constante existir: quando a primeira rede
+    fora de Brasília entrar, ela vira uma leitura, não onze edições. Descartada
+    \textbf{agora} porque não há contrato fora de São Paulo, porque o campo
+    teria de subir por token, por \emph{props} e pela ponte \cd{postMessage}
+    até dentro do \emph{iframe}, e porque nenhuma tela hoje sabe de que escola é
+    a data que está mostrando.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Uma rede em Rio Branco verá a hora de Brasília}, errada em duas
+    horas; em Manaus, uma. Isso não é efeito colateral: é a decisão. O teste
+    \arq{packages/sdk/src/fuso.test.ts} fixa esse comportamento com um caso
+    nomeado (\enquote{um relógio no Acre vê a hora de Brasília --- é a decisão,
+    não um bug}), para que ninguém o \enquote{conserte} sem reabrir esta ADR.
+  \item \textbf{Duas cópias da constante} (SDK e API). É o preço de a API não
+    consumir \emph{workspace}. Diferente da cópia da \emph{copy} da exp-01 ---
+    que é guardada por um comentário e nada mais ---, esta é amarrada por
+    \arq{apps/api/tests/fuso-da-plataforma.spec.ts}, que lê o arquivo do SDK e
+    reprova se os valores divergirem.
+  \item \textbf{A trava contra regressão cobre o hub, não as experiências.}
+    \arq{apps/hub/lib/formatacao-de-data.test.ts} varre \arq{app/},
+    \arq{components/} e \arq{lib/} e reprova data formatada sem fuso, apontando
+    arquivo e linha. As experiências não têm a varredura equivalente: elas não
+    têm SSR, então lá o defeito não quebra a hidratação --- mostra a data do
+    aparelho, que é mais silencioso e menos grave.
+  \item \textbf{Um formato de tela mudou.} O \emph{perfil portátil} recebido em
+    \arq{admin/turmas/[id]} usava \cd{dateStyle: "short"} (ano de dois dígitos)
+    e passou a \cd{dataHora} (quatro). Dois formatos de data e hora na mesma
+    plataforma era inconsistência sem razão registrada; a suíte \emph{e2e} casa
+    com \enquote{emitido em}, não com a data, e não foi afetada.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{A primeira rede fora do fuso de
+Brasília.} Quando um contrato for assinado em Rondônia, no Acre, no Amazonas ou
+em Mato Grosso, a constante vira um campo --- provavelmente em \cd{escolas}, e o
+caminho até o \emph{iframe} é o trabalho de verdade. Antes disso, qualquer
+mudança é só trocar a string de um lugar. Um segundo gatilho, menor: se alguma
+tela precisar mostrar a data \textbf{no fuso de quem lê} (um relatório exportado
+para outro país), o formatador ganha um parâmetro em vez de a constante mudar.

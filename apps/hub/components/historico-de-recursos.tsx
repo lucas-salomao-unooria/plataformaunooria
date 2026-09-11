@@ -1,5 +1,6 @@
 "use client";
 
+import { dataHora } from "@edu/sdk";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, EmptyState, FeedbackAlert, ScrollBar, Table, type TableColumn } from "@edu/ui/ds";
 
@@ -37,15 +38,7 @@ const ACOES: Record<string, { rotulo: string; cor: "success" | "error" | "info" 
   "versao-soltada": { rotulo: "Fixação removida", cor: "neutral" },
 };
 
-function quando(iso: string): string {
-  return new Date(iso).toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+const quando = dataHora;
 
 export function HistoricoDeRecursos({ escolaId }: { escolaId?: string | null }) {
   const [linhas, setLinhas] = useState<LinhaDoHistorico[] | null>(null);

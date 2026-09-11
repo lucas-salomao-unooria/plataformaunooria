@@ -1,3 +1,4 @@
+import { horaComSegundos } from "@edu/sdk";
 import { notFound } from "next/navigation";
 
 import { Badge, Card, EmptyState, FeedbackAlert, MetricCard, ScrollBar } from "@edu/ui/ds";
@@ -406,7 +407,7 @@ export default async function EstudantePage({
                         {/* A hora de ENVIO, pelo relógio da aula: "aos 0:42". */}
                         {f.segundosDesdeALargada !== null
                           ? ` · aos ${cronometro(f.segundosDesdeALargada)}`
-                          : ` · ${new Date(f.criadoEm).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`}
+                          : ` · ${horaComSegundos(f.criadoEm)}`}
                         {f.debitou && " · gastou pergunta"}
                       </span>
                       {f.texto}

@@ -409,10 +409,10 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **97**: a 93 é a sincronização de sala por polling da
+  (a PRÓXIMA é a **99**: a 93 é a sincronização de sala por polling da
       exp-08, a 94 o latch por polling da exp-04, a 95 a sessão de 2h de
-      inatividade e a 96 está RESERVADA para a renovação de sessão dentro da
-      missão — as quatro foram alocadas por quem repartia o trabalho ANTES de
+      inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
+      de login na tela e a **98 o fuso único da plataforma** — as quatro foram alocadas por quem repartia o trabalho ANTES de
       qualquer frente escrever, e é assim que a colisão de 2026-09-06 e
       2026-09-07 deixa de acontecer; a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
@@ -593,6 +593,15 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
   pausa`, `modal` e `popup` saem porque são jargão nosso vazado para o guia do
   professor. `fake news`, `cyberbullying` e `print` ficam por decisão registrada
   — não "corrija" nenhum deles.
+- **Não formatar data na mão** (ADR-98). `toLocaleDateString`,
+  `toLocaleTimeString`, `toLocaleString` sobre uma data e `Intl.DateTimeFormat`
+  sem `timeZone` usam o fuso de QUEM EXECUTA — e no hub o contêiner está em UTC
+  e a professora em `America/Sao_Paulo`. Entre 21h e a meia-noite os dois lados
+  renderizam DIAS diferentes, o React chama isso de "hydration failed",
+  regenera a árvore e engole o clique. Use `data`, `dataCurta`, `dataHora`,
+  `dataCurtaHora`, `hora`, `horaComSegundos` e `diaDaPlataforma`, do `@edu/sdk`
+  (na api, `src/comum/fuso.ts`). Número não tem fuso:
+  `n.toLocaleString("pt-BR")` para milhar continua livre.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.

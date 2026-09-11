@@ -121,3 +121,21 @@ Quatro coisas que a SDK faz depois do handshake, todas com o token do
 
 Deps novas: `@opentelemetry/*` (só carregadas com ratio > 0) e `web-vitals`.
 `packages/AGENTS.md` continua valendo: nada pesado no caminho síncrono.
+
+## O fuso da plataforma (ADR-98)
+
+`src/fuso.ts` guarda `FUSO_DA_PLATAFORMA` e as funções que formatam data para
+gente ler. **Não é utilitário de conveniência: é a correção de um defeito que
+passou meses invisível.** Sem `timeZone`, `Intl` usa o fuso de quem executa — e
+no hub a mesma linha roda no contêiner (UTC) e no navegador
+(`America/Sao_Paulo`). Entre 21h e a meia-noite os dois rendem DIAS diferentes,
+o React acusa "hydration failed", regenera a árvore e o clique da pessoa cai no
+vazio. Foi assim que a suíte e2e da exp-08 morreu com um timeout de clique.
+
+- **Formato novo entra AQUI**, como função nomeada pela intenção. Um formatador
+  escrito na tela é o começo do décimo segundo lugar que formata data sozinho.
+- **`apps/api/src/comum/fuso.ts` é a cópia gêmea** — a api não consome pacote de
+  workspace. As duas são amarradas por `apps/api/tests/fuso-da-plataforma.spec.ts`,
+  que lê este arquivo e compara o valor. Mudou aqui, muda lá, no mesmo commit.
+- **Número não tem fuso.** `n.toLocaleString("pt-BR")` para separar milhar não
+  tem nada a ver com isto e continua livre.

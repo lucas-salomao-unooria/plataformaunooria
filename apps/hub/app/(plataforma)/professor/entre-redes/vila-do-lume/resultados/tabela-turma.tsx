@@ -1,12 +1,10 @@
 import Link from "next/link";
 
 import { Badge, ScrollBar } from "@edu/ui/ds";
+import { dataCurta } from "@edu/sdk";
 import type { LinhaDaTurma } from "@/lib/vila-tipos";
 
-function quando(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-}
+const quando = dataCurta;
 
 /**
  * Uma linha por estudante da turma, inclusive quem não jogou.

@@ -1,5 +1,6 @@
 "use client";
 
+import { dataHora } from "@edu/sdk";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -843,10 +844,7 @@ export function TurmaDetalhe({
                           {/* Com hora: reemitir no mesmo dia gera OUTRO documento,
                               e só a data faria dois deles parecerem duplicata. */}
                           emitido em{" "}
-                          {new Date(r.emitidoEm).toLocaleString("pt-BR", {
-                            dateStyle: "short",
-                            timeStyle: "short",
-                          })}{" "}
+                          {dataHora(r.emitidoEm)}{" "}
                           ·{" "}
                           {r.escolas} escola{r.escolas === 1 ? "" : "s"}, {r.participacoes}{" "}
                           participaç{r.participacoes === 1 ? "ão" : "ões"}, {r.resultados} resultado

@@ -1,3 +1,4 @@
+import { dataCurtaHora } from "@edu/sdk";
 import { notFound } from "next/navigation";
 
 import { Badge, Card, EmptyState, FeedbackAlert, ScrollBar } from "@edu/ui/ds";
@@ -108,12 +109,7 @@ export default async function EstudanteDaVilaPage({
             {relatorio.status === "completa" ? "Terminou a vila" : "Abandonou no meio"}
           </Badge>
           <span>
-            {new Date(relatorio.abertaEm).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {dataCurtaHora(relatorio.abertaEm)}
           </span>
           <span>· {duracao(relatorio.duracaoSeg)} de jogo</span>
         </div>

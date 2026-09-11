@@ -17,6 +17,18 @@ export * from "./clarity";
 export { instalarCapturaDeErros, type ErroDeCliente } from "./erros";
 export { instalarVitais, type Vital } from "./vitals";
 export { lerDispositivo, type DispositivoDoNavegador } from "./dispositivo";
+/* O fuso e as funções que formatam data para gente ler. Toda tela do hub e das
+   experiências passa por aqui — o porquê está no cabeçalho de `fuso.ts`. */
+export {
+  FUSO_DA_PLATAFORMA,
+  data,
+  dataCurta,
+  dataHora,
+  dataCurtaHora,
+  hora,
+  horaComSegundos,
+  diaDaPlataforma,
+} from "./fuso";
 export { iniciarTracesWeb, lerObsConfig, type ObsConfig, type TracesWeb } from "./otel-web";
 
 type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
