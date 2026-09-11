@@ -1472,12 +1472,20 @@ formatos, sem nada mudar no que foi planejado.
 \headrow \thd{Botão} & \thd{O que sai no documento}\\
 \midrule
 \cd{Baixar esta semana} & a semana aberta, com as aulas datadas\\
-\zebra \cd{Esta e a próxima} & duas semanas, uma por página --- a entrega
-  quinzenal. Só aparece com a semana seguinte \textbf{já planejada}\\
-\cd{Baixar o Nº Bimestre} & todas as semanas \cd{pronto} daquele período de
-  avaliação, com a contagem no cabeçalho\\
+\zebra \cd{Esta e a próxima (quinzena)} & duas semanas, uma por página --- a
+  entrega quinzenal. Só aparece com a semana seguinte \textbf{já planejada}:
+  sem ela o documento sairia com uma semana só, e o nome mentiria\\
+\cd{Baixar o <período> inteiro} & todas as semanas \cd{pronto} daquele período
+  de avaliação. \textbf{O rótulo não é fixo}: ele é o do período, e segue a
+  divisão do ano escolhida na regência --- \enquote{3º Bimestre},
+  \enquote{2º Trimestre} ou \enquote{1º Semestre}, conforme
+  \cd{DIVISOES\_DO\_ANO}. Só aparece com \textbf{mais de uma} semana planejada
+  no período\\
 \bottomrule
 \end{tabularx}
+
+Os dois documentos de conjunto saem do mesmo \arq{documentoDeSemanas}: uma
+semana por página, e o cabeçalho conta as semanas e as aulas.
 
 As semanas vêm de \cd{GET /planejamento/planos-anuais/:id/periodos}, que
 devolve \textbf{só as \cd{pronto}}: um documento entregue à coordenação não
