@@ -9,11 +9,11 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{93 decisões escritas}, numeradas até ADR-95: a \adrr{ADR-93} e a
+São \textbf{94 decisões escritas}, numeradas até ADR-96: a \adrr{ADR-93} e a
 \adrr{ADR-94} estão \textbf{reservadas} por frentes em curso e entram no dia em
 que elas fecharem. A lacuna é deliberada, e é a regra deste capítulo em uso ---
 o número se reserva contra as frentes ABERTAS, não contra a branch integrada ---,
-que é o motivo de a \adrr{ADR-95} ter saído antes das duas. A ADR-65
+que é o motivo de a \adrr{ADR-95} e a \adrr{ADR-96} terem saído antes das duas. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -138,6 +138,7 @@ que a cercam.
 \zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
 \adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-95} & A sessão do hub dura 2h de inatividade, igual para todo papel & 2026-09-10 & Aceita\\
+\adrr{ADR-96} & Ficar na missão conta como uso, e a sessão que morre tem tela & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6995,4 +6996,137 @@ na estratégia de banco. Ou seja: as 12h \textbf{nunca foram absolutas}; eram
     mesa, com o custo acima já medido.
   \item \textbf{O WSO2 assumindo a autenticação.} O TTL passa a ser dele, e este
     número deixa de valer.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-96 --- Ficar na missão CONTA como uso, e a sessão que morre tem
+tela}
+\label{adr:sessao-conta-a-missao}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A \adrr{ADR-95} pôs a sessão em 2h de inatividade e declarou,
+como consequência ruim, que a janela podia morrer com a criança DENTRO da
+missão. Duas peças produzem isso, e nenhuma delas é visível no
+\emph{typecheck}:
+
+\begin{enumerate}
+  \item \cd{auth()} \textbf{sem argumentos} --- o caminho de \emph{React Server
+    Component} e de \emph{route handler} --- LÊ a sessão e \textbf{descarta} o
+    \cd{Set-Cookie}, porque nesses contextos não se escreve \emph{cookie}. Só o
+    \emph{middleware} renova.
+  \item \rota{GET /api/exp-token}, que a SDK pede de 10 em 10 minutos, está
+    FORA do \cd{matcher} do \emph{middleware}.
+\end{enumerate}
+
+Quem abre uma missão não navega mais no hub, então o prazo envelhece como se a
+pessoa estivesse parada. E quando morria, morria \textbf{em silêncio}:
+\arq{apps/hub/components/ExpFrame.tsx} tratava a falha de renovação com um
+\cd{console.error} e nada mais, a experiência seguia com o token velho até o TTL
+de 15 minutos vencer e, daí em diante, \textbf{toda} chamada à API respondia
+401. O que a criança já tinha enviado estava salvo; o que ela fizesse a partir
+dali, não --- e nada na tela pedia para entrar de novo.
+
+Com as 12h anteriores isso era inalcançável. Com 2h, uma missão que comece meia
+hora depois do \emph{login} alcança --- e as 2h foram para o ambiente de
+\emph{dev}, então deixou de ser hipótese.
+
+\textbf{Decisão.} Três partes:
+
+\begin{enumerate}
+  \item \textbf{O pedido de passe conta como atividade.} \rota{GET
+    /api/exp-token} chama \cd{unstable\_update(\{\})} depois de assinar o token.
+    O \cd{unstable\_update} do \cd{next-auth} escreve o \emph{cookie} via
+    \cd{cookies().set()}; o \cd{auth()} não. O objeto VAZIO é de propósito: o
+    \emph{callback} \cd{jwt} só mescla quando recebe \cd{session.usuario}, então
+    \cd{\{\}} renova o prazo sem tocar no conteúdo da sessão. E vem DEPOIS de
+    assinar, engolindo o próprio erro: falhar em deslizar custa, no pior caso,
+    um \emph{logoff} mais cedo; falhar em emitir o passe custa a aula.
+  \item \textbf{A morte da sessão tem TELA.} O \cd{ExpFrame} trata 401 e 403
+    como SESSÃO, não como rede: manda \cd{hub:pause}, PARA a missão e mostra o
+    \cd{AlertBox} \enquote{Sua sessão expirou} com \enquote{Entrar de novo}.
+    Fica no \cd{ExpFrame} e não no \cd{ExpHost} pelo mesmo motivo do
+    \cd{clarityProjectId}: é o único ponto por onde TODO \emph{embed} passa ---
+    no \cd{ExpHost}, as três telas de professor ficariam de fora, e um professor
+    dentro do gerador de plano por duas horas cai no mesmo buraco. E
+    \textbf{substitui} o \emph{iframe} em vez de cobri-lo: o \emph{iframe} ocupa
+    \cd{height: 100\%} em quatro \emph{layouts} diferentes, e um \cd{<div>} a
+    mais na cadeia do \emph{flex} é exatamente onde o percentual deixa de ser
+    \emph{definite} e ele volta aos 150px padrão.
+  \item \textbf{O TTL virou injetável, mas NÃO em produção.}
+    \env{SESSAO\_TTL\_SEGUNDOS} (validada com Zod, piso de 60s, teto de 12h)
+    existe para a suíte e é IGNORADA em produção, com aviso no \emph{log}. O
+    valor de produção é constante em \arq{apps/hub/lib/sessao.ts}.
+\end{enumerate}
+
+\textbf{A pergunta que a \adrr{ADR-95} deixou aberta, respondida.} Ela descartou
+a variável de ambiente porque a \rota{/privacidade} afirma o prazo \textbf{em
+texto, para a família}, e texto legal só pode afirmar o que o código faz
+(\adrr{ADR-70}). A resposta não é escolher um dos dois lados: é \textbf{pinar a
+produção e amarrar os dois por teste}. \arq{apps/hub/lib/sessao.test.ts} afirma
+que o prazo de produção é de 2h \emph{e} que a página contém a frase com esse
+número --- mudar o valor sem mudar a frase passa a ser vermelho, em vez de uma
+página mentindo em silêncio. Nada no \emph{typecheck} liga os dois.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Pôr \rota{/api/exp-token} no \cd{matcher} do
+    \emph{middleware}.} É o atalho óbvio, e não funciona por DOIS motivos
+    independentes. Com sessão válida, \cd{podeEntrarNaArea(papel,
+    "/api/exp-token")} é falso para todo papel: o \emph{middleware}
+    redirecionaria a própria rota para a \emph{home} e cortaria a renovação de
+    quem está usando o produto. Sem sessão, o \emph{redirect} vai para
+    \rota{/login}, que o \cd{fetch} SEGUE e devolve HTML com \textbf{status
+    200} --- o \cd{r.ok} passaria e o 401 honesto viraria erro de
+    \emph{parse}. Trocar um 401 legível por um JSON inválido é piorar o
+    diagnóstico do defeito que se quer consertar.
+  \item \textbf{Não fazer nada e documentar.} Era o estado depois da
+    \adrr{ADR-95}, e ele foi para \emph{dev}. O custo é trabalho de criança
+    perdido em silêncio --- a pior forma de falha deste produto, porque ninguém
+    reclama do que não vê.
+  \item \textbf{Renovar ANTES de assinar, ou deixar a falha de renovação
+    derrubar a rota.} Inverte a prioridade: o passe é o que mantém a aula de
+    pé.
+  \item \textbf{Avisar a experiência por mensagem nova da ponte.} Exigiria subir
+    o \cd{PROTOCOL\_VERSION} e republicar as seis experiências, e a mensagem
+    apareceria DENTRO do disfarce --- \enquote{sua sessão expirou} no meio do
+    Instanooria quebra a ficção que a experiência está medindo. A tela é chrome
+    do HUB, desenhada acima do aparelho.
+  \item \textbf{Derivar a frase de \rota{/privacidade} da env.} Obrigaria a
+    página pública mais visitada, hoje estática, a virar dinâmica só para
+    imprimir um número.
+\end{itemize}
+
+\textbf{Consequências, inclusive as ruins.}
+
+\begin{enumerate}
+  \item Missão EM USO não perde mais a sessão por inatividade --- desde que a
+    experiência esteja pedindo passe, o que toda experiência que usa a SDK faz.
+  \item \textbf{A janela deixou de ser só \enquote{navegação}.} Um aparelho
+    aberto e esquecido renova a sessão de 10 em 10 minutos indefinidamente: a
+    criança que fechou a tampa com a aba aberta continua logada. É o preço
+    declarado de não deslogar quem está trabalhando, e o teto real passou a ser
+    \enquote{a aba ficar aberta}, não o tempo.
+  \item \cd{unstable\_update} é API de \emph{beta}, e o nome o diz. Se ele mudar
+    na subida do \cd{next-auth}, isto quebra --- e quebra no \emph{typecheck},
+    que é o melhor lugar para quebrar.
+  \item \textbf{A tela de sessão expirada NÃO é exercitada pela suíte.} O
+    gatilho dela é o \emph{tick} de 10 minutos da SDK, e nenhum TTL curto
+    encurta esse \emph{tick}. O \cd{data-testid="sessao-expirada"} está no lugar
+    para quando um roteiro souber dirigir a ponte.
+  \item Substituir o \emph{iframe} descarta o estado de cliente da experiência.
+    Com a sessão morta ele já não podia ser salvo, mas a criança perde o que
+    estava na tela sem ter enviado.
+\end{enumerate}
+
+\textbf{Gatilho de reavaliação.}
+\begin{itemize}
+  \item \textbf{Relato de conta ficando logada por aba esquecida} (consequência
+    2). O caminho seria um teto ABSOLUTO ao lado da inatividade --- que a
+    \adrr{ADR-95} recusou porque deslogava no meio da aula, mas a conversa muda
+    quando o que sustenta a sessão é uma aba e não uma pessoa.
+  \item \cd{unstable\_update} saindo do \emph{beta} ou trocando de nome.
+  \item \textbf{A suíte ganhando como dirigir a ponte} (pedir
+    \cd{exp:token-expirando} sob comando): aí a tela passa a ser exercitável, e
+    o passo que falta entra.
 \end{itemize}
