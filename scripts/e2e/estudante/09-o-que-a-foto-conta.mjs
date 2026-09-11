@@ -18,7 +18,7 @@ const TURMA = process.env.TURMA ?? conta("estudante", { serie: SERIE }).turma;
 
 await suite(
   {
-    slug: "estudante/08-o-que-a-foto-conta",
+    slug: "estudante/09-o-que-a-foto-conta",
     papel: "estudante",
     titulo: "O Que a Foto Conta — toda foto mostra uma escolha",
     subtitulo: "o mural do 1º ano, o latch da Roda e a síntese sem nota",
@@ -36,7 +36,7 @@ await suite(
       "O Globo vira retry gentil; a Lupa conclui com a insígnia",
       "O painel do professor não tem coluna de pontos — não é ranking",
     ],
-    comando: "node scripts/e2e/estudante/08-o-que-a-foto-conta.mjs",
+    comando: "node scripts/e2e/estudante/09-o-que-a-foto-conta.mjs",
   },
   async (r) => {
     // ═══ PROFESSOR: a aula ao vivo, com a turma ainda por chegar ═══════════
