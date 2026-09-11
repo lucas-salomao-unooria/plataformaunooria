@@ -1060,6 +1060,120 @@ Ferramenta do professor, e o primeiro produto da plataforma cujo insumo é o
 \adrr{ADR-73}; o que resta registrar é a arquitetura do dado e a fronteira com a
 exp-90.
 
+\subsection{O caminho completo}
+
+Quatro passos, na ordem em que um plano de ensino se constrói numa escola.
+Nenhum pode ser pulado, e todos podem ser revisitados: em agosto o professor
+volta à distribuição, remaneja o que não coube e regera o plano do 3º bimestre
+--- um planejador que só anda para a frente não sobrevive ao primeiro mês de
+aula real.
+
+A \textbf{IA entra em exatamente dois pontos}, os dois marcados na
+Figura~\ref{fig:exp92-caminho}. Todo
+o resto --- a Base como dado, a distribuição, o calendário, a costura e a
+exportação --- é decisão humana ou conta determinística, e é o que faz o
+documento ser auditável.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+  ia/.style={draw=unooOrange, fill=unooOrangeWash, line width=0.7pt,
+             rounded corners=2pt, inner sep=2.5pt, font=\scriptsize\bfseries,
+             text=unooInk}]
+
+  % ---- a Base, preparada fora do produto --------------------------------
+  \node[actionsys, text width=40mm, anchor=north] (pdfs) at (-5.9,0.7)
+    {\textbf{Fora do produto, uma vez}\\[2pt]
+     PDFs homologados do MEC \seta{} \texttt{scripts/extrair-bncc.mjs}};
+  \node[objflow, text width=40mm, anchor=north] (dados) at (-5.9,-1.8)
+    {\texttt{api/src/curriculo/dados/*.ts}\\[2pt]
+     1.304 EF · 183 EM · 129 Computação};
+  \draw[flow] (pdfs.south) -- (dados.north);
+
+  % ---- a coluna do professor --------------------------------------------
+  \node[actstart] (ini) at (0,0) {};
+  \node[action, text width=42mm] (reg) at (0,-1.9)
+    {\textbf{1. Regência}\\[2pt]
+     componente, série, ano letivo, grade de horários, minutos por aula,
+     divisão do ano\\[2pt]
+     \texttt{POST /planejamento/}\\\texttt{configuracoes}};
+  \node[action, text width=42mm] (dist) at (0,-4.9)
+    {\textbf{2. Distribuição}\\[2pt]
+     o professor põe cada habilidade num período. \textbf{Decisão humana}\\[2pt]
+     \texttt{PUT .../planos-anuais/}\\\texttt{:id/distribuicao}};
+  \node[action, text width=42mm] (anual) at (0,-8.0)
+    {\textbf{3. Plano anual}\\[2pt]
+     a prosa pedagógica do ano, gerada e depois \textbf{reescrita} pelo
+     professor\\[2pt]
+     \texttt{POST .../planos-anuais/}\\\texttt{:id/gerar}};
+  \node[action, text width=42mm] (aulas) at (0,-11.3)
+    {\textbf{4. Aulas, semana a semana}\\[2pt]
+     40 semanas, uma por vez. O esqueleto é do calendário\\[2pt]
+     \texttt{POST .../periodos/}\\\texttt{:ordem/gerar}};
+  \node[actionsys, text width=42mm] (export) at (0,-14.3)
+    {\textbf{Exportação}\\[2pt]
+     montada no NAVEGADOR, sem rota e sem modelo: \texttt{.doc} (HTML com os
+     \emph{namespaces} do Office) e impressão};
+  \node[actend] (fim) at (0,-15.8) {};
+
+  \node[ia, anchor=west] (iaA) at (2.4,-8.0) {IA};
+  \node[ia, anchor=west] (iaB) at (2.4,-11.3) {IA};
+
+  \draw[flow] (ini) -- (reg);
+  \draw[flow] (reg) -- (dist);
+  \draw[flow] (dist) -- (anual);
+  \draw[flow] (anual) -- (aulas);
+  \draw[flow] (aulas) -- (export);
+  \draw[flow] (export) -- (fim);
+  \draw[flow] (dados.south) |- (dist.west);
+
+  % ---- o que cada passo deixa gravado ------------------------------------
+  \node[objflow, text width=42mm] (cfg) at (6.6,-1.9)
+    {\texttt{exp\_92\_configuracoes}\\[2pt]
+     e, se a rede ainda não tinha, \texttt{periodos\_letivos} --- catálogo do
+     CONTRATO};
+  \node[objflow, text width=42mm] (jdist) at (6.6,-4.9)
+    {\texttt{exp\_92\_planos\_anuais.}\\\texttt{distribuicao} (JSONB)\\[2pt]
+     o insumo do gerador, e o que sobrevive a reescrever o documento inteiro};
+  \node[objflow, text width=42mm] (docs) at (6.6,-8.0)
+    {\emph{bucket} privado:\\
+     \texttt{gerado.md} (imutável, o original da IA)\\
+     \texttt{atual.html} (sanitizado por \emph{allowlist})};
+  \node[objflow, text width=42mm] (jaulas) at (6.6,-11.3)
+    {\texttt{exp\_92\_planos\_de\_}\\\texttt{periodo.aulas} (JSONB)\\[2pt]
+     dado estruturado, não prosa: dá para editar quinta sem tocar em terça};
+  \node[objflow, text width=42mm] (recortes) at (6.6,-14.3)
+    {três recortes, só das semanas \texttt{pronto}: esta semana · esta e a
+     próxima (a entrega quinzenal) · o período de avaliação inteiro --- cujo
+     rótulo segue a divisão do ano: bimestre, trimestre ou semestre};
+
+  \draw[flow] (reg) -- (cfg);
+  \draw[flow] (dist) -- (jdist);
+  \draw[flow] (anual) -- (docs);
+  \draw[flow] (aulas) -- (jaulas);
+  \draw[flow] (export) -- (recortes);
+
+  % ---- o que a IA nao toca ------------------------------------------------
+  \node[actnote, text width=46mm, anchor=north west] (naoia) at (-8.2,-6.6)
+    {\textbf{Onde a IA NÃO entra}\\[2pt]
+     a extração da Base; a consulta de habilidades (exata por componente e ano,
+     \textbf{sem busca vetorial}); a distribuição; o esqueleto das aulas; a
+     costura; \texttt{cumprida} e \texttt{observacaoDoProfessor}; e a
+     exportação.\\[2pt]
+     Os dois pontos de IA passam por \texttt{temSaldo} ANTES e
+     \texttt{consumir} depois --- e o consumo conta mesmo quando a geração é
+     rejeitada: o \emph{token} foi gasto.};
+
+\end{tikzpicture}}
+\caption[exp-92: o caminho do planejamento de ensino]{O planejamento de ensino
+  de ponta a ponta, e os dois únicos pontos em que um modelo é chamado. A Base
+  chega como dado extraído fora do produto; a distribuição das habilidades pelos
+  períodos é decisão do professor e é o insumo das duas gerações; a exportação
+  não passa pelo servidor.}
+\label{fig:exp92-caminho}
+\end{figure}
+
 \subsection{Ela coexiste com a exp-90}
 
 Não são versões da mesma coisa: são ferramentas para redes diferentes.
@@ -1160,7 +1274,88 @@ Metadados e estado & PostgreSQL (\cd{exp\_92\_configuracoes} e as duas acima).\\
 Número, data, dia da semana e horário saem de \arq{planejamento/calendario.ts},
 calculados da grade real do professor; o modelo preenche apenas o conteúdo
 pedagógico das aulas que já existem, e \arq{planejamento/costura.ts} descarta
-sobra e completa falta.
+sobra e completa falta. A Figura~\ref{fig:exp92-semana} mostra a conciliação
+inteira, com as três regras da costura e as três barreiras contra um código de
+habilidade inventado.
+
+\begin{figure}[H]
+\centering
+\fitwidth{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+  ia/.style={draw=unooOrange, fill=unooOrangeWash, line width=0.7pt,
+             rounded corners=2pt, inner sep=2.5pt, font=\scriptsize\bfseries,
+             text=unooInk}]
+
+  % ---- os tres insumos ---------------------------------------------------
+  \node[actionsys, text width=42mm] (cal) at (-5.3,0)
+    {\textbf{Calendário} (\texttt{calendario.ts})\\[2pt]
+     número, data, dia da semana e horário das aulas DESTA semana, da grade
+     real do professor. Feriado \textbf{remove} a aula, não a desloca};
+  \node[objflow, text width=42mm] (rec) at (0,0)
+    {\textbf{O recorte da distribuição}\\[2pt]
+     só os códigos do período de avaliação em que esta semana cai};
+  \node[objflow, text width=42mm] (reg2) at (5.3,0)
+    {\textbf{A regência}\\[2pt]
+     componente, série e minutos por aula};
+
+  % ---- a coluna do meio --------------------------------------------------
+  \node[action, text width=52mm] (brief) at (0,-3.0)
+    {\texttt{montarBriefingDePeriodo}\\[2pt]
+     um \emph{briefing} com as aulas que EXISTEM e as habilidades que PODEM
+     entrar};
+  \node[action, text width=52mm] (gen) at (0,-5.8)
+    {\texttt{provider.generateJson}\\[2pt]
+     \emph{schema} de resposta, modelo longo, temperatura 0,5.\\
+     Devolve \textbf{só o conteúdo pedagógico} das aulas};
+  \node[ia, anchor=west] at (2.9,-5.8) {IA};
+  \node[actionsys, text width=52mm] (cost) at (0,-8.8)
+    {\texttt{costurarAulas} --- a conciliação entre o que o modelo devolveu e
+     as aulas que existem de verdade};
+  \node[objflow, text width=52mm] (out) at (0,-11.4)
+    {\texttt{exp\_92\_planos\_de\_periodo.aulas}\\[2pt]
+     JSONB estruturado, \texttt{status = pronto}};
+  \node[action, text width=52mm] (edita) at (0,-13.8)
+    {O professor edita\\[2pt]
+     \texttt{PUT /planejamento/periodos/:id/aulas}\\[2pt]
+     \texttt{cumprida} e a observação da aula são registro DELE, nunca do
+     modelo};
+
+  \draw[flow] (cal.south) |- (-3.1,-2.2) -- (brief.north west);
+  \draw[flow] (rec) -- (brief);
+  \draw[flow] (reg2.south) |- (3.1,-2.2) -- (brief.north east);
+  \draw[flow] (brief) -- (gen);
+  \draw[flow] (gen) -- (cost);
+  \draw[flow] (cost) -- (out);
+  \draw[flow] (out) -- (edita);
+
+  % ---- as tres regras da costura -----------------------------------------
+  \node[actnote, text width=46mm, anchor=north west] (regras) at (3.1,-7.6)
+    {\textbf{As três regras da costura}\\[2pt]
+     1. O esqueleto é do CALENDÁRIO. Oito aulas para uma semana de três: a
+     sobra é descartada. Uma para três: as outras duas nascem em branco.\\[2pt]
+     2. Código fora do recorte é \textbf{removido}, não corrigido.\\[2pt]
+     3. Campo ausente vira \emph{string} VAZIA, nunca \texttt{undefined} ---
+     ausente na tela é indistinguível de \enquote{ainda não preenchi}.};
+
+  % ---- as tres barreiras --------------------------------------------------
+  \node[actnote, text width=46mm, anchor=north east] (barreiras) at (-3.1,-7.6)
+    {\textbf{Três barreiras contra um código inventado}\\[2pt]
+     o \emph{prompt} (instrução, não garantia), o
+     \texttt{PUT .../distribuicao} (valida o que o PROFESSOR escolheu) e a
+     costura (remove o que o MODELO escreveu depois). Nenhuma sozinha
+     basta.};
+
+  \draw[actnoteline] (regras.west) -- (cost.east);
+  \draw[actnoteline] (barreiras.east) -- (cost.west);
+
+\end{tikzpicture}}
+\caption[exp-92: como uma semana nasce]{Como uma semana de aulas nasce. O modelo
+  recebe as aulas que existem e as habilidades que podem entrar, e devolve
+  apenas conteúdo pedagógico; a costura concilia. Uma resposta malformada
+  degrada para \enquote{planejar à mão}, nunca para aulas em dias que não
+  existem.}
+\label{fig:exp92-semana}
+\end{figure}
 
 \begin{atencao}
 Deixar o modelo decidir quantas aulas cabem na semana produzia \textbf{cinco}
