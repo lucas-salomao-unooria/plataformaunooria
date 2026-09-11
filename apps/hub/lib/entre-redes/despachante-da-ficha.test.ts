@@ -44,6 +44,9 @@ const MISSOES_NO_FALLBACK: readonly string[] = ["exp-01-instanooria"];
 function expIdsDespachados(fonte: string): Set<string> {
   const despachados = new Set<string>();
   for (const [, nome] of fonte.matchAll(/missao\.expId === (MISSAO_\w+)\.expId/g)) {
+    /* O grupo 1 existe sempre que a regex casa, mas o tipo de `matchAll` não
+       sabe disso: sem o estreitamento, `tsc` recusa o índice. */
+    if (!nome) continue;
     const missao = (catalogo as Record<string, unknown>)[nome] as Missao | undefined;
     expect(missao, `${nome} é comparado no despachante mas não existe no catálogo`).toBeDefined();
     if (missao?.expId) despachados.add(missao.expId);
