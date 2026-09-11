@@ -223,6 +223,18 @@ export const SessaoSchema = EstadoSchema.extend({
 export const GatePublicoSchema = z.object({
   etapa: EtapaSchema,
   passoEfetivo: PassoSchema,
+  /**
+   * A tela está CONGELADA esperando a turma?
+   *
+   * Vem do servidor e não é recalculável a partir dos outros dois campos: quem
+   * está parado exatamente no primeiro passo congelado tem `passoEfetivo`
+   * IGUAL ao próprio passo, e um cliente que deduzisse
+   * `passoEfetivo !== passo` deixaria de congelar justamente quem acabou de ler
+   * o manifesto — que é quem o debate existe para reunir. Foi o defeito de
+   * 2026-09-11, e ele viveu no PAR (ADR-92): as duas metades, lidas sozinhas,
+   * estavam certas.
+   */
+  aguardandoATurma: z.boolean(),
   /** O instante do SERVIDOR: o relógio da máquina da escola atrasa. */
   agora: z.string(),
 });

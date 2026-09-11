@@ -805,3 +805,37 @@ Duas armadilhas medidas:
 
 `app/exp/layout.tsx` já fazia certo (`height: 100dvh` + `flex flex-col`) e não
 precisou mudar — é a referência do arranjo.
+
+## A ficha da missão é um DESPACHANTE, e o fallback dele é o Instanooria
+
+`app/(plataforma)/professor/entre-redes/[ano]/[unidade]/page.tsx` escolhe o corpo
+da ficha por `missao.expId`, e o `return` final — sem `if` nenhum — é
+`<MissaoInstanooria>`. **Missão publicada sem ramo não quebra: ela mostra a ficha
+de outra missão.** Com "Nova atividade", que grava em `exp_01_activities` e a
+missão nova nunca lê, e sem "Abrir a aula e os resultados", que é o único caminho
+para o painel da turma.
+
+Aconteceu duas vezes — a exp-06 e, em 2026-09-11, a exp-08, com o aviso já
+escrito em `missao-rastro-boato.tsx`, no arquivo ao lado. Comentário não é rede:
+`lib/entre-redes/despachante-da-ficha.test.ts` lê o `page.tsx` e reprova toda
+missão publicada com `expId` que não tenha ramo próprio, com uma lista de
+exceções (`MISSOES_NO_FALLBACK`) que exige declarar por escrito quem usa o corpo
+do Instanooria de propósito.
+
+**Missão nova = ramo no despachante + `missao-<slug>.tsx`, no mesmo trabalho.**
+
+## Prefixo fora da allowlist do BFF dá 404, e a tela some inteira
+
+Toda chamada client-side do hub passa por `app/api/plataforma/[...path]/route.ts`,
+e `PREFIXOS_PERMITIDOS` decide o que ele repassa. **Prefixo ausente = 404**, com
+uma linha `codigo: bff-prefixo-recusado` no log — enquanto método ausente dá
+**405**. Os dois sintomas chegam como "o botão não faz nada".
+
+O que faz o 404 enganar é que a mesma rota funciona pelo servidor: a tela de
+resultados é Server Component e usa `apiDoServidor`, que vai direto na api. Ela
+CARREGA, com os dados certos, e só as ações do professor morrem. Na exp-08
+(2026-09-11) isso derrubou o preparo, os dois botões do debate e o "zerar turma"
+de uma vez, sem nenhum erro visível na tela.
+
+**Experiência nova com tela client-side de professor = uma linha na allowlist,
+com o comentário dizendo por que aquela tela não passa por `apiDoServidor`.**

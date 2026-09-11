@@ -262,6 +262,31 @@ causa.
 \headrow \thd{Sintoma} & \thd{Causa provável}\\
 \midrule
 \endhead
+\textbf{A ficha de uma missão mostra \enquote{Nova atividade} e não tem
+  \enquote{Abrir a aula e os resultados}} &
+  A missão não tem ramo no DESPACHANTE de
+  \arq{app/(plataforma)/professor/entre-redes/[ano]/[unidade]/page.tsx}, e caiu
+  no \cd{return} final --- que é o corpo do \textbf{Instanooria}. O modo de
+  falhar é MUDO: a tela abre, e mostra a ficha de OUTRA missão. Duas
+  consequências caras: a professora não acha o painel da turma (o único caminho
+  para congelar o debate e ver os resultados), e o botão \enquote{Nova
+  atividade} a leva a configurar uma linha em \cd{exp\_01\_activities} que a
+  missão dela nunca lê. Aconteceu com a exp-06 e de novo com a exp-08 (esta em
+  2026-09-11), com o aviso já escrito no arquivo ao lado. A rede é
+  \arq{apps/hub/lib/entre-redes/despachante-da-ficha.test.ts}, que reprova
+  missão publicada sem ramo.\\
+\zebra \textbf{O botão do painel da professora não faz nada, e a rede mostra 404
+  numa rota que existe na api} &
+  O prefixo da experiência não está em \cd{PREFIXOS\_PERMITIDOS} do BFF
+  (\arq{apps/hub/app/api/plataforma/[...path]/route.ts}). Toda tela
+  \emph{client-side} do professor passa por ali, e prefixo fora da lista devolve
+  \textbf{404} --- não 403, não 405 --- com uma linha
+  \cd{codigo: bff-prefixo-recusado} no log do hub. O sintoma engana porque a
+  rota EXISTE na api e responde bem por \cd{apiDoServidor}: a tela de resultados
+  carrega (é \emph{Server Component}) e só os botões morrem. Método que falta no
+  BFF, por contraste, dá \textbf{405}. Visto na exp-08 em 2026-09-11: a
+  preparação, os dois botões do debate e o \enquote{zerar turma} respondiam 404
+  em silêncio.\\
 \textbf{Um \emph{rollback} de versão \enquote{desfez-se} sozinho depois de um
   \emph{deploy}} &
   Ele é temporário por natureza: o \emph{job} \cd{ativar-exps} faz

@@ -20,7 +20,7 @@ export const EXP_ID = "exp-08-manifesto-ia";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.1.0";
+export const EXP_VERSION = "0.1.1";
 
 export type Passo =
   | "briefing"
@@ -122,6 +122,14 @@ export interface RespostaSessao extends Estado {
 export interface RespostaDoGate {
   etapa: Etapa;
   passoEfetivo: Passo;
+  /**
+   * A tela está congelada esperando a turma? **Quem decide é o servidor.**
+   *
+   * Não deduza isto de `passoEfetivo !== passo`: parado no primeiro passo
+   * congelado os dois são iguais, e a dedução deixa de congelar quem acabou de
+   * ler o manifesto — que é quem o debate existe para reunir.
+   */
+  aguardandoATurma: boolean;
   /** O instante do SERVIDOR: o relógio da máquina da escola atrasa. */
   agora: string;
 }
