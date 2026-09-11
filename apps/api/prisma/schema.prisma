@@ -232,6 +232,8 @@ model Turma {
   /// motivo do relógio acima.
   ecoGates       EcoGateTurma[]
   rastroGates    RastroGateTurma[]
+  /// A configuração da aula da exp-04 (pacote de fotos + o latch da roda).
+  fotoContaConfigs FotoContaTurmaConfig[]
 
   @@unique([escolaId, periodoLetivoId, nome])
   @@index([escolaId])
@@ -416,6 +418,9 @@ model User {
   ecoSessoes       EcoSessao[]       @relation("EcoEstudante")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
   rastroSessoes    RastroSessao[]    @relation("RastroEstudante")
+  /// Lista porque a run da exp-04 é por TENTATIVA (o reset da turma arquiva e
+  /// abre outra), então não há unicidade por estudante.
+  fotoContaRuns    FotoContaRun[]    @relation("FotoContaEstudante")
   /// O que esta conta ligou ou desligou no painel da Unooria (ADR-87). FK de
   /// verdade, pela mesma razão de `liberacoes.liberada_por`: "quem desligou o
   /// jogo da rede?" é a pergunta que se faz às 8h da manhã, e ela some do
@@ -1986,4 +1991,128 @@ model PlanoDeEnsinoPeriodo {
   @@unique([escolaId, planoAnualId, ordem], map: "exp_92_periodo_unico")
   @@index([escolaId, professorId])
   @@map("exp_92_planos_de_periodo")
+}
+
+// ═══════════════════════════════════════════ exp-04 — o que a foto conta
+//
+// A missão do 1º ano EF: escolher enquadramento e legenda no mural da turma
+// (clone do Instagram) e descobrir que toda foto mostra uma escolha. 100%
+// formativa (sem score somativo, por diretriz de 1EF), conduzida em aula pelo
+// professor: a Etapa 5 congela os tablets num LATCH que só ele libera.
+
+/// A configuração da aula, POR TURMA: o pacote de fotos/legendas (gerado por IA
+/// e aprovado pelo professor, ou o banco curado padrão quando `pacote` é null)
+/// e o interruptor do latch da Roda de Conversa.
+///
+/// `tentativa` é a rotação de sessão do "Zerar e Reiniciar Turma": o reset
+/// incrementa o número em vez de apagar runs — as antigas ficam arquivadas na
+/// tentativa anterior (DAD-06: dado legado imutável), e a run ativa é sempre a
+/// da tentativa corrente.
+model FotoContaTurmaConfig {
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+
+  /// recreio | nossa_horta | sala_de_aula | parquinho (CHECK na migration).
+  tema String @default("recreio")
+  /// nivel_1 (palavras curtas) | nivel_2 (frases simples) (CHECK na migration).
+  complexidade String @default("nivel_1")
+  /// pendente | pronto (CHECK). `pronto` = o professor aprovou (o
+  /// `cfg_turma_ready` da spec); sem aprovação até a aula, o banco padrão vale.
+  statusPacote String @default("pendente") @map("status_pacote")
+  /// O pacote APROVADO (validado por `PacoteDaTurmaSchema`). Null = banco
+  /// curado padrão do `catalogo.ts` — o fallback que nunca deixa a aula sem
+  /// material.
+  pacote Json?
+  /// Se o pacote aprovado veio da IA (auditoria do painel; o professor pode
+  /// ter editado os textos antes de aprovar).
+  pacoteDaIa Boolean @default(false) @map("pacote_da_ia")
+
+  /// O latch da Etapa 5 (Roda de Conversa). `false` congela os tablets da
+  /// turma; o professor libera UMA vez por aula (o reset o rearma).
+  latchLiberado Boolean @default(false) @map("latch_liberado")
+
+  tentativa Int @default(1) @db.SmallInt
+
+  criadoEm     DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+
+  turma Turma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@id([escolaId, turmaId])
+  @@index([escolaId])
+  @@map("exp_04_turma_config")
+}
+
+/// A execução de UM estudante em UMA tentativa da turma.
+///
+/// Payloads de tempo real e telemetria carregam SÓ `estudante_id` (regra 6 /
+/// DAD-07): o nome entra na resposta do painel do professor, hidratado na rota
+/// autenticada pela matrícula da turma — nunca gravado aqui.
+model FotoContaRun {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  escolaId    String @map("escola_id")
+  turmaId     String @map("turma_id") @db.Uuid
+  estudanteId String @map("estudante_id") @db.Uuid
+  tentativa   Int    @default(1) @db.SmallInt
+
+  /// desafiar | feed | decidir | aha | roda | refletir | concluida (CHECK).
+  /// `roda` é o latch: a run só sai dele quando o professor libera a turma.
+  etapa String @default("desafiar")
+
+  /// coruja | estrela | sol (CHECK) — a "marca" da Etapa 1 (cosmético).
+  marcaId String? @map("marca_id")
+  /// Id da foto escolhida no pacote (ex.: `par_a`, `par_b`).
+  fotoEscolhidaId String? @map("foto_escolhida_id") @db.VarChar(30)
+  /// Id da legenda escolhida no pacote (`legenda_1`, `legenda_2`).
+  legendaEscolhidaId String? @map("legenda_escolhida_id") @db.VarChar(30)
+  /// Milissegundos entre entrar na tela de decisão e publicar. Teto de 2h no
+  /// CHECK: acima disso é aba esquecida, não tempo de decisão.
+  latenciaDecisaoMs Int? @map("latencia_decisao_ms")
+
+  /// Exploração do feed (grau `none`: cosmético/motor, sem peso avaliativo).
+  curtidasFeed     Int @default(0) @map("curtidas_feed") @db.SmallInt
+  permanenciaFeedMs Int @default(0) @map("permanencia_feed_ms")
+
+  /// `lupa` (CHECK) — só a resposta que CONCLUI é gravada; o Globo é retry
+  /// formativo e vive em `tentativas_reflexao`, nunca como resposta final.
+  reflexaoFinal      String? @map("reflexao_final")
+  tentativasReflexao Int     @default(0) @map("tentativas_reflexao") @db.SmallInt
+
+  versaoInstrumento String @default("1.0.0") @map("versao_instrumento")
+
+  criadoEm     DateTime  @default(now()) @map("criado_em") @db.Timestamptz(6)
+  atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
+  concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
+
+  estudante User               @relation("FotoContaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  post      FotoContaPostTurma?
+
+  @@unique([escolaId, turmaId, estudanteId, tentativa], map: "exp_04_run_unica_por_tentativa")
+  @@index([escolaId, turmaId, tentativa])
+  @@map("exp_04_runs")
+}
+
+/// A publicação no mural coletivo — o que a Galeria da Turma mostra.
+///
+/// Carrega o CONTEÚDO renderizável (ids do pacote + texto da legenda) e nunca
+/// o nome da criança: quem assina o post na tela é a MARCA (coruja/estrela/
+/// sol), que é a identidade da ficção.
+model FotoContaPostTurma {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  runId    String @unique @map("run_id") @db.Uuid
+  escolaId String @map("escola_id")
+  turmaId  String @map("turma_id") @db.Uuid
+  tentativa Int   @default(1) @db.SmallInt
+
+  marcaId        String @map("marca_id")
+  fotoId         String @map("foto_id") @db.VarChar(30)
+  legendaTexto   String @map("legenda_texto") @db.VarChar(100)
+  curtidasSimuladas Int @default(0) @map("curtidas_simuladas")
+
+  criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  run FotoContaRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([escolaId, turmaId, tentativa])
+  @@map("exp_04_posts_turma")
 }

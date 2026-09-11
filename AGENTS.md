@@ -409,7 +409,8 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **93**: a 86 foi ocupada pelo guia da aula, a 87 e a 88
+  (a PRÓXIMA é a **95**: a 93 está RESERVADA pela frente da exp-08, a 94 é o
+      latch por polling da exp-04, a 86 foi ocupada pelo guia da aula, a 87 e a 88
       pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
       histórico append-only que a rede também lê, a 90 pela suíte da api em um
       worker, a 91 pelas três zonas do idioma da interface e a **92 pelo
@@ -532,6 +533,10 @@ node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/
                                           # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).
 pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
                                           # o professor prepara a mídia no painel antes da aula)
+pnpm --filter @edu/exp-04-o-que-a-foto-conta dev  # :5183 → hub /exp/exp-04-o-que-a-foto-conta (1º ano,
+                                          # unidade 1). 5183 e não 5182: a 5182 é da exp-08. A missão é
+                                          # SÍNCRONA: a Roda congela os tablets e o professor libera pelo
+                                          # painel (polling 3s, ADR-94).
 pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
                                           # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
                                           # gravado — a transcrição está sempre na tela.

@@ -34,6 +34,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
   "exp-06-rastro-boato": "http://localhost:5181",
   /** Planejamento de ensino do professor — embedado em /professor/plano-de-ensino. */
   "exp-92-plano-de-ensino": "http://localhost:5180",
+  /**
+   * O Que a Foto Conta — 1º ano EF, unidade 1.
+   *
+   * 5183, não 5182: a 5182 está reservada para a exp-08 (manifesto-ia), que
+   * corre em outra frente. A porta entra também no CORS_ORIGINS da api — sem
+   * ela o boot da missão morre com "Failed to fetch" e o erro não diz por quê.
+   */
+  "exp-04-o-que-a-foto-conta": "http://localhost:5183",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {
