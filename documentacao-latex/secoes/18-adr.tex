@@ -9,7 +9,9 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{92 decisões}, numeradas até ADR-92, \textbf{sem lacunas}. A ADR-65
+São \textbf{93 decisões}, numeradas até ADR-94 --- a ADR-93 está reservada
+por uma frente paralela (a exp-08) e entra no \emph{merge} dela; fora essa
+reserva, \textbf{sem lacunas}. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -133,6 +135,7 @@ que a cercam.
 \adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
 \adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-94} & O latch de turma anda por \emph{polling} curto, nunca por canal persistente & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6876,3 +6879,74 @@ o dossiê deixa de ser sobrescrito e passa a ser versionado por passagem. (2) O
 caminho passo a passo até a investigação aparecer em uso real com turma que já
 viu a revelação; aí o marco vira coluna e a proteção passa a valer pelos dois
 caminhos.
+
+% ---------------------------------------------------------------------------
+\section{ADR-94 --- O latch de turma anda por POLLING curto, nunca por canal
+persistente}
+\label{adr:latch-por-polling}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A exp-04 (O Que a Foto Conta, 1º ano EF) é a missão mais
+síncrona do catálogo: na Etapa 5 \emph{todos} os tablets da turma congelam numa
+tela sem nenhum botão (a Roda de Conversa) e só o professor os solta, de uma
+vez, pelo \cd{LIBERAR REFLEXÃO FINAL}. O insumo da missão pedia
+\enquote{WebSocket/SSE} para esse destravamento, e a banca já havia rebaixado o
+pedido a ressalva (TEC-06): priorizar SSE ou \emph{polling} HTTP curto, com o
+teto de 4 segundos entre o clique do professor e a reação do tablet.
+
+Três fatos do repositório decidem a questão antes de qualquer preferência:
+
+\begin{enumerate}
+  \item \textbf{Não existe canal persistente de aplicação nesta
+    infraestrutura.} Nenhum WebSocket, nenhum SSE --- e o Cloud Run cobra por
+    instância ocupada, o que faz conexão pendurada de 35 tablets durante uma
+    roda de conversa de 15 minutos custar exatamente o que o \emph{polling}
+    evita.
+  \item \textbf{O problema já foi resolvido três vezes, sempre por
+    \emph{polling} curto}: o \emph{gate} da aula do o-eco-no-grupo
+    (\rota{GET /o-eco-no-grupo/gate}, \(\sim\)5s, com professor movendo a turma
+    de etapa --- o irmão exato deste latch), os momentos coletivos do motor
+    (\rota{/runs}) e o progresso de geração (\rota{/geracao}, 2s).
+  \item \textbf{O \enquote{O que NÃO fazer} da raiz proíbe literalmente} o
+    caminho contrário: \enquote{não adicionar Redis/filas/libs de estado sem
+    gargalo medido}. SSE aqui seria tecnologia nova sem gargalo nenhum.
+\end{enumerate}
+
+\textbf{Decisão.} O latch da exp-04 anda por \emph{polling} HTTP de
+\textbf{3 segundos} na rota \rota{GET /foto-conta/latch} --- leve de propósito
+(sem pacote e sem catálogo: \cd{\{liberado, etapa, agora\}}), com \emph{rate
+limit} por usuário. A liberação é um \cd{UPDATE} idempotente por erro
+(\cd{409 latch-ja-liberado}) em \cd{exp\_04\_turma\_config.latch\_liberado},
+sem \emph{lock} de linha: quem \enquote{recebe o \emph{broadcast}} é o
+\emph{polling} dos tablets. O painel do professor acompanha a turma no mesmo
+desenho (\(\sim\)5s, como o o-eco-no-grupo). O \cd{agora} da resposta é o
+instante do SERVIDOR: o relógio do tablet da escola atrasa, e não é ele que
+decide o momento da aula.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{WebSocket persistente} (o pedido original do insumo): exige um
+    serviço com conexões de longa duração que a plataforma não tem, quebra o
+    modelo de escala do Cloud Run e cria a primeira dependência de estado de
+    conexão do produto --- para ganhar, no melhor caso, 3 segundos de latência
+    numa transição que acontece UMA vez por aula.
+  \item \textbf{SSE}: mais barato que WebSocket, mas ainda é conexão pendurada
+    por tablet, ainda é tecnologia nova no repositório, e não há precedente ---
+    introduzi-la para uma missão de 1º ano criaria o segundo padrão de
+    tempo real que o próximo módulo teria de escolher.
+\end{itemize}
+
+\textbf{Consequências ruins, aceitas.} A latência média do destravamento é
+metade do intervalo (\(\sim\)1,5s, teto 3s + rede) --- dentro do teto de 4s da
+banca, mas não instantânea. E uma turma de 35 tablets a 3s produz
+\(\sim\)12 req/s numa rota de leitura trivial durante a missão --- carga
+desprezível hoje, e é exatamente ela o gatilho abaixo.
+
+\textbf{Gatilho de reavaliação.} Se alguma rede real medir o \emph{polling} de
+latch como fonte relevante de carga (ordem de grandeza: várias dezenas de
+turmas SIMULTÂNEAS na mesma stack, \(>\)200 req/s só de latch) ou se um novo
+requisito exigir latência sub-segundo numa transição de turma, reabrir esta
+decisão --- e aí a resposta provável é UM canal de eventos de turma para a
+plataforma inteira, nunca um WebSocket por experiência.

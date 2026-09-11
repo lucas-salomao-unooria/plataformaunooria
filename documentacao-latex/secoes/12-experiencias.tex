@@ -21,13 +21,15 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
   telemetria, progresso & \arq{unootube}\\
 \cd{exp-03-unoogpt} & \cd{2EM} & estudante &
   telemetria, ia & \arq{unoogpt}\\
-\zebra \cd{exp-06-rastro-boato} & \cd{6EF} & estudante &
+\zebra \cd{exp-04-o-que-a-foto-conta} & \cd{1EF} & estudante &
+  telemetria, progresso & \arq{foto-conta}\\
+\cd{exp-06-rastro-boato} & \cd{6EF} & estudante &
   telemetria, progresso, avaliacao & \arq{rastro-boato}\\
-\cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
+\zebra \cd{exp-07-o-eco-no-grupo} & \cd{7EF} & estudante &
   telemetria, progresso, avaliacao, ia & \arq{o-eco-no-grupo}\\
-\zebra \cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
+\cd{exp-70-vila-do-lume} & \textbf{transversal} & estudante &
   telemetria & \arq{vila}\\
-\cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
+\zebra \cd{exp-90-plano-de-aula} & --- & \textbf{professor} &
   telemetria, ia & \arq{planos}\\
 \zebra \cd{exp-91-bem-estar} & --- & \textbf{professor} &
   telemetria, ia & \arq{bemestar}\\
@@ -50,6 +52,7 @@ mecânica impõe exigência ao \emph{software} --- e não como material pedagóg
 \cd{exp-07-o-eco-no-grupo} & \cd{5179} & \rota{/exp/exp-07-o-eco-no-grupo}\\
 \zebra \cd{exp-06-rastro-boato} & \cd{5181} & \rota{/exp/exp-06-rastro-boato}\\
 \cd{exp-92-plano-de-ensino} & \cd{5180} & \rota{/professor/plano-de-ensino}\\
+\zebra \cd{exp-04-o-que-a-foto-conta} & \cd{5183} & \rota{/exp/exp-04-o-que-a-foto-conta}\\
 \bottomrule
 \end{tabularx}
 
@@ -702,6 +705,55 @@ e o contraste dele passa o \cd{RNF-ACES-001} com folga (\adrr{ADR-68}). A ponte
 \cd{@edu/ui/ds-whatsapp} nasceu com esta missão --- a seção era
 \enquote{sem consumidor} até aqui.
 
+
+
+% ---------------------------------------------------------------------------
+\section{exp-04 --- O Que a Foto Conta}
+\label{sec:exp-04}
+
+\textbf{1º ano · Unidade 1 · clone do Instagram · \cd{instanooria}}
+
+A porta de entrada do Entre Redes, para crianças em alfabetização inicial. No
+mural da turma (\cd{@turma\_mural}), duas fotos do MESMO pátio contam histórias
+opostas: o plano geral com as peças espalhadas e o plano detalhe do brinquedo
+montado. O estudante escolhe a \emph{marca} (Coruja, Estrela ou Sol), explora
+um \emph{feed} fechado de 3 posts, publica UMA foto com UMA legenda --- e Leo e
+Sofia, colegas simulados, comentam em cadência fixa (1,5s e 3,0s) exatamente o
+que a escolha deixou ver e o que escondeu. Depois do eco, \textbf{todos os
+tablets congelam} numa tela sem nenhum botão (a Roda de Conversa) e só o
+professor os solta, pelo \cd{LIBERAR REFLEXÃO FINAL} da tela de resultados. A
+síntese final é formativa: o Globo (\enquote{a foto mostra tudo}) vira retry
+gentil de Nina, e a Lupa conclui com a insígnia \enquote{Olhar de Detetive}.
+
+O que define a missão, tecnicamente:
+
+\begin{itemize}
+  \item \textbf{O latch é do servidor e o canal é polling de 3s} na rota
+    \rota{GET /foto-conta/latch} (\adrr{ADR-94}) --- sem WebSocket e sem SSE,
+    como as demais superfícies síncronas da plataforma.
+  \item \textbf{A matriz causal do Aha nunca entra no bundle}: o boot serve o
+    pacote SEM \cd{comentarios} (\cd{Omit} estrutural no contrato), e o par
+    escolhido volta na resposta de \rota{POST /foto-conta/publicar}, uma linha
+    por vez --- o \cd{factual} do UnooTube desta missão.
+  \item \textbf{Acessibilidade de 1º EF é requisito}: CAIXA ALTA, máx.\ 8
+    palavras por texto, pictograma e locução em toda instrução (redundância
+    tripla). O áudio TOLERA ausência: as locuções profissionais são pendência
+    de produção e a tela degrada para texto+ícone.
+  \item \textbf{As duas famílias do DS convivem no mesmo bundle}: E1/E5/E6 são
+    casca Unooria (\cd{@edu/ui/ds}); E2--E4 são o clone
+    (\cd{@edu/ui/ds-insta}, importando do subcaminho do pacote).
+  \item \textbf{O pacote da aula é curado pelo professor}: a IA (Vertex, com
+    quota) escreve legendas e comentários adaptados ao tema; a aprovação
+    revalida com o MESMO \emph{schema}; sem aprovação, o banco curado padrão
+    (\enquote{O Mistério das Peças no Pátio}) assume sozinho.
+  \item \textbf{Zerar a turma ARQUIVA por tentativa} (\cd{tentativa} na config
+    e nas \emph{runs}): nada é apagado, e a reaplicação recomenda trocar o
+    tema (PED-13).
+  \item \textbf{100\% formativa}: sem \emph{score}, sem \emph{ranking}; a
+    lista de \emph{hesitação de leitura} (>60s na decisão) nomeia crianças SÓ
+    na rota autenticada do professor, para mediação --- o modelo e a
+    telemetria só conhecem o id opaco (DAD-07).
+\end{itemize}
 
 % ---------------------------------------------------------------------------
 \section{exp-06 --- O Rastro do Boato}

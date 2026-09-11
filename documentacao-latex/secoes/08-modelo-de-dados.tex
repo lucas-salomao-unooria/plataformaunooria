@@ -842,6 +842,41 @@ runtime, e só em produção, que é onde ela existe.
 \end{atencao}
 
 
+\section{As três tabelas da exp-04}
+\label{sec:tabelas-exp04}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_04\_turma\_config} & A aula, por \textbf{turma}: tema, nível de
+  leitura, o pacote APROVADO (JSONB validado pelo mesmo \emph{schema} da
+  geração; nulo = banco curado padrão), o \cd{latch\_liberado} da Roda e a
+  \cd{tentativa} corrente. Chave \cd{(escola\_id, turma\_id)}.\\
+\zebra \cd{exp\_04\_runs} & A execução de um estudante numa
+  \textbf{tentativa}: etapa (\emph{CHECK} de vocabulário fechado), marca, o
+  par foto+legenda escolhido, a latência de decisão (teto de 2h no
+  \emph{CHECK}: acima é aba esquecida) e a reflexão --- que só aceita
+  \cd{'lupa'}, porque o Globo é \emph{retry} e vive no contador. O reset da
+  turma INCREMENTA a tentativa em vez de apagar: as \emph{runs} antigas ficam
+  imutáveis na tentativa anterior (DAD-06). Única por
+  \cd{(escola\_id, turma\_id, estudante\_id, tentativa)}.\\
+\cd{exp\_04\_posts\_turma} & A publicação no mural coletivo, assinada pela
+  \textbf{marca} (coruja/estrela/sol) --- nome de criança não existe aqui.
+  1:1 com a \emph{run} (\cd{UNIQUE run\_id}): toque duplo e \emph{retry} de
+  rede não criam segundo post.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+O congelamento da Etapa 5 NÃO é tabela própria: é o par
+\cd{latch\_liberado} (config da turma) × etapa \cd{roda} (da \emph{run}).
+A liberação é um \cd{UPDATE} simples e idempotente por erro
+(\cd{409 latch-ja-liberado}), sem \emph{lock} de linha --- quem
+\enquote{recebe o \emph{broadcast}} é o \emph{polling} dos tablets
+(\adrr{ADR-94}).
+\end{regra}
+
 \section{As quatro tabelas da exp-06}
 \label{sec:tabelas-exp06}
 
@@ -1100,6 +1135,10 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   parametrizado na configuração curricular por escola/ano (\adrr{ADR-73}).\\
 \zebra \arq{20260906170000\_exp\_06\_rastro\_boato} & Tabelas de sessão e simulação de rede da
   exp-06 (Rastro do Boato) com tema escuro e topologia restrita (\adrr{ADR-72}).\\
+\arq{20260910150000\_exp\_04\_o\_que\_a\_foto\_conta} & As três tabelas da
+  missão do 1º ano (config da turma com o latch, \emph{runs} por tentativa e
+  posts do mural), com \emph{CHECK}, RLS e \emph{GRANT} no bloco manual
+  (\adrr{ADR-94}).\\
 \arq{20260907120000\_exp\_92\_planejamento\_sempre\_semanal} & Reestruturação do período de
   planejamento com cardinalidade estritamente semanal de 40 semanas (\adrr{ADR-76}).\\
 \zebra \arq{20260907130000\_permissao\_downloads} & Liberação do token \cd{allow-downloads}
