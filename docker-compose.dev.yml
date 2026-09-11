@@ -378,6 +378,27 @@ services:
       deps:
         condition: service_completed_successfully
 
+  exp-08:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-08-manifesto-ia
+    command: pnpm exec vite --host 0.0.0.0 --port 5182 --strictPort
+    ports:
+      - "5182:5182"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+  exp-04:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-04-o-que-a-foto-conta
+    command: pnpm exec vite --host 0.0.0.0 --port 5183 --strictPort
+    ports:
+      - "5183:5183"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
+
 volumes:
   pgdata:
   pnpm-store:
