@@ -281,12 +281,16 @@ await suite(
     }
 
     /* Sem nenhuma partida completa na turma, o vermelho tem de dizer ISTO — a
-       pré-condição de dado que faltou —, nunca um timeout de seletor. */
+       pré-condição de dado que faltou —, nunca um timeout de seletor.
+
+       O rótulo afirma o que é VERDADE quando passa: `exigir` imprime o mesmo
+       texto com ✓ e com ✗, e um "nenhum estudante tem..." marcado de verde
+       contradiz, na linha de cima, o retrato que acabou de ser provado. */
     r.exigir(
       retratoProvado,
-      `nenhum estudante de ${TURMA} tem a ÚLTIMA partida completa com retrato — não há onde ` +
-        "provar os dez valores. Isto é pré-condição de dado, não defeito da tela: rode " +
-        "estudante/05-vila-do-lume (que termina uma partida) e repita esta suíte.",
+      `ao menos um estudante de ${TURMA} tem a ÚLTIMA partida completa, e o retrato foi provado ` +
+        "nele — sem isso não há onde provar os dez valores, e a falta é pré-condição de dado, " +
+        "não defeito da tela: rode estudante/05-vila-do-lume (que termina uma partida) e repita.",
     );
   },
 );
