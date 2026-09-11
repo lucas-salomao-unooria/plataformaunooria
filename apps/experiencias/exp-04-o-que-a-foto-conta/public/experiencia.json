@@ -8,7 +8,6 @@
   "capabilities": ["telemetria", "progresso"],
   "viewport": "mobile",
   "publico": "estudante",
-  "permissoes": ["autoplay"],
   "verbos": {
     "interacted": "Toques em marca, curtida, foto, legenda e comentários",
     "completed": "Publicação do post e conclusão da missão",
