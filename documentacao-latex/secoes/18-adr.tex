@@ -9,11 +9,11 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{93 decisões escritas}, numeradas até ADR-95: a \adrr{ADR-93} e a
-\adrr{ADR-94} estão \textbf{reservadas} por frentes em curso e entram no dia em
-que elas fecharem. A lacuna é deliberada, e é a regra deste capítulo em uso ---
-o número se reserva contra as frentes ABERTAS, não contra a branch integrada ---,
-que é o motivo de a \adrr{ADR-95} ter saído antes das duas. A ADR-65
+São \textbf{94 decisões escritas}, numeradas até ADR-95: a \adrr{ADR-94}
+está \textbf{reservada} pela frente paralela que corria no mesmo dia e entra no
+dia em que ela fechar. A lacuna é deliberada, e é a regra deste capítulo em uso
+--- o número se reserva contra as frentes ABERTAS, não contra a branch
+integrada ---, que é o motivo de a \adrr{ADR-95} ter saído antes dela. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -137,6 +137,7 @@ que a cercam.
 \adrr{ADR-90} & A suíte da API roda em UM \emph{worker} & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
 \adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-93} & Sincronização de sala por \emph{polling} HTTP, não WebSocket & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-95} & A sessão do hub dura 2h de inatividade, igual para todo papel & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
@@ -6883,6 +6884,105 @@ viu a revelação; aí o marco vira coluna e a proteção passa a valer pelos do
 caminhos.
 
 % ---------------------------------------------------------------------------
+\section{ADR-93 --- Sincronização de sala por \emph{polling} HTTP curto, não por WebSocket}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A exp-08 (\emph{O Manifesto da IA}, 8º ano, unidade 4) tem um
+ponto de sincronização coletiva: ao fim da Etapa 3, o professor congela as telas
+da turma para um debate oral de dez minutos --- o \enquote{Checkpoint~A} do
+insumo. O \emph{handoff} de engenharia especificou o mecanismo como um
+\emph{broadcast} \cd{hub:pause} por WebSocket, despachado pela rota
+\cd{POST /manifesto-ia/turmas/:turmaId/pausar} para todos os clientes
+conectados daquela turma.
+
+\textbf{Esse WebSocket não existe.} A plataforma roda em Cloud Run, e não há
+infraestrutura de WebSocket de aplicação em nenhum dos ambientes: nem o
+\emph{load balancer} está configurado para conexão persistente, nem a API mantém
+estado de conexão --- ela é \emph{stateless} por desenho, com escalonamento
+horizontal e instâncias que somem sem aviso. Uma conexão persistente por
+estudante criaria estado de sessão na instância, que é justamente o que o
+modelo de escala do produto recusa. A banca técnica registrou a ressalva
+\textbf{TEC-06} e apontou a alternativa que o próprio protocolo de negociação do
+\emph{handoff} previa.
+
+\textbf{Decisão.} O estado coletivo de sala é uma \textbf{linha em tabela}, e o
+cliente a lê por \textbf{\emph{polling} HTTP curto de 5 segundos} numa rota
+dedicada e leve.
+
+\begin{enumerate}
+  \item \textbf{A verdade é uma linha por turma.} \cd{exp\_08\_gates\_turma}
+    guarda \cd{etapa} $\in$ \{\cd{missao}, \cd{debate}\}, com RLS por
+    \cd{escola\_id} como toda tabela de dado de aula. O clique do professor é um
+    \cd{upsert} idempotente.
+  \item \textbf{A rota do \emph{polling} é deliberadamente magra.}
+    \cd{GET /manifesto-ia/gate} devolve três campos --- a etapa da turma, o
+    passo efetivo reconciliado e o instante do SERVIDOR --- e não toca no
+    catálogo, na conversa nem no percurso. Ela é ordens de grandeza mais barata
+    que a rota de sessão.
+  \item \textbf{O \emph{polling} só roda onde o congelamento tem efeito.}
+    \cd{deveObservarOGate} (\arq{src/lib/maquina-estados.ts}) o liga de
+    \cd{decisao} a \cd{percurso}. Ligado durante a missão inteira, uma turma de
+    35 custaria 7~req/s pelos 50 minutos; assim, custa isso durante a Etapa~4.
+  \item \textbf{A reconciliação é função PURA e compartilhada.}
+    \cd{passoEfetivo(passo, etapa)} mora em \arq{regras/passos.ts} na API e é
+    espelhada no cliente, porque os dois precisam chegar à mesma resposta ---
+    duas implementações divergentes seriam a tela discordando do servidor.
+\end{enumerate}
+
+\textbf{O gate mexe no TETO, nunca no piso}, e isto é desenho, não detalhe. Na
+exp-06 a etapa da turma é uma porta que o professor ABRE, e por isso ela eleva o
+piso. Aqui o congelamento é uma interrupção OPCIONAL --- a especificação admite
+a sessão individual assíncrona, e sem clique nenhum a missão corre inteira. Se
+\cd{debate} também subisse o piso, apertar \enquote{Pausar para Debate}
+empurraria para a frente quem ainda estava auditando a máquina, e são justamente
+essas crianças que o debate tenta alcançar.
+
+\textbf{O custo, declarado: até 5 segundos de latência.} O congelamento não é
+simultâneo; ele chega em até um ciclo de \emph{polling}. É aceitável porque o
+que ele serve é um debate de dez minutos conduzido por uma pessoa falando ---
+não um jogo em tempo real. O texto do painel diz isso ao professor
+(\enquote{a pausa leva até 5 segundos para chegar nas telas}) em vez de deixá-lo
+descobrir olhando a sala.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{WebSocket de aplicação}, como o \emph{handoff} pedia. Exige
+    infraestrutura que não existe (conexão persistente no \emph{load balancer})
+    e estado de conexão numa API \emph{stateless} que escala horizontalmente.
+    Seria a primeira peça do produto a não sobreviver a uma instância morrendo.
+  \item \emph{Server-Sent Events (SSE)}. Mais barato que WebSocket e unidirecional,
+    que é o formato do problema --- mas ainda é conexão longa, e Cloud Run tem
+    teto de \emph{request timeout}: a conexão cairia e voltaria em ciclo, o que
+    é \emph{polling} com mais partes móveis. Para um dado de dois valores lido
+    durante dez minutos, não paga.
+  \item \emph{Pub/Sub para o navegador.} Já existe Pub/Sub no produto (a
+    telemetria), mas ele é de saída e assíncrono; entregá-lo ao cliente exigiria
+    um \emph{gateway} de \emph{fan-out}, que é o serviço novo que a doutrina do
+    projeto recusa sem gargalo medido.
+  \item \emph{Canal de comandos do hub pela ponte da SDK.} Seria elegante --- o
+    hub já fala com o iframe por \cd{postMessage} --- mas o hub não sabe quando a
+    turma foi congelada: ele também precisaria consultar a API. O \emph{polling}
+    apenas mudaria de lugar, ganhando um salto.
+\end{itemize}
+
+\textbf{Consequências ruins.} (1) Há uma janela de até 5~s em que dois
+estudantes da mesma turma estão em estados diferentes --- um congelado, o outro
+não. (2) O \emph{polling} continua rodando com a aba em segundo plano, e o
+navegador o desacelera de formas que variam por sistema: uma tela minimizada
+pode demorar mais que 5~s para congelar. (3) A rota de \cd{gate} é a mais
+chamada da experiência, então uma regressão de desempenho nela aparece como
+\enquote{a aula ficou lenta} sem nada apontar para ela --- por isso ela não faz
+JOIN e não lê catálogo.
+
+\textbf{Gatilho de reavaliação.} Dois. (1) Uma experiência pedir sincronização
+com granularidade abaixo de um segundo (um jogo coletivo, um cronômetro
+compartilhado visível); aí o problema muda de classe e SSE volta à mesa,
+medindo o teto de \emph{timeout} do Cloud Run. (2) A soma dos \emph{pollings} de
+todas as experiências aparecer no custo ou na latência do banco; o caminho
+então é um cache de leitura por turma na frente da rota de \cd{gate}, não trocar
+o mecanismo.
+
 \section{ADR-95 --- A sessão do hub dura 2h de INATIVIDADE, e vale igual para
 todo papel}
 \label{adr:sessao-duas-horas}

@@ -156,6 +156,10 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\texttt{/rastro-boato/professor/*}\desc{prof., gestor --- material do guia}};
   \node[c4component, text width=27mm] (ecop) at (5.7,-13.3)
     {\texttt{/o-eco-no-grupo/professor/*}\desc{prof., gestor --- material do guia}};
+  \node[c4component, text width=27mm] (mia) at (9.1,-13.3)
+    {\texttt{/manifesto-ia/*}\desc{estudante}};
+  \node[c4component, text width=27mm] (miat) at (12.5,-13.3)
+    {\texttt{/manifesto-ia/turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
 
 \end{tikzpicture}}
 \caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
@@ -171,7 +175,11 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   \textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
   quatro \texttt{/<slug>/professor/*} servem o \textbf{material do guia da
   aula}: catálogo com gabarito, sem \texttt{escolaId} e sem \emph{tenancy},
-  em que o que a guarda protege é só o papel (\adrr{ADR-86}).}
+  em que o que a guarda protege é só o papel (\adrr{ADR-86}). A exp-08
+  \textbf{não} tem uma dessas, e a ausência é o desenho: o material de mediação
+  dela é o pacote CURADO por turma, então ele mora em
+  \texttt{/manifesto-ia/turmas/:id/conteudo} --- com \emph{tenancy}, porque o
+  conteúdo não é igual para todo contrato.}
 \label{fig:mapa-rotas}
 \end{figure}
 
@@ -486,6 +494,68 @@ para o \cd{admin-contrato}. A separação física é o que garante que a próxim
 adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \arq{src/vila/}.
 \end{decisao}
+
+\subsection{O Manifesto da IA (exp-08)}
+
+\begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Papel} & \thd{O que faz}\\
+\midrule
+\rota{GET /manifesto-ia/sessao} & estudante & O estado, o pacote da turma e a
+  conversa \textbf{reconstituída} --- é o que faz um F5 devolver a tela exata.
+  Os questionamentos saem \textbf{sem} a réplica da máquina e as cláusulas
+  \textbf{sem} o argumento de mediação.\\
+\zebra \rota{GET /manifesto-ia/gate} & estudante & O \emph{polling} de 5~s do
+  Checkpoint~A (\adrr{ADR-93}). Três campos, sem catálogo: é a rota mais chamada
+  da experiência, e por isso ela não faz \emph{JOIN}.\\
+\rota{POST /manifesto-ia/disparar} & estudante & Envia um questionamento e
+  devolve a defesa da máquina. \textbf{A réplica só existe nesta resposta.} Quando o
+  segundo questionamento distinto entra, o passo anda para a decisão
+  \textbf{no servidor}.\\
+\zebra \rota{POST /manifesto-ia/clausula} & estudante & O PICO, e \emph{latch}.
+  Cobra a cota de auditoria (409 \cd{auditoria-insuficiente}) e
+  \textbf{compila} o manifesto. Nada é corrigido: as quatro cláusulas são
+  válidas.\\
+\rota{POST /manifesto-ia/percurso} & estudante & As duas palavras-chave e o
+  parágrafo autoral. Dado pessoal é recusado com \textbf{422} e não gravado;
+  durante o debate responde 409 \cd{debate-em-andamento}.\\
+\zebra \rota{POST /manifesto-ia/concluir} & estudante & O \emph{latch} final.
+  \textbf{Não recebe \cd{score}} --- a missão não pontua.\\
+\rota{GET /manifesto-ia/turmas/:id/painel} & prof., gestor & Progresso e
+  escolha por estudante, mais a distribuição das quatro cláusulas e a nuvem de
+  palavras-chave. \textbf{Sem nota, sem nível e sem taxa de acerto.} O parágrafo
+  autoral sai aqui e só aqui.\\
+\zebra \rota{GET /manifesto-ia/turmas/:id/conteudo} & prof., gestor & O pacote
+  da turma \textbf{com} o material de mediação: a réplica de cada questionamento
+  e o argumento de cada cláusula.\\
+\rota{POST .../gerar-conteudo} & prof., gestor & A única chamada de IA da
+  experiência, \textbf{pré-aula}. Devolve \textbf{rascunho} --- não persiste
+  nada.\\
+\zebra \rota{POST .../homologar} & prof., gestor & O clique em \enquote{Aprovar
+  Conteúdo da Turma}: o único lugar que liga
+  \cd{aprovado\_por\_professor}.\\
+\rota{POST .../gate} & prof., gestor & \enquote{Pausar para Debate} /
+  \enquote{Retomar Missão}. Idempotente: é o clique que se dá duas vezes.\\
+\zebra \rota{DELETE /manifesto-ia/turmas/:id} & prof., gestor & Zerar a turma.
+  Apaga a execução e \textbf{preserva} \cd{exp\_08\_conteudo\_turma}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Duas rotas de escrita e a de leitura do pacote são por TURMA, com
+\emph{tenancy}} --- diferente das quatro \rota{/<slug>/professor/*} de catálogo.
+A razão é que o conteúdo desta missão é parametrizável: o caso da escola, as
+réplicas e as cláusulas podem ter sido reescritos pelo professor daquela turma,
+e servir um catálogo global faria o guia projetar uma fala que ninguém recebeu.
+\end{regra}
+
+\begin{atencao}
+\rota{POST .../gerar-conteudo} nunca falha para fora. Sem saldo de quota, com o
+provedor fora do ar ou com a saída reprovada pela validação, ela devolve o
+\textbf{banco curado} com \cd{usouIa: false}, e a tela diz isso. Bloquear o
+professor seria o único jeito de esta rota estragar a aula --- ele precisa poder
+aprovar o pacote curado com o Vertex indisponível.
+\end{atencao}
 
 \subsection{As rotas que alimentam o guia da aula}
 

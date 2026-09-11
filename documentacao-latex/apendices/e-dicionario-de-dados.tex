@@ -1295,6 +1295,172 @@ regeração sobrescreve em vez de acumular, porque duas versões da mesma semana
 não têm como conviver no caderno do professor.
 \end{nota}
 
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp\_08\_conteudo\_turma}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, turma\_id)} & PK composta & O pacote curado é \textbf{por
+  turma}: cada professor contextualiza os dilemas com o caso da escola dele.\\
+\zebra \cd{caso\_contextual},\newline \cd{foco\_prioritario} & \cd{TEXT} & O que
+  o professor escreveu no formulário. Guardado para ele reencontrar o que pediu
+  --- não é insumo de nenhuma regra.\\
+\cd{contexto} & \cd{JSONB} & Escola, título do caso e a premissa autoritária com
+  que a máquina abre. \emph{CHECK} \cd{jsonb\_typeof = 'object'}.\\
+\zebra \cd{prompts\_json} & \cd{JSONB} & Os 3 questionamentos \textbf{com as
+  réplicas}. \emph{CHECK} \cd{jsonb\_array\_length = 3}.\\
+\cd{clausulas\_json} & \cd{JSONB} & As 4 cláusulas \textbf{com os argumentos de
+  mediação}. \emph{CHECK} \cd{= 4}. \cd{JSONB} e não tabelas-filhas: o pacote é
+  lido e escrito SEMPRE inteiro --- o professor aprova o conjunto, não um
+  prompt de cada vez.\\
+\zebra \cd{aprovado\_por\_professor} & \cd{BOOLEAN} & \textbf{O portão da
+  exigência 8.2.} Falso = rascunho, e rascunho \textbf{não chega ao estudante}:
+  a experiência lê o banco curado da Unooria. É o único booleano do produto que
+  separa curadoria de publicação automática.\\
+\cd{usou\_banco\_default} & \cd{BOOLEAN} & O professor manteve o pacote da
+  Unooria em vez de gerar com IA. A resposta \enquote{sim} não é problema: o
+  banco é homologado.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Esta é a única tabela da exp-08 que sobrevive ao \enquote{Zerar
+turma}.} A curadoria custou tempo do professor, e apagá-la junto obrigaria a
+refazer o preparo para aplicar a missão na turma seguinte no mesmo dia.
+\end{regra}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp\_08\_sessoes}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id)} & PK composta & Uma sessão por estudante e por
+  escola.\\
+\zebra \cd{turma\_id} & \cd{UUID?} & Denormalizado da identidade: o painel e o
+  gate consultam por turma o tempo todo. Reescrito em toda mutação --- uma linha
+  com a turma antiga desapareceria da tela do professor novo.\\
+\cd{passo} & \cd{TEXT} & \emph{CHECK} \cd{IN ('briefing','chat','decisao',}
+  \cd{'manifesto','percurso','podcast','fim')}. A ordem é
+  \arq{regras/passos.ts}; \emph{CHECK} e não \cd{enum} porque um
+  \cd{ALTER TYPE} amarraria toda mudança de roteiro a uma migração.\\
+\zebra \cd{clausula\_id} & \cd{TEXT?} & A salvaguarda fixada --- \emph{latch}.
+  \emph{CHECK} contra os quatro ids do catálogo. \textbf{Não é gabarito}: as
+  quatro são válidas, e o \emph{CHECK} existe para o id inventado, que produziria
+  uma tela mostrando uma cláusula que o servidor não reconhece.\\
+\cd{latencia\_clausula\_seg} & \cd{INT?} & Segundos entre a concessão da máquina
+  e a submissão. Cronometrado pelo \textbf{cliente}: a latência da API não é o
+  dado. \emph{CHECK} 0--7200 --- acima disso é aba esquecida aberta.\\
+\zebra \cd{confirmou\_provocacao} & \cd{BOOLEAN} & A criança clicou em menos de
+  5\,s e passou pela réplica provocativa. É \emph{indicative} e alimenta a
+  hipótese de exploração mínima --- \textbf{nunca} avalia ninguém.\\
+\cd{manifesto\_markdown} & \cd{TEXT?} & O documento promulgado, compilado no
+  \textbf{servidor}. Gravado porque é a EVIDÊNCIA do percurso: o que o professor
+  lê e o que a criança copiou têm de ser o mesmo texto, e recompilar com a
+  \emph{copy} revisada mudaria um documento já assinado. \emph{CHECK}:
+  \cd{(clausula\_id IS NULL) = (manifesto\_markdown IS NULL)}.\\
+\zebra \cd{versao\_instrumento} & \cd{TEXT} & \cd{'1.0.0'}. Na linha, para
+  permitir reprocessamento quando o catálogo mudar.\\
+\cd{concluido\_em} & \cd{TIMESTAMPTZ?} & \emph{CHECK}:
+  \cd{(passo = 'fim') = (concluido\_em IS NOT NULL)}. Uma tela dizendo
+  \enquote{missão cumprida} sobre uma linha sem carimbo é um relatório que
+  mente.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Não há coluna \cd{score}}, e é a única tabela de sessão do catálogo sem
+uma. A exp-06 tem porque o \cd{exp:concluir} da ponte carrega o campo; aqui a
+missão \textbf{não pontua} --- as quatro cláusulas valem igual, e um número na
+linha seria uma nota que nenhuma tela mostra e que alguém um dia usaria para
+ordenar crianças.
+\end{regra}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp\_08\_auditorias}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{BIGSERIAL} & Exige \cd{GRANT USAGE} na \textbf{sequência} para a
+  \emph{role} de runtime --- a quarta aparição da armadilha.\\
+\zebra \cd{prompt\_id} & \cd{TEXT} & Id do catálogo. \cd{UNIQUE (escola\_id,}
+  \cd{estudante\_id, prompt\_id)}: reenviar o mesmo questionamento não é
+  auditoria nova, e o índice faz a dedupe valer mesmo se um caminho novo
+  esquecer de checar.\\
+\cd{iteracao} & \cd{INT} & A ordem do disparo na conversa --- 1 e 2 são os
+  obrigatórios, 3 é o extra. É por ela que a conversa é reconstituída depois de
+  um F5. \emph{CHECK} $\geq 1$: zero seria uma fala fora da linha do tempo.\\
+\zebra \cd{latencia\_seg} & \cd{INT} & Calibragem de fluxo, \textbf{não} medida
+  de mérito: ninguém é avaliado por ler rápido. \emph{CHECK} 0--3600.\\
+\bottomrule
+\end{tabularx}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp\_08\_respostas\_percurso}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, estudante\_id)} & PK composta & Um percurso por estudante.\\
+\zebra \cd{palavras\_chave\_tags} & \cd{TEXT[]} & Exatamente 2, \textbf{e
+  distintas}: \emph{CHECK} \cd{cardinality = 2}, \cd{tags[1] <> tags[2]} e
+  \cd{<@ ARRAY['autonomia',} \cd{'transparencia','justica','privacidade']}.
+  Repetir deixaria um \emph{slot} logicamente vazio dentro de um \emph{array}
+  cheio, e a nuvem da turma contaria a mesma criança duas vezes na mesma
+  palavra. São ids sem acento --- identificador, não texto de tela
+  (\adrr{ADR-91}).\\
+\cd{justificativa\_texto} & \cd{TEXT} & \textbf{O parágrafo autoral: caixa
+  livre escrita por menor de idade.} \emph{CHECK}
+  \cd{char\_length(btrim(...)) BETWEEN 20 AND 800} --- o \cd{btrim} cobre o
+  piso, que o tipo não cobre: vinte espaços contariam como percurso entregue no
+  painel. Está em \cd{CHAVES\_REDIGIDAS} nos dois nomes
+  (\cd{justificativaTexto} e \cd{justificativa\_texto}), porque a comparação do
+  \emph{logger} é por nome INTEIRO e \cd{texto} não os cobria.\\
+\zebra \cd{chars\_count} & \cd{INT} & O tamanho, para a leitura agregada não
+  precisar tocar o texto. \emph{CHECK} 20--800.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+\textbf{Sem coluna de moderação}, e a ausência é a decisão: o texto com dado
+pessoal é recusado com \textbf{422} e não chega a esta tabela. Não há registro
+moderado a marcar --- e um dado que não foi gravado não vaza em \emph{backup},
+em \emph{dump} de diagnóstico nem em \emph{log}.
+
+\textbf{Retenção:} vinculada à vigência contratual escolar, \textbf{sem rotina
+ativa de expurgo programado} (\adrr{ADR-13}). A frase é literal e a escolha é
+deliberada: não existe \emph{scheduler} de expurgo na plataforma, e declarar
+\enquote{um ano letivo} aqui seria escrever um prazo que ninguém cumpre.
+\end{regra}
+
+% ---------------------------------------------------------------------------
+\subsection{\cd{exp\_08\_gates\_turma}}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{(escola\_id, turma\_id)} & PK composta & O Checkpoint~A é da
+  \textbf{turma}.\\
+\zebra \cd{etapa} & \cd{TEXT} & \emph{CHECK} \cd{IN ('missao','debate')}. É
+  \textbf{esta linha} que o \emph{polling} de 5\,s lê, porque não há WebSocket
+  de aplicação no Cloud Run (\adrr{ADR-93}).\\
+\bottomrule
+\end{tabularx}
+
+\begin{nota}
+Duas colunas, e o gate é \textbf{opcional}: a missão corre inteira sem ninguém
+apertar nada. Por isso \cd{debate} mexe só no TETO do passo do estudante, nunca
+no piso --- subir o piso empurraria para a frente quem ainda estava auditando a
+máquina, e são justamente essas crianças que o debate tenta alcançar.
+\end{nota}
+
 \subsection{\cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}}
 
 \begin{tabularx}{\linewidth}{@{}L{32mm}L{20mm}X@{}}

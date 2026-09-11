@@ -21,6 +21,7 @@
 #   exp-03  Vite do unooGPT, a Missão Tempestade (5178)
 #   exp-07  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
 #   exp-06  Vite de O Rastro do Boato, o clone de mensageiro (5181)
+#   exp-08  Vite de O Manifesto da IA, o clone do assistente (5182)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -208,7 +209,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182
       # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
       #
       # LIGADA por default em dev, com credencial de dev à vista: sem as duas
