@@ -33,6 +33,7 @@ import {
   ETAPA_DA_ACAO,
   PASSOS,
   aguardandoATurma,
+  congeladoParaDebate,
   avancarAte,
   normalizarEtapa,
   normalizarPasso,
@@ -179,8 +180,31 @@ describe("passos e o Checkpoint A (ADR-93)", () => {
 
   test("`debate` segura em `manifesto` — a assinatura espera o debate oral", () => {
     expect(passoEfetivo("percurso", "debate")).toBe("manifesto");
-    expect(passoEfetivo("podcast", "debate")).toBe("manifesto");
     expect(aguardandoATurma("percurso", "debate")).toBe(true);
+  });
+
+  /**
+   * O DEFEITO QUE A SUÍTE DE POSTGRES ENCONTROU, agora preso aqui também.
+   *
+   * O congelamento era um TETO, e `aguardandoATurma` era
+   * `passoEfetivo !== passo`. O estudante parado exatamente em `manifesto`
+   * ficava com os dois iguais — `false` — e **o overlay de pausa não aparecia
+   * para quem tinha acabado de ler o documento**, que é quem o debate existe
+   * para reunir. Passava no typecheck e nestes testes.
+   */
+  test("o congelamento é uma JANELA: acende para quem ESTÁ em `manifesto`", () => {
+    expect(congeladoParaDebate("manifesto", "debate")).toBe(true);
+    expect(aguardandoATurma("manifesto", "debate")).toBe(true);
+    expect(passoEfetivo("manifesto", "debate")).toBe("manifesto");
+  });
+
+  test("e NÃO alcança quem já assinou — o latch é do estudante, não da turma", () => {
+    // Congelar quem terminou tiraria da tela um percurso já protocolado.
+    for (const passo of ["podcast", "fim"] as const) {
+      expect(congeladoParaDebate(passo, "debate")).toBe(false);
+      expect(passoEfetivo(passo, "debate")).toBe(passo);
+      expect(aguardandoATurma(passo, "debate")).toBe(false);
+    }
   });
 
   test("`debate` NÃO empurra para a frente quem está atrás — mexe só no teto", () => {

@@ -72,20 +72,34 @@ const ORDEM: Record<Passo, number> = PASSOS.reduce(
   {} as Record<Passo, number>,
 );
 
+/** Onde o congelamento começa: quem leu o manifesto é quem o debate alcança. */
+const PRIMEIRO_CONGELADO: Passo = "manifesto";
+/** E onde ele termina: quem já assinou não é mais alcançado. */
+const ULTIMO_CONGELADO: Passo = "percurso";
+
 /**
- * Onde cada etapa da turma coloca, no MÁXIMO, a tela do estudante.
+ * O Checkpoint A alcança ESTE estudante?
  *
- * `debate` para em `manifesto`: o estudante lê o documento promulgado, e a
- * assinatura individual (Etapa 5) espera o debate acabar. É o gatilho de
- * handoff do Checkpoint A — a professora quer que a turma confronte os
- * argumentos ANTES de cada um justificar a escolha dele por escrito.
+ * É uma JANELA (`manifesto`..`percurso`), e não um teto, e a diferença foi
+ * medida: com teto, quem estava exatamente em `manifesto` não era considerado
+ * congelado — `passoEfetivo` devolvia o próprio passo, `aguardandoATurma` dava
+ * `false`, e **o overlay de pausa não aparecia justamente para quem tinha
+ * acabado de ler o documento**, que é quem o debate existe para reunir. A suíte
+ * de Postgres pegou isso; o typecheck e os testes de regra pura, não.
  *
- * `missao` não tem teto: `fim` é o último passo.
+ * As duas bordas são regra de produto, não arredondamento:
+ *
+ * - **Antes de `manifesto` ninguém é tocado.** Pausar não empurra para a frente
+ *   quem ainda audita a máquina — são justamente essas crianças que o debate
+ *   tenta alcançar, e puxá-las para o documento as faria pular a auditoria.
+ * - **Depois de `percurso` ninguém é tocado.** Quem já assinou terminou: o
+ *   latch é do estudante, não da turma. Congelá-lo tiraria da tela um percurso
+ *   que já está protocolado.
  */
-const TETO: Record<Etapa, Passo> = {
-  missao: "fim",
-  debate: "manifesto",
-};
+export function congeladoParaDebate(passo: Passo, etapa: Etapa | null): boolean {
+  if (etapa !== "debate") return false;
+  return ORDEM[passo] >= ORDEM[PRIMEIRO_CONGELADO] && ORDEM[passo] <= ORDEM[ULTIMO_CONGELADO];
+}
 
 export function normalizarPasso(bruto: string | null | undefined): Passo {
   return (PASSOS as readonly string[]).includes(bruto ?? "")
@@ -108,14 +122,18 @@ export function normalizarEtapa(bruta: string | null | undefined): Etapa {
  * congelamento que ninguém vai soltar seria um beco sem saída.
  */
 export function passoEfetivo(passo: Passo, etapa: Etapa | null): Passo {
-  if (!etapa) return passo;
-  const teto = TETO[etapa];
-  return ORDEM[passo] > ORDEM[teto] ? teto : passo;
+  return congeladoParaDebate(passo, etapa) ? PRIMEIRO_CONGELADO : passo;
 }
 
-/** A turma está segurando este estudante? É o que acende o overlay de pausa. */
+/**
+ * A turma está segurando este estudante? É o que acende o overlay de pausa.
+ *
+ * É a MESMA condição do congelamento, e não `passoEfetivo !== passo` como era
+ * antes: as duas divergiam exatamente no estudante parado em `manifesto`, e ele
+ * é o caso mais comum do Checkpoint A.
+ */
 export function aguardandoATurma(passo: Passo, etapa: Etapa | null): boolean {
-  return passoEfetivo(passo, etapa) !== passo;
+  return congeladoParaDebate(passo, etapa);
 }
 
 /** O passo seguinte, ou o próprio se já é o último. */

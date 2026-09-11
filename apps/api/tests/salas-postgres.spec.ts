@@ -29,6 +29,8 @@ const INSTA = "exp-01-instanooria";
 const VILA = "exp-70-vila-do-lume";
 const TUBE = "exp-02-unootube";
 const PLANO = "exp-90-plano-de-aula";
+/** A segunda missão do 8º ano (unidade 4). Entrou em 2026-09-10. */
+const MANIFESTO = "exp-08-manifesto-ia";
 
 const ids = { turma8A: "", turma8B: "", prof8A: "", prof8B: "", ana: "", bruno: "" };
 
@@ -238,7 +240,10 @@ describe("a sala do professor", () => {
     expect(sala.turma.nome).toBe("8A");
 
     const ids8A = sala.missoes.map((m) => m.expId);
-    expect(ids8A).toEqual([VILA, INSTA]);
+    /* A ORDEM é regra: transversal primeiro (não pertence a unidade nenhuma),
+       depois por `unidade` do manifesto — INSTA é a 1 e MANIFESTO é a 4. Sem
+       isso a criança encontraria o Ato 2 antes do Ato 1. */
+    expect(ids8A).toEqual([VILA, INSTA, MANIFESTO]);
     expect(ids8A).not.toContain(TUBE);
 
     const insta = sala.missoes.find((m) => m.expId === INSTA);

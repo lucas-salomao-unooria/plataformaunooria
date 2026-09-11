@@ -508,44 +508,41 @@ export class ManifestoIaService {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       const agora = new Date();
 
-      const [matriculas, sessoes, auditorias, percursos, gate] = await Promise.all([
-        tx.matricula.findMany({
-          where: { escolaId, turmaId, papel: "estudante", fim: null },
+      /**
+       * O painel parte de `users`, e NÃO de `matriculas` — a primeira versão
+       * partia, e a suíte de Postgres a reprovou com `total: 0`.
+       *
+       * A razão é a mesma que `comum/liberacao.ts` registra: a verdade da
+       * enturmação é `matriculas`, mas `users.turma_id` é o que o resto do
+       * runtime lê, e uma criança cuja matrícula ainda não existe — importação
+       * pela metade, seed antigo — **tem sala na prática e entra na missão**.
+       * Se a porta a deixa entrar e o painel não a mostra, a professora fica
+       * com uma tela que nega o que a aula está fazendo.
+       */
+      const [estudantes, gate] = await Promise.all([
+        tx.user.findMany({
+          where: { escolaId, turmaId, role: "estudante" },
           select: {
-            usuarioId: true,
-            usuario: { select: { displayName: true, username: true } },
+            id: true,
+            displayName: true,
+            username: true,
+            manifestoSessoes: {
+              where: { escolaId },
+              take: 1,
+              select: {
+                passo: true,
+                clausulaId: true,
+                atualizadoEm: true,
+                concluidoEm: true,
+              },
+            },
           },
-        }),
-        tx.exp08Sessao.findMany({
-          where: { escolaId, turmaId },
-          select: {
-            estudanteId: true,
-            passo: true,
-            clausulaId: true,
-            atualizadoEm: true,
-            concluidoEm: true,
-          },
-        }),
-        tx.exp08Auditoria.groupBy({
-          by: ["estudanteId"],
-          where: { escolaId, estudanteId: { in: [] } },
-          _count: { _all: true },
-        }),
-        tx.exp08Percurso.findMany({
-          where: { escolaId, estudanteId: { in: [] } },
-          select: { estudanteId: true, tags: true, justificativaTexto: true },
+          orderBy: { displayName: "asc" },
         }),
         this.gateDaTurma(tx, escolaId, turmaId),
       ]);
-      void auditorias;
-      void percursos;
 
-      const ids = matriculas.map((m) => m.usuarioId);
-      /* As duas leituras acima ficaram com `in: []` de propósito e são
-         refeitas aqui: a lista de estudantes vem das matrículas, e pedi-las em
-         paralelo com a própria lista que as define não é possível. Duas
-         consultas curtas por `in` de ids conhecidos custam menos que um join
-         que atravessaria a RLS por outro caminho. */
+      const ids = estudantes.map((e) => e.id);
       const [porAuditoria, porPercurso] = await Promise.all([
         ids.length
           ? tx.exp08Auditoria.groupBy({
@@ -562,57 +559,52 @@ export class ManifestoIaService {
           : Promise.resolve([]),
       ]);
 
-      const sessaoDe = new Map(sessoes.map((s) => [s.estudanteId, s]));
       const auditoriasDe = new Map(porAuditoria.map((a) => [a.estudanteId, a._count._all]));
       const percursoDe = new Map(porPercurso.map((p) => [p.estudanteId, p]));
 
-      const estudantes = matriculas
-        .map((m) => {
-          const sessao = sessaoDe.get(m.usuarioId);
-          const percurso = percursoDe.get(m.usuarioId);
-          const auditoriasFeitas = auditoriasDe.get(m.usuarioId) ?? 0;
-          return {
-            estudanteId: m.usuarioId,
-            nome: m.usuario.displayName,
-            usuario: m.usuario.username,
-            iniciou: Boolean(sessao),
-            passo: normalizarPasso(sessao?.passo),
-            auditorias: auditoriasFeitas,
-            auditouOMinimo: auditoriasFeitas >= PROMPTS_EXIGIDOS,
-            clausulaId: sessao?.clausulaId ?? null,
-            tags: percurso?.tags ?? [],
-            registrouPercurso: Boolean(percurso),
-            // Caixa livre de menor. Está AQUI e só aqui: a rota é a do
-            // professor DESTA turma (LGPD art. 14).
-            justificativaTexto: percurso?.justificativaTexto ?? null,
-            ociosoMin:
-              sessao && !sessao.concluidoEm
-                ? minutosDesde(sessao.atualizadoEm, agora)
-                : null,
-          };
-        })
-        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      const linhas = estudantes.map((e) => {
+        const sessao = e.manifestoSessoes[0];
+        const percurso = percursoDe.get(e.id);
+        const auditoriasFeitas = auditoriasDe.get(e.id) ?? 0;
+        return {
+          estudanteId: e.id,
+          nome: e.displayName,
+          usuario: e.username,
+          iniciou: Boolean(sessao),
+          passo: normalizarPasso(sessao?.passo),
+          auditorias: auditoriasFeitas,
+          auditouOMinimo: auditoriasFeitas >= PROMPTS_EXIGIDOS,
+          clausulaId: sessao?.clausulaId ?? null,
+          tags: percurso?.tags ?? [],
+          registrouPercurso: Boolean(percurso),
+          // Caixa livre de menor. Está AQUI e só aqui: a rota é a do professor
+          // DESTA turma (LGPD art. 14).
+          justificativaTexto: percurso?.justificativaTexto ?? null,
+          ociosoMin:
+            sessao && !sessao.concluidoEm ? minutosDesde(sessao.atualizadoEm, agora) : null,
+        };
+      });
 
       const distribuicao: Record<string, number> = {};
       for (const c of CLAUSULAS_DEFAULT) distribuicao[c.id] = 0;
       const tags: Record<string, number> = {};
       for (const t of TAGS) tags[t.id] = 0;
-      for (const e of estudantes) {
+      for (const e of linhas) {
         if (e.clausulaId) distribuicao[e.clausulaId] = (distribuicao[e.clausulaId] ?? 0) + 1;
         for (const t of e.tags) tags[t] = (tags[t] ?? 0) + 1;
       }
 
       return {
         turma: { ...turma, etapa: gate },
-        estudantes,
+        estudantes: linhas,
         resumo: {
-          total: estudantes.length,
-          iniciaram: estudantes.filter((e) => e.iniciou).length,
-          auditaram: estudantes.filter((e) => e.auditouOMinimo).length,
-          fixaramClausula: estudantes.filter((e) => e.clausulaId).length,
-          assinaram: estudantes.filter((e) => e.registrouPercurso).length,
-          concluiram: estudantes.filter((e) => e.passo === "fim").length,
-          ociosos: estudantes.filter(
+          total: linhas.length,
+          iniciaram: linhas.filter((e) => e.iniciou).length,
+          auditaram: linhas.filter((e) => e.auditouOMinimo).length,
+          fixaramClausula: linhas.filter((e) => e.clausulaId).length,
+          assinaram: linhas.filter((e) => e.registrouPercurso).length,
+          concluiram: linhas.filter((e) => e.passo === "fim").length,
+          ociosos: linhas.filter(
             (e) => e.ociosoMin !== null && e.ociosoMin >= MINUTOS_PARA_OCIOSO,
           ).length,
           distribuicao,
