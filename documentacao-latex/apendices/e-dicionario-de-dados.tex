@@ -4,7 +4,7 @@
 \chapter{Dicionário de dados}
 \label{ap:dicionario}
 
-Catálogo das 46 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
+Catálogo das 49 tabelas de \cd{public}, mais o \emph{schema} \cd{particoes}.
 Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}X@{}}
@@ -61,11 +61,14 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{exp\_03\_marcos} & Tenant & Trilha da decisão\\
 \cd{exp\_03\_simulacoes} & Tenant & Desfecho por tentativa\\
 \zebra \cd{exp\_03\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
-\cd{exp\_07\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
-\zebra \cd{exp\_07\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
-\cd{exp\_07\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
-\zebra \cd{exp\_07\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\cd{exp\_04\_turma\_config} & Tenant & A aula da exp-04 por turma: pacote aprovado, latch e tentativa\\
+\zebra \cd{exp\_04\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
+\cd{exp\_04\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
+\zebra \cd{exp\_07\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
+\cd{exp\_07\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
+\zebra \cd{exp\_07\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
+\cd{exp\_07\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\zebra \cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
 \cd{exp\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
 \zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por estudante\\
 \cd{exp\_90\_planos} & Tenant+posse & Metadados do plano de aula\\

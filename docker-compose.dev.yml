@@ -209,7 +209,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183
       # Documentação OpenAPI em http://localhost:3001/docs (Swagger UI).
       #
       # LIGADA por default em dev, com credencial de dev à vista: sem as duas

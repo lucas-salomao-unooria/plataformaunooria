@@ -26,6 +26,7 @@ const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as Prism
 const salas = new SalasService(prisma);
 
 const INSTA = "exp-01-instanooria";
+const MANIFESTO = "exp-08-manifesto-ia";
 const VILA = "exp-70-vila-do-lume";
 const TUBE = "exp-02-unootube";
 const PLANO = "exp-90-plano-de-aula";
@@ -238,7 +239,7 @@ describe("a sala do professor", () => {
     expect(sala.turma.nome).toBe("8A");
 
     const ids8A = sala.missoes.map((m) => m.expId);
-    expect(ids8A).toEqual([VILA, INSTA]);
+    expect(ids8A).toEqual([VILA, INSTA, MANIFESTO]);
     expect(ids8A).not.toContain(TUBE);
 
     const insta = sala.missoes.find((m) => m.expId === INSTA);

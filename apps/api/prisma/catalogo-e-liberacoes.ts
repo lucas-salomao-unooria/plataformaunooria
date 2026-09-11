@@ -120,6 +120,7 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // O 8º ano abre as duas: a Vila é o Ato 1 do Instanooria, e é o par que a
   // suíte `estudante/05-vila-do-lume` + `estudante/02-instanooria` percorre.
   { turma: "8A", expIds: ["exp-70-vila-do-lume", "exp-01-instanooria", "exp-08-manifesto-ia"] },
+  { turma: "1A", expIds: ["exp-04-o-que-a-foto-conta"] },
   { turma: "4A", expIds: ["exp-02-unootube"] },
   { turma: "6A", expIds: ["exp-06-rastro-boato"] },
   { turma: "7A", expIds: ["exp-07-o-eco-no-grupo"] },

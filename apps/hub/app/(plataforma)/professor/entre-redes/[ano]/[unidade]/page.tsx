@@ -4,6 +4,7 @@ import { EmptyState } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_FOTO_CONTA,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
@@ -11,6 +12,7 @@ import {
   rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
 
+import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
 import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
 import { MissaoRastroBoato } from "./missao-rastro-boato";
@@ -59,6 +61,9 @@ export default async function MissaoPage({
   }
 
   const comFicha = { ...missao, ficha: missao.ficha };
+  if (missao.expId === MISSAO_FOTO_CONTA.expId) {
+    return <MissaoFotoConta ano={ano} missao={comFicha} />;
+  }
   if (missao.expId === MISSAO_UNOOTUBE.expId) {
     return <MissaoUnooTube ano={ano} missao={comFicha} />;
   }
