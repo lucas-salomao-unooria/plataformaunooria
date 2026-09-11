@@ -961,6 +961,69 @@ classDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:exp92-caminho} --- exp-92: o caminho do planejamento}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  subgraph fora["Fora do produto, uma vez"]
+    pdf[PDFs homologados do MEC] --> ext[scripts/extrair-bncc.mjs]
+    ext --> dados[("api/src/curriculo/dados/*.ts<br/>1.304 EF - 183 EM - 129 Computacao")]
+  end
+
+  ini((inicio))
+  ini --> reg["1. Regencia<br/>componente, serie, ano letivo, grade de horarios,<br/>minutos por aula, divisao do ano<br/>POST /planejamento/configuracoes"]
+  reg --> dist["2. Distribuicao<br/>o professor poe cada habilidade num periodo - DECISAO HUMANA<br/>PUT .../planos-anuais/:id/distribuicao"]
+  dist --> anual["3. Plano anual (IA)<br/>a prosa pedagogica do ano, gerada e depois reescrita pelo professor<br/>POST .../planos-anuais/:id/gerar"]
+  anual --> aulas["4. Aulas, semana a semana (IA)<br/>40 semanas, uma por vez. O esqueleto e do calendario<br/>POST .../periodos/:ordem/gerar"]
+  aulas --> exp["Exportacao<br/>montada no NAVEGADOR, sem rota e sem modelo:<br/>.doc (HTML com os namespaces do Office) e impressao"]
+  exp --> fim(((fim)))
+
+  dados --> dist
+
+  reg --> cfg[("exp_92_configuracoes<br/>e, se a rede ainda nao tinha, periodos_letivos - catalogo do CONTRATO")]
+  dist --> jd[("exp_92_planos_anuais.distribuicao (JSONB)<br/>o insumo do gerador, e o que sobrevive a reescrever o documento")]
+  anual --> doc[("bucket privado: gerado.md (imutavel) + atual.html (sanitizado)")]
+  aulas --> ja[("exp_92_planos_de_periodo.aulas (JSONB)<br/>dado estruturado, nao prosa")]
+  exp --> rec["tres recortes, so das semanas pronto:<br/>esta semana - esta e a proxima -<br/>o periodo de avaliacao inteiro (bimestre, trimestre ou semestre)"]
+
+  %% Onde a IA NAO entra: a extracao da Base; a consulta de habilidades
+  %% (exata por componente e ano, sem busca vetorial); a distribuicao; o
+  %% esqueleto das aulas; a costura; cumprida e observacaoDoProfessor; e a
+  %% exportacao.
+  %% Os dois pontos de IA passam por temSaldo ANTES e consumir depois - e o
+  %% consumo conta mesmo quando a geracao e rejeitada: o token foi gasto.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
+\section{Figura~\ref{fig:exp92-semana} --- exp-92: como uma semana nasce}
+
+\begin{lstlisting}[language=mermaid]
+flowchart TB
+  cal["Calendario (calendario.ts)<br/>numero, data, dia da semana e horario das aulas DESTA semana,<br/>da grade real do professor. Feriado REMOVE a aula, nao a desloca"]
+  rec["O recorte da distribuicao<br/>so os codigos do periodo de avaliacao em que esta semana cai"]
+  reg["A regencia<br/>componente, serie e minutos por aula"]
+
+  cal --> brief
+  rec --> brief
+  reg --> brief
+
+  brief["montarBriefingDePeriodo<br/>um briefing com as aulas que EXISTEM e as habilidades que PODEM entrar"]
+  brief --> gen["provider.generateJson (IA)<br/>schema de resposta, modelo longo, temperatura 0.5<br/>devolve SO o conteudo pedagogico das aulas"]
+  gen --> cost["costurarAulas - a conciliacao entre o que o modelo devolveu<br/>e as aulas que existem de verdade"]
+  cost --> out[("exp_92_planos_de_periodo.aulas<br/>JSONB estruturado, status = pronto")]
+  out --> edita["O professor edita - PUT /planejamento/periodos/:id/aulas<br/>cumprida e a observacao da aula sao registro DELE, nunca do modelo"]
+
+  %% As tres regras da costura:
+  %% 1. O esqueleto e do CALENDARIO. Oito aulas para uma semana de tres: a
+  %%    sobra e descartada. Uma para tres: as outras duas nascem em branco.
+  %% 2. Codigo fora do recorte e REMOVIDO, nao corrigido.
+  %% 3. Campo ausente vira string VAZIA, nunca undefined.
+  %% As tres barreiras contra um codigo inventado: o prompt (instrucao, nao
+  %% garantia), o PUT .../distribuicao (valida o que o PROFESSOR escolheu) e a
+  %% costura (remove o que o MODELO escreveu depois). Nenhuma sozinha basta.
+\end{lstlisting}
+
+% ---------------------------------------------------------------------------
 \section{Figura~\ref{fig:mapa-rotas} --- Mapa de rotas da API}
 
 \begin{lstlisting}[language=mermaid]
