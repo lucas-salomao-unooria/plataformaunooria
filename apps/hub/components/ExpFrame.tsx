@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertBox } from "@edu/ui/ds";
-import { ExpParaHubSchema, PROTOCOL_VERSION } from "@edu/sdk";
+import { CHAVE_DO_FUSO, ExpParaHubSchema, PROTOCOL_VERSION, fusoDaPlataforma } from "@edu/sdk";
 import { CLARITY_PROJECT_ID } from "@/lib/clarity";
 
 /**
@@ -101,7 +101,19 @@ export function ExpFrame(props: {
            *
            * Quem chama pode sobrescrever: o spread de `config` vem depois.
            */
-          config: { clarityProjectId: CLARITY_PROJECT_ID, ...atual.current.config },
+          config: {
+            clarityProjectId: CLARITY_PROJECT_ID,
+            /*
+             * O FUSO (ADR-99), pelo mesmo motivo do `clarityProjectId`: este é
+             * o único ponto por onde TODO embed passa. O bundle da experiência
+             * é estático e não lê env nem o `<meta>` do hub (o iframe é outro
+             * documento), então o handshake é o único canal — e aqui o
+             * `fusoDaPlataforma()` já resolveu pelo `<meta>` que o layout raiz
+             * escreveu, ou seja, pela mesma env que a api recebeu.
+             */
+            [CHAVE_DO_FUSO]: fusoDaPlataforma(),
+            ...atual.current.config,
+          },
         });
       }
 

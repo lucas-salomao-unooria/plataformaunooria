@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{98 decisões}, numeradas até ADR-98, \textbf{sem lacunas}. As
+São \textbf{99 decisões}, numeradas até ADR-99, \textbf{sem lacunas}. As
 cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -143,6 +143,7 @@ que a cercam.
 \adrr{ADR-96} & Ficar na missão conta como uso, e a sessão que morre tem tela & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-97} & A tela diz POR QUE não entrou, e a suíte espera o desfecho & 2026-09-10 & Aceita\\
 \adrr{ADR-98} & A plataforma assume UM fuso, numa constante só & 2026-09-11 & Aceita\\
+\zebra \adrr{ADR-99} & O fuso vem de uma variável de ambiente, em três superfícies & 2026-09-11 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7542,3 +7543,130 @@ caminho até o \emph{iframe} é o trabalho de verdade. Antes disso, qualquer
 mudança é só trocar a string de um lugar. Um segundo gatilho, menor: se alguma
 tela precisar mostrar a data \textbf{no fuso de quem lê} (um relatório exportado
 para outro país), o formatador ganha um parâmetro em vez de a constante mudar.
+
+% ---------------------------------------------------------------------------
+\section{ADR-99 --- O fuso vem de uma variável de ambiente, em três superfícies}
+\label{adr:fuso-configuravel}
+
+\textbf{Data.} 2026-09-11. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-98}.
+
+\textbf{Contexto.} A ADR-98 decidiu que a plataforma assume UM fuso, num lugar
+só, e cravou \cd{America/Sao\_Paulo} no código --- registrando, no gatilho de
+reavaliação, que a primeira rede fora de Brasília reabriria a questão. Ela
+reabriu antes de existir: o dono do produto leu a decisão e afirmou que
+\textbf{vai haver contrato fora de Brasília}, e que o fuso precisa ser
+configurável por quem opera a \emph{stack}, sem alterar código.
+
+O que muda não é o valor --- ele continua sendo \cd{America/Sao\_Paulo} por
+omissão. O que muda é \textbf{de onde ele vem}. E isso não é trocar uma linha,
+porque o valor tem de chegar a \textbf{três superfícies com naturezas
+diferentes}:
+
+\begin{itemize}
+  \item a \textbf{API} (NestJS), um processo Node que lê o ambiente;
+  \item o \textbf{hub} (Next.js), que roda a MESMA linha no servidor e no
+    navegador --- e o navegador não lê \cd{process.env};
+  \item as \textbf{experiências}, \emph{bundles} Vite estáticos, construídos uma
+    vez, servidos de um \emph{bucket} e que \textbf{não conhecem contrato}.
+\end{itemize}
+
+\textbf{Decisão.} \textbf{Uma variável de ambiente,
+\env{FUSO\_DA\_PLATAFORMA}, com o MESMO nome nos dois serviços; ausente vale
+\cd{America/Sao\_Paulo}; e cada superfície a recebe pelo canal que ela já tem.}
+
+\begin{itemize}
+  \item \textbf{Env, e não coluna no banco.} \textbf{1 contrato = 1 \emph{stack}
+    de infra} --- a granularidade da configuração é a do \textbf{deploy}, não a
+    da escola. Coluna permitiria duas escolas do mesmo contrato divergirem (o
+    que ninguém pediu) e custaria migração, tela de administração e a viagem do
+    valor por \emph{token}, \emph{props} e \cd{postMessage}.
+  \item \textbf{API}: lida do ambiente e \textbf{validada com Zod no BOOT}
+    (\arq{apps/api/src/config/env.ts}). Um \emph{typo} como
+    \cd{America/SaoPaulo} não tem sintoma nenhum até alguém renderizar uma data,
+    dias depois do \emph{deploy} --- e aí sai uma exceção do \cd{Intl} no meio
+    de uma requisição. Na subida ele é barato: a revisão nova não pega tráfego.
+  \item \textbf{Hub}: lido no servidor e \textbf{entregue ao navegador por um
+    \cd{<meta name="unooria-fuso">}} escrito pelo \cd{generateMetadata} do
+    \emph{layout} raiz --- o mesmo caminho que \cd{unooria-obs-ratio} já usa
+    (cap.~\ref{cap:observabilidade}). Servidor e navegador leem o valor da
+    \textbf{mesma resposta HTTP}, e por isso não têm como divergir.
+  \item \textbf{Experiências}: o valor viaja no \cd{config} do \cd{hub:init}, na
+    chave \cd{fuso}, e \cd{createExperiencia} o aplica \textbf{antes da primeira
+    tela}. Vai em \cd{config} e não como campo de topo porque o contrato manda:
+    campo novo em \cd{config} é aditivo, mudar a FORMA do \cd{hub:init} obriga a
+    subir \cd{PROTOCOL\_VERSION} --- e \emph{bundle} já publicado passaria a
+    recusar o \emph{handshake}, o que é tela de erro para a criança.
+  \item \textbf{As seis funções não mudam de assinatura.} \cd{data(iso)}
+    continua \cd{data(iso)}: quem sabe o fuso é o MÓDULO, resolvendo por cascata
+    --- \emph{runtime} (\cd{hub:init}) $\rightarrow$ \cd{process.env}
+    $\rightarrow$ \cd{<meta>} $\rightarrow$ padrão. Passar o fuso em cada chamada
+    espalharia pelos onze sítios o problema que a ADR-98 juntou num lugar só.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{\env{NEXT\_PUBLIC\_FUSO\_DA\_PLATAFORMA} no hub.} É a forma
+    idiomática do Next de expor configuração ao navegador, e seria uma linha.
+    Descartada porque \cd{NEXT\_PUBLIC\_*} é \textbf{assado no build}: a mesma
+    imagem pode servir mais de um contrato, e nesse dia o valor fica errado
+    \textbf{sem nada acusar} --- exatamente o modo de falhar mudo que a ADR-98
+    existe para fechar. O \cd{<meta>} de \emph{runtime} custa cinco linhas e
+    funciona nos dois casos.
+  \item \textbf{Um \emph{provider} React descendo o valor por contexto.} É o
+    desenho que um revisor esperaria, e foi o primeiro escrito aqui. Descartado
+    porque o valor passaria a valer \textbf{a partir do momento em que o React
+    executa o \emph{provider}}, e a ordem entre componentes irmãos é detalhe do
+    renderizador. O \cd{<meta>} está no \cd{<head>}, resolvido antes de a
+    hidratação começar. Consertar uma falha de hidratação com algo que a
+    hidratação possa quebrar é trocar um defeito por outro mais difícil de ver.
+  \item \textbf{Coluna \cd{fuso} em \cd{escolas}, resolvida por requisição.} É o
+    que a ADR-98 apontava como o futuro, e continua sendo o desenho certo no dia
+    em que \textbf{um mesmo contrato} tiver escolas em fusos diferentes.
+    Descartada agora porque nenhuma rede pediu isso: uma rede estadual do Acre
+    está inteira no Acre. Ela custaria migração, tela de administração e o
+    caminho do valor até dentro do \emph{iframe} --- e o problema que o dono do
+    produto trouxe (\enquote{vai haver cliente fora de Brasília}) é resolvido
+    por inteiro pela env, que é uma linha de \emph{Terraform} por contrato.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O mesmo valor é declarado em dois serviços}, e nada no código
+    impede alguém de configurar a API e esquecer o hub. O sintoma seria o defeito
+    da ADR-98 de volta: entre as 21h e a meia-noite, API e hub falando de dias
+    diferentes. O que reduz o risco é fora deste repositório --- \arq{docs/INFRA.md}
+    pede um \cd{variable} ÚNICO no \emph{Terraform}, consumido pelos dois
+    serviços. \textbf{Não há teste que cubra isso}, porque a configuração não
+    mora aqui.
+  \item \textbf{A falha é diferente em cada superfície, de propósito.} A API
+    recusa subir; o hub e as experiências caem no padrão com \cd{console.error}.
+    A assimetria é a decisão --- derrubar a subida de um processo é barato,
+    deixar a rede sem tela não é ---, mas ela significa que um \emph{typo} só no
+    hub passa \textbf{silencioso para quem não lê o console}.
+  \item \textbf{Um \emph{offset} fixo (\cd{-04:00}) é aceito.} O \cd{Intl} o
+    aceita e a validação não o recusa --- recusar o que o \cd{Intl} aceita seria
+    recusar configuração que funciona. Mas ele \textbf{congela o deslocamento}: se
+    a rede voltar a ter horário de verão, a plataforma fica uma hora atrasada sem
+    nada acusar. O \arq{.env.example}, o apêndice~\ref{ap:envs} e o
+    \arq{docs/INFRA.md} pedem o nome IANA.
+  \item \textbf{O fuso resolvido é memorizado} no módulo do SDK, porque as
+    funções são chamadas por linha de tabela. Trocar a variável \textbf{exige
+    reiniciar o processo} --- e é isso que um \emph{deploy} faz. Em teste,
+    \cd{esquecerFusoDaPlataforma()} desfaz a memória; em produção ninguém o
+    chama.
+  \item \textbf{A experiência roda no padrão até o \cd{hub:init} chegar.} São
+    milissegundos e nenhuma tela de missão mostra data nesse intervalo, mas a
+    janela existe --- é a mesma aceita para o Clarity e para o OpenTelemetry Web,
+    pela mesma razão: a alternativa é cravar o valor em cada \emph{bundle}.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Um contrato com escolas em fusos
+diferentes} --- uma rede municipal partida por divisa de fuso, ou um contrato
+estadual que cubra os dois lados de uma. Aí a env deixa de bastar e a coluna
+\cd{fuso} em \cd{escolas} passa a ser o desenho certo, com o valor viajando no
+\emph{token} e no \cd{hub:init} por escola. Um segundo gatilho, menor: se a
+plataforma passar a servir mais de um contrato pela MESMA revisão de Cloud Run,
+a env deixa de ser por contrato e a decisão inteira precisa ser refeita.
