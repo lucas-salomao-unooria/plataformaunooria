@@ -43,11 +43,9 @@ const MISSOES_NO_FALLBACK: readonly string[] = ["exp-01-instanooria"];
 /** Nome da constante do catálogo → `expId`, para ler o `page.tsx` sem adivinhar. */
 function expIdsDespachados(fonte: string): Set<string> {
   const despachados = new Set<string>();
-  /* O grupo capturado é `string | undefined` sob `noUncheckedIndexedAccess`, e
-     desestruturá-lo direto no `for` passa no Vitest e reprova no `tsc` — que
-     não roda junto com os testes. */
-  for (const casamento of fonte.matchAll(/missao\.expId === (MISSAO_\w+)\.expId/g)) {
-    const nome = casamento[1];
+  for (const [, nome] of fonte.matchAll(/missao\.expId === (MISSAO_\w+)\.expId/g)) {
+    /* O grupo 1 existe sempre que a regex casa, mas o tipo de `matchAll` não
+       sabe disso: sem o estreitamento, `tsc` recusa o índice. */
     if (!nome) continue;
     const missao = (catalogo as Record<string, unknown>)[nome] as Missao | undefined;
     expect(missao, `${nome} é comparado no despachante mas não existe no catálogo`).toBeDefined();
@@ -71,9 +69,7 @@ describe("despachante da ficha da missão", () => {
   });
 
   test("o ramo importa o corpo que ele devolve", () => {
-    for (const casamento of fonte.matchAll(/return <(Missao\w+) ano=/g)) {
-      const nome = casamento[1];
-      if (!nome) continue;
+    for (const [, nome] of fonte.matchAll(/return <(Missao\w+) ano=/g)) {
       expect(fonte, `${nome} é devolvido sem import`).toContain(`import { ${nome} } from "./`);
     }
   });

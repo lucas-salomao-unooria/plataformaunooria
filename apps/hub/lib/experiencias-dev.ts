@@ -43,6 +43,14 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * apontar para a experiência errada.
    */
   "exp-08-manifesto-ia": "http://localhost:5182",
+  /**
+   * O Que a Foto Conta — 1º ano EF, unidade 1.
+   *
+   * 5183, não 5182: a 5182 está reservada para a exp-08 (manifesto-ia), que
+   * corre em outra frente. A porta entra também no CORS_ORIGINS da api — sem
+   * ela o boot da missão morre com "Failed to fetch" e o erro não diz por quê.
+   */
+  "exp-04-o-que-a-foto-conta": "http://localhost:5183",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

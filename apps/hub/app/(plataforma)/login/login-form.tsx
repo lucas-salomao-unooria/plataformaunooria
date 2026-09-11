@@ -6,6 +6,8 @@ import { signIn } from "next-auth/react";
 
 import { AlertBox, Button, Card, Logo, PasswordInput, TextField } from "@edu/ui/ds";
 
+import { mensagemDeRecusa } from "@/lib/motivos-de-login";
+
 // Sem qualquer menção a exercício: é só a entrada da plataforma.
 export function LoginForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
@@ -28,7 +30,10 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
       });
 
       if (!resultado || resultado.error) {
-        setErro("Usuário ou senha incorretos.");
+        /* O MOTIVO decide a mensagem, e nenhuma delas diz qual metade errou
+           (`lib/motivos-de-login.ts`). Antes era uma frase só, e ela mentia
+           sempre que o motivo não era a credencial. */
+        setErro(mensagemDeRecusa(resultado?.code));
         setEnviando(false);
         return;
       }

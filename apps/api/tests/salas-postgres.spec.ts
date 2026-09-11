@@ -26,11 +26,11 @@ const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as Prism
 const salas = new SalasService(prisma);
 
 const INSTA = "exp-01-instanooria";
+const MANIFESTO = "exp-08-manifesto-ia";
 const VILA = "exp-70-vila-do-lume";
 const TUBE = "exp-02-unootube";
 const PLANO = "exp-90-plano-de-aula";
 /** A segunda missão do 8º ano (unidade 4). Entrou em 2026-09-10. */
-const MANIFESTO = "exp-08-manifesto-ia";
 
 const ids = { turma8A: "", turma8B: "", prof8A: "", prof8B: "", ana: "", bruno: "" };
 

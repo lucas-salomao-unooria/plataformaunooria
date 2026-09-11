@@ -59,7 +59,9 @@ export class TokenService {
         perfil: perfil as Perfil,
       };
       if (!claims.usuarioId) throw new Error("claim sub ausente");
-      // admin-contrato é a única exceção cross-escola (regra inviolável nº 1)
+      // Os perfis de CONTRATO (`gestor_contrato`, `admin`) são a única exceção
+      // cross-escola (regra inviolável nº 1) — daí `ehDoContrato`, e não uma
+      // comparação com um nome só (ADR-80).
       if (!claims.escolaId && !ehDoContrato(claims.perfil)) {
         throw new Error("claim escola_id ausente");
       }

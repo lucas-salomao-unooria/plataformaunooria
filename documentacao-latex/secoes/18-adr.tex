@@ -9,7 +9,11 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{93 decisões}, numeradas até ADR-93, \textbf{sem lacunas}. A ADR-65
+São \textbf{97 decisões}, numeradas até ADR-97, \textbf{sem lacunas}. As
+cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
+colidiram porque os números foram \textbf{reservados por quem repartia o
+trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
+2026-09-06 e a de 2026-09-07 deixaram. A ADR-65
 ficou vaga por um tempo: o número se perdeu numa colisão entre duas frentes
 paralelas que reservaram o mesmo identificador --- o risco que a \adrr{ADR-61}
 registra --- e a lacuna foi ocupada pelo \textbf{guia da aula} (\adrr{ADR-65}),
@@ -134,6 +138,10 @@ que a cercam.
 \zebra \adrr{ADR-91} & O idioma da interface tem três zonas, e o clone não se traduz & 2026-09-10 & Aceita\\
 \adrr{ADR-92} & Voltar um momento reabre a sessão; a trava é a revelação & 2026-09-10 & Aceita\\
 \zebra \adrr{ADR-93} & Sincronização de sala por \emph{polling} HTTP, não WebSocket & 2026-09-10 & Aceita\\
+\adrr{ADR-94} & O latch de turma anda por \emph{polling} curto, nunca por canal persistente & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-95} & A sessão do hub dura 2h de inatividade, igual para todo papel & 2026-09-10 & Aceita\\
+\adrr{ADR-96} & Ficar na missão conta como uso, e a sessão que morre tem tela & 2026-09-10 & Aceita\\
+\zebra \adrr{ADR-97} & A tela diz POR QUE não entrou, e a suíte espera o desfecho & 2026-09-10 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -6977,3 +6985,437 @@ medindo o teto de \emph{timeout} do Cloud Run. (2) A soma dos \emph{pollings} de
 todas as experiências aparecer no custo ou na latência do banco; o caminho
 então é um cache de leitura por turma na frente da rota de \cd{gate}, não trocar
 o mecanismo.
+
+\section{ADR-94 --- O latch de turma anda por POLLING curto, nunca por canal
+persistente}
+\label{adr:latch-por-polling}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A exp-04 (O Que a Foto Conta, 1º ano EF) é a missão mais
+síncrona do catálogo: na Etapa 5 \emph{todos} os tablets da turma congelam numa
+tela sem nenhum botão (a Roda de Conversa) e só o professor os solta, de uma
+vez, pelo \cd{LIBERAR REFLEXÃO FINAL}. O insumo da missão pedia
+\enquote{WebSocket/SSE} para esse destravamento, e a banca já havia rebaixado o
+pedido a ressalva (TEC-06): priorizar SSE ou \emph{polling} HTTP curto, com o
+teto de 4 segundos entre o clique do professor e a reação do tablet.
+
+Três fatos do repositório decidem a questão antes de qualquer preferência:
+
+\begin{enumerate}
+  \item \textbf{Não existe canal persistente de aplicação nesta
+    infraestrutura.} Nenhum WebSocket, nenhum SSE --- e o Cloud Run cobra por
+    instância ocupada, o que faz conexão pendurada de 35 tablets durante uma
+    roda de conversa de 15 minutos custar exatamente o que o \emph{polling}
+    evita.
+  \item \textbf{O problema já foi resolvido três vezes, sempre por
+    \emph{polling} curto}: o \emph{gate} da aula do o-eco-no-grupo
+    (\rota{GET /o-eco-no-grupo/gate}, \(\sim\)5s, com professor movendo a turma
+    de etapa --- o irmão exato deste latch), os momentos coletivos do motor
+    (\rota{/runs}) e o progresso de geração (\rota{/geracao}, 2s).
+  \item \textbf{O \enquote{O que NÃO fazer} da raiz proíbe literalmente} o
+    caminho contrário: \enquote{não adicionar Redis/filas/libs de estado sem
+    gargalo medido}. SSE aqui seria tecnologia nova sem gargalo nenhum.
+\end{enumerate}
+
+\textbf{Decisão.} O latch da exp-04 anda por \emph{polling} HTTP de
+\textbf{3 segundos} na rota \rota{GET /foto-conta/latch} --- leve de propósito
+(sem pacote e sem catálogo: \cd{\{liberado, etapa, agora\}}), com \emph{rate
+limit} por usuário. A liberação é um \cd{UPDATE} idempotente por erro
+(\cd{409 latch-ja-liberado}) em \cd{exp\_04\_turma\_config.latch\_liberado},
+sem \emph{lock} de linha: quem \enquote{recebe o \emph{broadcast}} é o
+\emph{polling} dos tablets. O painel do professor acompanha a turma no mesmo
+desenho (\(\sim\)5s, como o o-eco-no-grupo). O \cd{agora} da resposta é o
+instante do SERVIDOR: o relógio do tablet da escola atrasa, e não é ele que
+decide o momento da aula.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{WebSocket persistente} (o pedido original do insumo): exige um
+    serviço com conexões de longa duração que a plataforma não tem, quebra o
+    modelo de escala do Cloud Run e cria a primeira dependência de estado de
+    conexão do produto --- para ganhar, no melhor caso, 3 segundos de latência
+    numa transição que acontece UMA vez por aula.
+  \item \textbf{SSE}: mais barato que WebSocket, mas ainda é conexão pendurada
+    por tablet, ainda é tecnologia nova no repositório, e não há precedente ---
+    introduzi-la para uma missão de 1º ano criaria o segundo padrão de
+    tempo real que o próximo módulo teria de escolher.
+\end{itemize}
+
+\textbf{Consequências ruins, aceitas.} A latência média do destravamento é
+metade do intervalo (\(\sim\)1,5s, teto 3s + rede) --- dentro do teto de 4s da
+banca, mas não instantânea. E uma turma de 35 tablets a 3s produz
+\(\sim\)12 req/s numa rota de leitura trivial durante a missão --- carga
+desprezível hoje, e é exatamente ela o gatilho abaixo.
+
+\textbf{Gatilho de reavaliação.} Se alguma rede real medir o \emph{polling} de
+latch como fonte relevante de carga (ordem de grandeza: várias dezenas de
+turmas SIMULTÂNEAS na mesma stack, \(>\)200 req/s só de latch) ou se um novo
+requisito exigir latência sub-segundo numa transição de turma, reabrir esta
+decisão --- e aí a resposta provável é UM canal de eventos de turma para a
+plataforma inteira, nunca um WebSocket por experiência.
+\section{ADR-95 --- A sessão do hub dura 2h de INATIVIDADE, e vale igual para
+todo papel}
+\label{adr:sessao-duas-horas}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A sessão do hub durava 12h
+(\arq{apps/hub/lib/auth.ts}), com o comentário \enquote{cobre um dia de aula}.
+O combinado original era \textbf{2h para o estudante e 4h para o professor},
+com o racional escrito: 2h porque é o tempo de duas aulas seguidas, e 4h para
+o professor não deslogar várias vezes ao longo do turno. O próprio registro da
+combinação já previa o plano B --- \enquote{na impossibilidade ajustamos para
+\emph{logout} geral após 2h} --- e é ele que o dono do produto pediu.
+
+\textbf{Um número de TTL não é uma decisão}, e é por isso que esta ADR existe:
+\enquote{2 horas} pode querer dizer duas coisas incompatíveis --- 2h
+\textbf{absolutas} desde o \emph{login}, ou 2h de \textbf{inatividade} --- e a
+diferença numa aula é enorme. Absoluta desloga a criança no meio da segunda
+aula; por inatividade, não.
+
+\textbf{O que o código já entregava, e ninguém tinha declarado.} Lido no
+\cd{@auth/core} 0.41.3 instalado: com \cd{strategy: "jwt"}, o ramo \cd{jwt} de
+\arq{lib/actions/session.js} \textbf{re-assina} o token a cada leitura de
+sessão (o \cd{jwt.encode} grava \cd{exp = agora + maxAge}) e o \cd{handleAuth}
+do \cd{next-auth} devolve o \cd{Set-Cookie} ao navegador. O \cd{updateAge}
+(\emph{default} de 24h) \textbf{não é consultado nesse ramo} --- ele só existe
+na estratégia de banco. Ou seja: as 12h \textbf{nunca foram absolutas}; eram
+12h de inatividade, e quem faz a janela deslizar é o \emph{middleware}, porque
+é ele que roda em toda navegação e devolve o cabeçalho.
+
+\textbf{Decisão.} Três partes:
+
+\begin{enumerate}
+  \item \textbf{2h para TODOS os papéis} --- o plano B, sem distinção por
+    perfil.
+  \item \textbf{De INATIVIDADE}, preservando a semântica que o código já tinha.
+    O comentário da linha passa a dizer isso, com o mecanismo, porque o antigo
+    (\enquote{cobre um dia de aula}) descrevia um número que deixou de existir.
+  \item \textbf{O valor fica FIXO no código}, não em variável de ambiente.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \emph{2h para estudante e 4h para professor} (o plano A). Não é
+    impossível --- e o registro da combinação supôs que fosse ---, mas também
+    não é limpo. \cd{session.maxAge} é um número global, e o \cd{encode} do
+    \cd{@auth/core} faz \cd{.setExpirationTime(now() + maxAge)}
+    \textbf{sobrescrevendo} qualquer \cd{exp} que o \emph{callback} \cd{jwt}
+    tenha posto no token: não sai de dez linhas no \emph{callback}. Sobram dois
+    caminhos, e os dois cobram o mesmo preço. (a) Config como FUNÇÃO
+    (\cd{NextAuth((req) => …)}, que o v5 aceita) exigiria decifrar o
+    \emph{cookie} de sessão à mão, no \emph{edge}, a cada requisição, para saber
+    o papel antes de montar a config que fornece a chave de decifração. (b)
+    \cd{maxAge} no maior valor (4h) mais uma segunda expiração nossa, com
+    \emph{claim} próprio de último uso conferido no \emph{middleware}. As duas
+    criam uma \textbf{segunda fonte de verdade} sobre quando a sessão morre, ao
+    lado da da biblioteca --- e sessão que expira por dois mecanismos diferentes
+    é a divergência que só aparece em campo. Fica registrado que o plano A custa
+    isto, e não a linha que se imaginou.
+  \item \emph{Sessão absoluta de 2h.} Desloga o estudante no meio da segunda
+    aula --- justamente o intervalo que as 2h existem para cobrir.
+  \item \emph{TTL em variável de ambiente.} Descartada por uma razão específica
+    desta plataforma: a página \rota{/privacidade} afirma o prazo \textbf{em
+    texto, para a família}, e a regra do hub é que o texto legal só afirme o que
+    o código faz (\adrr{ADR-70}). Com o número em \emph{env}, ou ele sai da
+    página legal --- piorando o que a família lê --- ou passa a poder divergir
+    por rede sem ninguém perceber. Número fixo com comentário é auditável dos
+    dois lados, e ajustar por rede não era pedido de ninguém.
+\end{itemize}
+
+\textbf{Consequências, inclusive as ruins.}
+
+\begin{enumerate}
+  \item \textbf{O professor volta a logar no meio do turno.} É o custo aceito do
+    plano B: ele perde as 4h combinadas, e duas horas sem abrir tela é plausível
+    entre uma janela de aulas e o intervalo.
+  \item \textbf{Missão longa pode perder a sessão com a criança trabalhando.}
+    \cd{auth()} sem argumentos --- o caminho de \emph{React Server Component} e
+    de \emph{route handler} --- LÊ a sessão e \textbf{descarta} o
+    \cd{Set-Cookie}, porque nesses contextos não se escreve \emph{cookie}. Só o
+    \emph{middleware} renova. Quem entra numa missão não navega mais no hub, e o
+    \cd{exp:token-expirando} de 10 em 10 minutos cai em
+    \rota{GET /api/exp-token}, que está FORA do \cd{matcher} e portanto não
+    conta como atividade. Com 12h isso era inalcançável; com 2h passa a ser
+    alcançável por uma missão que comece meia hora depois do \emph{login}.
+  \item \textbf{E quando morre, morre em SILÊNCIO.}
+    \arq{apps/hub/components/ExpFrame.tsx} trata a falha de renovação com um
+    \cd{console.error} e nada mais: a experiência segue com o token velho até
+    ele vencer (TTL de 15 min) e, daí em diante, toda chamada à API responde
+    401. O que a criança já enviou está salvo --- as experiências gravam
+    incrementalmente no servidor ---, mas o que ela fizer depois \textbf{não é
+    gravado}, e nada na tela pede para entrar de novo. Este defeito não nasce
+    aqui: esta decisão apenas o torna alcançável, e é o principal motivo de o
+    gatilho abaixo existir.
+  \item A página \rota{/privacidade} mudou no mesmo \emph{commit}, porque a
+    frase dela afirmava as 12 horas.
+\end{enumerate}
+
+\textbf{Gatilho de reavaliação.} Qualquer um dos três:
+\begin{itemize}
+  \item \textbf{Um relato de criança deslogada no meio de missão.} A correção
+    tem duas metades que só valem juntas: fazer a renovação do token CONTAR como
+    atividade (o caminho é o \emph{route handler} re-emitir o \emph{cookie} ---
+    o \cd{unstable\_update} do \cd{next-auth} escreve \emph{cookie}, ao
+    contrário de \cd{auth()}) e dar ao \cd{ExpFrame} uma tela que peça
+    \emph{login} em vez do \cd{console.error}. É também quando a variável de
+    ambiente descartada acima passa a ter razão de existir: sem TTL injetável, a
+    suíte de ponta a ponta só prova isso esperando 2h de relógio.
+  \item \textbf{Reclamação de professor sobre relogar.} Aí o plano A volta à
+    mesa, com o custo acima já medido.
+  \item \textbf{O WSO2 assumindo a autenticação.} O TTL passa a ser dele, e este
+    número deixa de valer.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-96 --- Ficar na missão CONTA como uso, e a sessão que morre tem
+tela}
+\label{adr:sessao-conta-a-missao}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A \adrr{ADR-95} pôs a sessão em 2h de inatividade e declarou,
+como consequência ruim, que a janela podia morrer com a criança DENTRO da
+missão. Duas peças produzem isso, e nenhuma delas é visível no
+\emph{typecheck}:
+
+\begin{enumerate}
+  \item \cd{auth()} \textbf{sem argumentos} --- o caminho de \emph{React Server
+    Component} e de \emph{route handler} --- LÊ a sessão e \textbf{descarta} o
+    \cd{Set-Cookie}, porque nesses contextos não se escreve \emph{cookie}. Só o
+    \emph{middleware} renova.
+  \item \rota{GET /api/exp-token}, que a SDK pede de 10 em 10 minutos, está
+    FORA do \cd{matcher} do \emph{middleware}.
+\end{enumerate}
+
+Quem abre uma missão não navega mais no hub, então o prazo envelhece como se a
+pessoa estivesse parada. E quando morria, morria \textbf{em silêncio}:
+\arq{apps/hub/components/ExpFrame.tsx} tratava a falha de renovação com um
+\cd{console.error} e nada mais, a experiência seguia com o token velho até o TTL
+de 15 minutos vencer e, daí em diante, \textbf{toda} chamada à API respondia
+401. O que a criança já tinha enviado estava salvo; o que ela fizesse a partir
+dali, não --- e nada na tela pedia para entrar de novo.
+
+Com as 12h anteriores isso era inalcançável. Com 2h, uma missão que comece meia
+hora depois do \emph{login} alcança --- e as 2h foram para o ambiente de
+\emph{dev}, então deixou de ser hipótese.
+
+\textbf{Decisão.} Três partes:
+
+\begin{enumerate}
+  \item \textbf{O pedido de passe conta como atividade.} \rota{GET
+    /api/exp-token} chama \cd{unstable\_update(\{\})} depois de assinar o token.
+    O \cd{unstable\_update} do \cd{next-auth} escreve o \emph{cookie} via
+    \cd{cookies().set()}; o \cd{auth()} não. O objeto VAZIO é de propósito: o
+    \emph{callback} \cd{jwt} só mescla quando recebe \cd{session.usuario}, então
+    \cd{\{\}} renova o prazo sem tocar no conteúdo da sessão. E vem DEPOIS de
+    assinar, engolindo o próprio erro: falhar em deslizar custa, no pior caso,
+    um \emph{logoff} mais cedo; falhar em emitir o passe custa a aula.
+  \item \textbf{A morte da sessão tem TELA.} O \cd{ExpFrame} trata 401 e 403
+    como SESSÃO, não como rede: manda \cd{hub:pause}, PARA a missão e mostra o
+    \cd{AlertBox} \enquote{Sua sessão expirou} com \enquote{Entrar de novo}.
+    Fica no \cd{ExpFrame} e não no \cd{ExpHost} pelo mesmo motivo do
+    \cd{clarityProjectId}: é o único ponto por onde TODO \emph{embed} passa ---
+    no \cd{ExpHost}, as três telas de professor ficariam de fora, e um professor
+    dentro do gerador de plano por duas horas cai no mesmo buraco. E
+    \textbf{substitui} o \emph{iframe} em vez de cobri-lo: o \emph{iframe} ocupa
+    \cd{height: 100\%} em quatro \emph{layouts} diferentes, e um \cd{<div>} a
+    mais na cadeia do \emph{flex} é exatamente onde o percentual deixa de ser
+    \emph{definite} e ele volta aos 150px padrão.
+  \item \textbf{O TTL virou injetável, mas NÃO em produção.}
+    \env{SESSAO\_TTL\_SEGUNDOS} (validada com Zod, piso de 60s, teto de 12h)
+    existe para a suíte e é IGNORADA em produção, com aviso no \emph{log}. O
+    valor de produção é constante em \arq{apps/hub/lib/sessao.ts}.
+\end{enumerate}
+
+\textbf{A pergunta que a \adrr{ADR-95} deixou aberta, respondida.} Ela descartou
+a variável de ambiente porque a \rota{/privacidade} afirma o prazo \textbf{em
+texto, para a família}, e texto legal só pode afirmar o que o código faz
+(\adrr{ADR-70}). A resposta não é escolher um dos dois lados: é \textbf{pinar a
+produção e amarrar os dois por teste}. \arq{apps/hub/lib/sessao.test.ts} afirma
+que o prazo de produção é de 2h \emph{e} que a página contém a frase com esse
+número --- mudar o valor sem mudar a frase passa a ser vermelho, em vez de uma
+página mentindo em silêncio. Nada no \emph{typecheck} liga os dois.
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Pôr \rota{/api/exp-token} no \cd{matcher} do
+    \emph{middleware}.} É o atalho óbvio, e não funciona por DOIS motivos
+    independentes. Com sessão válida, \cd{podeEntrarNaArea(papel,
+    "/api/exp-token")} é falso para todo papel: o \emph{middleware}
+    redirecionaria a própria rota para a \emph{home} e cortaria a renovação de
+    quem está usando o produto. Sem sessão, o \emph{redirect} vai para
+    \rota{/login}, que o \cd{fetch} SEGUE e devolve HTML com \textbf{status
+    200} --- o \cd{r.ok} passaria e o 401 honesto viraria erro de
+    \emph{parse}. Trocar um 401 legível por um JSON inválido é piorar o
+    diagnóstico do defeito que se quer consertar.
+  \item \textbf{Não fazer nada e documentar.} Era o estado depois da
+    \adrr{ADR-95}, e ele foi para \emph{dev}. O custo é trabalho de criança
+    perdido em silêncio --- a pior forma de falha deste produto, porque ninguém
+    reclama do que não vê.
+  \item \textbf{Renovar ANTES de assinar, ou deixar a falha de renovação
+    derrubar a rota.} Inverte a prioridade: o passe é o que mantém a aula de
+    pé.
+  \item \textbf{Avisar a experiência por mensagem nova da ponte.} Exigiria subir
+    o \cd{PROTOCOL\_VERSION} e republicar as seis experiências, e a mensagem
+    apareceria DENTRO do disfarce --- \enquote{sua sessão expirou} no meio do
+    Instanooria quebra a ficção que a experiência está medindo. A tela é chrome
+    do HUB, desenhada acima do aparelho.
+  \item \textbf{Derivar a frase de \rota{/privacidade} da env.} Obrigaria a
+    página pública mais visitada, hoje estática, a virar dinâmica só para
+    imprimir um número.
+\end{itemize}
+
+\textbf{Consequências, inclusive as ruins.}
+
+\begin{enumerate}
+  \item Missão EM USO não perde mais a sessão por inatividade --- desde que a
+    experiência esteja pedindo passe, o que toda experiência que usa a SDK faz.
+  \item \textbf{A janela deixou de ser só \enquote{navegação}.} Um aparelho
+    aberto e esquecido renova a sessão de 10 em 10 minutos indefinidamente: a
+    criança que fechou a tampa com a aba aberta continua logada. É o preço
+    declarado de não deslogar quem está trabalhando, e o teto real passou a ser
+    \enquote{a aba ficar aberta}, não o tempo.
+  \item \cd{unstable\_update} é API de \emph{beta}, e o nome o diz. Se ele mudar
+    na subida do \cd{next-auth}, isto quebra --- e quebra no \emph{typecheck},
+    que é o melhor lugar para quebrar.
+  \item \textbf{A tela de sessão expirada NÃO é exercitada pela suíte.} O
+    gatilho dela é o \emph{tick} de 10 minutos da SDK, e nenhum TTL curto
+    encurta esse \emph{tick}. O \cd{data-testid="sessao-expirada"} está no lugar
+    para quando um roteiro souber dirigir a ponte.
+  \item Substituir o \emph{iframe} descarta o estado de cliente da experiência.
+    Com a sessão morta ele já não podia ser salvo, mas a criança perde o que
+    estava na tela sem ter enviado.
+\end{enumerate}
+
+\textbf{Gatilho de reavaliação.}
+\begin{itemize}
+  \item \textbf{Relato de conta ficando logada por aba esquecida} (consequência
+    2). O caminho seria um teto ABSOLUTO ao lado da inatividade --- que a
+    \adrr{ADR-95} recusou porque deslogava no meio da aula, mas a conversa muda
+    quando o que sustenta a sessão é uma aba e não uma pessoa.
+  \item \cd{unstable\_update} saindo do \emph{beta} ou trocando de nome.
+  \item \textbf{A suíte ganhando como dirigir a ponte} (pedir
+    \cd{exp:token-expirando} sob comando): aí a tela passa a ser exercitável, e
+    o passo que falta entra.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{ADR-97 --- A tela diz POR QUE não entrou, e a suíte espera o desfecho}
+\label{adr:recusa-de-login-na-tela}
+
+\textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A verificação \enquote{a recusa aparece na tela, e não só no
+console}, de \arq{scripts/e2e/publico/02-login-e-papeis.mjs}, reprovou. Atrás de
+um vermelho estavam DOIS defeitos diferentes, e o primeiro escondia o segundo.
+
+O vermelho em si era da SUÍTE. O passo esperava 3s fixos depois do clique e então
+lia a tela; naquela corrida o \rota{POST /api/auth/callback/credentials} levou
+\textbf{4,5s}, porque era a primeira vez que o \cd{next dev} compilava
+\rota{/api/auth/[...nextauth]}, e a foto pegou o botão ainda em
+\enquote{Entrando\ldots}. A recusa aparece --- 333ms depois do clique, com a rota
+quente, medido no navegador. O relatório acusou o produto de um modo de falhar
+MUDO que ele não tinha, e a mensagem do relatório é o pior tipo de erro de
+diagnóstico: ela não diz \enquote{não sei}, ela aponta um culpado errado.
+
+Mas procurar o defeito acusado encontrou um de verdade, na vizinhança exata que
+a verificação nomeia. O \cd{authorize} de \arq{apps/hub/lib/auth.ts} chamava
+\rota{POST /auth/login} da API \textbf{sem prazo}, e só sabe recusar devolvendo
+\cd{null} --- e todo \cd{null} chega ao cliente como a MESMA
+\cd{CredentialsSignin} da senha errada. Daí dois comportamentos:
+
+\begin{itemize}
+  \item \textbf{API pendurada} (não fora do ar --- pendurada, que é como
+    aparecem um Cloud Run em partida a frio e um \emph{pool} de conexões
+    esgotado): o \cd{fetch} nunca volta, o \cd{signIn} nunca resolve, e a pessoa
+    fica em \enquote{Entrando\ldots} para sempre, sem mensagem nenhuma. Este É o
+    modo de falhar mudo, e ele estava lá.
+  \item \textbf{429 da API} (8 tentativas por minuto com o mesmo \emph{login}):
+    a tela dizia \enquote{Usuário ou senha incorretos}, culpando a pessoa por um
+    bloqueio nosso e mandando-a insistir justamente quando insistir estende o
+    bloqueio.
+\end{itemize}
+
+\textbf{Decisão.} Três partes.
+
+\begin{enumerate}
+  \item \textbf{A espera pela API tem prazo.}
+    \cd{AbortSignal.timeout(8\_000)} no \cd{fetch} do \cd{authorize}. 8s é
+    folgado para o \emph{bcrypt} do \rota{/auth/login} (~100ms medidos em
+    \emph{dev}) mais uma partida a frio.
+  \item \textbf{O MOTIVO viaja até a tela, e nenhuma mensagem diz qual metade
+    errou.} O \cd{code} de uma subclasse de \cd{CredentialsSignin} é o único
+    campo que o \cd{@auth/core} carrega até o cliente: ele o escreve no
+    \cd{?code=} da URL de erro e o \cd{signIn} o devolve em
+    \cd{SignInResponse.code} (verificado em execução, não só no código:
+    \cd{code=api-indisponivel} e \cd{code=muitas-tentativas} chegam, e
+    \cd{authorize} devolvendo \cd{null} continua chegando como
+    \cd{code=credentials}). As três mensagens --- credencial, indisponibilidade
+    e limite --- e os dois códigos vivem num lugar SÓ,
+    \arq{apps/hub/lib/motivos-de-login.ts}, porque quem escreve o motivo
+    (servidor) e quem o lê (cliente) estão em arquivos diferentes: uma cópia da
+    string em cada ponta faria um erro de digitação cair calado na recusa de
+    credencial --- de novo a tela culpando a pessoa. Como o \cd{code} vai para a
+    URL, ele só pode dizer de que LADO foi a falha, nunca qual metade da
+    credencial errou (\adrr{ADR-70} aplicada a interface: o texto não mente, e
+    também não entrega a lista de \emph{logins} da rede).
+  \item \textbf{A suíte espera o DESFECHO, não o relógio.} O passo corre o
+    \cd{AlertBox} de erro contra a saída do \rota{/login} e deixa cada
+    verificação com o seu nome --- credencial inválida que ENTRA falha na hora,
+    em vez de pagar o prazo inteiro e reportar o seletor que faltou.
+\end{enumerate}
+
+\textbf{Alternativas descartadas.}
+\begin{itemize}
+  \item \textbf{Reaproveitar \enquote{Usuário ou senha incorretos} para todo
+    motivo} --- era o que existia. É a tela mentindo em dois casos, e mentindo
+    contra a pessoa: ela conferiria a senha que estava certa.
+  \item \textbf{Dizer qual metade errou.} Nunca: transforma a tela de
+    \emph{login} num verificador de \emph{logins} válidos da rede. A
+    verificação que cobra isso é a mais antiga deste passo e continua verde.
+  \item \textbf{Pôr o prazo no CLIENTE} (um \cd{Promise.race} em volta do
+    \cd{signIn}). Cobriria também \enquote{o hub não respondeu}, que o prazo do
+    servidor não cobre, mas cria uma mentira NOVA: se a resposta chegar depois
+    de desistirmos, a pessoa está dentro e a tela diz que falhou. A lacuna fica
+    declarada abaixo em vez de trocada por uma afirmação errada.
+  \item \textbf{O prazo como variável de ambiente.} Mais um botão para algo que
+    ninguém vai ajustar por rede, e um valor por ambiente que só some da
+    memória de quem opera.
+  \item \textbf{Aumentar a espera cega da suíte para 10s.} Mantém a espera
+    cega e só troca o número --- e nenhum número que a gente escolha limita uma
+    compilação a frio.
+\end{itemize}
+
+\textbf{Consequências ruins, aceitas.}
+\begin{itemize}
+  \item \textbf{A distinção é visível a qualquer pessoa.} Quem tenta entrar
+    passa a conseguir separar \enquote{o sistema está fora} de
+    \enquote{credencial errada}. Não revela se um usuário existe --- que é o
+    que a regra protege --- mas revela disponibilidade. Aceito: o custo de
+    esconder isso é a tela mentindo para a professora que digitou tudo certo.
+  \item \textbf{O cliente continua sem prazo.} Se o HUB não responder, o botão
+    fica em \enquote{Entrando\ldots} indefinidamente. O prazo de 8s cobre a
+    API, que é o salto que se mede; o outro não tem tela.
+  \item \textbf{8s é um número sem medição de produção.} Em produção, uma
+    partida a frio da API mais lenta que isso vai mostrar \enquote{não foi
+    possível entrar agora} a quem tinha a senha certa --- honesto, e resolvido
+    por tentar de novo, mas é uma recusa que não precisava existir.
+  \item \textbf{Os dois caminhos novos não têm passo de e2e.} A suíte não sabe
+    pendurar a API nem esgotar o limite por minuto; a tela não mudou de FORMA
+    (mesmo \cd{AlertBox}, texto diferente), então não há passo novo.
+    \arq{apps/hub/lib/motivos-de-login.test.ts} cobre a propriedade que
+    importa --- nenhuma das três mensagens diz qual metade errou, e motivo
+    desconhecido cai na recusa de credencial --- e amarra o \cd{auth.ts} aos
+    códigos desta tabela, mas a ligação ponta a ponta foi provada por sonda, não
+    por teste do repositório.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} Um \emph{login} legítimo recusado com
+\cd{api-indisponivel} em produção (o \emph{log} do hub registra
+\cd{[login] a api não respondeu: TimeoutError}) --- aí o número de 8s está
+apertado, ou a partida a frio da API é o problema a resolver. E se o hub passar
+a responder o \emph{callback} em mais de alguns segundos com a rota QUENTE, a
+espera de 20s da suíte deixa de ser folga e volta a ser um prazo a discutir.

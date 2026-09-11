@@ -253,6 +253,13 @@ Nest --- ele nasce na importação, e é usado pelo \arq{main.ts} e pelo
   EXPERIÊNCIAS com OpenTelemetry Web. Vai no \cd{config.obs.traceRatio} do
   \cd{hub:init}: env de \emph{runtime}, então mudar a amostragem não
   republica bundle nenhum. \cd{0} desliga (a SDK nem baixa os pacotes).\\
+\env{SESSAO\_TTL\_SEGUNDOS} & servidor & Prazo de
+  INATIVIDADE da sessão, em segundos --- \textbf{só fora de produção}
+  (\adrr{ADR-96}). Existe para a suíte não esperar duas horas de relógio;
+  piso de 60s, teto de 12h, validada com Zod. Em produção ela é IGNORADA com
+  aviso no \emph{log} e o prazo é a constante de \arq{lib/sessao.ts}: a
+  \rota{/privacidade} afirma esse número em texto para a família, e
+  \arq{lib/sessao.test.ts} prende os dois lados.\\
 \env{NEXT\_PUBLIC\_HUB\_VERSAO} & \textbf{cliente} & O SHA do
   \emph{build}, inlinado no \emph{bundle} (\cd{ARG} do Dockerfile, como a do
   Clarity): a \enquote{versão} do hub nos erros de CLIENTE do Error Reporting.

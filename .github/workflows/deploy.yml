@@ -416,7 +416,7 @@ jobs:
     permissions: { contents: read, id-token: write }
     steps:
       # Sem BUILD, mas o `pnpm install` é obrigatório: o script assina o token
-      # de admin-contrato com `jose` (dependência do hub), e sem ele o job morre
+      # de `gestor_contrato` com `jose` (dependência do hub), e sem ele o job morre
       # em `ERR_MODULE_NOT_FOUND` — depois de os bundles já terem subido, com a
       # `versaoAtiva` ainda apontando para a versão antiga. O install é FILTRADO
       # no hub: é a única dependência que o script precisa, e instalar o

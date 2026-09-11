@@ -20,7 +20,13 @@ o que decide se você precisa abri-lo.
   outro, e confira a contagem no cabeçalho (`══ suíte … · N roteiro(s) ══`).
 - **Espera nova corre contra o erro** (`lib/smoke.mjs`: `esperarOuFalharCedo`,
   `esperarOuFalharPorHttp`). Espera cega paga o timeout inteiro e reporta o
-  seletor que faltou em vez da causa.
+  seletor que faltou em vez da causa — e quando ela é CURTA demais é pior:
+  espere o DESFECHO, nunca o relógio. A `publico/02` esperava 3s fixos depois
+  do clique no login; em 2026-09-10 o callback levou 4,5s porque era a primeira
+  compilação de `/api/auth/[...nextauth]` no `next dev`, a foto pegou
+  "Entrando…" e a verificação reprovou dizendo que a recusa **não aparece na
+  tela** (ADR-97). O relatório não disse "não sei" — apontou um culpado errado,
+  e o culpado apontado foi o produto.
 - **Vigie o alerta só DEPOIS de o estado novo começar.** Quando o botão que
   dispara a ação fica dentro do alerta de erro anterior (o "Tentar de novo" da
   exp-92), a vigilância vê o alerta ANTIGO e aborta antes de a ação começar —

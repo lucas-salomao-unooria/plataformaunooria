@@ -36848,6 +36848,1945 @@
         ],
         "x-acesso": "token"
       }
+    },
+    "/foto-conta/sessao": {
+      "get": {
+        "operationId": "FotoContaController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    },
+                    "tentativa": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "marcaId": {
+                      "type": "string",
+                      "enum": [
+                        "coruja",
+                        "estrela",
+                        "sol"
+                      ],
+                      "nullable": true
+                    },
+                    "fotoEscolhidaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "legendaEscolhidaId": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "tentativasReflexao": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "pacote": {
+                      "type": "object",
+                      "properties": {
+                        "tema": {
+                          "type": "string",
+                          "enum": [
+                            "recreio",
+                            "nossa_horta",
+                            "sala_de_aula",
+                            "parquinho"
+                          ]
+                        },
+                        "feed": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "fotoId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "legenda": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "fotoId",
+                              "legenda"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        "par": {
+                          "type": "object",
+                          "properties": {
+                            "fotoAId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            },
+                            "fotoBId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            }
+                          },
+                          "required": [
+                            "fotoAId",
+                            "fotoBId"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "legendas": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "enum": [
+                                    "legenda_1",
+                                    "legenda_2"
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 60
+                                },
+                                "icone": {
+                                  "type": "string",
+                                  "enum": [
+                                    "bloco",
+                                    "vassoura"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "texto",
+                                "icone"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "enum": [
+                                    "legenda_1",
+                                    "legenda_2"
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 60
+                                },
+                                "icone": {
+                                  "type": "string",
+                                  "enum": [
+                                    "bloco",
+                                    "vassoura"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "texto",
+                                "icone"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "tema",
+                        "feed",
+                        "par",
+                        "legendas"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "latchLiberado": {
+                      "type": "boolean"
+                    },
+                    "versaoInstrumento": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "tentativa",
+                    "marcaId",
+                    "fotoEscolhidaId",
+                    "legendaEscolhidaId",
+                    "tentativasReflexao",
+                    "pacote",
+                    "latchLiberado",
+                    "versaoInstrumento"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "O boot da missão: estado da run + o pacote da aula, sem a matriz do Aha.",
+        "description": "O `pacote` sai **sem `comentarios`** — o tipo do servidor é um `omit` do schema completo, então a surpresa do Aha é impossível de vazar aqui, não só ausente por descuido. Os comentários chegam um par por vez, na resposta de `POST /foto-conta/publicar`.\n\nA run da tentativa corrente é criada no primeiro toque; um F5 devolve exatamente o estado gravado (reentrada determinística, bloco 4 do handoff).\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Estudante sem turma responde 409 `sem-turma`: a missão é síncrona por turma e não há aula para entrar. Quem explica a resolução é a tela do HUB, fora do disfarce.\n- `latchLiberado` já vem no boot para o F5 no meio da roda renderizar direto a tela de espera — ou de reflexão, se o professor liberou durante a queda.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/marca": {
+      "post": {
+        "operationId": "FotoContaController_marca",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    },
+                    "marcaId": {
+                      "type": "string",
+                      "enum": [
+                        "coruja",
+                        "estrela",
+                        "sol"
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "marcaId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Etapa 1: grava a marca escolhida e abre o mural.",
+        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- Seleção unária: a marca nova substitui a anterior só ANTES de confirmar — depois de entrar no mural ela é a identidade da ficção e não muda mais.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "marcaId": {
+                    "type": "string",
+                    "enum": [
+                      "coruja",
+                      "estrela",
+                      "sol"
+                    ]
+                  }
+                },
+                "required": [
+                  "marcaId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/feed": {
+      "post": {
+        "operationId": "FotoContaController_feed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Etapa 2: registra a exploração do feed e abre a decisão.",
+        "description": "Curtidas e permanência são grau `none` (cosmético/motor): familiarização com o clone, sem peso avaliativo — o dashboard mostra a média da turma e nada mais.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "curtidas": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "permanenciaMs": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 7200000
+                  }
+                },
+                "required": [
+                  "curtidas",
+                  "permanenciaMs"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/publicar": {
+      "post": {
+        "operationId": "FotoContaController_publicar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    },
+                    "post": {
+                      "type": "object",
+                      "properties": {
+                        "marcaId": {
+                          "type": "string",
+                          "enum": [
+                            "coruja",
+                            "estrela",
+                            "sol"
+                          ]
+                        },
+                        "fotoId": {
+                          "type": "string"
+                        },
+                        "legendaTexto": {
+                          "type": "string"
+                        },
+                        "curtidas": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "criadoEm": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "marcaId",
+                        "fotoId",
+                        "legendaTexto",
+                        "curtidas",
+                        "criadoEm"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "comentarios": {
+                      "type": "object",
+                      "properties": {
+                        "fotoId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 30
+                        },
+                        "legendaId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 30
+                        },
+                        "leo": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "sofia": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "audioLeo": {
+                          "type": "string",
+                          "maxLength": 60
+                        },
+                        "audioSofia": {
+                          "type": "string",
+                          "maxLength": 60
+                        }
+                      },
+                      "required": [
+                        "fotoId",
+                        "legendaId",
+                        "leo",
+                        "sofia"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "post",
+                    "comentarios"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Etapa 3 (o PICO): publica o par foto+legenda e devolve o eco dos colegas.",
+        "description": "A escolha é validada CONTRA O PACOTE da turma (id fora do pacote é payload forjado, não clique) e os comentários voltam **deterministicamente** — o mesmo par devolve sempre o mesmo Leo e a mesma Sofia, e um F5 não muda a cena (não-negociável 1 do handoff).\n\nRepetir a chamada com o MESMO par devolve a publicação existente (toque duplo e retry de rede não criam segundo post); par DIFERENTE responde `409 publicacao-ja-feita` — publicar é irreversível por desenho.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `latenciaMs` é cronometrada pelo CLIENTE: o dado é o tempo de decisão da criança, não a latência da api. Teto de 2h (aba esquecida).\n- A cadência do eco (Leo a 1,5s, Sofia a 3,0s) é do CLIENTE, fixada em constante — o servidor entrega os textos de uma vez.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fotoId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 30
+                  },
+                  "legendaId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 30
+                  },
+                  "latenciaMs": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 7200000
+                  }
+                },
+                "required": [
+                  "fotoId",
+                  "legendaId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/roda": {
+      "post": {
+        "operationId": "FotoContaController_roda",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Etapa 4 → 5: o eco terminou; a run entra no latch da Roda de Conversa.",
+        "description": "**Papéis:** estudante.\n\n**Restrições:**\n- Daqui em diante o tablet é porta-retrato: a tela não tem botão nenhum e quem anda é o professor, liberando a turma inteira pelo painel.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/latch": {
+      "get": {
+        "operationId": "FotoContaController_latch",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "liberado": {
+                      "type": "boolean"
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    },
+                    "agora": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "liberado",
+                    "etapa",
+                    "agora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "O polling do latch (3s): a turma já foi liberada? (ADR-94)",
+        "description": "Leve de propósito, como o gate do o-eco-no-grupo: sem pacote e sem catálogo — é o que deixa 35 tablets perguntarem a cada 3 segundos sem pesar. `agora` é o instante do SERVIDOR: o relógio do tablet da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Polling HTTP curto, e não WebSocket/SSE: decisão da ADR-94 — não existe canal persistente de aplicação nesta infraestrutura, e o teto de 4s de reação docente da banca é atendido com folga.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/reflexao": {
+      "post": {
+        "operationId": "FotoContaController_reflexao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "conclui": {
+                      "type": "boolean"
+                    },
+                    "tentativas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "desafiar",
+                        "feed",
+                        "decidir",
+                        "aha",
+                        "roda",
+                        "refletir",
+                        "concluida"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "conclui",
+                    "tentativas",
+                    "etapa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Etapa 6: a síntese metacognitiva — o servidor decide, sem nota.",
+        "description": "O cliente manda `lupa` ou `globo` e NUNCA sabe de antemão qual conclui (regra 3): `conclui: true` celebra e congela a run; `false` é o retry formativo — o card pisca sem vermelho punitivo, Nina acolhe e a criança escolhe de novo, sem teto de tentativas e sem penalidade.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Exige o latch liberado (`409 roda-em-andamento` antes disso): responder antes da Roda quebraria a mediação presencial que a missão existe para provocar.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "escolha": {
+                    "type": "string",
+                    "enum": [
+                      "lupa",
+                      "globo"
+                    ]
+                  }
+                },
+                "required": [
+                  "escolha"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/galeria": {
+      "get": {
+        "operationId": "FotoContaController_galeria",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "posts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "marcaId": {
+                            "type": "string",
+                            "enum": [
+                              "coruja",
+                              "estrela",
+                              "sol"
+                            ]
+                          },
+                          "fotoId": {
+                            "type": "string"
+                          },
+                          "legendaTexto": {
+                            "type": "string"
+                          },
+                          "curtidas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "criadoEm": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "marcaId",
+                          "fotoId",
+                          "legendaTexto",
+                          "curtidas",
+                          "criadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "posts"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "O mural da turma (pós-publicação): as fotos dos colegas, chegando.",
+        "description": "Estritamente passiva (irreversibilidade pós-missão do handoff): sem curtir, sem editar, sem republicar. Quem assina cada post é a MARCA (coruja/estrela/sol) — nome de criança não existe nesta resposta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O cliente atualiza por polling lento (~10s); a galeria é vitrine, não canal.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/turmas": {
+      "get": {
+        "operationId": "FotoContaTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string"
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie",
+                          "estudantes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "As turmas de quem pergunta, para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. Perfis de contrato precisam dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/turmas/{turmaId}": {
+      "get": {
+        "operationId": "FotoContaTurmasController_painel",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "tema": {
+                      "type": "string",
+                      "enum": [
+                        "recreio",
+                        "nossa_horta",
+                        "sala_de_aula",
+                        "parquinho"
+                      ]
+                    },
+                    "complexidade": {
+                      "type": "string",
+                      "enum": [
+                        "nivel_1",
+                        "nivel_2"
+                      ]
+                    },
+                    "statusPacote": {
+                      "type": "string",
+                      "enum": [
+                        "pendente",
+                        "pronto"
+                      ]
+                    },
+                    "pacoteDaIa": {
+                      "type": "boolean"
+                    },
+                    "latchLiberado": {
+                      "type": "boolean"
+                    },
+                    "tentativa": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "conectados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "publicaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "noLatch": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "concluiram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "porFoto": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "porLegenda": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "required": [
+                        "conectados",
+                        "publicaram",
+                        "noLatch",
+                        "concluiram",
+                        "porFoto",
+                        "porLegenda"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "hesitando": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "tema",
+                    "complexidade",
+                    "statusPacote",
+                    "pacoteDaIa",
+                    "latchLiberado",
+                    "tentativa",
+                    "resumo",
+                    "hesitando"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "O dashboard ao vivo: distribuição A/B, latch e a lista de hesitação.",
+        "description": "É o alvo do polling do painel durante a aula (~5s). `hesitando` traz id E nome — o nome é hidratado AQUI, da matrícula autenticada da turma (DAD-07): o modelo da run, a telemetria e o canal de status só conhecem o id opaco.\n\nSem ranking, sem nota, sem ordem de velocidade: as métricas proibidas do handoff não existem neste payload por desenho.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- \"Hesitação\" é run parada na etapa de decisão há mais de 60s — a lista de mediação de leitura, não um alerta de desempenho.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/turmas/{turmaId}/configurar": {
+      "post": {
+        "operationId": "FotoContaTurmasController_configurar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Grava tema e nível de leitura da turma (o passo anterior à geração).",
+        "description": "**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tema": {
+                    "type": "string",
+                    "enum": [
+                      "recreio",
+                      "nossa_horta",
+                      "sala_de_aula",
+                      "parquinho"
+                    ]
+                  },
+                  "complexidade": {
+                    "type": "string",
+                    "enum": [
+                      "nivel_1",
+                      "nivel_2"
+                    ]
+                  }
+                },
+                "required": [
+                  "tema",
+                  "complexidade"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/turmas/{turmaId}/gerar-conteudo": {
+      "post": {
+        "operationId": "FotoContaTurmasController_gerar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pacote": {
+                      "type": "object",
+                      "properties": {
+                        "tema": {
+                          "type": "string",
+                          "enum": [
+                            "recreio",
+                            "nossa_horta",
+                            "sala_de_aula",
+                            "parquinho"
+                          ]
+                        },
+                        "feed": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "fotoId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "legenda": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "fotoId",
+                              "legenda"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 3,
+                          "maxItems": 3
+                        },
+                        "par": {
+                          "type": "object",
+                          "properties": {
+                            "fotoAId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            },
+                            "fotoBId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            }
+                          },
+                          "required": [
+                            "fotoAId",
+                            "fotoBId"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "legendas": {
+                          "type": "array",
+                          "minItems": 2,
+                          "maxItems": 2,
+                          "items": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "enum": [
+                                    "legenda_1",
+                                    "legenda_2"
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 60
+                                },
+                                "icone": {
+                                  "type": "string",
+                                  "enum": [
+                                    "bloco",
+                                    "vassoura"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "texto",
+                                "icone"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "enum": [
+                                    "legenda_1",
+                                    "legenda_2"
+                                  ]
+                                },
+                                "texto": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 60
+                                },
+                                "icone": {
+                                  "type": "string",
+                                  "enum": [
+                                    "bloco",
+                                    "vassoura"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "texto",
+                                "icone"
+                              ],
+                              "additionalProperties": false
+                            }
+                          ]
+                        },
+                        "comentarios": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "fotoId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "legendaId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "leo": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "sofia": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "audioLeo": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "audioSofia": {
+                                "type": "string",
+                                "maxLength": 60
+                              }
+                            },
+                            "required": [
+                              "fotoId",
+                              "legendaId",
+                              "leo",
+                              "sofia"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 4,
+                          "maxItems": 4
+                        }
+                      },
+                      "required": [
+                        "tema",
+                        "feed",
+                        "par",
+                        "legendas",
+                        "comentarios"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "daIa": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "pacote",
+                    "daIa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Gera o pacote da aula com IA (Vertex), para o preview do professor.",
+        "description": "A IA escreve os TEXTOS (legendas e comentários) adaptados ao tema e ao nível de leitura; as fotos são sempre do banco curado, e a estrutura (3 posts, 2 legendas, 4 combinações) é fixa do servidor. `daIa: false` = a geração não deu (sem saldo, provider fora, saída reprovada) e o pacote devolvido é o banco curado padrão — a tela diz isso com todas as letras.\n\nNada disso chega à turma sem o `aprovar-pacote`: curadoria docente é obrigatória (bloco 14 do one-pager).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Passa pelo QuotaService por usuário/dia e POR PERFIL (regra inviolável 5); a recusa por saldo cai no mesmo `daIa: false`.\n- Os comentários aparecem AQUI (preview do professor) — são o material da mediação dele; do estudante, continuam escondidos até a publicação.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tema": {
+                    "type": "string",
+                    "enum": [
+                      "recreio",
+                      "nossa_horta",
+                      "sala_de_aula",
+                      "parquinho"
+                    ]
+                  },
+                  "complexidade": {
+                    "type": "string",
+                    "enum": [
+                      "nivel_1",
+                      "nivel_2"
+                    ]
+                  }
+                },
+                "required": [
+                  "tema",
+                  "complexidade"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/turmas/{turmaId}/aprovar-pacote": {
+      "post": {
+        "operationId": "FotoContaTurmasController_aprovar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Aprova o pacote conferido no preview — o `cfg_turma_ready` da spec.",
+        "description": "A api REVALIDA o pacote inteiro com o MESMO schema da geração: aprovação é o último portão antes da turma, não um carimbo. Sem aprovação até a aula, o banco curado padrão assume sozinho (fallback do bloco 9 — a aula nunca fica sem material).\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pacote": {
+                    "type": "object",
+                    "properties": {
+                      "tema": {
+                        "type": "string",
+                        "enum": [
+                          "recreio",
+                          "nossa_horta",
+                          "sala_de_aula",
+                          "parquinho"
+                        ]
+                      },
+                      "feed": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            },
+                            "fotoId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            },
+                            "legenda": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "fotoId",
+                            "legenda"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "par": {
+                        "type": "object",
+                        "properties": {
+                          "fotoAId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 30
+                          },
+                          "fotoBId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 30
+                          }
+                        },
+                        "required": [
+                          "fotoAId",
+                          "fotoBId"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "legendas": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "legenda_1",
+                                  "legenda_2"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "icone": {
+                                "type": "string",
+                                "enum": [
+                                  "bloco",
+                                  "vassoura"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto",
+                              "icone"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "legenda_1",
+                                  "legenda_2"
+                                ]
+                              },
+                              "texto": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 60
+                              },
+                              "icone": {
+                                "type": "string",
+                                "enum": [
+                                  "bloco",
+                                  "vassoura"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "texto",
+                              "icone"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "comentarios": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "fotoId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            },
+                            "legendaId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 30
+                            },
+                            "leo": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "sofia": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "audioLeo": {
+                              "type": "string",
+                              "maxLength": 60
+                            },
+                            "audioSofia": {
+                              "type": "string",
+                              "maxLength": 60
+                            }
+                          },
+                          "required": [
+                            "fotoId",
+                            "legendaId",
+                            "leo",
+                            "sofia"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      }
+                    },
+                    "required": [
+                      "tema",
+                      "feed",
+                      "par",
+                      "legendas",
+                      "comentarios"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "daIa": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "pacote"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/foto-conta/turmas/{turmaId}/projecao": {
+      "get": {
+        "operationId": "FotoContaTurmasController_projecao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fotoAId": {
+                      "type": "string"
+                    },
+                    "fotoBId": {
+                      "type": "string"
+                    },
+                    "legendas": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "enum": [
+                                "legenda_1",
+                                "legenda_2"
+                              ]
+                            },
+                            "texto": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "icone": {
+                              "type": "string",
+                              "enum": [
+                                "bloco",
+                                "vassoura"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "texto",
+                            "icone"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "enum": [
+                                "legenda_1",
+                                "legenda_2"
+                              ]
+                            },
+                            "texto": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 60
+                            },
+                            "icone": {
+                              "type": "string",
+                              "enum": [
+                                "bloco",
+                                "vassoura"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "texto",
+                            "icone"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "rotulos": {
+                      "type": "object",
+                      "properties": {
+                        "meio": {
+                          "type": "string"
+                        },
+                        "fora": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "meio",
+                        "fora"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "perguntas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "tema": {
+                      "type": "string",
+                      "enum": [
+                        "recreio",
+                        "nossa_horta",
+                        "sala_de_aula",
+                        "parquinho"
+                      ]
+                    },
+                    "latchLiberado": {
+                      "type": "boolean"
+                    },
+                    "conectados": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "noLatch": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "fotoAId",
+                    "fotoBId",
+                    "legendas",
+                    "rotulos",
+                    "perguntas",
+                    "tema",
+                    "latchLiberado",
+                    "conectados",
+                    "noLatch"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "A projeção da lousa (E5): o par lado a lado, os rótulos e as 3 perguntas.",
+        "description": "O material do debate vem da API, nunca de cópia no hub: uma vírgula divergente entre o que os tablets mostraram e o que a lousa projeta põe a sala discutindo uma foto que ninguém viu. `noLatch`/`conectados` são o termômetro de \"a turma toda chegou\".\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/turmas/{turmaId}/destravar-latch": {
+      "post": {
+        "operationId": "FotoContaTurmasController_liberar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "liberado": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "tabletsNoLatch": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "liberado",
+                    "tabletsNoLatch"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "LIBERAR REFLEXÃO FINAL: destrava os tablets da turma inteira.",
+        "description": "UPDATE simples e sem lock de linha (DAD-11): quem \"recebe o broadcast\" é o polling de 3s dos tablets. Liberar de novo responde `409 latch-ja-liberado` — idempotência por erro, e a mensagem diz que está tudo bem: a turma JÁ está liberada.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `tabletsNoLatch` é a contagem no instante da liberação — a confirmação visual do painel (\"N tablets receberam o sinal\" chega pelo polling seguinte do dashboard).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/foto-conta/turmas/{turmaId}/reset": {
+      "post": {
+        "operationId": "FotoContaTurmasController_reset",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tentativa": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "runsArquivadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "latchLiberado": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  },
+                  "required": [
+                    "tentativa",
+                    "runsArquivadas",
+                    "latchLiberado"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "foto-conta"
+        ],
+        "summary": "Zerar e Reiniciar Turma: arquiva a tentativa e rearma o latch.",
+        "description": "Transação serializada (DAD-11): a `tentativa` incrementa e as runs anteriores ficam ARQUIVADAS na tentativa velha, imutáveis (DAD-06) — nada é apagado, e o histórico analítico não é tocado. Os tablets veem o número novo no boot seguinte e recomeçam do crachá.\n\nO guia do professor recomenda TROCAR o tema na reaplicação no mesmo ano (PED-13): repetir o pacote mede memória, não leitura de imagem — recomendação, não automatismo.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
     }
   },
   "info": {

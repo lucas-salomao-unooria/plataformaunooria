@@ -160,6 +160,10 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
     {\texttt{/manifesto-ia/*}\desc{estudante}};
   \node[c4component, text width=27mm] (miat) at (12.5,-13.3)
     {\texttt{/manifesto-ia/turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
+  \node[c4component, text width=27mm] (fc) at (9.1,-13.3)
+    {\texttt{/foto-conta/*}\desc{estudante}};
+  \node[c4component, text width=27mm] (fct) at (12.5,-13.3)
+    {\texttt{/foto-conta/turmas/*}\desc{prof., gestor --- o latch da Roda}};
 
 \end{tikzpicture}}
 \caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
@@ -582,6 +586,10 @@ hub divergiria na primeira revisão de \emph{copy}.
 \rota{GET /o-eco-no-grupo/professor/material} & prof., gestor & As 3 respostas
   com \cd{desfecho} e \cd{correta}, e as falas que o bairro devolve em cada
   desfecho (o roteiro canônico, sem IA).\\
+\zebra \rota{GET /foto-conta/turmas/:id/projecao} & prof., gestor & A projeção
+  da Roda da exp-04: o par de fotos, os rótulos, as 3 perguntas do debate e o
+  termômetro do \emph{latch} --- o material vem da API para a lousa e os
+  tablets nunca discordarem.\\
 \bottomrule
 \end{tabularx}
 

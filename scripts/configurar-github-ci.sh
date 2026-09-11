@@ -138,7 +138,7 @@ echo "$VARS" | while IFS='=' read -r nome valor; do
 done
 
 # A MESMA chave que o hub usa para assinar: e assim que o `publicar-manifesto`
-# do CI consegue um token admin-contrato que a api valida pelo JWKS do hub.
+# do CI consegue um token `gestor_contrato` que a api valida pelo JWKS do hub.
 # Escopada no environment: a chave de dev nunca assina um manifesto de hml.
 echo "   TOKEN_SIGNING_KEY_PEM = (secret)"
 tf output -raw token_signing_key_pem | gh secret set TOKEN_SIGNING_KEY_PEM --env "$AMB"
