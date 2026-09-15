@@ -91,8 +91,18 @@ export function limparSpan(span: SpanOtlp): SpanOtlp {
   };
 }
 
-/** O lote pronto para o Google: resource reescrito, spans limpos. Devolve também quantos spans tem. */
-export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote): { corpo: OtlpTraces; spans: number } {
+/**
+ * O lote pronto para o Google: resource reescrito, spans limpos. Devolve também
+ * quantos spans tem.
+ *
+ * `projeto` é o `gcp.project_id`, e **a Telemetry API o EXIGE**: sem ele todo
+ * lote volta `400 Resource is missing required attribute`, a rota responde 204 e
+ * o contador soma em `motivo=upstream`. É a mesma exigência que `recurso.ts`
+ * cumpre para os sinais do processo; aqui o atributo precisa ser repetido porque
+ * o resource do cliente é DESCARTADO inteiro (é entrada não confiável) e este é
+ * montado do zero. Opcional porque, sem cliente OTLP, o corpo nem é enviado.
+ */
+export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote, projeto?: string): { corpo: OtlpTraces; spans: number } {
   let spans = 0;
   const scopeSpans = (lote.resourceSpans[0]?.scopeSpans ?? []).map((sc) => {
     spans += sc.spans.length;
@@ -107,6 +117,7 @@ export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote): 
             { key: "service.version", value: { stringValue: identidade.versao } },
             { key: "service.namespace", value: { stringValue: "unooria-navegador" } },
             { key: "telemetry.sdk.language", value: { stringValue: "webjs" } },
+            ...(projeto ? [{ key: "gcp.project_id", value: { stringValue: projeto } }] : []),
           ],
         },
         scopeSpans,
@@ -140,7 +151,7 @@ export class ProxyOtlpService {
       this.metricas.spansDescartados.add(1, { motivo: "sem-identidade" });
       return "sem-identidade";
     }
-    const { corpo, spans } = reescreverLote(lote, identidade);
+    const { corpo, spans } = reescreverLote(lote, identidade, this.cliente?.projeto);
     if (spans === 0 || spans > LIMITE_SPANS_POR_LOTE) {
       this.metricas.spansDescartados.add(1, { motivo: "tamanho" });
       return "descartado";
@@ -160,7 +171,10 @@ export class ProxyOtlpService {
         // Uma linha por minuto, não uma por lote: o upstream fora do ar não
         // pode virar inundação de log.
         if (rateLimit("log:otlp-upstream", 1, 60_000).ok) {
-          logger.warn({ codigo: "otlp.upstream-recusou", status: r.status, detalhe: r.detalhe }, "a Telemetry API recusou o lote de spans");
+          logger.warn(
+            { codigo: "otlp.upstream-recusou", status: r.status, detalhe: r.detalhe, spans, expId: identidade.expId },
+            "a Telemetry API recusou o lote de spans",
+          );
         }
         return "descartado";
       }
@@ -168,7 +182,7 @@ export class ProxyOtlpService {
     } catch (erro) {
       this.metricas.spansDescartados.add(spans, { motivo: "upstream" });
       if (rateLimit("log:otlp-upstream", 1, 60_000).ok) {
-        logger.warn({ codigo: "otlp.upstream-falhou", err: erro }, "a Telemetry API não respondeu");
+        logger.warn({ codigo: "otlp.upstream-falhou", err: erro, spans, expId: identidade.expId }, "a Telemetry API não respondeu");
       }
       return "descartado";
     }

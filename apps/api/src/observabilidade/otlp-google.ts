@@ -70,7 +70,14 @@ export class ClienteOtlpGoogle {
   private readonly timeoutMs: number;
 
   constructor(
-    private readonly projeto: string,
+    /**
+     * PÚBLICO porque o `ProxyOtlpService` precisa dele no RESOURCE do lote, e
+     * não só no cabeçalho de cota: sem `gcp.project_id` ali, a Telemetry API
+     * recusa com `400 Resource is missing required attribute`. Mesma fonte para
+     * os dois usos de propósito — o projeto que paga a cota e o que recebe os
+     * spans não podem divergir.
+     */
+    readonly projeto: string,
     opcoes: OpcoesDoClienteOtlp = {},
   ) {
     this.auth = opcoes.auth ?? new GoogleAuth({ scopes: ["https://www.googleapis.com/auth/cloud-platform"] });
