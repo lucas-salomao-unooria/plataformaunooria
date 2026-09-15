@@ -1,4 +1,4 @@
-import type { MarcoDaTrilha, RodadaDoEstudante } from "./unoogpt-tipos";
+import type { MarcoDaTrilha, MotivoDoFim, RodadaDoEstudante } from "./unoogpt-tipos";
 
 /**
  * Como a tela do professor escreve TEMPO e MARCO da exp-03. Puro.
@@ -75,9 +75,32 @@ export function faseEmTexto(r: NonNullable<RodadaDoEstudante["recomeco"]>): stri
     : `com a aula correndo, faltavam ${cronometro(r.segundosRestantes)}`;
 }
 
-/** "Faltavam 1:40", "estourou (a chuva chegou)", "sem cronômetro". */
+/** Por que o relógio fechou, do jeito que a missão contou para o estudante. */
+function porQueOTempoAcabou(motivo: MotivoDoFim): string {
+  return motivo === "professor" ? "o professor encerrou" : "a chuva chegou";
+}
+
+/** "faltavam 1:40", "tempo esgotado — a chuva chegou", "sem cronômetro (modo livre)". */
 export function envioEmTexto(e: NonNullable<RodadaDoEstudante["envio"]>): string {
-  if (e.estourou) return e.motivoDoFim === "professor" ? "estourou — o professor encerrou" : "estourou — a chuva chegou";
+  if (e.estourou) return `tempo esgotado — ${porQueOTempoAcabou(e.motivoDoFim)}`;
   if (e.segundosRestantes === null) return "sem cronômetro (modo livre)";
   return `faltavam ${cronometro(e.segundosRestantes)}`;
+}
+
+/**
+ * O MESMO fato no tamanho de um `MetricCard`: "1:40", "esgotado", "sem relógio".
+ *
+ * Existe separada de `envioEmTexto` porque o cartão do DS é de KPI — o valor é
+ * `nowrap` a 36px dentro de 267px úteis (medidos na tela) e altura fixa, então
+ * frase VAZA por fora do cartão, sem nada no typecheck acusando. Os três valores
+ * cabem com folga: 164px, 208px e 93px. "tempo esgotado" foi medido e
+ * DESCARTADO — 291px, estoura de novo.
+ *
+ * O porquê de o tempo ter acabado não cabe aqui e nem precisa: ele já está por
+ * extenso em "Como usou o tempo", que é onde o professor vai atrás do detalhe.
+ */
+export function envioNoCartao(e: NonNullable<RodadaDoEstudante["envio"]>): string {
+  if (e.estourou) return "esgotado";
+  if (e.segundosRestantes === null) return "sem relógio";
+  return cronometro(e.segundosRestantes);
 }

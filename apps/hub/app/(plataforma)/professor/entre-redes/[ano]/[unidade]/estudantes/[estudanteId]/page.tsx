@@ -14,6 +14,7 @@ import {
   cronometro,
   descreverMarco,
   envioEmTexto,
+  envioNoCartao,
   faseEmTexto,
   horaDaCidade,
   quandoDoMarco,
@@ -161,15 +162,21 @@ export default async function EstudantePage({
           title="Mudanças de destino"
           value={ultimaRodada ? ultimaRodada.mudancasDeDestino : "—"}
         />
+        {/* `envioNoCartao`, e não `envioEmTexto`: o valor do `MetricCard` é
+            `nowrap` a 36px, e a frase inteira VAZA para fora do cartão. O
+            motivo de o tempo ter acabado fica na nota abaixo e, por extenso,
+            em "Como usou o tempo". */}
         <MetricCard
           title="Ao confirmar"
-          value={ultimoEnvio ? envioEmTexto(ultimoEnvio) : "—"}
+          value={ultimoEnvio ? envioNoCartao(ultimoEnvio) : "—"}
         />
       </div>
       <p className="-mt-3 text-[12px] leading-snug text-unooria-neutral-500">
         “Até a primeira fala” conta da largada do professor; com asterisco, do clique em
-        Começar (a turma não tinha largada registrada). “Mudanças de destino” e “Ao confirmar”
-        são da última rodada; o detalhe de cada uma está em “Como usou o tempo”.
+        Começar (a turma não tinha largada registrada). “Ao confirmar” é o que o relógio
+        marcava no envio: o tempo que faltava, “esgotado” se ele já tinha fechado, ou
+        “sem relógio” no modo livre. Ele e “Mudanças de destino” são da última rodada; o
+        detalhe de cada uma — inclusive por que o tempo acabou — está em “Como usou o tempo”.
       </p>
 
       <Card variant="elevated" title="O que a missão mediu">

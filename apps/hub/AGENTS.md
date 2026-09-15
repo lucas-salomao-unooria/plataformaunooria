@@ -819,6 +819,33 @@ publica.
 para ser impresso e levado para a sala, e `overflow` recortaria a tabela na
 largura da coluna.
 
+## `MetricCard` recebe NÚMERO ou rótulo curto — nunca frase (2026-09-15)
+
+O cartão do DS é de KPI: `.unooria-metric-card__value` é `white-space: nowrap`
+com `font-size: clamp(26px, 4vw, 36px)`, e o cartão tem `height: 128px` e
+`max-width: 301px` — ~269px úteis. Valor que passa disso **vaza para fora do
+cartão**, por cima do que está ao lado, e nada acusa: não é defeito de CSS, é o
+componente usado para o que ele não é.
+
+Quem descobriu foi o `Ao confirmar` do relatório individual do Instanooria, que
+mostrava `estourou — a chuva chegou` derramado sobre a página. Os outros 40
+`MetricCard` do hub são número ou `n/m`; aquele era o único com frase — e nem
+era só o caso extremo: `sem cronômetro (modo livre)` e `faltavam 1:40` também
+passavam da largura.
+
+A saída não foi compensar no CSS, foi separar as duas leituras, as duas em
+`lib/unoogpt-leitura.ts`: `envioNoCartao` (`1:40`, `esgotado`, `sem relógio`)
+para o cartão e `envioEmTexto` (`tempo esgotado — a chuva chegou`) para o texto
+corrido. **O porquê não cabe num KPI e não precisa
+caber** — ele já está por extenso na linha do tempo logo abaixo, e a nota sob a
+grade ensina a ler os três valores.
+
+**Meça, não estime.** A largura útil é 267px com a fonte do DS; `tempo
+esgotado` parecia caber e mede 291px. O recorte é por PIXEL, não por número de
+caracteres — o jeito barato de medir é montar um `.unooria-metric-card` no DOM
+de qualquer rota da plataforma (o CSS do DS é global no bundle do hub) e ler o
+`getBoundingClientRect().width` do valor depois de `document.fonts.ready`.
+
 ## Altura de tela cheia: `.tela-cheia`, nunca subtração do header
 
 A página do professor que embeda experiência e **não** rola
