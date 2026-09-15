@@ -1,0 +1,1 @@
+../../docs/regras/o-que-nao-fazer.md

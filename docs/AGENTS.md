@@ -10,6 +10,7 @@ Complementa o `AGENTS.md` da raiz.
 | `DECISOES.md` | resumo das decisões chave | **resumo** — o LaTeX tem 88 ADRs completas |
 | `openapi.json` | gerado por `apps/api/scripts/gerar-openapi.ts` | **gerado** — nunca editar à mão |
 | `agents/` | o que as skills de engenharia (plugin `mattpocock-skills`) precisam saber: onde estão as issues, os rótulos de triagem, e como ler a documentação de domínio deste repo | vivo — ver a seção `Agent skills` do `AGENTS.md` da raiz |
+| `regras/` | a **doutrina transversal** da plataforma, uma regra por arquivo. É a FONTE: `.claude/rules/` e `.agents/rules/` são symlinks para cá (ADR-102) | vivo — **canônico** |
 
 ## A fonte das decisões é o LaTeX, não esta pasta
 

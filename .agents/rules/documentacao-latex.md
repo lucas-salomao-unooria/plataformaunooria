@@ -1,0 +1,1 @@
+../../docs/regras/documentacao-latex.md
