@@ -1,0 +1,55 @@
+# Glossário de domínio — Plataforma Unooria
+
+O vocabulário desta plataforma. Um termo por linha, com a definição curta e
+**onde mora a definição de verdade** — quando as duas divergem, a fonte vence e
+esta linha está desatualizada.
+
+As regras que governam esses termos estão no `AGENTS.md` da raiz; as decisões
+que os produziram, em `documentacao-latex/secoes/18-adr.tex`. Como as skills de
+engenharia devem ler tudo isso está em `docs/agents/domain.md`.
+
+**Nomes de domínio são pt-BR; termos técnicos, inglês** (`provider`, `guard`,
+`batch`). Isto não é preferência de estilo: é o que faz o código, o banco, a
+tela e o card do Notion falarem a mesma palavra.
+
+## As pessoas e onde elas estão
+
+| Termo | O que é | Fonte |
+|---|---|---|
+| **contrato** | Uma rede pública cliente (estado ou município). 1 contrato = 1 stack de infra GCP. O nome da rede **não existe no banco** — o contrato *é* a stack | `AGENTS.md` da raiz |
+| **escola** | A unidade. Tudo que é dado de estudante é escopado por `escola_id`, com RLS | `escolas` |
+| **regional** | O nível que agrupa escolas dentro de uma rede: Diretoria de Ensino, polo, secretaria municipal. Mesma tabela que escola, `tipo = 'regional'` | `escolas.tipo` |
+| **rede** | O topo da árvore de organizações, `tipo = 'rede'` | `escolas.tipo` |
+| **lotação** | O vínculo de uma **pessoa** com uma **escola**, datado, com papel. Um professor tem várias; um estudante, uma só ativa | `lotacoes` |
+| **matrícula** | O vínculo de uma pessoa com uma **turma**. Só admite `estudante` e `professor` — gestor é papel de escola, não de turma | `matriculas` |
+| **enturmamento** | O ato de pôr estudantes em turmas. Quem escreve pessoa é o importador, nunca um formulário direto | `apps/api/AGENTS.md` |
+| **turma** | A sala. O `turma_id` do token é a matrícula **principal** do estudante | `turmas` |
+| **período letivo** | Ano, semestre, bimestre ou trimestre. É o que impede a virada do ano de reescrever a história | `periodos_letivos` |
+| **papel** | `estudante \| professor \| gestor_escola \| gestor_regional \| gestor_contrato \| admin`. Quem atribui quem sai da cadeia, nunca para cima | ADR-80; matriz em `secoes/07-tenancy-seguranca.tex` |
+| **admin** | A Unooria. O único papel que opera a disponibilidade, na área `/unooria` | ADR-88 |
+
+## O que o estudante abre
+
+| Termo | O que é | Fonte |
+|---|---|---|
+| **experiência** | Um bundle estático (Vite) que o hub embeda num iframe. Nunca vira serviço no Cloud Run | `apps/experiencias/AGENTS.md` |
+| **missão** | A experiência **do ponto de vista da aula** — é a palavra que o professor e o estudante leem na tela | ADR-91 |
+| **produto** | O agrupamento comercial de experiências. Declarado no `public/experiencia.json` de cada uma; a composição é **derivada** do manifesto, nunca uma lista à mão | regra 8 do `AGENTS.md` |
+| **manifesto** | O `public/experiencia.json`: versão, produto, série, permissões. Mexeu na experiência, sobe a `versao` — e o `version` do `package.json` junto | `AGENTS.md` da raiz |
+| **liberação** | *Esta missão está aberta NESTA TURMA?* Sem linha, não abre: 403 `missao-nao-liberada` | `liberacoes`, ADR-69 |
+| **disponibilidade** | *Este recurso existe NESTA REDE?* **Ausência de linha = LIGADO** — é mecanismo de exceção. É pré-condição da liberação, nunca o contrário | `disponibilidades`, ADR-87 |
+| **clone / disfarce** | A superfície que imita um app real (Instanooria, UnooTube, o ChatGPT da exp-03). Dentro dela a fidelidade é ao app imitado, não à marca Unooria | `packages/ui/AGENTS.md` |
+| **revelação** | O momento em que a experiência deixa de fingir ser o app e volta a ser a plataforma. É **a revelação** que marca a fronteira entre as duas famílias do DS, não o arquivo | ADR-72 |
+| **perfil portátil** | O que outra instalação afirmou sobre a criança, importado como documento assinado. **Nunca se mistura** com o dado produzido aqui | `perfis_portateis` |
+
+## As peças
+
+| Termo | O que é | Fonte |
+|---|---|---|
+| **hub** | O Next.js que autentica, lista e embeda. Assina os tokens de experiência e serve o JWKS | `apps/hub/AGENTS.md` |
+| **api** | O NestJS. Guarda gabarito, correção, pontuação e toda chamada de IA | `apps/api/AGENTS.md` |
+| **bridge** | O contrato `postMessage` entre hub e experiência. `targetOrigin` explícito, nunca `*` | `apps/experiencias/AGENTS.md` |
+| **seção do DS** | Uma das seis famílias do `@unooria/design-system`: `unooria` para a plataforma, uma por clone. **Não se cruzam** | `packages/ui/AGENTS.md` |
+| **compensação** | Um ajuste local e **marcado** que existe porque o DS ainda não cobre algo — medida, espaçamento, grade. Nunca um componente | `AGENTS.md` da raiz |
+| **quota** | O teto diário de tokens de IA, por usuário **e por perfil**. `temSaldo` antes, `consumir` depois | regra 5 |
+| **fatia** | O recorte **vertical** de uma frente paralela: módulo da api + rota do hub + experiência. É barreira, não conselho — o `pre-commit` recusa fora dela | ADR-61/71 |

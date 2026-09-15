@@ -282,6 +282,31 @@ razão do LaTeX: instrução desatualizada é pior que instrução nenhuma, porq
 agente obedece. Pasta nova que ganha `AGENTS.md` ganha o `CLAUDE.md` de uma linha
 junto; sozinho, o Claude Code não acha o canônico.
 
+## Agent skills
+
+As skills de engenharia instaladas (o plugin `mattpocock-skills`) precisam saber
+três coisas sobre este repo, e cada uma vive num arquivo próprio em
+`docs/agents/`. **Não responda nenhuma delas de cabeça** — as três divergem do
+padrão que as skills assumem.
+
+### Issue tracker
+
+As issues **não** estão nas Issues do GitHub: estão no Notion, board
+**Team Tasks → `Tasks`**, filtradas por `Segmento = "Entre Redes"`. Ver
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Os cinco papéis canônicos moram na propriedade `Triagem` do board — que é outro
+eixo, não o `Status`. Ver `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Layout próprio, não o das skills: o glossário é o `CONTEXT.md` da raiz, o mapa
+de contextos é a tabela de pastas deste arquivo, cada contexto é o `AGENTS.md`
+da sua pasta, e **não existe `docs/adr/`** — as ADRs estão em
+`documentacao-latex/secoes/18-adr.tex`. Ver `docs/agents/domain.md`.
+
 ## Ferramentas externas que o agente NÃO dispara
 
 **Varredura de vulnerabilidade (Snyk) é da esteira de CI/CD, não da sessão.** Não
