@@ -414,6 +414,47 @@ O caminho para conduzir a missão sai da sala, com a turma já na URL
 faz essa tradução). A trilha do Entre Redes continua por ano e virou catálogo,
 com faixa dizendo que quem abre é a turma.
 
+### UM caminho da sala para a missão, e ele leva à FICHA (ADR-100)
+
+A sala tinha TRÊS links por missão — "Como funciona", "Guia da aula" e
+"Conduzir com esta turma" — e o terceiro apontava direto para
+`.../resultados`. Isso obrigava a SALA a saber o que cada missão oferece, e ela
+não sabe: o Instanooria não tem tela de resultados (conduz-se pela atividade), o
+Rastro do Boato não tem guia, e a próxima missão publicada terá outra
+combinação. O 8º ano recebeu um 404 por causa disso (card de 2026-09-14; a tela
+de erro do Next é texto branco em fundo branco, então nem dava para ler).
+
+**Duas correções erradas antes da certa, e as duas estão presas em
+`lib/rotas-da-missao.test.ts`:**
+
+1. apontar para a tela de resultados → **link para 404**;
+2. tirar o link de quem não tem essa tela → **link ausente**, que é pior de
+   perceber: ninguém abre chamado por um link que não existe.
+
+Hoje a sala faz UMA pergunta — "onde fica esta missão?" — e `rotaDeConducao`
+responde sempre a ficha, com `?turmaId=`. Quem sabe o que a missão oferece é o
+corpo dela, que já existe por missão. **Link novo na sala é quase sempre o
+sintoma de que a ficha não está dando conta** — o lugar de resolver é lá.
+
+**A ficha abre NA TURMA, e isso é o ponto.** O despachante
+(`[ano]/[unidade]/page.tsx`) lê `?turmaId=`, resolve a turma com
+`turmaDaConducao` e a repassa aos sete corpos; a Vila do Lume faz o mesmo na
+rota própria. Com turma: a faixa de contexto diz qual é, `comTurma()` repõe o
+parâmetro nos links de dentro (resultados, guia da Vila, nova atividade) e a
+lista de atividades do Instanooria vem filtrada pela api (`?turmaId=`), não por
+um `filter` na tela — as atividades das outras turmas do professor não são
+ruído, são o convite a abrir o painel da turma errada. Sem turma (trilha do
+Entre Redes, link salvo) tudo abre como sempre abriu, e as telas de destino
+continuam oferecendo o próprio seletor.
+
+**`turmaDaConducao` resolve pela lista de turmas DO PROFESSOR**, não por
+`GET /turmas/:id`: um id de turma alheia simplesmente não está nela, então a
+ficha não tem como nomear na tela uma turma que não é dele.
+
+**A faixa de contexto é do DESPACHANTE, não dos corpos** — mesma razão da trilha
+(ADR-77) e do `EscopoDaEscola` (ADR-85): são sete corpos, e sete cópias
+divergem.
+
 `/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
 ela. Só para estudante: professor e gestor não chegam nesta rota, e `/dev-embed`
 segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer

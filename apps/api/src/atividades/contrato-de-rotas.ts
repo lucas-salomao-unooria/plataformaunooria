@@ -44,6 +44,10 @@ export const CriarSchema = z.object({
   turmaId: z.string().uuid(),
 });
 
+/** Filtro opcional de `GET /atividades`. A tenancy NÃO sai daqui: a rota já é
+ *  escopada por professor + escola, e este parâmetro só estreita o recorte. */
+export const AtividadesQuery = z.object({ turmaId: Uuid.optional() });
+
 export const EtapaSchema = z.object({ etapa: z.enum(ETAPAS_DA_TURMA) });
 export const IaSchema = z.object({ ativo: z.boolean() });
 export const AtivarSchema = z
@@ -54,6 +58,10 @@ export const AtivarSchema = z
 
 export const AtividadeEmListaSchema = z.object({
   id: Uuid,
+  /** A turma da atividade. `null` nas atividades criadas antes de a turma virar
+   *  obrigatória no formulário — a sala de aula precisa dele para saber QUAL
+   *  atividade é daquela turma, e sem ele o link de condução teria de adivinhar. */
+  turmaId: Uuid.nullable(),
   titulo: z.string(),
   disciplina: z.string(),
   recorte: z.string(),

@@ -41,6 +41,25 @@ export async function turmaComPessoas(turmaId: string): Promise<TurmaComPessoas 
   return apiDoServidor<TurmaComPessoas>(`/turmas/${turmaId}`);
 }
 
+/**
+ * A turma que a FICHA da missão está conduzindo (ADR-100), vinda do `?turmaId=`
+ * com que a sala de aula chama.
+ *
+ * Resolve pela lista de turmas DO PROFESSOR, e não por `GET /turmas/:id`, por
+ * dois motivos: é uma resposta pequena que as telas do professor já pedem, e um
+ * id de turma alheia simplesmente não está nela — então a ficha não tem como
+ * nomear na tela uma turma que não é dele. `null` quando não veio turma, quando
+ * o id não é dele, ou quando a api não respondeu: nos três casos a ficha abre
+ * como sempre abriu, sem contexto de turma, e nada nela mente.
+ */
+export async function turmaDaConducao(
+  turmaId: string | undefined,
+): Promise<TurmaDoProfessor | null> {
+  const id = turmaId?.trim();
+  if (!id) return null;
+  return (await minhasTurmas()).find((turma) => turma.id === id) ?? null;
+}
+
 const TURNOS: Record<string, string> = {
   manha: "manhã",
   tarde: "tarde",

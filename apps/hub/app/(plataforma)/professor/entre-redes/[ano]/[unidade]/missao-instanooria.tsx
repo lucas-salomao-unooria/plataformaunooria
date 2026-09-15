@@ -9,13 +9,16 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
-import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import type { TurmaDoProfessor } from "@/lib/turmas";
 import { statusDaAtividade } from "@/lib/status-atividade";
 
 /** O que a api devolve em GET /atividades (escopado ao professor do token). */
 type RespostaAtividades = {
   atividades: Array<{
     id: string;
+    /** A turma da atividade (a api passou a devolver junto com o filtro). */
+    turmaId: string | null;
     titulo: string;
     disciplina: string;
     recorte: string;
@@ -34,7 +37,16 @@ type RespostaAtividades = {
  * de atividades que o professor configurou. Recebe a missão já resolvida pelo
  * despachante em `page.tsx`.
  */
-export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Missao & { ficha: NonNullable<Missao["ficha"]> } }) {
+export async function MissaoInstanooria({
+  ano,
+  missao,
+  turma,
+}: {
+  ano: Ano;
+  missao: Missao & { ficha: NonNullable<Missao["ficha"]> };
+  /** A turma que a sala mandou conduzir (ADR-100); `null` pela trilha. */
+  turma: TurmaDoProfessor | null;
+}) {
   const { ficha } = missao;
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
@@ -42,7 +54,15 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
   // desta missão (nota de modelagem em lib/entre-redes/catalogo.ts).
   // No origem era `prisma.activity.findMany(...)`; a api devolve a lista já
   // ordenada por criação (desc) e escopada ao professor do token.
-  const resposta = await apiDoServidor<RespostaAtividades>("/atividades");
+  //
+  // Com turma (ADR-100), a lista é DAQUELA TURMA: quem chegou aqui pela sala
+  // está conduzindo uma turma específica, e as atividades das outras turmas
+  // dele são ruído — pior, são o convite a abrir o painel da turma errada. O
+  // filtro é da api (`?turmaId=`), não um `filter` aqui: a resposta já não
+  // traria as outras.
+  const resposta = await apiDoServidor<RespostaAtividades>(
+    turma ? `/atividades?turmaId=${encodeURIComponent(turma.id)}` : "/atividades",
+  );
   const atividades = resposta?.atividades ?? [];
 
   return (
@@ -118,14 +138,15 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-[18px] font-bold text-unooria-neutral-950">
-              Suas atividades nesta missão
+              {turma ? `Suas atividades com a turma ${turma.nome}` : "Suas atividades nesta missão"}
             </h2>
             <p className="text-[13px] text-unooria-neutral-500">
-              Cada atividade é uma configuração da missão para um tema seu. Você
-              pode ter quantas quiser — uma por turma, uma por conteúdo.
+              {turma
+                ? "Cada atividade é uma configuração da missão para um tema seu. Aqui estão as desta turma — as das outras ficam na trilha do Entre Redes."
+                : "Cada atividade é uma configuração da missão para um tema seu. Você pode ter quantas quiser — uma por turma, uma por conteúdo."}
             </p>
           </div>
-          <LinkButton href="/professor/atividades/nova">
+          <LinkButton href={comTurma("/professor/atividades/nova", turma?.id)}>
             Nova atividade
           </LinkButton>
         </div>
@@ -136,7 +157,11 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
             size="lg"
             bordered
             fullWidth
-            title="Nenhuma atividade por aqui ainda"
+            title={
+              turma
+                ? `Nenhuma atividade com a turma ${turma.nome} ainda`
+                : "Nenhuma atividade por aqui ainda"
+            }
             description="Comece pelo tema da sua disciplina — a IA propõe a pergunta-chave e você escolhe."
           />
         ) : (
