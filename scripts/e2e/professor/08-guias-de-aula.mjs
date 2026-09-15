@@ -187,31 +187,53 @@ await suite(
     );
     await p.waitForTimeout(600);
 
-    const links = p.locator("a", { hasText: "Guia da aula" });
-    const quantos = await links.count();
-    r.exigir(quantos > 0, `a sala de aula oferece o guia em ${quantos} missão(ões)`);
+    /* UM caminho por missão (ADR-100). A sala tinha três links e o de
+       "Conduzir" apontava para a tela de resultados — que não existe para toda
+       missão, e foi assim que o 8º ano recebeu um 404. Agora a sala leva à
+       ficha, com a turma, e o guia está lá dentro. */
+    const conduzir = p.locator("a", { hasText: "Conduzir com esta turma" });
+    const quantos = await conduzir.count();
+    r.exigir(quantos > 0, `a sala oferece a condução em ${quantos} missão(ões)`);
+    r.exigir(
+      (await p.locator("a", { hasText: "Guia da aula" }).count()) === 0,
+      "e NÃO oferece mais três links por missão — o guia mora na ficha",
+    );
 
     await r.registrar(p, "guia-a-partir-da-sala", {
       titulo: "O guia a partir da sala de aula",
       mostra:
-        "A grade da turma, com o estado de cada missão e, em cada linha, os três caminhos: " +
-        "como funciona, o guia da aula e conduzir com esta turma.",
+        "A grade da turma, com o estado de cada missão e, em cada linha, UM caminho: " +
+        "conduzir com esta turma.",
       prova:
-        "É aqui que o professor decide o que rodar hoje, com a turma na frente. O link sai de " +
-        "`lib/rotas-da-missao.ts`, que sabe se a missão tem guia — uma URL montada na tela " +
-        "viraria 404 na primeira missão publicada sem guia.",
+        "É aqui que o professor decide o que rodar hoje, com a turma na frente. Um link só, " +
+        "porque a sala não tem como saber o que cada missão oferece: o Instanooria não tem " +
+        "tela de resultados e o Rastro do Boato não tem guia. Quem responde isso é a ficha.",
       inteira: true,
     });
 
-    const primeiro = links.first();
+    const primeiro = conduzir.first();
     await primeiro.scrollIntoViewIfNeeded();
     await primeiro.click();
-    await p.waitForURL("**/guia**", { timeout: 20_000 });
+    await p.waitForURL("**turmaId=**", { timeout: 20_000 });
     await esperarOuFalharCedo(
-      p.locator("h1", { hasText: "Guia da aula" }),
+      p.locator("text=Conduzindo com a turma").first(),
       p.locator(ALERTA_DE_ERRO),
-      { oQue: "o guia aberto pela sala", timeout: 30_000 },
+      { oQue: "a ficha aberta pela sala", timeout: 30_000 },
     );
-    r.exigir(true, "e o link da sala abre o guia da missão");
+    r.exigir(true, "e o link da sala abre a ficha JÁ na turma");
+
+    /* E o guia continua a um clique — agora de dentro da ficha, que é quem sabe
+       se aquela missão tem um. */
+    const guiaDaFicha = p.locator("a", { hasText: "Abrir guia da aula" });
+    if ((await guiaDaFicha.count()) > 0) {
+      await guiaDaFicha.first().click();
+      await p.waitForURL("**/guia**", { timeout: 20_000 });
+      await esperarOuFalharCedo(
+        p.locator("h1", { hasText: "Guia da aula" }),
+        p.locator(ALERTA_DE_ERRO),
+        { oQue: "o guia aberto pela ficha", timeout: 30_000 },
+      );
+      r.exigir(true, "e a ficha abre o guia da missão");
+    }
   },
 );
