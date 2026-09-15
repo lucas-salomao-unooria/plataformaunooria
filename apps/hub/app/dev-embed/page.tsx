@@ -35,7 +35,7 @@ export default async function DevEmbedPage({
   const embed = await montarEmbed(expId, usuario, { srcDev: base });
   return (
     <>
-      <HeaderPlataforma largura="cheia" voltar={{ href: "/estudante", rotulo: "Missões" }} />
+      <HeaderPlataforma voltar={{ href: "/estudante", rotulo: "Missões" }} />
       <ExpHost
         expId={expId}
         src={embed.src}

@@ -17,12 +17,13 @@ import { ResultadosDaTurmaSchema, TurmasDoUnootubeSchema } from "./contrato-de-r
 import { erroDeJogo } from "./erros";
 import { UnootubeService } from "./unootube.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR (e gestor) sobre a missão do UnooTube — classe separada
  * para o `@Roles` ficar limpo, como em `analise.controller.ts`.
  *
- * `admin-contrato` é a única exceção cross-escola (regra 1): o token dele tem
+ * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem
  * escola vazia, então precisa dizer `?escolaId=` — e o valor vai EXPLÍCITO ao
  * `comTenancy` (o TenancyInterceptor não abre contexto para ele).
  */
@@ -30,7 +31,7 @@ import { professorDoToken } from "../comum/turmas-do-professor";
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "admin-contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) erroDeJogo("ESCOLA_OBRIGATORIA");
     return escolaIdPedida;
   }
@@ -42,7 +43,7 @@ function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
 
 @Controller("unootube/turmas")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor", "admin-contrato")
+@Roles("professor", ...GESTORES)
 export class UnootubeTurmasController {
   constructor(private readonly unootube: UnootubeService) {}
 
@@ -51,7 +52,7 @@ export class UnootubeTurmasController {
   @Contrato({
     resumo: "Turmas para o seletor de resultados.",
     descricao:
-      "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=` — o token dele tem escola vazia e o TenancyInterceptor não abre contexto.",
+      "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=` — o token dele tem escola vazia e o TenancyInterceptor não abre contexto.",
     query: z.object({ escolaId: z.string().optional() }),
     resposta: TurmasDoUnootubeSchema,
   })

@@ -26,10 +26,11 @@ import { dirname, resolve } from "node:path";
  * login no código.
  *
  * Usuários reais NÃO nascem aqui: entram por importação
- * (`POST /rostering/importar`, papel gestor/admin-contrato).
+ * (`POST /rostering/importar`, papel `gestor_escola`/`gestor_contrato`).
  *
- * `SEED_MINIMO=1` cria só a escola, um gestor e um admin-contrato — o ponto de
- * partida para percorrer a plataforma do zero, sem as contas de demonstração
+ * `SEED_MINIMO=1` cria só a escola, um `gestor_escola` e um `gestor_contrato`
+ * — o ponto de partida para percorrer a plataforma do zero, sem as contas de
+ * demonstração
  * poluindo o diagnóstico de contas de assento.
  */
 const prisma = new PrismaClient();
@@ -41,7 +42,7 @@ const prisma = new PrismaClient();
  *
  * Sem env o seed FALHA, e falha alto: constante no fonte significa que este
  * script, rodado por engano contra o banco de um contrato, criaria mil contas
- * com uma senha publicada no README — inclusive o `admin-contrato`, o único
+ * com uma senha publicada no README — inclusive o `gestor_contrato`, o único
  * papel que atravessa escolas.
  */
 const SENHA_PADRAO = senhaDoSeed();
@@ -74,6 +75,11 @@ const ESTUDANTES_POR_TURMA = 40;
 /** Papéis que não nascem de turma: 5 de cada, como pedido. */
 const GESTORES = 5;
 const ADMINS_CONTRATO = 5;
+/** Os dois papéis que nasceram com a ADR-80. Dois de cada basta: eles não têm
+ *  turma nem lotação, e o que a demonstração precisa provar é que ENTRAM e que
+ *  o escopo deles vem do lugar certo. */
+const GESTORES_REGIONAIS = 2;
+const ADMINS_UNOORIA = 2;
 
 const ESCOLA_ID = "escola-demo";
 const ESCOLA_NOME = "EE Professora Maria Aparecida Nogueira";
@@ -83,6 +89,16 @@ const ESCOLA_2_NOME = "EE Coronel Firmino Rodrigues";
 /** A diretoria que agrupa as duas — o nível entre a escola e o contrato. */
 const REGIONAL_ID = "de-demo";
 const REGIONAL_NOME = "DE Campinas Leste";
+/**
+ * A regional PADRÃO (ADR-79): a linha que a rede sem divisão administrativa usa,
+ * e o destino de quem chega sem regional declarada.
+ *
+ * A migração já a cria — mas só quando a rede está vazia ou tem escola órfã.
+ * Garantida aqui também, o banco de desenvolvimento converge para o mesmo
+ * estado tenha a migração rodado antes ou depois de já existir a `de-demo`.
+ */
+const REGIONAL_PADRAO_ID = "rede";
+const REGIONAL_PADRAO_NOME = "Rede";
 /** Turma da segunda unidade (ver comentário na seção dela). */
 const TURMA_ESCOLA_2 = { nome: "5A", serie: "5EF", turno: "tarde" };
 
@@ -117,6 +133,23 @@ async function emLotes<T>(itens: readonly T[], tamanho: number, fn: (item: T) =>
 async function main() {
   const passwordHash = await bcrypt.hash(SENHA_PADRAO, 10);
   const fabrica = criarFabricaDePessoas(SEMENTE);
+
+  /* A padrão entra primeiro de todas: é ela que o trigger usa para adotar
+     qualquer escola que chegue sem regional, e o `SEED_MINIMO` também depende
+     de haver uma regional na rede. Só se não houver outra marcada — a marca é
+     única no banco, e insistir daria erro de índice num seed reexecutado. */
+  if ((await prisma.escola.count({ where: { regionalPadrao: true } })) === 0) {
+    await prisma.escola.upsert({
+      where: { id: REGIONAL_PADRAO_ID },
+      update: { tipo: "regional", regionalPadrao: true },
+      create: {
+        id: REGIONAL_PADRAO_ID,
+        nome: REGIONAL_PADRAO_NOME,
+        tipo: "regional",
+        regionalPadrao: true,
+      },
+    });
+  }
 
   /* A diretoria entra ANTES das unidades: ela é o pai, e o trigger do banco
      recusa `pai_id` apontando para escola. */
@@ -256,40 +289,53 @@ async function main() {
   ) => credenciais.push({ login: pessoa.username, nome: pessoa.nome, papel, escola, turma, serie, cpf });
 
   /**
-   * `admin-contrato` é o único papel SEM escola — o upsert por
+   * Os perfis de CONTRATO (`gestor_contrato`, `admin`) são os únicos SEM
+   * escola — o upsert por
    * `(escolaId, username)` não o cobre com `escolaId` nulo, então procura-se
    * pelo login.
    */
-  const upsertAdminContrato = async (pessoa: PessoaDemo) => {
+  /**
+   * Os perfis SEM escola: os dois de contrato (que enxergam a rede inteira) e o
+   * regional (cuja escola ativa sai da regional, não de lotação). Não passam
+   * pelo importador — `PAPEIS_IMPORTAVEIS` sempre os excluiu, porque não cabem
+   * numa planilha da escola.
+   */
+  const upsertSemEscola = async (
+    pessoa: PessoaDemo,
+    papel: "gestor_contrato" | "admin" | "gestor_regional",
+    onde: string,
+    regionalId?: string,
+  ) => {
     const existente = await prisma.user.findFirst({
-      where: { username: pessoa.username, role: "admin-contrato" },
+      where: { username: pessoa.username, role: papel },
     });
     const dados = {
       displayName: pessoa.nome,
       passwordHash,
       cpf: pessoa.cpf,
-      role: "admin-contrato",
+      role: papel,
+      regionalId: regionalId ?? null,
       senhaProvisoria: false,
     };
     if (existente) await prisma.user.update({ where: { id: existente.id }, data: dados });
     else await prisma.user.create({ data: { username: pessoa.username, ...dados } });
-    anotar(pessoa, "admin-contrato", "— (atravessa escolas)");
+    anotar(pessoa, papel, onde);
   };
 
   if (MINIMO) {
     const gestor = fabrica.pessoa("gestor.");
-    const criado = await upsertPessoa(gestor, "gestor");
-    await lotar(ESCOLA_ID, criado.id, "gestor", true);
-    anotar(gestor, "gestor", ESCOLA_NOME);
-    await upsertAdminContrato(fabrica.pessoa("admin."));
+    const criado = await upsertPessoa(gestor, "gestor_escola");
+    await lotar(ESCOLA_ID, criado.id, "gestor_escola", true);
+    anotar(gestor, "gestor_escola", ESCOLA_NOME);
+    await upsertSemEscola(fabrica.pessoa("admin."), "gestor_contrato", "— (atravessa escolas)");
     /* O catálogo de experiências não depende de turma nem de gente: ele entra
        até no seed mínimo, senão a primeira turma criada pelo gestor abriria uma
        sala sem nada para liberar. */
     await semearCatalogo(prisma);
     escreverCredenciais();
     console.log(
-      `Seed MÍNIMO: "${ESCOLA_NOME}", período "${periodo.titulo}", 1 gestor e ` +
-        `1 admin-contrato. Nenhuma turma, nenhum estudante — as pessoas entram ` +
+      `Seed MÍNIMO: "${ESCOLA_NOME}", período "${periodo.titulo}", 1 gestor_escola ` +
+        `e 1 gestor_contrato. Nenhuma turma, nenhum estudante — as pessoas entram ` +
         `por /admin/importar. Credenciais em ${ARQUIVO_CREDENCIAIS}`,
     );
     return;
@@ -349,19 +395,19 @@ async function main() {
   for (let i = 0; i < GESTORES; i += 1) {
     const pessoa = fabrica.pessoa("gestor.");
     const daSegunda = i === 1;
-    const criado = await upsertPessoa(pessoa, "gestor", {
+    const criado = await upsertPessoa(pessoa, "gestor_escola", {
       escolaId: daSegunda ? ESCOLA_2_ID : ESCOLA_ID,
     });
     if (i === 0) {
-      await lotar(ESCOLA_ID, criado.id, "gestor", true);
-      await lotar(ESCOLA_2_ID, criado.id, "gestor", false);
-      anotar(pessoa, "gestor (supervisora, 2 unidades)", `${ESCOLA_NOME} + ${ESCOLA_2_NOME}`);
+      await lotar(ESCOLA_ID, criado.id, "gestor_escola", true);
+      await lotar(ESCOLA_2_ID, criado.id, "gestor_escola", false);
+      anotar(pessoa, "gestor_escola (supervisora, 2 unidades)", `${ESCOLA_NOME} + ${ESCOLA_2_NOME}`);
     } else if (daSegunda) {
-      await lotar(ESCOLA_2_ID, criado.id, "gestor", true);
-      anotar(pessoa, "gestor", ESCOLA_2_NOME);
+      await lotar(ESCOLA_2_ID, criado.id, "gestor_escola", true);
+      anotar(pessoa, "gestor_escola", ESCOLA_2_NOME);
     } else {
-      await lotar(ESCOLA_ID, criado.id, "gestor", true);
-      anotar(pessoa, "gestor", ESCOLA_NOME);
+      await lotar(ESCOLA_ID, criado.id, "gestor_escola", true);
+      anotar(pessoa, "gestor_escola", ESCOLA_NOME);
     }
   }
 
@@ -402,11 +448,32 @@ async function main() {
     anotar(pessoa, "estudante", ESCOLA_2_NOME, TURMA_ESCOLA_2.nome, TURMA_ESCOLA_2.serie);
   }
 
-  // --------------------------------------------------------- admin-contrato
-  // Papel de nível de produto: vê a análise entre escolas e turmas; não alcança
-  // as telas do professor nem a do estudante.
+  // ------------------------------------------- os papéis sem escola própria
+  // Nível de produto: vê a análise entre escolas e turmas; não alcança as telas
+  // do professor nem a do estudante.
   for (let i = 0; i < ADMINS_CONTRATO; i += 1) {
-    await upsertAdminContrato(fabrica.pessoa("admin."));
+    await upsertSemEscola(fabrica.pessoa("admin."), "gestor_contrato", "— (atravessa escolas)");
+  }
+
+  /* O GESTOR REGIONAL (ADR-80): cobre as escolas da `de-demo` SEM lotação em
+     nenhuma delas. É a conta que torna visível a diferença que o papel existe
+     para ter — ele entra e o seletor do cabeçalho já lhe oferece as duas
+     unidades da diretoria, sem ninguém o ter lotado. */
+  for (let i = 0; i < GESTORES_REGIONAIS; i += 1) {
+    await upsertSemEscola(
+      fabrica.pessoa("regional."),
+      "gestor_regional",
+      `${REGIONAL_NOME} (${ESCOLA_NOME} + ${ESCOLA_2_NOME})`,
+      REGIONAL_ID,
+    );
+  }
+
+  /* A conta da UNOORIA. Mesmas capacidades de `gestor_contrato` — o que a
+     distingue é de quem ela é, não o que pode. Existe no seed porque um papel
+     sem conta de demonstração é um papel que ninguém percorre, e a suíte e2e
+     não teria com que provar que ele entra. */
+  for (let i = 0; i < ADMINS_UNOORIA; i += 1) {
+    await upsertSemEscola(fabrica.pessoa("unooria."), "admin", "— (equipe Unooria)");
   }
 
   // ------------------------------------------------- catálogo e liberações
@@ -427,7 +494,7 @@ async function main() {
       `  ${ESCOLA_NOME}: ${turmas.length} turmas (1EF→3EM, 2 por série), ` +
       `${turmas.length * ESTUDANTES_POR_TURMA} estudantes, ${professores.length} professores\n` +
       `  ${ESCOLA_2_NOME}: turma ${TURMA_ESCOLA_2.nome}, ${ESTUDANTES_POR_TURMA} estudantes\n` +
-      `  ${GESTORES} gestores (o 1º nas duas unidades), ${ADMINS_CONTRATO} admin-contrato\n` +
+      `  ${GESTORES} gestores (o 1º nas duas unidades), ${ADMINS_CONTRATO} gestor_contrato\n` +
       `  ${experiencias} experiências no catálogo · ${liberadas} missões liberadas ` +
       `(só nas turmas "A"; as "B" ficam fechadas para o professor exercitar liberar)\n` +
       `  ${estudantes} estudantes no total · ${total} contas na base (senha: a de SEED_SENHA)\n` +

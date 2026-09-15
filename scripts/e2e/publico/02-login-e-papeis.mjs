@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { ALERTA_DE_ERRO } from "../lib/smoke.mjs";
 
 /**
  * A porta única: quatro papéis, um formulário, quatro destinos.
@@ -26,12 +27,12 @@ const DESTINOS = [
     oQueE: "o hub do professor: trilha, turmas, plano de aula e bem-estar",
   },
   {
-    papel: "gestor",
+    papel: "gestor_escola",
     caminho: "/admin",
     oQueE: "a gestão da escola — pessoas, turmas e importação",
   },
   {
-    papel: "admin-contrato",
+    papel: "gestor_contrato",
     caminho: "/admin",
     oQueE: "a rede inteira: escolas, regionais e períodos letivos",
   },
@@ -70,12 +71,39 @@ await suite(
       { timeout: 10_000 },
     );
     await p.click("button[type=submit]");
-    await p.waitForTimeout(3000);
 
-    const recusa = (await p.locator("main").innerText()).replace(/\s+/g, " ");
+    /* Espera o DESFECHO, não o relógio — e corre contra o erro.
+       O `waitForTimeout(3000)` que estava aqui fotografava o meio do caminho:
+       em 10/09 o POST do callback levou 4,5s (era a primeira vez que o
+       `next dev` compilava `/api/auth/[...nextauth]`), a tela ainda dizia
+       "Entrando…", e a verificação reprovou afirmando que a recusa não
+       aparecia — acusando o produto quando o defeito era desta espera.
+       Os dois lados resolvem em vez de lançar, para que o desfecho seja lido
+       pelas verificações abaixo (cada uma com o seu nome) e não por um timeout
+       de seletor, que reporta o seletor que faltou e nunca a causa. */
+    const desfecho = await Promise.race([
+      p
+        .locator(ALERTA_DE_ERRO)
+        .first()
+        .waitFor({ state: "visible", timeout: 20_000 })
+        .then(() => "recusou")
+        .catch(() => "sem-resposta"),
+      p
+        .waitForURL((u) => new URL(u).pathname !== "/login", { timeout: 20_000 })
+        .then(() => "entrou")
+        .catch(() => "sem-resposta"),
+    ]);
+
+    const recusa =
+      desfecho === "entrou" ? "" : (await p.locator("main").innerText()).replace(/\s+/g, " ");
     r.exigir(new URL(p.url()).pathname === "/login", "credencial inválida não sai do /login");
     r.exigir(
-      /incorret|inválid|não foi possível/i.test(recusa),
+      /* Três recusas honestas: credencial errada, api indisponível e o 429 do
+         limite por usuário — a api permite 8 tentativas por minuto com o MESMO
+         login, e rodar a suíte muitas vezes no mesmo minuto esgota a cota
+         deste `nao.existe.mesmo`. Nenhuma das três diz qual metade errou, que
+         é o que a verificação seguinte cobra. */
+      /incorret|inválid|não foi possível|tentativas/i.test(recusa),
       "a recusa aparece na tela, e não só no console",
     );
     r.exigir(
@@ -129,14 +157,24 @@ await suite(
       detalhe: `/estudante → ${ondeParou}`,
     });
 
-    // ── sair encerra a sessão de verdade ─────────────────────────────────
-    const sair = p.getByRole("button", { name: /Sair|Encerrar sessão/i }).first();
-    if (await sair.count()) {
-      await sair.click();
-      await p.waitForURL((url) => url.pathname === "/login" || url.pathname === "/", { timeout: 20_000 });
-    } else {
-      await p.goto(`${HUB}/api/auth/signout`, { waitUntil: "domcontentloaded" });
-    }
+    /* ── sair encerra a sessão de verdade ─────────────────────────────────
+       O "Sair" mora DENTRO do menu do avatar (ADR-78), então há dois cliques:
+       abrir a tira e escolher o item. Este roteiro procurava um botão solto,
+       não achava, e caía num fallback `GET /api/auth/signout` — que serve a
+       página de confirmação do NextAuth e NÃO encerra sessão (o signout exige
+       POST com CSRF). O teste passava a afirmar que a sessão morreu quando ela
+       estava viva: falso NEGATIVO invertido, o pior tipo. */
+    const gatilhoDaConta = p.getByRole("button", { name: /^Conta de / }).first();
+    await gatilhoDaConta.waitFor({ timeout: 15_000 });
+    await gatilhoDaConta.click();
+    /* `menuitem`, não `button`: é o papel que o `HeaderMenu` do DS dá ao item
+       (com `aria-label`), e procurar por `button` acha o GATILHO de novo. */
+    const sair = p.getByRole("menuitem", { name: "Sair" }).first();
+    await sair.waitFor({ timeout: 10_000 });
+    await sair.click();
+    await p.waitForURL((url) => url.pathname === "/login" || url.pathname === "/", {
+      timeout: 20_000,
+    });
     await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(1500);
     const depoisDeSair = new URL(p.url()).pathname;

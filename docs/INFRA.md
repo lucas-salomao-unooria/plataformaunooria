@@ -19,7 +19,7 @@ Este repo NÃO cria recursos GCP. O repo de infra provisiona, por contrato:
 | Cloud Run service | `{contrato}-frontend` (hub), `{contrato}-api` | deploy.yml |
 | Cloud Run **job** | `{contrato}-migrate` (VPC, roda `prisma migrate deploy`) | deploy.yml |
 | Artifact Registry | `{contrato}` (mesma região do Cloud Run) | deploy.yml |
-| Bucket experiências | `{contrato}-exp` (+ Cloud CDN) | deploy.yml |
+| Bucket experiências | `{contrato}-exp` (+ Cloud CDN) | deploy.yml, api (`CDN_EXP_URL`, só leitura por HTTP) |
 | Bucket **assets** | `{contrato}-assets` (+ Cloud CDN, leitura pública) | api (`ASSETS_BUCKET`) |
 | Bucket **planos** | `{contrato}-planos` (**privado**, sem CDN, versionamento de objetos ligado) | api (`PLANOS_BUCKET`) |
 | Cloud SQL | `{contrato}-pg` (HA, PITR, pooler ativo) | api DATABASE_URL |
@@ -33,6 +33,32 @@ Variáveis que a app espera: ver `.env.example`. Terraform injeta via Cloud Run 
 `OIDC_ISSUER`/`OIDC_JWKS_URI` NÃO são segredo (são URLs públicas do hub) e vão
 como env em texto plano, derivadas de `hub_domain` — é isso que garante que o
 `iss` do token e o esperado pela api não podem divergir.
+
+**Fuso da plataforma (`FUSO_DA_PLATAFORMA`, ADR-99)**: env em texto plano, **na
+api E no hub, com o MESMO valor**. Não é segredo, não é por escola, não tem
+coluna no banco: 1 contrato = 1 stack, então a granularidade da configuração é a
+do deploy. Ausente = `America/Sao_Paulo`, e nada quebra por falta dela.
+
+- Valor: nome **IANA** (`America/Sao_Paulo`, `America/Manaus`,
+  `America/Rio_Branco`, `America/Belem`, `America/Noronha`). Offset fixo
+  (`-04:00`) é aceito pelo `Intl` e **não deveria ser usado**: ele congela o
+  deslocamento, e uma rede que volte a ter horário de verão fica uma hora
+  atrasada sem nada acusar.
+- **Os dois serviços recebem a mesma variável, e isso não é redundância.** A api
+  decide o "dia" que grava (o check-in de bem-estar recusa o segundo do dia); o
+  hub decide o texto que a professora lê, **e é ele que repassa o valor às
+  experiências** — escreve num `<meta>` do layout raiz, o navegador lê dali e o
+  `config` do `hub:init` leva ao bundle. Divergir entre os dois devolve o
+  defeito da ADR-98: entre as 21h e a meia-noite api e hub falam de DIAS
+  diferentes. Um `variable "fuso_da_plataforma"` único no Terraform, consumido
+  pelos dois serviços, é o que impede isso — **não** duas entradas separadas.
+- **Falha diferente por serviço, de propósito**: na api um valor inválido
+  derruba o boot (Zod, `config/env.ts`) — a revisão nova não pega tráfego e o
+  Cloud Run mantém a anterior; no hub ele cai no padrão com um `console.error`.
+  Derrubar a subida de um processo é barato; deixar a rede sem tela não é.
+- **Nada de `NEXT_PUBLIC_FUSO_DA_PLATAFORMA`**: `NEXT_PUBLIC_*` é assado no
+  build da imagem, e a mesma imagem pode servir mais de um contrato.
+
 
 **Documentação da api (`/docs`)**: `SWAGGER_USUARIO` vai como env em texto plano;
 `SWAGGER_SENHA` vem de `{contrato}-swagger-senha` (mínimo 16 caracteres). **As
@@ -184,7 +210,7 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 |---|---|---|
 | Notification channels | `{contrato}-alerta-acorda` (e-mail + push do app Cloud Console), `{contrato}-alerta-amanha` (e-mail + Google Chat/Slack) | duas severidades, só |
 | Uptime checks (3 regiões, 60 s, valida conteúdo) | `{contrato}-jwks` (`{hub}/.well-known/jwks.json` contém `"keys"`), `{contrato}-api-readyz`, `{contrato}-hub-healthz` (rota nova do hub), `{contrato}-landing`, `{contrato}-exp-ativa` (index.html da versão ativa da exp-01) | o `/readyz` passa a ser chamado por alguém |
-| Alert policies | as 14 do cap. 17 (6 "acorda", 8 "amanhã"); as que dependem de métrica da aplicação só valem após a fase 2 | por sintoma; nenhuma de CPU/memória |
+| Alert policies | 13 aplicadas (ver cap. 17). A 13ª, `spans do navegador descartados`, é a primeira sobre métrica DA APLICAÇÃO — `prometheus.googleapis.com/unooria.observabilidade.spans_descartados/counter`, recurso `prometheus_target` | por sintoma; nenhuma de CPU/memória. **Alerta sobre métrica da aplicação só pode ser criado depois que a série existe**: o Cloud Monitoring responde 404 `Cannot find metric(s) that match type`, e o contador só cria a série ao incrementar. Por isso `obs_alerta_erro_de_cliente` nasce `false` — ligar depois do deploy da ADR-84. **Em 2026-09-14 essa política pagou o próprio custo**: o que ela apontou foi defeito de CÓDIGO (o proxy OTLP nunca recebia o cliente, por `import type` num token de injeção do Nest), não de infraestrutura. `GCP_PROJECT_ID` já estava nos dois serviços desde 03/09, então **`motivo=sem-projeto` não é evidência de env faltando** — confira a env do serviço antes de abrir tarefa no repo de Terraform |
 | SLOs (service monitoring) | disponibilidade do `-frontend` e do `-api` a 99,5 %/30 dias, com alerta de burn rate | |
 | Dashboard | `{contrato}-plataforma` (JSON versionado no Terraform) | igual em todo contrato |
 | Log: exclusões no sink `_Default` | request log de `/healthz`, `/readyz` e dos uptime checks; `sample(insertId, 0.2)` dos 2xx com latência < 1 s | é o que mantém o log dentro dos 50 GiB grátis |
@@ -192,7 +218,7 @@ Cloud Run. Quando a fase 0 for provisionada, este repo passa a esperar, por cont
 | Pub/Sub dead letter | topic `{contrato}-telemetria-dlq`, `dead_letter_policy` na `-telemetria-ingest` após 5 tentativas | hoje um lote recusado é reentregue para sempre, em silêncio |
 | Sondas do Cloud Run | `startup_probe` e `liveness_probe` HTTP em `/healthz` (api) e `/api/healthz` (hub, **existe desde 2026-09-02**) no recurso do serviço | o `gcloud run deploy` do CI não as remove; trocar a sonda para HTTP só DEPOIS do hub com a rota estar no ar naquele ambiente |
 | Cloud SQL | Query Insights ligado; `pg_stat_statements` | grátis |
-| Env | `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` (api e hub), `OBS_TRACE_RATIO_CLIENTE=0.02` (só hub: vai no `config.obs` do `hub:init` e liga o OpenTelemetry Web das experiências) | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
+| Env | `FUSO_DA_PLATAFORMA` (api E hub, MESMO valor — ADR-99; ausente = `America/Sao_Paulo`), `GCP_PROJECT_ID` (api e hub), `LOG_LEVEL=info`, `OBS_TRACE_RATIO=0.02` (api e hub), `OBS_TRACE_RATIO_CLIENTE=0.02` (só hub: vai no `config.obs` do `hub:init` e liga o OpenTelemetry Web das experiências) | o hub já recebe `GCP_PROJECT_ID` e `LOG_LEVEL`; a api passou a validá-las (Zod) em 2026-09-02 e ainda NÃO as recebe do Terraform — ver apêndice B |
 | Metrics scope | projeto de observação sem recursos, com todos os contratos como monitored projects | métrica atravessa projeto; log não |
 | IAM e APIs | `{contrato}-api` e `{contrato}-run` já têm `roles/cloudtrace.agent`, `roles/monitoring.metricWriter` e `roles/logging.logWriter` (confirmado no Terraform em 2026-09-02). O que faltava e entrou: APIs `cloudtrace`, `clouderrorreporting` e `telemetry` em `gcp_services` (o papel não habilita a API — sem ela o exportador recebe `SERVICE_DISABLED`), e `roles/telemetry.writer` + `roles/serviceusage.serviceUsageConsumer` **só na SA da api** (as MÉTRICAS da api e o proxy OTLP dos spans do navegador saem por `telemetry.googleapis.com`; o exportador de métricas do Google foi descartado por arrastar 202 MB de `googleapis`) | ver `RUNBOOK-API.md` > Observabilidade no repo de infra |
 
@@ -212,7 +238,21 @@ Deploy (CI deste repo):
    `public/experiencia.json` — é esse upsert que o hub lê para montar a URL do
    bundle. Feito por `apps/hub/scripts/publicar-manifesto.mjs`, que assina um
    token de 5 min com `token-signing-key` (vars `API_URL`, `HUB_ORIGIN`).
-   Rollback = `node apps/hub/scripts/publicar-manifesto.mjs <exp> --versao <anterior>`. Experiência com
+   **Rollback: prefira o painel da Unooria** (`/unooria/recursos`, papel
+   `admin` — ADR-87). Ele troca a `versao_ativa` E RESTAURA o manifesto daquela
+   versão (`viewport`, `permissoes`, `series`), lido de `experiencias_versoes`.
+   O `publicar-manifesto.mjs <exp> --versao <anterior>` continua funcionando e
+   é o caminho de quem não tem a tela à mão, mas ele manda o número antigo com o
+   `experiencia.json` **atual do repositório**: voltar a versão por ele NÃO volta
+   as permissões de iframe, e a exp-70 reabre sem `allow-pointer-lock` — o jogo
+   sobe e a câmera não gira, sem erro em lugar nenhum.
+
+   **A api precisa de `CDN_EXP_URL`** (a mesma base do
+   `NEXT_PUBLIC_CDN_EXP_URL` do hub) para conferir, com um HEAD no
+   `index.html`, se a versão que o painel está ativando existe no bucket.
+   Ausente, a ativação acontece e a tela DIZ que não deu para conferir — o que
+   é aceitável em dev e não em produção: apontar a rede para uma versão que não
+   subiu é tela branca para todo mundo. Experiência com
    mídia externa (exp-02) builda com `VITE_VIDEOS_BASE_URL` apontando para a
    CDN de assets do contrato.
    O `deploy.yml` faz o `rsync` **e** o `PUT` do manifesto, e grava

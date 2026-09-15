@@ -2,17 +2,22 @@ import { notFound } from "next/navigation";
 
 import { EmptyState } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_FOTO_CONTA,
+  MISSAO_MANIFESTO_IA,
+  MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
   rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
 
+import { MissaoFotoConta } from "./missao-foto-conta";
 import { MissaoInstanooria } from "./missao-instanooria";
+import { MissaoManifestoIa } from "./missao-manifesto-ia";
 import { MissaoOEcoNoGrupo } from "./missao-o-eco-no-grupo";
+import { MissaoRastroBoato } from "./missao-rastro-boato";
 import { MissaoUnooGPT } from "./missao-unoogpt";
 import { MissaoUnooTube } from "./missao-unootube";
 
@@ -40,13 +45,6 @@ export default async function MissaoPage({
   if (missao.status === "em-breve" || !missao.ficha) {
     return (
       <div className="flex flex-col gap-6">
-        <Trilha
-          itens={[
-            { label: "Início", href: "/professor" },
-            { label: "Entre Redes", href: "/professor/entre-redes" },
-            { label: rotuloDaMissao(ano, missao) },
-          ]}
-        />
         <EmptyState
           variant="no-data"
           size="lg"
@@ -65,6 +63,9 @@ export default async function MissaoPage({
   }
 
   const comFicha = { ...missao, ficha: missao.ficha };
+  if (missao.expId === MISSAO_FOTO_CONTA.expId) {
+    return <MissaoFotoConta ano={ano} missao={comFicha} />;
+  }
   if (missao.expId === MISSAO_UNOOTUBE.expId) {
     return <MissaoUnooTube ano={ano} missao={comFicha} />;
   }
@@ -74,5 +75,15 @@ export default async function MissaoPage({
   if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
     return <MissaoOEcoNoGrupo ano={ano} missao={comFicha} />;
   }
+  if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
+    return <MissaoRastroBoato ano={ano} missao={comFicha} />;
+  }
+  if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
+    return <MissaoManifestoIa ano={ano} missao={comFicha} />;
+  }
+  /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
+     publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,
+     com "Nova atividade" e sem o caminho para os resultados. Foi o que
+     aconteceu com a exp-08 até 2026-09-11, e só a suíte e2e pegou. */
   return <MissaoInstanooria ano={ano} missao={comFicha} />;
 }

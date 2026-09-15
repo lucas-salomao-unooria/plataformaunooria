@@ -1,8 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Card, EmptyState, FeedbackAlert, MetricCard } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import { buscarMissaoTransversal, rotaDaTransversal } from "@/lib/entre-redes/catalogo";
 import type { LinhaDaTurma, ResumoDaTurma, TurmaResumida } from "@/lib/vila-tipos";
@@ -61,15 +61,6 @@ export default async function ResultadosDaVilaPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: missao.titulo, href: rota },
-          { label: "Resultados da turma" },
-        ]}
-      />
-
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
           {missao.titulo}
@@ -80,6 +71,16 @@ export default async function ResultadosDaVilaPage({
         <p className="max-w-3xl text-[14px] leading-relaxed text-unooria-neutral-700">
           Quem jogou, qual bolha cada estudante recebeu e o que aconteceu com as mensagens.
           Recalculado a cada visita — atualize a página durante a aula.
+        </p>
+        {/* O guia à mão: esta é a tela em que o professor está DURANTE a aula, e
+            a revelação da Vila é projetada de lá — com a turma já selecionada. */}
+        <p className="text-[13px] font-semibold">
+          <Link
+            href={turma ? `${rota}/guia?turmaId=${encodeURIComponent(turma)}` : `${rota}/guia`}
+            className="text-unooria-navy-900 hover:text-unooria-neutral-950"
+          >
+            Abrir o guia da aula
+          </Link>
         </p>
       </header>
 
@@ -188,6 +189,19 @@ export default async function ResultadosDaVilaPage({
             </Card>
           ) : null}
 
+          {/* Destrutivo, e atrás de confirmação — mas ACIMA da lista, não
+              depois dela: a tabela rola dentro do próprio quadro e a ação ficava
+              escondida atrás da turma inteira. Longe do seletor de turma, que
+              continua no topo: um clique errado lá troca de turma, e o seguinte
+              apagaria a turma errada. */}
+          <div className="flex justify-end">
+            <ZerarTurma
+              turmaId={turma}
+              nomeDaTurma={turmas.find((t) => t.id === turma)?.nome ?? "esta turma"}
+              partidas={resumo.jogaram}
+            />
+          </div>
+
           <Card variant="elevated" title="Estudante por estudante">
             <TabelaTurma estudantes={estudantes} rotaBase={rota} />
           </Card>
@@ -196,14 +210,6 @@ export default async function ResultadosDaVilaPage({
             <LinkButton href={`${rotaBase}?turmaId=${encodeURIComponent(turma)}`} variant="secondary">
               Atualizar
             </LinkButton>
-            {/* Destrutivo, e por isso no fim da página e atrás de confirmação —
-                nunca ao lado do seletor de turma, onde um clique errado troca
-                de turma e o seguinte apaga a turma errada. */}
-            <ZerarTurma
-              turmaId={turma}
-              nomeDaTurma={turmas.find((t) => t.id === turma)?.nome ?? "esta turma"}
-              partidas={resumo.jogaram}
-            />
           </div>
         </>
       )}

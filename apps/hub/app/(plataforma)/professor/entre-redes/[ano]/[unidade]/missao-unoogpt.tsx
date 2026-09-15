@@ -1,12 +1,12 @@
 import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import {
   rotaDaMissao,
   rotuloDaMissao,
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 
 /**
  * Corpo da MISSÃO TEMPESTADE (2ª série do EM · Unidade 1).
@@ -28,17 +28,10 @@ export function MissaoUnooGPT({
 }) {
   const { ficha } = missao;
   const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (
     <div className="flex flex-col gap-8">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao) },
-        ]}
-      />
-
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="success">Disponível</Badge>
@@ -90,6 +83,13 @@ export function MissaoUnooGPT({
               <li key={passo}>{passo}</li>
             ))}
           </ol>
+          {guia ? (
+            <div className="pt-4">
+              <LinkButton href={guia} variant="secondary">
+                Abrir guia da aula
+              </LinkButton>
+            </div>
+          ) : null}
         </Card>
       </section>
 

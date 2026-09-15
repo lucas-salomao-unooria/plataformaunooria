@@ -14,10 +14,21 @@ exp → hub : { type: "exp:estado", estado:{...} }   → p/ "chrome" opcional do
 exp → hub : { type: "exp:erro", mensagem, hash }    → a exp quebrou; o hub troca a tela (aditivo; o registro vai SDK → api)
 hub → exp : { type: "hub:pause" | "hub:resume" }   → emitidos por visibilidade/foco da página
 ```
-`config` do `hub:init` carrega hoje `clarityProjectId`, `expId` e
+`config` do `hub:init` carrega hoje `clarityProjectId`, `expId`,
 `obs: { traceRatio }` (a fração de sessões com spans do OpenTelemetry Web —
-env de runtime do hub, `OBS_TRACE_RATIO_CLIENTE`). Campo novo em `config` é
+env de runtime do hub, `OBS_TRACE_RATIO_CLIENTE`) e **`fuso`** (o fuso da
+plataforma, `FUSO_DA_PLATAFORMA` — ADR-99). Campo novo em `config` é
 aditivo e não sobe `PROTOCOL_VERSION`.
+
+**O `fuso` é o terceiro do mesmo tipo, e a razão de ele estar em `config` e não
+como campo de topo é esta regra, não conveniência**: o bundle é estático, foi
+construído uma vez e não conhece contrato, então o valor tem de chegar em
+runtime — e campo de topo mudaria a FORMA do `hub:init`, obrigando a subir o
+major. Bundle já publicado passaria a recusar o handshake com "protocolo
+incompatível", que é tela de erro para a criança. Quem o aplica é o
+`createExperiencia`, ANTES da primeira tela: `data(iso)` e as outras cinco
+funções do `@edu/sdk` continuam com a assinatura de sempre, e a experiência não
+precisa saber que existe fuso. Até o `hub:init` chegar vale o padrão.
 O `?hubOrigin=` que o hub põe na URL do iframe é ENTRADA NÃO CONFIÁVEL: o bundle
 é público, então quem embeda a experiência num iframe próprio escolheria, por
 aquele parâmetro, de quem ela aceita o `hub:init` e para onde vai tudo o que sai
@@ -63,9 +74,21 @@ Os dev servers das exps declaram `allowedHosts: ["host.docker.internal"]`: o
 Vite 5.4+ recusa `Host` que não conheça, e sem isso o hub em container não lê o
 manifesto e a experiência aparece esticada na janela.
 `permissoes` (aditivo) lista o que o IFRAME daquela experiência precisa — hoje
-`pointer-lock` e `forms`, que o `ExpFrame` traduz nos tokens
-`allow-pointer-lock` e `allow-forms`. **`forms` custou um bug inteiro para ser
-descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
+`pointer-lock`, `forms` e `downloads`, que o `ExpFrame` traduz nos tokens
+`allow-pointer-lock`, `allow-forms` e `allow-downloads`.
+
+**`downloads` (exp-90 e exp-92) tem uma armadilha A MAIS: a rota do hub precisa
+REPASSAR `permissoes` ao `ExpFrame`.** `/exp/[expId]` e `/dev-embed` sempre
+repassaram; as três rotas de professor (`plano-de-aula`, `plano-de-ensino`,
+`bem-estar`) renderizam o `ExpFrame` direto e **não passavam** — então declarar
+a permissão no manifesto não tinha efeito nenhum ali. Sem o token, o navegador
+bloqueia o download em silêncio (o Chrome registra no painel Issues, não no
+console) e o `a.click()` volta como se tivesse funcionado: o professor clicava em
+"Baixar .doc" e nada acontecia. Confira com
+`document.querySelector('iframe').getAttribute('sandbox')` no console do hub
+(ADR-76).
+
+**`forms` custou um bug inteiro para ser descoberto**: o `Composer` do DS é um `<form>`, e sem o token o navegador BLOQUEIA
 o submit — o estudante da exp-03 digitava a pergunta, apertava Enter e nada
 acontecia. O sintoma engana porque a conversa parece viva (a fala de abertura do
 agente já está na tela) e o único rastro é um aviso de console sobre "form's
@@ -86,7 +109,7 @@ experiência desaparecer da tela sozinha.
 `/professor/bem-estar`), e `/exp/*` responde 404 para elas. Sem manifesto (dev) o hub cai na raiz do Vite **da
 experiência mapeada em `apps/hub/lib/experiencias-dev.ts`** (uma porta por exp:
 5173 exp-01, 5174 exp-02, 5175 exp-90, 5176 exp-91, 5177 exp-70, 5178 exp-03,
-5179 exp-07);
+5179 exp-07, 5181 exp-06 — a 5180 é da exp-92);
 teste local: rota `/dev-embed?src=http://localhost:5174`.
 A montagem do embed (token, manifesto, dev server, origin) é uma só:
 `apps/hub/lib/embed-experiencia.ts`, usada por `/exp/[expId]`, `/dev-embed`,
@@ -106,11 +129,11 @@ não moram numa unidade. Sem ela a ordem cai no `expId` — numeração de exper
 não do ano letivo, e o 7º ano viria depois do 8º.
 
 **Campo novo no `experiencia.json` tem de ser acrescentado ao
-`apps/hub/scripts/publicar-manifesto.mjs` também.** Já valeu para `permissoes` e
-para `unidade`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
+`apps/hub/scripts/publicar-manifesto.mjs` também.** Já valeu para `permissoes`,
+para `unidade` e para `produto`: esquecer é invisível em dev (o hub lê o arquivo do bundle) e
 quebra em produção, onde ele lê a coluna. E **a versão tem TRÊS fontes** —
 `public/experiencia.json`, `package.json` e a constante `EXP_VERSION` do código.
-Só a exp-07 tem teste cobrando as três; a exp-02 já vivia divergente.
+A exp-07 e a exp-06 têm teste cobrando as três; a exp-02 já vivia divergente.
 
 **A ORIGEM do bundle é do AMBIENTE, não do manifesto.** `montarEmbed` já decidiu
 "estou em dev" por "a tabela `experiencias` está vazia", e isso quebrou no dia em
@@ -127,6 +150,24 @@ professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo)
 (`lib/papeis.ts`). A trilha do professor cobre a Educação Básica inteira
 (1º–9º ano + 3 séries do EM), 4 unidades por ano.
 
+**`produto` (ADR-87) é o que põe a experiência no PAINEL da Unooria** —
+`entre-redes`, `plano-de-aula`, `plano-de-ensino` ou `bem-estar` —, e é o que lhe
+dá o TETO do produto: produto desligado numa rede desliga tudo dentro dele. A
+composição produto → experiências é DERIVADA deste campo, e é por isso que ele
+existe em vez de uma lista no hub: lista à mão é a que ninguém atualiza quando a
+experiência seguinte nasce. **Esquecer o campo é MUDO** — a coluna nasce nula, a
+experiência não aparece dentro de nenhum produto no painel, e continua abrindo
+normalmente para estudante e professor: nada quebra e nada avisa. Quem cobra é
+`apps/api/tests/manifestos-declaram-produto.spec.ts`, no CI, e NÃO o Zod da rota
+(um 400 no `PUT` mataria a ativação depois de os bundles já terem subido).
+
+**A cadeia de um campo de manifesto tem CINCO pontos, não dois:** o Zod
+(`apps/api/src/experiencias/contrato-de-rotas.ts`), a coluna, o
+`apps/hub/scripts/publicar-manifesto.mjs`, a interface `Manifesto` do seed
+(`apps/api/prisma/catalogo-e-liberacoes.ts`) e o **`_template`** — este porque
+`pnpm new:exp` copia o `experiencia.json` dele, e um template incompleto faz TODA
+experiência nova nascer errada.
+
 ## Como criar uma experiência nova
 
 0. `git switch -c exp-NN-slug` a partir da `main` — uma branch por experiência.
@@ -137,7 +178,10 @@ professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo)
    `tiktooria`) pela ponte em `packages/ui`. Falta componente? Ele nasce no repo
    `storybook-unooria` e chega por versão nova, não como arquivo local.
 3. Declarar capabilities no `experiencia.json` (`telemetria`, `progresso`,
-   `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso.
+   `ia`, `avaliacao`, `tempo-real`) — o hub e a api usam isso. **E `produto`**
+   (ADR-87), que é o que a põe no painel da Unooria: depois de semear, confirme
+   que ela aparece em `/unooria/recursos/<produto>`. Sem o campo ela funciona e
+   fica invisível para quem liga e desliga a rede — falha muda.
 4. `verbo`/`objeto` de telemetria: documentar no README da experiência.
 5. Build gera `dist/` 100% estático. Testar embedado: rota `/dev-embed` do hub.
 6. **Uma suíte de ponta a ponta**, e ela vai pelo PAPEL de quem usa, não pelo
@@ -149,6 +193,26 @@ professor agora é clicável nos DOIS sentidos (`AtoDaMissao.link` no catálogo)
    Cada `registrar()` escreve `titulo`/`mostra`/`prova`: é deles que saem o
    slide do deck e a legenda do vídeo.
 
+
+## Toda experiência é React 19, e a divergência só aparece no CI
+
+O `@unooria/design-system` 0.2.x é compilado contra os tipos do **React 19**. Uma
+experiência em React 18 resolve `@types/react@18` para si e vê a cópia 19 chegando
+pelo DS: o `tsc` então recusa QUALQUER componente do pacote com
+`TS2786: 'Button' cannot be used as a JSX component` — e a pista real
+(`Type 'bigint' is not assignable to type 'ReactNode'`) está três linhas abaixo,
+numa mensagem aninhada que o resumo do turbo não mostra.
+
+**O sintoma é de ambiente, não de código: passa na máquina e falha no CI.** O
+`node_modules` local cresceu por instalações incrementais e mantém uma resolução;
+o runner faz `--frozen-lockfile` do zero e resolve outra. Foi o que aconteceu com
+a exp-04 em 2026-09-14 — a única que nasceu em 18, porque o `_template` estava em
+18. Os dois subiram para `^19.2.0` juntos, e é assim que tem de continuar: **o
+template é a fonte de toda experiência nova**, e uma divergência ali reaparece na
+próxima que alguém criar.
+
+Mudou dependência de uma experiência? O bundle mudou: **sobe a versão nos três
+lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`.
 
 ## Design System nas experiências
 
@@ -163,12 +227,31 @@ no fallback — feio, mas não quebra.
 playlists, canal, o toast e o diálogo de limite falam de dentro da ficção
 (`ds-unootube`); ranking, os dois diálogos da missão, "Concluir missão" e a TELA
 DE ENTRADA falam pela escola (`ds`). A entrada é a única ANTES do feed e não é
-exceção: no briefing quem fala é a escola, e não há disfarce a proteger porque a
-criança ainda não viu um Short. O disfarce começa no toque em "Começar missão".
+exceção: na tela de entrada quem fala é a escola, e não há disfarce a proteger
+porque a criança ainda não viu um Short. O disfarce começa no toque em "Começar missão".
 
 **Tema**: a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
 `theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
 o estudante escolhe escuro no feed e o ranking volta branco.
+
+**O idioma do disfarce: o nome do app real, em português.** `Shorts`, `Stories`,
+`Feed`, `Playlists`, `Ranking` FICAM dentro do clone — são os nomes que o
+YouTube e o Instagram usam nas versões brasileiras deles, e traduzi-los quebra a
+fidelidade que a experiência está medindo. **Fora do clone, tudo é pt-BR** (a
+regra completa, com as três zonas e a lista de anglicismos que ficam por
+decisão, está em "O idioma da interface" no `AGENTS.md` da raiz — ADR-91).
+
+Duas armadilhas de experiência, das quais uma já cobrou:
+
+- **Rótulo visível que tem espelho na api muda nos DOIS.** `ROTULO_PASSO` de
+  `exp-03/src/lib/textos.ts` espelha `apps/api/src/unoogpt/regras/passos.ts`.
+  Quando o `Briefing` virou `A missão`, mudar só a experiência faria a trilha do
+  estudante divergir do que a api devolve — e o typecheck não vê.
+- **A versão vive em TRÊS lugares, não dois.** Mudou texto visível? Sobe
+  `public/experiencia.json`, `package.json` **e** o `EXP_VERSION` do código
+  (`src/lib/versao.ts`, ou `src/lib/tipos.ts` na exp-03). O `versao.test.ts` de
+  cada experiência cobra os três — foi ele que pegou o esquecimento na troca de
+  terminologia, e a ADR-84 conta o que o terceiro lugar esquecido custou.
 
 Detalhes de mecânica (CSS, frames, compensações) em `packages/ui/AGENTS.md`.
 O específico de cada experiência está no `AGENTS.md` da pasta dela.
@@ -221,3 +304,24 @@ bundles tem acesso uniforme, então qualquer objeto lá é público, e o mapa é
 fonte — na exp-01, a revelação legível antes da hora. Nunca `sourcemap: true`,
 nunca `inline`. Para traduzir a stack de um erro de cliente: o `.map` da
 versão exata está em `gs://{project}-exp-mapas/{expId}/{versao}/`.
+
+## Barra de rolagem: as experiências NÃO usam o `ScrollBar` do DS
+
+O hub passou a rolar com o `<ScrollBar>` do design system (ADR-75). **Aqui não**,
+e isso é decisão, não pendência: o `ScrollBar` é da seção `unooria`, e a regra
+das duas famílias proíbe que ele entre num clone — uma barra com o token da
+plataforma dentro do Instanooria é do mesmo tipo de vazamento que um `Button`
+institucional no feed.
+
+Então, dentro do iframe, a barra continua sendo a do SISTEMA OPERACIONAL, com
+`overflow-y: auto` no contêiner que rola. O que muda por sistema fica como está:
+no macOS com trackpad ela some sozinha, no Windows e no ChromeOS é permanente.
+
+**Esconder a barra continua permitido, e é decisão de FIDELIDADE.** As faixas que
+imitam um app sem barra (`.sem-scrollbar` da exp-01, `.feed-scroll` da exp-02)
+usam `scrollbar-width: none` + `::-webkit-scrollbar { display: none }`. Se você
+esconder uma barra, diga no CSS QUAL app imitado não a tem — sem essa linha, a
+próxima pessoa lê como defeito e "conserta".
+
+Se um dia a seção do clone publicar a própria barra, ela entra por aqui como
+qualquer outro componente: pela ponte, na seção certa.

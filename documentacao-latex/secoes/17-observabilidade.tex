@@ -67,16 +67,22 @@ API & \cd{ConsoleLogger} padrão do Nest em \textbf{texto}, quatro
   \emph{startup probe} TCP padrão, e \rota{/readyz} \textbf{não é usada por
   nada}. O \arq{docs/INFRA-IDENTITY.md} manda \enquote{nunca usar probe
   TCP} para o WSO2; a API não segue o próprio conselho.\\
-Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]}); o único log
+Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]},
+  \cd{[sessao]}, \cd{[login]} --- \cd{console} e não o \cd{pino} de
+  \arq{lib/log.ts} nos dois últimos, porque os módulos que os emitem são
+  importados pelo \emph{middleware}, que roda no EDGE); o único log
   diagnóstico real é \cd{avisarManifestoIlegivel}, escrito depois de um
   incidente. Nas telas, falha vira \cd{FeedbackAlert} de erro. &
   Sem \arq{error.tsx}, \arq{global-error.tsx}, \arq{instrumentation.ts},
   \cd{reportWebVitals} ou rota de saúde. Sem \cd{HEALTHCHECK} no Dockerfile
   nem no \emph{compose}. \cd{apiDoServidor} \textbf{engole qualquer falha em
   \cd{null}}, sem log: \enquote{API caiu} e \enquote{não há dados} são
-  indistinguíveis. Nenhum \cd{fetch} tem \emph{timeout}. Os cinco
+  indistinguíveis. Os cinco
   \emph{route handlers} do BFF não registram nada, inclusive o 404 de rota
-  fora da \emph{allowlist}.\\
+  fora da \emph{allowlist}.
+  \textbf{Dos \cd{fetch} do hub, só o do \emph{login} tem \emph{timeout}} ---
+  8s, e o prazo estourado chega à tela como \enquote{não foi possível entrar
+  agora} (\adrr{ADR-97}); todos os outros esperam indefinidamente.\\
 \zebra Experiências e SDK & O protocolo da ponte tem \cd{exp:ready},
   \cd{exp:concluir}, \cd{exp:estado}, \cd{exp:token-expirando}. O
   \cd{TelemetryClient} faz lote de 50 a cada 10\,s e \cd{sendBeacon} no
@@ -398,7 +404,12 @@ Nativas do Google Cloud & Cloud Run: \cd{request\_count} por
   e classe de \emph{status}; CDN: taxa de acerto. &
   \textbf{Grátis, zero código.} É a base de todos os alertas da fase 0.\\
 \zebra Métricas de log & Um contador ou distribuição derivado de um filtro
-  do Cloud Logging: \enquote{linhas com \cd{codigo=telemetria-descartada}},
+  do Cloud Logging: \enquote{linhas com \cd{codigo=recurso-auditoria-nao-gravada}}
+  --- a mudança do painel valeu mas o histórico dela não foi escrito
+  (\adrr{ADR-89}: o registro nunca derruba a operação que o chamou, e é por isso
+  que este contador existe); \enquote{linhas com \cd{codigo=recurso-alterado}} --- toda
+  vez que a Unooria liga ou desliga um produto numa rede (\adrr{ADR-87}), com
+  recurso, escopo, estado e motivo; \enquote{linhas com \cd{codigo=telemetria-descartada}},
   \enquote{\cd{severity=ERROR} da revisão X}, \enquote{execução do
   \emph{job} \cd{-migrate} com falha}. &
   As \emph{de sistema} são grátis; as \emph{definidas pelo usuário} contam
@@ -1118,8 +1129,16 @@ Error Reporting & \textbf{parcial} & API habilitada, mas \textbf{zero grupos}
   em uma semana. Ninguém provou ainda que a linha de erro sai no formato que
   ele agrupa --- as poucas linhas \cd{ERROR} do período foram falha de conexão
   do próprio Cloud Run, sem \emph{stack}\\
-\zebra Erro de cliente & \textbf{ausente} & Nenhum erro de navegador é
-  capturado. É a maior lacuna: tela branca de professor não gera sinal\\
+\zebra Erro de cliente & \textbf{corrigido em 08/09} & O código existia desde
+  02/09 e \textbf{nunca registrou nada}: o \cd{github.sha} de 40 caracteres
+  estourava o \cd{max(32)} do campo \cd{versao} e a API devolvia 400 a todo
+  erro do hub. O mesmo valor descartava o lote OTLP do hub em
+  \cd{identidadeDoLote} --- 425 \emph{spans} em \cd{hml} entre 5 e 7/09, com a
+  rota respondendo \textbf{204}. Corrigido pela \adrr{ADR-84}, que também abriu
+  o par \textbf{público} das rotas (a tela de login não tinha sessão, e o 401 do
+  BFF descartava o sinal de que ninguém conseguia entrar) e passou a CONTAR todo
+  caminho de recusa --- a ausência desse contador é a razão de seis dias sem
+  ninguém notar\\
 \emph{Session replay} & \textbf{parcial} & Instância própria de OpenReplay no
   ar, sem nenhum \emph{tracker} instrumentado --- nenhuma sessão gravada\\
 \zebra Sondas do Cloud Run & \textbf{ausente} & O módulo já aceita
@@ -1128,12 +1147,14 @@ Error Reporting & \textbf{parcial} & API habilitada, mas \textbf{zero grupos}
 \bottomrule
 \end{tabularx}
 
-\subsection{As doze políticas que existem}
+\subsection{As treze políticas que existem}
 
 A lista prevista na Seção anterior tinha quatorze linhas e nasceu de um
-desenho; estas doze nasceram do que a métrica nativa permite medir \emph{sem
-tocar na aplicação} --- porque o repositório de infraestrutura evolui sozinho,
-enquanto o \emph{monorepo} está em obra.
+desenho; doze nasceram do que a métrica nativa permite medir \emph{sem tocar
+na aplicação} --- porque o repositório de infraestrutura evolui sozinho,
+enquanto o \emph{monorepo} está em obra. A décima terceira, aplicada em 9 de
+setembro de 2026, é a primeira que lê uma métrica DA APLICAÇÃO, e nasceu de um
+caso concreto: ver a \adrr{ADR-84}.
 
 \begin{tabularx}{\linewidth}{@{}L{8mm}L{46mm}X@{}}
 \toprule
@@ -1154,6 +1175,12 @@ enquanto o \emph{monorepo} está em obra.
 \zebra \textbf{B} & API e hub lentos & p95 acima de 10\,s na API e de 2\,s no
   hub, por 10\,min\\
 \textbf{B} & CPU do banco alta & Acima de 80\% por 10\,min\\
+\zebra \textbf{B} & \emph{Spans} do navegador descartados & Qualquer um em
+  15\,min com \cd{motivo} em \cd{sem-identidade}, \cd{sem-projeto} ou
+  \cd{upstream}. O limite é ZERO: os três são falha de configuração ou de
+  contrato, e a rota responde \textbf{204} mesmo descartando --- o cliente nunca
+  sabe. \cd{cota} fica de fora de propósito: cota estourada é o sistema
+  funcionando\\
 \bottomrule
 \end{tabularx}
 
@@ -1161,6 +1188,48 @@ Cada política carrega no campo \cd{documentation} a sua própria primeira
 resposta em \emph{markdown}, com os comandos já preenchidos --- o e-mail do
 alerta chega com o passo a passo dentro, e não com um \emph{link} para o
 Apêndice~\ref{ap:operacao}.
+
+\begin{atencao}
+\textbf{Duas políticas ficaram escritas e DESLIGADAS, e a razão é uma ordem que
+não se pode inverter.} \cd{sinal do navegador recusado}
+(\cd{erros\_recusados} com \cd{motivo=invalido}) e \cd{erro de cliente em massa}
+(\cd{erros\_cliente}) leem métricas que a aplicação precisa ter emitido ao menos
+uma vez: o Cloud Monitoring \textbf{recusa} criar política sobre métrica
+inexistente, com \cd{404 Cannot find metric(s) that match type}, e um contador
+OpenTelemetry só cria a série quando incrementa pela primeira vez. Medido
+aplicando em \cd{dev} em 9 de setembro de 2026. A sequência obrigatória é:
+\emph{deploy} da plataforma \seta{} a primeira recusa (ou o primeiro erro)
+acontecer \seta{} ligar \env{obs\_alerta\_erro\_de\_cliente}. A variável existe
+para que essa dependência esteja escrita, em vez de ser descoberta num
+\cd{apply} vermelho.
+\end{atencao}
+
+\begin{atencao}
+\textbf{Esta política encontrou um defeito NOSSO no primeiro tráfego de
+verdade, e a primeira leitura dele estava errada.} Uma versão anterior deste
+capítulo dizia que os \emph{spans} \cd{motivo=sem-projeto} de \cd{hml} (292
+entre 5 e 7 de setembro) eram falta de \env{GCP\_PROJECT\_ID}, e que \enquote{o
+conserto é do Terraform, não da aplicação}. \textbf{Não era.} A \emph{env} já
+estava no serviço desde 3 de setembro, nos dois ambientes; o que faltava era o
+\cd{ClienteOtlpGoogle} chegar ao construtor do \cd{ProxyOtlpService}, que o
+importava com \cd{import type} --- o Nest perdia o \emph{token} e o
+\cd{@Optional()} injetava \cd{undefined} em silêncio, com a rota respondendo
+\textbf{204}. Corrigido em 2026-09-14; o sintoma e a verificação de um comando
+estão no Apêndice~\ref{ap:operacao}. Duas lições sobrevivem ao \emph{bug}:
+alerta sobre métrica DA APLICAÇÃO encontra defeito de código, e não só de
+configuração; e o primeiro palpite sobre a causa --- aqui, justamente a
+\emph{env} que esta documentação já esperava que faltasse --- tem de ser
+conferido contra o serviço antes de virar tarefa para outro repositório.
+\end{atencao}
+
+\begin{nota}
+O outro motivo que \cd{hml} produziu no mesmo dia, \cd{sem-identidade}, era
+ambiente ATRASADO e não defeito: até \cd{cf9489f} (8 de setembro) a api validava
+\cd{service.version} com \cd{\{1,32\}} enquanto o CI injetava
+\env{NEXT\_PUBLIC\_HUB\_VERSAO} com o \cd{github.sha} inteiro, de 40 caracteres
+--- todo lote do hub caía, também com \textbf{204}. O conserto de um ambiente
+atrasado é a promoção, não código.
+\end{nota}
 
 \subsection{Onde a implantação divergiu do desenho, e por quê}
 

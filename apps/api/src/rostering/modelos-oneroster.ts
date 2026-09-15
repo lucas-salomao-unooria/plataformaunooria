@@ -18,7 +18,7 @@
  * O exemplo é gerado com a escola de VERDADE no `sourcedId` do `orgs.csv` e no
  * `schoolSourcedId` das turmas e matrículas. Um `esc.exemplo` fixo seria pior de
  * duas maneiras: para o gestor, todo o lote voltaria como "escola não é a desta
- * importação"; para o `admin-contrato`, que PODE criar escola por CSV, o
+ * importação"; para o `gestor_contrato`, que PODE criar escola por CSV, o
  * exemplo abriria um tenant de mentira — com RLS e dados de menores atrás dele.
  */
 import type { ArquivoOneRoster } from "./catalogo";
@@ -120,7 +120,7 @@ export function exemploOneRoster(arquivo: ArquivoOneRoster, ctx: ContextoDoExemp
         ];
 
       /* UMA linha, a desta escola: o arquivo só APRENDE o código INEP. Escola
-         nova é ato de `admin-contrato`, não de upload. */
+         nova é ato de `gestor_contrato`, não de upload. */
       case "orgs":
         return [linha(escolaId, "active", modificado, escolaNome, "school", inep, "")];
 

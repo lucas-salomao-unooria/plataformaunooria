@@ -45,6 +45,9 @@ const PREFIXOS_PERMITIDOS = [
   "runs",
   "posts",
   "experiencias",
+  /* O interruptor da rede (ADR-87). Só a LEITURA passa por aqui: a escrita é do
+     painel da Unooria, e o `@Roles("admin")` da api é quem a protege. */
+  "recursos",
   "perfis",
   "analise",
   "progresso",
@@ -63,18 +66,56 @@ const PREFIXOS_PERMITIDOS = [
      durante a aula e as 30 telas precisam andar na hora, sem recarregar
      página. As guardas de papel estão na api (`@Roles("professor")`). */
   "o-eco-no-grupo",
+  /* exp-06: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
+     turma" são client-side pela mesma razão da exp-07 — a professora aperta no
+     meio da aula e as 30 telas andam na hora. As guardas de papel estão na api
+     (`@Roles("professor", "gestor_escola", "gestor_contrato")`). */
+  "rastro-boato",
+  /* exp-04: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
+     (gerar/aprovar) e o "zerar turma" são client-side — o professor aperta no
+     meio da aula e os tablets do 1º ano andam pelo polling deles. As guardas
+     de papel estão na api (`@Roles("professor", ...GESTORES)`). */
+  "foto-conta",
+  /* exp-08: a preparação do caso da escola (gerar/publicar), os dois botões do
+     debate e o "zerar turma" são client-side pela mesma razão da exp-06 — a
+     professora aperta no meio da aula e as 30 telas andam na hora, por polling
+     de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
+     "gestor_escola", "gestor_contrato")`). */
+  "manifesto-ia",
   /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
      tem bearer — passa por aqui. A api aplica cota e redaction. */
   "observabilidade",
 ] as const;
 
+/**
+ * Sinal do navegador que TAMBÉM vale sem sessão (ADR-84): erro de cliente e
+ * Web Vital na landing, no login e na troca de senha.
+ *
+ * Estas duas rotas são as únicas em que "não há sessão" não pode virar 401. A
+ * tela de login é por onde todo mundo passa, e o erro dela era o único que não
+ * deixava rastro em lugar nenhum — o 401 daqui descartava exatamente o sinal de
+ * que ninguém estava conseguindo entrar.
+ *
+ * Quem escolhe o destino é o BFF, não o client: com sessão vai para a rota
+ * autenticada (e o log ganha o id do usuário), sem sessão vai para a pública
+ * (sem identidade, com cota por IP). O client posta sempre no mesmo lugar e
+ * nunca vê um 401 — que, além de descartar o sinal, sujava o console de toda
+ * suíte e2e como "pendência conhecida".
+ */
+function ehSinalDoNavegador(request: NextRequest, path: string[]): boolean {
+  return request.method === "POST" && path.length === 2 && path[0] === "observabilidade" && (path[1] === "erros-cliente" || path[1] === "vitals");
+}
+
 async function proxy(request: NextRequest, path: string[]) {
   const session = await auth();
-  if (!session?.usuario) {
+  const sinalDoNavegador = ehSinalDoNavegador(request, path);
+  const semSessao = !session?.usuario;
+  if (semSessao && !sinalDoNavegador) {
     return NextResponse.json({ mensagem: "sem sessão" }, { status: 401 });
   }
-  if (session.usuario.precisaTrocarSenha) {
+  // Preso na troca de senha ainda é gente usando uma tela: o erro dela conta.
+  if (session?.usuario?.precisaTrocarSenha && !sinalDoNavegador) {
     return NextResponse.json({ mensagem: "troque a senha antes de continuar" }, { status: 403 });
   }
   const prefixo = path[0] ?? "";
@@ -87,16 +128,20 @@ async function proxy(request: NextRequest, path: string[]) {
     return NextResponse.json({ mensagem: "rota não permitida" }, { status: 404 });
   }
 
-  const u = session.usuario;
-  const token = await assinarTokenExperiencia({
-    sub: u.id,
-    escola_id: u.escolaId,
-    turma_id: u.turmaId,
-    perfil: u.papel,
-  });
+  const u = session?.usuario;
+  const token = u
+    ? await assinarTokenExperiencia({
+        sub: u.id,
+        escola_id: u.escolaId,
+        turma_id: u.turmaId,
+        perfil: u.papel,
+      })
+    : null;
 
   const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
-  const destino = new URL(`${apiUrl}/${path.join("/")}`);
+  // Sem sessão, o mesmo sinal vai para o par público da rota.
+  const caminho = token ? path.join("/") : `observabilidade/publico/${path[1]}`;
+  const destino = new URL(`${apiUrl}/${caminho}`);
   request.nextUrl.searchParams.forEach((valor, chave) => destino.searchParams.set(chave, valor));
 
   const temCorpo = request.method !== "GET" && request.method !== "HEAD";
@@ -108,7 +153,19 @@ async function proxy(request: NextRequest, path: string[]) {
     resposta = await fetch(destino, {
       method: request.method,
       headers: {
-        authorization: `Bearer ${token}`,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        /*
+         * O `user-agent` do NAVEGADOR só é repassado para os sinais de
+         * observabilidade, e é o que os torna úteis: é dele que a api deriva
+         * `navegador`/`so`/`tipo`. Sem esta linha o BFF mandava o user-agent do
+         * runtime do Next, e todo erro do hub era classificado como
+         * `outro/outro/desktop` — medido antes de existir (ADR-84). Não vale
+         * para as demais rotas: elas não leem o cabeçalho, e repassá-lo seria
+         * ampliar o que atravessa o BFF sem consumidor.
+         */
+        ...(sinalDoNavegador && request.headers.get("user-agent")
+          ? { "user-agent": request.headers.get("user-agent") as string }
+          : {}),
         ...(traceparent ? { traceparent } : {}),
         ...(temCorpo ? { "content-type": request.headers.get("content-type") ?? "application/json" } : {}),
       },

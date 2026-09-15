@@ -64,7 +64,8 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
   "config": {
     "clarityProjectId": "ybo0odt6cn",
     "expId": "exp-01-instanooria",
-    "obs": { "traceRatio": 0.02 }
+    "obs": { "traceRatio": 0.02 },
+    "fuso": "America/Sao_Paulo"
   }
 }
 \end{lstlisting}
@@ -74,6 +75,16 @@ experiência com OpenTelemetry Web ligado --- vem de
 \env{OBS\_TRACE\_RATIO\_CLIENTE} do hub, env de \emph{runtime}, então mudar a
 amostragem não republica bundle nenhum; \cd{0} faz a SDK nem baixar os
 pacotes.
+
+\cd{config.fuso} (2026-09-11, \adrr{ADR-99}) é o fuso da plataforma, vindo de
+\env{FUSO\_DA\_PLATAFORMA} do hub. \cd{createExperiencia} o aplica
+\textbf{antes da primeira tela}, e a partir daí \cd{data(iso)} e as outras cinco
+funções de formatação do \cd{@edu/sdk} respondem nele --- sem mudar de
+assinatura. Ausente (hub anterior à ADR-99) vale \cd{America/Sao\_Paulo}.
+Ele vai em \cd{config}, e não como campo de topo, pela regra da linha acima: o
+\emph{bundle} já publicado ignora o que não conhece, enquanto mudar a FORMA do
+\cd{hub:init} obrigaria a subir \cd{PROTOCOL\_VERSION} --- e aí o
+\emph{handshake} seria recusado, com tela de erro para a criança.
 
 \section{\emph{Token} de experiência}
 
@@ -453,7 +464,8 @@ vez de esperar um arquivo que não existe.
 {
   "id": "exp-01-instanooria",
   "nome": "Instanooria — O Conteúdo que não chegou",
-  "versao": "1.0.0",
+  "versao": "1.1.4",
+  "produto": "entre-redes",
   "series": ["8EF"],
   "capabilities": ["telemetria", "progresso", "ia"],
   "viewport": { "largura": 375, "altura": 812 },
@@ -469,7 +481,8 @@ vez de esperar um arquivo que não existe.
 {
   "id": "exp-90-plano-de-aula",
   "nome": "Gerador de Plano de Aula",
-  "versao": "1.0.0",
+  "versao": "1.2.1",
+  "produto": "plano-de-aula",
   "series": [],
   "capabilities": ["telemetria", "ia"],
   "publico": "professor",
@@ -485,7 +498,8 @@ vez de esperar um arquivo que não existe.
 {
   "id": "exp-07-o-eco-no-grupo",
   "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
-  "versao": "0.1.0",
+  "versao": "0.1.2",
+  "produto": "entre-redes",
   "series": ["7EF"],
   "capabilities": ["telemetria", "progresso", "avaliacao", "ia"],
   "viewport": { "largura": 375, "altura": 812 },

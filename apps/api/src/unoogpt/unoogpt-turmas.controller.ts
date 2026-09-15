@@ -13,9 +13,12 @@ import {
   TurmaDoProfessorSchema,
   TurmaZeradaDoUnoogptSchema,
   TurmasDoUnoogptSchema,
+  FontesDoProfessorSchema,
 } from "./contrato-de-rotas";
 import { UnoogptService } from "./unoogpt.service";
 import { professorDoToken } from "../comum/turmas-do-professor";
+import { fontesParaOProfessor } from "./modelo/conjuntos";
+import { GESTORES_DO_CONTRATO, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR: o relógio da aula, a folha da turma e a linha de uma
@@ -25,13 +28,13 @@ import { professorDoToken } from "../comum/turmas-do-professor";
  * com exceção por método (mesma regra da exp-70). O agregado por turma abre
  * para o gestor em `UnoogptAgregadoController`; a conversa de uma criança, não.
  *
- * `admin-contrato` é a única exceção cross-escola (regra 1): o token dele tem
+ * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem
  * escola vazia, então precisa dizer `?escolaId=`.
  */
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "admin-contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) throw erroDeJogo("payload-invalido");
     return escolaIdPedida;
   }
@@ -43,7 +46,7 @@ function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
 
 @Controller("unoogpt/professor")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "admin-contrato")
+@Roles("professor", ...GESTORES_DO_CONTRATO)
 export class UnoogptTurmasController {
   constructor(private readonly service: UnoogptService) {}
 
@@ -157,5 +160,27 @@ export class UnoogptTurmasController {
     const escolaId = escolaAlvo(req.auth, escolaIdPedida);
     if (!ehUuid(estudanteId)) throw erroDeJogo("payload-invalido");
     return this.service.doEstudante(escolaId, estudanteId, professorDoToken(req.auth));
+  }
+
+  /**
+   * As 8 fontes do cenário e o VIÉS de cada uma — o material do debate.
+   *
+   * Catálogo, não dado de turma: não há `escolaId` nem tenancy a aplicar aqui.
+   * O que a guarda protege é o PAPEL — esta é a única superfície da missão em
+   * que o viés é dito com todas as letras, e ele não pode chegar ao estudante
+   * (a missão não revela nada por software, de propósito).
+   */
+  @Get("fontes")
+  @Contrato({
+    resumo: "As 8 fontes do cenário com o viés de cada uma, para o guia da aula.",
+    descricao:
+      "**Professor only.** Alimenta o guia da aula em `/professor/entre-redes/2-serie/unidade-1/guia`. O hub NÃO guarda cópia disto: a missão não revela o viés por software, e uma cópia desatualizada faria o professor contar à turma um viés que o cenário já não produz.",
+    resposta: FontesDoProfessorSchema,
+    notas: [
+      "Nada aqui é escopado por escola: é o catálogo do cenário, igual para todo contrato.",
+    ],
+  })
+  fontes() {
+    return { fontes: fontesParaOProfessor() };
   }
 }

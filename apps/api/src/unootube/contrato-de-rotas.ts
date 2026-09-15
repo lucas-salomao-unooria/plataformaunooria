@@ -119,3 +119,37 @@ export const ResultadosDaTurmaSchema = z.object({
     mediaFontesConcluidos: z.number().nullable(),
   }),
 });
+
+/**
+ * A tabela dos 21 vídeos COM o gabarito — o que o guia da aula mostra ao
+ * professor.
+ *
+ * É professor-only pelo mesmo motivo que `VideoPublicoSchema` não tem
+ * `factual`: quem sabe de antemão qual vídeo é falso não avalia fonte nenhuma.
+ * A diferença é o LEITOR — aqui é quem conduz a aula, e ele precisa reconhecer
+ * o vídeo que a criança citou.
+ */
+export const VideosDoProfessorSchema = z.object({
+  videos: z.array(
+    z.object({
+      id: z.string(),
+      titulo: z.string(),
+      handle: z.string(),
+      inscritosRotulo: z.string(),
+      /** O GABARITO. */
+      factual: z.boolean(),
+    }),
+  ),
+  /** Contado do catálogo, não escrito à mão: 21 é ímpar, não dá "metade". */
+  resumo: z.object({
+    total: z.number().int().nonnegative(),
+    factuais: z.number().int().nonnegative(),
+    sensacionalistas: z.number().int().nonnegative(),
+  }),
+  /** Os números que o guia repetia à mão. */
+  pontuacao: z.object({
+    limiteSalvos: z.number().int().positive(),
+    inscritosPorFake: z.number().int().nonnegative(),
+    inscritosPorConfiavel: z.number().int().nonnegative(),
+  }),
+});

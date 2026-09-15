@@ -289,11 +289,11 @@ baixada no mundo inteiro.** Se o serviço subir com ela:
 3. Qualquer pessoa baixa o WSO2 IS 7.3.0, extrai a chave privada e forja:
 
    ```json
-   { "sub": "qualquer", "escola_id": "", "perfil": "admin-contrato",
+   { "sub": "qualquer", "escola_id": "", "perfil": "gestor_contrato",
      "aud": "plataforma-api", "iss": "<seu issuer>" }
    ```
 
-4. `perfil: "admin-contrato"` é **a única exceção cross-escola da regra inviolável nº 1**,
+4. `perfil: "gestor_contrato"` é **a única exceção cross-escola da regra inviolável nº 1**,
    e o `escolaAlvo()` de `usuarios.controller.ts` deixa esse perfil escolher qualquer
    `?escolaId=`. Resultado: **leitura e escrita de dados de menores de todas as escolas de
    todos os contratos, com um comando.**
@@ -544,7 +544,7 @@ depois do deploy e copie o campo `issuer` literalmente.**
 `PERFIS.includes(String(payload["perfil"]))`; se o WSO2 emitir `["estudante"]` — formato natural
 de roles/groups — a verificação falha e **todo mundo toma 401**. Mantenha `perfil` como
 atributo de usuário, não role. E trate a escrita desse atributo como privilegiada: um bug
-de escrita no userstore promove um estudante a `admin-contrato`.
+de escrita no userstore promove um estudante a `gestor_contrato`.
 
 ---
 

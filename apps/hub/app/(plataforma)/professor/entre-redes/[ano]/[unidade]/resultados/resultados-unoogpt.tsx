@@ -1,13 +1,13 @@
-import { Card, EmptyState, MetricCard } from "@edu/ui/ds";
+import Link from "next/link";
+import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
+import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   rotaDaMissao,
-  rotuloDaMissao,
-  type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { FolhaDaTurma, TurmaResumo } from "@/lib/unoogpt-tipos";
 
@@ -25,15 +25,14 @@ import { ZerarTurma } from "./zerar-turma";
  * justificou por intuição?) em vez de desempenho.
  */
 export async function ResultadosUnooGPT({
-  ano,
   missao,
   turma,
 }: {
-  ano: Ano;
   missao: Missao;
   turma: string;
 }) {
   const rotaBase = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   const lista = await apiDoServidor<{ turmas: TurmaResumo[] }>("/unoogpt/professor/turmas");
   const todas = lista?.turmas ?? [];
@@ -54,14 +53,10 @@ export async function ResultadosUnooGPT({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: "A aula e os resultados" },
-        ]}
-      />
+      {/* Esta missão chama a tela de "A aula e os resultados" (ela abre a Aula 2,
+          não só relata): o rótulo do registro de rotas é o genérico e quem o
+          corrige é a página. */}
+      <RotuloDaTrilha valor="A aula e os resultados" />
 
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
@@ -75,6 +70,16 @@ export async function ResultadosUnooGPT({
           turma: não quem acertou, mas quem <strong>leu antes de decidir</strong>, quem viu fontes
           discordando e quem decidiu no escuro.
         </p>
+        {/* O guia da aula, à mão: esta é a tela em que o professor está DURANTE
+            a aula, e é aqui que ele precisa reler o roteiro ou a pergunta do
+            debate sem perder o painel de vista. */}
+        {guia ? (
+          <p className="text-[13px] font-semibold">
+            <Link href={guia} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
+              Abrir o guia da aula
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <SeletorDeTurma turmas={turmas} turmaId={turma} rotaBase={rotaBase} aviso={aviso} />
@@ -136,8 +141,23 @@ export async function ResultadosUnooGPT({
             </ul>
           </Card>
 
+          {/* O caminho de exclusão desta missão, no lugar de um prazo de
+              retenção que nenhuma rotina cumpriria. Fica ACIMA da tabela: a
+              lista tem uma linha por estudante e rola dentro do próprio quadro,
+              então quem procurasse a ação no fim da página precisaria passar por
+              ela inteira. O que continua valendo é a distância da LARGADA: o
+              relógio fica no topo, e entre ele e este botão estão o retrato da
+              turma e o card do debate — além do diálogo de confirmação. */}
+          <div className="flex flex-wrap items-center gap-3">
+            <ZerarTurma turmaId={turma} nomeDaTurma={folha.turma.nome} />
+            <p className="text-[12px] leading-snug text-unooria-neutral-500">
+              Apaga as partidas desta turma e devolve o relógio ao início. Use para rodar a missão
+              de novo com a mesma turma.
+            </p>
+          </div>
+
           <Card variant="elevated" title={`${folha.turma.nome} · ${folha.turma.serie}`}>
-            <div className="overflow-x-auto">
+            <ScrollBar orientation="both" autoHide className="tabela-rolavel">
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
@@ -183,24 +203,12 @@ export async function ResultadosUnooGPT({
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollBar>
             <p className="pt-3 text-[12px] leading-snug text-unooria-neutral-500">
               Não há coluna de resgatados aqui, de propósito: listagem é ordenável, e ordenar
               crianças por acerto viraria ranking. O número está na tela de cada estudante.
             </p>
           </Card>
-
-          {/* O caminho de exclusão desta missão, no lugar de um prazo de
-              retenção que nenhuma rotina cumpriria. Fica no FIM da página, longe
-              da largada: ação destrutiva ao lado do botão que o professor mais
-              aperta é um acidente esperando acontecer. */}
-          <div className="flex flex-wrap items-center gap-3 border-t border-unooria-neutral-200 pt-4">
-            <ZerarTurma turmaId={turma} nomeDaTurma={folha.turma.nome} />
-            <p className="text-[12px] leading-snug text-unooria-neutral-500">
-              Apaga as partidas desta turma e devolve o relógio ao início. Use para rodar a missão
-              de novo com a mesma turma.
-            </p>
-          </div>
         </>
       )}
     </div>

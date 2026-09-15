@@ -84,7 +84,7 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
   \node[c4component, text width=30mm, fill=unooPaper, draw=unooAxis] (mk) at (10.4,-6.6)
     {\arq{mock.provider.ts}\desc{testes e \emph{dev} sem GCP}};
 
-  \node[c4db, text width=24mm] (ia) at (0.0,-4.4) {\cd{ia\_uso\_diario}};
+  \node[c4db, text width=24mm] (ia) at (0.0,-4.4) {\texttt{ia\_uso\_diario}};
   \node[c4systemext, text width=26mm, minimum height=13mm] (vertex) at (14.4,-9.8)
     {\textbf{Vertex AI}\desc{endpoint \cd{global}}};
 
@@ -113,6 +113,13 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 \begin{regra}
 \textbf{Nunca exponha chamada de IA sem passar pelo \cd{QuotaService}:}
 \cd{temSaldo(escola, usuario, perfil)} \textbf{antes}, \cd{consumir} \textbf{depois}.
+
+\textbf{Em \cd{generateJson}, o \enquote{depois} exige \cd{aoUsarTokens}}
+(\adrr{ADR-74}): ele devolve \cd{T}, não \cd{AiResult}, e sem o \emph{callback}
+não há número para debitar. Um \cd{temSaldo} sem \cd{aoUsarTokens} é meia
+regra --- barra quem já estourou o teto e faz o teto nunca ser alcançado. Foi
+o que aconteceu no plano de aulas da exp-92, a operação mais repetida da
+ferramenta.
 \end{regra}
 
 \begin{lstlisting}[language=tsunoo, caption={Incremento atômico da quota (\arq{src/ai/quota.service.ts})}, label={lst:quota}]
@@ -139,10 +146,14 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 \end{decisao}
 
 \begin{decisao}
-\textbf{O limite depende do PERFIL.} O estudante conversa com o tutor, e
-\num{20000} \emph{tokens}/dia bastam. O professor gera planos anuais em que só o
-\emph{prompt} --- currículo da rede mais material didático --- passa de
-\num{200000} \emph{tokens}: o teto dele é outro
+\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp-01
+e com os turnos da exp-03 (Missão Tempestade), onde uma partida completa gasta
+cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
+\num{300000} \emph{tokens}/dia (\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE}),
+permitindo até quatro partidas completas. O valor inicial de \num{20000}
+estourava no quarto turno com erro de sala fechada. O professor gera planos anuais
+em que só o \emph{prompt} --- currículo da rede mais material didático --- passa
+de \num{200000} \emph{tokens}: o teto dele é outro
 (\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, \emph{default}
 \num{2000000}/dia, o que dá seis a nove planos). Um teto único obrigaria a
 escolher entre \enquote{estudante com quota absurda} e \enquote{professor que não
@@ -311,7 +322,7 @@ validada~\cite{vignola2014dass21}, em domínio público.
 
   \node[actionerr, text width=34mm, below=9mm of sinal] (fixo)
     {texto FIXO de apoio\\CVV 188, SAMU 192, CAPS/UBS\\
-     \textbf{a IA não é chamada}\\\cd{origem\_texto = 'seguranca'}};
+     \textbf{a IA não é chamada}\\\texttt{origem\_texto = 'seguranca'}};
 
   \node[decision, text width=26mm, right=12mm of sinal] (saldo)
     {tem saldo e \emph{provider}?};
@@ -328,7 +339,7 @@ validada~\cite{vignola2014dass21}, em domínio público.
     {texto FIXO do catálogo\\\cd{origem\_texto = 'fallback'}};
 
   \node[actionok, text width=30mm, below=9mm of val] (ok)
-    {\cd{origem\_texto = 'ia'}};
+    {\texttt{origem\_texto = 'ia'}};
 
   \node[actend, left=12mm of ok] (fim) {};
 

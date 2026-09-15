@@ -8,7 +8,7 @@ este arquivo vence.
 
 | Pasta | O que está lá |
 |---|---|
-| `apps/api/AGENTS.md` | rede/escola/CPF, identidade e enturmamento, perfil portátil, telemetria, OpenAPI derivado do Zod, provider de IA, e os módulos de experiência (vila, planos, bem-estar, unoogpt, unootube) |
+| `apps/api/AGENTS.md` | rede/escola/CPF, identidade e enturmamento, perfil portátil, telemetria, OpenAPI derivado do Zod, provider de IA, e os módulos de experiência (vila, planos, planejamento/currículo, bem-estar, unoogpt, unootube) |
 | `apps/hub/AGENTS.md` | landing, header, casca, embed de experiência, papéis e middleware, fontes do DS |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, como criar experiência nova, seções de clone do DS, a zona congelada da exp-70 |
 | `packages/AGENTS.md` | índice dos pacotes de workspace (o detalhe está no `AGENTS.md` de cada um) |
@@ -81,6 +81,26 @@ hub serve).
    `/exp/:expId` é endereço adivinhável. Experiência nova declara o próprio
    `EXP_ID` e chama a guarda no FUNIL das rotas de estudante (o `estudanteDaEscola`
    / `garantirSessao` dela), nunca só na rota de leitura.
+8. **Todo produto e toda experiência nascem com interruptor no painel da
+   Unooria** (ADR-87). O eixo se chama **disponibilidade** e responde "este
+   recurso existe NESTA REDE?" — não confunda com a regra 7, que responde "está
+   aberta NESTA TURMA?". Disponibilidade é PRÉ-CONDIÇÃO da liberação, nunca o
+   contrário, e confundir as duas é caro: produto desligado tem o sintoma de um
+   bug de enturmamento.
+   - Tabela `disponibilidades`: uma linha por (recurso, escopo). Recurso é
+     `produto:<slug>` ou `experiencia:<expId>`; escopo é escola, regional ou o
+     contrato inteiro (`escola_id` NULO). **Ausência de linha = LIGADO** — o
+     contrário de `liberacoes`, porque este interruptor é mecanismo de EXCEÇÃO
+     (não contratado, ou quebrado no deploy) e não de liberação.
+   - **O escopo mais específico ganha** (escola → regional → contrato) e **o
+     produto é um TETO**: desligado no escopo que vale, nada dentro dele liga.
+   - **Experiência nova entra no painel declarando `produto` no
+     `public/experiencia.json`** — a composição produto → experiências é
+     DERIVADA do manifesto, e `apps/api/tests/manifestos-declaram-produto.spec.ts`
+     cobra o campo. Nunca uma lista mantida à mão: é a que ninguém atualiza.
+   - Quem opera é SÓ o `admin`, na área `/unooria` (ADR-88) — a primeira
+     capacidade que `admin` tem e `gestor_contrato` não, e a exceção à igualdade
+     que a ADR-80 afirma.
 
 
 ### Token e emissor (decisão da migração, 2026-08)
@@ -88,8 +108,12 @@ O HUB assina os tokens de experiência (RS256, TTL 15min, claims
 `{sub, escola_id, turma_id?, perfil}`, aud `plataforma-api`) e serve o JWKS em
 `/.well-known/jwks.json`. A api valida via `OIDC_ISSUER`/`OIDC_JWKS_URI` —
 trocar para WSO2 = trocar essas envs, o guard não muda. Papéis:
-`estudante | professor | gestor | admin-contrato` (admin-contrato é a única exceção
-cross-escola). O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
+`estudante | professor | gestor_escola | gestor_regional | gestor_contrato | admin`
+(os dois últimos são a exceção cross-escola). **Quem atribui quem sai da CADEIA**
+— `admin → gestor_contrato → gestor_regional → gestor_escola → professor/estudante`,
+com alcance transitivo e nunca para cima (ADR-80). O `gestor_regional` trabalha
+UMA escola por vez: o que a regional dele determina é a lista de escolas que ele
+pode ativar, e a RLS não muda. O claim `turma_id` é a matrícula PRINCIPAL do estudante (ver
 "Identidade e enturmamento").
 
 **A matriz completa de quem faz o quê** (papel x rota x tela, e as ausências
@@ -122,13 +146,90 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
 | `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
 | `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 INTEIRA, menos as telas da escola (breakpoint, cards, "Meu percurso") — **só tema escuro** |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 e a exp-06, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp-06 o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |
 
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
 `pnpm up -r @unooria/design-system --latest`, commitando lockfile e
 `package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
 armadilhas de migração) em `packages/ui/AGENTS.md`.
+
+### O procedimento, antes de escrever QUALQUER interface
+
+A regra não é "prefira o DS": é **procure primeiro, e só depois escreva**. Três
+passos, nesta ordem, e nenhum é opcional:
+
+1. **Procure no pacote.** A lista de tudo que existe são as pontes de
+   `packages/ui/src/ds*.ts` (um `export {}` por seção) e o catálogo em
+   `cd ../storybook-unooria && npm run storybook` (:6007). Procure pelo QUE a
+   coisa faz, não pelo nome que você daria a ela.
+2. **Achou? Use, mesmo que dê mais trabalho** do que escrever a sua. Um
+   componente do DS traz estado, acessibilidade, tema claro/escuro e as duas
+   famílias já resolvidos — e é atualizado por versão, sem ninguém aqui tocar.
+3. **Não achou? Não escreva um.** Abra pedido no `storybook-unooria`, registre-o
+   no `AGENTS.md` do pacote ou da experiência, e faça a **compensação local
+   MARCADA** — que existe para morrer quando o pacote publicar.
+
+**O que é compensação legítima:** medida, espaçamento, altura, posicionamento,
+grade, comportamento de página. **O que não é:** botão, campo, diálogo, aba,
+etiqueta, avatar, ícone, tabela, barra de rolagem — se tem estado ou aparência
+de controle, é componente, e componente nasce no `storybook-unooria`.
+
+**Componente que existe e não é usado custa igual a componente que falta.** Em
+2026-09-07 descobriu-se que o DS publica `ScrollBar` (vertical, horizontal, com
+`autoHide`) desde a 0.1.x e o hub tinha **24 tabelas** rolando em `<div>` com
+`overflow` na mão, além de mais 6 áreas roláveis soltas — barra de sistema em
+cada tela, sem auto-hide e diferente por sistema operacional. Ninguém "decidiu"
+não usar: o passo 1 não foi dado. Por isso ele está escrito aqui.
+
+**Compensação viva é dívida com nome e dono.** Toda compensação em
+`packages/ui/styles/plataforma.css` diz, no comentário, QUAL é a lacuna do DS,
+o que ela faz **e o que ela deixou de fazer** quando o pacote passou a cobrir a
+parte dele. A `.tabela-rolavel` é o exemplo: ela já foi a rolagem inteira, hoje
+é só a altura e o cabeçalho preso, porque a rolagem virou `ScrollBar`.
+
+## O idioma da interface — três zonas, e a fronteira é o que erra (ADR-91)
+
+**Todo texto que uma pessoa lê é pt-BR** — rótulo, botão, título, `aria-label`,
+`placeholder`, mensagem de erro, guia do professor, página legal. Mas "traduzir
+tudo" faz a plataforma melhorar e as experiências piorarem, porque há três zonas
+com regras opostas:
+
+| Zona | Regra |
+|---|---|
+| **Plataforma** — hub, exp-9x do professor | pt-BR, sem exceção. É a Unooria falando com professor, gestor e estudante, e numa rede pública não se pode pressupor repertório de inglês |
+| **Superfície disfarçada** — dentro do clone | o nome que o app REAL usa em português. `Shorts`, `Stories`, `Feed`, `Playlists`, `Ranking` FICAM: traduzi-los quebra o disfarce que a experiência está medindo |
+| **O professor falando SOBRE o clone** — guia da aula, catálogo, painéis | depende de o termo nomear um objeto na tela ou ser jargão vazado — abaixo |
+
+**A fronteira, que é onde se erra:** o termo **nomeia um objeto que está na
+tela** (`feed`, `Shorts`, `ranking`)? Fica — traduzir faria o guia dizer uma
+palavra e a tela mostrar outra, e o professor perde o referente no meio da aula.
+É **jargão de implementação que vazou** (`card de pausa`, `o modal`, `num
+popup`)? Traduz: não nomeia nada que a criança veja, descreve a mecânica da
+interface, e o professor não tem por que saber o que é um "modal". As traduções
+já feitas: **tela** de pausa, **quadro** de sistematização, **janela** (para
+`modal` e `popup`), **usuário** (para `login`), **dica** (para `insight`).
+
+**Identificador NÃO é texto.** Ficam como estão, e mudá-los é outra tarefa com
+outro custo: chave de objeto, rota, nome de coluna, verbo/objeto de telemetria,
+nome de glifo do Material Symbols (`checklist`, `psychology`, `schedule`),
+variante de componente (`warning`, `success`, `danger`), severidade de log,
+método HTTP. O rótulo `abertura: 'A missão'` mudou; o `'abertura'` do banco não.
+
+**Anglicismo que FICA por decisão pedagógica, não por esquecimento** — a lista é
+curta e cada item tem razão registrada na ADR-91: `fake news` (consagrado no
+Brasil, e a instrução "não anuncie que é uma aula sobre fake news" perde o
+sentido traduzida — o que o professor não deve dizer é a expressão que a criança
+reconhece), `cyberbullying` (BNCC EF07CO09 e Lei 13.185/2015), `print` (é a
+palavra da criança, e a exp-06/07 gira em torno desse objeto), `chat`, `on-line`
+(citação verbatim da BNCC). **Não "corrija" nenhum deles.**
+
+**Rótulo visível em dois lugares muda nos DOIS.** `ROTULO_PASSO` da exp-03 é
+espelho declarado de `apps/api/src/unoogpt/regras/passos.ts`; mudar um só faz a
+trilha do estudante divergir do que a api devolve. E **a suíte e2e casa por
+texto exato** (`getByText`, `getByRole({name})`): trocar copy sem atualizar a
+suíte a derruba com timeout, e o timeout reporta o seletor que faltou, nunca a
+causa.
 
 ## Arquivos de instrução de agente — o padrão
 
@@ -308,8 +409,40 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (reserve conferindo `origin/dev`), `main.pdf` (regera, não escolhe lado),
-  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
+  (a PRÓXIMA é a **100**: a 93 é a sincronização de sala por polling da
+      exp-08, a 94 o latch por polling da exp-04, a 95 a sessão de 2h de
+      inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
+      de login na tela, a **98 o fuso único da plataforma** e a **99 esse fuso
+      vindo de uma variável de ambiente** — as quatro foram alocadas por quem repartia o trabalho ANTES de
+      qualquer frente escrever, e é assim que a colisão de 2026-09-06 e
+      2026-09-07 deixa de acontecer; a 86 foi ocupada pelo guia da aula, a 87 e a 88
+      pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
+      histórico append-only que a rede também lê, a 90 pela suíte da api em um
+      worker, a 91 pelas três zonas do idioma da interface, a 92 pelo
+      retorno de etapa que reabre a sessão do Instanooria, a **93 pela
+      sincronização de sala por polling HTTP em vez de WebSocket** e a **94
+      reservada para a frente paralela que corria no mesmo dia** — as duas
+      foram alocadas por quem repartia o trabalho, ANTES de qualquer uma
+      escrever, e é assim que a colisão de 2026-09-06 e 2026-09-07 deixa de
+      acontecer; a 65 foi ocupada pelo guia da aula, a 72 pela
+      fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
+      BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
+      rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
+      planejamento + `allow-downloads`, a 77 pela trilha que virou do layout
+      e a 78 pelo logoff no menu do avatar — três frentes fecharam ADR em
+      2026-09-06 e duas colidiram na 65, e **em 2026-09-07 aconteceu de
+      novo**: duas frentes simultâneas reservaram a 76, uma cedeu e foi para
+      a 77/78, a 79 é o vínculo obrigatório escola/regional e a 80 o modelo
+      de seis papéis, a 81 o panorama da diretoria, a 82 o
+      relatório dela, a 83 o header que ancora na janela, a 84 o sinal do
+      navegador sem sessão e a **85 a remontagem do miolo da área ao trocar de
+      escola**. Conferir
+      `origin/dev` NÃO basta — em 2026-09-08 ele parava na 71 enquanto as
+      branches de trabalho já iam até a 83 —, e conferir uma vez no começo da
+      frente também
+      não: confira as branches de trabalho abertas E a de integração, na HORA
+      de escrever o número),
+  `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
 - **Uma branch por experiência nova**, com o nome do slug dela:
   `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
   commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
@@ -360,9 +493,16 @@ SEED_SENHA=<senha> pnpm --filter @edu/api seed  # a senha das contas de demo vem
                                           # Nos dois compose ela já vem (unooria123); no host, no
                                           # apps/api/.env (o Prisma carrega) ou na linha de comando.
                                           # Ausente, o seed FALHA — não inventa senha.
-SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + gestor.demo + admin: o "zero absoluto"
-pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (prof.demo; seed:demo importa referências demo)
-pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (prof.demo; AI_PROVIDER=mock usa os textos fixos)
+SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + um gestor + um admin: o "zero absoluto"
+# OS LOGINS SAEM DO SEED, que os ESCREVE em credenciais-demo.csv na raiz — arquivo
+# GITIGNORADO: ele nasce ao semear, e sem semear não existe. É a
+# fonte, e é de lá que a suíte e2e lê (`scripts/e2e/lib/credenciais.mjs`). Nomes de
+# gente, não `prof.demo`: o seed procura por MATRÍCULA (quem leciona no 8A), e
+# `semear-demo.ts` diz por quê — login fixo reacopla o script a um nome inventado.
+# Não escreva conta de demo em documentação: ela envelhece e manda a pessoa tentar
+# um login que não existe. Aponte para o CSV.
+pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (qualquer prof.* do CSV; seed:demo importa referências demo)
+pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (qualquer prof.* do CSV; AI_PROVIDER=mock usa os textos fixos)
 pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
 pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez por maquina.
                                           # `npx playwright install` NAO serve: o npx resolve o
@@ -372,7 +512,9 @@ pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez
                                           # shell-1234" com o cache CHEIO de navegador, e o banner
                                           # manda rodar justamente o npx que causou o descasamento.
 node scripts/e2e/rodar.mjs                # A SUÍTE INTEIRA de ponta a ponta, na ordem canônica
-                                          # (publico → estudante → professor → gestor → admin-contrato).
+                                          # (publico → estudante → professor → gestor_escola →
+                                          # gestor_contrato → admin). O `admin` vem por ÚLTIMO porque o
+                                          # painel dele mexe no interruptor que TODAS as outras leem.
                                           # A ordem não é alfabética: o estudante PRODUZ o estado
                                           # (runs, partidas, sessões) que as telas do professor leem, e a
                                           # administração vem por último porque importa gente e troca senha.
@@ -392,12 +534,32 @@ node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ 
 EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
 pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
 pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
+pnpm --filter @edu/exp-92-plano-de-ensino dev # :5180 → hub /professor/plano-de-ensino. Planejamento dirigido
+                                          # pela BNCC: plano anual + plano de aulas, 1ºEF ao 3ºEM, todos os
+                                          # componentes. Toda porta de exp entra no CORS_ORIGINS da api —
+                                          # sem a :5180 o boot morre com "Failed to fetch".
+node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/src/curriculo/dados/*.ts
+                                          # (GERADOS). Exige poppler (pdftotext/pdfinfo) e os PDFs em
+                                          # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).
 pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
                                           # o professor prepara a mídia no painel antes da aula)
+pnpm --filter @edu/exp-04-o-que-a-foto-conta dev  # :5183 → hub /exp/exp-04-o-que-a-foto-conta (1º ano,
+                                          # unidade 1). 5183 e não 5182: a 5182 é da exp-08. A missão é
+                                          # SÍNCRONA: a Roda congela os tablets e o professor libera pelo
+                                          # painel (polling 3s, ADR-94).
+pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
+                                          # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
+                                          # gravado — a transcrição está sempre na tela.
+pnpm --filter @edu/exp-08-manifesto-ia dev    # :5182 → hub /exp/exp-08-manifesto-ia (8º ano, unidade 4).
+                                          # Clone do ChatGPT. IA SÓ no preparo do professor, antes da
+                                          # aula: o motor de sala é determinístico e gasta zero token.
+                                          # NÃO existe cláusula certa — as 4 são válidas, e o painel
+                                          # mostra contagem, nunca acerto. O congelamento da turma para
+                                          # o debate é POLLING de 5s (ADR-93), não WebSocket.
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~436p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~542p). Atualizar SEMPRE
 ```
 
 
@@ -413,6 +575,45 @@ cd documentacao-latex && ./compilar.sh         # documentação técnica -> main
 - Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md` de uma linha.
 - Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
   quando a seção do DS já tem: o lugar do componente novo é o `storybook-unooria`.
+- **Não escrever interface sem antes procurar no DS** (o procedimento de três
+  passos está em "Design System"). Não achou? Pedido no `storybook-unooria` +
+  compensação local marcada — nunca um componente local silencioso.
+- Não resolver na mão o que o DS já resolve: rolagem é `ScrollBar`, não
+  `overflow` num `<div>`; diálogo é `Modal`; aba é `Tabs`; seleção é
+  `Selection`, não `<select>`; menu do avatar é `HeaderMenu`.
+- **Não escrever breadcrumb numa página do hub, e não deixar página sem ele.**
+  A trilha é do LAYOUT da área, montada de um registro de rotas — rota nova é
+  uma linha no registro (`apps/hub/lib/trilha.ts`) e nada na página. Era por
+  página, e o resultado foi 22 telas com trilha e 15 sem, nenhuma por decisão
+  (ADR-77). A regra inteira, com as duas exceções declaradas, está em
+  `apps/hub/AGENTS.md`; **área nova precisa de layout novo, e layout novo
+  desenha a trilha** — sem isso a área nasce sem trilha, como `/admin` nasceu.
+- **Não escrever texto de interface em inglês, e não traduzir o nome do clone.**
+  A regra das três zonas está em "O idioma da interface" (ADR-91): `Shorts` e
+  `feed` ficam porque é assim que o app real se chama em português; `card de
+  pausa`, `modal` e `popup` saem porque são jargão nosso vazado para o guia do
+  professor. `fake news`, `cyberbullying` e `print` ficam por decisão registrada
+  — não "corrija" nenhum deles.
+- **Não formatar data na mão** (ADR-98). `toLocaleDateString`,
+  `toLocaleTimeString`, `toLocaleString` sobre uma data e `Intl.DateTimeFormat`
+  sem `timeZone` usam o fuso de QUEM EXECUTA — e no hub o contêiner está em UTC
+  e a professora em `America/Sao_Paulo`. Entre 21h e a meia-noite os dois lados
+  renderizam DIAS diferentes, o React chama isso de "hydration failed",
+  regenera a árvore e engole o clique. Use `data`, `dataCurta`, `dataHora`,
+  `dataCurtaHora`, `hora`, `horaComSegundos` e `diaDaPlataforma`, do `@edu/sdk`
+  (na api, `src/comum/fuso.ts`). Número não tem fuso:
+  `n.toLocaleString("pt-BR")` para milhar continua livre.
+- **Não cravar o fuso em lugar nenhum, nem ler `FUSO_DA_PLATAFORMA` na mão**
+  (ADR-99). O valor é do DEPLOY: uma env só, com o mesmo nome na api e no hub,
+  ausente = `America/Sao_Paulo`. Quem responde qual é ele são
+  `fusoDaPlataforma()` do `@edu/sdk` e o de `apps/api/src/comum/fuso.ts` — eles
+  resolvem a cascata (runtime → env → `<meta name="unooria-fuso">` → padrão) que
+  faz o valor chegar ao servidor, ao navegador e ao bundle da experiência.
+  `process.env.FUSO_DA_PLATAFORMA` lido direto numa tela funciona no servidor e
+  volta `undefined` no navegador, que é o defeito da ADR-98 de volta pela porta
+  dos fundos. **Fuso novo para a experiência entra pelo `config` do `hub:init`**
+  (chave `CHAVE_DO_FUSO`), nunca por campo de topo: campo de topo muda a FORMA
+  do handshake e obriga a subir `PROTOCOL_VERSION`.
 - Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
   experiência (ou o contrário) quebra a fidelidade que a experiência mede.
 - Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
@@ -430,13 +631,13 @@ Nunca criar recursos GCP imperativamente por script neste repo.
 ## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
 
 A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~436 páginas, `PU-DOC-001`).
+`documentacao-latex/`, e compila em `main.pdf` (~542 páginas, `PU-DOC-001`).
 Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
 casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
 nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
 contratos de integração, telemetria, camada de IA, catálogo de experiências,
 especificação da API, design system, entrega, qualidade, **observabilidade**,
-**70 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
+**92 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
 Apêndice A.
 
 **REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
@@ -489,6 +690,12 @@ não desenha nada); e ER grande vai em **duas figuras retrato**, não em landsca
 - [ ] Input externo validado com Zod
 - [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
 - [ ] Sem segredo/URL interna em código client
+- [ ] **Produto ou experiência nova: aparece no painel da Unooria e DESLIGA**
+      (regra 8). Experiência declara `produto` no `public/experiencia.json`;
+      superfície nova de produto entra debaixo do layout que chama
+      `exigirProdutoLigado`, e rota de api nova da ferramenta herda o
+      `DisponibilidadeGuard` da classe. O modo de falhar é MUDO: tudo funciona
+      e o produto deixa de poder ser desligado
 - [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
 - [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
 - [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).

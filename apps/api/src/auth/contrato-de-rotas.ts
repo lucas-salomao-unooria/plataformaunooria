@@ -35,7 +35,7 @@ export const LoginRespostaSchema = z.object({
   usuario: z.string(),
   nome: z.string(),
   papel: PerfilSchema,
-  /** Nulo apenas para `admin-contrato`, a única exceção cross-escola. */
+  /** Nulo apenas para `gestor_contrato`, a única exceção cross-escola. */
   escolaId: z.string().nullable(),
   turmaId: z.string().uuid().nullable(),
   serie: SerieSchema.nullable(),

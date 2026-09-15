@@ -13,19 +13,24 @@ import { UsuariosModule } from "./usuarios/usuarios.module";
 import { PortabilidadeModule } from "./portabilidade/portabilidade.module";
 import { RosteringModule } from "./rostering/rostering.module";
 import { ExperienciasModule } from "./experiencias/experiencias.module";
+import { RecursosModule } from "./recursos/recursos.module";
 import { MotorModule } from "./motor/motor.module";
 import { AssetsModule } from "./assets/assets.module";
 import { AtividadesModule } from "./atividades/atividades.module";
 import { GeracaoModule } from "./geracao/geracao.module";
 import { AnaliseModule } from "./analise/analise.module";
 import { PerfisModule } from "./perfis/perfis.module";
+import { FotoContaModule } from "./foto-conta/foto-conta.module";
 import { OEcoNoGrupoModule } from "./o-eco-no-grupo/o-eco-no-grupo.module";
+import { RastroBoatoModule } from "./rastro-boato/rastro-boato.module";
+import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
 import { SalasModule } from "./salas/salas.module";
 import { UnootubeModule } from "./unootube/unootube.module";
 import { UnoogptModule } from "./unoogpt/unoogpt.module";
 import { VilaModule } from "./vila/vila.module";
 import { StorageModule } from "./object-storage/storage.module";
 import { PlanosModule } from "./planos/planos.module";
+import { PlanejamentoModule } from "./planejamento/planejamento.module";
 import { BemEstarModule } from "./bemestar/bemestar.module";
 import { TenancyInterceptor } from "./tenancy/tenancy.interceptor";
 import { ContratoInterceptor } from "./openapi/contrato.interceptor";
@@ -50,6 +55,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     RosteringModule,
     PortabilidadeModule,
     ExperienciasModule,
+    RecursosModule,
     SalasModule,
     MotorModule,
     AssetsModule,
@@ -62,8 +68,12 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     VilaModule,
     StorageModule,
     PlanosModule,
+    PlanejamentoModule,
     BemEstarModule,
     OEcoNoGrupoModule,
+    RastroBoatoModule,
+    ManifestoIaModule,
+    FotoContaModule,
   ],
   providers: [
     // Depois dos guards em toda rota: preenche a escola do token no

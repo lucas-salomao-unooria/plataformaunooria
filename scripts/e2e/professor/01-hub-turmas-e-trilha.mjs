@@ -29,7 +29,7 @@ await suite(
       "Onde o docente começa o dia: três produtos (preparar a aula, rodar com a turma, cuidar de " +
       "si), a lista nominal das turmas dele e a trilha das missões por ano.",
     prova: [
-      "O hub abre nos três produtos, com a situação do check-in de bem-estar no cartão",
+      "O hub abre nos três produtos, com a situação do acompanhamento de bem-estar no cartão",
       "Minhas turmas lista só as turmas em que ele tem matrícula",
       "A turma abre na SALA: a grade de missões daquela sala, com o estado de cada uma",
       "A aba Estudantes traz a lista nominal, uma linha por criança",
@@ -56,7 +56,7 @@ await suite(
       titulo: "O hub do professor",
       mostra: "Os três produtos e o atalho para as atividades recentes.",
       prova:
-        "Três produtos, cada um com o seu tempo. O de bem-estar mostra a situação do check-in do " +
+        "Três produtos, cada um com o seu tempo. O de bem-estar mostra a situação da resposta do " +
         "dia direto no cartão — se ele exigisse abrir para descobrir que já foi feito, ninguém abriria.",
       detalhe: `ícones: ${icones}`,
     });

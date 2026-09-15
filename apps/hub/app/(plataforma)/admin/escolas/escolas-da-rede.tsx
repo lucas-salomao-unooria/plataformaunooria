@@ -1,24 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertBox,
   Button,
+  Checkbox,
   FeedbackAlert,
   Modal,
   ModalBody,
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  ScrollBar,
   SearchInput,
   SectionHeader,
   Selection,
   Table,
-  Tag,
   TextField,
   type TableColumn,
 } from "@edu/ui/ds";
+import { rotuloDoPapel, type Papel } from "@/lib/papeis";
 
 interface Escola extends Record<string, unknown> {
   id: string;
@@ -34,46 +36,51 @@ interface Escola extends Record<string, unknown> {
   turmas: number;
 }
 
-interface Pessoa extends Record<string, unknown> {
+/** Um profissional achado na REDE, com as escolas em que ele já está. */
+interface Profissional {
   id: string;
   nome: string;
   usuario: string;
   papel: string;
+  escolas: Array<{ id: string; nome: string; papel: string }>;
 }
 
-const ROTULO_DO_TIPO: Record<string, string> = {
-  escola: "Unidade",
-  regional: "Regional",
-  rede: "Rede",
-};
+/** Os quatro estados da busca, distinguidos porque o card cobra isso: a tela
+ *  dizia "nenhum professor encontrado nesta escola" ANTES de qualquer busca. */
+type EstadoDaBusca = "inicial" | "buscando" | "vazia" | "erro" | "achou";
 
 /**
  * As escolas do contrato — a tela que faltava para vender a uma rede.
  *
- * Só `admin-contrato` chega aqui, e a razão é a mesma que impede `orgs.csv` de
+ * Só `gestor_contrato` chega aqui, e a razão é a mesma que impede `orgs.csv` de
  * criar escola para gestor: escola é *tenant*, com RLS, dados de menores e stack
  * por trás. Abrir um inquilino novo não é operação de quem administra uma
  * unidade.
  *
- * Três níveis convivem na mesma lista (`rede` > `regional` > `escola`) porque
- * uma rede estadual chega organizada em diretorias. A hierarquia AGRUPA e não
- * autoriza: quem dá acesso é a lotação, e é justamente por isso que a seleção de
- * linhas aqui termina em "lotar pessoa nestas escolas" — a diretoria é o insumo
- * da lotação em lote, nunca um poder que a pessoa herda por estar nela.
+ * SÓ ESCOLAS desde 2026-09-08 (ADR-79). Até então os três níveis conviviam aqui
+ * — o tipo numa etiqueta, "—" nas colunas de turma e estudante das regionais,
+ * um resumo que somava níveis diferentes ("3 registros · 2 unidades") e um
+ * filtro de Tipo que existia só para desfazer a mistura. As regionais têm tela
+ * própria (`/admin/regionais`) e este filtro morreu com a separação.
+ *
+ * A regional AGRUPA e não autoriza: quem dá acesso é a lotação, e é por isso que
+ * a seleção de linhas aqui termina em vincular alguém às escolas selecionadas —
+ * a diretoria é o insumo da lotação em lote, nunca um poder que a pessoa herda
+ * por estar nela.
  */
 export function EscolasDaRede() {
   const router = useRouter();
+  /** "Ver escolas", na tela de Regionais, chega por aqui já filtrado. */
+  const regionalDaUrl = useSearchParams().get("regional") ?? "";
   const [escolas, setEscolas] = useState<Escola[]>([]);
   const [busca, setBusca] = useState("");
-  const [tipo, setTipo] = useState("");
-  const [regional, setRegional] = useState("");
+  const [regional, setRegional] = useState(regionalDaUrl);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
   const [aberta, setAberta] = useState<"nova" | Escola | null>(null);
   const [id, setId] = useState("");
   const [nome, setNome] = useState("");
-  const [tipoNova, setTipoNova] = useState("escola");
   const [paiId, setPaiId] = useState("");
   const [inep, setInep] = useState("");
   const [municipio, setMunicipio] = useState("");
@@ -86,10 +93,12 @@ export function EscolasDaRede() {
      ao terminar eu desmarco as linhas da tabela, e um diálogo que lesse a
      seleção passaria a dizer "em 0 unidades" logo depois de ter lotado em duas. */
   const [loteAberto, setLoteAberto] = useState<Escola[] | null>(null);
-  const [escolaDeOrigem, setEscolaDeOrigem] = useState("");
   const [buscaPessoa, setBuscaPessoa] = useState("");
-  const [pessoas, setPessoas] = useState<Pessoa[]>([]);
+  const [achados, setAchados] = useState<Profissional[]>([]);
+  const [estadoDaBusca, setEstadoDaBusca] = useState<EstadoDaBusca>("inicial");
   const [pessoaId, setPessoaId] = useState("");
+  /** Os destinos, editáveis: a seleção da tabela entra como SUGESTÃO. */
+  const [destinos, setDestinos] = useState<string[]>([]);
   const [lotando, setLotando] = useState(false);
   const [feito, setFeito] = useState<string | null>(null);
 
@@ -97,9 +106,10 @@ export function EscolasDaRede() {
     setCarregando(true);
     setErro(null);
     try {
-      const params = new URLSearchParams();
+      // `tipo=escola` é fixo: esta tela é só de escolas, e as regionais têm a
+      // própria. Sem ele a listagem voltaria a misturar níveis.
+      const params = new URLSearchParams({ tipo: "escola" });
       if (busca.trim()) params.set("busca", busca.trim());
-      if (tipo) params.set("tipo", tipo);
       if (regional) params.set("paiId", regional);
       const resposta = await fetch(`/api/plataforma/escolas?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
@@ -109,7 +119,7 @@ export function EscolasDaRede() {
     } finally {
       setCarregando(false);
     }
-  }, [busca, tipo, regional]);
+  }, [busca, regional]);
 
   useEffect(() => {
     const id = setTimeout(() => void carregar(), busca ? 300 : 0);
@@ -134,11 +144,14 @@ export function EscolasDaRede() {
     void carregarRegionais();
   }, [carregarRegionais]);
 
-  function abrirNova(comTipo: "escola" | "regional") {
+  function abrirNova() {
     setId("");
     setNome("");
-    setTipoNova(comTipo);
-    setPaiId(comTipo === "regional" ? "" : regional);
+    /* A regional já vem escolhida quando não há escolha a fazer: o filtro em uso
+       manda, e com UMA regional na rede é ela. Com várias, o campo abre vazio e
+       o formulário não salva sem seleção — é a regra do vínculo obrigatório
+       aparecendo como ausência de atalho, não como erro depois de digitar. */
+    setPaiId(regional || (regionais.length === 1 ? (regionais[0]?.id ?? "") : ""));
     setInep("");
     setMunicipio("");
     setUf("");
@@ -148,7 +161,6 @@ export function EscolasDaRede() {
   function abrirEdicao(escola: Escola) {
     setId(escola.id);
     setNome(escola.nome);
-    setTipoNova(escola.tipo);
     setPaiId(escola.paiId ?? "");
     setInep(escola.codigoInep ?? "");
     setMunicipio(escola.municipio ?? "");
@@ -173,7 +185,7 @@ export function EscolasDaRede() {
         {
           method: nova ? "POST" : "PATCH",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(nova ? { id: id.trim(), tipo: tipoNova, ...corpo } : corpo),
+          body: JSON.stringify(nova ? { id: id.trim(), tipo: "escola", ...corpo } : corpo),
         },
       );
       const dados = (await resposta.json().catch(() => null)) as { message?: string } | null;
@@ -196,43 +208,70 @@ export function EscolasDaRede() {
 
   // ------------------------------------------------------------- lote
 
-  /** Regional e rede não recebem lotação: não têm turma, estudante nem dado. */
+  /* A tabela só tem escolas, então toda linha marcada recebe lotação. Havia um
+     filtro por tipo aqui — e um aviso de "regionais marcadas são ignoradas" na
+     barra de seleção — porque a listagem misturava níveis. */
   const unidadesSelecionadas = useMemo(
-    () => escolas.filter((e) => selecionadas.includes(e.id) && e.tipo === "escola"),
+    () => escolas.filter((e) => selecionadas.includes(e.id)),
     [escolas, selecionadas],
   );
-  const unidadesDoLote = loteAberto ?? [];
 
-  const buscarPessoas = useCallback(async () => {
-    if (!escolaDeOrigem) {
-      setPessoas([]);
+  /**
+   * A busca é na REDE inteira, sem escola de origem.
+   *
+   * O campo "Onde a pessoa está hoje" saiu, e não por gosto: ele filtrava por
+   * `users.escola_id`, que é o CACHE da lotação principal — quem trabalha em
+   * duas escolas só era encontrado pela principal, e procurando pela outra a
+   * lista voltava VAZIA. O administrador concluía que a pessoa não existe,
+   * exatamente na população que esta tela existe para administrar.
+   */
+  const buscarProfissionais = useCallback(async () => {
+    const termo = buscaPessoa.trim();
+    if (termo.length < 2) {
+      setAchados([]);
+      setEstadoDaBusca("inicial");
       return;
     }
-    const params = new URLSearchParams({ escolaId: escolaDeOrigem, porPagina: "25" });
-    if (buscaPessoa.trim()) params.set("busca", buscaPessoa.trim());
+    setEstadoDaBusca("buscando");
     try {
-      const resposta = await fetch(`/api/plataforma/usuarios?${params}`);
+      const params = new URLSearchParams({ busca: termo, limite: "25" });
+      const resposta = await fetch(`/api/plataforma/escolas/profissionais?${params}`);
       if (!resposta.ok) throw new Error(String(resposta.status));
-      const dados = (await resposta.json()) as { usuarios?: Pessoa[] };
-      setPessoas(
-        (dados.usuarios ?? []).filter((p) => p.papel === "professor" || p.papel === "gestor"),
-      );
+      const dados = (await resposta.json()) as Profissional[];
+      setAchados(dados);
+      /* "vazia" só DEPOIS de uma busca concluída. O estado inicial orienta a
+         pesquisa; dizer "nenhum encontrado" antes de procurar é afirmar sobre
+         uma consulta que nunca aconteceu. */
+      setEstadoDaBusca(dados.length === 0 ? "vazia" : "achou");
     } catch {
-      setPessoas([]);
+      setAchados([]);
+      setEstadoDaBusca("erro");
     }
-  }, [escolaDeOrigem, buscaPessoa]);
+  }, [buscaPessoa]);
 
   useEffect(() => {
     if (loteAberto === null) return;
-    const t = setTimeout(() => void buscarPessoas(), buscaPessoa ? 300 : 0);
+    const t = setTimeout(() => void buscarProfissionais(), 300);
     return () => clearTimeout(t);
-  }, [loteAberto, buscarPessoas, buscaPessoa]);
+  }, [loteAberto, buscarProfissionais]);
+
+  const escolhido = achados.find((p) => p.id === pessoaId) ?? null;
+  /** As escolas em que ele JÁ está — o vínculo não se oferece duas vezes. */
+  const jaVinculado = useMemo(
+    () => new Set(escolhido?.escolas.map((e) => e.id) ?? []),
+    [escolhido],
+  );
+  const destinosNovos = destinos.filter((id) => !jaVinculado.has(id));
+  const todosJaVinculados = destinos.length > 0 && destinosNovos.length === 0;
 
   function abrirLote() {
-    setEscolaDeOrigem(unidadesSelecionadas[0]?.id ?? "");
     setBuscaPessoa("");
-    setPessoas([]);
+    setAchados([]);
+    setEstadoDaBusca("inicial");
     setPessoaId("");
+    /* A seleção da tabela é SUGESTÃO de destino, não restrição: a busca da
+       pessoa é independente dela, e os destinos são editáveis no diálogo. */
+    setDestinos(unidadesSelecionadas.map((e) => e.id));
     setFeito(null);
     setLoteAberto(unidadesSelecionadas);
   }
@@ -243,8 +282,7 @@ export function EscolasDaRede() {
   }
 
   async function lotarEmLote() {
-    const pessoa = pessoas.find((p) => p.id === pessoaId);
-    if (!pessoa) return;
+    if (!escolhido || destinosNovos.length === 0) return;
     setLotando(true);
     setErro(null);
     try {
@@ -252,26 +290,45 @@ export function EscolasDaRede() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          usuarioId: pessoa.id,
-          papel: pessoa.papel === "gestor" ? "gestor" : "professor",
-          escolaIds: unidadesDoLote.map((e) => e.id),
+          usuarioId: escolhido.id,
+          /* O papel é o DA PESSOA, não uma escolha: a api recusa divergência,
+             porque a chave de `lotacoes` inclui o papel e um papel diferente
+             criaria uma SEGUNDA linha na mesma escola. */
+          papel: escolhido.papel,
+          /* Só os destinos NOVOS: o card pede "criar somente os novos
+             vínculos", e mandar os já vinculados faria a api devolvê-los em
+             `jaVinculadas` — correto, mas é trabalho que não precisava sair. */
+          escolaIds: destinosNovos,
         }),
       });
       const dados = (await resposta.json().catch(() => null)) as
-        | { lotadas?: number; message?: string }
+        | { criadas?: string[]; reabertas?: string[]; message?: string }
         | null;
       if (!resposta.ok) {
-        setErro(typeof dados?.message === "string" ? dados.message : "Não foi possível lotar.");
+        setErro(
+          typeof dados?.message === "string" ? dados.message : "Não foi possível vincular.",
+        );
         return;
       }
+      const nomeDaEscola = (id: string) => escolas.find((e) => e.id === id)?.nome ?? id;
+      const criadas = dados?.criadas ?? [];
+      const reabertas = dados?.reabertas ?? [];
       setFeito(
-        `${pessoa.nome} agora está em ${dados?.lotadas ?? 0} unidade${
-          dados?.lotadas === 1 ? "" : "s"
-        }. A troca de escola é no seletor do cabeçalho, uma por vez.`,
+        [
+          criadas.length > 0
+            ? `Vínculo criado em: ${criadas.map(nomeDaEscola).join(", ")}.`
+            : null,
+          reabertas.length > 0
+            ? `Vínculo reaberto em: ${reabertas.map(nomeDaEscola).join(", ")}.`
+            : null,
+          "A troca de escola é no seletor do cabeçalho, uma por vez.",
+        ]
+          .filter(Boolean)
+          .join(" "),
       );
       await carregar();
     } catch {
-      setErro("Não foi possível lotar.");
+      setErro("Não foi possível vincular.");
     } finally {
       setLotando(false);
     }
@@ -285,14 +342,10 @@ export function EscolasDaRede() {
         render: (_, l) => (
           <span>
             {String(l.nome)}
-            {l.tipo !== "escola" ? (
-              <>
-                {" "}
-                <Tag variant="brand" size="sm">
-                  {ROTULO_DO_TIPO[String(l.tipo)] ?? String(l.tipo)}
-                </Tag>
-              </>
-            ) : null}
+            {/* A regional é informação DA ESCOLA, na segunda linha junto do id:
+                ela não é mais uma linha da tabela, e sem isto o filtro de
+                regional seria o único lugar do produto que diz a qual diretoria
+                a unidade pertence. */}
             <span className="block text-[12px] text-unooria-neutral-500">
               <code>{String(l.id)}</code>
               {l.pai ? ` · ${String(l.pai)}` : ""}
@@ -300,29 +353,24 @@ export function EscolasDaRede() {
           </span>
         ),
       },
-      { key: "codigoInep", title: "INEP", render: (_, l) => l.codigoInep ?? "—" },
+      { key: "codigoInep", title: "Código INEP", render: (_, l) => l.codigoInep ?? "—" },
       {
         key: "local",
         title: "Município",
         render: (_, l) => (l.municipio ? `${l.municipio}${l.uf ? `/${l.uf}` : ""}` : "—"),
       },
-      {
-        key: "turmas",
-        title: "Turmas",
-        align: "right",
-        render: (_, l) => (l.tipo === "escola" ? String(l.turmas) : "—"),
-      },
+      { key: "turmas", title: "Turmas", align: "right", render: (_, l) => String(l.turmas) },
       {
         key: "estudantes",
         title: "Estudantes",
         align: "right",
-        render: (_, l) => (l.tipo === "escola" ? String(l.estudantes) : "—"),
+        render: (_, l) => String(l.estudantes ?? 0),
       },
       {
         key: "professores",
         title: "Professores",
         align: "right",
-        render: (_, l) => (l.tipo === "escola" ? String(l.professores) : "—"),
+        render: (_, l) => String(l.professores),
       },
       {
         key: "acoes",
@@ -332,35 +380,20 @@ export function EscolasDaRede() {
           <div className="flex justify-end gap-1">
             {/* Sem isto o admin do contrato teria de digitar o id da escola em
                 cada tela — e o id é justamente o que ele não decora. */}
-            {l.tipo === "escola" ? (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push(`/admin/turmas?escolaId=${encodeURIComponent(l.id)}`)}
-                >
-                  Turmas
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push(`/admin/usuarios?escolaId=${encodeURIComponent(l.id)}`)}
-                >
-                  Pessoas
-                </Button>
-              </>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setTipo("escola");
-                  setRegional(String(l.id));
-                }}
-              >
-                Ver unidades
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/admin/turmas?escolaId=${encodeURIComponent(l.id)}`)}
+            >
+              Ver turmas
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push(`/admin/usuarios?escolaId=${encodeURIComponent(l.id)}`)}
+            >
+              Ver pessoas
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => abrirEdicao(l)}>
               Editar
             </Button>
@@ -368,12 +401,10 @@ export function EscolasDaRede() {
         ),
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [regional],
+    [router],
   );
 
-  const unidades = escolas.filter((e) => e.tipo === "escola");
-  const totais = unidades.reduce(
+  const totais = escolas.reduce(
     (soma, e) => ({
       estudantes: soma.estudantes + (e.estudantes ?? 0),
       professores: soma.professores + e.professores,
@@ -382,16 +413,28 @@ export function EscolasDaRede() {
     { estudantes: 0, professores: 0, turmas: 0 },
   );
 
-  const opcoesDeRegional = [
-    { value: "", label: "Sem regional" },
+  /* "Todas as regionais" e não "Sem regional": o rótulo antigo MENTIA — o valor
+     vazio nunca filtrou órfãs, ele limpava o filtro e mostrava a rede inteira.
+     E hoje não haveria o que mostrar: toda escola tem regional (ADR-79). */
+  const opcoesDoFiltro = [
+    { value: "", label: "Todas as regionais" },
+    ...regionais.map((r) => ({ value: r.id, label: r.nome })),
+  ];
+  /* No FORMULÁRIO, "Selecione uma regional" aparece só quando há ESCOLHA a
+     fazer. Com uma regional na rede, `abrirNova` já a deixou marcada e a opção
+     vazia seria um convite a desfazer o único caminho possível. Com várias, ela
+     é o estado inicial honesto — sem ela o campo abriria mostrando a primeira
+     regional como se alguém a tivesse escolhido. */
+  const opcoesDoCadastro = [
+    ...(regionais.length > 1 ? [{ value: "", label: "Selecione uma regional" }] : []),
     ...regionais.map((r) => ({ value: r.id, label: r.nome })),
   ];
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1180px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
-        title="Escolas da rede"
-        description="Cada escola é um espaço isolado: os dados de uma nunca aparecem na outra. O que atravessa é a pessoa — professor lotado em várias, estudante transferido. A regional agrupa unidades para você trabalhar em lote; ela não dá acesso a nada."
+        title="Escolas"
+        description="Cadastre escolas, consulte suas informações e acesse turmas e pessoas cadastradas."
       />
 
       {erro ? <AlertBox theme="light" variant="error" device="auto" description={erro} /> : null}
@@ -401,7 +444,7 @@ export function EscolasDaRede() {
           <div className="w-[280px]">
             <SearchInput
               id="busca-escola"
-              label="Buscar"
+              label="Buscar escola"
               placeholder="Nome, id, INEP ou município"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
@@ -412,106 +455,98 @@ export function EscolasDaRede() {
               id="filtro-regional"
               label="Regional"
               value={regional}
-              options={opcoesDeRegional}
+              options={opcoesDoFiltro}
               onChange={(v) => setRegional(String(v))}
-            />
-          </div>
-          <div className="w-[180px]">
-            <Selection
-              id="filtro-tipo"
-              label="Tipo"
-              value={tipo}
-              options={[
-                { value: "", label: "Todos os tipos" },
-                { value: "escola", label: "Unidades" },
-                { value: "regional", label: "Regionais" },
-                { value: "rede", label: "Redes" },
-              ]}
-              onChange={(v) => setTipo(String(v))}
             />
           </div>
         </div>
 
         <div className="flex gap-2">
-          {unidadesSelecionadas.length > 0 ? (
-            <Button
-              variant="primary"
-              size="md"
-              onClick={abrirLote}
-            >
-              Lotação em lote ({unidadesSelecionadas.length})
-            </Button>
-          ) : null}
-          <Button variant="ghost" size="md" onClick={() => abrirNova("regional")}>
-            Nova regional
+          {/* SEMPRE visível: a operação deixou de exigir seleção prévia. A busca
+              da pessoa é independente das escolas marcadas, e as marcadas entram
+              como sugestão de destino — o que o card pede. Antes o botão só
+              aparecia com linha marcada, e ele duplicava o da barra de seleção:
+              dois botões idênticos lado a lado. */}
+          <Button variant="secondary" size="md" onClick={abrirLote}>
+            Vincular professor ou gestor
           </Button>
-          <Button variant="primary" size="md" onClick={() => abrirNova("escola")}>
-            Nova escola
+          <Button variant="primary" size="md" onClick={abrirNova}>
+            Cadastrar escola
           </Button>
         </div>
       </div>
 
+      {/* "vínculos de professores" e não "professores": por escola o número é de
+          PESSOAS (índice único por escola+pessoa+papel), mas o total somado
+          conta duas vezes o professor lotado em duas escolas. A coluna diz
+          pessoa; o resumo, vínculo. */}
       <p className="text-[14px] text-unooria-neutral-500">
-        {escolas.length} registro{escolas.length === 1 ? "" : "s"} · {unidades.length} unidade
-        {unidades.length === 1 ? "" : "s"} · {totais.turmas} turmas · {totais.estudantes} estudantes ·{" "}
-        {totais.professores} vínculos de professor
+        {escolas.length} escola{escolas.length === 1 ? "" : "s"} · {totais.turmas} turmas ·{" "}
+        {totais.estudantes.toLocaleString("pt-BR")} estudantes · {totais.professores} vínculos de
+        professores
+        {/* A explicação que o card oferece como opcional, e que entrou porque a
+            confusão pessoa/vínculo já custou duas conversas: a coluna conta
+            pessoas na escola, o total conta vínculos na rede. */}
+        <span className="block text-[13px]">
+          Um professor pode ter vínculo com mais de uma escola.
+        </span>
       </p>
 
       {unidadesSelecionadas.length > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 px-4 py-3">
           <span className="text-[14px] text-unooria-neutral-700">
-            {unidadesSelecionadas.length} unidade
+            {unidadesSelecionadas.length} escola
             {unidadesSelecionadas.length === 1 ? "" : "s"} selecionada
             {unidadesSelecionadas.length === 1 ? "" : "s"}
-            {selecionadas.length !== unidadesSelecionadas.length
-              ? " (regionais marcadas são ignoradas — não recebem lotação)"
-              : ""}
           </span>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={() => setSelecionadas([])}>
-              Limpar
+              Limpar seleção
             </Button>
             <Button variant="primary" size="sm" onClick={abrirLote}>
-              Lotar pessoa nestas escolas
+              Vincular professor ou gestor às escolas selecionadas
             </Button>
           </div>
         </div>
       ) : null}
 
-      <Table<Escola>
-        columns={colunas}
-        data={escolas}
-        keyExtractor={(l) => l.id}
-        selectable
-        selectedKeys={selecionadas}
-        onSelectionChange={(chaves) => setSelecionadas(chaves.map(String))}
-        loading={carregando}
-        emptyText="Nenhuma escola encontrada."
-        size="md"
-        theme="light"
-      />
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+        <Table<Escola>
+          columns={colunas}
+          data={escolas}
+          keyExtractor={(l) => l.id}
+          selectable
+          selectedKeys={selecionadas}
+          onSelectionChange={(chaves) => setSelecionadas(chaves.map(String))}
+          loading={carregando}
+          emptyText="Nenhuma escola encontrada."
+          size="md"
+          theme="light"
+        />
+      </ScrollBar>
 
+      {/* O detalhe de formato (orgs.csv, OneRoster, parentSourcedId) mora nas
+          instruções ao lado do envio do arquivo, em Importar: aqui ele só
+          atravancava a leitura de quem chega pela primeira vez. */}
       <FeedbackAlert
         type="info"
-        title="Cadastrar uma rede inteira"
-        description="Uma escola por vez aqui, ou o orgs.csv do OneRoster em Importar — que aceita a coluna parentSourcedId e monta as diretorias junto. Milhares de unidades não entram à mão."
+        title="Cadastrar várias escolas"
+        description="Para cadastrar várias escolas de uma só vez, acesse Importar."
       />
 
       <Modal isOpen={aberta !== null} onClose={() => setAberta(null)} size="sm" theme="light">
         <ModalHeader>
-          <ModalTitle>
-            {aberta === "nova"
-              ? tipoNova === "regional"
-                ? "Nova regional"
-                : "Nova escola"
-              : "Editar escola"}
-          </ModalTitle>
+          <ModalTitle>{aberta === "nova" ? "Cadastrar escola" : "Editar escola"}</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-4">
             <TextField
               id="escola-id"
-              label={tipoNova === "regional" ? "Id da regional" : "Id da escola"}
+              /* "Código interno" e não "Id da escola": é o nome que o card pede
+                 nos DETALHES, e é o que quem chega entende. Ele CONTINUA na
+                 listagem, sem rótulo, porque é a chave que a secretaria usa nas
+                 planilhas de importação — a suíte e2e registra isso como prova. */
+              label="Código interno"
               helperText="Não muda depois. Circula no token e na segurança do banco: use letras minúsculas, números, ponto, hífen (ex.: sp-035001)."
               value={id}
               disabled={aberta !== "nova"}
@@ -523,43 +558,38 @@ export function EscolasDaRede() {
               value={nome}
               onChange={(e) => setNome(e.target.value)}
             />
-            {tipoNova !== "rede" ? (
-              <Selection
-                label="Pertence a"
-                value={paiId}
-                onChange={(valor) => setPaiId(String(valor))}
-                options={opcoesDeRegional}
+            <Selection
+              id="escola-regional"
+              label="Regional"
+              value={paiId}
+              onChange={(valor) => setPaiId(String(valor))}
+              options={opcoesDoCadastro}
+            />
+            <TextField
+              id="escola-inep"
+              label="Código INEP (opcional)"
+              helperText="8 dígitos. É por ele que a escola se reconhece na base da rede."
+              value={inep}
+              onChange={(e) => setInep(e.target.value.replace(/\D/g, "").slice(0, 8))}
+            />
+            <div className="flex gap-3">
+              <TextField
+                id="escola-municipio"
+                label="Município"
+                value={municipio}
+                onChange={(e) => setMunicipio(e.target.value)}
               />
-            ) : null}
-            {tipoNova === "escola" ? (
-              <>
+              <div className="w-[90px]">
                 <TextField
-                  id="escola-inep"
-                  label="Código INEP (opcional)"
-                  helperText="8 dígitos. É por ele que a escola se reconhece na base da rede."
-                  value={inep}
-                  onChange={(e) => setInep(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  id="escola-uf"
+                  label="UF"
+                  value={uf}
+                  onChange={(e) =>
+                    setUf(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2))
+                  }
                 />
-                <div className="flex gap-3">
-                  <TextField
-                    id="escola-municipio"
-                    label="Município"
-                    value={municipio}
-                    onChange={(e) => setMunicipio(e.target.value)}
-                  />
-                  <div className="w-[90px]">
-                    <TextField
-                      id="escola-uf"
-                      label="UF"
-                      value={uf}
-                      onChange={(e) =>
-                        setUf(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2))
-                      }
-                    />
-                  </div>
-                </div>
-              </>
-            ) : null}
+              </div>
+            </div>
           </div>
         </ModalBody>
         <ModalFooter>
@@ -570,93 +600,204 @@ export function EscolasDaRede() {
             variant="primary"
             size="md"
             isLoading={salvando}
-            disabled={!nome.trim() || (aberta === "nova" && id.trim().length < 3)}
+            /* Sem regional não salva — a api reprovaria com o mesmo texto, mas
+               descobrir isso depois de preencher o formulário inteiro é pior
+               que o botão dizer que ainda falta algo. */
+            disabled={!nome.trim() || !paiId || (aberta === "nova" && id.trim().length < 3)}
             onClick={() => void salvar()}
           >
-            {aberta === "nova" ? "Criar" : "Salvar"}
+            {aberta === "nova" ? "Cadastrar" : "Salvar"}
           </Button>
         </ModalFooter>
       </Modal>
 
       <Modal isOpen={loteAberto !== null} onClose={fecharLote} size="md" theme="light">
         <ModalHeader>
+          {/* A contagem é DINÂMICA, dos destinos marcados agora — não da seleção
+              da tabela no momento em que o diálogo abriu. O card pede o número
+              no título; capturá-lo na abertura o deixaria velho no primeiro
+              clique numa caixa, porque os destinos são editáveis aqui dentro. */}
           <ModalTitle>
-            Lotar pessoa em {unidadesDoLote.length} unidade
-            {unidadesDoLote.length === 1 ? "" : "s"}
+            {destinosNovos.length === 1
+              ? "Vincular professor ou gestor a 1 escola"
+              : `Vincular professor ou gestor a ${destinosNovos.length} escolas`}
           </ModalTitle>
         </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-4">
-            <FeedbackAlert
-              type="info"
-              title="É assim que nasce o supervisor de uma diretoria"
-              description="Sem papel novo: um gestor lotado nas unidades da regional. Ele continua vendo uma escola por vez — troca no seletor do cabeçalho — e nunca vê duas somadas."
-            />
+            <p className="text-[14px] text-unooria-neutral-700">
+              Busque um professor ou gestor na rede. Depois, escolha as escolas às quais deseja
+              vinculá-lo.
+            </p>
 
-            {/* A pessoa já existe em ALGUMA escola: a lista de pessoas é por
-                escola porque a leitura é escopada por tenant. Escolher onde ela
-                está hoje é o passo que substitui uma busca cross-escola. */}
-            <Selection
-              label="Onde a pessoa está hoje"
-              value={escolaDeOrigem}
-              onChange={(valor) => {
-                setEscolaDeOrigem(String(valor));
-                setPessoaId("");
-              }}
-              options={[
-                { value: "", label: "Escolha a escola" },
-                ...unidadesDoLote.map((e) => ({ value: e.id, label: e.nome })),
-                ...escolas
-                  .filter((e) => e.tipo === "escola" && !unidadesDoLote.some((u) => u.id === e.id))
-                  .map((e) => ({ value: e.id, label: e.nome })),
-              ]}
-            />
-
+            {/* 1. A PESSOA, buscada na rede — sem escola de origem. */}
             <SearchInput
               id="busca-pessoa-lote"
-              label="Professor ou gestor"
-              placeholder="Nome, login ou CPF"
+              label="Buscar professor ou gestor"
+              placeholder="Nome, usuário, matrícula ou CPF"
               value={buscaPessoa}
-              onChange={(e) => setBuscaPessoa(e.target.value)}
+              onChange={(e) => {
+                setBuscaPessoa(e.target.value);
+                setPessoaId("");
+              }}
             />
 
-            {pessoas.length === 0 ? (
+            {estadoDaBusca === "inicial" ? (
               <p className="text-[14px] text-unooria-neutral-500">
-                {escolaDeOrigem
-                  ? "Nenhum professor ou gestor encontrado nesta escola."
-                  : "Escolha a escola em que a pessoa já está cadastrada."}
+                Digite o nome, login ou CPF de um professor ou gestor da rede.
               </p>
-            ) : (
+            ) : null}
+            {estadoDaBusca === "buscando" ? (
+              <p className="text-[14px] text-unooria-neutral-500">Buscando na rede…</p>
+            ) : null}
+            {estadoDaBusca === "vazia" ? (
+              <p className="text-[14px] text-unooria-neutral-500">
+                Nenhum professor ou gestor encontrado para esta busca na rede. Confira os dados
+                informados.
+              </p>
+            ) : null}
+            {estadoDaBusca === "erro" ? (
+              <AlertBox
+                theme="light"
+                variant="error"
+                device="auto"
+                description="Não foi possível consultar a rede. Tente de novo."
+              />
+            ) : null}
+
+            {estadoDaBusca === "achou" ? (
               <Selection
-                label="Pessoa"
+                id="profissional-encontrado"
+                label="Professor ou gestor encontrado"
                 value={pessoaId}
                 onChange={(valor) => setPessoaId(String(valor))}
-                options={pessoas.map((p) => ({
-                  value: p.id,
-                  label: `${p.nome} · ${p.usuario} · ${p.papel}`,
-                }))}
+                options={[
+                  { value: "", label: "Selecione o professor ou gestor" },
+                  ...achados.map((p) => ({
+                    value: p.id,
+                    label: `${p.nome} · ${p.usuario} · ${rotuloDoPapel(p.papel as Papel)}`,
+                  })),
+                ]}
               />
-            )}
+            ) : null}
 
-            <p className="text-[13px] text-unooria-neutral-500">
-              Escolas: {unidadesDoLote.map((e) => e.nome).join(", ")}
-            </p>
+            {/* 2. OS VÍNCULOS QUE ELE JÁ TEM. Mostrados antes dos destinos: é o
+                   que evita o administrador pedir o que já existe. */}
+            {escolhido ? (
+              <div className="rounded-xl border border-unooria-neutral-200 bg-unooria-neutral-50 px-4 py-3">
+                <p className="text-[13px] font-semibold text-unooria-neutral-700">
+                  Escolas com vínculo
+                </p>
+                {escolhido.escolas.length === 0 ? (
+                  <p className="text-[13px] text-unooria-neutral-500">
+                    Nenhuma ainda — este será o primeiro vínculo dele.
+                  </p>
+                ) : (
+                  <p className="text-[13px] text-unooria-neutral-700">
+                    {escolhido.escolas.map((e) => e.nome).join(", ")}
+                  </p>
+                )}
+              </div>
+            ) : null}
+
+            {/* 3. OS DESTINOS, editáveis. A seleção da tabela entrou marcada. */}
+            {escolhido ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[13px] font-semibold text-unooria-neutral-700">
+                  Escolas que receberão o vínculo:
+                </p>
+                <ScrollBar orientation="vertical" autoHide className="max-h-[220px]">
+                  <div className="flex flex-col gap-2 pr-2">
+                    {escolas.map((e) => {
+                      const vinculado = jaVinculado.has(e.id);
+                      return (
+                        <label key={e.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`destino-${e.id}`}
+                            checked={destinos.includes(e.id)}
+                            disabled={vinculado}
+                            onChange={() =>
+                              setDestinos((atual) =>
+                                atual.includes(e.id)
+                                  ? atual.filter((x) => x !== e.id)
+                                  : [...atual, e.id],
+                              )
+                            }
+                          />
+                          <span className="text-[14px] text-unooria-neutral-700">
+                            {e.nome}
+                            {vinculado ? (
+                              <span className="text-unooria-neutral-500">
+                                {" "}
+                                — Já vinculado a esta escola
+                              </span>
+                            ) : null}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </ScrollBar>
+              </div>
+            ) : null}
+
+            {todosJaVinculados ? (
+              <FeedbackAlert
+                type="info"
+                title="Nada a criar"
+                description="O profissional já está vinculado a todas as escolas selecionadas."
+              />
+            ) : null}
+
+            {/* 4. PERFIL E ACESSO, antes de confirmar. UM perfil, e a frase diz
+                   que ele vale em todas: `users.role` é global, e o papel da
+                   lotação não autoriza. Um seletor por escola prometeria o que
+                   o `RolesGuard` não cumpre. */}
+            {escolhido && destinosNovos.length > 0 ? (
+              <div className="rounded-xl border border-unooria-neutral-200 px-4 py-3">
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Professor ou gestor selecionado:</span>{" "}
+                  {escolhido.nome} ({escolhido.usuario})
+                </p>
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Perfil nas escolas de destino:</span>{" "}
+                  {rotuloDoPapel(escolhido.papel as Papel)} — o mesmo em todas, hoje o perfil é da pessoa e
+                  não da escola.
+                </p>
+                {/* As escolas do vínculo NOVO, pelo NOME. Numa seleção mista —
+                    algumas já vinculadas, outras não — dizer só "3 escolas"
+                    deixa quem confirma sem saber quais das marcadas vão receber
+                    o vínculo. O card pede que isso seja explícito. */}
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Escolas que receberão vínculo novo:</span>{" "}
+                  {destinosNovos
+                    .map((id) => escolas.find((e) => e.id === id)?.nome ?? id)
+                    .join(", ")}
+                </p>
+                <p className="text-[13px] text-unooria-neutral-700">
+                  <span className="font-semibold">Acesso concedido:</span> passa a abrir{" "}
+                  {destinosNovos.length === 1 ? "esta escola" : `estas ${destinosNovos.length} escolas`}{" "}
+                  no seletor do cabeçalho, uma por vez. Os vínculos que ele já tem continuam
+                  valendo.
+                </p>
+              </div>
+            ) : null}
 
             {feito ? <FeedbackAlert type="success" title="Pronto" description={feito} /> : null}
           </div>
         </ModalBody>
         <ModalFooter>
           <Button variant="ghost" size="md" onClick={fecharLote}>
-            Fechar
+            Cancelar
           </Button>
           <Button
             variant="primary"
             size="md"
             isLoading={lotando}
-            disabled={!pessoaId || unidadesDoLote.length === 0}
+            disabled={!escolhido || destinosNovos.length === 0}
             onClick={() => void lotarEmLote()}
           >
-            Lotar
+            {destinosNovos.length === 1 ? "Vincular à escola" : "Vincular às escolas"}
           </Button>
         </ModalFooter>
       </Modal>

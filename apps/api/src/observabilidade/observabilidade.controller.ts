@@ -3,6 +3,7 @@ import { OidcGuard, type AuthClaims } from "../auth/oidc.guard";
 import { rateLimit } from "../comum/rate-limit";
 import { Contrato } from "../openapi/contrato";
 import { TIPO_ERRO_REPORTADO } from "./filtro-de-excecao";
+import { classificarDispositivo } from "./dispositivo";
 import { logger } from "./logger";
 import { Metricas } from "./metricas";
 import { normalizarRota } from "./normalizar-rota";
@@ -55,15 +56,26 @@ export class ObservabilidadeController {
       "`traceId`/`spanId` opcionais ligam o erro ao trace do navegador quando o OpenTelemetry Web está ligado.",
     ],
   })
-  errosCliente(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
-    const erro = ErroClienteSchema.parse(body);
+  errosCliente(@Body() body: unknown, @Req() req: { auth: AuthClaims; headers: Record<string, unknown> }) {
     const chave = `erro-cliente:${req.auth.escolaId}:${req.auth.usuarioId}`;
     const cota = rateLimit(chave, ERROS_DE_CLIENTE_POR_MINUTO, 60_000);
     if (!cota.ok) {
-      this.metricas.errosDeClienteRecusados.add(1, { motivo: "cota" });
+      this.metricas.errosDeClienteRecusados.add(1, { motivo: "cota", superficie: "autenticado" });
       throw new HttpException({ codigo: "cota-excedida", retryAfterSeconds: cota.retryAfterSeconds }, HttpStatus.TOO_MANY_REQUESTS);
     }
+    // `safeParse`, e não `parse`: o corpo recusado precisa CONTAR. Sem este
+    // contador, um `versao` grande demais recusou todo erro do hub por seis
+    // dias e o único vestígio foi uma linha `corpo-invalido` no log.
+    const lido = ErroClienteSchema.safeParse(body);
+    if (!lido.success) {
+      this.metricas.errosDeClienteRecusados.add(1, { motivo: "invalido", superficie: "autenticado" });
+      throw new HttpException({ codigo: "corpo-invalido", problemas: lido.error.issues.map((i) => `${i.path.join(".")}: ${i.code}`).join("; ") }, HttpStatus.BAD_REQUEST);
+    }
+    const erro = lido.data;
     const superficie = erro.expId === "hub" ? "hub" : "exp";
+    const dispositivo = classificarDispositivo(
+      typeof req.headers["user-agent"] === "string" ? (req.headers["user-agent"] as string) : erro.userAgent,
+    );
     this.metricas.errosDeClienteRecebidos.add(1, { superficie });
     const mensagem = redigirTexto(erro.mensagem);
     const stack = erro.stack ? redigirTexto(erro.stack) : undefined;
@@ -77,8 +89,18 @@ export class ObservabilidadeController {
         url: redigirTexto(erro.url),
         userAgent: erro.userAgent,
         sessaoId: erro.sessaoId,
-        estudanteId: req.auth.usuarioId,
+        /**
+         * `usuarioId`, não `estudanteId`: a mesma linha registra erro de
+         * professor e de gestor, e o nome antigo dizia que todo erro era de
+         * criança. É o id opaco do token — nunca nome, login ou e-mail.
+         */
+        usuarioId: req.auth.usuarioId,
+        autenticado: true,
         perfilDoToken: req.auth.perfil,
+        navegador: dispositivo.navegador,
+        so: dispositivo.so,
+        tipoDeDispositivo: dispositivo.tipo,
+        ...(erro.dispositivo ? { dispositivo: erro.dispositivo } : {}),
         ...(erro.traceId ? { traceIdDoNavegador: erro.traceId, spanIdDoNavegador: erro.spanId } : {}),
         // `stack_trace` é o que o Error Reporting agrupa; sem stack, a mensagem serve de assinatura.
         stack_trace: stack ?? mensagem,
@@ -97,13 +119,28 @@ export class ObservabilidadeController {
     resposta: SemCorpoSchema,
     notas: ["Cota de 60 por minuto por (escola, usuário): acima, **429**.", "`valor` acima de 10 minutos é recusado (relógio, não lentidão)."],
   })
-  vitals(@Body() body: unknown, @Req() req: { auth: AuthClaims }) {
-    const vital = VitalSchema.parse(body);
+  vitals(@Body() body: unknown, @Req() req: { auth: AuthClaims; headers: Record<string, unknown> }) {
     this.cotaOu429(`vitals:${req.auth.escolaId}:${req.auth.usuarioId}`, VITAIS_POR_MINUTO);
+    const lido = VitalSchema.safeParse(body);
+    if (!lido.success) {
+      this.metricas.vitaisRecusados.add(1, { motivo: "invalido", superficie: "autenticado" });
+      throw new HttpException({ codigo: "corpo-invalido" }, HttpStatus.BAD_REQUEST);
+    }
+    const vital = lido.data;
     this.metricas.vital(vital.nome).record(vital.valor, {
       superficie: vital.superficie,
       rota: normalizarRota(vital.rota, vital.superficie),
       perfil: req.auth.perfil,
+      /**
+       * O ÚNICO rótulo de dispositivo que vira métrica, e é de propósito.
+       * `navegador` e `so` ficam no log do erro: com eles aqui, seriam
+       * 2 superfícies x ~20 rotas x 5 perfis x 6 navegadores x 3 tipos = 3.600
+       * combinações por histograma, e histograma multiplica por bucket. Com só
+       * o tipo são 600, e é ele que responde "está lento no celular?".
+       */
+      tipo_dispositivo: classificarDispositivo(
+        typeof req.headers["user-agent"] === "string" ? (req.headers["user-agent"] as string) : undefined,
+      ).tipo,
     });
   }
 

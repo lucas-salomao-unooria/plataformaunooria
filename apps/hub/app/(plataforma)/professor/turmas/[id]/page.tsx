@@ -1,6 +1,8 @@
+import { dataCurta } from "@edu/sdk";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
+import { RotuloDaTrilha } from "@/components/trilha";
 import { rotaDeConducao, rotasDaMissao } from "@/lib/rotas-da-missao";
 import { copyDaMissao } from "@/lib/missoes-do-estudante";
 import { salaDaTurma, type MissaoDaSalaDoProfessor } from "@/lib/salas";
@@ -18,7 +20,7 @@ function abaDaUrl(bruta: string | undefined): AbaDaSala {
 }
 
 function DataCurta({ iso }: { iso: string }) {
-  return <>{new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}</>;
+  return <>{dataCurta(iso)}</>;
 }
 
 /**
@@ -60,13 +62,12 @@ export default async function SalaDoProfessorPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* O nome da turma na trilha do layout. O "← Minhas turmas" que ficava
+          aqui saiu: a trilha já devolve o mesmo caminho, e dois caminhos de
+          volta na mesma tela é o que fazia cada área inventar o seu. */}
+      <RotuloDaTrilha valor={`Turma ${turma.nome}`} />
+
       <div className="flex flex-col gap-1">
-        <Link
-          href="/professor/turmas"
-          className="text-[13px] font-semibold text-unooria-neutral-700 hover:text-unooria-navy-900"
-        >
-          ← Minhas turmas
-        </Link>
         <h1 className="text-[24px] font-bold text-unooria-neutral-950">Turma {turma.nome}</h1>
         <p className="text-[14px] text-unooria-neutral-500">
           {serie ? rotuloDaSerie(serie) : turma.serie}
@@ -179,6 +180,18 @@ function MissoesDaSala({
                           className="text-unooria-neutral-700 hover:text-unooria-navy-900"
                         >
                           Como funciona
+                        </Link>
+                      ) : null}
+                      {/* O guia da aula: o professor abre daqui, na véspera e
+                          na hora. Ele existe por missão e não por turma, então
+                          não leva `?turmaId=` — a exceção é a Vila do Lume, cujo
+                          guia tem seletor de turma próprio na revelação. */}
+                      {rotas?.guia ? (
+                        <Link
+                          href={rotas.guia}
+                          className="text-unooria-neutral-700 hover:text-unooria-navy-900"
+                        >
+                          Guia da aula
                         </Link>
                       ) : null}
                       {conducao ? (

@@ -21,8 +21,8 @@ const PAPEIS = [
   { id: "publico", nome: "Público", descricao: "o que existe antes de qualquer credencial" },
   { id: "estudante", nome: "Estudante", descricao: "as quatro missões, de ponta a ponta" },
   { id: "professor", nome: "Professor", descricao: "preparar, conduzir e ler a aula" },
-  { id: "gestor", nome: "Gestor", descricao: "as pessoas e as turmas de uma escola" },
-  { id: "admin-contrato", nome: "Admin de contrato", descricao: "a rede inteira, e só ela" },
+  { id: "gestor_escola", nome: "Gestor", descricao: "as pessoas e as turmas de uma escola" },
+  { id: "gestor_contrato", nome: "Admin de contrato", descricao: "a rede inteira, e só ela" },
 ];
 
 const NAVY = "2F4F7F";

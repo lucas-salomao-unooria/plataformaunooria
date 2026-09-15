@@ -1,19 +1,34 @@
 import { ClarityHub } from "@/components/clarity-hub";
 import { VitalsHub } from "@/components/vitals-hub";
 import { obsDoAmbiente } from "@/lib/embed-experiencia";
+import { metadadosDoFuso } from "@/lib/fuso-do-hub";
 import "./globals.css";
 
 /**
- * `generateMetadata` em vez de `metadata` estático porque um dos valores é
- * lido do AMBIENTE a cada requisição: `unooria-obs-ratio` é a fração de
- * sessões do hub com OpenTelemetry Web (`OBS_TRACE_RATIO_CLIENTE`), que o
- * `instrumentation-client.ts` lê do `<meta>`. Env de runtime, não
- * `NEXT_PUBLIC_*`: mudar a amostragem não exige rebuild (cap. 17).
+ * `generateMetadata` em vez de `metadata` estático porque os valores são lidos
+ * do AMBIENTE a cada requisição, e não assados no build:
+ *
+ * - `unooria-obs-ratio`: a fração de sessões do hub com OpenTelemetry Web
+ *   (`OBS_TRACE_RATIO_CLIENTE`), que o `instrumentation-client.ts` lê do
+ *   `<meta>`. Mudar a amostragem não exige rebuild (cap. 17).
+ * - `unooria-fuso`: o FUSO da plataforma (`FUSO_DA_PLATAFORMA`, ADR-99). **É
+ *   assim que ele chega ao NAVEGADOR**, que não lê `process.env`.
+ *
+ * Por que o `<meta>` e não `NEXT_PUBLIC_FUSO_DA_PLATAFORMA`: `NEXT_PUBLIC_*` é
+ * assado no build, e a mesma imagem pode servir mais de um contrato — o valor
+ * ficaria errado sem ninguém ver. Por que aqui e não num provider React: no
+ * `<head>` ele já está resolvido antes de a hidratação começar, e a falha que
+ * este fuso existe para consertar É uma de hidratação (ADR-98). O servidor lê a
+ * env e o navegador lê este `<meta>` da MESMA resposta — os dois lados não têm
+ * como divergir.
  */
 export async function generateMetadata() {
   return {
     title: "Plataforma Unooria",
-    other: { "unooria-obs-ratio": String(obsDoAmbiente().traceRatio) },
+    other: {
+      "unooria-obs-ratio": String(obsDoAmbiente().traceRatio),
+      ...metadadosDoFuso(),
+    },
   };
 }
 

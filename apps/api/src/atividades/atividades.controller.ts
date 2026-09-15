@@ -419,11 +419,20 @@ export class AtividadesController {
   @Contrato({
     resumo: "O RELÓGIO DA AULA: move a turma inteira de momento.",
     descricao:
-      "Escreve a etapa na atividade e leva as runs junto. `voltou: true` quando a turma RETROCEDE de etapa.",
+      "Escreve a etapa na atividade e leva as runs junto. `voltou: true` quando a turma RETROCEDE de etapa.\n\n" +
+      "**A etapa é PISO indo para frente e TETO voltando** — o oposto de propósito: o piso existe para não punir " +
+      "quem leu mais rápido dentro do momento liberado; voltar é outra intenção, e com a regra do piso o retorno " +
+      "mudaria o rótulo do painel e nada na tela dos estudantes.",
     params: z.object({ id: z.string().uuid() }),
     corpo: EtapaSchema,
     resposta: EtapaMovidaSchema,
-    notas: ["`foraDoAparelho` conta quem ficou no onboarding: não entrou e não pode ser movido."],
+    notas: [
+      "`foraDoAparelho` conta quem ficou no onboarding: não entrou e não pode ser movido.",
+      "Sair da investigação CONGELA quem entrou no aparelho (computa o dossiê e grava `finished_at`) — sem isso o relatório abre vazio.",
+      "**Voltar para a investigação REABRE** quem volta ao feed: apaga o dossiê e zera `finished_at`, e `reabertas` diz quantos. O relatório é recomputado no encerramento seguinte, a partir dos eventos, que não são tocados. Ver ADR-92.",
+      "Quem JÁ VIU a revelação (`explicabilidade` em diante) não volta ao feed: para na resposta, que dá para refazer. O motivo é o instrumento — quem sabe do viés não pode ser medido por ele de novo.",
+      "O que o estudante produziu (eventos, posts salvos, comentários, conclusão, reflexão) NUNCA é apagado aqui. Quem apaga é `POST /runs/:id/reset`.",
+    ],
   })
   async moverEtapa(@Param("id") id: string, @Body() body: unknown, @Req() req: Autenticado) {
     const corpo = EtapaSchema.safeParse(body ?? {});
@@ -447,6 +456,11 @@ export class AtividadesController {
      * Congela a sessão de quem ainda não foi congelado — FORA de uma transação
      * única de propósito: uma sessão sem dados não pode travar a turma inteira
      * (registra e segue), e `encerrarRun` abre a própria transação.
+     *
+     * Isto acontece em TODA saída da investigação, para toda run que entrou no
+     * aparelho — e é por isso que voltar tem de REABRIR (o bloco `reabrir`
+     * abaixo, ADR-92). Sem o par, o congelamento é de mão única e a turma nunca
+     * volta ao feed.
      */
     if (etapa !== "investigacao") {
       const semDossie = runs.filter((run) => !run.dossier && run.fase !== "onboarding");
@@ -469,16 +483,44 @@ export class AtividadesController {
       const voltando = ehVoltar(atividade.etapa as EtapaDaTurma, etapa);
 
       const porDestino = new Map<FaseDaRun, string[]>();
+      /**
+       * Quem volta ao feed com a sessão CONGELADA. Reunido aqui, e não filtrando
+       * `porDestino` depois, porque `porDestino` só guarda quem TROCA de fase:
+       * uma run já em `feed` com `finished_at` preenchido — a inconsistência que
+       * uma versão anterior podia deixar para trás — nunca seria reaberta.
+       */
+      const reabrir: string[] = [];
       for (const run of atuais) {
         const destino = voltando
-          ? faseAoVoltar(run.fase as FaseDaRun, etapa, run.finishedAt !== null)
+          ? faseAoVoltar(run.fase as FaseDaRun, etapa)
           : faseEfetiva(run.fase as FaseDaRun, etapa);
+        if (destino === "feed" && run.finishedAt !== null) reabrir.push(run.id);
         if (destino === run.fase) continue;
         porDestino.set(destino, [...(porDestino.get(destino) ?? []), run.id]);
       }
 
       /** Reconciliação em lote: uma turma de 40 vira ≤9 updateMany, não 40 update. */
       await tx.activity.update({ where: { id }, data: { etapa } });
+
+      /**
+       * REABRIR a sessão de quem volta ao feed (ADR-92).
+       *
+       * `encerrarRun` é idempotente pelo DOSSIÊ: com a linha lá, ele devolve a
+       * de antes sem recomputar. Zerar só o `finished_at` deixaria o relatório
+       * do próximo encerramento sem nada do que a criança fizer daqui em diante
+       * — que é exatamente o "relatório mentindo" de que a regra antiga tinha
+       * medo. Apagar o dossiê é o que o torna recomputável.
+       *
+       * O que o estudante PRODUZIU não é tocado: eventos, posts salvos,
+       * comentários, a resposta e a reflexão continuam. Quem apaga isso é
+       * `POST /runs/:id/reset` — outra intenção, "esta sessão não presta,
+       * comece do zero", e não "a aula voltou um momento".
+       */
+      if (reabrir.length > 0) {
+        await tx.dossier.deleteMany({ where: { runId: { in: reabrir } } });
+        await tx.run.updateMany({ where: { id: { in: reabrir } }, data: { finishedAt: null } });
+      }
+
       for (const [destino, ids] of porDestino) {
         await tx.run.updateMany({ where: { id: { in: ids } }, data: { fase: destino } });
       }
@@ -492,6 +534,8 @@ export class AtividadesController {
         total: runs.length,
         /** Quem ficou no onboarding: não entrou no aparelho e não pode ser movido. */
         foraDoAparelho: atuais.filter((run) => faseEfetiva(run.fase as FaseDaRun, etapa) === "onboarding").length,
+        /** Quantas sessões voltaram ao feed com o relatório descartado para recomputo. */
+        reabertas: reabrir.length,
       };
     });
   }

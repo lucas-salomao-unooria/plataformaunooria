@@ -54,6 +54,37 @@ severidade, e a severidade considera o prazo de novembro de 2026.
   Consequência aceita e documentada (\adrr{ADR-16}). \textbf{Precisa constar do
   contrato e do DPA de cada rede.} Voltar à região exige trocar modelo e
   localização juntos.\\
+\cd{R-24} & \textbf{Alavanca de incidente no painel da Unooria.} Um clique no
+  escopo-contrato desliga um produto para os \textasciitilde10 mil estudantes de
+  uma rede, e o sintoma que ele produz --- a missão desapareceu da grade --- é
+  \textbf{indistinguível} de um defeito de enturmamento ou de catálogo
+  (\adrr{ADR-87}). & Possível & \textbf{Alto} &
+  Mitigado em quatro camadas, e nenhuma delas é permissão: diálogo de
+  confirmação que declara o alcance, \cd{motivo} obrigatório ao desligar (CHECK
+  no banco, não só Zod), registro estruturado \cd{recurso-alterado} em toda
+  escrita, e o sintoma no apêndice de operação. \textbf{Nada é destruído}: a
+  liberação por turma do professor não é tocada, e religar devolve a sala como
+  ela estava. O que NÃO está mitigado é a auditoria em tela --- a linha é
+  sobrescrita a cada mudança, e o histórico de quem mexeu vive só no registro.\\
+\zebra \cd{R-26} & \textbf{Histórico do painel sem prazo.}
+  \cd{recursos\_auditoria} só cresce, e nenhuma tabela deste produto tem prazo
+  declarado hoje (\adrr{ADR-89}). & Certa & Baixo &
+  Mesma decisão consciente de \cd{R-02}: prazo sem rotina que o cumpra é pior
+  que prazo nenhum. O volume aqui é ordens de grandeza menor que
+  \cd{telemetria\_eventos} --- são algumas mudanças por semana, não evento por
+  criança —, e nenhuma linha carrega dado de pessoa além do NOME de quem operou
+  o painel (conta da Unooria ou da coordenação, nunca de estudante). Quando o
+  prazo vier, ele vem para as duas tabelas na mesma conversa.\\
+\cd{R-25} & \textbf{Versão fixada por escopo divergindo em silêncio.} Uma
+  escola pode ficar meses numa versão antiga porque alguém a fixou como canário
+  e não a soltou --- e nada avisa. & Possível & Médio &
+  O painel mostra a fixação por escopo, e o \emph{rollback} do contrato tem
+  aviso próprio (\cd{emRollback}). A fixação por escopo \textbf{não} tem: ela
+  sobrevive ao \emph{deploy} de propósito (o CI não toca
+  \cd{disponibilidades}), e é justamente isso que a torna esquecível. Gatilho
+  para agir: a primeira fixação que passar de um bimestre --- aí ela pede prazo
+  de validade, que é o mesmo mecanismo do gatilho de reavaliação da
+  \adrr{ADR-87}.\\
 \zebra \cd{R-04} & \textbf{Fator humano único.} Uma pessoa desenvolve e opera. &
   Certa & \textbf{Alto} &
   Mitigado \emph{por arquitetura}: menos peças, reversão por ponteiro, decisões

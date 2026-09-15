@@ -30,7 +30,7 @@ describe("estado do check-in", () => {
   });
 
   test("mensagens por status", () => {
-    expect(mensagemDoStatus(409)).toMatch(/já foi registrado/);
+    expect(mensagemDoStatus(409)).toMatch(/já foi registrada/);
     expect(mensagemDoStatus(null)).toMatch(/continuam aqui/);
   });
 });

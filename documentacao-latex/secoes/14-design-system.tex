@@ -272,6 +272,44 @@ pnpm up -r @unooria/design-system --latest  # sobe em ui/hub/exps de uma vez
 \end{lstlisting}
 \end{atencao}
 
+\section{O painel de recursos: três estados, e o rótulo que muda}
+
+Duas regras de interface nasceram com o painel da Unooria (\adrr{ADR-87}), e as
+duas são de SIGNIFICADO, não de estilo:
+
+\textbf{Interruptor de TRÊS estados, nunca dois.} \cd{ligado | desligado |
+herda}. Sem o terceiro, \enquote{ligado nesta escola} fica idêntico a
+\enquote{herdado ligado}, e desfazer uma exceção criada por engano é impossível
+--- um controle de dois estados não tem como expressar \enquote{apague a minha
+linha e volte a seguir o escopo de cima}. Por isso o controle é um
+\cd{Selection} de três opções e não um \cd{Toggle}.
+
+\textbf{O rótulo de \emph{herda} depende do escopo.} No contrato não existe
+\enquote{de cima}: ali é \enquote{Padrão (ligado)}. Numa escola é \enquote{Herda
+de cima}. Chamar as duas coisas de \enquote{Herda} faria o operador do
+escopo-contrato procurar um nível que não existe.
+
+E uma terceira, que vale para todo controle desta plataforma: \textbf{controle
+sem efeito fica DESABILITADO com o motivo ao lado, nunca escondido.} A
+experiência sob um produto desligado mostra o interruptor inerte e a frase
+\enquote{o produto está desligado neste escopo}; ativo, ele prometeria uma
+mudança que o resolvedor ignora, e escondido pareceria defeito.
+
+\section{Lacuna aberta: o \cd{SideBar} traz um item que não é seu}
+
+O \cd{SideBar} da seção \cd{unooria} renderiza SEMPRE, como primeiro item, um
+botão \enquote{Iniciativas} fixo no componente, que alterna um painel de
+\cd{appsItems}. \textbf{Nenhuma área deste hub passa \cd{appsItems}}, então o
+clique não faz nada --- e isso vale para \rota{/admin} desde que a barra existe,
+e agora para \rota{/unooria}.
+
+Item de menu que não leva a nada é pior que item nenhum: ele consome a primeira
+posição da barra, que é onde a mão vai. É \textbf{lacuna do pacote}, com pedido
+no \arq{storybook-unooria} --- o que falta é o item ser condicional a haver
+\cd{appsItems}. Não há compensação local aqui de propósito: esconder o botão
+por CSS seria reimplementar decisão de componente do lado de fora, e a regra de
+ouro é o contrário disso.
+
 \section{Compensações locais}
 
 \begin{regra}
@@ -334,6 +372,85 @@ Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
 \bottomrule
 \end{tabularx}
 
+\subsection{Lacunas abertas em \cd{unooria} na 0.1.17 (hub, 2026-09-05)}
+
+As duas lacunas abaixo apareceram nas telas de turma do professor, onde a
+listagem tem uma linha por estudante --- 40 numa sala cheia. As duas são
+compensadas em \arq{packages/ui/styles/plataforma.css} e viraram pedido no
+\arq{storybook-unooria}.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Consequência}\\
+\midrule
+\cd{Table} não tem cabeçalho fixo & \cd{TableProps} não publica
+  \cd{stickyHeader} nem \cd{maxHeight}, e o \cd{.unooria-table-container} só rola
+  na horizontal. Numa turma de 40 estudantes o cabeçalho sai da tela junto com a
+  página, e o professor lê \enquote{sim $\cdot$ --- $\cdot$ 3} sem saber de qual
+  coluna. Compensado pela classe \cd{.tabela-rolavel}, que dá altura máxima ao
+  contêiner (tela útil menos o cromo, piso de 20\,rem) e prende o \cd{<th>} com
+  \cd{position: sticky}. Vale para as duas famílias de tabela do hub: a
+  \cd{<table>} crua e a do DS (\cd{className="tabela-rolavel"}).\\
+\zebra \cd{Button} não tem variante de perigo discreta & \cd{ButtonVariant} é
+  \cd{primary | secondary | outline | ghost | danger}: as três primeiras saem no
+  navy da marca, que não diz \enquote{isto apaga}, e a \cd{danger} é sólida ---
+  peso de ação primária, errado para \enquote{Zerar a turma} ao lado da leitura
+  da aula. Compensado por \cd{.acao-destrutiva}, que troca o navy do
+  \cd{outline} pelo token de perigo e mantém o fundo transparente.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Variante que não existe não é erro de compilação --- é botão sem cor.} O
+\cd{Button} monta a classe por interpolação (\cd{unooria-button--variant-\$\{variant\}}),
+então um \cd{variant="tertiary"} produz uma classe que nenhuma folha define: o
+botão perde fundo, cor e borda e fica com os estilos de base. Era o que
+acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo, e com o
+\enquote{confirmar} do diálogo (\cd{variant="destructive"}). O \emph{typecheck}
+não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
+\end{atencao}
+
+\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (exp-92, 2026-09-10)}
+
+O \cd{Collapse} esconde o corpo fechado com \cd{grid-template-rows: 0fr},
+\cd{opacity: 0} e \cd{aria-hidden="true"}, e o \cd{\_\_body-inner} com
+\cd{overflow: hidden}. \textbf{Nenhuma dessas propriedades remove do FOCO} ---
+nem \cd{inert}, nem \cd{visibility}, nem \cd{display: none}. A árvore de
+acessibilidade está correta (o \cd{aria-hidden} é do pacote), e é justamente
+isso que torna o defeito pior: \textbf{descendente focável dentro de
+\cd{aria-hidden="true"} é foco fantasma} --- o \cd{Tab} entra no controle e o
+leitor de tela não anuncia nada, porque para ele aquele elemento não existe.
+
+Medido na tela de aulas da exp-92, que abre o ano em quatro bimestres e só deixa
+o primeiro aberto (\cd{defaultOpen}): os três fechados deixavam \textbf{30
+botões de semana} recebendo foco do teclado. Um professor que navega por
+\cd{Tab} atravessava trinta controles invisíveis antes do próximo elemento
+visível.
+
+\textbf{Compensação}, em \arq{apps/experiencias/exp-92-plano-de-ensino/src/estilos/globals.css}:
+\cd{visibility: hidden} no corpo com \cd{aria-hidden="true"} --- é a única
+propriedade CSS que tira do foco sem tirar do fluxo --- com \cd{transition} de
+\cd{visibility} atrasada pela duração do collapse, para que o fechamento
+continue animado. Ela não muda aparência nenhuma. \textbf{Morre quando o pacote
+publicar \cd{inert} no corpo fechado}, e o pedido está aberto no
+\arq{storybook-unooria}.
+
+\begin{regra}
+\textbf{A compensação é guardada por teste.} A suíte
+\cd{professor/09-plano-de-ensino} conta quantos controles de bimestre fechado
+recebem foco e reprova se voltarem a ser mais de zero. Sem essa rede, remover a
+compensação passa no \emph{typecheck}, passa no \emph{build} e o defeito só
+reaparece para quem navega por teclado --- que é exatamente quem não vai abrir
+uma \emph{issue}.
+\end{regra}
+
+\textbf{O segundo custo do corpo fechado no DOM é de automação}: um
+\cd{locator(...).filter(...)} acha conteúdo de bimestre fechado, o Playwright o
+considera visível e o clique morre interceptado pelo contêiner colapsado. Foi o
+que quebrou aquela suíte no dia em que as dez semanas do primeiro bimestre
+ficaram todas planejadas. Quem automatiza a tela abre os bimestres antes de
+procurar.
+
 \subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp-07 0.1.0)}
 
 A seção tem 29 componentes e cobre o cromo inteiro do mensageiro --- barra de
@@ -377,6 +494,69 @@ aparelho é o hub, pelo \cd{viewport} do manifesto. Empilhar os dois daria um
 celular dentro de outro.
 \end{atencao}
 
+\subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp-08 0.1.0)}
+
+A seção tem 26 componentes e cobre o cromo do cliente \emph{web} --- barra
+lateral, campo de escrever com a doca, balão de fala, cartão de agente, diálogo,
+etiqueta. A exp-08 pediu \textbf{nove} peças que ela não publica, e a maior
+delas é estrutural para o não-negociável 4 da missão.
+
+\begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
+\toprule
+\headrow \thd{Lacuna} & \thd{Como está resolvido}\\
+\midrule
+\cd{CodeBlock} --- o bloco de \emph{markdown} com cabeçalho e ação de cópia &
+  \textbf{A maior, e a única que mexe com o mecanismo da missão.} O
+  não-negociável 4 exige o manifesto dentro do bloco nativo do assistente:
+  é essa moldura que faz o documento parecer \textbf{emitido pelo sistema} em
+  vez de escrito pela escola. Compensação: a moldura, o cabeçalho
+  \enquote{markdown}, a barra e a fonte monoespaçada, com os tokens do pacote ---
+  e o botão de copiar \textbf{é} o \cd{Button} da seção.\\
+\zebra \cd{SelectableCard} --- cartão de escolha exclusiva com corpo longo & O
+  \emph{grid} 2\texttimes 2 do pico. \cd{GPTCard} é para grade de agentes e
+  \cd{Tag} é etiqueta curta; nenhum tem estado de seleção com texto de artigo. O
+  elemento continua sendo \cd{<input type="radio">} \textbf{real} dentro de
+  \cd{<label>}: a exclusividade, a navegação por seta e o anúncio
+  \enquote{2 de 4} do leitor de tela vêm do navegador, não de JavaScript.\\
+\cd{StreamingCursor} & O cursor do efeito de digitação. \cd{ChatBubble} desenha
+  a fala pronta; não há estado de \emph{streaming} na seção. O caractere é um
+  \cd{::after}, e a animação respeita \cd{prefers-reduced-motion}.\\
+\zebra \cd{Spinner} & O indicador de 16px do \emph{delay} de 2000\,ms. Ele
+  \textbf{para} sob \cd{prefers-reduced-motion} em vez de sumir: sem nenhum
+  sinal, a tela pareceria travada por dois segundos.\\
+\cd{ContextBanner} & A faixa dos três princípios em disputa, fixa abaixo do
+  cabeçalho. \cd{Badge} é etiqueta \emph{inline} e \cd{Divider} é um fio.\\
+\zebra \cd{InlineNotice} & O aviso de bloqueio por cliques rápidos --- 15
+  palavras, que não cabem num \cd{Badge}.\\
+\cd{Toast} & A notificação de canto de Amara e a de cópia. O \cd{Snackbar}
+  existe, mas na seção \cd{unooria}, e a fala é \textbf{dentro} da conversa.\\
+\zebra \cd{BlockingOverlay} (na \cd{unooria}) & O congelamento para o debate.
+  \textbf{Esta tela não fecha}, e é por isso que ela não é um \cd{Modal}: o
+  diálogo do pacote traz \cd{closeOnEscape} e botão de fechar, que dariam à
+  criança o jeito de sair do congelamento que ele existe para impedir. O
+  bloqueio real é o atributo \cd{inert} no conteúdo de baixo.\\
+\cd{StampBadge} (na \cd{unooria}) & O selo de protocolo da certidão.
+  \cd{Badge} e \cd{Tag} são etiquetas curtas; a \emph{spec} chama esta peça de
+  \enquote{certidão}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Duas props do pacote diferem entre as seções}, e as duas custaram erro
+de \emph{typecheck} nesta experiência: o \cd{AlertBox} da \cd{unooria} usa
+\cd{variant} (não \cd{type}), e o \cd{Modal} da \cd{unooria} usa \cd{isOpen}
+enquanto o da \cd{chatgpt} usa \cd{open}. O compilador pegou as duas --- mas o
+\cd{Button} da \cd{unooria} \textbf{aceita prop inventada em silêncio}, então
+nem sempre pega.
+\end{atencao}
+
+\begin{nota}
+\cd{inert}, e não \cd{pointer-events: none}, no congelamento: o segundo pararia
+o clique e deixaria o \emph{Tab} alcançar os botões atrás do véu --- a mesma
+classe de defeito que o \cd{Collapse} da exp-92 produziu, com 30 alvos focáveis
+dentro de um \cd{aria-hidden}.
+\end{nota}
+
 \subsection{Avisos que ficaram obsoletos}
 
 \begin{nota}
@@ -403,6 +583,95 @@ de contexto, o componente é \cd{FeedbackAlert} (e a prop é \cd{type}, não
 ou seja, \emph{depois} do CSS da experiência no grafo de importação. Com peso
 igual, quem ganha é sempre o pacote.
 \end{atencao}
+
+\section{O menu da conta: o componente que faltava, e a lacuna que ele trouxe}
+
+O \cd{HeaderMenu} chegou na \textbf{0.1.19} para tirar o \enquote{Sair} da barra
+e pô-lo dentro do avatar (\adrr{ADR-78}). Ele é o caso de manual do procedimento
+de três passos: a busca no pacote foi feita ANTES de escrever qualquer coisa e
+mostrou que o DS 0.1.17 não tinha nada equivalente --- sem \cd{Dropdown},
+\cd{Menu} ou \cd{Popover} na seção, o \cd{Avatar} com \cd{onClick} mas sem prop
+de menu, e o único menu suspenso do pacote (\cd{TableDropdownMenu}) com gatilho
+fixo em três pontos e sem aceitar \emph{children}. Não achou \implica{} pedido no
+\cd{storybook-unooria}, e o componente nasceu LÁ.
+
+\begin{atencao}
+\textbf{A tira do \cd{HeaderMenu} COBRE o que está à esquerda do gatilho, em vez
+de empurrar.} Ela é um \emph{overlay} ancorado à esquerda do avatar, e o
+componente assume que ali há espaço vazio --- verdade num \emph{header} que
+termina no avatar, FALSA no da plataforma, onde ali ficam o nome e a linha de
+apoio. Integrado ingenuamente, o item \enquote{Sair} abre desenhado EM CIMA das
+letras. Passa no \emph{typecheck}, passa no \emph{build}, e só aparece abrindo o
+menu na tela.
+
+A compensação vive em \arq{apps/hub/components/menu-da-conta.tsx}, que junta
+identidade e menu na mesma peça e esconde o bloco enquanto a tira está aberta
+--- com \cd{invisible}, não desmontado, senão o gatilho escorrega embaixo do
+cursor. Ela \textbf{não} tem entrada em \arq{plataforma.css} de propósito: é
+comportamento de página, e uma classe faria o próximo a integrar o componente
+achar que era decoração.
+\end{atencao}
+
+\subsection{Duas lacunas que ficaram sem compensação, por escolha}
+
+Compensar sairia pior que esperar o pacote, nos dois casos:
+
+\begin{itemize}
+  \item \textbf{\cd{Selection} não aceita rótulo acessível sem rótulo visível.}
+    O \cd{...rest} dele aterra no \cd{<div>} de fora, e o \cd{aria-labelledby} do
+    \cd{combobox} só existe se a prop \cd{label} for passada --- e ela renderiza
+    uma linha acima do controle, que não cabe num \emph{header} de 64px. É o que
+    impede o \cd{<select>} cru do seletor de escola de migrar: trocar um controle
+    que tem \cd{aria-label} por um sem nome acessível é regressão, não
+    modernização. O resto da API casa 1:1 (\cd{options}, \cd{value},
+    \cd{onChange}, \cd{size="sm"} = 40px, \cd{error}), então a migração é de
+    minutos no dia em que a prop existir. O \cd{Breadcrumb} e o \cd{Avatar} já
+    publicam \cd{ariaLabel}: é inconsistência do pacote, não desenho.
+  \item \textbf{No \cd{Breadcrumb}, \cd{isCurrent} e \cd{as} se contradizem.}
+    Com \cd{as}, o DS renderiza o componente polimórfico mesmo no item marcado
+    como atual, e a página vira link para si mesma. A ponte da trilha compensa
+    omitindo \cd{href} e \cd{as} no último item.
+\end{itemize}
+
+\begin{nota}
+\textbf{O aviso do \cd{<select>} sem componente no DS estava OBSOLETO e ninguém
+tinha percebido.} O comentário de \arq{plataforma.css} afirmava que o pacote não
+publica componente de seleção. Foi verdade e deixou de ser: o \cd{Selection}
+existe, a ponte o exporta, e a área \rota{/admin} já havia migrado. O comentário
+sobreviveu à lacuna e virou a desculpa que manteve \textbf{24} \cd{<select>}
+crus no hub depois de o pacote já resolver o problema --- a mesma armadilha do
+\cd{expires\_at} que este documento registra em cinco ADRs: a regra sai do
+código, o registro fica, e quem lê acredita nele. Ele agora nomeia os cinco
+arquivos que faltam migrar e diz que o último apaga o bloco.
+\end{nota}
+
+\section{A barra de aplicação ancora na janela (\adrr{ADR-83})}
+
+O \cd{HeaderPlataforma} é o único \emph{chrome} do hub: mesma altura, mesmos
+elementos, da tela do estudante à área do contrato. Ele nasceu, porém, com um
+parâmetro \cd{largura} que casava o miolo com o \cd{max-width} do \cd{<main>} de
+cada área --- e como o miolo é centralizado, a coluna da área passou a decidir a
+POSIÇÃO da marca. Medido, a marca ocupava quatro X diferentes: 20px em
+\cd{/admin} e \cd{/exp}, 164px em \cd{/analise}, 228px em \cd{/professor} e
+\cd{/estudante} num viewport de 1440px --- 448px de salto em 1920px.
+
+\begin{atencao}
+\textbf{Barra de aplicação não se alinha ao conteúdo: ela se alinha à janela.} O
+miolo do header é \emph{full-bleed} (\cd{px-6}, sem \cd{max-width} e sem
+\cd{mx-auto}), e o mesmo \cd{px-6} é o gutter da coluna de cada área. Escrever os
+dois valores separados é o que produziu, em \cd{/analise}, uma marca 4px à
+esquerda do título da própria página --- e quatro pixels ninguém nomeia olhando.
+\end{atencao}
+
+Isto \textbf{não} é compensação de lacuna do DS: é decisão de layout do hub, e
+por isso mora no código do header (a constante \cd{GUTTER}) e não em
+\arq{plataforma.css}. Vira lacuna no dia em que o pacote publicar um componente
+de barra de aplicação --- é lá que o gutter deveria morar, e é o gatilho de
+reavaliação da \adrr{ADR-83}.
+
+A superfície PÚBLICA (\cd{/}, \cd{/privacidade}, \cd{/termos}) ficou fora por
+decisão: \cd{.landing-nav\_\_miolo} mantém 1440px centralizado e \cd{Logo
+size="md"}, porque é outra superfície com outro público.
 
 \section{Cor da plataforma: classe escrita à mão}
 
@@ -433,6 +702,177 @@ não elementos: sem o \emph{reset}, todo \cd{<a>} volta a ser sublinhado e todo
 \cd{<ul>} volta a ter marcador. Foi o que o \emph{smoke} visual pegou nos
 \emph{cards} de produto.
 \end{nota}
+
+\section{Rolagem: o \cd{ScrollBar} do DS, em toda área rolável do hub}
+\label{ds:rolagem}
+
+\textbf{Nenhuma tela do hub declara \cd{overflow} para rolar.} Área que rola é um
+\cd{<ScrollBar>} do \cd{@edu/ui/ds}: as 24 tabelas de \rota{/admin},
+\rota{/analise} e \rota{/professor}, o sumário de \rota{/privacidade} e
+\rota{/termos}, e as 5 tabelas largas do guia da aula. Dele vêm o \cd{overflow},
+a barra, o \cd{autoHide} e o \emph{fade} (\adrr{ADR-75}).
+
+Até 2026-09-07 nada disso usava o componente: as tabelas rolavam em \cd{<div>}
+com \cd{overflow} escrito à mão, e o \cd{ScrollBar} --- publicado pelo pacote
+desde a 0.1.x, com \cd{orientation}, \cd{thickness}, \cd{theme} e \cd{autoHide}
+--- não era referenciado em lugar nenhum do repositório. O componente existia e
+ninguém o procurou; é o caso que motivou o procedimento de três passos da regra
+de ouro (procurar, usar, e só então pedir ao \cd{storybook-unooria}).
+
+Tabela nova nasce assim:
+
+\begin{lstlisting}[language=tsunoo, caption={A forma canônica de uma tabela que rola}]
+<ScrollBar orientation="both" autoHide className="tabela-rolavel">
+  <Table … />        {/* ou a <table> crua */}
+</ScrollBar>
+\end{lstlisting}
+
+\begin{atencao}
+\textbf{\cd{orientation="both"} não é enfeite.} O \emph{default} é
+\cd{vertical}, que traz \cd{overflow-x: hidden} --- e cortaria a coluna da
+direita das tabelas largas, que são a maioria aqui. No guia, onde a rolagem é só
+lateral, vale \cd{orientation="horizontal"}.
+\end{atencao}
+
+\subsection{O que sobrou para a compensação local}
+
+A \cd{.tabela-rolavel} não desapareceu: ela \textbf{encolheu} para o que o pacote
+ainda não publica --- a \cd{max-height} que provoca a rolagem e o \cd{<th>}
+preso (a lacuna de \cd{stickyHeader}, já registrada). O \cd{overflow} saiu dela;
+devolvê-lo criaria dois contêineres de rolagem, um dentro do outro.
+
+Duas armadilhas medidas ao fazer a migração:
+
+\begin{itemize}
+  \item \textbf{o cabeçalho preso para de grudar dentro do \cd{ScrollBar}.} A
+    \cd{Table} do DS traz o próprio \cd{.unooria-table-container} com
+    \cd{overflow-x: auto}, e é NELE que o \cd{<th>} \emph{sticky} se prende ---
+    um contêiner que não rola na vertical. A regra
+    \cd{.tabela-rolavel .unooria-table-container \{ overflow: visible \}} devolve
+    o papel ao \cd{ScrollBar}, que cuida dos dois eixos;
+  \item \textbf{no papel, o \cd{ScrollBar} recorta.} O guia é impresso e levado
+    para a sala; \arq{components/guia/guia.css} devolve \cd{overflow: visible} e
+    \cd{max-height: none} em \cd{@media print}, senão a tabela sai cortada na
+    largura da coluna.
+\end{itemize}
+
+\subsection{O \cd{autoHide} do pacote é \emph{hover}, não rolagem}
+
+O \arq{ScrollBar.types.ts} documenta \enquote{oculta a barra quando ocioso e a
+exibe suavemente com \emph{fade-in} durante o \emph{hover} ou rolagem}, mas o
+CSS publicado só tem regras \cd{:hover}. Na prática: a barra aparece ao passar o
+mouse por cima da área e continua invisível quando a rolagem vem da roda do mouse
+ou do teclado. É menos do que se queria, e é o preço aceito de manter a fonte no
+pacote --- com pedido aberto no \cd{storybook-unooria} e a prop já no lugar para
+o dia em que ele publicar o gatilho por rolagem.
+
+\textbf{Fora do hub nada mudou.} As nove experiências seguem com a barra do
+sistema operacional: o \cd{ScrollBar} é da seção \cd{unooria}, e a regra das duas
+famílias proíbe que ele entre num clone.
+
+\section{O vocabulário das telas administrativas}
+
+O \emph{design system} resolve o componente; ele não resolve a PALAVRA. E a
+palavra divergiu: o mesmo perfil se chamava \enquote{gestor} num diálogo e
+\enquote{Coordenação} no filtro ao lado; a mesma coisa era \enquote{unidade} numa
+tela e \enquote{escola} na outra; \enquote{regional} e \enquote{diretoria}
+alternavam na mesma frase. Nada disso quebra teste, e tudo isso faz quem chega
+concluir que são coisas diferentes.
+
+A regra vale para TEXTO DE TELA --- rótulo, título, descrição, \emph{placeholder},
+mensagem --- e não para nome de campo de API:
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Use} & \thd{Nunca}\\
+\midrule
+\textbf{escola} & \enquote{unidade}\\
+\zebra \textbf{regional} & \enquote{diretoria} (nem alternando com ela)\\
+\textbf{vínculo}, \textbf{vincular} & \enquote{lotação}, \enquote{lotar} ---
+  \cd{lotacoes} segue sendo o nome da TABELA, porque é o termo que a rede pública
+  usa para o registro\\
+\zebra \textbf{Coordenação} (da escola, regional) & \enquote{Gestor} na
+  interface. O identificador continua \cd{gestor\_escola}: é contrato replicado
+  em quatro fontes\\
+\textbf{Código interno} nos FORMULÁRIOS & \enquote{Id da escola}. Na LISTAGEM o
+  id aparece sem rótulo, de propósito: é a chave que a secretaria usa nas
+  planilhas de importação, e um \enquote{Código interno:} por linha dobraria a
+  altura da célula\\
+\bottomrule
+\end{tabularx}
+
+\begin{atencao}
+\textbf{Pessoa e vínculo não são a mesma contagem, e a tela tem de dizer qual é
+qual.} A coluna \enquote{Professores} conta PESSOAS naquela escola (índice único
+por escola $\times$ pessoa $\times$ papel); o total do resumo conta VÍNCULOS na
+rede, porque quem dá aula em duas escolas entra duas vezes. Por isso o resumo diz
+\enquote{vínculos de professores} e leva a frase \enquote{Um professor pode ter
+vínculo com mais de uma escola}. Essa confusão já produziu um \emph{bug} de
+divergência entre indicador e listagem (apêndice~\ref{ap:operacao}) e duas
+conversas de esclarecimento.
+\end{atencao}
+
+Uma divergência fica REGISTRADA em vez de corrigida: o campo \cd{unidades} da
+resposta de \rota{GET /escolas} conta as escolas de uma regional, e o produto
+chama isso de \enquote{escolas}. Ele não foi renomeado porque é contrato
+publicado (OpenAPI e apêndice~\ref{ap:endpoints}), e trocá-lo por pureza de
+vocabulário é \emph{churn} sem ganho para quem usa a tela.
+
+\section{O idioma da interface: três zonas (\adrr{ADR-91})}
+
+Todo texto que uma pessoa lê é pt-BR --- rótulo, botão, título,
+\cd{aria-label}, \emph{placeholder}, mensagem de erro, guia do professor, página
+legal. Mas a regra não é única, porque a plataforma tem três superfícies com
+exigências opostas:
+
+\begin{center}
+\begin{tabular}{@{}p{0.28\linewidth}p{0.64\linewidth}@{}}
+\toprule
+\textbf{Zona} & \textbf{Regra}\\
+\midrule
+Plataforma (hub, experiências do professor) & pt-BR sem exceção. É a Unooria
+falando com professor, gestor e estudante, e numa rede pública não se pode
+pressupor repertório de inglês.\\
+\addlinespace
+Superfície disfarçada (dentro do clone) & O nome que o aplicativo REAL usa em
+português. \cd{Shorts}, \cd{Stories}, \cd{Feed}, \cd{Playlists} e \cd{Ranking}
+ficam: traduzi-los quebra o disfarce que a experiência está medindo.\\
+\addlinespace
+O professor falando SOBRE o clone (guia da aula, catálogo, painéis) & Depende de
+o termo nomear objeto na tela ou ser jargão vazado --- abaixo.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{A fronteira é onde se erra.} O termo \textbf{nomeia um objeto que está na
+tela} (\cd{feed}, \cd{Shorts}, \cd{ranking})? Fica --- traduzir faria o guia
+dizer uma palavra e a tela mostrar outra, e o professor perde o referente no meio
+da aula. É \textbf{jargão de implementação vazado} (\cd{card de pausa},
+\cd{o modal}, \cd{num popup})? Traduz: não nomeia nada que a criança veja, e
+existe palavra portuguesa exata --- \cd{tela de pausa}, \cd{quadro de
+sistematização}, \cd{janela}.
+
+\textbf{Identificador não é texto} e fica como está: chave de objeto, rota,
+coluna, verbo/objeto de telemetria, nome de glifo do Material Symbols
+(\cd{checklist}, \cd{psychology}, \cd{schedule}), variante de componente
+(\cd{warning}, \cd{success}, \cd{danger}), severidade de log, método HTTP.
+
+\begin{regra}
+\textbf{Anglicismo que fica por decisão, não por esquecimento:} \cd{fake news},
+\cd{cyberbullying}, \cd{print}, \cd{chat} e \cd{on-line}. Os dois primeiros são
+o vocabulário da BNCC e da Lei 13.185/2015 que o próprio guia cita; \cd{print} é
+a palavra que a criança usa, e a missão da exp-06 e da exp-07 gira em torno desse
+objeto. A \adrr{ADR-91} tem a razão de cada um. \textbf{Não \enquote{corrija}
+nenhum deles.}
+\end{regra}
+
+\textbf{Duas armadilhas que a troca de terminologia cobrou.} A suíte e2e casa por
+texto EXATO (\cd{getByText}, \cd{getByRole(\{name\})}): mudar copy sem atualizar
+a suíte a derruba com \emph{timeout}, e o \emph{timeout} reporta o seletor que
+faltou, nunca a causa. E rótulo visível com espelho na api muda nos DOIS lados
+--- \cd{ROTULO\_PASSO} da exp-03 espelha
+\arq{apps/api/src/unoogpt/regras/passos.ts}, e o \emph{typecheck} não vê a
+divergência.
 
 \section{Exceção registrada}
 

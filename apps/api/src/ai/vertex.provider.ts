@@ -247,13 +247,14 @@ export class VertexProvider implements AiProvider {
   async generateJson<T>(req: AiJsonRequest<T>): Promise<T> {
     const tentativas = req.tentativas ?? 3;
     let ultimoErro = "";
+    let ultimaFalhaHttp: ErroHttpDoVertex | undefined;
 
     for (let tentativa = 1; tentativa <= tentativas; tentativa += 1) {
       const reforco = ultimoErro
         ? `\n\nA tentativa anterior foi rejeitada por: ${ultimoErro}. Corrija e devolva JSON válido.`
         : "";
       try {
-        const res = await fetchDoUndici(this.endpoint(), {
+        const res = await fetchDoUndici(this.endpoint(this.modeloPara(req.modelo)), {
           method: "POST",
           headers: {
             authorization: `Bearer ${await this.accessToken()}`,
@@ -266,23 +267,52 @@ export class VertexProvider implements AiProvider {
               responseMimeType: "application/json",
               responseSchema: paraSchemaVertex(req.responseSchema),
               temperature: req.temperatura ?? 1,
+              ...(req.maxTokens !== undefined ? { maxOutputTokens: req.maxTokens } : {}),
               ...thinkingConfig(),
             },
           }),
           dispatcher,
         });
+        // Sem esta checagem um 403/429 vira "resposta vazia": o corpo de erro
+        // não traz `candidates`, o retry gasta as três tentativas e a causa
+        // morre atrás de "Falha ao gerar conteúdo estruturado". `generate` já
+        // checava; aqui faltava, e custou uma tarde de investigação.
+        if (!res.ok) {
+          throw new ErroHttpDoVertex(res.status, (await res.text()).slice(0, 300));
+        }
         const data = (await res.json()) as RespostaGenerate;
-        const texto = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+        // ANTES de validar: uma tentativa rejeitada por `validar` foi cobrada
+        // igual, e a quota conta o que foi pago, não o que serviu.
+        req.aoUsarTokens?.(data.usageMetadata?.totalTokenCount ?? 0);
+        const candidato = data.candidates?.[0];
+        const texto = candidato?.content?.parts?.map((p) => p.text ?? "").join("").trim();
+        // JSON truncado falha no `JSON.parse` com "Unexpected end of JSON
+        // input", que não conta a quem lê que o teto de saída é o culpado.
+        if (!texto && candidato?.finishReason === "MAX_TOKENS") {
+          throw new Error("a resposta estourou o teto de saída (maxTokens) antes de fechar o JSON");
+        }
         if (!texto) throw new Error("resposta vazia");
         return req.validar(JSON.parse(texto));
       } catch (erro) {
+        // Falha de TRANSPORTE não é falha de conteúdo, e tratá-las igual foi o
+        // que escondeu a causa: reforçar o prompt não conserta permissão nem
+        // projeto errado. 4xx (menos 429) morre na primeira — repetir só adia
+        // o erro; 429 e 5xx são passageiros e seguem no laço.
+        if (erro instanceof ErroHttpDoVertex) {
+          ultimaFalhaHttp = erro;
+          if (erro.status !== 429 && erro.status < 500) throw erro;
+        }
         ultimoErro = erro instanceof Error ? erro.message.slice(0, 300) : "erro desconhecido";
         if (tentativa === tentativas) {
+          // O status é a informação acionável; a mensagem genérica só seria
+          // ruído por cima dela.
+          if (ultimaFalhaHttp) throw ultimaFalhaHttp;
           throw new ErroDeGeracao("Falha ao gerar conteúdo estruturado.", ultimoErro);
         }
         await new Promise((r) => setTimeout(r, 400 * tentativa));
       }
     }
+    if (ultimaFalhaHttp) throw ultimaFalhaHttp;
     throw new ErroDeGeracao("Falha ao gerar conteúdo estruturado.", ultimoErro);
   }
 
@@ -567,6 +597,19 @@ export class VertexProvider implements AiProvider {
     const data = (await res.json()) as { audioContent?: string };
     if (!data.audioContent) throw new ErroDeGeracao("A síntese de voz não devolveu áudio.");
     return Buffer.from(data.audioContent, "base64");
+  }
+}
+
+/**
+ * Resposta HTTP de erro do vendor. Existe para o laço de retry distinguir
+ * "o modelo escreveu algo que não serve" (reforçar o prompt e tentar de novo)
+ * de "a requisição não passou" — que nenhuma reescrita de prompt conserta, e
+ * cujo STATUS é a única coisa que diz o que fazer a seguir.
+ */
+class ErroHttpDoVertex extends ErroDeGeracao {
+  constructor(readonly status: number, corpo: string) {
+    super(`Vertex respondeu ${status}`, corpo);
+    this.name = "ErroHttpDoVertex";
   }
 }
 

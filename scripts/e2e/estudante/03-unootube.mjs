@@ -2,7 +2,7 @@ import { suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * A missão do UnooTube, do briefing à virada do ranking.
+ * A missão do UnooTube, da tela de entrada à virada do ranking.
  *
  * A missão pede três favoritos e depois mostra um ranking por INSCRITOS — o
  * placar que a criança já conhece. A virada é o botão que troca o critério por
@@ -72,8 +72,8 @@ await suite(
     await tela.locator("h1", { hasText: "Missão: escolha seus Shorts favoritos!" }).waitFor({ timeout: 20_000 });
     const passosDoBriefing = await tela.locator(".entrada-passos li").count();
     const regrasDoBriefing = await tela.locator(".entrada-regras li").count();
-    await r.registrar(p, "briefing", {
-      titulo: "O briefing da missão",
+    await r.registrar(p, "tela-de-entrada", {
+      titulo: "A tela de entrada da missão",
       mostra: `${passosDoBriefing} passos e ${regrasDoBriefing} regras, na linguagem do app.`,
       prova:
         "A regra dos três favoritos é anunciada antes: o limite não pode ser descoberto como " +

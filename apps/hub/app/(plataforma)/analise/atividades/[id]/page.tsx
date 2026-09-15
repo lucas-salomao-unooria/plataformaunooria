@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 
-import { Card } from '@edu/ui/ds';
+import { Card, ScrollBar } from '@edu/ui/ds';
 import { LinkButton } from '@/components/link-button';
+import { RotuloDaTrilha } from '@/components/trilha';
 import type { AnaliseDeProduto } from '@/lib/analise-tipos';
 import { apiDoServidor } from '@/lib/api-servidor';
 
@@ -22,7 +23,7 @@ export default async function AnaliseDaAtividadePage({
   const escola = escolaId?.trim() ?? '';
 
   /**
-   * A escola vem na URL porque `admin-contrato` viaja com `escolaId` vazio no
+   * A escola vem na URL porque `gestor_contrato` viaja com `escolaId` vazio no
    * token (ver `../../seletor-de-escola.tsx`). Uma chamada só: a api valida o
    * id e devolve a análise; `null` cobre id inválido, atividade de outra escola
    * e atividade inexistente — os três casos que o origem tratava separado.
@@ -55,8 +56,17 @@ export default async function AnaliseDaAtividadePage({
   const positivos = comDelta.filter((linha) => (linha.delta ?? 0) > 0).length;
 
   return (
-    // Fontes, superfície e header vêm da casca da área (`../../layout.tsx`).
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
+    // Fontes, superfície, header, largura da coluna e trilha vêm da casca da
+    // área (`../../layout.tsx`).
+    <div className="flex flex-col gap-6">
+      {/* O título da atividade, que a rota não tem. E o endereço do item
+          anterior: `/analise` sem `?escolaId=` volta para o seletor vazio —
+          `gestor_contrato` viaja com escola vazia no token. */}
+      <RotuloDaTrilha valor={analise.atividade.titulo} />
+      <RotuloDaTrilha
+        para="/analise"
+        href={`/analise?escolaId=${encodeURIComponent(escola)}`}
+      />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">
@@ -93,7 +103,7 @@ export default async function AnaliseDaAtividadePage({
             </p>
           </div>
 
-          <div className="overflow-x-auto">
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead className="bg-unooria-neutral-100">
                 <tr className="text-[12px] text-unooria-neutral-700">
@@ -134,7 +144,7 @@ export default async function AnaliseDaAtividadePage({
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollBar>
 
           <div className="rounded-lg border border-unooria-neutral-200 bg-unooria-neutral-50 p-3">
             <p className="text-[13px] leading-relaxed text-unooria-neutral-800">

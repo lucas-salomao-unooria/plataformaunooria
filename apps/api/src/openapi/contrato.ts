@@ -6,7 +6,7 @@ export const CONTRATO_KEY = "contrato-da-rota";
 /**
  * Como a rota é autorizada. Os PAPÉIS não estão aqui de propósito: eles já são
  * declarados por `@Roles(...)`, e repeti-los seria abrir espaço para o
- * documento dizer "gestor" enquanto o guard exige "admin-contrato". O
+ * documento dizer "gestor_escola" enquanto o guard exige "gestor_contrato". O
  * `documento.ts` lê o `@Roles` real.
  *
  * O que sobra é o que o `@Roles` não sabe dizer: se a rota é aberta de

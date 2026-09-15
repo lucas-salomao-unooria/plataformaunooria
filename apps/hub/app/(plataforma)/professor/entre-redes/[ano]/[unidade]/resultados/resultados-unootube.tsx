@@ -1,13 +1,12 @@
+import Link from "next/link";
 import { BarChart, Card, EmptyState, MetricCard, UNOORIA_DATAVIZ_PALETTE } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
   rotaDaMissao,
-  rotuloDaMissao,
-  type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { ResultadosDaTurma, TurmaResumo } from "@/lib/unootube-tipos";
 
@@ -23,15 +22,14 @@ import { TabelaResultados } from "./tabela-resultados";
  * ganhou tela de resultados.
  */
 export async function ResultadosUnooTube({
-  ano,
   missao,
   turma,
 }: {
-  ano: Ano;
   missao: Missao;
   turma: string;
 }) {
   const rotaBase = `${rotaDaMissao(missao)}/resultados`;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   const listaTurmas = await apiDoServidor<{ turmas: TurmaResumo[] }>("/unootube/turmas");
   const todas = listaTurmas?.turmas ?? [];
@@ -65,15 +63,6 @@ export async function ResultadosUnooTube({
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: "Resultados da turma" },
-        ]}
-      />
-
       <header className="flex flex-col gap-1">
         <p className="text-[12px] uppercase tracking-widest text-unooria-neutral-500">{missao.titulo}</p>
         <h1 className="text-[24px] font-bold leading-tight text-unooria-neutral-950">Resultados da turma</h1>
@@ -81,6 +70,16 @@ export async function ResultadosUnooTube({
           Quem já salvou os 3 vídeos, quantas fontes confiáveis escolheu e quem chegou à virada do
           ranking. Recalculado a cada visita — atualize a página durante a aula.
         </p>
+        {/* O guia da aula, à mão: esta é a tela em que o professor está DURANTE
+            a aula, e é aqui que ele precisa reler o roteiro ou a pergunta do
+            debate sem perder o painel de vista. */}
+        {guia ? (
+          <p className="text-[13px] font-semibold">
+            <Link href={guia} className="text-unooria-navy-900 hover:text-unooria-neutral-950">
+              Abrir o guia da aula
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       <SeletorDeTurma turmas={turmas} turmaId={turma} rotaBase={rotaBase} aviso={aviso} />

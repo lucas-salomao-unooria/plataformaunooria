@@ -69,6 +69,13 @@ export {
   Tag,
   /** Cabeçalho de seção com título, apoio e ações à direita. */
   SectionHeader,
+  /**
+   * Menu do avatar do header — a tira que expande da DIREITA para a ESQUERDA,
+   * com o logoff no item colado no gatilho. Publicado na 0.1.19 (Figma
+   * `Menu Desk`, 21765:12693) e é o que substituiu o `<Avatar>` seco + botão
+   * "Sair" solto do `header-plataforma.tsx`.
+   */
+  HeaderMenu,
   /** Campos de formulário do DS, em vez de <input> com classes soltas. */
   TextField,
   TextArea,
@@ -131,6 +138,8 @@ export { tokens } from '@unooria/design-system';
 
 export type {
   AlertBoxProps,
+  HeaderMenuItem,
+  HeaderMenuProps,
   AvatarProps,
   BadgeProps,
   ButtonProps,

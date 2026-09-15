@@ -1,5 +1,6 @@
 import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
+import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 
 /**
  * A Vila do Lume pelo lado do professor: ficha, guia do debate, resultados da
@@ -13,6 +14,10 @@ import { conta } from "../lib/credenciais.mjs";
  *  · na tela individual, os DEZ valores aparecem sempre — inclusive os que não
  *    deram número. Mostrar só os que deram faz a página parecer um retrato
  *    completo quando ela é um recorte;
+ *  · partida ABANDONADA não gera retrato nenhum — a tela diz por quê, em vez de
+ *    inventar números a partir de dois minutos de jogo. O relatório é sempre o
+ *    da ÚLTIMA partida fechada, então este é um estado NORMAL da tela, não um
+ *    defeito: o roteiro prova os dois ramos;
  *  · onde o grau não autoriza número, a linha DIZ POR QUÊ em vez de inventar;
  *  · a ressalva de que isto não é um teste psicológico vem ANTES de qualquer
  *    número — ela existe para ser lida antes, não depois;
@@ -33,18 +38,19 @@ await suite(
     slug: "professor/05-vila-do-lume",
     papel: "professor",
     titulo: "A Vila pelo lado do professor",
-    subtitulo: "ficha, guia do debate, resultados da turma e o relatório de uma criança",
+    subtitulo: "ficha, guia da aula, resultados da turma e o relatório de uma criança",
     contexto:
       "Depois da partida, o professor tem três telas: a ficha (o que a missão faz), o guia do " +
       "debate (o que projetar e o que nunca perguntar) e os resultados. O que essas telas " +
       "escondem é tão desenhado quanto o que elas mostram.",
     prova: [
       "A ficha explica as três bolhas e avisa para não contar nada antes",
-      "O guia projeta as três versões do golpe E as duas mensagens legítimas",
+      "O guia cobre a aula inteira — preparo, roteiro, debate, mediação e avaliação",
       "O guia proíbe perguntar quem clicou, e manda dizer que não era um colega de verdade",
       "A listagem da turma não traz nenhum valor de Schwartz",
       "A tela individual traz os dez valores, e explica cada ausência de número",
       "A ressalva de que isto não é um teste vem antes dos números",
+      "Partida abandonada não gera retrato — e a tela explica a ausência em vez de inventar",
     ],
     comando: "node scripts/e2e/professor/05-vila-do-lume.mjs",
   },
@@ -72,7 +78,7 @@ await suite(
     });
 
     // ── o guia do debate ────────────────────────────────────────────────
-    await p.locator("a", { hasText: "Guia do debate" }).first().click();
+    await p.locator("a", { hasText: "Abrir guia da aula" }).first().click();
     await p.waitForURL("**/vila-do-lume/guia", { timeout: 20_000 });
     await p.locator("text=Em quem dava pra confiar?").first().waitFor({ timeout: 20_000 });
     await p.waitForTimeout(800);
@@ -96,13 +102,25 @@ await suite(
       /Escolha a turma para ver só as mensagens que ela recebeu/.test(guia),
       "o guia deixa escolher a turma — os anos iniciais não recebem a bolha B",
     );
-    await r.registrar(p, "guia-do-debate", {
-      titulo: "O guia do debate",
-      mostra: "As três versões do golpe, as duas mensagens legítimas, e as travas da condução.",
+
+    /* O guia deixou de ser só o debate (ADR-65): ele é a aula inteira, e as
+       seções abaixo são as que o professor não tinha em lugar nenhum. */
+    r.exigir(/Antes da aula/.test(guia), "o guia cobre o ANTES da aula, não só o debate");
+    r.exigir(/Roteiro/.test(guia), "traz o roteiro cronometrado da aula");
+    r.exigir(/O que NÃO dizer antes da hora/.test(guia), "e diz o que não pode ser dito antes");
+    r.exigir(/EF07CO07/.test(guia), "alinha com a BNCC Computação, com o código da habilidade");
+    r.exigir(/Mediação/.test(guia), "traz mediação — o que fazer quando a aula descarrila");
+    r.exigir(/Avaliação/.test(guia), "e a rubrica: o jogo não pontua, quem avalia é o professor");
+    await r.registrar(p, "guia-da-aula", {
+      titulo: "O guia da aula",
+      mostra:
+        "A aula inteira: objetivos e BNCC, preparo, roteiro, as três versões do golpe, as duas " +
+        "mensagens legítimas, mediação, rubrica — e as travas da condução.",
       prova:
-        "Os textos vêm da api, não de cópia no hub: uma vírgula divergente poria a turma " +
-        "discutindo uma mensagem que ninguém recebeu. E 'nunca pergunte quem clicou' está ali " +
-        "porque a pergunta natural do adulto é exatamente a que expõe a criança.",
+        "Os textos das mensagens vêm da api, não de cópia no hub: uma vírgula divergente poria " +
+        "a turma discutindo uma mensagem que ninguém recebeu. E 'nunca pergunte quem clicou' " +
+        "está ali porque a pergunta natural do adulto é exatamente a que expõe a criança.",
+      inteira: true,
     });
 
     // ── resultados da turma ─────────────────────────────────────────────
@@ -158,47 +176,121 @@ await suite(
       inteira: true,
     });
 
-    // ── o relatório de uma criança ──────────────────────────────────────
-    const abrir = p.locator("table tbody a", { hasText: "Abrir" }).first();
-    r.exigir((await abrir.count()) > 0, "há ao menos um estudante com partida para abrir");
-    await abrir.click();
-    await p.waitForURL((url) => /vila-do-lume\/estudantes\//.test(url.pathname), { timeout: 20_000 });
-    await p.locator("text=Os dez valores").first().waitFor({ timeout: 20_000 });
-    await p.waitForTimeout(800);
+    // ── o relatório de uma criança: os DOIS desfechos ───────────────────
+    /* O relatório é sempre o da ÚLTIMA partida fechada, e partida ABANDONADA
+       não gera retrato — POR DESENHO (a tela explica a ausência). Este roteiro
+       clicava o PRIMEIRO "Abrir" e esperava "Os dez valores" às cegas:
+       reprovava por timeout toda vez que a última partida de quem calhava de
+       estar no topo tinha sido largada no meio. Falso negativo de roteiro.
+       Agora ele percorre a lista, decide pelo que a TELA diz (o Badge do topo
+       e o corpo), e prova os dois ramos: o retrato completo em quem terminou
+       e a explicação honesta em quem abandonou. */
+    const links = p.locator("table tbody a", { hasText: "Abrir" });
+    const totalDeLinks = await links.count();
+    r.exigir(totalDeLinks > 0, "há ao menos um estudante com partida para abrir");
+    const enderecos = [];
+    for (let i = 0; i < totalDeLinks; i += 1) {
+      const href = await links.nth(i).getAttribute("href");
+      if (href) enderecos.push(href);
+    }
 
-    const relatorio = await p.locator("main").innerText();
-    const faltando = VALORES.filter((v) => !relatorio.includes(v));
-    r.exigir(faltando.length === 0, `os dez valores aparecem (faltando: ${faltando.join(", ") || "nenhum"})`);
+    const RETRATO = "Os dez valores";
+    const SEM_RETRATO = "Esta partida não gerou retrato de valores";
+    const SEM_PARTIDA = "Este estudante ainda não terminou uma partida";
 
-    const posRessalva = relatorio.indexOf("não um teste");
-    const posValores = relatorio.indexOf("Os dez valores");
-    r.exigir(posRessalva > 0, "a tela abre com a ressalva de que isto não é um teste");
-    r.exigir(posRessalva < posValores, "e a ressalva vem ANTES dos números, não depois");
-    r.exigir(/hipótese de design/i.test(relatorio), "a tela diz que o mapeamento é hipótese de design");
-    r.exigir(/Não leia na frente dela/i.test(relatorio), "e avisa para não ler na frente da criança");
+    let retratoProvado = false;
+    let ausenciaProvada = false;
 
-    const posNivel = relatorio.indexOf("O golpe que ela recebeu");
-    const posTabela = relatorio.indexOf("Mensagem por mensagem");
-    r.exigir(posNivel > 0, "a seção das mensagens abre pelo NÍVEL que ela recebeu");
-    r.exigir(posTabela === -1 || posNivel < posTabela, "e o nível vem antes do que ela fez");
+    for (const endereco of enderecos) {
+      if (retratoProvado && ausenciaProvada) break;
+      await p.goto(`${HUB}${endereco}`, { waitUntil: "domcontentloaded" });
+      /* A tela individual tem TRÊS estados terminais, e a espera corre contra
+         os três de uma vez (e contra o alerta de erro do hub): esperar só o
+         retrato é a espera cega que pagava o timeout inteiro e reportava o
+         seletor que faltou em vez da causa. */
+      const desfecho = p
+        .locator(`text=${RETRATO}`)
+        .or(p.locator(`text=${SEM_RETRATO}`))
+        .or(p.locator(`text=${SEM_PARTIDA}`));
+      await esperarOuFalharCedo(desfecho, p.locator(ALERTA_DE_ERRO), {
+        timeout: 20_000,
+        oQue: `o relatório em ${endereco}`,
+      });
+      await p.waitForTimeout(800);
+      const relatorio = await p.locator("main").innerText();
 
-    const semNumero = [
-      "um sinal só — não dá para pôr número",
-      "a oportunidade não chegou até ela",
-      "teve a chance e não foi por ali",
-    ].filter((t) => relatorio.includes(t));
+      if (relatorio.includes(RETRATO) && !retratoProvado) {
+        retratoProvado = true;
+        r.exigir(/Terminou a vila/.test(relatorio), "o retrato aberto é de uma partida COMPLETA");
+        const faltando = VALORES.filter((v) => !relatorio.includes(v));
+        r.exigir(faltando.length === 0, `os dez valores aparecem (faltando: ${faltando.join(", ") || "nenhum"})`);
+
+        const posRessalva = relatorio.indexOf("não um teste");
+        const posValores = relatorio.indexOf(RETRATO);
+        r.exigir(posRessalva > 0, "a tela abre com a ressalva de que isto não é um teste");
+        r.exigir(posRessalva < posValores, "e a ressalva vem ANTES dos números, não depois");
+        r.exigir(/hipótese de design/i.test(relatorio), "a tela diz que o mapeamento é hipótese de design");
+        r.exigir(/Não leia na frente dela/i.test(relatorio), "e avisa para não ler na frente da criança");
+
+        const posNivel = relatorio.indexOf("O golpe que ela recebeu");
+        const posTabela = relatorio.indexOf("Mensagem por mensagem");
+        r.exigir(posNivel > 0, "a seção das mensagens abre pelo NÍVEL que ela recebeu");
+        r.exigir(posTabela === -1 || posNivel < posTabela, "e o nível vem antes do que ela fez");
+
+        const semNumero = [
+          "um sinal só — não dá para pôr número",
+          "a oportunidade não chegou até ela",
+          "teve a chance e não foi por ali",
+        ].filter((t) => relatorio.includes(t));
+        r.exigir(
+          semNumero.length > 0,
+          `as ausências de número são explicadas (${semNumero.length} tipos de explicação na tela)`,
+        );
+        await r.registrar(p, "relatorio-do-estudante", {
+          titulo: "O relatório de uma criança",
+          mostra: "Os dez valores, com número onde há evidência e a explicação onde não há.",
+          prova:
+            "Onde o grau não autoriza número, a linha diz POR QUÊ — 'a oportunidade não chegou até " +
+            "ela' é diferente de 'ela não fez'. Preencher com zero seria inventar um dado.",
+          detalhe: `10 valores · ${semNumero.length} tipos de ausência explicados`,
+          inteira: true,
+        });
+      } else if (relatorio.includes(SEM_RETRATO) && !ausenciaProvada) {
+        ausenciaProvada = true;
+        r.exigir(/Abandonou no meio/.test(relatorio), "o topo diz que a partida foi abandonada");
+        r.exigir(
+          /Os dados brutos ficaram guardados/.test(relatorio),
+          "e a tela explica a ausência do retrato em vez de inventar números",
+        );
+        r.exigir(
+          relatorio.indexOf("não um teste") > 0,
+          "a ressalva de que isto não é um teste continua na tela, mesmo sem retrato",
+        );
+        await r.registrar(p, "relatorio-sem-retrato", {
+          titulo: "A partida que não gerou retrato",
+          mostra:
+            "O relatório de quem ABANDONOU a última partida: o que fez na vila, e a explicação " +
+            "de por que não há retrato de valores.",
+          prova:
+            "Quem larga no meio não escolheu nada que se possa ler — um retrato a partir de dois " +
+            "minutos de jogo diria mais sobre o cansaço da criança do que sobre valores. A " +
+            "ausência EXPLICADA é o comportamento desenhado, não um defeito.",
+          inteira: true,
+        });
+      }
+    }
+
+    /* Sem nenhuma partida completa na turma, o vermelho tem de dizer ISTO — a
+       pré-condição de dado que faltou —, nunca um timeout de seletor.
+
+       O rótulo afirma o que é VERDADE quando passa: `exigir` imprime o mesmo
+       texto com ✓ e com ✗, e um "nenhum estudante tem..." marcado de verde
+       contradiz, na linha de cima, o retrato que acabou de ser provado. */
     r.exigir(
-      semNumero.length > 0,
-      `as ausências de número são explicadas (${semNumero.length} tipos de explicação na tela)`,
+      retratoProvado,
+      `ao menos um estudante de ${TURMA} tem a ÚLTIMA partida completa, e o retrato foi provado ` +
+        "nele — sem isso não há onde provar os dez valores, e a falta é pré-condição de dado, " +
+        "não defeito da tela: rode estudante/05-vila-do-lume (que termina uma partida) e repita.",
     );
-    await r.registrar(p, "relatorio-do-estudante", {
-      titulo: "O relatório de uma criança",
-      mostra: "Os dez valores, com número onde há evidência e a explicação onde não há.",
-      prova:
-        "Onde o grau não autoriza número, a linha diz POR QUÊ — 'a oportunidade não chegou até " +
-        "ela' é diferente de 'ela não fez'. Preencher com zero seria inventar um dado.",
-      detalhe: `10 valores · ${semNumero.length} tipos de ausência explicados`,
-      inteira: true,
-    });
   },
 );

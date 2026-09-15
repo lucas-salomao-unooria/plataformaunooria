@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 
-import { Trilha } from "@/components/trilha";
 import {
   MISSAO_ATUAL,
   buscarMissao,
-  rotaDaMissao,
   rotuloDaMissao,
 } from "@/lib/entre-redes/catalogo";
 
@@ -29,15 +27,6 @@ export default async function NovaAtividadePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Trilha
-        itens={[
-          { label: "Início", href: "/professor" },
-          { label: "Entre Redes", href: "/professor/entre-redes" },
-          { label: rotuloDaMissao(ano, missao), href: rotaDaMissao(missao) },
-          { label: "Nova atividade" },
-        ]}
-      />
-
       <div>
         <h1 className="text-[24px] font-bold text-unooria-neutral-950">
           Nova atividade

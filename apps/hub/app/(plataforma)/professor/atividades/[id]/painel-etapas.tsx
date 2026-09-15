@@ -83,6 +83,7 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
         movidos?: number;
         total?: number;
         foraDoAparelho?: number;
+        reabertas?: number;
         mensagem?: string;
       };
 
@@ -99,15 +100,27 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
         const total = corpo.total ?? 0;
         const fora = corpo.foraDoAparelho ?? 0;
         const pendentes = fora > 0 ? ` ${fora} ainda não entraram no aparelho.` : "";
+        /**
+         * Voltar para a investigação REABRE o feed de quem já tinha sido
+         * encerrado, e o relatório daquelas sessões passa a ser recalculado no
+         * próximo encerramento (ADR-92). O professor precisa saber: é a
+         * diferença entre "a turma voltou" e "a turma voltou e o relatório
+         * daquela hora não existe mais".
+         */
+        const reabertas = corpo.reabertas ?? 0;
+        const recomputo =
+          reabertas > 0
+            ? ` ${reabertas} sessão(ões) voltaram ao feed — o relatório delas é refeito quando você encerrar a investigação de novo.`
+            : "";
 
         setAviso(
           total === 0
             ? `${rotulo}: ninguém entrou na atividade ainda.`
             : movidos === 0
-              ? `${rotulo}: a turma já estava aí — nenhuma tela precisou mudar.${pendentes}`
+              ? `${rotulo}: a turma já estava aí — nenhuma tela precisou mudar.${pendentes}${recomputo}`
               : movidos === total
-                ? `${rotulo}: as ${total} tela(s) mudaram.${pendentes}`
-                : `${rotulo}: ${movidos} de ${total} tela(s) mudaram.${pendentes}`,
+                ? `${rotulo}: as ${total} tela(s) mudaram.${pendentes}${recomputo}`
+                : `${rotulo}: ${movidos} de ${total} tela(s) mudaram.${pendentes}${recomputo}`,
         );
       }
       await buscar();
@@ -171,37 +184,59 @@ export function PainelEtapas({ activityId }: { activityId: string }) {
           ) : null}
         </div>
 
-        {proximo ? (
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="primary"
-                size="md"
-                disabled={mudando}
-                onClick={() => void mover(proximo.etapa, proximo.rotulo)}
-              >
-                {mudando ? "mudando…" : proximo.rotulo}
-              </Button>
-              {anterior ? (
+        {/*
+          VOLTAR VIVE FORA DO `proximo`. Ele já morou dentro do bloco do botão
+          principal, e na última etapa (`fim`) não existe próxima — então o
+          único jeito de tirar a turma do fim era chamar a api na mão. A aula
+          que terminou cedo demais é justamente quando voltar importa.
+        */}
+        <div className="flex flex-col gap-2">
+          {proximo ? (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="primary"
+                  size="md"
                   disabled={mudando}
-                  onClick={() => void mover(anterior.etapa, `Voltou para ${anterior.rotulo}`)}
+                  onClick={() => void mover(proximo.etapa, proximo.rotulo)}
                 >
-                  voltar um momento
+                  {mudando ? "mudando…" : proximo.rotulo}
                 </Button>
+                {anterior ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={mudando}
+                    onClick={() => void mover(anterior.etapa, `Voltou para ${anterior.rotulo}`)}
+                  >
+                    voltar um momento
+                  </Button>
+                ) : null}
+              </div>
+              <p className="text-[12px] leading-snug text-unooria-neutral-600">
+                {proximo.descricao}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[13px] text-unooria-neutral-600">
+                A missão terminou. As respostas e as reflexões ficam na análise da turma.
+              </p>
+              {anterior ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={mudando}
+                    onClick={() => void mover(anterior.etapa, `Voltou para ${anterior.rotulo}`)}
+                  >
+                    voltar um momento
+                  </Button>
+                </div>
               ) : null}
-            </div>
-            <p className="text-[12px] leading-snug text-unooria-neutral-600">
-              {proximo.descricao}
-            </p>
-          </div>
-        ) : (
-          <p className="text-[13px] text-unooria-neutral-600">
-            A missão terminou. As respostas e as reflexões ficam na análise da turma.
-          </p>
-        )}
+            </>
+          )}
+        </div>
 
         {aviso ? (
           <AlertBox theme="light" variant="info" device="auto" description={aviso} />

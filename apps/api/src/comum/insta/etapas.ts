@@ -114,6 +114,19 @@ export function faseEfetiva(faseDaRun: FaseDaRun, etapa: EtapaDaTurma): FaseDaRu
 }
 
 /**
+ * O estudante já soube que o feed dele era enviesado?
+ *
+ * A revelação é o único acontecimento IRREVERSÍVEL da missão: depois dela a
+ * criança sabe o que o instrumento media, e uma segunda passagem pelo feed não
+ * mede mais a mesma coisa. `explicabilidade` é a fase que a abre — e
+ * `normalizarFase` já traduz as duas fases legadas (`revelacao`, `dossie`) para
+ * ela, então comparar a ordem basta.
+ */
+export function jaViuARevelacao(faseDaRun: FaseDaRun): boolean {
+  return ordemDaFase(faseDaRun) >= ordemDaFase('explicabilidade');
+}
+
+/**
  * A fase quando o professor **volta** um momento.
  *
  * Aqui a etapa é TETO, não piso — o oposto de `faseEfetiva`. E é o oposto de
@@ -131,11 +144,7 @@ export function faseEfetiva(faseDaRun: FaseDaRun, etapa: EtapaDaTurma): FaseDaRu
  * `onboarding` continua preservado: quem nunca entrou no aparelho não tem para
  * onde voltar.
  */
-export function faseAoVoltar(
-  faseDaRun: FaseDaRun,
-  etapa: EtapaDaTurma,
-  sessaoCongelada = false,
-): FaseDaRun {
+export function faseAoVoltar(faseDaRun: FaseDaRun, etapa: EtapaDaTurma): FaseDaRun {
   if (faseDaRun === 'onboarding') return 'onboarding';
   if (etapa === 'debate') return 'debate';
 
@@ -146,12 +155,25 @@ export function faseAoVoltar(
    *    (`PISO_DA_ETAPA.investigacao === 'onboarding'`) jogaria a turma inteira de
    *    volta para o seletor de figurinha — quem já entrou no aparelho não escolhe
    *    avatar de novo.
-   * 2. **Sessão congelada não reabre.** Se o relatório já foi computado, devolver
-   *    o feed daria ao estudante posts que não entram em conta nenhuma e faria o
-   *    relatório mentir. Esses param na tela da resposta, que ele pode refazer.
+   * 2. **Quem já viu a REVELAÇÃO não volta ao feed.** Para na tela da resposta,
+   *    que dá para refazer. O motivo é o INSTRUMENTO, não o relatório: quem já
+   *    sabe que o feed era enviesado não pode ser medido por ele de novo.
+   *
+   * Até 2026-09-10 o item 2 dizia "sessão congelada não reabre" e olhava
+   * `runs.finished_at` — o que tornava o ramo do `feed` INALCANÇÁVEL, porque
+   * sair da investigação congela TODA run que entrou no aparelho (`moverEtapa`
+   * chama `encerrarRun`). O professor voltava a turma, o painel trocava de
+   * rótulo e nenhuma tela mudava: exatamente o sintoma que o parágrafo acima
+   * diz que esta função existe para evitar (ADR-92). Reabrir a sessão — apagar
+   * o dossiê e zerar `finished_at` — é do CHAMADOR; o relatório é recomputado
+   * dos eventos, que continuam todos lá.
    */
   const teto: FaseDaRun =
-    etapa === 'investigacao' ? (sessaoCongelada ? 'conclusao' : 'feed') : PISO_DA_ETAPA[etapa];
+    etapa === 'investigacao'
+      ? jaViuARevelacao(faseDaRun)
+        ? 'conclusao'
+        : 'feed'
+      : PISO_DA_ETAPA[etapa];
 
   return ordemDaFase(faseDaRun) <= ordemDaFase(teto) ? faseDaRun : teto;
 }

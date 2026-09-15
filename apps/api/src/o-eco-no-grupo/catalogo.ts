@@ -406,3 +406,44 @@ export const GABARITO_ASSINADO = {
   revisor: "[ABERTO — responsável de produto: nomear revisor]",
   versaoDoInstrumento: "1.0.0",
 } as const;
+
+// ---------------------------------------- o catálogo para o guia da aula
+
+/** Uma das três respostas, como o PROFESSOR a lê — com o gabarito. */
+export interface IntervencaoParaOProfessor {
+  id: IdDeOpcao;
+  /** O texto exato que o estudante lê no cartão. */
+  texto: string;
+  /** GABARITO: o desfecho que essa escolha produz no bairro. */
+  desfecho: Desfecho;
+  /** GABARITO: `true` só na contraprova fundamentada. */
+  correta: boolean;
+  /** O que o bairro responde — o roteiro canônico, sem IA. */
+  reacoes: Array<{ autor: string; texto: string }>;
+}
+
+/**
+ * O material do guia da aula: as três respostas COM desfecho e com o que o
+ * bairro devolve em cada uma.
+ *
+ * O guia descrevia isto — "a opção que funciona cita a matéria sem atacar
+ * ninguém" — e o professor entrava no debate sem ter lido nenhuma das três
+ * frases nem nenhuma reação. As reações são a metade que mais importa: é o
+ * pânico da Dona Lúcia que a turma comenta, não a letra que foi clicada.
+ *
+ * Vai o roteiro CANÔNICO (`REACOES`), o mesmo que roda com a IA desligada.
+ * Com IA as falas mudam para responder ao que o estudante postou, mas quem
+ * decide o desfecho continua sendo `Opcao.desfecho` — então o professor lê a
+ * forma da reação, que é o que ele precisa antecipar.
+ */
+export function materialDoProfessor(): { intervencoes: IntervencaoParaOProfessor[] } {
+  return {
+    intervencoes: OPCOES.map(({ id, texto, desfecho, correta }) => ({
+      id,
+      texto,
+      desfecho,
+      correta,
+      reacoes: REACOES[desfecho].map(({ autor, texto: fala }) => ({ autor, texto: fala })),
+    })),
+  };
+}

@@ -28,6 +28,7 @@ import {
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
 import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
+import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
  * Visão do PROFESSOR (e gestor) sobre a exp-07 — classe separada para o
@@ -35,7 +36,7 @@ import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
  * decisão de segurança, não de estilo: o gestor não tem rota que aceite
  * `estudanteId`.
  *
- * `admin-contrato` é a única exceção cross-escola (regra 1): o token dele tem
+ * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem
  * escola vazia, então precisa dizer `?escolaId=` — e o valor vai EXPLÍCITO ao
  * `comTenancy`, porque o TenancyInterceptor não abre contexto para ele.
  */
@@ -43,7 +44,7 @@ import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
 type Autenticado = { auth: AuthClaims };
 
 function escolaAlvo(auth: AuthClaims, escolaIdPedida?: string): string {
-  if (auth.perfil === "admin-contrato") {
+  if (ehDoContrato(auth.perfil)) {
     if (!escolaIdPedida) throw erroDeJogo("escola-obrigatoria");
     return escolaIdPedida;
   }
@@ -65,7 +66,7 @@ function turmaOu400(turmaId: string): string {
 
 @Controller("o-eco-no-grupo/turmas")
 @UseGuards(OidcGuard, RolesGuard)
-@Roles("professor", "gestor", "admin-contrato")
+@Roles("professor", ...GESTORES)
 export class OEcoNoGrupoTurmasController {
   constructor(private readonly eco: OEcoNoGrupoService) {}
 
@@ -73,7 +74,7 @@ export class OEcoNoGrupoTurmasController {
   @Contrato({
     resumo: "Turmas para o seletor do painel.",
     descricao:
-      "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `admin-contrato` precisa dizer `?escolaId=`.",
+      "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.",
     query: z.object({ escolaId: z.string().optional() }),
     resposta: TurmasDoEcoSchema,
   })

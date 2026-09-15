@@ -274,12 +274,6 @@ desenho existe para evitar.
 \arq{packages/ui} & Biblioteca & TypeScript, React &
   Ponte para o \emph{design system}: marca \cd{'use client'}, desfaz colisão de
   nomes entre seções e preserva \emph{tree-shaking}.\\
-\zebra \arq{packages/conteudo-exp-01} & Biblioteca & TypeScript puro &
-  A copy da revelação da exp-01, em UMA fonte. A experiência a exibe e o guia da
-  aula a mostra ao professor --- que antes conduzia a conversa mais importante
-  das duas aulas sem ter lido o que a turma acabara de ver. Não passa pela api
-  de propósito: a revelação abre no meio da aula, e texto que depende de
-  \emph{fetch} é texto que pode não aparecer.\\
 \zebra PostgreSQL & Contêiner gerenciado & Cloud SQL &
   Único banco, único \emph{schema} lógico. Guarda tudo, com RLS forçada.\\
 Pub/Sub & Contêiner gerenciado & Pub/Sub &
@@ -376,6 +370,8 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
     {\texttt{portabilidade/}\desc{perfil portátil}};
   \node[c4component, text width=22mm] (salas) at (2.0,-10.4)
     {\texttt{salas/}\desc{a sala: grade e liberação}};
+  \node[c4component, text width=22mm] (recs) at (5.1,-10.4)
+    {\texttt{recursos/}\desc{o interruptor da rede e a versão}};
 
   % ---- faixa 4: dominio por experiencia
   \node[camadalbl, anchor=west] at (0.7,-10.9)
@@ -433,6 +429,16 @@ produziria colisão de nomes e falha mais difícil de localizar. O padrão do
 Capítulo~\ref{cap:experiencias} continua valendo para experiência nova; este é um
 porte.
 \end{nota}
+
+\textbf{\arq{recursos/} é o terceiro eixo, e ele não é de \emph{tenancy}}
+(\adrr{ADR-87}). O catálogo (\arq{experiencias/}) diz que forma a experiência
+tem; \arq{salas/} diz se ela está aberta naquela turma; \arq{recursos/} diz se
+ela EXISTE naquela rede --- e é pré-condição dos outros dois. Ele expõe a
+leitura para qualquer autenticado e a ESCRITA só ao \cd{admin} (\adrr{ADR-88}),
+em \emph{controllers} separados; a guarda vive em \arq{comum/}, ao lado da de
+liberação, porque é de dentro de transações de outros módulos que ela é chamada.
+A superfície dele no hub é a área \rota{/unooria/*}, a única restrita a um papel
+que o \cd{gestor\_contrato} não tem.
 
 \textbf{A porta da sala é a exceção que confirma a regra.} \arq{salas/} é módulo de
 PLATAFORMA: ele não conhece missão nenhuma pelo nome --- sabe turma, série e
@@ -493,7 +499,8 @@ mentiria sobre quem depende dela.
   \node[c4component, text width=30mm] (rotas) at (4.4,-9.5)
     {Rotas: \texttt{/} (\emph{landing}), \texttt{/privacidade}, \texttt{/termos},
      \texttt{/estudante}, \texttt{/professor/*},
-     \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/exp/:expId}, \texttt{/dev-embed}};
+     \texttt{/admin/*}, \texttt{/analise/*}, \texttt{/unooria/*},
+     \texttt{/exp/:expId}, \texttt{/dev-embed}};
   \node[c4component, text width=30mm] (bff) at (10.4,-9.5)
     {\texttt{/api/plataforma/[...path]}\desc{\emph{proxy} autenticado para a API}};
 
@@ -522,6 +529,19 @@ nenhum. Hoje \cd{HeaderPlataforma} serve \rota{/estudante}, \rota{/professor},
 passou a valer um nível abaixo: o \emph{header} é \emph{chrome} do hub, desenhado
 \emph{acima} do aparelho --- dentro do \cd{iframe} nada da marca institucional
 entra.
+\end{decisao}
+
+\begin{decisao}
+\textbf{O \emph{layout} de cada área é onde moram as regras que valem para a área
+inteira.} São três hoje, e nenhuma pertence à página: a \textbf{trilha}
+(\adrr{ADR-77}), a \textbf{largura da coluna} (\adrr{ADR-83}) e a
+\textbf{fronteira de remontagem por escola ativa} (\adrr{ADR-85}, o
+\cd{EscopoDaEscola} que envolve o miolo). As três chegaram ali pelo mesmo
+caminho: eram responsabilidade de cada página, e responsabilidade de página se
+esquece --- 15 telas sem \emph{breadcrumb}, quatro larguras de coluna sem razão
+registrada e quatro telas que não reagiam à troca de escola. \textbf{Área nova
+precisa de \emph{layout} novo}, e é o \emph{layout} que faz as três coisas; sem
+ele a área nasce com os três defeitos, como \rota{/admin} nasceu.
 \end{decisao}
 
 \begin{nota}

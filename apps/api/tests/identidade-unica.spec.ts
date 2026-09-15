@@ -148,7 +148,7 @@ describe("identidade única", () => {
       SELECT count(*)::bigint AS total
         FROM users u
        WHERE u.escola_id IS NOT NULL
-         AND u.role IN ('estudante','professor','gestor')
+         AND u.role IN ('estudante','professor','gestor_escola')
          AND u.escola_id NOT LIKE 'teste-%'
          AND NOT EXISTS (
            SELECT 1 FROM lotacoes l

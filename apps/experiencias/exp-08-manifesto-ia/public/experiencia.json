@@ -1,0 +1,17 @@
+{
+  "id": "exp-08-manifesto-ia",
+  "nome": "O Manifesto da IA: Nossos Direitos em Código",
+  "versao": "0.1.3",
+  "produto": "entre-redes",
+  "series": ["8EF"],
+  "unidade": 4,
+  "capabilities": ["telemetria", "progresso", "avaliacao"],
+  "permissoes": ["forms"],
+  "publico": "estudante",
+  "verbos": {
+    "interacted": "questionou a máquina sobre a origem dos dados de treinamento",
+    "scored": "fixou uma cláusula de governança no código do sistema",
+    "progressed": "leu o manifesto promulgado e assinou a cláusula no Percurso",
+    "completed": "ouviu o episódio de fechamento e encerrou o percurso"
+  }
+}

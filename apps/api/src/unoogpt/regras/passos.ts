@@ -10,7 +10,7 @@ export const PASSOS = ['abertura', 'orientacao', 'investigacao', 'resultado'] as
 export type Passo = (typeof PASSOS)[number];
 
 export const ROTULO_PASSO: Record<Passo, string> = {
-  abertura: 'Briefing',
+  abertura: 'A missão',
   orientacao: 'Orientação',
   investigacao: 'Investigação',
   resultado: 'Resultado',

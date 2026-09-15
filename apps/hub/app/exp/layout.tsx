@@ -1,4 +1,5 @@
 import { CascaPlataforma } from "@/components/casca-plataforma";
+import { EscopoDaEscola } from "@/components/escopo-da-escola";
 
 /**
  * Casca da superfície da MISSÃO (`/exp/:expId`).
@@ -15,7 +16,7 @@ import { CascaPlataforma } from "@/components/casca-plataforma";
 export default function ExpLayout({ children }: { children: React.ReactNode }) {
   return (
     <CascaPlataforma className="flex flex-col" style={{ height: "100dvh" }}>
-      {children}
+      <EscopoDaEscola>{children}</EscopoDaEscola>
     </CascaPlataforma>
   );
 }

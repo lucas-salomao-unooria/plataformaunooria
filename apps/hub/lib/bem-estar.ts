@@ -24,10 +24,10 @@ export function situacaoDoBemEstar(resumo: ResumoBemEstar | null): string {
   if (!resumo) return "Menos de 1 minuto por dia";
   if (resumo.hoje === "respondido") {
     return resumo.respondidos >= resumo.total
-      ? "Check-in de hoje feito · ciclo fechado"
-      : `Check-in de hoje feito · ${resumo.respondidos} de ${resumo.total}`;
+      ? "Você já respondeu hoje · ciclo fechado"
+      : `Você já respondeu hoje · ${resumo.respondidos} de ${resumo.total}`;
   }
   return resumo.respondidos > 0
-    ? `Check-in de hoje pendente · ${resumo.respondidos} de ${resumo.total}`
-    : "Check-in de hoje pendente · ~40 segundos";
+    ? `Falta responder hoje · ${resumo.respondidos} de ${resumo.total}`
+    : "Falta responder hoje · ~40 segundos";
 }

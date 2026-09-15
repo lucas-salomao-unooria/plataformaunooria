@@ -56,10 +56,14 @@ export class IaDaExp07Service {
   ): Promise<{ reacoes: Reacao[]; tokens: number } | null> {
     if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) return null;
 
+    let tokens = 0;
     try {
       const bruto = await this.ia.generateJson<{ autor: string; texto: string }[]>({
         prompt: promptDasReacoes(opcao, desfecho),
         responseSchema: SCHEMA_DAS_REACOES,
+        aoUsarTokens: (n) => {
+          tokens += n;
+        },
         validar: (dados) => {
           const lista = (dados as { reacoes?: unknown }).reacoes;
           if (!Array.isArray(lista) || lista.length !== 3) {
@@ -83,8 +87,10 @@ export class IaDaExp07Service {
         atrasoMs: molde.atrasoMs,
       }));
 
-      const tokens = 1_500;
-      await this.quota.consumir(escolaId, usuarioId, tokens);
+      // Era `1_500` fixo, porque `generateJson` não devolvia o gasto. Chute não
+      // acompanha prompt nem troca de modelo, e o teto diário virava ficção:
+      // agora vem do `usageMetadata` do vendor (ADR-74).
+      if (tokens > 0) await this.quota.consumir(escolaId, usuarioId, tokens);
       return { reacoes, tokens };
     } catch {
       // Sem detalhe no log: a mensagem do provider pode trazer o texto gerado,

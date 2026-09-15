@@ -27,6 +27,14 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "mensagem",
   "transcricao",
   "observacao",
+  // O parágrafo autoral da exp-08 (TEC-03 / DAD-08). `texto` acima não o
+  // cobre: a chave é `justificativaTexto` / `justificativa_texto`, e a
+  // comparação aqui é por nome INTEIRO em minúsculas, não por substring — um
+  // `err` do Prisma carrega o objeto que o service tentou gravar, e é por ele
+  // que a caixa livre de um menor de idade chegaria ao log.
+  "justificativatexto",
+  "justificativa_texto",
+  "justificativasugerida",
 ]);
 
 export const MARCA = "[redigido]";

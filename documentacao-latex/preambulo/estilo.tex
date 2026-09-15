@@ -32,28 +32,36 @@
 \usepackage{setspace}
 \onehalfspacing
 
-% --- Cores (tokens do @unooria/design-system) -------------------------------
+% --- Cores canônicas do Brandbook Unooria ("BLUNOORIA") -----------------------
+% Regra semântica: "A cor não decora. Ela organiza."
+%   - Azul Profundo (#0E1039): Estrutura, corpo, regras e títulos
+%   - Lavanda (#8B85AC): Inteligência, decisões arquiteturais (ADR), IA
+%   - Azul Claro (#7FA5E2): Interface, navegação, referências e notas
 \usepackage{xcolor}
-\definecolor{unooNavy}      {HTML}{2F4F7F}  % brandnavy-900 — primaria escura
-\definecolor{unooBlue}      {HTML}{49699F}  % brandnavy-800 — primaria
-\definecolor{unooBlueLight} {HTML}{A9BDDD}
-\definecolor{unooBlueWash}  {HTML}{EDF1F8}
-\definecolor{unooInk}       {HTML}{22272A}  % neutral-950 — texto primario
-\definecolor{unooInkSoft}   {HTML}{475157}  % neutral-700 — texto secundario
-\definecolor{unooMuted}     {HTML}{617379}  % neutral-500
-\definecolor{unooGrid}      {HTML}{E4E9EB}
-\definecolor{unooAxis}      {HTML}{CBD4D6}  % neutral-200
-\definecolor{unooSurface}   {HTML}{FCFDFD}
-\definecolor{unooPaper}     {HTML}{F2F4F5}  % neutral-100
-\definecolor{unooRed}       {HTML}{E31A1A}  % danger-600
-\definecolor{unooRedWash}   {HTML}{FCEAEA}
-\definecolor{unooGreen}     {HTML}{17876A}
-\definecolor{unooGreenWash} {HTML}{E6F4F0}
-\definecolor{unooOrange}    {HTML}{C25A16}
-\definecolor{unooOrangeWash}{HTML}{FBEDE3}
-\definecolor{unooYellow}    {HTML}{B98700}
-\definecolor{unooYellowWash}{HTML}{FBF3DC}
-\definecolor{unooPink}      {HTML}{B45E86}
+\definecolor{unooNavy}        {HTML}{0E1039}  % Azul Profundo — Estrutura (C100 M96 Y44 K56)
+\definecolor{unooLavender}    {HTML}{8B85AC}  % Lavanda — Inteligência (C52 M48 Y15 K2)
+\definecolor{unooBlue}        {HTML}{7FA5E2}  % Azul Claro — Interface (C54 M29 Y0 K0)
+\definecolor{unooBlueLight}   {HTML}{B8D0F5}  % Variação clara de interface
+\definecolor{unooBlueWash}    {HTML}{F0F4FC}  % Fundo suave de interface
+\definecolor{unooLavenderWash}{HTML}{F3F2F8}  % Fundo suave de inteligência
+\definecolor{unooLavenderSoft}{HTML}{5D577D}  % Lavanda escurecido p/ alto contraste tipográfico
+\definecolor{unooInk}         {HTML}{0E1039}  % neutral-950 / texto primário ancorado na marca
+\definecolor{unooInkSoft}     {HTML}{3A3C59}  % neutral-700 / texto secundário
+\definecolor{unooMuted}       {HTML}{6D6E82}  % neutral-500 / legendas e metadados
+\definecolor{unooGrid}        {HTML}{E3E5EE}  % Linhas de grade e bordas sutis
+\definecolor{unooAxis}        {HTML}{CACDDC}  % Réguas e separadores
+\definecolor{unooSurface}     {HTML}{FFFFFF}  % Fundo puro
+\definecolor{unooPaper}       {HTML}{F7F8FC}  % Fundo alternado / zebra
+% Tons funcionais (alertas de sistema e status):
+\definecolor{unooRed}         {HTML}{C92A2A}  % danger-600
+\definecolor{unooRedWash}     {HTML}{FDF2F2}
+\definecolor{unooOrange}      {HTML}{D97706}  % warning-600
+\definecolor{unooOrangeWash}  {HTML}{FFFBEB}
+\definecolor{unooGreen}       {HTML}{2F855A}  % Status funcional aprovado
+\definecolor{unooGreenWash}   {HTML}{F0FDF4}
+\definecolor{unooYellow}      {HTML}{B45309}
+\definecolor{unooYellowWash}  {HTML}{FEF3C7}
+\definecolor{unooPink}        {HTML}{9D4EDD}
 
 % --- Tabelas ----------------------------------------------------------------
 \usepackage{booktabs}
@@ -148,8 +156,8 @@
 \newtcolorbox{atencao}[1][]{unoobase, colback=unooOrangeWash, colframe=unooOrange,
   colbacktitle=unooOrangeWash, coltitle=unooOrange, titlerule=0pt,
   title={ATENÇÃO}, #1}
-\newtcolorbox{decisao}[1][]{unoobase, colback=unooGreenWash, colframe=unooGreen,
-  colbacktitle=unooGreenWash, coltitle=unooGreen, titlerule=0pt,
+\newtcolorbox{decisao}[1][]{unoobase, colback=unooLavenderWash, colframe=unooLavender,
+  colbacktitle=unooLavenderWash, coltitle=unooNavy, titlerule=0pt,
   title={DECISÃO DE PROJETO}, #1}
 \newtcolorbox{limitacao}[1][]{unoobase, colback=unooRedWash, colframe=unooRed,
   colbacktitle=unooRedWash, coltitle=unooRed, titlerule=0pt,
@@ -157,7 +165,7 @@
 \newtcolorbox{regra}[1][]{unoobase, colback=unooRedWash, colframe=unooRed,
   colbacktitle=unooRedWash, coltitle=unooRed, titlerule=0pt,
   title={REGRA INVIOLÁVEL}, #1}
-\newtcolorbox{destaque}[1][]{unoobase, colback=unooPaper, colframe=unooInkSoft, #1}
+\newtcolorbox{destaque}[1][]{unoobase, colback=unooPaper, colframe=unooLavender, #1}
 \newtcolorbox{especificacao}[1]{unoobase, colback=unooSurface, colframe=unooNavy,
   colbacktitle=unooSurface, coltitle=unooNavy, titlerule=0pt, title={#1}}
 
@@ -336,7 +344,7 @@
 \usepackage{lastpage}
 
 \newcommand{\docid}{PU-DOC-001}
-\newcommand{\docversao}{1.1}
+\newcommand{\docversao}{1.3}
 
 \renewcommand{\headrule}{{\color{unooGrid}\hrule height \headrulewidth}}
 \renewcommand{\footrule}{{\color{unooGrid}\hrule height \footrulewidth}}
@@ -344,7 +352,7 @@
 \fancypagestyle{unoomain}{%
   \fancyhf{}
   \fancyhead[L]{\footnotesize\color{unooInkSoft}\nouppercase{\leftmark}}
-  \fancyhead[R]{\footnotesize\color{unooMuted}Plataforma Unooria}
+  \fancyhead[R]{\raisebox{-0.15ex}{\includegraphics[height=1.8ex]{figuras/marca/simbolo_azul_profundo.png}}\hspace{4pt}\footnotesize\bfseries\color{unooNavy}Unooria}
   \fancyfoot[L]{\footnotesize\color{unooMuted}\docid{} \textperiodcentered{} v\docversao}
   \fancyfoot[R]{\footnotesize\color{unooInkSoft}\thepage\,/\,\pageref{LastPage}}
   \renewcommand{\headrulewidth}{0.5pt}
@@ -355,7 +363,7 @@
 \fancypagestyle{unoofront}{%
   \fancyhf{}
   \fancyhead[L]{\footnotesize\color{unooInkSoft}\nouppercase{\leftmark}}
-  \fancyhead[R]{\footnotesize\color{unooMuted}Plataforma Unooria}
+  \fancyhead[R]{\raisebox{-0.15ex}{\includegraphics[height=1.8ex]{figuras/marca/simbolo_azul_profundo.png}}\hspace{4pt}\footnotesize\bfseries\color{unooNavy}Unooria}
   \fancyfoot[L]{\footnotesize\color{unooMuted}\docid{} \textperiodcentered{} v\docversao}
   \fancyfoot[R]{\footnotesize\color{unooInkSoft}\thepage}
   \renewcommand{\headrulewidth}{0.5pt}
@@ -395,7 +403,7 @@
 
 % --- Semantica de referencia do projeto ------------------------------------
 \newcommand{\rf}[1]{\textbf{\textcolor{unooNavy}{#1}}}
-\newcommand{\adrr}[1]{\textbf{\textcolor{unooGreen}{#1}}}
+\newcommand{\adrr}[1]{\textbf{\textcolor{unooLavenderSoft}{#1}}}
 \newcommand{\ucr}[1]{\textbf{\textcolor{unooBlue}{#1}}}
 \newcommand{\drr}[1]{\textbf{\textcolor{unooOrange}{#1}}}
 \newcommand{\yes}{\textcolor{unooGreen}{\textbf{\checkmark}}}

@@ -3,14 +3,13 @@ import Link from "next/link";
 import { Badge, Card, EmptyState, Tag } from "@edu/ui/ds";
 import { CartaoAtividade } from "@/components/cartao-atividade";
 import { LinkButton } from "@/components/link-button";
-import { Trilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
 import {
-  rotaDoGuia,
   rotuloDaMissao,
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
+import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { statusDaAtividade } from "@/lib/status-atividade";
 
 /** O que a api devolve em GET /atividades (escopado ao professor do token). */
@@ -36,13 +35,8 @@ type RespostaAtividades = {
  * despachante em `page.tsx`.
  */
 export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Missao & { ficha: NonNullable<Missao["ficha"]> } }) {
-  const trilha = [
-    { label: "Início", href: "/professor" },
-    { label: "Entre Redes", href: "/professor/entre-redes" },
-    { label: rotuloDaMissao(ano, missao) },
-  ];
-
   const { ficha } = missao;
+  const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   // MISSÃO ÚNICA: com uma só missão publicada, toda atividade do professor é
   // desta missão (nota de modelagem em lib/entre-redes/catalogo.ts).
@@ -53,8 +47,6 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
 
   return (
     <div className="flex flex-col gap-8">
-      <Trilha itens={trilha} />
-
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="success">Disponível</Badge>
@@ -112,11 +104,13 @@ export async function MissaoInstanooria({ ano, missao }: { ano: Ano; missao: Mis
               <li key={passo}>{passo}</li>
             ))}
           </ol>
-          <div className="pt-4">
-            <LinkButton href={rotaDoGuia(missao)} variant="secondary">
-              Abrir guia da aula
-            </LinkButton>
-          </div>
+          {guia ? (
+            <div className="pt-4">
+              <LinkButton href={guia} variant="secondary">
+                Abrir guia da aula
+              </LinkButton>
+            </div>
+          ) : null}
         </Card>
       </section>
 

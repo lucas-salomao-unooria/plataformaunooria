@@ -8,6 +8,7 @@ import {
   FeedbackAlert,
   Icon,
   RadioButton,
+  ScrollBar,
   SectionHeader,
   Table,
   Tabs,
@@ -17,6 +18,7 @@ import {
   type TableColumn,
   type UploadFileItem,
 } from "@edu/ui/ds";
+import { ehDoContrato } from "@/lib/papeis";
 import type { Papel } from "@/lib/papeis";
 
 interface ErroDeLinha extends Record<string, unknown> {
@@ -94,7 +96,7 @@ export function ImportarPessoas({
   papel: Papel;
   escolaIdInicial: string;
 }) {
-  /* `admin-contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
+  /* `gestor_contrato` chega aqui a partir de /admin/escolas com `?escolaId=`.
      Sem ler a URL, ele teria de digitar o id da escola em cada tela. */
   const daUrl = useSearchParams().get("escolaId") ?? "";
   const [escolaId, setEscolaId] = useState(daUrl || escolaIdInicial);
@@ -118,7 +120,7 @@ export function ImportarPessoas({
   const [carregandoAssentos, setCarregandoAssentos] = useState(false);
 
   const sufixoEscola = useMemo(
-    () => (papel === "admin-contrato" && escolaId ? `escolaId=${encodeURIComponent(escolaId)}` : ""),
+    () => (ehDoContrato(papel) && escolaId ? `escolaId=${encodeURIComponent(escolaId)}` : ""),
     [papel, escolaId],
   );
 
@@ -253,19 +255,19 @@ export function ImportarPessoas({
 
   const colunasDeSenha: TableColumn<Credencial>[] = [
     { key: "nome", title: "Nome" },
-    { key: "usuario", title: "Login" },
+    { key: "usuario", title: "Usuário" },
     { key: "senha", title: "Senha do primeiro acesso" },
     { key: "turma", title: "Turma", render: (_, linha) => linha.turma ?? "—" },
   ];
 
   return (
-    <div className="plataforma-largura-cheia mx-auto flex max-w-[1080px] flex-col gap-6">
+    <div className="plataforma-largura-cheia flex flex-col gap-6">
       <SectionHeader
         title="Importar pessoas"
         description="Uma linha por pessoa. As turmas informadas na planilha são criadas e o enturmamento é feito junto."
       />
 
-      {papel === "admin-contrato" ? (
+      {ehDoContrato(papel) ? (
         <div className="max-w-[320px]">
           <TextField
             id="escola"
@@ -477,6 +479,20 @@ export function ImportarPessoas({
           ignorada. Sem a coluna <code>role</code>, a pessoa entra como <strong>estudante</strong> (o
           menor privilégio) e o <code>roles.csv</code> corrige.
         </p>
+
+        {/* A REGRA DA REGIONAL, dita ANTES do envio.
+            Toda escola pertence a uma regional (ADR-79), e por isso o
+            comportamento de `orgs.csv` mudou: com várias regionais, a linha sem
+            `parentSourcedId` válido é ERRO, não aviso. Antes ela entrava sem
+            regional. Sem este aviso, quem importa descobre a mudança pelo
+            relatório de falha no meio de um arquivo de mil linhas — e a
+            mensagem de lá diz o que fazer, mas depois de o trabalho ter sido
+            feito errado. */}
+        <FeedbackAlert
+          type="info"
+          title="Toda escola entra vinculada a uma regional"
+          description="Com UMA regional na rede, o vínculo é automático e você não precisa da coluna. Com VÁRIAS, identifique a regional de cada escola em parentSourcedId — e envie as linhas de district antes das de school, senão a regional ainda não existe quando a escola chega. Linha sem regional válida é recusada e volta no relatório com o número dela."
+        />
       </section>
       )}
 
@@ -521,13 +537,15 @@ export function ImportarPessoas({
                 type="warning"
                 description="Guarde agora: estas senhas não aparecem de novo. Depois desta tela, o caminho é resetar a senha da pessoa em Usuários."
               />
-              <Table<Credencial>
-                columns={colunasDeSenha}
-                data={relatorio.credenciais}
-                keyExtractor={(linha) => linha.usuario}
-                size="sm"
-                theme="light"
-              />
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <Table<Credencial>
+                  columns={colunasDeSenha}
+                  data={relatorio.credenciais}
+                  keyExtractor={(linha) => linha.usuario}
+                  size="sm"
+                  theme="light"
+                />
+              </ScrollBar>
             </div>
           ) : null}
 
@@ -536,13 +554,15 @@ export function ImportarPessoas({
               <h2 className="text-[16px] font-bold text-unooria-neutral-950">
                 Avisos ({relatorio.avisos.length})
               </h2>
-              <Table<ErroDeLinha>
-                columns={colunasDeErro}
-                data={relatorio.avisos}
-                keyExtractor={(linha) => `${linha.linha}-${linha.campo}`}
-                size="sm"
-                theme="light"
-              />
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <Table<ErroDeLinha>
+                  columns={colunasDeErro}
+                  data={relatorio.avisos}
+                  keyExtractor={(linha) => `${linha.linha}-${linha.campo}`}
+                  size="sm"
+                  theme="light"
+                />
+              </ScrollBar>
             </div>
           ) : null}
 
@@ -554,13 +574,15 @@ export function ImportarPessoas({
               <p className="text-[14px] text-unooria-neutral-500">
                 Corrija estas linhas no arquivo e importe de novo — as demais já entraram.
               </p>
-              <Table<ErroDeLinha>
-                columns={colunasDeErro}
-                data={relatorio.erros}
-                keyExtractor={(linha) => `${linha.linha}-${linha.campo}-${linha.mensagem}`}
-                size="sm"
-                theme="light"
-              />
+              <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+                <Table<ErroDeLinha>
+                  columns={colunasDeErro}
+                  data={relatorio.erros}
+                  keyExtractor={(linha) => `${linha.linha}-${linha.campo}-${linha.mensagem}`}
+                  size="sm"
+                  theme="light"
+                />
+              </ScrollBar>
             </div>
           ) : null}
         </section>
@@ -588,32 +610,34 @@ export function ImportarPessoas({
           </Button>
         </div>
         {assentos ? (
-          <Table<ContaDeAssento>
-            columns={[
-              { key: "nome", title: "Nome" },
-              { key: "usuario", title: "Login" },
-              { key: "papel", title: "Papel" },
-              { key: "dados", title: "Dados", align: "right" },
-              {
-                key: "acoes",
-                title: "",
-                align: "right",
-                render: (_, linha) =>
-                  linha.ativo ? (
-                    <Button variant="ghost" size="sm" onClick={() => void desativar(linha)}>
-                      Desativar
-                    </Button>
-                  ) : (
-                    <Tag>inativa</Tag>
-                  ),
-              },
-            ]}
-            data={assentos.contas}
-            keyExtractor={(linha) => linha.id}
-            emptyText="Nenhuma conta sem matrícula — todo mundo aqui veio de uma importação com RA."
-            size="sm"
-            theme="light"
-          />
+          <ScrollBar orientation="both" autoHide className="tabela-rolavel">
+            <Table<ContaDeAssento>
+              columns={[
+                { key: "nome", title: "Nome" },
+                { key: "usuario", title: "Usuário" },
+                { key: "papel", title: "Papel" },
+                { key: "dados", title: "Dados", align: "right" },
+                {
+                  key: "acoes",
+                  title: "",
+                  align: "right",
+                  render: (_, linha) =>
+                    linha.ativo ? (
+                      <Button variant="ghost" size="sm" onClick={() => void desativar(linha)}>
+                        Desativar
+                      </Button>
+                    ) : (
+                      <Tag>inativa</Tag>
+                    ),
+                },
+              ]}
+              data={assentos.contas}
+              keyExtractor={(linha) => linha.id}
+              emptyText="Nenhuma conta sem matrícula — todo mundo aqui veio de uma importação com RA."
+              size="sm"
+              theme="light"
+            />
+          </ScrollBar>
         ) : null}
         {assentos?.truncado ? (
           <p className="text-[13px] text-unooria-neutral-500">

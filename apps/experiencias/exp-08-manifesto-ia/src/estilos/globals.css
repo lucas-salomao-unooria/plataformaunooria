@@ -1,0 +1,642 @@
+/**
+ * Estilos locais da exp-08. Só o que o design system não dá: layout da página,
+ * as compensações MARCADAS e a grade do pico.
+ *
+ * Cor NUNCA se escreve à mão aqui — sai dos tokens `--gpt-*` (o clone do
+ * assistente) e `--unooria-*` (a plataforma). Um hexadecimal literal neste
+ * arquivo é uma cor que não acompanha o pacote quando ele mudar.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * AS DUAS FAMÍLIAS, e onde a fronteira cai NESTA missão.
+ *
+ * A linha é a mesma das outras: **quem está falando**. Da Etapa 1 (o briefing
+ * de Amara) e da Etapa 5 em diante quem fala é a ESCOLA — o Meu Percurso é
+ * formulário institucional, e o handoff o coloca explicitamente "fora da
+ * simulação". Entre elas quem fala é o EduPredict IA.
+ *
+ * A diferença desta missão para a exp-02 é que aqui a virada NÃO é uma
+ * revelação: o estudante sempre soube que era uma aula. O que a fronteira
+ * protege é o TOM — a máquina precisa soar corporativa para a tese de
+ * neutralidade dela ser derrubável, e um `Button` institucional dentro da
+ * conversa faria o sistema soar amigável no exato momento em que ele defende a
+ * vigilância.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /* Tema claro institucional, fixado (campo 3 dos nove do handoff): o clone
+     simula o layout light oficial, e não há alternância. Sem toggle porque a
+     missão inteira roda em uma aula — trocar de tema no meio não é caminho que
+     alguém percorra, e um controle a mais no cromo é um alvo que distrai. */
+  background: var(--gpt-web-canvas);
+  color: var(--gpt-text-primary);
+  font-family: var(--gpt-font-sans, Inter, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
+   navegador, não ao recorte que o hub reservou. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+/* O container de 960px do handoff (viewport base 1024×768). A densidade
+   textual do gênero manifesto é o motivo: linha mais larga que isto perde o
+   olho na volta, e o documento da Etapa 4 é para ser LIDO. */
+.miolo {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.esqueleto__topo {
+  height: 56px;
+  background: var(--gpt-bg-secondary);
+  border-bottom: 1px solid var(--gpt-web-hairline);
+}
+
+/* ══════════════════════════════════════════ o cromo da conversa (clone) */
+
+.conversa {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.conversa__topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--gpt-web-hairline);
+  background: var(--gpt-bg-primary);
+  flex: 0 0 auto;
+}
+
+.conversa__nome {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* O contador de auditorias: metadado discreto, e discreto é a regra. Ele diz
+   quantas faltam sem virar barra de progresso — progresso de missão na tela do
+   clone denunciaria o andaime pedagógico. */
+.conversa__contador {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--gpt-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * COMPENSAÇÃO — a faixa dos três princípios em disputa.
+ *
+ * LACUNA DO DS: a seção `chatgpt` não publica banner de contexto fixo abaixo do
+ * cabeçalho (`Badge` é etiqueta inline, `Divider` é um fio). Composta com os
+ * tokens de superfície e borda do próprio pacote, sem cor inventada.
+ * PEDIDO ao `storybook-unooria`: `ContextBanner` na seção `chatgpt`.
+ */
+.principios {
+  padding: 10px 20px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--gpt-text-secondary);
+  background: var(--gpt-bg-secondary);
+  border-bottom: 1px solid var(--gpt-web-hairline);
+  flex: 0 0 auto;
+}
+
+.conversa__corpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 24px 0 8px;
+}
+
+.falas {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fala--user {
+  align-self: flex-end;
+  max-width: 75%;
+}
+
+.fala--assistant {
+  align-self: stretch;
+}
+
+/*
+ * COMPENSAÇÃO — o cursor do efeito de digitação.
+ *
+ * LACUNA DO DS: o `ChatBubble` desenha a fala pronta; não há estado de
+ * streaming na seção. O caractere é um `::after` no fim do texto, e a animação
+ * respeita `prefers-reduced-motion` — sem isso um cursor piscando é gatilho
+ * vestibular e a criança não tem como desligá-lo.
+ * PEDIDO: `StreamingCursor` (ou `ChatBubble state="streaming"`) na `chatgpt`.
+ */
+.digitando::after {
+  content: "▍";
+  margin-left: 2px;
+  color: var(--gpt-text-tertiary);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .digitando::after {
+    animation: piscar 1s step-end infinite;
+  }
+}
+
+@keyframes piscar {
+  50% {
+    opacity: 0;
+  }
+}
+
+.status-da-maquina {
+  font-size: 12.5px;
+  color: var(--gpt-text-tertiary);
+  margin: 8px 0 0;
+}
+
+/* ─────────────────────────────────────────── o seletor de questionamentos */
+
+.seletor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 0 12px;
+}
+
+.seletor__instrucao {
+  font-size: 13px;
+  color: var(--gpt-text-secondary);
+  margin: 0;
+}
+
+.seletor__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conversa__doca {
+  flex: 0 0 auto;
+  padding-bottom: 12px;
+}
+
+/*
+ * COMPENSAÇÃO — o aviso de bloqueio por cliques rápidos.
+ *
+ * LACUNA DO DS: não há faixa de aviso inline na seção `chatgpt` (`Badge` é
+ * curto demais para 15 palavras). Os termos em destaque usam `<strong>`, que é
+ * semântica, não estilo.
+ * PEDIDO: `InlineNotice` na seção `chatgpt`.
+ */
+.aviso-do-sistema {
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gpt-text-secondary);
+  background: var(--gpt-bg-tertiary);
+  border-left: 2px solid var(--gpt-border-strong);
+  border-radius: var(--gpt-radius-md);
+}
+
+/* O balão de apoio de Amara — o ÚNICO momento em que ela fala na Etapa 2, e só
+   depois de 120s sem ação. O silenciamento dela é não-negociável 3. */
+.apoio-da-guia {
+  position: fixed;
+  right: 20px;
+  bottom: 96px;
+  max-width: 300px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--unooria-color-text-primary, #22272a);
+  background: var(--unooria-color-surface-base, #fff);
+  border: 1px solid var(--unooria-color-border-default, #cbd4d6);
+  border-radius: 12px;
+  box-shadow: var(--gpt-elevation-md);
+  z-index: 20;
+}
+
+/* ══════════════════════════════════════════════ o PICO (Etapa 3, clone) */
+
+/*
+ * Teto estrito de 5 elementos, e o layout existe para sustentá-lo: o balão da
+ * concessão, a instrução e as quatro cláusulas. Nada de scaffolding, nada de
+ * Amara — o silêncio é o não-negociável desta tela.
+ */
+.decisao {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 8px 0 24px;
+}
+
+.decisao__grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Uma coluna abaixo de 720px. O grid 2×2 do handoff é a forma SOLENE da
+   escolha, mas dois cards de 320px lado a lado num Chromebook de 1366 com o
+   iframe reduzido cortam o texto do artigo — e o artigo é o que se lê para
+   escolher. */
+@media (max-width: 720px) {
+  .decisao__grade {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * COMPENSAÇÃO — o cartão de cláusula selecionável.
+ *
+ * LACUNA DO DS: a seção `chatgpt` tem `GPTCard` (nome + descrição, para uma
+ * grade de agentes) e `Tag` (etiqueta curta), mas nenhum cartão com estado de
+ * SELEÇÃO exclusiva e texto longo. O elemento continua sendo um
+ * `<input type="radio">` real dentro de um `<label>` — a exclusividade e a
+ * navegação por seta vêm do navegador, não de JavaScript.
+ * PEDIDO: `SelectableCard` (radio, corpo longo) na seção `chatgpt`.
+ */
+.clausula {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1.5px solid var(--gpt-border-default);
+  border-radius: var(--gpt-radius-lg);
+  background: var(--gpt-bg-primary);
+  cursor: pointer;
+}
+
+.clausula:has(input:checked) {
+  border-color: var(--gpt-border-strong);
+  border-width: 2px;
+  background: var(--gpt-fill-2);
+}
+
+.clausula:has(input:focus-visible) {
+  outline: 2px solid var(--gpt-text-primary);
+  outline-offset: 2px;
+}
+
+.clausula__cabeca {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.clausula__titulo {
+  font-size: 14.5px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.clausula__artigo {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gpt-text-secondary);
+  margin: 0;
+}
+
+/* O radio fica visível (critério de aceite pede "radio buttons visíveis"), mas
+   é o `:has()` acima que desenha o estado do cartão. */
+.clausula input {
+  margin: 0;
+  accent-color: var(--gpt-text-primary);
+}
+
+.decisao__rodape {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ═══════════════════════════════════ o manifesto promulgado (Etapa 4) */
+
+.processando {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 0;
+  font-size: 13.5px;
+  color: var(--gpt-text-secondary);
+}
+
+/*
+ * COMPENSAÇÃO — o indicador de processamento de 16px.
+ *
+ * LACUNA DO DS: a seção `chatgpt` não publica spinner. O desenho é o mínimo (um
+ * anel), e ele PARA sob `prefers-reduced-motion` em vez de sumir: o delay de
+ * 2000ms é o beat da capitulação, e sem nenhum indicador a tela pareceria
+ * travada.
+ * PEDIDO: `Spinner` na seção `chatgpt`.
+ */
+.processando__anel {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid var(--gpt-border-default);
+  border-top-color: var(--gpt-text-secondary);
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .processando__anel {
+    animation: girar 700ms linear infinite;
+  }
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/*
+ * COMPENSAÇÃO — o bloco de código Markdown com barra de ferramentas.
+ *
+ * LACUNA DO DS, e a maior desta missão: a seção `chatgpt` **não publica
+ * `CodeBlock`** (confirmado na 0.1.19 — a pasta `components` tem 26 nomes e
+ * nenhum deles). O não-negociável 4 da spec exige que o manifesto apareça
+ * dentro do bloco nativo do assistente, com o cabeçalho "markdown" e o botão de
+ * cópia, porque é essa moldura que faz o documento parecer emitido PELO
+ * SISTEMA — e não escrito pela escola.
+ *
+ * O que esta compensação faz: a moldura, o cabeçalho, a barra e a fonte
+ * monoespaçada, com os tokens do pacote. O botão de copiar É o `Button` do
+ * pacote; a barra é só a faixa que o ancora.
+ * PEDIDO: `CodeBlock` (cabeçalho com linguagem + ação de cópia) na `chatgpt`.
+ */
+.bloco {
+  border: 1px solid var(--gpt-border-default);
+  border-radius: var(--gpt-radius-lg);
+  overflow: hidden;
+  background: var(--gpt-bg-tertiary);
+}
+
+.bloco__barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px 6px 14px;
+  background: var(--gpt-bg-secondary);
+  border-bottom: 1px solid var(--gpt-web-hairline);
+}
+
+.bloco__lingua {
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--gpt-text-tertiary);
+}
+
+/* `pre` com `white-space: pre-wrap`: o manifesto tem linhas longas, e rolagem
+   horizontal num documento que a criança vai LER é hostil. Rolagem vertical
+   fica no corpo da conversa, que já rola. */
+.bloco__texto {
+  margin: 0;
+  padding: 16px 18px;
+  font-family: var(--gpt-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--gpt-text-primary);
+}
+
+/*
+ * COMPENSAÇÃO — o toast diegético de canto.
+ *
+ * LACUNA DO DS: a seção `chatgpt` não tem `Snackbar` (a `unooria` tem, mas ele
+ * é da plataforma, e a fala é de Amara DENTRO da conversa). Ele é discreto de
+ * propósito: o centro da tela é o documento.
+ * PEDIDO: `Toast` na seção `chatgpt`.
+ */
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  max-width: 320px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--gpt-text-inverse);
+  background: var(--gpt-bg-inverse);
+  border-radius: var(--gpt-radius-lg);
+  box-shadow: var(--gpt-elevation-lg);
+  z-index: 30;
+}
+
+.toast--claro {
+  color: var(--gpt-text-primary);
+  background: var(--gpt-bg-primary);
+  border: 1px solid var(--gpt-border-default);
+}
+
+/* ═════════════════════════════ telas da ESCOLA (seção `unooria`)
+ *
+ * DAQUI PARA BAIXO os tokens são `--unooria-*`, não `--gpt-*`, e a diferença
+ * não é estética: estas telas são da plataforma. O briefing de Amara, o
+ * congelamento para o debate, o Meu Percurso e o fechamento falam pela escola.
+ */
+
+.escola {
+  height: 100%;
+  overflow-y: auto;
+  padding: 32px 16px 48px;
+  background: var(--unooria-color-surface-base, #fff);
+  color: var(--unooria-color-text-primary, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+}
+
+.escola__cartao {
+  width: 100%;
+  /* 680px é a medida do card central do handoff para o briefing e a
+     assinatura: mais estreito que os 960 do documento, porque aqui o texto é
+     narrativo e não um documento formal. */
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.escola__narrativa {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.escola__rodape {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/*
+ * COMPENSAÇÃO — a área de toque de 48px do CTA principal.
+ *
+ * LACUNA DO DS: o `Button` da seção `unooria` tem `size="lg"` a 44px, e o
+ * critério de aceite de `E1-ALU-01` pede 48 de altura mínima. É MEDIDA, que é
+ * compensação legítima — não um botão novo.
+ */
+.cta-48 > button,
+.cta-48 button {
+  min-height: 48px;
+}
+
+/* O grupo de palavras-chave. `Checkbox` do DS com teto de 2 — o teto é a regra
+   da spec, e a tela IMPEDE a terceira em vez de aceitar e reclamar depois. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.contador-de-caracteres {
+  font-size: 12px;
+  color: var(--unooria-color-text-secondary, #536167);
+  text-align: right;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * COMPENSAÇÃO — o selo de protocolo.
+ *
+ * LACUNA DO DS: `Badge` e `Tag` são etiquetas curtas; não há selo de documento
+ * protocolado (moldura + número de protocolo em monoespaçada). É a confirmação
+ * de que a cláusula foi arquivada, e a spec a chama de "certidão".
+ * PEDIDO: `StampBadge` na seção `unooria`.
+ */
+.selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--unooria-color-text-secondary, #536167);
+  border: 1.5px dashed var(--unooria-color-border-default, #cbd4d6);
+  border-radius: 6px;
+}
+
+/* A citação do que ficou registrado: cláusula, tags e o parágrafo. Estática —
+   o formulário entrou em latch. */
+.citacao {
+  border-left: 3px solid var(--unooria-color-border-default, #cbd4d6);
+  padding-left: 14px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.podcast__falas {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.podcast__bloco {
+  margin-bottom: 14px;
+}
+
+.podcast__rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--unooria-color-text-secondary, #536167);
+  margin: 0 0 4px;
+}
+
+/* ─────────────────────────────────── o overlay do Checkpoint A (E4-SIS-01) */
+
+/*
+ * COMPENSAÇÃO — o congelamento da tela para o debate presencial.
+ *
+ * LACUNA DO DS: o `Modal` da `unooria` é diálogo com fechamento — e esta tela
+ * NÃO fecha: quem a solta é a professora, pelo painel. Um `Modal` com
+ * `closeOnEscape` e botão de X daria à criança um jeito de sair do
+ * congelamento, que é exatamente o que ele existe para impedir.
+ *
+ * `inert` no conteúdo de baixo é o que bloqueia clique, rolagem E FOCO. Sem
+ * ele, Tab continuaria alcançando os botões atrás do véu — a mesma classe de
+ * defeito do `Collapse` da exp-92, em que 30 botões focáveis viviam dentro de
+ * um `aria-hidden`.
+ * PEDIDO: `BlockingOverlay` (sem fechamento) na seção `unooria`.
+ */
+.pausa {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--gpt-overlay-black-40, rgb(0 0 0 / 40%));
+  backdrop-filter: blur(3px);
+  z-index: 40;
+}
+
+.pausa__cartao {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: center;
+  background: var(--unooria-color-surface-base, #fff);
+  color: var(--unooria-color-text-primary, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 24%);
+}
+
+.pausa__texto {
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.aviso-de-rede {
+  font-size: 13px;
+  color: var(--gpt-text-tertiary);
+  margin: 0;
+}

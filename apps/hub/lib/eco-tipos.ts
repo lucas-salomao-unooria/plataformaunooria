@@ -83,7 +83,7 @@ export const ROTULO_DO_PASSO: Record<PassoDoEstudante, string> = {
   podcast: "no episódio",
   intervencao: "decidindo",
   desfecho: "vendo o grupo reagir",
-  sintese: "nos cards",
+  sintese: "na sistematização",
   reflexao: "no Meu percurso",
   fim: "entregou",
 };

@@ -262,6 +262,90 @@ causa.
 \headrow \thd{Sintoma} & \thd{Causa provável}\\
 \midrule
 \endhead
+\textbf{A ficha de uma missão mostra \enquote{Nova atividade} e não tem
+  \enquote{Abrir a aula e os resultados}} &
+  A missão não tem ramo no DESPACHANTE de
+  \arq{app/(plataforma)/professor/entre-redes/[ano]/[unidade]/page.tsx}, e caiu
+  no \cd{return} final --- que é o corpo do \textbf{Instanooria}. O modo de
+  falhar é MUDO: a tela abre, e mostra a ficha de OUTRA missão. Duas
+  consequências caras: a professora não acha o painel da turma (o único caminho
+  para congelar o debate e ver os resultados), e o botão \enquote{Nova
+  atividade} a leva a configurar uma linha em \cd{exp\_01\_activities} que a
+  missão dela nunca lê. Aconteceu com a exp-06 e de novo com a exp-08 (esta em
+  2026-09-11), com o aviso já escrito no arquivo ao lado. A rede é
+  \arq{apps/hub/lib/entre-redes/despachante-da-ficha.test.ts}, que reprova
+  missão publicada sem ramo.\\
+\zebra \textbf{O botão do painel da professora não faz nada, e a rede mostra 404
+  numa rota que existe na api} &
+  O prefixo da experiência não está em \cd{PREFIXOS\_PERMITIDOS} do BFF
+  (\arq{apps/hub/app/api/plataforma/[...path]/route.ts}). Toda tela
+  \emph{client-side} do professor passa por ali, e prefixo fora da lista devolve
+  \textbf{404} --- não 403, não 405 --- com uma linha
+  \cd{codigo: bff-prefixo-recusado} no log do hub. O sintoma engana porque a
+  rota EXISTE na api e responde bem por \cd{apiDoServidor}: a tela de resultados
+  carrega (é \emph{Server Component}) e só os botões morrem. Método que falta no
+  BFF, por contraste, dá \textbf{405}. Visto na exp-08 em 2026-09-11: a
+  preparação, os dois botões do debate e o \enquote{zerar turma} respondiam 404
+  em silêncio.\\
+\textbf{Um \emph{rollback} de versão \enquote{desfez-se} sozinho depois de um
+  \emph{deploy}} &
+  Ele é temporário por natureza: o \emph{job} \cd{ativar-exps} faz
+  \rota{PUT /experiencias/\{expId\}} a cada publicação, e aquele PUT grava a
+  versão do repositório. O painel avisa (\cd{emRollback}) justamente porque esse
+  estado tem prazo. Se o \emph{rollback} precisa sobreviver ao \emph{deploy}, a
+  resposta não é reativá-lo depois: é a experiência não entrar no filtro do
+  \cd{ativar-exps} (não mexer na pasta dela) ou fixar a versão POR ESCOPO, que
+  vive em \cd{disponibilidades} e o CI não toca (\adrr{ADR-87}).\\
+\zebra \textbf{Fixei a versão de uma escola e ela continua abrindo a versão da
+  rede} &
+  Confira em ordem: a linha (\cd{SELECT recurso\_id, escola\_id, versao\_fixa FROM
+  disponibilidades}), o escopo (a fixação vale para a escola e o que está
+  ABAIXO dela, não para a irmã), e \env{CDN\_EXP\_URL} --- em desenvolvimento o
+  hub serve do \emph{dev server} do Vite e NÃO existe caminho versionado, então
+  a fixação não tem efeito visível ali por desenho. Em produção, o
+  \cd{montarEmbed} lê \rota{GET /recursos/efetivos} para montar a URL: se aquela
+  leitura falhar, ele cai na \cd{versao\_ativa} de propósito --- deixar de montar
+  a experiência porque uma leitura acessória caiu seria pior.\\
+\textbf{A missão desapareceu da grade da turma, e ninguém liberou nem
+  encerrou nada} &
+  O RECURSO foi desligado para esta rede (\adrr{ADR-87}). O sintoma é
+  \textbf{indistinguível} de um defeito de enturmamento ou de catálogo, e é por
+  isso que ele está nesta tabela. A missão indisponível SAI da grade (não fica
+  com cadeado), e a linha em \cd{liberacoes} continua intacta --- religar
+  devolve tudo. Confira em ordem: \cd{SELECT * FROM disponibilidades} (linha com
+  \cd{escola\_id} nulo vale para a rede INTEIRA), depois
+  \cd{experiencias.produto} da missão (nulo = ela responde só pelo próprio
+  interruptor, sem teto de produto). No log, o 403 sai com
+  \cd{codigo: recurso-indisponivel} --- se o código for
+  \cd{missao-nao-liberada}, o problema é da SALA e não do painel.\\
+\zebra \textbf{Card de produto sumiu da home do professor, ou a rota dele dá 404} &
+  Mesmo eixo do item acima, um nível acima: o PRODUTO está desligado no escopo
+  que vale (escola, regional ou contrato). A tela some por decisão --- ela não
+  explica que o produto existe e foi desligado, porque isso contaria ao cliente
+  o que a Unooria vendeu a quem. Confira
+  \cd{disponibilidades} com \cd{recurso\_id = 'produto:<slug>'}. Se a linha NÃO
+  existir, é a api que não respondeu: a leitura falha ABERTA, e nesse caso a
+  home mostra tudo --- card faltando com a tabela vazia é outra coisa.\\
+\textbf{Barra de rolagem parada na tela, sem ter o que rolar} &
+  A página transborda por 1--2px. Quase sempre é uma altura calculada a partir da
+  altura de um irmão: a tela cheia do professor subtraía \cd{64px} do
+  \cd{100dvh}, e o \cd{HeaderPlataforma} mede \textbf{65} --- o \cd{h-16} são 64
+  e a \cd{border-b} põe 1. Medir com
+  \cd{documentElement.scrollHeight - clientHeight}: 1px é subtração errada, não
+  conteúdo. A saída é a classe \cd{.tela-cheia}, que deixa o \emph{flex}
+  distribuir em vez de estimar (\adrr{ADR-75}). E \textbf{não conclua pelo seu
+  Mac}: com a preferência do sistema em automático e \emph{trackpad}, a barra
+  \emph{overlay} nativa desaparece sozinha em qualquer contêiner não estilizado
+  --- e esconde o que Windows e Chromebook mostram.\\
+\zebra \textbf{O cabeçalho da tabela deixou de grudar ao rolar} &
+  A \cd{Table} do DS traz o próprio \cd{.unooria-table-container} com
+  \cd{overflow-x: auto}. Dentro do \cd{ScrollBar} ele vira um SEGUNDO contêiner
+  de rolagem, e é nele que o \cd{<th>} \emph{sticky} se prende --- um contêiner
+  que não rola na vertical. A regra
+  \cd{.tabela-rolavel .unooria-table-container \{ overflow: visible \}} devolve o
+  papel ao \cd{ScrollBar} (\adrr{ADR-75}). Conferir com
+  \cd{getComputedStyle(th).position}: ele responde \cd{sticky} nos dois casos ---
+  o que muda é QUEM é o contêiner.\\
 \textbf{Ícone virando texto} (\enquote{addInvestigação}) &
   O Next removeu o \cd{@import} externo do CSS do \emph{design system}, e
   \cd{Material Symbols Rounded} é fonte de ligadura. Verificar
@@ -389,6 +473,17 @@ testado no container} &
 \textbf{\cd{iframe} vazio} &
   \emph{Handshake} expirado, \emph{dev server} fora do ar, ou
   \emph{origin} divergente. Ver o console: a SDK avisa o descarte por esquema.\\
+\zebra \textbf{\enquote{Baixar .doc} não baixa nada}, sem erro na tela e sem
+  linha no \emph{console} &
+  \cd{allow-downloads} ausente no \emph{sandbox} do \cd{iframe}. Confira em
+  ORDEM: (1) o \cd{permissoes} do \arq{public/experiencia.json} tem
+  \cd{downloads}; (2) a \textbf{linha} de \cd{experiencias} tem também --- em
+  \emph{dev} o hub lê a tabela quando ela existe, não o manifesto do
+  \emph{bundle}; (3) a rota do hub passa \cd{permissoes} ao \cd{ExpFrame} (as
+  três de professor não passavam). O bloqueio é do navegador e é MUDO: o Chrome
+  o registra no painel \emph{Issues}, não no \emph{console}. Verificação de um
+  comando, no console do hub:
+  \cd{document.querySelector('iframe').getAttribute('sandbox')}.\\
 \zebra \textbf{Câmera do jogo não anda \emph{desde o começo}} &
   \cd{allow-pointer-lock} ausente: \cd{permissoes} não chegou (manifesto vazio
   \emph{e} \arq{experiencia.json} não lido). \cd{requestPointerLock()} morre com
@@ -768,7 +863,41 @@ nenhum} &
   \cd{enforcedSecurityPolicy.preconfiguredExprIds} nomeando a assinatura. O
   Pub/Sub reentrega para sempre (não há DLQ), então o volume de 403 cresce
   sozinho e não indica ataque nenhum: o agente é \cd{APIs-Google}.\\
-\bottomrule
+\textbf{A coluna diz \enquote{1 professor} e a lista da mesma escola diz
+\enquote{Ninguém por aqui ainda}} &
+  Dois lados perguntando coisas diferentes com o mesmo rótulo. A coluna conta
+  LOTAÇÕES naquela escola; a lista filtrava \cd{users.escola\_id}, que é o CACHE
+  da lotação PRINCIPAL. Quem trabalha em duas escolas é contado nas duas e
+  aparecia só na principal. \textbf{\enquote{Quem trabalha nesta escola} é
+  sempre \cd{lotacoes}} --- e a regressão a proteger é a IGUALDADE entre
+  contagem e lista, não a \emph{query} de um dos lados. Corrigido em
+  \arq{usuarios.service.ts}; o mesmo cache já havia produzido o defeito da busca
+  de profissionais (\adrr{ADR-80}).\\
+\zebra \textbf{O item de menu aparece e a tela abre VAZIA, sem erro e sem linha
+de log} &
+  A tela e o menu leem fontes diferentes. Aconteceu com o panorama do
+  \cd{gestor\_regional}: o menu conta as escolas da SESSÃO (que vêm da regional)
+  e o painel lia \cd{lotacoes} direto --- e ele não tem lotação nenhuma. Quando
+  uma tela é habilitada por uma fonte e alimentada por outra, o estado
+  impossível é \enquote{habilitada e vazia}. As duas passam por
+  \cd{escolasDaPessoa} (\adrr{ADR-81}).\\
+\textbf{A suíte de ponta a ponta roda \enquote{tudo} e o número de roteiros
+caiu} &
+  O \arq{rodar.mjs} monta o caminho a partir do array \cd{PAPEIS} e usa
+  \cd{existsSync}: pasta que não existe devolve lista VAZIA, e ele PULA aquele
+  papel em silêncio. Renomear o vocabulário sem renomear as pastas derrubou a
+  suíte de 29 para 19 roteiros sem um aviso (\adrr{ADR-80}). \textbf{Confira
+  sempre a contagem do cabeçalho} (\cd{== suíte … · N roteiro(s) ==}): é o único
+  lugar onde a ausência aparece.\\
+\zebra \textbf{Toda tela do hub responde 401 no BFF, mas o login funciona} &
+  O login é chamada direta à API (usuário e senha); as telas passam pelo BFF, que
+  assina um \emph{token} com a chave do HUB e a API o valida contra
+  \env{OIDC\_ISSUER}. Se o hub subiu numa porta diferente da que o
+  \env{OIDC\_ISSUER} aponta, a API busca o JWKS de OUTRO hub e recusa tudo. E o
+  sintoma engana duas vezes: o login passa (não usa \emph{token}), e um processo
+  antigo que sobreviveu ao \cd{pkill} continua servindo a porta com a
+  configuração velha --- \cd{lsof -nP -iTCP:<porta> -sTCP:LISTEN} diz QUEM está
+  lá, e o \cd{EADDRINUSE} no \emph{log} do processo novo é a confirmação.\\
 \textbf{A imagem gerada sai, e a voz responde \cd{403 PERMISSION\_DENIED}} &
   ADC de \textbf{usuário} sem projeto de cota. A síntese da exp-07 não vai ao
   \cd{aiplatform}: vai à Cloud Text-to-Speech, que exige o cabeçalho
@@ -805,6 +934,209 @@ marcado} &
   caminho escrito para salvar a corrida era o que a virava 500. A releitura
   depois de conflito de chave única vai numa transação NOVA. Procure por
   \cd{catch} que consulta usando o mesmo \cd{tx}.\\
+\textbf{Uma suíte do Jest reprova com \enquote{Test suite failed to run} e
+\cd{TypeError: Cannot read properties of undefined (reading '\$disconnect')}} &
+  \textbf{O erro reportado não é a causa}: é o \emph{teardown} substituindo o
+  erro do \cd{beforeAll} no relatório. O cliente do Prisma era criado no FIM do
+  \cd{beforeAll} e desconectado no \cd{afterAll}; falhando o \emph{setup}
+  antes daquela linha, a variável fica \cd{undefined} e o \cd{afterAll}
+  estoura --- e é o \cd{TypeError} dele que o Jest imprime, no lugar do que
+  quebrou de verdade. O sintoma é intermitente (só aparece quando o
+  \emph{setup} falha) e aponta para o arquivo certo pela razão errada.
+  \textbf{Cliente de banco nasce no MÓDULO, com \cd{const}}, e a limpeza do
+  \cd{afterAll} vai \emph{best-effort} (\cd{.catch(() => undefined)}): falha
+  de limpeza também substitui o erro do teste. Para conferir que o mascaramento
+  saiu, sem esperar a intermitência: ponha um \cd{throw} na primeira linha do
+  \cd{beforeAll} e veja se o relatório mostra a SUA mensagem.\\
+\zebra \textbf{Uma suíte do Jest passa sozinha e reprova junto com as outras} &
+  \textbf{Procure primeiro a \emph{fixture} que escreve em tabela SEM RLS} ---
+  \cd{experiencias}, \cd{experiencias\_versoes}, \cd{disponibilidades},
+  \cd{periodos\_letivos}, \cd{recursos\_auditoria}. Ali a linha não é estado da
+  suíte, é estado GLOBAL, e o efeito atravessa arquivos: uma disponibilidade em
+  escopo-contrato desliga o produto para todo mundo; uma experiência de teste com
+  \cd{publico: "estudante"} entra na grade de toda turma; \cd{upsert} com
+  \cd{update} completo REESCREVE o catálogo que outra suíte esperava. Regra que
+  sai disso: \emph{fixture} de catálogo escreve o MÍNIMO no \cd{update}, usa id
+  próprio (\cd{exp-99-...}) e nunca deleta linha compartilhada. Depois de
+  consertados os casos localizáveis, a cauda que sobra é a CLASSE do problema
+  (um banco, tabelas compartilhadas, 40+ arquivos escrevendo juntos): a suíte da
+  API roda com \cd{maxWorkers: 1} por decisão medida (\adrr{ADR-90}), e
+  \textbf{reprovação intermitente que volte com o serial ligado é defeito NOVO},
+  não a cauda antiga. Para medir em vez de adivinhar: rode a suíte 30 vezes num
+  laço, redirecionando com \cd{> arquivo 2>\&1} --- o Jest escreve em
+  \cd{stderr}, e \cd{2>\&1 > arquivo} manda o relatório para o terminal e grava
+  um arquivo vazio (esta captura errada já fez uma caça parecer limpa).\\
+\textbf{A suíte passa na MÁQUINA e reprova no CI} &
+  \textbf{Procure a tabela de contrato que a suíte LÊ e não escreve} ---
+  \cd{experiencias} antes de todas. O banco de desenvolvimento está semeado; o
+  do CI é descartável e nasce só com o schema, então \enquote{o produto
+  desligado fecha a porta} reprova por não haver experiência declarando
+  pertencer ao produto. O sintoma MENTE: \cd{expect(codigo)} recebendo
+  \cd{null} lê-se como guarda quebrada, e a guarda está certa. É o espelho do
+  sintoma acima --- lá a \emph{fixture} escrita vaza, aqui a leitura depende de
+  quem semeou --- e as duas raízes são a mesma: tabela de contrato não isola por
+  suíte (\adrr{ADR-90}). O catálogo real virou pré-condição declarada
+  (\cd{globalSetup} em \arq{apps/api/jest.config.cjs}); \textbf{para reproduzir
+  antes de empurrar}, suba um Postgres descartável
+  (\cd{docker run -e POSTGRES\_PASSWORD=pass -e POSTGRES\_DB=unooria -p 55433:5432 postgres:16}),
+  rode \cd{migrate:deploy} contra ele e a suíte inteira --- é exatamente o que o
+  CI faz, e é o único jeito de ver este vermelho sem esperar o \emph{push}.\\
+\zebra \textbf{O painel de recursos mudou o estado e o histórico não mostra a linha} &
+  \textbf{Isto é por desenho, e o log diz}: procure
+  \cd{codigo=recurso-auditoria-nao-gravada} no Cloud Logging. O registro do
+  histórico NUNCA derruba a operação que o chamou (\adrr{ADR-89}) --- o
+  interruptor da rede falhando porque o histórico dele falhou seria pior de todos
+  os jeitos ---, então a mudança vale e o histórico fica incompleto, em silêncio
+  na tela. Aquele contador é o alarme. Se o log não tem a linha, a mudança que
+  você procura foi em OUTRO escopo: o histórico de uma escola inclui as decisões
+  de escopo-contrato, mas o do contrato não desce até as das escolas.\\
+\textbf{O histórico da escola mostra uma mudança que ninguém fez naquela
+escola} &
+  \textbf{Também por desenho.} Filtrar por escola inclui as linhas de
+  escopo-contrato (\cd{escola\_id IS NULL}): foram elas que decidiram o que vale
+  ali. Sem isso, o histórico de uma escola apareceria VAZIO no dia em que a rede
+  inteira mudou --- e é justamente o dia em que alguém vai olhar. A coluna
+  \enquote{escopo} diz \enquote{a rede inteira} nessas linhas.\\
+\zebra \textbf{A suíte e2e reprova a geração, e o BANCO diz que ela ficou
+\cd{pronto} --- na mesma corrida} &
+  A espera estava vigiando o alerta ANTIGO. Quando o botão que dispara a ação
+  fica DENTRO do alerta de erro anterior (o \enquote{Tentar de novo} da exp-92 é
+  o caso), o \cd{esperarOuFalharCedo} seguinte vê aquele alerta e aborta antes de
+  a ação começar. Confirme pelo banco:
+  \cd{SELECT ordem, status, tentativas, atualizado\_em FROM
+  exp\_92\_planos\_de\_periodo ORDER BY atualizado\_em DESC} --- \cd{tentativas}
+  incrementado e \cd{status = pronto} com carimbo DA corrida significa que o
+  produto funcionou e o roteiro mentiu. É o pior falso negativo que existe,
+  porque manda investigar o que está certo. O conserto é esperar o estado
+  \cd{gerando} com \cd{waitFor} puro antes de armar a vigilância.\\
+\textbf{A suíte falha ao clicar num item de lista, e o \emph{call log} termina
+em \cd{<div id="unooria-collapse-\ldots">}} &
+  O item está dentro de um \cd{Collapse} FECHADO. O corpo fechado fica no DOM
+  (o pacote esconde por altura e \cd{opacity}, não por \cd{display}), então o
+  \emph{locator} acha o elemento, o Playwright o considera visível e o clique
+  morre interceptado pelo contêiner. Abra os \emph{collapses} antes de procurar
+  --- o cabeçalho tem \cd{role="button"} e \cd{aria-expanded}. O mesmo desenho é a
+  lacuna de acessibilidade da Seção~\ref{cap:ds}: aqueles controles também
+  recebem foco do teclado.\\
+\zebra \textbf{Voltei a turma do Instanooria para a investigação e a tela dos
+estudantes não mudou} &
+  Confira primeiro o \cd{movidos} da resposta de
+  \rota{POST /atividades/\{id\}/etapa}: \cd{voltou: true} com \cd{movidos: 0} é
+  o retrato exato deste problema, e o painel fica autocontraditório no mesmo
+  cartão --- \enquote{agora Investigação} acima de \enquote{N respondendo}.
+  \textbf{Duas causas, e só uma é defeito.} Se as \emph{runs} estão em
+  \cd{explicabilidade} ou adiante, é POR DESENHO: quem já viu a revelação não
+  volta ao \emph{feed}, para na resposta, porque quem sabe que o \emph{feed} era
+  enviesado não pode ser medido por ele de novo (\adrr{ADR-92}). Fora disso, a
+  versão da API é anterior à \adrr{ADR-92}: até 2026-09-10 sair da investigação
+  congelava a sessão e voltar NUNCA reabria, o que tornava o retorno um
+  \emph{no-op} para a turma inteira. Confirme com
+  \cd{SELECT fase, finished\_at FROM exp\_01\_runs WHERE activity\_id = ...}: fase
+  \cd{conclusao} com \cd{finished\_at} preenchido e a atividade em
+  \cd{investigacao} é a assinatura do defeito.\\
+\textbf{Apertei \enquote{Pausar para Debate} e a tela do estudante não congelou}
+&
+  \textbf{Espere 5 segundos antes de investigar.} O congelamento da exp-08 não é
+  \emph{push}: é uma linha em \cd{exp\_08\_gates\_turma} que a tela lê por
+  \emph{polling} de 5\,s (\adrr{ADR-93}), e não há WebSocket de aplicação no
+  Cloud Run. Passados dois ciclos, as causas em ordem: (1) o estudante está
+  \textbf{antes} da decisão --- o \emph{polling} só roda de \cd{decisao} a
+  \cd{percurso}, e o gate mexe no TETO do passo, então quem ainda audita a
+  máquina não é tocado \textbf{de propósito}; (2) o estudante não tem turma (sem
+  \cd{turma\_id} não há gate, senão ele ficaria preso sem quem o solte); (3) a
+  aba está em segundo plano e o navegador desacelerou o \emph{timer}. Confirme
+  com \cd{SELECT etapa FROM exp\_08\_gates\_turma WHERE turma\_id = ...}: se está
+  \cd{debate} e a tela não congelou, é uma das três --- não é o botão.\\
+\zebra \textbf{O estudante da exp-08 diz que \enquote{não deixa escrever} a
+justificativa} &
+  Dois casos, e o código HTTP separa. \textbf{422 \cd{dado-pessoal-no-texto}}: o
+  filtro achou telefone, CPF, e-mail, CEP, cartão ou \cd{@perfil} e recusou
+  \textbf{sem gravar} --- é comportamento, não defeito, e a dica na tela diz o
+  que tirar. \textbf{400}: o texto tem menos de 20 caracteres depois do
+  \cd{trim}, ou as palavras-chave não são exatamente duas distintas. O log leva
+  o \emph{nome} do padrão que casou (\cd{padroes: ["telefone"]}) e o
+  \textbf{tamanho} do texto, nunca o trecho --- procurar o conteúdo no log é
+  procurar o que a regra existe para não guardar.\\
+\textbf{A turma toda da exp-08 escolheu a mesma cláusula --- o painel está
+quebrado?} &
+  Não. \textbf{As quatro cláusulas são válidas} e a distribuição é contagem, não
+  acerto: unanimidade é um resultado possível, e o guia da aula trata dela como
+  o cenário em que o debate quase não acontece (a mediação é pedir o CUSTO da
+  cláusula escolhida). Se você está procurando percentual de acerto no painel,
+  ele não existe por decisão --- \cd{PROIBIDO\_NO\_PAINEL} tem o teste que cobra
+  a ausência de \cd{acerto} e \cd{taxa}.\\
+\zebra \textbf{O professor gerou o conteúdo com IA e veio o texto padrão da
+Unooria} &
+  É o \emph{fallback} funcionando, e a tela diz qual pacote está em uso
+  (\enquote{Utilizando pacote curado padrão da Unooria}). Três causas: quota de
+  IA do perfil professor esgotada no dia, provedor indisponível, ou a saída
+  reprovada pela validação (balão acima de 60 palavras, termo proibido em tela,
+  cardinalidade errada) --- e reprovar faz o modelo regerar até esgotar as
+  tentativas. Procure \cd{codigo: exp08-preparo-falhou} ou
+  \cd{exp08-preparo-sem-saldo} no log. \textbf{Nada disso bloqueia a aula}: o
+  banco curado é homologado, e o professor pode aprová-lo como está.\\
+\textbf{A suíte diz que a recusa de \emph{login} não aparece na tela --- e ela
+aparece} &
+  A espera era CEGA. O passo esperava 3s fixos depois do clique e então lia a
+  tela; em 2026-09-10 o \rota{POST /api/auth/callback/credentials} levou
+  \textbf{4,5s}, porque era a primeira vez que o \cd{next dev} compilava
+  \rota{/api/auth/[...nextauth]}, e a foto pegou o botão ainda em
+  \enquote{Entrando\ldots}. O relatório então acusou o PRODUTO --- \enquote{a
+  recusa não aparece, e não só no console} --- quando o defeito era da espera.
+  Confirme no log do hub:
+  \cd{POST /api/auth/callback/credentials? 200 in 4.5s}; com a rota quente a
+  recusa aparece em 333ms (medido no mesmo dia). O conserto é o da espera que
+  corre contra o erro: espere o DESFECHO --- o \cd{AlertBox} de erro OU a saída
+  do \rota{/login} --- e nunca o relógio. Note que aqui a espera cega era curta
+  DEMAIS, o inverso do caso comum em que ela paga o prazo inteiro: os dois
+  reportam a causa errada, e este reporta uma causa que culpa o produto.\\
+\zebra \textbf{\emph{Spans} descartados com \cd{motivo=sem-projeto} --- e
+\env{GCP\_PROJECT\_ID} ESTÁ no serviço} &
+  A \emph{env} está certa: o que falta é o \cd{ClienteOtlpGoogle} chegar ao
+  construtor do \cd{ProxyOtlpService}. Ele era importado com \cd{import type},
+  o identificador sai do escopo de valor, o \cd{emitDecoratorMetadata} grava
+  \cd{Function} no \cd{design:paramtypes}, o Nest não acha provider para esse
+  \emph{token} --- e o \cd{@Optional()} injeta \cd{undefined} sem erro nenhum.
+  O ramo comentado como \enquote{dev sem projeto} vira o ÚNICO que roda, a rota
+  responde \textbf{204}, e o Cloud Trace nunca recebe span de navegador. Vigorou
+  de 2026-09-02 a 2026-09-14, em \emph{dev} e \emph{hml} ao mesmo tempo.
+  Verificação de um comando: procure \cd{design:paramtypes} no
+  \arq{otlp-proxy.service.js} de \arq{dist} --- o segundo tipo tem de ser
+  \cd{ClienteOtlpGoogle}, nunca \cd{Function}. A regra
+  que fica: em NestJS, classe usada como \emph{token} de injeção NUNCA entra por
+  \cd{import type}, e \cd{@Inject} explícito tira o \emph{token} das mãos do
+  compilador. Rede: \arq{apps/api/tests/observabilidade-injecao.spec.ts} --- e
+  note que as suítes antigas não pegavam, porque faziam
+  \cd{new ProxyOtlpService(...)}, que não passa pelo \emph{container}.\\
+\textbf{\emph{Spans} com \cd{motivo=upstream} logo após consertar o
+\cd{sem-projeto}} &
+  Leia como PROGRESSO antes de ler como defeito: \cd{upstream} só é contado
+  quando o cliente EXISTE e a chamada ao Google falhou --- ou seja, a injeção
+  voltou a funcionar. A causa medida em 2026-09-15 foi
+  \cd{400 Resource is missing required attribute}, sobre
+  \cd{gcp.project\_id}: o \cd{reescreverLote} monta o resource do ZERO (o do
+  navegador é descartado inteiro, por ser entrada não confiável) e não repetia o
+  atributo que \arq{recurso.ts} já punha nos sinais do processo.
+  \textbf{Um defeito escondia o outro} --- enquanto o cliente nunca era
+  injetado, o lote não chegava a ser enviado e o 400 não tinha como aparecer.
+  Hoje o projeto vem do próprio cliente (\cd{ClienteOtlpGoogle.projeto}), que é
+  a mesma fonte do cabeçalho de cota. Quem responde é
+  \cd{codigo: otlp.upstream-recusou}, com \cd{status} e \cd{detalhe}, e ela sai
+  \textbf{uma vez por minuto} --- não uma por lote, para o upstream fora do ar
+  não virar inundação de log cobrada por GiB.\\
+\zebra \textbf{Rajada de \cd{motivo=sem-iden\allowbreak{}tidade}, em UM ambiente só} &
+  O \cd{service.version} que o navegador manda não passa no formato que a api
+  daquele ambiente aceita, e o lote inteiro é recusado antes de qualquer
+  \emph{span} ser contado (o contador soma 1 por LOTE, não por \emph{span}).
+  O caso medido é de ambiente ATRASADO: até \cd{cf9489f} (2026-09-08) a api
+  validava a versão com \cd{\{1,32\}} enquanto o CI injetava
+  \env{NEXT\_PUBLIC\_HUB\_VERSAO} com o \cd{github.sha} INTEIRO, de 40
+  caracteres --- todo lote do hub caía, com a rota respondendo \textbf{204}. Em
+  \cd{hml}, parada em código de 05/09, isso rendeu 23 lotes descartados em
+  2026-09-14. Antes de procurar defeito, confira em que \emph{commit} o ambiente
+  está (\cd{gcloud run revisions list}) e compare com \cd{origin/dev}: o
+  conserto de um ambiente atrasado é a PROMOÇÃO, não código.\\
+\bottomrule
 \end{tabularx}
 
 \section{\emph{Checklist} de operação}
@@ -841,6 +1173,18 @@ Mensal & \textbf{Contagem da partição \cd{DEFAULT} de telemetria} --- encher
   catálogo (\cd{R-12}).\\
 Anual, ou por \emph{release} & Revisar as ADRs cujo gatilho de reavaliação pode
   ter sido acionado (Capítulo~\ref{cap:adr}).\\
+\zebra \textbf{Sob suspeita} de que o catálogo de uma \emph{stack} tenha sido
+  escrito por engano & \arq{apps/api/scripts/conferir-catalogo-remoto.mjs} ---
+  \textbf{só leitura}, com a receita do \emph{job} efêmero no próprio cabeçalho
+  (o Cloud SQL só tem IP privado). Ele procura as impressões digitais concretas
+  de \emph{fixture} de teste (\cd{nome = exp\_id}, \cd{exp-99-\%},
+  \cd{escola LIKE 'teste-\%'}) e imprime o catálogo, as disponibilidades e o
+  histórico do painel. \textbf{Não existe migração de conserto aqui, de
+  propósito}: o valor certo mora no \arq{public/experiencia.json}, e o
+  \emph{deploy} já o reaplica --- uma migração que \enquote{restaurasse} o
+  catálogo gravaria valores inventados por quem a escreveu, e o sintoma disso é
+  pior que o do problema (uma experiência sai da grade de uma série sem ninguém
+  ter mudado nada).\\
 \bottomrule
 \end{tabularx}
 

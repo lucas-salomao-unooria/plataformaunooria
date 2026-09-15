@@ -26,6 +26,7 @@ import {
   type OpcoesDeImportacao,
   type RelatorioImportacao,
 } from "./rostering.service";
+import { ehDoContrato } from "../auth/claims";
 
 const TIMEOUT_DA_ESCRITA = 30_000;
 
@@ -33,7 +34,7 @@ export interface OpcoesOneRoster extends OpcoesDeImportacao {
   /** `bulk` = lote completo; `delta` = só o que mudou. Default: `delta`. */
   modo?: "bulk" | "delta";
   /**
-   * `orgs.csv` pode CRIAR escola. Só `admin-contrato`: escola é tenant, e abrir
+   * `orgs.csv` pode CRIAR escola. Só `gestor_contrato`: escola é tenant, e abrir
    * inquilino novo não é operação de quem administra uma unidade.
    */
   podeCriarEscola?: boolean;
@@ -226,7 +227,7 @@ export class OneRosterService {
       if (!ehEsta) {
         /* REVISÃO da decisão original ("escola nova não nasce de CSV"): numa
            rede estadual são milhares de escolas, e cadastrar à mão é inviável.
-           O que se mantém é QUEM pode: só `admin-contrato` abre inquilino novo.
+           O que se mantém é QUEM pode: só `gestor_contrato` abre inquilino novo.
            Para gestor, a linha continua sendo aviso. */
         if (!podeCriar) {
           relatorio.avisos.push({
@@ -254,21 +255,51 @@ export class OneRosterService {
           relatorio.atualizados += 1;
         } else {
           /* `parentSourcedId` amarra a unidade à regional — é o que monta a lista
-             de escolas de uma diretoria. Pai desconhecido entra como null e volta
-             no relatório: melhor unidade sem regional que unidade pendurada em
-             nada. */
+             de escolas de uma diretoria.
+             ANTES a escola entrava com `pai_id` nulo e um aviso ("melhor unidade
+             sem regional que unidade pendurada em nada"). Deixou de ser opção:
+             toda escola tem regional (ADR-79), e uma órfã aqui reprovaria no
+             CHECK do banco como exceção crua de Postgres, no meio de um arquivo
+             de mil linhas.
+             A política nova é a do card: com UMA regional na rede o vínculo é
+             automático — a rede sem divisão administrativa não deveria ter de
+             declarar a coluna. Com VÁRIAS é preciso dizer qual, e a linha sem
+             vínculo válido é ERRO, com o número dela no relatório. */
           const paiId = linha.campo("parentSourcedId");
           const pai = paiId
             ? await this.prisma.escola.findFirst({
-                where: { OR: [{ id: paiId }, { fonteId: paiId }], tipo: { in: ["regional", "rede"] } },
+                where: { OR: [{ id: paiId }, { fonteId: paiId }], tipo: "regional" },
                 select: { id: true },
               })
             : null;
-          if (paiId && !pai) {
+          let regionalDaEscola = pai?.id;
+          if (!regionalDaEscola) {
+            /* `take: 2` porque a pergunta é "uma ou mais de uma?", não "quantas":
+               numa rede estadual são ~90, e contá-las por linha de CSV seria
+               noventa vezes o mesmo trabalho em cada uma das mil escolas. */
+            const regionais = await this.prisma.escola.findMany({
+              where: { tipo: "regional" },
+              select: { id: true },
+              take: 2,
+            });
+            const unica = regionais.length === 1 ? regionais[0] : undefined;
+            if (!unica) {
+              relatorio.erros.push({
+                linha: linha.linha,
+                campo: "parentSourcedId",
+                mensagem: paiId
+                  ? `regional "${paiId}" desconhecida: envie as linhas de district ANTES das de school`
+                  : "a rede tem mais de uma regional: informe parentSourcedId nesta escola",
+              });
+              continue;
+            }
+            regionalDaEscola = unica.id;
             relatorio.avisos.push({
               linha: linha.linha,
               campo: "parentSourcedId",
-              mensagem: `regional "${paiId}" desconhecida — a escola entrou sem regional; envie as linhas de district antes`,
+              mensagem: paiId
+                ? `regional "${paiId}" desconhecida — a escola entrou na única regional da rede`
+                : "sem parentSourcedId — a escola entrou na única regional da rede",
             });
           }
           await this.prisma.escola.create({
@@ -277,7 +308,7 @@ export class OneRosterService {
               nome: linha.campo("name") || idNovo,
               tipo: "escola",
               fonteId: sourcedId,
-              ...(pai ? { paiId: pai.id } : {}),
+              paiId: regionalDaEscola,
               ...(identifier ? { codigoInep: identifier } : {}),
             },
           });
@@ -596,7 +627,7 @@ export class OneRosterService {
           porUsuario.get(linha.campo("username")) ??
           null);
 
-      if (existente?.role === "admin-contrato" || naOutra?.role === "admin-contrato") {
+      if (ehDoContrato(existente?.role ?? "") || ehDoContrato(naOutra?.role ?? "")) {
         relatorio.erros.push({ linha: linha.linha, campo: "username", mensagem: "usuario reservado" });
         continue;
       }
@@ -710,7 +741,7 @@ export class OneRosterService {
         const feito = await this.escolasDaRede.lotar(
           escolaId,
           p.deOutraEscola.id,
-          p.papel as "professor" | "gestor",
+          p.papel as "professor" | "gestor_escola",
         );
         if (feito) relatorio.lotacoesNovas += 1;
       }
@@ -744,7 +775,7 @@ export class OneRosterService {
               await garantirLotacao(tx, {
                 escolaId,
                 usuarioId: p.existenteId,
-                papel: p.papel as "estudante" | "professor" | "gestor",
+                papel: p.papel as "estudante" | "professor" | "gestor_escola",
                 inicio: inicioDaLotacao,
                 fonteId: p.sourcedId || null,
               });
@@ -766,7 +797,7 @@ export class OneRosterService {
           await garantirLotacao(tx, {
             escolaId,
             usuarioId: criado.id,
-            papel: p.papel as "estudante" | "professor" | "gestor",
+            papel: p.papel as "estudante" | "professor" | "gestor_escola",
             inicio: inicioDaLotacao,
             principal: true,
             fonteId: p.sourcedId || null,
@@ -789,7 +820,7 @@ export class OneRosterService {
     if (relatorio.modo === "bulk") {
       const vindos = new Set(preparadas.map((p) => p.sourcedId).filter(Boolean));
       relatorio.candidatosAInativacao = existentes.filter(
-        (u) => u.fonteId && !vindos.has(u.fonteId) && u.role !== "admin-contrato",
+        (u) => u.fonteId && !vindos.has(u.fonteId) && !ehDoContrato(u.role),
       ).length;
       if (relatorio.candidatosAInativacao > 0) {
         relatorio.avisos.push({
@@ -911,7 +942,7 @@ export class OneRosterService {
             });
             continue;
           }
-          if (pessoa.role === "admin-contrato") {
+          if (ehDoContrato(pessoa.role)) {
             relatorio.erros.push({ linha: linha.linha, campo: "userSourcedId", mensagem: "usuario reservado" });
             continue;
           }

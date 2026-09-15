@@ -1,12 +1,10 @@
 import Link from "next/link";
 
-import { Badge } from "@edu/ui/ds";
+import { Badge, ScrollBar } from "@edu/ui/ds";
+import { dataCurta } from "@edu/sdk";
 import type { LinhaDaTurma } from "@/lib/vila-tipos";
 
-function quando(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-}
+const quando = dataCurta;
 
 /**
  * Uma linha por estudante da turma, inclusive quem não jogou.
@@ -30,7 +28,7 @@ export function TabelaTurma({
 }) {
   const lista = estudantes ?? [];
   return (
-    <div className="overflow-x-auto">
+    <ScrollBar orientation="both" autoHide className="tabela-rolavel">
       <table className="w-full min-w-[640px] border-collapse text-[13px]">
         <thead>
           <tr className="border-b border-unooria-neutral-200 text-left text-[12px] uppercase tracking-wider text-unooria-neutral-500">
@@ -90,6 +88,6 @@ export function TabelaTurma({
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollBar>
   );
 }

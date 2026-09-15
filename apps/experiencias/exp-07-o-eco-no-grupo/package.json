@@ -1,6 +1,6 @@
 {
   "name": "@edu/exp-07-o-eco-no-grupo",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,18 +11,18 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "@edu/sdk": "workspace:*",
     "@edu/ui": "workspace:*",
-    "@unooria/design-system": "^0.1.17"
+    "@unooria/design-system": "^0.2.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.0",
-    "vite": "^6.4.3",
-    "vitest": "^3.2.6",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "typescript": "^5.7.0"
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.4.3",
+    "vitest": "^3.2.6"
   }
 }

@@ -236,4 +236,12 @@ export async function limparBancoDeTeste(escolaId: string) {
   await prisma.author.deleteMany({ where });
   await prisma.activity.deleteMany({ where });
   await prisma.user.deleteMany({ where });
+  /* A LINHA DA ESCOLA TAMBÉM SAI. Sem isto, cada suíte deixava a própria escola
+     vazia no banco de dev para sempre — e escola é a única fixture que APARECE
+     na interface: o seletor de escopo do painel da Unooria e as listas de
+     escola do gestor passaram a oferecer "teste-motor-postgres" e companhia.
+     Visto em 2026-09-10, contando o que sobrou depois da suíte inteira.
+     `deleteMany` (e não `delete`) para não estourar quando a escola já não
+     existe, e por último porque as FKs dos filhos são `RESTRICT`. */
+  await prisma.escola.deleteMany({ where: { id: escolaId } });
 }

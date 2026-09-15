@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { AlertBox, Button, Card, Logo, PasswordInput } from "@edu/ui/ds";
+import { LogoutButton } from "@/components/logout-button";
 
 /**
  * A senha que a escola entregou vale uma vez. Aqui a pessoa escolhe a dela.
@@ -108,6 +109,22 @@ export function FormularioDeTrocaDeSenha({ nome, usuario }: { nome: string; usua
           Salvar e continuar
         </Button>
       </form>
+
+      {/*
+       * A ÚNICA porta de saída desta tela. Ela é a única rota com sessão e sem
+       * `HeaderPlataforma` — e a ausência do header é deliberada: o link da
+       * marca iria para a home do papel, que o middleware devolveria para cá,
+       * um link morto. Sem este botão, quem entrou com a conta errada (a escola
+       * entregou a senha de outra pessoa, ou a pessoa digitou o usuário do
+       * colega) fica presa: o middleware não deixa navegar para fora enquanto a
+       * senha do lote não for trocada, e trocá-la exige saber a senha atual.
+       */}
+      <div className="flex flex-col items-center gap-1 border-t border-unooria-neutral-200 px-1 pb-1 pt-5">
+        <p className="text-[13px] text-unooria-neutral-500">
+          Não é você, {nome.split(" ")[0]}?
+        </p>
+        <LogoutButton />
+      </div>
     </Card>
   );
 }

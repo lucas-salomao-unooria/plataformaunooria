@@ -213,7 +213,8 @@
 
 .landing-rodape {
   margin-top: 96px;
-  padding: 64px 24px;
+  /* Embaixo é menos que em cima: sob a assinatura não vem mais nada. */
+  padding: 64px 24px 32px;
   background: color-mix(
     in srgb,
     var(--unooria-color-brandnavy-100, #e8effa) 40%,
@@ -233,6 +234,17 @@
 
 .landing-rodape a:hover {
   color: var(--unooria-color-brandnavy-900, #2f4f7f);
+}
+
+/*
+ * A assinatura é a faixa de BAIXO do rodapé: centrada, separada da linha de
+ * marca/links só pelo respiro — sem fio, por decisão de desenho. Compensação
+ * local de LAYOUT (espaçamento e centralização), não componente: tipografia e
+ * cor saem das classes da landing, que só usam token.
+ */
+.landing-rodape__assinatura {
+  margin-top: 40px;
+  text-align: center;
 }
 
 /* ---- revelação ao rolar ------------------------------------------------- */

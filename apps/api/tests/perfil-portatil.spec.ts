@@ -107,7 +107,7 @@ beforeAll(async () => {
       username: "pp.gestor",
       displayName: "Gestor Portátil",
       passwordHash: "x",
-      role: "gestor",
+      role: "gestor_escola",
     },
   });
   gestorId = gestor.id;

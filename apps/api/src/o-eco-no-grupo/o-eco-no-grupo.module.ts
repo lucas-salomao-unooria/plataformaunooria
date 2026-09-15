@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AssetsModule } from "../assets/assets.module";
 import { IaDaExp07Service } from "./ia.service";
 import { MidiaDaExp07Service } from "./midia.service";
+import { OEcoNoGrupoProfessorController } from "./o-eco-no-grupo-professor.controller";
 import { OEcoNoGrupoTurmasController } from "./o-eco-no-grupo-turmas.controller";
 import { OEcoNoGrupoController } from "./o-eco-no-grupo.controller";
 import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
@@ -17,7 +18,7 @@ import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
  */
 @Module({
   imports: [AssetsModule],
-  controllers: [OEcoNoGrupoController, OEcoNoGrupoTurmasController],
+  controllers: [OEcoNoGrupoController, OEcoNoGrupoTurmasController, OEcoNoGrupoProfessorController],
   providers: [OEcoNoGrupoService, IaDaExp07Service, MidiaDaExp07Service],
   exports: [OEcoNoGrupoService],
 })

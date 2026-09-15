@@ -1,7 +1,9 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { PAPEIS, type Papel } from "./papeis";
+import { SESSAO_TTL_SEGUNDOS } from "./sessao";
+import { MOTIVO_API_INDISPONIVEL, MOTIVO_MUITAS_TENTATIVAS } from "./motivos-de-login";
 import type { UsuarioDaSessao } from "@/types/next-auth";
 
 /**
@@ -29,6 +31,43 @@ const RespostaLoginSchema = z.object({
     .default([]),
 });
 
+/**
+ * Quanto tempo o hub espera a api responder o login.
+ *
+ * Sem isto a espera é ILIMITADA: api PENDURADA — não fora do ar, pendurada,
+ * que é como aparecem um Cloud Run em partida a frio e um pool de conexões
+ * esgotado — deixa a pessoa no "Entrando…" para sempre, sem nunca receber
+ * mensagem nenhuma. É o modo de falhar MUDO: ela não sabe se errou a senha ou
+ * se o sistema travou. 8s é folgado para o bcrypt do `/auth/login` (~100ms
+ * medidos em dev) mais uma partida a frio da api.
+ */
+const TIMEOUT_DO_LOGIN_MS = 8_000;
+
+/**
+ * "Não foi possível entrar", que é DIFERENTE de "credencial errada".
+ *
+ * `authorize` só sabe recusar devolvendo `null`, e todo `null` chega ao
+ * cliente como a MESMA `CredentialsSignin` da senha errada. Se a falha da api
+ * entrasse por esse caminho, a tela diria "Usuário ou senha incorretos" a quem
+ * digitou tudo certo — culpando a pessoa por uma falha nossa. É a regra do
+ * "o texto não mente" aplicada a interface, não a documento.
+ *
+ * O `code` é o único campo que o @auth/core leva até o cliente: ele o escreve
+ * no `?code=` da URL de erro (`@auth/core/index.js`, `params.set("code", ...)`)
+ * e o `signIn` o devolve em `SignInResponse.code`. Como ele VAI PARA A URL, só
+ * pode dizer de que LADO foi a falha — nunca qual metade da credencial errou.
+ * A recusa de credencial continua ambígua entre usuário e senha, de propósito:
+ * dizer "este usuário não existe" entrega a lista de logins da rede.
+ */
+class ApiNaoRespondeu extends CredentialsSignin {
+  code = MOTIVO_API_INDISPONIVEL;
+}
+
+/** 429 da api. Acertar a senha agora não adiantaria, e insistir só estende o bloqueio. */
+class MuitasTentativas extends CredentialsSignin {
+  code = MOTIVO_MUITAS_TENTATIVAS;
+}
+
 const providers = [
   Credentials({
     id: "credentials",
@@ -41,12 +80,27 @@ const providers = [
       if (!cred.success) return null;
 
       const apiUrl = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
-      const resposta = await fetch(`${apiUrl}/auth/login`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(cred.data),
-        cache: "no-store",
-      });
+      let resposta: Response;
+      try {
+        resposta = await fetch(`${apiUrl}/auth/login`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(cred.data),
+          cache: "no-store",
+          signal: AbortSignal.timeout(TIMEOUT_DO_LOGIN_MS),
+        });
+      } catch (err) {
+        /* `console` e não o pino de `lib/log.ts`: este módulo é importado pelo
+           `middleware.ts`, que roda no EDGE (o `lib/log.ts` é `server-only`) —
+           a mesma razão do aviso de `lib/sessao.ts`. O `name` basta para
+           separar prazo estourado (`TimeoutError`) de api inalcançável
+           (`TypeError`), e não carrega nada da credencial. */
+        console.warn(
+          `[login] a api não respondeu: ${err instanceof Error ? err.name : "erro desconhecido"}`,
+        );
+        throw new ApiNaoRespondeu();
+      }
+      if (resposta.status === 429) throw new MuitasTentativas();
       if (!resposta.ok) return null;
 
       const dados = RespostaLoginSchema.safeParse(await resposta.json().catch(() => null));
@@ -84,7 +138,26 @@ if (process.env.AUTH_WSO2_ISSUER) {
 
 export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   providers,
-  session: { strategy: "jwt", maxAge: 60 * 60 * 12 }, // 12h — cobre um dia de aula
+  /**
+   * 2h de INATIVIDADE, não 2h absolutas, e igual para todo papel (ADR-95).
+   *
+   * Com `strategy: "jwt"` o `@auth/core` RE-ASSINA o cookie a cada leitura de
+   * sessão (`lib/actions/session.js`, ramo `jwt`: o `jwt.encode` grava
+   * `exp = agora + maxAge`) e o `handleAuth` do next-auth devolve o
+   * `Set-Cookie`. O `updateAge` **não é consultado nesse ramo** — ele só existe
+   * na estratégia de banco, então não há o que ajustar nele aqui.
+   *
+   * **O QUE CONTA COMO USO (ADR-96):** toda navegação casada pelo `matcher` do
+   * middleware e o pedido de passe da experiência (`GET /api/exp-token`, que
+   * chama `unstable_update` para ESCREVER o cookie — `auth()` sozinho lê e
+   * descarta o `Set-Cookie`, porque em RSC e route handler não se escreve
+   * cookie). Antes da ADR-96 o pedido de passe não contava, e quem ficava
+   * dentro de uma missão via a sessão envelhecer como se estivesse parado.
+   *
+   * O número vem de `lib/sessao.ts`, que o pina em produção: a `/privacidade`
+   * afirma o prazo à família e não pode divergir dele.
+   */
+  session: { strategy: "jwt", maxAge: SESSAO_TTL_SEGUNDOS },
   pages: { signIn: "/login" },
   callbacks: {
     // O beta do next-auth re-exporta o tipo JWT de @auth/core e a module

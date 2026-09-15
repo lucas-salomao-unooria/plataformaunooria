@@ -6,6 +6,7 @@ import { contextoAtual } from "../tenancy/tenancy-context";
 import { FiltroDeExcecao } from "./filtro-de-excecao";
 import { logger } from "./logger";
 import { Metricas } from "./metricas";
+import { ObservabilidadePublicoController } from "./observabilidade-publico.controller";
 import { ObservabilidadeController } from "./observabilidade.controller";
 import { ClienteOtlpGoogle } from "./otlp-google";
 import { ProxyOtlpService } from "./otlp-proxy.service";
@@ -32,6 +33,20 @@ export class DesligamentoDoOtel implements OnApplicationShutdown {
  * `quietReqLogger`: o logger por requisição do pino-http carrega só o
  * `requestId`, não o objeto `req` inteiro (que traz o header `authorization`).
  */
+/**
+ * Sem `GCP_PROJECT_ID` não há cliente: o proxy conta e descarta. O mesmo
+ * cliente que o `otel.ts` usa para as métricas — mesma credencial ADC.
+ *
+ * Constante exportada, e não literal dentro do `@Module`, para que a regressão
+ * de injeção (`tests/observabilidade-injecao.spec.ts`) monte ESTE provider em
+ * vez de uma cópia: um teste que redeclara a factory passa verde enquanto a do
+ * módulo está quebrada.
+ */
+export const PROVIDER_DO_CLIENTE_OTLP = {
+  provide: ClienteOtlpGoogle,
+  useFactory: () => (process.env.GCP_PROJECT_ID ? new ClienteOtlpGoogle(process.env.GCP_PROJECT_ID) : undefined),
+};
+
 @Global()
 @Module({
   imports: [
@@ -46,18 +61,15 @@ export class DesligamentoDoOtel implements OnApplicationShutdown {
       },
     }),
   ],
-  controllers: [ObservabilidadeController],
+  // O público vem PRIMEIRO: `observabilidade/publico/*` é prefixo mais específico
+  // que `observabilidade/*`, e o Nest casa na ordem de registro.
+  controllers: [ObservabilidadePublicoController, ObservabilidadeController],
   providers: [
     { provide: APP_FILTER, useClass: FiltroDeExcecao },
     DesligamentoDoOtel,
     Metricas,
     ProxyOtlpService,
-    {
-      // Sem `GCP_PROJECT_ID` (dev) não há cliente: o proxy conta e descarta.
-      // O mesmo cliente que o `otel.ts` usa para as métricas — mesma credencial ADC.
-      provide: ClienteOtlpGoogle,
-      useFactory: () => (process.env.GCP_PROJECT_ID ? new ClienteOtlpGoogle(process.env.GCP_PROJECT_ID) : undefined),
-    },
+    PROVIDER_DO_CLIENTE_OTLP,
   ],
   exports: [Metricas],
 })

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SERIES } from "../comum/series";
+import { ProdutoSchema } from "../recursos/catalogo";
 
 export const CAPABILITIES = [
   "telemetria",
@@ -10,8 +11,10 @@ export const CAPABILITIES = [
 ] as const;
 
 /** Lista FECHADA e curta do que o `ExpFrame` traduz em token de sandbox.
- *  `fullscreen` não entra: o `allow` do frame já o delega a todas. */
-export const PERMISSOES_DE_IFRAME = ["pointer-lock", "forms"] as const;
+ *  `fullscreen` não entra: o `allow` do frame já o delega a todas.
+ *  Mexeu aqui? Migration do CHECK também — `tests/permissoes-de-iframe.spec.ts`
+ *  cobra as duas, porque a divergência só aparece como 500 no CI. */
+export const PERMISSOES_DE_IFRAME = ["pointer-lock", "forms", "downloads"] as const;
 
 export const ViewportSchema = z.object({
   largura: z.number().int().positive(),
@@ -25,6 +28,20 @@ export const UpsertSchema = z.object({
   /** A unidade do ano (1 a 4). Ausente na transversal e na ferramenta de
    *  professor — elas não moram numa unidade. Ordena a grade da sala. */
   unidade: z.number().int().min(1).max(4).nullish(),
+  /**
+   * A QUE PRODUTO a experiência pertence — o que a põe no painel da Unooria
+   * (ADR-87) e o que dá a ela o TETO do produto.
+   *
+   * `nullish` e não obrigatório, DE PROPÓSITO. Obrigatório aqui faria um
+   * manifesto sem o campo virar 400 no job `ativar-exps` do deploy — ou seja,
+   * DEPOIS de os bundles já terem subido, com a `versaoAtiva` ainda apontando
+   * para a versão antiga. É a mesma falha que o comentário do `ativar-exps`
+   * descreve para o `pnpm install` faltando.
+   *
+   * Quem cobra o campo é `tests/manifestos-declaram-produto.spec.ts`, que roda
+   * no CI ANTES do deploy — o portão certo é o que falha cedo.
+   */
+  produto: ProdutoSchema.nullish(),
   capabilities: z.array(z.enum(CAPABILITIES)).default([]),
   viewport: ViewportSchema.nullish(),
   publico: z
@@ -53,6 +70,9 @@ export const ExperienciaSchema = z.object({
   versaoAtiva: z.string(),
   series: z.array(z.string()),
   unidade: z.number().int().nullable(),
+  /** `z.string()` e não o enum, pelo mesmo motivo dos três campos abaixo: linha
+   *  anterior à coluna tem `null` aqui, e é dado real. */
+  produto: z.string().nullable(),
   capabilities: z.array(z.string()),
   viewport: ViewportSchema.nullable(),
   publico: z.string(),

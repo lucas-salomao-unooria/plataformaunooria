@@ -12,7 +12,7 @@ import { COLUNAS_MODELO } from "../src/rostering/catalogo";
 describe("papéis", () => {
   test("coordenação, direção e os termos do OneRoster viram gestor", () => {
     for (const bruto of ["coordenacao", "Coordenação", "coordenador", "Diretora", "principal", "siteAdministrator"]) {
-      expect(normalizarPapel(bruto)).toBe("gestor");
+      expect(normalizarPapel(bruto)).toBe("gestor_escola");
     }
   });
 

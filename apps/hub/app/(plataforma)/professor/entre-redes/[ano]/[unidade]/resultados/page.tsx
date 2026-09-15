@@ -2,12 +2,18 @@ import { notFound } from "next/navigation";
 
 import {
   MISSAO_ECO_NO_GRUPO,
+  MISSAO_MANIFESTO_IA,
+  MISSAO_FOTO_CONTA,
+  MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
   buscarMissao,
 } from "@/lib/entre-redes/catalogo";
 
+import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
+import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
+import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
 import { ResultadosUnooTube } from "./resultados-unootube";
 
@@ -32,19 +38,28 @@ export default async function ResultadosPage({
   const { ano: anoSlug, unidade: unidadeSlug } = await params;
   const encontrado = buscarMissao(anoSlug, unidadeSlug);
   if (!encontrado) notFound();
-  const { ano, missao } = encontrado;
+  const { missao } = encontrado;
 
   const { turmaId } = await searchParams;
   const turma = turmaId?.trim() ?? "";
 
+  if (missao.expId === MISSAO_FOTO_CONTA.expId) {
+    return <ResultadosFotoConta missao={missao} turma={turma} />;
+  }
   if (missao.expId === MISSAO_UNOOTUBE.expId) {
-    return <ResultadosUnooTube ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosUnooTube missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_UNOOGPT.expId) {
-    return <ResultadosUnooGPT ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosUnooGPT missao={missao} turma={turma} />;
   }
   if (missao.expId === MISSAO_ECO_NO_GRUPO.expId) {
-    return <ResultadosOEcoNoGrupo ano={ano} missao={missao} turma={turma} />;
+    return <ResultadosOEcoNoGrupo missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_RASTRO_BOATO.expId) {
+    return <ResultadosRastroBoato missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
+    return <ResultadosManifestoIa missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

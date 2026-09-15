@@ -12,6 +12,8 @@
  * momento não há token. Ele fica no console — e o sinal dele é o hub, que vê
  * o handshake não fechar.
  */
+import { lerDispositivo, type DispositivoDoNavegador } from "./dispositivo";
+
 export const MAX_ERROS_POR_SESSAO = 5;
 export const MAX_STACK_BYTES = 8_192;
 export const MAX_MENSAGEM_BYTES = 2_048;
@@ -26,6 +28,7 @@ export interface ErroDeCliente {
   sessaoId: string;
   traceId?: string;
   spanId?: string;
+  dispositivo?: DispositivoDoNavegador;
 }
 
 export interface OpcoesDaCaptura {
@@ -75,6 +78,7 @@ export function instalarCapturaDeErros(o: OpcoesDaCaptura): { reportar: (erro: u
     vistos.add(hash);
     enviados += 1;
     const trace = o.traceAtivo?.();
+    const dispositivo = lerDispositivo(alvo);
     const erro: ErroDeCliente = {
       expId: o.expId,
       versao: o.versao,
@@ -84,6 +88,7 @@ export function instalarCapturaDeErros(o: OpcoesDaCaptura): { reportar: (erro: u
       url: `${alvo.location.origin}${alvo.location.pathname}`.slice(0, 512),
       userAgent: alvo.navigator?.userAgent?.slice(0, 256),
       sessaoId: o.sessaoId,
+      ...(dispositivo ? { dispositivo } : {}),
       ...(trace ? { traceId: trace.traceId, spanId: trace.spanId } : {}),
     };
     void o.enviar(erro).catch(() => undefined);

@@ -4,7 +4,8 @@
  * a partir do `public/experiencia.json` dela — o passo 4 do deploy em
  * docs/INFRA.md que o workflow só descrevia e não executava.
  *
- * A rota exige admin-contrato. Este script assina um token de 5 minutos com
+ * A rota exige `gestor_contrato` (a ADR-80 aposentou `admin-contrato` em
+ * 2026-09-08). Este script assina um token de 5 minutos com
  * a MESMA chave que o hub usa (`TOKEN_SIGNING_KEY_PEM`, do Secret Manager) e
  * o mesmo `kid` (thumbprint), então a api o valida pelo JWKS do hub sem nada
  * novo. Vive em apps/hub/scripts porque `jose` é dependência do hub.
@@ -44,7 +45,13 @@ const privateKey = await importPKCS8(pem, "RS256");
 const publicJwk = await exportJWK(createPublicKey(pem));
 const kid = await calculateJwkThumbprint(publicJwk);
 
-const token = await new SignJWT({ escola_id: "", perfil: "admin-contrato" })
+/* `gestor_contrato`, e o NOME é o que importa aqui: o `token.service.ts` da api
+   valida este claim contra a tupla `PERFIS` de `auth/claims.ts` ANTES de
+   qualquer checagem de papel, e valor fora dela sai como 401 "Token inválido"
+   — não 403. Foi exatamente o que derrubou o job `ativar-exps` do deploy de
+   2026-09-10, dois dias depois de a ADR-80 renomear o papel: os bundles subiram
+   e a `versaoAtiva` não virou. Mudou `PERFIS`? Mude esta linha junto. */
+const token = await new SignJWT({ escola_id: "", perfil: "gestor_contrato" })
   .setProtectedHeader({ alg: "RS256", kid })
   .setSubject("ci-deploy")
   .setIssuer(HUB_ORIGIN)
@@ -62,6 +69,12 @@ const corpo = {
      ela a ordem cai no `exp_id`, que é numeração de experiência e não do ano
      letivo: o 7º ano apareceria depois do 8º. */
   unidade: manifesto.unidade ?? null,
+  /* A QUE PRODUTO a experiência pertence (ADR-87). É o que a põe no painel da
+     Unooria e o que lhe dá o teto do produto. Esquecer aqui não dá erro: a
+     coluna nasce NULA, a experiência some do painel e ninguém é avisado — ela
+     continua abrindo normalmente, então nem o smoke acusa. Quem cobra o campo
+     é `apps/api/tests/manifestos-declaram-produto.spec.ts`, no CI. */
+  produto: manifesto.produto ?? null,
   capabilities: manifesto.capabilities ?? [],
   viewport: manifesto.viewport ?? null,
   publico: manifesto.publico ?? "estudante",

@@ -154,11 +154,11 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
         value={percentual(ciclo.respondidos, ciclo.total)}
         variant="brand"
         size="sm"
-        aria-label={`Ciclo: ${ciclo.respondidos} de ${ciclo.total} check-ins`}
+        aria-label={`Ciclo: ${ciclo.respondidos} de ${ciclo.total} dias`}
         valuePosition="none"
       />
       <p className="app-muted">
-        Ciclo: {ciclo.respondidos} de {ciclo.total} check-ins · cada um cobre 3 das 21 frases
+        Ciclo: {ciclo.respondidos} de {ciclo.total} dias · cada dia cobre 3 das 21 frases
       </p>
     </div>
   ) : null;
@@ -175,7 +175,7 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
                 description={checkin.abertura}
                 badge={
                   <Badge variant="info" size="md">
-                    Check-in {checkin.numero} de {checkin.total}
+                    Dia {checkin.numero} de {checkin.total}
                   </Badge>
                 }
                 actions={
@@ -251,7 +251,7 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
                 isDisabled={!completo || enviando}
                 leftIcon={<Icon name="check" size="xs" />}
               >
-                {enviando ? "Enviando…" : "Enviar check-in"}
+                {enviando ? "Enviando…" : "Enviar respostas"}
               </Button>
               <p className="app-muted">{hoje.aviso}</p>
             </>
@@ -261,11 +261,11 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
           {tela === "feito" && (
             <>
               <SectionHeader
-                title="Check-in de hoje feito"
+                title="Você já respondeu hoje"
                 description={devolucao?.acolhimento ?? checkin.acolhimento ?? "Registrado. Até o próximo."}
                 badge={
                   <Badge variant="success" size="md">
-                    Check-in {checkin.numero} de {checkin.total}
+                    Dia {checkin.numero} de {checkin.total}
                   </Badge>
                 }
                 actions={
@@ -283,7 +283,7 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
                 <section className="app-stack unooria-gap-s">
                   <SectionHeader
                     title="Retrato da sua semana"
-                    description="Ciclo fechado: as 21 frases respondidas ao longo dos últimos check-ins, somadas por dimensão."
+                    description="Ciclo fechado: as 21 frases respondidas ao longo dos últimos dias, somadas por dimensão."
                     variant="compact"
                   />
                   <ResultadoDoCiclo resultado={hoje.resultado} />
@@ -295,8 +295,8 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
                   {ciclo && (
                     <p className="app-muted">
                       {faltam(ciclo.respondidos, ciclo.total) === 1
-                        ? "Falta 1 check-in para o retrato da semana. Até amanhã."
-                        : `Faltam ${faltam(ciclo.respondidos, ciclo.total)} check-ins para o retrato da semana. Até amanhã.`}
+                        ? "Falta 1 dia para o retrato da semana. Até amanhã."
+                        : `Faltam ${faltam(ciclo.respondidos, ciclo.total)} dias para o retrato da semana. Até amanhã.`}
                     </p>
                   )}
                 </section>
@@ -334,8 +334,8 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
                   <EmptyState
                     variant="no-data"
                     title="Nada por aqui ainda"
-                    description="Seus check-ins e o retrato de cada ciclo de 7 dias aparecem aqui. Só você vê."
-                    primaryAction={{ label: "Voltar ao check-in", onClick: voltar }}
+                    description="Suas respostas e o retrato de cada ciclo de 7 dias aparecem aqui. Só você vê."
+                    primaryAction={{ label: "Voltar", onClick: voltar }}
                   />
                 </div>
               ) : (
@@ -367,7 +367,7 @@ export function BemEstarApp({ professorNome, hojeInicial }: Props) {
 
                   {historico.anotacoes.length > 0 && (
                     <section className="app-stack unooria-gap-s">
-                      <SectionHeader title="Suas anotações" description="O que você escreveu em cada check-in." variant="compact" />
+                      <SectionHeader title="Suas anotações" description="O que você escreveu em cada dia." variant="compact" />
                       <div className="app-surface app-lista">
                         {historico.anotacoes.map((a) => (
                           <div key={a.id} className="app-lista__item">

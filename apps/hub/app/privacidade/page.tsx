@@ -174,7 +174,7 @@ const SECOES: SecaoLegal[] = [
           <strong>
             Existe um único consentimento de verdade nesta plataforma:
           </strong>{" "}
-          o do professor adulto que decide participar do check-in de bem-estar.
+          o do professor adulto que decide participar do acompanhamento de bem-estar.
           Esse é livre, específico, pode ser recusado sem consequência e pode
           ser revogado a qualquer momento. Está descrito em{" "}
           <a href="#bem-estar">Bem-estar do professor</a>.
@@ -225,7 +225,7 @@ const SECOES: SecaoLegal[] = [
             <p className="legal-card__titulo">Professor</p>
             <p className="legal-card__texto">
               Servidor da rede. Além do cadastro, é o único que pode fornecer
-              dado de saúde, e só se escolher participar do check-in de
+              dado de saúde, e só se escolher participar do acompanhamento de
               bem-estar.
             </p>
           </div>
@@ -273,7 +273,7 @@ const SECOES: SecaoLegal[] = [
         </p>
         <div className="legal-cards">
           <div className="legal-card">
-            <p className="legal-card__titulo">Nome, login e e-mail</p>
+            <p className="legal-card__titulo">Nome, usuário e e-mail</p>
             <p className="legal-card__texto">
               Para reconhecer você nas telas e para o professor saber de quem é
               cada trabalho.
@@ -481,8 +481,8 @@ const SECOES: SecaoLegal[] = [
           <div className="legal-card">
             <p className="legal-card__titulo">Você apaga quando quiser</p>
             <p className="legal-card__texto">
-              Dentro da própria experiência há um botão que apaga todos os seus
-              check-ins e todas as suas pontuações, de uma vez. É imediato e é o
+              Dentro da própria experiência há um botão que apaga todas as suas
+              respostas e pontuações, de uma vez. É imediato e é o
               único caminho de exclusão que o titular aciona sozinho na
               plataforma.
             </p>
@@ -495,12 +495,12 @@ const SECOES: SecaoLegal[] = [
               As <strong>pontuações nunca saem da plataforma</strong>. O que vai
               para a IA é apenas o texto que o professor escolher escrever na
               caixa livre, para gerar a mensagem de acolhimento — e ele fica
-              guardado junto do check-in.
+              guardado junto da resposta.
             </p>
           </div>
         </div>
         <p>
-          Se a rede quiser tornar esse check-in obrigatório, o consentimento
+          Se a rede quiser tornar esse acompanhamento obrigatório, o consentimento
           deixa de valer e não sobra base legal para o instrumento. É por isso
           que ele é, e continuará sendo, opcional.
         </p>
@@ -571,8 +571,8 @@ const SECOES: SecaoLegal[] = [
           professor pede um plano de aula.
         </p>
         <p>
-          <strong>O que não é enviado:</strong> nome, e-mail, CPF, login ou
-          qualquer identificador seu. As pontuações do check-in de bem-estar
+          <strong>O que não é enviado:</strong> nome, e-mail, CPF, usuário ou
+          qualquer identificador seu. As pontuações do acompanhamento de bem-estar
           também não. O que a IA recebe é o texto e o contexto da missão, não a
           sua identidade.
         </p>
@@ -795,7 +795,7 @@ const SECOES: SecaoLegal[] = [
             </dl>
           </div>
           <div className="legal-card">
-            <p className="legal-card__titulo">O check-in de bem-estar</p>
+            <p className="legal-card__titulo">O acompanhamento de bem-estar</p>
             <p className="legal-card__texto">
               O professor apaga tudo o que respondeu, na própria experiência, a
               qualquer momento.
@@ -900,7 +900,7 @@ const SECOES: SecaoLegal[] = [
             registrados.
           </li>
           <li>
-            <strong>Limite de tentativas de login</strong> e mensagens iguais
+            <strong>Limite de tentativas de acesso</strong> e mensagens iguais
             para usuário inexistente e senha errada, para não revelar quem tem
             conta.
           </li>
@@ -954,9 +954,9 @@ const SECOES: SecaoLegal[] = [
         </div>
         <h3>O que fica guardado no seu navegador</h3>
         <p>
-          Um cookie de sessão, cifrado, que dura 12 horas — o suficiente para um
-          dia de aula — e que contém o seu nome e o seu login para as telas
-          funcionarem. Além dele, apenas três registros técnicos: um
+          Um cookie de sessão, cifrado, que expira depois de 2 horas sem uso — se
+          você ficar esse tempo sem abrir nenhuma tela, precisa entrar de novo —
+          e que contém o seu nome e o seu login para as telas funcionarem. Além dele, apenas três registros técnicos: um
           identificador de sessão para diagnóstico de erro, um marcador de
           amostragem de desempenho e a sua preferência de tema claro ou escuro
           numa das experiências. Nenhum deles é usado para publicidade, e{" "}
@@ -1023,7 +1023,7 @@ const SECOES: SecaoLegal[] = [
           esperar ordem judicial, e comunicamos a escola e a rede.
         </p>
         <p>
-          Esta página é pública e fica acessível <strong>sem login</strong>, de
+          Esta página é pública e fica acessível <strong>sem entrar na plataforma</strong>, de
           propósito: pais, responsáveis e os próprios estudantes precisam poder
           ler o que fazemos com os dados sem depender de uma conta. É exigência
           do art. 16 do ECA Digital, e é o mínimo decente.
@@ -1118,7 +1118,7 @@ const SECOES: SecaoLegal[] = [
               <div className="legal-card__campo">
                 <dt>Hoje</dt>
                 <dd>
-                  Imediato no check-in de bem-estar. Para o resto, quem decide é
+                  Imediato no acompanhamento de bem-estar. Para o resto, quem decide é
                   a rede e o que existe são as exclusões da seção 11
                 </dd>
               </div>
@@ -1168,7 +1168,7 @@ const SECOES: SecaoLegal[] = [
           <div className="legal-card">
             <p className="legal-card__titulo">Revogar consentimento</p>
             <p className="legal-card__texto">
-              Só se aplica ao check-in de bem-estar do professor, que é o único
+              Só se aplica ao acompanhamento de bem-estar do professor, que é o único
               tratamento baseado em consentimento.
             </p>
             <dl className="legal-card__campos">

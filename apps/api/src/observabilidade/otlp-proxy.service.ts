@@ -1,10 +1,17 @@
-import { Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { rateLimit } from "../comum/rate-limit";
 import { logger } from "./logger";
 import { Metricas } from "./metricas";
 import { redigirTexto } from "./redaction";
 import { EXP_ID_OU_HUB, LIMITE_SPANS_POR_LOTE, type AtributoOtlp, type OtlpTraces, type SpanOtlp } from "./contrato-de-rotas";
-import type { ClienteOtlpGoogle } from "./otlp-google";
+// IMPORT DE VALOR, nunca `import type`: a classe é o TOKEN de injeção do
+// construtor. Com `import type` o identificador some do escopo de valor, o
+// `emitDecoratorMetadata` grava `Function` no `design:paramtypes`, o Nest não
+// acha provider para esse token e o `@Optional()` injeta `undefined` — sem erro
+// nenhum. Foi assim de 2026-09-02 a 2026-09-14: TODO span de navegador virava
+// `sem-projeto` mesmo com `GCP_PROJECT_ID` no ambiente, nos três ambientes, com
+// a rota respondendo 204. A rede é `tests/observabilidade-injecao.spec.ts`.
+import { ClienteOtlpGoogle } from "./otlp-google";
 
 /**
  * Recebe o lote OTLP que a SDK exportou do navegador, o torna INOFENSIVO e o
@@ -43,7 +50,8 @@ const ATRIBUTOS_PERMITIDOS: ReadonlySet<string> = new Set([
   "document.load.type",
 ]);
 const ATRIBUTOS_DE_URL: ReadonlySet<string> = new Set(["http.url", "url.full"]);
-const VERSAO = /^[0-9A-Za-z._-]{1,32}$/;
+/** 64 pela mesma razão do `versao` do `ErroClienteSchema`: o SHA do hub não cabia em 32, o lote inteiro virava `sem-identidade` — e a rota respondia 204. */
+const VERSAO = /^[0-9A-Za-z._-]{1,64}$/;
 
 function valorTexto(a: AtributoOtlp): string | undefined {
   return "stringValue" in a.value ? a.value.stringValue : undefined;
@@ -83,8 +91,18 @@ export function limparSpan(span: SpanOtlp): SpanOtlp {
   };
 }
 
-/** O lote pronto para o Google: resource reescrito, spans limpos. Devolve também quantos spans tem. */
-export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote): { corpo: OtlpTraces; spans: number } {
+/**
+ * O lote pronto para o Google: resource reescrito, spans limpos. Devolve também
+ * quantos spans tem.
+ *
+ * `projeto` é o `gcp.project_id`, e **a Telemetry API o EXIGE**: sem ele todo
+ * lote volta `400 Resource is missing required attribute`, a rota responde 204 e
+ * o contador soma em `motivo=upstream`. É a mesma exigência que `recurso.ts`
+ * cumpre para os sinais do processo; aqui o atributo precisa ser repetido porque
+ * o resource do cliente é DESCARTADO inteiro (é entrada não confiável) e este é
+ * montado do zero. Opcional porque, sem cliente OTLP, o corpo nem é enviado.
+ */
+export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote, projeto?: string): { corpo: OtlpTraces; spans: number } {
   let spans = 0;
   const scopeSpans = (lote.resourceSpans[0]?.scopeSpans ?? []).map((sc) => {
     spans += sc.spans.length;
@@ -99,6 +117,7 @@ export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote): 
             { key: "service.version", value: { stringValue: identidade.versao } },
             { key: "service.namespace", value: { stringValue: "unooria-navegador" } },
             { key: "telemetry.sdk.language", value: { stringValue: "webjs" } },
+            ...(projeto ? [{ key: "gcp.project_id", value: { stringValue: projeto } }] : []),
           ],
         },
         scopeSpans,
@@ -112,7 +131,10 @@ export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote): 
 export class ProxyOtlpService {
   constructor(
     private readonly metricas: Metricas,
-    @Optional() private readonly cliente?: ClienteOtlpGoogle,
+    // `@Inject` EXPLÍCITO: o token deixa de depender do metadata que o
+    // compilador emite, então a próxima "limpeza de imports" não volta a
+    // desligar a reexportação em silêncio.
+    @Optional() @Inject(ClienteOtlpGoogle) private readonly cliente?: ClienteOtlpGoogle,
   ) {}
 
   /** Cota por (escola, usuário): laço de export num cliente não pode virar custo. */
@@ -129,7 +151,7 @@ export class ProxyOtlpService {
       this.metricas.spansDescartados.add(1, { motivo: "sem-identidade" });
       return "sem-identidade";
     }
-    const { corpo, spans } = reescreverLote(lote, identidade);
+    const { corpo, spans } = reescreverLote(lote, identidade, this.cliente?.projeto);
     if (spans === 0 || spans > LIMITE_SPANS_POR_LOTE) {
       this.metricas.spansDescartados.add(1, { motivo: "tamanho" });
       return "descartado";
@@ -149,7 +171,10 @@ export class ProxyOtlpService {
         // Uma linha por minuto, não uma por lote: o upstream fora do ar não
         // pode virar inundação de log.
         if (rateLimit("log:otlp-upstream", 1, 60_000).ok) {
-          logger.warn({ codigo: "otlp.upstream-recusou", status: r.status, detalhe: r.detalhe }, "a Telemetry API recusou o lote de spans");
+          logger.warn(
+            { codigo: "otlp.upstream-recusou", status: r.status, detalhe: r.detalhe, spans, expId: identidade.expId },
+            "a Telemetry API recusou o lote de spans",
+          );
         }
         return "descartado";
       }
@@ -157,7 +182,7 @@ export class ProxyOtlpService {
     } catch (erro) {
       this.metricas.spansDescartados.add(spans, { motivo: "upstream" });
       if (rateLimit("log:otlp-upstream", 1, 60_000).ok) {
-        logger.warn({ codigo: "otlp.upstream-falhou", err: erro }, "a Telemetry API não respondeu");
+        logger.warn({ codigo: "otlp.upstream-falhou", err: erro, spans, expId: identidade.expId }, "a Telemetry API não respondeu");
       }
       return "descartado";
     }

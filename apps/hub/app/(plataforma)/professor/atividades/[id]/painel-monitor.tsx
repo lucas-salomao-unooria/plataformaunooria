@@ -8,6 +8,7 @@ import {
   Button,
   Card,
   MetricCard,
+  ScrollBar,
   SemiDonutChart,
   StackedProgressBar,
   UNOORIA_DATAVIZ_PALETTE,
@@ -307,7 +308,7 @@ export function PainelMonitor({
         aoFechar={() => setEstudanteAberto(null)}
       />
 
-      <div className="overflow-x-auto rounded-xl border border-unooria-neutral-200">
+      <ScrollBar orientation="both" autoHide className="tabela-rolavel rounded-xl border border-unooria-neutral-200">
         <table className="w-full min-w-[980px] border-collapse text-left">
           {/*
             Sete colunas, não dez. Domínio, escalada e contagem de posts saíram
@@ -499,7 +500,7 @@ export function PainelMonitor({
             ) : null}
           </tbody>
         </table>
-      </div>
+      </ScrollBar>
     </div>
   );
 }

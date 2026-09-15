@@ -331,13 +331,24 @@ describe("orgs.csv", () => {
     const r = await oneroster.importar(
       ESCOLA,
       "orgs",
+      /* A linha de `district` vem ANTES da de `school`, e o lote inteiro numa
+         chamada só. É a ordem que o padrão pede e que o relatório manda seguir
+         ("envie as linhas de district antes") — mas aqui ela é também o que
+         torna o teste DETERMINÍSTICO: sem `parentSourcedId`, a escola cai na
+         política da ADR-79, que depende de quantas regionais existem no banco.
+         Com uma, vínculo automático; com várias, erro. Este arquivo roda depois
+         de outras suítes que criam regionais, então o resultado mudava entre
+         rodar sozinho e rodar na suíte — o sintoma clássico de teste que
+         depende de estado global. */
       csv(
-        "sourcedId,name,type,identifier",
-        "or-escola-nova,EE Nova do Padrão,school,35009999",
+        "sourcedId,name,type,identifier,parentSourcedId",
+        "or-de-nova,DE Nova do Padrão,district,,",
+        "or-escola-nova,EE Nova do Padrão,school,35009999,or-de-nova",
       ),
       { podeCriarEscola: true },
     );
-    expect(r.criados).toBe(1);
+    expect(r.erros).toEqual([]);
+    expect(r.criados).toBe(2);
     const nova = await prisma.escola.findUniqueOrThrow({ where: { id: "or-escola-nova" } });
     expect(nova.nome).toBe("EE Nova do Padrão");
     expect(nova.codigoInep).toBe("35009999");

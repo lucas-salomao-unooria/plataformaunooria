@@ -42,7 +42,7 @@ const unoogpt = new UnoogptService(
   ),
 );
 
-/** `undefined` é gestor/admin-contrato: enxergam a escola inteira, de propósito. */
+/** `undefined` é gestor/gestor_contrato: enxergam a escola inteira, de propósito. */
 const GESTOR = undefined;
 
 const ids = { turma8A: "", turma9B: "", prof8A: "", prof9B: "", ana: "", bruno: "", semTurma: "" };

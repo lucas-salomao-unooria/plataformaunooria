@@ -7,6 +7,7 @@ import {
   clarityUpgrade,
 } from "./clarity";
 import { instalarCapturaDeErros } from "./erros";
+import { CHAVE_DO_FUSO, definirFusoDaPlataforma } from "./fuso";
 import { iniciarTracesWeb, lerObsConfig } from "./otel-web";
 import { TelemetryClient } from "./telemetry";
 import { novoTraceparent } from "./trace";
@@ -16,6 +17,26 @@ export * from "./types";
 export * from "./clarity";
 export { instalarCapturaDeErros, type ErroDeCliente } from "./erros";
 export { instalarVitais, type Vital } from "./vitals";
+export { lerDispositivo, type DispositivoDoNavegador } from "./dispositivo";
+/* O fuso e as funções que formatam data para gente ler. Toda tela do hub e das
+   experiências passa por aqui — o porquê está no cabeçalho de `fuso.ts`. */
+export {
+  FUSO_PADRAO,
+  ENV_DO_FUSO,
+  META_DO_FUSO,
+  CHAVE_DO_FUSO,
+  fusoDaPlataforma,
+  definirFusoDaPlataforma,
+  esquecerFusoDaPlataforma,
+  fusoEhValido,
+  data,
+  dataCurta,
+  dataHora,
+  dataCurtaHora,
+  hora,
+  horaComSegundos,
+  diaDaPlataforma,
+} from "./fuso";
 export { iniciarTracesWeb, lerObsConfig, type ObsConfig, type TracesWeb } from "./otel-web";
 
 type MetodoHttp = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -55,6 +76,19 @@ export async function createExperiencia(meta: {
    */
   // deepcode ignore javascript/CodeInjection: setInterval recebe função, não string — ver acima
   const { init, send, onMessage } = await connectToHub({ hubOrigin });
+
+  /*
+   * O FUSO da plataforma, antes de qualquer outra coisa (ADR-99). Este bundle é
+   * estático: foi construído uma vez, pode servir contratos diferentes e não
+   * tem `process.env` nem o `<meta>` do hub — o iframe é um documento à parte.
+   * O único canal é este, e ele precisa valer ANTES da primeira tela, senão a
+   * missão abre com a data no fuso padrão e a corrige ao vivo.
+   *
+   * As funções de formatação (`data`, `dataHora`, …) não mudam de assinatura:
+   * é o módulo que passa a saber o fuso, não cada chamada.
+   */
+  definirFusoDaPlataforma(init.config[CHAVE_DO_FUSO]);
+
   let token = init.token;
   const sessaoId = crypto.randomUUID();
 

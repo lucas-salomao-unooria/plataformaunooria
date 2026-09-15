@@ -440,21 +440,23 @@ export function InstanooriaApp({
   useEffect(() => {
     if (!runId) return;
 
-    const intervalo = window.setInterval(async () => {
-      try {
-        const { fase: noServidor } = await api.get<{ fase: FaseCliente }>(`/runs/${runId}/fase`);
+    const intervalo = window.setInterval(() => {
+      void (async () => {
+        try {
+          const { fase: noServidor } = await api.get<{ fase: FaseCliente }>(`/runs/${runId}/fase`);
 
-        /**
-         * O servidor já reconcilia turma × estudante e devolve a tela certa. O
-         * cliente só obedece — com uma exceção: nunca puxa ninguém de volta para
-         * a revelação/explicabilidade que ele já passou.
-         */
-        if (noServidor !== fase && noServidor !== "onboarding") {
-          setFase(noServidor);
+          /**
+           * O servidor já reconcilia turma × estudante e devolve a tela certa. O
+           * cliente só obedece — com uma exceção: nunca puxa ninguém de volta para
+           * a revelação/explicabilidade que ele já passou.
+           */
+          if (noServidor !== fase && noServidor !== "onboarding") {
+            setFase(noServidor);
+          }
+        } catch {
+          // Rede instável na escola é regra, não exceção: o próximo tick tenta.
         }
-      } catch {
-        // Rede instável na escola é regra, não exceção: o próximo tick tenta.
-      }
+      })();
     }, 5_000);
 
     return () => window.clearInterval(intervalo);

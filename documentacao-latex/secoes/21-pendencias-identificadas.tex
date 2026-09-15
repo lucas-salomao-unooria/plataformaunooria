@@ -1,0 +1,172 @@
+% ===========================================================================
+%  21 — Pendências identificadas e roadmap de evolução
+% ===========================================================================
+\chapter{Pendências identificadas e roadmap de evolução}
+\label{cap:pendencias}
+
+Este capítulo consolida as pendências arquiteturais, lacunas de automação,
+débitos técnicos documentados e pontos de atenção operacional identificados
+durante a revisão técnica integral multiagente da Plataforma Unooria. As
+análises cobrem os contratos de nuvem, banco de dados, identidade, governança
+hierárquica, integridade de documentação e observabilidade.
+
+O objetivo deste levantamento não é apenas listar tarefas pendentes, mas
+qualificar os riscos de cada uma, documentar a dependência com as decisões
+arquiteturais (\adrr{ADRs}) e registrar o gatilho de resolução para que a
+plataforma atinja maturidade plena para a operação de produção em novembro de
+2026.
+
+\section{Quadro resumo de pendências}
+
+\begin{tabularx}{\linewidth}{@{}L{18mm} L{26mm} X L{22mm} L{20mm}@{}}
+\toprule
+\headrow \thd{ID} & \thd{Área} & \thd{Descrição da pendência} & \thd{Criticidade} & \thd{ADR / Ref.}\\
+\midrule
+\textbf{PEND-01} & Identidade & Validação E2E da transição do emissor JWT do Hub para WSO2 IS em homologação & Alta & \adrr{ADR-03}, \adrr{ADR-15}\\
+\zebra \textbf{PEND-02} & Testes E2E & Cobertura de testes automatizados para fluxos de \cd{gestor\_regional} & Alta & \adrr{ADR-80}, \adrr{ADR-81}\\
+\textbf{PEND-03} & Monitoramento & Alarmes de exaustão de quota de tokens de IA por escola e perfil & Média & \adrr{ADR-24}, \adrr{ADR-74}\\
+\zebra \textbf{PEND-04} & CI / OpenAPI & Portão de CI que valida sincronismo obrigatório do \arq{docs/openapi.json} & Média & \adrr{ADR-37}\\
+\textbf{PEND-05} & Banco de Dados & Automação periódica de checagem de integridade de RLS nas migrações & Alta & \adrr{ADR-08}, \adrr{ADR-20}\\
+\zebra \textbf{PEND-06} & Frontend / Hub & Auditoria contínua de componentes locais versus pacote do Design System & Baixa & \adrr{ADR-19}, \adrr{ADR-75}\\
+\textbf{PEND-07} & Telemetria & Validação de DLQ e reprocessamento assíncrono em picos matinais & Média & \adrr{ADR-06}, \adrr{ADR-62}\\
+\zebra \textbf{PEND-08} & Catálogo Exp & Esteira de empacotamento estático automatizado para bundles 08 a 69 & Baixa & \adrr{ADR-01}\\
+\bottomrule
+\end{tabularx}
+
+\section{Detalhamento técnico das pendências}
+
+\subsection{PEND-01 — Transição do emissor de tokens OIDC para WSO2 IS}
+
+\begin{especificacao}{Contexto e Débito Atual}
+Conforme deliberado na \adrr{ADR-15}, o Hub temporariamente atua como emissor de
+tokens JWT RS256 para as experiências e para a API, expondo o JWKS em
+\rota{/.well-known/jwks.json}. Com a evolução da governança para seis papéis
+(\adrr{ADR-80}) e a inclusão do atributo obrigatório \cd{regional\_id}, o contrato de
+identidade em \arq{docs/INFRA-IDENTITY.md} prevê o WSO2 Identity Server 7.3.0 como
+o provedor central multi-contrato.
+\end{especificacao}
+
+\textbf{Ações necessárias}:
+\begin{enumerate}
+  \item Configurar no WSO2 IS o mapeamento de \emph{claims} customizados:
+    \cd{turma\_id}, \cd{escola\_id}, \cd{perfil} e \cd{regional\_id}.
+  \item Conduzir teste de carga e autenticação em ambiente de homologação apontando
+    \cd{OIDC\_ISSUER} e \cd{OIDC\_JWKS\_URI} para a instância do WSO2.
+  \item Validar o comportamento do middleware ao expirar a chave no rodízio a frio
+    previsto na \adrr{ADR-33}.
+\end{enumerate}
+
+\subsection{PEND-02 — Testes E2E de autorização regional e troca de contexto}
+
+\begin{especificacao}{Contexto e Débito Atual}
+A \adrr{ADR-80} introduziu o papel \cd{gestor\_regional}, com permissão de leitura
+consolidada no Panorama da Diretoria (\adrr{ADR-81}) e Relatório da Regional
+(\adrr{ADR-82}). A \adrr{ADR-85} padronizou o componente \cd{<EscopoDaEscola>} para
+forçar a remontagem de estado em trocas de escola ativa.
+\end{especificacao}
+
+\textbf{Ações necessárias}:
+\begin{enumerate}
+  \item Criar suíte em \arq{scripts/e2e/} com Playwright simulando login de
+    \cd{gestor\_regional}.
+  \item Testar a tentativa de acesso a uma escola pertencente à sua regional
+    (esperado: 200 OK) e a uma escola fora da sua regional (esperado: 403 Forbidden).
+  \item Testar a troca de escola na UI do Hub verificando o cancelamento de requisições
+    pendentes e a purga dos seletores de turmas da escola anterior.
+\end{enumerate}
+
+\subsection{PEND-03 — Monitoramento de quotas de IA e telemetria de custos}
+
+\begin{especificacao}{Contexto e Débito Atual}
+O consumo de tokens de inteligência artificial é rigidamente controlado via
+\cd{QuotaService} (\adrr{ADR-24} e \adrr{ADR-74}). Um plano de ensino na exp-92 ou
+uma sessão iterativa na exp-03 consomem centenas de milhares de tokens por execução.
+\end{especificacao}
+
+\textbf{Ações necessárias}:
+\begin{enumerate}
+  \item Configurar métrica baseada em logs no Google Cloud Logging para monitorar a
+    frequência de erros \cd{429 Quota Exceeded}.
+  \item Estabelecer política de alerta no Cloud Monitoring disparando notificação
+    quando uma escola atingir 80\% da cota diária antes do meio-dia.
+  \item Avaliar agregação semanal em tabela analítica para previsão orçamentária por
+    contrato.
+\end{enumerate}
+
+\subsection{PEND-04 — Portão de validação de integridade do OpenAPI no CI}
+
+\begin{especificacao}{Contexto e Débito Atual}
+O arquivo \arq{docs/openapi.json} reflete a especificação pública da API derivada
+diretamente dos esquemas Zod dos controladores. Caso um desenvolvedor adicione rotas
+ou modifique esquemas sem rodar \cd{pnpm run api:openapi}, a especificação fica
+defasada em relação ao código real.
+\end{especificacao}
+
+\textbf{Ações necessárias}:
+\begin{enumerate}
+  \item Adicionar ao \arq{.github/workflows/ci.yml} um passo que execute o script de
+    geração e compare o diff contra o repositório (\cd{git diff --exit-code docs/openapi.json}).
+  \item Bloquear o merge caso haja alteração de contrato não registrada no JSON.
+\end{enumerate}
+
+\subsection{PEND-05 — Verificação estrutural de Row-Level Security em migrações}
+
+\begin{especificacao}{Contexto e Débito Atual}
+A regra de ouro da arquitetura Unooria estabelece que toda tabela com dados de
+estudante e escola deve ter \cd{escola\_id NOT NULL} e RLS forçada (\cd{FORCE ROW LEVEL SECURITY}).
+Atualmente, essa garantia depende do cuidado manual do desenvolvedor ao escrever a
+migração SQL do Prisma.
+\end{especificacao}
+
+\textbf{Ações necessárias}:
+\begin{enumerate}
+  \item Implementar teste estrutural automatizado em Jest que consulte o catálogo do
+    PostgreSQL (\cd{pg\_tables} e \cd{pg\_policies}) em ambiente de teste local.
+  \item Falhar o teste caso qualquer tabela criada fora da lista de isenções explícitas
+    careça de política de isolamento por \cd{escola\_id}.
+\end{enumerate}
+
+\section{Cronograma de mitigação e alinhamento com lançamento}
+
+O plano de resolução das pendências acima respeita a esteira de entrega do projeto,
+cuja entrada em operação assistida com redes piloto está planejada para o último
+trimestre do ciclo de engenharia:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[x=1cm, y=1cm, >=stealth]
+  % Eixo temporal
+  \draw[->, unooNavy, line width=1pt] (0,0) -- (14.5,0) node[right, font=\footnotesize\bfseries\color{unooNavy}] {2026};
+
+  % Marcos
+  \foreach \x/\mes in {1/Setembro, 5/Outubro, 9/Novembro, 13/Dezembro} {
+    \draw[unooGrid, line width=0.8pt] (\x, -0.2) -- (\x, 4.0);
+    \node[below, font=\scriptsize\color{unooMuted}] at (\x, -0.2) {\mes};
+  }
+
+  % Blocos de pendências
+  \draw[fill=unooLavenderWash, draw=unooLavender, rounded corners=3pt] (0.5, 2.8) rectangle (4.5, 3.6)
+    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-04 \& PEND-05\\Portões de CI e Testes RLS};
+
+  \draw[fill=unooBlueWash, draw=unooBlue, rounded corners=3pt] (4.8, 2.8) rectangle (8.8, 3.6)
+    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-02 \& PEND-07\\E2E Regional e Testes Pub/Sub};
+
+  \draw[fill=unooLavenderWash, draw=unooLavender, rounded corners=3pt] (4.8, 1.4) rectangle (8.8, 2.2)
+    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-01\\Transição OIDC / WSO2 IS};
+
+  \draw[fill=unooBlueWash, draw=unooBlue, rounded corners=3pt] (9.0, 1.4) rectangle (13.5, 2.2)
+    node[midway, align=center, font=\scriptsize\bfseries\color{unooNavy}] {PEND-03 \& PEND-08\\Operação, Quotas e Escala};
+
+  % Ponto de Lançamento
+  \draw[dashed, unooRed, line width=1.2pt] (9.0, -0.5) -- (9.0, 4.2)
+    node[above, font=\footnotesize\bfseries\color{unooRed}] {Go-Live Produção};
+\end{tikzpicture}
+\caption{Cronograma de resolução das pendências identificadas até a entrada em produção.}
+\label{fig:cronograma-pendencias}
+\end{figure}
+
+\begin{destaque}
+A consolidação contínua destas pendências garante que os débitos técnicos sejam
+resolvidos preventivamente, assegurando que o monorepo da Plataforma Unooria chegue à
+produção com aderência estrita às regras de segurança, privacidade e desempenho.
+\end{destaque}

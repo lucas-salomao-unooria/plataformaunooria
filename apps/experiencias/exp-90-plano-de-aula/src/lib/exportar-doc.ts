@@ -52,13 +52,33 @@ export function nomeDoArquivo(titulo: string): string {
   return `${limpo || "Plano_de_Aula"}.doc`;
 }
 
-/** Dispara o download no navegador. */
+/**
+ * Dispara o download no navegador.
+ *
+ * As três linhas que parecem cerimônia são as que fazem o download acontecer
+ * dentro do iframe do hub, e cada uma custou um sintoma sem mensagem:
+ *
+ *  - **o `<a>` entra no DOM** antes do `click()`. Elemento desanexado funciona
+ *    no Chrome e é ignorado no Firefox e no Safari, em silêncio;
+ *  - **a revogação espera.** `revokeObjectURL` na linha seguinte ao `click()`
+ *    corre contra o início da transferência: o navegador ainda não leu o blob e
+ *    a URL já não existe;
+ *  - e o iframe precisa de `allow-downloads` no sandbox, que vem da permissão
+ *    `downloads` do `experiencia.json` (ver o `ExpFrame` do hub). Sem ela nada
+ *    disto importa: o bloqueio é do navegador e é MUDO — sem erro na tela, sem
+ *    linha no console, com o `click()` voltando como se tivesse funcionado.
+ */
 export function baixarDoc(html: string, titulo: string): void {
   const blob = new Blob([montarDocumentoDoc(html)], { type: "application/msword" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = nomeDoArquivo(titulo);
+  a.style.display = "none";
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 1000);
 }

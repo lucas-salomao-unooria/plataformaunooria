@@ -121,3 +121,50 @@ Quatro coisas que a SDK faz depois do handshake, todas com o token do
 
 Deps novas: `@opentelemetry/*` (só carregadas com ratio > 0) e `web-vitals`.
 `packages/AGENTS.md` continua valendo: nada pesado no caminho síncrono.
+
+## O fuso da plataforma (ADR-98 e ADR-99)
+
+`src/fuso.ts` guarda o fuso da plataforma e as funções que formatam data para
+gente ler. **Não é utilitário de conveniência: é a correção de um defeito que
+passou meses invisível.** Sem `timeZone`, `Intl` usa o fuso de quem executa — e
+no hub a mesma linha roda no contêiner (UTC) e no navegador
+(`America/Sao_Paulo`). Entre 21h e a meia-noite os dois rendem DIAS diferentes,
+o React acusa "hydration failed", regenera a árvore e o clique da pessoa cai no
+vazio. Foi assim que a suíte e2e da exp-08 morreu com um timeout de clique.
+
+- **Formato novo entra AQUI**, como função nomeada pela intenção. Um formatador
+  escrito na tela é o começo do décimo segundo lugar que formata data sozinho.
+- **`apps/api/src/comum/fuso.ts` é a cópia gêmea** — a api não consome pacote de
+  workspace. As duas são amarradas por `apps/api/tests/fuso-da-plataforma.spec.ts`,
+  que lê este arquivo e compara **o valor padrão E o nome da variável de
+  ambiente**. Mudou aqui, muda lá, no mesmo commit. Nomes de env diferentes são
+  o pior dos dois erros: configurar a plataforma acertaria uma superfície e
+  deixaria a outra no padrão, e o sintoma é api e hub discordando do dia.
+- **Número não tem fuso.** `n.toLocaleString("pt-BR")` para separar milhar não
+  tem nada a ver com isto e continua livre.
+
+### O valor vem do AMBIENTE, e a cascata é o que faz isso funcionar (ADR-99)
+
+`FUSO_DA_PLATAFORMA` é env de deploy (1 contrato = 1 stack). Este módulo roda em
+três lugares e a env só existe em um, então `fusoDaPlataforma()` resolve por
+cascata: **runtime** (`definirFusoDaPlataforma`, o `hub:init`) → **`process.env`**
+(servidor do Next, api, Node) → **`<meta name="unooria-fuso">`** (navegador do
+hub, escrito pelo `generateMetadata` do layout raiz) → **`FUSO_PADRAO`**.
+
+- **As seis funções NÃO ganham um parâmetro de fuso.** `data(iso)` continua
+  `data(iso)`: passar o fuso em cada chamada espalharia pelos onze sítios o
+  problema que a ADR-98 juntou num lugar só. É o MÓDULO que sabe o fuso.
+- **O valor é memorizado**, porque as funções são chamadas por linha de tabela.
+  `esquecerFusoDaPlataforma()` existe **para teste** — é o que permite provar,
+  no mesmo processo, que trocar a variável muda o texto. Em produção ninguém
+  chama.
+- **O fuso entra na CHAVE do cache de formatadores.** Sem isso, trocar o fuso
+  devolve o formatador antigo e a tela continua na hora anterior, sem erro
+  nenhum apontando a causa.
+- **Valor inválido cai no padrão com `console.error`, não lança.** Quem falha
+  alto é a api, no boot (Zod). Derrubar a subida de um processo é barato;
+  derrubar a tela de uma rede inteira por causa de uma string não é.
+- **Para a experiência o canal é o `config` do `hub:init`** (chave
+  `CHAVE_DO_FUSO`), aplicado por `createExperiencia` antes da primeira tela.
+  Campo de TOPO mudaria a forma do handshake e obrigaria a subir
+  `PROTOCOL_VERSION` — ver `apps/experiencias/AGENTS.md`.

@@ -37,6 +37,7 @@ await suite(
       "O turno com o Cientista é gravado no servidor e sobrevive a um F5",
       "A folha da turma não tem coluna de resgatados — não é ranking de crianças",
       "A tela individual traz a transcrição inteira para o professor",
+      "A conclusão da operação cabe na coluna ao lado do mapa, sem nada cortado",
     ],
     comando: "node scripts/e2e/estudante/04-unoogpt.mjs",
   },
@@ -105,8 +106,8 @@ await suite(
     await p.goto(`${HUB}/exp/exp-03-unoogpt`, { waitUntil: "domcontentloaded" });
     const quadro = p.frameLocator('iframe[title="experiencia"]');
     await quadro.locator("text=/Não dá para atender todos/i").waitFor({ timeout: 40_000 });
-    await r.registrar(p, "briefing", {
-      titulo: "O briefing da emergência",
+    await r.registrar(p, "a-missao", {
+      titulo: "A missão: a emergência",
       mostra: "A situação: uma tempestade chegando, equipes de menos, bairros demais.",
       prova:
         "O dilema é declarado sem moralizar. A missão não tem resposta certa — tem escolhas com " +
@@ -142,7 +143,7 @@ await suite(
 
     // ═══ ESTUDANTE: a missão abre ═════════════════════════════════════════
     /* O polling do relógio é de 5s; recarregar é mais rápido e igualmente
-       válido. O estudante NÃO volta ao briefing — o passo é server-side. */
+       válido. O estudante NÃO volta à abertura — o passo é server-side. */
     await p.reload({ waitUntil: "domcontentloaded" });
     const q2 = p.frameLocator('iframe[title="experiencia"]');
     const campo = q2.locator("form input").first();
@@ -230,6 +231,49 @@ await suite(
         "A leitura é em GRAUS, não em nota. E a transcrição existe para o professor entender o " +
         "raciocínio — é o insumo da conversa em sala, não um resultado a publicar.",
       inteira: true,
+    });
+
+    // ═══ ESTUDANTE: decide, envia e vê a tempestade passar ═══════════════
+    /* O caminho é o do painel de decisão, que existe desde o começo da
+       Investigação: destino das duas equipes, o "por quê" de cada uma, Enviar.
+       Cada troca de destino é um POST — espera-se o select da justificativa
+       aparecer, que só existe depois de o servidor registrar o bairro. */
+    const q4 = p.frameLocator('iframe[title="experiencia"]');
+    await q4.locator("button", { hasText: /Definir destinos|Ver detalhes/ }).first().click();
+    const modal = q4.locator('[aria-label="Decisão operacional"]');
+    await modal.waitFor({ timeout: 20_000 });
+    for (const [equipe, indice] of [["alfa", 1], ["bravo", 2]]) {
+      await modal.locator(`select[aria-label="Destino da equipe ${equipe}"]`).selectOption({ index: indice });
+      const porque = modal.locator(`select[aria-label="Por que a equipe ${equipe} vai para lá"]`);
+      await porque.waitFor({ timeout: 20_000 });
+      await porque.selectOption({ index: 1 });
+    }
+    await modal.locator("button", { hasText: /enviar/i }).first().click();
+
+    /* "A tempestade passou" só aparece depois da animação das equipes (4,8 s);
+       antes disso o painel diz "Operação em curso". O que se prova aqui é o
+       layout: o painel da esquerda tem de caber na coluna dele. Ele já saiu
+       cortado na fronteira com o mapa, com barra de rolagem horizontal, porque
+       o motivo da chegada (nowrap) empurrava a largura mínima da lista. */
+    const passou = q4.locator("text=A tempestade passou");
+    await passou.waitFor({ timeout: 60_000 });
+    const largura = await passou.evaluate((el) => {
+      const sec = el.closest("section");
+      return { conteudo: sec.scrollWidth, coluna: sec.clientWidth };
+    });
+    r.exigir(
+      largura.conteudo <= largura.coluna,
+      `o painel da operação cabe na coluna (${largura.conteudo}px em ${largura.coluna}px)`,
+    );
+    await r.registrar(p, "tempestade-passou", {
+      titulo: "A tempestade passou",
+      mostra:
+        "À esquerda, onde cada equipe chegou e por quê, o percentual de resgatadas e atingidas e o " +
+        "risco coberto; à direita, o mapa com as rotas percorridas.",
+      prova:
+        "O painel cabe inteiro ao lado do mapa: o motivo da chegada quebra linha em vez de ser " +
+        "cortado. E não há nota — o número é da cidade, não do estudante.",
+      detalhe: `${largura.conteudo}px de conteúdo em ${largura.coluna}px de coluna`,
     });
   },
 );
