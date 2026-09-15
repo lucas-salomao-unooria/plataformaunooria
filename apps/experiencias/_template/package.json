@@ -11,15 +11,15 @@
     "test": "echo 'sem testes ainda'"
   },
   "dependencies": {
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "@edu/sdk": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",
     "vite": "^6.4.3",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
     "typescript": "^5.6.0"
   }
 }

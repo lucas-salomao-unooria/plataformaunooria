@@ -194,6 +194,26 @@ experiência nova nascer errada.
    slide do deck e a legenda do vídeo.
 
 
+## Toda experiência é React 19, e a divergência só aparece no CI
+
+O `@unooria/design-system` 0.2.x é compilado contra os tipos do **React 19**. Uma
+experiência em React 18 resolve `@types/react@18` para si e vê a cópia 19 chegando
+pelo DS: o `tsc` então recusa QUALQUER componente do pacote com
+`TS2786: 'Button' cannot be used as a JSX component` — e a pista real
+(`Type 'bigint' is not assignable to type 'ReactNode'`) está três linhas abaixo,
+numa mensagem aninhada que o resumo do turbo não mostra.
+
+**O sintoma é de ambiente, não de código: passa na máquina e falha no CI.** O
+`node_modules` local cresceu por instalações incrementais e mantém uma resolução;
+o runner faz `--frozen-lockfile` do zero e resolve outra. Foi o que aconteceu com
+a exp-04 em 2026-09-14 — a única que nasceu em 18, porque o `_template` estava em
+18. Os dois subiram para `^19.2.0` juntos, e é assim que tem de continuar: **o
+template é a fonte de toda experiência nova**, e uma divergência ali reaparece na
+próxima que alguém criar.
+
+Mudou dependência de uma experiência? O bundle mudou: **sobe a versão nos três
+lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`.
+
 ## Design System nas experiências
 
 A seção do clone entra pela ponte de `packages/ui` — nunca o `styles.css`
