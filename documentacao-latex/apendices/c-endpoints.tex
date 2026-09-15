@@ -56,7 +56,7 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
 \midrule
 \endhead
-\rota{GET /\allowbreak{}atividades} & \cd{professor} & As atividades DESTE professor.\par Posse por \cd{professor\_\allowbreak{}id} + \cd{escola\_\allowbreak{}id}: atividade é autoral.\\
+\rota{GET /\allowbreak{}atividades} & \cd{professor} & As atividades DESTE professor.\par Posse por \cd{professor\_\allowbreak{}id} + \cd{escola\_\allowbreak{}id}: atividade é autoral. \cd{?turmaId=} estreita para as daquela turma --- é como a SALA DE AULA resolve para onde o link \enquote{Conduzir com esta turma} leva \adrr{ADR-100}.\\
 \zebra \rota{POST /\allowbreak{}atividades} & \cd{professor} & Cria a atividade em rascunho, com os defaults do motor.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} \cd{qtdPostsTese} precisa ser múltiplo de 8 (2 lados × 4 perfis) para a matriz fechar sem célula quebrada --- \textbf{recusar é melhor que arredondar em silêncio}. É um \cd{.refine()}, invisível no esquema.\\
 \rota{GET /\allowbreak{}atividades/\allowbreak{}\{id\}} & \cd{professor} & O detalhe de uma atividade.\par \cd{\_\allowbreak{}count} espelha o \cd{select} do Prisma da página de origem --- o porte dos painéis consome exatamente esse shape ---, e os agregados nomeados (\cd{estudantes}, \cd{postsAprovados}) ficam junto.\\
 \zebra \rota{DELETE /\allowbreak{}atividades/\allowbreak{}\{id\}} & \cd{professor} & Exclui a atividade.\par Devolve o título e quantas sessões foram junto --- \enquote{pronto} sem número deixa o professor sem saber se apagou a atividade certa.\\

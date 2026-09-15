@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{99 decisões}, numeradas até ADR-99, \textbf{sem lacunas}. As
+São \textbf{100 decisões}, numeradas até ADR-100, \textbf{sem lacunas}. As
 cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -144,6 +144,7 @@ que a cercam.
 \zebra \adrr{ADR-97} & A tela diz POR QUE não entrou, e a suíte espera o desfecho & 2026-09-10 & Aceita\\
 \adrr{ADR-98} & A plataforma assume UM fuso, numa constante só & 2026-09-11 & Aceita\\
 \zebra \adrr{ADR-99} & O fuso vem de uma variável de ambiente, em três superfícies & 2026-09-11 & Aceita\\
+\adrr{ADR-100} & Da sala para a missão há UM caminho, e ele leva à ficha & 2026-09-15 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7670,3 +7671,115 @@ estadual que cubra os dois lados de uma. Aí a env deixa de bastar e a coluna
 \emph{token} e no \cd{hub:init} por escola. Um segundo gatilho, menor: se a
 plataforma passar a servir mais de um contrato pela MESMA revisão de Cloud Run,
 a env deixa de ser por contrato e a decisão inteira precisa ser refeita.
+
+\section{ADR-100 --- Da sala para a missão há UM caminho, e ele leva à ficha}
+\label{adr:um-caminho-da-sala}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+
+\textbf{Contexto.} A sala de aula (\cd{/professor/turmas/:id}) listava, por
+missão liberada, \textbf{três} links: \enquote{Como funciona} (a ficha),
+\enquote{Guia da aula} e \enquote{Conduzir com esta turma}. O terceiro apontava
+direto para \cd{.../resultados}.
+
+Essa rota é um \textbf{despachante por \cd{expId}} que termina em
+\cd{notFound()}. O Instanooria não tem ramo nela --- o que se acompanha nessa
+missão é a \textbf{atividade} que o professor montou, não uma tela de resultados
+por turma. O professor do 8º ano clicava em \enquote{Conduzir com esta turma} e
+recebia \textbf{404}; e a tela de erro padrão do Next é texto claro sobre fundo
+claro, então nem se lia o que era. Relatado pelo dono do produto em 2026-09-14.
+
+O defeito de fundo não é o link errado: é que a \textbf{sala precisava saber o
+que cada missão oferece}, e ela não tem como saber. O Instanooria não tem tela
+de resultados; o Rastro do Boato não tem guia; a próxima missão publicada terá
+outra combinação. Toda missão nova obrigaria a mexer na sala, e esquecer disso
+não quebra nada visível --- produz link para 404, ou link que falta.
+
+\textbf{Duas correções foram tentadas antes desta, e as duas estavam erradas},
+em direções opostas:
+
+\begin{enumerate}
+  \item \textbf{Esconder o link de quem não tem a tela.} Acabou com o 404, mas
+    tirou da sala o caminho da aula daquela missão. Trocou um defeito barulhento
+    por um mudo: \textbf{ninguém abre chamado por um link que não existe}.
+  \item \textbf{Fazer o link resolver a atividade da turma} (consultando a API e
+    escolhendo entre ativa, em preparo e encerrada). Levava ao lugar certo, mas
+    mantinha a sala decidindo o que a missão oferece --- e escondia as demais
+    atividades daquela turma atrás de uma heurística de desempate.
+\end{enumerate}
+
+\textbf{Decisão.} \textbf{A sala mostra UM link por missão ---
+\enquote{Conduzir com esta turma} --- e ele leva à FICHA da missão, com
+\cd{?turmaId=}.} \enquote{Como funciona} e \enquote{Guia da aula} saem da sala.
+
+\begin{itemize}
+  \item \textbf{A sala faz uma pergunta só:} \enquote{onde fica esta missão?}.
+    Quem responde o que ela oferece é o \textbf{corpo da ficha}, que já existe
+    por missão (sete corpos mais a Vila do Lume) e já sabe se há guia, se há
+    resultados, se há atividades a configurar.
+  \item \textbf{A ficha abre NA TURMA.} O despachante lê \cd{?turmaId=},
+    resolve a turma com \cd{turmaDaConducao} e a repassa aos corpos. Com turma:
+    uma faixa de contexto diz qual é; \cd{comTurma()} repõe o parâmetro nos
+    links de dentro (resultados, guia da Vila, nova atividade); e a lista de
+    atividades do Instanooria vem \textbf{filtrada pela API}
+    (\cd{GET /atividades?turmaId=}). Sem turma, tudo abre como sempre abriu.
+  \item \textbf{O filtro é da API, não um \cd{filter} na tela.} A resposta já não
+    traz as atividades das outras turmas. Elas não seriam ruído apenas: seriam o
+    convite a abrir o painel da turma errada no meio da aula.
+  \item \textbf{\cd{turmaDaConducao} resolve pela lista de turmas DO
+    PROFESSOR}, e não por \cd{GET /turmas/:id}: um id de turma alheia não está
+    nela, então a ficha não tem como nomear na tela uma turma que não é dele.
+  \item \textbf{A faixa de contexto mora no despachante}, não nos corpos ---
+    mesma razão da trilha (\adrr{ADR-77}) e do \cd{EscopoDaEscola}
+    (\adrr{ADR-85}): são sete corpos, e sete cópias divergem.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter os três links e consertar só o destino do terceiro.} É o
+    menor \emph{diff}, e foi a segunda tentativa. Descartada porque deixa de pé
+    a causa: a sala continua tendo de saber o que cada missão oferece, e a
+    missão nova volta a exigir manutenção lá --- com o mesmo modo de falhar
+    mudo.
+  \item \textbf{Dar ao Instanooria uma tela \cd{.../resultados} própria}, para
+    que a regra \enquote{o link leva aos resultados} valesse para todos. É o
+    desenho mais uniforme. Descartada porque construiria uma tela \textbf{que
+    duplica o painel da atividade} (monitor, progresso, perfis, revisão), e as
+    duas divergiriam --- e porque a uniformidade seria falsa: a missão continua
+    sendo conduzida pela atividade, que é onde o professor configura o conteúdo.
+  \item \textbf{Uma tela de lista de atividades por turma}, destino do link
+    quando há mais de uma. Descartada porque a ficha \textbf{já é} essa lista,
+    com a explicação da missão em volta --- e uma rota nova só para listar
+    repetiria o conteúdo dela.
+  \item \textbf{Deixar o link ir sempre ao guia da aula.} É o que o professor
+    abre na hora da aula, e seria útil em quatro das oito missões. Descartada
+    porque o Rastro do Boato não tem guia e o Instanooria precisa da atividade
+    antes: o link acertaria em algumas missões e erraria nas outras, que é
+    exatamente o problema atual com outro destino.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um clique a mais para quem ia direto aos resultados.} Quem
+    conduzia o UnooTube abria a tela de resultados a partir da sala; agora passa
+    pela ficha. O ganho é a sala não ter mais como mandar ninguém para um
+    \cd{notFound()}; o custo é real e cai sobre as missões que \emph{funcionavam}.
+  \item \textbf{O guia saiu da sala.} Ele é o que o professor abre na véspera e
+    na hora, e agora está um nível abaixo. A ficha o oferece em destaque, mas
+    quem tinha o caminho na memória vai procurá-lo onde não está mais.
+  \item \textbf{A ficha passou a ter dois comportamentos} --- com e sem turma ---
+    e a única coisa que os distingue na tela é a faixa de contexto. Se ela for
+    removida por ser \enquote{ruído visual}, o professor perde o que diz de qual
+    turma são as atividades que está vendo.
+  \item \textbf{\cd{turmaDaConducao} custa uma chamada a mais} por abertura de
+    ficha vinda da sala (\cd{GET /turmas/minhas}). É a lista pequena que as
+    telas do professor já pedem, mas é tráfego que antes não havia.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} A primeira missão cuja condução não caiba na
+ficha --- por exemplo, uma que precise de uma tela ao vivo aberta em projetor, na
+qual passar pela ficha atrapalhe. Aí o caminho único deixa de bastar, e a saída
+provável é a ficha redirecionar sozinha nesse caso, e não a sala voltar a
+decidir.

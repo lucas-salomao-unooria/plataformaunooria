@@ -16,8 +16,14 @@ import { FormularioAtividade } from "./formulario-atividade";
  * `lib/entre-redes/catalogo.ts`). Quando houver mais missões, esta rota passa a
  * receber a missão de origem.
  */
-export default async function NovaAtividadePage() {
+export default async function NovaAtividadePage({
+  searchParams,
+}: {
+  /** `?turmaId=` chega de quem veio da sala de aula (ADR-100). */
+  searchParams: Promise<{ turmaId?: string }>;
+}) {
   // O middleware já garante sessão de professor em /professor/**.
+  const { turmaId } = await searchParams;
   const encontrado = buscarMissao(
     MISSAO_ATUAL.anoSlug,
     MISSAO_ATUAL.unidadeSlug,
@@ -37,7 +43,10 @@ export default async function NovaAtividadePage() {
         </p>
       </div>
 
-      <FormularioAtividade />
+      {/* A turma NÃO é validada aqui: o `select` só casa com uma das turmas que
+          o próprio formulário busca, e `POST /atividades` recusa turma em que o
+          professor não leciona. Um id inventado na URL cai em "Escolha a turma…". */}
+      <FormularioAtividade turmaInicial={turmaId?.trim() ?? ""} />
     </div>
   );
 }
