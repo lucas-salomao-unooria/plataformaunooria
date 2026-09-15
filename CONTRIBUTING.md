@@ -225,6 +225,20 @@ git log --oneline origin/hml..origin/dev     # o que exatamente está indo
 Antes de mergear: rode a suíte e2e inteira (`node scripts/e2e/rodar.mjs`) contra
 a stack de dev. É a última tela de verdade antes de hml.
 
+**Depois de mergear, o deploy não acabou quando o merge acaba.** Os passos são
+independentes, e a falha de um deixa os outros aplicados — em 2026-09-15 o
+`deploy-hub` de hml caiu e o ambiente ficou dez minutos com o banco migrado e a
+api nova servindo um hub VELHO, numa promoção que renomeava papéis; `ativar-exps`
+e `smoke` foram pulados e nada avisou. Confira o que subiu, não só o que falhou:
+
+```bash
+gh run view <id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
+gh run rerun <id> --failed      # só para falha de INFRAESTRUTURA (credencial, rede)
+```
+
+Falha de código, teste ou migration não se resolve re-rodando: corrija em `dev` e
+promova de novo. O apêndice F do PDF traz os sintomas e o rollback por camada.
+
 ## Promoção `hml → main` (produção), e a tag
 
 ```bash
