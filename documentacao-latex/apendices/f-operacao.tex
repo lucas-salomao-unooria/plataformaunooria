@@ -1136,6 +1136,31 @@ aparece} &
   2026-09-14. Antes de procurar defeito, confira em que \emph{commit} o ambiente
   está (\cd{gcloud run revisions list}) e compare com \cd{origin/dev}: o
   conserto de um ambiente atrasado é a PROMOÇÃO, não código.\\
+\zebra \textbf{O \emph{deploy} de um ambiente falhou --- e a pergunta certa é
+o que já SUBIU} &
+  Os passos são independentes, então a falha de um deixa os outros aplicados:
+  em 2026-09-15 o \cd{deploy-hub} de \cd{hml} morreu e o ambiente ficou dez
+  minutos com \textbf{banco migrado e api nova servindo um hub VELHO} --- numa
+  promoção que renomeava papéis, e o hub carrega a própria cópia do vocabulário.
+  \cd{ativar-exps} e \cd{smoke} foram PULADOS, então nada avisou. Antes de
+  qualquer coisa:
+  \cd{gh run view <id> --json jobs}. Depois decida pela CAUSA: falha de
+  infraestrutura (credencial, rede, \emph{timeout} do \emph{runner}) se
+  resolve com \cd{gh run rerun <id> --failed}, que refaz também os pulados;
+  falha de código, teste ou \emph{migration} exige correção em \cd{dev} e
+  promoção nova --- re-rodar só repete. Se nem isso resolver, o \emph{rollback}
+  é por CAMADA: revisão anterior no Cloud Run e \cd{versao\_ativa} das
+  experiências pelo painel da Unooria.\\
+\textbf{\cd{error getting credentials} no \emph{push} da imagem} &
+  Parece permissão e NÃO é: é o \emph{credential helper} do Docker falhando
+  sozinho. O CI autenticava com \cd{gcloud auth configure-docker}, que registra
+  o \cd{gcloud} como \emph{helper} e o faz rodar a cada \emph{push}; em
+  2026-09-15 ele saiu com \cd{exit status 1} e saída VAZIA depois de 22s
+  subindo camadas, enquanto o \cd{deploy-api}, com a mesma configuração e no
+  mesmo \emph{run}, passou. Desde então os dois \emph{jobs} de imagem usam
+  \cd{token\_format: access\_token} no \cd{auth@v2} e entregam o \emph{token}
+  ao \cd{docker/login-action} --- um processo a menos no caminho do
+  \emph{push}. Se voltar a acontecer, é transitório: re-rode o \emph{job}.\\
 \bottomrule
 \end{tabularx}
 
