@@ -23,7 +23,15 @@ import {
 export interface RotasDaMissao {
   /** A ficha: o que a missão é, os atos, o preparo. */
   ficha: string;
-  /** A tela de condução com a turma já escolhida — `null` quando não existe. */
+  /**
+   * A tela de condução com a turma já escolhida — `null` quando não existe.
+   *
+   * Nem toda missão tem uma. O Instanooria se conduz pela ATIVIDADE (o professor
+   * cria a dele em `/professor/atividades/nova` e acompanha por ela), e a rota
+   * `.../resultados` responde `notFound()` para quem não tem ramo no despachante
+   * — que foi exatamente o 404 que a sala de aula do 8º ano serviu enquanto este
+   * campo era montado para todo mundo.
+   */
   resultados: string | null;
   /**
    * O guia da aula — `null` quando a missão ainda não tem um.
@@ -36,6 +44,28 @@ export interface RotasDaMissao {
   guia: string | null;
 }
 
+/**
+ * As missões que TÊM tela de condução por turma.
+ *
+ * Lista POSITIVA, e não uma lista de exceções, por causa de como cada uma
+ * falha: missão publicada e esquecida aqui perde o link na sala (o professor
+ * chega por outro caminho); missão esquecida numa lista de exceções ganharia o
+ * link para um 404. `rotas-da-missao.test.ts` compara esta lista com os ramos
+ * do despachante de `.../resultados` nos DOIS sentidos.
+ *
+ * A Vila do Lume entra: a tela dela não passa pelo despachante — é rota
+ * própria, `/professor/entre-redes/vila-do-lume/resultados`.
+ */
+export const EXPS_COM_CONDUCAO: ReadonlySet<string> = new Set([
+  "exp-02-unootube",
+  "exp-03-unoogpt",
+  "exp-04-o-que-a-foto-conta",
+  "exp-06-rastro-boato",
+  "exp-07-o-eco-no-grupo",
+  "exp-08-manifesto-ia",
+  "exp-70-vila-do-lume",
+]);
+
 function ehTransversal(missao: Missao | MissaoTransversal): missao is MissaoTransversal {
   return !("anoSlug" in missao);
 }
@@ -46,7 +76,11 @@ const POR_EXP: ReadonlyMap<string, RotasDaMissao> = new Map(
     const temGuia = Boolean(buscarGuia(missao.expId!));
     return [
       missao.expId!,
-      { ficha, resultados: `${ficha}/resultados`, guia: temGuia ? `${ficha}/guia` : null },
+      {
+        ficha,
+        resultados: EXPS_COM_CONDUCAO.has(missao.expId!) ? `${ficha}/resultados` : null,
+        guia: temGuia ? `${ficha}/guia` : null,
+      },
     ] as const;
   }),
 );

@@ -414,6 +414,18 @@ O caminho para conduzir a missão sai da sala, com a turma já na URL
 faz essa tradução). A trilha do Entre Redes continua por ano e virou catálogo,
 com faixa dizendo que quem abre é a turma.
 
+**Mas nem toda missão TEM condução, e a sala não pode fingir que tem.** A rota
+`.../resultados` é um despachante por `expId` que termina em `notFound()`; o
+Instanooria não tem ramo lá porque ele se conduz pela ATIVIDADE. Enquanto o
+campo `resultados` era montado para todo mundo, o professor do 8º ano clicava em
+"Conduzir com esta turma" e recebia um 404 — relatado em 2026-09-14, e a tela de
+erro do Next é texto branco em fundo branco, então nem dava para ler o que era.
+Hoje quem decide é `EXPS_COM_CONDUCAO`, **lista POSITIVA**: missão esquecida
+nela perde o link (o professor chega pela ficha), enquanto numa lista de
+exceções ela ganharia o link para o 404. É a mesma doutrina do `guia`, no mesmo
+arquivo e pela mesma razão. `lib/rotas-da-missao.test.ts` compara a lista com os
+ramos do despachante nos DOIS sentidos — comentário não é rede.
+
 `/exp/[expId]` confere a liberação ANTES de montar o embed e responde 404 sem
 ela. Só para estudante: professor e gestor não chegam nesta rota, e `/dev-embed`
 segue sem porta (é bancada de desenvolvimento). A api recusaria de qualquer
