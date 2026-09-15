@@ -20,7 +20,7 @@ export const EXP_ID = "exp-08-manifesto-ia";
  * `public/experiencia.json`. O CI lê a do manifesto, e a divergência já causou
  * bug — o `versao.test.ts` compara os três (ADR-84).
  */
-export const EXP_VERSION = "0.1.2";
+export const EXP_VERSION = "0.1.3";
 
 export type Passo =
   | "briefing"

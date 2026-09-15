@@ -9,4 +9,4 @@
  * sourcemap num caminho vazio. Ficou em "1.0.0" por várias versões, e foi
  * assim que se descobriu (2026-09-08). `versao.test.ts` é a rede.
  */
-export const EXP_VERSION = "1.2.3";
+export const EXP_VERSION = "1.2.4";

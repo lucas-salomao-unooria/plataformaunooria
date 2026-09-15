@@ -1,7 +1,7 @@
 {
   "id": "exp-91-bem-estar",
   "nome": "Como você está? — acompanhamento de bem-estar",
-  "versao": "1.1.6",
+  "versao": "1.1.7",
   "produto": "bem-estar",
   "series": [],
   "capabilities": ["telemetria", "ia"],

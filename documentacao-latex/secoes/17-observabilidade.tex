@@ -1204,12 +1204,31 @@ para que essa dependência esteja escrita, em vez de ser descoberta num
 \cd{apply} vermelho.
 \end{atencao}
 
+\begin{atencao}
+\textbf{Esta política encontrou um defeito NOSSO no primeiro tráfego de
+verdade, e a primeira leitura dele estava errada.} Uma versão anterior deste
+capítulo dizia que os \emph{spans} \cd{motivo=sem-projeto} de \cd{hml} (292
+entre 5 e 7 de setembro) eram falta de \env{GCP\_PROJECT\_ID}, e que \enquote{o
+conserto é do Terraform, não da aplicação}. \textbf{Não era.} A \emph{env} já
+estava no serviço desde 3 de setembro, nos dois ambientes; o que faltava era o
+\cd{ClienteOtlpGoogle} chegar ao construtor do \cd{ProxyOtlpService}, que o
+importava com \cd{import type} --- o Nest perdia o \emph{token} e o
+\cd{@Optional()} injetava \cd{undefined} em silêncio, com a rota respondendo
+\textbf{204}. Corrigido em 2026-09-14; o sintoma e a verificação de um comando
+estão no Apêndice~\ref{ap:operacao}. Duas lições sobrevivem ao \emph{bug}:
+alerta sobre métrica DA APLICAÇÃO encontra defeito de código, e não só de
+configuração; e o primeiro palpite sobre a causa --- aqui, justamente a
+\emph{env} que esta documentação já esperava que faltasse --- tem de ser
+conferido contra o serviço antes de virar tarefa para outro repositório.
+\end{atencao}
+
 \begin{nota}
-Em \cd{hml} a política de \emph{spans} descartados deve disparar no primeiro
-tráfego, e o alerta estará \textbf{correto}: a api de lá não recebeu
-\env{GCP\_PROJECT\_ID}, e por isso 292 \emph{spans} saíram como
-\cd{motivo=sem-projeto} entre 5 e 7 de setembro. O conserto é do Terraform, não
-da aplicação.
+O outro motivo que \cd{hml} produziu no mesmo dia, \cd{sem-identidade}, era
+ambiente ATRASADO e não defeito: até \cd{cf9489f} (8 de setembro) a api validava
+\cd{service.version} com \cd{\{1,32\}} enquanto o CI injetava
+\env{NEXT\_PUBLIC\_HUB\_VERSAO} com o \cd{github.sha} inteiro, de 40 caracteres
+--- todo lote do hub caía, também com \textbf{204}. O conserto de um ambiente
+atrasado é a promoção, não código.
 \end{nota}
 
 \subsection{Onde a implantação divergiu do desenho, e por quê}

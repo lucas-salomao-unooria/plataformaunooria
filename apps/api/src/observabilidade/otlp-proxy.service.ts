@@ -1,10 +1,17 @@
-import { Injectable, Optional } from "@nestjs/common";
+import { Inject, Injectable, Optional } from "@nestjs/common";
 import { rateLimit } from "../comum/rate-limit";
 import { logger } from "./logger";
 import { Metricas } from "./metricas";
 import { redigirTexto } from "./redaction";
 import { EXP_ID_OU_HUB, LIMITE_SPANS_POR_LOTE, type AtributoOtlp, type OtlpTraces, type SpanOtlp } from "./contrato-de-rotas";
-import type { ClienteOtlpGoogle } from "./otlp-google";
+// IMPORT DE VALOR, nunca `import type`: a classe é o TOKEN de injeção do
+// construtor. Com `import type` o identificador some do escopo de valor, o
+// `emitDecoratorMetadata` grava `Function` no `design:paramtypes`, o Nest não
+// acha provider para esse token e o `@Optional()` injeta `undefined` — sem erro
+// nenhum. Foi assim de 2026-09-02 a 2026-09-14: TODO span de navegador virava
+// `sem-projeto` mesmo com `GCP_PROJECT_ID` no ambiente, nos três ambientes, com
+// a rota respondendo 204. A rede é `tests/observabilidade-injecao.spec.ts`.
+import { ClienteOtlpGoogle } from "./otlp-google";
 
 /**
  * Recebe o lote OTLP que a SDK exportou do navegador, o torna INOFENSIVO e o
@@ -113,7 +120,10 @@ export function reescreverLote(lote: OtlpTraces, identidade: IdentidadeDoLote): 
 export class ProxyOtlpService {
   constructor(
     private readonly metricas: Metricas,
-    @Optional() private readonly cliente?: ClienteOtlpGoogle,
+    // `@Inject` EXPLÍCITO: o token deixa de depender do metadata que o
+    // compilador emite, então a próxima "limpeza de imports" não volta a
+    // desligar a reexportação em silêncio.
+    @Optional() @Inject(ClienteOtlpGoogle) private readonly cliente?: ClienteOtlpGoogle,
   ) {}
 
   /** Cota por (escola, usuário): laço de export num cliente não pode virar custo. */

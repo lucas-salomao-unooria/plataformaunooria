@@ -19,7 +19,7 @@ export const EXP_ID = "exp-07-o-eco-no-grupo";
  * `regras.test.ts` compara os três — a exp-02 e a exp-03 divergiram aqui, cada
  * uma com um comentário dizendo para não divergir.
  */
-export const EXP_VERSION = "0.1.3";
+export const EXP_VERSION = "0.1.4";
 
 // ------------------------------------------------------------------ estado
 
