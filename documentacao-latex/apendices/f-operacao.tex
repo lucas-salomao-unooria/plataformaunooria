@@ -1090,6 +1090,36 @@ aparece} &
   do \rota{/login} --- e nunca o relógio. Note que aqui a espera cega era curta
   DEMAIS, o inverso do caso comum em que ela paga o prazo inteiro: os dois
   reportam a causa errada, e este reporta uma causa que culpa o produto.\\
+\zebra \textbf{\emph{Spans} descartados com \cd{motivo=sem-projeto} --- e
+\env{GCP\_PROJECT\_ID} ESTÁ no serviço} &
+  A \emph{env} está certa: o que falta é o \cd{ClienteOtlpGoogle} chegar ao
+  construtor do \cd{ProxyOtlpService}. Ele era importado com \cd{import type},
+  o identificador sai do escopo de valor, o \cd{emitDecoratorMetadata} grava
+  \cd{Function} no \cd{design:paramtypes}, o Nest não acha provider para esse
+  \emph{token} --- e o \cd{@Optional()} injeta \cd{undefined} sem erro nenhum.
+  O ramo comentado como \enquote{dev sem projeto} vira o ÚNICO que roda, a rota
+  responde \textbf{204}, e o Cloud Trace nunca recebe span de navegador. Vigorou
+  de 2026-09-02 a 2026-09-14, em \emph{dev} e \emph{hml} ao mesmo tempo.
+  Verificação de um comando: procure \cd{design:paramtypes} no
+  \arq{otlp-proxy.service.js} de \arq{dist} --- o segundo tipo tem de ser
+  \cd{ClienteOtlpGoogle}, nunca \cd{Function}. A regra
+  que fica: em NestJS, classe usada como \emph{token} de injeção NUNCA entra por
+  \cd{import type}, e \cd{@Inject} explícito tira o \emph{token} das mãos do
+  compilador. Rede: \arq{apps/api/tests/observabilidade-injecao.spec.ts} --- e
+  note que as suítes antigas não pegavam, porque faziam
+  \cd{new ProxyOtlpService(...)}, que não passa pelo \emph{container}.\\
+\textbf{Rajada de \cd{motivo=sem-iden\allowbreak{}tidade}, em UM ambiente só} &
+  O \cd{service.version} que o navegador manda não passa no formato que a api
+  daquele ambiente aceita, e o lote inteiro é recusado antes de qualquer
+  \emph{span} ser contado (o contador soma 1 por LOTE, não por \emph{span}).
+  O caso medido é de ambiente ATRASADO: até \cd{cf9489f} (2026-09-08) a api
+  validava a versão com \cd{\{1,32\}} enquanto o CI injetava
+  \env{NEXT\_PUBLIC\_HUB\_VERSAO} com o \cd{github.sha} INTEIRO, de 40
+  caracteres --- todo lote do hub caía, com a rota respondendo \textbf{204}. Em
+  \cd{hml}, parada em código de 05/09, isso rendeu 23 lotes descartados em
+  2026-09-14. Antes de procurar defeito, confira em que \emph{commit} o ambiente
+  está (\cd{gcloud run revisions list}) e compare com \cd{origin/dev}: o
+  conserto de um ambiente atrasado é a PROMOÇÃO, não código.\\
 \bottomrule
 \end{tabularx}
 

@@ -931,6 +931,20 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   sinal é contador). O proxy OTLP (`otlp-proxy.service.ts`) SUBSTITUI o
   `resource` do cliente e filtra atributos por allowlist antes de reexportar —
   nada do que o navegador manda vai ao Google como veio.
+- **Classe que é TOKEN de injeção NUNCA entra por `import type`.** O
+  `emitDecoratorMetadata` monta o `design:paramtypes` a partir do escopo de
+  VALOR: com `import type` o identificador some, o metadata vira `Function`, o
+  Nest não acha provider para esse token — e com `@Optional()` a dependência
+  chega `undefined` em runtime, sem erro nenhum. Custou seis semanas (2026-09-02
+  a 09-14) do proxy OTLP descartando TODO span de navegador como `sem-projeto`
+  com `GCP_PROJECT_ID` definido em dev E hml, com a rota respondendo 204 e o
+  alerta do cap. 17 acusando uma env que estava correta. Passa no typecheck, no
+  lint e em qualquer suíte que faça `new Servico(...)` — **injeção manual não
+  passa pelo container, e é exatamente onde este defeito não aparece**.
+  Dependência opcional leva `@Inject(Classe)` explícito, que tira o token das
+  mãos do compilador; a rede é `tests/observabilidade-injecao.spec.ts`, que
+  monta o service pelo `NestFactory` (`@nestjs/testing` não é dependência deste
+  projeto, e `createApplicationContext` do `core` monta o mesmo grafo).
 - **`/observabilidade/publico/*` é a ÚNICA rota sem `OidcGuard`** além do
   `/telemetry/ingest` (que tem o `PubSubPushGuard`) — ADR-84. Existe porque a
   tela de LOGIN não tem sessão, e o 401 do BFF descartava exatamente o sinal de
