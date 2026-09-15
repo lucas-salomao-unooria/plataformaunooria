@@ -1,6 +1,8 @@
 import { Badge, Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { rotaDaMissao, rotuloDaMissao, type Ano, type Missao } from "@/lib/entre-redes/catalogo";
+import { comTurma } from "@/lib/rotas-da-missao";
+import type { TurmaDoProfessor } from "@/lib/turmas";
 
 /**
  * Corpo de O RASTRO DO BOATO (6º ano · Unidade 2).
@@ -20,12 +22,15 @@ import { rotaDaMissao, rotuloDaMissao, type Ano, type Missao } from "@/lib/entre
 export function MissaoRastroBoato({
   ano,
   missao,
+  turma,
 }: {
   ano: Ano;
   missao: Missao & { ficha: NonNullable<Missao["ficha"]> };
+  /** A turma que a sala mandou conduzir (ADR-100); `null` pela trilha. */
+  turma: TurmaDoProfessor | null;
 }) {
   const { ficha } = missao;
-  const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
+  const rotaResultados = comTurma(`${rotaDaMissao(missao)}/resultados`, turma?.id);
 
   return (
     <div className="flex flex-col gap-8">

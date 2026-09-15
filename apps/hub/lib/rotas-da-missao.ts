@@ -24,13 +24,12 @@ export interface RotasDaMissao {
   /** A ficha: o que a missão é, os atos, o preparo. */
   ficha: string;
   /**
-   * A tela de condução com a turma já escolhida — `null` quando não existe.
+   * A tela de resultados da missão, quando ela existe.
    *
-   * Nem toda missão tem uma. O Instanooria se conduz pela ATIVIDADE (o professor
-   * cria a dele em `/professor/atividades/nova` e acompanha por ela), e a rota
-   * `.../resultados` responde `notFound()` para quem não tem ramo no despachante
-   * — que foi exatamente o 404 que a sala de aula do 8º ano serviu enquanto este
-   * campo era montado para todo mundo.
+   * **A SALA não usa mais este campo** (ADR-100): de lá o professor entra sempre
+   * pela ficha, que é quem sabe o que aquela missão oferece. Quem monta o botão
+   * "Ver resultados" é o corpo da missão, que existe justamente porque cada uma
+   * oferece uma coisa diferente.
    */
   resultados: string | null;
   /**
@@ -44,28 +43,6 @@ export interface RotasDaMissao {
   guia: string | null;
 }
 
-/**
- * As missões que TÊM tela de condução por turma.
- *
- * Lista POSITIVA, e não uma lista de exceções, por causa de como cada uma
- * falha: missão publicada e esquecida aqui perde o link na sala (o professor
- * chega por outro caminho); missão esquecida numa lista de exceções ganharia o
- * link para um 404. `rotas-da-missao.test.ts` compara esta lista com os ramos
- * do despachante de `.../resultados` nos DOIS sentidos.
- *
- * A Vila do Lume entra: a tela dela não passa pelo despachante — é rota
- * própria, `/professor/entre-redes/vila-do-lume/resultados`.
- */
-export const EXPS_COM_CONDUCAO: ReadonlySet<string> = new Set([
-  "exp-02-unootube",
-  "exp-03-unoogpt",
-  "exp-04-o-que-a-foto-conta",
-  "exp-06-rastro-boato",
-  "exp-07-o-eco-no-grupo",
-  "exp-08-manifesto-ia",
-  "exp-70-vila-do-lume",
-]);
-
 function ehTransversal(missao: Missao | MissaoTransversal): missao is MissaoTransversal {
   return !("anoSlug" in missao);
 }
@@ -78,7 +55,7 @@ const POR_EXP: ReadonlyMap<string, RotasDaMissao> = new Map(
       missao.expId!,
       {
         ficha,
-        resultados: EXPS_COM_CONDUCAO.has(missao.expId!) ? `${ficha}/resultados` : null,
+        resultados: `${ficha}/resultados`,
         guia: temGuia ? `${ficha}/guia` : null,
       },
     ] as const;
@@ -94,11 +71,38 @@ export function rotasDaMissao(expId: string): RotasDaMissao | null {
   return POR_EXP.get(expId) ?? null;
 }
 
-/** A rota de condução com a turma já preenchida — é assim que se entra pela sala. */
+/**
+ * **O ÚNICO caminho da sala para a missão** (ADR-100): a ficha, com a turma.
+ *
+ * A sala tinha três links por missão — "Como funciona", "Guia da aula" e
+ * "Conduzir com esta turma" — e o terceiro apontava direto para a tela de
+ * resultados. Isso obrigava a SALA a saber o que cada missão oferece, e ela não
+ * sabe: o Instanooria não tem tela de resultados (conduz-se pela atividade), o
+ * Rastro do Boato não tem guia, e a próxima missão publicada terá outra
+ * combinação. O resultado foi um link para 404 na missão do 8º ano.
+ *
+ * Agora a sala faz UMA pergunta — "onde fica esta missão?" — e quem responde o
+ * que ela oferece é a ficha, que já tem o corpo próprio de cada missão. Ela
+ * recebe a turma e reponta tudo o que está dentro dela para aquela turma.
+ *
+ * `null` só quando o hub não conhece a missão.
+ */
 export function rotaDeConducao(expId: string, turmaId: string): string | null {
   const rotas = rotasDaMissao(expId);
-  if (!rotas?.resultados) return null;
-  return `${rotas.resultados}?turmaId=${encodeURIComponent(turmaId)}`;
+  if (!rotas) return null;
+  return `${rotas.ficha}?turmaId=${encodeURIComponent(turmaId)}`;
+}
+
+/**
+ * Repõe a turma numa rota de dentro da ficha (ADR-100).
+ *
+ * Existe para que o professor que entrou pela SALA não precise escolher a turma
+ * de novo na tela seguinte — ele já escolheu, ao abrir a sala. Sem turma
+ * (trilha do Entre Redes), devolve a rota como está, e a tela de destino
+ * continua oferecendo o próprio seletor.
+ */
+export function comTurma(rota: string, turmaId: string | null | undefined): string {
+  return turmaId ? `${rota}?turmaId=${encodeURIComponent(turmaId)}` : rota;
 }
 
 /** O guia da aula da missão, ou `null` se ela ainda não tem um. */

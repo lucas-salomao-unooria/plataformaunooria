@@ -6,7 +6,8 @@ import {
   type Ano,
   type Missao,
 } from "@/lib/entre-redes/catalogo";
-import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import { comTurma, rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
+import type { TurmaDoProfessor } from "@/lib/turmas";
 
 /**
  * Corpo da missão do UNOOTUBE (4º ano · Unidade 1). Não há atividade a
@@ -16,12 +17,15 @@ import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 export function MissaoUnooTube({
   ano,
   missao,
+  turma,
 }: {
   ano: Ano;
   missao: Missao & { ficha: NonNullable<Missao["ficha"]> };
+  /** A turma que a sala mandou conduzir (ADR-100); `null` pela trilha. */
+  turma: TurmaDoProfessor | null;
 }) {
   const { ficha } = missao;
-  const rotaResultados = `${rotaDaMissao(missao)}/resultados`;
+  const rotaResultados = comTurma(`${rotaDaMissao(missao)}/resultados`, turma?.id);
   const guia = missao.expId ? rotaDoGuiaDaMissao(missao.expId) : null;
 
   return (

@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from "@nestjs/common";
@@ -59,6 +60,7 @@ import {
   IaAlternadaSchema,
   IaSchema,
   LimpaSchema,
+  AtividadesQuery,
   ListaDeAtividadesSchema,
   MonitorSchema,
 } from "./contrato-de-rotas";
@@ -84,16 +86,26 @@ export class AtividadesController {
   @Get()
   @Contrato({
     resumo: "As atividades DESTE professor.",
-    descricao: "Posse por `professor_id` + `escola_id`: atividade é autoral.",
+    descricao:
+      "Posse por `professor_id` + `escola_id`: atividade é autoral. `?turmaId=` estreita para as daquela turma — é como a SALA DE AULA resolve para onde o link \"Conduzir com esta turma\" leva (ADR-100).",
+    query: AtividadesQuery,
     resposta: ListaDeAtividadesSchema,
   })
-  async listar(@Req() req: Autenticado) {
+  async listar(@Query() query: unknown, @Req() req: Autenticado) {
+    const { turmaId } = AtividadesQuery.parse(query ?? {});
     return this.prisma.comTenancy(async (tx) => {
       const atividades = await tx.activity.findMany({
-        where: { professorId: req.auth.usuarioId, escolaId: req.auth.escolaId },
+        where: {
+          professorId: req.auth.usuarioId,
+          escolaId: req.auth.escolaId,
+          /* Só estreita quando pedido. `turmaId` ausente continua devolvendo a
+             lista inteira, que é o que a ficha da missão e a home consomem. */
+          ...(turmaId ? { turmaId } : {}),
+        },
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
+          turmaId: true,
           titulo: true,
           disciplina: true,
           recorte: true,
@@ -107,6 +119,7 @@ export class AtividadesController {
       return {
         atividades: atividades.map((a) => ({
           id: a.id,
+          turmaId: a.turmaId,
           titulo: a.titulo,
           disciplina: a.disciplina,
           recorte: a.recorte,
