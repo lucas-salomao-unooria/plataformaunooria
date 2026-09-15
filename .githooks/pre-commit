@@ -46,7 +46,7 @@ done < <(git diff --cached --name-only)
 
 if [ "$costura" -gt 0 ]; then
   echo "aviso: $costura arquivo(s) de costura neste commit — a costura vai num commit" >&2
-  echo "       separado no fim da frente, depois de \`git merge origin/dev\`." >&2
+  echo "       separado no fim da frente, depois de \`git merge origin/dev-local\`." >&2
 fi
 
 [ ${#fora[@]} -eq 0 ] && exit 0

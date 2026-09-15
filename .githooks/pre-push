@@ -10,7 +10,7 @@
 # package.json faz isso no `pnpm install`).
 set -u
 
-AMBIENTES="dev hml main"
+AMBIENTES="dev-local dev hml main"
 TIPOS="feat|fix|chore|docs|ci|refactor|test|perf|build|style|hotfix"
 VAZIO="0000000000000000000000000000000000000000"
 falhou=0
@@ -29,16 +29,18 @@ while read -r ref_local sha_local ref_remota _sha_remoto; do
 
   ✗ push direto em '$amb' recusado.
 
-    '$amb' é branch de AMBIENTE: o merge do PR é o que dispara o deploy da
-    stack correspondente. Push direto sobe código para a escola sem passar
-    pelo portão (typecheck, lint, testes) e sem deixar o PR como registro.
+    '$amb' é branch de AMBIENTE. Em 'dev', 'hml' e 'main' o merge do PR é o
+    que dispara o deploy da stack; em 'dev-local' ele é o que integra a
+    frente ao ambiente Docker da máquina. Push direto pula o portão
+    (typecheck, lint, testes) e não deixa o PR como registro.
 
     O caminho:
-      trabalho  ->  PR para dev
-      dev       ->  PR para hml
-      hml       ->  PR para main   (produção; leva tag semver)
+      trabalho   ->  PR para dev-local   (o Docker local, onde você testa)
+      dev-local  ->  PR para dev         (a nuvem, onde o time testa)
+      dev        ->  PR para hml         (onde o cliente testa)
+      hml        ->  PR para main        (produção; leva tag semver)
 
-      gh pr create --base dev --fill
+      gh pr create --base dev-local --fill
 
     Emergência de verdade: PERMITIR_PUSH_DIRETO=1 git push …
     (e depois escreva no PR de acompanhamento por que foi preciso)
@@ -52,7 +54,7 @@ MSG
   # 2. Nome da branch de trabalho. Deleção remota (sha zerado) não é avaliada.
   if [ "$sha_local" != "$VAZIO" ]; then
     case "$branch_remota" in
-      dev|hml|main) : ;;
+      dev-local|dev|hml|main) : ;;
       exp-[0-9][0-9]-*) : ;;
       *)
         if ! printf '%s' "$branch_remota" | grep -Eq "^($TIPOS)/[a-z0-9][a-z0-9._-]*$"; then

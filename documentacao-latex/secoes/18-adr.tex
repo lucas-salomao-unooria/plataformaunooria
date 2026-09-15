@@ -145,6 +145,7 @@ que a cercam.
 \adrr{ADR-98} & A plataforma assume UM fuso, numa constante só & 2026-09-11 & Aceita\\
 \zebra \adrr{ADR-99} & O fuso vem de uma variável de ambiente, em três superfícies & 2026-09-11 & Aceita\\
 \adrr{ADR-100} & Da sala para a missão há UM caminho, e ele leva à ficha & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-101} & Quatro ambientes, e a frente nasce e volta em \cd{dev-local} & 2026-09-15 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7783,3 +7784,137 @@ ficha --- por exemplo, uma que precise de uma tela ao vivo aberta em projetor, n
 qual passar pela ficha atrapalhe. Aí o caminho único deixa de bastar, e a saída
 provável é a ficha redirecionar sozinha nesse caso, e não a sala voltar a
 decidir.
+
+
+\section{ADR-101 --- Quatro ambientes, e a frente nasce e volta em \cd{dev-local}}
+\label{adr:quatro-ambientes}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-53} (um ambiente por branch) e à \adrr{ADR-56}
+(o fluxo, imposto sem \emph{branch protection}).
+
+\textbf{Contexto.} A ADR-53 desenhou um ambiente por \emph{branch} e a ADR-56
+escreveu o caminho: trabalho \seta{} \cd{dev} \seta{} \cd{hml} \seta{}
+\cd{main}. Desde então passou a existir uma quarta camada que nenhum documento
+registrou --- \cd{dev-local}, a \emph{branch} que corresponde ao ambiente
+\textbf{Docker da máquina de quem desenvolve} (\cd{pnpm docker:dev}). Ela está
+no repositório desde 2026-09, recebe \emph{merge} de \emph{branch} de trabalho
+e já promoveu para \cd{dev} por PR. Mas nenhum \arq{AGENTS.md}, nenhum
+\emph{hook} e nenhum \emph{script} a conhecia: a raiz mandava partir de
+\cd{origin/dev}, o \arq{scripts/worktree.mjs} tinha \cd{origin/dev} ESCRITO com
+um parágrafo de justificativa, e o \arq{.githooks/pre-push} protegia
+\cd{dev hml main} deixando \cd{dev-local} aberta a \emph{push} direto.
+
+O custo foi medido três vezes, e nenhuma delas se parece com a causa:
+
+\begin{itemize}
+  \item \textbf{Frente nascendo atrás.} \cd{dev-local} recebe o trabalho
+    primeiro e por isso costuma estar \textbf{à frente} de \cd{dev}. A ADR-79
+    nasceu sobre \cd{dev-local}, que já tinha a 78, enquanto \cd{dev} parava na
+    71 --- quem partisse de \cd{dev} reservaria um número já gasto.
+  \item \textbf{A camada pulada.} Os PRs \#49 e \#50 foram de \emph{branch} de
+    trabalho direto para \cd{dev}, e o histórico mostra a prática misturada:
+    PRs \cd{dev-local \seta{} dev} (\#42, \#43) convivendo com \emph{merges}
+    locais e com PRs que saltavam a camada. O que se perde ao saltar é o único
+    portão em que \textbf{alguém olha a tela}: o CI roda \emph{typecheck},
+    \emph{lint}, testes e \emph{build}, e não abre navegador.
+  \item \textbf{O agente obedecendo o que está escrito.} A regra real vivia
+    apenas na memória automática da ferramenta de codificação --- que é local à
+    máquina, não viaja no repositório e \textbf{não é carregada em subagente
+    nenhum}. Contra ela, um \arq{AGENTS.md} de 727 linhas dizendo o contrário,
+    com justificativa. Instrução contraditória é resolvida arbitrariamente, e
+    foi.
+\end{itemize}
+
+\textbf{Decisão.} \textbf{Quatro ambientes, quatro \emph{branches}, e
+\cd{dev-local} é a BASE e o ALVO de toda \emph{branch} de trabalho.}
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Branch} & \textbf{Ambiente} & \textbf{Quem testa} & \textbf{O merge dispara}\\
+\midrule
+\cd{dev-local} & Docker na máquina & quem desenvolve & nada: a stack local sobe à mão\\
+\cd{dev} & \emph{stack} GCP de dev & o time & \emph{deploy} de dev\\
+\cd{hml} & \emph{stack} GCP de hml & o cliente & \emph{deploy} de hml\\
+\cd{main} & produção & as escolas & \emph{deploy} de produção\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{\cd{dev-local} é \emph{branch} de AMBIENTE}, ainda que o
+    ambiente seja um \emph{container} e não uma \emph{stack} em nuvem. O
+    \arq{.githooks/pre-push} a recusa a \emph{push} direto pela mesma razão que
+    recusa em \cd{dev}: o que entra ali entra por PR, com registro. Ela não
+    aparece no \arq{deploy.yml} --- não há \emph{deploy} a disparar.
+  \item \textbf{TODA tarefa começa num \emph{worktree}}, paralela ou não. A
+    cópia principal é onde a \emph{stack} RODA (\cd{docker:dev}, a suíte e2e, as
+    migrações); editar nela mistura, no mesmo \cd{git status}, o que já subiu
+    com o que ainda está sendo escrito.
+  \item \textbf{A base vai ESCRITA}: \cd{origin/dev-local}, literal, no
+    \arq{scripts/worktree.mjs}. Nenhuma ferramenta adivinha --- a
+    \cd{default\_branch} do GitHub é \cd{dev}, um clone antigo tem
+    \cd{origin/HEAD} em \cd{main}, e a criação automática de \emph{worktree} do
+    agente segue a padrão. Todas erram, e erram em silêncio.
+  \item \textbf{\cd{--fatia} passa a ser obrigatória} (\adrr{ADR-71}). Se o
+    \emph{worktree} é o começo de toda tarefa, a cerca de caminhos deixa de ser
+    instrumento de paralelismo e vira declaração de escopo. Frente que não toca
+    módulo de domínio declara a pasta da ferramenta:
+    \cd{--fatia scripts,.githooks}.
+  \item \textbf{O \emph{hotfix} desce a escada inteira}, até \cd{dev-local}.
+    Parar em \cd{dev} deixa a base local sem a correção, e a frente seguinte
+    nasce sem ela.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Deixar como estava}: \cd{dev-local} como conveniência pessoal
+    não registrada. Foi o estado até aqui, e é exatamente o que produziu as três
+    falhas do contexto. Uma regra que existe na cabeça de quem desenvolve e não
+    no repositório é, para qualquer agente e para qualquer pessoa nova,
+    equivalente a não existir.
+  \item \textbf{\cd{dev-local} como base, mas PR direto para \cd{dev}}. Economiza
+    um PR por frente. Perde o registro do que entrou no ambiente local e, com
+    ele, a resposta para \enquote{isto chegou a rodar na máquina antes de custar
+    um \emph{deploy}?}.
+  \item \textbf{Escrever a regra só no \arq{AGENTS.md}}. É o que já havia para o
+    fluxo antigo, e não bastou: instrução é contexto, não portão. A ADR-56 já
+    tinha decidido que a regra que o servidor não impõe, o \emph{hook} impõe ---
+    esta ADR apenas estende a lista de \emph{branches} protegidas.
+  \item \textbf{Renomear \cd{dev-local} para algo como \cd{integracao}}. O nome
+    atual diz a verdade: é o ambiente local. Renomear custaria reescrever
+    referências e não resolveria nada que a ausência de registro causava.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um PR a mais por frente.} Quem antes ia de \emph{branch} de
+    trabalho a \cd{dev} agora passa por \cd{dev-local}. Numa equipe de uma
+    pessoa, é cerimônia que ela cumpre sozinha --- e cerimônia que se cumpre
+    sozinha é a primeira a ser pulada num dia ruim.
+  \item \textbf{\cd{dev-local} e \cd{dev} divergem por construção.} A escada
+    ganhou um degrau, e com ele mais uma \emph{branch} que pode ficar para trás.
+    O \emph{retro-merge} do \emph{hotfix} ficou um passo mais longo.
+  \item \textbf{\emph{Worktree} para toda tarefa custa} \cd{pnpm install} mais
+    \cd{prisma generate} por frente --- minutos e disco, mesmo para corrigir uma
+    linha. O \emph{flag} \cd{--sem-instalar} existe para a frente que só edita
+    documentação, mas é uma decisão a mais na hora de criar.
+  \item \textbf{A fatia obrigatória cobra declaração de quem não precisa dela.}
+    Frente que muda um \emph{typo} em três arquivos de pastas diferentes vai
+    declarar três caminhos, ou usar \env{PERMITIR\_FORA\_DA\_FATIA}. O risco
+    conhecido é treinar o reflexo de desligar o \emph{hook}.
+  \item \textbf{O ambiente local não é reproduzível para mais ninguém.} O portão
+    de \cd{dev-local} é uma pessoa olhando uma tela na máquina dela. Não há
+    artefato, \emph{log} nem evidência de que o olhar aconteceu --- ao contrário
+    dos outros três, que deixam execução de CI.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Uma segunda pessoa desenvolvendo.}
+\cd{dev-local} é, por construção, o ambiente de UMA máquina: duas pessoas com
+Docker local diferente empurrando para a mesma \emph{branch} transformam o
+degrau em fonte de conflito, em vez de portão. Nesse dia a saída provável é
+\cd{dev-local} por pessoa (\cd{dev-local-lucas}), ou a camada desaparecer em
+favor de \emph{previews} efêmeros por PR.

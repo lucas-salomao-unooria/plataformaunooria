@@ -49,8 +49,8 @@ arrasta as dependências corretas.
 \begin{lstlisting}[language=yamlunoo, caption={\arq{.github/workflows/ci.yml} (abreviado)}, label={lst:ci}]
 name: ci
 on:
-  # Todo PR: de branch de trabalho para dev, de dev para hml e, quando
-  # producao existir, de hml para main — o mesmo portao nas tres pontes.
+  # Todo PR: de branch de trabalho para dev-local, dai para dev, para hml
+  # e, quando producao existir, para main — o mesmo portao nas quatro pontes.
   pull_request:
   # Chamado pelo deploy.yml no push para dev/hml. NAO tem `push` proprio:
   # rodaria duas vezes no mesmo commit, e o deploy precisa ESPERAR por ele —
@@ -96,8 +96,8 @@ no mesmo \emph{commit} --- e, pior, em \emph{paralelo} com o \emph{deploy}, o qu
 deixaria um teste vermelho subir para uma escola. Assim o \emph{deploy}
 \textbf{espera} pelo portão. O gatilho de \cd{pull\_request} não filtra a
 \emph{branch} de destino de propósito: o portão é o mesmo nas três pontes do
-fluxo (\emph{branch} de trabalho \(\to\) \cd{dev}, \cd{dev} \(\to\) \cd{hml},
-\cd{hml} \(\to\) \cd{main}).
+fluxo (\emph{branch} de trabalho \(\to\) \cd{dev-local}, \cd{dev-local}
+\(\to\) \cd{dev}, \cd{dev} \(\to\) \cd{hml}, \cd{hml} \(\to\) \cd{main}).
 \end{decisao}
 
 \subsection{A trava de vulnerabilidade (Snyk)}
@@ -454,34 +454,43 @@ reexecuta o \emph{bootstrap} (idempotente); só mudar o \arq{Dockerfile} (o
 \toprule
 \headrow \thd{Convenção} & \thd{Regra}\\
 \midrule
-Fluxo & \emph{Branch} de trabalho \(\to\) PR para \arq{dev} \(\to\) PR de
-  \arq{dev} para \arq{hml} \(\to\) (futuro) PR de \arq{hml} para \arq{main},
-  que será a produção. \textbf{Ninguém commita direto em \emph{branch} de
-  ambiente}: o \emph{merge} do PR é o que dispara o \emph{deploy} da
-  \emph{stack} correspondente.\\
-\zebra \emph{Merge} & \emph{Merge commit} ou \emph{squash}; \textbf{rebase fica
+Fluxo & \textbf{Quatro ambientes} (\adrr{ADR-101}): \emph{branch} de trabalho
+  \(\to\) PR para \arq{dev-local} \(\to\) PR para \arq{dev} \(\to\) PR para
+  \arq{hml} \(\to\) (futuro) PR para \arq{main}. Quem testa muda a cada degrau:
+  \arq{dev-local} é o Docker da máquina e quem olha é quem desenvolve;
+  \arq{dev} é do time; \arq{hml}, do cliente. \textbf{Ninguém commita direto em
+  \emph{branch} de ambiente} --- em \arq{dev}, \arq{hml} e \arq{main} o
+  \emph{merge} do PR dispara o \emph{deploy} da \emph{stack}; em
+  \arq{dev-local} ele integra a frente ao ambiente local, que não tem
+  \emph{deploy} e por isso não está no \arq{deploy.yml}.\\
+\zebra \emph{Worktree} & \textbf{Toda tarefa começa num}, paralela ou não
+  (\adrr{ADR-61}, \adrr{ADR-101}): \cd{pnpm worktree criar <branch> --fatia
+  <caminhos>}, sobre \cd{origin/dev-local} ESCRITO. A cópia principal é onde a
+  \emph{stack} roda, e editar nela mistura o que subiu com o que está sendo
+  escrito. \cd{--fatia} é obrigatória (\adrr{ADR-71}).\\
+\emph{Merge} & \emph{Merge commit} ou \emph{squash}; \textbf{rebase fica
   desabilitado} nas opções do repositório. O \emph{job} \cd{mudancas} compara
   \cd{HEAD\^{}} (o primeiro pai), que num \emph{merge commit} é a ponta antiga
   da \emph{branch} de ambiente --- um \emph{rebase-merge} faria o \emph{diff}
   enxergar só o último \emph{commit} do PR.\\
-\emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
+\zebra \emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
   (\arq{exp-12-fracoes}). Trabalho que não é experiência usa o prefixo do tipo do
   \emph{commit}: \arq{fix/quota-por-perfil}, \arq{chore/deps},
   \arq{ci/deploy}.\\
-\zebra \emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
+\emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
   \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
   tocado. Validado pelo \emph{hook} \arq{.githooks/commit-msg}.\\
-Promoção & O PR de \cd{hml} para \cd{main} leva \textbf{tag semver}
+\zebra Promoção & O PR de \cd{hml} para \cd{main} leva \textbf{tag semver}
   (\cd{v1.4.0}) e \emph{release}, criadas depois do \emph{merge}. MAJOR só em
   quebra de contrato externo (\cd{PROTOCOL\_VERSION} da ponte, manifesto,
   telemetria, contrato do Terraform); MINOR é o caso comum. A \emph{tag} é o
   nome do que está em produção --- sem ela, \enquote{voltar para a anterior}
   vira caça a \emph{SHA} no meio de um incidente.\\
-\zebra \emph{Hotfix} & Sai de \cd{main}, entra por PR em \cd{main}, leva
-  \emph{tag} de PATCH --- e volta para \cd{hml} e \cd{dev} por
-  \textbf{retro-merge} no mesmo dia. \emph{Hotfix} que não volta renasce como
-  \emph{bug} na promoção seguinte.\\
-Imposição & \cd{branch protection} e \cd{rulesets} respondem \textbf{403}
+\emph{Hotfix} & Sai de \cd{main}, entra por PR em \cd{main}, leva
+  \emph{tag} de PATCH --- e desce a escada INTEIRA por \textbf{retro-merge} no
+  mesmo dia: \cd{hml}, \cd{dev} e \cd{dev-local}. Parar em \cd{dev} deixa a
+  base local sem a correção, e a frente seguinte nasce sem ela.\\
+\zebra Imposição & \cd{branch protection} e \cd{rulesets} respondem \textbf{403}
   (repositório privado, plano \emph{Free}). As regras vivem em \arq{.githooks/}
   --- \arq{pre-push} recusa \emph{push} direto em \emph{branch} de ambiente e
   nome fora do padrão --- instaladas pelo \cd{prepare} do \cd{pnpm install}
