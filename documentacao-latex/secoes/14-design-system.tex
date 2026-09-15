@@ -578,6 +578,31 @@ de contexto, o componente é \cd{FeedbackAlert} (e a prop é \cd{type}, não
 \end{nota}
 
 \begin{atencao}
+\textbf{O \cd{MetricCard} recebe número ou rótulo curto --- nunca frase.} O
+valor é \cd{white-space: nowrap} com \cd{font-size: clamp(26px, 4vw, 36px)},
+dentro de um cartão de \cd{height: 128px} e \cd{max-width: 301px} --- cerca de
+269\,px úteis. Valor maior \textbf{vaza para fora do cartão}, por cima do que
+está ao lado, e nada acusa: não é defeito de CSS, é o componente usado para o
+que ele não é.
+
+Quem mostrou isso foi o cartão \enquote{Ao confirmar} do relatório individual
+do Instanooria, que derramava \enquote{estourou --- a chuva chegou} sobre a
+página. Os outros 40 \cd{MetricCard} do hub são número ou \cd{n/m}. A saída
+não foi compensar no CSS, e sim separar as duas leituras em
+\cd{lib/unoogpt-leitura.ts}: \cd{envioNoCartao} (\cd{1:40},
+\enquote{esgotado}, \enquote{sem relógio}) para o cartão e
+\cd{envioEmTexto} (\enquote{tempo esgotado --- a chuva chegou}) para o texto
+corrido. O porquê de o tempo ter acabado não cabe num KPI e não precisa caber:
+ele já está por extenso na linha do tempo logo abaixo.
+
+\textbf{O recorte é por pixel, não por número de caracteres, e medir é barato:}
+\enquote{tempo esgotado} parecia caber e mede 291\,px contra 267\,px úteis. A
+medida sai de um \cd{.unooria-metric-card} montado no DOM de qualquer rota da
+plataforma --- o CSS do DS é global no \emph{bundle} do hub --- lendo o
+\cd{getBoundingClientRect().width} do valor depois de \cd{document.fonts.ready}.
+\end{atencao}
+
+\begin{atencao}
 \textbf{Sobrescrever classe do pacote exige DOIS seletores}
 (\cd{.app-shell > .x}): o CSS do pacote é injetado pelo módulo do componente,
 ou seja, \emph{depois} do CSS da experiência no grafo de importação. Com peso
