@@ -109,16 +109,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: google-github-actions/auth@v2
+        id: auth
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOY_SA }}
+          # O token EM MAO, para entregar ao Docker no login abaixo.
+          token_format: access_token
       - uses: google-github-actions/setup-gcloud@v2
       - uses: docker/setup-buildx-action@v3
 
       # Push direto para o Artifact Registry: nada de Cloud Build no meio (uma
       # API e um conjunto de permissoes a menos, e o build fica no runner).
+      # Token DIRETO no Docker, em vez de registrar o gcloud como CREDENTIAL
+      # HELPER (um processo a mais, rodando a cada push). Em 2026-09-15 o
+      # helper falhou no push da imagem do hub em hml DEPOIS de 22s subindo
+      # camadas — `error getting credentials - err: exit status 1, out: ''` — e
+      # o deploy parou no pior lugar: api nova e hub VELHO no ar, numa promocao
+      # que renomeava papeis. O `deploy-api`, com a MESMA configuracao, passou
+      # no mesmo run: o helper falha sozinho, e o sintoma parece permissao sem
+      # ser. Ver o apendice F.
       - name: Autenticar o Docker no Artifact Registry
-        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       # A imagem builda do zero la dentro (o Dockerfile tem a camada de deps
       # cacheavel via type=gha) — este job nao precisa de pnpm no runner.
@@ -187,14 +202,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: google-github-actions/auth@v2
+        id: auth
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOY_SA }}
+          # O token EM MAO, para entregar ao Docker no login abaixo.
+          token_format: access_token
       - uses: google-github-actions/setup-gcloud@v2
       - uses: docker/setup-buildx-action@v3
 
+      # Token DIRETO no Docker, em vez de registrar o gcloud como CREDENTIAL
+      # HELPER (um processo a mais, rodando a cada push). Em 2026-09-15 o
+      # helper falhou no push da imagem do hub em hml DEPOIS de 22s subindo
+      # camadas — `error getting credentials - err: exit status 1, out: ''` — e
+      # o deploy parou no pior lugar: api nova e hub VELHO no ar, numa promocao
+      # que renomeava papeis. O `deploy-api`, com a MESMA configuracao, passou
+      # no mesmo run: o helper falha sozinho, e o sintoma parece permissao sem
+      # ser. Ver o apendice F.
       - name: Autenticar o Docker no Artifact Registry
-        run: gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ vars.REGION }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
 
       # O SHA CURTO, e nao o `github.sha` inteiro: `NEXT_PUBLIC_HUB_VERSAO` vira
       # o campo `versao` de todo erro de cliente do hub, e o schema da api o
