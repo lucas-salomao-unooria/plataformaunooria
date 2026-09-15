@@ -85,3 +85,54 @@ Layout próprio, não o das skills: o glossário é o `CONTEXT.md` da raiz, o ma
 de contextos é a tabela de pastas deste arquivo, cada contexto é o `AGENTS.md`
 da sua pasta, e **não existe `docs/adr/`** — as ADRs estão em
 `documentacao-latex/secoes/18-adr.tex`. Ver `docs/agents/domain.md`.
+
+## As quatro ferramentas, e por que o desenho é este (ADR-102)
+
+`AGENTS.md` é um **padrão aberto** ([agents.md](https://agents.md/)), adotado
+por ~23 agentes de codificação. O Claude Code é a exceção: ele lê `CLAUDE.md`,
+não `AGENTS.md` — e é só por isso que o ponteiro de uma linha existe.
+
+| Ferramenta | O que ela lê | Como chega aqui |
+|---|---|---|
+| **Claude Code** | `CLAUDE.md` (hierárquico) e `.claude/rules/` | o ponteiro `@AGENTS.md`, mais os symlinks de `.claude/rules/` — com `paths:` no frontmatter da FONTE, então carregam sob demanda |
+| **Codex** | `AGENTS.md`, da raiz do repo até o diretório atual | direto. Concatena de cima para baixo; o mais próximo vence por vir por último |
+| **Antigravity** | `.agents/rules/` (workspace) e `AGENTS.md` aninhado | os symlinks de `.agents/rules/`. **Cada arquivo de rule é cortado em 12.000 caracteres** — é daí que vem o teto desta pasta |
+| **Cursor** | `AGENTS.md` | direto |
+| **Gemini CLI** | `GEMINI.md` por padrão | `.gemini/settings.json` aponta `context.fileName` para `AGENTS.md` |
+
+**`docs/regras/` é a fonte; `.claude/rules/` e `.agents/rules/` são symlinks
+para ela.** Isso não é preferência: é a única forma de servir três ferramentas
+sem criar as cópias que esta página inteira existe para evitar. Editar a regra
+em `docs/regras/` muda o que todas leem, no mesmo instante.
+
+### Os dois tetos, e o que cada um custa
+
+- **12.000 caracteres por arquivo** — o corte do Antigravity. Acima disso, a
+  regra é truncada **em silêncio**, e o pedaço que some é o fim do arquivo,
+  onde costuma estar a consequência.
+- **~200 linhas por arquivo de contexto** — a recomendação do Claude Code:
+  *"longer files consume more context and reduce adherence"*. Não é corte, é
+  degradação: o arquivo entra inteiro e a regra compete com as outras 700.
+
+**Arquivo novo de regra nasce abaixo dos dois.** Se não couber, ele quer ser
+dois arquivos — e a divisão certa é por ASSUNTO, não por tamanho: partir uma
+regra ao meio deixa a consequência longe da decisão.
+
+Quatro arquivos ainda estão acima do teto de 12k e estão registrados aqui para
+não passarem por decisão: `packages/ui/AGENTS.md` (14,0 KB),
+`apps/experiencias/exp-92-plano-de-ensino/AGENTS.md` (12,4 KB) e o `AGENTS.md`
+da raiz (12,2 KB). Os três estão a menos de 20% do limite; quebrá-los exige
+achar a fronteira de assunto, que ainda não é óbvia em nenhum.
+
+### Onde uma regra vai morar
+
+| A regra vale para… | Vai em |
+|---|---|
+| uma pasta onde se trabalha a tarefa inteira | o `AGENTS.md` dela (+ `CLAUDE.md` de uma linha) |
+| um assunto que atravessa pastas | `docs/regras/<assunto>.md` + symlink nas duas pastas de rules |
+| um contrato entre dois ou mais consumidores | `docs/regras/`, nunca a pasta de um dos lados |
+
+**Pasta nova com `AGENTS.md` entra na tabela do `AGENTS.md` do nível acima, no
+mesmo commit.** A tabela é o que faz a pasta ser encontrada por quem não sabe
+que ela existe — e um `AGENTS.md` que ninguém abre custa o mesmo que um que não
+existe.

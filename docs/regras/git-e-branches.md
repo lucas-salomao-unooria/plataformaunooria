@@ -78,7 +78,8 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **102**: a **101 é o fluxo de quatro ambientes, com
+  (a PRÓXIMA é a **103**: a **102 é a doutrina numa fonte só, lida por
+      quatro agentes**, a **101 o fluxo de quatro ambientes, com
       `dev-local` como base de toda frente**, e a **100 o caminho único da sala
       para a missão** — que ocupou o número em 2026-09-15 e mergeou SEM
       atualizar esta linha, que ainda anunciava a 100 como livre. É o modo de

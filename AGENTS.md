@@ -35,6 +35,7 @@ de escrever**: cada uma traz o custo já pago que produziu a regra.
 | [`arquivos-de-instrucao.md`](docs/regras/arquivos-de-instrucao.md) | ao mexer em `AGENTS.md`/`CLAUDE.md` ou nas skills |
 | [`ferramentas-externas.md`](docs/regras/ferramentas-externas.md) | o que o agente NÃO dispara (Snyk é do CI) |
 | [`infra.md`](docs/regras/infra.md) | Terraform vive em outro repo |
+| [`bridge-postmessage.md`](docs/regras/bridge-postmessage.md) · [`manifesto-de-experiencias.md`](docs/regras/manifesto-de-experiencias.md) | os dois contratos da experiência |
 
 E na raiz: [`CONTEXT.md`](CONTEXT.md) (o glossário, com a fonte de verdade de
 cada termo) e [`CONTRIBUTING.md`](CONTRIBUTING.md) (o fluxo de git inteiro).
