@@ -86,6 +86,10 @@ describe("ProxyOtlpService sai do CONTAINER com o cliente injetado", () => {
     await expect(proxy.receber(OtlpTracesSchema.parse(lote()), "e1:u-injecao")).resolves.toBe("aceito");
 
     expect(espiao).toHaveBeenCalledWith("v1/traces", expect.stringContaining('"service.name"'));
+    // O resource carrega o projeto do PRÓPRIO cliente. Sem ele a Telemetry API
+    // recusa o lote com 400 e o contador soma em `motivo=upstream` — o segundo
+    // defeito do mesmo caminho, que só apareceu depois de consertar o primeiro.
+    expect(espiao.mock.calls[0]?.[1]).toContain('{"key":"gcp.project_id","value":{"stringValue":"projeto-de-teste"}}');
     // O ponto de virada: com o token do construtor perdido, esta lista tem uma
     // linha `motivo: sem-projeto` e o espião acima nunca é chamado.
     expect(await pontos("unooria.observabilidade.spans_descartados")).toEqual([]);

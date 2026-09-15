@@ -1108,7 +1108,23 @@ aparece} &
   compilador. Rede: \arq{apps/api/tests/observabilidade-injecao.spec.ts} --- e
   note que as suítes antigas não pegavam, porque faziam
   \cd{new ProxyOtlpService(...)}, que não passa pelo \emph{container}.\\
-\textbf{Rajada de \cd{motivo=sem-iden\allowbreak{}tidade}, em UM ambiente só} &
+\textbf{\emph{Spans} com \cd{motivo=upstream} logo após consertar o
+\cd{sem-projeto}} &
+  Leia como PROGRESSO antes de ler como defeito: \cd{upstream} só é contado
+  quando o cliente EXISTE e a chamada ao Google falhou --- ou seja, a injeção
+  voltou a funcionar. A causa medida em 2026-09-15 foi
+  \cd{400 Resource is missing required attribute}, sobre
+  \cd{gcp.project\_id}: o \cd{reescreverLote} monta o resource do ZERO (o do
+  navegador é descartado inteiro, por ser entrada não confiável) e não repetia o
+  atributo que \arq{recurso.ts} já punha nos sinais do processo.
+  \textbf{Um defeito escondia o outro} --- enquanto o cliente nunca era
+  injetado, o lote não chegava a ser enviado e o 400 não tinha como aparecer.
+  Hoje o projeto vem do próprio cliente (\cd{ClienteOtlpGoogle.projeto}), que é
+  a mesma fonte do cabeçalho de cota. Quem responde é
+  \cd{codigo: otlp.upstream-recusou}, com \cd{status} e \cd{detalhe}, e ela sai
+  \textbf{uma vez por minuto} --- não uma por lote, para o upstream fora do ar
+  não virar inundação de log cobrada por GiB.\\
+\zebra \textbf{Rajada de \cd{motivo=sem-iden\allowbreak{}tidade}, em UM ambiente só} &
   O \cd{service.version} que o navegador manda não passa no formato que a api
   daquele ambiente aceita, e o lote inteiro é recusado antes de qualquer
   \emph{span} ser contado (o contador soma 1 por LOTE, não por \emph{span}).

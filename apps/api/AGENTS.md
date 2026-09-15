@@ -931,6 +931,18 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   sinal é contador). O proxy OTLP (`otlp-proxy.service.ts`) SUBSTITUI o
   `resource` do cliente e filtra atributos por allowlist antes de reexportar —
   nada do que o navegador manda vai ao Google como veio.
+- **O resource do proxy OTLP também precisa de `gcp.project_id`.**
+  `reescreverLote` monta o resource do ZERO — o do navegador é descartado
+  inteiro, por ser entrada não confiável —, então ele tem de REPETIR o atributo
+  que `recurso.ts` já põe nos sinais do processo. Sem ele a Telemetry API recusa
+  todo lote com `400 Resource is missing required attribute`, a rota responde
+  204 e o contador soma em `motivo=upstream`. O valor sai de
+  `ClienteOtlpGoogle.projeto`, a MESMA fonte do cabeçalho `x-goog-user-project`:
+  o projeto que paga a cota e o que recebe os spans não podem divergir.
+  **Este defeito ficou escondido atrás do de baixo** por seis semanas — sem
+  cliente injetado o lote nunca era enviado, e o 400 não tinha como aparecer.
+  Consertar caminho morto revela o próximo erro que mora nele: não dê a correção
+  por encerrada no primeiro deploy, olhe a métrica depois.
 - **Classe que é TOKEN de injeção NUNCA entra por `import type`.** O
   `emitDecoratorMetadata` monta o `design:paramtypes` a partir do escopo de
   VALOR: com `import type` o identificador some, o metadata vira `Function`, o

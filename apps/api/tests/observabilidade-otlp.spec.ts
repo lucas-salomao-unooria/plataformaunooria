@@ -89,11 +89,28 @@ describe("identidadeDoLote / limparSpan / reescreverLote", () => {
   });
 
   it("substitui o resource do cliente e conta os spans", () => {
-    const { corpo, spans } = reescreverLote(OtlpTracesSchema.parse(lote(3)), { expId: "exp-02-unootube", versao: "0.3.1", superficie: "exp" });
+    const { corpo, spans } = reescreverLote(OtlpTracesSchema.parse(lote(3)), { expId: "exp-02-unootube", versao: "0.3.1", superficie: "exp" }, "projeto-de-teste");
     expect(spans).toBe(3);
     const attrs = corpo.resourceSpans[0]!.resource!.attributes!;
-    expect(attrs.map((a) => a.key)).toEqual(["service.name", "service.version", "service.namespace", "telemetry.sdk.language"]);
+    expect(attrs.map((a) => a.key)).toEqual(["service.name", "service.version", "service.namespace", "telemetry.sdk.language", "gcp.project_id"]);
     expect(JSON.stringify(corpo)).not.toContain("aluno");
+  });
+
+  /**
+   * A Telemetry API EXIGE `gcp.project_id` no resource: sem ele todo lote volta
+   * `400 Resource is missing required attribute`, a rota responde 204 e o
+   * contador soma em `motivo=upstream`. Custou o alerta de 2026-09-15, e só
+   * apareceu DEPOIS que a injeção do cliente foi corrigida — antes, o lote nunca
+   * chegava a ser enviado, e o defeito ficava escondido atrás do outro.
+   */
+  it("sem projeto o atributo não é inventado — e com projeto ele vai no resource", () => {
+    const identidade = { expId: "hub", versao: "a1b2c3d", superficie: "hub" } as const;
+    const sem = reescreverLote(OtlpTracesSchema.parse(lote(1)), identidade);
+    expect(sem.corpo.resourceSpans[0]!.resource!.attributes!.map((a) => a.key)).not.toContain("gcp.project_id");
+
+    const com = reescreverLote(OtlpTracesSchema.parse(lote(1)), identidade, "entre-redes-dev");
+    const projeto = com.corpo.resourceSpans[0]!.resource!.attributes!.find((a) => a.key === "gcp.project_id");
+    expect(projeto?.value).toEqual({ stringValue: "entre-redes-dev" });
   });
 });
 
@@ -101,6 +118,9 @@ describe("ProxyOtlpService", () => {
   function clienteFalso(ok = true) {
     const enviados: Array<{ caminho: string; corpo: string }> = [];
     const cliente = {
+      // `projeto` não é enfeite: é dele que sai o `gcp.project_id` do resource,
+      // sem o qual a Telemetry API recusa o lote inteiro com 400.
+      projeto: "projeto-de-teste",
       enviar: async (caminho: string, corpo: string | Uint8Array) => {
         enviados.push({ caminho, corpo: String(corpo) });
         return { ok, status: ok ? 200 : 403, detalhe: ok ? undefined : "PERMISSION_DENIED" };
@@ -116,6 +136,7 @@ describe("ProxyOtlpService", () => {
     await expect(proxy.receber(OtlpTracesSchema.parse(lote(2)), "e1:u-aceito")).resolves.toBe("aceito");
     expect(enviados[0]?.caminho).toBe("v1/traces");
     expect(enviados[0]?.corpo).toContain('"service.name"');
+    expect(enviados[0]?.corpo).toContain('"gcp.project_id"');
     expect(enviados[0]?.corpo).not.toContain("token=abc");
     expect((await pontos("unooria.observabilidade.spans_recebidos"))[0]).toMatchObject({ value: 2, attributes: { superficie: "exp" } });
     await encerrar();
