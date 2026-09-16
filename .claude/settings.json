@@ -7,5 +7,35 @@
       "Bash(npx snyk *)",
       "Bash(pnpm dlx snyk *)"
     ]
+  },
+  "mcpServers": {
+    "graphify": {
+      "command": "graphify",
+      "args": [".", "--mcp"]
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard search",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard read",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }
