@@ -18,6 +18,8 @@ export const ACOES_DE_AUDITORIA = [
   "versao-ativada",
   "versao-fixada",
   "versao-soltada",
+  /** O teto diário de IA de um perfil mudou (ADR-105). `recurso_id` é `quota:<perfil>`. */
+  "quota-alterada",
 ] as const;
 
 export type AcaoDeAuditoria = (typeof ACOES_DE_AUDITORIA)[number];
@@ -26,6 +28,10 @@ export const AcaoSchema = z.enum(ACOES_DE_AUDITORIA);
 
 /** As duas ações que carregam versão — o CHECK do banco cobra o mesmo par. */
 const COM_VERSAO: readonly AcaoDeAuditoria[] = ["versao-ativada", "versao-fixada"];
+
+/** O `detalhe` de uma mudança de quota: o número que valia e o que passou a valer. */
+export type DetalheDeQuota = { de: number; para: number };
+export const DetalheDeQuotaSchema = z.object({ de: z.number().int(), para: z.number().int() });
 
 /**
  * Grava uma linha de histórico. **Nunca falha a operação que a chamou.**
@@ -47,6 +53,8 @@ export async function registrarAuditoria(
     acao: AcaoDeAuditoria;
     versao?: string | null;
     motivo?: string | null;
+    /** Só em `quota-alterada` (CHECK bicondicional): `{ de, para }`. */
+    detalhe?: DetalheDeQuota | null;
     autorId: string;
   },
   aoFalhar: (erro: unknown) => void,
@@ -65,6 +73,9 @@ export async function registrarAuditoria(
            ações que a carregam. Normalizar aqui evita um 500 por um `versao`
            que chegou de carona numa ação de liga/desliga. */
         versao: COM_VERSAO.includes(dados.acao) ? (dados.versao ?? null) : null,
+        /* Mesma normalização para o `detalhe`: ele só significa algo na mudança
+           de quota, e o banco recusa nas outras ações (ADR-105). */
+        detalhe: dados.acao === "quota-alterada" ? (dados.detalhe ?? undefined) : undefined,
         motivo: dados.motivo ?? null,
         autorId: dados.autorId,
         /* Conta sem nome não deveria existir, mas o registro não é o lugar de

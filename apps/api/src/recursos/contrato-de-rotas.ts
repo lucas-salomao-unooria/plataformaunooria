@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { PERFIS_COM_QUOTA } from "../ai/quota.service";
 import { PRODUTOS } from "./catalogo";
+import { DetalheDeQuotaSchema } from "./auditoria";
 
 /**
  * O que o hub precisa saber para montar os cards e trancar as rotas de produto.
@@ -192,6 +194,8 @@ export const LinhaDoHistoricoSchema = z.object({
   /** Só nas ações de versão (CHECK bicondicional no banco). */
   versao: z.string().nullable(),
   motivo: z.string().nullable(),
+  /** Só em `quota-alterada` (ADR-105): o teto que valia e o que passou a valer. */
+  detalhe: DetalheDeQuotaSchema.nullable(),
   /** CONGELADO na linha — nunca um JOIN. Ver a nota da rota. */
   autorNome: z.string(),
   quando: z.string().datetime(),
@@ -201,4 +205,51 @@ export const HistoricoDeRecursosSchema = z.object({
   /** `true` quando bateu no teto de 200 — a tela precisa dizer que há mais. */
   truncado: z.boolean(),
   linhas: z.array(LinhaDoHistoricoSchema),
+});
+
+/* ==========================================================================
+   A QUOTA DE IA (ADR-105) — só `admin`, como o painel
+
+   Uma linha por perfil, escopo do contrato inteiro. O contador do dia
+   (`ia_uso_diario`) NÃO sai aqui: é dado por pessoa, e esta tela é da rede.
+   ========================================================================== */
+
+export const PerfilDaQuotaSchema = z.enum(PERFIS_COM_QUOTA);
+
+/**
+ * Teto de SANIDADE, não de negócio: 100 milhões de tokens por dia é mais do que
+ * qualquer rede gastaria num mês, e existe para um zero a mais no campo não
+ * virar "quota infinita" sem ninguém notar. Zero e negativo o banco também
+ * recusa (CHECK): desligar a IA de um produto é o interruptor da ADR-87, não a
+ * quota.
+ */
+export const TETO_DE_SANIDADE_DA_QUOTA = 100_000_000;
+
+export const QuotaDeIaSchema = z.object({
+  perfil: PerfilDaQuotaSchema,
+  tokensPorDia: z.number().int().positive(),
+  motivo: z.string().nullable(),
+  /** `null` = veio da migration; ninguém decidiu ainda. */
+  definidoPorNome: z.string().nullable(),
+  definidoEm: z.string().datetime(),
+});
+
+export const QuotasDeIaSchema = z.object({
+  /** Sempre uma por perfil de `PERFIS_COM_QUOTA`, na ordem da tupla. */
+  quotas: z.array(QuotaDeIaSchema),
+});
+
+export const DefinirQuotaDeIaSchema = z.object({
+  tokensPorDia: z
+    .number()
+    .int("a quota é um inteiro de tokens")
+    .positive("a quota tem de ser maior que zero — para fechar a IA, desligue o produto")
+    .max(TETO_DE_SANIDADE_DA_QUOTA, "acima do teto de sanidade (100 milhões de tokens por dia)"),
+  /** Obrigatório SEMPRE: aqui toda mudança é exceção ao padrão da plataforma. */
+  motivo: z.string().trim().min(3, "diga por quê — o motivo fica no histórico").max(500),
+});
+
+export const QuotaAlteradaSchema = QuotaDeIaSchema.extend({
+  /** `false` quando o valor pedido já era o que valia: nada foi gravado nem historiado. */
+  alterada: z.boolean(),
 });

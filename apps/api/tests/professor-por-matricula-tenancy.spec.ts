@@ -1,4 +1,3 @@
-import { ConfigService } from "@nestjs/config";
 import { PrismaClient } from "@prisma/client";
 import { MockProvider } from "../src/ai/mock.provider";
 import { QuotaService } from "../src/ai/quota.service";
@@ -33,13 +32,7 @@ const vila = new VilaService(prisma);
 const unoogpt = new UnoogptService(
   prisma,
   new MockProvider(),
-  new QuotaService(
-    prisma,
-    new ConfigService({
-      AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
-      AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
-    }),
-  ),
+  new QuotaService(prisma),
 );
 
 /** `undefined` é gestor/gestor_contrato: enxergam a escola inteira, de propósito. */
