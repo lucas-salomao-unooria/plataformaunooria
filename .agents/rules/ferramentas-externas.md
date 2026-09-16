@@ -1,0 +1,1 @@
+../../docs/regras/ferramentas-externas.md

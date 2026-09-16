@@ -45,7 +45,11 @@ documentacao-latex/*.fdb_latexmk
 documentacao-latex/*.synctex.gz
 
 # Skills do Claude
-.agents/
+# `.agents/` é do Antigravity: `skills/` é instalação local de cada máquina e
+# fica fora; `rules/` é VERSIONADO — são symlinks para docs/regras/, para que o
+# Antigravity leia a mesma fonte que o Claude e o Codex leem (ADR-102).
+.agents/*
+!.agents/rules/
 skills-lock.json
 
 # `.claude/` inteira fica fora — EXCETO as regras de permissão do projeto, que
@@ -54,6 +58,9 @@ skills-lock.json
 # git nem desce nele, e o `!` de dentro nunca chega a ser avaliado.
 .claude/*
 !.claude/settings.json
+# `.claude/rules/` também é versionado, pela mesma razão: symlinks para
+# docs/regras/, com `paths:` no frontmatter da FONTE (ADR-102).
+!.claude/rules/
 
 # Lista de contas de demonstração que o seed escreve (login, nome, CPF e senha
 # na mesma linha). Gente inventada, mas não é coisa que se versiona — e ela se

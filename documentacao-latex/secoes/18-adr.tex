@@ -146,6 +146,7 @@ que a cercam.
 \zebra \adrr{ADR-99} & O fuso vem de uma variável de ambiente, em três superfícies & 2026-09-11 & Aceita\\
 \adrr{ADR-100} & Da sala para a missão há UM caminho, e ele leva à ficha & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-101} & Quatro ambientes, e a frente nasce e volta em \cd{dev-local} & 2026-09-15 & Aceita\\
+\adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7918,3 +7919,114 @@ Docker local diferente empurrando para a mesma \emph{branch} transformam o
 degrau em fonte de conflito, em vez de portão. Nesse dia a saída provável é
 \cd{dev-local} por pessoa (\cd{dev-local-lucas}), ou a camada desaparecer em
 favor de \emph{previews} efêmeros por PR.
+
+
+\section{ADR-102 --- A doutrina é uma fonte só, lida por quatro agentes}
+\label{adr:agentes-portateis}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-55} (\arq{AGENTS.md} canônico, \arq{CLAUDE.md}
+ponteiro).
+
+\textbf{Contexto.} A ADR-55 resolveu o problema de \textbf{duas fontes} --- a
+doutrina se escreve uma vez, em \arq{AGENTS.md}, e o \arq{CLAUDE.md} é um
+ponteiro de uma linha. Dois anos de uso depois, apareceram dois problemas que
+ela não previa.
+
+\textbf{O primeiro é tamanho.} O \arq{AGENTS.md} da raiz chegou a 757 linhas e
+51\,KB, o de \arq{apps/api} a 1.407 linhas e 93\,KB, o de \arq{apps/hub} a 910 e
+53\,KB. Os três entram em contexto \emph{inteiros}: quem ia corrigir o
+check-in de bem-estar recebia a Vila do Lume, a telemetria e as três armadilhas
+de \cd{RENAME} junto. E a documentação do Claude Code é explícita sobre o custo
+--- \enquote{\emph{longer files consume more context and reduce adherence}},
+com alvo de \textbf{menos de 200 linhas}. Não é um corte: é degradação
+silenciosa, em que a regra certa compete com outras setecentas linhas.
+
+\textbf{O segundo é portabilidade.} \arq{AGENTS.md} virou um \textbf{padrão
+aberto} adotado por cerca de 23 agentes de codificação --- Codex, Cursor,
+Copilot, Zed, Warp, Jules, Devin, Windsurf. O Claude Code é a exceção que lê
+\arq{CLAUDE.md}, e é só por isso que o ponteiro existe. Mas duas ferramentas
+que passaram a ser usadas aqui não leem \arq{AGENTS.md} sozinhas: o
+\textbf{Antigravity} lê \arq{.agents/rules/} do \emph{workspace} e corta cada
+arquivo de regra em \textbf{12.000 caracteres}; o \textbf{Gemini CLI} procura
+\arq{GEMINI.md} e, sem configuração, não acha nada. Servir cada uma com a sua
+cópia recriaria exatamente o problema que a ADR-55 resolveu.
+
+\textbf{Decisão.} \textbf{Uma fonte por assunto, em \arq{docs/regras/}, com
+\emph{symlinks} nas pastas que cada ferramenta lê --- e nenhum arquivo acima de
+12.000 caracteres.}
+
+\begin{itemize}
+  \item \textbf{Por PASTA continua valendo}, e ganhou profundidade: o
+    \arq{AGENTS.md} de \arq{apps/api} virou um índice de 149 linhas mais 17
+    \arq{AGENTS.md} de módulo, e o de \arq{apps/hub}, 131 linhas mais sete de
+    área. O mecanismo é o mesmo nas três ferramentas --- \textbf{o mais próximo
+    vence, e carrega sozinho quando a sessão abre a pasta}.
+  \item \textbf{Por ASSUNTO é novo}: a regra que atravessa pastas (\emph{design
+    system}, idioma, convenções, comandos, git) vive em \arq{docs/regras/}, uma
+    por arquivo. É também onde mora todo \textbf{contrato entre consumidores}
+    --- o \cd{postMessage} e o manifesto não pertencem à pasta de nenhum dos
+    lados.
+  \item \textbf{As pastas de regra são \emph{symlinks} para
+    \arq{docs/regras/}}: \arq{.claude/rules/} (que o Claude Code carrega sob
+    demanda, pelo \cd{paths:} no \emph{frontmatter} da fonte) e
+    \arq{.agents/rules/} (que o Antigravity lê inteiro). Editar em
+    \arq{docs/regras/} muda o que todas leem, no mesmo instante.
+  \item \textbf{O teto de 12.000 caracteres vale para tudo} --- não porque o
+    Antigravity seja o leitor mais importante, mas porque um corte silencioso é
+    o pior modo de falhar: o que some é o \emph{fim} do arquivo, onde está a
+    consequência.
+  \item \arq{.gitignore}: \arq{.agents/} deixa de ser ignorada inteira
+    (\arq{skills/} continua fora --- é instalação de cada máquina) e
+    \arq{.claude/rules/} entra ao lado do \arq{settings.json}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um arquivo por ferramenta, com o mesmo conteúdo.} É a solução
+    óbvia e é exatamente o que a ADR-55 proíbe: três cópias divergem sempre, na
+    direção de quem parou de ler as outras.
+  \item \textbf{Só \arq{AGENTS.md}, e cada pessoa configura a ferramenta dela.}
+    O Antigravity tem um \emph{setting} para carregar \arq{AGENTS.md}
+    aninhados, e o Gemini CLI aceita \cd{context.fileName}. Mas configuração
+    por máquina não viaja no repositório: quem clonar amanhã tem a doutrina
+    invisível, e não há sintoma --- o agente simplesmente não sabe a regra.
+  \item \textbf{Cópias geradas por \emph{script}, com um \emph{hook} de
+    verificação.} Resolve a divergência, ao custo de um gerador a manter e de
+    um \emph{diff} de arquivos derivados em todo PR. O \emph{symlink} faz o
+    mesmo trabalho com zero código.
+  \item \textbf{Deixar como estava.} Foi a opção até aqui, e o custo já era
+    medido: a regra de \arq{dev-local} vivia num arquivo de 727 linhas e foi
+    ignorada em favor de uma contraditória (\adrr{ADR-101}).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{\emph{Symlink} em repositório é frágil fora do Unix.} No Windows
+    sem Modo de Desenvolvedor, o \emph{clone} escreve arquivos de texto com o
+    caminho dentro, e as regras somem sem erro. Hoje só há uma máquina, macOS;
+    no dia em que houver outra, isto é a primeira coisa a conferir.
+  \item \textbf{A regra transversal deixou de carregar sozinha no Codex e no
+    Cursor.} Eles leem \arq{AGENTS.md} e \emph{abrem os links} --- o que
+    depende do agente decidir abrir. Antes, tudo chegava sem decisão nenhuma;
+    o preço da economia de contexto é este.
+  \item \textbf{Quarenta e sete \arq{AGENTS.md} são quarenta e sete arquivos
+    para manter.} A regra de atualizar no mesmo \emph{commit} fica mais cara,
+    e a chance de um ficar para trás sobe com a contagem.
+  \item \textbf{Um \arq{CLAUDE.md} de uma linha por pasta nova} --- 24
+    arquivos que existem só porque uma ferramenta procura outro nome. Esquecer
+    um não dá erro: a doutrina daquela pasta simplesmente não chega.
+  \item \textbf{Três arquivos continuam acima do teto} (\arq{packages/ui},
+    \arq{exp-92} e a raiz, todos a menos de 20\%), porque a fronteira de
+    assunto ainda não é óbvia neles. Estão registrados em
+    \arq{docs/regras/arquivos-de-instrucao.md} para não passarem por decisão.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Uma segunda máquina, ou uma máquina
+Windows.} Os \emph{symlinks} são o ponto único de falha deste desenho, e o modo
+de falhar é mudo. Se isso acontecer, a saída provável é gerar as duas pastas de
+regra por \emph{script} no \cd{prepare} do \cd{pnpm install} --- a alternativa
+descartada acima, que volta a fazer sentido quando o \emph{symlink} deixa de
+funcionar.
