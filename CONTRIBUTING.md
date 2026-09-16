@@ -127,10 +127,64 @@ Decisões em **ADR-61** (o worktree) e **ADR-101** (`dev-local` como base).
 |---|---|
 | `pnpm docker:dev` de dentro do worktree | **Não faça.** O nome do projeto do compose vem do diretório: sobe uma segunda stack que recria os containers da principal e disputa as mesmas portas. Quem precisa da stack inteira usa a cópia principal. |
 | Dependência nova, ou schema do Prisma alterado | `node_modules` e o client do Prisma são por worktree. `pnpm install` + `prisma generate` de novo, no worktree. |
-| Terminar a frente | `git worktree remove .claude/worktrees/<nome>` depois do merge. Worktree órfão fica em `git worktree list` e segura a branch contra `git branch -d`. |
+| Terminar a frente | **não precisa fazer nada**: o `git pull` em `dev-local` depois do merge poda a frente sozinho (abaixo). À mão, `pnpm worktree remover <slug>`. |
 
 `.gitignore` já cobre `.claude/*`, então o worktree não aparece no `git status`
 da cópia principal — e não precisa de entrada nova.
+
+### A frente mergeada se enterra sozinha (ADR-103)
+
+**O merge do PR acontece no GitHub, e nenhum hook local dispara nele.** O
+primeiro momento em que a sua máquina fica sabendo é o `git pull` em
+`dev-local` — e é aí que o `.githooks/post-merge` roda `pnpm worktree limpar`.
+
+```bash
+git switch dev-local && git pull      # a poda acontece aqui, sozinha
+pnpm worktree limpar                  # à mão, quando quiser
+pnpm worktree limpar --seco           # só mostra o que removeria
+```
+
+A poda remove o worktree, a branch local e a remota. Ela **nunca remove
+trabalho**, e as três recusas são deliberadas:
+
+| Situação | O que acontece |
+|---|---|
+| worktree com alteração não commitada | **pulado**, e o `git status` dele é impresso. Você decide |
+| a frente de onde você está rodando | pulada, com aviso — mude para a cópia principal |
+| branch sem commit próprio | **não conta como mergeada.** Uma frente aberta agora aponta para o mesmo commit da base e seria trivialmente "ancestral" dela: sem esta regra, abrir uma frente apagaria a que o vizinho acabou de abrir |
+
+`pnpm worktree criar` também poda antes de abrir — quem começa uma frente já
+fechou a anterior —, e `pnpm worktree listar` marca as mergeadas que sobraram.
+Escape do hook: `PULAR_PODA_DE_WORKTREE=1 git pull`.
+
+**O hook nunca derruba o `git pull`**: qualquer erro dele sai como aviso e o
+`exit` é 0.
+
+### PR empilhado: mergeie de cima para baixo
+
+Duas frentes que tocam os mesmos arquivos **serializam** (é a ADR-71), e a forma
+de serializar sem esperar é empilhar: a segunda nasce da branch da primeira, e o
+PR dela tem a primeira como base.
+
+```bash
+# A frente 2 sai da branch da frente 1, não de origin/dev-local:
+git worktree add -b chore/frente-2 .claude/worktrees/frente-2 chore/frente-1
+gh pr create --base chore/frente-1 --head chore/frente-2
+```
+
+**A ordem do merge é de CIMA para baixo — a de trás primeiro.** Mergear o PR de
+baixo antes fecha a porta do de cima: o de baixo some do fluxo, e o que estava
+empilhado nele fica parado na branch, sem PR aberto para lugar nenhum.
+
+Foi o que aconteceu em 2026-09-15 com os PRs #51 e #52. O #51
+(`chore/fluxo-dev-local → dev-local`) foi mergeado primeiro; o #52 entrou depois
+em `chore/fluxo-dev-local`, que já não tinha PR aberto. Seis commits ficaram
+invisíveis em `dev-local` até alguém abrir o #53 — e o sintoma foi enganoso:
+`git status` limpo, PRs todos verdes, e a metade do trabalho simplesmente não
+estava lá.
+
+Se a ordem inverter, o conserto é um PR novo da branch de baixo para o destino:
+o conteúdo não se perde, só não chegou.
 
 ### Repartir o trabalho: a fatia é vertical, nunca por camada
 
@@ -228,7 +282,7 @@ para:
 
 | Arquivo | Como não brigar |
 |---|---|
-| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 103** — e quem gastar o 103 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
+| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 105** — e quem gastar o 105 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
 | `documentacao-latex/main.pdf` | binário: sempre conflita. Resolve-se **regerando**, nunca escolhendo um lado — quem mergeia por último recompila |
 | `AGENTS.md` da raiz | edite a seção da sua frente, não a vizinha; conflito aqui é textual e resolve na mão |
 | `pnpm-lock.yaml` | conflitou? `git checkout --theirs pnpm-lock.yaml && pnpm install` e commite o resultado |
@@ -260,6 +314,38 @@ Pode juntar várias frentes numa promoção só: `dev-local` acumula, e promover
 lote coerente é melhor do que um PR por frente. O que não se faz é pular a
 camada — PR de branch de trabalho direto para `dev` é o atalho que tira o único
 portão onde alguém de fato *olhou*.
+
+**Depois do merge, `dev-local` fica 1 commit atrás de `dev` — e isso se
+resolve sozinho** (ADR-104). O merge do PR nasce **no destino**: `dev` ganha um
+*merge commit* que `dev-local` não tem, ainda que o conteúdo seja idêntico
+(`git diff` entre as duas dá vazio).
+
+```
+antes:   dev-local  A───B───C          depois:  dev-local  A───B───C
+         dev        A                                              ╲
+                                                 dev       A────────M
+```
+
+Uma vez é cosmético. **O problema é que acumula**: a cada promoção mais um, e a
+próxima frente nasce de uma base cada vez mais atrás do que está publicado. Pior,
+**o primeiro hotfix muda isso de cosmético para real** — ele desce de `main` por
+retro-merge e chega em `dev` antes de chegar aqui; uma frente aberta no meio
+nasce sem a correção, que é o defeito que a ADR-101 existe para evitar.
+
+O próximo `pnpm worktree criar` conserta antes de abrir a frente: como
+`dev-local` está **contida** em `dev`, mover o ponteiro é *fast-forward* — não
+cria commit nem muda arquivo. À mão, se quiser fazer na hora:
+
+```bash
+git switch dev-local && git merge --ff-only origin/dev
+PERMITIR_PUSH_DIRETO=1 git push origin dev-local
+```
+
+O escape é deliberado e aparece na saída do script: `dev-local` é branch de
+ambiente e o `pre-push` recusa push direto nela, mas um *fast-forward* não traz
+conteúdo — só atualiza o ponteiro. **Se as duas divergirem de verdade** (cada uma
+com commit que a outra não tem), o script RECUSA e manda resolver à mão: mover a
+base por cima do que só existe nela perderia trabalho.
 
 ## Promoção `dev → hml`
 
@@ -381,6 +467,7 @@ pnpm install          # o `prepare` roda: git config core.hooksPath .githooks
 | `pre-push` | nome de branch fora do padrão | `PERMITIR_BRANCH_FORA_DO_PADRAO=1` |
 | `commit-msg` | assunto fora de Conventional Commits | `git commit --no-verify` |
 | `pre-commit` | arquivo fora da fatia declarada da frente (só quando existe `<git-dir>/fatia` — a cópia principal segue livre) | `PERMITIR_FORA_DA_FATIA=1` |
+| `post-merge` | **não recusa nada** — poda as frentes já mergeadas no `git pull` de `dev-local`. Nunca derruba o pull (ADR-103) | `PULAR_PODA_DE_WORKTREE=1` |
 
 Os escapes existem e são nomeados de propósito: emergência acontece, e é melhor
 que ela deixe rastro numa variável explícita do que numa flag genérica. **Hook é
