@@ -1,0 +1,87 @@
+/**
+ * Estilos locais — só o que o design system não dá: layout da página e as
+ * compensações MARCADAS (medida, espaçamento, grade). Botão, campo, diálogo,
+ * aba, etiqueta: vêm do pacote pela ponte, nunca daqui.
+ *
+ * Cor NUNCA se escreve à mão: sai dos tokens da seção que está falando
+ * (`--unooria-*` para a plataforma; `--insta-*`, `--uni-*`, `--gpt-*`, `--wa-*`
+ * para os clones). Um hexadecimal literal aqui é uma cor que não acompanha o
+ * pacote quando ele mudar. Os `var(--x, fallback)` abaixo existem só para a
+ * tela não ficar transparente antes de a folha do DS carregar.
+ *
+ * Quando a missão tiver um clone, separe as duas famílias por SEÇÃO deste
+ * arquivo, como a exp-08 faz — a fronteira é "quem está falando", e ela cai na
+ * revelação, não no arquivo.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--unooria-color-surface-base, #fff);
+  color: var(--unooria-color-text-primary, #22272a);
+  font-family: var(--unooria-font-sans, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* `100%` e não `100dvh`: dentro do iframe, `dvh` se refere à janela do
+   navegador, não ao recorte que o hub reservou. */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app--centrado {
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.esqueleto__topo {
+  height: 56px;
+  border-bottom: 1px solid var(--unooria-color-border-default, #cbd4d6);
+}
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.cartao__titulo {
+  margin: 0;
+  font-size: 24px;
+}
+
+.cartao__texto {
+  margin: 0;
+  font-size: 15px;
+  color: var(--unooria-color-text-secondary, #536167);
+}
+
+.cartao__acoes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.aviso {
+  margin: 0;
+  font-size: 14px;
+  color: var(--unooria-color-text-secondary, #536167);
+}

@@ -29,7 +29,10 @@ em conflito.
   `@unooria/design-system` (seção `unooria` para a plataforma, seção do clone
   para a experiência), sempre na última versão — ver "Design System" nesta página
   e a mecânica em `packages/ui/AGENTS.md`. O
-  `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
+  `_template` continua cru de INTERFACE de propósito: o que ele NÃO traz, o DS
+  traz. A FIAÇÃO (manifesto completo, handshake, `lib/api`, `lib/telemetria`,
+  versão em três lugares, `vitest`) ele traz desde a ADR-106 — a experiência
+  nova nasce compilando, testando e conversando com o hub.
 - **Analytics de terceiro passa por `@edu/sdk`, nunca por snippet solto.** O
   Microsoft Clarity (ADR-60) tem UMA fonte — `packages/sdk/src/clarity.ts` —
   consumida pelo hub e pelas experiências; colar o `<script>` num `index.html`

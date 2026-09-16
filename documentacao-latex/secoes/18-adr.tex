@@ -149,6 +149,8 @@ que a cercam.
 \adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-103} & A frente mergeada se enterra sozinha & 2026-09-15 & Aceita\\
 \adrr{ADR-104} & A base se realinha sozinha depois da promoção & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
+\adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8349,3 +8351,85 @@ diferente para UMA escola ou regional}, ou o dia em que gestor ou \cd{admin}
 ganhar rota de IA (aí o perfil entra na tupla, no CHECK e na semente --- nunca
 só num dos três). E o volume: se a leitura de \cd{ia\_quotas} aparecer na
 latência de alguma rota de IA, o \emph{cache} volta à mesa com a medida na mão.
+
+\section{ADR-106 --- O \cd{\_template} nasce com a fiação inteira e sem componente de interface}
+\label{adr:template-com-fiacao}
+
+\textbf{Data.} 2026-09-16. \textbf{Status.} Aceita.
+\textbf{Complementa} a \adrr{ADR-84} (a versão em três lugares), a \adrr{ADR-87}
+(\cd{produto} no manifesto) e a \adrr{ADR-69} (\cd{unidade} e liberação por
+turma); \textbf{mantém} a regra de ouro do \emph{design system}
+(Capítulo~14): nenhum componente local.
+
+\textbf{Contexto.} \cd{pnpm new:exp} copia \arq{apps/experiencias/\_template} para
+começar uma experiência nova. Até aqui o template tinha cinco arquivos de fonte
+(\arq{App.tsx}, \arq{main.tsx}, \arq{index.html}, \arq{vite.config.ts} e o
+manifesto), dependia só de React e do SDK, e o \emph{script} de teste era
+\cd{echo 'sem testes ainda'}. O manifesto não declarava \cd{unidade},
+\cd{publico} nem \cd{permissoes}. Cada missão nova refazia à mão o que as
+anteriores já tinham feito: acrescentar o \emph{design system} e a ponte
+\cd{@edu/ui}, escrever o \emph{bootstrap} do \emph{handshake}, o
+\emph{singleton} da api, o vocabulário de telemetria, o teste de versão em três
+lugares e o \cd{vitest}. A exp-04 nasceu em React~18 porque o template estava
+em 18 (\adrr{ADR-84} conta o custo); as exp-06, 07 e 08 convergiram para a
+mesma estrutura de \arq{src/lib/} sem que o template a registrasse.
+
+\textbf{Decisão.} \textbf{O template passa a trazer a fiação que TODA
+experiência precisa} --- e continua sem componente de interface:
+
+\begin{itemize}
+  \item \textbf{Manifesto completo}: \cd{id, nome, versao, produto, series,
+    unidade, publico, capabilities, permissoes, verbos}.
+  \item \textbf{Dependências} iguais às de uma missão real:
+    \cd{@unooria/design-system\^{}0.2.2}, \cd{@edu/ui}, \cd{vitest};
+    \emph{scripts} idênticos aos das outras experiências.
+  \item \textbf{\arq{src/bootstrap.tsx}}: \cd{createExperiencia}, \emph{singleton}
+    do \emph{handle}, telemetria ligada, primeira leitura de estado e erro de
+    abertura reportado pelo SDK (\adrr{ADR-84}).
+  \item \textbf{\arq{src/lib/}}: \arq{tipos.ts} (\cd{EXP\_ID}, \cd{EXP\_VERSION}),
+    \arq{api.ts} (toda chamada pelo SDK), \arq{telemetria.ts} (o vocabulário
+    \cd{verbo:objeto} num lugar só, com \cd{resultado} e \cd{contexto} como
+    objetos) e \arq{textos.ts} (o que a tela escreve, em pt-BR).
+  \item \textbf{\arq{src/main.tsx}} com as folhas da seção \cd{unooria}
+    (componente + fonte), e o lugar marcado para a seção do clone.
+  \item \textbf{\arq{src/versao.test.ts}}: versão nos três lugares, \cd{id} no
+    código e no pacote, e o manifesto dentro do vocabulário fechado
+    (\cd{produto}, \cd{publico}, \cd{unidade}, \cd{permissoes},
+    \cd{capabilities}).
+  \item \textbf{\arq{README.md}} e \arq{AGENTS.md} com a tabela \enquote{o que
+    trocar primeiro}. O \cd{new:exp} passa a renomear também \arq{src/lib/tipos.ts}
+    e o \arq{README.md}.
+  \item \textbf{Interface: só \cd{Button} de \cd{@edu/ui/ds}} na tela de
+    exemplo. Nenhum componente local, nenhuma cor escrita à mão.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Deixar o template cru e documentar a lista do que falta.} É o
+    estado anterior; o gerador de missões (PRD) passou a listar essa lacuna, e
+    listar não impede a próxima experiência de nascer sem teste.
+  \item \textbf{Linkar em vez de copiar} (um pacote \cd{@edu/exp-base} com o
+    \emph{bootstrap}). Faria a fiação valer para todas de uma vez, mas a
+    experiência deixaria de ser um \emph{bundle} autocontido e cada mudança no
+    pacote republicaria 48 caminhos imutáveis. Fiação que precisa valer para
+    todas continua sendo mudança no \cd{@edu/sdk}.
+  \item \textbf{Template rico em componentes} (cartão, cabeçalho, botão local).
+    Seria a primeira violação da regra de interface, replicada 48 vezes.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O template pode envelhecer de novo.} Ele segue a exp-08; quando
+    uma missão consolidar um padrão melhor, ele volta para cá no mesmo PR ---
+    senão a próxima nasce velha. Gatilho de reavaliação: duas missões seguidas
+    alterando o mesmo arquivo copiado do template.
+  \item \textbf{Mais dependências no \emph{scaffold}}: quem cria uma
+    ferramenta de professor sem clone ainda recebe o DS e a ponte --- que ela
+    usa de qualquer forma na seção \cd{unooria}.
+  \item \textbf{A porta \cd{5173} do \cd{dev} continua sendo a da exp-01}; o
+    template não tem como saber a próxima livre. O \cd{new:exp} imprime o
+    lembrete, e o \cd{strictPort} falha alto se a troca for esquecida.
+\end{itemize}
+
