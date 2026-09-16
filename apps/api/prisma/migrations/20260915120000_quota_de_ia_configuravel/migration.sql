@@ -69,8 +69,8 @@ ALTER TABLE "ia_quotas"
 -- nove planos anuais, cujo PROMPT sozinho passa de 200k tokens.
 INSERT INTO "ia_quotas" ("perfil", "tokens_por_dia", "motivo")
 VALUES
-  ('estudante', 300000,  'Valor inicial da plataforma (migration de 2026-09-15): cabe ~4 partidas completas da Missão Tempestade por dia.'),
-  ('professor', 2000000, 'Valor inicial da plataforma (migration de 2026-09-15): cabe de 6 a 9 planos anuais por dia.')
+  ('estudante', 300000,  'Cabe 3 partidas completas da Missão Tempestade por pessoa (uma custa cerca de 77 mil tokens, medido).'),
+  ('professor', 2000000, 'Cabe de 6 a 9 planos anuais por pessoa (só o prompt de um passa de 200 mil tokens).')
 ON CONFLICT ("perfil") DO NOTHING;
 
 -- ============================================================ auditoria
