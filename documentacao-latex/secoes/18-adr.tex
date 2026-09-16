@@ -145,6 +145,8 @@ que a cercam.
 \adrr{ADR-98} & A plataforma assume UM fuso, numa constante só & 2026-09-11 & Aceita\\
 \zebra \adrr{ADR-99} & O fuso vem de uma variável de ambiente, em três superfícies & 2026-09-11 & Aceita\\
 \adrr{ADR-100} & Da sala para a missão há UM caminho, e ele leva à ficha & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-101} & Quatro ambientes, e a frente nasce e volta em \cd{dev-local} & 2026-09-15 & Aceita\\
+\adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -7783,3 +7785,248 @@ ficha --- por exemplo, uma que precise de uma tela ao vivo aberta em projetor, n
 qual passar pela ficha atrapalhe. Aí o caminho único deixa de bastar, e a saída
 provável é a ficha redirecionar sozinha nesse caso, e não a sala voltar a
 decidir.
+
+
+\section{ADR-101 --- Quatro ambientes, e a frente nasce e volta em \cd{dev-local}}
+\label{adr:quatro-ambientes}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-53} (um ambiente por branch) e à \adrr{ADR-56}
+(o fluxo, imposto sem \emph{branch protection}).
+
+\textbf{Contexto.} A ADR-53 desenhou um ambiente por \emph{branch} e a ADR-56
+escreveu o caminho: trabalho \seta{} \cd{dev} \seta{} \cd{hml} \seta{}
+\cd{main}. Desde então passou a existir uma quarta camada que nenhum documento
+registrou --- \cd{dev-local}, a \emph{branch} que corresponde ao ambiente
+\textbf{Docker da máquina de quem desenvolve} (\cd{pnpm docker:dev}). Ela está
+no repositório desde 2026-09, recebe \emph{merge} de \emph{branch} de trabalho
+e já promoveu para \cd{dev} por PR. Mas nenhum \arq{AGENTS.md}, nenhum
+\emph{hook} e nenhum \emph{script} a conhecia: a raiz mandava partir de
+\cd{origin/dev}, o \arq{scripts/worktree.mjs} tinha \cd{origin/dev} ESCRITO com
+um parágrafo de justificativa, e o \arq{.githooks/pre-push} protegia
+\cd{dev hml main} deixando \cd{dev-local} aberta a \emph{push} direto.
+
+O custo foi medido três vezes, e nenhuma delas se parece com a causa:
+
+\begin{itemize}
+  \item \textbf{Frente nascendo atrás.} \cd{dev-local} recebe o trabalho
+    primeiro e por isso costuma estar \textbf{à frente} de \cd{dev}. A ADR-79
+    nasceu sobre \cd{dev-local}, que já tinha a 78, enquanto \cd{dev} parava na
+    71 --- quem partisse de \cd{dev} reservaria um número já gasto.
+  \item \textbf{A camada pulada.} Os PRs \#49 e \#50 foram de \emph{branch} de
+    trabalho direto para \cd{dev}, e o histórico mostra a prática misturada:
+    PRs \cd{dev-local \seta{} dev} (\#42, \#43) convivendo com \emph{merges}
+    locais e com PRs que saltavam a camada. O que se perde ao saltar é o único
+    portão em que \textbf{alguém olha a tela}: o CI roda \emph{typecheck},
+    \emph{lint}, testes e \emph{build}, e não abre navegador.
+  \item \textbf{O agente obedecendo o que está escrito.} A regra real vivia
+    apenas na memória automática da ferramenta de codificação --- que é local à
+    máquina, não viaja no repositório e \textbf{não é carregada em subagente
+    nenhum}. Contra ela, um \arq{AGENTS.md} de 727 linhas dizendo o contrário,
+    com justificativa. Instrução contraditória é resolvida arbitrariamente, e
+    foi.
+\end{itemize}
+
+\textbf{Decisão.} \textbf{Quatro ambientes, quatro \emph{branches}, e
+\cd{dev-local} é a BASE e o ALVO de toda \emph{branch} de trabalho.}
+
+\begin{center}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Branch} & \textbf{Ambiente} & \textbf{Quem testa} & \textbf{O merge dispara}\\
+\midrule
+\cd{dev-local} & Docker na máquina & quem desenvolve & nada: a stack local sobe à mão\\
+\cd{dev} & \emph{stack} GCP de dev & o time & \emph{deploy} de dev\\
+\cd{hml} & \emph{stack} GCP de hml & o cliente & \emph{deploy} de hml\\
+\cd{main} & produção & as escolas & \emph{deploy} de produção\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{\cd{dev-local} é \emph{branch} de AMBIENTE}, ainda que o
+    ambiente seja um \emph{container} e não uma \emph{stack} em nuvem. O
+    \arq{.githooks/pre-push} a recusa a \emph{push} direto pela mesma razão que
+    recusa em \cd{dev}: o que entra ali entra por PR, com registro. Ela não
+    aparece no \arq{deploy.yml} --- não há \emph{deploy} a disparar.
+  \item \textbf{TODA tarefa começa num \emph{worktree}}, paralela ou não. A
+    cópia principal é onde a \emph{stack} RODA (\cd{docker:dev}, a suíte e2e, as
+    migrações); editar nela mistura, no mesmo \cd{git status}, o que já subiu
+    com o que ainda está sendo escrito.
+  \item \textbf{A base vai ESCRITA}: \cd{origin/dev-local}, literal, no
+    \arq{scripts/worktree.mjs}. Nenhuma ferramenta adivinha --- a
+    \cd{default\_branch} do GitHub é \cd{dev}, um clone antigo tem
+    \cd{origin/HEAD} em \cd{main}, e a criação automática de \emph{worktree} do
+    agente segue a padrão. Todas erram, e erram em silêncio.
+  \item \textbf{\cd{--fatia} passa a ser obrigatória} (\adrr{ADR-71}). Se o
+    \emph{worktree} é o começo de toda tarefa, a cerca de caminhos deixa de ser
+    instrumento de paralelismo e vira declaração de escopo. Frente que não toca
+    módulo de domínio declara a pasta da ferramenta:
+    \cd{--fatia scripts,.githooks}.
+  \item \textbf{O \emph{hotfix} desce a escada inteira}, até \cd{dev-local}.
+    Parar em \cd{dev} deixa a base local sem a correção, e a frente seguinte
+    nasce sem ela.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Deixar como estava}: \cd{dev-local} como conveniência pessoal
+    não registrada. Foi o estado até aqui, e é exatamente o que produziu as três
+    falhas do contexto. Uma regra que existe na cabeça de quem desenvolve e não
+    no repositório é, para qualquer agente e para qualquer pessoa nova,
+    equivalente a não existir.
+  \item \textbf{\cd{dev-local} como base, mas PR direto para \cd{dev}}. Economiza
+    um PR por frente. Perde o registro do que entrou no ambiente local e, com
+    ele, a resposta para \enquote{isto chegou a rodar na máquina antes de custar
+    um \emph{deploy}?}.
+  \item \textbf{Escrever a regra só no \arq{AGENTS.md}}. É o que já havia para o
+    fluxo antigo, e não bastou: instrução é contexto, não portão. A ADR-56 já
+    tinha decidido que a regra que o servidor não impõe, o \emph{hook} impõe ---
+    esta ADR apenas estende a lista de \emph{branches} protegidas.
+  \item \textbf{Renomear \cd{dev-local} para algo como \cd{integracao}}. O nome
+    atual diz a verdade: é o ambiente local. Renomear custaria reescrever
+    referências e não resolveria nada que a ausência de registro causava.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um PR a mais por frente.} Quem antes ia de \emph{branch} de
+    trabalho a \cd{dev} agora passa por \cd{dev-local}. Numa equipe de uma
+    pessoa, é cerimônia que ela cumpre sozinha --- e cerimônia que se cumpre
+    sozinha é a primeira a ser pulada num dia ruim.
+  \item \textbf{\cd{dev-local} e \cd{dev} divergem por construção.} A escada
+    ganhou um degrau, e com ele mais uma \emph{branch} que pode ficar para trás.
+    O \emph{retro-merge} do \emph{hotfix} ficou um passo mais longo.
+  \item \textbf{\emph{Worktree} para toda tarefa custa} \cd{pnpm install} mais
+    \cd{prisma generate} por frente --- minutos e disco, mesmo para corrigir uma
+    linha. O \emph{flag} \cd{--sem-instalar} existe para a frente que só edita
+    documentação, mas é uma decisão a mais na hora de criar.
+  \item \textbf{A fatia obrigatória cobra declaração de quem não precisa dela.}
+    Frente que muda um \emph{typo} em três arquivos de pastas diferentes vai
+    declarar três caminhos, ou usar \env{PERMITIR\_FORA\_DA\_FATIA}. O risco
+    conhecido é treinar o reflexo de desligar o \emph{hook}.
+  \item \textbf{O ambiente local não é reproduzível para mais ninguém.} O portão
+    de \cd{dev-local} é uma pessoa olhando uma tela na máquina dela. Não há
+    artefato, \emph{log} nem evidência de que o olhar aconteceu --- ao contrário
+    dos outros três, que deixam execução de CI.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Uma segunda pessoa desenvolvendo.}
+\cd{dev-local} é, por construção, o ambiente de UMA máquina: duas pessoas com
+Docker local diferente empurrando para a mesma \emph{branch} transformam o
+degrau em fonte de conflito, em vez de portão. Nesse dia a saída provável é
+\cd{dev-local} por pessoa (\cd{dev-local-lucas}), ou a camada desaparecer em
+favor de \emph{previews} efêmeros por PR.
+
+
+\section{ADR-102 --- A doutrina é uma fonte só, lida por quatro agentes}
+\label{adr:agentes-portateis}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-55} (\arq{AGENTS.md} canônico, \arq{CLAUDE.md}
+ponteiro).
+
+\textbf{Contexto.} A ADR-55 resolveu o problema de \textbf{duas fontes} --- a
+doutrina se escreve uma vez, em \arq{AGENTS.md}, e o \arq{CLAUDE.md} é um
+ponteiro de uma linha. Dois anos de uso depois, apareceram dois problemas que
+ela não previa.
+
+\textbf{O primeiro é tamanho.} O \arq{AGENTS.md} da raiz chegou a 757 linhas e
+51\,KB, o de \arq{apps/api} a 1.407 linhas e 93\,KB, o de \arq{apps/hub} a 910 e
+53\,KB. Os três entram em contexto \emph{inteiros}: quem ia corrigir o
+check-in de bem-estar recebia a Vila do Lume, a telemetria e as três armadilhas
+de \cd{RENAME} junto. E a documentação do Claude Code é explícita sobre o custo
+--- \enquote{\emph{longer files consume more context and reduce adherence}},
+com alvo de \textbf{menos de 200 linhas}. Não é um corte: é degradação
+silenciosa, em que a regra certa compete com outras setecentas linhas.
+
+\textbf{O segundo é portabilidade.} \arq{AGENTS.md} virou um \textbf{padrão
+aberto} adotado por cerca de 23 agentes de codificação --- Codex, Cursor,
+Copilot, Zed, Warp, Jules, Devin, Windsurf. O Claude Code é a exceção que lê
+\arq{CLAUDE.md}, e é só por isso que o ponteiro existe. Mas duas ferramentas
+que passaram a ser usadas aqui não leem \arq{AGENTS.md} sozinhas: o
+\textbf{Antigravity} lê \arq{.agents/rules/} do \emph{workspace} e corta cada
+arquivo de regra em \textbf{12.000 caracteres}; o \textbf{Gemini CLI} procura
+\arq{GEMINI.md} e, sem configuração, não acha nada. Servir cada uma com a sua
+cópia recriaria exatamente o problema que a ADR-55 resolveu.
+
+\textbf{Decisão.} \textbf{Uma fonte por assunto, em \arq{docs/regras/}, com
+\emph{symlinks} nas pastas que cada ferramenta lê --- e nenhum arquivo acima de
+12.000 caracteres.}
+
+\begin{itemize}
+  \item \textbf{Por PASTA continua valendo}, e ganhou profundidade: o
+    \arq{AGENTS.md} de \arq{apps/api} virou um índice de 149 linhas mais 17
+    \arq{AGENTS.md} de módulo, e o de \arq{apps/hub}, 131 linhas mais sete de
+    área. O mecanismo é o mesmo nas três ferramentas --- \textbf{o mais próximo
+    vence, e carrega sozinho quando a sessão abre a pasta}.
+  \item \textbf{Por ASSUNTO é novo}: a regra que atravessa pastas (\emph{design
+    system}, idioma, convenções, comandos, git) vive em \arq{docs/regras/}, uma
+    por arquivo. É também onde mora todo \textbf{contrato entre consumidores}
+    --- o \cd{postMessage} e o manifesto não pertencem à pasta de nenhum dos
+    lados.
+  \item \textbf{As pastas de regra são \emph{symlinks} para
+    \arq{docs/regras/}}: \arq{.claude/rules/} (que o Claude Code carrega sob
+    demanda, pelo \cd{paths:} no \emph{frontmatter} da fonte) e
+    \arq{.agents/rules/} (que o Antigravity lê inteiro). Editar em
+    \arq{docs/regras/} muda o que todas leem, no mesmo instante.
+  \item \textbf{O teto de 12.000 caracteres vale para tudo} --- não porque o
+    Antigravity seja o leitor mais importante, mas porque um corte silencioso é
+    o pior modo de falhar: o que some é o \emph{fim} do arquivo, onde está a
+    consequência.
+  \item \arq{.gitignore}: \arq{.agents/} deixa de ser ignorada inteira
+    (\arq{skills/} continua fora --- é instalação de cada máquina) e
+    \arq{.claude/rules/} entra ao lado do \arq{settings.json}.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Um arquivo por ferramenta, com o mesmo conteúdo.} É a solução
+    óbvia e é exatamente o que a ADR-55 proíbe: três cópias divergem sempre, na
+    direção de quem parou de ler as outras.
+  \item \textbf{Só \arq{AGENTS.md}, e cada pessoa configura a ferramenta dela.}
+    O Antigravity tem um \emph{setting} para carregar \arq{AGENTS.md}
+    aninhados, e o Gemini CLI aceita \cd{context.fileName}. Mas configuração
+    por máquina não viaja no repositório: quem clonar amanhã tem a doutrina
+    invisível, e não há sintoma --- o agente simplesmente não sabe a regra.
+  \item \textbf{Cópias geradas por \emph{script}, com um \emph{hook} de
+    verificação.} Resolve a divergência, ao custo de um gerador a manter e de
+    um \emph{diff} de arquivos derivados em todo PR. O \emph{symlink} faz o
+    mesmo trabalho com zero código.
+  \item \textbf{Deixar como estava.} Foi a opção até aqui, e o custo já era
+    medido: a regra de \arq{dev-local} vivia num arquivo de 727 linhas e foi
+    ignorada em favor de uma contraditória (\adrr{ADR-101}).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{\emph{Symlink} em repositório é frágil fora do Unix.} No Windows
+    sem Modo de Desenvolvedor, o \emph{clone} escreve arquivos de texto com o
+    caminho dentro, e as regras somem sem erro. Hoje só há uma máquina, macOS;
+    no dia em que houver outra, isto é a primeira coisa a conferir.
+  \item \textbf{A regra transversal deixou de carregar sozinha no Codex e no
+    Cursor.} Eles leem \arq{AGENTS.md} e \emph{abrem os links} --- o que
+    depende do agente decidir abrir. Antes, tudo chegava sem decisão nenhuma;
+    o preço da economia de contexto é este.
+  \item \textbf{Quarenta e sete \arq{AGENTS.md} são quarenta e sete arquivos
+    para manter.} A regra de atualizar no mesmo \emph{commit} fica mais cara,
+    e a chance de um ficar para trás sobe com a contagem.
+  \item \textbf{Um \arq{CLAUDE.md} de uma linha por pasta nova} --- 24
+    arquivos que existem só porque uma ferramenta procura outro nome. Esquecer
+    um não dá erro: a doutrina daquela pasta simplesmente não chega.
+  \item \textbf{Três arquivos continuam acima do teto} (\arq{packages/ui},
+    \arq{exp-92} e a raiz, todos a menos de 20\%), porque a fronteira de
+    assunto ainda não é óbvia neles. Estão registrados em
+    \arq{docs/regras/arquivos-de-instrucao.md} para não passarem por decisão.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Uma segunda máquina, ou uma máquina
+Windows.} Os \emph{symlinks} são o ponto único de falha deste desenho, e o modo
+de falhar é mudo. Se isso acontecer, a saída provável é gerar as duas pastas de
+regra por \emph{script} no \cd{prepare} do \cd{pnpm install} --- a alternativa
+descartada acima, que volta a fazer sentido quando o \emph{symlink} deixa de
+funcionar.
