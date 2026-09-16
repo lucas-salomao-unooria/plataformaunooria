@@ -5,7 +5,7 @@ import { HttpException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaClient } from "@prisma/client";
 import type { AiJsonRequest, AiProvider, AiRequest, AiResult } from "../src/ai/provider";
-import { QuotaService } from "../src/ai/quota.service";
+import { QuotaService, perfilDaQuota } from "../src/ai/quota.service";
 import { ObjectStorageService } from "../src/object-storage/object-storage.service";
 import { markdownParaHtml, PlanosService } from "../src/planos/planos.service";
 import { sanitizarHtmlDoPlano } from "../src/planos/sanitizar";
@@ -65,13 +65,11 @@ const dirTemporario = mkdtempSync(join(tmpdir(), "planos-teste-"));
 const config = new ConfigService({
   PLANOS_DRIVER: "local",
   PLANOS_LOCAL_DIR: dirTemporario,
-  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
-  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
 });
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const storage = new ObjectStorageService(config);
 const provider = new ProviderFake();
-const quota = new QuotaService(prisma, config);
+const quota = new QuotaService(prisma);
 const service = new PlanosService(prisma, storage, provider, quota);
 
 let profA = "";
@@ -257,26 +255,24 @@ describe("geração assíncrona", () => {
     await prisma.planoDeAula.update({ where: { id }, data: { status: "pronto" } });
   });
 
-  test("quota do professor esgotada → 429 antes de qualquer trabalho", async () => {
-    // `ConfigService.get` lê o process.env ANTES do config injetado, e o
-    // Prisma carrega o `apps/api/.env` ao subir os testes: sem apertar
-    // também o process.env, um `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` no .env
-    // local vencia o config apertado e o 429 nunca acontecia. E o consumo é
-    // forçado aqui em vez de herdado dos testes anteriores, para o caso valer
-    // rodando isolado (`-t`).
-    const envAnterior = process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR;
-    process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR = "100";
-    try {
-      await rodarQuotaEsgotada();
-    } finally {
-      if (envAnterior === undefined) delete process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR;
-      else process.env.AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR = envAnterior;
+  /**
+   * O teto apertado é uma SUBCLASSE, e não uma escrita em `ia_quotas`: aquela
+   * tabela é de CONTRATO (sem `escola_id`), e apertar a linha `professor` ali
+   * apertaria a quota de toda suíte que rodasse junto — a mesma armadilha das
+   * linhas de escopo-contrato de `disponibilidades`. Antes da ADR-105 o aperto
+   * era por env, e exigia mexer também no `process.env` porque o `.env` local
+   * vencia o config injetado; o banco não tem esse furo.
+   */
+  class QuotaApertada extends QuotaService {
+    override async limite(perfil: string): Promise<number> {
+      return perfilDaQuota(perfil) === "professor" ? 100 : super.limite(perfil);
     }
-  });
+  }
 
-  async function rodarQuotaEsgotada() {
-    const configApertada = new ConfigService({ ...config["internalConfig"], AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 100 });
-    const servicoApertado = new PlanosService(prisma, storage, provider, new QuotaService(prisma, configApertada));
+  test("quota do professor esgotada → 429 antes de qualquer trabalho", async () => {
+    // O consumo é forçado aqui em vez de herdado dos testes anteriores, para o
+    // caso valer rodando isolado (`-t`).
+    const servicoApertado = new PlanosService(prisma, storage, provider, new QuotaApertada(prisma));
     await quota.consumir(ESCOLA, profA, 500);
     const chamadasAntes = provider.chamadas.length;
     expect(await statusDe(servicoApertado.criar(ESCOLA, profA, "professor", { disciplina: DISCIPLINA, serie: "8EF" }))).toBe(429);
@@ -284,8 +280,8 @@ describe("geração assíncrona", () => {
     // O mesmo consumo, medido pela régua do ESTUDANTE, também estaria estourado —
     // e a régua do professor (2M) não: é isso que `perfil` muda.
     expect(await quota.temSaldo(ESCOLA, profA, "estudante")).toBe(true); // 300k > ~3k gastos
-    expect(await new QuotaService(prisma, configApertada).temSaldo(ESCOLA, profA, "professor")).toBe(false);
-  }
+    expect(await new QuotaApertada(prisma).temSaldo(ESCOLA, profA, "professor")).toBe(false);
+  });
 });
 
 describe("salvar, restaurar, renomear, excluir", () => {

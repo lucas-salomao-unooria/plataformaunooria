@@ -88,7 +88,7 @@ export class PlanosController {
     notas: [
       "3 gerações por hora por professor: cada uma custa ~220k tokens só de prompt (currículo da rede + as 4 unidades do ano). Acima disso, **429** com `codigo: RATE_LIMIT`.",
       "O teto de saída é 64k tokens, não 32k: com o material real o gemini-2.5-flash era cortado e o professor recebia \"o plano ficou grande demais\" sem plano nenhum.",
-      "Passa pelo `QuotaService` por PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`).",
+      "Passa pelo `QuotaService` por PERFIL (a linha `professor` de `ia_quotas`, ADR-105).",
     ],
   })
   criar(@Body() body: unknown, @Req() req: Autenticado) {

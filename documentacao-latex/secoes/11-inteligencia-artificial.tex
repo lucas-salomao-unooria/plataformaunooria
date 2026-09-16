@@ -149,15 +149,28 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 \textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp-01
 e com os turnos da exp-03 (Missão Tempestade), onde uma partida completa gasta
 cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
-\num{300000} \emph{tokens}/dia (\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE}),
-permitindo até quatro partidas completas. O valor inicial de \num{20000}
-estourava no quarto turno com erro de sala fechada. O professor gera planos anuais
-em que só o \emph{prompt} --- currículo da rede mais material didático --- passa
-de \num{200000} \emph{tokens}: o teto dele é outro
-(\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, \emph{default}
-\num{2000000}/dia, o que dá seis a nove planos). Um teto único obrigaria a
-escolher entre \enquote{estudante com quota absurda} e \enquote{professor que não
-consegue gerar um plano}.
+\num{300000} \emph{tokens}/dia, o que cabe três partidas completas. O valor
+inicial de \num{20000} estourava no quarto turno com erro de sala fechada. O
+professor gera planos anuais em que só o \emph{prompt} --- currículo da rede
+mais material didático --- passa de \num{200000} \emph{tokens}: o teto dele é
+outro (\num{2000000}/dia, o que dá seis a nove planos). Um teto único obrigaria
+a escolher entre \enquote{estudante com quota absurda} e \enquote{professor que
+não consegue gerar um plano}.
+\end{decisao}
+
+\begin{decisao}
+\textbf{O limite é DADO, não variável de ambiente} (\adrr{ADR-105}). Uma linha
+por perfil em \cd{ia\_quotas} (\cd{estudante}, \cd{professor}; vocabulário
+fechado por CHECK), escopo do contrato inteiro, semeada pela \emph{migration}
+com os valores acima. O \cd{QuotaService} a lê a cada \cd{temSaldo} --- sem
+\emph{cache}, para que a alteração valha na chamada seguinte em todas as
+instâncias --- e todo perfil que não é \cd{estudante} cai na linha
+\cd{professor}. Quem altera é só o \cd{admin}, em \rota{/unooria/uso-de-ia},
+com motivo obrigatório; a mudança entra em \cd{recursos\_auditoria} com o
+\cd{\{de, para\}}. As \emph{envs} \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_*}
+\textbf{deixaram de existir}: mantê-las como \emph{fallback} seria a segunda
+fonte de verdade. Sem linha (uma \emph{stack} antes da \emph{migration}), vale a
+constante do código e o registro acusa \cd{ia-quota-sem-linha}.
 \end{decisao}
 
 \begin{nota}

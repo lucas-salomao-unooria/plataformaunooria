@@ -8231,3 +8231,121 @@ o dia em que \cd{dev-local} deixar de ser de uma máquina só. O realinhamento
 automático pressupõe que quem roda o \cd{criar} é dono da base: com duas
 pessoas, mover a \emph{branch} de ambiente do outro no meio do trabalho dele é
 exatamente o tipo de surpresa que esta decisão aceita hoje porque não há outro.
+
+\section{ADR-105 --- A quota de IA é DADO, editável pela Unooria, e não variável de ambiente}
+\label{adr:quota-de-ia-dado}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Complementa} a \adrr{ADR-87} (o interruptor da rede) e a \adrr{ADR-88}
+(o painel é só do \cd{admin}); \textbf{revê} a decisão do Capítulo~11 de o teto
+viver em \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_*}.
+
+\textbf{Contexto.} A regra inviolável nº~5 exige quota diária de IA por usuário
+\emph{e por perfil}, e o \cd{QuotaService} a aplica em onze pontos da api ---
+o tutor da exp-01, a exp-03, a exp-07 (estudante), e exp-04, exp-07, exp-08,
+exp-90, exp-91 e exp-92 (professor). O \textbf{contador} já era persistido
+(\cd{ia\_uso\_diario}); o \textbf{limite} não: eram duas variáveis de ambiente,
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} e
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, lidas a cada chamada.
+
+Mudar o teto de UMA rede era, portanto, editar o Terraform de outro repositório
+e fazer \emph{deploy} da api --- para uma decisão que não é de código: quanto de
+IA aquela rede contratou, ou quanto se quer fechar durante um consumo anormal.
+É o mesmo defeito que a \adrr{ADR-87} consertou para \enquote{este produto
+existe nesta rede?}: configuração comercial da rede vivendo em constante de
+\emph{deploy}. O pedido veio como cartão (\enquote{quota configurável de uso de
+IA para alunos e professores}), com a direção dada por quem opera: semente por
+\emph{migration}, alteração só pela Unooria, diretamente no papel do estudante
+e do professor.
+
+\textbf{Decisão.} \textbf{O limite vira uma linha por perfil na tabela
+\cd{ia\_quotas}}, escopo do contrato inteiro, semeada pela \emph{migration} com
+os valores que valiam por \emph{env} (\num{300000} e \num{2000000}) para que
+nenhuma rede mude de comportamento no \emph{deploy}. O \cd{QuotaService} lê a
+linha a cada \cd{temSaldo}; o \cd{admin} a altera em \rota{/unooria/uso-de-ia}
+(\rota{PUT /recursos/quotas-de-ia/\{perfil\}}), com \textbf{motivo obrigatório
+sempre}, e a mudança entra no histórico do painel (\cd{recursos\_auditoria},
+ação \cd{quota-alterada}, \cd{detalhe = \{de, para\}}).
+
+\begin{itemize}
+  \item \textbf{O banco vence, a \emph{env} morre.} As duas variáveis saem do
+    \cd{env.ts}, dos dois \emph{compose}, do \arq{.env.example} e do Terraform.
+    Manter a \emph{env} como \emph{fallback} seria a segunda fonte de verdade
+    --- a tela diria uma coisa enquanto o processo aplica outra, e a primeira
+    pessoa a subir a \emph{env} para \enquote{resolver rápido} produziria
+    exatamente esse estado.
+  \item \textbf{Vocabulário FECHADO, dois perfis} (\cd{estudante},
+    \cd{professor}; CHECK espelhando \cd{PERFIS\_COM\_QUOTA}). Só esses dois
+    chamam IA hoje; gestores e \cd{admin} não têm rota de IA. Todo perfil que
+    não é \cd{estudante} lê a linha \cd{professor} --- é o que já valia com as
+    \emph{envs}, agora escrito em vez de implícito num \cd{if}.
+  \item \textbf{Sem linha, vale a constante do código e sai
+    \cd{ia-quota-sem-linha}} no registro. Falhar fechado derrubaria toda a IA
+    de uma \emph{stack} recém-provisionada por um dado ausente, com um 429 que
+    não explica nada.
+  \item \textbf{Sem \emph{cache}}, e é decisão: uma leitura por chave primária
+    numa tabela de duas linhas, antes de uma chamada que dura segundos. A regra
+    da casa é não acrescentar estado sem gargalo medido.
+  \item \textbf{Zero e negativo são recusados} (Zod e CHECK), e há um teto de
+    sanidade de \num{100000000} por dia. Fechar a IA de um produto é o
+    interruptor da \adrr{ADR-87}, não a quota --- e um zero a mais no campo não
+    pode virar quota infinita.
+  \item \textbf{Só o \cd{admin}}, pela mesma razão da \adrr{ADR-88}: um
+    \cd{gestor\_contrato} que pudesse SUBIR a quota passaria a decidir o custo
+    variável da Unooria.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a \emph{env} e só documentar onde mudar.} É o estado
+    anterior, e o custo dele é um \emph{deploy} por rede por ajuste.
+  \item \textbf{Escopo por escola ou regional}, como \cd{disponibilidades}.
+    Nenhuma rede pediu, e dobraria o resolvedor (escola \seta{} regional
+    \seta{} contrato \seta{} padrão) para um número que hoje é um por perfil.
+    Fica como gatilho abaixo.
+  \item \textbf{Quota por experiência.} A exp-03 já tem o controle certo para
+    custo de partida --- o teto por SESSÃO (\num{150000}, medido) ---, e é por
+    sessão porque a sessão tem começo e fim. A quota diária é o fusível da
+    plataforma, não o orçamento de cada missão.
+  \item \textbf{Tabela de histórico própria (\cd{ia\_quotas\_historico}).}
+    Seriam duas telas de \enquote{quem mudou o quê} com colunas quase iguais, e
+    a segunda é a que ninguém abre. O custo de reaproveitar
+    \cd{recursos\_auditoria} foi uma ação nova e uma coluna \cd{detalhe} JSONB
+    com CHECK bicondicional --- o mesmo desenho de \cd{versao}.
+  \item \textbf{\emph{Cache} da linha no processo.} Pouparia uma consulta por
+    chamada de IA, e faria a alteração do \cd{admin} valer \enquote{em até N
+    minutos} --- com \cd{min-instances: 3} no Cloud Run, em momentos diferentes
+    em cada instância. A promessa da tela (\enquote{vale na próxima chamada})
+    só é verdadeira sem \emph{cache}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Uma consulta a mais por chamada de IA.} Por chave primária, em
+    tabela de duas linhas; ainda assim, é uma ida ao banco que não existia.
+  \item \textbf{A alteração vale para a REDE INTEIRA na chamada seguinte}, e
+    quem já passou do teto novo hoje fica sem IA até amanhã. O diálogo diz isso
+    com todas as letras; é a mesma alavanca de incidente da \adrr{ADR-87}, e o
+    mesmo tipo de mitigação.
+  \item \textbf{Uma suíte de Postgres passa a ESCREVER numa tabela de contrato}
+    (\arq{quotas-de-ia-postgres.spec.ts} e a e2e \cd{admin/02}). Ela só SOBE o
+    teto e devolve o valor no fim, então uma corrida abortada não recusa
+    ninguém; mas é uma exceção à regra \enquote{suíte nunca escreve linha de
+    escopo-contrato}, e está escrita nas duas.
+  \item \textbf{O motor da exp-01 (\arq{geracao/}) e as reações da Vila do
+    Lume continuam FORA do \cd{QuotaService}} --- já apontados na
+    \adrr{ADR-74} e não corrigidos aqui. Uma quota configurável só vale para
+    quem passa pelo funil; esses dois pontos são cartão à parte, e o da Vila é
+    chamada de estudante sem fusível nenhum.
+  \item \textbf{O \enquote{dia} da quota é o dia UTC} (\cd{hoje()} do
+    \cd{QuotaService}): o contador zera às 21h de Brasília. Não é escopo desta
+    decisão; a tela diz isso para quem opera.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{A primeira rede que pedir teto
+diferente para UMA escola ou regional}, ou o dia em que gestor ou \cd{admin}
+ganhar rota de IA (aí o perfil entra na tupla, no CHECK e na semente --- nunca
+só num dos três). E o volume: se a leitura de \cd{ia\_quotas} aparecer na
+latência de alguma rota de IA, o \emph{cache} volta à mesa com a medida na mão.

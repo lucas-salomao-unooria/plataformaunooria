@@ -20,7 +20,7 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
-\cd{experiencias\_versoes}, \cd{disponibilidades},
+\cd{experiencias\_versoes}, \cd{disponibilidades}, \cd{ia\_quotas},
 \cd{recursos\_auditoria}, \cd{progresso},
 \cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
 
@@ -206,6 +206,11 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \zebra \cd{ia\_uso\_diario} & \emph{Tenant} & Contador de quota, uma linha por
   (escola, usuário, dia). Incremento atômico por
   \cd{ON CONFLICT DO UPDATE ... RETURNING}.\\
+\cd{ia\_quotas} & Catálogo & \textbf{O teto diário de IA por perfil}
+  (\adrr{ADR-105}): uma linha por perfil (\cd{estudante}, \cd{professor}),
+  escopo do contrato. Semeada pela \emph{migration} com o que valia por
+  \emph{env}; sobrescrita pelo \cd{admin}, com o histórico em
+  \cd{recursos\_auditoria}. Fora da RLS pela razão de \cd{disponibilidades}.\\
 \cd{telemetria\_eventos} & \emph{Tenant}, particionada & Ver
   Seção~\ref{sec:particao}.\\
 \zebra \cd{perfis\_portateis} & \emph{Tenant} & O documento assinado que veio de

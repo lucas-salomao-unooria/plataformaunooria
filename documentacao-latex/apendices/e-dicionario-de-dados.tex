@@ -40,6 +40,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
 \zebra \cd{progresso} & Tenant & Progresso genérico da SDK\\
 \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
+\zebra \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \zebra \cd{exp\_01\_activities} & Tenant & Atividade preparada pelo professor\\
 \cd{exp\_01\_authors} & Tenant & Personas fictícias\\
@@ -514,14 +515,21 @@ por que o produto dela mudou de estado é informação do cliente.
 \zebra \cd{acao} & \cd{TEXT} & Vocabulário FECHADO por \emph{CHECK}
   (\cd{ck\_recursos\_auditoria\_acao}), espelhando \cd{ACOES\_DE\_AUDITORIA} do
   código: \cd{ligado}, \cd{desligado}, \cd{herdado}, \cd{versao-ativada},
-  \cd{versao-fixada}, \cd{versao-soltada}. O teste prende os dois lados, porque
-  a divergência só apareceria como 500 no log.\\
+  \cd{versao-fixada}, \cd{versao-soltada}, \cd{quota-alterada}
+  (\adrr{ADR-105}). O teste prende os dois lados, porque a divergência só
+  apareceria como 500 no log.\\
 \cd{versao} & \cd{TEXT?} & \emph{CHECK} BICONDICIONAL: preenchida exatamente nas
   duas ações de versão, nula em todas as outras. Campo cheio onde não significa
   nada é pior que campo vazio --- quem lê \cd{desligado} com uma versão ao lado
   conclui que a versão foi parte da decisão.\\
 \zebra \cd{motivo} & \cd{TEXT?} & O texto que o painel exige ao desligar,
   copiado para cá.\\
+\cd{detalhe} & \cd{JSONB?} & \cd{\{de, para\}} da mudança de quota
+  (\adrr{ADR-105}) --- e SÓ em \cd{quota-alterada}, por \emph{CHECK}
+  bicondicional (\cd{ck\_recursos\_auditoria\_detalhe}), pela mesma razão de
+  \cd{versao}: campo preenchido onde não significa nada faz quem lê procurar um
+  número que não existiu. Em \cd{quota-alterada}, \cd{recurso\_id} é
+  \cd{quota:<perfil>}.\\
 \cd{autor\_id} & \cd{UUID} & \textbf{Sem FK}, ao contrário de
   \cd{disponibilidades.definido\_por}: uma FK com \cd{RESTRICT} travaria para
   sempre a exclusão de qualquer conta que já tenha mexido no painel, porque
@@ -549,6 +557,42 @@ a política a esconderia). Quem protege a leitura é o \cd{RolesGuard}
 (\cd{GESTORES\_DO\_CONTRATO}) --- e o \emph{grant} é
 \cd{SELECT, INSERT, DELETE}: sem \cd{UPDATE}, a role de runtime não alcança nem
 o \emph{trigger}.
+
+\subsection{\cd{ia\_quotas} (catálogo)}
+
+\textbf{O teto diário de IA por perfil} (\adrr{ADR-105}) --- o número que o
+\cd{QuotaService} compara com \cd{ia\_uso\_diario} ANTES de toda chamada de IA.
+Uma linha por perfil, escopo do CONTRATO inteiro (1 contrato = 1 \emph{stack}),
+semeada pela \emph{migration} com os valores que valiam por \emph{env}
+(\num{300000} e \num{2000000}) e sobrescrita pelo \cd{admin} em
+\rota{/unooria/uso-de-ia}. O histórico de quem mudou vive em
+\cd{recursos\_auditoria} (ação \cd{quota-alterada}).
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{perfil} & \cd{TEXT} PK & Vocabulário FECHADO por \emph{CHECK}
+  (\cd{ck\_ia\_quotas\_perfil}): \cd{estudante}, \cd{professor}, espelhando
+  \cd{PERFIS\_COM\_QUOTA} do código. Só esses dois chamam IA; todo outro perfil
+  lê a linha \cd{professor}. Perfil novo entra na tupla, no CHECK e na semente.\\
+\zebra \cd{tokens\_por\_dia} & \cd{INTEGER} & \emph{CHECK} $> 0$: zero e
+  negativo não são quota, são o interruptor da \adrr{ADR-87} entrando pela porta
+  errada. O teto de sanidade (\num{100000000}) é do Zod.\\
+\cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod), sempre: aqui toda mudança
+  é exceção ao padrão da plataforma.\\
+\zebra \cd{definido\_por} & \cd{UUID?} & \textbf{Sem FK}, como
+  \cd{recursos\_auditoria.autor\_id}: a linha é SOBRESCRITA e o nome congelado
+  de quem mexeu vive no histórico. \cd{NULL} = veio da \emph{migration}.\\
+\cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Sem RLS}, pelo par de razões de \cd{disponibilidades}: não é dado de
+estudante, e não há \cd{escola\_id} --- a linha vale para o contrato inteiro.
+\emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem \cd{DELETE}
+--- a linha de um perfil não se apaga; sem ela, vale a constante do código e o
+registro acusa \cd{ia-quota-sem-linha}.
 
 \subsection{\cd{progresso}}
 

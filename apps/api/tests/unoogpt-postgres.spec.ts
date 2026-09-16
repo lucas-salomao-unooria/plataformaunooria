@@ -1,5 +1,4 @@
 import { HttpException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { PrismaClient } from "@prisma/client";
 import { MockProvider } from "../src/ai/mock.provider";
 import { QuotaService } from "../src/ai/quota.service";
@@ -27,11 +26,7 @@ const ESCOLA = "teste-unoogpt";
 const OUTRA_ESCOLA = "teste-unoogpt-outra";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
-const config = new ConfigService({
-  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
-  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
-});
-const quota = new QuotaService(prisma, config);
+const quota = new QuotaService(prisma);
 const service = new UnoogptService(prisma, new MockProvider(), quota);
 
 let turmaId = "";

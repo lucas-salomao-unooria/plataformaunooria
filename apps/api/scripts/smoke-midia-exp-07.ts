@@ -39,7 +39,6 @@ async function main() {
     ASSETS_LOCAL_DIR: process.env.ASSETS_LOCAL_DIR,
     ASSETS_PUBLIC_URL: process.env.ASSETS_PUBLIC_URL,
     ASSETS_BUCKET: process.env.ASSETS_BUCKET,
-    AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
   });
   // O `QuotaService` grava em `ia_uso_diario`, então o banco de dev precisa
   // estar de pé — o smoke exercita o caminho REAL, quota inclusive.
@@ -48,7 +47,7 @@ async function main() {
   const servico = new MidiaDaExp07Service(
     new VertexProvider(),
     assets,
-    new QuotaService(prisma, config),
+    new QuotaService(prisma),
   );
 
   const inicio = Date.now();
