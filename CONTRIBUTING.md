@@ -282,7 +282,7 @@ para:
 
 | Arquivo | Como não brigar |
 |---|---|
-| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 104** — e quem gastar o 104 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
+| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 105** — e quem gastar o 105 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
 | `documentacao-latex/main.pdf` | binário: sempre conflita. Resolve-se **regerando**, nunca escolhendo um lado — quem mergeia por último recompila |
 | `AGENTS.md` da raiz | edite a seção da sua frente, não a vizinha; conflito aqui é textual e resolve na mão |
 | `pnpm-lock.yaml` | conflitou? `git checkout --theirs pnpm-lock.yaml && pnpm install` e commite o resultado |
@@ -314,6 +314,38 @@ Pode juntar várias frentes numa promoção só: `dev-local` acumula, e promover
 lote coerente é melhor do que um PR por frente. O que não se faz é pular a
 camada — PR de branch de trabalho direto para `dev` é o atalho que tira o único
 portão onde alguém de fato *olhou*.
+
+**Depois do merge, `dev-local` fica 1 commit atrás de `dev` — e isso se
+resolve sozinho** (ADR-104). O merge do PR nasce **no destino**: `dev` ganha um
+*merge commit* que `dev-local` não tem, ainda que o conteúdo seja idêntico
+(`git diff` entre as duas dá vazio).
+
+```
+antes:   dev-local  A───B───C          depois:  dev-local  A───B───C
+         dev        A                                              ╲
+                                                 dev       A────────M
+```
+
+Uma vez é cosmético. **O problema é que acumula**: a cada promoção mais um, e a
+próxima frente nasce de uma base cada vez mais atrás do que está publicado. Pior,
+**o primeiro hotfix muda isso de cosmético para real** — ele desce de `main` por
+retro-merge e chega em `dev` antes de chegar aqui; uma frente aberta no meio
+nasce sem a correção, que é o defeito que a ADR-101 existe para evitar.
+
+O próximo `pnpm worktree criar` conserta antes de abrir a frente: como
+`dev-local` está **contida** em `dev`, mover o ponteiro é *fast-forward* — não
+cria commit nem muda arquivo. À mão, se quiser fazer na hora:
+
+```bash
+git switch dev-local && git merge --ff-only origin/dev
+PERMITIR_PUSH_DIRETO=1 git push origin dev-local
+```
+
+O escape é deliberado e aparece na saída do script: `dev-local` é branch de
+ambiente e o `pre-push` recusa push direto nela, mas um *fast-forward* não traz
+conteúdo — só atualiza o ponteiro. **Se as duas divergirem de verdade** (cada uma
+com commit que a outra não tem), o script RECUSA e manda resolver à mão: mover a
+base por cima do que só existe nela perderia trabalho.
 
 ## Promoção `dev → hml`
 

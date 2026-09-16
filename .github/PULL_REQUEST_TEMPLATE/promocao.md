@@ -25,6 +25,10 @@ rodar** — antes dela nada saiu da sua máquina.
 - [ ] Nenhuma frente de trabalho ficou de pé: `pnpm worktree listar` sem
       sobras (a poda é automática no `git pull`, mas confira — ADR-103)
 
+<!-- Depois do merge, `dev-local` fica 1 commit atrás de `dev`: o merge commit
+     nasce no destino. Não faça nada — o próximo `pnpm worktree criar`
+     realinha por fast-forward (ADR-104). -->
+
 ## Antes de mergear
 
 - [ ] Suíte de ponta a ponta INTEIRA verde contra o ambiente de origem: `node scripts/e2e/rodar.mjs`

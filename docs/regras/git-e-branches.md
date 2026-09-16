@@ -57,7 +57,11 @@ abri-lo.
   ESCRITO. **`dev-local` costuma estar À FRENTE de `dev`** (é ela que recebe o
   trabalho primeiro): sair de `dev` é nascer sem o que você integrou ontem.
   `git log origin/dev-local..HEAD` antes do PR confere, e o PR é
-  `gh pr create --base dev-local`. **Terminada a frente, não remova nada à
+  `gh pr create --base dev-local`. **A base se realinha sozinha** (ADR-104):
+  toda promoção deixa `dev-local` 1 commit atrás de `dev` (o *merge commit*
+  nasce no destino), o atraso ACUMULA, e o primeiro hotfix que descer por
+  retro-merge faria a frente nascer sem a correção. O `criar` conserta por
+  fast-forward antes de abrir — e RECUSA se as duas divergiram de verdade. **Terminada a frente, não remova nada à
   mão**: o `git pull` em `dev-local` depois do merge poda o worktree, a branch
   local e a remota (ADR-103) — pulando o que tem alteração não commitada, o que
   está em uso, e a branch sem commit próprio. `pnpm worktree limpar --seco`
@@ -86,7 +90,8 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **104**: a **103 é a poda automática da frente
+  (a PRÓXIMA é a **105**: a **104 é o realinhamento automático da
+      base depois da promoção**, a **103 a poda automática da frente
       mergeada**, a **102 a doutrina numa fonte só, lida por
       quatro agentes**, a **101 o fluxo de quatro ambientes, com
       `dev-local` como base de toda frente**, e a **100 o caminho único da sala

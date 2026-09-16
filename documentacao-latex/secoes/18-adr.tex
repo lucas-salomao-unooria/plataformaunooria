@@ -148,6 +148,7 @@ que a cercam.
 \zebra \adrr{ADR-101} & Quatro ambientes, e a frente nasce e volta em \cd{dev-local} & 2026-09-15 & Aceita\\
 \adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-103} & A frente mergeada se enterra sozinha & 2026-09-15 & Aceita\\
+\adrr{ADR-104} & A base se realinha sozinha depois da promoção & 2026-09-15 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8133,3 +8134,100 @@ recebe \emph{merge} da base e continua, por exemplo. Hoje o desenho pressupõe
 que frente mergeada é frente terminada. Nesse dia a saída provável é uma marca
 explícita na frente (um arquivo no \emph{git-dir} dela, como a \cd{fatia} já é)
 que a poda respeite.
+
+
+\section{ADR-104 --- A base se realinha sozinha depois da promoção}
+\label{adr:realinhar-base}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-101} (quatro ambientes, com \cd{dev-local} como
+base de toda frente).
+
+\textbf{Contexto.} A \adrr{ADR-101} fez de \cd{dev-local} a base de toda frente
+e o primeiro degrau da escada. O que ela não previu é o que acontece
+\textbf{depois} da promoção: o \emph{merge} do PR \textbf{nasce no destino}. Ao
+mergear \cd{dev-local \seta{} dev}, o GitHub não move \cd{dev} para onde
+\cd{dev-local} está --- ele cria um \emph{merge commit} novo em \cd{dev}, com
+dois pais. \cd{dev} passa a ter um \emph{commit} que \cd{dev-local} não tem,
+\textbf{ainda que o conteúdo seja idêntico}: o \cd{git diff} entre as duas dá
+vazio, e o \cd{git rev-list} diz \enquote{\cd{dev-local} tem 0, \cd{dev} tem 1}.
+
+Uma vez é cosmético. O defeito é que \textbf{acumula}: a cada promoção mais um,
+e toda frente nova nasce de uma base cada vez mais atrás do que está publicado.
+E há um ponto em que deixa de ser cosmético --- \textbf{o primeiro
+\emph{hotfix}}. Ele sai de \cd{main} e desce por \emph{retro-merge} até
+\cd{dev}; se \cd{dev-local} está atrás, a correção chega aqui depois, e uma
+frente aberta no meio nasce sem ela. É exatamente o defeito que a ADR-101
+existe para evitar, voltando pela porta dos fundos.
+
+O sintoma apareceu na primeira promoção real, em 2026-09-15, e foi lido como
+\enquote{\emph{dev-local} está atrasado} --- que é a descrição certa e a causa
+errada: não havia trabalho faltando, havia um ponteiro parado.
+
+\textbf{Decisão.} \textbf{O \cd{pnpm worktree criar} realinha
+\cd{origin/dev-local} com \cd{origin/dev} antes de abrir a frente, por
+\emph{fast-forward}, sem perguntar.}
+
+\begin{itemize}
+  \item \textbf{No \cd{criar}, e não num comando próprio}, porque é ali que a
+    base importa: a frente está prestes a nascer dela. Um comando separado
+    dependeria de alguém lembrar --- e foi por depender disso que os
+    \emph{worktrees} ficavam de pé (\adrr{ADR-103}).
+  \item \textbf{Só quando é \emph{fast-forward} puro.} Se \cd{dev-local} está à
+    frente (o estado normal, com trabalho esperando promoção), não faz nada. Se
+    as duas \textbf{divergiram} --- cada uma com \emph{commit} que a outra não
+    tem --- ele \textbf{RECUSA} e manda resolver à mão: mover a base por cima do
+    que só existe nela perderia trabalho, e isso nenhum \emph{script} decide.
+  \item \textbf{Empurra \cd{origin/dev} direto para a \emph{branch} remota}
+    (\cd{git push origin origin/dev:refs/heads/dev-local}) em vez de fazer
+    \emph{checkout}. A cópia principal pode estar com \cd{dev-local} aberta e
+    suja, e realinhar não pode depender do estado de quem não pediu nada.
+  \item \textbf{O escape do \cd{pre-push} é usado por dentro, e DITO na saída.}
+    \cd{dev-local} é \emph{branch} de ambiente e o \emph{hook} recusa
+    \emph{push} direto nela; aqui o \env{PERMITIR\_PUSH\_DIRETO} é deliberado,
+    porque um \emph{fast-forward} não traz conteúdo --- só atualiza o ponteiro.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Recusar e mandar realinhar à mão}, como o \cd{criar} já faz com
+    a \cd{--fatia} e com o nome de \emph{branch}. É a opção coerente com o resto
+    do desenho e foi a recomendada --- e foi descartada por quem opera: dois
+    comandos copiados a cada promoção, para consertar algo que não tem decisão
+    nenhuma dentro (o \emph{fast-forward} ou é possível, ou não é).
+  \item \textbf{Um comando próprio, \cd{pnpm realinhar}.} Mais explícito, e
+    depende de lembrar. O mesmo argumento que a \adrr{ADR-103} já gastou.
+  \item \textbf{Só documentar, como item do \emph{template} de promoção.}
+    É o que existia para a remoção do \emph{worktree}, e não funcionou.
+  \item \textbf{Promover por \emph{fast-forward}, sem \emph{merge commit}.}
+    Elimina a causa, e não pode: o \emph{job} \cd{mudancas} compara
+    \cd{HEAD\^{}} --- o primeiro pai, que num \emph{merge commit} é a ponta
+    antiga da \emph{branch} de ambiente. Sem ele, o \emph{diff} do \emph{deploy}
+    enxerga a coisa errada (\adrr{ADR-56}).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um \emph{push} direto em \emph{branch} de ambiente passou a
+    acontecer por dentro de um \emph{script}.} A barreira do \arq{pre-push}
+    continua de pé para gente, mas a ferramenta a fura sozinha --- e quem não
+    leu esta ADR não tem como saber. O que separa isto de um defeito é uma
+    linha na saída, e nada mais.
+  \item \textbf{\cd{criar} passou a ter efeito FORA da frente que cria.} Ele
+    move uma \emph{branch} de ambiente no remoto. É um comando que parecia
+    local e não é mais.
+  \item \textbf{Sem rede, não realinha e não avisa direito}: o \cd{fetch} falha
+    em silêncio e a comparação vale sobre \emph{refs} velhas. A frente nasce
+    atrasada sem que nada acuse.
+  \item \textbf{A divergência de verdade vira uma parada dura.} O \cd{criar}
+    morre e não abre a frente, no meio do trabalho de alguém. É o comportamento
+    certo --- mas é uma interrupção, e ela chega sem aviso prévio.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Uma segunda pessoa desenvolvendo}, ou
+o dia em que \cd{dev-local} deixar de ser de uma máquina só. O realinhamento
+automático pressupõe que quem roda o \cd{criar} é dono da base: com duas
+pessoas, mover a \emph{branch} de ambiente do outro no meio do trabalho dele é
+exatamente o tipo de surpresa que esta decisão aceita hoje porque não há outro.

@@ -210,6 +210,8 @@ function criar(branch, fatia) {
 
   passo("git fetch origin");
   git(["fetch", "origin", "--quiet"]);
+  // A base tem de estar em dia ANTES de a frente nascer dela (ADR-104).
+  realinharBase();
   // Conserta a raiz de uma vez: clone antigo tem origin/HEAD em main (ADR-61).
   try {
     git(["remote", "set-head", "origin", "--auto"], { stdio: "ignore" });
@@ -428,6 +430,88 @@ function apagarBranch(branch) {
     ok(`branch remota 'origin/${branch}' apagada.`);
   } catch {
     console.log(`${cor(33, "!")} não consegui apagar 'origin/${branch}' — apague pelo GitHub.`);
+  }
+}
+
+
+const PROMOVIDA = "origin/dev";
+
+/**
+ * Põe `origin/dev-local` onde `origin/dev` está, quando a promoção deixou a
+ * base para trás (ADR-104).
+ *
+ * O merge do PR de promoção nasce NO DESTINO: `dev` ganha um merge commit que
+ * `dev-local` não tem, ainda que o conteúdo seja idêntico. Uma vez é
+ * cosmético; dez promoções depois o atraso acumulou, e o primeiro hotfix que
+ * descer por retro-merge chega em `dev` antes de chegar aqui — a frente nasce
+ * sem a correção, que é o defeito que a ADR-101 existe para evitar.
+ *
+ * Só age quando é fast-forward PURO (a base está contida em `dev`). Se as duas
+ * divergiram de verdade, RECUSA: mover a base por cima de commit que só existe
+ * nela seria perder trabalho, e isso nenhum script decide sozinho.
+ *
+ * Empurra `origin/dev` direto para a branch remota e não toca a working tree
+ * da cópia principal — ela pode estar com `dev-local` em checkout e suja, e
+ * realinhar não pode depender do estado de quem não pediu nada.
+ */
+function realinharBase() {
+  let promovida;
+  let base;
+  try {
+    promovida = git(["rev-parse", PROMOVIDA]);
+    base = git(["rev-parse", BASE]);
+  } catch {
+    return; // sem origin/dev: clone parcial ou repo novo. Nada a alinhar.
+  }
+  if (!promovida || !base || promovida === base) return;
+
+  const contida = (a, b) => {
+    try {
+      git(["merge-base", "--is-ancestor", a, b], { stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // `dev-local` à frente de `dev` é o estado NORMAL: trabalho esperando promoção.
+  if (contida(PROMOVIDA, BASE)) return;
+
+  if (!contida(BASE, PROMOVIDA)) {
+    morre(
+      `${BASE} e ${PROMOVIDA} DIVERGIRAM — cada uma tem commit que a outra não tem.\n` +
+        "    Não realinho sozinho: mover a base por cima do que só existe nela perde trabalho.\n" +
+        `    Veja o que é de cada lado e resolva à mão:\n` +
+        `      git log --oneline --left-right ${BASE}...${PROMOVIDA}`,
+    );
+  }
+
+  const atras = git(["rev-list", "--count", `${BASE}..${PROMOVIDA}`]);
+  passo(`${BASE} está ${atras} commit(s) atrás de ${PROMOVIDA} — realinhando (fast-forward)`);
+  try {
+    // O pre-push recusa push direto em branch de ambiente; aqui o escape é
+    // deliberado e DITO na saída, porque fast-forward não traz conteúdo novo.
+    git(["push", "origin", `${PROMOVIDA}:refs/heads/dev-local`], {
+      stdio: "ignore",
+      env: { ...process.env, PERMITIR_PUSH_DIRETO: "1" },
+    });
+  } catch {
+    morre(
+      `não consegui empurrar ${PROMOVIDA} para dev-local. Faça à mão:\n` +
+        "      git switch dev-local && git merge --ff-only origin/dev\n" +
+        "      PERMITIR_PUSH_DIRETO=1 git push origin dev-local",
+    );
+  }
+  git(["fetch", "origin", "--quiet"]);
+  ok(`dev-local: ${base.slice(0, 7)} → ${promovida.slice(0, 7)} (push direto, fast-forward)`);
+
+  // A branch LOCAL também — falha se ela estiver em checkout em algum lugar.
+  try {
+    git(["fetch", "origin", "dev-local:dev-local", "--quiet"]);
+  } catch {
+    console.log(
+      `${cor(33, "!")} a branch local 'dev-local' não foi atualizada (está em checkout). Rode 'git pull' na cópia principal.`,
+    );
   }
 }
 
