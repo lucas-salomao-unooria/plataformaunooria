@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 /**
- * Uma frente paralela pronta para trabalhar: worktree sobre `origin/dev`,
- * dependências instaladas, `.env` copiados, porta de Vite reservada e o
- * briefing da fatia impresso no fim.
+ * A frente de trabalho pronta: worktree sobre `origin/dev-local`, dependências
+ * instaladas, `.env` copiados, porta de Vite reservada e o briefing da fatia
+ * impresso no fim.
+ *
+ * TODA tarefa começa por aqui (ADR-101) — não só as paralelas. `dev-local` é
+ * branch de AMBIENTE (o Docker da máquina): o pre-push recusa commit direto
+ * nela, e a frente volta por PR `--base dev-local`.
  *
  * Uso:
- *   pnpm worktree criar <tipo/slug | exp-NN-slug> [--fatia api/<mod>,hub/<rota>,exp/<id>]
+ *   pnpm worktree criar <tipo/slug | exp-NN-slug> --fatia api/<mod>,hub/<rota>,exp/<id>
  *   pnpm worktree listar
  *   pnpm worktree remover <slug>
  *
  * Existe porque a receita à mão (CONTRIBUTING.md) tem quatro passos e o
- * primeiro é o que morde: `git worktree add` sem `origin/dev` ESCRITO abre a
- * branch sobre produção em silêncio — compila, passa nos testes, e o PR chega
- * com um diff cheio de commit que já estava em `dev` (ADR-61, ADR-71).
+ * primeiro é o que morde: `git worktree add` sem `origin/dev-local` ESCRITO
+ * abre a branch sobre a branch padrão do clone — que num clone antigo é
+ * PRODUÇÃO. O erro é silencioso: compila, passa nos testes, e o PR chega com
+ * um diff cheio de commit que já estava lá (ADR-61, ADR-71, ADR-101).
  */
 import { execFileSync, execSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
@@ -104,6 +109,9 @@ function portasDasFrentes(extra) {
 function resolverAlvo(alvo) {
   const t = alvo.trim();
   if (/^(apps|packages|scripts|docs)\//.test(t)) return [t];
+  // Caminhos de ferramenta não têm apelido: a frente que mexe em hook ou CI
+  // declara a pasta inteira. Sem isto, `--fatia .githooks` virava lista vazia.
+  if (/^(\.githooks|\.github|documentacao-latex|scripts|docs)$/.test(t)) return [t];
   const [tipo, ...resto] = t.split("/");
   const nome = resto.join("/");
   if (!nome) return [];
@@ -162,6 +170,16 @@ function criar(branch, fatia) {
   // Resolvida ANTES do install: um --fatia errado falha em segundos, não depois
   // de dois minutos de `pnpm install`.
   const alvos = resolverFatia(fatia);
+  if (alvos.length === 0) {
+    morre(
+      "falta --fatia. TODA frente declara o que vai tocar (ADR-71, ADR-101).\n" +
+        "    Vertical:    --fatia api/unootube,hub/professor,exp/exp-02-unootube\n" +
+        "    Ferramenta:  --fatia scripts,.githooks\n" +
+        "  A fatia vira `<git-dir>/fatia`, e o .githooks/pre-commit recusa commit\n" +
+        "  fora dela. Declarar é barato; descobrir no merge que duas frentes\n" +
+        "  reescreveram o mesmo service não é.",
+    );
+  }
 
   passo("git fetch origin");
   git(["fetch", "origin", "--quiet"]);
@@ -169,11 +187,11 @@ function criar(branch, fatia) {
   try {
     git(["remote", "set-head", "origin", "--auto"], { stdio: "ignore" });
   } catch {
-    /* sem rede, ou remote sem HEAD: o `origin/dev` explícito abaixo já basta */
+    /* sem rede, ou remote sem HEAD: o `origin/dev-local` explícito abaixo basta */
   }
 
   // A branch que já existe vence a convenção: reaproveita em vez de recusar —
-  // e uma branch existente NÃO é movida para cima de `dev` por conta própria.
+  // e uma branch existente NÃO é movida para cima de `dev-local` sozinha.
   const jaExisteLocal = git(["branch", "--list", branch]) !== "";
   const jaExisteRemota = git(["ls-remote", "--heads", "origin", branch]) !== "";
   mkdirSync(WORKTREES, { recursive: true });
@@ -187,25 +205,19 @@ function criar(branch, fatia) {
       stdio: "inherit",
     });
   } else {
-    // `origin/dev` está ESCRITO de propósito. Ver o cabeçalho deste arquivo.
-    passo(`git worktree add -b ${branch} … origin/dev`);
-    git(["worktree", "add", "-b", branch, destino, "origin/dev"], { stdio: "inherit" });
+    // `origin/dev-local` está ESCRITO de propósito. Ver o cabeçalho.
+    passo(`git worktree add -b ${branch} … origin/dev-local`);
+    git(["worktree", "add", "-b", branch, destino, "origin/dev-local"], { stdio: "inherit" });
   }
 
   // A fatia mora no git-dir DA FRENTE (.git/worktrees/<slug>/): privado dela,
   // fora do versionamento, e é onde o .githooks/pre-commit vai procurar.
-  if (alvos.length > 0) {
-    const gitDir = execFileSync("git", ["rev-parse", "--absolute-git-dir"], {
-      cwd: destino,
-      encoding: "utf8",
-    }).trim();
-    writeFileSync(join(gitDir, "fatia"), `${alvos.join("\n")}\n`);
-    ok(`fatia gravada — o pre-commit recusa commit fora dela (escape: PERMITIR_FORA_DA_FATIA=1)`);
-  } else {
-    console.log(
-      `${cor(33, "!")} sem --fatia: o pre-commit não tem o que conferir nesta frente.`,
-    );
-  }
+  const gitDir = execFileSync("git", ["rev-parse", "--absolute-git-dir"], {
+    cwd: destino,
+    encoding: "utf8",
+  }).trim();
+  writeFileSync(join(gitDir, "fatia"), `${alvos.join("\n")}\n`);
+  ok(`fatia gravada — o pre-commit recusa commit fora dela (escape: PERMITIR_FORA_DA_FATIA=1)`);
 
   passo("copiando os .env (ignorados pelo git, não viajam com o worktree)");
   let copiados = 0;
@@ -236,15 +248,12 @@ function criar(branch, fatia) {
 }
 
 function briefing({ slug, branch, destino, porta, alvos }) {
-  const declarada =
-    alvos.length > 0
-      ? alvos.map((a) => `  ${a}`).join("\n")
-      : "  (declare com --fatia api/<modulo>,hub/<rota>,exp/<exp-id>)";
+  const declarada = alvos.map((a) => `  ${a}`).join("\n");
   const regua = cor(2, "─".repeat(72));
 
   console.log(`${cor(1, "Briefing")} — cole no agente que vai tocar esta frente:
 ${regua}
-Trabalhe em ${destino} (branch ${branch}, a partir de origin/dev).
+Trabalhe em ${destino} (branch ${branch}, a partir de origin/dev-local).
 
 Sua fatia, e só ela:
 ${declarada}
@@ -253,12 +262,13 @@ NÃO edite outro módulo de apps/api/src nem outra rota de apps/hub/app. A fatia
 é vertical: o módulo da api, a rota do hub e a experiência andam juntos.
 
 Costura permitida, em UM commit separado no fim, depois de
-\`git fetch origin && git merge origin/dev\`:
+\`git fetch origin && git merge origin/dev-local\`:
   - 1 import + 1 linha no array de apps/api/src/app.module.ts
   - models novos NO FIM de apps/api/prisma/schema.prisma (nunca no meio)
   - a sua migração em apps/api/prisma/migrations/
   - a sua entrada em apps/hub/middleware.ts / apps/hub/lib/experiencias-dev.ts
-Reserve o número da ADR conferindo origin/dev, não a sua cópia.
+Reserve o número da ADR conferindo origin/dev-local E as branches de trabalho
+abertas, na HORA de escrever o número — não a sua cópia, e não uma vez só.
 
 O runtime é singleton. AQUI você roda:
   pnpm turbo typecheck lint test          (unitários e de contrato)
@@ -273,9 +283,11 @@ AQUI você NÃO roda — é da cópia principal, uma frente por vez:
   a suíte e2e (node scripts/e2e/rodar.mjs …)
 ${regua}
 
-Terminou a frente:
-  git log --oneline origin/dev..HEAD     ${cor(2, "# só os seus commits")}
-  gh pr create --base dev
+Terminou a frente — teste, commite, e o PR volta para o ambiente local:
+  pnpm turbo typecheck lint test
+  git log --oneline origin/dev-local..HEAD   ${cor(2, "# só os seus commits")}
+  gh pr create --base dev-local
+  ${cor(2, "# depois do merge, você testa no Docker local; daí sai o PR dev-local -> dev")}
   pnpm worktree remover ${slug}`);
 }
 

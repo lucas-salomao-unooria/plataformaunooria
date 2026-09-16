@@ -10,13 +10,20 @@ Este documento é o fluxo completo. O resumo operacional está em
 **ADR-53** (um ambiente por branch) e na **ADR-56** (este fluxo, e como ele é
 imposto sem *branch protection*).
 
-## O mapa: três branches, três stacks
+## O mapa: quatro branches, quatro ambientes, quem testa em cada um
 
-| Branch | Environment | Stack GCP | O que dispara o deploy | Hoje |
+| Branch | Ambiente | Quem testa ali | O que o merge dispara | Hoje |
 |---|---|---|---|---|
-| `dev` | `dev` | projeto/workspace de dev | merge de PR de branch de trabalho | ativo — é a `default_branch` do repo |
-| `hml` | `hml` | projeto/workspace de hml | merge do PR de promoção `dev → hml` | ativo |
-| `main` | `prd` | produção | merge do PR de promoção `hml → main` | **ainda não dispara**: `main` não está em `on.push.branches` do `deploy.yml`, e o environment `prd` não existe |
+| `dev-local` | Docker na máquina de quem desenvolve (`pnpm docker:dev`) | **você** | nada automático — você sobe a stack local e olha | ativo; é a base de toda branch de trabalho |
+| `dev` | stack GCP de dev | **o time** | deploy da stack dev | ativo — é a `default_branch` do repo |
+| `hml` | stack GCP de hml | **o cliente** | deploy da stack hml | ativo |
+| `main` | produção | as escolas | deploy de produção | **ainda não dispara**: `main` não está em `on.push.branches` do `deploy.yml`, e o environment `prd` não existe |
+
+**`dev-local` não tem stack em nuvem e não aparece no `deploy.yml`** — de
+propósito. Ela é a camada onde o código é integrado e visto rodando *antes* de
+custar um deploy e o tempo de outra pessoa. É branch de AMBIENTE mesmo assim: o
+ambiente é o seu Docker, e o `pre-push` recusa push direto nela pela mesma razão
+que recusa em `dev` — o que entra ali entra por PR, com registro.
 
 O `deploy.yml` já sabe traduzir a branch em environment
 (`main → prd`, `dev → dev`, `hml → hml`). Ligar produção, quando for a hora, são
@@ -29,13 +36,21 @@ para a escola; um push direto pula o portão e não deixa registro. O hook
 
 ## O ciclo normal
 
+**Toda tarefa começa abrindo uma frente** (ADR-101). Não existe "tarefa pequena
+demais para um worktree": a cópia principal é onde a stack roda, e trabalho
+não commitado dela é o que aparece misturado no `git status` da próxima vez.
+
 ```bash
-git switch dev && git pull                    # sempre parta de dev atualizado
-git switch -c fix/quota-por-perfil            # ou exp-12-fracoes, se for experiência nova
+pnpm worktree criar fix/quota-por-perfil --fatia api/ai,hub/professor
 # ... trabalho, com commits Conventional (o hook commit-msg valida) ...
+pnpm turbo typecheck lint test                # a DoD, antes do PR
 git push -u origin fix/quota-por-perfil
-gh pr create --base dev --fill                # o template do PR já traz a checklist
+gh pr create --base dev-local --fill          # o template do PR já traz a checklist
 ```
+
+Depois do merge em `dev-local`, você sobe o Docker local (`pnpm docker:dev`) e
+**vê a coisa rodando**. É esse olhar que autoriza o PR seguinte, `dev-local →
+dev` — o primeiro que custa um deploy e o tempo de outra pessoa.
 
 **Nome da branch:** `exp-NN-slug` para experiência nova (o slug dela, e só ela na
 branch); `tipo/slug` para o resto — `feat`, `fix`, `chore`, `docs`, `ci`,
@@ -50,14 +65,19 @@ Postgres de verdade (9 das 23 suítes da api são de integração). Tela alterad
 pede também a suíte de ponta a ponta do papel afetado, na sua máquina: o CI não
 abre navegador.
 
-## Worktree: mais de uma frente ao mesmo tempo
+## Worktree: onde o trabalho acontece
 
-O ciclo acima pressupõe uma cópia do repositório e uma tarefa por vez. Quando há
-duas frentes em paralelo — duas pessoas, ou mais de um agente — `git switch` não
-serve: existe **uma** árvore de trabalho, e ela carrega as alterações não
-commitadas de quem estava antes. O `git status` misturado é de onde sai o commit.
+**A cópia principal não é lugar de editar.** Ela é onde a stack roda — `pnpm
+docker:dev`, a suíte e2e, as migrações — e é a checagem do que está em
+`dev-local`. Editar ali significa que o `git status` que você olha antes de um
+deploy mistura o que subiu com o que você ainda está escrevendo.
 
-Cada frente paralela ganha um worktree, e um comando faz o caminho inteiro:
+`git switch -c` também não resolve: existe **uma** árvore de trabalho, e ela
+carrega as alterações não commitadas de quem estava antes. O `git status`
+misturado é de onde sai o commit errado.
+
+Por isso **toda tarefa ganha um worktree**, paralela ou não, e um comando faz o
+caminho inteiro:
 
 ```bash
 pnpm worktree criar feat/clarity-analytics --fatia api/telemetry,hub/analise
@@ -65,33 +85,41 @@ pnpm worktree listar                          # as frentes, e a porta de Vite de
 pnpm worktree remover clarity-analytics       # depois do merge
 ```
 
+`--fatia` é **obrigatória** — o script recusa sem ela. Frente que não toca
+módulo de domínio declara a pasta da ferramenta: `--fatia scripts,.githooks`.
+
 Ele faz o que a mão faria — e os dois passos que a mão esquece:
 
 ```bash
 git fetch origin
-git worktree add -b feat/clarity-analytics .claude/worktrees/clarity-analytics origin/dev
+git worktree add -b feat/clarity-analytics .claude/worktrees/clarity-analytics origin/dev-local
 cd .claude/worktrees/clarity-analytics
 pnpm install                                  # node_modules NÃO é compartilhado
 pnpm --filter @edu/api exec prisma generate   # o client do Prisma também é por worktree
 cp ../../../apps/api/.env apps/api/.env       # os .env são ignorados: não viajam
 ```
 
-**`origin/dev` está escrito no comando de propósito.** Um clone antigo deste
-repositório carrega `origin/HEAD` apontando para `origin/main` (a
-`default_branch` no GitHub já é `dev`, mas o ponteiro local não acompanha
-sozinho), e qualquer ferramenta que "parta da branch padrão" — inclusive a
-criação automática de worktree do Claude Code — abre a branch **sobre
-produção**. O erro é silencioso: compila, os testes passam, e o PR aparece com
-um diff cheio de commits que já estavam em `dev`. Conserte a raiz uma vez por
-clone e confira antes de cada PR:
+**`origin/dev-local` está escrito no comando de propósito.** Nenhuma ferramenta
+adivinha a base certa: a `default_branch` no GitHub é `dev`, e um clone antigo
+ainda carrega `origin/HEAD` apontando para `origin/main`. Qualquer coisa que
+"parta da branch padrão" — inclusive a criação automática de worktree do Claude
+Code — abre a branch sobre `dev` ou sobre **produção**, nunca sobre a base do
+seu ambiente local. O erro é silencioso: compila, os testes passam, e o PR
+aparece com um diff cheio de commits que já estavam lá.
+
+E a base importa mais do que parece porque **`dev-local` pode estar à frente de
+`dev`**: é ela que recebe o trabalho primeiro. Sair de `dev` é nascer sem o que
+você mesmo integrou ontem — foi assim que uma frente reservou a ADR-79 sobre
+`dev-local`, que já tinha a 78, enquanto `dev` ainda parava na 71.
 
 ```bash
-git remote set-head origin --auto            # origin/HEAD passa a seguir o GitHub (dev)
-git log --oneline origin/dev..HEAD           # antes do PR: só os seus commits
+git remote set-head origin --auto              # origin/HEAD passa a seguir o GitHub
+git log --oneline origin/dev-local..HEAD       # antes do PR: só os seus commits
 ```
 
-Daí em diante nada muda — commits Conventional, push, `gh pr create --base dev`.
-O worktree é onde o trabalho acontece, não um fluxo novo. Decisão em **ADR-61**.
+Daí em diante nada muda — commits Conventional, push, `gh pr create --base
+dev-local`. O worktree é onde o trabalho acontece, não um fluxo novo.
+Decisões em **ADR-61** (o worktree) e **ADR-101** (`dev-local` como base).
 
 **Três coisas que mordem:**
 
@@ -135,12 +163,12 @@ não lógica**:
 | `apps/api/src/app.module.ts` | 1 import + 1 linha no array. A resolução do conflito é sempre "os dois ficam" |
 | `apps/api/prisma/schema.prisma` | `model` novo **no fim do arquivo**, nunca no meio. Duas inserções no fim conflitam limpo; duas no meio, sujo |
 | `apps/api/prisma/migrations/` | pastas com timestamps distintos não conflitam em texto — o risco é de **ordem**: duas migrações escritas contra o mesmo estado do banco. Quem mergeia por segundo roda `migrate reset` local antes de acreditar no verde |
-| `apps/hub/middleware.ts`, `apps/hub/lib/experiencias-dev.ts` | edite só a sua entrada. A porta de dev se reserva como o número da ADR: conferindo `origin/dev` |
+| `apps/hub/middleware.ts`, `apps/hub/lib/experiencias-dev.ts` | edite só a sua entrada. A porta de dev se reserva como o número da ADR: conferindo `origin/dev-local` |
 
 **A costura é o último commit da frente, não o primeiro** — separado, e depois
-de `git fetch origin && git merge origin/dev`. Rebase está desabilitado neste
-repositório (o job `mudancas` compara `HEAD^`), então merge de `dev` para dentro
-da frente é o jeito de se atualizar. Faça cedo e várias vezes: deixar para a
+de `git fetch origin && git merge origin/dev-local`. Rebase está desabilitado neste
+repositório (o job `mudancas` compara `HEAD^`), então merge de `dev-local` para
+dentro da frente é o jeito de se atualizar. Faça cedo e várias vezes: deixar para a
 véspera do PR é o que transforma quatro conflitos triviais em um difícil.
 
 **A fatia é barreira, não conselho.** `pnpm worktree criar --fatia …` resolve os
@@ -200,15 +228,38 @@ para:
 
 | Arquivo | Como não brigar |
 |---|---|
-| `documentacao-latex/secoes/18-adr.tex` | **reserve o número no começo da frente**, conferindo `origin/dev` (não a sua cópia). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo — e a lacuna que isso abriu (a 65) já foi ocupada. Em 2026-09-06 aconteceu de novo, com TRÊS frentes no mesmo dia e duas na mesma ADR-65: conferir `origin/dev` não basta, confira também as branches de trabalho abertas. **O próximo número é a 74** |
+| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 102** — e quem gastar o 102 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
 | `documentacao-latex/main.pdf` | binário: sempre conflita. Resolve-se **regerando**, nunca escolhendo um lado — quem mergeia por último recompila |
 | `AGENTS.md` da raiz | edite a seção da sua frente, não a vizinha; conflito aqui é textual e resolve na mão |
 | `pnpm-lock.yaml` | conflitou? `git checkout --theirs pnpm-lock.yaml && pnpm install` e commite o resultado |
 
-E a fila do outro lado: cada merge em `dev` dispara um deploy da stack dev, que
+E a fila do outro lado: merge em `dev-local` não dispara nada (o ambiente é o
+seu Docker), mas cada merge em `dev` dispara um deploy da stack dev, que
 **não cancela** o anterior (`cancel-in-progress: false`, de propósito — abortar
 no meio de uma migração é pior). Três PRs mergeados em rajada são três deploys
 em sequência. Não é bug; é o custo de ter um ambiente por branch.
+
+## Promoção `dev-local → dev`
+
+É a primeira promoção da escada, e a única cujo portão é **você olhando a coisa
+rodar**. Antes dela, nada saiu da sua máquina.
+
+```bash
+pnpm docker:dev                                   # a stack inteira, com o que acabou de entrar
+node scripts/e2e/rodar.mjs <papel>                # o papel que a mudança afeta
+git log --oneline origin/dev..origin/dev-local    # o que exatamente está indo
+gh pr create --base dev --head dev-local --title "promoção: dev-local → dev"
+```
+
+**O que se verifica aqui é o que o CI não vê.** O CI roda typecheck, lint,
+testes e build; ele não abre navegador. Ícone que virou texto, link sublinhado,
+iframe vazio e tela que não hidrata passam inteiros por um CI verde — e do lado
+de lá de `dev` há outra pessoa perdendo a manhã com isso.
+
+Pode juntar várias frentes numa promoção só: `dev-local` acumula, e promover um
+lote coerente é melhor do que um PR por frente. O que não se faz é pular a
+camada — PR de branch de trabalho direto para `dev` é o atalho que tira o único
+portão onde alguém de fato *olhou*.
 
 ## Promoção `dev → hml`
 
@@ -236,8 +287,8 @@ gh run view <id> --json jobs --jq '.jobs[] | "\(.name): \(.conclusion)"'
 gh run rerun <id> --failed      # só para falha de INFRAESTRUTURA (credencial, rede)
 ```
 
-Falha de código, teste ou migration não se resolve re-rodando: corrija em `dev` e
-promova de novo. O apêndice F do PDF traz os sintomas e o rollback por camada.
+Falha de código, teste ou migration não se resolve re-rodando: a correção nasce
+numa frente sobre `dev-local` e sobe a escada de novo. O apêndice F do PDF traz os sintomas e o rollback por camada.
 
 ## Promoção `hml → main` (produção), e a tag
 
@@ -263,8 +314,8 @@ Semver, com o significado que faz sentido para uma rede de escolas:
 | **PATCH** | correção sem contrato novo |
 
 A tag é criada **depois** do merge, apontando para o commit de merge em `main`.
-Não existe tag em `dev` nem em `hml`: ambiente de trabalho não tem versão, tem
-ponta.
+Não existe tag em `dev-local`, `dev` nem `hml`: ambiente de trabalho não tem
+versão, tem ponta.
 
 ## Hotfix
 
@@ -283,12 +334,13 @@ gh pr create --base main --title "fix(api): ..." --label hotfix
 
 ```bash
 gh pr create --base hml --head main --title "retro-merge: hotfix v1.4.1 em hml"
-# e, depois desse, hml → dev pelo mesmo caminho
+# e, depois desse, hml → dev e dev → dev-local pelo mesmo caminho
 ```
 
-Hotfix que não volta para `dev` é a correção que renasce como bug na promoção
-seguinte. Se o retro-merge não couber no mesmo dia, ele é o primeiro item do dia
-seguinte.
+Hotfix que não volta é a correção que renasce como bug na promoção seguinte — e
+ele tem de descer a escada **inteira**, até `dev-local`: parar em `dev` deixa a
+sua base local sem a correção, e a próxima frente nasce sem ela. Se o
+retro-merge não couber no mesmo dia, ele é o primeiro item do dia seguinte.
 
 ## Rollback
 
@@ -325,10 +377,10 @@ pnpm install          # o `prepare` roda: git config core.hooksPath .githooks
 
 | Hook | O que recusa | Escape |
 |---|---|---|
-| `pre-push` | push direto em `dev`/`hml`/`main` (inclusive deleção) | `PERMITIR_PUSH_DIRETO=1` |
+| `pre-push` | push direto em `dev-local`/`dev`/`hml`/`main` (inclusive deleção) | `PERMITIR_PUSH_DIRETO=1` |
 | `pre-push` | nome de branch fora do padrão | `PERMITIR_BRANCH_FORA_DO_PADRAO=1` |
 | `commit-msg` | assunto fora de Conventional Commits | `git commit --no-verify` |
-| `pre-commit` | arquivo fora da fatia declarada da frente (só quando existe `<git-dir>/fatia`) | `PERMITIR_FORA_DA_FATIA=1` |
+| `pre-commit` | arquivo fora da fatia declarada da frente (só quando existe `<git-dir>/fatia` — a cópia principal segue livre) | `PERMITIR_FORA_DA_FATIA=1` |
 
 Os escapes existem e são nomeados de propósito: emergência acontece, e é melhor
 que ela deixe rastro numa variável explícita do que numa flag genérica. **Hook é
@@ -342,7 +394,7 @@ Branch mergeada é lixo com nome bonito: ela aparece no autocompletar, confunde
 `git branch -a` e faz alguém partir de uma base velha.
 
 ```bash
-git branch --merged origin/dev            # o que já está contido em dev
+git branch --merged origin/dev-local      # o que já está contido em dev-local
 git branch -d <branch>                    # local
 git push origin --delete <branch>         # remota
 ```
