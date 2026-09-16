@@ -3,23 +3,47 @@
 Plataforma educacional B2G. Em conflito entre este arquivo e uma suposição sua,
 este arquivo vence.
 
-**Este arquivo é o que vale SEMPRE.** O detalhe de cada domínio está no
-`AGENTS.md` da pasta correspondente, que carrega sozinho quando você mexe nela:
+**Este arquivo é o que vale SEMPRE**, e é curto de propósito. O detalhe mora em
+dois lugares, e nenhum repete o outro.
+
+## 1. Por PASTA — carrega sozinho quando você mexe nela
 
 | Pasta | O que está lá |
 |---|---|
-| `apps/api/AGENTS.md` | rede/escola/CPF, identidade e enturmamento, perfil portátil, telemetria, OpenAPI derivado do Zod, provider de IA, e os módulos de experiência (vila, planos, planejamento/currículo, bem-estar, unoogpt, unootube) |
-| `apps/hub/AGENTS.md` | landing, header, casca, embed de experiência, papéis e middleware, fontes do DS |
-| `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, como criar experiência nova, seções de clone do DS, a zona congelada da exp-70 |
-| `packages/AGENTS.md` | índice dos pacotes de workspace (o detalhe está no `AGENTS.md` de cada um) |
-| `packages/*/AGENTS.md` | por pacote: o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp-01 |
-| `apps/experiencias/*/AGENTS.md` | por experiência: porta de dev, rota do hub, seção do DS, módulo da api e as regras dela |
-| `scripts/AGENTS.md` | os utilitários de linha de comando, e o que é gerado e não se edita à mão |
-| `scripts/e2e/AGENTS.md` | o que uma suíte precisa provar, e a espera que corre contra o erro |
-| `docs/AGENTS.md` | o que ali é contrato vivo e o que é resumo (a fonte das decisões é o LaTeX) |
-| `documentacao-latex/AGENTS.md` | as regras de edição que já custaram tempo (o resto está no `README.md` ao lado) |
-| `docs/INFRA.md` | contrato com o repo de Terraform |
-| `CONTRIBUTING.md` | o fluxo de git inteiro: promoção, hotfix, tag/release, rollback, hooks |
+| `apps/api/AGENTS.md` | o que vale para TODA a api (papéis, lotação, o módulo por domínio) — e um `AGENTS.md` por módulo em `apps/api/src/*/` |
+| `apps/hub/AGENTS.md` | o que vale para TODO o hub (casca, papéis, middleware) — e um `AGENTS.md` por área em `apps/hub/app/*/` |
+| `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
+| `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
+| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp-01 |
+| `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | os utilitários, o que é gerado, e o que uma suíte precisa provar |
+| `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
+
+## 2. Por ASSUNTO — regra transversal, em `docs/regras/`
+
+Valem em todo lugar, então não cabem numa pasta. **Abra a do seu assunto antes
+de escrever**: cada uma traz o custo já pago que produziu a regra.
+
+| Em `docs/regras/` | Quando é sua |
+|---|---|
+| [`o-que-nao-fazer.md`](docs/regras/o-que-nao-fazer.md) | **sempre** — a lista completa, com o custo de cada uma |
+| [`design-system.md`](docs/regras/design-system.md) | antes de escrever QUALQUER interface |
+| [`idioma-da-interface.md`](docs/regras/idioma-da-interface.md) | qualquer texto que uma pessoa lê (ADR-91) |
+| [`convencoes-de-codigo.md`](docs/regras/convencoes-de-codigo.md) | nomes, Zod, testes, prefixo de tabela |
+| [`git-e-branches.md`](docs/regras/git-e-branches.md) | antes do primeiro commit |
+| [`comandos.md`](docs/regras/comandos.md) | ao rodar qualquer coisa |
+| [`documentacao-latex.md`](docs/regras/documentacao-latex.md) | toda implementação atualiza o LaTeX no mesmo commit |
+| [`arquivos-de-instrucao.md`](docs/regras/arquivos-de-instrucao.md) | ao mexer em `AGENTS.md`/`CLAUDE.md` ou nas skills |
+| [`ferramentas-externas.md`](docs/regras/ferramentas-externas.md) | o que o agente NÃO dispara (Snyk é do CI) |
+| [`infra.md`](docs/regras/infra.md) | Terraform vive em outro repo |
+| [`bridge-postmessage.md`](docs/regras/bridge-postmessage.md) · [`manifesto-de-experiencias.md`](docs/regras/manifesto-de-experiencias.md) | os dois contratos da experiência |
+
+E na raiz: [`CONTEXT.md`](CONTEXT.md) (o glossário, com a fonte de verdade de
+cada termo) e [`CONTRIBUTING.md`](CONTRIBUTING.md) (o fluxo de git inteiro).
+
+**Elas chegam sozinhas em cada ferramenta** (ADR-102): Claude Code por
+`.claude/rules/` (com `paths:`, sob demanda), Antigravity por `.agents/rules/`,
+Codex e Cursor por este arquivo. As duas pastas são **symlinks para
+`docs/regras/`**: uma fonte, vários leitores.
 
 ## Contexto de negócio (não violar)
 
@@ -48,14 +72,12 @@ Experiências NUNCA viram serviços no Cloud Run. São bundles estáticos:
 `gs://{contrato}-exp/{expId}/{versao}/`. Rollback = hub apontar p/ versão anterior
 (`publicar-manifesto.mjs <pasta> --versao x.y.z`).
 
-**Mexeu numa experiência? Suba a `versao` do `public/experiencia.json`** — e o
-`version` do `package.json` junto, que o CI lê do manifesto e a divergência já
-causou bug. O caminho no bucket carrega a versão e o `rsync` roda com
-`--delete-unmatched-destination-objects`: publicar sem subir sobrescreve um
-caminho tratado como imutável, e quem está no meio de uma sessão pede assets que
-acabaram de ser apagados. O deploy separa **subir** (inerte, em paralelo) de
-**ativar** (o PUT do manifesto, depois do hub — a api valida contra o JWKS que o
-hub serve).
+**Mexeu numa experiência? Suba a `versao` do `public/experiencia.json` E o
+`version` do `package.json`, juntos.** O caminho no bucket carrega a versão e o
+`rsync` apaga o que não casa: publicar sem subir sobrescreve um caminho tratado
+como imutável, e quem está no meio de uma sessão pede assets recém-apagados. O
+porquê inteiro, e a separação entre *subir* e *ativar*, em
+`apps/experiencias/AGENTS.md`.
 
 ## Regras invioláveis (segurança/tenancy)
 
@@ -128,604 +150,47 @@ dividem a MESMA área do middleware, então quem separa os dois é o `RolesGuard
 da api, não o hub. **Gestor não cria `admin-contrato`**: a opção não aparece na
 tela e a rota responde 403.
 
+## O que NÃO fazer — a versão curta
 
-## Design System (`@unooria/design-system`) — a regra de ouro
+A lista completa, com o custo de cada uma, está em
+[`docs/regras/o-que-nao-fazer.md`](docs/regras/o-que-nao-fazer.md). Aqui, só as
+proibições:
 
-**Todo elemento de interface do hub e das experiências vem deste pacote, sempre
-na última versão publicada.** npm PÚBLICO no escopo `@unooria`; a fonte é o repo
-`storybook-unooria` (fora deste monorepo). Componente de UI novo se escreve LÁ e
-chega aqui por versão — não em `packages/ui`, não dentro de uma experiência.
-
-**Duas famílias que nunca se cruzam.** A marca institucional é chrome do HUB;
-dentro do iframe a fidelidade é ao clone que a experiência imita. Um `Button` da
-plataforma no feed do estudante quebra a ilusão que a experiência está medindo.
-
-| Seção | Ponte | Onde vale |
-|---|---|---|
-| `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
-| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
-| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
-| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 e a exp-06, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp-06 o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
-| `tiktooria` | — | ainda sem consumidor |
-
-`^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:
-`pnpm up -r @unooria/design-system --latest`, commitando lockfile e
-`package.json` juntos. Mecânica completa (CSS, fontes, frames, compensações,
-armadilhas de migração) em `packages/ui/AGENTS.md`.
-
-### O procedimento, antes de escrever QUALQUER interface
-
-A regra não é "prefira o DS": é **procure primeiro, e só depois escreva**. Três
-passos, nesta ordem, e nenhum é opcional:
-
-1. **Procure no pacote.** A lista de tudo que existe são as pontes de
-   `packages/ui/src/ds*.ts` (um `export {}` por seção) e o catálogo em
-   `cd ../storybook-unooria && npm run storybook` (:6007). Procure pelo QUE a
-   coisa faz, não pelo nome que você daria a ela.
-2. **Achou? Use, mesmo que dê mais trabalho** do que escrever a sua. Um
-   componente do DS traz estado, acessibilidade, tema claro/escuro e as duas
-   famílias já resolvidos — e é atualizado por versão, sem ninguém aqui tocar.
-3. **Não achou? Não escreva um.** Abra pedido no `storybook-unooria`, registre-o
-   no `AGENTS.md` do pacote ou da experiência, e faça a **compensação local
-   MARCADA** — que existe para morrer quando o pacote publicar.
-
-**O que é compensação legítima:** medida, espaçamento, altura, posicionamento,
-grade, comportamento de página. **O que não é:** botão, campo, diálogo, aba,
-etiqueta, avatar, ícone, tabela, barra de rolagem — se tem estado ou aparência
-de controle, é componente, e componente nasce no `storybook-unooria`.
-
-**Componente que existe e não é usado custa igual a componente que falta.** Em
-2026-09-07 descobriu-se que o DS publica `ScrollBar` (vertical, horizontal, com
-`autoHide`) desde a 0.1.x e o hub tinha **24 tabelas** rolando em `<div>` com
-`overflow` na mão, além de mais 6 áreas roláveis soltas — barra de sistema em
-cada tela, sem auto-hide e diferente por sistema operacional. Ninguém "decidiu"
-não usar: o passo 1 não foi dado. Por isso ele está escrito aqui.
-
-**Compensação viva é dívida com nome e dono.** Toda compensação em
-`packages/ui/styles/plataforma.css` diz, no comentário, QUAL é a lacuna do DS,
-o que ela faz **e o que ela deixou de fazer** quando o pacote passou a cobrir a
-parte dele. A `.tabela-rolavel` é o exemplo: ela já foi a rolagem inteira, hoje
-é só a altura e o cabeçalho preso, porque a rolagem virou `ScrollBar`.
-
-## O idioma da interface — três zonas, e a fronteira é o que erra (ADR-91)
-
-**Todo texto que uma pessoa lê é pt-BR** — rótulo, botão, título, `aria-label`,
-`placeholder`, mensagem de erro, guia do professor, página legal. Mas "traduzir
-tudo" faz a plataforma melhorar e as experiências piorarem, porque há três zonas
-com regras opostas:
-
-| Zona | Regra |
-|---|---|
-| **Plataforma** — hub, exp-9x do professor | pt-BR, sem exceção. É a Unooria falando com professor, gestor e estudante, e numa rede pública não se pode pressupor repertório de inglês |
-| **Superfície disfarçada** — dentro do clone | o nome que o app REAL usa em português. `Shorts`, `Stories`, `Feed`, `Playlists`, `Ranking` FICAM: traduzi-los quebra o disfarce que a experiência está medindo |
-| **O professor falando SOBRE o clone** — guia da aula, catálogo, painéis | depende de o termo nomear um objeto na tela ou ser jargão vazado — abaixo |
-
-**A fronteira, que é onde se erra:** o termo **nomeia um objeto que está na
-tela** (`feed`, `Shorts`, `ranking`)? Fica — traduzir faria o guia dizer uma
-palavra e a tela mostrar outra, e o professor perde o referente no meio da aula.
-É **jargão de implementação que vazou** (`card de pausa`, `o modal`, `num
-popup`)? Traduz: não nomeia nada que a criança veja, descreve a mecânica da
-interface, e o professor não tem por que saber o que é um "modal". As traduções
-já feitas: **tela** de pausa, **quadro** de sistematização, **janela** (para
-`modal` e `popup`), **usuário** (para `login`), **dica** (para `insight`).
-
-**Identificador NÃO é texto.** Ficam como estão, e mudá-los é outra tarefa com
-outro custo: chave de objeto, rota, nome de coluna, verbo/objeto de telemetria,
-nome de glifo do Material Symbols (`checklist`, `psychology`, `schedule`),
-variante de componente (`warning`, `success`, `danger`), severidade de log,
-método HTTP. O rótulo `abertura: 'A missão'` mudou; o `'abertura'` do banco não.
-
-**Anglicismo que FICA por decisão pedagógica, não por esquecimento** — a lista é
-curta e cada item tem razão registrada na ADR-91: `fake news` (consagrado no
-Brasil, e a instrução "não anuncie que é uma aula sobre fake news" perde o
-sentido traduzida — o que o professor não deve dizer é a expressão que a criança
-reconhece), `cyberbullying` (BNCC EF07CO09 e Lei 13.185/2015), `print` (é a
-palavra da criança, e a exp-06/07 gira em torno desse objeto), `chat`, `on-line`
-(citação verbatim da BNCC). **Não "corrija" nenhum deles.**
-
-**Rótulo visível em dois lugares muda nos DOIS.** `ROTULO_PASSO` da exp-03 é
-espelho declarado de `apps/api/src/unoogpt/regras/passos.ts`; mudar um só faz a
-trilha do estudante divergir do que a api devolve. E **a suíte e2e casa por
-texto exato** (`getByText`, `getByRole({name})`): trocar copy sem atualizar a
-suíte a derruba com timeout, e o timeout reporta o seletor que faltou, nunca a
-causa.
-
-## Arquivos de instrução de agente — o padrão
-
-Três arquivos, três papéis que não se misturam:
-
-| Arquivo | Para quem | Regra |
-|---|---|---|
-| `AGENTS.md` | qualquer agente | **canônico.** O único lugar onde a doutrina daquela pasta é escrita |
-| `CLAUDE.md` | Claude Code | **uma linha, `@AGENTS.md`.** Nunca conteúdo próprio |
-| `README.md` | pessoa | o que a pasta é e como rodar. NÃO entra sozinho no contexto do agente |
-
-Por que dois e não um: `AGENTS.md` é o nome que a maioria das ferramentas lê;
-`CLAUDE.md` é o que o Claude Code procura. O ponteiro `@AGENTS.md` importa o
-canônico, e a regra existe **uma vez**. `CLAUDE.md` com texto próprio é uma
-segunda fonte de verdade sobre a mesma pasta — e duas fontes divergem, sempre na
-direção de quem parou de ler a outra.
-
-**Onde nasce um `AGENTS.md`:** numa pasta onde se trabalha uma tarefa inteira sem
-sair dela — um app, um pacote, uma experiência, a suíte e2e. Ele carrega sozinho
-quando a sessão toca a pasta, e é isso que paga o custo de existir. **Na raiz da
-pasta, nunca numa subpasta.** A doutrina da Vila do Lume viveu meses em
-`exp-70-vila-do-lume/docs/CLAUDE.md`: quem editava o jogo em `public/jogo/` nunca
-a recebia, porque o carregamento é por caminho — o arquivo estava a um nível de
-distância de todo mundo que ele tentava avisar.
-
-**O que entra:** o que, se você não souber, você quebra. Regra já violada e o que
-custou; contrato com quem consome; zona congelada; armadilha que passa no
-typecheck. **O que não entra:** o que o código já diz (estrutura de pastas, lista
-de dependências, assinatura de função), o que o `README.md` ao lado já explica, e
-qualquer repetição da raiz. Um `AGENTS.md` que repete outro não é redundância
-inofensiva: é a cópia que ninguém vai atualizar junto.
-
-**Quando o `README.md` da pasta JÁ é a doutrina** (`scripts/e2e`,
-`documentacao-latex`), o `AGENTS.md` não a copia: ele vira um **carregador** —
-as poucas regras invioláveis, em uma linha cada, e a ordem de abrir o README
-antes de escrever. Copiar o README para o `AGENTS.md` cria as duas cópias que
-esta seção inteira existe para evitar.
-
-**Forma.** Primeira linha `# <caminho da pasta> — <o que é>`; segunda,
-`Complementa o AGENTS.md da raiz.` (a raiz vence em conflito). Seções por assunto,
-com o porquê junto da regra — regra sem custo declarado é a primeira a ser
-"otimizada" por quem chega depois.
-
-**Bloco gerado por ferramenta** (o do Next em `apps/hub/AGENTS.md`) fica entre os
-marcadores dela, intocado, e o conteúdo do projeto vem depois — a ferramenta
-reescreve o bloco, e apagá-lo só recria a alteração não commitada.
-
-**Manutenção.** Mudou a regra, muda o `AGENTS.md` **no mesmo commit** — mesma
-razão do LaTeX: instrução desatualizada é pior que instrução nenhuma, porque o
-agente obedece. Pasta nova que ganha `AGENTS.md` ganha o `CLAUDE.md` de uma linha
-junto; sozinho, o Claude Code não acha o canônico.
-
-## Ferramentas externas que o agente NÃO dispara
-
-**Varredura de vulnerabilidade (Snyk) é da esteira de CI/CD, não da sessão.** Não
-rode `snyk` nem as ferramentas do MCP do Snyk — nem para "conferir", nem depois de
-mexer em dependência. O lugar da varredura é a esteira, com o `SNYK_TOKEN` do
-repositório e a política com prazo dos `.snyk` (ADR-39). Varredura na sessão
-gasta cota do plano, produz apontamento sem o portão que o cumpre, responde por
-uma working tree local que não é o que vai a produção, e recicla falso positivo
-já analisado — o "code injection" do `setInterval` da bridge tem comentário no
-código, entrada no `.snyk` e ADR. Precisou de uma avulsa? Quem roda é a pessoa,
-na mão.
-
-Estado do portão hoje: o passo `Snyk` do `ci.yml` está **comentado** desde
-`07d9ec0`. Reativá-lo é decisão de quem cuida do CI — não é trabalho que você
-começa por conta própria, e não muda nada do parágrafo acima.
-
-As regras estão em `.claude/settings.json` (versionado) e no `settings.json` do
-usuário; o MCP continua instalado, para uso manual.
-
-## Convenções de código
-
-- TypeScript strict em tudo. Sem `any` (use `unknown` + narrow). **Uma exceção,
-  registrada em ADR:** o jogo da exp-70 (`public/jogo/`, ~10k linhas de JS
-  clássico com globais compartilhados, `three.min.js` vendorizado) fica como
-  está — é um instrumento com distâncias e tempos calibrados, e o compilador não
-  tem como saber que uma refatoração mudou a medida. `public/jogo/**` está nos
-  `ignores` do ESLint. O shim (`src/`, TS strict) é a única porta: `window.VILA`.
-  A rede que substitui o `tsc` ali é o smoke visual.
-- Nomes de domínio em pt-BR (`estudante`, `escola`, `turma`, `experiencia`);
-  termos técnicos em inglês (`provider`, `guard`, `batch`).
-- Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...`.
-- Zod para validar TODO input externo (body, query, postMessage recebido, env).
-- Testes: mínimo = contratos (bridge, telemetria, guards de tenancy). Vitest
-  no sdk/experiências, Jest no NestJS.
-- UI: **não inventar componente**. Hub e experiências montam interface com
-  `@unooria/design-system` (seção `unooria` para a plataforma, seção do clone
-  para a experiência), sempre na última versão — ver "Design System" nesta página
-  e a mecânica em `packages/ui/AGENTS.md`. O
-  `_template` continua cru de propósito: o que ele NÃO traz, o DS traz.
-- **Analytics de terceiro passa por `@edu/sdk`, nunca por snippet solto.** O
-  Microsoft Clarity (ADR-60) tem UMA fonte — `packages/sdk/src/clarity.ts` —
-  consumida pelo hub e pelas experiências; colar o `<script>` num `index.html`
-  ou num layout cria a segunda cópia que ninguém atualiza junto. O id vem de
-  `NEXT_PUBLIC_CLARITY_PROJECT_ID` e **ausente = desligado**, nas duas
-  superfícies. O que sai para lá é id opaco e `verbo:objeto`; nome, e-mail e
-  resposta de estudante NÃO — a regra 6 continua valendo dentro do Clarity.
-- **Tabela de experiência leva o NÚMERO dela: `exp_NN_`.** `exp_70_sessoes`,
-  `exp_02_sessoes`, `exp_91_checkins`. Tabela da PLATAFORMA — que serve a todas
-  — fica **sem prefixo**: `escolas`, `lotacoes`, `turmas`, `matriculas`,
-  `liberacoes`, `periodos_letivos`, `users`, `experiencias`, `progresso`,
-  `telemetria_eventos`, `ia_uso_diario`. O motor (feed adaptativo,
-  geração, dossiê) é da exp-01 e leva `exp_01_`. Tabela que é CONTRATO entre
-  duas experiências carrega os DOIS números: `exp_01_exp_70_perfis_importados`
-  (a exp-70 escreve, a exp-01 lê) — chamá-la de uma só mentiria sobre quem
-  depende dela.
-  **Um banco, um schema.** Nem banco por experiência (elas não são isoladas: o
-  perfil da Vila alimenta a largada do Instanooria, e o Postgres não faz JOIN
-  entre bancos; além disso um pool do Prisma por experiência estouraria o
-  `max_connections`), nem schema por experiência (a única coisa que um schema
-  daria além do prefixo é fronteira de `GRANT`, e existe UMA role de aplicação).
-  Migração de referência: `20260827090000_tabelas_por_experiencia` — `RENAME`,
-  nunca DROP/CREATE, e renomeando constraints, índices e políticas de RLS
-  junto. Duas armadilhas registradas lá: `FOR ... IN SELECT` sobre o catálogo
-  relê o que o próprio laço alterou, e `RENAME CONSTRAINT` renomeia também o
-  índice que a sustenta — as duas produzem `exp_01_exp_01_..._pkey`.
-- Lógica de domínio de uma experiência (gabarito, estado da missão, visão do
-  professor) vive num módulo próprio da api, prefixo minúsculo igual ao slug:
-  `apps/api/src/unootube/` ↔ `/unootube/*` (regra 3: o client nunca recebe o
-  gabarito). Padrão: `catalogo.ts` (dados) + `regras.ts` (puro) + service com
-  `comTenancy` + controllers por papel.
-
-
-## Git e branches
-
-**O fluxo inteiro — promoção, hotfix, retro-merge, tag/release, rollback por
-camada — está em `CONTRIBUTING.md`.** Aqui fica só o que decide se você precisa
-abri-lo.
-
-- **QUATRO ambientes, e cada um tem um testador diferente** (ADR-53, ADR-101):
-
-  | Branch | Ambiente | Quem testa | O merge dispara |
-  |---|---|---|---|
-  | `dev-local` | Docker na máquina (`pnpm docker:dev`) | **você** | nada — você sobe a stack e olha |
-  | `dev` | stack GCP de dev | **o time** | deploy de dev |
-  | `hml` | stack GCP de hml | **o cliente** | deploy de hml |
-  | `main` | produção | as escolas | deploy de produção |
-
-  **O caminho é sempre: branch de trabalho → PR para `dev-local` → PR para
-  `dev` → PR para `hml` → PR para `main`.** Pular `dev-local` tira o único
-  portão onde alguém de fato OLHA a tela: o CI não abre navegador, e ícone
-  virado texto, link sublinhado e iframe vazio passam por um CI verde.
-  **`dev-local` não tem stack em nuvem e não está no `deploy.yml`** — mas é
-  branch de AMBIENTE do mesmo jeito, e o `pre-push` recusa push direto nela.
-  `main` ainda NÃO dispara: falta o environment `prd` e acrescentar `main` ao
-  gatilho de push do `deploy.yml`. Merge por merge commit ou squash; **rebase
-  desabilitado**: o job `mudancas` compara `HEAD^`, e um rebase-merge faria o
-  diff enxergar só o último commit do PR.
-- **Promoção para `main` leva tag semver** (`v1.4.0`) e release, criadas depois
-  do merge. A tag é o nome do que está em produção — sem ela, "volta para a
-  anterior" vira caça a SHA no meio de um incidente.
-- **Hotfix sai de `main`, e desce a escada INTEIRA por retro-merge** — `hml`,
-  `dev` e `dev-local` — no mesmo dia. Parar em `dev` deixa a base local sem a
-  correção, e a próxima frente nasce sem ela: o hotfix renasce como bug.
-- **Os hooks são a única barreira**: `branch protection` e `rulesets` respondem
-  403 (repo privado, plano Free). `.githooks/pre-push` recusa push direto em
-  branch de ambiente (`dev-local`, `dev`, `hml`, `main`) e nome de branch fora
-  do padrão; `.githooks/commit-msg` valida o formato do commit;
-  `.githooks/pre-commit` recusa arquivo fora da fatia da frente — só quando
-  existe `<git-dir>/fatia`, então a cópia principal segue livre. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
-  Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`, `PERMITIR_BRANCH_FORA_DO_PADRAO=1`,
-  `PERMITIR_FORA_DA_FATIA=1`.
-- **TODA tarefa começa num worktree, e a base vai ESCRITA** (ADR-61, ADR-101):
-  `pnpm worktree criar <tipo/slug> --fatia api/<mod>,hub/<rota>,exp/<id>` faz o
-  caminho inteiro (worktree sobre `origin/dev-local`, `.env` copiados,
-  `install` + `prisma generate`, porta de Vite reservada, briefing impresso).
-  Não é só para paralelismo: a cópia principal é onde a stack RODA, e editar
-  nela mistura o que subiu com o que ainda está sendo escrito. Nenhuma
-  ferramenta adivinha a base — a `default_branch` do GitHub é `dev`, clone
-  antigo tem `origin/HEAD` em `main`, e a criação automática de worktree do
-  Claude Code segue a padrão; por isso o `origin/dev-local` do script está
-  ESCRITO. **`dev-local` costuma estar À FRENTE de `dev`** (é ela que recebe o
-  trabalho primeiro): sair de `dev` é nascer sem o que você integrou ontem.
-  `git log origin/dev-local..HEAD` antes do PR confere, e o PR é
-  `gh pr create --base dev-local`.
-- **Reparta por fatia VERTICAL, nunca por camada** (ADR-71). `apps/api` e
-  `apps/hub` são comuns a todas as frentes: um agente "no backend" e outro "no
-  frontend" moram nos mesmos arquivos e brigam no merge. Cada frente leva o
-  módulo da api + a rota do hub + a experiência, juntos — aí a fatia de cada uma
-  dentro de api/hub é uma pasta própria. Duas frentes no mesmo módulo não se
-  paralelizam: serializam. O que resta compartilhado é linha de REGISTRO
-  (`app.module.ts`, fim do `schema.prisma`, `middleware.ts`,
-  `experiencias-dev.ts`) e vai em UM commit no fim, depois de
-  `git merge origin/dev-local` — rebase está desabilitado. **A fatia é
-  OBRIGATÓRIA e é barreira, não conselho**: `criar` recusa sem `--fatia`, grava
-  os caminhos em `<git-dir>/fatia` e o `.githooks/pre-commit` recusa commit fora
-  dela (escape: `PERMITIR_FORA_DA_FATIA=1`). Frente que não toca módulo de
-  domínio declara a pasta da ferramenta: `--fatia scripts,.githooks`. Receita em
-  `CONTRIBUTING.md`.
-- **O paralelismo é de EDIÇÃO e teste unitário; o runtime é singleton.** Portas
-  fixas com `strictPort`, compose de nome fixo, um banco: dois worktrees não
-  rodam a stack ao mesmo tempo. No worktree: editar, `typecheck lint test`,
-  build, e o Vite de UMA experiência em porta alternativa
-  (`/dev-embed?src=http://localhost:52NN`). Na cópia principal, uma frente por
-  vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
-  `pnpm docker:dev` de um worktree — ele recria os containers da stack
-  principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **102**: a **101 é o fluxo de quatro ambientes, com
-      `dev-local` como base de toda frente**, e a **100 o caminho único da sala
-      para a missão** — que ocupou o número em 2026-09-15 e mergeou SEM
-      atualizar esta linha, que ainda anunciava a 100 como livre. É o modo de
-      falhar desta lista: ela só vale se quem gasta o número a corrige no
-      MESMO commit. Antes delas, a 93 é a sincronização de sala por polling da
-      exp-08, a 94 o latch por polling da exp-04, a 95 a sessão de 2h de
-      inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
-      de login na tela, a **98 o fuso único da plataforma** e a **99 esse fuso
-      vindo de uma variável de ambiente** — as quatro foram alocadas por quem repartia o trabalho ANTES de
-      qualquer frente escrever, e é assim que a colisão de 2026-09-06 e
-      2026-09-07 deixa de acontecer; a 86 foi ocupada pelo guia da aula, a 87 e a 88
-      pelo eixo da disponibilidade e pelo painel da Unooria, a 89 pelo
-      histórico append-only que a rede também lê, a 90 pela suíte da api em um
-      worker, a 91 pelas três zonas do idioma da interface, a 92 pelo
-      retorno de etapa que reabre a sessão do Instanooria, a **93 pela
-      sincronização de sala por polling HTTP em vez de WebSocket** e a **94
-      reservada para a frente paralela que corria no mesmo dia** — as duas
-      foram alocadas por quem repartia o trabalho, ANTES de qualquer uma
-      escrever, e é assim que a colisão de 2026-09-06 e 2026-09-07 deixa de
-      acontecer; a 65 foi ocupada pelo guia da aula, a 72 pela
-      fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
-      BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
-      rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
-      planejamento + `allow-downloads`, a 77 pela trilha que virou do layout
-      e a 78 pelo logoff no menu do avatar — três frentes fecharam ADR em
-      2026-09-06 e duas colidiram na 65, e **em 2026-09-07 aconteceu de
-      novo**: duas frentes simultâneas reservaram a 76, uma cedeu e foi para
-      a 77/78, a 79 é o vínculo obrigatório escola/regional e a 80 o modelo
-      de seis papéis, a 81 o panorama da diretoria, a 82 o
-      relatório dela, a 83 o header que ancora na janela, a 84 o sinal do
-      navegador sem sessão e a **85 a remontagem do miolo da área ao trocar de
-      escola**. Conferir
-      só a branch de integração NÃO basta — em 2026-09-08 `origin/dev` parava
-      na 71 enquanto as branches de trabalho já iam até a 83 —, e conferir uma
-      vez no começo da frente também
-      não: confira as branches de trabalho abertas E `origin/dev-local`, na
-      HORA de escrever o número — e é `origin/dev-local`, não `origin/dev`, que
-      é a base de toda frente e costuma estar à frente),
-  `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
-- **Uma branch por experiência nova**, com o nome do slug dela:
-  `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
-  commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
-- Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo é
-  o slug da experiência ou o app/pacote tocado.
-- **Nada de build no git.** `.gitignore` cobre `dist/`, `.next/`, `.next-prod/`,
-  `.turbo/`, `*.tsbuildinfo`, `storage/`, `storage-privado/` e a pasta `testes/`
-  inteira — os prints, o deck e os vídeos da suíte e2e são reproduzíveis
-  rodando-a de novo. Exceção deliberada: `documentacao-latex/main.pdf` É
-  versionado — é entregável de projeto, não artefato de build, e quem precisa
-  dele (cliente, edital, revisão) não tem TeX instalado. Os auxiliares do LaTeX
-  e `documentacao-latex/build/` ficam fora. `apps/hub/.next-prod/` (que o `pnpm build:isolado` escreve) já
-  entrou uma vez por um `git add -A` distraído: 358 arquivos e 250MB de cache de
-  webpack no histórico, que só saíram reconstruindo a branch inteira. Stage por
-  caminho, nunca `-A` sem olhar o `git status`.
-- `apps/hub/next-env.d.ts` É versionado (o Next espera isso), mas alterna entre
-  `./.next` e `./.next-prod` conforme o último build. Modificado depois de um
-  `build:isolado` = descartar, não commitar.
-
-
-## Comandos
-
-```bash
-pnpm dev                                  # tudo em watch, no host
-pnpm docker:dev                           # a stack INTEIRA em container (pg/api/hub/3 exps) com o
-                                          # código do host por bind mount: salvar arquivo recompila
-                                          # lá dentro, sem build. Mesmas portas do `pnpm dev`, então
-                                          # é um OU outro. `:logs` `:deps` `:down` completam.
-pnpm turbo build --filter=@edu/exp-01     # builda 1 experiência (+ deps)
-pnpm turbo build --filter='...[HEAD^]'    # só o que mudou (CI usa isso)
-pnpm new:exp exp-12-fracoes               # scaffolda experiência do _template
-pnpm worktree criar fix/<slug> --fatia api/<mod>,hub/<rota>,exp/<id>
-                                          # COMEÇA TODA TAREFA (ADR-61/71/100): worktree sobre
-                                          # origin/dev-local, .env copiados, install + prisma
-                                          # generate, porta de Vite 52xx reservada e o briefing da
-                                          # fatia impresso para colar no agente. `listar` mostra as
-                                          # frentes e suas portas; `remover <slug>` fecha.
-                                          # --fatia é OBRIGATÓRIA: o pre-commit recusa commit fora
-                                          # dela. É VERTICAL (módulo da api + rota do hub +
-                                          # experiência) — dois agentes na mesma camada brigam. Quem
-                                          # mexe em ferramenta declara a pasta: scripts,.githooks.
-                                          # No fim: gh pr create --base dev-local. NUNCA --base dev:
-                                          # dev-local é o ambiente Docker onde VOCÊ testa antes.
-pnpm --filter @edu/api test
-pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
-npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
-node scripts/gerar-endpoints-tex.mjs                            # apendices/c-endpoints.tex A PARTIR do openapi.json
-# /docs já vem LIGADO no docker:dev — http://localhost:3001/docs (docs / unooria-docs-local).
-# No host (`pnpm dev`) as envs não existem e a rota some; exporte-as para ligar:
-SWAGGER_USUARIO=docs SWAGGER_SENHA=unooria-docs-local pnpm dev
-SEED_SENHA=<senha> pnpm --filter @edu/api seed  # a senha das contas de demo vem do AMBIENTE (ADR-47).
-                                          # Nos dois compose ela já vem (unooria123); no host, no
-                                          # apps/api/.env (o Prisma carrega) ou na linha de comando.
-                                          # Ausente, o seed FALHA — não inventa senha.
-SEED_MINIMO=1 pnpm --filter @edu/api seed   # só escola + um gestor + um admin: o "zero absoluto"
-# OS LOGINS SAEM DO SEED, que os ESCREVE em credenciais-demo.csv na raiz — arquivo
-# GITIGNORADO: ele nasce ao semear, e sem semear não existe. É a
-# fonte, e é de lá que a suíte e2e lê (`scripts/e2e/lib/credenciais.mjs`). Nomes de
-# gente, não `prof.demo`: o seed procura por MATRÍCULA (quem leciona no 8A), e
-# `semear-demo.ts` diz por quê — login fixo reacopla o script a um nome inventado.
-# Não escreva conta de demo em documentação: ela envelhece e manda a pessoa tentar
-# um login que não existe. Aponte para o CSV.
-pnpm --filter @edu/exp-90-plano-de-aula dev   # :5175 → hub /professor/plano-de-aula (qualquer prof.* do CSV; seed:demo importa referências demo)
-pnpm --filter @edu/exp-91-bem-estar dev       # :5176 → hub /professor/bem-estar (qualquer prof.* do CSV; AI_PROVIDER=mock usa os textos fixos)
-pnpm --filter @edu/exp-02-unootube dev    # :5174 (exp-01 usa :5173 — portas em apps/hub/lib/experiencias-dev.ts)
-pnpm exec playwright install chromium     # PRE-REQUISITO da suíte e2e, uma vez por maquina.
-                                          # `npx playwright install` NAO serve: o npx resolve o
-                                          # playwright mais NOVO do npm e baixa a build de navegador
-                                          # DELE, enquanto o repo fixa 1.62.1 (build 1234). O erro sai
-                                          # como "Executable doesn't exist at .../chromium_headless_
-                                          # shell-1234" com o cache CHEIO de navegador, e o banner
-                                          # manda rodar justamente o npx que causou o descasamento.
-node scripts/e2e/rodar.mjs                # A SUÍTE INTEIRA de ponta a ponta, na ordem canônica
-                                          # (publico → estudante → professor → gestor_escola →
-                                          # gestor_contrato → admin). O `admin` vem por ÚLTIMO porque o
-                                          # painel dele mexe no interruptor que TODAS as outras leem.
-                                          # A ordem não é alfabética: o estudante PRODUZ o estado
-                                          # (runs, partidas, sessões) que as telas do professor leem, e a
-                                          # administração vem por último porque importa gente e troca senha.
-node scripts/e2e/rodar.mjs professor      # só um papel
-node scripts/e2e/rodar.mjs estudante/02   # só uma suíte
-node scripts/e2e/rodar.mjs --deck         # tudo + deck (.pptx) + vídeos (.webm), gerados dos manifestos
-node scripts/e2e/publico/01-landing.mjs   # cada suíte também roda sozinha, direto
-# Evidências em testes/<papel>/<suíte>/: os prints, `passos.json` (o manifesto) e `relatorio.md`.
-# A pasta é APAGADA no começo de cada execução — print de duas corridas na mesma pasta conta
-# uma história que nunca aconteceu. `testes/` inteira está no .gitignore.
-# O deck e os vídeos NASCEM do `passos.json`: a descrição de cada tela é escrita no
-# `registrar()` da suíte, ao lado do passo que a fotografa. Antes havia um roteiro de 66 KB
-# mantido à mão, e ele divergiu — descrevia telas que o script já não tirava.
-node scripts/e2e/ferramentas/gerar-deck.mjs             # só o deck
-node scripts/e2e/ferramentas/gerar-videos.mjs           # só os vídeos (um por papel; o estudante, um por missão)
-node scripts/e2e/ferramentas/gerar-videos.mjs --amostra # um quadro em JPEG, p/ conferir o layout sem codificar
-EXP_MAPAS_BUCKET=<bucket> node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt  # stack de erro de cliente -> fonte:linha (mapas no bucket PRIVADO)
-pnpm --filter @edu/exp-70-vila-do-lume dev    # :5177 → hub /exp/exp-70-vila-do-lume (transversal, sem série)
-pnpm --filter @edu/exp-03-unoogpt dev         # :5178 → hub /exp/exp-03-unoogpt (2ª série EM, unidade 1)
-pnpm --filter @edu/exp-92-plano-de-ensino dev # :5180 → hub /professor/plano-de-ensino. Planejamento dirigido
-                                          # pela BNCC: plano anual + plano de aulas, 1ºEF ao 3ºEM, todos os
-                                          # componentes. Toda porta de exp entra no CORS_ORIGINS da api —
-                                          # sem a :5180 o boot morre com "Failed to fetch".
-node scripts/extrair-bncc.mjs             # BNCC dos PDFs oficiais → apps/api/src/curriculo/dados/*.ts
-                                          # (GERADOS). Exige poppler (pdftotext/pdfinfo) e os PDFs em
-                                          # documentos-fonte/bncc/ — que NÃO são versionados (>2MB).
-pnpm --filter @edu/exp-07-o-eco-no-grupo dev   # :5179 → hub /exp/exp-07-o-eco-no-grupo (7º ano, unidade 1;
-                                          # o professor prepara a mídia no painel antes da aula)
-pnpm --filter @edu/exp-04-o-que-a-foto-conta dev  # :5183 → hub /exp/exp-04-o-que-a-foto-conta (1º ano,
-                                          # unidade 1). 5183 e não 5182: a 5182 é da exp-08. A missão é
-                                          # SÍNCRONA: a Roda congela os tablets e o professor libera pelo
-                                          # painel (polling 3s, ADR-94).
-pnpm --filter @edu/exp-06-rastro-boato dev    # :5181 → hub /exp/exp-06-rastro-boato (6º ano, unidade 2).
-                                          # 5181 e não 5180: a 5180 é da exp-92. Zero IA, e sem áudio
-                                          # gravado — a transcrição está sempre na tela.
-pnpm --filter @edu/exp-08-manifesto-ia dev    # :5182 → hub /exp/exp-08-manifesto-ia (8º ano, unidade 4).
-                                          # Clone do ChatGPT. IA SÓ no preparo do professor, antes da
-                                          # aula: o motor de sala é determinístico e gasta zero token.
-                                          # NÃO existe cláusula certa — as 4 são válidas, e o painel
-                                          # mostra contagem, nunca acerto. O congelamento da turma para
-                                          # o debate é POLLING de 5s (ADR-93), não WebSocket.
-pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
-npm view @unooria/design-system version        # qual é a última publicada
-cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~606p). Atualizar SEMPRE
-```
-
-
-## O que NÃO fazer
-
-- Não criar novos serviços Cloud Run sem necessidade demonstrada (a api absorve).
-- Não adicionar Redis/filas/libs de estado sem gargalo medido (exceção: Pub/Sub
-  de telemetria, que já é decisão tomada).
-- Não usar localStorage para token. Não usar `targetOrigin: "*"`.
+- Não criar serviço Cloud Run novo sem necessidade demonstrada (a api absorve).
+- Não adicionar Redis/filas/libs de estado sem gargalo medido.
+- Não usar `localStorage` para token. Não usar `targetOrigin: "*"`.
 - Não escrever migração que remova `escola_id` ou afrouxe RLS.
 - Não chamar provedores de IA fora de `apps/api/src/ai`.
-- Não rodar Snyk (CLI ou MCP): a varredura é do CI. Ver "Ferramentas externas".
-- Não escrever conteúdo em `CLAUDE.md`: ele é o ponteiro `@AGENTS.md` de uma linha.
-- Não escrever componente de UI local (nem em `packages/ui`, nem na experiência)
-  quando a seção do DS já tem: o lugar do componente novo é o `storybook-unooria`.
-- **Não escrever interface sem antes procurar no DS** (o procedimento de três
-  passos está em "Design System"). Não achou? Pedido no `storybook-unooria` +
-  compensação local marcada — nunca um componente local silencioso.
-- Não resolver na mão o que o DS já resolve: rolagem é `ScrollBar`, não
-  `overflow` num `<div>`; diálogo é `Modal`; aba é `Tabs`; seleção é
-  `Selection`, não `<select>`; menu do avatar é `HeaderMenu`.
-- **Não escrever breadcrumb numa página do hub, e não deixar página sem ele.**
-  A trilha é do LAYOUT da área, montada de um registro de rotas — rota nova é
-  uma linha no registro (`apps/hub/lib/trilha.ts`) e nada na página. Era por
-  página, e o resultado foi 22 telas com trilha e 15 sem, nenhuma por decisão
-  (ADR-77). A regra inteira, com as duas exceções declaradas, está em
-  `apps/hub/AGENTS.md`; **área nova precisa de layout novo, e layout novo
-  desenha a trilha** — sem isso a área nasce sem trilha, como `/admin` nasceu.
-- **Não escrever texto de interface em inglês, e não traduzir o nome do clone.**
-  A regra das três zonas está em "O idioma da interface" (ADR-91): `Shorts` e
-  `feed` ficam porque é assim que o app real se chama em português; `card de
-  pausa`, `modal` e `popup` saem porque são jargão nosso vazado para o guia do
-  professor. `fake news`, `cyberbullying` e `print` ficam por decisão registrada
-  — não "corrija" nenhum deles.
-- **Não formatar data na mão** (ADR-98). `toLocaleDateString`,
-  `toLocaleTimeString`, `toLocaleString` sobre uma data e `Intl.DateTimeFormat`
-  sem `timeZone` usam o fuso de QUEM EXECUTA — e no hub o contêiner está em UTC
-  e a professora em `America/Sao_Paulo`. Entre 21h e a meia-noite os dois lados
-  renderizam DIAS diferentes, o React chama isso de "hydration failed",
-  regenera a árvore e engole o clique. Use `data`, `dataCurta`, `dataHora`,
-  `dataCurtaHora`, `hora`, `horaComSegundos` e `diaDaPlataforma`, do `@edu/sdk`
-  (na api, `src/comum/fuso.ts`). Número não tem fuso:
-  `n.toLocaleString("pt-BR")` para milhar continua livre.
-- **Não cravar o fuso em lugar nenhum, nem ler `FUSO_DA_PLATAFORMA` na mão**
-  (ADR-99). O valor é do DEPLOY: uma env só, com o mesmo nome na api e no hub,
-  ausente = `America/Sao_Paulo`. Quem responde qual é ele são
-  `fusoDaPlataforma()` do `@edu/sdk` e o de `apps/api/src/comum/fuso.ts` — eles
-  resolvem a cascata (runtime → env → `<meta name="unooria-fuso">` → padrão) que
-  faz o valor chegar ao servidor, ao navegador e ao bundle da experiência.
-  `process.env.FUSO_DA_PLATAFORMA` lido direto numa tela funciona no servidor e
-  volta `undefined` no navegador, que é o defeito da ADR-98 de volta pela porta
-  dos fundos. **Fuso novo para a experiência entra pelo `config` do `hub:init`**
-  (chave `CHAVE_DO_FUSO`), nunca por campo de topo: campo de topo muda a FORMA
-  do handshake e obriga a subir `PROTOCOL_VERSION`.
-- Não misturar seções do DS: componente/token da plataforma dentro do clone de uma
-  experiência (ou o contrário) quebra a fidelidade que a experiência mede.
-- Não travar a versão do DS: `^0.1.x` não sobe minor — atualizar de propósito.
-- Não commitar assets binários pesados (>2MB): vão para o bucket, referenciados por URL.
-
-
-## Infra (repo separado)
-
-Terraform vive em outro repo. O contrato entre os repos está em `docs/INFRA.md`:
-nomes de recursos esperados, variáveis de ambiente que a app consome, e o que o
-CI deste repo publica (imagens no Artifact Registry, bundles no bucket).
-Nunca criar recursos GCP imperativamente por script neste repo.
-
-
-## Documentação técnica (`documentacao-latex/`) — ATUALIZAR SEMPRE
-
-A documentação técnica consolidada do projeto é **LaTeX versionado**, em
-`documentacao-latex/`, e compila em `main.pdf` (~606 páginas, `PU-DOC-001`).
-Ela é a fonte única de: contexto de negócio, requisitos rastreáveis (RF/RNF),
-casos de uso, **arquitetura de software nos 4 níveis do C4**, **arquitetura de
-nuvem e implantação em GCP**, multi-tenancy e segurança, modelo de dados,
-contratos de integração, telemetria, camada de IA, catálogo de experiências,
-especificação da API, design system, entrega, qualidade, **observabilidade**,
-**101 ADRs**, riscos e evolução. Todos os diagramas são TikZ vetorial, com fonte Mermaid equivalente no
-Apêndice A.
-
-**REGRA: toda implementação nova atualiza esta documentação NO MESMO COMMIT, e
-regera o PDF.** Documento que ninguém atualiza é pior que documento nenhum —
-é a mesma armadilha do `expires_at` que saiu do schema e do
-`turmas.consentimento_em` do app de origem: a regra sai do código, o registro
-fica, e quem lê acredita nele.
-
-```bash
-cd documentacao-latex && ./compilar.sh      # tectonic; --rapido p/ iterar, --limpar p/ limpar
-```
-
-| Se você mudou… | Atualize |
-|---|---|
-| Módulo, componente, fronteira | `secoes/05-arquitetura-software.tex` (+ o C4 correspondente) |
-| Recurso de nuvem, rede, CI/CD | `secoes/06-arquitetura-nuvem.tex`, `secoes/15-entrega.tex` |
-| RLS, papel, guard, sandbox do iframe | `secoes/07-tenancy-seguranca.tex` |
-| Migração, tabela, coluna | `secoes/08-modelo-de-dados.tex` + `apendices/e-dicionario-de-dados.tex` |
-| Bridge, telemetria, manifesto, provider de IA | `secoes/09-contratos-integracao.tex` + `apendices/d-payloads.tex` |
-| Rota nova, ou papel de uma rota | `secoes/13-api.tex` + `apendices/c-endpoints.tex` |
-| Variável de ambiente | `apendices/b-variaveis-ambiente.tex` |
-| Experiência nova | `secoes/12-experiencias.tex` (e o catálogo do cap. 12) |
-| Regra de interface / lacuna do DS | `secoes/14-design-system.tex` |
-| **Qualquer decisão com alternativa descartada** | `secoes/18-adr.tex` — **ADR nova, numerada** (contexto, decisão, alternativas, consequências ruins incluídas, gatilho de reavaliação) |
-| Risco novo, mitigado ou reclassificado | `secoes/19-riscos-evolucao.tex` |
-| Sinal operacional novo (log, métrica, alerta, SLO, sonda, erro de cliente) | `secoes/17-observabilidade.tex` — e `docs/INFRA.md` se virar recurso do Terraform |
-| Sintoma de diagnóstico novo (o sintoma que não aponta para a causa) | `apendices/f-operacao.tex` |
-| Diagrama TikZ novo | **também** a fonte Mermaid equivalente em `apendices/a-mermaid.tex` |
-
-Convenções de edição (as que já custaram tempo) em `documentacao-latex/README.md`.
-As três que mais pegam: dentro de `tikzpicture` use `\texttt{}` cru (as macros
-`\cd`/`\arq` ficam invisíveis em nó de fundo escuro); setas são `\seta` e
-`\implica`, nunca `→`/`⇒` literais (a Roboto não tem esses glifos e o XeTeX
-não desenha nada); e ER grande vai em **duas figuras retrato**, não em landscape.
-
+- Não rodar Snyk (CLI ou MCP): a varredura é do CI.
+- Não escrever conteúdo em `CLAUDE.md`: é o ponteiro `@AGENTS.md` de uma linha.
+- **Não escrever interface sem antes procurar no DS**, nem componente local
+  silencioso, nem `overflow` onde há `ScrollBar`, nem `<select>` onde há
+  `Selection`. E não misturar seções do DS (plataforma dentro do clone).
+- Não travar a versão do DS: `^0.1.x` não sobe minor.
+- **Não escrever breadcrumb numa página do hub, nem deixar página sem ele**: a
+  trilha é do layout da área (ADR-77).
+- **Não escrever texto de interface em inglês, nem traduzir o nome do clone**
+  (ADR-91). `fake news`, `cyberbullying` e `print` ficam por decisão.
+- **Não formatar data na mão** (ADR-98) nem cravar o fuso (ADR-99).
+- Não commitar asset binário >2MB (vai para o bucket) nem build (`dist/`,
+  `.next/`, `testes/`). Stage por caminho, nunca `git add -A`.
 
 ## Definition of Done (qualquer tarefa)
 
-- [ ] Typecheck + lint + testes passando (`pnpm turbo typecheck lint test`)
-- [ ] Se mexeu em tela: a suíte E2E do papel afetado
-      (`node scripts/e2e/rodar.mjs <papel>`) — typecheck verde não pega ícone
-      virando texto, link sublinhado nem iframe vazio. Tela nova = passo novo na
-      suíte, com `titulo`/`mostra`/`prova` preenchidos: é deles que saem o slide
-      e a legenda do vídeo.
-      Espera nova de IA **corre contra o erro** (`scripts/e2e/lib/smoke.mjs`:
-      `esperarOuFalharCedo` + `ALERTA_DE_ERRO` nas telas da plataforma,
-      `vigiarFalhasDaApi` e `esperarOuFalharPorHttp` nas disfarçadas). Espera cega paga o
-      timeout inteiro e reporta o seletor que faltou em vez da causa: a api
-      falhou em 306ms e o roteiro esperou 180s pela `<table>`
+O porquê de cada item está em
+[`docs/regras/definition-of-done.md`](docs/regras/definition-of-done.md).
+
+- [ ] `pnpm turbo typecheck lint test` verde
+- [ ] Mexeu em tela? A suíte e2e do papel (`node scripts/e2e/rodar.mjs <papel>`)
+      — o typecheck não pega ícone virando texto nem iframe vazio. Tela nova =
+      passo novo, com `titulo`/`mostra`/`prova`. Espera de IA **corre contra o
+      erro**, nunca cega
 - [ ] Input externo validado com Zod
-- [ ] Queries novas escopadas por tenancy (revisar mentalmente a regra 1)
-- [ ] Sem segredo/URL interna em código client
-- [ ] **Produto ou experiência nova: aparece no painel da Unooria e DESLIGA**
-      (regra 8). Experiência declara `produto` no `public/experiencia.json`;
-      superfície nova de produto entra debaixo do layout que chama
-      `exigirProdutoLigado`, e rota de api nova da ferramenta herda o
-      `DisponibilidadeGuard` da classe. O modo de falhar é MUDO: tudo funciona
-      e o produto deixa de poder ser desligado
-- [ ] Se tocou contrato (bridge/telemetria/provider): docs atualizados aqui
-- [ ] Se a regra mudou: o `AGENTS.md` da pasta afetada mudou no mesmo commit
-- [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado** (tabela acima).
-      Decisão com alternativa descartada = ADR nova em `secoes/18-adr.tex`
+- [ ] Query nova escopada por tenancy (a regra 1)
+- [ ] Sem segredo, prompt de sistema ou URL interna em código client
+- [ ] Produto ou experiência nova: **aparece no painel da Unooria e DESLIGA**
+      (regra 8) — o modo de falhar é MUDO
+- [ ] Tocou contrato (bridge/telemetria/provider)? Docs atualizados
+- [ ] Regra mudou? O `AGENTS.md` ou o `docs/regras/` afetado, no mesmo commit
+- [ ] **`documentacao-latex/` atualizada e `main.pdf` regerado.** Decisão com
+      alternativa descartada = **ADR nova** em `secoes/18-adr.tex`

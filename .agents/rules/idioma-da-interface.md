@@ -1,0 +1,1 @@
+../../docs/regras/idioma-da-interface.md

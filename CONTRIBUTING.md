@@ -228,7 +228,7 @@ para:
 
 | Arquivo | Como não brigar |
 |---|---|
-| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 102** — e quem gastar o 102 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
+| `documentacao-latex/secoes/18-adr.tex` | **reserve o número na HORA de escrevê-lo**, conferindo `origin/dev-local` E as branches de trabalho abertas (não a sua cópia, e não uma vez só no começo da frente). Dois agentes já escreveram a mesma "ADR-N" ao mesmo tempo, em 2026-09-06 e de novo em 2026-09-07. E conferir só a branch de integração não basta: em 2026-09-08 `origin/dev` parava na 71 enquanto as branches de trabalho já iam até a 83. **O próximo número é a 103** — e quem gastar o 103 corrige esta célula no mesmo commit, senão a lista mente para a próxima frente, como mentiu sobre a 100 em 2026-09-15 |
 | `documentacao-latex/main.pdf` | binário: sempre conflita. Resolve-se **regerando**, nunca escolhendo um lado — quem mergeia por último recompila |
 | `AGENTS.md` da raiz | edite a seção da sua frente, não a vizinha; conflito aqui é textual e resolve na mão |
 | `pnpm-lock.yaml` | conflitou? `git checkout --theirs pnpm-lock.yaml && pnpm install` e commite o resultado |

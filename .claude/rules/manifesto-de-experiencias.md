@@ -1,0 +1,1 @@
+../../docs/regras/manifesto-de-experiencias.md
