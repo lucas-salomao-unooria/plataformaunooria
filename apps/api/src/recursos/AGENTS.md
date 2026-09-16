@@ -174,3 +174,31 @@ toda experiência nova ficaria invisível até alguém lembrar de ligá-la.
 **A linha inteira é a decisão**: `ligado` e `versao_fixa` não se resolvem em
 cadeias separadas. Campo a campo daria mais flexibilidade e produziria estados
 que ninguém explica olhando a tela.
+
+## A torneira ao lado do interruptor: a quota de IA (ADR-105, 2026-09-15)
+
+`quotas-de-ia.controller.ts` — `GET /recursos/quotas-de-ia` e
+`PUT /recursos/quotas-de-ia/:perfil`, `@Roles("admin")` e nada mais, pela razão
+da ADR-88: quanto de IA uma rede gasta por dia é o custo variável da
+fornecedora. Mora AQUI, e não em `src/ai`, porque é o painel da Unooria que a
+opera: mesma guarda, mesmo histórico, mesmo prefixo `recursos` no BFF do hub.
+`src/ai` só LÊ a linha.
+
+- **Motivo obrigatório SEMPRE** (Zod), ao contrário de `disponibilidades`, onde
+  só desligar pede: aqui toda mudança é exceção ao padrão da plataforma.
+- **Zero e negativo são recusados** (Zod + CHECK `ck_ia_quotas_tokens_positivos`),
+  e há teto de sanidade de 100 milhões. Fechar a IA de um produto é o
+  interruptor, não a quota — e um zero a mais não pode virar quota infinita.
+- **Valor igual ao atual não grava nem historia** (`alterada: false`), pela
+  mesma razão de `remover` só historiar com `count > 0`.
+- **A mudança entra em `recursos_auditoria`** com ação `quota-alterada`,
+  `recurso_id = quota:<perfil>`, `escola_id` NULO e `detalhe = {de, para}`
+  (coluna JSONB com CHECK bicondicional, o mesmo desenho de `versao`). O hub
+  recorta essas linhas com `GET /recursos/auditoria?prefixo=quota:`. `ACOES` do
+  `historico-de-recursos.tsx` é `Record` exaustivo: ação nova sem rótulo não
+  compila.
+- **`ia_quotas` é tabela de CONTRATO** (sem `escola_id`, sem RLS) e as duas
+  suítes que a exercitam (`quotas-de-ia-postgres.spec.ts`, e2e `admin/02`)
+  ESCREVEM nela — exceção declarada à regra "suíte nunca escreve linha de
+  escopo-contrato". A precaução: só SUBIR o teto (não recusa ninguém se a
+  corrida abortar) e devolver o valor no fim.

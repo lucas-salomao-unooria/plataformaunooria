@@ -6,7 +6,30 @@ capacidade que `admin` tem e `gestor_contrato` não.
 ## A área `/unooria` — o painel da fornecedora (ADR-88, 2026-09-10)
 
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
-`NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/`.
+`NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
+`app/(plataforma)/unooria/uso-de-ia/` (ADR-105).
+
+### O segundo item: Uso de IA (ADR-105, 2026-09-15)
+
+`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por perfil
+(`estudante`, `professor`), lido de `GET /recursos/quotas-de-ia` e alterado por
+`PUT /recursos/quotas-de-ia/:perfil` pelo BFF (prefixo `recursos`, já na
+allowlist). O histórico é o MESMO `HistoricoDeRecursos`, com `prefixo="quota:"`
+e `key={mudancas}` para remontar depois de cada gravação — a doutrina do painel.
+
+- **"Token" fica, e a tela TRADUZ ao lado**: "cabe cerca de N partidas completas
+  da Missão Tempestade" / "N planos anuais", com os custos MEDIDOS no projeto
+  (77k e 220k). É a unidade em que o modelo cobra; trocá-la por outra palavra
+  inventaria uma medida que não existe na fatura.
+- **O diálogo avisa o alcance** (rede inteira, próxima chamada, quem já passou do
+  teto novo fica sem IA até amanhã) e trava "Gravar" enquanto nada mudou ou o
+  motivo está vazio — mesmo desenho do diálogo de desligar.
+- **Zero e negativo o campo recusa com a frase certa**: "para fechar a IA de um
+  produto, desligue o produto em Recursos". Confundir quota com interruptor é o
+  erro que a ADR-87 nomeia.
+- **O item do `SideBar` do DS se clica pelo ITEM** (`.unooria-sidebar-item`),
+  não pelo texto: o rótulo vive num tooltip oculto (`__tooltip-content`), e
+  `getByText` acha o texto e não consegue clicar. Custou uma corrida da e2e.
 
 **A armadilha do middleware, que passa no typecheck.** O redirect cross-área
 comparava UMA string (`areaDoPathname` contra `areaDoPapel`). O `admin` tem

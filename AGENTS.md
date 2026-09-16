@@ -90,10 +90,12 @@ porquê inteiro, e a separação entre *subir* e *ativar*, em
    O client envia a resposta do estudante; a api corrige.
 4. **Token**: hub obtém via OIDC (WSO2), repassa à experiência por `postMessage`
    com `targetOrigin` explícito (nunca `*`). Experiência mantém token só em memória.
-5. **IA tem quota**: por usuário/dia e POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE`,
-   `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` — um plano anual gasta ~220k tokens só de
-   prompt) e rate limit por usuário. Nunca exponha chamada de IA sem passar pelo
-   `QuotaService` (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
+5. **IA tem quota**: por usuário/dia e POR PERFIL, e **o teto é DADO, não env**
+   (ADR-105): a linha do perfil em `ia_quotas` (`estudante` | `professor`),
+   semeada pela migration e editada só pelo `admin` em `/unooria/uso-de-ia`.
+   Não recrie `AI_DAILY_TOKEN_QUOTA_PER_*` como fallback. E rate limit por
+   usuário. Nunca exponha chamada de IA sem passar pelo `QuotaService`
+   (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `estudante_id` opaco, nunca nome/email.
 7. **A missão só abre na turma em que o professor a liberou** (ADR-69). Toda

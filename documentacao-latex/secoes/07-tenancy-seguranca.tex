@@ -308,6 +308,12 @@ não contratou. Para todo o resto a igualdade continua valendo.
 que o produto da própria rede mudou de estado é informação do cliente; decidir o
 estado não é. \rota{GET /recursos/painel} e as escritas seguem em 403 para o
 \cd{gestor\_contrato}.
+
+\textbf{A segunda capacidade só do \cd{admin} é a quota de IA}
+(\rota{/recursos/quotas-de-ia/*}, \adrr{ADR-105}), pela mesma razão: quanto de
+IA uma rede pode gastar por dia é o custo variável da fornecedora. Aqui nem a
+leitura volta atrás da linha --- o \cd{gestor\_contrato} recebe 403 no GET e no
+PUT, e a tela \rota{/unooria/uso-de-ia} o manda embora pelo \emph{middleware}.
 \end{regra}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{38mm}X@{}}
@@ -525,7 +531,9 @@ unooTube: a própria sessão & \rota{/unootube/*} & \yes & \no & \no & \no\\
   \no & \no & \no & \yes\\
 \zebra Chamar a IA (com quota diária POR PERFIL) & \rota{POST /ai/gerar} &
   \yes & \yes & \yes & \yes\\
-Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
+\textbf{Alterar o teto diário de IA de um perfil} (só \cd{admin}, \adrr{ADR-105}) &
+  \rota{/recursos/quotas-de-ia/*} & \no & \no & \no & \no\\
+\zebra Enviar telemetria & \rota{POST /telemetry/batch} & \yes & \yes & \yes & \yes\\
 \bottomrule
 \end{tabularx}
 

@@ -758,6 +758,28 @@ respondendo 403 ao \cd{gestor\_contrato}.
 painel a mostraria e nada mudaria --- campo que não muda nada é pior que campo
 nenhum.
 
+\textbf{A QUOTA DE IA mora no mesmo prefixo} (\adrr{ADR-105}), porque é o mesmo
+painel, a mesma guarda e o mesmo histórico --- e só o \cd{admin} a alcança, nem
+na leitura:
+
+\begin{itemize}
+  \item \rota{GET /recursos/quotas-de-ia} --- uma linha por perfil de
+    \cd{ia\_quotas} (\cd{estudante}, \cd{professor}), sempre as duas, com quem
+    definiu (nome resolvido) e o motivo. O contador do dia
+    (\cd{ia\_uso\_diario}) NÃO sai aqui: é dado por pessoa.
+  \item \rota{PUT /recursos/quotas-de-ia/\{perfil\}} --- sobrescreve o teto.
+    \textbf{Motivo obrigatório sempre} (Zod): aqui toda mudança é exceção ao
+    padrão. Zero e negativo recusados (Zod e CHECK), teto de sanidade de
+    \num{100000000}. Valor igual ao atual devolve \cd{alterada: false} e não
+    grava nem historia. Registra \cd{codigo: ia-quota-alterada} e a linha de
+    \cd{recursos\_auditoria} (ação \cd{quota-alterada}, \cd{detalhe = \{de,
+    para\}}). Vale para a rede inteira na próxima chamada de IA: o
+    \cd{QuotaService} lê a linha a cada \cd{temSaldo}, sem \emph{cache}.
+\end{itemize}
+
+O \rota{GET /recursos/auditoria} ganhou \cd{?prefixo=} (\cd{quota:} recorta as
+mudanças de quota) e a coluna \cd{detalhe}, só preenchida nessas linhas.
+
 \section{Sanidade e prontidão}
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}L{20mm}X@{}}
