@@ -41,7 +41,19 @@ interface TurmaDoProfessor {
  * a IA propõe candidatas no passo 2 e o professor escolhe, edita ou escreve a
  * sua.
  */
-export function FormularioAtividade() {
+export function FormularioAtividade({
+  turmaInicial = "",
+}: {
+  /**
+   * A turma já escolhida, quando o professor chegou pela SALA DE AULA
+   * (ADR-100). Ele clicou em "Conduzir com esta turma" numa turma específica:
+   * reabrir o seletor vazio o faria escolher de novo o que já tinha escolhido —
+   * e escolher errado é criar a atividade na turma errada.
+   *
+   * Continua editável: é sugestão vinda do caminho, não trava.
+   */
+  turmaInicial?: string;
+} = {}) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -79,7 +91,7 @@ export function FormularioAtividade() {
   }, []);
 
   const [form, setForm] = useState({
-    turmaId: "",
+    turmaId: turmaInicial,
     titulo: "",
     disciplina: "",
     recorte: "",

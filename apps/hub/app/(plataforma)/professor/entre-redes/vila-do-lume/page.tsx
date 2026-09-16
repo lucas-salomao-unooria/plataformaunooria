@@ -9,6 +9,8 @@ import {
   rotaDaMissao,
   rotaDaTransversal,
 } from "@/lib/entre-redes/catalogo";
+import { comTurma } from "@/lib/rotas-da-missao";
+import { turmaDaConducao } from "@/lib/turmas";
 import { DESCRICAO_BOLHA } from "@/lib/vila-tipos";
 
 export const metadata = { title: "Vila do Lume — Plataforma Unooria" };
@@ -23,14 +25,28 @@ export const metadata = { title: "Vila do Lume — Plataforma Unooria" };
  * criança sem saber o nível que ela recebeu produz a conclusão errada, e é a
  * conclusão mais fácil de tirar: a de que ela é ingênua.
  */
-export default async function VilaDoLumePage() {
+export default async function VilaDoLumePage({
+  searchParams,
+}: {
+  /** `?turmaId=` chega da SALA DE AULA (ADR-100) — daqui a Vila é a única porta. */
+  searchParams: Promise<{ turmaId?: string }>;
+}) {
   const missao = buscarMissaoTransversal("vila-do-lume");
   if (!missao || !missao.ficha) notFound();
   const { ficha } = missao;
   const rota = rotaDaTransversal(missao);
+  const { turmaId } = await searchParams;
+  const turma = await turmaDaConducao(turmaId);
 
   return (
     <div className="flex flex-col gap-6">
+      {turma ? (
+        <FeedbackAlert
+          type="info"
+          title={`Conduzindo com a turma ${turma.nome}`}
+          description="Os resultados abaixo já abrem nesta turma. Para ver as outras, entre pela trilha do Entre Redes."
+        />
+      ) : null}
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-3">
           <Tag variant="brand" size="sm" pill>
@@ -50,10 +66,10 @@ export default async function VilaDoLumePage() {
       </header>
 
       <div className="flex flex-wrap gap-3">
-        <LinkButton href={`${rota}/guia`} variant="primary">
+        <LinkButton href={comTurma(`${rota}/guia`, turma?.id)} variant="primary">
           Abrir guia da aula
         </LinkButton>
-        <LinkButton href={`${rota}/resultados`} variant="secondary">
+        <LinkButton href={comTurma(`${rota}/resultados`, turma?.id)} variant="secondary">
           Ver resultados da turma
         </LinkButton>
       </div>

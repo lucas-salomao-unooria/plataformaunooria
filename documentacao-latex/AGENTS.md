@@ -15,11 +15,11 @@ armadilhas que já custaram tempo e não avisam quando você cai nelas:
   ficou vaga numa colisão entre frentes paralelas) já foi ocupada pelo guia da
   aula; a 80 é o modelo de seis papéis, 81 o panorama da diretoria, 82 o
   relatório dela, 83 o header full-bleed, 84 a observabilidade sem sessão e
-  85 a remontagem do miolo ao trocar de escola. **Confira na HORA de escrever o número, e não só `origin/dev`**: confira
-  as branches de trabalho abertas E a de integração. Conferir `origin/dev` não
-  basta — em 2026-09-07 duas frentes simultâneas reservaram a 76 e uma teve de
-  ceder, e a base de trabalho pode estar à frente de `dev` (a 79 nasceu sobre
-  `dev-local`, que já tinha 78 e `dev` tinha 71). **Número de ADR nunca é
+  85 a remontagem do miolo ao trocar de escola. **Confira na HORA de escrever o número, e confira `origin/dev-local`**,
+  que é a base de toda frente (ADR-101) — mais as branches de trabalho abertas.
+  `origin/dev` não basta: ele fica ATRÁS. Em 2026-09-07 duas frentes
+  simultâneas reservaram a 76 e uma teve de ceder, e a 79 nasceu sobre
+  `dev-local`, que já tinha 78 enquanto `dev` tinha 71. **Número de ADR nunca é
   reaproveitado nem renumerado**: ele já viaja em mensagem de commit, PR e PDF
   distribuído, e renumerar não quebra a referência — faz ela apontar para outra
   decisão, em silêncio.

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, FeedbackAlert, Tag } from "@edu/ui/ds";
 import { RotuloDaTrilha } from "@/components/trilha";
-import { rotaDeConducao, rotasDaMissao } from "@/lib/rotas-da-missao";
+import { rotaDeConducao } from "@/lib/rotas-da-missao";
 import { copyDaMissao } from "@/lib/missoes-do-estudante";
 import { salaDaTurma, type MissaoDaSalaDoProfessor } from "@/lib/salas";
 import { rotuloDaSerie, normalizarSerie } from "@/lib/series";
@@ -128,7 +128,6 @@ function MissoesDaSala({
         <ul className="flex flex-col">
           {missoes.map((missao) => {
             const copy = copyDaMissao(missao.expId);
-            const rotas = rotasDaMissao(missao.expId);
             const conducao = rotaDeConducao(missao.expId, turmaId);
             return (
               <li key={missao.expId} className="linha-de-lista py-3">
@@ -173,27 +172,16 @@ function MissoesDaSala({
                         "ninguém abriu esta missão aqui ainda"
                       )}
                     </p>
+                    {/* UM caminho por missão (ADR-100). Eram três — "Como
+                        funciona", "Guia da aula" e "Conduzir com esta turma" —
+                        e manter os três obrigava a SALA a saber o que cada
+                        missão oferece. Ela não sabe: o Instanooria não tem tela
+                        de resultados, o Rastro do Boato não tem guia, e foi
+                        assim que a sala serviu um 404 para o 8º ano. Agora ela
+                        pergunta só "onde fica esta missão?", e o guia, as
+                        atividades e os resultados ficam lá dentro — já na
+                        turma. */}
                     <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[13px] font-semibold">
-                      {rotas ? (
-                        <Link
-                          href={rotas.ficha}
-                          className="text-unooria-neutral-700 hover:text-unooria-navy-900"
-                        >
-                          Como funciona
-                        </Link>
-                      ) : null}
-                      {/* O guia da aula: o professor abre daqui, na véspera e
-                          na hora. Ele existe por missão e não por turma, então
-                          não leva `?turmaId=` — a exceção é a Vila do Lume, cujo
-                          guia tem seletor de turma próprio na revelação. */}
-                      {rotas?.guia ? (
-                        <Link
-                          href={rotas.guia}
-                          className="text-unooria-neutral-700 hover:text-unooria-navy-900"
-                        >
-                          Guia da aula
-                        </Link>
-                      ) : null}
                       {conducao ? (
                         <Link
                           href={conducao}

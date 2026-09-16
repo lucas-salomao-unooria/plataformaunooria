@@ -1,0 +1,32 @@
+# apps/api/src/unoogpt — Missão Tempestade (exp-03)
+
+Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
+
+## Missão Tempestade (exp-03, `apps/api/src/unoogpt`)
+
+- **Marco novo leva o relógio do INSTANTE, nunca `sessoes.minutos_gastos`.**
+  `gravarMarco(..., estado)` recebe o `EstadoDoRelogio` de `relogioAgora(tx,
+  escolaId, turmaId)` e grava `minuto`, `segundos_restantes` e `motivo_do_fim`
+  dele. `minutos_gastos` é o retrato do último turno do Cientista — um turno
+  leva 10–30 s (2–6 minutos da cidade), e as rotas diretas (`alocar`,
+  `carregarConjuntos`, `simular`) gravavam com ele; a saída das equipes saía
+  no minuto de um turno atrás (ADR-64). O relatório do professor lê o
+  cronômetro gravado; reconstruí-lo depois é inviável ("+2 min" muda a duração
+  sem histórico, "zerar" apaga o relógio).
+- **O que o professor lê de TEMPO é derivado na leitura, não coluna**:
+  `mudancasDeDestino` (pares consecutivos distintos — o cartão de duas opções
+  manda dois POSTs e justificar passa pela mesma rota), `coberturaDoRisco`,
+  `posicaoNaFaixa` (`regras/trilha.ts`, `regras/desfecho.ts`). Só se grava o
+  que não dá para recalcular: o cronômetro do marco e `simulacoes.esperado`.
+- **A fala do estudante é datada por `agora`** (a hora do envio), porque a
+  gravação acontece depois do `await` do provedor. Sem isso a hora é o fim do
+  turno.
+- **`reiniciar` grava `recomeco` na tentativa que FECHA**, com `origem` (vem do
+  corpo, opcional — cliente antigo não manda) e `fase`/`modo` do relógio. Não
+  existe "liberar recomeço" pelo professor; o que ele controla é o relógio.
+- **`GET /resultado` do estudante filtra os tipos** `fontes|leitura|alocacao|envio`:
+  a linha do tempo do cliente cai no ramo de `envio` para tipo desconhecido, e
+  narraria `inicio` como "enviou 0 resgatadas".
+- Número de resgate **só na rota individual** (`doEstudante`); a folha da turma
+  fala de conduta, e `tests/unoogpt-postgres.spec.ts` quebra se `salvas`
+  entrar nela.

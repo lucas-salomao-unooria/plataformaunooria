@@ -11629,7 +11629,17 @@
     "/atividades": {
       "get": {
         "operationId": "AtividadesController_listar",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Sucesso.",
@@ -11646,6 +11656,11 @@
                           "id": {
                             "type": "string",
                             "format": "uuid"
+                          },
+                          "turmaId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "nullable": true
                           },
                           "titulo": {
                             "type": "string"
@@ -11684,6 +11699,7 @@
                         },
                         "required": [
                           "id",
+                          "turmaId",
                           "titulo",
                           "disciplina",
                           "recorte",
@@ -11712,7 +11728,7 @@
           "atividades"
         ],
         "summary": "As atividades DESTE professor.",
-        "description": "Posse por `professor_id` + `escola_id`: atividade é autoral.\n\n**Papéis:** professor.",
+        "description": "Posse por `professor_id` + `escola_id`: atividade é autoral. `?turmaId=` estreita para as daquela turma — é como a SALA DE AULA resolve para onde o link \"Conduzir com esta turma\" leva (ADR-100).\n\n**Papéis:** professor.",
         "security": [
           {
             "token-da-plataforma": []
