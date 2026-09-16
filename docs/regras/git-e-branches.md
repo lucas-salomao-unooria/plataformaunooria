@@ -40,7 +40,9 @@ abri-lo.
   branch de ambiente (`dev-local`, `dev`, `hml`, `main`) e nome de branch fora
   do padrão; `.githooks/commit-msg` valida o formato do commit;
   `.githooks/pre-commit` recusa arquivo fora da fatia da frente — só quando
-  existe `<git-dir>/fatia`, então a cópia principal segue livre. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
+  existe `<git-dir>/fatia`, então a cópia principal segue livre. O
+  `.githooks/post-merge` não recusa nada: ele **poda as frentes já mergeadas**
+  no `git pull` de `dev-local` (ADR-103), e nunca derruba o pull. Instalados pelo `prepare` no `pnpm install` (`core.hooksPath`).
   Escapes nomeados: `PERMITIR_PUSH_DIRETO=1`, `PERMITIR_BRANCH_FORA_DO_PADRAO=1`,
   `PERMITIR_FORA_DA_FATIA=1`.
 - **TODA tarefa começa num worktree, e a base vai ESCRITA** (ADR-61, ADR-101):
@@ -55,7 +57,13 @@ abri-lo.
   ESCRITO. **`dev-local` costuma estar À FRENTE de `dev`** (é ela que recebe o
   trabalho primeiro): sair de `dev` é nascer sem o que você integrou ontem.
   `git log origin/dev-local..HEAD` antes do PR confere, e o PR é
-  `gh pr create --base dev-local`.
+  `gh pr create --base dev-local`. **Terminada a frente, não remova nada à
+  mão**: o `git pull` em `dev-local` depois do merge poda o worktree, a branch
+  local e a remota (ADR-103) — pulando o que tem alteração não commitada, o que
+  está em uso, e a branch sem commit próprio. `pnpm worktree limpar --seco`
+  mostra o que sairia. **PR empilhado mergeia de CIMA para baixo**: mergear o de
+  baixo antes fecha a porta do de cima, e o trabalho fica parado na branch sem
+  PR — aconteceu com o #51/#52 em 2026-09-15. Receita em `CONTRIBUTING.md`.
 - **Reparta por fatia VERTICAL, nunca por camada** (ADR-71). `apps/api` e
   `apps/hub` são comuns a todas as frentes: um agente "no backend" e outro "no
   frontend" moram nos mesmos arquivos e brigam no merge. Cada frente leva o
@@ -78,7 +86,8 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **103**: a **102 é a doutrina numa fonte só, lida por
+  (a PRÓXIMA é a **104**: a **103 é a poda automática da frente
+      mergeada**, a **102 a doutrina numa fonte só, lida por
       quatro agentes**, a **101 o fluxo de quatro ambientes, com
       `dev-local` como base de toda frente**, e a **100 o caminho único da sala
       para a missão** — que ocupou o número em 2026-09-15 e mergeou SEM

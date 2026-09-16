@@ -147,6 +147,7 @@ que a cercam.
 \adrr{ADR-100} & Da sala para a missão há UM caminho, e ele leva à ficha & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-101} & Quatro ambientes, e a frente nasce e volta em \cd{dev-local} & 2026-09-15 & Aceita\\
 \adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-103} & A frente mergeada se enterra sozinha & 2026-09-15 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8030,3 +8031,105 @@ de falhar é mudo. Se isso acontecer, a saída provável é gerar as duas pastas
 regra por \emph{script} no \cd{prepare} do \cd{pnpm install} --- a alternativa
 descartada acima, que volta a fazer sentido quando o \emph{symlink} deixa de
 funcionar.
+
+
+\section{ADR-103 --- A frente mergeada se enterra sozinha}
+\label{adr:poda-de-worktree}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-61} (a frente paralela é um \emph{worktree}) e à
+\adrr{ADR-101} (quatro ambientes, com \cd{dev-local} como base).
+
+\textbf{Contexto.} A \adrr{ADR-61} deu à frente de trabalho um comando de
+abertura --- \cd{pnpm worktree criar} --- e deixou o fechamento com quem
+lembrasse: \cd{git worktree remove}, \cd{git branch -d}, \cd{git push origin
+--delete}, três comandos em três lugares. Na prática ninguém lembra, e o motivo
+é estrutural: \textbf{o \emph{merge} do PR acontece no GitHub, e nenhum
+\emph{hook} local dispara nele.} A máquina que abriu a frente não tem como saber que ela
+acabou.
+
+O custo não é desordem. O \emph{worktree} órfão \textbf{segura a \emph{branch}
+contra \cd{git branch -d}}, o \emph{slug} continua reservando uma porta de Vite entre
+5201 e 5299, e o \cd{pnpm worktree listar} deixa de responder \enquote{quais
+frentes estão abertas} --- que é a única pergunta que ele existe para responder.
+Em 2026-09-15 o dono do produto apagou três frentes à mão, rodando os comandos
+que um agente tinha ditado, e pediu que isso parasse de ser trabalho dele.
+
+\textbf{Decisão.} \textbf{Um comando de poda, e um \emph{hook} que o dispara no
+único instante em que a máquina fica sabendo do \emph{merge}: o \cd{git pull}
+em \cd{dev-local}.}
+
+\begin{itemize}
+  \item \cd{pnpm worktree limpar} remove, de cada frente já contida em
+    \cd{origin/dev-local}, o \emph{worktree}, a \emph{branch} local e a remota.
+    \cd{--seco} mostra o que sairia sem remover nada.
+  \item \arq{.githooks/post-merge} o chama quando o \cd{git pull} de
+    \cd{dev-local} traz o \emph{merge} do PR. É o gatilho automático, e ele
+    \textbf{nunca derruba o \cd{pull}}: qualquer erro sai como aviso e o
+    \cd{exit} é 0. Escape: \env{PULAR\_PODA\_DE\_WORKTREE}.
+  \item \cd{pnpm worktree criar} também poda antes de abrir --- quem começa uma
+    frente já fechou a anterior, e ali a poda não interrompe nada.
+  \item \textbf{Três recusas deliberadas.} \emph{Worktree} com alteração não
+    commitada é PULADO, e o \cd{git status} dele é impresso; a frente de onde o
+    comando está rodando é pulada; e \textbf{\emph{branch} sem \emph{commit}
+    próprio não conta como mergeada}.
+\end{itemize}
+
+A terceira recusa é a que quase passou. \enquote{Estar contida na base} é o
+critério óbvio, e ele está \textbf{errado} para uma frente recém-aberta: ela
+aponta para o MESMO \emph{commit} da base e é trivialmente ancestral dela. Com a
+poda rodando dentro do \cd{criar}, abrir uma frente apagaria a que o vizinho
+tinha aberto minutos antes --- e sem sintoma, porque o \emph{worktree} estaria
+limpo. O critério correto tem duas partes: contida na base \textbf{e} com a
+ponta DIFERENTE da ponta dela. Depois de um \emph{merge} de verdade a base fica
+à frente (o repositório usa \emph{merge commit} ou \emph{squash}, com
+\emph{rebase} desabilitado), então a diferença existe; antes do primeiro
+\emph{commit}, não existe.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Deixar como estava, documentando melhor.} A receita já estava
+    escrita no \arq{CONTRIBUTING.md} e mesmo assim as frentes ficavam de pé. Uma
+    instrução que depende de alguém lembrar, no fim de uma tarefa que já
+    terminou, é uma instrução que não vai ser seguida.
+  \item \textbf{\cd{delete\_branch\_on\_merge} do GitHub.} Resolve UM dos três
+    restos --- a \emph{branch} remota --- e deixa o \emph{worktree} e a
+    \emph{branch} local, que são os que atrapalham de verdade. Vale ligar assim
+    mesmo, e a poda já tolera a remota ausente.
+  \item \textbf{Podar no \cd{prepare} do \cd{pnpm install}.} Roda com muito mais
+    frequência que o \emph{merge}, e num momento em que quem instalou está
+    esperando outra coisa. Remover \emph{worktree} como efeito colateral de
+    instalar dependência é surpresa.
+  \item \textbf{Um \emph{workflow} do GitHub Actions apagando a \emph{branch}.}
+    Não alcança a máquina: o \emph{worktree} e a \emph{branch} local são estado
+    de um disco que a esteira não vê.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um \cd{git pull} passou a apagar coisas.} É seguro pelas três
+    recusas, mas é um efeito colateral que ninguém espera de um \cd{pull} --- e
+    quem não leu esta ADR vai ver \emph{worktrees} sumirem sem ter pedido. O
+    \emph{hook} imprime o que está fazendo e o nome do escape, e é só isso que
+    separa a poda de parecer um defeito.
+  \item \textbf{A base está cravada em \cd{origin/dev-local}.} Uma frente que
+    saia de outra base (um PR empilhado, por exemplo) só é podada depois que a
+    pilha inteira chega a \cd{dev-local}. É o comportamento conservador certo,
+    mas quem empilha vê a frente de baixo sobreviver à própria \emph{merge}.
+  \item \textbf{Sem rede, a poda subestima o que foi mergeado.} O \cd{fetch}
+    falha em silêncio e o critério passa a valer sobre o que já estava em
+    \arq{.git}: nada é apagado por engano, mas nada é podado também.
+  \item \textbf{\cd{git push origin --delete} é irreversível na prática.} A
+    \emph{branch} remota some, e recuperá-la exige o SHA. Ele só roda sobre
+    \emph{branch} já contida na base, então o conteúdo está preservado --- mas o
+    nome, não.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{A primeira frente que precise
+sobreviver ao \emph{merge}.} Uma \emph{branch} de experimento longo que
+recebe \emph{merge} da base e continua, por exemplo. Hoje o desenho pressupõe
+que frente mergeada é frente terminada. Nesse dia a saída provável é uma marca
+explícita na frente (um arquivo no \emph{git-dir} dela, como a \cd{fatia} já é)
+que a poda respeite.
