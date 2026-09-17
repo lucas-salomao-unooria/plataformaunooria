@@ -1,5 +1,4 @@
 import { HttpException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { PrismaClient } from "@prisma/client";
 import type { AiJsonRequest, AiProvider, AiRequest, AiResult } from "../src/ai/provider";
 import { QuotaService } from "../src/ai/quota.service";
@@ -46,13 +45,10 @@ class ProviderFake implements AiProvider {
   }
 }
 
-const config = new ConfigService({
-  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 20000,
-  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
-});
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const provider = new ProviderFake();
-const quota = new QuotaService(prisma, config);
+// O teto vem de `ia_quotas` (ADR-105), semeada pela migration — nada a configurar.
+const quota = new QuotaService(prisma);
 const service = new BemEstarService(prisma, provider, quota);
 
 /** Relógio controlável: começa numa terça, 10h de Brasília. */

@@ -31,13 +31,11 @@ const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as Prism
  * aula não depende de o modelo estar de pé.
  */
 const config = new ConfigService({
-  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: 300_000,
-  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000,
   ASSETS_DRIVER: "local",
   ASSETS_LOCAL_DIR: "/tmp/eco-teste-assets",
 });
 const provider = new MockProvider();
-const quota = new QuotaService(prisma, config);
+const quota = new QuotaService(prisma);
 const assets = new AssetsService(config);
 const service = new OEcoNoGrupoService(
   prisma,

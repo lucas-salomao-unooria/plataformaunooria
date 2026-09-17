@@ -14,6 +14,7 @@ import { PortabilidadeModule } from "./portabilidade/portabilidade.module";
 import { RosteringModule } from "./rostering/rostering.module";
 import { ExperienciasModule } from "./experiencias/experiencias.module";
 import { RecursosModule } from "./recursos/recursos.module";
+import { ProspeccaoModule } from "./prospeccao/prospeccao.module";
 import { MotorModule } from "./motor/motor.module";
 import { AssetsModule } from "./assets/assets.module";
 import { AtividadesModule } from "./atividades/atividades.module";
@@ -56,6 +57,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     PortabilidadeModule,
     ExperienciasModule,
     RecursosModule,
+    ProspeccaoModule,
     SalasModule,
     MotorModule,
     AssetsModule,

@@ -131,8 +131,10 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
   (OIDC + posse). Versionamento de objetos ligado dá histórico de cada
   Salvar sem código. Em dev, `PLANOS_DRIVER=local` grava em `storage-privado/`.
   Envs: `PLANOS_DRIVER`, `PLANOS_BUCKET`, `PLANOS_IMPORT_TOKEN`,
-  `VERTEX_MODEL_LONGO` (Gemini 2.5, saída longa),
-  `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`. As referências curriculares (texto)
+  `VERTEX_MODEL_LONGO` (Gemini 2.5, saída longa). A quota diária do professor
+  deixou de ser env (`AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` **saiu do Terraform**,
+  ADR-105): é a linha `professor` de `ia_quotas`, editada pelo `admin` em
+  `/unooria/uso-de-ia`. As referências curriculares (texto)
   vivem no Postgres e entram por `scripts/importar-referencias-plano.mjs`.
   O Cloud Run `planodeaula` antigo pode ser desligado após o smoke em produção.
 - **Vila do Lume** (exp-70, transversal, 2026-08): jogo 3D estático no bucket de

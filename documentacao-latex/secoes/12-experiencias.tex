@@ -1818,7 +1818,12 @@ Mídia $>$ \SI{2}{\mega\byte} & Vai para o \emph{bucket} de \emph{assets},
 \end{tabularx}
 
 \begin{nota}
-O \arq{\_template} continua \textbf{cru de propósito}: o que ele não traz, o
-\emph{design system} traz. Um \emph{template} rico em componentes locais seria a
-primeira violação da regra de interface, replicada 48 vezes.
+O \arq{\_template} continua \textbf{cru de interface, de propósito}: o que ele
+não traz, o \emph{design system} traz. Um \emph{template} rico em componentes
+locais seria a primeira violação da regra de interface, replicada 48 vezes.
+A \textbf{fiação}, porém, ele traz inteira desde a \adrr{ADR-106}: manifesto
+completo (\cd{produto}, \cd{unidade}, \cd{publico}, \cd{permissoes}),
+\emph{handshake} em \arq{bootstrap.tsx}, \arq{lib/\{api,telemetria,tipos,textos\}.ts},
+folhas da seção \cd{unooria}, \arq{versao.test.ts} e \cd{vitest} --- a
+experiência nova nasce compilando, testando e conversando com o hub.
 \end{nota}

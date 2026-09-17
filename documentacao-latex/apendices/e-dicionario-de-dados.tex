@@ -37,9 +37,11 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
 \zebra \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
+\cd{prospeccao\_leads} & \textbf{Sem tenant} & Cadastro de interesse do site público (\adrr{ADR-107}) --- a ÚNICA tabela de dado pessoal sem \cd{escola\_id} e sem RLS\\
 \cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
 \zebra \cd{progresso} & Tenant & Progresso genérico da SDK\\
 \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
+\zebra \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
 \zebra \cd{exp\_01\_activities} & Tenant & Atividade preparada pelo professor\\
 \cd{exp\_01\_authors} & Tenant & Personas fictícias\\
@@ -514,14 +516,21 @@ por que o produto dela mudou de estado é informação do cliente.
 \zebra \cd{acao} & \cd{TEXT} & Vocabulário FECHADO por \emph{CHECK}
   (\cd{ck\_recursos\_auditoria\_acao}), espelhando \cd{ACOES\_DE\_AUDITORIA} do
   código: \cd{ligado}, \cd{desligado}, \cd{herdado}, \cd{versao-ativada},
-  \cd{versao-fixada}, \cd{versao-soltada}. O teste prende os dois lados, porque
-  a divergência só apareceria como 500 no log.\\
+  \cd{versao-fixada}, \cd{versao-soltada}, \cd{quota-alterada}
+  (\adrr{ADR-105}). O teste prende os dois lados, porque a divergência só
+  apareceria como 500 no log.\\
 \cd{versao} & \cd{TEXT?} & \emph{CHECK} BICONDICIONAL: preenchida exatamente nas
   duas ações de versão, nula em todas as outras. Campo cheio onde não significa
   nada é pior que campo vazio --- quem lê \cd{desligado} com uma versão ao lado
   conclui que a versão foi parte da decisão.\\
 \zebra \cd{motivo} & \cd{TEXT?} & O texto que o painel exige ao desligar,
   copiado para cá.\\
+\cd{detalhe} & \cd{JSONB?} & \cd{\{de, para\}} da mudança de quota
+  (\adrr{ADR-105}) --- e SÓ em \cd{quota-alterada}, por \emph{CHECK}
+  bicondicional (\cd{ck\_recursos\_auditoria\_detalhe}), pela mesma razão de
+  \cd{versao}: campo preenchido onde não significa nada faz quem lê procurar um
+  número que não existiu. Em \cd{quota-alterada}, \cd{recurso\_id} é
+  \cd{quota:<perfil>}.\\
 \cd{autor\_id} & \cd{UUID} & \textbf{Sem FK}, ao contrário de
   \cd{disponibilidades.definido\_por}: uma FK com \cd{RESTRICT} travaria para
   sempre a exclusão de qualquer conta que já tenha mexido no painel, porque
@@ -549,6 +558,42 @@ a política a esconderia). Quem protege a leitura é o \cd{RolesGuard}
 (\cd{GESTORES\_DO\_CONTRATO}) --- e o \emph{grant} é
 \cd{SELECT, INSERT, DELETE}: sem \cd{UPDATE}, a role de runtime não alcança nem
 o \emph{trigger}.
+
+\subsection{\cd{ia\_quotas} (catálogo)}
+
+\textbf{O teto diário de IA por perfil} (\adrr{ADR-105}) --- o número que o
+\cd{QuotaService} compara com \cd{ia\_uso\_diario} ANTES de toda chamada de IA.
+Uma linha por perfil, escopo do CONTRATO inteiro (1 contrato = 1 \emph{stack}),
+semeada pela \emph{migration} com os valores que valiam por \emph{env}
+(\num{300000} e \num{2000000}) e sobrescrita pelo \cd{admin} em
+\rota{/unooria/uso-de-ia}. O histórico de quem mudou vive em
+\cd{recursos\_auditoria} (ação \cd{quota-alterada}).
+
+\begin{tabularx}{\linewidth}{@{}L{28mm}L{26mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{perfil} & \cd{TEXT} PK & Vocabulário FECHADO por \emph{CHECK}
+  (\cd{ck\_ia\_quotas\_perfil}): \cd{estudante}, \cd{professor}, espelhando
+  \cd{PERFIS\_COM\_QUOTA} do código. Só esses dois chamam IA; todo outro perfil
+  lê a linha \cd{professor}. Perfil novo entra na tupla, no CHECK e na semente.\\
+\zebra \cd{tokens\_por\_dia} & \cd{INTEGER} & \emph{CHECK} $> 0$: zero e
+  negativo não são quota, são o interruptor da \adrr{ADR-87} entrando pela porta
+  errada. O teto de sanidade (\num{100000000}) é do Zod.\\
+\cd{motivo} & \cd{TEXT?} & Obrigatório na rota (Zod), sempre: aqui toda mudança
+  é exceção ao padrão da plataforma.\\
+\zebra \cd{definido\_por} & \cd{UUID?} & \textbf{Sem FK}, como
+  \cd{recursos\_auditoria.autor\_id}: a linha é SOBRESCRITA e o nome congelado
+  de quem mexeu vive no histórico. \cd{NULL} = veio da \emph{migration}.\\
+\cd{definido\_em}, \cd{atualizado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\textbf{Sem RLS}, pelo par de razões de \cd{disponibilidades}: não é dado de
+estudante, e não há \cd{escola\_id} --- a linha vale para o contrato inteiro.
+\emph{Grant} da role de runtime: \cd{SELECT, INSERT, UPDATE}, sem \cd{DELETE}
+--- a linha de um perfil não se apaga; sem ela, vale a constante do código e o
+registro acusa \cd{ia-quota-sem-linha}.
 
 \subsection{\cd{progresso}}
 
@@ -594,6 +639,59 @@ sobrescrevam.
 \cd{particoes.\ldots\_default} & \textbf{Rede de segurança.} Sem ela, evento com
   \cd{ts} fora das faixas seria \textbf{recusado} --- e telemetria perdida em
   silêncio é pior que telemetria mal guardada. Encher = faltou criar partição.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{prospeccao\_leads} (sem tenant)}
+
+\textbf{Quem pediu contato pelo formulário do site público} (\adrr{ADR-107}),
+antes de existir contrato. Substituiu um SQLite (Cloudflare D1) servido por um
+\emph{Worker} fora da plataforma, com listagem protegida por um \emph{token} no
+fragmento da URL --- um banco, um \emph{runtime} e um modelo de autorização a
+mais na arquitetura, nenhum deles visível para quem opera o produto.
+
+\textbf{Sem \cd{escola\_id} e sem RLS}, a exceção da regra nº 1 (Capítulo~7):
+não há tenant a isolar. Quem protege a leitura é \cd{@Roles("admin")}; a escrita
+é pública, e a defesa dela é o Zod, a cota por IP, o campo-armadilha e o
+\emph{dedupe}.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}. Não sai na resposta da api:
+  nenhuma rota o consome, e um identificador no \emph{payload} convida a uma
+  rota de edição que não deve existir.\\
+\zebra \cd{nome}, \cd{telefone}, \cd{organizacao}, \cd{cargo} & \cd{TEXT} &
+  \emph{CHECK} de não-vazio nos cinco campos mais o aceite. O Zod da rota já
+  recusa; o \emph{CHECK} impede que qualquer outro caminho (semente, correção
+  manual, importação futura) escreva a linha que a tela mostraria como uma
+  fileira de células em branco.\\
+\cd{email} & \cd{TEXT} & \textbf{Sempre em minúsculas} (\emph{CHECK}
+  \cd{email = lower(email)}): é a chave do \emph{dedupe}, e a mesma pessoa
+  escreve o próprio endereço de três jeitos ao longo de um ano.\\
+\zebra \cd{consentimento\_texto} & \cd{TEXT} & \textbf{A FRASE que a pessoa
+  marcou}, não um booleano. Booleano prova que alguém clicou; ele não prova a
+  QUE se consentiu, que é o que a LGPD cobra (art.~8º, §2º). Mudou o texto no
+  site, muda a constante da api no mesmo \emph{commit} --- as linhas antigas
+  continuam dizendo o que valia no dia delas.\\
+\cd{criado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Objeto} & \thd{Nota}\\
+\midrule
+\cd{prospeccao\_leads\_}\B{}\cd{email\_criado\_em\_idx} & O \emph{dedupe} da
+  rota pública: mesmo e-mail dentro de uma hora não vira linha nova.\\
+\zebra \cd{prospeccao\_leads\_}\B{}\cd{criado\_em\_idx} & \cd{DESC} --- a
+  ordem em que o painel lê.\\
+\cd{GRANT} & \cd{SELECT, INSERT, DELETE}. \textbf{Com \cd{DELETE}} (o titular
+  pode revogar o consentimento e pedir a eliminação, art.~18, VI) e
+  \textbf{sem \cd{UPDATE}} (cadastro não se edita: se a pessoa reenviar com o
+  dado certo, a linha nova é o registro certo, e a antiga continua sendo verdade
+  sobre o que foi enviado naquele dia).\\
 \bottomrule
 \end{tabularx}
 

@@ -47,7 +47,7 @@ export class AiController {
     corpo: GerarSchema,
     resposta: GerarRespostaSchema,
     notas: [
-      "Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.",
+      "Quota diária POR PERFIL (o teto é a linha do perfil em `ia_quotas`, editável pelo `admin` em `/unooria/uso-de-ia` — ADR-105), contador persistido em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.",
       "A série do estudante vai ao prompt RESOLVIDA da turma do token (`turmas.serie` → \"4º ano\"), nunca vinda do corpo. Sem turma, a linha some do prompt.",
     ],
   })

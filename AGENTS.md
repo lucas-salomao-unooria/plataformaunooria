@@ -84,16 +84,23 @@ porquê inteiro, e a separação entre *subir* e *ativar*, em
 1. **Toda query SQL é escopada por `escola_id`** (e `estudante_id` quando aplicável).
    Tabelas de dados de estudante têm `escola_id NOT NULL` + Row-Level Security.
    Nunca escreva uma query que atravesse escolas, exceto em rotas `admin-contrato`.
+   **Uma exceção, e só ela: `prospeccao_leads`** (ADR-107) — o cadastro de
+   interesse do site público, escrito por VISITANTE meses antes de existir
+   contrato. Sem `escola_id`, sem RLS, e as queries dela rodam fora de
+   `comTenancy`. Quem tranca é o papel (`admin`) na leitura; a escrita é pública
+   por desenho. Tabela nova NÃO herda essa exceção.
 2. **Nenhum segredo em bundle client** (experiências e hub client-side): sem
    API keys, sem prompts de sistema, sem URLs internas. IA só via `api /ai/*`.
 3. **Respostas corretas / correção / pontuação que vale nota: server-side.**
    O client envia a resposta do estudante; a api corrige.
 4. **Token**: hub obtém via OIDC (WSO2), repassa à experiência por `postMessage`
    com `targetOrigin` explícito (nunca `*`). Experiência mantém token só em memória.
-5. **IA tem quota**: por usuário/dia e POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE`,
-   `AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR` — um plano anual gasta ~220k tokens só de
-   prompt) e rate limit por usuário. Nunca exponha chamada de IA sem passar pelo
-   `QuotaService` (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
+5. **IA tem quota**: por usuário/dia e POR PERFIL, e **o teto é DADO, não env**
+   (ADR-105): a linha do perfil em `ia_quotas` (`estudante` | `professor`),
+   semeada pela migration e editada só pelo `admin` em `/unooria/uso-de-ia`.
+   Não recrie `AI_DAILY_TOKEN_QUOTA_PER_*` como fallback. E rate limit por
+   usuário. Nunca exponha chamada de IA sem passar pelo `QuotaService`
+   (`temSaldo(escola, usuario, perfil)` ANTES, `consumir` depois).
 6. Dados de menores (LGPD): não logar PII em texto claro; telemetria carrega
    `estudante_id` opaco, nunca nome/email.
 7. **A missão só abre na turma em que o professor a liberou** (ADR-69). Toda

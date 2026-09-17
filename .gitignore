@@ -75,3 +75,5 @@ credenciais-*.csv
 # versionado em apps/api/src/curriculo/dados/*.ts. Como rebaixá-los está no
 # README da pasta, junto da armadilha do rascunho do Ensino Médio.
 documentos-fonte/**/*.pdf
+
+graphify-out/

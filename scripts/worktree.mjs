@@ -26,7 +26,30 @@ import { fileURLToPath } from "node:url";
 
 // Caminhos ancorados na raiz do repo (não no cwd): funciona de qualquer pasta.
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
-const WORKTREES = join(RAIZ, ".claude", "worktrees");
+
+/**
+ * A cópia PRINCIPAL, mesmo quando o script roda de dentro de um worktree.
+ *
+ * `RAIZ` é a árvore de onde este arquivo foi lido — num worktree, é o worktree.
+ * Mas `git worktree list` sempre devolve caminhos da principal, e é lá que
+ * `.claude/worktrees/` existe: sem esta resolução, a poda comparava prefixos
+ * que nunca casam e dizia "nada a podar" com três frentes abertas.
+ * `--git-common-dir` é o `.git` da principal, mesmo visto de um worktree.
+ */
+function raizPrincipal() {
+  try {
+    const comum = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
+      cwd: RAIZ,
+      encoding: "utf8",
+    }).trim();
+    return dirname(comum);
+  } catch {
+    return RAIZ;
+  }
+}
+
+const PRINCIPAL = raizPrincipal();
+const WORKTREES = join(PRINCIPAL, ".claude", "worktrees");
 
 /** Espelha `.githooks/pre-push`: um nome que o hook recusaria não vira worktree. */
 const TIPOS = "feat|fix|chore|docs|ci|refactor|test|perf|build|style|hotfix";
@@ -167,6 +190,10 @@ function criar(branch, fatia) {
   const destino = join(WORKTREES, slug);
   if (existsSync(destino)) morre(`${destino} já existe — não vou sobrescrever.`);
 
+  // Frente nova é a hora natural de enterrar as antigas: quem abre uma já
+  // fechou a anterior, e aqui a poda não interrompe nada (ADR-103).
+  limpar({ silencioso: true });
+
   // Resolvida ANTES do install: um --fatia errado falha em segundos, não depois
   // de dois minutos de `pnpm install`.
   const alvos = resolverFatia(fatia);
@@ -183,6 +210,8 @@ function criar(branch, fatia) {
 
   passo("git fetch origin");
   git(["fetch", "origin", "--quiet"]);
+  // A base tem de estar em dia ANTES de a frente nascer dela (ADR-104).
+  realinharBase();
   // Conserta a raiz de uma vez: clone antigo tem origin/HEAD em main (ADR-61).
   try {
     git(["remote", "set-head", "origin", "--auto"], { stdio: "ignore" });
@@ -291,27 +320,34 @@ Terminou a frente — teste, commite, e o PR volta para o ambiente local:
   pnpm worktree remover ${slug}`);
 }
 
-function listar() {
+/** As árvores de trabalho abertas, a principal inclusive. */
+function frentes() {
   const bruto = git(["worktree", "list", "--porcelain"]);
-  const portas = portasDasFrentes();
-  const frentes = [];
+  const out = [];
   let atual = {};
   for (const linha of `${bruto}\n\n`.split("\n")) {
     if (linha.startsWith("worktree ")) atual = { caminho: linha.slice(9) };
     else if (linha.startsWith("branch ")) atual.branch = linha.slice(7).replace("refs/heads/", "");
     else if (linha === "" && atual.caminho) {
-      frentes.push(atual);
+      out.push(atual);
       atual = {};
     }
   }
+  return out;
+}
+
+function listar() {
+  const portas = portasDasFrentes();
+  const frentes_ = frentes();
 
   console.log(`\n${cor(1, "Frentes")}\n`);
-  for (const { caminho, branch } of frentes) {
+  for (const { caminho, branch } of frentes_) {
     const slug = caminho.startsWith(`${WORKTREES}/`) ? caminho.slice(WORKTREES.length + 1) : null;
     const porta = slug ? portas.get(slug) : null;
     const onde = slug ? `worktree ${slug}` : "cópia principal";
+    const fim = slug && branch && jaMergeada(branch) ? cor(32, "  ← mergeada: pnpm worktree limpar") : "";
     console.log(
-      `  ${(branch ?? "(destacada)").padEnd(32)} ${onde.padEnd(30)} ${porta ? `Vite :${porta}` : ""}`,
+      `  ${(branch ?? "(destacada)").padEnd(32)} ${onde.padEnd(30)} ${porta ? `Vite :${porta}` : ""}${fim}`,
     );
   }
   console.log(
@@ -323,9 +359,214 @@ function remover(slug) {
   if (!slug) morre("falta o slug. Uso: pnpm worktree remover <slug>");
   const destino = join(WORKTREES, slug);
   if (!existsSync(destino)) morre(`${destino} não existe. Veja: pnpm worktree listar`);
+  const branch = branchDoWorktree(destino);
   // Worktree órfão fica em `git worktree list` e segura a branch contra `git branch -d`.
   git(["worktree", "remove", destino], { stdio: "inherit" });
-  ok(`worktree '${slug}' removido. A branch fica — apague com git branch -d depois do merge.`);
+  ok(`worktree '${slug}' removido.`);
+  if (branch) apagarBranch(branch);
+}
+
+/** A branch daquela árvore de trabalho, ou null se ela está destacada. */
+function branchDoWorktree(caminho) {
+  try {
+    const r = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+      cwd: caminho,
+      encoding: "utf8",
+    }).trim();
+    return r === "HEAD" ? null : r;
+  } catch {
+    return null;
+  }
+}
+
+const BASE = "origin/dev-local";
+
+/**
+ * A branch teve trabalho E esse trabalho já está em `origin/dev-local`?
+ *
+ * Ser ancestral da base não basta: uma frente ABERTA AGORA, sem commit nenhum,
+ * aponta para o mesmo commit da base e é trivialmente ancestral dela. Podar por
+ * esse critério apagaria a frente que alguém acabou de abrir — e como `criar`
+ * poda antes de criar, isso mataria a frente do vizinho ao abrir a sua.
+ *
+ * Por isso a segunda condição: a ponta da branch tem de ser DIFERENTE da ponta
+ * da base. Depois de um merge de verdade a base fica à frente (o repositório
+ * usa merge commit ou squash — rebase está desabilitado), então a diferença
+ * existe. Antes do primeiro commit, não existe, e a frente fica de pé.
+ */
+function jaMergeada(branch) {
+  try {
+    const ponta = git(["rev-parse", branch]);
+    const pontaDaBase = git(["rev-parse", BASE]);
+    if (!ponta || ponta === pontaDaBase) return false;
+    git(["merge-base", "--is-ancestor", branch, BASE], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Apaga a branch local e a remota, NESTA ordem e só se ela estiver mergeada.
+ * O `-d` (minúsculo) é a segunda rede: ele próprio recusa branch não contida.
+ */
+function apagarBranch(branch) {
+  if (!jaMergeada(branch)) {
+    console.log(
+      `${cor(33, "!")} branch '${branch}' NÃO está em ${BASE} — fica. Apague à mão se foi abandonada.`,
+    );
+    return;
+  }
+  try {
+    git(["branch", "-d", branch], { stdio: "ignore" });
+    ok(`branch local '${branch}' apagada.`);
+  } catch {
+    console.log(`${cor(33, "!")} não consegui apagar a branch local '${branch}'.`);
+  }
+  // A remota pode já ter sido apagada pelo GitHub (`delete_branch_on_merge`).
+  if (git(["ls-remote", "--heads", "origin", branch]) === "") return;
+  try {
+    git(["push", "origin", "--delete", branch], { stdio: "ignore" });
+    ok(`branch remota 'origin/${branch}' apagada.`);
+  } catch {
+    console.log(`${cor(33, "!")} não consegui apagar 'origin/${branch}' — apague pelo GitHub.`);
+  }
+}
+
+
+const PROMOVIDA = "origin/dev";
+
+/**
+ * Põe `origin/dev-local` onde `origin/dev` está, quando a promoção deixou a
+ * base para trás (ADR-104).
+ *
+ * O merge do PR de promoção nasce NO DESTINO: `dev` ganha um merge commit que
+ * `dev-local` não tem, ainda que o conteúdo seja idêntico. Uma vez é
+ * cosmético; dez promoções depois o atraso acumulou, e o primeiro hotfix que
+ * descer por retro-merge chega em `dev` antes de chegar aqui — a frente nasce
+ * sem a correção, que é o defeito que a ADR-101 existe para evitar.
+ *
+ * Só age quando é fast-forward PURO (a base está contida em `dev`). Se as duas
+ * divergiram de verdade, RECUSA: mover a base por cima de commit que só existe
+ * nela seria perder trabalho, e isso nenhum script decide sozinho.
+ *
+ * Empurra `origin/dev` direto para a branch remota e não toca a working tree
+ * da cópia principal — ela pode estar com `dev-local` em checkout e suja, e
+ * realinhar não pode depender do estado de quem não pediu nada.
+ */
+function realinharBase() {
+  let promovida;
+  let base;
+  try {
+    promovida = git(["rev-parse", PROMOVIDA]);
+    base = git(["rev-parse", BASE]);
+  } catch {
+    return; // sem origin/dev: clone parcial ou repo novo. Nada a alinhar.
+  }
+  if (!promovida || !base || promovida === base) return;
+
+  const contida = (a, b) => {
+    try {
+      git(["merge-base", "--is-ancestor", a, b], { stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // `dev-local` à frente de `dev` é o estado NORMAL: trabalho esperando promoção.
+  if (contida(PROMOVIDA, BASE)) return;
+
+  if (!contida(BASE, PROMOVIDA)) {
+    morre(
+      `${BASE} e ${PROMOVIDA} DIVERGIRAM — cada uma tem commit que a outra não tem.\n` +
+        "    Não realinho sozinho: mover a base por cima do que só existe nela perde trabalho.\n" +
+        `    Veja o que é de cada lado e resolva à mão:\n` +
+        `      git log --oneline --left-right ${BASE}...${PROMOVIDA}`,
+    );
+  }
+
+  const atras = git(["rev-list", "--count", `${BASE}..${PROMOVIDA}`]);
+  passo(`${BASE} está ${atras} commit(s) atrás de ${PROMOVIDA} — realinhando (fast-forward)`);
+  try {
+    // O pre-push recusa push direto em branch de ambiente; aqui o escape é
+    // deliberado e DITO na saída, porque fast-forward não traz conteúdo novo.
+    git(["push", "origin", `${PROMOVIDA}:refs/heads/dev-local`], {
+      stdio: "ignore",
+      env: { ...process.env, PERMITIR_PUSH_DIRETO: "1" },
+    });
+  } catch {
+    morre(
+      `não consegui empurrar ${PROMOVIDA} para dev-local. Faça à mão:\n` +
+        "      git switch dev-local && git merge --ff-only origin/dev\n" +
+        "      PERMITIR_PUSH_DIRETO=1 git push origin dev-local",
+    );
+  }
+  git(["fetch", "origin", "--quiet"]);
+  ok(`dev-local: ${base.slice(0, 7)} → ${promovida.slice(0, 7)} (push direto, fast-forward)`);
+
+  // A branch LOCAL também — falha se ela estiver em checkout em algum lugar.
+  try {
+    git(["fetch", "origin", "dev-local:dev-local", "--quiet"]);
+  } catch {
+    console.log(
+      `${cor(33, "!")} a branch local 'dev-local' não foi atualizada (está em checkout). Rode 'git pull' na cópia principal.`,
+    );
+  }
+}
+
+/**
+ * Poda as frentes já mergeadas em `origin/dev-local` (ADR-103).
+ *
+ * Existe porque o merge acontece no GitHub e NENHUM hook local dispara nele:
+ * a frente terminada fica de pé até alguém se lembrar. E o custo não é só
+ * desordem — o worktree órfão segura a branch contra `git branch -d`, o slug
+ * continua reservando porta de Vite, e o `listar` deixa de responder "quais
+ * frentes estão abertas", que é a única pergunta que ele existe para responder.
+ *
+ * Nunca remove trabalho: worktree com alteração não commitada é PULADO (o
+ * `git worktree remove` sem `--force` recusa, e aqui a recusa vira aviso), e a
+ * frente de onde o comando está rodando também.
+ */
+function limpar({ seco = false, silencioso = false } = {}) {
+  try {
+    git(["fetch", "origin", "--quiet"]);
+  } catch {
+    /* sem rede: decide com o que já está em .git — pode subestimar o mergeado */
+  }
+  const aqui = process.cwd();
+  const podados = [];
+
+  for (const { caminho, branch } of frentes()) {
+    if (!caminho.startsWith(`${WORKTREES}/`)) continue; // a cópia principal nunca
+    const slug = caminho.slice(WORKTREES.length + 1);
+    if (!branch || !jaMergeada(branch)) continue;
+
+    if (aqui === caminho || aqui.startsWith(`${caminho}/`)) {
+      console.log(`${cor(33, "!")} '${slug}' está mergeada, mas é a frente ONDE VOCÊ ESTÁ — pule para a cópia principal e rode de novo.`);
+      continue;
+    }
+    const sujo = execFileSync("git", ["status", "--porcelain"], { cwd: caminho, encoding: "utf8" }).trim();
+    if (sujo) {
+      console.log(`${cor(33, "!")} '${slug}' está mergeada mas tem alteração não commitada — NÃO removi:`);
+      console.log(sujo.split("\n").map((l) => `      ${l}`).join("\n"));
+      continue;
+    }
+    if (seco) {
+      console.log(`  ${cor(2, "removeria")} ${slug} (${branch})`);
+      podados.push(slug);
+      continue;
+    }
+    passo(`podando '${slug}' — ${branch} já está em ${BASE}`);
+    git(["worktree", "remove", caminho], { stdio: "inherit" });
+    apagarBranch(branch);
+    podados.push(slug);
+  }
+
+  if (podados.length === 0 && !silencioso) {
+    ok(`nenhuma frente mergeada para podar (base: ${BASE}).`);
+  }
+  return podados;
 }
 
 const [comando, argumento] = process.argv.slice(2);
@@ -342,10 +583,14 @@ switch (comando) {
   case "remover":
     remover(argumento);
     break;
+  case "limpar":
+    limpar({ seco: process.argv.includes("--seco") });
+    break;
   default:
     console.log(`Uso:
-  pnpm worktree criar <tipo/slug | exp-NN-slug> [--fatia api/<mod>,hub/<rota>,exp/<id>] [--sem-instalar]
+  pnpm worktree criar <tipo/slug | exp-NN-slug> --fatia api/<mod>,hub/<rota>,exp/<id> [--sem-instalar]
   pnpm worktree listar
-  pnpm worktree remover <slug>`);
+  pnpm worktree remover <slug>
+  pnpm worktree limpar [--seco]     poda as frentes já mergeadas em ${BASE}`);
     process.exit(comando ? 1 : 0);
 }

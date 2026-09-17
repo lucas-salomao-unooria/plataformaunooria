@@ -17,7 +17,11 @@ e chegam sozinhos pelas pontes de cada ferramenta (ADR-102):
 ## Como criar uma experiência nova
 
 0. `git switch -c exp-NN-slug` a partir da `main` — uma branch por experiência.
-1. `pnpm new:exp exp-NN-slug` (copia `_template`, ajusta nomes).
+1. `pnpm new:exp exp-NN-slug` (copia `_template`, ajusta nomes). O template
+   nasce com a **fiação inteira** — manifesto completo, handshake em
+   `bootstrap.tsx`, `lib/{api,telemetria,tipos,textos}.ts`, folhas da seção
+   `unooria`, `versao.test.ts` e `vitest` — e **sem componente de interface**,
+   de propósito (`_template/AGENTS.md` diz o que trocar primeiro).
 2. Implementar em `src/App.tsx`+; usar SOMENTE a SDK para auth/api/telemetria e
    SOMENTE o `@unooria/design-system` para interface — a seção do clone que a
    experiência imita (`instanooria`, `unitube`, `chatgpt`, `whatsappmobile`,
@@ -54,7 +58,10 @@ o runner faz `--frozen-lockfile` do zero e resolve outra. Foi o que aconteceu co
 a exp-04 em 2026-09-14 — a única que nasceu em 18, porque o `_template` estava em
 18. Os dois subiram para `^19.2.0` juntos, e é assim que tem de continuar: **o
 template é a fonte de toda experiência nova**, e uma divergência ali reaparece na
-próxima que alguém criar.
+próxima que alguém criar. Pelo mesmo motivo, desde 2026-09-16 o template traz o
+DS `^0.2.2`, o `@edu/ui` e a fiação da exp-08 (ADR-106): antes, cada missão nova
+refazia à mão o bootstrap, a telemetria e o teste de versão — e a exp-04 nasceu
+sem eles.
 
 Mudou dependência de uma experiência? O bundle mudou: **sobe a versão nos três
 lugares** e commita o `pnpm-lock.yaml` junto com o `package.json`.

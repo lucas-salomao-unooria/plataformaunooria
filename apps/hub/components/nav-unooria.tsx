@@ -6,9 +6,10 @@ import { Icon, SideBar, type SideBarItemData } from "@edu/ui/ds";
 /**
  * Navegação da área da Unooria (ADR-88).
  *
- * UM item hoje, e a barra existe assim mesmo: ela é o que diz "você está no
- * painel da Unooria, não na área da escola" — que é justamente a confusão que a
- * ADR-88 quer evitar. O segundo item chega com a fixação de versão por escopo.
+ * Três itens: o interruptor da rede (ADR-87), a torneira da IA (ADR-105) e os
+ * cadastros de interesse do site público (ADR-107). A
+ * barra é o que diz "você está no painel da Unooria, não na área da escola" —
+ * que é justamente a confusão que a ADR-88 quer evitar.
  *
  * `icon` é NÓ, não nome: passando a string, o item renderiza o texto cru e a
  * barra escreve "toggle_on" na lateral — o mesmo sintoma de fonte de ligadura
@@ -20,6 +21,18 @@ const ITENS: Array<SideBarItemData & { href: string }> = [
     label: "Recursos",
     icon: <Icon name="toggle_on" />,
     href: "/unooria/recursos",
+  },
+  {
+    id: "uso-de-ia",
+    label: "Uso de IA",
+    icon: <Icon name="data_usage" />,
+    href: "/unooria/uso-de-ia",
+  },
+  {
+    id: "prospeccao",
+    label: "Prospecção",
+    icon: <Icon name="contact_mail" />,
+    href: "/unooria/prospeccao",
   },
 ];
 
