@@ -8481,6 +8481,18 @@ Unooria.} Em quatro partes:
 com \cd{noindex}, e \arq{components/landing/} continua no lugar porque
 \cd{/privacidade} e \cd{/termos} montam o fundo e a folha dela (\adrr{ADR-70}).
 
+\textbf{Ajuste de 2026-09-17, a pedido do dono do produto.} O formulário deixou
+de ficar aberto no fim da página e passou a abrir numa \textbf{janela}
+(\cd{<dialog>}), pelos três convites que agora dizem \enquote{Quero conhecer a
+solução} --- o do cabeçalho, o do fechamento e o da seção de cadastro. Enviar
+fecha a janela e deixa a confirmação na página, no lugar onde o convite estava;
+Esc, o \cd{×} do topo e o \enquote{Cancelar} também fecham. Nada mudou no
+contrato com a api --- mesmas rotas, mesmos campos, mesma frase de
+consentimento. A janela reaproveita o desenho que o material já tinha para os
+outros dois diálogos do site (medidas do índice, moldura, \cd{.button.outline}),
+e as armadilhas que o ajuste produziu estão em
+\arq{apps/hub/components/site/AGENTS.md}.
+
 \textbf{Alternativas descartadas.}
 
 \begin{itemize}

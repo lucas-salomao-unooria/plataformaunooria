@@ -1,6 +1,6 @@
 import "./site.css";
 
-import { FormularioDeCadastro } from "./formulario-de-cadastro";
+import { CadastroDeInteresse, ROTULO_DO_CONVITE } from "./formulario-de-cadastro";
 import { PalcoDoSite } from "./palco-do-site";
 
 /**
@@ -14,7 +14,9 @@ import { PalcoDoSite } from "./palco-do-site";
  * defeito de layout, não como refatoração.
  *
  * DUAS coisas mudaram em relação ao bundle de origem, e só elas:
- *  - o `<form>` virou `FormularioDeCadastro`, que posta na api (ADR-107);
+ *  - o `<form>` saiu do corpo da página e virou `CadastroDeInteresse`: uma
+ *    JANELA que os três "Quero conhecer a solução" abrem, e que posta na api
+ *    (ADR-107, ajuste de 2026-09-17 — ver `components/site/AGENTS.md`);
  *  - os `<script>` viraram `efeitos/`, montados pelo `PalcoDoSite`.
  *
  * O QUE NÃO SE APLICA AQUI: o design system. O DS vale da porta do login para
@@ -50,7 +52,11 @@ export function SiteEntreRedes() {
       <a href="#curriculo">Currículo</a>
       <a href="#docentes">Docentes</a>
       </nav>
-      <a className="floating-cta" href="#cadastro" aria-label="Cadastrar interesse"><span className="cta-label-full">Cadastrar interesse</span><span className="cta-label-short" aria-hidden="true">Cadastro</span></a>
+      {/* Era um link para `#cadastro`; virou o botão que abre a janela (o
+          formulário não está mais aberto na página). O rótulo curto é o que
+          aparece no celular, onde "Quero conhecer a solução" não cabe ao lado
+          do menu. */}
+      <button className="floating-cta" type="button" aria-haspopup="dialog" aria-controls="cadastro-dialog" aria-label={ROTULO_DO_CONVITE} data-abrir-cadastro=""><span className="cta-label-full">{ROTULO_DO_CONVITE}</span><span className="cta-label-short" aria-hidden="true">Conhecer</span></button>
       <button className="menu-button" id="menu-open" aria-expanded="false" aria-label="Abrir navegação" aria-haspopup="dialog" aria-controls="index-dialog"><span className="menu-label">Explorar</span> <span className="menu-symbol" aria-hidden="true">
       </span>
       </button>
@@ -647,8 +653,8 @@ export function SiteEntreRedes() {
       </h2>
       <div className="closing-side">
       <p>Uma solução completa para transformar a prioridade de Educação Digital e Midiática em aprendizagem real, com implantação simples e acompanhamento contínuo.</p>
-      <a className="button light" href="#cadastro">Quero conhecer o programa <span className="arrow" aria-hidden="true">↓</span>
-      </a>
+      <button className="button light" type="button" aria-haspopup="dialog" aria-controls="cadastro-dialog" data-abrir-cadastro="">{ROTULO_DO_CONVITE} <span className="arrow" aria-hidden="true">→</span>
+      </button>
       </div>
       </div>
       </section>
@@ -659,7 +665,7 @@ export function SiteEntreRedes() {
       <h2 id="registration-title">Vamos conversar sobre a sua rede ou escola.</h2>
       <p>Preencha os dados para receber uma apresentação do ENTRE REDES e entender como o programa pode entrar na sua realidade.</p>
       </div>
-      <FormularioDeCadastro />
+      <CadastroDeInteresse />
       </div>
       </section>
       </main>

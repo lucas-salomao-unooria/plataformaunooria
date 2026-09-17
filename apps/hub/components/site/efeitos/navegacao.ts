@@ -15,6 +15,8 @@
  *  - `locked` continua no `<body>`: ali o seletor é de elemento (`body.locked`)
  *    e o que ele trava é a rolagem da página, que é do documento.
  */
+import { ATRIBUTO_DE_ABERTURA, ID_DA_JANELA } from "../formulario-de-cadastro";
+
 export function iniciarNavegacao(raiz: HTMLElement): () => void {
   const corte = new AbortController();
   const { signal } = corte;
@@ -28,6 +30,11 @@ export function iniciarNavegacao(raiz: HTMLElement): () => void {
   const menuOpen = raiz.querySelector<HTMLElement>("#menu-open");
   const indexDialog = raiz.querySelector<HTMLDialogElement>("#index-dialog");
   const printDialog = raiz.querySelector<HTMLDialogElement>("#print-dialog");
+  /* A janela do cadastro (2026-09-17) é renderizada pelo React, e não pela
+     marcação estática — por isso ela não entra na checagem obrigatória abaixo:
+     um `null` aqui não pode derrubar a rolagem, o trilho e as revelações do
+     site inteiro. Sem ela, os botões simplesmente não abrem nada. */
+  const cadastroDialog = raiz.querySelector<HTMLDialogElement>(`#${ID_DA_JANELA}`);
   const backTop = raiz.querySelector<HTMLElement>("#back-top");
   if (!progress || !header || !opening || !menuOpen || !indexDialog || !printDialog || !backTop) return () => {};
 
@@ -63,14 +70,22 @@ export function iniciarNavegacao(raiz: HTMLElement): () => void {
     reveals.forEach((el) => observador!.observe(el));
   } else reveals.forEach((el) => el.classList.add("visible"));
 
-  const dialogs = [indexDialog, printDialog];
+  const dialogs = [indexDialog, printDialog, cadastroDialog].filter(
+    (dialog): dialog is HTMLDialogElement => dialog !== null,
+  );
   function openDialog(dialog: HTMLDialogElement) {
     dialog.showModal();
     document.body.classList.add("locked");
     if (dialog === indexDialog) menuOpen!.setAttribute("aria-expanded", "true");
   }
   dialogs.forEach((dialog) => {
-    dialog.querySelector("[data-close]")!.addEventListener("click", () => dialog.close(), { signal });
+    /* TODOS os `[data-close]`, não o primeiro: a janela do cadastro tem dois —
+       o × discreto do topo e o "Cancelar" ao lado de "Enviar". Com
+       `querySelector` no singular, o Cancelar era um botão que não fazia nada e
+       nada acusava. */
+    dialog.querySelectorAll("[data-close]").forEach((botao) =>
+      botao.addEventListener("click", () => dialog.close(), { signal }),
+    );
     dialog.addEventListener("close", () => {
       document.body.classList.remove("locked");
       if (dialog === indexDialog) menuOpen!.setAttribute("aria-expanded", "false");
@@ -83,6 +98,14 @@ export function iniciarNavegacao(raiz: HTMLElement): () => void {
     }, { signal });
   });
   menuOpen.addEventListener("click", () => openDialog(indexDialog), { signal });
+  /* Os TRÊS convites do site — cabeçalho, fechamento e a seção do cadastro —
+     abrem a mesma janela. O seletor vem da constante que o componente exporta:
+     um atributo escrito à mão aqui e lá é um botão morto sem nada no console. */
+  if (cadastroDialog) {
+    raiz.querySelectorAll<HTMLElement>(`[${ATRIBUTO_DE_ABERTURA}]`).forEach((botao) =>
+      botao.addEventListener("click", () => openDialog(cadastroDialog), { signal }),
+    );
+  }
   indexDialog.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => indexDialog.close(), { signal }));
   backTop.addEventListener("click", () => {
     location.hash = "inicio";
