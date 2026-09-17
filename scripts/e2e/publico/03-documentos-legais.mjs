@@ -24,6 +24,11 @@ import { HUB, suite } from "../lib/roteiro.mjs";
  *  - nada transbordando em 390px, nos dois documentos.
  *
  * A api NÃO é necessária: as duas páginas são estáticas e não leem sessão.
+ *
+ * ATENÇÃO, e está dito em voz alta no roteiro: **a raiz não leva a estas duas
+ * páginas desde a ADR-107**. O site público novo veio com o rodapé do material
+ * aprovado, sem os links legais, e a decisão foi preservá-lo como está. Quem
+ * as alcança é o rodapé da landing anterior; por URL direta elas respondem.
  */
 
 /** Coleta o índice, as seções e as medidas de layout de uma página legal. */
@@ -53,7 +58,14 @@ const RADIOGRAFIA = () => {
  * `/privacidade` e `/termos`.
  */
 async function documento(r, p, { rota, link, titulo, prefixo }) {
-  await p.goto(`${HUB}/`, { waitUntil: "domcontentloaded" });
+  /* `/landing-anterior`, e não `/`: desde a ADR-107 a raiz é o site de
+     marketing, cujo rodapé — preservado como veio do material aprovado — NÃO
+     linka para as páginas legais. O rodapé que as alcança é o da landing
+     anterior, que continua de pé justamente porque estas duas páginas montam o
+     fundo e a folha dela. O clique continua sendo o objeto do teste: foi um
+     `href="#"` que originou esta suíte, e conferir por URL direta deixaria esse
+     defeito passar intacto. */
+  await p.goto(`${HUB}/landing-anterior`, { waitUntil: "domcontentloaded" });
   await p.locator("footer").scrollIntoViewIfNeeded();
 
   const ancora = p.locator("footer a", { hasText: link });
@@ -177,7 +189,7 @@ await suite(
     slug: "publico/03-documentos-legais",
     papel: "publico",
     titulo: "Os documentos legais",
-    subtitulo: "privacidade e termos, alcançados pelo rodapé da landing",
+    subtitulo: "privacidade e termos, alcançados pelo rodapé da landing anterior",
     contexto:
       "As duas páginas que a rede, a escola e a família leem antes de aceitar o produto. São públicas, " +
       "não leem sessão e não tocam a api — e até agora os links do rodapé não levavam a lugar nenhum.",
@@ -191,6 +203,9 @@ await suite(
     comando: "node scripts/e2e/publico/03-documentos-legais.mjs",
   },
   async (r) => {
+    r.ressalva(
+      "A RAIZ NÃO LEVA A ESTAS PÁGINAS desde a ADR-107: o rodapé do site novo veio do material aprovado, sem os links legais. Quem as alcança é o rodapé de /landing-anterior; por URL direta as duas respondem.",
+    );
     // ── desktop: os dois documentos, cada um a partir do rodapé ──────────
     const p = await r.pagina("desktop", { viewport: { width: 1440, height: 900 } });
 

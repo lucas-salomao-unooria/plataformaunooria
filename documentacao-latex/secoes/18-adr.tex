@@ -147,6 +147,11 @@ que a cercam.
 \adrr{ADR-100} & Da sala para a missão há UM caminho, e ele leva à ficha & 2026-09-15 & Aceita\\
 \zebra \adrr{ADR-101} & Quatro ambientes, e a frente nasce e volta em \cd{dev-local} & 2026-09-15 & Aceita\\
 \adrr{ADR-102} & A doutrina é uma fonte só, lida por quatro agentes & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-103} & A frente mergeada se enterra sozinha & 2026-09-15 & Aceita\\
+\adrr{ADR-104} & A base se realinha sozinha depois da promoção & 2026-09-15 & Aceita\\
+\zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
+\adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
+\zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8030,3 +8035,502 @@ de falhar é mudo. Se isso acontecer, a saída provável é gerar as duas pastas
 regra por \emph{script} no \cd{prepare} do \cd{pnpm install} --- a alternativa
 descartada acima, que volta a fazer sentido quando o \emph{symlink} deixa de
 funcionar.
+
+
+\section{ADR-103 --- A frente mergeada se enterra sozinha}
+\label{adr:poda-de-worktree}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-61} (a frente paralela é um \emph{worktree}) e à
+\adrr{ADR-101} (quatro ambientes, com \cd{dev-local} como base).
+
+\textbf{Contexto.} A \adrr{ADR-61} deu à frente de trabalho um comando de
+abertura --- \cd{pnpm worktree criar} --- e deixou o fechamento com quem
+lembrasse: \cd{git worktree remove}, \cd{git branch -d}, \cd{git push origin
+--delete}, três comandos em três lugares. Na prática ninguém lembra, e o motivo
+é estrutural: \textbf{o \emph{merge} do PR acontece no GitHub, e nenhum
+\emph{hook} local dispara nele.} A máquina que abriu a frente não tem como saber que ela
+acabou.
+
+O custo não é desordem. O \emph{worktree} órfão \textbf{segura a \emph{branch}
+contra \cd{git branch -d}}, o \emph{slug} continua reservando uma porta de Vite entre
+5201 e 5299, e o \cd{pnpm worktree listar} deixa de responder \enquote{quais
+frentes estão abertas} --- que é a única pergunta que ele existe para responder.
+Em 2026-09-15 o dono do produto apagou três frentes à mão, rodando os comandos
+que um agente tinha ditado, e pediu que isso parasse de ser trabalho dele.
+
+\textbf{Decisão.} \textbf{Um comando de poda, e um \emph{hook} que o dispara no
+único instante em que a máquina fica sabendo do \emph{merge}: o \cd{git pull}
+em \cd{dev-local}.}
+
+\begin{itemize}
+  \item \cd{pnpm worktree limpar} remove, de cada frente já contida em
+    \cd{origin/dev-local}, o \emph{worktree}, a \emph{branch} local e a remota.
+    \cd{--seco} mostra o que sairia sem remover nada.
+  \item \arq{.githooks/post-merge} o chama quando o \cd{git pull} de
+    \cd{dev-local} traz o \emph{merge} do PR. É o gatilho automático, e ele
+    \textbf{nunca derruba o \cd{pull}}: qualquer erro sai como aviso e o
+    \cd{exit} é 0. Escape: \env{PULAR\_PODA\_DE\_WORKTREE}.
+  \item \cd{pnpm worktree criar} também poda antes de abrir --- quem começa uma
+    frente já fechou a anterior, e ali a poda não interrompe nada.
+  \item \textbf{Três recusas deliberadas.} \emph{Worktree} com alteração não
+    commitada é PULADO, e o \cd{git status} dele é impresso; a frente de onde o
+    comando está rodando é pulada; e \textbf{\emph{branch} sem \emph{commit}
+    próprio não conta como mergeada}.
+\end{itemize}
+
+A terceira recusa é a que quase passou. \enquote{Estar contida na base} é o
+critério óbvio, e ele está \textbf{errado} para uma frente recém-aberta: ela
+aponta para o MESMO \emph{commit} da base e é trivialmente ancestral dela. Com a
+poda rodando dentro do \cd{criar}, abrir uma frente apagaria a que o vizinho
+tinha aberto minutos antes --- e sem sintoma, porque o \emph{worktree} estaria
+limpo. O critério correto tem duas partes: contida na base \textbf{e} com a
+ponta DIFERENTE da ponta dela. Depois de um \emph{merge} de verdade a base fica
+à frente (o repositório usa \emph{merge commit} ou \emph{squash}, com
+\emph{rebase} desabilitado), então a diferença existe; antes do primeiro
+\emph{commit}, não existe.
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Deixar como estava, documentando melhor.} A receita já estava
+    escrita no \arq{CONTRIBUTING.md} e mesmo assim as frentes ficavam de pé. Uma
+    instrução que depende de alguém lembrar, no fim de uma tarefa que já
+    terminou, é uma instrução que não vai ser seguida.
+  \item \textbf{\cd{delete\_branch\_on\_merge} do GitHub.} Resolve UM dos três
+    restos --- a \emph{branch} remota --- e deixa o \emph{worktree} e a
+    \emph{branch} local, que são os que atrapalham de verdade. Vale ligar assim
+    mesmo, e a poda já tolera a remota ausente.
+  \item \textbf{Podar no \cd{prepare} do \cd{pnpm install}.} Roda com muito mais
+    frequência que o \emph{merge}, e num momento em que quem instalou está
+    esperando outra coisa. Remover \emph{worktree} como efeito colateral de
+    instalar dependência é surpresa.
+  \item \textbf{Um \emph{workflow} do GitHub Actions apagando a \emph{branch}.}
+    Não alcança a máquina: o \emph{worktree} e a \emph{branch} local são estado
+    de um disco que a esteira não vê.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um \cd{git pull} passou a apagar coisas.} É seguro pelas três
+    recusas, mas é um efeito colateral que ninguém espera de um \cd{pull} --- e
+    quem não leu esta ADR vai ver \emph{worktrees} sumirem sem ter pedido. O
+    \emph{hook} imprime o que está fazendo e o nome do escape, e é só isso que
+    separa a poda de parecer um defeito.
+  \item \textbf{A base está cravada em \cd{origin/dev-local}.} Uma frente que
+    saia de outra base (um PR empilhado, por exemplo) só é podada depois que a
+    pilha inteira chega a \cd{dev-local}. É o comportamento conservador certo,
+    mas quem empilha vê a frente de baixo sobreviver à própria \emph{merge}.
+  \item \textbf{Sem rede, a poda subestima o que foi mergeado.} O \cd{fetch}
+    falha em silêncio e o critério passa a valer sobre o que já estava em
+    \arq{.git}: nada é apagado por engano, mas nada é podado também.
+  \item \textbf{\cd{git push origin --delete} é irreversível na prática.} A
+    \emph{branch} remota some, e recuperá-la exige o SHA. Ele só roda sobre
+    \emph{branch} já contida na base, então o conteúdo está preservado --- mas o
+    nome, não.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{A primeira frente que precise
+sobreviver ao \emph{merge}.} Uma \emph{branch} de experimento longo que
+recebe \emph{merge} da base e continua, por exemplo. Hoje o desenho pressupõe
+que frente mergeada é frente terminada. Nesse dia a saída provável é uma marca
+explícita na frente (um arquivo no \emph{git-dir} dela, como a \cd{fatia} já é)
+que a poda respeite.
+
+
+\section{ADR-104 --- A base se realinha sozinha depois da promoção}
+\label{adr:realinhar-base}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Emenda} à \adrr{ADR-101} (quatro ambientes, com \cd{dev-local} como
+base de toda frente).
+
+\textbf{Contexto.} A \adrr{ADR-101} fez de \cd{dev-local} a base de toda frente
+e o primeiro degrau da escada. O que ela não previu é o que acontece
+\textbf{depois} da promoção: o \emph{merge} do PR \textbf{nasce no destino}. Ao
+mergear \cd{dev-local \seta{} dev}, o GitHub não move \cd{dev} para onde
+\cd{dev-local} está --- ele cria um \emph{merge commit} novo em \cd{dev}, com
+dois pais. \cd{dev} passa a ter um \emph{commit} que \cd{dev-local} não tem,
+\textbf{ainda que o conteúdo seja idêntico}: o \cd{git diff} entre as duas dá
+vazio, e o \cd{git rev-list} diz \enquote{\cd{dev-local} tem 0, \cd{dev} tem 1}.
+
+Uma vez é cosmético. O defeito é que \textbf{acumula}: a cada promoção mais um,
+e toda frente nova nasce de uma base cada vez mais atrás do que está publicado.
+E há um ponto em que deixa de ser cosmético --- \textbf{o primeiro
+\emph{hotfix}}. Ele sai de \cd{main} e desce por \emph{retro-merge} até
+\cd{dev}; se \cd{dev-local} está atrás, a correção chega aqui depois, e uma
+frente aberta no meio nasce sem ela. É exatamente o defeito que a ADR-101
+existe para evitar, voltando pela porta dos fundos.
+
+O sintoma apareceu na primeira promoção real, em 2026-09-15, e foi lido como
+\enquote{\emph{dev-local} está atrasado} --- que é a descrição certa e a causa
+errada: não havia trabalho faltando, havia um ponteiro parado.
+
+\textbf{Decisão.} \textbf{O \cd{pnpm worktree criar} realinha
+\cd{origin/dev-local} com \cd{origin/dev} antes de abrir a frente, por
+\emph{fast-forward}, sem perguntar.}
+
+\begin{itemize}
+  \item \textbf{No \cd{criar}, e não num comando próprio}, porque é ali que a
+    base importa: a frente está prestes a nascer dela. Um comando separado
+    dependeria de alguém lembrar --- e foi por depender disso que os
+    \emph{worktrees} ficavam de pé (\adrr{ADR-103}).
+  \item \textbf{Só quando é \emph{fast-forward} puro.} Se \cd{dev-local} está à
+    frente (o estado normal, com trabalho esperando promoção), não faz nada. Se
+    as duas \textbf{divergiram} --- cada uma com \emph{commit} que a outra não
+    tem --- ele \textbf{RECUSA} e manda resolver à mão: mover a base por cima do
+    que só existe nela perderia trabalho, e isso nenhum \emph{script} decide.
+  \item \textbf{Empurra \cd{origin/dev} direto para a \emph{branch} remota}
+    (\cd{git push origin origin/dev:refs/heads/dev-local}) em vez de fazer
+    \emph{checkout}. A cópia principal pode estar com \cd{dev-local} aberta e
+    suja, e realinhar não pode depender do estado de quem não pediu nada.
+  \item \textbf{O escape do \cd{pre-push} é usado por dentro, e DITO na saída.}
+    \cd{dev-local} é \emph{branch} de ambiente e o \emph{hook} recusa
+    \emph{push} direto nela; aqui o \env{PERMITIR\_PUSH\_DIRETO} é deliberado,
+    porque um \emph{fast-forward} não traz conteúdo --- só atualiza o ponteiro.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Recusar e mandar realinhar à mão}, como o \cd{criar} já faz com
+    a \cd{--fatia} e com o nome de \emph{branch}. É a opção coerente com o resto
+    do desenho e foi a recomendada --- e foi descartada por quem opera: dois
+    comandos copiados a cada promoção, para consertar algo que não tem decisão
+    nenhuma dentro (o \emph{fast-forward} ou é possível, ou não é).
+  \item \textbf{Um comando próprio, \cd{pnpm realinhar}.} Mais explícito, e
+    depende de lembrar. O mesmo argumento que a \adrr{ADR-103} já gastou.
+  \item \textbf{Só documentar, como item do \emph{template} de promoção.}
+    É o que existia para a remoção do \emph{worktree}, e não funcionou.
+  \item \textbf{Promover por \emph{fast-forward}, sem \emph{merge commit}.}
+    Elimina a causa, e não pode: o \emph{job} \cd{mudancas} compara
+    \cd{HEAD\^{}} --- o primeiro pai, que num \emph{merge commit} é a ponta
+    antiga da \emph{branch} de ambiente. Sem ele, o \emph{diff} do \emph{deploy}
+    enxerga a coisa errada (\adrr{ADR-56}).
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Um \emph{push} direto em \emph{branch} de ambiente passou a
+    acontecer por dentro de um \emph{script}.} A barreira do \arq{pre-push}
+    continua de pé para gente, mas a ferramenta a fura sozinha --- e quem não
+    leu esta ADR não tem como saber. O que separa isto de um defeito é uma
+    linha na saída, e nada mais.
+  \item \textbf{\cd{criar} passou a ter efeito FORA da frente que cria.} Ele
+    move uma \emph{branch} de ambiente no remoto. É um comando que parecia
+    local e não é mais.
+  \item \textbf{Sem rede, não realinha e não avisa direito}: o \cd{fetch} falha
+    em silêncio e a comparação vale sobre \emph{refs} velhas. A frente nasce
+    atrasada sem que nada acuse.
+  \item \textbf{A divergência de verdade vira uma parada dura.} O \cd{criar}
+    morre e não abre a frente, no meio do trabalho de alguém. É o comportamento
+    certo --- mas é uma interrupção, e ela chega sem aviso prévio.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{Uma segunda pessoa desenvolvendo}, ou
+o dia em que \cd{dev-local} deixar de ser de uma máquina só. O realinhamento
+automático pressupõe que quem roda o \cd{criar} é dono da base: com duas
+pessoas, mover a \emph{branch} de ambiente do outro no meio do trabalho dele é
+exatamente o tipo de surpresa que esta decisão aceita hoje porque não há outro.
+
+\section{ADR-105 --- A quota de IA é DADO, editável pela Unooria, e não variável de ambiente}
+\label{adr:quota-de-ia-dado}
+
+\textbf{Data.} 2026-09-15. \textbf{Status.} Aceita.
+\textbf{Complementa} a \adrr{ADR-87} (o interruptor da rede) e a \adrr{ADR-88}
+(o painel é só do \cd{admin}); \textbf{revê} a decisão do Capítulo~11 de o teto
+viver em \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_*}.
+
+\textbf{Contexto.} A regra inviolável nº~5 exige quota diária de IA por usuário
+\emph{e por perfil}, e o \cd{QuotaService} a aplica em onze pontos da api ---
+o tutor da exp-01, a exp-03, a exp-07 (estudante), e exp-04, exp-07, exp-08,
+exp-90, exp-91 e exp-92 (professor). O \textbf{contador} já era persistido
+(\cd{ia\_uso\_diario}); o \textbf{limite} não: eram duas variáveis de ambiente,
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} e
+\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, lidas a cada chamada.
+
+Mudar o teto de UMA rede era, portanto, editar o Terraform de outro repositório
+e fazer \emph{deploy} da api --- para uma decisão que não é de código: quanto de
+IA aquela rede contratou, ou quanto se quer fechar durante um consumo anormal.
+É o mesmo defeito que a \adrr{ADR-87} consertou para \enquote{este produto
+existe nesta rede?}: configuração comercial da rede vivendo em constante de
+\emph{deploy}. O pedido veio como cartão (\enquote{quota configurável de uso de
+IA para alunos e professores}), com a direção dada por quem opera: semente por
+\emph{migration}, alteração só pela Unooria, diretamente no papel do estudante
+e do professor.
+
+\textbf{Decisão.} \textbf{O limite vira uma linha por perfil na tabela
+\cd{ia\_quotas}}, escopo do contrato inteiro, semeada pela \emph{migration} com
+os valores que valiam por \emph{env} (\num{300000} e \num{2000000}) para que
+nenhuma rede mude de comportamento no \emph{deploy}. O \cd{QuotaService} lê a
+linha a cada \cd{temSaldo}; o \cd{admin} a altera em \rota{/unooria/uso-de-ia}
+(\rota{PUT /recursos/quotas-de-ia/\{perfil\}}), com \textbf{motivo obrigatório
+sempre}, e a mudança entra no histórico do painel (\cd{recursos\_auditoria},
+ação \cd{quota-alterada}, \cd{detalhe = \{de, para\}}).
+
+\begin{itemize}
+  \item \textbf{O banco vence, a \emph{env} morre.} As duas variáveis saem do
+    \cd{env.ts}, dos dois \emph{compose}, do \arq{.env.example} e do Terraform.
+    Manter a \emph{env} como \emph{fallback} seria a segunda fonte de verdade
+    --- a tela diria uma coisa enquanto o processo aplica outra, e a primeira
+    pessoa a subir a \emph{env} para \enquote{resolver rápido} produziria
+    exatamente esse estado.
+  \item \textbf{Vocabulário FECHADO, dois perfis} (\cd{estudante},
+    \cd{professor}; CHECK espelhando \cd{PERFIS\_COM\_QUOTA}). Só esses dois
+    chamam IA hoje; gestores e \cd{admin} não têm rota de IA. Todo perfil que
+    não é \cd{estudante} lê a linha \cd{professor} --- é o que já valia com as
+    \emph{envs}, agora escrito em vez de implícito num \cd{if}.
+  \item \textbf{Sem linha, vale a constante do código e sai
+    \cd{ia-quota-sem-linha}} no registro. Falhar fechado derrubaria toda a IA
+    de uma \emph{stack} recém-provisionada por um dado ausente, com um 429 que
+    não explica nada.
+  \item \textbf{Sem \emph{cache}}, e é decisão: uma leitura por chave primária
+    numa tabela de duas linhas, antes de uma chamada que dura segundos. A regra
+    da casa é não acrescentar estado sem gargalo medido.
+  \item \textbf{Zero e negativo são recusados} (Zod e CHECK), e há um teto de
+    sanidade de \num{100000000} por dia. Fechar a IA de um produto é o
+    interruptor da \adrr{ADR-87}, não a quota --- e um zero a mais no campo não
+    pode virar quota infinita.
+  \item \textbf{Só o \cd{admin}}, pela mesma razão da \adrr{ADR-88}: um
+    \cd{gestor\_contrato} que pudesse SUBIR a quota passaria a decidir o custo
+    variável da Unooria.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter a \emph{env} e só documentar onde mudar.} É o estado
+    anterior, e o custo dele é um \emph{deploy} por rede por ajuste.
+  \item \textbf{Escopo por escola ou regional}, como \cd{disponibilidades}.
+    Nenhuma rede pediu, e dobraria o resolvedor (escola \seta{} regional
+    \seta{} contrato \seta{} padrão) para um número que hoje é um por perfil.
+    Fica como gatilho abaixo.
+  \item \textbf{Quota por experiência.} A exp-03 já tem o controle certo para
+    custo de partida --- o teto por SESSÃO (\num{150000}, medido) ---, e é por
+    sessão porque a sessão tem começo e fim. A quota diária é o fusível da
+    plataforma, não o orçamento de cada missão.
+  \item \textbf{Tabela de histórico própria (\cd{ia\_quotas\_historico}).}
+    Seriam duas telas de \enquote{quem mudou o quê} com colunas quase iguais, e
+    a segunda é a que ninguém abre. O custo de reaproveitar
+    \cd{recursos\_auditoria} foi uma ação nova e uma coluna \cd{detalhe} JSONB
+    com CHECK bicondicional --- o mesmo desenho de \cd{versao}.
+  \item \textbf{\emph{Cache} da linha no processo.} Pouparia uma consulta por
+    chamada de IA, e faria a alteração do \cd{admin} valer \enquote{em até N
+    minutos} --- com \cd{min-instances: 3} no Cloud Run, em momentos diferentes
+    em cada instância. A promessa da tela (\enquote{vale na próxima chamada})
+    só é verdadeira sem \emph{cache}.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Uma consulta a mais por chamada de IA.} Por chave primária, em
+    tabela de duas linhas; ainda assim, é uma ida ao banco que não existia.
+  \item \textbf{A alteração vale para a REDE INTEIRA na chamada seguinte}, e
+    quem já passou do teto novo hoje fica sem IA até amanhã. O diálogo diz isso
+    com todas as letras; é a mesma alavanca de incidente da \adrr{ADR-87}, e o
+    mesmo tipo de mitigação.
+  \item \textbf{Uma suíte de Postgres passa a ESCREVER numa tabela de contrato}
+    (\arq{quotas-de-ia-postgres.spec.ts} e a e2e \cd{admin/02}). Ela só SOBE o
+    teto e devolve o valor no fim, então uma corrida abortada não recusa
+    ninguém; mas é uma exceção à regra \enquote{suíte nunca escreve linha de
+    escopo-contrato}, e está escrita nas duas.
+  \item \textbf{O motor da exp-01 (\arq{geracao/}) e as reações da Vila do
+    Lume continuam FORA do \cd{QuotaService}} --- já apontados na
+    \adrr{ADR-74} e não corrigidos aqui. Uma quota configurável só vale para
+    quem passa pelo funil; esses dois pontos são cartão à parte, e o da Vila é
+    chamada de estudante sem fusível nenhum.
+  \item \textbf{O \enquote{dia} da quota é o dia UTC} (\cd{hoje()} do
+    \cd{QuotaService}): o contador zera às 21h de Brasília. Não é escopo desta
+    decisão; a tela diz isso para quem opera.
+\end{itemize}
+
+\textbf{Gatilho de reavaliação.} \textbf{A primeira rede que pedir teto
+diferente para UMA escola ou regional}, ou o dia em que gestor ou \cd{admin}
+ganhar rota de IA (aí o perfil entra na tupla, no CHECK e na semente --- nunca
+só num dos três). E o volume: se a leitura de \cd{ia\_quotas} aparecer na
+latência de alguma rota de IA, o \emph{cache} volta à mesa com a medida na mão.
+
+\section{ADR-106 --- O \cd{\_template} nasce com a fiação inteira e sem componente de interface}
+\label{adr:template-com-fiacao}
+
+\textbf{Data.} 2026-09-16. \textbf{Status.} Aceita.
+\textbf{Complementa} a \adrr{ADR-84} (a versão em três lugares), a \adrr{ADR-87}
+(\cd{produto} no manifesto) e a \adrr{ADR-69} (\cd{unidade} e liberação por
+turma); \textbf{mantém} a regra de ouro do \emph{design system}
+(Capítulo~14): nenhum componente local.
+
+\textbf{Contexto.} \cd{pnpm new:exp} copia \arq{apps/experiencias/\_template} para
+começar uma experiência nova. Até aqui o template tinha cinco arquivos de fonte
+(\arq{App.tsx}, \arq{main.tsx}, \arq{index.html}, \arq{vite.config.ts} e o
+manifesto), dependia só de React e do SDK, e o \emph{script} de teste era
+\cd{echo 'sem testes ainda'}. O manifesto não declarava \cd{unidade},
+\cd{publico} nem \cd{permissoes}. Cada missão nova refazia à mão o que as
+anteriores já tinham feito: acrescentar o \emph{design system} e a ponte
+\cd{@edu/ui}, escrever o \emph{bootstrap} do \emph{handshake}, o
+\emph{singleton} da api, o vocabulário de telemetria, o teste de versão em três
+lugares e o \cd{vitest}. A exp-04 nasceu em React~18 porque o template estava
+em 18 (\adrr{ADR-84} conta o custo); as exp-06, 07 e 08 convergiram para a
+mesma estrutura de \arq{src/lib/} sem que o template a registrasse.
+
+\textbf{Decisão.} \textbf{O template passa a trazer a fiação que TODA
+experiência precisa} --- e continua sem componente de interface:
+
+\begin{itemize}
+  \item \textbf{Manifesto completo}: \cd{id, nome, versao, produto, series,
+    unidade, publico, capabilities, permissoes, verbos}.
+  \item \textbf{Dependências} iguais às de uma missão real:
+    \cd{@unooria/design-system\^{}0.2.2}, \cd{@edu/ui}, \cd{vitest};
+    \emph{scripts} idênticos aos das outras experiências.
+  \item \textbf{\arq{src/bootstrap.tsx}}: \cd{createExperiencia}, \emph{singleton}
+    do \emph{handle}, telemetria ligada, primeira leitura de estado e erro de
+    abertura reportado pelo SDK (\adrr{ADR-84}).
+  \item \textbf{\arq{src/lib/}}: \arq{tipos.ts} (\cd{EXP\_ID}, \cd{EXP\_VERSION}),
+    \arq{api.ts} (toda chamada pelo SDK), \arq{telemetria.ts} (o vocabulário
+    \cd{verbo:objeto} num lugar só, com \cd{resultado} e \cd{contexto} como
+    objetos) e \arq{textos.ts} (o que a tela escreve, em pt-BR).
+  \item \textbf{\arq{src/main.tsx}} com as folhas da seção \cd{unooria}
+    (componente + fonte), e o lugar marcado para a seção do clone.
+  \item \textbf{\arq{src/versao.test.ts}}: versão nos três lugares, \cd{id} no
+    código e no pacote, e o manifesto dentro do vocabulário fechado
+    (\cd{produto}, \cd{publico}, \cd{unidade}, \cd{permissoes},
+    \cd{capabilities}).
+  \item \textbf{\arq{README.md}} e \arq{AGENTS.md} com a tabela \enquote{o que
+    trocar primeiro}. O \cd{new:exp} passa a renomear também \arq{src/lib/tipos.ts}
+    e o \arq{README.md}.
+  \item \textbf{Interface: só \cd{Button} de \cd{@edu/ui/ds}} na tela de
+    exemplo. Nenhum componente local, nenhuma cor escrita à mão.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Deixar o template cru e documentar a lista do que falta.} É o
+    estado anterior; o gerador de missões (PRD) passou a listar essa lacuna, e
+    listar não impede a próxima experiência de nascer sem teste.
+  \item \textbf{Linkar em vez de copiar} (um pacote \cd{@edu/exp-base} com o
+    \emph{bootstrap}). Faria a fiação valer para todas de uma vez, mas a
+    experiência deixaria de ser um \emph{bundle} autocontido e cada mudança no
+    pacote republicaria 48 caminhos imutáveis. Fiação que precisa valer para
+    todas continua sendo mudança no \cd{@edu/sdk}.
+  \item \textbf{Template rico em componentes} (cartão, cabeçalho, botão local).
+    Seria a primeira violação da regra de interface, replicada 48 vezes.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O template pode envelhecer de novo.} Ele segue a exp-08; quando
+    uma missão consolidar um padrão melhor, ele volta para cá no mesmo PR ---
+    senão a próxima nasce velha. Gatilho de reavaliação: duas missões seguidas
+    alterando o mesmo arquivo copiado do template.
+  \item \textbf{Mais dependências no \emph{scaffold}}: quem cria uma
+    ferramenta de professor sem clone ainda recebe o DS e a ponte --- que ela
+    usa de qualquer forma na seção \cd{unooria}.
+  \item \textbf{A porta \cd{5173} do \cd{dev} continua sendo a da exp-01}; o
+    template não tem como saber a próxima livre. O \cd{new:exp} imprime o
+    lembrete, e o \cd{strictPort} falha alto se a troca for esquecida.
+\end{itemize}
+
+\section{ADR-107 --- O site público entra no hub como PORTE, e o cadastro de interesse passa pela api}
+\label{adr:site-publico-e-prospeccao}
+
+\textbf{Data.} 2026-09-16. \textbf{Status.} Aceita.
+\textbf{Substitui} a \adrr{ADR-40} na raiz (\cd{/}); \textbf{complementa} a
+\adrr{ADR-88} (o painel da Unooria) e a \adrr{ADR-70} (as páginas legais).
+\textbf{Abre exceção} à regra inviolável nº 1 (tenancy) e à regra de ouro do
+\emph{design system} (Capítulo~14), nas fronteiras que esta ADR delimita.
+
+\textbf{Contexto.} O site institucional do ENTRE REDES foi produzido fora deste
+repositório (\arq{Unooria\_Entre\_Redes\_site\_completo}): HTML, uma folha de
+24\,KB, cinco arquivos de JS de \emph{canvas} e \num{1{,}7}\,MB de imagens e
+fontes, servidos por um \emph{Worker} que também expunha \rota{POST
+/api/cadastro} gravando num SQLite (Cloudflare D1) e uma página
+\cd{/cadastros} protegida por um \emph{token} no fragmento da URL. Ele está
+aprovado, funciona em celular e em desktop, e é a peça comercial do produto.
+
+A plataforma, enquanto isso, tinha na raiz a landing da \adrr{ADR-40} --- outra
+proposta, feita com o \emph{design system}. E o formulário do site vivia numa
+arquitetura paralela: um banco, um \emph{runtime} e um modelo de autorização que
+não aparecem em nenhum diagrama deste documento, com dados pessoais dentro.
+
+\textbf{Decisão.} \textbf{O site vira a raiz do hub, portado 1:1 para o Next; o
+formulário passa pela api; e o \cd{admin} lê os cadastros no painel da
+Unooria.} Em quatro partes:
+
+\begin{itemize}
+  \item \textbf{Porte, não releitura.} \arq{components/site/} traz o
+    \cd{site.css} copiado inteiro (uma única regra acrescentada, marcada no
+    arquivo) e a marcação 1:1 --- mesma árvore, mesmas classes, mesmos ids. Os
+    cinco \emph{scripts} viraram \arq{efeitos/*.ts}, corpo literal, com o
+    cancelamento preso a um \cd{AbortController}.
+  \item \textbf{O DS não vale ali, e a fronteira é a porta do login.} O site tem
+    tipografia, paleta e movimento próprios. Da porta para dentro, a regra de
+    ouro continua sem exceção.
+  \item \textbf{O cadastro passa pela api}: \rota{POST /api/cadastro-de-interesse}
+    (hub, sem sessão) \seta{} \rota{POST /prospeccao/publico/cadastros} (api, sem
+    \emph{guard}) \seta{} \cd{prospeccao\_leads} (Postgres). A defesa é Zod, cota
+    por IP, campo-armadilha e \emph{dedupe} de uma hora.
+  \item \textbf{A leitura é do \cd{admin}}, em \cd{/unooria/prospeccao}, com
+    exportação em CSV gerada pela api.
+\end{itemize}
+
+\textbf{A landing anterior não foi apagada}: responde em \cd{/landing-anterior}
+com \cd{noindex}, e \arq{components/landing/} continua no lugar porque
+\cd{/privacidade} e \cd{/termos} montam o fundo e a folha dela (\adrr{ADR-70}).
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Servir o HTML como arquivo estático em \cd{public/}}, com
+    \emph{rewrite} da raiz. É o caminho de menor risco de divergência visual ---
+    e deixa o site fora do \emph{build}: sem \emph{typecheck}, sem \emph{lint},
+    sem as fontes e os assets sob o mesmo pipeline, e com o formulário
+    precisando de um caminho próprio até a api. O porte paga uma vez o custo de
+    conferência e devolve o site ao regime de qualidade do repositório.
+  \item \textbf{Reescrever o site com o \emph{design system}}. Seria trocar uma
+    peça aprovada por outra parecida, com a fidelidade decidida arquivo a
+    arquivo. O material é de marketing: o DS existe para a plataforma.
+  \item \textbf{Manter o \emph{Worker} e o D1 só para o formulário.} Dado pessoal
+    de adulto, com base legal de consentimento, num banco que não tem
+    \emph{backup} conhecido, não aparece no modelo de dados e cuja leitura é
+    protegida por um \emph{token} que viaja no fragmento da URL --- e que, uma
+    vez compartilhado, não expira.
+  \item \textbf{Guardar o \emph{lead} com \cd{escola\_id}} de uma escola fictícia,
+    para não abrir exceção na regra nº 1. Seria inventar um tenant para caber
+    numa política, e a primeira consulta cruzada acharia contatos comerciais
+    dentro de uma rede real.
+  \item \textbf{Exigir sessão na escrita} (ampliar a exceção do BFF da
+    \adrr{ADR-84}). O visitante não tem conta; é o cadastro que vem ANTES de
+    qualquer conta existir.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Duas superfícies públicas com propostas parecidas} (\cd{/} e
+    \cd{/landing-anterior}), e o \cd{noindex} é tudo que separa uma da outra no
+    buscador. Gatilho de reavaliação: quando \cd{/privacidade} e \cd{/termos}
+    forem realinhadas ao site novo, \arq{components/landing/} sai inteiro.
+  \item \textbf{A fidelidade do porte não tem rede automática.} \emph{Typecheck}
+    e \emph{lint} não veem layout. A conferência é por MEDIDA, e está escrita em
+    \arq{components/site/AGENTS.md}: altura do documento, topo de cada seção e
+    contagem de \cd{.reveal}/\cd{img}/\cd{section}, em \num{390} e \num{1440}.
+    No dia do porte, as treze seções caíam no mesmo pixel.
+  \item \textbf{Uma rota de escrita sem \emph{guard}} passa a existir na api. É
+    superfície nova de abuso, mitigada por cota e armadilha, não eliminada. Se o
+    volume de lixo passar do que a cota segura, o próximo passo é desafio
+    (\emph{captcha}) --- não fechar a rota, que é o formulário do site.
+  \item \textbf{A cota por IP conta por instância} do Cloud Run: com N
+    instâncias, o teto real é N vezes maior. Aceitável --- o teto existe contra
+    enxurrada, não contra fraude.
+  \item \textbf{Não há rotina de retenção nem rota de exclusão} para
+    \cd{prospeccao\_leads}. O \cd{GRANT} tem \cd{DELETE} e o pedido do titular
+    é atendido à mão, no banco. A tela diz isso; inventar prazo ou botão seria a
+    mentira mais fácil de escrever e a mais fácil de provar.
+  \item \textbf{A frase do consentimento existe em dois lugares} --- o rótulo da
+    caixa no site e a constante da api. Mudar um sem o outro faz o banco
+    registrar um aceite que ninguém deu; os dois \emph{AGENTS.md} dizem isso.
+\end{itemize}

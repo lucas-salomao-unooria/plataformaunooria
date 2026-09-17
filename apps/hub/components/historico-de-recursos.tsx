@@ -24,6 +24,8 @@ interface LinhaDoHistorico extends Record<string, unknown> {
   acao: string;
   versao: string | null;
   motivo: string | null;
+  /** Só em `quota-alterada` (ADR-105): o teto que valia e o que passou a valer. */
+  detalhe: { de: number; para: number } | null;
   autorNome: string;
   quando: string;
 }
@@ -36,20 +38,38 @@ const ACOES: Record<string, { rotulo: string; cor: "success" | "error" | "info" 
   "versao-ativada": { rotulo: "Versão ativada", cor: "info" },
   "versao-fixada": { rotulo: "Versão fixada", cor: "info" },
   "versao-soltada": { rotulo: "Fixação removida", cor: "neutral" },
+  "quota-alterada": { rotulo: "Quota de IA alterada", cor: "info" },
 };
+
+/** `quota:estudante` vira "Quota de IA · estudantes"; o resto fica como está. */
+function rotuloDoRecurso(recursoId: string): string {
+  if (recursoId === "quota:estudante") return "Quota de IA · estudantes";
+  if (recursoId === "quota:professor") return "Quota de IA · professores";
+  return recursoId;
+}
+
+const numero = (n: number) => n.toLocaleString("pt-BR");
 
 const quando = dataHora;
 
-export function HistoricoDeRecursos({ escolaId }: { escolaId?: string | null }) {
+export function HistoricoDeRecursos({
+  escolaId,
+  prefixo,
+}: {
+  escolaId?: string | null;
+  /** Recorta por prefixo de `recursoId` — `quota:` é a tela de uso de IA (ADR-105). */
+  prefixo?: string;
+}) {
   const [linhas, setLinhas] = useState<LinhaDoHistorico[] | null>(null);
   const [truncado, setTruncado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const ler = useCallback(async () => {
-    const url = escolaId
-      ? `/api/plataforma/recursos/auditoria?escolaId=${encodeURIComponent(escolaId)}`
-      : "/api/plataforma/recursos/auditoria";
-    const r = await fetch(url, { cache: "no-store" });
+    const query = new URLSearchParams();
+    if (escolaId) query.set("escolaId", escolaId);
+    if (prefixo) query.set("prefixo", prefixo);
+    const sufixo = query.size > 0 ? `?${query.toString()}` : "";
+    const r = await fetch(`/api/plataforma/recursos/auditoria${sufixo}`, { cache: "no-store" });
     if (!r.ok) {
       setErro("O histórico não carregou.");
       return;
@@ -57,7 +77,7 @@ export function HistoricoDeRecursos({ escolaId }: { escolaId?: string | null }) 
     const dados = (await r.json()) as { truncado: boolean; linhas: LinhaDoHistorico[] };
     setLinhas(dados.linhas);
     setTruncado(dados.truncado);
-  }, [escolaId]);
+  }, [escolaId, prefixo]);
 
   useEffect(() => {
     void ler();
@@ -81,6 +101,7 @@ export function HistoricoDeRecursos({ escolaId }: { escolaId?: string | null }) 
           <Badge variant={acao?.cor ?? "neutral"}>
             {acao?.rotulo ?? linha.acao}
             {linha.versao ? ` · v${linha.versao}` : ""}
+            {linha.detalhe ? ` · de ${numero(linha.detalhe.de)} para ${numero(linha.detalhe.para)}` : ""}
           </Badge>
         );
       },
@@ -88,7 +109,7 @@ export function HistoricoDeRecursos({ escolaId }: { escolaId?: string | null }) 
     {
       key: "recursoId",
       title: "Recurso",
-      render: (_v, linha) => <span className="text-[13px]">{linha.recursoId}</span>,
+      render: (_v, linha) => <span className="text-[13px]">{rotuloDoRecurso(linha.recursoId)}</span>,
     },
     {
       key: "escolaId",
@@ -117,7 +138,11 @@ export function HistoricoDeRecursos({ escolaId }: { escolaId?: string | null }) 
     return (
       <EmptyState
         title="Nada mudou por aqui ainda"
-        description="Quando um produto ou uma versão for ligado, desligado ou trocado, a mudança aparece nesta lista com o motivo e quem a fez."
+        description={
+          prefixo === "quota:"
+            ? "Quando o teto diário de IA de um perfil for alterado, a mudança aparece nesta lista com o valor anterior, o novo, o motivo e quem a fez."
+            : "Quando um produto ou uma versão for ligado, desligado ou trocado, a mudança aparece nesta lista com o motivo e quem a fez."
+        }
       />
     );
   }

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Enterra a frente que acabou de ser mergeada.
+#
+# O merge do PR acontece no GitHub, e NENHUM hook local dispara nele. O
+# primeiro momento em que esta máquina fica sabendo é o `git pull` em
+# `dev-local` — que é exatamente quando este hook roda. Sem ele, o worktree
+# terminado fica de pé até alguém se lembrar, segurando a branch contra
+# `git branch -d` e reservando uma porta de Vite que ninguém usa (ADR-103).
+#
+# NUNCA falha o pull: qualquer erro aqui sai como aviso e o exit é 0. E nunca
+# remove trabalho — `pnpm worktree limpar` pula worktree sujo e o que estiver
+# em uso. Escape: PULAR_PODA_DE_WORKTREE=1 git pull
+set -u
+
+[ "${PULAR_PODA_DE_WORKTREE:-}" = "1" ] && exit 0
+
+# Só na cópia principal: num worktree, --git-dir aponta para .git/worktrees/<slug>.
+[ "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" ] || exit 0
+
+# Só quando o merge foi para dev-local — é a base que define "mergeada".
+[ "$(git rev-parse --abbrev-ref HEAD)" = "dev-local" ] || exit 0
+
+# Sem frente aberta, não há o que podar (e não paga o custo de subir o node).
+RAIZ="$(git rev-parse --show-toplevel)"
+[ -d "$RAIZ/.claude/worktrees" ] || exit 0
+[ -n "$(ls -A "$RAIZ/.claude/worktrees" 2>/dev/null)" ] || exit 0
+
+echo ""
+echo "→ podando as frentes já mergeadas em dev-local (escape: PULAR_PODA_DE_WORKTREE=1)"
+node "$RAIZ/scripts/worktree.mjs" limpar || echo "  (a poda falhou; rode 'pnpm worktree limpar' à mão)"
+exit 0

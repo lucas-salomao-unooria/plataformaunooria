@@ -5086,7 +5086,7 @@
           "ai"
         ],
         "summary": "Conversa com o tutor de IA da experiência.",
-        "description": "Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo `expId` e **nunca sai daqui** — segredo em bundle de experiência é regra 2.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Quota diária POR PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE` / `_PROFESSOR`), persistida em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.\n- A série do estudante vai ao prompt RESOLVIDA da turma do token (`turmas.serie` → \"4º ano\"), nunca vinda do corpo. Sem turma, a linha some do prompt.",
+        "description": "Única porta de IA para o cliente. O prompt de sistema é escolhido no servidor pelo `expId` e **nunca sai daqui** — segredo em bundle de experiência é regra 2.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Quota diária POR PERFIL (o teto é a linha do perfil em `ia_quotas`, editável pelo `admin` em `/unooria/uso-de-ia` — ADR-105), contador persistido em `ia_uso_diario`: `temSaldo` ANTES, `consumir` depois. Sem saldo, **429**.\n- A série do estudante vai ao prompt RESOLVIDA da turma do token (`turmas.serie` → \"4º ano\"), nunca vinda do corpo. Sem turma, a linha some do prompt.",
         "security": [
           {
             "token-da-plataforma": []
@@ -7673,6 +7673,195 @@
         }
       }
     },
+    "/recursos/quotas-de-ia": {
+      "get": {
+        "operationId": "QuotasDeIaController_quotas",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "quotas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "perfil": {
+                            "type": "string",
+                            "enum": [
+                              "estudante",
+                              "professor"
+                            ]
+                          },
+                          "tokensPorDia": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "motivo": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoPorNome": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "definidoEm": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "perfil",
+                          "tokensPorDia",
+                          "motivo",
+                          "definidoPorNome",
+                          "definidoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "quotas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "O teto diário de IA de cada perfil.",
+        "description": "Uma linha por perfil de `ia_quotas` (`estudante`, `professor`), escopo do contrato inteiro. É o número que o `QuotaService` consulta ANTES de toda chamada de IA (regra 5).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88/105). O contador do dia (`ia_uso_diario`) NÃO sai aqui: é dado por pessoa.\n- Todo perfil que não é `estudante` cai na linha `professor` — é o que já valia com as envs, agora escrito.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/recursos/quotas-de-ia/{perfil}": {
+      "put": {
+        "operationId": "QuotasDeIaController_definir",
+        "parameters": [
+          {
+            "name": "perfil",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "estudante",
+                "professor"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "perfil": {
+                      "type": "string",
+                      "enum": [
+                        "estudante",
+                        "professor"
+                      ]
+                    },
+                    "tokensPorDia": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "motivo": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoPorNome": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "definidoEm": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "alterada": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "perfil",
+                    "tokensPorDia",
+                    "motivo",
+                    "definidoPorNome",
+                    "definidoEm",
+                    "alterada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "recursos"
+        ],
+        "summary": "Define o teto diário de IA de um perfil.",
+        "description": "Sobrescreve a linha do perfil em `ia_quotas`. **Motivo obrigatório sempre**: aqui toda mudança é exceção ao padrão da plataforma, e é o motivo que, meses depois, diz se foi decisão comercial ou incidente. A mudança entra no histórico do painel (`recursos_auditoria`, ação `quota-alterada`, com `{ de, para }`).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Zero e negativo são recusados (Zod e CHECK): fechar a IA de um produto é o interruptor da ADR-87, não a quota.\n- Teto de sanidade de 100 milhões de tokens/dia — um zero a mais no campo não vira quota infinita.\n- Valor igual ao atual devolve `alterada: false` e não grava nem historia: nada mudou.\n- Vale para a REDE INTEIRA na próxima chamada de IA: o `QuotaService` lê a linha a cada `temSaldo`, sem cache.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tokensPorDia": {
+                    "type": "integer",
+                    "exclusiveMinimum": true,
+                    "minimum": 0,
+                    "maximum": 100000000
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "tokensPorDia",
+                  "motivo"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
     "/recursos/auditoria": {
       "get": {
         "operationId": "RecursosAuditoriaController_auditoria",
@@ -7687,6 +7876,14 @@
           },
           {
             "name": "recursoId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "prefixo",
             "in": "query",
             "required": false,
             "schema": {
@@ -7739,6 +7936,23 @@
                             "type": "string",
                             "nullable": true
                           },
+                          "detalhe": {
+                            "type": "object",
+                            "properties": {
+                              "de": {
+                                "type": "integer"
+                              },
+                              "para": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "de",
+                              "para"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
                           "autorNome": {
                             "type": "string"
                           },
@@ -7754,6 +7968,7 @@
                           "acao",
                           "versao",
                           "motivo",
+                          "detalhe",
                           "autorNome",
                           "quando"
                         ],
@@ -7775,7 +7990,7 @@
           "recursos"
         ],
         "summary": "Quem ligou ou desligou o quê, e quando.",
-        "description": "O registro **append-only** das mudanças de disponibilidade e de versão. Existe porque a linha de `disponibilidades` é SOBRESCRITA a cada mudança: ela responde o estado atual, não o histórico. `UPDATE` é recusado por trigger no banco.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Aberta a `admin` E `gestor_contrato` — a única de `/recursos/*` que a rede alcança. Escrever continua sendo só do `admin` (ADR-88).\n- `autorNome` vem CONGELADO da linha, não de um JOIN: o histórico tem de dizer quem era aquela pessoa NAQUELE dia, e não o nome de hoje (ou nada, se a conta saiu).\n- Sem `?escolaId=` traz o contrato inteiro, incluindo as mudanças de escopo-contrato (`escolaId: null`). COM ele, traz as daquela escola **e** as do contrato, porque foram elas que decidiram o que vale ali.\n- Teto de 200 linhas, dito na resposta (`truncado`) — mesmo desenho de `GET /rostering/contas-de-assento`.",
+        "description": "O registro **append-only** das mudanças de disponibilidade e de versão. Existe porque a linha de `disponibilidades` é SOBRESCRITA a cada mudança: ela responde o estado atual, não o histórico. `UPDATE` é recusado por trigger no banco.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- Aberta a `admin` E `gestor_contrato` — a única de `/recursos/*` que a rede alcança. Escrever continua sendo só do `admin` (ADR-88).\n- `autorNome` vem CONGELADO da linha, não de um JOIN: o histórico tem de dizer quem era aquela pessoa NAQUELE dia, e não o nome de hoje (ou nada, se a conta saiu).\n- Sem `?escolaId=` traz o contrato inteiro, incluindo as mudanças de escopo-contrato (`escolaId: null`). COM ele, traz as daquela escola **e** as do contrato, porque foram elas que decidiram o que vale ali.\n- Teto de 200 linhas, dito na resposta (`truncado`) — mesmo desenho de `GET /rostering/contas-de-assento`.\n- `?prefixo=quota:` recorta as mudanças de quota de IA (ADR-105), que a tela `/unooria/uso-de-ia` mostra sozinhas. `detalhe` (`{ de, para }`) só vem nessas linhas.",
         "security": [
           {
             "token-da-plataforma": []
@@ -8554,6 +8769,210 @@
           }
         ],
         "x-papeis": [],
+        "x-acesso": "token"
+      }
+    },
+    "/prospeccao/publico/cadastros": {
+      "post": {
+        "operationId": "ProspeccaoPublicoController_cadastrar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recebido": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "recebido"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "prospeccao"
+        ],
+        "summary": "Registra um cadastro de interesse feito no site público.",
+        "description": "A rota do formulário do ENTRE REDES (`/`, ADR-107). Sem sessão de propósito: quem preenche é um visitante, antes de existir contrato. Grava em `prospeccao_leads` — a única tabela sem `escola_id` e sem RLS, pelas razões da migration. O aceite é gravado com a FRASE que a pessoa marcou, não como um booleano solto.\n\n**Acesso:** rota pública, sem _guard_ — deliberadamente.\n\n**Restrições:**\n- Cota de 5 por hora por IP e 200 por hora na instância: acima, **429**. O IP é só chave de cota e não é registrado.\n- `consentimento` precisa ser exatamente `true`: sem aceite não há base legal, e o corpo é recusado com 400.\n- `website` é campo-armadilha. Preenchido, a resposta é **201 e nada é gravado** — recusar com erro ensinaria o robô.\n- Mesmo e-mail de novo dentro de 60 minutos devolve 201 sem gravar linha nova.\n- A resposta NUNCA diz se o e-mail já estava na base: isso transformaria a rota num verificador de quem se cadastrou.",
+        "security": [],
+        "x-papeis": [],
+        "x-acesso": "publica",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 180
+                  },
+                  "telefone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "organizacao": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180
+                  },
+                  "cargo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "consentimento": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  },
+                  "website": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "nome",
+                  "email",
+                  "telefone",
+                  "organizacao",
+                  "cargo",
+                  "consentimento"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prospeccao/cadastros": {
+      "get": {
+        "operationId": "ProspeccaoController_cadastros",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cadastros": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "telefone": {
+                            "type": "string"
+                          },
+                          "organizacao": {
+                            "type": "string"
+                          },
+                          "cargo": {
+                            "type": "string"
+                          },
+                          "criadoEm": {
+                            "type": "string",
+                            "description": "ISO 8601, em UTC — quem formata é a tela (ADR-98/99)."
+                          }
+                        },
+                        "required": [
+                          "nome",
+                          "email",
+                          "telefone",
+                          "organizacao",
+                          "cargo",
+                          "criadoEm"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "cadastros",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "prospeccao"
+        ],
+        "summary": "Os cadastros de interesse recebidos pelo site público.",
+        "description": "Do mais novo para o mais antigo. Alimenta `/unooria/prospeccao` (ADR-107). A data sai em **ISO 8601**, e quem a formata é a tela, no fuso da plataforma (ADR-98/99).\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88): é o funil comercial da Unooria, não da rede.\n- A lista vem limitada a 5000 linhas; `total` diz quantas existem de verdade — se os dois divergirem, a tela avisa em vez de mentir que aquilo é tudo.\n- O `id` da linha não sai: nenhuma rota o consome, e um identificador na resposta convida a uma rota de edição que não deve existir.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/prospeccao/cadastros/exportacao": {
+      "get": {
+        "operationId": "ProspeccaoController_exportacao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "prospeccao"
+        ],
+        "summary": "Os mesmos cadastros, em CSV.",
+        "description": "O arquivo que o `admin` baixa do painel. Separador `;` e BOM UTF-8: é o par que faz o Excel em português abrir o arquivo com as colunas separadas e os acentos certos — com vírgula, a planilha chega numa coluna só.\n\n**Papéis:** admin.\n\n**Restrições:**\n- Só `admin` (ADR-88).\n- O caminho **não** termina em `.csv`, como em `/analise/exportar/:nivel`: segmento de rota com ponto quebra a validação de tipos do App Router no hub. O nome do arquivo sai no `content-disposition`.\n- A data sai formatada no fuso da plataforma (`FUSO_DA_PLATAFORMA`), e não em ISO: este arquivo é lido por gente, numa planilha.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "admin"
+        ],
         "x-acesso": "token"
       }
     },
@@ -25568,7 +25987,7 @@
           "planos"
         ],
         "summary": "Pede a geração de um plano de aula.",
-        "description": "**202**: a geração corre em background (claim atômico na linha), e o cliente acompanha por `GET /planos/:id` até o status virar `pronto` ou `erro`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- 3 gerações por hora por professor: cada uma custa ~220k tokens só de prompt (currículo da rede + as 4 unidades do ano). Acima disso, **429** com `codigo: RATE_LIMIT`.\n- O teto de saída é 64k tokens, não 32k: com o material real o gemini-2.5-flash era cortado e o professor recebia \"o plano ficou grande demais\" sem plano nenhum.\n- Passa pelo `QuotaService` por PERFIL (`AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR`).",
+        "description": "**202**: a geração corre em background (claim atômico na linha), e o cliente acompanha por `GET /planos/:id` até o status virar `pronto` ou `erro`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- 3 gerações por hora por professor: cada uma custa ~220k tokens só de prompt (currículo da rede + as 4 unidades do ano). Acima disso, **429** com `codigo: RATE_LIMIT`.\n- O teto de saída é 64k tokens, não 32k: com o material real o gemini-2.5-flash era cortado e o professor recebia \"o plano ficou grande demais\" sem plano nenhum.\n- Passa pelo `QuotaService` por PERFIL (a linha `professor` de `ia_quotas`, ADR-105).",
         "security": [
           {
             "token-da-plataforma": []

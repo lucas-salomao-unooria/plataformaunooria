@@ -3,6 +3,33 @@
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito. **Nenhuma
 chamada a provedor de IA acontece fora desta pasta.**
 
+## A quota diária é DADO, não env (ADR-105, 2026-09-15)
+
+`QuotaService.limite(perfil)` lê `ia_quotas` a cada `temSaldo` — uma linha por
+perfil (`PERFIS_COM_QUOTA = ["estudante", "professor"]`, CHECK espelhando a
+tupla), escopo do contrato, **sem cache** de propósito: a tela promete "vale na
+próxima chamada", e com `min-instances: 3` um cache faria cada instância mudar
+em hora diferente. Todo perfil que não é `estudante` cai em `professor`
+(`perfilDaQuota`), que é o que já valia com as envs.
+
+- **`AI_DAILY_TOKEN_QUOTA_PER_*` não existe mais.** Não a recrie como fallback:
+  seria a segunda fonte de verdade, e a tela diria uma coisa enquanto o processo
+  aplica outra. Sem linha, vale `QUOTA_PADRAO` e sai `codigo: "ia-quota-sem-linha"`
+  (um aviso por perfil por processo) — falhar fechado derrubaria toda a IA de
+  uma stack antes da migration.
+- **Quem escreve a linha é o módulo `recursos`** (`quotas-de-ia.controller.ts`,
+  `@Roles("admin")`), não este: `src/ai` não conhece papel de tela (ADR-23). O
+  histórico da mudança vai para `recursos_auditoria` (`quota-alterada`).
+- **Teste que precisa de teto apertado usa SUBCLASSE** (`override limite()`),
+  como `planos.spec.ts` e `quotas-de-ia-postgres.spec.ts` fazem. Escrever um
+  valor baixo em `ia_quotas` recusaria a IA de toda suíte que rodasse junto — é
+  tabela de contrato, sem `escola_id`.
+- **Perfil novo com IA** (gestor, admin) entra em TRÊS lugares no mesmo commit:
+  a tupla, o CHECK da migration e a semente. Um só é o modo de falhar mudo.
+- Continuam FORA do funil, e são cartão à parte: o motor da exp-01 (`geracao/`)
+  e as reações da Vila do Lume (`motor/runs.controller.ts`), já apontados na
+  ADR-74. Quota configurável só vale para quem chama `temSaldo`.
+
 ## Provider de IA (`apps/api/src/ai/provider.ts`)
 Interface única `AiProvider { generate(req): Promise<AiResult> }`. Implementações:
 `vertex.provider.ts` (default), `mock.provider.ts` (testes). Para trocar de

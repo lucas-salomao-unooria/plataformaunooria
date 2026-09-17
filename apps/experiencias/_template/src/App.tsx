@@ -1,44 +1,51 @@
-import { useEffect, useState } from "react";
-import { createExperiencia, type ExperienciaHandle } from "@edu/sdk";
+import { useState } from "react";
+import type { ExperienciaHandle } from "@edu/sdk";
+import { Button } from "@edu/ui/ds";
+import { concluir } from "./lib/api";
+import { telemetria } from "./lib/telemetria";
+import { TEXTOS } from "./lib/textos";
+import type { Progresso } from "./lib/tipos";
 
-/** Template mínimo: handshake com o hub, telemetria, progresso, conclusão.
- *  UI propositalmente crua — design vem depois (ver CLAUDE.md). */
-export function App() {
-  const [exp, setExp] = useState<ExperienciaHandle | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const [cliques, setCliques] = useState(0);
+/**
+ * A tela de exemplo — troque tudo aqui, mantendo três coisas:
+ *
+ * - **interface só do design system**, pela ponte (`@edu/ui/ds` para a seção
+ *   da plataforma, `@edu/ui/ds-<clone>` para a do app imitado). Este template
+ *   não traz componente local de propósito: o que falta aqui, o pacote traz —
+ *   e o que o pacote não traz nasce no `storybook-unooria`, com compensação
+ *   local MARCADA no CSS enquanto não chega (`docs/regras/design-system.md`);
+ * - **toda leitura e escrita pela SDK** (`lib/api.ts`), nunca `fetch` solto;
+ * - **todo evento pela `telemetria`** (`lib/telemetria.ts`), nunca `exp.track`
+ *   espalhado pelas telas — é lá que mora o vocabulário da missão.
+ */
+export function App({ exp, inicial }: { exp: ExperienciaHandle; inicial: Progresso }) {
+  const [passos, setPassos] = useState(inicial.passos);
 
-  useEffect(() => {
-    createExperiencia({ expId: "exp-template", expVersion: "0.1.0" })
-      .then(async (e) => {
-        setExp(e);
-        const save = await e.progresso.carregar<{ cliques: number }>();
-        if (save) setCliques(save.cliques);
-        e.track("attempted", "exp-template");
-      })
-      .catch((err) => setErro(String(err)));
-  }, []);
-
-  if (erro) return <p>Erro no handshake: {erro} (abra via hub: /exp/exp-template)</p>;
-  if (!exp) return <p>Conectando ao hub…</p>;
+  function registrarPasso() {
+    const n = passos + 1;
+    setPassos(n);
+    telemetria.registrouPasso(n);
+    void exp.progresso.salvar({ passos: n } satisfies Progresso);
+  }
 
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h1>Olá, {exp.estudante.nome} ({exp.estudante.serie})</h1>
-      <p>Cliques: {cliques}</p>
-      <button
-        onClick={() => {
-          const n = cliques + 1;
-          setCliques(n);
-          exp.track("interacted", "botao-contador", { resultado: { cliques: n } });
-          void exp.progresso.salvar({ cliques: n });
-        }}
-      >
-        Clicar
-      </button>
-      <button style={{ marginLeft: 8 }} onClick={() => exp.concluir({ score: cliques })}>
-        Concluir atividade
-      </button>
+    <main className="app app--centrado">
+      <div className="cartao">
+        <h1 className="cartao__titulo">{TEXTOS.saudacao(exp.estudante.nome)}</h1>
+        <p className="cartao__texto">{TEXTOS.passos(passos)}</p>
+        <div className="cartao__acoes">
+          <Button onClick={registrarPasso}>{TEXTOS.registrarPasso}</Button>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              telemetria.concluiu(passos);
+              concluir({ passos });
+            }}
+          >
+            {TEXTOS.concluir}
+          </Button>
+        </div>
+      </div>
     </main>
   );
 }

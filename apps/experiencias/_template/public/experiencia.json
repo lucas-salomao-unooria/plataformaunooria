@@ -4,6 +4,13 @@
   "versao": "0.1.0",
   "produto": "entre-redes",
   "series": ["6EF"],
+  "unidade": 1,
+  "publico": "estudante",
   "capabilities": ["telemetria", "progresso"],
-  "verbos": { "interacted": "clicou no contador", "completed": "concluiu a atividade" }
+  "permissoes": [],
+  "verbos": {
+    "attempted": "entrou na missão",
+    "interacted": "registrou um passo",
+    "completed": "concluiu a missão"
+  }
 }

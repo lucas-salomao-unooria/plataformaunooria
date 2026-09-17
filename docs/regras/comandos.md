@@ -26,6 +26,14 @@ pnpm worktree criar fix/<slug> --fatia api/<mod>,hub/<rota>,exp/<id>
                                           # mexe em ferramenta declara a pasta: scripts,.githooks.
                                           # No fim: gh pr create --base dev-local. NUNCA --base dev:
                                           # dev-local é o ambiente Docker onde VOCÊ testa antes.
+                                          # Antes de abrir, REALINHA origin/dev-local com origin/dev se a
+                                          # promoção a deixou atrás (fast-forward, ADR-104) — e RECUSA se
+                                          # as duas divergiram de verdade.
+pnpm worktree limpar [--seco]             # PODA as frentes já mergeadas em origin/dev-local: worktree,
+                                          # branch local e remota (ADR-103). Roda SOZINHO no `git pull`
+                                          # de dev-local (.githooks/post-merge) e antes de cada `criar`.
+                                          # Pula worktree sujo, a frente em uso e branch sem commit
+                                          # próprio — `--seco` mostra o que sairia sem remover nada.
 pnpm --filter @edu/api test
 pnpm --filter @edu/api exec prisma migrate reset --force --skip-seed  # ZERA o banco (dev)
 npx ts-node --transpile-only apps/api/scripts/gerar-openapi.ts   # docs/openapi.json (roda da pasta apps/api)
@@ -103,5 +111,5 @@ pnpm --filter @edu/exp-08-manifesto-ia dev    # :5182 → hub /exp/exp-08-manife
 pnpm up -r @unooria/design-system --latest     # sobe o DS em ui/hub/exps de uma vez (caret ^0.1.x NÃO sobe minor)
 npm view @unooria/design-system version        # qual é a última publicada
 cd ../storybook-unooria && npm run storybook   # :6007, o catálogo das 6 seções (repo do DS, fora deste monorepo)
-cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~608p). Atualizar SEMPRE
+cd documentacao-latex && ./compilar.sh         # documentação técnica -> main.pdf (~612p). Atualizar SEMPRE
 ```

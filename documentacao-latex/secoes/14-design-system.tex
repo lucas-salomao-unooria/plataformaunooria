@@ -902,6 +902,17 @@ divergência.
 \section{Exceção registrada}
 
 \begin{decisao}
+\textbf{O site público \cd{/} está fora da regra do \emph{design system}}
+(\adrr{ADR-107}): ele é porte 1:1 de um material de marketing aprovado fora
+deste repositório, com folha (\arq{components/site/site.css}), tipografia
+(Manrope) e movimento próprios. \textbf{A fronteira do DS é a porta do login}:
+dali para dentro, a regra de ouro continua valendo sem exceção. A landing
+anterior (\adrr{ADR-40}), essa sim feita de DS, continua viva em
+\cd{/landing-anterior} com \cd{noindex}, porque \cd{/privacidade} e \cd{/termos}
+ainda montam o fundo e a folha dela.
+\end{decisao}
+
+\begin{decisao}
 \textbf{A exp-70 está fora da regra do \emph{design system}}, deliberadamente:
 é jogo em \emph{canvas} 3D, sem DOM de interface (\adrr{ADR-18}). A pendência da
 exp-02 --- que tinha CSS próprio em \arq{src/estilos} --- foi

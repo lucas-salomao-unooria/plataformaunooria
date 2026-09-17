@@ -39,16 +39,11 @@ export const EnvSchema = z.object({
   // de 8k tokens de saída. Hoje é o mesmo modelo do dia a dia; a env separada
   // existe para trocar um sem tocar no outro.
   VERTEX_MODEL_LONGO: z.string().default("gemini-3.6-flash"),
-  /**
-   * 300k: uma partida completa da exp-03 custa ~77k tokens MEDIDOS (ver
-   * `unoogpt/regras/defaults.ts`), e "Recomeçar" abre partida nova — o teto
-   * cabe ~4 partidas. O valor anterior, 20000, era dimensionado para o tutor da
-   * exp-01 e recusava o 4o turno da missão com "a sala de operações fechou".
-   */
-  AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE: z.coerce.number().int().positive().default(300_000),
-  // Professor gera planos cujo PROMPT sozinho tem ~220k tokens (currículo +
-  // material didático); 2M/dia ≈ 6–9 planos. Regra 5 do CLAUDE.md, por perfil.
-  AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: z.coerce.number().int().positive().default(2_000_000),
+  // A quota diária de IA por perfil NÃO é env desde a ADR-105: mora em
+  // `ia_quotas`, semeada pela migration e editada pelo `admin` no painel da
+  // Unooria. `AI_DAILY_TOKEN_QUOTA_PER_*` deixou de existir — uma env aqui seria
+  // a segunda fonte de verdade, e a tela diria uma coisa enquanto o processo
+  // aplica outra.
 
   // Arte da exp-01. O `gemini-2.0-flash-exp` que era o default aqui não existe
   // mais no catálogo (404 na região E em global), então toda geração caía no
@@ -193,15 +188,7 @@ export const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 export function validarEnv(config: Record<string, unknown>): Env {
-  const merged = {
-    ...config,
-    AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE:
-      config.AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE ??
-      (typeof process !== "undefined"
-        ? process.env.AI_DAILY_TOKEN_QUOTA_PER_ESTUDANTE
-        : undefined),
-  };
-  const parsed = EnvSchema.safeParse(merged);
+  const parsed = EnvSchema.safeParse(config);
   if (!parsed.success) {
     const erros = parsed.error.issues
       .map((i) => `  ${i.path.join(".")}: ${i.message}`)

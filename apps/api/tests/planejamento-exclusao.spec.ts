@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { PlanejamentoService } from "../src/planejamento/planejamento.service";
 import { QuotaService } from "../src/ai/quota.service";
@@ -66,7 +65,6 @@ const provider = {
 } as unknown as AiProvider;
 
 /** A quota não é exercitada aqui (nada gera), mas o service a exige. */
-const config = new ConfigService({ AI_DAILY_TOKEN_QUOTA_PER_PROFESSOR: 2_000_000 });
 
 async function limpar() {
   // A cascata de `escolas` não cobre `exp_92_*` (o `escola_id` é texto, sem FK
@@ -148,7 +146,7 @@ beforeAll(async () => {
   idDoProfessor = dono.id;
   idDeOutroProfessor = outro.id;
 
-  servico = new PlanejamentoService(prisma, storage, new QuotaService(prisma, config), provider);
+  servico = new PlanejamentoService(prisma, storage, new QuotaService(prisma), provider);
 });
 
 beforeEach(() => {
@@ -216,7 +214,7 @@ describe("apagar a regência inteira", () => {
       {
         apagarPrefixo: async () => Promise.reject(new Error("bucket fora do ar")),
       } as unknown as ObjectStorageService,
-      new QuotaService(prisma, config),
+      new QuotaService(prisma),
       provider,
     );
 

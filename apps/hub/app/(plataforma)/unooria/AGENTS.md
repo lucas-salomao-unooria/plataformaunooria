@@ -6,7 +6,31 @@ capacidade que `admin` tem e `gestor_contrato` não.
 ## A área `/unooria` — o painel da fornecedora (ADR-88, 2026-09-10)
 
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
-`NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/`.
+`NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
+`app/(plataforma)/unooria/uso-de-ia/` (ADR-105) +
+`app/(plataforma)/unooria/prospeccao/` (ADR-107).
+
+### O segundo item: Uso de IA (ADR-105, 2026-09-15)
+
+`/unooria/uso-de-ia` — o teto diário de tokens por perfil, um cartão por perfil
+(`estudante`, `professor`), lido de `GET /recursos/quotas-de-ia` e alterado por
+`PUT /recursos/quotas-de-ia/:perfil` pelo BFF (prefixo `recursos`, já na
+allowlist). O histórico é o MESMO `HistoricoDeRecursos`, com `prefixo="quota:"`
+e `key={mudancas}` para remontar depois de cada gravação — a doutrina do painel.
+
+- **"Token" fica, e a tela TRADUZ ao lado**: "cabe cerca de N partidas completas
+  da Missão Tempestade" / "N planos anuais", com os custos MEDIDOS no projeto
+  (77k e 220k). É a unidade em que o modelo cobra; trocá-la por outra palavra
+  inventaria uma medida que não existe na fatura.
+- **O diálogo avisa o alcance** (rede inteira, próxima chamada, quem já passou do
+  teto novo fica sem IA até amanhã) e trava "Gravar" enquanto nada mudou ou o
+  motivo está vazio — mesmo desenho do diálogo de desligar.
+- **Zero e negativo o campo recusa com a frase certa**: "para fechar a IA de um
+  produto, desligue o produto em Recursos". Confundir quota com interruptor é o
+  erro que a ADR-87 nomeia.
+- **O item do `SideBar` do DS se clica pelo ITEM** (`.unooria-sidebar-item`),
+  não pelo texto: o rótulo vive num tooltip oculto (`__tooltip-content`), e
+  `getByText` acha o texto e não consegue clicar. Custou uma corrida da e2e.
 
 **A armadilha do middleware, que passa no typecheck.** O redirect cross-área
 comparava UMA string (`areaDoPathname` contra `areaDoPapel`). O `admin` tem
@@ -19,6 +43,31 @@ que todo papel entra na própria casa e que ninguém além do `admin` entra em
 
 **`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
 painel dela, não a área da escola.
+
+### O terceiro item: Prospecção (ADR-107, 2026-09-16)
+
+`/unooria/prospeccao` — quem pediu contato pelo formulário do site público. Lido
+de `GET /prospeccao/cadastros` pelo BFF (prefixo `prospeccao`, liberado só para
+a LEITURA) e baixado em CSV por `GET /prospeccao/cadastros/exportacao`.
+
+É a terceira capacidade que `admin` tem e `gestor_contrato` não, e a razão é a
+mesma das outras duas: **o `gestor_contrato` é o cliente**, e esta lista é sobre
+ele, não para ele. Mostrar a uma rede quem mais pediu apresentação seria
+entregar o funil comercial da Unooria ao cliente.
+
+- **O CSV vem da API, não do navegador.** Montá-lo aqui a partir da lista em
+  tela parece mais simples e é a armadilha: a tela mostra a lista TRUNCADA (teto
+  de 5000), então o arquivo sairia calado com menos linhas do que a base tem.
+- **Erro ao atualizar NÃO esvazia a tabela.** "Nenhum cadastro" e "a api não
+  respondeu" são a mesma tela para quem olha, e a primeira leitura manda
+  procurar defeito no formulário do site. A lista anterior fica, com o aviso.
+- **A tela diz que não apaga cadastro.** O direito de eliminação (LGPD art. 18,
+  VI) é real e hoje o caminho é humano — o `GRANT` da tabela tem `DELETE` e não
+  há rota. Escrever isso na tela é melhor que um botão que não existe, e melhor
+  que o silêncio que faz procurá-lo.
+- **Sem escopo de escola**, ao contrário de Recursos: cadastro de interesse é
+  anterior a qualquer contrato. Não há seletor para trocar nem estado a
+  remontar — o que a seção abaixo descreve não se aplica a esta tela.
 
 ### Trocar de escopo REMONTA o painel — e sem isso a tela MENTE
 

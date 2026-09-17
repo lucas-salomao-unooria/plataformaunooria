@@ -5,6 +5,7 @@ import { OidcGuard } from "../auth/oidc.guard";
 import { Roles, RolesGuard } from "../auth/roles";
 import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
+import { DetalheDeQuotaSchema } from "./auditoria";
 import { HistoricoDeRecursosSchema } from "./contrato-de-rotas";
 
 /**
@@ -39,6 +40,8 @@ export class RecursosAuditoriaController {
     query: z.object({
       escolaId: z.string().optional(),
       recursoId: z.string().optional(),
+      /** Prefixo de `recursoId` — `quota:` traz só as mudanças de quota (ADR-105). */
+      prefixo: z.string().optional(),
       limite: z.string().optional(),
     }),
     resposta: HistoricoDeRecursosSchema,
@@ -47,6 +50,7 @@ export class RecursosAuditoriaController {
       "`autorNome` vem CONGELADO da linha, não de um JOIN: o histórico tem de dizer quem era aquela pessoa NAQUELE dia, e não o nome de hoje (ou nada, se a conta saiu).",
       "Sem `?escolaId=` traz o contrato inteiro, incluindo as mudanças de escopo-contrato (`escolaId: null`). COM ele, traz as daquela escola **e** as do contrato, porque foram elas que decidiram o que vale ali.",
       "Teto de 200 linhas, dito na resposta (`truncado`) — mesmo desenho de `GET /rostering/contas-de-assento`.",
+      "`?prefixo=quota:` recorta as mudanças de quota de IA (ADR-105), que a tela `/unooria/uso-de-ia` mostra sozinhas. `detalhe` (`{ de, para }`) só vem nessas linhas.",
     ],
   })
   async auditoria(
@@ -54,6 +58,7 @@ export class RecursosAuditoriaController {
     @Query("recursoId") recursoId: string | undefined,
     @Query("limite") limiteBruto: string | undefined,
     @Req() _req: { auth: AuthClaims },
+    @Query("prefixo") prefixo?: string,
   ) {
     const TETO = 200;
     const pedido = Number(limiteBruto ?? TETO);
@@ -63,6 +68,7 @@ export class RecursosAuditoriaController {
     const linhas = await this.prisma.recursoAuditoria.findMany({
       where: {
         ...(recursoId ? { recursoId } : {}),
+        ...(!recursoId && prefixo ? { recursoId: { startsWith: prefixo } } : {}),
         /* COM escola: as dela E as do contrato. Sem as do contrato, o histórico
            de uma escola omitiria justamente a decisão que a alcançou — e a tela
            diria "nada aconteceu aqui" sobre um produto que a rede desligou. */
@@ -77,6 +83,7 @@ export class RecursosAuditoriaController {
         acao: true,
         versao: true,
         motivo: true,
+        detalhe: true,
         autorNome: true,
         quando: true,
       },
@@ -92,6 +99,7 @@ export class RecursosAuditoriaController {
         acao: l.acao,
         versao: l.versao,
         motivo: l.motivo,
+        detalhe: DetalheDeQuotaSchema.nullable().catch(null).parse(l.detalhe ?? null),
         autorNome: l.autorNome,
         quando: l.quando.toISOString(),
       })),
