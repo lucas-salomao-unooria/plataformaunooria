@@ -43,6 +43,7 @@ await suite(
       "Os três canvas têm contexto e tamanho: as estrelas e o infinito amostrado do logo",
       "A revelação ao rolar termina: nenhum bloco fica invisível para sempre",
       "Nada transborda na largura em 390px, e o diálogo de navegação abre",
+      "Os três convites dizem \"Quero conhecer a solução\" e abrem a MESMA janela, que o Esc fecha",
       "A landing anterior continua de pé em /landing-anterior — /privacidade e /termos dependem dela",
     ],
     comando: "node scripts/e2e/publico/01-site.mjs",
@@ -164,23 +165,68 @@ await suite(
       `a revelação ao rolar chegou ao fim${pendentes.length ? ` — ficaram: ${pendentes.join(", ")}` : ""}`,
     );
 
-    const campos = await p.evaluate(() =>
-      Array.from(document.querySelectorAll("#registration-form [name]")).map((e) => e.name),
+    /* O FORMULÁRIO NÃO ESTÁ MAIS NA PÁGINA (2026-09-17): ele abre numa janela,
+       pelos três convites "Quero conhecer a solução" — o do cabeçalho, o do
+       fechamento e o da seção do cadastro. */
+    const convites = await p.evaluate(() =>
+      Array.from(document.querySelectorAll("[data-abrir-cadastro]")).map(
+        (b) => b.getAttribute("aria-label") || b.innerText.trim().split("\n")[0],
+      ),
     );
+    r.exigir(convites.length === 3, `os três convites do site abrem a mesma janela (${convites.length} encontrados)`);
+    r.exigir(
+      convites.every((rotulo) => rotulo.includes("Quero conhecer a solução")),
+      `todos dizem "Quero conhecer a solução" (${convites.join(" · ")})`,
+    );
+    /* O formulário existe, mas DENTRO da janela: `main #registration-form` não
+       serve para provar isso — o `<dialog>` é filho da seção, então o seletor o
+       encontra de qualquer jeito. O que distingue é o ancestral. */
+    const ondeMoraOForm = await p.evaluate(() => document.querySelector("#registration-form")?.closest("dialog")?.id ?? "solto na página");
+    r.exigir(ondeMoraOForm === "cadastro-dialog", `o formulário mora na janela, não no corpo da página (${ondeMoraOForm})`);
+
+    await p.locator("#cadastro [data-abrir-cadastro]").click();
+    await p.locator("#cadastro-dialog[open]").waitFor({ timeout: 15_000 });
+    const janela = await p.evaluate(() => {
+      const dialogo = document.querySelector("#cadastro-dialog");
+      const caixa = dialogo.getBoundingClientRect();
+      return {
+        campos: Array.from(dialogo.querySelectorAll("#registration-form [name]")).map((e) => e.name),
+        acao: dialogo.querySelector("#registration-form").getAttribute("action"),
+        fechadores: Array.from(dialogo.querySelectorAll("[data-close]")).map(
+          (b) => b.innerText.trim() || b.getAttribute("aria-label"),
+        ),
+        travou: document.body.classList.contains("locked"),
+        cabe: caixa.width <= innerWidth && caixa.height <= innerHeight,
+      };
+    });
     for (const campo of ["nome", "email", "telefone", "organizacao", "cargo", "consentimento"]) {
-      r.exigir(campos.includes(campo), `o formulário tem o campo "${campo}"`);
+      r.exigir(janela.campos.includes(campo), `o formulário tem o campo "${campo}"`);
     }
     r.exigir(
-      (await p.locator("#registration-form").getAttribute("action")) === "/api/cadastro-de-interesse",
+      janela.acao === "/api/cadastro-de-interesse",
       "o formulário aponta para a rota do hub, não para o Worker de origem",
     );
+    r.exigir(janela.fechadores.length === 2, `a janela oferece DUAS saídas além do Esc (${janela.fechadores.join(" · ")})`);
+    r.exigir(janela.travou, "a página atrás da janela para de rolar enquanto ela está aberta");
+    r.exigir(janela.cabe, "a janela cabe na tela — nenhuma ação fica fora do alcance");
     await r.registrar(p, "cadastro", {
-      titulo: "O cadastro de interesse",
-      mostra: "Formulário com nome, e-mail profissional, telefone, organização, cargo e o aceite de contato.",
+      titulo: "O cadastro de interesse, numa janela",
+      mostra: "Nome, e-mail profissional, telefone, organização, cargo e o aceite, sobre a página escurecida.",
       prova:
         "É a única parte do site que não é porte: o destino mudou de um SQLite fora da plataforma para a api (ADR-107). O envio de verdade é provado em admin/03-prospeccao.",
-      detalhe: `${campos.length} campos · ${pendentes} revelações pendentes`,
+      detalhe: `${janela.campos.length} campos · saídas: ${janela.fechadores.join(", ")}`,
     });
+
+    /* O Esc fecha E devolve a rolagem: uma janela que fecha deixando o `<body>`
+       travado deixa a página inteira parada, e ninguém liga uma coisa à outra. */
+    await p.keyboard.press("Escape");
+    await p.waitForTimeout(500);
+    const depoisDoEsc = await p.evaluate(() => ({
+      aberta: document.querySelector("#cadastro-dialog").open,
+      travada: document.body.classList.contains("locked"),
+    }));
+    r.exigir(!depoisDoEsc.aberta, "o Esc fecha a janela do cadastro");
+    r.exigir(!depoisDoEsc.travada, "e devolve a rolagem da página");
 
     /* Sem print de página INTEIRA: o site tem mais de 20.000px de altura e o
        Chrome recusa a captura ("Unable to capture screenshot"). O que substitui

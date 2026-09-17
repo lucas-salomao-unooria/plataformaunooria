@@ -66,6 +66,41 @@ com uma página de listagem protegida por token no fragmento da URL — um banco
 um runtime e um modelo de autorização fora da plataforma. Quem lê os cadastros
 hoje é o `admin`, em `/unooria/prospeccao`.
 
+### E desde 2026-09-17 ele abre numa JANELA, não no corpo da página
+
+Pedido do dono do produto. Os três convites do site — o do cabeçalho
+(`.floating-cta`), o do fechamento (`#contato`) e o da seção `#cadastro` — dizem
+**"Quero conhecer a solução"** e abrem o mesmo `<dialog id="cadastro-dialog">`.
+O que saber antes de mexer:
+
+- **Quem ABRE a janela é o `efeitos/navegacao.ts`; quem a FECHA no sucesso é o
+  componente.** Os outros dois diálogos do site já são operados por lá, e é de
+  lá que vêm o Esc, o clique fora, o `[data-close]` e o `locked` do `<body>`.
+  Duplicar isso no React daria duas fontes para o mesmo comportamento.
+- **`[data-close]` no PLURAL.** A janela tem DUAS saídas além do Esc: o `×`
+  discreto do topo e o "Cancelar" ao lado de "Enviar". O `navegacao.ts` ligava
+  só o primeiro (`querySelector`), e o Cancelar era um botão que não fazia nada
+  — sem erro, sem nada no console.
+- **O id da janela, o atributo que a abre e o rótulo dos convites são
+  CONSTANTES exportadas** pelo componente, porque são usados em três arquivos.
+  Escritos à mão em cada um, o primeiro erro de digitação vira um botão morto.
+- **DOIS estados, não um com três valores**: `envio` (do formulário) e
+  `confirmado` (da página). Com um só, reabrir a janela depois de um envio —
+  coisa que os outros dois convites permitem — trazia o botão travado em
+  "enviado", sem nada explicando.
+- **Enviar FECHA a janela e deixa a confirmação na página**, no lugar onde o
+  convite da seção estava; se ela ficou fora da tela, o componente rola até lá.
+  Fechar sem deixar rastro pareceria "sumiu e não aconteceu nada". **No ERRO a
+  janela fica aberta**: é ali que a pessoa corrige o campo, e fechar levaria
+  embora o que ela digitou.
+- **O CSS da janela reaproveita o do material** (as medidas do `.index-dialog`,
+  a moldura da regra `dialog`, o `.button.outline` do Cancelar). Está num bloco
+  marcado no fim do `site.css` — é o segundo acréscimo à folha, e o primeiro
+  continua sendo a linha da tipografia.
+- **Empilhado, "Enviar" fica EM CIMA** (`order:-1` abaixo de 600px). Com o
+  Cancelar no topo, o polegar encontra primeiro o botão que descarta o que a
+  pessoa acabou de digitar.
+
 **A frase do consentimento é contrato com a api.** Ela aparece aqui como rótulo
 da caixa e lá como `TEXTO_DO_CONSENTIMENTO` (`api/src/prospeccao/`), que é o que
 o banco guarda. Mudou uma, muda a outra no mesmo commit — senão o banco registra

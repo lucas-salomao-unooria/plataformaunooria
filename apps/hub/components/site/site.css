@@ -206,3 +206,42 @@ dialog::backdrop{background:#030613c9;backdrop-filter:blur(12px)}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}.progression-light,.infinity-controls{display:none}.infinity-canvas{cursor:default}}
 @media print{.header,.chapter-rail,dialog,.skip,.button,.floating-cta,.footer button,.infinity-controls,#ambient-dust,.infinity-interlude,.opening-stars,.print-zoom-label,.progression-light{display:none!important}body{background:white;color:#14172f}.section{padding:28px 0;break-before:page}.hero{break-before:auto}.container{width:100%}.reveal{opacity:1!important;transform:none!important}.hero-opening{min-height:0;padding:40px 0}.hero h1{font-size:40px}.section h2{font-size:28px}.mission-print,.progression{break-inside:avoid}.portrait-print .print-open{width:180px}}
+
+/* ==========================================================================
+   ACRESCENTADO NO PORTE (2026-09-17) — a JANELA do cadastro.
+
+   O formulário saiu do corpo da página e passou a abrir num `<dialog>`, pelos
+   três botões "Quero conhecer a solução". Tudo aqui REAPROVEITA o que o
+   material já define: as medidas são as do `.index-dialog` (o diálogo do
+   índice), a moldura e o fundo vêm da regra `dialog` genérica lá em cima, e o
+   "Cancelar" usa o `.button.outline` que já existia.
+
+   Escrever medidas novas seria inventar um segundo desenho de janela na mesma
+   página — e as duas divergiriam na primeira mudança de marca.
+   ========================================================================== */
+.form-dialog{width:560px;max-width:calc(100% - 24px);max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:20px;overscroll-behavior:contain}
+/* O topo acompanha a rolagem: o formulário é mais alto que a janela no celular,
+   e sem isto o × sai de vista justamente quando se quer fechar. */
+.form-dialog .dialog-top{position:sticky;top:-20px;background:#10152a;padding-block:10px;z-index:1}
+.form-intro{color:var(--muted);font-size:.9375rem;margin-bottom:18px}
+/* Dentro da janela o formulário NÃO é mais um cartão — a janela é. Sem isto
+   ficam duas bordas e dois fundos, um dentro do outro. */
+.form-dialog .registration-form{padding:0;border:0;background:none;gap:18px}
+.form-acoes{display:grid;grid-template-columns:1fr;gap:12px}
+/* EMPILHADO, a ação principal fica EM CIMA. Com "Cancelar" no topo, o polegar
+   encontra primeiro o botão que descarta o que a pessoa acabou de digitar. */
+.form-acoes .button[type=submit]{order:-1}
+.form-dialog .registration-form .button{width:100%}
+/* O convite do cabeçalho virou `<button>`: o reset do material só zera fonte e
+   cor (`button,input,select{font:inherit;color:inherit}`), não a borda. */
+button.floating-cta{border:0}
+.registration-acao .button{width:100%}
+@media(min-width:600px){
+  .form-dialog{padding:24px}
+  /* Lado a lado, volta a ordem de leitura: Cancelar à esquerda, no tamanho do
+     texto, e Enviar ocupando o resto — a ação de sair não pode ter o mesmo peso
+     da de enviar. */
+  .form-acoes{grid-template-columns:auto 1fr}
+  .form-acoes .button[type=submit]{order:0}
+  .registration-acao .button{width:auto;min-width:300px}
+}
