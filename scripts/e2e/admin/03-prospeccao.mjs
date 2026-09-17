@@ -38,7 +38,7 @@ await suite(
       "URL — um banco, um runtime e um modelo de autorização que não apareciam em diagrama nenhum. " +
       "Agora o cadastro entra pela api, no mesmo Postgres, e quem o lê é o admin da Unooria.",
     prova: [
-      "Um visitante SEM SESSÃO envia o cadastro e recebe a confirmação na própria tela",
+      "Um visitante SEM SESSÃO abre a janela, envia o cadastro, e a janela fecha deixando a confirmação",
       "O mesmo cadastro aparece no painel da Unooria, com data, organização e cargo",
       "O CSV baixa de verdade, com o separador e o BOM que o Excel em português precisa",
       "A rede (gestor_contrato) não alcança a lista: é o funil comercial da fornecedora",
@@ -48,21 +48,35 @@ await suite(
   async (r) => {
     // ── 1. o visitante, sem sessão nenhuma ───────────────────────────────
     const visitante = await r.pagina("visitante", { viewport: { width: 1280, height: 900 } });
+    /* UM IP FICTÍCIO POR CORRIDA, e é o que torna esta suíte repetível: a rota
+       pública aceita 5 cadastros por hora POR IP, e rodar a suíte cinco vezes
+       na mesma hora — o que acontece num dia de ajuste — derrubava a sexta com
+       429, com o sintoma "a janela não envia" e o produto intacto. O `hub`
+       repassa este cabeçalho à api, que o usa só como chave de cota.
+       203.0.113.0/24 é a faixa que a RFC 5737 reserva para documentação. */
+    await visitante.setExtraHTTPHeaders({ "x-forwarded-for": `203.0.113.${1 + (Date.now() % 250)}` });
     await visitante.goto(`${HUB}/#cadastro`, { waitUntil: "domcontentloaded" });
-    await visitante.locator("#registration-form").waitFor({ timeout: 30_000 });
+    const convite = visitante.locator("#cadastro [data-abrir-cadastro]");
+    await convite.waitFor({ timeout: 30_000 });
 
     /* Portão de hidratação: em dev o HTML do servidor chega antes do bundle, e
-       o `fill` do Playwright não move o estado do React se o componente ainda
-       não hidratou. O sinal é o `onSubmit` existir — e a prova barata é o
-       botão responder ao clique, então esperamos o formulário estar montado
-       como componente client (o React marca o nó com um handler). */
+       nem o clique que ABRE a janela existe antes disso — quem liga os três
+       convites é o `efeitos/navegacao.ts`, num `useEffect`. Sem o portão, o
+       primeiro clique cai no vazio e a suíte reprova um produto que funciona. */
     await visitante.waitForFunction(
       () => {
-        const f = document.querySelector("#registration-form");
-        return f && Object.keys(f).some((k) => k.startsWith("__react"));
+        const botao = document.querySelector("#cadastro [data-abrir-cadastro]");
+        return botao && Object.keys(botao).some((k) => k.startsWith("__react"));
       },
       null,
       { timeout: 20_000 },
+    );
+
+    await convite.click();
+    await visitante.locator("#cadastro-dialog[open]").waitFor({ timeout: 15_000 });
+    r.exigir(
+      await visitante.evaluate(() => document.body.classList.contains("locked")),
+      "a janela do cadastro abriu e travou a rolagem da página atrás dela",
     );
 
     await visitante.fill("#lead-name", NOME);
@@ -80,23 +94,39 @@ await suite(
     });
 
     await visitante.getByRole("button", { name: /Enviar cadastro/ }).click();
+    /* ENVIAR FECHA A JANELA, e a confirmação fica na página: é o que distingue
+       "enviou" de "a janela sumiu". A espera é pelo texto, não pelo fechamento —
+       o fechamento sozinho também aconteceria num Cancelar. */
+    await visitante.locator("#cadastro-confirmado").waitFor({ timeout: 30_000 });
+    /* A rolagem volta pelo evento `close` do `<dialog>`, que o navegador
+       entrega em OUTRA tarefa: a confirmação já está na tela quando o `locked`
+       ainda não saiu. Ler uma vez reprovava a suíte por um quadro de diferença
+       — esperar pelo estado continua provando que ele chega (e o timeout ainda
+       reprova se não chegar). */
     await visitante
-      .locator("#registration-status")
-      .filter({ hasText: "Cadastro enviado" })
-      .waitFor({ timeout: 30_000 });
+      .waitForFunction(() => !document.body.classList.contains("locked"), null, { timeout: 10_000 })
+      .catch(() => {});
     const depoisDoEnvio = await visitante.evaluate(() => ({
-      classe: document.querySelector("#registration-form").className,
-      botao: document.querySelector("#registration-form button[type=submit]").innerText.trim(),
+      janelaAberta: document.querySelector("#cadastro-dialog").open,
+      travada: document.body.classList.contains("locked"),
+      confirmacao: document.querySelector("#cadastro-confirmado").innerText.trim(),
       nomeVazio: document.querySelector("#lead-name").value === "",
+      conviteSumiu: document.querySelector("#cadastro [data-abrir-cadastro]") === null,
     }));
-    r.exigir(depoisDoEnvio.classe.includes("is-success"), "o formulário entra no estado de sucesso da folha original");
-    r.exigir(depoisDoEnvio.nomeVazio, "os campos foram limpos — não dá para reenviar o mesmo cadastro sem querer");
+    r.exigir(!depoisDoEnvio.janelaAberta, "a janela fecha sozinha ao enviar");
+    r.exigir(!depoisDoEnvio.travada, "e a rolagem da página volta");
+    r.exigir(
+      depoisDoEnvio.confirmacao.includes("Cadastro enviado"),
+      `a confirmação fica na página, onde o convite estava ("${depoisDoEnvio.confirmacao}")`,
+    );
+    r.exigir(depoisDoEnvio.conviteSumiu, "o convite da seção dá lugar à confirmação — não se cadastra duas vezes sem querer");
+    r.exigir(depoisDoEnvio.nomeVazio, "os campos foram limpos — reabrir a janela não reenvia o mesmo cadastro");
     await r.registrar(visitante, "cadastro-enviado", {
-      titulo: "A confirmação, na própria tela",
-      mostra: "“Cadastro enviado. A equipe da Unooria entrará em contato.”, e o botão travado.",
+      titulo: "A janela fecha e a confirmação fica",
+      mostra: "“Cadastro enviado. A equipe da Unooria entrará em contato.”, no lugar do convite.",
       prova:
         "A api responde a MESMA coisa se gravou, se o e-mail já se cadastrara na última hora ou se a armadilha pegou um robô. Dizer qual foi transformaria a rota num verificador de quem procurou a Unooria.",
-      detalhe: `botão: "${depoisDoEnvio.botao}"`,
+      detalhe: "janela fechada, rolagem devolvida, campos limpos",
     });
 
     // ── 2. o painel da Unooria ───────────────────────────────────────────

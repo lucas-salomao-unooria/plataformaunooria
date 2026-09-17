@@ -3,18 +3,27 @@
 import { useRef, useState } from "react";
 
 /**
- * O cadastro de interesse do site público (ADR-107).
+ * O cadastro de interesse do site público (ADR-107), numa JANELA.
  *
- * A MARCAÇÃO é a do material aprovado, campo por campo e classe por classe: o
- * `site.css` estiliza pelo `.registration-form`, pelos `.form-field` e pelo
- * `.is-success`, e qualquer liberdade aqui aparece como defeito de layout.
+ * Até 2026-09-17 o formulário ficava aberto no fim da página. Agora ele mora
+ * num `<dialog>` que os três botões "Quero conhecer a solução" abrem — o do
+ * cabeçalho, o do fechamento (`#contato`) e o desta seção.
  *
- * O que mudou foi o DESTINO. No bundle original o formulário postava em
- * `/api/cadastro`, servido por um Worker que escrevia direto num SQLite (D1) de
- * fora da plataforma. Aqui ele posta em `/api/cadastro-de-interesse`, rota do
- * próprio hub, que repassa à api — que é quem valida, cobra a cota e escreve no
- * Postgres. O caminho é o mesmo de todo o resto: o navegador nunca fala com a
- * api direto, e nenhum banco novo entra na arquitetura.
+ * A MARCAÇÃO DO FORMULÁRIO continua a do material aprovado, campo por campo e
+ * classe por classe: o `site.css` estiliza pelo `.registration-form`, pelos
+ * `.form-field` e pelo `.is-success`. O que a janela acrescentou está num bloco
+ * marcado no fim da folha, e reaproveita o que os outros dois diálogos do site
+ * já usam (`dialog`, `.dialog-top`, `.close-button`, `.button.outline`).
+ *
+ * QUEM ABRE A JANELA É O `efeitos/navegacao.ts`, não este componente: os outros
+ * dois diálogos da página já são operados por ele, e é de lá que vêm o Esc, o
+ * clique fora, o `[data-close]` e o `locked` do `<body>`. Este componente só a
+ * FECHA, no sucesso do envio — a janela é dele, o teclado é do site.
+ *
+ * O DESTINO é a api. No bundle original o formulário postava em `/api/cadastro`,
+ * servido por um Worker que escrevia direto num SQLite (D1) de fora da
+ * plataforma. Aqui ele posta em `/api/cadastro-de-interesse`, rota do próprio
+ * hub, que repassa à api — que valida, cobra a cota e escreve no Postgres.
  *
  * SEM SESSÃO, de propósito: quem preenche isto é um visitante. É a segunda rota
  * do hub que vale sem cookie (a primeira é o sinal de navegador da ADR-84), e a
@@ -27,16 +36,35 @@ const ARMADILHA = "website";
 const AVISO_DE_SUCESSO = "Cadastro enviado. A equipe da Unooria entrará em contato.";
 const AVISO_GENERICO = "Não foi possível enviar agora. Tente novamente.";
 
-export function FormularioDeCadastro() {
+/**
+ * O id da janela e o atributo que a abre. Exportados porque quem os usa está em
+ * TRÊS arquivos: a marcação estática (`site-entre-redes.tsx`), o módulo que liga
+ * os botões (`efeitos/navegacao.ts`) e este componente. Literal repetido nos
+ * três é o caminho curto para um botão que não abre nada e não avisa.
+ */
+export const ID_DA_JANELA = "cadastro-dialog";
+export const ATRIBUTO_DE_ABERTURA = "data-abrir-cadastro";
+
+/** O rótulo dos três botões que abrem a janela. Um lugar só, pelo mesmo motivo. */
+export const ROTULO_DO_CONVITE = "Quero conhecer a solução";
+
+export function CadastroDeInteresse() {
+  const janela = useRef<HTMLDialogElement>(null);
+  const confirmacao = useRef<HTMLParagraphElement>(null);
   const form = useRef<HTMLFormElement>(null);
-  const [estado, setEstado] = useState<"pronto" | "enviando" | "enviado">("pronto");
+  /* DOIS estados, e não um com três valores: a janela pode ser reaberta depois
+     de um envio (os botões do cabeçalho e do fechamento continuam lá), e com um
+     estado só o formulário reabria travado em "enviado" — botão desabilitado,
+     sem nada explicando. `envio` é do formulário; `confirmado` é da página. */
+  const [envio, setEnvio] = useState<"pronto" | "enviando">("pronto");
+  const [confirmado, setConfirmado] = useState(false);
   const [aviso, setAviso] = useState("");
 
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!form.current?.reportValidity()) return;
 
-    setEstado("enviando");
+    setEnvio("enviando");
     setAviso("");
 
     const campos = new FormData(form.current);
@@ -59,76 +87,133 @@ export function FormularioDeCadastro() {
       if (!resposta.ok) throw new Error(corpo.mensagem || "Não foi possível enviar agora.");
 
       form.current.reset();
-      setEstado("enviado");
-      setAviso(AVISO_DE_SUCESSO);
+      setEnvio("pronto");
+      setConfirmado(true);
+      setAviso("");
+      /* Fecha a janela e deixa a confirmação na PÁGINA. Mantê-la aberta com um
+         "enviado" dentro obrigaria a pessoa a fechar algo que já não tem o que
+         fazer; fechá-la sem deixar rastro nenhum apagaria a única prova de que
+         o envio funcionou. */
+      janela.current?.close();
+      /* E leva a pessoa até a confirmação, se ela ficou fora da tela: quem abriu
+         a janela pelo botão do cabeçalho pode estar a dez seções de distância, e
+         o fechamento sozinho pareceria "sumiu e não aconteceu nada". */
+      requestAnimationFrame(() => {
+        const alvo = confirmacao.current;
+        if (!alvo) return;
+        const caixa = alvo.getBoundingClientRect();
+        if (caixa.top < 0 || caixa.bottom > innerHeight) {
+          const suave = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+          alvo.scrollIntoView({ block: "center", behavior: suave ? "smooth" : "auto" });
+        }
+      });
     } catch (erro) {
-      /* Volta ao estado inicial — botão habilitado e com o rótulo de origem —
-         porque o erro aqui é quase sempre rede: quem tentar de novo consegue. */
-      setEstado("pronto");
+      /* A JANELA FICA ABERTA no erro, e o botão volta a funcionar: é aqui que a
+         pessoa corrige o campo ou tenta de novo. Fechar levaria embora o que ela
+         acabou de digitar. */
+      setEnvio("pronto");
       setAviso(erro instanceof Error ? erro.message : AVISO_GENERICO);
     }
   }
 
+  const abertura = { [ATRIBUTO_DE_ABERTURA]: "" };
+
   return (
-    <form
-      ref={form}
-      className={`registration-form reveal${estado === "enviado" ? " is-success" : ""}`}
-      id="registration-form"
-      method="post"
-      action="/api/cadastro-de-interesse"
-      onSubmit={enviar}
-    >
-      <div className="form-trap" aria-hidden="true">
-        <label htmlFor="lead-website">Website</label>
-        <input id="lead-website" name={ARMADILHA} tabIndex={-1} autoComplete="off" />
-      </div>
-      <div className="form-field form-wide">
-        <label htmlFor="lead-name">Nome</label>
-        <input id="lead-name" name="nome" autoComplete="name" required />
-      </div>
-      <div className="form-field">
-        <label htmlFor="lead-email">E-mail profissional</label>
-        <input id="lead-email" name="email" type="email" autoComplete="email" required />
-      </div>
-      <div className="form-field">
-        <label htmlFor="lead-phone">Telefone / WhatsApp</label>
-        <input id="lead-phone" name="telefone" type="tel" autoComplete="tel" required />
-      </div>
-      <div className="form-field">
-        <label htmlFor="lead-organization">Rede, secretaria ou escola</label>
-        <input id="lead-organization" name="organizacao" autoComplete="organization" required />
-      </div>
-      <div className="form-field">
-        <label htmlFor="lead-role">Seu cargo</label>
-        <select id="lead-role" name="cargo" required defaultValue="">
-          <option value="">Selecione</option>
-          <option>Gestão de rede ou secretaria</option>
-          <option>Direção ou coordenação escolar</option>
-          <option>Professor</option>
-          <option>Mantenedor</option>
-          <option>Outro</option>
-        </select>
-      </div>
-      <label className="form-consent form-wide">
-        <input type="checkbox" name="consentimento" required /> Autorizo o contato da Unooria sobre o ENTRE REDES.
-      </label>
-      <button className="button light form-wide" type="submit" disabled={estado !== "pronto"}>
-        {estado === "pronto" ? (
-          <>
-            Enviar cadastro{" "}
+    <>
+      <div className="registration-acao reveal">
+        {confirmado ? (
+          <p className="form-status" id="cadastro-confirmado" role="status" aria-live="polite" ref={confirmacao}>
+            {AVISO_DE_SUCESSO}
+          </p>
+        ) : (
+          <button className="button light" type="button" aria-haspopup="dialog" aria-controls={ID_DA_JANELA} {...abertura}>
+            {ROTULO_DO_CONVITE}{" "}
             <span className="arrow" aria-hidden="true">
               →
             </span>
-          </>
-        ) : estado === "enviando" ? (
-          "Enviando…"
-        ) : (
-          "Cadastro enviado"
+          </button>
         )}
-      </button>
-      <p className="form-status form-wide" id="registration-status" role="status" aria-live="polite">
-        {aviso}
-      </p>
-    </form>
+      </div>
+
+      <dialog ref={janela} id={ID_DA_JANELA} className="form-dialog" aria-labelledby="cadastro-dialog-titulo">
+        <div className="dialog-top">
+          <span className="eyebrow" id="cadastro-dialog-titulo">
+            Cadastro de interesse
+          </span>
+          <button className="close-button" type="button" data-close aria-label="Fechar o cadastro">
+            ×
+          </button>
+        </div>
+        <p className="form-intro">
+          Preencha os dados para receber uma apresentação do ENTRE REDES e entender como o programa pode entrar na sua
+          realidade.
+        </p>
+        <form
+          ref={form}
+          className="registration-form"
+          id="registration-form"
+          method="post"
+          action="/api/cadastro-de-interesse"
+          onSubmit={enviar}
+        >
+          <div className="form-trap" aria-hidden="true">
+            <label htmlFor="lead-website">Website</label>
+            <input id="lead-website" name={ARMADILHA} tabIndex={-1} autoComplete="off" />
+          </div>
+          <div className="form-field form-wide">
+            <label htmlFor="lead-name">Nome</label>
+            <input id="lead-name" name="nome" autoComplete="name" required />
+          </div>
+          <div className="form-field">
+            <label htmlFor="lead-email">E-mail profissional</label>
+            <input id="lead-email" name="email" type="email" autoComplete="email" required />
+          </div>
+          <div className="form-field">
+            <label htmlFor="lead-phone">Telefone / WhatsApp</label>
+            <input id="lead-phone" name="telefone" type="tel" autoComplete="tel" required />
+          </div>
+          <div className="form-field">
+            <label htmlFor="lead-organization">Rede, secretaria ou escola</label>
+            <input id="lead-organization" name="organizacao" autoComplete="organization" required />
+          </div>
+          <div className="form-field">
+            <label htmlFor="lead-role">Seu cargo</label>
+            <select id="lead-role" name="cargo" required defaultValue="">
+              <option value="">Selecione</option>
+              <option>Gestão de rede ou secretaria</option>
+              <option>Direção ou coordenação escolar</option>
+              <option>Professor</option>
+              <option>Mantenedor</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <label className="form-consent form-wide">
+            <input type="checkbox" name="consentimento" required /> Autorizo o contato da Unooria sobre o ENTRE REDES.
+          </label>
+          <div className="form-acoes form-wide">
+            {/* `outline` é a variante que o próprio material já traz: a ação de
+                sair não pode ter o mesmo peso visual da de enviar. */}
+            <button className="button outline" type="button" data-close disabled={envio === "enviando"}>
+              Cancelar
+            </button>
+            <button className="button light" type="submit" disabled={envio === "enviando"}>
+              {envio === "pronto" ? (
+                <>
+                  Enviar cadastro{" "}
+                  <span className="arrow" aria-hidden="true">
+                    →
+                  </span>
+                </>
+              ) : (
+                "Enviando…"
+              )}
+            </button>
+          </div>
+          <p className="form-status form-wide" id="registration-status" role="status" aria-live="polite">
+            {aviso}
+          </p>
+        </form>
+      </dialog>
+    </>
   );
 }
