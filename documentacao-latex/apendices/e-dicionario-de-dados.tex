@@ -37,6 +37,7 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \zebra \cd{experiencias} & \textbf{Catálogo} & Manifesto de versões\\
 \cd{experiencias\_versoes} & \textbf{Catálogo} & Uma linha por versão publicada, com o manifesto inteiro (\adrr{ADR-87})\\
 \zebra \cd{disponibilidades} & \textbf{Catálogo} & \textbf{O interruptor da rede} (\adrr{ADR-87})\\
+\cd{prospeccao\_leads} & \textbf{Sem tenant} & Cadastro de interesse do site público (\adrr{ADR-107}) --- a ÚNICA tabela de dado pessoal sem \cd{escola\_id} e sem RLS\\
 \cd{recursos\_auditoria} & \textbf{Catálogo} & \textbf{Quem mexeu no interruptor} --- append-only (\adrr{ADR-89})\\
 \zebra \cd{progresso} & Tenant & Progresso genérico da SDK\\
 \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
@@ -638,6 +639,59 @@ sobrescrevam.
 \cd{particoes.\ldots\_default} & \textbf{Rede de segurança.} Sem ela, evento com
   \cd{ts} fora das faixas seria \textbf{recusado} --- e telemetria perdida em
   silêncio é pior que telemetria mal guardada. Encher = faltou criar partição.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{\cd{prospeccao\_leads} (sem tenant)}
+
+\textbf{Quem pediu contato pelo formulário do site público} (\adrr{ADR-107}),
+antes de existir contrato. Substituiu um SQLite (Cloudflare D1) servido por um
+\emph{Worker} fora da plataforma, com listagem protegida por um \emph{token} no
+fragmento da URL --- um banco, um \emph{runtime} e um modelo de autorização a
+mais na arquitetura, nenhum deles visível para quem opera o produto.
+
+\textbf{Sem \cd{escola\_id} e sem RLS}, a exceção da regra nº 1 (Capítulo~7):
+não há tenant a isolar. Quem protege a leitura é \cd{@Roles("admin")}; a escrita
+é pública, e a defesa dela é o Zod, a cota por IP, o campo-armadilha e o
+\emph{dedupe}.
+
+\begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
+\toprule
+\headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
+\midrule
+\pk{id} & \cd{UUID} PK & \cd{gen\_random\_uuid()}. Não sai na resposta da api:
+  nenhuma rota o consome, e um identificador no \emph{payload} convida a uma
+  rota de edição que não deve existir.\\
+\zebra \cd{nome}, \cd{telefone}, \cd{organizacao}, \cd{cargo} & \cd{TEXT} &
+  \emph{CHECK} de não-vazio nos cinco campos mais o aceite. O Zod da rota já
+  recusa; o \emph{CHECK} impede que qualquer outro caminho (semente, correção
+  manual, importação futura) escreva a linha que a tela mostraria como uma
+  fileira de células em branco.\\
+\cd{email} & \cd{TEXT} & \textbf{Sempre em minúsculas} (\emph{CHECK}
+  \cd{email = lower(email)}): é a chave do \emph{dedupe}, e a mesma pessoa
+  escreve o próprio endereço de três jeitos ao longo de um ano.\\
+\zebra \cd{consentimento\_texto} & \cd{TEXT} & \textbf{A FRASE que a pessoa
+  marcou}, não um booleano. Booleano prova que alguém clicou; ele não prova a
+  QUE se consentiu, que é o que a LGPD cobra (art.~8º, §2º). Mudou o texto no
+  site, muda a constante da api no mesmo \emph{commit} --- as linhas antigas
+  continuam dizendo o que valia no dia delas.\\
+\cd{criado\_em} & \cd{TIMESTAMPTZ(6)} & \\
+\bottomrule
+\end{tabularx}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Objeto} & \thd{Nota}\\
+\midrule
+\cd{prospeccao\_leads\_}\B{}\cd{email\_criado\_em\_idx} & O \emph{dedupe} da
+  rota pública: mesmo e-mail dentro de uma hora não vira linha nova.\\
+\zebra \cd{prospeccao\_leads\_}\B{}\cd{criado\_em\_idx} & \cd{DESC} --- a
+  ordem em que o painel lê.\\
+\cd{GRANT} & \cd{SELECT, INSERT, DELETE}. \textbf{Com \cd{DELETE}} (o titular
+  pode revogar o consentimento e pedir a eliminação, art.~18, VI) e
+  \textbf{sem \cd{UPDATE}} (cadastro não se edita: se a pessoa reenviar com o
+  dado certo, a linha nova é o registro certo, e a antiga continua sendo verdade
+  sobre o que foi enviado naquele dia).\\
 \bottomrule
 \end{tabularx}
 

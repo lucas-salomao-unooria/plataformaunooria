@@ -392,6 +392,19 @@ Todas as rotas da API, com o papel autorizado. \textbf{Este apêndice é gerado}
 \bottomrule
 \end{tabularx}
 
+\section{prospeccao}
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{Autorização} & \thd{Semântica}\\
+\midrule
+\endhead
+\rota{GET /\allowbreak{}prospeccao/\allowbreak{}cadastros} & \cd{admin} & Os cadastros de interesse recebidos pelo site público.\par Do mais novo para o mais antigo. Alimenta \cd{/\allowbreak{}unooria/\allowbreak{}prospeccao} \adrr{ADR-107}. A data sai em \textbf{ISO 8601}, e quem a formata é a tela, no fuso da plataforma \adrr{ADR-98}/99).\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Só \cd{admin} \adrr{ADR-88}: é o funil comercial da Unooria, não da rede.\par \hspace*{1em}\textbullet{} A lista vem limitada a 5000 linhas; \cd{total} diz quantas existem de verdade --- se os dois divergirem, a tela avisa em vez de mentir que aquilo é tudo.\par \hspace*{1em}\textbullet{} O \cd{id} da linha não sai: nenhuma rota o consome, e um identificador na resposta convida a uma rota de edição que não deve existir.\\
+\zebra \rota{GET /\allowbreak{}prospeccao/\allowbreak{}cadastros/\allowbreak{}exportacao} & \cd{admin} & Os mesmos cadastros, em CSV.\par O arquivo que o \cd{admin} baixa do painel. Separador \cd{;} e BOM UTF-8: é o par que faz o Excel em português abrir o arquivo com as colunas separadas e os acentos certos --- com vírgula, a planilha chega numa coluna só.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Só \cd{admin} \adrr{ADR-88}.\par \hspace*{1em}\textbullet{} O caminho \textbf{não} termina em \cd{.csv}, como em \cd{/\allowbreak{}analise/\allowbreak{}exportar/\allowbreak{}:nivel}: segmento de rota com ponto quebra a validação de tipos do App Router no hub. O nome do arquivo sai no \cd{content-disposition}.\par \hspace*{1em}\textbullet{} A data sai formatada no fuso da plataforma (\cd{FUSO\_\allowbreak{}DA\_\allowbreak{}PLATAFORMA}), e não em ISO: este arquivo é lido por gente, numa planilha.\\
+\rota{POST /\allowbreak{}prospeccao/\allowbreak{}publico/\allowbreak{}cadastros} & \textbf{público} & Registra um cadastro de interesse feito no site público.\par A rota do formulário do ENTRE REDES (\cd{/\allowbreak{}}, \adrr{ADR-107}. Sem sessão de propósito: quem preenche é um visitante, antes de existir contrato. Grava em \cd{prospeccao\_\allowbreak{}leads} --- a única tabela sem \cd{escola\_\allowbreak{}id} e sem RLS, pelas razões da migration. O aceite é gravado com a FRASE que a pessoa marcou, não como um booleano solto.\par \textbf{Restrições:}\par \hspace*{1em}\textbullet{} Cota de 5 por hora por IP e 200 por hora na instância: acima, \textbf{429}. O IP é só chave de cota e não é registrado.\par \hspace*{1em}\textbullet{} \cd{consentimento} precisa ser exatamente \cd{true}: sem aceite não há base legal, e o corpo é recusado com 400.\par \hspace*{1em}\textbullet{} \cd{website} é campo-armadilha. Preenchido, a resposta é \textbf{201 e nada é gravado} --- recusar com erro ensinaria o robô.\par \hspace*{1em}\textbullet{} Mesmo e-mail de novo dentro de 60 minutos devolve 201 sem gravar linha nova.\par \hspace*{1em}\textbullet{} A resposta NUNCA diz se o e-mail já estava na base: isso transformaria a rota num verificador de quem se cadastrou.\\
+\bottomrule
+\end{tabularx}
+
 \section{rastro-boato}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{24mm}X@{}}

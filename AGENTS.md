@@ -84,6 +84,11 @@ porquê inteiro, e a separação entre *subir* e *ativar*, em
 1. **Toda query SQL é escopada por `escola_id`** (e `estudante_id` quando aplicável).
    Tabelas de dados de estudante têm `escola_id NOT NULL` + Row-Level Security.
    Nunca escreva uma query que atravesse escolas, exceto em rotas `admin-contrato`.
+   **Uma exceção, e só ela: `prospeccao_leads`** (ADR-107) — o cadastro de
+   interesse do site público, escrito por VISITANTE meses antes de existir
+   contrato. Sem `escola_id`, sem RLS, e as queries dela rodam fora de
+   `comTenancy`. Quem tranca é o papel (`admin`) na leitura; a escrita é pública
+   por desenho. Tabela nova NÃO herda essa exceção.
 2. **Nenhum segredo em bundle client** (experiências e hub client-side): sem
    API keys, sem prompts de sistema, sem URLs internas. IA só via `api /ai/*`.
 3. **Respostas corretas / correção / pontuação que vale nota: server-side.**

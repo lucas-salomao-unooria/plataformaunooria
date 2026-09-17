@@ -221,6 +221,21 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
 \bottomrule
 \end{tabularx}
 
+\section{A tabela que fica fora do modelo: \cd{prospeccao\_leads}}
+
+\adrr{ADR-107}. Cadastro de interesse do site público: nome, e-mail, telefone,
+organização, cargo, a frase consentida e a data. \textbf{Sem \cd{escola\_id},
+sem RLS e sem relação com \cd{users}} --- não há tenant a que pertencer, porque
+a linha nasce meses antes de existir contrato, escrita por um visitante numa
+rota sem sessão. É a única tabela de dado pessoal do banco nessa condição, e o
+porquê está no Capítulo~7 (\enquote{A tabela sem tenant}) e no verbete do
+Apêndice~E.
+
+Duas colunas merecem nota no modelo: \cd{email} é guardado em minúsculas por
+\emph{CHECK} (é a chave do \emph{dedupe} de uma hora) e o aceite é
+\cd{consentimento\_texto}, a FRASE marcada --- não um booleano, que provaria o
+clique e não o conteúdo do consentimento.
+
 \section{A rede: escola, lotação e o CPF}
 \label{sec:rede}
 

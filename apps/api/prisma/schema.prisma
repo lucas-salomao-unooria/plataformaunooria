@@ -2364,3 +2364,31 @@ model IaQuota {
 
   @@map("ia_quotas")
 }
+
+/// CADASTRO DE INTERESSE do site público (ADR-107) — quem pediu contato pelo
+/// formulário do ENTRE REDES, antes de existir contrato.
+///
+/// É a única tabela do banco que NÃO é de gente da rede: quem escreve aqui é um
+/// visitante, e a linha nasce numa rota sem sessão. Daí as três diferenças que
+/// a migration justifica: sem `escola_id` (não há escola ainda), sem RLS (não
+/// há tenant a isolar) e sem vínculo com `users`.
+///
+/// `consentimentoTexto` guarda a FRASE que a pessoa marcou, não um booleano
+/// solto: consentimento que não registra a que se consentiu não prova nada
+/// (LGPD art. 8º, §2º). Se o texto do site mudar, as linhas antigas continuam
+/// dizendo o que valia no dia.
+model ProspeccaoLead {
+  id                 String   @id @default(uuid()) @db.Uuid
+  nome               String
+  /// Guardado em minúsculas: é a chave que separa um reenvio de um cadastro novo.
+  email              String
+  telefone           String
+  organizacao        String
+  cargo              String
+  consentimentoTexto String   @map("consentimento_texto")
+  criadoEm           DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
+
+  @@index([email, criadoEm], map: "prospeccao_leads_email_criado_em_idx")
+  @@index([criadoEm(sort: Desc)], map: "prospeccao_leads_criado_em_idx")
+  @@map("prospeccao_leads")
+}

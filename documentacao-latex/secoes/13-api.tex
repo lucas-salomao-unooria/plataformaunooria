@@ -780,6 +780,46 @@ na leitura:
 O \rota{GET /recursos/auditoria} ganhou \cd{?prefixo=} (\cd{quota:} recorta as
 mudanças de quota) e a coluna \cd{detalhe}, só preenchida nessas linhas.
 
+\section{Prospecção: a única escrita sem token (\adrr{ADR-107})}
+
+O formulário do site público (\cd{/}) grava pela api, e não num banco próprio.
+São três rotas, e o prefixo separa o que tem \emph{guard} do que não tem:
+
+\begin{itemize}
+  \item \rota{POST /prospeccao/publico/cadastros} --- \textbf{sem \emph{guard}},
+    e é a única rota de dados da api nessa condição. Recebe nome, e-mail,
+    telefone, organização, cargo e o aceite; grava em \cd{prospeccao\_leads}
+    com a FRASE consentida. \textbf{Três situações respondem a MESMA coisa}
+    (\cd{201 \{recebido: true\}}): gravou, o e-mail já se cadastrara na última
+    hora, ou o campo-armadilha veio preenchido. Dizer \enquote{este e-mail já
+    está cadastrado} transformaria a rota num verificador de quem procurou a
+    Unooria; recusar a armadilha com erro ensinaria o robô a tentar sem o campo.
+    Cota de \num{5}/hora por IP e \num{200}/hora na instância; acima, \num{429}.
+  \item \rota{GET /prospeccao/cadastros} --- \cd{admin}. Do mais novo para o
+    mais antigo, teto de \num{5000} linhas, com o \cd{total} real ao lado: se os
+    dois divergirem, a tela avisa em vez de afirmar que aquilo é tudo. A data
+    sai em ISO~8601 e quem formata é a tela (\adrr{ADR-98}/\adrr{ADR-99}).
+  \item \rota{GET /prospeccao/cadastros/exportacao} --- \cd{admin}. O mesmo
+    recorte em CSV, com separador \cd{;} e BOM UTF-8 (o par que faz o Excel em
+    português abrir colunas separadas e acentos certos), todo campo entre aspas
+    e aspas internas dobradas --- nome de secretaria leva \cd{;} com frequência,
+    e um separador solto dentro do valor desloca a linha inteira sem nada
+    acusar. O caminho \textbf{não} termina em \cd{.csv}, pela mesma razão de
+    \rota{/analise/exportar/\{nivel\}}: segmento de rota com ponto quebra a
+    validação de tipos do App Router no hub. O nome do arquivo sai no
+    \cd{content-disposition}.
+\end{itemize}
+
+\textbf{A escrita não passa pelo BFF.} O \arq{/api/plataforma/*} do hub exige
+sessão, e ampliar a exceção dos sinais de navegador (\adrr{ADR-84}) para uma
+rota que ESCREVE dado pessoal tornaria \enquote{o BFF exige sessão} uma regra
+com lista de exceções. Ela tem rota própria no hub
+(\rota{POST /api/cadastro-de-interesse}), que também traduz o código de recusa
+na frase que o visitante lê. O que essa rota \textbf{precisa} repassar é o
+\cd{x-forwarded-for}: sem ele todos os visitantes chegam à api como um cliente
+só, o primeiro robô gasta a cota de todos e o formulário passa a recusar gente
+de verdade.
+
 \section{Sanidade e prontidão}
 
 \begin{tabularx}{\linewidth}{@{}L{22mm}L{20mm}X@{}}

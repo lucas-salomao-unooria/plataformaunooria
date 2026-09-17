@@ -82,6 +82,10 @@ const PREFIXOS_PERMITIDOS = [
      de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
      "gestor_escola", "gestor_contrato")`). */
   "manifesto-ia",
+  /* Os cadastros de interesse do site público (ADR-107) — só a LEITURA, e só
+     `admin` (o `@Roles` está na api). A ESCRITA não passa por aqui: ela vem de
+     visitante sem sessão, e tem rota própria (`/api/cadastro-de-interesse`). */
+  "prospeccao",
   /* Sinais do NAVEGADOR do hub (cap. 17): erro de cliente e Web Vitals postam
      pela mesma rota que a SDK usa dentro do iframe, mas o client do hub não
      tem bearer — passa por aqui. A api aplica cota e redaction. */

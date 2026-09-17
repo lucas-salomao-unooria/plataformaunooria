@@ -179,6 +179,7 @@ const NOS: Record<string, NoDaTrilha> = {
   "/unooria/recursos": { rotulo: "Recursos" },
   // A quota diária de IA por perfil (ADR-105).
   "/unooria/uso-de-ia": { rotulo: "Uso de IA" },
+  "/unooria/prospeccao": { rotulo: "Prospecção" },
 
   /* ---- análise de produto (admin-contrato) ----------------------------- */
   '/analise': { rotulo: 'Análise de produto' },

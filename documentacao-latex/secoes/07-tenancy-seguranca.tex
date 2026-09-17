@@ -235,6 +235,51 @@ As rotas cross-escola vivem em \emph{controllers} separados
 um \cd{@Roles} misto é o caminho mais curto para um \cd{GET} novo herdar
 silenciosamente a permissão do vizinho.
 
+\section{A tabela sem tenant: o cadastro de interesse (\adrr{ADR-107})}
+
+\begin{regra}
+\textbf{\cd{prospeccao\_leads} não tem \cd{escola\_id} e não tem RLS}, e é a
+ÚNICA tabela de dados pessoais do banco nessa situação. A exceção está escrita
+aqui porque a regra inviolável nº 1 não admite esquecimento: toda outra tabela
+de dados de pessoa carrega \cd{escola\_id NOT NULL} mais política de RLS.
+\end{regra}
+
+Quem escreve nessa tabela é um \textbf{visitante do site público}, meses antes
+de existir contrato: não há escola para isolar, não há pessoa da rede para
+identificar e não há sessão para exigir. Uma política por \cd{escola\_id} sobre
+uma tabela sem a coluna esconderia a tabela de todos. A consequência prática,
+registrada em \arq{apps/api/src/prospeccao/AGENTS.md}: as \emph{queries} desse
+módulo rodam FORA de \cd{comTenancy} --- de propósito, e só ali.
+
+O que protege cada lado:
+
+\begin{itemize}
+  \item \textbf{A leitura} é \cd{@Roles("admin")} (\adrr{ADR-88}), como todo o
+    painel da Unooria. O \cd{gestor\_contrato} é o cliente, e a lista de quem
+    procurou a fornecedora é sobre ele, não para ele.
+  \item \textbf{A escrita é pública por desenho}, e é a única rota de dados da
+    api sem \emph{guard}. A defesa dela é o Zod, a cota por IP
+    (\num{5}/hora por endereço, \num{200}/hora na instância), o campo-armadilha
+    e o \emph{dedupe} de uma hora. O IP é chave de cota e não é gravado em lugar
+    nenhum --- ele identificaria a pessoa sem acrescentar nada ao que o
+    cadastro já diz.
+  \item \textbf{Dois \emph{controllers}, não um}, pelo mesmo motivo dos
+    \emph{controllers} cross-escola acima: um \cd{@UseGuards} esquecido num
+    método some na revisão; um arquivo inteiro sem \emph{guard} é decisão que se
+    lê no topo.
+\end{itemize}
+
+\textbf{A base legal é o CONSENTIMENTO} (LGPD art.~7º, I), ao contrário do dado
+de estudante, cuja base é a execução de política pública. Aqui ele é válido
+porque a relação é voluntária: ninguém é obrigado a pedir uma apresentação
+comercial. Por isso a coluna guarda a FRASE aceita (\cd{consentimento\_texto}) e
+não um booleano --- um booleano prova que alguém clicou, não a que consentiu
+(art.~8º, §2º) --- e por isso a \emph{role} de \emph{runtime} tem \cd{DELETE},
+que \cd{ia\_quotas} não tem: o titular pode revogar e pedir a eliminação
+(art.~18, VI), e tabela sem \cd{DELETE} torna o pedido impossível de atender.
+\textbf{Não há rota de exclusão}; o pedido é atendido por acesso direto ao
+banco, e a tela de Prospecção diz isso em vez de prometer um botão inexistente.
+
 \section{O interruptor da rede: um nível que não é de tenancy}
 
 A \adrr{ADR-87} acrescentou um eixo que decide se algo abre e que \textbf{não é

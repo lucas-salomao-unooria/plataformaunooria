@@ -7,7 +7,8 @@ capacidade que `admin` tem e `gestor_contrato` não.
 
 Área própria, papel `admin`, layout próprio (e portanto trilha própria).
 `NavUnooria` + `lib/recursos.ts` + `app/(plataforma)/unooria/recursos/` +
-`app/(plataforma)/unooria/uso-de-ia/` (ADR-105).
+`app/(plataforma)/unooria/uso-de-ia/` (ADR-105) +
+`app/(plataforma)/unooria/prospeccao/` (ADR-107).
 
 ### O segundo item: Uso de IA (ADR-105, 2026-09-15)
 
@@ -42,6 +43,31 @@ que todo papel entra na própria casa e que ninguém além do `admin` entra em
 
 **`homeDoPapel("admin")` é `/unooria/recursos`**: a casa da conta da Unooria é o
 painel dela, não a área da escola.
+
+### O terceiro item: Prospecção (ADR-107, 2026-09-16)
+
+`/unooria/prospeccao` — quem pediu contato pelo formulário do site público. Lido
+de `GET /prospeccao/cadastros` pelo BFF (prefixo `prospeccao`, liberado só para
+a LEITURA) e baixado em CSV por `GET /prospeccao/cadastros/exportacao`.
+
+É a terceira capacidade que `admin` tem e `gestor_contrato` não, e a razão é a
+mesma das outras duas: **o `gestor_contrato` é o cliente**, e esta lista é sobre
+ele, não para ele. Mostrar a uma rede quem mais pediu apresentação seria
+entregar o funil comercial da Unooria ao cliente.
+
+- **O CSV vem da API, não do navegador.** Montá-lo aqui a partir da lista em
+  tela parece mais simples e é a armadilha: a tela mostra a lista TRUNCADA (teto
+  de 5000), então o arquivo sairia calado com menos linhas do que a base tem.
+- **Erro ao atualizar NÃO esvazia a tabela.** "Nenhum cadastro" e "a api não
+  respondeu" são a mesma tela para quem olha, e a primeira leitura manda
+  procurar defeito no formulário do site. A lista anterior fica, com o aviso.
+- **A tela diz que não apaga cadastro.** O direito de eliminação (LGPD art. 18,
+  VI) é real e hoje o caminho é humano — o `GRANT` da tabela tem `DELETE` e não
+  há rota. Escrever isso na tela é melhor que um botão que não existe, e melhor
+  que o silêncio que faz procurá-lo.
+- **Sem escopo de escola**, ao contrário de Recursos: cadastro de interesse é
+  anterior a qualquer contrato. Não há seletor para trocar nem estado a
+  remontar — o que a seção abaixo descreve não se aplica a esta tela.
 
 ### Trocar de escopo REMONTA o painel — e sem isso a tela MENTE
 
