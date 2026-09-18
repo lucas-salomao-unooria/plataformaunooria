@@ -102,7 +102,7 @@ export function SiteEntreRedes() {
       <span className="hero-line">A educação precisa <span className="hero-accent">mudar de aula.</span></span>
       </h1>
       <div className="hero-sub">
-      <p>O ENTRE REDES conecta a vida nas telas à aprendizagem na escola.<br /> Educação Digital e Midiática do 1º ano ao Ensino Médio.</p>
+      <p>O ENTRE REDES conecta a vida nas telas à aprendizagem na escola.<br /> Educação Digital e Midiática para estudantes do Ensino Fundamental e Ensino Médio.</p>
       </div>
       </div>
       </div>
@@ -127,7 +127,7 @@ export function SiteEntreRedes() {
       <details open>
       <summary>
       <span className="detail-no">01</span>O currículo precisa de progressão.</summary>
-      <p>A rede precisa organizar o que ensinar em cada idade, do 1º EF ao 3º EM.</p>
+      <p>A rede precisa organizar o que ensinar em cada etapa, do 1º ano do Ensino Fundamental à 3ª série do Ensino Médio.</p>
       </details>
       <details>
       <summary>
@@ -137,12 +137,12 @@ export function SiteEntreRedes() {
       <details>
       <summary>
       <span className="detail-no">03</span>O professor não foi formado para isso.</summary>
-      <p>Nem para ensinar esses temas, nem para incorporar a IA de forma crítica e pedagógica às aulas. E não há tempo sobrando para pesquisar, planejar e construir tudo sozinho.</p>
+      <p>Nem para ensinar esses temas, nem para incorporar a IA às aulas de forma crítica e pedagógica. E não há tempo de sobra para pesquisar, planejar e construir tudo sozinho.</p>
       </details>
       <details>
       <summary>
       <span className="detail-no">04</span>A infraestrutura ainda limita.</summary>
-      <p>Conectividade e disponibilidade de dispositivos variam entre escolas e até dentro da mesma rede. Uma solução que depende de acesso pleno à tecnologia não escala de forma justa.</p>
+      <p>A conectividade e a disponibilidade de dispositivos variam entre as escolas e até dentro de uma mesma rede. Uma solução que depende de acesso pleno à tecnologia pode limitar o engajamento e ampliar desigualdades entre os estudantes.</p>
       </details>
       <details>
       <summary>
@@ -165,7 +165,7 @@ export function SiteEntreRedes() {
       </div>
       <div className="reveal">
       <h2 id="response-title" className="section-heading">Uma solução completa para fazer Educação Digital e Midiática acontecer na escola real.</h2>
-      <p className="lead section-description">O ENTRE REDES une currículo, experiências digitais, apoio ao professor e implementação em um mesmo programa.</p>
+      <p className="lead section-description">O ENTRE REDES integra currículo, experiências digitais, apoio ao professor e implementação em uma única solução educacional.</p>
       </div>
       <div className="vertical-panels">
 
@@ -238,7 +238,7 @@ export function SiteEntreRedes() {
       </div>
       <div className="ecosystem-difference reveal">
       <strong>Por que é diferente?</strong>
-      <p>A rede não precisa costurar materiais, tecnologia, formação e acompanhamento de fornecedores separados. Tudo segue a mesma lógica pedagógica e funciona dentro da rotina escolar.</p>
+      <p>A rede não precisa articular materiais, tecnologia, formação e acompanhamento em iniciativas separadas. Tudo faz parte da mesma solução, segue uma única lógica pedagógica e se integra à rotina escolar.</p>
       </div>
       </div>
       </section>
@@ -247,12 +247,12 @@ export function SiteEntreRedes() {
       <div className="container">
       <div className="section-top">
       <div className="eyebrow">
-      Método · O ciclo bimestral</div>
-      <span className="section-name">Um ciclo bimestral conectado ao percurso do ano</span>
+      Método · O ciclo por unidade</div>
+      <span className="section-name">Um ciclo por unidade conectado ao percurso do ano</span>
       </div>
       <div className="method-heading reveal">
-      <h2 id="method-title">Quatro bimestres. Quatro ciclos.<br /> <span className="emphasis">Um método que se repete.</span></h2>
-      <p className="lead">A escola não precisa inventar uma dinâmica nova a cada bimestre. O percurso é previsível para o professor e progressivo para o estudante.</p>
+      <h2 id="method-title">Quatro unidades. Quatro ciclos.<br /> <span className="emphasis">Um método que se repete.</span></h2>
+      <p className="lead">A escola não precisa criar uma nova dinâmica a cada unidade. O percurso mantém uma lógica clara para o professor e evolui de forma progressiva para o estudante.</p>
       </div>
       <div className="vertical-panels">
 
@@ -263,7 +263,7 @@ export function SiteEntreRedes() {
       <p>O livro desenvolve conceitos, leituras, discussões e produções.</p>
       </div>
       <div className="method-note">
-      <strong>Ao longo do bimestre</strong>O material didático constrói repertório ao longo do bimestre.</div>
+      <strong>Ao longo da unidade</strong>O material didático constrói e amplia o repertório do estudante.</div>
       </div>
       <div className="method-panel" role="region" id="method-panel-1" aria-labelledby="method-heading-1">
       <div>
@@ -272,7 +272,7 @@ export function SiteEntreRedes() {
       <p>Em cerca de 50 minutos, o estudante vive uma situação e precisa decidir.</p>
       </div>
       <div className="method-note">
-      <strong>Uma Missão Digital por bimestre</strong>A Missão Digital coloca o conhecimento em uma situação prática.</div>
+      <strong>Uma Missão Digital por unidade</strong>A Missão Digital coloca o conhecimento em uma situação prática.</div>
       </div>
       <div className="method-panel" role="region" id="method-panel-2" aria-labelledby="method-heading-2">
       <div>
@@ -306,7 +306,7 @@ export function SiteEntreRedes() {
       <div className="mission-intro reveal">
       <h2 id="mission-title">Missões são experiências digitais em que o estudante <span className="accent">aprende decidindo.</span>
       </h2>
-      <p className="lead">Em cerca de 50 minutos, a turma entra em uma situação inspirada no mundo digital, investiga informações, faz escolhas e acompanha suas consequências. Depois, o professor transforma a experiência em conceito, reflexão e critério para a vida real.</p>
+      <p className="lead">Em cerca de 50 minutos, a turma vivencia uma situação inspirada no mundo digital, investiga informações, faz escolhas e acompanha suas consequências. Depois, o professor conduz a reflexão, consolida os conceitos e ajuda os estudantes a transformar a experiência em critérios para a vida real.</p>
       </div>
       <figure className="infinity-stage infinity-interlude" aria-label="O infinito da Unooria formado por pontos de luz">
       <canvas className="infinity-canvas" id="brand-infinity" role="button" tabIndex={0} aria-label="Arraste para girar o infinito de estrelas. Toque ou pressione Enter para refazer. Use as setas para girar e Home para centralizar."></canvas>
@@ -399,10 +399,10 @@ export function SiteEntreRedes() {
       <span className="section-name">Da preparação às evidências</span>
       </div>
       <div className="manager-heading reveal">
-      <h2 id="manager-title">A rede começa com o que já tem.<br /> <span className="emphasis">A Unooria organiza o restante.</span></h2>
+      <h2 id="manager-title">A rede começa com o que já tem.<br /> <span className="emphasis">O ENTRE REDES organiza o restante.</span></h2>
       <p className="lead">O ENTRE REDES entra na grade e na rotina existente. A implementação reúne planejamento, materiais, formação, suporte e acompanhamento em um único processo.</p>
       </div>
-      <h3 className="deploy-title reveal">Três movimentos para o programa virar rotina.</h3>
+      <h3 className="deploy-title reveal">Três movimentos para a solução virar rotina.</h3>
       <div className="deploy reveal">
       <div className="deploy-item">
       <span>01</span>
@@ -472,14 +472,14 @@ export function SiteEntreRedes() {
       <h3 className="stage-title" id="stage-title-0">Anos Iniciais</h3>
       <div className="age">1º ao 5º ano · Ensino Fundamental</div>
       <h4>Entender, verificar,<br /> proteger e produzir.</h4>
-      <p>A criança começa a ler criticamente o que vê, reconhecer sinais de confiabilidade, proteger dados e criar com responsabilidade. Primeiros critérios para viver no digital.</p>
+      <p>O estudante começa a ler criticamente o que vê, reconhecer sinais de confiabilidade, proteger dados e criar com responsabilidade. Primeiros critérios para viver no digital.</p>
       </div>
       <div className="stage-aside">
       <strong>Mais concreto. Mais guiado.</strong>
       </div>
       <figure className="progression" data-progression="initial" aria-label="Progressão pedagógica real dos Anos Iniciais">
       <button type="button" className="progression-art" data-print="" data-title="Jornada de aprendizagem · Anos Iniciais" aria-label="Ampliar a progressão dos Anos Iniciais" aria-haspopup="dialog">
-      <img src="/site/assets/57b7460195babc28.webp" width="935" height="1683" alt="Progressão pedagógica real: entender o que vê, verificar antes de acreditar, proteger-se e produzir com responsabilidade, com missões guiadas e simulações seguras." loading="lazy" decoding="async" />
+      <img src="/site/assets/jornada-anos-iniciais.webp" width="935" height="1683" alt="Progressão pedagógica real: entender o que vê, verificar antes de acreditar, proteger-se e produzir com responsabilidade, com missões guiadas e simulações seguras." loading="lazy" decoding="async" />
       <span className="progression-zoom" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5M7.5 10.5h6m-3-3v6" /></svg></span>
       </button>
       </figure>
@@ -504,9 +504,9 @@ export function SiteEntreRedes() {
       <article className="curriculum-panel" id="stage-panel-2" aria-labelledby="stage-title-2">
       <div>
       <h3 className="stage-title" id="stage-title-2">Ensino Médio</h3>
-      <div className="age">1º ao 3º ano · Ensino Médio</div>
+      <div className="age">1ª a 3ª série - Ensino Médio</div>
       <h4>Posicionar-se, criar<br /> e avaliar impacto.</h4>
-      <p>O jovem aprofunda identidade digital, sistemas automatizados, transparência, autoria e impacto social das próprias escolhas. Critério, posicionamento e impacto.</p>
+      <p>O estudante aprofunda identidade digital, sistemas automatizados, transparência, autoria e impacto social das próprias escolhas. Critério, posicionamento e impacto.</p>
       </div>
       <div className="stage-aside">
       <strong>Mais autoral. Mais consciente.</strong>
@@ -553,7 +553,7 @@ export function SiteEntreRedes() {
       </div>
       <div className="teacher-lead reveal">
       <h2 className="section-heading" id="teacher-title">A tecnologia entra para<br /> <span className="emphasis">tirar peso do professor.</span></h2>
-      <p className="teacher-intro">O professor não precisa ser especialista em tecnologia. A Unooria traz a complexidade pedagógica e tecnológica para dentro do produto; o docente entra com o que faz melhor: conhecer a turma, provocar reflexão e mediar a aprendizagem.</p>
+      <p className="teacher-intro">O professor não precisa ser especialista em tecnologia. O ENTRE REDES traz a complexidade pedagógica e tecnológica para dentro do produto; o docente entra com o que faz melhor: conhecer a turma, provocar reflexão e mediar a aprendizagem.</p>
       </div>
       <div className="teacher-role-grid reveal">
       <article><span>01</span><h3>Conhecer a turma</h3><p>Adaptar a condução à realidade, ao repertório e às necessidades dos estudantes.</p></article>
@@ -662,8 +662,8 @@ export function SiteEntreRedes() {
       <div className="container registration-grid">
       <div className="registration-copy reveal">
       <div className="eyebrow">Cadastro de interesse</div>
-      <h2 id="registration-title">Vamos conversar sobre a sua rede ou escola.</h2>
-      <p>Preencha os dados para receber uma apresentação do ENTRE REDES e entender como o programa pode entrar na sua realidade.</p>
+      <h2 id="registration-title">Vamos conversar sobre a sua rede de ensino.</h2>
+      <p>Preencha os dados para receber uma apresentação do ENTRE REDES e entender como a solução pode contribuir com a sua rede.</p>
       </div>
       <CadastroDeInteresse />
       </div>

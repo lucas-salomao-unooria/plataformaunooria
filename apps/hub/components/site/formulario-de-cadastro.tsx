@@ -145,8 +145,8 @@ export function CadastroDeInteresse() {
           </button>
         </div>
         <p className="form-intro">
-          Preencha os dados para receber uma apresentação do ENTRE REDES e entender como o programa pode entrar na sua
-          realidade.
+          Preencha os dados para receber uma apresentação do ENTRE REDES e entender como a solução pode contribuir com a
+          sua rede.
         </p>
         <form
           ref={form}
