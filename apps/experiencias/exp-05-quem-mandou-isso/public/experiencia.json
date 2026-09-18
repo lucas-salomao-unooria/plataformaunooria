@@ -1,0 +1,18 @@
+{
+  "id": "exp-05-quem-mandou-isso",
+  "nome": "Quem mandou isso?",
+  "versao": "0.1.0",
+  "produto": "entre-redes",
+  "series": ["5EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso", "avaliacao"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "permissoes": ["forms"],
+  "publico": "estudante",
+  "verbos": {
+    "attempted": "entrou no grupo da turma e confirmou o envio para o Mural",
+    "interacted": "encaminhou mensagens, abriu a transcrição do áudio e o card do link",
+    "progressed": "leu o grupo até o fim e esperou a revelação coletiva da turma",
+    "completed": "respondeu ao dilema do áudio do tio"
+  }
+}

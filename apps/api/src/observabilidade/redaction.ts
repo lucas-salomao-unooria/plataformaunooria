@@ -35,6 +35,20 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "justificativatexto",
   "justificativa_texto",
   "justificativasugerida",
+  // O GABARITO da exp-05 (`CAMPOS_SENSIVEIS` de
+  // `src/quem-mandou-isso/invariantes.ts`). Não é PII: é a resposta que a missão
+  // inteira existe para não entregar antes do telão — e um `err` do Prisma
+  // carrega o lote que o service tentou gravar, com as oito veracidades dentro.
+  // Log de produção é lido por gente da escola.
+  "veracidade",
+  "tom",
+  "explicacao",
+  // As variações de hash de senha que `senha`/`passwordhash` NÃO cobrem: a
+  // comparação aqui é por nome INTEIRO em minúsculas, então `senha_hash` e
+  // `senhaHash` passavam inteiros.
+  "password_hash",
+  "senhahash",
+  "senha_hash",
 ]);
 
 export const MARCA = "[redigido]";

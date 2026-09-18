@@ -22,6 +22,8 @@
 #   exp-07  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
 #   exp-06  Vite de O Rastro do Boato, o clone de mensageiro (5181)
 #   exp-08  Vite de O Manifesto da IA, o clone do assistente (5182)
+#   exp-04  Vite de O Que a Foto Conta, o clone do mural (5183)
+#   exp-05  Vite de Quem mandou isso?, o clone do mensageiro (5184)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -63,6 +65,7 @@ x-fonte: &fonte
   - nm-exp03:/repo/apps/experiencias/exp-03-unoogpt/node_modules
   - nm-exp07:/repo/apps/experiencias/exp-07-o-eco-no-grupo/node_modules
   - nm-exp06:/repo/apps/experiencias/exp-06-rastro-boato/node_modules
+  - nm-exp05:/repo/apps/experiencias/exp-05-quem-mandou-isso/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -207,7 +210,7 @@ services:
       # Toda porta de exp entra no CORS: sem a :5175 o plano de aula embedado
       # morre com "Failed to fetch", sem a :5176 o check-in de bem-estar e sem
       # a :5177 a Vila do Lume não abre nem conclui a partida.
-      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183,http://localhost:5184
       # O FUSO da plataforma inteira (ADR-99). Ausente = America/Sao_Paulo.
       # O MESMO valor vai para o hub abaixo: 1 contrato = 1 stack, e api e hub
       # que discordem do fuso devolvem o defeito da ADR-98 — entre as 21h e a
@@ -406,6 +409,20 @@ services:
       deps:
         condition: service_completed_successfully
 
+  # 5184, a próxima livre depois da exp-04. Com volume PRÓPRIO de node_modules,
+  # como as seis primeiras: sem ele o cache do host entra no container e a tela
+  # quebra com "does not provide an export named …" na primeira subida do DS —
+  # foi o que aconteceu com a exp-92, que nasceu sem o volume.
+  exp-05:
+    <<: *dev
+    working_dir: /repo/apps/experiencias/exp-05-quem-mandou-isso
+    command: pnpm exec vite --host 0.0.0.0 --port 5184 --strictPort
+    ports:
+      - "5184:5184"
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+
 
 volumes:
   pgdata:
@@ -423,6 +440,7 @@ volumes:
   nm-exp03:
   nm-exp07:
   nm-exp06:
+  nm-exp05:
   nm-exp-template:
   hub-next:
   api-dist:

@@ -51,6 +51,18 @@ export const EXPERIENCIAS_DEV: Readonly<Record<string, string>> = {
    * ela o boot da missão morre com "Failed to fetch" e o erro não diz por quê.
    */
   "exp-04-o-que-a-foto-conta": "http://localhost:5183",
+  /**
+   * Quem mandou isso? — 5º ano EF, unidade 1.
+   *
+   * 5184 porque é a PRIMEIRA porta livre: 5180 é da exp-92, 5181 da exp-06,
+   * 5182 da exp-08 e 5183 da exp-04. Não há escolha estética aqui — o que
+   * importa é que duas experiências nunca peçam a mesma. Com `strictPort` a
+   * colisão falha alto; sem ele o Vite pula de porta em silêncio e o iframe do
+   * hub passa a apontar para a experiência errada, com o handshake morrendo por
+   * origin. A porta entra também no CORS_ORIGINS da api — sem ela o boot da
+   * missão morre com "Failed to fetch", e o erro não diz por quê.
+   */
+  "exp-05-quem-mandou-isso": "http://localhost:5184",
 };
 
 export function baseDevDaExperiencia(expId: string, fallback: string): string {

@@ -152,6 +152,7 @@ que a cercam.
 \zebra \adrr{ADR-105} & A quota de IA é dado, editável pela Unooria, e não variável de ambiente & 2026-09-15 & Aceita\\
 \adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
+\adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita\\
 \adrr{ADR-109} & O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma partição & 2026-09-17 & Aceita\\
 \bottomrule
 \end{tabularx}
@@ -8560,6 +8561,152 @@ coisas (texto, CSS computado e medidas), e o procedimento está em
 \end{itemize}
 
 % ---------------------------------------------------------------------------
+\section{ADR-108 --- A missão de sala nasce VAZIA, e a revelação é do relógio da turma}
+\label{adr:exp-05-sala-sincronizada}
+
+\textbf{Data.} 2026-09-17. \textbf{Status.} Aceita.
+\textbf{Aplica} à exp-05 a \adrr{ADR-69} (a liberação por turma), a
+\adrr{ADR-93} (\emph{polling} HTTP, não WebSocket) e a \adrr{ADR-94} (o
+\emph{latch} de turma). \textbf{Rompe}, num ponto declarado abaixo, o padrão que
+a exp-08 e a exp-04 estabeleceram: aqui a turma sem preparo \textbf{não} cai no
+banco curado.
+
+\begin{especificacao}{Contexto}
+O PRD da exp-05 especifica uma aula síncrona: trinta crianças de dez anos no
+mesmo grupo simulado, um telão, e um momento em que a sala vê junta o que
+encaminhou. Para sustentar isso ele pede quatro coisas que esta plataforma não
+tem, ou tem de outro jeito:
+
+\begin{itemize}
+  \item um \textbf{PIN de turma}, digitado pela professora e pelos estudantes,
+    para formar a sala;
+  \item \textbf{WebSocket} para o \emph{broadcast} da revelação coletiva;
+  \item \textbf{AES-256} na reflexão escrita pela criança;
+  \item \textbf{um gate por etapa} --- revelar, depois explicar, depois liberar a
+    reflexão ---, ou seja, três botões no painel.
+\end{itemize}
+
+E há uma quinta pergunta que o PRD não faz e que o repositório já respondeu duas
+vezes: \textbf{o que a criança vê quando a professora não preparou nada.} A
+exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
+\end{especificacao}
+
+\textbf{Decisão.} Em cinco partes:
+
+\begin{itemize}
+  \item \textbf{Quem entra na sala é a liberação por turma} (\adrr{ADR-69}), não
+    um PIN. \cd{exigirMissaoLiberada} já responde \enquote{esta missão está
+    aberta nesta turma?}, e o \cd{turma\_id} do \emph{token} já diz de qual sala
+    a criança é. A guarda entra no funil das rotas de estudante da exp-05, não só
+    na de leitura.
+  \item \textbf{A revelação é uma LINHA} em \cd{exp\_05\_gates\_turma}, que a
+    tela lê por \emph{polling} HTTP de 5 segundos em
+    \rota{GET /quem-mandou-isso/gate} (\adrr{ADR-93}).
+  \item \textbf{A missão nasce vazia.} Sem \cd{aprovado\_por\_professor} para
+    aquela turma, o estudante vê \textbf{tela de espera} --- não o banco curado.
+  \item \textbf{Três etapas, dois botões e o inverso deles.} O card de síntese
+    entra JUNTO da revelação, ao fim do Mural.
+  \item \textbf{A reflexão fica em claro no banco}, protegida por RLS e pelo
+    recorte da rota do professor da turma.
+  \item \textbf{O TEXTO da reflexão é de quem LECIONA a turma, e o campo vem
+    \cd{null} para todo o resto.} A rota do painel continua respondendo a
+    gestor, diretor e \cd{admin} --- eles precisam do progresso da turma ---,
+    mas o parágrafo em si sai só para quem tem matrícula de professor naquela
+    turma. O que todos continuam vendo é \cd{entregouReflexao}: acompanhar a
+    turma não exige ler o que cada criança escreveu.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{PIN de turma próprio.} Seria um segundo mecanismo de
+    pertencimento a uma sala, ao lado do enturmamento e da liberação --- com
+    tela de digitação para crianças de dez anos no início da aula, e com a
+    pergunta \enquote{quem entra?} passando a ter duas respostas que podem
+    divergir. O PIN também não é autorização: quem sabe o número entra, inclusive
+    de outra turma, e a RLS não teria como saber disso. A liberação por turma já
+    é a resposta, e ela é a mesma de todas as outras missões.
+  \item \textbf{WebSocket para o \emph{broadcast}.} Não há WebSocket de aplicação
+    no Cloud Run desta plataforma, e a \adrr{ADR-93} já gastou as quatro
+    alternativas. O que se ganharia é latência abaixo de um segundo numa transição
+    que a professora anuncia em voz alta antes de clicar.
+  \item \textbf{Criptografia em nível de aplicação na reflexão.} Não existe
+    nenhuma no repositório, e esta seria a primeira: uma chave para gerar,
+    guardar, rodar e restaurar, mantida por uma pessoa, para um campo de 500
+    caracteres. O Cloud SQL já cifra em repouso, o dado tem RLS, e a rota que o
+    lê é a do professor da turma. Cifrar só aqui também tiraria a reflexão do
+    painel --- que é a única razão de ela existir.
+  \item \textbf{Queda para o banco curado sem a professora}, como na exp-08. É a
+    alternativa que mais custou a descartar, porque o resto do repositório faz
+    assim. O que a separa é o conteúdo: o pacote da exp-08 é sobre governança de
+    IA, igual em qualquer escola; o lote da exp-05 é escrito EM CIMA do
+    acontecimento que a professora escolheu. Cair no lote padrão no meio da aula
+    dela poria na tela oito mensagens sobre uma mudança no intervalo que não
+    houve naquela escola --- e a mecânica que a missão mede, desconfiar de uma
+    urgência que soa familiar, desmonta na primeira leitura. Esperar é pior para
+    o software e melhor para a aula.
+  \item \textbf{Reescrever a frase em vez de apertar o código}, no recorte da
+    reflexão. Cinco lugares deste módulo afirmavam que \enquote{quem lê é o
+    professor da turma dela}, e a api não fazia isso: \cd{professorDoToken}
+    devolve \cd{undefined} para quem não é professor, e \cd{professorLeciona}
+    responde \cd{true} a \cd{undefined}, porque gestor enxerga a escola
+    inteira. Bastaria trocar as cinco frases por \enquote{quem lê é o professor
+    ou o gestor}, e o repositório passaria a descrever o que faz. Foi descartado
+    porque a frase era a decisão certa e o código é que a contradizia: a caixa
+    livre de menor de idade (LGPD art.~14) não tem por que alcançar quem não dá
+    aula àquela criança, e a alternativa transformaria uma regra em relato.
+    \textbf{A exp-06 e a exp-08 continuam como estavam} --- entregam o texto a
+    qualquer gestor, com a mesma frase no comentário. A divergência é conhecida
+    e está registrada no \cd{AGENTS.md} do módulo: apertar as duas muda o que a
+    tela de gestor delas mostra hoje, e isso é frente própria, com a conversa de
+    produto que ela merece.
+  \item \textbf{Um terceiro gate para o card de síntese.} O PRD separa
+    \enquote{revelado} de \enquote{explicação} por mais um avanço docente. Seria
+    um botão a mais no painel que a professora aperta um segundo depois do
+    anterior, todas as vezes --- controle morto, e mais uma coisa para esquecer
+    de clicar com trinta crianças esperando. A exp-06 e a exp-08 já tinham feito
+    a mesma leitura.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A turma não entra se a professora esquecer de aprovar.} É a
+    consequência direta da missão nascer vazia, e ela custa a aula inteira, não
+    um recurso. A mitigação é de produto e não de código: a tela do professor
+    abre no preparo, o painel diz em letra grande que a turma está esperando, e o
+    banco curado é aprovável com um clique --- mas nada disso impede o
+    esquecimento. \emph{Gatilho de reavaliação:} a primeira aula perdida por
+    esse motivo em rede real.
+  \item \textbf{Até 5 segundos de atraso na revelação}, e as telas da sala não
+    acendem juntas --- elas acendem dentro da mesma janela de cinco segundos.
+    Numa sala em que a professora fala antes de clicar, o efeito é o de um
+    aplauso desencontrado, não o de um defeito. É o preço da \adrr{ADR-93}, e
+    ele é conhecido.
+  \item \textbf{Quem não confirmou fica fora do histograma}, e o número da sala é
+    MENOR que o número de crianças na turma. \enquote{Encaminhada por 18 de 24}
+    não diz \enquote{de 24 estudantes}, diz \enquote{de 24 que confirmaram} --- e
+    a tela precisa dizer isso, porque a leitura errada é a natural. Contar a
+    curadoria em andamento seria pior: mostraria à turma uma escolha que a
+    criança ainda podia desfazer.
+  \item \textbf{A reflexão fica em claro no banco.} Quem tem acesso ao
+    PostgreSQL de produção lê texto escrito por criança de dez anos. A proteção é
+    RLS mais o recorte da rota, e \textbf{não} é criptografia. Está declarado
+    aqui em vez de descrito como \enquote{protegido} em algum lugar, porque a
+    palavra sem o mecanismo é o que engana numa auditoria.
+  \item \textbf{Não há rotina de retenção} para \cd{exp\_05\_reflexoes}
+    (\adrr{ADR-13}), como não há para as outras caixas de texto livre do
+    catálogo. Inventar um prazo aqui seria escrever uma promessa que nenhum
+    \emph{scheduler} cumpre.
+\end{itemize}
+
+\textbf{Gatilho.} Uma missão de sala cujo conteúdo NÃO dependa do acontecimento
+local --- aí a queda para o banco curado volta à mesa, e a parte 3 desta decisão
+deixa de valer para ela. E, para a parte 2, latência medida acima de cinco
+segundos em rede de escola: o problema passaria a ser o intervalo do
+\emph{polling}, não o transporte.
+
+% ---------------------------------------------------------------------------
 \section{ADR-109 --- O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma PARTIÇÃO}
 \label{adr:bncc-computacao-geometria}
 
@@ -8671,4 +8818,3 @@ em todos os outros anos.
 \textbf{Gatilho.} Um terceiro layout de tabela na Base, ou o dia em que o MEC
 republicar o anexo com a \cd{EF05CO011} corrigida: aí o código muda no
 documento, e o dataset muda junto.
-

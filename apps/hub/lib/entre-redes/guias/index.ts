@@ -2,6 +2,7 @@ import { GUIA_EXP_01 } from "./exp-01-instanooria";
 import { GUIA_EXP_02 } from "./exp-02-unootube";
 import { GUIA_EXP_03 } from "./exp-03-unoogpt";
 import { GUIA_EXP_04 } from "./exp-04-o-que-a-foto-conta";
+import { GUIA_EXP_05 } from "./exp-05-quem-mandou-isso";
 import { GUIA_EXP_06 } from "./exp-06-rastro-boato";
 import { GUIA_EXP_07 } from "./exp-07-o-eco-no-grupo";
 import { GUIA_EXP_08 } from "./exp-08-manifesto-ia";
@@ -26,6 +27,7 @@ const GUIAS: ReadonlyMap<string, GuiaDaAula> = new Map(
     GUIA_EXP_02,
     GUIA_EXP_03,
     GUIA_EXP_04,
+    GUIA_EXP_05,
     GUIA_EXP_06,
     GUIA_EXP_07,
     GUIA_EXP_08,
