@@ -203,6 +203,12 @@ await suite(
     comando: "node scripts/e2e/publico/03-documentos-legais.mjs",
   },
   async (r) => {
+    /* O 401 do trace do navegador é ESPERADO em superfície pública: o hub
+       instrumenta, o BFF recusa sem sessão e o exportador descarta o lote —
+       está escrito em `apps/hub/instrumentation-client.ts` ("aceito"). Com a
+       amostragem de dev/hml (5%) ele aparece em uma corrida a cada vinte, e
+       sem esta declaração o smoke do deploy fica vermelho por sorteio. */
+    r.provocado(/observabilidade\/v1\/traces/, "o trace do navegador sem sessão: o hub o envia e o BFF recusa com 401 de propósito (instrumentation-client.ts), e o lote é descartado — só aparece quando a sessão cai na amostragem");
     r.ressalva(
       "A RAIZ NÃO LEVA A ESTAS PÁGINAS desde a ADR-107: o rodapé do site novo veio do material aprovado, sem os links legais. Quem as alcança é o rodapé de /landing-anterior; por URL direta as duas respondem.",
     );

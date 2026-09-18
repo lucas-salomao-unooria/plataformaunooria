@@ -41,6 +41,40 @@ site, renderizadas pelo servidor. O CSS as usa como ancestral (`.js .reveal`,
 `locked` continua no `<body>`, onde o seletor é de elemento e o que ele trava é
 a rolagem do documento.
 
+## A REVISÃO 19 (2026-09-18): como um pacote de revisão chega
+
+O material volta de tempos em tempos revisado, e o segundo pacote
+(`Unooria_Entre_Redes_Revisao_19_Ajustes`, em `~/Downloads`) mostrou o formato:
+
+| Arquivo | O que é |
+|---|---|
+| `alteracoes.json` | o MAPA das trocas de texto: `before`/`after`/`occurrences` |
+| `index.html` | uma PRÉVIA — e ela é uma exportação **deste site**, com o CSS novo embutido |
+| `assets/*.png` | a arte trocada, nas mesmas dimensões da anterior |
+| `LEIA-ME.txt` | o resumo em prosa |
+
+**O `alteracoes.json` não é a lista completa.** Ele cobriu os 19 ajustes de
+TEXTO; o pacote trazia também um redesenho do hero e a troca do campo de
+estrelas, que só apareceram comparando o **CSS computado** da prévia com o
+nosso. O texto batia 100% e a tela estava diferente — foi o dono do produto que
+viu ("o primeiro título está centralizado e o que você fez não está").
+
+**A receita, então, é comparar as duas coisas.** Abra a prévia (`file://`) e o
+site local lado a lado e compare:
+
+1. **o texto**: a lista de blocos visíveis dos dois `<main>` (179 blocos, na
+   revisão 19 — precisa dar diferença ZERO);
+2. **o CSS**: percorra `document.styleSheets` nos dois, ignore `@font-face` (a
+   prévia embute as fontes em base64 e o diff fica ilegível) e compare por
+   seletor. As regras que a revisão acrescenta vêm **prefixadas com
+   `.site-entre-redes`** — é assim que elas vencem as de cima sem editar nada;
+3. **as medidas**: altura do documento e topo de cada seção (ver abaixo).
+
+Ruído conhecido nessa comparação de CSS, que NÃO é diferença: `background: none`
+serializado como `background: 0px 0px`, e as regras do reset do Tailwind que só
+o hub carrega (`.container{width:100%}`, `dialog{padding:0}`,
+`summary{display:list-item}`).
+
 ## O que o porte prova, e como provar de novo
 
 A conferência não é impressão: o site de origem sobe com
@@ -49,9 +83,14 @@ comparam pelas MEDIDAS. Em 390px e em 1440px, no dia do porte:
 
 | | origem | hub |
 |---|---|---|
-| altura do documento (390 / 1440) | 20286 / 21230 | 20286 / 21230 |
-| topo de cada uma das 13 seções | — | **idêntico ao pixel** |
+| altura do documento, no porte (390 / 1440) | 20286 / 21230 | 20286 / 21230 |
+| altura do documento, na revisão 19 (1440) | 20656 | 20656 |
+| topo de cada uma das 13 seções, e o rodapé | — | **idêntico ao pixel** |
 | `.reveal`, `<img>`, `main > section` | 31 / 8 / 13 | 31 / 8 / 13 |
+
+O hero cresceu (ele passou a ocupar `100svh`), e é por isso que a altura mudou
+entre uma conferência e outra. O que não muda é o método: **a medida é a prova,
+e ela se refaz a cada pacote**.
 
 Screenshot lado a lado não basta para o infinito de estrelas: ele é animação
 viva, e dois instantes diferentes parecem duas telas diferentes. O que compara é
@@ -106,10 +145,32 @@ da caixa e lá como `TEXTO_DO_CONSENTIMENTO` (`api/src/prospeccao/`), que é o q
 o banco guarda. Mudou uma, muda a outra no mesmo commit — senão o banco registra
 um aceite que ninguém deu.
 
+## O campo de estrelas: um, e não três (revisão 19)
+
+`efeitos/estrelas-da-rolagem.ts` desenha `#unooria-scroll-stars` — um canvas
+fixo, criado pelo próprio efeito (é o único que não tem marcação portada), que
+cobre a janela e responde à rolagem e ao ponteiro.
+
+**Ele substituiu dois.** `atmosfera.ts` (a poeira, em `#ambient-dust`) e
+`estrelas-de-abertura.ts` (o campo do hero, em `#opening-stars`) continuam no
+repositório e os dois `<canvas>` continuam na marcação — **mas a folha os
+esconde e o `palco-do-site.tsx` não os monta**. Animar canvas com
+`display:none` é queimar bateria para desenhar o que ninguém vê.
+
+Desfazer é tirar a linha do CSS e devolver as duas chamadas ao palco. Se um dia
+alguém tirar só a linha do CSS, os canvas aparecem VAZIOS — e é por isso que a
+suíte `publico/01-site` cobra os dois estados: o nó existe **e** está desligado.
+
 ## Os assets moram em `public/site/`
 
 `site/assets/*` (webp, png e as três Manrope). Os `src` do JSX e os `url()` das
 `@font-face` apontam para lá, e é a única reescrita de caminho do porte.
+
+**Arte que chega depois do porte ganha nome descritivo e vira webp.** A jornada
+dos Anos Iniciais veio na revisão 19 como PNG de 1,7 MB; entrou como
+`jornada-anos-iniciais.webp` (204 KB, `cwebp -q 90`), abaixo das outras artes
+(230-238 KB), e a anterior saiu do repositório. Os nomes em hash são do
+pipeline de origem — não vale imitá-los para um arquivo que já não vem de lá.
 
 **`<img>` cru, nunca `next/image`, na marca do cabeçalho**: `efeitos/infinito.ts`
 lê a imagem PIXEL A PIXEL para formar o infinito de estrelas. O `next/image`

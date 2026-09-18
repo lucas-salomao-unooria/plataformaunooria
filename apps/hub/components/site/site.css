@@ -245,3 +245,49 @@ button.floating-cta{border:0}
   .form-acoes .button[type=submit]{order:0}
   .registration-acao .button{width:auto;min-width:300px}
 }
+
+/* ==========================================================================
+   REVISÃO 19 (2026-09-18) — o hero centralizado e o campo de estrelas único.
+
+   Terceiro e último acréscimo à folha, e o maior: veio do pacote
+   `Unooria_Entre_Redes_Revisao_19_Ajustes`, que chegou como uma PRÉVIA
+   exportada deste próprio site com as regras já prefixadas por
+   `.site-entre-redes`. Mantidas como vieram, prefixo inclusive: é o prefixo
+   que as faz vencer as regras de cima sem precisar editá-las, e editar as de
+   cima faria o porte divergir do material original.
+
+   O que ela muda, e por quê importa saber:
+    - o hero passa a OCUPAR A TELA (`100svh`) com o texto centralizado e
+      tipografia fluida — era alinhado à esquerda;
+    - `.hero` e `.registration` ficam translúcidos, porque agora existe um
+      fundo ÚNICO por trás da página inteira;
+    - os dois canvas originais saem de cena (`#opening-stars`, o campo do
+      hero, e `#ambient-dust`, a poeira) e um terceiro os substitui:
+      `#unooria-scroll-stars`, fixo, cobrindo a janela e respondendo à
+      rolagem. Quem o desenha é `efeitos/estrelas-da-rolagem.ts`;
+    - os controles do infinito (rever/pausar) somem. O infinito continua.
+   ========================================================================== */
+.site-entre-redes .hero{background:transparent;isolation:auto}
+.site-entre-redes .registration{background:rgba(13,17,42,.4)}
+.site-entre-redes .hero > .container{max-width:1240px}
+.site-entre-redes .hero-opening{min-height:100svh;padding:max(112px,calc(var(--head,68px) + 32px)) 0;align-items:center;justify-content:center;text-align:center}
+.site-entre-redes .hero-opening h1{width:100%;max-width:1200px;font-size:clamp(2.15rem,4.8vw,4.5rem);line-height:1.18;text-wrap:balance;margin-inline:auto}
+.site-entre-redes .hero-line + .hero-line{margin-top:.12em}
+.site-entre-redes .hero-accent{display:inline}
+.site-entre-redes .hero-sub{max-width:780px;margin:clamp(24px,3vw,36px) auto 0}
+.site-entre-redes .hero-sub{text-align:center}
+.site-entre-redes .hero-sub p{text-wrap:balance}
+.site-entre-redes .hero-sub br{display:initial}
+/* Desligados pelo CSS, e também NÃO MONTADOS pelo palco: animar canvas com
+   `display:none` é queimar bateria para desenhar o que ninguém vê. Ver
+   `palco-do-site.tsx`. */
+.site-entre-redes #opening-stars,.site-entre-redes #ambient-dust{display:none}
+.site-entre-redes .infinity-controls{display:none}
+.site-entre-redes #unooria-scroll-stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block;pointer-events:none;user-select:none}
+@media(max-width:600px){
+  .site-entre-redes .hero-opening{padding-block:max(100px,calc(var(--head,68px) + 24px))}
+  .site-entre-redes .hero-opening h1{font-size:clamp(2rem,8.5vw,3rem)}
+  .site-entre-redes .hero-line + .hero-line{margin-top:.3em}
+  .site-entre-redes .hero-sub{max-width:34rem}
+  .site-entre-redes .hero-sub br{display:none}
+}

@@ -57,6 +57,12 @@ await suite(
     comando: "node scripts/e2e/publico/02-login-e-papeis.mjs",
   },
   async (r) => {
+    /* O 401 do trace do navegador é ESPERADO em superfície pública: o hub
+       instrumenta, o BFF recusa sem sessão e o exportador descarta o lote —
+       está escrito em `apps/hub/instrumentation-client.ts` ("aceito"). Com a
+       amostragem de dev/hml (5%) ele aparece em uma corrida a cada vinte, e
+       sem esta declaração o smoke do deploy fica vermelho por sorteio. */
+    r.provocado(/observabilidade\/v1\/traces/, "o trace do navegador sem sessão: o hub o envia e o BFF recusa com 401 de propósito (instrumentation-client.ts), e o lote é descartado — só aparece quando a sessão cai na amostragem");
     const p = await r.pagina("visitante");
 
     // ── credencial inválida ──────────────────────────────────────────────
@@ -175,6 +181,15 @@ await suite(
     await p.waitForURL((url) => url.pathname === "/login" || url.pathname === "/", {
       timeout: 20_000,
     });
+    /* O 401 daqui é PROVOCADO, e é o que este passo veio provar: ao voltar a uma
+       rota interna sem sessão, a tela chega a disparar a leitura antes de o
+       middleware expulsar, e a api recusa. Sem declará-lo, a suíte fica
+       vermelha de forma intermitente — conforme o redirect ganhe ou perca a
+       corrida com o fetch — por causa do comportamento que ela exercita. */
+    r.provocado(
+      /plataforma\/usuarios/,
+      "a tela interna pedindo dados depois do logoff: o 401 é a prova de que a sessão acabou",
+    );
     await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(1500);
     const depoisDeSair = new URL(p.url()).pathname;
