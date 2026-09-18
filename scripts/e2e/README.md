@@ -95,6 +95,30 @@ alerta ali é vigiar o passado. Em 2026-09-10 isso fez a `professor/09` reportar
 vermelho enquanto o banco gravava a semana como `pronto` na mesma corrida: o
 pior falso negativo, porque manda investigar um produto que funcionou.
 
+## O que derruba o SMOKE do deploy, e não é o produto
+
+O `deploy.yml` roda `publico/01-site` contra o ambiente recém-publicado. Duas
+coisas o derrubaram em 2026-09-18, com o site correto e as verificações verdes:
+
+**1. O 401 do trace do navegador.** Em superfície pública o hub instrumenta, o
+BFF recusa sem sessão e o exportador descarta o lote — está escrito e aceito em
+`apps/hub/instrumentation-client.ts`. Como dev e hml amostram 5% das sessões
+(`OBS_TRACE_RATIO_CLIENTE`), ele aparece em **uma corrida a cada vinte**: o
+smoke ficava vermelho por sorteio. As três suítes de `publico/` declaram esse
+erro com `r.provocado(/observabilidade\/v1\/traces/, …)`.
+
+**Regra geral:** erro de console que o PRODUTO decidiu produzir é `provocado`,
+com o motivo. Sem isso, o vermelho aparece quando o sorteio quiser, e a próxima
+pessoa procura regressão onde não há.
+
+**2. O print que estoura o tempo.** O site público ganhou um campo de estrelas
+fixo que anima sem parar; num runner de CI sem GPU, o `Page.captureScreenshot`
+chegou a passar dos 30s numa página de 20 000 px e derrubou o deploy de hml com
+**28 verificações verdes**. O `registrar` do `roteiro.mjs` agora dá 60s e, se
+ainda assim estourar, repete a captura com `emulateMedia({reducedMotion:
+"reduce"})` — o desligamento que os próprios efeitos respeitam, então o quadro
+é o mesmo, parado.
+
 ## Evidências
 
 `testes/<papel>/<suíte>/` — os prints, o `passos.json` e um `relatorio.md`
