@@ -122,6 +122,7 @@ export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   { turma: "8A", expIds: ["exp-70-vila-do-lume", "exp-01-instanooria", "exp-08-manifesto-ia"] },
   { turma: "1A", expIds: ["exp-04-o-que-a-foto-conta"] },
   { turma: "4A", expIds: ["exp-02-unootube"] },
+  { turma: "5A", expIds: ["exp-05-quem-mandou-isso"] },
   { turma: "6A", expIds: ["exp-06-rastro-boato"] },
   { turma: "7A", expIds: ["exp-07-o-eco-no-grupo"] },
   { turma: "2EM-A", expIds: ["exp-03-unoogpt"] },
