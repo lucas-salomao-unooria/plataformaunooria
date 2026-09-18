@@ -40,7 +40,7 @@ await suite(
     prova: [
       "A raiz sem sessão é o site: nada de redirecionar para o login",
       "A Manrope carrega — o `font-family` inline do hub venceria a folha sem a regra do container",
-      "Os três canvas têm contexto e tamanho: as estrelas e o infinito amostrado do logo",
+      "O campo de estrelas da rolagem e o infinito desenham; os dois canvas antigos ficam desligados",
       "A revelação ao rolar termina: nenhum bloco fica invisível para sempre",
       "Nada transborda na largura em 390px, e o diálogo de navegação abre",
       "Os três convites dizem \"Quero conhecer a solução\" e abrem a MESMA janela, que o Esc fecha",
@@ -76,17 +76,36 @@ await suite(
       `o h1 desenha em Manrope e não na fonte do sistema (${tipografia.h1})`,
     );
 
+    /* DOIS canvas desde a revisão 19 (2026-09-18): o campo de estrelas ÚNICO,
+       criado pelo efeito e fixo atrás da página inteira, e o infinito da marca.
+       Os dois canvas do material original (`#opening-stars`, o campo do hero, e
+       `#ambient-dust`, a poeira) continuam na marcação e estão DESLIGADOS —
+       escondidos pela folha e não montados pelo palco. */
     const canvas = await p.evaluate(() => {
       const medir = (seletor) => {
         const c = document.querySelector(seletor);
         return c ? { w: c.width, h: c.height, ctx: Boolean(c.getContext("2d")) } : null;
       };
-      return { poeira: medir("#ambient-dust"), estrelas: medir("#opening-stars"), infinito: medir("#brand-infinity") };
+      return {
+        vivos: { rolagem: medir("#unooria-scroll-stars"), infinito: medir("#brand-infinity") },
+        desligados: ["#opening-stars", "#ambient-dust"].map((s) => {
+          const el = document.querySelector(s);
+          return { seletor: s, existe: Boolean(el), display: el ? getComputedStyle(el).display : null };
+        }),
+      };
     });
-    for (const [nome, medida] of Object.entries(canvas)) {
+    for (const [nome, medida] of Object.entries(canvas.vivos)) {
       r.exigir(
         medida && medida.ctx && medida.w > 0 && medida.h > 0,
         `o canvas "${nome}" tem contexto e tamanho (${medida?.w}×${medida?.h})`,
+      );
+    }
+    for (const antigo of canvas.desligados) {
+      /* Cobra os DOIS estados: o nó continua na marcação (o porte não perdeu
+         nada) e o desenho está desligado (ninguém anima o invisível). */
+      r.exigir(
+        antigo.existe && antigo.display === "none",
+        `"${antigo.seletor}" continua na marcação e está desligado (display: ${antigo.display})`,
       );
     }
 
@@ -101,7 +120,7 @@ await suite(
       mostra: "Campo de estrelas, a marca, a chamada sobre a vida que mudou de tela e o convite ao cadastro.",
       prova:
         "É a única tela do produto que existe sem credencial: nada aqui pode depender de sessão, de api ou de dado de estudante.",
-      detalhe: `${secoes.length} seções · Manrope no h1 · estrelas ${canvas.estrelas?.w}×${canvas.estrelas?.h}`,
+      detalhe: `${secoes.length} seções · Manrope no h1 · estrelas ${canvas.vivos.rolagem?.w}×${canvas.vivos.rolagem?.h}`,
     });
 
     // ── o diálogo de navegação ───────────────────────────────────────────

@@ -175,6 +175,15 @@ await suite(
     await p.waitForURL((url) => url.pathname === "/login" || url.pathname === "/", {
       timeout: 20_000,
     });
+    /* O 401 daqui é PROVOCADO, e é o que este passo veio provar: ao voltar a uma
+       rota interna sem sessão, a tela chega a disparar a leitura antes de o
+       middleware expulsar, e a api recusa. Sem declará-lo, a suíte fica
+       vermelha de forma intermitente — conforme o redirect ganhe ou perca a
+       corrida com o fetch — por causa do comportamento que ela exercita. */
+    r.provocado(
+      /plataforma\/usuarios/,
+      "a tela interna pedindo dados depois do logoff: o 401 é a prova de que a sessão acabou",
+    );
     await p.goto(`${HUB}/admin/usuarios`, { waitUntil: "domcontentloaded" });
     await p.waitForTimeout(1500);
     const depoisDeSair = new URL(p.url()).pathname;
