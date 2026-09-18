@@ -153,6 +153,7 @@ que a cercam.
 \adrr{ADR-106} & O \cd{\_template} nasce com a fiação inteira e sem componente de interface & 2026-09-16 & Aceita\\
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
 \adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita\\
+\adrr{ADR-109} & O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma partição & 2026-09-17 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -8704,3 +8705,116 @@ local --- aí a queda para o banco curado volta à mesa, e a parte 3 desta decis
 deixa de valer para ela. E, para a parte 2, latência medida acima de cinco
 segundos em rede de escola: o problema passaria a ser o intervalo do
 \emph{polling}, não o transporte.
+
+% ---------------------------------------------------------------------------
+\section{ADR-109 --- O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma PARTIÇÃO}
+\label{adr:bncc-computacao-geometria}
+
+\textbf{Data.} 2026-09-17. \textbf{Status.} Aceita.
+\textbf{Corrige} a extração do anexo do Parecer CNE/CEB nº 2/2022 descrita em
+\enquote{O currículo como dado}.
+
+\begin{especificacao}{Contexto}
+\arq{scripts/extrair-bncc.mjs} associa cada habilidade ao rótulo da linha dela
+por COORDENADA, e a regra que ele usa veio da BNCC regular: \emph{o último
+rótulo cujo topo está na altura da habilidade ou acima dela}. Ali a regra é
+correta --- o InDesign alinha a célula pelo topo, e um rótulo que cobre três
+habilidades aparece na altura da primeira.
+
+\textbf{O anexo de Computação usa outro layout}: o rótulo é CENTRADO na célula.
+Um eixo que cobre quatro habilidades aparece na altura da terceira --- então a
+regra do topo dava às duas primeiras o eixo ANTERIOR, e à primeira de cada ano
+um \cd{null}. Somando eixo e objeto de conhecimento, \textbf{80 das 130 linhas
+estavam erradas}.
+
+Nada disso aparecia. O tipo é \cd{string | null}, o \cd{tsc} não tem o que
+dizer, e a tela do plano de ensino agrupa por eixo e lista o objeto: o
+resultado era um agrupamento plausível e inteiramente falso, que a professora
+leria como currículo. Dois efeitos colaterais vieram no mesmo pacote: onze
+linhas com o texto \enquote{OBJETO DE CONHECIMENTO} gravado como o objeto delas
+(a lista de ruído do extrator só trazia o plural da BNCC regular), e a
+\cd{EF05CO011} inteiramente ausente --- a Base a publica com TRÊS dígitos, num
+erro de digitação dela, e a expressão regular do extrator só reconhecia dois.
+O teste do dataset registrava \enquote{129 (Computação, de 130 no anexo)}, isto
+é, documentava a perda em vez de recusá-la.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{A atribuição é uma PARTIÇÃO, não um vizinho.} Os rótulos
+    ladrilham a coluna sem buraco nem sobreposição, então as habilidades de cada
+    um formam um bloco CONSECUTIVO, e o centro do bloco é o centro da célula ---
+    que é onde o rótulo está. Escolhe-se a divisão em blocos consecutivos que
+    minimiza a distância entre o centro de cada rótulo e o centro do bloco dele.
+    A busca é exaustiva e cabe: uma página tem no máximo oito habilidades.
+  \item \textbf{O código fica como a Base o publica}, \cd{EF05CO011} inclusive.
+  \item \textbf{A correção é do GERADOR}, nunca do arquivo gerado.
+  \item \textbf{A prova é ESTRUTURAL, não amostral} --- ver abaixo.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{O rótulo de centro mais próximo.} Resolve a maioria e erra na
+    fronteira entre células de tamanhos diferentes: na página do 5º ano o
+    PENSAMENTO COMPUTACIONAL cobre UMA habilidade e o MUNDO DIGITAL cobre três,
+    e a \cd{EF05CO05} fica mais perto do centro da célula pequena. Foram cinco
+    linhas erradas --- menos que 80, e do mesmo tipo.
+  \item \textbf{Normalizar \cd{EF05CO011} para \cd{EF05CO11}.} Seria inventar um
+    código que nenhuma rede vai procurar e que não existe em documento nenhum.
+    O erro de digitação é da Base; consertá-lo aqui é criar uma segunda verdade.
+  \item \textbf{Editar o arquivo gerado à mão.} Eram 80 linhas, e a próxima
+    execução do extrator as desfaria --- em silêncio, que é o modo de falhar que
+    o cabeçalho \enquote{NÃO edite à mão} existe para evitar.
+  \item \textbf{Conferir por amostragem} (alguns códigos escritos no teste). Foi
+    o que existia, e foi o que deixou 80 linhas passarem: uma amostra confirma o
+    que ela contém e não diz nada sobre o resto.
+\end{itemize}
+
+\textbf{Como isto se prova, e por que a prova basta.}
+
+O teste em \arq{apps/api/src/curriculo/curriculo.spec.ts} não compara com uma
+amostra: ele cobra a ESTRUTURA que o documento tem.
+
+\begin{itemize}
+  \item \textbf{Todo ano traz os três eixos, uma vez cada, na ordem} PENSAMENTO
+    COMPUTACIONAL \seta{} MUNDO DIGITAL \seta{} CULTURA DIGITAL. Onze anos, e
+    nenhum deles saía assim com a regra antiga.
+  \item \textbf{Nenhum objeto de conhecimento reaparece} depois de outro dentro
+    do mesmo ano --- a célula da tabela não se parte em duas.
+  \item \textbf{Nenhum cabeçalho} (\enquote{EIXO}, \enquote{OBJETO DE
+    CONHECIMENTO}, \enquote{HABILIDADE}) entra como valor.
+  \item \textbf{Toda habilidade do Fundamental tem eixo, e nenhuma do Médio
+    tem} --- no Médio a coluna é COMPETÊNCIA ESPECÍFICA, e inventar um eixo ali
+    seria pior que a ausência.
+  \item \textbf{O total é 130}, e não mais \enquote{129 de 130}.
+\end{itemize}
+
+A conferência independente que produziu esta ADR foi um segundo extrator,
+escrito do zero e por LINHA em vez de por bloco: os dois concordam nas 130
+descrições, caractere a caractere, e as cinco divergências de eixo entre eles
+foram decididas a favor deste pela coluna do objeto de conhecimento ---
+\cd{EF15CO07} tem \enquote{Sistema Operacional} por objeto, que é MUNDO DIGITAL
+em todos os outros anos.
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{A busca exaustiva é exponencial no número de rótulos.} Cabe
+    porque uma página da Base tem no máximo oito habilidades e três eixos. Um
+    documento com dezenas de linhas por página pediria programação dinâmica ---
+    e ninguém vai notar isso até tentar.
+  \item \textbf{A regra do topo continua valendo para a BNCC regular}, e as duas
+    convivem no mesmo arquivo. Quem escrever a extração do próximo documento tem
+    de PERGUNTAR qual layout ele usa, e a resposta não está no PDF: está em
+    olhar uma página.
+  \item \textbf{Os 45\,\% sem exemplos continuam sem exemplos.} O casamento das
+    colunas de comentário é por ORDEM, e ele se recusa quando as contagens
+    divergem --- o que é a decisão certa (atribuir o exemplo de uma habilidade a
+    outra seria pior), mas não é cobertura.
+\end{itemize}
+
+\textbf{Gatilho.} Um terceiro layout de tabela na Base, ou o dia em que o MEC
+republicar o anexo com a \cd{EF05CO011} corrigida: aí o código muda no
+documento, e o dataset muda junto.
