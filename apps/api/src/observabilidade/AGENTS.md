@@ -24,6 +24,11 @@ puras). Os dois carregam o contexto da requisição via `mixin`.
   mensagem e na `stack`. Isso é rede, não licença: o `username` do
   `auth.controller.ts` foi REMOVIDO do log, não redigido. Um campo novo com
   dado de pessoa ganha o nome da lista, ou entra na lista — nunca um sinônimo.
+  A comparação é por nome INTEIRO em minúsculas, e é por isso que `senha` não
+  cobria `senha_hash` nem `senhaHash`: os dois entraram na lista, junto com o
+  GABARITO da exp-05 (`veracidade`, `tom`, `explicacao`) — a lista de
+  `CAMPOS_SENSIVEIS` de cada missão tem de estar contida aqui, e
+  `quem-mandou-isso-regras.spec.ts` é quem cobra isso para a exp-05.
 - **Sem log de requisição da aplicação** (`autoLogging: false`). O Cloud Run
   já grava um por requisição, com trace. O que a api loga é o que ele não
   sabe: escola, motivo de um 4xx, a decisão de degradar.

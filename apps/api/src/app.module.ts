@@ -25,6 +25,7 @@ import { FotoContaModule } from "./foto-conta/foto-conta.module";
 import { OEcoNoGrupoModule } from "./o-eco-no-grupo/o-eco-no-grupo.module";
 import { RastroBoatoModule } from "./rastro-boato/rastro-boato.module";
 import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
+import { QuemMandouIssoModule } from "./quem-mandou-isso/quem-mandou-isso.module";
 import { SalasModule } from "./salas/salas.module";
 import { UnootubeModule } from "./unootube/unootube.module";
 import { UnoogptModule } from "./unoogpt/unoogpt.module";
@@ -75,6 +76,7 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     OEcoNoGrupoModule,
     RastroBoatoModule,
     ManifestoIaModule,
+    QuemMandouIssoModule,
     FotoContaModule,
   ],
   providers: [

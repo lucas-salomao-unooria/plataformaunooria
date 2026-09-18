@@ -4,6 +4,7 @@ import {
   MISSAO_ECO_NO_GRUPO,
   MISSAO_MANIFESTO_IA,
   MISSAO_FOTO_CONTA,
+  MISSAO_QUEM_MANDOU_ISSO,
   MISSAO_RASTRO_BOATO,
   MISSAO_UNOOGPT,
   MISSAO_UNOOTUBE,
@@ -13,6 +14,7 @@ import {
 import { ResultadosManifestoIa } from "./resultados-manifesto-ia";
 import { ResultadosFotoConta } from "./resultados-foto-conta";
 import { ResultadosOEcoNoGrupo } from "./resultados-o-eco-no-grupo";
+import { ResultadosQuemMandouIsso } from "./resultados-quem-mandou-isso";
 import { ResultadosRastroBoato } from "./resultados-rastro-boato";
 import { ResultadosUnooGPT } from "./resultados-unoogpt";
 import { ResultadosUnooTube } from "./resultados-unootube";
@@ -60,6 +62,9 @@ export default async function ResultadosPage({
   }
   if (missao.expId === MISSAO_MANIFESTO_IA.expId) {
     return <ResultadosManifestoIa missao={missao} turma={turma} />;
+  }
+  if (missao.expId === MISSAO_QUEM_MANDOU_ISSO.expId) {
+    return <ResultadosQuemMandouIsso missao={missao} turma={turma} />;
   }
   // Missão sem tela de resultados própria: a trilha não linka para cá.
   notFound();

@@ -37284,6 +37284,4236 @@
         "x-acesso": "token"
       }
     },
+    "/quem-mandou-isso/sessao": {
+      "get": {
+        "operationId": "QuemMandouIssoController_sessao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "lote": {
+                      "type": "object",
+                      "properties": {
+                        "tema": {
+                          "type": "string"
+                        },
+                        "grupo": {
+                          "type": "object",
+                          "properties": {
+                            "nome": {
+                              "type": "string"
+                            },
+                            "subtitulo": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "nome",
+                            "subtitulo"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "mural": {
+                          "type": "object",
+                          "properties": {
+                            "nome": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "nome"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "remetente": {
+                                "type": "string"
+                              },
+                              "hora": {
+                                "type": "string"
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "texto",
+                                  "audio",
+                                  "imagem",
+                                  "link"
+                                ]
+                              },
+                              "corpo": {
+                                "type": "string"
+                              },
+                              "duracaoSeg": {
+                                "type": "integer"
+                              },
+                              "titulo": {
+                                "type": "string"
+                              },
+                              "fonte": {
+                                "type": "string"
+                              },
+                              "data": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "remetente",
+                              "hora",
+                              "tipo",
+                              "corpo"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 8,
+                          "maxItems": 8
+                        }
+                      },
+                      "required": [
+                        "tema",
+                        "grupo",
+                        "mural",
+                        "mensagens"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "constantes": {
+                      "type": "object",
+                      "properties": {
+                        "pisoDeEncaminhamentos": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "totalDeMensagens": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "perguntaDaReflexao": {
+                          "type": "string"
+                        },
+                        "pisoDaReflexao": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "tetoDaReflexao": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "podcast": {
+                          "type": "object",
+                          "properties": {
+                            "titulo": {
+                              "type": "string"
+                            },
+                            "blocos": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "rotulo": {
+                                    "type": "string"
+                                  },
+                                  "falas": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rotulo",
+                                  "falas"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "titulo",
+                            "blocos"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "pisoDeEncaminhamentos",
+                        "totalDeMensagens",
+                        "perguntaDaReflexao",
+                        "pisoDaReflexao",
+                        "tetoDaReflexao",
+                        "podcast"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "reflexao": {
+                      "type": "object",
+                      "properties": {
+                        "texto": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "texto"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao",
+                    "lote",
+                    "constantes",
+                    "reflexao",
+                    "estudante"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
+        "description": "As mensagens saem **sem `veracidade`, `tom` e `explicacao`** — o tipo do servidor é um `Omit`, então o gabarito é impossível de vazar aqui, não só ausente por descuido. Os três só aparecem dentro de `revelacao`, e `revelacao` é `null` até a professora acender o telão.\n\n`lote` é `null` enquanto a professora não homologou o grupo: **a missão nasce vazia**. Diferente da exp-08, não há banco curado de reserva — o lote é do TEMA que ela escolheu, e mostrar outro faria a criança ler mensagens sobre um acontecimento que não existiu na escola dela.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Quando os dois divergem e `aguardandoATurma` é `true`, ele confirmou o Mural e espera o telão.\n- `revelacao.mensagens[].total` é quantos estudantes CONFIRMADOS encaminharam aquela mensagem — quem não confirmou não entra na conta, porque a curadoria em andamento ainda podia ser desfeita.\n- `reflexao` é sempre a do PRÓPRIO estudante. Nenhuma rota devolve a de outra criança.\n- O roteiro do podcast vem da api, e não do bundle, para que corrigir uma fala não exija republicar um caminho imutável no bucket.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/gate": {
+      "get": {
+        "operationId": "QuemMandouIssoController_gate",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "revelacao",
+                        "reflexao"
+                      ]
+                    },
+                    "passoEfetivo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "agora": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "etapa",
+                    "passoEfetivo",
+                    "aguardandoATurma",
+                    "preparada",
+                    "agora"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Em que etapa a turma está (polling de ~5s).",
+        "description": "Leve de propósito: sem lote e sem histograma. É o que deixa a docente conduzir 30 telas — a revelação acende para todos ao mesmo tempo.\n\n**Polling HTTP, nunca WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e 'Iniciar revelação coletiva' é uma linha em `exp_05_gates_turma` que esta rota lê.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `preparada: false` é a tela de espera do preparo, não um erro: a professora ainda não homologou o grupo desta turma.\n- A guarda de liberação (ADR-69) e a de disponibilidade (ADR-87) valem AQUI também: esta rota passa pelo mesmo funil das demais, e a turma sem a missão liberada recebe 403 em vez de descobrir a etapa. É a única das quatro missões de clone em que o `gate` entra no funil — nas outras a nota não afirmava a guarda; aqui ela afirmava, e a afirmação tinha de virar verdade.\n- Estudante sem turma recebe a etapa inicial em vez de ficar preso esperando uma aula que não existe.\n- **Não recebe o passo por query.** `passoEfetivo` e `aguardandoATurma` são calculados sobre o passo GRAVADO da sessão: a tela não é ouvida sobre onde a criança está, porque toda mutação já o persistiu.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/entrar": {
+      "post": {
+        "operationId": "QuemMandouIssoController_entrar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Toca \"Entrar no grupo\" e abre a Turma 5ºB.",
+        "description": "Idempotente. Existe como rota para o `passo` andar no SERVIDOR: um F5 no meio da curadoria não pode devolver a criança à fala de contexto que ela já leu.\n\nÉ aqui que `entrou_em` é carimbado — e não no `criado_em` da linha. O relógio do indicativo de impulsividade começa quando a primeira mensagem aparece na tela, não quando o iframe abriu; e um F5 não o reinicia, senão o número do painel mediria a última recarga.\n\nSem lote homologado responde 409 `conteudo-nao-publicado`, que é espera, não bloqueio.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/encaminhar": {
+      "post": {
+        "operationId": "QuemMandouIssoController_encaminhar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "novo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao",
+                    "novo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Manda uma mensagem para o Mural da Turma.",
+        "description": "A dedupe é do servidor, pelo UNIQUE da tabela: tocar duas vezes na mesma setinha devolve 200 com `novo: false` e não conta de novo. Um contador incrementado no cliente seria um número que o estudante controla — e é justamente esse número que o telão mostra.\n\nO `mensagemId` é conferido contra o **lote DESTA turma** (400 `mensagem-desconhecida`), não contra a lista de ids: a professora homologou oito mensagens específicas, e um id fora delas é uma tela velha falando com um lote novo.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Recusa depois do latch (409 `curadoria-confirmada`) e depois do telão (409 `revelacao-iniciada`). As duas frases são diferentes de propósito: quem já confirmou não pode achar que perdeu o próprio envio.\n- O PRIMEIRO encaminhamento carimba `primeiro_encaminhamento_em`. Com `entrou_em` ele vira o indicativo de impulsividade do painel — o dado central da missão.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mensagemId": {
+                    "type": "string",
+                    "enum": [
+                      "msg-1",
+                      "msg-2",
+                      "msg-3",
+                      "msg-4",
+                      "msg-5",
+                      "msg-6",
+                      "msg-7",
+                      "msg-8"
+                    ]
+                  }
+                },
+                "required": [
+                  "mensagemId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quem-mandou-isso/encaminhar/{mensagemId}": {
+      "delete": {
+        "operationId": "QuemMandouIssoController_desencaminhar",
+        "parameters": [
+          {
+            "name": "mensagemId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "msg-1",
+                "msg-2",
+                "msg-3",
+                "msg-4",
+                "msg-5",
+                "msg-6",
+                "msg-7",
+                "msg-8"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "novo": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao",
+                    "novo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "O \"Apagar para todos\" do Mural — tira a mensagem antes da confirmação.",
+        "description": "Existe porque a curadoria é revisível ATÉ o latch: a criança que repassou no impulso e voltou atrás fez exatamente o que a missão ensina, e tirar do Mural é o gesto que ela conhece do aplicativo real.\n\nDepois de \"Confirmar envio\" não se apaga mais (409 `curadoria-confirmada`), e depois do telão também não (409 `revelacao-iniciada`) — o snapshot que entrou na conta da sala não pode mudar enquanto a sala o discute.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Idempotente: apagar o que já não estava no Mural devolve 200 com `novo: false`, pela mesma razão que encaminhar duas vezes devolve.\n- `primeiro_encaminhamento_em` NÃO é apagado junto. O indicativo é sobre o impulso que aconteceu; desfazê-lo no Mural é o arrependimento, e apagar o carimbo esconderia justamente a parte que a missão quer mostrar.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/leitura-integral": {
+      "post": {
+        "operationId": "QuemMandouIssoController_leituraIntegral",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Marca que o estudante rolou até a 8ª mensagem do grupo.",
+        "description": "Junto com o piso de 3 encaminhamentos, é o que libera \"Confirmar envio\". Sem esta marca a criança fecha o Mural com as três primeiras mensagens e nunca lê o esclarecimento do professor, que é a `msg-7` — a mensagem que muda a leitura do grupo inteiro.\n\nIdempotente, e sem volta: ter lido não se desfaz.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O cliente é quem observa a rolagem, mas quem guarda a marca é o servidor: `podeConfirmar` sai daqui, e o botão da tela é consequência dele — não o contrário.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/midia": {
+      "post": {
+        "operationId": "QuemMandouIssoController_midia",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Registra que a transcrição do áudio ou o card do link foi aberto.",
+        "description": "**Indicativo de leitura, nunca mérito.** Nada no produto depende deste array: ele não libera passo, não entra em conta nenhuma e o painel o mostra como conduta (\"ouviu o áudio\"), não como acerto.\n\nIdempotente: reabrir o mesmo balão não acrescenta duas vezes.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Não há mídia binária na missão: o áudio é transcrição com player simulado, e o link é um card de texto. Nenhum arquivo é servido por esta rota.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mensagemId": {
+                    "type": "string",
+                    "enum": [
+                      "msg-1",
+                      "msg-2",
+                      "msg-3",
+                      "msg-4",
+                      "msg-5",
+                      "msg-6",
+                      "msg-7",
+                      "msg-8"
+                    ]
+                  }
+                },
+                "required": [
+                  "mensagemId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quem-mandou-isso/confirmar": {
+      "post": {
+        "operationId": "QuemMandouIssoController_confirmar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "\"Confirmar envio\" — fecha o Mural da Turma (latch).",
+        "description": "O gesto que a missão mede. A partir daqui o Mural não muda mais, e é esta linha que entra no histograma da sala.\n\nA api confere as DUAS condições antes de aceitar, e as separa de propósito: 409 `piso-nao-atingido` quando faltam mensagens e 409 `leitura-incompleta` quando falta rolar o grupo. São coisas diferentes na cabeça da criança, e a frase de cada uma é outra.\n\nSegunda chamada responde 409 `curadoria-confirmada`. Com o telão já aceso, 409 `revelacao-iniciada`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O botão da tela já fica inerte sem as duas condições. A regra vale aqui porque `/quem-mandou-isso/confirmar` é endereço alcançável (regra inviolável nº 3).\n- Depois da revelação não há como confirmar. Quem perdeu a janela volta pela professora, com \"Voltar para a exploração\" no painel — e é essa a saída que a mensagem de 409 manda pedir.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/avancar": {
+      "post": {
+        "operationId": "QuemMandouIssoController_avancar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Sai do Mural revelado e abre a pergunta do dilema do tio.",
+        "description": "O avanço é do ESTUDANTE, não da professora: ela libera a etapa no painel, ele decide quando termina de ler os selos. Sem a etapa aberta responde 409 `reflexao-nao-liberada`, que é uma tarja de espera — a criança não fez nada errado.\n\nA etapa `reflexao` NÃO empurra ninguém para a pergunta sozinha: quem chega atrasado vê o Mural revelado primeiro, e é dele que este botão sai. Pular direto seria responder sobre uma cena que a criança não viu.\n\n**Papéis:** estudante.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/reflexao": {
+      "post": {
+        "operationId": "QuemMandouIssoController_reflexao",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "passo": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "passoDoEstudante": {
+                      "type": "string",
+                      "enum": [
+                        "contexto",
+                        "curadoria",
+                        "espera",
+                        "revelado",
+                        "reflexao",
+                        "fim"
+                      ]
+                    },
+                    "aguardandoATurma": {
+                      "type": "boolean"
+                    },
+                    "preparada": {
+                      "type": "boolean"
+                    },
+                    "encaminhadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "totalEncaminhadas": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "atingiuPiso": {
+                      "type": "boolean"
+                    },
+                    "faltam": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "leuTudo": {
+                      "type": "boolean"
+                    },
+                    "podeConfirmar": {
+                      "type": "boolean"
+                    },
+                    "encaminhouTudo": {
+                      "type": "boolean"
+                    },
+                    "confirmou": {
+                      "type": "boolean"
+                    },
+                    "confirmadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "midiasAbertas": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "msg-1",
+                          "msg-2",
+                          "msg-3",
+                          "msg-4",
+                          "msg-5",
+                          "msg-6",
+                          "msg-7",
+                          "msg-8"
+                        ]
+                      }
+                    },
+                    "entregouReflexao": {
+                      "type": "boolean"
+                    },
+                    "concluidoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "etapa"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "revelacao": {
+                      "type": "object",
+                      "properties": {
+                        "totalConfirmados": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "mensagens": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "totalConfirmados",
+                        "mensagens",
+                        "sintese"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "passo",
+                    "passoDoEstudante",
+                    "aguardandoATurma",
+                    "preparada",
+                    "encaminhadas",
+                    "totalEncaminhadas",
+                    "atingiuPiso",
+                    "faltam",
+                    "leuTudo",
+                    "podeConfirmar",
+                    "encaminhouTudo",
+                    "confirmou",
+                    "confirmadoEm",
+                    "midiasAbertas",
+                    "entregouReflexao",
+                    "concluidoEm",
+                    "turma",
+                    "revelacao"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "A resposta ao dilema do áudio do tio — encerra a missão (latch).",
+        "description": "Texto livre de 5 a 500 caracteres. É o **único** campo livre da missão e o dado mais sensível dela: caixa escrita por menor de idade. Não vai a log, não vai à telemetria analítica, e a única rota que a devolve é o painel do professor DA TURMA dela (LGPD art. 14).\n\nGrava `concluido_em` e leva o `passo` a `fim`. Segunda chamada responde 409 `reflexao-ja-enviada`.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- O `trim` é anterior ao `min(5)`: um campo com cinco espaços é uma resposta em branco, e ela contaria como entregue no painel da professora.\n- Exige o Mural confirmado (409 `curadoria-nao-confirmada`): o par (snapshot, reflexão) é o que a missão mede. Quem não confirmou volta pela professora, com \"Voltar para a exploração\" no painel.\n- **Sem criptografia em nível de aplicação**, e a ausência é decisão: o repo não tem nenhuma, o Cloud SQL já cifra em repouso, e uma coluna cifrada só aqui criaria a chave que ninguém sabe onde rodar. Quem tranca é a RLS mais o recorte da rota.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "texto"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quem-mandou-isso/turmas": {
+      "get": {
+        "operationId": "QuemMandouIssoTurmasController_turmas",
+        "parameters": [
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turmas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "serie": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "estudantes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "serie",
+                          "estudantes"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "turmas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Turmas para o seletor do painel.",
+        "description": "Filtradas por MATRÍCULA para o professor; o gestor vê a escola. `gestor_contrato` precisa dizer `?escolaId=`.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/painel": {
+      "get": {
+        "operationId": "QuemMandouIssoTurmasController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "etapa": {
+                          "type": "string",
+                          "enum": [
+                            "exploracao",
+                            "revelacao",
+                            "reflexao"
+                          ]
+                        },
+                        "preparada": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie",
+                        "etapa",
+                        "preparada"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "estudanteId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "usuario": {
+                            "type": "string"
+                          },
+                          "iniciou": {
+                            "type": "boolean"
+                          },
+                          "passo": {
+                            "type": "string",
+                            "enum": [
+                              "contexto",
+                              "curadoria",
+                              "espera",
+                              "revelado",
+                              "reflexao",
+                              "fim"
+                            ]
+                          },
+                          "totalEncaminhadas": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "leuTudo": {
+                            "type": "boolean"
+                          },
+                          "ouviuAudio": {
+                            "type": "boolean"
+                          },
+                          "abriuLink": {
+                            "type": "boolean"
+                          },
+                          "segundosAteOPrimeiroEncaminhamento": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "confirmou": {
+                            "type": "boolean"
+                          },
+                          "entregouReflexao": {
+                            "type": "boolean"
+                          },
+                          "reflexaoTexto": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ociosoMin": {
+                            "type": "integer",
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "estudanteId",
+                          "nome",
+                          "usuario",
+                          "iniciou",
+                          "passo",
+                          "totalEncaminhadas",
+                          "leuTudo",
+                          "ouviuAudio",
+                          "abriuLink",
+                          "segundosAteOPrimeiroEncaminhamento",
+                          "confirmou",
+                          "entregouReflexao",
+                          "reflexaoTexto",
+                          "ociosoMin"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "resumo": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "iniciaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "confirmaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "percentualConfirmados": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100
+                        },
+                        "entregaram": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "ociosos": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "histograma": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "msg-1",
+                                  "msg-2",
+                                  "msg-3",
+                                  "msg-4",
+                                  "msg-5",
+                                  "msg-6",
+                                  "msg-7",
+                                  "msg-8"
+                                ]
+                              },
+                              "remetente": {
+                                "type": "string"
+                              },
+                              "tipo": {
+                                "type": "string",
+                                "enum": [
+                                  "texto",
+                                  "audio",
+                                  "imagem",
+                                  "link"
+                                ]
+                              },
+                              "resumo": {
+                                "type": "string"
+                              },
+                              "veracidade": {
+                                "type": "string",
+                                "enum": [
+                                  "verdadeira",
+                                  "falsa",
+                                  "ambigua"
+                                ]
+                              },
+                              "explicacao": {
+                                "type": "string"
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "percentual": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "remetente",
+                              "tipo",
+                              "resumo",
+                              "veracidade",
+                              "explicacao",
+                              "total",
+                              "percentual"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "sintese": {
+                          "type": "object",
+                          "properties": {
+                            "emocionais": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "informativas": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "polaridade": {
+                              "type": "string",
+                              "enum": [
+                                "urgencia-venceu",
+                                "informativas-venceram",
+                                "empate"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emocionais",
+                            "informativas",
+                            "polaridade"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "iniciaram",
+                        "confirmaram",
+                        "percentualConfirmados",
+                        "entregaram",
+                        "ociosos",
+                        "histograma",
+                        "sintese"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "estudantes",
+                    "resumo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "O painel ao vivo: a barra de prontidão e o telão da sala.",
+        "description": "Uma linha por estudante mais o resumo agregado. `percentualConfirmados` é a barra de prontidão — é ela que diz à professora quando o telão pode acender.\n\n`histograma` é o telão: uma barra por mensagem, **anonimizada**, contando só quem CONFIRMOU. Nenhum nome chega até ele, e não por disciplina — a função pura que o monta não tem parâmetro para nome (PED-07).\n\n**Sem nenhuma coluna de acerto por criança** (PED-11 e `PROIBIDO_NO_PAINEL`, que tem o teste que cobra a ausência). Aqui a tentação é específica: com o gabarito a um JOIN de distância, \"quantas falsas cada um encaminhou\" é a coluna que se escreve sozinha — e ela é um ranking de quem caiu no boato. A leitura do gabarito é da SALA, no histograma.\n\n`reflexaoTexto` sai NESTA rota e só nela, e **só vem preenchido para quem LECIONA a turma**: é caixa livre de menor de idade (LGPD art. 14). Gestor, diretor e admin recebem a mesma linha com o campo em `null` — eles veem `entregouReflexao`, que responde \"a criança respondeu?\" sem entregar o que ela escreveu.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- `segundosAteOPrimeiroEncaminhamento` é o indicativo de impulsividade — o dado central da missão. `null` quando falta uma das pontas: \"repassou no mesmo segundo\" e \"não dá para saber\" são leituras opostas para quem conduz a aula.\n- `ociosoMin` alimenta o alerta de inatividade (> 3 min). Serve para o professor ir até a carteira, não para punir.\n- O histograma aparece antes da revelação, e só aqui: é como a professora decide a hora de acender o telão. A tela do estudante só o recebe depois do gate.\n- `turma.preparada: false` significa que esta turma ainda não tem lote homologado — e que a missão dela está em tela de espera.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/conteudo": {
+      "get": {
+        "operationId": "QuemMandouIssoTurmasController_conteudo",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tema": {
+                      "type": "string"
+                    },
+                    "gatilho": {
+                      "type": "string",
+                      "enum": [
+                        "urgencia",
+                        "indignacao",
+                        "medo"
+                      ]
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "ia",
+                        "padrao"
+                      ]
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "msg-1",
+                              "msg-2",
+                              "msg-3",
+                              "msg-4",
+                              "msg-5",
+                              "msg-6",
+                              "msg-7",
+                              "msg-8"
+                            ]
+                          },
+                          "remetente": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 30
+                          },
+                          "hora": {
+                            "type": "string",
+                            "pattern": "^\\d{2}:\\d{2}$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "audio",
+                              "imagem",
+                              "link"
+                            ]
+                          },
+                          "corpo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 600
+                          },
+                          "duracaoSeg": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 20
+                          },
+                          "titulo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "fonte": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          },
+                          "data": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "veracidade": {
+                            "type": "string",
+                            "enum": [
+                              "verdadeira",
+                              "falsa",
+                              "ambigua"
+                            ]
+                          },
+                          "tom": {
+                            "type": "string",
+                            "enum": [
+                              "neutro",
+                              "alarmista",
+                              "urgente",
+                              "ponderado"
+                            ]
+                          },
+                          "explicacao": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 160
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "remetente",
+                          "hora",
+                          "tipo",
+                          "corpo",
+                          "veracidade",
+                          "tom",
+                          "explicacao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoPorProfessor": {
+                      "type": "boolean"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "tema",
+                    "gatilho",
+                    "origem",
+                    "mensagens",
+                    "aprovadoPorProfessor",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "O lote da turma, COM o gabarito.",
+        "description": "**Professor only**, e é aqui que `veracidade`, `tom` e `explicacao` de cada mensagem aparecem. A professora os lê ANTES da aula, de propósito: são o roteiro dela.\n\nSem lote gravado devolve o BANCO CURADO da Unooria com `aprovadoPorProfessor: false` — é o rascunho que a tela do preparo abre para editar, e o que ela aprova com um clique quando não quer gerar nada. **A tela do estudante não tem essa queda**: lá, sem homologação, é espera.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/gerar-conteudo": {
+      "post": {
+        "operationId": "QuemMandouIssoTurmasController_gerarConteudo",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tema": {
+                      "type": "string"
+                    },
+                    "gatilho": {
+                      "type": "string",
+                      "enum": [
+                        "urgencia",
+                        "indignacao",
+                        "medo"
+                      ]
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "ia",
+                        "padrao"
+                      ]
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "msg-1",
+                              "msg-2",
+                              "msg-3",
+                              "msg-4",
+                              "msg-5",
+                              "msg-6",
+                              "msg-7",
+                              "msg-8"
+                            ]
+                          },
+                          "remetente": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 30
+                          },
+                          "hora": {
+                            "type": "string",
+                            "pattern": "^\\d{2}:\\d{2}$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "audio",
+                              "imagem",
+                              "link"
+                            ]
+                          },
+                          "corpo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 600
+                          },
+                          "duracaoSeg": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 20
+                          },
+                          "titulo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "fonte": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          },
+                          "data": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "veracidade": {
+                            "type": "string",
+                            "enum": [
+                              "verdadeira",
+                              "falsa",
+                              "ambigua"
+                            ]
+                          },
+                          "tom": {
+                            "type": "string",
+                            "enum": [
+                              "neutro",
+                              "alarmista",
+                              "urgente",
+                              "ponderado"
+                            ]
+                          },
+                          "explicacao": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 160
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "remetente",
+                          "hora",
+                          "tipo",
+                          "corpo",
+                          "veracidade",
+                          "tom",
+                          "explicacao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoPorProfessor": {
+                      "type": "boolean"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "usouIa": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "tema",
+                    "gatilho",
+                    "origem",
+                    "mensagens",
+                    "aprovadoPorProfessor",
+                    "atualizadoEm",
+                    "usouIa"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Gera um RASCUNHO das 8 mensagens do grupo com IA (pré-aula).",
+        "description": "A única chamada de IA desta experiência, e ela roda **antes** da aula, com a professora olhando. Em sala o motor é 100% determinístico: nenhum token de estudante é gasto e nenhuma aula depende de o Vertex estar de pé.\n\n**Não persiste nada.** O que volta é rascunho para a tela editar; publicar é o `POST /homologar` (RF-001).\n\nFalha de vendor, quota esgotada ou saída fora do molde devolvem o lote CURADO com `usouIa: false` — e a tela diz 'Utilizando o lote curado padrão' em vez de fingir que a IA respondeu. O único jeito de esta rota estragar a aula seria bloquear a professora.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A quota é a do PERFIL (ADR-105): `temSaldo` antes, e o que o vendor cobrou é debitado por TENTATIVA — inclusive as que a validação rejeitou, porque foram pagas igual.\n- `id`, `tipo`, `veracidade` e `tom` são fixados pela ORDEM do molde, nunca pelo que o modelo devolveu: com o áudio livre para cair na posição que o modelo quiser, a simetria formal do lote se perde — e 'áudio é sempre mentira' vira a heurística que a criança aprende.\n- A validação rejeita mensagem fora do teto de palavras da faixa e termo proibido na tela, e rejeitar faz o modelo REGERAR: vale mais que aceitar e contar com a revisão de um texto que a professora talvez só passe o olho.\n- O teto de 60 caracteres do `tema` é a primeira barreira contra injeção de instrução no gerador; a segunda é o `system` de `prompts.ts`, que fixa o formato da saída.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tema": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 60
+                  },
+                  "gatilho": {
+                    "type": "string",
+                    "enum": [
+                      "urgencia",
+                      "indignacao",
+                      "medo"
+                    ]
+                  },
+                  "contextoDaEscola": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "tema",
+                  "gatilho"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/homologar": {
+      "post": {
+        "operationId": "QuemMandouIssoTurmasController_homologar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tema": {
+                      "type": "string"
+                    },
+                    "gatilho": {
+                      "type": "string",
+                      "enum": [
+                        "urgencia",
+                        "indignacao",
+                        "medo"
+                      ]
+                    },
+                    "origem": {
+                      "type": "string",
+                      "enum": [
+                        "ia",
+                        "padrao"
+                      ]
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "msg-1",
+                              "msg-2",
+                              "msg-3",
+                              "msg-4",
+                              "msg-5",
+                              "msg-6",
+                              "msg-7",
+                              "msg-8"
+                            ]
+                          },
+                          "remetente": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 30
+                          },
+                          "hora": {
+                            "type": "string",
+                            "pattern": "^\\d{2}:\\d{2}$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "audio",
+                              "imagem",
+                              "link"
+                            ]
+                          },
+                          "corpo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 600
+                          },
+                          "duracaoSeg": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 20
+                          },
+                          "titulo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "fonte": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          },
+                          "data": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "veracidade": {
+                            "type": "string",
+                            "enum": [
+                              "verdadeira",
+                              "falsa",
+                              "ambigua"
+                            ]
+                          },
+                          "tom": {
+                            "type": "string",
+                            "enum": [
+                              "neutro",
+                              "alarmista",
+                              "urgente",
+                              "ponderado"
+                            ]
+                          },
+                          "explicacao": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 160
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "remetente",
+                          "hora",
+                          "tipo",
+                          "corpo",
+                          "veracidade",
+                          "tom",
+                          "explicacao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "aprovadoPorProfessor": {
+                      "type": "boolean"
+                    },
+                    "atualizadoEm": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "tema",
+                    "gatilho",
+                    "origem",
+                    "mensagens",
+                    "aprovadoPorProfessor",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "O clique em \"Aprovar e liberar para a turma\" — o portão do RF-001.",
+        "description": "Grava o lote como a professora o deixou e marca `aprovado_por_professor: true`. **É o único lugar que liga esse booleano**, e é ele que a tela do estudante consulta: sem homologação, a missão é uma tela de espera.\n\nO corpo carrega as 8 mensagens INTEIRAS em vez de um `{ aprovado: true }` porque a curadoria é editar: a professora pode reescrever qualquer texto antes de aprovar. Aprovar sem editar manda de volta o que a tela recebeu — o que também é curadoria, porque passou pelos olhos dela.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- A paridade é cobrada no corpo: exatamente 3 verdadeiras, 3 falsas e 2 ambíguas, e cada id de `msg-1` a `msg-8` uma vez. Não é preferência — é o que impede a heurística 'se está em maiúscula é mentira' de fechar a conta sozinha, e o que dá ao histograma uma barra longa para cada lado. (`.refine()` some do OpenAPI; daí esta nota.)\n- Idempotente: homologar duas vezes é exatamente o clique que uma docente nervosa dá.\n- Sobrevive ao 'Zerar turma'. O preparo custou tempo da professora, e apagá-lo junto obrigaria a refazer a curadoria para aplicar a missão na turma seguinte no mesmo dia.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tema": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 100
+                  },
+                  "gatilho": {
+                    "type": "string",
+                    "enum": [
+                      "urgencia",
+                      "indignacao",
+                      "medo"
+                    ]
+                  },
+                  "origem": {
+                    "type": "string",
+                    "enum": [
+                      "ia",
+                      "padrao"
+                    ]
+                  },
+                  "mensagens": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "enum": [
+                            "msg-1",
+                            "msg-2",
+                            "msg-3",
+                            "msg-4",
+                            "msg-5",
+                            "msg-6",
+                            "msg-7",
+                            "msg-8"
+                          ]
+                        },
+                        "remetente": {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 30
+                        },
+                        "hora": {
+                          "type": "string",
+                          "pattern": "^\\d{2}:\\d{2}$"
+                        },
+                        "tipo": {
+                          "type": "string",
+                          "enum": [
+                            "texto",
+                            "audio",
+                            "imagem",
+                            "link"
+                          ]
+                        },
+                        "corpo": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 600
+                        },
+                        "duracaoSeg": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 20
+                        },
+                        "titulo": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        },
+                        "fonte": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        },
+                        "data": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 40
+                        },
+                        "veracidade": {
+                          "type": "string",
+                          "enum": [
+                            "verdadeira",
+                            "falsa",
+                            "ambigua"
+                          ]
+                        },
+                        "tom": {
+                          "type": "string",
+                          "enum": [
+                            "neutro",
+                            "alarmista",
+                            "urgente",
+                            "ponderado"
+                          ]
+                        },
+                        "explicacao": {
+                          "type": "string",
+                          "minLength": 5,
+                          "maxLength": 160
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "remetente",
+                        "hora",
+                        "tipo",
+                        "corpo",
+                        "veracidade",
+                        "tom",
+                        "explicacao"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 8,
+                    "maxItems": 8
+                  }
+                },
+                "required": [
+                  "tema",
+                  "gatilho",
+                  "origem",
+                  "mensagens"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}/gate": {
+      "post": {
+        "operationId": "QuemMandouIssoTurmasController_gate",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "turma": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        },
+                        "serie": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome",
+                        "serie"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "etapa": {
+                      "type": "string",
+                      "enum": [
+                        "exploracao",
+                        "revelacao",
+                        "reflexao"
+                      ]
+                    },
+                    "atualizadoEm": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "turma",
+                    "etapa",
+                    "atualizadoEm"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Os dois botões mestres: \"Iniciar revelação coletiva\" e \"Liberar reflexão final\".",
+        "description": "É o que acende o telão para 30 telas ao mesmo tempo — e é a rota que o polling de 5 s do estudante lê (`GET /quem-mandou-isso/gate`), porque **não há WebSocket de aplicação no Cloud Run** (ADR-93).\n\n`iniciar-revelacao` mexe no PISO do passo, não só no teto: quem ainda não tinha confirmado é empurrado para o Mural revelado. Deixá-lo continuar encaminhando com o gabarito projetado na parede mediria outra coisa.\n\n`voltar-exploracao` é o inverso dos dois, para quem revelou antes da hora. **Não é um 'zerar'**: nada é apagado, os snapshots confirmados continuam confirmados, e quem já entregou a reflexão fica em `fim`.\n\n**Idempotente de propósito**: apertar duas vezes é exatamente o clique que se dá duas vezes.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- São TRÊS etapas e não quatro: o card de síntese da sala entra JUNTO da revelação, ao fim do Mural. Um terceiro botão para ele seria controle morto no painel.\n- `liberar-reflexao` não empurra ninguém para a pergunta do tio: quem chega atrasado vê o Mural revelado primeiro, e é dele que o botão do estudante sai.\n- Quem já entregou a reflexão fica onde está. O latch é do estudante, não da turma.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "acao": {
+                    "type": "string",
+                    "enum": [
+                      "iniciar-revelacao",
+                      "liberar-reflexao",
+                      "voltar-exploracao"
+                    ]
+                  }
+                },
+                "required": [
+                  "acao"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/quem-mandou-isso/turmas/{turmaId}": {
+      "delete": {
+        "operationId": "QuemMandouIssoTurmasController_zerar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sucesso": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "registrosApagados": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "sucesso",
+                    "registrosApagados"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "Zerar a turma — a segunda aplicação.",
+        "description": "Apaga as sessões, os encaminhamentos e as reflexões desta turma (CASCADE da sessão) e devolve o gate a `exploracao`, senão a turma nova nasceria com o telão já aceso. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp_05_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nA reflexão vai junto, e isso é deliberado: refazer a missão com a resposta da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/quem-mandou-isso/professor/material": {
+      "get": {
+        "operationId": "QuemMandouIssoProfessorController_material",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tema": {
+                      "type": "string"
+                    },
+                    "mensagens": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "enum": [
+                              "msg-1",
+                              "msg-2",
+                              "msg-3",
+                              "msg-4",
+                              "msg-5",
+                              "msg-6",
+                              "msg-7",
+                              "msg-8"
+                            ]
+                          },
+                          "remetente": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 30
+                          },
+                          "hora": {
+                            "type": "string",
+                            "pattern": "^\\d{2}:\\d{2}$"
+                          },
+                          "tipo": {
+                            "type": "string",
+                            "enum": [
+                              "texto",
+                              "audio",
+                              "imagem",
+                              "link"
+                            ]
+                          },
+                          "corpo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 600
+                          },
+                          "duracaoSeg": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 20
+                          },
+                          "titulo": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          "fonte": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          },
+                          "data": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 40
+                          },
+                          "veracidade": {
+                            "type": "string",
+                            "enum": [
+                              "verdadeira",
+                              "falsa",
+                              "ambigua"
+                            ]
+                          },
+                          "tom": {
+                            "type": "string",
+                            "enum": [
+                              "neutro",
+                              "alarmista",
+                              "urgente",
+                              "ponderado"
+                            ]
+                          },
+                          "explicacao": {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 160
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "remetente",
+                          "hora",
+                          "tipo",
+                          "corpo",
+                          "veracidade",
+                          "tom",
+                          "explicacao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "paridade": {
+                      "type": "object",
+                      "properties": {
+                        "verdadeira": {
+                          "type": "integer"
+                        },
+                        "falsa": {
+                          "type": "integer"
+                        },
+                        "ambigua": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "verdadeira",
+                        "falsa",
+                        "ambigua"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "pisoDeEncaminhamentos": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "podcast": {
+                      "type": "object",
+                      "properties": {
+                        "titulo": {
+                          "type": "string"
+                        },
+                        "blocos": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "rotulo": {
+                                "type": "string"
+                              },
+                              "falas": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "rotulo",
+                              "falas"
+                            ],
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "required": [
+                        "titulo",
+                        "blocos"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "tema",
+                    "mensagens",
+                    "paridade",
+                    "pisoDeEncaminhamentos",
+                    "podcast"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "quem-mandou-isso"
+        ],
+        "summary": "As 8 mensagens do banco curado com o gabarito, a paridade e o podcast.",
+        "description": "**Professor only.** Alimenta o bloco vivo do guia da aula em `/professor/entre-redes/5-ano/unidade-1/guia`.\n\nÉ o BANCO CURADO da Unooria, não o lote da turma: se a professora gerou ou editou outro, ele está em `GET /quem-mandou-isso/turmas/:turmaId/conteudo`. Os dois coexistem de propósito — o guia da aula é escrito sobre o banco curado, e uma turma com tema próprio não pode reescrever o guia impresso.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Nada aqui é escopado por escola: é o catálogo da missão, igual para todo contrato.\n- `paridade` (3 verdadeiras, 3 falsas, 2 ambíguas) e `pisoDeEncaminhamentos` vão junto porque são o que a professora precisa dizer em voz alta antes de a turma entrar no grupo — e são as duas regras que o lote gerado por IA também tem de respeitar.\n- O podcast é TEXTO. A locução do brief não foi gravada, e a missão roda igual: a transcrição é acessibilidade de sala sem fone, não remendo. Quando o áudio chegar, entra ao lado — nunca no lugar.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
     "/foto-conta/sessao": {
       "get": {
         "operationId": "FotoContaController_sessao",
