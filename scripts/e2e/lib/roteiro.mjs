@@ -205,12 +205,30 @@ export class Roteiro {
        30 000 px) estoura o `Page.captureScreenshot` do Chrome com "Unable to
        capture screenshot" — e derrubar a suíte por causa do print seria perder
        a corrida inteira por causa da câmera. Cai para a viewport e diz. */
+    /* O teto é MAIOR que o padrão (30s) e a falha tem segunda chance com o
+       MOVIMENTO CONGELADO. O site público passou a ter um campo de estrelas
+       fixo que anima sem parar (`efeitos/estrelas-da-rolagem.ts`): num runner
+       de CI sem GPU, o `Page.captureScreenshot` do Chrome chegou a estourar os
+       30s numa página de 20 000 px — derrubando o smoke do deploy de hml com
+       28 verificações VERDES e nenhum defeito de produto.
+       `emulateMedia({reducedMotion:"reduce"})` é o desligamento que os próprios
+       efeitos já respeitam, então o quadro capturado é o mesmo, parado. */
+    const tirarPrint = (opcoes = {}) =>
+      pagina.screenshot({ path: caminho, fullPage: ficha.inteira ?? false, timeout: 60_000, ...opcoes });
     try {
-      await pagina.screenshot({ path: caminho, fullPage: ficha.inteira ?? false });
+      await tirarPrint();
     } catch (erro) {
-      if (!ficha.inteira) throw erro;
-      console.log(`      · página alta demais para um print inteiro: ${String(erro).slice(0, 80)}`);
-      await pagina.screenshot({ path: caminho });
+      const alto = ficha.inteira;
+      const tempo = /Timeout/i.test(String(erro));
+      if (!alto && !tempo) throw erro;
+      if (alto) console.log(`      · página alta demais para um print inteiro: ${String(erro).slice(0, 80)}`);
+      if (tempo) console.log("      · print demorou demais: repetindo com o movimento congelado");
+      try {
+        if (tempo) await pagina.emulateMedia({ reducedMotion: "reduce" });
+        await tirarPrint({ fullPage: false });
+      } finally {
+        if (tempo) await pagina.emulateMedia({ reducedMotion: null }).catch(() => {});
+      }
     }
     /* De QUEM é esta tela. Nos roteiros de dois contextos (o professor conduz o
        relógio, o estudante joga) o deck e o vídeo precisam dizer em qual das
