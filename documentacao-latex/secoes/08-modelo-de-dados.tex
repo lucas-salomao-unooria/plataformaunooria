@@ -925,6 +925,94 @@ em produção, que é onde ela existe.
 \end{atencao}
 
 
+\section{As cinco tabelas da exp-05}
+\label{sec:tabelas-exp05}
+
+\begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
+\toprule
+\headrow \thd{Tabela} & \thd{O que guarda}\\
+\midrule
+\cd{exp\_05\_conteudo\_turma} & O \textbf{lote da turma}: as oito mensagens que
+  a professora homologou, \textbf{com} o gabarito, em \cd{JSONB}. Uma linha por
+  turma, com o tema, o \cd{gatilho} e a \cd{origem}
+  (\cd{ia} $|$ \cd{padrao}). \cd{JSONB} e não tabela-filha porque o lote é lido
+  e escrito SEMPRE inteiro --- ela aprova o conjunto, não uma mensagem de cada
+  vez. \textbf{Mais dura que a irmã da exp-08}: sem
+  \cd{aprovado\_por\_professor} verdadeiro não há queda para o banco curado, e a
+  missão do estudante é uma tela de espera. \textbf{Sobrevive ao \enquote{Zerar
+  turma}}: o preparo custou tempo dela.\\
+\zebra \cd{exp\_05\_sessoes} & O estado da missão, uma linha por estudante.
+  Chave \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
+  \emph{coluna} dela: \cd{leu\_tudo}, \cd{midias\_abertas}, \cd{entrou\_em},
+  \cd{primeiro\_encaminhamento\_em} e o \cd{confirmado\_em} que é o
+  \emph{latch}. \textbf{Não há coluna de pontuação}, e a ausência é o desenho ---
+  a missão não pontua ninguém.\\
+\cd{exp\_05\_encaminhamentos} & Cada mensagem que foi ao Mural ---
+  \textbf{1:N} de propósito, e é a única tabela da exp-05 que não repete o
+  desenho da exp-08. \emph{Quais} mensagens a criança encaminhou é o dado que o
+  telão mostra: um contador diria \enquote{encaminhou 4} e perderia exatamente a
+  coisa que a revelação revela, que a sala inteira mandou a mesma mensagem
+  falsa. \cd{UNIQUE (escola\_id, estudante\_id, mensagem\_id)} faz a
+  \emph{dedupe} valer quando dois toques rápidos no mesmo balão chegam como duas
+  requisições em paralelo.\\
+\zebra \cd{exp\_05\_reflexoes} & A resposta ao dilema do áudio do tio: 5 a 500
+  caracteres de \textbf{texto livre escrito por menor de idade}. Fora de
+  \emph{log} (\cd{texto} está em \cd{CAMPOS\_SENSIVEIS}), fora da telemetria
+  analítica, e o texto só sai preenchido para quem \textbf{leciona} a turma ---
+  a rota do painel responde a gestor e \cd{admin}, e para eles o campo vem
+  \cd{null}, com o \enquote{entregou} intacto. \textbf{Em claro}, e a escolha
+  está declarada na \adrr{ADR-108}.\\
+\cd{exp\_05\_gates\_turma} & O \textbf{relógio da turma}, por turma ---
+  \cd{exploracao} $|$ \cd{revelacao} $|$ \cd{reflexao}. Chave
+  \cd{(escola\_id, turma\_id)}. É esta linha que o \emph{polling} de 5 segundos
+  lê, porque não há WebSocket de aplicação no Cloud Run (\adrr{ADR-93}).
+  Diferente do gate da exp-08, ela mexe no \textbf{piso} do passo: quando o telão
+  acende, quem não confirmou é empurrado para \cd{revelado}.\\
+\bottomrule
+\end{tabularx}
+
+\begin{regra}
+Os \emph{CHECK} desta migração amarram as invariantes que as regras puras já
+aplicam, e um deles é interessante pelo que \textbf{não} afirma.
+
+A regra que se quer escrever sobre o \emph{latch} é \cd{confirmou}
+\implica{} \enquote{está na espera ou além}, e ela é \textbf{falsa}: a revelação
+sobe o PISO do passo, então quem não confirmou vai para \cd{revelado} quando o
+telão acende, e \cd{passo} deixa de testemunhar sobre confirmação. Na direção
+contrária a implicação também não fecha, porque o \enquote{voltar à exploração}
+da professora reduz o passo efetivo sem apagar carimbo nenhum. O que sobra
+verdadeiro em todo caminho é \cd{confirmado\_em IS NULL OR passo <> 'contexto'}:
+uma linha com carimbo e passo \cd{contexto} é um Mural fechado por quem nunca
+viu uma mensagem --- o sintoma de um \cd{POST} direto em \rota{/confirmar}. E é
+de propósito que ele \textbf{não} veda \cd{curadoria}: o \emph{CHECK} vale por
+\emph{statement}, e um \emph{service} que grave carimbo e passo em dois
+\cd{UPDATE} veria o estado intermediário reprovar --- falha que só apareceria em
+produção, no meio da aula.
+
+Os outros quatro: \cd{(passo = 'fim') = (concluido\_em IS NOT NULL)}, pela mesma
+razão da exp-07; \cd{primeiro\_encaminhamento\_em >= entrou\_em} quando ambos
+existem, porque subtração fora de ordem produz segundos negativos no painel, que
+se leem como defeito do produto e não como relógio torto; os oito ids do
+catálogo em \cd{midias\_abertas} e em \cd{exp\_05\_encaminhamentos.mensagem\_id},
+porque um \cd{msg-9} viraria barra órfã no telão; e
+\cd{jsonb\_array\_length(mensagens\_json) = 8}.
+
+\textbf{A paridade 3/3/2 NÃO entra no banco.} Contá-la em SQL exigiria desmontar
+o \cd{JSONB} dentro do \emph{CHECK}, e o gabarito só existe em uma gramática ---
+a do Zod, em \arq{contrato-de-rotas.ts}. Duas gramáticas para a mesma regra é a
+divergência que o repositório já pagou em \cd{permissoes}.
+\end{regra}
+
+\begin{atencao}
+\cd{exp\_05\_encaminhamentos} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\textbf{sequência}, além do \emph{grant} de tabela --- a quinta aparição da mesma
+armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só em
+produção, que é onde ela existe. Aqui a falha é a pior das cinco: o
+encaminhamento é o \emph{primeiro} toque da criança num balão, então a missão
+inteira para no primeiro gesto.
+\end{atencao}
+
+
 \section{As quatro tabelas da exp-06}
 \label{sec:tabelas-exp06}
 
