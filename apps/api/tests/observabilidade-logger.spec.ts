@@ -72,6 +72,35 @@ describe("logger (pino → Cloud Logging)", () => {
     expect(ultima()).not.toHaveProperty("logging.googleapis.com/trace");
   });
 
+  it("erro com `message` só-leitura e getter com marca (o jeito do DOMException) é logado, não estoura", () => {
+    /* O `DOMException` real vem de outro realm no Jest (\`instanceof Error\`
+       dá falso e a redação nem roda). Este imita o que importa dele: `name` e
+       `message` são getters do PROTÓTIPO, sem setter, que recusam um `this`
+       que não seja o objeto original. */
+    const marca = new WeakSet<object>();
+    class ErroDePlataforma extends Error {
+      constructor(private readonly texto: string) {
+        super();
+        marca.add(this);
+      }
+    }
+    for (const chave of ["message", "name"] as const) {
+      Object.defineProperty(ErroDePlataforma.prototype, chave, {
+        enumerable: true,
+        get(this: ErroDePlataforma) {
+          if (!marca.has(this)) throw new TypeError('Value of "this" must be of ErroDePlataforma');
+          return chave === "name" ? "TimeoutError" : this.texto;
+        },
+      });
+    }
+    const { log, ultima } = loggerEmMemoria();
+    const timeout = new ErroDePlataforma("aborted due to timeout joao@a.com");
+    expect(() => log.error({ err: timeout }, "chamada externa")).not.toThrow();
+    const linha = ultima() as { err: { message: string; type: string } };
+    expect(linha.err.type).toBe("ErroDePlataforma");
+    expect(linha.err.message).toBe("aborted due to timeout [redigido]");
+  });
+
   it("redige o objeto (por chave) e a mensagem (por padrão)", () => {
     const { log, ultima } = loggerEmMemoria();
     log.info({ usuario: { cpf: "12345678909", username: "maria" }, escolaId: "e1" }, "login de maria@escola.gov.br");

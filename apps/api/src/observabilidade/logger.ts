@@ -45,12 +45,23 @@ export interface OpcoesDoLogger {
  * sendo a classe real (`PrismaClientKnownRequestError`, não "Object").
  */
 function redigirErro(err: Error): Error {
-  const copia = Object.create(Object.getPrototypeOf(err) as object) as Error & Record<string, unknown>;
-  for (const chave of Object.getOwnPropertyNames(err)) {
-    copia[chave] = (err as unknown as Record<string, unknown>)[chave];
-  }
-  copia.message = redigirTexto(err.message);
-  if (typeof err.stack === "string") copia.stack = redigirTexto(err.stack);
+  /* Todo campo vira propriedade PRÓPRIA, lida do original — os próprios e os
+     herdados enumeráveis, que o serializador do pino percorre. Em erro de
+     plataforma como o `DOMException` (timeout do `fetch`), `name`, `message` e
+     `code` são getters do protótipo que exigem o objeto nativo: atribuir
+     estoura "only a getter", ler na cópia estoura "Value of this must be of
+     DOMException", e o TypeError sai no lugar do erro real. Mesmo conserto do
+     `apps/hub/lib/log.ts`. */
+  const copia = Object.create(Object.getPrototypeOf(err) as object) as Error;
+  const original = err as unknown as Record<string, unknown>;
+  const chaves = new Set<string>(Object.getOwnPropertyNames(err));
+  for (const chave in err) chaves.add(chave);
+  chaves.add("name");
+  const propria = (chave: string, valor: unknown) =>
+    Object.defineProperty(copia, chave, { value: valor, writable: true, enumerable: true, configurable: true });
+  for (const chave of chaves) propria(chave, original[chave]);
+  propria("message", redigirTexto(err.message));
+  if (typeof err.stack === "string") propria("stack", redigirTexto(err.stack));
   return copia;
 }
 

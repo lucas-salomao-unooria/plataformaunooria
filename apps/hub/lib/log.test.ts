@@ -40,6 +40,14 @@ describe("log do hub (pino → Cloud Logging)", () => {
     expect(linha.err.message).toBe("x [redigido]");
   });
 
+  it("erro com `message` só-leitura (DOMException do timeout do fetch) é logado, não estoura", () => {
+    const { log, ultima } = loggerEmMemoria();
+    const timeout = new DOMException("The operation was aborted due to timeout joao@a.com", "TimeoutError");
+    expect(() => log.error({ err: timeout }, "proxy")).not.toThrow();
+    const linha = ultima() as { err: { message: string } };
+    expect(linha.err.message).toBe("The operation was aborted due to timeout [redigido]");
+  });
+
   it("contextoDaRequisicao monta o trace do Cloud Logging só com projeto", () => {
     const cab = { traceparent: `00-${TRACE}-00f067aa0ba902b7-01` };
     expect(contextoDaRequisicao(cab, "entre-redes")).toEqual({
