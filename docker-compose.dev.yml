@@ -338,6 +338,12 @@ services:
     command: pnpm exec vite --host 0.0.0.0 --port 5177 --strictPort
     ports:
       - "5177:5177"
+    # Faltava, e só apareceu quando o volume `nm-app70` nasceu vazio na troca
+    # de código (ADR-110): sem esperar o `deps`, o Vite sobe antes do install
+    # e morre com "Command vite not found".
+    depends_on:
+      deps:
+        condition: service_completed_successfully
   app-91:
     <<: *dev
     working_dir: /repo/apps/experiencias/app-91-bem-estar
