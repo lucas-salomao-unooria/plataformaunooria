@@ -122,6 +122,6 @@ export default async function MissaoPage({
   /* FALLBACK = INSTANOORIA, e é por isso que ele é perigoso: uma missão
      publicada sem ramo aqui não quebra — ela mostra a tela de OUTRA missão,
      com "Nova atividade" e sem o caminho para os resultados. Foi o que
-     aconteceu com a exp-08 até 2026-09-11, e só a suíte e2e pegou. */
+     aconteceu com a exp08ef4b até 2026-09-11, e só a suíte e2e pegou. */
   return corpo(<MissaoInstanooria ano={ano} missao={comFicha} turma={turma} />);
 }

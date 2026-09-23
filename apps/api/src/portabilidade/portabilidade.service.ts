@@ -140,7 +140,7 @@ export class PortabilidadeService {
    *
    * Lê `vilaPerfil` direto em vez de chamar o `VilaService`: o que este módulo
    * precisa é a LEITURA (as funções puras de `vila/leitura.ts`), não o relatório
-   * de tela. Depender do service inteiro arrastaria o módulo da exp-70 para
+   * de tela. Depender do service inteiro arrastaria o módulo da app-70 para
    * dentro da portabilidade sem nada em troca.
    *
    * `versaoMapeamento` viaja junto e é o motivo de o resultado ser exportável:
@@ -168,7 +168,7 @@ export class PortabilidadeService {
       );
       resultados.push({
         tipo: "perfil-de-valores",
-        expId: "exp-70-vila-do-lume",
+        expId: "app-70-vila-do-lume",
         instrumento: "Vila do Lume — retrato de valores (Schwartz)",
         versaoMapeamento: perfil.versaoMapeamento,
         em: perfil.createdAt.toISOString(),

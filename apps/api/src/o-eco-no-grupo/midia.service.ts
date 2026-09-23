@@ -9,7 +9,7 @@ import { erroDeJogo } from "./erros";
 import { EXP_ID, MIDIA, ORDEM_DE_PREPARO, type Midia, type MidiaDeFoto } from "./midia";
 
 /**
- * A mídia da exp-07: gerada uma vez, servida a todo mundo.
+ * A mídia da exp07ef1b: gerada uma vez, servida a todo mundo.
  *
  * **Quem prepara é o PROFESSOR, no preparo da aula** — não o primeiro estudante
  * que abre a missão. Três razões, e nenhuma é técnica:
@@ -58,7 +58,7 @@ export interface PreparoDaMidia {
 }
 
 @Injectable()
-export class MidiaDaExp07Service {
+export class MidiaDaExp07ef1bService {
   constructor(
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
     private readonly assets: AssetsService,
@@ -127,7 +127,7 @@ export class MidiaDaExp07Service {
         // Sem `err` no log: a mensagem do provider pode carregar trecho do
         // roteiro, e roteiro é conteúdo da missão.
         logger.warn(
-          { codigo: "exp07.midia-falhou", midia: id, tipo: midia.tipo },
+          { codigo: "exp07ef1b.midia-falhou", midia: id, tipo: midia.tipo },
           "mídia não gerada — a missão segue no fallback",
         );
         falharam.push(id);

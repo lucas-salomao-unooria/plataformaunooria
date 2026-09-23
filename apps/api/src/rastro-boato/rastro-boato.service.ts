@@ -37,7 +37,7 @@ import { scoreDe } from "./regras/pontuacao";
 import { curvas, topologiaDe, type Topologia } from "./regras/topologia";
 
 /**
- * Persistência e regras aplicadas da exp-06-rastro-boato.
+ * Persistência e regras aplicadas da exp06ef2b.
  *
  * Assinaturas recebem `escolaId`/`estudanteId` explícitos (não o request) — os
  * testes de integração chamam direto, e toda query leva `escola_id` no `where`
@@ -51,7 +51,7 @@ import { curvas, topologiaDe, type Topologia } from "./regras/topologia";
  */
 
 /** O id que a guarda de liberação (ADR-69) e o manifesto compartilham. */
-export const EXP_ID = "exp-06-rastro-boato";
+export const EXP_ID = "exp06ef2b";
 
 /** Minutos sem ação para o painel marcar ociosidade. O alerta é para a docente
  *  ir até a carteira, não para punir. */
@@ -103,7 +103,7 @@ function paraEstado(linha: LinhaDaSessao | null | undefined): EstadoSessao {
  * `desfecho` é o campo que evita a tela comparar `opcao === "B"` — comparação
  * que iria legível para o bundle e entregaria a resposta certa no DevTools
  * antes de a criança responder (regra 3, e a mesma armadilha registrada na
- * exp-07). Ele só existe DEPOIS do envio, quando a criança já viu a cena.
+ * exp07ef1b). Ele só existe DEPOIS do envio, quando a criança já viu a cena.
  */
 export interface EstadoPublico {
   passo: Passo;
@@ -669,7 +669,7 @@ export class RastroBoatoService {
       await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`rastro:${escolaId}:${estudanteId}`}, 0))`;
       await tx.$executeRaw`
-        INSERT INTO exp_06_sessoes (escola_id, estudante_id, turma_id)
+        INSERT INTO exp06ef2b_sessoes (escola_id, estudante_id, turma_id)
         VALUES (${escolaId}, ${estudanteId}::uuid, ${turmaId}::uuid)
         ON CONFLICT DO NOTHING`;
       /* A turma pode ter mudado depois da primeira visita (transferência no

@@ -1,15 +1,16 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { UpsertSchema } from "../src/experiencias/contrato-de-rotas";
+import { EXP_ID_RE } from "../src/comum/codigo-da-experiencia";
 
 /**
  * TODO MANIFESTO PASSA NO PUT DO DEPLOY — antes do deploy.
  *
  * Em 2026-09-11 o job `ativar-exps` de dev morreu num 400 `viewport:
- * invalid_type`: o manifesto da exp-04 dizia `"viewport": "mobile"` (string)
+ * invalid_type`: o manifesto da exp01ef1b dizia `"viewport": "mobile"` (string)
  * onde o `ViewportSchema` exige `{ largura, altura }`. O 400 veio DEPOIS de os
  * bundles subirem, quebrou o laço com exit 1 e deixou tudo que vinha depois da
- * exp-04 na versão anterior. Nenhum teste validava o manifesto contra o Zod da
+ * exp01ef1b na versão anterior. Nenhum teste validava o manifesto contra o Zod da
  * rota — o vizinho `manifestos-declaram-produto.spec.ts` cobre só o `produto`.
  *
  * Este teste fecha a classe: monta, para CADA experiência, o corpo EXATO que
@@ -49,7 +50,7 @@ function corpoDoPut(manifesto: Manifesto, versao: string) {
 }
 
 const pastas = readdirSync(PASTA, { withFileTypes: true })
-  .filter((e) => e.isDirectory() && e.name.startsWith("exp-"))
+  .filter((e) => e.isDirectory() && EXP_ID_RE.test(e.name))
   .map((e) => e.name)
   .sort();
 

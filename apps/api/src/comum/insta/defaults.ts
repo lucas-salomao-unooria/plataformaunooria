@@ -7,12 +7,12 @@
  * O slug desta experiência no catálogo (`experiencias.exp_id`) e no bucket.
  *
  * É o que a porta da sala (`comum/liberacao.ts`) usa para perguntar se a missão
- * está liberada na turma. Toda experiência declara o seu — a exp-07 em
+ * está liberada na turma. Toda experiência declara o seu — a exp07ef1b em
  * `o-eco-no-grupo/midia.ts`, esta aqui —, e o valor tem de bater com o `id` do
  * `public/experiencia.json` dela: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-export const EXP_ID = 'exp-01-instanooria';
+export const EXP_ID = 'exp08ef1b';
 
 /**
  * Público-alvo, constante do sistema. Era campo do formulário ("faixa etária");

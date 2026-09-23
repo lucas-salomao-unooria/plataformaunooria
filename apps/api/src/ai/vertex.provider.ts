@@ -128,7 +128,7 @@ export function endpointVertex(alvo: { project?: string; location: string; model
  * pensamento numa resposta de três frases. MEDIDO no gemini-2.5-flash: com
  * pensamento dinâmico o
  * modelo gastou o teto inteiro pensando e devolveu texto VAZIO com
- * `finishReason: MAX_TOKENS` — que na exp-90 vira "o plano ficou grande demais"
+ * `finishReason: MAX_TOKENS` — que na app-90 vira "o plano ficou grande demais"
  * sem nenhum plano. O app origem (Claude via OpenRouter) não tinha essa etapa,
  * então `0` (desligado) é o valor de PARIDADE e o default aqui.
  * `VERTEX_THINKING_BUDGET=-1` volta ao pensamento dinâmico; `>0` põe teto.

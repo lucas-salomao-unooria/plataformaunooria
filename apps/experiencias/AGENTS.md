@@ -16,8 +16,14 @@ e chegam sozinhos pelas pontes de cada ferramenta (ADR-102):
 
 ## Como criar uma experiência nova
 
-0. `git switch -c exp-NN-slug` a partir da `main` — uma branch por experiência.
-1. `pnpm new:exp exp-NN-slug` (copia `_template`, ajusta nomes). O template
+0. `pnpm worktree criar <código> --fatia exp/<código>,…` — uma frente por
+   experiência. O **código** é o da ADR-110: missão da trilha é
+   `exp` + ano (01–09 EF, 01–03 EM) + etapa + unidade + `b` (`exp06ef3b` = 6º ano,
+   unidade 3); o que não é missão é `app-NN-nome`. O código de missão NÃO se
+   escolhe — ele SAI da série e da unidade, e `apps/api/tests/codigo-da-experiencia.spec.ts`
+   reprova o manifesto que discordar dele.
+1. `pnpm new:exp <código>` (copia `_template`, ajusta nomes e já preenche
+   `series`/`unidade` a partir do código). O template
    nasce com a **fiação inteira** — manifesto completo, handshake em
    `bootstrap.tsx`, `lib/{api,telemetria,tipos,textos}.ts`, folhas da seção
    `unooria`, `versao.test.ts` e `vitest` — e **sem componente de interface**,
@@ -38,7 +44,7 @@ e chegam sozinhos pelas pontes de cada ferramenta (ADR-102):
    número da experiência (ADR-51): missão de estudante entra em
    `scripts/e2e/estudante/NN-slug.mjs`; ferramenta de professor, em
    `scripts/e2e/professor/`. Se a experiência é conduzida pelo relógio da turma,
-   a suíte sobe DOIS contextos e mora no papel do protagonista — a da exp-01 é
+   a suíte sobe DOIS contextos e mora no papel do protagonista — a da exp08ef1b é
    `estudante/02-instanooria.mjs`, ainda que metade dos prints seja do docente.
    Cada `registrar()` escreve `titulo`/`mostra`/`prova`: é deles que saem o
    slide do deck e a legenda do vídeo.
@@ -55,12 +61,12 @@ numa mensagem aninhada que o resumo do turbo não mostra.
 **O sintoma é de ambiente, não de código: passa na máquina e falha no CI.** O
 `node_modules` local cresceu por instalações incrementais e mantém uma resolução;
 o runner faz `--frozen-lockfile` do zero e resolve outra. Foi o que aconteceu com
-a exp-04 em 2026-09-14 — a única que nasceu em 18, porque o `_template` estava em
+a exp01ef1b em 2026-09-14 — a única que nasceu em 18, porque o `_template` estava em
 18. Os dois subiram para `^19.2.0` juntos, e é assim que tem de continuar: **o
 template é a fonte de toda experiência nova**, e uma divergência ali reaparece na
 próxima que alguém criar. Pelo mesmo motivo, desde 2026-09-16 o template traz o
-DS `^0.2.2`, o `@edu/ui` e a fiação da exp-08 (ADR-106): antes, cada missão nova
-refazia à mão o bootstrap, a telemetria e o teste de versão — e a exp-04 nasceu
+DS `^0.2.2`, o `@edu/ui` e a fiação da exp08ef4b (ADR-106): antes, cada missão nova
+refazia à mão o bootstrap, a telemetria e o teste de versão — e a exp01ef1b nasceu
 sem eles.
 
 Mudou dependência de uma experiência? O bundle mudou: **sobe a versão nos três
@@ -75,7 +81,7 @@ componente não declaram mais `@font-face`); numa marca de clone, esquecê-la ca
 no fallback — feio, mas não quebra.
 
 **A linha que separa as seções é a REVELAÇÃO, não o arquivo.** O critério é
-"quem está falando?", nunca "é depois no tempo?". Na exp-02: feed, cromo,
+"quem está falando?", nunca "é depois no tempo?". Na exp04ef1b: feed, cromo,
 playlists, canal, o toast e o diálogo de limite falam de dentro da ficção
 (`ds-unootube`); ranking, os dois diálogos da missão, "Concluir missão" e a TELA
 DE ENTRADA falam pela escola (`ds`). A entrada é a única ANTES do feed e não é
@@ -83,7 +89,7 @@ exceção: na tela de entrada quem fala é a escola, e não há disfarce a prote
 porque a criança ainda não viu um Short. O disfarce começa no toque em "Começar missão".
 
 **Tema**: a seção do clone lê `data-uni-theme` na raiz; a da plataforma recebe
-`theme` por PROP. Quem troca escreve nos dois (`exp-02/src/lib/tema.ts`), senão
+`theme` por PROP. Quem troca escreve nos dois (`exp04ef1b/src/lib/tema.ts`), senão
 o estudante escolhe escuro no feed e o ranking volta branco.
 
 **O idioma do disfarce: o nome do app real, em português.** `Shorts`, `Stories`,
@@ -96,19 +102,19 @@ decisão, está em "O idioma da interface" no `AGENTS.md` da raiz — ADR-91).
 Duas armadilhas de experiência, das quais uma já cobrou:
 
 - **Rótulo visível que tem espelho na api muda nos DOIS.** `ROTULO_PASSO` de
-  `exp-03/src/lib/textos.ts` espelha `apps/api/src/unoogpt/regras/passos.ts`.
+  `exp02em1b/src/lib/textos.ts` espelha `apps/api/src/unoogpt/regras/passos.ts`.
   Quando o `Briefing` virou `A missão`, mudar só a experiência faria a trilha do
   estudante divergir do que a api devolve — e o typecheck não vê.
 - **A versão vive em TRÊS lugares, não dois.** Mudou texto visível? Sobe
   `public/experiencia.json`, `package.json` **e** o `EXP_VERSION` do código
-  (`src/lib/versao.ts`, ou `src/lib/tipos.ts` na exp-03). O `versao.test.ts` de
+  (`src/lib/versao.ts`, ou `src/lib/tipos.ts` na exp02em1b). O `versao.test.ts` de
   cada experiência cobra os três — foi ele que pegou o esquecimento na troca de
   terminologia, e a ADR-84 conta o que o terceiro lugar esquecido custou.
 
 Detalhes de mecânica (CSS, frames, compensações) em `packages/ui/AGENTS.md`.
 O específico de cada experiência está no `AGENTS.md` da pasta dela.
 
-## exp-70: `public/jogo/` é zona congelada
+## app-70: `public/jogo/` é zona congelada
 
 ~10k linhas de JS clássico com globais compartilhados e `three.min.js`
 vendorizado. É um instrumento com distâncias e tempos calibrados, e o compilador
@@ -129,7 +135,7 @@ Então, dentro do iframe, a barra continua sendo a do SISTEMA OPERACIONAL, com
 no macOS com trackpad ela some sozinha, no Windows e no ChromeOS é permanente.
 
 **Esconder a barra continua permitido, e é decisão de FIDELIDADE.** As faixas que
-imitam um app sem barra (`.sem-scrollbar` da exp-01, `.feed-scroll` da exp-02)
+imitam um app sem barra (`.sem-scrollbar` da exp08ef1b, `.feed-scroll` da exp04ef1b)
 usam `scrollbar-width: none` + `::-webkit-scrollbar { display: none }`. Se você
 esconder uma barra, diga no CSS QUAL app imitado não a tem — sem essa linha, a
 próxima pessoa lê como defeito e "conserta".

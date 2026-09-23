@@ -14,8 +14,8 @@ import {
 } from "@/lib/foto-conta-tipos";
 
 /**
- * O painel VIVO da aula da exp-04 — client-side pela mesma razão dos gates da
- * exp-07: o professor aperta no meio da aula e as 30 telas precisam andar na
+ * O painel VIVO da aula da exp01ef1b — client-side pela mesma razão dos gates da
+ * exp07ef1b: o professor aperta no meio da aula e as 30 telas precisam andar na
  * hora, sem recarregar página. As guardas de papel estão na api.
  *
  * Polling de ~5s no dashboard (o mesmo ritmo do gate do o-eco-no-grupo); os

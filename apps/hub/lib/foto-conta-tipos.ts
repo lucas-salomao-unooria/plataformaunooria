@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp-04 — espelho do contrato do PROFESSOR em
+ * O que o hub lê da exp01ef1b — espelho do contrato do PROFESSOR em
  * `apps/api/src/foto-conta/contrato-de-rotas.ts`. Só o lado docente: o lado do
  * estudante vive no bundle da experiência.
  */

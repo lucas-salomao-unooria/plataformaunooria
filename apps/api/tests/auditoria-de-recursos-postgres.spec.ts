@@ -18,7 +18,7 @@ import { RecursosAuditoriaController } from "../src/recursos/recursos-auditoria.
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const ESCOLA = "teste-auditoria";
-const EXP = "exp-99-auditoria";
+const EXP = "app-99-auditoria";
 const RECURSO = `experiencia:${EXP}`;
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;

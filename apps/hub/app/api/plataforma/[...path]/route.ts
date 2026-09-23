@@ -51,40 +51,40 @@ const PREFIXOS_PERMITIDOS = [
   "perfis",
   "analise",
   "progresso",
-  /* exp-70: o botão de zerar os dados da turma é client-side, e é o único
+  /* app-70: o botão de zerar os dados da turma é client-side, e é o único
      caminho da Vila que não passa por `apiDoServidor`. As guardas de papel estão
      na api (`@Roles("professor")`); isto aqui só decide quais prefixos o BFF
      repassa. */
   "vila",
-  /* exp-03: a LARGADA do relógio da turma é client-side — o professor aperta
+  /* exp02em1b: a LARGADA do relógio da turma é client-side — o professor aperta
      durante a aula e o painel precisa responder na hora, sem recarregar a
      página. É o único caminho do unooGPT que não passa por `apiDoServidor`.
      As guardas de papel estão na api (`@Roles("professor")`). */
   "unoogpt",
-  /* exp-07: os GATES da aula (abrir a Aula 2, congelar o debate, liberar a
+  /* exp07ef1b: os GATES da aula (abrir a Aula 2, congelar o debate, liberar a
      reflexão) e o preparo da mídia são client-side — a professora aperta
      durante a aula e as 30 telas precisam andar na hora, sem recarregar
      página. As guardas de papel estão na api (`@Roles("professor")`). */
   "o-eco-no-grupo",
-  /* exp-06: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
-     turma" são client-side pela mesma razão da exp-07 — a professora aperta no
+  /* exp06ef2b: o gate da aula (abrir a Aula 2, pausar a simulação) e o "zerar
+     turma" são client-side pela mesma razão da exp07ef1b — a professora aperta no
      meio da aula e as 30 telas andam na hora. As guardas de papel estão na api
      (`@Roles("professor", "gestor_escola", "gestor_contrato")`). */
   "rastro-boato",
-  /* exp-04: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
+  /* exp01ef1b: o latch da Roda (LIBERAR REFLEXÃO FINAL), a preparação do pacote
      (gerar/aprovar) e o "zerar turma" são client-side — o professor aperta no
      meio da aula e os tablets do 1º ano andam pelo polling deles. As guardas
      de papel estão na api (`@Roles("professor", ...GESTORES)`). */
   "foto-conta",
-  /* exp-08: a preparação do caso da escola (gerar/publicar), os dois botões do
-     debate e o "zerar turma" são client-side pela mesma razão da exp-06 — a
+  /* exp08ef4b: a preparação do caso da escola (gerar/publicar), os dois botões do
+     debate e o "zerar turma" são client-side pela mesma razão da exp06ef2b — a
      professora aperta no meio da aula e as 30 telas andam na hora, por polling
      de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
      "gestor_escola", "gestor_contrato")`). */
   "manifesto-ia",
-  /* exp-05: o preparo do lote (gerar/aprovar), os DOIS botões mestres da aula
+  /* exp05ef1b: o preparo do lote (gerar/aprovar), os DOIS botões mestres da aula
      — a revelação coletiva e a reflexão final —, o inverso deles e o "zerar
-     turma" são client-side pela mesma razão da exp-08: a professora aperta no
+     turma" são client-side pela mesma razão da exp08ef4b: a professora aperta no
      meio da aula, na frente da sala, e as 30 telas andam na hora pelo polling
      de 5s (ADR-93). As guardas de papel estão na api (`@Roles("professor",
      "gestor_escola", "gestor_contrato")`). */

@@ -9,8 +9,8 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{100 decisões}, numeradas até ADR-100, \textbf{sem lacunas}. As
-cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
+São \textbf{110 decisões}, numeradas até ADR-110, \textbf{sem lacunas}. Quando
+eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
 2026-09-06 e a de 2026-09-07 deixaram. A ADR-65
@@ -62,18 +62,18 @@ que a cercam.
 \adrr{ADR-15} & O hub assina os \emph{tokens} enquanto o IdP central não entra & 2026-08 & Aceita, transitória\\
 \zebra \adrr{ADR-16} & Credencial por ADC; modelo \cd{3.6-flash} em \cd{global} & 2026-08 & Aceita, com custo\\
 \adrr{ADR-17} & \emph{Claim} atômico em vez de fila externa & 2026-08 & Aceita\\
-\zebra \adrr{ADR-18} & Exceções registradas: jogo em JS clássico, exp-70 fora do DS & 2026-08-26 & Aceita\\
+\zebra \adrr{ADR-18} & Exceções registradas: jogo em JS clássico, app-70 fora do DS & 2026-08-26 & Aceita\\
 \adrr{ADR-19} & \emph{Design system} externo como fonte única de interface & 2026-08 & Aceita\\
-\zebra \adrr{ADR-20} & Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_} & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-20} & Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_} & 2026-08-27 & Aceita; prefixo revisto na \adrr{ADR-110}\\
 \adrr{ADR-21} & \emph{Push subscription} para a própria API, sem \emph{worker} & 2026-08 & Aceita\\
-\zebra \adrr{ADR-22} & exp-02 1.1.0: \emph{briefing} na voz da escola, conclusão por botão & 2026-08-27 & Aceita, com custo\\
+\zebra \adrr{ADR-22} & exp04ef1b 1.1.0: \emph{briefing} na voz da escola, conclusão por botão & 2026-08-27 & Aceita, com custo\\
 \adrr{ADR-23} & \emph{Function calling} entra no \cd{AiProvider}, não na experiência & 2026-08-27 & Aceita\\
 \zebra \adrr{ADR-24} & Teto de custo de IA por SESSÃO; a quota diária é fusível & 2026-08-27 & Aceita, com número a medir\\
 \adrr{ADR-25} & O Relógio da Aula é tabela da experiência, não coluna em \cd{turmas} & 2026-08-27 & Aceita\\
-\zebra \adrr{ADR-26} & Sem prazo de retenção na exp-03; exclusão por \enquote{zerar a turma} & 2026-08-27 & Aceita\\
+\zebra \adrr{ADR-26} & Sem prazo de retenção na exp02em1b; exclusão por \enquote{zerar a turma} & 2026-08-27 & Aceita\\
 \adrr{ADR-27} & Transcrição do estudante é dado do instrumento: professor lê, gestor não & 2026-08-27 & Aceita\\
 \zebra \adrr{ADR-28} & O \emph{feed} do professor consome a API do estudante & 2026-08-27 & Aceita\\
-\adrr{ADR-29} & A exp-70 não emite nota, emite perfil & 2026-08-27 & Aceita\\
+\adrr{ADR-29} & A app-70 não emite nota, emite perfil & 2026-08-27 & Aceita\\
 \zebra \adrr{ADR-30} & Vínculo pessoa $\times$ escola datado (\cd{lotacoes}) & 2026-08-28 & Aceita\\
 \adrr{ADR-31} & CPF como identificador civil, sem senha no CSV & 2026-08-28 & Aceita\\
 \zebra \adrr{ADR-32} & Sessão por \emph{cookie} HttpOnly com rotação & 2026-08-28 & Aceita\\
@@ -85,7 +85,7 @@ que a cercam.
 \zebra \adrr{ADR-38} & Documentação viva em LaTeX compilada no CI & 2026-08-29 & Aceita\\
 \adrr{ADR-39} & Dependências sob varredura de vulnerabilidade (Snyk) & 2026-08-29 & Aceita\\
 \zebra \adrr{ADR-40} & Landing institucional: estática, sem sessão, 1440\,px & 2026-08-30 & Aceita\\
-\adrr{ADR-41} & Dispositivo expansível na pós-revelação da exp-01 & 2026-08-30 & Aceita\\
+\adrr{ADR-41} & Dispositivo expansível na pós-revelação da exp08ef1b & 2026-08-30 & Aceita\\
 \zebra \adrr{ADR-42} & Exposição no dossiê mede o \emph{feed}, não o domínio & 2026-08-30 & Aceita\\
 \adrr{ADR-43} & Conclusão do estudante: guarda primeira e última inclinação & 2026-08-30 & Aceita\\
 \zebra \adrr{ADR-44} & Janela de envolvimento fecha no último post visto & 2026-08-30 & Aceita\\
@@ -94,7 +94,7 @@ que a cercam.
 \adrr{ADR-47} & Rate limit por IP em rotas públicas, por usuário em autenticadas & 2026-08-31 & Aceita\\
 \zebra \adrr{ADR-48} & Importação de CSV síncrona com limite de 30\,MB & 2026-08-31 & Aceita\\
 \adrr{ADR-49} & Atividade vinculada à turma; clone para cada turma nova & 2026-09-01 & Aceita\\
-\zebra \adrr{ADR-50} & Perfil da Vila importado na exp-01 sem FK rígida & 2026-09-01 & Aceita\\
+\zebra \adrr{ADR-50} & Perfil da Vila importado na exp08ef1b sem FK rígida & 2026-09-01 & Aceita\\
 \adrr{ADR-51} & Testes E2E com Playwright contra ambiente real & 2026-09-01 & Aceita\\
 \zebra \adrr{ADR-52} & Mock de IA determinístico para testes e homologação & 2026-09-01 & Aceita\\
 \adrr{ADR-53} & GitHub Actions com três ambientes (\cd{dev}, \cd{hml}, \cd{main}) & 2026-09-02 & Aceita\\
@@ -110,14 +110,14 @@ que a cercam.
 \zebra \adrr{ADR-63} & Ingestão de telemetria desacoplada do processamento analítico & 2026-09-04 & Aceita\\
 \adrr{ADR-64} & Relógio da Tempestade: tempo no marco, não em background & 2026-09-05 & Aceita\\
 \zebra \adrr{ADR-65} & Guia da aula é gerado do catálogo, sem tela dedicada & 2026-09-06 & Aceita\\
-\adrr{ADR-66} & exp-07: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Aceita\\
-\zebra \adrr{ADR-67} & Mídias da exp-07: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita\\
-\adrr{ADR-68} & exp-07 e exp-06: clone de mensageria só no tema escuro & 2026-09-06 & Aceita\\
+\adrr{ADR-66} & exp07ef1b: IA no runtime para conversas, gabarito server-side & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-67} & Mídias da exp07ef1b: imagens e áudios pré-gerados no bucket & 2026-09-06 & Aceita\\
+\adrr{ADR-68} & exp07ef1b e exp06ef2b: clone de mensageria só no tema escuro & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-69} & Missão só abre na turma se o professor liberou (\cd{liberacoes}) & 2026-09-06 & Aceita\\
 \adrr{ADR-70} & Página de transparência algorítmica aberta ao público & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-71} & Fatias verticais por módulo em frentes paralelas & 2026-09-06 & Aceita\\
-\adrr{ADR-72} & Fronteira do disfarce da exp-06: mapa da rede fala pela escola & 2026-09-06 & Aceita\\
-\zebra \adrr{ADR-73} & Planejamento curricular dirigido pela BNCC (exp-92) & 2026-09-06 & Aceita\\
+\adrr{ADR-72} & Fronteira do disfarce da exp06ef2b: mapa da rede fala pela escola & 2026-09-06 & Aceita\\
+\zebra \adrr{ADR-73} & Planejamento curricular dirigido pela BNCC (app-92) & 2026-09-06 & Aceita\\
 \adrr{ADR-74} & Contabilidade de tokens de IA com callback \cd{aoUsarTokens} & 2026-09-06 & Aceita\\
 \zebra \adrr{ADR-75} & Rolagem unificada via \cd{ScrollBar} do Design System & 2026-09-07 & Aceita\\
 \adrr{ADR-76} & Planejamento semanal estruturado com suporte a downloads & 2026-09-07 & Aceita\\
@@ -154,6 +154,7 @@ que a cercam.
 \zebra \adrr{ADR-107} & O site público entra no hub como porte, e o cadastro de interesse passa pela api & 2026-09-16 & Aceita\\
 \adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita\\
 \adrr{ADR-109} & O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma partição & 2026-09-17 & Aceita\\
+\zebra \adrr{ADR-110} & O código da experiência diz onde ela mora na trilha & 2026-09-23 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -362,7 +363,7 @@ transação.
 % ---------------------------------------------------------------------------
 \section{ADR-09 --- Domínio por experiência na API; gabarito \emph{server-side}}
 
-\textbf{Contexto.} A exp-02 (2026-08-24) foi a primeira experiência com gabarito.
+\textbf{Contexto.} A exp04ef1b (2026-08-24) foi a primeira experiência com gabarito.
 
 \textbf{Decisão.} \textbf{Não há módulo genérico de avaliação.} Cada experiência
 com lógica de domínio ganha um módulo próprio na API (\arq{src/<slug>/}), com
@@ -424,7 +425,7 @@ real de informação de gestão, aceita.
 
 \textbf{Decisão.} A telemetria carrega \cd{estudante\_id} \textbf{opaco}, e a
 identidade é derivada do \emph{token} no servidor --- o que o cliente enviou nesses
-campos é descartado. Em \cd{exp\_70\_sessoes.payload}, \cd{eventos[].dados} aceita
+campos é descartado. Em \cd{app\_70\_sessoes.payload}, \cd{eventos[].dados} aceita
 apenas número, booleano ou \emph{string} de um \textbf{vocabulário fechado}.
 
 \textbf{Alternativa descartada.} Campo \cd{texto} livre no \emph{payload} (que
@@ -471,11 +472,11 @@ união ganha uma variante --- não perde a distinção.
 \section{ADR-13 --- Retenção sem prazo declarado}
 
 \textbf{Contexto.} 2026-08-26. Havia \cd{expires\_at} de 90 dias no \emph{schema}
-da exp-70 e \textbf{nenhuma rotina que o cumprisse}.
+da app-70 e \textbf{nenhuma rotina que o cumprisse}.
 
 \textbf{Decisão.} A coluna \textbf{saiu}
 (\arq{20260826170000\_vila\_sem\_prazo}). Não há prazo de retenção declarado para
-\cd{exp\_70\_sessoes} nem para \cd{telemetria\_eventos}.
+\cd{app\_70\_sessoes} nem para \cd{telemetria\_eventos}.
 
 \textbf{Alternativa descartada.} Manter a coluna. \textbf{Coluna de prazo que
 ninguém lê é pior que prazo nenhum}, porque quem lê o \emph{schema} acredita nela
@@ -509,7 +510,7 @@ caminho de gravação.
 \textbf{Alternativas descartadas.}
 \begin{itemize}
   \item \emph{BigQuery}: os relatórios do professor \textbf{não leem}
-    \cd{telemetria\_eventos} (leem \cd{exp\_01\_events}), então não resolvia
+    \cd{telemetria\_eventos} (leem \cd{exp08ef1b\_events}), então não resolvia
     problema nenhum hoje --- e criava uma segunda plataforma de dados para
     operar.
   \item \emph{Redis como \emph{buffer}}: quem amortece o pico já é o Pub/Sub, e
@@ -567,7 +568,7 @@ hub. \emph{Ruim}: o hub acumula responsabilidade de emissor, e
 
 \textbf{Contexto.} Antes havia \emph{só} o \emph{metadata server}, e por isso
 \emph{nenhuma} chamada de IA funcionava fora do Cloud Run. Em desenvolvimento a
-API ficava presa em \cd{mock} e a exp-90 devolvia um plano \textbf{falso} --- o
+API ficava presa em \cd{mock} e a app-90 devolvia um plano \textbf{falso} --- o
 que é pior que falhar, porque parecia funcionar.
 
 \textbf{Decisão, parte 2 --- modelo e região.} Modelo \cd{gemini-3.6-flash},
@@ -595,7 +596,7 @@ pedir a proporção o \cd{cover} descarta metade da largura.
 \section{ADR-17 --- \emph{Claim} atômico em vez de fila externa}
 
 \textbf{Contexto.} Duas rotinas longas e assíncronas: geração de \emph{feed}
-(exp-01) e geração de plano de aula (exp-90). Duas ou três instâncias do Cloud Run
+(exp08ef1b) e geração de plano de aula (app-90). Duas ou três instâncias do Cloud Run
 rodando ao mesmo tempo.
 
 \textbf{Decisão.} \emph{Claim} atômico na própria linha
@@ -628,7 +629,7 @@ painel, uma geração órfã fica parada até que alguém abra.
 registrada vira precedente.
 
 \textbf{Exceção 1 --- \cd{any} e ESLint.}
-\arq{apps/experiencias/exp-70-vila-do-lume/public/jogo/} --- cerca de dez mil
+\arq{apps/experiencias/app-70-vila-do-lume/public/jogo/} --- cerca de dez mil
 linhas de JavaScript clássico com globais compartilhadas e \arq{three.min.js}
 vendorizado --- fica como está, e está nos \cd{ignores} do ESLint.
 \textbf{Motivo:} é um instrumento com distâncias e tempos calibrados, e o
@@ -636,7 +637,7 @@ compilador não tem como saber que uma refatoração mudou a \emph{medida}. O
 \emph{shim} (\arq{src/}, TS \emph{strict}) é a única porta: \cd{window.VILA}. A
 rede que substitui o \cd{tsc} ali é o \emph{smoke} visual.
 
-\textbf{Exceção 2 --- \emph{design system}.} A exp-70 não usa o
+\textbf{Exceção 2 --- \emph{design system}.} A app-70 não usa o
 \cd{@unooria/design-system}. \textbf{Motivo:} é jogo em \emph{canvas} 3D, sem DOM
 de interface.
 
@@ -668,10 +669,14 @@ ato deliberado.
 % ---------------------------------------------------------------------------
 \section{ADR-20 --- Um banco, um \emph{schema}; prefixo \cd{exp\_NN\_}}
 
+\textbf{Revista pela \adrr{ADR-110}} no prefixo: desde 2026-09-23 ele é o CÓDIGO
+da experiência (\cd{exp08ef1b\_}, \cd{app\_70\_}), não o número de criação. O
+resto desta decisão continua valendo como está.
+
 \textbf{Decisão.} Um banco, um \emph{schema} lógico. Tabela de experiência leva
 \cd{exp\_NN\_}; tabela de plataforma fica sem prefixo; tabela que é contrato entre
 duas experiências carrega \textbf{os dois números}
-(\cd{exp\_01\_exp\_70\_perfis\_importados}).
+(\cd{exp08ef1b\_app\_70\_perfis\_importados}).
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
@@ -690,7 +695,7 @@ duas experiências carrega \textbf{os dois números}
 Duas armadilhas registradas lá: \cd{FOR ... IN SELECT} sobre o catálogo
 \textbf{relê o que o próprio laço alterou}, e \cd{RENAME CONSTRAINT} renomeia
 \textbf{também} o índice que a sustenta --- as duas produzem
-\cd{exp\_01\_exp\_01\_...\_pkey}.
+\cd{exp08ef1b\_exp08ef1b\_...\_pkey}.
 
 \textbf{Gatilho.} Necessidade de fronteira de \cd{GRANT} por experiência --- o
 que só faria sentido com mais de uma \emph{role} de aplicação.
@@ -716,9 +721,9 @@ idempotente por \cd{ON CONFLICT}, porque a entrega é \emph{at least once}.
 
 % ---------------------------------------------------------------------------
 
-\section{ADR-22 --- exp-02 1.1.0: \emph{briefing} antes do disfarce}
+\section{ADR-22 --- exp04ef1b 1.1.0: \emph{briefing} antes do disfarce}
 
-\textbf{Contexto.} Até a 1.0.0 o estudante da exp-02 caía direto no \emph{feed} de
+\textbf{Contexto.} Até a 1.0.0 o estudante da exp04ef1b caía direto no \emph{feed} de
 \emph{Shorts} sem nenhum enquadramento: a primeira vez que a palavra
 \enquote{missão} aparecia para ele era no diálogo que abria sozinho depois do
 terceiro salvo --- isto é, \emph{depois} de a medida já ter sido tomada. Não havia
@@ -786,7 +791,7 @@ fosse do professor e não da tela.
 \label{adr:ferramentas}
 
 \begin{especificacao}{Contexto}
-A exp-03 (Missão Tempestade) tem um agente conversacional em que \textbf{nenhum
+A exp02em1b (Missão Tempestade) tem um agente conversacional em que \textbf{nenhum
 número pode sair do modelo de linguagem}: as estimativas vêm de um motor
 probabilístico determinístico, e o agente apenas narra o que a ferramenta
 devolveu. O projeto de origem implementava isso com um laço de \emph{function
@@ -849,7 +854,7 @@ mesma volta. Ou latência de turno acima do que a sala tolera, que empurraria pa
 \begin{especificacao}{Contexto}
 O \cd{QuotaService} limita tokens por usuário e por dia, com teto por perfil
 (\env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} valia 20.000). Esse número foi
-dimensionado para o tutor da exp-01: uma conversa curta. O agente da exp-03 tem
+dimensionado para o tutor da exp08ef1b: uma conversa curta. O agente da exp02em1b tem
 \emph{prompt} de sistema de cerca de 11.500 caracteres, reenviado inteiro a cada
 volta de ferramenta e a cada tentativa; uma partida de sete turnos fica na ordem
 de 100 a 200 mil tokens --- duas ordens de grandeza acima.
@@ -901,7 +906,7 @@ este é a rede contra o laço, não o controle de custo.
 \begin{atencao}
 A medição encontrou um defeito que a estimativa não teria encontrado: com
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} em \num{20000} --- o valor dimensionado
-para o tutor da exp-01, e que estava \textbf{fixo no \emph{compose} de
+para o tutor da exp08ef1b, e que estava \textbf{fixo no \emph{compose} de
 produção} --- a missão recusava o \textbf{quarto turno} com \enquote{a sala de
 operações fechou por hoje}. A quota subiu para \num{300000} (cerca de quatro
 partidas, porque \enquote{Recomeçar} abre partida nova) em quatro lugares: os dois
@@ -933,7 +938,7 @@ de o professor acabar de explicar. As colunas do relógio moravam em
 \end{especificacao}
 
 \textbf{Decisão.} O relógio é da \textbf{turma}, e vive em
-\cd{exp\_03\_relogio\_turma} --- tabela \emph{da experiência}, com
+\cd{exp02em1b\_relogio\_turma} --- tabela \emph{da experiência}, com
 \cd{escola\_id} e RLS como as outras. Quem dá a largada é o professor, no painel,
 e ela vale para a sala inteira ao mesmo tempo. Enquanto \cd{iniciado\_em} é nulo o
 estudante vê o cronômetro parado e o campo de fala desabilitado.
@@ -966,19 +971,19 @@ adicionar as suas. É o mesmo raciocínio do prefixo \cd{exp\_NN\_}
 aí o relógio da turma vira serviço da plataforma, não tabela de uma missão.
 
 % ---------------------------------------------------------------------------
-\section{ADR-26 --- Sem prazo de retenção na exp-03}
-\label{adr:retencao-exp03}
+\section{ADR-26 --- Sem prazo de retenção na exp02em1b}
+\label{adr:retencao-exp02em1b}
 
 \begin{especificacao}{Contexto}
 O projeto de origem tinha \cd{expires\_at} de 30 dias em \cd{messages} e
 \cd{marcos}, com uma rota de \emph{cron} que o cumpria. Esta plataforma não tem
 \emph{job} agendado, por decisão --- e já registrou duas vezes o custo de uma
-coluna de prazo sem rotina: o \cd{expires\_at} da exp-70 e o
+coluna de prazo sem rotina: o \cd{expires\_at} da app-70 e o
 \cd{turmas.consentimento\_em} do aplicativo de origem, onde a regra saiu do
 código, a coluna ficou, e quem leu o \emph{schema} acreditou nela.
 \end{especificacao}
 
-\textbf{Decisão.} Nenhuma das cinco tabelas da exp-03 tem coluna de prazo. No
+\textbf{Decisão.} Nenhuma das cinco tabelas da exp02em1b tem coluna de prazo. No
 lugar entra \textbf{um} caminho de exclusão que existe de fato: \enquote{zerar a
 turma} (\rota{DELETE /unoogpt/professor/turmas/:turmaId}), acionado por quem tem
 a posse pedagógica, apagando as partidas \emph{daquela turma} e devolvendo o
@@ -1015,13 +1020,13 @@ prazo cai muito.
 A missão inteira acontece numa conversa em texto livre, escrita por menor de
 idade. O professor precisa ler essa conversa: é nela que aparece \emph{como} a
 criança perguntou, e o relatório sem ela é uma lista de contagens. Ao mesmo tempo,
-o \cd{AGENTS.md} registra a trava oposta na exp-70 --- o campo de texto livre foi
+o \cd{AGENTS.md} registra a trava oposta na app-70 --- o campo de texto livre foi
 removido do \emph{payload} porque era o caminho por onde o nome de uma criança
 chegaria a um JSONB de 90 dias.
 \end{especificacao}
 
 \textbf{Decisão.} A transcrição vive em coluna dedicada
-(\cd{exp\_03\_mensagens.texto}), com RLS por escola, e é servida
+(\cd{exp02em1b\_mensagens.texto}), com RLS por escola, e é servida
 \textbf{apenas ao professor}: \cd{UnoogptTurmasController} tem
 \cd{@Roles("professor", "admin-contrato")} --- e \cd{admin-contrato} é a
 exceção cross-escola de sempre, não o gestor ---, enquanto o agregado do gestor
@@ -1040,7 +1045,7 @@ no controller dele.
   \item O relatório individual abre pelo \textbf{nível} --- graus, com
     \cd{zero} (\enquote{teve a chance e não foi}) distinto de \cd{none} (\enquote{a
     oportunidade não chegou}) --- antes do que a criança fez. É a regra da
-    exp-70, e existe para o adulto não concluir sobre a criança o que o
+    app-70, e existe para o adulto não concluir sobre a criança o que o
     instrumento não mediu.
   \item A \textbf{listagem} da turma não tem coluna de resgatados: listagem é
     ordenável, e ordenar crianças por acerto viraria \emph{ranking}. O
@@ -1067,7 +1072,7 @@ chave estrangeira para \cd{users} ---, mas três resíduos impediam que
 
 \begin{enumerate}
   \item A conta era de \textbf{assento}, não de pessoa. Está escrito no
-    \emph{schema} desde o porte: \cd{exp\_01\_runs.nome\_no\_app} existe
+    \emph{schema} desde o porte: \cd{exp08ef1b\_runs.nome\_no\_app} existe
     \enquote{porque a conta é do APARELHO: outra turma reusa o mesmo login}. O nome
     real da criança vivia dentro de UMA experiência, e nenhuma das outras o
     enxergava.
@@ -1452,7 +1457,7 @@ primeira transferência.
 do art.~11 da LGPD --- que trata de saúde, raça, religião, filiação e biometria.
 O tratamento tem base clara num contrato de execução de política pública de
 educação, e é o que todo sistema de gestão escolar brasileiro guarda. O cuidado
-que a plataforma tem com \cd{exp\_91\_checkins} (saúde) não é o mesmo caso.
+que a plataforma tem com \cd{app\_91\_checkins} (saúde) não é o mesmo caso.
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
@@ -1656,7 +1661,7 @@ Quatro decisões dentro dessa:
     guardado \emph{verbatim} porque alterá-lo destruiria a assinatura. A exceção
     está numa lista explícita dentro do teste estrutural, para que a próxima seja
     uma decisão e não um vazamento que ninguém viu.
-  \item \textbf{Bem-estar (exp-91) nunca entra no documento.} DASS-21 é dado de
+  \item \textbf{Bem-estar (app-91) nunca entra no documento.} DASS-21 é dado de
     saúde, a posse é do professor e não existe rota de gestor para ele em lugar
     nenhum. Um documento que o gestor emite não pode carregar o que nem o gestor
     lê.
@@ -2094,7 +2099,7 @@ ainda não existe, e nasce quando a terceira página pública aparecer.
 \label{adr:relatorio-expandido}
 
 \begin{especificacao}{Contexto}
-A explicabilidade da exp-01 é a peça mais densa do produto e rodava inteira
+A explicabilidade da exp08ef1b é a peça mais densa do produto e rodava inteira
 dentro do aparelho de $375\times812$: seis blocos, um gráfico só e três dos cinco
 posts de maior \emph{dwell} --- quando o \emph{payload} já carregava mais. As
 barras por bloco e a linha da escalada existiam em \arq{graficos.tsx} e não
@@ -2235,7 +2240,7 @@ feed ou o que sobrou depois de dois minutos de espera e de olhar a tela do
 colega.
 \end{especificacao}
 
-\textbf{Decisão.} Migração aditiva em \cd{exp\_01\_conclusoes}:
+\textbf{Decisão.} Migração aditiva em \cd{exp08ef1b\_conclusoes}:
 \cd{inclinacao\_inicial} (gravada uma vez, nunca mais tocada), \cd{trocas} e
 \cd{atualizado\_em}. A correlação continua usando a ÚLTIMA --- é a que o estudante
 assumiu e é a que ele vai defender no debate --- e a análise da turma passa a
@@ -2388,7 +2393,7 @@ de quem se aceita o \cd{hub:init} --- vinha CRU da \emph{query string}
 
 O \emph{bundle} da experiência é público por construção (ADR-01: ele mora num
 \emph{bucket} servido por CDN). Quem abrisse
-\arq{https://cdn/exp-01/1.0.0/index.html?hubOrigin=https://evil.tld} dentro de
+\arq{https://cdn/exp08ef1b/1.0.0/index.html?hubOrigin=https://evil.tld} dentro de
 um \emph{iframe} próprio escrevia, com aquele parâmetro, a política de confiança
 da experiência: passava a poder entregar um \cd{hub:init} forjado --- com
 \cd{estudante}, \cd{apiUrl} e \cd{token} escolhidos por ele --- e a receber
@@ -2687,7 +2692,7 @@ faixa que já as explica. Fechou a porta de criar mais uma assim, não o passado
 \end{atencao}
 
 \begin{especificacao}{Contexto}
-A \cd{exp\_01\_activities} tinha \cd{escola\_id} e \cd{professor\_id}, e nenhum
+A \cd{exp08ef1b\_activities} tinha \cd{escola\_id} e \cd{professor\_id}, e nenhum
 vínculo com \cd{turmas} --- embora o próprio esquema já falasse como se tivesse:
 o comentário de \cd{etapa} chama o campo de ``relógio COLETIVO da turma'', e a
 função que monta o painel de perfis se chama \cd{distribuicaoDaTurma}.
@@ -2714,7 +2719,7 @@ jogaram'' sobre crianças de salas que o professor não tem.
   \item \textbf{\cd{escola\_id} explícito} em \cd{distribuicaoDaTurma}. É a
     regra inviolável nº 1 --- toda \emph{query} filtra por escola ALÉM da RLS ---
     e aqui a RLS nem existia como rede.
-  \item \textbf{\cd{exp\_01\_activities.turma\_id}}, ANULÁVEL e sem
+  \item \textbf{\cd{exp08ef1b\_activities.turma\_id}}, ANULÁVEL e sem
     \emph{backfill} (\arq{20260830090000\_atividade\_por\_turma}). Com turma, o
     painel, a listagem de perfis, a importação da Vila e a entrada do estudante em
     \cd{POST /runs} falam todos da MESMA sala. Sem turma --- que é o caso de toda
@@ -2762,17 +2767,17 @@ mapeamento, e não ganha chave estrangeira}
 \label{adr:perfil-importado-versao}
 
 \begin{especificacao}{Contexto}
-\cd{exp\_70\_sessoes} (chamada \cd{vila\_sessoes} até a \adrr{ADR-20}) não tem
+\cd{app\_70\_sessoes} (chamada \cd{vila\_sessoes} até a \adrr{ADR-20}) não tem
 prazo de retenção por uma decisão registrada em
 \arq{20260826170000\_vila\_sem\_prazo}: o bruto do jogo é a ÚNICA fonte para
 recalcular o perfil quando \cd{VERSAO\_MAPEAMENTO} subir, e o mapeamento é
 hipótese de design que vai mudar.
 
 Só que a cópia que alimenta o Instanooria
-(\cd{exp\_01\_exp\_70\_perfis\_importados}) guardava \cd{escores},
+(\cd{exp08ef1b\_app\_70\_perfis\_importados}) guardava \cd{escores},
 \cd{dominante}, \cd{origem}, \cd{lado\_forcado} e \cd{medido\_em} --- e nem a
 sessão de onde veio, nem a versão sob a qual foi medida. Ao subir a constante,
-os \cd{exp\_70\_perfis} seriam recalculados e as cópias ficariam na geração
+os \cd{app\_70\_perfis} seriam recalculados e as cópias ficariam na geração
 anterior, decidindo o lado do feed, sem nada em lugar nenhum dizendo isso. É
 exatamente a armadilha do \cd{expires\_at}: o registro fica, a regra sai, e quem
 lê acredita.
@@ -2870,7 +2875,7 @@ passou a morar onde o passo mora, e sair de sincronia deixou de ser possível.
 \textbf{Alternativas descartadas.}
 \begin{itemize}
   \item \emph{Manter a organização por experiência}: é a que casa com o
-    \arq{apps/experiencias/}, e para a exp-70 e a exp-03 seria mais direta. Mas
+    \arq{apps/experiencias/}, e para a app-70 e a exp02em1b seria mais direta. Mas
     ela esconde as telas da PLATAFORMA, que são a maioria e não pertencem a
     experiência nenhuma --- e foram justamente elas que ficaram sem cobertura
     por dois anos de projeto.
@@ -2892,7 +2897,7 @@ passou a morar onde o passo mora, e sair de sincronia deixou de ser possível.
 
 \textbf{Consequências.} As suítes de dois contextos (o professor conduz o
 relógio, o estudante joga) ficam no papel do PROTAGONISTA, e não em ambos: a
-missão da exp-01 mora em \arq{estudante/}, ainda que metade dos \emph{prints}
+missão da exp08ef1b mora em \arq{estudante/}, ainda que metade dos \emph{prints}
 sejam da tela do docente. O passo carrega de qual contexto veio, e o deck e o
 vídeo dizem isso na tarja.
 
@@ -3148,7 +3153,7 @@ um padrão \emph{de fato}, nunca escrito: \arq{AGENTS.md} por domínio, com um
 
 Padrão que não está escrito não se verifica, e os desvios apareceram. A doutrina
 da Vila do Lume --- as regras que protegem a Camada~2 do instrumento --- viveu
-meses em \arq{exp-70-vila-do-lume/docs/CLAUDE.md}: o carregamento é por caminho,
+meses em \arq{app-70-vila-do-lume/docs/CLAUDE.md}: o carregamento é por caminho,
 então quem editava o jogo em \arq{public/jogo/} nunca a recebia. Ela ainda
 mandava rodar dois \arq{scripts/walkthrough-*.mjs} que deixaram de existir
 quando a suíte passou a ser organizada por papel (\adrr{ADR-51}) --- instrução
@@ -3529,7 +3534,7 @@ amostrados e sem identificador de pessoa.
     \emph{handshake} --- justamente o mais comum. A ponte fica com o papel de
     interface, não de transporte.
   \item \emph{\emph{Sourcemaps} públicos no \emph{bundle}}: expõem o fonte
-    da experiência --- e, na exp-01, a lógica da revelação que o estudante
+    da experiência --- e, na exp08ef1b, a lógica da revelação que o estudante
     não deve ver antes da hora.
   \item \emph{Não capturar erro de cliente}: é o estado atual, e é a maior
     cegueira da Figura~\ref{fig:cadeia-visibilidade}.
@@ -3748,8 +3753,8 @@ Capítulo~\ref{cap:riscos}.
 contrário do log e da métrica, que ficam no projeto do contrato, o
 \emph{replay} vai para um processador de terceiro, sob os termos dele.
 
-\emph{Ruim}: as experiências disfarçadas (\cd{exp-01}, \cd{exp-02},
-\cd{exp-03}) carregam no \arq{index.html} o aviso de que nada ali pode
+\emph{Ruim}: as experiências disfarçadas (\cd{exp08ef1b}, \cd{exp04ef1b},
+\cd{exp02em1b}) carregam no \arq{index.html} o aviso de que nada ali pode
 denunciar o exercício. Requisições para \cd{clarity.ms} aparecem no DevTools, e
 um estudante que abra o inspetor vê um domínio que o clone imitado não teria.
 
@@ -3881,7 +3886,7 @@ prejuízo é silencioso duas vezes: a \emph{subscription} reentrega para sempre
 nenhum --- a requisição morre no \emph{load balancer}, antes da api, então não
 há log de aplicação a consultar.
 
-A mesma assinatura ameaça a exp-03: a pergunta do estudante é texto livre, e
+A mesma assinatura ameaça a exp02em1b: a pergunta do estudante é texto livre, e
 \emph{Shift+Enter} ou colar de outra aba produzem quebra de linha legítima. O
 403 do WAF não carrega cabeçalho de CORS, então o navegador reporta falha de
 rede: o estudante lê \enquote{A conexão falhou} e não há nada no servidor
@@ -3939,12 +3944,12 @@ sem ela}
 
 \begin{especificacao}{Contexto}
 Mídia acima de 2\,MB não entra no git nem no \emph{bundle}: os 21 \emph{mp4}
-da exp-02 (52\,MB) vivem no \emph{bucket} de \emph{assets} do contrato, e o
+da exp04ef1b (52\,MB) vivem no \emph{bucket} de \emph{assets} do contrato, e o
 \emph{build} recebe a base pública em \env{VITE\_VIDEOS\_BASE\_URL}. O
 \emph{upload} sempre foi manual, uma vez por contrato, e isso estava registrado
 como lacuna conhecida em \arq{docs/INFRA.md}.
 
-Em 2026-09-01 a lacuna cobrou. A exp-02 foi publicada no contrato
+Em 2026-09-01 a lacuna cobrou. A exp04ef1b foi publicada no contrato
 \cd{entre-redes-dev} com o \emph{bucket} de \emph{assets} vazio: os 21 arquivos
 responderam 404, e como o \cd{ShortsPlayer} do \emph{design system} deriva
 \cd{waiting} só de \cd{waiting}/\cd{playing} --- sem escutar \cd{error} --- o
@@ -4005,7 +4010,7 @@ sem acrescentar a linha faz a conferência passar sem conferir.
 uma, a lista à mão é honesta; com três, o \arq{midia-externa.json} deve passar
 a ser gerado do catálogo da api, que já sabe o nome de cada arquivo.
 
-\section{ADR-64 --- O marco da exp-03 carrega o relógio do instante; a faixa
+\section{ADR-64 --- O marco da exp02em1b carrega o relógio do instante; a faixa
 da decisão é gravada, não recomputada}
 \label{adr:marco-com-relogio}
 
@@ -4051,8 +4056,8 @@ RLS nem \cd{escola\_id}:
     (qual botão: a lixeira da Investigação ou o \enquote{Tentar de novo} do
     Resultado --- a única parte que só o cliente sabe, e vai no corpo do
     \rota{POST /unoogpt/reiniciar}), \cd{fase} e \cd{modo} do relógio da turma.
-  \item \cd{exp\_03\_simulacoes.esperado}: a faixa e o percentil do resgate
-    real, gravados no confirmar. Precedente: \cd{exp\_70\_sessoes.leitura\_mensagens}.
+  \item \cd{exp02em1b\_simulacoes.esperado}: a faixa e o percentil do resgate
+    real, gravados no confirmar. Precedente: \cd{app\_70\_sessoes.leitura\_mensagens}.
     O \cd{envio} passa a carregar também as justificativas como o professor lê,
     porque \cd{reiniciar} zera as da sessão.
   \item O resto é \textbf{derivado na leitura}, sem coluna: mudanças de destino
@@ -4083,7 +4088,7 @@ gravado mostrar que faz falta.
     falha em toda aula com \enquote{+2 min} (a duração muda sem histórico) e
     em toda turma zerada (o relógio some). Gravar no instante custa duas
     colunas e não mente.
-  \item \emph{Sessão por tentativa} (uma linha de \cd{exp\_03\_sessoes} por
+  \item \emph{Sessão por tentativa} (uma linha de \cd{exp02em1b\_sessoes} por
     rodada, preservando justificativas e conjuntos): resolveria a perda no
     \cd{reiniciar} de forma geral, mas mudaria a chave primária de quatro
     tabelas e toda consulta do módulo. A cópia das justificativas no marco de
@@ -4099,7 +4104,7 @@ quem confirma sem turno novo --- é correção, mas partidas antigas e novas nã
 são comparáveis nesse detalhe, e o produto foi avisado antes de qualquer teste
 controlado. \emph{Ruim}: marcos e simulações anteriores à migração têm as
 colunas novas nulas; a tela diz \enquote{sem registro} e a leitura recomputa a
-faixa. \emph{Ruim}: o cliente da exp-03 sobe de versão pela \cd{origem} no
+faixa. \emph{Ruim}: o cliente da exp02em1b sobe de versão pela \cd{origem} no
 corpo --- cliente antigo continua aceito (corpo vazio é válido). \emph{Bom}:
 nenhum evento de telemetria novo, nenhuma tabela nova, RLS intocada; o
 relatório do professor sai inteiro de \cd{GET /unoogpt/professor/estudantes/:id},
@@ -4197,12 +4202,12 @@ renderizador. Ou se a rede pedir o guia como PDF/impresso oficial, com marca e
 paginação de documento: aí a folha de impressão deixa de bastar e o caminho é
 gerar o documento, não estilizar a tela.
 
-\section{ADR-66 --- A exp-07 escreve com IA na tela do estudante, e o gabarito
+\section{ADR-66 --- A exp07ef1b escreve com IA na tela do estudante, e o gabarito
 continua fora do modelo}
-\label{adr:exp07-ia-em-runtime}
+\label{adr:exp07ef1b-ia-em-runtime}
 
 \begin{especificacao}{Contexto}
-A missão \cd{exp-07-o-eco-no-grupo} chegou dos gates de produto com uma decisão
+A missão \cd{exp07ef1b} chegou dos gates de produto com uma decisão
 explícita: \enquote{NÃO HÁ USO DE IA GENERATIVA nesta missão. Todas as
 mensagens de chat, reações da cascata, áudios e falas de personagens são 100\%
 roteirizados e deterministicamente controlados.} As cinco bancas aprovaram
@@ -4241,9 +4246,9 @@ Nenhuma aula depende de o Vertex estar de pé --- e é isso que
 
 \textbf{O texto livre de menor volta, com cinco travas.} A conversa com Amara é
 o único campo aberto da missão: 600 caracteres, teto de 3 turnos, gravado em
-\cd{exp\_07\_mensagens} sob RLS, fora de log e fora da telemetria (só a
+\cd{exp07ef1b\_mensagens} sob RLS, fora de log e fora da telemetria (só a
 contagem de turnos sai), e sem nenhuma rota de gestor que o alcance. É a mesma
-postura do \cd{exp\_03\_mensagens}, com um teto menor.
+postura do \cd{exp02em1b\_mensagens}, com um teto menor.
 
 \textbf{Alternativas descartadas.}
 \begin{itemize}
@@ -4276,12 +4281,12 @@ Amara para escrever o que não deveriam. Nos dois casos, o roteiro do catálogo
 já está no código e volta a ser o caminho único trocando uma linha.
 
 
-\section{ADR-67 --- A mídia da exp-07 é gerada por IA, preparada pelo professor
+\section{ADR-67 --- A mídia da exp07ef1b é gerada por IA, preparada pelo professor
 e cacheada por contrato}
-\label{adr:exp07-midia-gerada}
+\label{adr:exp07ef1b-midia-gerada}
 
 \begin{especificacao}{Contexto}
-O brief de assets da exp-07 pede oito peças de conteúdo autoral: duas gravações
+O brief de assets da exp07ef1b pede oito peças de conteúdo autoral: duas gravações
 de voz, um podcast masterizado de 3m30 com dois locutores e três fotografias
 estilizadas de um portal de notícias fictício. Nenhuma delas existe, e nenhuma
 sai de código --- são voz humana e design gráfico.
@@ -4324,9 +4329,9 @@ assets e servida como arquivo estático. Cinco movimentos:
     modelo, e o custo se multiplicaria por dez mil.
   \item \emph{Script one-shot com os arquivos no git}: funciona, mas cada
     contrato novo dependeria de alguém rodar o script --- e o precedente é caro
-    (a exp-02 subiu com o bucket vazio e a missão ficou impossível de concluir,
+    (a exp04ef1b subiu com o bucket vazio e a missão ficou impossível de concluir,
     sem nada falhar no deploy nem no log). O script existe
-    (\arq{apps/api/scripts/smoke-midia-exp-07.ts}), como ferramenta de
+    (\arq{apps/api/scripts/smoke-midia-exp07ef1b.ts}), como ferramenta de
     conferência.
   \item \emph{Print inteiro gerado por IA}: manchete e parágrafos distorcidos, o
     trecho omitido ilegível, e o texto invisível para leitor de tela.
@@ -4351,12 +4356,12 @@ ou um playtest mostrar que a voz sintética atrapalha a compreensão de quem tem
 código da tela não muda.
 
 
-\section{ADR-68 --- O clone de WhatsApp da exp-07 é escuro, e as quatro peças
+\section{ADR-68 --- O clone de WhatsApp da exp07ef1b é escuro, e as quatro peças
 que faltam são compensação marcada}
-\label{adr:exp07-clone-escuro}
+\label{adr:exp07ef1b-clone-escuro}
 
 \begin{especificacao}{Contexto}
-Os wireframes e o sheet de copy da exp-07 descrevem a missão em \textbf{modo
+Os wireframes e o sheet de copy da exp07ef1b descrevem a missão em \textbf{modo
 claro}: balões verdes e brancos sobre fundo bege, o WhatsApp que a maioria das
 pessoas usa. A seção \cd{whatsappmobile} do \cd{@unooria/design-system} 0.1.17
 publica \textbf{exclusivamente o tema escuro} --- \cd{WaTheme = 'dark'}, e o CSS
@@ -4436,8 +4441,8 @@ O efeito era visível nas três telas que o produto tem:
     mesma ficha, o mesmo guia e a mesma tela de resultados --- a turma só
     reaparecia num \cd{<select>} no fim;
   \item \enquote{liberar} existia só DENTRO de três das cinco experiências, com
-    um mecanismo diferente em cada uma: o \cd{status} da atividade da exp-01, o
-    relógio da turma da exp-03 (\adrr{ADR-25}), os \emph{gates} da exp-07. Todos
+    um mecanismo diferente em cada uma: o \cd{status} da atividade da exp08ef1b, o
+    relógio da turma da exp02em1b (\adrr{ADR-25}), os \emph{gates} da exp07ef1b. Todos
     respondem \enquote{a aula começou}; nenhum responde \enquote{esta missão
     pertence a esta sala}.
 \end{itemize}
@@ -4510,7 +4515,7 @@ Sem liberação, a pergunta do relógio nem chega a ser feita.
 
 \begin{itemize}
   \item \textbf{Estudante sem turma não vê missão nenhuma}, e isto é mudança de
-    comportamento. A exp-03 tinha decisão registrada de que a criança solta via o
+    comportamento. A exp02em1b tinha decisão registrada de que a criança solta via o
     relógio \enquote{aguardando} em vez de um cronômetro só dela; agora ela nem
     entra. Sem sala não há missão --- e quem explica isso é a tela do hub, porque
     um erro dentro do aparelho não teria como dizer \enquote{peça para a
@@ -4624,7 +4629,7 @@ quatro lugares (\arq{config/env.ts}, os dois \emph{compose} e o
 \cd{LOCALIZACAO\_PADRAO} do provider), e o \cd{3.6-flash} responde 404 na
 região brasileira. Era a linha que uma política copiaria para afirmar que os
 dados ficam no Brasil. \emph{Ruim}: a outra é de produto e segue aberta --- a
-exp-91 exibe \enquote{Só você lê o que escreve aqui} sob a caixa cujo conteúdo
+app-91 exibe \enquote{Só você lê o que escreve aqui} sob a caixa cujo conteúdo
 vai ao Vertex para gerar o acolhimento. \emph{Bom}: o inventário existe, e com ele o RIPD que a Resolução
 CD/ANPD nº 2/2022 torna exigível deixa de ser trabalho do zero.
 
@@ -4660,7 +4665,7 @@ do \emph{iframe}, que é uma falha silenciosa e cara de diagnosticar.
 
 \textbf{Decisão.} \textbf{Reparta por fatia vertical.} Cada frente leva o módulo
 da api, a rota do hub e a experiência \emph{juntos} --- \arq{apps/api/src/unootube/}
-com a rota do hub e \arq{apps/experiencias/exp-02-unootube/}, e não "a api" de um
+com a rota do hub e \arq{apps/experiencias/exp04ef1b/}, e não "a api" de um
 lado e "o hub" do outro. Com isso api e hub deixam de ser recurso disputado: a
 fatia de cada frente dentro deles é uma \textbf{pasta própria}. Não é sorte --- é
 o desenho de um módulo por domínio (\cd{catalogo.ts} + \cd{regras.ts} + service +
@@ -4761,12 +4766,12 @@ por worktree volta à mesa com o custo justificado por número, não por intuiç
 
 % ---------------------------------------------------------------------------
 \section{ADR-72 --- A fronteira do disfarce é a revelação, e a Etapa 4 da
-exp-06 fica fora dele}
+exp06ef2b fica fora dele}
 \label{adr:72}
 
 \textbf{Data.} 2026-09-06 \quad \textbf{Status.} Aceita
 
-\textbf{Contexto.} A exp-06 termina com duas telas analíticas: um gráfico
+\textbf{Contexto.} A exp06ef2b termina com duas telas analíticas: um gráfico
 comparando a velocidade do boato com a da nota oficial, e um mapa da topologia
 de rede que desenha o alcance da decisão do estudante. Os wireframes e o
 \emph{handoff} da missão colocam as duas \textbf{dentro do clone}, descritas
@@ -4787,7 +4792,7 @@ construtor do ciclo e o \enquote{Meu percurso} usam \cd{@edu/ui/ds} e os tokens
 
 O critério que decide, e que já valia no repositório, é
 \textbf{\enquote{quem está falando?}} --- não \enquote{é depois no tempo?}. A
-exp-02 já o havia aplicado: feed, cromo e playlists falam de dentro da ficção; o
+exp04ef1b já o havia aplicado: feed, cromo e playlists falam de dentro da ficção; o
 ranking e os diálogos da missão falam pela escola, ainda que apareçam no meio
 dela.
 
@@ -4840,7 +4845,7 @@ PDF homologado, e o componente da rede não é o componente da Base}
 \label{adr:plano-de-ensino-bncc}
 
 \begin{especificacao}{Contexto}
-A exp-90 gera plano anual a partir do \textbf{currículo da rede importado como
+A app-90 gera plano anual a partir do \textbf{currículo da rede importado como
 texto} (\adrr{ADR-47}): um documento em prosa entra no \emph{prompt}, e o modelo
 infere dele a progressão do ano. O arranjo serve a quem tem documento curricular
 próprio e material didático adotado --- e é inútil para quem não tem, que é a
@@ -4879,7 +4884,7 @@ dezembro de 2018, distribuído sob o nome \cd{BNCC\_EI\_EF\_110518}, é o que tr
 as três etapas.
 \end{especificacao}
 
-\textbf{Decisão. Nasce a exp-92, ao lado da exp-90 e sem substituí-la}, com o
+\textbf{Decisão. Nasce a app-92, ao lado da app-90 e sem substituí-la}, com o
 currículo como DADO ESTRUTURADO extraído do PDF homologado, cobrindo todos os
 componentes do 1º ano do Fundamental à 3ª série do Médio, em dois níveis: plano
 \textbf{anual} (macro, por período de avaliação) e plano de \textbf{período}
@@ -4949,7 +4954,7 @@ campos estruturados. Busca vetorial responderia com aproximação onde existe
 resposta certa, e um plano anual que \enquote{esqueceu} a \cd{EF67LP08} porque
 ela ficou fora do \emph{top-k} é um plano que descumpre o currículo.
 
-\textbf{Substituir a exp-90} foi descartado: são ferramentas para redes
+\textbf{Substituir a app-90} foi descartado: são ferramentas para redes
 diferentes, e migrar os planos já salvos custaria mais do que manter as duas.
 
 \textbf{Consequências ruins, declaradas.}
@@ -4984,7 +4989,7 @@ existem na versão homologada.
 a do Ensino Médio desde a Lei 14.945/2024); a publicação de uma exportação
 oficial máquina-legível estável pelo MEC; ou o primeiro contrato cujo currículo
 próprio precise ser exibido AO LADO da Base --- caso em que a fronteira entre
-exp-90 e exp-92 deixa de fazer sentido e as duas convergem.
+app-90 e app-92 deixa de fazer sentido e as duas convergem.
 \section{ADR-74 --- \cd{generateJson} informa o que o vendor cobrou por um
 \emph{callback}, e não pelo retorno}
 \label{adr:74}
@@ -4999,17 +5004,17 @@ métodos de texto do \cd{AiProvider}, dois devolvem o que foi gasto
 cada consumidor inventou a própria saída:
 
 \begin{itemize}
-  \item a \textbf{exp-92} (plano de aulas) chamava \cd{temSaldo} e nunca
+  \item a \textbf{app-92} (plano de aulas) chamava \cd{temSaldo} e nunca
     \cd{consumir}: o professor gerava as aulas de todos os bimestres e o
     contador não se movia. É a operação mais repetida da ferramenta --- 4
     bimestres $\times$ ${\sim}10$ semanas ---, então o teto diário perdia
     sentido justamente onde mais importa;
-  \item a \textbf{exp-07} debitava \cd{1\_500} fixo, chute que não acompanha
+  \item a \textbf{exp07ef1b} debitava \cd{1\_500} fixo, chute que não acompanha
     tamanho de \emph{prompt} nem troca de modelo;
   \item o \textbf{bem-estar} desviou do problema: usa \cd{generate} em vez de
     \cd{generateJson} \enquote{porque só ele devolve \cd{tokensUsados} para a
     quota} --- o comentário está no código desde então;
-  \item o módulo \arq{geracao} (motor da exp-01) não contabiliza nada.
+  \item o módulo \arq{geracao} (motor da exp08ef1b) não contabiliza nada.
 \end{itemize}
 
 Quatro consumidores, quatro respostas diferentes para o mesmo buraco. Não é
@@ -5018,9 +5023,9 @@ descuido de quem escreveu cada um: é o contrato que não oferecia o número.
 \textbf{Decisão.} \cd{AiJsonRequest} ganha
 \cd{aoUsarTokens?: (tokens: number) => void}, chamado \textbf{uma vez por
 tentativa} --- inclusive pelas que \cd{validar} rejeitou, porque foram cobradas
-igual. Quem chama \cd{temSaldo} passa a ser obrigado a passá-lo. A exp-92 debita
+igual. Quem chama \cd{temSaldo} passa a ser obrigado a passá-lo. A app-92 debita
 no \cd{finally} (token gasto em geração que falhou no meio também foi gasto) e
-grava o total em \cd{exp\_92\_planos\_de\_periodo.tokens\_usados}; a exp-07
+grava o total em \cd{app\_92\_planos\_de\_periodo.tokens\_usados}; a exp07ef1b
 troca o chute pelo número real.
 
 \textbf{Alternativas descartadas.}
@@ -5031,7 +5036,7 @@ chamada: três dos seis fazem \cd{return provider.generateJson(...)}
 \emph{direto} --- em \arq{geracao/prompts/}\{\cd{destilacao},
 \cd{personas}, \cd{posts}\} ---, então a mudança não pararia neles: subiria pelo
 tipo de retorno dessas funções e por quem as chama, atravessando o motor da
-exp-01, que é a zona mais delicada do repositório. Tudo isso para entregar um
+exp08ef1b, que é a zona mais delicada do repositório. Tudo isso para entregar um
 número a quatro consumidores que hoje não têm quota. O custo caía sobre o código
 mais arriscado e o benefício, sobre nenhum deles.
 
@@ -5051,7 +5056,7 @@ corrige, agora com ferramenta disponível em vez de ausente. O compilador não
 pega; o que pega é a revisão e o texto do contrato, que diz a obrigação onde ela
 é lida. \textbf{O número é do vendor}: \cd{usageMetadata.totalTokenCount} é o que
 o Google reporta, e uma mudança no que ele conta muda o que debitamos sem aviso.
-E \textbf{a exp-07 passa a debitar mais do que antes} nas respostas longas --- o
+E \textbf{a exp07ef1b passa a debitar mais do que antes} nas respostas longas --- o
 chute de 1.500 era otimista ---, o que aproxima a quota da realidade mas encurta
 o dia de quem usava muito.
 
@@ -5167,7 +5172,7 @@ exportação; o \cd{iframe} ganha \cd{allow-downloads} por declaração}
 
 \textbf{Data.} 2026-09-07 \quad \textbf{Status.} Aceita
 
-\textbf{Contexto.} Três defeitos relatados no mesmo dia sobre a exp-92, e os
+\textbf{Contexto.} Três defeitos relatados no mesmo dia sobre a app-92, e os
 três tinham a mesma raiz: uma pergunta de \emph{entrega} tratada como
 configuração de \emph{produto}.
 
@@ -5196,7 +5201,7 @@ configuração de \emph{produto}.
 \textbf{Decisão.}
 
 \textbf{(a) O passo do planejamento é SEMPRE semanal.} A coluna
-\cd{exp\_92\_configuracoes.periodicidade} sai (migration
+\cd{app\_92\_configuracoes.periodicidade} sai (migration
 \cd{20260907120000\_exp\_92\_planejamento\_sempre\_semanal}), com ela o campo do
 formulário e o parâmetro de \cd{janelasDePlanejamento}, que passa a se chamar
 \cd{semanasDoAnoLetivo}. \textbf{A quinzena vira recorte de exportação}: o
@@ -5205,7 +5210,7 @@ período de avaliação inteiro, num só documento --- uma semana por página.
 
 \textbf{(b) \cd{allow-downloads} entra no \cd{sandbox}, por declaração.}
 \cd{downloads} passa a valer no \cd{permissoes} do manifesto (Zod da api,
-CHECK de \cd{experiencias.permissoes} e \cd{ExpFrame}), e só a exp-90 e a exp-92
+CHECK de \cd{experiencias.permissoes} e \cd{ExpFrame}), e só a app-90 e a app-92
 o declaram. \textbf{E as três rotas de professor passaram a repassar
 \cd{permissoes} ao \cd{ExpFrame}} --- elas nunca repassaram, então a permissão
 sozinha não teria efeito nenhum ali.
@@ -5218,7 +5223,7 @@ não tem cascata, então os prefixos de cada plano anual são varridos ANTES do
 \textbf{Alternativas descartadas.}
 
 \emph{Manter a periodicidade e corrigir só as datas.} A \cd{ordem} de
-\cd{exp\_92\_planos\_de\_periodo} muda de significado com o passo --- a 3ª
+\cd{app\_92\_planos\_de\_periodo} muda de significado com o passo --- a 3ª
 quinzena não é a 3ª semana ---, então um plano gravado em modo quinzenal e lido
 em modo semanal casa pela ordem e devolve as datas de um recorte com as aulas de
 outro. Corrigir início e fim no \cd{upsert} (o que foi feito, e era um defeito
@@ -6173,7 +6178,7 @@ coexistem sem conflito:
     arquivo de TypeScript puro, uma na experiência e outra no hub, cada uma
     compilada para o seu bundle. Existe assim porque a revelação abre no meio da
     aula: texto que depende de rede é texto que pode não aparecer. Foi um pacote
-    de \emph{workspace} (\cd{@edu/conteudo-exp-01}) até 2026-09-09, e a
+    de \emph{workspace} (\cd{@edu/conteudo-exp08ef1b}) até 2026-09-09, e a
     duplicação é decisão do dono do produto --- a copy está fechada, e o pacote
     cobrava o custo de existir sem ter o que proteger. \textbf{O que segura a
     igualdade hoje é o cabeçalho dos dois arquivos, e nada mais.}
@@ -6362,7 +6367,7 @@ de os \emph{bundles} já terem subido, com a \cd{versao\_ativa} na versão antig
 tabela \cd{experiencias\_versoes} que nasceu com esta decisão conserta um defeito
 que ninguém havia notado --- \cd{publicar-manifesto.mjs --versao x.y.z} manda o
 número antigo com o manifesto ATUAL do repositório, então voltar a versão não
-voltava \cd{viewport} nem \cd{permissoes}: a exp-70 reabria sem
+voltava \cd{viewport} nem \cd{permissoes}: a app-70 reabria sem
 \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava, sem
 erro em lugar nenhum. Guardando o manifesto inteiro por versão, o
 \emph{rollback} passa a ser fiel.
@@ -6494,7 +6499,7 @@ responde 200 e o \cd{PUT} responde 403 na mesma sessão.
 \emph{\cd{autor\_nome} é CONGELADO na linha}, e não um \emph{JOIN} com
 \cd{users}. Um \emph{JOIN} mostraria o nome de HOJE --- ou nada, se a conta saiu
 da rede --- e o registro deixaria de dizer quem era aquela pessoa NAQUELE dia.
-É a mesma razão de \cd{exp\_01\_runs.nome\_no\_app} guardar o apelido em vez de
+É a mesma razão de \cd{exp08ef1b\_runs.nome\_no\_app} guardar o apelido em vez de
 o resolver. Por isso também \textbf{não há FK} em \cd{autor\_id}: com
 \cd{RESTRICT}, excluir qualquer conta que já tenha mexido no painel ficaria
 impossível para sempre, porque histórico não se apaga.
@@ -6640,7 +6645,7 @@ professor, gestor e criança do 1º ano EF ao 3º EM. Anglicismo em rótulo não
 questão de gosto: é pressuposto de repertório que numa rede pública não se pode
 fazer. A varredura de 2026-09-10 achou \textbf{427 trechos de texto realmente
 visível} com termo em inglês, em 112 arquivos --- e o achado que motivou a
-tarefa foi o mais claro de todos: a trilha da exp-03 dizia
+tarefa foi o mais claro de todos: a trilha da exp02em1b dizia
 \cd{Briefing} ao lado de \cd{Orientação}, \cd{Investigação} e \cd{Resultado}, ou
 seja, a palavra estava fora do padrão dos próprios vizinhos.
 
@@ -6693,14 +6698,14 @@ curta de propósito, e está registrada para que ninguém a \enquote{corrija}:
 
 \begin{itemize}
   \item \cd{fake news} --- consagrado no Brasil, inclusive em política pública e
-    imprensa. E nos guias da exp-06 e da exp-07 a frase é \enquote{não anuncie
+    imprensa. E nos guias da exp06ef2b e da exp07ef1b a frase é \enquote{não anuncie
     que é uma aula sobre fake news}: o que o professor NÃO deve dizer é
     exatamente a expressão que a criança reconhece, então traduzir mudaria o
     sentido da instrução.
   \item \cd{cyberbullying} --- é o termo da BNCC (EF07CO09) e da Lei
     13.185/2015. Alterar desalinha do documento oficial que o próprio guia cita.
   \item \cd{print} --- é a palavra que a criança brasileira usa, e a missão da
-    exp-06 e da exp-07 gira em torno desse objeto. \enquote{Captura de tela}
+    exp06ef2b e da exp07ef1b gira em torno desse objeto. \enquote{Captura de tela}
     tornaria o guia irreconhecível diante da fala da sala.
   \item \cd{chat} e \cd{on-line} --- o primeiro incorporado ao português e nome
     da coisa no WhatsApp; o segundo é citação verbatim de habilidade da BNCC.
@@ -6737,7 +6742,7 @@ o que impede a próxima \enquote{correção} de reintroduzir jargão ou apagar
 (\cd{getByText}, \cd{getByRole(\{name\})}) --- trocar copy sem atualizar a suíte
 a derruba com \emph{timeout}, e o \emph{timeout} reporta o seletor que faltou,
 nunca a causa; foram 36 linhas mexidas em \arq{professor/04-bem-estar.mjs} só por
-isso. \emph{Ruim}: \cd{ROTULO\_PASSO} da exp-03 é espelho declarado de
+isso. \emph{Ruim}: \cd{ROTULO\_PASSO} da exp02em1b é espelho declarado de
 \arq{apps/api/src/unoogpt/regras/passos.ts}, e mudar um lado só faria a trilha do
 estudante divergir do que a api devolve, sem o \emph{typecheck} ver nada.
 
@@ -6752,7 +6757,7 @@ esquecido custou (erro de cliente agrupado numa versão que nunca existiu, e
 
 Um pedido de professores mostrou que a regra das três zonas resolve o inglês e
 NÃO resolve o outro caso de linguagem inacessível: a palavra em português que a
-criança lê sem saber o que significa. Na tela de resultado da exp-03, o número
+criança lê sem saber o que significa. Na tela de resultado da exp02em1b, o número
 em vermelho era rotulado \enquote{afetadas} --- e os estudantes não sabiam se
 aquilo contava morte, desabrigamento ou outro dano. O termo virou
 \enquote{atingidas pela enchente} (\enquote{Atingidas} no cabeçalho da tabela,
@@ -6903,7 +6908,7 @@ caminhos.
 
 \textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
 
-\textbf{Contexto.} A exp-08 (\emph{O Manifesto da IA}, 8º ano, unidade 4) tem um
+\textbf{Contexto.} A exp08ef4b (\emph{O Manifesto da IA}, 8º ano, unidade 4) tem um
 ponto de sincronização coletiva: ao fim da Etapa 3, o professor congela as telas
 da turma para um debate oral de dez minutos --- o \enquote{Checkpoint~A} do
 insumo. O \emph{handoff} de engenharia especificou o mecanismo como um
@@ -6926,7 +6931,7 @@ cliente a lê por \textbf{\emph{polling} HTTP curto de 5 segundos} numa rota
 dedicada e leve.
 
 \begin{enumerate}
-  \item \textbf{A verdade é uma linha por turma.} \cd{exp\_08\_gates\_turma}
+  \item \textbf{A verdade é uma linha por turma.} \cd{exp08ef4b\_gates\_turma}
     guarda \cd{etapa} $\in$ \{\cd{missao}, \cd{debate}\}, com RLS por
     \cd{escola\_id} como toda tabela de dado de aula. O clique do professor é um
     \cd{upsert} idempotente.
@@ -6946,7 +6951,7 @@ dedicada e leve.
 \end{enumerate}
 
 \textbf{O gate mexe no TETO, nunca no piso}, e isto é desenho, não detalhe. Na
-exp-06 a etapa da turma é uma porta que o professor ABRE, e por isso ela eleva o
+exp06ef2b a etapa da turma é uma porta que o professor ABRE, e por isso ela eleva o
 piso. Aqui o congelamento é uma interrupção OPCIONAL --- a especificação admite
 a sessão individual assíncrona, e sem clique nenhum a missão corre inteira. Se
 \cd{debate} também subisse o piso, apertar \enquote{Pausar para Debate}
@@ -7004,7 +7009,7 @@ persistente}
 
 \textbf{Data.} 2026-09-10. \textbf{Status.} Aceita.
 
-\textbf{Contexto.} A exp-04 (O Que a Foto Conta, 1º ano EF) é a missão mais
+\textbf{Contexto.} A exp01ef1b (O Que a Foto Conta, 1º ano EF) é a missão mais
 síncrona do catálogo: na Etapa 5 \emph{todos} os tablets da turma congelam numa
 tela sem nenhum botão (a Roda de Conversa) e só o professor os solta, de uma
 vez, pelo \cd{LIBERAR REFLEXÃO FINAL}. O insumo da missão pedia
@@ -7030,11 +7035,11 @@ Três fatos do repositório decidem a questão antes de qualquer preferência:
     gargalo medido}. SSE aqui seria tecnologia nova sem gargalo nenhum.
 \end{enumerate}
 
-\textbf{Decisão.} O latch da exp-04 anda por \emph{polling} HTTP de
+\textbf{Decisão.} O latch da exp01ef1b anda por \emph{polling} HTTP de
 \textbf{3 segundos} na rota \rota{GET /foto-conta/latch} --- leve de propósito
 (sem pacote e sem catálogo: \cd{\{liberado, etapa, agora\}}), com \emph{rate
 limit} por usuário. A liberação é um \cd{UPDATE} idempotente por erro
-(\cd{409 latch-ja-liberado}) em \cd{exp\_04\_turma\_config.latch\_liberado},
+(\cd{409 latch-ja-liberado}) em \cd{exp01ef1b\_turma\_config.latch\_liberado},
 sem \emph{lock} de linha: quem \enquote{recebe o \emph{broadcast}} é o
 \emph{polling} dos tablets. O painel do professor acompanha a turma no mesmo
 desenho (\(\sim\)5s, como o o-eco-no-grupo). O \cd{agora} da resposta é o
@@ -7437,7 +7442,7 @@ espera de 20s da suíte deixa de ser folga e volta a ser um prazo a discutir.
 
 \textbf{Data.} 2026-09-11. \textbf{Status.} Aceita.
 
-\textbf{Contexto.} A suíte \emph{e2e} da exp-08 morreu com
+\textbf{Contexto.} A suíte \emph{e2e} da exp08ef4b morreu com
 \cd{page.click: Timeout 30000ms exceeded} na tela da professora, e o console
 trazia \cd{Hydration failed because the server rendered text didn't match the
 client}. O texto que divergia era uma \textbf{data}: o HTML do servidor dizia
@@ -7529,7 +7534,7 @@ constante única, e nenhuma tela formata data na mão.}
     nomeado (\enquote{um relógio no Acre vê a hora de Brasília --- é a decisão,
     não um bug}), para que ninguém o \enquote{conserte} sem reabrir esta ADR.
   \item \textbf{Duas cópias da constante} (SDK e API). É o preço de a API não
-    consumir \emph{workspace}. Diferente da cópia da \emph{copy} da exp-01 ---
+    consumir \emph{workspace}. Diferente da cópia da \emph{copy} da exp08ef1b ---
     que é guardada por um comentário e nada mais ---, esta é amarrada por
     \arq{apps/api/tests/fuso-da-plataforma.spec.ts}, que lê o arquivo do SDK e
     reprova se os valores divergirem.
@@ -8026,7 +8031,7 @@ cópia recriaria exatamente o problema que a ADR-55 resolveu.
     arquivos que existem só porque uma ferramenta procura outro nome. Esquecer
     um não dá erro: a doutrina daquela pasta simplesmente não chega.
   \item \textbf{Três arquivos continuam acima do teto} (\arq{packages/ui},
-    \arq{exp-92} e a raiz, todos a menos de 20\%), porque a fronteira de
+    \arq{app-92} e a raiz, todos a menos de 20\%), porque a fronteira de
     assunto ainda não é óbvia neles. Estão registrados em
     \arq{docs/regras/arquivos-de-instrucao.md} para não passarem por decisão.
 \end{itemize}
@@ -8247,8 +8252,8 @@ viver em \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_*}.
 
 \textbf{Contexto.} A regra inviolável nº~5 exige quota diária de IA por usuário
 \emph{e por perfil}, e o \cd{QuotaService} a aplica em onze pontos da api ---
-o tutor da exp-01, a exp-03, a exp-07 (estudante), e exp-04, exp-07, exp-08,
-exp-90, exp-91 e exp-92 (professor). O \textbf{contador} já era persistido
+o tutor da exp08ef1b, a exp02em1b, a exp07ef1b (estudante), e exp01ef1b, exp07ef1b, exp08ef4b,
+app-90, app-91 e app-92 (professor). O \textbf{contador} já era persistido
 (\cd{ia\_uso\_diario}); o \textbf{limite} não: eram duas variáveis de ambiente,
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_ESTUDANTE} e
 \env{AI\_DAILY\_TOKEN\_QUOTA\_PER\_PROFESSOR}, lidas a cada chamada.
@@ -8309,7 +8314,7 @@ ação \cd{quota-alterada}, \cd{detalhe = \{de, para\}}).
     Nenhuma rede pediu, e dobraria o resolvedor (escola \seta{} regional
     \seta{} contrato \seta{} padrão) para um número que hoje é um por perfil.
     Fica como gatilho abaixo.
-  \item \textbf{Quota por experiência.} A exp-03 já tem o controle certo para
+  \item \textbf{Quota por experiência.} A exp02em1b já tem o controle certo para
     custo de partida --- o teto por SESSÃO (\num{150000}, medido) ---, e é por
     sessão porque a sessão tem começo e fim. A quota diária é o fusível da
     plataforma, não o orçamento de cada missão.
@@ -8339,7 +8344,7 @@ ação \cd{quota-alterada}, \cd{detalhe = \{de, para\}}).
     teto e devolve o valor no fim, então uma corrida abortada não recusa
     ninguém; mas é uma exceção à regra \enquote{suíte nunca escreve linha de
     escopo-contrato}, e está escrita nas duas.
-  \item \textbf{O motor da exp-01 (\arq{geracao/}) e as reações da Vila do
+  \item \textbf{O motor da exp08ef1b (\arq{geracao/}) e as reações da Vila do
     Lume continuam FORA do \cd{QuotaService}} --- já apontados na
     \adrr{ADR-74} e não corrigidos aqui. Uma quota configurável só vale para
     quem passa pelo funil; esses dois pontos são cartão à parte, e o da Vila é
@@ -8373,8 +8378,8 @@ manifesto), dependia só de React e do SDK, e o \emph{script} de teste era
 anteriores já tinham feito: acrescentar o \emph{design system} e a ponte
 \cd{@edu/ui}, escrever o \emph{bootstrap} do \emph{handshake}, o
 \emph{singleton} da api, o vocabulário de telemetria, o teste de versão em três
-lugares e o \cd{vitest}. A exp-04 nasceu em React~18 porque o template estava
-em 18 (\adrr{ADR-84} conta o custo); as exp-06, 07 e 08 convergiram para a
+lugares e o \cd{vitest}. A exp01ef1b nasceu em React~18 porque o template estava
+em 18 (\adrr{ADR-84} conta o custo); as exp06ef2b, exp07ef1b e exp08ef4b convergiram para a
 mesma estrutura de \arq{src/lib/} sem que o template a registrasse.
 
 \textbf{Decisão.} \textbf{O template passa a trazer a fiação que TODA
@@ -8424,14 +8429,14 @@ experiência precisa} --- e continua sem componente de interface:
 \textbf{Consequências ruins, declaradas.}
 
 \begin{itemize}
-  \item \textbf{O template pode envelhecer de novo.} Ele segue a exp-08; quando
+  \item \textbf{O template pode envelhecer de novo.} Ele segue a exp08ef4b; quando
     uma missão consolidar um padrão melhor, ele volta para cá no mesmo PR ---
     senão a próxima nasce velha. Gatilho de reavaliação: duas missões seguidas
     alterando o mesmo arquivo copiado do template.
   \item \textbf{Mais dependências no \emph{scaffold}}: quem cria uma
     ferramenta de professor sem clone ainda recebe o DS e a ponte --- que ela
     usa de qualquer forma na seção \cd{unooria}.
-  \item \textbf{A porta \cd{5173} do \cd{dev} continua sendo a da exp-01}; o
+  \item \textbf{A porta \cd{5173} do \cd{dev} continua sendo a da exp08ef1b}; o
     template não tem como saber a próxima livre. O \cd{new:exp} imprime o
     lembrete, e o \cd{strictPort} falha alto se a troca for esquecida.
 \end{itemize}
@@ -8562,17 +8567,17 @@ coisas (texto, CSS computado e medidas), e o procedimento está em
 
 % ---------------------------------------------------------------------------
 \section{ADR-108 --- A missão de sala nasce VAZIA, e a revelação é do relógio da turma}
-\label{adr:exp-05-sala-sincronizada}
+\label{adr:exp05ef1b-sala-sincronizada}
 
 \textbf{Data.} 2026-09-17. \textbf{Status.} Aceita.
-\textbf{Aplica} à exp-05 a \adrr{ADR-69} (a liberação por turma), a
+\textbf{Aplica} à exp05ef1b a \adrr{ADR-69} (a liberação por turma), a
 \adrr{ADR-93} (\emph{polling} HTTP, não WebSocket) e a \adrr{ADR-94} (o
 \emph{latch} de turma). \textbf{Rompe}, num ponto declarado abaixo, o padrão que
-a exp-08 e a exp-04 estabeleceram: aqui a turma sem preparo \textbf{não} cai no
+a exp08ef4b e a exp01ef1b estabeleceram: aqui a turma sem preparo \textbf{não} cai no
 banco curado.
 
 \begin{especificacao}{Contexto}
-O PRD da exp-05 especifica uma aula síncrona: trinta crianças de dez anos no
+O PRD da exp05ef1b especifica uma aula síncrona: trinta crianças de dez anos no
 mesmo grupo simulado, um telão, e um momento em que a sala vê junta o que
 encaminhou. Para sustentar isso ele pede quatro coisas que esta plataforma não
 tem, ou tem de outro jeito:
@@ -8588,7 +8593,7 @@ tem, ou tem de outro jeito:
 
 E há uma quinta pergunta que o PRD não faz e que o repositório já respondeu duas
 vezes: \textbf{o que a criança vê quando a professora não preparou nada.} A
-exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
+exp08ef4b e a exp01ef1b caem no banco curado da Unooria e a aula corre.
 \end{especificacao}
 
 \textbf{Decisão.} Em cinco partes:
@@ -8597,9 +8602,9 @@ exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
   \item \textbf{Quem entra na sala é a liberação por turma} (\adrr{ADR-69}), não
     um PIN. \cd{exigirMissaoLiberada} já responde \enquote{esta missão está
     aberta nesta turma?}, e o \cd{turma\_id} do \emph{token} já diz de qual sala
-    a criança é. A guarda entra no funil das rotas de estudante da exp-05, não só
+    a criança é. A guarda entra no funil das rotas de estudante da exp05ef1b, não só
     na de leitura.
-  \item \textbf{A revelação é uma LINHA} em \cd{exp\_05\_gates\_turma}, que a
+  \item \textbf{A revelação é uma LINHA} em \cd{exp05ef1b\_gates\_turma}, que a
     tela lê por \emph{polling} HTTP de 5 segundos em
     \rota{GET /quem-mandou-isso/gate} (\adrr{ADR-93}).
   \item \textbf{A missão nasce vazia.} Sem \cd{aprovado\_por\_professor} para
@@ -8636,10 +8641,10 @@ exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
     caracteres. O Cloud SQL já cifra em repouso, o dado tem RLS, e a rota que o
     lê é a do professor da turma. Cifrar só aqui também tiraria a reflexão do
     painel --- que é a única razão de ela existir.
-  \item \textbf{Queda para o banco curado sem a professora}, como na exp-08. É a
+  \item \textbf{Queda para o banco curado sem a professora}, como na exp08ef4b. É a
     alternativa que mais custou a descartar, porque o resto do repositório faz
-    assim. O que a separa é o conteúdo: o pacote da exp-08 é sobre governança de
-    IA, igual em qualquer escola; o lote da exp-05 é escrito EM CIMA do
+    assim. O que a separa é o conteúdo: o pacote da exp08ef4b é sobre governança de
+    IA, igual em qualquer escola; o lote da exp05ef1b é escrito EM CIMA do
     acontecimento que a professora escolheu. Cair no lote padrão no meio da aula
     dela poria na tela oito mensagens sobre uma mudança no intervalo que não
     houve naquela escola --- e a mecânica que a missão mede, desconfiar de uma
@@ -8655,7 +8660,7 @@ exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
     porque a frase era a decisão certa e o código é que a contradizia: a caixa
     livre de menor de idade (LGPD art.~14) não tem por que alcançar quem não dá
     aula àquela criança, e a alternativa transformaria uma regra em relato.
-    \textbf{A exp-06 e a exp-08 continuam como estavam} --- entregam o texto a
+    \textbf{A exp06ef2b e a exp08ef4b continuam como estavam} --- entregam o texto a
     qualquer gestor, com a mesma frase no comentário. A divergência é conhecida
     e está registrada no \cd{AGENTS.md} do módulo: apertar as duas muda o que a
     tela de gestor delas mostra hoje, e isso é frente própria, com a conversa de
@@ -8664,7 +8669,7 @@ exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
     \enquote{revelado} de \enquote{explicação} por mais um avanço docente. Seria
     um botão a mais no painel que a professora aperta um segundo depois do
     anterior, todas as vezes --- controle morto, e mais uma coisa para esquecer
-    de clicar com trinta crianças esperando. A exp-06 e a exp-08 já tinham feito
+    de clicar com trinta crianças esperando. A exp06ef2b e a exp08ef4b já tinham feito
     a mesma leitura.
 \end{itemize}
 
@@ -8694,7 +8699,7 @@ exp-08 e a exp-04 caem no banco curado da Unooria e a aula corre.
     RLS mais o recorte da rota, e \textbf{não} é criptografia. Está declarado
     aqui em vez de descrito como \enquote{protegido} em algum lugar, porque a
     palavra sem o mecanismo é o que engana numa auditoria.
-  \item \textbf{Não há rotina de retenção} para \cd{exp\_05\_reflexoes}
+  \item \textbf{Não há rotina de retenção} para \cd{exp05ef1b\_reflexoes}
     (\adrr{ADR-13}), como não há para as outras caixas de texto livre do
     catálogo. Inventar um prazo aqui seria escrever uma promessa que nenhum
     \emph{scheduler} cumpre.
@@ -8818,3 +8823,168 @@ em todos os outros anos.
 \textbf{Gatilho.} Um terceiro layout de tabela na Base, ou o dia em que o MEC
 republicar o anexo com a \cd{EF05CO011} corrigida: aí o código muda no
 documento, e o dataset muda junto.
+
+% ---------------------------------------------------------------------------
+\section{ADR-110 --- O código da experiência diz onde ela mora na trilha}
+\label{adr:codigo-da-experiencia}
+
+\textbf{Data.} 2026-09-23. \textbf{Status.} Aceita.
+\textbf{Revê} o prefixo de tabela da \adrr{ADR-20}; o resto dela continua valendo.
+
+\begin{especificacao}{Contexto}
+O identificador de toda experiência era \cd{exp-NN-slug}, e o \cd{NN} era a
+\textbf{ordem de criação}: a \cd{exp-01} era o Instanooria, do 8º ano; a
+\cd{exp-04} era o Foto Conta, do 1º. O número PARECIA dizer a série e não dizia,
+e o sintoma é o mais caro que um identificador pode ter --- quem lê
+\enquote{exp-04} numa conversa sobre o 4º ano está falando de outra coisa, e
+nada avisa.
+
+O formato nunca foi decidido. Ele existia implícito em seis expressões regulares
+copiadas na api e no hub, com três variações (uma aceitava \cd{exp-} seguido de
+qualquer coisa, outra exigia dois dígitos), e no \emph{script} de
+\emph{scaffolding}. As faixas \enquote{70 = transversal} e \enquote{9x =
+ferramenta do professor} eram costume citado em documento, sem registro. A
+\adrr{ADR-20} USAVA o número --- para o prefixo de tabela --- sem dizer de onde
+ele vinha.
+
+A trilha do Entre Redes tem uma forma fixa: 12 anos (1º ao 9º do Fundamental, 1ª
+à 3ª série do Médio), 4 unidades por ano, uma missão por unidade. O Lucas
+padronizou a nomenclatura do produto a partir dela.
+\end{especificacao}
+
+\textbf{Decisão.}
+
+\begin{itemize}
+  \item \textbf{Missão da trilha:} \cd{exp} + ano com dois dígitos + etapa
+    (\cd{ef} ou \cd{em}) + unidade (1 a 4) + \cd{b}. \cd{exp08ef1b} é o 8º ano
+    do Fundamental, unidade 1; \cd{exp02em1b}, a 2ª série do Médio, unidade 1.
+    O \cd{b} é fixo: é o nome que o produto dá à unidade (o bimestre), e não
+    carrega informação que o resto do código não tenha.
+  \item \textbf{O que não é missão} (ferramenta do professor, o transversal):
+    \cd{app-NN-nome}, com o número e o nome que já tinha --- \cd{app-70-vila-do-lume},
+    \cd{app-90-plano-de-aula}. Não mora numa unidade, então não tem código de
+    grade para ter.
+  \item \textbf{O código é o id em TODO lugar}: manifesto, pasta, pacote
+    \cd{@edu/*}, serviço do \emph{compose}, prefixo de tabela (\cd{exp08ef1b\_},
+    \cd{app\_70\_}), \emph{model} do Prisma, caminho no \emph{bucket},
+    telemetria, \cd{service.name}, nome de \emph{branch} e escopo de
+    \emph{commit}. Módulo da api e arquivo do hub continuam pelo NOME
+    (\arq{src/quem-mandou-isso/}, \arq{missao-rastro-boato.tsx}): nome é
+    conteúdo, código é lugar.
+  \item \textbf{O código de missão é DERIVADO, nunca escolhido.}
+    \cd{codigoDaMissao(series[0], unidade)} o monta a partir do manifesto;
+    \arq{apps/api/tests/codigo-da-experiencia.spec.ts} reprova o manifesto de
+    missão cujo \cd{id} não é esse, a pasta cujo nome não é o \cd{id} e a
+    experiência sem \cd{unidade} fora do formato \cd{app-}. O \cd{pnpm new:exp}
+    recebe o código e escreve \cd{series} e \cd{unidade} a partir dele.
+  \item \textbf{O formato mora em um lugar por lado}:
+    \arq{apps/api/src/comum/codigo-da-experiencia.ts} e
+    \arq{packages/sdk/src/codigo-da-experiencia.ts}, amarrados pelo mesmo teste,
+    que lê o arquivo do SDK --- o desenho do fuso (\adrr{ADR-99}). As seis cópias
+    saem.
+  \item \textbf{A migração dos dados}
+    (\arq{20260923120000\_codigo\_das\_experiencias}): \cd{RENAME} por OID de
+    tabela, \emph{constraint}, índice, política e \emph{sequence}, e
+    \cd{UPDATE} do id em \cd{experiencias}, \cd{experiencias\_versoes},
+    \cd{liberacoes}, \cd{progresso}, \cd{telemetria\_eventos},
+    \cd{disponibilidades} e \cd{recursos\_auditoria}. O \cd{FORCE ROW LEVEL
+    SECURITY} sai e volta dentro da transação --- com ele o \cd{UPDATE} casaria
+    zero linhas em silêncio --- e a asserção roda antes de ele voltar.
+\end{itemize}
+
+\begin{tabularx}{\linewidth}{@{}L{52mm}L{18mm}X@{}}
+\toprule
+\headrow \thd{Antes} & \thd{Série} & \thd{Código}\\
+\cd{exp-04-o-que-a-foto-conta} & 1EF, U1 & \cd{exp01ef1b}\\
+\zebra \cd{exp-02-unootube} & 4EF, U1 & \cd{exp04ef1b}\\
+\cd{exp-05-quem-mandou-isso} & 5EF, U1 & \cd{exp05ef1b}\\
+\zebra \cd{exp-06-rastro-boato} & 6EF, U2 & \cd{exp06ef2b}\\
+\cd{exp-07-o-eco-no-grupo} & 7EF, U1 & \cd{exp07ef1b}\\
+\zebra \cd{exp-01-instanooria} & 8EF, U1 & \cd{exp08ef1b}\\
+\cd{exp-08-manifesto-ia} & 8EF, U4 & \cd{exp08ef4b}\\
+\zebra \cd{exp-03-unoogpt} & 2EM, U1 & \cd{exp02em1b}\\
+\cd{exp-70-vila-do-lume} & --- & \cd{app-70-vila-do-lume}\\
+\zebra \cd{exp-90-plano-de-aula} & --- & \cd{app-90-plano-de-aula}\\
+\cd{exp-91-bem-estar} & --- & \cd{app-91-bem-estar}\\
+\zebra \cd{exp-92-plano-de-ensino} & --- & \cd{app-92-plano-de-ensino}\\
+\bottomrule
+\end{tabularx}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Manter \cd{exp-NN-slug} e documentar a faixa.} Registra o
+    costume e deixa o defeito: o número continua parecendo a série. E o slug no
+    id não acrescenta nada que o \cd{nome} do manifesto não diga.
+  \item \textbf{Trocar só o id como DADO} (manifesto, banco, \emph{bucket}) e
+    manter pasta, pacote e tabelas. Seria o pior dos dois: as tabelas
+    \cd{exp\_04\_} passariam a pertencer à \cd{exp01ef1b}, e cada leitura do
+    código pediria o de-para de cabeça.
+  \item \textbf{Código com o slug} (\cd{exp08ef1b-instanooria}). Carrega o nome
+    duas vezes, e o slug muda quando a missão é renomeada --- o código é o lugar
+    na grade, e o lugar não muda com o título.
+  \item \textbf{Dar código de grade também às ferramentas}, com série e unidade
+    fictícias. Seria o mesmo defeito ao contrário: um número que diz uma série
+    que a ferramenta não tem.
+  \item \textbf{Deixar \cd{recursos\_auditoria} com o id antigo}, respeitando o
+    \emph{append-only} da \adrr{ADR-89} à risca. O histórico de cada
+    experiência SUMIRIA da tela dela, que filtra pelo id novo; a outra saída,
+    traduzir na leitura, deixaria um de-para vivendo no código para sempre.
+    Trocar o id não muda o que a linha afirma --- quem, quando, em que recurso
+    ---, só o nome do recurso. É a única escrita que o \emph{trigger} deixa
+    passar, e só dentro desta migração.
+  \item \textbf{Uma cópia só do formato}, com a api importando o SDK. A api não
+    consome pacote de \emph{workspace} (\arq{packages/AGENTS.md}), e arrastar o
+    SDK --- \emph{handshake}, OpenTelemetry de navegador --- para dentro do
+    NestJS por causa de uma expressão regular é pior que a cópia amarrada.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{O de-para embaralha os números.} A \cd{exp01ef1b} é a antiga
+    \cd{exp-04}, não a antiga \cd{exp-01}. Ler \emph{commit}, PR e PDF
+    anteriores a 2026-09-23 pede a tabela acima. O que o formato garante é que
+    a referência antiga não RESOLVE para outra coisa: \cd{exp-01} deixou de ser
+    um id válido, ao contrário do que renumerar ADRs faria (ver a abertura
+    deste capítulo).
+  \item \textbf{Uma missão por unidade, uma série por missão.} O código não
+    tem lugar para duas missões na mesma unidade, e o teste exige
+    \cd{series} com um elemento. É a forma do produto hoje (48 missões = 12
+    anos \texttimes{} 4 unidades); se ela mudar, o formato cresce.
+  \item \textbf{O que está fora do repositório carrega o id antigo até ser
+    trocado à mão}, uma vez por contrato: as versões anteriores dos
+    \emph{bundles}, os vídeos da \cd{exp04ef1b} e a mídia que a api GEROU para a
+    \cd{exp07ef1b} (\arq{experiencias/\{expId\}/} no \emph{bucket} de
+    \emph{assets}: sem a cópia, a api gera tudo de novo no Vertex, e a primeira
+    geração passa dos 30\,s que o proxy do hub espera) (o comando está
+    em \arq{docs/INFRA.md}; o \emph{deploy} REPROVA até os vídeos estarem no
+    prefixo novo, de propósito), e, no Terraform, o \emph{uptime check} da
+    versão ativa, os painéis por \cd{service.name} e as métricas de log por
+    \cd{codigo} (\cd{exp07.*} virou \cd{exp07ef1b.*}). Série temporal que cruza
+    a troca aparece partida em duas.
+  \item \textbf{Perfil portátil assinado antes da troca} (\adrr{ADR-35})
+    carrega \cd{exp-70-vila-do-lume}. É documento assinado, e não se reescreve:
+    ele continua sendo importado (o \cd{expId} ali é texto livre), só não acha
+    mais o nome da experiência no catálogo.
+  \item \textbf{Os serviços do \emph{compose} mudaram de nome}
+    (\cd{exp-01} \seta{} \cd{exp08ef1b}): os \emph{containers} antigos ficam
+    órfãos até um \cd{--remove-orphans}.
+  \item \textbf{O nome de índice cresce até 3 caracteres}, e um deles passou de
+    63: o Postgres corta o FIM em silêncio e o Prisma corta o MEIO. A migração
+    aplica o corte do Prisma e aborta se aparecer nome longo sem sufixo
+    conhecido --- sem isso, \cd{prisma migrate diff} acusaria \emph{drift} num
+    nome que ninguém escreveu.
+\end{itemize}
+
+\textbf{Como isto se prova.} A migração rodou num Postgres descartável sobre o
+estado anterior, com linhas dos doze ids em todas as tabelas afetadas e uma de
+id desconhecido: os doze trocaram, o desconhecido ficou, o \cd{FORCE} e o
+\emph{trigger} voltaram, o catálogo (tabelas, RLS, políticas) saiu idêntico a
+menos dos nomes, e o \cd{prisma migrate diff} contra o \emph{schema} novo
+devolveu exatamente o \emph{drift} que já existia antes da troca --- nenhum a
+mais.
+
+\textbf{Gatilho.} Uma segunda missão na mesma unidade; uma missão que valha
+para mais de uma série; ou o produto passar a dividir o ano em outra coisa que
+não bimestre --- aí o \cd{b} passa a mentir.

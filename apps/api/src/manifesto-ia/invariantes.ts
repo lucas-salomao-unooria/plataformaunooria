@@ -1,5 +1,5 @@
 /**
- * Invariantes de produto verificáveis da exp-08. Vivem em UM lugar só e são
+ * Invariantes de produto verificáveis da exp08ef4b. Vivem em UM lugar só e são
  * importadas pela redaction, pelo painel e pelo teste. Alterar aqui obriga a
  * rodar a suíte da api.
  *
@@ -37,7 +37,7 @@ export const CAMPOS_SENSIVEIS = [
  * Termos que não podem aparecer em texto visível ao estudante DENTRO do clone
  * do ChatGPT.
  *
- * Só o primeiro grupo é sobre disfarce, e ele é MENOR que o da exp-06 por um
+ * Só o primeiro grupo é sobre disfarce, e ele é MENOR que o da exp06ef2b por um
  * motivo de desenho: aqui o estudante SABE que está numa aula. O clone é o
  * ambiente da tarefa (auditar um sistema escolar), não uma armadilha — não há
  * revelação a proteger. O que ainda quebraria a cena é o vocabulário de
@@ -54,7 +54,7 @@ export const TERMOS_PROIBIDOS_NA_TELA = [
   // redes sociais" é o vocabulário da cláusula de anonimização — o objeto que a
   // criança está protegendo do cruzamento de dados. Proibir a palavra faria a
   // régua reprovar a própria copy homologada, e foi EXATAMENTE o que ela fez
-  // quando este teste rodou pela primeira vez. É o mesmo caso que a exp-06
+  // quando este teste rodou pela primeira vez. É o mesmo caso que a exp06ef2b
   // registrou com "nota". O que se proíbe é a atividade ESCOLAR, e ela vem
   // sempre acompanhada.
   "esta atividade",

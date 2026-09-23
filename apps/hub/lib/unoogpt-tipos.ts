@@ -1,11 +1,11 @@
 /**
- * Formas de LEITURA da exp-03-unoogpt, do jeito que as telas do professor as
+ * Formas de LEITURA da exp02em1b, do jeito que as telas do professor as
  * recebem (`apps/api/src/unoogpt/*.controller.ts`).
  *
  * Só tipos. A regra que eles carregam, e que a tela precisa respeitar: a
  * LISTAGEM da turma não tem número de resgatados. Listagem é ordenável, e uma
  * coluna de resgate viraria ranking de crianças — o número vive na tela
- * individual, uma por vez. É a mesma regra da exp-70.
+ * individual, uma por vez. É a mesma regra da app-70.
  */
 
 export interface RetratoDoRelogio {

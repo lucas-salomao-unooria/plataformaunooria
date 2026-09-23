@@ -83,11 +83,11 @@ inválido} --- e a mensagem não diz qual dos dois lados está errado.
 \env{VERTEX\_MODEL\_LONGO} & \cd{gemini-3.6-flash} & Modelo de saída longa
   (planos anuais). A variável separada existe para trocar um sem tocar no
   outro.\\
-\zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} & Arte da exp-01.
+\zebra \env{VERTEX\_IMAGE\_MODEL} & \cd{gemini-3.1-flash-image} & Arte da exp08ef1b.
   O antigo \cd{gemini-2.0-flash-exp} \textbf{não existe mais} --- e por isso toda
   geração de imagem caía no \emph{fallback} procedural. Quem trocar precisa
   conferir a proporção devolvida.\\
-\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz das falas da exp-07
+\env{VERTEX\_TTS\_MODEL} & \cd{gemini-2.5-flash-tts} & Voz das falas da exp07ef1b
   (Amara, a moradora, o podcast). \textbf{Não é o \emph{aiplatform}}: a síntese
   vem da Cloud Text-to-Speech, com os mesmos modelos por trás e o mesmo ADC, e a
   API precisa estar habilitada no projeto. Com ADC de \emph{usuário} ela exige
@@ -345,16 +345,16 @@ aparece \textbf{dentro da casca de celular da Instanooria}.
 \toprule
 \headrow \thd{Variável} & \thd{Papel}\\
 \midrule
-\env{VITE\_VIDEOS\_BASE\_URL} & exp-02: base dos 21 arquivos MP4
+\env{VITE\_VIDEOS\_BASE\_URL} & exp04ef1b: base dos 21 arquivos MP4
   (\SI{52}{\mega\byte}), que ficam fora do \emph{git} e fora do \emph{bundle}.
   Vazio = \arq{./videos} (\arq{public/videos/}, \emph{gitignorado}, em
   \emph{dev}). Em produção:
-  \cd{https://<cdn-assets>/exp-02-unootube/videos}.\\
+  \cd{https://<cdn-assets>/exp04ef1b/videos}.\\
 \bottomrule
 \end{tabularx}
 
 \begin{nota}
-\textbf{A exp-70 não tem nenhuma variável de ambiente.} Ela não usa IA, não usa
+\textbf{A app-70 não tem nenhuma variável de ambiente.} Ela não usa IA, não usa
 \emph{bucket} e não tem prazo de retenção declarado --- o que é registrado
 explicitamente em \arq{.env.example}, para que a ausência seja lida como decisão e
 não como esquecimento.
@@ -378,7 +378,7 @@ entra por \cd{vars} do repositório, cujos valores saem de
 \cd{MIGRATE\_JOB} & Nome do Cloud Run Job de migração.\\
 \zebra \cd{EXP\_BUCKET} & \emph{Bucket} dos \emph{bundles}.\\
 \cd{ASSETS\_BASE\_URL} & Base pública de \emph{assets} (entra no \emph{build} da
-  exp-02).\\
+  exp04ef1b).\\
 \zebra \cd{CLARITY\_PROJECT\_ID} & Id do projeto Microsoft Clarity, por
   \emph{environment} (\cd{dev}, \cd{hml}, \cd{prd}). O \arq{deploy.yml} o passa
   como \cd{-{}-build-arg} ao construir a imagem do hub. \textbf{Não} sai de

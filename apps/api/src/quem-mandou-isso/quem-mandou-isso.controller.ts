@@ -29,7 +29,7 @@ import { erroDeJogo } from "./erros";
 import { QuemMandouIssoService } from "./quem-mandou-isso.service";
 
 /**
- * Rotas do ESTUDANTE da exp-05-quem-mandou-isso.
+ * Rotas do ESTUDANTE da exp05ef1b.
  *
  * O gabarito fica no servidor: o cliente diz o que encaminhou, e a veracidade
  * de cada mensagem só desce DEPOIS de a professora acender o telão, dentro de
@@ -71,7 +71,7 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
     descricao:
-      "As mensagens saem **sem `veracidade`, `tom` e `explicacao`** — o tipo do servidor é um `Omit`, então o gabarito é impossível de vazar aqui, não só ausente por descuido. Os três só aparecem dentro de `revelacao`, e `revelacao` é `null` até a professora acender o telão.\n\n`lote` é `null` enquanto a professora não homologou o grupo: **a missão nasce vazia**. Diferente da exp-08, não há banco curado de reserva — o lote é do TEMA que ela escolheu, e mostrar outro faria a criança ler mensagens sobre um acontecimento que não existiu na escola dela.",
+      "As mensagens saem **sem `veracidade`, `tom` e `explicacao`** — o tipo do servidor é um `Omit`, então o gabarito é impossível de vazar aqui, não só ausente por descuido. Os três só aparecem dentro de `revelacao`, e `revelacao` é `null` até a professora acender o telão.\n\n`lote` é `null` enquanto a professora não homologou o grupo: **a missão nasce vazia**. Diferente da exp08ef4b, não há banco curado de reserva — o lote é do TEMA que ela escolheu, e mostrar outro faria a criança ler mensagens sobre um acontecimento que não existiu na escola dela.",
     resposta: SessaoSchema,
     notas: [
       "`passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Quando os dois divergem e `aguardandoATurma` é `true`, ele confirmou o Mural e espera o telão.",
@@ -88,7 +88,7 @@ export class QuemMandouIssoController {
   @Contrato({
     resumo: "Em que etapa a turma está (polling de ~5s).",
     descricao:
-      "Leve de propósito: sem lote e sem histograma. É o que deixa a docente conduzir 30 telas — a revelação acende para todos ao mesmo tempo.\n\n**Polling HTTP, nunca WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e 'Iniciar revelação coletiva' é uma linha em `exp_05_gates_turma` que esta rota lê.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.",
+      "Leve de propósito: sem lote e sem histograma. É o que deixa a docente conduzir 30 telas — a revelação acende para todos ao mesmo tempo.\n\n**Polling HTTP, nunca WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e 'Iniciar revelação coletiva' é uma linha em `exp05ef1b_gates_turma` que esta rota lê.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.",
     resposta: GatePublicoSchema,
     notas: [
       "`preparada: false` é a tela de espera do preparo, não um erro: a professora ainda não homologou o grupo desta turma.",

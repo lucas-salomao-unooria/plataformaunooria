@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
 /**
- * Erros de MISSÃO da exp-04 — não de programa. O leitor tem 6 anos e está
+ * Erros de MISSÃO da exp01ef1b — não de programa. O leitor tem 6 anos e está
  * dentro de um app disfarçado: mensagem de erro aqui é a voz de Nina, nunca
  * stack trace, "sessão" ou "requisição". A tela decide a ilustração pelo
  * `codigo`; o texto é curto porque toda instrução do 1º EF é lida em voz alta.

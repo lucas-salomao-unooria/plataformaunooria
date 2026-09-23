@@ -3,7 +3,7 @@
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias` (o passo a passo de
 "como criar uma experiência nova" está lá).
 
-`pnpm new:exp exp-NN-slug` copia esta pasta e troca `exp-template` pelo id em
+`pnpm new:exp <código>` (ADR-110: `exp06ef3b` ou `app-NN-nome`) copia esta pasta e troca `exp-template` pelo id em
 `package.json`, `public/experiencia.json`, `src/lib/tipos.ts` e `README.md`.
 **Não é para ser usada direto** e não entra em nenhum deploy (o `deploy.yml`
 a pula pelo nome).
@@ -43,6 +43,6 @@ mostra ONDE a experiência o chama (`bootstrap.tsx`, `lib/api.ts`).
 Não. A experiência nasce **copiada, não linkada**: o que mudar aqui vale para a
 próxima, e as que já existem ficam como estão. Mudança de fiação que precisa
 valer para todas é mudança no `@edu/sdk`. Por isso este template segue de perto
-a experiência mais recente (exp-08): quando uma missão nova consolidar um
+a experiência mais recente (exp08ef4b): quando uma missão nova consolidar um
 padrão melhor, ele volta para cá no mesmo PR — senão a próxima nasce velha,
-como a exp-04 nasceu em React 18 porque o template estava em 18.
+como a exp01ef1b nasceu em React 18 porque o template estava em 18.

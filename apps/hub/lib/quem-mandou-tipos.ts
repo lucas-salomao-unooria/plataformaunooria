@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp-05 — espelho de `apps/api/src/quem-mandou-isso`.
+ * O que o hub lê da exp05ef1b — espelho de `apps/api/src/quem-mandou-isso`.
  *
  * Note o que NÃO existe aqui, e cada ausência é uma regra:
  *
@@ -53,8 +53,8 @@ export type OrigemDoLote = "ia" | "padrao";
 export type Polaridade = "urgencia-venceu" | "informativas-venceram" | "empate";
 
 /**
- * O `SeletorDeTurma` é compartilhado com a exp-03, a exp-06, a exp-07 e a
- * exp-08 e exige `estudantes`; a api o devolve sempre.
+ * O `SeletorDeTurma` é compartilhado com a exp02em1b, a exp06ef2b, a exp07ef1b e a
+ * exp08ef4b e exige `estudantes`; a api o devolve sempre.
  *
  * `serie` é anulável AQUI e não lá: o contrato da api a declara
  * `z.string().nullable()` (turma sem série cadastrada existe no rostering), e

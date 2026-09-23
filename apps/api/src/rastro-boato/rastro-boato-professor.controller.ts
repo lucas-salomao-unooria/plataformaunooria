@@ -7,7 +7,7 @@ import { materialDoProfessor } from "./catalogo";
 import { MaterialDoProfessorSchema } from "./contrato-de-rotas";
 
 /**
- * O material do GUIA DA AULA da exp-06 — catálogo com gabarito, para quem
+ * O material do GUIA DA AULA da exp06ef2b — catálogo com gabarito, para quem
  * conduz.
  *
  * Classe separada de `RastroBoatoTurmasController` porque não é dado de turma:

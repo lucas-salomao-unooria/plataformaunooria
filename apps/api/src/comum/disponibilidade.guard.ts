@@ -15,7 +15,7 @@ import { exigirRecursoDisponivel } from "./disponibilidade";
  *
  * As experiências de ESTUDANTE não precisam disto: todas passam por
  * `exigirMissaoLiberada`, que já checa disponibilidade num ponto só. As três
- * ferramentas de professor (exp-90, exp-91, exp-92) não têm liberação por
+ * ferramentas de professor (app-90, app-91, app-92) não têm liberação por
  * turma — e têm 28 rotas entre elas. Anotar rota por rota é o desenho em que a
  * 29ª nasce sem guarda, sem erro e sem sintoma: o produto simplesmente não
  * desliga, e ninguém descobre até tentar desligá-lo num incidente.
@@ -26,7 +26,7 @@ import { exigirRecursoDisponivel } from "./disponibilidade";
  *   @Controller("bemestar")
  *   @UseGuards(OidcGuard, RolesGuard, DisponibilidadeGuard)
  *   @Roles("professor")
- *   @Recurso("exp-91-bem-estar")
+ *   @Recurso("app-91-bem-estar")
  *   export class BemEstarController { ... }
  *
  * Lê as tabelas fora de transação de tenancy de propósito: `disponibilidades`,

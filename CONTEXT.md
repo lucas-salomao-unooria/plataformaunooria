@@ -33,12 +33,13 @@ tela e o card do Notion falarem a mesma palavra.
 | Termo | O que é | Fonte |
 |---|---|---|
 | **experiência** | Um bundle estático (Vite) que o hub embeda num iframe. Nunca vira serviço no Cloud Run | `apps/experiencias/AGENTS.md` |
+| **código da experiência** | O `expId`. Missão da trilha: `exp` + ano + etapa + unidade + `b` — `exp08ef1b` é o 8º ano do Fundamental, unidade 1; `exp02em1b`, a 2ª série do Médio. O que não é missão: `app-NN-nome` (`app-90-plano-de-aula`). É o mesmo na pasta, no pacote, no prefixo de tabela (`exp08ef1b_`, `app_70_`) e no bucket. O de missão é **derivado** de `series` + `unidade` do manifesto, nunca escolhido. Até 2026-09 era `exp-NN-slug`, com NN = ordem de criação — o de-para está na ADR | ADR-110; `apps/api/src/comum/codigo-da-experiencia.ts` |
 | **missão** | A experiência **do ponto de vista da aula** — é a palavra que o professor e o estudante leem na tela | ADR-91 |
 | **produto** | O agrupamento comercial de experiências. Declarado no `public/experiencia.json` de cada uma; a composição é **derivada** do manifesto, nunca uma lista à mão | regra 8 do `AGENTS.md` |
 | **manifesto** | O `public/experiencia.json`: versão, produto, série, permissões. Mexeu na experiência, sobe a `versao` — e o `version` do `package.json` junto | `AGENTS.md` da raiz |
 | **liberação** | *Esta missão está aberta NESTA TURMA?* Sem linha, não abre: 403 `missao-nao-liberada` | `liberacoes`, ADR-69 |
 | **disponibilidade** | *Este recurso existe NESTA REDE?* **Ausência de linha = LIGADO** — é mecanismo de exceção. É pré-condição da liberação, nunca o contrário | `disponibilidades`, ADR-87 |
-| **clone / disfarce** | A superfície que imita um app real (Instanooria, UnooTube, o ChatGPT da exp-03). Dentro dela a fidelidade é ao app imitado, não à marca Unooria | `packages/ui/AGENTS.md` |
+| **clone / disfarce** | A superfície que imita um app real (Instanooria, UnooTube, o ChatGPT da exp02em1b). Dentro dela a fidelidade é ao app imitado, não à marca Unooria | `packages/ui/AGENTS.md` |
 | **revelação** | O momento em que a experiência deixa de fingir ser o app e volta a ser a plataforma. É **a revelação** que marca a fronteira entre as duas famílias do DS, não o arquivo | ADR-72 |
 | **perfil portátil** | O que outra instalação afirmou sobre a criança, importado como documento assinado. **Nunca se mistura** com o dado produzido aqui | `perfis_portateis` |
 

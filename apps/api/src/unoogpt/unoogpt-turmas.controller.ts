@@ -25,7 +25,7 @@ import { GESTORES_DO_CONTRATO, ehDoContrato} from "../auth/claims";
  * criança — com a Transcrição.
  *
  * **Gestor NÃO entra aqui**, e isso é classe separada em vez de `@Roles` misto
- * com exceção por método (mesma regra da exp-70). O agregado por turma abre
+ * com exceção por método (mesma regra da app-70). O agregado por turma abre
  * para o gestor em `UnoogptAgregadoController`; a conversa de uma criança, não.
  *
  * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem

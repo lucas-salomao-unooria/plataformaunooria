@@ -1,5 +1,5 @@
 /**
- * exp-04-o-que-a-foto-conta — o catálogo autoral da missão.
+ * exp01ef1b — o catálogo autoral da missão.
  *
  * Missão do 1º ano EF no mural da turma (clone do Instagram, seção
  * `instanooria` do DS): a criança escolhe UM enquadramento e UMA legenda,
@@ -17,7 +17,7 @@
 
 /** Tem de bater com o `id` do `public/experiencia.json` — divergir faz a
  *  missão nunca abrir, com a liberação gravada (ADR-69). */
-export const EXP_ID = "exp-04-o-que-a-foto-conta";
+export const EXP_ID = "exp01ef1b";
 
 /** Gravada em toda run e no payload analítico (DAD-06: subir a versão nunca
  *  reprocessa dado legado). */
@@ -77,7 +77,7 @@ export interface ComentariosDoPar {
   audioSofia?: string;
 }
 
-/** O pacote COMPLETO de uma aula — o que `exp_04_turma_config.pacote` guarda.
+/** O pacote COMPLETO de uma aula — o que `exp01ef1b_turma_config.pacote` guarda.
  *  A parte pública (sem `comentarios`) é o que a rota do estudante devolve. */
 export interface PacoteDaTurma {
   tema: Tema;

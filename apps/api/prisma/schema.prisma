@@ -219,28 +219,28 @@ model Turma {
   /// Cache da matrícula principal (`users.turma_id`). A VERDADE é `matriculas`.
   estudantes         User[]
   matriculas         Matricula[]
-  /// Atividades do Instanooria desta turma (`exp_01_activities.turma_id`).
+  /// Atividades do Instanooria desta turma (`exp08ef1b_activities.turma_id`).
   atividades         Activity[]
   /// As missões liberadas NESTA turma (ADR-69).
   liberacoes         Liberacao[]
 
-  /// O Relógio da AULA da exp-03 mora em tabela DA EXPERIÊNCIA, não em coluna
+  /// O Relógio da AULA da exp02em1b mora em tabela DA EXPERIÊNCIA, não em coluna
   /// aqui: `turmas` serve a plataforma inteira, e uma coluna de cronômetro de
   /// uma missão só faria toda experiência futura herdar o vocabulário dela.
   unoogptRelogio     UnoogptRelogioTurma[]
-  /// O gate da aula da exp-07 mora em tabela DA EXPERIÊNCIA, pelo mesmo
+  /// O gate da aula da exp07ef1b mora em tabela DA EXPERIÊNCIA, pelo mesmo
   /// motivo do relógio acima.
   ecoGates           EcoGateTurma[]
   rastroGates        RastroGateTurma[]
-  manifestoGates     Exp08GateTurma[]
-  /// O pacote curado da exp-08 é POR TURMA: cada professora contextualiza os
+  manifestoGates     Exp08ef4bGateTurma[]
+  /// O pacote curado da exp08ef4b é POR TURMA: cada professora contextualiza os
   /// dilemas com o caso da escola dela (exigência 8.1).
-  manifestoConteudo  Exp08ConteudoTurma[]
-  quemMandouGates    Exp05GateTurma[]
-  /// O lote da exp-05 também é POR TURMA, e mais rígido que o da exp-08: sem
+  manifestoConteudo  Exp08ef4bConteudoTurma[]
+  quemMandouGates    Exp05ef1bGateTurma[]
+  /// O lote da exp05ef1b também é POR TURMA, e mais rígido que o da exp08ef4b: sem
   /// ele homologado a missão do estudante não abre, fica em espera.
-  quemMandouConteudo Exp05ConteudoTurma[]
-  /// A configuração da aula da exp-04 (pacote de fotos + o latch da roda).
+  quemMandouConteudo Exp05ef1bConteudoTurma[]
+  /// A configuração da aula da exp01ef1b (pacote de fotos + o latch da roda).
   fotoContaConfigs   FotoContaTurmaConfig[]
 
   @@unique([escolaId, periodoLetivoId, nome])
@@ -291,11 +291,11 @@ model Matricula {
 ///
 /// Sem linha aqui, a experiência não abre para o estudante daquela turma: é a
 /// tabela que responde "esta missão está nesta sala?". Não confundir com o
-/// relógio da exp-03 nem com os gates da exp-07, que respondem "a aula já
+/// relógio da exp02em1b nem com os gates da exp07ef1b, que respondem "a aula já
 /// começou" — aqueles são DA experiência e continuam onde estão. Esta é a
 /// pré-condição de todos eles.
 ///
-/// Tabela de PLATAFORMA (sem prefixo `exp_NN_`): serve a todas as experiências,
+/// Tabela de PLATAFORMA (sem prefixo de experiência): serve a todas as experiências,
 /// e é contrato entre a plataforma e cada uma delas.
 model Liberacao {
   id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -427,10 +427,10 @@ model User {
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
   rastroSessoes              RastroSessao[]              @relation("RastroEstudante")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
-  manifestoSessoes           Exp08Sessao[]               @relation("Exp08Estudante")
+  manifestoSessoes           Exp08ef4bSessao[]               @relation("Exp08ef4bEstudante")
   /// Lista pelo mesmo motivo de `unootube`: PK composta não é única por estudante.
-  quemMandouSessoes          Exp05Sessao[]               @relation("Exp05Estudante")
-  /// Lista porque a run da exp-04 é por TENTATIVA (o reset arquiva e abre
+  quemMandouSessoes          Exp05ef1bSessao[]               @relation("Exp05ef1bEstudante")
+  /// Lista porque a run da exp01ef1b é por TENTATIVA (o reset arquiva e abre
   /// outra), então não há unicidade por estudante.
   fotoContaRuns              FotoContaRun[]              @relation("FotoContaEstudante")
   /// O que esta conta ligou ou desligou no painel da Unooria (ADR-87). FK de
@@ -497,7 +497,7 @@ model Activity {
 
   @@index([escolaId])
   @@index([turmaId])
-  @@map("exp_01_activities")
+  @@map("exp08ef1b_activities")
 }
 
 /// personas fictícias (etapa 0 da geração)
@@ -524,7 +524,7 @@ model Author {
 
   @@unique([activityId, handle])
   @@index([escolaId])
-  @@map("exp_01_authors")
+  @@map("exp08ef1b_authors")
 }
 
 model Post {
@@ -559,9 +559,9 @@ model Post {
   events              Event[]
   comentariosDaSessao ComentarioDaSessao[]
 
-  @@index([activityId, lado, perfil, intensidade, aprovado], map: "idx_exp_01_posts_curadoria")
+  @@index([activityId, lado, perfil, intensidade, aprovado], map: "idx_exp08ef1b_posts_curadoria")
   @@index([escolaId])
-  @@map("exp_01_posts")
+  @@map("exp08ef1b_posts")
 }
 
 /// comentários fake do post (objeto completo, como no padrão do IG)
@@ -581,7 +581,7 @@ model PostComment {
   author Author? @relation(fields: [authorId], references: [id])
 
   @@index([escolaId])
-  @@map("exp_01_post_comments")
+  @@map("exp08ef1b_post_comments")
 }
 
 model GenerationJob {
@@ -602,7 +602,7 @@ model GenerationJob {
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("exp_01_generation_jobs")
+  @@map("exp08ef1b_generation_jobs")
 }
 
 /// sessão de uso do estudante
@@ -642,7 +642,7 @@ model Run {
 
   @@unique([activityId, estudanteId])
   @@index([escolaId])
-  @@map("exp_01_runs")
+  @@map("exp08ef1b_runs")
 }
 
 model Event {
@@ -661,9 +661,9 @@ model Event {
   run  Run   @relation(fields: [runId], references: [id], onDelete: Cascade)
   post Post? @relation(fields: [postId], references: [id])
 
-  @@index([runId, id], map: "idx_exp_01_events_run")
+  @@index([runId, id], map: "idx_exp08ef1b_events_run")
   @@index([escolaId])
-  @@map("exp_01_events")
+  @@map("exp08ef1b_events")
 }
 
 /// post publicado pelo estudante (opcional, espontâneo)
@@ -681,7 +681,7 @@ model StudentPost {
   comentariosDaSessao ComentarioDaSessao[]
 
   @@index([escolaId])
-  @@map("exp_01_student_posts")
+  @@map("exp08ef1b_student_posts")
 }
 
 /// perfil do Ato 1 importado ANTES de existir run
@@ -717,7 +717,7 @@ model PerfilImportado {
 
   @@unique([activityId, estudanteId])
   @@index([escolaId])
-  @@map("exp_01_exp_70_perfis_importados")
+  @@map("exp08ef1b_app_70_perfis_importados")
 }
 
 /// conclusão da missão: neste fluxo o estudante só escolhe um lado; o texto livre
@@ -745,7 +745,7 @@ model Conclusao {
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("exp_01_conclusoes")
+  @@map("exp08ef1b_conclusoes")
 }
 
 model Dossier {
@@ -758,7 +758,7 @@ model Dossier {
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("exp_01_dossiers")
+  @@map("exp08ef1b_dossiers")
 }
 
 /// Fechamento da atividade: o que o estudante entendeu sobre viés, algoritmo e as
@@ -773,7 +773,7 @@ model Reflexao {
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId])
-  @@map("exp_01_reflexoes")
+  @@map("exp08ef1b_reflexoes")
 }
 
 /// Comentário que existe SÓ nesta sessão: escrito pelo estudante ou por uma persona
@@ -799,7 +799,7 @@ model ComentarioDaSessao {
   @@index([runId, createdAt], map: "idx_comentarios_sessao_run")
   @@index([runId, postId], map: "idx_comentarios_sessao_post")
   @@index([escolaId])
-  @@map("exp_01_comentarios_da_sessao")
+  @@map("exp08ef1b_comentarios_da_sessao")
 }
 
 // ─── Tabelas do contrato SDK/monorepo (absorvidas do scaffold SQL) ───────────
@@ -816,7 +816,7 @@ model Progresso {
   @@map("progresso")
 }
 
-/// Estado server-side da exp-02-unootube (uma linha por estudante). `salvos`
+/// Estado server-side da exp04ef1b (uma linha por estudante). `salvos`
 /// guarda ids do catálogo (`src/unootube/catalogo.ts`); o gabarito `factual`
 /// não é persistido nem devolvido. CHECKs (cardinality(salvos) <= 3,
 /// conclusão implica concluido_em) e RLS vivem na migration.
@@ -836,7 +836,7 @@ model UnootubeSessao {
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
-  @@map("exp_02_sessoes")
+  @@map("exp04ef1b_sessoes")
 }
 
 /// Telemetria analítica (xAPI simplificado) — gravada pelo ingest do Pub/Sub.
@@ -883,7 +883,7 @@ model Experiencia {
   ///
   /// É esta coluna que faz o painel da Unooria se auto-estender: a composição
   /// produto → experiências é DERIVADA do manifesto, não uma lista mantida à
-  /// mão — e lista à mão é a que ninguém atualiza quando a exp-08 nascer.
+  /// mão — e lista à mão é a que ninguém atualiza quando a exp08ef4b nascer.
   ///
   /// NULO é dado real (linha de antes da coluna): a experiência responde só
   /// pelo próprio interruptor, sem teto de produto. Quem impede uma experiência
@@ -892,12 +892,12 @@ model Experiencia {
   capabilities String[] @default([])
   /// {largura, altura} px lógicos quando a experiência exige casca de aparelho
   viewport     Json?
-  /// estudante | professor — CHECK na migration. Ferramenta de professor (exp-90)
+  /// estudante | professor — CHECK na migration. Ferramenta de professor (app-90)
   /// não é embedada em /exp/* nem listada para estudante.
   publico      String   @default("estudante")
   /// Permissões de iframe que esta experiência precisa. Hoje só
   /// `pointer-lock`, que liga o token `allow-pointer-lock` do sandbox do
-  /// `ExpFrame` — jogo 3D em primeira pessoa (exp-70). Vazio = nenhuma, que é
+  /// `ExpFrame` — jogo 3D em primeira pessoa (app-70). Vazio = nenhuma, que é
   /// o que toda experiência tinha antes disto existir.
   ///
   /// `fullscreen` NÃO entra aqui: o `allow` do frame já o delega a todas as
@@ -1036,7 +1036,7 @@ model RecursoAuditoria {
 
   /// O nome de quem fez, CONGELADO na linha. Um JOIN mostraria o nome de hoje
   /// — ou nada, se a conta saiu da rede —, e o registro deixaria de dizer quem
-  /// era aquela pessoa NAQUELE dia. Mesma razão de `exp_01_runs.nome_no_app`.
+  /// era aquela pessoa NAQUELE dia. Mesma razão de `exp08ef1b_runs.nome_no_app`.
   autorNome String @map("autor_nome")
 
   quando DateTime @default(now()) @db.Timestamptz(6)
@@ -1060,7 +1060,7 @@ model IaUsoDiario {
   @@map("ia_uso_diario")
 }
 
-/// Plano de aula gerado pelo professor (exp-90-plano-de-aula). O CONTEÚDO fica
+/// Plano de aula gerado pelo professor (app-90-plano-de-aula). O CONTEÚDO fica
 /// em object storage privado (`{contrato}-planos`); aqui só metadados, status
 /// da geração assíncrona e os caminhos. `pendente|gerando|pronto|erro` — CHECK
 /// na migration. RLS por escola_id + posse por professor_id nas queries.
@@ -1088,7 +1088,7 @@ model PlanoDeAula {
   professor User @relation("PlanoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
 
   @@index([escolaId, professorId])
-  @@map("exp_90_planos")
+  @@map("app_90_planos")
 }
 
 /// Referências curriculares do CONTRATO (currículo da rede, material didático)
@@ -1107,10 +1107,10 @@ model PlanoReferencia {
 
   @@unique([disciplina, serie, nome])
   @@index([disciplina, serie])
-  @@map("exp_90_referencias")
+  @@map("app_90_referencias")
 }
 
-// ─── exp-70-vila-do-lume ─────────────────────────────────────────────────────
+// ─── app-70-vila-do-lume ─────────────────────────────────────────────────────
 //
 // Jogo 3D transversal (não pertence a nenhum ano). Duas leituras saem de uma
 // partida, e elas NÃO SE TOCAM: o retrato de valores (Schwartz), derivado de
@@ -1201,9 +1201,9 @@ model VilaSessao {
   estudante User         @relation("VilaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   perfis    VilaPerfil[]
 
-  @@index([escolaId, turmaId, abertaEm], map: "idx_exp_70_sessoes_consulta")
-  @@index([escolaId, estudanteId], map: "idx_exp_70_sessoes_estudante")
-  @@map("exp_70_sessoes")
+  @@index([escolaId, turmaId, abertaEm], map: "idx_app_70_sessoes_consulta")
+  @@index([escolaId, estudanteId], map: "idx_app_70_sessoes_estudante")
+  @@map("app_70_sessoes")
 }
 
 /// O retrato Schwartz de uma partida. RECALCULADO pelo servidor a partir das
@@ -1248,8 +1248,8 @@ model VilaPerfil {
   estudante User       @relation("VilaPerfilEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
 
   @@unique([sessaoId, versaoMapeamento])
-  @@index([escolaId, estudanteId, createdAt], map: "idx_exp_70_perfis_consulta")
-  @@map("exp_70_perfis")
+  @@index([escolaId, estudanteId, createdAt], map: "idx_app_70_perfis_consulta")
+  @@map("app_70_perfis")
 }
 
 /// Que bolha cada estudante recebeu. Uma linha por estudante, POR ESTUDANTE e não por
@@ -1271,11 +1271,11 @@ model VilaBolha {
   estudante User @relation("VilaBolhaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
 
   @@id([escolaId, estudanteId])
-  @@index([escolaId], map: "idx_exp_70_bolhas_escola")
-  @@map("exp_70_bolhas")
+  @@index([escolaId], map: "idx_app_70_bolhas_escola")
+  @@map("app_70_bolhas")
 }
 
-/// Check-in de bem-estar do PROFESSOR (exp-91-bem-estar): um ciclo cobre os
+/// Check-in de bem-estar do PROFESSOR (app-91-bem-estar): um ciclo cobre os
 /// 21 itens do DASS-21 em 7 check-ins de 3 itens. `ordem_itens` é a permutação
 /// dos itens 1..21 sorteada na abertura do ciclo (cada check-in = 3 itens, um
 /// de cada subescala). A pontuação (soma ×2, faixas de Lovibond & Lovibond) é
@@ -1302,7 +1302,7 @@ model BemEstarCiclo {
   checkins  BemEstarCheckin[]
 
   @@index([escolaId, professorId, status])
-  @@map("exp_91_ciclos")
+  @@map("app_91_ciclos")
 }
 
 /// Um check-in (≤ 1 por dia por professor — `dia` é YYYY-MM-DD no fuso do
@@ -1337,17 +1337,17 @@ model BemEstarCheckin {
 
   @@unique([escolaId, professorId, dia])
   @@index([cicloId])
-  @@map("exp_91_checkins")
+  @@map("app_91_checkins")
 }
 
 // ---------------------------------------------------------------------------
-// exp-03-unoogpt — a Missão Tempestade (Serra do Sauá)
+// exp02em1b — a Missão Tempestade (Serra do Sauá)
 //
 // Porte do projeto `gpturia`. Cinco tabelas, e NENHUMA coluna de prazo: houve
 // um `expires_at` de 30 dias no origem com uma rota de cron para cumpri-lo;
 // aqui não há job agendado, de propósito, e prazo que nenhuma rotina cumpre é
 // pior que prazo nenhum — quem lê o schema acredita nele. O caminho de
-// exclusão que existe de fato é "zerar a turma" (precedente da exp-70).
+// exclusão que existe de fato é "zerar a turma" (precedente da app-70).
 //
 // Cinco colunas do origem NÃO vieram porque estavam mortas lá: `evidencias`
 // (só escrita), `camadas_reveladas` e `pergunta_id` (só escritas vazias),
@@ -1360,7 +1360,7 @@ model BemEstarCheckin {
 // CHECKs e RLS vivem na migration.
 // ---------------------------------------------------------------------------
 
-/// Estado server-side de uma partida (uma linha por estudante, como a exp-02).
+/// Estado server-side de uma partida (uma linha por estudante, como a exp04ef1b).
 model UnoogptSessao {
   escolaId    String  @map("escola_id")
   estudanteId String  @map("estudante_id") @db.Uuid
@@ -1376,7 +1376,7 @@ model UnoogptSessao {
   /// legível.
   tentativa          Int      @default(1) @db.SmallInt
   /// Minuto NARRATIVO decorrido desde as 17h00 — snapshot do que o relógio da
-  /// turma já produziu. A fonte da verdade é `exp_03_relogio_turma`; isto é o
+  /// turma já produziu. A fonte da verdade é `exp02em1b_relogio_turma`; isto é o
   /// instante congelado da última ação, e é o minuto de SAÍDA das equipes
   /// quando a tempestade é enfrentada.
   minutosGastos      Int      @default(0) @map("minutos_gastos")
@@ -1414,7 +1414,7 @@ model UnoogptSessao {
   @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
-  @@map("exp_03_sessoes")
+  @@map("exp02em1b_sessoes")
 }
 
 /// A Transcrição: a conversa entre o estudante e o Cientista.
@@ -1445,7 +1445,7 @@ model UnoogptMensagem {
 
   /// Paginação por id é estável; por timestamp não.
   @@index([escolaId, estudanteId, id])
-  @@map("exp_03_mensagens")
+  @@map("exp02em1b_mensagens")
 }
 
 /// A trilha da decisão: o que o estudante fez, em que minuto da cidade.
@@ -1480,7 +1480,7 @@ model UnoogptMarco {
 
   @@unique([escolaId, estudanteId, tentativa, ordem])
   @@index([escolaId, estudanteId])
-  @@map("exp_03_marcos")
+  @@map("exp02em1b_marcos")
 }
 
 /// O desfecho de cada tentativa — o AGREGADO, que sobrevive ao "zerar a turma"
@@ -1513,7 +1513,7 @@ model UnoogptSimulacao {
 
   @@unique([escolaId, estudanteId, ordem])
   @@index([escolaId, estudanteId])
-  @@map("exp_03_simulacoes")
+  @@map("exp02em1b_simulacoes")
 }
 
 /// O Relógio da AULA — por TURMA, não por estudante.
@@ -1522,7 +1522,7 @@ model UnoogptSimulacao {
 /// cada um começava quando abria o link. Numa sala isso é uma corrida com
 /// largadas diferentes: quem chegou primeiro terminava antes de o professor
 /// acabar de explicar. Quem dá a partida é o professor, e ela vale para todo
-/// mundo ao mesmo tempo. Mesmo espírito do lock por turma da exp-70.
+/// mundo ao mesmo tempo. Mesmo espírito do lock por turma da app-70.
 model UnoogptRelogioTurma {
   escolaId String @map("escola_id")
   turmaId  String @map("turma_id") @db.Uuid
@@ -1548,10 +1548,10 @@ model UnoogptRelogioTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_03_relogio_turma")
+  @@map("exp02em1b_relogio_turma")
 }
 
-/// Estado server-side da exp-07-o-eco-no-grupo (uma linha por estudante).
+/// Estado server-side da exp07ef1b (uma linha por estudante).
 ///
 /// `passo` é o que o SERVIDOR precisa saber para reidratar a missão depois de um
 /// F5 — não o estado de tela. Modal aberto, cutucão de ociosidade e os 7s da
@@ -1564,7 +1564,7 @@ model UnoogptRelogioTurma {
 model EcoSessao {
   escolaId    String  @map("escola_id")
   estudanteId String  @map("estudante_id") @db.Uuid
-  /// Denormalizado da identidade, como na exp-03: o painel do professor e o
+  /// Denormalizado da identidade, como na exp02em1b: o painel do professor e o
   /// gate da turma consultam por turma o tempo todo.
   turmaId     String? @map("turma_id") @db.Uuid
 
@@ -1608,7 +1608,7 @@ model EcoSessao {
   /// o que aconteceu no grupo.
   turnosAmara Int @default(0) @map("turnos_amara") @db.SmallInt
 
-  /// Teto de custo por sessão, no espírito da exp-03: soma o que foi PAGO
+  /// Teto de custo por sessão, no espírito da exp02em1b: soma o que foi PAGO
   /// (reações, conversa com Amara, devolutiva), não o aproveitado.
   tokensGastos Int @default(0) @map("tokens_gastos")
   chamadasIa   Int @default(0) @map("chamadas_ia")
@@ -1624,7 +1624,7 @@ model EcoSessao {
   @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
-  @@map("exp_07_sessoes")
+  @@map("exp07ef1b_sessoes")
 }
 
 /// A conversa com Amara, DEPOIS da decisão no grupo.
@@ -1646,7 +1646,7 @@ model EcoMensagem {
 
   /// Paginação por id é estável; por timestamp não.
   @@index([escolaId, estudanteId, id])
-  @@map("exp_07_mensagens")
+  @@map("exp07ef1b_mensagens")
 }
 
 /// O "Meu percurso" — 2 estratégias de checagem e 1 justificativa, todas de
@@ -1668,12 +1668,12 @@ model EcoReflexao {
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
-  @@map("exp_07_reflexoes")
+  @@map("exp07ef1b_reflexoes")
 }
 
 /// O GATE DA AULA — por TURMA, e é o que deixa a professora conduzir 30 telas.
 ///
-/// Mesmo espírito do relógio da exp-03, mas a escassez aqui não é tempo: é
+/// Mesmo espírito do relógio da exp02em1b, mas a escassez aqui não é tempo: é
 /// ETAPA. A Aula 1 fecha num breakpoint que só ela abre, o debate CONGELA a
 /// turma na mesma tela (a conversa é entre pares) e a reflexão é liberada depois.
 /// A reconciliação entre esta etapa e o passo de cada estudante é função pura
@@ -1693,15 +1693,15 @@ model EcoGateTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_07_gates_turma")
+  @@map("exp07ef1b_gates_turma")
 }
 
-// ═══════════════════════════════════════════════ exp-06 — o rastro do boato
+// ═══════════════════════════════════════════════ exp06ef2b — o rastro do boato
 //
 // A missão do 6º ano: auditar os metadados de um boato em quatro grupos de
 // mensagens, decidir sob contágio ativo e ler a própria decisão no mapa da
-// rede. Quatro tabelas, e o desenho segue a exp-07 — o que é 1:1 com a sessão
-// é COLUNA da sessão, não tabela: `exp_06_decisoes` e `exp_06_modelagens` do
+// rede. Quatro tabelas, e o desenho segue a exp07ef1b — o que é 1:1 com a sessão
+// é COLUNA da sessão, não tabela: `exp06ef2b_decisoes` e `exp06ef2b_modelagens` do
 // PRD virariam duas linhas por estudante com uma FK cada, e o JOIN existiria
 // para nada.
 //
@@ -1713,7 +1713,7 @@ model EcoGateTurma {
 model RastroSessao {
   escolaId    String  @map("escola_id")
   estudanteId String  @map("estudante_id") @db.Uuid
-  /// Denormalizado da identidade, como na exp-07: o painel e o gate da turma
+  /// Denormalizado da identidade, como na exp07ef1b: o painel e o gate da turma
   /// consultam por turma o tempo todo.
   turmaId     String? @map("turma_id") @db.Uuid
 
@@ -1758,7 +1758,7 @@ model RastroSessao {
   @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
-  @@map("exp_06_sessoes")
+  @@map("exp06ef2b_sessoes")
 }
 
 /// Cada abertura do modal "Dados da mensagem".
@@ -1784,7 +1784,7 @@ model RastroAuditoria {
   /// dedupe valer mesmo se um caminho novo esquecer de checar antes.
   @@unique([escolaId, estudanteId, mensagemId])
   @@index([escolaId, estudanteId])
-  @@map("exp_06_auditorias")
+  @@map("exp06ef2b_auditorias")
 }
 
 /// O "Meu percurso" — a reflexão metacognitiva de até 280 caracteres.
@@ -1804,7 +1804,7 @@ model RastroReflexao {
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
-  @@map("exp_06_reflexoes")
+  @@map("exp06ef2b_reflexoes")
 }
 
 /// O GATE DA AULA — por TURMA. É o que deixa a professora conduzir 30 telas.
@@ -1826,20 +1826,20 @@ model RastroGateTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_06_gates_turma")
+  @@map("exp06ef2b_gates_turma")
 }
 
-// ═══════════════════════════════════════════════ exp-92 — plano de ensino
+// ═══════════════════════════════════════════════ app-92 — plano de ensino
 //
 // O planejamento dirigido pela BNCC, em dois níveis: um plano ANUAL (macro,
 // prosa pedagógica por período de avaliação) e planos de PERÍODO (granular,
 // aula a aula, semanal ou quinzenal). Um alimenta o outro.
 //
-// Por que não reaproveitou `exp_90_planos`: a exp-90 gera um documento a partir
+// Por que não reaproveitou `app_90_planos`: a app-90 gera um documento a partir
 // de TEXTO de currículo importado, e o que ela sabe do plano é "de que
 // disciplina e série ele é". Aqui o plano precisa saber quantas aulas o
 // professor tem, em que dias, em quantos períodos, e QUAIS habilidades caem em
-// cada um — nada disso cabe nas colunas de lá, e alargá-las quebraria a exp-90
+// cada um — nada disso cabe nas colunas de lá, e alargá-las quebraria a app-90
 // que está em uso.
 
 /// A REGÊNCIA: o que este professor leciona, para quem, quantas aulas e quando.
@@ -1852,7 +1852,7 @@ model RastroGateTurma {
 /// O passo do planejamento granular é SEMPRE semanal. Houve uma coluna
 /// `periodicidade` (semanal | quinzenal) e ela saiu na
 /// `20260907120000_exp_92_planejamento_sempre_semanal` (ADR-76): a `ordem` de
-/// `exp_92_planos_de_periodo` mudava de significado com ela, e entregar de
+/// `app_92_planos_de_periodo` mudava de significado com ela, e entregar de
 /// quinze em quinze dias é recorte de exportação, não de planejamento.
 model PlanoDeEnsinoConfiguracao {
   id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -1910,16 +1910,16 @@ model PlanoDeEnsinoConfiguracao {
   /// turmas do mesmo 7º ano de Matemática compartilham o planejamento — é o que
   /// o professor faz na prática, e forçar uma cópia por turma multiplicaria o
   /// trabalho dele sem acrescentar informação.
-  @@unique([escolaId, professorId, anoLetivo, serie, componente], map: "exp_92_configuracao_unica")
+  @@unique([escolaId, professorId, anoLetivo, serie, componente], map: "app_92_configuracao_unica")
   @@index([escolaId, professorId])
-  @@map("exp_92_configuracoes")
+  @@map("app_92_configuracoes")
 }
 
 /// O PLANO ANUAL — o macro. Prosa pedagógica gerada pela IA sobre a distribuição
 /// de habilidades que o professor decidiu, período por período.
 ///
 /// `distribuicao` é a decisão HUMANA e fica no banco, estruturada; o documento
-/// gerado é prosa e vai para o object storage, no mesmo arranjo da exp-90
+/// gerado é prosa e vai para o object storage, no mesmo arranjo da app-90
 /// (metadado aqui, conteúdo lá). A separação importa: o professor pode reescrever
 /// o texto inteiro sem que o sistema perca qual habilidade cai em que bimestre —
 /// e é isso que o plano de período precisa saber para ser gerado.
@@ -1931,7 +1931,7 @@ model PlanoDeEnsinoAnual {
 
   titulo       String
   /// pendente | gerando | pronto | erro — CHECK na migration. Mesma máquina de
-  /// estados da exp-90: a geração corre em background e a tela faz polling.
+  /// estados da app-90: a geração corre em background e a tela faz polling.
   status       String    @default("pendente")
   tentativas   Int       @default(0) @db.SmallInt
   iniciadoEm   DateTime? @map("iniciado_em") @db.Timestamptz(6)
@@ -1959,7 +1959,7 @@ model PlanoDeEnsinoAnual {
 
   @@index([escolaId, professorId])
   @@index([escolaId, configuracaoId])
-  @@map("exp_92_planos_anuais")
+  @@map("app_92_planos_anuais")
 }
 
 /// O PLANO DE PERÍODO — o granular, aula a aula, de uma semana ou quinzena.
@@ -2006,25 +2006,25 @@ model PlanoDeEnsinoPeriodo {
   planoAnual PlanoDeEnsinoAnual @relation(fields: [planoAnualId], references: [id], onDelete: Cascade)
   professor  User               @relation("PlanoEnsinoPeriodoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
 
-  @@unique([escolaId, planoAnualId, ordem], map: "exp_92_periodo_unico")
+  @@unique([escolaId, planoAnualId, ordem], map: "app_92_periodo_unico")
   @@index([escolaId, professorId])
-  @@map("exp_92_planos_de_periodo")
+  @@map("app_92_planos_de_periodo")
 }
 
-// ═══════════════════════════════════════════ exp-08 — o manifesto da IA
+// ═══════════════════════════════════════════ exp08ef4b — o manifesto da IA
 //
 // "O Manifesto da IA: Nossos Direitos em Código" — 8º ano, 4º bimestre. O
 // estudante audita um sistema de predição escolar dentro de um clone do
 // ChatGPT, derruba a tese de neutralidade da máquina e fixa uma cláusula de
 // governança que ela passa a obedecer.
 //
-// CINCO tabelas, e o desenho segue a exp-06: o que é 1:1 com a sessão é COLUNA
-// da sessão, não tabela. A exceção é `exp_08_auditorias`, que é 1:N de
+// CINCO tabelas, e o desenho segue a exp06ef2b: o que é 1:1 com a sessão é COLUNA
+// da sessão, não tabela. A exceção é `exp08ef4b_auditorias`, que é 1:N de
 // propósito — a cota de 2 é sobre prompts DISTINTOS, e guardar só um contador
 // perderia QUAIS questionamentos a criança escolheu fazer, que é o dado
 // pedagógico da Etapa 2.
 //
-// A tabela a mais em relação à exp-06 é `exp_08_conteudo_turma`: o pacote
+// A tabela a mais em relação à exp06ef2b é `exp08ef4b_conteudo_turma`: o pacote
 // curado que a professora homologa antes da aula (exigência 8.2 — nenhum texto
 // gerado por IA chega ao estudante sem clique formal dela).
 //
@@ -2048,7 +2048,7 @@ model PlanoDeEnsinoPeriodo {
 /// Sobrevive ao "Zerar turma": o preparo custou tempo da professora, e apagá-lo
 /// junto com as respostas obrigaria a refazer a curadoria para reaplicar a
 /// missão numa segunda turma no mesmo dia.
-model Exp08ConteudoTurma {
+model Exp08ef4bConteudoTurma {
   escolaId String @map("escola_id")
   turmaId  String @map("turma_id") @db.Uuid
 
@@ -2080,14 +2080,14 @@ model Exp08ConteudoTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_08_conteudo_turma")
+  @@map("exp08ef4b_conteudo_turma")
 }
 
 /// A sessão do estudante na missão. Uma por estudante e por escola.
-model Exp08Sessao {
+model Exp08ef4bSessao {
   escolaId    String  @map("escola_id")
   estudanteId String  @map("estudante_id") @db.Uuid
-  /// Denormalizado da identidade, como na exp-06: o painel e o gate da turma
+  /// Denormalizado da identidade, como na exp06ef2b: o painel e o gate da turma
   /// consultam por turma o tempo todo.
   turmaId     String? @map("turma_id") @db.Uuid
 
@@ -2119,14 +2119,14 @@ model Exp08Sessao {
   atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
 
-  estudante  User             @relation("Exp08Estudante", fields: [estudanteId], references: [id], onDelete: Cascade)
-  auditorias Exp08Auditoria[]
-  percursos  Exp08Percurso[]
+  estudante  User             @relation("Exp08ef4bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  auditorias Exp08ef4bAuditoria[]
+  percursos  Exp08ef4bPercurso[]
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
-  @@map("exp_08_sessoes")
+  @@map("exp08ef4b_sessoes")
 }
 
 /// Cada questionamento disparado contra a máquina na Etapa 2.
@@ -2134,7 +2134,7 @@ model Exp08Sessao {
 /// 1:N de propósito: a cota de 2 é sobre prompts DISTINTOS, e guardar só o
 /// contador perderia QUAIS a criança escolheu — que é o dado da hipótese
 /// pedagógica (a contradição só aparece no prompt do preconceito histórico).
-model Exp08Auditoria {
+model Exp08ef4bAuditoria {
   id          BigInt @id @default(autoincrement())
   escolaId    String @map("escola_id")
   estudanteId String @map("estudante_id") @db.Uuid
@@ -2149,13 +2149,13 @@ model Exp08Auditoria {
 
   criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao Exp08Sessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+  sessao Exp08ef4bSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
   /// Reenviar o mesmo questionamento não é auditoria nova: o UNIQUE faz a
   /// dedupe valer mesmo se um caminho novo esquecer de checar antes.
   @@unique([escolaId, estudanteId, promptId])
   @@index([escolaId, estudanteId])
-  @@map("exp_08_auditorias")
+  @@map("exp08ef4b_auditorias")
 }
 
 /// O "MEU PERCURSO" — as 2 palavras-chave e o parágrafo autoral da Etapa 5.
@@ -2171,7 +2171,7 @@ model Exp08Auditoria {
 /// não existe scheduler de expurgo na plataforma, e declarar "um ano letivo"
 /// aqui seria escrever um prazo que ninguém cumpre — a armadilha do
 /// `expires_at` que o `AGENTS.md` da raiz cita.
-model Exp08Percurso {
+model Exp08ef4bPercurso {
   escolaId    String @map("escola_id")
   estudanteId String @map("estudante_id") @db.Uuid
 
@@ -2189,11 +2189,11 @@ model Exp08Percurso {
 
   criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao Exp08Sessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+  sessao Exp08ef4bSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
-  @@map("exp_08_respostas_percurso")
+  @@map("exp08ef4b_respostas_percurso")
 }
 
 /// O CHECKPOINT A — por TURMA. É o que congela 30 telas para o debate oral.
@@ -2204,12 +2204,12 @@ model Exp08Percurso {
 /// a tela do estudante lê por polling HTTP de 5s (`GET /manifesto-ia/gate`).
 ///
 /// Duas etapas só (`regras/passos.ts`): `missao` e `debate`. E, diferente da
-/// exp-06, o gate é OPCIONAL — a missão corre inteira sem ninguém apertar nada,
+/// exp06ef2b, o gate é OPCIONAL — a missão corre inteira sem ninguém apertar nada,
 /// porque a spec admite a sessão assíncrona individual. Por isso `debate` mexe
 /// só no TETO do passo, nunca no piso: subir o piso empurraria para a frente
 /// quem ainda estava auditando a máquina, e são justamente essas crianças que o
 /// debate tenta alcançar.
-model Exp08GateTurma {
+model Exp08ef4bGateTurma {
   escolaId String @map("escola_id")
   turmaId  String @map("turma_id") @db.Uuid
 
@@ -2222,10 +2222,10 @@ model Exp08GateTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_08_gates_turma")
+  @@map("exp08ef4b_gates_turma")
 }
 
-// ═══════════════════════════════════════════ exp-04 — o que a foto conta
+// ═══════════════════════════════════════════ exp01ef1b — o que a foto conta
 //
 // A missão do 1º ano EF: escolher enquadramento e legenda no mural da turma
 // (clone do Instagram) e descobrir que toda foto mostra uma escolha. 100%
@@ -2272,7 +2272,7 @@ model FotoContaTurmaConfig {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_04_turma_config")
+  @@map("exp01ef1b_turma_config")
 }
 
 /// A execução de UM estudante em UMA tentativa da turma.
@@ -2319,9 +2319,9 @@ model FotoContaRun {
   estudante User               @relation("FotoContaEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
   post      FotoContaPostTurma?
 
-  @@unique([escolaId, turmaId, estudanteId, tentativa], map: "exp_04_run_unica_por_tentativa")
+  @@unique([escolaId, turmaId, estudanteId, tentativa], map: "exp01ef1b_run_unica_por_tentativa")
   @@index([escolaId, turmaId, tentativa])
-  @@map("exp_04_runs")
+  @@map("exp01ef1b_runs")
 }
 
 /// A publicação no mural coletivo — o que a Galeria da Turma mostra.
@@ -2346,7 +2346,7 @@ model FotoContaPostTurma {
   run FotoContaRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([escolaId, turmaId, tentativa])
-  @@map("exp_04_posts_turma")
+  @@map("exp01ef1b_posts_turma")
 }
 
 /// O TETO DIÁRIO DE IA POR PERFIL (ADR-105) — a quota que `QuotaService`
@@ -2399,20 +2399,20 @@ model ProspeccaoLead {
   @@map("prospeccao_leads")
 }
 
-// ════════════════════════════════════════ exp-05 — quem mandou isso?
+// ════════════════════════════════════════ exp05ef1b — quem mandou isso?
 //
 // "Quem Mandou Isso?" — 5º ano EF, unidade 1. O estudante entra num grupo de
 // mensagens da turma, encaminha para o Mural o que julga importante, CONFIRMA —
 // e só então a professora acende o telão com o histograma da sala. A descoberta
 // é sobre o próprio dedo: a mentira chegou mais longe porque ele a encaminhou.
 //
-// CINCO tabelas, e o desenho segue a exp-08: o que é 1:1 com a sessão é COLUNA
+// CINCO tabelas, e o desenho segue a exp08ef4b: o que é 1:1 com a sessão é COLUNA
 // da sessão (`leu_tudo`, `midias_abertas`, `confirmado_em`), não tabela. A
-// exceção é `exp_05_encaminhamentos`, 1:N de propósito — o dado da missão é
+// exceção é `exp05ef1b_encaminhamentos`, 1:N de propósito — o dado da missão é
 // QUAIS mensagens foram ao Mural, e é dele que sai o histograma; um contador
 // diria "encaminhou 4" e perderia a única coisa que a revelação mostra.
 //
-// A tabela de conteúdo, aqui, é mais dura que a da exp-08: lá a turma sem
+// A tabela de conteúdo, aqui, é mais dura que a da exp08ef4b: lá a turma sem
 // preparo cai no banco curado e a aula corre; aqui não há queda, porque o lote
 // é do TEMA que a professora escolheu e um tema alheio faria a criança ler
 // mensagens sobre um acontecimento que não existiu na escola dela. Sem
@@ -2429,13 +2429,13 @@ model ProspeccaoLead {
 ///
 /// Uma linha por turma. `aprovadoPorProfessor` é o portão da curadoria humana
 /// (RF-001): sem ele `true` a experiência do estudante fica em ESPERA. É a
-/// diferença para a exp-08 — lá o não-preparo cai no banco curado, aqui não há
+/// diferença para a exp08ef4b — lá o não-preparo cai no banco curado, aqui não há
 /// queda, porque o lote inteiro é escrito em cima do tema que ela escolheu.
 ///
-/// Sobrevive ao "Zerar turma", como o pacote da exp-08: o preparo custou tempo
+/// Sobrevive ao "Zerar turma", como o pacote da exp08ef4b: o preparo custou tempo
 /// dela, e apagá-lo junto com as respostas obrigaria a refazer a curadoria para
 /// reaplicar a missão na turma seguinte no mesmo dia.
-model Exp05ConteudoTurma {
+model Exp05ef1bConteudoTurma {
   escolaId String @map("escola_id")
   turmaId  String @map("turma_id") @db.Uuid
 
@@ -2472,14 +2472,14 @@ model Exp05ConteudoTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_05_conteudo_turma")
+  @@map("exp05ef1b_conteudo_turma")
 }
 
 /// A sessão do estudante na missão. Uma por estudante e por escola.
-model Exp05Sessao {
+model Exp05ef1bSessao {
   escolaId    String  @map("escola_id")
   estudanteId String  @map("estudante_id") @db.Uuid
-  /// Denormalizado da identidade, como na exp-06 e na exp-08: o painel e o gate
+  /// Denormalizado da identidade, como na exp06ef2b e na exp08ef4b: o painel e o gate
   /// da turma consultam por turma o tempo todo.
   turmaId     String? @map("turma_id") @db.Uuid
 
@@ -2505,7 +2505,7 @@ model Exp05Sessao {
 
   /// Os ids cuja transcrição do áudio ou card do link foi ABERTA. É indicativo
   /// de leitura, nunca mérito. Coluna e não tabela: é 1:1 com a sessão, e a
-  /// convenção do repo é que 1:1 não vira tabela (exp-06, exp-08).
+  /// convenção do repo é que 1:1 não vira tabela (exp06ef2b, exp08ef4b).
   midiasAbertas String[] @default([]) @map("midias_abertas")
 
   /// O LATCH. Carimbado em "Confirmar envio" e irreversível: a partir daqui o
@@ -2521,14 +2521,14 @@ model Exp05Sessao {
   atualizadoEm DateTime  @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(6)
   concluidoEm  DateTime? @map("concluido_em") @db.Timestamptz(6)
 
-  estudante       User                  @relation("Exp05Estudante", fields: [estudanteId], references: [id], onDelete: Cascade)
-  encaminhamentos Exp05Encaminhamento[]
-  reflexoes       Exp05Reflexao[]
+  estudante       User                  @relation("Exp05ef1bEstudante", fields: [estudanteId], references: [id], onDelete: Cascade)
+  encaminhamentos Exp05ef1bEncaminhamento[]
+  reflexoes       Exp05ef1bReflexao[]
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
   @@index([escolaId, turmaId])
-  @@map("exp_05_sessoes")
+  @@map("exp05ef1b_sessoes")
 }
 
 /// Cada mensagem que o estudante mandou para o Mural da Turma.
@@ -2538,7 +2538,7 @@ model Exp05Sessao {
 /// snapshots dos confirmados). Um contador na sessão diria "encaminhou 4" e
 /// perderia exatamente a coisa que o telão mostra — que a sala inteira mandou
 /// a mesma mensagem falsa.
-model Exp05Encaminhamento {
+model Exp05ef1bEncaminhamento {
   id          BigInt @id @default(autoincrement())
   escolaId    String @map("escola_id")
   estudanteId String @map("estudante_id") @db.Uuid
@@ -2548,7 +2548,7 @@ model Exp05Encaminhamento {
 
   criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao Exp05Sessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+  sessao Exp05ef1bSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
   /// Encaminhar duas vezes não conta duas. A regra pura já deduplica com um
   /// `Set`, e o UNIQUE faz a dedupe valer quando dois toques rápidos no mesmo
@@ -2556,7 +2556,7 @@ model Exp05Encaminhamento {
   /// numa sala com trinta tablets, não a exceção.
   @@unique([escolaId, estudanteId, mensagemId])
   @@index([escolaId, estudanteId])
-  @@map("exp_05_encaminhamentos")
+  @@map("exp05ef1b_encaminhamentos")
 }
 
 /// A reflexão final — a resposta ao dilema do áudio do tio, em texto livre.
@@ -2572,9 +2572,9 @@ model Exp05Encaminhamento {
 /// painel que é a razão de ela existir.
 ///
 /// RETENÇÃO: vinculada à vigência contratual escolar, **sem rotina ativa de
-/// expurgo programado** (DAD-10), como na exp-08. Declarar "um ano letivo" aqui
+/// expurgo programado** (DAD-10), como na exp08ef4b. Declarar "um ano letivo" aqui
 /// seria escrever um prazo que nenhum scheduler cumpre.
-model Exp05Reflexao {
+model Exp05ef1bReflexao {
   escolaId    String @map("escola_id")
   estudanteId String @map("estudante_id") @db.Uuid
 
@@ -2586,11 +2586,11 @@ model Exp05Reflexao {
 
   criadoEm DateTime @default(now()) @map("criado_em") @db.Timestamptz(6)
 
-  sessao Exp05Sessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
+  sessao Exp05ef1bSessao @relation(fields: [escolaId, estudanteId], references: [escolaId, estudanteId], onDelete: Cascade)
 
   @@id([escolaId, estudanteId])
   @@index([escolaId])
-  @@map("exp_05_reflexoes")
+  @@map("exp05ef1b_reflexoes")
 }
 
 /// O RELÓGIO DA TURMA — os dois botões mestres da professora, e o inverso.
@@ -2603,10 +2603,10 @@ model Exp05Reflexao {
 /// card de síntese entra JUNTO da revelação — um terceiro botão para ele seria
 /// controle morto no painel.
 ///
-/// Diferente da exp-08, aqui a etapa mexe no PISO: quando o telão acende, quem
+/// Diferente da exp08ef4b, aqui a etapa mexe no PISO: quando o telão acende, quem
 /// não confirmou é empurrado para `revelado`. Deixá-lo continuar encaminhando
 /// com o gabarito projetado na parede mediria outra coisa.
-model Exp05GateTurma {
+model Exp05ef1bGateTurma {
   escolaId String @map("escola_id")
   turmaId  String @map("turma_id") @db.Uuid
 
@@ -2619,5 +2619,5 @@ model Exp05GateTurma {
 
   @@id([escolaId, turmaId])
   @@index([escolaId])
-  @@map("exp_05_gates_turma")
+  @@map("exp05ef1b_gates_turma")
 }

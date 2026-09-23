@@ -11,12 +11,12 @@
  *
  * Este arquivo é a fonte da verdade da trilha. Ele descreve o CATÁLOGO
  * (o que a Unooria oferece); as **atividades** que o professor cria a partir de
- * uma missão são instâncias no banco (`exp_01_activities`), com rota própria em
+ * uma missão são instâncias no banco (`exp08ef1b_activities`), com rota própria em
  * `/professor/atividades/**`.
  *
  * NOTA DE MODELAGEM: enquanto existir uma única missão COM ATIVIDADES, toda
- * atividade pertence a `MISSAO_ATUAL` por construção — por isso `exp_01_activities`
- * ainda não tem coluna `missao`. Missões sem `exp_01_activities` (o UnooTube do 4º
+ * atividade pertence a `MISSAO_ATUAL` por construção — por isso `exp08ef1b_activities`
+ * ainda não tem coluna `missao`. Missões sem `exp08ef1b_activities` (o UnooTube do 4º
  * ano: conteúdo fixo, resultados em tabela própria da api) não mudam isso.
  * Quando a segunda missão configurável entrar, o caminho é adicionar essa
  * coluna (default = slug da missão atual) e filtrar as listagens por ela; os
@@ -129,7 +129,7 @@ export const MISSAO_ATUAL: Missao = {
   anoSlug: "8-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-01-instanooria",
+  expId: "exp08ef1b",
   titulo: "O Conteúdo que não chegou",
   resumo:
     "O estudante investiga uma pergunta do seu conteúdo dentro de uma rede social — e só na revelação final descobre que o feed dele foi montado para puxá-lo para um dos lados.",
@@ -184,7 +184,7 @@ export const MISSAO_UNOOTUBE: Missao = {
   anoSlug: "4-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-02-unootube",
+  expId: "exp04ef1b",
   titulo: "UnooTube — Em quais fontes você confiaria?",
   resumo:
     "Num feed de vídeos curtos sobre História, o estudante salva as 3 fontes em que confiaria. Quem escolhe sensacionalismo ganha mais inscritos — até a turma descobrir que popularidade não é credibilidade.",
@@ -225,7 +225,7 @@ export const MISSAO_UNOOTUBE: Missao = {
 };
 
 /**
- * 2ª série do EM · Unidade 1 — a Missão Tempestade (`exp-03-unoogpt`).
+ * 2ª série do EM · Unidade 1 — a Missão Tempestade (`exp02em1b`).
  *
  * ATENÇÃO À COPY: os textos abaixo foram redigidos a partir das ADRs e dos dois
  * playtests documentados do projeto de origem, porque o guia do professor de lá
@@ -239,7 +239,7 @@ export const MISSAO_UNOOGPT: Missao = {
   anoSlug: "2-serie",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-03-unoogpt",
+  expId: "exp02em1b",
   titulo: "unooGPT — Decidir com o que os dados mostram",
   resumo:
     "Uma tempestade chega em uma hora e há 2 equipes para 4 bairros. O estudante conversa com um assistente de IA, pede os dados que quiser e decide — com 3 perguntas e o relógio correndo. Cada fonte mostra um pedaço distorcido da cidade, e é essa distorção que a turma discute depois.",
@@ -292,7 +292,7 @@ export const MISSAO_UNOOGPT: Missao = {
  * está aqui entra na grade como "Em breve".
  */
 /**
- * 7º ano · Unidade 1 — O Eco no Grupo (`exp-07-o-eco-no-grupo`).
+ * 7º ano · Unidade 1 — O Eco no Grupo (`exp07ef1b`).
  *
  * Clone de WhatsApp móvel, em DUAS aulas com breakpoint entre elas — a
  * primeira missão da trilha em que a professora conduz a turma por etapas
@@ -309,7 +309,7 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
   anoSlug: "7-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-07-o-eco-no-grupo",
+  expId: "exp07ef1b",
   titulo: "O Eco no Grupo — Quem decide o que roda?",
   resumo:
     "Um boato sobre o festival do bairro corre num grupo de WhatsApp, com print recortado e áudio alarmado. O estudante audita as mensagens, descobre o parágrafo que o print cortou e responde citando a matéria completa — e o grupo se acalma na frente dele.",
@@ -357,7 +357,7 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
 };
 
 /**
- * 6º ano · Unidade 2 — O Rastro do Boato (`exp-06-rastro-boato`).
+ * 6º ano · Unidade 2 — O Rastro do Boato (`exp06ef2b`).
  *
  * Clone de mensageiro móvel, em DUAS aulas com breakpoint entre elas, como a do
  * 7º ano — mas o objeto de análise é outro, e é isso que separa as duas na
@@ -367,7 +367,7 @@ export const MISSAO_ECO_NO_GRUPO: Missao = {
  * citar a matéria completa.
  *
  * A professora tem UM botão durante a aula (abrir a Aula 2) e o inverso dele.
- * É menos do que os três da exp-07 porque esta missão pede menos: o debate
+ * É menos do que os três da exp07ef1b porque esta missão pede menos: o debate
  * acontece depois do mapa, não no meio dele.
  *
  * A copy sai do sheet congelado da missão (passada 2), com uma exceção
@@ -379,7 +379,7 @@ export const MISSAO_RASTRO_BOATO: Missao = {
   anoSlug: "6-ano",
   unidadeSlug: "unidade-2",
   unidade: 2,
-  expId: "exp-06-rastro-boato",
+  expId: "exp06ef2b",
   titulo: "O Rastro do Boato — Por que a mentira voa?",
   resumo:
     "Um aviso de que a água da escola está contaminada corre quatro grupos em dez minutos, e a nota da direção com o laudo quase não sai do lugar. O estudante abre os dados de envio de cada mensagem, descobre que o alerta veio de seis encaminhamentos anônimos sem autor — e decide o que fazer quando chega o áudio convocando um protesto.",
@@ -427,10 +427,10 @@ export const MISSAO_RASTRO_BOATO: Missao = {
 };
 
 /**
- * 8º ano · Unidade 4 — O Manifesto da IA (`exp-08-manifesto-ia`).
+ * 8º ano · Unidade 4 — O Manifesto da IA (`exp08ef4b`).
  *
  * A SEGUNDA missão do 8º ano, e a que fecha o ano letivo dele. Clone do
- * ChatGPT, como a exp-03 — mas o que se audita aqui é outra coisa, e é isso que
+ * ChatGPT, como a exp02em1b — mas o que se audita aqui é outra coisa, e é isso que
  * separa as duas na trilha: na Missão Tempestade o estudante confere as FONTES
  * que o agente cita; aqui ele confronta a PREMISSA do sistema (a de que
  * algoritmo é neutro) e fixa uma regra que o código passa a obedecer.
@@ -453,7 +453,7 @@ export const MISSAO_MANIFESTO_IA: Missao = {
   anoSlug: "8-ano",
   unidadeSlug: "unidade-4",
   unidade: 4,
-  expId: "exp-08-manifesto-ia",
+  expId: "exp08ef4b",
   titulo: "O Manifesto da IA — Nossos direitos em código",
   resumo:
     "A direção quer instalar uma inteligência artificial para prever notas e monitorar presença, " +
@@ -531,7 +531,7 @@ export const MISSAO_MANIFESTO_IA: Missao = {
 };
 
 /**
- * 1º ano · Unidade 1 — O Que a Foto Conta (`exp-04-o-que-a-foto-conta`).
+ * 1º ano · Unidade 1 — O Que a Foto Conta (`exp01ef1b`).
  *
  * A porta de entrada do Entre Redes: leitura de imagem no mural da turma
  * (clone do Instagram), para crianças em alfabetização inicial. A missão é
@@ -548,7 +548,7 @@ export const MISSAO_FOTO_CONTA: Missao = {
   anoSlug: "1-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-04-o-que-a-foto-conta",
+  expId: "exp01ef1b",
   titulo: "O Que a Foto Conta — toda foto mostra uma escolha",
   resumo:
     "No mural da turma, duas fotos do mesmo pátio contam histórias opostas: uma celebra o brinquedo que a turma montou, a outra mostra o chão cheio de peças. O estudante escolhe UMA foto e UMA legenda, publica — e descobre, pelos comentários dos colegas simulados, que o pedaço que ele escolheu mostrar mudou o que os outros viram.",
@@ -607,9 +607,9 @@ export const MISSAO_FOTO_CONTA: Missao = {
 };
 
 /**
- * 5º ano · Unidade 1 — Quem mandou isso? (`exp-05-quem-mandou-isso`).
+ * 5º ano · Unidade 1 — Quem mandou isso? (`exp05ef1b`).
  *
- * Clone de mensageiro móvel, como a exp-06 e a exp-07 — e o que a separa das
+ * Clone de mensageiro móvel, como a exp06ef2b e a exp07ef1b — e o que a separa das
  * duas é O QUE se mede. No 6º ano o estudante LÊ os dados de envio; no 7º ele
  * audita o recorte de um print. Aqui ele não audita nada: ele ENCAMINHA, sob
  * urgência, e a missão mede o que o dedo dele fez antes de a cabeça alcançar.
@@ -619,7 +619,7 @@ export const MISSAO_FOTO_CONTA: Missao = {
  *
  * 1. **A missão NASCE VAZIA.** Sem lote homologado por ela, o estudante vê uma
  *    tela de espera — não um grupo vazio, e não o banco curado assumindo
- *    sozinho. É a diferença para a exp-04 e a exp-08, em que o pacote da
+ *    sozinho. É a diferença para a exp01ef1b e a exp08ef4b, em que o pacote da
  *    Unooria roda a aula sem ninguém aprovar nada. Aqui a aprovação é a porta.
  * 2. **São DOIS botões durante a aula**, não um: a revelação coletiva e a
  *    reflexão final. O primeiro fecha o Mural da turma inteira e acende o
@@ -637,7 +637,7 @@ export const MISSAO_QUEM_MANDOU_ISSO: Missao = {
   anoSlug: "5-ano",
   unidadeSlug: "unidade-1",
   unidade: 1,
-  expId: "exp-05-quem-mandou-isso",
+  expId: "exp05ef1b",
   titulo: "Quem mandou isso? — O grupo da turma e o mural da escola",
   resumo:
     "A direção pede ajuda ao 5ºB para organizar o que está sendo dito sobre uma mudança na " +
@@ -827,7 +827,7 @@ export type MissaoTransversal = {
  */
 export const MISSAO_VILA: MissaoTransversal = {
   slug: "vila-do-lume",
-  expId: "exp-70-vila-do-lume",
+  expId: "app-70-vila-do-lume",
   titulo: "Vila do Lume — A Noite Longa",
   resumo:
     "A turma reacende as oito fogueiras de uma vila no escuro. Pelo caminho chegam mensagens: duas são verdadeiras, e cada estudante recebe um golpe de um nível diferente — é isso que faz o debate funcionar.",

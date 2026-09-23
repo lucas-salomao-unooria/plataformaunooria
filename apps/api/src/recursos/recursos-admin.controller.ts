@@ -40,6 +40,7 @@ import {
   type Efetivo,
   type LinhaDeDisponibilidade,
 } from "./regras";
+import { EXP_ID_RE } from "../comum/codigo-da-experiencia";
 
 /**
  * O PAINEL DA UNOORIA (ADR-87 + ADR-88) — ligar, desligar e ver o que vale.
@@ -53,8 +54,6 @@ import {
  * método: é a mesma razão do unooGPT e da Vila — `@Roles` misto é como uma rota
  * acaba aberta para quem não devia sem ninguém notar.
  */
-/** O mesmo formato que o controller de experiências valida. */
-const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
 
 @Controller("recursos")
 @UseGuards(OidcGuard, RolesGuard)
@@ -370,7 +369,7 @@ export class RecursosAdminController {
   @Contrato({
     resumo: "Ativa uma versão para o CONTRATO (o rollback).",
     descricao:
-      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
+      "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a app-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.",
     params: z.object({ expId: z.string() }),
     corpo: AtivarVersaoSchema,
     resposta: VersaoAtivadaSchema,

@@ -32,7 +32,7 @@ Latência & Milissegundos; a próxima tela depende dela &
   Segundos a minutos; ninguém espera\\
 \zebra Ordenação & \textbf{Garantida} pela transação e pelo \emph{lock} da
   \cd{run} & Sem garantia\\
-Destino & \cd{exp\_01\_events} & \cd{telemetria\_eventos} (particionada)\\
+Destino & \cd{exp08ef1b\_events} & \cd{telemetria\_eventos} (particionada)\\
 \zebra Entrega & Exatamente uma vez (transacional) &
   \emph{At least once}; \emph{dedupe} por \cd{(event\_id, ts)}\\
 Quem lê & O motor de curadoria, o painel do professor, o dossiê &
@@ -171,7 +171,7 @@ de estudante.
 Avaliou-se mandar o canal analítico para o BigQuery por \emph{subscription}
 nativa do Pub/Sub. Não foi, por dois motivos concretos: (a) os relatórios do
 professor \textbf{não leem} \cd{telemetria\_eventos} --- eles leem
-\cd{exp\_01\_events}, o canal síncrono do motor ---, então o BigQuery não
+\cd{exp08ef1b\_events}, o canal síncrono do motor ---, então o BigQuery não
 resolvia problema nenhum \emph{hoje}; e (b) criava uma segunda plataforma de
 dados para operar, com IAM, custo e ferramentas próprios.
 
@@ -244,7 +244,7 @@ gargalo medido aqui era o laço de \cd{INSERT}.
   \item Nenhuma PII em log em texto claro.
   \item Texto livre sensível (o \emph{check-in} de bem-estar) \textbf{nunca} vai
     à telemetria; só contagens.
-  \item Em \cd{exp\_70\_sessoes.payload}, \cd{eventos[].dados} aceita apenas
+  \item Em \cd{app\_70\_sessoes.payload}, \cd{eventos[].dados} aceita apenas
     número, booleano ou \emph{string} de um \textbf{vocabulário fechado}. O campo
     de texto livre que existia era o único canal de texto arbitrário do
     \emph{payload} --- e o caminho por onde o nome de uma criança chegaria a um

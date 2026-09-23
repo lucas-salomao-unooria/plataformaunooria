@@ -7,8 +7,8 @@
  *
  * Uso:
  *   EXP_MAPAS_BUCKET=entre-redes-dev-exp-mapas GCP_PROJECT=entre-redes-dev \
- *     node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 < stack.txt
- *   ... ou com a stack inline: node scripts/mapear-stack.mjs exp-02-unootube 1.2.3 --stack "TypeError: ... at index-DmVpvDXl.js:1:23456"
+ *     node scripts/mapear-stack.mjs exp04ef1b 1.2.3 < stack.txt
+ *   ... ou com a stack inline: node scripts/mapear-stack.mjs exp04ef1b 1.2.3 --stack "TypeError: ... at index-DmVpvDXl.js:1:23456"
  *
  * A stack vem do Logs Explorer (jsonPayload.stack_trace da linha codigo=erro-cliente).
  * Sem dependência: usa `SourceMap` do Node (>= 18) e o gcloud já autenticado.

@@ -10,7 +10,7 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 - **A porta é `comum/liberacao.ts#exigirMissaoLiberada`**, e ela fica no FUNIL
   das rotas de estudante de cada experiência — `estudanteDaEscola` no UnooTube e
   no Eco, `garantirSessao` no unooGPT, `abrir` na Vila, e o controller em
-  `POST /runs` + `GET /runs/boot` (a exp-01 é a única cuja entrada está no
+  `POST /runs` + `GET /runs/boot` (a exp08ef1b é a única cuja entrada está no
   controller). Pô-la só na rota de leitura deixa a de escrita aberta a quem
   chamar direto: no UnooTube, `POST /salvos` cria a sessão sozinho.
 - **Fica na CRIAÇÃO da sessão, não em toda rota.** Quem já entrou fica —
@@ -28,7 +28,7 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
   (`prisma/catalogo-e-liberacoes.ts`, lendo os mesmos manifestos que o CI envia)
   — **sem catálogo não há grade**, e o professor abre a sala sem nada para liberar.
 - **Estudante sem turma não vê missão nenhuma**, e isso mudou o comportamento da
-  exp-03 (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
+  exp02em1b (que servia o relógio "aguardando" a quem estava solto). Sem sala não há
   missão; quem explica é a tela do hub, porque um erro dentro do aparelho não
   diria "peça para a coordenação te matricular" sem sair do disfarce.
 - **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**

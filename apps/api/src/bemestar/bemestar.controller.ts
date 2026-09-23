@@ -31,7 +31,7 @@ import {
 } from "./contrato-de-rotas";
 
 /**
- * Rotas do PROFESSOR da exp-91-bem-estar. Identidade sempre do token; posse
+ * Rotas do PROFESSOR da app-91-bem-estar. Identidade sempre do token; posse
  * checada em toda rota com id. NÃO existe rota de gestor/admin aqui de
  * propósito: as respostas são dado sensível de saúde do professor e só ele lê
  * (ver docs/DECISOES.md).
@@ -55,7 +55,7 @@ function limitar(chave: string, limite: number, janelaMs: number) {
 /* O interruptor da rede (ADR-87), por CLASSE: rota nova desta ferramenta nasce
    coberta. A exceção é declarada com `@SemDisponibilidade()`, e só vale para
    apagar os próprios dados. */
-@Recurso("exp-91-bem-estar")
+@Recurso("app-91-bem-estar")
 export class BemEstarController {
   constructor(private readonly bemEstar: BemEstarService) {}
 

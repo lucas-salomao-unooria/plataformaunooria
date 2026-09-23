@@ -44,7 +44,7 @@ export async function criarRoleDeRuntime(admin: PrismaClient): Promise<void> {
    * `GRANT USAGE ON SCHEMA public`.
    *
    * `pg_advisory_lock` é a ferramenta certa porque é por SESSÃO e atravessa
-   * processos — é o mesmo mecanismo que o motor da exp-01 usa para o lock por
+   * processos — é o mesmo mecanismo que o motor da exp08ef1b usa para o lock por
    * run. `$queryRawUnsafe` e não `$executeRawUnsafe`: é um SELECT — e com
    * `::text`, porque `pg_advisory_lock` devolve `void` e o Prisma responde
    * "Failed to deserialize column of type 'void'".

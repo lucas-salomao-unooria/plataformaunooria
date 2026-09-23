@@ -6,14 +6,14 @@ import { Button, Card, FeedbackAlert } from "@edu/ui/ds";
 import { ROTULO_DA_ETAPA, type EtapaDaTurma } from "@/lib/quem-mandou-tipos";
 
 /**
- * O PAINEL DA AULA da exp-05 — onde a professora muda o que 30 estudantes veem.
+ * O PAINEL DA AULA da exp05ef1b — onde a professora muda o que 30 estudantes veem.
  *
  * Client component de propósito: ela aperta no meio da aula, na frente da sala,
  * e precisa de resposta na hora, sem recarregar. A mutação vai pelo BFF
  * (`/api/plataforma/quem-mandou-isso/...`), que assina o token — o client do
  * hub nunca segura bearer.
  *
- * **DOIS botões mestres, mais o inverso.** É um a mais que a exp-06 porque esta
+ * **DOIS botões mestres, mais o inverso.** É um a mais que a exp06ef2b porque esta
  * missão tem dois momentos coletivos, e eles não podem ser o mesmo clique: a
  * revelação FECHA o Mural da sala inteira e acende o telão; a reflexão abre a
  * pergunta do tio, e ela vem DEPOIS do debate, que acontece fora da tela. Juntá
@@ -74,7 +74,7 @@ export function PainelDaAulaQuemMandou({
      refaz o render do servidor, e é de lá que vêm a barra de prontidão, o telão
      e a folha da turma.
 
-     COMO FALHAVA: nada na árvore da exp-05 pedia dado de novo. A professora
+     COMO FALHAVA: nada na árvore da exp05ef1b pedia dado de novo. A professora
      abria a tela às 8h e projetava; ela ficava em "0/30 confirmaram (0%)"
      enquanto os 30 confirmavam — com a frase "Espere cerca de 90% antes de
      iniciar a revelação" embaixo de um número que não andava, e nada em tela
@@ -83,7 +83,7 @@ export function PainelDaAulaQuemMandou({
      isso primeiro foi a própria suíte, que recarrega a página antes de ler o
      telão.
 
-     O molde é o relógio da exp-03 (`painel-do-relogio.tsx`): a transição troca
+     O molde é o relógio da exp02em1b (`painel-do-relogio.tsx`): a transição troca
      o render sem piscar a tela e sem derrubar o que ela já digitou no preparo
      logo acima — aquele formulário é estado de client, e `refresh` não o
      remonta.

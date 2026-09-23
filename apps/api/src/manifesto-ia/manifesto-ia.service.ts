@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma, type Exp08Sessao } from "@prisma/client";
+import { Prisma, type Exp08ef4bSessao } from "@prisma/client";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { PrismaService } from "../prisma/prisma.service";
@@ -47,7 +47,7 @@ import {
 import type { PacoteDeConteudo } from "./preparo.service";
 
 /**
- * Persistência e regras aplicadas da exp-08-manifesto-ia.
+ * Persistência e regras aplicadas da exp08ef4b.
  *
  * Assinaturas recebem `escolaId`/`estudanteId` explícitos (não o request) — os
  * testes de integração chamam direto, e toda query leva `escola_id` no `where`
@@ -62,7 +62,7 @@ import type { PacoteDeConteudo } from "./preparo.service";
  */
 
 /** O id que a guarda de liberação (ADR-69) e o manifesto compartilham. */
-export const EXP_ID = "exp-08-manifesto-ia";
+export const EXP_ID = "exp08ef4b";
 
 /** Minutos sem ação para o painel marcar ociosidade. O alerta é para a docente
  *  ir até a carteira, não para punir. */
@@ -89,7 +89,7 @@ const ESTADO_INICIAL: EstadoSessao = {
 };
 
 type LinhaDaSessao = Pick<
-  Exp08Sessao,
+  Exp08ef4bSessao,
   | "passo"
   | "clausulaId"
   | "latenciaClausulaSeg"
@@ -152,12 +152,12 @@ export class ManifestoIaService {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await this.estudanteDaEscola(tx, escolaId, estudanteId);
       const [linha, etapa, auditorias, percurso, conteudo] = await Promise.all([
-        tx.exp08Sessao.findUnique({
+        tx.exp08ef4bSessao.findUnique({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
         }),
         this.etapaDaTurma(tx, escolaId, turmaId),
         this.promptsDisparados(tx, escolaId, estudanteId),
-        tx.exp08Percurso.findUnique({
+        tx.exp08ef4bPercurso.findUnique({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
         }),
         this.conteudoDaTurma(tx, escolaId, turmaId),
@@ -205,11 +205,11 @@ export class ManifestoIaService {
    *
    * É a alternativa ao WebSocket que a ADR-93 registra: a tela do estudante
    * chama isto a cada 5 segundos durante a Etapa 4, e a professora congela 30
-   * telas mudando UMA linha em `exp_08_gates_turma`.
+   * telas mudando UMA linha em `exp08ef4b_gates_turma`.
    *
    * O custo é conhecido e comportado: 35 estudantes a cada 5s = 7 req/s por
    * turma, e só durante a Etapa 4. É a mesma ordem de grandeza do gate da
-   * exp-06, que roda em produção.
+   * exp06ef2b, que roda em produção.
    */
   async gate(escolaId: string, turmaId: string | null, passoBruto?: string) {
     return this.prisma.comTenancy(async (tx) => {
@@ -284,7 +284,7 @@ export class ManifestoIaService {
       // validação e a leitura (professora reaprovando no meio da aula).
       if (!prompt) throw erroDeJogo("prompt-desconhecido");
 
-      await tx.exp08Auditoria.create({
+      await tx.exp08ef4bAuditoria.create({
         data: {
           escolaId,
           estudanteId,
@@ -343,7 +343,7 @@ export class ManifestoIaService {
 
       const manifestoMarkdown = compilarManifesto(conteudo.contexto, clausula);
       const passo = avancarAte(estado.passo, "manifesto");
-      await tx.exp08Sessao.update({
+      await tx.exp08ef4bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: {
           clausulaId,
@@ -390,7 +390,7 @@ export class ManifestoIaService {
       if (estado.concluidoEm) throw erroDeJogo("missao-concluida");
       if (!estado.clausulaId) throw erroDeJogo("sem-clausula");
 
-      const jaTem = await tx.exp08Percurso.findUnique({
+      const jaTem = await tx.exp08ef4bPercurso.findUnique({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
       });
       if (jaTem) throw erroDeJogo("percurso-ja-registrado");
@@ -405,7 +405,7 @@ export class ManifestoIaService {
       if (padroes.length > 0) {
         logger.info(
           {
-            codigo: "exp08-pii-recusada",
+            codigo: "exp08ef4b-pii-recusada",
             escolaId,
             padroes,
             tamanho: paraLog(justificativa),
@@ -416,7 +416,7 @@ export class ManifestoIaService {
       }
 
       const texto = justificativa.trim();
-      await tx.exp08Percurso.create({
+      await tx.exp08ef4bPercurso.create({
         data: {
           escolaId,
           estudanteId,
@@ -446,13 +446,13 @@ export class ManifestoIaService {
     return this.comSessao(escolaId, estudanteId, turmaId, async (tx, estado) => {
       if (estado.concluidoEm) throw erroDeJogo("missao-concluida");
 
-      const percurso = await tx.exp08Percurso.findUnique({
+      const percurso = await tx.exp08ef4bPercurso.findUnique({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
       });
       if (!percurso) throw erroDeJogo("sem-clausula");
 
       const agora = new Date();
-      await tx.exp08Sessao.update({
+      await tx.exp08ef4bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: { passo: "fim", concluidoEm: agora },
       });
@@ -549,14 +549,14 @@ export class ManifestoIaService {
       const ids = estudantes.map((e) => e.id);
       const [porAuditoria, porPercurso] = await Promise.all([
         ids.length
-          ? tx.exp08Auditoria.groupBy({
+          ? tx.exp08ef4bAuditoria.groupBy({
               by: ["estudanteId"],
               where: { escolaId, estudanteId: { in: ids } },
               _count: { _all: true },
             })
           : Promise.resolve([]),
         ids.length
-          ? tx.exp08Percurso.findMany({
+          ? tx.exp08ef4bPercurso.findMany({
               where: { escolaId, estudanteId: { in: ids } },
               select: { estudanteId: true, tags: true, justificativaTexto: true },
             })
@@ -622,7 +622,7 @@ export class ManifestoIaService {
   async conteudoParaOProfessor(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const linha = await tx.exp08ConteudoTurma.findUnique({
+      const linha = await tx.exp08ef4bConteudoTurma.findUnique({
         where: { escolaId_turmaId: { escolaId, turmaId } },
       });
       const conteudo = this.conteudoDaLinha(linha);
@@ -662,7 +662,7 @@ export class ManifestoIaService {
         aprovadoPorProfessor: true,
         usouBancoDefault,
       };
-      const linha = await tx.exp08ConteudoTurma.upsert({
+      const linha = await tx.exp08ef4bConteudoTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         update: dados,
         create: { escolaId, turmaId, ...dados },
@@ -686,7 +686,7 @@ export class ManifestoIaService {
     return this.prisma.comTenancy(async (tx) => {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
       const etapa = ETAPA_DA_ACAO[acao];
-      const linha = await tx.exp08GateTurma.upsert({
+      const linha = await tx.exp08ef4bGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         update: { etapa },
         create: { escolaId, turmaId, etapa },
@@ -698,7 +698,7 @@ export class ManifestoIaService {
   /**
    * "Zerar turma" — apaga a execução, PRESERVA o preparo.
    *
-   * `exp_08_conteudo_turma` fica: a curadoria custou tempo da professora, e
+   * `exp08ef4b_conteudo_turma` fica: a curadoria custou tempo da professora, e
    * apagá-la junto obrigaria a refazer o preparo para aplicar a missão na
    * turma seguinte no mesmo dia. As auditorias e o percurso caem por CASCADE
    * da sessão — e o gate volta a `missao`, senão a turma nova nasceria
@@ -707,8 +707,8 @@ export class ManifestoIaService {
   async zerarTurma(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const { count } = await tx.exp08Sessao.deleteMany({ where: { escolaId, turmaId } });
-      await tx.exp08GateTurma.upsert({
+      const { count } = await tx.exp08ef4bSessao.deleteMany({ where: { escolaId, turmaId } });
+      await tx.exp08ef4bGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         update: { etapa: ETAPA_INICIAL },
         create: { escolaId, turmaId, etapa: ETAPA_INICIAL },
@@ -777,13 +777,13 @@ export class ManifestoIaService {
       await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`manifesto:${escolaId}:${estudanteId}`}, 0))`;
       await tx.$executeRaw`
-        INSERT INTO exp_08_sessoes (escola_id, estudante_id, turma_id)
+        INSERT INTO exp08ef4b_sessoes (escola_id, estudante_id, turma_id)
         VALUES (${escolaId}, ${estudanteId}::uuid, ${turmaId}::uuid)
         ON CONFLICT DO NOTHING`;
       /* A turma pode ter mudado depois da primeira visita (transferência no
          meio do ano): o painel lê por turma, e uma linha com a turma antiga
          desapareceria da tela da professora nova. */
-      const atual = await tx.exp08Sessao.update({
+      const atual = await tx.exp08ef4bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: { turmaId },
       });
@@ -799,7 +799,7 @@ export class ManifestoIaService {
     novo: Passo,
   ) {
     if (novo === anterior) return;
-    await tx.exp08Sessao.update({
+    await tx.exp08ef4bSessao.update({
       where: { escolaId_estudanteId: { escolaId, estudanteId } },
       data: { passo: novo },
     });
@@ -810,7 +810,7 @@ export class ManifestoIaService {
     escolaId: string,
     estudanteId: string,
   ): Promise<string[]> {
-    const linhas = await tx.exp08Auditoria.findMany({
+    const linhas = await tx.exp08ef4bAuditoria.findMany({
       where: { escolaId, estudanteId },
       select: { promptId: true },
       orderBy: { iteracao: "asc" },
@@ -832,7 +832,7 @@ export class ManifestoIaService {
     escolaId: string,
     turmaId: string,
   ): Promise<Etapa> {
-    const linha = await tx.exp08GateTurma.findUnique({
+    const linha = await tx.exp08ef4bGateTurma.findUnique({
       where: { escolaId_turmaId: { escolaId, turmaId } },
       select: { etapa: true },
     });
@@ -852,7 +852,7 @@ export class ManifestoIaService {
     turmaId: string | null,
   ): Promise<ConteudoEfetivo> {
     if (!turmaId) return { ...this.conteudoDaLinha(null), origem: "default" };
-    const linha = await tx.exp08ConteudoTurma.findUnique({
+    const linha = await tx.exp08ef4bConteudoTurma.findUnique({
       where: { escolaId_turmaId: { escolaId, turmaId } },
     });
     if (!linha?.aprovadoPorProfessor) {

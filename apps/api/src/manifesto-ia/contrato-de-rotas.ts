@@ -8,7 +8,7 @@ import {
 import { ACOES_DO_GATE, ETAPAS, PASSOS } from "./regras/passos";
 
 /**
- * O contrato HTTP da exp-08 — só schemas Zod, nenhum decorator.
+ * O contrato HTTP da exp08ef4b — só schemas Zod, nenhum decorator.
  *
  * Os enums vêm do catálogo e das regras, nunca reescritos aqui: uma segunda
  * lista de valores é a que ninguém atualiza junto.
@@ -58,7 +58,7 @@ export const ClausulaSchema = z.object({
  *
  * As tags são exatamente 2, e o `.refine` cobra distintas — marcar "Justiça"
  * duas vezes deixaria um slot logicamente vazio dentro de um array cheio, o
- * mesmo defeito que a ordem de blocos repetida produziu na exp-06.
+ * mesmo defeito que a ordem de blocos repetida produziu na exp06ef2b.
  */
 export const PercursoSchema = z.object({
   tags: z

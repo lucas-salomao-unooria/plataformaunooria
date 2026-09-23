@@ -13,7 +13,7 @@
  * `Dialog`, `Menu`, `ListItem`, `Checkbox`, `Radio` e `TopBar` colidem com os
  * da plataforma, e quem importa daqui sabe que está no clone.
  *
- * ONDE USAR: a casca móvel da exp-07-o-eco-no-grupo — da tela de bloqueio até a
+ * ONDE USAR: a casca móvel da exp07ef1b — da tela de bloqueio até a
  * validação de Amara no privado, inclusive os estados de erro, que falam na voz
  * do app ("Conectando...").
  *

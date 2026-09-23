@@ -11,7 +11,7 @@ const bairro = (m: ReturnType<typeof montarMapa>, slug: string) =>
  *
  * As asserções sobre a VISÃO (níveis de risco, faixa em vez de número seco)
  * moraram aqui até o porte e agora vivem em
- * `apps/experiencias/exp-03-unoogpt/src/lib/visao.test.ts`: `visao.ts` é
+ * `apps/experiencias/exp02em1b/src/lib/visao.test.ts`: `visao.ts` é
  * lógica de tela e mudou de lado junto com ela.
  */
 describe('invariante: o mapa é a leitura dos Conjuntos', () => {

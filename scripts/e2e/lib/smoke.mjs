@@ -21,8 +21,8 @@
  * O modificador `--error` é a única parte estrutural que separa os quatro
  * (`FeedbackAlert.mjs` monta `unooria-feedback-alert--${alertType}`).
  *
- * Vale para o que fala pela PLATAFORMA — exp-90 e exp-91. As experiências
- * disfarçadas (exp-01, exp-03) renderizam erro em `<p>` avulso, com classe
+ * Vale para o que fala pela PLATAFORMA — app-90 e app-91. As experiências
+ * disfarçadas (exp08ef1b, exp02em1b) renderizam erro em `<p>` avulso, com classe
  * diferente em cada tela, e por isso ainda não têm gancho estável: nelas o
  * sinal é `vigiarFalhasDaApi`.
  *
@@ -41,7 +41,7 @@ export const ALERTA_DE_ERRO =
  * `performance.measure(routeChangeToRender, ...)` em `next/dist/client/index.js`
  * pode receber um timestamp negativo numa navegação cliente e lança
  * `Failed to execute 'measure' on 'Performance'`. Aparece em 11 dos 12
- * roteiros, e como o da exp-02 e o da exp-03 reprovam por QUALQUER erro de
+ * roteiros, e como o da exp04ef1b e o da exp02em1b reprovam por QUALQUER erro de
  * console, os dois viviam vermelhos por isso — o que treina a pessoa a ignorar
  * o vermelho, que é o único jeito de um smoke deixar de servir.
  *
@@ -96,9 +96,9 @@ const PENDENCIAS_CONHECIDAS = [
     oQue:
       "algum componente do design system repassa uma prop booleana ao DOM (aviso do React; o " +
       "console do Playwright entrega a mensagem sem interpolar os argumentos, então ela não " +
-      "diz qual atributo é) — aparece no fluxo da exp-92, e a origem exata segue por isolar: " +
+      "diz qual atributo é) — aparece no fluxo da app-92, e a origem exata segue por isolar: " +
       "NÃO é o `ProgressBar` nem o `Selection`, que tratam as suas, e não era o " +
-      "`fillCompletedConnectors` que a exp-92 passava ao `Stepper` (prop inexistente no DS, já " +
+      "`fillCompletedConnectors` que a app-92 passava ao `Stepper` (prop inexistente no DS, já " +
       "removida). Fica listado porque é defeito de biblioteca, não da tela que a suíte mede",
   },
 ];

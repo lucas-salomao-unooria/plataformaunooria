@@ -14,9 +14,10 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \section{A convenção de nomes}
 
 \begin{regra}
-\textbf{Tabela de experiência leva o número dela: \cd{exp\_NN\_}.} Assim:
-\cd{exp\_70\_sessoes}, \cd{exp\_02\_sessoes}, \cd{exp\_03\_sessoes},
-\cd{exp\_07\_sessoes}, \cd{exp\_08\_sessoes}, \cd{exp\_91\_checkins}.
+\textbf{Tabela de experiência leva o CÓDIGO dela (\adrr{ADR-110}):
+\cd{exp08ef1b\_} para missão, \cd{app\_70\_} para o resto.} Assim:
+\cd{app\_70\_sessoes}, \cd{exp04ef1b\_sessoes}, \cd{exp02em1b\_sessoes},
+\cd{exp07ef1b\_sessoes}, \cd{exp08ef4b\_sessoes}, \cd{app\_91\_checkins}.
 
 \textbf{Tabela da plataforma --- que serve a todas --- fica sem prefixo}:
 \cd{escolas}, \cd{turmas}, \cd{users}, \cd{experiencias},
@@ -25,7 +26,7 @@ O dicionário de dados campo a campo está no Apêndice~\ref{ap:dicionario}.
 \cd{telemetria\_eventos}, \cd{ia\_uso\_diario}.
 
 \textbf{Tabela que é contrato entre duas experiências carrega os dois números}:
-\cd{exp\_01\_exp\_70\_perfis\_importados} --- a exp-70 escreve, a exp-01 lê.
+\cd{exp08ef1b\_app\_70\_perfis\_importados} --- a app-70 escreve, a exp08ef1b lê.
 Chamá-la de uma só mentiria sobre quem depende dela.
 \end{regra}
 
@@ -47,14 +48,17 @@ exatamente o que um prefixo de nome já dá.
 
 \subsection{A migração de referência, e duas armadilhas registradas}
 
-A renomeação para o padrão \cd{exp\_NN\_} está em
-\arq{20260827090000\_tabelas\_por\_experiencia}, e é a migração de referência para
+A renomeação para o prefixo por experiência está em
+\arq{20260827090000\_tabelas\_por\_experiencia}; a troca do número pelo código
+(\adrr{ADR-110}) está em \arq{20260923120000\_codigo\_das\_experiencias}, que
+resolve as mesmas duas armadilhas abaixo pelo OID do objeto em vez do nome. A
+primeira é a migração de referência para
 qualquer renomeação futura: \cd{RENAME}, nunca \cd{DROP}/\cd{CREATE}, e
 renomeando \emph{constraints}, índices e políticas de RLS junto.
 
 \begin{atencao}
 Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
---- nomes duplicados como \cd{exp\_01\_exp\_01\_..\_pkey}:
+--- nomes duplicados como \cd{exp08ef1b\_exp08ef1b\_..\_pkey}:
 
 \begin{enumerate}
   \item \cd{FOR ... IN SELECT} sobre o catálogo do sistema \textbf{relê o que o
@@ -454,11 +458,11 @@ faixas vão até 2028-12. Verificar a contagem da partição \cd{DEFAULT} é ite
 \emph{checklist} de operação (Apêndice~\ref{ap:operacao}).
 \end{atencao}
 
-\section{Modelo da exp-01 (Instanooria)}
+\section{Modelo da exp08ef1b (Instanooria)}
 
-A exp-01 é a experiência mais rica em dados: um motor de \emph{feed} adaptativo
+A exp08ef1b é a experiência mais rica em dados: um motor de \emph{feed} adaptativo
 com geração de conteúdo por IA, sessão por estudante e dossiê de fechamento. São doze
-tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
+tabelas \cd{exp08ef1b\_} mais a tabela de contrato com a app-70.
 
 \begin{figure}[H]
 \centering
@@ -466,7 +470,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   \node[tabela, text width=44mm] (act) at (2.9,0)
-    {\etitulo{exp\_01\_activities}
+    {\etitulo{exp08ef1b\_activities}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
      \fk{turma\_id} --- NULL = escola inteira\\
@@ -481,7 +485,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{status}: rascunho\ldots{}encerrada};
 
   \node[tabela, text width=40mm] (aut) at (8.4,1.0)
-    {\etitulo{exp\_01\_authors}
+    {\etitulo{exp08ef1b\_authors}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
      \texttt{handle}, \texttt{display\_name}\\
@@ -491,7 +495,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{UNIQUE (activity\_id, handle)}};
 
   \node[tabela, text width=44mm] (pos) at (13.6,-0.8)
-    {\etitulo{exp\_01\_posts}
+    {\etitulo{exp08ef1b\_posts}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
      \fk{author\_id}\\
@@ -505,7 +509,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \quad\texttt{intensidade, aprovado)}};
 
   \node[tabela, text width=40mm] (job) at (2.9,-6.4)
-    {\etitulo{exp\_01\_generation\_jobs}
+    {\etitulo{exp08ef1b\_generation\_jobs}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
      \texttt{tipo}: personas $|$ posts\_lote $|$\\
@@ -514,7 +518,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{erro}, \texttt{updated\_at} --- recicla órfão};
 
   \node[tabela, text width=38mm] (pc) at (8.6,-6.2)
-    {\etitulo{exp\_01\_post\_comments}
+    {\etitulo{exp08ef1b\_post\_comments}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{post\_id}\\
      \fk{author\_id} --- NULL = handle avulso\\
@@ -531,13 +535,13 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
     node[ercard, pos=0.86]{N};
 
 \end{tikzpicture}}
-\caption[Modelo de dados da exp-01: atividade e conteúdo]{Modelo de dados da
-  exp-01, parte 1: a atividade preparada pelo professor e o conteúdo gerado.
+\caption[Modelo de dados da exp08ef1b: atividade e conteúdo]{Modelo de dados da
+  exp08ef1b, parte 1: a atividade preparada pelo professor e o conteúdo gerado.
   \texttt{lado}, \texttt{perfil} e \texttt{intensidade} em
-  \cd{exp\_01\_posts} são a variável independente do experimento --- estão no
+  \cd{exp08ef1b\_posts} são a variável independente do experimento --- estão no
   banco, e o sanitizador da API os remove antes de o \emph{feed} sair
   (Seção~\ref{sec:fluxos}).}
-\label{fig:er-exp01a}
+\label{fig:er-exp08ef1ba}
 \end{figure}
 
 \begin{figure}[H]
@@ -546,7 +550,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \begin{tikzpicture}[x=1cm, y=1cm]
 
   \node[tabela, text width=46mm] (run) at (3.1,0)
-    {\etitulo{exp\_01\_runs} --- sessão de um estudante
+    {\etitulo{exp08ef1b\_runs} --- sessão de um estudante
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}\\
      \fk{estudante\_id}\\
@@ -559,7 +563,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{UNIQUE (activity\_id, estudante\_id)}};
 
   \node[tabela, text width=40mm] (ev) at (9.2,0.6)
-    {\etitulo{exp\_01\_events} --- canal OPERACIONAL
+    {\etitulo{exp08ef1b\_events} --- canal OPERACIONAL
      \nodepart{two}
      \pk{id} BIGSERIAL, \fk{escola\_id}\\
      \fk{run\_id}, \fk{post\_id}\\
@@ -569,14 +573,14 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{INDEX (run\_id, id)}};
 
   \node[tabela, text width=36mm] (sp) at (14.2,0.2)
-    {\etitulo{exp\_01\_student\_posts}
+    {\etitulo{exp08ef1b\_student\_posts}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
      \texttt{texto}, \texttt{template}\\
      \texttt{lado\_inferido}};
 
   \node[tabela, text width=32mm] (con) at (2.2,-5.2)
-    {\etitulo{exp\_01\_conclusoes}
+    {\etitulo{exp08ef1b\_conclusoes}
      \nodepart{two}
      \pk{run\_id}, \fk{escola\_id}\\
      \texttt{inclinacao}: A$|$B$|$duvida\\
@@ -585,19 +589,19 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{texto}};
 
   \node[tabela, text width=30mm] (ref) at (6.2,-5.2)
-    {\etitulo{exp\_01\_reflexoes}
+    {\etitulo{exp08ef1b\_reflexoes}
      \nodepart{two}
      \pk{run\_id}, \fk{escola\_id}\\
      \texttt{texto} --- sem limite};
 
   \node[tabela, text width=28mm] (dos) at (10.0,-5.2)
-    {\etitulo{exp\_01\_dossiers}
+    {\etitulo{exp08ef1b\_dossiers}
      \nodepart{two}
      \pk{run\_id}, \fk{escola\_id}\\
      \texttt{data} JSONB};
 
   \node[tabela, text width=38mm] (cs) at (14.2,-5.4)
-    {\etitulo{exp\_01\_comentarios\_da\_sessao}
+    {\etitulo{exp08ef1b\_comentarios\_da\_sessao}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{run\_id}\\
      \fk{post\_id} \textbf{XOR} \fk{student\_post\_id}\\
@@ -605,7 +609,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{de\_ia}, \texttt{texto}};
 
   \node[tabela, text width=48mm, rectangle split part fill={unooOrange, unooOrangeWash}] (pi) at (5.4,-9.6)
-    {\etitulo{exp\_01\_exp\_70\_perfis\_importados}
+    {\etitulo{exp08ef1b\_app\_70\_perfis\_importados}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{activity\_id}, \fk{estudante\_id}\\
      \texttt{escores} JSONB --- 4 quadrantes, 0--1\\
@@ -616,11 +620,11 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{UNIQUE (activity\_id, estudante\_id)}};
 
   \node[actnote, text width=52mm, anchor=north west] at (11.0,-8.4)
-    {\textbf{A tabela laranja é o contrato entre duas experiências.} A exp-70
-     escreve (\rota{POST /atividades/:id/perfis/da-vila}); a exp-01 lê em
+    {\textbf{A tabela laranja é o contrato entre duas experiências.} A app-70
+     escreve (\rota{POST /atividades/:id/perfis/da-vila}); a exp08ef1b lê em
      \arq{perfis/largada.ts} para decidir de que lado o \emph{feed} de cada estudante
      nasce. O nome carrega os dois números porque a dependência é real --- e um
-     nome com um número só faria parecer que apagar a exp-70 não afeta ninguém.};
+     nome com um número só faria parecer que apagar a app-70 não afeta ninguém.};
 
   \draw[erel] (run.east) -- (ev.west)
     node[ercard, pos=0.18]{1} node[ercard, pos=0.82]{N};
@@ -633,13 +637,13 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
     node[ercard, pos=0.72, above]{mesmo estudante};
 
 \end{tikzpicture}}
-\caption[Modelo de dados da exp-01: sessão do estudante]{Modelo de dados da exp-01,
+\caption[Modelo de dados da exp08ef1b: sessão do estudante]{Modelo de dados da exp08ef1b,
   parte 2: a sessão do estudante. A \cd{run} é o centro --- carrega o estado do motor
-  em JSONB e é a unidade de \emph{lock} da curadoria. \cd{exp\_01\_events} é o
+  em JSONB e é a unidade de \emph{lock} da curadoria. \cd{exp08ef1b\_events} é o
   canal \emph{operacional} de telemetria, síncrono e transacional, e não deve ser
   confundido com \cd{telemetria\_eventos}, o canal analítico
   (Capítulo~\ref{cap:telemetria}).}
-\label{fig:er-exp01b}
+\label{fig:er-exp08ef1bb}
 \end{figure}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
@@ -673,9 +677,9 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[camadalbl, anchor=west] at (0.2,2.1) {exp-02 --- UnooTube};
+  \node[camadalbl, anchor=west] at (0.2,2.1) {exp04ef1b --- UnooTube};
   \node[tabela, text width=46mm] (u) at (3.4,-0.2)
-    {\etitulo{exp\_02\_sessoes}
+    {\etitulo{exp04ef1b\_sessoes}
      \nodepart{two}
      \pk{escola\_id, estudante\_id} --- 1 linha por estudante\\
      \texttt{salvos[]} --- ids do catálogo, CHECK $\leq$ 3\\
@@ -691,9 +695,9 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \emph{CHECK} de cardinalidade dos salvos e de \enquote{conclusão implica
      \texttt{concluido\_em}} vivem na migração, porque o Prisma não os modela.};
 
-  \node[camadalbl, anchor=west] at (0.2,-4.2) {exp-70 --- Vila do Lume};
+  \node[camadalbl, anchor=west] at (0.2,-4.2) {app-70 --- Vila do Lume};
   \node[tabela, text width=50mm] (vs) at (3.6,-8.0)
-    {\etitulo{exp\_70\_sessoes} --- uma partida
+    {\etitulo{app\_70\_sessoes} --- uma partida
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{estudante\_id}, \fk{turma\_id}\\
      \texttt{exp\_version}, \texttt{schema\_version}\\
@@ -709,7 +713,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{leitura\_mensagens} JSONB};
 
   \node[tabela, text width=48mm] (vp) at (11.4,-7.6)
-    {\etitulo{exp\_70\_perfis} --- retrato Schwartz
+    {\etitulo{app\_70\_perfis} --- retrato Schwartz
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{sessao\_id}, \fk{estudante\_id}\\
      \texttt{versao\_mapeamento} --- hoje 3\\
@@ -723,7 +727,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{UNIQUE (sessao\_id, versao\_mapeamento)}};
 
   \node[tabela, text width=40mm] (vb) at (11.6,-12.4)
-    {\etitulo{exp\_70\_bolhas} --- 1 linha por ESTUDANTE
+    {\etitulo{app\_70\_bolhas} --- 1 linha por ESTUDANTE
      \nodepart{two}
      \pk{escola\_id, estudante\_id}\\
      \texttt{bolha}, \texttt{atribuida\_em}};
@@ -742,11 +746,11 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
     node[ercard, pos=0.5, right=2pt]{mesmo estudante};
 
 \end{tikzpicture}}
-\caption[Modelo de dados das exps 02 e 70]{Modelo de dados da exp-02 e da
-  exp-70. Em \cd{exp\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
+\caption[Modelo de dados das exps 02 e 70]{Modelo de dados da exp04ef1b e da
+  app-70. Em \cd{app\_70\_perfis}, \cd{null} \textbf{não é zero}: é valor que não
   recebeu número. \cd{graus} diz por quê, e é essa distinção que impede um
   relatório de afirmar recusa onde houve ausência de oportunidade.}
-\label{fig:er-exp02-70}
+\label{fig:er-exp04ef1b-app70}
 \end{figure}
 
 \begin{figure}[H]
@@ -754,9 +758,9 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \node[camadalbl, anchor=west] at (0.2,1.9) {exp-90 --- Plano de aula};
+  \node[camadalbl, anchor=west] at (0.2,1.9) {app-90 --- Plano de aula};
   \node[tabela, text width=46mm] (pl) at (3.4,-0.8)
-    {\etitulo{exp\_90\_planos}
+    {\etitulo{app\_90\_planos}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
      \texttt{serie}, \texttt{disciplina}, \texttt{titulo}\\
@@ -768,7 +772,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{caminho\_html} --- o que o editor salvou};
 
   \node[tabelacat, text width=44mm] (pr) at (10.4,-0.6)
-    {\etitulo{exp\_90\_referencias} --- catálogo do contrato
+    {\etitulo{app\_90\_referencias} --- catálogo do contrato
      \nodepart{two}
      \pk{id}\\
      \texttt{disciplina}, \texttt{serie} --- NULL = todas\\
@@ -776,9 +780,9 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \texttt{UNIQUE (disciplina, serie, nome)}\\
      \textbf{sem \texttt{escola\_id}}, fora da RLS};
 
-  \node[camadalbl, anchor=west] at (0.2,-5.2) {exp-91 --- Bem-estar do professor};
+  \node[camadalbl, anchor=west] at (0.2,-5.2) {app-91 --- Bem-estar do professor};
   \node[tabela, text width=44mm, rectangle split part fill={unooRed, unooRedWash}] (bc) at (3.4,-7.6)
-    {\etitulo{exp\_91\_ciclos} --- DADO SENSÍVEL
+    {\etitulo{app\_91\_ciclos} --- DADO SENSÍVEL
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
      \texttt{status}: aberto $|$ concluido $|$ expirado\\
@@ -789,7 +793,7 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
      \quad --- somas $\times 2$, preenchidas ao concluir};
 
   \node[tabela, text width=46mm, rectangle split part fill={unooRed, unooRedWash}] (bk) at (11.0,-8.4)
-    {\etitulo{exp\_91\_checkins}
+    {\etitulo{app\_91\_checkins}
      \nodepart{two}
      \pk{id}, \fk{escola\_id}, \fk{professor\_id}\\
      \fk{ciclo\_id}\\
@@ -809,37 +813,37 @@ tabelas \cd{exp\_01\_} mais a tabela de contrato com a exp-70.
     node[ercard, pos=0.18]{1} node[ercard, pos=0.84]{7};
 
 \end{tikzpicture}}
-\caption[Modelo de dados das exps 90 e 91]{Modelo de dados da exp-90 e da
-  exp-91. As caixas vermelhas são dado \emph{sensível} de saúde (LGPD art.~11):
+\caption[Modelo de dados das exps 90 e 91]{Modelo de dados da app-90 e da
+  app-91. As caixas vermelhas são dado \emph{sensível} de saúde (LGPD art.~11):
   RLS \emph{e} posse por \cd{professor\_id} em toda \emph{query}, sem nenhuma rota
-  de gestor ou agregado. \cd{exp\_90\_referencias} é catálogo do contrato e fica
+  de gestor ou agregado. \cd{app\_90\_referencias} é catálogo do contrato e fica
   \textbf{fora} da RLS, como \cd{experiencias}.}
-\label{fig:er-exp90-91}
+\label{fig:er-app90-91}
 \end{figure}
 
-\section{As quatro tabelas da exp-07}
-\label{sec:tabelas-exp07}
+\section{As quatro tabelas da exp07ef1b}
+\label{sec:tabelas-exp07ef1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_07\_sessoes} & O estado da missão, uma linha por estudante. Chave
-  \cd{(escola\_id, estudante\_id)}, como na exp-03. O \cd{passo} são \textbf{nove}
+\cd{exp07ef1b\_sessoes} & O estado da missão, uma linha por estudante. Chave
+  \cd{(escola\_id, estudante\_id)}, como na exp02em1b. O \cd{passo} são \textbf{nove}
   valores, não os dezessete estados de tela do desenho: modal aberto, cutucão de
   ociosidade e os sete segundos da cascata são do cliente, e gravá-los faria o
   banco mudar de schema a cada ajuste de layout. Inclui \cd{reacoes} (JSONB), que
   guarda a cena que o bairro fez --- reger no F5 mostraria o grupo reagindo de
   outro jeito à mesma mensagem.\\
-\zebra \cd{exp\_07\_mensagens} & A conversa com Amara, \textbf{depois} da decisão.
+\zebra \cd{exp07ef1b\_mensagens} & A conversa com Amara, \textbf{depois} da decisão.
   \cd{texto} é caixa livre escrita por menor de idade, com teto de 600
   caracteres e 3 turnos (\adrr{ADR-66}). Fora de log, fora da telemetria, e sem
   rota de gestor que a alcance.\\
-\cd{exp\_07\_reflexoes} & O \enquote{Meu percurso}: duas estratégias e uma
+\cd{exp07ef1b\_reflexoes} & O \enquote{Meu percurso}: duas estratégias e uma
   justificativa, todas de lista fechada --- \textbf{zero texto livre aqui}. Mais
   a \cd{devolutiva} escrita pelo modelo, que não é nota e não entra no
   \cd{score}.\\
-\zebra \cd{exp\_07\_gates\_turma} & A etapa da aula, por \textbf{turma}. É o que
+\zebra \cd{exp07ef1b\_gates\_turma} & A etapa da aula, por \textbf{turma}. É o que
   deixa a professora fechar a Aula 1 em trinta telas ao mesmo tempo e congelar
   todas no debate. Chave \cd{(escola\_id, turma\_id)}.\\
 \bottomrule
@@ -855,21 +859,21 @@ linha sem carimbo é um relatório que mente para o professor.
 \end{regra}
 
 \begin{atencao}
-\cd{exp\_07\_mensagens} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\cd{exp07ef1b\_mensagens} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
 \textbf{sequência}, além do \emph{grant} de tabela --- a mesma armadilha das
-duas tabelas da exp-03. Sem ele o \cd{INSERT} falha para a \emph{role} de
+duas tabelas da exp02em1b. Sem ele o \cd{INSERT} falha para a \emph{role} de
 runtime, e só em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp-08}
-\label{sec:tabelas-exp08}
+\section{As cinco tabelas da exp08ef4b}
+\label{sec:tabelas-exp08ef4b}
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_08\_conteudo\_turma} & O \textbf{pacote curado} que o professor
+\cd{exp08ef4b\_conteudo\_turma} & O \textbf{pacote curado} que o professor
   homologa antes da aula --- é a tabela que não existe nas outras experiências.
   Uma linha por turma, com o contexto, os 3 questionamentos (com as réplicas) e
   as 4 cláusulas (com os argumentos de mediação) em \cd{JSONB}. O booleano
@@ -877,25 +881,25 @@ runtime, e só em produção, que é onde ela existe.
   verdadeiro, a experiência do estudante lê o banco curado da Unooria, e
   rascunho de IA \textbf{não conta}. \textbf{Sobrevive ao \enquote{Zerar
   turma}}: a curadoria custou tempo do professor.\\
-\zebra \cd{exp\_08\_sessoes} & O estado da missão, uma linha por estudante.
+\zebra \cd{exp08ef4b\_sessoes} & O estado da missão, uma linha por estudante.
   Chave \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
   \emph{coluna} dela: a \cd{clausula\_id} fixada, a
   \cd{latencia\_clausula\_seg}, o \cd{confirmou\_provocacao} e o
   \cd{manifesto\_markdown} compilado. \textbf{Não há coluna \cd{score}}, e a
   ausência é o desenho: a missão não pontua.\\
-\cd{exp\_08\_auditorias} & Cada questionamento disparado contra a máquina ---
+\cd{exp08ef4b\_auditorias} & Cada questionamento disparado contra a máquina ---
   \textbf{1:N} de propósito. A cota é sobre questionamentos \emph{distintos}, e
   um contador perderia \emph{quais} a criança escolheu fazer, que é o dado da
   hipótese pedagógica (a contradição só aparece no do preconceito histórico). Um
   \cd{UNIQUE (escola\_id, estudante\_id, prompt\_id)} faz a dedupe valer mesmo
   se um caminho novo esquecer de checar.\\
-\zebra \cd{exp\_08\_respostas\_percurso} & O \enquote{Meu Percurso}: duas
+\zebra \cd{exp08ef4b\_respostas\_percurso} & O \enquote{Meu Percurso}: duas
   palavras-chave e um parágrafo de 20 a 800 caracteres escrito por menor de
   idade. Fora de \emph{log}, fora da telemetria analítica, alcançável só pelo
   professor da turma dela. \textbf{Sem \emph{flag} de moderação}: o texto com
   dado pessoal é recusado com \textbf{422} e não chega a esta tabela --- não há
   registro moderado a marcar.\\
-\cd{exp\_08\_gates\_turma} & O \textbf{Checkpoint~A}, por turma ---
+\cd{exp08ef4b\_gates\_turma} & O \textbf{Checkpoint~A}, por turma ---
   \cd{missao | debate}. Chave \cd{(escola\_id, turma\_id)}. É esta linha que o
   \emph{polling} de 5 segundos lê, porque não há WebSocket de aplicação no
   Cloud Run (\adrr{ADR-93}).\\
@@ -918,55 +922,55 @@ apareceria na aula, não no \emph{deploy}.
 \end{regra}
 
 \begin{atencao}
-\cd{exp\_08\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\cd{exp08ef4b\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
 \textbf{sequência}, além do \emph{grant} de tabela --- a quarta aparição da
 mesma armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só
 em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp-05}
-\label{sec:tabelas-exp05}
+\section{As cinco tabelas da exp05ef1b}
+\label{sec:tabelas-exp05ef1b}
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_05\_conteudo\_turma} & O \textbf{lote da turma}: as oito mensagens que
+\cd{exp05ef1b\_conteudo\_turma} & O \textbf{lote da turma}: as oito mensagens que
   a professora homologou, \textbf{com} o gabarito, em \cd{JSONB}. Uma linha por
   turma, com o tema, o \cd{gatilho} e a \cd{origem}
   (\cd{ia} $|$ \cd{padrao}). \cd{JSONB} e não tabela-filha porque o lote é lido
   e escrito SEMPRE inteiro --- ela aprova o conjunto, não uma mensagem de cada
-  vez. \textbf{Mais dura que a irmã da exp-08}: sem
+  vez. \textbf{Mais dura que a irmã da exp08ef4b}: sem
   \cd{aprovado\_por\_professor} verdadeiro não há queda para o banco curado, e a
   missão do estudante é uma tela de espera. \textbf{Sobrevive ao \enquote{Zerar
   turma}}: o preparo custou tempo dela.\\
-\zebra \cd{exp\_05\_sessoes} & O estado da missão, uma linha por estudante.
+\zebra \cd{exp05ef1b\_sessoes} & O estado da missão, uma linha por estudante.
   Chave \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
   \emph{coluna} dela: \cd{leu\_tudo}, \cd{midias\_abertas}, \cd{entrou\_em},
   \cd{primeiro\_encaminhamento\_em} e o \cd{confirmado\_em} que é o
   \emph{latch}. \textbf{Não há coluna de pontuação}, e a ausência é o desenho ---
   a missão não pontua ninguém.\\
-\cd{exp\_05\_encaminhamentos} & Cada mensagem que foi ao Mural ---
-  \textbf{1:N} de propósito, e é a única tabela da exp-05 que não repete o
-  desenho da exp-08. \emph{Quais} mensagens a criança encaminhou é o dado que o
+\cd{exp05ef1b\_encaminhamentos} & Cada mensagem que foi ao Mural ---
+  \textbf{1:N} de propósito, e é a única tabela da exp05ef1b que não repete o
+  desenho da exp08ef4b. \emph{Quais} mensagens a criança encaminhou é o dado que o
   telão mostra: um contador diria \enquote{encaminhou 4} e perderia exatamente a
   coisa que a revelação revela, que a sala inteira mandou a mesma mensagem
   falsa. \cd{UNIQUE (escola\_id, estudante\_id, mensagem\_id)} faz a
   \emph{dedupe} valer quando dois toques rápidos no mesmo balão chegam como duas
   requisições em paralelo.\\
-\zebra \cd{exp\_05\_reflexoes} & A resposta ao dilema do áudio do tio: 5 a 500
+\zebra \cd{exp05ef1b\_reflexoes} & A resposta ao dilema do áudio do tio: 5 a 500
   caracteres de \textbf{texto livre escrito por menor de idade}. Fora de
   \emph{log} (\cd{texto} está em \cd{CAMPOS\_SENSIVEIS}), fora da telemetria
   analítica, e o texto só sai preenchido para quem \textbf{leciona} a turma ---
   a rota do painel responde a gestor e \cd{admin}, e para eles o campo vem
   \cd{null}, com o \enquote{entregou} intacto. \textbf{Em claro}, e a escolha
   está declarada na \adrr{ADR-108}.\\
-\cd{exp\_05\_gates\_turma} & O \textbf{relógio da turma}, por turma ---
+\cd{exp05ef1b\_gates\_turma} & O \textbf{relógio da turma}, por turma ---
   \cd{exploracao} $|$ \cd{revelacao} $|$ \cd{reflexao}. Chave
   \cd{(escola\_id, turma\_id)}. É esta linha que o \emph{polling} de 5 segundos
   lê, porque não há WebSocket de aplicação no Cloud Run (\adrr{ADR-93}).
-  Diferente do gate da exp-08, ela mexe no \textbf{piso} do passo: quando o telão
+  Diferente do gate da exp08ef4b, ela mexe no \textbf{piso} do passo: quando o telão
   acende, quem não confirmou é empurrado para \cd{revelado}.\\
 \bottomrule
 \end{tabularx}
@@ -990,10 +994,10 @@ de propósito que ele \textbf{não} veda \cd{curadoria}: o \emph{CHECK} vale por
 produção, no meio da aula.
 
 Os outros quatro: \cd{(passo = 'fim') = (concluido\_em IS NOT NULL)}, pela mesma
-razão da exp-07; \cd{primeiro\_encaminhamento\_em >= entrou\_em} quando ambos
+razão da exp07ef1b; \cd{primeiro\_encaminhamento\_em >= entrou\_em} quando ambos
 existem, porque subtração fora de ordem produz segundos negativos no painel, que
 se leem como defeito do produto e não como relógio torto; os oito ids do
-catálogo em \cd{midias\_abertas} e em \cd{exp\_05\_encaminhamentos.mensagem\_id},
+catálogo em \cd{midias\_abertas} e em \cd{exp05ef1b\_encaminhamentos.mensagem\_id},
 porque um \cd{msg-9} viraria barra órfã no telão; e
 \cd{jsonb\_array\_length(mensagens\_json) = 8}.
 
@@ -1004,7 +1008,7 @@ divergência que o repositório já pagou em \cd{permissoes}.
 \end{regra}
 
 \begin{atencao}
-\cd{exp\_05\_encaminhamentos} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\cd{exp05ef1b\_encaminhamentos} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
 \textbf{sequência}, além do \emph{grant} de tabela --- a quinta aparição da mesma
 armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só em
 produção, que é onde ela existe. Aqui a falha é a pior das cinco: o
@@ -1013,32 +1017,32 @@ inteira para no primeiro gesto.
 \end{atencao}
 
 
-\section{As quatro tabelas da exp-06}
-\label{sec:tabelas-exp06}
+\section{As quatro tabelas da exp06ef2b}
+\label{sec:tabelas-exp06ef2b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_06\_sessoes} & O estado da missão, uma linha por estudante. Chave
+\cd{exp06ef2b\_sessoes} & O estado da missão, uma linha por estudante. Chave
   \cd{(escola\_id, estudante\_id)}. O que é \textbf{1:1} com a sessão é
   \emph{coluna} dela: a \cd{opcao} da intervenção, a \cd{latencia\_seg}, a
   \cd{ordem\_blocos} do ciclo e o \cd{coerente}. As tabelas
-  \cd{exp\_06\_decisoes} e \cd{exp\_06\_modelagens} que o insumo pedia dariam
+  \cd{exp06ef2b\_decisoes} e \cd{exp06ef2b\_modelagens} que o insumo pedia dariam
   uma linha por estudante com uma \emph{FK} cada, e o \emph{JOIN} existiria
   para nada.\\
-\zebra \cd{exp\_06\_auditorias} & Cada abertura do painel de dados de envio ---
+\zebra \cd{exp06ef2b\_auditorias} & Cada abertura do painel de dados de envio ---
   \textbf{1:N} de propósito. A cota é sobre mensagens \emph{distintas}, e um
   contador perderia \emph{quais} o estudante escolheu auditar, que é o dado
   pedagógico. Um \cd{UNIQUE (escola\_id, estudante\_id, mensagem\_id)} faz a
   dedupe valer mesmo se um caminho novo esquecer de checar antes.\\
-\cd{exp\_06\_reflexoes} & O \enquote{Meu percurso}: 280 caracteres de texto
-  livre escrito por menor de idade --- \textbf{diferente da exp-07}, que fechou
+\cd{exp06ef2b\_reflexoes} & O \enquote{Meu percurso}: 280 caracteres de texto
+  livre escrito por menor de idade --- \textbf{diferente da exp07ef1b}, que fechou
   essa porta. Aqui o insumo pede a redação como instrumento metacognitivo, e ela
   vem com o mesmo isolamento: fora de log, fora da telemetria analítica, e
   alcançável só pelo professor da turma dela.\\
-\zebra \cd{exp\_06\_gates\_turma} & A etapa da aula, por \textbf{turma} ---
-  \cd{aula1 | aula2}, duas e não as quatro da exp-07. Chave
+\zebra \cd{exp06ef2b\_gates\_turma} & A etapa da aula, por \textbf{turma} ---
+  \cd{aula1 | aula2}, duas e não as quatro da exp07ef1b. Chave
   \cd{(escola\_id, turma\_id)}.\\
 \bottomrule
 \end{tabularx}
@@ -1050,33 +1054,33 @@ qualquer outro seria pontuação vinda do cliente (regra inviolável nº 3).
 \cd{cardinality(ordem\_blocos) IN (0, 4)} amarra o modelo do ciclo: 1, 2 ou 3
 blocos é slot vazio, e um quarto \emph{CHECK} exige que \cd{coerente} seja nulo
 exatamente quando a ordem está vazia. E \cd{passo = 'fim'} está amarrado a
-\cd{concluido\_em} não nulo, pela mesma razão da exp-07.
+\cd{concluido\_em} não nulo, pela mesma razão da exp07ef1b.
 \end{regra}
 
 \begin{atencao}
-\cd{exp\_06\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
+\cd{exp06ef2b\_auditorias} tem id \cd{BIGSERIAL} e exige \cd{GRANT USAGE} na
 \textbf{sequência}, além do \emph{grant} de tabela --- a terceira aparição da
 mesma armadilha. Sem ele o \cd{INSERT} falha para a \emph{role} de runtime, e só
 em produção, que é onde ela existe.
 \end{atencao}
 
 
-\section{As cinco tabelas da exp-03}
-\label{sec:tabelas-exp03}
+\section{As cinco tabelas da exp02em1b}
+\label{sec:tabelas-exp02em1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_03\_sessoes} & O estado da partida, uma linha por estudante. Chave
+\cd{exp02em1b\_sessoes} & O estado da partida, uma linha por estudante. Chave
   \cd{(escola\_id, estudante\_id)} --- \textbf{não há id de sessão}: a identidade vem
   do \emph{token}, e foi isso que dispensou a guarda de posse do projeto de
   origem, onde a sessão era um \emph{uuid} na URL. Inclui
   \cd{tokens\_gastos} e \cd{chamadas\_ia} (\adrr{ADR-24}).\\
-\zebra \cd{exp\_03\_mensagens} & A \textbf{Transcrição}: a conversa entre o estudante e
+\zebra \cd{exp02em1b\_mensagens} & A \textbf{Transcrição}: a conversa entre o estudante e
   o agente. \cd{texto} é caixa livre escrita por menor de idade --- o dado mais
   sensível da experiência (\adrr{ADR-27}).\\
-\cd{exp\_03\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
+\cd{exp02em1b\_marcos} & A trilha da decisão: o que a criança fez, em que minuto da
   cidade --- e com \textbf{que cronômetro na tela} (\cd{segundos\_restantes},
   \cd{motivo\_do\_fim}), recalculado do relógio da turma no instante da
   gravação (\adrr{ADR-64}). Seis tipos: \cd{fontes}, \cd{leitura},
@@ -1084,12 +1088,12 @@ em produção, que é onde ela existe.
   \cd{recomeco} (o clique em Recomeçar, na tentativa que fecha). \cd{dados}
   traz \textbf{só dado público} --- nada de viés, Lacuna ou parâmetro oculto,
   porque este JSON chega ao navegador.\\
-\zebra \cd{exp\_03\_simulacoes} & O desfecho de cada tentativa, com
+\zebra \cd{exp02em1b\_simulacoes} & O desfecho de cada tentativa, com
   \cd{versao\_prompt} gravada junto: sem ela não se sabe qual \emph{prompt}
   produziu o que está em produção. E a \textbf{faixa da decisão}
   (\cd{esperado}), gravada no confirmar em vez de recomputada a cada leitura
   (\adrr{ADR-64}).\\
-\cd{exp\_03\_relogio\_turma} & O Relógio da Aula, por \textbf{turma}
+\cd{exp02em1b\_relogio\_turma} & O Relógio da Aula, por \textbf{turma}
   (\adrr{ADR-25}). Chave \cd{(escola\_id, turma\_id)}.\\
 \bottomrule
 \end{tabularx}
@@ -1113,29 +1117,29 @@ que nunca começou, duração de relógio igual a zero (dividiria por zero no mi
 narrativo) e \cd{debitou} numa fala que não é do estudante.
 
 \begin{atencao}
-As duas tabelas com \cd{BIGSERIAL} (\cd{exp\_03\_mensagens} e
-\cd{exp\_03\_marcos}) exigem \cd{GRANT USAGE} na \textbf{sequência}, além do
+As duas tabelas com \cd{BIGSERIAL} (\cd{exp02em1b\_mensagens} e
+\cd{exp02em1b\_marcos}) exigem \cd{GRANT USAGE} na \textbf{sequência}, além do
 \emph{grant} de tabela. Sem ele o \cd{INSERT} falha para a \emph{role} de
 \emph{runtime} mesmo com todos os privilégios de tabela concedidos.
 \end{atencao}
 
-\section{As três tabelas da exp-92}
-\label{sec:tabelas-exp92}
+\section{As três tabelas da app-92}
+\label{sec:tabelas-app92}
 
-A exp-92 (Planejamento de Ensino dirigido pela BNCC, \adrr{ADR-73}, \adrr{ADR-76})
+A app-92 (Planejamento de Ensino dirigido pela BNCC, \adrr{ADR-73}, \adrr{ADR-76})
 persiste o plano curricular do docente em três tabelas:
 
 \begin{tabularx}{\linewidth}{@{}L{44mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_92\_configuracoes} & Regência anual do professor (ano letivo, série,
+\cd{app\_92\_configuracoes} & Regência anual do professor (ano letivo, série,
   componente, divisão do ano, aulas semanais e grade de horários em JSON). Chave
   única em \cd{(escola\_id, professor\_id, ano\_letivo, serie, componente)}.\\
-\zebra \cd{exp\_92\_planos\_anuais} & Plano consolidado gerado com IA
+\zebra \cd{app\_92\_planos\_anuais} & Plano consolidado gerado com IA
   (objetivos gerais, cronograma de unidades temáticas e competências BNCC),
   com controle de versão, \emph{prompt} imutável e \cd{tokens\_gastos}.\\
-\cd{exp\_92\_planos\_de\_periodo} & O detalhamento do plano em granularidade
+\cd{app\_92\_planos\_de\_periodo} & O detalhamento do plano em granularidade
   \textbf{estritamente semanal} (\adrr{ADR-76}), amarrado à configuração e ao
   plano anual, contendo semanas letivas, habilidades BNCC trabalhadas, estratégias
   didáticas e instrumentos de avaliação.\\
@@ -1145,7 +1149,7 @@ persiste o plano curricular do docente em três tabelas:
 % ---------------------------------------------------------------------------
 \section{Decisões de esquema por experiência}
 
-\subsection{exp-70 --- as decisões que custam informação de propósito}
+\subsection{app-70 --- as decisões que custam informação de propósito}
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
 \toprule
@@ -1180,7 +1184,7 @@ Nova linha por \cd{versao\_mapeamento} & O mapeamento é hipótese de \emph{desi
 \bottomrule
 \end{tabularx}
 
-\subsection{exp-90 --- conteúdo fora do banco}
+\subsection{app-90 --- conteúdo fora do banco}
 
 \begin{decisao}
 O \textbf{conteúdo} do plano de aula não fica no PostgreSQL: fica em
@@ -1195,7 +1199,7 @@ histórico}. Um professor que sobrescreveu o plano por engano tem recuperação,
 ninguém escreveu uma tabela de versões.
 \end{decisao}
 
-\subsection{exp-91 --- ausência como decisão de esquema}
+\subsection{app-91 --- ausência como decisão de esquema}
 
 \begin{decisao}
 Não existe tabela de agregado de bem-estar, e não existe \emph{view} por escola.
@@ -1213,27 +1217,27 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
 \headrow \thd{Migração} & \thd{Conteúdo}\\
 \midrule
 \arq{20260824145301\_init} & Esquema inicial: \emph{tenancy} (\cd{escolas},
-  \cd{turmas}, \cd{users}), tabelas da exp-01, tabelas de plataforma, e o laço
+  \cd{turmas}, \cd{users}), tabelas da exp08ef1b, tabelas de plataforma, e o laço
   que aplica \cd{ENABLE}/\cd{FORCE ROW LEVEL SECURITY} + política por escola.\\
 \zebra \arq{20260825011950\_unootube\_sessoes} & Estado \emph{server-side} da
-  exp-02, com \emph{CHECK} de cardinalidade dos salvos.\\
+  exp04ef1b, com \emph{CHECK} de cardinalidade dos salvos.\\
 \arq{20260825120000\_planos\_de\_aula} & Planos e referências curriculares.\\
 \zebra \arq{20260825225016\_bem\_estar} & Ciclos e \emph{check-ins} do DASS-21,
   com RLS e \cd{GRANT}.\\
 \arq{20260826120000\_permissoes\_de\_iframe} & Coluna \cd{permissoes} no
   manifesto, com \emph{CHECK} do vocabulário aceito.\\
 \zebra \arq{20260826140000\_vila\_do\_lume} & Sessões, perfis e bolhas da
-  exp-70.\\
+  app-70.\\
 \arq{20260826170000\_vila\_sem\_prazo} & Remoção da coluna \cd{expires\_at}
   (\adrr{ADR-13}).\\
-\zebra \arq{20260827090000\_tabelas\_por\_experiencia} & Renomeação para o padrão
-  \cd{exp\_NN\_}: \cd{RENAME} de tabelas, \emph{constraints}, índices e políticas.
+\zebra \arq{20260827090000\_tabelas\_por\_experiencia} & Renomeação para o prefixo
+  por experiência (então \cd{exp\_NN\_}): \cd{RENAME} de tabelas, \emph{constraints}, índices e políticas.
   É a migração de referência.\\
 \arq{20260827100000\_telemetria\_particionada} & Particionamento mensal de
   \cd{telemetria\_eventos} no \emph{schema} \cd{particoes}, com partição
   \cd{DEFAULT} e faixas até 2028-12.\\
 \zebra \arq{20260827184956\_exp\_03\_unoogpt} & Sessões e marcos de conversa da
-  exp-03 (UnooGPT), com isolamento por escola e RLS.\\
+  exp02em1b (UnooGPT), com isolamento por escola e RLS.\\
 \arq{20260828093000\_enturmamento\_e\_identidade} & \cd{periodos\_letivos},
   \cd{matriculas} (com RLS), colunas de identidade em \cd{users} e o
   \emph{backfill} de \cd{users.turma\_id} para matrícula principal.\\
@@ -1251,26 +1255,26 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \emph{CHECK} do vocabulário de \cd{verificacao} e único por
   (escola, estudante, emissor, emissão) --- \adrr{ADR-35}.\\
 \arq{20260829120000\_conclusao\_primeira\_e\_ultima} & Registro de inclinação inicial,
-  trocas de rota e convergência no término da exp-01.\\
+  trocas de rota e convergência no término da exp08ef1b.\\
 \zebra \arq{20260830090000\_atividade\_por\_turma} & Adição da coluna \cd{turma\_id}
-  nas atividades da exp-01 para agregação analítica docente.\\
+  nas atividades da exp08ef1b para agregação analítica docente.\\
 \arq{20260830100000\_perfil\_importado\_sabe\_a\_partida} & Vínculo de proveniência entre
-  \cd{exp\_01\_exp\_70\_perfis\_importados} e a sessão da Vila do Lume.\\
+  \cd{exp08ef1b\_app\_70\_perfis\_importados} e a sessão da Vila do Lume.\\
 \zebra \arq{20260902120000\_exp\_03\_trilha\_com\_relogio} & Rastreamento temporal nos
   marcos do diálogo com o bot (segundos restantes e causa de encerramento).\\
-\arq{20260903120000\_exp\_07\_o\_eco\_no\_grupo} & Estado \emph{server-side} da exp-07
+\arq{20260903120000\_exp\_07\_o\_eco\_no\_grupo} & Estado \emph{server-side} da exp07ef1b
   (WhatsApp / Desinformação), com RLS e validações de progresso.\\
 \zebra \arq{20260905120000\_liberacoes\_por\_turma} & Tabela de controle de abertura de missões
   por turma (\cd{liberacoes}), governança docente com RLS (\adrr{ADR-69}).\\
 \arq{20260905160000\_experiencia\_declara\_unidade} & Adição da coluna \cd{unidade} (1 a 4)
   ao catálogo curricular de experiências.\\
-\zebra \arq{20260906120000\_exp\_92\_plano\_de\_ensino} & Tabelas da exp-92:
-  \cd{exp\_92\_configuracoes}, \cd{exp\_92\_planos\_anuais} e \cd{exp\_92\_planos\_de\_periodo}
+\zebra \arq{20260906120000\_exp\_92\_plano\_de\_ensino} & Tabelas da app-92:
+  \cd{app\_92\_configuracoes}, \cd{app\_92\_planos\_anuais} e \cd{app\_92\_planos\_de\_periodo}
   (\adrr{ADR-73}).\\
 \arq{20260906140000\_exp\_92\_inicio\_do\_ano\_por\_regencia} & Início do ano letivo
   parametrizado na configuração curricular por escola/ano (\adrr{ADR-73}).\\
 \zebra \arq{20260906170000\_exp\_06\_rastro\_boato} & Tabelas de sessão e simulação de rede da
-  exp-06 (Rastro do Boato) com tema escuro e topologia restrita (\adrr{ADR-72}).\\
+  exp06ef2b (Rastro do Boato) com tema escuro e topologia restrita (\adrr{ADR-72}).\\
 \arq{20260907120000\_exp\_92\_planejamento\_sempre\_semanal} & Reestruturação do período de
   planejamento com cardinalidade estritamente semanal de 40 semanas (\adrr{ADR-76}).\\
 \zebra \arq{20260907130000\_permissao\_downloads} & Liberação do token \cd{allow-downloads}
@@ -1286,6 +1290,12 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{gestor\_regional} e \cd{admin}), \cd{users.regional\_id} com FK,
   \emph{CHECK} bicondicional e \emph{trigger}, e o \cd{lotacoes\_papel\_check}
   acompanhando --- \adrr{ADR-80}.\\
+\arq{20260923120000\_codigo\_das\_experiencias} & O código da experiência
+  (\adrr{ADR-110}): \cd{RENAME} por OID de tabela, \emph{constraint}, índice,
+  política e \emph{sequence} (\cd{exp\_01\_} \seta{} \cd{exp08ef1b\_},
+  \cd{exp\_70\_} \seta{} \cd{app\_70\_}) e o \cd{UPDATE} do \cd{exp\_id} em
+  sete tabelas, com o \cd{FORCE ROW LEVEL SECURITY} e o \emph{trigger}
+  \emph{append-only} afrouxados só dentro da transação.\\
 \bottomrule
 \end{tabularx}
 
@@ -1305,18 +1315,18 @@ campos correspondentes são \cd{TEXT}/\cd{SMALLINT} no \emph{schema} e a valida�
 de aplicação é feita com Zod.
 \end{atencao}
 
-\section{As três tabelas da exp-04}
-\label{sec:tabelas-exp04}
+\section{As três tabelas da exp01ef1b}
+\label{sec:tabelas-exp01ef1b}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
 \headrow \thd{Tabela} & \thd{O que guarda}\\
 \midrule
-\cd{exp\_04\_turma\_config} & A aula, por \textbf{turma}: tema, nível de
+\cd{exp01ef1b\_turma\_config} & A aula, por \textbf{turma}: tema, nível de
   leitura, o pacote APROVADO (JSONB validado pelo mesmo \emph{schema} da
   geração; nulo = banco curado padrão), o \cd{latch\_liberado} da Roda e a
   \cd{tentativa} corrente. Chave \cd{(escola\_id, turma\_id)}.\\
-\zebra \cd{exp\_04\_runs} & A execução de um estudante numa
+\zebra \cd{exp01ef1b\_runs} & A execução de um estudante numa
   \textbf{tentativa}: etapa (\emph{CHECK} de vocabulário fechado), marca, o
   par foto+legenda escolhido, a latência de decisão (teto de 2h no
   \emph{CHECK}: acima é aba esquecida) e a reflexão --- que só aceita
@@ -1324,7 +1334,7 @@ de aplicação é feita com Zod.
   turma INCREMENTA a tentativa em vez de apagar: as \emph{runs} antigas ficam
   imutáveis na tentativa anterior (DAD-06). Única por
   \cd{(escola\_id, turma\_id, estudante\_id, tentativa)}.\\
-\cd{exp\_04\_posts\_turma} & A publicação no mural coletivo, assinada pela
+\cd{exp01ef1b\_posts\_turma} & A publicação no mural coletivo, assinada pela
   \textbf{marca} (coruja/estrela/sol) --- nome de criança não existe aqui.
   1:1 com a \emph{run} (\cd{UNIQUE run\_id}): toque duplo e \emph{retry} de
   rede não criam segundo post.\\

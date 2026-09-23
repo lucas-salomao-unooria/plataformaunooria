@@ -25,11 +25,11 @@ const ESCOLA = "teste-salas";
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const salas = new SalasService(prisma);
 
-const INSTA = "exp-01-instanooria";
-const MANIFESTO = "exp-08-manifesto-ia";
-const VILA = "exp-70-vila-do-lume";
-const TUBE = "exp-02-unootube";
-const PLANO = "exp-90-plano-de-aula";
+const INSTA = "exp08ef1b";
+const MANIFESTO = "exp08ef4b";
+const VILA = "app-70-vila-do-lume";
+const TUBE = "exp04ef1b";
+const PLANO = "app-90-plano-de-aula";
 /** A segunda missão do 8º ano (unidade 4). Entrou em 2026-09-10. */
 
 const ids = { turma8A: "", turma8B: "", prof8A: "", prof8B: "", ana: "", bruno: "" };
@@ -175,11 +175,11 @@ describe("a porta da sala", () => {
 });
 
 /**
- * A exp-01 é a única cujas entradas ficam no CONTROLLER, não no service — e
+ * A exp08ef1b é a única cujas entradas ficam no CONTROLLER, não no service — e
  * nenhuma outra suíte a exercita por ali (as do motor chamam o engine direto).
  * Sem este teste, apagar a guarda de `POST /runs` não quebraria nada.
  */
-describe("a porta da exp-01, pelo controller", () => {
+describe("a porta da exp08ef1b, pelo controller", () => {
   const runs = new RunsController(prisma, new MockProvider());
   const req = (usuarioId: string) =>
     ({ auth: { usuarioId, escolaId: ESCOLA, perfil: "estudante" as const } }) as never;
@@ -229,7 +229,7 @@ describe("liberar e encerrar", () => {
 
   test("experiência fora do catálogo é recusada, com a causa dita", async () => {
     await expect(
-      salas.definirEstado(ESCOLA, ids.turma8A, "exp-99-inexistente", "liberada", ids.prof8A),
+      salas.definirEstado(ESCOLA, ids.turma8A, "exp09ef4b", "liberada", ids.prof8A),
     ).rejects.toMatchObject({ status: 404 });
   });
 });

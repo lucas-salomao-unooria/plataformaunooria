@@ -3,7 +3,7 @@ import { conta } from "../lib/credenciais.mjs";
 import { esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 
 /**
- * O Que a Foto Conta (exp-04), nas duas pontas da sala — TEC-09: dois
+ * O Que a Foto Conta (exp01ef1b), nas duas pontas da sala — TEC-09: dois
  * contextos de navegador, o tablet da criança e a lousa do professor.
  *
  * A missão é SÍNCRONA: a Etapa 5 congela o tablet numa tela sem nenhum botão e
@@ -100,7 +100,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-04-o-que-a-foto-conta`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp01ef1b`, { waitUntil: "domcontentloaded" });
     const q = p.frameLocator('iframe[title="experiencia"]');
     /* Corre contra o erro (não espera cega): se o boot falhar, a mensagem traz
        o status e o corpo — nunca "timeout esperando o seletor". */

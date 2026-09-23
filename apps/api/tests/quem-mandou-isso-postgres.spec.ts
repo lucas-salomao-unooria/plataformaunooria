@@ -10,7 +10,7 @@ import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-05 no Postgres: a RLS das cinco tabelas, a porta da sala, a
+ * Integração da exp05ef1b no Postgres: a RLS das cinco tabelas, a porta da sala, a
  * missão que nasce VAZIA, as duas portas do Mural, o latch, o telão da turma e
  * o que "Zerar turma" preserva.
  *
@@ -46,11 +46,11 @@ const runtime = new PrismaService({
 const service = new QuemMandouIssoService(prisma);
 
 const TABELAS = [
-  "exp_05_conteudo_turma",
-  "exp_05_sessoes",
-  "exp_05_encaminhamentos",
-  "exp_05_reflexoes",
-  "exp_05_gates_turma",
+  "exp05ef1b_conteudo_turma",
+  "exp05ef1b_sessoes",
+  "exp05ef1b_encaminhamentos",
+  "exp05ef1b_reflexoes",
+  "exp05ef1b_gates_turma",
 ] as const;
 
 /** As três que assustam: o boato em caixa alta, o áudio do corredor e a chantagem. */
@@ -88,9 +88,9 @@ async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
   /* Encaminhamentos e reflexões caem por CASCADE da FK com a sessão. */
-  await prisma.exp05Sessao.deleteMany({ where: { escolaId: { in: escolas } } });
-  await prisma.exp05GateTurma.deleteMany({ where: { escolaId: { in: escolas } } });
-  await prisma.exp05ConteudoTurma.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.exp05ef1bSessao.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.exp05ef1bGateTurma.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.exp05ef1bConteudoTurma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.escola.deleteMany({ where: { id: { in: escolas } } });
@@ -202,10 +202,10 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
       [ESCOLA, dinho],
       [OUTRA_ESCOLA, vizinho],
     ] as const) {
-      await prisma.exp05Reflexao.create({
+      await prisma.exp05ef1bReflexao.create({
         data: { escolaId, estudanteId, texto, charsCount: texto.length },
       });
-      await prisma.exp05GateTurma.upsert({
+      await prisma.exp05ef1bGateTurma.upsert({
         where: {
           escolaId_turmaId: {
             escolaId,
@@ -222,7 +222,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     /* A reflexão CRUA existe só para a RLS ter linha nas cinco tabelas. Deixá-la
        viva faria o painel do professor contar como entregue uma criança que
        nunca respondeu ao tio — e o teste do painel mede exatamente isso. */
-    await prisma.exp05Reflexao.deleteMany({
+    await prisma.exp05ef1bReflexao.deleteMany({
       where: { escolaId: { in: [ESCOLA, OUTRA_ESCOLA] } },
     });
   });
@@ -248,16 +248,16 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
   /**
    * A prova que a leitura de código não dá: com a escola de cá armada, a linha
    * de lá SOME — não vem marcada, não vem vazia: some. Nas cinco tabelas, e a
-   * que pesa mais é `exp_05_conteudo_turma`: ali mora o GABARITO.
+   * que pesa mais é `exp05ef1b_conteudo_turma`: ali mora o GABARITO.
    */
   test("a RLS isola DE VERDADE: nada da escola vizinha existe daqui", async () => {
     const daqui = await runtime.comTenancy(
       async (tx) => ({
-        conteudo: await tx.exp05ConteudoTurma.findMany({ select: { escolaId: true } }),
-        sessoes: await tx.exp05Sessao.findMany({ select: { escolaId: true } }),
-        encaminhamentos: await tx.exp05Encaminhamento.findMany({ select: { escolaId: true } }),
-        reflexoes: await tx.exp05Reflexao.findMany({ select: { escolaId: true } }),
-        gates: await tx.exp05GateTurma.findMany({ select: { escolaId: true } }),
+        conteudo: await tx.exp05ef1bConteudoTurma.findMany({ select: { escolaId: true } }),
+        sessoes: await tx.exp05ef1bSessao.findMany({ select: { escolaId: true } }),
+        encaminhamentos: await tx.exp05ef1bEncaminhamento.findMany({ select: { escolaId: true } }),
+        reflexoes: await tx.exp05ef1bReflexao.findMany({ select: { escolaId: true } }),
+        gates: await tx.exp05ef1bGateTurma.findMany({ select: { escolaId: true } }),
       }),
       ESCOLA,
     );
@@ -271,8 +271,8 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
 
     const deLa = await runtime.comTenancy(
       async (tx) => ({
-        conteudo: await tx.exp05ConteudoTurma.findMany({ select: { escolaId: true } }),
-        reflexoes: await tx.exp05Reflexao.findMany({ select: { escolaId: true } }),
+        conteudo: await tx.exp05ef1bConteudoTurma.findMany({ select: { escolaId: true } }),
+        reflexoes: await tx.exp05ef1bReflexao.findMany({ select: { escolaId: true } }),
       }),
       OUTRA_ESCOLA,
     );
@@ -285,25 +285,25 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     // política compara com `NULL` e o resultado é o conjunto vazio — nunca a
     // escola inteira.
     const nada = await runtime.$queryRawUnsafe<{ n: bigint }[]>(
-      "SELECT count(*) AS n FROM exp_05_sessoes",
+      "SELECT count(*) AS n FROM exp05ef1b_sessoes",
     );
     expect(Number(nada[0]!.n)).toBe(0);
   });
 
   test("a role sem ownership grava um encaminhamento — a sequência do BIGSERIAL", async () => {
-    // `exp_05_encaminhamentos` é a única tabela da missão com id BIGSERIAL, e
+    // `exp05ef1b_encaminhamentos` é a única tabela da missão com id BIGSERIAL, e
     // sem `GRANT USAGE` na sequência o INSERT falha SÓ em produção, que é onde a
     // role existe. Seria a missão inteira parando no primeiro toque da criança.
     const gravado = await runtime.comTenancy(
       (tx) =>
-        tx.exp05Encaminhamento.create({
+        tx.exp05ef1bEncaminhamento.create({
           data: { escolaId: ESCOLA, estudanteId: dinho, mensagemId: "msg-5" },
           select: { mensagemId: true },
         }),
       ESCOLA,
     );
     expect(gravado.mensagemId).toBe("msg-5");
-    await prisma.exp05Encaminhamento.deleteMany({
+    await prisma.exp05ef1bEncaminhamento.deleteMany({
       where: { escolaId: ESCOLA, estudanteId: dinho, mensagemId: "msg-5" },
     });
   });
@@ -313,7 +313,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     // `/confirmar`, que é endereço alcançável.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_05_sessoes SET confirmado_em = now(), passo = 'contexto'
+        `UPDATE exp05ef1b_sessoes SET confirmado_em = now(), passo = 'contexto'
          WHERE escola_id = '${ESCOLA}' AND estudante_id = '${dinho}'::uuid`,
       ),
     ).rejects.toThrow();
@@ -324,7 +324,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     // relatório que mente.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_05_sessoes SET passo = 'fim'
+        `UPDATE exp05ef1b_sessoes SET passo = 'fim'
          WHERE escola_id = '${ESCOLA}' AND estudante_id = '${dinho}'::uuid`,
       ),
     ).rejects.toThrow();
@@ -335,7 +335,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     // ela apareceria no painel como leitura que ninguém fez.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_05_sessoes SET midias_abertas = ARRAY['msg-9']
+        `UPDATE exp05ef1b_sessoes SET midias_abertas = ARRAY['msg-9']
          WHERE escola_id = '${ESCOLA}' AND estudante_id = '${dinho}'::uuid`,
       ),
     ).rejects.toThrow();
@@ -347,7 +347,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     for (const texto of ["     ", "oi"]) {
       await expect(
         prisma.$executeRawUnsafe(
-          `UPDATE exp_05_reflexoes SET texto = '${texto}'
+          `UPDATE exp05ef1b_reflexoes SET texto = '${texto}'
            WHERE escola_id = '${ESCOLA}' AND estudante_id = '${dinho}'::uuid`,
         ),
       ).rejects.toThrow();
@@ -357,18 +357,18 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
   test("o lote da turma tem OITO mensagens, e o gatilho é do vocabulário", async () => {
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_05_conteudo_turma SET mensagens_json = '[]'::jsonb
+        `UPDATE exp05ef1b_conteudo_turma SET mensagens_json = '[]'::jsonb
          WHERE escola_id = '${ESCOLA}'`,
       ),
     ).rejects.toThrow();
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_05_conteudo_turma SET gatilho = 'panico' WHERE escola_id = '${ESCOLA}'`,
+        `UPDATE exp05ef1b_conteudo_turma SET gatilho = 'panico' WHERE escola_id = '${ESCOLA}'`,
       ),
     ).rejects.toThrow();
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_05_conteudo_turma SET origem = 'importado' WHERE escola_id = '${ESCOLA}'`,
+        `UPDATE exp05ef1b_conteudo_turma SET origem = 'importado' WHERE escola_id = '${ESCOLA}'`,
       ),
     ).rejects.toThrow();
   });
@@ -393,8 +393,8 @@ describe("a porta da sala (ADR-69)", () => {
       () => service.confirmar(ESCOLA, semTurma, null),
       () => service.avancarParaReflexao(ESCOLA, semTurma, null),
       () => service.reflexao(ESCOLA, semTurma, null, "um texto qualquer"),
-      /* O `gate` entra na lista, e é a diferença desta missão para a exp-06, a
-         exp-07 e a exp-08: nas três ele fica FORA do funil, e um estudante
+      /* O `gate` entra na lista, e é a diferença desta missão para a exp06ef2b, a
+         exp07ef1b e a exp08ef4b: nas três ele fica FORA do funil, e um estudante
          logado sem liberação descobre a etapa da turma dele. Aqui a nota do
          `@Contrato` afirmava a guarda — então a afirmação virou verdade, e este
          caso a prende. */
@@ -416,7 +416,7 @@ describe("a missão nasce VAZIA", () => {
   beforeAll(async () => {
     /* RASCUNHO, não homologação: a rota de geração com IA devolve isto e não
        liga nada. Para o estudante, rascunho e nada são a MESMA coisa (RF-001). */
-    await prisma.exp05ConteudoTurma.create({
+    await prisma.exp05ef1bConteudoTurma.create({
       data: {
         escolaId: ESCOLA,
         turmaId: turmaSemPreparo,
@@ -449,14 +449,14 @@ describe("a missão nasce VAZIA", () => {
     /* `mensagensValidas` é a leitura do `Json` da linha, e o `Json` do Prisma é
        `unknown` na prática: o Zod validou na ESCRITA, mas uma linha gravada por
        uma versão anterior do schema — ou por um `psql` de migração — chega aqui
-       com a forma velha. O desfecho aqui é diferente do da exp-08: **não há
+       com a forma velha. O desfecho aqui é diferente do da exp08ef4b: **não há
        queda para o banco curado**, porque o lote é do TEMA que a professora
        escolheu. Forma torta = turma não preparada.
 
        E o `logger.warn` é parte da regra, não decoração: sem ele o sintoma é uma
        turma homologada em que a missão insiste em "ainda estamos organizando o
        grupo", e nada, em lugar nenhum, diz por quê. */
-    const original = await prisma.exp05ConteudoTurma.findUniqueOrThrow({
+    const original = await prisma.exp05ef1bConteudoTurma.findUniqueOrThrow({
       where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId: turmaSemPreparo } },
     });
     const oitoIguais = LOTE_DEFAULT.map(() => ({ ...LOTE_DEFAULT[0] }));
@@ -483,21 +483,21 @@ describe("a missão nasce VAZIA", () => {
     const linhas = await prisma.$queryRaw<{ def: string }[]>`
       SELECT pg_get_constraintdef(oid) AS def
       FROM pg_constraint
-      WHERE conname = 'exp_05_conteudo_mensagens_check'
+      WHERE conname = 'exp05ef1b_conteudo_mensagens_check'
     `;
     const def = linhas[0]?.def;
     /* Sem o CHECK no banco não há o que derrubar nem o que repor, e seguir
        adiante deixaria a suíte gravando lixo sem a primeira barreira. */
     expect(def).toEqual(expect.stringContaining("mensagens_json"));
     await prisma.$executeRawUnsafe(
-      `ALTER TABLE exp_05_conteudo_turma DROP CONSTRAINT exp_05_conteudo_mensagens_check`,
+      `ALTER TABLE exp05ef1b_conteudo_turma DROP CONSTRAINT exp05ef1b_conteudo_mensagens_check`,
     );
 
     const avisos = jest.spyOn(logger, "warn").mockImplementation(() => undefined);
     try {
       for (const [caso, mensagensJson] of Object.entries(tortos)) {
         avisos.mockClear();
-        await prisma.exp05ConteudoTurma.update({
+        await prisma.exp05ef1bConteudoTurma.update({
           where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId: turmaSemPreparo } },
           data: { aprovadoPorProfessor: true, mensagensJson: mensagensJson as never },
         });
@@ -517,14 +517,14 @@ describe("a missão nasce VAZIA", () => {
             ? (primeiro as { codigo?: string }).codigo
             : undefined,
         );
-        expect({ caso, avisou: codigos.includes("exp05-lote-invalido") }).toEqual({
+        expect({ caso, avisou: codigos.includes("exp05ef1b-lote-invalido") }).toEqual({
           caso,
           avisou: true,
         });
       }
     } finally {
       avisos.mockRestore();
-      await prisma.exp05ConteudoTurma.update({
+      await prisma.exp05ef1bConteudoTurma.update({
         where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId: turmaSemPreparo } },
         data: {
           aprovadoPorProfessor: original.aprovadoPorProfessor,
@@ -532,7 +532,7 @@ describe("a missão nasce VAZIA", () => {
         },
       });
       await prisma.$executeRawUnsafe(
-        `ALTER TABLE exp_05_conteudo_turma ADD CONSTRAINT exp_05_conteudo_mensagens_check ${def}`,
+        `ALTER TABLE exp05ef1b_conteudo_turma ADD CONSTRAINT exp05ef1b_conteudo_mensagens_check ${def}`,
       );
     }
 
@@ -540,7 +540,7 @@ describe("a missão nasce VAZIA", () => {
        o derruba sem repor deixaria todo o resto da suíte gravando lixo em
        silêncio. */
     await expect(
-      prisma.exp05ConteudoTurma.update({
+      prisma.exp05ef1bConteudoTurma.update({
         where: { escolaId_turmaId: { escolaId: ESCOLA, turmaId: turmaSemPreparo } },
         data: { mensagensJson: [] as never },
       }),
@@ -590,7 +590,7 @@ describe("a curadoria — as duas portas do Mural", () => {
     const r = await service.encaminhar(ESCOLA, bia, turmaId, INFORMATIVAS[0]);
     expect(r.novo).toBe(false);
     expect(r.totalEncaminhadas).toBe(3);
-    const linhas = await prisma.exp05Encaminhamento.count({
+    const linhas = await prisma.exp05ef1bEncaminhamento.count({
       where: { escolaId: ESCOLA, estudanteId: bia, mensagemId: INFORMATIVAS[0] },
     });
     expect(linhas).toBe(1);
@@ -605,7 +605,7 @@ describe("a curadoria — as duas portas do Mural", () => {
     ]);
     expect([a.novo, b.novo].filter(Boolean)).toHaveLength(1);
     expect(
-      await prisma.exp05Encaminhamento.count({
+      await prisma.exp05ef1bEncaminhamento.count({
         where: { escolaId: ESCOLA, estudanteId: bia, mensagemId: "msg-8" },
       }),
     ).toBe(1);
@@ -648,7 +648,7 @@ describe("o latch da confirmação", () => {
       service.confirmar(ESCOLA, bia, turmaId),
     ]);
     expect([a.status, b.status].filter((s) => s === "fulfilled")).toHaveLength(1);
-    const linha = await prisma.exp05Sessao.findUnique({
+    const linha = await prisma.exp05ef1bSessao.findUnique({
       where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: bia } },
     });
     expect(linha?.confirmadoEm).toBeTruthy();
@@ -778,7 +778,7 @@ describe("a reflexão — o dilema do tio", () => {
     expect(r.passo).toBe("fim");
     expect(r.entregouReflexao).toBe(true);
     expect(r.concluidoEm).toBeTruthy();
-    const linha = await prisma.exp05Reflexao.findUnique({
+    const linha = await prisma.exp05ef1bReflexao.findUnique({
       where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: ana } },
     });
     expect(linha?.charsCount).toBe(RESPOSTA_DA_ANA.length);
@@ -919,7 +919,7 @@ describe("zerar a turma", () => {
    * acontecendo na sala ao lado, e nada em tela diria isso.
    */
   beforeAll(async () => {
-    await prisma.exp05Sessao.create({
+    await prisma.exp05ef1bSessao.create({
       data: {
         escolaId: ESCOLA,
         estudanteId: semPreparo,
@@ -929,11 +929,11 @@ describe("zerar a turma", () => {
         leuTudo: true,
       },
     });
-    await prisma.exp05Encaminhamento.create({
+    await prisma.exp05ef1bEncaminhamento.create({
       data: { escolaId: ESCOLA, estudanteId: semPreparo, mensagemId: "msg-4" },
     });
     const texto = "A aula da 5B ainda está no meio, e nada daqui pode sumir.";
-    await prisma.exp05Reflexao.create({
+    await prisma.exp05ef1bReflexao.create({
       data: { escolaId: ESCOLA, estudanteId: semPreparo, texto, charsCount: texto.length },
     });
   });
@@ -954,14 +954,14 @@ describe("zerar a turma", () => {
     // conta é POR TURMA, senão a asserção não distingue "zerou a 5A" de "zerou
     // a escola inteira".
     const daTurma = { escolaId: ESCOLA, sessao: { turmaId } };
-    expect(await prisma.exp05Encaminhamento.count({ where: daTurma })).toBe(0);
-    expect(await prisma.exp05Reflexao.count({ where: daTurma })).toBe(0);
+    expect(await prisma.exp05ef1bEncaminhamento.count({ where: daTurma })).toBe(0);
+    expect(await prisma.exp05ef1bReflexao.count({ where: daTurma })).toBe(0);
 
     /* E a 5B, que está no meio da aula dela, continua inteira. */
     const daVizinha = { escolaId: ESCOLA, sessao: { turmaId: turmaSemPreparo } };
-    expect(await prisma.exp05Sessao.count({ where: { escolaId: ESCOLA, turmaId: turmaSemPreparo } })).toBe(1);
-    expect(await prisma.exp05Encaminhamento.count({ where: daVizinha })).toBe(1);
-    expect(await prisma.exp05Reflexao.count({ where: daVizinha })).toBe(1);
+    expect(await prisma.exp05ef1bSessao.count({ where: { escolaId: ESCOLA, turmaId: turmaSemPreparo } })).toBe(1);
+    expect(await prisma.exp05ef1bEncaminhamento.count({ where: daVizinha })).toBe(1);
+    expect(await prisma.exp05ef1bReflexao.count({ where: daVizinha })).toBe(1);
   });
 
   test("PRESERVA o lote homologado — o preparo custou tempo da professora", async () => {

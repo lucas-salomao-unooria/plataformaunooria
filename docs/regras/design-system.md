@@ -25,10 +25,10 @@ plataforma no feed do estudante quebra a ilusão que a experiência está medind
 | Seção | Ponte | Onde vale |
 |---|---|---|
 | `unooria` | `@edu/ui/ds` | hub (login, `/professor`, `/admin`, `/analise`), header de todos os papéis, telas pós-revelação do estudante |
-| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp-01 |
-| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp-02 |
-| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp-03 INTEIRA (não tem revelação no software) |
-| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp-07 e a exp-06, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp-06 o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
+| `instanooria` | `@edu/ui/ds-insta` | superfície disfarçada da exp08ef1b |
+| `unitube` | `@edu/ui/ds-unootube` | superfície disfarçada da exp04ef1b |
+| `chatgpt` | `@edu/ui/ds-chatgpt` | a exp02em1b INTEIRA (não tem revelação no software) |
+| `whatsappmobile` | `@edu/ui/ds-whatsapp` | a exp07ef1b e a exp06ef2b, menos as telas da escola — **só tema escuro**. Onde a fronteira cai é a REVELAÇÃO, não o arquivo: na exp06ef2b o mapa da rede fala pela escola porque o app real não tem visualizador de topologia (ADR-72) |
 | `tiktooria` | — | ainda sem consumidor |
 
 `^0.1.x` **não** pega `0.2.0` — caret em `0.x` só sobe patch. Atualizar é ativo:

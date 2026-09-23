@@ -22,7 +22,7 @@ import { RecursosAdminController } from "../src/recursos/recursos-admin.controll
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const REGIONAL = "teste-painel-regional";
 const ESCOLA = "teste-painel";
-const VILA = "exp-70-vila-do-lume";
+const VILA = "app-70-vila-do-lume";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const painel = new RecursosAdminController(prisma);
@@ -125,7 +125,7 @@ describe("GET /recursos/painel", () => {
        suíte concorrente criasse uma linha com este produto. O que se prova é a
        DERIVAÇÃO — cada experiência aparece sob o produto que ela declara, e não
        sob outro. */
-    expect(bemEstar?.experiencias.map((e) => e.expId)).toContain("exp-91-bem-estar");
+    expect(bemEstar?.experiencias.map((e) => e.expId)).toContain("app-91-bem-estar");
     expect(bemEstar?.experiencias.map((e) => e.expId)).not.toContain(VILA);
     // E cada uma traz a versão que o hub monta hoje.
     expect(entreRedes?.experiencias[0]?.versaoAtiva).toMatch(/^\d+\.\d+\.\d+$/);
@@ -260,7 +260,7 @@ describe("PUT /recursos/:recursoId", () => {
     /* Sem esta recusa, um `expId` digitado errado criaria linha que não desliga
        nada e apareceria no painel como experiência que não existe. */
     await expect(
-      painel.definir("experiencia:exp-99-nao-existe", { escolaId: ESCOLA, ligado: true }, comoAdmin()),
+      painel.definir("experiencia:app-99-nao-existe", { escolaId: ESCOLA, ligado: true }, comoAdmin()),
     ).rejects.toThrow();
   });
 

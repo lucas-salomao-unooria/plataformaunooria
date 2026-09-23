@@ -7,7 +7,7 @@ import { videosParaOProfessor } from "./catalogo";
 import { VideosDoProfessorSchema } from "./contrato-de-rotas";
 
 /**
- * O material do GUIA DA AULA da exp-02 — catálogo com gabarito, para quem
+ * O material do GUIA DA AULA da exp04ef1b — catálogo com gabarito, para quem
  * conduz.
  *
  * Classe separada de `UnootubeTurmasController` porque não é dado de turma:

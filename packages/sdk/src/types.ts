@@ -87,7 +87,7 @@ export interface ExperienciaHandle {
   api: {
     get<T = unknown>(path: string, opcoes?: OpcoesDeChamada): Promise<T>;
     post<T = unknown>(path: string, body?: unknown, opcoes?: OpcoesDeChamada): Promise<T>;
-    /** Aditivos (exp-90): salvar/renomear/excluir. Sem retry — só GET reenvia. */
+    /** Aditivos (app-90): salvar/renomear/excluir. Sem retry — só GET reenvia. */
     put<T = unknown>(path: string, body?: unknown, opcoes?: OpcoesDeChamada): Promise<T>;
     patch<T = unknown>(path: string, body?: unknown, opcoes?: OpcoesDeChamada): Promise<T>;
     delete<T = unknown>(path: string, opcoes?: OpcoesDeChamada): Promise<T>;

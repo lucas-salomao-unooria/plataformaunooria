@@ -4,7 +4,7 @@ import { chromium } from "playwright";
 /**
  * Mede se o pointer lock funciona dentro de um iframe com sandbox — a decisão
  * que sustenta o campo `permissoes` do manifesto e o `allow-pointer-lock` do
- * `ExpFrame` (a exp-70 é um jogo 3D em primeira pessoa).
+ * `ExpFrame` (a app-70 é um jogo 3D em primeira pessoa).
  *
  * Existe porque a resposta depende do NAVEGADOR, e um teste que roda no
  * navegador errado responde a coisa errada. Medido em 2026-08-26, páginas

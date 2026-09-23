@@ -15,26 +15,26 @@ uso de produzir dano.
 \toprule
 \headrow \thd{Uso} & \thd{Onde} & \thd{O que gera, e o que NÃO gera}\\
 \midrule
-Geração de \emph{feed} & exp-01, \arq{src/geracao/} &
+Geração de \emph{feed} & exp08ef1b, \arq{src/geracao/} &
   Personas fictícias, \emph{captions}, \emph{hashtags} e arte dos posts. O
   \emph{mix} (quantos posts de cada lado, perfil e intensidade) é decidido pelo
   \textbf{servidor}; a IA só preenche.\\
-\zebra Reação ao vivo & exp-01, \arq{src/motor/} &
+\zebra Reação ao vivo & exp08ef1b, \arq{src/motor/} &
   Comentários de persona reagindo ao que o estudante publicou. Desligável pelo
   professor no meio da aula, sem \emph{deploy} (\cd{ia\_ao\_vivo}).\\
-Plano de aula & exp-90, \arq{src/planos/} &
+Plano de aula & app-90, \arq{src/planos/} &
   Um plano anual completo em Markdown, a partir do currículo da rede e das
   unidades do ano. \textbf{Não} decide nota nem avalia estudante.\\
-\zebra Entorno do \emph{check-in} & exp-91, \arq{src/bemestar/} &
+\zebra Entorno do \emph{check-in} & app-91, \arq{src/bemestar/} &
   Abertura do dia, pergunta aberta e acolhimento. \textbf{Nunca} reescreve um
   item do DASS-21, nunca vê pontuação, nome ou escola.\\
-Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
+Eco do grupo & exp07ef1b, \arq{src/o-eco-no-grupo/} &
   Três superfícies: as reações do grupo à intervenção do estudante, a conversa
   com Amara depois da decisão, e a devolutiva do \enquote{Meu percurso}. O
   \textbf{desfecho} (\cd{checada}, \cd{ruido}, \cd{conflito}) e a pontuação saem
   de \arq{regras/}, não do modelo --- a IA só \emph{redige} o que já foi
   decidido (\adrr{ADR-66}).\\
-\zebra Mídia da missão & exp-07, \arq{midia.service.ts} &
+\zebra Mídia da missão & exp07ef1b, \arq{midia.service.ts} &
   As duas falas de áudio, o episódio de podcast a duas vozes e as fotos do
   boato. Gerado \textbf{uma vez}, no preparo do professor, e cacheado no bucket;
   o estudante nunca espera por geração (\adrr{ADR-67}).\\
@@ -58,10 +58,10 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
   \draw[c4zone] (0.6,0.6) rectangle (15.4,-8.6);
   \node[c4boundarylbl, fill=unooSurface] at (1.0,0.75) {API --- \arq{apps/api/src}};
 
-  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp-01}};
-  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp-01}};
-  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{exp-90}};
-  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{exp-91}};
+  \node[c4component, text width=24mm] (g) at (2.4,-0.4) {\arq{geracao/}\desc{exp08ef1b}};
+  \node[c4component, text width=24mm] (m) at (5.6,-0.4) {\arq{motor/}\desc{exp08ef1b}};
+  \node[c4component, text width=24mm] (p) at (8.8,-0.4) {\arq{planos/}\desc{app-90}};
+  \node[c4component, text width=24mm] (b) at (12.0,-0.4) {\arq{bemestar/}\desc{app-91}};
   \node[c4component, text width=20mm] (a) at (14.6,-2.0) {\rota{POST /ai/gerar}\desc{SDK}};
 
   \draw[c4boundary, draw=unooGreen!70] (1.4,-3.0) rectangle (14.6,-7.9);
@@ -118,7 +118,7 @@ Eco do grupo & exp-07, \arq{src/o-eco-no-grupo/} &
 (\adrr{ADR-74}): ele devolve \cd{T}, não \cd{AiResult}, e sem o \emph{callback}
 não há número para debitar. Um \cd{temSaldo} sem \cd{aoUsarTokens} é meia
 regra --- barra quem já estourou o teto e faz o teto nunca ser alcançado. Foi
-o que aconteceu no plano de aulas da exp-92, a operação mais repetida da
+o que aconteceu no plano de aulas da app-92, a operação mais repetida da
 ferramenta.
 \end{regra}
 
@@ -146,8 +146,8 @@ Uma linha por (escola, usuário, dia), com incremento atômico, resolve os dois.
 \end{decisao}
 
 \begin{decisao}
-\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp-01
-e com os turnos da exp-03 (Missão Tempestade), onde uma partida completa gasta
+\textbf{O limite depende do PERFIL.} O estudante interage com o tutor da exp08ef1b
+e com os turnos da exp02em1b (Missão Tempestade), onde uma partida completa gasta
 cerca de \num{77000} \emph{tokens} medidos: o teto de estudante é calibrado em
 \num{300000} \emph{tokens}/dia, o que cabe três partidas completas. O valor
 inicial de \num{20000} estourava no quarto turno com erro de sala fechada. O
@@ -198,7 +198,7 @@ nem em \arq{.env.example}.
 Antes dessa mudança havia \textbf{só} o \emph{metadata server}, e por isso
 \emph{nenhuma} chamada de IA funcionava fora do Cloud Run --- nem no \emph{host},
 nem no contêiner, onde \cd{metadata.google.internal} não resolve. Em
-desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a exp-90 devolvia
+desenvolvimento a API ficava presa em \env{AI\_PROVIDER=mock} e a app-90 devolvia
 um plano \textbf{falso}, o que é pior que falhar: parecia funcionar. Os dois
 \emph{compose} montam o ADC do \emph{host} em \arq{/adc} somente leitura; em
 Cloud Run a conta de serviço do serviço já \emph{é} a credencial, e ela precisa de
@@ -247,7 +247,7 @@ A proporção \cd{4:5} é PEDIDA no \cd{imageConfig} & Sem isso, o 3.1 devolve
 
 \subsection{Voz: a única chamada que não é ao \emph{aiplatform}}
 
-\cd{generateSpeech} chegou ao \cd{AiProvider} com a exp-07 (\adrr{ADR-67}) e é a
+\cd{generateSpeech} chegou ao \cd{AiProvider} com a exp07ef1b (\adrr{ADR-67}) e é a
 exceção do capítulo: as outras três operações batem em
 \cd{\{loc\}-aiplatform.googleapis.com}, e a síntese bate em
 \cd{texttospeech.googleapis.com/v1/text:synthesize} --- mesma credencial ADC,

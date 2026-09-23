@@ -65,7 +65,7 @@ import {
 import { coberturaDoRisco, percentilEntre, posicaoNaFaixa } from "./regras/desfecho";
 
 /**
- * O serviço da exp-03-unoogpt — a Missão Tempestade.
+ * O serviço da exp02em1b — a Missão Tempestade.
  *
  * Porte de `lib/missao/servico.ts` do projeto `gpturia`, com quatro diferenças
  * que vêm da plataforma e não do jogo:

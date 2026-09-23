@@ -1,0 +1,447 @@
+/**
+ * Layout da exp01ef1b — SÓ medida, espaçamento, grade e comportamento de página
+ * (compensação legítima). Botão, card e barra vêm do DS de cada família;
+ * cor de componente nasce lá, não aqui.
+ *
+ * Tema: estritamente CLARO (nono campo do handoff) — fundo branco canônico
+ * das postagens e contraste ≥ 4.5:1 para leitores iniciantes.
+ */
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #fff;
+  font-family: "Inter Variable", Inter, system-ui, sans-serif;
+}
+
+.fc-tela {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.fc-tela-casca h1 {
+  font-size: 22px;
+  text-align: center;
+  margin: 0;
+}
+
+/* ------------------------------- E1: crachás ------------------------------ */
+
+.fc-balao-nina {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fc-balao-texto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5fb;
+  border-radius: 16px;
+  padding: 12px 16px;
+}
+
+.fc-instrucao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.fc-grade-marcas {
+  display: flex;
+  gap: 12px;
+}
+
+.fc-cartao-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 96px;
+  padding: 12px 4px;
+  background: #fff;
+  border: 3px solid #d6dbe3;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fc-cartao-marca--ativa {
+  border-color: #1a4b8f;
+  background: #eaf1fb;
+}
+
+.fc-botao-largo {
+  width: 100%;
+  max-width: 327px;
+  min-height: 56px;
+}
+
+/* ------------------------------- E2: o mural ------------------------------ */
+
+.fc-tela-clone {
+  padding: 0;
+  gap: 0;
+}
+
+.fc-feed {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  /* O app imitado não mostra barra no feed (fidelidade, como a exp08ef1b). */
+  scrollbar-width: none;
+}
+
+.fc-feed::-webkit-scrollbar {
+  display: none;
+}
+
+.fc-scaffold-scroll {
+  position: absolute;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fc-seta-baixo {
+  animation: fc-desce 1.2s ease-in-out infinite;
+}
+
+@keyframes fc-desce {
+  0%,
+  100% {
+    transform: translateY(-2px);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
+.fc-botao-criar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 48px;
+}
+
+/* ------------------------------ E3: decisão ------------------------------- */
+
+.fc-instrucao-clone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 0 16px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.fc-seletor-fotos {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.fc-foto-opcao {
+  position: relative;
+  flex: 1;
+  padding: 0;
+  border: 4px solid transparent;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+}
+
+.fc-foto-opcao img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.fc-foto-opcao--ativa {
+  border-color: #111;
+}
+
+.fc-foto-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.fc-card-legenda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 32px);
+  margin: 0 16px;
+}
+
+.fc-card-legenda-corpo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 8px 12px;
+  border: 3px solid #d6dbe3;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fc-card-legenda--ativa .fc-card-legenda-corpo {
+  border-color: #111;
+  background: #f5f7fa;
+}
+
+.fc-scaffold-pulso .fc-foto-opcao,
+.fc-scaffold-pulso .fc-card-legenda-corpo {
+  animation: fc-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes fc-pulso {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(26, 75, 143, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(26, 75, 143, 0.35);
+  }
+}
+
+/* ------------------------------ E3-2: o PICO ------------------------------ */
+
+.fc-pico {
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+}
+
+.fc-pico-preview {
+  width: 200px;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.fc-pico-legenda {
+  font-size: 18px;
+  font-weight: 700;
+  text-align: center;
+  margin: 0;
+}
+
+.fc-botao-compartilhar {
+  width: 327px;
+  min-height: 64px;
+  font-size: 18px;
+}
+
+.fc-spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-spinner-svg {
+  animation: fc-gira 0.8s linear infinite;
+}
+
+@keyframes fc-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -------------------------------- E4: o eco ------------------------------- */
+
+.fc-aha {
+  width: 100%;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.fc-badge-publicado {
+  margin: 8px 16px;
+}
+
+.fc-comentarios {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 16px 24px;
+}
+
+.fc-comentario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fc-surge 300ms ease-out;
+}
+
+.fc-comentario p {
+  margin: 0;
+  font-size: 15px;
+}
+
+@keyframes fc-surge {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------- E5: o congelamento --------------------------- */
+
+.fc-congelamento {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fffdf7;
+  text-align: center;
+  padding: 24px;
+  /* Porta-retrato: nenhum descendente é interativo e nada rola. */
+  overflow: hidden;
+}
+
+.fc-congelamento h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+/* ------------------------------ E6: reflexão ------------------------------ */
+
+.fc-retry {
+  font-weight: 700;
+  color: #7a5200;
+}
+
+.fc-cards-reflexao {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 327px;
+}
+
+.fc-card-reflexao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-card-reflexao button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 120px;
+  padding: 12px;
+  border: 3px solid #d6dbe3;
+  border-radius: 14px;
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fc-card-reflexao--pisca button {
+  animation: fc-pisca 700ms ease-in-out 2;
+}
+
+@keyframes fc-pisca {
+  50% {
+    background: #fff3d6;
+  }
+}
+
+/* ------------------------------ E6-2 e galeria ---------------------------- */
+
+.fc-podcast {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.fc-titulo-mural {
+  font-size: 20px;
+}
+
+.fc-galeria {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+  overflow-y: auto;
+}
+
+.fc-galeria-item {
+  margin: 0;
+}
+
+.fc-galeria-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.fc-galeria-item figcaption {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 2px;
+}

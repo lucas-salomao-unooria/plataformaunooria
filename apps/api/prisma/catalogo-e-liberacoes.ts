@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { PrismaClient } from "@prisma/client";
+import { EXP_ID_RE } from "../src/comum/codigo-da-experiencia";
 
 /**
  * O catálogo de experiências e as liberações de demonstração (ADR-69).
@@ -37,7 +38,7 @@ const PASTA_DAS_EXPERIENCIAS = resolve(__dirname, "../../experiencias");
 /** Lê os manifestos do monorepo. `_template` fica de fora: não é experiência. */
 export function lerManifestos(): Manifesto[] {
   const pastas = readdirSync(PASTA_DAS_EXPERIENCIAS, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name.startsWith("exp-"))
+    .filter((e) => e.isDirectory() && EXP_ID_RE.test(e.name))
     .map((e) => e.name)
     .sort();
 
@@ -119,13 +120,13 @@ export async function semearCatalogo(prisma: PrismaClient): Promise<number> {
 export const LIBERACOES_DE_DEMO: Array<{ turma: string; expIds: string[] }> = [
   // O 8º ano abre as duas: a Vila é o Ato 1 do Instanooria, e é o par que a
   // suíte `estudante/05-vila-do-lume` + `estudante/02-instanooria` percorre.
-  { turma: "8A", expIds: ["exp-70-vila-do-lume", "exp-01-instanooria", "exp-08-manifesto-ia"] },
-  { turma: "1A", expIds: ["exp-04-o-que-a-foto-conta"] },
-  { turma: "4A", expIds: ["exp-02-unootube"] },
-  { turma: "5A", expIds: ["exp-05-quem-mandou-isso"] },
-  { turma: "6A", expIds: ["exp-06-rastro-boato"] },
-  { turma: "7A", expIds: ["exp-07-o-eco-no-grupo"] },
-  { turma: "2EM-A", expIds: ["exp-03-unoogpt"] },
+  { turma: "8A", expIds: ["app-70-vila-do-lume", "exp08ef1b", "exp08ef4b"] },
+  { turma: "1A", expIds: ["exp01ef1b"] },
+  { turma: "4A", expIds: ["exp04ef1b"] },
+  { turma: "5A", expIds: ["exp05ef1b"] },
+  { turma: "6A", expIds: ["exp06ef2b"] },
+  { turma: "7A", expIds: ["exp07ef1b"] },
+  { turma: "2EM-A", expIds: ["exp02em1b"] },
 ];
 
 export async function semearLiberacoes(

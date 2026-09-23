@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { lerManifestos } from "../prisma/catalogo-e-liberacoes";
 import { PRODUTOS } from "../src/recursos/catalogo";
+import { EXP_ID_RE } from "../src/comum/codigo-da-experiencia";
 
 /**
  * TODA EXPERIÊNCIA DECLARA A QUE PRODUTO PERTENCE (ADR-87).
@@ -27,7 +28,7 @@ const manifestos = lerManifestos();
 
 test("há manifesto para ler (senão este teste passaria vazio e não provaria nada)", () => {
   const pastas = readdirSync(PASTA, { withFileTypes: true }).filter(
-    (e) => e.isDirectory() && e.name.startsWith("exp-"),
+    (e) => e.isDirectory() && EXP_ID_RE.test(e.name),
   );
   expect(manifestos).toHaveLength(pastas.length);
 });
@@ -43,8 +44,8 @@ describe.each(manifestos.map((m) => [m.id, m] as const))("%s", (_id, manifesto) 
 });
 
 /**
- * O `_template` entra à parte: `lerManifestos` filtra pastas `exp-*` e a dele é
- * `_template`. Ele precisa do campo pelo motivo mais direto que existe — o
+ * O `_template` entra à parte: `lerManifestos` só lê pasta cujo nome é um código de
+ * experiência (ADR-110), e a dele é `_template`. Ele precisa do campo pelo motivo mais direto que existe — o
  * `pnpm new:exp` copia este arquivo, e um template sem `produto` faz TODA
  * experiência nova nascer errada, com o defeito mudo descrito acima.
  */

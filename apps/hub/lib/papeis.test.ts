@@ -20,7 +20,7 @@ describe("homeDoPapel", () => {
 describe("areaDoPathname", () => {
   test("hub e aparelho do estudante são a MESMA área (senão o middleware faz pingue-pongue)", () => {
     expect(areaDoPathname("/estudante")).toBe(homeDoPapel("estudante"));
-    expect(areaDoPathname("/exp/exp-02-unootube")).toBe(homeDoPapel("estudante"));
+    expect(areaDoPathname("/exp/exp04ef1b")).toBe(homeDoPapel("estudante"));
     expect(areaDoPathname("/dev-embed")).toBe(homeDoPapel("estudante"));
   });
 
@@ -57,7 +57,7 @@ describe("areasDoPapel — o admin mora em DUAS áreas", () => {
   test("e continua FORA das áreas de professor e estudante", () => {
     expect(podeEntrarNaArea("admin", "/professor")).toBe(false);
     expect(podeEntrarNaArea("admin", "/estudante")).toBe(false);
-    expect(podeEntrarNaArea("admin", "/exp/exp-70-vila-do-lume")).toBe(false);
+    expect(podeEntrarNaArea("admin", "/exp/app-70-vila-do-lume")).toBe(false);
   });
 
   test("NINGUÉM MAIS entra em `/unooria` — nem o `gestor_contrato`", () => {

@@ -80,7 +80,7 @@ revisão em par que uma pessoa não tem.
 \end{figure}
 
 \begin{nota}
-\textbf{Caso registrado (2026-08-27).} O \emph{smoke} da exp-02 foi o único
+\textbf{Caso registrado (2026-08-27).} O \emph{smoke} da exp04ef1b foi o único
 verificador a pegar o \cd{hub:pause} espúrio do \arq{ExpFrame.tsx}
 (\adrr{ADR-22}): 31 tarefas de \cd{typecheck}, \cd{lint} e teste passavam, e o
 que denunciou foi uma linha do relatório --- \enquote{autoplay BLOQUEADO}. O
@@ -126,7 +126,7 @@ node scripts/probe-pointerlock.mjs
 
 \begin{atencao}
 Duas coisas exigem o \textbf{Chrome do sistema}, não o Chromium do
-Playwright: a suíte da exp-70 e o \emph{probe} de \emph{pointer lock}. O Chromium
+Playwright: a suíte da app-70 e o \emph{probe} de \emph{pointer lock}. O Chromium
 empacotado \textbf{não concede \emph{pointer lock} nem no topo da página}, então
 usá-lo produziria um falso negativo --- o teste diria que a permissão de
 \emph{sandbox} não funciona quando o problema é o navegador.
@@ -201,9 +201,9 @@ cortado por \cd{MAX\_TOKENS} caindo num \emph{fallback}) passaria \textbf{verde}
 \zebra \cd{ALERTA\_DE\_ERRO} & \cd{.unooria-feedback-alert--error}. É a CLASSE,
   não \cd{[role="alert"]}: o \emph{role} é o mesmo para \emph{info},
   \emph{warning} e \emph{success}, e esperar por ele faria um aviso benigno
-  derrubar o roteiro. Vale para quem fala pela PLATAFORMA (exp-90, exp-91).\\
+  derrubar o roteiro. Vale para quem fala pela PLATAFORMA (app-90, app-91).\\
 \cd{vigiarFalhasDaApi} & Anota respostas 4xx/5xx para o relatório, com rótulo do
-  contexto. É o sinal das experiências DISFARÇADAS (exp-01, exp-03, exp-07), que
+  contexto. É o sinal das experiências DISFARÇADAS (exp08ef1b, exp02em1b, exp07ef1b), que
   mostram erro em \cd{<p>} avulso, com classe diferente em cada tela, e por isso
   não têm gancho estável. \textbf{Não derruba o roteiro}: um 404 de sondagem é
   esperado, e derrubar por \emph{status} inventaria falha. Para 5xx e 422 ele
@@ -219,10 +219,10 @@ cortado por \cd{MAX\_TOKENS} caindo num \emph{fallback}) passaria \textbf{verde}
 \end{tabularx}
 
 \begin{atencao}
-Os dois mecanismos são complementares, e o caso da exp-90 mostra por quê: o
+Os dois mecanismos são complementares, e o caso da app-90 mostra por quê: o
 \cd{POST /planos} devolve \textbf{202}, e o erro só aparece no CORPO do
 \emph{polling}. Um vigia de \emph{status} HTTP não o pegaria --- ali o sinal é o
-alerta no DOM. Na exp-03 é o contrário: a rota devolve \textbf{503} e não há
+alerta no DOM. Na exp02em1b é o contrário: a rota devolve \textbf{503} e não há
 classe estável para esperar.
 \end{atencao}
 
@@ -233,7 +233,7 @@ classe estável para esperar.
 vez: na segunda execução a criança cai direto no \emph{feed}, a espera pelo
 texto da tela de entrada estoura em 30\,s, e o relatório diz \emph{iframe}
 vazio quando o \emph{iframe} está perfeito, só adiantado. Ele passou a zerar a
-turma no começo, como o da explicabilidade e o da exp-03 já faziam.
+turma no começo, como o da explicabilidade e o da exp02em1b já faziam.
 \textbf{\emph{Smoke} que só passa uma vez por banco não é \emph{smoke}} --- e o
 sintoma dessa falha é indistinguível de um defeito de produto.
 
@@ -241,7 +241,7 @@ sintoma dessa falha é indistinguível de um defeito de produto.
 \cd{performance.measure(routeChangeToRender, \ldots)} de
 \arq{next/dist/client/index.js} pode receber \emph{timestamp} negativo numa
 navegação cliente e lança \cd{Failed to execute 'measure' on 'Performance'}.
-Aparece em 11 dos 12 roteiros; como o da exp-02 e o da exp-03 reprovam por
+Aparece em 11 dos 12 roteiros; como o da exp04ef1b e o da exp02em1b reprovam por
 QUALQUER erro de console, os dois viviam vermelhos por um defeito que não é
 nosso --- e vermelho permanente treina a pessoa a ignorar o vermelho, que é o
 único jeito de um \emph{smoke} deixar de servir. A lista de ruído
@@ -261,7 +261,7 @@ quantos ignorou}: silenciar por padrão devolveria o problema em outra forma.
   no CSS.\\
 \zebra Cor inexistente em fundo & Classe de cor que não existe em
   \arq{plataforma.css} não é erro em lugar nenhum. Em texto herda a cor; em
-  \textbf{fundo} o elemento fica branco no branco. O \emph{smoke} da exp-70 checa
+  \textbf{fundo} o elemento fica branco no branco. O \emph{smoke} da app-70 checa
   o \cd{backgroundColor} \textbf{computado} --- \cd{toBeVisible()} não pega.\\
 \cd{iframe} vazio & \emph{Handshake} que expira, \emph{dev server} fora do ar,
   manifesto ausente: o componente monta, o \cd{iframe} existe, e não há nada
@@ -295,7 +295,7 @@ TypeScript \emph{strict} em tudo & \arq{tsconfig.base.json}, herdado por todos o
   \emph{workspaces}. Inclui \cd{noUncheckedIndexedAccess} --- é por isso que o
   código de curadoria usa \cd{!} em índices provadamente válidos, com comentário.\\
 \zebra \textbf{Sem \cd{any}} & Use \cd{unknown} + \emph{narrow}. Uma exceção,
-  registrada em ADR: \arq{exp-70/public/jogo/**} está nos \cd{ignores} do
+  registrada em ADR: \arq{app-70/public/jogo/**} está nos \cd{ignores} do
   ESLint.\\
 Zod em todo \emph{input} externo & Corpo, \emph{query}, \cd{postMessage}
   recebido, variáveis de ambiente.\\

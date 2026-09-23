@@ -315,9 +315,9 @@ migração não a \enquote{conserte}: ligar RLS ali faz TODO produto parecer lig
     experiências já passam por aquele funil, e um ponto único torna impossível
     existir liberação valendo num recurso que a rede não tem. A ordem importa
     para o diagnóstico: o \cd{codigo} do 403 diz em qual dos dois eixos procurar.
-  \item \emph{Ferramentas de professor} (exp-90, exp-91, exp-92) --- não têm
+  \item \emph{Ferramentas de professor} (app-90, app-91, app-92) --- não têm
     liberação por turma e somam \textbf{28 rotas}. A guarda é um
-    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("exp-NN-slug")} no
+    \cd{DisponibilidadeGuard} de CLASSE, com \cd{@Recurso("app-90-plano-de-aula")} no
     \cd{@Controller}: rota nova nasce coberta. Anotar rota por rota é o desenho
     em que a 29ª nasce sem guarda, sem erro e sem sintoma --- o produto
     simplesmente deixa de poder ser desligado.
@@ -399,7 +399,7 @@ redirecionado para a própria casa, porque estudante que tropeça em
   O \emph{hub} de missões e o aparelho da experiência (\rota{/exp/:expId}).
   São a MESMA área: o hub escolhe, o \cd{iframe} joga.\\
 \zebra \cd{professor} & \rota{/professor} &
-  Atividades (exp-01), turmas, guia, plano de aula (exp-90), bem-estar (exp-91)
+  Atividades (exp08ef1b), turmas, guia, plano de aula (app-90), bem-estar (app-91)
   e \enquote{entre redes} --- os resultados por unidade.\\
 \cd{gestor} & \rota{/admin/usuarios} &
   Usuários, turmas, importar, ano letivo. E \enquote{minhas escolas}, que só
@@ -542,7 +542,7 @@ atribui \cd{gestor\_regional}; \cd{gestor\_contrato} pedindo outro
 \endhead
 Realizar experiência e salvar progresso &
   \rota{/progresso/:expId}, \rota{/runs/*} & \yes & \no & \no & \no\\
-\zebra Preparar e conduzir atividade (exp-01) & \rota{/atividades/*} &
+\zebra Preparar e conduzir atividade (exp08ef1b) & \rota{/atividades/*} &
   \no & \yes & \no & \no\\
 Destilar, gerar e regenerar o \emph{feed} com IA &
   \rota{/atividades/:id/\B destilar}, \rota{/gerar}, \rota{/posts/:id/\B regenerar} &
@@ -808,7 +808,7 @@ Cada token do \emph{sandbox} está lá por um motivo medido:
 \cd{allow-same-origin} porque, sem ele, a \emph{origin} do \cd{iframe}
 cross-origin vira \cd{"null"} e a validação de \emph{origin} quebra dos dois
 lados; \cd{allow-modals} porque, sem ele, o navegador \emph{ignora}
-\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a exp-90
+\cd{confirm()} do \cd{iframe} silenciosamente (devolve \cd{false}), e a app-90
 confirma exclusão assim; \cd{allow-pointer-lock} porque, num \cd{iframe} com
 \emph{sandbox}, \cd{requestPointerLock()} morre com \cd{SecurityError} sem ele
 --- verificado em \arq{scripts/probe-pointerlock.mjs}, que precisa do Chrome do
@@ -854,11 +854,11 @@ acredita ter declarado algo.
   \item Chamada de IA só existe como \rota{POST /ai/gerar} na API. O
     \emph{prompt} de sistema mora em \arq{apps/api/src/ai/prompts.ts} e nunca é
     devolvido.
-  \item O gabarito da exp-02 (\cd{factual}) não é persistido no estado do estudante
+  \item O gabarito da exp04ef1b (\cd{factual}) não é persistido no estado do estudante
     nem devolvido em nenhuma rota de estudante.
-  \item Os textos dos cartões da exp-70 chegam ao jogo \textbf{sem gabarito}, e
+  \item Os textos dos cartões da app-70 chegam ao jogo \textbf{sem gabarito}, e
     apenas os da bolha daquela criança.
-  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp-01 são
+  \item \cd{lado}, \cd{perfil} e \cd{intensidade} dos posts da exp08ef1b são
     removidos pelo sanitizador antes de o \emph{feed} sair da API --- são a
     variável independente do experimento.
 \end{itemize}
@@ -889,7 +889,7 @@ Telemetria sem PII & O evento carrega \cd{estudante\_id} opaco (UUID), nunca nom
   \emph{e-mail}. A identidade é derivada do \emph{token} no servidor, não do
   corpo enviado pelo cliente --- o que é, ao mesmo tempo, anti-\emph{spoof} e
   garantia de que o cliente não \emph{pode} enviar PII no lugar do id.\\
-\zebra Sem canal de texto arbitrário & Em \cd{exp\_70\_sessoes.payload}, o campo
+\zebra Sem canal de texto arbitrário & Em \cd{app\_70\_sessoes.payload}, o campo
   \cd{eventos[].dados} aceita apenas número, booleano ou \emph{string} de um
   \textbf{vocabulário fechado}. O campo \cd{texto} livre que existia era o único
   canal de texto arbitrário do \emph{payload} --- e o caminho por onde o nome de
@@ -900,20 +900,20 @@ Texto sensível fora de log & O texto livre do \emph{check-in} de bem-estar nunc
 \zebra IA sem contexto identificável & O \emph{prompt} de bem-estar recebe
   apenas dia da semana, mês, número do \emph{check-in} e o texto livre
   \emph{delimitado como conteúdo}. Nunca nome, escola, pontuação ou faixa.\\
-Ranking sem menor real & O ranking da exp-02 usa colegas
+Ranking sem menor real & O ranking da exp04ef1b usa colegas
   \textbf{fictícios}, com distribuição desenhada para a lição. Não há pontuação
   de criança real exposta a outra criança.\\
-\zebra Dado de saúde com posse & \cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}
+\zebra Dado de saúde com posse & \cd{app\_91\_ciclos} e \cd{app\_91\_checkins}
   têm RLS \emph{e} filtro por \cd{professor\_id} em toda \emph{query}, e não
   existe rota de gestor nem agregado. O próprio titular apaga tudo.\\
 Texto de menor com contenção & \textbf{Três} campos livres de estudante, e a
-  diferença entre eles é de finalidade. \cd{exp\_07\_mensagens} guarda a
+  diferença entre eles é de finalidade. \cd{exp07ef1b\_mensagens} guarda a
   conversa da criança com Amara: 600 caracteres, 3 turnos, sanitizador nos dois
   sentidos, e \textbf{nenhum caminho até o painel} --- a professora vê
-  \emph{quantos} turnos, nunca o quê. \cd{exp\_06\_reflexoes} guarda o
+  \emph{quantos} turnos, nunca o quê. \cd{exp06ef2b\_reflexoes} guarda o
   \enquote{Meu percurso}: 280 caracteres que \textbf{a professora da turma lê},
   porque ali o texto \emph{é} o instrumento.
-  \cd{exp\_08\_respostas\_percurso} guarda a justificativa da cláusula: 800
+  \cd{exp08ef4b\_respostas\_percurso} guarda a justificativa da cláusula: 800
   caracteres, mesma finalidade e mesma fronteira --- e com uma trava que os
   outros dois não têm, o \textbf{filtro de dado pessoal que recusa antes de
   gravar}. As três ficam sob RLS, fora de log e fora da telemetria. Ver as
@@ -922,11 +922,11 @@ Texto de menor com contenção & \textbf{Três} campos livres de estudante, e a
 \end{tabularx}
 
 \begin{decisao}
-\textbf{A exp-07 reabriu o texto livre de menor, e isso é mudança de postura}
+\textbf{A exp07ef1b reabriu o texto livre de menor, e isso é mudança de postura}
 (\adrr{ADR-66}). Até ela, o produto tinha exatamente um campo aberto, e ele era
 de \emph{professor} (o \emph{check-in} de bem-estar); as experiências de
 estudante trabalhavam com vocabulário fechado, e a linha acima sobre
-\cd{exp\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
+\cd{app\_70\_sessoes} descreve a trava estrutural que existe justamente por isso.
 
 O que fez valer a pena: a missão mede se a criança consegue \textbf{perguntar
 antes de repassar}, e um menu de perguntas prontas responderia a pergunta no
@@ -936,23 +936,23 @@ da escola dele, e nenhum caminho o leva a \emph{log}, telemetria, Clarity ou
 painel do professor --- o painel mostra \textbf{quantos} turnos, nunca o quê.
 
 Consequência aceita: existe no banco uma coluna de longa duração com texto
-escrito por criança (\cd{exp\_07\_mensagens.texto}), e ela entra no mesmo regime
+escrito por criança (\cd{exp07ef1b\_mensagens.texto}), e ela entra no mesmo regime
 de retenção da subseção seguinte. Gatilho de reavaliação: se a conversa deixar de ser opcional, ou se
 algum painel pedir o texto, a decisão volta à mesa.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-06 leva o texto da criança ao painel do professor, e a exp-07
+\textbf{A exp06ef2b leva o texto da criança ao painel do professor, e a exp07ef1b
 não --- as duas estão certas.} O que separa os dois casos é a
 \textbf{finalidade}, não o grau de cuidado.
 
-Na exp-07 o campo é uma \emph{conversa} com uma personagem: ele existe para a
+Na exp07ef1b o campo é uma \emph{conversa} com uma personagem: ele existe para a
 criança perguntar antes de repassar, e o que a professora precisa saber é se ela
 perguntou --- daí a contagem de turnos no painel e o texto fora dele. Levá-lo à
 tela do adulto mudaria o que a criança escreve, e a missão mede justamente a
 pergunta espontânea.
 
-Na exp-06 o campo é o \emph{registro do percurso}: 280 caracteres em que a
+Na exp06ef2b o campo é o \emph{registro do percurso}: 280 caracteres em que a
 criança nomeia o gatilho que reconheceu e o que fará antes de encaminhar da
 próxima vez. Ali o texto \textbf{é} o instrumento formativo --- um painel que
 mostrasse só \enquote{entregou / não entregou} guardaria a redação para ninguém.
@@ -961,13 +961,13 @@ o campo não existe em nenhum \emph{payload} de telemetria.
 
 Consequência aceita: há agora duas colunas de longa duração com texto de menor,
 e uma delas é visível a um adulto por desenho. Gatilho de reavaliação: se um
-painel de gestor, de rede ou de análise pedir \cd{exp\_06\_reflexoes.texto}, a
+painel de gestor, de rede ou de análise pedir \cd{exp06ef2b\_reflexoes.texto}, a
 decisão volta à mesa --- a fronteira é o professor da turma, e ela não se move
 por conveniência de relatório.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-08 RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
+\textbf{A exp08ef4b RECUSA o dado pessoal em vez de guardá-lo com \emph{flag}}, e
 essa é a primeira vez que o produto trata a caixa livre de menor de forma ativa,
 não só contida.
 
@@ -1012,7 +1012,7 @@ gravar.
 \subsection{Retenção: uma decisão explícita de não declarar prazo}
 
 \begin{decisao}
-\textbf{Não há prazo de retenção declarado} para \cd{exp\_70\_sessoes} nem para
+\textbf{Não há prazo de retenção declarado} para \cd{app\_70\_sessoes} nem para
 \cd{telemetria\_eventos} (decisão de 2026-08-26, \adrr{ADR-13}).
 
 Havia uma coluna \cd{expires\_at} de 90 dias no \emph{schema} e \emph{nenhuma

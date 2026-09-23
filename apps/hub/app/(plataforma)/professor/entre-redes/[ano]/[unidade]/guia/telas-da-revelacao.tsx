@@ -10,7 +10,7 @@ import {
  * As telas da revelação do Instanooria — BLOCO VIVO do guia.
  *
  * Renderizadas de `lib/insta/copy-da-revelacao.ts` — que é uma CÓPIA do
- * arquivo homônimo da exp-01, não a mesma fonte. As duas têm de ser
+ * arquivo homônimo da exp08ef1b, não a mesma fonte. As duas têm de ser
  * idênticas, e nada no build cobra isso: o cabeçalho dos dois arquivos é o
  * único aviso. Mexeu na copy, mexa nas duas.
  */

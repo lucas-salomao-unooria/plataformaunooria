@@ -9,7 +9,7 @@
  * nela, e a frente volta por PR `--base dev-local`.
  *
  * Uso:
- *   pnpm worktree criar <tipo/slug | exp-NN-slug> --fatia api/<mod>,hub/<rota>,exp/<id>
+ *   pnpm worktree criar <tipo/slug | código da experiência> --fatia api/<mod>,hub/<rota>,exp/<id>
  *   pnpm worktree listar
  *   pnpm worktree remover <slug>
  *
@@ -53,7 +53,9 @@ const WORKTREES = join(PRINCIPAL, ".claude", "worktrees");
 
 /** Espelha `.githooks/pre-push`: um nome que o hook recusaria não vira worktree. */
 const TIPOS = "feat|fix|chore|docs|ci|refactor|test|perf|build|style|hotfix";
-const NOME_DE_BRANCH = new RegExp(`^(exp-\\d{2}-[a-z0-9-]+|(${TIPOS})/[a-z0-9][a-z0-9._-]*)$`);
+const NOME_DE_BRANCH = new RegExp(
+  `^(exp0[1-9]e[fm][1-4]b|app-\\d{2}-[a-z0-9-]+|(${TIPOS})/[a-z0-9][a-z0-9._-]*)$`,
+);
 
 /**
  * Faixa das frentes. 5173–5179 são da cópia principal (`experiencias-dev.ts`),
@@ -178,7 +180,7 @@ function criar(branch, fatia) {
   if (!NOME_DE_BRANCH.test(branch)) {
     morre(
       `nome de branch fora do padrão: '${branch}'\n` +
-        `    Experiência nova:  exp-NN-slug     (ex.: exp-12-fracoes)\n` +
+        `    Experiência nova:  o código dela   (ex.: exp06ef3b, app-93-diario-de-bordo — ADR-110)\n` +
         `    Qualquer outra:    tipo/slug       (ex.: fix/quota-por-perfil)\n` +
         `    Tipos: ${TIPOS.replaceAll("|", ", ")}\n` +
         `  É o padrão do .githooks/pre-push: criar aqui o que ele recusaria só` +
@@ -200,7 +202,7 @@ function criar(branch, fatia) {
   if (alvos.length === 0) {
     morre(
       "falta --fatia. TODA frente declara o que vai tocar (ADR-71, ADR-101).\n" +
-        "    Vertical:    --fatia api/unootube,hub/professor,exp/exp-02-unootube\n" +
+        "    Vertical:    --fatia api/unootube,hub/professor,exp/exp04ef1b\n" +
         "    Ferramenta:  --fatia scripts,.githooks\n" +
         "  A fatia vira `<git-dir>/fatia`, e o .githooks/pre-commit recusa commit\n" +
         "  fora dela. Declarar é barato; descobrir no merge que duas frentes\n" +
@@ -588,7 +590,7 @@ switch (comando) {
     break;
   default:
     console.log(`Uso:
-  pnpm worktree criar <tipo/slug | exp-NN-slug> --fatia api/<mod>,hub/<rota>,exp/<id> [--sem-instalar]
+  pnpm worktree criar <tipo/slug | código da experiência> --fatia api/<mod>,hub/<rota>,exp/<id> [--sem-instalar]
   pnpm worktree listar
   pnpm worktree remover <slug>
   pnpm worktree limpar [--seco]     poda as frentes já mergeadas em ${BASE}`);

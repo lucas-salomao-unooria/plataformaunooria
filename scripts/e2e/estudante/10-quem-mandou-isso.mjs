@@ -3,7 +3,7 @@ import { conta } from "../lib/credenciais.mjs";
 import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 
 /**
- * Quem mandou isso? (exp-05), nas duas pontas da sala.
+ * Quem mandou isso? (exp05ef1b), nas duas pontas da sala.
  *
  * A missão prova quatro coisas, e cada uma é uma regra que o software instala:
  *
@@ -27,7 +27,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo, esperarOuFalharPorHttp } from "../
  * A casca do mensageiro roda na seção `whatsappmobile` do design system, em
  * tema escuro (o pacote não publica outro). A abertura de Nina, a pergunta do
  * tio e o fechamento falam pela escola — a fronteira é QUEM FALA, e aqui ela
- * cai mais tarde que na exp-06: o Mural revelado ainda é o app, porque
+ * cai mais tarde que na exp06ef2b: o Mural revelado ainda é o app, porque
  * mensageiro real tem etiqueta de checagem.
  */
 const SERIE = "5EF";
@@ -320,7 +320,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-05-quem-mandou-isso`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp05ef1b`, { waitUntil: "domcontentloaded" });
     let q = p.frameLocator('iframe[title="experiencia"]');
     await q.locator("text=/Entrar no grupo/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "abertura-da-missao", {

@@ -224,7 +224,7 @@ export async function ResultadosQuemMandouIsso({
                       {barra.resumo}
                     </span>
                   </span>
-                  {/* Barra proporcional desenhada à mão, como a da exp-08: não é
+                  {/* Barra proporcional desenhada à mão, como a da exp08ef4b: não é
                       `BarChart` do DS porque são oito linhas com rótulo longo e
                       etiqueta ao lado, e o gráfico as encavalaria. É MEDIDA,
                       que é compensação legítima. */}

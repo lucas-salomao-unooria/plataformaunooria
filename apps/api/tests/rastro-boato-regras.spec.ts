@@ -32,7 +32,7 @@ import { SCORE_DO_NIVEL, nivelDe, scoreDe } from "../src/rastro-boato/regras/pon
 import { curvas, topologiaDe } from "../src/rastro-boato/regras/topologia";
 
 /**
- * Regras puras da exp-06 — sem Prisma, sem HTTP.
+ * Regras puras da exp06ef2b — sem Prisma, sem HTTP.
  *
  * O que estes testes protegem não é "a função devolve X": é a mecânica
  * pedagógica. Cada bloco corresponde a um não-negociável documentado, e a falha
@@ -48,7 +48,7 @@ describe("catálogo", () => {
 
   test("há mais mensagens auditáveis do que a cota exige", () => {
     // Se houvesse exatamente 3, "quais auditar" deixaria de ser escolha — e é a
-    // escolha que vira dado em `exp_06_auditorias`.
+    // escolha que vira dado em `exp06ef2b_auditorias`.
     expect(MENSAGENS.length).toBeGreaterThan(AUDITORIAS_EXIGIDAS);
   });
 

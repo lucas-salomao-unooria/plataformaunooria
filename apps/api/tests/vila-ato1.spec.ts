@@ -14,7 +14,7 @@ import { VilaService } from "../src/vila/vila.service";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * O Ato 1 nativo: o perfil da Vila do Lume virando `exp_01_exp_70_perfis_importados`, que é o
+ * O Ato 1 nativo: o perfil da Vila do Lume virando `exp08ef1b_app_70_perfis_importados`, que é o
  * que decide de que lado o feed do Instanooria nasce.
  *
  * UMA ESCOLA POR SUÍTE (o Jest paraleliza suítes).
@@ -353,7 +353,7 @@ describe("importar para a atividade (Ato 1)", () => {
  * lado o feed do Instanooria nasce?
  *
  * Os testes acima provam cada elo (colapso → `normalizarPerfil` → linha em
- * `exp_01_exp_70_perfis_importados`). Este prova o elo final, que é o único que importa para o
+ * `exp08ef1b_app_70_perfis_importados`). Este prova o elo final, que é o único que importa para o
  * estudante: `resolverLargada` — a função que o `POST /api/runs` chama quando a
  * criança entra na atividade — devolvendo `ladoOrigem: "perfil"` em vez de
  * `"sorteio"`.

@@ -49,22 +49,22 @@ await suite(
        `abertos === missoes.length`: publicar uma missão para o 8º e não a
        acrescentar aqui derruba esta suíte com "as N missões da 8A estão
        abertas" — que culpa a liberação por uma lista desatualizada. Aconteceu
-       com a exp-08 em 2026-09-11, e o mesmo efeito colateral já tinha quebrado
+       com a exp08ef4b em 2026-09-11, e o mesmo efeito colateral já tinha quebrado
        `apps/api/tests/salas-postgres.spec.ts`. */
     const missoes = [
-      { texto: "Vila do Lume", expId: "exp-70-vila-do-lume", declara: ["allow-pointer-lock"] },
-      { texto: "Instanooria", expId: "exp-01-instanooria", declara: [] },
-      { texto: "Manifesto da IA", expId: "exp-08-manifesto-ia", declara: ["allow-forms"] },
+      { texto: "Vila do Lume", expId: "app-70-vila-do-lume", declara: ["allow-pointer-lock"] },
+      { texto: "Instanooria", expId: "exp08ef1b", declara: [] },
+      { texto: "Manifesto da IA", expId: "exp08ef4b", declara: ["allow-forms"] },
     ];
     const OPCIONAIS = ["allow-pointer-lock", "allow-forms"];
     /* Do 4º ano: não pertence à grade do 8º. Não é "bloqueada" — é de outra
        série, e nem aparece. São coisas diferentes, e a tela precisa distingui-las. */
-    const DE_OUTRA_SERIE = { texto: "UnooTube", expId: "exp-02-unootube" };
+    const DE_OUTRA_SERIE = { texto: "UnooTube", expId: "exp04ef1b" };
 
     /* O 404 é PROVOCADO: esta suíte digita de propósito a URL de uma missão que
        não é desta turma, e é o servidor recusando que ela existe para provar. */
     r.provocado(
-      /404.*\/exp\/exp-02-unootube/,
+      /404.*\/exp\/exp04ef1b/,
       "a porta da sala recusando a URL adivinhada de uma missão de outra série",
     );
 

@@ -1,5 +1,5 @@
 /**
- * Invariantes de produto verificáveis da exp-07. Esta lista vive em UM lugar só
+ * Invariantes de produto verificáveis da exp07ef1b. Esta lista vive em UM lugar só
  * e é importada pelo sanitizador da saída de IA, pela redaction do log e pelo
  * teste. Alterar aqui obriga a rodar a suíte da api.
  *

@@ -12,18 +12,18 @@
 #   pg      Postgres da plataforma (5432, banco `unooria`)
 #   api     NestJS em `nest start --watch` (3001)
 #   hub     Next.js em `next dev` (3000)
-#   exp-01  Vite da Instanooria (5173)
-#   exp-02  Vite do UnooTube (5174)
-#   exp-90  Vite do plano de aula, ferramenta do professor (5175)
-#   exp-92  Vite do planejamento de ensino, ferramenta do professor (5180)
-#   exp-70  Vite da Vila do Lume, transversal (5177 — a 5176 é da exp-91)
-#   exp-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
-#   exp-03  Vite do unooGPT, a Missão Tempestade (5178)
-#   exp-07  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
-#   exp-06  Vite de O Rastro do Boato, o clone de mensageiro (5181)
-#   exp-08  Vite de O Manifesto da IA, o clone do assistente (5182)
-#   exp-04  Vite de O Que a Foto Conta, o clone do mural (5183)
-#   exp-05  Vite de Quem mandou isso?, o clone do mensageiro (5184)
+#   exp08ef1b  Vite da Instanooria (5173)
+#   exp04ef1b  Vite do UnooTube (5174)
+#   app-90  Vite do plano de aula, ferramenta do professor (5175)
+#   app-92  Vite do planejamento de ensino, ferramenta do professor (5180)
+#   app-70  Vite da Vila do Lume, transversal (5177 — a 5176 é da app-91)
+#   app-91  Vite do check-in de bem-estar, ferramenta do professor (5176)
+#   exp02em1b  Vite do unooGPT, a Missão Tempestade (5178)
+#   exp07ef1b  Vite de O Eco no Grupo, o clone de WhatsApp (5179)
+#   exp06ef2b  Vite de O Rastro do Boato, o clone de mensageiro (5181)
+#   exp08ef4b  Vite de O Manifesto da IA, o clone do assistente (5182)
+#   exp01ef1b  Vite de O Que a Foto Conta, o clone do mural (5183)
+#   exp05ef1b  Vite de Quem mandou isso?, o clone do mensageiro (5184)
 #
 # As experiências ENTRAM aqui — ao contrário do compose de produção, onde elas
 # não existem porque em produção são bundles estáticos num bucket, não serviços.
@@ -57,15 +57,15 @@ x-fonte: &fonte
   - nm-hub:/repo/apps/hub/node_modules
   - nm-sdk:/repo/packages/sdk/node_modules
   - nm-ui:/repo/packages/ui/node_modules
-  - nm-exp01:/repo/apps/experiencias/exp-01-instanooria/node_modules
-  - nm-exp02:/repo/apps/experiencias/exp-02-unootube/node_modules
-  - nm-exp90:/repo/apps/experiencias/exp-90-plano-de-aula/node_modules
-  - nm-exp70:/repo/apps/experiencias/exp-70-vila-do-lume/node_modules
-  - nm-exp91:/repo/apps/experiencias/exp-91-bem-estar/node_modules
-  - nm-exp03:/repo/apps/experiencias/exp-03-unoogpt/node_modules
-  - nm-exp07:/repo/apps/experiencias/exp-07-o-eco-no-grupo/node_modules
-  - nm-exp06:/repo/apps/experiencias/exp-06-rastro-boato/node_modules
-  - nm-exp05:/repo/apps/experiencias/exp-05-quem-mandou-isso/node_modules
+  - nm-exp08ef1b:/repo/apps/experiencias/exp08ef1b/node_modules
+  - nm-exp04ef1b:/repo/apps/experiencias/exp04ef1b/node_modules
+  - nm-app90:/repo/apps/experiencias/app-90-plano-de-aula/node_modules
+  - nm-app70:/repo/apps/experiencias/app-70-vila-do-lume/node_modules
+  - nm-app91:/repo/apps/experiencias/app-91-bem-estar/node_modules
+  - nm-exp02em1b:/repo/apps/experiencias/exp02em1b/node_modules
+  - nm-exp07ef1b:/repo/apps/experiencias/exp07ef1b/node_modules
+  - nm-exp06ef2b:/repo/apps/experiencias/exp06ef2b/node_modules
+  - nm-exp05ef1b:/repo/apps/experiencias/exp05ef1b/node_modules
   - nm-exp-template:/repo/apps/experiencias/_template/node_modules
   - pnpm-store:/pnpm-store
   # Artefatos de build também em volume, por dois motivos: não competir com o
@@ -302,9 +302,9 @@ services:
   # ── Experiências (dev servers do Vite) ──────────────────────────────────────
   # `--strictPort` porque a porta é contrato com o hub: sem ele o Vite pula para
   # a próxima livre e o iframe passa a apontar para a experiência errada.
-  exp-01:
+  exp08ef1b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-01-instanooria
+    working_dir: /repo/apps/experiencias/exp08ef1b
     command: pnpm exec vite --host 0.0.0.0 --port 5173 --strictPort
     ports:
       - "5173:5173"
@@ -312,9 +312,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-02:
+  exp04ef1b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-02-unootube
+    working_dir: /repo/apps/experiencias/exp04ef1b
     command: pnpm exec vite --host 0.0.0.0 --port 5174 --strictPort
     ports:
       - "5174:5174"
@@ -322,9 +322,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-90:
+  app-90:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-90-plano-de-aula
+    working_dir: /repo/apps/experiencias/app-90-plano-de-aula
     command: pnpm exec vite --host 0.0.0.0 --port 5175 --strictPort
     ports:
       - "5175:5175"
@@ -332,15 +332,21 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-70:
+  app-70:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-70-vila-do-lume
+    working_dir: /repo/apps/experiencias/app-70-vila-do-lume
     command: pnpm exec vite --host 0.0.0.0 --port 5177 --strictPort
     ports:
       - "5177:5177"
-  exp-91:
+    # Faltava, e só apareceu quando o volume `nm-app70` nasceu vazio na troca
+    # de código (ADR-110): sem esperar o `deps`, o Vite sobe antes do install
+    # e morre com "Command vite not found".
+    depends_on:
+      deps:
+        condition: service_completed_successfully
+  app-91:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-91-bem-estar
+    working_dir: /repo/apps/experiencias/app-91-bem-estar
     command: pnpm exec vite --host 0.0.0.0 --port 5176 --strictPort
     ports:
       - "5176:5176"
@@ -348,9 +354,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-92:
+  app-92:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-92-plano-de-ensino
+    working_dir: /repo/apps/experiencias/app-92-plano-de-ensino
     command: pnpm exec vite --host 0.0.0.0 --port 5180 --strictPort
     ports:
       - "5180:5180"
@@ -358,9 +364,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-03:
+  exp02em1b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-03-unoogpt
+    working_dir: /repo/apps/experiencias/exp02em1b
     command: pnpm exec vite --host 0.0.0.0 --port 5178 --strictPort
     ports:
       - "5178:5178"
@@ -368,9 +374,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-07:
+  exp07ef1b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-07-o-eco-no-grupo
+    working_dir: /repo/apps/experiencias/exp07ef1b
     command: pnpm exec vite --host 0.0.0.0 --port 5179 --strictPort
     ports:
       - "5179:5179"
@@ -379,9 +385,9 @@ services:
         condition: service_completed_successfully
 
   # 5181, e não 5180: a 5180 está reservada para o planejamento de ensino.
-  exp-06:
+  exp06ef2b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-06-rastro-boato
+    working_dir: /repo/apps/experiencias/exp06ef2b
     command: pnpm exec vite --host 0.0.0.0 --port 5181 --strictPort
     ports:
       - "5181:5181"
@@ -389,9 +395,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-08:
+  exp08ef4b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-08-manifesto-ia
+    working_dir: /repo/apps/experiencias/exp08ef4b
     command: pnpm exec vite --host 0.0.0.0 --port 5182 --strictPort
     ports:
       - "5182:5182"
@@ -399,9 +405,9 @@ services:
       deps:
         condition: service_completed_successfully
 
-  exp-04:
+  exp01ef1b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-04-o-que-a-foto-conta
+    working_dir: /repo/apps/experiencias/exp01ef1b
     command: pnpm exec vite --host 0.0.0.0 --port 5183 --strictPort
     ports:
       - "5183:5183"
@@ -409,13 +415,13 @@ services:
       deps:
         condition: service_completed_successfully
 
-  # 5184, a próxima livre depois da exp-04. Com volume PRÓPRIO de node_modules,
+  # 5184, a próxima livre depois da exp01ef1b. Com volume PRÓPRIO de node_modules,
   # como as seis primeiras: sem ele o cache do host entra no container e a tela
   # quebra com "does not provide an export named …" na primeira subida do DS —
-  # foi o que aconteceu com a exp-92, que nasceu sem o volume.
-  exp-05:
+  # foi o que aconteceu com a app-92, que nasceu sem o volume.
+  exp05ef1b:
     <<: *dev
-    working_dir: /repo/apps/experiencias/exp-05-quem-mandou-isso
+    working_dir: /repo/apps/experiencias/exp05ef1b
     command: pnpm exec vite --host 0.0.0.0 --port 5184 --strictPort
     ports:
       - "5184:5184"
@@ -432,15 +438,15 @@ volumes:
   nm-hub:
   nm-sdk:
   nm-ui:
-  nm-exp01:
-  nm-exp02:
-  nm-exp90:
-  nm-exp70:
-  nm-exp91:
-  nm-exp03:
-  nm-exp07:
-  nm-exp06:
-  nm-exp05:
+  nm-exp08ef1b:
+  nm-exp04ef1b:
+  nm-app90:
+  nm-app70:
+  nm-app91:
+  nm-exp02em1b:
+  nm-exp07ef1b:
+  nm-exp06ef2b:
+  nm-exp05ef1b:
   nm-exp-template:
   hub-next:
   api-dist:

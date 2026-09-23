@@ -45,14 +45,14 @@ export const EnvSchema = z.object({
   // a segunda fonte de verdade, e a tela diria uma coisa enquanto o processo
   // aplica outra.
 
-  // Arte da exp-01. O `gemini-2.0-flash-exp` que era o default aqui não existe
+  // Arte da exp08ef1b. O `gemini-2.0-flash-exp` que era o default aqui não existe
   // mais no catálogo (404 na região E em global), então toda geração caía no
   // fallback procedural. Responde hoje: `gemini-3.1-flash-image` (default),
   // `gemini-2.5-flash-image` e `gemini-3-pro-image`. Quem trocar precisa
   // conferir a proporção devolvida — ver PROPORCAO_IMAGEM no vertex.provider.
   VERTEX_IMAGE_MODEL: z.string().default("gemini-3.1-flash-image"),
 
-  // Voz das falas da exp-07 (Amara, a moradora do grupo, o podcast). Não é o
+  // Voz das falas da exp07ef1b (Amara, a moradora do grupo, o podcast). Não é o
   // aiplatform: a síntese vem da Cloud Text-to-Speech, com os mesmos modelos
   // Gemini por trás e o MESMO ADC — e a API precisa estar habilitada no
   // projeto (`gcloud services enable texttospeech.googleapis.com`), senão a
@@ -92,7 +92,7 @@ export const EnvSchema = z.object({
   // jogo externo). Ausente = rota desligada (503), não aberta.
   PERFIL_IMPORT_TOKEN: z.string().optional(),
 
-  // Planos de aula (exp-90): conteúdo autoral do professor, em bucket PRIVADO
+  // Planos de aula (app-90): conteúdo autoral do professor, em bucket PRIVADO
   // `{contrato}-planos` (docs/INFRA.md) — nunca no de assets, que é público.
   // Em dev, `local` grava em `storage-privado/` (fora do static de /assets).
   PLANOS_DRIVER: z.enum(["local", "gcs"]).default("local"),

@@ -26,7 +26,7 @@
  * `id` do `public/experiencia.json`: divergir faz a missão nunca abrir, com a
  * liberação gravada e visível na tela do professor.
  */
-export const EXP_ID = 'exp-70-vila-do-lume';
+export const EXP_ID = 'app-70-vila-do-lume';
 
 /** As três bolhas: o nível do golpe da batida 3, e o momento em que ele chega. */
 export const BOLHAS = ["A", "B", "C"] as const;

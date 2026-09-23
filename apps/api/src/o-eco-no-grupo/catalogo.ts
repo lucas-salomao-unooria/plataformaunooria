@@ -1,5 +1,5 @@
 /**
- * Catálogo da exp-07-o-eco-no-grupo — o conteúdo da missão e o GABARITO.
+ * Catálogo da exp07ef1b — o conteúdo da missão e o GABARITO.
  *
  * Tudo o que a criança lê no grupo "Comunidade Alerta" está aqui, e não no
  * bundle: o texto é conteúdo da missão, e mantê-lo no servidor permite corrigir

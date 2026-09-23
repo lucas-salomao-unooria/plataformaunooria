@@ -6,6 +6,7 @@ import { Contrato } from "../openapi/contrato";
 import { PrismaService } from "../prisma/prisma.service";
 import { CatalogoSchema, UmaExperienciaSchema, UpsertSchema } from "./contrato-de-rotas";
 import { GESTORES_DO_CONTRATO } from "../auth/claims";
+import { EXP_ID_RE, FORMATO_DO_EXP_ID } from "../comum/codigo-da-experiencia";
 
 /**
  * Manifesto de versões das experiências — o `experiencia.json` finalmente é
@@ -16,7 +17,6 @@ import { GESTORES_DO_CONTRATO } from "../auth/claims";
  */
 
 
-const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
 
 @Controller("experiencias")
 @UseGuards(OidcGuard, RolesGuard)
@@ -31,7 +31,7 @@ export class ExperienciasController {
       "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de estudante. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.",
     resposta: CatalogoSchema,
     notas: [
-      "`series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (exp-70).",
+      "`series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (app-70).",
     ],
   })
   async listar() {
@@ -66,12 +66,12 @@ export class ExperienciasController {
       "`permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.",
       "`produto` é o que põe a experiência no painel da Unooria (ADR-87) e o que lhe dá o TETO do produto. Ausente = ela responde só pelo próprio interruptor; quem cobra o campo é o teste dos manifestos, no CI, e não esta rota — 400 aqui mataria a ativação DEPOIS de os bundles subirem.",
       "Cada PUT grava também uma linha em `experiencias_versoes` com o MANIFESTO INTEIRO. É o que faz o rollback pela tela devolver `viewport` e `permissoes` daquela versão, e não os de hoje.",
-      "`viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
+      "`viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp04ef1b foi desenhada para desktop).",
     ],
   })
   async upsert(@Param("expId") expId: string, @Body() body: unknown, @Req() req: { auth: AuthClaims }) {
     const dados = UpsertSchema.parse(body);
-    const id = z.string().regex(EXP_ID_RE, "expId no formato exp-<slug>").parse(expId);
+    const id = z.string().regex(EXP_ID_RE, FORMATO_DO_EXP_ID).parse(expId);
 
     const colunas = {
       nome: dados.nome,
@@ -103,7 +103,7 @@ export class ExperienciasController {
       /* O MANIFESTO INTEIRO, não só o número — é o que torna o rollback fiel.
          Hoje `publicar-manifesto.mjs --versao x.y.z` manda o número ANTIGO com
          o `experiencia.json` ATUAL, então voltar a versão não volta `viewport`
-         nem `permissoes`: a exp-70 reabria sem `allow-pointer-lock`, a criança
+         nem `permissoes`: a app-70 reabria sem `allow-pointer-lock`, a criança
          entrava na Vila e a câmera não girava, sem erro em lugar nenhum.
          `upsert` e não `create` porque republicar a mesma versão (`--forcar`)
          é caso real. */

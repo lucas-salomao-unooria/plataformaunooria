@@ -7,7 +7,7 @@ import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-04 no Postgres: RLS, o fluxo inteiro do crachá à
+ * Integração da exp01ef1b no Postgres: RLS, o fluxo inteiro do crachá à
  * conclusão, o latch (DAD-11), o reset por tentativa (DAD-06) e a fronteira
  * DAD-07 (nome só na resposta do professor). UMA ESCOLA POR SUÍTE (o Jest
  * paraleliza; limpeza compartilhada corromperia a vizinha).
@@ -82,7 +82,7 @@ beforeAll(async () => {
   });
 
   /* A PORTA DA SALA (ADR-69): sem esta linha o funil recusa com 403. */
-  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-04-o-que-a-foto-conta", ana);
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp01ef1b", ana);
 });
 
 afterAll(async () => {
@@ -92,7 +92,7 @@ afterAll(async () => {
 
 describe("tenancy no banco", () => {
   test("as três tabelas têm RLS habilitada E forçada, com uma política por escola", async () => {
-    const tabelas = ["exp_04_turma_config", "exp_04_runs", "exp_04_posts_turma"];
+    const tabelas = ["exp01ef1b_turma_config", "exp01ef1b_runs", "exp01ef1b_posts_turma"];
     for (const tabela of tabelas) {
       const [linha] = await prisma.$queryRawUnsafe<
         { relrowsecurity: boolean; relforcerowsecurity: boolean }[]

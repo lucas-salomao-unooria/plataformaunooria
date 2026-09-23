@@ -10,7 +10,7 @@ import {
 } from "./catalogo";
 
 /**
- * Os prompts da exp-07. Ficam no SERVIDOR, sempre — o bundle é público, e um
+ * Os prompts da exp07ef1b. Ficam no SERVIDOR, sempre — o bundle é público, e um
  * prompt no cliente é a descrição do mecanismo da missão em texto legível
  * (regra inviolável nº 2).
  *

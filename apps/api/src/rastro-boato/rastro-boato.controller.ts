@@ -30,7 +30,7 @@ import { RastroBoatoService } from "./rastro-boato.service";
 import { PASSOS } from "./regras/passos";
 
 /**
- * Rotas do ESTUDANTE da exp-06-rastro-boato.
+ * Rotas do ESTUDANTE da exp06ef2b.
  *
  * O gabarito fica no servidor: o cliente manda qual opção escolheu e qual ordem
  * montou, a api corrige contra o catálogo e devolve o desfecho, a reação do
@@ -54,7 +54,7 @@ function limitar(usuarioId: string, limite = 120) {
 }
 
 /**
- * `z.output<S>`, e não `z.ZodType<T>` como na exp-07: dois campos aqui têm
+ * `z.output<S>`, e não `z.ZodType<T>` como na exp07ef1b: dois campos aqui têm
  * `.default()` (`tempoLeituraS`, `houveInacao90s`), e com a assinatura genérica
  * o TypeScript infere o tipo de ENTRADA — em que eles são opcionais — em vez do
  * de saída, onde o default já foi aplicado. O sintoma é um `undefined` que só

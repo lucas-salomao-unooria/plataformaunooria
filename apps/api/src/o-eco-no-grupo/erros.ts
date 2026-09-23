@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
 /**
- * Erros de JOGO da exp-07 — não de programa. Cada código vira uma frase que o
+ * Erros de JOGO da exp07ef1b — não de programa. Cada código vira uma frase que o
  * estudante lê DENTRO da ficção do mensageiro, nunca um stack trace nem um
  * "erro 500".
  *

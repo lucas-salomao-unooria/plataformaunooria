@@ -6,7 +6,7 @@ import { Button, Card, FeedbackAlert } from "@edu/ui/ds";
 import { ROTULO_DA_ETAPA, type EtapaDaAula, type PreparoDaMidia } from "@/lib/eco-tipos";
 
 /**
- * O PAINEL DA AULA — a única tela do hub, junto do relógio da exp-03, em que a
+ * O PAINEL DA AULA — a única tela do hub, junto do relógio da exp02em1b, em que a
  * professora muda o que 30 estudantes veem, ao vivo.
  *
  * Client component de propósito: ela aperta no meio da aula e precisa de

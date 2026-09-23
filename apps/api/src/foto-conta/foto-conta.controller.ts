@@ -28,7 +28,7 @@ import { erroDaMissao } from "./erros";
 import { FotoContaService } from "./foto-conta.service";
 
 /**
- * Rotas do ESTUDANTE da exp-04-o-que-a-foto-conta.
+ * Rotas do ESTUDANTE da exp01ef1b.
  *
  * O leitor tem 6 anos: nenhum erro daqui fala de token, sessão ou requisição —
  * a voz é a de Nina (`erros.ts`). Identidade e TURMA saem sempre do token,

@@ -114,7 +114,7 @@ export class ObservabilidadeController {
   @Contrato({
     resumo: "Recebe um Web Vital (LCP, INP, CLS, TTFB) do hub ou de uma experiência.",
     descricao:
-      "Amostrado a 10% no cliente, sem identificador de pessoa no corpo. A api normaliza `rota` para um conjunto fechado (`/professor/:secao`, `exp-02-unootube`…, senão `outra`) e registra num histograma OpenTelemetry por `superficie`, `rota` e `perfil` (do token). É o único sinal de que \"a plataforma está lenta na escola X\" que não depende de alguém reclamar — e nunca vira log.",
+      "Amostrado a 10% no cliente, sem identificador de pessoa no corpo. A api normaliza `rota` para um conjunto fechado (`/professor/:secao`, `exp04ef1b`…, senão `outra`) e registra num histograma OpenTelemetry por `superficie`, `rota` e `perfil` (do token). É o único sinal de que \"a plataforma está lenta na escola X\" que não depende de alguém reclamar — e nunca vira log.",
     corpo: VitalSchema,
     resposta: SemCorpoSchema,
     notas: ["Cota de 60 por minuto por (escola, usuário): acima, **429**.", "`valor` acima de 10 minutos é recusado (relógio, não lentidão)."],

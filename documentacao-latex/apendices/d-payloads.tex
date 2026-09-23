@@ -63,7 +63,7 @@ export const ExpParaHubSchema = z.discriminatedUnion("type", [
   "apiUrl": "https://api-entreredes.unooria.com",
   "config": {
     "clarityProjectId": "ybo0odt6cn",
-    "expId": "exp-01-instanooria",
+    "expId": "exp08ef1b",
     "obs": { "traceRatio": 0.02 },
     "fuso": "America/Sao_Paulo"
   }
@@ -147,7 +147,7 @@ const PushSchema = z.object({
     {
       "eventId":    "3f9a2c10-8b41-4d2e-9c77-1a5e6b0d4f22",
       "ts":         "2026-08-27T11:14:03.512Z",
-      "expId":      "exp-02-unootube",
+      "expId":      "exp04ef1b",
       "expVersion": "1.1.0",
       "sessaoId":   "c81b5e77-2d94-4a10-b3f6-77c2e9a4d001",
       "verbo":      "interacted",
@@ -168,11 +168,11 @@ projeto do Google.
 
 \begin{lstlisting}[language=jsonunoo, caption={\rota{POST /observabilidade/erros-cliente}}]
 {
-  "expId": "exp-02-unootube",
+  "expId": "exp04ef1b",
   "versao": "0.3.1",
   "mensagem": "Cannot read properties of undefined (reading 'video')",
   "stack": "TypeError: ...\n    at feed.tsx:42:11",
-  "url": "https://exp-entreredes.unooria.com/exp-02-unootube/0.3.1/index.html",
+  "url": "https://exp-entreredes.unooria.com/exp04ef1b/0.3.1/index.html",
   "userAgent": "Mozilla/5.0 ...",
   "sessaoId": "6f1a1d1e-9c2b-4a4e-8f1e-1234567890ab",
   "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
@@ -200,7 +200,7 @@ não vem no corpo: vem do \emph{token}.
 {
   "resourceSpans": [{
     "resource": { "attributes": [
-      { "key": "service.name",    "value": { "stringValue": "exp-02-unootube" } },
+      { "key": "service.name",    "value": { "stringValue": "exp04ef1b" } },
       { "key": "service.version", "value": { "stringValue": "0.3.1" } }
     ]},
     "scopeSpans": [{
@@ -228,11 +228,11 @@ não vem no corpo: vem do \emph{token}.
 Um \cd{resourceSpans}, até 4 \cd{scopeSpans}, até 64 \emph{spans}, até 24
 atributos por \emph{span} (valores de até 256 caracteres); \cd{links},
 \cd{traceState} e chaves desconhecidas são removidos. O \cd{resource} do
-cliente é lido só para \cd{service.name} (\cd{exp-NN-slug} ou \cd{hub}) e
+cliente é lido só para \cd{service.name} (o código da experiência, \adrr{ADR-110}, ou \cd{hub}) e
 \cd{service.version}, e SUBSTITUÍDO; atributos passam por \emph{allowlist} e
 \cd{http.url}/\cd{url.full} perdem \emph{query} e fragmento antes de sair.
 
-\section{exp-70 --- o \emph{payload} de uma partida}
+\section{app-70 --- o \emph{payload} de uma partida}
 
 Este é o \emph{payload} mais elaborado da plataforma, e o que carrega mais
 decisões de projeto por campo.
@@ -407,9 +407,9 @@ ignorar em silêncio, porque um campo de nome aparecendo é \emph{bug do jogo}.
  */
 \end{lstlisting}
 
-\section{exp-07 --- o estado da missão e a cascata}
+\section{exp07ef1b --- o estado da missão e a cascata}
 
-O que o servidor devolve ao cliente da exp-07 é desenhado por \textbf{ausência}:
+O que o servidor devolve ao cliente da exp07ef1b é desenhado por \textbf{ausência}:
 não há gabarito, não há letra correta, e não há pontuação até o fim. O campo que
 comanda a tela depois da resposta é \cd{desfecho}, e ele existe justamente para
 que o \emph{bundle} público não precise saber qual das três opções é a checada.
@@ -460,9 +460,9 @@ vez de esperar um arquivo que não existe.
 
 \section{Manifesto de experiência}
 
-\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp-01, com \cd{viewport}}]
+\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp08ef1b, com \cd{viewport}}]
 {
-  "id": "exp-01-instanooria",
+  "id": "exp08ef1b",
   "nome": "Instanooria — O Conteúdo que não chegou",
   "versao": "1.1.4",
   "produto": "entre-redes",
@@ -477,9 +477,9 @@ vez de esperar um arquivo que não existe.
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp-90, ferramenta de professor}]
+\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- app-90, ferramenta de professor}]
 {
-  "id": "exp-90-plano-de-aula",
+  "id": "app-90-plano-de-aula",
   "nome": "Gerador de Plano de Aula",
   "versao": "1.2.1",
   "produto": "plano-de-aula",
@@ -494,9 +494,9 @@ vez de esperar um arquivo que não existe.
 }
 \end{lstlisting}
 
-\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp-07, com \cd{permissoes}}]
+\begin{lstlisting}[language=jsonunoo, caption={\arq{public/experiencia.json} --- exp07ef1b, com \cd{permissoes}}]
 {
-  "id": "exp-07-o-eco-no-grupo",
+  "id": "exp07ef1b",
   "nome": "O Eco no Grupo: Quem Decide o Que Roda?",
   "versao": "0.1.2",
   "produto": "entre-redes",
@@ -516,8 +516,8 @@ vez de esperar um arquivo que não existe.
 \end{lstlisting}
 
 \begin{nota}
-\cd{series: []} na exp-90 significa \enquote{não se aplica} porque
-\cd{publico: "professor"}; na exp-70 significa \textbf{todas as séries}, porque é
+\cd{series: []} na app-90 significa \enquote{não se aplica} porque
+\cd{publico: "professor"}; na app-70 significa \textbf{todas as séries}, porque é
 experiência de estudante \emph{transversal}. O mesmo valor, duas leituras --- e o que
 as distingue é \cd{publico}. Quando o filtro por série voltar a valer, vazio tem
 de continuar querendo dizer \enquote{todas} para o público \cd{estudante}.

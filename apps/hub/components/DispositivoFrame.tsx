@@ -26,7 +26,7 @@ const FOLGA = { vertical: 32, horizontal: 16 };
  * passaram a mentir quando o header virou 64px.
  *
  * Aplicado quando o manifesto da experiência declara `viewport`; sem viewport,
- * o ExpFrame ocupa a área inteira (exp-02, desenhada para desktop).
+ * o ExpFrame ocupa a área inteira (exp04ef1b, desenhada para desktop).
  *
  * `expandido` solta o aparelho e deixa a experiência ocupar a área toda — hoje
  * só o relatório do estudante, DEPOIS da revelação, onde não há mais disfarce a

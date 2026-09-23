@@ -1,12 +1,12 @@
 /**
- * Os passos da exp-05 e a regra que reconcilia **a turma** com **o estudante**.
+ * Os passos da exp05ef1b e a regra que reconcilia **a turma** com **o estudante**.
  *
- * Dois relógios, como na exp-06, na exp-07 e na exp-08:
+ * Dois relógios, como na exp06ef2b, na exp07ef1b e na exp08ef4b:
  *
- * - `exp_05_gates_turma.etapa` — o relógio da TURMA, que a professora controla
+ * - `exp05ef1b_gates_turma.etapa` — o relógio da TURMA, que a professora controla
  *   pelo painel. São os dois botões mestres do PRD: "Iniciar revelação
  *   coletiva" e "Liberar reflexão final".
- * - `exp_05_sessoes.passo` — a tela daquele estudante. Dentro do mesmo momento
+ * - `exp05ef1b_sessoes.passo` — a tela daquele estudante. Dentro do mesmo momento
  *   eles andam em ritmos diferentes: um ainda lê o áudio do Pedro enquanto o
  *   outro já confirmou o Mural e espera.
  *
@@ -17,7 +17,7 @@
  * **Três etapas, e a revelação é PISO e TETO ao mesmo tempo.** O PRD separa
  * "revelado" de "explicação" por um avanço docente a mais; aqui o card de
  * síntese entra junto da revelação, ao fim do Mural — um terceiro botão seria
- * controle morto no painel (a mesma leitura da exp-06 e da exp-08).
+ * controle morto no painel (a mesma leitura da exp06ef2b e da exp08ef4b).
  */
 
 /** Passos do estudante, na ordem em que ele os percorre. */

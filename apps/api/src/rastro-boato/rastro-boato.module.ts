@@ -5,7 +5,7 @@ import { RastroBoatoController } from "./rastro-boato.controller";
 import { RastroBoatoService } from "./rastro-boato.service";
 
 /**
- * Lado server da exp-06-rastro-boato. Prisma e Auth são globais.
+ * Lado server da exp06ef2b. Prisma e Auth são globais.
  *
  * **Sem `AiModule` e sem `AssetsModule`, e a ausência é o desenho.** A missão é
  * 100% determinística (RNF-CUST-001: zero tokens): reações, topologia e

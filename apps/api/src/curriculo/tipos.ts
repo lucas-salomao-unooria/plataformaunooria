@@ -1,7 +1,7 @@
 /**
  * O vocabulário do currículo. Estes tipos são o contrato entre o dado extraído
  * dos PDFs oficiais (`dados/*.ts`, gerados) e tudo que consulta currículo: o
- * catálogo servido à exp-92, o gerador de plano anual e o de plano de período.
+ * catálogo servido à app-92, o gerador de plano anual e o de plano de período.
  *
  * A fonte é o PDF HOMOLOGADO do MEC (dez/2018), extraído por
  * `scripts/extrair-bncc.mjs`. Não é o dataset de terceiro nem a planilha do

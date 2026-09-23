@@ -26,19 +26,19 @@
    lote sempre que a pedagogia permitir.
 9. **JWT curto + memória no iframe** — roubo mitigado por HTTPS, expiração 1h,
    escopo mínimo, rate limit; validação de nota é server-side de qualquer forma.
-10. **Gabarito e estado de missão server-side, por experiência** (exp-02
+10. **Gabarito e estado de missão server-side, por experiência** (exp04ef1b
    UnooTube, 2026-08-24) — `factual` (a resposta) nunca vai ao bundle; a api
    corrige e devolve inscritos/fontes (regra 3). Não há módulo genérico de
    avaliação: cada experiência com lógica de domínio ganha um módulo próprio
-   (`apps/api/src/<slug>/`), como `motor/` para a exp-01. Decisões da missão:
+   (`apps/api/src/<slug>/`), como `motor/` para a exp08ef1b. Decisões da missão:
    ranking com colegas FICTÍCIOS (distribuição desenhada para a lição; sem
    pontuação de menores reais — LGPD), URLs das fontes como TEXTO (sandbox do
    iframe bloqueia popups; estudante não sai da plataforma), salvos CONGELADOS após
    "adicionar credibilidade" (o score já foi reportado — nota e estado não
    divergem; reiniciar descongela), estudante roteado pela SÉRIE
-   (`4EF → exp-02-unootube`, mapa estático até o manifesto ser a fonte).
+   (`4EF → exp04ef1b`, mapa estático até o manifesto ser a fonte).
 11. **Check-in de bem-estar do professor: DASS-21 fixo, IA só no entorno,
-   dado que só o professor lê** (exp-91, 2026-08-25). O instrumento entra
+   dado que só o professor lê** (app-91, 2026-08-25). O instrumento entra
    verbatim (versão brasileira de Vignola & Tucci 2014) em microdoses de 3
    itens/dia — engajamento vem de custar < 1 min, não de reescrever perguntas.
    A IA gera abertura, pergunta aberta e acolhimento, atrás de guardrails
@@ -53,7 +53,7 @@
    fronteira** (2026-08-28). As experiências vieram de projetos com cadastro
    próprio por atividade. A unificação técnica já existia (todas recebem
    `estudante.id` pelo `hub:init`), mas a conta era de **assento** — está escrito no
-   schema: `exp_01_runs.nome_no_app` existe "porque a conta é do APARELHO: outra
+   schema: `exp08ef1b_runs.nome_no_app` existe "porque a conta é do APARELHO: outra
    turma reusa o mesmo login" — e o nome real da criança vivia dentro de uma
    experiência só. Entram `periodos_letivos` (≈ `academicSessions`) e
    `matriculas` (≈ `enrollments`), mais `matricula_externa` (o RA da rede) como

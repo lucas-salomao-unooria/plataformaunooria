@@ -43,43 +43,43 @@ Os diagramas entidade-relacionamento estão no Capítulo~\ref{cap:dados}.
 \cd{ia\_uso\_diario} & Tenant & Contador de quota de IA\\
 \zebra \cd{ia\_quotas} & \textbf{Catálogo} & \textbf{O teto diário de IA por perfil} (\adrr{ADR-105})\\
 \cd{telemetria\_eventos} & Tenant, particionada & Canal analítico\\
-\zebra \cd{exp\_01\_activities} & Tenant & Atividade preparada pelo professor\\
-\cd{exp\_01\_authors} & Tenant & Personas fictícias\\
-\zebra \cd{exp\_01\_posts} & Tenant & Posts gerados\\
-\cd{exp\_01\_post\_comments} & Tenant & Comentários dos posts\\
-\zebra \cd{exp\_01\_generation\_jobs} & Tenant & Fila de geração\\
-\cd{exp\_01\_runs} & Tenant & Sessão de um estudante\\
-\zebra \cd{exp\_01\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
-\cd{exp\_01\_student\_posts} & Tenant & Posts publicados pelo estudante\\
-\zebra \cd{exp\_01\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
-\cd{exp\_01\_reflexoes} & Tenant & Texto de fechamento\\
-\zebra \cd{exp\_01\_dossiers} & Tenant & Dossiê calculado\\
-\cd{exp\_01\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
-\zebra \cd{exp\_01\_exp\_70\_perfis\_importados} & Tenant &
+\zebra \cd{exp08ef1b\_activities} & Tenant & Atividade preparada pelo professor\\
+\cd{exp08ef1b\_authors} & Tenant & Personas fictícias\\
+\zebra \cd{exp08ef1b\_posts} & Tenant & Posts gerados\\
+\cd{exp08ef1b\_post\_comments} & Tenant & Comentários dos posts\\
+\zebra \cd{exp08ef1b\_generation\_jobs} & Tenant & Fila de geração\\
+\cd{exp08ef1b\_runs} & Tenant & Sessão de um estudante\\
+\zebra \cd{exp08ef1b\_events} & Tenant & Canal \textbf{operacional} de telemetria\\
+\cd{exp08ef1b\_student\_posts} & Tenant & Posts publicados pelo estudante\\
+\zebra \cd{exp08ef1b\_conclusoes} & Tenant & Inclinação escolhida --- a ÚLTIMA em \cd{inclinacao} e a PRIMEIRA em \cd{inclinacao\_inicial}, com \cd{trocas}. A tela convida a mudar de ideia (``vale a última'') e o \cd{upsert} apagava a primeira; \cd{atualizado\_em} existe porque \cd{created\_at} congelava no primeiro envio e passava a mentir (ADR-43)\\
+\cd{exp08ef1b\_reflexoes} & Tenant & Texto de fechamento\\
+\zebra \cd{exp08ef1b\_dossiers} & Tenant & Dossiê calculado\\
+\cd{exp08ef1b\_comentarios\_da\_sessao} & Tenant & Comentários da sessão\\
+\zebra \cd{exp08ef1b\_app\_70\_perfis\_importados} & Tenant &
   \textbf{Contrato entre duas experiências}\\
-\cd{exp\_02\_sessoes} & Tenant & Estado da missão do UnooTube\\
-\zebra \cd{exp\_03\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
-\cd{exp\_03\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
-\zebra \cd{exp\_03\_marcos} & Tenant & Trilha da decisão\\
-\cd{exp\_03\_simulacoes} & Tenant & Desfecho por tentativa\\
-\zebra \cd{exp\_03\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
-\cd{exp\_04\_turma\_config} & Tenant & A aula da exp-04 por turma: pacote aprovado, latch e tentativa\\
-\zebra \cd{exp\_04\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
-\cd{exp\_04\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
-\zebra \cd{exp\_07\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
-\cd{exp\_07\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
-\zebra \cd{exp\_07\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
-\cd{exp\_07\_gates\_turma} & Tenant & A etapa da aula, por turma\\
-\zebra \cd{exp\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
-\cd{exp\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
-\zebra \cd{exp\_70\_bolhas} & Tenant & Bolha por estudante\\
-\cd{exp\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
-\zebra \cd{exp\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
-\cd{exp\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
-\zebra \cd{exp\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
-\cd{exp\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
-\zebra \cd{exp\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
-\cd{exp\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
+\cd{exp04ef1b\_sessoes} & Tenant & Estado da missão do UnooTube\\
+\zebra \cd{exp02em1b\_sessoes} & Tenant & Estado da partida da Missão Tempestade\\
+\cd{exp02em1b\_mensagens} & Tenant & A Transcrição (texto livre do estudante)\\
+\zebra \cd{exp02em1b\_marcos} & Tenant & Trilha da decisão\\
+\cd{exp02em1b\_simulacoes} & Tenant & Desfecho por tentativa\\
+\zebra \cd{exp02em1b\_relogio\_turma} & Tenant & O Relógio da Aula, por turma\\
+\cd{exp01ef1b\_turma\_config} & Tenant & A aula da exp01ef1b por turma: pacote aprovado, latch e tentativa\\
+\zebra \cd{exp01ef1b\_runs} & Tenant & Execução por estudante e tentativa (reset arquiva, não apaga)\\
+\cd{exp01ef1b\_posts\_turma} & Tenant & O mural coletivo, assinado pela marca --- sem nome de criança\\
+\zebra \cd{exp07ef1b\_sessoes} & Tenant & Estado da missão de O Eco no Grupo\\
+\cd{exp07ef1b\_mensagens} & Tenant & Conversa com Amara (texto livre do estudante)\\
+\zebra \cd{exp07ef1b\_reflexoes} & Tenant & O \enquote{Meu percurso}, de lista fechada\\
+\cd{exp07ef1b\_gates\_turma} & Tenant & A etapa da aula, por turma\\
+\zebra \cd{app\_70\_sessoes} & Tenant & Uma partida da Vila do Lume\\
+\cd{app\_70\_perfis} & Tenant & Retrato Schwartz recalculado\\
+\zebra \cd{app\_70\_bolhas} & Tenant & Bolha por estudante\\
+\cd{app\_90\_planos} & Tenant+posse & Metadados do plano de aula\\
+\zebra \cd{app\_90\_referencias} & \textbf{Catálogo} & Referências curriculares\\
+\cd{app\_92\_configuracoes} & Tenant+posse & A regência: componente, ano, carga e grade\\
+\zebra \cd{app\_92\_planos\_anuais} & Tenant+posse & Plano anual e a distribuição por período\\
+\cd{app\_92\_planos\_de\_periodo} & Tenant+posse & As aulas da semana ou quinzena\\
+\zebra \cd{app\_91\_ciclos} & Tenant+posse & Ciclo do DASS-21 (\textbf{sensível})\\
+\cd{app\_91\_checkins} & Tenant+posse & \emph{Check-in} diário
   (\textbf{sensível})\\
 \bottomrule
 \end{tabularx}
@@ -183,7 +183,7 @@ emissor} deixar de valer não é fato novo sobre a criança.
 \end{tabularx}
 
 \textbf{Sem \cd{escola\_id} e sem RLS}, de propósito: o calendário é do
-\textbf{contrato}, mesmo precedente de \cd{exp\_90\_referencias}. Uma rede
+\textbf{contrato}, mesmo precedente de \cd{app\_90\_referencias}. Uma rede
 compartilha o ano letivo, e duplicá-lo por escola só criaria cem linhas
 divergentes.
 
@@ -244,8 +244,8 @@ divergentes.
 \subsection{\cd{liberacoes}}
 
 A missão DENTRO da turma (\adrr{ADR-69}). Sem linha, a experiência não abre para
-o estudante daquela sala. Não confundir com o relógio da exp-03 nem com os
-\emph{gates} da exp-07, que respondem \enquote{a aula já começou} e são tabelas
+o estudante daquela sala. Não confundir com o relógio da exp02em1b nem com os
+\emph{gates} da exp07ef1b, que respondem \enquote{a aula já começou} e são tabelas
 DA experiência: esta é a pré-condição de todos eles.
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{26mm}X@{}}
@@ -355,9 +355,10 @@ principal. O \emph{login} e o \emph{claim} \cd{turma\_id} do \emph{token}
   grade de uma turma.\\
 \cd{unidade} & \cd{SMALLINT?} & A unidade do ano (1 a 4), com \emph{CHECK}.
   \cd{NULL} na transversal e na ferramenta de professor --- elas não moram numa
-  unidade. É o que ORDENA a grade da sala; sem ela a ordem cai no \cd{exp\_id},
-  que é numeração de experiência e não do ano letivo (o 7º ano viria depois do
-  8º).\\
+  unidade. É o que ORDENA a grade da sala. Desde a \adrr{ADR-110} o \cd{exp\_id}
+  de missão já segue a grade (\cd{exp07ef1b} antes de \cd{exp08ef1b}), mas quem
+  ordena continua sendo a unidade: a transversal e a ferramenta não têm uma, e a
+  ordem da grade não pode depender da forma de um identificador.\\
 \zebra \cd{produto} & \cd{TEXT?} & \cd{entre-redes} $|$ \cd{plano-de-aula} $|$
   \cd{plano-de-ensino} $|$ \cd{bem-estar}, com \emph{CHECK} espelhando
   \cd{PRODUTOS} do código. Declarado no \cd{public/\allowbreak{}experiencia.json}.
@@ -397,7 +398,7 @@ Unooria oferece no \emph{rollback} (\adrr{ADR-87}). PK composta
   só o número. É o que torna o \emph{rollback} fiel: hoje
   \cd{publicar-manifesto.mjs --versao x.y.z} manda o número antigo com o
   \cd{experiencia.json} ATUAL do repositório, então voltar a versão não voltava
-  \cd{viewport} nem \cd{permissoes} --- a exp-70 reabria sem
+  \cd{viewport} nem \cd{permissoes} --- a app-70 reabria sem
   \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava, sem
   erro em lugar nenhum.\\
 \zebra \cd{publicada\_em} & \cd{TIMESTAMPTZ(6)} & \\
@@ -538,7 +539,7 @@ por que o produto dela mudou de estado é informação do cliente.
 \zebra \cd{autor\_nome} & \cd{TEXT} & \textbf{CONGELADO na linha.} Um \emph{JOIN}
   mostraria o nome de hoje --- ou nada, se a conta saiu da rede ---, e o registro
   deixaria de dizer quem era aquela pessoa NAQUELE dia. Mesma razão de
-  \cd{exp\_01\_runs.nome\_no\_app} guardar o apelido em vez de o resolver.\\
+  \cd{exp08ef1b\_runs.nome\_no\_app} guardar o apelido em vez de o resolver.\\
 \cd{quando} & \cd{TIMESTAMPTZ(6)} & \\
 \bottomrule
 \end{tabularx}
@@ -695,9 +696,9 @@ não há tenant a isolar. Quem protege a leitura é \cd{@Roles("admin")}; a escr
 \bottomrule
 \end{tabularx}
 
-\section{Tabelas da exp-01}
+\section{Tabelas da exp08ef1b}
 
-\subsection{\cd{exp\_01\_activities}}
+\subsection{\cd{exp08ef1b\_activities}}
 
 \begin{tabularx}{\linewidth}{@{}L{32mm}L{24mm}X@{}}
 \toprule
@@ -735,7 +736,7 @@ não há tenant a isolar. Quem protege a leitura é \cd{@Roles("admin")}; a escr
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_01\_posts}}
+\subsection{\cd{exp08ef1b\_posts}}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
 \toprule
@@ -778,7 +779,7 @@ revelação.
 \cd{(activity\_id, lado, perfil, intensidade, aprovado)} --- é exatamente a
 consulta que o motor faz a cada bloco.
 
-\subsection{\cd{exp\_01\_runs}}
+\subsection{\cd{exp08ef1b\_runs}}
 
 \begin{tabularx}{\linewidth}{@{}L{30mm}L{22mm}X@{}}
 \toprule
@@ -807,7 +808,7 @@ consulta que o motor faz a cada bloco.
 
 \cd{UNIQUE (activity\_id, estudante\_id)}: uma sessão por estudante por atividade.
 
-\subsection{\cd{exp\_01\_events} --- o canal operacional}
+\subsection{\cd{exp08ef1b\_events} --- o canal operacional}
 
 \begin{tabularx}{\linewidth}{@{}L{26mm}L{24mm}X@{}}
 \toprule
@@ -834,7 +835,7 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 (Capítulo~\ref{cap:telemetria}).
 \end{regra}
 
-\subsection{\cd{exp\_01\_exp\_70\_perfis\_importados}}
+\subsection{\cd{exp08ef1b\_app\_70\_perfis\_importados}}
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \toprule
@@ -863,7 +864,7 @@ o canal \emph{operacional}; \cd{telemetria\_eventos} é o analítico
 
 \section{Tabelas das demais experiências}
 
-\subsection{\cd{exp\_02\_sessoes}}
+\subsection{\cd{exp04ef1b\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -896,16 +897,16 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \emph{ranking} desmonta depois.
 \end{regra}
 
-\section{Tabelas da exp-07}
+\section{Tabelas da exp07ef1b}
 
-\subsection{\cd{exp\_07\_sessoes}}
+\subsection{\cd{exp07ef1b\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
 \headrow \thd{Coluna} & \thd{Tipo} & \thd{Nota}\\
 \midrule
 \pk{(escola\_id, estudante\_id)} & PK composta & Uma linha por estudante, como na
-  exp-03: a identidade vem do \emph{token}.\\
+  exp02em1b: a identidade vem do \emph{token}.\\
 \zebra \cd{turma\_id} & \cd{UUID?} & Denormalizado. O painel e o gate consultam por
   turma o tempo todo. Reescrito a cada mutação: transferência no meio do ano
   faria a linha sumir da tela da professora nova.\\
@@ -940,7 +941,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_07\_mensagens}}
+\subsection{\cd{exp07ef1b\_mensagens}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -955,7 +956,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_07\_reflexoes}}
+\subsection{\cd{exp07ef1b\_reflexoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -971,7 +972,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_07\_gates\_turma}}
+\subsection{\cd{exp07ef1b\_gates\_turma}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -980,15 +981,15 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \pk{(escola\_id, turma\_id)} & PK composta & Uma etapa por turma.\\
 \zebra \cd{etapa} & \cd{TEXT} & \emph{CHECK} \cd{IN ('investigacao','aula2',}
   \cd{'debate','reflexao')}. É \textbf{piso e teto} ao mesmo tempo
-  (Seção~\ref{sec:exp-07}) --- e \cd{debate} é a exceção em que os dois são o
+  (Seção~\ref{sec:exp07ef1b}) --- e \cd{debate} é a exceção em que os dois são o
   mesmo passo.\\
 \bottomrule
 \end{tabularx}
 
 
-\section{Tabelas da exp-03}
+\section{Tabelas da exp02em1b}
 
-\subsection{\cd{exp\_03\_sessoes}}
+\subsection{\cd{exp02em1b\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1005,7 +1006,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
   $\geq 1$.\\
 \cd{minutos\_gastos} & \cd{INT} & Minuto narrativo desde as 17h00. \emph{Snapshot}
   do que o relógio da turma já produziu --- a fonte da verdade é
-  \cd{exp\_03\_relogio\_turma}. É também o minuto de \textbf{saída} das equipes
+  \cd{exp02em1b\_relogio\_turma}. É também o minuto de \textbf{saída} das equipes
   quando a tempestade é enfrentada. \emph{CHECK} 0--60.\\
 \zebra \cd{conjuntos} & \cd{TEXT[]} & Fontes carregadas, em camadas.
   \emph{CHECK} \cd{cardinality <= 8}.\\
@@ -1022,7 +1023,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_03\_mensagens}}
+\subsection{\cd{exp02em1b\_mensagens}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1039,7 +1040,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_03\_marcos}}
+\subsection{\cd{exp02em1b\_marcos}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1070,7 +1071,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_03\_simulacoes}}
+\subsection{\cd{exp02em1b\_simulacoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1092,7 +1093,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \bottomrule
 \end{tabularx}
 
-\subsection{\cd{exp\_03\_relogio\_turma}}
+\subsection{\cd{exp02em1b\_relogio\_turma}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1116,7 +1117,7 @@ para que o vídeo \emph{fake} seja o dos números grandes --- o contraste que o
 \end{tabularx}
 
 \begin{regra}
-O gabarito da exp-03 não está em tabela nenhuma: os oito conjuntos, com o viés
+O gabarito da exp02em1b não está em tabela nenhuma: os oito conjuntos, com o viés
 (\cd{instrucao}) e a cobertura de cada um, vivem em
 \arq{src/unoogpt/modelo/conjuntos.ts}, e os parâmetros ocultos do mundo em
 \arq{modelo/parametros.ts}. Nada disso é persistido, nada disso é servido, e há
@@ -1124,7 +1125,7 @@ conferência por \cd{grep} no \arq{dist/} da experiência.
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_70\_sessoes}}
+\subsection{\cd{app\_70\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{22mm}X@{}}
 \toprule
@@ -1174,7 +1175,7 @@ conferência por \cd{grep} no \arq{dist/} da experiência.
 rotina que o cumprisse. Coluna de prazo que ninguém lê é pior que prazo nenhum.
 \end{decisao}
 
-\subsection{\cd{exp\_70\_perfis}}
+\subsection{\cd{app\_70\_perfis}}
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}L{20mm}X@{}}
 \toprule
@@ -1202,7 +1203,7 @@ rotina que o cumprisse. Coluna de prazo que ninguém lê é pior que prazo nenhu
 linha nova e as antigas ficam --- porque comparar as duas é o único jeito de saber
 o que a mudança fez.
 
-\subsection{\cd{exp\_70\_bolhas}}
+\subsection{\cd{app\_70\_bolhas}}
 
 PK composta \cd{(escola\_id, estudante\_id)}; \cd{bolha}, \cd{atribuida\_em}.
 
@@ -1216,7 +1217,7 @@ pode dar 14/6/5 numa sala de 25 --- e aí o debate da missão não acontece, por
 ele depende de as três bolhas estarem na mesma sala.
 \end{decisao}
 
-\subsection{\cd{exp\_90\_planos} e \cd{exp\_90\_referencias}}
+\subsection{\cd{app\_90\_planos} e \cd{app\_90\_referencias}}
 
 \begin{tabularx}{\linewidth}{@{}L{34mm}L{20mm}X@{}}
 \toprule
@@ -1237,13 +1238,13 @@ ele depende de as três bolhas estarem na mesma sala.
 \bottomrule
 \end{tabularx}
 
-\cd{exp\_90\_referencias} é \textbf{catálogo do contrato}: sem \cd{escola\_id},
+\cd{app\_90\_referencias} é \textbf{catálogo do contrato}: sem \cd{escola\_id},
 fora da RLS, com \cd{serie NULL} significando \enquote{vale para todas as séries
 da disciplina} (ex.: o currículo da rede). Escrita só pelo \emph{script} de
 importação.
 
 
-\subsection{\cd{exp\_92\_configuracoes}}
+\subsection{\cd{app\_92\_configuracoes}}
 
 A \textbf{regência}: o que o professor leciona, para quem e com quanta aula. É a
 entrada de todo o planejamento --- sem ela o plano anual distribuiria habilidades
@@ -1305,14 +1306,14 @@ e a tela pedia a data e a descartava em silêncio. \cd{NULL} significa
 \cd{20260907120000\_exp\_92\_planejamento\_sempre\_semanal}
 (\hyperref[adr:76]{ADR-76}). O passo é sempre semanal; entregar de quinze em
 quinze dias, ou o período inteiro, é recorte de \textbf{exportação}. A razão de
-não ser configurável está em \cd{exp\_92\_planos\_de\_periodo}: a \cd{ordem}
+não ser configurável está em \cd{app\_92\_planos\_de\_periodo}: a \cd{ordem}
 \textbf{muda de significado} com o passo --- a 3ª quinzena não é a 3ª semana ---,
 então um plano gravado num modo e lido no outro casa pela ordem e devolve as
 datas de um recorte com as aulas de outro. A migration \textbf{apaga} os planos
 de período das regências que estavam em quinzenal, por isso.
 \end{nota}
 
-\subsection{\cd{exp\_92\_planos\_anuais}}
+\subsection{\cd{app\_92\_planos\_anuais}}
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}L{20mm}X@{}}
 \toprule
@@ -1321,7 +1322,7 @@ de período das regências que estavam em quinzenal, por isso.
 \cd{configuracao\_id} & \cd{UUID} & \cd{ON DELETE CASCADE}\\
 \zebra \cd{status} & \cd{TEXT} & \cd{pendente} \textbar{} \cd{gerando}
   \textbar{} \cd{pronto} \textbar{} \cd{erro} (\cd{CHECK}). Mesma máquina de
-  estados da exp-90; o \emph{claim} atômico impede duas instâncias de gerar o
+  estados da app-90; o \emph{claim} atômico impede duas instâncias de gerar o
   mesmo plano\\
 \cd{distribuicao} & \cd{JSONB} & \cd{\{"1": ["EF67LP08"], ...\}} --- a
   \textbf{decisão humana} de que habilidade cai em que período de avaliação, e o
@@ -1345,7 +1346,7 @@ texto todo sem que o sistema perca a distribuição --- e é ela que o plano de
 período precisa para ser gerado.
 \end{decisao}
 
-\subsection{\cd{exp\_92\_planos\_de\_periodo}}
+\subsection{\cd{app\_92\_planos\_de\_periodo}}
 
 O plano granular de uma semana ou quinzena. Aqui as aulas são \textbf{dado
 estruturado}, e é essa escolha que faz o produto valer: o professor edita a aula
@@ -1397,7 +1398,7 @@ não têm como conviver no caderno do professor.
 \end{nota}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_08\_conteudo\_turma}}
+\subsection{\cd{exp08ef4b\_conteudo\_turma}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1427,13 +1428,13 @@ não têm como conviver no caderno do professor.
 \end{tabularx}
 
 \begin{regra}
-\textbf{Esta é a única tabela da exp-08 que sobrevive ao \enquote{Zerar
+\textbf{Esta é a única tabela da exp08ef4b que sobrevive ao \enquote{Zerar
 turma}.} A curadoria custou tempo do professor, e apagá-la junto obrigaria a
 refazer o preparo para aplicar a missão na turma seguinte no mesmo dia.
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_08\_sessoes}}
+\subsection{\cd{exp08ef4b\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1474,14 +1475,14 @@ refazer o preparo para aplicar a missão na turma seguinte no mesmo dia.
 
 \begin{regra}
 \textbf{Não há coluna \cd{score}}, e é a única tabela de sessão do catálogo sem
-uma. A exp-06 tem porque o \cd{exp:concluir} da ponte carrega o campo; aqui a
+uma. A exp06ef2b tem porque o \cd{exp:concluir} da ponte carrega o campo; aqui a
 missão \textbf{não pontua} --- as quatro cláusulas valem igual, e um número na
 linha seria uma nota que nenhuma tela mostra e que alguém um dia usaria para
 ordenar crianças.
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_08\_auditorias}}
+\subsection{\cd{exp08ef4b\_auditorias}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1502,7 +1503,7 @@ ordenar crianças.
 \end{tabularx}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_08\_respostas\_percurso}}
+\subsection{\cd{exp08ef4b\_respostas\_percurso}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1541,7 +1542,7 @@ deliberada: não existe \emph{scheduler} de expurgo na plataforma, e declarar
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_08\_gates\_turma}}
+\subsection{\cd{exp08ef4b\_gates\_turma}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1563,7 +1564,7 @@ máquina, e são justamente essas crianças que o debate tenta alcançar.
 \end{nota}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_05\_conteudo\_turma}}
+\subsection{\cd{exp05ef1b\_conteudo\_turma}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1598,19 +1599,19 @@ máquina, e são justamente essas crianças que o debate tenta alcançar.
 \zebra \cd{aprovado\_por\_professor} & \cd{BOOLEAN} & \textbf{O portão da
   curadoria humana} (RF-001). Falso = rascunho, e rascunho não abre a missão
   \textbf{para ninguém}: o estudante vê tela de espera. É onde esta tabela se
-  separa da \cd{exp\_08\_conteudo\_turma}, que cai no banco curado.\\
+  separa da \cd{exp08ef4b\_conteudo\_turma}, que cai no banco curado.\\
 \bottomrule
 \end{tabularx}
 
 \begin{regra}
-\textbf{Esta é a única tabela da exp-05 que sobrevive ao \enquote{Zerar
-turma}}, pela mesma razão da exp-08: o preparo custou tempo da professora, e
+\textbf{Esta é a única tabela da exp05ef1b que sobrevive ao \enquote{Zerar
+turma}}, pela mesma razão da exp08ef4b: o preparo custou tempo da professora, e
 apagá-lo junto com as respostas obrigaria a refazer a curadoria para reaplicar a
 missão na turma seguinte no mesmo dia.
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_05\_sessoes}}
+\subsection{\cd{exp05ef1b\_sessoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1619,7 +1620,7 @@ missão na turma seguinte no mesmo dia.
 \pk{(escola\_id, estudante\_id)} & PK composta & Uma sessão por estudante e por
   escola.\\
 \zebra \cd{turma\_id} & \cd{UUID?} & Desnormalizado da identidade, como na
-  exp-06 e na exp-08: o painel e o gate consultam por turma o tempo todo.\\
+  exp06ef2b e na exp08ef4b: o painel e o gate consultam por turma o tempo todo.\\
 \cd{passo} & \cd{TEXT} & \emph{CHECK} \cd{IN ('contexto','curadoria','espera',}
   \cd{'revelado','reflexao','fim')}. A ordem é \arq{regras/passos.ts};
   \emph{CHECK} e não \cd{enum} porque um \cd{ALTER TYPE} amarraria toda mudança
@@ -1670,7 +1671,7 @@ ausência. O que existe é o histograma da SALA, por mensagem.
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_05\_encaminhamentos}}
+\subsection{\cd{exp05ef1b\_encaminhamentos}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1697,7 +1698,7 @@ reencaminhar é comportamento legítimo.
 \end{nota}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_05\_reflexoes}}
+\subsection{\cd{exp05ef1b\_reflexoes}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1723,12 +1724,12 @@ em repouso, e uma coluna cifrada só aqui criaria a chave que ninguém sabe onde
 rodar. A proteção é RLS mais o recorte da rota do professor da turma dela.
 
 \textbf{Retenção:} vinculada à vigência contratual escolar, \textbf{sem rotina
-ativa de expurgo programado} (\adrr{ADR-13}), como na exp-08. Declarar \enquote{um
+ativa de expurgo programado} (\adrr{ADR-13}), como na exp08ef4b. Declarar \enquote{um
 ano letivo} aqui seria escrever um prazo que nenhum \emph{scheduler} cumpre.
 \end{regra}
 
 % ---------------------------------------------------------------------------
-\subsection{\cd{exp\_05\_gates\_turma}}
+\subsection{\cd{exp05ef1b\_gates\_turma}}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{20mm}X@{}}
 \toprule
@@ -1746,14 +1747,14 @@ ano letivo} aqui seria escrever um prazo que nenhum \emph{scheduler} cumpre.
 
 \begin{nota}
 Duas colunas, três etapas, e o gate \textbf{não é opcional} --- é o oposto do
-Checkpoint~A da exp-08. Sem \enquote{Iniciar revelação coletiva} não há
+Checkpoint~A da exp08ef4b. Sem \enquote{Iniciar revelação coletiva} não há
 revelação, porque o \emph{aha} desta missão é coletivo por desenho. E aqui a
 etapa mexe no \textbf{piso} do passo do estudante, não só no teto: quando o telão
 acende, quem não confirmou é empurrado para \cd{revelado}, porque continuar
 encaminhando com o gabarito projetado na parede mediria outra coisa.
 \end{nota}
 
-\subsection{\cd{exp\_91\_ciclos} e \cd{exp\_91\_checkins}}
+\subsection{\cd{app\_91\_ciclos} e \cd{app\_91\_checkins}}
 
 \begin{tabularx}{\linewidth}{@{}L{32mm}L{20mm}X@{}}
 \toprule

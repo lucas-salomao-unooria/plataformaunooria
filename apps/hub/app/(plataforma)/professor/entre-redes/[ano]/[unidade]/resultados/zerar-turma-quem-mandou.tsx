@@ -5,11 +5,11 @@ import { useState, useTransition } from "react";
 import { Button, FeedbackAlert, Modal } from "@edu/ui/ds";
 
 /**
- * ZERAR A TURMA — o caminho de exclusão da exp-05, e a preparação para a turma
+ * ZERAR A TURMA — o caminho de exclusão da exp05ef1b, e a preparação para a turma
  * seguinte do mesmo dia.
  *
  * **O LOTE APROVADO SOBREVIVE, e o diálogo diz isso.** É a diferença desta
- * missão para a exp-06: aqui o lote é PRÉ-CONDIÇÃO — sem ele ninguém entra —,
+ * missão para a exp06ef2b: aqui o lote é PRÉ-CONDIÇÃO — sem ele ninguém entra —,
  * e apagá-lo junto deixaria a turma seguinte diante de uma tela de espera com a
  * professora achando que zerou só as respostas. O que ela curou custou tempo
  * dela, e refazer no intervalo de 10 minutos não é uma opção real.

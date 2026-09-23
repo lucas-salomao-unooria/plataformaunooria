@@ -9,7 +9,7 @@ import { ACOES } from "./regras/sessao";
 import { ACOES_DO_GATE, ETAPAS, PASSOS } from "./regras/passos";
 
 /**
- * O contrato HTTP da exp-07 — só schemas Zod, nenhum decorator.
+ * O contrato HTTP da exp07ef1b — só schemas Zod, nenhum decorator.
  *
  * Os enums vêm do catálogo e das regras, nunca reescritos aqui: uma segunda
  * lista de valores é a que ninguém atualiza junto.
@@ -40,7 +40,7 @@ export const ReflexaoSchema = z.object({
 });
 
 /**
- * A fala do estudante para Amara. 600 caracteres pelo mesmo motivo da exp-03:
+ * A fala do estudante para Amara. 600 caracteres pelo mesmo motivo da exp02em1b:
  * é o campo de um chat, não um formulário — acima disso não é fala, é colagem.
  *
  * Este é o ÚNICO texto livre da missão, e ele só existe depois da decisão no

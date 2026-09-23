@@ -26,7 +26,7 @@ import {
 import { UnootubeService } from "./unootube.service";
 
 /**
- * Rotas do ESTUDANTE da exp-02-unootube. O gabarito (`factual`) fica no servidor:
+ * Rotas do ESTUDANTE da exp04ef1b. O gabarito (`factual`) fica no servidor:
  * o cliente manda a escolha, a api corrige e devolve inscritos/fontes
  * (regra inviolável nº 3). Identidade sempre do token, nunca do body.
  */

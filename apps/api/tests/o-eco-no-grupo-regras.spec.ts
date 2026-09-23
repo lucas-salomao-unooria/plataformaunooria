@@ -37,7 +37,7 @@ import {
 } from "../src/o-eco-no-grupo/regras/sessao";
 
 /**
- * Regras puras da exp-07 — sem Prisma, sem HTTP.
+ * Regras puras da exp07ef1b — sem Prisma, sem HTTP.
  *
  * O que estes testes protegem não é "a função devolve X": é a mecânica
  * pedagógica. Cada bloco abaixo corresponde a um não-negociável documentado, e

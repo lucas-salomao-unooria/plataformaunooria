@@ -14,7 +14,7 @@ dois lugares, e nenhum repete o outro.
 | `apps/hub/AGENTS.md` | o que vale para TODO o hub (casca, papéis, middleware) — e um `AGENTS.md` por área em `apps/hub/app/*/` |
 | `apps/experiencias/AGENTS.md` | contrato `postMessage`, manifesto, experiência nova, clones do DS |
 | `apps/experiencias/*/AGENTS.md` | por experiência: porta, rota, seção do DS, módulo da api |
-| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp-01 |
+| `packages/AGENTS.md`, `packages/*/AGENTS.md` | o contrato que o `sdk` promete, as 5 pontes do `ui`, o conteúdo da exp08ef1b |
 | `scripts/AGENTS.md`, `scripts/e2e/AGENTS.md` | os utilitários, o que é gerado, e o que uma suíte precisa provar |
 | `docs/AGENTS.md`, `documentacao-latex/AGENTS.md` | o que ali é contrato vivo, e as regras de edição do LaTeX |
 

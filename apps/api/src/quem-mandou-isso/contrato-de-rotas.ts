@@ -14,7 +14,7 @@ import { validarParidade } from "./regras/curadoria";
 import { ACOES_DO_GATE, ETAPAS, PASSOS } from "./regras/passos";
 
 /**
- * O contrato HTTP da exp-05 — só schemas Zod, nenhum decorator.
+ * O contrato HTTP da exp05ef1b — só schemas Zod, nenhum decorator.
  *
  * Os enums vêm do catálogo e das regras, nunca reescritos aqui: uma segunda
  * lista de valores é a que ninguém atualiza junto.

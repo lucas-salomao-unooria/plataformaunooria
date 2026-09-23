@@ -1,16 +1,16 @@
 import { Module } from "@nestjs/common";
 import { AiModule } from "../ai/ai.module";
-import { PreparoDaExp05Service } from "./preparo.service";
+import { PreparoDaExp05ef1bService } from "./preparo.service";
 import { QuemMandouIssoProfessorController } from "./quem-mandou-isso-professor.controller";
 import { QuemMandouIssoTurmasController } from "./quem-mandou-isso-turmas.controller";
 import { QuemMandouIssoController } from "./quem-mandou-isso.controller";
 import { QuemMandouIssoService } from "./quem-mandou-isso.service";
 
 /**
- * Lado server da exp-05-quem-mandou-isso. Prisma e Auth são globais.
+ * Lado server da exp05ef1b. Prisma e Auth são globais.
  *
  * **`AiModule` entra, e a fronteira dele é estreita de propósito.** A IA existe
- * numa superfície só — a preparação docente pré-aula, em `PreparoDaExp05Service`
+ * numa superfície só — a preparação docente pré-aula, em `PreparoDaExp05ef1bService`
  * — e a AULA É 100% DETERMINÍSTICA: a curadoria, o latch, o histograma
  * anonimizado e o card de síntese saem do lote homologado e das regras puras de
  * `regras/`. Nenhum token é gasto com a turma na sala.
@@ -31,7 +31,7 @@ import { QuemMandouIssoService } from "./quem-mandou-isso.service";
     QuemMandouIssoTurmasController,
     QuemMandouIssoProfessorController,
   ],
-  providers: [QuemMandouIssoService, PreparoDaExp05Service],
+  providers: [QuemMandouIssoService, PreparoDaExp05ef1bService],
   exports: [QuemMandouIssoService],
 })
 export class QuemMandouIssoModule {}

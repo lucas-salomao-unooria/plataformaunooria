@@ -41,7 +41,7 @@ export default async function ExpPage({ params }: { params: Promise<{ expId: str
 
   const embed = await montarEmbed(expId, usuario);
 
-  // Ferramenta de professor (exp-90) não é uma experiência do estudante: a api
+  // Ferramenta de professor (app-90) não é uma experiência do estudante: a api
   // recusaria as chamadas com 403, mas a tela quebraria feio. 404 é o certo.
   if (
     embed.manifesto &&

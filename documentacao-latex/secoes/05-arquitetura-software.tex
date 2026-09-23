@@ -136,10 +136,10 @@ Os princípios que atravessam todo o código:
 \begin{nota}
 A dependência externa \emph{não substituível em tempo de execução} é o Vertex AI,
 e mesmo assim sua indisponibilidade não derruba a plataforma: as experiências que
-não usam IA (exp-02, exp-70) seguem íntegras, o \emph{feed} da exp-01 continua
+não usam IA (exp04ef1b, app-70) seguem íntegras, o \emph{feed} da exp08ef1b continua
 sendo curado a partir de conteúdo já gerado, e as ferramentas de professor
-degradam para texto fixo (exp-91) ou recusam a geração com mensagem clara
-(exp-90). Essa contenção de acoplamento é deliberada (\rf{RNF-12}).
+degradam para texto fixo (app-91) ou recusam a geração com mensagem clara
+(app-90). Essa contenção de acoplamento é deliberada (\rf{RNF-12}).
 \end{nota}
 
 \section{C4 nível 2 --- Contêineres}
@@ -292,7 +292,8 @@ faz \cd{JOIN} entre bancos; além disso, um \emph{pool} do Prisma por experiênc
 estouraria \cd{max\_connections}) --- nem \emph{schema} por experiência: a única
 coisa que um \emph{schema} daria além do prefixo é fronteira de \cd{GRANT}, e
 existe \emph{uma} \emph{role} de aplicação. A separação é por
-\textbf{prefixo de tabela}: \cd{exp\_NN\_} para tabela de experiência, sem
+\textbf{prefixo de tabela}: o código da experiência (\cd{exp08ef1b\_},
+\cd{app\_70\_} --- \adrr{ADR-110}) para tabela de experiência, sem
 prefixo para tabela de plataforma (Capítulo~\ref{cap:dados}).
 \end{regra}
 
@@ -377,19 +378,19 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
   \node[camadalbl, anchor=west] at (0.7,-10.9)
     {Domínio por experiência --- \texttt{catalogo.ts} + \texttt{regras.ts} + \emph{service} + \emph{controllers} por papel};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (motor) at (2.2,-12.4)
-    {\texttt{motor/} e mais 4\desc{geracao, dossie, atividades, perfis --- exp-01}};
+    {\texttt{motor/} e mais 4\desc{geracao, dossie, atividades, perfis --- exp08ef1b}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (utube) at (5.6,-12.4)
-    {\texttt{unootube/}\desc{exp-02}};
+    {\texttt{unootube/}\desc{exp04ef1b}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (vila) at (9.0,-12.4)
-    {\texttt{vila/}\desc{exp-70}};
+    {\texttt{vila/}\desc{app-70}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (planos) at (12.4,-12.4)
-    {\texttt{planos/}\desc{exp-90}};
+    {\texttt{planos/}\desc{app-90}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (bem) at (14.6,-13.6)
-    {\texttt{bemestar/}\desc{exp-91}};
+    {\texttt{bemestar/}\desc{app-91}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (2.2,-14.2)
-    {\texttt{unoogpt/}\desc{exp-03}};
+    {\texttt{unoogpt/}\desc{exp02em1b}};
   \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (eco) at (9.0,-14.2)
-    {\texttt{o-eco-no-grupo/}\desc{exp-07 --- texto, imagem e VOZ}};
+    {\texttt{o-eco-no-grupo/}\desc{exp07ef1b --- texto, imagem e VOZ}};
 
   % ---- relações principais
   \draw[c4rel] (guard.south) -- (2.5,-3.1) -- (6.0,-3.1) -- (roles.south);
@@ -450,7 +451,7 @@ esquecida viraria uma porta aberta em silêncio (\adrr{ADR-69}).
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
 Vila alimentando a largada do Instanooria --- a comunicação é por \emph{tabela de
-contrato} explícita (\cd{exp\_01\_exp\_70\_perfis\_importados}, que carrega os
+contrato} explícita (\cd{exp08ef1b\_app\_70\_perfis\_importados}, que carrega os
 dois números no nome) e por um \emph{endpoint} de fronteira
 (\rota{POST /atividades/:id/perfis/da-vila}). Chamar a tabela por um número só
 mentiria sobre quem depende dela.
@@ -708,11 +709,11 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 
   \node[c4container, text width=26mm] (hub) at (2.0,-3.2) {\texttt{apps/hub}};
   \node[c4container, text width=26mm] (api) at (5.6,-3.2) {\texttt{apps/api}};
-  \node[bundle, text width=24mm] (e01) at (9.0,-3.2) {\texttt{exp-01}};
-  \node[bundle, text width=24mm] (e02) at (11.9,-3.2) {\texttt{exp-02}};
-  \node[bundle, text width=24mm] (e70) at (14.8,-3.2) {\texttt{exp-70}};
-  \node[bundle, text width=24mm] (e90) at (9.0,-5.2) {\texttt{exp-90}};
-  \node[bundle, text width=24mm] (e91) at (11.9,-5.2) {\texttt{exp-91}};
+  \node[bundle, text width=24mm] (e01) at (9.0,-3.2) {\texttt{exp08ef1b}};
+  \node[bundle, text width=24mm] (e02) at (11.9,-3.2) {\texttt{exp04ef1b}};
+  \node[bundle, text width=24mm] (e70) at (14.8,-3.2) {\texttt{app-70}};
+  \node[bundle, text width=24mm] (e90) at (9.0,-5.2) {\texttt{app-90}};
+  \node[bundle, text width=24mm] (e91) at (11.9,-5.2) {\texttt{app-91}};
   \node[bundle, text width=24mm, fill=unooMuted, draw=unooInkSoft] (tpl) at (14.8,-5.2)
     {\texttt{\_template}};
 
@@ -737,7 +738,7 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 \caption[Grafo de dependências do monorepo]{Grafo de dependências do
   \emph{monorepo}. A SDK é consumida por tudo --- é por isso que uma mudança nela
   precisa testar tudo no mesmo \emph{pull request}, e por isso o
-  \emph{monorepo} (\adrr{ADR-02}). A exp-70 não depende de \arq{packages/ui}: é
+  \emph{monorepo} (\adrr{ADR-02}). A app-70 não depende de \arq{packages/ui}: é
   jogo em \emph{canvas} 3D, sem DOM de interface, e é a exceção registrada em ADR
   à regra do \emph{design system}.}
 \label{fig:monorepo}
@@ -774,7 +775,7 @@ pnpm turbo typecheck lint test build --filter='...[HEAD^]'
 \section{Fluxos principais}
 \label{sec:fluxos}
 
-\subsection{Curadoria de um bloco de \emph{feed} (exp-01)}
+\subsection{Curadoria de um bloco de \emph{feed} (exp08ef1b)}
 
 Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco.
 
@@ -783,7 +784,7 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
 \fitwidth{%
 \begin{tikzpicture}[x=1cm, y=1cm]
 
-  \raia{1.4}{-10.4}{Experiência}{exp-01 no \texttt{iframe}}
+  \raia{1.4}{-10.4}{Experiência}{exp08ef1b no \texttt{iframe}}
   \raia{5.4}{-10.4}{\texttt{runs.controller}}{NestJS}
   \raia{9.4}{-10.4}{\texttt{motor/servico}}{regra + persistência}
   \raiaext{13.4}{-10.4}{PostgreSQL}{Cloud SQL}
@@ -824,7 +825,7 @@ Este é o fluxo com mais concorrência da plataforma e o que mais exige do banco
 \subsection{Estados de uma geração assíncrona}
 
 Duas rotinas da plataforma são assíncronas e longas: a geração de \emph{feed} da
-exp-01 e a geração de plano de aula da exp-90. Ambas seguem a mesma máquina de
+exp08ef1b e a geração de plano de aula da app-90. Ambas seguem a mesma máquina de
 estados, com \emph{claim} atômico em vez de fila externa.
 
 \begin{figure}[H]
@@ -858,7 +859,7 @@ estados, com \emph{claim} atômico em vez de fila externa.
 
 \end{tikzpicture}}
 \caption[Estados de uma geração assíncrona]{Máquina de estados das gerações
-  assíncronas (exp-01 e exp-90). O \emph{claim} atômico dispensa fila externa; a
+  assíncronas (exp08ef1b e app-90). O \emph{claim} atômico dispensa fila externa; a
   retomada de órfã é disparada pelo \emph{polling} do próprio painel, não por um
   \emph{scheduler}.}
 \label{fig:estados-geracao}

@@ -34,8 +34,8 @@ import { criarTurmaDeTeste } from "./turma-de-teste";
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 const REGIONAL = "teste-porta-regional";
 const ESCOLA = "teste-porta";
-const VILA = "exp-70-vila-do-lume";
-const INSTA = "exp-01-instanooria";
+const VILA = "app-70-vila-do-lume";
+const INSTA = "exp08ef1b";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
 const salas = new SalasService(prisma);
@@ -45,7 +45,7 @@ const ids = { turma: "", estudante: "", professor: "", admin: "" };
 
 /** O recurso de escopo-contrato desta suíte: `expId` que não existe no catálogo
  *  e que nenhuma outra suíte conhece. É o único que pode ir a `escola_id NULL`. */
-const SO_MEU = "exp-99-porta-de-teste";
+const SO_MEU = "app-99-porta-de-teste";
 
 async function limparDisponibilidades() {
   /* A AUDITORIA TAMBÉM É LIXO DE TESTE (ADR-89). Ela é append-only e ninguém
@@ -261,7 +261,7 @@ describe("a ferramenta de professor", () => {
     await definir("produto:bem-estar", ESCOLA, false);
     try {
       await prisma.comTenancy(
-        (tx) => exigirRecursoDisponivel(tx, ESCOLA, "exp-91-bem-estar"),
+        (tx) => exigirRecursoDisponivel(tx, ESCOLA, "app-91-bem-estar"),
         ESCOLA,
       );
       throw new Error("devia ter recusado");
@@ -285,7 +285,7 @@ test("experiência FORA do catálogo não é trancada por isto", async () => {
      num ambiente novo, com um 403 que não explica nada. */
   expect(
     await codigoDoErro(() =>
-      prisma.comTenancy((tx) => exigirRecursoDisponivel(tx, ESCOLA, "exp-99-inexistente"), ESCOLA),
+      prisma.comTenancy((tx) => exigirRecursoDisponivel(tx, ESCOLA, "app-99-inexistente"), ESCOLA),
     ),
   ).toBeNull();
 });

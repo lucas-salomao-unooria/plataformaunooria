@@ -13,7 +13,7 @@ import {
 } from "./regras/sanitizador";
 
 /**
- * As três superfícies em que o modelo escreve algo na exp-07.
+ * As três superfícies em que o modelo escreve algo na exp07ef1b.
  *
  * A regra que atravessa todas: **o modelo escreve a fala, nunca decide o
  * resultado.** Qual desfecho o bairro vive, se o Admin fixa a mensagem e quanto
@@ -32,7 +32,7 @@ import {
 export const TURNOS_COM_AMARA = 3;
 
 @Injectable()
-export class IaDaExp07Service {
+export class IaDaExp07ef1bService {
   constructor(
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
     private readonly quota: QuotaService,
@@ -96,7 +96,7 @@ export class IaDaExp07Service {
       // Sem detalhe no log: a mensagem do provider pode trazer o texto gerado,
       // e ele fala do caso da missão.
       logger.warn(
-        { codigo: "exp07.reacoes-no-roteiro", desfecho },
+        { codigo: "exp07ef1b.reacoes-no-roteiro", desfecho },
         "reações do modelo indisponíveis — o bairro reage pelo roteiro",
       );
       return null;
@@ -175,7 +175,7 @@ export class IaDaExp07Service {
       const motivos = validarDevolutiva(texto);
       if (motivos.length > 0) {
         logger.warn(
-          { codigo: "exp07.devolutiva-reprovada", motivos: motivos.join("; ") },
+          { codigo: "exp07ef1b.devolutiva-reprovada", motivos: motivos.join("; ") },
           "devolutiva do modelo barrada pelo sanitizador",
         );
         return null;
@@ -183,7 +183,7 @@ export class IaDaExp07Service {
       await this.quota.consumir(escolaId, usuarioId, r.tokensUsados);
       return { texto, tokens: r.tokensUsados };
     } catch {
-      logger.warn({ codigo: "exp07.devolutiva-indisponivel" }, "percurso salvo sem devolutiva");
+      logger.warn({ codigo: "exp07ef1b.devolutiva-indisponivel" }, "percurso salvo sem devolutiva");
       return null;
     }
   }

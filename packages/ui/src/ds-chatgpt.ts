@@ -14,13 +14,13 @@
  * `Modal` colidem com os da plataforma, e quem importa daqui sabe que está no
  * clone.
  *
- * ONDE USAR: a superfície da exp-03-unoogpt, do briefing ao resultado.
+ * ONDE USAR: a superfície da exp02em1b, do briefing ao resultado.
  *
  * ONDE NÃO USAR: em qualquer tela da plataforma. E note a diferença desta
- * missão para a exp-02: lá a linha era a REVELAÇÃO, e as telas pós-virada
+ * missão para a exp04ef1b: lá a linha era a REVELAÇÃO, e as telas pós-virada
  * usavam `@edu/ui/ds`. **Aqui não há revelação no software** — a Lacuna de cada
  * fonte é deliberadamente o material do debate do professor, não uma tela. Por
- * isso a exp-03 é 100% desta seção, e não importa `unooria.css` nenhum: a marca
+ * isso a exp02em1b é 100% desta seção, e não importa `unooria.css` nenhum: a marca
  * institucional entra só como chrome do HUB, desenhada acima do iframe.
  *
  * DUAS RÉGUAS NO MESMO PACOTE, e elas não se substituem (o próprio

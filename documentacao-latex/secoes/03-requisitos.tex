@@ -166,14 +166,14 @@ agosto de 2026.
   \cd{pg\_advisory\_xact\_lock}; \arq{tests/motor-concorrencia.spec.ts}\\
 \zebra \rf{RF-43} & Atribuir bolha (A/B/C) balanceada dentro da turma, no
   servidor, e mantê-la estável entre partidas. & M & Implementado &
-  \cd{exp\_70\_bolhas}; \arq{tests/vila-regras.spec.ts}\\
+  \cd{app\_70\_bolhas}; \arq{tests/vila-regras.spec.ts}\\
 \rf{RF-44} & Não servir a bolha B nos anos iniciais (1EF--5EF). & M &
   Implementado & \cd{bolhasElegiveis}\\
 \zebra \rf{RF-45} & Recalcular o perfil de valores no servidor a partir das
   medidas brutas, recusando \emph{payload} que traga o perfil. & M &
   Implementado & \cd{CHAVES\_DE\_PERFIL} em \arq{src/vila/contrato.ts}\\
 \rf{RF-46} & Permitir reprocessar o histórico quando a versão do mapeamento
-  subir. & M & Implementado & \cd{exp\_70\_sessoes.payload};
+  subir. & M & Implementado & \cd{app\_70\_sessoes.payload};
   \cd{versaoMapeamento}\\
 \zebra \rf{RF-47} & Devolver leitura em que só a variante \cd{scored} tem número;
   as outras têm \cd{null} \emph{por tipo}. & M & Implementado &

@@ -32,7 +32,7 @@ import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
 import { PASSOS } from "./regras/passos";
 
 /**
- * Rotas do ESTUDANTE da exp-07-o-eco-no-grupo.
+ * Rotas do ESTUDANTE da exp07ef1b.
  *
  * O gabarito fica no servidor: o cliente manda qual opção escolheu, a api
  * corrige contra o catálogo e devolve o desfecho e as reações do bairro

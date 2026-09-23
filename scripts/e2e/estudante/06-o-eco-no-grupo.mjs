@@ -3,7 +3,7 @@ import { conta } from "../lib/credenciais.mjs";
 import { esperarOuFalharPorHttp } from "../lib/smoke.mjs";
 
 /**
- * O Eco no Grupo (exp-07), nas duas pontas da sala.
+ * O Eco no Grupo (exp07ef1b), nas duas pontas da sala.
  *
  * A missão é de DUAS AULAS, e quem separa uma da outra é a professora. O
  * roteiro prova as duas metades: primeiro que o estudante trava no fim da Aula
@@ -117,7 +117,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-07-o-eco-no-grupo`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp07ef1b`, { waitUntil: "domcontentloaded" });
     let q = p.frameLocator('iframe[title="experiencia"]');
     await q.locator("text=/Você viu o que mandaram/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "tela-de-bloqueio", {
@@ -259,7 +259,7 @@ await suite(
       p,
       q.locator("text=/fixou uma mensagem/i"),
       /\/o-eco-no-grupo\/intervencao$/,
-      { timeout: 25_000, oQue: "a intervenção no grupo (exp-07)" },
+      { timeout: 25_000, oQue: "a intervenção no grupo (exp07ef1b)" },
     );
     await r.registrar(p, "alfinete-do-admin", {
       titulo: "O administrador fixa a contraprova",
@@ -304,7 +304,7 @@ await suite(
          `__control` do radio fica sob o `__dot`, que tem `pointer-events: none`
          e faz o clique nunca chegar. */
       const alvo = (await linha.count()) ? linha : q.locator(`.${classe}__control`);
-      /* `scrollIntoViewIfNeeded` antes do clique, como na suíte da exp-01: a
+      /* `scrollIntoViewIfNeeded` antes do clique, como na suíte da exp08ef1b: a
          tela vive dentro do aparelho de 812px com `transform: scale`, e o
          scroll automático do Playwright não alcança o que está abaixo da
          dobra — o clique fica esperando um alvo estável para sempre. */

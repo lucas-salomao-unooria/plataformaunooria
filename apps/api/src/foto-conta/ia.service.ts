@@ -12,7 +12,7 @@ import {
 import { PacoteDaTurmaSchema } from "./contrato-de-rotas";
 
 /**
- * A ÚNICA superfície de IA da exp-04: a preparação docente (E0-PROF-01).
+ * A ÚNICA superfície de IA da exp01ef1b: a preparação docente (E0-PROF-01).
  *
  * O modelo escreve TEXTOS — legendas do feed, o par de legendas decisórias e
  * os 8 comentários da matriz causal — adaptados ao tema e ao nível de leitura

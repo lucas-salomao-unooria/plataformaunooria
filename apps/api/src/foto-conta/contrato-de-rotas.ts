@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COMPLEXIDADES, ETAPAS, MARCAS, OPCOES_REFLEXAO, TEMAS } from "./catalogo";
 
 /**
- * Contrato Zod das rotas `/foto-conta/*` (exp-04-o-que-a-foto-conta).
+ * Contrato Zod das rotas `/foto-conta/*` (exp01ef1b).
  *
  * O OpenAPI deriva daqui (ADR-36) e as respostas são conferidas contra estes
  * schemas nos testes. A fronteira que este arquivo desenha:
@@ -47,7 +47,7 @@ export const ComentariosDoParSchema = z.object({
 });
 
 /** O pacote COMPLETO — o shape que a IA tem de produzir, que o professor
- *  aprova e que `exp_04_turma_config.pacote` guarda. */
+ *  aprova e que `exp01ef1b_turma_config.pacote` guarda. */
 export const PacoteDaTurmaSchema = z.object({
   tema: TemaSchema,
   feed: z.array(PostDoFeedSchema).length(3),

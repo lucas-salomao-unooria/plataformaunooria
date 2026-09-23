@@ -26,7 +26,7 @@ em hora diferente. Todo perfil que não é `estudante` cai em `professor`
   tabela de contrato, sem `escola_id`.
 - **Perfil novo com IA** (gestor, admin) entra em TRÊS lugares no mesmo commit:
   a tupla, o CHECK da migration e a semente. Um só é o modo de falhar mudo.
-- Continuam FORA do funil, e são cartão à parte: o motor da exp-01 (`geracao/`)
+- Continuam FORA do funil, e são cartão à parte: o motor da exp08ef1b (`geracao/`)
   e as reações da Vila do Lume (`motor/runs.controller.ts`), já apontados na
   ADR-74. Quota configurável só vale para quem chama `temSaldo`.
 
@@ -37,7 +37,7 @@ provedor, cria-se novo arquivo — nada fora de `src/ai` conhece o vendor.
 
 **O mock falha FECHADO em `generateJson` e `generateImage`** (lançam sempre) e
 NÃO falha em `conversar` — conversa não tem fallback autorado, e falhar ali
-deixaria a exp-03 sem abrir em dev. Quem chama `generateJson` precisa decidir o
+deixaria a exp02em1b sem abrir em dev. Quem chama `generateJson` precisa decidir o
 que fazer com isso: reações ao vivo caem em lista vazia, geração de posts vira
 job falho que o painel mostra, e **`/destilar` devolve 503 com a causa** (ADR-52)
 — era o único sem tratamento, e em `AI_PROVIDER=mock` fazia criar atividade
@@ -52,7 +52,7 @@ longo checa `AiResult.finishReason` (`MAX_TOKENS` = conteúdo cortado, é erro).
 login` → metadata server (Cloud Run). Antes daqui só havia o metadata server, e
 por isso NENHUMA chamada de IA funcionava fora do Cloud Run — nem no host nem no
 container, onde `metadata.google.internal` não resolve; em dev a api ficava presa
-no `AI_PROVIDER=mock` e a exp-90 devolvia um plano falso. Os dois compose montam
+no `AI_PROVIDER=mock` e a app-90 devolvia um plano falso. Os dois compose montam
 o ADC do host em `/adc` (só leitura); em Cloud Run a service account do serviço
 já é a credencial, e ela precisa de `roles/aiplatform.user`.
 
@@ -63,7 +63,7 @@ só o endpoint `global` (sem host regional) o serve. A consequência é explíci
 foi aceita: o tráfego de IA sai de São Paulo, inclusive o do estudante. Voltar para
 `VERTEX_LOCATION=southamerica-east1` é possível a qualquer momento, mas exige
 trocar TAMBÉM o modelo pelo que a região publica (família 2.5 — a 2.0 saiu do
-catálogo e a 3.x nunca esteve lá). A arte da exp-01 usa `gemini-3.1-flash-image`
+catálogo e a 3.x nunca esteve lá). A arte da exp08ef1b usa `gemini-3.1-flash-image`
 (o `gemini-2.0-flash-exp` que era o default não existe mais em lugar nenhum, e
 por isso toda geração de imagem caía no fallback procedural), e PEDE a proporção
 `4:5` no `imageConfig`: sem isso o 3.1 devolve 1408×768 e o `cover` do

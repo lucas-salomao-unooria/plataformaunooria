@@ -17,7 +17,7 @@ function lote(spans = 1, extras: Partial<OtlpTraces["resourceSpans"][0]> = {}): 
       {
         resource: {
           attributes: [
-            { key: "service.name", value: { stringValue: "exp-02-unootube" } },
+            { key: "service.name", value: { stringValue: "exp04ef1b" } },
             { key: "service.version", value: { stringValue: "0.3.1" } },
             { key: "user_agent.original", value: { stringValue: "Mozilla/5.0 (aluno)" } },
           ],
@@ -70,7 +70,7 @@ describe("OtlpTracesSchema", () => {
 
 describe("identidadeDoLote / limparSpan / reescreverLote", () => {
   it("lê service.name/version válidos; recusa formato estranho", () => {
-    expect(identidadeDoLote(OtlpTracesSchema.parse(lote()))).toEqual({ expId: "exp-02-unootube", versao: "0.3.1", superficie: "exp" });
+    expect(identidadeDoLote(OtlpTracesSchema.parse(lote()))).toEqual({ expId: "exp04ef1b", versao: "0.3.1", superficie: "exp" });
     const hub = OtlpTracesSchema.parse(lote());
     hub.resourceSpans[0]!.resource!.attributes![0] = { key: "service.name", value: { stringValue: "hub" } };
     expect(identidadeDoLote(hub)?.superficie).toBe("hub");
@@ -89,7 +89,7 @@ describe("identidadeDoLote / limparSpan / reescreverLote", () => {
   });
 
   it("substitui o resource do cliente e conta os spans", () => {
-    const { corpo, spans } = reescreverLote(OtlpTracesSchema.parse(lote(3)), { expId: "exp-02-unootube", versao: "0.3.1", superficie: "exp" }, "projeto-de-teste");
+    const { corpo, spans } = reescreverLote(OtlpTracesSchema.parse(lote(3)), { expId: "exp04ef1b", versao: "0.3.1", superficie: "exp" }, "projeto-de-teste");
     expect(spans).toBe(3);
     const attrs = corpo.resourceSpans[0]!.resource!.attributes!;
     expect(attrs.map((a) => a.key)).toEqual(["service.name", "service.version", "service.namespace", "telemetry.sdk.language", "gcp.project_id"]);

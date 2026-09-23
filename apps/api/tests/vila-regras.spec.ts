@@ -6,7 +6,7 @@ import { lerMensagens } from "../src/vila/mensagens";
 import { bolhasElegiveis, corrigirCartoes, escolherBolha } from "../src/vila/regras";
 
 /**
- * Invariantes PUROS da exp-70 — sem banco.
+ * Invariantes PUROS da app-70 — sem banco.
  *
  * Cada `test` aqui é um "nunca" que o CLAUDE.md ou o desenho da missão afirma em
  * prosa. Prosa não é controle: foi assim que o app de origem quase entregou uma
