@@ -362,7 +362,7 @@ sem nenhuma linha no log da API.
      Antes disso havia \emph{só} o nível 3 --- e por isso nenhuma chamada de IA
      funcionava fora do Cloud Run: nem no \emph{host}, nem no contêiner, onde
      \texttt{metadata.google.internal} não resolve. Em desenvolvimento a API ficava
-     presa em \texttt{AI\_PROVIDER=mock} e a exp-90 devolvia um plano falso.};
+     presa em \texttt{AI\_PROVIDER=mock} e a app-90 devolvia um plano falso.};
 
   \node[actnote, text width=54mm, anchor=north west] at (8.0,-4.6)
     {\textbf{Nunca chave de API.} Não há campo de env para chave de IA em lugar
@@ -422,7 +422,7 @@ sem nenhuma linha no log da API.
 Cloud Run --- API & CPU sempre alocada, \cd{min-instances} $\geq$ 1,
   concorrência 80 &
   Há trabalho \emph{in-process} fora do ciclo de requisição: o \emph{worker} de
-  geração de conteúdo da exp-01 e a geração de plano de aula da exp-90. Com CPU
+  geração de conteúdo da exp08ef1b e a geração de plano de aula da app-90. Com CPU
   liberada entre requisições, a geração morreria no meio.\\
 \zebra Cloud Run --- hub & \cd{min-instances} $\geq$ 1 &
   Elimina \emph{cold start} no pico de \emph{login}.\\
@@ -445,13 +445,13 @@ Pub/Sub & \emph{Push subscription} com \cd{oidc\_token} &
 \toprule
 \headrow \thd{Grandeza} & \thd{Valor medido} & \thd{Como se chegou a ele}\\
 \midrule
-\emph{Payload} de uma partida da exp-70 & \SI{1.1}{\kilo\byte} de JSON
+\emph{Payload} de uma partida da app-70 & \SI{1.1}{\kilo\byte} de JSON
   (\SI{1.5}{\kilo\byte} em JSONB) &
   Medido em 2026-08-26. O jogo tem sete pontos de log, todos atos discretos com
   guarda própria: 8 Chamas, 4 aldeões, 1 Borda + 3 Destaques, 4 cartões, 1
   primeira conversa --- teto real de \textasciitilde22 eventos por partida. Nada
   por quadro, nada por metro andado.\\
-\zebra Armazenamento da exp-70 por contrato & \textbf{\textasciitilde\SI{30}{\mega\byte}} &
+\zebra Armazenamento da app-70 por contrato & \textbf{\textasciitilde\SI{30}{\mega\byte}} &
   \num{10000} estudantes jogando uma vez. A estimativa \emph{anterior} --- centenas
   de MB a \SI{2.4}{\giga\byte} --- partia do teto do contrato (2000 eventos) e
   errava por duas ordens de grandeza. O teto do contrato caiu de 2000 para 200,
@@ -465,7 +465,7 @@ Custo de gravação da telemetria & \textasciitilde16 \cd{INSERT}/s no pico
   \emph{tokens} &
   Currículo da rede + as quatro unidades do ano. É o que justifica a quota
   separada de professor (\num{2000000}/dia $\approx$ 6 a 9 planos).\\
-Mídia da exp-02 & \SI{52}{\mega\byte} (21 arquivos MP4) &
+Mídia da exp04ef1b & \SI{52}{\mega\byte} (21 arquivos MP4) &
   Fora do \emph{git} e fora do \emph{bundle}: vai para o \emph{bucket} de
   \emph{assets}, referenciada por \env{VITE\_VIDEOS\_BASE\_URL}.\\
 \bottomrule

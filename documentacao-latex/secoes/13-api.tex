@@ -109,7 +109,7 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (rec) at (16.3,-3.0)
     {\rota{/recursos/*}\desc{o interruptor da REDE}};
 
-  \node[camadalbl, anchor=west] at (0.3,-4.0) {exp-01 --- Instanooria};
+  \node[camadalbl, anchor=west] at (0.3,-4.0) {exp08ef1b --- Instanooria};
   \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
     {\rota{/atividades/*}\desc{professor}};
   \node[c4component, text width=27mm] (rn) at (5.7,-4.6)
@@ -185,11 +185,11 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
   \textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
   \texttt{/<slug>/professor/*} servem o \textbf{material do guia da
   aula}: catálogo com gabarito, sem \texttt{escolaId} e sem \emph{tenancy},
-  em que o que a guarda protege é só o papel (\adrr{ADR-86}). A exp-08
+  em que o que a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b
   \textbf{não} tem uma dessas, e a ausência é o desenho: o material de mediação
   dela é o pacote CURADO por turma, então ele mora em
   \texttt{/manifesto-ia/turmas/:id/conteudo} --- com \emph{tenancy}, porque o
-  conteúdo não é igual para todo contrato. A exp-05 tem \textbf{as duas
+  conteúdo não é igual para todo contrato. A exp05ef1b tem \textbf{as duas
   coisas}, e elas respondem perguntas diferentes:
   \texttt{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
   igual em todo contrato, e \texttt{/quem-mandou-isso/turmas/:id/conteudo} é o
@@ -246,7 +246,7 @@ API genérica de avaliação convidaria a mandar a resposta certa junto.
 
 \section{Grupos de rotas em detalhe}
 
-\subsection{Motor de \emph{feed} (exp-01)}
+\subsection{Motor de \emph{feed} (exp08ef1b)}
 
 O grupo com mais rotas da plataforma, todas escopadas por \cd{run} e todas de
 papel \cd{estudante}, com duas exceções marcadas.
@@ -311,7 +311,7 @@ de sessão do UnooTube, do unooGPT, da Vila e do Eco --- chama
 liberação. O \emph{bundle} é público e \rota{/exp/:expId} é endereço adivinhável:
 antes disto, qualquer estudante logado abria qualquer missão digitando a URL.
 
-A guarda é PRÉ-CONDIÇÃO do relógio da exp-03 e dos \emph{gates} da exp-07, não
+A guarda é PRÉ-CONDIÇÃO do relógio da exp02em1b e dos \emph{gates} da exp07ef1b, não
 substituta --- e fica na CRIAÇÃO da sessão, não em toda rota: quem já entrou
 fica, porque encerrar fecha a entrada e não expulsa a criança no meio da aula.
 \end{regra}
@@ -385,7 +385,7 @@ turma, sem estudante e sem dado. Corrigido com a \adrr{ADR-79}: a regra agora
 vale nas duas portas.
 \end{atencao}
 
-\subsection{Planos de aula (exp-90)}
+\subsection{Planos de aula (app-90)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}L{16mm}X@{}}
 \toprule
@@ -407,7 +407,7 @@ vale nas duas portas.
 \bottomrule
 \end{tabularx}
 
-\subsection{Planejamento de ensino (exp-92)}
+\subsection{Planejamento de ensino (app-92)}
 
 Duas famílias: a \textbf{regência} (o que o professor leciona) e o que pende
 dela --- o plano anual e as 40 semanas. Identidade sempre do \emph{token}: um
@@ -455,13 +455,13 @@ de outro, e a posse é conferida em toda rota com id.
 \begin{nota}
 \rota{GET .../planos-anuais/:id/periodos} devolve \textbf{só as \cd{pronto}}, em
 ordem: é a fonte do documento de mais de uma semana (a entrega quinzenal e a do
-período de avaliação inteiro --- ver a Seção~\ref{sec:exp92-semanal}), e um
+período de avaliação inteiro --- ver a Seção~\ref{sec:app92-semanal}), e um
 documento entregue à coordenação não leva semana que falhou na geração. O filtro
 é no \textbf{banco}: baixar o 1º bimestre não tem por que carregar as aulas dos
 outros três.
 \end{nota}
 
-\subsection{Bem-estar (exp-91)}
+\subsection{Bem-estar (app-91)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -509,7 +509,7 @@ adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \arq{src/vila/}.
 \end{decisao}
 
-\subsection{O Manifesto da IA (exp-08)}
+\subsection{O Manifesto da IA (exp08ef4b)}
 
 \begin{tabularx}{\linewidth}{@{}L{56mm}L{20mm}X@{}}
 \toprule
@@ -551,7 +551,7 @@ adicionada herde a permissão certa --- e é a mesma decisão tomada em
 \rota{POST .../gate} & prof., gestor & \enquote{Pausar para Debate} /
   \enquote{Retomar Missão}. Idempotente: é o clique que se dá duas vezes.\\
 \zebra \rota{DELETE /manifesto-ia/turmas/:id} & prof., gestor & Zerar a turma.
-  Apaga a execução e \textbf{preserva} \cd{exp\_08\_conteudo\_turma}.\\
+  Apaga a execução e \textbf{preserva} \cd{exp08ef4b\_conteudo\_turma}.\\
 \bottomrule
 \end{tabularx}
 
@@ -571,7 +571,7 @@ professor seria o único jeito de esta rota estragar a aula --- ele precisa pode
 aprovar o pacote curado com o Vertex indisponível.
 \end{atencao}
 
-\subsection{Quem mandou isso? (exp-05)}
+\subsection{Quem mandou isso? (exp05ef1b)}
 
 % Esta tabela e ESCRITA A MAO; a verdade e o Apendice C (`apendices/c-endpoints.tex`),
 % gerado de `docs/openapi.json`. Confira LINHA A LINHA contra ele antes de mexer.
@@ -660,7 +660,7 @@ aprovar o pacote curado com o Vertex indisponível.
   \enquote{Liberar reflexão final} e o inverso dos dois. Idempotente: é o clique
   que se dá duas vezes.\\
 \rota{DELETE /quem-mandou-isso/turmas/:id} & prof., gestor & Zerar a
-  turma. Apaga a execução e \textbf{preserva} \cd{exp\_05\_conteudo\_turma}.\\
+  turma. Apaga a execução e \textbf{preserva} \cd{exp05ef1b\_conteudo\_turma}.\\
 \zebra \rota{GET /quem-mandou-isso/professor/material} & prof., gestor & O banco curado
   COM gabarito e o roteiro do episódio, para o guia da aula. Catálogo: sem
   \cd{escolaId} e sem \emph{tenancy} --- o que a guarda protege é só o papel
@@ -673,14 +673,14 @@ aprovar o pacote curado com o Vertex indisponível.
 conteúdo da turma, o rascunho do preparo e o material do guia --- \textbf{e em
 UMA de estudante}: o bloco \cd{revelacao} de
 \rota{GET /quem-mandou-isso/sessao}, que é \cd{null} até
-\cd{exp\_05\_gates\_turma.etapa} passar de \cd{exploracao}. Não há caminho em que
+\cd{exp05ef1b\_gates\_turma.etapa} passar de \cd{exploracao}. Não há caminho em que
 a veracidade desça ao estudante antes disso: o tipo do lote é construído por
 \cd{Omit} dos três campos, e o \emph{schema} de saída não tem lugar para eles.
 \end{regra}
 
 \begin{atencao}
 \rota{POST .../homologar} é a rota que \textbf{abre} a missão, e sem ela ninguém
-entra. Na exp-08 a turma sem pacote aprovado lê o banco curado e a aula corre;
+entra. Na exp08ef4b a turma sem pacote aprovado lê o banco curado e a aula corre;
 aqui não há essa queda, e a professora que esqueceu de aprovar tem uma turma
 inteira em tela de espera. A mitigação é de produto, não de código ---
 a tela do professor abre no preparo, e o painel diz, em letra grande, que a turma
@@ -713,7 +713,7 @@ hub divergiria na primeira revisão de \emph{copy}.
   com \cd{desfecho} e \cd{correta}, e as falas que o bairro devolve em cada
   desfecho (o roteiro canônico, sem IA).\\
 \zebra \rota{GET /foto-conta/turmas/:id/projecao} & prof., gestor & A projeção
-  da Roda da exp-04: o par de fotos, os rótulos, as 3 perguntas do debate e o
+  da Roda da exp01ef1b: o par de fotos, os rótulos, as 3 perguntas do debate e o
   termômetro do \emph{latch} --- o material vem da API para a lousa e os
   tablets nunca discordarem.\\
 \bottomrule
@@ -772,7 +772,7 @@ nenhuma. A cota do par público é por IP, somada a um teto global de instância
   \item \rota{POST /observabilidade/vitals}: um Web Vital (\cd{LCP}, \cd{INP},
     \cd{CLS}, \cd{TTFB}) amostrado a 10\% no cliente. Vira ponto num
     histograma OpenTelemetry por \cd{superficie}, \cd{rota} \textbf{normalizada}
-    (\arq{normalizar-rota.ts}: \cd{/professor/:secao}, \cd{exp-02-unootube},
+    (\arq{normalizar-rota.ts}: \cd{/professor/:secao}, \cd{exp04ef1b},
     senão \cd{outra}) e \cd{perfil} do \emph{token}. Nunca vira log.
   \item \rota{POST /observabilidade/v1/traces}: o lote OTLP/JSON que o
     OpenTelemetry Web da experiência exporta. A API valida o subconjunto
@@ -849,7 +849,7 @@ registro é a única resposta a \enquote{quem desligou isto, e quando?}.
     versão}. É o conserto de um defeito que ninguém havia notado:
     \cd{publicar-manifesto.mjs --versao x.y.z} manda o número antigo com o
     \arq{experiencia.json} ATUAL do repositório, então voltar a versão nunca
-    voltava \cd{viewport} nem \cd{permissoes} --- a exp-70 reabria sem
+    voltava \cd{viewport} nem \cd{permissoes} --- a app-70 reabria sem
     \cd{allow-pointer-lock}, a criança entrava na Vila e a câmera não girava,
     sem erro em lugar nenhum.
   \item \rota{PUT /recursos/experiencias/\{expId\}/versao} --- fixa (ou solta)

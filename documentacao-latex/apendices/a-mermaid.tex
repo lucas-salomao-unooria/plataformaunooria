@@ -206,13 +206,13 @@ C4Component
     Component(recs,   "recursos/", "", "O interruptor da rede e a versao (ADR-87); escrita so admin")
 
     %% --- dominio por experiencia (nenhum conhece outro)
-    Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp-01")
-    Component(utube,  "unootube/", "", "exp-02")
-    Component(vila,   "vila/", "", "exp-70")
-    Component(planos, "planos/", "", "exp-90")
-    Component(bem,    "bemestar/", "", "exp-91")
-    Component(ugpt,   "unoogpt/", "", "exp-03 - motor probabilistico, agente com ferramentas, relogio da turma")
-    Component(eco,    "o-eco-no-grupo/", "", "exp-07 - gate de turma, texto, imagem e VOZ")
+    Component(motor,  "motor/ geracao/ dossie/ atividades/ perfis/", "", "exp08ef1b")
+    Component(utube,  "unootube/", "", "exp04ef1b")
+    Component(vila,   "vila/", "", "app-70")
+    Component(planos, "planos/", "", "app-90")
+    Component(bem,    "bemestar/", "", "app-91")
+    Component(ugpt,   "unoogpt/", "", "exp02em1b - motor probabilistico, agente com ferramentas, relogio da turma")
+    Component(eco,    "o-eco-no-grupo/", "", "exp07ef1b - gate de turma, texto, imagem e VOZ")
   }
 
   Rel(guard, roles, "antes de")
@@ -317,13 +317,13 @@ flowchart TB
   sdk["packages/sdk"]
   ui["packages/ui"]
   hub["apps/hub"]; api["apps/api"]
-  e01["exp-01"]; e02["exp-02"]; e70["exp-70"]; e90["exp-90"]; e91["exp-91"]
+  e01["exp08ef1b"]; e02["exp04ef1b"]; e70["app-70"]; e90["app-90"]; e91["app-91"]
   tpl["_template"]
 
   ds -->|versao publicada| ui
   sdk --> hub & api & e01 & e02 & e70 & e90 & e91 & tpl
   ui --> hub & e01 & e02 & e90 & e91
-  %% exp-70 NAO depende de packages/ui: canvas 3D, sem DOM de UI (ADR-18)
+  %% app-70 NAO depende de packages/ui: canvas 3D, sem DOM de UI (ADR-18)
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -332,7 +332,7 @@ flowchart TB
 \begin{lstlisting}[language=mermaid]
 sequenceDiagram
   autonumber
-  participant E as Experiencia (exp-01 no iframe)
+  participant E as Experiencia (exp08ef1b no iframe)
   participant C as runs.controller (NestJS)
   participant S as motor/servico
   participant P as PostgreSQL
@@ -657,29 +657,29 @@ erDiagram
 
   %% A ausencia de linha em liberacoes E o bloqueio: guardar bloqueio como linha
   %% obrigaria a criar uma por turma x experiencia so para o mundo nascer fechado.
-  %% liberacoes e PRE-CONDICAO do relogio da exp-03 e dos gates da exp-07, que
+  %% liberacoes e PRE-CONDICAO do relogio da exp02em1b e dos gates da exp07ef1b, que
   %% dizem "a aula comecou" e continuam morando na tabela DA experiencia.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figuras~\ref{fig:er-exp01a} e~\ref{fig:er-exp01b} --- Modelo da exp-01}
+\section{Figuras~\ref{fig:er-exp08ef1ba} e~\ref{fig:er-exp08ef1bb} --- Modelo da exp08ef1b}
 
 \begin{lstlisting}[language=mermaid]
 erDiagram
-  exp_01_activities ||--o{ exp_01_authors : tem
-  exp_01_authors    ||--o{ exp_01_posts   : escreve
-  exp_01_posts      ||--o{ exp_01_post_comments : tem
-  exp_01_activities ||--o{ exp_01_generation_jobs : enfileira
-  exp_01_activities ||--o{ exp_01_runs : hospeda
-  exp_01_runs ||--o{ exp_01_events : registra
-  exp_01_runs ||--o{ exp_01_student_posts : publica
-  exp_01_runs ||--|| exp_01_conclusoes : conclui
-  exp_01_runs ||--|| exp_01_reflexoes : reflete
-  exp_01_runs ||--|| exp_01_dossiers : gera
-  exp_01_runs ||--o{ exp_01_comentarios_da_sessao : ancora
-  exp_01_activities ||--o{ exp_01_exp_70_perfis_importados : "largada"
+  exp08ef1b_activities ||--o{ exp08ef1b_authors : tem
+  exp08ef1b_authors    ||--o{ exp08ef1b_posts   : escreve
+  exp08ef1b_posts      ||--o{ exp08ef1b_post_comments : tem
+  exp08ef1b_activities ||--o{ exp08ef1b_generation_jobs : enfileira
+  exp08ef1b_activities ||--o{ exp08ef1b_runs : hospeda
+  exp08ef1b_runs ||--o{ exp08ef1b_events : registra
+  exp08ef1b_runs ||--o{ exp08ef1b_student_posts : publica
+  exp08ef1b_runs ||--|| exp08ef1b_conclusoes : conclui
+  exp08ef1b_runs ||--|| exp08ef1b_reflexoes : reflete
+  exp08ef1b_runs ||--|| exp08ef1b_dossiers : gera
+  exp08ef1b_runs ||--o{ exp08ef1b_comentarios_da_sessao : ancora
+  exp08ef1b_activities ||--o{ exp08ef1b_app_70_perfis_importados : "largada"
 
-  exp_01_activities {
+  exp08ef1b_activities {
     uuid id PK
     text escola_id FK
     uuid professor_id FK
@@ -691,7 +691,7 @@ erDiagram
     jsonb engine_config
     text status
   }
-  exp_01_posts {
+  exp08ef1b_posts {
     uuid id PK
     text lado "VARIAVEL INDEPENDENTE - sanitizada antes de sair"
     text perfil "idem"
@@ -699,24 +699,24 @@ erDiagram
     text image_status "pendente|ok|fallback"
     boolean aprovado
   }
-  exp_01_runs {
+  exp08ef1b_runs {
     uuid id PK
     text lado_inicial
     text lado_origem "perfil|sorteio|redistribuido - auditoria"
     jsonb engine_state "estado do motor; unidade de LOCK"
     text nome_no_app "a conta e do APARELHO, nao da crianca"
   }
-  exp_01_events {
+  exp08ef1b_events {
     bigint id PK
     text tipo "canal OPERACIONAL: sincrono e transacional"
     jsonb payload "{dwellMs, dwellNorm}"
   }
-  exp_01_comentarios_da_sessao {
+  exp08ef1b_comentarios_da_sessao {
     uuid post_id FK "XOR com student_post_id (CHECK na migration)"
     uuid student_post_id FK
     boolean de_ia "para o professor distinguir na auditoria"
   }
-  exp_01_exp_70_perfis_importados {
+  exp08ef1b_app_70_perfis_importados {
     jsonb escores "4 quadrantes, 0-1"
     text dominante
     text origem "jogo|professor"
@@ -725,23 +725,23 @@ erDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figuras~\ref{fig:er-exp02-70} e~\ref{fig:er-exp90-91} --- Demais experiências}
+\section{Figuras~\ref{fig:er-exp04ef1b-app70} e~\ref{fig:er-app90-91} --- Demais experiências}
 
 \begin{lstlisting}[language=mermaid]
 erDiagram
-  exp_70_sessoes ||--o{ exp_70_perfis : "recalculado pelo servidor"
-  exp_70_perfis  ||..|| exp_70_bolhas : "mesmo estudante"
-  exp_90_planos  ||..o{ exp_90_referencias : "monta o prompt"
-  exp_91_ciclos  ||--o{ exp_91_checkins : "7 check-ins"
+  app_70_sessoes ||--o{ app_70_perfis : "recalculado pelo servidor"
+  app_70_perfis  ||..|| app_70_bolhas : "mesmo estudante"
+  app_90_planos  ||..o{ app_90_referencias : "monta o prompt"
+  app_91_ciclos  ||--o{ app_91_checkins : "7 check-ins"
 
-  exp_02_sessoes {
+  exp04ef1b_sessoes {
     text escola_id PK
     uuid estudante_id PK
     text_array salvos "CHECK cardinality <= 3"
     boolean ranking_desbloqueado "LATCH: nao volta"
     boolean credibilidade_adicionada "congela os salvos"
   }
-  exp_70_sessoes {
+  app_70_sessoes {
     uuid id PK "EMITIDO pela API - o cliente colidia"
     uuid turma_id FK "desnormalizado: turma NO MOMENTO da partida"
     text bolha "A|B|C - do SERVIDOR"
@@ -750,35 +750,35 @@ erDiagram
     jsonb payload "bruto - unica fonte do reprocessamento"
     jsonb leitura_mensagens
   }
-  exp_70_perfis {
+  app_70_perfis {
     smallint versao_mapeamento "sobe => nasce linha nova"
     jsonb valores "null NAO e zero"
     jsonb graus "scored|indicative|zero|none"
     float abertura_vs_conservacao "NULL se polo nao observado"
     boolean amostra_suficiente "falso => o painel avisa que NAO SABE"
   }
-  exp_70_bolhas {
+  app_70_bolhas {
     text escola_id PK
     uuid estudante_id PK "por ESTUDANTE, nao por partida"
     text bolha
   }
-  exp_90_planos {
+  app_90_planos {
     text status "pendente|gerando|pronto|erro"
     text caminho_gerado_md "IMUTAVEL, bucket privado"
     text caminho_html "o que o editor salvou, sanitizado"
   }
-  exp_90_referencias {
+  app_90_referencias {
     text disciplina PK
     text serie PK "NULL = todas"
     text nome PK
     text texto "catalogo do CONTRATO - sem escola_id, FORA da RLS"
   }
-  exp_91_ciclos {
+  app_91_ciclos {
     uuid id PK
     int_array ordem_itens "permutacao de 1..21"
     int depressao "somas x2, ao concluir - DADO SENSIVEL"
   }
-  exp_91_checkins {
+  app_91_checkins {
     smallint numero "1..7"
     text dia "UNIQUE (escola_id, professor_id, dia)"
     text texto_livre "NUNCA em log nem telemetria"
@@ -833,7 +833,7 @@ flowchart TB
   frame --> fim([fim])
 
   %% A leitura do experiencia.json NAO e so de dev: stack com a tabela vazia
-  %% servia a exp-01 esticada na janela em vez de dentro do aparelho.
+  %% servia a exp08ef1b esticada na janela em vez de dentro do aparelho.
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
@@ -841,10 +841,10 @@ flowchart TB
 
 \begin{lstlisting}[language=mermaid]
 flowchart LR
-  v["exp-70 (Vila do Lume)"] -->|payload bruto| mv["src/vila/ - quadrantes.ts: colapso 10 -> 4"]
-  mv -->|"POST /atividades/:id/perfis/da-vila (professor)"| t["exp_01_exp_70_perfis_importados"]
+  v["app-70 (Vila do Lume)"] -->|payload bruto| mv["src/vila/ - quadrantes.ts: colapso 10 -> 4"]
+  mv -->|"POST /atividades/:id/perfis/da-vila (professor)"| t["exp08ef1b_app_70_perfis_importados"]
   t -->|le| mi["src/perfis/largada.ts - decide o lado do feed"]
-  mi --> i["exp-01 (Instanooria)"]
+  mi --> i["exp08ef1b (Instanooria)"]
 
   %% Duas travas que CUSTAM estudantes, de proposito:
   %%  1. valor nao observado (indicative|none) fica FORA da media — nunca zero
@@ -879,10 +879,10 @@ C4Component
   title Camada de IA - src/ai e a UNICA porta
 
   Container_Boundary(api, "API") {
-    Component(g, "geracao/", "", "exp-01")
-    Component(m, "motor/", "", "exp-01")
-    Component(p, "planos/", "", "exp-90")
-    Component(b, "bemestar/", "", "exp-91")
+    Component(g, "geracao/", "", "exp08ef1b")
+    Component(m, "motor/", "", "exp08ef1b")
+    Component(p, "planos/", "", "app-90")
+    Component(b, "bemestar/", "", "app-91")
     Component(a, "POST /ai/gerar", "", "SDK")
 
     Container_Boundary(ai, "src/ai/ - a UNICA porta") {
@@ -961,7 +961,7 @@ classDiagram
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:exp92-caminho} --- exp-92: o caminho do planejamento}
+\section{Figura~\ref{fig:app92-caminho} --- app-92: o caminho do planejamento}
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
@@ -980,10 +980,10 @@ flowchart TB
 
   dados --> dist
 
-  reg --> cfg[("exp_92_configuracoes<br/>e, se a rede ainda nao tinha, periodos_letivos - catalogo do CONTRATO")]
-  dist --> jd[("exp_92_planos_anuais.distribuicao (JSONB)<br/>o insumo do gerador, e o que sobrevive a reescrever o documento")]
+  reg --> cfg[("app_92_configuracoes<br/>e, se a rede ainda nao tinha, periodos_letivos - catalogo do CONTRATO")]
+  dist --> jd[("app_92_planos_anuais.distribuicao (JSONB)<br/>o insumo do gerador, e o que sobrevive a reescrever o documento")]
   anual --> doc[("bucket privado: gerado.md (imutavel) + atual.html (sanitizado)")]
-  aulas --> ja[("exp_92_planos_de_periodo.aulas (JSONB)<br/>dado estruturado, nao prosa")]
+  aulas --> ja[("app_92_planos_de_periodo.aulas (JSONB)<br/>dado estruturado, nao prosa")]
   exp --> rec["tres recortes, so das semanas pronto:<br/>esta semana - esta e a proxima -<br/>o periodo de avaliacao inteiro (bimestre, trimestre ou semestre)"]
 
   %% Onde a IA NAO entra: a extracao da Base; a consulta de habilidades
@@ -995,7 +995,7 @@ flowchart TB
 \end{lstlisting}
 
 % ---------------------------------------------------------------------------
-\section{Figura~\ref{fig:exp92-semana} --- exp-92: como uma semana nasce}
+\section{Figura~\ref{fig:app92-semana} --- app-92: como uma semana nasce}
 
 \begin{lstlisting}[language=mermaid]
 flowchart TB
@@ -1010,7 +1010,7 @@ flowchart TB
   brief["montarBriefingDePeriodo<br/>um briefing com as aulas que EXISTEM e as habilidades que PODEM entrar"]
   brief --> gen["provider.generateJson (IA)<br/>schema de resposta, modelo longo, temperatura 0.5<br/>devolve SO o conteudo pedagogico das aulas"]
   gen --> cost["costurarAulas - a conciliacao entre o que o modelo devolveu<br/>e as aulas que existem de verdade"]
-  cost --> out[("exp_92_planos_de_periodo.aulas<br/>JSONB estruturado, status = pronto")]
+  cost --> out[("app_92_planos_de_periodo.aulas<br/>JSONB estruturado, status = pronto")]
   out --> edita["O professor edita - PUT /planejamento/periodos/:id/aulas<br/>cumprida e a observacao da aula sao registro DELE, nunca do modelo"]
 
   %% As tres regras da costura:
@@ -1035,7 +1035,7 @@ flowchart TB
     us["/usuarios/* - gestor, admin"]; ai["/ai/gerar - autenticado + quota"]
     an["/analise/* - ADMIN-CONTRATO"]
   end
-  subgraph E01["exp-01 - Instanooria"]
+  subgraph E01["exp08ef1b - Instanooria"]
     atv["/atividades/* - professor"]; rn["/runs/* - estudante (/eventos: professor tb.)"]
     po["/posts/:id/comentarios - estudante"]; pf["/perfis/importar - chave de servico"]
   end
@@ -1085,9 +1085,9 @@ flowchart LR
   %% A linha e a REVELACAO, nao o arquivo. O toast NAO cruza: ele fala de
   %% dentro da ficcao. O criterio nao e "e depois no tempo?", e "quem fala?".
   %%
-  %% CONTRAEXEMPLO, exp-03 (unooGPT): nao ha revelacao no software. O vies de
+  %% CONTRAEXEMPLO, exp02em1b (unooGPT): nao ha revelacao no software. O vies de
   %% cada fonte e o material do debate do professor, e nenhuma tela o entrega.
-  %% Logo a exp-03 e 100% da secao do clone (@edu/ui/ds-chatgpt) e nunca troca
+  %% Logo a exp02em1b e 100% da secao do clone (@edu/ui/ds-chatgpt) e nunca troca
   %% para a da plataforma. A marca institucional entra so como chrome do HUB,
   %% desenhada ACIMA do iframe.
 \end{lstlisting}
@@ -1219,9 +1219,9 @@ quadrantChart
   "R-15 senha compartilhada":  [0.52, 0.52]
   "R-16 replay sobre menor":   [0.88, 0.94]
   "R-17 latencia de IA":       [0.55, 0.86]
-  "R-18 custo de IA exp-03":   [0.96, 0.60]
-  "R-19 guia da exp-03":       [0.96, 0.84]
+  "R-18 custo de IA exp02em1b":   [0.96, 0.60]
+  "R-19 guia da exp02em1b":       [0.96, 0.84]
   "R-20 midia nao preparada":  [0.55, 0.48]
   "R-21 texto livre de menor": [0.96, 0.52]
-  "R-22 guia da exp-07":       [0.96, 0.46]
+  "R-22 guia da exp07ef1b":       [0.96, 0.46]
 \end{lstlisting}

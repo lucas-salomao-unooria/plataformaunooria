@@ -33,15 +33,15 @@ token e prefixo de classe próprios. Elas nunca se cruzam.
   \rota{/admin}, \rota{/analise}; \emph{header} de todos os papéis; telas
   \textbf{pós-revelação} do estudante\\
 \zebra \cd{instanooria} (21) & \cd{/instanooria} & \cd{--insta-*}, \cd{insta-} &
-  exp-01\\
+  exp08ef1b\\
 \cd{unitube} (30) & \cd{/unitube} & \cd{--uni-*}, \cd{uni-} ---
-  \textbf{só escuro} & exp-02\\
+  \textbf{só escuro} & exp04ef1b\\
 \zebra \cd{whatsappmobile} (29) & \cd{/whatsappmobile} & \cd{--wa-*} --- só escuro
-  & \textbf{exp-05, exp-06 e exp-07} --- as três missões de mensageiro. Na
-  exp-07, da tela de bloqueio à validação de Amara, inclusive os erros
-  diegéticos; na exp-05, do grupo da turma aos selos de veracidade do Mural\\
+  & \textbf{exp05ef1b, exp06ef2b e exp07ef1b} --- as três missões de mensageiro. Na
+  exp07ef1b, da tela de bloqueio à validação de Amara, inclusive os erros
+  diegéticos; na exp05ef1b, do grupo da turma aos selos de veracidade do Mural\\
 \cd{chatgpt} (25) & \cd{/chatgpt} & \cd{--gpt-*},
-  \cd{data-gpt-theme} & \textbf{exp-03 inteira} --- ela não tem revelação no
+  \cd{data-gpt-theme} & \textbf{exp02em1b inteira} --- ela não tem revelação no
   software, então nunca troca para a seção da plataforma\\
 \zebra \cd{tiktooria} (35) & \cd{/tiktooria} & \cd{--tik-*} &
   --- (dois \emph{contextos} de superfície: cromo claro de lista e perfil,
@@ -117,14 +117,14 @@ uma aproximação, e a experiência mede reconhecimento.
   \draw[c4relhi] (8.0,-2.0) -- (9.0,-2.0) node[cxlabel, midway, above]{revelação};
 
 \end{tikzpicture}}
-\caption[A linha da revelação]{A linha da revelação, na exp-02. As duas seções do
+\caption[A linha da revelação]{A linha da revelação, na exp04ef1b. As duas seções do
   \emph{design system} coexistem no mesmo \emph{bundle} e a fronteira entre elas é
   pedagógica, não técnica.}
 \label{fig:linha-revelacao}
 \end{figure}
 
 \begin{nota}
-\textbf{A linha tem duas pontas, não uma.} A versão 1.1.0 da exp-02 abriu com uma
+\textbf{A linha tem duas pontas, não uma.} A versão 1.1.0 da exp04ef1b abriu com uma
 \textbf{tela de entrada} que explica a missão, e ela usa a seção da
 \textbf{plataforma} --- antes do \emph{feed}, ou seja, \emph{antes} da revelação.
 Não é exceção à regra: é a regra aplicada pelo critério que ela mesma enuncia,
@@ -141,10 +141,10 @@ pacote direto num componente:
 
 \begin{tabularx}{\linewidth}{@{}L{28mm}L{22mm}X@{}}
 \cd{@edu/ui/ds} & \cd{unooria} & plataforma\\
-\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp-01\\
-\cd{@edu/ui/ds-unootube} & \cd{unitube} & exp-02\\
-\cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp-03\\
-\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp-05, exp-06, exp-07\\
+\cd{@edu/ui/ds-insta} & \cd{instanooria} & exp08ef1b\\
+\cd{@edu/ui/ds-unootube} & \cd{unitube} & exp04ef1b\\
+\cd{@edu/ui/ds-chatgpt} & \cd{chatgpt} & exp02em1b\\
+\cd{@edu/ui/ds-whatsapp} & \cd{whatsappmobile} & exp05ef1b, exp06ef2b, exp07ef1b\\
 \end{tabularx}
 \end{regra}
 
@@ -252,9 +252,9 @@ Clone (\cd{unitube}) & Lê \cd{data-uni-theme} na raiz do documento.\\
 \end{tabularx}
 
 \begin{atencao}
-Quem troca o tema escreve nos \textbf{dois} (\arq{exp-02/src/lib/tema.ts}),
+Quem troca o tema escreve nos \textbf{dois} (\arq{exp04ef1b/src/lib/tema.ts}),
 senão o estudante escolhe escuro no \emph{feed} e o ranking volta branco --- porque
-o ranking é da seção da plataforma, que não lê o atributo da raiz. Na exp-02 a
+o ranking é da seção da plataforma, que não lê o atributo da raiz. Na exp04ef1b a
 escolha é do estudante (Perfil \seta{} APARÊNCIA) e é lembrada em
 \cd{localStorage}, que a regra 4 proíbe para \emph{token}, não para preferência
 de tela.
@@ -325,7 +325,7 @@ quando o pacote publicar a correção.
 
 \begin{nota}
 As quatro primeiras da tabela abaixo foram \textbf{atendidas na 0.1.17} e as
-compensações correspondentes foram apagadas da exp-02. Duas lacunas novas
+compensações correspondentes foram apagadas da exp04ef1b. Duas lacunas novas
 apareceram na 1.1.0 da experiência e estão registradas logo depois.
 \end{nota}
 
@@ -334,9 +334,9 @@ apareceram na 1.1.0 da experiência e estão registradas logo depois.
 \headrow \thd{Lacuna} & \thd{Consequência}\\
 \midrule
 \cd{unitube} não publica \emph{toast}, diálogo, tabela nem estado vazio &
-  Quatro compensações locais na exp-02.\\
+  Quatro compensações locais na exp04ef1b.\\
 \zebra \cd{ChannelHeader} não tem \cd{showSubscribe} & O botão de inscrever-se é
-  \emph{sempre} desenhado, e o canal da exp-02 é o do \textbf{próprio estudante}.\\
+  \emph{sempre} desenhado, e o canal da exp04ef1b é o do \textbf{próprio estudante}.\\
 \cd{.uni-channel-header\_\_cover} usa a primitiva
   \cd{--uni-color-neutral-50}, não um token semântico & No escuro vira uma laje
   branca.\\
@@ -350,7 +350,7 @@ Não existe componente de seleção (só \cd{TextField}, \cd{TextArea},
 \bottomrule
 \end{tabularx}
 
-\subsection{Lacunas abertas na 0.1.17 (exp-02 1.1.0)}
+\subsection{Lacunas abertas na 0.1.17 (exp04ef1b 1.1.0)}
 
 \begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
 \toprule
@@ -411,7 +411,7 @@ acontecia com \enquote{Zerar a turma} do UnooGPT e do Eco no Grupo, e com o
 não pega. Ao escrever um \cd{variant}, confira contra \cd{ButtonVariant}.
 \end{atencao}
 
-\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (exp-92, 2026-09-10)}
+\subsection{Lacuna aberta em \cd{Collapse} na 0.1.19 (app-92, 2026-09-10)}
 
 O \cd{Collapse} esconde o corpo fechado com \cd{grid-template-rows: 0fr},
 \cd{opacity: 0} e \cd{aria-hidden="true"}, e o \cd{\_\_body-inner} com
@@ -422,13 +422,13 @@ isso que torna o defeito pior: \textbf{descendente focável dentro de
 \cd{aria-hidden="true"} é foco fantasma} --- o \cd{Tab} entra no controle e o
 leitor de tela não anuncia nada, porque para ele aquele elemento não existe.
 
-Medido na tela de aulas da exp-92, que abre o ano em quatro bimestres e só deixa
+Medido na tela de aulas da app-92, que abre o ano em quatro bimestres e só deixa
 o primeiro aberto (\cd{defaultOpen}): os três fechados deixavam \textbf{30
 botões de semana} recebendo foco do teclado. Um professor que navega por
 \cd{Tab} atravessava trinta controles invisíveis antes do próximo elemento
 visível.
 
-\textbf{Compensação}, em \arq{apps/experiencias/exp-92-plano-de-ensino/src/estilos/globals.css}:
+\textbf{Compensação}, em \arq{apps/experiencias/app-92-plano-de-ensino/src/estilos/globals.css}:
 \cd{visibility: hidden} no corpo com \cd{aria-hidden="true"} --- é a única
 propriedade CSS que tira do foco sem tirar do fluxo --- com \cd{transition} de
 \cd{visibility} atrasada pela duração do collapse, para que o fechamento
@@ -452,11 +452,11 @@ que quebrou aquela suíte no dia em que as dez semanas do primeiro bimestre
 ficaram todas planejadas. Quem automatiza a tela abre os bimestres antes de
 procurar.
 
-\subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp-07 0.1.0)}
+\subsection{Lacunas abertas em \cd{whatsappmobile} na 0.1.17 (exp07ef1b 0.1.0)}
 
 A seção tem 29 componentes e cobre o cromo inteiro do mensageiro --- barra de
 status, cabeçalho de conversa, balão com mídia e documento, campo de escrever,
-diálogo, folha inferior. As quatro peças que a exp-07 pede e ela não publica
+diálogo, folha inferior. As quatro peças que a exp07ef1b pede e ela não publica
 estão abaixo; \textbf{três saem de composição}, e só uma é compensação de
 verdade (\adrr{ADR-68}).
 
@@ -485,7 +485,7 @@ verdade (\adrr{ADR-68}).
 
 \begin{atencao}
 \textbf{A seção publica só o tema escuro} (\cd{WaTheme = 'dark'}; o CSS traz
-\cd{:root, [data-wa-theme=dark]} e nada mais). Os wireframes da exp-07 descrevem
+\cd{:root, [data-wa-theme=dark]} e nada mais). Os wireframes da exp07ef1b descrevem
 telas claras; derivar a paleta é proibido, pela mesma regra do \cd{unitube}. O
 contraste do escuro (\cd{\#D3DAE0} sobre \cd{\#101D25}, cerca de 11:1) passa o
 AA com folga --- ver \adrr{ADR-68}.
@@ -495,11 +495,11 @@ aparelho é o hub, pelo \cd{viewport} do manifesto. Empilhar os dois daria um
 celular dentro de outro.
 \end{atencao}
 
-\subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp-08 0.1.0)}
+\subsection{Lacunas abertas em \cd{chatgpt} na 0.1.19 (exp08ef4b 0.1.0)}
 
 A seção tem 26 componentes e cobre o cromo do cliente \emph{web} --- barra
 lateral, campo de escrever com a doca, balão de fala, cartão de agente, diálogo,
-etiqueta. A exp-08 pediu \textbf{nove} peças que ela não publica, e a maior
+etiqueta. A exp08ef4b pediu \textbf{nove} peças que ela não publica, e a maior
 delas é estrutural para o não-negociável 4 da missão.
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
@@ -554,7 +554,7 @@ nem sempre pega.
 \begin{nota}
 \cd{inert}, e não \cd{pointer-events: none}, no congelamento: o segundo pararia
 o clique e deixaria o \emph{Tab} alcançar os botões atrás do véu --- a mesma
-classe de defeito que o \cd{Collapse} da exp-92 produziu, com 30 alvos focáveis
+classe de defeito que o \cd{Collapse} da app-92 produziu, com 30 alvos focáveis
 dentro de um \cd{aria-hidden}.
 \end{nota}
 
@@ -711,7 +711,7 @@ A consequência é uma armadilha real: \textbf{classe de cor que não existe ali
 é erro em lugar nenhum}. Em texto, ela herda a cor e passa desapercebida; em
 \textbf{fundo}, o elemento fica branco no branco. Foi o que aconteceu com
 \cd{bg-unooria-neutral-900}: a letra da bolha ficou invisível. O \emph{smoke} da
-exp-70 checa o \cd{backgroundColor} \textbf{computado} do círculo por isso ---
+app-70 checa o \cd{backgroundColor} \textbf{computado} do círculo por isso ---
 \cd{toBeVisible()} não pega.
 
 Existem hoje apenas:
@@ -887,7 +887,7 @@ coluna, verbo/objeto de telemetria, nome de glifo do Material Symbols
 \textbf{Anglicismo que fica por decisão, não por esquecimento:} \cd{fake news},
 \cd{cyberbullying}, \cd{print}, \cd{chat} e \cd{on-line}. Os dois primeiros são
 o vocabulário da BNCC e da Lei 13.185/2015 que o próprio guia cita; \cd{print} é
-a palavra que a criança usa, e a missão da exp-06 e da exp-07 gira em torno desse
+a palavra que a criança usa, e a missão da exp06ef2b e da exp07ef1b gira em torno desse
 objeto. A \adrr{ADR-91} tem a razão de cada um. \textbf{Não \enquote{corrija}
 nenhum deles.}
 \end{regra}
@@ -896,7 +896,7 @@ nenhum deles.}
 texto EXATO (\cd{getByText}, \cd{getByRole(\{name\})}): mudar copy sem atualizar
 a suíte a derruba com \emph{timeout}, e o \emph{timeout} reporta o seletor que
 faltou, nunca a causa. E rótulo visível com espelho na api muda nos DOIS lados
---- \cd{ROTULO\_PASSO} da exp-03 espelha
+--- \cd{ROTULO\_PASSO} da exp02em1b espelha
 \arq{apps/api/src/unoogpt/regras/passos.ts}, e o \emph{typecheck} não vê a
 divergência.
 
@@ -914,9 +914,9 @@ ainda montam o fundo e a folha dela.
 \end{decisao}
 
 \begin{decisao}
-\textbf{A exp-70 está fora da regra do \emph{design system}}, deliberadamente:
+\textbf{A app-70 está fora da regra do \emph{design system}}, deliberadamente:
 é jogo em \emph{canvas} 3D, sem DOM de interface (\adrr{ADR-18}). A pendência da
-exp-02 --- que tinha CSS próprio em \arq{src/estilos} --- foi
+exp04ef1b --- que tinha CSS próprio em \arq{src/estilos} --- foi
 \textbf{resolvida}: ela consome a seção \cd{unitube} pela ponte
 \cd{@edu/ui/ds-unootube}, com a aparência escolhida pelo estudante.
 \end{decisao}

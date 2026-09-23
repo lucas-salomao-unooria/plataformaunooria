@@ -88,11 +88,11 @@ Hub & \cd{console.*} esparso (\cd{[hub]}, \cd{[chave-token]},
   \cd{TelemetryClient} faz lote de 50 a cada 10\,s e \cd{sendBeacon} no
   \cd{pagehide}. &
   \textbf{Não existe \cd{exp:erro}}, nem \cd{window.onerror}, nem
-  \cd{unhandledrejection} em lugar nenhum: um \emph{crash} na exp-70 durante
+  \cd{unhandledrejection} em lugar nenhum: um \emph{crash} na app-70 durante
   a aula não deixa rastro fora do console do estudante. Falha ao renovar
   \emph{token} ou ao registrar conclusão é \cd{console.error} no navegador.
   Sem \emph{sourcemap} nos \emph{bundles}. Fila de telemetria só em memória,
-  sem \emph{backoff}, sem teto, sem \cd{visibilitychange} (a exp-01 registra
+  sem \emph{backoff}, sem teto, sem \cd{visibilitychange} (a exp08ef1b registra
   os três eventos e comenta por quê; a SDK não aplicou a lição).\\
 Pipeline de telemetria & Guarda do \emph{push} falha fechada; \cd{INSERT}
   multi-linha; \emph{dedupe} por \cd{(event\_id, ts)}. &
@@ -617,7 +617,7 @@ de \emph{status}:
   passa a ser chamada 4.320 vezes por dia.\\
 \rota{GET \{hub\}/api/healthz} & Rota nova do hub, sem dependência: processo
   vivo. Separa \enquote{hub caiu} de \enquote{API caiu} no alerta.\\
-\zebra \rota{GET \{exp\}/\B exp-01-instanooria/\B\{versao\}/\B index.html} & CDN
+\zebra \rota{GET \{exp\}/\B exp08ef1b/\B\{versao\}/\B index.html} & CDN
   e \emph{bucket} servindo a versão ativa. A versão vem do manifesto, então
   o \emph{check} é regerado no passo \emph{ativar} do \emph{deploy}.\\
 \rota{GET \{hub\}/} contém o texto da \emph{landing} & O \emph{render} do
@@ -688,7 +688,7 @@ no processo --- preço muda sem \emph{deploy}, e a métrica de \emph{tokens} é
 a que vale.
 
 Três alertas saem daqui: erro do \emph{provider} acima de 10\% em 5 minutos
-(\emph{acorda}, se em horário escolar: é a exp-03 inteira), latência p95
+(\emph{acorda}, se em horário escolar: é a exp02em1b inteira), latência p95
 acima de 30\,s (\emph{amanhã}: é o \cd{R-13} materializado), e consumo do
 dia acima de duas vezes a média móvel de 7 dias (\emph{amanhã}: é custo ou
 laço). O \cd{R-14} mediu uma partida em 71.397 \emph{tokens} à mão; com isto,
@@ -850,7 +850,7 @@ aponta para o Apêndice~\ref{ap:operacao}.
   mesma taxa às 8h e às 23h significa coisas diferentes. & Error Reporting:
   o erro novo da revisão\\
 \textbf{A} & Erro do \emph{provider} de IA \(>\) 10\% em 5 min, entre 7h e
-  19h & A exp-03 inteira depende disso, e a sala espera. & Quota do Vertex;
+  19h & A exp02em1b inteira depende disso, e a sala espera. & Quota do Vertex;
   catálogo do modelo (\cd{R-12}); \cd{error.cause}\\
 \zebra \textbf{A} & \cd{instance\_count} da API \(=\) \cd{max-instances} por
   5 min & Saturação: a próxima requisição espera na fila do Cloud Run. &
@@ -1070,7 +1070,7 @@ prova de pronto que a suíte ou o painel exibe.
   ignorada por hub antigo); \emph{sourcemaps} ocultos publicados com ACL
   privada no passo \emph{subir}. Políticas de alerta que faltavam. &
   \arq{apps/api/src/\B observabilidade/}, \arq{apps/api/src/ai},
-  \arq{packages/sdk}, \arq{deploy.yml} & Um \cd{throw} provocado na exp-02
+  \arq{packages/sdk}, \arq{deploy.yml} & Um \cd{throw} provocado na exp04ef1b
   em \cd{hml} vira erro agrupado por \cd{(expId, versao)} com \emph{stack}
   mapeada. Um \emph{trace} de abertura de missão mostra hub \seta{} API
   \seta{} Postgres \seta{} Vertex numa só linha do tempo.\\

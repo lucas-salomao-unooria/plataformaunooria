@@ -35,7 +35,7 @@ arrasta as dependências corretas.
 \toprule
 \headrow \thd{Comando} & \thd{Uso}\\
 \midrule
-\cd{pnpm turbo build --filter=@edu/exp-01} & Builda uma experiência mais as
+\cd{pnpm turbo build --filter=@edu/exp08ef1b} & Builda uma experiência mais as
   dependências dela.\\
 \zebra \cd{pnpm turbo build --filter='...[HEAD\^{}]'} & Só o que mudou. É o que o
   CI usa.\\
@@ -473,12 +473,12 @@ Fluxo & \textbf{Quatro ambientes} (\adrr{ADR-101}): \emph{branch} de trabalho
   \cd{HEAD\^{}} (o primeiro pai), que num \emph{merge commit} é a ponta antiga
   da \emph{branch} de ambiente --- um \emph{rebase-merge} faria o \emph{diff}
   enxergar só o último \emph{commit} do PR.\\
-\zebra \emph{Branches} & \textbf{Uma por experiência}, com o nome do slug
-  (\arq{exp-12-fracoes}). Trabalho que não é experiência usa o prefixo do tipo do
+\zebra \emph{Branches} & \textbf{Uma por experiência}, com o código dela
+  (\arq{exp06ef3b} --- \adrr{ADR-110}). Trabalho que não é experiência usa o prefixo do tipo do
   \emph{commit}: \arq{fix/quota-por-perfil}, \arq{chore/deps},
   \arq{ci/deploy}.\\
-\emph{Commits} & \cd{feat(exp-12): ...}, \cd{fix(api): ...},
-  \cd{chore(sdk): ...} --- o escopo é o slug da experiência ou o aplicativo
+\emph{Commits} & \cd{feat(exp06ef3b): ...}, \cd{fix(api): ...},
+  \cd{chore(sdk): ...} --- o escopo é o código da experiência ou o aplicativo
   tocado. Validado pelo \emph{hook} \arq{.githooks/commit-msg}.\\
 \zebra Promoção & O PR de \cd{hml} para \cd{main} leva \textbf{tag semver}
   (\cd{v1.4.0}) e \emph{release}, criadas depois do \emph{merge}. MAJOR só em
