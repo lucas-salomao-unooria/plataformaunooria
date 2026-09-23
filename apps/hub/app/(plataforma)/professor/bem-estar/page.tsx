@@ -4,9 +4,9 @@ import { EXP_BEM_ESTAR } from "@/lib/bem-estar";
 import { montarEmbed } from "@/lib/embed-experiencia";
 
 /**
- * **Como você está?** dentro do hub: a exp-91 (Vite, estática) embedada na
+ * **Como você está?** dentro do hub: a app-91 (Vite, estática) embedada na
  * casca do professor — mesma sessão, mesmo token, mesma api (o desenho da
- * exp-90 em `/professor/plano-de-aula`).
+ * app-90 em `/professor/plano-de-aula`).
  *
  * `ExpFrame` direto (sem `ExpHost`): não há aparelho nem chrome de estudante. O
  * wrapper anula o padding do layout para a experiência usar a altura toda.

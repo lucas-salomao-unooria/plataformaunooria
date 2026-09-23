@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
 /**
- * Erros de JOGO da exp-06 — não de programa. Cada código vira uma frase que o
+ * Erros de JOGO da exp06ef2b — não de programa. Cada código vira uma frase que o
  * estudante lê DENTRO da ficção do mensageiro, nunca um stack trace.
  *
  * Molde: `apps/api/src/o-eco-no-grupo/erros.ts`. Como lá, boa parte dos 409 vem
@@ -69,7 +69,7 @@ export class ErroDeJogo extends HttpException {
 }
 
 /**
- * RETORNA a exceção, não lança — como na exp-07. Use `throw erroDeJogo(...)`.
+ * RETORNA a exceção, não lança — como na exp07ef1b. Use `throw erroDeJogo(...)`.
  * As regras puras devolvem `{ ok: false, codigo }` e quem lança é o service,
  * num único ponto.
  */

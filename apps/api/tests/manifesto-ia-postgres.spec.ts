@@ -8,7 +8,7 @@ import { criarRoleDeRuntime, urlDeRuntime } from "./role-de-runtime";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-08 no Postgres: RLS, a porta da sala, a cota de auditoria,
+ * Integração da exp08ef4b no Postgres: RLS, a porta da sala, a cota de auditoria,
  * o latch da cláusula, o Checkpoint A, o filtro de dado pessoal e a corrida em
  * "Submeter resposta".
  *
@@ -54,11 +54,11 @@ let estudanteSemTurma = "";
 let estudanteOutraEscola = "";
 
 const TABELAS = [
-  "exp_08_conteudo_turma",
-  "exp_08_sessoes",
-  "exp_08_auditorias",
-  "exp_08_respostas_percurso",
-  "exp_08_gates_turma",
+  "exp08ef4b_conteudo_turma",
+  "exp08ef4b_sessoes",
+  "exp08ef4b_auditorias",
+  "exp08ef4b_respostas_percurso",
+  "exp08ef4b_gates_turma",
 ] as const;
 
 /** Os dois questionamentos que abrem o pico, na ordem da hipótese pedagógica. */
@@ -67,9 +67,9 @@ const DOIS_QUESTIONAMENTOS = ["prompt_origem_dados", "prompt_preconceito_histori
 async function limpar() {
   const escolas = [ESCOLA, OUTRA_ESCOLA];
   await prisma.liberacao.deleteMany({ where: { escolaId: { in: escolas } } });
-  await prisma.exp08Sessao.deleteMany({ where: { escolaId: { in: escolas } } });
-  await prisma.exp08GateTurma.deleteMany({ where: { escolaId: { in: escolas } } });
-  await prisma.exp08ConteudoTurma.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.exp08ef4bSessao.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.exp08ef4bGateTurma.deleteMany({ where: { escolaId: { in: escolas } } });
+  await prisma.exp08ef4bConteudoTurma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.user.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.turma.deleteMany({ where: { escolaId: { in: escolas } } });
   await prisma.escola.deleteMany({ where: { id: { in: escolas } } });
@@ -130,12 +130,12 @@ beforeAll(async () => {
 
   /* A PORTA DA SALA (ADR-69): sem esta linha `estudanteDaEscola` — o funil de
      todas as rotas de estudante — recusa com 403 `missao-nao-liberada`. */
-  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-08-manifesto-ia", estudanteA);
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp08ef4b", estudanteA);
   await liberarParaTeste(
     prisma,
     OUTRA_ESCOLA,
     turmaOutraEscola,
-    "exp-08-manifesto-ia",
+    "exp08ef4b",
     estudanteOutraEscola,
   );
 });
@@ -178,14 +178,14 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     await service.abrirConversa(OUTRA_ESCOLA, estudanteOutraEscola, turmaOutraEscola);
 
     const daqui = await runtime.comTenancy(
-      (tx) => tx.exp08Sessao.findMany({ select: { escolaId: true } }),
+      (tx) => tx.exp08ef4bSessao.findMany({ select: { escolaId: true } }),
       ESCOLA,
     );
     expect(daqui.length).toBeGreaterThan(0);
     expect(daqui.every((l) => l.escolaId === ESCOLA)).toBe(true);
 
     const deLa = await runtime.comTenancy(
-      (tx) => tx.exp08Sessao.findMany({ select: { escolaId: true } }),
+      (tx) => tx.exp08ef4bSessao.findMany({ select: { escolaId: true } }),
       OUTRA_ESCOLA,
     );
     expect(deLa.every((l) => l.escolaId === OUTRA_ESCOLA)).toBe(true);
@@ -200,7 +200,7 @@ describe("tenancy no banco (regra inviolável nº 1)", () => {
     // preparo é dela.
     await service.mudarGate(OUTRA_ESCOLA, turmaOutraEscola, undefined, "pausar-para-debate");
     const gates = await runtime.comTenancy(
-      (tx) => tx.exp08GateTurma.findMany({ select: { escolaId: true } }),
+      (tx) => tx.exp08ef4bGateTurma.findMany({ select: { escolaId: true } }),
       ESCOLA,
     );
     expect(gates.every((g) => g.escolaId === ESCOLA)).toBe(true);
@@ -213,7 +213,7 @@ describe("os CHECK são a rede das regras puras", () => {
     // documento seria a Etapa 4 sem o artefato que ela promulga.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_08_sessoes SET clausula_id = 'clausula_veto_humano'
+        `UPDATE exp08ef4b_sessoes SET clausula_id = 'clausula_veto_humano'
          WHERE escola_id = '${ESCOLA}' AND estudante_id = '${estudanteA}'::uuid`,
       ),
     ).rejects.toThrow();
@@ -224,7 +224,7 @@ describe("os CHECK são a rede das regras puras", () => {
     // relatório que mente.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_08_sessoes SET passo = 'fim' WHERE escola_id = '${ESCOLA}'`,
+        `UPDATE exp08ef4b_sessoes SET passo = 'fim' WHERE escola_id = '${ESCOLA}'`,
       ),
     ).rejects.toThrow();
   });
@@ -234,7 +234,7 @@ describe("os CHECK são a rede das regras puras", () => {
     // não reconhece. NÃO é gabarito: as quatro são válidas.
     await expect(
       prisma.$executeRawUnsafe(
-        `UPDATE exp_08_sessoes SET clausula_id = 'clausula_inventada', manifesto_markdown = 'x'
+        `UPDATE exp08ef4b_sessoes SET clausula_id = 'clausula_inventada', manifesto_markdown = 'x'
          WHERE escola_id = '${ESCOLA}' AND estudante_id = '${estudanteA}'::uuid`,
       ),
     ).rejects.toThrow();
@@ -243,7 +243,7 @@ describe("os CHECK são a rede das regras puras", () => {
   test("o percurso exige DUAS palavras-chave distintas do vocabulário", async () => {
     const inserir = (tags: string) =>
       prisma.$executeRawUnsafe(
-        `INSERT INTO exp_08_respostas_percurso
+        `INSERT INTO exp08ef4b_respostas_percurso
            (escola_id, estudante_id, palavras_chave_tags, justificativa_texto, chars_count)
          VALUES ('${ESCOLA}', '${estudanteA}'::uuid, ${tags},
                  'Uma pessoa tem de olhar antes de a maquina decidir.', 50)`,
@@ -260,7 +260,7 @@ describe("os CHECK são a rede das regras puras", () => {
     // Vinte espaços passariam o comprimento e contariam como percurso entregue.
     await expect(
       prisma.$executeRawUnsafe(
-        `INSERT INTO exp_08_respostas_percurso
+        `INSERT INTO exp08ef4b_respostas_percurso
            (escola_id, estudante_id, palavras_chave_tags, justificativa_texto, chars_count)
          VALUES ('${ESCOLA}', '${estudanteA}'::uuid, ARRAY['autonomia','justica'],
                  '                         ', 25)`,
@@ -273,7 +273,7 @@ describe("os CHECK são a rede das regras puras", () => {
     // o sintoma apareceria na aula, não no deploy.
     await expect(
       prisma.$executeRawUnsafe(
-        `INSERT INTO exp_08_conteudo_turma
+        `INSERT INTO exp08ef4b_conteudo_turma
            (escola_id, turma_id, caso_contextual, foco_prioritario,
             contexto, prompts_json, clausulas_json)
          VALUES ('${ESCOLA}', '${turmaId}'::uuid, 'caso', 'foco',
@@ -320,7 +320,7 @@ describe("a cota de auditoria é a porta do pico (PED-02)", () => {
     expect(
       await codigoDe(service.disparar(ESCOLA, estudanteB, turmaId, "prompt_origem_dados", 9)),
     ).toBe("prompt-ja-enviado");
-    const linhas = await prisma.exp08Auditoria.count({
+    const linhas = await prisma.exp08ef4bAuditoria.count({
       where: { escolaId: ESCOLA, estudanteId: estudanteB, promptId: "prompt_origem_dados" },
     });
     expect(linhas).toBe(1);
@@ -403,7 +403,7 @@ describe("o PICO: latch, compilação e a corrida em Submeter", () => {
     const vitoriosos = [a, b].filter((r) => r.status === "fulfilled");
     expect(vitoriosos).toHaveLength(1);
 
-    const linha = await prisma.exp08Sessao.findUniqueOrThrow({
+    const linha = await prisma.exp08ef4bSessao.findUniqueOrThrow({
       where: { escolaId_estudanteId: { escolaId: ESCOLA, estudanteId: estudanteA } },
       select: { clausulaId: true, manifestoMarkdown: true },
     });
@@ -522,7 +522,7 @@ describe("o filtro de dado pessoal: 422, e NADA gravado", () => {
   test("e o texto NÃO chegou ao banco — a recusa é anterior à gravação", async () => {
     // A alternativa descartada era gravar com flag de moderação. O que não foi
     // gravado não vaza em backup, em dump de diagnóstico nem em log.
-    const linhas = await prisma.exp08Percurso.count({
+    const linhas = await prisma.exp08ef4bPercurso.count({
       where: { escolaId: ESCOLA, estudanteId: estudanteB },
     });
     expect(linhas).toBe(0);

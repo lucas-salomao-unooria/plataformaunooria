@@ -48,7 +48,7 @@ import {
 import { CHAVES_REDIGIDAS } from "../src/observabilidade/redaction";
 
 /**
- * Regras puras da exp-05 — sem Prisma, sem HTTP.
+ * Regras puras da exp05ef1b — sem Prisma, sem HTTP.
  *
  * O que estes testes protegem não é "a função devolve X": é a mecânica
  * pedagógica da missão. A falha de qualquer um deles significa que a aula
@@ -109,7 +109,7 @@ describe("catálogo — o lote curado e o gabarito", () => {
   test("o banco curado passa pela régua do preparo — a sua própria", () => {
     // `validarLote` é o que rejeita a saída da IA. Aplicá-lo ao lote autoral é o
     // teste que descobre o dia em que a régua reprovaria a copy homologada —
-    // exatamente o que a exp-06 registrou ao proibir a palavra "nota".
+    // exatamente o que a exp06ef2b registrou ao proibir a palavra "nota".
     expect(() => validarLote({ mensagens: loteBruto() })).not.toThrow();
   });
 
@@ -580,7 +580,7 @@ describe("invariantes de produto", () => {
   });
 
   test('"professor" NÃO é termo proibido nesta missão, e a ausência é deliberada', () => {
-    // Diferente da exp-06: aqui o grupo é o da TURMA, e um "Prof. Marcelo"
+    // Diferente da exp06ef2b: aqui o grupo é o da TURMA, e um "Prof. Marcelo"
     // escrevendo nele é o WhatsApp real. Proibir a palavra reprovaria a própria
     // copy homologada — a `msg-3` e a `msg-7` do banco curado.
     expect(TERMOS_PROIBIDOS_NA_TELA as readonly string[]).not.toContain("professor");

@@ -6,14 +6,14 @@ import { Button, Card, FeedbackAlert } from "@edu/ui/ds";
 import { ROTULO_DA_ETAPA, type EtapaDaAula } from "@/lib/rastro-tipos";
 
 /**
- * O PAINEL DA AULA da exp-06 — onde a professora muda o que 30 estudantes veem.
+ * O PAINEL DA AULA da exp06ef2b — onde a professora muda o que 30 estudantes veem.
  *
  * Client component de propósito: ela aperta no meio da aula e precisa de
  * resposta na hora, sem recarregar. A mutação vai pelo BFF
  * (`/api/plataforma/rastro-boato/...`), que assina o token — o client do hub
  * nunca segura bearer.
  *
- * **Dois botões, não três.** A exp-07 tem um gate por momento do roteiro dela;
+ * **Dois botões, não três.** A exp07ef1b tem um gate por momento do roteiro dela;
  * aqui o debate acontece DEPOIS do mapa, com a turma toda já na Aula 2, e não
  * há o que congelar no meio. Um terceiro botão seria um controle morto no
  * painel — e controle morto no meio de uma aula é pior que controle nenhum.

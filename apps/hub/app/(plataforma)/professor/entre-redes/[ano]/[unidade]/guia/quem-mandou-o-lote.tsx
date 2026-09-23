@@ -2,7 +2,7 @@ import { Card, Tag } from "@edu/ui/ds";
 import { ROTULO_DA_VERACIDADE, type MaterialDoProfessor } from "@/lib/quem-mandou-tipos";
 
 /**
- * As 8 mensagens do grupo COM o gabarito — BLOCO VIVO do guia da exp-05.
+ * As 8 mensagens do grupo COM o gabarito — BLOCO VIVO do guia da exp05ef1b.
  *
  * Vem de `GET /quem-mandou-isso/professor/material` (professor only). Descrever
  * as mensagens em vez de mostrá-las destruiria justamente o que sustenta a

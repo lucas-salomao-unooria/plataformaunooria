@@ -211,7 +211,7 @@ export class SalasService {
   /**
    * LIBERAR ou ENCERRAR uma missão nesta turma. Idempotente: apertar duas vezes
    * não muda nada além do carimbo, e é exatamente o clique que um professor
-   * nervoso dá duas vezes (a mesma razão da largada da exp-03).
+   * nervoso dá duas vezes (a mesma razão da largada da exp02em1b).
    *
    * Só QUEM LECIONA libera. Gestor não: ele vê a sala e não decide a aula — a
    * opção nem aparece na tela dele, e aqui a rota recusa. Se uma rede pedir
@@ -237,7 +237,7 @@ export class SalasService {
       }
 
       /* A experiência precisa existir no catálogo E ser de estudante. Sem esta
-         checagem dava para liberar `exp-90-plano-de-aula` numa turma: um botão
+         checagem dava para liberar `app-90-plano-de-aula` numa turma: um botão
          que não abre nada, porque `/exp/*` responde 404 para ferramenta de
          professor. Catálogo vazio (dev sem seed) cai aqui com a causa dita. */
       const experiencia = await tx.experiencia.findUnique({

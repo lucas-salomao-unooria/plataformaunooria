@@ -7,7 +7,7 @@ import { SERIES } from "../comum/series";
  * da rota.
  *
  * Tudo que entra é validado aqui — inclusive o que "vem da nossa própria tela".
- * A exp-92 é um bundle estático e público: `POST /planejamento/configuracoes`
+ * A app-92 é um bundle estático e público: `POST /planejamento/configuracoes`
  * é endereço adivinhável, e um `aulasSemanais: 999` que passasse contaminaria a
  * conversão de carga horária do plano inteiro.
  */

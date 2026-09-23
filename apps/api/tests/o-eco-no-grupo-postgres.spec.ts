@@ -4,15 +4,15 @@ import { PrismaClient } from "@prisma/client";
 import { MockProvider } from "../src/ai/mock.provider";
 import { QuotaService } from "../src/ai/quota.service";
 import { AssetsService } from "../src/assets/assets.service";
-import { IaDaExp07Service } from "../src/o-eco-no-grupo/ia.service";
-import { MidiaDaExp07Service } from "../src/o-eco-no-grupo/midia.service";
+import { IaDaExp07ef1bService } from "../src/o-eco-no-grupo/ia.service";
+import { MidiaDaExp07ef1bService } from "../src/o-eco-no-grupo/midia.service";
 import { OEcoNoGrupoService } from "../src/o-eco-no-grupo/o-eco-no-grupo.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-07 no Postgres: o gate da aula, o fluxo completo, a corrida
+ * Integração da exp07ef1b no Postgres: o gate da aula, o fluxo completo, a corrida
  * em "enviar", o latch e a tenancy. UMA ESCOLA POR SUÍTE (o Jest paraleliza
  * suítes; limpeza compartilhada corromperia a outra).
  */
@@ -39,8 +39,8 @@ const quota = new QuotaService(prisma);
 const assets = new AssetsService(config);
 const service = new OEcoNoGrupoService(
   prisma,
-  new IaDaExp07Service(provider, quota),
-  new MidiaDaExp07Service(provider, assets, quota),
+  new IaDaExp07ef1bService(provider, quota),
+  new MidiaDaExp07ef1bService(provider, assets, quota),
 );
 
 let turmaId = "";
@@ -105,7 +105,7 @@ beforeAll(async () => {
 
   /* A PORTA DA SALA (ADR-69): sem esta linha `estudanteDaEscola` — o funil de
      todas as rotas de estudante — recusa com 403 `missao-nao-liberada`. */
-  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-07-o-eco-no-grupo", estudanteA);
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp07ef1b", estudanteA);
 });
 
 afterAll(async () => {
@@ -116,10 +116,10 @@ afterAll(async () => {
 describe("tenancy no banco", () => {
   test("as quatro tabelas têm RLS habilitada E forçada, com uma política por escola", async () => {
     const tabelas = [
-      "exp_07_sessoes",
-      "exp_07_mensagens",
-      "exp_07_reflexoes",
-      "exp_07_gates_turma",
+      "exp07ef1b_sessoes",
+      "exp07ef1b_mensagens",
+      "exp07ef1b_reflexoes",
+      "exp07ef1b_gates_turma",
     ];
     for (const tabela of tabelas) {
       const [linha] = await prisma.$queryRawUnsafe<
@@ -138,7 +138,7 @@ describe("tenancy no banco", () => {
     // Se um caminho novo tentar gravar pontuação vinda do cliente, o banco recusa.
     await expect(
       prisma.$executeRaw`
-        INSERT INTO exp_07_sessoes (escola_id, estudante_id, passo, score)
+        INSERT INTO exp07ef1b_sessoes (escola_id, estudante_id, passo, score)
         VALUES (${ESCOLA}, ${estudanteA}::uuid, 'desfecho', 55)`,
     ).rejects.toThrow(/score_check/);
   });
@@ -148,7 +148,7 @@ describe("tenancy no banco", () => {
     // um relatório que mente para o professor.
     await expect(
       prisma.$executeRaw`
-        INSERT INTO exp_07_sessoes (escola_id, estudante_id, passo, score)
+        INSERT INTO exp07ef1b_sessoes (escola_id, estudante_id, passo, score)
         VALUES (${ESCOLA}, ${estudanteA}::uuid, 'fim', 100)`,
     ).rejects.toThrow(/fim_check/);
   });
@@ -156,7 +156,7 @@ describe("tenancy no banco", () => {
   test("o percurso exige exatamente 2 estratégias", async () => {
     await expect(
       prisma.$executeRaw`
-        INSERT INTO exp_07_reflexoes (escola_id, estudante_id, estrategias, justificativa)
+        INSERT INTO exp07ef1b_reflexoes (escola_id, estudante_id, estrategias, justificativa)
         VALUES (${ESCOLA}, ${estudanteA}::uuid, ARRAY['buscar_fonte'], 'evidencia_desarma')`,
     ).rejects.toThrow(/estrategias_check/);
   });

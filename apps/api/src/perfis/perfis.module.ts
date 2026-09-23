@@ -9,8 +9,8 @@ import { PerfisController, PerfisImportacaoController } from "./perfis.controlle
  * fica FORA de guards (ver `perfis.controller.ts`).
  */
 /* `VilaModule` entra porque o Ato 1 deixou de ser externo: `POST
-   :id/perfis/da-vila` lê o perfil da exp-70 pelo `VilaService`. A dependência é
-   nesta direção e não na contrária — `perfis` é dono de `exp_01_exp_70_perfis_importados`, e
+   :id/perfis/da-vila` lê o perfil da app-70 pelo `VilaService`. A dependência é
+   nesta direção e não na contrária — `perfis` é dono de `exp08ef1b_app_70_perfis_importados`, e
    `vila` não sabe que o Instanooria existe. */
 @Module({
   imports: [VilaModule],

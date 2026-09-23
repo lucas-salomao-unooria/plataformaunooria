@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * ZERO HEXADECIMAL neste arquivo. Cor vem de token do design system, sempre —
+ * e classe de cor que não existe no `tailwind.config.ts` não é erro em lugar
+ * nenhum: em texto ela herda a cor e passa desapercebida, em FUNDO o elemento
+ * fica branco no branco. Foi o que aconteceu com `bg-unooria-neutral-900` na
+ * app-70 (letra da bolha invisível), e é por isso que o smoke visual checa cor
+ * COMPUTADA em vez de `toBeVisible()`.
+ *
+ * Três blocos, como na exp04ef1b:
+ *   (a) ESQUELETO    — o que é do documento, não da marca
+ *   (b) COMPENSAÇÃO  — o que falta no pacote e vira pedido ao storybook-unooria
+ *   (c) LIGAÇÃO      — o que costura o clone à moldura do iframe
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   (a) ESQUELETO
+   ───────────────────────────────────────────────────────────────────────── */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  /* A família vem do token do pacote — `fonts/chatgpt.css` declara o
+     @font-face da Inter com os .woff2 do próprio pacote (0.1.17). A pilha do
+     sistema é fallback para o primeiro quadro. */
+  font-family: var(--gpt-font-sans), Inter, system-ui, sans-serif;
+  background: var(--gpt-web-canvas);
+  color: var(--gpt-text-primary);
+  /* O iframe tem o tamanho que o hub der: nada de rolagem horizontal por
+     conta de uma tela que assume largura de desktop. */
+  overflow-x: hidden;
+}
+
+/* O estudante pode estar num laboratório com o sistema em "reduzir movimento". A
+   chuva do briefing é cenário, e cenário não é informação: ela some inteira. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   (b) COMPENSAÇÃO — falta no pacote; cada uma é um pedido ao storybook-unooria
+   ───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * (b1) A seção `chatgpt` não publica INDICADOR DE CARREGAMENTO, e um turno do
+ * Cientista leva de 10 a 30 segundos. Sem sinal de vida o estudante reenvia a
+ * pergunta — que é justamente o que o orçamento de 3 perguntas não perdoa.
+ * Três pontos que pulsam, com o token de texto secundário.
+ */
+.gpt-pensando {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.gpt-pensando span {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--gpt-radius-full);
+  background: var(--gpt-text-tertiary);
+  animation: gpt-pulso 1.2s ease-in-out infinite;
+}
+
+.gpt-pensando span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.gpt-pensando span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes gpt-pulso {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+/**
+ * (b2) `ChatBubble` não aceita conteúdo em BLOCO abaixo da fala — e é embaixo
+ * dela que o cartão de leitura precisa aparecer (o cartão pertence à fala; solto
+ * na coluna ele perde o dono). A regra usa DOIS seletores porque o CSS do
+ * pacote é injetado pelo módulo do componente, ou seja DEPOIS do CSS da
+ * experiência no grafo de importação: com peso igual, quem ganha é sempre o DS.
+ */
+.gpt-fala > .gpt-anexo {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   (c) LIGAÇÃO — o clone dentro do iframe
+   ───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * A experiência preenche o iframe: não há casca de aparelho aqui (o manifesto
+ * não declara `viewport`, porque a missão é de laboratório, desktop, com a
+ * conversa em 2/3 e o mapa em 1/3). Quem desenha aparelho, quando é o caso, é o
+ * hub em `components/DispositivoFrame.tsx`.
+ */
+.tela-da-missao {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* O `Composer.Dock` é fixo no rodapé da COLUNA da conversa, não da janela: com
+   o mapa ao lado, ancorar na janela punha o campo por cima do mapa. */
+.coluna-da-conversa {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.rolagem-da-conversa {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}

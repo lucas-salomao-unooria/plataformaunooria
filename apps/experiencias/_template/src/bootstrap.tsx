@@ -17,7 +17,7 @@ import { EXP_ID, EXP_VERSION, type Progresso } from "./lib/tipos";
  * 2. O handle vai para o singleton de `lib/api.ts` e liga a telemetria.
  * 3. A primeira leitura de estado. Aqui é o `progresso` genérico da plataforma;
  *    uma missão com módulo próprio na api troca esta linha por
- *    `api.get("/<slug>/sessao")` (molde: exp-08).
+ *    `api.get("/<slug>/sessao")` (molde: exp08ef4b).
  *
  * O `catch` reporta pelo SDK: o boot que falha DEPOIS do handshake tem token e
  * deixa rastro no servidor (ADR-84). Antes do handshake não há token, e o sinal

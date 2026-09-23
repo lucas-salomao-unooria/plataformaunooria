@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp-07 — espelho de `apps/api/src/o-eco-no-grupo`.
+ * O que o hub lê da exp07ef1b — espelho de `apps/api/src/o-eco-no-grupo`.
  *
  * Note o que NÃO existe aqui: coluna de pontos. A leitura do professor é de
  * progresso e de estratégia, nunca uma ordenação de crianças por acerto
@@ -20,7 +20,7 @@ export type PassoDoEstudante =
   | "reflexao"
   | "fim";
 
-/** O `SeletorDeTurma` é compartilhado com a exp-03 e exige `estudantes`; a api
+/** O `SeletorDeTurma` é compartilhado com a exp02em1b e exige `estudantes`; a api
  *  o devolve sempre, e marcá-lo opcional aqui só criaria uma divergência de
  *  tipo entre duas telas que leem a mesma lista. */
 export interface TurmaDoEco {

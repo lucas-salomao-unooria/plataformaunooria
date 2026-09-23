@@ -3,13 +3,13 @@ import { AiModule } from "../ai/ai.module";
 import { ManifestoIaTurmasController } from "./manifesto-ia-turmas.controller";
 import { ManifestoIaController } from "./manifesto-ia.controller";
 import { ManifestoIaService } from "./manifesto-ia.service";
-import { PreparoDaExp08Service } from "./preparo.service";
+import { PreparoDaExp08ef4bService } from "./preparo.service";
 
 /**
- * Lado server da exp-08-manifesto-ia. Prisma e Auth são globais.
+ * Lado server da exp08ef4b. Prisma e Auth são globais.
  *
  * **`AiModule` entra, e a fronteira dele é estreita de propósito.** A IA existe
- * numa superfície só — a preparação docente pré-aula, em `PreparoDaExp08Service`
+ * numa superfície só — a preparação docente pré-aula, em `PreparoDaExp08ef4bService`
  * — e o motor de sala é 100% determinístico: réplicas da máquina, cláusulas e o
  * manifesto compilado saem do pacote da turma ou do catálogo curado.
  *
@@ -25,7 +25,7 @@ import { PreparoDaExp08Service } from "./preparo.service";
 @Module({
   imports: [AiModule],
   controllers: [ManifestoIaController, ManifestoIaTurmasController],
-  providers: [ManifestoIaService, PreparoDaExp08Service],
+  providers: [ManifestoIaService, PreparoDaExp08ef4bService],
   exports: [ManifestoIaService],
 })
 export class ManifestoIaModule {}

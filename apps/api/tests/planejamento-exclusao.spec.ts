@@ -27,7 +27,7 @@ import type { ObjectStorageService } from "../src/object-storage/object-storage.
 
 const ADMIN_URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
 
-const ESCOLA = "teste-exp92-exclusao";
+const ESCOLA = "teste-app92-exclusao";
 const admin = new PrismaClient({ datasources: { db: { url: ADMIN_URL } } });
 
 /**
@@ -67,7 +67,7 @@ const provider = {
 /** A quota não é exercitada aqui (nada gera), mas o service a exige. */
 
 async function limpar() {
-  // A cascata de `escolas` não cobre `exp_92_*` (o `escola_id` é texto, sem FK
+  // A cascata de `escolas` não cobre `app_92_*` (o `escola_id` é texto, sem FK
   // para a escola), então a limpeza é explícita e de dentro para fora.
   await admin.planoDeEnsinoPeriodo.deleteMany({ where: { escolaId: ESCOLA } });
   await admin.planoDeEnsinoAnual.deleteMany({ where: { escolaId: ESCOLA } });

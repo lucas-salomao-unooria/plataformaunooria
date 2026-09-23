@@ -16,7 +16,7 @@ import {
 } from "../src/o-eco-no-grupo/regras/sanitizador";
 
 /**
- * A camada de IA da exp-07 — sem rede, sem credencial.
+ * A camada de IA da exp07ef1b — sem rede, sem credencial.
  *
  * O que estes testes protegem: que o modelo escreva a fala e NUNCA decida o
  * resultado, que nada do prompt chegue à tela, e que o roteiro do podcast caiba

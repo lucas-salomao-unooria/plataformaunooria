@@ -37,7 +37,7 @@ export type ResultadoDoDisparo =
  * Registra um disparo de prompt.
  *
  * Reenviar o MESMO prompt é recusado — e aqui, diferente da auditoria da
- * exp-06, com erro e não com `novo: false`. A diferença é o que a tela faz:
+ * exp06ef2b, com erro e não com `novo: false`. A diferença é o que a tela faz:
  * lá reabrir um balão é releitura legítima, e um 409 transformaria leitura em
  * erro; aqui o card já disparado fica DESABILITADO no seletor (critério de
  * aceite de `E2-ALU-02`), então um segundo disparo do mesmo id só chega por

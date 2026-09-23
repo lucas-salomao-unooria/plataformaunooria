@@ -13,7 +13,7 @@ import {
 import { MaterialDoProfessorSchema } from "./contrato-de-rotas";
 
 /**
- * O material do GUIA DA AULA da exp-05 — o banco curado COM gabarito, para quem
+ * O material do GUIA DA AULA da exp05ef1b — o banco curado COM gabarito, para quem
  * conduz.
  *
  * Classe separada de `QuemMandouIssoTurmasController` porque não é dado de

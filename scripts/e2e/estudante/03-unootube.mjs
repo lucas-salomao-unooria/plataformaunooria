@@ -9,11 +9,11 @@ import { conta } from "../lib/credenciais.mjs";
  * CREDIBILIDADE e reordena tudo na frente dela. Nenhuma frase explica; a
  * posição dela é que muda.
  *
- * O estado inteiro é server-side (`exp_02_sessoes`): salvar, curtir, concluir e
+ * O estado inteiro é server-side (`exp04ef1b_sessoes`): salvar, curtir, concluir e
  * o critério do ranking. Por isso o roteiro termina com um F5 — o que sobrevive
  * à recarga é o que existe de verdade.
  *
- * Os seletores aqui são CONTRATO com a experiência (README da exp-02).
+ * Os seletores aqui são CONTRATO com a experiência (README da exp04ef1b).
  */
 const SERIE = "4EF";
 
@@ -46,7 +46,7 @@ await suite(
     const cartao = p.locator("a", { hasText: "UnooTube" }).first();
     await cartao.waitFor({ timeout: 15_000 });
     await cartao.click();
-    await p.waitForURL("**/exp/exp-02-unootube**", { timeout: 30_000 });
+    await p.waitForURL("**/exp/exp04ef1b**", { timeout: 30_000 });
 
     const tela = p.frameLocator('iframe[title="experiencia"]');
     await tela.locator(".uni-topbar .uni-logo").first().waitFor({ timeout: 30_000 });

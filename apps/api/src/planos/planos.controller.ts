@@ -37,7 +37,7 @@ import {
 import { PlanosService } from "./planos.service";
 
 /**
- * Rotas do PROFESSOR da exp-90-plano-de-aula. Identidade (professor, escola)
+ * Rotas do PROFESSOR da app-90-plano-de-aula. Identidade (professor, escola)
  * sempre do token — nunca do body. Posse checada em toda rota com id.
  */
 
@@ -49,7 +49,7 @@ type Autenticado = { auth: AuthClaims };
 /* O interruptor da rede (ADR-87), por CLASSE: rota nova desta ferramenta nasce
    coberta. A exceção é declarada com `@SemDisponibilidade()`, e só vale para
    apagar os próprios dados. */
-@Recurso("exp-90-plano-de-aula")
+@Recurso("app-90-plano-de-aula")
 export class PlanosController {
   constructor(private readonly planos: PlanosService) {}
 
@@ -58,7 +58,7 @@ export class PlanosController {
   @Contrato({
     resumo: "Disciplinas e séries que têm material curricular importado.",
     descricao:
-      "Alimenta os seletores da exp-90. Vem com os rótulos prontos: a tela imprime o que o servidor mandou, em vez de manter um segundo dicionário que divergiria na primeira disciplina nova.",
+      "Alimenta os seletores da app-90. Vem com os rótulos prontos: a tela imprime o que o servidor mandou, em vez de manter um segundo dicionário que divergiria na primeira disciplina nova.",
     resposta: DisponiveisSchema,
   })
   disponiveis() {

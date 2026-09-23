@@ -10,9 +10,9 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
  * **Existe porque a ausência dele é MUDA.** Sem entrada no despachante de
  * `page.tsx`, uma missão publicada cai no corpo do INSTANOORIA — que tem "Nova
  * atividade" e não tem "Abrir a aula e os resultados". A professora criaria uma
- * configuração em `exp_01_activities` que esta missão nunca lê, e não acharia o
+ * configuração em `exp08ef1b_activities` que esta missão nunca lê, e não acharia o
  * painel em que se prepara o lote e se acende o telão. Aconteceu duas vezes
- * (exp-06 e exp-08), e o `despachante-da-ficha.test.ts` é a rede.
+ * (exp06ef2b e exp08ef4b), e o `despachante-da-ficha.test.ts` é a rede.
  *
  * A ficha abre com o fato que muda a condução, e ele não pode estar no fim de
  * uma lista de preparo: **sem o lote aprovado a missão não abre para ninguém**.

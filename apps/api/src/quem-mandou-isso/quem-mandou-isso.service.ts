@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma, type Exp05Sessao } from "@prisma/client";
+import { Prisma, type Exp05ef1bSessao } from "@prisma/client";
 import { exigirMissaoLiberada } from "../comum/liberacao";
 import { ondeAsTurmasSaoVisiveis, professorLeciona } from "../comum/turmas-do-professor";
 import { logger } from "../observabilidade/logger";
@@ -46,7 +46,7 @@ import {
 } from "./regras/passos";
 
 /**
- * Persistência e regras aplicadas da exp-05-quem-mandou-isso.
+ * Persistência e regras aplicadas da exp05ef1b.
  *
  * Molde: `rastro-boato.service.ts` (o funil, o lock, o gate da turma) e
  * `manifesto-ia.service.ts` (o conteúdo homologado por turma). Assinaturas
@@ -67,7 +67,7 @@ import {
  */
 
 /** O id que a guarda de liberação (ADR-69) e o manifesto compartilham. */
-export const EXP_ID = "exp-05-quem-mandou-isso";
+export const EXP_ID = "exp05ef1b";
 
 /**
  * Minutos sem ação para o painel marcar ociosidade. O alerta é para a docente
@@ -110,7 +110,7 @@ const ESTADO_INICIAL: EstadoSessao = {
 };
 
 type LinhaDaSessao = Pick<
-  Exp05Sessao,
+  Exp05ef1bSessao,
   | "passo"
   | "entrouEm"
   | "primeiroEncaminhamentoEm"
@@ -203,7 +203,7 @@ function ehDaLista(valor: unknown, lista: readonly string[]): boolean {
  * O `Json` do Prisma é `unknown` na prática: o Zod validou na ESCRITA, mas uma
  * linha gravada por uma versão anterior do schema — ou por um `psql` de
  * migração — chegaria aqui com a forma velha. A lição é a do `conteudoDaLinha`
- * da exp-08, com uma diferença que muda o desfecho: lá o pacote torto cai no
+ * da exp08ef4b, com uma diferença que muda o desfecho: lá o pacote torto cai no
  * banco curado e a aula corre; **aqui não há queda**, porque o lote é do TEMA
  * que a professora escolheu e mostrar outro faria a criança ler mensagens sobre
  * um acontecimento que não existiu na escola dela. Linha torta = turma não
@@ -285,10 +285,10 @@ export class QuemMandouIssoService {
     return this.prisma.comTenancy(async (tx) => {
       const estudante = await this.estudanteDaEscola(tx, escolaId, estudanteId);
       const [linha, etapa, encaminhadas, reflexao, conteudo] = await Promise.all([
-        tx.exp05Sessao.findUnique({ where: { escolaId_estudanteId: { escolaId, estudanteId } } }),
+        tx.exp05ef1bSessao.findUnique({ where: { escolaId_estudanteId: { escolaId, estudanteId } } }),
         this.etapaDaTurma(tx, escolaId, turmaId),
         this.idsEncaminhados(tx, escolaId, estudanteId),
-        tx.exp05Reflexao.findUnique({
+        tx.exp05ef1bReflexao.findUnique({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
         }),
         this.loteDaTurma(tx, escolaId, turmaId),
@@ -333,8 +333,8 @@ export class QuemMandouIssoService {
    * por sua vez chama `exigirRecursoDisponivel` — as regras invioláveis 7
    * (ADR-69) e 8 (ADR-87). Sem ela, um estudante de turma sem liberação
    * descobria a etapa e o `preparada` da turma dele, e o `@Contrato` publicado
-   * no OpenAPI afirmava uma guarda que a api não executava. A exp-06, a exp-07
-   * e a exp-08 deixam o `gate` fora do funil; aqui ele entra, e o preço é uma
+   * no OpenAPI afirmava uma guarda que a api não executava. A exp06ef2b, a exp07ef1b
+   * e a exp08ef4b deixam o `gate` fora do funil; aqui ele entra, e o preço é uma
    * leitura por chave primária em `users` mais a de `liberacoes`, dentro do
    * mesmo `comTenancy` que já lia a etapa.
    *
@@ -354,7 +354,7 @@ export class QuemMandouIssoService {
       const [etapa, preparada, sessao] = await Promise.all([
         this.etapaDaTurma(tx, escolaId, turmaId),
         this.turmaPreparada(tx, escolaId, turmaId),
-        tx.exp05Sessao.findUnique({
+        tx.exp05ef1bSessao.findUnique({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
           select: { passo: true },
         }),
@@ -392,7 +392,7 @@ export class QuemMandouIssoService {
       const entrouEm = estado.entrouEm ?? new Date();
       const novo: EstadoSessao = { ...estado, passo, entrouEm };
       if (passo !== estado.passo || entrouEm !== estado.entrouEm) {
-        await tx.exp05Sessao.update({
+        await tx.exp05ef1bSessao.update({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
           data: { passo, entrouEm },
         });
@@ -424,7 +424,7 @@ export class QuemMandouIssoService {
         throw erroDeJogo("mensagem-desconhecida");
       }
 
-      const { count } = await tx.exp05Encaminhamento.createMany({
+      const { count } = await tx.exp05ef1bEncaminhamento.createMany({
         data: [{ escolaId, estudanteId, mensagemId }],
         skipDuplicates: true,
       });
@@ -436,7 +436,7 @@ export class QuemMandouIssoService {
       let primeiro = estado.primeiroEncaminhamentoEm;
       if (novoRegistro && primeiro === null) {
         primeiro = new Date();
-        await tx.exp05Sessao.update({
+        await tx.exp05ef1bSessao.update({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
           data: { primeiroEncaminhamentoEm: primeiro },
         });
@@ -472,7 +472,7 @@ export class QuemMandouIssoService {
         throw erroDeJogo("mensagem-desconhecida");
       }
 
-      const { count } = await tx.exp05Encaminhamento.deleteMany({
+      const { count } = await tx.exp05ef1bEncaminhamento.deleteMany({
         where: { escolaId, estudanteId, mensagemId },
       });
       const estadoAtual = await this.montarEstado(tx, escolaId, estudanteId, estado, contexto);
@@ -494,7 +494,7 @@ export class QuemMandouIssoService {
     return this.comSessao(escolaId, estudanteId, turmaId, async (tx, estado, contexto) => {
       if (estado.concluidoEm) throw erroDeJogo("missao-concluida");
       if (!estado.leuTudo) {
-        await tx.exp05Sessao.update({
+        await tx.exp05ef1bSessao.update({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
           data: { leuTudo: true },
         });
@@ -524,7 +524,7 @@ export class QuemMandouIssoService {
         return this.montarEstado(tx, escolaId, estudanteId, estado, contexto);
       }
       const midiasAbertas = [...estado.midiasAbertas, mensagemId];
-      await tx.exp05Sessao.update({
+      await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: { midiasAbertas },
       });
@@ -561,7 +561,7 @@ export class QuemMandouIssoService {
       /* Carimbo e passo no MESMO statement: o CHECK do latch
          (`confirmado_em IS NULL OR passo <> 'contexto'`) vale por statement, e
          dois UPDATEs deixariam o intermediário reprovar no meio da aula. */
-      await tx.exp05Sessao.update({
+      await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: { confirmadoEm, passo },
       });
@@ -590,7 +590,7 @@ export class QuemMandouIssoService {
 
       const passo = avancarAte(estado.passo, "reflexao");
       if (passo !== estado.passo) {
-        await tx.exp05Sessao.update({
+        await tx.exp05ef1bSessao.update({
           where: { escolaId_estudanteId: { escolaId, estudanteId } },
           data: { passo },
         });
@@ -624,13 +624,13 @@ export class QuemMandouIssoService {
       if (!estado.confirmadoEm) throw erroDeJogo("curadoria-nao-confirmada");
 
       const concluidoEm = new Date();
-      await tx.exp05Reflexao.create({
+      await tx.exp05ef1bReflexao.create({
         data: { escolaId, estudanteId, texto, charsCount: texto.length },
       });
       /* Passo e conclusão juntos: o CHECK da migration cobra a equivalência
          (`passo = 'fim'`) = (`concluido_em IS NOT NULL`), e ela vale por
          statement. */
-      await tx.exp05Sessao.update({
+      await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: { passo: "fim", concluidoEm },
       });
@@ -668,7 +668,7 @@ export class QuemMandouIssoService {
   /**
    * O painel da turma — a barra de prontidão e o telão.
    *
-   * Parte de `users`, e NÃO de `matriculas`, pela razão que a exp-08 registrou
+   * Parte de `users`, e NÃO de `matriculas`, pela razão que a exp08ef4b registrou
    * e a suíte de Postgres reprovou: a verdade do enturmamento é `matriculas`,
    * mas `users.turma_id` é o que o resto do runtime lê, e uma criança cuja
    * matrícula ainda não existe **tem sala na prática e entra na missão**. Se a
@@ -724,13 +724,13 @@ export class QuemMandouIssoService {
          tela, e um N+1 aqui seria trinta round-trips a cada 5 s. */
       const [porEstudante, reflexoes] = await Promise.all([
         ids.length
-          ? tx.exp05Encaminhamento.findMany({
+          ? tx.exp05ef1bEncaminhamento.findMany({
               where: { escolaId, estudanteId: { in: ids } },
               select: { estudanteId: true, mensagemId: true },
             })
           : Promise.resolve([]),
         ids.length
-          ? tx.exp05Reflexao.findMany({
+          ? tx.exp05ef1bReflexao.findMany({
               where: { escolaId, estudanteId: { in: ids } },
               select: { estudanteId: true, texto: true },
             })
@@ -806,7 +806,7 @@ export class QuemMandouIssoService {
            * inteira de progresso — inclusive `entregouReflexao` —, e só o texto
            * some. Acompanhar a turma não exige ler o que cada criança escreveu.
            *
-           * **A exp-06 e a exp-08 fazem o contrário** (`rastro-boato.service.ts`
+           * **A exp06ef2b e a exp08ef4b fazem o contrário** (`rastro-boato.service.ts`
            * e `manifesto-ia.service.ts` devolvem o texto a qualquer gestor, com
            * a mesma afirmação no comentário). A divergência é deliberada e está
            * registrada no `AGENTS.md` deste módulo — apertar as duas é frente
@@ -866,7 +866,7 @@ export class QuemMandouIssoService {
   async conteudoParaOProfessor(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const linha = await tx.exp05ConteudoTurma.findUnique({
+      const linha = await tx.exp05ef1bConteudoTurma.findUnique({
         where: { escolaId_turmaId: { escolaId, turmaId } },
       });
       const mensagens = mensagensValidas(linha?.mensagensJson);
@@ -905,7 +905,7 @@ export class QuemMandouIssoService {
         mensagensJson: lote.mensagens as unknown as Prisma.InputJsonValue,
         aprovadoPorProfessor: true,
       };
-      const linha = await tx.exp05ConteudoTurma.upsert({
+      const linha = await tx.exp05ef1bConteudoTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         update: dados,
         create: { escolaId, turmaId, ...dados },
@@ -942,7 +942,7 @@ export class QuemMandouIssoService {
       /* Lock por TURMA: dois docentes na mesma sala (ou dois cliques) não podem
          intercalar escrita no mesmo gate. */
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quem-mandou:${escolaId}:${turmaId}`}, 0))`;
-      const linha = await tx.exp05GateTurma.upsert({
+      const linha = await tx.exp05ef1bGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         create: { escolaId, turmaId, etapa },
         update: { etapa },
@@ -960,7 +960,7 @@ export class QuemMandouIssoService {
    *
    * Apaga as sessões (encaminhamentos e reflexões caem por CASCADE da FK) e
    * devolve o gate a `exploracao`, senão a turma nova nasceria com o telão já
-   * aceso. **PRESERVA `exp_05_conteudo_turma`**: o preparo custou tempo da
+   * aceso. **PRESERVA `exp05ef1b_conteudo_turma`**: o preparo custou tempo da
    * professora, e apagá-lo obrigaria a refazer a curadoria para reaplicar a
    * missão na turma seguinte no mesmo dia. **Preserva `telemetria_eventos`**,
    * que é a trilha analítica imutável.
@@ -971,8 +971,8 @@ export class QuemMandouIssoService {
   async zerarTurma(escolaId: string, turmaId: string, professorId?: string) {
     return this.prisma.comTenancy(async (tx) => {
       await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      const { count } = await tx.exp05Sessao.deleteMany({ where: { escolaId, turmaId } });
-      await tx.exp05GateTurma.upsert({
+      const { count } = await tx.exp05ef1bSessao.deleteMany({ where: { escolaId, turmaId } });
+      await tx.exp05ef1bGateTurma.upsert({
         where: { escolaId_turmaId: { escolaId, turmaId } },
         create: { escolaId, turmaId, etapa: ETAPA_INICIAL },
         update: { etapa: ETAPA_INICIAL },
@@ -1057,7 +1057,7 @@ export class QuemMandouIssoService {
       contexto.conteudo,
     );
     /* A entrega é DERIVADA de `concluido_em`, não recebida: os dois nascem no
-       mesmo latch (a linha de `exp_05_reflexoes` e o carimbo), e o CHECK da
+       mesmo latch (a linha de `exp05ef1b_reflexoes` e o carimbo), e o CHECK da
        migration cobra a equivalência com `passo = 'fim'`. Um parâmetro com
        default `false` só abriria a chance de uma rota esquecer de passá-lo — e
        dizer a quem já respondeu que não respondeu. */
@@ -1093,7 +1093,7 @@ export class QuemMandouIssoService {
     escolaId: string,
     estudanteId: string,
   ): Promise<string[]> {
-    const linhas = await tx.exp05Encaminhamento.findMany({
+    const linhas = await tx.exp05ef1bEncaminhamento.findMany({
       where: { escolaId, estudanteId },
       orderBy: { id: "asc" },
       select: { mensagemId: true },
@@ -1128,7 +1128,7 @@ export class QuemMandouIssoService {
     conteudo: ConteudoDaTurma | null,
   ): Promise<string[][]> {
     if (!turmaId || conteudo === null || !this.turmaJaRevelou(etapa)) return [];
-    const sessoes = await tx.exp05Sessao.findMany({
+    const sessoes = await tx.exp05ef1bSessao.findMany({
       where: { escolaId, turmaId, confirmadoEm: { not: null } },
       select: { encaminhamentos: { select: { mensagemId: true } } },
     });
@@ -1148,7 +1148,7 @@ export class QuemMandouIssoService {
     turmaId: string | null,
   ): Promise<ConteudoDaTurma | null> {
     if (!turmaId) return null;
-    const linha = await tx.exp05ConteudoTurma.findUnique({
+    const linha = await tx.exp05ef1bConteudoTurma.findUnique({
       where: { escolaId_turmaId: { escolaId, turmaId } },
     });
     if (!linha?.aprovadoPorProfessor) return null;
@@ -1160,7 +1160,7 @@ export class QuemMandouIssoService {
          por quê. Nenhum texto de mensagem vai ao log: só o que identifica a
          linha. */
       logger.warn(
-        { codigo: "exp05-lote-invalido", escolaId, turmaId },
+        { codigo: "exp05ef1b-lote-invalido", escolaId, turmaId },
         "lote homologado com forma inesperada; a turma segue como não preparada",
       );
       return null;
@@ -1183,7 +1183,7 @@ export class QuemMandouIssoService {
     turmaId: string | null,
   ): Promise<boolean> {
     if (!turmaId) return false;
-    const linha = await tx.exp05ConteudoTurma.findUnique({
+    const linha = await tx.exp05ef1bConteudoTurma.findUnique({
       where: { escolaId_turmaId: { escolaId, turmaId } },
       select: { aprovadoPorProfessor: true },
     });
@@ -1202,13 +1202,13 @@ export class QuemMandouIssoService {
     criarSeFaltar = false,
   ): Promise<Etapa | null> {
     if (!turmaId) return null;
-    const linha = await tx.exp05GateTurma.findUnique({
+    const linha = await tx.exp05ef1bGateTurma.findUnique({
       where: { escolaId_turmaId: { escolaId, turmaId } },
       select: { etapa: true },
     });
     if (linha) return normalizarEtapa(linha.etapa);
     if (!criarSeFaltar) return ETAPA_INICIAL;
-    const criada = await tx.exp05GateTurma.create({
+    const criada = await tx.exp05ef1bGateTurma.create({
       data: { escolaId, turmaId, etapa: ETAPA_INICIAL },
       select: { etapa: true },
     });
@@ -1282,13 +1282,13 @@ export class QuemMandouIssoService {
       await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quem-mandou:${escolaId}:${estudanteId}`}, 0))`;
       await tx.$executeRaw`
-        INSERT INTO exp_05_sessoes (escola_id, estudante_id, turma_id)
+        INSERT INTO exp05ef1b_sessoes (escola_id, estudante_id, turma_id)
         VALUES (${escolaId}, ${estudanteId}::uuid, ${turmaId}::uuid)
         ON CONFLICT DO NOTHING`;
       /* A turma pode ter mudado depois da primeira visita (transferência no
          meio do ano): o painel lê por turma, e uma linha com a turma antiga
          desapareceria da tela da professora nova. */
-      const atual = await tx.exp05Sessao.update({
+      const atual = await tx.exp05ef1bSessao.update({
         where: { escolaId_estudanteId: { escolaId, estudanteId } },
         data: { turmaId },
       });

@@ -7,7 +7,7 @@ import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-02-unootube no Postgres: fluxo completo, corrida em
+ * Integração da exp04ef1b no Postgres: fluxo completo, corrida em
  * "salvar", congelamento e tenancy. UMA ESCOLA POR SUÍTE (o Jest paraleliza
  * suítes; limpeza compartilhada corromperia a outra).
  */
@@ -74,7 +74,7 @@ beforeAll(async () => {
   /* A PORTA DA SALA (ADR-69): sem esta linha, `service.sessao` recusa com 403
      `missao-nao-liberada` e a suíte inteira falha. `liberadaPor` é só o nome que
      a tela mostra — nenhuma regra o lê. */
-  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp-02-unootube", estudanteA);
+  await liberarParaTeste(prisma, ESCOLA, turmaId, "exp04ef1b", estudanteA);
 });
 
 afterAll(async () => {
@@ -217,10 +217,10 @@ describe("tenancy", () => {
 
   test("a RLS da tabela nova está armada (policy + FORCE)", async () => {
     const policies = await prisma.$queryRaw<{ policyname: string }[]>`
-      SELECT policyname FROM pg_policies WHERE tablename = 'exp_02_sessoes'`;
-    expect(policies.map((p) => p.policyname)).toEqual(["exp_02_sessoes_por_escola"]);
+      SELECT policyname FROM pg_policies WHERE tablename = 'exp04ef1b_sessoes'`;
+    expect(policies.map((p) => p.policyname)).toEqual(["exp04ef1b_sessoes_por_escola"]);
     const [tabela] = await prisma.$queryRaw<{ relrowsecurity: boolean; relforcerowsecurity: boolean }[]>`
-      SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'exp_02_sessoes'`;
+      SELECT relrowsecurity, relforcerowsecurity FROM pg_class WHERE relname = 'exp04ef1b_sessoes'`;
     expect(tabela).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
   });
 });

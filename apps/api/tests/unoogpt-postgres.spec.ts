@@ -8,7 +8,7 @@ import { liberarParaTeste } from "./liberar-de-teste";
 import { criarTurmaDeTeste } from "./turma-de-teste";
 
 /**
- * Integração da exp-03-unoogpt no Postgres: a largada da TURMA, o orçamento de
+ * Integração da exp02em1b no Postgres: a largada da TURMA, o orçamento de
  * perguntas, a alocação com justificativa, a tempestade, o teto por sessão e
  * TENANCY.
  *
@@ -93,9 +93,9 @@ beforeAll(async () => {
   /* A PORTA DA SALA: sem estas linhas `garantirSessao` recusa com 403
      `missao-nao-liberada` e a suíte inteira falha. */
   for (const t of [turmaId, turmaBId]) {
-    await liberarParaTeste(prisma, ESCOLA, t, "exp-03-unoogpt", ana);
+    await liberarParaTeste(prisma, ESCOLA, t, "exp02em1b", ana);
   }
-  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp-03-unoogpt", deOutraEscola);
+  await liberarParaTeste(prisma, OUTRA_ESCOLA, outraTurmaId, "exp02em1b", deOutraEscola);
 });
 
 afterAll(async () => {

@@ -58,7 +58,7 @@ describe("orçamento de raciocínio", () => {
 });
 
 describe("proporção da imagem gerada", () => {
-  test("é a mesma do card da exp-01 — senão o `cover` come a composição", () => {
+  test("é a mesma do card da exp08ef1b — senão o `cover` come a composição", () => {
     const [largura, altura] = PROPORCAO_IMAGEM.split(":").map(Number);
     expect(largura! / altura!).toBeCloseTo(LARGURA / ALTURA, 3);
   });

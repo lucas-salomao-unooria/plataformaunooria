@@ -19,6 +19,6 @@ describe("iniciarTracesWeb", () => {
   });
 
   it("com ratio 0 não liga nada (nem baixa os pacotes)", async () => {
-    await expect(iniciarTracesWeb({ traceRatio: 0, apiUrl: "https://api", expId: "exp-01-instanooria", versao: "1", getToken: () => "t" })).resolves.toBeNull();
+    await expect(iniciarTracesWeb({ traceRatio: 0, apiUrl: "https://api", expId: "exp08ef1b", versao: "1", getToken: () => "t" })).resolves.toBeNull();
   });
 });

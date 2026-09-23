@@ -15,7 +15,7 @@ import type { ConteudoDaTurma } from "@/lib/manifesto-tipos";
 /**
  * E0-PROF-01 — a PREPARAÇÃO da turma, dentro do painel de resultados.
  *
- * Mora AQUI, e não numa rota `/professor/exp-08-manifesto-ia/preparar` como o
+ * Mora AQUI, e não numa rota `/professor/exp08ef4b/preparar` como o
  * handoff sugeria, por três razões práticas: a professora já vem a esta tela
  * para conduzir a aula (é onde estão o congelamento e a folha da turma), o
  * preparo é POR TURMA e o seletor de turma já está no topo, e uma rota nova
@@ -213,7 +213,7 @@ export function PreparoManifesto({
         {/*
           O preview em `Collapse`, fechado por padrão: são sete textos longos, e
           abertos eles empurram a folha da turma para fora da tela no meio da
-          aula. O `Collapse` do DS tem a armadilha registrada na exp-92 (o
+          aula. O `Collapse` do DS tem a armadilha registrada na app-92 (o
           conteúdo fechado continua focável), e aqui ela é aceitável porque o
           conteúdo é um formulário do professor — não trinta alvos numa tela de
           criança. Se o pacote publicar a correção, isto some sozinho.

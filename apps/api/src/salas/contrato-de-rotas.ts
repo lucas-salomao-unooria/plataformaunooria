@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { ESTADOS_GRAVADOS } from "./regras";
+import { EXP_ID_RE, FORMATO_DO_EXP_ID } from "../comum/codigo-da-experiencia";
 
 /**
  * Os schemas das rotas de `/salas` (ADR-69). O OpenAPI é derivado daqui — não há
  * DTO de classe nesta api (ADR-36).
  */
 
-export const EXP_ID_RE = /^exp-[a-z0-9-]+$/;
-export const ExpId = z.string().regex(EXP_ID_RE, "expId no formato exp-<slug>");
+export { EXP_ID_RE };
+export const ExpId = z.string().regex(EXP_ID_RE, FORMATO_DO_EXP_ID);
 export const Uuid = z.string().uuid();
 
 /** `bloqueada` não é um estado do banco: é a ausência de linha em `liberacoes`. */

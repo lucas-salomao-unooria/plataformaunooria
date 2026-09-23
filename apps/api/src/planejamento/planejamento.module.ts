@@ -4,7 +4,7 @@ import { PlanejamentoController } from "./planejamento.controller";
 import { PlanejamentoService } from "./planejamento.service";
 
 /**
- * Lado server da exp-92-plano-de-ensino. Prisma, Auth, Ai e Storage são módulos
+ * Lado server da app-92-plano-de-ensino. Prisma, Auth, Ai e Storage são módulos
  * globais.
  *
  * O catálogo curricular tem controller próprio e SEM serviço: é leitura pura do

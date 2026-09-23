@@ -27,7 +27,7 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "mensagem",
   "transcricao",
   "observacao",
-  // O parágrafo autoral da exp-08 (TEC-03 / DAD-08). `texto` acima não o
+  // O parágrafo autoral da exp08ef4b (TEC-03 / DAD-08). `texto` acima não o
   // cobre: a chave é `justificativaTexto` / `justificativa_texto`, e a
   // comparação aqui é por nome INTEIRO em minúsculas, não por substring — um
   // `err` do Prisma carrega o objeto que o service tentou gravar, e é por ele
@@ -35,7 +35,7 @@ export const CHAVES_REDIGIDAS: ReadonlySet<string> = new Set([
   "justificativatexto",
   "justificativa_texto",
   "justificativasugerida",
-  // O GABARITO da exp-05 (`CAMPOS_SENSIVEIS` de
+  // O GABARITO da exp05ef1b (`CAMPOS_SENSIVEIS` de
   // `src/quem-mandou-isso/invariantes.ts`). Não é PII: é a resposta que a missão
   // inteira existe para não entregar antes do telão — e um `err` do Prisma
   // carrega o lote que o service tentou gravar, com as oito veracidades dentro.

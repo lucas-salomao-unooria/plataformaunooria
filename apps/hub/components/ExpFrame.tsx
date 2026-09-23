@@ -178,7 +178,7 @@ export function ExpFrame(props: {
      * lugar DENTRO do iframe move o foco para a experiência, e o navegador
      * dispara `blur` no documento de cima. Como o `focus` correspondente nunca
      * volta enquanto ele continua ali, um `hub:pause` aqui é definitivo — na
-     * exp-02 o vídeo parava no primeiro toque em "Salvar" e não voltava mais.
+     * exp04ef1b o vídeo parava no primeiro toque em "Salvar" e não voltava mais.
      *
      * Quando o foco foi para a NOSSA experiência, `document.activeElement` é o
      * próprio `<iframe>`. Esse caso não é perda de visibilidade nenhuma.
@@ -245,7 +245,7 @@ export function ExpFrame(props: {
 
   /**
    * O sandbox é o MESMO para todas as experiências, exceto o que o manifesto
-   * pedir. `allow-pointer-lock` só entra para quem declarou (exp-70, o jogo 3D
+   * pedir. `allow-pointer-lock` só entra para quem declarou (app-70, o jogo 3D
    * em primeira pessoa): num iframe com sandbox, `requestPointerLock()` é
    * ignorado sem esse token — e dá-lo a todas as experiências significaria que
    * qualquer bundle pode capturar o mouse do estudante.
@@ -258,12 +258,12 @@ export function ExpFrame(props: {
     // iframe vira "null" e a validação de origin quebra dos dois lados.
     "allow-same-origin",
     // `allow-modals`: sem ele o navegador IGNORA `confirm()`/`alert()` do
-    // iframe em silêncio (devolve false) — a exp-90 confirma exclusão e
+    // iframe em silêncio (devolve false) — a app-90 confirma exclusão e
     // restauração assim. Ferramenta 1ª parte; não abre nada além disso.
     "allow-modals",
     ...(props.permissoes?.includes("pointer-lock") ? ["allow-pointer-lock"] : []),
     /**
-     * `allow-forms` só para quem declarou (exp-03, a Missão Tempestade).
+     * `allow-forms` só para quem declarou (exp02em1b, a Missão Tempestade).
      *
      * O `Composer` do design system é um `<form>`, e num iframe com sandbox sem
      * este token o navegador BLOQUEIA o submit — o estudante digita a pergunta,
@@ -277,7 +277,7 @@ export function ExpFrame(props: {
      */
     ...(props.permissoes?.includes("forms") ? ["allow-forms"] : []),
     /**
-     * `allow-downloads` para quem declarou (exp-90 e exp-92, as ferramentas do
+     * `allow-downloads` para quem declarou (app-90 e app-92, as ferramentas do
      * professor que exportam `.doc`).
      *
      * Sem este token o navegador BLOQUEIA todo download iniciado de dentro do

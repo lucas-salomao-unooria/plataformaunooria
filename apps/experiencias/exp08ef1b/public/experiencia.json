@@ -1,0 +1,15 @@
+{
+  "id": "exp08ef1b",
+  "nome": "Instanooria — O Conteúdo que não chegou",
+  "versao": "1.1.7",
+  "produto": "entre-redes",
+  "series": ["8EF"],
+  "unidade": 1,
+  "capabilities": ["telemetria", "progresso", "ia"],
+  "viewport": { "largura": 375, "altura": 812 },
+  "verbos": {
+    "attempted": "entrou no aparelho",
+    "completed": "concluiu a missão (dossiê visto)",
+    "progressed": "mudou de fase"
+  }
+}

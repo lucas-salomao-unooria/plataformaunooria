@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { Button, FeedbackAlert, Modal } from "@edu/ui/ds";
 
 /**
- * ZERAR A TURMA — o caminho de exclusão da exp-06, e a preparação para uma
+ * ZERAR A TURMA — o caminho de exclusão da exp06ef2b, e a preparação para uma
  * segunda aplicação (PED-13).
  *
  * O GATE DA AULA VAI JUNTO, e o diálogo diz isso: rodar de novo com a Aula 2 já

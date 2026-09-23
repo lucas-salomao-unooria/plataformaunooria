@@ -1,5 +1,5 @@
 /**
- * Contrato do payload da exp-70 — a fronteira entre o jogo e o banco.
+ * Contrato do payload da app-70 — a fronteira entre o jogo e o banco.
  *
  * PURO: sem Prisma, sem fetch, sem `Date`. A persistência mora no service.
  *

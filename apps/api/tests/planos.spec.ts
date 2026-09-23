@@ -12,7 +12,7 @@ import { sanitizarHtmlDoPlano } from "../src/planos/sanitizar";
 import { PrismaService } from "../src/prisma/prisma.service";
 
 /**
- * Integração da exp-90-plano-de-aula no Postgres: geração assíncrona (claim,
+ * Integração da app-90-plano-de-aula no Postgres: geração assíncrona (claim,
  * pronto/erro, órfã), Salvar/Restaurar/Excluir, posse entre professores e
  * quota por perfil. Provider FAKE (controlável) e storage local em pasta
  * temporária. UMA ESCOLA POR SUÍTE.

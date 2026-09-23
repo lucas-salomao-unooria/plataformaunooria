@@ -23,8 +23,8 @@ import {
 /**
  * E0-PROF-01 — a PREPARAÇÃO do grupo da turma, dentro do painel de resultados.
  *
- * Mora AQUI, e não numa rota `/professor/exp-05-quem-mandou-isso/preparar`,
- * pela mesma razão da exp-08: a professora já vem a esta tela para conduzir a
+ * Mora AQUI, e não numa rota `/professor/exp05ef1b/preparar`,
+ * pela mesma razão da exp08ef4b: a professora já vem a esta tela para conduzir a
  * aula (é onde estão os dois botões e a folha da turma), o preparo é POR TURMA
  * e o seletor de turma já está no topo, e uma rota nova pediria linha no
  * `middleware.ts` e no registro da trilha.
@@ -32,7 +32,7 @@ import {
  * ────────────────────────────────────────────────────────────────────────────
  * A EXIGÊNCIA QUE ESTE COMPONENTE EXISTE PARA CUMPRIR: **nada chega aos
  * estudantes sem o clique dela em "Aprovar e publicar"** — e aqui isso é mais
- * forte que nas outras missões, porque a exp-05 NASCE VAZIA. Sem homologação
+ * forte que nas outras missões, porque a exp05ef1b NASCE VAZIA. Sem homologação
  * não há lote curado assumindo sozinho: o estudante vê tela de espera. A
  * aprovação não é revisão de um conteúdo que já ia rodar; ela é a porta.
  *
@@ -326,7 +326,7 @@ export function PreparoQuemMandou({
           As 8 mensagens em `Collapse`, fechado por padrão: são oito textos, e
           abertos eles empurram a barra de prontidão e a folha da turma para
           fora da tela no meio da aula. A armadilha do `Collapse` registrada na
-          exp-92 (o conteúdo fechado continua focável) é aceitável aqui porque o
+          app-92 (o conteúdo fechado continua focável) é aceitável aqui porque o
           conteúdo é um formulário do professor — não trinta alvos numa tela de
           criança. Some sozinha quando o pacote publicar a correção.
         */}

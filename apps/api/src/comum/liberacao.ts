@@ -13,7 +13,7 @@ import { exigirRecursoDisponivel } from "./disponibilidade";
  * é um endereço adivinhável, e antes disto qualquer estudante logado abria
  * qualquer missão digitando a URL.
  *
- * NÃO confunda com o relógio da exp-03 nem com os gates da exp-07. Aqueles
+ * NÃO confunda com o relógio da exp02em1b nem com os gates da exp07ef1b. Aqueles
  * dizem "a aula começou" e continuam morando na experiência (ADR-25). Este diz
  * "esta missão está nesta sala", e é PRÉ-CONDIÇÃO deles: sem liberação a
  * pergunta do relógio nem chega a ser feita.
@@ -120,7 +120,7 @@ export async function exigirMissaoLiberada(
    * desligado apareceria no log como turma sem liberação, e quem fosse
    * investigar iria procurar na sala de aula um problema que está no painel.
    *
-   * As três ferramentas de PROFESSOR (exp-90, exp-91, exp-92) não têm liberação
+   * As três ferramentas de PROFESSOR (app-90, app-91, app-92) não têm liberação
    * por turma e por isso não passam por aqui: elas chamam
    * `exigirRecursoDisponivel` no funil delas.
    */

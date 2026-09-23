@@ -29,7 +29,7 @@ import {
 } from "./regras";
 
 /**
- * Persistência da exp-04. Assinaturas recebem `escolaId`/`estudanteId`
+ * Persistência da exp01ef1b. Assinaturas recebem `escolaId`/`estudanteId`
  * explícitos (não o request) — os testes chamam direto, e toda query leva
  * `escola_id` no `where` ALÉM da RLS que o `comTenancy` arma (regra 1,
  * defesa em profundidade).

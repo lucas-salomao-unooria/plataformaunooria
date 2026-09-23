@@ -71,7 +71,7 @@ export class PortabilidadeController {
     notas: [
       "Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.",
       "**Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.",
-      "Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.",
+      "Bem-estar (app-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.",
       "Sem `CONTRATO_ID` no hub, a emissão é **503**.",
     ],
   })

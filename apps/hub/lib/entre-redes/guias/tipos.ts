@@ -21,7 +21,7 @@
  *
  * O que tem fonte viva em outro lugar. A tabela dos momentos do Instanooria sai
  * de `CONTROLE_DO_PROFESSOR`, a revelação sai de `lib/insta/copy-da-revelacao.ts`
- * (cópia gêmea da que a exp-01 carrega — as duas mudam juntas), os
+ * (cópia gêmea da que a exp08ef1b carrega — as duas mudam juntas), os
  * cartões da Vila do Lume vêm da api por turma, e o CONTEÚDO que a turma lê na
  * tela — os vieses do unooGPT, os vídeos do UnooTube, as intervenções do Rastro
  * do Boato e as respostas do Eco no Grupo — vem de uma rota `professor-only` de

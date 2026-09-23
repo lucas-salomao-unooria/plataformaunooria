@@ -11,7 +11,7 @@
  *
  * O React acusa (`Hydration failed because the server rendered text didn't
  * match the client`), **regenera a árvore** e, enquanto regenera, o clique da
- * pessoa cai no vazio. Foi assim que a suíte e2e da exp-08 morreu com
+ * pessoa cai no vazio. Foi assim que a suíte e2e da exp08ef4b morreu com
  * `page.click: Timeout 30000ms` — um sintoma a três saltos da causa.
  *
  * E ele é **intermitente por desenho**: só diverge entre 21h e a meia-noite de
@@ -136,7 +136,7 @@ function avisar(fuso: string, origem: string): void {
  *
  * 1. **Tipo.** Este pacote é compilado dentro de cada experiência, e um bundle
  *    de navegador não carrega `@types/node` — `process` solto vira
- *    `TS2580: Cannot find name 'process'` no `tsc` da exp-70, que não tem o
+ *    `TS2580: Cannot find name 'process'` no `tsc` da app-70, que não tem o
  *    pacote de tipos e não deveria mesmo ter.
  * 2. **Bundler.** `process.env.NOME` escrito literalmente é SUBSTITUÍDO em
  *    tempo de build pelo Next e pelo Vite. O acesso dinâmico não é: no

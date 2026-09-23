@@ -20,9 +20,9 @@ import {
   type Reacao,
 } from "./catalogo";
 import { erroDeJogo } from "./erros";
-import { IaDaExp07Service, TURNOS_COM_AMARA } from "./ia.service";
+import { IaDaExp07ef1bService, TURNOS_COM_AMARA } from "./ia.service";
 import { EXP_ID } from "./midia";
-import { MidiaDaExp07Service } from "./midia.service";
+import { MidiaDaExp07ef1bService } from "./midia.service";
 import { avaliarPercurso } from "./regras/pontuacao";
 import {
   ETAPA_DA_ACAO,
@@ -49,7 +49,7 @@ import {
 } from "./regras/sessao";
 
 /**
- * Persistência da exp-07. Assinaturas recebem `escolaId`/`estudanteId`
+ * Persistência da exp07ef1b. Assinaturas recebem `escolaId`/`estudanteId`
  * explícitos (não o request) — os testes de integração chamam direto, e toda
  * query leva `escola_id` no `where` ALÉM da RLS que o `comTenancy` arma
  * (regra inviolável nº 1, defesa em profundidade).
@@ -168,8 +168,8 @@ function minutosDesde(instante: Date, agora: Date): number {
 export class OEcoNoGrupoService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly ia: IaDaExp07Service,
-    private readonly midia: MidiaDaExp07Service,
+    private readonly ia: IaDaExp07ef1bService,
+    private readonly midia: MidiaDaExp07ef1bService,
   ) {}
 
   /** Boot da experiência — READ-ONLY: sem linha devolve o estado inicial. */
@@ -358,7 +358,7 @@ export class OEcoNoGrupoService {
    * mede deixaria de acontecer. O portão está aqui, no servidor, e não numa
    * condição de tela.
    *
-   * O texto do estudante é gravado em `exp_07_mensagens` (sob RLS) porque a
+   * O texto do estudante é gravado em `exp07ef1b_mensagens` (sob RLS) porque a
    * conversa precisa voltar inteira depois de um F5. Ele não vai a log nem à
    * telemetria, e nenhuma rota de gestor o alcança.
    */
@@ -533,7 +533,7 @@ export class OEcoNoGrupoService {
     const etapa = ETAPA_DA_ACAO[acao];
     return this.prisma.comTenancy(async (tx) => {
       const turma = await this.turmaVisivel(tx, escolaId, turmaId, professorId);
-      // Lock por TURMA, no espírito da exp-70: dois docentes na mesma sala (ou
+      // Lock por TURMA, no espírito da app-70: dois docentes na mesma sala (ou
       // dois cliques) não podem intercalar escrita no mesmo gate.
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`eco:${escolaId}:${turmaId}`}, 0))`;
       const linha = await tx.ecoGateTurma.upsert({
@@ -647,7 +647,7 @@ export class OEcoNoGrupoService {
       await this.estudanteDaEscola(tx, escolaId, estudanteId);
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`eco:${escolaId}:${estudanteId}`}, 0))`;
       await tx.$executeRaw`
-        INSERT INTO exp_07_sessoes (escola_id, estudante_id, turma_id)
+        INSERT INTO exp07ef1b_sessoes (escola_id, estudante_id, turma_id)
         VALUES (${escolaId}, ${estudanteId}::uuid, ${turmaId}::uuid)
         ON CONFLICT DO NOTHING`;
       // A turma pode ter mudado depois da primeira visita (transferência no

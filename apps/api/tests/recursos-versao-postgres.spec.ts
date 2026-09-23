@@ -7,7 +7,7 @@ import { RecursosAdminController } from "../src/recursos/recursos-admin.controll
  *
  * O que mais importa aqui é a FIDELIDADE do rollback. `publicar-manifesto.mjs
  * --versao x.y.z` manda o número antigo com o manifesto ATUAL do repositório —
- * então voltar a versão nunca voltou `viewport` nem `permissoes`, e a exp-70
+ * então voltar a versão nunca voltou `viewport` nem `permissoes`, e a app-70
  * reabria sem `allow-pointer-lock`: a criança entrava na Vila e a câmera não
  * girava, sem erro em lugar nenhum. A ativação pela tela restaura o manifesto
  * guardado, e é isso que os testes de fidelidade cobram.
@@ -29,7 +29,7 @@ import { RecursosAdminController } from "../src/recursos/recursos-admin.controll
  */
 
 const URL = process.env.DATABASE_URL ?? "postgresql://postgres:pass@localhost:5432/unooria";
-const EXP = "exp-99-versao-de-teste";
+const EXP = "app-99-versao-de-teste";
 const ESCOLA = "teste-versao";
 
 const prisma = new PrismaService({ datasources: { db: { url: URL } } }) as PrismaService & PrismaClient;
@@ -70,7 +70,7 @@ async function limpar() {
   /* A AUDITORIA TAMBÉM É LIXO DE TESTE (ADR-89). Ela é append-only e ninguém
      mais a limpa, então cada escrita destes testes fica no banco de dev para
      sempre — foi visto no print da suíte e2e: o histórico da REDE aberto em
-     `/admin/recursos` com dezenas de linhas de `exp-99-...` e "Admin da
+     `/admin/recursos` com dezenas de linhas de `app-99-...` e "Admin da
      versão". Mesma família do `salas-postgres` reescrevendo o catálogo: linha
      em tabela sem RLS é estado global, e a tela do cliente é onde ela aparece. */
   await prisma.recursoAuditoria.deleteMany({
@@ -169,7 +169,7 @@ describe("GET /recursos/experiencias/:expId/versoes", () => {
   });
 
   test("experiência fora do catálogo é 404", async () => {
-    await expect(painel.versoes("exp-99-nao-existe")).rejects.toThrow();
+    await expect(painel.versoes("app-99-nao-existe")).rejects.toThrow();
   });
 });
 

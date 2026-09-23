@@ -1,7 +1,7 @@
 import { HttpException } from "@nestjs/common";
 
 /**
- * Erros de JOGO da exp-08 — não de programa. Cada código vira uma frase que o
+ * Erros de JOGO da exp08ef4b — não de programa. Cada código vira uma frase que o
  * estudante lê DENTRO da ficção do terminal escolar, nunca um stack trace.
  *
  * Molde: `apps/api/src/rastro-boato/erros.ts`. A diferença de tom é que aqui a

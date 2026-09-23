@@ -28,7 +28,7 @@ const GUIAS = [
   {
     rota: "/professor/entre-redes/8-ano/unidade-1/guia",
     missao: "Instanooria · 8º ano",
-    /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp-01`: se o bloco
+    /* Vem de `CONTROLE_DO_PROFESSOR` e de `@edu/conteudo-exp08ef1b`: se o bloco
        vivo quebrar, o guia continua renderizando e some em silêncio. */
     vivo: [/Você conduz — os \d+ momentos/i, /O que a turma lê na revelação/i],
     bncc: "EF08CO11",

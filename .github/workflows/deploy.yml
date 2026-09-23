@@ -323,9 +323,9 @@ jobs:
 
       - name: Build
         env:
-          # Mídia pesada (52 MB de mp4 da exp-02) não entra no bundle: o build
+          # Mídia pesada (52 MB de mp4 da exp04ef1b) não entra no bundle: o build
           # aponta para o bucket de assets. Vazio = ./videos (dev).
-          VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp-02-unootube/videos
+          VITE_VIDEOS_BASE_URL: ${{ vars.ASSETS_BASE_URL }}/exp04ef1b/videos
           FORCAR: ${{ inputs.forcar }}
         # Com `forcar`, o laço de publicação percorre TODAS as experiências —
         # então o build também precisa ser de todas, senão falta o `dist/`.
@@ -357,7 +357,7 @@ jobs:
             # A versão sai do MANIFESTO, não do package.json: é o
             # `experiencia.json` que o `publicar-manifesto.mjs` lê para gravar
             # `versaoAtiva`. Lendo de fontes diferentes elas divergem — a
-            # exp-02 subiu para `.../1.0.0/` (package.json) enquanto o manifesto
+            # exp04ef1b subiu para `.../1.0.0/` (package.json) enquanto o manifesto
             # registrava `1.1.0`, e o hub montaria a URL de uma versão que não
             # existe no bucket.
             ver=$(node -p "require('./$dir/public/experiencia.json').versao")
@@ -367,7 +367,7 @@ jobs:
             # o runner nao tem os arquivos para sincronizar. O que o CI pode
             # fazer, e passou a fazer, e SE RECUSAR a publicar sem eles.
             #
-            # O custo de nao ter isso ja foi pago: a exp-02 subiu num contrato
+            # O custo de nao ter isso ja foi pago: a exp04ef1b subiu num contrato
             # novo com o bucket de assets vazio, os 21 mp4 responderam 404, e o
             # feed ficou em "Carregando o video..." para sempre — com Salvar e
             # Curtir desabilitados junto, o que tornava a missao impossivel de
@@ -394,7 +394,7 @@ jobs:
             # `--exclude` vale para ORIGEM e DESTINO: nenhum `.map` sobe para o
             # bucket público, e nenhum que exista lá é apagado. O bucket dos
             # bundles tem acesso uniforme — qualquer objeto nele é público, e o
-            # sourcemap é o fonte (na exp-01, a revelação legível antes da hora).
+            # sourcemap é o fonte (na exp08ef1b, a revelação legível antes da hora).
             gcloud storage rsync -r "$dir/dist" "gs://$EXP_BUCKET/$exp/$ver/" \
               --delete-unmatched-destination-objects --exclude='.*\.map$' --project "$GCP_PROJECT"
 

@@ -378,7 +378,7 @@ describe("relatório da diretoria", () => {
           data: {
             escolaId: ESCOLAS[0]!,
             turmaId: turma.id,
-            expId: "exp-70-vila-do-lume",
+            expId: "app-70-vila-do-lume",
             estado: "encerrada",
             /* O banco exige a data junto do estado (CHECK
                `liberacoes_encerrada_em_check`): "encerrada" sem quando é um
@@ -392,7 +392,7 @@ describe("relatório da diretoria", () => {
     await prisma.comTenancy(
       (tx) =>
         tx.progresso.create({
-          data: { escolaId: ESCOLAS[1]!, estudanteId: estudante.id, expId: "exp-70-vila-do-lume" },
+          data: { escolaId: ESCOLAS[1]!, estudanteId: estudante.id, expId: "app-70-vila-do-lume" },
         }),
       ESCOLAS[1]!,
     );
@@ -407,7 +407,7 @@ describe("relatório da diretoria", () => {
     expect(relatorio?.escolas.map((e) => e.nome)).toEqual(
       [...(relatorio?.escolas ?? [])].map((e) => e.nome).sort((a, b) => a.localeCompare(b, "pt-BR")),
     );
-    const vila = relatorio?.experiencias.find((e) => e.expId === "exp-70-vila-do-lume");
+    const vila = relatorio?.experiencias.find((e) => e.expId === "app-70-vila-do-lume");
     expect(vila).toMatchObject({ turmasEncerradas: 1, turmasLiberadas: 0, estudantes: 1 });
     // E cada medida aparece na ESCOLA onde aconteceu, não somada na primeira.
     const daTurma = relatorio?.escolas.find((e) => e.id === ESCOLAS[0]);

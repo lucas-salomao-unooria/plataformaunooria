@@ -31,7 +31,7 @@ import { OEcoNoGrupoService } from "./o-eco-no-grupo.service";
 import { GESTORES, ehDoContrato} from "../auth/claims";
 
 /**
- * Visão do PROFESSOR (e gestor) sobre a exp-07 — classe separada para o
+ * Visão do PROFESSOR (e gestor) sobre a exp07ef1b — classe separada para o
  * `@Roles` ficar limpo, como em `unootube-turmas.controller.ts`. A separação é
  * decisão de segurança, não de estilo: o gestor não tem rota que aceite
  * `estudanteId`.

@@ -10,7 +10,7 @@ import type { TurmaDoProfessor } from "@/lib/turmas";
  * **Existe porque a ausência dele é MUDA.** Sem entrada no despachante de
  * `page.tsx`, uma missão publicada cai no corpo do INSTANOORIA — que tem
  * "Nova atividade" e não tem "Abrir a aula e os resultados". A professora
- * criaria uma configuração em `exp_01_activities` que esta missão nunca lê, e
+ * criaria uma configuração em `exp08ef1b_activities` que esta missão nunca lê, e
  * não acharia o painel do debate. O aviso já estava escrito em
  * `missao-rastro-boato.tsx`, no arquivo ao lado, e mesmo assim aconteceu de
  * novo: quem publica missão nova mexe no despachante no mesmo trabalho.

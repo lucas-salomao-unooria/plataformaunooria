@@ -1,5 +1,5 @@
 /**
- * O conteúdo da exp-05-quem-mandou-isso — e o GABARITO dela.
+ * O conteúdo da exp05ef1b — e o GABARITO dela.
  *
  * Este arquivo nunca cruza a fronteira do cliente inteiro. O que sai é a
  * projeção `MensagemPublica`, construída por `Omit` de `veracidade`, `tom` e

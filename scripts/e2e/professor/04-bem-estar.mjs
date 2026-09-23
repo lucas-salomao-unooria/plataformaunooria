@@ -3,7 +3,7 @@ import { ALERTA_DE_ERRO, esperarOuFalharCedo } from "../lib/smoke.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O acompanhamento de bem-estar (exp-91): o único produto da plataforma cujo sujeito
+ * O acompanhamento de bem-estar (app-91): o único produto da plataforma cujo sujeito
  * é o PROFESSOR.
  *
  * As três frases do dia são verbatim do DASS-21 — instrumento validado, e por
@@ -144,7 +144,7 @@ await suite(
     await esperarOuFalharCedo(
       bem.getByText("Você já respondeu hoje"),
       bem.locator(ALERTA_DE_ERRO),
-      { timeout: 90_000, oQue: "o envio das respostas (exp-91)" },
+      { timeout: 90_000, oQue: "o envio das respostas (app-91)" },
     );
     await p.waitForTimeout(1500);
     await r.registrar(p, "acolhimento", {

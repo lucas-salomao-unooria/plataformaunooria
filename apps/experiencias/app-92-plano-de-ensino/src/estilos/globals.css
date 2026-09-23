@@ -1,0 +1,597 @@
+/* ---------------------------------------------------------------------------
+ * Camada de aplicação da app-92 (o shell vem da app-90; o resto é próprio).
+ *
+ * Só existe aqui o que o @unooria/design-system não entrega como componente:
+ * o shell da página e a moldura do rodízio de insights. Nenhuma cor,
+ * espaçamento ou tamanho é escrito à mão — tudo lê as CSS variables do DS.
+ * ------------------------------------------------------------------------ */
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--unooria-font-sans);
+  background-color: var(--unooria-color-neutral-100);
+  color: var(--unooria-color-neutral-900);
+}
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--unooria-color-neutral-100);
+}
+
+.app-main {
+  flex: 1;
+  padding: var(--unooria-spacing-l) var(--unooria-spacing-m) var(--unooria-spacing-xxl);
+}
+
+/* Coluna de leitura: cheia no mobile; 8 colunas centrais no desktop. */
+.app-col-main {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.app-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* ---------------------------------------------------------------------------
+ * app-92 — planejamento de ensino.
+ *
+ * Só existe aqui o que o @unooria/design-system não entrega como componente:
+ * arranjo de página, a grade de horários e o cartão de aula. Nenhuma cor,
+ * espaçamento, raio ou tipografia é escrito à mão — tudo lê CSS variable do DS,
+ * porque uma cor literal aqui é a que não muda quando a marca mudar.
+ * ------------------------------------------------------------------------ */
+
+.app-conteudo {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-l);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--unooria-spacing-m);
+  flex-wrap: wrap;
+}
+.cabecalho h1 {
+  margin: 0;
+  font-size: var(--unooria-font-size-xl);
+  color: var(--unooria-color-neutral-950);
+}
+.cabecalho p {
+  margin: var(--unooria-spacing-xxs) 0 0;
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-s);
+}
+
+.passo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-m);
+}
+
+.nota {
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-xs);
+  margin: var(--unooria-spacing-xxs) 0 0;
+}
+
+/* Compensação de LAYOUT (medida e posição), não componente: a nota ocupa a
+   coluna que o "Passo do planejamento" deixou vaga no grid da regência quando
+   o quinzenal saiu (ADR-76). O `align-self` a alinha com o rótulo do campo ao
+   lado em vez de centralizá-la na altura da linha. */
+.nota--no-formulario {
+  align-self: center;
+  margin: 0;
+  padding: var(--unooria-spacing-s) 0 0;
+  line-height: 1.5;
+}
+
+/* Dois campos por linha no desktop, empilhados no telefone — o professor
+   configura isso no celular, entre uma aula e outra. */
+.grade-de-campos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--unooria-spacing-m);
+}
+@media (min-width: 720px) {
+  .grade-de-campos {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cartao-informativo {
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-m);
+  background: var(--unooria-color-neutral-50, #fff);
+  padding: var(--unooria-spacing-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-s);
+}
+.cartao-informativo p {
+  margin: 0;
+}
+.cartao-informativo__linha {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-s);
+  flex-wrap: wrap;
+}
+
+.acoes {
+  display: flex;
+  gap: var(--unooria-spacing-s);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.acoes--topo {
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--unooria-color-neutral-150);
+  padding-bottom: var(--unooria-spacing-s);
+}
+
+.linha-toggle {
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-m);
+  padding: var(--unooria-spacing-m);
+}
+
+/* --------------------------------------------------- a grade de horários -- */
+
+.grade-de-horarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--unooria-spacing-s);
+}
+.grade-de-horarios__dia {
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-m);
+  padding: var(--unooria-spacing-s);
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xs);
+  align-items: flex-start;
+}
+.grade-de-horarios__rotulo {
+  font-weight: 600;
+  color: var(--unooria-color-neutral-800);
+  font-size: var(--unooria-font-size-s);
+}
+.grade-de-horarios__aula {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xxs);
+  width: 100%;
+}
+.grade-de-horarios__aula input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: var(--unooria-font-size-s);
+  padding: var(--unooria-spacing-xxs) var(--unooria-spacing-xs);
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-s);
+  background: transparent;
+  color: inherit;
+}
+.grade-de-horarios__aula button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--unooria-color-neutral-600);
+  display: inline-flex;
+  padding: var(--unooria-spacing-xxs);
+  border-radius: var(--unooria-radius-s);
+}
+.grade-de-horarios__aula button:hover {
+  background: var(--unooria-color-neutral-150);
+}
+
+/* ------------------------------------------------ os períodos e a lista --- */
+
+.abas-de-periodo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--unooria-spacing-s);
+}
+.aba-de-periodo {
+  text-align: left;
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-m);
+  background: transparent;
+  padding: var(--unooria-spacing-s) var(--unooria-spacing-m);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xxs);
+  color: inherit;
+  font: inherit;
+}
+.aba-de-periodo:hover {
+  border-color: var(--unooria-color-neutral-400);
+}
+/* A aba ativa é marcada por COR E por peso de borda: cor sozinha não passa em
+   contraste para quem não distingue as duas. */
+.aba-de-periodo--ativa {
+  border-color: var(--unooria-color-brandnavy-500, #1c4e9c);
+  border-width: 2px;
+  background: var(--unooria-color-brandnavy-50, #f3f7fd);
+}
+.aba-de-periodo__numeros {
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-xs);
+}
+.aba-de-periodo span {
+  font-size: var(--unooria-font-size-s);
+  color: var(--unooria-color-neutral-700);
+}
+
+.barra-de-resumo {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-m);
+  flex-wrap: wrap;
+  padding: var(--unooria-spacing-s) var(--unooria-spacing-m);
+  border-radius: var(--unooria-radius-m);
+  background: var(--unooria-color-neutral-150);
+}
+
+/* ---------------------------------------------------- as habilidades ------ */
+
+.lista-de-habilidades {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xs);
+}
+.habilidade {
+  display: flex;
+  gap: var(--unooria-spacing-s);
+  padding: var(--unooria-spacing-s);
+  border-radius: var(--unooria-radius-s);
+  border: 1px solid transparent;
+}
+.habilidade--marcada {
+  background: var(--unooria-color-brandnavy-50, #f3f7fd);
+  border-color: var(--unooria-color-brandnavy-300, #bdd0ef);
+}
+.habilidade__botao {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--unooria-color-neutral-700);
+  padding: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.habilidade__texto {
+  flex: 1;
+  min-width: 0;
+}
+.habilidade__texto p {
+  margin: 0 0 var(--unooria-spacing-xxs);
+  font-size: var(--unooria-font-size-s);
+}
+.habilidade__cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xs);
+}
+.habilidade__cabecalho code {
+  font-family: var(--unooria-font-mono, ui-monospace, monospace);
+  font-weight: 600;
+  color: var(--unooria-color-neutral-900);
+}
+.habilidade__objeto {
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-xs) !important;
+}
+.habilidade__detalhe summary {
+  cursor: pointer;
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-font-size-xs);
+}
+
+/* ------------------------------------------- planejamentos e semanas ------ */
+
+.lista-de-planejamentos,
+.lista-de-semanas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xs);
+}
+
+.planejamento,
+.semana {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--unooria-spacing-m);
+  padding: var(--unooria-spacing-m);
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-m);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.planejamento:hover,
+.semana:hover {
+  border-color: var(--unooria-color-neutral-400);
+  background: var(--unooria-color-neutral-150);
+}
+.planejamento:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.planejamento__titulo,
+.semana__rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.planejamento__titulo span,
+.semana__rotulo span {
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-s);
+}
+.planejamento__meta,
+.semana__estado {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xs);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* ------------------------------------------------------- estados ---------- */
+
+.estado-vazio,
+.estado-gerando {
+  border: 1px dashed var(--unooria-color-neutral-300);
+  border-radius: var(--unooria-radius-m);
+  padding: var(--unooria-spacing-xl);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--unooria-spacing-m);
+}
+.estado-gerando {
+  border-style: solid;
+}
+.estado-gerando > * {
+  width: 100%;
+  max-width: 520px;
+}
+
+.titulo-da-semana {
+  margin: 0;
+  font-size: var(--unooria-font-size-m);
+  color: var(--unooria-color-neutral-800);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------- o cartão de aula ----- */
+
+.cartao-de-aula {
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-m);
+  padding: var(--unooria-spacing-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-s);
+  background: var(--unooria-color-neutral-50, #fff);
+}
+/* A aula dada fica visualmente resolvida — e a marca é a barra à esquerda, não
+   só a opacidade: aula cumprida não pode ficar mais difícil de ler. */
+.cartao-de-aula--cumprida {
+  border-left: 4px solid var(--unooria-color-success-500, #2e7d32);
+}
+.cartao-de-aula__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--unooria-spacing-m);
+  flex-wrap: wrap;
+}
+.cartao-de-aula__cabecalho > div:first-child {
+  flex: 1;
+  min-width: 240px;
+}
+.cartao-de-aula__quando {
+  display: block;
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-xs);
+  margin-bottom: var(--unooria-spacing-xxs);
+}
+.cartao-de-aula__habilidades,
+.cartao-de-aula__recursos {
+  display: flex;
+  gap: var(--unooria-spacing-xxs);
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.momentos {
+  border-top: 1px solid var(--unooria-color-neutral-150);
+  padding-top: var(--unooria-spacing-s);
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-s);
+}
+.momentos__titulo {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--unooria-font-size-s);
+  color: var(--unooria-color-neutral-800);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--unooria-spacing-s);
+}
+.momentos__soma {
+  font-weight: 400;
+  color: var(--unooria-color-neutral-600);
+}
+/* Soma que estoura o tempo da aula é o erro mais comum de plano de aula, e o
+   mais fácil de não perceber: quatro momentos plausíveis que não cabem em 50
+   minutos. Por isso é cor E peso. */
+.momentos__soma--estourou {
+  font-weight: 700;
+  color: var(--unooria-color-error-600, #b3261e);
+}
+.momento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xxs);
+}
+.momento__rotulo {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xs);
+  font-size: var(--unooria-font-size-s);
+  color: var(--unooria-color-neutral-700);
+}
+.momento__rotulo input {
+  width: 4.5rem;
+  font: inherit;
+  padding: var(--unooria-spacing-xxs) var(--unooria-spacing-xs);
+  border: 1px solid var(--unooria-color-neutral-200);
+  border-radius: var(--unooria-radius-s);
+  background: transparent;
+  color: inherit;
+}
+
+/* Foco visível em tudo que é clicável: o professor navega no teclado quando
+   está com a turma, e o DS só cobre os próprios componentes. */
+.aba-de-periodo:focus-visible,
+.planejamento:focus-visible,
+.semana:focus-visible,
+.habilidade__botao:focus-visible,
+.grade-de-horarios__aula button:focus-visible,
+.grade-de-horarios__aula input:focus-visible,
+.momento__rotulo input:focus-visible {
+  outline: 2px solid var(--unooria-color-brandnavy-500, #1c4e9c);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------- exportar mais de uma semana --- */
+
+/* O planejamento é semanal e a ENTREGA é por recorte (ADR-76): a escola que
+   recolhe de quinze em quinze dias baixa duas semanas, a que pede o bimestre
+   baixa as dez. A barra separa visualmente "esta semana" de "o conjunto"
+   porque são decisões diferentes — uma é o que o professor está editando
+   agora, a outra é o que ele vai entregar. */
+.exportar-conjunto {
+  display: flex;
+  align-items: center;
+  gap: var(--unooria-spacing-xs);
+  flex-wrap: wrap;
+  padding: var(--unooria-spacing-s) 0 0;
+  border-top: 1px solid var(--unooria-color-neutral-200);
+  margin-top: var(--unooria-spacing-s);
+}
+.exportar-conjunto__rotulo {
+  color: var(--unooria-color-neutral-600);
+  font-size: var(--unooria-font-size-xs);
+  margin: 0 var(--unooria-spacing-xxs) 0 0;
+}
+
+/* ------------------------------------- a linha do planejamento na lista ---- */
+
+/* O cartão é um `<button>` (abre o planejamento) e o "Excluir" é outro botão:
+   um dentro do outro é HTML inválido, então eles são IRMÃOS e a linha os
+   distribui. O cartão cresce e o excluir fica no tamanho dele — a ação
+   destrutiva não disputa a largura com o alvo principal. */
+.planejamento-linha {
+  display: flex;
+  align-items: stretch;
+  gap: var(--unooria-spacing-xs);
+}
+.planejamento-linha .planejamento {
+  flex: 1;
+  min-width: 0;
+}
+
+/* No telefone a linha empilha: com 360px de largura, o cartão e o botão lado a
+   lado deixam o nome do componente em duas linhas e a etiqueta quebra. */
+@media (max-width: 640px) {
+  .planejamento-linha {
+    flex-direction: column;
+  }
+}
+
+/* O que a exclusão apaga, dentro do diálogo. Lista de verdade (`<ul>`), não
+   parágrafo com bullets escritos à mão: quem usa leitor de tela precisa ouvir
+   "lista de 4 itens" antes de decidir. */
+.lista-do-que-se-perde {
+  margin: var(--unooria-spacing-xs) 0;
+  padding-left: var(--unooria-spacing-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--unooria-spacing-xxs);
+  color: var(--unooria-color-neutral-700);
+  font-size: var(--unooria-font-size-s);
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+ * COMPENSAÇÃO — o corpo FECHADO do `Collapse` sequestra o teclado
+ *
+ * LACUNA REAL DO DS (0.1.19): o `Collapse` esconde o corpo com
+ * `grid-template-rows: 0fr` + `opacity: 0` + `aria-hidden="true"`, e o
+ * `__body-inner` com `overflow: hidden`. Nada disso remove do FOCO: nem
+ * `inert`, nem `visibility`, nem `display: none`. Um descendente focável
+ * dentro de `aria-hidden="true"` é foco fantasma — o Tab entra, e o leitor de
+ * tela não anuncia nada, porque para ele aquilo não existe.
+ *
+ * Medido nesta tela em 2026-09-10: os três bimestres fechados deixavam
+ * **30 botões de semana** recebendo foco do teclado. Um professor que navega
+ * por Tab atravessava trinta controles invisíveis antes de chegar ao próximo
+ * elemento visível da página.
+ *
+ * O que ela faz: `visibility: hidden` é a única propriedade CSS que tira do
+ * foco sem tirar do fluxo, e a que preserva a animação de altura do pacote. O
+ * `transition` com delay igual à duração do collapse mantém o fechamento
+ * animado — sem ele o conteúdo sumiria de golpe antes de a altura chegar a
+ * zero. Na abertura, `visibility: visible` volta imediatamente.
+ *
+ * O que ela NÃO faz: nada além do foco. A árvore de acessibilidade já estava
+ * correta (o pacote põe `aria-hidden`), e a aparência não muda.
+ *
+ * MORRE quando o `Collapse` publicar `inert` no corpo fechado — pedido aberto
+ * no `storybook-unooria`. Registrada em `AGENTS.md` desta pasta.
+ * A suíte `professor/09-plano-de-ensino` conta os focáveis e reprova se
+ * voltarem, para que remover isto não passe em silêncio.
+ * ------------------------------------------------------------------------- */
+.unooria-collapse__body[aria-hidden="true"] {
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease,
+    visibility 0s linear 0.3s;
+}

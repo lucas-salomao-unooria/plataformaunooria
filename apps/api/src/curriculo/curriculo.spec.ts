@@ -139,7 +139,7 @@ describe("dado extraído da BNCC", () => {
       expect(h?.anos).toEqual(["5EF"]);
     });
 
-    it("põe a habilidade da exp-05 no eixo e no objeto do PDF", () => {
+    it("põe a habilidade da exp05ef1b no eixo e no objeto do PDF", () => {
       // Conferida à mão na página 32 do anexo: ela é de CULTURA DIGITAL, e o
       // dataset a dava como MUNDO DIGITAL com o cabeçalho da tabela no lugar do
       // objeto de conhecimento.

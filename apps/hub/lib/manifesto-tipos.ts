@@ -1,5 +1,5 @@
 /**
- * O que o hub lê da exp-08 — espelho de `apps/api/src/manifesto-ia`.
+ * O que o hub lê da exp08ef4b — espelho de `apps/api/src/manifesto-ia`.
  *
  * Note o que NÃO existe aqui: nenhum campo de nota, nível ou taxa de acerto. A
  * leitura do professor é de PROGRESSO e de ESCOLHA (PED-07). A distribuição das
@@ -21,7 +21,7 @@ export type PassoDoEstudante =
   | "podcast"
   | "fim";
 
-/** O `SeletorDeTurma` é compartilhado com a exp-03, a exp-06 e a exp-07 e
+/** O `SeletorDeTurma` é compartilhado com a exp02em1b, a exp06ef2b e a exp07ef1b e
  *  exige `estudantes`; a api o devolve sempre. */
 export interface TurmaDoManifesto {
   id: string;

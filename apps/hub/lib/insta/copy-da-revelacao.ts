@@ -5,7 +5,7 @@
  * ║  ESTE ARQUIVO EXISTE DUAS VEZES, E AS DUAS CÓPIAS TÊM DE SER IDÊNTICAS.  ║
  * ║                                                                          ║
  * ║    apps/hub/lib/insta/copy-da-revelacao.ts  ← você está aqui                                                                             ║
- * ║    apps/experiencias/exp-01-instanooria/src/lib/copy-da-revelacao.ts                                                                       ║
+ * ║    apps/experiencias/exp08ef1b/src/lib/copy-da-revelacao.ts                                                                       ║
  * ║                                                                          ║
  * ║  Mexeu na copy? Mexa NAS DUAS, no mesmo commit. Nada no build cobra       ║
  * ║  isso — nem o typecheck, nem o lint, nem teste nenhum.                    ║
@@ -19,7 +19,7 @@
  * instável na escola é regra, não exceção: texto que depende de fetch é texto
  * que pode não aparecer. Ele viaja no bundle, como sempre viajou.
  *
- * Isto já foi um pacote de workspace (`@edu/conteudo-exp-01`), que garantia a
+ * Isto já foi um pacote de workspace (`@edu/conteudo-exp08ef1b`), que garantia a
  * igualdade por construção. Foi desfeito por decisão de 2026-09-09: a copy está
  * fechada e não haverá revisão dela. Se essa premissa mudar, a duplicação volta
  * a ser o risco que o pacote existia para eliminar.

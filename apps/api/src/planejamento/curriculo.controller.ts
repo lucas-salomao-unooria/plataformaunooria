@@ -35,7 +35,7 @@ import { GESTORES } from "../auth/claims";
  * Juntar as duas coisas num controller convidaria a esquecer, numa rota nova,
  * de qual lado da fronteira ela está.
  *
- * Exige autenticação mesmo sendo dado público: quem consome é a exp-92 dentro
+ * Exige autenticação mesmo sendo dado público: quem consome é a app-92 dentro
  * do iframe, com o token do professor, e uma rota aberta aqui seria um endpoint
  * a mais para varrer.
  */

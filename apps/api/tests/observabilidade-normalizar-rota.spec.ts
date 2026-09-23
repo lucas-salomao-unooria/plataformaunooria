@@ -12,7 +12,7 @@ describe("normalizarRota", () => {
     expect(normalizarRota("/professor/entre-redes/vila-do-lume/estudantes/abc", "hub")).toBe("/professor/:secao");
     expect(normalizarRota("/admin/usuarios", "hub")).toBe("/admin/:secao");
     expect(normalizarRota("/analise/atividades/x", "hub")).toBe("/analise");
-    expect(normalizarRota("/exp/exp-02-unootube", "hub")).toBe("/exp/:expId");
+    expect(normalizarRota("/exp/exp04ef1b", "hub")).toBe("/exp/:expId");
     expect(normalizarRota("/trocar-senha/", "hub")).toBe("/trocar-senha");
   });
 
@@ -23,9 +23,11 @@ describe("normalizarRota", () => {
   });
 
   it("exp: só o padrão de expId passa", () => {
-    expect(normalizarRota("exp-02-unootube", "exp")).toBe("exp-02-unootube");
-    expect(normalizarRota("exp-70-vila-do-lume?x=1", "exp")).toBe("exp-70-vila-do-lume");
-    expect(normalizarRota("/exp/exp-02-unootube", "exp")).toBe("outra");
-    expect(normalizarRota("Exp-02", "exp")).toBe("outra");
+    expect(normalizarRota("exp04ef1b", "exp")).toBe("exp04ef1b");
+    expect(normalizarRota("app-70-vila-do-lume?x=1", "exp")).toBe("app-70-vila-do-lume");
+    expect(normalizarRota("/exp/exp04ef1b", "exp")).toBe("outra");
+    expect(normalizarRota("Exp04ef1b", "exp")).toBe("outra");
+    /* O formato antigo (`exp-NN-slug`, antes da ADR-110) não é mais expId. */
+    expect(normalizarRota("exp-02-unootube", "exp")).toBe("outra");
   });
 });

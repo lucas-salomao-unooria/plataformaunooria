@@ -1,5 +1,5 @@
 /**
- * Prompts de sistema do check-in de bem-estar (exp-91). Vivem AQUI, no server
+ * Prompts de sistema do check-in de bem-estar (app-91). Vivem AQUI, no server
  * (regra 2 do CLAUDE.md) — o bundle nunca os vê.
  *
  * A IA escreve SÓ o entorno do instrumento: a frase de abertura do dia, a

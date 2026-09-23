@@ -1,5 +1,5 @@
 /**
- * Invariantes de produto verificáveis da exp-06. Vivem em UM lugar só e são
+ * Invariantes de produto verificáveis da exp06ef2b. Vivem em UM lugar só e são
  * importadas pela redaction do log, pelo painel e pelo teste. Alterar aqui
  * obriga a rodar a suíte da api.
  *

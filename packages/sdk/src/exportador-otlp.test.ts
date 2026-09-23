@@ -37,9 +37,9 @@ describe("spanParaOtlp / loteOtlp", () => {
   });
 
   it("descarta resourceFetch, agrupa por escopo e escreve o resource da experiência", () => {
-    const lote = loteOtlp([spanFalso("documentLoad"), spanFalso("resourceFetch"), spanFalso("HTTP GET")], { expId: "exp-02-unootube", versao: "1.2.3" });
+    const lote = loteOtlp([spanFalso("documentLoad"), spanFalso("resourceFetch"), spanFalso("HTTP GET")], { expId: "exp04ef1b", versao: "1.2.3" });
     expect(lote.resourceSpans[0]?.resource.attributes).toEqual([
-      { key: "service.name", value: { stringValue: "exp-02-unootube" } },
+      { key: "service.name", value: { stringValue: "exp04ef1b" } },
       { key: "service.version", value: { stringValue: "1.2.3" } },
     ]);
     expect(lote.resourceSpans[0]?.scopeSpans[0]?.spans.map((s) => s.name)).toEqual(["documentLoad", "HTTP GET"]);
@@ -59,7 +59,7 @@ describe("ExportadorOtlpDaApi", () => {
   it("POST em /observabilidade/v1/traces com o token ATUAL a cada envio", async () => {
     let token = "t1";
     const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
-    const exp = new ExportadorOtlpDaApi({ apiUrl: "https://api", getToken: () => token, expId: "exp-01-instanooria", versao: "1.1.1", fetch: fetchMock as unknown as typeof fetch });
+    const exp = new ExportadorOtlpDaApi({ apiUrl: "https://api", getToken: () => token, expId: "exp08ef1b", versao: "1.1.1", fetch: fetchMock as unknown as typeof fetch });
     const r1 = await new Promise((res) => exp.export([spanFalso("HTTP GET")], res));
     token = "t2";
     const r2 = await new Promise((res) => exp.export([spanFalso("HTTP GET")], res));
@@ -73,7 +73,7 @@ describe("ExportadorOtlpDaApi", () => {
 
   it("lote só de resourceFetch não faz requisição; erro HTTP vira FAILED", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 429 }));
-    const exp = new ExportadorOtlpDaApi({ apiUrl: "https://api", getToken: () => "t", expId: "exp-01-instanooria", versao: "1.1.1", fetch: fetchMock as unknown as typeof fetch });
+    const exp = new ExportadorOtlpDaApi({ apiUrl: "https://api", getToken: () => "t", expId: "exp08ef1b", versao: "1.1.1", fetch: fetchMock as unknown as typeof fetch });
     expect(await new Promise((res) => exp.export([spanFalso("resourceFetch")], res))).toEqual({ code: 0 });
     expect(fetchMock).not.toHaveBeenCalled();
     const r = (await new Promise((res) => exp.export([spanFalso("x")], res))) as { code: number };

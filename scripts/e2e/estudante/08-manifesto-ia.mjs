@@ -2,7 +2,7 @@ import { HUB, suite } from "../lib/roteiro.mjs";
 import { conta } from "../lib/credenciais.mjs";
 
 /**
- * O Manifesto da IA (exp-08), nas duas pontas da sala.
+ * O Manifesto da IA (exp08ef4b), nas duas pontas da sala.
  *
  * A missão prova três coisas, e cada uma é uma regra que o software instala:
  *
@@ -144,7 +144,7 @@ await suite(
     const p = await r.pagina("estudante", { viewport: { width: 1280, height: 950 } });
     await r.entrar(p, estudante.login);
 
-    await p.goto(`${HUB}/exp/exp-08-manifesto-ia`, { waitUntil: "domcontentloaded" });
+    await p.goto(`${HUB}/exp/exp08ef4b`, { waitUntil: "domcontentloaded" });
     let q = p.frameLocator('iframe[title="experiencia"]');
     await q.locator("text=/monitorar notas e presença/i").waitFor({ timeout: 40_000 });
     await r.registrar(p, "alerta-de-amara", {
@@ -218,7 +218,7 @@ await suite(
      * Dispara um questionamento RESPEITANDO o ritmo que a máquina impõe.
      *
      * A experiência exige 10s entre disparos (`INTERVALO_MINIMO_MS`, em
-     * `apps/experiencias/exp-08-manifesto-ia/src/lib/maquina-estados.ts`), e o
+     * `apps/experiencias/exp08ef4b/src/lib/maquina-estados.ts`), e o
      * caminho degenerado é DELIBERADO: dois cliques rápidos põem o sistema em
      * latência forçada de 15s e o segundo clique é **descartado**. O objetivo é
      * a criança LER a réplica antes de perguntar de novo.

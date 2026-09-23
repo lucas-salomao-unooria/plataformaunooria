@@ -7,7 +7,7 @@ export default defineConfig({
     // Sourcemap OCULTO (cap. 17): o `.map` é gerado, mas o bundle não ganha o
     // comentário `sourceMappingURL` — o navegador nunca o pede. O CI sobe os
     // mapas num bucket PRIVADO à parte; no público (acesso uniforme) qualquer
-    // objeto é público, e o mapa é o fonte (na exp-01, a revelação). Nunca
+    // objeto é público, e o mapa é o fonte (na exp08ef1b, a revelação). Nunca
     // `true`; nunca `inline`.
     sourcemap: "hidden",
   },

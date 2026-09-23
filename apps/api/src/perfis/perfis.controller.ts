@@ -140,7 +140,7 @@ export class PerfisController {
   }
 
   /**
-   * IMPORTA OS PERFIS DA VILA DO LUME (exp-70) para esta atividade.
+   * IMPORTA OS PERFIS DA VILA DO LUME (app-70) para esta atividade.
    *
    * Fecha o "Ato 1" que a ficha do Instanooria sempre descreveu: *"fora da
    * plataforma, um jogo mede o perfil de valores do estudante"*. O jogo deixou de
@@ -168,7 +168,7 @@ export class PerfisController {
   @Contrato({
     resumo: "Traz os perfis da Vila do Lume para a largada do Instanooria.",
     descricao:
-      "Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.",
+      "Colapsa o perfil Schwartz da app-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.",
     params: z.object({ id: z.string().uuid() }),
     query: DaVilaSchema,
     resposta: ImportadosDaVilaSchema,

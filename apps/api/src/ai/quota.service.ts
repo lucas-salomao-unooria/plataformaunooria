@@ -6,8 +6,8 @@ import { PrismaService } from "../prisma/prisma.service";
 
 /**
  * Os perfis que TÊM linha em `ia_quotas` — e o CHECK da migration espelha esta
- * tupla. Só dois chamam IA de fato: o estudante (tutor da exp-01, exp-03,
- * exp-07) e o professor (exp-04, exp-07, exp-08, exp-90, exp-91, exp-92).
+ * tupla. Só dois chamam IA de fato: o estudante (tutor da exp08ef1b, exp02em1b,
+ * exp07ef1b) e o professor (exp01ef1b, exp07ef1b, exp08ef4b, app-90, app-91, app-92).
  * Gestores e `admin` não têm rota de IA hoje; quando tiverem, o perfil entra
  * aqui, no CHECK e na semente — nunca só num dos três.
  */
@@ -17,7 +17,7 @@ export type PerfilDaQuota = (typeof PERFIS_COM_QUOTA)[number];
 /**
  * O que vale quando a linha NÃO existe — e ela deveria existir sempre, porque a
  * migration a semeia. São os valores que viviam nas envs até a ADR-105: 300k é
- * ~4 partidas da exp-03 (uma custa ~77k, MEDIDO em `unoogpt/regras/defaults.ts`);
+ * ~4 partidas da exp02em1b (uma custa ~77k, MEDIDO em `unoogpt/regras/defaults.ts`);
  * 2M dá de 6 a 9 planos anuais, cujo PROMPT sozinho passa de 200k tokens.
  *
  * Falhar ABERTO com a constante, e não fechado: uma stack recém-provisionada

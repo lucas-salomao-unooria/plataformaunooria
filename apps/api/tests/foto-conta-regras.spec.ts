@@ -14,7 +14,7 @@ import {
   type RunParaPainel,
 } from "../src/foto-conta/regras";
 
-/** Regras puras da exp-04 — sem banco. */
+/** Regras puras da exp01ef1b — sem banco. */
 
 describe("a máquina de etapas anda um passo, sempre para a frente", () => {
   test("cada etapa avança só para a seguinte", () => {

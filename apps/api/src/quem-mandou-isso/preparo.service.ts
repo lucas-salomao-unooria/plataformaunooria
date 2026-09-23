@@ -14,7 +14,7 @@ import {
 import { validarParidade } from "./regras/curadoria";
 
 /**
- * A ÚNICA superfície de IA da exp-05: o rascunho do lote da turma, antes da aula.
+ * A ÚNICA superfície de IA da exp05ef1b: o rascunho do lote da turma, antes da aula.
  *
  * Três coisas que este serviço não faz, e cada ausência é uma regra:
  *
@@ -162,7 +162,7 @@ export function validarLote(bruto: unknown): MensagemDoLote[] {
 }
 
 @Injectable()
-export class PreparoDaExp05Service {
+export class PreparoDaExp05ef1bService {
   constructor(
     @Inject(AI_PROVIDER) private readonly ia: AiProvider,
     private readonly quota: QuotaService,
@@ -187,7 +187,7 @@ export class PreparoDaExp05Service {
     parametros: { tema: string; gatilho: Gatilho; contextoDaEscola?: string },
   ): Promise<{ rascunho: RascunhoDoLote; usouIa: boolean; tokens: number }> {
     if (!(await this.quota.temSaldo(escolaId, usuarioId, perfil))) {
-      logger.info({ codigo: "exp05-preparo-sem-saldo", escolaId }, "preparo sem saldo de IA");
+      logger.info({ codigo: "exp05ef1b-preparo-sem-saldo", escolaId }, "preparo sem saldo de IA");
       return { rascunho: loteDefault(), usouIa: false, tokens: 0 };
     }
 
@@ -213,7 +213,7 @@ export class PreparoDaExp05Service {
          `validar` já foram faturadas pelo vendor (ADR-74). */
       if (tokens > 0) await this.quota.consumir(escolaId, usuarioId, tokens);
       logger.warn(
-        { codigo: "exp05-preparo-falhou", escolaId, tokens, err: erro },
+        { codigo: "exp05ef1b-preparo-falhou", escolaId, tokens, err: erro },
         "geração do lote da turma falhou; devolvendo o banco curado",
       );
       return { rascunho: loteDefault(), usouIa: false, tokens };

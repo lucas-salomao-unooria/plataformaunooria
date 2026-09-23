@@ -1,12 +1,12 @@
 /**
  * Os passos da missão e a regra que reconcilia **a turma** com **o estudante**.
  *
- * A exp-07 tem dois relógios, como a exp-01:
+ * A exp07ef1b tem dois relógios, como a exp08ef1b:
  *
- * - `exp_07_gates_turma.etapa` — o relógio da TURMA, que a professora controla.
+ * - `exp07ef1b_gates_turma.etapa` — o relógio da TURMA, que a professora controla.
  *   É o que permite fechar a Aula 1 em 30 telas ao mesmo tempo e congelar todas
  *   no debate.
- * - `exp_07_sessoes.passo` — a tela daquele estudante. Dentro de um mesmo
+ * - `exp07ef1b_sessoes.passo` — a tela daquele estudante. Dentro de um mesmo
  *   momento eles andam em ritmos diferentes: um ainda ouve o áudio da Dona
  *   Lúcia enquanto o outro já abriu a matéria íntegra.
  *
@@ -15,7 +15,7 @@
  * implementações divergentes disso seriam a tela do estudante discordando do
  * que o servidor acha que ele está vendo.
  *
- * A diferença em relação à exp-01: lá a etapa é só PISO. Aqui há TETO de
+ * A diferença em relação à exp08ef1b: lá a etapa é só PISO. Aqui há TETO de
  * verdade, porque a missão é de DUAS AULAS — quem termina a investigação não
  * pode simplesmente entrar na decisão e acabar a missão sozinho antes da
  * segunda aula. O breakpoint é o teto da Aula 1, e é ele que faz a turma chegar
@@ -81,7 +81,7 @@ export function ehEtapa(valor: string): valor is Etapa {
 /**
  * Traduz qualquer valor de `passo` para um passo conhecido.
  *
- * Existe pela mesma razão do `normalizarFase` da exp-01: o fallback ingênuo
+ * Existe pela mesma razão do `normalizarFase` da exp08ef1b: o fallback ingênuo
  * seria o começo, e uma linha gravada por uma versão futura mandaria a criança
  * de volta ao chat de Amara no meio da síntese.
  */

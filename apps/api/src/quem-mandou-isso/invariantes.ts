@@ -1,5 +1,5 @@
 /**
- * Invariantes de produto verificáveis da exp-05. Vivem em UM lugar só e são
+ * Invariantes de produto verificáveis da exp05ef1b. Vivem em UM lugar só e são
  * importadas pela redaction do log, pelo preparo e pelo teste. Alterar aqui
  * obriga a rodar a suíte da api.
  *
@@ -32,7 +32,7 @@ export const CAMPOS_SENSIVEIS = [
  * - **Quebra de ficção**: no iframe quem fala é um app de mensagens.
  *   "Atividade", "experimento" e "gabarito" numa mensagem do grupo denunciam
  *   o exercício, e a missão mede comportamento espontâneo. **"Professor" NÃO
- *   entra**, e a ausência é deliberada — diferente da exp-06: aqui o grupo é o
+ *   entra**, e a ausência é deliberada — diferente da exp06ef2b: aqui o grupo é o
  *   da TURMA, e mensagens de estudante sobre "os professores" ou de um "Prof."
  *   escrevendo no grupo são o WhatsApp real. Proibir a palavra faria a régua
  *   reprovar a própria copy homologada (a `msg-3` e a `msg-7` do banco).

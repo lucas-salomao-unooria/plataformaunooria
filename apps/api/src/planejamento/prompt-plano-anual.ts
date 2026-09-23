@@ -1,13 +1,13 @@
 /**
- * Prompt de sistema do gerador de PLANO ANUAL da exp-92.
+ * Prompt de sistema do gerador de PLANO ANUAL da app-92.
  *
  * Vive na api porque é prompt de sistema (regra 2 do AGENTS.md: nada disso em
  * bundle client), e como string TS porque o `nest build` não copia `.md` sem
  * configurar assets — mesmo motivo de `planos/prompt-plano-de-aula.ts`.
  *
- * COMO ELE DIFERE DO DA exp-90
+ * COMO ELE DIFERE DO DA app-90
  * ----------------------------
- * O da exp-90 recebe DOCUMENTOS (o currículo da rede e o material didático) e
+ * O da app-90 recebe DOCUMENTOS (o currículo da rede e o material didático) e
  * tem de inferir a progressão a partir de prosa. Este recebe DADO: a lista
  * exata das habilidades da BNCC daquele componente naquele ano, com código,
  * objeto de conhecimento e unidade temática, e a distribuição por período que o

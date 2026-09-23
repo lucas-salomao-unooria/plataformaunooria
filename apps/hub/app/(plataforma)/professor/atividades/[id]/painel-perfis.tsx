@@ -109,7 +109,7 @@ export function PainelPerfis({
   }, [carregar]);
 
   /**
-   * Traz os perfis da Vila do Lume (exp-70) para esta atividade — o "Ato 1" que
+   * Traz os perfis da Vila do Lume (app-70) para esta atividade — o "Ato 1" que
    * a ficha da missão sempre descreveu como um jogo fora da plataforma.
    *
    * O DISPARO É DO PROFESSOR, não automático: importar sozinho desfaria em

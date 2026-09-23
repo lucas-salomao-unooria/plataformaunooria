@@ -47,7 +47,7 @@ importers:
         version: 4.0.1
       sharp:
         specifier: ^0.35.3
-        version: 0.35.3(@types/node@22.20.1)
+        version: 0.35.3(@types/node@26.5.0)
       turbo:
         specifier: ^2.3.0
         version: 2.10.11
@@ -222,6 +222,59 @@ importers:
         version: link:../../../packages/ui
       '@unooria/design-system':
         specifier: ^0.2.2
+        version: 0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/app-70-vila-do-lume:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/app-90-plano-de-aula:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
         version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.0
@@ -249,7 +302,81 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
 
-  apps/experiencias/exp-01-instanooria:
+  apps/experiencias/app-91-bem-estar:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
+        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/app-92-plano-de-ensino:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
+        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/exp01ef1b:
     dependencies:
       '@edu/sdk':
         specifier: workspace:*
@@ -281,64 +408,18 @@ importers:
         version: 19.2.5(@types/react@19.2.18)
       '@vitejs/plugin-react':
         specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))
-      autoprefixer:
-        specifier: ^10.4.0
-        version: 10.5.4(postcss@8.5.26)
-      postcss:
-        specifier: ^8.5.0
-        version: 8.5.26
-      tailwindcss:
-        specifier: ^3.4.19
-        version: 3.4.19(yaml@2.9.0)
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@1.21.7)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-02-unootube:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
         version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.6.0
         version: 5.9.3
       vite:
         specifier: ^6.4.3
         version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
       vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@26.5.0)(jsdom@30.0.1)(terser@5.51.2)
 
-  apps/experiencias/exp-03-unoogpt:
+  apps/experiencias/exp02em1b:
     dependencies:
       '@edu/sdk':
         specifier: workspace:*
@@ -384,7 +465,155 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
 
-  apps/experiencias/exp-04-o-que-a-foto-conta:
+  apps/experiencias/exp04ef1b:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
+        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/exp05ef1b:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
+        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/exp06ef2b:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
+        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/exp07ef1b:
+    dependencies:
+      '@edu/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@edu/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@unooria/design-system':
+        specifier: ^0.2.2
+        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react:
+        specifier: ^19.2.0
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.8(react@19.2.8)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.2.0
+        version: 19.2.5(@types/react@19.2.18)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.4.3
+        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vitest:
+        specifier: ^3.2.6
+        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+
+  apps/experiencias/exp08ef1b:
     dependencies:
       '@edu/sdk':
         specifier: workspace:*
@@ -417,43 +646,15 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^4.3.0
         version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.6.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^2.1.9
-        version: 2.1.9(@types/node@26.5.0)(jsdom@30.0.1)(terser@5.51.2)
-
-  apps/experiencias/exp-05-quem-mandou-isso:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      autoprefixer:
+        specifier: ^10.4.0
+        version: 10.5.4(postcss@8.5.26)
+      postcss:
+        specifier: ^8.5.0
+        version: 8.5.26
+      tailwindcss:
+        specifier: ^3.4.19
+        version: 3.4.19(yaml@2.9.0)
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -464,208 +665,7 @@ importers:
         specifier: ^3.2.6
         version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
 
-  apps/experiencias/exp-06-rastro-boato:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-07-o-eco-no-grupo:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-08-manifesto-ia:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-70-vila-do-lume:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-    devDependencies:
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-90-plano-de-aula:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-91-bem-estar:
-    dependencies:
-      '@edu/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
-      '@edu/ui':
-        specifier: workspace:*
-        version: link:../../../packages/ui
-      '@unooria/design-system':
-        specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react:
-        specifier: ^19.2.0
-        version: 19.2.8
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.8(react@19.2.8)
-    devDependencies:
-      '@types/react':
-        specifier: ^19.2.0
-        version: 19.2.18
-      '@types/react-dom':
-        specifier: ^19.2.0
-        version: 19.2.5(@types/react@19.2.18)
-      '@vitejs/plugin-react':
-        specifier: ^4.3.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-      vite:
-        specifier: ^6.4.3
-        version: 6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vitest:
-        specifier: ^3.2.6
-        version: 3.2.7(@types/node@26.5.0)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
-
-  apps/experiencias/exp-92-plano-de-ensino:
+  apps/experiencias/exp08ef4b:
     dependencies:
       '@edu/sdk':
         specifier: workspace:*
@@ -745,7 +745,7 @@ importers:
         version: 1.43.0
       '@unooria/design-system':
         specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       google-auth-library:
         specifier: ^11.0.2
         version: 11.0.2
@@ -754,10 +754,10 @@ importers:
         version: 5.10.0
       next:
         specifier: ^16.3.3
-        version: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next-auth:
         specifier: ^5.0.0-beta.25
-        version: 5.0.0-beta.32(next@16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
+        version: 5.0.0-beta.32(next@16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
       pino:
         specifier: ^10.3.1
         version: 10.3.1
@@ -803,7 +803,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.6
-        version: 3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
+        version: 3.2.7(@types/node@22.20.1)(jiti@1.21.7)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0)
 
   packages/sdk:
     dependencies:
@@ -855,7 +855,7 @@ importers:
     dependencies:
       '@unooria/design-system':
         specifier: ^0.2.2
-        version: 0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        version: 0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
       '@types/react':
         specifier: ^19.2.0
@@ -8377,6 +8377,20 @@ snapshots:
   '@ungap/structured-clone@1.4.0':
     optional: true
 
+  '@unooria/design-system@0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@opentelemetry/api'
+      - '@playwright/test'
+      - '@types/node'
+      - babel-plugin-macros
+      - babel-plugin-react-compiler
+      - sass
+
   '@unooria/design-system@0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -8391,9 +8405,9 @@ snapshots:
       - babel-plugin-react-compiler
       - sass
 
-  '@unooria/design-system@0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@unooria/design-system@0.2.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
     transitivePeerDependencies:
@@ -8418,32 +8432,6 @@ snapshots:
       - babel-plugin-macros
       - babel-plugin-react-compiler
       - sass
-
-  '@unooria/design-system@0.2.2(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@opentelemetry/api'
-      - '@playwright/test'
-      - '@types/node'
-      - babel-plugin-macros
-      - babel-plugin-react-compiler
-      - sass
-
-  '@vitejs/plugin-react@4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@babel/plugin-transform-react-jsx-self': 7.29.7(@babel/core@7.29.7)
-      '@babel/plugin-transform-react-jsx-source': 7.29.7(@babel/core@7.29.7)
-      '@rolldown/pluginutils': 1.0.0-beta.27
-      '@types/babel__core': 7.20.5
-      react-refresh: 0.17.0
-      vite: 6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
-    transitivePeerDependencies:
-      - supports-color
 
   '@vitejs/plugin-react@4.7.0(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))':
     dependencies:
@@ -8480,21 +8468,13 @@ snapshots:
     optionalDependencies:
       vite: 5.4.21(@types/node@26.5.0)(terser@5.51.2)
 
-  '@vitest/mocker@3.2.7(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))':
+  '@vitest/mocker@3.2.7(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 3.2.7
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-
-  '@vitest/mocker@3.2.7(vite@6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))':
-    dependencies:
-      '@vitest/spy': 3.2.7
-      estree-walker: 3.0.3
-      magic-string: 0.30.21
-    optionalDependencies:
-      vite: 6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
 
   '@vitest/mocker@3.2.7(vite@6.4.3(@types/node@26.5.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))':
     dependencies:
@@ -10856,11 +10836,37 @@ snapshots:
       pino-http: 11.0.0
       rxjs: 7.8.2
 
-  next-auth@5.0.0-beta.32(next@16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8):
+  next-auth@5.0.0-beta.32(next@16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8):
     dependencies:
       '@auth/core': 0.41.3
-      next: 16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      next: 16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8
+
+  next@16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+    dependencies:
+      '@next/env': 16.3.3
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.11.19
+      caniuse-lite: 1.0.30001810
+      postcss: 8.5.23
+      react: 19.2.8
+      react-dom: 19.2.8(react@19.2.8)
+      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.2.8)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.3.3
+      '@next/swc-darwin-x64': 16.3.3
+      '@next/swc-linux-arm64-gnu': 16.3.3
+      '@next/swc-linux-arm64-musl': 16.3.3
+      '@next/swc-linux-x64-gnu': 16.3.3
+      '@next/swc-linux-x64-musl': 16.3.3
+      '@next/swc-win32-arm64-msvc': 16.3.3
+      '@next/swc-win32-x64-msvc': 16.3.3
+      '@opentelemetry/api': 1.9.1
+      sharp: 0.35.3(@types/node@22.20.1)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
 
   next@16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@26.5.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
@@ -10888,7 +10894,7 @@ snapshots:
       - '@types/node'
       - babel-plugin-macros
 
-  next@16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  next@16.3.3(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       '@next/env': 16.3.3
       '@swc/helpers': 0.5.23
@@ -10897,7 +10903,7 @@ snapshots:
       postcss: 8.5.23
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
-      styled-jsx: 5.1.6(@babel/core@8.0.1)(react@19.2.8)
+      styled-jsx: 5.1.6(@babel/core@7.29.7)(react@19.2.8)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.3.3
       '@next/swc-darwin-x64': 16.3.3
@@ -10908,7 +10914,7 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 16.3.3
       '@next/swc-win32-x64-msvc': 16.3.3
       '@opentelemetry/api': 1.9.1
-      sharp: 0.35.3(@types/node@22.20.1)
+      sharp: 0.35.3
     transitivePeerDependencies:
       - '@babel/core'
       - '@types/node'
@@ -10935,32 +10941,6 @@ snapshots:
       '@next/swc-win32-x64-msvc': 16.3.3
       '@opentelemetry/api': 1.9.1
       sharp: 0.35.3(@types/node@26.5.0)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - babel-plugin-macros
-
-  next@16.3.3(@babel/core@8.0.1)(@opentelemetry/api@1.9.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
-    dependencies:
-      '@next/env': 16.3.3
-      '@swc/helpers': 0.5.23
-      baseline-browser-mapping: 2.11.19
-      caniuse-lite: 1.0.30001810
-      postcss: 8.5.23
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-      styled-jsx: 5.1.6(@babel/core@8.0.1)(react@19.2.8)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.3.3
-      '@next/swc-darwin-x64': 16.3.3
-      '@next/swc-linux-arm64-gnu': 16.3.3
-      '@next/swc-linux-arm64-musl': 16.3.3
-      '@next/swc-linux-x64-gnu': 16.3.3
-      '@next/swc-linux-x64-musl': 16.3.3
-      '@next/swc-win32-arm64-msvc': 16.3.3
-      '@next/swc-win32-x64-msvc': 16.3.3
-      '@opentelemetry/api': 1.9.1
-      sharp: 0.35.3
     transitivePeerDependencies:
       - '@babel/core'
       - '@types/node'
@@ -11682,7 +11662,6 @@ snapshots:
       '@img/sharp-win32-ia32': 0.35.3
       '@img/sharp-win32-x64': 0.35.3
       '@types/node': 26.5.0
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:
@@ -12201,34 +12180,13 @@ snapshots:
       - supports-color
       - terser
 
-  vite-node@3.2.4(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0):
+  vite-node@3.2.4(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-    transitivePeerDependencies:
-      - '@types/node'
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-
-  vite-node@3.2.4(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0):
-    dependencies:
-      cac: 6.7.14
-      debug: 4.4.3
-      es-module-lexer: 1.7.0
-      pathe: 2.0.3
-      vite: 6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -12274,7 +12232,7 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.51.2
 
-  vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0):
+  vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0):
     dependencies:
       esbuild: 0.25.12
       fdir: 6.5.0(picomatch@4.0.4)
@@ -12284,21 +12242,6 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 22.20.1
-      fsevents: 2.3.3
-      jiti: 2.7.0
-      terser: 5.51.2
-      yaml: 2.9.0
-
-  vite@6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0):
-    dependencies:
-      esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.4)
-      picomatch: 4.0.4
-      postcss: 8.5.26
-      rollup: 4.62.5
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 26.5.0
       fsevents: 2.3.3
       jiti: 1.21.7
       terser: 5.51.2
@@ -12355,11 +12298,11 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0):
+  vitest@3.2.7(@types/node@22.20.1)(jiti@1.21.7)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.7
-      '@vitest/mocker': 3.2.7(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0))
+      '@vitest/mocker': 3.2.7(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))
       '@vitest/pretty-format': 3.2.7
       '@vitest/runner': 3.2.7
       '@vitest/snapshot': 3.2.7
@@ -12377,53 +12320,11 @@ snapshots:
       tinyglobby: 0.2.17
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
-      vite-node: 3.2.4(@types/node@22.20.1)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)
+      vite: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
+      vite-node: 3.2.4(@types/node@22.20.1)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.20.1
-      jsdom: 30.0.1
-    transitivePeerDependencies:
-      - jiti
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-
-  vitest@3.2.7(@types/node@26.5.0)(jiti@1.21.7)(jsdom@30.0.1)(terser@5.51.2)(yaml@2.9.0):
-    dependencies:
-      '@types/chai': 5.2.3
-      '@vitest/expect': 3.2.7
-      '@vitest/mocker': 3.2.7(vite@6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0))
-      '@vitest/pretty-format': 3.2.7
-      '@vitest/runner': 3.2.7
-      '@vitest/snapshot': 3.2.7
-      '@vitest/spy': 3.2.7
-      '@vitest/utils': 3.2.7
-      chai: 5.3.3
-      debug: 4.4.3
-      expect-type: 1.4.0
-      magic-string: 0.30.21
-      pathe: 2.0.3
-      picomatch: 4.0.4
-      std-env: 3.10.0
-      tinybench: 2.9.0
-      tinyexec: 0.3.2
-      tinyglobby: 0.2.17
-      tinypool: 1.1.1
-      tinyrainbow: 2.0.0
-      vite: 6.4.3(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
-      vite-node: 3.2.4(@types/node@26.5.0)(jiti@1.21.7)(terser@5.51.2)(yaml@2.9.0)
-      why-is-node-running: 2.3.0
-    optionalDependencies:
-      '@types/node': 26.5.0
       jsdom: 30.0.1
     transitivePeerDependencies:
       - jiti

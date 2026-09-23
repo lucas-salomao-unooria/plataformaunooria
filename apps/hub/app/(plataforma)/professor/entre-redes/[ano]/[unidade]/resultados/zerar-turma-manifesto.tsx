@@ -5,11 +5,11 @@ import { useState, useTransition } from "react";
 import { Button, FeedbackAlert, Modal } from "@edu/ui/ds";
 
 /**
- * ZERAR A TURMA — o caminho de exclusão da exp-08, e a preparação para uma
+ * ZERAR A TURMA — o caminho de exclusão da exp08ef4b, e a preparação para uma
  * segunda aplicação.
  *
  * **O PREPARO SOBREVIVE, e o diálogo diz isso.** É a diferença desta missão
- * para a exp-06: o caso que a professora contextualizou e as réplicas que ela
+ * para a exp06ef2b: o caso que a professora contextualizou e as réplicas que ela
  * revisou custaram tempo dela, e apagá-los junto obrigaria a refazer a
  * curadoria para aplicar a missão na turma seguinte no mesmo dia.
  *

@@ -3,7 +3,7 @@ import { IDS_DE_BLOCO, IDS_DE_OPCAO, TETO_DA_REFLEXAO } from "./catalogo";
 import { ACOES_DO_GATE, ETAPAS, PASSOS } from "./regras/passos";
 
 /**
- * O contrato HTTP da exp-06 — só schemas Zod, nenhum decorator.
+ * O contrato HTTP da exp06ef2b — só schemas Zod, nenhum decorator.
  *
  * Os enums vêm do catálogo e das regras, nunca reescritos aqui: uma segunda
  * lista de valores é a que ninguém atualiza junto.

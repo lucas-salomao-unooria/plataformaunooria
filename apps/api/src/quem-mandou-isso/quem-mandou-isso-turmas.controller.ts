@@ -30,12 +30,12 @@ import {
   ZerarTurmaSchema,
 } from "./contrato-de-rotas";
 import { erroDeJogo } from "./erros";
-import { PreparoDaExp05Service } from "./preparo.service";
+import { PreparoDaExp05ef1bService } from "./preparo.service";
 import { QuemMandouIssoService } from "./quem-mandou-isso.service";
 
 /**
- * Visão do PROFESSOR (e gestor) sobre a exp-05 — classe separada para o
- * `@Roles` ficar limpo, como na exp-06 e na exp-08. A separação é decisão de
+ * Visão do PROFESSOR (e gestor) sobre a exp05ef1b — classe separada para o
+ * `@Roles` ficar limpo, como na exp06ef2b e na exp08ef4b. A separação é decisão de
  * segurança, não de estilo: o gestor não tem rota que aceite `estudanteId`.
  *
  * `gestor_contrato` é a única exceção cross-escola (regra 1): o token dele tem
@@ -43,7 +43,7 @@ import { QuemMandouIssoService } from "./quem-mandou-isso.service";
  * `comTenancy`, porque o `TenancyInterceptor` não abre contexto para ele.
  *
  * O GESTOR da escola alcança as mesmas rotas do professor, inclusive homologar
- * o lote, e isso segue o padrão da exp-06 e da exp-08 de propósito:
+ * o lote, e isso segue o padrão da exp06ef2b e da exp08ef4b de propósito:
  * `professorLeciona` exige matrícula de quem é professor e aceita o gestor da
  * escola. Restringir a curadoria ao regente daria ao gestor uma tela em que o
  * botão responde 404 sem dizer por quê.
@@ -78,7 +78,7 @@ function turmaOu400(turmaId: string): string {
 export class QuemMandouIssoTurmasController {
   constructor(
     private readonly missao: QuemMandouIssoService,
-    private readonly preparo: PreparoDaExp05Service,
+    private readonly preparo: PreparoDaExp05ef1bService,
   ) {}
 
   @Get()
@@ -268,7 +268,7 @@ export class QuemMandouIssoTurmasController {
   @Contrato({
     resumo: "Zerar a turma — a segunda aplicação.",
     descricao:
-      "Apaga as sessões, os encaminhamentos e as reflexões desta turma (CASCADE da sessão) e devolve o gate a `exploracao`, senão a turma nova nasceria com o telão já aceso. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp_05_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nA reflexão vai junto, e isso é deliberado: refazer a missão com a resposta da turma do ano passado na tela seria um portfólio que mistura duas turmas.",
+      "Apaga as sessões, os encaminhamentos e as reflexões desta turma (CASCADE da sessão) e devolve o gate a `exploracao`, senão a turma nova nasceria com o telão já aceso. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp05ef1b_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nA reflexão vai junto, e isso é deliberado: refazer a missão com a resposta da turma do ano passado na tela seria um portfólio que mistura duas turmas.",
     params: z.object({ turmaId: z.string().uuid() }),
     query: z.object({ escolaId: z.string().optional() }),
     resposta: ZerarTurmaSchema,

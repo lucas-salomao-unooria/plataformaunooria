@@ -13,13 +13,13 @@
  *    escrever `InstanooriaUI.Icon` e o bundler perderia o tree-shaking.
  *
  * ONDE USAR: a superfície do estudante das experiências que imitam o
- * Instagram — a exp-01-instanooria e as telas do CLONE da exp-04 (E2–E4; a
+ * Instagram — a exp08ef1b e as telas do CLONE da exp01ef1b (E2–E4; a
  * casca dela fala pela escola e usa `ds.ts`). É o inverso de `ds.ts`, que vale
  * só para as superfícies da plataforma. Os dois nunca se cruzam.
  *
  * DUAS FORMAS DE IMPORTAÇÃO COEXISTEM AQUI, e a diferença é histórica, não
  * intencional: o `Glifo` abaixo veio do namespace `InstanooriaUI` (a forma da
- * época) e FICA assim — ele é consumido pela exp-01 inteira, e migrá-lo é uma
+ * época) e FICA assim — ele é consumido pela exp08ef1b inteira, e migrá-lo é uma
  * mudança com risco próprio. Tudo que entrar DAQUI EM DIANTE importa do
  * SUBCAMINHO `@unooria/design-system/instanooria`, como `ds-chatgpt.ts`
  * documenta: o subcaminho preserva o tree-shaking (o namespace arrasta a seção
@@ -37,7 +37,7 @@ export const Glifo: IconeInstanooria = InstanooriaUI.Icon;
 export type NomeDeGlifo = Parameters<typeof Glifo>[0]['name'];
 
 /**
- * Componentes do clone para a exp-04 (e as próximas do Instanooria), pelo
+ * Componentes do clone para a exp01ef1b (e as próximas do Instanooria), pelo
  * SUBCAMINHO (ver o cabeçalho). Os nomes que NÃO colidem com a plataforma
  * saem como estão; os que colidem (Button, Avatar, Badge) ganham o sufixo
  * `Insta`, nunca um alias criativo: quem procura no Storybook precisa achar

@@ -1,7 +1,7 @@
 import type { AiFalante, AiProporcao } from "../ai/provider";
 
 /**
- * A mídia da exp-07 — as vozes e as fotos, com o roteiro de cada uma.
+ * A mídia da exp07ef1b — as vozes e as fotos, com o roteiro de cada uma.
  *
  * Ela é GERADA, não autorada: o brief de assets pedia duas gravações de voz, um
  * podcast masterizado e três fotografias, e nenhuma delas existe. O que existe
@@ -15,10 +15,10 @@ import type { AiFalante, AiProporcao } from "../ai/provider";
  * **Nada aqui é obrigatório para a missão rodar.** Sem mídia preparada, o áudio
  * cai na transcrição (que já está sempre na tela, por acessibilidade) e a foto
  * cai na ilustração procedural. É o mesmo princípio do `imageStatus: "fallback"`
- * da exp-01.
+ * da exp08ef1b.
  */
 
-export const EXP_ID = "exp-07-o-eco-no-grupo";
+export const EXP_ID = "exp07ef1b";
 
 /** As pessoas que falam, e o timbre de cada uma. */
 const AMARA: AiFalante = { nome: "Amara", timbre: "jovem-feminino" };
@@ -89,7 +89,7 @@ export type Midia = MidiaDeVoz | MidiaDeFoto;
 /**
  * O bloco de segurança que TODO prompt de foto carrega.
  *
- * Vem do `promptDeImagem` da exp-01, com dois acréscimos que esta missão exige:
+ * Vem do `promptDeImagem` da exp08ef1b, com dois acréscimos que esta missão exige:
  * a cena tem polícia e aglomeração, e nenhuma das duas pode virar imagem de
  * confronto — o boato do grupo é justamente que houve confusão, e uma foto
  * violenta faria o print manipulado dizer a verdade.

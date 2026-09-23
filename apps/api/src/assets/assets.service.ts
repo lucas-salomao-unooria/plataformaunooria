@@ -75,7 +75,7 @@ export class AssetsService {
   }
 
   /**
-   * Mídia FIXA de uma experiência — as vozes e as fotos que a exp-07 gera uma
+   * Mídia FIXA de uma experiência — as vozes e as fotos que a exp07ef1b gera uma
    * vez e serve a todo mundo.
    *
    * Três diferenças em relação a `salvarImagemDePost`, e as três são de

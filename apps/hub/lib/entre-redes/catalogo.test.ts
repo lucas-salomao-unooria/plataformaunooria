@@ -18,7 +18,7 @@ describe("grade do Entre Redes", () => {
   });
 
   test("as missões publicadas continuam no lugar delas", () => {
-    expect(buscarMissao("4-ano", "unidade-1")?.missao.expId).toBe("exp-02-unootube");
-    expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp-01-instanooria");
+    expect(buscarMissao("4-ano", "unidade-1")?.missao.expId).toBe("exp04ef1b");
+    expect(buscarMissao("8-ano", "unidade-1")?.missao.expId).toBe("exp08ef1b");
   });
 });

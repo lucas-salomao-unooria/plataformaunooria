@@ -20,7 +20,7 @@ import { ZerarTurma } from "./zerar-turma";
  *
  * A REGRA QUE ESTA TELA APLICA: nenhuma coluna de resgatados. Listagem é
  * ordenável, e ordenar crianças por acerto viraria ranking — o número fica na
- * tela individual, uma por vez. É a mesma regra da exp-70, e ela é o motivo de
+ * tela individual, uma por vez. É a mesma regra da app-70, e ela é o motivo de
  * a folha falar de CONDUTA (leu antes de decidir? viu fontes discordando?
  * justificou por intuição?) em vez de desempenho.
  */
