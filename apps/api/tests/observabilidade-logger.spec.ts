@@ -79,7 +79,7 @@ describe("logger (pino → Cloud Logging)", () => {
        que não seja o objeto original. */
     const marca = new WeakSet<object>();
     class ErroDePlataforma extends Error {
-      constructor(private readonly texto: string) {
+      constructor(readonly texto: string) {
         super();
         marca.add(this);
       }
