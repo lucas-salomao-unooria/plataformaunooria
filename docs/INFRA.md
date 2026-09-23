@@ -98,6 +98,17 @@ não abre com alguém achando que configurou a documentação é pior que nenhum
     gs://{contrato}-assets/exp04ef1b/ --project {projeto}
   ```
 
+  **A mídia que a api GERA também mora por `expId`**: `experiencias/{expId}/`
+  no mesmo bucket (as fotos e os áudios da exp07ef1b, feitos pelo Vertex no
+  primeiro `preparar-midia`). Com o id novo a api não acha o que já gerou e gera
+  TUDO de novo — custo de Vertex e, na primeira vez, mais de 30 s, que o proxy
+  do hub não espera (a professora vê erro). Copie junto:
+
+  ```bash
+  gcloud storage cp -r -n "gs://{contrato}-assets/experiencias/exp-07-o-eco-no-grupo/*" \
+    gs://{contrato}-assets/experiencias/exp07ef1b/ --project {projeto}
+  ```
+
   O build da exp recebe a base pública em `VITE_VIDEOS_BASE_URL`
   (`https://<cdn-assets>/exp04ef1b/videos`); vazio = `./videos` (dev,
   `public/videos/` gitignorado).

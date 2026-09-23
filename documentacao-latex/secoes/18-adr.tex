@@ -8954,7 +8954,10 @@ padronizou a nomenclatura do produto a partir dela.
     anos \texttimes{} 4 unidades); se ela mudar, o formato cresce.
   \item \textbf{O que está fora do repositório carrega o id antigo até ser
     trocado à mão}, uma vez por contrato: as versões anteriores dos
-    \emph{bundles} e os vídeos da \cd{exp04ef1b} no \emph{bucket} (o comando está
+    \emph{bundles}, os vídeos da \cd{exp04ef1b} e a mídia que a api GEROU para a
+    \cd{exp07ef1b} (\arq{experiencias/\{expId\}/} no \emph{bucket} de
+    \emph{assets}: sem a cópia, a api gera tudo de novo no Vertex, e a primeira
+    geração passa dos 30\,s que o proxy do hub espera) (o comando está
     em \arq{docs/INFRA.md}; o \emph{deploy} REPROVA até os vídeos estarem no
     prefixo novo, de propósito), e, no Terraform, o \emph{uptime check} da
     versão ativa, os painéis por \cd{service.name} e as métricas de log por
