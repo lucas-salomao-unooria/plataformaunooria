@@ -63,5 +63,5 @@ Duas armadilhas ao fazer isso, e as duas já custaram tempo:
 Se sua saída contradiz uma ADR existente, diga isso explicitamente em vez de
 atropelar em silêncio:
 
-> _Contradiz a ADR-72 (fronteira do disfarce da exp-06), mas vale reabrir
+> _Contradiz a ADR-72 (fronteira do disfarce da exp06ef2b), mas vale reabrir
 > porque…_

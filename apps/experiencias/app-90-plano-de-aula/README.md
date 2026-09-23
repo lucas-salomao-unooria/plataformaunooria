@@ -1,4 +1,4 @@
-# exp-90-plano-de-aula — Gerador de Plano de Aula
+# app-90-plano-de-aula — Gerador de Plano de Aula
 
 Ferramenta do **professor** (`publico: "professor"` no manifesto), embedada pelo
 hub em `/professor/plano-de-aula`. Porte do app `planodeaula` (Next.js, serviço
@@ -25,7 +25,7 @@ Cloud Run separado) para experiência Vite + `@edu/sdk`.
 ## Dev
 
 ```bash
-pnpm --filter @edu/exp-90-plano-de-aula dev     # :5175
+pnpm --filter @edu/app-90-plano-de-aula dev     # :5175
 # hub: http://localhost:3000/professor/plano-de-aula  (login: uma linha prof.* de credenciais-demo.csv)
 # referências de demonstração: pnpm --filter @edu/api seed:demo
 # referências reais: PLANOS_IMPORT_TOKEN=... node scripts/importar-referencias-plano.mjs <docs-referencia>

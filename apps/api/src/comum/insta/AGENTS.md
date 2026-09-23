@@ -1,8 +1,8 @@
-# apps/api/src/comum/insta — o relógio da aula (exp-01, ADR-92)
+# apps/api/src/comum/insta — o relógio da aula (exp08ef1b, ADR-92)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## Instanooria: o relógio da aula tem DOIS ponteiros (exp-01, ADR-92)
+## Instanooria: o relógio da aula tem DOIS ponteiros (exp08ef1b, ADR-92)
 
 `comum/insta/etapas.ts` reconcilia `activities.etapa` (a TURMA, que o professor
 move) com `runs.fase` (a tela daquela criança). É puro e testado

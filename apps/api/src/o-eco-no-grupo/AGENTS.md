@@ -1,12 +1,12 @@
-# apps/api/src/o-eco-no-grupo — O Eco no Grupo (exp-07)
+# apps/api/src/o-eco-no-grupo — O Eco no Grupo (exp07ef1b)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## O Eco no Grupo (exp-07, `apps/api/src/o-eco-no-grupo`)
+## O Eco no Grupo (exp07ef1b, `apps/api/src/o-eco-no-grupo`)
 
 Missão de 7º ano conduzida pelo **relógio da turma**, em duas aulas. Quatro
-tabelas (`exp_07_sessoes`, `exp_07_reflexoes`, `exp_07_mensagens`,
-`exp_07_gates_turma`), gabarito só no `catalogo.ts`, e IA em três superfícies.
+tabelas (`exp07ef1b_sessoes`, `exp07ef1b_reflexoes`, `exp07ef1b_mensagens`,
+`exp07ef1b_gates_turma`), gabarito só no `catalogo.ts`, e IA em três superfícies.
 
 - **A etapa da turma é PISO e TETO** (`regras/passos.ts`, molde de
   `comum/insta/etapas.ts`). Piso porque quem chegou atrasado não fica para trás;

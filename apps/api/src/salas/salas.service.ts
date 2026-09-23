@@ -16,7 +16,7 @@ import {
  * A SALA DE AULA (ADR-69): a turma como contexto do que existe para fazer.
  *
  * Este módulo é de PLATAFORMA, não de experiência — por isso não tem prefixo
- * `exp_NN_` e por isso ele não conhece nenhuma missão pelo nome. O que ele sabe
+ * `exp08ef1b_`/`app_70_` e por isso ele não conhece nenhuma missão pelo nome. O que ele sabe
  * é turma, série e catálogo; o que cada missão faz por dentro continua sendo
  * assunto do módulo dela.
  */

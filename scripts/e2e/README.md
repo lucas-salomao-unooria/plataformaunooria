@@ -88,7 +88,7 @@ Uma geração de IA que falha em 306 ms deixava o roteiro esperando 180 s por um
   espera cega paga o timeout inteiro para reportar o seletor.
 
 **Vigiar alerta só depois de o estado novo COMEÇAR.** Quando o botão que dispara
-a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da exp-92 é o
+a ação está DENTRO do alerta de erro anterior (o "Tentar de novo" da app-92 é o
 caso), o `esperarOuFalharCedo` seguinte vê o alerta ANTIGO e aborta antes de a
 ação começar. Espere primeiro o estado `gerando` com `waitFor` puro — vigiar o
 alerta ali é vigiar o passado. Em 2026-09-10 isso fez a `professor/09` reportar

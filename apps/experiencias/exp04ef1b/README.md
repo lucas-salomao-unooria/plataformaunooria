@@ -1,4 +1,4 @@
-# exp-02-unootube — UnooTube
+# exp04ef1b — UnooTube
 
 Clone educacional do YouTube Shorts sobre **fontes confiáveis vs. sensacionalismo**
 (Entre Redes · 4º ano EF · unidade 1). Portado do projeto standalone `UnooTube`
@@ -38,7 +38,7 @@ já foi reportado). Reiniciar descongela.
 
 | verbo | objeto |
 |---|---|
-| `attempted` | `exp-02-unootube` (boot) |
+| `attempted` | `exp04ef1b` (boot) |
 | `interacted` | `comecar-missao`, `salvar:vNN`, `remover-salvo:vNN`, `curtir:vNN`, `descurtir:vNN`, `limite-atingido`, `concluir-missao`, `tela:playlists\|ranking\|perfil`, `descricao:vNN`, `som:on\|off`, `ordenar:inscritos\|confiaveis`, `busca-bloqueada`, `reiniciar` |
 | `progressed` | `missao-3-salvos` com `resultado: { inscritos, fontesConfiaveis }` |
 | `completed` | via `exp.concluir` em "Adicionar credibilidade" (`score = fontesConfiaveis`) |
@@ -66,18 +66,18 @@ para o bucket").
 - **Dev**: copie-os para `public/videos/vNN.mp4` (pasta gitignorada) — o Vite
   serve em `./videos`. Origem: `~/Documents/UnooTube-projeto-completo/public/videos`.
 - **Prod**: suba uma vez por contrato para
-  `gs://{contrato}-assets/exp-02-unootube/videos/` e builde com
-  `VITE_VIDEOS_BASE_URL=https://<cdn-assets>/exp-02-unootube/videos`
+  `gs://{contrato}-assets/exp04ef1b/videos/` e builde com
+  `VITE_VIDEOS_BASE_URL=https://<cdn-assets>/exp04ef1b/videos`
   (`docs/INFRA.md`).
 
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-02-unootube dev      # :5174 (a exp-01 usa :5173)
+pnpm --filter @edu/exp04ef1b dev      # :5174 (a exp08ef1b usa :5173)
 ```
 
 Logado no hub como estudante do 4º ano (`estudante4a01` / `unooria123` no seed), a
-home é `/exp/exp-02-unootube`. Em dev o hub acha o Vite pela porta mapeada em
+home é `/exp/exp04ef1b`. Em dev o hub acha o Vite pela porta mapeada em
 `apps/hub/lib/experiencias-dev.ts`. Sem `viewport` no manifesto: tela cheia.
 
 ## Interface
@@ -137,4 +137,4 @@ verdade". Do ranking em diante os seletores são da seção da PLATAFORMA:
   publica glifo de MUDO, então o estado aparece pelo realce de `active` e pelo
   rótulo ("Som"/"Mudo") em vez de por um glifo inventado.
 - O `PhoneFrame` do DS NÃO é usado: quem desenha aparelho na plataforma é o hub
-  (`DispositivoFrame`), e a exp-02 não declara `viewport` de propósito.
+  (`DispositivoFrame`), e a exp04ef1b não declara `viewport` de propósito.

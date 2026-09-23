@@ -31,7 +31,7 @@
                 "properties": {
                   "expId": {
                     "type": "string",
-                    "pattern": "^(exp-\\d{2}-[a-z0-9-]+|hub)$"
+                    "pattern": "^((exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)|hub)$"
                   },
                   "versao": {
                     "type": "string",
@@ -267,7 +267,7 @@
                 "properties": {
                   "expId": {
                     "type": "string",
-                    "pattern": "^(exp-\\d{2}-[a-z0-9-]+|hub)$"
+                    "pattern": "^((exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)|hub)$"
                   },
                   "versao": {
                     "type": "string",
@@ -375,7 +375,7 @@
           "observabilidade"
         ],
         "summary": "Recebe um Web Vital (LCP, INP, CLS, TTFB) do hub ou de uma experiência.",
-        "description": "Amostrado a 10% no cliente, sem identificador de pessoa no corpo. A api normaliza `rota` para um conjunto fechado (`/professor/:secao`, `exp-02-unootube`…, senão `outra`) e registra num histograma OpenTelemetry por `superficie`, `rota` e `perfil` (do token). É o único sinal de que \"a plataforma está lenta na escola X\" que não depende de alguém reclamar — e nunca vira log.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 60 por minuto por (escola, usuário): acima, **429**.\n- `valor` acima de 10 minutos é recusado (relógio, não lentidão).",
+        "description": "Amostrado a 10% no cliente, sem identificador de pessoa no corpo. A api normaliza `rota` para um conjunto fechado (`/professor/:secao`, `exp04ef1b`…, senão `outra`) e registra num histograma OpenTelemetry por `superficie`, `rota` e `perfil` (do token). É o único sinal de que \"a plataforma está lenta na escola X\" que não depende de alguém reclamar — e nunca vira log.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- Cota de 60 por minuto por (escola, usuário): acima, **429**.\n- `valor` acima de 10 minutos é recusado (relógio, não lentidão).",
         "security": [
           {
             "token-da-plataforma": []
@@ -6392,7 +6392,7 @@
           "estudantes"
         ],
         "summary": "Monta o documento SEM assinatura, para o hub assinar.",
-        "description": "A api monta; **o hub assina**, porque é ele que tem a chave e publica o JWKS. Os campos `emissor` e `emitidoEm` são preenchidos na assinatura, e por isso não vêm daqui.\n\nTransferir é dentro do contrato; o perfil portátil é para FORA dele — a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto (ADR-35).\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.\n- **Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\n- Bem-estar (exp-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.\n- Sem `CONTRATO_ID` no hub, a emissão é **503**.",
+        "description": "A api monta; **o hub assina**, porque é ele que tem a chave e publica o JWKS. Os campos `emissor` e `emitidoEm` são preenchidos na assinatura, e por isso não vêm daqui.\n\nTransferir é dentro do contrato; o perfil portátil é para FORA dele — a criança que vai da rede estadual para a municipal sai da instalação, e não há garantia de que o destino comprou o produto (ADR-35).\n\n**Papéis:** gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Mesma tranca de `GET /estudantes/:id/historico`: quem pede precisa de lotação na escola onde a criança está HOJE.\n- **Sem CPF não há perfil portátil** (400): numa rede de destino nenhum id daqui existe, e o CPF é o que reconhece a criança.\n- Bem-estar (app-91) **nunca** entra: documento que o gestor emite não carrega o que nem o gestor lê.\n- Sem `CONTRATO_ID` no hub, a emissão é **503**.",
         "security": [
           {
             "token-da-plataforma": []
@@ -7287,7 +7287,7 @@
           "experiencias"
         ],
         "summary": "O catálogo de experiências do contrato.",
-        "description": "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de estudante. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (exp-70).",
+        "description": "Tabela GLOBAL, sem RLS: manifesto de versões não é dado de estudante. O hub monta a URL do iframe com `versaoAtiva`, e filtra por série na interface.\n\n**Papéis:** qualquer papel autenticado.\n\n**Restrições:**\n- `series: []` quer dizer TODAS as séries, não nenhuma — é como uma experiência transversal se declara (app-70).",
         "security": [
           {
             "token-da-plataforma": []
@@ -7433,7 +7433,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^exp-[a-z0-9-]+$"
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
             }
           }
         ],
@@ -7542,7 +7542,7 @@
           "experiencias"
         ],
         "summary": "Publica ou faz rollback de uma versão.",
-        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `produto` é o que põe a experiência no painel da Unooria (ADR-87) e o que lhe dá o TETO do produto. Ausente = ela responde só pelo próprio interruptor; quem cobra o campo é o teste dos manifestos, no CI, e não esta rota — 400 aqui mataria a ativação DEPOIS de os bundles subirem.\n- Cada PUT grava também uma linha em `experiencias_versoes` com o MANIFESTO INTEIRO. É o que faz o rollback pela tela devolver `viewport` e `permissoes` daquela versão, e não os de hoje.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp-02 foi desenhada para desktop).",
+        "description": "Chamada pelo CI ao publicar `gs://{contrato}-exp/{expId}/{versao}/`, com o conteúdo do `public/experiencia.json` da experiência. **Rollback é trocar `versaoAtiva` para a anterior** — não há deploy a desfazer, porque o bundle antigo continua no bucket.\n\n**Papéis:** gestor_contrato, admin.\n\n**Restrições:**\n- `permissoes` é POR EXPERIÊNCIA: prender o ponteiro do estudante é capacidade de quem declarou, nunca default do frame.\n- `produto` é o que põe a experiência no painel da Unooria (ADR-87) e o que lhe dá o TETO do produto. Ausente = ela responde só pelo próprio interruptor; quem cobra o campo é o teste dos manifestos, no CI, e não esta rota — 400 aqui mataria a ativação DEPOIS de os bundles subirem.\n- Cada PUT grava também uma linha em `experiencias_versoes` com o MANIFESTO INTEIRO. É o que faz o rollback pela tela devolver `viewport` e `permissoes` daquela versão, e não os de hoje.\n- `viewport` ausente ⇒ o hub NÃO embeda dentro da casca de aparelho (a exp04ef1b foi desenhada para desktop).",
         "security": [
           {
             "token-da-plataforma": []
@@ -8507,7 +8507,7 @@
           "recursos"
         ],
         "summary": "Ativa uma versão para o CONTRATO (o rollback).",
-        "description": "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a exp-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.\n\n**Papéis:** admin.\n\n**Restrições:**\n- **Confere no CDN antes de gravar** (um HEAD no `index.html` da versão). Apontar a rede para uma versão que não subiu é tela branca para todo mundo, e o erro só apareceria quando a primeira criança abrisse a missão.\n- `conferida: false` = `CDN_EXP_URL` ausente (desenvolvimento). A tela precisa dizer isso: 'ativei sem conferir' e 'ativei e conferi' são garantias diferentes.\n- Vale para o CONTRATO inteiro. Fixar versão numa escola é `PUT /recursos/experiencias/:expId/versao`.",
+        "description": "Troca `experiencias.versao_ativa` e **restaura o manifesto daquela versão** — `viewport`, `permissoes`, `series`, `unidade`, `produto`. Antes disto, rollback era `publicar-manifesto.mjs --versao x.y.z`, que mandava o número antigo com o manifesto ATUAL do repositório: voltar a versão não voltava as permissões de iframe, e a app-70 reabria sem `allow-pointer-lock` — a criança entrava na Vila e a câmera não girava, sem erro em lugar nenhum.\n\n**Papéis:** admin.\n\n**Restrições:**\n- **Confere no CDN antes de gravar** (um HEAD no `index.html` da versão). Apontar a rede para uma versão que não subiu é tela branca para todo mundo, e o erro só apareceria quando a primeira criança abrisse a missão.\n- `conferida: false` = `CDN_EXP_URL` ausente (desenvolvimento). A tela precisa dizer isso: 'ativei sem conferir' e 'ativei e conferi' são garantias diferentes.\n- Vale para o CONTRATO inteiro. Fixar versão numa escola é `PUT /recursos/experiencias/:expId/versao`.",
         "security": [
           {
             "token-da-plataforma": []
@@ -9287,7 +9287,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "pattern": "^exp-[a-z0-9-]+$"
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
             }
           },
           {
@@ -9339,7 +9339,7 @@
           "salas"
         ],
         "summary": "Libera ou encerra uma missão nesta turma.",
-        "description": "**Só quem tem matrícula de professor na turma.** Gestor não libera: ele vê a sala e não decide a aula — a opção não aparece na tela dele e a rota responde 404 para turma que não é dele.\n\nIdempotente: repetir não muda nada além do carimbo.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Não existe estado `bloqueada` no corpo: bloquear é a ausência de linha, e o caminho de volta é `encerrada` — a criança precisa continuar vendo o que fez.\n- Recusa experiência de `publico: professor` (exp-90, exp-91): liberar uma delas seria um botão que não abre nada, porque `/exp/*` responde 404 para ferramenta de professor.",
+        "description": "**Só quem tem matrícula de professor na turma.** Gestor não libera: ele vê a sala e não decide a aula — a opção não aparece na tela dele e a rota responde 404 para turma que não é dele.\n\nIdempotente: repetir não muda nada além do carimbo.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Não existe estado `bloqueada` no corpo: bloquear é a ausência de linha, e o caminho de volta é `encerrada` — a criança precisa continuar vendo o que fez.\n- Recusa experiência de `publico: professor` (app-90, app-91): liberar uma delas seria um botão que não abre nada, porque `/exp/*` responde 404 para ferramenta de professor.",
         "security": [
           {
             "token-da-plataforma": []
@@ -15344,7 +15344,7 @@
           "atividades"
         ],
         "summary": "Traz os perfis da Vila do Lume para a largada do Instanooria.",
-        "description": "Colapsa o perfil Schwartz da exp-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.\n\n**Papéis:** professor.\n\n**Restrições:**\n- O colapso tem duas travas que CUSTAM estudantes, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.\n- Sem perfil, o Instanooria cai no sorteio balanceado — que é honesto sobre não saber.\n- Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise` ao lado da identidade da criança.\n- `ladoForcado` é PRESERVADO no upsert.",
+        "description": "Colapsa o perfil Schwartz da app-70 nos quatro quadrantes e grava com `origem: \"jogo\"` — é o que decide de que lado o feed nasce. O disparo é do PROFESSOR: importar sozinho desfaria em silêncio uma redistribuição feita antes da aula.\n\n**Papéis:** professor.\n\n**Restrições:**\n- O colapso tem duas travas que CUSTAM estudantes, de propósito: valor não observado (`indicative`/`none`) fica **fora da média**, nunca entra como zero; e quadrante sem nenhum membro observado **invalida o perfil inteiro**.\n- Sem perfil, o Instanooria cai no sorteio balanceado — que é honesto sobre não saber.\n- Exige `amostraSuficiente`: o `dominante` vira coluna no CSV do `/analise` ao lado da identidade da criança.\n- `ladoForcado` é PRESERVADO no upsert.",
         "security": [
           {
             "token-da-plataforma": []
@@ -25843,7 +25843,7 @@
           "planos"
         ],
         "summary": "Disciplinas e séries que têm material curricular importado.",
-        "description": "Alimenta os seletores da exp-90. Vem com os rótulos prontos: a tela imprime o que o servidor mandou, em vez de manter um segundo dicionário que divergiria na primeira disciplina nova.\n\n**Papéis:** professor.",
+        "description": "Alimenta os seletores da app-90. Vem com os rótulos prontos: a tela imprime o que o servidor mandou, em vez de manter um segundo dicionário que divergiria na primeira disciplina nova.\n\n**Papéis:** professor.",
         "security": [
           {
             "token-da-plataforma": []
@@ -35435,7 +35435,7 @@
           "manifesto-ia"
         ],
         "summary": "Em que etapa a turma está — o polling de 5s do Checkpoint A.",
-        "description": "Leve de propósito: sem catálogo e sem conversa. **É a alternativa ao WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e o congelamento da turma para o debate oral é uma linha em `exp_08_gates_turma` que a tela do estudante lê a cada 5 segundos durante a Etapa 4.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Estudante sem turma não tem gate: a missão corre no ritmo dele. Prendê-lo num congelamento seria um beco sem saída, porque não há quem o solte.\n- O limite é mais alto que o das outras rotas justamente porque este é o polling — 240/min por usuário cobre 5s com folga para retry.",
+        "description": "Leve de propósito: sem catálogo e sem conversa. **É a alternativa ao WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e o congelamento da turma para o debate oral é uma linha em `exp08ef4b_gates_turma` que a tela do estudante lê a cada 5 segundos durante a Etapa 4.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Estudante sem turma não tem gate: a missão corre no ritmo dele. Prendê-lo num congelamento seria um beco sem saída, porque não há quem o solte.\n- O limite é mais alto que o das outras rotas justamente porque este é o polling — 240/min por usuário cobre 5s com folga para retry.",
         "security": [
           {
             "token-da-plataforma": []
@@ -37268,7 +37268,7 @@
           "manifesto-ia"
         ],
         "summary": "Zerar a turma — a segunda aplicação.",
-        "description": "Apaga sessões, auditorias e percursos desta turma (CASCADE da sessão) e devolve o gate a `missao`, senão a turma nova nasceria congelada num debate que já aconteceu. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp_08_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com o parágrafo da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "description": "Apaga sessões, auditorias e percursos desta turma (CASCADE da sessão) e devolve o gate a `missao`, senão a turma nova nasceria congelada num debate que já aconteceu. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp08ef4b_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nO percurso vai junto, e isso é deliberado: refazer a missão com o parágrafo da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -37736,7 +37736,7 @@
           "quem-mandou-isso"
         ],
         "summary": "O estado da missão e as 8 mensagens do grupo, sem o gabarito.",
-        "description": "As mensagens saem **sem `veracidade`, `tom` e `explicacao`** — o tipo do servidor é um `Omit`, então o gabarito é impossível de vazar aqui, não só ausente por descuido. Os três só aparecem dentro de `revelacao`, e `revelacao` é `null` até a professora acender o telão.\n\n`lote` é `null` enquanto a professora não homologou o grupo: **a missão nasce vazia**. Diferente da exp-08, não há banco curado de reserva — o lote é do TEMA que ela escolheu, e mostrar outro faria a criança ler mensagens sobre um acontecimento que não existiu na escola dela.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Quando os dois divergem e `aguardandoATurma` é `true`, ele confirmou o Mural e espera o telão.\n- `revelacao.mensagens[].total` é quantos estudantes CONFIRMADOS encaminharam aquela mensagem — quem não confirmou não entra na conta, porque a curadoria em andamento ainda podia ser desfeita.\n- `reflexao` é sempre a do PRÓPRIO estudante. Nenhuma rota devolve a de outra criança.\n- O roteiro do podcast vem da api, e não do bundle, para que corrigir uma fala não exija republicar um caminho imutável no bucket.",
+        "description": "As mensagens saem **sem `veracidade`, `tom` e `explicacao`** — o tipo do servidor é um `Omit`, então o gabarito é impossível de vazar aqui, não só ausente por descuido. Os três só aparecem dentro de `revelacao`, e `revelacao` é `null` até a professora acender o telão.\n\n`lote` é `null` enquanto a professora não homologou o grupo: **a missão nasce vazia**. Diferente da exp08ef4b, não há banco curado de reserva — o lote é do TEMA que ela escolheu, e mostrar outro faria a criança ler mensagens sobre um acontecimento que não existiu na escola dela.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `passo` já vem reconciliado com a etapa da turma; `passoDoEstudante` é o cru. Quando os dois divergem e `aguardandoATurma` é `true`, ele confirmou o Mural e espera o telão.\n- `revelacao.mensagens[].total` é quantos estudantes CONFIRMADOS encaminharam aquela mensagem — quem não confirmou não entra na conta, porque a curadoria em andamento ainda podia ser desfeita.\n- `reflexao` é sempre a do PRÓPRIO estudante. Nenhuma rota devolve a de outra criança.\n- O roteiro do podcast vem da api, e não do bundle, para que corrigir uma fala não exija republicar um caminho imutável no bucket.",
         "security": [
           {
             "token-da-plataforma": []
@@ -37806,7 +37806,7 @@
           "quem-mandou-isso"
         ],
         "summary": "Em que etapa a turma está (polling de ~5s).",
-        "description": "Leve de propósito: sem lote e sem histograma. É o que deixa a docente conduzir 30 telas — a revelação acende para todos ao mesmo tempo.\n\n**Polling HTTP, nunca WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e 'Iniciar revelação coletiva' é uma linha em `exp_05_gates_turma` que esta rota lê.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `preparada: false` é a tela de espera do preparo, não um erro: a professora ainda não homologou o grupo desta turma.\n- A guarda de liberação (ADR-69) e a de disponibilidade (ADR-87) valem AQUI também: esta rota passa pelo mesmo funil das demais, e a turma sem a missão liberada recebe 403 em vez de descobrir a etapa. É a única das quatro missões de clone em que o `gate` entra no funil — nas outras a nota não afirmava a guarda; aqui ela afirmava, e a afirmação tinha de virar verdade.\n- Estudante sem turma recebe a etapa inicial em vez de ficar preso esperando uma aula que não existe.\n- **Não recebe o passo por query.** `passoEfetivo` e `aguardandoATurma` são calculados sobre o passo GRAVADO da sessão: a tela não é ouvida sobre onde a criança está, porque toda mutação já o persistiu.",
+        "description": "Leve de propósito: sem lote e sem histograma. É o que deixa a docente conduzir 30 telas — a revelação acende para todos ao mesmo tempo.\n\n**Polling HTTP, nunca WebSocket** (ADR-93): a infraestrutura Cloud Run da plataforma não tem WebSocket de aplicação, e 'Iniciar revelação coletiva' é uma linha em `exp05ef1b_gates_turma` que esta rota lê.\n\n`agora` é o instante do SERVIDOR: o relógio da máquina da escola atrasa, e não é ele que decide o momento da aula.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `preparada: false` é a tela de espera do preparo, não um erro: a professora ainda não homologou o grupo desta turma.\n- A guarda de liberação (ADR-69) e a de disponibilidade (ADR-87) valem AQUI também: esta rota passa pelo mesmo funil das demais, e a turma sem a missão liberada recebe 403 em vez de descobrir a etapa. É a única das quatro missões de clone em que o `gate` entra no funil — nas outras a nota não afirmava a guarda; aqui ela afirmava, e a afirmação tinha de virar verdade.\n- Estudante sem turma recebe a etapa inicial em vez de ficar preso esperando uma aula que não existe.\n- **Não recebe o passo por query.** `passoEfetivo` e `aguardandoATurma` são calculados sobre o passo GRAVADO da sessão: a tela não é ouvida sobre onde a criança está, porque toda mutação já o persistiu.",
         "security": [
           {
             "token-da-plataforma": []
@@ -41292,7 +41292,7 @@
           "quem-mandou-isso"
         ],
         "summary": "Zerar a turma — a segunda aplicação.",
-        "description": "Apaga as sessões, os encaminhamentos e as reflexões desta turma (CASCADE da sessão) e devolve o gate a `exploracao`, senão a turma nova nasceria com o telão já aceso. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp_05_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nA reflexão vai junto, e isso é deliberado: refazer a missão com a resposta da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "description": "Apaga as sessões, os encaminhamentos e as reflexões desta turma (CASCADE da sessão) e devolve o gate a `exploracao`, senão a turma nova nasceria com o telão já aceso. **Preserva `telemetria_eventos`**, que é a trilha analítica imutável, **e preserva `exp05ef1b_conteudo_turma`**: a curadoria da professora não é execução de estudante.\n\nA reflexão vai junto, e isso é deliberado: refazer a missão com a resposta da turma do ano passado na tela seria um portfólio que mistura duas turmas.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []

@@ -1,11 +1,11 @@
-# apps/experiencias/exp-02-unootube — em quais fontes você confiaria
+# apps/experiencias/exp04ef1b — em quais fontes você confiaria
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | | |
 |---|---|
-| Manifesto | `exp-02-unootube` · 4EF · `telemetria, progresso` |
-| Dev | `pnpm --filter @edu/exp-02-unootube dev` → :5174 |
+| Manifesto | `exp04ef1b` · 4EF · `telemetria, progresso` |
+| Dev | `pnpm --filter @edu/exp04ef1b dev` → :5174 |
 | DS | `@edu/ui/ds-unootube` na ficção, `@edu/ui/ds` na escola (a linha é a REVELAÇÃO — ver `packages/ui/AGENTS.md`) |
 | api | `/unootube/*` (`sessao`, `salvos`, `credibilidade`, `ranking`, `reiniciar`) |
 | e2e | `scripts/e2e/estudante/03-unootube.mjs` |

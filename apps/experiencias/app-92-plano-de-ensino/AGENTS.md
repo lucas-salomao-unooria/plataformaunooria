@@ -1,4 +1,4 @@
-# apps/experiencias/exp-92-plano-de-ensino — planejamento de ensino do professor
+# apps/experiencias/app-92-plano-de-ensino — planejamento de ensino do professor
 
 Complementa o `AGENTS.md` da raiz. A raiz vence em conflito.
 
@@ -7,12 +7,12 @@ Ferramenta do PROFESSOR, não missão de estudante: seção `unooria` do DS
 **5180**; rota do hub `/professor/plano-de-ensino`; módulo da api
 `apps/api/src/planejamento` + o currículo em `apps/api/src/curriculo`.
 
-## Ela COEXISTE com a exp-90, e não a substitui
+## Ela COEXISTE com a app-90, e não a substitui
 
-São ferramentas para redes diferentes, não versões da mesma coisa. A exp-90
+São ferramentas para redes diferentes, não versões da mesma coisa. A app-90
 gera um plano anual a partir do **currículo da rede importado como texto** —
 serve a quem já tem documento curricular próprio e material didático adotado. A
-exp-92 parte da **BNCC estruturada**, cobre todos os componentes do 1º ano do EF
+app-92 parte da **BNCC estruturada**, cobre todos os componentes do 1º ano do EF
 à 3ª série do EM e desce até o plano de aula da semana.
 
 Mexer numa não é mexer na outra. O único código compartilhado é
@@ -105,7 +105,7 @@ Já custou um bug: `periodos_letivos` é catálogo do CONTRATO e o seed o preenc
 como ano CIVIL (01/01–31/12). Como o calendário alinha cada período na
 segunda-feira, o professor que declarava 02/02/2026 recebia um 1º bimestre
 começando em **29/12/2025**. A coluna `inicio_do_ano_letivo` de
-`exp_92_configuracoes` é o que vale; o catálogo é só sugestão do primeiro
+`app_92_configuracoes` é o que vale; o catálogo é só sugestão do primeiro
 preenchimento, e um "ano letivo" que abre em 1º de janeiro é descartado como ano
 civil.
 
@@ -147,7 +147,7 @@ planejamento de quinze em quinze dias — e isso hoje é um botão de exportaç�
 "Esta e a próxima (quinzena)" e "Baixar o Nº Bimestre inteiro", que juntam
 semanas `pronto` num documento, uma por página.
 
-**Por que não podia ser configurável:** `exp_92_planos_de_periodo` é endereçada
+**Por que não podia ser configurável:** `app_92_planos_de_periodo` é endereçada
 por (escola, plano anual, `ordem`), e a `ordem` MUDA DE SIGNIFICADO com o passo —
 a 3ª quinzena não é a 3ª semana. Um plano gravado num modo e lido no outro casa
 pela ordem e devolve as datas de um recorte com as aulas de outro. A migration
@@ -167,7 +167,7 @@ devolve só as `pronto`. Semana que falhou na geração não entra no documento.
 ## Export: `.doc`, impressão — e o `allow-downloads` do sandbox
 
 O `.doc` é HTML com os namespaces do MS Office (Word, Google Docs e LibreOffice
-abrem como documento). Não é DOCX — mesma escolha da exp-90, e por isso as cores
+abrem como documento). Não é DOCX — mesma escolha da app-90, e por isso as cores
 vão como literais de token: o Word não resolve CSS variable.
 
 **O download precisa de TRÊS coisas, e a que falta não diz nada.** O botão

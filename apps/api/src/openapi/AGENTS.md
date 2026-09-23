@@ -34,7 +34,7 @@ primeira — a armadilha do `expires_at`.
 - **A trava é `tests/openapi-cobertura.spec.ts`**: percorre o roteador e cobra
   `@Contrato` de toda rota, salvo as da lista `SEM_CONTRATO_AINDA`, **que só
   encolhe**. Cada commit cobre um módulo (`<modulo>/contrato-de-rotas.ts` — o
-  nome `contrato.ts` já é o payload do jogo na exp-70) e apaga as linhas dele,
+  nome `contrato.ts` já é o payload do jogo na app-70) e apaga as linhas dele,
   copiando a prosa daquele módulo do `c-endpoints.tex` para a `descricao`. Feito:
   `health`, `auth`, `experiencias`, `progresso`, `telemetry`, `ai`, `rostering`
   (escolas, turmas, matrículas, períodos, lotações, estudantes), `usuarios`,

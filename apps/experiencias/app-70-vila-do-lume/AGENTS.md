@@ -1,4 +1,4 @@
-# apps/experiencias/exp-70-vila-do-lume — doutrina do jogo
+# apps/experiencias/app-70-vila-do-lume — doutrina do jogo
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 Este arquivo é **doutrina do jogo**: as regras que já foram quebradas uma vez e o que cada

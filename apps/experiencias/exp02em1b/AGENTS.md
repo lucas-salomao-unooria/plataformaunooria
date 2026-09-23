@@ -1,13 +1,13 @@
-# apps/experiencias/exp-03-unoogpt — a missão que nunca sai do disfarce
+# apps/experiencias/exp02em1b — a missão que nunca sai do disfarce
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | | |
 |---|---|
-| Manifesto | `exp-03-unoogpt` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` |
-| Dev | `pnpm --filter @edu/exp-03-unoogpt dev` → :5178 · hub `/exp/exp-03-unoogpt` |
+| Manifesto | `exp02em1b` · 2EM (unidade 1) · `telemetria, ia` · `permissoes: ["forms"]` |
+| Dev | `pnpm --filter @edu/exp02em1b dev` → :5178 · hub `/exp/exp02em1b` |
 | DS | `@edu/ui/ds-chatgpt` **na experiência inteira** |
-| api | módulo `unoogpt` — trilha pedagógica em `exp_03_marcos` |
+| api | módulo `unoogpt` — trilha pedagógica em `exp02em1b_marcos` |
 | e2e | `scripts/e2e/estudante/04-unoogpt.mjs` |
 
 **Ela não tem revelação no software.** Por isso nunca troca para a seção da
@@ -23,7 +23,7 @@ ele o estudante vê falha no meio de uma resposta que estava chegando.
 ## Dois canais que não são o mesmo
 
 Telemetria **analítica** (SDK → batch → `telemetria_eventos`) mede o uso.
-A trilha **pedagógica** é `exp_03_marcos`, gravada pela api. Não misture: o que
+A trilha **pedagógica** é `exp02em1b_marcos`, gravada pela api. Não misture: o que
 vale nota nunca vem do canal que o cliente preenche.
 
 E o corte de PII é por design: `fontesCarregadas` registra **quantas** fontes,

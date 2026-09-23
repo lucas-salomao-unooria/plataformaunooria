@@ -295,7 +295,7 @@ model Matricula {
 /// começou" — aqueles são DA experiência e continuam onde estão. Esta é a
 /// pré-condição de todos eles.
 ///
-/// Tabela de PLATAFORMA (sem prefixo `exp_NN_`): serve a todas as experiências,
+/// Tabela de PLATAFORMA (sem prefixo de experiência): serve a todas as experiências,
 /// e é contrato entre a plataforma e cada uma delas.
 model Liberacao {
   id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

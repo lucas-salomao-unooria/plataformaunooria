@@ -1,17 +1,17 @@
-# apps/api/src/quem-mandou-isso — Quem Mandou Isso? (exp-05)
+# apps/api/src/quem-mandou-isso — Quem Mandou Isso? (exp05ef1b)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## Quem Mandou Isso? (exp-05, `apps/api/src/quem-mandou-isso`)
+## Quem Mandou Isso? (exp05ef1b, `apps/api/src/quem-mandou-isso`)
 
 Missão de 5º ano conduzida pelo **relógio da turma**, numa aula. Cinco tabelas
-(`exp_05_conteudo_turma`, `exp_05_sessoes`, `exp_05_encaminhamentos`,
-`exp_05_reflexoes`, `exp_05_gates_turma`), gabarito no lote da turma, e IA numa
+(`exp05ef1b_conteudo_turma`, `exp05ef1b_sessoes`, `exp05ef1b_encaminhamentos`,
+`exp05ef1b_reflexoes`, `exp05ef1b_gates_turma`), gabarito no lote da turma, e IA numa
 superfície só — o preparo pré-aula.
 
 - **A missão NASCE VAZIA.** Sem lote homologado (`aprovado_por_professor`), o
   estudante vê tela de espera, e não o banco curado. É a diferença para a
-  exp-08, onde o não-preparo cai no default e a aula corre: aqui o lote inteiro
+  exp08ef4b, onde o não-preparo cai no default e a aula corre: aqui o lote inteiro
   é escrito em cima do TEMA que a professora escolheu, e mostrar outro faria a
   criança ler mensagens sobre um acontecimento que não existiu na escola dela.
   **A tela do PROFESSOR tem a queda** (`GET turmas/:id/conteudo` devolve o banco
@@ -21,7 +21,7 @@ superfície só — o preparo pré-aula.
   `mensagensPublicas`, que é um `Omit` de `veracidade`/`tom`/`explicacao` — o
   vazamento pelo lote reprova no `tsc`, não no DevTools de uma criança. Antes do
   telão, `revelacao` é `null` e nenhum pedaço do gabarito está na resposta.
-- **`iniciar-revelacao` mexe no PISO do passo**, diferente do gate da exp-08 que
+- **`iniciar-revelacao` mexe no PISO do passo**, diferente do gate da exp08ef4b que
   só mexe no teto: quem não confirmou é empurrado para `revelado`. Deixá-lo
   continuar encaminhando com o gabarito projetado na parede mediria outra coisa.
 - **Só quem CONFIRMOU entra no histograma** (`confirmado_em IS NOT NULL`).
@@ -46,7 +46,7 @@ superfície só — o preparo pré-aula.
   `professorDoToken` devolve `undefined` para quem não é professor, e
   `professorLeciona` responde `true` a `undefined` (gestor vê a escola inteira),
   então quem só olha o `@Roles` conclui o contrário do que acontece.
-  **A exp-06 (`rastro-boato`) e a exp-08 (`manifesto-ia`) ainda entregam o texto
+  **A exp06ef2b (`rastro-boato`) e a exp08ef4b (`manifesto-ia`) ainda entregam o texto
   a qualquer gestor**, com a mesma frase no comentário. A divergência é
   conhecida e deliberada: apertar as duas muda o que a tela de gestor delas
   mostra hoje, e isso é frente própria.
@@ -62,7 +62,7 @@ superfície só — o preparo pré-aula.
   simulado, a imagem é legenda com rótulo, o link é card de texto. Sem
   `AssetsModule`. Quando o áudio chegar, entra AO LADO da transcrição.
 - **Lote com forma inesperada = turma NÃO preparada**, com `logger.warn`
-  (`exp05-lote-invalido`). Cair no banco curado ali seria trocar o tema da
+  (`exp05ef1b-lote-invalido`). Cair no banco curado ali seria trocar o tema da
   professora sem avisar; o log existe para o "ainda estamos organizando o grupo"
   não ser mudo para quem diagnostica.
 - **`public/experiencia.json` da pasta da experiência precisa declarar

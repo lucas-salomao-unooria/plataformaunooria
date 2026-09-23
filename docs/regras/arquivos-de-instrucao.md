@@ -30,7 +30,7 @@ direção de quem parou de ler a outra.
 sair dela — um app, um pacote, uma experiência, a suíte e2e. Ele carrega sozinho
 quando a sessão toca a pasta, e é isso que paga o custo de existir. **Na raiz da
 pasta, nunca numa subpasta.** A doutrina da Vila do Lume viveu meses em
-`exp-70-vila-do-lume/docs/CLAUDE.md`: quem editava o jogo em `public/jogo/` nunca
+`app-70-vila-do-lume/docs/CLAUDE.md`: quem editava o jogo em `public/jogo/` nunca
 a recebia, porque o carregamento é por caminho — o arquivo estava a um nível de
 distância de todo mundo que ele tentava avisar.
 
@@ -120,7 +120,7 @@ regra ao meio deixa a consequência longe da decisão.
 
 Quatro arquivos ainda estão acima do teto de 12k e estão registrados aqui para
 não passarem por decisão: `packages/ui/AGENTS.md` (14,0 KB),
-`apps/experiencias/exp-92-plano-de-ensino/AGENTS.md` (12,4 KB) e o `AGENTS.md`
+`apps/experiencias/app-92-plano-de-ensino/AGENTS.md` (12,4 KB) e o `AGENTS.md`
 da raiz (12,2 KB). Os três estão a menos de 20% do limite; quebrá-los exige
 achar a fronteira de assunto, que ainda não é óbvia em nenhum.
 

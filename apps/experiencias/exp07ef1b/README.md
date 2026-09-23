@@ -1,4 +1,4 @@
-# O Eco no Grupo: Quem Decide o Que Roda? (exp-07)
+# O Eco no Grupo: Quem Decide o Que Roda? (exp07ef1b)
 
 Missão do **7º ano · Unidade 1** da trilha Entre Redes. Um clone de WhatsApp
 móvel em que o estudante investiga um boato num grupo de bairro, descobre que o
@@ -11,8 +11,8 @@ libera a reflexão é a professora, pelo painel.
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-07-o-eco-no-grupo dev      # :5179
-# no hub: http://localhost:3000/exp/exp-07-o-eco-no-grupo
+pnpm --filter @edu/exp07ef1b dev      # :5179
+# no hub: http://localhost:3000/exp/exp07ef1b
 # bancada:  http://localhost:3000/dev-embed?src=http://localhost:5179
 ```
 
@@ -27,7 +27,7 @@ prepara é o professor, no painel da turma — ou, em dev, pela linha de comando
 ```bash
 cd apps/api
 ASSETS_LOCAL_DIR=/tmp/eco VERTEX_PROJECT_ID=<projeto> \
-  npx ts-node --transpile-only scripts/smoke-midia-exp-07.ts
+  npx ts-node --transpile-only scripts/smoke-midia-exp07ef1b.ts
 ```
 
 Sem mídia preparada a missão roda igual: o áudio cai na transcrição e a foto na

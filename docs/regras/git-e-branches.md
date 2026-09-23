@@ -103,7 +103,7 @@ abri-lo.
       atualizar esta linha, que ainda anunciava a 100 como livre. É o modo de
       falhar desta lista: ela só vale se quem gasta o número a corrige no
       MESMO commit. Antes delas, a 93 é a sincronização de sala por polling da
-      exp-08, a 94 o latch por polling da exp-04, a 95 a sessão de 2h de
+      exp08ef4b, a 94 o latch por polling da exp01ef1b, a 95 a sessão de 2h de
       inatividade, a 96 a renovação de sessão dentro da missão, a 97 a recusa
       de login na tela, a **98 o fuso único da plataforma** e a **99 esse fuso
       vindo de uma variável de ambiente** — as quatro foram alocadas por quem repartia o trabalho ANTES de
@@ -118,7 +118,7 @@ abri-lo.
       foram alocadas por quem repartia o trabalho, ANTES de qualquer uma
       escrever, e é assim que a colisão de 2026-09-06 e 2026-09-07 deixa de
       acontecer; a 65 foi ocupada pelo guia da aula, a 72 pela
-      fronteira do disfarce da exp-06, a 73 pelo planejamento dirigido pela
+      fronteira do disfarce da exp06ef2b, a 73 pelo planejamento dirigido pela
       BNCC, a 74 pela contabilidade de tokens do `generateJson`, a 75 pela
       rolagem com o `ScrollBar` do DS, a 76 pelo passo semanal do
       planejamento + `allow-downloads`, a 77 pela trilha que virou do layout
@@ -137,11 +137,12 @@ abri-lo.
       HORA de escrever o número — e é `origin/dev-local`, não `origin/dev`, que
       é a base de toda frente e costuma estar à frente),
   `main.pdf` (regera, não escolhe lado),  `AGENTS.md` da raiz, `pnpm-lock.yaml`. Receita em `CONTRIBUTING.md`.
-- **Uma branch por experiência nova**, com o nome do slug dela:
-  `exp-12-fracoes`. Trabalho que não é experiência usa o prefixo do tipo do
-  commit: `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
-- Commits: `feat(exp-12): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo é
-  o slug da experiência ou o app/pacote tocado.
+- **Uma branch por experiência nova**, com o CÓDIGO dela (ADR-110):
+  `exp06ef3b` para missão da trilha, `app-93-diario-de-bordo` para o que não é
+  missão. Trabalho que não é experiência usa o prefixo do tipo do commit:
+  `fix/quota-por-perfil`, `chore/deps`, `ci/deploy`.
+- Commits: `feat(exp06ef3b): ...`, `fix(api): ...`, `chore(sdk): ...` — o escopo
+  é o código da experiência ou o app/pacote tocado.
 - **Nada de build no git.** `.gitignore` cobre `dist/`, `.next/`, `.next-prod/`,
   `.turbo/`, `*.tsbuildinfo`, `storage/`, `storage-privado/` e a pasta `testes/`
   inteira — os prints, o deck e os vídeos da suíte e2e são reproduzíveis

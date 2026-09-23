@@ -1,10 +1,10 @@
-# apps/experiencias/exp-06-rastro-boato — O Rastro do Boato
+# apps/experiencias/exp06ef2b — O Rastro do Boato
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp-06-rastro-boato` · 6EF · unidade 2 · `viewport` 375×812 · `permissoes: []` | `:5181`, hub `/exp/exp-06-rastro-boato` | `@edu/ui/ds-whatsapp` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/rastro-boato` ↔ `/rastro-boato/*` | `scripts/e2e/estudante/07-rastro-boato.mjs` |
+| `exp06ef2b` · 6EF · unidade 2 · `viewport` 375×812 · `permissoes: []` | `:5181`, hub `/exp/exp06ef2b` | `@edu/ui/ds-whatsapp` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/rastro-boato` ↔ `/rastro-boato/*` | `scripts/e2e/estudante/07-rastro-boato.mjs` |
 
 ## O clone é ESCURO, e isso não é escolha
 
@@ -12,7 +12,7 @@ A seção `whatsappmobile` do `@unooria/design-system` publica **só o tema
 escuro** (`WaTheme = 'dark'`; o CSS traz `:root, [data-wa-theme=dark]` e nada
 mais). O PRD e os wireframes cravam "tema claro forçado" e descrevem balões
 verdes sobre fundo branco — **não existe paleta clara no pacote, e derivar uma
-aqui é proibido**, pela mesma regra do `unitube` e da exp-07. O contraste do
+aqui é proibido**, pela mesma regra do `unitube` e da exp07ef1b. O contraste do
 escuro (`#D3DAE0` sobre `#101D25`, ~11:1) passa o `RNF-A11Y-001` com folga.
 
 Se um dia o pacote publicar o tema claro, é ele que muda — não este código.
@@ -39,7 +39,7 @@ O bundle é público. Três coisas seguem daí:
   (`interrompeu | amplificou | silenciou`), que a api devolve DEPOIS do envio.
   Um `opcao === "B"` para decidir entre o mapa cortado e a dispersão iria
   legível para o JS — a resposta certa no DevTools antes de a criança responder
-  (regra 3). A exp-07 registrou essa mesma armadilha.
+  (regra 3). A exp07ef1b registrou essa mesma armadilha.
 - **A ordem certa do ciclo não vem.** O servidor manda os 4 blocos e recebe a
   sequência montada; quem confere é `regras/ciclo.ts`.
 - **A matriz de propagação é do servidor.** `regras/topologia.ts` calcula o
@@ -93,7 +93,7 @@ procura primeiro, e sem ele a única saída seria recarregar a página.
 `passoDoEstudante` cru. Só o par `passo` + `aguardandoATurma` distingue "a aula
 acabou, seu progresso está salvo" de qualquer outro estado.
 
-São duas etapas (`aula1`/`aula2`), não quatro como na exp-07: o PRD pede UM
+São duas etapas (`aula1`/`aula2`), não quatro como na exp07ef1b: o PRD pede UM
 botão ("Liberar Aula 2") e o seu inverso. Gates que ninguém aperta enchem o
 painel de controles mortos.
 

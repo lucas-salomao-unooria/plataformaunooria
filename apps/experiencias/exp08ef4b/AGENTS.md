@@ -1,9 +1,9 @@
-# apps/experiencias/exp-08-manifesto-ia — O Manifesto da IA
+# apps/experiencias/exp08ef4b — O Manifesto da IA
 
 Complementa o `AGENTS.md` da raiz.
 
 8º ano do EF, **unidade 4**. Porta de dev **5182**; rota do hub
-`/exp/exp-08-manifesto-ia`; módulo da api `apps/api/src/manifesto-ia/` ↔
+`/exp/exp08ef4b`; módulo da api `apps/api/src/manifesto-ia/` ↔
 `/manifesto-ia/*`. Seções do DS: **`chatgpt`** (a conversa) e **`unooria`** (o
 briefing, o Meu Percurso e o fechamento).
 
@@ -14,7 +14,7 @@ que a máquina passa a obedecer.
 ## As quatro regras que, se você não souber, você quebra
 
 1. **NÃO há WebSocket** (ADR-93). A pausa da turma para o debate (Checkpoint A)
-   é uma linha em `exp_08_gates_turma` que a tela lê por **polling HTTP de 5s**
+   é uma linha em `exp08ef4b_gates_turma` que a tela lê por **polling HTTP de 5s**
    em `GET /manifesto-ia/gate`. O handoff original previa `hub:pause` por
    WebSocket, e não existe WebSocket de aplicação no Cloud Run. O polling só
    roda de `decisao` a `percurso` (`deveObservarOGate`): ligado sempre, custaria
@@ -41,7 +41,7 @@ que a máquina passa a obedecer.
 `forms` porque o `Composer` do DS é um `<form>` e sem o token de sandbox o
 navegador BLOQUEIA o submit em silêncio — o estudante escolheria o card,
 apertaria enviar e nada aconteceria (a armadilha que custou um bug inteiro na
-exp-03).
+exp02em1b).
 
 **`clipboard-write` NÃO entra aqui**, ainda que o botão "Copiar texto" precise
 da Clipboard API. O vocabulário de `permissoes` é FECHADO
@@ -127,7 +127,7 @@ Quando os MP3 chegarem, entram AO LADO do texto — não no lugar dele.
 Quando a turma está em debate, o conteúdo de baixo recebe `inert` — que bloqueia
 clique, rolagem **e FOCO**. `pointer-events: none` pararia o clique e deixaria o
 Tab passar: botões focáveis atrás de um véu é a mesma classe de defeito que o
-`Collapse` da exp-92 produziu, com 30 alvos dentro de um `aria-hidden`.
+`Collapse` da app-92 produziu, com 30 alvos dentro de um `aria-hidden`.
 
 ## O que NÃO tem, de propósito
 
@@ -152,7 +152,7 @@ alcançavam. Três eram de produto, e as três tinham a mesma forma: **cada meta
 estava certa lida sozinha** (ADR-92).
 
 - **A ficha da professora era a do Instanooria.** Faltava o ramo no despachante
-  de `page.tsx` do hub, e o `return` final é o corpo da exp-01. A tela ABRIA —
+  de `page.tsx` do hub, e o `return` final é o corpo da exp08ef1b. A tela ABRIA —
   com "Nova atividade" e sem o caminho para o painel. Hoje há
   `apps/hub/lib/entre-redes/despachante-da-ficha.test.ts` cobrando o ramo.
 - **Todo botão da professora respondia 404.** `manifesto-ia` não estava em

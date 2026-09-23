@@ -1,8 +1,8 @@
-# apps/api/src/bemestar — check-in de bem-estar (exp-91)
+# apps/api/src/bemestar — check-in de bem-estar (app-91)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## Check-in de bem-estar (exp-91, `apps/api/src/bemestar`)
+## Check-in de bem-estar (app-91, `apps/api/src/bemestar`)
 Ferramenta do professor: o **DASS-21** (Lovibond & Lovibond 1995; versão
 brasileira Vignola & Tucci 2014; domínio público) em **microdoses** — 3 frases
 por dia, 7 check-ins fecham os 21 itens, um texto livre opcional. Decisões:

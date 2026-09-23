@@ -1,4 +1,4 @@
-# exp-05-quem-mandou-isso — Quem mandou isso?
+# exp05ef1b — Quem mandou isso?
 
 Missão do **5º ano do Fundamental**, unidade 1. Clone de mensageiro móvel: o
 estudante entra num grupo da turma com oito mensagens sobre um acontecimento da
@@ -15,10 +15,10 @@ Uma aula de ~35 min, conduzida pelo relógio da turma: dois botões da professor
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-05-quem-mandou-isso dev     # :5184
+pnpm --filter @edu/exp05ef1b dev     # :5184
 ```
 
-O hub embeda em `/exp/exp-05-quem-mandou-isso`. Para testar o embed sem passar
+O hub embeda em `/exp/exp05ef1b`. Para testar o embed sem passar
 pela trilha: `/dev-embed?src=http://localhost:5184`.
 
 A porta entra em `apps/hub/lib/experiencias-dev.ts` e no `CORS_ORIGINS` da api
@@ -33,10 +33,10 @@ a missão mostra a tela de espera do preparo, de propósito.
 ## Verificar
 
 ```bash
-pnpm --filter @edu/exp-05-quem-mandou-isso typecheck
-pnpm --filter @edu/exp-05-quem-mandou-isso lint
-pnpm --filter @edu/exp-05-quem-mandou-isso test
-pnpm --filter @edu/exp-05-quem-mandou-isso build
+pnpm --filter @edu/exp05ef1b typecheck
+pnpm --filter @edu/exp05ef1b lint
+pnpm --filter @edu/exp05ef1b test
+pnpm --filter @edu/exp05ef1b build
 ```
 
 ## Onde as coisas estão
@@ -89,7 +89,7 @@ e-mail — nem os ids das mensagens encaminhadas** (o porquê está no cabeçalh
 | `progressed` | `gate:espera`, `mural:revelado` | espera e telão | — |
 | `completed` | `missao:reflexao` | entregou a resposta ao dilema | `{ chars }` |
 
-Onde cada medida é LIDA: `exp_05_sessoes` e `exp_05_encaminhamentos`, pelo painel
+Onde cada medida é LIDA: `exp05ef1b_sessoes` e `exp05ef1b_encaminhamentos`, pelo painel
 da professora (`GET /quem-mandou-isso/turmas/:id/painel`).
 
 ## Onde está o resto

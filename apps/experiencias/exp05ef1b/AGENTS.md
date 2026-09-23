@@ -1,17 +1,17 @@
-# apps/experiencias/exp-05-quem-mandou-isso — Quem mandou isso?
+# apps/experiencias/exp05ef1b — Quem mandou isso?
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp-05-quem-mandou-isso` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184`, hub `/exp/exp-05-quem-mandou-isso` | `@edu/ui/ds-whatsapp` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) |
+| `exp05ef1b` · 5EF · unidade 1 · `entre-redes` · `viewport` 375×812 · `permissoes: ["forms"]` | `:5184`, hub `/exp/exp05ef1b` | `@edu/ui/ds-whatsapp` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/quem-mandou-isso` ↔ `/quem-mandou-isso/*` | `scripts/e2e/estudante/10-quem-mandou-isso.mjs` (dois contextos) |
 
 ## O clone é ESCURO, e isso não é escolha
 
 A seção `whatsappmobile` do `@unooria/design-system` publica **só o tema
 escuro** (`WaTheme = 'dark'`; o CSS traz `:root, [data-wa-theme=dark]` e nada
 mais). **Derivar uma paleta clara aqui é proibido**, pela mesma regra do
-`unitube` e da exp-06: a fidelidade do clone é ao que o pacote publica, e uma
+`unitube` e da exp06ef2b: a fidelidade do clone é ao que o pacote publica, e uma
 paleta inventada seria um WhatsApp que não existe. O contraste do escuro
 (`#D3DAE0` sobre `#101D25`, ~11:1) passa o AA com folga.
 
@@ -21,7 +21,7 @@ Se um dia o pacote publicar o tema claro, é ele que muda — não este código.
 
 `lote === null` ⇒ tela de espera do preparo, em QUALQUER passo
 (`telaDoPasso` checa `preparada` antes do `switch`, e há teste). Diferente da
-exp-08, **não existe reserva**: o lote é escrito em cima do TEMA que a professora
+exp08ef4b, **não existe reserva**: o lote é escrito em cima do TEMA que a professora
 escolheu, e servir outro faria a criança ler mensagens sobre um acontecimento
 que não existiu na escola dela.
 
@@ -36,14 +36,14 @@ mexe no passo efetivo de quem já está em `revelado` (o piso da etapa `reflexao
 congelava em `revelacao` e o botão "Responder a última pergunta" nunca aparecia.
 A sala esperava um botão que só um F5 traria, e nada em tela dizia por quê.
 
-## Onde a fronteira do disfarce cai — e por que ela é mais tarde que na exp-06
+## Onde a fronteira do disfarce cai — e por que ela é mais tarde que na exp06ef2b
 
 O disfarce vale **do "Entrar no grupo" até o card de síntese**, revelação
-inclusive. Na exp-06 ele cai no breakpoint, e a diferença não é inconsistência:
+inclusive. Na exp06ef2b ele cai no breakpoint, e a diferença não é inconsistência:
 
 - O Mural revelado é uma **lista de mensagens com etiquetas**, e mensageiro real
   tem etiqueta de checagem — o próprio WhatsApp marca "encaminhada com
-  frequência". O que a exp-06 recusou foi um **visualizador de topologia de
+  frequência". O que a exp06ef2b recusou foi um **visualizador de topologia de
   rede**, que app de mensagem nenhum tem.
 - A pergunta do tio sai do disfarce porque ela **não é sobre o grupo da turma**:
   é sobre o grupo da FAMÍLIA dele. A transferência para fora da tela é o que a
@@ -52,7 +52,7 @@ inclusive. Na exp-06 ele cai no breakpoint, e a diferença não é inconsistênc
 
 O critério continua sendo *quem está falando*, nunca *é depois no tempo*.
 
-## O que o cliente NÃO sabe — e por que aqui é mais barato que na exp-06
+## O que o cliente NÃO sabe — e por que aqui é mais barato que na exp06ef2b
 
 O bundle é público, e nesta missão o segredo não precisa ser escondido: **ele
 não desce**. `MensagemPublica` é um `Omit` de `veracidade`, `tom` e `explicacao`
@@ -72,7 +72,7 @@ primeira verificação desta missão.
 O que prova o segredo são duas perguntas, e as duas têm de vir vazias:
 
 ```bash
-A=apps/experiencias/exp-05-quem-mandou-isso/dist/assets/*.js
+A=apps/experiencias/exp05ef1b/dist/assets/*.js
 grep -oh "URGENTE GENTE\|Coordenação Pedagógica\|reordenamento de turmas" $A   # o texto do lote
 grep -ohE "msg-[1-8][^;]{0,60}(verdadeira|falsa|ambigua)" $A                   # o par id↔resposta
 ```
@@ -82,7 +82,7 @@ grep -ohE "msg-[1-8][^;]{0,60}(verdadeira|falsa|ambigua)" $A                   #
 - **O alvo NÃO pode ser um `<button>`.** O balão de voz tem um botão de play
   dentro, e `<button>` aninhado é HTML inválido: o React derruba a hidratação e
   o feed inteiro para de responder ao toque. Custou uma execução da suíte na
-  exp-06 porque typecheck e lint passam por cima. Aqui é
+  exp06ef2b porque typecheck e lint passam por cima. Aqui é
   `div[role=button] + tabIndex + Enter/Espaço`.
 - **Cancelar no movimento precisa de folga (10 px).** Sem cancelamento, a
   rolagem vira seleção acidental e a criança encaminha o que não escolheu para
@@ -114,7 +114,7 @@ quem não fechou a curadoria a tempo. Quem perdeu a janela volta pela professora
 
 ## O podcast fica no FIM, não junto do dilema
 
-A exp-06 põe o episódio na mesma tela do "Meu percurso". Aqui não dá: o bloco
+A exp06ef2b põe o episódio na mesma tela do "Meu percurso". Aqui não dá: o bloco
 "Provocação e transferência" do roteiro **descreve o áudio do tio e diz o que
 fazer com ele**. Na tela da pergunta, isso seria a resposta impressa acima do
 campo.
@@ -136,7 +136,7 @@ fallback.
 A `TextArea` do DS é um campo de formulário. Sem o token no `sandbox` do iframe
 o submit morre **em silêncio**: a criança escreve, toca em "Concluir Missão" e
 nada acontece, sem erro em lugar nenhum. É a única permissão que esta missão
-pede — a exp-06 pede zero, e a diferença é exatamente esse campo.
+pede — a exp06ef2b pede zero, e a diferença é exatamente esse campo.
 
 ## Props do DS que enganam (0.2.2)
 

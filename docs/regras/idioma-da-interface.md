@@ -19,7 +19,7 @@ com regras opostas:
 
 | Zona | Regra |
 |---|---|
-| **Plataforma** — hub, exp-9x do professor | pt-BR, sem exceção. É a Unooria falando com professor, gestor e estudante, e numa rede pública não se pode pressupor repertório de inglês |
+| **Plataforma** — hub, app-9x do professor | pt-BR, sem exceção. É a Unooria falando com professor, gestor e estudante, e numa rede pública não se pode pressupor repertório de inglês |
 | **Superfície disfarçada** — dentro do clone | o nome que o app REAL usa em português. `Shorts`, `Stories`, `Feed`, `Playlists`, `Ranking` FICAM: traduzi-los quebra o disfarce que a experiência está medindo |
 | **O professor falando SOBRE o clone** — guia da aula, catálogo, painéis | depende de o termo nomear um objeto na tela ou ser jargão vazado — abaixo |
 
@@ -43,10 +43,10 @@ curta e cada item tem razão registrada na ADR-91: `fake news` (consagrado no
 Brasil, e a instrução "não anuncie que é uma aula sobre fake news" perde o
 sentido traduzida — o que o professor não deve dizer é a expressão que a criança
 reconhece), `cyberbullying` (BNCC EF07CO09 e Lei 13.185/2015), `print` (é a
-palavra da criança, e a exp-06/07 gira em torno desse objeto), `chat`, `on-line`
+palavra da criança, e a exp06ef2b e a exp07ef1b giram em torno desse objeto), `chat`, `on-line`
 (citação verbatim da BNCC). **Não "corrija" nenhum deles.**
 
-**Rótulo visível em dois lugares muda nos DOIS.** `ROTULO_PASSO` da exp-03 é
+**Rótulo visível em dois lugares muda nos DOIS.** `ROTULO_PASSO` da exp02em1b é
 espelho declarado de `apps/api/src/unoogpt/regras/passos.ts`; mudar um só faz a
 trilha do estudante divergir do que a api devolve. E **a suíte e2e casa por
 texto exato** (`getByText`, `getByRole({name})`): trocar copy sem atualizar a

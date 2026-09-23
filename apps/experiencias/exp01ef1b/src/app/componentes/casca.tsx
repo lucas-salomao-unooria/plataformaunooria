@@ -91,7 +91,7 @@ export function FreezeOverlayFrame(): JSX.Element {
   );
 }
 
-/** Nina com megafone (ilustração de cena `ilu-exp08ef1b-02` do brief; placeholder
+/** Nina com megafone (ilustração de cena `ilu-exp01-02` do brief; placeholder
  *  vetorial até a arte final da Ilustração chegar). */
 export function IlustracaoNinaMegafone(): JSX.Element {
   return (
@@ -108,7 +108,7 @@ export function IlustracaoNinaMegafone(): JSX.Element {
   );
 }
 
-/** Nina fotógrafa (E1 — `ilu-exp08ef1b-01`; placeholder vetorial). */
+/** Nina fotógrafa (E1 — `ilu-exp01-01`; placeholder vetorial). */
 export function IlustracaoNinaFotografa(): JSX.Element {
   return (
     <svg width="120" height="120" viewBox="0 0 140 140" aria-hidden>

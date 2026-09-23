@@ -49,7 +49,7 @@ instalar a plataforma, o mesmo arquivo continua legível.
   exceção está numa lista explícita em `tests/identidade-unica.spec.ts`, que varre
   todo JSONB do schema procurando os CPFs QUE EXISTEM — não "onze dígitos", que
   casa com qualquer `Date.now()`.
-- **Bem-estar (exp-91) nunca entra no documento**: dado de saúde, posse do
+- **Bem-estar (app-91) nunca entra no documento**: dado de saúde, posse do
   professor, sem rota de gestor em lugar nenhum. Documento que o gestor emite não
   carrega o que nem o gestor lê.
 - Envs: `CONTRATO_ID` + `CONTRATO_NOME` no hub (sem o primeiro, a emissão é 503);

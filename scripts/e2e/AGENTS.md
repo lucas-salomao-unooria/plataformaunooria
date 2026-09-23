@@ -29,7 +29,7 @@ o que decide se você precisa abri-lo.
   e o culpado apontado foi o produto.
 - **Vigie o alerta só DEPOIS de o estado novo começar.** Quando o botão que
   dispara a ação fica dentro do alerta de erro anterior (o "Tentar de novo" da
-  exp-92), a vigilância vê o alerta ANTIGO e aborta antes de a ação começar —
+  app-92), a vigilância vê o alerta ANTIGO e aborta antes de a ação começar —
   espere primeiro o estado `gerando` com `waitFor` puro. Em 2026-09-10 isso fez
   a `professor/09` reportar vermelho enquanto o banco gravava `pronto` na mesma
   corrida: falso negativo que manda investigar um produto que funcionou.

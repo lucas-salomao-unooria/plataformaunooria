@@ -1,4 +1,4 @@
-# exp-70-vila-do-lume
+# app-70-vila-do-lume
 
 Jogo 3D em primeira pessoa: a criança reacende as 8 fogueiras de uma vila no escuro.
 **Transversal** — não pertence a nenhum ano (`series: []` no manifesto), e aparece
@@ -46,9 +46,9 @@ jogo confere isso antes de entregar e a api recusa payload que tenha.
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-70-vila-do-lume dev   # :5177
+pnpm --filter @edu/app-70-vila-do-lume dev   # :5177
 # embedado, com sessão de estudante:
-#   /dev-embed?src=http://localhost:5177   ou   /exp/exp-70-vila-do-lume
+#   /dev-embed?src=http://localhost:5177   ou   /exp/app-70-vila-do-lume
 ```
 
 Abrir `http://localhost:5177` direto **não** funciona, e é de propósito: sem hub não há

@@ -1,4 +1,4 @@
-# exp-08-manifesto-ia — O Manifesto da IA: Nossos Direitos em Código
+# exp08ef4b — O Manifesto da IA: Nossos Direitos em Código
 
 8º ano do Ensino Fundamental, 4º bimestre (unidade 4). Clone do ChatGPT.
 
@@ -16,8 +16,8 @@ para o debate oral de 10 minutos.
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-08-manifesto-ia dev     # :5182
-# no hub: /exp/exp-08-manifesto-ia  (ou /dev-embed?src=http://localhost:5182)
+pnpm --filter @edu/exp08ef4b dev     # :5182
+# no hub: /exp/exp08ef4b  (ou /dev-embed?src=http://localhost:5182)
 ```
 
 A porta entra no `CORS_ORIGINS` da api (`apps/api/.env`, `docker-compose.yml`,

@@ -1,4 +1,4 @@
-# exp-06-rastro-boato — O Rastro do Boato: Por que a Mentira Voa?
+# exp06ef2b — O Rastro do Boato: Por que a Mentira Voa?
 
 Missão do **6º ano do Fundamental**, unidade 2. Clone de mensageiro móvel: um
 boato sobre a água da escola corre quatro grupos, o estudante audita os dados de
@@ -10,10 +10,10 @@ Duas aulas de ~35 min, com pausa entre elas conduzida pela professora.
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-06-rastro-boato dev     # :5181
+pnpm --filter @edu/exp06ef2b dev     # :5181
 ```
 
-O hub embeda em `/exp/exp-06-rastro-boato`. Para testar o embed sem passar pela
+O hub embeda em `/exp/exp06ef2b`. Para testar o embed sem passar pela
 trilha: `/dev-embed?src=http://localhost:5181`.
 
 A api precisa estar no ar (`/rastro-boato/*`), e a missão precisa estar
@@ -22,9 +22,9 @@ A api precisa estar no ar (`/rastro-boato/*`), e a missão precisa estar
 ## Verificar
 
 ```bash
-pnpm --filter @edu/exp-06-rastro-boato typecheck
-pnpm --filter @edu/exp-06-rastro-boato test
-pnpm --filter @edu/exp-06-rastro-boato build
+pnpm --filter @edu/exp06ef2b typecheck
+pnpm --filter @edu/exp06ef2b test
+pnpm --filter @edu/exp06ef2b build
 node scripts/e2e/rodar.mjs estudante/07-rastro-boato
 ```
 

@@ -1,10 +1,10 @@
-# apps/experiencias/exp-07-o-eco-no-grupo — O Eco no Grupo
+# apps/experiencias/exp07ef1b — O Eco no Grupo
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | Manifesto | Dev | DS | api | e2e |
 |---|---|---|---|---|
-| `exp-07-o-eco-no-grupo` · 7EF · `viewport` 375×812 · `permissoes: ["forms"]` | `:5179`, hub `/exp/exp-07-o-eco-no-grupo` | `@edu/ui/ds-whatsapp` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/o-eco-no-grupo` ↔ `/o-eco-no-grupo/*` | `scripts/e2e/estudante/06-o-eco-no-grupo.mjs` |
+| `exp07ef1b` · 7EF · `viewport` 375×812 · `permissoes: ["forms"]` | `:5179`, hub `/exp/exp07ef1b` | `@edu/ui/ds-whatsapp` (clone) + `@edu/ui/ds` (escola) | `apps/api/src/o-eco-no-grupo` ↔ `/o-eco-no-grupo/*` | `scripts/e2e/estudante/06-o-eco-no-grupo.mjs` |
 
 ## O clone é ESCURO, e isso não é escolha
 

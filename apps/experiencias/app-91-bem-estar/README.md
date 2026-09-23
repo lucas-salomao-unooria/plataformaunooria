@@ -1,4 +1,4 @@
-# exp-91-bem-estar — "Como você está?" (check-in de bem-estar do professor)
+# app-91-bem-estar — "Como você está?" (check-in de bem-estar do professor)
 
 Ferramenta do **professor** (`publico: "professor"` no manifesto), embedada pelo
 hub em `/professor/bem-estar`. Aplica o **DASS-21** (Depression Anxiety Stress
@@ -38,7 +38,7 @@ Nunca vai à telemetria: respostas, pontuação, faixa, texto livre.
 ## Dev
 
 ```bash
-pnpm --filter @edu/exp-91-bem-estar dev     # :5176
+pnpm --filter @edu/app-91-bem-estar dev     # :5176
 # hub: http://localhost:3000/professor/bem-estar  (login: uma linha prof.* de credenciais-demo.csv)
 # sem GCP: AI_PROVIDER=mock na api → textos fixos (o fluxo inteiro funciona)
 ```

@@ -119,11 +119,11 @@ produziu códigos inventados uma vez, e um teste guarda a forma.
 `app/(plataforma)/professor/entre-redes/[ano]/[unidade]/page.tsx` escolhe o corpo
 da ficha por `missao.expId`, e o `return` final — sem `if` nenhum — é
 `<MissaoInstanooria>`. **Missão publicada sem ramo não quebra: ela mostra a ficha
-de outra missão.** Com "Nova atividade", que grava em `exp_01_activities` e a
+de outra missão.** Com "Nova atividade", que grava em `exp08ef1b_activities` e a
 missão nova nunca lê, e sem "Abrir a aula e os resultados", que é o único caminho
 para o painel da turma.
 
-Aconteceu duas vezes — a exp-06 e, em 2026-09-11, a exp-08, com o aviso já
+Aconteceu duas vezes — a exp06ef2b e, em 2026-09-11, a exp08ef4b, com o aviso já
 escrito em `missao-rastro-boato.tsx`, no arquivo ao lado. Comentário não é rede:
 `lib/entre-redes/despachante-da-ficha.test.ts` lê o `page.tsx` e reprova toda
 missão publicada com `expId` que não tenha ramo próprio, com uma lista de

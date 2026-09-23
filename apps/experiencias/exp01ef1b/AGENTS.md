@@ -1,9 +1,9 @@
-# apps/experiencias/exp-04-o-que-a-foto-conta — a missão do 1º ano no mural
+# apps/experiencias/exp01ef1b — a missão do 1º ano no mural
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`. Porta de dev
-**5183** (`strictPort`; a 5182 é da exp-08), rota do hub `/exp/exp-04-o-que-a-foto-conta`,
+**5183** (`strictPort`; a 5182 é da exp08ef4b), rota do hub `/exp/exp01ef1b`,
 módulo da api `apps/api/src/foto-conta/` (`/foto-conta/*` — NÃO `/instanooria/*`,
-que pertence à exp-01), produto `entre-redes`, 1º ano EF, unidade 1.
+que pertence à exp08ef1b), produto `entre-redes`, 1º ano EF, unidade 1.
 
 ## O que quebra se você não souber
 

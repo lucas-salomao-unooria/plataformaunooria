@@ -1,8 +1,8 @@
-# apps/api/src/unoogpt — Missão Tempestade (exp-03)
+# apps/api/src/unoogpt — Missão Tempestade (exp02em1b)
 
 Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 
-## Missão Tempestade (exp-03, `apps/api/src/unoogpt`)
+## Missão Tempestade (exp02em1b, `apps/api/src/unoogpt`)
 
 - **Marco novo leva o relógio do INSTANTE, nunca `sessoes.minutos_gastos`.**
   `gravarMarco(..., estado)` recebe o `EstadoDoRelogio` de `relogioAgora(tx,

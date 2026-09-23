@@ -1,11 +1,11 @@
-# apps/experiencias/exp-90-plano-de-aula — ferramenta do professor
+# apps/experiencias/app-90-plano-de-aula — ferramenta do professor
 
 Complementa o `AGENTS.md` da raiz e o de `apps/experiencias`.
 
 | | |
 |---|---|
-| Manifesto | `exp-90-plano-de-aula` · `publico: "professor"` · `series: []` · `telemetria, ia` |
-| Dev | `pnpm --filter @edu/exp-90-plano-de-aula dev` → :5175 · hub `/professor/plano-de-aula` |
+| Manifesto | `app-90-plano-de-aula` · `publico: "professor"` · `series: []` · `telemetria, ia` |
+| Dev | `pnpm --filter @edu/app-90-plano-de-aula dev` → :5175 · hub `/professor/plano-de-aula` |
 | DS | `@edu/ui/ds` (plataforma — não há disfarce a proteger aqui) |
 | api | `/planos` (+ `/planos/referencias/disponiveis`) — ver `apps/api/AGENTS.md` |
 | e2e | `scripts/e2e/professor/03-plano-de-aula.mjs` (a conta sai de `credenciais-demo.csv` via `conta("professor")`, nunca de login fixo; `seed:demo` importa as referências) |

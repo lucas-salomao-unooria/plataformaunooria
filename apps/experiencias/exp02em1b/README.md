@@ -1,4 +1,4 @@
-# exp-03-unoogpt — a Missão Tempestade
+# exp02em1b — a Missão Tempestade
 
 Clone de assistente de IA em que o estudante decide, **sob incerteza e com o relógio
 correndo**, onde alocar 2 equipes de resgate entre 4 bairros de Serra do Sauá
@@ -17,7 +17,7 @@ conjuntos de dados distorce a cidade de um jeito (o satélite vê telhado e não
 morador; o cadastro está velho), e essa distorção é o **material do debate do
 professor** — não uma tela.
 
-Consequência prática: **não há revelação no software**. A exp-02 troca da seção
+Consequência prática: **não há revelação no software**. A exp04ef1b troca da seção
 do clone para a da plataforma na virada da missão; aqui não existe virada, e por
 isso esta experiência é 100% da seção `chatgpt` e não importa `unooria.css`
 nenhum. A marca institucional entra só como chrome do hub, acima do iframe.
@@ -69,7 +69,7 @@ professor, e o defeito existia no projeto de origem (corrigido em
 
 Canal **analítico** (SDK → batch → Pub/Sub). O **texto do estudante nunca entra**:
 a conversa é caixa livre escrita por menor de idade, e o que sobe é contagem.
-A trilha pedagógica é outra coisa — `exp_03_marcos`, gravada pela api, lida pelo
+A trilha pedagógica é outra coisa — `exp02em1b_marcos`, gravada pela api, lida pelo
 professor.
 
 | verbo | objeto | resultado |
@@ -112,24 +112,24 @@ desta missão:
 2. **Esperar por texto do assistente é falso positivo.** A fala de abertura dele
    já está na tela desde o começo, e o cliente mostra a fala do ESTUDANTE
    otimistamente antes de a api responder. A asserção honesta é a conversa
-   **sobreviver a um F5**, porque aí ela veio de `exp_03_mensagens`.
+   **sobreviver a um F5**, porque aí ela veio de `exp02em1b_mensagens`.
 
 ## Decisões
 
 - **Tailwind 3 veio junto**, com o config de apelidos do origem (zero cor
   literal — só `var(--gpt-*)`). As ~15 telas foram medidas em playtest com estas
   classes; reescrevê-las em CSS à mão arriscaria a medida sem ganho. Precedente:
-  `exp-01-instanooria`. Componente de interface continua vindo do pacote.
+  `exp08ef1b`. Componente de interface continua vindo do pacote.
 - **Sem `viewport` no manifesto**: a missão é de laboratório, desktop, com a
   conversa em 2/3 e o mapa em 1/3. Preenche o iframe, sem casca de aparelho.
-- **Tema fixo em claro.** A exp-02 deixa o estudante escolher; aqui o desenho foi
+- **Tema fixo em claro.** A exp04ef1b deixa o estudante escolher; aqui o desenho foi
   calibrado no claro e não há escolha a fazer.
 - **As duas folhas do DS são obrigatórias** na 0.1.17: `chatgpt.css` (tokens e
   componentes) e `fonts/chatgpt.css` (o `@font-face` da Inter com os `.woff2` do
   pacote). Sem a segunda o texto cai na fonte do sistema. Isto **dispensa** o
   `next/font` que o projeto de origem precisava usar.
 - **O mapa SVG e os 8 ícones de fonte são arte de produto**, em `src/app/arte/` —
-  exceção declarada ao "não inventar componente", como o canvas 3D da exp-70.
+  exceção declarada ao "não inventar componente", como o canvas 3D da app-70.
 
 ## Lacunas do pacote (pedidos ao `storybook-unooria`)
 
@@ -153,14 +153,14 @@ agente está na tela) e o único rastro é um aviso de console sobre *"form's fr
 is sandboxed"*. Foi assim que passou pelo typecheck, pelo lint e por uma primeira
 versão do smoke.
 
-É por experiência, não default, pelo mesmo motivo do `pointer-lock` da exp-70:
+É por experiência, não default, pelo mesmo motivo do `pointer-lock` da app-70:
 permitir submit de formulário é capacidade de quem declarou.
 
 ## Rodar
 
 ```bash
-pnpm --filter @edu/exp-03-unoogpt dev     # :5178 → hub /exp/exp-03-unoogpt
-pnpm --filter @edu/exp-03-unoogpt test    # Vitest da lógica de tela
+pnpm --filter @edu/exp02em1b dev     # :5178 → hub /exp/exp02em1b
+pnpm --filter @edu/exp02em1b test    # Vitest da lógica de tela
 ```
 
 Com `AI_PROVIDER=mock` a missão abre e o laço de ferramenta roda, mas o mock não
