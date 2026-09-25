@@ -318,104 +318,149 @@ instrumentação automática do OpenTelemetry precisa alterar \cd{http},
 \centering
 \fitpage{%
 \begin{tikzpicture}[x=1cm, y=1cm]
+  % Grade (2026-09-25): cinco colunas de 32mm de passo (x = 1,85 / 5,05 / 8,25 /
+  % 11,45 / 14,65) com caixas de 25,5mm e 3mm de vão entre elas; a faixa
+  % transversal usa quatro colunas mais largas porque `TenancyInterceptor` não
+  % cabe em 25,5mm. A versão anterior encavalava caixas (`salas/` sobre
+  % `health/`, `recursos/` sobre `analise/`) e o rótulo do domínio sobre as
+  % duas: typecheck nenhum pega isso --- só a página renderizada.
+  % A infraestrutura fica ENTRE a plataforma e o domínio para que as duas
+  % faixas que a usam cheguem a ela sem atravessar a outra; a coluna 2 da
+  % infraestrutura fica VAZIA de propósito: é por ela que os painéis sobem até
+  % `equipes/`. Os rótulos das faixas vão à direita porque a esquerda é a
+  % pista das setas.
 
-  \draw[c4zone] (0.4,-0.5) rectangle (15.6,-15.1);
-  \node[c4boundarylbl, fill=unooSurface] at (0.8,-0.35) {Contêiner: API (NestJS)};
+  \draw[c4zone] (0,0) rectangle (16.5,-15.95);
+  \node[c4boundarylbl, fill=unooSurface] at (0.4,0.15) {Contêiner: API (NestJS)};
 
   % ---- faixa 1: transversal
-  \node[camadalbl, anchor=west] at (0.7,-1.25) {Transversal --- toda rota passa por aqui};
-  \node[c4component, text width=27mm] (guard) at (2.5,-2.4)
+  \node[camadalbl, anchor=east] at (16.1,-0.5) {Transversal --- toda rota passa por aqui};
+  \node[c4component, text width=31mm, minimum height=16mm] (guard) at (2.125,-1.55)
     {\texttt{OidcGuard}\desc{valida JWT por JWKS}};
-  \node[c4component, text width=27mm] (roles) at (6.0,-2.4)
+  \node[c4component, text width=31mm, minimum height=16mm] (roles) at (6.208,-1.55)
     {\texttt{RolesGuard}\desc{restringe por papel}};
-  \node[c4component, text width=27mm] (tenint) at (9.5,-2.4)
+  \node[c4component, text width=31mm, minimum height=16mm] (tenint) at (10.292,-1.55)
     {\texttt{TenancyInterceptor}\desc{escola no \texttt{AsyncLocalStorage}}};
-  \node[c4component, text width=27mm] (env) at (13.0,-2.4)
+  \node[c4component, text width=31mm, minimum height=16mm] (env) at (14.375,-1.55)
     {\texttt{validarEnv}\desc{Zod no \emph{boot}}};
 
-  % ---- faixa 2: infraestrutura
-  \node[camadalbl, anchor=west] at (0.7,-4.0) {Infraestrutura --- as portas únicas};
-  \node[c4component, text width=27mm] (prisma) at (2.5,-5.2)
+  % ---- faixa 2: plataforma
+  \node[camadalbl, anchor=east] at (16.1,-2.95) {Plataforma --- serve a todas as experiências};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (auth) at (1.85,-4.0)
+    {\texttt{auth/}\desc{\texttt{TokenService}}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (usu) at (5.05,-4.0)
+    {\texttt{usuarios/}\desc{listar, editar, senha}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (expmod) at (8.25,-4.0)
+    {\texttt{experiencias/}\desc{manifesto}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (tel) at (11.45,-4.0)
+    {\texttt{telemetry/}\desc{\emph{batch}, \emph{ingest}}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (prog) at (14.65,-4.0)
+    {\texttt{progress/}\desc{progresso genérico}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (health) at (1.85,-5.95)
+    {\texttt{health/}\desc{\texttt{healthz}, \texttt{readyz}}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (analise) at (5.05,-5.95)
+    {\texttt{analise/}\desc{turma e rede, CSV}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (comum) at (8.25,-5.95)
+    {\texttt{comum/}\desc{séries, escopo de turma}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (rost) at (11.45,-5.95)
+    {\texttt{rostering/}\desc{pessoas, \mbox{escolas}, turmas}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (port) at (14.65,-5.95)
+    {\texttt{portabilidade/}\desc{perfil portátil}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (salas) at (1.85,-8.1)
+    {\texttt{salas/}\desc{a sala: grade e liberação}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (equipes) at (5.05,-8.1)
+    {\texttt{equipes/}\desc{quem divide um computador}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (recs) at (8.25,-8.1)
+    {\texttt{recursos/}\desc{o interruptor da rede e a versão}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (prosp) at (11.45,-8.1)
+    {\texttt{prospeccao/}\desc{o site público, sem \emph{tenant}}};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (evid) at (14.65,-8.1)
+    {\texttt{evidencias/}\desc{habilidade da BNCC por atividade}};
+
+  % ---- faixa 3: infraestrutura (coluna 2 vazia: a pista das equipes)
+  \node[camadalbl, anchor=east] at (16.1,-9.25) {Infraestrutura --- as portas únicas};
+  \node[c4component, text width=25.5mm, minimum height=16mm] (prisma) at (1.85,-10.4)
     {\texttt{PrismaService}\desc{\texttt{comTenancy}: transação + RLS}};
-  \node[c4component, text width=27mm] (ai) at (6.0,-5.2)
+  \node[c4component, text width=25.5mm, minimum height=16mm] (ai) at (8.25,-10.4)
     {\texttt{ai/}\desc{\texttt{AiProvider}, \texttt{QuotaService}}};
-  \node[c4component, text width=27mm] (store) at (9.5,-5.2)
+  \node[c4component, text width=25.5mm, minimum height=16mm] (store) at (11.45,-10.4)
     {\texttt{object-storage/}\desc{local $|$ GCS}};
-  \node[c4component, text width=27mm] (assets) at (13.0,-5.2)
+  \node[c4component, text width=25.5mm, minimum height=16mm] (assets) at (14.65,-10.4)
     {\texttt{assets/}\desc{imagem gerada}};
 
-  % ---- faixa 3: plataforma
-  \node[camadalbl, anchor=west] at (0.7,-6.8) {Plataforma --- serve a todas as experiências};
-  % Cinco colunas por linha, 22mm: com 25mm e a quinta em x=14,0 as caixas
-  % encostavam umas nas outras — `progress/` cobria `rostering/` no PDF, e
-  % typecheck nenhum pega isso.
-  \node[c4component, text width=22mm] (auth) at (2.0,-8.0)
-    {\texttt{auth/}\desc{\texttt{TokenService}}};
-  \node[c4component, text width=22mm] (usu) at (5.1,-8.0)
-    {\texttt{usuarios/}\desc{listar, editar, senha}};
-  \node[c4component, text width=22mm] (expmod) at (8.2,-8.0)
-    {\texttt{experiencias/}\desc{manifesto}};
-  \node[c4component, text width=22mm] (tel) at (11.3,-8.0)
-    {\texttt{telemetry/}\desc{\emph{batch}, \emph{ingest}}};
-  \node[c4component, text width=22mm] (prog) at (14.4,-8.0)
-    {\texttt{progress/}\desc{progresso genérico}};
-  \node[c4component, text width=22mm] (health) at (2.0,-9.6)
-    {\texttt{health/}\desc{\texttt{healthz}, \texttt{readyz}}};
-  \node[c4component, text width=22mm] (analise) at (5.1,-9.6)
-    {\texttt{analise/}\desc{turma e rede, CSV}};
-  \node[c4component, text width=22mm] (comum) at (8.2,-9.6)
-    {\texttt{comum/}\desc{séries, escopo de turma}};
-  \node[c4component, text width=22mm] (rost) at (11.3,-9.6)
-    {\texttt{rostering/}\desc{pessoas, escolas, turmas}};
-  \node[c4component, text width=22mm] (port) at (14.4,-9.6)
-    {\texttt{portabilidade/}\desc{perfil portátil}};
-  \node[c4component, text width=22mm] (salas) at (2.0,-10.4)
-    {\texttt{salas/}\desc{a sala: grade e liberação}};
-  \node[c4component, text width=22mm] (recs) at (5.1,-10.4)
-    {\texttt{recursos/}\desc{o interruptor da rede e a versão}};
-
   % ---- faixa 4: dominio por experiencia
-  \node[camadalbl, anchor=west] at (0.7,-10.9)
-    {Domínio por experiência --- \texttt{catalogo.ts} + \texttt{regras.ts} + \emph{service} + \emph{controllers} por papel};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (motor) at (2.2,-12.4)
+  % Linha de cima alinhada à grade; a de baixo DESLOCADA meia coluna, para a
+  % seta de cada caixa subir pelo vão entre duas da linha de cima.
+  \node[camadalbl, anchor=east] at (16.1,-11.82) {Domínio por experiência};
+  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (motor) at (1.85,-13.075)
     {\texttt{motor/} e mais 4\desc{geracao, dossie, atividades, perfis --- exp08ef1b}};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (utube) at (5.6,-12.4)
+  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (utube) at (5.05,-13.075)
     {\texttt{unootube/}\desc{exp04ef1b}};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (vila) at (9.0,-12.4)
-    {\texttt{vila/}\desc{app-70}};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (planos) at (12.4,-12.4)
-    {\texttt{planos/}\desc{app-90}};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (bem) at (14.6,-13.6)
+  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (bem) at (8.25,-13.075)
     {\texttt{bemestar/}\desc{app-91}};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (2.2,-14.2)
-    {\texttt{unoogpt/}\desc{exp02em1b}};
-  \node[c4component, text width=23mm, fill=unooGreen!22, draw=unooGreen] (eco) at (9.0,-14.2)
+  \node[c4component, text width=25.5mm, minimum height=19.5mm, fill=unooGreen!22, draw=unooGreen] (eco) at (11.45,-13.075)
     {\texttt{o-eco-no-grupo/}\desc{exp07ef1b --- texto, imagem e VOZ}};
+  \node[c4component, text width=27mm, minimum height=35.5mm, fill=unooGreen!22, draw=unooGreen, font=\scriptsize] (outros) at (14.73,-13.875)
+    {\texttt{rastro-boato/}\\\texttt{manifesto-ia/}\\\texttt{quem-mandou-isso/}\\\texttt{foto-conta/}\\\texttt{planejamento/}};
+  \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (vila) at (3.45,-15.0)
+    {\texttt{vila/}\desc{app-70}};
+  \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (ugpt) at (6.65,-15.0)
+    {\texttt{unoogpt/}\desc{exp02em1b}};
+  \node[c4component, text width=25.5mm, minimum height=13mm, fill=unooGreen!22, draw=unooGreen] (planos) at (9.85,-15.0)
+    {\texttt{planos/}\desc{app-90}};
 
-  % ---- relações principais
-  \draw[c4rel] (guard.south) -- (2.5,-3.1) -- (6.0,-3.1) -- (roles.south);
-  \draw[c4reldash] (tenint.south) -- (9.5,-4.3) -- (2.5,-4.3) -- (prisma.north)
-    node[cxlabel, pos=0.62, above]{escola do \emph{token}};
-  \draw[c4rel] (motor.north) -- (2.2,-10.4) -- (2.5,-6.0);
-  \draw[c4rel] (vila.north) -- (9.0,-10.4) -- (2.9,-10.4) -- (2.9,-6.0);
-  \draw[c4rel] (planos.north) -- (12.4,-10.9) -- (6.4,-10.9) -- (6.0,-6.0)
-    node[cxlabel, pos=0.80, right=1pt]{IA + quota};
-  \draw[c4rel] (bem.west) -- (13.6,-13.6) -- (13.6,-10.7) -- (6.4,-10.7) -- (6.4,-6.0);
-  \draw[c4rel] (ugpt.west) -- (0.4,-14.2) -- (0.4,-10.5) -- (2.5,-10.5) -- (2.5,-6.0);
-  \draw[c4rel] (ugpt.east) -- (4.0,-14.2) -- (6.8,-14.2) -- (6.8,-10.2) -- (6.4,-10.2) -- (6.4,-6.0);
-  \node[cxlabel, anchor=west] at (6.95,-11.45) {IA com ferramentas + quota};
-  \draw[c4rel] (planos.north east) -- (13.6,-11.6) -- (10.0,-6.0)
-    node[cxlabel, pos=0.72, right=1pt]{\emph{bucket} privado};
-  \draw[c4rel] (eco.north) -- (9.0,-13.35) -- (10.5,-13.35) -- (10.5,-10.35) -- (6.4,-10.35) -- (6.4,-6.0);
-  \draw[c4rel] (eco.east) -- (10.9,-14.2) -- (10.9,-11.55) -- (10.0,-6.0)
-    node[cxlabel, pos=0.80, right=1pt]{mídia no \emph{bucket}};
+  % ---- relações: transversal
+  \draw[c4rel] (guard.east) -- (roles.west);
+  % a escola do token desce pela margem esquerda, fora de toda caixa
+  \draw[c4reldash] (tenint.south) -- (10.292,-2.6) -- (0.2,-2.6) -- (0.2,-10.4) -- (prisma.west);
+  \node[cxlabel] at (6.208,-2.6) {escola do \emph{token}};
+
+  % ---- relações: plataforma
+  \draw[c4rel] (2.6,-7.3) -- (2.6,-7.05) -- (4.6,-7.05) -- (4.6,-7.3);
+  \node[cxlabel] at (3.6,-7.05) {contagem};
+  \draw[c4rel] (salas.south) -- (prisma.north);
+  \draw[c4rel] (3.75,-8.9) -- (3.75,-9.25) -- (2.9,-9.25) -- (2.9,-9.6);
+  % evidencias/ -> equipes/: pelo vão entre a 2a e a 3a linha da plataforma,
+  % acima de recursos/ e prospeccao/, e descendo no terço direito de equipes/
+  % (o terço esquerdo é a chegada da contagem da sala).
+  \draw[c4rel] (evid.north) -- (14.65,-7.05) -- (5.6,-7.05) -- (5.6,-7.3);
+  \node[cxlabel] at (10.05,-7.05) {gancho \texttt{aoMudarEquipes} + \texttt{consulta.ts}};
+
+  % ---- relações: domínio (as que sobem até equipes/ passam pela coluna vazia)
+  \draw[c4rel] (motor.north) -- (1.85,-11.2);
+  \draw[c4rel] (3.45,-14.35) -- (3.45,-11.75) -- (2.9,-11.75) -- (2.9,-11.2);
+  \draw[c4rel] (4.4,-12.1) -- (4.4,-8.9);
+  \draw[c4rel] (6.65,-14.35) -- (6.65,-11.75) -- (5.0,-11.75) -- (5.0,-8.9);
+  \draw[c4rel] (6.65,-11.75) -- (7.4,-11.75) -- (7.4,-11.2);
+  \node[cxlabel, anchor=west] at (5.15,-9.25) {\texttt{consulta.ts}};
+  \draw[c4rel] (bem.north) -- (8.25,-11.2);
+  % eco e planos usam as DUAS portas: um barramento com duas saídas
+  \draw[c4rel] (eco.north) -- (11.45,-11.2);
+  \draw[c4rel] (11.45,-11.75) -- (9.2,-11.75) -- (9.2,-11.2);
+  \draw[line width=0.85pt, draw=unooInkSoft] (9.85,-14.35) -- (9.85,-11.75);
+  \fill[unooInkSoft] (9.85,-11.75) circle (1.5pt) (11.45,-11.75) circle (1.5pt)
+                     (6.65,-11.75) circle (1.5pt);
+  \node[cxlabel] at (10.65,-11.47) {IA + quota};
+  \node[cxlabel, anchor=west] at (11.55,-11.47) {\emph{bucket}};
 
 \end{tikzpicture}}
 \caption[C4 nível 3 --- componentes da API]{C4 nível 3: componentes da API. A
-  faixa transversal roda em toda rota; a faixa de infraestrutura contém as portas
-  únicas (banco, IA, armazenamento); a faixa de plataforma serve a todas as
-  experiências; a faixa de domínio tem um módulo por experiência, e nenhum
-  módulo dessa faixa conhece outro.}
+  faixa transversal roda em toda rota; a de plataforma serve a todas as
+  experiências; a de infraestrutura contém as portas únicas (banco, IA,
+  armazenamento); a de domínio tem um módulo por experiência ---
+  \texttt{catalogo.ts} + \texttt{regras.ts} + \emph{service} + \emph{controllers}
+  por papel ---, e nenhum módulo dessa faixa conhece outro. \texttt{equipes/}
+  (\adrr{ADR-111}) é lido por \texttt{salas/} (\adrr{ADR-69}), que mostra a
+  contagem na sala, e pelos painéis de \texttt{unootube/} e \texttt{unoogpt/},
+  pela porta \texttt{equipes/consulta.ts}; \texttt{evidencias/}
+  (\adrr{ADR-112}) lê a mesma porta e se registra no gancho
+  \texttt{aoMudarEquipes}, e as missões vão chamá-lo pela porta
+  \texttt{marcar} --- que nenhuma chama ainda, daí a caixa sem seta vinda do
+  domínio. A caixa da direita reúne, sem setas,
+  os módulos da exp06ef2b, da exp08ef4b, da exp05ef1b, da exp01ef1b e da
+  app-92, na ordem em que aparecem. Todo módulo com dado passa por
+  \texttt{comTenancy}: as setas até o \texttt{PrismaService} são uma amostra, e a
+  fonte Mermaid do Apêndice~\ref{ap:mermaid} lista as relações por módulo.}
 \label{fig:c4l3api}
 \end{figure}
 
@@ -447,6 +492,46 @@ catálogo. E a guarda que as experiências chamam (\cd{exigirMissaoLiberada}) N�
 mora nele, mora em \arq{comum/liberacao.ts}. Fosse um \emph{provider} do
 \arq{salas/}, cada módulo de experiência teria de importá-lo, e uma dependência
 esquecida viraria uma porta aberta em silêncio (\adrr{ADR-69}).
+
+\textbf{\arq{equipes/} é o segundo módulo de plataforma no mesmo molde}
+(\adrr{ADR-111}). Ele diz QUEM DIVIDE UM COMPUTADOR em cada missão de cada
+turma, e a única coisa que sabe de missão é a lista
+\cd{EXPERIENCIAS\_COM\_EQUIPE}. O que cada missão FAZ com a equipe --- o painel
+contando por computador --- é assunto do módulo dela: \arq{unootube/} e
+\arq{unoogpt/} leem \arq{equipes/consulta.ts} (funções livres que recebem o
+\cd{tx}, como \arq{comum/liberacao.ts}) e aplicam \cd{colapsarEmUnidades}, de
+\arq{equipes/regras.ts}, sem injetar provedor nenhum. O sentido inverso --- a
+missão dizendo ao sorteio o lado de cada criança --- é um REGISTRO: o módulo da
+missão chama \cd{EquipesService.registrarFonteDeGrupo} na subida, e
+\arq{equipes/} nunca importa nada dele. No hub, a seção mora na ficha da missão
+(\arq{components/equipes/}), e as chamadas passam pelo BFF
+(\rota{/api/plataforma/equipes/*}), do lado do cliente porque o professor monta
+as equipes na frente da sala.
+
+\textbf{\arq{evidencias/} é o terceiro, e o primeiro que as missões CHAMAM}
+(\adrr{ADR-112}). Ele guarda que habilidades da BNCC cada estudante demonstrou
+numa atividade de uma missão, rodada a rodada, e não conhece missão nenhuma pelo
+nome: o que cada uma sabe de si entra por três pontos. A \textbf{ficha} é dado
+estático do módulo (\arq{evidencias/\B fichas/\B <expId>.ts}, no registro
+\cd{FICHAS}, vazio nesta frente), porque o gabarito não pode ir para o
+\emph{bundle}. O \textbf{contexto} --- em que turma, atividade e rodada o
+estudante está agora --- é um REGISTRO, como a fonte de lado das equipes: o módulo
+da missão chama \cd{EvidenciasService.\B{}registrarContexto(expId, resolver)} na
+subida. E a \textbf{marca} é uma chamada, \cd{EvidenciasService.marcar(tx,
+\ldots)}, feita DA transação da missão, sem abrir \cd{comTenancy} --- a marca cai
+junto se a jogada cair. Por isso o módulo exporta o \emph{service}, que é a
+porta das missões, e a dependência vai num sentido só: a missão conhece a
+evidência, e \arq{evidencias/} nunca importa módulo de missão. Com \arq{equipes/} o arranjo é o inverso: \arq{evidencias/} importa
+o \cd{EquipesModule}, lê \arq{equipes/consulta.ts} (\cd{mapaDeEquipes},
+\cd{computadoresDaMontagem}) e registra o recálculo das cópias no gancho
+\cd{EquipesService.\B{}aoMudarEquipes}, que o \cd{salvar} e o \cd{desfazer} chamam
+dentro da própria transação; \arq{equipes/} não sabe que a evidência existe. As
+regras moram em \arq{evidencias/regras.ts}, puras, e os códigos da BNCC vêm de
+\arq{curriculo/} (\cd{habilidadePorCodigo}). No hub, o painel
+\enquote{Habilidades da BNCC} é genérico e entra na página da atividade (hoje
+só o Instanooria tem atividade), desenhado só quando a resposta diz
+\cd{temFicha: true}; o perfil do estudante é uma página nova, aberta pela aba
+Estudantes da turma.
 
 \textbf{Módulo de domínio não conhece módulo de domínio.} \arq{vila/} não importa
 \arq{unootube/}. Quando duas experiências precisam se comunicar --- o perfil da
@@ -749,7 +834,8 @@ são separados e cobrem exatamente o que não dá para afirmar sem ele:
 \headrow \thd{Diretório} & \thd{Conteúdo}\\
 \midrule
 \arq{apps/hub} & Aplicação Next.js: rotas por papel, \emph{embed}, BFF, JWKS.\\
-\zebra \arq{apps/api} & Aplicação NestJS: 22 módulos, Prisma, 9 migrações.\\
+\zebra \arq{apps/api} & Aplicação NestJS: 34 módulos, Prisma, 40 migrações
+  (contagem de 2026-09-25).\\
 \arq{apps/experiencias/*} & Uma pasta por experiência, mais \arq{\_template}.\\
 \zebra \arq{packages/sdk} & Contrato da ponte e telemetria.\\
 \arq{packages/ui} & Ponte do \emph{design system} e CSS da plataforma.\\

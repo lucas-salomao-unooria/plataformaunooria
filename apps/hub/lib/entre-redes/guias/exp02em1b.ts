@@ -416,7 +416,7 @@ export const GUIA_EXP02EM1B: GuiaDaAula = {
     {
       contexto: "Menos aparelhos que estudantes.",
       comoAdaptar:
-        "Duplas funcionam bem aqui, e até melhoram uma coisa: as três perguntas passam a ser negociadas em voz alta, e você ouve o raciocínio acontecendo. Peça que alternem quem digita.",
+        "Monte as equipes em “Equipes desta turma”, na ficha da missão (Minhas turmas → a turma → Conduzir com esta turma): diga quantos computadores há e sorteie, ou separe você mesmo. Só um da equipe entra, e ele representa o grupo: nos resultados da turma, cada computador é uma linha. As 3 perguntas e a cota diária de IA são da conta de quem entrou: a equipe negocia em voz alta o que perguntar, e você ouve o raciocínio acontecendo. O que for escrito fica no nome de quem entrou.",
     },
     {
       contexto: "A conexão da escola é lenta.",

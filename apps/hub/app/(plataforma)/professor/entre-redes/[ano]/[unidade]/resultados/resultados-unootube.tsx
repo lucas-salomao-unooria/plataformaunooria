@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarChart, Card, EmptyState, MetricCard, UNOORIA_DATAVIZ_PALETTE } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { apiDoServidor } from "@/lib/api-servidor";
+import { AVISO_POR_COMPUTADOR } from "@/lib/equipe-no-painel";
 import {
   rotaDaMissao,
   type Missao,
@@ -12,6 +13,12 @@ import type { ResultadosDaTurma, TurmaResumo } from "@/lib/unootube-tipos";
 
 import { SeletorDeTurma } from "./seletor-de-turma";
 import { TabelaResultados } from "./tabela-resultados";
+
+/** "estudante concluiu" / "computadores concluíram" — o sujeito do que o resumo conta. */
+function quemConcluiu(n: number, porComputador: boolean): string {
+  if (porComputador) return n === 1 ? "computador concluiu" : "computadores concluíram";
+  return n === 1 ? "estudante concluiu" : "estudantes concluíram";
+}
 
 /**
  * Resultados do UNOOTUBE por turma. A turma vem da URL (`?turmaId=`), como a
@@ -50,6 +57,9 @@ export async function ResultadosUnooTube({
 
   const paleta = UNOORIA_DATAVIZ_PALETTE;
   const resumo = resultados?.resumo;
+  /* Com equipes nesta missão (E13), cada linha é um computador e o resumo conta
+     computadores — os rótulos dizem isso, em vez de chamar de "estudantes". */
+  const porComputador = resumo?.porComputador === true;
   // O BarChart do DS tem eixo fixo 0–100: os valores vão em % dos concluídos
   // (contagens de 0 a 40 estudantes sumiriam na escala). Rótulos curtos: o eixo x
   // trunca texto acima de ~8 caracteres.
@@ -87,7 +97,8 @@ export async function ResultadosUnooTube({
       {turma === "" ? (
         <Card variant="elevated">
           <p className="text-[14px] text-unooria-neutral-700">
-            Escolha a turma acima. Os resultados aparecem por estudante, inclusive quem ainda não entrou.
+            Escolha a turma acima. Os resultados aparecem por estudante — ou por computador, quando a
+            turma tem equipes nesta missão —, inclusive quem ainda não entrou.
           </p>
         </Card>
       ) : resultados === null ? (
@@ -102,7 +113,10 @@ export async function ResultadosUnooTube({
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            <MetricCard title="Estudantes na turma" value={resultados.resumo.total} />
+            <MetricCard
+              title={porComputador ? "Computadores na turma" : "Estudantes na turma"}
+              value={resultados.resumo.total}
+            />
             <MetricCard title="Concluíram" value={`${resultados.resumo.concluiram}/${resultados.resumo.total}`} />
             <MetricCard
               title="Média de fontes confiáveis"
@@ -112,13 +126,14 @@ export async function ResultadosUnooTube({
           <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">
             {resultados.resumo.iniciaram} entraram · {resultados.resumo.desbloquearamRanking} chegaram ao ranking ·
             a média considera só quem concluiu (0 a 3 fontes)
+            {porComputador ? ` · ${AVISO_POR_COMPUTADOR}` : null}
           </p>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <Card variant="elevated">
               <BarChart
                 title="Fontes confiáveis (0 a 3) — % dos concluídos"
-                subtitle={`${resultados.resumo.concluiram} ${resultados.resumo.concluiram === 1 ? "estudante concluiu" : "estudantes concluíram"} · eixo x = quantas das 3 escolhas eram fontes confiáveis`}
+                subtitle={`${resultados.resumo.concluiram} ${quemConcluiu(resultados.resumo.concluiram, porComputador)} · eixo x = quantas das 3 escolhas eram fontes confiáveis`}
                 data={distribuicao}
                 height={200}
               />
@@ -145,7 +160,7 @@ export async function ResultadosUnooTube({
           </div>
 
           <Card variant="elevated" title={`${resultados.turma.nome} · ${resultados.turma.serie}`}>
-            <TabelaResultados estudantes={resultados.estudantes} />
+            <TabelaResultados estudantes={resultados.estudantes} porComputador={porComputador} />
           </Card>
 
           <div>

@@ -17,6 +17,7 @@ const linha = (nome: string, extra: Partial<LinhaEstudanteUnootube> = {}): Linha
   rankingDesbloqueado: false,
   credibilidadeAdicionada: false,
   concluidoEm: null,
+  equipe: null,
   ...extra,
 });
 
@@ -47,5 +48,15 @@ describe("situacaoDoEstudante / ordenarEstudantes", () => {
     expect(situacaoDoEstudante(estudantes[1]!)).toBe("em-andamento");
     expect(situacaoDoEstudante(estudantes[2]!)).toBe("concluiu");
     expect(situacaoDoEstudante(estudantes[0]!)).toBe("nao-iniciou");
+  });
+
+  test("linha de equipe ordena pelo nome da EQUIPE, com número como número", () => {
+    const equipe = (id: string, nome: string) => ({ id, nome, membros: [] });
+    const estudantes = [
+      linha("Zeca", { iniciou: true, equipe: equipe("e10", "Equipe 10") }),
+      linha("Ana", { iniciou: true, equipe: equipe("e2", "Equipe 2") }),
+      linha("Caio", { iniciou: true }),
+    ];
+    expect(ordenarEstudantes(estudantes).map((a) => a.nome)).toEqual(["Caio", "Ana", "Zeca"]);
   });
 });

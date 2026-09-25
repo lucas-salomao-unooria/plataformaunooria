@@ -4,8 +4,12 @@
 \chapter{Modelo de dados}
 \label{cap:dados}
 
-Um banco, um \emph{schema} lógico, 52 tabelas em \cd{public} e um \emph{schema}
-auxiliar (\cd{particoes}) fora do alcance do ORM. Este capítulo explica a
+Um banco, um \emph{schema} lógico, 73 tabelas em \cd{public} e um \emph{schema}
+auxiliar (\cd{particoes}) fora do alcance do ORM. O número é uma contagem, e
+envelhece a cada migração: são os \cd{model} de
+\arq{apps/api/prisma/schema.prisma} em 2026-09-25, todos com \cd{@@map}, sem a
+\cd{\_prisma\_migrations} do próprio Prisma e sem nenhuma \emph{view}, que o
+banco não tem. Este capítulo explica a
 convenção de nomes, o modelo por área e as decisões de esquema que não são
 óbvias --- que, neste projeto, são a maioria.
 
@@ -222,6 +226,28 @@ Duas armadilhas registradas naquela migração, ambas produzindo o mesmo sintoma
   matrícula, progresso nem perfil, e não entra em média. É a única exceção à
   contenção do CPF --- o número é o conteúdo do documento, e alterá-lo
   destruiria a assinatura.\\
+\cd{equipes\_montagens} & \emph{Tenant} & A decisão da aula por turma
+  $\times$ missão (\adrr{ADR-111}): \cd{modo}, \cd{computadores},
+  \cd{ausentes} e a \cd{versao} da concorrência otimista. PK composta
+  \cd{(escola\_id, turma\_id, exp\_id)}. Ver Seção~\ref{sec:equipes}.\\
+\zebra \cd{equipes} & \emph{Tenant} & Um computador da montagem: \cd{nome}
+  (1 a 30 caracteres depois do \emph{trim}) e \cd{ordem}. Nome único dentro da
+  missão --- duas \enquote{Equipe 3} no mesmo painel são a dúvida que ninguém
+  resolve no meio da aula.\\
+\cd{equipes\_membros} & \emph{Tenant} & Quem senta diante de cada computador,
+  com \cd{turma\_id} e \cd{exp\_id} repetidos da equipe para o \cd{UNIQUE} de
+  \textbf{uma equipe por criança por missão}. A única das três com id de
+  criança.\\
+\zebra \cd{evidencias\_marcas} & \emph{Tenant} & O DADO BRUTO da evidência
+  pedagógica (\adrr{ADR-112}): o que a missão viu o estudante fazer, uma linha
+  por marcador da ficha $\times$ atividade $\times$ rodada. Só a missão escreve,
+  pela porta \cd{marcar}. Ver Seção~\ref{sec:evidencias}.\\
+\cd{evidencias} & \emph{Tenant} & O nível de UM estudante numa habilidade da
+  BNCC, numa atividade, numa rodada, com \cd{origem} e \cd{situacao} --- é o
+  que o painel lê. \textbf{N/A é a ausência de linha.}\\
+\zebra \cd{evidencias\_eventos} & \emph{Tenant} & O histórico da evidência, com
+  de/para, quem e quando. \textbf{Append-only no banco}: \emph{trigger} contra
+  \cd{UPDATE}, e a \emph{role} de \emph{runtime} só com \cd{SELECT, INSERT}.\\
 \bottomrule
 \end{tabularx}
 
@@ -246,8 +272,8 @@ clique e não o conteúdo do consentimento.
 Uma rede estadual tem milhares de unidades, professores que dão aula em mais de
 uma e crianças que se transferem entre elas. Três colunas e uma tabela sustentam
 isso, e a decisão que as torna baratas é o que \textbf{não} muda: o \emph{token}
-continua carregando UMA escola, então as 45 tabelas com \cd{escola\_id} e a
-política de RLS forçada nas 42 tabelas de tenant ficam intocadas (\adrr{ADR-30}).
+continua carregando UMA escola, então nenhuma tabela com \cd{escola\_id} muda,
+e a política de RLS forçada das tabelas de tenant fica intocada (\adrr{ADR-30}).
 
 \begin{tabularx}{\linewidth}{@{}L{38mm}X@{}}
 \toprule
@@ -418,6 +444,127 @@ Não existe estado \cd{bloqueada} & Bloqueio é a \textbf{ausência} de linha.
   RA não colidem entre si (\cd{NULL} não é valor), mas o mesmo RA não se repete
   dentro de uma escola. O Prisma não modela índice parcial: ele vive na
   \emph{migration}, como os \emph{CHECKs} e a RLS.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{As equipes na missão}
+\label{sec:equipes}
+
+\adrr{ADR-111}. Equipe é quem DIVIDE UM COMPUTADOR numa missão: a resposta
+física a uma sala com menos máquinas que crianças. São três tabelas de
+plataforma, na migração \arq{20260925120000\_\B{}equipes\_\B{}na\_\B{}missao}, e nenhuma
+mexe na porta da sala --- a liberação continua por turma, e o dado da
+experiência continua por criança. O que muda é a LEITURA: o painel passa a
+poder contar por computador.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+Três tabelas, e não uma coluna \cd{equipe} & A montagem tem estado próprio ---
+  quantos computadores, sorteio ou manual, quem faltou, a \cd{versao} --- que não
+  pertence a criança nenhuma. Uma coluna na tabela da experiência exigiria a
+  mesma coluna em cada missão com equipe, e cada painel reinventaria a regra.\\
+\zebra \cd{turma\_id} e \cd{exp\_id} repetidos em \cd{equipes\_membros} & É o
+  que torna possível \cd{UNIQUE (escola\_id, turma\_id, exp\_id,
+  estudante\_id)}: uma criança, uma equipe por missão. Sem as colunas ali, a
+  regra só existiria no código, e dois \cd{PUT} em paralelo poriam a mesma
+  criança em dois computadores.\\
+\cd{versao} começa em 1, com \emph{CHECK} & O cliente manda \cd{0} quando não
+  havia montagem. Versão 0 gravada tornaria o 409 incapaz de distinguir
+  \enquote{não existe} de \enquote{existe e ninguém mexeu}.\\
+\zebra Troca INTEIRA, com cascata & \cd{equipes} tem FK composta para a
+  montagem, e \cd{equipes\_membros} para a equipe, as duas com
+  \cd{ON DELETE CASCADE}: salvar apaga as equipes e grava as novas; desfazer
+  apaga a montagem, e o resto cai junto. Por isso nada que precise sobreviver a
+  uma edição pode pender de \cd{equipes} --- o lado da equipe no Instanooria é
+  resolvido na largada do \emph{run}, e não guardado ao lado dela.\\
+\cd{exp\_id} e \cd{atualizado\_por} \textbf{sem} FK & O primeiro pela razão de
+  \cd{liberacoes.exp\_id}: o catálogo é do CI e está vazio em desenvolvimento, e
+  quem restringe as missões é \cd{EXPERIENCIAS\_COM\_EQUIPE}, no código. O
+  segundo porque é carimbo: uma FK para \cd{users} faria a saída de um professor
+  da rede apagar ou travar a montagem da turma inteira.\\
+\zebra Membro que mudou de turma continua na linha & A linha de
+  \cd{equipes\_membros} não some quando a criança muda de turma --- ela não foi
+  apagada, só se mudou. A LEITURA filtra por \cd{users.turma\_id}, a mesma fonte
+  dos painéis; a FK de \cd{estudante\_id} para \cd{users}, com cascata, cobre só
+  a exclusão.\\
+\emph{CHECK} do nome com \cd{btrim} & Cinco espaços passariam por um
+  \cd{NOT NULL} e apareceriam no painel como uma equipe sem nome. O teto de 30 é
+  \cd{NOME\_MAX} no código, e \arq{tests/equipes-postgres.spec.ts} compara os
+  dois vocabulários, como o de \cd{modo}.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{A evidência pedagógica}
+\label{sec:evidencias}
+
+\adrr{ADR-112}. Que habilidades da BNCC cada estudante DEMONSTROU numa atividade
+de uma missão, rodada a rodada. São três tabelas de plataforma, na migração
+\arq{20260925150000\_\B{}evidencia\_\B{}pedagogica}, e elas separam o que a missão
+VIU (\cd{evidencias\_marcas}) do nível que o professor LÊ e pode corrigir
+(\cd{evidencias}), com toda mudança no histórico (\cd{evidencias\_eventos}). As
+três estão vazias enquanto nenhuma missão tiver ficha pedagógica: nesta frente,
+nenhuma tem.
+
+\begin{tabularx}{\linewidth}{@{}L{40mm}X@{}}
+\toprule
+\headrow \thd{Decisão de esquema} & \thd{Por quê}\\
+\midrule
+A marca e a evidência em tabelas separadas & A evidência PRÓPRIA é derivada (a
+  melhor marca da habilidade na rodada), mas a cópia da equipe e o ajuste do
+  professor não são marca nenhuma. Guardar só a evidência perderia o que a
+  missão viu --- qual marcador, com que nível, sob que versão da ficha;
+  guardar só as marcas não teria onde pôr o ajuste, e o painel refaria a
+  precedência a cada leitura.\\
+\zebra PK da marca \textbf{sem} \cd{turma\_id} & A chave é
+  \cd{(escola\_id, exp\_id, atividade\_id, rodada, estudante\_id, marcador)}: a
+  marca é da criança naquela atividade e rodada, e a turma é só o contexto em que
+  ela foi registrada. É o \cd{INSERT ... ON CONFLICT DO NOTHING} dessa chave que
+  faz valer a PRIMEIRA resposta de uma pergunta, mesmo com duas chegando juntas.\\
+Uma evidência por habilidade por rodada & \cd{UNIQUE (escola\_id, exp\_id,
+  atividade\_id, rodada, estudante\_id, habilidade)}. O nome do índice é o que o
+  Prisma gera, truncado em 63 caracteres: trocá-lo faria o \cd{migrate diff}
+  acusar um índice a renomear.\\
+\zebra N/A é AUSÊNCIA de linha & \enquote{Não avaliado} não se grava: sem linha,
+  a habilidade não conta em lugar nenhum, e nunca como \cd{nao\_atingiu}. O N/A
+  EXPLÍCITO, \cd{nao\_participou}, é uma linha --- e só do professor
+  (\emph{CHECK} \cd{evidencias\_\B{}nao\_\B{}participou\_\B{}check}), porque existe para barrar a
+  cópia da equipe.\\
+\emph{CHECKs} de COERÊNCIA entre colunas & \cd{a\_revisar} só na origem
+  \cd{projecao}; \cd{fonte\_estudante\_id} se e só se for cópia
+  (\cd{equipe}/\cd{projecao}); \cd{editado\_por} se e só se for ajuste
+  (\cd{professor}). A linha que o código montar errada é recusada pelo banco, em
+  vez de chegar ao painel como um estado que ele não sabe mostrar.\\
+\zebra O vocabulário em dois lugares & Os \emph{CHECKs} de \cd{status},
+  \cd{origem}, \cd{situacao}, \cd{tipo} e o \emph{regex} de \cd{atividade\_id}
+  repetem as constantes de \arq{evidencias/regras.ts}, e
+  \arq{tests/evidencias-postgres.spec.ts} compara os dois --- o par que já
+  custou um \emph{deploy} em \cd{permissoes}. A marca só aceita os três níveis:
+  \enquote{não participou} nunca é o que a missão viu.\\
+\cd{estudante\_id} COM FK, em cascata --- no histórico também & É a trava da
+  identidade única (\arq{tests/identidade-unica.spec.ts}), e a evidência é dado
+  da criança: sai com ela. No histórico, cascata e não \cd{SET NULL}: anular a
+  coluna seria um \cd{UPDATE}, que o \emph{trigger} recusa, e a exclusão da
+  conta travaria.\\
+\zebra \cd{equipe\_id}, \cd{fonte\_estudante\_id}, \cd{editado\_por} e
+  \cd{autor\_id} \textbf{sem} FK & As equipes são trocadas INTEIRAS a cada
+  \cd{PUT} (\adrr{ADR-111}): uma FK para \cd{equipes} apagaria ou travaria a
+  cópia junto --- e a cópia de uma rodada passada existe justamente para guardar
+  a equipe que teve. Os outros três são carimbo: não podem travar a saída de
+  ninguém da rede. \cd{exp\_id} também fica sem FK, pela razão de
+  \cd{liberacoes.exp\_id}.\\
+Histórico append-only NO BANCO & \emph{Trigger} \cd{BEFORE UPDATE} que lança
+  para qualquer \emph{role}, a dona da tabela inclusive, no desenho de
+  \cd{recursos\_auditoria}. O \cd{DELETE} fica fora, pela retenção futura, pelo
+  isolamento de teste e pela cascata da turma; quem não apaga é a \emph{role}
+  de \emph{runtime}, que só recebe \cd{SELECT, INSERT}.\\
+\zebra Índice por \cd{registrada\_em} & A RODADA EM ANDAMENTO de uma turma
+  $\times$ missão é a da marca mais recente, e é só ela que o recálculo das
+  equipes toca: \cd{(escola\_id, turma\_id, exp\_id, registrada\_em)} a
+  encontra. Os outros índices são as duas leituras --- o painel, por
+  \cd{(escola\_id, turma\_id, exp\_id, atividade\_id, rodada)}, e o perfil, por
+  \cd{(escola\_id, estudante\_id)}.\\
 \bottomrule
 \end{tabularx}
 
@@ -1296,6 +1443,18 @@ decisão \emph{futura}, com DPA e \emph{k}-anonimato --- e não sai de um
   \cd{exp\_70\_} \seta{} \cd{app\_70\_}) e o \cd{UPDATE} do \cd{exp\_id} em
   sete tabelas, com o \cd{FORCE ROW LEVEL SECURITY} e o \emph{trigger}
   \emph{append-only} afrouxados só dentro da transação.\\
+\zebra \arq{20260925120000\_\B{}equipes\_\B{}na\_\B{}missao} & As equipes na missão
+  (\adrr{ADR-111}): \cd{equipes\_montagens}, \cd{equipes} e
+  \cd{equipes\_membros}, as três com RLS forçada; o \cd{UNIQUE} de uma equipe por
+  criança por missão, os \emph{CHECKs} de \cd{modo}, \cd{computadores},
+  \cd{versao}, nome e ordem, e o \cd{GRANT} à \emph{role} de \emph{runtime}.\\
+\arq{20260925150000\_\B{}evidencia\_\B{}pedagogica} & A evidência pedagógica
+  (\adrr{ADR-112}): \cd{evidencias\_marcas}, \cd{evidencias} e
+  \cd{evidencias\_eventos}, as três com RLS forçada e FK de \cd{turma\_id} e
+  \cd{estudante\_id} em cascata; os \emph{CHECKs} de vocabulário e de
+  coerência, o \emph{trigger} que recusa \cd{UPDATE} no histórico e o
+  \cd{GRANT} à \emph{role} de \emph{runtime} (só \cd{SELECT, INSERT} no
+  histórico).\\
 \bottomrule
 \end{tabularx}
 

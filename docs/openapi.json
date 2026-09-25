@@ -9221,6 +9221,10 @@
                             "type": "string",
                             "format": "date-time",
                             "nullable": true
+                          },
+                          "equipes": {
+                            "type": "integer",
+                            "minimum": 0
                           }
                         },
                         "required": [
@@ -9232,7 +9236,8 @@
                           "deOutraSerie",
                           "liberadaPor",
                           "liberadaEm",
-                          "encerradaEm"
+                          "encerradaEm",
+                          "equipes"
                         ],
                         "additionalProperties": false
                       }
@@ -9372,6 +9377,1950 @@
             }
           }
         }
+      }
+    },
+    "/equipes/minha": {
+      "get": {
+        "operationId": "EquipesEstudanteController_minha",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "equipe": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        },
+                        "colegas": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "nome",
+                        "colegas"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "equipe"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "equipes"
+        ],
+        "summary": "A equipe do estudante nesta missão: o nome dela e o primeiro nome dos colegas.",
+        "description": "É o que o hub mostra antes de abrir a missão — \"você está na Equipe 3, com a Bia e o Caio\" — para a criança saber de qual computador ela é.\n\n**Sempre 200**: sem equipe, `equipe: null`. Um 404 aqui viraria `api-recusou` no log do hub a cada abertura de missão, para a imensa maioria das crianças, que não tem equipe.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- `colegas` leva SÓ o primeiro nome dos outros membros — o nome completo de outra criança não tem o que fazer nesta tela (regra 6).\n- `expId` ausente ou fora do formato responde **400**; missão que não aceita equipe responde `equipe: null`.\n- A turma sai da matrícula e do cache (`turmasDoEstudante`), a mesma da porta da sala.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/equipes/turma/{turmaId}/missao/{expId}": {
+      "get": {
+        "operationId": "EquipesProfessorController_ler",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "permitida": {
+                      "type": "boolean"
+                    },
+                    "montagem": {
+                      "type": "object",
+                      "properties": {
+                        "modo": {
+                          "type": "string",
+                          "enum": [
+                            "sorteio",
+                            "manual"
+                          ]
+                        },
+                        "computadores": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "ausentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "versao": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "atualizadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "modo",
+                        "computadores",
+                        "ausentes",
+                        "versao",
+                        "atualizadoEm"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "equipes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "ordem": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "membros": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "nome"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "ordem",
+                          "membros"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "semEquipe": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "estudantes": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "permitida",
+                    "montagem",
+                    "equipes",
+                    "semEquipe",
+                    "estudantes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "equipes"
+        ],
+        "summary": "As equipes de uma missão nesta turma: a montagem, as equipes e quem está sem equipe.",
+        "description": "Equipe é quem DIVIDE UM COMPUTADOR na missão. `semEquipe` são os estudantes da turma fora de qualquer equipe — os ausentes da montagem inclusive.\n\nMissão que não aceita equipe responde **200** com `permitida: false` e listas vazias, e não 400: é por esta resposta que o hub decide se desenha o bloco de equipes.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin leem a escola inteira, de propósito — e não montam.\n- Membro que saiu da turma não aparece: a fonte dos estudantes é `users.turma_id`, a mesma dos painéis de missão.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      },
+      "put": {
+        "operationId": "EquipesProfessorController_salvar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "permitida": {
+                      "type": "boolean"
+                    },
+                    "montagem": {
+                      "type": "object",
+                      "properties": {
+                        "modo": {
+                          "type": "string",
+                          "enum": [
+                            "sorteio",
+                            "manual"
+                          ]
+                        },
+                        "computadores": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "ausentes": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "versao": {
+                          "type": "integer",
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        },
+                        "atualizadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "modo",
+                        "computadores",
+                        "ausentes",
+                        "versao",
+                        "atualizadoEm"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "equipes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "ordem": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "membros": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "nome"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "ordem",
+                          "membros"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "semEquipe": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "estudantes": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "permitida",
+                    "montagem",
+                    "equipes",
+                    "semEquipe",
+                    "estudantes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "equipes"
+        ],
+        "summary": "Grava a montagem inteira das equipes desta missão, com concorrência otimista.",
+        "description": "**Só quem tem matrícula de professor na turma.** Troca a montagem INTEIRA: as equipes anteriores saem e as do corpo entram, na ordem em que vieram.\n\n`versao` é a versão em que a tela se baseou (`0` quando não havia montagem). Versão velha responde **409** com `versaoAtual` — o computador da sala e o celular do professor salvando ao mesmo tempo não se sobrescrevem em silêncio.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Montagem impossível responde **400** `montagem-invalida` com `erros`: a lista INTEIRA, em frases para o professor — membro ou ausente de fora da turma, estudante em duas equipes, ausente dentro de equipe, nome vazio, repetido (sem distinguir maiúsculas) ou com mais de 30 caracteres, equipe sem ninguém, nenhuma equipe.\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`; fora do catálogo, **404**; ferramenta de professor, **403**; recurso desligado na rede, **403** `recurso-indisponivel`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "versao": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "modo": {
+                    "type": "string",
+                    "enum": [
+                      "sorteio",
+                      "manual"
+                    ]
+                  },
+                  "computadores": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200
+                  },
+                  "ausentes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "default": []
+                  },
+                  "equipes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "nome": {
+                          "type": "string"
+                        },
+                        "membros": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        }
+                      },
+                      "required": [
+                        "nome",
+                        "membros"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "versao",
+                  "modo",
+                  "computadores",
+                  "equipes"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "EquipesProfessorController_desfazer",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "equipes"
+        ],
+        "summary": "Desfaz as equipes desta missão na turma.",
+        "description": "A montagem sai, e as equipes e os membros caem junto. **Idempotente**: apagar o que não existe devolve o mesmo `ok`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Sem checagem de catálogo nem de disponibilidade: desfazer é sempre seguro, e missão desligada na rede não pode deixar equipes presas.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/equipes/turma/{turmaId}/missao/{expId}/sugestao": {
+      "post": {
+        "operationId": "EquipesProfessorController_sugerir",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "modo": {
+                      "type": "string",
+                      "enum": [
+                        "sorteio",
+                        "manual"
+                      ]
+                    },
+                    "computadores": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "equipes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string"
+                          },
+                          "membros": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "nome"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "grupo": {
+                            "type": "string",
+                            "enum": [
+                              "A",
+                              "B"
+                            ],
+                            "nullable": true
+                          },
+                          "mista": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "nome",
+                          "membros",
+                          "grupo",
+                          "mista"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "semEquipe": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "agrupamento": {
+                      "type": "object",
+                      "properties": {
+                        "fonte": {
+                          "type": "string"
+                        },
+                        "comGrupo": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "neutros": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "equipesMistas": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "aviso": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "fonte",
+                        "comGrupo",
+                        "neutros",
+                        "equipesMistas",
+                        "aviso"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "modo",
+                    "computadores",
+                    "equipes",
+                    "semEquipe",
+                    "agrupamento"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "equipes"
+        ],
+        "summary": "Uma proposta de equipes (sorteio ou N equipes vazias) — nunca grava.",
+        "description": "`sorteio` distribui os presentes (a turma menos `ausentes`) por `computadores` equipes de tamanhos que diferem em no máximo 1. `manual` devolve N equipes VAZIAS e todos os presentes em `semEquipe`, para o professor arrastar.\n\nSe a missão tem lados (o Instanooria), o sorteio evita juntar os dois lados na mesma tela e conta em `agrupamento.equipesMistas` quando a aritmética não fecha. Sem fonte de lado, `agrupamento` volta `null`.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`.\n- Com mais computadores que presentes, cada criança fica numa equipe só dela — é a sala com um computador por estudante.\n- Ausente que não é da turma é ignorado aqui; o `PUT` o recusa.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "modo": {
+                    "type": "string",
+                    "enum": [
+                      "sorteio",
+                      "manual"
+                    ]
+                  },
+                  "computadores": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200
+                  },
+                  "ausentes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "default": []
+                  }
+                },
+                "required": [
+                  "modo",
+                  "computadores"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/equipes/turma/{turmaId}/missao/{expId}/ultima": {
+      "get": {
+        "operationId": "EquipesProfessorController_ultima",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "origem": {
+                      "type": "object",
+                      "properties": {
+                        "expId": {
+                          "type": "string"
+                        },
+                        "atualizadoEm": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "expId",
+                        "atualizadoEm"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "equipes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "nome": {
+                            "type": "string"
+                          },
+                          "membros": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "nome": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "nome"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "nome",
+                          "membros"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "semEquipe": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "saidas": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "required": [
+                    "origem",
+                    "equipes",
+                    "semEquipe",
+                    "saidas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "equipes"
+        ],
+        "summary": "As equipes da última missão desta turma, reprojetadas sobre a turma de hoje.",
+        "description": "A montagem mais recente da MESMA turma em OUTRA missão com equipe. Quem saiu da turma cai (e é contado em `saidas`), equipe que ficou vazia some, e quem chegou depois fica em `semEquipe`. Os ausentes de lá não vêm: falta é da aula.\n\nSem montagem anterior, `origem` volta `null` e todos os estudantes em `semEquipe`. Nada é gravado.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Missão que não aceita equipe responde **400** `missao-sem-equipes`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/evidencias/{expId}/perguntas/{perguntaId}": {
+      "get": {
+        "operationId": "EvidenciasEstudanteController_pergunta",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "perguntaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enunciado": {
+                      "type": "string"
+                    },
+                    "alternativas": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "texto": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "texto"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "enunciado",
+                    "alternativas"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "Uma pergunta de múltipla escolha da ficha da missão — sem o gabarito.",
+        "description": "O enunciado e as alternativas (`id` e `texto`). O nível que cada alternativa vale fica no servidor (regra 3): quem corrige é a api, na resposta.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Pergunta que não existe na ficha da missão responde **404** `pergunta-nao-encontrada`.\n- Missão não liberada na turma do estudante responde **403** `missao-nao-liberada` (ou `recurso-indisponivel`, se a rede não tem o recurso).",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/evidencias/{expId}/perguntas/{perguntaId}/resposta": {
+      "post": {
+        "operationId": "EvidenciasEstudanteController_responder",
+        "parameters": [
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "perguntaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enviada": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "enviada"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "A resposta do estudante a uma pergunta — a api corrige, e só devolve o recibo.",
+        "description": "O corpo leva SÓ a alternativa. A atividade e a rodada saem do contexto da missão, no servidor — nunca do cliente. Vale a PRIMEIRA resposta; as seguintes são aceitas e ignoradas, e as duas respondem o mesmo `{ enviada: true }`: a criança não descobre, pela resposta, se acertou nem se já tinha respondido.\n\n**Papéis:** estudante.\n\n**Restrições:**\n- Sem atividade em andamento na missão responde **409** `sem-atividade-em-andamento`.\n- Missão não liberada na turma do estudante responde **403** `missao-nao-liberada`.\n- Pergunta fora da ficha responde **404** `pergunta-nao-encontrada`; alternativa que não é dela, **400** `alternativa-desconhecida`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "estudante"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "alternativaId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+                  }
+                },
+                "required": [
+                  "alternativaId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evidencias/turma/{turmaId}/missao/{expId}/atividade/{atividadeId}": {
+      "get": {
+        "operationId": "EvidenciasProfessorController_painel",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "temFicha": {
+                      "type": "boolean"
+                    },
+                    "habilidades": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "codigo": {
+                            "type": "string"
+                          },
+                          "descricao": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "codigo",
+                          "descricao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "rodadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "minimum": 0
+                      }
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "porRodada": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "atingiu",
+                                      "em_processo",
+                                      "nao_atingiu",
+                                      "nao_participou"
+                                    ]
+                                  },
+                                  "origem": {
+                                    "type": "string",
+                                    "enum": [
+                                      "propria",
+                                      "equipe",
+                                      "projecao",
+                                      "professor"
+                                    ]
+                                  },
+                                  "situacao": {
+                                    "type": "string",
+                                    "enum": [
+                                      "valida",
+                                      "a_revisar"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "status",
+                                  "origem",
+                                  "situacao"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "resultado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "enum": [
+                                "atingiu",
+                                "em_processo",
+                                "nao_atingiu"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "equipe",
+                          "porRodada",
+                          "resultado"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pendentes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  },
+                  "required": [
+                    "temFicha",
+                    "habilidades",
+                    "rodadas",
+                    "estudantes",
+                    "pendentes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "O painel da evidência de uma atividade: cada estudante, cada rodada, cada habilidade da BNCC.",
+        "description": "Para cada estudante da turma: a equipe dele nesta missão, a evidência de cada habilidade em cada rodada (`porRodada`, com `status`, `origem` e `situacao`) e o `resultado` — a MELHOR rodada por habilidade, só com o que vale.\n\nHabilidade ausente é **N/A** (\"Não avaliado\"). `pendentes` conta, por rodada, as cópias da projeção que esperam o professor confirmar.\n\nMissão sem ficha pedagógica responde **200** com `temFicha: false` e tudo vazio, e não 400: é por esta resposta que o hub decide se desenha o bloco.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Gestor e admin leem a escola inteira, de propósito — e não confirmam nem ajustam.\n- Sem ranking: a ordem dos estudantes é a alfabética, e nenhum campo soma níveis.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/evidencias/turma/{turmaId}/missao/{expId}/atividade/{atividadeId}/rodadas/{rodada}/confirmar": {
+      "post": {
+        "operationId": "EvidenciasProfessorController_confirmar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+            }
+          },
+          {
+            "name": "rodada",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "temFicha": {
+                      "type": "boolean"
+                    },
+                    "habilidades": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "codigo": {
+                            "type": "string"
+                          },
+                          "descricao": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "codigo",
+                          "descricao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "rodadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "minimum": 0
+                      }
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "porRodada": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "atingiu",
+                                      "em_processo",
+                                      "nao_atingiu",
+                                      "nao_participou"
+                                    ]
+                                  },
+                                  "origem": {
+                                    "type": "string",
+                                    "enum": [
+                                      "propria",
+                                      "equipe",
+                                      "projecao",
+                                      "professor"
+                                    ]
+                                  },
+                                  "situacao": {
+                                    "type": "string",
+                                    "enum": [
+                                      "valida",
+                                      "a_revisar"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "status",
+                                  "origem",
+                                  "situacao"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "resultado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "enum": [
+                                "atingiu",
+                                "em_processo",
+                                "nao_atingiu"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "equipe",
+                          "porRodada",
+                          "resultado"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pendentes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  },
+                  "required": [
+                    "temFicha",
+                    "habilidades",
+                    "rodadas",
+                    "estudantes",
+                    "pendentes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "Confirma para a turma as cópias da projeção desta rodada.",
+        "description": "Com a turma inteira diante de um computador só (a projeção), o que a missão viu é copiado para todos como `a_revisar` — e NÃO conta até o professor confirmar. Este botão passa todas as desta rodada a `valida`. Depois, o professor ainda pode ajustar cada criança.\n\nDevolve o painel já atualizado. Repetir não muda nada.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Missão sem ficha pedagógica responde **400** `missao-sem-ficha`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token"
+      }
+    },
+    "/evidencias/turma/{turmaId}/missao/{expId}/atividade/{atividadeId}/rodadas/{rodada}/ajustes": {
+      "patch": {
+        "operationId": "EvidenciasProfessorController_ajustar",
+        "parameters": [
+          {
+            "name": "turmaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(exp(0[1-9]ef|0[1-3]em)[1-4]b|app-\\d{2}-[a-z0-9]+(-[a-z0-9]+)*)$"
+            }
+          },
+          {
+            "name": "atividadeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.:-]{1,100}$"
+            }
+          },
+          {
+            "name": "rodada",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "temFicha": {
+                      "type": "boolean"
+                    },
+                    "habilidades": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "codigo": {
+                            "type": "string"
+                          },
+                          "descricao": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "codigo",
+                          "descricao"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "rodadas": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "exclusiveMinimum": true,
+                        "minimum": 0
+                      }
+                    },
+                    "estudantes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "porRodada": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "atingiu",
+                                      "em_processo",
+                                      "nao_atingiu",
+                                      "nao_participou"
+                                    ]
+                                  },
+                                  "origem": {
+                                    "type": "string",
+                                    "enum": [
+                                      "propria",
+                                      "equipe",
+                                      "projecao",
+                                      "professor"
+                                    ]
+                                  },
+                                  "situacao": {
+                                    "type": "string",
+                                    "enum": [
+                                      "valida",
+                                      "a_revisar"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "status",
+                                  "origem",
+                                  "situacao"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "resultado": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string",
+                              "enum": [
+                                "atingiu",
+                                "em_processo",
+                                "nao_atingiu"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "nome",
+                          "equipe",
+                          "porRodada",
+                          "resultado"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pendentes": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  },
+                  "required": [
+                    "temFicha",
+                    "habilidades",
+                    "rodadas",
+                    "estudantes",
+                    "pendentes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "Ajusta a evidência de um ou vários estudantes numa rodada.",
+        "description": "**Só quem tem matrícula de professor na turma**, a qualquer momento — mesmo com a missão encerrada. O ajuste é a origem `professor`: nada o sobrescreve depois (nem a marca da criança, nem a cópia da equipe).\n\n`nao_participou` é o N/A explícito: barra a cópia da equipe e não conta no perfil.\n\nToda mudança vai para o histórico com de/para, quem e quando; ajuste que repete o que já estava é ignorado. Devolve o painel já atualizado.\n\n**Papéis:** professor.\n\n**Restrições:**\n- Turma em que o professor não tem matrícula responde **404**, não 403: um \"sem permissão\" já contaria que a turma existe.\n- Estudante de fora da turma, habilidade fora da ficha ou o mesmo par duas vezes respondem **400** `ajuste-invalido` com `erros`: a lista INTEIRA, em frases para o professor.\n- Rodada depois da última que a atividade teve responde **400** `rodada-inexistente` (a rodada 1 sempre existe).\n- Missão sem ficha pedagógica responde **400** `missao-sem-ficha`.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor"
+        ],
+        "x-acesso": "token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ajustes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "estudanteId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "habilidade": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 20
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "atingiu",
+                            "em_processo",
+                            "nao_atingiu",
+                            "nao_participou"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "estudanteId",
+                        "habilidade",
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 200
+                  }
+                },
+                "required": [
+                  "ajustes"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evidencias/estudante/{estudanteId}": {
+      "get": {
+        "operationId": "EvidenciasProfessorController_perfil",
+        "parameters": [
+          {
+            "name": "estudanteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "escolaId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sucesso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "estudante": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "nome": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "nome"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "missoes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "expId": {
+                            "type": "string"
+                          },
+                          "nome": {
+                            "type": "string"
+                          },
+                          "atividades": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "atividadeId": {
+                                  "type": "string"
+                                },
+                                "habilidades": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "codigo": {
+                                        "type": "string"
+                                      },
+                                      "descricao": {
+                                        "type": "string"
+                                      },
+                                      "status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "atingiu",
+                                          "em_processo",
+                                          "nao_atingiu"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "codigo",
+                                      "descricao",
+                                      "status"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "atividadeId",
+                                "habilidades"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "expId",
+                          "nome",
+                          "atividades"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "estudante",
+                    "missoes"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "O perfil de evidência de um estudante: cada missão, cada atividade, o nível de cada habilidade.",
+        "description": "Em cada atividade, a MELHOR rodada por habilidade — só com o que vale: sem a projeção que o professor ainda não confirmou, sem N/A e sem `nao_participou`. Sem origem: quem lê o perfil quer saber o que a criança demonstrou, não de que computador veio.\n\nO estudante NÃO tem rota para ver o próprio resultado.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.\n\n**Restrições:**\n- Estudante que o professor não ensina (nenhuma turma dele) responde **404**, não 403.\n- Gestor e admin leem qualquer estudante da escola.",
+        "security": [
+          {
+            "token-da-plataforma": []
+          }
+        ],
+        "x-papeis": [
+          "professor",
+          "gestor_escola",
+          "gestor_regional",
+          "gestor_contrato",
+          "admin"
+        ],
+        "x-acesso": "token"
       }
     },
     "/runs": {
@@ -19874,6 +21823,45 @@
                           "concluidoEm": {
                             "type": "string",
                             "nullable": true
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "membros": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "nome": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "nome"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome",
+                              "membros"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -19885,7 +21873,8 @@
                           "inscritos",
                           "rankingDesbloqueado",
                           "credibilidadeAdicionada",
-                          "concluidoEm"
+                          "concluidoEm",
+                          "equipe"
                         ],
                         "additionalProperties": false
                       }
@@ -19919,6 +21908,9 @@
                         "mediaFontesConcluidos": {
                           "type": "number",
                           "nullable": true
+                        },
+                        "porComputador": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -19927,7 +21919,8 @@
                         "desbloquearamRanking",
                         "concluiram",
                         "distribuicaoFontes",
-                        "mediaFontesConcluidos"
+                        "mediaFontesConcluidos",
+                        "porComputador"
                       ],
                       "additionalProperties": false
                     }
@@ -19946,7 +21939,7 @@
           "unootube"
         ],
         "summary": "O que a turma fez na missão do UnooTube.",
-        "description": "Uma linha por estudante mais o resumo. `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
+        "description": "Uma linha por COMPUTADOR mais o resumo: sem equipes, cada estudante é uma linha; com equipes nesta missão (E13), os membros viram uma linha só, a de quem entrou, com `equipe` preenchida — e o resumo conta essas linhas (`porComputador: true`). `distribuicaoFontes` conta só entre os que CONCLUÍRAM — misturar quem parou no meio faria a média dizer outra coisa.\n\n**Papéis:** professor, gestor_escola, gestor_regional, gestor_contrato, admin.",
         "security": [
           {
             "token-da-plataforma": []
@@ -24432,6 +26425,9 @@
                         "justificaramPorIntuicao": {
                           "type": "integer",
                           "minimum": 0
+                        },
+                        "porComputador": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
@@ -24439,7 +26435,8 @@
                         "concluiram",
                         "viramConflito",
                         "decidiramNoEscuro",
-                        "justificaramPorIntuicao"
+                        "justificaramPorIntuicao",
+                        "porComputador"
                       ],
                       "additionalProperties": false
                     },
@@ -24488,6 +26485,45 @@
                           "tentativas": {
                             "type": "integer",
                             "minimum": 0
+                          },
+                          "equipe": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nome": {
+                                "type": "string"
+                              },
+                              "membros": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "nome": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "nome"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "nome",
+                              "membros"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
                           }
                         },
                         "required": [
@@ -24500,7 +26536,8 @@
                           "viuConflito",
                           "decidiuNoEscuro",
                           "justificouPorIntuicao",
-                          "tentativas"
+                          "tentativas",
+                          "equipe"
                         ],
                         "additionalProperties": false
                       }

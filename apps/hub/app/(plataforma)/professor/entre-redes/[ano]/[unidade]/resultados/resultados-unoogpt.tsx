@@ -3,6 +3,7 @@ import { Card, EmptyState, MetricCard, ScrollBar } from "@edu/ui/ds";
 import { LinkButton } from "@/components/link-button";
 import { RotuloDaTrilha } from "@/components/trilha";
 import { apiDoServidor } from "@/lib/api-servidor";
+import { AVISO_POR_COMPUTADOR, chaveDaLinha } from "@/lib/equipe-no-painel";
 import {
   rotaDaMissao,
   type Missao,
@@ -11,6 +12,7 @@ import { rotaDoGuiaDaMissao } from "@/lib/rotas-da-missao";
 import { normalizarSerie } from "@/lib/series";
 import type { FolhaDaTurma, TurmaResumo } from "@/lib/unoogpt-tipos";
 
+import { EquipeNaLinha } from "./equipe-na-linha";
 import { PainelDoRelogio } from "./painel-do-relogio";
 import { SeletorDeTurma } from "./seletor-de-turma";
 import { ZerarTurma } from "./zerar-turma";
@@ -50,6 +52,9 @@ export async function ResultadosUnooGPT({
   const folha = turma
     ? await apiDoServidor<FolhaDaTurma>(`/unoogpt/professor/turmas/${encodeURIComponent(turma)}`)
     : null;
+  /* Com equipes nesta missão (E13), cada linha é um computador e o retrato
+     conta computadores. */
+  const porComputador = folha?.retrato.porComputador === true;
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,6 +126,7 @@ export async function ResultadosUnooGPT({
           <p className="-mt-2 text-[12px] leading-snug text-unooria-neutral-600">
             {folha.retrato.decidiramNoEscuro} decidiram sem cruzar dado nenhum ·{" "}
             {folha.retrato.justificaramPorIntuicao} justificaram por intuição
+            {porComputador ? ` · ${AVISO_POR_COMPUTADOR}` : null}
           </p>
 
           <Card variant="outlined" title="Como usar isto no debate">
@@ -161,7 +167,9 @@ export async function ResultadosUnooGPT({
               <table className="w-full min-w-[720px] border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-unooria-neutral-200 text-left text-unooria-neutral-500">
-                    <th className="py-2 pr-3 font-semibold">Estudante</th>
+                    <th className="py-2 pr-3 font-semibold">
+                      {porComputador ? "Estudante ou equipe" : "Estudante"}
+                    </th>
                     <th className="py-2 pr-3 font-semibold">Fontes</th>
                     <th className="py-2 pr-3 font-semibold">Leituras</th>
                     <th className="py-2 pr-3 font-semibold">Viu conflito</th>
@@ -174,14 +182,28 @@ export async function ResultadosUnooGPT({
                 <tbody>
                   {folha.linhas.map((l) => (
                     <tr
-                      key={l.estudanteId}
+                      key={chaveDaLinha(l)}
                       className="border-b border-unooria-neutral-100 text-unooria-neutral-800"
                       data-estudante={l.usuario}
                     >
                       <td className="py-2 pr-3">
-                        <span className="font-medium text-unooria-neutral-950">{l.nome}</span>
-                        {!l.comecou && (
-                          <span className="ml-2 text-unooria-neutral-500">não começou</span>
+                        {/* Com equipe, a linha é o computador: a equipe, quem
+                            senta nela e quem entrou — e "Abrir" leva à tela
+                            de quem entrou. */}
+                        {l.equipe ? (
+                          <>
+                            <EquipeNaLinha equipe={l.equipe} representante={l.nome} entrou={l.comecou} />
+                            {!l.comecou && (
+                              <span className="text-[11px] text-unooria-neutral-500">não começou</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium text-unooria-neutral-950">{l.nome}</span>
+                            {!l.comecou && (
+                              <span className="ml-2 text-unooria-neutral-500">não começou</span>
+                            )}
+                          </>
                         )}
                       </td>
                       <td className="py-2 pr-3 tabular-nums">{l.fontesDistintas}</td>

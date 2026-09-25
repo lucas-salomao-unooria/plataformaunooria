@@ -9,7 +9,7 @@ decisão, alternativas descartadas, consequências --- inclusive as ruins --- e 
 gatilho que faria reavaliá-la. Decisão sem alternativa descartada e sem gatilho de
 reavaliação não é decisão registrada: é justificativa.
 
-São \textbf{110 decisões}, numeradas até ADR-110, \textbf{sem lacunas}. Quando
+São \textbf{112 decisões}, numeradas até ADR-112, \textbf{sem lacunas}. Quando
 eram cem, as cinco últimas nasceram no MESMO dia, em três frentes paralelas, e não
 colidiram porque os números foram \textbf{reservados por quem repartia o
 trabalho antes de qualquer uma escrever} --- que é a lição que a colisão de
@@ -155,6 +155,8 @@ que a cercam.
 \adrr{ADR-108} & A missão de sala nasce vazia, e a revelação é do relógio da turma & 2026-09-17 & Aceita\\
 \adrr{ADR-109} & O rótulo da tabela da BNCC de Computação é CENTRADO, e a atribuição é uma partição & 2026-09-17 & Aceita\\
 \zebra \adrr{ADR-110} & O código da experiência diz onde ela mora na trilha & 2026-09-23 & Aceita\\
+\adrr{ADR-111} & Equipe é quem divide um computador, e o painel conta por computador & 2026-09-25 & Aceita\\
+\zebra \adrr{ADR-112} & A evidência é por atividade e rodada, e a melhor rodada vale por habilidade & 2026-09-25 & Aceita\\
 \bottomrule
 \end{tabularx}
 
@@ -5179,7 +5181,7 @@ configuração de \emph{produto}.
 \begin{enumerate}
   \item \textbf{Não havia como apagar um planejamento.} A regência nascia e
     ficava. \cd{DELETE /planejamento/planos-anuais/:id} existia desde a
-    \hyperref[adr:73]{ADR-73}, mas o que a lista do professor mostra é a
+    \hyperref[adr:plano-de-ensino-bncc]{ADR-73}, mas o que a lista do professor mostra é a
     \textbf{regência} (componente $\times$ ano), e para ela não havia rota nem
     botão.
   \item \textbf{\enquote{Baixar .doc} não baixava nada}, sem erro na tela e sem
@@ -8988,3 +8990,457 @@ mais.
 \textbf{Gatilho.} Uma segunda missão na mesma unidade; uma missão que valha
 para mais de uma série; ou o produto passar a dividir o ano em outra coisa que
 não bimestre --- aí o \cd{b} passa a mentir.
+
+% ---------------------------------------------------------------------------
+\section{ADR-111 --- Equipe é quem divide um computador, e o painel conta por computador}
+\label{adr:equipes-na-missao}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Estende} a sala da \adrr{ADR-69} sem mexer na porta dela: a liberação
+continua por turma, e o caminho da sala para a missão continua sendo a ficha
+(\adrr{ADR-100}).
+
+\begin{especificacao}{Contexto}
+A escola pública tem menos computadores que crianças. Na sala real, dois ou três
+estudantes sentam diante da mesma tela e fazem a missão juntos, com o login de
+UM deles. A plataforma não sabia disso: o painel do professor contava a sala
+como se cada criança tivesse o próprio computador, e dizia \enquote{12 não
+começaram} quando os 12 estavam sentados ao lado de quem começou. Os totais do
+UnooTube e do unooGPT caíam na mesma proporção, e o professor aprendia a
+desconfiar do painel justamente na aula em que ele mais precisava dele.
+
+Nada no modelo dizia QUEM ESTÁ COM QUEM. A liberação (\adrr{ADR-69}) é por
+turma; o dado da experiência é por estudante. Faltava a camada do meio, e duas
+restrições da sala decidiram a forma dela:
+
+\begin{itemize}
+  \item \textbf{Nem toda missão sobrevive a uma tela dividida.} A Vila do Lume
+    (app-70) mede um retrato de valores INDIVIDUAL, que alimenta a largada do
+    Instanooria e o CSV da análise: uma equipe gravaria as escolhas do grupo
+    como o perfil de uma criança. E o Instanooria divide a turma em dois lados
+    do \emph{feed} (A e B): uma equipe com gente dos dois lados diante da mesma
+    tela desmancha a missão.
+  \item \textbf{Quem chega atrasado não faz login.} Na sala de computador
+    compartilhado, a criança que entra depois senta num computador já logado.
+    Nada que dependa do login dela vai acontecer.
+\end{itemize}
+\end{especificacao}
+
+\textbf{Decisão} (épico E13, \enquote{Equipes na missão}).
+
+\begin{itemize}
+  \item \textbf{Equipe é quem DIVIDE UM COMPUTADOR numa missão}, e não grupo
+    pedagógico. Ela existe por turma $\times$ missão, em três tabelas de
+    PLATAFORMA --- sem prefixo de experiência, como \cd{liberacoes}, com
+    \cd{escola\_id} e RLS forçada ---, no módulo \arq{apps/api/src/equipes/}:
+    \cd{equipes\_montagens} (a decisão da aula: \cd{modo}, \cd{computadores},
+    \cd{ausentes} e a \cd{versao}), \cd{equipes} (cada computador, com nome e
+    ordem) e \cd{equipes\_membros} (quem senta diante de cada um, com
+    \cd{turma\_id} e \cd{exp\_id} repetidos para o banco garantir \textbf{uma
+    equipe por criança por missão}).
+  \item \textbf{O professor diz quantos computadores há e marca quem faltou, e a
+    plataforma SEMPRE pergunta como montar}, sem opção marcada:
+    \enquote{Sortear as equipes} ou \enquote{Eu separo} (nascem N equipes
+    VAZIAS, e o professor põe cada estudante numa). Quando a turma tem equipes
+    salvas em OUTRA missão, aparece a terceira: \enquote{Manter as equipes da
+    última missão}, reprojetada sobre a turma de hoje --- quem saiu da turma cai
+    (e é contado), quem chegou depois fica sem equipe, e os ausentes de lá não
+    vêm, porque falta é da aula, não da criança.
+  \item \textbf{O tamanho é rígido}: os tamanhos diferem em no máximo 1, os
+    maiores primeiro (25 presentes em 10 computadores dão cinco equipes de 3 e
+    cinco de 2). \cd{computadores} $\geq$ presentes quer dizer cada um no seu
+    computador, e é legítimo: é a sala com uma máquina por criança.
+  \item \textbf{Só três missões aceitam equipe nesta onda}, e a lista mora no
+    CÓDIGO: \cd{EXPERIENCIAS\_COM\_EQUIPE}, em \arq{equipes/regras.ts} ---
+    \cd{exp08ef1b} (Instanooria), \cd{exp02em1b} (unooGPT, a Missão
+    Tempestade) e \cd{exp04ef1b} (UnooTube), conferidas uma a uma. Ficam de
+    fora a \cd{app-70-vila-do-lume}, pelo retrato individual acima; a
+    \cd{exp07ef1b} (O Eco no Grupo), que vai ser substituída por A Seleção, e
+    esta nasce com equipe; e \cd{exp01ef1b}, \cd{exp05ef1b}, \cd{exp06ef2b} e
+    \cd{exp08ef4b}, que o dono do produto retira da trilha logo depois desta
+    frente.
+  \item \textbf{Quem MONTA é só o professor que leciona a turma}, como quem
+    libera (\adrr{ADR-69}): quem não leciona recebe \textbf{404}, nunca 403 ---
+    um \enquote{sem permissão} já contaria que a turma existe. Gestores e
+    \cd{admin} só LEEM.
+  \item \textbf{Concorrência otimista pela \cd{versao}.} O \cd{PUT} diz em que
+    versão a tela se baseou (\cd{0} sem montagem), e versão velha é
+    \textbf{409} com \cd{versaoAtual}: o computador da sala e o celular do
+    professor abrem a mesma montagem, e o segundo a salvar não apaga em
+    silêncio o que o primeiro arrastou. A troca é INTEIRA (as equipes antigas
+    saem, as novas entram), e a sugestão e a \enquote{última} nunca gravam.
+  \item \textbf{As equipes são SEMPRE editáveis}, inclusive com a missão
+    encerrada --- é por ali que se corrige \enquote{ela faltou}. E \textbf{não
+    existe encaixe automático de quem chega atrasado}: o gatilho seria o login
+    dele, que não acontece.
+  \item \textbf{O estudante vê a própria equipe} numa faixa do hub, fora do
+    \cd{iframe}, acima da missão: \enquote{Sua equipe: Equipe 3 $\cdot$ com
+    Ana e Bruno}, só com o PRIMEIRO nome dos colegas (regra 6).
+    \rota{GET /equipes/minha} responde \textbf{sempre 200}, com
+    \cd{equipe: null} quando não há: um 404 viraria \cd{api-recusou} no log do
+    hub a cada abertura de missão, para a imensa maioria das crianças, que não
+    tem equipe. A sala mostra uma \cd{Tag} \enquote{N equipes prontas}, que
+    NÃO é link (\adrr{ADR-100}): montar e editar é na ficha.
+  \item \textbf{Os painéis do UnooTube e do unooGPT contam por COMPUTADOR.} Uma
+    linha por equipe, representada pelo membro que entrou
+    (\cd{colapsarEmUnidades}, em \arq{equipes/regras.ts}: a linha de quem
+    iniciou; com dois logins no mesmo computador, a do mais recente), com
+    \cd{equipe} preenchida na linha; os totais contam essas unidades, e o resumo
+    diz \cd{porComputador: true}. Sem montagem, o painel sai exatamente como era.
+  \item \textbf{O Instanooria é a PRÓXIMA frente}
+    (\cd{feat/equipes-instanooria}), e o gancho já existe:
+    \cd{EquipesService.registrarFonteDeGrupo(expId, fonte)}, pelo qual o módulo
+    da missão diz o lado de cada criança sem que \arq{equipes/} importe nada
+    dele. Com fonte registrada, o sorteio evita juntar os dois lados na mesma
+    tela, usa os NEUTROS (quem não tem perfil da Vila) como enchimento e CONTA
+    as equipes mistas quando a aritmética não fecha. O planejado: equipes do
+    MESMO lado do \emph{feed}, e o lado da equipe resolvido na LARGADA do
+    \emph{run} --- pelo \emph{run} de um colega de equipe, ou pela maioria ---,
+    com uma origem de lado nova, \cd{'equipe'}. Hoje nenhum módulo registra
+    fonte, e o \cd{agrupamento} da sugestão volta \cd{null}.
+  \item \textbf{A evidência pedagógica é outro plano} (épico E14: a replicação
+    do resultado da equipe por habilidade da BNCC). Esta frente não a calcula;
+    guarda a composição que ela vai ler. E a falta marcada na montagem
+    \textbf{não é frequência}: tira do sorteio, e só.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Equipes fixas por turma, para o bimestre.} Quebra na primeira
+    missão que pede outro tamanho, e na aula em que o laboratório tem menos
+    máquinas --- o número de computadores muda de aula para aula. O reúso que
+    ela prometia é o que \enquote{Manter as equipes da última missão} já dá, sem
+    congelar nada.
+  \item \textbf{Um passo \enquote{confirmar quem participou} no fim da aula.}
+    Trabalho a mais em TODA aula para corrigir a exceção, na hora em que a sala
+    já está saindo. As equipes sempre editáveis cobrem a correção quando ela é
+    necessária, e só então.
+  \item \textbf{Encaixar automaticamente quem chega atrasado.} Nunca
+    dispararia: na sala de computador compartilhado, o atrasado senta num
+    computador já logado e não faz login. Um gatilho que depende do login dele
+    seria código sem evento.
+  \item \textbf{Um \enquote{modo projeção} do professor dentro de cada missão.}
+    Tocaria todas as missões, uma a uma, e cada missão nova herdaria a
+    obrigação. Projetar a missão é um estudante logado no computador do
+    professor; o que a plataforma projeta é a lista das equipes
+    (\enquote{Mostrar equipes}), para cada criança achar o seu computador.
+  \item \textbf{Uma coluna ou \emph{flag} no catálogo} em vez da lista no
+    código. \enquote{Funciona com duas crianças numa tela} é propriedade do
+    DESENHO da missão --- quem clica, quem lê, o que o painel conta ---, não
+    configuração da rede; e o catálogo \cd{experiencias} é escrito pelo CI e
+    está vazio em desenvolvimento. Missão que entrasse por \emph{flag}, sem
+    conferência, abriria para equipe e continuaria contando por criança no
+    painel.
+  \item \textbf{Uma tabela à parte com o lado de cada equipe, para o
+    Instanooria.} O \cd{PUT} troca a montagem inteira, e as equipes antigas
+    saem com tudo o que pende delas, por cascata: o lado seria perdido a cada
+    edição, em silêncio. O lado é resolvido na largada do \emph{run}, a partir
+    do \emph{run} de um colega ou da maioria --- dado que já existe e que a
+    edição não apaga.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Missão nova com equipe passa por \emph{deploy}.} A lista no
+    código é de propósito (a conferência é do desenho), mas A Seleção e as
+    próximas entram por PR, nunca por um painel.
+  \item \textbf{No unooGPT, a equipe divide a conta de UM estudante.} As 3
+    perguntas e a cota diária de IA são de quem entrou, e o que for escrito fica
+    no nome dele. O guia da aula da \cd{exp02em1b} diz isso ao professor; o da
+    \cd{exp04ef1b} diz que os 3 vídeos salvos passam a ser da equipe.
+  \item \textbf{O dado da experiência continua por criança.} Quem não entrou não
+    tem linha em \cd{exp04ef1b\_\B{}sessoes} nem em \cd{exp02em1b\_\B{}sessoes}; quem
+    conta por computador é a LEITURA. Relatório novo que não passe por
+    \cd{colapsarEmUnidades} volta a contar por criança --- e o mapa de equipes
+    tem de ser lido DENTRO de \cd{comTenancy}: fora dele a RLS das três tabelas
+    devolve vazio, e o painel volta a contar por criança sem erro nenhum.
+  \item \textbf{A criança que chegou atrasada só entra na equipe pela mão do
+    professor.} Até lá, no painel, ela é a própria linha --- e aparece como
+    \enquote{não iniciou}, que é o sintoma que esta decisão existia para tirar.
+  \item \textbf{A falta marcada pode ser lida como chamada}, e não é: não vai a
+    diário nem a relatório. Quem a usar como frequência vai ler errado.
+  \item \textbf{Criança que muda de turma deixa a linha em
+    \cd{equipes\_membros}.} A leitura a filtra por \cd{users.\B{}turma\_id}
+    (\arq{equipes/consulta.ts}), então a equipe aparece menor e o próximo
+    salvamento limpa; o \enquote{Manter as equipes da última missão} a conta em
+    \cd{saidas}, para a tela dizer por que uma equipe encolheu.
+  \item \textbf{A faixa do estudante ocupa uma linha} de uma coluna de altura
+    travada; o aparelho da experiência recalcula a escala e fica um pouco menor.
+\end{itemize}
+
+\textbf{Como isto se prova.} \arq{apps/api/tests/\B{}equipes-regras.spec.ts} cobre
+as regras puras: os tamanhos (nunca diferem em mais de 1 e somam os presentes),
+o sorteio com e sem lados sob semente fixa (12 A + 8 B + 5 neutros em 10
+computadores sem nenhuma equipe mista; 13 A + 15 B em 7 computadores de 4 com
+UMA mista, contada), o modo manual, a validação que devolve a lista INTEIRA de
+problemas e o \cd{colapsarEmUnidades}. \arq{apps/api/tests/\B{}equipes-postgres.spec.ts}
+cobra o banco: RLS habilitada E forçada nas três tabelas, isolamento de verdade
+entre escolas, a \emph{role} sem \emph{ownership} montando pelo serviço, o
+\cd{UNIQUE} de uma equipe por criança por missão segurando mesmo com o código
+errado, os \emph{CHECKs} iguais a \cd{MODOS}/\cd{NOME\_MAX}, o 409 de versão, a
+troca inteira, o 404 para quem não leciona, a \cd{minha} sempre 200 com
+primeiros nomes, a contagem na sala e a \enquote{última} reprojetada. Os dois
+painéis têm os seus casos em \arq{unootube-postgres.spec.ts} e
+\arq{unoogpt-postgres.spec.ts} (equipe de 3 com um login vira UMA linha; dois
+logins, vale o último), e a suíte \arq{scripts/e2e/professor/\B{}10-equipes-na-missao.mjs}
+percorre a ficha, a \cd{Tag} da sala, \enquote{Mostrar equipes} e a faixa do
+estudante.
+
+\textbf{Gatilho.} Uma missão com equipe cujo dado precise ser da EQUIPE, e não
+de quem entrou --- a primeira candidata é A Seleção ---; a evidência do E14
+pedindo uma composição que a troca inteira não preserva (histórico de quem
+esteve em qual equipe em cada aula); ou uma rede em que a sala tenha um
+computador por criança de forma estável, em que a montagem vira trabalho sem
+retorno.
+
+% ---------------------------------------------------------------------------
+\section{ADR-112 --- A evidência é por atividade e rodada, e a melhor rodada vale por habilidade}
+\label{adr:evidencia-pedagogica}
+
+\textbf{Data.} 2026-09-25. \textbf{Status.} Aceita.
+\textbf{Lê} a composição das equipes da \adrr{ADR-111} sem que \arq{equipes/}
+saiba que a evidência existe, passa pela porta da sala da \adrr{ADR-69} nas
+rotas do estudante e guarda o gabarito no servidor, como a \adrr{ADR-09}.
+Responde ao gatilho da \adrr{ADR-111} sobre \enquote{quem esteve em qual equipe
+em cada aula}: a cópia guarda a equipe que teve.
+
+\begin{especificacao}{Contexto}
+A missão já via o que a criança fazia --- tirou o post do ar, respondeu a
+pergunta --- e isso morria dentro da experiência. No fim do bimestre, o
+professor não tinha como dizer \enquote{a Ana atingiu a EF08CO05 e o Caio ainda
+está em processo}, que é a frase que a rede pede e que a BNCC organiza. Faltava
+uma camada de PLATAFORMA que transformasse o que a missão observou num nível por
+habilidade da Base, que o professor lê, corrige e leva para a avaliação dele.
+
+Quatro fatos da sala decidiram a forma dela:
+
+\begin{itemize}
+  \item \textbf{A atividade se refaz.} O professor reinicia a atividade para a
+    turma tentar de novo, e a segunda tentativa não pode apagar o que a criança
+    já tinha demonstrado na primeira.
+  \item \textbf{O computador é dividido} (\adrr{ADR-111}). O que a missão vê
+    numa tela foi feito por dois ou três, com o login de UM deles.
+  \item \textbf{Às vezes a tela é uma só.} O professor projeta a missão e a
+    turma inteira responde junto; a criança no fundo da sala não demonstrou o que
+    a turma respondeu no telão.
+  \item \textbf{O \emph{bundle} é público} (regra inviolável nº 3): o gabarito
+    de uma pergunta não pode estar nele, nem no manifesto que o acompanha.
+\end{itemize}
+
+E uma restrição de produto: em 2026-09-25 só o Instanooria tem ATIVIDADES (a
+atividade preparada pelo professor, clonada por turma, \adrr{ADR-49}); o unooGPT
+e o UnooTube serão refeitos com atividades numa próxima onda.
+\end{especificacao}
+
+\textbf{Decisão} (épico E14, \enquote{Evidência pedagógica}; a política foi
+fixada pelo dono do produto em 2026-09-25).
+
+\begin{itemize}
+  \item \textbf{A unidade é ATIVIDADE + RODADA, e a atividade é DA MISSÃO.} A
+    plataforma não tem conceito próprio de atividade: \cd{atividade\_id} é um
+    texto opaco que a missão dá (\cd{ATIVIDADE\_ID\_RE}: 1 a 100 caracteres
+    entre letras, dígitos e \cd{\_ . : -}, porque ele vai para o endereço da
+    rota do painel), e é a missão quem conta os reinícios. Reiniciar abre a
+    rodada seguinte; a anterior fica.
+  \item \textbf{A régua é uma FICHA PEDAGÓGICA por missão, no código da api}:
+    \arq{evidencias/\B fichas/\B <expId>.ts}, no registro estático \cd{FICHAS}. Ela
+    diz quais habilidades da BNCC a missão mede, por quais MARCADORES (uma
+    \cd{acao}, que a missão observa e gradua, ou uma pergunta de
+    \cd{multipla\_escolha}, graduada pelo gabarito), a pergunta e o nível que
+    cada alternativa vale; e carrega \cd{versao}, \cd{validadaPor} e
+    \cd{validadaEm}, porque uma ficha que ninguém do pedagógico conferiu produz
+    um painel que AFIRMA que a criança atingiu uma habilidade da Base.
+    \cd{validarFicha} recusa código que não existe no documento homologado (com
+    a grafia exata), nível fora da escala, pergunta sem marcador e marcador sem
+    pergunta. \textbf{Nesta frente o registro está VAZIO}: é só a plataforma,
+    nenhuma missão foi adaptada, e nada aparece para o professor até a
+    primeira missão entrar com a ficha validada pela equipe pedagógica.
+  \item \textbf{A escala é \cd{atingiu} $>$ \cd{em\_processo} $>$
+    \cd{nao\_atingiu}, e N/A é a AUSÊNCIA de linha} --- \enquote{Não avaliado},
+    que nunca conta como não atingiu. \cd{nao\_participou} é o N/A EXPLÍCITO
+    que só o professor põe: barra a cópia da equipe e, no perfil, conta como
+    N/A.
+  \item \textbf{Dentro de uma rodada, dois marcadores da mesma habilidade: vale
+    o MELHOR} (\cd{statusProprio}) --- demonstrar uma vez é demonstrar. E
+    \textbf{o resultado da atividade é a MELHOR RODADA POR HABILIDADE}
+    (\cd{melhorRodada\B{}PorHabilidade}), não a melhor rodada inteira: quem atingiu
+    X na rodada 1 e Y na rodada 2 atingiu as duas.
+  \item \textbf{Precedência: professor $>$ a própria criança $>$ a cópia.} A
+    marca própria vence a cópia mesmo sendo pior --- o que a criança fez com o
+    próprio login é dela ---, e nada vence o ajuste.
+  \item \textbf{A cópia para a equipe leva só o NÍVEL, nunca texto.} Quando o
+    resultado próprio sai, os colegas de computador (\cd{mapaDeEquipes}, de
+    \arq{equipes/consulta.ts}) o recebem como origem \cd{equipe}
+    (\cd{decidirCopia}). Colega com marca própria daquela habilidade na rodada,
+    ou com ajuste do professor, não é sobrescrito; entre duas fontes da mesma
+    equipe, fica a melhor.
+  \item \textbf{A PROJEÇÃO chega \enquote{a revisar}.} Montagem com
+    \cd{computadores = 1}, ou uma equipe com a turma inteira (\cd{ehProjecao}),
+    copia como \cd{projecao}/\cd{a\_revisar}, e essa cópia \textbf{não conta}
+    --- nem no resultado, nem no perfil --- até \enquote{Confirmar para a
+    turma}, que passa as da rodada a \cd{valida}. Depois o professor ainda
+    ajusta um a um.
+  \item \textbf{A equipe mudou: recalcula SÓ a rodada em andamento}, a
+    (atividade, rodada) da marca mais recente da turma $\times$ missão. O
+    recálculo entra pelo gancho \cd{EquipesService.aoMudarEquipes}, registrado
+    no \cd{onModuleInit}, e roda DENTRO da transação do \rota{PUT} e do
+    \rota{DELETE} das equipes: um erro nele desfaz a montagem. Rodada passada
+    fica com a equipe que teve --- a cópia guarda \cd{equipe\_id} e
+    \cd{fonte\_estudante\_id} como carimbo, sem FK --- e o que estiver errado
+    nela se corrige no ajuste. A cópia que não mudou de nível nem de origem fica
+    com a confirmação que tinha (\cd{diferencaDasCopias}).
+  \item \textbf{Múltipla escolha: o gabarito é do servidor.}
+    \rota{GET /evidencias/\B :expId/\B perguntas/\B :perguntaId} devolve só o
+    enunciado e as alternativas; \rota{POST .../resposta} leva só a
+    alternativa, e a atividade e a rodada saem do resolvedor que a missão
+    registra (\cd{registrarContexto}) --- nunca do cliente, senão a criança
+    escolheria em que rodada a resposta conta. \textbf{Vale a PRIMEIRA
+    resposta}; a segunda é aceita e ignorada, e as duas respondem o mesmo
+    \mbox{\cd{\{ enviada: true \}}}: a criança lê \enquote{resposta enviada} e não
+    descobre, pela resposta, se acertou nem se já tinha respondido.
+  \item \textbf{O professor que leciona ajusta a qualquer momento}, mesmo com a
+    missão encerrada, um estudante ou vários (até 200 por \rota{PATCH}), e cada
+    mudança vai para \cd{evidencias\_\B{}eventos} com de/para, quem e quando. O
+    histórico é append-only NO BANCO, no molde de \cd{recursos\_\B{}auditoria}
+    (\adrr{ADR-89}): um \emph{trigger} recusa \cd{UPDATE} para qualquer
+    \emph{role}, e a de \emph{runtime} só tem \cd{SELECT, INSERT}.
+  \item \textbf{Gestores leem; o estudante nunca vê o próprio resultado; não há
+    ranking.} Os quatro papéis de gestão, \cd{admin} incluído, leem o painel e o
+    perfil e recebem 403 no confirmar e no ajustar --- administrar a escola não é
+    dar a aula. O que eles leem é NÍVEL por habilidade, nunca texto: a evidência
+    não guarda nada que a criança escreveu. Não existe rota em que o estudante leia a própria evidência. A
+    ordem dos estudantes é a alfabética, e nenhum campo soma níveis numa nota:
+    o nível é de uma habilidade, não da criança.
+  \item \textbf{O perfil do estudante é por missão e por atividade, sem juntar
+    missões}: a mesma habilidade medida em duas missões aparece nas duas.
+    Juntar é assunto de um painel futuro, com regra pedagógica própria.
+  \item \textbf{Três tabelas de PLATAFORMA}, sem prefixo de experiência, com
+    \cd{escola\_id} e RLS forçada, no módulo \arq{apps/\B{}api/\B{}src/\B{}evidencias/}:
+    \cd{evidencias\_\B{}marcas} (o dado bruto, que só a missão escreve),
+    \cd{evidencias} (o nível por habilidade, com origem e situação) e
+    \cd{evidencias\_\B{}eventos} (o histórico). As missões entram por UMA porta,
+    \cd{EvidenciasService.\B{}marcar(tx, \ldots)}, chamada da transação delas: a
+    marca cai junto se a jogada cair. No hub, um painel genérico
+    \enquote{Habilidades da BNCC} na página da atividade (hoje, só a do
+    Instanooria), desenhado só quando a resposta diz \cd{temFicha: true}, e uma
+    página nova de perfil do estudante, aberta pela aba Estudantes da turma.
+\end{itemize}
+
+\textbf{Alternativas descartadas.}
+
+\begin{itemize}
+  \item \textbf{Replicação automática para toda a equipe, projeção incluída} ---
+    o pedido do documento do dono do produto. Na equipe de dois ou três ela vale:
+    quem estava ao lado fez junto. Na projeção, a \enquote{equipe} é a turma
+    inteira, e a cópia automática gravaria trinta \enquote{atingiu} pelo acerto
+    de uma criança no telão: a evidência afirmaria o que ninguém observou. A
+    cópia da projeção nasce a revisar, e um clique do professor a confirma.
+  \item \textbf{Recalcular tudo quando a equipe muda.} A aula de ontem mudaria
+    de resultado porque hoje a sala tem menos computadores: a montagem de ontem
+    já não existe (a \adrr{ADR-111} troca a montagem INTEIRA), e a cópia seria
+    refeita com a composição de hoje. Recalcula-se só a rodada em andamento, e o
+    passado se corrige no ajuste, com autor no histórico.
+  \item \textbf{Três estados, sem N/A.} \enquote{Não avaliado} viraria
+    \enquote{não atingiu}, e a criança que faltou, ou que a missão não chegou a
+    observar, entraria no boletim como quem tentou e não conseguiu --- a
+    ausência de dado lida como afirmação, que a plataforma já se recusa a fazer
+    nos relatórios. São quatro: os três níveis e a ausência de linha, com o N/A
+    explícito do professor ao lado.
+  \item \textbf{A atividade como conceito de plataforma já agora} (uma tabela
+    \cd{atividades} genérica, com ciclo de vida). Só uma missão tem atividade
+    hoje, e cada uma que vier terá a sua forma: um modelo comum desenhado a
+    partir de um exemplo erraria nos outros. A plataforma recebe um id opaco e
+    conta rodadas; quando o unooGPT e o UnooTube voltarem com atividades, o
+    conceito comum, se houver, sai de três exemplos.
+  \item \textbf{A ficha no manifesto ou no \emph{bundle}.} O gabarito chegaria
+    ao aparelho do estudante antes da resposta (regra inviolável nº 3), e o
+    manifesto é escrito pelo CI, sem conferência pedagógica. No código da api, a
+    ficha é versionada com o desenho da missão, revisada em PR e conferida por
+    teste --- os códigos na BNCC, o \cd{expId} nos manifestos, o gabarito na
+    escala.
+  \item \textbf{\enquote{A tentativa nova substitui a anterior}.} Reiniciar
+    para treinar apagaria o que a criança já tinha demonstrado, e o professor
+    que reinicia para a turma inteira puniria quem tinha ido bem. Rodadas com
+    histórico, e o resultado é a melhor rodada por habilidade.
+  \item \textbf{Juntar as habilidades de missões diferentes no perfil.} A mesma
+    habilidade medida por duas réguas diferentes não tem soma evidente --- vale
+    a melhor? a mais recente? a da missão mais longa? --- e escolher agora seria
+    uma regra pedagógica escrita pela engenharia. O perfil mostra cada missão e
+    cada atividade; juntar é de um painel futuro, com a regra definida pelo
+    pedagógico.
+\end{itemize}
+
+\textbf{Consequências ruins, declaradas.}
+
+\begin{itemize}
+  \item \textbf{Nada aparece para o professor até a primeira ficha.} A
+    plataforma está pronta e invisível: o painel responde
+    \cd{temFicha: false}, e o hub não desenha o bloco. Quem abrir a tela sem
+    ficha não vê nada, e pode achar que quebrou.
+  \item \textbf{Missão nova com evidência passa por \emph{deploy}, e por três
+    trabalhos no mesmo PR}: a ficha, o resolvedor de contexto e a chamada a
+    \cd{marcar}. Sem o resolvedor, a pergunta responde 409
+    \cd{sem-atividade-em-andamento} para todo mundo; sem subir a \cd{versao} da
+    ficha ao mudar um gabarito, as marcas antigas e as novas ficam
+    indistinguíveis.
+  \item \textbf{A cópia da equipe pode atribuir a quem estava distraído.} É o
+    preço de a evidência valer para quem divide o computador; o professor
+    corrige com o ajuste ou com \enquote{não participou}, e a projeção, onde o
+    erro seria em massa, espera confirmação.
+  \item \textbf{A rodada passada guarda a equipe que teve --- inclusive a
+    errada.} Quem montou mal as equipes ontem corrige ontem à mão, estudante por
+    estudante; trocar as equipes hoje não conserta.
+  \item \textbf{A rodada em andamento é INFERIDA} da marca mais recente da
+    turma $\times$ missão. Duas atividades da mesma missão correndo em paralelo
+    na mesma turma fariam o recálculo das equipes tocar só a mais recente.
+  \item \textbf{A evidência não é produto e não tem interruptor próprio} no
+    painel da Unooria (regra inviolável nº 8): segue o da missão. A pergunta e a
+    resposta passam por \cd{exigirMissaoLiberada}, então missão desligada na
+    rede ou fechada na turma responde 403; o painel e o perfil do professor
+    continuam lendo o que foi registrado.
+  \item \textbf{A gestão passa a ler o nível de UMA criança.} O perfil aceita
+    \cd{estudanteId} para os quatro papéis de gestão, ao contrário do agregado
+    do unooGPT (que não tem rota onde um \cd{estudanteId} caiba) e da linha da
+    Vila (só do professor). É leitura de nível por habilidade --- nunca texto,
+    nunca o relatório da missão ---, e foi decisão do dono do produto; revê-la
+    é tirar \cd{GESTORES} do \cd{@Roles} das duas leituras.
+  \item \textbf{O perfil repete a habilidade em cada missão que a mede}, o que
+    pode parecer duplicado a quem lê. E o histórico cresce sem prazo: o
+    \cd{DELETE} fica fora do \emph{trigger}, para a retenção e para a cascata da
+    turma, mas o prazo de guarda do dado de criança ainda não está definido.
+  \item \textbf{O vocabulário mora em dois lugares}: as constantes de
+    \arq{evidencias/regras.ts} e os \emph{CHECKs} da \emph{migration}. É o par
+    que já custou um \emph{deploy} em \cd{permissoes}, e por isso o teste de
+    banco compara os dois.
+\end{itemize}
+
+\textbf{Como isto se prova.} \arq{apps/api/tests/\B{}evidencias-regras.spec.ts}
+cobre as regras puras, sem banco: a escala e o \cd{melhor}, a melhor rodada por
+habilidade (a projeção a revisar fora, o \cd{nao\_participou} como N/A), o
+\cd{decidirCopia} com cada precedência, a projeção pelos dois caminhos, o
+\cd{copiasDesejadas} e o \cd{diferencaDasCopias} (a confirmação que sobrevive, o
+de/para de quem entrou e saiu) e o \cd{validarFicha} recusando cada defeito.
+\arq{apps/api/tests/\B{}evidencias-postgres.spec.ts} cobra o banco e o serviço: RLS
+habilitada E forçada nas três tabelas, isolamento de verdade entre escolas, a
+\emph{role} sem \emph{ownership} marcando e ajustando pelo serviço, os
+\emph{CHECKs} iguais ao vocabulário e os de coerência, o \cd{UPDATE} recusado no
+histórico até para a dona da tabela, a conta apagada levando marca, evidência e
+histórico; a cópia só do nível, o recálculo que toca só a rodada em andamento, a
+falha no recálculo desfazendo a montagem, a projeção fora do perfil até a
+confirmação (e a confirmação sobrevivendo a salvar as equipes de novo), o
+ajuste com histórico e com a missão encerrada, a pergunta sem gabarito, a
+primeira resposta valendo, o 409 sem contexto, o 403 da missão não liberada, o
+painel sem ficha em 200, o 404 para quem não leciona e o \cd{RolesGuard} de cada
+rota. A suíte registra em tempo de execução uma ficha da exp08ef1b
+(\cd{registrarFicha}, só para teste). \arq{apps/api/tests/\B{}evidencias-fichas.spec.ts}
+confere cada ficha do registro --- e, com ele vazio, prova que a trava reprova
+de verdade uma ficha com missão sem manifesto e código fora da Base.
+
+\textbf{Gatilho.} A primeira missão com ficha mostrar que o nível não cabe em
+três graus (uma régua que precise de \enquote{superou}, ou de nota); o unooGPT e
+o UnooTube voltarem com atividades e o id opaco pedir um ciclo de vida comum ---
+aí a atividade vira conceito de plataforma; o painel que junta missões ganhar a
+regra pedagógica; ou uma turma rodar duas atividades da mesma missão em
+paralelo, que a rodada em andamento inferida não distingue.

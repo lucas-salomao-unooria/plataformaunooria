@@ -27,6 +27,8 @@ import { RastroBoatoModule } from "./rastro-boato/rastro-boato.module";
 import { ManifestoIaModule } from "./manifesto-ia/manifesto-ia.module";
 import { QuemMandouIssoModule } from "./quem-mandou-isso/quem-mandou-isso.module";
 import { SalasModule } from "./salas/salas.module";
+import { EquipesModule } from "./equipes/equipes.module";
+import { EvidenciasModule } from "./evidencias/evidencias.module";
 import { UnootubeModule } from "./unootube/unootube.module";
 import { UnoogptModule } from "./unoogpt/unoogpt.module";
 import { VilaModule } from "./vila/vila.module";
@@ -60,6 +62,8 @@ import { ContratoInterceptor } from "./openapi/contrato.interceptor";
     RecursosModule,
     ProspeccaoModule,
     SalasModule,
+    EquipesModule,
+    EvidenciasModule,
     MotorModule,
     AssetsModule,
     AtividadesModule,

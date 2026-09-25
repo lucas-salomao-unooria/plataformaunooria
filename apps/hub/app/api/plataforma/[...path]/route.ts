@@ -29,6 +29,17 @@ const PREFIXOS_PERMITIDOS = [
      client-side porque o professor aperta na frente da sala e o card precisa
      responder na hora. As guardas de papel estão na api. */
   "salas",
+  /* EQUIPES NA MISSÃO (E13): sortear, separar, salvar e desfazer as equipes de
+     uma missão numa turma. Client-side pela mesma razão do liberar: o professor
+     monta as equipes na frente da sala, e a ficha precisa responder na hora. As
+     guardas de papel estão na api (só `professor` escreve; gestor lê). */
+  "equipes",
+  /* EVIDÊNCIA PEDAGÓGICA (E14): "Confirmar para a turma" (POST) e o ajuste do
+     nível de uma habilidade, de um estudante ou de vários (PATCH), no painel da
+     atividade. Client-side porque o professor corrige olhando a turma, e o
+     painel volta atualizado na própria resposta. As guardas de papel estão na
+     api (só `professor` escreve; gestor lê). */
+  "evidencias",
   "matriculas",
   "periodos-letivos",
   /* A REDE: escolas do contrato, o vínculo das pessoas com elas (lotações) e a

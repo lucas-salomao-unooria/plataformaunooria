@@ -92,6 +92,23 @@ export const TurmasDoUnootubeSchema = z.object({
   ),
 });
 
+/**
+ * A equipe de um computador (E13, ADR-111), como o painel a mostra. `membros`
+ * inclui quem entrou; `nome` de cada um é o `displayName` — é a tela do
+ * professor, que já lê o nome completo na linha.
+ */
+export const EquipeDoResultadoSchema = z.object({
+  id: Uuid,
+  nome: z.string(),
+  membros: z.array(z.object({ id: Uuid, nome: z.string() })),
+});
+
+/**
+ * Uma linha do painel = UM COMPUTADOR. Sem equipe, é o próprio estudante, como
+ * sempre foi. Com equipe, é a linha de quem ENTROU (o representante: o mais
+ * recente, se mais de um entrou), e `equipe` diz quem senta com ele.
+ * `id`/`estudanteId` são do representante.
+ */
 export const EstudanteDoResultadoSchema = z.object({
   id: Uuid.optional(),
   estudanteId: Uuid.optional(),
@@ -104,11 +121,14 @@ export const EstudanteDoResultadoSchema = z.object({
   rankingDesbloqueado: z.boolean(),
   credibilidadeAdicionada: z.boolean(),
   concluidoEm: z.string().nullable(),
+  /** `null` = sem equipe nesta missão: a linha é só deste estudante. */
+  equipe: EquipeDoResultadoSchema.nullable(),
 });
 
 export const ResultadosDaTurmaSchema = z.object({
   turma: z.object({ id: Uuid, nome: z.string(), serie: z.string() }),
   estudantes: z.array(EstudanteDoResultadoSchema).optional(),
+  /** Conta COMPUTADORES (as linhas de `estudantes`), e não crianças, quando há equipes. */
   resumo: z.object({
     total: z.number().int().nonnegative(),
     iniciaram: z.number().int().nonnegative(),
@@ -117,6 +137,11 @@ export const ResultadosDaTurmaSchema = z.object({
     /** Só entre os que CONCLUÍRAM: quantos fecharam com 0, 1, 2 ou 3 fontes. */
     distribuicaoFontes: z.record(z.number().int().nonnegative()),
     mediaFontesConcluidos: z.number().nullable(),
+    /**
+     * A turma tem equipes nesta missão: os números acima contam computadores.
+     * `false` = cada estudante é uma linha, como antes das equipes.
+     */
+    porComputador: z.boolean(),
   }),
 });
 

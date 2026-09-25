@@ -90,7 +90,14 @@ abri-lo.
   vez: `pnpm dev`/`docker:dev`, a suíte e2e, migração. **Nunca**
   `pnpm docker:dev` de um worktree — ele recria os containers da stack
   principal. Arquivos que toda frente toca e brigam no merge: número da ADR
-  (a PRÓXIMA é a **108**: a **107 é o site público portado para o hub,
+  (a PRÓXIMA é a **113**: a **112 é a evidência pedagógica por atividade e
+      rodada, com a melhor rodada valendo por habilidade**, a **111 a equipe
+      como quem divide um computador na missão, com o painel contando por
+      computador**, a **110 o
+      código da experiência**, a **109 o rótulo CENTRADO da BNCC de
+      Computação** e a **108 a missão de sala que nasce vazia** — as três
+      gastaram o número sem corrigir esta linha, que seguiu anunciando a 108
+      como livre até a 111 —, a **107 é o site público portado para o hub,
       com o cadastro de interesse passando pela api**, a **106 o `_template`
       com a fiação inteira** — que gastou o número sem corrigir esta linha, o
       modo de falhar que ela mesma descreve —, a **105 a quota de IA como dado,

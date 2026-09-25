@@ -50,6 +50,10 @@ export const SalaDoProfessorSchema = z.object({
       liberadaPor: z.string().nullable(),
       liberadaEm: z.string().datetime().nullable(),
       encerradaEm: z.string().datetime().nullable(),
+      /* Quantas equipes a missão tem nesta turma (E13, ADR-111). SÓ na sala do
+         professor: `MissaoNaGradeSchema` também responde `/salas/minhas`, e o
+         estudante não tem o que fazer com a contagem da sala inteira. */
+      equipes: z.number().int().nonnegative(),
     }),
   ),
 });

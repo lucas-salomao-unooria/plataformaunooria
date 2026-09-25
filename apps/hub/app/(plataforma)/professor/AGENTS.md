@@ -131,3 +131,63 @@ exceções (`MISSOES_NO_FALLBACK`) que exige declarar por escrito quem usa o cor
 do Instanooria de propósito.
 
 **Missão nova = ramo no despachante + `missao-<slug>.tsx`, no mesmo trabalho.**
+
+## Equipes na missão (E13)
+
+Quando a turma divide computadores, quem entra na missão representa a equipe. A
+seção **"Equipes desta turma"** mora na FICHA, entra UMA vez pelo `corpo()` do
+despachante (`components/equipes/equipes-da-ficha.tsx`, logo abaixo da faixa da
+turma) e só aparece com `?turmaId=` e quando a api responde `permitida` — a
+lista de missões com equipe é da api, não do hub. Os tipos e as regras puras
+(mover, remover, o que impede salvar) estão em `lib/equipes.ts`, que o cliente
+importa; as leituras server-side em `lib/equipes-servidor.ts` (`server-only`).
+
+- **A plataforma sempre pergunta** "Sortear as equipes" ou "Eu separo", sem
+  opção marcada; "Manter as equipes da última missão" só existe quando a turma
+  tem equipes salvas em outra missão.
+- **Só o `professor` escreve.** Gestor lê: cartões ou "Nenhuma equipe montada
+  para esta turma." A api recusaria de qualquer jeito.
+- **"Mostrar equipes" é uma janela do DS (`Modal` `full`), não uma rota**: uma
+  página de tela cheia herdaria a trilha e o layout da área. Ela mostra o nome
+  da equipe e o PRIMEIRO nome de cada estudante (a inicial do sobrenome só
+  quando o nome repete na turma) — nada de falta, desempenho ou "Sem equipe": é
+  a tela que a sala inteira lê.
+- **A lista de presença e a edição NÃO vão dentro de `Collapse`**: fechado, ele
+  deixa ~40 controles focáveis dentro de `aria-hidden`. Renderização condicional.
+- **Na sala, as equipes são uma `Tag` ("N equipes prontas"), não um link**
+  (ADR-100): montar e editar é na ficha, pelo mesmo "Conduzir com esta turma".
+- **O estudante vê a própria equipe** numa faixa entre o header e o aparelho
+  (`components/equipes/faixa-da-equipe.tsx`, `shrink-0`, uma linha), só com
+  primeiros nomes e sem link.
+
+Suíte: `professor/10-equipes-na-missao` (4B de ponta a ponta, terminando em
+"Desfazer"; a faixa do estudante na 4A, com as equipes criadas e apagadas pelo
+BFF).
+
+## Evidência pedagógica (E14)
+
+Por estudante, as habilidades da BNCC que ele demonstrou numa ATIVIDADE,
+rodada a rodada. Tipos e regras puras em `lib/evidencias.ts`; leituras em
+`lib/evidencias-servidor.ts`; confirmar e ajustar pelo BFF (`evidencias`). Quem
+decide nível, cópia e o que conta é a api (`apps/api/src/evidencias/`).
+
+- **O painel mora na tela da ATIVIDADE** (`atividades/[id]`, depois da revisão):
+  hoje só o Instanooria tem atividade. Atividade sem turma (anterior à coluna)
+  não tem painel — a evidência é por turma.
+- **Invisível sem ficha, de propósito**: `temFicha: false` não desenha nada, e
+  hoje NENHUMA missão tem ficha. Acende sozinho quando a primeira publicar a
+  dela; "não aparece" não é defeito — confira `temFicha` antes.
+- **Ausência é "Não avaliado", nunca "Não atingiu".** A cópia da aula projetada
+  chega "a revisar" e só conta depois de "Confirmar para a turma".
+- **O perfil** é `turmas/[id]/estudantes/[estudanteId]`, pelo NOME na aba
+  Estudantes; o relatório da Vila, antes destino da linha inteira, virou link ao
+  lado (link dentro de link não existe). A trilha volta para `?aba=estudantes`.
+- **Só o `professor` confirma e ajusta** (`podeEditar`); gestor lê, sem caixas,
+  sem célula clicável, sem confirmar. O estudante nunca vê resultado.
+- **Sem ranking nem ordem por nível.** Alfabética com a equipe junta
+  (`ordenarPorEquipe`), nenhuma coluna `sortable`. A seleção é o `Checkbox` do
+  DS numa coluna, não a `selectable` da `Table`: a dela diz "Selecionar linha
+  N", e a linha é uma criança (lacuna a pedir no `storybook-unooria`).
+
+Suíte: `professor/11-perfil-do-aluno` (4B, até o perfil vazio). O painel ganha
+passo quando a primeira missão tiver ficha.

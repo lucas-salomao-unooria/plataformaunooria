@@ -34,6 +34,10 @@ Complementa o `AGENTS.md` de `apps/api`, que vence em conflito.
 - **Fixture de teste que abre experiência precisa de `tests/liberar-de-teste.ts`.**
   Quatro suítes quebraram quando a guarda entrou — quem quebrar com
   `missao-nao-liberada` não tem bug, tem fixture faltando.
+- **A sala do professor diz quantas equipes cada missão tem** (`missoes[].equipes`,
+  E13/ADR-111, de `equipes/consulta.ts#contarEquipesDaTurma`) — só no schema do
+  PROFESSOR: `MissaoNaGradeSchema` também responde `/salas/minhas`, e a contagem da
+  sala inteira não é assunto do estudante.
 
 **Pessoa NASCE por importação — e o cadastro unitário DELEGA a ela.** As
 chamadas que ESCREVEM em `users` continuam sendo duas:

@@ -4,7 +4,8 @@
 \chapter{Especificação da API}
 \label{cap:api}
 
-A API é um serviço NestJS~\cite{nestjs2026} com 22 módulos. Este capítulo
+A API é um serviço NestJS~\cite{nestjs2026} com 34 módulos (os \cd{imports} de
+\arq{app.module.ts} em 2026-09-25). Este capítulo
 especifica a superfície HTTP: as convenções transversais, os grupos de rotas e a
 autorização de cada um. O catálogo completo, rota por rota, está no
 Apêndice~\ref{ap:endpoints}.
@@ -72,129 +73,212 @@ quando a variável correspondente está ausente --- desligadas, não abertas.
 
 \section{Mapa de rotas por área}
 
+O mapa vem em duas figuras: a plataforma e a exp08ef1b na
+Figura~\ref{fig:mapa-rotas}, e as demais experiências, uma linha por
+experiência, na Figura~\ref{fig:mapa-rotas-exps}. O catálogo rota por rota, com
+método e esquema, é o Apêndice~\ref{ap:endpoints}.
+
+% Duas figuras, e não uma (2026-09-25): numa só, as 45 caixas mais a legenda não
+% cabiam na página, e a versão anterior "cabia" encavalando caixas (a
+% `/salas/*` sobre a `/perfis-recebidos`, a `/telemetry/*` sobre a
+% `/rostering/*`) e deixando rota vazar da borda. Grade fixa: coluna nova é
+% linha nova, nunca caixa espremida no vão.
 \begin{figure}[H]
 \centering
 \fitwidth{%
-\begin{tikzpicture}[x=1cm, y=1cm]
+\begin{tikzpicture}[x=1cm, y=1cm,
+    rt/.style={c4component, text width=33mm, minimum height=16mm}]
 
-  \node[camadalbl, anchor=west] at (0.3,0.8) {Plataforma --- serve a todos os papéis};
-  \node[c4component, text width=27mm] (au) at (2.3,-0.4)
-    {\rota{/auth/login}\desc{sem papel}};
-  \node[c4component, text width=27mm] (he) at (5.7,-0.4)
-    {\rota{/healthz}, \rota{/readyz}\desc{público}};
-  \node[c4component, text width=27mm] (ex) at (9.1,-0.4)
-    {\rota{/experiencias}\desc{GET: qualquer; PUT: admin}};
-  \node[c4component, text width=27mm] (pg) at (12.5,-0.4)
-    {\rota{/progresso/:expId}\desc{estudante}};
-  \node[c4component, text width=27mm] (te) at (14.4,-1.9)
-    {\rota{/telemetry/*}\desc{ver acima}};
-  \node[c4component, text width=27mm] (us) at (2.3,-1.9)
-    {\rota{/usuarios/*}\desc{gestor, admin}};
-  \node[c4component, text width=27mm] (ai) at (5.7,-1.9)
-    {\rota{/ai/gerar}\desc{autenticado + quota}};
-  \node[c4component, text width=27mm] (an) at (9.1,-1.9)
-    {\rota{/analise/*}\desc{\textbf{admin-contrato}}};
-  \node[c4component, text width=27mm] (ro) at (12.5,-1.9)
-    {\rota{/rostering/*}\desc{gestor, admin}};
-  \node[c4component, text width=27mm] (tu) at (2.3,-3.0)
-    {\rota{/turmas/*}\desc{prof.\ (as dele), gestor}};
-  \node[c4component, text width=27mm] (mt) at (5.7,-3.0)
-    {\rota{/matriculas/:id}\desc{gestor, admin}};
-  \node[c4component, text width=27mm] (pll) at (9.1,-3.0)
-    {\rota{/periodos-letivos}\desc{GET: prof.; POST: gestor}};
-  \node[c4component, text width=27mm] (pp) at (12.5,-3.0)
-    {\rota{/perfis-recebidos}\desc{gestor, admin}};
-  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (sal) at (14.4,-3.0)
-    {\rota{/salas/*}\desc{a SALA: grade e liberação}};
-  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (rec) at (16.3,-3.0)
-    {\rota{/recursos/*}\desc{o interruptor da REDE}};
+  \node[camadalbl, anchor=west] at (0.1,0) {Plataforma --- serve a todos os papéis};
+  \node[rt] (au) at (1.95,-1.1)
+    {\texttt{/auth/login}\desc{sem papel}};
+  \node[rt] (he) at (5.9,-1.1)
+    {\texttt{/healthz}, \texttt{/readyz}\desc{público}};
+  \node[rt] (ex) at (9.85,-1.1)
+    {\texttt{/experiencias}\desc{GET: qualquer; PUT: admin}};
+  \node[rt] (pg) at (13.8,-1.1)
+    {\texttt{/progresso/:expId}\desc{estudante}};
 
-  \node[camadalbl, anchor=west] at (0.3,-4.0) {exp08ef1b --- Instanooria};
-  \node[c4component, text width=27mm] (atv) at (2.3,-4.6)
-    {\rota{/atividades/*}\desc{professor}};
-  \node[c4component, text width=27mm] (rn) at (5.7,-4.6)
-    {\rota{/runs/*}\desc{estudante (\cd{/eventos}: professor tb.)}};
-  \node[c4component, text width=27mm] (po) at (9.1,-4.6)
-    {\rota{/posts/:id/comentarios}\desc{estudante}};
-  \node[c4component, text width=27mm] (pf) at (12.5,-4.6)
-    {\rota{/perfis/importar}\desc{chave de serviço}};
+  \node[rt] (te) at (1.95,-2.95)
+    {\texttt{/telemetry/*}\desc{ver acima}};
+  \node[rt] (us) at (5.9,-2.95)
+    {\texttt{/usuarios/*}\desc{gestor, admin}};
+  \node[rt] (ai) at (9.85,-2.95)
+    {\texttt{/ai/gerar}\desc{autenticado + quota}};
+  \node[rt] (an) at (13.8,-2.95)
+    {\texttt{/analise/*}\desc{\textbf{admin-contrato}}};
 
-  \node[camadalbl, anchor=west] at (0.3,-6.1) {Demais experiências};
-  \node[c4component, text width=27mm] (ut) at (2.3,-7.3)
-    {\rota{/unootube/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (utt) at (5.7,-7.3)
-    {\rota{/unootube/turmas/*}\desc{prof., gestor, admin}};
-  \node[c4component, text width=27mm] (vi) at (9.1,-7.3)
-    {\rota{/vila/sessoes}\desc{estudante}};
-  \node[c4component, text width=27mm] (vp) at (12.5,-7.3)
-    {\rota{/vila/professor/*}\desc{\textbf{professor}}};
-  \node[c4component, text width=27mm] (va) at (2.3,-8.8)
-    {\rota{/vila/agregado/*}\desc{prof., gestor}};
-  \node[c4component, text width=27mm] (pl) at (5.7,-8.8)
-    {\rota{/planos/*}\desc{professor}};
-  \node[c4component, text width=27mm] (pref) at (9.1,-8.8)
-    {\rota{/planos/referencias}\desc{chave de serviço}};
-  \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (be) at (12.5,-8.8)
-    {\rota{/bemestar/*}\desc{\textbf{só professor}, posse}};
-  \node[c4component, text width=27mm] (ug) at (2.3,-10.3)
-    {\texttt{/unoogpt/*}\desc{estudante}};
-  \node[c4component, text width=27mm, fill=unooRedWash, draw=unooRed] (ugp) at (5.7,-10.3)
-    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
-  \node[c4component, text width=27mm] (uga) at (9.1,-10.3)
-    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
-  \node[c4component, text width=27mm] (eco) at (12.5,-10.3)
-    {\texttt{/o-eco-no-grupo/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (ecot) at (2.3,-11.8)
-    {\texttt{/o-eco-no-grupo/turmas/*}\desc{prof., gestor, admin --- o gate da aula}};
-  \node[c4component, text width=27mm] (rb) at (5.7,-11.8)
-    {\texttt{/rastro-boato/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (rbt) at (9.1,-11.8)
-    {\texttt{/rastro-boato/turmas/*}\desc{prof., gestor, admin --- o gate da aula}};
-  \node[c4component, text width=27mm] (utp) at (12.5,-11.8)
-    {\texttt{/unootube/professor/*}\desc{prof., gestor --- material do guia}};
-  \node[c4component, text width=27mm] (rbp) at (2.3,-13.3)
-    {\texttt{/rastro-boato/professor/*}\desc{prof., gestor --- material do guia}};
-  \node[c4component, text width=27mm] (ecop) at (5.7,-13.3)
-    {\texttt{/o-eco-no-grupo/professor/*}\desc{prof., gestor --- material do guia}};
-  \node[c4component, text width=27mm] (mia) at (9.1,-13.3)
-    {\texttt{/manifesto-ia/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (miat) at (12.5,-13.3)
-    {\texttt{/manifesto-ia/turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
-  \node[c4component, text width=27mm] (fc) at (2.3,-14.8)
-    {\texttt{/foto-conta/*}\desc{estudante}};
-  \node[c4component, text width=27mm] (fct) at (5.7,-14.8)
-    {\texttt{/foto-conta/turmas/*}\desc{prof., gestor --- o latch da Roda}};
-  \node[c4component, text width=27mm] (qm) at (9.1,-14.8)
-    {\texttt{/quem-mandou-isso/*}\desc{estudante}};
-  \node[c4component, text width=27mm, fill=unooBlueWash, draw=unooBlue] (qmt) at (12.5,-14.8)
-    {\texttt{/quem-mandou-isso/turmas/*}\desc{prof., gestor --- o lote E o relógio da turma}};
-  \node[c4component, text width=27mm] (qmp) at (2.3,-16.3)
-    {\texttt{/quem-mandou-isso/professor/*}\desc{prof., gestor --- material do guia}};
+  \node[rt] (ro) at (1.95,-4.8)
+    {\texttt{/rostering/*}\desc{gestor, admin}};
+  \node[rt] (tu) at (5.9,-4.8)
+    {\texttt{/turmas/*}\desc{prof.\ (as dele), gestor}};
+  \node[rt] (mt) at (9.85,-4.8)
+    {\texttt{/matriculas/:id}\desc{gestor, admin}};
+  \node[rt] (pll) at (13.8,-4.8)
+    {\texttt{/periodos-letivos}\desc{GET: prof.; POST: gestor}};
+
+  \node[rt] (pp) at (1.95,-6.65)
+    {\texttt{/perfis-recebidos}\desc{gestor, admin}};
+  \node[rt, fill=unooBlueWash, draw=unooBlue] (rec) at (5.9,-6.65)
+    {\texttt{/recursos/*}\desc{o interruptor da REDE}};
+  \node[rt, fill=unooBlueWash, draw=unooBlue] (sal) at (9.85,-6.65)
+    {\texttt{/salas/*}\desc{prof.\ libera, gestor lê,\\estudante: \texttt{/minhas}}};
+  \node[rt, fill=unooBlueWash, draw=unooBlue] (eq) at (13.8,-6.65)
+    {\texttt{/equipes/*}\desc{prof.\ monta, gestor lê,\\estudante: \texttt{/minha}}};
+
+  % 5a linha (2026-09-25): coluna nova é linha nova --- /evidencias/* entra
+  % embaixo, e a faixa da exp08ef1b desce 1,85.
+  \node[rt] (evi) at (1.95,-8.5)
+    {\texttt{/evidencias/*}\desc{prof.\ ajusta, gestor lê;\\estudante: só a pergunta}};
+
+  \node[camadalbl, anchor=west] at (0.1,-9.8) {exp08ef1b --- Instanooria};
+  \node[rt] (atv) at (1.95,-10.9)
+    {\texttt{/atividades/*}\desc{professor}};
+  \node[rt] (rn) at (5.9,-10.9)
+    {\texttt{/runs/*}\desc{estudante (\texttt{/eventos}: professor tb.)}};
+  \node[rt] (po) at (9.85,-10.9)
+    {\texttt{/posts/:id/\B{}comentarios}\desc{estudante}};
+  \node[rt] (pf) at (13.8,-10.9)
+    {\texttt{/perfis/importar}\desc{chave de serviço}};
 
 \end{tikzpicture}}
-\caption[Mapa de rotas da API]{Mapa das rotas por área e papel autorizado. Duas
-  áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não tem
-  nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do estudante só
-  existe no controller do professor --- o do gestor \textbf{não tem uma rota que
-  aceite \texttt{estudanteId}}, o que torna estrutural, e não disciplinar, o limite do
-  que ele alcança (\adrr{ADR-27}). Em \rota{/turmas/*} a autorização do professor
-  é por \textbf{matrícula}, não por escola: é a diferença entre \enquote{dá aula
-  nesta turma} e \enquote{trabalha nesta escola} (\adrr{ADR-28}). Em
+\caption[Mapa de rotas da API --- plataforma e exp08ef1b]{Mapa das rotas da
+  plataforma e da exp08ef1b, por papel autorizado; as das demais experiências
+  estão na Figura~\ref{fig:mapa-rotas-exps}. Em \texttt{/turmas/*} a autorização
+  do professor é por \textbf{matrícula}, não por escola: é a diferença entre
+  \enquote{dá aula nesta turma} e \enquote{trabalha nesta escola}
+  (\adrr{ADR-28}). Em destaque, os três eixos que nenhuma experiência conhece
+  pelo nome: \texttt{/recursos/*} diz se ela existe NESTA REDE (\adrr{ADR-87}),
+  \texttt{/salas/*} se está aberta NESTA TURMA (\adrr{ADR-69}) e
+  \texttt{/equipes/*} quem divide um computador nela (\adrr{ADR-111}). Nas duas
+  últimas quem escreve é só quem leciona; o gestor só lê --- como em
+  \texttt{/evidencias/*} (\adrr{ADR-112}), em que o estudante alcança só a
+  pergunta e a resposta, nunca o próprio resultado.}
+\label{fig:mapa-rotas}
+\end{figure}
+
+% A 13.2 ocupa quase uma página e nunca cabe junto da 13.1. Sem esta quebra, o
+% \flushbottom do preâmbulo empurra a sobra para a única cola elástica da
+% página --- o \intextsep ACIMA da 13.1 --- e abre um buraco entre o título e a
+% figura.
+\newpage
+
+\begin{figure}[H]
+\centering
+\fitpage{%
+\begin{tikzpicture}[x=1cm, y=1cm,
+    rt/.style={c4component, text width=40mm, font=\scriptsize},
+    exprot/.style={anchor=west, font=\scriptsize, text width=20mm, align=left,
+                   inner sep=0pt}]
+
+  % Uma linha por experiência; a coluna diz QUEM chama. Célula vazia é
+  % ausência, e as destacadas em vermelho são ausência DELIBERADA.
+  \node[camadalbl] at (4.5,-0.25) {o estudante};
+  \node[camadalbl] at (9.05,-0.25) {o professor e a gestão};
+  \node[camadalbl] at (13.6,-0.25) {o guia, o agregado e o serviço};
+
+  % ---- exp04ef1b
+  \node[exprot] at (0.1,-1.35) {\textbf{exp04ef1b}\\UnooTube};
+  \node[rt, minimum height=15mm] at (4.5,-1.35)
+    {\texttt{/unootube/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-1.35)
+    {\texttt{/unootube/turmas/*}\desc{prof., gestor, admin}};
+  \node[rt, minimum height=15mm] at (13.6,-1.35)
+    {\texttt{/unootube/professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- app-70
+  \node[exprot] at (0.1,-2.925) {\textbf{app-70}\\Vila do Lume};
+  \node[rt, minimum height=11.5mm] at (4.5,-2.925)
+    {\texttt{/vila/sessoes}\desc{estudante}};
+  \node[rt, minimum height=11.5mm] at (9.05,-2.925)
+    {\texttt{/vila/professor/*}\desc{\textbf{professor}}};
+  \node[rt, minimum height=11.5mm] at (13.6,-2.925)
+    {\texttt{/vila/agregado/*}\desc{prof., gestor}};
+
+  % ---- app-90
+  \node[exprot] at (0.1,-4.325) {\textbf{app-90}\\Plano de aula};
+  \node[rt, minimum height=11.5mm] at (9.05,-4.325)
+    {\texttt{/planos/*}\desc{professor}};
+  \node[rt, minimum height=11.5mm] at (13.6,-4.325)
+    {\texttt{/planos/referencias}\desc{chave de serviço}};
+
+  % ---- app-91
+  \node[exprot] at (0.1,-5.725) {\textbf{app-91}\\Bem-estar};
+  \node[rt, minimum height=11.5mm, fill=unooRedWash, draw=unooRed] at (9.05,-5.725)
+    {\texttt{/bemestar/*}\desc{\textbf{só professor}, posse}};
+
+  % ---- exp02em1b
+  \node[exprot] at (0.1,-7.3) {\textbf{exp02em1b}\\unooGPT};
+  \node[rt, minimum height=15mm] at (4.5,-7.3)
+    {\texttt{/unoogpt/*}\desc{estudante}};
+  \node[rt, minimum height=15mm, fill=unooRedWash, draw=unooRed] at (9.05,-7.3)
+    {\texttt{/unoogpt/professor/*}\desc{\textbf{só professor}, transcrição}};
+  \node[rt, minimum height=15mm] at (13.6,-7.3)
+    {\texttt{/unoogpt/agregado/*}\desc{gestor, admin --- sem \texttt{estudanteId}}};
+
+  % ---- exp07ef1b
+  \node[exprot] at (0.1,-9.225) {\textbf{exp07ef1b}\\O Eco no Grupo};
+  \node[rt, minimum height=18.5mm] at (4.5,-9.225)
+    {\texttt{/o-eco-no-grupo/*}\desc{estudante}};
+  \node[rt, minimum height=18.5mm] at (9.05,-9.225)
+    {\texttt{/o-eco-no-grupo/\B{}turmas/*}\desc{prof., gestor, admin --- o \emph{gate} da aula}};
+  \node[rt, minimum height=18.5mm] at (13.6,-9.225)
+    {\texttt{/o-eco-no-grupo/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp06ef2b
+  \node[exprot] at (0.1,-11.325) {\textbf{exp06ef2b}\\O Rastro do Boato};
+  \node[rt, minimum height=18.5mm] at (4.5,-11.325)
+    {\texttt{/rastro-boato/*}\desc{estudante}};
+  \node[rt, minimum height=18.5mm] at (9.05,-11.325)
+    {\texttt{/rastro-boato/\B{}turmas/*}\desc{prof., gestor, admin --- o \emph{gate} da aula}};
+  \node[rt, minimum height=18.5mm] at (13.6,-11.325)
+    {\texttt{/rastro-boato/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+  % ---- exp08ef4b
+  \node[exprot] at (0.1,-13.25) {\textbf{exp08ef4b}\\O Manifesto da IA};
+  \node[rt, minimum height=15mm] at (4.5,-13.25)
+    {\texttt{/manifesto-ia/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-13.25)
+    {\texttt{/manifesto-ia/\B{}turmas/*}\desc{prof., gestor --- o debate E o conteúdo da turma}};
+
+  % ---- exp01ef1b
+  \node[exprot] at (0.1,-15.0) {\textbf{exp01ef1b}\\O Que a Foto Conta};
+  \node[rt, minimum height=15mm] at (4.5,-15.0)
+    {\texttt{/foto-conta/*}\desc{estudante}};
+  \node[rt, minimum height=15mm] at (9.05,-15.0)
+    {\texttt{/foto-conta/\B{}turmas/*}\desc{prof., gestor --- o \emph{latch} da Roda}};
+
+  % ---- exp05ef1b
+  \node[exprot] at (0.1,-16.925) {\textbf{exp05ef1b}\\Quem mandou isso?};
+  \node[rt, minimum height=18.5mm] at (4.5,-16.925)
+    {\texttt{/quem-mandou-isso/*}\desc{estudante}};
+  \node[rt, minimum height=18.5mm, fill=unooBlueWash, draw=unooBlue] at (9.05,-16.925)
+    {\texttt{/quem-mandou-isso/\B{}turmas/*}\desc{prof., gestor --- o lote E o relógio da turma}};
+  \node[rt, minimum height=18.5mm] at (13.6,-16.925)
+    {\texttt{/quem-mandou-isso/\B{}professor/*}\desc{prof., gestor --- material do guia}};
+
+\end{tikzpicture}}
+\caption[Mapa de rotas da API --- demais experiências]{Mapa das rotas das
+  demais experiências: uma linha por experiência, uma coluna por quem chama.
+  Duas áreas estão destacadas por \textbf{ausência deliberada}: bem-estar não
+  tem nenhuma rota de gestor nem de agregado; e no unooGPT a transcrição do
+  estudante só existe no controller do professor --- o do gestor \textbf{não tem
+  uma rota que aceite \texttt{estudanteId}}, o que torna estrutural, e não
+  disciplinar, o limite do que ele alcança (\adrr{ADR-27}). Em
   \texttt{/o-eco-no-grupo/turmas/*} e \texttt{/rastro-boato/turmas/*} mora o
   \emph{gate} da aula: é a professora quem move a turma de etapa, e a rota é
   \textbf{idempotente} de propósito --- é o clique que se dá duas vezes. As
-  \texttt{/<slug>/professor/*} servem o \textbf{material do guia da
-  aula}: catálogo com gabarito, sem \texttt{escolaId} e sem \emph{tenancy},
-  em que o que a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b
-  \textbf{não} tem uma dessas, e a ausência é o desenho: o material de mediação
-  dela é o pacote CURADO por turma, então ele mora em
-  \texttt{/manifesto-ia/turmas/:id/conteudo} --- com \emph{tenancy}, porque o
-  conteúdo não é igual para todo contrato. A exp05ef1b tem \textbf{as duas
-  coisas}, e elas respondem perguntas diferentes:
+  \texttt{/<slug>/professor/*} servem o \textbf{material do guia da aula}:
+  catálogo com gabarito, sem \texttt{escolaId} e sem \emph{tenancy}, em que o que
+  a guarda protege é só o papel (\adrr{ADR-86}). A exp08ef4b \textbf{não} tem uma
+  dessas, e a ausência é o desenho: o material de mediação dela é o pacote
+  CURADO por turma, então ele mora em \texttt{/manifesto-ia/turmas/:id/conteudo}
+  --- com \emph{tenancy}, porque o conteúdo não é igual para todo contrato. A
+  exp05ef1b tem \textbf{as duas coisas}, e elas respondem perguntas diferentes:
   \texttt{/quem-mandou-isso/professor/material} é o banco curado da Unooria,
   igual em todo contrato, e \texttt{/quem-mandou-isso/turmas/:id/conteudo} é o
   lote que AQUELA professora homologou --- o único que a turma dela vai ler.}
-\label{fig:mapa-rotas}
+\label{fig:mapa-rotas-exps}
 \end{figure}
 
 \section{Superfície que a SDK consome}
@@ -315,6 +399,135 @@ A guarda é PRÉ-CONDIÇÃO do relógio da exp02em1b e dos \emph{gates} da exp07
 substituta --- e fica na CRIAÇÃO da sessão, não em toda rota: quem já entrou
 fica, porque encerrar fecha a entrada e não expulsa a criança no meio da aula.
 \end{regra}
+
+\subsection{As equipes na missão: quem divide um computador}
+
+Seis rotas no módulo \arq{equipes/} (\adrr{ADR-111}): cinco de professor, todas
+sob \rota{/equipes/turma/\B :turmaId/\B missao/:expId}, e uma de estudante, a literal
+\rota{/equipes/minha}. Os prefixos são distintos de propósito: assim a ordem de
+registro dos \emph{controllers} não decide quem responde, e o do estudante é
+outro arquivo, sem \cd{@Roles} misto.
+
+\begin{itemize}
+  \item \rota{GET /equipes/turma/\B :turmaId/\B missao/:expId} (professor que leciona,
+    gestor, admin) --- a montagem, as equipes com os membros e \cd{semEquipe}
+    (os ausentes inclusive). Missão que não aceita equipe responde \textbf{200}
+    com \cd{permitida: false}, e não 400: é por esta resposta que o hub decide se
+    desenha o bloco.
+  \item \rota{POST .../sugestao} (só professor) --- uma proposta que
+    \textbf{nunca grava}, e por isso responde 200: \cd{sorteio} distribui os
+    presentes por tamanhos que diferem em no máximo 1; \cd{manual} devolve N
+    equipes vazias e todos em \cd{semEquipe}. O \cd{agrupamento} (lados, neutros,
+    equipes mistas) só vem quando a missão registrou uma fonte de lado; hoje,
+    nenhuma registrou.
+  \item \rota{GET .../ultima} (só professor) --- a montagem mais recente da MESMA
+    turma em OUTRA missão com equipe, reprojetada sobre a turma de hoje: quem
+    saiu cai e é contado em \cd{saidas}, quem chegou fica em \cd{semEquipe}, e
+    os ausentes de lá não vêm. Também não grava.
+  \item \rota{PUT .../} (\textbf{só professor com matrícula na turma}) --- grava
+    a montagem INTEIRA. O corpo leva a \cd{versao} em que a tela se baseou
+    (\cd{0} sem montagem); versão velha é \textbf{409}
+    \cd{equipes-\B{}desatualizadas} com \cd{versaoAtual}. Montagem impossível é
+    \textbf{400} \cd{montagem-invalida} com \cd{erros}: a lista INTEIRA, em
+    frases para o professor e sem nome de criança. Missão fora da lista é 400
+    \cd{missao-sem-equipes}; fora do catálogo, 404; ferramenta de professor ou
+    recurso desligado na rede, 403.
+  \item \rota{DELETE .../} (só professor) --- desfaz. \textbf{Idempotente}, e
+    sem checagem de catálogo nem de disponibilidade: missão desligada na rede
+    não pode deixar equipes presas que ninguém consegue apagar.
+  \item \rota{GET /equipes/minha?expId=} (estudante) --- \textbf{sempre 200}:
+    \cd{equipe: null}, ou o nome dela e \cd{colegas} com SÓ o primeiro nome dos
+    outros membros. Um 404 viraria \cd{api-recusou} no log do hub a cada
+    abertura de missão.
+\end{itemize}
+
+Turma que o professor não leciona responde \textbf{404} em todas as rotas de
+professor, nunca 403 --- é o desenho da sala. E três respostas de outros módulos
+mudaram de forma para contar por COMPUTADOR:
+
+\begin{tabularx}{\linewidth}{@{}L{46mm}X@{}}
+\toprule
+\headrow \thd{Rota} & \thd{O que mudou}\\
+\midrule
+\rota{GET /salas/turma/:turmaId} & \cd{missoes[].equipes}: quantas equipes a missão
+  tem na turma, num \cd{groupBy} para a grade inteira. SÓ no \emph{schema} do
+  professor, e não no \cd{MissaoNaGradeSchema}, que também responde
+  \rota{/salas/minhas}: a contagem da sala não é assunto do estudante.\\
+\zebra \rota{GET /unootube/turmas/\B :turmaId/resultados} & Uma linha por
+  computador: cada item de \cd{estudantes} ganha \cd{equipe} (\cd{null}, ou
+  \cd{id}, \cd{nome} e \cd{membros}), com \cd{id}/\cd{estudanteId} do
+  representante --- quem entrou. O \cd{resumo} conta essas linhas e ganha
+  \cd{porComputador}.\\
+\rota{GET /unoogpt/professor/\B turmas/:turmaId} & O mesmo na folha da Missão
+  Tempestade: \cd{linhas[].equipe}, e o \cd{retrato} conta as linhas, com
+  \cd{porComputador}. \enquote{Abrir} leva ao representante.\\
+\bottomrule
+\end{tabularx}
+
+\subsection{A evidência pedagógica: por atividade e rodada}
+
+Seis rotas no módulo \arq{evidencias/} (\adrr{ADR-112}), em dois
+\emph{controllers}: quatro do lado de quem dá aula --- o painel, a confirmação e
+o ajuste de uma atividade, e o perfil de um estudante --- e duas do estudante, a
+pergunta e a resposta. Nenhum caminho de um casa com o
+do outro --- o número de segmentos e as literais diferem ---, então a ordem de
+registro não decide quem responde; e o do estudante é outro arquivo, sem
+\cd{@Roles} misto. As duas escritas do professor devolvem o PAINEL já
+atualizado, para a tela não precisar reler.
+
+\begin{itemize}
+  \item \rota{GET /evidencias/turma/\B :turmaId/\B missao/:expId/\B atividade/:atividadeId}
+    (professor que leciona, gestores, \cd{admin}) --- o painel: as habilidades da
+    ficha com o texto da BNCC, as rodadas que têm evidência, e para cada
+    estudante da turma a equipe dele na missão, \cd{porRodada} (cada habilidade
+    com \cd{status}, \cd{origem} e \cd{situacao}) e o \cd{resultado} --- a
+    melhor rodada por habilidade, só com o que vale. Habilidade ausente é N/A.
+    \cd{pendentes} conta, por rodada, as cópias da projeção a revisar. Missão
+    SEM ficha responde \textbf{200} com \cd{temFicha: false} e tudo vazio, e não
+    400: é por esta resposta que o hub decide se desenha o bloco. A ordem é a
+    alfabética, e nenhum campo soma níveis.
+  \item \rota{POST .../\B rodadas/:rodada/confirmar} (só professor) ---
+    \enquote{Confirmar para a turma}: as cópias \cd{a\_revisar} da rodada
+    passam a \cd{valida}, com UM evento de turma no histórico. Responde 200,
+    e não 201 (\cd{@HttpCode(200)}), porque é ação sobre o que já existe; e
+    repetir não muda nada.
+  \item \rota{PATCH .../\B rodadas/:rodada/ajustes} (\textbf{só professor com
+    matrícula na turma}) --- de 1 a 200 ajustes
+    \cd{\{ estudanteId, habilidade, status \}}, a qualquer momento, mesmo com a
+    missão encerrada. O ajuste é a origem \cd{professor}, que nada sobrescreve
+    depois; \cd{nao\_participou} é o N/A explícito. Estudante fora da turma,
+    habilidade fora da ficha ou o mesmo par duas vezes: \textbf{400}
+    \cd{ajuste-invalido} com \cd{erros}, a lista INTEIRA em frases. Rodada
+    depois da última que a atividade teve: \textbf{400}
+    \cd{rodada-inexistente} (a rodada 1 sempre existe, para a atividade feita
+    fora da missão). Ajuste que repete o que já estava é ignorado, sem evento.
+  \item \rota{GET /evidencias/\B estudante/:estudanteId} (professor, gestores,
+    \cd{admin}) --- o perfil: em cada missão (com o nome do catálogo, ou o
+    \cd{expId} quando ela não está nele), em cada atividade, o nível de cada
+    habilidade --- a melhor rodada, só com o que vale: sem a projeção a
+    revisar, sem N/A e sem \cd{nao\_participou}. Sem origem, e sem juntar
+    missões. O professor só abre quem ele ensina
+    (\cd{professorEnsinaOEstudante}).
+  \item \rota{GET /evidencias/\B :expId/\B perguntas/:perguntaId} (estudante) --- o
+    enunciado e as alternativas, só \cd{id} e \cd{texto}: o nível de cada uma é
+    o gabarito, e fica no servidor. Pergunta fora da ficha: \textbf{404}
+    \cd{pergunta-nao-encontrada}.
+  \item \rota{POST /evidencias/\B :expId/\B perguntas/:perguntaId/resposta}
+    (estudante) --- o corpo leva SÓ \cd{alternativaId}; a atividade e a rodada
+    saem do resolvedor da missão. Responde \textbf{sempre}
+    \mbox{\cd{\{ enviada: true \}}}, na primeira e na segunda vez --- vale a primeira.
+    Sem atividade em andamento (ou sem resolvedor registrado): \textbf{409}
+    \cd{sem-atividade-em-andamento}; alternativa que não é da pergunta:
+    \textbf{400} \cd{alternativa-desconhecida}.
+\end{itemize}
+
+As duas do estudante passam por \cd{exigirMissaoLiberada}: missão não liberada
+na turma dele é \textbf{403} \cd{missao-nao-liberada}, e recurso desligado na
+rede, \cd{recurso-indisponivel}. Turma que o professor não leciona, e estudante
+que ele não ensina, respondem \textbf{404}, nunca 403 --- o desenho da sala. O
+gestor, que tem a escola do \emph{token} vazia quando é
+\cd{gestor\_contrato}, diz a escola em \cd{?escolaId=}. E o estudante
+\textbf{não tem rota que leia o próprio resultado}: a ausência é o contrato.
 
 \subsection{Entrada de pessoas: as duas portas, e por que só uma escreve}
 
