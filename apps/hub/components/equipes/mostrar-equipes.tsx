@@ -19,10 +19,12 @@ import { juntarNomes, rotulosCurtos, turmaInteira, type EquipeSalva, type Pessoa
  * cheia dentro de `/professor` herdaria a trilha e o layout da área, e sair
  * dela seria navegar de volta para a ficha no meio da aula.
  *
- * `aria-labelledby` é COMPENSAÇÃO de uma lacuna do DS (0.2.2): o `Modal` só liga
- * o título ao `role="dialog"` no atalho `title=`; montado com `ModalTitle`, o
- * título ganha id e o diálogo fica SEM NOME acessível — o leitor de tela anuncia
- * "diálogo" e mais nada.
+ * O `aria-labelledby` explícito nasceu como COMPENSAÇÃO de uma lacuna do DS
+ * (até a 0.2.2; corrigido na 0.2.3): o `Modal` só ligava o título ao
+ * `role="dialog"` no atalho `title=`, e montado com `ModalTitle` o diálogo ficava
+ * SEM NOME acessível — o leitor de tela anunciava "diálogo" e mais nada. Desde a
+ * 0.2.3 o `Modal` liga o `ModalTitle` sozinho; o par `useId` + `aria-labelledby`
+ * ficou porque o explícito vence e aponta para o mesmo título.
  */
 export function MostrarEquipes({
   aberto,
