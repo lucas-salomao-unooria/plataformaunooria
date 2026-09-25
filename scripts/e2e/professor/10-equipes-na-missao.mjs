@@ -385,7 +385,18 @@ await suite(
         .then(() => true)
         .catch(() => false);
       r.exigir(temFaixa, "a missão abre com a faixa da equipe acima do aparelho");
-      const textoDaFaixa = temFaixa ? (await faixa.innerText()).trim() : "";
+      /* O texto SEM o ícone: o `Icon` do DS é uma ligadura do Material Symbols, e o
+         `innerText` devolve o nome dele ("groups") mesmo com o ícone desenhado. O que o
+         estudante lê é o que não é `aria-hidden`. */
+      const textoDaFaixa = temFaixa
+        ? (await faixa.evaluate((el) =>
+            [...el.childNodes]
+              .filter((n) => !(n instanceof Element && n.getAttribute("aria-hidden") === "true"))
+              .map((n) => n.textContent ?? "")
+              .join(" ")
+              .replace(/\s+/g, " "),
+          )).trim()
+        : "";
       r.exigir(textoDaFaixa.startsWith(`Sua equipe: ${equipe.nome}`), `a faixa diz "${textoDaFaixa}"`);
       r.exigir(
         colegas.every((m) => textoDaFaixa.includes(m.nome.trim().split(/\s+/)[0])),
